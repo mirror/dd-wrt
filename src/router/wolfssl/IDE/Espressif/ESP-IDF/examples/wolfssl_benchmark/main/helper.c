@@ -1,6 +1,6 @@
 /* helper.c
  *
- * Copyright (C) 2006-2018 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -22,11 +22,79 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfcrypt/benchmark/benchmark.h>
+
 #include "sdkconfig.h"
+#include "esp_log.h"
 
-#define WOLFSSL_BENCH_ARGV              CONFIG_BENCH_ARGV
+#define WOLFSSL_BENCH_ARGV                 CONFIG_BENCH_ARGV
 
+/* proto-type */
+extern void wolf_benchmark_task();
+static const char* const TAG = "wolfbenchmark";
 char* __argv[22];
+
+#if defined(WOLFSSL_ESPWROOM32SE) && defined(HAVE_PK_CALLBACKS) \
+                                  && defined(WOLFSSL_ATECC508A)
+
+#include "wolfssl/wolfcrypt/port/atmel/atmel.h"
+
+/* when you need to use a custom slot allocation, */
+/* enable the definition CUSTOM_SLOT_ALLOCAION.   */
+#if defined(CUSTOM_SLOT_ALLOCATION)
+
+static byte mSlotList[ATECC_MAX_SLOT];
+
+/* initialize slot array */
+void my_atmel_slotInit()
+{
+    int i;
+    for(i = 0;i < ATECC_MAX_SLOT;i++) {
+        mSlotList[i] = ATECC_INVALID_SLOT;
+    }
+}
+
+/* allocate slot depending on slotType */
+int my_atmel_alloc(int slotType)
+{
+    int i, slot = -1;
+
+    switch(slotType){
+        case ATMEL_SLOT_ENCKEY:
+            slot = 4;
+            break;
+        case ATMEL_SLOT_DEVICE:
+            slot = 0;
+            break;
+        case ATMEL_SLOT_ECDHE:
+            slot = 0;
+            break;
+        case ATMEL_SLOT_ECDHE_ENC:
+            slot = 4;
+            break;
+        case ATMEL_SLOT_ANY:
+            for(i = 0;i < ATECC_MAX_SLOT;i++){
+                if(mSlotList[i] == ATECC_INVALID_SLOT){
+                    slot = i;
+                    break;
+                }
+            }
+    }
+
+    return slot;
+}
+
+/* free slot array       */
+void my_atmel_free(int slotId)
+{
+    if(slotId >= 0 && slotId < ATECC_MAX_SLOT){
+        mSlotList[slotId] = ATECC_INVALID_SLOT;
+    }
+}
+
+#endif /* CUSTOM_SLOT_ALLOCATION                                       */
+#endif /* WOLFSSL_ESPWROOM32SE && HAVE_PK_CALLBACK && WOLFSSL_ATECC508A */
 
 int construct_argv()
 {
@@ -77,4 +145,28 @@ int construct_argv()
     free(_argv);
 
     return (cnt);
+}
+
+/* entry point */
+void app_main(void)
+{
+    (void) TAG;
+#ifndef NO_CRYPT_BENCHMARK
+
+/* when using atecc608a on esp32-wroom-32se */
+#if defined(WOLFSSL_ESPWROOM32SE) && defined(HAVE_PK_CALLBACKS) \
+                                  && defined(WOLFSSL_ATECC508A)
+    #if defined(CUSTOM_SLOT_ALLOCATION)
+    my_atmel_slotInit();
+    /* to register the callback, it needs to be initialized. */
+    if ((wolfCrypt_Init()) != 0) {
+       ESP_LOGE(TAG, "wolfCrypt_Init failed");
+       return;
+    }
+    atmel_set_slot_allocator(my_atmel_alloc, my_atmel_free);
+    #endif
+#endif
+    wolf_benchmark_task();
+#else
+#endif /* NO_CRYPT_BENCHMARK */
 }

@@ -1,6 +1,6 @@
 /* test_main.c
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -65,7 +65,7 @@ void main(void)
         test_num++;
     } while(args.return_code == 0);
 
-    /*Print this again for redundancy*/
+    /* Print this again for redundancy */
     #ifdef WOLFSSL_FRDM_K64_JENKINS
         printf("\n&&&&&&&&&&&&&& done &&&&&&&&&&&&&\n");
         delay_us(1000000);

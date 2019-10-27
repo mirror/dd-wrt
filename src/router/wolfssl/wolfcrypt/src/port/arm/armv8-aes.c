@@ -1,6 +1,6 @@
 /* armv8-aes.c
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -4650,5 +4650,4 @@ int wc_AesGcmSetKey(Aes* aes, const byte* key, word32 len)
         }
     #endif /* HAVE_AES_DECRYPT */
 #endif /* WOLFSSL_AES_DIRECT */
-#endif /* NO_AES */
-
+#endif /* !NO_AES && WOLFSSL_ARMASM */

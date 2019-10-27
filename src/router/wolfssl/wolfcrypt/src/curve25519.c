@@ -1,6 +1,6 @@
 /* curve25519.c
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -253,6 +253,64 @@ int wc_curve25519_import_public_ex(const byte* in, word32 inLen,
         ltcPoint.Y = &key->p.pointY[0];
         LTC_PKHA_Curve25519ComputeY(&ltcPoint);
     #endif
+
+    return 0;
+}
+
+/* Check the public key value (big or little endian)
+ *
+ * pub     Public key bytes.
+ * pubSz   Size of public key in bytes.
+ * endian  Public key bytes passed in as big-endian or little-endian.
+ * returns BAD_FUNC_ARGS when pub is NULL,
+ *         BUFFER_E when size of public key is zero;
+ *         ECC_OUT_OF_RANGE_E if the high bit is set;
+ *         ECC_BAD_ARG_E if key length is not 32 bytes, public key value is
+ *         zero or one; and
+ *         0 otherwise.
+ */
+int wc_curve25519_check_public(const byte* pub, word32 pubSz, int endian)
+{
+    word32 i;
+
+    if (pub == NULL)
+        return BAD_FUNC_ARG;
+
+    /* Check for empty key data */
+    if (pubSz == 0)
+        return BUFFER_E;
+
+    /* Check key length */
+    if (pubSz != CURVE25519_KEYSIZE)
+        return ECC_BAD_ARG_E;
+
+
+    if (endian == EC25519_LITTLE_ENDIAN) {
+        /* Check for value of zero or one */
+        for (i = pubSz - 1; i > 0; i--) {
+            if (pub[i] != 0)
+                break;
+        }
+        if (i == 0 && (pub[0] == 0 || pub[0] == 1))
+            return ECC_BAD_ARG_E;
+
+        /* Check high bit set */
+        if (pub[CURVE25519_KEYSIZE-1] & 0x80)
+            return ECC_OUT_OF_RANGE_E;
+    }
+    else {
+        /* Check for value of zero or one */
+        for (i = 0; i < pubSz-1; i++) {
+            if (pub[i] != 0)
+                break;
+        }
+        if (i == pubSz - 1 && (pub[i] == 0 || pub[i] == 1))
+            return ECC_BAD_ARG_E;
+
+        /* Check high bit set */
+        if (pub[0] & 0x80)
+            return ECC_OUT_OF_RANGE_E;
+    }
 
     return 0;
 }

@@ -1,6 +1,6 @@
 /* armv8-sha256.c
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -135,7 +135,7 @@ static WC_INLINE int Sha256Update(wc_Sha256* sha256, const byte* data, word32 le
             "LD1 {v24.4s-v27.4s}, [%[k]], #64    \n"
             "LD1 {v28.4s-v31.4s}, [%[k]], #64    \n"
 
-            /* begining of SHA256 block operation */
+            /* beginning of SHA256 block operation */
             "1:\n"
             /* Round 1 */
             "MOV v4.16b, v0.16b        \n"
@@ -694,7 +694,7 @@ static WC_INLINE int Sha256Update(wc_Sha256* sha256, const byte* data, word32 le
             "VMOV.32 q14, q12 \n" /* store digest for add at the end */
             "VMOV.32 q15, q13 \n"
 
-            /* begining of SHA256 block operation */
+            /* beginning of SHA256 block operation */
             "1:\n"
 
             /* Round 1 */
@@ -916,7 +916,7 @@ static WC_INLINE int Sha256Final(wc_Sha256* sha256, byte* hash)
         "VMOV.32 q14, q12 \n" /* store digest for add at the end */
         "VMOV.32 q15, q13 \n"
 
-        /* begining of SHA256 block operation */
+        /* beginning of SHA256 block operation */
         /* Round 1 */
         "VLD1.32 {q5}, [%[k]]!    \n"
         "VMOV.32 q4, q0           \n"
@@ -1116,7 +1116,7 @@ static WC_INLINE int Sha256Final(wc_Sha256* sha256, byte* hash)
         "VMOV.32 q14, q12 \n" /* store digest for add at the end */
         "VMOV.32 q15, q13 \n"
 
-        /* begining of SHA256 block operation */
+        /* beginning of SHA256 block operation */
         /* Round 1 */
         "VLD1.32 {q5}, [%[k]]!    \n"
         "VMOV.32 q4, q0           \n"
@@ -1345,6 +1345,23 @@ int wc_Sha256GetHash(wc_Sha256* sha256, byte* hash)
     return ret;
 }
 
+#if defined(WOLFSSL_HASH_FLAGS) || defined(WOLF_CRYPTO_CB)
+int wc_Sha256SetFlags(wc_Sha256* sha256, word32 flags)
+{
+    if (sha256) {
+        sha256->flags = flags;
+    }
+    return 0;
+}
+int wc_Sha256GetFlags(wc_Sha256* sha256, word32* flags)
+{
+    if (sha256 && flags) {
+        *flags = sha256->flags;
+    }
+    return 0;
+}
+#endif
+
 int wc_Sha256Copy(wc_Sha256* src, wc_Sha256* dst)
 {
     int ret = 0;
@@ -1453,6 +1470,24 @@ int wc_Sha256Copy(wc_Sha256* src, wc_Sha256* dst)
         }
         return ret;
     }
+
+#if defined(WOLFSSL_HASH_FLAGS) || defined(WOLF_CRYPTO_CB)
+    int wc_Sha224SetFlags(wc_Sha224* sha224, word32 flags)
+    {
+        if (sha224) {
+            sha224->flags = flags;
+        }
+        return 0;
+    }
+    int wc_Sha224GetFlags(wc_Sha224* sha224, word32* flags)
+    {
+        if (sha224 && flags) {
+            *flags = sha224->flags;
+        }
+        return 0;
+    }
+#endif
+
     int wc_Sha224Copy(wc_Sha224* src, wc_Sha224* dst)
     {
         int ret = 0;

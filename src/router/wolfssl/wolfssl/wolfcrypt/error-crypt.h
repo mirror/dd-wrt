@@ -1,6 +1,6 @@
 /* error-crypt.h
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -28,9 +28,10 @@
 
 #include <wolfssl/wolfcrypt/types.h>
 
-#ifdef HAVE_FIPS
+#if defined(HAVE_FIPS) && \
+    (!defined(HAVE_FIPS_VERSION) || (HAVE_FIPS_VERSION < 2))
 	#include <cyassl/ctaocrypt/error-crypt.h>
-#endif /* HAVE_FIPS */
+#endif /* HAVE_FIPS V1 */
 
 #ifdef __cplusplus
     extern "C" {
@@ -223,7 +224,10 @@ enum {
     PKCS7_NO_SIGNER_E   = -269,  /* No signer in PKCS#7 signed data msg */
     WC_PKCS7_WANT_READ_E= -270,  /* PKCS7 operations wants more input */
 
-    WC_LAST_E           = -270,  /* Update this to indicate last error */
+    CRYPTOCB_UNAVAILABLE= -271, /* Crypto callback unavailable */
+    PKCS7_SIGNEEDS_CHECK= -272, /* signature needs verified by caller */
+
+    WC_LAST_E           = -272,  /* Update this to indicate last error */
     MIN_CODE_E          = -300   /* errors -101 - -299 */
 
     /* add new companion error id strings for any new error codes

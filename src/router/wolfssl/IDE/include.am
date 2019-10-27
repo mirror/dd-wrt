@@ -14,10 +14,18 @@ include IDE/ARDUINO/include.am
 include IDE/INTIME-RTOS/include.am
 include IDE/OPENSTM32/include.am
 include IDE/VS-ARM/include.am
+include IDE/VS-AZURE-SPHERE/include.am
 include IDE/GCC-ARM/include.am
 include IDE/CSBENCH/include.am
+include IDE/ECLIPSE/DEOS/include.am
+include IDE/ECLIPSE/MICRIUM/include.am
+include IDE/ECLIPSE/SIFIVE/include.am
 include IDE/mynewt/include.am
 include IDE/Renesas/cs+/Projects/include.am
 include IDE/Renesas/e2studio/Projects/include.am
+include IDE/WICED-STUDIO/include.am
+include IDE/CRYPTOCELL/include.am
+include IDE/M68K/include.am
+include IDE/RISCV/include.am
 
-EXTRA_DIST+= IDE/IAR-EWARM IDE/MDK-ARM IDE/MDK5-ARM IDE/MYSQL IDE/LPCXPRESSO IDE/HEXIWEAR IDE/Espressif
+EXTRA_DIST+= IDE/IAR-EWARM IDE/MDK-ARM IDE/MDK5-ARM IDE/MYSQL IDE/LPCXPRESSO IDE/HEXIWEAR IDE/Espressif IDE/zephyr

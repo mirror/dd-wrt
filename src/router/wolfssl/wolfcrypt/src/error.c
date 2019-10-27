@@ -1,6 +1,6 @@
 /* error.c
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -502,6 +502,12 @@ const char* wc_GetErrorString(int error)
 
     case PKCS7_NO_SIGNER_E:
         return "No signer in PKCS#7 signed data";
+
+    case CRYPTOCB_UNAVAILABLE:
+        return "Crypto callback unavailable";
+
+    case PKCS7_SIGNEEDS_CHECK:
+        return "Signature found but no certificate to verify";
 
     default:
         return "unknown error number";

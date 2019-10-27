@@ -1,6 +1,6 @@
 /* random.h
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -48,9 +48,9 @@
  /* Maximum generate block length */
 #ifndef RNG_MAX_BLOCK_LEN
     #ifdef HAVE_INTEL_QA
-        #define RNG_MAX_BLOCK_LEN (0xFFFF)
+        #define RNG_MAX_BLOCK_LEN (0xFFFFl)
     #else
-        #define RNG_MAX_BLOCK_LEN (0x10000)
+        #define RNG_MAX_BLOCK_LEN (0x10000l)
     #endif
 #endif
 
@@ -88,7 +88,7 @@
  *     seeded via wc_GenerateSeed. This is the default source.
  */
 
- /* Seed source can be overriden by defining one of these:
+ /* Seed source can be overridden by defining one of these:
       CUSTOM_RAND_GENERATE_SEED
       CUSTOM_RAND_GENERATE_SEED_OS
       CUSTOM_RAND_GENERATE */
@@ -138,6 +138,9 @@ typedef struct OS_Seed {
     #else
         int fd;
     #endif
+    #if defined(WOLF_CRYPTO_CB)
+        int devId;
+    #endif
 } OS_Seed;
 
 
@@ -153,10 +156,26 @@ struct WC_RNG {
 #ifdef HAVE_HASHDRBG
     /* Hash-based Deterministic Random Bit Generator */
     struct DRBG* drbg;
+#if defined(WOLFSSL_NO_MALLOC) && !defined(WOLFSSL_STATIC_MEMORY)
+    #define DRBG_STRUCT_SZ ((sizeof(word32)*3) + (DRBG_SEED_LEN*2))
+    #ifdef WOLFSSL_SMALL_STACK_CACHE
+        #define DRBG_STRUCT_SZ_SHA256 (sizeof(wc_Sha256))
+    #else
+        #define DRBG_STRUCT_SZ_SHA256 0
+    #endif
+    #if defined(WOLFSSL_ASYNC_CRYPT) || defined(WOLF_CRYPTO_CB)
+        #define DRBG_STRUCT_SZ_ASYNC (sizeof(void*) + sizeof(int))
+    #else
+        #define DRBG_STRUCT_SZ_ASYNC 0
+    #endif
+    byte drbg_data[DRBG_STRUCT_SZ + DRBG_STRUCT_SZ_SHA256 + DRBG_STRUCT_SZ_ASYNC];
+#endif
     byte status;
 #endif
 #ifdef WOLFSSL_ASYNC_CRYPT
     WC_ASYNC_DEV asyncDev;
+#endif
+#if defined(WOLFSSL_ASYNC_CRYPT) || defined(WOLF_CRYPTO_CB)
     int devId;
 #endif
 };

@@ -1,6 +1,6 @@
 /* sniffer.h
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -98,7 +98,7 @@ enum {
  * information associated with the SSL session.
  */
 
-#if defined(__GNUC__)
+#if defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__)
     #define WOLFSSL_PACK __attribute__ ((packed))
 #else
     #define WOLFSSL_PACK
@@ -115,6 +115,8 @@ typedef struct SSLInfo
     unsigned char  serverCipherSuite;       /* second byte, actual suite */
     unsigned char  serverCipherSuiteName[256];
             /* cipher name, e.g., "TLS_RSA_..." */
+    unsigned char  serverNameIndication[128];
+    unsigned int   keySize;
 } WOLFSSL_PACK SSLInfo;
 
 
@@ -123,6 +125,100 @@ SSL_SNIFFER_API int ssl_DecodePacketWithSessionInfo(
                         const unsigned char* packet, int length,
                         unsigned char** data, SSLInfo* sslInfo, char* error);
 
+typedef void (*SSLConnCb)(const void* session, SSLInfo* info, void* ctx);
+
+WOLFSSL_API
+SSL_SNIFFER_API int ssl_SetConnectionCb(SSLConnCb cb);
+
+WOLFSSL_API
+SSL_SNIFFER_API int ssl_SetConnectionCtx(void* ctx);
+
+
+typedef struct SSLStats
+{
+    unsigned long int sslStandardConns;
+    unsigned long int sslClientAuthConns;
+    unsigned long int sslResumedConns;
+    unsigned long int sslEphemeralMisses;
+    unsigned long int sslResumeMisses;
+    unsigned long int sslCiphersUnsupported;
+    unsigned long int sslKeysUnmatched;
+    unsigned long int sslKeyFails;
+    unsigned long int sslDecodeFails;
+    unsigned long int sslAlerts;
+    unsigned long int sslDecryptedBytes;
+    unsigned long int sslEncryptedBytes;
+    unsigned long int sslEncryptedPackets;
+    unsigned long int sslDecryptedPackets;
+    unsigned long int sslKeyMatches;
+    unsigned long int sslEncryptedConns;
+
+    unsigned long int sslResumptionValid;
+    unsigned long int sslResumptionInserts;
+} SSLStats;
+
+
+WOLFSSL_API
+SSL_SNIFFER_API int ssl_ResetStatistics(void);
+
+
+WOLFSSL_API
+SSL_SNIFFER_API int ssl_ReadStatistics(SSLStats* stats);
+
+
+WOLFSSL_API
+SSL_SNIFFER_API int ssl_ReadResetStatistics(SSLStats* stats);
+
+
+typedef int (*SSLWatchCb)(void* vSniffer,
+                        const unsigned char* certHash,
+                        unsigned int certHashSz,
+                        const unsigned char* certChain,
+                        unsigned int certChainSz,
+                        void* ctx, char* error);
+
+WOLFSSL_API
+SSL_SNIFFER_API int ssl_SetWatchKeyCallback(SSLWatchCb cb, char* error);
+
+WOLFSSL_API
+SSL_SNIFFER_API int ssl_SetWatchKeyCallback_ex(SSLWatchCb cb, int devId,
+                        char* error);
+
+WOLFSSL_API
+SSL_SNIFFER_API int ssl_SetWatchKeyCtx(void* ctx, char* error);
+
+WOLFSSL_API
+SSL_SNIFFER_API int ssl_SetWatchKey_buffer(void* vSniffer,
+                        const unsigned char* key, unsigned int keySz,
+                        int keyType, char* error);
+
+WOLFSSL_API
+SSL_SNIFFER_API int ssl_SetWatchKey_file(void* vSniffer,
+                        const char* keyFile, int keyType,
+                        const char* password, char* error);
+
+
+typedef int (*SSLStoreDataCb)(const unsigned char* decryptBuf,
+        unsigned int decryptBufSz, unsigned int decryptBufOffset, void* ctx);
+
+WOLFSSL_API
+SSL_SNIFFER_API int ssl_SetStoreDataCallback(SSLStoreDataCb cb);
+
+WOLFSSL_API
+SSL_SNIFFER_API int ssl_DecodePacketWithSessionInfoStoreData(
+        const unsigned char* packet, int length, void* ctx,
+        SSLInfo* sslInfo, char* error);
+
+
+WOLFSSL_API
+SSL_SNIFFER_API int ssl_DecodePacketWithChain(void* vChain,
+        unsigned int chainSz, unsigned char** data, char* error);
+
+
+WOLFSSL_API
+SSL_SNIFFER_API int ssl_DecodePacketWithChainSessionInfoStoreData(
+        void* vChain, unsigned int chainSz, void* ctx, SSLInfo* sslInfo,
+        char* error);
 
 #ifdef __cplusplus
     }  /* extern "C" */

@@ -1,6 +1,6 @@
 /* des3.c
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -44,6 +44,10 @@
 #endif
 
 #include <wolfssl/wolfcrypt/des3.h>
+
+#ifdef WOLF_CRYPTO_CB
+    #include <wolfssl/wolfcrypt/cryptocb.h>
+#endif
 
 /* fips wrapper calls, user can call direct */
 #if defined(HAVE_FIPS) && \
@@ -1443,15 +1447,15 @@
             return BAD_FUNC_ARG;
         }
 
-    #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_3DES)
-        if (des->asyncDev.marker == WOLFSSL_ASYNC_MARKER_3DES) {
-            /* key_raw holds orignal key copy */
-            des->key_raw = key;
-            des->iv_raw = iv;
-
-            /* continue on to set normal key for smaller DES operations */
+    #if defined(WOLF_CRYPTO_CB) || \
+        (defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_3DES))
+        #ifdef WOLF_CRYPTO_CB
+        if (des->devId != INVALID_DEVID)
+        #endif
+        {
+            XMEMCPY(des->devKey, key, DES3_KEYLEN);
         }
-    #endif /* WOLFSSL_ASYNC_CRYPT */
+    #endif
 
         ret = DesSetKey(key + (dir == DES_ENCRYPTION ? 0:16), dir, des->key[0]);
         if (ret != 0)
@@ -1587,6 +1591,15 @@
             return BAD_FUNC_ARG;
         }
 
+    #ifdef WOLF_CRYPTO_CB
+        if (des->devId != INVALID_DEVID) {
+            int ret = wc_CryptoCb_Des3Encrypt(des, out, in, sz);
+            if (ret != CRYPTOCB_UNAVAILABLE)
+                return ret;
+            /* fall-through when unavailable */
+        }
+    #endif
+
     #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_3DES)
         if (des->asyncDev.marker == WOLFSSL_ASYNC_MARKER_3DES &&
                                             sz >= WC_ASYNC_THRESH_DES3_CBC) {
@@ -1594,7 +1607,7 @@
             return NitroxDes3CbcEncrypt(des, out, in, sz);
         #elif defined(HAVE_INTEL_QA)
             return IntelQaSymDes3CbcEncrypt(&des->asyncDev, out, in, sz,
-                des->key_raw, DES3_KEYLEN, (byte*)des->iv_raw, DES3_IVLEN);
+                (const byte*)des->devKey, DES3_KEYLEN, (byte*)des->reg, DES3_IVLEN);
         #else /* WOLFSSL_ASYNC_CRYPT_TEST */
             if (wc_AsyncTestInit(&des->asyncDev, ASYNC_TEST_DES3_CBC_ENCRYPT)) {
                 WC_ASYNC_TEST* testDev = &des->asyncDev.test;
@@ -1629,6 +1642,15 @@
             return BAD_FUNC_ARG;
         }
 
+    #ifdef WOLF_CRYPTO_CB
+        if (des->devId != INVALID_DEVID) {
+            int ret = wc_CryptoCb_Des3Decrypt(des, out, in, sz);
+            if (ret != CRYPTOCB_UNAVAILABLE)
+                return ret;
+            /* fall-through when unavailable */
+        }
+    #endif
+
     #if defined(WOLFSSL_ASYNC_CRYPT)
         if (des->asyncDev.marker == WOLFSSL_ASYNC_MARKER_3DES &&
                                             sz >= WC_ASYNC_THRESH_DES3_CBC) {
@@ -1636,7 +1658,7 @@
             return NitroxDes3CbcDecrypt(des, out, in, sz);
         #elif defined(HAVE_INTEL_QA)
             return IntelQaSymDes3CbcDecrypt(&des->asyncDev, out, in, sz,
-                des->key_raw, DES3_KEYLEN, (byte*)des->iv_raw, DES3_IVLEN);
+                (const byte*)des->devKey, DES3_KEYLEN, (byte*)des->reg, DES3_IVLEN);
         #else /* WOLFSSL_ASYNC_CRYPT_TEST */
             if (wc_AsyncTestInit(&des->asyncDev, ASYNC_TEST_DES3_CBC_DECRYPT)) {
                 WC_ASYNC_TEST* testDev = &des->asyncDev.test;
@@ -1734,11 +1756,16 @@ int wc_Des3Init(Des3* des3, void* heap, int devId)
 
     des3->heap = heap;
 
+#ifdef WOLF_CRYPTO_CB
+    des3->devId = devId;
+    des3->devCtx = NULL;
+#else
+    (void)devId;
+#endif
+
 #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_3DES)
     ret = wolfAsync_DevCtxInit(&des3->asyncDev, WOLFSSL_ASYNC_MARKER_3DES,
                                                         des3->heap, devId);
-#else
-    (void)devId;
 #endif
 
     return ret;
@@ -1753,6 +1780,10 @@ void wc_Des3Free(Des3* des3)
 #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_3DES)
     wolfAsync_DevCtxFree(&des3->asyncDev, WOLFSSL_ASYNC_MARKER_3DES);
 #endif /* WOLFSSL_ASYNC_CRYPT */
+#if defined(WOLF_CRYPTO_CB) || \
+        (defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_3DES))
+    ForceZero(des3->devKey, sizeof(des3->devKey));
+#endif
 }
 
 #endif /* WOLFSSL_TI_CRYPT */

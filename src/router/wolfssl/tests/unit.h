@@ -1,6 +1,6 @@
 /* unit.c API unit tests driver
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -91,7 +91,7 @@
 
 
 void ApiTest(void);
-int  SuiteTest(void);
+int  SuiteTest(int argc, char** argv);
 int  HashTest(void);
 void SrpTest(void);
 

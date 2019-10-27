@@ -1,8 +1,8 @@
 /* wc_pkcs11.h
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
- * This file is part of wolfSSL. (formerly known as CyaSSL)
+ * This file is part of wolfSSL.
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
 #ifndef _WOLFPKCS11_H_
@@ -26,8 +26,17 @@
 
 #ifdef HAVE_PKCS11
 
-#include <wolfssl/wolfcrypt/cryptodev.h>
+#ifndef WOLF_CRYPTO_CB
+    #error PKCS11 support requires ./configure --enable-cryptocb or WOLF_CRYPTO_CB to be defined
+#endif
+
+#include <wolfssl/wolfcrypt/cryptocb.h>
 #include <wolfssl/wolfcrypt/pkcs11.h>
+
+#ifdef __cplusplus
+    extern "C" {
+#endif
+
 
 typedef struct Pkcs11Dev {
     void*             dlHandle;         /* Handle to library  */
@@ -49,13 +58,11 @@ typedef struct Pkcs11Session {
     CK_SESSION_HANDLE handle;           /* Handle to active session           */
 } Pkcs11Session;
 
-#ifdef __cplusplus
-    extern "C" {
-#endif
-
 /* Types of keys that can be stored. */
 enum Pkcs11KeyType {
     PKCS11_KEY_TYPE_AES_GCM,
+    PKCS11_KEY_TYPE_AES_CBC,
+    PKCS11_KEY_TYPE_HMAC,
     PKCS11_KEY_TYPE_RSA,
     PKCS11_KEY_TYPE_EC,
 };
