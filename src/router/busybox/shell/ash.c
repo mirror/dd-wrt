@@ -11091,6 +11091,8 @@ plus_minus_o(char *name, int val)
 		return 1;
 	}
 	for (i = 0; i < NOPTS; i++) {
+		if (optnames(i)[0] == '\0')
+			continue;
 		if (val) {
 			out1fmt("%-16s%s\n", optnames(i), optlist[i] ? "on" : "off");
 		} else {
@@ -13126,6 +13128,8 @@ expandstr(const char *ps, int syntax_type)
 	if (setjmp(jmploc.loc) == 0) {
 		exception_handler = &jmploc;
 		expandarg(&n, NULL, EXP_QUOTED);
+	} else if (exception_type == EXEXIT) {
+		exitshell();
 	}
 	exception_handler = savehandler;
 	RESTORE_INT(saveint);
