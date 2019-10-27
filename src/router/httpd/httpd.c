@@ -1078,7 +1078,7 @@ static void *handle_request(void *arg)
 		    && ias_detected == 0 && nvram_matchi("ias_startup", 3)) {
 
 			fprintf(stderr, "[HTTP PATH] %s redirect\n", file);
-			sprintf(redirect_path, "Location: http://%s/detect.asp", nvram_get("lan_ipaddr"));
+			snprintf(redirect_path, sizeof(redirect_path), "Location: http://%s/detect.asp", nvram_get("lan_ipaddr"));
 			send_headers(conn_fp, 302, "Found", redirect_path, "", -1, NULL, 1);
 			goto out;
 
@@ -1100,7 +1100,7 @@ static void *handle_request(void *arg)
 
 			nvram_unset("ias_dnsresp");
 			char cmd[64];
-			sprintf(cmd, "%s:55300", nvram_get("lan_ipaddr"));
+			snprintf(cmd, sizeof(cmd), "%s:55300", nvram_get("lan_ipaddr"));
 			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-i", "br0", "-p", "udp", "--dport", "53", "-j", "DNAT", "--to", cmd);
 
 			char buf[128];
