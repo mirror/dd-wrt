@@ -243,7 +243,7 @@ static void unmount_fs(void)
 			continue;
 		}
 #endif
-		fprintf(stderr, "unmounting %s\n", mpoint);
+		dd_loginfo("init", "unmounting %s\n", mpoint);
 		eval("umount", "-r", "-f", mpoint);
 	}
 	fclose(fp);
@@ -275,14 +275,14 @@ void shutdown_system(void)
 #ifdef HAVE_LAGUNA
 		start_service("deconfigurewifi");
 #endif
-		fprintf(stderr, "send dhcp lease release signal\n");
+		dd_loginfo("init", "send dhcp lease release signal\n");
 		killall("udhcpc", SIGUSR2);
 		sleep(1);
-		fprintf(stderr, "Sending SIGTERM to all processes\n");
+		dd_loginfo("init", "Sending SIGTERM to all processes\n");
 		kill(-1, SIGTERM);
 		sync();
 		unmount_fs();	// try to unmount a first time
-		fprintf(stderr, "Sending SIGKILL to all processes\n");
+		dd_loginfo("init", "Sending SIGKILL to all processes\n");
 		kill(-1, SIGKILL);
 		sync();
 		unmount_fs();	// try it a second time, but consider that kill already could have reached init process
@@ -360,9 +360,9 @@ void fatal_signal(int sig)
 	}
 
 	if (message)
-		fprintf(stderr, "%s....................................\n", message);
+		dd_loginfo("init", "%s....................................\n", message);
 	else
-		fprintf(stderr, "Caught signal %d.......................................\n", sig);
+		dd_loginfo("init", "Caught signal %d.......................................\n", sig);
 
 	shutdown_system();
 
@@ -467,8 +467,8 @@ int main(int argc, char **argv)
 	initlcd();
 	cprintf("first message\n");
 	lcdmessage("System Start");
-	fprintf(stderr, "start service\n");
-	fprintf(stderr, "starting Architecture code for " ARCHITECTURE "\n");
+	dd_loginfo("init", "start service\n");
+	dd_loginfo("init", "starting Architecture code for " ARCHITECTURE "\n");
 	start_service("devinit");	//init /dev /proc etc.
 	start_service("sysinit");
 #ifndef HAVE_MICRO
