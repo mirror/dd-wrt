@@ -1,6 +1,6 @@
-﻿/* atmel.c
+/* atmel.c
  *
- * Copyright (C) 2006-2018 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -105,7 +105,9 @@ int atmel_get_random_number(uint32_t count, uint8_t* rand_out)
 		XMEMCPY(&rand_out[i], rng_buffer, copy_count);
 		i += copy_count;
 	}
+    #ifdef ATCAPRINTF
     atcab_printbin_label((const char*)"\r\nRandom Number", rand_out, count);
+    #endif
 #else
     /* TODO: Use on-board TRNG */
 #endif
@@ -338,7 +340,7 @@ int atmel_ecc_create_pms(int slotId, const uint8_t* peerKey, uint8_t* pms)
     int slotIdEnc;
 
     slotIdEnc = atmel_ecc_alloc(ATMEL_SLOT_ECDHE_ENC);
-    if (slotIdEnc != ATECC_INVALID_SLOT)
+    if (slotIdEnc == ATECC_INVALID_SLOT)
         return BAD_FUNC_ARG;
 
     /* get encryption key */
@@ -347,6 +349,10 @@ int atmel_ecc_create_pms(int slotId, const uint8_t* peerKey, uint8_t* pms)
     /* send the encrypted version of the ECDH command */
     ret = atcab_ecdh_enc(slotId, peerKey, pms, read_key, slotIdEnc);
     ret = atmel_ecc_translate_err(ret);
+
+    /* free the ECDHE slot */
+    atmel_ecc_free(slotIdEnc);
+
     return ret;
 }
 
@@ -402,7 +408,7 @@ int atmel_init(void)
     #endif
 
         /* Init the free slotId list */
-        for (i=0; i<=ATECC_MAX_SLOT; i++) {
+        for (i=0; i<ATECC_MAX_SLOT; i++) {
             if (i == ATECC_SLOT_AUTH_PRIV || i == ATECC_SLOT_I2C_ENC) {
                 mSlotList[i] = i;
             }
@@ -474,7 +480,7 @@ void atmel_finish(void)
 /**
  * \brief Used on the server-side only for creating the ephemeral key for ECDH
  */
-int atcatls_create_key_cb(WOLFSSL* ssl, ecc_key* key, word32 keySz,
+int atcatls_create_key_cb(WOLFSSL* ssl, ecc_key* key, unsigned int keySz,
     int ecc_curve, void* ctx)
 {
     int ret;
@@ -530,8 +536,8 @@ int atcatls_create_key_cb(WOLFSSL* ssl, ecc_key* key, word32 keySz,
  * \brief Creates a shared secret using a peer public key and a device key
  */
 int atcatls_create_pms_cb(WOLFSSL* ssl, ecc_key* otherKey,
-        unsigned char* pubKeyDer, unsigned int* pubKeySz,
-        unsigned char* out, unsigned int* outlen,
+        unsigned char* pubKeyDer, word32* pubKeySz,
+        unsigned char* out, word32* outlen,
         int side, void* ctx)
 {
     int ret;
@@ -603,7 +609,7 @@ int atcatls_create_pms_cb(WOLFSSL* ssl, ecc_key* otherKey,
         }
 
         ret = atmel_ecc_create_pms(tmpKey.slot, peerKey, out);
-        *outlen = ATECC_SIG_SIZE;
+        *outlen = ATECC_KEY_SIZE;
 
     #ifndef WOLFSSL_ATECC508A_NOIDLE
         /* put chip into idle to prevent watchdog situation on chip */
@@ -672,8 +678,8 @@ exit:
 /**
  * \brief Sign received digest using private key on device
  */
-int atcatls_sign_certificate_cb(WOLFSSL* ssl, const byte* in, word32 inSz,
-    byte* out, word32* outSz, const byte* key, word32 keySz, void* ctx)
+int atcatls_sign_certificate_cb(WOLFSSL* ssl, const byte* in, unsigned int inSz,
+    byte* out, word32* outSz, const byte* key, unsigned int keySz, void* ctx)
 {
     int ret;
     byte sigRs[ATECC_SIG_SIZE];
@@ -729,8 +735,8 @@ exit:
 /**
  * \brief Verify signature received from peers to prove peer's private key.
  */
-int atcatls_verify_signature_cb(WOLFSSL* ssl, const byte* sig, word32 sigSz,
-    const byte* hash, word32 hashSz, const byte* key, word32 keySz, int* result,
+int atcatls_verify_signature_cb(WOLFSSL* ssl, const byte* sig, unsigned int sigSz,
+    const byte* hash, unsigned int hashSz, const byte* key, unsigned int keySz, int* result,
     void* ctx)
 {
     int ret;

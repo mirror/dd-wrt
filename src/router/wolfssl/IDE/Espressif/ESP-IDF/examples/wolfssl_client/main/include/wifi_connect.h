@@ -1,6 +1,6 @@
 /* user_settings.h
  *
- * Copyright (C) 2006-2018 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -21,9 +21,14 @@
 #ifndef _TLS_WIFI_H_
 #define _TLS_WIFI_H_
 
+#include "esp_idf_version.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
+#if ESP_IDF_VERSION_MAJOR >= 4 && ESP_IDF_VERSION_MINOR >= 1
+#include "esp_event.h"
+#else
 #include "esp_event_loop.h"
+#endif
 
 #define DEFAULT_PORT                     11111
 

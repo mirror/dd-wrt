@@ -1,6 +1,6 @@
 /* dh.c
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -1312,12 +1312,12 @@ static int wc_DhGenerateKeyPair_Async(DhKey* key, WC_RNG* rng,
     int ret;
 
 #if defined(HAVE_INTEL_QA)
-    word32 sz;
+    word32 pBits;
 
-    /* verify prime is at least 768-bits */
-    /* QAT HW must have prime at least 768-bits */
-    sz = mp_unsigned_bin_size(&key->p);
-    if (sz >= (768/8)) {
+    /* QAT DH sizes: 768, 1024, 1536, 2048, 3072 and 4096 bits */
+    pBits = mp_unsigned_bin_size(&key->p) * 8;
+    if (pBits == 768 ||  pBits == 1024 || pBits == 1536 ||
+        pBits == 2048 || pBits == 3072 || pBits == 4096) {
         mp_int x;
 
         ret = mp_init(&x);
@@ -1519,6 +1519,46 @@ int wc_DhCheckPubKey_ex(DhKey* key, const byte* pub, word32 pubSz,
 int wc_DhCheckPubKey(DhKey* key, const byte* pub, word32 pubSz)
 {
     return wc_DhCheckPubKey_ex(key, pub, pubSz, NULL, 0);
+}
+
+
+/**
+ * Quick validity check of public key value agaist prime.
+ * Checks are:
+ *   - Public key not 0 or 1
+ *   - Public key not equal to prime or prime - 1
+ *   - Public key not bigger than prime.
+ *
+ * prime    Big-endian encoding of prime in bytes.
+ * primeSz  Size of prime in bytes.
+ * pub      Big-endian encoding of public key in bytes.
+ * pubSz    Size of public key in bytes.
+ */
+int wc_DhCheckPubValue(const byte* prime, word32 primeSz, const byte* pub,
+                       word32 pubSz)
+{
+    int ret = 0;
+    word32 i;
+
+    for (i = 0; i < pubSz && pub[i] == 0; i++) {
+    }
+    pubSz -= i;
+    pub += i;
+
+    if (pubSz == 0 || (pubSz == 1 && pub[0] == 1))
+        ret = MP_VAL;
+    else if (pubSz == primeSz) {
+        for (i = 0; i < pubSz-1 && pub[i] == prime[i]; i++) {
+        }
+        if (i == pubSz-1 && (pub[i] == prime[i] || pub[i] == prime[i] - 1))
+            ret = MP_VAL;
+        else if (pub[i] > prime[i])
+            ret = MP_VAL;
+    }
+    else if (pubSz > primeSz)
+        ret = MP_VAL;
+
+    return ret;
 }
 
 
@@ -1918,15 +1958,23 @@ static int wc_DhAgree_Async(DhKey* key, byte* agree, word32* agreeSz,
 {
     int ret;
 
-#ifdef HAVE_CAVIUM
-    /* TODO: Not implemented - use software for now */
-    ret = wc_DhAgree_Sync(key, agree, agreeSz, priv, privSz, otherPub, pubSz);
+#if defined(HAVE_INTEL_QA)
+    word32 pBits;
 
-#elif defined(HAVE_INTEL_QA)
-    ret = wc_mp_to_bigint(&key->p, &key->p.raw);
-    if (ret == MP_OKAY)
-        ret = IntelQaDhAgree(&key->asyncDev, &key->p.raw,
-            agree, agreeSz, priv, privSz, otherPub, pubSz);
+    /* QAT DH sizes: 768, 1024, 1536, 2048, 3072 and 4096 bits */
+    pBits = mp_unsigned_bin_size(&key->p) * 8;
+    if (pBits == 768 ||  pBits == 1024 || pBits == 1536 ||
+        pBits == 2048 || pBits == 3072 || pBits == 4096) {
+        ret = wc_mp_to_bigint(&key->p, &key->p.raw);
+        if (ret == MP_OKAY)
+            ret = IntelQaDhAgree(&key->asyncDev, &key->p.raw,
+                agree, agreeSz, priv, privSz, otherPub, pubSz);
+        return ret;
+    }
+
+#elif defined(HAVE_CAVIUM)
+    /* TODO: Not implemented - use software for now */
+
 #else /* WOLFSSL_ASYNC_CRYPT_TEST */
     if (wc_AsyncTestInit(&key->asyncDev, ASYNC_TEST_DH_AGREE)) {
         WC_ASYNC_TEST* testDev = &key->asyncDev.test;
@@ -1939,8 +1987,10 @@ static int wc_DhAgree_Async(DhKey* key, byte* agree, word32* agreeSz,
         testDev->dhAgree.pubSz = pubSz;
         return WC_PENDING_E;
     }
-    ret = wc_DhAgree_Sync(key, agree, agreeSz, priv, privSz, otherPub, pubSz);
 #endif
+
+    /* otherwise use software DH */
+    ret = wc_DhAgree_Sync(key, agree, agreeSz, priv, privSz, otherPub, pubSz);
 
     return ret;
 }
@@ -2010,7 +2060,6 @@ static int _DhSetKey(DhKey* key, const byte* p, word32 pSz, const byte* g,
             keyP = &key->p;
     }
 
-#ifndef WOLFSSL_SP_MATH
     if (ret == 0 && !trusted) {
         int isPrime = 0;
         if (rng != NULL)
@@ -2021,10 +2070,6 @@ static int _DhSetKey(DhKey* key, const byte* p, word32 pSz, const byte* g,
         if (ret == 0 && isPrime == 0)
             ret = DH_CHECK_PUB_E;
     }
-#else
-    (void)trusted;
-    (void)rng;
-#endif
 
     if (ret == 0 && mp_init(&key->g) != MP_OKAY)
         ret = MP_INIT_E;
@@ -2191,13 +2236,13 @@ int wc_DhGenerateParams(WC_RNG *rng, int modSz, DhKey *dh)
     /* tmp2 += (2*loop_check_prime)
      * to have p = (q * tmp2) + 1 prime
      */
-    if (primeCheckCount) {
+    if ((ret == 0) && (primeCheckCount)) {
         if (mp_add_d(&tmp2, 2 * primeCheckCount, &tmp2) != MP_OKAY)
             ret = MP_ADD_E;
     }
 
     /* find a value g for which g^tmp2 != 1 */
-    if (mp_set(&dh->g, 1) != MP_OKAY)
+    if ((ret == 0) && (mp_set(&dh->g, 1) != MP_OKAY))
         ret = MP_ZERO_E;
 
     if (ret == 0) {
@@ -2209,18 +2254,24 @@ int wc_DhGenerateParams(WC_RNG *rng, int modSz, DhKey *dh)
         } while (ret == 0 && mp_cmp_d(&tmp, 1) == MP_EQ);
     }
 
-    /* at this point tmp generates a group of order q mod p */
-    mp_exch(&tmp, &dh->g);
+    if (ret == 0) {
+        /* at this point tmp generates a group of order q mod p */
+        mp_exch(&tmp, &dh->g);
+    }
 
     /* clear the parameters if there was an error */
-    if (ret != 0) {
+    if ((ret != 0) && (dh != NULL)) {
         mp_clear(&dh->q);
         mp_clear(&dh->p);
         mp_clear(&dh->g);
     }
 
-    ForceZero(buf, bufSz);
-    XFREE(buf, dh->heap, DYNAMIC_TYPE_TMP_BUFFER);
+    if (buf != NULL) {
+        ForceZero(buf, bufSz);
+        if (dh != NULL) {
+            XFREE(buf, dh->heap, DYNAMIC_TYPE_TMP_BUFFER);
+        }
+    }
     mp_clear(&tmp);
     mp_clear(&tmp2);
 

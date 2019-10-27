@@ -1,6 +1,6 @@
 /* memory.c
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -53,6 +53,19 @@ Possible memory options:
  * WOLFSSL_HEAP_TEST:               Used for internal testing of heap hint
  */
 
+#ifdef WOLFSSL_ZEPHYR
+#undef realloc
+void *z_realloc(void *ptr, size_t size)
+{
+    if (ptr == NULL)
+        ptr = malloc(size);
+    else
+        ptr = realloc(ptr, size);
+
+    return ptr;
+}
+#define realloc z_realloc
+#endif
 
 #ifdef USE_WOLFSSL_MEMORY
 
@@ -656,6 +669,12 @@ void* wolfSSL_Malloc(size_t size, void* heap, int type)
                             mem->ava[i] = pt->next;
                             break;
                         }
+                    #ifdef WOLFSSL_DEBUG_STATIC_MEMORY
+                        else {
+                            printf("Size: %ld, Empty: %d\n", size,
+                                                              mem->sizeList[i]);
+                        }
+                    #endif
                     }
                 }
             }
@@ -851,6 +870,14 @@ void* wolfSSL_Realloc(void *ptr, size_t size, void* heap, int type)
         WOLFSSL_HEAP*      mem  = hint->memory;
         word32 padSz = -(int)sizeof(wc_Memory) & (WOLFSSL_STATIC_ALIGN - 1);
 
+        if (ptr == NULL) {
+        #ifdef WOLFSSL_DEBUG_MEMORY
+            return wolfSSL_Malloc(size, heap, type, func, line);
+        #else
+            return wolfSSL_Malloc(size, heap, type);
+        #endif
+        }
+
         if (wc_LockMutex(&(mem->memory_mutex)) != 0) {
             WOLFSSL_MSG("Bad memory_mutex lock");
             return NULL;
@@ -1012,7 +1039,7 @@ void *xmalloc(size_t n, void* heap, int type, const char* func,
     else
         p32 = malloc(n + sizeof(word32) * 4);
 
-    p32[0] = n;
+    p32[0] = (word32)n;
     p = (void*)(p32 + 4);
 
     fprintf(stderr, "Alloc: %p -> %u (%d) at %s:%s:%d\n", p, (word32)n, type,
@@ -1042,7 +1069,7 @@ void *xrealloc(void *p, size_t n, void* heap, int type, const char* func,
         p32 = realloc(oldp32, n + sizeof(word32) * 4);
 
     if (p32 != NULL) {
-        p32[0] = n;
+        p32[0] = (word32)n;
         newp = (void*)(p32 + 4);
 
         fprintf(stderr, "Alloc: %p -> %u (%d) at %s:%s:%d\n", newp, (word32)n,

@@ -1,6 +1,6 @@
 /* wolfssl_adds.c
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -209,7 +209,7 @@ RsaKey* GetRsaPrivateKey(const char* keyFile)
         word32 idx = 0;
         XFILE  file = XFOPEN(keyFile, "rb");
 
-        if (file != XBADFILE)
+        if (file == XBADFILE)
         {
             free(key);
             return 0;

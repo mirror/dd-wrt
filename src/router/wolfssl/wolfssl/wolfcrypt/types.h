@@ -1,6 +1,6 @@
 /* types.h
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -46,8 +46,13 @@
         #ifndef byte
             typedef unsigned char  byte;
         #endif
-        typedef unsigned short word16;
-        typedef unsigned int   word32;
+        #ifdef WC_16BIT_CPU
+            typedef unsigned int   word16;
+            typedef unsigned long  word32;
+        #else
+            typedef unsigned short word16;
+            typedef unsigned int   word32;
+        #endif
         typedef byte           word24[3];
     #endif
 
@@ -91,11 +96,12 @@
         typedef unsigned long long word64;
     #endif
 
-#if !defined(NO_64BIT) && defined(WORD64_AVAILABLE)
+#if !defined(NO_64BIT) && defined(WORD64_AVAILABLE) && !defined(WC_16BIT_CPU)
     /* These platforms have 64-bit CPU registers.  */
     #if (defined(__alpha__) || defined(__ia64__) || defined(_ARCH_PPC64) || \
          defined(__mips64)  || defined(__x86_64__) || defined(_M_X64)) || \
-         defined(__aarch64__) || defined(__sparc64__)
+         defined(__aarch64__) || defined(__sparc64__) || \
+        (defined(__riscv_xlen) && (__riscv_xlen == 64))
         typedef word64 wolfssl_word;
         #define WC_64BIT_CPU
     #elif (defined(sun) || defined(__sun)) && \
@@ -112,6 +118,13 @@
             #define WOLFCRYPT_SLOW_WORD64
         #endif
     #endif
+
+#elif defined(WC_16BIT_CPU)
+        #undef WORD64_AVAILABLE
+        typedef word16 wolfssl_word;
+        #define MP_16BIT  /* for mp_int, mp_word needs to be twice as big as
+                             mp_digit, no 64 bit type so make mp_digit 16 bit */
+
 #else
         #undef WORD64_AVAILABLE
         typedef word32 wolfssl_word;
@@ -142,6 +155,12 @@
             #define WC_INLINE inline
         #elif defined(THREADX)
             #define WC_INLINE _Inline
+        #elif defined(__ghc__)
+            #ifndef __cplusplus
+                #define WC_INLINE __inline
+            #else
+                #define WC_INLINE inline
+            #endif
         #else
             #define WC_INLINE
         #endif
@@ -175,7 +194,8 @@
         #if defined(_MSC_VER)
             #define THREAD_LS_T __declspec(thread)
         /* Thread local storage only in FreeRTOS v8.2.1 and higher */
-        #elif defined(FREERTOS) || defined(FREERTOS_TCP)
+        #elif defined(FREERTOS) || defined(FREERTOS_TCP) || \
+                                                         defined(WOLFSSL_ZEPHYR)
             #define THREAD_LS_T
         #else
             #define THREAD_LS_T __thread
@@ -185,14 +205,17 @@
     #endif
 
     /* GCC 7 has new switch() fall-through detection */
+    /* default to FALL_THROUGH stub */
+    #ifndef FALL_THROUGH
+    #define FALL_THROUGH
+
     #if defined(__GNUC__)
         #if ((__GNUC__ > 7) || ((__GNUC__ == 7) && (__GNUC_MINOR__ >= 1)))
-            #define FALL_THROUGH __attribute__ ((fallthrough))
+            #undef  FALL_THROUGH
+            #define FALL_THROUGH __attribute__ ((fallthrough));
         #endif
     #endif
-    #ifndef FALL_THROUGH
-        #define FALL_THROUGH
-    #endif
+    #endif /* FALL_THROUGH */
 
     /* Micrium will use Visual Studio for compilation but not the Win32 API */
     #if defined(_WIN32) && !defined(MICRIUM) && !defined(FREERTOS) && \
@@ -210,8 +233,13 @@
         WOLFSSL_API void* XMALLOC(size_t n, void* heap, int type);
         WOLFSSL_API void* XREALLOC(void *p, size_t n, void* heap, int type);
         WOLFSSL_API void XFREE(void *p, void* heap, int type);
-    #elif defined(WOLFSSL_ASYNC_CRYPT) && defined(HAVE_INTEL_QA)
-        #include <wolfssl/wolfcrypt/port/intel/quickassist_mem.h>
+    #elif (defined(WOLFSSL_ASYNC_CRYPT) && defined(HAVE_INTEL_QA)) || \
+          defined(HAVE_INTEL_QA_SYNC)
+        #ifndef HAVE_INTEL_QA_SYNC
+            #include <wolfssl/wolfcrypt/port/intel/quickassist_mem.h>
+        #else
+            #include <wolfssl/wolfcrypt/port/intel/quickassist_sync.h>
+        #endif
         #undef USE_WOLFSSL_MEMORY
         #ifdef WOLFSSL_DEBUG_MEMORY
             #define XMALLOC(s, h, t)     IntelQaMalloc((s), (h), (t), __func__, __LINE__)
@@ -236,20 +264,45 @@
         /* prototypes for user heap override functions */
         #include <stddef.h>  /* for size_t */
         #include <stdlib.h>
-        extern void *xmalloc(size_t n, void* heap, int type, const char* func,
-              const char* file, unsigned int line);
-        extern void *xrealloc(void *p, size_t n, void* heap, int type,
-              const char* func, const char* file, unsigned int line);
-        extern void xfree(void *p, void* heap, int type, const char* func,
-              const char* file, unsigned int line);
+        WOLFSSL_API void *xmalloc(size_t n, void* heap, int type,
+                const char* func, const char* file, unsigned int line);
+        WOLFSSL_API void *xrealloc(void *p, size_t n, void* heap, int type,
+                const char* func, const char* file, unsigned int line);
+        WOLFSSL_API void xfree(void *p, void* heap, int type, const char* func,
+                const char* file, unsigned int line);
     #elif defined(XMALLOC_OVERRIDE)
         /* override the XMALLOC, XFREE and XREALLOC macros */
+    #elif defined(WOLFSSL_TELIT_M2MB)
+        /* Telit M2MB SDK requires use m2mb_os API's, not std malloc/free */
+        /* Use of malloc/free will cause CPU reboot */
+        #define XMALLOC(s, h, t)     ((void)h, (void)t, m2mb_os_malloc((s)))
+        #define XFREE(p, h, t)       {void* xp = (p); if((xp)) m2mb_os_free((xp));}
+        #define XREALLOC(p, n, h, t) m2mb_os_realloc((p), (n))
+
     #elif defined(NO_WOLFSSL_MEMORY)
+        #ifdef WOLFSSL_NO_MALLOC
+            /* this platform does not support heap use */
+            #ifdef WOLFSSL_MALLOC_CHECK
+                #include <stdio.h>
+                static inline void* malloc_check(size_t sz) {
+                    printf("wolfSSL_malloc failed");
+                    return NULL;
+                };
+                #define XMALLOC(s, h, t)     malloc_check((s))
+                #define XFREE(p, h, t)
+                #define XREALLOC(p, n, h, t) (NULL)
+            #else
+                #define XMALLOC(s, h, t)     (NULL)
+                #define XFREE(p, h, t)
+                #define XREALLOC(p, n, h, t) (NULL)
+            #endif
+        #else
         /* just use plain C stdlib stuff if desired */
         #include <stdlib.h>
-        #define XMALLOC(s, h, t)     ((void)h, (void)t, malloc((s)))
+        #define XMALLOC(s, h, t)     malloc((s))
         #define XFREE(p, h, t)       {void* xp = (p); if((xp)) free((xp));}
         #define XREALLOC(p, n, h, t) realloc((p), (n))
+        #endif
     #elif !defined(MICRIUM_MALLOC) && !defined(EBSNET) \
             && !defined(WOLFSSL_SAFERTOS) && !defined(FREESCALE_MQX) \
             && !defined(FREESCALE_KSDK_MQX) && !defined(FREESCALE_FREE_RTOS) \
@@ -303,6 +356,12 @@
             for (idx##VAR_NAME=0; idx##VAR_NAME<VAR_ITEMS; idx##VAR_NAME++) { \
                 XFREE(VAR_NAME[idx##VAR_NAME], (HEAP), DYNAMIC_TYPE_WOLF_BIGINT); \
             }
+
+        #define DECLARE_ARRAY_DYNAMIC_DEC(VAR_NAME, VAR_TYPE, VAR_ITEMS, VAR_SIZE, HEAP) \
+            DECLARE_ARRAY(VAR_NAME, VAR_TYPE, VAR_ITEMS, VAR_SIZE, HEAP)
+        #define DECLARE_ARRAY_DYNAMIC_EXE(VAR_NAME, VAR_TYPE, VAR_ITEMS, VAR_SIZE, HEAP)
+        #define FREE_ARRAY_DYNAMIC(VAR_NAME, VAR_ITEMS, HEAP) \
+            FREE_ARRAY(VAR_NAME, VAR_ITEMS, HEAP)
     #else
         #define DECLARE_VAR(VAR_NAME, VAR_TYPE, VAR_SIZE, HEAP) \
             VAR_TYPE VAR_NAME[VAR_SIZE]
@@ -312,6 +371,18 @@
             VAR_TYPE VAR_NAME[VAR_ITEMS][VAR_SIZE]
         #define FREE_VAR(VAR_NAME, HEAP) /* nothing to free, its stack */
         #define FREE_ARRAY(VAR_NAME, VAR_ITEMS, HEAP)  /* nothing to free, its stack */
+
+        #define DECLARE_ARRAY_DYNAMIC_DEC(VAR_NAME, VAR_TYPE, VAR_ITEMS, VAR_SIZE, HEAP) \
+            VAR_TYPE* VAR_NAME[VAR_ITEMS]; \
+            int idx##VAR_NAME;
+        #define DECLARE_ARRAY_DYNAMIC_EXE(VAR_NAME, VAR_TYPE, VAR_ITEMS, VAR_SIZE, HEAP) \
+            for (idx##VAR_NAME=0; idx##VAR_NAME<VAR_ITEMS; idx##VAR_NAME++) { \
+                VAR_NAME[idx##VAR_NAME] = (VAR_TYPE*)XMALLOC(VAR_SIZE, (HEAP), DYNAMIC_TYPE_TMP_BUFFER); \
+            }
+        #define FREE_ARRAY_DYNAMIC(VAR_NAME, VAR_ITEMS, HEAP) \
+            for (idx##VAR_NAME=0; idx##VAR_NAME<VAR_ITEMS; idx##VAR_NAME++) { \
+                XFREE(VAR_NAME[idx##VAR_NAME], (HEAP), DYNAMIC_TYPE_TMP_BUFFER); \
+            }
     #endif
 
     #if !defined(USE_WOLF_STRTOK) && \
@@ -345,7 +416,9 @@
             #define XSTRSEP(s1,d) strsep((s1),(d))
         #endif
 
-        #if defined(MICROCHIP_PIC32) || defined(WOLFSSL_TIRTOS)
+        #ifndef XSTRNCASECMP
+        #if defined(MICROCHIP_PIC32) || defined(WOLFSSL_TIRTOS) || \
+                defined(WOLFSSL_ZEPHYR)
             /* XC32 does not support strncasecmp, so use case sensitive one */
             #define XSTRNCASECMP(s1,s2,n) strncmp((s1),(s2),(n))
         #elif defined(USE_WINDOWS_API) || defined(FREERTOS_TCP_WINSIM)
@@ -355,22 +428,56 @@
                 !defined(WOLFSSL_SGX)
                 #include <strings.h>
             #endif
-            #define XSTRNCASECMP(s1,s2,n) strncasecmp((s1),(s2),(n))
+            #if defined(WOLFSSL_DEOS)
+                #define XSTRNCASECMP(s1,s2,n) strnicmp((s1),(s2),(n))
+            #else
+                #define XSTRNCASECMP(s1,s2,n) strncasecmp((s1),(s2),(n))
+            #endif
         #endif
+        #endif /* !XSTRNCASECMP */
 
         /* snprintf is used in asn.c for GetTimeString, PKCS7 test, and when
            debugging is turned on */
         #ifndef USE_WINDOWS_API
+            #ifndef XSNPRINTF
             #if defined(NO_FILESYSTEM) && (defined(OPENSSL_EXTRA) || \
                    defined(HAVE_PKCS7)) && !defined(NO_STDIO_FILESYSTEM)
-                /* case where stdio is not included else where but is needed for
-                 * snprintf */
+                /* case where stdio is not included else where but is needed
+                   for snprintf */
                 #include <stdio.h>
             #endif
             #define XSNPRINTF snprintf
+            #endif
         #else
-            #define XSNPRINTF _snprintf
-        #endif
+            #if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
+                #if defined(_MSC_VER) && (_MSC_VER >= 1900)
+                    /* Beginning with the UCRT in Visual Studio 2015 and
+                       Windows 10, snprintf is no longer identical to
+                       _snprintf. The snprintf function behavior is now
+                       C99 standard compliant. */
+                    #define XSNPRINTF snprintf
+                #else
+                    /* 4996 warning to use MS extensions e.g., _sprintf_s
+                       instead of _snprintf */
+                    #pragma warning(disable: 4996)
+                    static WC_INLINE
+                    int xsnprintf(char *buffer, size_t bufsize,
+                            const char *format, ...) {
+                        va_list ap;
+                        int ret;
+
+                        if ((int)bufsize <= 0) return -1;
+                        va_start(ap, format);
+                        ret = vsnprintf(buffer, bufsize, format, ap);
+                        if (ret >= (int)bufsize)
+                            ret = -1;
+                        va_end(ap);
+                        return ret;
+                    }
+                    #define XSNPRINTF xsnprintf
+                #endif /* (_MSC_VER >= 1900) */
+            #endif /* _MSC_VER || __CYGWIN__ || __MINGW32__ */
+        #endif /* USE_WINDOWS_API */
 
         #if defined(WOLFSSL_CERT_EXT) || defined(HAVE_ALPN)
             /* use only Thread Safe version of strtok */
@@ -380,6 +487,16 @@
                 #define XSTRTOK(s1,d,ptr) strtok_s((s1),(d),(ptr))
             #else
                 #define XSTRTOK(s1,d,ptr) strtok_r((s1),(d),(ptr))
+            #endif
+        #endif
+
+        #if defined(WOLFSSL_CERT_EXT) || defined(HAVE_OCSP) || \
+            defined(HAVE_CRL_IO) || defined(HAVE_HTTP_CLIENT) || \
+            !defined(NO_CRYPT_BENCHMARK)
+
+            #ifndef XATOI /* if custom XATOI is not already defined */
+                #include <stdlib.h>
+                #define XATOI(s)          atoi((s))
             #endif
         #endif
     #endif
@@ -503,6 +620,12 @@
         DYNAMIC_TYPE_HASH_TMP     = 88,
         DYNAMIC_TYPE_BLOB         = 89,
         DYNAMIC_TYPE_NAME_ENTRY   = 90,
+        DYNAMIC_TYPE_SNIFFER_SERVER     = 1000,
+        DYNAMIC_TYPE_SNIFFER_SESSION    = 1001,
+        DYNAMIC_TYPE_SNIFFER_PB         = 1002,
+        DYNAMIC_TYPE_SNIFFER_PB_BUFFER  = 1003,
+        DYNAMIC_TYPE_SNIFFER_TICKET_ID  = 1004,
+        DYNAMIC_TYPE_SNIFFER_NAMED_KEY  = 1005,
     };
 
     /* max error buffer string size */
@@ -522,15 +645,19 @@
         WC_ALGO_TYPE_HASH = 1,
         WC_ALGO_TYPE_CIPHER = 2,
         WC_ALGO_TYPE_PK = 3,
+        WC_ALGO_TYPE_RNG = 4,
+        WC_ALGO_TYPE_SEED = 5,
+        WC_ALGO_TYPE_HMAC = 6,
 
-        WC_ALGO_TYPE_MAX = WC_ALGO_TYPE_PK
+        WC_ALGO_TYPE_MAX = WC_ALGO_TYPE_HMAC
     };
 
     /* hash types */
     enum wc_HashType {
     #if defined(HAVE_SELFTEST) || defined(HAVE_FIPS)
         /* In selftest build, WC_* types are not mapped to WC_HASH_TYPE types.
-         * Values here are based on old selftest hmac.h enum, with additions */
+         * Values here are based on old selftest hmac.h enum, with additions.
+         * These values are fixed for backwards FIPS compatibility */
         WC_HASH_TYPE_NONE = 15,
         WC_HASH_TYPE_MD2 = 16,
         WC_HASH_TYPE_MD4 = 17,
@@ -546,8 +673,9 @@
         WC_HASH_TYPE_SHA3_384 = 12,
         WC_HASH_TYPE_SHA3_512 = 13,
         WC_HASH_TYPE_BLAKE2B = 14,
+        WC_HASH_TYPE_BLAKE2S = 19,
 
-        WC_HASH_TYPE_MAX = WC_HASH_TYPE_MD5_SHA
+        WC_HASH_TYPE_MAX = WC_HASH_TYPE_BLAKE2S
     #else
         WC_HASH_TYPE_NONE = 0,
         WC_HASH_TYPE_MD2 = 1,
@@ -564,8 +692,9 @@
         WC_HASH_TYPE_SHA3_384 = 12,
         WC_HASH_TYPE_SHA3_512 = 13,
         WC_HASH_TYPE_BLAKE2B = 14,
+        WC_HASH_TYPE_BLAKE2S = 15,
 
-        WC_HASH_TYPE_MAX = WC_HASH_TYPE_BLAKE2B
+        WC_HASH_TYPE_MAX = WC_HASH_TYPE_BLAKE2S
     #endif /* HAVE_SELFTEST */
     };
 
@@ -639,10 +768,12 @@
     #define INVALID_DEVID    -2
 
 
-    /* AESNI requires alignment and ARMASM gains some performance from it */
-    #if defined(WOLFSSL_AESNI) || defined(WOLFSSL_ARMASM) || defined(USE_INTEL_SPEEDUP)
+    /* AESNI requires alignment and ARMASM gains some performance from it
+     * Xilinx RSA operations require alignment */
+    #if defined(WOLFSSL_AESNI) || defined(WOLFSSL_ARMASM) || \
+        defined(USE_INTEL_SPEEDUP) || defined(WOLFSSL_AFALG_XILINX)
         #if !defined(ALIGN16)
-            #if defined(__GNUC__)
+            #if defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__)
                 #define ALIGN16 __attribute__ ( (aligned (16)))
             #elif defined(_MSC_VER)
                 /* disable align warning, we want alignment ! */
@@ -654,19 +785,7 @@
         #endif /* !ALIGN16 */
 
         #if !defined (ALIGN32)
-            #if defined (__GNUC__)
-                #define ALIGN32 __attribute__ ( (aligned (32)))
-            #elif defined(_MSC_VER)
-                /* disable align warning, we want alignment ! */
-                #pragma warning(disable: 4324)
-                #define ALIGN32 __declspec (align (32))
-            #else
-                #define ALIGN32
-            #endif
-        #endif
-
-        #if !defined(ALIGN32)
-            #if defined(__GNUC__)
+            #if defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__)
                 #define ALIGN32 __attribute__ ( (aligned (32)))
             #elif defined(_MSC_VER)
                 /* disable align warning, we want alignment ! */
@@ -677,7 +796,19 @@
             #endif
         #endif /* !ALIGN32 */
 
-        #if defined(__GNUC__)
+        #if !defined(ALIGN64)
+            #if defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__)
+                #define ALIGN64 __attribute__ ( (aligned (64)))
+            #elif defined(_MSC_VER)
+                /* disable align warning, we want alignment ! */
+                #pragma warning(disable: 4324)
+                #define ALIGN64 __declspec (align (64))
+            #else
+                #define ALIGN64
+            #endif
+        #endif /* !ALIGN64 */
+
+        #if defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__)
             #define ALIGN128 __attribute__ ( (aligned (128)))
         #elif defined(_MSC_VER)
             /* disable align warning, we want alignment ! */
@@ -687,7 +818,7 @@
             #define ALIGN128
         #endif
 
-        #if defined(__GNUC__)
+        #if defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__)
             #define ALIGN256 __attribute__ ( (aligned (256)))
         #elif defined(_MSC_VER)
             /* disable align warning, we want alignment ! */
@@ -703,6 +834,9 @@
         #endif
         #ifndef ALIGN32
             #define ALIGN32
+        #endif
+        #ifndef ALIGN64
+            #define ALIGN64
         #endif
         #ifndef ALIGN128
             #define ALIGN128
@@ -721,16 +855,14 @@
     #endif
 
 
-    #ifdef WOLFSSL_RIOT_OS
-        #define EXIT_TEST(ret) exit(ret)
-    #elif defined(HAVE_STACK_SIZE)
+    #if defined(HAVE_STACK_SIZE)
         #define EXIT_TEST(ret) return (void*)((size_t)(ret))
     #else
         #define EXIT_TEST(ret) return ret
     #endif
 
 
-    #if defined(__GNUC__)
+    #if defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__)
         #define WOLFSSL_PACK __attribute__ ((packed))
     #else
         #define WOLFSSL_PACK
@@ -745,7 +877,7 @@
         #endif
     #endif
 
-    #if defined(__GNUC__)
+    #if defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__)
         #define WC_NORETURN __attribute__((noreturn))
     #else
         #define WC_NORETURN

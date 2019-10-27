@@ -1,6 +1,6 @@
 /* crypto.h
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -46,13 +46,14 @@ WOLFSSL_API void *wolfSSL_OPENSSL_malloc(size_t a);
 #define SSLeay_version wolfSSLeay_version
 #define SSLeay wolfSSLeay
 
+#define OpenSSL_version wolfSSLeay_version
 
 #define SSLEAY_VERSION 0x0090600fL
 #define SSLEAY_VERSION_NUMBER SSLEAY_VERSION
 #define CRYPTO_lock wc_LockMutex_ex
 
 /* this function was used to set the default malloc, free, and realloc */
-#define CRYPTO_malloc_init() /* CRYPTO_malloc_init is not needed */
+#define CRYPTO_malloc_init() 0 /* CRYPTO_malloc_init is not needed */
 
 #define OPENSSL_free wolfSSL_OPENSSL_free
 #define OPENSSL_malloc wolfSSL_OPENSSL_malloc

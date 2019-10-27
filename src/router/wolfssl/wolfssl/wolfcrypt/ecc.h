@@ -1,6 +1,6 @@
 /* ecc.h
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -31,7 +31,8 @@
 
 #ifdef HAVE_ECC
 
-#if defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2)
+#if defined(HAVE_FIPS) && \
+    defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2)
     #include <wolfssl/wolfcrypt/fips.h>
 #endif /* HAVE_FIPS_VERSION >= 2 */
 
@@ -53,6 +54,9 @@
     #include <wolfssl/wolfcrypt/port/atmel/atmel.h>
 #endif /* WOLFSSL_ATECC508A */
 
+#if defined(WOLFSSL_CRYPTOCELL)
+    #include <wolfssl/wolfcrypt/port/arm/cryptoCell.h>
+#endif
 
 #ifdef __cplusplus
     extern "C" {
@@ -104,18 +108,21 @@
     #define MAX_ECC_BYTES     ((MAX_ECC_BITS / 8) + 1)
 #endif
 
+#ifndef ECC_MAX_PAD_SZ
+    /* ECC maximum padding size (when MSB is set extra byte required for R and S) */
+    #define ECC_MAX_PAD_SZ 2
+#endif
 
 enum {
     ECC_PUBLICKEY       = 1,
     ECC_PRIVATEKEY      = 2,
     ECC_PRIVATEKEY_ONLY = 3,
     ECC_MAXNAME     = 16,   /* MAX CURVE NAME LENGTH */
-    SIG_HEADER_SZ   =  6,   /* ECC signature header size */
+    SIG_HEADER_SZ   =  7,   /* ECC signature header size (30 81 87 02 42 [R] 02 42 [S]) */
     ECC_BUFSIZE     = 256,  /* for exported keys temp buffer */
     ECC_MINSIZE     = 20,   /* MIN Private Key size */
     ECC_MAXSIZE     = 66,   /* MAX Private Key size */
     ECC_MAXSIZE_GEN = 74,   /* MAX Buffer size required when generating ECC keys*/
-    ECC_MAX_PAD_SZ  = 4,    /* ECC maximum padding size */
     ECC_MAX_OID_LEN = 16,
     ECC_MAX_SIG_SIZE= ((MAX_ECC_BYTES * 2) + ECC_MAX_PAD_SZ + SIG_HEADER_SZ),
 
@@ -125,6 +132,11 @@ enum {
     ECC_MAX_CRYPTO_HW_PUBKEY_SIZE = (ATECC_KEY_SIZE*2),
 #elif defined(PLUTON_CRYPTO_ECC)
     ECC_MAX_CRYPTO_HW_SIZE = 32,
+#elif defined(WOLFSSL_CRYPTOCELL)
+    #ifndef CRYPTOCELL_KEY_SIZE
+        CRYPTOCELL_KEY_SIZE = ECC_MAXSIZE,
+    #endif
+    ECC_MAX_CRYPTO_HW_SIZE = CRYPTOCELL_KEY_SIZE,
 #endif
 
     /* point compression type */
@@ -356,7 +368,7 @@ struct ecc_key {
     int  slot;        /* Key Slot Number (-1 unknown) */
     byte pubkey_raw[ECC_MAX_CRYPTO_HW_PUBKEY_SIZE];
 #endif
-#if defined(PLUTON_CRYPTO_ECC) || defined(WOLF_CRYPTO_DEV)
+#if defined(PLUTON_CRYPTO_ECC) || defined(WOLF_CRYPTO_CB)
     int devId;
 #endif
 #ifdef WOLFSSL_ASYNC_CRYPT
@@ -375,6 +387,10 @@ struct ecc_key {
     byte id[ECC_MAX_ID_LEN];
     int  idLen;
 #endif
+#if defined(WOLFSSL_CRYPTOCELL)
+    ecc_context_t ctx;
+#endif
+
 #ifdef WOLFSSL_SMALL_STACK_CACHE
     mp_int* t1;
     mp_int* t2;
@@ -435,7 +451,13 @@ int wc_ecc_shared_secret_gen(ecc_key* private_key, ecc_point* point,
 WOLFSSL_API
 int wc_ecc_shared_secret_ex(ecc_key* private_key, ecc_point* point,
                              byte* out, word32 *outlen);
+
+#if defined(WOLFSSL_ATECC508A) || defined(PLUTON_CRYPTO_ECC) || defined(WOLFSSL_CRYPTOCELL)
+#define wc_ecc_shared_secret_ssh wc_ecc_shared_secret
+#else
 #define wc_ecc_shared_secret_ssh wc_ecc_shared_secret_ex /* For backwards compat */
+#endif
+
 #endif /* HAVE_ECC_DHE */
 
 #ifdef HAVE_ECC_SIGN
@@ -500,9 +522,13 @@ int wc_ecc_get_curve_id_from_params(int fieldSize,
         const byte* prime, word32 primeSz, const byte* Af, word32 AfSz,
         const byte* Bf, word32 BfSz, const byte* order, word32 orderSz,
         const byte* Gx, word32 GxSz, const byte* Gy, word32 GySz, int cofactor);
+WOLFSSL_API
+int wc_ecc_get_curve_id_from_dp_params(const ecc_set_type* dp);
 
 WOLFSSL_API
 int wc_ecc_get_curve_id_from_oid(const byte* oid, word32 len);
+
+WOLFSSL_API const ecc_set_type* wc_ecc_get_curve_params(int curve_idx);
 
 WOLFSSL_API
 ecc_point* wc_ecc_new_point(void);

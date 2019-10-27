@@ -1,26 +1,43 @@
-# Description
+*** Description ***
 
-The wolfSSL embedded SSL library (formerly CyaSSL) is a lightweight SSL/TLS library written in ANSI C and targeted for embedded, RTOS, and resource-constrained environments - primarily because of its small size, speed, and feature set.  It is commonly used in standard operating environments as well because of its royalty-free pricing and excellent cross platform support.  wolfSSL supports industry standards up to the current TLS 1.3 and DTLS 1.3 levels, is up to 20 times smaller than OpenSSL, and offers progressive ciphers such as ChaCha20, Curve25519, NTRU, and Blake2b.  User benchmarking and feedback reports dramatically better performance when using wolfSSL over OpenSSL.
+The wolfSSL embedded SSL library (formerly CyaSSL) is a lightweight SSL/TLS
+library written in ANSI C and targeted for embedded, RTOS, and
+resource-constrained environments - primarily because of its small size, speed,
+and feature set.  It is commonly used in standard operating environments as well
+because of its royalty-free pricing and excellent cross platform support.
+wolfSSL supports industry standards up to the current TLS 1.3 and DTLS 1.2
+levels, is up to 20 times smaller than OpenSSL, and offers progressive ciphers
+such as ChaCha20, Curve25519, NTRU, and Blake2b. User benchmarking and feedback
+reports dramatically better performance when using wolfSSL over OpenSSL.
 
-wolfSSL is powered by the wolfCrypt library. A version of the wolfCrypt cryptography library has been FIPS 140-2 validated (Certificate #2425). For additional information, visit the [wolfCrypt FIPS FAQ](https://www.wolfssl.com/license/fips/) or contact fips@wolfssl.com
+wolfSSL is powered by the wolfCrypt library. A version of the wolfCrypt
+cryptography library has been FIPS 140-2 validated (Certificate #2425). For
+additional information, visit the wolfCrypt FIPS FAQ
+(https://www.wolfssl.com/license/fips/) or contact fips@wolfssl.com
 
-## Why Choose wolfSSL?
-There are many reasons to choose wolfSSL as your embedded SSL solution. Some of the top reasons include size (typical footprint sizes range from 20-100 kB), support for the newest standards (SSL 3.0, TLS 1.0, TLS 1.1, TLS 1.2, TLS 1.3, DTLS 1.0, and DTLS 1.2), current and progressive cipher support (including stream ciphers), multi-platform, royalty free, and an OpenSSL compatibility API to ease porting into existing applications which have previously used the OpenSSL package. For a complete feature list, see [Section 4.1.](https://www.wolfssl.com/docs/wolfssl-manual/ch4/)
+*** Why choose wolfSSL? ***
 
-***
+There are many reasons to choose wolfSSL as your embedded SSL solution. Some of
+the top reasons include size (typical footprint sizes range from 20-100 kB),
+support for the newest standards (SSL 3.0, TLS 1.0, TLS 1.1, TLS 1.2, TLS 1.3,
+DTLS 1.0, and DTLS 1.2), current and progressive cipher support (including
+stream ciphers), multi-platform, royalty free, and an OpenSSL compatibility API
+to ease porting into existing applications which have previously used the
+OpenSSL package. For a complete feature list, see chapter 4 of the wolfSSL
+manual. (https://www.wolfssl.com/docs/wolfssl-manual/ch4/)
 
-# Notes - Please read
+*** Notes, Please read ***
 
-## Note 1
-```
-wolfSSL as of 3.6.6 no longer enables SSLv3 by default.  wolfSSL also no
-longer supports static key cipher suites with PSK, RSA, or ECDH.  This means
-if you plan to use TLS cipher suites you must enable DH (DH is on by default),
-or enable ECC (ECC is on by default), or you must enable static
-key cipher suites with
+Note 1)
+wolfSSL as of 3.6.6 no longer enables SSLv3 by default.  wolfSSL also no longer
+supports static key cipher suites with PSK, RSA, or ECDH. This means if you
+plan to use TLS cipher suites you must enable DH (DH is on by default), or
+enable ECC (ECC is on by default), or you must enable static key cipher suites
+with
+
     WOLFSSL_STATIC_DH
     WOLFSSL_STATIC_RSA
-    or
+      or
     WOLFSSL_STATIC_PSK
 
 though static key cipher suites are deprecated and will be removed from future
@@ -28,74 +45,129 @@ versions of TLS.  They also lower your security by removing PFS.  Since current
 NTRU suites available do not use ephemeral keys, WOLFSSL_STATIC_RSA needs to be
 used in order to build with NTRU suites.
 
+When compiling ssl.c, wolfSSL will now issue a compiler error if no cipher
+suites are available. You can remove this error by defining
+WOLFSSL_ALLOW_NO_SUITES in the event that you desire that, i.e., you're not
+using TLS cipher suites.
 
-When compiling ssl.c, wolfSSL will now issue a compiler error if no cipher suites
-are available.  You can remove this error by defining WOLFSSL_ALLOW_NO_SUITES
-in the event that you desire that, i.e., you're not using TLS cipher suites.
-```
-
-## Note 2
-```
-
+Note 2)
 wolfSSL takes a different approach to certificate verification than OpenSSL
-does.  The default policy for the client is to verify the server, this means
+does. The default policy for the client is to verify the server, this means
 that if you don't load CAs to verify the server you'll get a connect error,
-no signer error to confirm failure (-188).  If you want to mimic OpenSSL
-behavior of having SSL_connect succeed even if verifying the server fails and
-reducing security you can do this by calling:
+no signer error to confirm failure (-188).
 
-wolfSSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, 0);
+If you want to mimic OpenSSL behavior of having SSL_connect succeed even if
+verifying the server fails and reducing security you can do this by calling:
 
-before calling wolfSSL_new();  Though it's not recommended.
-```
+    wolfSSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, 0);
 
-## Note 3
-```
+before calling wolfSSL_new();. Though it's not recommended.
+
+Note 3)
 The enum values SHA, SHA256, SHA384, SHA512 are no longer available when
 wolfSSL is built with --enable-opensslextra (OPENSSL_EXTRA) or with the macro
 NO_OLD_SHA_NAMES. These names get mapped to the OpenSSL API for a single call
 hash function. Instead the name WC_SHA, WC_SHA256, WC_SHA384 and WC_SHA512
 should be used for the enum name.
-```
 
-# wolfSSL Release 3.15.7 (12/26/2018)
-
-Release 3.15.7 of wolfSSL embedded TLS has bug fixes and new features including:
-
-* Support for Espressif ESP-IDF development framework
-* Fix for XCode build with iPhone simulator on i386
-* PKCS7 support for generating and verify bundles using a detached signature
-* Fix for build disabling AES-CBC and enabling opensslextra compatibility layer
-* Updates to sniffer for showing session information and handling split messages across records
-* Port update for Micrium uC/OS-III
-* Feature to adjust max fragment size post handshake when compiled with the macro WOLFSSL_ALLOW_MAX_FRAGMENT_ADJUST
-* Adding the macro NO_MULTIBYTE_PRINT for compiling out special characters that embedded devices may have problems with
-* Updates for Doxygen documentation, including PKCS #11 API and more
-* Adding Intel QuickAssist v1.7 driver support for asynchronous crypto
-* Adding Intel QuickAssist RSA key generation and SHA-3 support
-* RSA verify only (--enable-rsavfy) and RSA public only (--enable-rsapub) builds added
-* Enhancements to test cases for increased code coverage
-* Updates to VxWorks port for use with Mongoose, including updates to the OpenSSL compatibility layer
-* Yocto Project ease of use improvements along with many updates and build instructions added to the INSTALL file
-* Maximum ticket nonce size was increased to 8
-* Updating --enable-armasm build for ease of use with autotools
-* Updates to internal code checking TLS 1.3 version with a connection
-* Removing unnecessary extended master secret from ServerHello if using TLS 1.3
-* Fix for TLS v1.3 HelloRetryRequest to be sent immediately and not grouped
+*** end Notes ***
 
 
+# wolfSSL Release 4.2.0 (10/22/2019)
 
-This release of wolfSSL includes a fix for 1 security vulnerability.
+If you have questions about this release, then feel free to contact us on our info@ address.
 
-Medium level fix for potential cache attack with a variant of Bleichenbacher’s attack. Earlier versions of wolfSSL leaked PKCS #1 v1.5 padding information during private key decryption that could lead to a potential padding oracle attack. It is recommended that users update to the latest version of wolfSSL if they have RSA cipher suites enabled and have the potential for malicious software to be ran on the same system that is performing RSA operations. Users that have only ECC cipher suites enabled and are not performing RSA PKCS #1 v1.5 Decryption operations are not vulnerable. Also users with TLS 1.3 only connections are not vulnerable to this attack. Thanks to Eyal Ronen (Weizmann Institute), Robert Gillham (University of Adelaide), Daniel Genkin (University of Michigan), Adi Shamir (Weizmann Institute), David Wong (NCC Group), and Yuval Yarom (University of Adelaide and Data61) for the report.
+Release 4.2.0 of wolfSSL embedded TLS has bug fixes and new features including:
 
-The paper for further reading on the attack details can be found at http://cat.eyalro.net/cat.pdf.
 
+##### New Feature Additions
+* Over 198 OpenSSL compatibility API’s added
+* Apache port added for compiling with wolfSSL using --enable-apachehttpd
+* Port for using wolfSSL with OpenVSwitch
+* Port for Renesas TSIP added
+* Visual Studio Solution for Azure Sphere Devices (MT3620 and MT3620-mini) added to the directory IDE/VS-AZURE-SPHERE
+* Addition of Coldfire MCF5441X NetBurner example to the directory IDE/M68K/
+* Added support for prime checking to SP math build
+* Addition of DYNAMIC_TYPE_BIGINT type for tracking mp_int allocations
+* Addition of wc_ecc_get_curve_params API for getting ecc_set_type params for a curve
+* Adding in TLS_SHA256_SHA256 and TLS_SHA384_SHA384 TLS1.3 cipher suites (null ciphers)
+* Added in PKCS7 decryption callbacks for CMS operations
+* Added handling for optional ECC parameters with PKCS7 KARI
+* Addition to configure.ac for FIPS wolfRand builds
+* Adding the flag WOLFSSL_LOAD_FLAG_DATE_ERR_OKAY for ignoring certificate date checks with the functions wolfSSL_CTX_load_verify_buffer_ex and wolfSSL_CTX_load_verify_locations_ex
+* Support for PKCS8 keys added to the function wolfSSL_CTX_use_PrivateKey_buffer
+* Support for KECCAK hashing. Build with macro WOLFSSL_HASH_FLAGS and call wc_Sha3_SetFlags(&sha, WC_HASH_SHA3_KECCAK256) before the first SHA3 update 
+* Addition of setting secure renegotiation at CTX level
+* Addition of KDS (NXP Kinetis Design Studio) example project to directory IDE/KDS/
+* Support for Encrypt-Then-MAC to TLS 1.2 and below
+* Added a new build option for a TITAN session cache that can hold just over 2 million session entries (--enable-titancache)  
+* Synchronous Quick Assist Support for Sniffer
+* Added Support for SiFive HiFive Unleashed board 
+* Support for Google WebRTC added in to compatibility layer build
+* Additional Sniffer features; IPv6 sniffer support, Fragment chain input, Data store callback, Various statistics tweaks and other Sniffer fixes
+
+
+##### Fixes
+* Addition of internal content digest checks for PKCS7 SignedData message types that also have signed attributes present. Users could previously check the content digest against the messageDigest attribute, but this adds a default internal check. It’s advised that if users are not doing their own checks that they update wolfSSL version.
+* A fix for BIO and base64 encoding/decoding
+* A fix for memory management of CTX / WOLFSSL_METHOD pointer with staticmemory build
+* A fix for detection of AES-NI support to read bit 25 from ECX
+* A fix a DTLS handshake message retransmit bug corner case
+* Additional fixes to coding style and uninitialized values using cppcheck tool
+* Fixes for failing IAR builds, thanks to Joseph C. for the report
+* Fixes for ARMv8 Poly1305 inline assembly code to compile with clang 3.5
+* Fixes for esp-idf build warnings
+* A fix for XSNPRINTF with mingw32 builds
+* Fixes for strncpy warnings when compiling with newer versions of GCC
+* A fix for using IV of all 0’s as default case with AES-NI when no IV passed in
+* Fixes for types with 16 bit systems, thanks to Ralf Schlatterbeck
+* Fixes for build with devcrypto/afalg and aesccm, thanks to GitHub user cotequeiroz for the report
+* Fixes for addressing handling of pathLen constraint when parsing certificate chains
+* A DTLS fix for alert packet injection at end of handshake
+* Fixes for Poly1305 AArch64 assembly code
+* A fix for memory management in error cases when adding a CA, this resolves a coverity report
+* A fix for SP math for precomputation tables to not include infinity field
+* Fixes for checks on defines with AVX2 and Poly1305 build
+* Fixes for CubeMX HAL v1.15 with STM32F7
+* A fix for TLS 1.3 to always send Key Share extension
+* A fix for a potential buffer over read in TLS 1.3 DoTls13SupportedVersions, thanks to Artem for the report
+
+
+##### Improvements/Optimizations
+* Optimization to SP math, changing variables to const where possible. Thanks to Yair Poleg (yair.poleg@ayyeka.com) of Ayyeka for proposing static declaration of global constant variables in SP code
+* Additional fuzz testing and fixes for TLS 1.3 use, including additional TLS 1.3 alert messages (PR#2440 for more information)
+* Additional sanity check that ciphersuite from client hello is used in server hello response (check can be removed with the macro WOLFSSL_NO_STRICT_CIPHER_SUITE)
+* Improved MMCAU performance: SHA-1 by 35%, SHA-256 by 20% and MD5 by 78% 
+* By default, disallow SHA-2 cipher suites from being used in TLS 1.0 and 1.1 handshakes (can be ignored with macro WOLFSSL_OLDTLS_SHA2_CIPHERSUITES)
+* Optimization of export session buffer size with enable option --enable-sessionexport=nopeer
+* Spelling fixes in comments and some cast warnings resolved
+* Updates to abstract atoi to XATOI when used, this allows for better portability when making calls to the system function atoi for converting strings to integers
+* Improvements to the STSAFE-A100 error code handling, providing better debug information
+* Adding a sanity check on TLS 1.3 ticket encrypt callback
+* Specialized implementations of mod exp when base is 2
+
+
+
+##### This release of wolfSSL includes a fix for 5 security vulnerabilities.
+
+Fix for sanity check on reading TLS 1.3 pre-shared key extension. This fixes a potential for an invalid read when TLS 1.3 and pre-shared keys is enabled. Users without TLS 1.3 enabled are unaffected. Users with TLS 1.3 enabled and HAVE_SESSION_TICKET defined or NO_PSK not defined should update wolfSSL versions. Thanks to Robert Hoerr for the report.
+
+Fix for potential program hang when ocspstapling2 is enabled. This is a moderate level fix that affects users who have ocspstapling2 enabled(off by default) and are on the server side. In parsing a CSR2 (Certificate Status Request v2 ) on the server side, there was the potential for a malformed extension to cause a program hang. Thanks to Robert Hoerr for the report.
+
+Two moderate level fixes involving an ASN.1 over read by one byte. CVE-2019-15651 is for a fix that is due to a potential one byte over read when decoding certificate extensions. CVE-2019-16748 is for a fix on a potential one byte overread with checking certificate signatures. This affects builds that do certificate parsing and do not have the macro NO_SKID defined.Thanks to Yan Jia and the researcher team  from Institute of Software, Chinese Academy of Sciences for the report.
+
+High level fix for DSA operations involving an attack on recovering DSA private keys. This fix affects users that have DSA enabled and are performing DSA operations (off by default). All users that have DSA enabled and are using DSA keys are advised to regenerate DSA keys and update wolfSSL version. ECDSA is NOT affected by this and TLS code is NOT affected by this issue. Thanks to Ján Jančár for the report.
+
+
+For additional vulnerability information visit the vulnerability page at https://www.wolfssl.com/docs/security-vulnerabilities/
 
 See INSTALL file for build instructions.
 More info can be found on-line at http://wolfssl.com/wolfSSL/Docs.html
 
-# Resources
+
+
+*** Resources ***
+
 
 [wolfSSL Website](https://www.wolfssl.com/)
 
@@ -105,8 +177,10 @@ More info can be found on-line at http://wolfssl.com/wolfSSL/Docs.html
 
 [wolfSSL Manual](https://wolfssl.com/wolfSSL/Docs-wolfssl-manual-toc.html)
 
-[wolfSSL API Reference](https://wolfssl.com/wolfSSL/Docs-wolfssl-manual-17-wolfssl-api-reference.html)
+[wolfSSL API Reference]
+(https://wolfssl.com/wolfSSL/Docs-wolfssl-manual-17-wolfssl-api-reference.html)
 
-[wolfCrypt API Reference](https://wolfssl.com/wolfSSL/Docs-wolfssl-manual-18-wolfcrypt-api-reference.html)
+[wolfCrypt API Reference]
+(https://wolfssl.com/wolfSSL/Docs-wolfssl-manual-18-wolfcrypt-api-reference.html)
 
 [TLS 1.3](https://www.wolfssl.com/docs/tls13/)

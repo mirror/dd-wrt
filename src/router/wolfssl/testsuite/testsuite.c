@@ -1,6 +1,6 @@
 /* testsuite.c
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -180,7 +180,7 @@ int testsuite_test(int argc, char** argv)
 
     /* show ciphers */
     {
-        char ciphers[1024];
+        char ciphers[WOLFSSL_CIPHER_LIST_MAX_SIZE];
         XMEMSET(ciphers, 0, sizeof(ciphers));
         wolfSSL_get_ciphers(ciphers, sizeof(ciphers)-1);
         printf("ciphers = %s\n", ciphers);
