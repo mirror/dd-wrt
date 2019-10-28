@@ -397,6 +397,8 @@ ifeq ($(CONFIG_PWC),y)
 	cp ../windows_js/themes/default.css $(INSTALLDIR)/www/style/pwc
 	cp -r common_style/pwc $(INSTALLDIR)/www/style
 	cp common_style/common.css $(INSTALLDIR)/www/style
+else
+	cp common_micro.js $(INSTALLDIR)/www/common.js
 endif
 
 ifeq ($(CONFIG_SKYTEL),y)
