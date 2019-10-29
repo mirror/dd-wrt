@@ -20,30 +20,19 @@
  * CDDL HEADER END
  */
 /*
- * Copyright 2000 Sun Microsystems, Inc.  All rights reserved.
+ * Copyright 2017 Zettabyte Software, LLC.  All rights reserved.
  * Use is subject to license terms.
  */
 
-/*	Copyright (c) 1983, 1984, 1985, 1986, 1987, 1988, 1989 AT&T	*/
-/*	  All Rights Reserved	*/
-
 /*
- * University Copyright- Copyright (c) 1982, 1986, 1988
- * The Regents of the University of California
- * All Rights Reserved
- *
- * University Acknowledgment- Portions of this document are derived from
- * software developed by the University of California, Berkeley, and its
- * contributors.
+ * Compiling against musl correctly points out that including sys/errno.h is
+ * disallowed by the Single UNIX Specification when building in userspace, so
+ * we implement a dummy header to redirect the include to the proper header.
  */
+#ifndef _LIBSPL_SYS_ERRNO_H
+#define	_LIBSPL_SYS_ERRNO_H
 
-#ifndef _SYS_ERRNO_H
-#define	_SYS_ERRNO_H
-
-#include <linux/errno.h>
-
-#define	ENOTSUP		EOPNOTSUPP
-
+#include <errno.h>
 /*
  * We'll take the unused errnos, 'EBADE' and 'EBADR' (from the Convergent
  * graveyard) to indicate checksum errors and fragmentation.
@@ -54,4 +43,4 @@
 /* Similar for ENOACTIVE */
 #define	ENOTACTIVE	ENOANO
 
-#endif	/* _SYS_ERRNO_H */
+#endif /* _LIBSPL_SYS_ERRNO_H */

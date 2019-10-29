@@ -1525,7 +1525,7 @@ dump_filesystem(zfs_handle_t *zhp, void *arg)
 
 	(void) snprintf(zc.zc_name, sizeof (zc.zc_name), "%s@%s",
 	    zhp->zfs_name, sdd->tosnap);
-	if (ioctl(zhp->zfs_hdl->libzfs_fd, ZFS_IOC_OBJSET_STATS, &zc) != 0) {
+	if (zfs_ioctl(zhp->zfs_hdl, ZFS_IOC_OBJSET_STATS, &zc) != 0) {
 		(void) fprintf(stderr, dgettext(TEXT_DOMAIN,
 		    "WARNING: could not send %s@%s: does not exist\n"),
 		    zhp->zfs_name, sdd->tosnap);
@@ -1543,7 +1543,7 @@ dump_filesystem(zfs_handle_t *zhp, void *arg)
 		 */
 		(void) snprintf(zc.zc_name, sizeof (zc.zc_name), "%s@%s",
 		    zhp->zfs_name, sdd->fromsnap);
-		if (ioctl(zhp->zfs_hdl->libzfs_fd,
+		if (zfs_ioctl(zhp->zfs_hdl,
 		    ZFS_IOC_OBJSET_STATS, &zc) != 0) {
 			missingfrom = B_TRUE;
 		}
@@ -4257,11 +4257,21 @@ zfs_setup_cmdline_props(libzfs_handle_t *hdl, zfs_type_t type,
 
 		/* raw streams can't override encryption properties */
 		if ((zfs_prop_encryption_key_param(prop) ||
-		    prop == ZFS_PROP_ENCRYPTION) && (raw || !newfs)) {
+		    prop == ZFS_PROP_ENCRYPTION) && raw) {
 			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
 			    "encryption property '%s' cannot "
-			    "be set or excluded for raw or incremental "
-			    "streams."), name);
+			    "be set or excluded for raw streams."), name);
+			ret = zfs_error(hdl, EZFS_BADPROP, errbuf);
+			goto error;
+		}
+
+		/* incremental streams can only exclude encryption properties */
+		if ((zfs_prop_encryption_key_param(prop) ||
+		    prop == ZFS_PROP_ENCRYPTION) && !newfs &&
+		    nvpair_type(nvp) != DATA_TYPE_BOOLEAN) {
+			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
+			    "encryption property '%s' cannot "
+			    "be set for incremental streams."), name);
 			ret = zfs_error(hdl, EZFS_BADPROP, errbuf);
 			goto error;
 		}
@@ -4279,10 +4289,12 @@ zfs_setup_cmdline_props(libzfs_handle_t *hdl, zfs_type_t type,
 			 */
 			if (nvlist_exists(origprops, name)) {
 				nvlist_t *attrs;
+				char *source = NULL;
 
 				attrs = fnvlist_lookup_nvlist(origprops, name);
-				if (strcmp(fnvlist_lookup_string(attrs,
-				    ZPROP_SOURCE), ZPROP_SOURCE_VAL_RECVD) != 0)
+				if (nvlist_lookup_string(attrs,
+				    ZPROP_SOURCE, &source) == 0 &&
+				    strcmp(source, ZPROP_SOURCE_VAL_RECVD) != 0)
 					continue;
 			}
 			/*
@@ -4667,7 +4679,7 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 				err = zfs_error(hdl, EZFS_EXISTS, errbuf);
 				goto out;
 			}
-			if (ioctl(hdl->libzfs_fd, ZFS_IOC_SNAPSHOT_LIST_NEXT,
+			if (zfs_ioctl(hdl, ZFS_IOC_SNAPSHOT_LIST_NEXT,
 			    &zc) == 0) {
 				zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
 				    "destination has snapshots (eg. %s)\n"
@@ -4685,7 +4697,7 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 				goto out;
 			}
 			if (is_volume &&
-			    ioctl(hdl->libzfs_fd, ZFS_IOC_DATASET_LIST_NEXT,
+			    zfs_ioctl(hdl, ZFS_IOC_DATASET_LIST_NEXT,
 			    &zc) == 0) {
 				zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
 				    "destination has children (eg. %s)\n"

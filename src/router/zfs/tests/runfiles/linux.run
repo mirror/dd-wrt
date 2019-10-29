@@ -25,7 +25,8 @@ tests = ['posix_001_pos', 'posix_002_pos', 'posix_003_pos']
 tags = ['functional', 'acl', 'posix']
 
 [tests/functional/arc:Linux]
-tests = ['dbufstats_001_pos', 'dbufstats_002_pos', 'dbufstats_003_pos']
+tests = ['dbufstats_001_pos', 'dbufstats_002_pos', 'dbufstats_003_pos',
+    'arcstats_runtime_tuning']
 tags = ['functional', 'arc']
 
 [tests/functional/atime:Linux]
@@ -43,6 +44,12 @@ tags = ['functional', 'cli_root', 'zfs']
 [tests/functional/cli_root/zfs_mount:Linux]
 tests = ['zfs_mount_006_pos', 'zfs_mount_008_pos', 'zfs_multi_mount']
 tags = ['functional', 'cli_root', 'zfs_mount']
+
+[tests/functional/cli_root/zfs_sysfs:Linux]
+tests = ['zfeature_set_unsupported', 'zfs_get_unsupported',
+    'zfs_set_unsupported', 'zfs_sysfs_live', 'zpool_get_unsupported',
+    'zpool_set_unsupported']
+tags = ['functional', 'cli_root', 'zfs_sysfs']
 
 [tests/functional/cli_root/zpool_events:Linux]
 tests = ['zpool_events_clear', 'zpool_events_cliargs', 'zpool_events_follow',
@@ -83,6 +90,11 @@ tags = ['functional', 'io']
 tests = ['mmap_libaio_001_pos']
 tags = ['functional', 'mmap']
 
+[tests/functional/procfs:Linux]
+tests = ['procfs_list_basic', 'procfs_list_concurrent_readers',
+    'procfs_list_stale_read', 'pool_state']
+tags = ['functional', 'procfs']
+
 [tests/functional/projectquota:Linux]
 tests = ['projectid_001_pos', 'projectid_002_pos', 'projectid_003_pos',
     'projectquota_001_pos', 'projectquota_002_pos', 'projectquota_003_pos',
@@ -100,6 +112,10 @@ tags = ['functional', 'rsend']
 [tests/functional/snapshot:Linux]
 tests = ['snapshot_015_pos', 'snapshot_016_pos']
 tags = ['functional', 'snapshot']
+
+[tests/functional/tmpfile:Linux]
+tests = ['tmpfile_001_pos', 'tmpfile_002_pos', 'tmpfile_003_pos']
+tags = ['functional', 'tmpfile']
 
 [tests/functional/upgrade:Linux]
 tests = ['upgrade_projectquota_001_pos']
