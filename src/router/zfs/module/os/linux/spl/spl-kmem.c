@@ -152,9 +152,14 @@ spl_kvmalloc(size_t size, gfp_t flags)
 		    (size <= PAGE_SIZE << PAGE_ALLOC_COSTLY_ORDER))
 			kmalloc_flags |= __GFP_NORETRY;
 	}
-	ret = kmalloc_node(size, kmalloc_flags, NUMA_NO_NODE);
-	if (ret || size <= PAGE_SIZE)
-		return (ret);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 33, 0)
+	if (!(kmalloc_flags & __GFP_COMP))
+#endif
+	{
+		ret = kmalloc_node(size, kmalloc_flags, NUMA_NO_NODE);
+		if (ret || size <= PAGE_SIZE)
+			return (ret);
+	}
 	return (__vmalloc(size, flags | __GFP_HIGHMEM, PAGE_KERNEL));
 }
 
