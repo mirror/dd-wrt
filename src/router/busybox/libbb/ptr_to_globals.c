@@ -5,6 +5,7 @@
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 #include <errno.h>
+#include <features.h>
 
 struct globals;
 
@@ -14,7 +15,7 @@ struct globals;
  * but here we make it live in R/W memory */
 struct globals *ptr_to_globals;
 
-#ifdef __GLIBC__
+#if defined(__GLIBC__)
 int *bb_errno;
 #endif
 
