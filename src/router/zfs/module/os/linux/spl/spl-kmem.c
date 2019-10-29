@@ -27,6 +27,7 @@
 #include <sys/kmem.h>
 #include <sys/vmem.h>
 #include <linux/mm.h>
+#include <linux/version.h>
 
 /*
  * As a general rule kmem_alloc() allocations should be small, preferably
