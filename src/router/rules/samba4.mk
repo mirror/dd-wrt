@@ -1,4 +1,4 @@
-samba4-configure: gnutls
+samba4-configure:
 	cp $(TOP)/samba4/waf-cross-answers/$(ARCH).txt $(TOP)/samba4/cross-answers.txt
 	echo 'Checking uname machine type: "$(ARCH)"' >> $(TOP)/samba4/cross-answers.txt
 	echo 'Checking uname release type: "$(LINUX_VERSION)"' >> $(TOP)/samba4/cross-answers.txt
@@ -36,7 +36,7 @@ samba4-configure: gnutls
 	cd samba4 && ./buildtools/bin/waf build --targets=asn1_compile,compile_et python_LDFLAGS="" python_LIBDIR="" CC=gcc LD=ld CFLAGS="-O2"
 		install $(TOP)/samba4/bin/asn1_compile $(TOP)/samba4/bin/asn1_compile_host 
 		install $(TOP)/samba4/bin/compile_et $(TOP)/samba4/bin/compile_et_host
-	cd samba4 && ./configure \
+	cd samba4 && ./configure  \
 		--hostcc="$(ARCH)-linux-uclibc-gcc" \
 		--cross-compile \
 		--cross-answers=cross-answers.txt \
@@ -93,6 +93,7 @@ samba4-install:
 	cd samba4 && ./buildtools/bin/waf install --destdir=$(INSTALLDIR)/samba4
 	rm -rf $(INSTALLDIR)/samba4/usr/include
 	rm -rf $(INSTALLDIR)/samba4/usr/lib/pkgconfig
+
 
 samba4-clean:
 	make -C samba4 clean
