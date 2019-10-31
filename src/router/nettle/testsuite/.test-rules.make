@@ -25,14 +25,14 @@ camellia-test$(EXEEXT): camellia-test.$(OBJEXT)
 chacha-test$(EXEEXT): chacha-test.$(OBJEXT)
 	$(LINK) chacha-test.$(OBJEXT) $(TEST_OBJS) -o chacha-test$(EXEEXT)
 
+cnd-memcpy-test$(EXEEXT): cnd-memcpy-test.$(OBJEXT)
+	$(LINK) cnd-memcpy-test.$(OBJEXT) $(TEST_OBJS) -o cnd-memcpy-test$(EXEEXT)
+
 des-test$(EXEEXT): des-test.$(OBJEXT)
 	$(LINK) des-test.$(OBJEXT) $(TEST_OBJS) -o des-test$(EXEEXT)
 
 des3-test$(EXEEXT): des3-test.$(OBJEXT)
 	$(LINK) des3-test.$(OBJEXT) $(TEST_OBJS) -o des3-test$(EXEEXT)
-
-des-compat-test$(EXEEXT): des-compat-test.$(OBJEXT)
-	$(LINK) des-compat-test.$(OBJEXT) $(TEST_OBJS) -o des-compat-test$(EXEEXT)
 
 md2-test$(EXEEXT): md2-test.$(OBJEXT)
 	$(LINK) md2-test.$(OBJEXT) $(TEST_OBJS) -o md2-test$(EXEEXT)
@@ -130,6 +130,9 @@ eax-test$(EXEEXT): eax-test.$(OBJEXT)
 ccm-test$(EXEEXT): ccm-test.$(OBJEXT)
 	$(LINK) ccm-test.$(OBJEXT) $(TEST_OBJS) -o ccm-test$(EXEEXT)
 
+cmac-test$(EXEEXT): cmac-test.$(OBJEXT)
+	$(LINK) cmac-test.$(OBJEXT) $(TEST_OBJS) -o cmac-test$(EXEEXT)
+
 poly1305-test$(EXEEXT): poly1305-test.$(OBJEXT)
 	$(LINK) poly1305-test.$(OBJEXT) $(TEST_OBJS) -o poly1305-test$(EXEEXT)
 
@@ -160,11 +163,11 @@ buffer-test$(EXEEXT): buffer-test.$(OBJEXT)
 yarrow-test$(EXEEXT): yarrow-test.$(OBJEXT)
 	$(LINK) yarrow-test.$(OBJEXT) $(TEST_OBJS) -o yarrow-test$(EXEEXT)
 
+xts-test$(EXEEXT): xts-test.$(OBJEXT)
+	$(LINK) xts-test.$(OBJEXT) $(TEST_OBJS) -o xts-test$(EXEEXT)
+
 pbkdf2-test$(EXEEXT): pbkdf2-test.$(OBJEXT)
 	$(LINK) pbkdf2-test.$(OBJEXT) $(TEST_OBJS) -o pbkdf2-test$(EXEEXT)
-
-pss-mgf1-test$(EXEEXT): pss-mgf1-test.$(OBJEXT)
-	$(LINK) pss-mgf1-test.$(OBJEXT) $(TEST_OBJS) -o pss-mgf1-test$(EXEEXT)
 
 sexp-test$(EXEEXT): sexp-test.$(OBJEXT)
 	$(LINK) sexp-test.$(OBJEXT) $(TEST_OBJS) -o sexp-test$(EXEEXT)
@@ -187,11 +190,17 @@ random-prime-test$(EXEEXT): random-prime-test.$(OBJEXT)
 pkcs1-test$(EXEEXT): pkcs1-test.$(OBJEXT)
 	$(LINK) pkcs1-test.$(OBJEXT) $(TEST_OBJS) -o pkcs1-test$(EXEEXT)
 
+pkcs1-sec-decrypt-test$(EXEEXT): pkcs1-sec-decrypt-test.$(OBJEXT)
+	$(LINK) pkcs1-sec-decrypt-test.$(OBJEXT) $(TEST_OBJS) -o pkcs1-sec-decrypt-test$(EXEEXT)
+
 pss-test$(EXEEXT): pss-test.$(OBJEXT)
 	$(LINK) pss-test.$(OBJEXT) $(TEST_OBJS) -o pss-test$(EXEEXT)
 
 rsa-sign-tr-test$(EXEEXT): rsa-sign-tr-test.$(OBJEXT)
 	$(LINK) rsa-sign-tr-test.$(OBJEXT) $(TEST_OBJS) -o rsa-sign-tr-test$(EXEEXT)
+
+pss-mgf1-test$(EXEEXT): pss-mgf1-test.$(OBJEXT)
+	$(LINK) pss-mgf1-test.$(OBJEXT) $(TEST_OBJS) -o pss-mgf1-test$(EXEEXT)
 
 rsa-pss-sign-tr-test$(EXEEXT): rsa-pss-sign-tr-test.$(OBJEXT)
 	$(LINK) rsa-pss-sign-tr-test.$(OBJEXT) $(TEST_OBJS) -o rsa-pss-sign-tr-test$(EXEEXT)
@@ -204,6 +213,12 @@ rsa-encrypt-test$(EXEEXT): rsa-encrypt-test.$(OBJEXT)
 
 rsa-keygen-test$(EXEEXT): rsa-keygen-test.$(OBJEXT)
 	$(LINK) rsa-keygen-test.$(OBJEXT) $(TEST_OBJS) -o rsa-keygen-test$(EXEEXT)
+
+rsa-sec-decrypt-test$(EXEEXT): rsa-sec-decrypt-test.$(OBJEXT)
+	$(LINK) rsa-sec-decrypt-test.$(OBJEXT) $(TEST_OBJS) -o rsa-sec-decrypt-test$(EXEEXT)
+
+rsa-compute-root-test$(EXEEXT): rsa-compute-root-test.$(OBJEXT)
+	$(LINK) rsa-compute-root-test.$(OBJEXT) $(TEST_OBJS) -o rsa-compute-root-test$(EXEEXT)
 
 dsa-test$(EXEEXT): dsa-test.$(OBJEXT)
 	$(LINK) dsa-test.$(OBJEXT) $(TEST_OBJS) -o dsa-test$(EXEEXT)
