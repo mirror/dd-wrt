@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 
 # Copyright (C) Catalyst.Net Ltd 2019
 #
@@ -137,7 +137,7 @@ PKGS = [
     ('python-dnspython', 'python-dns'),
     ('python-pexpect', ''),  # for wintest only
 
-    ('python3', 'python3'),
+    ('/usr/bin/python3', 'python3'),
     ('python3-dev', 'python3-devel'),
     ('python3-dbg', ''),
     ('python3-iso8601', ''),
@@ -433,7 +433,7 @@ RPM_DISTS = {
         'bootstrap': YUM_BOOTSTRAP,
         'replace': {
             'lsb-release': 'redhat-lsb',
-            'python3': 'python36',
+            '/usr/bin/python3': 'python36',
             'python3-devel': 'python36-devel',
             'python2-gpg': 'pygpgme',
             'python3-gpg': '',  # no python3-gpg yet
@@ -456,7 +456,7 @@ RPM_DISTS = {
         'bootstrap': YUM_BOOTSTRAP,
         'replace': {
             'lsb-release': 'redhat-lsb',
-            'python3': 'python36',
+            '/usr/bin/python3': 'python36',
             'python3-crypto': 'python36-crypto',
             'python3-devel': 'python36-devel',
             'python3-dns': 'python36-dns',
