@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<book xmlns="http://www.devhelp.net/book" title="GnuTLS API Reference Manual" link="index.html" author="" name="gnutls" version="2" language="c" online="https://www.gnutls.org/reference/">
+  <chapters>
+    <sub name="GnuTLS API Reference Manual" link="intro.html"/>
+    <sub name="API Index" link="api-index-full.html"/>
+  </chapters>
+  <functions/>
+</book>
