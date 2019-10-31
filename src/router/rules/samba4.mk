@@ -93,6 +93,7 @@ samba4-install:
 	cd samba4 && ./buildtools/bin/waf install --destdir=$(INSTALLDIR)/samba4
 	rm -rf $(INSTALLDIR)/samba4/usr/include
 	rm -rf $(INSTALLDIR)/samba4/usr/lib/pkgconfig
+	rm -rf $(INSTALLDIR)/samba4/var
 
 
 samba4-clean:
