@@ -18,7 +18,18 @@ gnutls: gmp nettle
 	make -C gnutls
 
 gnutls-install:
+	$(MAKE) -C gmp install DESTDIR=$(INSTALLDIR)/gnutls
+	$(MAKE) -C nettle install DESTDIR=$(INSTALLDIR)/gnutls
 	$(MAKE) -C gnutls install DESTDIR=$(INSTALLDIR)/gnutls
+	mkdir -p $(INSTALLDIR)/gnutls/usr/lib
+	cp -a gnutls/lib/.libs/libgnutls.so $(INSTALLDIR)/gnutls/usr/lib
+	cp -a gnutls/lib/.libs/libgnutls.so.30 $(INSTALLDIR)/gnutls/usr/lib
+	cp -a gnutls/lib/.libs/libgnutls.so.30.26.0 $(INSTALLDIR)/gnutls/usr/lib
+	cp -a gnutls/lib/.libs/libgnutlsxx.so $(INSTALLDIR)/gnutls/usr/lib
+	cp -a gnutls/lib/.libs/libgnutlsxx.so.28 $(INSTALLDIR)/gnutls/usr/lib
+	cp -a gnutls/lib/.libs/libgnutlsxx.so.28.1.0 $(INSTALLDIR)/gnutls/usr/lib
+
+
 	rm -rf $(INSTALLDIR)/gnutls/usr/include
 	rm -rf $(INSTALLDIR)/gnutls/usr/lib/pkgconfig
 	rm -rf $(INSTALLDIR)/gnutls/usr/lib/*.la
