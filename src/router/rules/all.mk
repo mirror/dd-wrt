@@ -326,6 +326,7 @@ include rules/rsync.mk
 include rules/libyang.mk
 include rules/smartmontools.mk
 include rules/sispmctl.mk
+include rules/samba4.mk
 
 #
 # Generic rules
