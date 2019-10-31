@@ -1,0 +1,16 @@
+<samba:parameter name="winbindd socket directory"
+                 context="G"
+                 type="string"
+                 constant="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>This setting controls the location of the winbind daemon's socket.</para>
+	<para>Except within automated test scripts, this should not be
+	altered, as the client tools (nss_winbind etc) do not honour
+	this parameter.  Client tools must then be advised of the
+	altered path with the WINBINDD_SOCKET_DIR environment
+	varaible.</para>
+</description>
+
+<value type="default">&pathconfig.WINBINDD_SOCKET_DIR;</value>
+</samba:parameter>

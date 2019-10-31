@@ -1,0 +1,37 @@
+#!/usr/bin/env python
+
+bld.SAMBA_SUBSYSTEM('gensec_util',
+                    source='gensec_tstream.c',
+                    deps='tevent-util tevent samba-util LIBTSOCKET',
+                    autoproto='gensec_proto.h')
+
+gensec_krb5_sources = 'gensec_krb5_heimdal.c'
+if bld.CONFIG_SET('SAMBA_USES_MITKDC'):
+    gensec_krb5_sources = 'gensec_krb5_mit.c'
+
+bld.SAMBA_MODULE('gensec_krb5',
+	source='gensec_krb5.c ' + gensec_krb5_sources,
+	subsystem='gensec',
+	init_function='gensec_krb5_init',
+	deps='samba-credentials authkrb5 com_err',
+	internal_module=False,
+        enabled=bld.AD_DC_BUILD_IS_ENABLED()
+	)
+
+
+bld.SAMBA_MODULE('gensec_gssapi',
+	source='gensec_gssapi.c',
+	subsystem='gensec',
+	init_function='gensec_gssapi_init',
+	deps='gssapi samba-credentials authkrb5 com_err'
+	)
+
+
+pytalloc_util = bld.pyembed_libname('pytalloc-util')
+pyparam_util = bld.pyembed_libname('pyparam_util')
+
+bld.SAMBA_PYTHON('pygensec',
+        source='pygensec.c',
+        deps='gensec %s %s' % (pytalloc_util, pyparam_util),
+        realname='samba/gensec.so'
+        )

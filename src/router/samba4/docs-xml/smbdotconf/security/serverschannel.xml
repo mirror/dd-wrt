@@ -1,0 +1,32 @@
+<samba:parameter name="server schannel"
+                 context="G"
+                 type="enum"
+                 enumlist="enum_bool_auto"
+                 deprecated="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+
+    <para>
+	This option is deprecated with Samba 4.8 and will be removed in future.
+	At the same time the default changed to yes, which will be the
+	hardcoded behavior in future. If you have the need for the behavior of "auto"
+	to be kept, please file a bug at https://bugzilla.samba.org.
+    </para>
+
+    <para>
+	This controls whether the server offers or even demands the use of the netlogon schannel.
+	<smbconfoption name="server schannel">no</smbconfoption> does not offer the schannel, <smbconfoption
+	name="server schannel">auto</smbconfoption> offers the schannel but does not enforce it, and <smbconfoption
+	name="server schannel">yes</smbconfoption> denies access if the client is not able to speak netlogon schannel.
+	This is only the case for Windows NT4 before SP4.
+	</para>
+
+    <para>
+	Please note that with this set to <literal>no</literal>, you will have to apply the WindowsXP
+	<filename>WinXP_SignOrSeal.reg</filename> registry patch found in the docs/registry subdirectory of the Samba distribution tarball.
+	</para>
+</description>
+
+<value type="default">yes</value>
+<value type="example">auto</value>
+</samba:parameter>

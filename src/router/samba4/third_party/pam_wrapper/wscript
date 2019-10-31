@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+
+import os
+
+VERSION="1.0.7"
+
+def find_library(library_names, lookup_paths):
+    for directory in lookup_paths:
+        for filename in library_names:
+            so_path = os.path.join(directory, filename)
+            if os.path.exists(so_path):
+                return so_path
+    return ''
+
+def configure(conf):
+    if conf.CHECK_PAM_WRAPPER():
+        conf.DEFINE('USING_SYSTEM_PAM_WRAPPER', 1)
+        libpam_wrapper_so_path = 'libpam_wrapper.so'
+
+        pam_set_items_so_path = find_library(['pam_set_items.so'],
+                                             ['/usr/lib64/pam_wrapper', '/usr/lib/pam_wrapper'])
+    else:
+
+        if conf.CONFIG_SET("HAVE___THREAD"):
+            conf.DEFINE("HAVE_GCC_THREAD_LOCAL_STORAGE", 1)
+
+        # check HAVE_FUNCTION_ATTRIBUTE_FORMAT
+        conf.CHECK_CODE('''
+            void log_fn(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
+
+            int main(void) {
+                return 0;
+            }
+            ''',
+            'HAVE_FUNCTION_ATTRIBUTE_FORMAT',
+            addmain=False,
+            strict=True,
+            msg='Checking for printf format validation support')
+
+        conf.CHECK_HEADERS('security/pam_appl.h')
+        conf.CHECK_HEADERS('security/pam_modules.h')
+        conf.CHECK_HEADERS('security/pam_ext.h')
+
+        conf.CHECK_FUNCS_IN('pam_vsyslog',
+                            'pam',
+                            checklibc=False,
+                            headers='security/pam_ext.h')
+
+        conf.CHECK_FUNCS_IN('pam_syslog',
+                            'pam',
+                            checklibc=False,
+                            headers='security/pam_ext.h')
+
+        conf.CHECK_C_PROTOTYPE('pam_vprompt',
+                               'int pam_vprompt(const pam_handle_t *_pamh, int _style, char **_resp, const char *_fmt, va_list _ap)',
+                               define='HAVE_PAM_VPROMPT_CONST', headers='stdio.h sys/types.h security/pam_appl.h security/pam_modules.h')
+
+        conf.CHECK_C_PROTOTYPE('pam_prompt',
+                               'int pam_prompt(const pam_handle_t *_pamh, int _style, char **_resp, const char *_fmt, ...)',
+                               define='HAVE_PAM_PROMPT_CONST', headers='stdio.h sys/types.h security/pam_appl.h security/pam_modules.h')
+
+        conf.CHECK_C_PROTOTYPE(
+            'pam_strerror',
+            'const char *pam_strerror(const pam_handle_t *pamh, int errnum)',
+            define='HAVE_PAM_STRERROR_CONST',
+            headers='''stdio.h sys/types.h security/pam_appl.h
+                       security/pam_modules.h''')
+
+        # Find the absolute path to libpam.so.0
+        libpam_path = find_library(['libpam.so.0', 'libpam.so'], conf.env.STANDARD_LIBPATH)
+        conf.DEFINE('PAM_LIBRARY', ('"%s"' % libpam_path ))
+
+        # Create full path to pam_wrapper
+        blddir = os.path.realpath(conf.bldnode.abspath())
+        libpam_wrapper_so_path = blddir + '/default/third_party/pam_wrapper/libpam-wrapper.so'
+        pam_set_items_so_path = blddir + '/default/third_party/pam_wrapper/libpam-set-items.so'
+
+    conf.DEFINE('LIBPAM_WRAPPER_SO_PATH', libpam_wrapper_so_path)
+    conf.DEFINE('PAM_SET_ITEMS_SO_PATH', pam_set_items_so_path)
+    conf.DEFINE('PAM_WRAPPER', 1)
+
+def build(bld):
+    if not bld.CONFIG_SET("USING_SYSTEM_PAM_WRAPPER"):
+        # We need to do it this way or the library wont work.
+        # Using private_library=True will add symbol version which
+        # breaks preloading!
+        bld.SAMBA_LIBRARY('pam_wrapper',
+                          source='pam_wrapper.c',
+                          deps='dl',
+                          install=False,
+                          realname='libpam-wrapper.so')
+
+        bld.SAMBA_SUBSYSTEM('libpamtest',
+                            source='libpamtest.c',
+                            deps='dl pam')
+
+        bld.SAMBA_LIBRARY('pam_set_items',
+                          source='modules/pam_set_items.c',
+                          deps='pam',
+                          install=False,
+                          realname='pam_set_items.so')
+
+        # Can be used to write pam tests in python
+        bld.SAMBA_PYTHON('pypamtest',
+                         source='python/pypamtest.c',
+                         deps='libpamtest',
+                         install=False)

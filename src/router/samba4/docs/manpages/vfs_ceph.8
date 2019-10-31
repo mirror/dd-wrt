@@ -1,0 +1,115 @@
+'\" t
+.\"     Title: vfs_ceph
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2019
+.\"    Manual: System Administration tools
+.\"    Source: Samba 4.11.2
+.\"  Language: English
+.\"
+.TH "VFS_CEPH" "8" "10/24/2019" "Samba 4\&.11\&.2" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+vfs_ceph \- Utilize features provided by CephFS
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+vfs objects = ceph
+.SH "DESCRIPTION"
+.PP
+This VFS module is part of the
+\fBsamba\fR(8)
+suite\&.
+.PP
+The
+vfs_ceph
+VFS module exposes CephFS specific features for use by Samba\&.
+.PP
+Ceph is a distributed network file system designed to provide excellent performance, reliability, and scalability\&. This is a shared library allowing applications to access a Ceph distributed file system via a POSIX\-like interface\&.
+.PP
+This module can be combined with other modules, but it should be the last module in the
+vfs objects
+list\&. Modules added to this list to the right of the ceph entry may not have any effect at all\&.
+.PP
+vfs_ceph
+performs mapping between Windows and POSIX Access Control Lists (ACLs)\&. To ensure correct processing and enforcement of POSIX ACLs, the following Ceph configuration parameters are automatically applied:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+		client acl type = posix_acl
+		fuse default permissions = false
+	
+.fi
+.if n \{\
+.RE
+.\}
+.SH "CONFIGURATION"
+.PP
+vfs_ceph
+requires that the underlying share path is a Ceph filesystem\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+		\fI[share]\fR
+		\m[blue]\fBvfs objects = ceph\fR\m[]
+		\m[blue]\fBpath = /non\-mounted/cephfs/path\fR\m[]
+		\m[blue]\fBkernel share modes = no\fR\m[]
+	
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Since
+vfs_ceph
+does not require a filesystem mount, the share
+path
+is treated differently: it is interpreted as an absolute path within the Ceph filesystem on the attached Ceph cluster\&. In a ctdb cluster environment where ctdb manages Samba,
+CTDB_SAMBA_SKIP_SHARE_CHECK=yes
+must be configured to disable local share path checks, otherwise ctdb will not reach a healthy state\&.
+.PP
+Note that currently
+kernel share modes
+have to be disabled in a share running with the CephFS vfs module for file serving to work properly\&.
+.SH "OPTIONS"
+.PP
+ceph:config_file = path
+.RS 4
+Allows one to define a ceph configfile to use\&. Empty by default\&.
+.sp
+Example: ceph:config_file = /etc/ceph/ceph\&.conf
+.RE
+.PP
+ceph:user_id = name
+.RS 4
+Allows one to explicitly set the client ID used for the CephFS mount handle\&. Empty by default (CephFS uses the process id)\&.
+.sp
+Example: ceph:user_id = samba
+.RE
+.SH "VERSION"
+.PP
+This man page is part of version 4\&.11\&.2 of the Samba suite\&.
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

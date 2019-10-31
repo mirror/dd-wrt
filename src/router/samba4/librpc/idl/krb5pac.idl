@@ -1,0 +1,186 @@
+/*
+  krb5 PAC
+*/
+
+#include "idl_types.h"
+
+import "security.idl", "lsa.idl", "netlogon.idl", "samr.idl";
+
+[
+  uuid("12345778-1234-abcd-0000-00000000"),
+  version(0.0),
+  pointer_default(unique),
+  helpstring("Active Directory KRB5 PAC"),
+  helper("../librpc/ndr/ndr_krb5pac.h")
+]
+interface krb5pac
+{
+	typedef struct {
+		NTTIME logon_time;
+		[value(2*strlen_m(account_name))] uint16 size;
+		[charset(UTF16)] uint8 account_name[size];
+	} PAC_LOGON_NAME;
+
+	typedef [public,flag(NDR_PAHEX)] struct {
+		uint32 type;
+		[flag(NDR_REMAINING)] DATA_BLOB signature;
+	} PAC_SIGNATURE_DATA;
+
+	typedef struct {
+		dom_sid2 *domain_sid;
+		samr_RidWithAttributeArray groups;
+	} PAC_DOMAIN_GROUP_MEMBERSHIP;
+
+	typedef struct {
+		netr_SamInfo3 info3;
+		/*
+		 * On ndr_push:
+		 * Pointers values of info3.sids[*].sid
+		 * should be allocated before the following ones?
+		 * (just the 0x30 0x00 0x02 0x00 value).
+		 */
+		PAC_DOMAIN_GROUP_MEMBERSHIP resource_groups;
+	} PAC_LOGON_INFO;
+
+	typedef [bitmap32bit] bitmap {
+		PAC_CREDENTIAL_NTLM_HAS_LM_HASH = 0x00000001,
+		PAC_CREDENTIAL_NTLM_HAS_NT_HASH = 0x00000002
+	} PAC_CREDENTIAL_NTLM_FLAGS;
+
+	typedef [public] struct {
+		[value(0)] uint32 version;
+		PAC_CREDENTIAL_NTLM_FLAGS flags;
+		[noprint] samr_Password lm_password;
+		[noprint] samr_Password nt_password;
+	} PAC_CREDENTIAL_NTLM_SECPKG;
+
+	typedef [public] struct {
+		lsa_String package_name;
+		uint32 credential_size;
+		[size_is(credential_size), noprint] uint8 *credential;
+	} PAC_CREDENTIAL_SUPPLEMENTAL_SECPKG;
+
+	typedef [public] struct {
+		uint32 credential_count;
+		[size_is(credential_count)] PAC_CREDENTIAL_SUPPLEMENTAL_SECPKG credentials[*];
+	} PAC_CREDENTIAL_DATA;
+
+	typedef [public] struct {
+		PAC_CREDENTIAL_DATA *data;
+	} PAC_CREDENTIAL_DATA_CTR;
+
+	typedef [public] struct {
+		[subcontext(0xFFFFFC01)] PAC_CREDENTIAL_DATA_CTR ctr;
+	} PAC_CREDENTIAL_DATA_NDR;
+
+	typedef [public] struct {
+		[value(0)] uint32 version;
+		uint32 encryption_type;
+		[flag(NDR_REMAINING)] DATA_BLOB encrypted_data;
+	} PAC_CREDENTIAL_INFO;
+
+	typedef struct {
+		lsa_String proxy_target;
+		uint32 num_transited_services;
+		[size_is(num_transited_services)] lsa_String *transited_services;
+	} PAC_CONSTRAINED_DELEGATION;
+
+	typedef [bitmap32bit] bitmap {
+		PAC_UPN_DNS_FLAG_CONSTRUCTED = 0x00000001
+	} PAC_UPN_DNS_FLAGS;
+
+	typedef struct {
+		[value(2*strlen_m(upn_name))] uint16 upn_name_size;
+		[relative_short,subcontext(0),subcontext_size(upn_name_size),flag(NDR_ALIGN8|STR_NOTERM|NDR_REMAINING)] string *upn_name;
+		[value(2*strlen_m(dns_domain_name))] uint16 dns_domain_name_size;
+		[relative_short,subcontext(0),subcontext_size(dns_domain_name_size),flag(NDR_ALIGN8|STR_NOTERM|NDR_REMAINING)] string *dns_domain_name;
+		PAC_UPN_DNS_FLAGS flags;
+	} PAC_UPN_DNS_INFO;
+
+	typedef [public] struct {
+		PAC_LOGON_INFO *info;
+	} PAC_LOGON_INFO_CTR;
+
+	typedef [public] struct {
+		PAC_CONSTRAINED_DELEGATION *info;
+	} PAC_CONSTRAINED_DELEGATION_CTR;
+
+	typedef [public,v1_enum] enum {
+		PAC_TYPE_LOGON_INFO = 1,
+		PAC_TYPE_CREDENTIAL_INFO = 2,
+		PAC_TYPE_SRV_CHECKSUM = 6,
+		PAC_TYPE_KDC_CHECKSUM = 7,
+		PAC_TYPE_LOGON_NAME = 10,
+		PAC_TYPE_CONSTRAINED_DELEGATION = 11,
+		PAC_TYPE_UPN_DNS_INFO = 12
+	} PAC_TYPE;
+
+	typedef struct {
+		[flag(NDR_REMAINING)] DATA_BLOB remaining;
+	} DATA_BLOB_REM;
+
+	typedef [public,nodiscriminant,gensize] union {
+		[case(PAC_TYPE_LOGON_INFO)][subcontext(0xFFFFFC01)] PAC_LOGON_INFO_CTR logon_info;
+		[case(PAC_TYPE_CREDENTIAL_INFO)]	PAC_CREDENTIAL_INFO credential_info;
+		[case(PAC_TYPE_SRV_CHECKSUM)]	PAC_SIGNATURE_DATA srv_cksum;
+		[case(PAC_TYPE_KDC_CHECKSUM)]	PAC_SIGNATURE_DATA kdc_cksum;
+		[case(PAC_TYPE_LOGON_NAME)]	PAC_LOGON_NAME logon_name;
+		[case(PAC_TYPE_CONSTRAINED_DELEGATION)][subcontext(0xFFFFFC01)]
+			PAC_CONSTRAINED_DELEGATION_CTR constrained_delegation;
+		[case(PAC_TYPE_UPN_DNS_INFO)]	PAC_UPN_DNS_INFO upn_dns_info;
+		/* when new PAC info types are added they are supposed to be done
+		   in such a way that they are backwards compatible with existing
+		   servers. This makes it safe to just use a [default] for
+		   unknown types, which lets us ignore the data */
+		[default]	[subcontext(0)] DATA_BLOB_REM unknown;
+	} PAC_INFO;
+
+	typedef [public,nopush,nopull] struct {
+		PAC_TYPE type;
+		[value(_ndr_size_PAC_INFO(info, type, 0))] uint32 _ndr_size;
+		/*
+		 * We need to have two subcontexts to get the padding right,
+		 * the outer subcontext uses NDR_ROUND(_ndr_size, 8), while
+		 * the inner subcontext only uses _ndr_size.
+		 *
+		 * We do that in non-generated push/pull functions.
+		 */
+		[relative,switch_is(type),subcontext(0),subcontext_size(NDR_ROUND(_ndr_size,8)),flag(NDR_ALIGN8)] PAC_INFO *info;
+		[value(0)] uint32 _pad; /* Top half of a 64 bit pointer? */
+	} PAC_BUFFER;
+
+	typedef [public] struct {
+		uint32 num_buffers;
+		uint32 version;
+		PAC_BUFFER buffers[num_buffers];
+	} PAC_DATA;
+
+	typedef [public] struct {
+		PAC_TYPE type;
+		uint32 ndr_size;
+		[relative,subcontext(0),subcontext_size(NDR_ROUND(ndr_size,8)),flag(NDR_ALIGN8)] DATA_BLOB_REM *info;
+		[value(0)] uint32 _pad; /* Top half of a 64 bit pointer? */
+	} PAC_BUFFER_RAW;
+
+	typedef [public] struct {
+		uint32 num_buffers;
+		uint32 version;
+		PAC_BUFFER_RAW buffers[num_buffers];
+	} PAC_DATA_RAW;
+
+	const int NETLOGON_GENERIC_KRB5_PAC_VALIDATE = 3;
+
+	typedef [public] struct {
+		[value(NETLOGON_GENERIC_KRB5_PAC_VALIDATE)] uint32 MessageType;
+		uint32 ChecksumLength;
+		int32 SignatureType;
+		uint32 SignatureLength;
+		[flag(NDR_REMAINING)] DATA_BLOB ChecksumAndSignature;
+	} PAC_Validate;
+
+	/* used for samba3 netsamlogon cache */
+	typedef [public] struct {
+		time_t timestamp;
+		netr_SamInfo3 info3;
+	} netsamlogoncache_entry;
+}

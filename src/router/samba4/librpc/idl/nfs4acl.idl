@@ -1,0 +1,51 @@
+#include "idl_types.h"
+
+/*
+  NFS4 ACL format on disk
+  see http://www.suse.de/~agruen/nfs4acl/
+*/
+
+import "misc.idl", "security.idl";
+
+[
+  version(1.0),
+  pointer_default(unique)
+]
+interface nfs4acl_interface
+{
+	const char *NFS4ACL_NDR_XATTR_NAME = "security.nfs4acl_ndr";
+
+	const char *NFS4ACL_XATTR_OWNER_WHO	 = "OWNER@";
+	const char *NFS4ACL_XATTR_GROUP_WHO	 = "GROUP@";
+	const char *NFS4ACL_XATTR_EVERYONE_WHO   = "EVERYONE@";
+
+	const uint8 ACL4_XATTR_VERSION_40      = 0x00;
+	const uint8 ACL4_XATTR_VERSION_41      = 0x01;
+	const uint8 ACL4_XATTR_VERSION_DEFAULT = ACL4_XATTR_VERSION_41;
+
+	const uint8 ACL4_AUTO_INHERIT  = 0x01;
+	const uint8 ACL4_PROTECTED     = 0x02;
+	const uint8 ACL4_DEFAULTED     = 0x04;
+	const uint8 ACL4_WRITE_THROUGH = 0x40;
+
+	/* these structures use the same bit values and other constants as
+	   in security.idl */
+	typedef [flag(NDR_BIG_ENDIAN)] struct {
+		uint16 e_type;
+		uint16 e_flags;
+		uint32 e_mask;
+		uint32 e_id;
+		utf8string e_who;
+		[flag(NDR_ALIGN4)]  DATA_BLOB _pad;
+	} nfs4ace;
+
+	typedef [public,flag(NDR_BIG_ENDIAN)] struct {
+		uint8 a_version;
+		uint8 a_flags;
+		uint16 a_count;
+		uint32 a_owner_mask;
+		uint32 a_group_mask;
+		uint32 a_other_mask;
+		nfs4ace ace[a_count];
+	} nfs4acl;
+}

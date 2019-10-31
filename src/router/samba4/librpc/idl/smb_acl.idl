@@ -1,0 +1,96 @@
+/*
+   Unix SMB/CIFS implementation.
+   Portable SMB ACL interface
+   Copyright (C) Jeremy Allison 2000
+   Copyright (C) Andrew Bartlett 2012
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+
+/*
+ * Allow the smb_acl interface to be pushed into an NDR blob and
+ * read/written in python.
+ *
+ * The exact layout of these stuctures is CRITICAL, as a SHA-256 hash is
+ * taken over these after they are pushed as NDR blobs, and stored in an
+ * xattr for ACL verification.
+ */
+[
+	pointer_default(unique)
+]
+interface smb_acl
+{
+
+	const int SMB_ACL_READ 				= 4;
+	const int SMB_ACL_WRITE 			= 2;
+	const int SMB_ACL_EXECUTE			= 1;
+
+	/* Types of ACLs. */
+	typedef enum {
+		SMB_ACL_TAG_INVALID = 0,
+		SMB_ACL_USER        = 1,
+		SMB_ACL_USER_OBJ    = 2,
+		SMB_ACL_GROUP       = 3,
+		SMB_ACL_GROUP_OBJ   = 4,
+		SMB_ACL_OTHER       = 5,
+		SMB_ACL_MASK        = 6
+	} smb_acl_tag_t;
+
+	typedef struct {
+		uid_t uid;
+	} smb_acl_user;
+
+	typedef struct {
+		gid_t gid;
+	} smb_acl_group;
+
+	typedef [switch_type(uint16)] union {
+		[case (SMB_ACL_USER)] smb_acl_user user;
+		[case (SMB_ACL_USER_OBJ)];
+		[case (SMB_ACL_GROUP)] smb_acl_group group;
+		[case (SMB_ACL_GROUP_OBJ)];
+		[case (SMB_ACL_OTHER)];
+		[case (SMB_ACL_MASK)];
+	} smb_acl_entry_info;
+
+	typedef struct {
+		smb_acl_tag_t a_type;
+		[switch_is(a_type)] smb_acl_entry_info info;
+		mode_t a_perm;
+	} smb_acl_entry;
+
+	[public] typedef struct {
+		int	count;
+		[value(0)] int	next;
+		[size_is(count)] smb_acl_entry acl[*];
+	} smb_acl_t;
+
+	const int SMB_ACL_FIRST_ENTRY		= 0;
+	const int SMB_ACL_NEXT_ENTRY		= 1;
+
+	const int SMB_ACL_TYPE_ACCESS		= 0;
+	const int SMB_ACL_TYPE_DEFAULT		= 1;
+
+	/* A wrapper of all the information required to reproduce an
+	 * ACL, so we can hash it for the acl_xattr and acl_tdb
+	 * modules */
+	[public] typedef struct {
+		smb_acl_t *access_acl;
+		smb_acl_t *default_acl; /* NULL on files */
+		uid_t owner;
+		gid_t group;
+		mode_t mode;
+	} smb_acl_wrapper;
+}

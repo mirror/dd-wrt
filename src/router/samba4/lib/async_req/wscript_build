@@ -1,0 +1,14 @@
+#!/usr/bin/env python
+
+
+bld.SAMBA_SUBSYSTEM('LIBASYNC_REQ',
+	source='async_sock.c',
+	public_deps='talloc tevent iov_buf',
+	deps='tevent-util socket-blocking'
+	)
+
+bld.SAMBA_BINARY('async_connect_send_test',
+                 source='async_connect_send_test.c',
+                 deps='LIBASYNC_REQ',
+                 install=False
+)

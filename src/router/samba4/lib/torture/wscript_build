@@ -1,0 +1,8 @@
+#!/usr/bin/env python
+
+bld.SAMBA_LIBRARY('torture',
+    private_library=True,
+    source='torture.c subunit.c simple.c',
+    public_deps='samba-hostconfig samba-util samba-errors talloc tevent',
+    private_headers='torture.h'
+    )

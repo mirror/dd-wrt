@@ -1,0 +1,107 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>onnode</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry"><a name="onnode.1"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>onnode &#8212; run commands on CTDB cluster nodes</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><code class="command">onnode</code>  [<em class="replaceable"><code>OPTION</code></em>...] {<em class="replaceable"><code>NODES</code></em>} {<em class="replaceable"><code>COMMAND</code></em>}</p></div></div><div class="refsect1"><a name="idm19"></a><h2>DESCRIPTION</h2><p>
+      onnode is a utility to run commands on a specific node of a CTDB
+      cluster, or on all nodes.
+    </p><p>
+      <em class="replaceable"><code>NODES</code></em> specifies which node(s) to run
+      a command on.  See section <em class="citetitle">NODES
+      SPECIFICATION</em> for details.
+    </p><p>
+      <em class="replaceable"><code>COMMAND</code></em> can be any shell command. The
+      onnode utility uses ssh or rsh to connect to the remote nodes
+      and run the command.
+    </p></div><div class="refsect1"><a name="idm27"></a><h2>OPTIONS</h2><div class="variablelist"><dl class="variablelist"><dt><span class="term">-c</span></dt><dd><p>
+            Execute COMMAND in the current working directory on the
+            specified nodes.
+	  </p></dd><dt><span class="term">-f <em class="parameter"><code>FILENAME</code></em></span></dt><dd><p>
+	  Specify an alternative nodes FILENAME to use instead of
+	  the default.  See the discussion of
+	  <code class="filename">/usr/local/etc/ctdb/nodes</code> in the
+	  FILES section for more details.
+	  </p></dd><dt><span class="term">-i</span></dt><dd><p>
+	    Keep standard input open, allowing data to be piped to
+	    onnode.  Normally onnode closes stdin to avoid surprises
+	    when scripting.  Note that this option is ignored when
+	    using <code class="option">-p</code> or if <code class="envar">ONNODE_SSH</code>
+	    is set to anything other than "ssh".
+	  </p></dd><dt><span class="term">-n</span></dt><dd><p>
+            Allow nodes to be specified by name rather than node
+            numbers.  These nodes don't need to be listed in the nodes
+            file.  You can avoid the nodes file entirely by combining
+            this with <code class="code">-f /dev/null</code>.
+	  </p></dd><dt><span class="term">-p</span></dt><dd><p>
+            Run COMMAND in parallel on the specified nodes.  The
+            default is to run COMMAND sequentially on each node.
+	  </p></dd><dt><span class="term">-P</span></dt><dd><p>
+            Push files to nodes.  Names of files to push are specified
+            rather than the usual command.  Quoting is fragile/broken
+            - filenames with whitespace in them are not supported.
+	  </p></dd><dt><span class="term">-q</span></dt><dd><p>
+            Do not print node addresses.  Normally, onnode prints
+            informational node addresses if more than one node is
+            specified.  This overrides -v.
+	  </p></dd><dt><span class="term">-v</span></dt><dd><p>
+            Print node addresses even if only one node is specified.
+            Normally, onnode prints informational node addresses when
+            more than one node is specified.
+	  </p></dd><dt><span class="term">-h, --help</span></dt><dd><p>
+            Show a short usage guide.
+	  </p></dd></dl></div></div><div class="refsect1"><a name="idm71"></a><h2>NODES SPECIFICATION</h2><p>
+      Nodes can be specified via numeric node numbers (from 0 to N-1)
+      or mnemonics.  Multiple nodes are specified using lists of
+      nodes, separated by commas, and ranges of numeric node numbers,
+      separated by dashes.  If nodes are specified multiple times then
+      the command will be executed multiple times on those nodes.  The
+      order of nodes is significant.
+    </p><p>
+      The following mnemonics are available:
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">all</span></dt><dd><p>
+            All nodes.
+	  </p></dd><dt><span class="term">any</span></dt><dd><p>
+             A node where ctdbd is running.  This semi-random but
+             there is a bias towards choosing a low numbered node.
+	  </p></dd><dt><span class="term">ok | healthy</span></dt><dd><p>
+            All nodes that are not disconnected, banned, disabled or
+            unhealthy.
+	  </p></dd><dt><span class="term">con | connected</span></dt><dd><p>
+            All nodes that are not disconnected.
+	  </p></dd></dl></div></div><div class="refsect1"><a name="idm92"></a><h2>EXAMPLES</h2><p>
+      The following command would show the process ID of ctdbd on all nodes
+    </p><pre class="screen">
+      onnode all ctdb getpid
+    </pre><p>
+      The following command would show the last 5 lines of log on each
+      node, preceded by the node's hostname
+    </p><pre class="screen">
+      onnode all "hostname; tail -5 /usr/local/var/log/log.ctdb"
+    </pre><p>
+      The following command would restart the ctdb service on all
+      nodes, in parallel.
+    </p><pre class="screen">
+      onnode -p all service ctdb restart
+    </pre><p>
+      The following command would run ./foo in the current working
+      directory, in parallel, on nodes 0, 2, 3 and 4.
+    </p><pre class="screen">
+      onnode -c -p 0,2-4 ./foo
+    </pre></div><div class="refsect1"><a name="idm102"></a><h2>FILES</h2><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="filename">/usr/local/etc/ctdb/nodes</code></span></dt><dd><p>
+            Default file containing a list of each node's IP address
+            or hostname.
+	  </p><p>
+	    As above, a file specified via the <code class="option">-f</code>
+	    is given precedence.  If a
+	    relative path is specified and no corresponding file
+	    exists relative to the current directory then the file is
+	    also searched for in the CTDB configuration directory.
+	  </p><p>
+	    Otherwise the default is
+	    <code class="filename">/usr/local/etc/ctdb/nodes</code>.
+          </p></dd><dt><span class="term"><code class="filename">/usr/local/etc/ctdb/onnode.conf</code></span></dt><dd><p>
+	    If this file exists it is sourced by onnode.  The main
+	    purpose is to allow the administrator to set
+	    <code class="envar">ONNODE_SSH</code> to something other than "ssh".
+	    In this case the -t option is ignored.
+	  </p></dd></dl></div></div><div class="refsect1"><a name="idm120"></a><h2>SEE ALSO</h2><p>
+      <span class="citerefentry"><span class="refentrytitle">ctdb</span>(7)</span>,
+
+      <a class="ulink" href="http://ctdb.samba.org/" target="_top">http://ctdb.samba.org/</a>
+    </p></div></div></body></html>

@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+name = bld.pyembed_libname('PROVISION')
+pytalloc_util = bld.pyembed_libname('pytalloc-util')
+pyparam_util = bld.pyembed_libname('pyparam_util')
+libpython = bld.pyembed_libname('LIBPYTHON')
+
+pyldb_util = bld.pyembed_libname('pyldb-util')
+bld.SAMBA_SUBSYSTEM(name,
+		    source='provision.c pyparam.c',
+		    deps='%s %s ldb %s %s' % (libpython, pyparam_util, pytalloc_util, pyldb_util),
+		    pyext=True,
+		    enabled=bld.PYTHON_BUILD_IS_ENABLED(),
+)
+
+
+bld.SAMBA_SUBSYSTEM('share',
+	source='share.c',
+	public_headers='share.h',
+	deps='samba-util samba-modules'
+	)
+
+
+bld.SAMBA_MODULE('share_classic',
+	source='share_classic.c',
+	subsystem='share',
+	init_function='share_classic_init',
+	deps='samba-util'
+	)
+
+
+bld.SAMBA_MODULE('share_ldb',
+	source='share_ldb.c',
+	subsystem='share',
+	init_function='share_ldb_init',
+	deps='ldbsamba auth_system_session'
+	)
+
+
+bld.SAMBA_SUBSYSTEM('SECRETS',
+	source='secrets.c',
+	deps='ldb tdb-wrap util_tdb NDR_SECURITY tevent ldbwrap'
+	)
+
+pytalloc_util = bld.pyembed_libname('pytalloc-util')
+pyparam_util = bld.pyembed_libname('pyparam_util')
+libpython = bld.pyembed_libname('LIBPYTHON')
+
+bld.SAMBA_PYTHON('pyparam',
+	         source='pyparam.c',
+	         deps='samba-hostconfig %s' % pytalloc_util,
+	         realname='samba/param.so'
+	         )
+
+bld.SAMBA_SUBSYSTEM(pyparam_util,
+	            source='pyparam_util.c',
+	            deps='%s samba-hostconfig %s' % (libpython, pytalloc_util),
+	            pyext=True,
+	            enabled=bld.PYTHON_BUILD_IS_ENABLED()
+	            )
+
+bld.SAMBA_SUBSYSTEM('param_options',
+	source='loadparm.c',
+	deps='samba-hostconfig')
+
+
+bld.SAMBA_LIBRARY('shares',
+                  source=[],
+                  deps='share',
+                  grouping_library=True,
+                  private_library=True)

@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+
+from waflib import Options, Logs
+
+# Remember to also update wbclient.h
+VERSION="0.15"
+
+# It may be useful at some point to allow Samba to build against a
+# system libwbclient, such as the one provided by Likewise.  To to
+# this, not only must the check below be activated but this must only
+# be activated with an off-by-default option to disable the internal
+# build of both winbindd implementations, and all the internal
+# references to libwbclient.h will need to be fixed to point at the
+# system libwbclient.  Finally, as a system libwbclient would probably
+# not use the same version scheme as Samba, so this would need to
+# reference Likewise version numbers instead.
+#
+#def configure(conf):
+#    if conf.CHECK_BUNDLED_SYSTEM_PKG('wbclient', minversion=VERSION):
+#        conf.define('USING_SYSTEM_LIBWBCLIENT', 1)
+#
+
+def build(bld):
+#    if bld.CONFIG_SET('USING_SYSTEM_LIBWBCLIENT'):
+#        Logs.info("\tSelected system libwbclient build")
+#        return
+#
+#    Logs.info("\tSelected embedded libwbclient build")
+
+    abi_match = 'wbc*'
+    bld.SAMBA_LIBRARY('wbclient',
+                      source='''
+                             wbc_guid.c
+                             wbc_idmap.c
+                             wbclient.c
+                             wbc_pam.c
+                             wbc_pwd.c
+                             wbc_sid.c
+                             wbc_util.c''',
+                      deps='winbind-client samba-util',
+                      pc_files='wbclient.pc',
+                      public_headers='wbclient.h',
+                      abi_directory='ABI',
+                      abi_match=abi_match,
+                      vnum=VERSION)

@@ -1,0 +1,20 @@
+<samba:parameter name="tls crlfile"
+                 type="string"
+                 context="G"
+                 function="_tls_crlfile"
+                 constant="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+ <description>
+	 <para>This option can be set to a file containing a certificate
+		 revocation list (CRL).</para>
+	 <para>This path is relative to <smbconfoption name="private dir"/> if the path
+	 does not start with a /.</para>
+</description>
+
+ <related>tls certfile</related>
+ <related>tls crlfile</related>
+ <related>tls dh params file</related>
+ <related>tls enabled</related>
+ <related>tls cafile</related>
+ <value type="default"></value>
+</samba:parameter>

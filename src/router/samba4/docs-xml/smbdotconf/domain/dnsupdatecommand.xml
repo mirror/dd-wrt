@@ -1,0 +1,14 @@
+<samba:parameter name="dns update command"
+                 context="G"
+                 type="cmdlist"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>This option sets the command that is called when there are
+		DNS updates. It should update the local machines DNS names using
+		TSIG-GSS.
+	</para>
+</description>
+
+<value type="default">&pathconfig.SCRIPTSBINDIR;/samba_dnsupdate</value>
+<value type="example">/usr/local/sbin/dnsupdate</value>
+</samba:parameter>

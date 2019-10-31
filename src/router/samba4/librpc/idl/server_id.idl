@@ -1,0 +1,36 @@
+[
+	pointer_default(unique)
+]
+interface server_id
+{
+
+	/*
+	 * Virtual Node Numbers are identifying a node within a cluster.
+	 * Ctdbd sets this, we retrieve our vnn from it.
+	 */
+
+	const uint32 NONCLUSTER_VNN = 0xFFFFFFFF;
+
+	/** Don't verify this unique id */
+	const hyper SERVERID_UNIQUE_ID_NOT_TO_VERIFY = 0xFFFFFFFFFFFFFFFFULL;
+
+	/* used to look like the following, note that unique_id was not
+	 * marshalled at all...
+
+	struct server_id {
+		pid_t pid;
+	#ifdef CLUSTER_SUPPORT
+		uint32 vnn;
+	#endif
+		uint64_t unique_id;
+	};
+
+	*/
+
+	typedef [public] struct {
+		hyper pid;
+		uint32 task_id;
+		uint32 vnn;
+		hyper unique_id;
+	} server_id;
+}

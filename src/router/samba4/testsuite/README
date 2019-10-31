@@ -1,0 +1,13 @@
+README for testsuite directory
+------------------------------
+
+The Samba testsuite is divided up into the following subdirectories.
+
+    - lib	      Various library files used by tool directories
+    
+    - nsswitch        Tests for nsswitch extensions
+
+All the scripts require an unreleased
+version of DejaGNU, and although they contain some useful tests they
+are not so useful at the moment.  All scripts are migrating to a
+single test framework, Satyr.  <cvs://cvs.samba.org/data/cvs/satyr>

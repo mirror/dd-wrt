@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+
+from waflib import Options
+
+def configure(conf):
+    if conf.CHECK_POPT():
+        conf.define('USING_SYSTEM_POPT', 1)
+        return
+
+    conf.CHECK_HEADERS('float.h')
+    conf.CHECK_FUNCS('stpcpy')
+    conf.CHECK_LIB('iconv', shlib=True)
+
+def build(bld):
+    if bld.CONFIG_SET('USING_SYSTEM_POPT'):
+        return
+
+    cflags = '-DPACKAGE="popt" -DPOPT_SYSCONFDIR="%s"' % bld.env.SYSCONFDIR
+    bld.SAMBA_LIBRARY('popt',
+                      source='popt.c poptconfig.c popthelp.c poptint.c poptparse.c',
+                      cflags=cflags,
+                      deps='iconv',
+                      allow_warnings=True,
+                      private_library=True)

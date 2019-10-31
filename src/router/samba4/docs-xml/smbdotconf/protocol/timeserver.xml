@@ -1,0 +1,12 @@
+<samba:parameter name="time server"
+                 context="G"
+                 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>This parameter determines if <citerefentry><refentrytitle>nmbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> advertises itself as a time server to Windows 
+clients.</para>
+</description>
+
+<value type="default">no</value>
+</samba:parameter>

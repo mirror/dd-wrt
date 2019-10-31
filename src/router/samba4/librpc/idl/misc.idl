@@ -1,0 +1,143 @@
+#include "idl_types.h"
+
+/*
+  miscellaneous IDL structures
+*/
+
+
+[
+	pyhelper("librpc/ndr/py_misc.c"),
+	pointer_default(unique)
+]
+interface misc
+{
+	typedef [public,noprint,gensize] struct {
+		uint32 time_low;
+		uint16 time_mid;
+		uint16 time_hi_and_version;
+		uint8  clock_seq[2];
+		uint8  node[6];
+	} GUID;
+
+	typedef [public] struct {
+		GUID uuid;
+		/* The major version is encoded in the 16 least significant bits, 
+		   the minor in the 16 most significant bits.  
+		   http://www.opengroup.org/onlinepubs/9629399/chap12.htm */
+		uint32 if_version;
+	} ndr_syntax_id;
+
+	typedef [public] struct {
+		uint32 handle_type;
+		GUID   uuid;
+	} policy_handle;
+
+	/* secure channel types */
+	/* Only SEC_CHAN_WKSTA can forward requests to other domains. */
+
+	typedef [public] enum {
+		SEC_CHAN_NULL        = 0,
+		SEC_CHAN_LOCAL       = 1,
+		SEC_CHAN_WKSTA       = 2,
+		SEC_CHAN_DNS_DOMAIN  = 3,
+		SEC_CHAN_DOMAIN      = 4,
+		SEC_CHAN_LANMAN      = 5,
+		SEC_CHAN_BDC         = 6,
+		SEC_CHAN_RODC        = 7
+	} netr_SchannelType;
+
+	typedef [public] struct {
+		NTSTATUS ntstatus;
+		uint32 unknown1;
+		uint32 unknown2; /* 0x00000001 */
+	} KRB5_EDATA_NTSTATUS;
+
+	typedef [public,v1_enum] enum {
+		REG_NONE                       = 0,
+		REG_SZ                         = 1,
+		REG_EXPAND_SZ                  = 2,
+		REG_BINARY                     = 3,
+		REG_DWORD                      = 4,
+		REG_DWORD_BIG_ENDIAN           = 5,
+		REG_LINK                       = 6,
+		REG_MULTI_SZ                   = 7,
+		REG_RESOURCE_LIST              = 8,
+		REG_FULL_RESOURCE_DESCRIPTOR   = 9,
+		REG_RESOURCE_REQUIREMENTS_LIST = 10,
+		REG_QWORD                      = 11
+	} winreg_Type;
+
+	typedef [nodiscriminant,public,flag(NDR_LITTLE_ENDIAN)] union {
+		[case(REG_NONE)];
+		[case(REG_SZ)] nstring string;
+		[case(REG_EXPAND_SZ)] nstring string;
+		[case(REG_BINARY),flag(NDR_REMAINING)] DATA_BLOB binary;
+		[case(REG_DWORD)] uint32 value;
+		[case(REG_DWORD_BIG_ENDIAN),flag(NDR_BIG_ENDIAN)] uint32 value;
+		[case(REG_MULTI_SZ)] nstring_array string_array;
+		[case(REG_QWORD)] hyper qword;
+		[default,flag(NDR_REMAINING)] DATA_BLOB data;
+	} winreg_Data;
+
+	/*
+	 * We duplicate the above winreg_Data for usage in the GPO python
+	 * parsers which cannot handle nstring_array. This should be only
+	 * temporary, until we can get PIDL to generate the correct bindings.
+	 */
+	typedef [nodiscriminant,public,flag(NDR_LITTLE_ENDIAN),gensize] union {
+		[case(REG_NONE)];
+		[case(REG_SZ)] nstring string;
+		[case(REG_EXPAND_SZ)] nstring string;
+		[case(REG_BINARY),flag(NDR_REMAINING)] DATA_BLOB binary;
+		[case(REG_DWORD)] uint32 value;
+		[case(REG_DWORD_BIG_ENDIAN),flag(NDR_BIG_ENDIAN)] uint32 value;
+		/*
+		 * There are no python handlers for nstring_array.
+		 * Prefer a fallback to DATA_BLOB instead.
+		 *
+		 * [case(REG_MULTI_SZ)] nstring_array string_array;
+		 */
+		[case(REG_QWORD)] hyper qword;
+		[default,flag(NDR_REMAINING)] DATA_BLOB data;
+	} winreg_Data_GPO;
+
+	/* SAM database types */
+	typedef [public,v1_enum] enum {
+		SAM_DATABASE_DOMAIN  = 0, /* Domain users and groups */
+		SAM_DATABASE_BUILTIN = 1, /* BUILTIN users and groups */
+		SAM_DATABASE_PRIVS   = 2 /* Privileges */
+	} netr_SamDatabaseID;
+
+	typedef [public,bitmap32bit] bitmap {
+		SV_TYPE_WORKSTATION       = 0x00000001,
+		SV_TYPE_SERVER            = 0x00000002,
+		SV_TYPE_SQLSERVER         = 0x00000004,
+		SV_TYPE_DOMAIN_CTRL       = 0x00000008,
+		SV_TYPE_DOMAIN_BAKCTRL    = 0x00000010,
+		SV_TYPE_TIME_SOURCE       = 0x00000020,
+		SV_TYPE_AFP               = 0x00000040,
+		SV_TYPE_NOVELL            = 0x00000080,
+
+		SV_TYPE_DOMAIN_MEMBER     = 0x00000100,
+		SV_TYPE_PRINTQ_SERVER     = 0x00000200,
+		SV_TYPE_DIALIN_SERVER     = 0x00000400,
+		SV_TYPE_SERVER_UNIX       = 0x00000800,
+		SV_TYPE_NT                = 0x00001000,
+		SV_TYPE_WFW               = 0x00002000,
+		SV_TYPE_SERVER_MFPN       = 0x00004000,
+		SV_TYPE_SERVER_NT         = 0x00008000,
+		SV_TYPE_POTENTIAL_BROWSER = 0x00010000,
+		SV_TYPE_BACKUP_BROWSER    = 0x00020000,
+		SV_TYPE_MASTER_BROWSER    = 0x00040000,
+		SV_TYPE_DOMAIN_MASTER     = 0x00080000,
+		SV_TYPE_SERVER_OSF        = 0x00100000,
+		SV_TYPE_SERVER_VMS        = 0x00200000,
+		SV_TYPE_WIN95_PLUS        = 0x00400000,
+		SV_TYPE_DFS_SERVER        = 0x00800000,
+		SV_TYPE_ALTERNATE_XPORT   = 0x20000000,
+		SV_TYPE_LOCAL_LIST_ONLY   = 0x40000000,
+		SV_TYPE_DOMAIN_ENUM       = 0x80000000
+	} svcctl_ServerType;
+
+	const uint32 SV_TYPE_ALL	= 0xFFFFFFFF;
+}

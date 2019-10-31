@@ -1,0 +1,346 @@
+#!/usr/bin/env python3
+#
+# Compute our KCC topology
+#
+# Copyright (C) Dave Craft 2011
+# Copyright (C) Andrew Bartlett 2015
+#
+# Andrew Bartlett's alleged work performed by his underlings Douglas
+# Bagnall and Garming Sam.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from __future__ import print_function
+
+import os
+import sys
+import random
+
+# ensure we get messages out immediately, so they get in the samba logs,
+# and don't get swallowed by a timeout
+os.environ['PYTHONUNBUFFERED'] = '1'
+
+# forcing GMT avoids a problem in some timezones with kerberos. Both MIT
+# heimdal can get mutual authentication errors due to the 24 second difference
+# between UTC and GMT when using some zone files (eg. the PDT zone from
+# the US)
+os.environ["TZ"] = "GMT"
+
+# Find right directory when running from source tree
+sys.path.insert(0, "bin/python")
+
+import optparse
+import time
+
+from samba import getopt as options
+
+from samba.kcc.graph_utils import verify_and_dot, list_verify_tests
+from samba.kcc.graph_utils import GraphError
+
+import logging
+from samba.kcc.debug import logger, DEBUG, DEBUG_FN
+from samba.kcc import KCC
+
+# If DEFAULT_RNG_SEED is None, /dev/urandom or system time is used.
+DEFAULT_RNG_SEED = None
+
+
+def test_all_reps_from(kcc, dburl, lp, creds, unix_now, rng_seed=None,
+                       ldif_file=None):
+    """Run the KCC from all DSAs in read-only mode
+
+    The behaviour depends on the global opts variable which contains
+    command line variables. Usually you will want to run it with
+    opt.dot_file_dir set (via --dot-file-dir) to see the graphs that
+    would be created from each DC.
+
+    :param lp: a loadparm object.
+    :param creds: a Credentials object.
+    :param unix_now: the unix epoch time as an integer
+    :param rng_seed: a seed for the random number generator
+    :return None:
+    """
+    # This implies readonly and attempt_live_connections
+    dsas = kcc.list_dsas()
+    samdb = kcc.samdb
+    needed_parts = {}
+    current_parts = {}
+
+    guid_to_dnstr = {}
+    for site in kcc.site_table.values():
+        guid_to_dnstr.update((str(dsa.dsa_guid), dnstr)
+                             for dnstr, dsa in site.dsa_table.items())
+
+    dot_edges = []
+    dot_vertices = []
+    colours = []
+    vertex_colours = []
+
+    for dsa_dn in dsas:
+        if rng_seed is not None:
+            random.seed(rng_seed)
+        kcc = KCC(unix_now, readonly=True,
+                  verify=opts.verify, debug=opts.debug,
+                  dot_file_dir=opts.dot_file_dir)
+        if ldif_file is not None:
+            try:
+                # The dburl in this case is a temporary database.
+                # Its non-existence is ensured at the script startup.
+                # If it exists, it is from a previous iteration of
+                # this loop -- unless we're in an unfortunate race.
+                # Because this database is temporary, it lacks some
+                # detail and needs to be re-created anew to set the
+                # local dsa.
+                os.unlink(dburl)
+            except OSError:
+                pass
+
+            kcc.import_ldif(dburl, lp, ldif_file, dsa_dn)
+        else:
+            kcc.samdb = samdb
+        kcc.run(dburl, lp, creds, forced_local_dsa=dsa_dn,
+                forget_local_links=opts.forget_local_links,
+                forget_intersite_links=opts.forget_intersite_links,
+                attempt_live_connections=opts.attempt_live_connections)
+
+        current, needed = kcc.my_dsa.get_rep_tables()
+
+        for dsa in kcc.my_site.dsa_table.values():
+            if dsa is kcc.my_dsa:
+                continue
+            kcc.translate_ntdsconn(dsa)
+            c, n = dsa.get_rep_tables()
+            current.update(c)
+            needed.update(n)
+
+        for name, rep_table, rep_parts in (
+                ('needed', needed, needed_parts),
+                ('current', current, current_parts)):
+            for part, nc_rep in rep_table.items():
+                edges = rep_parts.setdefault(part, [])
+                for reps_from in nc_rep.rep_repsFrom:
+                    source = guid_to_dnstr[str(reps_from.source_dsa_obj_guid)]
+                    dest = guid_to_dnstr[str(nc_rep.rep_dsa_guid)]
+                    edges.append((source, dest))
+
+        for site in kcc.site_table.values():
+            for dsa in site.dsa_table.values():
+                if dsa.is_ro():
+                    vertex_colours.append('#cc0000')
+                else:
+                    vertex_colours.append('#0000cc')
+                dot_vertices.append(dsa.dsa_dnstr)
+                if dsa.connect_table:
+                    DEBUG_FN("DSA %s %s connections:\n%s" %
+                             (dsa.dsa_dnstr, len(dsa.connect_table),
+                              [x.from_dnstr for x in
+                               dsa.connect_table.values()]))
+                for con in dsa.connect_table.values():
+                    if con.is_rodc_topology():
+                        colours.append('red')
+                    else:
+                        colours.append('blue')
+                    dot_edges.append((con.from_dnstr, dsa.dsa_dnstr))
+
+    verify_and_dot('all-dsa-connections', dot_edges, vertices=dot_vertices,
+                   label="all dsa NTDSConnections", properties=(),
+                   debug=DEBUG, verify=opts.verify,
+                   dot_file_dir=opts.dot_file_dir,
+                   directed=True, edge_colors=colours,
+                   vertex_colors=vertex_colours)
+
+    for name, rep_parts in (('needed', needed_parts),
+                            ('current', current_parts)):
+        for part, edges in rep_parts.items():
+            verify_and_dot('all-repsFrom_%s__%s' % (name, part), edges,
+                           directed=True, label=part,
+                           properties=(), debug=DEBUG, verify=opts.verify,
+                           dot_file_dir=opts.dot_file_dir)
+
+##################################################
+# samba_kcc entry point
+##################################################
+
+
+parser = optparse.OptionParser("samba_kcc [options]")
+sambaopts = options.SambaOptions(parser)
+credopts = options.CredentialsOptions(parser)
+
+parser.add_option_group(sambaopts)
+parser.add_option_group(credopts)
+parser.add_option_group(options.VersionOptions(parser))
+
+parser.add_option("--readonly", default=False,
+                  help="compute topology but do not update database",
+                  action="store_true")
+
+parser.add_option("--debug",
+                  help="debug output",
+                  action="store_true")
+
+parser.add_option("--verify",
+                  help="verify that assorted invariants are kept",
+                  action="store_true")
+
+parser.add_option("--list-verify-tests",
+                  help=("list what verification actions are available "
+                        "and do nothing else"),
+                  action="store_true")
+
+parser.add_option("--dot-file-dir", default=None,
+                  help="Write Graphviz .dot files to this directory")
+
+parser.add_option("--seed",
+                  help="random number seed",
+                  type=int, default=DEFAULT_RNG_SEED)
+
+parser.add_option("--importldif",
+                  help="import topology ldif file",
+                  type=str, metavar="<file>")
+
+parser.add_option("--exportldif",
+                  help="export topology ldif file",
+                  type=str, metavar="<file>")
+
+parser.add_option("-H", "--URL",
+                  help="LDB URL for database or target server",
+                  type=str, metavar="<URL>", dest="dburl")
+
+parser.add_option("--tmpdb",
+                  help="schemaless database file to create for ldif import",
+                  type=str, metavar="<file>")
+
+parser.add_option("--now",
+                  help=("assume current time is this ('YYYYmmddHHMMSS[tz]',"
+                        " default: system time)"),
+                  type=str, metavar="<date>")
+
+parser.add_option("--forced-local-dsa",
+                  help="run calculations assuming the DSA is this DN",
+                  type=str, metavar="<DSA>")
+
+parser.add_option("--attempt-live-connections", default=False,
+                  help="Attempt to connect to other DSAs to test links",
+                  action="store_true")
+
+parser.add_option("--list-valid-dsas", default=False,
+                  help=("Print a list of DSA dnstrs that could be"
+                        " used in --forced-local-dsa"),
+                  action="store_true")
+
+parser.add_option("--test-all-reps-from", default=False,
+                  help="Create and verify a graph of reps-from for every DSA",
+                  action="store_true")
+
+parser.add_option("--forget-local-links", default=False,
+                  help="pretend not to know the existing local topology",
+                  action="store_true")
+
+parser.add_option("--forget-intersite-links", default=False,
+                  help="pretend not to know the existing intersite topology",
+                  action="store_true")
+
+opts, args = parser.parse_args()
+
+
+if opts.list_verify_tests:
+    list_verify_tests()
+    sys.exit(0)
+
+if opts.test_all_reps_from:
+    opts.readonly = True
+
+if opts.debug:
+    logger.setLevel(logging.DEBUG)
+elif opts.readonly:
+    logger.setLevel(logging.INFO)
+else:
+    logger.setLevel(logging.WARNING)
+
+random.seed(opts.seed)
+
+if opts.now:
+    for timeformat in ("%Y%m%d%H%M%S%Z", "%Y%m%d%H%M%S"):
+        try:
+            now_tuple = time.strptime(opts.now, timeformat)
+            break
+        except ValueError:
+            pass
+    else:
+        # else happens if break doesn't --> no match
+        print("could not parse time '%s'" % (opts.now), file = sys.stderr)
+        sys.exit(1)
+    unix_now = int(time.mktime(now_tuple))
+else:
+    unix_now = int(time.time())
+
+lp = sambaopts.get_loadparm()
+# only log warnings/errors by default, unless the user has specified otherwise
+if opts.debug is None:
+    lp.set('log level', '1')
+
+creds = credopts.get_credentials(lp, fallback_machine=True)
+
+if opts.dburl is None:
+    if opts.importldif:
+        opts.dburl = opts.tmpdb
+    else:
+        opts.dburl = lp.samdb_url()
+elif opts.importldif:
+    logger.error("Don't use -H/--URL with --importldif, use --tmpdb instead")
+    sys.exit(1)
+
+# Instantiate Knowledge Consistency Checker and perform run
+kcc = KCC(unix_now, readonly=opts.readonly, verify=opts.verify,
+          debug=opts.debug, dot_file_dir=opts.dot_file_dir)
+
+if opts.exportldif:
+    rc = kcc.export_ldif(opts.dburl, lp, creds, opts.exportldif)
+    sys.exit(rc)
+
+if opts.importldif:
+    if opts.tmpdb is None or opts.tmpdb.startswith('ldap'):
+        logger.error("Specify a target temp database file with --tmpdb option")
+        sys.exit(1)
+    if os.path.exists(opts.tmpdb):
+        logger.error("The temp database file (%s) specified with --tmpdb "
+                     "already exists. We refuse to clobber it." % opts.tmpdb)
+        sys.exit(1)
+
+    rc = kcc.import_ldif(opts.tmpdb, lp, opts.importldif,
+                         forced_local_dsa=opts.forced_local_dsa)
+    if rc != 0:
+        sys.exit(rc)
+
+
+kcc.load_samdb(opts.dburl, lp, creds, force=False)
+
+if opts.test_all_reps_from:
+    test_all_reps_from(kcc, opts.dburl, lp, creds, unix_now,
+                       rng_seed=opts.seed,
+                       ldif_file=opts.importldif)
+    sys.exit()
+
+if opts.list_valid_dsas:
+    print('\n'.join(kcc.list_dsas()))
+    sys.exit()
+
+try:
+    rc = kcc.run(opts.dburl, lp, creds, opts.forced_local_dsa,
+                 opts.forget_local_links, opts.forget_intersite_links,
+                 attempt_live_connections=opts.attempt_live_connections)
+    sys.exit(rc)
+
+except GraphError as e:
+    print( e)
+    sys.exit(1)

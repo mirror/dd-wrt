@@ -1,0 +1,567 @@
+#!/usr/bin/env python
+
+bld.SAMBA_SUBSYSTEM('DSDB_MODULE_HELPERS_AUDIT',
+	            source='audit_util.c',
+	            autoproto='audit_util_proto.h',
+	            deps='DSDB_MODULE_HELPERS audit_logging')
+
+#
+# These tests require JANSSON, so we only build them if we are doing a
+# build on the AD DC (where Jansson is required).
+#
+
+bld.SAMBA_BINARY('test_audit_util',
+                 source='tests/test_audit_util.c',
+                 deps='''
+                 talloc
+                 samba-util
+                 samdb-common
+                 samdb
+                 cmocka
+                 audit_logging
+                 DSDB_MODULE_HELPERS
+                 ''',
+                 install=False)
+
+bld.SAMBA_BINARY('test_audit_log',
+                 source='tests/test_audit_log.c',
+                 deps='''
+                 talloc
+                 samba-util
+                 samdb-common
+                 samdb
+                 cmocka
+                 audit_logging
+                 DSDB_MODULE_HELPERS
+                 DSDB_MODULE_HELPERS_AUDIT
+                 ''',
+                 install=False)
+
+bld.SAMBA_BINARY('test_audit_log_errors',
+                 source='tests/test_audit_log_errors.c',
+                 deps='''
+                 talloc
+                 samba-util
+                 samdb-common
+                 samdb
+                 cmocka
+                 audit_logging
+                 DSDB_MODULE_HELPERS
+                 DSDB_MODULE_HELPERS_AUDIT
+                 ''',
+                 ldflags='''
+                     -Wl,--wrap,json_new_object
+                     -Wl,--wrap,json_add_version
+                     -Wl,--wrap,json_add_timestamp
+                 ''',
+                 install=False)
+
+bld.SAMBA_BINARY('test_group_audit',
+                 source='tests/test_group_audit.c',
+                 deps='''
+                 talloc
+                 samba-util
+                 samdb-common
+                 samdb
+                 cmocka
+                 audit_logging
+                 DSDB_MODULE_HELPERS
+                 DSDB_MODULE_HELPERS_AUDIT
+                 ''',
+                 install=False)
+
+bld.SAMBA_BINARY('test_group_audit_errors',
+                 source='tests/test_group_audit_errors.c',
+                 deps='''
+                 talloc
+                 samba-util
+                 samdb-common
+                 samdb
+                 cmocka
+                 audit_logging
+                 DSDB_MODULE_HELPERS
+                 DSDB_MODULE_HELPERS_AUDIT
+                 ''',
+                 ldflags='''
+                     -Wl,--wrap,json_new_object
+                     -Wl,--wrap,json_add_version
+                     -Wl,--wrap,json_add_timestamp
+                 ''',
+                 install=False)
+
+bld.SAMBA_MODULE('ldb_samba_dsdb',
+	source='samba_dsdb.c',
+	subsystem='ldb',
+	init_function='ldb_samba_dsdb_module_init',
+	module_init_name='ldb_init_module',
+	deps='samdb talloc ndr DSDB_MODULE_HELPERS',
+	internal_module=False,
+	)
+
+
+bld.SAMBA_MODULE('ldb_samba_secrets',
+	source='samba_secrets.c',
+	subsystem='ldb',
+	init_function='ldb_samba_secrets_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='samdb talloc ndr'
+	)
+
+
+bld.SAMBA_MODULE('ldb_objectguid',
+	source='objectguid.c',
+	subsystem='ldb',
+	init_function='ldb_objectguid_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='samdb talloc ndr DSDB_MODULE_HELPERS'
+	)
+
+
+bld.SAMBA_MODULE('ldb_repl_meta_data',
+	source='repl_meta_data.c',
+	subsystem='ldb',
+	init_function='ldb_repl_meta_data_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='samdb talloc ndr NDR_DRSUAPI NDR_DRSBLOBS ndr DSDB_MODULE_HELPERS samba-security'
+	)
+
+
+bld.SAMBA_MODULE('ldb_schema_load',
+	source='schema_load.c',
+	subsystem='ldb',
+	init_function='ldb_schema_load_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='samdb talloc DSDB_MODULE_HELPERS'
+	)
+
+
+bld.SAMBA_MODULE('ldb_schema_data',
+	source='schema_data.c',
+	subsystem='ldb',
+	init_function='ldb_schema_data_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='samdb talloc DSDB_MODULE_HELPERS'
+	)
+
+
+bld.SAMBA_MODULE('ldb_samldb',
+	source='samldb.c',
+	subsystem='ldb',
+	init_function='ldb_samldb_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samdb DSDB_MODULE_HELPERS DSDB_MODULE_HELPER_RIDALLOC'
+	)
+
+
+bld.SAMBA_MODULE('ldb_samba3sam',
+	source='samba3sam.c',
+	subsystem='ldb',
+	init_function='ldb_samba3sam_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc ldb smbpasswdparser samba-security NDR_SECURITY'
+	)
+
+
+bld.SAMBA_MODULE('ldb_samba3sid',
+	source='samba3sid.c',
+	subsystem='ldb',
+	init_function='ldb_samba3sid_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc ldb samba-security NDR_SECURITY ldbsamba DSDB_MODULE_HELPERS'
+	)
+
+
+bld.SAMBA_MODULE('ldb_simple_ldap_map',
+	source='simple_ldap_map.c',
+	subsystem='ldb',
+	init_function='ldb_simple_ldap_map_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc ldb ndr ldbsamba samdb-common'
+	)
+
+
+bld.SAMBA_MODULE('ldb_rootdse',
+	source='rootdse.c',
+	subsystem='ldb',
+	init_function='ldb_rootdse_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samdb MESSAGING samba-security DSDB_MODULE_HELPERS RPC_NDR_IRPC'
+	)
+
+
+bld.SAMBA_MODULE('ldb_password_hash',
+	source='password_hash.c',
+	subsystem='ldb',
+	init_function='ldb_password_hash_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samdb LIBCLI_AUTH NDR_DRSBLOBS authkrb5 krb5 gpgme DSDB_MODULE_HELPERS'
+	)
+
+
+bld.SAMBA_MODULE('ldb_local_password',
+	source='local_password.c',
+	subsystem='ldb',
+	init_function='ldb_local_password_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc ndr samdb'
+	)
+
+bld.SAMBA_MODULE('ldb_extended_dn_in',
+	source='extended_dn_in.c',
+	subsystem='ldb',
+	init_function='ldb_extended_dn_in_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='ldb talloc samba-util DSDB_MODULE_HELPERS'
+	)
+
+
+bld.SAMBA_MODULE('ldb_extended_dn_out',
+	source='extended_dn_out.c',
+	init_function='ldb_extended_dn_out_module_init',
+	module_init_name='ldb_init_module',
+	subsystem='ldb',
+	deps='talloc ndr samba-util samdb DSDB_MODULE_HELPERS',
+	internal_module=False,
+	)
+
+
+bld.SAMBA_MODULE('ldb_extended_dn_store',
+	source='extended_dn_store.c',
+	subsystem='ldb',
+	init_function='ldb_extended_dn_store_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samba-util samdb DSDB_MODULE_HELPERS'
+	)
+
+
+bld.SAMBA_MODULE('ldb_show_deleted',
+	source='show_deleted.c',
+	subsystem='ldb',
+	init_function='ldb_show_deleted_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samba-util DSDB_MODULE_HELPERS'
+	)
+
+
+bld.SAMBA_MODULE('ldb_partition',
+	source='partition.c partition_init.c partition_metadata.c',
+	autoproto='partition_proto.h',
+	subsystem='ldb',
+	init_function='ldb_partition_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samdb DSDB_MODULE_HELPERS'
+	)
+
+
+bld.SAMBA_MODULE('ldb_new_partition',
+	source='new_partition.c',
+	subsystem='ldb',
+	init_function='ldb_new_partition_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samdb DSDB_MODULE_HELPERS'
+	)
+
+
+bld.SAMBA_MODULE('ldb_update_keytab',
+	source='update_keytab.c',
+	subsystem='ldb',
+	init_function='ldb_update_keytab_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samba-credentials ldb com_err KERBEROS_SRV_KEYTAB SECRETS DSDB_MODULE_HELPERS'
+	)
+
+bld.SAMBA_MODULE('ldb_secrets_tdb_sync',
+	source='secrets_tdb_sync.c',
+	subsystem='ldb',
+	init_function='ldb_secrets_tdb_sync_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc secrets3 DSDB_MODULE_HELPERS dbwrap gssapi'
+	)
+
+
+bld.SAMBA_MODULE('ldb_objectclass',
+	source='objectclass.c',
+	subsystem='ldb',
+	init_function='ldb_objectclass_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samdb DSDB_MODULE_HELPERS samba-util'
+	)
+
+
+bld.SAMBA_MODULE('ldb_objectclass_attrs',
+	source='objectclass_attrs.c',
+	subsystem='ldb',
+	init_function='ldb_objectclass_attrs_module_init',
+	module_init_name='ldb_init_module',
+	deps='talloc samdb DSDB_MODULE_HELPERS samba-util',
+	internal_module=False,
+	)
+
+
+bld.SAMBA_MODULE('ldb_subtree_rename',
+	source='subtree_rename.c',
+	subsystem='ldb',
+	init_function='ldb_subtree_rename_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samba-util ldb samdb-common DSDB_MODULE_HELPERS'
+	)
+
+
+bld.SAMBA_MODULE('ldb_subtree_delete',
+	source='subtree_delete.c',
+	subsystem='ldb',
+	init_function='ldb_subtree_delete_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samba-util DSDB_MODULE_HELPERS'
+	)
+
+
+bld.SAMBA_MODULE('ldb_linked_attributes',
+	source='linked_attributes.c',
+	subsystem='ldb',
+	init_function='ldb_linked_attributes_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samdb DSDB_MODULE_HELPERS'
+	)
+
+
+bld.SAMBA_MODULE('ldb_ranged_results',
+	source='ranged_results.c',
+	subsystem='ldb',
+	init_function='ldb_ranged_results_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samba-util ldb'
+	)
+
+
+bld.SAMBA_MODULE('ldb_anr',
+	source='anr.c',
+	subsystem='ldb',
+	init_function='ldb_anr_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samba-util samdb'
+	)
+
+
+bld.SAMBA_MODULE('ldb_instancetype',
+	source='instancetype.c',
+	subsystem='ldb',
+	init_function='ldb_instancetype_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samba-util samdb DSDB_MODULE_HELPERS'
+	)
+
+
+bld.SAMBA_MODULE('ldb_operational',
+	source='operational.c',
+	subsystem='ldb',
+	init_function='ldb_operational_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samba-util samdb-common DSDB_MODULE_HELPERS samdb'
+	)
+
+
+bld.SAMBA_MODULE('ldb_descriptor',
+	source='descriptor.c',
+	subsystem='ldb',
+	init_function='ldb_descriptor_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samba-security NDR_SECURITY samdb DSDB_MODULE_HELPERS'
+	)
+
+
+bld.SAMBA_MODULE('ldb_resolve_oids',
+	source='resolve_oids.c',
+	subsystem='ldb',
+	init_function='ldb_resolve_oids_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='samdb talloc ndr'
+	)
+
+
+bld.SAMBA_MODULE('ldb_acl',
+	source='acl.c',
+	subsystem='ldb',
+	init_function='ldb_acl_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samba-util samba-security samdb DSDB_MODULE_HELPERS krb5samba'
+	)
+
+
+bld.SAMBA_MODULE('ldb_lazy_commit',
+	source='lazy_commit.c',
+	subsystem='ldb',
+	internal_module=False,
+	module_init_name='ldb_init_module',
+	init_function='ldb_lazy_commit_module_init',
+	deps='samdb DSDB_MODULE_HELPERS'
+	)
+
+bld.SAMBA_MODULE('ldb_aclread',
+	source='acl_read.c',
+	subsystem='ldb',
+	init_function='ldb_aclread_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samba-security samdb DSDB_MODULE_HELPERS',
+	)
+
+bld.SAMBA_MODULE('ldb_simple_dn',
+	source='simple_dn.c',
+	subsystem='ldb',
+	init_function='ldb_simple_dn_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc DSDB_MODULE_HELPERS'
+	)
+
+bld.SAMBA_MODULE('ldb_dirsync',
+	source='dirsync.c',
+	subsystem='ldb',
+	init_function='ldb_dirsync_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samba-security samdb DSDB_MODULE_HELPERS'
+	)
+
+bld.SAMBA_MODULE('ldb_dsdb_notification',
+	source='dsdb_notification.c',
+	subsystem='ldb',
+	init_function='ldb_dsdb_notification_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samba-security samdb DSDB_MODULE_HELPERS'
+	)
+
+bld.SAMBA_MODULE('ldb_dns_notify',
+	source='dns_notify.c',
+	subsystem='ldb',
+	init_function='ldb_dns_notify_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samdb DSDB_MODULE_HELPERS MESSAGING RPC_NDR_IRPC'
+	)
+
+bld.SAMBA_MODULE('tombstone_reanimate',
+	source='tombstone_reanimate.c',
+	subsystem='ldb',
+	init_function='ldb_tombstone_reanimate_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='talloc samba-util DSDB_MODULE_HELPERS'
+	)
+
+bld.SAMBA_MODULE('ldb_vlv',
+	'vlv_pagination.c',
+	init_function='ldb_vlv_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='samdb-common',
+	subsystem='ldb'
+	)
+
+bld.SAMBA_MODULE('ldb_paged_results',
+	'paged_results.c',
+	init_function='ldb_dsdb_paged_results_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='samdb-common',
+	subsystem='ldb'
+	)
+
+bld.SAMBA_MODULE('ldb_unique_object_sids',
+	'unique_object_sids.c',
+	init_function='ldb_unique_object_sids_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='samdb-common DSDB_MODULE_HELPERS',
+	subsystem='ldb'
+	)
+
+bld.SAMBA_MODULE('ldb_encrypted_secrets',
+	source='encrypted_secrets.c',
+	subsystem='ldb',
+	init_function='ldb_encrypted_secrets_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='''
+            talloc
+            samba-util
+            samdb-common
+            DSDB_MODULE_HELPERS
+            samdb
+            gnutls
+        '''
+	)
+
+bld.SAMBA_MODULE('ldb_audit_log',
+	source='audit_log.c',
+	subsystem='ldb',
+	init_function='ldb_audit_log_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='''
+            audit_logging
+            talloc
+            samba-util
+            samdb-common
+            DSDB_MODULE_HELPERS_AUDIT
+            samdb
+        '''
+	)
+
+bld.SAMBA_MODULE('ldb_group_audit_log',
+	source='group_audit.c',
+	subsystem='ldb',
+	init_function='ldb_group_audit_log_module_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='''
+            audit_logging
+            talloc
+            samba-util
+            samdb-common
+            DSDB_MODULE_HELPERS_AUDIT
+            samdb
+        '''
+	)
+
+
+bld.SAMBA_MODULE('count_attrs',
+	'count_attrs.c',
+	init_function='ldb_count_attrs_init',
+	module_init_name='ldb_init_module',
+	internal_module=False,
+	deps='samdb-common DSDB_MODULE_HELPERS',
+	subsystem='ldb'
+)

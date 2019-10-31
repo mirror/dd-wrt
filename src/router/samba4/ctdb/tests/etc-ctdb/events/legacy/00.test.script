@@ -1,0 +1,30 @@
+#!/bin/sh
+# event script for 'make test'
+
+. "${CTDB_BASE}/functions"
+
+load_script_options
+
+ctdb_check_args "$@"
+
+event="$1"
+shift
+
+case "$event" in
+monitor)
+	if [ "$CTDB_RUN_TIMEOUT_MONITOR" = "yes" ] ; then
+		timeout=9999
+		echo "Sleeping for ${timeout} seconds..."
+		sleep $timeout
+	fi
+	;;
+
+startup)
+	ifaces=$(ctdb ifaces -X | tail -n +2 | cut -d '|' -f2)
+	for i in $ifaces; do
+		ctdb setifacelink "$i" up
+	done
+	;;
+esac
+
+echo "${event} event${*:+ for }$*"

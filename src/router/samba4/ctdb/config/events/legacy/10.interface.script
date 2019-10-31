@@ -1,0 +1,257 @@
+#!/bin/sh
+
+#################################
+# interface event script for ctdb
+# this adds/removes IPs from your 
+# public interface
+
+[ -n "$CTDB_BASE" ] || \
+    CTDB_BASE=$(d=$(dirname "$0") ; cd -P "$d" ; dirname "$PWD")
+
+. "${CTDB_BASE}/functions"
+
+load_script_options
+
+ctdb_public_addresses="${CTDB_BASE}/public_addresses"
+
+if [ ! -f "$ctdb_public_addresses" ]; then
+	if [ "$1" = "init" ] ; then
+		echo "No public addresses file found"
+	fi
+	exit 0
+fi
+
+# This sets $all_interfaces as a side-effect.
+get_all_interfaces ()
+{
+    # Get all the interfaces listed in the public_addresses file
+    all_interfaces=$(sed -e 's/^[^\t ]*[\t ]*//' \
+			 -e 's/,/ /g' \
+			 -e 's/[\t ]*$//' "$ctdb_public_addresses")
+
+    # Get the interfaces for which CTDB has public IPs configured.
+    # That is, for all but the 1st line, get the 1st field.
+    ctdb_ifaces=$($CTDB -X ifaces | sed -e '1d' -e 's@^|@@' -e 's@|.*@@')
+
+    # Add $ctdb_ifaces and make $all_interfaces unique
+    # Use word splitting to squash whitespace
+    # shellcheck disable=SC2086
+    all_interfaces=$(echo $all_interfaces $ctdb_ifaces | tr ' ' '\n' | sort -u)
+}
+
+monitor_interfaces()
+{
+	get_all_interfaces
+
+	down_interfaces_found=false
+	up_interfaces_found=false
+
+	# Note that this loop must not exit early.  It must process
+	# all interfaces so that the correct state for each interface
+	# is set in CTDB using setifacelink.
+	for _iface in $all_interfaces ; do
+		if interface_monitor "$_iface" ; then
+			up_interfaces_found=true
+			$CTDB setifacelink "$_iface" up >/dev/null 2>&1
+		else
+			down_interfaces_found=true
+			$CTDB setifacelink "$_iface" down >/dev/null 2>&1
+		fi
+	done
+
+	if ! $down_interfaces_found ; then
+		return 0
+	fi
+
+	if ! $up_interfaces_found ; then
+		return 1
+	fi
+
+	if [ "$CTDB_PARTIALLY_ONLINE_INTERFACES" != "yes" ]; then
+		return 1
+	fi
+
+	return 0
+}
+
+# Sets: iface, ip, maskbits
+get_iface_ip_maskbits ()
+{
+    _iface_in="$1"
+    ip="$2"
+    _maskbits_in="$3"
+
+    # Intentional word splitting here
+    # shellcheck disable=SC2046
+    set -- $(ip_maskbits_iface "$ip")
+    if [ -n "$1" ] ; then
+	maskbits="$1"
+	iface="$2"
+
+	if [ "$iface" != "$_iface_in" ] ; then
+	    printf \
+		'WARNING: Public IP %s hosted on interface %s but VNN says %s\n' \
+		"$ip" "$iface" "$_iface_in"
+	fi
+	if [ "$maskbits" != "$_maskbits_in" ] ; then
+	    printf \
+		'WARNING: Public IP %s has %s bit netmask but VNN says %s\n' \
+		    "$ip" "$maskbits" "$_maskbits_in"
+	fi
+    else
+	die "ERROR: Unable to determine interface for IP ${ip}"
+    fi
+}
+
+ip_block ()
+{
+	_ip="$1"
+	_iface="$2"
+
+	case "$_ip" in
+	*:*) _family="inet6" ;;
+	*)   _family="inet"  ;;
+	esac
+
+	# Extra delete copes with previously killed script
+	iptables_wrapper "$_family" \
+			 -D INPUT -i "$_iface" -d "$_ip" -j DROP 2>/dev/null
+	iptables_wrapper "$_family" \
+			 -I INPUT -i "$_iface" -d "$_ip" -j DROP
+}
+
+ip_unblock ()
+{
+	_ip="$1"
+	_iface="$2"
+
+	case "$_ip" in
+	*:*) _family="inet6" ;;
+	*)   _family="inet"  ;;
+	esac
+
+	iptables_wrapper "$_family" \
+			 -D INPUT -i "$_iface" -d "$_ip" -j DROP 2>/dev/null
+}
+
+ctdb_check_args "$@"
+
+case "$1" in
+init)
+	# make sure that we only respond to ARP messages from the NIC where
+	# a particular ip address is associated.
+	get_proc sys/net/ipv4/conf/all/arp_filter >/dev/null 2>&1 && {
+	    set_proc sys/net/ipv4/conf/all/arp_filter 1
+	}
+
+	_promote="sys/net/ipv4/conf/all/promote_secondaries"
+	get_proc "$_promote" >/dev/null 2>&1 || \
+	    die "Public IPs only supported if promote_secondaries is available"
+
+	# make sure we drop any ips that might still be held if
+	# previous instance of ctdb got killed with -9 or similar
+	drop_all_public_ips
+	;;
+
+startup)
+	monitor_interfaces
+	;;
+
+takeip)
+	iface=$2
+	ip=$3
+	maskbits=$4
+
+	add_ip_to_iface "$iface" "$ip" "$maskbits" || {
+		exit 1;
+	}
+
+	# In case a previous "releaseip" for this IP was killed...
+	ip_unblock "$ip" "$iface"
+
+	flush_route_cache
+	;;
+
+releaseip)
+	# releasing an IP is a bit more complex than it seems. Once the IP
+	# is released, any open tcp connections to that IP on this host will end
+	# up being stuck. Some of them (such as NFS connections) will be unkillable
+	# so we need to use the killtcp ctdb function to kill them off. We also
+	# need to make sure that no new connections get established while we are
+	# doing this! So what we do is this:
+	# 1) firewall this IP, so no new external packets arrive for it
+	# 2) find existing connections, and kill them
+	# 3) remove the IP from the interface
+	# 4) remove the firewall rule
+	shift
+	get_iface_ip_maskbits "$@"
+
+	ip_block "$ip" "$iface"
+
+	kill_tcp_connections "$iface" "$ip"
+
+	delete_ip_from_iface "$iface" "$ip" "$maskbits" || {
+		ip_unblock "$ip" "$iface"
+		exit 1
+	}
+
+	ip_unblock "$ip" "$iface"
+
+	flush_route_cache
+	;;
+
+updateip)
+	# moving an IP is a bit more complex than it seems.
+	# First we drop all traffic on the old interface.
+	# Then we try to add the ip to the new interface and before
+	# we finally remove it from the old interface.
+	#
+	# 1) firewall this IP, so no new external packets arrive for it
+	# 2) remove the IP from the old interface (and new interface, to be sure)
+	# 3) add the IP to the new interface
+	# 4) remove the firewall rule
+	# 5) use ctdb gratarp to propagate the new mac address
+	# 6) use netstat -tn to find existing connections, and tickle them
+	_oiface=$2
+	niface=$3
+	_ip=$4
+	_maskbits=$5
+
+	get_iface_ip_maskbits "$_oiface" "$_ip" "$_maskbits"
+	oiface="$iface"
+
+	# Could check maskbits too.  However, that should never change
+	# so we want to notice if it does.
+	if [ "$oiface" = "$niface" ] ; then
+		echo "Redundant \"updateip\" - ${ip} already on ${niface}"
+		exit 0
+	fi
+
+	ip_block "$ip" "$oiface"
+
+	delete_ip_from_iface "$oiface" "$ip" "$maskbits" 2>/dev/null
+	delete_ip_from_iface "$niface" "$ip" "$maskbits" 2>/dev/null
+
+	add_ip_to_iface "$niface" "$ip" "$maskbits" || {
+		ip_unblock "$ip" "$oiface"
+		exit 1
+	}
+
+	ip_unblock "$ip" "$oiface"
+
+	flush_route_cache
+
+	# propagate the new mac address
+	$CTDB gratarp "$ip" "$niface"
+
+	# tickle all existing connections, so that dropped packets
+	# are retransmited and the tcp streams work
+	tickle_tcp_connections "$ip"
+	;;
+
+monitor)
+	monitor_interfaces || exit 1
+	;;
+esac
+
+exit 0

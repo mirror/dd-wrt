@@ -1,0 +1,124 @@
+#!/bin/sh
+# script to manage the lvs ip multiplexer for a single public address cluster
+
+[ -n "$CTDB_BASE" ] || \
+    CTDB_BASE=$(d=$(dirname "$0") ; cd -P "$d" ; dirname "$PWD")
+
+. "${CTDB_BASE}/functions"
+
+load_script_options
+
+[ -n "$CTDB_LVS_NODES" ] || exit 0
+export CTDB_LVS_NODES
+
+# type is commonly supported and more portable than which(1)
+# shellcheck disable=SC2039
+if ! type ipvsadm >/dev/null 2>&1 ; then
+	echo "LVS configured but ipvsadm not found"
+	exit 0
+fi
+
+
+lvs_slave_only ()
+{
+	_ip_address=$(ctdb_get_ip_address)
+	awk -v my_ip="$_ip_address" \
+	    '$1 == my_ip { if ($2 ~ "slave-only") { exit 0 } else { exit 1 } }' \
+	    "$CTDB_LVS_NODES"
+}
+
+lvs_check_config ()
+{
+	[ -r "$CTDB_LVS_NODES" ] || \
+		die "error: CTDB_LVS_NODES=${CTDB_LVS_NODES} unreadable"
+	[ -n "$CTDB_LVS_PUBLIC_IP" ] || \
+		die "Invalid configuration: CTDB_LVS_PUBLIC_IP not set"
+	if ! lvs_slave_only ; then
+		[ -n "$CTDB_LVS_PUBLIC_IFACE" ] || \
+			die "Invalid configuration: CTDB_LVS_PUBLIC_IFACE not set"
+	fi
+}
+
+case "$1" in
+setup)
+	lvs_check_config
+	;;
+startup)
+	lvs_check_config
+
+	ipvsadm -D -t "$CTDB_LVS_PUBLIC_IP" >/dev/null 2>&1
+	ipvsadm -D -u "$CTDB_LVS_PUBLIC_IP" >/dev/null 2>&1
+
+	ip addr add "${CTDB_LVS_PUBLIC_IP}/32" dev lo scope host
+
+	# do not respond to ARPs that are for ip addresses with scope 'host'
+	set_proc_maybe sys/net/ipv4/conf/all/arp_ignore 3
+	# do not send out arp requests from loopback addresses
+	set_proc_maybe sys/net/ipv4/conf/all/arp_announce 2
+	;;
+
+shutdown)
+	lvs_check_config
+
+	ipvsadm -D -t "$CTDB_LVS_PUBLIC_IP"
+	ipvsadm -D -u "$CTDB_LVS_PUBLIC_IP"
+
+	ip addr del "${CTDB_LVS_PUBLIC_IP}/32" dev lo >/dev/null 2>&1
+
+	flush_route_cache
+	;;
+
+ipreallocated)
+	lvs_check_config
+
+	# Kill connections
+	ipvsadm -D -t "$CTDB_LVS_PUBLIC_IP" >/dev/null 2>&1
+	ipvsadm -D -u "$CTDB_LVS_PUBLIC_IP" >/dev/null 2>&1
+	kill_tcp_connections_local_only \
+		"$CTDB_LVS_PUBLIC_IFACE" "$CTDB_LVS_PUBLIC_IP"
+
+	pnn=$(ctdb_get_pnn)
+	lvsmaster=$("${CTDB_HELPER_BINDIR}/ctdb_lvs" master)
+	if [ "$pnn" != "$lvsmaster" ] ; then
+	    # This node is not the LVS master so change the IP address
+	    # to have scope "host" so this node won't respond to ARPs
+	    ip addr del "${CTDB_LVS_PUBLIC_IP}/32" dev lo >/dev/null 2>&1
+	    ip addr add "${CTDB_LVS_PUBLIC_IP}/32" dev lo scope host
+	    exit 0
+	fi
+
+	# Change the scope so this node starts responding to ARPs
+	ip addr del "${CTDB_LVS_PUBLIC_IP}/32" dev lo >/dev/null 2>&1
+	ip addr add "${CTDB_LVS_PUBLIC_IP}/32" dev lo >/dev/null 2>&1
+
+	ipvsadm -A -t "$CTDB_LVS_PUBLIC_IP" -p 1999999 -s lc
+	ipvsadm -A -u "$CTDB_LVS_PUBLIC_IP" -p 1999999 -s lc
+
+	# Add all nodes (except this node) as LVS servers
+	"${CTDB_HELPER_BINDIR}/ctdb_lvs" list |
+	awk -v pnn="$pnn" '$1 != pnn { print $2 }' |
+	while read ip ; do
+		ipvsadm -a -t "$CTDB_LVS_PUBLIC_IP" -r "$ip" -g
+		ipvsadm -a -u "$CTDB_LVS_PUBLIC_IP" -r "$ip" -g
+	done
+
+	# Add localhost too...
+	ipvsadm -a -t "$CTDB_LVS_PUBLIC_IP" -r 127.0.0.1
+	ipvsadm -a -u "$CTDB_LVS_PUBLIC_IP" -r 127.0.0.1
+
+	$CTDB gratarp \
+	     "$CTDB_LVS_PUBLIC_IP" "$CTDB_LVS_PUBLIC_IFACE" >/dev/null 2>&1
+
+	flush_route_cache
+	;;
+
+monitor)
+	lvs_check_config
+
+	if [ -n "$CTDB_LVS_PUBLIC_IFACE" ] ; then
+		interface_monitor "$CTDB_LVS_PUBLIC_IFACE" || exit 1
+	fi
+	;;
+esac
+
+exit 0

@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+
+from waflib import Options
+
+def configure(conf):
+    conf.CHECK_FUNCS('longjmp siglongjmp')
+
+    if conf.CHECK_CMOCKA():
+        conf.define('USING_SYSTEM_CMOCKA', 1)
+
+def build(bld):
+    if bld.CONFIG_SET('USING_SYSTEM_CMOCKA'):
+        return
+
+    extra_libs=''
+
+    # Link to librt if needed for clock_gettime()
+    if bld.CONFIG_SET('HAVE_LIBRT'): extra_libs += ' rt'
+
+    bld.SAMBA_LIBRARY('cmocka',
+                      source='cmocka.c',
+                      deps=extra_libs,
+                      allow_warnings=True,
+                      private_library=True)

@@ -1,0 +1,469 @@
+#!/usr/bin/env python
+
+bld.RECURSE('../../librpc/idl')
+bld.RECURSE('../../librpc/tools')
+bld.RECURSE('idl')
+
+
+bld.SAMBA_SUBSYSTEM('NDR_WINSTATION',
+	source='gen_ndr/ndr_winstation.c',
+	public_deps='ndr'
+	)
+
+
+bld.SAMBA_SUBSYSTEM('NDR_IRPC',
+	source='gen_ndr/ndr_irpc.c',
+	public_deps='ndr NDR_SECURITY ndr_nbt'
+	)
+
+
+bld.SAMBA_SUBSYSTEM('NDR_SASL_HELPERS',
+	source='gen_ndr/ndr_sasl_helpers.c',
+	public_deps='ndr'
+	)
+
+
+
+bld.SAMBA_SUBSYSTEM('NDR_WINSIF',
+	source='gen_ndr/ndr_winsif.c',
+	public_deps='ndr'
+	)
+
+
+bld.SAMBA_SUBSYSTEM('NDR_OPENDB',
+	source='gen_ndr/ndr_opendb.c',
+	public_deps='ndr'
+	)
+
+
+bld.SAMBA_SUBSYSTEM('NDR_NTP_SIGND',
+	source='gen_ndr/ndr_ntp_signd.c',
+	public_deps='ndr'
+	)
+
+
+bld.SAMBA_SUBSYSTEM('NDR_WINSREPL',
+	source='gen_ndr/ndr_winsrepl.c',
+	public_deps='ndr ndr_nbt'
+	)
+
+
+# create a grouping library to consolidate our samba4 specific NDR code
+bld.SAMBA_LIBRARY('ndr-samba4',
+	source=[],
+	deps='NDR_WINBIND NDR_IRPC NDR_NFS4ACL NDR_OPENDB ndr-table',
+	private_library=True,
+	grouping_library=True
+	)
+
+# a grouping library for RPC_NDR subsystems that may be used by more than one target
+bld.SAMBA_LIBRARY('dcerpc-samba4',
+	source=[],
+	deps='RPC_NDR_WINBIND',
+	private_library=True,
+	grouping_library=True
+	)
+
+
+bld.SAMBA_PIDL_TABLES('GEN_NDR_TABLES', 'gen_ndr/tables.c')
+
+bld.SAMBA_SUBSYSTEM('ndr-table',
+	source='../../librpc/ndr/ndr_table.c gen_ndr/tables.c',
+        public_deps='''
+                    ndr-standard
+                    NDR_AUDIOSRV
+                    NDR_DSBACKUP
+                    NDR_EFS
+                    NDR_DRSUAPI
+                    NDR_POLICYAGENT
+                    NDR_UNIXINFO
+                    NDR_SPOOLSS
+                    NDR_EPMAPPER
+                    NDR_DBGIDL
+                    NDR_DSSETUP
+                    NDR_MSGSVC
+                    NDR_WINSIF
+                    NDR_MGMT
+                    NDR_OXIDRESOLVER
+                    NDR_REMACT
+                    NDR_WZCSVC
+                    NDR_BROWSER
+                    NDR_W32TIME
+                    NDR_SCERPC
+                    NDR_TRKWKS
+                    NDR_KEYSVC
+                    ndr-krb5pac
+                    NDR_SCHANNEL
+                    NDR_ROT
+                    NDR_DRSBLOBS
+                    ndr_nbt
+                    NDR_WINSREPL
+                    NDR_SECURITY
+                    NDR_DNSSERVER
+                    NDR_WINSTATION
+                    NDR_IRPC
+                    NDR_OPENDB
+                    NDR_SASL_HELPERS
+                    NDR_NOTIFY
+                    NDR_WINBIND
+                    NDR_FRSRPC
+                    NDR_FRSAPI
+                    NDR_FRSTRANS
+                    NDR_NTP_SIGND
+                    NDR_DCOM
+                    NDR_WMI
+                    NDR_NAMED_PIPE_AUTH
+                    NDR_NTLMSSP
+                    NDR_DFSBLOBS
+                    NDR_DNSP
+                    NDR_NTPRINTING
+                    NDR_DNS
+                    NDR_BACKUPKEY
+                    NDR_PREG
+                    NDR_BKUPBLOBS
+                    NDR_FSCC
+                    NDR_CLUSAPI
+                    NDR_WINSPOOL
+                    NDR_CAB
+                    ''',
+        depends_on='GEN_NDR_TABLES'
+        )
+
+
+bld.SAMBA_SUBSYSTEM('RPC_NDR_IRPC',
+	source='gen_ndr/ndr_irpc_c.c',
+	public_deps='dcerpc NDR_IRPC'
+	)
+
+bld.SAMBA_LIBRARY('dcerpc-samr',
+	source='',
+	pc_files='dcerpc_samr.pc',
+	vnum='0.0.1',
+	public_deps='dcerpc ndr-standard RPC_NDR_SAMR',
+	public_headers='../../librpc/gen_ndr/ndr_samr_c.h',
+	header_path='gen_ndr'
+	)
+
+
+bld.SAMBA_LIBRARY('dcerpc',
+	source='''rpc/dcerpc.c rpc/dcerpc_auth.c rpc/dcerpc_schannel.c
+	rpc/dcerpc_util.c rpc/dcerpc_smb.c rpc/dcerpc_sock.c
+	rpc/dcerpc_roh_channel_in.c rpc/dcerpc_roh_channel_out.c rpc/dcerpc_roh.c
+	rpc/dcerpc_connect.c rpc/dcerpc_secondary.c''',
+	pc_files='dcerpc.pc',
+	deps='samba_socket LIBCLI_RESOLVE LIBCLI_SMB LIBCLI_SMB2 ndr NDR_DCERPC RPC_NDR_EPMAPPER NDR_SCHANNEL RPC_NDR_NETLOGON RPC_NDR_MGMT gensec LIBCLI_AUTH smbclient-raw LP_RESOLVE tevent-util dcerpc-binding param_options http',
+	autoproto='rpc/dcerpc_proto.h',
+	public_deps='samba-credentials tevent talloc',
+	public_headers='''rpc/dcerpc.h''',
+	# It's very important to keep this form of construction
+	# it force the sambawaf extension to put everything that match the first element
+	# (*gen_ndr*) into the dir named by the second element (gen_ndr).
+	# If we just put header_path = 'gen_ndr' then all the public_headers will go
+	# in 'gen_ndr' and for dcerpc.h (at least) it will cause a problem as
+	# we have already a dcerpc.h installed by librpc/wscript_build
+	# and one will overright the other which is not what we expect.
+	header_path=[ ('*gen_ndr*', 'gen_ndr') ],
+	vnum='0.0.1'
+	)
+
+gen_cflags = ''
+if bld.CONFIG_SET('HAVE_WNO_UNUSED_FUNCTION'):
+    gen_cflags = '-Wno-unused-function'
+
+pyrpc_util = bld.pyembed_libname('pyrpc_util')
+pytalloc_util = bld.pyembed_libname('pytalloc-util')
+pyparam_util = bld.pyembed_libname('pyparam_util')
+
+bld.SAMBA_SUBSYSTEM(pyrpc_util,
+        source='rpc/pyrpc_util.c',
+        public_deps='%s %s dcerpc MESSAGING' % (pytalloc_util, pyparam_util),
+        pyext=True,
+        enabled=bld.PYTHON_BUILD_IS_ENABLED(),
+        )
+
+bld.SAMBA_PYTHON('python_dcerpc',
+        source='rpc/pyrpc.c',
+        public_deps='LIBCLI_SMB samba-util samba-hostconfig dcerpc-samr RPC_NDR_LSA DYNCONFIG %s gensec' % pyrpc_util,
+        realname='samba/dcerpc/base.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_dcerpc_misc',
+        source='../../librpc/gen_ndr/py_misc.c',
+        deps='%s %s ndr-krb5pac' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/misc.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_auth',
+        source='../../librpc/gen_ndr/py_auth.c',
+        deps='NDR_AUTH %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/auth.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_dcerpc_security',
+        source='../../librpc/gen_ndr/py_security.c',
+        deps='%s %s NDR_SECURITY' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/security.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_lsa',
+        source='../../librpc/gen_ndr/py_lsa.c',
+        deps='RPC_NDR_LSA %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/lsa.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_krb5pac',
+        source='../../librpc/gen_ndr/py_krb5pac.c',
+        deps='ndr-krb5pac %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/krb5pac.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_netlogon',
+        source='../../librpc/gen_ndr/py_netlogon.c',
+        deps='RPC_NDR_NETLOGON %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/netlogon.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_samr',
+        source='../../librpc/gen_ndr/py_samr.c',
+        deps='dcerpc-samr %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/samr.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_spoolss',
+        source='../../librpc/gen_ndr/py_spoolss.c',
+        deps='RPC_NDR_SPOOLSS %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/spoolss.so'
+        )
+
+bld.SAMBA_PYTHON('python_winspool',
+        source='../../librpc/gen_ndr/py_winspool.c',
+        deps='RPC_NDR_WINSPOOL %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/winspool.so'
+        )
+
+bld.SAMBA_PYTHON('python_witness',
+        source='../../librpc/gen_ndr/py_witness.c',
+        deps='RPC_NDR_WITNESS %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/witness.so'
+        )
+
+bld.SAMBA_PYTHON('python_dcerpc_nbt',
+        source='../../librpc/gen_ndr/py_nbt.c',
+        deps='ndr_nbt %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/nbt.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_dcerpc_drsblobs',
+        source='../../librpc/gen_ndr/py_drsblobs.c',
+        deps='%s %s NDR_SECURITY NDR_DRSBLOBS' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/drsblobs.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_dcerpc_ntlmssp',
+        source='../../librpc/gen_ndr/py_ntlmssp.c',
+        deps='%s %s NDR_NTLMSSP' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/ntlmssp.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_srvsvc',
+    source='../../librpc/gen_ndr/py_srvsvc.c',
+    deps='RPC_NDR_SRVSVC %s %s' % (pytalloc_util, pyrpc_util),
+    realname='samba/dcerpc/srvsvc.so',
+    cflags_end=gen_cflags
+    )
+
+bld.SAMBA_PYTHON('python_echo',
+        source='../../librpc/gen_ndr/py_echo.c',
+        deps='RPC_NDR_ECHO %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/echo.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_dns',
+        source='../../librpc/gen_ndr/py_dns.c',
+        deps='NDR_DNS %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/dns.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_winreg',
+        source='../../librpc/gen_ndr/py_winreg.c',
+        deps='RPC_NDR_WINREG %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/winreg.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_preg',
+        source='../../librpc/gen_ndr/py_preg.c',
+        deps='NDR_PREG %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/preg.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_initshutdown',
+        source='../../librpc/gen_ndr/py_initshutdown.c',
+        deps='RPC_NDR_INITSHUTDOWN %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/initshutdown.so',
+        cflags_end=gen_cflags
+        )
+
+
+bld.SAMBA_PYTHON('python_epmapper',
+        source='../../librpc/gen_ndr/py_epmapper.c',
+        deps='dcerpc %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/epmapper.so',
+        cflags_end=gen_cflags
+        )
+
+
+bld.SAMBA_PYTHON('python_mgmt',
+        source='../../librpc/gen_ndr/py_mgmt.c',
+        deps='dcerpc %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/mgmt.so',
+        cflags_end=gen_cflags
+        )
+
+
+bld.SAMBA_PYTHON('python_atsvc',
+        source='../../librpc/gen_ndr/py_atsvc.c',
+        deps='RPC_NDR_ATSVC %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/atsvc.so',
+        cflags_end=gen_cflags
+        )
+
+
+bld.SAMBA_PYTHON('python_svcctl',
+        source='../../librpc/gen_ndr/py_svcctl.c',
+        deps='RPC_NDR_SVCCTL %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/svcctl.so',
+        cflags_end=gen_cflags
+        )
+
+
+bld.SAMBA_PYTHON('python_wkssvc',
+        source='../../librpc/gen_ndr/py_wkssvc.c',
+        deps='RPC_NDR_WKSSVC %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/wkssvc.so',
+        cflags_end=gen_cflags
+        )
+
+
+bld.SAMBA_PYTHON('python_dfs',
+        source='../../librpc/gen_ndr/py_dfs.c',
+        deps='RPC_NDR_DFS %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/dfs.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_dcerpc_dcerpc',
+        source='../../librpc/gen_ndr/py_dcerpc.c',
+        deps='NDR_DCERPC %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/dcerpc.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_unixinfo',
+        source='../../librpc/gen_ndr/py_unixinfo.c',
+        deps='RPC_NDR_UNIXINFO %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/unixinfo.so',
+        cflags_end=gen_cflags
+        )
+
+
+bld.SAMBA_PYTHON('python_irpc',
+        source='gen_ndr/py_irpc.c',
+        deps='RPC_NDR_IRPC %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/irpc.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_server_id',
+        source='../../librpc/gen_ndr/py_server_id.c',
+        deps='NDR_SERVER_ID %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/server_id.so',
+        cflags_end=gen_cflags
+        )
+
+python_netlogon = 'python_netlogon'
+bld.SAMBA_PYTHON('python_winbind',
+        source='../../librpc/gen_ndr/py_winbind.c',
+        deps='RPC_NDR_WINBIND %s %s %s' % (pytalloc_util, pyrpc_util, python_netlogon),
+        realname='samba/dcerpc/winbind.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_drsuapi',
+        source='../../librpc/gen_ndr/py_drsuapi.c',
+        deps='RPC_NDR_DRSUAPI %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/drsuapi.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_dcerpc_dnsp',
+        source='../../librpc/gen_ndr/py_dnsp.c',
+        deps='%s %s NDR_SECURITY NDR_DNSP' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/dnsp.so',
+        cflags_end=gen_cflags
+        )
+
+
+bld.SAMBA_PYTHON('python_dcerpc_xattr',
+        source='../../librpc/gen_ndr/py_xattr.c',
+        deps='%s %s NDR_XATTR' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/xattr.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_dcerpc_idmap',
+        source='../../librpc/gen_ndr/py_idmap.c',
+        deps='%s %s NDR_IDMAP' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/idmap.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_dnsserver',
+        source='../../librpc/gen_ndr/py_dnsserver.c',
+        deps='RPC_NDR_DNSSERVER %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/dnsserver.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_dcerpc_smb_acl',
+        source='../../librpc/gen_ndr/py_smb_acl.c',
+        deps='%s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/smb_acl.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('dcerpc_python_messaging',
+        source='../../librpc/gen_ndr/py_messaging.c',
+        deps='%s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/messaging.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('dcerpc_windows_event_ids',
+        source='../../librpc/gen_ndr/py_windows_event_ids.c',
+        deps='%s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/windows_event_ids.so',
+        cflags_end=gen_cflags
+        )
+
+if bld.PYTHON_BUILD_IS_ENABLED():
+    bld.SAMBA_SCRIPT('python_dcerpc_init',
+		    pattern='rpc/dcerpc.py',
+		     installdir='python/samba/dcerpc',
+		     installname='__init__.py')
+
+    bld.INSTALL_FILES('${PYTHONARCHDIR}/samba/dcerpc', 'rpc/dcerpc.py', destname='__init__.py')

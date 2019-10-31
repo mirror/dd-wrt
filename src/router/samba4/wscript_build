@@ -1,0 +1,158 @@
+#!/usr/bin/env python
+
+# top level waf build script for samba4
+
+from waflib import Options
+import os
+srcdir = "."
+
+import samba_version
+
+bld.env.suffix3 = "3"
+bld.env.suffix4 = "4"
+
+# create separate build groups for building the asn1 and et compiler, then
+# building the C from ASN1 and IDL, and finally the main build process
+bld.SETUP_BUILD_GROUPS()
+bld.AUTOCLEANUP_STALE_FILES()
+
+# enable building of public headers in the build tree
+bld.env.build_public_headers = 'include/public'
+
+# these are includes which appear in public headers, but with #ifdef conditional
+# compilation, so they are safe
+bld.env.public_headers_skip = ['lib/param/param_proto.h', 'lib/param/param_functions.h']
+
+version=samba_version.load_version(bld.env, is_install=bld.is_install)
+bld.SAMBA_MKVERSION('version.h')
+
+# bld.ENABLE_MAGIC_ORDERING()
+
+bld.env.ABS_TOP_SRCDIR = bld.srcnode.abspath() + '/docs-xml'
+bld.env.ABS_TOP_BUILDDIR = bld.bldnode.abspath() + '/docs-xml'
+bld.CONFIGURE_FILE('docs-xml/build/catalog.xml',
+                   ABS_TOP_BUILDDIR = bld.env.ABS_TOP_BUILDDIR,
+                   ABS_TOP_SRCDIR=bld.env.ABS_TOP_SRCDIR)
+bld.env.DOC_VERSION=version.STRING
+bld.CONFIGURE_FILE('docs-xml/build/DTD/samba.build.version',
+                   DOC_VERSION=bld.env.DOC_VERSION)
+bld.RECURSE('docs-xml')
+
+bld.RECURSE('lib/replace')
+bld.RECURSE('lib/socket')
+bld.RECURSE('lib/talloc')
+bld.RECURSE('lib/tevent')
+bld.RECURSE('lib/texpect')
+bld.RECURSE('lib/addns')
+bld.RECURSE('lib/ldb')
+bld.RECURSE('lib/param')
+bld.RECURSE('lib/printer_driver')
+bld.RECURSE('lib/audit_logging')
+bld.RECURSE('dynconfig')
+bld.RECURSE('lib/util/charset')
+bld.RECURSE('python')
+bld.RECURSE('source4/param')
+bld.RECURSE('source4/librpc')
+bld.RECURSE('source4/dsdb')
+bld.RECURSE('source4/smbd')
+bld.RECURSE('source4/cluster')
+bld.RECURSE('source4/smbd')
+bld.RECURSE('source4/libnet')
+bld.RECURSE('source4/auth')
+bld.RECURSE('auth')
+bld.RECURSE('auth/kerberos')
+bld.RECURSE('nsswitch')
+bld.RECURSE('nsswitch/libwbclient')
+bld.RECURSE('source4/lib/samba3')
+bld.RECURSE('source4/lib/socket')
+bld.RECURSE('lib/ldb-samba')
+bld.RECURSE('source4/lib/tls')
+bld.RECURSE('source4/lib/registry')
+bld.RECURSE('source4/lib/messaging')
+bld.RECURSE('source4/lib/events')
+bld.RECURSE('source4/lib/cmdline')
+bld.RECURSE('source4/lib/http')
+if bld.CHECK_FOR_THIRD_PARTY():
+    bld.RECURSE('third_party')
+bld.RECURSE('source4/lib/stream')
+bld.RECURSE('lib/afs')
+bld.RECURSE('lib/util')
+bld.RECURSE('lib/tdb_wrap')
+bld.RECURSE('lib/tdr')
+bld.RECURSE('lib/tsocket')
+bld.RECURSE('lib/crypto')
+bld.RECURSE('lib/torture')
+bld.RECURSE('libgpo')
+bld.RECURSE('source4/lib/com')
+bld.RECURSE('source4/dns_server')
+bld.RECURSE('source4/echo_server')
+bld.RECURSE('source4/smb_server')
+bld.RECURSE('source4/rpc_server')
+bld.RECURSE('source4/ldap_server')
+bld.RECURSE('source4/winbind')
+bld.RECURSE('source4/nbt_server')
+bld.RECURSE('source4/wrepl_server')
+bld.RECURSE('source4/cldap_server')
+bld.RECURSE('source4/ntp_signd')
+bld.RECURSE('source4/utils/oLschema2ldif')
+bld.RECURSE('source4/ntvfs')
+bld.RECURSE('source4/torture')
+bld.RECURSE('librpc')
+bld.RECURSE('source4')
+bld.RECURSE('source4/libcli')
+bld.RECURSE('libcli/smb')
+bld.RECURSE('libcli/util')
+bld.RECURSE('libcli/cldap')
+bld.RECURSE('lib/smbconf')
+bld.RECURSE('lib/async_req')
+bld.RECURSE('lib/dbwrap')
+bld.RECURSE('libcli/security')
+bld.RECURSE('libcli/ldap')
+bld.RECURSE('libcli/nbt')
+bld.RECURSE('libcli/netlogon')
+bld.RECURSE('libcli/auth')
+bld.RECURSE('libcli/lsarpc')
+bld.RECURSE('libcli/drsuapi')
+bld.RECURSE('libcli/echo')
+bld.RECURSE('libcli/dns')
+bld.RECURSE('libcli/samsync')
+bld.RECURSE('libcli/registry')
+bld.RECURSE('lib/mscat')
+bld.RECURSE('source4/lib/policy')
+bld.RECURSE('libcli/named_pipe_auth')
+if bld.CONFIG_GET('ENABLE_SELFTEST'):
+    bld.RECURSE('testsuite/unittests')
+
+if bld.CONFIG_GET('KRB5_VENDOR') in (None, 'heimdal'):
+    if bld.CONFIG_GET("HEIMDAL_KRB5_CONFIG") and bld.CONFIG_GET("USING_SYSTEM_KRB5"):
+        # When both HEIMDAL_KRB5_CONFIG and KRB5_CONFIG are set and not equal,
+        # it means one is Heimdal-specific (krb5-config.heimdal, for example)
+        # and there is system heimdal
+        bld.PROCESS_SEPARATE_RULE('system_heimdal')
+    else:
+        bld.PROCESS_SEPARATE_RULE('embedded_heimdal')
+else:
+    bld.PROCESS_SEPARATE_RULE('system_mitkrb5')
+
+bld.RECURSE('libcli/smbreadline')
+if bld.AD_DC_BUILD_IS_ENABLED():
+    bld.RECURSE('source4/setup')
+    bld.RECURSE('source4/kdc')
+if bld.env.with_ctdb:
+    bld.RECURSE('ctdb')
+bld.RECURSE('source4/scripting')
+bld.RECURSE('pidl')
+bld.RECURSE('lib')
+bld.RECURSE('libds/common')
+bld.RECURSE('lib/pthreadpool')
+bld.RECURSE('source3')
+bld.RECURSE('dfs_server')
+bld.RECURSE('file_server')
+bld.RECURSE('lib/krb5_wrap')
+bld.RECURSE('packaging')
+
+bld.RECURSE('testsuite/headers')
+
+bld.SYMBOL_CHECK()
+bld.DUP_SYMBOL_CHECK()
+

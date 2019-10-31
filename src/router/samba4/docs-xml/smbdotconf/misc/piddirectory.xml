@@ -1,0 +1,14 @@
+<samba:parameter name="pid directory"
+                 context="G"
+                 type="string"
+                 constant="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	This option specifies the directory where pid files will be placed.  
+	</para>
+</description>
+
+<value type="default">&pathconfig.PIDDIR;</value>
+<value type="example">/var/run/</value>
+</samba:parameter>

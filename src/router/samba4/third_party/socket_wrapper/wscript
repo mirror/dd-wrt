@@ -1,0 +1,90 @@
+#!/usr/bin/env python
+
+import os
+
+VERSION="1.2.3"
+
+def configure(conf):
+    if conf.CHECK_SOCKET_WRAPPER():
+        conf.DEFINE('USING_SYSTEM_SOCKET_WRAPPER', 1)
+        libsocket_wrapper_so_path = 'libsocket_wrapper.so'
+    else:
+
+        if conf.CONFIG_SET("HAVE___THREAD"):
+            conf.DEFINE("HAVE_GCC_THREAD_LOCAL_STORAGE", 1)
+
+        # check HAVE_FUNCTION_ATTRIBUTE_FORMAT
+        conf.CHECK_CODE('''
+            void log_fn(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
+
+            int main(void) {
+                return 0;
+            }
+            ''',
+            'HAVE_FUNCTION_ATTRIBUTE_FORMAT',
+            addmain=False,
+            strict=True,
+            msg='Checking for printf format validation support')
+
+        conf.CHECK_HEADERS('sys/signalfd.h')
+        conf.CHECK_HEADERS('sys/eventfd.h')
+        conf.CHECK_HEADERS('sys/timerfd.h')
+        conf.CHECK_HEADERS('gnu/lib-names.h')
+        conf.CHECK_HEADERS('rpc/rpc.h')
+
+        conf.CHECK_STRUCTURE_MEMBER('struct msghdr',
+                                    'msg_control',
+                                    headers='sys/types.h sys/socket.h',
+                                    define='HAVE_STRUCT_MSGHDR_MSG_CONTROL')
+
+        conf.CHECK_STRUCTURE_MEMBER('struct in_pktinfo',
+                                    'ipi_addr',
+                                    headers='sys/types.h sys/socket.h netinet/in.h',
+                                    define='HAVE_STRUCT_IN_PKTINFO')
+
+        conf.CHECK_STRUCTURE_MEMBER('struct in6_pktinfo',
+                                    'ipi6_addr',
+                                    headers='sys/types.h sys/socket.h netinet/in.h',
+                                    define='HAVE_STRUCT_IN6_PKTINFO')
+
+        conf.CHECK_FUNCS('getaddrinfo')
+        conf.CHECK_FUNCS('signalfd eventfd timerfd_create')
+        conf.CHECK_FUNCS('bindresvport')
+        conf.CHECK_FUNCS('pledge')
+        conf.CHECK_FUNCS('accept4')
+
+        conf.CHECK_FUNCS_IN('bind',
+                            'socket',
+                            checklibc=True,
+                            headers='sys/types.h sys/socket.h')
+
+        conf.CHECK_C_PROTOTYPE('accept',
+                               'int accept(int s, struct sockaddr *addr, Psocklen_t addrlen)',
+                               define='HAVE_ACCEPT_PSOCKLEN_T', headers='sys/types.h sys/socket.h')
+
+        conf.CHECK_C_PROTOTYPE('ioctl',
+                               'int ioctl(int s, int r, ...)',
+                               define='HAVE_IOCTL_INT', headers='unistd.h sys/ioctl.h')
+
+        if conf.CONFIG_SET("HAVE_EVENTFD"):
+            conf.CHECK_C_PROTOTYPE('eventfd',
+                                   'int eventfd(unsigned int count, int flags)',
+                                   define='HAVE_EVENTFD_UNSIGNED_INT', headers='sys/eventfd.h')
+
+        # Create full path to socket_wrapper
+        blddir = os.path.realpath(conf.bldnode.abspath())
+        libsocket_wrapper_so_path = blddir + '/default/third_party/socket_wrapper/libsocket-wrapper.so'
+
+    conf.DEFINE('LIBSOCKET_WRAPPER_SO_PATH', libsocket_wrapper_so_path)
+    conf.DEFINE('SOCKET_WRAPPER', 1)
+
+def build(bld):
+    if not bld.CONFIG_SET("USING_SYSTEM_SOCKET_WRAPPER"):
+        # We need to do it this way or the library wont work.
+        # Using private_library=True will add symbol version which
+        # breaks preloading!
+        bld.SAMBA_LIBRARY('socket_wrapper',
+                          source='socket_wrapper.c',
+                          deps='dl pthread tirpc',
+                          install=False,
+                          realname='libsocket-wrapper.so')

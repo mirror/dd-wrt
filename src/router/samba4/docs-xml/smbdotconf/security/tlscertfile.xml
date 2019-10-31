@@ -1,0 +1,20 @@
+<samba:parameter name="tls certfile"
+                 type="string"
+                 context="G"
+                 function="_tls_certfile"
+                 constant="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+ <description>
+	 <para>This option can be set to a file (PEM format)
+		 containing the RSA certificate. </para>
+	 <para>This path is relative to <smbconfoption name="private dir"/> if the path
+	 does not start with a /.</para>
+</description>
+
+ <related>tls keyfile</related>
+ <related>tls crlfile</related>
+ <related>tls dh params file</related>
+ <related>tls enabled</related>
+ <related>tls cafile</related>
+ <value type="default">tls/cert.pem</value>
+</samba:parameter>

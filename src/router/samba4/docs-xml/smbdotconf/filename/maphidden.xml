@@ -1,0 +1,24 @@
+<samba:parameter name="map hidden"
+                 context="S"
+                 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	This controls whether DOS style hidden files should be mapped to the UNIX world execute bit.
+	</para>
+
+	<para>
+	Note that this parameter will be ignored if the <smbconfoption name="store dos attributes"/>
+	parameter is set, as the DOS hidden attribute will then be stored inside a UNIX extended
+	attribute.
+	</para>
+
+	<para>
+	Note that this requires the <smbconfoption name="create mask"/> to be set such that the world execute 
+	bit is not masked out (i.e. it must include 001). See the parameter <smbconfoption name="create mask"/> 
+	for details.
+	</para>
+
+</description>
+<value type="default">no</value>
+</samba:parameter>

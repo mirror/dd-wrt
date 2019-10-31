@@ -1,0 +1,34 @@
+<samba:parameter name="strict rename"
+                 context="S"
+				 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>By default a Windows SMB server prevents directory
+    renames when there are open file or directory handles below
+    it in the filesystem hierarchy. Historically Samba has always
+    allowed this as POSIX filesystem semantics require it.</para>
+
+    <para>This boolean parameter allows Samba to match the Windows
+    behavior. Setting this to "yes" is a very expensive change,
+    as it forces Samba to travers the entire open file handle
+    database on every directory rename request. In a clustered
+    Samba system the cost is even greater than the non-clustered
+    case.</para>
+
+    <para>When set to "no" smbd only checks the local process
+    the client is attached to for open files below a directory
+    being renamed, instead of checking for open files across all
+    smbd processes.</para>
+
+    <para>Because of the expense in fully searching the database,
+    the default is "no", and it is recommended to be left that way
+    unless a specific Windows application requires it to be changed.</para>
+
+    <para>If the client has requested UNIX extensions (POSIX
+    pathnames) then renames are always allowed and this parameter
+    has no effect.</para>
+
+</description>
+
+<value type="default">no</value>
+</samba:parameter>

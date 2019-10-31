@@ -1,0 +1,494 @@
+#include "idl_types.h"
+
+import "misc.idl";
+import "server_id.idl";
+import "security.idl";
+import "auth.idl";
+
+[
+	uuid("07408340-ae31-11e1-97dc-539f7fddc06f"),
+	version(0.0),
+	pointer_default(unique),
+	helpstring("smbXsrv structures")
+]
+interface smbXsrv
+{
+	/*
+	 * smbXsrv_version* is designed to allow
+	 * rolling code upgrades in future (within a cluster).
+	 *
+	 * This just adds the infrastructure,
+	 * but we does not implement it yet!
+	 *
+	 * Currently it only prevents that
+	 * nodes with a different version numbers
+	 * cannot run at the same time.
+	 *
+	 * Each node checks at startup, if the version
+	 * matches the version of all other nodes.
+	 * And it exits if the version does not match
+	 * to avoid corruption.
+	 *
+	 * While it would be possible to add versioning
+	 * to each of our internal databases it is easier
+	 * use a dedicated database "smbXsrv_version_global.tdb"
+	 * to hold the global version information.
+	 *
+	 * This removes extra complexity from the individual
+	 * databases and allows that we add/remove databases
+	 * or use different indexing keys.
+	 *
+	 */
+	typedef [v1_enum] enum {
+		/*
+		 * NOTE: Version 0 is designed to be unstable and the format
+		 * may change during development.
+		 */
+		SMBXSRV_VERSION_0 = 0x00000000
+	} smbXsrv_version_values;
+
+	const uint32 SMBXSRV_VERSION_CURRENT = SMBXSRV_VERSION_0;
+
+	typedef struct {
+		server_id				server_id;
+		smbXsrv_version_values			min_version;
+		smbXsrv_version_values			max_version;
+		smbXsrv_version_values			current_version;
+	} smbXsrv_version_node0;
+
+	typedef struct {
+		[ignore] db_record 			*db_rec;
+		[range(1, 1024)] uint32			num_nodes;
+		smbXsrv_version_node0			nodes[num_nodes];
+	} smbXsrv_version_global0;
+
+	typedef union {
+		[case(0)] smbXsrv_version_global0	*info0;
+		[default] hyper				*dummy;
+	} smbXsrv_version_globalU;
+
+	typedef [public] struct {
+		smbXsrv_version_values			version;
+		uint32					seqnum;
+		[switch_is(version)] smbXsrv_version_globalU info;
+	} smbXsrv_version_globalB;
+
+	void smbXsrv_version_global_decode(
+		[in] smbXsrv_version_globalB blob
+		);
+
+	/* client */
+
+	typedef struct {
+		[ignore] db_record 			*db_rec;
+		server_id				server_id;
+		[charset(UTF8),string] char		local_address[];
+		[charset(UTF8),string] char		remote_address[];
+		[charset(UTF8),string] char		remote_name[];
+		NTTIME					initial_connect_time;
+		GUID					client_guid;
+		boolean8				stored;
+	} smbXsrv_client_global0;
+
+	typedef union {
+		[case(0)] smbXsrv_client_global0	*info0;
+		[default] hyper				*dummy;
+	} smbXsrv_client_globalU;
+
+	typedef [public] struct {
+		smbXsrv_version_values			version;
+		uint32					seqnum;
+		[switch_is(version)] smbXsrv_client_globalU info;
+	} smbXsrv_client_globalB;
+
+	void smbXsrv_client_global_decode(
+		[in] smbXsrv_client_globalB blob
+		);
+
+	typedef [public] struct {
+		[ignore] smbXsrv_client_table		*table;
+		[ignore] struct tevent_context		*raw_ev_ctx;
+		[ignore] struct messaging_context	*msg_ctx;
+
+		[ref] smbXsrv_client_global0		*global;
+
+		/*
+		 * There's just one 'sconn' per client.
+		 * It holds the FSA layer details, which are global
+		 * per client (process).
+		 */
+		[ignore] struct smbd_server_connection	*sconn;
+
+		/*
+		 * this session_table is used for SMB1 and SMB2,
+		 */
+		[ignore] struct smbXsrv_session_table	*session_table;
+		/*
+		 * this tcon_table is only used for SMB1.
+		 */
+		[ignore] struct smbXsrv_tcon_table	*tcon_table;
+		/*
+		 * this open_table is used for SMB1 and SMB2,
+		 * because we have a global sconn->real_max_open_files
+		 * limit.
+		 */
+		[ignore] struct smbXsrv_open_table	*open_table;
+
+		/*
+		 * For now this is only one connection!
+		 * With multi-channel support we'll get more than
+		 * one in future.
+		 */
+		[ignore] struct smbXsrv_connection	*connections;
+		boolean8		server_multi_channel_enabled;
+	} smbXsrv_client;
+
+	typedef union {
+		[case(0)] smbXsrv_client		*info0;
+		[default] hyper				*dummy;
+	} smbXsrv_clientU;
+
+	typedef [public] struct {
+		smbXsrv_version_values			version;
+		[value(0)] uint32			reserved;
+		[switch_is(version)] smbXsrv_clientU	info;
+	} smbXsrv_clientB;
+
+	void smbXsrv_client_decode(
+		[in] smbXsrv_clientB blob
+		);
+
+	/*
+	 * smbXsrv_connection_pass is used in the MSG_SMBXSRV_CONNECTION_PASS
+	 * message
+	 */
+	typedef struct {
+		NTTIME					initial_connect_time;
+		GUID					client_guid;
+		DATA_BLOB 				negotiate_request;
+	} smbXsrv_connection_pass0;
+
+	typedef union {
+		[case(0)] smbXsrv_connection_pass0	*info0;
+		[default] hyper				*dummy;
+	} smbXsrv_connection_passU;
+
+	typedef [public] struct {
+		smbXsrv_version_values			version;
+		[value(0)] uint32			reserved;
+		[switch_is(version)] smbXsrv_connection_passU	info;
+	} smbXsrv_connection_passB;
+
+	void smbXsrv_connection_pass_decode(
+		[in] smbXsrv_connection_passB blob
+		);
+
+	/* sessions */
+
+	typedef [public,bitmap8bit] bitmap {
+		SMBXSRV_ENCRYPTION_REQUIRED		= 0x01,
+		SMBXSRV_ENCRYPTION_DESIRED		= 0x02,
+		SMBXSRV_PROCESSED_ENCRYPTED_PACKET	= 0x04,
+		SMBXSRV_PROCESSED_UNENCRYPTED_PACKET	= 0x08
+	} smbXsrv_encrpytion_flags;
+
+	typedef [public,bitmap8bit] bitmap {
+		SMBXSRV_SIGNING_REQUIRED		= 0x01,
+		SMBXSRV_PROCESSED_SIGNED_PACKET		= 0x02,
+		SMBXSRV_PROCESSED_UNSIGNED_PACKET	= 0x04
+	} smbXsrv_signing_flags;
+
+	typedef struct {
+		server_id				server_id;
+		[charset(UTF8),string] char		local_address[];
+		[charset(UTF8),string] char		remote_address[];
+		[charset(UTF8),string] char		remote_name[];
+		[noprint] DATA_BLOB			signing_key_blob;
+		[ignore] smb2_signing_key		*signing_key;
+		uint32					auth_session_info_seqnum;
+		[ignore] smbXsrv_connection		*connection;
+		uint16					encryption_cipher;
+	} smbXsrv_channel_global0;
+
+	typedef struct {
+		[ignore] db_record 			*db_rec;
+		uint32					session_global_id;
+		hyper					session_wire_id;
+		NTTIME					creation_time;
+		NTTIME					expiration_time;
+		/*
+		 * auth_session is NULL until the
+		 * session is valid for the first time.
+		 */
+		NTTIME					auth_time;
+		uint32					auth_session_info_seqnum;
+		auth_session_info			*auth_session_info;
+		uint16					connection_dialect;
+		smbXsrv_signing_flags			signing_flags;
+		smbXsrv_encrpytion_flags		encryption_flags;
+		[noprint] DATA_BLOB			signing_key_blob;
+		[ignore] smb2_signing_key		*signing_key;
+		[noprint] DATA_BLOB			encryption_key_blob;
+		[noprint] DATA_BLOB			decryption_key_blob;
+		[noprint] DATA_BLOB			application_key;
+		[range(1, 1024)] uint32			num_channels;
+		smbXsrv_channel_global0			channels[num_channels];
+	} smbXsrv_session_global0;
+
+	typedef union {
+		[case(0)] smbXsrv_session_global0	*info0;
+		[default] hyper				*dummy;
+	} smbXsrv_session_globalU;
+
+	typedef [public] struct {
+		smbXsrv_version_values			version;
+		uint32					seqnum;
+		[switch_is(version)] smbXsrv_session_globalU info;
+	} smbXsrv_session_globalB;
+
+	void smbXsrv_session_global_decode(
+		[in] smbXsrv_session_globalB blob
+		);
+
+	/*
+	 * The main server code should just work with
+	 * 'struct smbXsrv_session' and never use
+	 * smbXsrv_session0, smbXsrv_sessionU
+	 * and smbXsrv_sessionB directly.
+	 *
+	 * If we need to change the smbXsrv_session,
+	 * we can just rename smbXsrv_session
+	 * to smbXsrv_session0 and add a new
+	 * smbXsrv_session for version 1
+	 * and could implement transparent mapping.
+	 */
+
+	typedef struct {
+		[ignore] smbXsrv_session_auth0		*prev;
+		smbXsrv_session_auth0			*next;
+		[ignore] smbXsrv_session		*session;
+		[ignore] smbXsrv_connection		*connection;
+		[ignore] gensec_security		*gensec;
+		[ignore] smbXsrv_preauth		*preauth;
+		uint8					in_flags;
+		uint8					in_security_mode;
+		NTTIME					creation_time;
+		NTTIME					idle_time;
+	} smbXsrv_session_auth0;
+
+	typedef struct {
+		[ignore] smbXsrv_session_table		*table;
+		[ignore] db_record 			*db_rec;
+		[ignore] smbXsrv_client			*client;
+		uint32					local_id;
+		[ref] smbXsrv_session_global0		*global;
+		NTSTATUS				status;
+		NTTIME					idle_time;
+		hyper					nonce_high_random;
+		hyper					nonce_high_max;
+		hyper					nonce_high;
+		hyper					nonce_low;
+		[ignore] user_struct			*compat;
+		[ignore] smbXsrv_tcon_table		*tcon_table;
+		smbXsrv_session_auth0			*pending_auth;
+	} smbXsrv_session;
+
+	typedef union {
+		[case(0)] smbXsrv_session		*info0;
+		[default] hyper				*dummy;
+	} smbXsrv_sessionU;
+
+	typedef [public] struct {
+		smbXsrv_version_values			version;
+		[value(0)] uint32			reserved;
+		[switch_is(version)] smbXsrv_sessionU	info;
+	} smbXsrv_sessionB;
+
+	void smbXsrv_session_decode(
+		[in] smbXsrv_sessionB blob
+		);
+
+	/*
+	 * smbXsrv_session_close is use in the MSG_SMBXSRV_SESSION_CLOSE
+	 * message
+	 */
+	typedef struct {
+		uint32					old_session_global_id;
+		hyper					old_session_wire_id;
+		NTTIME					old_creation_time;
+		hyper					new_session_wire_id;
+	} smbXsrv_session_close0;
+
+	typedef union {
+		[case(0)] smbXsrv_session_close0	*info0;
+		[default] hyper				*dummy;
+	} smbXsrv_session_closeU;
+
+	typedef [public] struct {
+		smbXsrv_version_values			version;
+		[value(0)] uint32			reserved;
+		[switch_is(version)] smbXsrv_session_closeU	info;
+	} smbXsrv_session_closeB;
+
+	void smbXsrv_session_close_decode(
+		[in] smbXsrv_session_closeB blob
+		);
+
+	/* tree connects */
+
+	typedef struct {
+		[ignore] db_record 			*db_rec;
+		uint32					tcon_global_id;
+		uint32					tcon_wire_id;
+		server_id				server_id;
+		NTTIME					creation_time;
+		[charset(UTF8),string] char		share_name[];
+		smbXsrv_encrpytion_flags		encryption_flags;
+		/*
+		 * for SMB1 this is the session that the tcon was opened on
+		 */
+		uint32					session_global_id;
+		smbXsrv_signing_flags                   signing_flags;
+	} smbXsrv_tcon_global0;
+
+	typedef union {
+		[case(0)] smbXsrv_tcon_global0		*info0;
+		[default] hyper				*dummy;
+	} smbXsrv_tcon_globalU;
+
+	typedef [public] struct {
+		smbXsrv_version_values			version;
+		uint32					seqnum;
+		[switch_is(version)] smbXsrv_tcon_globalU info;
+	} smbXsrv_tcon_globalB;
+
+	void smbXsrv_tcon_global_decode(
+		[in] smbXsrv_tcon_globalB blob
+		);
+
+	/*
+	 * The main server code should just work with
+	 * 'struct smbXsrv_tcon' and never use
+	 * smbXsrv_tcon0, smbXsrv_tconU
+	 * and smbXsrv_tconB directly.
+	 *
+	 * If we need to change the smbXsrv_tcon,
+	 * we can just rename smbXsrv_tcon
+	 * to smbXsrv_tcon0 and add a new
+	 * smbXsrv_tcon for version 1
+	 * and could implement transparent mapping.
+	 */
+	typedef struct {
+		[ignore] smbXsrv_tcon_table		*table;
+		[ignore] db_record 			*db_rec;
+		uint32					local_id;
+		[ref] smbXsrv_tcon_global0		*global;
+		NTSTATUS				status;
+		NTTIME					idle_time;
+		[ignore] connection_struct		*compat;
+	} smbXsrv_tcon;
+
+	typedef union {
+		[case(0)] smbXsrv_tcon			*info0;
+		[default] hyper				*dummy;
+	} smbXsrv_tconU;
+
+	typedef [public] struct {
+		smbXsrv_version_values			version;
+		[value(0)] uint32			reserved;
+		[switch_is(version)] smbXsrv_tconU	info;
+	} smbXsrv_tconB;
+
+	void smbXsrv_tcon_decode(
+		[in] smbXsrv_tconB blob
+		);
+
+	/* open files */
+
+	typedef [public,bitmap8bit] bitmap {
+		SMBXSRV_OPEN_NEED_REPLAY_CACHE		= 0x01,
+		SMBXSRV_OPEN_HAVE_REPLAY_CACHE		= 0x02
+	} smbXsrv_open_flags;
+
+	typedef struct {
+		[ignore] db_record 			*db_rec;
+		server_id				server_id;
+		uint32					open_global_id;
+		hyper					open_persistent_id;
+		hyper					open_volatile_id;
+		dom_sid					open_owner;
+		NTTIME					open_time;
+		GUID					create_guid;
+		GUID					client_guid;
+		GUID					app_instance_id;
+		/*
+		 * TODO: for durable/resilient/persistent handles we need more
+		 *       things here. See [MS-SMB2] 3.3.1.10 Per Open
+		 *
+		 * NOTE: this is still version 0, which is not a stable format!
+		 */
+		NTTIME					disconnect_time;
+		uint32					durable_timeout_msec;
+		boolean8				durable;
+		DATA_BLOB				backend_cookie;
+		uint16					channel_sequence;
+		hyper					channel_generation;
+	} smbXsrv_open_global0;
+
+	typedef union {
+		[case(0)] smbXsrv_open_global0		*info0;
+		[default] hyper				*dummy;
+	} smbXsrv_open_globalU;
+
+	typedef [public] struct {
+
+		smbXsrv_version_values			version;
+		uint32					seqnum;
+		[switch_is(version)] smbXsrv_open_globalU info;
+	} smbXsrv_open_globalB;
+
+	void smbXsrv_open_global_decode(
+		[in] smbXsrv_open_globalB blob
+		);
+
+	/*
+	 * The main server code should just work with
+	 * 'struct smbXsrv_open' and never use
+	 * smbXsrv_open0, smbXsrv_openU
+	 * and smbXsrv_openB directly.
+	 *
+	 * If we need to change the smbXsrv_open,
+	 * we can just rename smbXsrv_open
+	 * to smbXsrv_open0 and add a new
+	 * smbXsrv_open for version 1
+	 * and could implement transparent mapping.
+	 */
+	typedef struct {
+		[ignore] smbXsrv_open_table		*table;
+		[ignore] db_record 			*db_rec;
+		uint32					local_id;
+		[ref] smbXsrv_open_global0		*global;
+		NTSTATUS				status;
+		NTTIME					idle_time;
+		[ignore] files_struct			*compat;
+		smbXsrv_open_flags			flags;
+		uint32					create_action;
+		hyper					request_count;
+		hyper					pre_request_count;
+	} smbXsrv_open;
+
+	typedef union {
+		[case(0)] smbXsrv_open			*info0;
+		[default] hyper				*dummy;
+	} smbXsrv_openU;
+
+	typedef [public] struct {
+		smbXsrv_version_values			version;
+		[value(0)] uint32			reserved;
+		[switch_is(version)] smbXsrv_openU	info;
+	} smbXsrv_openB;
+
+	void smbXsrv_open_decode(
+		[in] smbXsrv_openB blob
+		);
+}

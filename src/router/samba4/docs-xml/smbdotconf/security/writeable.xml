@@ -1,0 +1,14 @@
+<samba:parameter name="writeable"
+                 context="S"
+                 type="boolean-rev"
+                 function="read_only"
+                 synonym="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<synonym>writable</synonym>
+<synonym>write ok</synonym>
+<description>
+    <para>Inverted synonym for <smbconfoption name="read only"/>.</para>
+</description>
+
+<value type="default">no</value>
+</samba:parameter>

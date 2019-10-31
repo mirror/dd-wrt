@@ -1,0 +1,9 @@
+#!/usr/bin/env python
+
+
+bld.SAMBA_LIBRARY('npa_tstream',
+                  source='npa_tstream.c tstream_u32_read.c',
+                  private_library=True,
+                  public_deps='NDR_NAMED_PIPE_AUTH tevent LIBTSOCKET'
+                  )
+

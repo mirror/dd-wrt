@@ -1,0 +1,8 @@
+#!/usr/bin/env python
+
+# a grouping library for event and socket related subsystems
+bld.SAMBA_LIBRARY('samba-sockets',
+                  source=[],
+                  private_library=True,
+                  grouping_library=True,
+                  deps='LIBTSOCKET samba_socket tevent-util')

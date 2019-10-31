@@ -1,0 +1,60 @@
+#!/usr/bin/env python
+
+bld.SAMBA_LIBRARY('dsdb-module',
+	source=[],
+	deps='DSDB_MODULE_HELPERS DSDB_MODULE_HELPER_RIDALLOC',
+	private_library=True,
+	grouping_library=True)
+
+bld.SAMBA_SUBSYSTEM('DSDB_MODULE_HELPERS',
+	source='util.c acl_util.c schema_util.c netlogon.c',
+	autoproto='util_proto.h',
+	deps='ldb ndr samdb-common samba-security'
+	)
+
+bld.SAMBA_SUBSYSTEM('DSDB_MODULE_HELPER_RIDALLOC',
+	source='ridalloc.c',
+	autoproto='ridalloc.h',
+	deps='MESSAGING',
+	)
+
+# Build the cmocka unit tests
+bld.SAMBA_BINARY('test_unique_object_sids',
+        source='tests/test_unique_object_sids.c',
+        deps='''
+            talloc
+            samdb
+            cmocka
+            DSDB_MODULE_HELPERS
+        ''',
+        install=False)
+bld.SAMBA_BINARY('test_encrypted_secrets_tdb',
+        source='tests/test_encrypted_secrets.c',
+        cflags='-DTEST_BE=\"tdb\"',
+        deps='''
+            talloc
+            samba-util
+            samdb-common
+            samdb
+            cmocka
+            gnutls
+            DSDB_MODULE_HELPERS
+        ''',
+        install=False)
+if conf.env.HAVE_LMDB:
+    bld.SAMBA_BINARY('test_encrypted_secrets_mdb',
+            source='tests/test_encrypted_secrets.c',
+            cflags='-DTEST_BE=\"mdb\"',
+            deps='''
+                talloc
+                samba-util
+                samdb-common
+                samdb
+                cmocka
+                gnutls
+                DSDB_MODULE_HELPERS
+            ''',
+            install=False)
+
+if bld.AD_DC_BUILD_IS_ENABLED():
+    bld.PROCESS_SEPARATE_RULE("server")

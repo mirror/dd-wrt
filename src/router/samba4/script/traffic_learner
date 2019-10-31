@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+# Generate a traffic model from a traffic summary file
+#
+# Copyright (C) Catalyst IT Ltd. 2017
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+from __future__ import print_function
+import sys
+import argparse
+
+sys.path.insert(0, "bin/python")
+from samba.emulate import traffic
+
+from samba.logger import get_samba_logger
+logger = get_samba_logger(name=__name__, level=20)
+error = logger.error
+info = logger.info
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__,
+                        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('-o', '--out',
+                        help="write model here")
+    parser.add_argument('--dns-mode', choices=['inline', 'count'],
+                        help='how to deal with DNS', default='count')
+    parser.add_argument('SUMMARY_FILE', nargs='*', type=argparse.FileType('r'),
+                        default=[sys.stdin],
+                        help="read from this file (default STDIN)")
+    args = parser.parse_args()
+
+    if args.out is None:
+        error("No output file was specified to write the model to.")
+        error("Please specify a filename using the --out option.")
+        return 1
+
+    try:
+        outfile = open(args.out, 'w')
+    except IOError as e:
+        error("could not open %s" % args.out)
+        error(e)
+        return 1
+
+    if args.SUMMARY_FILE is sys.stdin:
+        info("reading from STDIN...")
+
+    (conversations,
+     interval,
+     duration,
+     dns_counts) = traffic.ingest_summaries(args.SUMMARY_FILE,
+                                            dns_mode=args.dns_mode)
+
+    model = traffic.TrafficModel()
+    info("learning model")
+    if args.dns_mode == 'count':
+        model.learn(conversations, dns_counts)
+    else:
+        model.learn(conversations)
+
+    model.save(args.out)
+
+sys.exit(main())
