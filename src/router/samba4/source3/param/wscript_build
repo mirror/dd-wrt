@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+
+bld.SAMBA3_SUBSYSTEM('PARAM_UTIL',
+                     source='util.c',
+                     deps='talloc')
+
+bld.SAMBA3_SUBSYSTEM('LOADPARM_CTX',
+                     source='loadparm_ctx.c',
+                     deps='''talloc smbconf''')
+
+bld.SAMBA_GENERATOR('s3_param_proto_h',
+                    source= '../../script/generate_param.py ../../docs-xml/smbdotconf/parameters.all.xml',
+                    target='param_proto.h',
+                    group='build_source',
+                    rule='${PYTHON} ${SRC[0].abspath(env)} --file ${SRC[1].abspath(env)} --output ${TGT} --mode=S3PROTO')
+
+pytalloc_util = bld.pyembed_libname('pytalloc-util')
+bld.SAMBA3_PYTHON('pys3param',
+                  source='pyparam.c',
+                  deps='smbconf',
+                  public_deps=' '.join(['samba-hostconfig', pytalloc_util, 'talloc']),
+                  realname='samba/samba3/param.so')
+
+bld.SAMBA3_SUBSYSTEM('param_service',
+                     source='service.c',
+                     deps = 'USER_UTIL smbconf PRINTING')
+
+bld.SAMBA3_BINARY('test_lp_load',
+                 source='test_lp_load.c',
+                 deps='''
+                 talloc
+                 smbconf
+                 popt_samba3''',
+                 install=False)

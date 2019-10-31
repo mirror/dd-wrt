@@ -1,0 +1,284 @@
+#!/usr/bin/env python
+
+bld.SAMBA3_LIBRARY('idmap',
+                   source='idmap.c idmap_util.c',
+                   deps='samba-util pdb',
+                   allow_undefined_symbols=True,
+                   private_library=True)
+
+bld.SAMBA3_SUBSYSTEM('IDMAP_RW',
+                     source='idmap_rw.c',
+                     deps='samba-util')
+
+bld.SAMBA3_SUBSYSTEM('IDMAP_TDB_COMMON',
+                     source='idmap_tdb_common.c',
+                     deps='tdb IDMAP_RW')
+
+bld.SAMBA3_SUBSYSTEM('IDMAP_HASH',
+                    source='idmap_hash/idmap_hash.c idmap_hash/mapfile.c',
+                    deps='samba-util krb5samba',
+                    enabled=bld.SAMBA3_IS_ENABLED_MODULE('idmap_hash'))
+
+bld.SAMBA3_SUBSYSTEM('IDMAP_AD',
+                    source='idmap_ad.c idmap_ad_nss.c',
+                    deps='ads nss_info',
+                    enabled=bld.SAMBA3_IS_ENABLED_MODULE('idmap_ad'))
+
+bld.SAMBA3_MODULE('idmap_ad',
+                 subsystem='idmap',
+                 allow_undefined_symbols=True,
+                 source='',
+                 deps='IDMAP_AD TLDAP LIBNMB',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('idmap_ad'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('idmap_ad'))
+
+bld.SAMBA3_MODULE('idmap_rfc2307',
+                 subsystem='idmap',
+                 allow_undefined_symbols=True,
+                 source='idmap_rfc2307.c',
+                 init_function='',
+                 deps='ads',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('idmap_rfc2307'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('idmap_rfc2307'))
+
+bld.SAMBA3_MODULE('idmap_rid',
+                 subsystem='idmap',
+                 allow_undefined_symbols=True,
+                 source='idmap_rid.c',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('idmap_rid'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('idmap_rid'))
+
+bld.SAMBA3_MODULE('idmap_passdb',
+                 subsystem='idmap',
+                 source='idmap_passdb.c',
+                 deps='samba-util samba-passdb',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('idmap_passdb'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('idmap_passdb'))
+
+bld.SAMBA3_MODULE('idmap_ldap',
+                 subsystem='idmap',
+                 source='idmap_ldap.c',
+                 deps='smbldap smbldaphelper pdb IDMAP_RW',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('idmap_ldap'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('idmap_ldap') and bld.CONFIG_SET("HAVE_LDAP"),
+                 allow_undefined_symbols=True)
+
+bld.SAMBA3_MODULE('idmap_nss',
+                 subsystem='idmap',
+                 source='idmap_nss.c',
+                 deps='samba-util',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('idmap_nss'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('idmap_nss'))
+
+bld.SAMBA3_MODULE('idmap_tdb',
+                 subsystem='idmap',
+                 source='idmap_tdb.c',
+                 deps='samba-util tdb IDMAP_TDB_COMMON',
+                 init_function='',
+                 allow_undefined_symbols=True,
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('idmap_tdb'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('idmap_tdb'))
+
+bld.SAMBA3_MODULE('idmap_tdb2',
+                 subsystem='idmap',
+                 source='idmap_tdb2.c',
+                 deps='samba-util tdb IDMAP_TDB_COMMON',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('idmap_tdb2'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('idmap_tdb2'))
+
+bld.SAMBA3_MODULE('idmap_hash',
+                 subsystem='idmap',
+                 source='',
+                 deps='IDMAP_HASH',
+                 allow_undefined_symbols=True,
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('idmap_hash'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('idmap_hash'))
+
+bld.SAMBA3_SUBSYSTEM('IDMAP_AUTORID_TDB',
+                     source='idmap_autorid_tdb.c',
+                     deps='tdb')
+
+bld.SAMBA3_MODULE('idmap_autorid',
+                 subsystem='idmap',
+                 source='idmap_autorid.c',
+                 deps='samba-util tdb IDMAP_TDB_COMMON IDMAP_AUTORID_TDB',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('idmap_autorid'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('idmap_autorid'),
+                 allow_undefined_symbols=True)
+
+bld.SAMBA3_LIBRARY('nss_info',
+                   source='nss_info.c',
+                   deps='samba-util smbconf',
+                   private_library=True)
+
+bld.SAMBA3_MODULE('nss_info_template',
+                 subsystem='nss_info',
+                 source='nss_info_template.c',
+                 deps='samba-util krb5samba',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('nss_info_template'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('nss_info_template'))
+
+bld.SAMBA3_MODULE('nss_info_hash',
+                 subsystem='nss_info',
+                 source='',
+                 deps='IDMAP_HASH',
+                 allow_undefined_symbols=True,
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('idmap_hash'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('idmap_hash'))
+
+bld.SAMBA3_MODULE('nss_info_rfc2307',
+                 subsystem='nss_info',
+                 source='',
+                 deps='IDMAP_AD',
+                 allow_undefined_symbols=True,
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('idmap_ad'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('idmap_ad'))
+
+bld.SAMBA3_MODULE('nss_info_sfu20',
+                 subsystem='nss_info',
+                 source='',
+                 deps='IDMAP_AD',
+                 allow_undefined_symbols=True,
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('idmap_ad'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('idmap_ad'))
+
+bld.SAMBA3_MODULE('nss_info_sfu',
+                 subsystem='nss_info',
+                 source='',
+                 deps='IDMAP_AD',
+                 allow_undefined_symbols=True,
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('idmap_ad'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('idmap_ad') and bld.CONFIG_SET("HAVE_LDAP"))
+
+bld.SAMBA3_MODULE('idmap_script',
+                 subsystem='idmap',
+                 allow_undefined_symbols=True,
+                 source='idmap_script.c',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('idmap_script'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('idmap_script'))
+
+bld.SAMBA3_BINARY('winbindd',
+                 source='''winbindd.c
+                 winbindd_group.c
+                 winbindd_util.c
+                 winbindd_cache.c
+                 winbindd_pam.c
+                 winbindd_misc.c
+                 winbindd_cm.c
+                 winbindd_wins_byip.c
+                 winbindd_wins_byname.c
+                 winbindd_msrpc.c
+                 winbindd_rpc.c
+                 winbindd_reconnect.c
+                 winbindd_reconnect_ads.c
+                 winbindd_ads.c
+                 winbindd_samr.c
+                 winbindd_dual.c
+                 winbindd_dual_ndr.c
+                 winbindd_dual_srv.c
+                 winbindd_async.c
+                 winbindd_creds.c
+                 winbindd_cred_cache.c
+                 winbindd_ccache_access.c
+                 winbindd_domain.c
+                 winbindd_idmap.c
+                 winbindd_locator.c
+                 winbindd_ndr.c
+                 wb_lookupsid.c
+                 wb_lookupsids.c
+                 wb_lookupname.c
+                 wb_sids2xids.c
+                 wb_xids2sids.c
+                 wb_queryuser.c
+                 wb_lookupuseraliases.c
+                 wb_lookupusergroups.c
+                 wb_getpwsid.c
+                 wb_gettoken.c
+                 wb_seqnum.c
+                 wb_seqnums.c
+                 wb_group_members.c
+                 wb_getgrsid.c
+                 wb_query_user_list.c
+                 wb_query_group_list.c
+                 wb_next_pwent.c
+                 wb_next_grent.c
+                 wb_dsgetdcname.c
+                 winbindd_lookupsid.c
+                 winbindd_lookupsids.c
+                 winbindd_lookupname.c
+                 winbindd_sids_to_xids.c
+                 winbindd_xids_to_sids.c
+                 winbindd_allocate_uid.c
+                 winbindd_allocate_gid.c
+                 winbindd_getpwsid.c
+                 winbindd_getpwnam.c
+                 winbindd_getpwuid.c
+                 winbindd_getsidaliases.c
+                 winbindd_getuserdomgroups.c
+                 winbindd_getgroups.c
+                 winbindd_show_sequence.c
+                 winbindd_getgrgid.c
+                 winbindd_getgrnam.c
+                 winbindd_getusersids.c
+                 winbindd_lookuprids.c
+                 winbindd_setpwent.c
+                 winbindd_getpwent.c
+                 winbindd_endpwent.c
+                 winbindd_setgrent.c
+                 winbindd_getgrent.c
+                 winbindd_endgrent.c
+                 winbindd_dsgetdcname.c
+                 winbindd_getdcname.c
+                 winbindd_list_users.c
+                 winbindd_list_groups.c
+                 winbindd_check_machine_acct.c
+                 winbindd_change_machine_acct.c
+                 winbindd_irpc.c
+                 winbindd_ping_dc.c
+                 winbindd_domain_info.c
+                 winbindd_pam_auth.c
+                 winbindd_pam_logoff.c
+                 winbindd_pam_chauthtok.c
+                 winbindd_pam_auth_crap.c
+                 winbindd_pam_chng_pswd_auth_crap.c
+                 winbindd_gpupdate.c''',
+                 deps='''
+                 talloc
+                 tevent
+                 pdb
+                 popt_samba3
+                 idmap
+                 ads
+                 msrpc3
+                 nss_info
+                 LIBAFS
+                 LIBADS_SERVER
+                 LIBCLI_SAMR
+                 SLCACHE
+                 RPC_NDR_DSSETUP
+                 RPC_NDR_WINBIND
+                 SRV_NDR_WINBIND
+                 RPC_SAMR
+                 RPC_LSARPC
+                 RPC_SERVER
+                 WB_REQTRANS
+                 TDB_VALIDATE
+                 MESSAGING
+                 LIBLSA
+                 ''',
+                 enabled=bld.env.build_winbind,
+                 install_path='${SBINDIR}')

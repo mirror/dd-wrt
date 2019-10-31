@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+
+bld.SAMBA_LIBRARY('clidns',
+        source='dns.c resolvconf.c',
+        public_deps='LIBTSOCKET tevent-util ndr-standard',
+        private_library=True)
+
+bld.SAMBA_BINARY('resolvconftest',
+                  source='resolvconftest.c',
+                  deps='clidns',
+                  enabled=bld.CONFIG_SET('HAVE_FMEMOPEN'),
+                  install=False)
+
+bld.SAMBA_SUBSYSTEM('dns_lookup',
+                    source='dns_lookup.c',
+                    public_deps='clidns')
+
+bld.SAMBA_BINARY('dns_lookuptest',
+                  source='dns_lookuptest.c',
+                  deps='dns_lookup',
+                  install=False)

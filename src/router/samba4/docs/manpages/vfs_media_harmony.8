@@ -1,0 +1,144 @@
+'\" t
+.\"     Title: vfs_media_harmony
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2019
+.\"    Manual: System Administration tools
+.\"    Source: Samba 4.11.2
+.\"  Language: English
+.\"
+.TH "VFS_MEDIA_HARMONY" "8" "10/24/2019" "Samba 4\&.11\&.2" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+vfs_media_harmony \- Allow multiple Avid clients to share a network drive\&.
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+vfs objects = media_harmony
+.SH "DESCRIPTION"
+.PP
+This VFS module is part of the
+\fBsamba\fR(7)
+suite\&.
+.PP
+The
+vfs_media_harmony
+VFS module allows Avid editorial workstations to share a network drive\&. It does this by:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+Giving each client their own copy of the Avid msmMMOB\&.mdb and msmFMID\&.pmr files and Creating directories\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+Allowing each client to explicitly control the write time the Avid application sees on Avid media directories\&.
+.RE
+.sp
+.RE
+.PP
+This module is stackable\&.
+.SH "CONFIGURATION"
+.PP
+vfs_media_harmony
+automatically redirects requests from clients for Avid database files or an Avid Creating directory to a client\-specific version of the file\&. No configuration beyond enabling the module is needed to get this portion of its functionality working\&.
+.PP
+If Mac and Windows Avid clients will be accessing the same folder, they should be given separate share definitions, with hidden Mac files vetoed on the Windows share\&. See EXAMPLES\&.
+.PP
+To allow each client to control when the Avid application refreshes their Avid databases, create files for each client and each Avid media directory with the name [avid_dir_name]_[client_ip_address]_[client_username]\&. To trigger Avid database refreshes, update the write time on those files\&. See EXAMPLES\&.
+.PP
+It is also necessary for the
+cache locked write times = no
+option to be set for clients to be able to control their Avid media folder write times\&.
+.SH "EXAMPLES"
+.PP
+Enable media_harmony for Mac and Windows clients:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        \fI[avid_mac]\fR
+	\m[blue]\fBpath = /avid\fR\m[]
+	\m[blue]\fBvfs objects = media_harmony\fR\m[]
+	\m[blue]\fBcache locked write times = no\fR\m[]
+        \fI[avid_win]\fR
+	\m[blue]\fBpath = /avid\fR\m[]
+	\m[blue]\fBvfs objects = media_harmony\fR\m[]
+	\m[blue]\fBcache locked write times = no\fR\m[]
+	\m[blue]\fBveto files = /\&.DS_Store/\&._@/\&.Trash@/\&.Spotlight@/\&.hidden/\&.hotfiles@/\&.vol/\fR\m[]
+	\m[blue]\fBdelete veto files = yes\fR\m[]
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Create the files that will allow users david and susan to control their own Avid database refreshes:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	touch \*(Aq/avid/OMFI MediaFiles_192\&.168\&.1\&.10_david\*(Aq \e
+		\*(Aq/avid/OMFI MediaFiles_192\&.168\&.1\&.11_susan\*(Aq \e
+		\*(Aq/avid/Avid MediaFiles/MXF/1_192\&.168\&.1\&.10_david\*(Aq \e
+		\*(Aq/avid/Avid MediaFiles/MXF/1_192\&.168\&.1\&.11_susan\*(Aq
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Trigger an Avid database refresh for user david:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	touch \*(Aq/avid/OMFI MediaFiles_192\&.168\&.1\&.10_david\*(Aq \e
+		\*(Aq/avid/Avid MediaFiles/MXF/1_192\&.168\&.1\&.10_david\*(Aq
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+If you have a large number of Avid media folders to manage, you can give each editor a suitably modified version of examples/scripts/vfs/media_harmony/trigger_avid_update\&.py to create and update these files\&.
+.SH "CAVEATS"
+.PP
+vfs_media_harmony
+is designed to work with Avid editing applications that look in the Avid MediaFiles or OMFI MediaFiles directories for media\&. It is not designed to work as expected in all circumstances for general use\&. For example: It is possible to open a client\-specific file such as msmMMOB\&.mdb_192\&.168\&.1\&.10_userx even though it doesn\*(Aqt show up in a directory listing\&.
+.SH "VERSION"
+.PP
+This man page is part of version 4\&.11\&.2 of the Samba suite\&.
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

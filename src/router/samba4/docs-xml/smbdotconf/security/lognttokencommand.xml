@@ -1,0 +1,13 @@
+<samba:parameter name="log nt token command"
+                 context="G"
+                 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>This option can be set to a command that will be called when new nt
+		tokens are created.</para>
+
+	<para>This is only useful for development purposes.</para>
+</description>
+
+<value type="default"></value>
+</samba:parameter>

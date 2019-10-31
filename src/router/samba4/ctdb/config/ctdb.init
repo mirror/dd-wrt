@@ -1,0 +1,164 @@
+#!/bin/sh
+
+# Start and stop CTDB (Clustered TDB daemon)
+#
+# chkconfig: - 90 01
+#
+# description: Starts and stops CTDB
+# pidfile: /var/run/ctdb/ctdbd.pid
+# config: /etc/sysconfig/ctdb
+
+### BEGIN INIT INFO
+# Provides:            ctdb
+# Required-Start:      $local_fs $syslog $network $remote_fs
+# Required-Stop:       $local_fs $syslog $network $remote_fs
+# Default-Start:       2 3 4 5
+# Default-Stop:        0 1 6
+# Short-Description:   start and stop ctdb service
+# Description:         Start and stop CTDB (Clustered TDB daemon)
+### END INIT INFO
+
+# Source function library.
+if [ -f /etc/init.d/functions ] ; then
+    # Red Hat
+    . /etc/init.d/functions
+elif [ -f /etc/rc.d/init.d/functions ] ; then
+    # Red Hat
+    . /etc/rc.d/init.d/functions
+elif [ -f /etc/rc.status ] ; then
+    # SUSE
+    . /etc/rc.status
+    rc_reset
+    LC_ALL=en_US.UTF-8
+elif [ -f /lib/lsb/init-functions ] ; then
+    # Debian
+    . /lib/lsb/init-functions
+fi
+
+# Avoid using root's TMPDIR
+unset TMPDIR
+
+[ -n "$CTDB_BASE" ] || export CTDB_BASE="/etc/ctdb"
+
+. "${CTDB_BASE}/functions"
+
+load_system_config "network"
+
+# check networking is up (for redhat)
+if [ "$NETWORKING" = "no" ] ; then
+    exit 0
+fi
+
+load_system_config "ctdb"
+
+detect_init_style
+export CTDB_INIT_STYLE
+
+ctdbd="${CTDBD:-/usr/sbin/ctdbd}"
+ctdbd_wrapper="${CTDBD_WRAPPER:-/usr/sbin/ctdbd_wrapper}"
+pidfile="/var/run/ctdb/ctdbd.pid"
+
+############################################################
+
+start()
+{
+    printf "Starting ctdbd service: "
+
+    case "$CTDB_INIT_STYLE" in
+	suse)
+	    startproc \
+		"$ctdbd_wrapper" "start"
+	    rc_status -v
+	    ;;
+	redhat)
+	    daemon --pidfile "$pidfile" \
+		"$ctdbd_wrapper" "start"
+	    RETVAL=$?
+	    echo
+	    [ $RETVAL -eq 0 ] && touch /var/lock/subsys/ctdb || RETVAL=1
+	    return $RETVAL
+	    ;;
+	debian)
+	    eval start-stop-daemon --start --quiet --background --exec \
+		"$ctdbd_wrapper" "start"
+	    ;;
+    esac
+}
+
+stop()
+{
+    printf "Shutting down ctdbd service: "
+
+    case "$CTDB_INIT_STYLE" in
+	suse)
+	    "$ctdbd_wrapper" "stop"
+	    rc_status -v
+	    ;;
+	redhat)
+	    "$ctdbd_wrapper" "stop"
+	    RETVAL=$?
+	    # Common idiom in Red Hat init scripts - success() always
+	    # succeeds so this does behave like if-then-else
+	    # shellcheck disable=SC2015
+            [ $RETVAL -eq 0 ] && success || failure
+	    echo ""
+	    [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/ctdb
+	    return $RETVAL
+	    ;;
+	debian)
+	    "$ctdbd_wrapper" "stop"
+	    log_end_msg $?
+	    ;;
+    esac
+}
+
+restart()
+{
+    stop
+    start
+}
+
+check_status ()
+{
+	case "$CTDB_INIT_STYLE" in
+	suse)
+		checkproc -p "$pidfile" "$ctdbd"
+		rc_status -v
+		;;
+	redhat)
+		status -p "$pidfile" -l "ctdb" "$ctdbd"
+		;;
+	debian)
+		status_of_proc -p "$pidfile" "$ctdbd" "ctdb"
+		;;
+	esac
+}
+
+############################################################
+
+case "$1" in
+    start)
+  	start
+	;;
+    stop)
+  	stop
+	;;
+    restart|reload|force-reload)
+  	restart
+	;;
+    status)
+  	check_status
+	;;
+    condrestart|try-restart)
+  	if check_status >/dev/null ; then
+	    restart
+	fi
+	;;
+    cron)
+	# used from cron to auto-restart ctdb
+  	check_status >/dev/null 2>&1 || restart
+	;;
+    *)
+	echo "Usage: $0 {start|stop|restart|reload|force-reload|status|cron|condrestart|try-restart}"
+	exit 1
+esac

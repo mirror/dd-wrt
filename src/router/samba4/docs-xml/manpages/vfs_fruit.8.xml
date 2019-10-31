@@ -1,0 +1,436 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="vfs_fruit.8">
+
+<refmeta>
+	<refentrytitle>vfs_fruit</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">System Administration tools</refmiscinfo>
+	<refmiscinfo class="version">&doc.version;</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>vfs_fruit</refname>
+	<refpurpose>Enhanced OS X and Netatalk interoperability</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>vfs objects = fruit</command>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>DESCRIPTION</title>
+
+	<para>This VFS module is part of the
+	<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry> suite.</para>
+
+	<para>The <command>vfs_fruit</command> module provides
+	enhanced compatibility with Apple SMB clients and
+	interoperability with a Netatalk 3 AFP fileserver.</para>
+
+	<para>The module should be stacked with
+	<command>vfs_catia</command> if enabling character conversion and
+	must be stacked with <command>vfs_streams_xattr</command>, see the
+	example section for the correct config.</para>
+
+	<para>The module enables alternate data streams (ADS) support
+	for a share, intercepts the OS X special streams "AFP_AfpInfo"
+	and "AFP_Resource" and handles them in a special way. All
+	other named streams are deferred to
+	<command>vfs_streams_xattr</command> which must be loaded
+	together with <command>vfs_fruit</command>.</para>
+
+	<para>Be careful when mixing shares with and without
+	vfs_fruit. OS X clients negotiate SMB2 AAPL protocol
+	extensions on the first tcon, so mixing shares with and
+	without fruit will globally disable AAPL if the first tcon is
+	without fruit.</para>
+
+	<para>Having shares with ADS support enabled for OS X client
+	is worthwhile because it resembles the behaviour of Apple's
+	own SMB server implementation and it avoids certain severe
+	performance degradations caused by Samba's case sensitivity
+	semantics.</para>
+
+	<para>The OS X metadata and resource fork stream can be stored
+	in a way compatible with Netatalk 3 by setting
+	<command>fruit:resource = file</command> and
+	<command>fruit:metadata = netatalk</command>.</para>
+
+	<para>OS X maps NTFS illegal characters to the Unicode private
+	range in SMB requests. By setting <command>fruit:encoding =
+	native</command>, all mapped characters are converted to
+	native ASCII characters.</para>
+
+	<para>Finally, share access modes are optionally checked
+	against Netatalk AFP sharing modes by setting
+	<command>fruit:locking = netatalk</command>.</para>
+
+	<para>This module is not stackable other than described in
+	this manpage.</para>
+
+</refsect1>
+
+<refsect1>
+	<title>GLOBAL OPTIONS</title>
+
+	<para>The following options must be set in the global smb.conf section
+	and won't take effect when set per share.</para>
+
+	<variablelist>
+
+	  <varlistentry>
+	    <term>fruit:aapl = yes | no</term>
+	    <listitem>
+	      <para>A <emphasis>global</emphasis> option whether to enable Apple's SMB2+
+	      extension codenamed AAPL. Default
+	      <emphasis>yes</emphasis>. This extension enhances
+	      several deficiencies when connecting from Macs:</para>
+
+	      <itemizedlist>
+		<listitem><para>directory enumeration is enriched with
+		Mac relevant filesystem metadata (UNIX mode,
+		FinderInfo, resource fork size and effective
+		permission), as a result the Mac client doesn't need
+		to fetch this metadata individually per directory
+		entry resulting in an often tremendous performance
+		increase.</para></listitem>
+
+		<listitem><para>The ability to query and modify the
+		UNIX mode of directory entries.</para></listitem>
+	      </itemizedlist>
+
+	      <para>There's a set of per share options that come into play when
+	      <emphasis>fruit:aapl</emphasis> is enabled. These options, listed
+	      below, can be used to disable the computation of specific Mac
+	      metadata in the directory enumeration context, all are enabled by
+	      default:</para>
+
+	      <itemizedlist>
+		<listitem><para>readdir_attr:aapl_rsize = yes | no</para></listitem>
+		<listitem><para>readdir_attr:aapl_finder_info = yes | no</para></listitem>
+		<listitem><para>readdir_attr:aapl_max_access = yes | no</para></listitem>
+	      </itemizedlist>
+
+	      <para>See below for a description of these options.</para>
+
+	    </listitem>
+	  </varlistentry>
+
+	  <varlistentry>
+	    <term>fruit:nfs_aces = yes | no</term>
+	    <listitem>
+	      <para>A <emphasis>global</emphasis> option whether support for
+	      querying and modifying the UNIX mode of directory entries via NFS
+	      ACEs is enabled, default <emphasis>yes</emphasis>.</para>
+	    </listitem>
+	  </varlistentry>
+
+	  <varlistentry>
+	    <term>fruit:copyfile = yes | no</term>
+	    <listitem>
+	      <para>A <emphasis>global</emphasis> option whether to enable OS X
+	      specific copychunk ioctl that requests a copy of a whole file
+	      along with all attached metadata.</para>
+	      <para>WARNING: the copyfile request is blocking the
+	      client while the server does the copy.</para>
+	      <para>The default is <emphasis>no</emphasis>.</para>
+	    </listitem>
+	  </varlistentry>
+
+	  <varlistentry>
+	    <term>fruit:model = MacSamba</term>
+	    <listitem>
+	      <para>This option defines the model string inside the AAPL
+	      extension and will determine the appearance of the icon representing the
+	      Samba server in the Finder window.</para>
+	      <para>The default is <emphasis>MacSamba</emphasis>.</para>
+	    </listitem>
+	  </varlistentry>
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>OPTIONS</title>
+
+	<para>The following options can be set either in the global smb.conf section
+	or per share.</para>
+
+	<variablelist>
+
+	  <varlistentry>
+	    <term>fruit:resource = [ file | xattr | stream ]</term>
+	    <listitem>
+	      <para>Controls where the OS X resource fork is stored.</para>
+
+	      <para>Due to a spelling bug in all Samba versions older then
+	      4.6.0, this option can also be given as
+	      <emphasis>fruit:ressource</emphasis>, ie with two s.</para>
+
+	      <para>Settings:</para>
+
+	      <itemizedlist>
+		<listitem><para><command>file (default)</command> - use a ._
+		AppleDouble file compatible with OS X and
+		Netatalk</para></listitem>
+
+		<listitem><para><command>xattr</command> - use a
+		xattr, requires a filesystem with large xattr support
+		and a file IO API compatible with xattrs, this boils
+		down to Solaris and derived platforms and
+		ZFS</para></listitem>
+
+		<listitem><para><command>stream (experimental)</command> - pass
+		the stream on to the next module in the VFS stack.
+		<emphasis>Warning: </emphasis> this option should not be used
+		with the <emphasis>streams_xattr</emphasis> module due to the
+		extended attributes size limitations of most
+		filesytems.</para></listitem>
+	      </itemizedlist>
+
+	    </listitem>
+	  </varlistentry>
+
+	  <varlistentry>
+	    <term>fruit:time machine = [ yes | no ]</term>
+	    <listitem>
+	      <para>Controls if Time Machine support via the FULLSYNC volume
+	      capability is advertised to clients.</para>
+
+	      <itemizedlist>
+		<listitem><para><command>yes</command> - Enables Time Machine
+		support for this share. Also registers the share with mDNS in
+		case Samba is built with mDNS support.</para></listitem>
+
+		<listitem><para><command>no (default)</command> Disables
+		advertising Time Machine support.</para></listitem>
+
+	      </itemizedlist>
+
+	      <para>This option enforces the following settings per share (or
+	      for all shares if enabled globally):</para>
+	      <itemizedlist>
+		<listitem><para><command>durable handles = yes</command></para></listitem>
+		<listitem><para><command>kernel oplocks = no</command></para></listitem>
+		<listitem><para><command>kernel share modes = no</command></para></listitem>
+		<listitem><para><command>posix locking = no</command></para></listitem>
+	      </itemizedlist>
+
+	    </listitem>
+	  </varlistentry>
+
+	  <varlistentry>
+	    <term>fruit:time machine max size = SIZE [K|M|G|T|P]</term>
+	    <listitem>
+	      <para>Useful for Time Machine: limits the reported disksize, thus
+	      preventing Time Machine from using the whole real disk space for
+	      backup. The option takes a number plus an optional unit.</para>
+	      <para><emphasis>IMPORTANT</emphasis>: This is an approximated
+	      calculation that only takes into account the contents of Time
+	      Machine sparsebundle images. Therefor you <emphasis>MUST
+	      NOT</emphasis> use this volume to store other content when using
+	      this option, because it would NOT be accounted.</para>
+	      <para>The calculation works by reading the band size from the
+	      Info.plist XML file of the sparsebundle, reading the bands/
+	      directory counting the number of band files, and then multiplying
+	      one with the other.</para>
+	    </listitem>
+	  </varlistentry>
+
+	  <varlistentry>
+	    <term>fruit:metadata = [ stream | netatalk ]</term>
+	    <listitem>
+	      <para>Controls where the OS X metadata stream is stored:</para>
+
+	      <itemizedlist>
+		<listitem><para><command>netatalk (default)</command> - use
+		Netatalk compatible xattr</para></listitem>
+
+		<listitem><para><command>stream</command> - pass the
+		stream on to the next module in the VFS
+		stack</para></listitem>
+	      </itemizedlist>
+
+	    </listitem>
+	  </varlistentry>
+
+	  <varlistentry>
+	    <term>fruit:locking = [ netatalk | none ]</term>
+	    <listitem>
+	      <para></para>
+	      <itemizedlist>
+		<listitem><para><command>none (default)</command> - no
+		cross protocol locking</para></listitem>
+
+		<listitem><para><command>netatalk</command> - use
+		cross protocol locking with Netatalk</para></listitem>
+
+	      </itemizedlist>
+	    </listitem>
+	  </varlistentry>
+
+	  <varlistentry>
+	    <term>fruit:encoding = [ native | private ]</term>
+	    <listitem>
+
+	      <para>Controls how the set of illegal NTFS ASCII
+	      character, commonly used by OS X clients, are stored in
+	      the filesystem.</para>
+
+	      <para><emphasis>Important:</emphasis> this is known to not fully
+	      work with <emphasis>fruit:metadata=stream</emphasis> or
+	      <emphasis>fruit:resource=stream</emphasis>.</para>
+
+ 	      <itemizedlist>
+
+		<listitem><para><command>private (default)</command> -
+		store characters as encoded by the OS X client: mapped
+		to the Unicode private range</para></listitem>
+
+		<listitem><para><command>native</command> - store
+		characters with their native ASCII
+		value. <emphasis>Important</emphasis>: this option
+		requires the use of <emphasis>vfs_catia</emphasis> in
+		the VFS module stack as shown in the examples
+		section.</para></listitem>
+
+	      </itemizedlist>
+	    </listitem>
+	  </varlistentry>
+
+	  <varlistentry>
+	    <term>fruit:veto_appledouble = yes | no</term>
+	    <listitem>
+	      <para><emphasis>Note:</emphasis> this option only applies when
+	      <parameter>fruit:resource</parameter> is set to
+	      <parameter>file</parameter> (the default).</para>
+
+	      <para>When <parameter>fruit:resource</parameter> is set to
+	      <parameter>file</parameter>, vfs_fruit may create ._ AppleDouble
+	      files. This options controls whether these ._ AppleDouble files
+	      are vetoed which prevents the client from accessing them.</para>
+	      <para>Vetoing ._ files may break some applications, e.g.
+	      extracting Mac ZIP archives from Mac clients fails,
+	      because they contain ._ files. <command>rsync</command> will
+	      also be unable to sync files beginning with underscores, as
+	      the temporary files it uses for these will start with ._ and
+	      so cannot be created.</para>
+	      <para>Setting this option to
+	      false will fix this, but the abstraction leak of
+	      exposing the internally created ._ files may have other
+	      unknown side effects.</para>
+	      <para>The default is <emphasis>yes</emphasis>.</para>
+	    </listitem>
+	  </varlistentry>
+
+	  <varlistentry>
+	    <term>fruit:posix_rename = yes | no</term>
+	    <listitem>
+	      <para>Whether to enable POSIX directory rename behaviour
+	      for OS X clients. Without this, directories can't be
+	      renamed if any client has any file inside it
+	      (recursive!) open.</para>
+	      <para>The default is <emphasis>yes</emphasis>.</para>
+	    </listitem>
+	  </varlistentry>
+
+	  <varlistentry>
+	    <term>readdir_attr:aapl_rsize = yes | no</term>
+	    <listitem>
+	      <para>Return resource fork size in SMB2 FIND responses.</para>
+	      <para>The default is <emphasis>yes</emphasis>.</para>
+	    </listitem>
+	  </varlistentry>
+
+	  <varlistentry>
+	    <term>readdir_attr:aapl_finder_info = yes | no</term>
+	    <listitem>
+	      <para>Return FinderInfo in SMB2 FIND responses.</para>
+	      <para>The default is <emphasis>yes</emphasis>.</para>
+	    </listitem>
+	  </varlistentry>
+
+	  <varlistentry>
+	    <term>readdir_attr:aapl_max_access = yes | no</term>
+	    <listitem>
+	      <para>Return the user's effective maximum permissions in SMB2 FIND
+	      responses. This is an expensive computation, setting this to off
+	      pretends the use has maximum effective permissions.</para>
+	      <para>The default is <emphasis>yes</emphasis>.</para>
+	    </listitem>
+	  </varlistentry>
+
+	  <varlistentry>
+	    <term>fruit:wipe_intentionally_left_blank_rfork = yes | no</term>
+	    <listitem>
+	      <para>Whether to wipe Resource Fork data that matches the special
+	      286 bytes sized placeholder blob that macOS client create on
+	      occasion. The blob contains a string <quote>This resource fork
+	      intentionally left blank</quote>, the remaining bytes being mostly
+	      zero. There being no one use of this data, it is probably safe to
+	      discard it. When this option is enabled, this module truncates the
+	      Resource Fork stream to 0 bytes.</para>
+	      <para>The default is <emphasis>no</emphasis>.</para>
+	    </listitem>
+	  </varlistentry>
+
+	  <varlistentry>
+	    <term>fruit:delete_empty_adfiles = yes | no</term>
+	    <listitem>
+	      <para>Whether to delete empty AppleDouble files. Empty means that
+	      the resource fork entry in the AppleDouble files is of size 0, or
+	      the size is exactly 286 bytes and the content matches a special
+	      boilerplate resource fork created my macOS.</para>
+	      <para>The default is <emphasis>no</emphasis>.</para>
+	    </listitem>
+	  </varlistentry>
+
+	  <varlistentry>
+	    <term>fruit:zero_file_id = yes | no</term>
+	    <listitem>
+	      <para>Whether to return zero to queries of on-disk file
+	      identifier if the client has negotiated AAPL.</para>
+	      <para>Mac applications and / or the Mac SMB client code expect the
+	      on-disk file identifier to have the semantics of HFS+ Catalog Node
+	      Identifier (CNID). Samba provides File-IDs based on a file's
+	      initial creation date if the option <smbconfoption name="store dos
+	      attributes"/> is enabled.  Returning a file identifier of
+	      zero causes the Mac client to stop using and trusting the file id
+	      returned from the server.</para>
+	      <para>The default is <emphasis>yes</emphasis>.</para>
+	    </listitem>
+	  </varlistentry>
+
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>EXAMPLES</title>
+
+<programlisting>
+        <smbconfsection name="[share]"/>
+	<smbconfoption name="vfs objects">catia fruit streams_xattr</smbconfoption>
+	<smbconfoption name="fruit:resource">file</smbconfoption>
+	<smbconfoption name="fruit:metadata">netatalk</smbconfoption>
+	<smbconfoption name="fruit:locking">netatalk</smbconfoption>
+	<smbconfoption name="fruit:encoding">native</smbconfoption>
+</programlisting>
+
+</refsect1>
+
+<refsect1>
+	<title>AUTHOR</title>
+
+	<para>The original Samba software and related utilities
+	were created by Andrew Tridgell. Samba is now developed
+	by the Samba Team as an Open Source project similar
+	to the way the Linux kernel is developed.</para>
+
+</refsect1>
+
+</refentry>

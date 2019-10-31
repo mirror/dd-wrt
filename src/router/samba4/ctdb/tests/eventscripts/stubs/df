@@ -1,0 +1,38 @@
+#!/bin/sh
+
+usage ()
+{
+    echo "usage: df [-kP] [<mount-point>]"
+    exit 1
+}
+
+if [ "$1" = "-kP" ] ; then
+    shift
+fi
+
+case "$1" in
+     -*) usage ;;
+esac
+
+fs="${1:-/}"
+
+# Anything starting with CTDB_DBDIR_BASE gets canonicalised to
+# CTDB_DBDIR_BASE.  This helps with the setting of defaults for the
+# filesystem checks.
+if [ "${fs#${CTDB_DBDIR_BASE}}" != "$fs" ] ; then
+    fs="$CTDB_DBDIR_BASE"
+fi
+
+# A default, for tests that don't initialise this...
+if [ -z "$FAKE_FS_USE" ] ; then
+    FAKE_FS_USE=10
+fi
+
+echo "Filesystem             1024-blocks      Used Available Capacity Mounted on"
+
+blocks="1000000"
+used=$(($blocks * $FAKE_FS_USE / 100))
+available=$(($blocks - $used))
+
+printf "%-36s %10d %10d %10d %10d%% %s\n" \
+       "/dev/sda1" "$blocks" "$used" "$available" "$FAKE_FS_USE" "$fs"

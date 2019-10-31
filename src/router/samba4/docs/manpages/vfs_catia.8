@@ -1,0 +1,126 @@
+'\" t
+.\"     Title: vfs_catia
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2019
+.\"    Manual: System Administration tools
+.\"    Source: Samba 4.11.2
+.\"  Language: English
+.\"
+.TH "VFS_CATIA" "8" "10/24/2019" "Samba 4\&.11\&.2" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+vfs_catia \- translate illegal characters in Catia filenames
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+vfs objects = catia
+.SH "DESCRIPTION"
+.PP
+This VFS module is part of the
+\fBsamba\fR(7)
+suite\&.
+.PP
+The Catia CAD package commonly creates filenames that use characters that are illegal in CIFS filenames\&. The
+vfs_catia
+VFS module implements a character mapping so that these files can be shared with CIFS clients\&.
+.PP
+This module is stackable\&.
+.PP
+The parameter "catia:mappings" specifies the mapping on a per\-character basis, see below\&.
+.SH "OPTIONS"
+.PP
+catia:mappings = SERVER_HEX_CHAR:CLIENT_HEX_CHAR
+.RS 4
+SERVER_HEX_CHAR specifies a 0x prefixed hexedecimal character code that, when included in a Samba server\-side filename, will be mapped to CLIENT_HEX_CHAR for the CIFS client\&.
+.sp
+The same mapping occurs in the opposite direction\&. Multiple character mappings are separated by a comma\&.
+.RE
+.SH "EXAMPLES"
+.PP
+Map server\-side quotation\-marks (") to client\-side diaeresis (\(ad) on filenames in the [CAD] share:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        \fI[CAD]\fR
+	\m[blue]\fBpath = /data/cad\fR\m[]
+	\m[blue]\fBvfs objects = catia\fR\m[]
+	\m[blue]\fBcatia:mappings = 0x22:0xa8\fR\m[]
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Perform comprehensive mapping of common Catia filename characters:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        \fI[CAD]\fR
+	\m[blue]\fBpath = /data/cad\fR\m[]
+	\m[blue]\fBvfs objects = catia\fR\m[]
+	\m[blue]\fBcatia:mappings = 0x22:0xa8,0x2a:0xa4,0x2f:0xf8,0x3a:0xf7,0x3c:0xab,0x3e:0xbb,0x3f:0xbf,0x5c:0xff,0x7c:0xa6\fR\m[]
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Server\-side filename to be translated (Note that the path delimiter "/" is not used here):
+.PP
+a\ea:a*a?a"a<a>a|a
+.PP
+Resulting filename, as seen by the client:
+.PP
+aÿa\(dia\(Csa\(r?a\(ada\(Foa\(Fca\(bba
+.SH "CAVEATS"
+.PP
+Character mapping must work in BOTH directions (server \-> client and client \-> server) to get unique and existing file names!
+.PP
+A NOT working example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        \fI[CAD]\fR
+	\m[blue]\fBpath = /data/cad\fR\m[]
+	\m[blue]\fBvfs objects = catia\fR\m[]
+	\m[blue]\fBcatia:mappings = 0x3a:0x5f\fR\m[]
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Here the colon ":" is mapped to the underscore "_"\&.
+.PP
+Assuming a server\-side filename "a:should_work", which is translated to "a_should_work" for the client\&.
+.PP
+BUT the reverse mapping from client "a_should_work" to server will result in "a:should:work" \- something like "file not found" will be returned\&.
+.SH "VERSION"
+.PP
+This man page is part of Samba versions from 3\&.5\&.0 to 4\&.0\&.6\&.
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.
+.PP
+New version written by Guenter Kukkukk kukks@samba\&.org

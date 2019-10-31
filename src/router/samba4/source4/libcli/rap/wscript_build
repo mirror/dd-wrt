@@ -1,0 +1,7 @@
+#!/usr/bin/env python
+
+bld.SAMBA_SUBSYSTEM('LIBCLI_RAP',
+	source='rap.c',
+	public_deps='smbclient-raw NDR_RAP',
+	autoproto='proto.h'
+	)

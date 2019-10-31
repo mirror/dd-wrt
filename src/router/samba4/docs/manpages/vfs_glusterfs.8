@@ -1,0 +1,115 @@
+'\" t
+.\"     Title: vfs_glusterfs
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2019
+.\"    Manual: System Administration tools
+.\"    Source: Samba 4.11.2
+.\"  Language: English
+.\"
+.TH "VFS_GLUSTERFS" "8" "10/24/2019" "Samba 4\&.11\&.2" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+vfs_glusterfs \- Utilize features provided by GlusterFS
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+vfs objects = glusterfs
+.SH "DESCRIPTION"
+.PP
+This VFS module is part of the
+\fBsamba\fR(8)
+suite\&.
+.PP
+GlusterFS (http://www\&.gluster\&.org) is an Open Source clustered file system capable of scaling to several peta\-bytes\&. With its FUSE based native client, GlusterFS is available as a POSIX compliant file system and can hence be shared by Samba without additional steps\&.
+.PP
+The
+vfs_glusterfs
+VFS module provides an alternative, and superior way to access a Gluster filesystem from Samba for sharing\&. It does not require a Gluster FUSE mount but directly accesses the GlusterFS daemon through its library
+libgfapi, thereby omitting the expensive kernel\-userspace context switches and taking advantage of some of the more advanced features of GlusterFS\&.
+.PP
+This module can be combined with other modules, but it should be the last module in the
+vfs objects
+list\&. Modules added to this list to the right of the glusterfs entry may not have any effect at all\&.
+.SH "CONFIGURATION"
+.PP
+A basic configuration looks like this\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+		\fI[share]\fR
+		\m[blue]\fBvfs objects = glusterfs\fR\m[]
+		\m[blue]\fBpath = /relative/base/path\fR\m[]
+		\m[blue]\fBglusterfs:volume = gv0\fR\m[]
+		\m[blue]\fBkernel share modes = no\fR\m[]
+	
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Note that since
+vfs_glusterfs
+does not require a Gluster mount, the share
+path
+is treated differently than for other shares: It is interpreted as the base path of the share relative to the gluster volume used\&. Because this is usually not at the same time a system path, in a ctdb cluster setup where ctdb manages Samba, you need to set
+CTDB_SAMBA_SKIP_SHARE_CHECK=yes
+in ctdb\*(Aqs configuration file\&. Otherwise ctdb will not get healthy\&.
+.PP
+Note that currently kernel share modes have to be disabled in a share running with the glusterfs vfs module for file serving to work properly\&.
+.SH "OPTIONS"
+.PP
+glusterfs:logfile = path
+.RS 4
+Defines whether and where to store a vfs_glusterfs specific logfile\&. Client variable substitution is supported (i\&.e\&. %M, %m, %I), hence per client log file can be specified\&.
+.sp
+Example: glusterfs:logfile = /var/log/samba/glusterfs\-vol2\&.%M\&.log
+.RE
+.PP
+glusterfs:loglevel = 0\-9
+.RS 4
+Defines the level of logging, with higher numbers corresponding to more verbosity\&. 0 \- No logs; 9 \- Trace log level; 7 being the info log level is preferred\&.
+.sp
+If this option is not defined with an explicit loglevel, the glusterfs default is used (currently loglevel 7)\&.
+.RE
+.PP
+glusterfs:volfile_server = servername
+.RS 4
+Defines which volfile server to use, defaults to localhost\&. It could be list of white space separated elements where each element could be
+.sp
+1\&. unix+/path/to/socket/file
+.sp
+2\&. [tcp+]IP|hostname|\e[IPv6\e][:port]
+.sp
+Note the restriction on naming a IPv6 host, it follows the same restriction that is based on IPv6 naming in URL as per RFC 2732\&.
+.RE
+.PP
+glusterfs:volume = volumename
+.RS 4
+Defines the glusterfs volumename to use for this share\&.
+.RE
+.SH "VERSION"
+.PP
+This man page is part of version 4\&.11\&.2 of the Samba suite\&.
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

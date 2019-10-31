@@ -1,0 +1,81 @@
+'\" t
+.\"     Title: vfs_aio_pthread
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2019
+.\"    Manual: System Administration tools
+.\"    Source: Samba 4.11.2
+.\"  Language: English
+.\"
+.TH "VFS_AIO_PTHREAD" "8" "10/24/2019" "Samba 4\&.11\&.2" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+vfs_aio_pthread \- implement async open in Samba vfs using a pthread pool
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+vfs objects = aio_pthread
+.SH "DESCRIPTION"
+.PP
+This VFS module is part of the
+\fBsamba\fR(7)
+suite\&.
+.PP
+The
+aio_pthread
+VFS module enables asynchronous opens (for new files) with
+\m[blue]\fBaio_pthread:aio open = yes\fR\m[]
+on platforms which have the pthreads API available, support the openat() syscall and support per thread credentials (modern Linux kernels)\&.
+.PP
+The module makes use of the global thread pool which uses the
+\m[blue]\fBaio max threads\fR\m[]
+option\&.
+.PP
+This module MUST be listed last in any module stack as the Samba VFS open interface is not thread\-safe\&. This module makes direct openat() system calls and does NOT call the Samba VFS open interfaces\&.
+.SH "EXAMPLES"
+.PP
+Straight forward use:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        \fI[cooldata]\fR
+	\m[blue]\fBpath = /data/ice\fR\m[]
+	\m[blue]\fBvfs objects = aio_pthread\fR\m[]
+	\m[blue]\fBaio_pthread:aio open = yes\fR\m[]
+.fi
+.if n \{\
+.RE
+.\}
+.SH "OPTIONS"
+.PP
+aio_pthread:aio open = BOOL
+.RS 4
+Try async opens for creating new files\&.
+.sp
+The default is \*(Aqno\*(Aq\&.
+.RE
+.SH "VERSION"
+.PP
+This man page is part of version 4\&.11\&.2 of the Samba suite\&.
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

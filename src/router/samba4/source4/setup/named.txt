@@ -1,0 +1,49 @@
+# Additional information for DNS setup using BIND
+
+# You must make the following configuration changes to BIND to support
+# Samba's AD DC:
+
+#
+# Steps for BIND 9.8.x and 9.9.x -----------------------------------------
+#
+
+# 1. Insert following lines into the options {} section of your named.conf 
+#    file:
+tkey-gssapi-keytab "${DNS_KEYTAB_ABS}";
+minimal-responses yes;
+
+# 2. If SELinux is enabled, ensure that all files have the appropriate 
+#    SELinux file contexts.  The ${DNS_KEYTAB} file must be accessible by the 
+#    BIND daemon and should have a SELinux type of named_conf_t.  This can be 
+#    set with the following command:
+chcon -t named_conf_t ${DNS_KEYTAB_ABS}
+
+#    Even if not using SELinux, do confirm (only) BIND can access this file as the 
+#    user it becomes (generally not root).
+
+#
+# Steps for BIND 9.x.x using BIND9_DLZ ------------------------------
+#
+
+# 3. Disable chroot support in BIND.  
+#    BIND is often configured to run in a chroot, but this is not
+#    compatible with access to the dns/sam.ldb files that database
+#    access and updates require.  Additionally, the DLZ plugin is
+#    linked to a large number of Samba shared libraries and loads
+#    additonal plugins.
+
+#
+# Steps for BIND 9.x.x using BIND9_FLATFILE ------------------------------
+#
+
+# 3. Ensure the BIND zone file(s) that will be dynamically updated are in 
+#    a directory where the BIND daemon can write.  When BIND performs 
+#    dynamic updates, it not only needs to update the zone file itself but 
+#    it must also create a journal (.jnl) file to track the dynamic updates 
+#    as they occur.  Under Fedora 9, the /var/named directory can not be 
+#    written to by the "named" user.  However, the directory /var/named/dynamic 
+#    directory does provide write access.  Therefore the zone files were 
+#    placed under the /var/named/dynamic directory.  The file directives in 
+#    both example zone statements at the beginning of this file were changed 
+#    by prepending the directory "dynamic/".
+

@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+
+bld.SAMBA_BINARY('client/smbclient'  + bld.env.suffix4,
+	source='client/client.c',
+	deps='samba-hostconfig SMBREADLINE samba-util LIBCLI_SMB RPC_NDR_SRVSVC LIBCLI_LSA popt POPT_SAMBA POPT_CREDENTIALS smbclient-raw param_options dcerpc',
+	install=False
+	)
+
+
+bld.SAMBA_BINARY('client/cifsdd',
+	source='client/cifsdd.c client/cifsddio.c',
+	deps='samba-hostconfig LIBCLI_SMB popt POPT_SAMBA POPT_CREDENTIALS param_options'
+	)

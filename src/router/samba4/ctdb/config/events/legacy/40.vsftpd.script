@@ -1,0 +1,56 @@
+#!/bin/sh
+# event strict to manage vsftpd in a cluster environment
+
+[ -n "$CTDB_BASE" ] || \
+    CTDB_BASE=$(d=$(dirname "$0") ; cd -P "$d" ; dirname "$PWD")
+
+. "${CTDB_BASE}/functions"
+
+service_name="vsftpd"
+
+service_reconfigure ()
+{
+    service $service_name restart
+}
+
+load_script_options
+
+ctdb_setup_state_dir "service" "$service_name"
+
+case "$1" in
+startup)
+	service "$service_name" stop > /dev/null 2>&1
+	service "$service_name" start
+	ctdb_counter_init
+	;;
+
+shutdown)
+	service "$service_name" stop
+	;;
+
+takeip|releaseip)
+	ctdb_service_set_reconfigure
+	;;
+
+ipreallocated)
+	if ctdb_service_needs_reconfigure ; then
+		ctdb_service_reconfigure
+	fi
+	;;
+
+monitor)
+	if ctdb_check_tcp_ports 21 ; then
+		ctdb_counter_init
+	else
+		ctdb_counter_incr
+		num_fails=$(ctdb_counter_get)
+		if [ "$num_fails" -ge 2 ] ; then
+			die "ERROR: ${num_fails} consecutive failures for vsftpd, marking node unhealthy"
+		elif [ "$num_fails" -eq 1 ] ; then
+			echo "WARNING: vsftpd not listening but less than 2 consecutive failures, not unhealthy yet"
+		fi
+	fi
+	;;
+esac
+
+exit 0

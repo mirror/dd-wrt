@@ -1,0 +1,21 @@
+<samba:parameter name="tls cafile"
+                 type="string"
+                 context="G"
+                 function="_tls_cafile"
+                 constant="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+ <description>
+	 <para>This option can be set to a file (PEM format)
+		 containing CA certificates of root CAs to trust to sign
+		 certificates or intermediate CA certificates.</para>
+	 <para>This path is relative to <smbconfoption name="private dir"/> if the path
+	 does not start with a /.</para>
+ </description>
+
+ <related>tls certfile</related>
+ <related>tls crlfile</related>
+ <related>tls dh params file</related>
+ <related>tls enabled</related>
+ <related>tls keyfile</related>
+ <value type="default">tls/ca.pem</value>
+</samba:parameter>

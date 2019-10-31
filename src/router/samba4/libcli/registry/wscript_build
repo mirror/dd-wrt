@@ -1,0 +1,5 @@
+
+bld.SAMBA_LIBRARY('util_reg',
+                    source='util_reg.c',
+                    deps='ndr',
+		    private_library=True)

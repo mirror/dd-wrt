@@ -1,0 +1,252 @@
+Using talloc in Samba4
+======================
+
+.. contents::
+
+Jelmer Vernooij
+August 2013
+
+The most current version of this document is available at
+   http://samba.org/ftp/unpacked/talloc/pytalloc_guide.txt
+
+pytalloc is a small library that provides glue for wrapping
+talloc-allocated objects from C in Python objects.
+
+What is pytalloc, and what is it not?
+-------------------------------------
+
+pytalloc is merely a helper library - it provides a convenient base type object
+for objects that wrap talloc-maintained memory in C. It won't write your
+bindings for you but it will make it easier to write C bindings that involve
+talloc, and take away some of the boiler plate.
+
+Python 3
+--------
+
+pytalloc can be used with Python 3. Usage from Python extension remains
+the same, but for the C utilities, the library to link to is tagged with
+Python's PEP3149 ABI tag, for example "pytalloc.cpython34m".
+To make a build for Python 3, configure with PYTHON=/usr/bin/python3.
+.
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+pytalloc_Object / pytalloc_BaseObject
+
+This is the new base class that all Python objects that wrap talloc pointers
+derive from. It is itself a subclass of the "Object" type that all objects
+in Python derive from.
+
+Note that you will almost never create objects of the pytalloc_Object type
+itself, as they are just opaque pointers that can not be accessed from
+Python. A common pattern is other objects that subclass pytalloc_Object and
+rely on it for their memory management.
+
+Each `pytalloc_Object` wraps two core of information - a talloc context
+and a pointer. The pointer is the actual data that is wrapped. The talloc
+context is used for memory management purposes only; when the wrapping Python object
+goes away, it unlinks the talloc context. The talloc context pointer and the ptr
+can (and often do) have the same value.
+
+Each pytalloc_Object has a custom __repr__ implementation that
+describes that it is a talloc object and the location of the
+pointer it is wrapping. it also has a custom __cmp__/__eq__/__neq__ method that
+compares the pointers the object is wrapping rather than the objects
+themselves (since there can be multiple objects that wrap the same talloc
+pointer).
+
+It is preferred to use pytalloc_BaseObject as this implementation
+exposes less in the C ABI and correctly supports pointers in C arrays
+in the way needed by PIDL.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+PyTypeObject *pytalloc_GetObjectType(void)
+
+Obtain a pointer to the PyTypeObject for `pytalloc_Object`. The
+reference counter for the object will be NOT incremented, so the
+caller MUST NOT decrement it when it no longer needs it (eg by using
+`Py_DECREF`).
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+PyTypeObject *pytalloc_GetBaseObjectType(void)
+
+Obtain a pointer to the PyTypeObject for `pytalloc_BaseObject`. The
+reference counter for the object will be NOT incremented, so the
+caller MUST NOT decrement it when it no longer needs it (eg by using
+`Py_DECREF`).
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+int pytalloc_BaseObject_PyType_Ready(PyTypeObject *type);
+
+Wrapper for PyType_Ready() that will set the correct values into
+the PyTypeObject to create a BaseObject
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-
+int pytalloc_Check(PyObject *)
+
+Check whether a specific object is a talloc Object. Returns non-zero if it is
+a pytalloc_Object and zero otherwise.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-
+int pytalloc_BaseObject_Check(PyObject *)
+
+Check whether a specific object is a talloc BaseObject. Returns non-zero if it is
+a pytalloc_BaseObject and zero otherwise.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+int pytalloc_check_type(PyObject *py_obj, type)
+
+Check if the object based on `pytalloc_*Object` py_obj. type should be a
+C type, similar to a type passed to `talloc_get_type`.
+This can be used as a check before using pytalloc_get_type()
+or an alternative codepath. Returns non-zero if it is
+an object of the expected type and zero otherwise.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+type *pytalloc_get_type(PyObject *py_obj, type)
+
+Retrieve the pointer from a `pytalloc_Object` py_obj. type should be a
+C type, similar to a type passed to `talloc_get_type`.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+pytalloc_get_ptr(PyObject *py_obj)
+
+Retrieve the pointer from a `pytalloc_Object` or `pytalloc_BaseObject`
+py_obj. There is no type checking - use `pytalloc_get_type` if
+possible.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+TALLOC_CTX *pytalloc_get_mem_ctx(PyObject *py_obj)
+
+Retrieve the talloc context associated with a pytalloc_Object or pytalloc_BaseObject.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+PyObject *pytalloc_steal_ex(PyTypeObject *py_type, TALLOC_CTX *mem_ctx, void *ptr)
+
+Create a new Python wrapping object for a talloc pointer and context, with
+py_type as associated Python sub type object. This typically used
+when `mem_ctx` and `ptr` differ, e.g. a pointer to an array element.
+`pytalloc_get_ptr()` can be used to get the pointer out of the object again.
+
+This will *not* increment the reference counter for the talloc context,
+so the caller should make sure such an increment has happened. When the Python
+object goes away, it will unreference the talloc context.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+PyObject *pytalloc_steal(PyTypeObject *py_type, void *ptr)
+
+Create a new Python wrapping object for a talloc pointer and context, with
+py_type as associated Python sub type object. The pointer will also be used
+as the talloc context. `pytalloc_get_type()` can be used to get
+the pointer out of the object again.
+
+This will *not* increment the reference counter for the talloc context,
+so the caller should make sure such an increment has happened. When the Python
+object goes away, it will unreference the talloc context.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+PyObject *pytalloc_reference_ex(PyTypeObject *py_type, TALLOC_CTX *mem_ctx, void *ptr)
+
+Create a new Python wrapping object for a talloc pointer and context, with
+py_type as associated Python sub type object. This typically used
+when `mem_ctx` and `ptr` differ, e.g. a pointer to an array element.
+`pytalloc_get_ptr()` can be used to get the pointer out of the object again.
+
+This will increment the reference counter for the talloc context.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+PyObject *pytalloc_reference(PyTypeObject *py_type, void *talloc_ptr)
+
+Create a new Python wrapping object for a talloc pointer, with
+py_type as associated Python sub type object. The pointer will also be used
+as the talloc context. `pytalloc_get_type()` can be used to get
+the pointer out of the object again.
+
+This will increment the reference counter for the talloc context.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+PyObject *pytalloc_new(type, PyTypeObject *typeobj)
+
+Create a new, empty pytalloc_Object with the specified Python type object. type
+should be a C type, similar to talloc_new().
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+PyObject *pytalloc_GenericObject_steal_ex(void *ptr)
+
+Create a new Python wrapping object for a generic talloc pointer,
+as sub type of `pytalloc_BaseObject`. This typically used
+when `mem_ctx` and `ptr` differ, e.g. a pointer to an array element.
+`pytalloc_get_ptr()` can be used to get the pointer out of the object again.
+
+This will *not* increment the reference counter for the talloc context,
+so the caller should make sure such an increment has happened. When the Python
+object goes away, it will unreference the talloc context.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+PyObject *pytalloc_GenericObject_steal(void *ptr)
+
+Create a new Python wrapping object for a generic talloc pointer,
+as sub type of `pytalloc_BaseObject`. The pointer will also be used
+as the talloc context. `pytalloc_get_type()` can be used to get
+the pointer out of the object again.
+
+This will *not* increment the reference counter for the talloc context,
+so the caller should make sure such an increment has happened. When the Python
+object goes away, it will unreference the talloc context.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+PyObject *pytalloc_GenericObject_reference_ex(void *ptr)
+
+Create a new Python wrapping object for a generic talloc pointer,
+as sub type of `pytalloc_BaseObject`. This typically used
+when `mem_ctx` and `ptr` differ, e.g. a pointer to an array element.
+`pytalloc_get_ptr()` can be used to get the pointer out of the object again.
+
+This will increment the reference counter for the talloc context.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+PyObject *pytalloc_GenericObject_reference(void *ptr)
+
+Create a new Python wrapping object for a generic talloc pointer,
+as sub type of `pytalloc_BaseObject`. The pointer will also be used
+as the talloc context. `pytalloc_get_type()` can be used to get
+the pointer out of the object again.
+
+This will increment the reference counter for the talloc context.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+DEPRECATED! PyObject *pytalloc_CObject_FromTallocPtr(void *);
+
+Create a new pytalloc_Object for an abitrary talloc-maintained C pointer. This will
+use a generic VoidPtr Python type, which just provides an opaque object in
+Python. The caller is responsible for incrementing the talloc reference count before calling
+this function - it will dereference the talloc pointer when it is garbage collected.
+
+This function is deprecated and only available on Python 2.
+Use pytalloc_GenericObject_{reference,steal}[_ex]() instead.
+
+Debug function for talloc in Python
+-----------------------------------
+
+The "talloc" module in Python provides a couple of functions that can be used
+to debug issues with objects wrapped by pytalloc.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+report_full(obj?)
+
+Print a full report on a specific object or on all allocated objects by Python.
+Same behaviour as the `talloc_report_full()` function that is provided by
+C talloc.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+enable_null_tracking()
+
+This enables tracking of the NULL memory context without enabling leak
+reporting on exit. Useful for when you want to do your own leak
+reporting call via talloc_report_null_full().
+
+This must be done in the top level script, not an imported module.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+pytalloc_total_blocks(obj?)
+
+Return the talloc block count for all allocated objects or a specific object if
+specified.

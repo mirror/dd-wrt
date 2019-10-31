@@ -1,0 +1,893 @@
+'\" t
+.\"     Title: samba-tool
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2019
+.\"    Manual: System Administration tools
+.\"    Source: Samba 4.11.2
+.\"  Language: English
+.\"
+.TH "SAMBA\-TOOL" "8" "10/24/2019" "Samba 4\&.11\&.2" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+samba-tool \- Main Samba administration tool\&.
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+samba\-tool [\-h] [\-W\ myworkgroup] [\-U\ user] [\-d\ debuglevel] [\-\-v]
+.SH "DESCRIPTION"
+.PP
+This tool is part of the
+\fBsamba\fR(7)
+suite\&.
+.SH "OPTIONS"
+.PP
+\-h|\-\-help
+.RS 4
+Show this help message and exit
+.RE
+.PP
+\-\-realm=REALM
+.RS 4
+Set the realm name
+.RE
+.PP
+\-\-simple\-bind\-dn=DN
+.RS 4
+DN to use for a simple bind
+.RE
+.PP
+\-\-password=PASSWORD
+.RS 4
+Password
+.RE
+.PP
+\-U USERNAME|\-\-username=USERNAME
+.RS 4
+Username
+.RE
+.PP
+\-W WORKGROUP|\-\-workgroup=WORKGROUP
+.RS 4
+Workgroup
+.RE
+.PP
+\-N|\-\-no\-pass
+.RS 4
+Don\*(Aqt ask for a password
+.RE
+.PP
+\-k KERBEROS|\-\-kerberos=KERBEROS
+.RS 4
+Use Kerberos
+.RE
+.PP
+\-\-ipaddress=IPADDRESS
+.RS 4
+IP address of the server
+.RE
+.PP
+\-d|\-\-debuglevel=level
+.RS 4
+\fIlevel\fR
+is an integer from 0 to 10\&. The default value if this parameter is not specified is 1\&.
+.sp
+The higher this value, the more detail will be logged to the log files about the activities of the server\&. At level 0, only critical errors and serious warnings will be logged\&. Level 1 is a reasonable level for day\-to\-day running \- it generates a small amount of information about operations carried out\&.
+.sp
+Levels above 1 will generate considerable amounts of log data, and should only be used when investigating a problem\&. Levels above 3 are designed for use only by developers and generate HUGE amounts of log data, most of which is extremely cryptic\&.
+.sp
+Note that specifying this parameter here will override the
+\m[blue]\fBlog level\fR\m[]
+parameter in the
+smb\&.conf
+file\&.
+.RE
+.PP
+\-V|\-\-version
+.RS 4
+Prints the program version number\&.
+.RE
+.PP
+\-s|\-\-configfile=<configuration file>
+.RS 4
+The file specified contains the configuration details required by the server\&. The information in this file includes server\-specific information such as what printcap file to use, as well as descriptions of all the services that the server is to provide\&. See
+smb\&.conf
+for more information\&. The default configuration file name is determined at compile time\&.
+.RE
+.PP
+\-l|\-\-log\-basename=logdirectory
+.RS 4
+Base directory name for log/debug files\&. The extension
+\fB"\&.progname"\fR
+will be appended (e\&.g\&. log\&.smbclient, log\&.smbd, etc\&.\&.\&.)\&. The log file is never removed by the client\&.
+.RE
+.PP
+\-\-option=<name>=<value>
+.RS 4
+Set the
+\fBsmb.conf\fR(5)
+option "<name>" to value "<value>" from the command line\&. This overrides compiled\-in defaults and options read from the configuration file\&.
+.RE
+.SH "COMMANDS"
+.SS "computer"
+.PP
+Manage computer accounts\&.
+.SS "computer create computername [options]"
+.PP
+Create a new computer in the Active Directory Domain\&.
+.PP
+The new computer name specified on the command is the sAMAccountName, with or without the trailing dollar sign\&.
+.PP
+\-\-computerou=COMPUTEROU
+.RS 4
+DN of alternative location (with or without domainDN counterpart) to default CN=Computers in which new computer object will be created\&. E\&.g\&. \*(AqOU=OUname\*(Aq\&.
+.RE
+.PP
+\-\-description=DESCRIPTION
+.RS 4
+The new computers\*(Aqs description\&.
+.RE
+.PP
+\-\-ip\-address=IP_ADDRESS_LIST
+.RS 4
+IPv4 address for the computer\*(Aqs A record, or IPv6 address for AAAA record, can be provided multiple times\&.
+.RE
+.PP
+\-\-service\-principal\-name=SERVICE_PRINCIPAL_NAME_LIST
+.RS 4
+Computer\*(Aqs Service Principal Name, can be provided multiple times\&.
+.RE
+.PP
+\-\-prepare\-oldjoin
+.RS 4
+Prepare enabled machine account for oldjoin mechanism\&.
+.RE
+.SS "computer delete computername [options]"
+.PP
+Delete an existing computer account\&.
+.PP
+The computer name specified on the command is the sAMAccountName, with or without the trailing dollar sign\&.
+.SS "computer edit computername"
+.PP
+Edit a computer AD object\&.
+.PP
+The computer name specified on the command is the sAMAccountName, with or without the trailing dollar sign\&.
+.PP
+\-\-editor=EDITOR
+.RS 4
+Specifies the editor to use instead of the system default, or \*(Aqvi\*(Aq if no system default is set\&.
+.RE
+.SS "computer list"
+.PP
+List all computers\&.
+.SS "computer move computername new_parent_dn [options]"
+.PP
+This command moves a computer account into the specified organizational unit or container\&.
+.PP
+The computername specified on the command is the sAMAccountName, with or without the trailing dollar sign\&.
+.PP
+The name of the organizational unit or container can be specified as a full DN or without the domainDN component\&.
+.SS "computer show computername [options]"
+.PP
+Display a computer AD object\&.
+.PP
+The computer name specified on the command is the sAMAccountName, with or without the trailing dollar sign\&.
+.PP
+\-\-attributes=USER_ATTRS
+.RS 4
+Comma separated list of attributes, which will be printed\&.
+.RE
+.SS "contact"
+.PP
+Manage contacts\&.
+.SS "contact create [contactname] [options]"
+.PP
+Create a new contact in the Active Directory Domain\&.
+.PP
+The name of the new contact can be specified by the first argument \*(Aqcontactname\*(Aq or the \-\-given\-name, \-\-initial and \-\-surname arguments\&. If no \*(Aqcontactname\*(Aq is given, contact\*(Aqs name will be made up of the given arguments by combining the given\-name, initials and surname\&. Each argument is optional\&. A dot (\*(Aq\&.\*(Aq) will be appended to the initials automatically\&.
+.PP
+\-\-ou=OU
+.RS 4
+DN of alternative location (with or without domainDN counterpart) in which the new contact will be created\&. E\&.g\&. \*(AqOU=OUname\*(Aq\&. Default is the domain base\&.
+.RE
+.PP
+\-\-description=DESCRIPTION
+.RS 4
+The new contacts\*(Aqs description\&.
+.RE
+.PP
+\-\-surname=SURNAME
+.RS 4
+Contact\*(Aqs surname\&.
+.RE
+.PP
+\-\-given\-name=GIVEN_NAME
+.RS 4
+Contact\*(Aqs given name\&.
+.RE
+.PP
+\-\-initials=INITIALS
+.RS 4
+Contact\*(Aqs initials\&.
+.RE
+.PP
+\-\-display\-name=DISPLAY_NAME
+.RS 4
+Contact\*(Aqs display name\&.
+.RE
+.PP
+\-\-job\-title=JOB_TITLE
+.RS 4
+Contact\*(Aqs job title\&.
+.RE
+.PP
+\-\-department=DEPARTMENT
+.RS 4
+Contact\*(Aqs department\&.
+.RE
+.PP
+\-\-company=COMPANY
+.RS 4
+Contact\*(Aqs company\&.
+.RE
+.PP
+\-\-mail\-address=MAIL_ADDRESS
+.RS 4
+Contact\*(Aqs email address\&.
+.RE
+.PP
+\-\-internet\-address=INTERNET_ADDRESS
+.RS 4
+Contact\*(Aqs home page\&.
+.RE
+.PP
+\-\-telephone\-number=TELEPHONE_NUMBER
+.RS 4
+Contact\*(Aqs phone number\&.
+.RE
+.PP
+\-\-mobile\-number=MOBILE_NUMBER
+.RS 4
+Contact\*(Aqs mobile phone number\&.
+.RE
+.PP
+\-\-physical\-delivery\-office=PHYSICAL_DELIVERY_OFFICE
+.RS 4
+Contact\*(Aqs office location\&.
+.RE
+.SS "contact delete contactname [options]"
+.PP
+Delete an existing contact\&.
+.PP
+The contactname specified on the command is the common name or the distinguished name of the contact object\&. The distinguished name of the contact can be specified with or without the domainDN component\&.
+.SS "contact edit contactname"
+.PP
+Modify a contact AD object\&.
+.PP
+The contactname specified on the command is the common name or the distinguished name of the contact object\&. The distinguished name of the contact can be specified with or without the domainDN component\&.
+.PP
+\-\-editor=EDITOR
+.RS 4
+Specifies the editor to use instead of the system default, or \*(Aqvi\*(Aq if no system default is set\&.
+.RE
+.SS "contact list [options]"
+.PP
+List all contacts\&.
+.PP
+\-\-full\-dn
+.RS 4
+Display contact\*(Aqs full DN instead of the name\&.
+.RE
+.SS "contact move contactname new_parent_dn [options]"
+.PP
+This command moves a contact into the specified organizational unit or container\&.
+.PP
+The contactname specified on the command is the common name or the distinguished name of the contact object\&. The distinguished name of the contact can be specified with or without the domainDN component\&.
+.SS "contact show contactname [options]"
+.PP
+Display a contact AD object\&.
+.PP
+The contactname specified on the command is the common name or the distinguished name of the contact object\&. The distinguished name of the contact can be specified with or without the domainDN component\&.
+.PP
+\-\-attributes=CONTACT_ATTRS
+.RS 4
+Comma separated list of attributes, which will be printed\&.
+.RE
+.SS "dbcheck"
+.PP
+Check the local AD database for errors\&.
+.SS "delegation"
+.PP
+Manage Delegations\&.
+.SS "delegation add-service accountname principal [options]"
+.PP
+Add a service principal as msDS\-AllowedToDelegateTo\&.
+.SS "delegation del-service accountname principal [options]"
+.PP
+Delete a service principal as msDS\-AllowedToDelegateTo\&.
+.SS "delegation for-any-protocol accountname [(on|off)] [options]"
+.PP
+Set/unset UF_TRUSTED_TO_AUTHENTICATE_FOR_DELEGATION (S4U2Proxy) for an account\&.
+.SS "delegation for-any-service accountname [(on|off)] [options]"
+.PP
+Set/unset UF_TRUSTED_FOR_DELEGATION for an account\&.
+.SS "delegation show accountname [options]	"
+.PP
+Show the delegation setting of an account\&.
+.SS "dns"
+.PP
+Manage Domain Name Service (DNS)\&.
+.SS "dns add server zone name A|AAAA|PTR|CNAME|NS|MX|SRV|TXT data"
+.PP
+Add a DNS record\&.
+.SS "dns delete server zone name A|AAAA|PTR|CNAME|NS|MX|SRV|TXT data"
+.PP
+Delete a DNS record\&.
+.SS "dns query server zone name A|AAAA|PTR|CNAME|NS|MX|SRV|TXT|ALL [options] data"
+.PP
+Query a name\&.
+.SS "dns roothints server [name] [options]"
+.PP
+Query root hints\&.
+.SS "dns serverinfo server [options]"
+.PP
+Query server information\&.
+.SS "dns update server zone name A|AAAA|PTR|CNAME|NS|MX|SRV|TXT olddata newdata"
+.PP
+Update a DNS record\&.
+.SS "dns zonecreate server zone [options]"
+.PP
+Create a zone\&.
+.SS "dns zonedelete server zone [options]"
+.PP
+Delete a zone\&.
+.SS "dns zoneinfo server zone [options]"
+.PP
+Query zone information\&.
+.SS "dns zonelist server [options]"
+.PP
+List zones\&.
+.SS "domain"
+.PP
+Manage Domain\&.
+.SS "domain backup"
+.PP
+Create or restore a backup of the domain\&.
+.SS "domain backup offline"
+.PP
+Backup (with proper locking) local domain directories into a tar file\&.
+.SS "domain backup online"
+.PP
+Copy a running DC\*(Aqs current DB into a backup tar file\&.
+.SS "domain backup rename"
+.PP
+Copy a running DC\*(Aqs DB to backup file, renaming the domain in the process\&.
+.SS "domain backup restore"
+.PP
+Restore the domain\*(Aqs DB from a backup\-file\&.
+.SS "domain classicupgrade [options] classic_smb_conf"
+.PP
+Upgrade from Samba classic (NT4\-like) database to Samba AD DC database\&.
+.SS "domain dcpromo dnsdomain [DC|RODC] [options]"
+.PP
+Promote an existing domain member or NT4 PDC to an AD DC\&.
+.SS "domain demote"
+.PP
+Demote ourselves from the role of domain controller\&.
+.SS "domain exportkeytab keytab [options]"
+.PP
+Dumps Kerberos keys of the domain into a keytab\&.
+.SS "domain info ip_address [options]"
+.PP
+Print basic info about a domain and the specified DC\&.
+.SS "domain join dnsdomain [DC|RODC|MEMBER|SUBDOMAIN] [options]"
+.PP
+Join a domain as either member or backup domain controller\&.
+.SS "domain level show|raise options [options]"
+.PP
+Show/raise domain and forest function levels\&.
+.SS "domain passwordsettings show|set options [options]"
+.PP
+Show/set password settings\&.
+.SS "domain passwordsettings pso"
+.PP
+Manage fine\-grained Password Settings Objects (PSOs)\&.
+.SS "domain passwordsettings pso apply pso-name user-or-group-name [options]"
+.PP
+Applies a PSO\*(Aqs password policy to a user or group\&.
+.SS "domain passwordsettings pso create pso-name precedence [options]"
+.PP
+Creates a new Password Settings Object (PSO)\&.
+.SS "domain passwordsettings pso delete pso-name [options]"
+.PP
+Deletes a Password Settings Object (PSO)\&.
+.SS "domain passwordsettings pso list [options]"
+.PP
+Lists all Password Settings Objects (PSOs)\&.
+.SS "domain passwordsettings pso set pso-name [options]"
+.PP
+Modifies a Password Settings Object (PSO)\&.
+.SS "domain passwordsettings pso show user-name [options]"
+.PP
+Displays a Password Settings Object (PSO)\&.
+.SS "domain passwordsettings pso show-user pso-name [options]"
+.PP
+Displays the Password Settings that apply to a user\&.
+.SS "domain passwordsettings pso unapply pso-name user-or-group-name [options]"
+.PP
+Updates a PSO to no longer apply to a user or group\&.
+.SS "domain provision"
+.PP
+Promote an existing domain member or NT4 PDC to an AD DC\&.
+.SS "domain trust"
+.PP
+Domain and forest trust management\&.
+.SS "domain trust create DOMAIN options [options]"
+.PP
+Create a domain or forest trust\&.
+.SS "domain trust delete DOMAIN options [options]"
+.PP
+Delete a domain trust\&.
+.SS "domain trust list options [options]"
+.PP
+List domain trusts\&.
+.SS "domain trust namespaces [DOMAIN] options [options]"
+.PP
+Manage forest trust namespaces\&.
+.SS "domain trust show DOMAIN options [options]"
+.PP
+Show trusted domain details\&.
+.SS "domain trust validate DOMAIN options [options]"
+.PP
+Validate a domain trust\&.
+.SS "drs"
+.PP
+Manage Directory Replication Services (DRS)\&.
+.SS "drs bind"
+.PP
+Show DRS capabilities of a server\&.
+.SS "drs kcc"
+.PP
+Trigger knowledge consistency center run\&.
+.SS "drs options"
+.PP
+Query or change
+\fIoptions\fR
+for NTDS Settings object of a domain controller\&.
+.SS "drs replicate destination_DC source_DC NC [options]"
+.PP
+Replicate a naming context between two DCs\&.
+.SS "drs showrepl"
+.PP
+Show replication status\&. The
+[\-\-json]
+option results in JSON output, and with the
+[\-\-summary]
+option produces very little output when the replication status seems healthy\&.
+.SS "dsacl"
+.PP
+Administer DS ACLs
+.SS "dsacl set"
+.PP
+Modify access list on a directory object\&.
+.SS "forest"
+.PP
+Manage Forest configuration\&.
+.SS "forest directory_service"
+.PP
+Manage directory_service behaviour for the forest\&.
+.SS "forest directory_service dsheuristics VALUE"
+.PP
+Modify dsheuristics directory_service configuration for the forest\&.
+.SS "forest directory_service show"
+.PP
+Show current directory_service configuration for the forest\&.
+.SS "fsmo"
+.PP
+Manage Flexible Single Master Operations (FSMO)\&.
+.SS "fsmo seize [options]"
+.PP
+Seize the role\&.
+.SS "fsmo show"
+.PP
+Show the roles\&.
+.SS "fsmo transfer [options]"
+.PP
+Transfer the role\&.
+.SS "gpo"
+.PP
+Manage Group Policy Objects (GPO)\&.
+.SS "gpo create displayname [options]"
+.PP
+Create an empty GPO\&.
+.SS "gpo del gpo [options]"
+.PP
+Delete GPO\&.
+.SS "gpo dellink container_dn gpo [options]"
+.PP
+Delete GPO link from a container\&.
+.SS "gpo fetch gpo [options]"
+.PP
+Download a GPO\&.
+.SS "gpo getinheritance container_dn [options]"
+.PP
+Get inheritance flag for a container\&.
+.SS "gpo getlink container_dn [options]"
+.PP
+List GPO Links for a container\&.
+.SS "gpo list username [options]"
+.PP
+List GPOs for an account\&.
+.SS "gpo listall"
+.PP
+List all GPOs\&.
+.SS "gpo listcontainers gpo [options]"
+.PP
+List all linked containers for a GPO\&.
+.SS "gpo setinheritance container_dn block|inherit [options]"
+.PP
+Set inheritance flag on a container\&.
+.SS "gpo setlink container_dn gpo [options]"
+.PP
+Add or Update a GPO link to a container\&.
+.SS "gpo show gpo [options]"
+.PP
+Show information for a GPO\&.
+.SS "group"
+.PP
+Manage groups\&.
+.SS "group add groupname [options]"
+.PP
+Create a new AD group\&.
+.SS "group addmembers groupname members [options]"
+.PP
+Add members to an AD group\&.
+.SS "group delete groupname [options]"
+.PP
+Delete an AD group\&.
+.SS "group edit groupname"
+.PP
+Edit a group AD object\&.
+.PP
+\-\-editor=EDITOR
+.RS 4
+Specifies the editor to use instead of the system default, or \*(Aqvi\*(Aq if no system default is set\&.
+.RE
+.SS "group list"
+.PP
+List all groups\&.
+.SS "group listmembers groupname [options]"
+.PP
+List all members of the specified AD group\&.
+.SS "group move groupname new_parent_dn [options]"
+.PP
+This command moves a group into the specified organizational unit or container\&.
+.PP
+The groupname specified on the command is the sAMAccountName\&.
+.PP
+The name of the organizational unit or container can be specified as a full DN or without the domainDN component\&.
+.PP
+
+.SS "group removemembers groupname members [options]"
+.PP
+Remove members from the specified AD group\&.
+.SS "group show groupname [options]"
+.PP
+Show group object and it\*(Aqs attributes\&.
+.SS "group stats [options]"
+.PP
+Show statistics for overall groups and group memberships\&.
+.SS "ldapcmp \fIURL1\fR \fIURL2\fR \fIdomain|configuration|schema|dnsdomain|dnsforest\fR [options]"
+.PP
+Compare two LDAP databases\&.
+.SS "ntacl"
+.PP
+Manage NT ACLs\&.
+.SS "ntacl changedomsid original-domain-SID new-domain-SID file [options]"
+.PP
+Change the domain SID for ACLs\&. Can be used to change all entries in acl_xattr when the machine\*(Aqs SID has accidentially changed or the data set has been copied to another machine either via backup/restore or rsync\&.
+.PP
+\-\-use\-ntvfs
+.RS 4
+Set the ACLs directly to the TDB or xattr\&. The POSIX permissions will NOT be changed, only the NT ACL will be stored\&.
+.RE
+.PP
+\-\-service=SERVICE
+.RS 4
+Specify the name of the smb\&.conf service to use\&. This option is required in combination with the \-\-use\-s3fs option\&.
+.RE
+.PP
+\-\-use\-s3fs
+.RS 4
+Set the ACLs for use with the default s3fs file server via the VFS layer\&. This option requires a smb\&.conf service, specified by the \-\-service=SERVICE option\&.
+.RE
+.PP
+\-\-xattr\-backend=[native|tdb]
+.RS 4
+Specify the xattr backend type (native fs or tdb)\&.
+.RE
+.PP
+\-\-eadb\-file=EADB_FILE
+.RS 4
+Name of the tdb file where attributes are stored\&.
+.RE
+.PP
+\-\-recursive
+.RS 4
+Set the ACLs for directories and their contents recursively\&.
+.RE
+.PP
+\-\-follow\-symlinks
+.RS 4
+Follow symlinks when \-\-recursive is specified\&.
+.RE
+.PP
+\-\-verbose
+.RS 4
+Verbosely list files and ACLs which are being processed\&.
+.RE
+.SS "ntacl get file [options]"
+.PP
+Get ACLs on a file\&.
+.SS "ntacl set acl file [options]"
+.PP
+Set ACLs on a file\&.
+.SS "ntacl sysvolcheck"
+.PP
+Check sysvol ACLs match defaults (including correct ACLs on GPOs)\&.
+.SS "ntacl sysvolreset"
+.PP
+Reset sysvol ACLs to defaults (including correct ACLs on GPOs)\&.
+.SS "ou"
+.PP
+Manage organizational units (OUs)\&.
+.SS "ou create ou_dn [options]"
+.PP
+Create an organizational unit\&.
+.PP
+The name of the organizational unit can be specified as a full DN or without the domainDN component\&.
+.PP
+\-\-description=DESCRIPTION
+.RS 4
+Specify OU\*(Aqs description\&.
+.RE
+.SS "ou delete ou_dn [options]"
+.PP
+Delete an organizational unit\&.
+.PP
+The name of the organizational unit can be specified as a full DN or without the domainDN component\&.
+.PP
+\-\-force\-subtree\-delete
+.RS 4
+Delete organizational unit and all children reclusively\&.
+.RE
+.SS "ou list [options]"
+.PP
+List all organizational units\&.
+.PP
+\-\-full\-dn
+.RS 4
+Display DNs including the base DN\&.
+.RE
+.SS "ou listobjects ou_dn [options]"
+.PP
+List all objects in an organizational unit\&.
+.PP
+The name of the organizational unit can be specified as a full DN or without the domainDN component\&.
+.PP
+\-\-full\-dn
+.RS 4
+Display DNs including the base DN\&.
+.RE
+.PP
+\-r|\-\-recursive
+.RS 4
+List objects recursively\&.
+.RE
+.SS "ou move old_ou_dn new_parent_dn [options]"
+.PP
+Move an organizational unit\&.
+.PP
+The name of the organizational units can be specified as a full DN or without the domainDN component\&.
+.SS "ou rename old_ou_dn new_ou_dn [options]"
+.PP
+Rename an organizational unit\&.
+.PP
+The name of the organizational units can be specified as a full DN or without the domainDN component\&.
+.SS "rodc"
+.PP
+Manage Read\-Only Domain Controller (RODC)\&.
+.SS "rodc preload SID|DN|accountname [options]"
+.PP
+Preload one account for an RODC\&.
+.SS "schema"
+.PP
+Manage and query schema\&.
+.SS "schema attribute modify attribute [options]"
+.PP
+Modify the behaviour of an attribute in schema\&.
+.SS "schema attribute show attribute [options]"
+.PP
+Display an attribute schema definition\&.
+.SS "schema attribute show_oc attribute [options]"
+.PP
+Show objectclasses that MAY or MUST contain this attribute\&.
+.SS "schema objectclass show objectclass [options]"
+.PP
+Display an objectclass schema definition\&.
+.SS "sites"
+.PP
+Manage sites\&.
+.SS "sites create site [options]"
+.PP
+Create a new site\&.
+.SS "sites remove site [options]"
+.PP
+Delete an existing site\&.
+.SS "spn"
+.PP
+Manage Service Principal Names (SPN)\&.
+.SS "spn add name user [options]"
+.PP
+Create a new SPN\&.
+.SS "spn delete name [user] [options]"
+.PP
+Delete an existing SPN\&.
+.SS "spn list user [options]"
+.PP
+List SPNs of a given user\&.
+.SS "testparm"
+.PP
+Check the syntax of the configuration file\&.
+.SS "time"
+.PP
+Retrieve the time on a server\&.
+.SS "user"
+.PP
+Manage users\&.
+.SS "user add username [password]"
+.PP
+Create a new user\&. Please note that this subcommand is deprecated and available for compatibility reasons only\&. Please use
+samba\-tool user create
+instead\&.
+.SS "user create username [password]"
+.PP
+Create a new user in the Active Directory Domain\&.
+.SS "user delete username [options]"
+.PP
+Delete an existing user account\&.
+.SS "user disable username"
+.PP
+Disable a user account\&.
+.SS "user edit username"
+.PP
+Edit a user account AD object\&.
+.PP
+\-\-editor=EDITOR
+.RS 4
+Specifies the editor to use instead of the system default, or \*(Aqvi\*(Aq if no system default is set\&.
+.RE
+.SS "user enable username"
+.PP
+Enable a user account\&.
+.SS "user list"
+.PP
+List all users\&.
+.SS "user show username [options]"
+.PP
+Display a user AD object\&.
+.PP
+\-\-attributes=USER_ATTRS
+.RS 4
+Comma separated list of attributes, which will be printed\&.
+.RE
+.SS "user move username new_parent_dn [options]"
+.PP
+This command moves a user account into the specified organizational unit or container\&.
+.PP
+The username specified on the command is the sAMAccountName\&.
+.PP
+The name of the organizational unit or container can be specified as a full DN or without the domainDN component\&.
+.SS "user password [options]"
+.PP
+Change password for a user account (the one provided in authentication)\&.
+.SS "user setexpiry username [options]"
+.PP
+Set the expiration of a user account\&.
+.SS "user setpassword username [options]"
+.PP
+Sets or resets the password of a user account\&.
+.SS "user getpassword username [options]"
+.PP
+Gets the password of a user account\&.
+.SS "user syncpasswords --cache-ldb-initialize [options]"
+.PP
+Syncs the passwords of all user accounts, using an optional script\&.
+.PP
+Note that this command should run on a single domain controller only (typically the PDC\-emulator)\&.
+.SS "vampire [options] \fIdomain\fR"
+.PP
+Join and synchronise a remote AD domain to the local server\&. Please note that
+samba\-tool vampire
+is deprecated, please use
+samba\-tool domain join
+instead\&.
+.SS "visualize [options] \fIsubcommand\fR"
+.PP
+Produce graphical representations of Samba network state\&. To work out what is happening in a replication graph, it is sometimes helpful to use visualisations\&.
+.PP
+There are two subcommands, two graphical modes, and (roughly) two modes of operation with respect to the location of authority\&.
+.SS "MODES OF OPERATION"
+.PP
+samba\-tool visualize ntdsconn
+.RS 4
+Looks at NTDS connections\&.
+.RE
+.PP
+samba\-tool visualize reps
+.RS 4
+Looks at repsTo and repsFrom objects\&.
+.RE
+.PP
+samba\-tool visualize uptodateness
+.RS 4
+Looks at replication lag as shown by the uptodateness vectors\&.
+.RE
+.SS "GRAPHICAL MODES"
+.PP
+\-\-distance
+.RS 4
+Distances between DCs are shown in a matrix in the terminal\&.
+.RE
+.PP
+\-\-dot
+.RS 4
+Generate Graphviz dot output (for ntdsconn and reps modes)\&. When viewed using dot or xdot, this shows the network as a graph with DCs as vertices and connections edges\&. Certain types of degenerate edges are shown in different colours or line\-styles\&.
+.RE
+.PP
+\-\-xdot
+.RS 4
+Generate Graphviz dot output as with
+[\-\-dot]
+and attempt to view it immediately using
+/usr/bin/xdot\&.
+.RE
+.PP
+\-r
+.RS 4
+Normally,
+samba\-tool
+talks to one database; with the
+[\-r]
+option attempts are made to contact all the DCs known to the first database\&. This is necessary for
+samba\-tool visualize uptodateness
+and for
+samba\-tool visualize reps
+because the repsFrom/To objects are not replicated, and it can reveal replication issues in other modes\&.
+.RE
+.SS "help"
+.PP
+Gives usage information\&.
+.SH "VERSION"
+.PP
+This man page is complete for version 4\&.11\&.2 of the Samba suite\&.
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

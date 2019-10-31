@@ -1,0 +1,39 @@
+<samba:parameter name="winbind nss info"
+                 context="G"
+                 type="cmdlist"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+
+	<para>This parameter is designed to control how Winbind retrieves Name
+	Service Information to construct a user's home directory and login shell.
+	Currently the following settings are available:
+
+	<itemizedlist>
+		<listitem>
+			<para><parameter moreinfo="none">template</parameter>
+			- The default, using the parameters of <parameter moreinfo="none">template
+			shell</parameter> and <parameter moreinfo="none">template homedir</parameter>)
+			</para>
+		</listitem>
+
+		<listitem>
+			<para><parameter moreinfo="none">&lt;sfu | sfu20 | rfc2307 &gt;</parameter>
+			- When Samba is running in security = ads and your Active Directory
+			Domain Controller does support the Microsoft "Services for Unix" (SFU)
+			LDAP schema, winbind can retrieve the login shell and the home
+			directory attributes directly from your Directory Server. For SFU 3.0 or 3.5 simply choose
+			"sfu", if you use SFU 2.0 please choose "sfu20". Note that
+			retrieving UID and GID from your ADS-Server requires to
+			use <parameter moreinfo="none">idmap config DOMAIN:backend</parameter> = ad
+			as well. The primary group membership is currently
+			always calculated via the "primaryGroupID" LDAP attribute.
+			</para>
+		</listitem>
+	</itemizedlist>
+
+</para>
+</description>
+
+<value type="default">template</value>
+<value type="example">sfu</value>
+</samba:parameter>

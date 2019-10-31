@@ -1,0 +1,7 @@
+#!/usr/bin/env python
+
+bld.SAMBA_SUBSYSTEM('LIBCLI_ECHO',
+        source='echo.c',
+        deps='LIBTSOCKET tevent-util');
+
+bld.RECURSE('tests')

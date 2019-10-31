@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+
+
+bld.SAMBA_LIBRARY('samba-errors',
+                  public_headers='error.h ntstatus.h ntstatus_gen.h doserr.h werror.h werror_gen.h hresult.h',
+                  private_headers='nterr_private.h',
+                  header_path='core',
+                  source='doserr.c errormap.c nterr.c errmap_unix.c hresult.c',
+                  public_deps='talloc samba-debug',
+                  deps='gnutls',
+                  # private_library=True,
+                  pc_files=[],
+                  vnum='1',
+                  )
+
+bld.SAMBA_GENERATOR('ntstatus_generated',
+                    source='../../source4/scripting/bin/gen_ntstatus.py ntstatus_err_table.txt ../../source4/scripting/bin/gen_error_common.py',
+                    target='ntstatus_gen.h nterr_gen.c py_ntstatus.c',
+                    group='build_source',
+                    rule='${PYTHON} ${SRC[0].abspath(env)} ${SRC[1].abspath(env)} ${TGT[0].abspath(env)} ${TGT[1].abspath(env)} ${TGT[2].abspath(env)}'
+                   )
+
+bld.SAMBA_GENERATOR('werror_generated',
+                    source='../../source4/scripting/bin/gen_werror.py werror_err_table.txt ../../source4/scripting/bin/gen_error_common.py',
+                    target='werror_gen.h werror_gen.c py_werror.c',
+                    group='build_source',
+                    rule='${PYTHON} ${SRC[0].abspath(env)} ${SRC[1].abspath(env)} ${TGT[0].abspath(env)} ${TGT[1].abspath(env)} ${TGT[2].abspath(env)}'
+                   )
+
+bld.SAMBA_PYTHON('python_ntstatus',
+		source='py_ntstatus.c',
+		deps='samba-errors',
+		realname='samba/ntstatus.so'
+		)
+
+bld.SAMBA_PYTHON('python_werror',
+		source='py_werror.c',
+		deps='samba-errors',
+		realname='samba/werror.so'
+		)

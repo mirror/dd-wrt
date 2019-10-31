@@ -1,0 +1,136 @@
+#!/usr/bin/python3
+#
+# Unix SMB/CIFS implementation.
+# Copyright (C) Andrew Bartlett <abartlet@samba.org> 2019
+#
+# Downgrade a database from 4.11 format to 4.7 format. 4.7 Format will
+# run on any version of Samba AD, and Samba will repack/reconfigure the
+# database if necessary.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from __future__ import print_function
+import optparse
+import sys
+
+# Find right directory when running from source tree
+sys.path.insert(0, "bin/python")
+
+
+import samba
+import ldb
+import urllib
+import os
+from samba import getopt as options
+from samba.samdb import SamDB
+from samba.dbchecker import dbcheck
+from samba.credentials import Credentials
+parser = optparse.OptionParser("sambaundoguididx")
+sambaopts = options.SambaOptions(parser)
+parser.add_option_group(options.VersionOptions(parser))
+parser.add_option("-H", "--URL", help="LDB URL for database",
+                  type=str, metavar="URL", dest="H")
+opts, args = parser.parse_args()
+
+if len(args) != 0:
+    parser.print_usage()
+    sys.exit(1)
+
+lp_ctx = sambaopts.get_loadparm()
+
+if opts.H is None:
+    url = lp_ctx.private_path("sam.ldb")
+else:
+    url = opts.H
+
+samdb = ldb.Ldb(url=url,
+                flags=ldb.FLG_DONT_CREATE_DB,
+                options=["modules:"])
+
+partitions = samdb.search(base="@PARTITION",
+                          scope=ldb.SCOPE_BASE,
+                          attrs=["backendStore", "partition"])
+
+backend = str(partitions[0].get('backendStore', 'tdb'))
+
+if backend == "mdb":
+    samdb = None
+    options = ["pack_format_override=%d" % ldb.PACKING_FORMAT]
+    # We can't remove GUID indexes from LMDB in case there are very
+    # long DNs, so we just move down the pack format, which also removes
+    # references to ORDERED_INTEGER in @ATTRIBUTES.
+
+    # Reopen the DB with pack_format_override set
+    samdb = SamDB(url=url,
+                  flags=ldb.FLG_DONT_CREATE_DB,
+                  lp=lp_ctx,
+                  options=options)
+    samdb.transaction_start()
+    samdb.transaction_commit()
+    print("Your database has been downgraded to LDB pack format version %0x (v1)." % ldb.PACKING_FORMAT)
+
+    print("NOTE: Any use of a Samba 4.11 tool that modifies the DB will "
+          "auto-upgrade back to pack format version %0x (v2)" %
+          ldb.PACKING_FORMAT_V2)
+    exit(0);
+
+# This is needed to force the @ATTRIBUTES and @INDEXLIST to be correct
+lp_ctx.set("dsdb:guid index", "false")
+
+modmsg = ldb.Message()
+modmsg.dn = ldb.Dn(samdb, '@INDEXLIST')
+modmsg.add(ldb.MessageElement(
+    elements=[],
+    flags=ldb.FLAG_MOD_REPLACE,
+    name='@IDXGUID'))
+modmsg.add(ldb.MessageElement(
+    elements=[],
+    flags=ldb.FLAG_MOD_REPLACE,
+    name='@IDX_DN_GUID'))
+
+samdb.transaction_start()
+samdb.modify(modmsg)
+
+privatedir = os.path.dirname(url)
+
+dbs = []
+for part in partitions[0]['partition']:
+    dbname = str(part).split(":")[1]
+    dbpath = os.path.join(privatedir, dbname)
+    if os.path.isfile(dbpath):
+        dbpath = "ldb://" + dbpath
+    db = ldb.Ldb(url=dbpath,
+                 options=["modules:"],
+                 flags=ldb.FLG_DONT_CREATE_DB)
+    db.transaction_start()
+    db.modify(modmsg)
+    dbs.append(db)
+
+for db in dbs:
+    db.transaction_commit()
+
+samdb.transaction_commit()
+
+print("Re-opening with the full DB stack")
+samdb = SamDB(url=url,
+              flags=ldb.FLG_DONT_CREATE_DB,
+              lp=lp_ctx)
+print("Re-triggering another re-index")
+chk = dbcheck(samdb)
+
+chk.reindex_database()
+
+print("Your database has been downgraded to DN-based index values.")
+
+print("NOTE: Any use of a Samba 4.8 or later tool including ldbsearch will "
+      "auto-upgrade back to GUID index mode")

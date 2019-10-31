@@ -1,0 +1,104 @@
+<samba:parameter name="security"
+                 context="G"
+                 type="enum"
+                 function="_security"
+                 enumlist="enum_security"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<when_value value="security">
+    <requires option="encrypted passwords">/(yes|true)/</requires>
+</when_value>
+<description>
+    <para>This option affects how clients respond to 
+    Samba and is one of the most important settings in the <filename moreinfo="none">
+    smb.conf</filename> file.</para>
+
+    <para>The default is <command moreinfo="none">security = user</command>, as this is
+    the most common setting, used for a standalone file server or a DC.</para>
+
+    <para>The alternatives are
+    <command moreinfo="none">security = ads</command> or <command moreinfo="none">security = domain
+    </command>, which support joining Samba to a Windows domain</para>
+
+    <para>You should use <command moreinfo="none">security = user</command> and 
+    <smbconfoption name="map to guest"/> if you 
+    want to mainly setup shares without a password (guest shares). This 
+    is commonly used for a shared printer server. </para>
+		
+    <para>The different settings will now be explained.</para>
+
+
+    <para><anchor id="SECURITYEQUALSAUTO"/><emphasis>SECURITY = AUTO</emphasis></para>
+
+    <para>This is the default security setting in Samba, and causes Samba to consult
+    the <smbconfoption name="server role"/> parameter (if set) to determine the security mode.</para>
+
+    <para><anchor id="SECURITYEQUALSUSER"/><emphasis>SECURITY = USER</emphasis></para>
+
+    <para>If <smbconfoption name="server role"/> is not specified, this is the default security setting in Samba. 
+    With user-level security a client must first &quot;log-on&quot; with a 
+    valid username and password (which can be mapped using the <smbconfoption name="username map"/> 
+    parameter). Encrypted passwords (see the <smbconfoption name="encrypted passwords"/> parameter) can also
+    be used in this security mode. Parameters such as <smbconfoption name="user"/> and <smbconfoption
+	name="guest only"/> if set	are then applied and 
+    may change the UNIX user to use on this connection, but only after 
+    the user has been successfully authenticated.</para>
+
+    <para><emphasis>Note</emphasis> that the name of the resource being 
+    requested is <emphasis>not</emphasis> sent to the server until after 
+    the server has successfully authenticated the client. This is why 
+    guest shares don't work in user level security without allowing 
+    the server to automatically map unknown users into the <smbconfoption name="guest account"/>. 
+    See the <smbconfoption name="map to guest"/> parameter for details on doing this.</para>
+
+    <para><anchor id="SECURITYEQUALSDOMAIN"/><emphasis>SECURITY = DOMAIN</emphasis></para>
+
+    <para>This mode will only work correctly if <citerefentry><refentrytitle>net</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> has been used to add this
+    machine into a Windows NT Domain. It expects the <smbconfoption name="encrypted passwords"/>
+	parameter to be set to <constant>yes</constant>. In this 
+    mode Samba will try to validate the username/password by passing
+    it to a Windows NT Primary or Backup Domain Controller, in exactly 
+    the same way that a Windows NT Server would do.</para>
+
+    <para><emphasis>Note</emphasis> that a valid UNIX user must still 
+    exist as well as the account on the Domain Controller to allow 
+    Samba to have a valid UNIX account to map file access to.</para>
+
+    <para><emphasis>Note</emphasis> that from the client's point 
+    of view <command moreinfo="none">security = domain</command> is the same 
+    as <command moreinfo="none">security = user</command>. It only 
+    affects how the server deals with the authentication, 
+    it does not in any way affect what the client sees.</para>
+
+    <para><emphasis>Note</emphasis> that the name of the resource being 
+    requested is <emphasis>not</emphasis> sent to the server until after 
+    the server has successfully authenticated the client. This is why 
+    guest shares don't work in user level security without allowing 
+    the server to automatically map unknown users into the <smbconfoption name="guest account"/>. 
+    See the <smbconfoption name="map to guest"/> parameter for details on doing this.</para>
+
+    <para>See also the <smbconfoption name="password server"/> parameter and
+	 the <smbconfoption name="encrypted passwords"/> parameter.</para>
+
+	<para><anchor id="SECURITYEQUALSADS"/><emphasis>SECURITY = ADS</emphasis></para>
+	
+	<para>In this mode, Samba will act as a domain member in an ADS realm. To operate 
+		in this mode, the machine running Samba will need to have Kerberos installed 
+		and configured and Samba will need to be joined to the ADS realm using the 
+		net utility. </para>
+	
+	<para>Note that this mode does NOT make Samba operate as a Active Directory Domain 
+		Controller. </para>
+
+	<para>Note that this forces <smbconfoption name="require strong key">yes</smbconfoption>
+	and <smbconfoption name="client schannel">yes</smbconfoption> for the primary domain.</para>
+
+	<para>Read the chapter about Domain Membership in the HOWTO for details.</para>
+</description>
+
+<related>realm</related>
+<related>encrypt passwords</related>
+
+<value type="default">AUTO</value>
+<value type="example">DOMAIN</value>
+</samba:parameter>

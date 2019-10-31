@@ -1,0 +1,139 @@
+'\" t
+.\"     Title: vfs_nfs4acl_xattr
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2019
+.\"    Manual: System Administration tools
+.\"    Source: Samba 4.11.2
+.\"  Language: English
+.\"
+.TH "VFS_NFS4ACL_XATTR" "8" "10/24/2019" "Samba 4\&.11\&.2" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+vfs_nfs4acl_xattr \- Save NTFS\-ACLs as NFS4 encoded blobs in extended attributes
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+vfs objects = nfs4acl_xattr
+.SH "DESCRIPTION"
+.PP
+This VFS module is part of the
+\fBsamba\fR(7)
+suite\&.
+.PP
+The
+vfs_acl_xattr
+VFS module stores NTFS Access Control Lists (ACLs) in Extended Attributes (EAs/xattrs)\&. This enables the full mapping of Windows ACLs on Samba servers\&.
+.PP
+This module is stackable\&.
+.SH "OPTIONS"
+.PP
+nfs4acl_xattr:encoding = [nfs|ndr|xdr]
+.RS 4
+This parameter configures the marshaling format used in the ACL blob and the default extended attribute name used to store the blob\&.
+.sp
+When set to
+\fInfs\fR
+\- fetch and store the NT ACL in NFS 4\&.0 or 4\&.1 compatible XDR encoding\&. By default this uses the extended attribute "system\&.nfs4_acl"\&. This setting also disables
+\fIvalidate_mode\fR\&.
+.sp
+When set to
+\fIndr (default)\fR
+\- store the NT ACL with POSIX draft NFSv4 compatible NDR encoding\&. By default this uses the extended attribute "security\&.nfs4acl_ndr"\&.
+.sp
+When set to
+\fIxdr\fR
+\- store the NT ACL in a format similar to NFS 4\&.1 RFC 5661 in XDR encoding\&. The main differences to RFC 5661 are the use of ids instead of strings as users and group identifiers and an additional attribute per nfsace4\&. By default this encoding stores the blob in the extended attribute "security\&.nfs4acl_xdr"\&.
+.RE
+.PP
+nfs4acl_xattr:version = [40|41]
+.RS 4
+This parameter configures the NFS4 ACL level\&. Only
+\fI41\fR
+fully supports mapping NT ACLs and should be used\&. The default is
+\fI41\fR\&.
+.RE
+.PP
+nfs4acl_xattr:default acl style = [posix|windows|everyone]
+.RS 4
+This parameter determines the type of ACL that is synthesized in case a file or directory lacks an ACL extended attribute\&.
+.sp
+When set to
+\fIposix\fR, an ACL will be synthesized based on the POSIX mode permissions for user, group and others, with an additional ACE for
+\fINT Authority\eSYSTEM\fR
+will full rights\&.
+.sp
+When set to
+\fIwindows\fR, an ACL is synthesized the same way Windows does it, only including permissions for the owner and
+\fINT Authority\eSYSTEM\fR\&.
+.sp
+When set to
+\fIeveryone\fR, an ACL is synthesized giving full permissions to everyone (S\-1\-1\-0)\&.
+.sp
+The default for this option is
+\fIeveryone\fR\&.
+.RE
+.PP
+nfs4acl_xattr:xattr_name = STRING
+.RS 4
+This parameter configures the extended attribute name used to store the marshaled ACL\&.
+.sp
+The default depends on the setting for
+\fInfs4acl_xattr:encoding\fR\&.
+.RE
+.PP
+nfs4acl_xattr:nfs4_id_numeric = yes|no (default: no)
+.RS 4
+This parameter tells the module how the NFS4 server encodes user and group identifiers on the network\&. With the default setting the module expects identifiers encoded as per the NFS4 RFC as user@domain\&.
+.sp
+When set to
+\fIyes\fR, the module expects the identifiers as numeric string\&.
+.sp
+The default for this options\fIno\fR\&.
+.RE
+.PP
+nfs4acl_xattr:validate_mode = yes|no
+.RS 4
+This parameter configures whether the module enforces the POSIX mode is set to 0777 for directores and 0666 for files\&. If this constrained is not met, the xattr with the ACL blob is discarded\&.
+.sp
+The default depends on the setting for
+\fInfs4acl_xattr:encoding\fR: when set to
+\fInfs\fR
+this setting is disabled by default, otherwise it is enabled\&.
+.RE
+.SH "EXAMPLES"
+.PP
+A directory can be exported via Samba using this module as follows:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+      \fI[samba_gpfs_share]\fR
+      \m[blue]\fBvfs objects = nfs4acl_xattr\fR\m[]
+      \m[blue]\fBpath = /foo/bar\fR\m[]
+    
+.fi
+.if n \{\
+.RE
+.\}
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

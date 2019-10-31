@@ -1,0 +1,525 @@
+'\" t
+.\"     Title: vfs_shadow_copy2
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2019
+.\"    Manual: System Administration tools
+.\"    Source: Samba 4.11.2
+.\"  Language: English
+.\"
+.TH "VFS_SHADOW_COPY2" "8" "10/24/2019" "Samba 4\&.11\&.2" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+vfs_shadow_copy2 \- Expose snapshots to Windows clients as shadow copies\&.
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+vfs objects = shadow_copy2
+.SH "DESCRIPTION"
+.PP
+This VFS module is part of the
+\fBsamba\fR(7)
+suite\&.
+.PP
+The
+vfs_shadow_copy2
+VFS module offers a functionality similar to Microsoft Shadow Copy services\&. When set up properly, this module allows Microsoft Shadow Copy clients to browse through file system snapshots as "shadow copies" on Samba shares\&.
+.PP
+This is a second implementation of a shadow copy module which has the following additional features (compared to the original
+\fBshadow_copy\fR(8)
+module):
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+There is no need any more to populate your share\*(Aqs root directory with symlinks to the snapshots if the file system stores the snapshots elsewhere\&. Instead, you can flexibly configure the module where to look for the file system snapshots\&. This can be very important when you have thousands of shares, or use [homes]\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+Snapshot directories need not be in one fixed central place but can be located anywhere in the directory tree\&. This mode helps to support file systems that offer snapshotting of particular subtrees, for example the GPFS independent file sets\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+Vanity naming for snapshots: snapshots can be named in any format compatible with str[fp]time conversions\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+Timestamps can be represented in localtime rather than UTC\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+The inode number of the files can optionally be altered to be different from the original\&. This fixes the \*(Aqrestore\*(Aq button in the Windows GUI to work without a sharing violation when serving from file systems, like GPFS, that return the same device and inode number for the snapshot file and the original\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 6.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  6." 4.2
+.\}
+Shadow copy results are by default sorted before being sent to the client\&. This is beneficial for filesystems that don\*(Aqt read directories alphabetically (the default unix)\&. Sort ordering can be configured and sorting can be turned off completely if the file system sorts its directory listing\&.
+.RE
+.sp
+.RE
+.PP
+This module is stackable\&.
+.SH "CONFIGURATION"
+.PP
+vfs_shadow_copy2
+relies on a filesystem snapshot implementation\&. Many common filesystems have native support for this\&.
+.PP
+Filesystem snapshots must be available under specially named directories in order to be recognized by
+vfs_shadow_copy2\&. These snapshot directory is typically a direct subdirectory of the share root\*(Aqs mountpoint but there are other modes that can be configured with the parameters described in detail below\&.
+.PP
+The snapshot at a given point in time is expected in a subdirectory of the snapshot directory where the snapshot\*(Aqs directory is expected to be a formatted version of the snapshot time\&. The default format which can be changed with the
+shadow:format
+option is @GMT\-YYYY\&.MM\&.DD\-hh\&.mm\&.ss, where:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+YYYY
+is the 4 digit year
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+MM
+is the 2 digit month
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+DD
+is the 2 digit day
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+hh
+is the 2 digit hour
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+mm
+is the 2 digit minute
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ss
+is the 2 digit second\&.
+.RE
+.sp
+.RE
+.PP
+The
+vfs_shadow_copy2
+snapshot naming convention can be produced with the following
+\fBdate\fR(1)
+command:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	TZ=GMT date +@GMT\-%Y\&.%m\&.%d\-%H\&.%M\&.%S
+	
+.fi
+.if n \{\
+.RE
+.\}
+.SH "OPTIONS"
+.PP
+shadow:mountpoint = MOUNTPOINT
+.RS 4
+With this parameter, one can specify the mount point of the filesystem that contains the share path\&. Usually this mount point is automatically detected\&. But for some constellations, in particular tests, it can be convenient to be able to specify it\&.
+.sp
+Example: shadow:mountpoint = /path/to/filesystem
+.sp
+Default: shadow:mountpoint = NOT SPECIFIED
+.RE
+.PP
+shadow:snapdir = SNAPDIR
+.RS 4
+Path to the directory where the file system of the share keeps its snapshots\&. If an absolute path is specified, it is used as\-is\&. If a relative path is specified, then it is taken relative to the mount point of the filesystem of the share root\&. (See
+shadow:mountpoint\&.)
+.sp
+Note that
+shadow:snapdirseverywhere
+depends on this parameter and needs a relative path\&. Setting an absolute path disables
+shadow:snapdirseverywhere\&.
+.sp
+Note that the
+shadow:crossmountpoints
+option also requires a relative snapdir\&. Setting an absolute path disables
+shadow:crossmountpoints\&.
+.sp
+Example: shadow:snapdir = /some/absolute/path
+.sp
+Default: shadow:snapdir = \&.snapshots
+.RE
+.PP
+shadow:basedir = BASEDIR
+.RS 4
+The basedir option allows one to specify a directory between the share\*(Aqs mount point and the share root, relative to which the file system\*(Aqs snapshots are taken\&.
+.sp
+For example, if
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+basedir = mountpoint/rel_basedir
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+share_root = basedir/rel_share_root
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+snapshot_path = mountpoint/snapdir
+.sp
+or
+snapshot_path = snapdir
+if snapdir is absolute
+.RE
+.sp
+.RE
+then the snapshot of a
+file = mountpoint/rel_basedir/rel_share_root/rel_file
+at a time TIME will be found under
+snapshot_path/FS_GMT_TOKEN(TIME)/rel_share_root/rel_file, where FS_GMT_TOKEN(TIME) is the timestamp string belonging to TIME in the format required by the file system\&. (See
+shadow:format\&.)
+.sp
+The default for the basedir is the mount point of the file system of the share root (see
+shadow:mountpoint)\&.
+.sp
+Note that the
+shadow:snapdirseverywhere
+and
+shadow:crossmountpoints
+options are incompatible with
+shadow:basedir
+and disable the basedir setting\&.
+.RE
+.PP
+shadow:snapsharepath = SNAPSHAREPATH
+.RS 4
+With this parameter, one can specify the path of the share\*(Aqs root directory in snapshots, relative to the snapshot\*(Aqs root directory\&. It is an alternative method to
+shadow:basedir, allowing greater control\&.
+.sp
+For example, if within each snapshot the files of the share have a
+path/to/share/
+prefix, then
+shadow:snapsharepath
+can be set to
+path/to/share\&.
+.sp
+With this parameter, it is no longer assumed that a snapshot represents an image of the original file system or a portion of it\&. For example, a system could perform backups of only files contained in shares, and then expose the backup files in a logical structure:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+share1/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+share2/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\&.\&.\&./
+.RE
+.sp
+.RE
+Note that the
+shadow:snapdirseverywhere
+and the
+shadow:basedir
+options are incompatible with
+shadow:snapsharepath
+and disable
+shadow:snapsharepath
+setting\&.
+.sp
+Example: shadow:snapsharepath = path/to/share
+.sp
+Default: shadow:snapsharepath = NOT SPECIFIED
+.RE
+.PP
+shadow:sort = asc/desc
+.RS 4
+By default, this module sorts the shadow copy data alphabetically before sending it to the client\&. With this parameter, one can specify the sort order\&. Possible known values are desc (descending, the default) and asc (ascending)\&. If the file system lists directories alphabetically sorted, one can turn off sorting in this module by specifying any other value\&.
+.sp
+Example: shadow:sort = asc
+.sp
+Example: shadow:sort = none
+.sp
+Default: shadow:sort = desc
+.RE
+.PP
+shadow:localtime = yes/no
+.RS 4
+This is an optional parameter that indicates whether the snapshot names are in UTC/GMT or in local time\&. If it is disabled then UTC/GMT is expected\&.
+.sp
+shadow:localtime = no
+.RE
+.PP
+shadow:format = format specification for snapshot names
+.RS 4
+This is an optional parameter that specifies the format specification for the naming of snapshots in the file system\&. The format must be compatible with the conversion specifications recognized by str[fp]time\&.
+.sp
+Default: shadow:format = "@GMT\-%Y\&.%m\&.%d\-%H\&.%M\&.%S"
+.RE
+.PP
+shadow:sscanf = yes/no
+.RS 4
+This parameter can be used to specify that the time in format string is given as an unsigned long integer (%lu) rather than a time strptime() can parse\&. The result must be a unix time_t time\&.
+.sp
+Default: shadow:sscanf = no
+.RE
+.PP
+shadow:fixinodes = yes/no
+.RS 4
+If you enable
+shadow:fixinodes
+then this module will modify the apparent inode number of files in the snapshot directories using a hash of the files path\&. This is needed for snapshot systems where the snapshots have the same device:inode number as the original files (such as happens with GPFS snapshots)\&. If you don\*(Aqt set this option then the \*(Aqrestore\*(Aq button in the shadow copy UI will fail with a sharing violation\&.
+.sp
+Default: shadow:fixinodes = no
+.RE
+.PP
+shadow:snapdirseverywhere = yes/no
+.RS 4
+If you enable
+shadow:snapdirseverywhere
+then this module will look out for snapshot directories in the current working directory and all parent directories, stopping at the mount point by default\&. But see
+shadow:crossmountpoints
+how to change that behaviour\&.
+.sp
+An example where this is needed are independent filesets in IBM\*(Aqs GPFS, but other filesystems might support snapshotting only particular subtrees of the filesystem as well\&.
+.sp
+Note that
+shadow:snapdirseverywhere
+depends on
+shadow:snapdir
+and needs it to be a relative path\&. Setting an absolute snapdir path disables
+shadow:snapdirseverywhere\&.
+.sp
+Note that this option is incompatible with the
+shadow:basedir
+option and removes the
+shadow:basedir
+setting by itself\&.
+.sp
+Example: shadow:snapdirseverywhere = yes
+.sp
+Default: shadow:snapdirseverywhere = no
+.RE
+.PP
+shadow:crossmountpoints = yes/no
+.RS 4
+This option is effective in the case of
+shadow:snapdirseverywhere = yes\&. Setting this option makes the module not stop at the first mount point encountered when looking for snapdirs, but lets it search potentially all through the path instead\&.
+.sp
+An example where this is needed are independent filesets in IBM\*(Aqs GPFS, but other filesystems might support snapshotting only particular subtrees of the filesystem as well\&.
+.sp
+Note that
+shadow:crossmountpoints
+depends on
+shadow:snapdir
+and needs it to be a relative path\&. Setting an absolute snapdir path disables
+shadow:crossmountpoints\&.
+.sp
+Note that this option is incompatible with the
+shadow:basedir
+option and removes the
+shadow:basedir
+setting by itself\&.
+.sp
+Example: shadow:crossmountpoints = yes
+.sp
+Default: shadow:crossmountpoints = no
+.RE
+.PP
+shadow:snapprefix
+.RS 4
+With growing number of snapshots file\-systems need some mechanism to differentiate one set of snapshots from other, e\&.g\&. monthly, weekly, manual, special events, etc\&. Therefore these file\-systems provide different ways to tag snapshots, e\&.g\&. provide a configurable way to name snapshots, which is not just based on time\&. With only
+shadow:format
+it is very difficult to filter these snapshots\&. With this optional parameter, one can specify a variable prefix component for names of the snapshot directories in the file\-system\&. If this parameter is set, together with the
+shadow:format
+and
+shadow:delimiter
+parameters it determines the possible names of snapshot directories in the file\-system\&. The option only supports Basic Regular Expression (BRE)\&.
+.RE
+.PP
+shadow:delimiter
+.RS 4
+This optional parameter is used as a delimiter between
+shadow:snapprefix
+and
+shadow:format\&. This parameter is used only when
+shadow:snapprefix
+is set\&.
+.sp
+Default: shadow:delimiter = "_GMT"
+.RE
+.SH "EXAMPLES"
+.PP
+Add shadow copy support to user home directories:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        \fI[homes]\fR
+	\m[blue]\fBvfs objects = shadow_copy2\fR\m[]
+	\m[blue]\fBshadow:snapdir = /data/snapshots\fR\m[]
+	\m[blue]\fBshadow:basedir = /data/home\fR\m[]
+	\m[blue]\fBshadow:sort = desc\fR\m[]
+.fi
+.if n \{\
+.RE
+.\}
+.SH "CAVEATS"
+.PP
+This is not a backup, archival, or version control solution\&.
+.PP
+With Samba or Windows servers,
+vfs_shadow_copy2
+is designed to be an end\-user tool only\&. It does not replace or enhance your backup and archival solutions and should in no way be considered as such\&. Additionally, if you need version control, implement a version control system\&.
+.SH "VERSION"
+.PP
+This man page is part of version 4\&.11\&.2 of the Samba suite\&.
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

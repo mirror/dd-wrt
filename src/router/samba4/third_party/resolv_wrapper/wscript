@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+
+import os
+
+VERSION="1.1.4"
+
+def configure(conf):
+    if conf.CHECK_RESOLV_WRAPPER():
+        conf.DEFINE('USING_SYSTEM_RESOLV_WRAPPER', 1)
+        libresolv_wrapper_so_path = 'libresolv_wrapper.so'
+    else:
+
+        if conf.CONFIG_SET("HAVE___THREAD"):
+            conf.DEFINE("HAVE_GCC_THREAD_LOCAL_STORAGE", 1)
+
+        # check HAVE_ATTRIBUTE_PRINTF_FORMAT
+        conf.CHECK_CODE('''
+            void log_fn(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
+
+            int main(void) {
+                return 0;
+            }
+            ''',
+            'HAVE_ATTRIBUTE_PRINTF_FORMAT',
+            addmain=False,
+            strict=True,
+            msg='Checking for printf format validation support')
+
+        conf.CHECK_HEADERS('resolv.h')
+
+        conf.CHECK_STRUCTURE_MEMBER('struct __res_state',
+                                    '_u._ext.nsaddrs',
+                                    headers='resolv.h',
+                                    define='HAVE_RESOLV_IPV6_NSADDRS')
+
+        conf.CHECK_FUNCS_IN('res_ninit', 'resolv')
+        if conf.CONFIG_SET('HAVE_RES_NINIT'):
+            conf.DEFINE('HAVE_RES_NINIT_IN_LIBRESOLV', 1)
+
+        conf.CHECK_FUNCS_IN('res_nclose', 'resolv')
+        if conf.CONFIG_SET('HAVE_RES_NCLOSE'):
+            conf.DEFINE('HAVE_RES_NCLOSE_IN_LIBRESOLV', 1)
+
+        conf.CHECK_FUNCS_IN('res_init __res_init', 'resolv', checklibc=True)
+        conf.CHECK_FUNCS_IN('res_ninit __res_ninit', 'resolv', checklibc=True)
+        conf.CHECK_FUNCS_IN('res_close __res_close', 'resolv', checklibc=True)
+        conf.CHECK_FUNCS_IN('res_nclose __res_nclose', 'resolv', checklibc=True)
+        conf.CHECK_FUNCS_IN('res_query __res_query', 'resolv', checklibc=True)
+        conf.CHECK_FUNCS_IN('res_nquery __res_nquery', 'resolv', checklibc=True)
+        conf.CHECK_FUNCS_IN('res_search __res_search', 'resolv', checklibc=True)
+        conf.CHECK_FUNCS_IN('res_nsearch __res_nsearch', 'resolv', checklibc=True)
+
+        conf.CHECK_DECLS('ns_name_compress', headers='sys/types.h arpa/nameser.h')
+        if (conf.CONFIG_SET("HAVE_DECL_NS_NAME_COMPRESS")):
+            conf.DEFINE("HAVE_NS_NAME_COMPRESS", 1)
+
+        # Create full path to resolv_wrapper
+        blddir = os.path.realpath(conf.bldnode.abspath())
+        libresolv_wrapper_so_path = blddir + '/default/third_party/resolv_wrapper/libresolv-wrapper.so'
+
+    conf.DEFINE('LIBRESOLV_WRAPPER_SO_PATH', libresolv_wrapper_so_path)
+    conf.DEFINE('RESOLV_WRAPPER', 1)
+
+def build(bld):
+    if bld.CONFIG_SET("HAVE_RESOLV_H") and not bld.CONFIG_SET("USING_SYSTEM_RESOLV_WRAPPER"):
+        # We need to do it this way or the library wont work.
+        # Using private_library=True will add symbol version which
+        # breaks preloading!
+        bld.SAMBA_LIBRARY('resolv_wrapper',
+                          source='resolv_wrapper.c',
+                          deps='dl resolv',
+                          install=False,
+                          realname='libresolv-wrapper.so')

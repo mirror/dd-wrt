@@ -1,0 +1,38 @@
+
+import sys
+from waflib import Logs, Options
+import samba3
+
+def options(opt):
+    help =  "Build with gpgme support (default=auto). "
+    help += "This requires gpgme devel and python packages "
+    help += "(e.g. libgpgme11-dev, python-gpgme on debian/ubuntu)."
+
+    opt.samba_add_onoff_option('gpgme', default=True, help=(help))
+
+    return
+
+def configure(conf):
+    conf.SET_TARGET_TYPE('gpgme', 'EMPTY')
+
+    if not Options.options.without_ad_dc \
+       and Options.options.with_gpgme != False:
+        conf.find_program('gpgme-config', var='GPGME_CONFIG')
+
+        if conf.env.GPGME_CONFIG:
+            conf.CHECK_CFG(path=conf.env.GPGME_CONFIG, args="--cflags --libs",
+                           package="", uselib_store="gpgme",
+                           msg='Checking for gpgme support')
+
+        if conf.CHECK_FUNCS_IN('gpgme_new', 'gpgme', headers='gpgme.h'):
+            conf.DEFINE('ENABLE_GPGME', '1')
+
+        if not conf.CONFIG_SET('ENABLE_GPGME'):
+            conf.fatal("GPGME support not found. "
+                       "Try installing libgpgme11-dev or gpgme-devel "
+		       "and python-gpgme. "
+                       "Otherwise, use --without-gpgme to build without "
+                       "GPGME support or --without-ad-dc to build without "
+		       "the Samba AD DC. "
+                       "GPGME support is required for the GPG encrypted "
+                       "password sync feature")

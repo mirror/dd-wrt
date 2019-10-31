@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+
+if bld.env.WITH_PTHREADPOOL:
+    extra_libs=''
+
+    # Link to librt if needed for clock_gettime()
+    if bld.CONFIG_SET('HAVE_LIBRT'): extra_libs += ' rt'
+
+    bld.SAMBA_SUBSYSTEM('PTHREADPOOL',
+                         source='''pthreadpool.c
+                                   pthreadpool_pipe.c
+                                   pthreadpool_tevent.c
+                                ''',
+                         deps='pthread replace tevent-util' + extra_libs)
+else:
+    bld.SAMBA_SUBSYSTEM('PTHREADPOOL',
+                         source='''pthreadpool_sync.c
+                                   pthreadpool_pipe.c
+                                   pthreadpool_tevent.c
+                                ''',
+                         deps='replace tevent-util')
+
+
+bld.SAMBA_BINARY('pthreadpooltest',
+                  source='tests.c',
+                  deps='PTHREADPOOL',
+                  enabled=bld.env.WITH_PTHREADPOOL,
+                  install=False)
+
+bld.SAMBA_BINARY('pthreadpooltest_cmocka',
+                  source='tests_cmocka.c',
+                  deps='PTHREADPOOL cmocka',
+                  ldflags='-Wl,--wrap=pthread_create',
+                  enabled=bld.env.WITH_PTHREADPOOL and bld.env['HAVE_LDWRAP'],
+                  install=False)

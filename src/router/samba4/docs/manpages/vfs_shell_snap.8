@@ -1,0 +1,221 @@
+'\" t
+.\"     Title: vfs_shell_snap
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2019
+.\"    Manual: System Administration tools
+.\"    Source: Samba 4.11.2
+.\"  Language: English
+.\"
+.TH "VFS_SHELL_SNAP" "8" "10/24/2019" "Samba 4\&.11\&.2" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+vfs_shell_snap \- Shell script callouts for snapshot creation and deletion
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+vfs objects = shell_snap
+.SH "DESCRIPTION"
+.PP
+This VFS module is part of the
+\fBsamba\fR(8)
+suite\&.
+.PP
+The
+vfs_shell_snap
+VFS provides shell\-script callouts for snapshot creation and deletion operations issued by remote clients using the File Server Remote VSS Protocol (FSRVP)\&.
+.PP
+The following shell callouts may be configured in smb\&.conf:
+.PP
+\m[blue]\fBshell_snap:check path command\fR\m[]
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Called when an FSRVP client wishes to check whether a given share supports snapshot create/delete requests\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The command is called with a single
+\fIshare_path\fR
+argument\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The command must return 0 if
+\fIshare_path\fR
+is capable of being snapshotted\&.
+.RE
+.sp
+.RE
+.PP
+\m[blue]\fBshell_snap:create command\fR\m[]
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Called when an FSRVP client wishes to create a snapshot\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The command is called with a single
+\fIshare_path\fR
+argument\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The command must return 0 status if the snapshot was successfully taken\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The command must output the path of the newly created snapshot to stdout\&.
+.RE
+.sp
+.RE
+.PP
+\m[blue]\fBshell_snap:delete command\fR\m[]
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Called when an FSRVP client wishes to delete a snapshot\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The command is called with
+\fIbase_share_path\fR
+and
+\fIsnapshot_share_path\fR
+arguments\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The command must return 0 status if the snapshot was successfully removed\&.
+.RE
+.sp
+.RE
+All commands are executed as the authenticated FSRVP client user\&.
+.PP
+This module is stackable\&.
+.SH "CONFIGURATION"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+		\fI[share]\fR
+		\m[blue]\fBvfs objects = shell_snap\fR\m[]
+		\m[blue]\fBshell_snap:check path command = snap_check_path\&.sh\fR\m[]
+		\m[blue]\fBshell_snap:create command = snap_create\&.sh\fR\m[]
+		\m[blue]\fBshell_snap:delete command = snap_delete\&.sh\fR\m[]
+	
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Samba\*(Aqs FSRVP server must be configured in the [global] section:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+		\fI[global]\fR
+		\m[blue]\fBrpc_daemon:fssd = fork\fR\m[]
+		\m[blue]\fBregistry shares = yes\fR\m[]
+		\m[blue]\fBinclude = registry\fR\m[]
+	
+.fi
+.if n \{\
+.RE
+.\}
+.SH "VERSION"
+.PP
+This man page is part of version 4\&.11\&.2 of the Samba suite\&.
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

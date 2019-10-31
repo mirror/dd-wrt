@@ -1,0 +1,189 @@
+#!/usr/bin/env python
+
+# We do this because we do not want to depend on the KDC, only find and use it's header files.  We do not want 
+if not bld.CONFIG_SET("USING_SYSTEM_KDC"):
+    kdc_include = "../heimdal/kdc"
+else:
+    kdc_include = getattr(bld.env, "CPPPATH_KDC")
+
+if bld.CONFIG_SET('SAMBA4_USES_HEIMDAL'):
+    bld.SAMBA_MODULE('service_kdc',
+                     source='kdc-heimdal.c',
+                     subsystem='service',
+                     init_function='server_service_kdc_init',
+                     deps='''
+                          kdc
+                          HDB_SAMBA4
+                          WDC_SAMBA4
+                          samba-hostconfig
+                          com_err
+                          samba_server_gensec
+                          PAC_GLUE
+                          KDC-GLUE
+                          KDC-SERVER
+                          KPASSWD-SERVICE
+                          KPASSWD_GLUE
+                     ''',
+                     internal_module=False)
+
+if bld.CONFIG_GET('SAMBA_USES_MITKDC'):
+    bld.SAMBA_MODULE('service_kdc',
+                     source='kdc-service-mit.c',
+                     subsystem='service',
+                     init_function='server_service_mitkdc_init',
+                     deps='''
+                          samba-hostconfig
+                          service
+                          talloc
+                          UTIL_RUNCMD
+                          MIT_KDC_IRPC
+                          KDC-SERVER
+                          KPASSWD-SERVICE
+                          com_err
+                          kadm5srv_mit
+                          kdb5
+                     ''',
+                     internal_module=False)
+
+bld.SAMBA_LIBRARY('HDB_SAMBA4',
+                  source='hdb-samba4.c hdb-samba4-plugin.c',
+                  deps='ldb auth4_sam common_auth samba-credentials hdb db-glue samba-hostconfig com_err sdb_hdb RPC_NDR_WINBIND',
+                  includes=kdc_include,
+                  private_library=True,
+                  enabled=bld.CONFIG_SET('SAMBA4_USES_HEIMDAL')
+                  )
+
+# A plugin for Heimdal's kadmin for users who need to operate that tool
+bld.SAMBA_LIBRARY('HDB_SAMBA4_PLUGIN',
+                  source='hdb-samba4-plugin.c',
+                  deps='hdb HDB_SAMBA4 samba-util samba-hostconfig ',
+                  includes=kdc_include,
+                  link_name='modules/hdb/hdb_samba4.so',
+                  realname='hdb_samba4.so',
+                  install_path='${MODULESDIR}/hdb',
+                  enabled = (bld.CONFIG_SET("USING_SYSTEM_KRB5") and bld.CONFIG_SET("USING_SYSTEM_HDB"))
+                  )
+
+bld.SAMBA_SUBSYSTEM('KDC-SERVER',
+                    source='kdc-server.c kdc-proxy.c',
+                    includes=kdc_include,
+                    deps='''
+                         krb5samba
+                         ldb
+                         LIBTSOCKET
+                         LIBSAMBA_TSOCKET
+                    ''')
+
+kpasswd_flavor_src = 'kpasswd-service.c kpasswd-helper.c'
+if bld.CONFIG_SET('SAMBA4_USES_HEIMDAL'):
+    kpasswd_flavor_src = kpasswd_flavor_src + ' kpasswd-service-heimdal.c'
+elif bld.CONFIG_GET('SAMBA_USES_MITKDC'):
+    kpasswd_flavor_src = kpasswd_flavor_src + ' kpasswd-service-mit.c'
+
+bld.SAMBA_SUBSYSTEM('KPASSWD-SERVICE',
+                    source=kpasswd_flavor_src,
+                    includes=kdc_include,
+                    deps='''
+                         krb5samba
+                         samba_server_gensec
+                         KPASSWD_GLUE
+                         ''')
+
+bld.SAMBA_SUBSYSTEM('KDC-GLUE',
+	source='kdc-glue.c',
+        includes=kdc_include,
+	deps='hdb PAC_GLUE',
+	enabled=bld.CONFIG_SET('SAMBA4_USES_HEIMDAL')
+	)
+
+bld.SAMBA_SUBSYSTEM('WDC_SAMBA4',
+	source='wdc-samba4.c',
+        includes=kdc_include,
+	deps='ldb auth4_sam common_auth samba-credentials hdb PAC_GLUE samba-hostconfig com_err KDC-GLUE',
+	enabled=bld.CONFIG_SET('SAMBA4_USES_HEIMDAL')
+	)
+
+bld.SAMBA_SUBSYSTEM('sdb',
+	source='sdb.c',
+	includes=kdc_include,
+	deps='talloc krb5',
+	)
+
+bld.SAMBA_SUBSYSTEM('sdb_hdb',
+	source='sdb_to_hdb.c',
+	includes=kdc_include,
+	deps='talloc sdb hdb',
+	autoproto='sdb_hdb.h',
+	enabled=bld.CONFIG_SET('SAMBA4_USES_HEIMDAL')
+	)
+
+bld.SAMBA_SUBSYSTEM('sdb_kdb',
+	source='sdb_to_kdb.c',
+	includes=kdc_include,
+	deps='sdb kdb5',
+	autoproto='sdb_kdb.h',
+	enabled=bld.CONFIG_SET('HAVE_KDB_H')
+	)
+
+bld.SAMBA_SUBSYSTEM('PAC_GLUE',
+	source='pac-glue.c',
+        includes=kdc_include,
+	deps='ldb auth4_sam common_auth samba-credentials samba-hostconfig com_err'
+	)
+
+bld.SAMBA_LIBRARY('pac',
+	source=[],
+	deps='PAC_GLUE',
+	private_library=True,
+	grouping_library=True)
+
+
+bld.SAMBA_LIBRARY('db-glue',
+	source='db-glue.c',
+	deps='ldb auth4_sam common_auth samba-credentials sdb samba-hostconfig com_err RPC_NDR_IRPC MESSAGING',
+	private_library=True,
+        includes=kdc_include,
+	)
+
+bld.SAMBA_SUBSYSTEM('KPASSWD_GLUE',
+        source='kpasswd_glue.c',
+        includes=kdc_include,
+        deps='ldb com_err')
+
+bld.SAMBA_SUBSYSTEM('MIT_KDC_IRPC',
+                    source='mit_kdc_irpc.c',
+                    deps='''
+                    ldb
+                    auth4_sam
+                    samba-credentials
+                    db-glue
+                    samba-hostconfig
+                    com_err
+                    kdb5
+                    ''',
+                    enabled=(bld.CONFIG_SET('SAMBA_USES_MITKDC') and bld.CONFIG_SET('HAVE_KDB_H'))
+                    )
+
+bld.SAMBA_SUBSYSTEM('MIT_SAMBA',
+                    source='mit_samba.c',
+                    deps='''
+                         ldb
+                         auth4_sam
+                         common_auth
+                         samba-credentials
+                         db-glue
+                         PAC_GLUE
+                         KPASSWD_GLUE
+                         samba-hostconfig
+                         com_err
+                         sdb_kdb
+                         kdb5
+                         ''',
+                    enabled=(not bld.CONFIG_SET('SAMBA4_USES_HEIMDAL') and bld.CONFIG_SET('HAVE_KDB_H')) )
+
+bld.SAMBA_BINARY('samba4ktutil',
+                 'ktutil.c',
+                 deps='krb5samba',
+                 install=False)
+
+bld.RECURSE('mit-kdb')

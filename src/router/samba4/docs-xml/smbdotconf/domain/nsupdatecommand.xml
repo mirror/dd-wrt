@@ -1,0 +1,12 @@
+<samba:parameter name="nsupdate command"
+                 context="G"
+                 type="cmdlist"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>This option sets the path to the <filename>nsupdate</filename>
+		command which is used for GSS-TSIG dynamic DNS updates.
+	</para>
+</description>
+
+<value type="default">/usr/bin/nsupdate -g</value>
+</samba:parameter>

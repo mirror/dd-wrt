@@ -1,0 +1,4 @@
+dn: CN=Computers,${DOMAINDN}
+objectClass: top
+objectClass: container
+nTSecurityDescriptor:: ${COMPUTERS_DESCRIPTOR}

@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+
+if bld.CONFIG_SET('WITH_NTVFS_FILESERVER'):
+    bld.SAMBA_SUBSYSTEM('pvfs_acl',
+	                source='pvfs_acl.c',
+	                autoproto='vfs_acl_proto.h',
+	                deps='events samba-modules',
+    )
+
+
+    bld.SAMBA_MODULE('pvfs_acl_xattr',
+	             source='pvfs_acl_xattr.c',
+	             subsystem='pvfs_acl',
+	             init_function='pvfs_acl_xattr_init',
+	            deps='NDR_XATTR events'
+    )
+
+
+    bld.SAMBA_MODULE('pvfs_acl_nfs4',
+	             source='pvfs_acl_nfs4.c',
+	             subsystem='pvfs_acl',
+	             init_function='pvfs_acl_nfs4_init',
+	            deps='NDR_NFS4ACL samdb events'
+    )
+
+
+    bld.SAMBA_SUBSYSTEM('pvfs_aio',
+	                source='pvfs_aio.c',
+	                deps='tevent',
+                    enabled=False
+    )
+
+
+    bld.SAMBA_MODULE('ntvfs_posix',
+	             source='vfs_posix.c pvfs_util.c pvfs_search.c pvfs_dirlist.c pvfs_fileinfo.c pvfs_unlink.c pvfs_mkdir.c pvfs_open.c pvfs_read.c pvfs_flush.c pvfs_write.c pvfs_fsinfo.c pvfs_qfileinfo.c pvfs_setfileinfo.c pvfs_rename.c pvfs_resolve.c pvfs_shortname.c pvfs_lock.c pvfs_oplock.c pvfs_wait.c pvfs_seek.c pvfs_ioctl.c pvfs_xattr.c pvfs_streams.c pvfs_notify.c pvfs_sys.c xattr_system.c',
+	             autoproto='vfs_posix_proto.h',
+	             subsystem='ntvfs',
+	            init_function='ntvfs_posix_init',
+	             deps='NDR_XATTR attr ntvfs_common MESSAGING LIBWBCLIENT_OLD pvfs_acl pvfs_aio posix_eadb',
+	             internal_module=True
+    )
+
+
+bld.SAMBA_LIBRARY('posix_eadb',
+                  source='posix_eadb.c',
+                  deps='tdb tdb-wrap samba-util',
+                  autoproto='posix_eadb_proto.h',
+                  private_library=True)
+
+pyparam_util = bld.pyembed_libname('pyparam_util')
+
+bld.SAMBA_PYTHON('python_xattr_native',
+        source='python/pyxattr_native.c',
+        deps='ndr ldb samdb samba-credentials %s attr' % pyparam_util,
+        realname='samba/xattr_native.so'
+        )
+
+bld.SAMBA_PYTHON('python_posix_eadb',
+	source='python/pyposix_eadb.c',
+	deps='%s posix_eadb tdb' % pyparam_util,
+	realname='samba/posix_eadb.so'
+	)
+
+bld.SAMBA_PYTHON('python_xattr_tdb',
+	source='python/pyxattr_tdb.c',
+	deps='%s xattr_tdb' % pyparam_util,
+	realname='samba/xattr_tdb.so'
+	)

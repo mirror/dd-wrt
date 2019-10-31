@@ -1,0 +1,144 @@
+'\" t
+.\"     Title: vfs_fileid
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2019
+.\"    Manual: System Administration tools
+.\"    Source: Samba 4.11.2
+.\"  Language: English
+.\"
+.TH "VFS_FILEID" "8" "10/24/2019" "Samba 4\&.11\&.2" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+vfs_fileid \- Generates file_id structs with unique device id values for cluster setups
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+vfs objects = fileid
+.SH "DESCRIPTION"
+.PP
+This VFS module is part of the
+\fBsamba\fR(7)
+suite\&.
+.PP
+Samba uses file_id structs to uniquely identify files for locking purpose\&. By default the file_id contains the device and inode number returned by the
+stat()
+system call\&. As the file_id is a unique identifier of a file, it must be the same on all nodes in a cluster setup\&. This module overloads the
+SMB_VFS_FILE_ID_CREATE()
+operation and generates the device number based on the configured algorithm (see the "fileid:algorithm" option)\&.
+.PP
+When using the fsname or fsid algorithm a
+stat()
+and
+statfs()
+call is required for all mounted file systems to generate the file_id\&. If e\&.g\&. an NFS file system is unresponsive such a call might block and the smbd process will become unresponsive\&. Use the "fileid:fstype deny", "fileid:fstype allow", "fileid:mntdir deny", or "fileid:mntdir allow" options to ignore potentially unresponsive file systems\&.
+.SH "OPTIONS"
+.PP
+fileid:algorithm = ALGORITHM
+.RS 4
+Available algorithms are
+fsname,
+fsname_nodirs,
+fsid
+and
+hostname\&. The default value is
+fsname\&.
+.sp
+The
+fsname
+algorithm generates device id by hashing the kernel device name\&.
+.sp
+The
+fsname_nodirs
+algorithm generates device id by hashing the kernel device name for files and by hashing the hostname for directories\&. This can be used to deliberately break lock coherency for directories in a cluster\&.
+.sp
+The
+fsid
+algorithm generates the device id from the
+f_fsid
+returned from the
+statfs()
+syscall\&.
+.sp
+The
+hostname
+algorithm generates device id by hashing the hostname\&. This can be used to deliberately break lock coherency in a cluster\&.
+.sp
+The
+fsname_norootdir
+algorithm generates device ids by hashing the kernel device name, except for the root directory of shares where it will use the hostname algorithm\&. This can be used to deliberately break lock coherency in a cluster for the root directory of a share\&.
+.RE
+.PP
+fileid:mapping = ALGORITHM
+.RS 4
+This option is the legacy version of the
+fileid:algorithm
+option, which was used in earlier versions of fileid mapping feature in custom Samba 3\&.0 versions\&.
+.RE
+.PP
+fileid:fstype deny = LIST
+.RS 4
+List of file system types to be ignored for file_id generation\&.
+.RE
+.PP
+fileid:fstype allow = LIST
+.RS 4
+List of file system types to be allowed for file_id generation\&. If this option is set, file system types not listed here are ignored\&.
+.RE
+.PP
+fileid:mntdir deny = LIST
+.RS 4
+List of file system mount points to be ignored for file_id generation\&.
+.RE
+.PP
+fileid:mntdir allow = LIST
+.RS 4
+List of file system mount points to be allowed for file_id generation\&. If this option is set, file system mount points not listed here are ignored\&.
+.RE
+.PP
+fileid:nolockinode
+.RS 4
+This option triggers use of the fileid hostname algorithm for the configured inode which can be used to deliberately break lock coherency for the corresponding file or directory in a cluster\&.
+.RE
+.SH "EXAMPLES"
+.PP
+Usage of the
+fileid
+module with the
+fsid
+algorithm:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        \fI[global]\fR
+	\m[blue]\fBvfs objects = fileid\fR\m[]
+	\m[blue]\fBfileid:algorithm = fsid\fR\m[]
+.fi
+.if n \{\
+.RE
+.\}
+.SH "VERSION"
+.PP
+This man page is part of version 4\&.11\&.2 of the Samba suite\&.
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.
