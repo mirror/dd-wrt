@@ -327,6 +327,7 @@ include rules/libyang.mk
 include rules/smartmontools.mk
 include rules/sispmctl.mk
 include rules/samba4.mk
+include rules/gnutls.mk
 
 #
 # Generic rules
