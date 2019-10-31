@@ -234,7 +234,7 @@ class PythonScriptUsageTests(TestCase):
             def _f(self, filename=filename):
                 print(filename)
                 try:
-                    p = subprocess.Popen(['python3', filename],
+                    p = subprocess.Popen(['/usr/bin/python3', filename],
                                          stderr=subprocess.PIPE,
                                          stdout=subprocess.PIPE)
                     out, err = p.communicate(timeout=5)

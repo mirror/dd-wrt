@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 #
 # Simple subunit testrunner for python
 # Copyright (C) Jelmer Vernooij <jelmer@samba.org> 2014
