@@ -1,0 +1,21 @@
+dn: ${ZONE_DN}
+changetype: modify
+add: wellKnownObjects
+wellKnownObjects: B:32:6227f0af1fc2410d8e3bb10615bb5b0f:CN=NTDS Quotas,${ZONE_DN}
+wellKnownObjects: B:32:18e2ea80684f11d2b9aa00c04f79f805:CN=Deleted Objects,${ZONE_DN}
+wellKnownObjects: B:32:2fbac1870ade11d297c400c04fd8d5cd:CN=Infrastructure,${ZONE_DN}
+wellKnownObjects: B:32:ab8153b7768811d1aded00c04fd8d5cd:CN=LostAndFound,${ZONE_DN}
+
+dn: CN=Infrastructure,${ZONE_DN}
+changetype: modify
+add: fSMORoleOwner
+fSMORoleOwner: CN=NTDS Settings,${SERVERDN}
+
+dn: CN=NTDS Settings,${SERVERDN}
+changetype: modify
+add: msDS-HasInstantiatedNCs
+msDS-HasInstantiatedNCs: B:8:0000000D:${ZONE_DN}
+-
+add: msDS-hasMasterNCs
+msDS-hasMasterNCs: ${ZONE_DN}
+-

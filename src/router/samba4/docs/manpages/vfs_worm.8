@@ -1,0 +1,74 @@
+'\" t
+.\"     Title: vfs_worm
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2019
+.\"    Manual: System Administration tools
+.\"    Source: Samba 4.11.2
+.\"  Language: English
+.\"
+.TH "VFS_WORM" "8" "10/24/2019" "Samba 4\&.11\&.2" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+vfs_worm \- disallows writes for older file
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+vfs objects = worm
+.SH "DESCRIPTION"
+.PP
+This VFS module is part of the
+\fBsamba\fR(7)
+suite\&.
+.PP
+The
+vfs_worm
+module controls the writability of files and folders depending on their change time and a adjustable grace period\&.
+.PP
+If the change time of a file or directory is older than the specified grace period, the write access will be denied, independent of further access controls (e\&.g\&. by the filesystem)\&.
+.PP
+In the case that the grace period is not exceed, the worm module will not impact any access controls\&.
+.SH "OPTIONS"
+.PP
+worm:grace_period = SECONDS
+.RS 4
+Period in seconds which defines the time how long the write access should be handled by the normal access controls\&. After this grace period the file or directory becomes read only\&.
+.RE
+.SH "EXAMPLES"
+.PP
+Deny the write access to files and folders, which are older than five minutes (300 seconds):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	\fI[wormshare]\fR
+	\m[blue]\fBvfs objects = worm\fR\m[]
+	\m[blue]\fBworm:grace_period = 300\fR\m[]
+.fi
+.if n \{\
+.RE
+.\}
+.SH "VERSION"
+.PP
+This man page is part of version 4\&.11\&.2 of the Samba suite\&.
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

@@ -1,0 +1,7 @@
+# status
+version="1"
+restart_every=2
+unhealthy_after=6
+service_stop_cmd="$CTDB_NFS_CALLOUT stop status"
+service_start_cmd="$CTDB_NFS_CALLOUT start status"
+service_debug_cmd="program_stack_traces rpc.statd 5"

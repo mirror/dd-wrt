@@ -1,0 +1,12 @@
+DNS server todo list
+--------------------
+
+Just so we don't forget the required features for an AD-compatible DNS server:
+
+- Symmetric Bind-style TKEY handling (not strictly needed for AD, but needed for
+  integration to other name servers / tools)
+(- Command line tools that unix admins are used to)
+- Zone transfer support (XFER, IFER) (look at AD for permission settings)
+- Caching
+- dynamic zone reloading
+- Tests, tests, tests

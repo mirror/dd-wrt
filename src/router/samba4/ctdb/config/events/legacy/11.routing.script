@@ -1,0 +1,49 @@
+#!/bin/sh
+
+# Attempt to add a set of static routes.
+#
+# Do this in "ipreallocated" rather than just "startup" because some
+# of the routes might be missing because the corresponding interface
+# has not previously had any IPs assigned or IPs were previously
+# released and corresponding routes were dropped.
+#
+# Addition of some routes might fail, errors go to /dev/null.
+#
+# Routes to add are defined in $CTDB_BASE/static-routes. Syntax is:
+#
+# IFACE NET/MASK GATEWAY
+#
+# Example:
+#
+# bond1 10.3.3.0/24 10.0.0.1
+
+[ -n "$CTDB_BASE" ] || \
+    CTDB_BASE=$(d=$(dirname "$0") ; cd -P "$d" ; dirname "$PWD")
+
+. "${CTDB_BASE}/functions"
+
+load_script_options
+
+[ -f "${CTDB_BASE}/static-routes" ] || {
+    exit 0
+}
+
+case "$1" in
+ipreallocated)
+        while read iface dest gw; do
+            ip route add "$dest" via "$gw" dev "$iface" >/dev/null 2>&1
+        done <"${CTDB_BASE}/static-routes"
+        ;;
+
+updateip)
+	oiface=$2
+	niface=$3
+	while read iface dest gw; do
+	    if [ "$niface" = "$iface" -o "$oiface" = "$iface" ] ; then
+		ip route add "$dest" via "$gw" dev "$iface" >/dev/null 2>&1
+	    fi
+	done <"${CTDB_BASE}/static-routes"
+	;;
+esac
+
+exit 0

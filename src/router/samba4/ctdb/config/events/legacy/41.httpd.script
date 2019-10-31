@@ -1,0 +1,78 @@
+#!/bin/sh
+# event script to manage httpd in a cluster environment
+
+[ -n "$CTDB_BASE" ] || \
+    CTDB_BASE=$(d=$(dirname "$0") ; cd -P "$d" ; dirname "$PWD")
+
+. "${CTDB_BASE}/functions"
+
+detect_init_style
+
+case $CTDB_INIT_STYLE in
+redhat)
+	service_name="httpd"
+	;;
+suse|debian|*)
+	service_name="apache2"
+	;;
+esac
+
+load_script_options
+
+ctdb_setup_state_dir "service" "$service_name"
+
+# RHEL5 sometimes use a SIGKILL to terminate httpd, which then leaks
+# semaphores.  This is a hack to clean them up.
+cleanup_httpd_semaphore_leak() {
+    killall -q -0 "$service_name" ||
+    for i in $(ipcs -s | awk '$3 == "apache" { print $2 }') ; do
+	ipcrm -s "$i"
+    done
+}
+
+##########
+
+service_start ()
+{
+    cleanup_httpd_semaphore_leak
+    service $service_name start
+}
+service_stop ()
+{
+    service $service_name stop
+    killall -q -9 $service_name || true
+}
+
+case "$1" in
+startup)
+	service_start
+	ctdb_counter_init
+	;;
+
+shutdown)
+	service_stop
+	;;
+
+monitor)
+	if ctdb_check_tcp_ports 80 >/dev/null 2>/dev/null ; then
+		ctdb_counter_init
+	else
+		ctdb_counter_incr
+		num_fails=$(ctdb_counter_get)
+		if [ "$num_fails" -eq 2 ] ; then
+			echo "HTTPD is not running. Trying to restart HTTPD."
+			service_stop
+			service_start
+			exit 0
+		elif [ "$num_fails" -ge 5 ] ; then
+			echo "HTTPD is not running. Trying to restart HTTPD."
+			service_stop
+			service_start
+			exit 1
+		fi
+	fi
+	;;
+esac
+
+exit 0
+

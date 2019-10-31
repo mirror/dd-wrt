@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="idmap_autorid.8">
+
+<refmeta>
+	<refentrytitle>idmap_autorid</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">System Administration tools</refmiscinfo>
+	<refmiscinfo class="version">&doc.version;</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>idmap_autorid</refname>
+	<refpurpose>Samba's idmap_autorid Backend for Winbind</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<title>DESCRIPTION</title>
+	<para>The idmap_autorid backend provides a way to use an algorithmic
+	mapping scheme to map UIDs/GIDs and SIDs that is more deterministic
+	than idmap_tdb and easier to configure than idmap_rid.</para>
+	<para>The module works similar to idmap_rid, but it automatically
+	configures the range to be used for each domain, so there is no need
+	to specify a specific range for each domain in the forest, the only
+	configuration that is needed is the range of uid/gids that shall
+	be used for user/group mappings and an optional size of the ranges
+	to be used.</para>
+	<para>The mappings of which domain is mapped to which range is stored
+	in autorid.tdb, thus you should backup this database regularly.</para>
+	<para>Due to the algorithm being used, it is the module that is
+	most easy to use as it only requires a minimal configuration.</para>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>IDMAP OPTIONS</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>range = low - high</term>
+		<listitem><para>
+			Defines the available matching uid and gid
+			range for which the backend is
+			authoritative. Note that the range acts as a
+			filter.  If algorithmically determined UID or
+			GID fall outside the range, they are ignored
+			and the corresponding map is discarded.  It is
+			intended as a way to avoid accidental UID/GID
+			overlaps between local and remotely defined
+			IDs.
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>rangesize = numberofidsperdomain</term>
+		<listitem><para>
+			Defines the number of uids/gids available per
+			domain range. The minimum needed value is 2000.
+			SIDs with RIDs larger than this value will be mapped
+			into extension ranges depending upon number of available
+			ranges. If the autorid backend runs out of available
+			ranges, mapping requests for new domains (or new
+			extension ranges for domains already known) are ignored
+			and the corresponding map is discarded.
+			</para>
+			<para>
+			Example: with rangesize set to 10000, users/groups with
+			a RID up to 10000 will be put into the first range for the
+			domain. When attempting to map the an object with a RID
+			of 25000, an extension range will be allocated that
+			will then be used to map all RIDs from 20000-29999.
+			</para>
+			<para>One range will be used for local users and groups and for
+			non-domain well-known SIDs like Everyone (S-1-1-0) or Creator Owner (S-1-3-0).
+			A chosen list of well-known SIDs will be preallocated on first start
+			to create deterministic mappings for those.</para>
+			<para>
+			Thus the number of local users and groups that can be created is
+			limited by this option as well. If you plan to create a large amount
+			of local users or groups, you will need set this parameter accordingly.
+			</para>
+		<para>The default value is 100000.</para>
+		</listitem>
+		</varlistentry>
+		<varlistentry>
+		<term>read only = [ yes | no ]</term>
+		<listitem><para>Turn the module into read-only mode. No new ranges will be allocated
+			nor will new mappings be created in the idmap pool. Defaults to no.</para>
+		</listitem>
+		</varlistentry>
+		<varlistentry>
+		<term>ignore builtin = [ yes | no ]</term>
+		<listitem><para>Ignore any mapping requests for the BUILTIN domain.
+			Defaults to no.</para>
+		</listitem>
+		</varlistentry>
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>THE MAPPING FORMULAS</title>
+	<para>
+		The Unix ID for a RID is calculated this way:
+		<programlisting>
+			ID =  REDUCED RID + IDMAP RANGE LOW VALUE + RANGE NUMBER * RANGE SIZE
+		</programlisting>
+		where REDUCED RID = RID % RANGE_SIZE
+		and a DOMAIN RANGE INDEX = RID / RANGE_SIZE is used together with the
+		domain sid to determine the RANGE NUMBER (stored in the database).
+	</para>
+	<para>
+		Correspondingly, the formula for calculating the RID for a
+		given Unix ID is this:
+		<programlisting>
+			RID = (ID - LOW ID) % RANGE SIZE + DOMAIN RANGE INDEX * RANGE SIZE
+		</programlisting>
+		Where the DOMAIN RANGE INDEX is retrieved from the database along with the
+		domain sid by the RANGE NUMBER = (ID - LOW ID) / RANGE SIZE .
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>EXAMPLES</title>
+	<para>
+		This example shows you the minimal configuration that will
+		work for the principal domain and 19 trusted domains / range
+		extensions.
+	</para>
+
+	<programlisting>
+	[global]
+	security = ads
+	workgroup = CUSTOMER
+	realm = CUSTOMER.COM
+
+	idmap config * : backend = autorid
+	idmap config * : range = 1000000-1999999
+
+	</programlisting>
+
+	<para>
+		This example shows how to configure idmap_autorid as default
+		for all domains with a potentially large amount of users
+		plus a specific configuration for a trusted domain
+		that uses the SFU mapping scheme. Please note that idmap
+		ranges and sfu ranges are not allowed to overlap.
+	</para>
+
+	<programlisting>
+	[global]
+	security = ads
+	workgroup = CUSTOMER
+	realm = CUSTOMER.COM
+
+	idmap config * : backend = autorid
+	idmap config * : range = 1000000-19999999
+	idmap config * : rangesize = 1000000
+
+	idmap config TRUSTED : backend  = ad
+	idmap config TRUSTED : range    = 50000 - 99999
+	idmap config TRUSTED : schema_mode = sfu
+	</programlisting>
+
+</refsect1>
+
+<refsect1>
+	<title>AUTHOR</title>
+
+	<para>
+	The original Samba software and related utilities
+	were created by Andrew Tridgell. Samba is now developed
+	by the Samba Team as an Open Source project similar
+	to the way the Linux kernel is developed.
+	</para>
+</refsect1>
+
+</refentry>

@@ -1,0 +1,24 @@
+<samba:parameter name="client signing"
+                 context="G"
+                 type="enum"
+                 enumlist="enum_smb_signing_vals"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>This controls whether the client is allowed or required to use SMB signing. Possible values 
+    are <emphasis>auto</emphasis>, <emphasis>mandatory</emphasis> 
+    and <emphasis>disabled</emphasis>. 
+    </para>
+
+    <para>When set to auto or default, SMB signing is offered, but not enforced.</para>
+
+    <para>When set to mandatory, SMB signing is required and if set
+    to disabled, SMB signing is not offered either.</para>
+
+    <para>IPC$ connections for DCERPC e.g. in winbindd, are handled by the
+    <smbconfoption name="client ipc signing"/> option.</para>
+</description>
+
+<related>client ipc signing</related>
+
+<value type="default">default</value>
+</samba:parameter>

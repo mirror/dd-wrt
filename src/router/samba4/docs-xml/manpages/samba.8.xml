@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="samba.8">
+
+<refmeta>
+	<refentrytitle>samba</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">System Administration tools</refmiscinfo>
+	<refmiscinfo class="version">&doc.version;</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>samba</refname>
+	<refpurpose>Server to provide AD and SMB/CIFS services to clients</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>samba</command>
+		<arg choice="opt">-D</arg>
+		<arg choice="opt">-i</arg>
+		<arg choice="opt">-M &lt;model&gt;</arg>
+		<arg choice="opt">--maximum-runtime=&lt;seconds&gt;</arg>
+		<arg choice="opt">-b</arg>
+		<arg choice="opt">--help</arg>
+		<arg choice="opt">--usage</arg>
+		<arg choice="opt">-d &lt;debug level&gt;</arg>
+		<arg choice="opt">--debug-stderr</arg>
+		<arg choice="opt">-s &lt;configuration file&gt;</arg>
+		<arg choice="opt">--option=&lt;smb_conf_param&gt;=&lt;value&gt;</arg>
+		<arg choice="opt">-l &lt;log directory&gt;</arg>
+		<arg choice="opt">--leak-report</arg>
+		<arg choice="opt">--leak-report-full</arg>
+		<arg choice="opt">-V</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>DESCRIPTION</title>
+	<para>This program is part of the <citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry> suite.</para>
+
+	<para><command>samba</command> is the server daemon that
+	provides Active Directory, filesharing and printing services to clients.
+	The server provides filespace and directory services to
+	clients using the SMB (or CIFS) protocol and other
+	related protocols such as DCE/RPC, LDAP and Kerberos.
+	</para>
+
+	<para>
+	Clients supported include MSCLIENT 3.0 for DOS, Windows for
+	Workgroups, Windows 95/98/ME, Windows NT, Windows 2000/XP/2003,
+	OS/2, DAVE for Macintosh, and cifsfs for Linux.</para>
+
+	<para>An extensive description of the services that the
+	server can provide is given in the man page for the
+	configuration file controlling the attributes of those
+	services (see <citerefentry><refentrytitle>smb.conf</refentrytitle>
+	<manvolnum>5</manvolnum></citerefentry>.  This man page will not describe the
+	services, but will concentrate on the administrative aspects
+	of running the server.
+	</para>
+
+	<para>Please note that there are significant security
+	implications to running this server, and the <citerefentry><refentrytitle>smb.conf</refentrytitle>
+	<manvolnum>5</manvolnum></citerefentry> manual page should be regarded as mandatory reading before
+	proceeding with installation.
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>OPTIONS</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>-D|--daemon</term>
+		<listitem><para>If specified, this parameter causes
+		the server to operate as a daemon. That is, it detaches
+		itself and runs in the background, fielding requests
+		on the appropriate ports. Operating the server as a
+		daemon is the recommended way of running
+		<command>samba</command> for servers that provide more
+		than casual use file and print services.  This switch is
+		assumed if <command>samba</command> is executed on the
+		command line of a shell.
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-i|--interactive</term>
+		<listitem><para>If this parameter is specified it causes the
+		server to run "interactively", not as a daemon, even if the
+		server is executed on the command line of a shell. Setting this
+		parameter negates the implicit daemon mode when run from the
+		command line. <command>samba</command> also logs to standard
+                output, as if the <command>-S</command> parameter had been
+                given.
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-M|--model</term>
+		<listitem><para>This parameter can be used to specify the
+		&quot;process model&quot; samba should use. This determines
+		how concurrent clients are handled. Available process
+		models include:
+		<itemizedlist>
+			<listitem><para><emphasis>single</emphasis></para>
+			<para>All Samba services run in a single process. This is
+			not recommended for production configurations.
+			</para></listitem>
+
+			<listitem><para><emphasis>standard</emphasis></para>
+			<para>A process is created for each Samba service,
+			and for those services that support it (currently only
+			LDAP and NETLOGON) a new processes is started
+			for each new client connection.</para>
+
+			<para>Historically, this was the 'standard' way Samba behaved
+			up until v4.10. Note that this model can be resource intensive
+			if you have a large number of client connections.</para>
+			</listitem>
+
+			<listitem><para><emphasis>prefork</emphasis></para>
+			<para>The default. A process is started for each Samba service,
+			and a fixed number of worker processes are started for those
+			services that support it (currently LDAP, NETLOGON, and KDC).
+			The client connections are then shared amongst the worker
+			processes.
+			Requests for services not supporting prefork are handled
+			by a single process for that service.</para>
+			<para>The number of prefork worker processes started is
+			controlled by the
+			<citerefentry><refentrytitle>smb.conf</refentrytitle>
+			<manvolnum>5</manvolnum></citerefentry> parameter
+		        <smbconfoption name="prefork children"/>,
+			which defaults to 4.
+			</para></listitem>
+		</itemizedlist>
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>--maximum-runtime=seconds</term>
+		<listitem><para>Set maximum runtime of the server process till
+		autotermination in seconds.
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-b|--show-build</term>
+		<listitem><para>Print information about how Samba was built.
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>--usage</term>
+		<listitem><para>Display brief usage message.</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>--debug-stderr</term>
+		<listitem><para>Send debug output to STDERR.</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>--leak-report</term>
+		<listitem><para>Enable talloc leak reporting on exit.
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>--leak-report-full</term>
+		<listitem><para>Enable full talloc leak reporting on exit.
+		</para></listitem>
+		</varlistentry>
+
+		&popt.common.samba.server;
+		&popt.autohelp;
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>FILES</title>
+
+	<variablelist>
+		<varlistentry>
+		<term><filename>/etc/rc</filename></term>
+		<listitem><para>or whatever initialization script your
+		system uses.</para>
+
+		<para>If running the server as a daemon at startup,
+		this file will need to contain an appropriate startup
+		sequence for the server. </para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><filename>/etc/services</filename></term>
+		<listitem><para>If running the server via the
+		meta-daemon <command>inetd</command>, this file
+		must contain a mapping of service name (e.g., netbios-ssn)
+		to service port (e.g., 139) and protocol type (e.g., tcp).
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><filename>/usr/local/samba/lib/smb.conf</filename></term>
+		<listitem><para>This is the default location of the <citerefentry><refentrytitle>smb.conf</refentrytitle>
+		<manvolnum>5</manvolnum></citerefentry> server configuration file. Other common places that systems
+		install this file are <filename>/usr/samba/lib/smb.conf</filename>
+		and <filename>/etc/samba/smb.conf</filename>.</para>
+
+		<para>This file describes all the services the server
+		is to make available to clients. See <citerefentry><refentrytitle>smb.conf</refentrytitle>
+		<manvolnum>5</manvolnum></citerefentry> for more information.</para>
+		</listitem>
+		</varlistentry>
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>DIAGNOSTICS</title>
+
+	<para>Most diagnostics issued by the server are logged
+	in a specified log file. The log file name is specified
+	at compile time, but may be overridden on the command line.</para>
+
+	<para>The number and nature of diagnostics available depends
+	on the debug level used by the server. If you have problems, set
+	the debug level to 3 and peruse the log files.</para>
+
+	<para>Most messages are reasonably self-explanatory. Unfortunately,
+	at the time this man page was created, there are too many diagnostics
+	available in the source code to warrant describing each and every
+	diagnostic. At this stage your best bet is still to grep the
+	source code and inspect the conditions that gave rise to the
+	diagnostics you are seeing.</para>
+</refsect1>
+
+<refsect1>
+	<title>VERSION</title>
+
+	<para>This man page is part of version &doc.version; of	the Samba suite.</para>
+</refsect1>
+
+<refsect1>
+	<title>SEE ALSO</title>
+	<para><citerefentry><refentrytitle>hosts_access</refentrytitle>
+	<manvolnum>5</manvolnum></citerefentry>
+	<citerefentry><refentrytitle>smb.conf</refentrytitle>
+	<manvolnum>5</manvolnum></citerefentry>, <citerefentry><refentrytitle>smbclient</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>, <citerefentry><refentrytitle>samba-tool</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>, <citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>, <citerefentry><refentrytitle>nmbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>, <citerefentry><refentrytitle>winbindd</refentrytitle>
+	<manvolnum>1</manvolnum></citerefentry>, and the
+	Internet RFC's	<filename>rfc1001.txt</filename>, <filename>rfc1002.txt</filename>.
+	In addition the CIFS (formerly SMB) specification is available
+	as a link from the Web page <ulink noescape="1" url="https://www.samba.org/cifs/">
+	https://www.samba.org/cifs/</ulink>.</para>
+</refsect1>
+
+<refsect1>
+	<title>AUTHOR</title>
+
+	<para>The original Samba software and related utilities
+	were created by Andrew Tridgell. Samba is now developed
+	by the Samba Team as an Open Source project similar
+	to the way the Linux kernel is developed.</para>
+</refsect1>
+
+</refentry>

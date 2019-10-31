@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+
+bld.SAMBA3_SUBSYSTEM('TOKEN_UTIL',
+                    source='token_util.c',
+                    deps='samba-util pdb')
+
+bld.SAMBA3_SUBSYSTEM('USER_UTIL',
+                     source='user_util.c',
+                     deps='TOKEN_UTIL tirpc nsl')
+
+bld.SAMBA3_SUBSYSTEM('AUTH_COMMON',
+                    source='''auth_util.c
+			      check_samsec.c
+			      server_info.c
+			      server_info_sam.c
+			      user_info.c''',
+                     deps='TOKEN_UTIL DCUTIL USER_UTIL common_auth')
+
+bld.SAMBA3_LIBRARY('auth',
+                   source='''auth.c
+                   user_krb5.c
+                   auth_ntlmssp.c
+                   auth_generic.c''',
+                   deps='''PLAINTEXT_AUTH SLCACHE DCUTIL TOKEN_UTIL AUTH_COMMON libcli_netlogon3 samba-hostconfig MESSAGING''',
+                   private_library=True)
+
+bld.SAMBA3_MODULE('auth_sam',
+                 subsystem='auth',
+                 source='auth_sam.c',
+                 deps='samba-util',
+                 init_function='',
+                 internal_module=True)
+
+bld.SAMBA3_MODULE('auth_unix',
+                 subsystem='auth',
+                 source='auth_unix.c',
+                 deps='samba-util',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('auth_unix'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('auth_unix'))
+
+bld.SAMBA3_MODULE('auth_winbind',
+                 subsystem='auth',
+                 source='auth_winbind.c',
+                 deps='samba-util',
+                 init_function='',
+                 internal_module=True)
+
+bld.SAMBA3_MODULE('auth_builtin',
+                 subsystem='auth',
+                 source='auth_builtin.c',
+                 deps='samba-util',
+                 init_function='',
+                 internal_module=True)
+
+bld.SAMBA3_MODULE('auth_script',
+                 subsystem='auth',
+                 source='auth_script.c',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('auth_script'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('auth_script'))
+
+bld.SAMBA3_MODULE('auth_samba4',
+                  subsystem='auth',
+                  source='auth_samba4.c',
+                  init_function='',
+                  deps='auth4 samba_server_gensec gensec',
+                  internal_module=bld.SAMBA3_IS_STATIC_MODULE('auth_samba4') and bld.AD_DC_BUILD_IS_ENABLED(),
+                  enabled=bld.SAMBA3_IS_ENABLED_MODULE('auth_samba4') and bld.AD_DC_BUILD_IS_ENABLED())

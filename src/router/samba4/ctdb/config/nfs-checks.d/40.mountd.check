@@ -1,0 +1,7 @@
+# mountd
+version="1"
+restart_every=2
+unhealthy_after=6
+service_stop_cmd="$CTDB_NFS_CALLOUT stop mountd"
+service_start_cmd="$CTDB_NFS_CALLOUT start mountd"
+service_debug_cmd="program_stack_traces rpc.mountd 5"

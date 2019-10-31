@@ -1,0 +1,38 @@
+<samba:parameter name="restrict anonymous"
+                 type="integer"
+                 context="G"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+		The setting of this parameter determines whether SAMR and LSA
+		DCERPC services can be accessed anonymously. This corresponds
+		to the following Windows Server registry options:
+	</para>
+
+	<programlisting>
+		HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa\RestrictAnonymous
+	</programlisting>
+
+	<para>
+		The option also affects the browse option which is required by
+		legacy clients which rely on Netbios browsing. While modern
+		Windows version should be fine with restricting the access
+		there could still be applications relying on anonymous access.
+	</para>
+
+	<para>
+		Setting <smbconfoption name="restrict anonymous">1</smbconfoption>
+		will disable anonymous SAMR access.
+	</para>
+
+	<para>
+		Setting <smbconfoption name="restrict anonymous">2</smbconfoption>
+		will, in addition to restricting SAMR access, disallow anonymous
+		connections to the IPC$ share in general.
+		Setting <smbconfoption name="guest ok">yes</smbconfoption> on any share
+		will remove the security advantage.
+	</para>
+</description>
+
+<value type="default">0</value>
+</samba:parameter>

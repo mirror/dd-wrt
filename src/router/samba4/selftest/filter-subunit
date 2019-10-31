@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+# Filter a subunit stream
+# Copyright (C) 2009-2011 Jelmer Vernooij <jelmer@samba.org>
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# NOTE: This script is a hack, meant as a placeholder until we can migrate
+# to upstream subunit's filtering tools.
+
+import optparse
+import sys
+import signal
+
+sys.path.insert(0, "bin/python")
+
+import subunithelper
+
+parser = optparse.OptionParser("filter-subunit [options] < instream > outstream")
+parser.add_option("--expected-failures", type="string", action="append",
+    help=("File or directory containing lists of regexes matching tests "
+          "to consider known failures"))
+parser.add_option("--flapping", type="string", action="append",
+    help=("File or directory containing lists of flapping tests, "
+          "of which to ignore results."))
+parser.add_option("--strip-passed-output", action="store_true",
+    help="Whether to strip output from tests that passed")
+parser.add_option("--fail-immediately", action="store_true",
+    help="Whether to stop on the first error", default=False)
+parser.add_option("--prefix", type="string", default='',
+    help="Add prefix to all test names")
+parser.add_option("--suffix", type="string", default='',
+    help="Add suffix to all test names")
+parser.add_option("--fail-on-empty", default=False,
+    action="store_true", help="Fail if there was no subunit output")
+parser.add_option("--list", default=False,
+    action="store_true", help="Operate in list mode")
+parser.add_option("--perf-test-output", default=False,
+    action="store_true", help="orientate output for performance measurement")
+opts, args = parser.parse_args()
+
+if opts.list:
+    for l in sys.stdin:
+         sys.stdout.write("%s%s%s\n" % (opts.prefix, l.rstrip(), opts.suffix))
+    sys.exit(0)
+
+if opts.perf_test_output:
+    bad_options = []
+    for bad_opt in ('fail_immediately', 'strip_passed_output',
+                    'flapping', 'expected_failures'):
+        if getattr(opts, bad_opt):
+            bad_options.append(bad_opt)
+    if bad_options:
+        print("--perf-test-output is incompatible with --%s" %
+              (', --'.join(x.replace('_', '-') for x in bad_options)),
+              file=sys.stderr)
+        sys.exit(1)
+
+if opts.expected_failures:
+    expected_failures = subunithelper.read_test_regexes(*opts.expected_failures)
+else:
+    expected_failures = {}
+
+
+if opts.flapping:
+    flapping = subunithelper.read_test_regexes(*opts.flapping)
+else:
+    flapping = {}
+
+statistics = {
+    'TESTS_UNEXPECTED_OK': 0,
+    'TESTS_EXPECTED_OK': 0,
+    'TESTS_UNEXPECTED_FAIL': 0,
+    'TESTS_EXPECTED_FAIL': 0,
+    'TESTS_ERROR': 0,
+    'TESTS_SKIP': 0,
+}
+
+def handle_sigint(sig, stack):
+    sys.exit(0)
+signal.signal(signal.SIGINT, handle_sigint)
+
+out = subunithelper.SubunitOps(sys.stdout)
+
+if opts.perf_test_output:
+    msg_ops = subunithelper.PerfFilterOps(out, opts.prefix, opts.suffix)
+else:
+    msg_ops = subunithelper.FilterOps(out, opts.prefix, opts.suffix,
+                                      expected_failures,
+                                      opts.strip_passed_output,
+                                      fail_immediately=opts.fail_immediately,
+                                      flapping=flapping)
+
+try:
+    from samba.compat import PY3
+    from io import TextIOWrapper as TextIOWrapper
+    if PY3:
+        forgiving_stdin = TextIOWrapper(sys.stdin.buffer, errors='ignore',  encoding='utf-8')
+    else:
+        forgiving_stdin = sys.stdin
+    ret = subunithelper.parse_results(msg_ops, statistics, forgiving_stdin)
+except subunithelper.ImmediateFail:
+    sys.stdout.flush()
+    sys.exit(1)
+
+if opts.fail_on_empty and not msg_ops.seen_output:
+    sys.exit(1)
+else:
+    sys.exit(ret)

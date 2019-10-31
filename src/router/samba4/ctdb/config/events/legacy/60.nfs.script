@@ -1,0 +1,299 @@
+#!/bin/sh
+# script to manage nfs in a clustered environment
+
+[ -n "$CTDB_BASE" ] || \
+    CTDB_BASE=$(d=$(dirname "$0") ; cd -P "$d" ; dirname "$PWD")
+
+. "${CTDB_BASE}/functions"
+
+service_name="nfs"
+
+load_system_config "nfs"
+
+load_script_options
+
+ctdb_setup_state_dir "service" "$service_name"
+
+######################################################################
+
+service_reconfigure ()
+{
+    # Restart lock manager, notify clients
+    if [ -x "${CTDB_BASE}/statd-callout" ] ; then
+	"${CTDB_BASE}/statd-callout" notify &
+    fi >/dev/null 2>&1
+}
+
+######################################################################
+
+######################################################
+# Check the health of NFS services
+#
+# Use .check files in $CTDB_NFS_CHECKS_DIR.
+# Default is "${CTDB_BASE}/nfs-checks.d/"
+######################################################
+nfs_check_services ()
+{
+    _dir="${CTDB_NFS_CHECKS_DIR:-${CTDB_BASE}/nfs-checks.d}"
+
+    # Files must end with .check - avoids editor backups, RPM fu, ...
+    for _f in "$_dir"/[0-9][0-9].*.check ; do
+	[ -r "$_f" ] || continue
+
+	_t="${_f%.check}"
+	_progname="${_t##*/[0-9][0-9].}"
+
+	nfs_check_service "$_progname" <"$_f"
+    done
+}
+
+######################################################
+# Check the health of an NFS service
+#
+# $1 - progname, passed to rpcinfo (looked up in /etc/rpc)
+#
+# Reads variables from stdin
+#
+# Variables are:
+#
+# * family             - "tcp" or "udp" or space separated list
+#                        default: tcp, not used with "service_check_cmd"
+# * version            - optional, RPC service version number
+#                        default is to omit to check for any version,
+#                        not used with "service_check_cmd"
+# * unhealthy_after    - number of check fails before unhealthy
+#                        default: 1
+# * restart_every      - number of check fails before restart
+#                        default: 0, meaning no restart
+# * service_stop_cmd   - command to stop service
+#                        default: no default, must be provided if
+#                                 restart_every > 0
+# * service_start_cmd  - command to start service
+#                        default: no default, must be provided if
+#                                 restart_every > 0
+# * service_check_cmd  - command to check health of service
+#                        default is to check RPC service using rpcinfo
+# * service_debug_cmd  - command to debug a service after trying to stop it;
+#                        for example, it can be useful to print stack
+#                        traces of threads that have not exited, since
+#                        they may be stuck doing I/O;
+#                        no default, see also function program_stack_traces()
+#
+# Quoting in values is not preserved
+#
+######################################################
+nfs_check_service ()
+{
+    _progname="$1"
+
+    # This sub-shell is created to intentionally limit the scope of
+    # variable values read from the .check files.
+    # shellcheck disable=SC2030
+    (
+	# Subshell to restrict scope variables...
+
+	# Defaults
+	family="tcp"
+	version=""
+	unhealthy_after=1
+	restart_every=0
+	service_stop_cmd=""
+	service_start_cmd=""
+	service_check_cmd=""
+	service_debug_cmd=""
+
+	# Eval line-by-line.  Expands variable references in values.
+	# Also allows variable name checking, which seems useful.
+	while read _line ; do
+	    case "$_line" in
+		\#*|"") : ;; # Ignore comments, blank lines
+
+		family=*|version=*|\
+		unhealthy_after=*|restart_every=*|\
+		service_stop_cmd=*|service_start_cmd=*|\
+		service_check_cmd=*|service_debug_cmd=*)
+
+		    eval "$_line"
+		    ;;
+		*)
+		    echo "ERROR: Unknown variable for ${_progname}: ${_line}"
+		    exit 1
+	    esac
+	done
+
+	_ok=false
+	if [ -n "$service_check_cmd" ] ; then
+	    # Using eval means variables can contain semicolon separated commands
+	    if eval "$service_check_cmd" ; then
+		_ok=true
+	    else
+		_err="monitoring service \"${_progname}\" failed"
+	    fi
+	else
+	    if nfs_check_rpcinfo \
+		   "$_progname" "$version" "$family" >/dev/null ; then
+		_ok=true
+	    else
+		_err="$ctdb_check_rpc_out"
+	    fi
+	fi
+
+	if $_ok ; then
+	    if [ $unhealthy_after -ne 1 -o $restart_every -ne 0 ] ; then
+		ctdb_counter_init "$_progname"
+	    fi
+	    exit 0
+	fi
+
+	ctdb_counter_incr "$_progname"
+	_failcount=$(ctdb_counter_get "$_progname")
+
+	_unhealthy=false
+	if [ "$unhealthy_after" -gt 0 ] ; then
+	    if [ "$_failcount" -ge "$unhealthy_after" ] ; then
+		_unhealthy=true
+		echo "ERROR: $_err"
+	    fi
+	fi
+
+	if [ "$restart_every" -gt 0 ] ; then
+	    if [ $((_failcount % restart_every)) -eq 0 ] ; then
+		if ! $_unhealthy ; then
+		    echo "WARNING: $_err"
+		fi
+		nfs_restart_service
+	    fi
+	fi
+
+	if $_unhealthy ; then
+	    exit 1
+	fi
+
+	return 0
+    ) || exit 1
+}
+
+# Uses: service_stop_cmd, service_start_cmd, service_debug_cmd
+# This function is called within the sub-shell that shellcheck thinks
+# loses the above variable values.
+# shellcheck disable=SC2031
+nfs_restart_service ()
+{
+    if [ -z "$service_stop_cmd" -o -z "$service_start_cmd" ] ; then
+	die "ERROR: Can not restart service \"${_progname}\" without corresponding service_start_cmd/service_stop_cmd settings"
+    fi
+
+    echo "Trying to restart service \"${_progname}\"..."
+    # Using eval means variables can contain semicolon separated commands
+    eval "$service_stop_cmd"
+    if [ -n "$service_debug_cmd" ] ; then
+	eval "$service_debug_cmd"
+    fi
+    background_with_logging eval "$service_start_cmd"
+}
+
+######################################################
+# Check an RPC service with rpcinfo
+######################################################
+ctdb_check_rpc ()
+{
+    _progname="$1"        # passed to rpcinfo (looked up in /etc/rpc)
+    _version="$2"         # optional, not passed if empty/unset
+    _family="${3:-tcp}"   # optional, default is "tcp"
+
+    case "$_family" in
+	tcp6|udp6)
+	    _localhost="${CTDB_RPCINFO_LOCALHOST6:-::1}"
+	    ;;
+	*)
+	    _localhost="${CTDB_RPCINFO_LOCALHOST:-127.0.0.1}"
+    esac
+
+    # $_version is not quoted because it is optional
+    # shellcheck disable=SC2086
+    if ! ctdb_check_rpc_out=$(rpcinfo -T "$_family" "$_localhost" \
+				      "$_progname" $_version 2>&1) ; then
+	ctdb_check_rpc_out="$_progname failed RPC check:
+$ctdb_check_rpc_out"
+	echo "$ctdb_check_rpc_out"
+	return 1
+    fi
+}
+
+nfs_check_rpcinfo ()
+{
+    _progname="$1"        # passed to rpcinfo (looked up in /etc/rpc)
+    _versions="$2"        # optional, space separated, not passed if empty/unset
+    _families="${3:-tcp}" # optional, space separated, default is "tcp"
+
+    for _family in $_families ; do
+	if [ -n "$_versions" ] ; then
+	    for _version in $_versions ; do
+		ctdb_check_rpc "$_progname" "$_version" "$_family" || return $?
+	    done
+	else
+	    ctdb_check_rpc "$_progname" "" "$_family" || return $?
+	fi
+    done
+}
+
+##################################################################
+# use statd-callout to update NFS lock info
+##################################################################
+nfs_update_lock_info ()
+{
+    if [ -x "$CTDB_BASE/statd-callout" ] ; then
+	"$CTDB_BASE/statd-callout" update
+    fi
+}
+
+######################################################################
+
+# script_state_dir set by ctdb_setup_state_dir()
+# shellcheck disable=SC2154
+nfs_callout_init "$script_state_dir"
+
+case "$1" in
+startup)
+	nfs_callout "$@" || exit $?
+	;;
+
+shutdown)
+	nfs_callout "$@" || exit $?
+	;;
+
+takeip)
+	nfs_callout "$@" || exit $?
+	ctdb_service_set_reconfigure
+	;;
+
+releaseip)
+	nfs_callout "$@" || exit $?
+	ctdb_service_set_reconfigure
+	;;
+
+ipreallocated)
+	if ctdb_service_needs_reconfigure ; then
+		ctdb_service_reconfigure
+	fi
+	;;
+
+monitor)
+	nfs_callout "monitor-pre" || exit $?
+
+	# Check that directories for shares actually exist
+	if [ "$CTDB_NFS_SKIP_SHARE_CHECK" != "yes" ] ; then
+	    nfs_callout "monitor-list-shares" | ctdb_check_directories || \
+		exit $?
+	fi
+
+	update_tickles 2049
+	nfs_update_lock_info
+
+	nfs_check_services
+
+	nfs_callout "monitor-post" || exit $?
+       	;;
+esac
+
+exit 0

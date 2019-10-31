@@ -1,0 +1,316 @@
+import sys
+from waflib import Logs, Options, Errors
+
+# Check for kerberos
+have_gssapi=False
+
+krb5_min_required_version = "1.9"
+
+# Requried versions
+krb5_required_version = krb5_min_required_version
+if conf.CONFIG_SET('AD_DC_BUILD_IS_ENABLED'):
+    krb5_required_version = "1.15.1"
+
+def parse_version(v):
+    return tuple(map(int, (v.split("."))))
+
+def krb5_define_syslib(conf, lib, deps):
+    found = 'FOUND_SYSTEMLIB_' + lib
+    if found in conf.env:
+        return
+    conf.SET_TARGET_TYPE(lib, 'SYSLIB')
+    conf.SET_SYSLIB_DEPS(lib, deps)
+    conf.env[found] = True
+
+Logs.info("Looking for kerberos features")
+conf.find_program('krb5-config.heimdal', var='HEIMDAL_KRB5_CONFIG')
+
+if isinstance(Options.options.with_system_mitkrb5, list):
+    path_krb5_config = [x+'/bin' for x in Options.options.with_system_mitkrb5]
+else:
+    path_krb5_config = None
+
+conf.find_program('krb5-config', path_list=path_krb5_config, var='KRB5_CONFIG')
+if conf.env.KRB5_CONFIG:
+    conf.CHECK_CFG(path=conf.env.KRB5_CONFIG, args="--cflags --libs",
+               package="", uselib_store="KRB5")
+    krb5_define_syslib(conf, "krb5", conf.env['LIB_KRB5'])
+
+    conf.CHECK_CFG(path=conf.env.KRB5_CONFIG, args="--cflags --libs",
+                   package="kadm-server", uselib_store="KADM-SERVER")
+    conf.CHECK_FUNCS_IN('kadm5_init', 'kadm5srv_mit')
+
+    conf.CHECK_CFG(path=conf.env.KRB5_CONFIG, args="--cflags --libs",
+                   package="kdb", uselib_store="KDB5")
+    krb5_define_syslib(conf, "kdb5", conf.env['LIB_KDB5'])
+
+    conf.CHECK_CFG(path=conf.env.KRB5_CONFIG, args="--cflags --libs",
+               package="gssapi", uselib_store="GSSAPI")
+    krb5_define_syslib(conf, "gssapi", conf.env['LIB_GSSAPI'])
+    if 'k5crypto' in conf.env['LIB_GSSAPI']:
+        krb5_define_syslib(conf, "k5crypto", conf.env['LIB_GSSAPI'])
+    if 'com_err' in conf.env['LIB_GSSAPI']:
+        krb5_define_syslib(conf, "com_err", conf.env['LIB_GSSAPI'])
+    if 'gssapi_krb5' in conf.env['LIB_GSSAPI']:
+        krb5_define_syslib(conf, "gssapi_krb5", conf.env['LIB_GSSAPI'])
+
+    vendor = conf.cmd_and_log(conf.env.KRB5_CONFIG+['--vendor'])
+    conf.env.KRB5_VENDOR = vendor.strip().lower()
+    if conf.env.KRB5_VENDOR == 'heimdal':
+        raise Errors.WafError('--with-system-mitkrb5 cannot be used with system heimdal')
+
+    conf.define('USING_SYSTEM_KRB5', 1)
+    del conf.env.HEIMDAL_KRB5_CONFIG
+    krb5_conf_version = conf.cmd_and_log(conf.env.KRB5_CONFIG+['--version']).strip()
+
+    krb5_version = krb5_conf_version.split()[-1]
+
+    # drop '-prerelease' suffix
+    if krb5_version.find('-') > 0:
+        krb5_version = krb5_version.split("-")[0]
+
+    if parse_version(krb5_version) < parse_version(krb5_required_version):
+        Logs.error('ERROR: The MIT KRB5 build with Samba AD requires at least %s. %s has been found and cannot be used' % (krb5_required_version, krb5_version))
+        Logs.error('ERROR: If you want to just build Samba FS (File Server) use the option --without-ad-dc which requires version %s' % (krb5_min_required_version))
+        Logs.error('ERROR: You may try to build with embedded Heimdal Kerberos by not specifying --with-system-mitkrb5')
+        sys.exit(1)
+    else:
+        Logs.info('MIT Kerberos %s detected, MIT krb5 build can proceed' % (krb5_version))
+
+conf.CHECK_CFG(args="--cflags --libs", package="com_err", uselib_store="com_err")
+conf.CHECK_FUNCS_IN('_et_list', 'com_err')
+conf.CHECK_HEADERS('com_err.h', lib='com_err')
+conf.CHECK_HEADERS('kdb.h', lib='kdb5')
+
+conf.CHECK_HEADERS('krb5.h krb5/locate_plugin.h', lib='krb5')
+conf.CHECK_HEADERS('krb5.h krb5/localauth_plugin.h', lib='krb5')
+possible_gssapi_headers="gssapi.h gssapi/gssapi_generic.h gssapi/gssapi.h gssapi/gssapi_ext.h gssapi/gssapi_krb5.h gssapi/gssapi_oid.h"
+conf.CHECK_HEADERS(possible_gssapi_headers, lib='gssapi')
+
+conf.CHECK_FUNCS_IN('krb5_encrypt_data', 'k5crypto')
+conf.CHECK_FUNCS_IN('des_set_key','crypto')
+conf.CHECK_FUNCS_IN('copy_Authenticator', 'asn1')
+conf.CHECK_FUNCS_IN('roken_getaddrinfo_hostspec', 'roken')
+
+conf.CHECK_HEADERS('profile.h')
+
+if conf.CHECK_FUNCS_IN('gss_display_status', 'gssapi gssapi_krb5'):
+    have_gssapi=True
+
+if not have_gssapi:
+    if conf.env.KRB5_CONFIG and conf.env.KRB5_CONFIG != 'heimdal':
+        Logs.error("ERROR: WAF build with MIT Krb5 requires working GSSAPI implementation")
+        sys.exit(1)
+
+conf.CHECK_FUNCS_IN('''
+       gss_wrap_iov
+       gss_krb5_import_cred
+       gss_get_name_attribute
+       gss_mech_krb5
+       gss_oid_equal
+       gss_inquire_sec_context_by_oid
+       gsskrb5_extract_authz_data_from_sec_context
+       gss_krb5_export_lucid_sec_context
+       gss_import_cred gss_export_cred
+       gss_acquire_cred_from
+       ''', 'gssapi gssapi_krb5')
+conf.CHECK_VARIABLE('GSS_KRB5_CRED_NO_CI_FLAGS_X', headers=possible_gssapi_headers)
+conf.CHECK_FUNCS_IN('krb5_mk_req_extended krb5_kt_compare', 'krb5')
+conf.CHECK_FUNCS('''
+       krb5_auth_con_getrecvsubkey
+       krb5_auth_con_getsendsubkey
+       krb5_set_default_in_tkt_etypes krb5_set_default_tgs_enctypes
+       krb5_set_default_tgs_ktypes krb5_principal2salt
+       krb5_c_string_to_key krb5_get_pw_salt krb5_string_to_key_salt krb5_auth_con_setkey
+       krb5_auth_con_setuseruserkey krb5_get_permitted_enctypes
+       krb5_get_default_in_tkt_etypes krb5_free_data_contents
+       krb5_principal_get_comp_string krb5_free_unparsed_name
+       krb5_free_keytab_entry_contents krb5_kt_free_entry krb5_krbhst_init
+       krb5_krbhst_get_addrinfo
+       krb5_crypto_init krb5_crypto_destroy
+       krb5_c_verify_checksum krb5_principal_compare_any_realm
+       krb5_parse_name_norealm krb5_princ_size krb5_get_init_creds_opt_set_pac_request
+       krb5_get_renewed_creds krb5_free_error_contents
+       initialize_krb5_error_table krb5_get_init_creds_opt_alloc
+       krb5_get_init_creds_opt_free krb5_get_init_creds_opt_get_error
+       krb5_enctype_to_string krb5_fwd_tgt_creds krb5_auth_con_set_req_cksumtype
+       krb5_get_creds_opt_alloc krb5_get_creds_opt_set_impersonate krb5_get_creds
+       krb5_get_credentials_for_user krb5_get_host_realm krb5_free_host_realm
+       krb5_get_init_creds_keyblock krb5_get_init_creds_keytab
+       krb5_make_principal krb5_build_principal_alloc_va
+       krb5_cc_get_lifetime krb5_cc_retrieve_cred
+       krb5_cc_copy_creds
+       krb5_free_checksum_contents krb5_c_make_checksum krb5_create_checksum
+       krb5_config_get_bool_default krb5_get_profile
+       krb5_data_copy
+       krb5_init_keyblock krb5_principal_set_realm krb5_principal_get_type
+       krb5_principal_set_type
+       krb5_warnx
+       krb5_get_prompt_types
+       ''',
+     lib='krb5 k5crypto')
+conf.CHECK_DECLS('''krb5_get_credentials_for_user
+                    krb5_auth_con_set_req_cksumtype''',
+                    headers='krb5.h', always=True)
+conf.CHECK_VARIABLE('AP_OPTS_USE_SUBKEY', headers='krb5.h')
+conf.CHECK_VARIABLE('KV5M_KEYTAB', headers='krb5.h')
+conf.CHECK_VARIABLE('KRB5_KU_OTHER_CKSUM', headers='krb5.h')
+conf.CHECK_VARIABLE('KRB5_KEYUSAGE_APP_DATA_CKSUM', headers='krb5.h')
+conf.CHECK_VARIABLE('ENCTYPE_AES128_CTS_HMAC_SHA1_96', headers='krb5.h')
+conf.CHECK_VARIABLE('ENCTYPE_AES256_CTS_HMAC_SHA1_96', headers='krb5.h')
+conf.CHECK_DECLS('KRB5_PDU_NONE', reverse=True, headers='krb5.h')
+conf.CHECK_STRUCTURE_MEMBER('krb5_keytab_entry', 'key', headers='krb5.h',
+                            define='HAVE_KRB5_KEYTAB_ENTRY_KEY')
+conf.CHECK_STRUCTURE_MEMBER('krb5_keytab_entry', 'keyblock', headers='krb5.h',
+                            define='HAVE_KRB5_KEYTAB_ENTRY_KEYBLOCK')
+conf.CHECK_STRUCTURE_MEMBER('krb5_address', 'magic', headers='krb5.h',
+                            define='HAVE_MAGIC_IN_KRB5_ADDRESS')
+conf.CHECK_STRUCTURE_MEMBER('krb5_address', 'addrtype', headers='krb5.h',
+                            define='HAVE_ADDRTYPE_IN_KRB5_ADDRESS')
+conf.CHECK_STRUCTURE_MEMBER('krb5_ap_req', 'ticket', headers='krb5.h',
+                            define='HAVE_TICKET_POINTER_IN_KRB5_AP_REQ')
+conf.CHECK_STRUCTURE_MEMBER('krb5_prompt', 'type', headers='krb5.h',
+                            define='HAVE_KRB5_PROMPT_TYPE')
+
+conf.CHECK_TYPE('krb5_encrypt_block', headers='krb5.h')
+
+conf.CHECK_CODE('''
+       krb5_context ctx;
+       krb5_get_init_creds_opt *opt = NULL;
+       krb5_get_init_creds_opt_free(ctx, opt);
+       ''',
+    'KRB5_CREDS_OPT_FREE_REQUIRES_CONTEXT',
+    headers='krb5.h', link=False,
+    msg="Checking whether krb5_get_init_creds_opt_free takes a context argument")
+conf.CHECK_CODE('''
+       const krb5_data *pkdata;
+       krb5_context context;
+       krb5_principal principal;
+       pkdata = krb5_princ_component(context, principal, 0);
+       ''',
+    'HAVE_KRB5_PRINC_COMPONENT',
+    headers='krb5.h', lib='krb5',
+    msg="Checking whether krb5_princ_component is available")
+
+conf.CHECK_CODE('''
+       int main(void) {
+       char buf[256];
+       krb5_enctype_to_string(1, buf, 256);
+       return 0;
+       }''',
+    'HAVE_KRB5_ENCTYPE_TO_STRING_WITH_SIZE_T_ARG',
+    headers='krb5.h', lib='krb5 k5crypto',
+    addmain=False, cflags=conf.env['WERROR_CFLAGS'],
+    msg="Checking whether krb5_enctype_to_string takes size_t argument")
+
+conf.CHECK_CODE('''
+       int main(void) {
+       krb5_context context = NULL;
+       char *str = NULL;
+       krb5_enctype_to_string(context, 1, &str);
+       if (str) free (str);
+       return 0;
+       }''',
+    'HAVE_KRB5_ENCTYPE_TO_STRING_WITH_KRB5_CONTEXT_ARG',
+    headers='krb5.h stdlib.h', lib='krb5',
+    addmain=False, cflags=conf.env['WERROR_CFLAGS'],
+    msg="Checking whether krb5_enctype_to_string takes krb5_context argument")
+conf.CHECK_CODE('''
+       int main(void) {
+       krb5_context ctx = NULL;
+       krb5_principal princ = NULL;
+       const char *str = krb5_princ_realm(ctx, princ)->data;
+       return 0;
+       }''',
+    'HAVE_KRB5_PRINC_REALM',
+    headers='krb5.h', lib='krb5',
+    addmain=False,
+    msg="Checking whether the macro krb5_princ_realm is defined")
+conf.CHECK_CODE('''
+       int main(void) {
+           krb5_context context;
+           krb5_principal principal;
+           const char *realm; realm = krb5_principal_get_realm(context, principal);
+           return 0;
+       }''',
+    'HAVE_KRB5_PRINCIPAL_GET_REALM',
+    headers='krb5.h', lib='krb5',
+    addmain=False,
+    msg="Checking whether krb5_principal_get_realm is defined")
+conf.CHECK_CODE('''
+       krb5_enctype enctype;
+       enctype = ENCTYPE_ARCFOUR_HMAC_MD5;
+       ''',
+    '_HAVE_ENCTYPE_ARCFOUR_HMAC_MD5',
+    headers='krb5.h', lib='krb5',
+    msg="Checking whether the ENCTYPE_ARCFOUR_HMAC_MD5 key type definition is available");
+conf.CHECK_CODE('''
+       krb5_enctype enctype;
+       enctype = ENCTYPE_ARCFOUR_HMAC_MD5_56;
+       ''',
+    '_HAVE_ENCTYPE_ARCFOUR_HMAC_MD5_56',
+    headers='krb5.h', lib='krb5',
+    msg="Checking whether the ENCTYPE_ARCFOUR_HMAC_MD5_56 key type definition is available");
+conf.CHECK_CODE('''
+       krb5_keytype keytype;
+       keytype = KEYTYPE_ARCFOUR_56;
+       ''',
+    '_HAVE_KEYTYPE_ARCFOUR_56',
+    headers='krb5.h', lib='krb5',
+    msg="Checking whether the HAVE_KEYTYPE_ARCFOUR_56 key type definition is available");
+if conf.CONFIG_SET('_HAVE_ENCTYPE_ARCFOUR_HMAC_MD5') and conf.CONFIG_SET('_HAVE_KEYTYPE_ARCFOUR_56'):
+    conf.DEFINE('HAVE_ENCTYPE_ARCFOUR_HMAC_MD5', '1')
+if conf.CONFIG_SET('_HAVE_ENCTYPE_ARCFOUR_HMAC_MD5_56') and conf.CONFIG_SET('_HAVE_KEYTYPE_ARCFOUR_56'):
+    conf.DEFINE('HAVE_ENCTYPE_ARCFOUR_HMAC_MD5_56', '1')
+
+conf.CHECK_CODE('''
+       krb5_enctype enctype;
+       enctype = ENCTYPE_ARCFOUR_HMAC;
+       ''',
+    'HAVE_ENCTYPE_ARCFOUR_HMAC',
+    headers='krb5.h', lib='krb5',
+    msg="Checking whether the ENCTYPE_ARCFOUR_HMAC key type definition is available");
+conf.CHECK_CODE('''
+       krb5_enctype enctype;
+       enctype = ENCTYPE_ARCFOUR_HMAC_EXP;
+       ''',
+    'HAVE_ENCTYPE_ARCFOUR_HMAC_EXP',
+    headers='krb5.h', lib='krb5',
+    msg="Checking whether the ENCTYPE_ARCFOUR_HMAC_EXP key type definition is available");
+
+conf.CHECK_CODE('''
+       krb5_context context;
+       krb5_keytab keytab;
+       krb5_init_context(&context);
+       return krb5_kt_resolve(context, "WRFILE:api", &keytab);
+       ''',
+    'HAVE_WRFILE_KEYTAB',
+    headers='krb5.h', lib='krb5', execute=True,
+    msg="Checking whether the WRFILE -keytab is supported");
+# Check for KRB5_DEPRECATED handling
+conf.CHECK_CODE('''#define KRB5_DEPRECATED 1
+       #include <krb5.h>''',
+   'HAVE_KRB5_DEPRECATED_WITH_IDENTIFIER', addmain=False,
+    link=False,
+    msg="Checking for KRB5_DEPRECATED define taking an identifier")
+
+conf.CHECK_CODE('''
+       krb5_creds creds;
+       creds.flags.b.initial = 0;
+       ''',
+    'HAVE_FLAGS_IN_KRB5_CREDS',
+    headers='krb5.h', lib='krb5', execute=False,
+    msg="Checking whether krb5_creds have flags property")
+
+# Check for MIT KDC
+if conf.CONFIG_SET('AD_DC_BUILD_IS_ENABLED'):
+    Logs.info("Looking for MIT KDC")
+    conf.DEFINE('SAMBA_USES_MITKDC', 1);
+
+    kdc_path_list = [ '/usr/sbin', '/usr/lib/mit/sbin']
+
+    if getattr(Options.options, 'with_system_mitkdc', None):
+        conf.DEFINE('MIT_KDC_PATH', '"' + Options.options.with_system_mitkdc + '"')
+    else:
+        conf.find_program('krb5kdc', path_list=kdc_path_list, var='MIT_KDC_BINARY', mandatory=True)
+        conf.DEFINE('MIT_KDC_PATH', '"' + " ".join(conf.env.MIT_KDC_BINARY) + '"')

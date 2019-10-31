@@ -1,0 +1,965 @@
+#!/usr/bin/env python3
+# vim: expandtab
+#
+# update our DNS names using TSIG-GSS
+#
+# Copyright (C) Andrew Tridgell 2010
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+import os
+import fcntl
+import sys
+import tempfile
+import subprocess
+
+# ensure we get messages out immediately, so they get in the samba logs,
+# and don't get swallowed by a timeout
+os.environ['PYTHONUNBUFFERED'] = '1'
+
+# forcing GMT avoids a problem in some timezones with kerberos. Both MIT
+# heimdal can get mutual authentication errors due to the 24 second difference
+# between UTC and GMT when using some zone files (eg. the PDT zone from
+# the US)
+os.environ["TZ"] = "GMT"
+
+# Find right directory when running from source tree
+sys.path.insert(0, "bin/python")
+
+import samba
+import optparse
+from samba import getopt as options
+from ldb import SCOPE_BASE
+from samba import dsdb
+from samba.auth import system_session
+from samba.samdb import SamDB
+from samba.dcerpc import netlogon, winbind
+from samba.netcmd.dns import cmd_dns
+from samba import gensec
+from samba.kcc import kcc_utils
+from samba.compat import get_string
+from samba.compat import text_type
+import ldb
+
+import dns.resolver
+import dns.exception
+
+default_ttl = 900
+am_rodc = False
+error_count = 0
+
+parser = optparse.OptionParser("samba_dnsupdate [options]")
+sambaopts = options.SambaOptions(parser)
+parser.add_option_group(sambaopts)
+parser.add_option_group(options.VersionOptions(parser))
+parser.add_option("--verbose", action="store_true")
+parser.add_option("--use-samba-tool", action="store_true", help="Use samba-tool to make updates over RPC, rather than over DNS")
+parser.add_option("--use-nsupdate", action="store_true", help="Use nsupdate command to make updates over DNS (default, if kinit successful)")
+parser.add_option("--all-names", action="store_true")
+parser.add_option("--all-interfaces", action="store_true")
+parser.add_option("--current-ip", action="append", help="IP address to update DNS to match (helpful if behind NAT, valid multiple times, defaults to values from interfaces=)")
+parser.add_option("--rpc-server-ip", type="string", help="IP address of server to use with samba-tool (defaults to first --current-ip)")
+parser.add_option("--use-file", type="string", help="Use a file, rather than real DNS calls")
+parser.add_option("--update-list", type="string", help="Add DNS names from the given file")
+parser.add_option("--update-cache", type="string", help="Cache database of already registered records")
+parser.add_option("--fail-immediately", action='store_true', help="Exit on first failure")
+parser.add_option("--no-credentials", dest='nocreds', action='store_true', help="don't try and get credentials")
+parser.add_option("--no-substitutions", dest='nosubs', action='store_true', help="don't try and expands variables in file specified by --update-list")
+
+creds = None
+ccachename = None
+
+opts, args = parser.parse_args()
+
+if len(args) != 0:
+    parser.print_usage()
+    sys.exit(1)
+
+lp = sambaopts.get_loadparm()
+
+domain = lp.get("realm")
+host = lp.get("netbios name")
+all_interfaces = opts.all_interfaces
+
+IPs = opts.current_ip or samba.interface_ips(lp, bool(all_interfaces)) or []
+
+nsupdate_cmd = lp.get('nsupdate command')
+dns_zone_scavenging = lp.get("dns zone scavenging")
+
+if len(IPs) == 0:
+    print("No IP interfaces - skipping DNS updates\n")
+    parser.print_usage()
+    sys.exit(0)
+
+rpc_server_ip = opts.rpc_server_ip or IPs[0]
+
+IP6s = [ip for ip in IPs if ':' in ip]
+IP4s = [ip for ip in IPs if ':' not in ip]
+
+smb_conf = sambaopts.get_loadparm_path()
+
+if opts.verbose:
+    print("IPs: %s" % IPs)
+
+def get_possible_rw_dns_server(creds, domain):
+    """Get a list of possible read-write DNS servers, starting with
+       the SOA.  The SOA is the correct answer, but old Samba domains
+       (4.6 and prior) do not maintain this value, so add NS servers
+       as well"""
+
+    ans_soa = check_one_dns_name(domain, 'SOA')
+    # Actually there is only one
+    hosts_soa = [str(a.mname).rstrip('.') for a in ans_soa]
+
+    # This is not strictly legit, but old Samba domains may have an
+    # unmaintained SOA record, so go for any NS that we can get a
+    # ticket to.
+    ans_ns = check_one_dns_name(domain, 'NS')
+    # Actually there is only one
+    hosts_ns = [str(a.target).rstrip('.') for a in ans_ns]
+
+    return hosts_soa + hosts_ns
+
+def get_krb5_rw_dns_server(creds, domain):
+    """Get a list of read-write DNS servers that we can obtain a ticket
+       for, starting with the SOA.  The SOA is the correct answer, but
+       old Samba domains (4.6 and prior) do not maintain this value,
+       so continue with the NS servers as well until we get one that
+       the KDC will issue a ticket to.
+    """
+
+    rw_dns_servers = get_possible_rw_dns_server(creds, domain)
+    # Actually there is only one
+    for i, target_hostname in enumerate(rw_dns_servers):
+        settings = {}
+        settings["lp_ctx"] = lp
+        settings["target_hostname"] = target_hostname
+
+        gensec_client = gensec.Security.start_client(settings)
+        gensec_client.set_credentials(creds)
+        gensec_client.set_target_service("DNS")
+        gensec_client.set_target_hostname(target_hostname)
+        gensec_client.want_feature(gensec.FEATURE_SEAL)
+        gensec_client.start_mech_by_sasl_name("GSSAPI")
+        server_to_client = b""
+        try:
+            (client_finished, client_to_server) = gensec_client.update(server_to_client)
+            if opts.verbose:
+                print("Successfully obtained Kerberos ticket to DNS/%s as %s" \
+                    % (target_hostname, creds.get_username()))
+            return target_hostname
+        except RuntimeError:
+            # Only raise an exception if they all failed
+            if i == len(rw_dns_servers) - 1:
+                raise
+
+def get_credentials(lp):
+    """# get credentials if we haven't got them already."""
+    from samba import credentials
+    global ccachename
+    creds = credentials.Credentials()
+    creds.guess(lp)
+    creds.set_machine_account(lp)
+    creds.set_krb_forwardable(credentials.NO_KRB_FORWARDABLE)
+    (tmp_fd, ccachename) = tempfile.mkstemp()
+    try:
+        if opts.use_file is not None:
+            return
+
+        creds.get_named_ccache(lp, ccachename)
+
+        # Now confirm we can get a ticket to the DNS server
+        get_krb5_rw_dns_server(creds, sub_vars['DNSDOMAIN'] + '.')
+        return creds
+
+    except RuntimeError as e:
+        os.unlink(ccachename)
+        raise e
+
+
+class dnsobj(object):
+    """an object to hold a parsed DNS line"""
+
+    def __init__(self, string_form):
+        list = string_form.split()
+        if len(list) < 3:
+            raise Exception("Invalid DNS entry %r" % string_form)
+        self.dest = None
+        self.port = None
+        self.ip = None
+        self.existing_port = None
+        self.existing_weight = None
+        self.existing_cname_target = None
+        self.rpc = False
+        self.zone = None
+        if list[0] == "RPC":
+            self.rpc = True
+            self.zone = list[1]
+            list = list[2:]
+        self.type = list[0]
+        self.name = list[1]
+        self.nameservers = []
+        if self.type == 'SRV':
+            if len(list) < 4:
+                raise Exception("Invalid DNS entry %r" % string_form)
+            self.dest = list[2]
+            self.port = list[3]
+        elif self.type in ['A', 'AAAA']:
+            self.ip   = list[2] # usually $IP, which gets replaced
+        elif self.type == 'CNAME':
+            self.dest = list[2]
+        elif self.type == 'NS':
+            self.dest = list[2]
+        else:
+            raise Exception("Received unexpected DNS reply of type %s: %s" % (self.type, string_form))
+
+    def __str__(self):
+        if self.type == "A":
+            return "%s %s %s" % (self.type, self.name, self.ip)
+        if self.type == "AAAA":
+            return "%s %s %s" % (self.type, self.name, self.ip)
+        if self.type == "SRV":
+            return "%s %s %s %s" % (self.type, self.name, self.dest, self.port)
+        if self.type == "CNAME":
+            return "%s %s %s" % (self.type, self.name, self.dest)
+        if self.type == "NS":
+            return "%s %s %s" % (self.type, self.name, self.dest)
+
+
+def parse_dns_line(line, sub_vars):
+    """parse a DNS line from."""
+    if line.startswith("SRV _ldap._tcp.pdc._msdcs.") and not samdb.am_pdc():
+        # We keep this as compat to the dns_update_list of 4.0/4.1
+        if opts.verbose:
+            print("Skipping PDC entry (%s) as we are not a PDC" % line)
+        return None
+    subline = samba.substitute_var(line, sub_vars)
+    if subline == '' or subline[0] == "#":
+        return None
+    return dnsobj(subline)
+
+
+def hostname_match(h1, h2):
+    """see if two hostnames match."""
+    h1 = str(h1)
+    h2 = str(h2)
+    return h1.lower().rstrip('.') == h2.lower().rstrip('.')
+
+def get_resolver(d=None):
+    resolv_conf = os.getenv('RESOLV_CONF', default='/etc/resolv.conf')
+    resolver = dns.resolver.Resolver(filename=resolv_conf, configure=True)
+
+    if d is not None and d.nameservers != []:
+        resolver.nameservers = d.nameservers
+
+    return resolver
+
+def check_one_dns_name(name, name_type, d=None):
+    resolver = get_resolver(d)
+    if d and not d.nameservers:
+        d.nameservers = resolver.nameservers
+    # dns.resolver.Answer
+    return resolver.query(name, name_type)
+
+def check_dns_name(d):
+    """check that a DNS entry exists."""
+    normalised_name = d.name.rstrip('.') + '.'
+    if opts.verbose:
+        print("Looking for DNS entry %s as %s" % (d, normalised_name))
+
+    if opts.use_file is not None:
+        try:
+            dns_file = open(opts.use_file, "r")
+        except IOError:
+            return False
+
+        for line in dns_file:
+            line = line.strip()
+            if line == '' or line[0] == "#":
+                continue
+            if line.lower() == str(d).lower():
+                return True
+        return False
+
+    try:
+        ans = check_one_dns_name(normalised_name, d.type, d)
+    except dns.exception.Timeout:
+        raise Exception("Timeout while waiting to contact a working DNS server while looking for %s as %s" % (d, normalised_name))
+    except dns.resolver.NoNameservers:
+        raise Exception("Unable to contact a working DNS server while looking for %s as %s" % (d, normalised_name))
+    except dns.resolver.NXDOMAIN:
+        if opts.verbose:
+            print("The DNS entry %s, queried as %s does not exist" % (d, normalised_name))
+        return False
+    except dns.resolver.NoAnswer:
+        if opts.verbose:
+            print("The DNS entry %s, queried as %s does not hold this record type" % (d, normalised_name))
+        return False
+    except dns.exception.DNSException:
+        raise Exception("Failure while trying to resolve %s as %s" % (d, normalised_name))
+    if d.type in ['A', 'AAAA']:
+        # we need to be sure that our IP is there
+        for rdata in ans:
+            if str(rdata) == str(d.ip):
+                return True
+    elif d.type == 'CNAME':
+        for i in range(len(ans)):
+            if hostname_match(ans[i].target, d.dest):
+                return True
+            else:
+                d.existing_cname_target = str(ans[i].target)
+    elif d.type == 'NS':
+        for i in range(len(ans)):
+            if hostname_match(ans[i].target, d.dest):
+                return True
+    elif d.type == 'SRV':
+        for rdata in ans:
+            if opts.verbose:
+                print("Checking %s against %s" % (rdata, d))
+            if hostname_match(rdata.target, d.dest):
+                if str(rdata.port) == str(d.port):
+                    return True
+                else:
+                    d.existing_port     = str(rdata.port)
+                    d.existing_weight = str(rdata.weight)
+
+    if opts.verbose:
+        print("Lookup of %s succeeded, but we failed to find a matching DNS entry for %s" % (normalised_name, d))
+
+    return False
+
+
+def get_subst_vars(samdb):
+    """get the list of substitution vars."""
+    global lp, am_rodc
+    vars = {}
+
+    vars['DNSDOMAIN'] = samdb.domain_dns_name()
+    vars['DNSFOREST'] = samdb.forest_dns_name()
+    vars['HOSTNAME']  = samdb.host_dns_name()
+    vars['NTDSGUID']  = samdb.get_ntds_GUID()
+    vars['SITE']      = samdb.server_site_name()
+    res = samdb.search(base=samdb.get_default_basedn(), scope=SCOPE_BASE, attrs=["objectGUID"])
+    guid = samdb.schema_format_value("objectGUID", res[0]['objectGUID'][0])
+    vars['DOMAINGUID'] = get_string(guid)
+
+    vars['IF_DC'] = ""
+    vars['IF_RWDC'] = "# "
+    vars['IF_RODC'] = "# "
+    vars['IF_PDC'] = "# "
+    vars['IF_GC'] = "# "
+    vars['IF_RWGC'] = "# "
+    vars['IF_ROGC'] = "# "
+    vars['IF_DNS_DOMAIN'] = "# "
+    vars['IF_RWDNS_DOMAIN'] = "# "
+    vars['IF_RODNS_DOMAIN'] = "# "
+    vars['IF_DNS_FOREST'] = "# "
+    vars['IF_RWDNS_FOREST'] = "# "
+    vars['IF_R0DNS_FOREST'] = "# "
+
+    am_rodc = samdb.am_rodc()
+    if am_rodc:
+        vars['IF_RODC'] = ""
+    else:
+        vars['IF_RWDC'] = ""
+
+    if samdb.am_pdc():
+        vars['IF_PDC'] = ""
+
+    # check if we "are DNS server"
+    res = samdb.search(base=samdb.get_config_basedn(),
+                   expression='(objectguid=%s)' % vars['NTDSGUID'],
+                   attrs=["options", "msDS-hasMasterNCs"])
+
+    if len(res) == 1:
+        if "options" in res[0]:
+            options = int(res[0]["options"][0])
+            if (options & dsdb.DS_NTDSDSA_OPT_IS_GC) != 0:
+                vars['IF_GC'] = ""
+                if am_rodc:
+                    vars['IF_ROGC'] = ""
+                else:
+                    vars['IF_RWGC'] = ""
+
+        basedn = str(samdb.get_default_basedn())
+        forestdn = str(samdb.get_root_basedn())
+
+        if "msDS-hasMasterNCs" in res[0]:
+            for e in res[0]["msDS-hasMasterNCs"]:
+                if str(e) == "DC=DomainDnsZones,%s" % basedn:
+                    vars['IF_DNS_DOMAIN'] = ""
+                    if am_rodc:
+                        vars['IF_RODNS_DOMAIN'] = ""
+                    else:
+                        vars['IF_RWDNS_DOMAIN'] = ""
+                if str(e) == "DC=ForestDnsZones,%s" % forestdn:
+                    vars['IF_DNS_FOREST'] = ""
+                    if am_rodc:
+                        vars['IF_RODNS_FOREST'] = ""
+                    else:
+                        vars['IF_RWDNS_FOREST'] = ""
+
+    return vars
+
+
+def call_nsupdate(d, op="add"):
+    """call nsupdate for an entry."""
+    global ccachename, nsupdate_cmd, krb5conf
+
+    assert(op in ["add", "delete"])
+
+    if opts.use_file is not None:
+        if opts.verbose:
+            print("Use File instead of nsupdate for %s (%s)" % (d, op))
+
+        try:
+            rfile = open(opts.use_file, 'r+')
+        except IOError:
+            # Perhaps create it
+            rfile = open(opts.use_file, 'w+')
+            # Open it for reading again, in case someone else got to it first
+            rfile = open(opts.use_file, 'r+')
+        fcntl.lockf(rfile, fcntl.LOCK_EX)
+        (file_dir, file_name) = os.path.split(opts.use_file)
+        (tmp_fd, tmpfile) = tempfile.mkstemp(dir=file_dir, prefix=file_name, suffix="XXXXXX")
+        wfile = os.fdopen(tmp_fd, 'a')
+        rfile.seek(0)
+        for line in rfile:
+            if op == "delete":
+                l = parse_dns_line(line, {})
+                if str(l).lower() == str(d).lower():
+                    continue
+            wfile.write(line)
+        if op == "add":
+            wfile.write(str(d)+"\n")
+        os.rename(tmpfile, opts.use_file)
+        fcntl.lockf(rfile, fcntl.LOCK_UN)
+        return
+
+    if opts.verbose:
+        print("Calling nsupdate for %s (%s)" % (d, op))
+
+    normalised_name = d.name.rstrip('.') + '.'
+
+    (tmp_fd, tmpfile) = tempfile.mkstemp()
+    f = os.fdopen(tmp_fd, 'w')
+
+    resolver = get_resolver(d)
+
+    # Local the zone for this name
+    zone = dns.resolver.zone_for_name(normalised_name,
+                                      resolver=resolver)
+
+    # Now find the SOA, or if we can't get a ticket to the SOA,
+    # any server with an NS record we can get a ticket for.
+    #
+    # Thanks to the Kerberos Credentials cache this is not
+    # expensive inside the loop
+    server = get_krb5_rw_dns_server(creds, zone)
+    f.write('server %s\n' % server)
+
+    if d.type == "A":
+        f.write("update %s %s %u A %s\n" % (op, normalised_name, default_ttl, d.ip))
+    if d.type == "AAAA":
+        f.write("update %s %s %u AAAA %s\n" % (op, normalised_name, default_ttl, d.ip))
+    if d.type == "SRV":
+        if op == "add" and d.existing_port is not None:
+            f.write("update delete %s SRV 0 %s %s %s\n" % (normalised_name, d.existing_weight,
+                                                           d.existing_port, d.dest))
+        f.write("update %s %s %u SRV 0 100 %s %s\n" % (op, normalised_name, default_ttl, d.port, d.dest))
+    if d.type == "CNAME":
+        f.write("update %s %s %u CNAME %s\n" % (op, normalised_name, default_ttl, d.dest))
+    if d.type == "NS":
+        f.write("update %s %s %u NS %s\n" % (op, normalised_name, default_ttl, d.dest))
+    if opts.verbose:
+        f.write("show\n")
+    f.write("send\n")
+    f.close()
+
+    # Set a bigger MTU size to work around a bug in nsupdate's doio_send()
+    os.environ["SOCKET_WRAPPER_MTU"] = "2000"
+
+    global error_count
+    if ccachename:
+        os.environ["KRB5CCNAME"] = ccachename
+    try:
+        cmd = nsupdate_cmd[:]
+        cmd.append(tmpfile)
+        env = os.environ
+        if krb5conf:
+            env["KRB5_CONFIG"] = krb5conf
+        if ccachename:
+            env["KRB5CCNAME"] = ccachename
+        ret = subprocess.call(cmd, shell=False, env=env)
+        if ret != 0:
+            if opts.fail_immediately:
+                if opts.verbose:
+                    print("Failed update with %s" % tmpfile)
+                sys.exit(1)
+            error_count = error_count + 1
+            if opts.verbose:
+                print("Failed nsupdate: %d" % ret)
+    except Exception as estr:
+        if opts.fail_immediately:
+            sys.exit(1)
+        error_count = error_count + 1
+        if opts.verbose:
+            print("Failed nsupdate: %s : %s" % (str(d), estr))
+    os.unlink(tmpfile)
+
+    # Let socket_wrapper set the default MTU size
+    os.environ["SOCKET_WRAPPER_MTU"] = "0"
+
+
+def call_samba_tool(d, op="add", zone=None):
+    """call samba-tool dns to update an entry."""
+
+    assert(op in ["add", "delete"])
+
+    if (sub_vars['DNSFOREST'] != sub_vars['DNSDOMAIN']) and \
+       sub_vars['DNSFOREST'].endswith('.' + sub_vars['DNSDOMAIN']):
+        print("Refusing to use samba-tool when forest %s is under domain %s" \
+            % (sub_vars['DNSFOREST'], sub_vars['DNSDOMAIN']))
+
+    if opts.verbose:
+        print("Calling samba-tool dns for %s (%s)" % (d, op))
+
+    normalised_name = d.name.rstrip('.') + '.'
+    if zone is None:
+        if normalised_name == (sub_vars['DNSDOMAIN'] + '.'):
+            short_name = '@'
+            zone = sub_vars['DNSDOMAIN']
+        elif normalised_name == (sub_vars['DNSFOREST'] + '.'):
+            short_name = '@'
+            zone = sub_vars['DNSFOREST']
+        elif normalised_name == ('_msdcs.' + sub_vars['DNSFOREST'] + '.'):
+            short_name = '@'
+            zone = '_msdcs.' + sub_vars['DNSFOREST']
+        else:
+            if not normalised_name.endswith('.' + sub_vars['DNSDOMAIN'] + '.'):
+                print("Not Calling samba-tool dns for %s (%s), %s not in %s" % (d, op, normalised_name, sub_vars['DNSDOMAIN'] + '.'))
+                return False
+            elif normalised_name.endswith('._msdcs.' + sub_vars['DNSFOREST'] + '.'):
+                zone = '_msdcs.' + sub_vars['DNSFOREST']
+            else:
+                zone = sub_vars['DNSDOMAIN']
+            len_zone = len(zone)+2
+            short_name = normalised_name[:-len_zone]
+    else:
+        len_zone = len(zone)+2
+        short_name = normalised_name[:-len_zone]
+
+    if d.type == "A":
+        args = [rpc_server_ip, zone, short_name, "A", d.ip]
+    if d.type == "AAAA":
+        args = [rpc_server_ip, zone, short_name, "AAAA", d.ip]
+    if d.type == "SRV":
+        if op == "add" and d.existing_port is not None:
+            print("Not handling modify of exising SRV %s using samba-tool" % d)
+            return False
+            op = "update"
+            args = [rpc_server_ip, zone, short_name, "SRV",
+                    "%s %s %s %s" % (d.existing_weight,
+                                     d.existing_port, "0", "100"),
+                    "%s %s %s %s" % (d.dest, d.port, "0", "100")]
+        else:
+            args = [rpc_server_ip, zone, short_name, "SRV", "%s %s %s %s" % (d.dest, d.port, "0", "100")]
+    if d.type == "CNAME":
+        if d.existing_cname_target is None:
+            args = [rpc_server_ip, zone, short_name, "CNAME", d.dest]
+        else:
+            op = "update"
+            args = [rpc_server_ip, zone, short_name, "CNAME",
+                    d.existing_cname_target.rstrip('.'), d.dest]
+
+    if d.type == "NS":
+        args = [rpc_server_ip, zone, short_name, "NS", d.dest]
+
+    if smb_conf and args:
+        args += ["--configfile=" + smb_conf]
+
+    global error_count
+    try:
+        cmd = cmd_dns()
+        if opts.verbose:
+            print("Calling samba-tool dns %s -k no -P %s" % (op, args))
+        ret = cmd._run("dns", op, "-k", "no", "-P", *args)
+        if ret == -1:
+            if opts.fail_immediately:
+                sys.exit(1)
+            error_count = error_count + 1
+            if opts.verbose:
+                print("Failed 'samba-tool dns' based update of %s" % (str(d)))
+    except Exception as estr:
+        if opts.fail_immediately:
+            sys.exit(1)
+        error_count = error_count + 1
+        if opts.verbose:
+            print("Failed 'samba-tool dns' based update: %s : %s" % (str(d), estr))
+        raise
+
+irpc_wb = None
+def cached_irpc_wb(lp):
+    global irpc_wb
+    if irpc_wb is not None:
+        return irpc_wb
+    irpc_wb = winbind.winbind("irpc:winbind_server", lp)
+    return irpc_wb
+
+def rodc_dns_update(d, t, op):
+    '''a single DNS update via the RODC netlogon call'''
+    global sub_vars
+
+    assert(op in ["add", "delete"])
+
+    if opts.verbose:
+        print("Calling netlogon RODC update for %s" % d)
+
+    typemap = {
+        netlogon.NlDnsLdapAtSite       : netlogon.NlDnsInfoTypeNone,
+        netlogon.NlDnsGcAtSite         : netlogon.NlDnsDomainNameAlias,
+        netlogon.NlDnsDsaCname         : netlogon.NlDnsDomainNameAlias,
+        netlogon.NlDnsKdcAtSite        : netlogon.NlDnsInfoTypeNone,
+        netlogon.NlDnsDcAtSite         : netlogon.NlDnsInfoTypeNone,
+        netlogon.NlDnsRfc1510KdcAtSite : netlogon.NlDnsInfoTypeNone,
+        netlogon.NlDnsGenericGcAtSite  : netlogon.NlDnsDomainNameAlias
+        }
+
+    w = cached_irpc_wb(lp)
+    dns_names = netlogon.NL_DNS_NAME_INFO_ARRAY()
+    dns_names.count = 1
+    name = netlogon.NL_DNS_NAME_INFO()
+    name.type = t
+    name.dns_domain_info_type = typemap[t]
+    name.priority = 0
+    name.weight   = 0
+    if d.port is not None:
+        name.port = int(d.port)
+    if op == "add":
+        name.dns_register = True
+    else:
+        name.dns_register = False
+    dns_names.names = [ name ]
+    site_name = text_type(sub_vars['SITE'])
+
+    global error_count
+
+    try:
+        ret_names = w.DsrUpdateReadOnlyServerDnsRecords(site_name, default_ttl, dns_names)
+        if ret_names.names[0].status != 0:
+            print("Failed to set DNS entry: %s (status %u)" % (d, ret_names.names[0].status))
+            error_count = error_count + 1
+    except RuntimeError as reason:
+        print("Error setting DNS entry of type %u: %s: %s" % (t, d, reason))
+        error_count = error_count + 1
+
+    if opts.verbose:
+        print("Called netlogon RODC update for %s" % d)
+
+    if error_count != 0 and opts.fail_immediately:
+        sys.exit(1)
+
+
+def call_rodc_update(d, op="add"):
+    '''RODCs need to use the netlogon API for nsupdate'''
+    global lp, sub_vars
+
+    assert(op in ["add", "delete"])
+
+    # we expect failure for 3268 if we aren't a GC
+    if d.port is not None and int(d.port) == 3268:
+        return
+
+    # map the DNS request to a netlogon update type
+    map = {
+        netlogon.NlDnsLdapAtSite       : '_ldap._tcp.${SITE}._sites.${DNSDOMAIN}',
+        netlogon.NlDnsGcAtSite         : '_ldap._tcp.${SITE}._sites.gc._msdcs.${DNSDOMAIN}',
+        netlogon.NlDnsDsaCname         : '${NTDSGUID}._msdcs.${DNSFOREST}',
+        netlogon.NlDnsKdcAtSite        : '_kerberos._tcp.${SITE}._sites.dc._msdcs.${DNSDOMAIN}',
+        netlogon.NlDnsDcAtSite         : '_ldap._tcp.${SITE}._sites.dc._msdcs.${DNSDOMAIN}',
+        netlogon.NlDnsRfc1510KdcAtSite : '_kerberos._tcp.${SITE}._sites.${DNSDOMAIN}',
+        netlogon.NlDnsGenericGcAtSite  : '_gc._tcp.${SITE}._sites.${DNSFOREST}'
+        }
+
+    for t in map:
+        subname = samba.substitute_var(map[t], sub_vars)
+        if subname.lower() == d.name.lower():
+            # found a match - do the update
+            rodc_dns_update(d, t, op)
+            return
+    if opts.verbose:
+        print("Unable to map to netlogon DNS update: %s" % d)
+
+
+# get the list of DNS entries we should have
+dns_update_list = opts.update_list or lp.private_path('dns_update_list')
+
+dns_update_cache = opts.update_cache or lp.private_path('dns_update_cache')
+
+krb5conf = None
+# only change the krb5.conf if we are not in selftest
+if 'SOCKET_WRAPPER_DIR' not in os.environ:
+    # use our private krb5.conf to avoid problems with the wrong domain
+    # bind9 nsupdate wants the default domain set
+    krb5conf = lp.private_path('krb5.conf')
+    os.environ['KRB5_CONFIG'] = krb5conf
+
+try:
+    file = open(dns_update_list, "r")
+except OSError as e:
+    if opts.update_cache:
+        print("The specified update list does not exist")
+    else:
+        print("The server update list was not found, "
+              "and --update-list was not provided.")
+    print(e)
+    print()
+    parser.print_usage()
+    sys.exit(1)
+
+if opts.nosubs:
+    sub_vars = {}
+else:
+    samdb = SamDB(url=lp.samdb_url(), session_info=system_session(), lp=lp)
+
+    # get the substitution dictionary
+    sub_vars = get_subst_vars(samdb)
+
+# build up a list of update commands to pass to nsupdate
+update_list = []
+dns_list = []
+cache_list = []
+delete_list = []
+
+dup_set = set()
+cache_set = set()
+
+rebuild_cache = False
+try:
+    cfile = open(dns_update_cache, 'r+')
+except IOError:
+    # Perhaps create it
+    cfile = open(dns_update_cache, 'w+')
+    # Open it for reading again, in case someone else got to it first
+    cfile = open(dns_update_cache, 'r+')
+fcntl.lockf(cfile, fcntl.LOCK_EX)
+for line in cfile:
+    line = line.strip()
+    if line == '' or line[0] == "#":
+        continue
+    c = parse_dns_line(line, {})
+    if c is None:
+        continue
+    if str(c) not in cache_set:
+        cache_list.append(c)
+        cache_set.add(str(c))
+
+site_specific_rec = []
+
+# read each line, and check that the DNS name exists
+for line in file:
+    line = line.strip()
+
+    if '${SITE}' in line:
+        site_specific_rec.append(line)
+
+    if line == '' or line[0] == "#":
+        continue
+    d = parse_dns_line(line, sub_vars)
+    if d is None:
+        continue
+    if d.type == 'A' and len(IP4s) == 0:
+        continue
+    if d.type == 'AAAA' and len(IP6s) == 0:
+        continue
+    if str(d) not in dup_set:
+        dns_list.append(d)
+        dup_set.add(str(d))
+
+# Perform automatic site coverage by default
+auto_coverage = True
+
+if not am_rodc and auto_coverage:
+    site_names = kcc_utils.uncovered_sites_to_cover(samdb,
+                                                    samdb.server_site_name())
+
+    # Duplicate all site specific records for the uncovered site
+    for site in site_names:
+        to_add = [samba.substitute_var(line, {'SITE': site})
+                  for line in site_specific_rec]
+
+        for site_line in to_add:
+            d = parse_dns_line(site_line,
+                               sub_vars=sub_vars)
+            if d is not None and str(d) not in dup_set:
+                dns_list.append(d)
+                dup_set.add(str(d))
+
+# now expand the entries, if any are A record with ip set to $IP
+# then replace with multiple entries, one for each interface IP
+for d in dns_list:
+    if d.ip != "$IP":
+        continue
+    if d.type == 'A':
+        d.ip = IP4s[0]
+        for i in range(len(IP4s)-1):
+            d2 = dnsobj(str(d))
+            d2.ip = IP4s[i+1]
+            dns_list.append(d2)
+    if d.type == 'AAAA':
+        d.ip = IP6s[0]
+        for i in range(len(IP6s)-1):
+            d2 = dnsobj(str(d))
+            d2.ip = IP6s[i+1]
+            dns_list.append(d2)
+
+# now check if the entries already exist on the DNS server
+for d in dns_list:
+    found = False
+    for c in cache_list:
+        if str(c).lower() == str(d).lower():
+            found = True
+            break
+    if not found:
+        rebuild_cache = True
+        if opts.verbose:
+            print("need cache add: %s" % d)
+    if dns_zone_scavenging:
+        update_list.append(d)
+        if opts.verbose:
+            print("scavenging requires update: %s" % d)
+    elif opts.all_names:
+        update_list.append(d)
+        if opts.verbose:
+            print("force update: %s" % d)
+    elif not check_dns_name(d):
+        update_list.append(d)
+        if opts.verbose:
+            print("need update: %s" % d)
+
+for c in cache_list:
+    found = False
+    for d in dns_list:
+        if str(c).lower() == str(d).lower():
+            found = True
+            break
+    if found:
+        continue
+    rebuild_cache = True
+    if opts.verbose:
+        print("need cache remove: %s" % c)
+    if not opts.all_names and not check_dns_name(c):
+        continue
+    delete_list.append(c)
+    if opts.verbose:
+        print("need delete: %s" % c)
+
+if len(delete_list) == 0 and len(update_list) == 0 and not rebuild_cache:
+    if opts.verbose:
+        print("No DNS updates needed")
+    sys.exit(0)
+else:
+    if opts.verbose:
+        print("%d DNS updates and %d DNS deletes needed" % (len(update_list), len(delete_list)))
+
+use_samba_tool = opts.use_samba_tool
+use_nsupdate = opts.use_nsupdate
+# get our krb5 creds
+if delete_list or update_list and not opts.nocreds:
+    try:
+        creds = get_credentials(lp)
+    except RuntimeError as e:
+        ccachename = None
+
+        if sub_vars['IF_RWDNS_DOMAIN'] == "# ":
+            raise
+
+        if use_nsupdate:
+            raise
+
+        print("Failed to get Kerberos credentials, falling back to samba-tool: %s" % e)
+        use_samba_tool = True
+
+
+# ask nsupdate to delete entries as needed
+for d in delete_list:
+    if d.rpc or (not use_nsupdate and use_samba_tool):
+        if opts.verbose:
+            print("update (samba-tool): %s" % d)
+        call_samba_tool(d, op="delete", zone=d.zone)
+
+    elif am_rodc:
+        if d.name.lower() == domain.lower():
+            if opts.verbose:
+                print("skip delete (rodc): %s" % d)
+            continue
+        if not d.type in [ 'A', 'AAAA' ]:
+            if opts.verbose:
+                print("delete (rodc): %s" % d)
+            call_rodc_update(d, op="delete")
+        else:
+            if opts.verbose:
+                print("delete (nsupdate): %s" % d)
+            call_nsupdate(d, op="delete")
+    else:
+        if opts.verbose:
+            print("delete (nsupdate): %s" % d)
+        call_nsupdate(d, op="delete")
+
+# ask nsupdate to add entries as needed
+for d in update_list:
+    if d.rpc or (not use_nsupdate and use_samba_tool):
+        if opts.verbose:
+            print("update (samba-tool): %s" % d)
+        call_samba_tool(d, zone=d.zone)
+
+    elif am_rodc:
+        if d.name.lower() == domain.lower():
+            if opts.verbose:
+                print("skip (rodc): %s" % d)
+            continue
+        if not d.type in [ 'A', 'AAAA' ]:
+            if opts.verbose:
+                print("update (rodc): %s" % d)
+            call_rodc_update(d)
+        else:
+            if opts.verbose:
+                print("update (nsupdate): %s" % d)
+            call_nsupdate(d)
+    else:
+        if opts.verbose:
+            print("update(nsupdate): %s" % d)
+        call_nsupdate(d)
+
+if rebuild_cache:
+    print("Rebuilding cache at %s" % dns_update_cache)
+    (file_dir, file_name) = os.path.split(dns_update_cache)
+    (tmp_fd, tmpfile) = tempfile.mkstemp(dir=file_dir, prefix=file_name, suffix="XXXXXX")
+    wfile = os.fdopen(tmp_fd, 'a')
+    for d in dns_list:
+        if opts.verbose:
+            print("Adding %s to %s" % (str(d), file_name))
+        wfile.write(str(d)+"\n")
+    wfile.flush()
+    os.rename(tmpfile, dns_update_cache)
+fcntl.lockf(cfile, fcntl.LOCK_UN)
+
+# delete the ccache if we created it
+if ccachename is not None:
+    os.unlink(ccachename)
+
+if error_count != 0:
+    print("Failed update of %u entries" % error_count)
+sys.exit(error_count)

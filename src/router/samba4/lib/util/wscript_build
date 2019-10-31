@@ -1,0 +1,283 @@
+#!/usr/bin/env python
+
+# Please add any new SAMBA_SUBSYSTEM/SAMBA_LIBRARY to the bottom of the file
+# unless they are also required to build standalone ctdb.
+
+bld.SAMBA_LIBRARY('time-basic',
+                  source='time_basic.c',
+                  deps='replace',
+                  private_library=True,
+                  local_include=False)
+
+bld.SAMBA_SUBSYSTEM('tini',
+                    source='tini.c',
+                    deps='',
+                    local_include=False)
+
+bld.SAMBA_SUBSYSTEM('tiniparser',
+                    source='tiniparser.c',
+                    deps='tini',
+                    local_include=False)
+
+bld.SAMBA_SUBSYSTEM('strv',
+                    source='strv.c',
+                    deps='talloc',
+                    local_include=False)
+
+bld.SAMBA_SUBSYSTEM('close-low-fd',
+                    source='close_low_fd.c',
+                    deps='replace',
+                    local_include=False)
+
+bld.SAMBA_LIBRARY('sys_rw',
+                  source='sys_rw.c sys_rw_data.c',
+                  deps='replace iov_buf',
+                  local_include=False,
+                  private_library=True)
+
+samba_debug_add_deps = ''
+samba_debug_add_inc  = ''
+
+if bld.CONFIG_SET('HAVE_GPFS'):
+    bld.SAMBA_SUBSYSTEM('gpfswrap',
+                        source='gpfswrap.c',
+                        deps='replace',
+                        local_include=False,
+                        includes=bld.CONFIG_GET('CPPPATH_GPFS'))
+    samba_debug_add_deps += ' gpfswrap'
+    samba_debug_add_inc  += bld.CONFIG_GET('CPPPATH_GPFS')
+
+bld.SAMBA_LIBRARY('samba-debug',
+                  source='debug.c',
+                  deps='replace time-basic close-low-fd talloc socket-blocking' + samba_debug_add_deps,
+                  public_deps='systemd systemd-journal lttng-ust',
+                  local_include=False,
+                  includes=samba_debug_add_inc,
+                  private_library=True)
+
+bld.SAMBA_LIBRARY('socket-blocking',
+                  source='blocking.c',
+                  local_include=False,
+                  private_library=True)
+
+bld.SAMBA_LIBRARY('talloc_report',
+                  source='talloc_report.c',
+                  local_include=False,
+                  public_deps='talloc',
+                  private_library=True
+                  )
+
+bld.SAMBA_SUBSYSTEM('samba-util-core',
+                    source='''data_blob.c util_file.c sys_popen.c time.c
+                              signal.c util.c idtree.c fault.c
+                              substitute.c util_process.c util_strlist.c
+                              strv_util.c bitmap.c select.c pidfile.c
+                              become_daemon.c mkdir_p.c''',
+                    deps='''time-basic samba-debug socket-blocking talloc
+                            tevent execinfo pthread strv tini''',
+                    public_deps='systemd systemd-daemon sys_rw',
+                    local_include=False)
+
+bld.SAMBA_LIBRARY('iov_buf',
+                  source='iov_buf.c',
+                  deps='talloc',
+                  local_include=False,
+                  private_library=True)
+
+bld.SAMBA_LIBRARY('msghdr',
+                  source='msghdr.c',
+                  deps='replace iov_buf',
+                  local_include=False,
+                  private_library=True)
+
+if bld.env.SAMBA_UTIL_CORE_ONLY:
+
+    bld.SAMBA_LIBRARY('tevent-util',
+                      source='tevent_unix.c',
+                      local_include=False,
+                      deps='tevent',
+                      private_library=True)
+
+else:
+
+    bld.env.public_headers_skip.append('charset_compat.h')
+
+    bld.SAMBA_LIBRARY('genrand',
+                      source='genrand.c',
+                      deps='replace socket-blocking sys_rw',
+                      local_include=False,
+                      private_library=True)
+
+    bld.SAMBA_BINARY('genrandperf',
+                     source='tests/genrandperf.c',
+                     deps='genrand replace',
+                     local_include=False,
+                     install=False)
+
+    bld.SAMBA_LIBRARY('samba-util',
+                  source='''
+                         base64.c
+                         dprintf.c
+                         fsusage.c
+                         genrand_util.c
+                         getpass.c
+                         idtree_random.c
+                         memcache.c
+                         ms_fnmatch.c
+                         params.c
+                         rbtree.c
+                         rfc1738.c
+                         server_id.c
+                         smb_threads.c
+                         system.c
+                         talloc_keep_secret.c
+                         talloc_stack.c
+                         tevent_debug.c
+                         tfork.c
+                         tftw.c
+                         unix_match.c
+                         util_id.c
+                         util_net.c
+                         util_paths.c
+                         util_str.c
+                         util_str_common.c
+                         util_strlist_v3.c
+                         ''',
+                  deps='samba-util-core DYNCONFIG close-low-fd tiniparser genrand util_str_hex',
+                  public_deps='talloc tevent execinfo pthread LIBCRYPTO charset util_setid',
+                  public_headers='''
+                                 attr.h
+                                 byteorder.h
+                                 data_blob.h
+                                 debug.h
+                                 discard.h
+                                 time.h
+                                 string_wrappers.h
+                                 idtree.h
+                                 idtree_random.h
+                                 blocking.h
+                                 signal.h
+                                 substitute.h
+                                 fault.h
+                                 genrand.h
+                                 tfork.h
+                                 ''',
+                  header_path= [ ('dlinklist.h samba_util.h', '.'), ('*', 'util') ],
+                  local_include=False,
+                  vnum='0.0.1',
+                  pc_files='samba-util.pc'
+                  )
+
+    bld.SAMBA_LIBRARY('samba-modules',
+                      source='modules.c',
+                      deps='samba-errors samba-util',
+                      local_include=False,
+                      private_library=True)
+
+    bld.SAMBA_LIBRARY('asn1util',
+                      source='asn1.c',
+                      deps='talloc samba-util',
+                      private_library=True,
+                      local_include=False)
+
+
+    bld.SAMBA_SUBSYSTEM('UNIX_PRIVS',
+                        source='unix_privs.c',
+                        autoproto='unix_privs.h',
+                        deps='replace talloc',
+                        local_include=False,
+                        )
+
+
+    bld.SAMBA_LIBRARY('util_tdb',
+                      source='util_tdb.c',
+                      local_include=False,
+                      public_deps='tdb talloc',
+                      private_library=True
+                      )
+
+    bld.SAMBA_LIBRARY('tevent-util',
+                      source='''
+                          tevent_unix.c
+                          tevent_ntstatus.c
+                          tevent_werror.c
+                          tevent_req_profile.c
+                      ''',
+                      local_include=False,
+                      public_deps='tevent samba-errors',
+                      public_headers='tevent_ntstatus.h tevent_unix.h tevent_werror.h',
+                      header_path=[ ('*', 'util') ],
+                      pc_files=[],
+                      vnum='0.0.1'
+                      )
+
+    bld.SAMBA_LIBRARY('util_setid',
+                      source='setid.c',
+                      local_include=False,
+                      private_library=True
+                      )
+
+    bld.SAMBA_SUBSYSTEM('util_ldb',
+                        source='util_ldb.c',
+                        local_include=False,
+                        public_deps='ldb',
+                        public_headers='util_ldb.h'
+		        )
+
+
+    bld.SAMBA_SUBSYSTEM('UTIL_RUNCMD',
+                        source='util_runcmd.c',
+                        local_include=False,
+                        public_deps='tevent'
+                        )
+
+    bld.SAMBA_SUBSYSTEM('UTIL_PW',
+                        source='util_pw.c',
+                        local_include=False,
+                        public_deps='talloc'
+	                )
+
+    bld.SAMBA_LIBRARY('server_id_db',
+                      source='server_id_db.c',
+                      deps='talloc tdb strv util_tdb tdb-wrap samba-util',
+                      local_include=False,
+                      private_library=True)
+
+    bld.SAMBA_SUBSYSTEM('access',
+                        source='access.c',
+                        deps='interfaces samba-util tirpc nsl',
+                        local_include=False)
+
+    bld.SAMBA_SUBSYSTEM('util_str_escape',
+                        source='util_str_escape.c',
+                        deps='talloc',
+                        local_include=False)
+
+    bld.SAMBA_SUBSYSTEM('util_str_hex',
+                        source='util_str_hex.c',
+                        deps='talloc',
+                        local_include=False)
+
+    bld.SAMBA_BINARY('test_rfc1738',
+                     source='tests/rfc1738.c',
+                     deps='cmocka replace samba-util',
+                     local_include=False,
+                     install=False)
+
+    bld.SAMBA_BINARY('test_ms_fnmatch',
+                     source='tests/test_ms_fnmatch.c',
+                     deps='cmocka replace samba-util',
+                     local_include=False,
+                     install=False)
+
+    bld.SAMBA_BINARY('test_talloc_keep_secret',
+                     source='tests/test_talloc_keep_secret.c',
+                     deps='cmocka replace samba-util',
+                     local_include=False,
+                     install=False)
+
+    bld.SAMBA_BINARY('test_byteorder',
+                     source='tests/test_byteorder.c',
+                     deps='cmocka replace samba-util',
+                     local_include=False,
+                     install=False)

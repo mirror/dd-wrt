@@ -1,0 +1,166 @@
+#!/usr/bin/env python
+# Waf build script for Samba 4's bundled Heimdal.
+
+# Unless explicitly requested by the user (e.g.
+# "./configure --bundled-libraries=!asn1_compile") this will always use the
+# bundled Heimdal, even if a system heimdal was found. The reason
+# for this is that our checks for the system heimdal are not accurate
+# enough yet to know if it is usable (some bug fix might be missing,
+# compile_et might not generate the expected code, etc).
+
+import sys
+from waflib import Logs
+
+conf.CHECK_TYPE('u_char', 'uint8_t')
+conf.CHECK_TYPE('u_int32_t', 'uint32_t')
+
+conf.CHECK_HEADERS('err.h')
+
+conf.CHECK_HEADERS('ifaddrs.h')
+conf.CHECK_HEADERS('''crypt.h errno.h inttypes.h netdb.h signal.h sys/bswap.h
+                  sys/file.h sys/stropts.h sys/timeb.h sys/times.h sys/uio.h sys/un.h
+              sys/utsname.h time.h timezone.h ttyname.h netinet/in.h
+              netinet/in6.h netinet6/in6.h''')
+
+conf.CHECK_HEADERS('curses.h term.h termcap.h', together=True)
+
+conf.CHECK_FUNCS('''atexit cgetent getprogname setprogname gethostname
+                    putenv rcmd readv sendmsg setitimer strlwr strncasecmp
+            strptime strsep strsep_copy    strtok_r strupr swab umask uname unsetenv
+            closefrom err warn errx warnx flock writev''')
+
+conf.CHECK_FUNCS_IN('hstrerror', 'resolv socket nsl', checklibc=True)
+conf.CHECK_FUNCS_IN('''getnameinfo sendmsg socket getipnodebyname gethostent gethostent_r
+                       sethostent endhostent getipnodebyaddr freehostent gethostbyname
+                       gethostbyname_r gethostbyaddr''',
+                    'socket nsl',
+                    checklibc=True)
+
+conf.CHECK_FUNCS('iruserok')
+
+conf.CHECK_FUNCS('bswap16')
+conf.CHECK_FUNCS('bswap32')
+
+conf.CHECK_TYPE('struct winsize', define='HAVE_STRUCT_WINSIZE', headers='sys/termios.h sys/ioctl.h')
+conf.CHECK_STRUCTURE_MEMBER('struct winsize', 'ws_xpixel',
+                    define='HAVE_WS_XPIXEL', headers='sys/termios.h sys/ioctl.h')
+conf.CHECK_STRUCTURE_MEMBER('struct winsize', 'ws_ypixel',
+                    define='HAVE_WS_YPIXEL', headers='sys/termios.h sys/ioctl.h')
+conf.DEFINE('HAVE_KRB_STRUCT_WINSIZE', 1)
+conf.DEFINE('VOID_RETSIGTYPE', 1)
+
+conf.CHECK_VARIABLE('h_errno', headers='netdb.h')
+
+# strangely enough, we need it with another define too
+conf.CHECK_DECLS('h_errno', headers='netdb.h')
+
+conf.CHECK_FUNCS_IN('res_search res_nsearch res_ndestroy dns_search dn_expand', 'resolv',
+                    checklibc=True, headers='netinet/in.h arpa/nameser.h resolv.h dns.h')
+conf.CHECK_VARIABLE('_res', headers='netinet/in.h arpa/nameser.h resolv.h')
+conf.CHECK_DECLS('_res', headers='netinet/in.h arpa/nameser.h resolv.h')
+
+conf.DEFINE('HAVE_KRB5',1)
+
+conf.CHECK_FUNCS('dirfd', headers='dirent.h')
+conf.CHECK_DECLS('dirfd', reverse=True, headers='dirent.h')
+conf.CHECK_STRUCTURE_MEMBER('DIR', 'dd_fd', define='HAVE_DIR_DD_FD',  headers='dirent.h')
+
+conf.DEFINE('SAMBA4_USES_HEIMDAL', 1)
+
+# setup the right defines for a in-tree heimdal build
+Logs.info("Using in-tree heimdal kerberos defines")
+conf.define('HAVE_GSSAPI_GSSAPI_H', 1)
+conf.define('HAVE_GSSAPI_GSSAPI_KRB5_H', 1)
+conf.define('HAVE_AP_OPTS_USE_SUBKEY', 1)
+conf.define('HAVE_KRB5_KEYTAB_ENTRY_KEYBLOCK', 1)
+conf.define('HAVE_KRB5_SET_REAL_TIME', 1)
+conf.define('HAVE_COM_ERR_H', 1)
+conf.define('HAVE_ADDR_TYPE_IN_KRB5_ADDRESS', 1)
+conf.define('HAVE_GSS_DISPLAY_STATUS', 1)
+conf.define('HAVE_GSS_WRAP_IOV', 1)
+conf.define('HAVE_GSS_KRB5_IMPORT_CRED', 1)
+conf.define('HAVE_GSS_OID_EQUAL', 1)
+conf.define('HAVE_GSS_INQUIRE_SEC_CONTEXT_BY_OID', 1)
+conf.define('HAVE_GSSKRB5_EXTRACT_AUTHZ_DATA_FROM_SEC_CONTEXT', 1)
+conf.define('HAVE_GSSKRB5_GET_SUBKEY', 1)
+conf.define('HAVE_GSS_KRB5_EXPORT_LUCID_SEC_CONTEXT', 1)
+conf.define('HAVE_GSS_IMPORT_CRED', 1)
+conf.define('HAVE_GSS_EXPORT_CRED', 1)
+conf.define('HAVE_GSS_KRB5_CRED_NO_CI_FLAGS_X', 1)
+conf.define('HAVE_GSSAPI', 1)
+conf.define('HAVE_ADDR_TYPE_IN_KRB5_ADDRESS', 1)
+conf.define('HAVE_CHECKSUM_IN_KRB5_CHECKSUM', 1)
+conf.define('HAVE_DECL_KRB5_AUTH_CON_SET_REQ_CKSUMTYPE', 0)
+conf.define('HAVE_DECL_KRB5_GET_CREDENTIALS_FOR_USER', 0)
+conf.define('HAVE_E_DATA_POINTER_IN_KRB5_ERROR', 1)
+conf.define('HAVE_INITIALIZE_KRB5_ERROR_TABLE', 1)
+conf.define('HAVE_KRB5_ADDRESSES', 1)
+conf.define('HAVE_KRB5_AUTH_CON_SETKEY', 1)
+conf.define('HAVE_KRB5_CC_GET_LIFETIME', 1)
+conf.define('HAVE_KRB5_CC_COPY_CACHE', 1)
+conf.define('HAVE_KRB5_CREATE_CHECKSUM', 1)
+conf.define('HAVE_KRB5_CRYPTO', 1)
+conf.define('HAVE_KRB5_CRYPTO_DESTROY', 1)
+conf.define('HAVE_KRB5_CRYPTO_INIT', 1)
+conf.define('HAVE_KRB5_C_VERIFY_CHECKSUM', 1)
+conf.define('HAVE_KRB5_ENCTYPE_TO_STRING', 1)
+conf.define('HAVE_KRB5_ENCTYPE_TO_STRING_WITH_KRB5_CONTEXT_ARG', 1)
+conf.define('HAVE_KRB5_FREE_ERROR_CONTENTS', 1)
+conf.define('HAVE_KRB5_FREE_HOST_REALM', 1)
+conf.define('HAVE_KRB5_FWD_TGT_CREDS', 1)
+conf.define('HAVE_KRB5_GET_CREDS', 1)
+conf.define('HAVE_KRB5_GET_CREDS_OPT_ALLOC', 1)
+conf.define('HAVE_KRB5_GET_CREDS_OPT_SET_IMPERSONATE', 1)
+conf.define('HAVE_KRB5_GET_DEFAULT_IN_TKT_ETYPES', 1)
+conf.define('HAVE_KRB5_GET_HOST_REALM', 1)
+conf.define('HAVE_KRB5_GET_INIT_CREDS_OPT_ALLOC', 1)
+conf.define('HAVE_KRB5_GET_INIT_CREDS_OPT_FREE', 1)
+conf.define('HAVE_KRB5_GET_INIT_CREDS_OPT_GET_ERROR', 1)
+conf.define('HAVE_KRB5_GET_INIT_CREDS_OPT_SET_PAC_REQUEST', 1)
+conf.define('HAVE_KRB5_GET_INIT_CREDS_KEYBLOCK', 1)
+conf.define('HAVE_KRB5_GET_PW_SALT', 1)
+conf.define('HAVE_KRB5_GET_RENEWED_CREDS', 1)
+conf.define('HAVE_KRB5_KEYBLOCK_KEYVALUE', 1)
+conf.define('HAVE_KRB5_KEYBLOCK_INIT', 1)
+conf.define('HAVE_KRB5_KEYTAB_ENTRY_KEYBLOCK', 1)
+conf.define('HAVE_KRB5_KRBHST_GET_ADDRINFO', 1)
+conf.define('HAVE_KRB5_KRBHST_INIT', 1)
+conf.define('HAVE_KRB5_KT_COMPARE', 1)
+conf.define('HAVE_KRB5_KT_FREE_ENTRY', 1)
+conf.define('HAVE_KRB5_KU_OTHER_CKSUM', 1)
+conf.define('HAVE_KRB5_LOCATE_PLUGIN_H', 1)
+conf.define('HAVE_KRB5_MK_REQ_EXTENDED', 1)
+conf.define('HAVE_KRB5_PRINCIPAL_COMPARE_ANY_REALM', 1)
+conf.define('HAVE_KRB5_PRINCIPAL_GET_COMP_STRING', 1)
+conf.define('HAVE_KRB5_PRINCIPAL_GET_REALM', 1)
+conf.define('HAVE_KRB5_MAKE_PRINCIPAL', 1)
+conf.define('HAVE_KRB5_REALM_TYPE', 1)
+conf.define('HAVE_KRB5_SET_DEFAULT_IN_TKT_ETYPES', 1)
+conf.define('HAVE_KRB5_SET_REAL_TIME', 1)
+conf.define('HAVE_KRB5_STRING_TO_KEY', 1)
+conf.define('HAVE_KRB5_STRING_TO_KEY_SALT', 1)
+conf.define('HAVE_FREE_CHECKSUM', 1)
+conf.define('HAVE_LIBKRB5', 1)
+conf.define('KRB5_CREDS_OPT_FREE_REQUIRES_CONTEXT', 1)
+conf.define('HAVE_ETYPE_IN_ENCRYPTEDDATA', 1)
+conf.define('KRB5_PRINC_REALM_RETURNS_REALM', 1)
+conf.define('HAVE_KRB5_PRINCIPAL_GET_REALM', 1)
+conf.define('HAVE_KRB5_H', 1)
+conf.define('HAVE_AP_OPTS_USE_SUBKEY', 1)
+conf.define('HAVE_ENCTYPE_ARCFOUR_HMAC_MD5', 1)
+conf.define('HAVE_ENCTYPE_ARCFOUR_HMAC_MD5_56', 1)
+conf.define('HAVE_ENCTYPE_ARCFOUR_HMAC', 1)
+conf.define('HAVE_KRB5_PDU_NONE_DECL', 1)
+conf.define('HAVE_ENCTYPE_AES128_CTS_HMAC_SHA1_96', 1)
+conf.define('HAVE_ENCTYPE_AES256_CTS_HMAC_SHA1_96', 1)
+conf.define('HAVE_KRB5_PRINCIPAL_GET_NUM_COMP', 1)
+conf.define('HAVE_GSSAPI_GSSAPI_SPNEGO_H', 1)
+conf.define('HAVE_FLAGS_IN_KRB5_CREDS', 1)
+conf.define('HAVE_KRB5_CONFIG_GET_BOOL_DEFAULT', 1)
+conf.define('HAVE_KRB5_DATA_COPY', 1)
+conf.define('HAVE_KRB5_PRINCIPAL_SET_REALM', 1)
+conf.define('HAVE_KRB5_PRINCIPAL_SET_TYPE', 1)
+conf.define('HAVE_KRB5_PRINCIPAL_GET_TYPE', 1)
+conf.define('HAVE_KRB5_WARNX', 1)
+conf.define('HAVE_KRB5_PROMPT_TYPE', 1)
+

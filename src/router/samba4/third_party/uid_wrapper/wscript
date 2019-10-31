@@ -1,0 +1,124 @@
+#!/usr/bin/env python
+
+from waflib import Options
+import os, sys
+
+VERSION="1.2.4"
+
+def configure(conf):
+    if conf.CHECK_UID_WRAPPER():
+        conf.DEFINE('USING_SYSTEM_UID_WRAPPER', 1)
+        libuid_wrapper_so_path = 'libuid_wrapper.so'
+    else:
+        # check HAVE_GCC_ATOMIC_BUILTINS
+        conf.CHECK_CODE('''
+            #include <stdbool.h>
+            int main(void) {
+                bool x;
+                bool *p_x = &x;
+                __atomic_load(p_x, &x, __ATOMIC_RELAXED);
+                return 0;
+            ''',
+            'HAVE_GCC_ATOMIC_BUILTINS',
+            addmain=False,
+            msg='Checking for atomic builtins')
+
+
+        if conf.CONFIG_SET("HAVE___THREAD"):
+            conf.DEFINE("HAVE_GCC_THREAD_LOCAL_STORAGE", 1)
+
+        if Options.options.address_sanitizer:
+            # check HAVE_ADDRESS_SANITIZER_ATTRIBUTE
+            conf.CHECK_CODE('''
+                void test_address_sanitizer_attribute(void) __attribute__((no_sanitize_address));
+
+                void test_address_sanitizer_attribute(void)
+                {
+                    return;
+                }
+
+                int main(void) {
+                    return 0;
+                }
+                ''',
+                'HAVE_ADDRESS_SANITIZER_ATTRIBUTE',
+                addmain=False,
+                cflags='-Wall -Wextra',
+                strict=True,
+                msg='Checking for address sanitizer attribute')
+
+        # check HAVE_FUNCTION_ATTRIBUTE_FORMAT
+        conf.CHECK_CODE('''
+            void log_fn(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
+
+            int main(void) {
+                return 0;
+            }
+            ''',
+            'HAVE_FUNCTION_ATTRIBUTE_FORMAT',
+            addmain=False,
+            strict=True,
+            msg='Checking for printf format validation support')
+        # Prototype checks
+        conf.CHECK_C_PROTOTYPE('setgroups',
+                'int setgroups(int ngroups, const gid_t *grouplist)',
+        define='HAVE_SETGROUPS_INT', headers='unistd.h sys/types.h')
+        conf.CHECK_C_PROTOTYPE('syscall',
+                'int syscall(int number, ...)',
+        define='HAVE_SYSCALL_INT', headers='unistd.h sys/syscall.h')
+
+        if (sys.platform.rfind('linux') > -1):
+            conf.CHECK_CODE('''
+#if defined(HAVE_UNISTD_H)
+#include <unistd.h>
+#endif
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <errno.h>
+
+#ifdef HAVE_SYS_PRIV_H
+#include <sys/priv.h>
+#endif
+#ifdef HAVE_SYS_ID_H
+#include <sys/id.h>
+#endif
+
+#if defined(HAVE_SYSCALL_H)
+#include <syscall.h>
+#endif
+
+#if defined(HAVE_SYS_SYSCALL_H)
+#include <sys/syscall.h>
+#endif
+
+syscall(SYS_setresuid32, -1, -1, -1);
+syscall(SYS_setresgid32, -1, -1, -1);
+syscall(SYS_setreuid32, -1, -1);
+syscall(SYS_setregid32, -1, -1);
+syscall(SYS_setuid32, -1);
+syscall(SYS_setgid32, -1);
+syscall(SYS_setgroups32, 0, NULL);
+''',
+                'HAVE_LINUX_32BIT_SYSCALLS',
+                msg="Checking whether Linux has 32-bit credential calls");
+
+        conf.CHECK_FUNCS('getresuid getresgid')
+
+        # Create full path to uid_wrapper
+        blddir = os.path.realpath(conf.bldnode.abspath())
+        libuid_wrapper_so_path = blddir + '/default/third_party/uid_wrapper/libuid-wrapper.so'
+
+    conf.DEFINE('LIBUID_WRAPPER_SO_PATH', libuid_wrapper_so_path)
+    conf.DEFINE('UID_WRAPPER', 1)
+
+def build(bld):
+    if not bld.CONFIG_SET("USING_SYSTEM_UID_WRAPPER"):
+        # We need to do it this way or the library wont work.
+        # Using private_library=True will add symbol version which
+        # breaks preloading!
+        bld.SAMBA_LIBRARY('uid_wrapper',
+                          source='uid_wrapper.c',
+                          deps='dl pthread',
+                          install=False,
+                          realname='libuid-wrapper.so')

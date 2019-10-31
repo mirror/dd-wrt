@@ -1,0 +1,1349 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="samba-tool.8">
+
+<refmeta>
+	<refentrytitle>samba-tool</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">System Administration tools</refmiscinfo>
+	<refmiscinfo class="version">&doc.version;</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>samba-tool</refname>
+	<refpurpose>Main Samba administration tool.
+	</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>samba-tool</command>
+		<arg choice="opt">-h</arg>
+		<arg choice="opt">-W myworkgroup</arg>
+		<arg choice="opt">-U user</arg>
+		<arg choice="opt">-d debuglevel</arg>
+		<arg choice="opt">--v</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>DESCRIPTION</title>
+	<para>This tool is part of the <citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry> suite.</para>
+</refsect1>
+
+<refsect1>
+	<title>OPTIONS</title>
+
+	<variablelist>
+
+	<varlistentry>
+	<term>-h|--help</term>
+	<listitem><para>
+	Show this help message and exit
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--realm=REALM</term>
+	<listitem><para>
+	Set the realm name
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--simple-bind-dn=DN</term>
+	<listitem><para>
+	DN to use for a simple bind
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--password=PASSWORD</term>
+	<listitem><para>
+	Password
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>-U USERNAME|--username=USERNAME</term>
+	<listitem><para>
+	Username
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>-W WORKGROUP|--workgroup=WORKGROUP</term>
+	<listitem><para>
+	Workgroup
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>-N|--no-pass</term>
+	<listitem><para>
+	Don't ask for a password
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>-k KERBEROS|--kerberos=KERBEROS</term>
+	<listitem><para>
+	Use Kerberos
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--ipaddress=IPADDRESS</term>
+	<listitem><para>
+	IP address of the server
+	</para></listitem>
+	</varlistentry>
+
+	&popt.common.samba.client;
+
+	</variablelist>
+</refsect1>
+
+<refsect1>
+<title>COMMANDS</title>
+
+<refsect2>
+	<title>computer</title>
+	<para>Manage computer accounts.</para>
+</refsect2>
+
+<refsect3>
+	<title>computer create <replaceable>computername</replaceable> [options]</title>
+	<para>Create a new computer in the Active Directory Domain.</para>
+	<para>The new computer name specified on the command is the
+	sAMAccountName, with or without the trailing dollar sign.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term>--computerou=COMPUTEROU</term>
+	<listitem><para>
+	DN of alternative location (with or without domainDN counterpart) to
+	default CN=Computers in which new computer object will be created.
+	E.g. 'OU=OUname'.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--description=DESCRIPTION</term>
+	<listitem><para>
+	The new computers's description.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--ip-address=IP_ADDRESS_LIST</term>
+	<listitem><para>
+	IPv4 address for the computer's A record, or IPv6 address for AAAA record,
+	can be provided multiple times.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--service-principal-name=SERVICE_PRINCIPAL_NAME_LIST</term>
+	<listitem><para>
+	Computer's Service Principal Name, can be provided multiple times.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--prepare-oldjoin</term>
+	<listitem><para>
+	Prepare enabled machine account for oldjoin mechanism.
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
+</refsect3>
+
+<refsect3>
+	<title>computer delete <replaceable>computername</replaceable> [options]</title>
+	<para>Delete an existing computer account.</para>
+	<para>The computer name specified on the command is the
+	sAMAccountName, with or without the trailing dollar sign.</para>
+</refsect3>
+
+<refsect3>
+	<title>computer edit <replaceable>computername</replaceable></title>
+	<para>Edit a computer AD object.</para>
+	<para>The computer name specified on the command is the
+	sAMAccountName, with or without the trailing dollar sign.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term>--editor=EDITOR</term>
+	<listitem><para>
+	Specifies the editor to use instead of the system default, or 'vi' if no
+	system default is set.
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
+</refsect3>
+
+<refsect3>
+	<title>computer list</title>
+	<para>List all computers.</para>
+</refsect3>
+
+<refsect3>
+	<title>computer move <replaceable>computername</replaceable> <replaceable>new_parent_dn</replaceable> [options]</title>
+	<para>This command moves a computer account into the specified
+	organizational unit or container.</para>
+	<para>The computername specified on the command is the
+	sAMAccountName, with or without the trailing dollar sign.</para>
+	<para>The name of the organizational unit or container can be
+	specified as a full DN or without the domainDN component.</para>
+</refsect3>
+
+<refsect3>
+	<title>computer show <replaceable>computername</replaceable> [options]</title>
+	<para>Display a computer AD object.</para>
+	<para>The computer name specified on the command is the
+	sAMAccountName, with or without the trailing dollar sign.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term>--attributes=USER_ATTRS</term>
+	<listitem><para>
+	Comma separated list of attributes, which will be printed.
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
+</refsect3>
+
+<refsect2>
+	<title>contact</title>
+	<para>Manage contacts.</para>
+</refsect2>
+
+<refsect3>
+	<title>contact create [<replaceable>contactname</replaceable>] [options]</title>
+	<para>Create a new contact in the Active Directory Domain.</para>
+	<para>The name of the new contact can be specified by the first
+	argument 'contactname' or the --given-name, --initial and --surname
+	arguments. If no 'contactname' is given, contact's name will be made
+	up of the given arguments by combining the given-name, initials and
+	surname. Each argument is optional. A dot ('.') will be appended to
+	the initials automatically.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term>--ou=OU</term>
+	<listitem><para>
+	DN of alternative location (with or without domainDN counterpart) in
+	which the new contact will be created.
+	E.g. 'OU=OUname'.
+	Default is the domain base.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--description=DESCRIPTION</term>
+	<listitem><para>
+	The new contacts's description.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--surname=SURNAME</term>
+	<listitem><para>
+	Contact's surname.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--given-name=GIVEN_NAME</term>
+	<listitem><para>
+	Contact's given name.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--initials=INITIALS</term>
+	<listitem><para>
+	Contact's initials.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--display-name=DISPLAY_NAME</term>
+	<listitem><para>
+	Contact's display name.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--job-title=JOB_TITLE</term>
+	<listitem><para>
+	Contact's job title.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--department=DEPARTMENT</term>
+	<listitem><para>
+	Contact's department.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--company=COMPANY</term>
+	<listitem><para>
+	Contact's company.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--mail-address=MAIL_ADDRESS</term>
+	<listitem><para>
+	Contact's email address.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--internet-address=INTERNET_ADDRESS</term>
+	<listitem><para>
+	Contact's home page.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--telephone-number=TELEPHONE_NUMBER</term>
+	<listitem><para>
+	Contact's phone number.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--mobile-number=MOBILE_NUMBER</term>
+	<listitem><para>
+	Contact's mobile phone number.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--physical-delivery-office=PHYSICAL_DELIVERY_OFFICE</term>
+	<listitem><para>
+	Contact's office location.
+	</para></listitem>
+	</varlistentry>
+
+	</variablelist>
+</refsect3>
+
+<refsect3>
+	<title>contact delete <replaceable>contactname</replaceable> [options]</title>
+	<para>Delete an existing contact.</para>
+	<para>The contactname specified on the command is the common name or the
+        distinguished name of the contact object. The distinguished name of the
+        contact can be specified with or without the domainDN component.</para>
+</refsect3>
+
+<refsect3>
+	<title>contact edit <replaceable>contactname</replaceable></title>
+	<para>Modify a contact AD object.</para>
+	<para>The contactname specified on the command is the common name or the
+        distinguished name of the contact object. The distinguished name of the
+        contact can be specified with or without the domainDN component.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term>--editor=EDITOR</term>
+	<listitem><para>
+	Specifies the editor to use instead of the system default, or 'vi' if no
+	system default is set.
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
+</refsect3>
+
+<refsect3>
+	<title>contact list [options]</title>
+	<para>List all contacts.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term>--full-dn</term>
+	<listitem><para>
+	Display contact's full DN instead of the name.
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
+</refsect3>
+
+<refsect3>
+	<title>contact move <replaceable>contactname</replaceable> <replaceable>new_parent_dn</replaceable> [options]</title>
+	<para>This command moves a contact into the specified organizational
+	unit or container.</para>
+	<para>The contactname specified on the command is the common name or the
+        distinguished name of the contact object. The distinguished name of the
+        contact can be specified with or without the domainDN component.</para>
+</refsect3>
+
+<refsect3>
+	<title>contact show <replaceable>contactname</replaceable> [options]</title>
+	<para>Display a contact AD object.</para>
+	<para>The contactname specified on the command is the common name or the
+        distinguished name of the contact object. The distinguished name of the
+        contact can be specified with or without the domainDN component.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term>--attributes=CONTACT_ATTRS</term>
+	<listitem><para>
+	Comma separated list of attributes, which will be printed.
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
+</refsect3>
+
+<refsect2>
+	<title>dbcheck</title>
+	<para>Check the local AD database for errors.</para>
+</refsect2>
+
+<refsect2>
+	<title>delegation</title>
+	<para>Manage Delegations.</para>
+</refsect2>
+
+<refsect3>
+	<title>delegation add-service <replaceable>accountname</replaceable> <replaceable>principal</replaceable> [options]</title>
+	<para>Add a service principal as msDS-AllowedToDelegateTo.</para>
+</refsect3>
+
+<refsect3>
+	<title>delegation del-service <replaceable>accountname</replaceable> <replaceable>principal</replaceable> [options]</title>
+	<para>Delete a service principal as msDS-AllowedToDelegateTo.</para>
+</refsect3>
+
+<refsect3>
+	<title>delegation for-any-protocol <replaceable>accountname</replaceable> [(on|off)] [options]</title>
+	<para>Set/unset UF_TRUSTED_TO_AUTHENTICATE_FOR_DELEGATION (S4U2Proxy)
+	for an account.</para>
+</refsect3>
+
+<refsect3>
+	<title>delegation for-any-service <replaceable>accountname</replaceable> [(on|off)] [options]</title>
+	<para>Set/unset UF_TRUSTED_FOR_DELEGATION for an account.</para>
+</refsect3>
+
+<refsect3>
+	<title>delegation show <replaceable>accountname</replaceable> [options]	</title>
+	<para>Show the delegation setting of an account.</para>
+</refsect3>
+
+<refsect2>
+	<title>dns</title>
+	<para>Manage Domain Name Service (DNS).</para>
+</refsect2>
+
+<refsect3>
+	<title>dns add <replaceable>server</replaceable> <replaceable>zone</replaceable> <replaceable>name</replaceable> <replaceable>A|AAAA|PTR|CNAME|NS|MX|SRV|TXT</replaceable> <replaceable>data</replaceable></title>
+	<para>Add a DNS record.</para>
+</refsect3>
+
+<refsect3>
+	<title>dns delete <replaceable>server</replaceable> <replaceable>zone</replaceable> <replaceable>name</replaceable> <replaceable>A|AAAA|PTR|CNAME|NS|MX|SRV|TXT</replaceable> <replaceable>data</replaceable></title>
+	<para>Delete a DNS record.</para>
+</refsect3>
+
+<refsect3>
+	<title>dns query <replaceable>server</replaceable> <replaceable>zone</replaceable> <replaceable>name</replaceable> <replaceable>A|AAAA|PTR|CNAME|NS|MX|SRV|TXT|ALL</replaceable> [options] <replaceable>data</replaceable></title>
+	<para>Query a name.</para>
+</refsect3>
+
+<refsect3>
+	<title>dns roothints <replaceable>server</replaceable> [<replaceable>name</replaceable>] [options]</title>
+	<para>Query root hints.</para>
+</refsect3>
+
+<refsect3>
+	<title>dns serverinfo <replaceable>server</replaceable> [options]</title>
+	<para>Query server information.</para>
+</refsect3>
+
+<refsect3>
+	<title>dns update <replaceable>server</replaceable> <replaceable>zone</replaceable> <replaceable>name</replaceable> <replaceable>A|AAAA|PTR|CNAME|NS|MX|SRV|TXT</replaceable> <replaceable>olddata</replaceable> <replaceable>newdata</replaceable></title>
+	<para>Update a DNS record.</para>
+</refsect3>
+
+<refsect3>
+	<title>dns zonecreate <replaceable>server</replaceable> <replaceable>zone</replaceable> [options]</title>
+	<para>Create a zone.</para>
+</refsect3>
+
+<refsect3>
+	<title>dns zonedelete <replaceable>server</replaceable> <replaceable>zone</replaceable> [options]</title>
+	<para>Delete a zone.</para>
+</refsect3>
+
+<refsect3>
+	<title>dns zoneinfo <replaceable>server</replaceable> <replaceable>zone</replaceable> [options]</title>
+	<para>Query zone information.</para>
+</refsect3>
+
+<refsect3>
+	<title>dns zonelist <replaceable>server</replaceable> [options]</title>
+	<para>List zones.</para>
+</refsect3>
+
+<refsect2>
+	<title>domain</title>
+	<para>Manage Domain.</para>
+</refsect2>
+
+<refsect3>
+	<title>domain backup</title>
+	<para>Create or restore a backup of the domain.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain backup offline</title>
+	<para>Backup (with proper locking) local domain directories into a tar file.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain backup online</title>
+	<para>Copy a running DC's current DB into a backup tar file.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain backup rename</title>
+	<para>Copy a running DC's DB to backup file, renaming the domain in the process.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain backup restore</title>
+	<para>Restore the domain's DB from a backup-file.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain classicupgrade [options] <replaceable>classic_smb_conf</replaceable></title>
+	<para>Upgrade from Samba classic (NT4-like) database to Samba AD DC
+	database.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain dcpromo <replaceable>dnsdomain</replaceable> [DC|RODC] [options]</title>
+	<para>Promote an existing domain member or NT4 PDC to an AD DC.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain demote</title>
+	<para>Demote ourselves from the role of domain controller.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain exportkeytab <replaceable>keytab</replaceable> [options]</title>
+	<para>Dumps Kerberos keys of the domain into a keytab.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain info <replaceable>ip_address</replaceable> [options]</title>
+	<para>Print basic info about a domain and the specified DC.
+</para>
+</refsect3>
+
+<refsect3>
+	<title>domain join <replaceable>dnsdomain</replaceable> [DC|RODC|MEMBER|SUBDOMAIN] [options]</title>
+	<para>Join a domain as either member or backup domain controller.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain level <replaceable>show|raise</replaceable> <replaceable>options</replaceable> [options]</title>
+	<para>Show/raise domain and forest function levels.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain passwordsettings <replaceable>show|set</replaceable> <replaceable>options</replaceable> [options]</title>
+	<para>Show/set password settings.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain passwordsettings pso</title>
+	<para>Manage fine-grained Password Settings Objects (PSOs).</para>
+</refsect3>
+
+<refsect3>
+	<title>domain passwordsettings pso apply <replaceable>pso-name</replaceable> <replaceable>user-or-group-name</replaceable> [options]</title>
+	<para>Applies a PSO's password policy to a user or group.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain passwordsettings pso create <replaceable>pso-name</replaceable> <replaceable>precedence</replaceable> [options]</title>
+	<para>Creates a new Password Settings Object (PSO).</para>
+</refsect3>
+
+<refsect3>
+	<title>domain passwordsettings pso delete <replaceable>pso-name</replaceable> [options]</title>
+	<para>Deletes a Password Settings Object (PSO).</para>
+</refsect3>
+
+<refsect3>
+	<title>domain passwordsettings pso list [options]</title>
+	<para>Lists all Password Settings Objects (PSOs).</para>
+</refsect3>
+
+<refsect3>
+	<title>domain passwordsettings pso set <replaceable>pso-name</replaceable> [options]</title>
+	<para>Modifies a Password Settings Object (PSO).</para>
+</refsect3>
+
+<refsect3>
+	<title>domain passwordsettings pso show <replaceable>user-name</replaceable> [options]</title>
+	<para>Displays a Password Settings Object (PSO).</para>
+</refsect3>
+
+<refsect3>
+	<title>domain passwordsettings pso show-user <replaceable>pso-name</replaceable> [options]</title>
+	<para>Displays the Password Settings that apply to a user.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain passwordsettings pso unapply <replaceable>pso-name</replaceable> <replaceable>user-or-group-name</replaceable> [options]</title>
+	<para>Updates a PSO to no longer apply to a user or group.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain provision</title>
+	<para>Promote an existing domain member or NT4 PDC to an AD DC.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain trust</title>
+	<para>Domain and forest trust management.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain trust create <replaceable>DOMAIN</replaceable> <replaceable>options</replaceable> [options]</title>
+	<para>Create a domain or forest trust.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain trust delete <replaceable>DOMAIN</replaceable> <replaceable>options</replaceable> [options]</title>
+	<para>Delete a domain trust.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain trust list <replaceable>options</replaceable> [options]</title>
+	<para>List domain trusts.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain trust namespaces [<replaceable>DOMAIN</replaceable>] <replaceable>options</replaceable> [options]</title>
+	<para>Manage forest trust namespaces.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain trust show <replaceable>DOMAIN</replaceable> <replaceable>options</replaceable> [options]</title>
+	<para>Show trusted domain details.</para>
+</refsect3>
+
+<refsect3>
+	<title>domain trust validate <replaceable>DOMAIN</replaceable> <replaceable>options</replaceable> [options]</title>
+	<para>Validate a domain trust.</para>
+</refsect3>
+
+<refsect2>
+	<title>drs</title>
+	<para>Manage Directory Replication Services (DRS).</para>
+</refsect2>
+
+<refsect3>
+	<title>drs bind</title>
+	<para>Show DRS capabilities of a server.</para>
+</refsect3>
+
+<refsect3>
+	<title>drs kcc</title>
+	<para>Trigger knowledge consistency center run.</para>
+</refsect3>
+
+<refsect3>
+	<title>drs options</title>
+	<para>Query or change <replaceable>options</replaceable> for NTDS Settings
+	object of a domain controller.</para>
+</refsect3>
+
+<refsect3>
+	<title>drs replicate <replaceable>destination_DC</replaceable> <replaceable>source_DC</replaceable> <replaceable>NC</replaceable> [options]</title>
+	<para>Replicate a naming context between two DCs.</para>
+</refsect3>
+
+<refsect3>
+	<title>drs showrepl</title>
+	<para>Show replication status. The <arg
+	choice="opt">--json</arg> option results in JSON output, and
+	with the <arg choice="opt">--summary</arg> option produces
+	very little output when the replication status seems healthy.
+	</para>
+</refsect3>
+
+<refsect2>
+	<title>dsacl</title>
+	<para>Administer DS ACLs</para>
+</refsect2>
+
+<refsect3>
+	<title>dsacl set</title>
+	<para>Modify access list on a directory object.</para>
+</refsect3>
+
+<refsect2>
+	<title>forest</title>
+	<para>Manage Forest configuration.</para>
+</refsect2>
+
+<refsect3>
+	<title>forest directory_service</title>
+	<para>Manage directory_service behaviour for the forest.</para>
+</refsect3>
+
+<refsect3>
+	<title>forest directory_service dsheuristics <replaceable>VALUE</replaceable></title>
+	<para>Modify dsheuristics directory_service configuration for the forest.</para>
+</refsect3>
+
+<refsect3>
+	<title>forest directory_service show</title>
+	<para>Show current directory_service configuration for the forest.</para>
+</refsect3>
+
+<refsect2>
+	<title>fsmo</title>
+	<para>Manage Flexible Single Master Operations (FSMO).</para>
+</refsect2>
+
+<refsect3>
+	<title>fsmo seize [options]</title>
+	<para>Seize the role.</para>
+</refsect3>
+
+<refsect3>
+	<title>fsmo show</title>
+	<para>Show the roles.</para>
+</refsect3>
+
+<refsect3>
+	<title>fsmo transfer [options]</title>
+	<para>Transfer the role.</para>
+</refsect3>
+
+<refsect2>
+	<title>gpo</title>
+	<para>Manage Group Policy Objects (GPO).</para>
+</refsect2>
+
+<refsect3>
+	<title>gpo create <replaceable>displayname</replaceable> [options]</title>
+	<para>Create an empty GPO.</para>
+</refsect3>
+
+<refsect3>
+	<title>gpo del <replaceable>gpo</replaceable> [options]</title>
+	<para>Delete GPO.</para>
+</refsect3>
+
+<refsect3>
+	<title>gpo dellink <replaceable>container_dn</replaceable> <replaceable>gpo</replaceable> [options]</title>
+	<para>Delete GPO link from a container.</para>
+</refsect3>
+
+<refsect3>
+	<title>gpo fetch <replaceable>gpo</replaceable> [options]</title>
+	<para>Download a GPO.</para>
+</refsect3>
+
+<refsect3>
+	<title>gpo getinheritance <replaceable>container_dn</replaceable> [options]</title>
+	<para>Get inheritance flag for a container.</para>
+</refsect3>
+
+<refsect3>
+	<title>gpo getlink <replaceable>container_dn</replaceable> [options]</title>
+	<para>List GPO Links for a container.</para>
+</refsect3>
+
+<refsect3>
+	<title>gpo list <replaceable>username</replaceable> [options]</title>
+	<para>List GPOs for an account.</para>
+</refsect3>
+
+<refsect3>
+	<title>gpo listall</title>
+	<para>List all GPOs.</para>
+</refsect3>
+
+<refsect3>
+	<title>gpo listcontainers <replaceable>gpo</replaceable> [options]</title>
+	<para>List all linked containers for a GPO.</para>
+</refsect3>
+
+<refsect3>
+	<title>gpo setinheritance <replaceable>container_dn</replaceable> <replaceable>block|inherit</replaceable> [options]</title>
+	<para>Set inheritance flag on a container.</para>
+</refsect3>
+
+<refsect3>
+	<title>gpo setlink <replaceable>container_dn</replaceable> <replaceable>gpo</replaceable> [options]</title>
+	<para>Add or Update a GPO link to a container.</para>
+</refsect3>
+
+<refsect3>
+	<title>gpo show <replaceable>gpo</replaceable> [options]</title>
+	<para>Show information for a GPO.</para>
+</refsect3>
+
+<refsect2>
+	<title>group</title>
+	<para>Manage groups.</para>
+</refsect2>
+
+<refsect3>
+	<title>group add <replaceable>groupname</replaceable> [options]</title>
+	<para>Create a new AD group.</para>
+</refsect3>
+
+<refsect3>
+	<title>group addmembers <replaceable>groupname</replaceable> <replaceable>members</replaceable> [options]</title>
+	<para>Add members to an AD group.</para>
+</refsect3>
+
+<refsect3>
+	<title>group delete <replaceable>groupname</replaceable> [options]</title>
+	<para>Delete an AD group.</para>
+</refsect3>
+
+<refsect3>
+	<title>group edit <replaceable>groupname</replaceable></title>
+	<para>Edit a group AD object.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term>--editor=EDITOR</term>
+	<listitem><para>
+	Specifies the editor to use instead of the system default, or 'vi' if no
+	system default is set.
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
+</refsect3>
+
+<refsect3>
+	<title>group list</title>
+	<para>List all groups.</para>
+</refsect3>
+
+<refsect3>
+	<title>group listmembers <replaceable>groupname</replaceable> [options]</title>
+	<para>List all members of the specified AD group.</para>
+</refsect3>
+
+<refsect3>
+	<title>group move <replaceable>groupname</replaceable> <replaceable>new_parent_dn</replaceable> [options]</title>
+	<para>This command moves a group into the specified organizational unit
+	or container.</para>
+	<para>The groupname specified on the command is the sAMAccountName.
+	</para>
+	<para>The name of the organizational unit or container can be
+	specified as a full DN or without the domainDN component.</para>
+	<para></para>
+</refsect3>
+
+<refsect3>
+	<title>group removemembers <replaceable>groupname</replaceable> <replaceable>members</replaceable> [options]</title>
+	<para>Remove members from the specified AD group.</para>
+</refsect3>
+
+<refsect3>
+	<title>group show <replaceable>groupname</replaceable> [options]</title>
+	<para>Show group object and it's attributes.</para>
+</refsect3>
+
+<refsect3>
+	<title>group stats [options]</title>
+	<para>Show statistics for overall groups and group memberships.</para>
+</refsect3>
+
+<refsect2>
+	<title>ldapcmp <replaceable>URL1</replaceable> <replaceable>URL2</replaceable> <replaceable>domain|configuration|schema|dnsdomain|dnsforest</replaceable> [options] </title>
+	<para>Compare two LDAP databases.</para>
+</refsect2>
+
+<refsect2>
+	<title>ntacl</title>
+	<para>Manage NT ACLs.</para>
+</refsect2>
+
+<refsect3>
+	<title>ntacl changedomsid <replaceable>original-domain-SID</replaceable> <replaceable>new-domain-SID</replaceable> <replaceable>file</replaceable> [options]</title>
+	<para>Change the domain SID for ACLs.
+	Can be used to change all entries in acl_xattr when the machine's SID
+	has accidentially changed or the data set has been copied
+	to another machine either via backup/restore or rsync.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term>--use-ntvfs</term>
+	<listitem><para>
+	Set the ACLs directly to the TDB or xattr. The POSIX permissions will
+	NOT be changed, only the NT ACL will be stored.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--service=SERVICE</term>
+	<listitem><para>
+	Specify the name of the smb.conf service to use. This option is
+	required in combination with the --use-s3fs option.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--use-s3fs</term>
+	<listitem><para>
+	Set the ACLs for use with the default s3fs file server via the VFS
+	layer. This option requires a smb.conf service, specified by the
+	--service=SERVICE option.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--xattr-backend=[native|tdb]</term>
+	<listitem><para>
+	Specify the xattr backend type (native fs or tdb).
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--eadb-file=EADB_FILE</term>
+	<listitem><para>
+	Name of the tdb file where attributes are stored.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--recursive</term>
+	<listitem><para>
+	Set the ACLs for directories and their contents recursively.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--follow-symlinks</term>
+	<listitem><para>
+	Follow symlinks when --recursive is specified.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--verbose</term>
+	<listitem><para>
+	Verbosely list files and ACLs which are being processed.
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
+</refsect3>
+
+
+<refsect3>
+	<title>ntacl get <replaceable>file</replaceable> [options]</title>
+	<para>Get ACLs on a file.</para>
+</refsect3>
+
+<refsect3>
+	<title>ntacl set <replaceable>acl</replaceable> <replaceable>file</replaceable> [options]</title>
+	<para>Set ACLs on a file.</para>
+</refsect3>
+
+<refsect3>
+	<title>ntacl sysvolcheck</title>
+	<para>Check sysvol ACLs match defaults (including correct ACLs on GPOs).</para>
+</refsect3>
+
+<refsect3>
+	<title>ntacl sysvolreset</title>
+	<para>Reset sysvol ACLs to defaults (including correct ACLs on GPOs).</para>
+</refsect3>
+
+<refsect2>
+	<title>ou</title>
+	<para>Manage organizational units (OUs).</para>
+</refsect2>
+
+<refsect3>
+	<title>ou create <replaceable>ou_dn</replaceable> [options]</title>
+	<para>Create an organizational unit.</para>
+	<para>The name of the organizational unit can be specified as a full DN
+	or without the domainDN component.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term>--description=DESCRIPTION</term>
+	<listitem><para>
+	Specify OU's description.
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
+</refsect3>
+
+<refsect3>
+	<title>ou delete <replaceable>ou_dn</replaceable> [options]</title>
+	<para>Delete an organizational unit.</para>
+	<para>The name of the organizational unit can be specified as a full DN
+	or without the domainDN component.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term>--force-subtree-delete</term>
+	<listitem><para>
+	Delete organizational unit and all children reclusively.
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
+</refsect3>
+
+<refsect3>
+	<title>ou list [options]</title>
+	<para>List all organizational units.</para>
+	<variablelist>
+	<varlistentry>
+	<term>--full-dn</term>
+	<listitem><para>
+	Display DNs including the base DN.
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
+</refsect3>
+
+<refsect3>
+	<title>ou listobjects <replaceable>ou_dn</replaceable> [options]</title>
+	<para>List all objects in an organizational unit.</para>
+	<para>The name of the organizational unit can be specified as a full DN
+	or without the domainDN component.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term>--full-dn</term>
+	<listitem><para>
+	Display DNs including the base DN.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>-r|--recursive</term>
+	<listitem><para>
+	List objects recursively.
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
+</refsect3>
+
+<refsect3>
+	<title>ou move <replaceable>old_ou_dn</replaceable> <replaceable>new_parent_dn</replaceable> [options]</title>
+	<para>Move an organizational unit.</para>
+	<para>The name of the organizational units can be specified as a full DN
+	or without the domainDN component.</para>
+</refsect3>
+
+<refsect3>
+	<title>ou rename <replaceable>old_ou_dn</replaceable> <replaceable>new_ou_dn</replaceable> [options]</title>
+	<para>Rename an organizational unit.</para>
+	<para>The name of the organizational units can be specified as a full DN
+	or without the domainDN component.</para>
+</refsect3>
+
+<refsect2>
+	<title>rodc</title>
+	<para>Manage Read-Only Domain Controller (RODC).</para>
+</refsect2>
+
+<refsect3>
+	<title>rodc preload <replaceable>SID</replaceable>|<replaceable>DN</replaceable>|<replaceable>accountname</replaceable> [options]</title>
+	<para>Preload one account for an RODC.</para>
+</refsect3>
+
+<refsect2>
+	<title>schema</title>
+	<para>Manage and query schema.</para>
+</refsect2>
+
+<refsect3>
+	<title>schema attribute modify <replaceable>attribute</replaceable> [options]</title>
+	<para>Modify the behaviour of an attribute in schema.</para>
+</refsect3>
+
+<refsect3>
+	<title>schema attribute show <replaceable>attribute</replaceable> [options]</title>
+	<para>Display an attribute schema definition.</para>
+</refsect3>
+
+<refsect3>
+	<title>schema attribute show_oc <replaceable>attribute</replaceable> [options]</title>
+	<para>Show objectclasses that MAY or MUST contain this attribute.</para>
+</refsect3>
+
+<refsect3>
+	<title>schema objectclass show <replaceable>objectclass</replaceable> [options]</title>
+	<para>Display an objectclass schema definition.</para>
+</refsect3>
+
+<refsect2>
+	<title>sites</title>
+	<para>Manage sites.</para>
+</refsect2>
+
+<refsect3>
+	<title>sites create <replaceable>site</replaceable> [options]</title>
+	<para>Create a new site.</para>
+</refsect3>
+
+<refsect3>
+	<title>sites remove <replaceable>site</replaceable> [options]</title>
+	<para>Delete an existing site.</para>
+</refsect3>
+
+<refsect2>
+	<title>spn</title>
+	<para>Manage Service Principal Names (SPN).</para>
+</refsect2>
+
+<refsect3>
+	<title>spn add <replaceable>name</replaceable> <replaceable>user</replaceable> [options]</title>
+	<para>Create a new SPN.</para>
+</refsect3>
+
+<refsect3>
+	<title>spn delete <replaceable>name</replaceable> [<replaceable>user</replaceable>] [options]</title>
+	<para>Delete an existing SPN.</para>
+</refsect3>
+
+<refsect3>
+	<title>spn list <replaceable>user</replaceable> [options]</title>
+	<para>List SPNs of a given user.</para>
+</refsect3>
+
+<refsect2>
+	<title>testparm</title>
+	<para>Check the syntax of the configuration file.</para>
+</refsect2>
+
+<refsect2>
+	<title>time</title>
+	<para>Retrieve the time on a server.</para>
+</refsect2>
+
+<refsect2>
+	<title>user</title>
+	<para>Manage users.</para>
+</refsect2>
+
+<refsect3>
+	<title>user add <replaceable>username</replaceable> [<replaceable>password</replaceable>]</title>
+	<para>Create a new user. Please note that this subcommand is deprecated
+	and available for compatibility reasons only. Please use
+	<command>samba-tool user create</command> instead.</para>
+</refsect3>
+
+<refsect3>
+	<title>user create <replaceable>username</replaceable> [<replaceable>password</replaceable>]</title>
+	<para>Create a new user in the Active Directory Domain.</para>
+</refsect3>
+
+<refsect3>
+	<title>user delete <replaceable>username</replaceable> [options]</title>
+	<para>Delete an existing user account.</para>
+</refsect3>
+
+<refsect3>
+	<title>user disable <replaceable>username</replaceable></title>
+	<para>Disable a user account.</para>
+</refsect3>
+
+<refsect3>
+	<title>user edit <replaceable>username</replaceable></title>
+	<para>Edit a user account AD object.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term>--editor=EDITOR</term>
+	<listitem><para>
+	Specifies the editor to use instead of the system default, or 'vi' if no
+	system default is set.
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
+</refsect3>
+
+<refsect3>
+	<title>user enable <replaceable>username</replaceable></title>
+	<para>Enable a user account.</para>
+</refsect3>
+
+<refsect3>
+	<title>user list</title>
+	<para>List all users.</para>
+</refsect3>
+
+<refsect3>
+	<title>user show <replaceable>username</replaceable> [options]</title>
+	<para>Display a user AD object.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term>--attributes=USER_ATTRS</term>
+	<listitem><para>
+	Comma separated list of attributes, which will be printed.
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
+</refsect3>
+
+<refsect3>
+	<title>user move <replaceable>username</replaceable> <replaceable>new_parent_dn</replaceable> [options]</title>
+	<para>This command moves a user account into the specified
+	organizational unit or container.</para>
+	<para>The username specified on the command is the
+	sAMAccountName.</para>
+	<para>The name of the organizational unit or container can be
+	specified as a full DN or without the domainDN component.</para>
+</refsect3>
+
+<refsect3>
+	<title>user password [options]</title>
+	<para>Change password for a user account (the one provided in
+	authentication).</para>
+</refsect3>
+
+<refsect3>
+	<title>user setexpiry <replaceable>username</replaceable> [options]</title>
+	<para>Set the expiration of a user account.</para>
+</refsect3>
+
+<refsect3>
+	<title>user setpassword <replaceable>username</replaceable> [options]</title>
+	<para>Sets or resets the password of a user account.</para>
+</refsect3>
+
+<refsect3>
+	<title>user getpassword <replaceable>username</replaceable> [options]</title>
+	<para>Gets the password of a user account.</para>
+</refsect3>
+
+<refsect3>
+	<title>user syncpasswords <replaceable>--cache-ldb-initialize</replaceable> [options]</title>
+	<para>Syncs the passwords of all user accounts, using an optional script.</para>
+	<para>Note that this command should run on a single domain controller only
+	(typically the PDC-emulator).</para>
+</refsect3>
+
+<refsect2>
+	<title>vampire [options] <replaceable>domain</replaceable></title>
+	<para>Join and synchronise a remote AD domain to the local server.
+	Please note that <command>samba-tool vampire</command> is deprecated,
+	please use <command>samba-tool domain join</command> instead.</para>
+</refsect2>
+
+<refsect2>
+	<title>visualize [options] <replaceable>subcommand</replaceable></title>
+	<para>Produce graphical representations of Samba network state.
+	To work out what is happening in a replication graph, it is sometimes
+	helpful to use visualisations.</para>
+
+	<para>
+	There are two subcommands, two graphical modes, and (roughly) two modes
+	of operation with respect to the location of authority.</para>
+
+	<refsect3><title>MODES OF OPERATION</title>
+	<varlistentry>
+                <term>samba-tool visualize ntdsconn</term>
+                <listitem><para>Looks at NTDS connections.
+                </para></listitem>
+                </varlistentry>
+
+	<varlistentry>
+		<term>samba-tool visualize reps</term>
+		<listitem><para>Looks at repsTo and repsFrom objects.
+		</para></listitem>
+		</varlistentry>
+
+	<varlistentry>
+		<term>samba-tool visualize uptodateness</term>
+		<listitem><para>Looks at replication lag as shown by the
+                uptodateness vectors.
+		</para></listitem>
+		</varlistentry>
+	</refsect3>
+
+	<refsect3><title>GRAPHICAL MODES</title>
+	<varlistentry>
+                <term>--distance</term>
+                <listitem><para>Distances between DCs are shown in a matrix in
+		 the terminal.
+                </para></listitem>
+                </varlistentry>
+
+	<varlistentry>
+                <term>--dot</term>
+                <listitem><para>Generate Graphviz dot output (for
+                ntdsconn and reps modes). When viewed using dot or
+                xdot, this shows the network as a graph with DCs as
+                vertices and connections edges. Certain types of
+                degenerate edges are shown in different colours or
+                line-styles. </para></listitem>
+                </varlistentry>
+	<varlistentry>
+                <term>--xdot</term>
+                <listitem><para>Generate Graphviz dot output as with
+                <arg choice="opt">--dot</arg> and attempt to view it
+                immediately using <command>/usr/bin/xdot</command>.
+                </para></listitem>
+                </varlistentry>
+	</refsect3>
+
+	<varlistentry>
+		<term>-r</term>
+		<listitem><para>Normally,
+		<command>samba-tool</command> talks to one database;
+		with the <arg choice="opt">-r</arg> option attempts
+		are made to contact all the DCs known to the first
+		database. This is necessary for <command>samba-tool
+		visualize uptodateness</command> and for
+		<command>samba-tool visualize reps</command> because
+		the repsFrom/To objects are not replicated, and it can
+		reveal replication issues in other modes.
+		</para></listitem>
+                </varlistentry>
+</refsect2>
+
+<refsect2>
+<title>help</title>
+<para>Gives usage information.</para>
+</refsect2>
+
+</refsect1>
+
+<refsect1>
+	<title>VERSION</title>
+
+	<para>This man page is complete for version &doc.version; of the Samba
+	suite.</para>
+</refsect1>
+
+<refsect1>
+	<title>AUTHOR</title>
+
+	<para>The original Samba software and related utilities
+	were created by Andrew Tridgell. Samba is now developed
+	by the Samba Team as an Open Source project similar
+	to the way the Linux kernel is developed.</para>
+</refsect1>
+
+</refentry>

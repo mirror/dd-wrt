@@ -1,0 +1,22 @@
+<samba:parameter name="idmap backend"
+                 context="G"
+                 type="string"
+                 generated_function="0"
+                 handler="handle_idmap_backend"
+                 deprecated="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	The idmap backend provides a plugin interface for Winbind to use
+	varying backends to store SID/uid/gid mapping tables.
+	</para>
+
+	<para>
+	This option specifies the default backend that is used when no special
+	configuration set, but it is now deprecated in favour of the new
+	spelling <smbconfoption name="idmap config * :  backend"/>.
+	</para>
+</description>
+
+<value type="default">tdb</value>
+</samba:parameter>

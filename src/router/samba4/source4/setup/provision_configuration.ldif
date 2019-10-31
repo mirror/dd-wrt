@@ -1,0 +1,575 @@
+###############################
+# Configuration Naming Context
+###############################
+
+# Display specifiers are located in
+# display-specifiers/DisplaySpecifiers-Win2k8R2.txt"
+# This file is parsed during provision using the ms_display_specifiers.py
+# script.
+
+dn: CN=Deleted Objects,${CONFIGDN}
+objectClass: top
+objectClass: container
+description: Container for deleted objects
+isDeleted: TRUE
+isCriticalSystemObject: TRUE
+systemFlags: -1946157056
+
+# Extended rights
+
+dn: CN=Extended-Rights,${CONFIGDN}
+objectClass: top
+objectClass: container
+systemFlags: -2147483648
+nTSecurityDescriptor:: ${EXTENDEDRIGHTS_DESCRIPTOR}
+
+# Forest updates
+
+dn: CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+nTSecurityDescriptor:: ${FORESTUPDATES_DESCRIPTOR}
+
+dn: CN=ActiveDirectoryRodcUpdate,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+revision: 2
+
+dn: CN=ActiveDirectoryUpdate,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+revision: 5
+
+dn: CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=6b800a81-affe-4a15-8e41-6ea0c7aa89e4,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=dd07182c-3174-4c95-902a-d64fee285bbf,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=ffa5ee3c-1405-476d-b344-7ad37d69cc25,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=099f1587-af70-49c6-ab6c-7b3e82be0fe2,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=94fdebc6-8eeb-4640-80de-ec52b9ca17fa,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+objectVersion: 3
+
+dn: CN=1a3f6b15-55f2-4752-ba27-3d38a8232c4d,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=dee21a17-4e8e-4f40-a58c-c0c009b685a7,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=9bd98bb4-4047-4de5-bf4c-7bd1d0f6d21d,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=3fe80fbf-bf39-4773-b5bd-3e5767a30d2d,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=f02915e2-9141-4f73-b8e7-2804662782da,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=39902c52-ef24-4b4b-8033-2c9dfdd173a2,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=20bf09b4-6d0b-4cd1-9c09-4231edf1209b,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=94f238bb-831c-11d6-977b-00c04f613221,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=94f238bc-831c-11d6-977b-00c04f613221,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=94f238bd-831c-11d6-977b-00c04f613221,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=94f238be-831c-11d6-977b-00c04f613221,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=94f238bf-831c-11d6-977b-00c04f613221,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=94f238c0-831c-11d6-977b-00c04f613221,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=eda27b47-e610-11d6-9793-00c04f613221,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=eda27b48-e610-11d6-9793-00c04f613221,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=eda27b49-e610-11d6-9793-00c04f613221,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=eda27b4a-e610-11d6-9793-00c04f613221,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=26d9c510-e61a-11d6-9793-00c04f613221,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=26d9c511-e61a-11d6-9793-00c04f613221,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=3467dae5-dedd-4648-9066-f48ac186b20a,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=33b7ee33-1386-47cf-baa1-b03e06473253,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=e9ee8d55-c2fb-4723-a333-c80ff4dfbf45,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=ccfae63a-7fb5-454c-83ab-0e8e1214974e,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=ad3c7909-b154-4c16-8bf7-2c3a7870bb3d,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=26ad2ebf-f8f5-44a4-b97c-a616c8b9d09a,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=4444c516-f43a-4c12-9c4b-b5c064941d61,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=436a1a4b-f41a-46e6-ac86-427720ef29f3,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=b2b7fb45-f50d-41bc-a73b-8f580f3b636a,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=1bdf6366-c3db-4d0b-b8cb-f99ba9bce20f,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=63c0f51a-067c-4640-8a4f-044fb33f1049,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=dae441c0-366e-482e-98d9-60a99a1898cc,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=7dd09ca6-f0d6-43bf-b7f8-ef348f435617,CN=Operations,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=002fb291-0d00-4b0c-8c00-fe7f50ce6f8d,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=07e57d28-ad40-44fc-8334-8a0dc119b3f4,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=0fc5a978-0059-4b0a-9dc2-9896e8e389a1,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=10338d31-2423-4dff-b4b5-ef025144b01f,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=2a858903-5696-4364-b4e5-4cac027ca7a6,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=2b9e0609-6d75-498a-9727-c9fcc93f0e42,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=3b3adbdb-4485-4559-aed8-9811c4bf90e4,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=429a6334-1a00-4515-bf48-676deb55954a,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=4c022fd1-adab-4d84-a7f1-9580f03da856,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=4c0672a2-437c-4944-b953-5db8f111d665,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=4d753a29-26ac-4d1a-bc80-311f947e4f0a,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=56040c71-fe93-4037-8fe9-1a4d1a283009,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=560cf82d-9572-48a3-9024-6f2b56f1f866,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=613bd063-e8e9-4a62-8f4c-cda566f7eb6f,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=6eb8eaf9-3403-4ba5-8b4b-ce349a4680ad,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=6fd48655-1698-497a-ac8d-8267ce01c80b,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=782370ce-3d38-438d-8b0c-464220a3039d,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=8f86b825-c322-4101-adc4-579f12d445db,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=96541a16-910a-4b66-acde-720a0dff03c7,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=9fea28ff-387f-4d57-866d-3893c50f373f,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=a96e2ed5-7a7c-4d5c-9d5d-965eca0051da,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=abd97102-88dd-4013-a009-0e2c2f967ff6,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=bd3413c0-9559-469b-9f3d-51d7faabd81a,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=c03b1f37-c240-4910-93c8-1544a452b4b5,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=caa2bfad-0cca-483b-8d00-347f943292a8,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=d668ad1f-cedd-4565-ab02-9385926ce4f5,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=dcb3c95d-deb7-4c51-ad13-43a7d5d06fc7,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=ea08c04c-f474-4212-b19e-5e754f9210d4,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=ef010a1e-bd88-48c8-a7af-2affd250d77d,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=f814097b-3e3d-49ba-8a3a-092c25085f06,CN=Operations,CN=ForestUpdates,CN=Configuration,${DOMAINDN}
+objectClass: top
+objectClass: container
+
+dn: CN=Windows2003Update,CN=ForestUpdates,${CONFIGDN}
+objectClass: top
+objectClass: container
+revision: 10
+
+# End forest updates
+
+dn: CN=LostAndFoundConfig,${CONFIGDN}
+objectClass: top
+objectClass: lostAndFound
+systemFlags: -2147483648
+nTSecurityDescriptor:: ${LOSTANDFOUND_DESCRIPTOR}
+
+dn: CN=NTDS Quotas,${CONFIGDN}
+objectClass: top
+objectClass: msDS-QuotaContainer
+description: Quota specifications container
+isCriticalSystemObject: TRUE
+msDS-TombstoneQuotaFactor: 100
+systemFlags: -2147483648
+nTSecurityDescriptor:: ${NTDSQUOTAS_DESCRIPTOR}
+
+# Partitions
+
+dn: CN=Partitions,${CONFIGDN}
+objectClass: top
+objectClass: crossRefContainer
+systemFlags: -2147483648
+msDS-Behavior-Version: ${FOREST_FUNCTIONALITY}
+showInAdvancedViewOnly: TRUE
+nTSecurityDescriptor:: ${PARTITIONS_DESCRIPTOR}
+
+# Partitions for DNS are missing here, they are added from provision_dnszones.ldif
+
+dn: CN=Enterprise Configuration,CN=Partitions,${CONFIGDN}
+objectClass: top
+objectClass: crossRef
+dnsRoot: ${DNSDOMAIN}
+nCName: ${CONFIGDN}
+systemFlags: 1
+
+dn: CN=Enterprise Schema,CN=Partitions,${CONFIGDN}
+objectClass: top
+objectClass: crossRef
+dnsRoot: ${DNSDOMAIN}
+nCName: ${SCHEMADN}
+systemFlags: 1
+
+dn: CN=${DOMAIN},CN=Partitions,${CONFIGDN}
+objectClass: top
+objectClass: crossRef
+dnsRoot: ${DNSDOMAIN}
+msDS-Behavior-Version: ${DOMAIN_FUNCTIONALITY}
+nCName: ${DOMAINDN}
+nETBIOSName: ${DOMAIN}
+nTMixedDomain: 0
+systemFlags: 3
+
+# End partitions
+
+dn: CN=Physical Locations,${CONFIGDN}
+objectClass: top
+objectClass: locality
+objectClass: physicalLocation
+l: Physical Locations tree root
+nTSecurityDescriptor:: ${PHYSICALLOCATIONS_DESCRIPTOR}
+
+# Schema located in "ad-schema/*.txt"
+
+# Services
+
+dn: CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: container
+systemFlags: -2147483648
+nTSecurityDescriptor:: ${SERVICES_DESCRIPTOR}
+
+dn: CN=MsmqServices,CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: mSMQEnterpriseSettings
+mSMQVersion: 200
+
+dn: CN=NetServices,CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=Public Key Services,CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=Certificate Templates,CN=Public Key Services,CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=Enrollment Services,CN=Public Key Services,CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=Certification Authorities,CN=Public Key Services,CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=AIA,CN=Public Key Services,CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=CDP,CN=Public Key Services,CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=KRA,CN=Public Key Services,CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=OID,CN=Public Key Services,CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: msPKI-Enterprise-Oid
+
+dn: CN=RRAS,CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=IdentityDictionary,CN=RRAS,CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: rRASAdministrationDictionary
+msRRASVendorAttributeEntry: 311:6:803:RADIUS Accouting
+msRRASVendorAttributeEntry: 311:6:802:RADIUS Authentication
+msRRASVendorAttributeEntry: 311:6:801:NT Domain Authentication
+msRRASVendorAttributeEntry: 311:6:714:Point to point parallel connection
+msRRASVendorAttributeEntry: 311:6:713:Point to point serial connection
+msRRASVendorAttributeEntry: 311:6:712:Generic LAN
+msRRASVendorAttributeEntry: 311:6:711:Generic WAN
+msRRASVendorAttributeEntry: 311:6:710:X.25
+msRRASVendorAttributeEntry: 311:6:709:IrDA
+msRRASVendorAttributeEntry: 311:6:708:Switched 56
+msRRASVendorAttributeEntry: 311:6:707:SONET
+msRRASVendorAttributeEntry: 311:6:706:Modem
+msRRASVendorAttributeEntry: 311:6:705:ISDN
+msRRASVendorAttributeEntry: 311:6:704:ATM
+msRRASVendorAttributeEntry: 311:6:703:Frame Relay
+msRRASVendorAttributeEntry: 311:6:702:Layer 2 Tunneling Protocol
+msRRASVendorAttributeEntry: 311:6:701:Point-to-Point Tunneling Protocol
+msRRASVendorAttributeEntry: 311:6:604:Network Address and Port Translation
+msRRASVendorAttributeEntry: 311:6:603:Demand Dial Router
+msRRASVendorAttributeEntry: 311:6:602:Remote Access Server
+msRRASVendorAttributeEntry: 311:6:601:LAN-to- LAN Router
+msRRASVendorAttributeEntry: 311:6:503:AppleTalk Forwarding Enabled
+msRRASVendorAttributeEntry: 311:6:502:IPX Forwarding Enabled
+msRRASVendorAttributeEntry: 311:6:501:IP Forwarding Enabled
+msRRASVendorAttributeEntry: 311:5:2:IPX SAP
+msRRASVendorAttributeEntry: 311::5:1:IPX RIP
+msRRASVendorAttributeEntry: 311:1:10:IGMP Only
+msRRASVendorAttributeEntry: 311:0:13:OSPF
+msRRASVendorAttributeEntry: 311:0:8:RIP (version 1 or 2)
+
+dn: CN=Windows NT,CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=Directory Service,CN=Windows NT,CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: nTDSService
+msDS-Other-Settings: DisableVLVSupport=0
+msDS-Other-Settings: DynamicObjectMinTTL=900
+msDS-Other-Settings: DynamicObjectDefaultTTL=86400
+sPNMappings: host=alerter,appmgmt,cisvc,clipsrv,browser,dhcp,dnscache,replicator,eventlog,eventsystem,policyagent,oakley,dmserver,dns,mcsvc,fax,msiserver,ias,messenger,netlogon,netman,netdde,netddedsm,nmagent,plugplay,protectedstorage,rasman,rpclocator,rpc,rpcss,remoteaccess,rsvp,samss,scardsvr,scesrv,seclogon,scm,dcom,cifs,spooler,snmp,schedule,tapisrv,trksvr,trkwks,ups,time,wins,www,http,w3svc,iisadmin,msdtc
+tombstoneLifetime: 180
+
+dn: CN=Optional Features,CN=Directory Service,CN=Windows NT,CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: container
+systemFlags: -1946157056
+
+dn: CN=Recycle Bin Feature,CN=Optional Features,CN=Directory Service,CN=Windows NT,CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: msDS-OptionalFeature
+msDS-OptionalFeatureGUID: 766ddcd8-acd0-445e-f3b9-a7f9b6744f2a
+msDS-OptionalFeatureFlags: 1
+msDS-RequiredForestBehaviorVersion: 4
+systemFlags: -1946157056
+
+dn: CN=Query-Policies,CN=Directory Service,CN=Windows NT,CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: container
+
+dn: CN=Default Query Policy,CN=Query-Policies,CN=Directory Service,CN=Windows NT,CN=Services,${CONFIGDN}
+objectClass: top
+objectClass: queryPolicy
+lDAPAdminLimits: MaxValRange=1500
+lDAPAdminLimits: MaxReceiveBuffer=10485760
+lDAPAdminLimits: MaxDatagramRecv=4096
+lDAPAdminLimits: MaxPoolThreads=4
+lDAPAdminLimits: MaxResultSetSize=262144
+lDAPAdminLimits: MaxTempTableSize=10000
+lDAPAdminLimits: MaxQueryDuration=120
+lDAPAdminLimits: MaxPageSize=1000
+lDAPAdminLimits: MaxNotificationPerConn=5
+lDAPAdminLimits: MaxActiveQueries=20
+lDAPAdminLimits: MaxConnIdleTime=900
+lDAPAdminLimits: InitRecvTimeout=120
+lDAPAdminLimits: MaxConnections=5000
+
+# End services
+
+# Sites
+
+dn: CN=Sites,${CONFIGDN}
+objectClass: top
+objectClass: sitesContainer
+systemFlags: -2113929216
+ntSecurityDescriptor:: ${SITES_DESCRIPTOR}
+
+dn: CN=${DEFAULTSITE},CN=Sites,${CONFIGDN}
+objectClass: top
+objectClass: site
+systemFlags: 1107296256
+
+dn: CN=Inter-Site Transports,CN=Sites,${CONFIGDN}
+objectClass: top
+objectClass: interSiteTransportContainer
+systemFlags: -2147483648
+
+dn: CN=IP,CN=Inter-Site Transports,CN=Sites,${CONFIGDN}
+objectClass: top
+objectClass: interSiteTransport
+transportAddressAttribute: dNSHostName
+transportDLLName: ismip.dll
+systemFlags: -2147483648
+
+dn: CN=DEFAULTIPSITELINK,CN=IP,CN=Inter-Site Transports,CN=Sites,${CONFIGDN}
+objectClass: top
+objectClass: siteLink
+cost: 100
+replInterval: 180
+showInAdvancedViewOnly: TRUE
+siteList: CN=${DEFAULTSITE},CN=Sites,${CONFIGDN}
+systemFlags: 1073741824
+
+dn: CN=SMTP,CN=Inter-Site Transports,CN=Sites,${CONFIGDN}
+objectClass: top
+objectClass: interSiteTransport
+transportAddressAttribute: mailAddress
+transportDLLName: ismsmtp.dll
+options: 1
+
+dn: CN=NTDS Site Settings,CN=${DEFAULTSITE},CN=Sites,${CONFIGDN}
+objectClass: top
+objectClass: applicationSiteSettings
+objectClass: nTDSSiteSettings
+schedule:: vAAAAAAAAAABAAAAAAAAABQAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=
+
+dn: CN=Servers,CN=${DEFAULTSITE},CN=Sites,${CONFIGDN}
+objectClass: top
+objectClass: serversContainer
+systemFlags: 33554432
+
+dn: CN=Subnets,CN=Sites,${CONFIGDN}
+objectClass: top
+objectClass: subnetContainer
+systemFlags: -2147483648

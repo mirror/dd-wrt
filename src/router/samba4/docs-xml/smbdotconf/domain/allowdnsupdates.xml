@@ -1,0 +1,19 @@
+<samba:parameter name="allow dns updates"
+                 context="G"
+                 type="enum"
+                 enumlist="enum_dns_update_settings"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>This option determines what kind of updates to the DNS are allowed.
+	</para>
+
+	<para>DNS updates can either be disallowed completely by setting it to
+		<constant>disabled</constant>, enabled over secure connections only by
+		setting it to <constant>secure only</constant> or allowed in all cases
+		by setting it to <constant>nonsecure</constant>.
+	</para>
+</description>
+
+<value type="default">secure only</value>
+<value type="example">disabled</value>
+</samba:parameter>

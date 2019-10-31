@@ -1,0 +1,89 @@
+'\" t
+.\"     Title: vfs_tsmsm
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2019
+.\"    Manual: System Administration tools
+.\"    Source: Samba 4.11.2
+.\"  Language: English
+.\"
+.TH "VFS_TSMSM" "8" "10/24/2019" "Samba 4\&.11\&.2" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+vfs_tsmsm \- VFS module for handling offline files with Tivoli Storage Manager Space Management
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+vfs objects = tsmsm
+.SH "DESCRIPTION"
+.PP
+This VFS module is part of the
+\fBsamba\fR(7)
+suite\&.
+.PP
+The
+tsmsm
+VFS module is an extension for handling offline files with Tivoli Storage Manager Space Management\&.
+.PP
+It tries to avoid calling expensive DMAPI calls with some heuristics based on the fact that number of blocks reported of a file multiplied by 512 will be bigger than \*(Aqonline ratio\*(Aq of actual size for online (non\-migrated) files\&. If heuristic check fails, the module calls DMAPI and asks for a specific attribute which is present for offline (migrated) files\&. If this attribute presents, the file is considered offline\&.
+.PP
+This module is not stackable\&.
+.SH "OPTIONS"
+.PP
+tsmsm:hsm script = [ path to hsm script ]
+.RS 4
+hsm script should point to a shell script which accepts two arguments: operation and filepath\&. the tsmsm module only uses "offline" for operation to set the file under filepath offline\&.
+.RE
+.PP
+tsmsm:online ratio = [ number ]
+.RS 4
+Ratio to check reported size against actual file size\&. The default value is 0\&.5\&.
+.RE
+.PP
+tsmsm:dmapi attribute = [ attribute\-name ]
+.RS 4
+Name of a DMAPI attribute that is present when a file is offline\&. The default is "IBMobj" (which is what GPFS uses)\&.
+.RE
+.PP
+tsmsm:dmapi value = [ value for the DMAPI attribute ]
+.RS 4
+Value that the DMAPI attribute should have for the file to be considered offline\&. The default is empty (no value required)\&.
+.RE
+.SH "EXAMPLES"
+.PP
+A GPFS mount with TSM support can be exported via Samba as follows:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        \fI[gpfs_tsm_share]\fR
+	\m[blue]\fBvfs objects = tsmsm gpfs\fR\m[]
+	\m[blue]\fBpath = /test/gpfs_mount\fR\m[]
+.fi
+.if n \{\
+.RE
+.\}
+.SH "VERSION"
+.PP
+This man page is part of version 4\&.11\&.2 of the Samba suite\&.
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

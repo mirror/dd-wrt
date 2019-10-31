@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="vfs_aio_pthread.8">
+
+<refmeta>
+	<refentrytitle>vfs_aio_pthread</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">System Administration tools</refmiscinfo>
+	<refmiscinfo class="version">&doc.version;</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>vfs_aio_pthread</refname>
+	<refpurpose>implement async open in Samba vfs using a pthread pool</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>vfs objects = aio_pthread</command>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>DESCRIPTION</title>
+
+	<para>This VFS module is part of the
+	<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry> suite.</para>
+
+	<para>The <command>aio_pthread</command> VFS module enables asynchronous
+	opens (for new files) with <smbconfoption name="aio_pthread:aio open">yes</smbconfoption>
+	on platforms which have the pthreads API available,
+	support the openat() syscall and support per thread credentials (modern Linux kernels).
+	</para>
+
+	<para>The module makes use of the global thread pool which uses the
+	<smbconfoption name="aio max threads"/> option.</para>
+
+	<para>This module MUST be listed last in any module stack as
+	the Samba VFS open interface is not thread-safe. This
+	module makes direct openat() system calls and does
+	NOT call the Samba VFS open interfaces.</para>
+
+</refsect1>
+
+
+<refsect1>
+	<title>EXAMPLES</title>
+
+	<para>Straight forward use:</para>
+
+<programlisting>
+        <smbconfsection name="[cooldata]"/>
+	<smbconfoption name="path">/data/ice</smbconfoption>
+	<smbconfoption name="vfs objects">aio_pthread</smbconfoption>
+	<smbconfoption name="aio_pthread:aio open">yes</smbconfoption>
+</programlisting>
+
+</refsect1>
+
+<refsect1>
+	<title>OPTIONS</title>
+
+	<variablelist>
+
+		<varlistentry>
+		<term>aio_pthread:aio open = BOOL</term>
+		<listitem>
+		<para>Try async opens for creating new files.
+		</para>
+		<para>The default is 'no'.</para>
+		</listitem>
+		</varlistentry>
+
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>VERSION</title>
+
+	<para>This man page is part of version &doc.version; of the Samba suite.
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>AUTHOR</title>
+
+	<para>The original Samba software and related utilities
+	were created by Andrew Tridgell. Samba is now developed
+	by the Samba Team as an Open Source project similar
+	to the way the Linux kernel is developed.</para>
+
+</refsect1>
+
+</refentry>

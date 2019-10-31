@@ -1,0 +1,49 @@
+'\" t
+.\"     Title: smbspool_krb5_wrapper
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2019
+.\"    Manual: System Administration tools
+.\"    Source: Samba 4.11.2
+.\"  Language: English
+.\"
+.TH "SMBSPOOL_KRB5_WRAPPE" "8" "10/24/2019" "Samba 4\&.11\&.2" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+smbspool_krb5_wrapper \- This is a CUPS printing backend which calls smbspool
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+smbspool_krb5_wrapper {job} {user} {title} {copies} {options} [filename]
+.SH "DESCRIPTION"
+.PP
+This tool is part of the
+\fBsamba\fR(7)
+suite\&.
+.PP
+smbspool_krb5_wrapper is a tool that can be used to print using Kerberos credentials\&. To get this working smbspool_krb5_wrapper needs to be the smb backend of CUPS\&. It needs to be owned by root and the permissions for the binary need to be 0700\&. Once smbspool_krb5_wrapper switched to the user trying to print it executes smbspool\&. It should not be called by a user\&.
+.SH "SEE ALSO"
+.PP
+\fBsmbspool\fR(8)\&.
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.
+.PP
+The smbspool_krb5_wrapper manpage was written by Andreas Schneider\&.

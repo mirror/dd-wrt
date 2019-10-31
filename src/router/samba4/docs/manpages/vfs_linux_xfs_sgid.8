@@ -1,0 +1,70 @@
+'\" t
+.\"     Title: vfs_syncops
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2019
+.\"    Manual: System Administration tools
+.\"    Source: Samba 4.11.2
+.\"  Language: English
+.\"
+.TH "VFS_SYNCOPS" "8" "10/24/2019" "Samba 4\&.11\&.2" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+vfs_linux_xfs_sgid \- Workaround XFS sgid bit not inherited
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+vfs objects = linux_xfs_sgid
+.SH "DESCRIPTION"
+.PP
+This VFS module is part of the
+\fBsamba\fR(7)
+suite\&.
+.PP
+vfs_linux_xfs_sgid
+is a VFS module to work around an old Linux XFS bug fixed in 3\&.11: the SGID bit is not inherited during mkdir when a default ACL is set (https://web\&.archive\&.org/web/20160320180937/http://oss\&.sgi\&.com/bugzilla/show_bug\&.cgi?id=280
+fixed by
+https://git\&.kernel\&.org/pub/scm/linux/kernel/git/torvalds/linux\&.git/commit/?id=42c49d7f249c2487f36d3314753d5d8ebcee8249)\&. The
+vfs_linux_xfs_sgid
+VFS module will work around this bug by manually setting the SGID bit after a
+mkdir
+if the parent directory had the SGID bit set\&.
+.PP
+This module is stackable\&.
+.SH "EXAMPLES"
+.PP
+Add syncops functionality for [share]:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        \fI[share]\fR
+	\m[blue]\fBvfs objects = linux_xfs_sgid\fR\m[]
+.fi
+.if n \{\
+.RE
+.\}
+.SH "VERSION"
+.PP
+This man page is part of version 4\&.11\&.2 of the Samba suite\&.
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

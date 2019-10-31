@@ -1,0 +1,19 @@
+<samba:parameter name="aio read size"
+                 context="S"
+                 type="bytes"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+  <para>If this integer parameter is set to a non-zero value,
+    Samba will read from files asynchronously when the request size is bigger
+    than this value. Note that it happens only for non-chained and non-chaining
+    reads and when not using write cache.</para>
+  <para>The only reasonable values for this parameter are 0 (no async I/O) and
+    1 (always do async I/O).</para>
+  <related>write cache size</related>
+  <related>aio write size</related>
+</description>
+
+<value type="default">1</value>
+<value type="example">0<comment>Always do reads synchronously
+  </comment></value>
+</samba:parameter>

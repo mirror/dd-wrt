@@ -1,0 +1,25 @@
+<samba:parameter name="read raw"
+                 context="G"
+                 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>This is ignored if <smbconfoption name="async smb echo handler"/> is set,
+    because this feature is incompatible with raw read SMB requests</para>
+
+    <para>If enabled, raw reads allow reads of 65535 bytes in 
+    one packet. This typically provides a major performance benefit for some very, very old clients.
+    </para>
+
+    <para>However, some clients either negotiate the allowable 
+    block size incorrectly or are incapable of supporting larger block 
+	sizes, and for these clients you may need to disable raw reads.</para>
+
+<para>In general this parameter should be viewed as a system tuning 
+	tool and left severely alone.</para>
+</description>
+
+<value type="default">yes</value>
+
+<related>write raw</related>
+<related>async smb echo handler</related>
+</samba:parameter>

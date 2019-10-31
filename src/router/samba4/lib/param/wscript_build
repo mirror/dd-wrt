@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+
+bld.SAMBA_GENERATOR('param_functions.c',
+                    source= '../../script/generate_param.py ../../docs-xml/smbdotconf/parameters.all.xml',
+                    target='param_functions.c',
+                    group='build_source',
+                    rule='${PYTHON} ${SRC[0].abspath(env)} --file ${SRC[1].abspath(env)} --output ${TGT} --mode=FUNCTIONS')
+
+bld.SAMBA_GENERATOR('param_functions.h',
+                    source= '../../script/generate_param.py ../../docs-xml/smbdotconf/parameters.all.xml',
+                    target='param_functions.h',
+                    group='build_source',
+                    rule='${PYTHON} ${SRC[0].abspath(env)} --file ${SRC[1].abspath(env)} --output ${TGT} --mode=LIBPROTO')
+
+bld.SAMBA_GENERATOR('param_local.h',
+                    source= '../../script/generate_param.py ../../docs-xml/smbdotconf/parameters.all.xml',
+                    target='param_local.h',
+                    group='build_source',
+                    rule='${PYTHON} ${SRC[0].abspath(env)} --file ${SRC[1].abspath(env)} --output ${TGT} --mode=PARAMDEFS --scope=LOCAL')
+
+bld.SAMBA_GENERATOR('param_global.h',
+                    source= '../../script/generate_param.py ../../docs-xml/smbdotconf/parameters.all.xml',
+                    target='param_global.h',
+                    group='build_source',
+                    rule='${PYTHON} ${SRC[0].abspath(env)} --file ${SRC[1].abspath(env)} --output ${TGT} --mode=PARAMDEFS --scope=GLOBAL')
+
+bld.SAMBA_GENERATOR('param_table_gen.c',
+                    source='../../script/generate_param.py ../../docs-xml/smbdotconf/parameters.all.xml',
+                    target='param_table_gen.c',
+                    group='build_source',
+                    rule='${PYTHON} ${SRC[0].abspath(env)} --file ${SRC[1].abspath(env)} --output ${TGT} --mode=PARAMTABLE')
+
+bld.SAMBA_LIBRARY('server-role',
+                  source='loadparm_server_role.c',
+                  deps='samba-util samba-debug',
+                  private_library=True)
+
+bld.SAMBA_LIBRARY('samba-hostconfig',
+	source='loadparm.c util.c param_table.c',
+	pc_files='samba-hostconfig.pc',
+	vnum='0.0.1',
+	deps='DYNCONFIG server-role tdb',
+	public_deps='samba-util param_local.h',
+	public_headers='param.h',
+	autoproto='param_proto.h'
+	)
+
+

@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+
+bld.SAMBA_PIDL('PIDL_REG',
+               source='regf.idl',
+               options='--header --tdr-parser')
+
+bld.SAMBA_SUBSYSTEM('TDR_REGF',
+	source='tdr_regf.c',
+	public_deps='TDR'
+	)
+
+
+bld.SAMBA_LIBRARY('registry',
+	source='interface.c util.c samba.c patchfile_dotreg.c patchfile_preg.c patchfile.c regf.c hive.c local.c ldb.c rpc.c',
+	public_deps='dcerpc samba-util TDR_REGF ldb RPC_NDR_WINREG ldbsamba util_reg',
+	private_headers='registry.h',
+	private_library=True
+	)
+
+
+bld.SAMBA_SUBSYSTEM('registry_common',
+	source='tools/common.c',
+	autoproto='tools/common.h',
+	public_deps='registry'
+	)
+
+
+bld.SAMBA_BINARY('regdiff',
+	source='tools/regdiff.c',
+	manpages='man/regdiff.1',
+	deps='samba-hostconfig registry popt POPT_SAMBA POPT_CREDENTIALS'
+	)
+
+
+bld.SAMBA_BINARY('regpatch',
+	source='tools/regpatch.c',
+	manpages='man/regpatch.1',
+	deps='samba-hostconfig registry popt POPT_SAMBA POPT_CREDENTIALS registry_common'
+	)
+
+
+bld.SAMBA_BINARY('regshell',
+	source='tools/regshell.c',
+	manpages='man/regshell.1',
+	deps='samba-hostconfig popt registry POPT_SAMBA POPT_CREDENTIALS SMBREADLINE registry_common'
+	)
+
+
+bld.SAMBA_BINARY('regtree',
+	source='tools/regtree.c',
+	manpages='man/regtree.1',
+	deps='samba-hostconfig popt registry POPT_SAMBA POPT_CREDENTIALS registry_common'
+	)
+
+
+bld.SAMBA_SUBSYSTEM('torture_registry',
+	source='tests/generic.c tests/hive.c tests/diff.c tests/registry.c',
+	autoproto='tests/proto.h',
+	deps='torture registry'
+	)
+
+pytalloc_util = bld.pyembed_libname('pytalloc-util')
+pyparam_util = bld.pyembed_libname('pyparam_util')
+
+bld.SAMBA_PYTHON('py_registry',
+		source='pyregistry.c',
+		public_deps='registry %s %s' % (pytalloc_util, pyparam_util),
+		realname='samba/registry.so'
+		)

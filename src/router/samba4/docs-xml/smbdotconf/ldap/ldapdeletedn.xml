@@ -1,0 +1,13 @@
+<samba:parameter name="ldap delete dn"
+                 context="G"
+                 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para> This parameter specifies whether a delete
+	operation in the ldapsam deletes the complete entry or only the attributes
+	specific to Samba.
+	</para>
+</description>
+
+<value type="default">no</value>
+</samba:parameter>

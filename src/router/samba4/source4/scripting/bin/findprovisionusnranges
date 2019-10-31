@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+#
+# Helper for determining USN ranges created of modified by provision and
+# upgradeprovision.
+# Copyright (C) Matthieu Patou <mat@matws.net> 2009-2011
+#
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+import sys
+import optparse
+sys.path.insert(0, "bin/python")
+
+from samba.credentials import DONT_USE_KERBEROS
+from samba.auth import system_session
+from samba import Ldb
+import ldb
+                
+import samba.getopt as options
+from samba import param
+from samba.upgradehelpers import get_paths, print_provision_ranges, findprovisionrange
+from samba.ndr import ndr_unpack
+from samba.dcerpc import misc
+
+parser = optparse.OptionParser("provision [options]")
+sambaopts = options.SambaOptions(parser)
+parser.add_option_group(sambaopts)
+parser.add_option_group(options.VersionOptions(parser))
+parser.add_option("--storedir", type="string", help="Directory where to store result files")
+credopts = options.CredentialsOptions(parser)
+parser.add_option_group(credopts)
+opts = parser.parse_args()[0]
+lp = sambaopts.get_loadparm()
+smbconf = lp.configfile
+
+creds = credopts.get_credentials(lp)
+creds.set_kerberos_state(DONT_USE_KERBEROS)
+session = system_session()
+paths = get_paths(param, smbconf=smbconf)
+basedn="DC=" + lp.get("realm").replace(".",",DC=")
+samdb = Ldb(paths.samdb, session_info=session, credentials=creds,lp=lp)
+
+res = samdb.search(base="", scope=ldb.SCOPE_BASE, attrs=["dsServiceName"])
+
+invocation = None
+if res and len(res) == 1 and res[0]["dsServiceName"] != None:
+    dn = ldb.Dn(samdb, str(res[0]["dsServiceName"]))
+    res = samdb.search(base=str(dn), scope=ldb.SCOPE_BASE, attrs=["invocationId"],
+                        controls=["search_options:1:2"])
+
+    if res and len(res) == 1 and res[0]["invocationId"]:
+        invocation = str(ndr_unpack(misc.GUID, res[0]["invocationId"][0]))   
+    else:
+        print("Unable to find invocation ID")
+        sys.exit(1)
+else:
+    print("Unable to find attribute dsServiceName in rootDSE")
+    sys.exit(1)
+
+minobj = 5
+(hash_id, nb_obj) = findprovisionrange(samdb, basedn)
+print("Here is a list of changes that modified more than %d objects in 1 minute." % minobj)
+print("Usually changes made by provision and upgradeprovision are those who affect a couple"
+      " of hundred of objects or more")
+print("Total number of objects: %d\n" % nb_obj)
+
+print_provision_ranges(hash_id, minobj, opts.storedir, str(paths.samdb), invocation)

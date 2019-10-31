@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+
+# rather strangely, we need to look for libiconv before checking libc
+# as the external libiconv can use a macro to override iconv_open to libiconv_open
+# and then we may find the wrong iconv.h later due to other packages looking
+# in /usr/local
+# We check for the lib iconv when building a shared lib has some compiler/linker
+# managed to link when specifying -liconv a executable even if there is no
+# libiconv.so or libiconv.a
+
+conf.CHECK_LIB(libs="iconv", shlib=True)
+
+#HP-UX can use libiconv as an add-on package, which has #define iconv_open libiconv_open
+if (conf.CHECK_FUNCS_IN('iconv_open', 'iconv', checklibc=False, headers='iconv.h') or
+    conf.CHECK_FUNCS_IN('libiconv_open', 'iconv', checklibc=False, headers='iconv.h') or 
+    conf.CHECK_FUNCS('iconv_open', headers='iconv.h')):
+    
+    conf.DEFINE('HAVE_NATIVE_ICONV', 1)
+
+conf.CHECK_CODE('''
+                uint8_t inbuf[2] = { 0x30, 0xdf };
+                uint8_t outbuf[4] = { 0 };
+                char *ptr_in = (char *)inbuf;
+                char *ptr_out = (char *)outbuf;
+                size_t size_in = sizeof(inbuf);
+                size_t size_out = sizeof(outbuf);
+                size_t ret;
+                iconv_t cd;
+                cd = iconv_open("UTF-8", "UTF-16LE");
+                if (cd == 0 || cd == (iconv_t)-1) return -1;
+                ret = iconv(cd, &ptr_in, &size_in, &ptr_out, &size_out);
+                if (ret != (size_t)-1 || errno != EILSEQ) return -1;
+                ''',
+                define='HAVE_ICONV_ERRNO_ILLEGAL_MULTIBYTE',
+                execute=True,
+                msg='Checking errno of iconv for illegal multibyte sequence',
+                lib='iconv',
+                headers='errno.h iconv.h')

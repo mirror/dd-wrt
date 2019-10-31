@@ -1,0 +1,193 @@
+The events/ directory contains event scripts used by CTDB.  Event
+scripts are triggered on certain events, such as startup, monitoring
+or public IP allocation.  Scripts may be specific to services,
+networking or internal CTDB operations.
+
+Scripts are divided into subdirectories for different CTDB components.
+Right now the only component is "legacy".
+
+All event scripts start with the prefix 'NN.' where N is a digit.  The
+event scripts are run in sequence based on NN.  Thus 10.interface will
+be run before 60.nfs.  It is recommended to keep each NN unique.
+However, scripts with the same NN prefix will be executed in
+alphanumeric sort order.
+
+As a special case, any eventscript that ends with a '~' character will be
+ignored since this is a common postfix that some editors will append to
+older versions of a file.  Similarly, any eventscript with multiple '.'s
+will be ignored as package managers can create copies with additional
+suffix starting with '.' (e.g. .rpmnew, .dpkg-dist).
+
+Only executable event scripts are run by CTDB.  Any event script that
+does not have execute permission is ignored.
+
+The eventscripts are called with varying number of arguments.  The
+first argument is the event name and the rest of the arguments depend
+on the event name.
+
+Event scripts must return 0 for success and non-zero for failure.
+
+Output of event scripts is logged.  On failure the output of the
+failing event script is included in the output of "ctdb scriptstatus".
+
+The following events are supported (with arguments shown):
+
+init
+
+	This event is triggered once when CTDB is starting up.  This
+	event is used to do some basic cleanup and initialisation.
+
+	During the "init" event CTDB is not listening on its Unix
+	domain socket, so the "ctdb" CLI will not work.
+
+	Failure of this event will cause CTDB to terminate.
+
+	Example: 00.ctdb creates $CTDB_SCRIPT_VARDIR
+
+setup
+
+	This event is triggered once, after the "init" event has
+	completed.
+
+	For this and any subsequent events the CTDB Unix domain socket
+	is available, so the "ctdb" CLI will work.
+
+	Failure of this event will cause CTDB to terminate.
+
+	Example: 00.ctdb processes tunables defined in ctdb.tunables.
+
+startup
+
+	This event is triggered after the "setup" event has completed
+	and CTDB has finished its initial database recovery.
+
+	This event starts all services that are managed by CTDB.  Each
+	service that is managed by CTDB should implement this event
+	and use it to (re)start the service.
+
+	If the "startup" event fails then CTDB will retry it until it
+	succeeds.  There is no limit on the number of retries.
+
+	Example: 50.samba uses this event to start the Samba daemon.
+
+shutdown
+
+	This event is triggered when CTDB is shutting down.
+
+	This event shuts down all services that are managed by CTDB.
+	Each service that is managed by CTDB should implement this
+	event and use it to stop the service.
+
+	Example: 50.samba uses this event to shut down the Samba
+	daemon.
+
+monitor
+
+	This event is run periodically.  The interval between
+	successive "monitor" events is configured using the
+	MonitorInterval tunable, which defaults to 15 seconds.
+
+	This event is triggered by CTDB to continuously monitor that
+	all managed services are healthy.  If all event scripts
+	complete then the monitor event successfully then the node is
+	marked HEALTHY.  If any event script fails then no subsequent
+	scripts will be run for that event and the node is marked
+	UNHEALTHY.
+
+	Each service that is managed by CTDB should implement this
+	event and use it to monitor the service.
+
+	Example: 10.interface checks that each configured interface
+	for public IP addresses has a physical link established.
+
+startrecovery
+
+	This event is triggered every time a database recovery process
+	is started.
+
+	This is rarely used.
+
+recovered
+
+	This event is triggered every time a database recovery process
+	is completed.
+
+	This is rarely used.
+
+takeip <interface> <ip-address> <netmask-bits>
+
+	This event is triggered for each public IP address taken by a
+	node during IP address (re)assignment.  Multiple "takeip"
+	events can be run in parallel if multiple IP addresses are
+	being assigned.
+
+	Example: In 10.interface the "ip" command (from the Linux
+	iproute2 package) is used to add the specified public IP
+	address to the specified interface.  The "ip" command can
+	safely be run concurrently.  However, the "iptables" command
+	cannot be run concurrently so a wrapper is used to serialise
+	runs using exclusive locking.
+
+	If substantial work is required to reconfigure a service when
+	a public IP address is taken over it can be better to defer
+	service reconfiguration to the "ipreallocated" event, after
+	all IP addresses have been assigned.
+
+	Example: 60.nfs uses ctdb_service_set_reconfigure() to flag
+	that public IP addresses have changed so that service
+	reconfiguration will occur in the "ipreallocated" event.
+
+releaseip <interface> <ip-address> <netmask-bits>
+
+	This event is triggered for each public IP address released by
+	a node during IP address (re)assignment.  Multiple "releaseip"
+	events can be run in parallel if multiple IP addresses are
+	being unassigned.
+
+	In all other regards, this event is analogous to the "takeip"
+	event above.
+
+updateip <old-interface> <new-interface> <ip-address> <netmask-bits>
+
+	This event is triggered for each public IP address moved
+	between interfaces on a node during IP address (re)assignment.
+	Multiple "updateip" events can be run in parallel if multiple
+	IP addresses are being moved.
+
+        This event is only used if multiple interfaces are capable of
+        hosting an IP address, as specified in the public addresses
+        configuration file.
+
+	This event is similar to the "takeip" event above.
+
+ipreallocated
+
+	This event is triggered on all nodes as the last step of
+	public IP address (re)assignment.  It is unconditionally
+	triggered after any "releaseip", "takeip" and "updateip"
+	events, even though these events may not run on some nodes if
+	there are no relevant changes.  That is, the "ipreallocated"
+	event is triggered unconditionally, even on nodes where public
+	IP addresses assignements have not changed.
+
+	This event is used to reconfigure services.
+
+	Since "ipreallocated" is always run, this allows
+	reconfiguration to depend on the states of other nodes rather
+	that just IP addresses.
+
+	Example: 11.natgw recalculates the NAT gateway master and
+	updates the relevant network configuration on each node if the
+	NAT gateway master has changed.
+
+Additional notes for "takeip", "releaseip", "updateip",
+"ipreallocated":
+
+* Failure of any of these events causes IP allocation to be retried.
+
+* An event script can use ctdb_service_set_reconfigure() in "takeip",
+  "releaseip" or "updateip" events to flag that its service needs to
+  be reconfigured.  The "ipreallocated" event can then use
+  ctdb_service_needs_reconfigure() to test if there were public IPs
+  changes to determine what type of reconfiguration (if any) is
+  needed.

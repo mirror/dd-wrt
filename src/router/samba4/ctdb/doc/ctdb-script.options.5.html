@@ -1,0 +1,491 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>ctdb-script.options</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry"><a name="ctdb-script.options.5"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>ctdb-script.options &#8212; CTDB scripts configuration files</p></div><div class="refsect1"><a name="idm10"></a><h2>DESCRIPTION</h2><p>
+      Each CTDB script has 2 possible locations for its configuration options:
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+	  <code class="filename">/usr/local/etc/ctdb/script.options</code>
+	</span></dt><dd><p>
+	    This is a catch-all global file for general purpose
+	    scripts and for options that are used in multiple event
+	    scripts.
+	  </p></dd><dt><span class="term">
+	  <em class="parameter"><code>SCRIPT</code></em>.options
+	</span></dt><dd><p>
+	    That is, options for
+	    <code class="filename"><em class="parameter"><code>SCRIPT</code></em></code> are
+	    placed in a file alongside the script, with a ".script"
+	    suffix added.  This style is usually recommended for event
+	    scripts.
+	  </p><p>
+	    Options in this script-specific file override those in
+	    the global file.
+	  </p></dd></dl></div><p>
+      These files should include simple shell-style variable
+      assignments and shell-style comments.
+    </p></div><div class="refsect1"><a name="idm28"></a><h2>NETWORK CONFIGURATION</h2><div class="refsect2"><a name="idm30"></a><h3>10.interface</h3><p>
+	This event script handles monitoring of interfaces using by
+	public IP addresses.
+      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+	    CTDB_PARTIALLY_ONLINE_INTERFACES=yes|no
+	  </span></dt><dd><p>
+	      Whether one or more offline interfaces should cause a
+	      monitor event to fail if there are other interfaces that
+	      are up.  If this is "yes" and a node has some interfaces
+	      that are down then <span class="command"><strong>ctdb status</strong></span> will
+	      display the node as "PARTIALLYONLINE".
+	    </p><p>
+	      Note that CTDB_PARTIALLY_ONLINE_INTERFACES=yes is not
+	      generally compatible with NAT gateway or LVS.  NAT
+	      gateway relies on the interface configured by
+	      CTDB_NATGW_PUBLIC_IFACE to be up and LVS replies on
+	      CTDB_LVS_PUBLIC_IFACE to be up.  CTDB does not check if
+	      these options are set in an incompatible way so care is
+	      needed to understand the interaction.
+	    </p><p>
+	      Default is "no".
+	    </p></dd></dl></div></div><div class="refsect2"><a name="idm41"></a><h3>11.natgw</h3><p>
+	Provides CTDB's NAT gateway functionality.
+      </p><p>
+	NAT gateway is used to configure fallback routing for nodes
+	when they do not host any public IP addresses.  For example,
+	it allows unhealthy nodes to reliably communicate with
+	external infrastructure.  One node in a NAT gateway group will
+	be designated as the NAT gateway master node and other (slave)
+	nodes will be configured with fallback routes via the NAT
+	gateway master node.  For more information, see the
+	<em class="citetitle">NAT GATEWAY</em> section in
+	<span class="citerefentry"><span class="refentrytitle">ctdb</span>(7)</span>.
+      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">CTDB_NATGW_DEFAULT_GATEWAY=<em class="parameter"><code>IPADDR</code></em></span></dt><dd><p>
+	      IPADDR is an alternate network gateway to use on the NAT
+	      gateway master node.  If set, a fallback default route
+	      is added via this network gateway.
+	    </p><p>
+	      No default.  Setting this variable is optional - if not
+	      set that no route is created on the NAT gateway master
+	      node.
+	    </p></dd><dt><span class="term">CTDB_NATGW_NODES=<em class="parameter"><code>FILENAME</code></em></span></dt><dd><p>
+	      FILENAME contains the list of nodes that belong to the
+	      same NAT gateway group.
+	    </p><p>
+	      File format:
+	      </p><pre class="screen">
+<em class="parameter"><code>IPADDR</code></em> [<span class="optional">slave-only</span>]
+	      </pre><p>
+	    </p><p>
+	      IPADDR is the private IP address of each node in the NAT
+	      gateway group.
+	    </p><p>
+	      If "slave-only" is specified then the corresponding node
+	      can not be the NAT gateway master node.  In this case
+	      <code class="varname">CTDB_NATGW_PUBLIC_IFACE</code> and
+	      <code class="varname">CTDB_NATGW_PUBLIC_IP</code> are optional and
+	      unused.
+	    </p><p>
+	      No default, usually
+	      <code class="filename">/usr/local/etc/ctdb/natgw_nodes</code> when enabled.
+	    </p></dd><dt><span class="term">CTDB_NATGW_PRIVATE_NETWORK=<em class="parameter"><code>IPADDR/MASK</code></em></span></dt><dd><p>
+	      IPADDR/MASK is the private sub-network that is
+	      internally routed via the NAT gateway master node.  This
+	      is usually the private network that is used for node
+	      addresses.
+	    </p><p>
+	      No default.
+	    </p></dd><dt><span class="term">CTDB_NATGW_PUBLIC_IFACE=<em class="parameter"><code>IFACE</code></em></span></dt><dd><p>
+	      IFACE is the network interface on which the
+	      CTDB_NATGW_PUBLIC_IP will be configured.
+	    </p><p>
+	      No default.
+	    </p></dd><dt><span class="term">CTDB_NATGW_PUBLIC_IP=<em class="parameter"><code>IPADDR/MASK</code></em></span></dt><dd><p>
+	      IPADDR/MASK indicates the IP address that is used for
+	      outgoing traffic (originating from
+	      CTDB_NATGW_PRIVATE_NETWORK) on the NAT gateway master
+	      node.  This <span class="emphasis"><em>must not</em></span> be a
+	      configured public IP address.
+	    </p><p>
+	      No default.
+	    </p></dd><dt><span class="term">CTDB_NATGW_STATIC_ROUTES=<em class="parameter"><code>IPADDR/MASK[@GATEWAY]</code></em> ...</span></dt><dd><p>
+	      Each IPADDR/MASK identifies a network or host to which
+	      NATGW should create a fallback route, instead of
+	      creating a single default route.  This can be used when
+	      there is already a default route, via an interface that
+	      can not reach required infrastructure, that overrides
+	      the NAT gateway default route.
+	    </p><p>
+	      If GATEWAY is specified then the corresponding route on
+	      the NATGW master node will be via GATEWAY.  Such routes
+	      are created even if
+	      <code class="varname">CTDB_NATGW_DEFAULT_GATEWAY</code> is not
+	      specified.  If GATEWAY is not specified for some
+	      networks then routes are only created on the NATGW
+	      master node for those networks if
+	      <code class="varname">CTDB_NATGW_DEFAULT_GATEWAY</code> is
+	      specified.
+	    </p><p>
+	      This should be used with care to avoid causing traffic
+	      to unnecessarily double-hop through the NAT gateway
+	      master, even when a node is hosting public IP addresses.
+	      Each specified network or host should probably have a
+	      corresponding automatically created link route or static
+	      route to avoid this.
+	    </p><p>
+	      No default.
+	    </p></dd></dl></div><div class="refsect3"><a name="idm100"></a><h4>Example</h4><pre class="screen">
+CTDB_NATGW_NODES=/usr/local/etc/ctdb/natgw_nodes
+CTDB_NATGW_PRIVATE_NETWORK=192.168.1.0/24
+CTDB_NATGW_DEFAULT_GATEWAY=10.0.0.1
+CTDB_NATGW_PUBLIC_IP=10.0.0.227/24
+CTDB_NATGW_PUBLIC_IFACE=eth0
+	</pre><p>
+	  A variation that ensures that infrastructure (ADS, DNS, ...)
+	  directly attached to the public network (10.0.0.0/24) is
+	  always reachable would look like this:
+	</p><pre class="screen">
+CTDB_NATGW_NODES=/usr/local/etc/ctdb/natgw_nodes
+CTDB_NATGW_PRIVATE_NETWORK=192.168.1.0/24
+CTDB_NATGW_PUBLIC_IP=10.0.0.227/24
+CTDB_NATGW_PUBLIC_IFACE=eth0
+CTDB_NATGW_STATIC_ROUTES=10.0.0.0/24
+	</pre><p>
+	  Note that <code class="varname">CTDB_NATGW_DEFAULT_GATEWAY</code> is
+	  not specified.
+	</p></div></div><div class="refsect2"><a name="idm107"></a><h3>13.per_ip_routing</h3><p>
+	Provides CTDB's policy routing functionality.
+      </p><p>
+	A node running CTDB may be a component of a complex network
+	topology.  In particular, public addresses may be spread
+	across several different networks (or VLANs) and it may not be
+	possible to route packets from these public addresses via the
+	system's default route.  Therefore, CTDB has support for
+	policy routing via the <code class="filename">13.per_ip_routing</code>
+	eventscript.  This allows routing to be specified for packets
+	sourced from each public address.  The routes are added and
+	removed as CTDB moves public addresses between nodes.
+      </p><p>
+	For more information, see the <em class="citetitle">POLICY
+	ROUTING</em> section in
+	<span class="citerefentry"><span class="refentrytitle">ctdb</span>(7)</span>.
+      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">CTDB_PER_IP_ROUTING_CONF=<em class="parameter"><code>FILENAME</code></em></span></dt><dd><p>
+	      FILENAME contains elements for constructing the desired
+	      routes for each source address.
+	    </p><p>
+	      The special FILENAME value
+	      <code class="constant">__auto_link_local__</code> indicates that no
+	      configuration file is provided and that CTDB should
+	      generate reasonable link-local routes for each public IP
+	      address.
+	    </p><p>
+	      File format:
+	      </p><pre class="screen">
+		<em class="parameter"><code>IPADDR</code></em> <em class="parameter"><code>DEST-IPADDR/MASK</code></em> [<span class="optional"><em class="parameter"><code>GATEWAY-IPADDR</code></em></span>]
+	      </pre><p>
+	    </p><p>
+	      No default, usually
+	      <code class="filename">/usr/local/etc/ctdb/policy_routing</code>
+	      when enabled.
+	    </p></dd><dt><span class="term">
+	    CTDB_PER_IP_ROUTING_RULE_PREF=<em class="parameter"><code>NUM</code></em>
+	  </span></dt><dd><p>
+	    NUM sets the priority (or preference) for the routing
+	    rules that are added by CTDB.
+	  </p><p>
+	    This should be (strictly) greater than 0 and (strictly)
+	    less than 32766.  A priority of 100 is recommended, unless
+	    this conflicts with a priority already in use on the
+	    system.  See
+	    <span class="citerefentry"><span class="refentrytitle">ip</span>(8)</span>, for more details.
+	  </p></dd><dt><span class="term">
+	    CTDB_PER_IP_ROUTING_TABLE_ID_LOW=<em class="parameter"><code>LOW-NUM</code></em>,
+	    CTDB_PER_IP_ROUTING_TABLE_ID_HIGH=<em class="parameter"><code>HIGH-NUM</code></em>
+	  </span></dt><dd><p>
+	      CTDB determines a unique routing table number to use for
+	      the routing related to each public address.  LOW-NUM and
+	      HIGH-NUM indicate the minimum and maximum routing table
+	      numbers that are used.
+	    </p><p>
+	      <span class="citerefentry"><span class="refentrytitle">ip</span>(8)</span> uses some
+	      reserved routing table numbers below 255.  Therefore,
+	      CTDB_PER_IP_ROUTING_TABLE_ID_LOW should be (strictly)
+	      greater than 255.
+	    </p><p>
+	      CTDB uses the standard file
+	      <code class="filename">/etc/iproute2/rt_tables</code> to maintain
+	      a mapping between the routing table numbers and labels.
+	      The label for a public address
+	      <em class="replaceable"><code>ADDR</code></em> will look like
+	      ctdb.<em class="replaceable"><code>addr</code></em>.  This means that
+	      the associated rules and routes are easy to read (and
+	      manipulate).
+	    </p><p>
+	      No default, usually 1000 and 9000.
+	    </p></dd></dl></div><div class="refsect3"><a name="idm157"></a><h4>Example</h4><pre class="screen">
+CTDB_PER_IP_ROUTING_CONF=/usr/local/etc/ctdb/policy_routing
+CTDB_PER_IP_ROUTING_RULE_PREF=100
+CTDB_PER_IP_ROUTING_TABLE_ID_LOW=1000
+CTDB_PER_IP_ROUTING_TABLE_ID_HIGH=9000
+	</pre></div></div><div class="refsect2"><a name="idm160"></a><h3>91.lvs</h3><p>
+	Provides CTDB's LVS functionality.
+      </p><p>
+	For a general description see the <em class="citetitle">LVS</em>
+	section in <span class="citerefentry"><span class="refentrytitle">ctdb</span>(7)</span>.
+      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+	    CTDB_LVS_NODES=<em class="parameter"><code>FILENAME</code></em>
+	  </span></dt><dd><p>
+	      FILENAME contains the list of nodes that belong to the
+	      same LVS group.
+	    </p><p>
+	      File format:
+	      </p><pre class="screen">
+<em class="parameter"><code>IPADDR</code></em> [<span class="optional">slave-only</span>]
+	      </pre><p>
+	    </p><p>
+	      IPADDR is the private IP address of each node in the LVS
+	      group.
+	    </p><p>
+	      If "slave-only" is specified then the corresponding node
+	      can not be the LVS master node.  In this case
+	      <code class="varname">CTDB_LVS_PUBLIC_IFACE</code> and
+	      <code class="varname">CTDB_LVS_PUBLIC_IP</code> are optional and
+	      unused.
+	    </p><p>
+	      No default, usually
+	      <code class="filename">/usr/local/etc/ctdb/lvs_nodes</code> when enabled.
+	    </p></dd><dt><span class="term">
+	    CTDB_LVS_PUBLIC_IFACE=<em class="parameter"><code>INTERFACE</code></em>
+	  </span></dt><dd><p>
+	      INTERFACE is the network interface that clients will use
+	      to connection to <code class="varname">CTDB_LVS_PUBLIC_IP</code>.
+	      This is optional for slave-only nodes.
+	      No default.
+	    </p></dd><dt><span class="term">
+	    CTDB_LVS_PUBLIC_IP=<em class="parameter"><code>IPADDR</code></em>
+	  </span></dt><dd><p>
+	      CTDB_LVS_PUBLIC_IP is the LVS public address.  No
+	      default.
+	  </p></dd></dl></div></div></div><div class="refsect1"><a name="idm195"></a><h2>SERVICE CONFIGURATION</h2><p>
+      CTDB can be configured to manage and/or monitor various NAS (and
+      other) services via its eventscripts.
+    </p><p>
+      In the simplest case CTDB will manage a service.  This means the
+      service will be started and stopped along with CTDB, CTDB will
+      monitor the service and CTDB will do any required
+      reconfiguration of the service when public IP addresses are
+      failed over.
+    </p><div class="refsect2"><a name="idm199"></a><h3>20.multipathd</h3><p>
+	Provides CTDB's Linux multipathd service management.
+      </p><p>
+	It can monitor multipath devices to ensure that active paths
+	are available.
+      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+	    CTDB_MONITOR_MPDEVICES=<em class="parameter"><code>MP-DEVICE-LIST</code></em>
+	  </span></dt><dd><p>
+	      MP-DEVICE-LIST is a list of multipath devices for CTDB to monitor?
+	    </p><p>
+	      No default.
+	    </p></dd></dl></div></div><div class="refsect2"><a name="idm210"></a><h3>31.clamd</h3><p>
+	This event script provide CTDB's ClamAV anti-virus service
+	management.
+      </p><p>
+	This eventscript is not enabled by default.  Use <span class="command"><strong>ctdb
+	enablescript</strong></span> to enable it.
+      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+	    CTDB_CLAMD_SOCKET=<em class="parameter"><code>FILENAME</code></em>
+	  </span></dt><dd><p>
+	      FILENAME is the socket to monitor ClamAV.
+	    </p><p>
+	      No default.
+	    </p></dd></dl></div></div><div class="refsect2"><a name="idm222"></a><h3>49.winbind</h3><p>
+	Provides CTDB's Samba winbind service management.
+      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+	    CTDB_SERVICE_WINBIND=<em class="parameter"><code>SERVICE</code></em>
+	  </span></dt><dd><p>
+	      Distribution specific SERVICE for managing winbindd.
+	    </p><p>
+	      Default is "winbind".
+	    </p></dd></dl></div></div><div class="refsect2"><a name="idm232"></a><h3>50.samba</h3><p>
+	Provides the core of CTDB's Samba file service management.
+      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+	    CTDB_SAMBA_CHECK_PORTS=<em class="parameter"><code>PORT-LIST</code></em>
+	  </span></dt><dd><p>
+	      When monitoring Samba, check TCP ports in
+	      space-separated PORT-LIST.
+	    </p><p>
+	      Default is to monitor ports that Samba is configured to listen on.
+	    </p></dd><dt><span class="term">
+	    CTDB_SAMBA_SKIP_SHARE_CHECK=yes|no
+	  </span></dt><dd><p>
+	      As part of monitoring, should CTDB skip the check for
+	      the existence of each directory configured as share in
+	      Samba.  This may be desirable if there is a large number
+	      of shares.
+	    </p><p>
+	      Default is no.
+	    </p></dd><dt><span class="term">
+	    CTDB_SERVICE_NMB=<em class="parameter"><code>SERVICE</code></em>
+	  </span></dt><dd><p>
+	      Distribution specific SERVICE for managing nmbd.
+	    </p><p>
+	      Default is distribution-dependant.
+	    </p></dd><dt><span class="term">
+	    CTDB_SERVICE_SMB=<em class="parameter"><code>SERVICE</code></em>
+	  </span></dt><dd><p>
+	      Distribution specific SERVICE for managing smbd.
+	    </p><p>
+	      Default is distribution-dependant.
+	    </p></dd></dl></div></div><div class="refsect2"><a name="idm259"></a><h3>60.nfs</h3><p>
+	This event script (along with 06.nfs) provides CTDB's NFS
+	service management.
+      </p><p>
+	This includes parameters for the kernel NFS server.
+	Alternative NFS subsystems (such as <a class="ulink" href="https://github.com/nfs-ganesha/nfs-ganesha/wiki" target="_top">NFS-Ganesha</a>)
+	can be integrated using <code class="varname">CTDB_NFS_CALLOUT</code>.
+      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+	    CTDB_NFS_CALLOUT=<em class="parameter"><code>COMMAND</code></em>
+	  </span></dt><dd><p>
+	      COMMAND specifies the path to a callout to handle
+	      interactions with the configured NFS system, including
+	      startup, shutdown, monitoring.
+	    </p><p>
+	      Default is the included
+	      <span class="command"><strong>nfs-linux-kernel-callout</strong></span>.
+	    </p></dd><dt><span class="term">
+	    CTDB_NFS_CHECKS_DIR=<em class="parameter"><code>DIRECTORY</code></em>
+	  </span></dt><dd><p>
+	      Specifies the path to a DIRECTORY containing files that
+	      describe how to monitor the responsiveness of NFS RPC
+	      services.  See the README file for this directory for an
+	      explanation of the contents of these "check" files.
+	    </p><p>
+	      CTDB_NFS_CHECKS_DIR can be used to point to different
+	      sets of checks for different NFS servers.
+	    </p><p>
+	      One way of using this is to have it point to, say,
+	      <code class="filename">/usr/local/etc/ctdb/nfs-checks-enabled.d</code>
+	      and populate it with symbolic links to the desired check
+	      files.  This avoids duplication and is upgrade-safe.
+	    </p><p>
+	      Default is
+	      <code class="filename">/usr/local/etc/ctdb/nfs-checks.d</code>,
+	      which contains NFS RPC checks suitable for Linux kernel
+	      NFS.
+	    </p></dd><dt><span class="term">
+	    CTDB_NFS_SKIP_SHARE_CHECK=yes|no
+	  </span></dt><dd><p>
+	      As part of monitoring, should CTDB skip the check for
+	      the existence of each directory exported via NFS.  This
+	      may be desirable if there is a large number of exports.
+	    </p><p>
+	      Default is no.
+	    </p></dd><dt><span class="term">
+	    CTDB_RPCINFO_LOCALHOST=<em class="parameter"><code>IPADDR</code></em>|<em class="parameter"><code>HOSTNAME</code></em>
+	  </span></dt><dd><p>
+	      IPADDR or HOSTNAME indicates the address that
+	      <span class="command"><strong>rpcinfo</strong></span> should connect to when doing
+	      <span class="command"><strong>rpcinfo</strong></span> check on IPv4 RPC service during
+	      monitoring.  Optimally this would be "localhost".
+	      However, this can add some performance overheads.
+	    </p><p>
+	      Default is "127.0.0.1".
+	    </p></dd><dt><span class="term">
+	    CTDB_RPCINFO_LOCALHOST6=<em class="parameter"><code>IPADDR</code></em>|<em class="parameter"><code>HOSTNAME</code></em>
+	  </span></dt><dd><p>
+	      IPADDR or HOSTNAME indicates the address that
+	      <span class="command"><strong>rpcinfo</strong></span> should connect to when doing
+	      <span class="command"><strong>rpcinfo</strong></span> check on IPv6 RPC service
+	      during monitoring.  Optimally this would be "localhost6"
+	      (or similar).  However, this can add some performance
+	      overheads.
+	    </p><p>
+	      Default is "::1".
+	    </p></dd><dt><span class="term">
+	    CTDB_NFS_STATE_FS_TYPE=<em class="parameter"><code>TYPE</code></em>
+	  </span></dt><dd><p>
+	      The type of filesystem used for a clustered NFS' shared
+	      state. No default.
+	    </p></dd><dt><span class="term">
+	    CTDB_NFS_STATE_MNT=<em class="parameter"><code>DIR</code></em>
+	  </span></dt><dd><p>
+	      The directory where a clustered NFS' shared state will be
+	      located. No default.
+	    </p></dd></dl></div></div><div class="refsect2"><a name="idm316"></a><h3>70.iscsi</h3><p>
+	Provides CTDB's Linux iSCSI tgtd service management.
+      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+	    CTDB_START_ISCSI_SCRIPTS=<em class="parameter"><code>DIRECTORY</code></em>
+	  </span></dt><dd><p>
+	      DIRECTORY on shared storage containing scripts to start
+	      tgtd for each public IP address.
+	    </p><p>
+	      No default.
+	    </p></dd></dl></div></div></div><div class="refsect1"><a name="idm326"></a><h2>
+      DATABASE SETUP
+      </h2><p>
+	CTDB checks the consistency of databases during startup.
+      </p><div class="refsect2"><a name="idm329"></a><h3>00.ctdb</h3><div class="variablelist"><dl class="variablelist"><dt><span class="term">CTDB_MAX_CORRUPT_DB_BACKUPS=<em class="parameter"><code>NUM</code></em></span></dt><dd><p>
+		NUM is the maximum number of volatile TDB database
+		backups to be kept (for each database) when a corrupt
+		database is found during startup.  Volatile TDBs are
+		zeroed during startup so backups are needed to debug
+		any corruption that occurs before a restart.
+	      </p><p>
+		Default is 10.
+	      </p></dd></dl></div></div></div><div class="refsect1"><a name="idm338"></a><h2>SYSTEM RESOURCE MONITORING</h2><div class="refsect2"><a name="idm340"></a><h3>
+	05.system
+      </h3><p>
+	Provides CTDB's filesystem and memory usage monitoring.
+      </p><p>
+	CTDB can experience seemingly random (performance and other)
+	issues if system resources become too constrained.  Options in
+	this section can be enabled to allow certain system resources
+	to be checked.  They allows warnings to be logged and nodes to
+	be marked unhealthy when system resource usage reaches the
+	configured thresholds.
+      </p><p>
+	Some checks are enabled by default.  It is recommended that
+	these checks remain enabled or are augmented by extra checks.
+	There is no supported way of completely disabling the checks.
+      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+	    CTDB_MONITOR_FILESYSTEM_USAGE=<em class="parameter"><code>FS-LIMIT-LIST</code></em>
+	  </span></dt><dd><p>
+	      FS-LIMIT-LIST is a space-separated list of
+	      <em class="parameter"><code>FILESYSTEM</code></em>:<em class="parameter"><code>WARN_LIMIT</code></em>[<span class="optional">:<em class="parameter"><code>UNHEALTHY_LIMIT</code></em></span>]
+	      triples indicating that warnings should be logged if the
+	      space used on FILESYSTEM reaches WARN_LIMIT%.  If usage
+	      reaches UNHEALTHY_LIMIT then the node should be flagged
+	      unhealthy.  Either WARN_LIMIT or UNHEALTHY_LIMIT may be
+	      left blank, meaning that check will be omitted.
+	    </p><p>
+	      Default is to warn for each filesystem containing a
+	      database directory
+	      (<code class="literal">volatile database directory</code>,
+	      <code class="literal">persistent database directory</code>,
+	      <code class="literal">state database directory</code>)
+	      with a threshold of 90%.
+	    </p></dd><dt><span class="term">
+	    CTDB_MONITOR_MEMORY_USAGE=<em class="parameter"><code>MEM-LIMITS</code></em>
+	  </span></dt><dd><p>
+	      MEM-LIMITS takes the form
+	      <em class="parameter"><code>WARN_LIMIT</code></em>[<span class="optional">:<em class="parameter"><code>UNHEALTHY_LIMIT</code></em></span>]
+	      indicating that warnings should be logged if memory
+	      usage reaches WARN_LIMIT%.  If usage reaches
+	      UNHEALTHY_LIMIT then the node should be flagged
+	      unhealthy.  Either WARN_LIMIT or UNHEALTHY_LIMIT may be
+	      left blank, meaning that check will be omitted.
+	    </p><p>
+	      Default is 80, so warnings will be logged when memory
+	      usage reaches 80%.
+	    </p></dd></dl></div></div></div><div class="refsect1"><a name="idm368"></a><h2>EVENT SCRIPT DEBUGGING</h2><div class="refsect2"><a name="idm370"></a><h3>
+	debug-hung-script.sh
+      </h3><div class="variablelist"><dl class="variablelist"><dt><span class="term">CTDB_DEBUG_HUNG_SCRIPT_STACKPAT=<em class="parameter"><code>REGEXP</code></em></span></dt><dd><p>
+	      REGEXP specifies interesting processes for which stack
+	      traces should be logged when debugging hung eventscripts
+	      and those processes are matched in pstree output.
+	      REGEXP is an extended regexp so choices are separated by
+	      pipes ('|').  However, REGEXP should not contain
+	      parentheses.  See also the <span class="citerefentry"><span class="refentrytitle">ctdb.conf</span>(5)</span>
+	      [event] "debug script" option.
+	    </p><p>
+	      Default is "exportfs|rpcinfo".
+	    </p></dd></dl></div></div></div><div class="refsect1"><a name="idm382"></a><h2>FILES</h2><table border="0" summary="Simple list" class="simplelist"><tr><td><code class="filename">/usr/local/etc/ctdb/script.options</code></td></tr></table></div><div class="refsect1"><a name="idm387"></a><h2>SEE ALSO</h2><p>
+      <span class="citerefentry"><span class="refentrytitle">ctdbd</span>(1)</span>,
+
+      <span class="citerefentry"><span class="refentrytitle">ctdb</span>(7)</span>,
+
+      <a class="ulink" href="http://ctdb.samba.org/" target="_top">http://ctdb.samba.org/</a>
+    </p></div></div></body></html>

@@ -1,0 +1,66 @@
+'\" t
+.\"     Title: samba_downgrade_db
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2019
+.\"    Manual: User Commands
+.\"    Source: Samba 4.11.2
+.\"  Language: English
+.\"
+.TH "SAMBA_DOWNGRADE_DB" "8" "10/24/2019" "Samba 4\&.11\&.2" "User Commands"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+samba_downgrade_db \- Samba tool for downgrading AD databases
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+samba_downgrade_db [\-H] [\-s]
+.SH "DESCRIPTION"
+.PP
+This tool is part of the
+\fBsamba\fR(8)
+suite\&.
+.PP
+The format of the Samba Active Directory (AD) database changed in version 4\&.8 and 4\&.11\&. When downgrading a Samba AD Domain Controller (DC) to a release that is older than either of these versions (e\&.g\&. 4\&.11 to 4\&.10), the AD database must be manually downgraded
+\fIbefore\fR
+the Samba packages can be safely downgraded\&.
+.PP
+This tool downgrades a Samba sam\&.ldb database from the format used in version 4\&.11\&.2 to that of version 4\&.7\&. The v4\&.7 database format can safely be read by any version of Samba\&. If necessary, later versions of Samba will repack and reconfigure a v4\&.7\-format database when the samba executable is first started\&.
+.PP
+Note that all Samba services must be stopped on the DC before running this tool\&. Once the tool has run, do not restart samba or modify the database before the Samba software package has been downgraded\&.
+.SH "OPTIONS"
+.PP
+\-H [sam\&.ldb file]
+.RS 4
+Link directly to a sam\&.ldb file instead of using path in system smb\&.conf
+.RE
+.PP
+\-s [smb\&.conf file]
+.RS 4
+Link directly to smb\&.conf file instead of system default (usually in /usr/local/samba/etc/smb\&.conf)
+.RE
+.SH "VERSION"
+.PP
+This man page is complete for version 4\&.11\&.2 of the Samba suite\&.
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.
+.PP
+The samba_downgrade_db tool was developed by the Samba team at Catalyst IT Ltd\&.

@@ -1,0 +1,98 @@
+'\" t
+.\"     Title: vfs_streams_depot
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2019
+.\"    Manual: System Administration tools
+.\"    Source: Samba 4.11.2
+.\"  Language: English
+.\"
+.TH "VFS_STREAMS_DEPOT" "8" "10/24/2019" "Samba 4\&.11\&.2" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+vfs_streams_depot \- EXPERIMENTAL module to store alternate data streams in a central directory\&.
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+vfs objects = streams_depot
+.SH "DESCRIPTION"
+.PP
+This
+\fIEXPERIMENTAL\fR
+VFS module is part of the
+\fBsamba\fR(7)
+suite\&.
+.PP
+The
+vfs_streams_depot
+enables storing of NTFS alternate data streams in the file system\&. As a normal posix file system does not support the concept of multiple data streams per file, the streams_depot module stores the data in files in a separate directory\&.
+.SH "OPTIONS"
+.PP
+streams_depot:directory = PATH
+.RS 4
+Path of the directory where the alternate data streams should be stored\&. Defaults to the sharepath/\&.streams\&.
+.RE
+.PP
+streams_depot:delete_lost = [ yes | no ]
+.RS 4
+In the case of an already existing data streams directory for a newly created file the streams directory will be renamed to "lost\-%lu", random()\&. With this option lost stream directories will be removed instead of renamed\&.
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+no(default)
+\- rename lost streams to "lost\-%lu", random()\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+yes
+\- remove lost streams\&.
+.RE
+.sp
+.RE
+.RE
+.SH "EXAMPLES"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        \fI[share]\fR
+	\m[blue]\fBvfs objects = streams_depot\fR\m[]
+.fi
+.if n \{\
+.RE
+.\}
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+
+bld.SAMBA_PIDL_LIST('PIDL',
+                    '''atsvc.idl drsuapi.idl epmapper.idl initshutdown.idl
+                       eventlog.idl
+                       ntsvcs.idl remact.idl unixinfo.idl
+                       browser.idl dfs.idl dssetup.idl frsapi.idl
+                       rot.idl spoolss.idl w32time.idl
+                       dnsserver.idl echo.idl lsa.idl
+                       oxidresolver.idl samr.idl srvsvc.idl winreg.idl
+                       mgmt.idl netlogon.idl
+                       svcctl.idl wkssvc.idl eventlog6.idl backupkey.idl
+                       fsrvp.idl witness.idl clusapi.idl
+                       mdssvc.idl
+                       winspool.idl''',
+                    options='--header --ndr-parser --samba3-ndr-server --server --client --python',
+                    output_dir='../gen_ndr')
+
+bld.SAMBA_PIDL_LIST('PIDL',
+                    'wmi.idl dcom.idl',
+                    options='--header --ndr-parser --server --client --dcom-proxy --com-header',
+                    output_dir='../gen_ndr')
+
+# DCE/RPC protocols which Samba does not implement a client or server
+# for
+
+bld.SAMBA_PIDL_LIST('PIDL',
+                    '''
+                    audiosrv.idl
+                    dsbackup.idl
+                    efs.idl
+                    frstrans.idl
+                    frsrpc.idl
+                    keysvc.idl
+                    msgsvc.idl
+                    orpc.idl
+                    policyagent.idl
+                    scerpc.idl
+                    trkwks.idl
+                    wzcsvc.idl
+                    ''',
+                    options='--header --ndr-parser',
+                    output_dir='../gen_ndr')
+
+# Non-DCE/RPC protocols encoded in IDL for Samba or helper IDLs for
+# DCE/RPC protocols (eg defining constands or structures but not
+# functions)
+bld.SAMBA_PIDL_LIST('PIDL',
+                    '''
+                    bkupblobs.idl
+                    cab.idl
+                    dbgidl.idl
+                    file_id.idl
+                    fscc.idl
+                    fsrvp_state.idl
+                    ioctl.idl
+                    named_pipe_auth.idl
+                    negoex.idl
+                    nfs4acl.idl
+                    notify.idl
+                    ntprinting.idl
+                    printcap.idl
+                    quota.idl
+                    rap.idl
+                    schannel.idl
+                    smb2_lease_struct.idl
+                    ''',
+                    options='--header --ndr-parser',
+                    output_dir='../gen_ndr')
+
+# Non-DCE/RPC protocls with Python bindings
+# (for structures or constants)
+
+bld.SAMBA_PIDL_LIST('PIDL',
+		    '''
+                    auth.idl
+                    dcerpc.idl
+                    dfsblobs.idl
+                    dns.idl
+                    dnsp.idl
+                    drsblobs.idl
+                    idmap.idl
+                    krb5pac.idl
+                    messaging.idl
+                    misc.idl
+                    nbt.idl
+                    ntlmssp.idl
+                    preg.idl
+                    security.idl
+                    server_id.idl
+                    smb_acl.idl
+                    windows_event_ids.idl
+                    xattr.idl
+                    ''',
+                    options='--header --ndr-parser --python',
+                    output_dir='../gen_ndr')
+
+bld.SAMBA_PIDL_LIST('PIDL',
+                    'winbind.idl',
+                    options='--header --ndr-parser --samba3-ndr-server --client --python',
+                    output_dir='../gen_ndr')
+

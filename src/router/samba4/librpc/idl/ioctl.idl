@@ -1,0 +1,230 @@
+#include "idl_types.h"
+[
+	pointer_default(unique)
+]
+interface copychunk
+{
+	typedef [public] struct {
+		uint8 resume_key[24];
+		uint32 context_len;
+		/* <56> Windows sends 4 bytes of zero for the context field. */
+		uint8 context[4];
+	} req_resume_key_rsp;
+
+	const uint32 COPYCHUNK_MAX_CHUNKS = 256; /* 2k8r2 & win8 = 256 */
+	const uint32 COPYCHUNK_MAX_CHUNK_LEN = 1048576; /* 2k8r2 & win8 = 1048576 */
+	const uint32 COPYCHUNK_MAX_TOTAL_LEN = 16777216; /* 2k8r2 & win8 = 16777216 */
+
+	typedef struct {
+		hyper source_off;
+		hyper target_off;
+		uint32 length;
+		uint32 reserved;
+	} srv_copychunk;
+
+	typedef [public] struct {
+		uint8 source_key[24];
+		uint32 chunk_count;
+		uint32 reserved;
+		srv_copychunk chunks[chunk_count];
+	} srv_copychunk_copy;
+
+	typedef [public] struct {
+		uint32 chunks_written;
+		uint32 chunk_bytes_written;
+		uint32 total_bytes_written;
+	} srv_copychunk_rsp;
+
+	typedef [public] struct {
+		uint32 version;
+		uint32 size;
+		uint32 maximum_token_lifetime;
+		uint32 default_token_lifetime;
+		hyper maximum_xfer_size;
+		hyper optimal_xfer_count;
+		uint32 maximum_data_descriptors;
+		uint32 maximum_xfer_length_per_descriptor;
+		uint32 optimal_xfer_length_per_descriptor;
+		uint16 optimal_xfer_length_granularity;
+		uint8 reserved[2];
+	} device_copy_offload_descriptor;
+
+	const uint32 STORAGE_OFFLOAD_TOKEN_TYPE_ZERO_DATA = 0xffff0001;
+
+	typedef [public] struct {
+		uint32 token_type;
+		uint8 reserved[2];
+		uint16 token_id_len;
+		[size_is(token_id_len)] uint8 token[];
+	} storage_offload_token;
+
+	typedef [public] struct {
+		uint32 size;
+		uint32 flags;
+		uint32 token_time_to_live;
+		uint32 reserved;
+		hyper file_offset;
+		hyper length;
+	} fsctl_offload_read_input;
+
+	typedef [public,bitmap32bit] bitmap {
+		OFFLOAD_READ_FLAG_FILE_TOO_SMALL = 0x01,
+		OFFLOAD_READ_FLAG_ALL_ZERO_BEYOND_RANGE = 0x02,
+		OFFLOAD_READ_FLAG_CANNOT_OFFLOAD_BEYOND_RANGE = 0x04
+	} offload_flags;
+
+	typedef [public] struct {
+		uint32 size;
+		offload_flags flags;
+		hyper xfer_length;
+		storage_offload_token token;
+	} fsctl_offload_read_output;
+
+	typedef [public] struct {
+		uint32 size;
+		offload_flags flags;
+		hyper file_offset;
+		hyper copy_length;
+		hyper xfer_offset;
+		storage_offload_token token;
+	} fsctl_offload_write_input;
+
+	typedef [public] struct {
+		uint32 size;
+		uint32 flags;
+		hyper length_written;
+	} fsctl_offload_write_output;
+
+	typedef [public] struct {
+		uint8 source_fid[16];
+		hyper source_off;
+		hyper target_off;
+		hyper byte_count;
+	} fsctl_dup_extents_to_file;
+}
+
+interface compression
+{
+	const uint16 COMPRESSION_FORMAT_NONE = 0x0000;
+	const uint16 COMPRESSION_FORMAT_DEFAULT = 0x0001;
+	const uint16 COMPRESSION_FORMAT_LZNT1 = 0x0002;
+
+	typedef [public] struct {
+		uint16 format;
+	} compression_state;
+}
+
+interface netinterface
+{
+	typedef [bitmap32bit] bitmap {
+		FSCTL_NET_IFACE_NONE_CAPABLE = 0x00000000,
+		FSCTL_NET_IFACE_RSS_CAPABLE = 0x00000001,
+		FSCTL_NET_IFACE_RDMA_CAPABLE = 0x00000002
+	} fsctl_net_iface_capability;
+
+	typedef [enum16bit] enum {
+		FSCTL_NET_IFACE_AF_INET = 0x0002,
+		FSCTL_NET_IFACE_AF_INET6 = 0x0017
+	} fsctl_sockaddr_af;
+
+	typedef [flag(NDR_NOALIGN)] struct {
+		[value(0)] uint16 port;
+		[flag(NDR_BIG_ENDIAN)] ipv4address ipv4;
+		[value(0)] hyper reserved;
+	} fsctl_sockaddr_in;
+
+	typedef [flag(NDR_NOALIGN)] struct {
+		[value(0)] uint16 port;
+		[value(0)] uint32 flowinfo;
+		[flag(NDR_BIG_ENDIAN)] ipv6address ipv6;
+		[value(0)] uint32 scopeid;
+	} fsctl_sockaddr_in6;
+
+	typedef [nodiscriminant,flag(NDR_NOALIGN)] union {
+		[case (FSCTL_NET_IFACE_AF_INET)] fsctl_sockaddr_in saddr_in;
+		[case (FSCTL_NET_IFACE_AF_INET6)] fsctl_sockaddr_in6 saddr_in6;
+	} fsctl_sockaddr_union;
+
+	typedef [flag(NDR_NOALIGN)] struct {
+		fsctl_sockaddr_af family;
+		[subcontext(0),subcontext_size(126),switch_is(family)] fsctl_sockaddr_union saddr;
+	} fsctl_sockaddr_storage;
+
+	typedef [public,relative_base,noprint] struct {
+		[relative] fsctl_net_iface_info *next;
+		uint32 ifindex;
+		fsctl_net_iface_capability capability;
+		[value(0)] uint32 reserved;
+		hyper linkspeed;
+		fsctl_sockaddr_storage sockaddr;
+	} fsctl_net_iface_info;
+}
+
+interface sparse
+{
+	/* MS-FSCC 2.3.33 FSCTL_QUERY_ALLOCATED_RANGES Request */
+	typedef [public] struct {
+		hyper file_off;
+		hyper len;
+	} file_alloced_range_buf;
+
+	typedef [public] struct {
+		file_alloced_range_buf buf;
+	} fsctl_query_alloced_ranges_req;
+
+	/*
+	 * 2.3.34 FSCTL_QUERY_ALLOCATED_RANGES Reply
+	 * ...
+	 * The number of FILE_ALLOCATED_RANGE_BUFFER elements returned is
+	 * computed by dividing the size of the returned output buffer (from
+	 * either SMB or SMB2, the lower-layer protocol that carries the FSCTL)
+	 * by the size of the FILE_ALLOCATED_RANGE_BUFFER element.
+	 *
+	 * This logic can't (currently) be represented in pidl, so just use a
+	 * blob. Perhaps in future we'll support:
+	 *	[flag(NDR_REMAINING)] file_alloced_range_buf array[];
+	 */
+	typedef [public] struct {
+		[flag(NDR_REMAINING)] DATA_BLOB far_buf_array;
+	} fsctl_query_alloced_ranges_rsp;
+
+	/* 2.3.65 FSCTL_SET_ZERO_DATA Request */
+	typedef [public] struct {
+		hyper file_off;
+		hyper beyond_final_zero;
+	} file_zero_data_info;
+
+	typedef [public] struct {
+		file_zero_data_info info;
+	} fsctl_set_zero_data_req;
+}
+
+interface resiliency
+{
+	/* 2.2.31.3 NETWORK_RESILIENCY_REQUEST */
+	typedef [public] struct {
+		uint32 timeout;
+		uint32 reserved;
+	} network_resiliency_request;
+}
+
+interface trim
+{
+	/* MS-FSCC 2.3.73.1 FILE_LEVEL_TRIM_RANGE */
+	typedef [public] struct {
+		hyper off;
+		hyper len;
+	} file_level_trim_range;
+
+	/* MS-FSCC 2.3.73 FSCTL_FILE_LEVEL_TRIM Request */
+	typedef [public] struct {
+		uint32 key;
+		uint32 num_ranges;
+		file_level_trim_range ranges[num_ranges];
+	} fsctl_file_level_trim_req;
+
+	/* MS-FSCC 2.3.74 FSCTL_FILE_LEVEL_TRIM Reply */
+	typedef [public] struct {
+		uint32 num_ranges_processed;
+	} fsctl_file_level_trim_rsp;
+}

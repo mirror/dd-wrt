@@ -1,0 +1,20 @@
+#!/bin/sh
+
+if gcc -dM -E - </dev/null | grep -Eq '__(x86_64|powerpc64)__' ; then
+	_libdir=/usr/lib64
+else
+	_libdir=/usr/lib
+fi
+
+CFLAGS="-Wall -g -D_GNU_SOURCE" ./configure \
+	--builtin-libraries=replace,popt \
+	--bundled-libraries=!talloc,!tevent,!tdb \
+	--minimum-library-version=talloc:2.1.14,tdb:1.3.17,tevent:0.9.37 \
+	--prefix=/usr \
+	--includedir=/usr/include/ctdb \
+	--libdir=${_libdir} \
+	--libexecdir=/usr/libexec \
+	--sysconfdir=/etc \
+	--mandir=/usr/man \
+	--localstatedir=/var \
+	$*

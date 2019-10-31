@@ -1,0 +1,104 @@
+'\" t
+.\"     Title: cifsdd
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2019
+.\"    Manual: System Administration tools
+.\"    Source: Samba 4.11.2
+.\"  Language: English
+.\"
+.TH "CIFSDD" "8" "10/24/2019" "Samba 4\&.11\&.2" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+cifsdd \- convert and copy a file over SMB
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+cifsdd [OPERAND]\&.\&.\&.
+	
+.HP \w'\ 'u
+cifsdd OPTION
+.SH "DESCRIPTION"
+.PP
+This tool is part of the
+\fBsamba\fR(7)
+suite\&.
+.PP
+Copy a file, converting and formatting according to the operands\&.
+.PP
+bs=BYTES
+.RS 4
+read and write up to BYTES bytes at a time (default: 4096)
+.RE
+.PP
+ibs=BYTES
+.RS 4
+read up to BYTES bytes at a time (default: 4096)
+.RE
+.PP
+obs=BYTES
+.RS 4
+write BYTES bytes at a time (default: 4096)
+.RE
+.PP
+if=FILE
+.RS 4
+read from FILE instead of stdin
+.RE
+.PP
+of=FILE
+.RS 4
+write to FILE instead of stdout
+.RE
+.PP
+count=N
+.RS 4
+copy only N input blocks
+.RE
+.PP
+seek=N
+.RS 4
+skip N obs\-sized blocks at start of output
+.RE
+.PP
+skip=N
+.RS 4
+skip N ibs\-sized blocks at start of input
+.RE
+.PP
+direct
+.RS 4
+use direct I/O for data
+.RE
+.PP
+sync
+.RS 4
+use synchronous writes
+.RE
+.PP
+oplock
+.RS 4
+take oplocks on the input and output files
+.RE
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.
+.PP
+The cifsdd manpage was written by Andreas Schneider\&.

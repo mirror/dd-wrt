@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+
+bld.SAMBA3_MODULE('pdb_tdbsam',
+                 subsystem='pdb',
+                 source='pdb_tdb.c',
+                 deps='samba-util dbwrap tdb-wrap3',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('pdb_tdbsam'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('pdb_tdbsam'))
+
+bld.SAMBA3_MODULE('pdb_ldapsam',
+                 subsystem='pdb',
+                 deps='smbldap smbldaphelper',
+                 source='pdb_ldap.c pdb_nds.c',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('pdb_ldapsam'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('pdb_ldapsam') and bld.CONFIG_SET('HAVE_LDAP'))
+
+bld.SAMBA3_MODULE('pdb_smbpasswd',
+                 subsystem='pdb',
+                 source='pdb_smbpasswd.c',
+                 deps='samba-util',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('pdb_smbpasswd'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('pdb_smbpasswd'))
+
+bld.SAMBA3_MODULE('pdb_samba_dsdb',
+                  subsystem='pdb',
+                  source='pdb_samba_dsdb.c',
+                  init_function='',
+                  deps='IDMAP samdb',
+                  internal_module=bld.SAMBA3_IS_STATIC_MODULE('pdb_samba_dsdb') and bld.AD_DC_BUILD_IS_ENABLED(),
+                  enabled=bld.SAMBA3_IS_ENABLED_MODULE('pdb_samba_dsdb') and bld.AD_DC_BUILD_IS_ENABLED())
+
+pyrpc_util = bld.pyembed_libname('pyrpc_util')
+pytalloc_util = bld.pyembed_libname('pytalloc-util')
+bld.SAMBA3_PYTHON('pypassdb',
+                  source='py_passdb.c',
+                  deps='pdb',
+                  public_deps=' '.join(['samba-util', 'tdb', 'talloc', pyrpc_util, pytalloc_util]),
+                  realname='samba/samba3/passdb.so'
+                  )

@@ -1,0 +1,176 @@
+#!/usr/bin/env python
+from samba_utils import save_file
+import os
+manpages='''
+         manpages/cifsdd.8
+         manpages/dbwrap_tool.1
+         manpages/eventlogadm.8
+         manpages/findsmb.1
+         manpages/idmap_ad.8
+         manpages/idmap_autorid.8
+         manpages/idmap_hash.8
+         manpages/idmap_ldap.8
+         manpages/idmap_nss.8
+         manpages/idmap_rfc2307.8
+         manpages/idmap_rid.8
+         manpages/idmap_script.8
+         manpages/idmap_tdb.8
+         manpages/idmap_tdb2.8
+         manpages/libsmbclient.7
+         manpages/lmhosts.5
+         manpages/log2pcap.1
+         manpages/mvxattr.1
+         manpages/net.8
+         manpages/nmbd.8
+         manpages/nmblookup.1
+         manpages/ntlm_auth.1
+         manpages/pdbedit.8
+         manpages/profiles.1
+         manpages/rpcclient.1
+         manpages/samba-regedit.8
+         manpages/samba-tool.8
+         manpages/samba.7
+         manpages/samba.8
+         manpages/samba_downgrade_db.8
+         manpages/sharesec.1
+         manpages/smbcacls.1
+         manpages/smbclient.1
+         manpages/smbcontrol.1
+         manpages/smbcquotas.1
+         manpages/smbd.8
+         manpages/smbget.1
+         manpages/smbgetrc.5
+         manpages/smbpasswd.5
+         manpages/smbpasswd.8
+         manpages/smbspool_krb5_wrapper.8
+         manpages/smbspool.8
+         manpages/smbstatus.1
+         manpages/smbtar.1
+         manpages/smbtree.1
+         manpages/testparm.1
+         manpages/traffic_learner.7
+         manpages/traffic_replay.7
+         manpages/vfstest.1
+         manpages/wbinfo.1
+         manpages/winbindd.8
+         '''
+
+pam_winbind_manpages = '''
+                       manpages/pam_winbind.8
+                       manpages/pam_winbind.conf.5
+                       '''
+
+krb5_locator_manpages = 'manpages/winbind_krb5_locator.8'
+krb5_localauth_manpages = 'manpages/winbind_krb5_localauth.8'
+
+vfs_module_manpages = ['vfs_acl_tdb',
+                       'vfs_acl_xattr',
+                       'vfs_aio_fork',
+                       'vfs_aio_pthread',
+                       'vfs_audit',
+                       'vfs_btrfs',
+                       'vfs_cacheprime',
+                       'vfs_cap',
+                       'vfs_catia',
+                       'vfs_ceph',
+                       'vfs_ceph_snapshots',
+                       'vfs_commit',
+                       'vfs_crossrename',
+                       'vfs_default_quota',
+                       'vfs_dirsort',
+                       'vfs_extd_audit',
+                       'vfs_fake_perms',
+                       'vfs_fileid',
+                       'vfs_fruit',
+                       'vfs_full_audit',
+                       'vfs_glusterfs',
+                       'vfs_glusterfs_fuse',
+                       'vfs_gpfs',
+                       'vfs_linux_xfs_sgid',
+                       'vfs_media_harmony',
+                       'vfs_netatalk',
+                       'vfs_nfs4acl_xattr',
+                       'vfs_offline',
+                       'vfs_prealloc',
+                       'vfs_preopen',
+                       'vfs_readahead',
+                       'vfs_readonly',
+                       'vfs_recycle',
+                       'vfs_shadow_copy',
+                       'vfs_shadow_copy2',
+                       'vfs_shell_snap',
+                       'vfs_snapper',
+                       'vfs_streams_depot',
+                       'vfs_streams_xattr',
+                       'vfs_syncops',
+                       'vfs_time_audit',
+                       'vfs_tsmsm',
+                       'vfs_unityed_media',
+                       'vfs_virusfilter',
+                       'vfs_worm',
+                       'vfs_xattr_tdb',
+                       'vfs_zfsacl' ]
+
+def smbdotconf_generate_parameter_list(task):
+    parameter_all = task.outputs[0].bldpath(task.env)
+    articles = task.inputs
+
+    entities = bld.pathconfig_entities()
+    t = "<!DOCTYPE section [\n"
+
+    for entity in entities:
+        t += "%s\n" % entity
+
+    # We need this if we build with Heimdal
+    mit_kdc_path = '"/usr/sbin/krb5kdc"'
+
+    # The MIT krb5kdc path is set if we build with MIT Kerberos
+    if bld.CONFIG_SET('MIT_KDC_PATH'):
+        mit_kdc_path = bld.CONFIG_GET('MIT_KDC_PATH')
+
+    t += "<!ENTITY pathconfig.MITKDCPATH   %s>\n" % mit_kdc_path
+
+    t += "]>\n"
+    t += "<section>\n"
+    for article in articles:
+        t += article.read()
+
+    t += "</section>\n"
+    save_file(parameter_all, t , create_dir=True)
+    return 0
+
+# Since nothing really forces sorting in glob, we have to sort by file name
+# POSIX file systems aren't required to return sorted content but we want
+# smb.conf parameters to be sorted alphabetically
+parameter_all = 'smbdotconf/parameters.all.xml'
+sources = bld.path.ant_glob("smbdotconf/**/*.xml", flat=False, excl=parameter_all)
+articles = " ".join(sorted([x.path_from(bld.path) for x in sources],
+                           key=lambda m: m.split(os.sep)[-1]))
+
+bld.SAMBA_GENERATOR(parameter_all,
+                    source=articles,
+                    target=parameter_all,
+                    rule=smbdotconf_generate_parameter_list,
+                    dep_vars=bld.dynconfig_varnames())
+
+def SMBDOTCONF_MANPAGE(bld, target):
+    ''' assemble and build smb.conf.5 manual page'''
+    bld.SAMBAMANPAGES(target, parameter_all)
+
+if ('XSLTPROC_MANPAGES' in bld.env and bld.env['XSLTPROC_MANPAGES']):
+
+    SMBDOTCONF_MANPAGE(bld, 'manpages/smb.conf.5')
+    bld.SAMBAMANPAGES(manpages)
+
+    if bld.CONFIG_SET('WITH_PAM_MODULES') and bld.CONFIG_SET('HAVE_PAM_START'):
+        bld.SAMBAMANPAGES(pam_winbind_manpages)
+
+    if bld.CONFIG_SET('HAVE_KRB5_LOCATE_PLUGIN_H'):
+        bld.SAMBAMANPAGES(krb5_locator_manpages)
+
+    if bld.CONFIG_SET('HAVE_KRB5_LOCALAUTH_PLUGIN_H'):
+        bld.SAMBAMANPAGES(krb5_localauth_manpages)
+
+    for manpage in vfs_module_manpages:
+        if bld.SAMBA3_IS_ENABLED_MODULE(manpage):
+            bld.SAMBAMANPAGES('manpages/%s.8' % manpage)
