@@ -1,0 +1,74 @@
+#!/bin/sh
+
+# Copyright (C) 2014 Red Hat, Inc.
+#
+# Author: Nikos Mavrogiannopoulos
+#
+# This file is part of GnuTLS.
+#
+# GnuTLS is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at
+# your option) any later version.
+#
+# GnuTLS is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GnuTLS; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+unset RETCODE
+if ! test -z "${VALGRIND}"; then
+	VALGRIND="${LIBTOOL:-libtool} --mode=execute ${VALGRIND}"
+fi
+PROG=./cipher-override${EXEEXT}
+
+# we are explicitly unsetting this variable, because we want
+# the "production" checks to be triggered, not the ones in the
+# test suite.
+
+unset GNUTLS_TEST_SUITE_RUN
+GNUTLS_NO_EXPLICIT_INIT=1 ${VALGRIND} ${PROG}
+ret=$?
+if test $ret != 0; then
+	echo "overridden cipher tests failed"
+	exit $ret
+fi
+
+${VALGRIND} ${PROG}
+ret=$?
+if test $ret != 0; then
+	echo "overridden cipher tests 2 failed"
+	exit $ret
+fi
+
+${VALGRIND} ${PROG}
+ret=$?
+if test $ret != 0; then
+	echo "overridden cipher tests 3 failed"
+	exit $ret
+fi
+
+
+if test "$WINDOWS" = 1;then
+	exit 77
+else
+	GNUTLS_NO_EXPLICIT_INIT=1 ${VALGRIND} ./mac-override
+	ret=$?
+	if test $ret != 0; then
+		echo "overridden mac tests failed"
+		exit $ret
+	fi
+
+	${VALGRIND} ./mac-override
+	ret=$?
+	if test $ret != 0; then
+		echo "overridden mac tests 2 failed"
+		exit $ret
+	fi
+fi
+
+exit 0

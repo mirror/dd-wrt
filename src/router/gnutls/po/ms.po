@@ -1,0 +1,1835 @@
+# gnutls Bahasa Melayu (Malay) (ms)
+# Copyright (C) 2006, 2007, 2008, 2015, 2019 Free Software Foundation, Inc.
+# This file is distributed under the same license as the gnutls package.
+# Sharuzzaman Ahmat Raslan <sharuzzaman@gmail.com>, 2006, 2007, 2008, 2015, 2019.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: gnutls 3.6.8\n"
+"Report-Msgid-Bugs-To: bug-gnutls@gnu.org\n"
+"POT-Creation-Date: 2019-09-29 12:27+0200\n"
+"PO-Revision-Date: 2019-06-30 18:28+0800\n"
+"Last-Translator: Sharuzzaman Ahmat Raslan <sharuzzaman@gmail.com>\n"
+"Language-Team: Malay <translation-team-ms@lists.sourceforge.net>\n"
+"Language: ms\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"X-Generator: Poedit 2.2.3\n"
+
+#: lib/alert.c:39
+msgid "Close notify"
+msgstr "Pemberitahuan tutup"
+
+#: lib/alert.c:40
+msgid "Unexpected message"
+msgstr "Mesej tidak dijangka"
+
+#: lib/alert.c:41
+msgid "Bad record MAC"
+msgstr "Rekod MAC buruk"
+
+#: lib/alert.c:42
+msgid "Decryption failed"
+msgstr "Nyahenkripsi gagal"
+
+#: lib/alert.c:43
+msgid "Record overflow"
+msgstr "Rekod melimpah"
+
+#: lib/alert.c:45
+msgid "Decompression failed"
+msgstr "Nyahmampatan gagal"
+
+#: lib/alert.c:46
+msgid "Handshake failed"
+msgstr "Jabat tangan gagal"
+
+#: lib/alert.c:47
+msgid "Certificate is bad"
+msgstr "Sijil buruk"
+
+#: lib/alert.c:49
+msgid "Certificate is not supported"
+msgstr "Sijil tidak disokong"
+
+#: lib/alert.c:51
+msgid "Certificate was revoked"
+msgstr "Sijil telah dibatalkan"
+
+#: lib/alert.c:53
+msgid "Certificate is expired"
+msgstr "Sijil tamat tempoh"
+
+#: lib/alert.c:55
+msgid "Unknown certificate"
+msgstr "Sijil tidak diketahui"
+
+#: lib/alert.c:56
+msgid "Illegal parameter"
+msgstr "Parameter tidak sah"
+
+#: lib/alert.c:57
+msgid "CA is unknown"
+msgstr "CA tidak diketahui"
+
+#: lib/alert.c:58
+msgid "Access was denied"
+msgstr "Akses telah dihalang"
+
+#: lib/alert.c:59
+msgid "Decode error"
+msgstr "Ralat decode"
+
+#: lib/alert.c:60
+msgid "Decrypt error"
+msgstr "Ralat decrypt"
+
+#: lib/alert.c:61
+msgid "Export restriction"
+msgstr "Halangan eksport"
+
+#: lib/alert.c:63
+msgid "Error in protocol version"
+msgstr "Ralat dalam versi protokol"
+
+#: lib/alert.c:65
+msgid "Insufficient security"
+msgstr "Sekuriti tidak mencukupi"
+
+#: lib/alert.c:66
+msgid "User canceled"
+msgstr "Pengguna membatalkan"
+
+#: lib/alert.c:68
+#, fuzzy
+msgid "No certificate (SSL 3.0)"
+msgstr "Salaman TLS/SSL gagal!"
+
+#: lib/alert.c:69
+msgid "Internal error"
+msgstr "Ralat dalaman"
+
+#: lib/alert.c:71
+msgid "Inappropriate fallback"
+msgstr ""
+
+#: lib/alert.c:73
+msgid "No renegotiation is allowed"
+msgstr "Tiada perbincangan semula dibenarkan"
+
+#: lib/alert.c:75
+msgid "Could not retrieve the specified certificate"
+msgstr "Tidak dapat mendapatkan sijil dinyatakan"
+
+#: lib/alert.c:77
+msgid "An unsupported extension was sent"
+msgstr "Sambungan tidak disokong telah dihantar"
+
+#: lib/alert.c:79
+msgid "The server name sent was not recognized"
+msgstr "Nama pelayan dihantar tidak dikenali"
+
+#: lib/alert.c:81
+msgid "The SRP/PSK username is missing or not known"
+msgstr "Nama pengguna SRP/PSK tiada atau tidak diketahui"
+
+#: lib/alert.c:83
+#, fuzzy
+msgid "An extension was expected but was not seen"
+msgstr "menjangka `ya' atau `tidak', tetapi menjumpai %s"
+
+#: lib/alert.c:86
+msgid "No supported application protocol could be negotiated"
+msgstr ""
+
+#: lib/alert.c:88
+#, fuzzy
+msgid "Certificate is required"
+msgstr "Aksara bukan-kosong diperlukan"
+
+#: lib/errors.c:43
+msgid "Could not negotiate a supported cipher suite."
+msgstr "Tidak dapat merunding sut cipher yang disokong."
+
+#: lib/errors.c:45
+msgid "No or insufficient priorities were set."
+msgstr ""
+
+#: lib/errors.c:47
+msgid "The cipher type is unsupported."
+msgstr "Jenis cipher tidak disokong."
+
+#: lib/errors.c:49
+msgid "The certificate and the given key do not match."
+msgstr "Sijil dan kekunci diberi tidak sepadan."
+
+#: lib/errors.c:52
+msgid "Could not negotiate a supported compression method."
+msgstr "Tidak dapat merunding kaedah mampatan disokong."
+
+#: lib/errors.c:54
+msgid "An unknown public key algorithm was encountered."
+msgstr "Algoritma kekunci awam tidak diketahui dijumpai."
+
+#: lib/errors.c:57
+msgid "An algorithm that is not enabled was negotiated."
+msgstr "Algoritma yang tidak dihidupkan telah dirundingkan."
+
+#: lib/errors.c:60
+#, fuzzy
+msgid "A packet with illegal or unsupported version was received."
+msgstr "Paket rekod dengan versi tidak sah telah diterima."
+
+#: lib/errors.c:63
+#, fuzzy
+msgid ""
+"The Diffie-Hellman prime sent by the server is not acceptable (not long "
+"enough)."
+msgstr ""
+"Perdana Diffie Hellman yang dihantar oleh pelayan tidak boleh diterima "
+"(tidak cukup panjang)."
+
+#: lib/errors.c:66
+#, fuzzy
+msgid "Error decoding the received TLS packet."
+msgstr "Paket TLS tidak dijangka telah diterima."
+
+#: lib/errors.c:69
+#, fuzzy
+msgid "A TLS record packet with invalid length was received."
+msgstr "Paket TLS dengan panjang tidak dijangka telah diterima."
+
+#: lib/errors.c:71
+msgid "The TLS connection was non-properly terminated."
+msgstr ""
+
+#: lib/errors.c:74
+msgid "The specified session has been invalidated for some reason."
+msgstr "Sesi yang dinyatakan telah dinyahsahkan atas sebab tertentu."
+
+#: lib/errors.c:77
+msgid "GnuTLS internal error."
+msgstr "Ralat dalaman GnuTLS."
+
+#: lib/errors.c:79
+msgid "A connection with inappropriate fallback was attempted."
+msgstr ""
+
+#: lib/errors.c:81
+msgid "An illegal TLS extension was received."
+msgstr "Sambungan TLS tidak sah telah diterima."
+
+#: lib/errors.c:83
+#, fuzzy
+msgid "An required TLS extension was received."
+msgstr "Sambungan TLS tidak sah telah diterima."
+
+#: lib/errors.c:85
+msgid "A TLS fatal alert has been received."
+msgstr "Amaran teruk TLS telah diterima."
+
+#: lib/errors.c:87
+msgid "An unexpected TLS packet was received."
+msgstr "Paket TLS tidak dijangka telah diterima."
+
+#: lib/errors.c:89
+#, fuzzy
+msgid "Failed to import the key into store."
+msgstr "Nyahenkripsi kekunci awam telah gagal."
+
+#: lib/errors.c:92
+msgid "An error was encountered at the TLS Finished packet calculation."
+msgstr "Ralat ditemui pada pengiraan paket Selesai TLS"
+
+#: lib/errors.c:94 libdane/errors.c:67
+#, fuzzy
+msgid "No certificate was found."
+msgstr "Tiada sijil dijumpai!"
+
+#: lib/errors.c:96
+#, fuzzy
+msgid "Certificate is required."
+msgstr "Aksara bukan-kosong diperlukan"
+
+#: lib/errors.c:99
+msgid "The given DSA key is incompatible with the selected TLS protocol."
+msgstr ""
+
+#: lib/errors.c:102
+msgid "There is already a crypto algorithm with lower priority."
+msgstr "Telah terdapat algoritma kripto dengan keutamaan rendah."
+
+#: lib/errors.c:105
+msgid "No temporary RSA parameters were found."
+msgstr "Tiada parameter RSA sementara telah dijumpai."
+
+#: lib/errors.c:107
+msgid "No temporary DH parameters were found."
+msgstr "Tiada parameter DH sementara telah dijumpai."
+
+#: lib/errors.c:109
+msgid "An unexpected TLS handshake packet was received."
+msgstr "Paket handshake TLS tidak dijangka telah diterima."
+
+#: lib/errors.c:111
+msgid "The scanning of a large integer has failed."
+msgstr "Pengesanan integer besar telah gagal."
+
+#: lib/errors.c:113
+msgid "Could not export a large integer."
+msgstr "Tidak dapat mengeksport integer besar."
+
+#: lib/errors.c:115
+msgid "Decryption has failed."
+msgstr "Nyahenkripsi telah gagal."
+
+#: lib/errors.c:117
+msgid "Encryption has failed."
+msgstr "Enkripsi telah gagal."
+
+#: lib/errors.c:119
+msgid "Public key decryption has failed."
+msgstr "Nyahenkripsi kekunci awam telah gagal."
+
+#: lib/errors.c:121
+msgid "Public key encryption has failed."
+msgstr "Enkripsi kekunci awam telah gagal."
+
+#: lib/errors.c:123
+msgid "Public key signing has failed."
+msgstr "Tandatangan kekunci awam telah gagal."
+
+#: lib/errors.c:125
+msgid "Public key signature verification has failed."
+msgstr "Pengesahan tandatangan kekunci awam telah gagal."
+
+#: lib/errors.c:128
+msgid "Decompression of the TLS record packet has failed."
+msgstr "Nyahmampatan paket rekod TLS telah gagal."
+
+#: lib/errors.c:130
+msgid "Compression of the TLS record packet has failed."
+msgstr "Mampatan paket rekod TLS telah gagal."
+
+#: lib/errors.c:133
+msgid "Internal error in memory allocation."
+msgstr "Ralat dalaman dalam pengumpukan memori."
+
+#: lib/errors.c:136
+msgid "An unimplemented or disabled feature has been requested."
+msgstr "Ciri tidak disediakan atau dimatikan telah diminta."
+
+#: lib/errors.c:138
+msgid "Insufficient credentials for that request."
+msgstr "Akuan tidak mencukupi untuk permintaan tersebut."
+
+#: lib/errors.c:140
+#, fuzzy
+msgid "Error in password/key file."
+msgstr "Ralat dalam fail katalaluan."
+
+#: lib/errors.c:141
+msgid "Wrong padding in PKCS1 packet."
+msgstr "Pelapik salah dalam paket PKCS1."
+
+#: lib/errors.c:143
+#, fuzzy
+msgid "The session or certificate has expired."
+msgstr "Sesi diminta telah tamat tempoh."
+
+#: lib/errors.c:145
+#, fuzzy
+msgid "The certificate is not yet activated."
+msgstr "Sijil belum lagi diaktifkan."
+
+#: lib/errors.c:147
+msgid "Hashing has failed."
+msgstr "Menghash telah gagal."
+
+#: lib/errors.c:148
+msgid "Base64 decoding error."
+msgstr "Ralat menyahkod base64."
+
+#: lib/errors.c:150
+msgid "Base64 unexpected header error."
+msgstr "Ralat pengepala tidak dijangka base64."
+
+#: lib/errors.c:152
+msgid "Base64 encoding error."
+msgstr "Ralat mengenkod base64."
+
+#: lib/errors.c:154
+#, fuzzy
+msgid "Parsing error in password/key file."
+msgstr "Ralat huraian dalam fail katalaluan."
+
+#: lib/errors.c:156
+msgid "The requested data were not available."
+msgstr "Data yang diminta tiada."
+
+#: lib/errors.c:158
+#, fuzzy
+msgid "There are no embedded data in the structure."
+msgstr "Jenis kandungan struktur PKCS tidak diketahui."
+
+#: lib/errors.c:160
+msgid "Error in the pull function."
+msgstr "Ralat dalam fungsi tarik."
+
+#: lib/errors.c:161
+msgid "Error in the push function."
+msgstr "Ralat dalam fungsi tolak."
+
+#: lib/errors.c:163
+msgid ""
+"The upper limit of record packet sequence numbers has been reached. Wow!"
+msgstr "Had atas nombor jujukan paket rakaman telah dicapai. Wow!"
+
+#: lib/errors.c:165
+msgid "Error in the certificate."
+msgstr "Ralat dalam sijil."
+
+#: lib/errors.c:167
+#, fuzzy
+msgid "Error in the time fields of certificate."
+msgstr "Ralat dalam sijil."
+
+#: lib/errors.c:169
+#, fuzzy
+msgid "Error in the certificate verification."
+msgstr "Ralat dalam sijil."
+
+#: lib/errors.c:171
+#, fuzzy
+msgid "Error in the CRL verification."
+msgstr "Pengesahan Message Authentication Code gagal."
+
+#: lib/errors.c:173
+msgid "Error in the private key verification; seed doesn't match."
+msgstr ""
+
+#: lib/errors.c:175
+#, fuzzy
+msgid "Could not authenticate peer."
+msgstr "Rehandshake diminta oleh peer."
+
+#: lib/errors.c:178
+msgid "Unknown Subject Alternative name in X.509 certificate."
+msgstr "Nama Subjek Alternatif tidak diketahu dalam sijil X.509."
+
+#: lib/errors.c:181
+msgid "CIDR name constraint is malformed in size or structure."
+msgstr ""
+
+#: lib/errors.c:185
+msgid "Unsupported critical extension in X.509 certificate."
+msgstr "Sambungan kritikal tidak disokong dalam sijil X.509."
+
+#: lib/errors.c:187
+#, fuzzy
+msgid "Unsupported extension in X.509 certificate."
+msgstr "Sambungan kritikal tidak disokong dalam sijil X.509."
+
+#: lib/errors.c:190
+msgid "Key usage violation in certificate has been detected."
+msgstr "Pelanggaran penggunaan kekunci dalam sijik telah dikesan."
+
+#: lib/errors.c:192 lib/errors.c:454
+msgid "Function was interrupted."
+msgstr "Fungsi telah dibatalkan."
+
+#: lib/errors.c:194
+msgid "TLS Application data were received, while expecting handshake data."
+msgstr "Data Aplikasi TLS telah diterima, semasa menjangka data handshake."
+
+#: lib/errors.c:196
+msgid "Error in Database backend."
+msgstr "Ralat dalam backend Pengkalan Data."
+
+#: lib/errors.c:197
+msgid "The Database entry already exists."
+msgstr ""
+
+#: lib/errors.c:198
+msgid "The certificate type is not supported."
+msgstr "Jenis sijil tidak disokong."
+
+#: lib/errors.c:201
+msgid "The given memory buffer is too short to hold parameters."
+msgstr "Buffer memori yang diberikan terlalu pendek untuk memegang parameter."
+
+#: lib/errors.c:203 libdane/errors.c:61
+msgid "The request is invalid."
+msgstr "Permintaan tidak sah."
+
+#: lib/errors.c:205
+msgid "The cookie was bad."
+msgstr ""
+
+#: lib/errors.c:206
+msgid "An illegal parameter has been received."
+msgstr "Parameter tidak sah telah diterima."
+
+#: lib/errors.c:208
+#, fuzzy
+msgid "An illegal parameter was found."
+msgstr "Parameter tidak sah"
+
+#: lib/errors.c:210
+msgid "Error while reading file."
+msgstr "Ralat apabila membaca fail."
+
+#: lib/errors.c:211
+#, fuzzy
+msgid "A disallowed SNI server name has been received."
+msgstr "Parameter tidak sah telah diterima."
+
+#: lib/errors.c:214
+msgid "ASN1 parser: Element was not found."
+msgstr "Penghurai ASN1: Elemen tidak dijumpai."
+
+#: lib/errors.c:216
+msgid "ASN1 parser: Identifier was not found"
+msgstr "Penghurai ASN1: Pengenalan tidak dijumpai"
+
+#: lib/errors.c:218
+msgid "ASN1 parser: Error in DER parsing."
+msgstr "Penghurai ASN1: Ralat dalam huraian DER."
+
+#: lib/errors.c:220
+msgid "ASN1 parser: Value was not found."
+msgstr "Penghurai ASN1: Nilai tidak dijumpai."
+
+#: lib/errors.c:222
+msgid "ASN1 parser: Generic parsing error."
+msgstr "Penghurai ASN1: Ralat menghurai generik."
+
+#: lib/errors.c:224
+msgid "ASN1 parser: Value is not valid."
+msgstr "Penghurai ASN1: Nilai tidak sah."
+
+#: lib/errors.c:226
+msgid "ASN1 parser: Error in TAG."
+msgstr "Penghurai ASN1: Ralat dalam TAG."
+
+#: lib/errors.c:228
+msgid "ASN1 parser: error in implicit tag"
+msgstr "Penghurai ASN1: ralat dalam tag tersirat"
+
+#: lib/errors.c:230
+msgid "ASN1 parser: Error in type 'ANY'."
+msgstr "Penghurai ASN1: Ralat dalam jenis 'ANY'."
+
+#: lib/errors.c:232
+msgid "ASN1 parser: Syntax error."
+msgstr "Penghurai ASN1: Ralat sintaks."
+
+#: lib/errors.c:234
+msgid "ASN1 parser: Overflow in DER parsing."
+msgstr "Penghurai ASN1: Limpahan dalam penghuraian DER."
+
+#: lib/errors.c:238
+msgid "Too many empty record packets have been received."
+msgstr "Terlalu banyak paket rekod kosong telah diterima."
+
+#: lib/errors.c:240
+#, fuzzy
+msgid "Too many handshake packets have been received."
+msgstr "Terlalu banyak paket rekod kosong telah diterima."
+
+#: lib/errors.c:242
+msgid "More than a single object matches the criteria."
+msgstr ""
+
+#: lib/errors.c:244
+#, fuzzy
+msgid "The crypto library version is too old."
+msgstr "Versi pustaka tasn1 terlalu lama."
+
+#: lib/errors.c:247
+msgid "The tasn1 library version is too old."
+msgstr "Versi pustaka tasn1 terlalu lama."
+
+#: lib/errors.c:249
+msgid "The OpenPGP User ID is revoked."
+msgstr "ID Pengguna OpenPGP telah dibatalkan."
+
+#: lib/errors.c:251
+msgid "The OpenPGP key has not a preferred key set."
+msgstr ""
+
+#: lib/errors.c:253
+msgid "Error loading the keyring."
+msgstr "Ralat memuatkan cecincin kunci."
+
+#: lib/errors.c:255
+#, fuzzy
+msgid "The initialization of crypto backend has failed."
+msgstr "Pemulaan LZO telah gagal."
+
+#: lib/errors.c:258
+msgid "No supported compression algorithms have been found."
+msgstr "Tiada algoritma pemampat yang disokong dijumpai."
+
+#: lib/errors.c:260
+msgid "No supported cipher suites have been found."
+msgstr "Tiada sut cipher yang disokong dijumpai."
+
+#: lib/errors.c:262
+msgid "Could not get OpenPGP key."
+msgstr "Tidak dapat memperoleh kekunci OpenPGP."
+
+#: lib/errors.c:264
+msgid "Could not find OpenPGP subkey."
+msgstr "Tidak dapat mencari subkekunci OpenPGP."
+
+#: lib/errors.c:266
+#, fuzzy
+msgid "Safe renegotiation failed."
+msgstr "Tiada perbincangan semula dibenarkan"
+
+#: lib/errors.c:268
+#, fuzzy
+msgid "Unsafe renegotiation denied."
+msgstr "Tiada perbincangan semula dibenarkan"
+
+#: lib/errors.c:271
+msgid "The SRP username supplied is illegal."
+msgstr "Namapengguna SRP yang diberikan tidak sah."
+
+#: lib/errors.c:273
+#, fuzzy
+msgid "The username supplied is unknown."
+msgstr "Namapengguna SRP yang diberikan tidak sah."
+
+#: lib/errors.c:276
+msgid "The OpenPGP fingerprint is not supported."
+msgstr "Cap jari OpenPGP tidak disokong."
+
+#: lib/errors.c:278
+#, fuzzy
+msgid "The signature algorithm is not supported."
+msgstr "\tAlgoritma tandatangan: %s\n"
+
+#: lib/errors.c:280
+msgid "The certificate has unsupported attributes."
+msgstr "Sijil tidak mempunyai ciri disokong."
+
+#: lib/errors.c:282
+msgid "The OID is not supported."
+msgstr "OID tidak disokong."
+
+#: lib/errors.c:284
+msgid "The hash algorithm is unknown."
+msgstr "Algoritma hash tidak diketahui."
+
+#: lib/errors.c:286
+msgid "The PKCS structure's content type is unknown."
+msgstr "Jenis kandungan struktur PKCS tidak diketahui."
+
+#: lib/errors.c:288
+msgid "The PKCS structure's bag type is unknown."
+msgstr "Jenis beg struktur PKCS tidak diketahui."
+
+#: lib/errors.c:290 lib/errors.c:296
+msgid "The given password contains invalid characters."
+msgstr "Katalaluan diberikan mengandungi aksara tidak sah."
+
+#: lib/errors.c:292
+#, fuzzy
+msgid "The given string contains invalid UTF-8 characters."
+msgstr "Katalaluan diberikan mengandungi aksara tidak sah."
+
+#: lib/errors.c:294
+#, fuzzy
+msgid "The given email string contains non-ASCII characters before '@'."
+msgstr "Katalaluan diberikan mengandungi aksara tidak sah."
+
+#: lib/errors.c:299
+msgid "The Message Authentication Code verification failed."
+msgstr "Pengesahan Message Authentication Code gagal."
+
+#: lib/errors.c:301
+msgid "Some constraint limits were reached."
+msgstr "Beberapa had kekangan telah dicapai."
+
+#: lib/errors.c:303
+msgid "Failed to acquire random data."
+msgstr "Gagal untuk mendapatkan data rawak."
+
+#: lib/errors.c:305
+msgid "Verifying TLS/IA phase checksum failed"
+msgstr "Pengesahan checksum fasa TLS/IA gagal"
+
+#: lib/errors.c:308
+msgid "The specified algorithm or protocol is unknown."
+msgstr "Algoritma atau protokol dinyataka tidak diketahui."
+
+#: lib/errors.c:311
+msgid "The handshake data size is too large."
+msgstr ""
+
+#: lib/errors.c:314
+msgid "Error opening /dev/crypto"
+msgstr ""
+
+#: lib/errors.c:317
+msgid "Error interfacing with /dev/crypto"
+msgstr ""
+
+#: lib/errors.c:319
+msgid "Peer has terminated the connection"
+msgstr ""
+
+#: lib/errors.c:321
+#, fuzzy
+msgid "Channel binding data not available"
+msgstr "Data yang diminta tiada."
+
+#: lib/errors.c:324
+#, fuzzy
+msgid "TPM error."
+msgstr "ralat"
+
+#: lib/errors.c:326
+msgid "The TPM library (trousers) cannot be found."
+msgstr ""
+
+#: lib/errors.c:328
+msgid "TPM is not initialized."
+msgstr ""
+
+#: lib/errors.c:330
+msgid "TPM key was not found in persistent storage."
+msgstr ""
+
+#: lib/errors.c:332
+#, fuzzy
+msgid "Cannot initialize a session with the TPM."
+msgstr "Tidak dapat memulakan libgsasl: %s"
+
+#: lib/errors.c:334
+#, fuzzy
+msgid "PKCS #11 error."
+msgstr "ralat"
+
+#: lib/errors.c:336
+msgid "PKCS #11 initialization error."
+msgstr ""
+
+#: lib/errors.c:338
+#, fuzzy
+msgid "Error in parsing."
+msgstr "Penghurai ASN1: Ralat dalam huraian DER."
+
+#: lib/errors.c:340
+#, fuzzy
+msgid "Error in provided PIN."
+msgstr "Ralat decode"
+
+#: lib/errors.c:342
+#, fuzzy
+msgid "Error in provided SRK password for TPM."
+msgstr "Ralat dalam fail katalaluan."
+
+#: lib/errors.c:345
+msgid "Error in provided password for key to be loaded in TPM."
+msgstr ""
+
+#: lib/errors.c:347
+msgid "PKCS #11 error in slot"
+msgstr ""
+
+#: lib/errors.c:349
+#, fuzzy
+msgid "Thread locking error"
+msgstr "Ralat decode"
+
+#: lib/errors.c:351
+msgid "PKCS #11 error in attribute"
+msgstr ""
+
+#: lib/errors.c:353
+msgid "PKCS #11 error in device"
+msgstr ""
+
+#: lib/errors.c:355
+msgid "PKCS #11 error in data"
+msgstr ""
+
+#: lib/errors.c:357
+#, fuzzy
+msgid "PKCS #11 unsupported feature"
+msgstr "%s tidak mempunyai ciri disokong:"
+
+#: lib/errors.c:359
+#, fuzzy
+msgid "PKCS #11 error in key"
+msgstr "ralat: get_key_usage: %s\n"
+
+#: lib/errors.c:361
+msgid "PKCS #11 PIN expired"
+msgstr ""
+
+#: lib/errors.c:363
+msgid "PKCS #11 PIN locked"
+msgstr ""
+
+#: lib/errors.c:365
+msgid "PKCS #11 error in session"
+msgstr ""
+
+#: lib/errors.c:367
+msgid "PKCS #11 error in signature"
+msgstr ""
+
+#: lib/errors.c:369
+msgid "PKCS #11 error in token"
+msgstr ""
+
+#: lib/errors.c:371
+msgid "PKCS #11 user error"
+msgstr ""
+
+#: lib/errors.c:373
+#, fuzzy
+msgid "The operation timed out"
+msgstr "Nyahbuat tindakan terakhir"
+
+#: lib/errors.c:375
+msgid "The operation was cancelled due to user error"
+msgstr ""
+
+#: lib/errors.c:377
+#, fuzzy
+msgid "No supported ECC curves were found"
+msgstr "Tiada sut cipher yang disokong dijumpai."
+
+#: lib/errors.c:379
+#, fuzzy
+msgid "The curve is unsupported"
+msgstr "Jenis cipher tidak disokong."
+
+#: lib/errors.c:381
+#, fuzzy
+msgid "The requested PKCS #11 object is not available"
+msgstr "Data yang diminta tiada."
+
+#: lib/errors.c:384
+msgid ""
+"The provided X.509 certificate list is not sorted (in subject to issuer "
+"order)"
+msgstr ""
+
+#: lib/errors.c:386
+#, fuzzy
+msgid "The OCSP response is invalid"
+msgstr "Kandungan \\{\\} tidak sah"
+
+#: lib/errors.c:388
+msgid "The OCSP response provided doesn't match the available certificates"
+msgstr ""
+
+#: lib/errors.c:390
+#, fuzzy
+msgid "There is no certificate status (OCSP)."
+msgstr "Selesai dengan %s (status keluar %d)\n"
+
+#: lib/errors.c:392
+#, fuzzy
+msgid "Error in the system's randomness device."
+msgstr "Ralat sistem tidak diketahui"
+
+#: lib/errors.c:395
+msgid "No common application protocol could be negotiated."
+msgstr ""
+
+#: lib/errors.c:397
+#, fuzzy
+msgid "Error while performing self checks."
+msgstr "Ralat apabila membaca fail."
+
+#: lib/errors.c:399
+#, fuzzy
+msgid "There is no self test for this algorithm."
+msgstr "sendiri"
+
+#: lib/errors.c:401
+msgid ""
+"An error has been detected in the library and cannot continue operations."
+msgstr ""
+
+#: lib/errors.c:403
+#, fuzzy
+msgid "Error in sockets initialization."
+msgstr "Ralat decode"
+
+#: lib/errors.c:405
+#, fuzzy
+msgid "Error in public key generation."
+msgstr "\tAlgoritma Kekunci Awam: %s\n"
+
+#: lib/errors.c:407
+#, fuzzy
+msgid "Invalid TLS extensions length field."
+msgstr "Sambungan TLS tidak sah telah diterima."
+
+#: lib/errors.c:409
+msgid "Peer's certificate or username has changed during a rehandshake."
+msgstr ""
+
+#: lib/errors.c:411
+msgid "The provided string has an embedded null."
+msgstr ""
+
+#: lib/errors.c:413
+msgid "Attempted handshake during false start."
+msgstr ""
+
+#: lib/errors.c:415
+#, fuzzy
+msgid "The SNI host name not recognised."
+msgstr "Nama pelayan dihantar tidak dikenali"
+
+#: lib/errors.c:417
+msgid "There was an issue converting to or from UTF8."
+msgstr ""
+
+#: lib/errors.c:419
+msgid "Cannot perform this action while handshake is in progress."
+msgstr ""
+
+#: lib/errors.c:421
+#, fuzzy
+msgid "The public key is invalid."
+msgstr "\tAlgoritma Kekunci Awam: %s\n"
+
+#: lib/errors.c:423
+#, fuzzy
+msgid "There are no validation parameters present."
+msgstr "Tiada parameter RSA sementara telah dijumpai."
+
+#: lib/errors.c:425
+#, fuzzy
+msgid "The public key parameters are invalid."
+msgstr "Algoritma kekunci awam tidak diketahui dijumpai."
+
+#: lib/errors.c:427
+#, fuzzy
+msgid "The private key is invalid."
+msgstr "Kekunci tidak sah dalam mod bukan multibuffer"
+
+#: lib/errors.c:429
+#, fuzzy
+msgid "The DER time encoding is invalid."
+msgstr "format gaya tarikh tidak sah %s"
+
+#: lib/errors.c:431
+#, fuzzy
+msgid "The signature is incompatible with the public key."
+msgstr "Pengesahan tandatangan kekunci awam telah gagal."
+
+#: lib/errors.c:433
+msgid "One of the involved algorithms has insufficient security level."
+msgstr ""
+
+#: lib/errors.c:435
+msgid "No common key share with peer."
+msgstr ""
+
+#: lib/errors.c:437
+#, fuzzy
+msgid "The early data were rejected."
+msgstr "Data yang diminta tiada."
+
+#: lib/errors.c:443 libdane/errors.c:42
+msgid "Success."
+msgstr "Berjaya."
+
+#: lib/errors.c:444
+msgid "A TLS warning alert has been received."
+msgstr "Arahan amaran telah diterima."
+
+#: lib/errors.c:446
+#, fuzzy
+msgid "A heartbeat pong message was received."
+msgstr "Paket rekod TLS besar telah diterima."
+
+#: lib/errors.c:448
+#, fuzzy
+msgid "A heartbeat ping message was received."
+msgstr "Paket rekod TLS besar telah diterima."
+
+#: lib/errors.c:450
+msgid "Resource temporarily unavailable, try again."
+msgstr ""
+
+#: lib/errors.c:452
+msgid "The transmitted packet is too large (EMSGSIZE)."
+msgstr ""
+
+#: lib/errors.c:455
+msgid "Rehandshake was requested by the peer."
+msgstr "Rehandshake diminta oleh peer."
+
+#: lib/errors.c:457
+#, fuzzy
+msgid "Re-authentication was requested by the peer."
+msgstr "Rehandshake diminta oleh peer."
+
+#: lib/errors.c:549 libdane/errors.c:100
+msgid "(unknown error code)"
+msgstr "(kod ralat tidak diketahui)"
+
+#: lib/x509/ocsp.c:2605
+#, fuzzy
+msgid "The OCSP response is trusted. "
+msgstr "Sijil tidak dipercayai."
+
+#: lib/x509/ocsp.c:2610
+#, fuzzy
+msgid "The OCSP response's signer could not be found. "
+msgstr "Permintaan tidak sah."
+
+#: lib/x509/ocsp.c:2615
+#, fuzzy
+msgid "Error in the signer's key usageflags. "
+msgstr "ralat: get_key_usage: %s\n"
+
+#: lib/x509/ocsp.c:2620
+#, fuzzy
+msgid "The OCSP response's signer is not trusted. "
+msgstr "Permintaan tidak sah."
+
+#: lib/x509/ocsp.c:2625
+#, fuzzy
+msgid "The OCSP response depends on insecure algorithms. "
+msgstr "Permintaan tidak sah."
+
+#: lib/x509/ocsp.c:2630
+#, fuzzy
+msgid "The OCSP response's signature cannot be validated. "
+msgstr "Permintaan tidak sah."
+
+#: lib/x509/ocsp.c:2635
+msgid "The OCSP response's signer's certificate is not activated. "
+msgstr ""
+
+#: lib/x509/ocsp.c:2640
+#, fuzzy
+msgid "The OCSP response's signer's certificate is expired. "
+msgstr "Permintaan tidak sah."
+
+#: lib/x509/ocsp.c:2644
+#, fuzzy
+msgid "Memory error"
+msgstr "Ralat dalaman dalam pengumpukan memori."
+
+#: lib/x509/ocsp_output.c:50 lib/x509/ocsp_output.c:276 lib/x509/output.c:1679
+#: lib/x509/output.c:2212 lib/x509/output.c:2610
+#, c-format
+msgid "\tVersion: %d\n"
+msgstr "\tVersi: %d\n"
+
+#: lib/x509/ocsp_output.c:136 lib/x509/ocsp_output.c:500 lib/x509/output.c:2380
+#: lib/x509/output.c:2774
+msgid "\t\t\tASCII: "
+msgstr "\t\t\tASCII: "
+
+#: lib/x509/ocsp_output.c:141 lib/x509/ocsp_output.c:505 lib/x509/output.c:2384
+#: lib/x509/output.c:2779
+msgid "\t\t\tHexdump: "
+msgstr "\t\t\tLambakan Hex: "
+
+#: lib/x509/ocsp_output.c:186
+#, fuzzy
+msgid "OCSP Request Information:\n"
+msgstr "Maklumat Permintaan Sijil PKCS #10:\n"
+
+#: lib/x509/ocsp_output.c:289
+#, fuzzy
+msgid "\tResponder Key ID: "
+msgstr ""
+"\tId Kekunci Awam:\n"
+"\t\t"
+
+#: lib/x509/ocsp_output.c:299
+#, fuzzy, c-format
+msgid "\tResponder ID: %s\n"
+msgstr "ID pengguna tidak sah: %s"
+
+#: lib/x509/ocsp_output.c:320
+#, fuzzy, c-format
+msgid "\tProduced At: %s\n"
+msgstr "[Tiada keluaran dihasilkan]\n"
+
+#: lib/x509/ocsp_output.c:414
+#, fuzzy, c-format
+msgid "\t\tRevocation time: %s\n"
+msgstr "%time"
+
+#: lib/x509/ocsp_output.c:434
+#, fuzzy, c-format
+msgid "\t\tThis Update: %s\n"
+msgstr "\tTarikh kemaskini:\n"
+
+#: lib/x509/ocsp_output.c:452
+#, fuzzy, c-format
+msgid "\t\tNext Update: %s\n"
+msgstr "\t\tSeterusnya pada: %s\n"
+
+#: lib/x509/ocsp_output.c:524 lib/x509/output.c:1343 lib/x509/output.c:1614
+#: lib/x509/output.c:1740 lib/x509/output.c:1760 lib/x509/output.c:1804
+#: lib/x509/output.c:2032 lib/x509/output.c:2045 lib/x509/output.c:2459
+#: lib/x509/output.c:2587 lib/x509/output.c:2638
+msgid "unknown"
+msgstr "tidak diketahui"
+
+#: lib/x509/ocsp_output.c:525 lib/x509/output.c:1808 lib/x509/output.c:2463
+#: lib/x509/output.c:2642
+#, c-format
+msgid "\tSignature Algorithm: %s\n"
+msgstr "\tAlgoritma tandatangan: %s\n"
+
+#: lib/x509/ocsp_output.c:529 lib/x509/output.c:1815 lib/x509/output.c:2468
+msgid ""
+"warning: signed using a broken signature algorithm that can be forged.\n"
+msgstr ""
+"amaran: ditandatangan menggunakan algoritma tandatangan rosak yang boleh "
+"dipalsukan.\n"
+
+#: lib/x509/ocsp_output.c:543 lib/x509/output.c:1841 lib/x509/output.c:2494
+msgid "\tSignature:\n"
+msgstr "\tTandatangan:\n"
+
+#: lib/x509/ocsp_output.c:651
+#, fuzzy
+msgid "OCSP Response Information:\n"
+msgstr "Maklumat Lain:\n"
+
+#: lib/x509/output.c:54 lib/x509/output.c:84
+#, fuzzy, c-format
+msgid "%s%s: %.*s (contains illegal chars)\n"
+msgstr "%s: pilihan salah  -- %c\n"
+
+#: lib/x509/output.c:60 lib/x509/output.c:90
+#, c-format
+msgid "%s%s: %.*s (%s)\n"
+msgstr "%s%s: %.*s (%s)\n"
+
+#: lib/x509/output.c:68 lib/x509/output.c:98
+#, c-format
+msgid "%s%s: %.*s\n"
+msgstr "%s%s: %.*s\n"
+
+#: lib/x509/output.c:114
+msgid "warning: SAN contains an embedded NUL, replacing with '!'\n"
+msgstr ""
+
+#: lib/x509/output.c:130
+#, c-format
+msgid "%sURI: %.*s\n"
+msgstr "%sURI: %.*s\n"
+
+#: lib/x509/output.c:144
+#, fuzzy, c-format
+msgid "%sdirectoryName: %.*s\n"
+msgstr "< %s ... %s > ? "
+
+#: lib/x509/output.c:148
+#, fuzzy, c-format
+msgid "%sRegistered ID: %.*s\n"
+msgstr "< %s ... %s > ? "
+
+#: lib/x509/output.c:152
+#, fuzzy, c-format
+msgid "%sXMPP Address: %.*s\n"
+msgstr "Jenis alamat tidak disokong."
+
+#: lib/x509/output.c:156
+#, fuzzy, c-format
+msgid "%sKRB5Principal: %.*s\n"
+msgstr "< %s ... %s > ? "
+
+#: lib/x509/output.c:160
+#, fuzzy, c-format
+msgid "%sUnknown name: "
+msgstr "nama"
+
+#: lib/x509/output.c:302
+#, c-format
+msgid "\t\t\tPath Length Constraint: %d\n"
+msgstr "\t\t\tKekangan Panjang Laluan: %d\n"
+
+#: lib/x509/output.c:304
+#, c-format
+msgid "\t\t\tPolicy Language: %s"
+msgstr "\t\t\tBahasa Polisi: %s"
+
+#: lib/x509/output.c:312
+msgid ""
+"\t\t\tPolicy:\n"
+"\t\t\t\tASCII: "
+msgstr ""
+"\t\t\tPolisi:\n"
+"\t\t\t\tASCII: "
+
+#: lib/x509/output.c:314
+msgid ""
+"\n"
+"\t\t\t\tHexdump: "
+msgstr ""
+"\n"
+"\t\t\tLambakan Hex: "
+
+#: lib/x509/output.c:347
+#, c-format
+msgid "%s\t\t\tPermitted:\n"
+msgstr ""
+
+#: lib/x509/output.c:359
+#, fuzzy, c-format
+msgid "%s\t\t\tExcluded:\n"
+msgstr "< %s ... %s > ? "
+
+#: lib/x509/output.c:399 lib/x509/output.c:401 lib/x509/output.c:403
+#, fuzzy, c-format
+msgid "\t\t\tAccess Method: %s (%s)\n"
+msgstr "Tak dapat mengakses %s"
+
+#: lib/x509/output.c:507
+#, fuzzy, c-format
+msgid "%sDigital signature.\n"
+msgstr "\tTandatangan:\n"
+
+#: lib/x509/output.c:509
+#, fuzzy, c-format
+msgid "%sNon repudiation.\n"
+msgstr "\t\t\tTidak ditolak.\n"
+
+#: lib/x509/output.c:511
+#, fuzzy, c-format
+msgid "%sKey encipherment.\n"
+msgstr "\t\t\tPenyulitan data simpanan.\n"
+
+#: lib/x509/output.c:513
+#, fuzzy, c-format
+msgid "%sData encipherment.\n"
+msgstr "\t\t\tPenyulitan komunikasi.\n"
+
+#: lib/x509/output.c:515
+#, fuzzy, c-format
+msgid "%sKey agreement.\n"
+msgstr "\t\t\tPersetujuan kekunci.\n"
+
+#: lib/x509/output.c:517
+#, fuzzy, c-format
+msgid "%sCertificate signing.\n"
+msgstr "\t\t\tMenandatangan sijil.\n"
+
+#: lib/x509/output.c:519
+#, fuzzy, c-format
+msgid "%sCRL signing.\n"
+msgstr "\t\t\tMenandatangan sijil.\n"
+
+#: lib/x509/output.c:521
+#, fuzzy, c-format
+msgid "%sKey encipher only.\n"
+msgstr "Hanya inilah sahaja yang dijumpai"
+
+#: lib/x509/output.c:523
+#, fuzzy, c-format
+msgid "%sKey decipher only.\n"
+msgstr "Hanya inilah sahaja yang dijumpai"
+
+#: lib/x509/output.c:567
+#, c-format
+msgid "\t\t\tNot Before: %s\n"
+msgstr "\t\tTidak Sebelum: %s\n"
+
+#: lib/x509/output.c:576
+#, c-format
+msgid "\t\t\tNot After: %s\n"
+msgstr "\t\tTidak Selepas: %s\n"
+
+#: lib/x509/output.c:654
+#, fuzzy, c-format
+msgid "%s\t\t\tTLS WWW Server.\n"
+msgstr "%s: ralat pelayan nama tidak dapat dipulihkan berlaku."
+
+#: lib/x509/output.c:656
+#, fuzzy, c-format
+msgid "%s\t\t\tTLS WWW Client.\n"
+msgstr "SASL gsasl_client_start: %s"
+
+#: lib/x509/output.c:658
+#, fuzzy, c-format
+msgid "%s\t\t\tCode signing.\n"
+msgstr "\t\t\tMenandatangan sijil.\n"
+
+#: lib/x509/output.c:660
+#, fuzzy, c-format
+msgid "%s\t\t\tEmail protection.\n"
+msgstr "EMEL"
+
+#: lib/x509/output.c:663
+#, fuzzy, c-format
+msgid "%s\t\t\tTime stamping.\n"
+msgstr "%time"
+
+#: lib/x509/output.c:665
+#, fuzzy, c-format
+msgid "%s\t\t\tOCSP signing.\n"
+msgstr "\t\t\tMenandatangan sijil.\n"
+
+#: lib/x509/output.c:667
+#, fuzzy, c-format
+msgid "%s\t\t\tIpsec IKE.\n"
+msgstr "< %s ... %s > ? "
+
+#: lib/x509/output.c:669
+#, fuzzy, c-format
+msgid "%s\t\t\tAny purpose.\n"
+msgstr "apa-apa jenis"
+
+#: lib/x509/output.c:692
+#, fuzzy, c-format
+msgid "%s\t\t\tCertificate Authority (CA): FALSE\n"
+msgstr "\t\t\tPihak Berkuasa Sijil (CA): SALAH\n"
+
+#: lib/x509/output.c:695
+#, fuzzy, c-format
+msgid "%s\t\t\tCertificate Authority (CA): TRUE\n"
+msgstr "\t\t\tPenguasa Sijil (CA): BENAR\n"
+
+#: lib/x509/output.c:699
+#, fuzzy, c-format
+msgid "%s\t\t\tPath Length Constraint: %d\n"
+msgstr "\t\t\tKekangan Panjang Laluan: %d\n"
+
+#: lib/x509/output.c:755
+#, fuzzy, c-format
+msgid "%s\t\t\totherName OID: %.*s\n"
+msgstr "< %s ... %s > ? "
+
+#: lib/x509/output.c:757
+#, fuzzy, c-format
+msgid "%s\t\t\totherName DER: "
+msgstr "Penghurai ASN1: Ralat dalam huraian DER."
+
+#: lib/x509/output.c:760
+#, fuzzy, c-format
+msgid ""
+"\n"
+"%s\t\t\totherName ASCII: "
+msgstr "\t\t\tASCII: "
+
+#: lib/x509/output.c:880 lib/x509/output.c:952 lib/x509/output.c:1240
+#, c-format
+msgid "%s\t\t\tASCII: "
+msgstr "%s\t\t\tASCII: "
+
+#: lib/x509/output.c:884 lib/x509/output.c:956 lib/x509/output.c:1244
+#, fuzzy, c-format
+msgid "%s\t\t\tHexdump: "
+msgstr ""
+"\n"
+"\t\t\tLambakan Hex: "
+
+#: lib/x509/output.c:891
+#, fuzzy, c-format
+msgid "%s\t\t\t%.*s\n"
+msgstr "%s%s: %.*s\n"
+
+#: lib/x509/output.c:920
+#, c-format
+msgid "%s\t\t\tSignTool: %.*s\n"
+msgstr ""
+
+#: lib/x509/output.c:928
+#, fuzzy, c-format
+msgid "%s\t\t\tCATool: %.*s\n"
+msgstr "%s%s: %.*s\n"
+
+#: lib/x509/output.c:936
+#, fuzzy, c-format
+msgid "%s\t\t\tSignToolCert: %.*s\n"
+msgstr "< %s ... %s > ? "
+
+#: lib/x509/output.c:944
+#, fuzzy, c-format
+msgid "%s\t\t\tCAToolCert: %.*s\n"
+msgstr "< %s ... %s > ? "
+
+#: lib/x509/output.c:988
+#, fuzzy, c-format
+msgid "%s\t\tBasic Constraints (%s):\n"
+msgstr "\t\tKekangan Asas (%s):\n"
+
+#: lib/x509/output.c:990 lib/x509/output.c:1004 lib/x509/output.c:1049
+#: lib/x509/output.c:1083 lib/x509/output.c:1096 lib/x509/output.c:1108
+#: lib/x509/output.c:1123 lib/x509/output.c:1135 lib/x509/output.c:1148
+#: lib/x509/output.c:1160 lib/x509/output.c:1174 lib/x509/output.c:1188
+#: lib/x509/output.c:1196 lib/x509/output.c:1207 lib/x509/output.c:1218
+#: lib/x509/output.c:1226 lib/x509/output.c:1232 lib/x509/output.c:1238
+#: lib/x509/output.c:2321 lib/x509/output.c:2346 lib/x509/output.c:2366
+msgid "critical"
+msgstr "kritikal"
+
+#: lib/x509/output.c:990 lib/x509/output.c:1004 lib/x509/output.c:1050
+#: lib/x509/output.c:1084 lib/x509/output.c:1096 lib/x509/output.c:1108
+#: lib/x509/output.c:1123 lib/x509/output.c:1135 lib/x509/output.c:1148
+#: lib/x509/output.c:1160 lib/x509/output.c:1174 lib/x509/output.c:1188
+#: lib/x509/output.c:1196 lib/x509/output.c:1207 lib/x509/output.c:1218
+#: lib/x509/output.c:1226 lib/x509/output.c:1232 lib/x509/output.c:1238
+#: lib/x509/output.c:2322 lib/x509/output.c:2347 lib/x509/output.c:2367
+msgid "not critical"
+msgstr "tidak kritikal"
+
+#: lib/x509/output.c:1002
+#, fuzzy, c-format
+msgid "%s\t\tSubject Key Identifier (%s):\n"
+msgstr "\t\tPengesahan Kekunci Pengenalan (%s):\n"
+
+#: lib/x509/output.c:1094
+#, fuzzy, c-format
+msgid "%s\t\tAuthority Key Identifier (%s):\n"
+msgstr "\t\tPengesahan Kekunci Pengenalan (%s):\n"
+
+#: lib/x509/output.c:1107
+#, fuzzy, c-format
+msgid "%s\t\tKey Usage (%s):\n"
+msgstr "ralat: get_key_usage: %s\n"
+
+#: lib/x509/output.c:1121
+#, fuzzy, c-format
+msgid "%s\t\tPrivate Key Usage Period (%s):\n"
+msgstr "ralat: get_key_usage: %s\n"
+
+#: lib/x509/output.c:1134
+#, fuzzy, c-format
+msgid "%s\t\tKey Purpose (%s):\n"
+msgstr "tiada kekunci ditakrifkan untuk `%s'"
+
+#: lib/x509/output.c:1146
+#, fuzzy, c-format
+msgid "%s\t\tSubject Alternative Name (%s):\n"
+msgstr "Nama Subjek Alternatif tidak diketahu dalam sijil X.509."
+
+#: lib/x509/output.c:1158
+#, fuzzy, c-format
+msgid "%s\t\tIssuer Alternative Name (%s):\n"
+msgstr "- DN Pengeluar Sijil: %s\n"
+
+#: lib/x509/output.c:1172
+#, fuzzy, c-format
+msgid "%s\t\tCRL Distribution points (%s):\n"
+msgstr "\t\tTitik Edaran CRL (%s):\n"
+
+#: lib/x509/output.c:1186
+#, fuzzy, c-format
+msgid "%s\t\tProxy Certificate Information (%s):\n"
+msgstr "%s: tiada maklumat saiz bagi peranti ini"
+
+#: lib/x509/output.c:1194
+#, fuzzy, c-format
+msgid "%s\t\tAuthority Information Access (%s):\n"
+msgstr "Tak dapat mengakses %s"
+
+#: lib/x509/output.c:1206
+#, fuzzy, c-format
+msgid "%s\t\tName Constraints (%s):\n"
+msgstr "Penggunaan: %s [OPSYEN] NAMA...\n"
+
+#: lib/x509/output.c:1216
+#, fuzzy, c-format
+msgid "%s\t\tTLS Features (%s):\n"
+msgstr "Salaman TLS/SSL gagal: %s"
+
+#: lib/x509/output.c:1224
+#, fuzzy, c-format
+msgid "%s\t\tSubject Signing Tool(%s):\n"
+msgstr "\t\tPengesahan Kekunci Pengenalan (%s):\n"
+
+#: lib/x509/output.c:1230
+#, fuzzy, c-format
+msgid "%s\t\tIssuer Signing Tool(%s):\n"
+msgstr "- DN Pengeluar Sijil: %s\n"
+
+#: lib/x509/output.c:1236
+#, fuzzy, c-format
+msgid "%s\t\tUnknown extension %s (%s):\n"
+msgstr "\t\tSambungan tidak diketahui %s (%s):\n"
+
+#: lib/x509/output.c:1293
+#, fuzzy, c-format
+msgid "%s\tExtensions:\n"
+msgstr "\tSambungan:\n"
+
+#: lib/x509/output.c:1345
+#, fuzzy, c-format
+msgid "\t%sPublic Key Algorithm: %s\n"
+msgstr "\tAlgoritma Kekunci Awam: %s\n"
+
+#: lib/x509/output.c:1347
+#, c-format
+msgid "\tAlgorithm Security Level: %s (%d bits)\n"
+msgstr ""
+
+#: lib/x509/output.c:1352
+#, fuzzy
+msgid "\t\tParameters:\n"
+msgstr "Buffer memori yang diberikan terlalu pendek untuk memegang parameter."
+
+#: lib/x509/output.c:1372
+#, fuzzy, c-format
+msgid "\t\tModulus (bits %d): "
+msgstr "\t\tModulus (%d bit):\n"
+
+#: lib/x509/output.c:1379
+#, fuzzy, c-format
+msgid "\t\tExponent (bits %d): "
+msgstr "\t\tModulus (%d bit):\n"
+
+#: lib/x509/output.c:1387
+#, c-format
+msgid "\t\tModulus (bits %d):\n"
+msgstr "\t\tModulus (%d bit):\n"
+
+#: lib/x509/output.c:1394
+#, fuzzy, c-format
+msgid "\t\tExponent (bits %d):\n"
+msgstr "\t\tModulus (%d bit):\n"
+
+#: lib/x509/output.c:1421 lib/x509/output.c:1541
+#, fuzzy, c-format
+msgid "\t\tCurve:\t%s\n"
+msgstr "< %s ... %s > ? "
+
+#: lib/x509/output.c:1425 lib/x509/output.c:1551
+msgid "\t\tX: "
+msgstr "\t\tX: "
+
+#: lib/x509/output.c:1431 lib/x509/output.c:1556
+msgid "\t\tY: "
+msgstr "\t\tY: "
+
+#: lib/x509/output.c:1438 lib/x509/output.c:1562
+msgid "\t\tX:\n"
+msgstr "\t\tX:\n"
+
+#: lib/x509/output.c:1443 lib/x509/output.c:1566
+msgid "\t\tY:\n"
+msgstr "\t\tY:\n"
+
+#: lib/x509/output.c:1471
+#, fuzzy, c-format
+msgid "\t\tPublic key (bits %d): "
+msgstr "\t\tKekunci awam (%d bit):\n"
+
+#: lib/x509/output.c:1477
+msgid "\t\tP: "
+msgstr "\t\tP: "
+
+#: lib/x509/output.c:1482
+msgid "\t\tQ: "
+msgstr "\t\tQ: "
+
+#: lib/x509/output.c:1487
+msgid "\t\tG: "
+msgstr "\t\tG: "
+
+#: lib/x509/output.c:1495
+#, c-format
+msgid "\t\tPublic key (bits %d):\n"
+msgstr "\t\tKekunci awam (%d bit):\n"
+
+#: lib/x509/output.c:1500
+msgid "\t\tP:\n"
+msgstr "\t\tP:\n"
+
+#: lib/x509/output.c:1504
+msgid "\t\tQ:\n"
+msgstr "\t\tQ:\n"
+
+#: lib/x509/output.c:1508
+msgid "\t\tG:\n"
+msgstr "\t\tG:\n"
+
+#: lib/x509/output.c:1543
+#, fuzzy, c-format
+msgid "\t\tDigest:\t%s\n"
+msgstr "< %s ... %s > ? "
+
+#: lib/x509/output.c:1545
+#, fuzzy, c-format
+msgid "\t\tParamSet: %s\n"
+msgstr "< %s ... %s > ? "
+
+#: lib/x509/output.c:1658 lib/x509/output.c:2577
+#, fuzzy
+msgid "Subject "
+msgstr "\tSubjek: %s\n"
+
+#: lib/x509/output.c:1694
+msgid "\tSerial Number (hex): "
+msgstr "\tNombor Siri (hex):"
+
+#: lib/x509/output.c:1707 lib/x509/output.c:2222
+#, fuzzy
+msgid "\tIssuer:\n"
+msgstr "\tPengeluar: %s\n"
+
+#: lib/x509/output.c:1712 lib/x509/output.c:2227
+#, c-format
+msgid "\tIssuer: %s\n"
+msgstr "\tPengeluar: %s\n"
+
+#: lib/x509/output.c:1721
+msgid "\tValidity:\n"
+msgstr "\tKesahan:\n"
+
+#: lib/x509/output.c:1738 lib/x509/output.c:1740
+#, c-format
+msgid "\t\tNot Before: %s\n"
+msgstr "\t\tTidak Sebelum: %s\n"
+
+#: lib/x509/output.c:1758 lib/x509/output.c:1760
+#, c-format
+msgid "\t\tNot After: %s\n"
+msgstr "\t\tTidak Selepas: %s\n"
+
+#: lib/x509/output.c:1771 lib/x509/output.c:2620
+#, fuzzy
+msgid "\tSubject:\n"
+msgstr "\tSubjek: %s\n"
+
+#: lib/x509/output.c:1776 lib/x509/output.c:2625
+#, c-format
+msgid "\tSubject: %s\n"
+msgstr "\tSubjek: %s\n"
+
+#: lib/x509/output.c:1855
+#, fuzzy
+msgid "\tFingerprint:\n"
+msgstr "\tCapjari (hex): "
+
+#: lib/x509/output.c:1864
+msgid "\t\tsha1:"
+msgstr "\t\tsha1:"
+
+#: lib/x509/output.c:1875
+msgid "\t\tsha256:"
+msgstr "\t\tsha256:"
+
+#: lib/x509/output.c:1909
+#, fuzzy, c-format
+msgid ""
+"%sPublic Key ID:\n"
+"%s\tsha1:"
+msgstr "ID Kekunci Awam: "
+
+#: lib/x509/output.c:1915
+#, fuzzy, c-format
+msgid ""
+"%sPublic Key PIN:\n"
+"%s\tpin-sha256:"
+msgstr ""
+"\tId Kekunci Awam:\n"
+"\t\t"
+
+#: lib/x509/output.c:1987
+#, fuzzy
+msgid "no subject,"
+msgstr "\tSubjek: %s\n"
+
+#: lib/x509/output.c:2003
+#, fuzzy
+msgid "no issuer,"
+msgstr "\tPengeluar: %s\n"
+
+#: lib/x509/output.c:2050
+#, c-format
+msgid "signed using %s (broken!), "
+msgstr ""
+
+#: lib/x509/output.c:2052
+#, fuzzy, c-format
+msgid "signed using %s, "
+msgstr "kurang menggunakan hukum %d (%s)"
+
+#: lib/x509/output.c:2188
+msgid "X.509 Certificate Information:\n"
+msgstr "Maklumat Sijil X.509:\n"
+
+#: lib/x509/output.c:2192 lib/x509/output.c:2832
+msgid "Other Information:\n"
+msgstr "Maklumat Lain:\n"
+
+#: lib/x509/output.c:2207
+msgid "\tVersion: 1 (default)\n"
+msgstr "\tVersi: 1 (default)\n"
+
+#: lib/x509/output.c:2236
+msgid "\tUpdate dates:\n"
+msgstr "\tTarikh kemaskini:\n"
+
+#: lib/x509/output.c:2253
+#, c-format
+msgid "\t\tIssued: %s\n"
+msgstr "\t\tDikeluarkan: %s\n"
+
+#: lib/x509/output.c:2273
+#, c-format
+msgid "\t\tNext at: %s\n"
+msgstr "\t\tSeterusnya pada: %s\n"
+
+#: lib/x509/output.c:2304
+msgid "\tExtensions:\n"
+msgstr "\tSambungan:\n"
+
+#: lib/x509/output.c:2320
+#, fuzzy, c-format
+msgid "\t\tCRL Number (%s): "
+msgstr ""
+"Pengunaan: %s [NOMBOR]...\n"
+"    atau: %s OPSYEN\n"
+
+#: lib/x509/output.c:2345
+#, c-format
+msgid "\t\tAuthority Key Identifier (%s):\n"
+msgstr "\t\tPengesahan Kekunci Pengenalan (%s):\n"
+
+#: lib/x509/output.c:2364
+#, c-format
+msgid "\t\tUnknown extension %s (%s):\n"
+msgstr "\t\tSambungan tidak diketahui %s (%s):\n"
+
+#: lib/x509/output.c:2401
+#, c-format
+msgid "\tRevoked certificates (%d):\n"
+msgstr "\tSijil dibatalkan (%d):\n"
+
+#: lib/x509/output.c:2404
+msgid "\tNo revoked certificates.\n"
+msgstr "\tTiada sijil dibatalkan.\n"
+
+#: lib/x509/output.c:2425
+msgid "\t\tSerial Number (hex): "
+msgstr "\t\tNombor Siri (hex): "
+
+#: lib/x509/output.c:2443
+#, c-format
+msgid "\t\tRevoked at: %s\n"
+msgstr "\t\tDibatalkan pada: %s\n"
+
+#: lib/x509/output.c:2525
+msgid "X.509 Certificate Revocation List Information:\n"
+msgstr "Maklumat Senarai Pembatalan Sijil X.509:\n"
+
+#: lib/x509/output.c:2675
+#, fuzzy
+msgid "\tAttributes:\n"
+msgstr "mendapatkan atribut baru untuk %s"
+
+#: lib/x509/output.c:2732
+#, fuzzy, c-format
+msgid "\t\tChallenge password: %s\n"
+msgstr "Nama pengguna atau kata laluan tidak sah."
+
+#: lib/x509/output.c:2742
+#, c-format
+msgid "\t\tUnknown attribute %s:\n"
+msgstr "\t\tSifat %s yang tidak diketahui:\n"
+
+#: lib/x509/output.c:2828
+msgid "PKCS #10 Certificate Request Information:\n"
+msgstr "Maklumat Permintaan Sijil PKCS #10:\n"
+
+#: lib/x509/output.c:2855
+msgid "Public Key Usage:\n"
+msgstr "Penggunaan Kekunci Awam:\n"
+
+#: lib/x509/output.c:2895
+msgid "Public Key Information:\n"
+msgstr "Maklumat Kekunci Awam:\n"
+
+#: libdane/dane.c:1050
+#, fuzzy
+msgid "Certificate matches. "
+msgstr "Tiada padanan"
+
+#: libdane/dane.c:1053
+#, fuzzy
+msgid "Verification failed. "
+msgstr "Pengesahan Message Authentication Code gagal."
+
+#: libdane/dane.c:1058
+#, fuzzy
+msgid "CA constrains were violated. "
+msgstr "Beberapa had kekangan telah dicapai."
+
+#: libdane/dane.c:1062
+#, fuzzy
+msgid "The certificate differs. "
+msgstr "Jenis fail berbeza"
+
+#: libdane/dane.c:1067
+#, fuzzy
+msgid "There were no DANE information. "
+msgstr "Maklumat Lain:\n"
+
+#: libdane/errors.c:43
+#, fuzzy
+msgid "There was error initializing the DNS query."
+msgstr "%s: ralat DNS tidak diketahui %d."
+
+#: libdane/errors.c:45
+#, fuzzy
+msgid "There was an error while resolving."
+msgstr "Ralat apabila membaca fail."
+
+#: libdane/errors.c:47
+#, fuzzy
+msgid "No DANE data were found."
+msgstr "Tiada parameter RSA sementara telah dijumpai."
+
+#: libdane/errors.c:49
+msgid "Unknown DANE data were found."
+msgstr ""
+
+#: libdane/errors.c:51
+#, fuzzy
+msgid "No DNSSEC signature was found."
+msgstr "\tTandatangan:\n"
+
+#: libdane/errors.c:53
+msgid "Received corrupt data."
+msgstr ""
+
+#: libdane/errors.c:55
+#, fuzzy
+msgid "The DNSSEC signature is invalid."
+msgstr "\tTandatangan:\n"
+
+#: libdane/errors.c:57
+msgid "There was a memory error."
+msgstr "Terdapat ralat dalam memori."
+
+#: libdane/errors.c:59
+msgid "The requested data are not available."
+msgstr "Data yang diminta tiada."
+
+#: libdane/errors.c:63
+msgid "There was an error in the certificate."
+msgstr "Terdapat ralat dalam sijil."
+
+#: libdane/errors.c:65
+msgid "There was an error in the public key."
+msgstr "Terdapat ralat dalam kekunci awam."
+
+#: libdane/errors.c:69
+msgid "Error in file."
+msgstr "Ralat dalam fail."
