@@ -3,6 +3,7 @@ gmp-configure:
 		--build=$(ARCH)-linux \
 		--host=$(ARCH)-linux-gnu \
 		--prefix=/usr \
+		--libdir=/usr/lib \
 		--enable-assembly \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/iptables/include/libipq/ -ffunction-sections -fdata-sections" LDFLAGS="-L$(TOP)/iptables/libipq"
 
