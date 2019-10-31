@@ -4,6 +4,7 @@ gnutls-configure: gmp nettle
 	cd gnutls && ./configure --host=$(ARCH)-linux --prefix=/usr CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF"  CXXFLAGS="$(COPTS) -fPIC -DNEED_PRINTF"  CPPFLAGS="$(COPTS) -fPIC -DNEED_PRINTF" \
 		--with-included-unistring \
 		--with-included-libtasn1 \
+		--libdir=/usr/lib \
 		--without-p11-kit \
 		NETTLE_CFLAGS="-I$(TOP)/_staging/usr/include" \
 		NETTLE_LIBS="-L$(TOP)/nettle -lnettle -L$(TOP)/gmp/.libs -lgmp" \
