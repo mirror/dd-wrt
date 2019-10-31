@@ -15,7 +15,7 @@ if Options.options.with_system_mitkrb5 and conf.env.AD_DC_BUILD_IS_ENABLED:
 conf.CHECK_CFG(package='gnutls',
                args=('"gnutls >= %s" --cflags --libs' % gnutls_required_version),
                      msg='Checking for GnuTLS >= %s' % gnutls_required_version,
-                     mandatory=True)
+                     mandatory=False)
 
 # Define gnutls as a system library
 conf.SET_TARGET_TYPE('gnutls', 'SYSLIB')

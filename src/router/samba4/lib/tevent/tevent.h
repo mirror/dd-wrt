@@ -29,6 +29,7 @@
 #define __TEVENT_H__
 
 #include <stdint.h>
+#include <signal.h>
 #include <talloc.h>
 #include <sys/time.h>
 #include <stdbool.h>
