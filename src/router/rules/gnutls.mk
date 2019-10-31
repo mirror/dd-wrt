@@ -5,6 +5,7 @@ gnutls-configure: gmp nettle
 		--with-included-unistring \
 		--with-included-libtasn1 \
 		--libdir=/usr/lib \
+		--disable-doc \
 		--without-p11-kit \
 		NETTLE_CFLAGS="-I$(TOP)/_staging/usr/include" \
 		NETTLE_LIBS="-L$(TOP)/nettle -lnettle -L$(TOP)/gmp/.libs -lgmp" \
