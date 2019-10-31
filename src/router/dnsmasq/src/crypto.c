@@ -294,7 +294,7 @@ static int dnsmasq_ecdsa_verify(struct blockdata *key_data, unsigned int key_len
 	  if (!(key_256 = whine_malloc(sizeof(struct ecc_point))))
 	    return 0;
 	  
-	  nettle_ecc_point_init(key_256, &nettle_secp_256r1);
+	  nettle_ecc_point_init(key_256, nettle_get_secp_256r1());
 	}
       
       key = key_256;
@@ -307,7 +307,7 @@ static int dnsmasq_ecdsa_verify(struct blockdata *key_data, unsigned int key_len
 	  if (!(key_384 = whine_malloc(sizeof(struct ecc_point))))
 	    return 0;
 	  
-	  nettle_ecc_point_init(key_384, &nettle_secp_384r1);
+	  nettle_ecc_point_init(key_384, nettle_get_secp_384r1());
 	}
       
       key = key_384;
