@@ -521,7 +521,7 @@ def validate_c(self, kw):
 	if not 'execute' in kw:
 		kw['execute'] = False
 	if kw['execute']:
-		kw['features'].append('test_exec')
+		#kw['features'].append('test_exec')
 		kw['chmod'] = Utils.O755
 
 	if not 'errmsg' in kw:

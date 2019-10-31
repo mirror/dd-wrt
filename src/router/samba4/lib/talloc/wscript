@@ -48,7 +48,7 @@ def configure(conf):
         conf.env.PKGCONFIGDIR = '${LIBDIR}/pkgconfig'
         conf.env.TALLOC_VERSION = VERSION
 
-    conf.CHECK_XSLTPROC_MANPAGES()
+    #conf.CHECK_XSLTPROC_MANPAGES()
 
     conf.CHECK_HEADERS('sys/auxv.h')
     conf.CHECK_FUNCS('getauxval')

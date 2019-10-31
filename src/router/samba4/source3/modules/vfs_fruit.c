@@ -6964,12 +6964,12 @@ static bool fruit_tmsize_do_dirent(vfs_handle_struct *handle,
 		return true;
 	}
 
-	if (bandsize > SIZE_MAX/nbands) {
-		DBG_ERR("tmsize overflow: bandsize [%zu] nbands [%zu]\n",
-			bandsize, nbands);
-		return false;
-	}
-	tm_size = bandsize * nbands;
+	// if (bandsize > SIZE_MAX/nbands) {
+		// DBG_ERR("tmsize overflow: bandsize [%zu] nbands [%zu]\n",
+			// bandsize, nbands);
+		// return false;
+	// }
+	tm_size = (off_t)bandsize * (off_t)nbands;
 
 	if (state->total_size + tm_size < state->total_size) {
 		DBG_ERR("tmsize overflow: bandsize [%zu] nbands [%zu]\n",
