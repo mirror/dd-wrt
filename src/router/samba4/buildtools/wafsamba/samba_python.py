@@ -17,10 +17,10 @@ def SAMBA_CHECK_PYTHON(conf, version=(3,4,0)):
 
     interpreters = []
 
-    conf.find_program('python3', var='PYTHON',
+    conf.find_program('/usr/bin/python3', var='PYTHON',
                       mandatory=not conf.env.disable_python)
     conf.load('python')
-    path_python = conf.find_program('python3')
+    path_python = conf.find_program('/usr/bin/python3')
 
     conf.env.PYTHON_SPECIFIED = (conf.env.PYTHON != path_python)
     conf.check_python_version(version)

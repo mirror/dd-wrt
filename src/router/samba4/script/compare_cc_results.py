@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """Compare the results of native and cross-compiled configure tests
 
 The compared files are called "default.cache.py" and are generated in

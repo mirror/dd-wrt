@@ -30,8 +30,8 @@ def configure(conf):
 	"""TODO: Might need to be updated for Windows once
 	"PEP 397":http://www.python.org/dev/peps/pep-0397/ is settled.
 	"""
-	conf.find_program('python', var='PY2CMD', mandatory=False)
-	conf.find_program('python3', var='PY3CMD', mandatory=False)
+	conf.find_program('/usr/bin/python', var='PY2CMD', mandatory=False)
+	conf.find_program('/usr/bin/python3', var='PY3CMD', mandatory=False)
 	if not conf.env.PY2CMD and not conf.env.PY3CMD:
 		conf.fatal("No Python interpreter found!")
 

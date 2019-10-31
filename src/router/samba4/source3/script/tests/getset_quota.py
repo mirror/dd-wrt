@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 # Unix SMB/CIFS implementation.
 # Tests for smbcquotas
 # Copyright (C) Noel Power 2017

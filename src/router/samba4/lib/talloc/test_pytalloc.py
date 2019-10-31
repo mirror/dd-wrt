@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 # Simple tests for the talloc python bindings.
 # Copyright (C) 2015 Petr Viktorin <pviktori@redhat.com>
 
