@@ -507,7 +507,7 @@ static NTSTATUS messaging_init_internal(TALLOC_CTX *mem_ctx,
 		return NT_STATUS_ACCESS_DENIED;
 	}
 
-	priv_path = private_path("msg.sock");
+	priv_path = lock_path("msg.sock");
 	if (priv_path == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
@@ -651,7 +651,7 @@ NTSTATUS messaging_reinit(struct messaging_context *msg_ctx)
 
 	msg_ctx->msg_dgm_ref = messaging_dgm_ref(
 		msg_ctx, msg_ctx->event_ctx, &msg_ctx->id.unique_id,
-		private_path("msg.sock"), lck_path,
+		lock_path("msg.sock"), lck_path,
 		messaging_recv_cb, msg_ctx, &ret);
 
 	if (msg_ctx->msg_dgm_ref == NULL) {

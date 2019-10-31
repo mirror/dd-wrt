@@ -454,7 +454,7 @@ struct imessaging_context *imessaging_init(TALLOC_CTX *mem_ctx,
 		goto fail;
 	}
 
-	msg->sock_dir = lpcfg_private_path(msg, lp_ctx, "msg.sock");
+	msg->sock_dir = lpcfg_lock_path(msg, lp_ctx, "msg.sock");
 	if (msg->sock_dir == NULL) {
 		goto fail;
 	}

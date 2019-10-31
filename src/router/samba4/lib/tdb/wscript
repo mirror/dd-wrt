@@ -95,7 +95,7 @@ def configure(conf):
         not conf.env.disable_tdb_mutex_locking):
         conf.define('USE_TDB_MUTEX_LOCKING', 1)
 
-    conf.CHECK_XSLTPROC_MANPAGES()
+    #conf.CHECK_XSLTPROC_MANPAGES()
 
     conf.SAMBA_CHECK_PYTHON()
     conf.SAMBA_CHECK_PYTHON_HEADERS()
