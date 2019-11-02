@@ -26,6 +26,7 @@ libspl_HEADERS = \
 	$(top_srcdir)/lib/libspl/include/sys/poll.h \
 	$(top_srcdir)/lib/libspl/include/sys/priv.h \
 	$(top_srcdir)/lib/libspl/include/sys/processor.h \
+	$(top_srcdir)/lib/libspl/include/sys/sha2.h \
 	$(top_srcdir)/lib/libspl/include/sys/simd.h \
 	$(top_srcdir)/lib/libspl/include/sys/stack.h \
 	$(top_srcdir)/lib/libspl/include/sys/stdtypes.h \
@@ -34,7 +35,8 @@ libspl_HEADERS = \
 	$(top_srcdir)/lib/libspl/include/sys/sunddi.h \
 	$(top_srcdir)/lib/libspl/include/sys/systeminfo.h \
 	$(top_srcdir)/lib/libspl/include/sys/time.h \
-	$(top_srcdir)/lib/libspl/include/sys/trace_defs.h \
+	$(top_srcdir)/lib/libspl/include/sys/trace_spl.h \
+	$(top_srcdir)/lib/libspl/include/sys/trace_zfs.h \
 	$(top_srcdir)/lib/libspl/include/sys/types32.h \
 	$(top_srcdir)/lib/libspl/include/sys/types.h \
 	$(top_srcdir)/lib/libspl/include/sys/tzfile.h \

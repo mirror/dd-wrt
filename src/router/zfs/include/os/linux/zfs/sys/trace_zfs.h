@@ -19,10 +19,8 @@
  * CDDL HEADER END
  */
 
-/*
- * Each DTRACE_PROBE must define its trace point in one (and only one)
- * source file, so this dummy file exists for that purpose.
- */
+#ifndef _OS_LINUX_ZFS_TRACE_H
+#define	_OS_LINUX_ZFS_TRACE_H
 
 #include <sys/multilist.h>
 #include <sys/arc_impl.h>
@@ -35,9 +33,8 @@
 #include <sys/dnode.h>
 #include <sys/zfs_znode.h>
 #include <sys/zil_impl.h>
+#include <sys/zrlock.h>
 
-#ifdef _KERNEL
-#define	CREATE_TRACE_POINTS
 #include <sys/trace.h>
 #include <sys/trace_acl.h>
 #include <sys/trace_arc.h>
@@ -52,4 +49,5 @@
 #include <sys/trace_zil.h>
 #include <sys/trace_zio.h>
 #include <sys/trace_zrlock.h>
+
 #endif
