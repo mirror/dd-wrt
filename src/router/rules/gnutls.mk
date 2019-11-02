@@ -15,7 +15,6 @@ gnutls-configure: gmp nettle
 		GMP_LIBS="-L$(TOP)/gmp/.libs -lgmp"
 
 gnutls: gmp nettle
-	cd nettle && make install DESTDIR=$(TOP)/_staging
 	make -C gnutls
 
 gnutls-install:
