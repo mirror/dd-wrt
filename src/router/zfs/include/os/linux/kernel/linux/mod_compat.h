@@ -53,6 +53,7 @@ enum scope_prefix_types {
 	zfs_condense,
 	zfs_dbuf,
 	zfs_dbuf_cache,
+	zfs_deadman,
 	zfs_l2arc,
 	zfs_livelist,
 	zfs_livelist_condense,
@@ -71,6 +72,7 @@ enum scope_prefix_types {
 	zfs_vdev_mirror,
 	zfs_zio,
 	zfs_zil,
+	spa
 };
 
 /*
@@ -136,5 +138,10 @@ enum scope_prefix_types {
 	module_param_call(name_prefix ## name, setfunc, getfunc, &name_prefix ## name, perm); \
 	MODULE_PARM_DESC(name_prefix ## name, desc)
 /* END CSTYLED */
+
+#define	ZFS_MODULE_DESCRIPTION(s) MODULE_DESCRIPTION(s)
+#define	ZFS_MODULE_AUTHOR(s) MODULE_AUTHOR(s)
+#define	ZFS_MODULE_LICENSE(s) MODULE_LICENSE(s)
+#define	ZFS_MODULE_VERSION(s) MODULE_VERSION(s)
 
 #endif	/* _MOD_COMPAT_H */
