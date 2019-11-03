@@ -35,3 +35,4 @@ gnutls-install:
 	rm -rf $(INSTALLDIR)/gnutls/usr/lib/*.la
 	rm -rf $(INSTALLDIR)/gnutls/usr/lib/*.a
 	rm -rf $(INSTALLDIR)/gnutls/usr/share
+	rm -rf $(INSTALLDIR)/gnutls/usr/bin
