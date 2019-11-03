@@ -1,3 +1,9 @@
+ifeq ($(ARCH),x86_64)
+	SAMBA4_AES_ARGS:= --accel-aes=intelaesni
+else
+	SAMBA4_AES_ARGS:= --accel-aes=none
+endif
+
 samba4-configure:
 	cp $(TOP)/samba4/waf-cross-answers/$(ARCH).txt $(TOP)/samba4/cross-answers.txt
 	echo 'Checking uname machine type: "$(ARCH)"' >> $(TOP)/samba4/cross-answers.txt
@@ -79,6 +85,7 @@ samba4-configure:
 		--without-ldap \
 		--with-winbind \
 		--without-json \
+		$(SAMBA4_AES_ARGS) \
 		--prefix=/usr \
 		--with-lockdir=/var \
 		--destdir=$(INSTALLDIR)/samba4 \
