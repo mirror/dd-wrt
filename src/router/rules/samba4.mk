@@ -65,6 +65,7 @@ samba4-configure:
 		--with-logfilebase=/var/log \
 		--with-piddir=/var/run \
 		--with-privatedir=/etc/samba \
+		--with-privatelibdir=/usr/lib \
 		--enable-avahi \
 		--with-quotas \
 		--without-acl-support \
