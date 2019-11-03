@@ -4,7 +4,7 @@ else
 	SAMBA4_AES_ARGS:= --accel-aes=none
 endif
 
-samba4-configure:
+samba4-configure: gnutls
 	cp $(TOP)/samba4/waf-cross-answers/$(ARCH).txt $(TOP)/samba4/cross-answers.txt
 	echo 'Checking uname machine type: "$(ARCH)"' >> $(TOP)/samba4/cross-answers.txt
 	echo 'Checking uname release type: "$(LINUX_VERSION)"' >> $(TOP)/samba4/cross-answers.txt
