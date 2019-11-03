@@ -99,6 +99,7 @@ samba4-configure: gnutls
 
 samba4: gnutls
 	make -C samba4
+	sed -i 's/\/USR\/BIN\/PYTHON3/PYTHON3/g' $(TOP)/samba4/bin/default/source3/smbd/build_options.c
 
 samba4-install:
 	cd samba4 && ./buildtools/bin/waf install --destdir=$(INSTALLDIR)/samba4
