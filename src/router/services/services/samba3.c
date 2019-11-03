@@ -145,7 +145,10 @@ void start_samba3(void)
 			"getwd cache = yes\n"
 			"lpq cache time = 30\n"
 			"max protocol = SMB2\n"
-			"printing = none\n" "load printers = No\n" "usershare allow guests = Yes\n", nvram_safe_get("router_name"), nvram_safe_get("samba3_srvstr"), nvram_safe_get("samba3_workgrp"));
+#ifndef HAVE_SAMBA4
+			"printing = none\n"
+#endif
+			"load printers = No\n" "usershare allow guests = Yes\n", nvram_safe_get("router_name"), nvram_safe_get("samba3_srvstr"), nvram_safe_get("samba3_workgrp"));
 
 		samba3shares = getsamba3shares();
 		for (cs = samba3shares; cs; cs = csnext) {
