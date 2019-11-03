@@ -10,11 +10,8 @@ def configure(conf):
                 conf.DEFINE('AESNI_INTEL_CFLAGS', f)
                 break
         if conf.CONFIG_SET('AESNI_INTEL_CFLAGS'):
-            if conf.env['SYSTEM_UNAME_MACHINE'] in ('x86_64', 'amd64'):
-                print("Compiling with Intel AES instructions")
-                conf.DEFINE('HAVE_AESNI_INTEL', 1)
-            else:
-                raise Errors.WafError('--accel-aes=intelaesni selected and non x86_64 CPU')
+            print("Compiling with Intel AES instructions")
+            conf.DEFINE('HAVE_AESNI_INTEL', 1)
         else:
             raise Errors.WafError('--aes-accel=intelaesni selected and compiler rejects ' + str(asm_flags))
         if not conf.CHECK_LDFLAGS('-Wl,-z,noexecstack'):
