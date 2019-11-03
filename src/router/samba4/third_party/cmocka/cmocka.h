@@ -57,7 +57,7 @@ int __stdcall IsDebuggerPresent();
 
 /* If __WORDSIZE is not set, try to figure it out and default to 32 bit. */
 #ifndef __WORDSIZE
-# if ((defined(__x86_64__) || defined(__aarch64__)) && !defined(__ILP32__)) || defined(__sparc_v9__) || defined(__sparcv9)
+# if ((defined(__x86_64__) || defined(__aarch64__) || (defined(__mips__) && _MIPS_SIM == _ABI64)) && !defined(__ILP32__)) || defined(__sparc_v9__) || defined(__sparcv9)
 #  define __WORDSIZE 64
 # else
 #  define __WORDSIZE 32
