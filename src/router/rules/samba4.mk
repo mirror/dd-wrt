@@ -67,11 +67,12 @@ samba4-configure:
 		--without-gettext \
 		--without-regedit \
 		--without-gpgme \
-		--with-lockdir=/var/lock \
-		--with-logfilebase=/var/log \
-		--with-piddir=/var/run \
+		--with-lockdir=/tmp/var/lock \
+		--with-logfilebase=/tmp/var/log \
+		--with-piddir=/tmp/var/run \
 		--with-privatedir=/etc/samba \
 		--with-privatelibdir=/usr/lib \
+		--localstatedir=/tmp/var \
 		--enable-avahi \
 		--with-quotas \
 		--without-acl-support \
@@ -87,7 +88,7 @@ samba4-configure:
 		--without-json \
 		$(SAMBA4_AES_ARGS) \
 		--prefix=/usr \
-		--with-lockdir=/var \
+		--with-lockdir=/tmp/var \
 		--destdir=$(INSTALLDIR)/samba4 \
 		--private-libraries=talloc,tevent,tevent-util,texpect,tdb,ldb,tdr,cmocka,replace \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/gnutls/lib/includes -ffunction-sections -fdata-sections" \
@@ -104,6 +105,7 @@ samba4-install:
 	rm -rf $(INSTALLDIR)/samba4/usr/include
 	rm -rf $(INSTALLDIR)/samba4/usr/lib/pkgconfig
 	rm -rf $(INSTALLDIR)/samba4/var
+	rm -rf $(INSTALLDIR)/samba4/tmp
 	install -D samba36/config/samba3.webnas $(INSTALLDIR)/samba4/etc/config/02samba3.webnas
 	install -D samba36/config/samba3.nvramconfig $(INSTALLDIR)/samba4/etc/config/samba3.nvramconfig
 	install -D filesharing/config/zfilesharing.webnas $(INSTALLDIR)/samba4/etc/config/03zfilesharing.webnas
