@@ -1109,6 +1109,9 @@ CFLAGS_EXTRA += -DHAVE_SAMBA3
 OBJS += samba3.o
 LDFLAGS += -lsharetools
 endif
+ifeq ($(CONFIG_SAMBA4),y)
+CFLAGS_EXTRA += -DHAVE_SAMBA4
+endif
 ifeq ($(CONFIG_RB500),y)
 CFLAGS_EXTRA += -DHAVE_RB500
 endif
