@@ -176,6 +176,35 @@ bool dbgsetclass(int level, int cls);
 int debuglevel_get_class(size_t idx);
 void debuglevel_set_class(size_t idx, int level);
 
+#ifdef NODEBUG
+
+#define CHECK_DEBUGLVL( level ) 0
+
+#define CHECK_DEBUGLVLC( dbgc_class, level ) 0
+
+#define DEBUGLVL( level ) 0
+
+#define DEBUGLVLC( dbgc_class, level ) 0
+
+#define DEBUG( level, body ) do { } while(0)
+
+#define DEBUGC( dbgc_class, level, body ) do { } while(0)
+
+#define DEBUGADD( level, body ) do { } while(0)
+
+#define DEBUGADDC( dbgc_class, level, body ) do { } while(0)
+
+/* Print a separator to the debug log. */
+#define DEBUGSEP(level) do { } while(0)
+
+/* Prefix messages with the function name */
+#define DBG_PREFIX(level, body ) do { } while(0)
+
+/* Prefix messages with the function name - class specific */
+#define DBGC_PREFIX(dbgc_class, level, body ) do { } while(0)
+
+#else
+
 #define CHECK_DEBUGLVL( level ) \
   ( ((level) <= MAX_DEBUG_LEVEL) && \
     unlikely(debuglevel_get_class(DBGC_CLASS) >= (level)))
@@ -235,7 +264,7 @@ void debuglevel_set_class(size_t idx, int level);
 		&& (dbghdrclass(level, dbgc_class, __location__, __func__ )) \
 		&& (dbgtext("%s: ", __func__))				\
 		&& (dbgtext body) )
-
+#endif
 /*
  * Debug levels matching RFC 3164
  */
