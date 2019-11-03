@@ -85,6 +85,8 @@ samba4-configure:
 		--private-libraries=talloc,tevent,tevent-util,texpect,tdb,ldb,tdr,cmocka,replace \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/gnutls/lib/includes -ffunction-sections -fdata-sections" \
 		LDFLAGS="-Wl,--gc-sections -L$(TOP)/gnutls/lib/.libs -lgnutls -L$(TOP)/nettle -lnettle -lhogweed -L$(TOP)/gmp/.libs -lgmp"
+		-make -C samba4
+		sed -i 's/\/USR\/BIN\/PYTHON3/PYTHON3/g' $(TOP)/samba4/bin/default/source3/smbd/build_options.c
 
 
 samba4: gnutls
