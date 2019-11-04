@@ -450,6 +450,7 @@ static inline int has_vht80plus80(const char *prefix)
 {
 	return 0;
 }
+
 #endif
 
 struct unl;
@@ -489,6 +490,12 @@ extern void free_mac80211_ac(struct mac80211_ac *ac);
 #define has_subeamforming(prefix) 0
 #define has_mubeamforming(prefix) 0
 #define has_vht80(interface) 0
+#if !defined(HAVE_MADWIFI) && (defined(HAVE_RT2880) || defined(HAVE_RT61))
+static inline int has_acktiming(const char *prefix)
+{
+	return 0;
+}
+#endif
 #endif
 
 #ifdef HAVE_WPA3
