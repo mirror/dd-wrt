@@ -2773,6 +2773,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_isolate[32];
 	char wl_intmit[32];
 	char wl_qboost[32];
+	char wl_sifs_trigger_time[32];
 	char wl_noise_immunity[32];
 	char wl_ofdm_weak_det[32];
 	char wl_protmode[32];
@@ -3027,6 +3028,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_xr, "%s_xr", prefix);
 	sprintf(wl_intmit, "%s_intmit", prefix);
 	sprintf(wl_qboost, "%s_qboost", prefix);
+	sprintf(wl_sifs_trigger_time, "%s_sifs_trigger_time", prefix);
 	sprintf(wl_noise_immunity, "%s_noise_immunity", prefix);
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
 	sprintf(wl_uapsd, "%s_uapsd", prefix);
@@ -3055,6 +3057,11 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		}
 		if (has_qboost(prefix)) {
 			showRadio(wp, "wl_basic.qboost", wl_qboost);
+			websWrite(wp, "<div class=\"setting\">\n");
+			show_caption(wp, "label", "wl_basic.sifs_trigger_time", NULL);
+			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,20,wl_basic.sifs_trigger_time)\" value=\"%s\" />\n", wl_sifs_trigger_time,
+				  nvram_default_get(wl_sifs_trigger_time, "0"));
+			websWrite(wp, "</div>\n");
 		}
 		if (!is_mac80211(prefix)) {
 			websWrite(wp, "<div class=\"setting\">\n");
@@ -3729,6 +3736,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_xr, "%s_xr", prefix);
 	sprintf(wl_intmit, "%s_intmit", prefix);
 	sprintf(wl_qboost, "%s_qboost", prefix);
+	sprintf(wl_sifs_trigger_time, "%s_sifs_trigger_time", prefix);
 	sprintf(wl_noise_immunity, "%s_noise_immunity", prefix);
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
 	sprintf(wl_uapsd, "%s_uapsd", prefix);
@@ -4123,6 +4131,11 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		}
 		if (has_qboost(prefix)) {
 			showRadio(wp, "wl_basic.qboost", wl_qboost);
+			websWrite(wp, "<div class=\"setting\">\n");
+			show_caption(wp, "label", "wl_basic.sifs_trigger_time", NULL);
+			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,20,wl_basic.sifs_trigger_time)\" value=\"%s\" />\n", wl_sifs_trigger_time,
+				  nvram_default_get(wl_sifs_trigger_time, "0"));
+			websWrite(wp, "</div>\n");
 		}
 		if (!is_mac80211(prefix)) {
 			websWrite(wp, "<div class=\"setting\">\n");
