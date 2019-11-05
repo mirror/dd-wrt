@@ -97,7 +97,9 @@ void start_samba3(void)
 	start_mkfiles();
 	sysprintf("echo \"nobody:*:65534:65534:nobody:/var:/bin/false\" >> /etc/passwd");
 	mkdir("/var/samba", 0700);
+	mkdir("/var/run", 0700);
 	mkdir("/var/run/samba", 0700);
+	mkdir("/var/cache", 0700);
 	mkdir("/var/cache/samba", 0700);
 	eval("touch", "/var/samba/smbpasswd");
 	if (nvram_matchi("samba3_advanced", 1)) {
