@@ -201,8 +201,8 @@ void start_openvpnserver(void)
 		else
 			fprintf(fp, "server-bridge nogw\n" "dev tap2\n");
 		if (*(nvram_safe_get("openvpn_tlsauth"))) {
-			if (nvram_matchi("openvpn_tls_btn", 1)) 
-				fprintf(fp, "tls-crypt /tmp/openvpn/ta.key\n"); //egc: tls_btn 1 is tls-crypt
+			if (nvram_matchi("openvpn_tls_btn", 1))
+				fprintf(fp, "tls-crypt /tmp/openvpn/ta.key\n");	//egc: tls_btn 1 is tls-crypt
 			else
 				fprintf(fp, "tls-auth /tmp/openvpn/ta.key 0\n");
 		}
@@ -482,8 +482,8 @@ void start_openvpn(void)
 //      if (nvram_match("openvpncl_tuntap", "tun"))
 //              fprintf(fp, "tun-ipv6\n");      //enable ipv6 support.
 	if (*(nvram_safe_get("openvpncl_tlsauth"))) {
-		if (nvram_matchi("openvpncl_tls_btn", 1)) 
-			fprintf(fp, "tls-crypt /tmp/openvpncl/ta.key\n"); //egc: tls_btn 1 is tls-crypt
+		if (nvram_matchi("openvpncl_tls_btn", 1))
+			fprintf(fp, "tls-crypt /tmp/openvpncl/ta.key\n");	//egc: tls_btn 1 is tls-crypt
 		else
 			fprintf(fp, "tls-auth /tmp/openvpncl/ta.key 1\n");
 	}

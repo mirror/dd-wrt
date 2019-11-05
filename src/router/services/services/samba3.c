@@ -114,38 +114,40 @@ void start_samba3(void)
 		}
 
 		fp = fopen("/tmp/smb.conf", "wb");
-		fprintf(fp,
-			"[global]\n"
-			"log level = 1\n"
-			"netbios name = %s\n"
-			"server string = %s\n"
-			"syslog = 10\n"
-			"encrypt passwords = true\n"
-			"preferred master = yes\n"
-			"use sendfile = yes\n"
-			"aio read size = 2048\n"
-			"aio write size = 2048\n"
-			"large readwrite = yes\n"
-			"security = user\n"
-			"mangled names = no\n"
-			"max stat cache size = 64\n"
-			"workgroup = %s\n"
-			"bind interfaces only = Yes\n"
-			"guest account = nobody\n"
-			"map to guest = Bad User\n"
-			"smb passwd file = /var/samba/smbpasswd\n"
-			"private dir = /var/samba\n"
-			"passdb backend = smbpasswd\n"
-			"log file = /var/smbd.log\n"
-			"max log size = 1000\n"
-			"socket options = TCP_NODELAY IPTOS_LOWDELAY SO_SNDBUF=262144 SO_RCVBUF=262144\n"
-			"read raw = yes\n"
-			"write raw = yes\n"
-			"oplocks = yes\n"
-			"max xmit = 65536\n"
-			"dead time = 15\n"
-			"getwd cache = yes\n"
-			"lpq cache time = 30\n"
+		fprintf(fp, "[global]\n"	//
+			"log level = 1\n"	//
+			"netbios name = %s\n"	// 
+			"server string = %s\n"	//
+#ifdef HAVE_SAMBA4
+			"unix charset = UTF-8\n"
+#endif
+			"syslog = 10\n"	//
+			"encrypt passwords = true\n"	//
+			"preferred master = yes\n"	//
+			"use sendfile = yes\n"	//
+			"aio read size = 2048\n"	//
+			"aio write size = 2048\n"	//
+			"large readwrite = yes\n"	//
+			"security = user\n"	//
+			"mangled names = no\n"	//
+			"max stat cache size = 64\n"	//
+			"workgroup = %s\n"	//
+			"bind interfaces only = Yes\n"	//
+			"guest account = nobody\n"	//
+			"map to guest = Bad User\n"	//
+			"smb passwd file = /var/samba/smbpasswd\n"	//
+			"private dir = /var/samba\n"	//
+			"passdb backend = smbpasswd\n"	//
+			"log file = /var/smbd.log\n"	//
+			"max log size = 1000\n"	//
+			"socket options = TCP_NODELAY IPTOS_LOWDELAY SO_SNDBUF=262144 SO_RCVBUF=262144\n"	//
+			"read raw = yes\n"	//
+			"write raw = yes\n"	//
+			"oplocks = yes\n"	//
+			"max xmit = 65536\n"	//
+			"dead time = 15\n"	//
+			"getwd cache = yes\n"	//
+			"lpq cache time = 30\n"	//
 #ifndef HAVE_SAMBA4
 			"max protocol = SMB2\n"
 #else
@@ -154,7 +156,8 @@ void start_samba3(void)
 #ifndef HAVE_SAMBA4
 			"printing = none\n"
 #endif
-			"load printers = No\n" "usershare allow guests = Yes\n", nvram_safe_get("router_name"), nvram_safe_get("samba3_srvstr"), nvram_safe_get("samba3_workgrp"));
+			"load printers = No\n"	//
+			"usershare allow guests = Yes\n", nvram_safe_get("router_name"), nvram_safe_get("samba3_srvstr"), nvram_safe_get("samba3_workgrp"));
 
 		samba3shares = getsamba3shares();
 		for (cs = samba3shares; cs; cs = csnext) {
@@ -229,8 +232,10 @@ void start_samba3(void)
 #endif
 			eval("/usr/sbin/smbd", "-D", conffile);
 	}
+#ifdef HAVE_SAMBA4
+	eval("/usr/sbin/winbindd", "-D", conffile);
+#endif
 	dd_loginfo("smbd", "samba started\n");
-
 	return;
 }
 
