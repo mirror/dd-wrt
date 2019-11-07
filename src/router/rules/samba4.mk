@@ -103,10 +103,12 @@ samba4: gnutls
 
 samba4-install:
 	cd samba4 && ./buildtools/bin/waf install --destdir=$(INSTALLDIR)/samba4
+	cp $(INSTALLDIR)/samba4/bin/smbpasswd $(INSTALLDIR)/samba4/sbin/smbpasswd
 	rm -f $(INSTALLDIR)/samba4/usr/bin/*
+	cp $(INSTALLDIR)/samba4/sbin/smbpasswd $(INSTALLDIR)/samba4/bin/smbpasswd
 	rm -f $(INSTALLDIR)/samba4/usr/sbin/samba-gpupdate
 	rm -f $(INSTALLDIR)/samba4/usr/sbin/eventlogadm
-	install -D samba36/source3/bin/smbpasswd $(INSTALLDIR)/samba4/usr/bin/smbpasswd
+#	install -D samba36/source3/bin/smbpasswd $(INSTALLDIR)/samba4/usr/bin/smbpasswd
 	rm -rf $(INSTALLDIR)/samba4/usr/include
 	rm -rf $(INSTALLDIR)/samba4/usr/etc
 	rm -rf $(INSTALLDIR)/samba4/usr/lib/pkgconfig
