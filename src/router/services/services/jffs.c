@@ -48,6 +48,7 @@ void start_jffs2(void)
 	switch (brand) {
 	case ROUTER_TRENDNET_TEW827:
 	case ROUTER_ASROCK_G10:
+	case ROUTER_NETGEAR_R9000:
 		ubidev = 1;
 		break;
 	case ROUTER_LINKSYS_EA8500:
@@ -60,7 +61,6 @@ void start_jffs2(void)
 	sprintf(udev, "/dev/ubi%d", ubidev);
 	char upath[32];
 	sprintf(upath, "ubi%d:ddwrt", ubidev);
-
 	if (nvram_matchi("sys_enable_jffs2", 1)) {
 		insmod("crc32 lzma_compress lzma_decompress lzo_compress lzo_decompress jffs2");
 		if (nvram_matchi("sys_clean_jffs2", 1)) {
