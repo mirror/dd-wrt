@@ -495,6 +495,7 @@ static NTSTATUS messaging_init_internal(TALLOC_CTX *mem_ctx,
 
 	lck_path = lock_path(talloc_tos(), "msg.lock");
 	if (lck_path == NULL) {
+		DEBUG(2, ("no memory %s:%d\n", __func__, __LINE__));
 		return NT_STATUS_NO_MEMORY;
 	}
 
@@ -504,19 +505,21 @@ static NTSTATUS messaging_init_internal(TALLOC_CTX *mem_ctx,
 	if (!ok) {
 		DBG_DEBUG("Could not create lock directory: %s\n",
 			  strerror(errno));
+		DEBUG(2, ("acces denied %s:%d %s\n", __func__, __LINE__, lck_path));
 		return NT_STATUS_ACCESS_DENIED;
 	}
 
-	priv_path = lock_path(talloc_tos(), "msg.lock");
+	priv_path = lock_path(talloc_tos(), "msg.sock");
+//	priv_path = private_path("msg.sock");
 	if (priv_path == NULL) {
+		DEBUG(2, ("out of memory at %s:%d\n", __func__, __LINE__));
 		return NT_STATUS_NO_MEMORY;
 	}
-
 	ok = directory_create_or_exist_strict(priv_path, sec_initial_uid(),
 					      0700);
 	if (!ok) {
-		DBG_DEBUG("Could not create msg directory: %s\n",
-			  strerror(errno));
+		DEBUG(2, ("Could not create msg directory: %s (%s)\n",
+			  strerror(errno), priv_path));
 		return NT_STATUS_ACCESS_DENIED;
 	}
 
@@ -527,6 +530,7 @@ static NTSTATUS messaging_init_internal(TALLOC_CTX *mem_ctx,
 
 	ctx = talloc_zero(frame, struct messaging_context);
 	if (ctx == NULL) {
+		DEBUG(2, ("out of memory at %s:%d\n", __func__, __LINE__));
 		status = NT_STATUS_NO_MEMORY;
 		goto done;
 	}
@@ -539,6 +543,7 @@ static NTSTATUS messaging_init_internal(TALLOC_CTX *mem_ctx,
 
 	ok = messaging_register_event_context(ctx, ev);
 	if (!ok) {
+		DEBUG(2, ("out of memory at %s:%d\n", __func__, __LINE__));
 		status = NT_STATUS_NO_MEMORY;
 		goto done;
 	}
@@ -604,6 +609,7 @@ static NTSTATUS messaging_init_internal(TALLOC_CTX *mem_ctx,
 	status = NT_STATUS_OK;
 done:
 	TALLOC_FREE(frame);
+	DBG_DEBUG("status: %d\n", status);
 
 	return status;
 }

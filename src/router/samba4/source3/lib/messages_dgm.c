@@ -1024,10 +1024,14 @@ int messaging_dgm_init(struct tevent_context *ev,
 		return ENAMETOOLONG;
 	}
 
-	socket_address = (struct sockaddr_un) { .sun_family = AF_UNIX };
+	memset(&socket_address,0,sizeof(socket_address));
+	socket_address.sun_family = AF_UNIX;
+
 	len = snprintf(socket_address.sun_path,
 		       sizeof(socket_address.sun_path),
 		       "%s/%u", socket_dir, (unsigned)ctx->pid);
+
+	DEBUG(2, ("sun path is %s\n", socket_address.sun_path));
 	if (len >= sizeof(socket_address.sun_path)) {
 		TALLOC_FREE(ctx);
 		return ENAMETOOLONG;
@@ -1041,7 +1045,7 @@ int messaging_dgm_init(struct tevent_context *ev,
 		TALLOC_FREE(ctx);
 		return ret;
 	}
-
+	DEBUG(2, ("delete sun path is %s\n", socket_address.sun_path));
 	unlink(socket_address.sun_path);
 
 	ctx->sock = socket(AF_UNIX, SOCK_DGRAM, 0);
