@@ -21,6 +21,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "includes.h"
 #include "replace.h"
 #include <talloc.h>
 #include "lib/util/samba_util.h"
@@ -43,14 +44,18 @@ static char *xx_path(TALLOC_CTX *mem_ctx,
 		     const char *rootpath)
 {
 	char *fname = NULL;
-
+	if (rootpath)
+		DEBUG(2, ("root path %s\n", rootpath));
+	    
 	fname = talloc_strdup(mem_ctx, rootpath);
 	if (!fname) {
+		DEBUG(2, ("talloc_strdup failed at %s:%d\n", __func__,__LINE__));
 		return NULL;
 	}
 	trim_string(fname,"","/");
 
 	if (!directory_create_or_exist(fname, 0755)) {
+		DEBUG(2, ("dir create failed for %s\n", fname));
 		return NULL;
 	}
 
