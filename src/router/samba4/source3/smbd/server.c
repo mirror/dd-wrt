@@ -1812,6 +1812,7 @@ extern void build_options(bool screen);
 	 */
 	ev_ctx = global_event_context();
 	if (ev_ctx == NULL) {
+		fprintf(stdout, "unexpected exit %s:%d\n", __func__, __LINE__);
 		exit(1);
 	}
 
@@ -1821,6 +1822,7 @@ extern void build_options(bool screen);
 	 */
 	msg_ctx = global_messaging_context();
 	if (msg_ctx == NULL) {
+		fprintf(stdout, "unexpected exit %s:%d\n", __func__, __LINE__);
 		exit(1);
 	}
 
@@ -1829,6 +1831,7 @@ extern void build_options(bool screen);
 	 * server info and rpc services set up. It will be called later.
 	 */
 	if (!reload_services(NULL, NULL, false)) {
+		fprintf(stdout, "unexpected exit %s:%d\n", __func__, __LINE__);
 		exit(1);
 	}
 

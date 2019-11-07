@@ -353,9 +353,9 @@ _PUBLIC_ bool directory_create_or_exist(const char *dname,
 	old_umask = umask(0);
 	ret = mkdir(dname, dir_perms);
 	if (ret == -1 && errno != EEXIST) {
-		DBG_WARNING("mkdir failed on directory %s: %s\n",
+		    DEBUG(2, ("mkdir failed on directory %s: %s\n",
 			    dname,
-			    strerror(errno));
+			    strerror(errno)));
 		umask(old_umask);
 		return false;
 	}
@@ -364,12 +364,15 @@ _PUBLIC_ bool directory_create_or_exist(const char *dname,
 	if (ret != 0 && errno == EEXIST) {
 		struct stat sbuf;
 
-		ret = lstat(dname, &sbuf);
+		bzero(&sbuf, sizeof(struct stat));
+		ret = stat(dname, &sbuf);
 		if (ret != 0) {
+			DEBUG(2, ("lstat failed\n"));
 			return false;
 		}
 
 		if (!S_ISDIR(sbuf.st_mode)) {
+			DEBUG(2, ("%s is no dir, mode is %d\n",dname, sbuf.st_mode));
 			return false;
 		}
 	}
