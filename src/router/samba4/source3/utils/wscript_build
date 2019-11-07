@@ -35,14 +35,10 @@ bld.SAMBA3_BINARY('smbtree',
                  RPC_NDR_SRVSVC''')
 
 bld.SAMBA3_BINARY('smbpasswd',
-                 source='smbpasswd.c',
+                 source='owrt_smbpasswd.c',
                  deps='''
-                 talloc
-                 smbconf
-                 pdb
-                 PASSWD_UTIL
-                 PASSCHANGE
-                 cmdline_contexts
+                 LIBCRYPTO
+                 LIBCLI_AUTH
                  ''')
 
 bld.SAMBA3_BINARY('pdbedit',
