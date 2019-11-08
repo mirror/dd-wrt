@@ -104,7 +104,7 @@ window_kill_confirm(char *buf, int len, char *data)
 
   if (len || (*buf != 'y' && *buf != 'Y'))
     {
-      *buf = 0;
+      memset(buf, 0, len);
       return;
     }
 

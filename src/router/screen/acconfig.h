@@ -274,7 +274,7 @@
  * Define USE_LOCALE if you want screen to use the locale names
  * for the name of the month and day of the week.
  */
-#define USE_LOCALE
+#undef USE_LOCALE
 
 /*
  * Define USE_PAM if your system supports PAM (Pluggable Authentication

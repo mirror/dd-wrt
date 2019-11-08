@@ -38,6 +38,7 @@ extern struct NewWindow nwin_undef, nwin_default, nwin_options;
 extern int force_vt;
 extern int hardstatusemu;
 #ifdef MAPKEYS
+extern char *kmapdef[];
 extern struct action umtab[];
 extern struct action mmtab[];
 extern struct action dmtab[];
@@ -46,7 +47,6 @@ extern struct kmap_ext *kmap_exts;
 extern int kmap_extn;
 extern int DefaultEsc;
 #endif
-
 
 static void  AddCap __P((char *));
 static void  MakeString __P((char *, char *, int, char *));
@@ -224,8 +224,11 @@ int he;
       if ((D_EA && InStr(D_EA, "\033(B")) || (D_AS && InStr(D_AS, "\033(0")))
 	D_CG0 = 1;
       if (InStr(D_termname, "xterm") || InStr(D_termname, "rxvt") ||
-	  (D_CKM && InStr(D_CKM, "\033[M")))
-	D_CXT = 1;
+	  (D_CKM && (InStr(D_CKM, "\033[M") || InStr(D_CKM, "\033[<"))))
+        {
+          D_CXT = 1;
+          kmapdef[0] = SaveStr(D_CKM);
+        }
       /* "be" seems to be standard for xterms... */
       if (D_CXT)
 	D_BE = 1;

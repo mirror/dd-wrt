@@ -58,6 +58,13 @@ struct kmap_ext
 
 struct win;			/* forward declaration */
 
+struct mouse_parse
+{
+  char sgrmode;                 /* non-zero if parsing an SGR sequence */
+  char state;                   /* current state of parsing */
+  int params[3];                /* parsed params: button, x, y */
+};
+
 struct display
 {
   struct display *d_next;	/* linked list */
@@ -100,6 +107,8 @@ struct display
   int	d_hstatus;		/* hardstatus used */
   int	d_lp_missing;		/* last character on bot line missing */
   int   d_mouse;		/* mouse mode */
+  int	d_extmouse;		/* extended mouse mode */
+  struct mouse_parse d_mouse_parse;		/* state of mouse code parsing */
   int	d_mousetrack;		/* set when user wants to use mouse even when the window
 				   does not */
 #ifdef RXVT_OSC
@@ -227,6 +236,8 @@ extern struct display TheDisplay;
 #define D_hstatus	DISPLAY(d_hstatus)
 #define D_lp_missing	DISPLAY(d_lp_missing)
 #define D_mouse		DISPLAY(d_mouse)
+#define D_mouse_parse	DISPLAY(d_mouse_parse)
+#define D_extmouse	DISPLAY(d_extmouse)
 #define D_mousetrack	DISPLAY(d_mousetrack)
 #define D_xtermosc	DISPLAY(d_xtermosc)
 #define D_lpchar	DISPLAY(d_lpchar)

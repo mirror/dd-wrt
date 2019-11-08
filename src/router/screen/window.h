@@ -240,6 +240,7 @@ struct win
   char	 w_xtermosc[4][MAXSTR];	/* special xterm/rxvt escapes */
 #endif
   int    w_mouse;		/* mouse mode 0,9,1000 */
+  int    w_extmouse;		/* extended mouse mode 0,1006 */
 #ifdef HAVE_BRAILLE
   int	 w_bd_x, w_bd_y;	/* Braille cursor position */
 #endif
@@ -350,6 +351,7 @@ struct win
 #define Layer2Window(l) ((struct win *)(l)->l_bottom->l_data)
 
 int WindowChangeNumber __P((int, int));
+int OpenDevice __P((char **, int, int *, char **));
 
 #endif /* SCREEN_WINDOW_H */
 

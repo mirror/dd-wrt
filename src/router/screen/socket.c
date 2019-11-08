@@ -720,7 +720,7 @@ struct NewWindow *nwin;
   if (getcwd(m.m.create.dir, sizeof(m.m.create.dir)) == 0)
     {
       Msg(errno, "getcwd");
-      return;
+      goto end;
     }
   if (nwin->term != nwin_undef.term)
     strncpy(m.m.create.screenterm, nwin->term, MAXTERMLEN);
@@ -729,6 +729,8 @@ struct NewWindow *nwin;
   debug1("SendCreateMsg writing '%s'\n", m.m.create.line);
   if (write(s, (char *) &m, sizeof m) != sizeof m)
     Msg(errno, "write");
+
+end:
   close(s);
 }
 
@@ -740,6 +742,7 @@ char *tty, *buf;
   struct msg m;
   bool is_socket;
 
+  debug2("SendErrorMsg: %s %s\n", tty, buf);
   strncpy(m.m.message, buf, sizeof(m.m.message) - 1);
   m.m.message[sizeof(m.m.message) - 1] = 0;
   is_socket = IsSocket(SockPath);
@@ -1235,7 +1238,13 @@ ReceiveMsg()
           FinishAttach(&m);
         break;
       case MSG_ERROR:
+      {
+        int blocked=D_blocked;
+        if(D_blocked == 4) /* allow error messages while in blanker mode */
+          D_blocked=0; /* likely they're from failed blanker */
         Msg(0, "%s", m.m.message);
+        D_blocked=blocked;
+      }
         break;
       case MSG_HANGUP:
         if (!wi) /* ignore hangups from inside */

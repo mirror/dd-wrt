@@ -289,6 +289,7 @@ extern void  CursorkeysMode __P((int));
 extern void  ReverseVideo __P((int));
 extern void  CursorVisibility __P((int));
 extern void  MouseMode __P((int));
+extern void  ExtMouseMode __P((int));
 extern void  SetFont __P((int));
 extern void  SetAttr __P((int));
 extern void  SetColor __P((int, int));
@@ -307,7 +308,7 @@ extern void  NukePending __P((void));
 #endif
 #ifdef RXVT_OSC
 extern void  ClearAllXtermOSC __P((void));
-extern void  SetXtermOSC __P((int, char *));
+extern void  SetXtermOSC __P((int, char *, char *));
 #endif
 #ifdef COLOR
 extern int   color256to16 __P((int));
@@ -449,6 +450,7 @@ extern void  LSetFlow __P((struct layer *, int));
 extern void  LKeypadMode __P((struct layer *, int));
 extern void  LCursorkeysMode __P((struct layer *, int));
 extern void  LMouseMode __P((struct layer *, int));
+extern void  LExtMouseMode __P((struct layer *, int));
 #if defined(USEVARARGS)
 extern void  LMsg __P((int, const char *, ...)) __attribute__((format(printf, 2, 3)));
 #else
