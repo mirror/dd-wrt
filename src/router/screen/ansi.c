@@ -1471,6 +1471,12 @@ int c, intermediate;
 	      curr->w_mouse = i ? a1 : 0;
 	      LMouseMode(&curr->w_layer, curr->w_mouse);
 	      break;
+         /* case 1005:     UTF-8 mouse mode rejected */
+	    case 1006:  /* SGR mouse mode */
+		curr->w_extmouse = i ? a1 : 0;
+		LExtMouseMode(&curr->w_layer, curr->w_extmouse);
+                break;
+	 /* case 1015:     UXRVT mouse mode rejected */
 	    }
 	}
       break;
@@ -1516,6 +1522,11 @@ StringEnd()
   struct canvas *cv;
   char *p;
   int typ;
+  char *t;
+
+  /* There's two ways to terminate an OSC. If we've seen an ESC
+   * then it's been ST otherwise it's BEL. */
+  t = curr->w_state == STRESC ? "\033\\" : "\a";
 
   curr->w_state = LIT;
   *curr->w_stringp = '\0';
@@ -1556,25 +1567,28 @@ StringEnd()
 	}
 #endif
 #ifdef RXVT_OSC
-      if (typ == 0 || typ == 1 || typ == 2 || typ == 20 || typ == 39 || typ == 49)
+      if (typ == 0 || typ == 1 || typ == 2 || typ == 11 || typ == 20 || typ == 39 || typ == 49)
 	{
 	  int typ2;
 	  typ2 = typ / 10;
-	  if (--typ2 < 0)
-	    typ2 = 0;
 	  if (strcmp(curr->w_xtermosc[typ2], p))
 	    {
-	      strncpy(curr->w_xtermosc[typ2], p, sizeof(curr->w_xtermosc[typ2]) - 1);
-	      curr->w_xtermosc[typ2][sizeof(curr->w_xtermosc[typ2]) - 1] = 0;
+	      if (typ != 11 || strcmp("?", p))
+		{
+		  strncpy(curr->w_xtermosc[typ2], p, sizeof(curr->w_xtermosc[typ2]) - 1);
+		  curr->w_xtermosc[typ2][sizeof(curr->w_xtermosc[typ2]) - 1] = 0;
+		}
 
 	      for (display = displays; display; display = display->d_next)
 		{
 		  if (!D_CXT)
 		    continue;
 		  if (D_forecv->c_layer->l_bottom == &curr->w_layer)
-		    SetXtermOSC(typ2, curr->w_xtermosc[typ2]);
-		  if ((typ2 == 2 || typ2 == 3) && D_xtermosc[typ2])
+		    SetXtermOSC(typ2, p, t);
+		  if ((typ2 == 3 || typ2 == 4) && D_xtermosc[typ2])
 		    Redisplay(0);
+		  if (typ == 11 && !strcmp("?", p))
+		    break;
 		}
 	    }
 	}

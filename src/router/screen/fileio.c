@@ -42,6 +42,7 @@
 extern struct display *display, *displays;
 extern struct win *fore;
 extern struct layer *flayer;
+extern int ServerSocket;
 extern int real_uid, eff_uid;
 extern int real_gid, eff_gid;
 extern char *extra_incap, *extra_outcap;
@@ -493,7 +494,7 @@ void WriteFile(struct acluser *user, char *fn, int dump) {
                   putc('\n', f);
                 else
                   putc(*p, f);
-                break;
+              break;
 #endif
         }
         (void) fclose(f);
@@ -707,7 +708,7 @@ int printpipe(struct win *p, char *cmd) {
     case 0:
       display = p->w_pdisplay;
       displays = 0;
-
+      ServerSocket = -1;
 #ifdef DEBUG
       if (dfp && dfp != stderr)
         fclose(dfp);
@@ -717,6 +718,8 @@ int printpipe(struct win *p, char *cmd) {
       closeallfiles(0);
       if (setgid(real_gid) || setuid(real_uid))
         Panic(errno, "printpipe setuid");
+      eff_uid = real_uid;
+      eff_gid = real_gid;
 
 #ifdef SIGPIPE
       signal(SIGPIPE, SIG_DFL);
@@ -744,6 +747,7 @@ int readpipe(char **cmdv) {
     return -1;
   case 0:
     displays = 0;
+    ServerSocket = -1;
 #ifdef DEBUG
     if (dfp && dfp != stderr)
       fclose(dfp);
@@ -759,6 +763,8 @@ int readpipe(char **cmdv) {
       close(1);
       Panic(errno, "setuid/setgid");
     }
+    eff_uid = real_uid;
+    eff_gid = real_gid;
 #ifdef SIGPIPE
     signal(SIGPIPE, SIG_DFL);
 #endif

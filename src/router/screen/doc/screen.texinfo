@@ -1,13 +1,14 @@
 \input texinfo @c -*-texinfo-*-
 @c %**start of header
 @c vi:set wm=5
+@documentencoding ISO-8859-15
 @setfilename screen.info
 @settitle Screen User's Manual
 @dircategory General Commands
 @finalout
 @setchapternewpage odd
 @c %**end of header
-@set version 4.6.2
+@set version 4.7.0
 
 @direntry
 * Screen: (screen).             Full-screen window manager.
@@ -24,7 +25,7 @@
 @ifinfo
 This file documents the @code{Screen} virtual terminal manager.
 
-Copyright (c) 1993-2017 Free Software Foundation, Inc.
+Copyright (c) 1993-2018 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -52,11 +53,11 @@ by the Foundation.
 @title Screen
 @subtitle The virtual terminal manager
 @subtitle for Version @value{version}
-@subtitle Feb 2017
+@subtitle Oct 2019
 
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 1993-2017 Free Software Foundation, Inc.
+Copyright @copyright{} 1993-2018 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -3042,7 +3043,6 @@ for the @var{unicode-value}.
 
 The following table is the builtin sequences.
 
-@documentencoding ISO-8859-1
 @example
      Sequence   Octal   Digraph   Unicode Equivalent
      -----------------------------------------------
@@ -3251,8 +3251,8 @@ Sets or toggles the visual bell setting for the current window. If
 terminal does not support a visual bell, the visual bell message is
 displayed in the status line when the bell character is received. 
 Visual bell support of a terminal is 
-defined by the termcap variable @code{vb}. @xref{Bell, , Visual Bell, 
-termcap, The Termcap Manual}, for more information on visual bells. 
+defined by the termcap variable @code{vb}. @xref{Bell},
+for more information on visual bells.
 The equivalent terminfo capability is @code{flash}.
 
 Per  default, @code{vbell} is @samp{off}, thus the audible bell is used.
@@ -3897,7 +3897,7 @@ amounts of text.
 @deffn Command readreg [-e encoding] [register [filename]]
 (none)@*
 Does one of two things, dependent on number of arguments: with zero or one
-arguments it it duplicates the paste buffer contents into the register specified
+arguments it duplicates the paste buffer contents into the register specified
 or entered at the prompt. With two arguments it reads the contents of the named
 file into the register, just as @code{readbuf} reads the screen-exchange file
 into the paste buffer.
@@ -4673,8 +4673,8 @@ pretending it doesn't support character deletion).
 If you would like to fully specify each window's termcap entry, you
 should instead set the @code{$SCREENCAP} variable prior to running
 @code{screen}.  @xref{Virtual Terminal}, for the details of the
-@code{screen} terminal emulation.  @xref{Top, , Termcap, termcap, The
-Termcap Manual}, for more information on termcap definitions.
+@code{screen} terminal emulation.  @xref{Termcap},
+for more information on termcap definitions.
 
 @node Special Capabilities, Autonuke, Termcap Examples, Termcap
 @section Special Terminal Capabilities
@@ -4682,7 +4682,7 @@ Termcap Manual}, for more information on termcap definitions.
 @cindex capabilities 
 The following table describes all terminal capabilities that are
 recognized by @code{screen} and are not in the termcap manual
-(@pxref{Top, , Termcap, termcap, The Termcap Manual}).
+(@pxref{Termcap}).
 You can place these capabilities in your termcap entries (in
 @file{/etc/termcap}) or use them with the commands @code{termcap},
 @code{terminfo} and @code{termcapinfo} in your @code{screenrc} files. It is
@@ -5646,7 +5646,7 @@ a length qualifier (e.g. @code{%3n}), @code{D} and @code{M} can be
 prefixed with @code{L} to generate long names, @code{w} and
 @code{W} also show the window flags if @code{L} is given.
 
-An attribute/color modifier is is used to change the attributes or the
+An attribute/color modifier is used to change the attributes or the
 color settings. Its format
 is @samp{[attribute modifier] [color description]}. The attribute modifier
 must be prefixed by a change type indicator if it can be confused with
@@ -5851,8 +5851,8 @@ Authors @*
 
 Originally created by Oliver Laumann. For a long time maintained
 and developed by Juergen Weigert, Michael Schroeder, Micah Cowan
-and Sadrul Habib Chowdhury. This latest version was produced by
-Amadeusz Slawinski <amade@@asmblr.net>
+and Sadrul Habib Chowdhury. Since 2015 maintained and developed
+by Amadeusz Slawinski <amade@@asmblr.net>
 and Alexander Naumov <alexander_naumov@@opensuse.org>.
 
 @noindent
@@ -5860,6 +5860,8 @@ Contributors @*
 ============
 
 @verbatim
+     Maarten ter Huurne <maarten@treewalker.org>,
+     Jussi Kukkonen <jussi.kukkonen@intel.com>,
      Thomas Renninger <treen@suse.com>,
      Axel Beckert <abe@deuxchevaux.org>,
      Ken Beal <kbeal@@amber.ssd.csd.harris.com>,

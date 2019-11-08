@@ -279,7 +279,13 @@ char **ttyn;
       return -1;
     }
   signal(SIGCHLD, sigcld);
-  strncpy(TtyName, m, sizeof(TtyName));
+  if (strlen(m) < sizeof(TtyName))
+    strcpy(TtyName, m);
+  else
+    {
+      close(f);
+      return -1;
+    }
   initmaster(f);
   *ttyn = TtyName;
   return f;
