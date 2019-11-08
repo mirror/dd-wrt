@@ -1,4 +1,5 @@
 screen-configure: ncurses
+	cd screen && autoreconf --force --install --symlink
 	cd screen && ./configure --host=$(ARCH)-linux --enable-colors256 CFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF -I$(TOP)/ncurses/include" LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/ncurses/lib" --prefix=/usr ac_cv_safe_to_define___extensions__=no
 
 screen: ncurses
