@@ -55,6 +55,8 @@ static sigret_t AttacherChld __P(SIGPROTOARG);
 static sigret_t AttachSigCont __P(SIGPROTOARG);
 
 extern int real_uid, real_gid, eff_uid, eff_gid;
+extern int ServerSocket;
+extern struct display *displays;
 extern char *SockName, *SockMatch, SockPath[];
 extern char HostName[];
 extern struct passwd *ppp;
@@ -307,9 +309,9 @@ int how;
       xseteuid(real_uid); /* multi_uid, allow backend to send signals */
     }
 #endif
+  eff_uid = real_uid;
   if (setgid(real_gid))
     Panic(errno, "setgid");
-  eff_uid = real_uid;
   eff_gid = real_gid;
 
   debug2("Attach: uid %d euid %d\n", (int)getuid(), (int)geteuid());
@@ -737,6 +739,8 @@ LockTerminal()
       if ((pid = fork()) == 0)
         {
           /* Child */
+          displays = 0;		/* beware of Panic() */
+          ServerSocket = -1;
           if (setgid(real_gid))
             Panic(errno, "setgid");
 #ifdef MULTIUSER

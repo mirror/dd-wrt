@@ -52,6 +52,7 @@ extern char *screenlogfile;
 extern char HostName[];
 extern int TtyMode;
 extern int SilenceWait;
+extern int ServerSocket;
 extern int real_uid, real_gid, eff_uid, eff_gid;
 extern char Termcap[];
 extern char **NewEnv;
@@ -99,7 +100,6 @@ static void pseu_writeev_fn __P((struct event *, char *));
 static void win_silenceev_fn __P((struct event *, char *));
 static void win_destroyev_fn __P((struct event *, char *));
 
-static int  OpenDevice __P((char **, int, int *, char **));
 static int  ForkWindow __P((struct win *, char **, char *));
 #ifdef ZMODEM
 static void zmodem_found __P((struct win *, int, char *, int));
@@ -508,6 +508,7 @@ WinRestore()
       ReverseVideo(fore->w_revvid);
       CursorVisibility(fore->w_curinv ? -1 : fore->w_curvvis);
       MouseMode(fore->w_mouse);
+      ExtMouseMode(fore->w_extmouse);
     }
 }
 
@@ -1087,7 +1088,7 @@ struct win *wp;
   free((char *)wp);
 }
 
-static int
+int
 OpenDevice(args, lflag, typep, namep)
 char **args;
 int lflag;
@@ -1268,6 +1269,7 @@ char **args, *ttyn;
 #endif
 
       displays = 0;		/* beware of Panic() */
+      ServerSocket = -1;
       if (setgid(real_gid) || setuid(real_uid))
 	Panic(errno, "Setuid/gid");
       eff_uid = real_uid;

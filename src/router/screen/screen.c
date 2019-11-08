@@ -623,7 +623,7 @@ int main(int ac, char** av)
           case 'h':
             if (--ac == 0)
               exit_with_usage(myname, NULL, NULL);
-              nwin_options.histheight = atoi(*++av);
+            nwin_options.histheight = atoi(*++av);
             if (nwin_options.histheight < 0)
               exit_with_usage(myname, "-h: %s: negative scrollback size?", *av);
             break;
@@ -1271,7 +1271,7 @@ int main(int ac, char** av)
   ap = av0 + strlen(av0) - 1;
   while (ap >= av0) {
     if (!strncmp("screen", ap, 6)) {
-      strncpy(ap, "SCREEN", 6); /* name this process "SCREEN-BACKEND" */
+      memcpy(ap, "SCREEN", 6); /* name this process "SCREEN-BACKEND" */
       break;
     }
     ap--;
@@ -1351,7 +1351,6 @@ int main(int ac, char** av)
    * new ones.
    */
   ServerSocket = MakeServerSocket(true);
-  InitKeytab();
 
 #ifdef ETCSCREENRC
 # ifdef ALLOW_SYSSCREENRC
@@ -1389,6 +1388,7 @@ int main(int ac, char** av)
   InitLoadav();
 #endif /* LOADAV */
 
+  InitKeytab();
   MakeNewEnv();
   signal(SIGHUP, SigHup);
   signal(SIGINT, FinitHandler);
@@ -1817,16 +1817,16 @@ void Finit(int i)
   for (display = displays; display; display = display->d_next) {
     if (D_status)
       RemoveStatus();
-      FinitTerm();
+    FinitTerm();
 #ifdef UTMPOK
-      RestoreLoginSlot();
+    RestoreLoginSlot();
 #endif
-      AddStr("[screen is terminating]\r\n");
-      Flush(3);
-      SetTTY(D_userfd, &D_OldMode);
-      fcntl(D_userfd, F_SETFL, 0);
-      freetty();
-      Kill(D_userpid, SIG_BYE);
+    AddStr("[screen is terminating]\r\n");
+    Flush(3);
+    SetTTY(D_userfd, &D_OldMode);
+    fcntl(D_userfd, F_SETFL, 0);
+    freetty();
+    Kill(D_userpid, SIG_BYE);
   }
   /*
    * we _cannot_ call eexit(i) here,
@@ -2291,12 +2291,12 @@ static void backtick_fn(struct event *ev, char *data)
   if (j < l) {
     for (k = i - j - 2; k >= 0; k--)
       if (bt->buf[k] == '\n')
-	  break;
-      k++;
-      bcopy(bt->buf + k, bt->result, i - j - k);
-      bt->result[i - j - k - 1] = 0;
-      backtick_filter(bt);
-      WindowChanged(0, '`');
+        break;
+    k++;
+    bcopy(bt->buf + k, bt->result, i - j - k);
+    bt->result[i - j - k - 1] = 0;
+    backtick_filter(bt);
+    WindowChanged(0, '`');
   }
 
   if (j == l && i == MAXSTR) {
@@ -2676,10 +2676,10 @@ char *MakeWinMsgEv(char *str, struct win *win, int esc, int padlen, struct event
           for (bt = backticks; bt; bt = bt->next)
             if (bt->num == num)
               break;
-            if (bt == 0) {
-              p--;
-              break;
-		    }
+          if (bt == 0) {
+            p--;
+            break;
+          }
 	    }
 	    {
           char savebuf[sizeof(winmsg_buf)];
@@ -2771,11 +2771,11 @@ char *MakeWinMsgEv(char *str, struct win *win, int esc, int padlen, struct event
 
         if (i != 1 || rbuf[0] != '-')
           r = ParseAttrColor(rbuf, (char *)0, 0);
-          if (r != -1 || (i == 1 && rbuf[0] == '-')) {
-            winmsg_rend[winmsg_numrend] = r;
-            winmsg_rendpos[winmsg_numrend] = p - winmsg_buf;
-            winmsg_numrend++;
-          }
+        if (r != -1 || (i == 1 && rbuf[0] == '-')) {
+          winmsg_rend[winmsg_numrend] = r;
+          winmsg_rendpos[winmsg_numrend] = p - winmsg_buf;
+          winmsg_numrend++;
+        }
        }
        s += i;
        p--;
@@ -3179,16 +3179,16 @@ static void serv_select_fn(struct event *ev, char *data)
         for (cv = D_cvlist; cv; cv = cv->c_next)
           if (cv->c_layer->l_bottom == &p->w_layer)
             break;
-          if (cv)
-            continue;   /* user already sees window */
+        if (cv)
+          continue;   /* user already sees window */
 
 #ifdef MULTIUSER
-          if (!(ACLBYTE(p->w_mon_notify, D_user->u_id) & ACLBIT(D_user->u_id)))
-            continue;   /* user doesn't care */
+        if (!(ACLBYTE(p->w_mon_notify, D_user->u_id) & ACLBIT(D_user->u_id)))
+          continue;   /* user doesn't care */
 #endif
 
-          Msg(0, "%s", MakeWinMsg(ActivityString, p, '%'));
-          p->w_monitor = MON_DONE;
+        Msg(0, "%s", MakeWinMsg(ActivityString, p, '%'));
+        p->w_monitor = MON_DONE;
       }
       WindowChanged(p, 'f');
     }
@@ -3206,9 +3206,9 @@ static void serv_select_fn(struct event *ev, char *data)
     struct canvas *cv;
     if (D_status == STATUS_ON_WIN)
       continue;
-      /* XXX: should use display functions! */
-      for (cv = D_cvlist; cv; cv = cv->c_next) {
-        int lx, ly;
+    /* XXX: should use display functions! */
+    for (cv = D_cvlist; cv; cv = cv->c_next) {
+      int lx, ly;
 
       /* normalize window, see resize.c */
       lx = cv->c_layer->l_x;
@@ -3347,7 +3347,7 @@ static char *ParseChar(char *p, char *cp)
       *cp = Ctrl(*p);
     else
       return 0;
-      ++p;
+    ++p;
   }
   else if (*p == '\\' && *++p <= '7' && *p >= '0') {
     *cp = 0;

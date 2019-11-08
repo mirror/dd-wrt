@@ -1,3 +1,11 @@
+Version 4.7.0 (02/10/2019)
+  * Add support for SGR (1006) mouse mode
+  * Add support for OSC 11
+  * Update Unicode ambiguous and wide tables to 12.1.0
+  * Fixes:
+  - cross-compilation support (bug #43223)
+  - a lot of manpage fixes and cleanups
+
 Version 4.6.2 (23/10/2017):
   * Fixes:
 	- revert changes to cursor position restore behavour (bug #51832)

@@ -6268,7 +6268,7 @@ char *data;	/* dummy */
   debug("pow_detach_fn called\n");
   if (len)
     {
-      *buf = 0;
+      memset(buf, 0, len);
       return;
     }
   if (ktab[(int)(unsigned char)*buf].nr != RC_POW_DETACH)
@@ -6293,7 +6293,7 @@ char *data;	/* dummy */
 
   if (len)
     {
-      *buf = 0;
+      memset(buf, 0, len);
       return;
     }
   if (pp->buf)
@@ -6326,7 +6326,7 @@ char *data;	/* dummy */
 
   if (len)
     {
-      *buf = 0;
+      memset(buf, 0, len);
       return;
     }
   if (!fore)
@@ -6352,7 +6352,7 @@ char *data;	/* dummy */
 
   if (len)
     {
-      *buf = 0;
+      memset(buf, 0, len);
       return;
     }
   if (pp->buf)
@@ -6373,7 +6373,7 @@ char *data;
 
   if (len || (*buf != 'y' && *buf != 'Y'))
     {
-      *buf = 0;
+      memset(buf, 0, len);
       return;
     }
   act.nr = *(int *)data;
@@ -7190,8 +7190,8 @@ RefreshXtermOSC()
   struct win *p;
 
   p = Layer2Window(D_forecv->c_layer);
-  for (i = 3; i >=0; i--)
-    SetXtermOSC(i, p ? p->w_xtermosc[i] : 0);
+  for (i = 4; i >=0; i--)
+    SetXtermOSC(i, p ? p->w_xtermosc[i] : 0, "\a");
 }
 #endif
 
