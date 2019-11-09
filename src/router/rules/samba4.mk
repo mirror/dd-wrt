@@ -105,7 +105,7 @@ samba4-install:
 	cd samba4 && ./buildtools/bin/waf install --destdir=$(INSTALLDIR)/samba4
 	cp $(INSTALLDIR)/samba4/usr/bin/smbpasswd $(INSTALLDIR)/samba4/usr/sbin/smbpasswd
 	rm -f $(INSTALLDIR)/samba4/usr/bin/*
-	cp $(INSTALLDIR)/samba4/usr/sbin/smbpasswd $(INSTALLDIR)/samba4/usr/bin/smbpasswd
+	mv $(INSTALLDIR)/samba4/usr/sbin/smbpasswd $(INSTALLDIR)/samba4/usr/bin/smbpasswd
 	rm -f $(INSTALLDIR)/samba4/usr/sbin/samba-gpupdate
 	rm -f $(INSTALLDIR)/samba4/usr/sbin/eventlogadm
 #	install -D samba36/source3/bin/smbpasswd $(INSTALLDIR)/samba4/usr/bin/smbpasswd
