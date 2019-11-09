@@ -752,9 +752,9 @@ ACTF(execdir)
 	char *olddir = NULL;
 	if (ap->exec_argc > 1) {
 		char *basename = strdup(fileName);
-		char *l = strrchr(basename, '/');
-		if (l) {
-			l[0] = 0;
+		char *trailing = strrchr(basename, '/');
+		if (trailing) {
+			trailing[0] = 0;
 			d = malloc(1024);
 			olddir = getcwd(d, 1024);
 			chdir(basename);
@@ -1240,7 +1240,7 @@ static action*** parse_params(char **argv)
 			dbg("%d", __LINE__);
 			(void) ALLOC_ACTION(prune);
 		}
-[5~#endif
+#endif
 #if ENABLE_FEATURE_FIND_QUIT
 		else if (parm == PARM_quit) {
 			dbg("%d", __LINE__);
@@ -1256,62 +1256,21 @@ static action*** parse_params(char **argv)
 		}
 #endif
 #if ENABLE_FEATURE_FIND_EXEC
-		else if (parm == PARM_execdir) {
-			int i;
-			action_execdir *ap;
-			IF_FEATURE_FIND_EXEC_PLUS(int all_subst = 0;)
-			dbg("%d", __LINE__);
-			G.need_print = 0;
-			ap = ALLOC_ACTION(execdir);
-			ap->exec_argv = ++argv; /* first arg after -exec */
-			/*ap->exec_argc = 0; - ALLOC_ACTION did it */
-			while (1) {
-				if (!*argv) /* did not see ';' or '+' until end */
-					bb_error_msg_and_die(bb_msg_requires_arg, "-execdir");
-				// find -exec echo Foo ">{}<" ";"
-				// executes "echo Foo >FILENAME<",
-				// find -exec echo Foo ">{}<" "+"
-				// executes "echo Foo FILENAME1 FILENAME2 FILENAME3...".
-				if ((argv[0][0] == ';' || argv[0][0] == '+')
-				 && argv[0][1] == '\0'
-				) {
-# if ENABLE_FEATURE_FIND_EXEC_PLUS
-					if (argv[0][0] == '+')
-						ap->filelist = xzalloc(sizeof(ap->filelist[0]));
-# endif
-					break;
-				}
-				argv++;
-				ap->exec_argc++;
-			}
-			if (ap->exec_argc == 0)
-				bb_error_msg_and_die(bb_msg_requires_arg, arg);
-			ap->subst_count = xmalloc(ap->exec_argc * sizeof(int));
-			i = ap->exec_argc;
-			while (i--) {
-				ap->subst_count[i] = count_strstr(ap->exec_argv[i], "{}");
-				IF_FEATURE_FIND_EXEC_PLUS(all_subst += ap->subst_count[i];)
-			}
-# if ENABLE_FEATURE_FIND_EXEC_PLUS
-			/*
-			 * coreutils expects {} to appear only once in "-exec +"
-			 */
-			if (all_subst != 1 && ap->filelist)
-				bb_error_msg_and_die("only one '{}' allowed for -execdir +");
-# endif
-		}
-		else if (parm == PARM_exec) {
+		else if (parm == PARM_exec || parm == PARM_execdir) {
 			int i;
 			action_exec *ap;
 			IF_FEATURE_FIND_EXEC_PLUS(int all_subst = 0;)
 			dbg("%d", __LINE__);
 			G.need_print = 0;
-			ap = ALLOC_ACTION(exec);
+			if (parm == PARM_execdir)
+				ap = (action_exec *)ALLOC_ACTION(execdir);
+			else
+				ap = ALLOC_ACTION(exec);
 			ap->exec_argv = ++argv; /* first arg after -exec */
 			/*ap->exec_argc = 0; - ALLOC_ACTION did it */
 			while (1) {
 				if (!*argv) /* did not see ';' or '+' until end */
-					bb_error_msg_and_die(bb_msg_requires_arg, "-exec");
+					bb_error_msg_and_die(bb_msg_requires_arg, parm == PARM_execdir ? "-execdir" : "-exec");
 				// find -exec echo Foo ">{}<" ";"
 				// executes "echo Foo >FILENAME<",
 				// find -exec echo Foo ">{}<" "+"
@@ -1341,7 +1300,7 @@ static action*** parse_params(char **argv)
 			 * coreutils expects {} to appear only once in "-exec +"
 			 */
 			if (all_subst != 1 && ap->filelist)
-				bb_error_msg_and_die("only one '{}' allowed for -exec +");
+				bb_error_msg_and_die(parm == PARM_execdir ? "only one '{}' allowed for -execdir +" : "only one '{}' allowed for -exec +");
 # endif
 		}
 #endif
