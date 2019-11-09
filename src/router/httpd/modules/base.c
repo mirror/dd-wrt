@@ -72,7 +72,7 @@ static char *websGetVar(webs_t wp, char *var, char *d);
 static int websGetVari(webs_t wp, char *var, int d);
 static void start_gozila(char *name, webs_t wp);
 static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, struct variable *v);
-static void do_upgrade_post(char *url, webs_t stream, int len, char *boundary);
+static void do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary);
 static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
 static char *wfgets(char *buf, int len, webs_t fp);
 static int wfprintf(webs_t fp, char *fmt, ...);
@@ -1821,7 +1821,7 @@ char ezc_version[128];
 // #endif
 
 void				// support GET and POST 2003-08-22
-do_apply_post(char *url, webs_t stream, int len, char *boundary)
+do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 {
 	int count;
 	if (stream->post == 1) {

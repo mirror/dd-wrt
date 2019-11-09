@@ -122,7 +122,7 @@ struct mime_handler {
 	char *pattern;
 	char *mime_type;
 	char *extra_header;
-	void (*input) (char *path, webs_t stream, int len, char *boundary);
+	void (*input) (char *path, webs_t stream, unsigned long len, char *boundary);
 	void (*output) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream);
 	int (*auth) (webs_t wp, int (*auth_check) (webs_t conn_fp));
 	unsigned char send_headers;
