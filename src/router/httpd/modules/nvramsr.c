@@ -76,10 +76,10 @@ static void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 	unsigned short count;
 	FILE *fp = fopen("/tmp/restore.bin", "wb");
 	if (!fp)
-	    return;
+		return;
 	char *mem = malloc(len);
-	if (!mem);
-	    return;
+	if (!mem)
+		return;
 	wfread(mem, len, 1, wp);
 	fwrite(mem, len, 1, fp);
 	fclose(fp);
