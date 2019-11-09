@@ -326,6 +326,8 @@
 //usage:	IF_FEATURE_FIND_EXEC(
 //usage:     "\n	-exec CMD ARG ;	Run CMD with all instances of {} replaced by"
 //usage:     "\n			file name. Fails if CMD exits with nonzero"
+//usage:     "\n	-execdir CMD ARG ;Run CMD with all instances of {} replaced by"
+//usage:     "\n			file name from its path. Fails if CMD exits with nonzero"
 //usage:	)
 //usage:	IF_FEATURE_FIND_EXEC_PLUS(
 //usage:     "\n	-exec CMD ARG + Run CMD with {} replaced by list of file names"
@@ -750,27 +752,25 @@ ACTF(execdir)
 	char *d;
 	int rc = 0;
 	char *olddir = NULL;
-	if (ap->exec_argc > 1) {
-		char *basename = strdup(fileName);
-		char *trailing = strrchr(basename, '/');
-		if (trailing) {
-			trailing[0] = 0;
-			d = malloc(1024);
-			olddir = getcwd(d, 1024);
-			chdir(basename);
-			free(basename);
+	char *basename = strdup(fileName);
+	char *trailing = strrchr(basename, '/');
+	if (trailing) {
+		trailing[0] = 0;
+		d = malloc(1024);
+		olddir = getcwd(d, 1024);
+		chdir(basename);
+		free(basename);
 #if ENABLE_FEATURE_FIND_EXEC_PLUS
-			if (ap->filelist) {
-				rc = execplus((action_exec *) ap);
-			} else
+		if (ap->filelist) {
+			rc = execplus((action_exec *) ap);
+		} else
 #endif
-			{
+		{
 
-				rc = do_exec((action_exec *) ap, fileName);
-			}
-			chdir(olddir);
-			free(olddir);
+			rc = do_exec((action_exec *) ap, fileName);
 		}
+		chdir(olddir);
+		free(olddir);
 	}
 	return rc;
 }
