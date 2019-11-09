@@ -782,7 +782,7 @@ static void *handle_request(void *arg)
 	char *file = NULL;
 	int len;
 	struct mime_handler *handler = NULL;;
-	unsigned long content_length = 0, flags;
+	size_t content_length = 0, flags;
 	char *line;
 	long method_type;
 	conn_fp->p = &global_vars;
