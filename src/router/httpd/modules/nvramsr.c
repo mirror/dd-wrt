@@ -140,7 +140,7 @@ static void nv_file_out(unsigned char method, struct mime_handler *handler, char
 }
 
 static void td_file_in(char *url, webs_t wp, size_t len, char *boundary)	//load and set traffic data from config file
-
+{
 	char *buf = malloc(2048);
 	char *name = NULL;
 	char *data = NULL;
