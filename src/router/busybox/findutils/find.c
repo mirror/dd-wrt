@@ -410,6 +410,20 @@ IF_FEATURE_FIND_EXEC(   ACTS(exec,
 					int file_len;
 				)
 				))
+IF_FEATURE_FIND_EXEC(   ACTS(execdir,
+				char **exec_argv; /* -exec ARGS */
+				unsigned *subst_count;
+				int exec_argc; /* count of ARGS */
+				IF_FEATURE_FIND_EXEC_PLUS(
+					/*
+					 * filelist is NULL if "exec ;"
+					 * non-NULL if "exec +"
+					 */
+					char **filelist;
+					int filelist_idx;
+					int file_len;
+				)
+				))
 IF_FEATURE_FIND_GROUP(  ACTS(group, gid_t gid;))
 IF_FEATURE_FIND_LINKS(  ACTS(links, char links_char; int links_count;))
 
@@ -706,23 +720,59 @@ static int do_exec(action_exec *ap, const char *fileName)
 		free(argv[i++]);
 	return rc == 0; /* return 1 if exitcode 0 */
 }
+#if ENABLE_FEATURE_FIND_EXEC_PLUS
+static int execplus(action_exec * ap)
+{
+	int rc;
+
+	ap->filelist = xrealloc_vector(ap->filelist, 8, ap->filelist_idx);
+	ap->filelist[ap->filelist_idx++] = xstrdup(fileName);
+	ap->file_len += strlen(fileName) + sizeof(char *) + 1;
+	/* If we have lots of files already, exec the command */
+	rc = 1;
+	if (ap->file_len >= G.max_argv_len)
+		rc = do_exec(ap, NULL);
+	return rc;
+}
+#endif
 ACTF(exec)
 {
-# if ENABLE_FEATURE_FIND_EXEC_PLUS
+#if ENABLE_FEATURE_FIND_EXEC_PLUS
 	if (ap->filelist) {
-		int rc;
-
-		ap->filelist = xrealloc_vector(ap->filelist, 8, ap->filelist_idx);
-		ap->filelist[ap->filelist_idx++] = xstrdup(fileName);
-		ap->file_len += strlen(fileName) + sizeof(char*) + 1;
-		/* If we have lots of files already, exec the command */
-		rc = 1;
-		if (ap->file_len >= G.max_argv_len)
-			rc = do_exec(ap, NULL);
-		return rc;
+		return execplus(ap);
 	}
-# endif
+#endif
 	return do_exec(ap, fileName);
+}
+
+ACTF(execdir)
+{
+	char *d;
+	int rc = 0;
+	char *olddir = NULL;
+	if (ap->exec_argc > 1) {
+		char *basename = strdup(fileName);
+		char *l = strrchr(basename, '/');
+		if (l) {
+			l[0] = 0;
+			d = malloc(1024);
+			olddir = getcwd(d, 1024);
+			chdir(basename);
+			free(basename);
+#if ENABLE_FEATURE_FIND_EXEC_PLUS
+			if (ap->filelist) {
+				rc = execplus((action_exec *) ap);
+			} else
+#endif
+			{
+
+				rc = do_exec((action_exec *) ap, fileName);
+			}
+			chdir(olddir);
+			free(olddir);
+		}
+	}
+	return rc;
 }
 # if ENABLE_FEATURE_FIND_EXEC_PLUS
 static int flush_exec_plus(void)
@@ -990,6 +1040,7 @@ static action*** parse_params(char **argv)
 	IF_FEATURE_FIND_QUIT(   PARM_quit      ,)
 	IF_FEATURE_FIND_DELETE( PARM_delete    ,)
 	IF_FEATURE_FIND_EXEC(   PARM_exec      ,)
+	IF_FEATURE_FIND_EXEC(   PARM_execdir      ,)
 	IF_FEATURE_FIND_EXECUTABLE(PARM_executable,)
 	IF_FEATURE_FIND_PAREN(  PARM_char_brace,)
 	/* All options/actions starting from here require argument */
@@ -1035,6 +1086,7 @@ static action*** parse_params(char **argv)
 	IF_FEATURE_FIND_QUIT(   "-quit\0"  )
 	IF_FEATURE_FIND_DELETE( "-delete\0" )
 	IF_FEATURE_FIND_EXEC(   "-exec\0"   )
+	IF_FEATURE_FIND_EXEC(   "-execdir\0"   )
 	IF_FEATURE_FIND_EXECUTABLE("-executable\0")
 	IF_FEATURE_FIND_PAREN(  "(\0"       )
 	/* All options/actions starting from here require argument */
@@ -1188,7 +1240,7 @@ static action*** parse_params(char **argv)
 			dbg("%d", __LINE__);
 			(void) ALLOC_ACTION(prune);
 		}
-#endif
+[5~#endif
 #if ENABLE_FEATURE_FIND_QUIT
 		else if (parm == PARM_quit) {
 			dbg("%d", __LINE__);
@@ -1204,6 +1256,50 @@ static action*** parse_params(char **argv)
 		}
 #endif
 #if ENABLE_FEATURE_FIND_EXEC
+		else if (parm == PARM_execdir) {
+			int i;
+			action_execdir *ap;
+			IF_FEATURE_FIND_EXEC_PLUS(int all_subst = 0;)
+			dbg("%d", __LINE__);
+			G.need_print = 0;
+			ap = ALLOC_ACTION(execdir);
+			ap->exec_argv = ++argv; /* first arg after -exec */
+			/*ap->exec_argc = 0; - ALLOC_ACTION did it */
+			while (1) {
+				if (!*argv) /* did not see ';' or '+' until end */
+					bb_error_msg_and_die(bb_msg_requires_arg, "-execdir");
+				// find -exec echo Foo ">{}<" ";"
+				// executes "echo Foo >FILENAME<",
+				// find -exec echo Foo ">{}<" "+"
+				// executes "echo Foo FILENAME1 FILENAME2 FILENAME3...".
+				if ((argv[0][0] == ';' || argv[0][0] == '+')
+				 && argv[0][1] == '\0'
+				) {
+# if ENABLE_FEATURE_FIND_EXEC_PLUS
+					if (argv[0][0] == '+')
+						ap->filelist = xzalloc(sizeof(ap->filelist[0]));
+# endif
+					break;
+				}
+				argv++;
+				ap->exec_argc++;
+			}
+			if (ap->exec_argc == 0)
+				bb_error_msg_and_die(bb_msg_requires_arg, arg);
+			ap->subst_count = xmalloc(ap->exec_argc * sizeof(int));
+			i = ap->exec_argc;
+			while (i--) {
+				ap->subst_count[i] = count_strstr(ap->exec_argv[i], "{}");
+				IF_FEATURE_FIND_EXEC_PLUS(all_subst += ap->subst_count[i];)
+			}
+# if ENABLE_FEATURE_FIND_EXEC_PLUS
+			/*
+			 * coreutils expects {} to appear only once in "-exec +"
+			 */
+			if (all_subst != 1 && ap->filelist)
+				bb_error_msg_and_die("only one '{}' allowed for -execdir +");
+# endif
+		}
 		else if (parm == PARM_exec) {
 			int i;
 			action_exec *ap;
