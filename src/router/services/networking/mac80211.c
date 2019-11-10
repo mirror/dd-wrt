@@ -286,10 +286,12 @@ void configure_single_ath9k(int count)
 	sprintf(wl_intmit, "%s_intmit", dev);
 	char wl_qboost[32];
 	sprintf(wl_qboost, "%s_qboost", dev);
-
+	char wl_sifs_trigger_time[32];
+	sprintf(wl_sifs_trigger_time, "%s_sifs_trigger_time", dev);
 #ifdef HAVE_ATH10K
-	if (is_ath10k(dev)) {
+	if (is_ath10k(dev) && has_qboost(dev)) {
 		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/qboost_enable", nvram_default_get(wl_qboost, "0"), wif);
+		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/sifs_trigger_time", nvram_default_get(wl_sifs_trigger_time, "0"), wif);
 		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/ani_enable", nvram_default_get(wl_intmit, "0"), wif);
 	} else
 #endif
