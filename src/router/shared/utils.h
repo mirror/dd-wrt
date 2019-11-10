@@ -1149,7 +1149,7 @@ extern int is_mac80211(const char *prefix);
 extern int is_ap8x(void);
 extern int has_channelsurvey(const char *prefix);
 extern int has_qboost(const char *prefix);
-extern int has_tdma(const char *prefix);
+extern int has_qboost_tdma(const char *prefix);
 extern int has_spectralscanning(const char *prefix);
 extern int getath9kdevicecount(void);
 #else
@@ -1171,7 +1171,7 @@ static inline int has_qboost(char *prefix)
 {
 	return 0;
 }
-static inline int has_tdma(char *prefix)
+static inline int has_qboost_tdma(char *prefix)
 {
 	return 0;
 }
