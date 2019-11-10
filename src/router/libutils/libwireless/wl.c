@@ -2571,7 +2571,7 @@ int has_qboost(const char *prefix)
 	return flagcheck(prefix, QBOOST, 0);
 }
 
-int has_tdma(const char *prefix)
+int has_qboost_tdma(const char *prefix)
 {
 	return flagcheck(prefix, TDMA, 0);
 }
