@@ -3057,7 +3057,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		}
 		if (has_qboost(prefix)) {
 			showRadio(wp, "wl_basic.qboost", wl_qboost);
-			if (has_tdma(prefix)) {
+			if (has_qboost_tdma(prefix)) {
 				websWrite(wp, "<div class=\"setting\">\n");
 				show_caption(wp, "label", "wl_basic.sifs_trigger_time", NULL);
 				websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,20,wl_basic.sifs_trigger_time)\" value=\"%s\" />\n", wl_sifs_trigger_time,
@@ -4133,7 +4133,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		}
 		if (has_qboost(prefix)) {
 			showRadio(wp, "wl_basic.qboost", wl_qboost);
-			if (has_tdma(prefix)) {
+			if (has_qboost_tdma(prefix)) {
 				websWrite(wp, "<div class=\"setting\">\n");
 				show_caption(wp, "label", "wl_basic.sifs_trigger_time", NULL);
 				websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,20,wl_basic.sifs_trigger_time)\" value=\"%s\" />\n", wl_sifs_trigger_time,
