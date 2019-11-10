@@ -48,7 +48,7 @@
 /*formal version control*/
 #define AMBIT_HARDWARE_VERSION     "U12H315T00"
 #define AMBIT_SOFTWARE_VERSION     "V1.9.99.99"
-#define AMBIT_UI_VERSION           "99.9.99"
+#define AMBIT_UI_VERSION           "99.99.99"
 #define STRING_TBL_VERSION         "1.9.99.99_2.1.40.1"
 
 #define AMBIT_PRODUCT_NAME          "R8000"
