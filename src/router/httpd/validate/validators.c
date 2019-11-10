@@ -82,6 +82,7 @@ int websGetVari(webs_t wp, char *var, int d)
 }
 
 char *copytonv(webs_t wp, const char *fmt, ...);
+char *copytonv_prefix(webs_t wp, const char *var, const char *prefix);
 
 char *copymergetonv(webs_t wp, const char *fmt, ...);
 
@@ -764,17 +765,17 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 
 	getIfLists(eths, 256);
 	foreach(var, eths, next) {
-		copytonv(wp, "%s_label", var);
-		copytonv(wp, "%s_hwaddr", var);
-		char *bridged = copytonv(wp, "%s_bridged", var);
-		copytonv(wp, "%s_multicast", var);
-		copytonv(wp, "%s_multicast_to_unicast", var);
-		copytonv(wp, "%s_nat", var);
-		copytonv(wp, "%s_isolation", var);
+		copytonv_prefix(wp, "label", var);
+		copytonv_prefix(wp, "hwaddr", var);
+		char *bridged = copytonv_prefix(wp, "bridged", var);
+		copytonv_prefix(wp, "multicast", var);
+		copytonv_prefix(wp, "multicast_to_unicast", var);
+		copytonv_prefix(wp, "nat", var);
+		copytonv_prefix(wp, "isolation", var);
 #ifdef HAVE_TOR
-		copytonv(wp, "%s_tor", var);
+		copytonv_prefix(wp, "tor", var);
 #endif
-		copytonv(wp, "%s_dns_redirect", var);
+		copytonv_prefix(wp, "dns_redirect", var);
 		copymergetonv(wp, "%s_dns_ipaddr", var);
 		char val[64];
 

@@ -724,6 +724,16 @@ char *copytonv(webs_t wp, const char *fmt, ...)
 	return wl;
 }
 
+char *copytonv_prefix(webs_t wp, const char *var, const char *prefix)
+{
+	return copytonv(wp, "%s_%s",prefix, var);
+}
+
+char *_copytonv_prefix(webs_t wp, const char *var, const char *prefix)
+{
+	return _copytonv(wp, "%s_%s",prefix, var);
+}
+
 static int copytonv_check(webs_t wp, const char *fmt, ...)
 {
 	char varbuf[64];
@@ -812,66 +822,66 @@ _8021xca
 _8021xpem
 _8021xprv
 */
-	copytonv(wp, "%s_8021xtype", prefix);
-	copytonv(wp, "%s_tls8021xuser", prefix);
-	copytonv(wp, "%s_tls8021xanon", prefix);
-	copytonv(wp, "%s_tls8021xpasswd", prefix);
-	copytonv(wp, "%s_tls8021xphase2", prefix);
-	copytonv(wp, "%s_tls8021xca", prefix);
-	copytonv(wp, "%s_tls8021xpem", prefix);
-	copytonv(wp, "%s_tls8021xprv", prefix);
-	copytonv(wp, "%s_tls8021xaddopt", prefix);
-	copytonv(wp, "%s_peap8021xuser", prefix);
-	copytonv(wp, "%s_peap8021xanon", prefix);
-	copytonv(wp, "%s_peap8021xpasswd", prefix);
-	copytonv(wp, "%s_tls8021xkeyxchng", prefix);
-	copytonv(wp, "%s_peap8021xphase2", prefix);
-	copytonv(wp, "%s_peap8021xca", prefix);
-	copytonv(wp, "%s_peap8021xaddopt", prefix);
-	copytonv(wp, "%s_ttls8021xuser", prefix);
-	copytonv(wp, "%s_ttls8021xanon", prefix);
-	copytonv(wp, "%s_ttls8021xpasswd", prefix);
-	copytonv(wp, "%s_ttls8021xphase2", prefix);
-	copytonv(wp, "%s_ttls8021xca", prefix);
-	copytonv(wp, "%s_ttls8021xaddopt", prefix);
-	copytonv(wp, "%s_leap8021xuser", prefix);
-	copytonv(wp, "%s_leap8021xanon", prefix);
-	copytonv(wp, "%s_leap8021xpasswd", prefix);
-	copytonv(wp, "%s_leap8021xphase2", prefix);
-	copytonv(wp, "%s_leap8021xaddopt", prefix);
+	copytonv_prefix(wp, "8021xtype", prefix);
+	copytonv_prefix(wp, "tls8021xuser", prefix);
+	copytonv_prefix(wp, "tls8021xanon", prefix);
+	copytonv_prefix(wp, "tls8021xpasswd", prefix);
+	copytonv_prefix(wp, "tls8021xphase2", prefix);
+	copytonv_prefix(wp, "tls8021xca", prefix);
+	copytonv_prefix(wp, "tls8021xpem", prefix);
+	copytonv_prefix(wp, "tls8021xprv", prefix);
+	copytonv_prefix(wp, "tls8021xaddopt", prefix);
+	copytonv_prefix(wp, "peap8021xuser", prefix);
+	copytonv_prefix(wp, "peap8021xanon", prefix);
+	copytonv_prefix(wp, "peap8021xpasswd", prefix);
+	copytonv_prefix(wp, "tls8021xkeyxchng", prefix);
+	copytonv_prefix(wp, "peap8021xphase2", prefix);
+	copytonv_prefix(wp, "peap8021xca", prefix);
+	copytonv_prefix(wp, "peap8021xaddopt", prefix);
+	copytonv_prefix(wp, "ttls8021xuser", prefix);
+	copytonv_prefix(wp, "ttls8021xanon", prefix);
+	copytonv_prefix(wp, "ttls8021xpasswd", prefix);
+	copytonv_prefix(wp, "ttls8021xphase2", prefix);
+	copytonv_prefix(wp, "ttls8021xca", prefix);
+	copytonv_prefix(wp, "ttls8021xaddopt", prefix);
+	copytonv_prefix(wp, "leap8021xuser", prefix);
+	copytonv_prefix(wp, "leap8021xanon", prefix);
+	copytonv_prefix(wp, "leap8021xpasswd", prefix);
+	copytonv_prefix(wp, "leap8021xphase2", prefix);
+	copytonv_prefix(wp, "leap8021xaddopt", prefix);
 
 #endif
-	copytonv(wp, "%s_wpa_psk", prefix);
+	copytonv_prefix(wp, "wpa_psk", prefix);
 #ifdef HAVE_MADWIFI
-	copytonv(wp, "%s_sae_key", prefix);
+	copytonv_prefix(wp, "sae_key", prefix);
 #endif
-	copytonv(wp, "%s_disable_eapol_key_retries", prefix);
+	copytonv_prefix(wp, "disable_eapol_key_retries", prefix);
 #ifdef HAVE_80211R
-	copytonv(wp, "%s_ft", prefix);
-	copytonv(wp, "%s_domain", prefix);
-	copytonv(wp, "%s_nas", prefix);
+	copytonv_prefix(wp, "ft", prefix);
+	copytonv_prefix(wp, "domain", prefix);
+	copytonv_prefix(wp, "nas", prefix);
 #endif
 #ifdef HAVE_80211W
-	copytonv(wp, "%s_mfp", prefix);
+	copytonv_prefix(wp, "mfp", prefix);
 #endif
-	copytonv(wp, "%s_wpa_gtk_rekey", prefix);
+	copytonv_prefix(wp, "wpa_gtk_rekey", prefix);
 	copymergetonv(wp, "%s_radius_ipaddr", prefix);
-	copytonv(wp, "%s_radius_port", prefix);
-	copytonv(wp, "%s_radius_key", prefix);
+	copytonv_prefix(wp, "radius_port", prefix);
+	copytonv_prefix(wp, "radius_key", prefix);
 
 	copymergetonv(wp, "%s_local_ip", prefix);
 
 	copymergetonv(wp, "%s_radius2_ipaddr", prefix);
-	copytonv(wp, "%s_radius2_port", prefix);
-	copytonv(wp, "%s_radius2_key", prefix);
+	copytonv_prefix(wp, "radius2_port", prefix);
+	copytonv_prefix(wp, "radius2_key", prefix);
 #ifdef HAVE_MADWIFI
-	copytonv(wp, "%s_radius_retry", prefix);
-	copytonv(wp, "%s_acct", prefix);
+	copytonv_prefix(wp, "radius_retry", prefix);
+	copytonv_prefix(wp, "acct", prefix);
 	copymergetonv(wp, "%s_acct_ipaddr", prefix);
-	copytonv(wp, "%s_acct_port", prefix);
-	copytonv(wp, "%s_acct_key", prefix);
+	copytonv_prefix(wp, "acct_port", prefix);
+	copytonv_prefix(wp, "acct_key", prefix);
 #endif
-	copytonv(wp, "%s_radmactype", prefix);
+	copytonv_prefix(wp, "radmactype", prefix);
 
 	sprintf(n, "%s_authmode", prefix);
 	char *authmode = websGetVar(wp, n, "");
@@ -907,7 +917,7 @@ _8021xprv
 	} else {
 		copytonv(wp, n);
 	}
-	copytonv(wp, "%s_wep_bit", prefix);
+	copytonv_prefix(wp, "wep_bit", prefix);
 	char buf[128];
 
 	snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s", pass, key1, key2, key3, key4, tx);
@@ -922,14 +932,14 @@ _8021xprv
 
 #ifdef HAVE_MADWIFI
 	if (v && (!strcmp(v, "wpa") || !strcmp(v, "8021X"))) {
-		_copytonv(wp, "%s_ccmp", prefix);
-		_copytonv(wp, "%s_tkip", prefix);
-		_copytonv(wp, "%s_ccmp-256", prefix);
-		_copytonv(wp, "%s_gcmp-256", prefix);
-		_copytonv(wp, "%s_gcmp", prefix);
+		_copytonv_prefix(wp, "ccmp", prefix);
+		_copytonv_prefix(wp, "tkip", prefix);
+		_copytonv_prefix(wp, "ccmp-256", prefix);
+		_copytonv_prefix(wp, "gcmp-256", prefix);
+		_copytonv_prefix(wp, "gcmp", prefix);
 	}
 #else
-	copytonv(wp, "%s_crypto", prefix);
+	copytonv_prefix(wp, "crypto", prefix);
 #endif
 
 	if (v) {
@@ -953,16 +963,16 @@ _8021xprv
 #ifdef HAVE_MADWIFI
 
 	if (v && !strcmp(v, "wpa")) {
-		_copytonv(wp, "%s_psk", prefix);
-		_copytonv(wp, "%s_psk2", prefix);
-		_copytonv(wp, "%s_psk2-sha256", prefix);
-		_copytonv(wp, "%s_psk3", prefix);
-		_copytonv(wp, "%s_wpa", prefix);
-		_copytonv(wp, "%s_wpa2", prefix);
-		_copytonv(wp, "%s_wpa2-sha256", prefix);
-		_copytonv(wp, "%s_wpa3", prefix);
-		_copytonv(wp, "%s_wpa3-192", prefix);
-		_copytonv(wp, "%s_wpa3-128", prefix);
+		_copytonv_prefix(wp, "psk", prefix);
+		_copytonv_prefix(wp, "psk2", prefix);
+		_copytonv_prefix(wp, "psk2-sha256", prefix);
+		_copytonv_prefix(wp, "psk3", prefix);
+		_copytonv_prefix(wp, "wpa", prefix);
+		_copytonv_prefix(wp, "wpa2", prefix);
+		_copytonv_prefix(wp, "wpa2-sha256", prefix);
+		_copytonv_prefix(wp, "wpa3", prefix);
+		_copytonv_prefix(wp, "wpa3-192", prefix);
+		_copytonv_prefix(wp, "wpa3-128", prefix);
 		char akm[128] = { 0, 0 };
 		if (nvram_nmatch("1", "%s_psk", prefix))
 			sprintf(akm, "%s %s", akm, "psk");
@@ -993,17 +1003,17 @@ _8021xprv
 	}
 
 	if (v && !strcmp(v, "8021X")) {
-		_copytonv(wp, "%s_802.1x", prefix);
-		_copytonv(wp, "%s_leap", prefix);
-		_copytonv(wp, "%s_peap", prefix);
-		_copytonv(wp, "%s_tls", prefix);
-		_copytonv(wp, "%s_ttls", prefix);
-		_copytonv(wp, "%s_wpa", prefix);
-		_copytonv(wp, "%s_wpa2", prefix);
-		_copytonv(wp, "%s_wpa2-sha256", prefix);
-		_copytonv(wp, "%s_wpa3", prefix);
-		_copytonv(wp, "%s_wpa3-192", prefix);
-		_copytonv(wp, "%s_wpa3-128", prefix);
+		_copytonv_prefix(wp, "802.1x", prefix);
+		_copytonv_prefix(wp, "leap", prefix);
+		_copytonv_prefix(wp, "peap", prefix);
+		_copytonv_prefix(wp, "tls", prefix);
+		_copytonv_prefix(wp, "ttls", prefix);
+		_copytonv_prefix(wp, "wpa", prefix);
+		_copytonv_prefix(wp, "wpa2", prefix);
+		_copytonv_prefix(wp, "wpa2-sha256", prefix);
+		_copytonv_prefix(wp, "wpa3", prefix);
+		_copytonv_prefix(wp, "wpa3-192", prefix);
+		_copytonv_prefix(wp, "wpa3-128", prefix);
 		char akm[128] = { 0, 0 };
 		if (nvram_nmatch("1", "%s_leap", prefix))
 			sprintf(akm, "%s %s", akm, "leap");
@@ -4075,14 +4085,14 @@ static void save_prefix(webs_t wp, char *prefix)
 #endif
 #ifdef HAVE_RELAYD
 	char gwaddr[32];
-	copytonv(wp, "%s_relayd_gw_auto", prefix);
+	copytonv_prefix(wp, "relayd_gw_auto", prefix);
 	copymergetonv(wp, "%s_relayd_gw_ipaddr", prefix);
 #endif
 #ifdef HAVE_IFL
 #ifdef HAVE_NEXTMEDIA
-	copytonv(wp, "%s_label", prefix);
+	copytonv_prefix(wp, "label", prefix);
 #endif
-	copytonv(wp, "%s_note", prefix);
+	copytonv_prefix(wp, "note", prefix);
 #endif
 #ifdef HAVE_MADWIFI
 	copytonv(wp, "rate_control");
@@ -4102,7 +4112,7 @@ static void save_prefix(webs_t wp, char *prefix)
 				nvram_set("wl2_ssid", wl);
 		}
 	}
-	copytonv(wp, "%s_distance", prefix);
+	copytonv_prefix(wp, "distance", prefix);
 #ifdef HAVE_MADWIFI
 	{
 		snprintf(n, sizeof(n), "%s_txpwrdbm", prefix);
@@ -4143,8 +4153,8 @@ static void save_prefix(webs_t wp, char *prefix)
 			nvram_set(n, turbo);
 		}
 	}
-	copytonv(wp, "%s_antgain", prefix);
-	copytonv(wp, "%s_regulatory", prefix);
+	copytonv_prefix(wp, "antgain", prefix);
+	copytonv_prefix(wp, "regulatory", prefix);
 	snprintf(n, sizeof(n), "%s_scanlist", prefix);
 	{
 		char *sl = websGetVar(wp, n, NULL);
@@ -4166,9 +4176,9 @@ static void save_prefix(webs_t wp, char *prefix)
 #ifdef HAVE_MAKSAT
 	copytonv(wp, "ath_specialmode");
 #endif
-	copytonv(wp, "%s_regdomain", prefix);
+	copytonv_prefix(wp, "regdomain", prefix);
 
-	copytonv(wp, "%s_rts", prefix);
+	copytonv_prefix(wp, "rts", prefix);
 	if (nvram_nmatch("1", "%s_rts", prefix)) {
 		snprintf(turbo, sizeof(turbo), "%s_rtsvalue", prefix);
 		char *tw = websGetVar(wp, turbo, NULL);
@@ -4181,46 +4191,46 @@ static void save_prefix(webs_t wp, char *prefix)
 			nvram_nset(tw, "%s_rtsvalue", prefix);
 		}
 	}
-	copytonv(wp, "%s_protmode", prefix);
-	copytonv(wp, "%s_minrate", prefix);
-	copytonv(wp, "%s_maxrate", prefix);
-	copytonv(wp, "%s_xr", prefix);
-	copytonv(wp, "%s_outdoor", prefix);
+	copytonv_prefix(wp, "protmode", prefix);
+	copytonv_prefix(wp, "minrate", prefix);
+	copytonv_prefix(wp, "maxrate", prefix);
+	copytonv_prefix(wp, "xr", prefix);
+	copytonv_prefix(wp, "outdoor", prefix);
 //    copytonv( wp, "%s_compression", prefix ); // Atheros SuperG header
 	// compression
-	copytonv(wp, "%s_ff", prefix);	// ff = 0, Atheros SuperG fast
+	copytonv_prefix(wp, "ff", prefix);	// ff = 0, Atheros SuperG fast
 	// framing disabled, 1 fast framing
 	// enabled
-	copytonv(wp, "%s_diversity", prefix);
-	copytonv(wp, "%s_preamble", prefix);
+	copytonv_prefix(wp, "diversity", prefix);
+	copytonv_prefix(wp, "preamble", prefix);
 #ifdef HAVE_ATH9K
-	copytonv(wp, "%s_uapsd", prefix);
-	copytonv(wp, "%s_smps", prefix);
-	copytonv(wp, "%s_shortgi", prefix);
-	copytonv(wp, "%s_connect", prefix);
-	copytonv(wp, "%s_stay", prefix);
-	copytonv(wp, "%s_poll_time", prefix);
-	copytonv(wp, "%s_strikes", prefix);
+	copytonv_prefix(wp, "uapsd", prefix);
+	copytonv_prefix(wp, "smps", prefix);
+	copytonv_prefix(wp, "shortgi", prefix);
+	copytonv_prefix(wp, "connect", prefix);
+	copytonv_prefix(wp, "stay", prefix);
+	copytonv_prefix(wp, "poll_time", prefix);
+	copytonv_prefix(wp, "strikes", prefix);
 #endif
 #if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC)
-	copytonv(wp, "%s_subf", prefix);
-	copytonv(wp, "%s_mubf", prefix);
-	copytonv(wp, "%s_qboost", prefix);
-	copytonv(wp, "%s_sifs_trigger_time", prefix);
+	copytonv_prefix(wp, "subf", prefix);
+	copytonv_prefix(wp, "mubf", prefix);
+	copytonv_prefix(wp, "qboost", prefix);
+	copytonv_prefix(wp, "sifs_trigger_time", prefix);
 #endif
-	copytonv(wp, "%s_wmm", prefix);
-	copytonv(wp, "%s_bcn", prefix);
-	copytonv(wp, "%s_dtim", prefix);
-	copytonv(wp, "%s_txantenna", prefix);
-	copytonv(wp, "%s_rxantenna", prefix);
-	copytonv(wp, "%s_intmit", prefix);
-	copytonv(wp, "%s_csma", prefix);
-	copytonv(wp, "%s_noise_immunity", prefix);
-	copytonv(wp, "%s_ofdm_weak_det", prefix);
+	copytonv_prefix(wp, "wmm", prefix);
+	copytonv_prefix(wp, "bcn", prefix);
+	copytonv_prefix(wp, "dtim", prefix);
+	copytonv_prefix(wp, "txantenna", prefix);
+	copytonv_prefix(wp, "rxantenna", prefix);
+	copytonv_prefix(wp, "intmit", prefix);
+	copytonv_prefix(wp, "csma", prefix);
+	copytonv_prefix(wp, "noise_immunity", prefix);
+	copytonv_prefix(wp, "ofdm_weak_det", prefix);
 
-	copytonv(wp, "%s_chanshift", prefix);
-	copytonv(wp, "%s_doth", prefix);
-	copytonv(wp, "%s_maxassoc", prefix);
+	copytonv_prefix(wp, "chanshift", prefix);
+	copytonv_prefix(wp, "doth", prefix);
+	copytonv_prefix(wp, "maxassoc", prefix);
 
 	snprintf(chanbw, sizeof(chanbw), "%s_channelbw", prefix);
 	char *cbw = websGetVar(wp, chanbw, NULL);
@@ -4231,29 +4241,29 @@ static void save_prefix(webs_t wp, char *prefix)
 	if (cbw)
 		nvram_set(chanbw, cbw);
 
-	copytonv(wp, "%s_xr", prefix);
-	copytonv(wp, "%s_cardtype", prefix);
+	copytonv_prefix(wp, "xr", prefix);
+	copytonv_prefix(wp, "cardtype", prefix);
 
 #endif
-	copytonv(wp, "%s_closed", prefix);
+	copytonv_prefix(wp, "closed", prefix);
 	if (has_ac(prefix) && has_2ghz(prefix)) {
-		copytonv(wp, "%s_turbo_qam", prefix);
+		copytonv_prefix(wp, "turbo_qam", prefix);
 	}
-	copytonv(wp, "%s_atf", prefix);
-	copytonv(wp, "%s_fc", prefix);
+	copytonv_prefix(wp, "atf", prefix);
+	copytonv_prefix(wp, "fc", prefix);
 
 #ifdef HAVE_80211AC
 #ifndef HAVE_NOAC
-	copytonv(wp, "%s_wmf_bss_enable", prefix);
+	copytonv_prefix(wp, "wmf_bss_enable", prefix);
 	if (has_ac(prefix)) {
-		copytonv(wp, "%s_nitro_qam", prefix);
+		copytonv_prefix(wp, "nitro_qam", prefix);
 	}
 	if (has_beamforming(prefix)) {
-		copytonv(wp, "%s_txbf", prefix);
-		copytonv(wp, "%s_txbf_imp", prefix);
+		copytonv_prefix(wp, "txbf", prefix);
+		copytonv_prefix(wp, "txbf_imp", prefix);
 	}
 	if (has_mumimo(prefix)) {
-		copytonv(wp, "%s_mumimo", prefix);
+		copytonv_prefix(wp, "mumimo", prefix);
 	}
 #endif
 #endif
@@ -4274,15 +4284,15 @@ static void save_prefix(webs_t wp, char *prefix)
 #else
 	ifname = getRADev(prefix);
 #endif
-	copytonv(wp, "%s_multicast", ifname);
-	copytonv(wp, "%s_multicast_to_unicast", ifname);
-	copytonv(wp, "%s_bridged", ifname);
-	copytonv(wp, "%s_nat", ifname);
-	copytonv(wp, "%s_isolation", ifname);
+	copytonv_prefix(wp, "multicast", ifname);
+	copytonv_prefix(wp, "multicast_to_unicast", ifname);
+	copytonv_prefix(wp, "bridged", ifname);
+	copytonv_prefix(wp, "nat", ifname);
+	copytonv_prefix(wp, "isolation", ifname);
 #ifdef HAVE_TOR
-	copytonv(wp, "%s_tor", ifname);
+	copytonv_prefix(wp, "tor", ifname);
 #endif
-	copytonv(wp, "%s_dns_redirect", ifname);
+	copytonv_prefix(wp, "dns_redirect", ifname);
 
 	copymergetonv(wp, "%s_dns_ipaddr", ifname);
 	copymergetonv(wp, "%s_ipaddr", ifname);
@@ -4290,26 +4300,26 @@ static void save_prefix(webs_t wp, char *prefix)
 
 #else
 
-	copytonv(wp, "%s_multicast", prefix);
-	copytonv(wp, "%s_multicast_to_unicast", prefix);
-	copytonv(wp, "%s_bridged", prefix);
-	copytonv(wp, "%s_nat", prefix);
-	copytonv(wp, "%s_isolation", prefix);
+	copytonv_prefix(wp, "multicast", prefix);
+	copytonv_prefix(wp, "multicast_to_unicast", prefix);
+	copytonv_prefix(wp, "bridged", prefix);
+	copytonv_prefix(wp, "nat", prefix);
+	copytonv_prefix(wp, "isolation", prefix);
 #ifdef HAVE_TOR
-	copytonv(wp, "%s_tor", prefix);
+	copytonv_prefix(wp, "tor", prefix);
 #endif
-	copytonv(wp, "%s_dns_redirect", prefix);
+	copytonv_prefix(wp, "dns_redirect", prefix);
 	copymergetonv(wp, "%s_dns_ipaddr", prefix);
 	copymergetonv(wp, "%s_ipaddr", prefix);
 	copymergetonv(wp, "%s_netmask", prefix);
 
-	copytonv(wp, "%s_duallink", prefix);
+	copytonv_prefix(wp, "duallink", prefix);
 
 	copymergetonv(wp, "%s_duallink_parent", prefix);
 
 #endif
 
-	copytonv(wp, "%s_ap_isolate", prefix);
+	copytonv_prefix(wp, "ap_isolate", prefix);
 	snprintf(n, sizeof(n), "%s_mode", prefix);
 	char *wl_newmode = websGetVar(wp, n, NULL);
 	if (wl_newmode && (nvram_match(n, "sta") || nvram_match(n, "apsta")) && strcmp(wl_newmode, "sta") && strcmp(wl_newmode, "apsta"))
@@ -4335,7 +4345,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	int chanchanged = 0;
 
 #ifdef HAVE_RT2880
-	copytonv(wp, "%s_greenfield", prefix);
+	copytonv_prefix(wp, "greenfield", prefix);
 #endif
 
 #ifndef HAVE_MADWIFI
@@ -4380,8 +4390,8 @@ static void save_prefix(webs_t wp, char *prefix)
 #endif
 #endif
 
-	copytonv(wp, "%s_nbw", prefix);
-	copytonv(wp, "%s_nctrlsb", prefix);
+	copytonv_prefix(wp, "nbw", prefix);
+	copytonv_prefix(wp, "nctrlsb", prefix);
 
 	snprintf(n, sizeof(n), "%s_channel", prefix);
 	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2")) {
@@ -4410,7 +4420,7 @@ static void save_prefix(webs_t wp, char *prefix)
 			nvram_set("wl2_wchannel", wl);
 
 	}
-	copytonv(wp, "%s_channel2", prefix);
+	copytonv_prefix(wp, "channel2", prefix);
 	copytonv(wp, n);
 	copytonv(wp, "wl_reg_mode");
 	copytonv(wp, "wl_tpc_db");
@@ -4676,10 +4686,10 @@ void set_security(webs_t wp)
 	char akm[128] = { 0, 0 };
 	if (ifname && !strcmp(prefix2, "wpa")) {
 		sprintf(n2, "%s_akm", ifname);
-		_copytonv(wp, "%s_psk", ifname);
-		_copytonv(wp, "%s_psk2", ifname);
-		_copytonv(wp, "%s_psk2-sha256", ifname);
-		_copytonv(wp, "%s_psk3", ifname);
+		_copytonv_prefix(wp, "psk", ifname);
+		_copytonv_prefix(wp, "psk2", ifname);
+		_copytonv_prefix(wp, "psk2-sha256", ifname);
+		_copytonv_prefix(wp, "psk3", ifname);
 		if (nvram_nmatch("1", "%s_psk", ifname))
 			sprintf(akm, "%s %s", akm, "psk");
 		if (nvram_nmatch("1", "%s_psk2", ifname))
@@ -4692,17 +4702,17 @@ void set_security(webs_t wp)
 	}
 	if (ifname && !strcmp(prefix2, "8021X")) {
 		sprintf(n2, "%s_akm", ifname);
-		_copytonv(wp, "%s_802.1x", ifname);
-		_copytonv(wp, "%s_leap", ifname);
-		_copytonv(wp, "%s_peap", ifname);
-		_copytonv(wp, "%s_tls", ifname);
-		_copytonv(wp, "%s_ttls", ifname);
-		_copytonv(wp, "%s_wpa", ifname);
-		_copytonv(wp, "%s_wpa2", ifname);
-		_copytonv(wp, "%s_wpa2-sha256", ifname);
-		_copytonv(wp, "%s_wpa3", ifname);
-		_copytonv(wp, "%s_wpa3-192", ifname);
-		_copytonv(wp, "%s_wpa3-128", ifname);
+		_copytonv_prefix(wp, "802.1x", ifname);
+		_copytonv_prefix(wp, "leap", ifname);
+		_copytonv_prefix(wp, "peap", ifname);
+		_copytonv_prefix(wp, "tls", ifname);
+		_copytonv_prefix(wp, "ttls", ifname);
+		_copytonv_prefix(wp, "wpa", ifname);
+		_copytonv_prefix(wp, "wpa2", ifname);
+		_copytonv_prefix(wp, "wpa2-sha256", ifname);
+		_copytonv_prefix(wp, "wpa3", ifname);
+		_copytonv_prefix(wp, "wpa3-192", ifname);
+		_copytonv_prefix(wp, "wpa3-128", ifname);
 		if (nvram_nmatch("1", "%s_802.1x", ifname))
 			sprintf(akm, "%s %s", akm, "802.1x");
 		if (nvram_nmatch("1", "%s_leap", ifname))
@@ -4717,17 +4727,17 @@ void set_security(webs_t wp)
 	}
 	if (ifname && (!strcmp(prefix2, "wpa") || !strcmp(prefix2, "8021X"))) {
 		sprintf(n2, "%s_akm", ifname);
-		_copytonv(wp, "%s_ccmp", ifname);
-		_copytonv(wp, "%s_tkip", ifname);
-		_copytonv(wp, "%s_ccmp-256", ifname);
-		_copytonv(wp, "%s_gcmp-256", ifname);
-		_copytonv(wp, "%s_gcmp", ifname);
-		_copytonv(wp, "%s_wpa", ifname);
-		_copytonv(wp, "%s_wpa2", ifname);
-		_copytonv(wp, "%s_wpa2-sha256", ifname);
-		_copytonv(wp, "%s_wpa3", ifname);
-		_copytonv(wp, "%s_wpa3-192", ifname);
-		_copytonv(wp, "%s_wpa3-128", ifname);
+		_copytonv_prefix(wp, "ccmp", ifname);
+		_copytonv_prefix(wp, "tkip", ifname);
+		_copytonv_prefix(wp, "ccmp-256", ifname);
+		_copytonv_prefix(wp, "gcmp-256", ifname);
+		_copytonv_prefix(wp, "gcmp", ifname);
+		_copytonv_prefix(wp, "wpa", ifname);
+		_copytonv_prefix(wp, "wpa2", ifname);
+		_copytonv_prefix(wp, "wpa2-sha256", ifname);
+		_copytonv_prefix(wp, "wpa3", ifname);
+		_copytonv_prefix(wp, "wpa3-192", ifname);
+		_copytonv_prefix(wp, "wpa3-128", ifname);
 		if (nvram_nmatch("1", "%s_wpa", ifname))
 			sprintf(akm, "%s %s", akm, "wpa");
 		if (nvram_nmatch("1", "%s_wpa2", ifname))
