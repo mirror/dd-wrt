@@ -4206,6 +4206,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_subf", prefix);
 	copytonv(wp, "%s_mubf", prefix);
 	copytonv(wp, "%s_qboost", prefix);
+	copytonv(wp, "%s_sifs_trigger_time", prefix);
 #endif
 	copytonv(wp, "%s_wmm", prefix);
 	copytonv(wp, "%s_bcn", prefix);
