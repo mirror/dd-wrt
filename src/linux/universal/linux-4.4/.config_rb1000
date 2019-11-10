@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 4.4.190-rc1 Kernel Configuration
+# Linux/powerpc 4.4.200 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -1938,7 +1938,6 @@ CONFIG_USB_SERIAL_OPTION=y
 # CONFIG_USB_EMI26 is not set
 # CONFIG_USB_ADUTUX is not set
 # CONFIG_USB_SEVSEG is not set
-# CONFIG_USB_RIO500 is not set
 # CONFIG_USB_LEGOTOWER is not set
 # CONFIG_USB_LCD is not set
 # CONFIG_USB_LED is not set
@@ -2418,6 +2417,7 @@ CONFIG_TRACING_SUPPORT=y
 # CONFIG_TEST_KSTRTOX is not set
 # CONFIG_TEST_PRINTF is not set
 # CONFIG_TEST_RHASHTABLE is not set
+# CONFIG_TEST_HASH is not set
 # CONFIG_DMA_API_DEBUG is not set
 # CONFIG_TEST_LKM is not set
 # CONFIG_TEST_USER_COPY is not set
@@ -2583,4 +2583,3 @@ CONFIG_CRYPTO_DEFLATE=m
 # CONFIG_OCF_OCF is not set
 CONFIG_PPC_LIB_RHEAP=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_TEST_HASH is not set

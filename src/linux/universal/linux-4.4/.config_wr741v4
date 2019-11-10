@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.4.190-rc1 Kernel Configuration
+# Linux/mips 4.4.200 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1708,6 +1708,7 @@ CONFIG_TRACING_SUPPORT=y
 # CONFIG_TEST_KSTRTOX is not set
 # CONFIG_TEST_PRINTF is not set
 # CONFIG_TEST_RHASHTABLE is not set
+# CONFIG_TEST_HASH is not set
 # CONFIG_DMA_API_DEBUG is not set
 # CONFIG_TEST_LKM is not set
 # CONFIG_TEST_USER_COPY is not set
@@ -1923,4 +1924,3 @@ CONFIG_ARCH_HAS_ATOMIC64_DEC_IF_POSITIVE=y
 # CONFIG_ARCH_HAS_SG_CHAIN is not set
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_TEST_HASH is not set
