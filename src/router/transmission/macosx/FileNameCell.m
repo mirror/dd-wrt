@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- * 
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -22,14 +20,14 @@
  * DEALINGS IN THE SOFTWARE.
  *****************************************************************************/
 
+#include <libtransmission/transmission.h>
+#include <libtransmission/utils.h>
+
 #import "FileNameCell.h"
 #import "FileOutlineView.h"
 #import "Torrent.h"
 #import "FileListNode.h"
 #import "NSStringAdditions.h"
-
-#import "transmission.h" // required by utils.h
-#import "utils.h"
 
 #define PADDING_HORIZONAL 2.0
 #define IMAGE_FOLDER_SIZE 16.0
@@ -58,39 +56,30 @@
     {
         NSMutableParagraphStyle * paragraphStyle = [[NSParagraphStyle defaultParagraphStyle] mutableCopy];
         [paragraphStyle setLineBreakMode: NSLineBreakByTruncatingMiddle];
-        
+
         fTitleAttributes = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
                             [NSFont messageFontOfSize: 12.0], NSFontAttributeName,
                             paragraphStyle, NSParagraphStyleAttributeName, nil];
-        
+
         NSMutableParagraphStyle * statusParagraphStyle = [[NSParagraphStyle defaultParagraphStyle] mutableCopy];
         [statusParagraphStyle setLineBreakMode: NSLineBreakByTruncatingTail];
-        
+
         fStatusAttributes = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
                                 [NSFont messageFontOfSize: 9.0], NSFontAttributeName,
                                 statusParagraphStyle, NSParagraphStyleAttributeName,  nil];
-        
-        [paragraphStyle release];
-        [statusParagraphStyle release];
+
     }
     return self;
 }
 
-- (void) dealloc
-{
-    [fTitleAttributes release];
-    [fStatusAttributes release];
-    
-    [super dealloc];
-}
 
 - (id) copyWithZone: (NSZone *) zone
 {
     FileNameCell * copy = [super copyWithZone: zone];
-    
-    copy->fTitleAttributes = [fTitleAttributes retain];
-    copy->fStatusAttributes = [fStatusAttributes retain];
-    
+
+    copy->fTitleAttributes = fTitleAttributes;
+    copy->fStatusAttributes = fStatusAttributes;
+
     return copy;
 }
 
@@ -103,13 +92,13 @@
 - (NSRect) imageRectForBounds: (NSRect) bounds
 {
     NSRect result = bounds;
-    
+
     result.origin.x += PADDING_HORIZONAL;
-    
+
     const CGFloat IMAGE_SIZE = [(FileListNode *)[self objectValue] isFolder] ? IMAGE_FOLDER_SIZE : IMAGE_ICON_SIZE;
     result.origin.y += (result.size.height - IMAGE_SIZE) * 0.5;
     result.size = NSMakeSize(IMAGE_SIZE, IMAGE_SIZE);
-    
+
     return result;
 }
 
@@ -117,7 +106,7 @@
 {
     //icon
     [[self image] drawInRect: [self imageRectForBounds: cellFrame] fromRect: NSZeroRect operation: NSCompositeSourceOver fraction: 1.0 respectFlipped: YES hints: nil];
-    
+
     NSColor * titleColor, * statusColor;
     if ([self backgroundStyle] == NSBackgroundStyleDark)
         titleColor = statusColor = [NSColor whiteColor];
@@ -126,17 +115,17 @@
     else
     {
         titleColor = [NSColor controlTextColor];
-        statusColor = [NSColor darkGrayColor];
+        statusColor = [NSColor secondaryLabelColor];
     }
-    
-    [fTitleAttributes setObject: titleColor forKey: NSForegroundColorAttributeName];
-    [fStatusAttributes setObject: statusColor forKey: NSForegroundColorAttributeName];
-    
+
+    fTitleAttributes[NSForegroundColorAttributeName] = titleColor;
+    fStatusAttributes[NSForegroundColorAttributeName] = statusColor;
+
     //title
     NSAttributedString * titleString = [self attributedTitle];
     NSRect titleRect = [self rectForTitleWithString: titleString inBounds: cellFrame];
     [titleString drawInRect: titleRect];
-    
+
     //status
     NSAttributedString * statusString = [self attributedStatus];
     NSRect statusRect = [self rectForStatusWithString: statusString withTitleRect: titleRect inBounds: cellFrame];
@@ -147,14 +136,14 @@
 {
     NSAttributedString * titleString = [self attributedTitle];
     NSRect realRect = [self rectForTitleWithString: titleString inBounds: cellFrame];
-    
+
     if ([titleString size].width > NSWidth(realRect)
         && NSMouseInRect([view convertPoint: [[view window] mouseLocationOutsideOfEventStream] fromView: nil], realRect, [view isFlipped]))
     {
         realRect.size.width = [titleString size].width;
         return NSInsetRect(realRect, -PADDING_EXPANSION_FRAME, -PADDING_EXPANSION_FRAME);
     }
-    
+
     return NSZeroRect;
 }
 
@@ -162,8 +151,8 @@
 {
     cellFrame.origin.x += PADDING_EXPANSION_FRAME;
     cellFrame.origin.y += PADDING_EXPANSION_FRAME;
-    
-    [fTitleAttributes setObject: [NSColor controlTextColor] forKey: NSForegroundColorAttributeName];
+
+    fTitleAttributes[NSForegroundColorAttributeName] = [NSColor controlTextColor];
     NSAttributedString * titleString = [self attributedTitle];
     [titleString drawInRect: cellFrame];
 }
@@ -175,7 +164,7 @@
 - (NSRect) rectForTitleWithString: (NSAttributedString *) string inBounds: (NSRect) bounds
 {
     const NSSize titleSize = [string size];
-    
+
     //no right padding, so that there's not too much space between this and the priority image
     NSRect result;
     if (![(FileListNode *)[self objectValue] isFolder])
@@ -191,14 +180,14 @@
         result.size.width = MIN(titleSize.width, NSMaxX(bounds) - NSMinX(result));
     }
     result.size.height = titleSize.height;
-    
+
     return result;
 }
 
-- (NSRect) rectForStatusWithString: (NSAttributedString *) string withTitleRect: (NSRect) titleRect inBounds: (NSRect) bounds;
+- (NSRect) rectForStatusWithString: (NSAttributedString *) string withTitleRect: (NSRect) titleRect inBounds: (NSRect) bounds
 {
     const NSSize statusSize = [string size];
-    
+
     NSRect result;
     if (![(FileListNode *)[self objectValue] isFolder])
     {
@@ -213,28 +202,28 @@
         result.size.width = NSMaxX(bounds) - NSMaxX(titleRect);
     }
     result.size.height = statusSize.height;
-    
+
     return result;
 }
 
 - (NSAttributedString *) attributedTitle
 {
     NSString * title = [(FileListNode *)[self objectValue] name];
-    return [[[NSAttributedString alloc] initWithString: title attributes: fTitleAttributes] autorelease];
+    return [[NSAttributedString alloc] initWithString: title attributes: fTitleAttributes];
 }
 
 - (NSAttributedString *) attributedStatus
 {
     FileListNode * node = (FileListNode *)[self objectValue];
     Torrent * torrent = [node torrent];
-    
+
     const CGFloat progress = [torrent fileProgress: node];
     NSString * percentString = [NSString percentString: progress longDecimals: YES];
-    
+
     NSString * status = [NSString stringWithFormat: NSLocalizedString(@"%@ of %@",
                             "Inspector -> Files tab -> file status string"), percentString, [NSString stringForFileSize: [node size]]];
-    
-    return [[[NSAttributedString alloc] initWithString: status attributes: fStatusAttributes] autorelease];
+
+    return [[NSAttributedString alloc] initWithString: status attributes: fStatusAttributes];
 }
 
 @end

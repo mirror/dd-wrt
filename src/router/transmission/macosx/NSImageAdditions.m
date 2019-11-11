@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- *
  * Copyright (c) 2011-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -29,17 +27,17 @@
 - (NSImage *) imageWithColor: (NSColor *) color
 {
     NSImage * coloredImage = [self copy];
-    
+
     [coloredImage lockFocus];
-    
+
     [color set];
-    
+
     const NSSize size = [coloredImage size];
     NSRectFillUsingOperation(NSMakeRect(0.0, 0.0, size.width, size.height), NSCompositeSourceAtop);
-    
+
     [coloredImage unlockFocus];
-    
-    return [coloredImage autorelease];
+
+    return coloredImage;
 }
 
 @end

@@ -4,41 +4,37 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id$
  */
 
-#ifndef QTR_FILTER_BAR_COMBO_BOX_H
-#define QTR_FILTER_BAR_COMBO_BOX_H
+#pragma once
 
 #include <QComboBox>
 
-class FilterBarComboBox: public QComboBox
+class FilterBarComboBox : public QComboBox
 {
     Q_OBJECT
 
-  public:
+public:
     enum
     {
-      CountRole = Qt::UserRole + 1,
-      CountStringRole,
-      UserRole
+        CountRole = Qt::UserRole + 1,
+        CountStringRole,
+        UserRole
     };
 
-  public:
-    FilterBarComboBox (QWidget * parent = nullptr);
+public:
+    FilterBarComboBox(QWidget* parent = nullptr);
 
-    int currentCount () const;
+    int currentCount() const;
 
     // QWidget
-    virtual QSize minimumSizeHint () const;
-    virtual QSize sizeHint () const;
+    virtual QSize minimumSizeHint() const;
+    virtual QSize sizeHint() const;
 
-  protected:
+protected:
     // QWidget
-    virtual void paintEvent (QPaintEvent * e);
+    virtual void paintEvent(QPaintEvent* e);
 
-  private:
-    QSize calculateSize (const QSize& textSize, const QSize& countSize) const;
+private:
+    QSize calculateSize(QSize const& textSize, QSize const& countSize) const;
 };
-
-#endif // QTR_FILTER_BAR_COMBO_BOX_H
