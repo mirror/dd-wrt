@@ -323,11 +323,11 @@ static void add_response(struct evhttp_request* req, struct tr_rpc_server* serve
 
             /* zlib's manual says: "Add 16 to windowBits to write a simple gzip header
              * and trailer around the compressed data instead of a zlib wrapper." */
-#ifdef TR_LIGHTWEIGHT
+//#ifdef TR_LIGHTWEIGHT
             compressionLevel = Z_DEFAULT_COMPRESSION;
-#else
-            compressionLevel = Z_BEST_COMPRESSION;
-#endif
+//#else
+//            compressionLevel = Z_BEST_COMPRESSION;
+//#endif
             deflateInit2(&server->stream, compressionLevel, Z_DEFLATED, 15 + 16, 8, Z_DEFAULT_STRATEGY);
         }
 
