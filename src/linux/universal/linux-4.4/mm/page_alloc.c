@@ -6880,7 +6880,7 @@ void free_contig_range(unsigned long pfn, unsigned nr_pages)
  * The zone indicated has a new number of managed_pages; batch sizes and percpu
  * page high values need to be recalulated.
  */
-void __meminit zone_pcp_update(struct zone *zone)
+void zone_pcp_update(struct zone *zone)
 {
 	unsigned cpu;
 	mutex_lock(&pcp_batch_high_lock);
