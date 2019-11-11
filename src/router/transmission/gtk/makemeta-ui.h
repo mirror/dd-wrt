@@ -4,15 +4,11 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id$
  */
 
-#ifndef GTR_TORRENT_CREATION_DIALOG_H
-#define GTR_TORRENT_CREATION_DIALOG_H
+#pragma once
 
 #include <gtk/gtk.h>
 #include "tr-core.h"
 
-GtkWidget* gtr_torrent_creation_dialog_new (GtkWindow * parent, TrCore * core);
-
-#endif
+GtkWidget* gtr_torrent_creation_dialog_new(GtkWindow* parent, TrCore* core);

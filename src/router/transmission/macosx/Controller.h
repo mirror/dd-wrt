@@ -1,7 +1,5 @@
 /******************************************************************************
- * $Id$
- *
- * Copyright (c) 2005-2012 Transmission authors and contributors
+ * Copyright (c) 2005-2019 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,9 +21,10 @@
  *****************************************************************************/
 
 #import <Cocoa/Cocoa.h>
-#import <transmission.h>
 #import <Quartz/Quartz.h>
-#import <Growl/Growl.h>
+
+#include <libtransmission/transmission.h>
+
 #import "VDKQueue.h"
 
 @class AddMagnetWindowController;
@@ -50,64 +49,64 @@ typedef enum
     ADD_CREATED
 } addType;
 
-@interface Controller : NSObject <GrowlApplicationBridgeDelegate, NSURLDownloadDelegate, NSUserNotificationCenterDelegate, NSPopoverDelegate, NSSharingServiceDelegate, NSSharingServicePickerDelegate, NSSoundDelegate, NSToolbarDelegate, NSWindowDelegate, QLPreviewPanelDataSource, QLPreviewPanelDelegate, VDKQueueDelegate>
+@interface Controller : NSObject <NSURLDownloadDelegate, NSUserNotificationCenterDelegate, NSPopoverDelegate, NSSharingServiceDelegate, NSSharingServicePickerDelegate, NSSoundDelegate, NSToolbarDelegate, NSWindowDelegate, QLPreviewPanelDataSource, QLPreviewPanelDelegate, VDKQueueDelegate>
 {
     tr_session                      * fLib;
-    
+
     NSMutableArray                  * fTorrents, * fDisplayedTorrents;
-    
+
     PrefsController                 * fPrefsController;
     InfoWindowController            * fInfoController;
     MessageWindowController         * fMessageController;
-    
+
     NSUserDefaults                  * fDefaults;
-    
+
     NSString                        * fConfigDirectory;
-    
+
     IBOutlet NSWindow               * fWindow;
     DragOverlayWindow               * fOverlayWindow;
     IBOutlet TorrentTableView       * fTableView;
 
     io_connect_t                    fRootPort;
     NSTimer                         * fTimer;
-    
+
     VDKQueue                        * fFileWatcherQueue;
-    
+
     IBOutlet NSMenuItem             * fOpenIgnoreDownloadFolder;
     IBOutlet NSButton               * fActionButton, * fSpeedLimitButton, * fClearCompletedButton;
     IBOutlet NSTextField            * fTotalTorrentsField;
-    
+
     StatusBarController             * fStatusBar;
-    
+
     FilterBarController             * fFilterBar;
     IBOutlet NSMenuItem             * fNextFilterItem;
-                                
+
     IBOutlet NSMenuItem             * fNextInfoTabItem, * fPrevInfoTabItem;
-    
+
     IBOutlet NSMenu                 * fSortMenu;
-    
+
     IBOutlet NSMenu                 * fGroupsSetMenu, * fGroupsSetContextMenu;
-    
+
     IBOutlet NSMenu                 * fShareMenu, * fShareContextMenu;
     IBOutlet NSMenuItem             * fShareMenuItem, * fShareContextMenuItem; // remove when dropping 10.6
-    
+
     QLPreviewPanel                  * fPreviewPanel;
     BOOL                            fQuitting;
     BOOL                            fQuitRequested;
     BOOL                            fPauseOnLaunch;
-    
+
     Badger                          * fBadger;
-    
+
     NSMutableArray                  * fAutoImportedNames;
     NSTimer                         * fAutoImportTimer;
-    
+
     NSMutableDictionary             * fPendingTorrentDownloads;
-    
+
     NSMutableSet                    * fAddingTransfers;
-    
+
     NSMutableSet                    * fAddWindows;
     URLSheetWindowController        * fUrlSheetController;
-    
+
     BOOL                            fGlobalPopoverShown;
     BOOL                            fSoundPlaying;
 }
@@ -150,7 +149,7 @@ typedef enum
 
 - (void) removeTorrents: (NSArray *) torrents deleteData: (BOOL) deleteData;
 - (void) removeSheetDidEnd: (NSWindow *) sheet returnCode: (NSInteger) returnCode
-                        contextInfo: (NSDictionary *) dict;
+                        contextInfo: (void *) contextInfo;
 - (void) confirmRemoveTorrents: (NSArray *) torrents deleteData: (BOOL) deleteData;
 - (void) removeNoDelete:                (id) sender;
 - (void) removeDeleteData:              (id) sender;
@@ -176,7 +175,7 @@ typedef enum
 
 - (NSArray *)selectedTorrents;
 
-@property (retain, readonly) PrefsController * prefsController;
+@property (nonatomic, readonly) PrefsController * prefsController;
 - (void) showPreferenceWindow: (id) sender;
 
 - (void) showAboutWindow: (id) sender;
@@ -185,7 +184,7 @@ typedef enum
 - (void) resetInfo;
 - (void) setInfoTab: (id) sender;
 
-@property (retain, readonly) MessageWindowController * messageWindowController;
+@property (nonatomic, readonly) MessageWindowController * messageWindowController;
 - (void) showMessageWindow: (id) sender;
 - (void) showStatsWindow: (id) sender;
 
@@ -228,7 +227,7 @@ typedef enum
 
 - (void) sleepCallback: (natural_t) messageType argument: (void *) messageArgument;
 
-@property (retain, readonly) VDKQueue * fileWatcherQueue;
+@property (nonatomic, readonly) VDKQueue * fileWatcherQueue;
 
 - (void) torrentTableViewSelectionDidChange: (NSNotification *) notification;
 

@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- * 
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -23,6 +21,7 @@
  *****************************************************************************/
 
 #import <Cocoa/Cocoa.h>
+
 #import "FileOutlineView.h"
 
 @interface FilePriorityCell : NSSegmentedCell
