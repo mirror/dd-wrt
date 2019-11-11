@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- *
  * Copyright (c) 2010-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -22,14 +20,14 @@
  * DEALINGS IN THE SOFTWARE.
  *****************************************************************************/
 
+#include <libtransmission/transmission.h>
+#include <libtransmission/utils.h> //tr_getRatio()
+
 #import "InfoActivityViewController.h"
 #import "NSApplicationAdditions.h"
 #import "NSStringAdditions.h"
 #import "PiecesView.h"
 #import "Torrent.h"
-
-#include "transmission.h" // required by utils.h
-#include "utils.h" //tr_getRatio()
 
 #define PIECES_CONTROL_PROGRESS 0
 #define PIECES_CONTROL_AVAILABLE 1
@@ -48,7 +46,7 @@
     {
         [self setTitle: NSLocalizedString(@"Activity", "Inspector view -> title")];
     }
-    
+
     return self;
 }
 
@@ -57,9 +55,9 @@
     [fTransferSectionLabel sizeToFit];
     [fDatesSectionLabel sizeToFit];
     [fTimeSectionLabel sizeToFit];
-    
+
     NSArray * labels = @[ fStateLabel, fProgressLabel, fHaveLabel, fDownloadedLabel, fUploadedLabel, fFailedDLLabel, fRatioLabel, fErrorLabel, fDateAddedLabel, fDateCompletedLabel, fDateActivityLabel, fDownloadTimeLabel, fSeedTimeLabel ];
-    
+
     CGFloat oldMaxWidth = 0.0, originX, newMaxWidth = 0.0;
     for (NSTextField * label in labels)
     {
@@ -69,22 +67,22 @@
             oldMaxWidth = oldFrame.size.width;
             originX = oldFrame.origin.x;
         }
-        
+
         [label sizeToFit];
         const CGFloat newWidth = [label bounds].size.width;
         if (newWidth > newMaxWidth)
             newMaxWidth = newWidth;
     }
-    
+
     for (NSTextField * label in labels)
     {
         NSRect frame = [label frame];
         frame.origin.x = originX + (newMaxWidth - frame.size.width);
         [label setFrame: frame];
     }
-    
+
     NSArray * fields = @[ fDateAddedField, fDateCompletedField, fDateActivityField, fStateField, fProgressField, fHaveField, fDownloadedTotalField, fUploadedTotalField, fFailedHashField, fRatioField, fDownloadTimeField, fSeedTimeField, fErrorScrollView ];
-    
+
     const CGFloat widthIncrease = newMaxWidth - oldMaxWidth;
     for (NSView * field in fields) {
         NSRect frame = [field frame];
@@ -92,7 +90,7 @@
         frame.size.width -= widthIncrease;
         [field setFrame: frame];
     }
-    
+
     //set the click action of the pieces view
     #warning after 2.8 just hook this up in the xib
     [fPiecesView setAction:@selector(updatePiecesView:)];
@@ -102,18 +100,13 @@
 - (void) dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver: self];
-    
-    [fTorrents release];
-    
-    [super dealloc];
 }
 
 - (void) setInfoForTorrents: (NSArray *) torrents
 {
     //don't check if it's the same in case the metadata changed
-    [fTorrents release];
-    fTorrents = [torrents retain];
-    
+    fTorrents = torrents;
+
     fSet = NO;
 }
 
@@ -121,11 +114,11 @@
 {
     if (!fSet)
         [self setupInfo];
-    
+
     const NSInteger numberSelected = [fTorrents count];
     if (numberSelected == 0)
         return;
-    
+
     uint64_t have = 0, haveVerified = 0, downloadedTotal = 0, uploadedTotal = 0, failedHash = 0;
     NSDate * lastActivity = nil;
     for (Torrent * torrent in fTorrents)
@@ -135,12 +128,12 @@
         downloadedTotal += [torrent downloadedTotal];
         uploadedTotal += [torrent uploadedTotal];
         failedHash += [torrent failedHash];
-        
+
         NSDate * nextLastActivity;
         if ((nextLastActivity = [torrent dateActivity]))
             lastActivity = lastActivity ? [lastActivity laterDate: nextLastActivity] : nextLastActivity;
     }
-    
+
     if (have == 0)
         [fHaveField setStringValue: [NSString stringForFileSize: 0]];
     else
@@ -152,19 +145,19 @@
         else
             [fHaveField setStringValue: [NSString stringWithFormat: @"%@ (%@)", [NSString stringForFileSize: have], verifiedString]];
     }
-    
+
     [fDownloadedTotalField setStringValue: [NSString stringForFileSize: downloadedTotal]];
     [fUploadedTotalField setStringValue: [NSString stringForFileSize: uploadedTotal]];
     [fFailedHashField setStringValue: [NSString stringForFileSize: failedHash]];
-    
+
     [fDateActivityField setObjectValue: lastActivity];
-    
+
     if (numberSelected == 1)
     {
-        Torrent * torrent = [fTorrents objectAtIndex: 0];
-        
+        Torrent * torrent = fTorrents[0];
+
         [fStateField setStringValue: [torrent stateString]];
-        
+
         NSString * progressString = [NSString percentString: [torrent progress] longDecimals: YES];
         if ([torrent isFolder])
         {
@@ -174,18 +167,18 @@
             progressString = [progressString stringByAppendingFormat: @" (%@)", progressSelectedString];
         }
         [fProgressField setStringValue: progressString];
-            
+
         [fRatioField setStringValue: [NSString stringForRatio: [torrent ratio]]];
-        
+
         NSString * errorMessage = [torrent errorMessage];
         if (![errorMessage isEqualToString: [fErrorMessageView string]])
             [fErrorMessageView setString: errorMessage];
-        
+
         [fDateCompletedField setObjectValue: [torrent dateCompleted]];
-        
+
         //uses a relative date, so can't be set once
         [fDateAddedField setObjectValue: [torrent dateAdded]];
-        
+
         if ([NSApp isOnYosemiteOrBetter]) {
             static NSDateComponentsFormatter *timeFormatter;
             static dispatch_once_t onceToken;
@@ -195,7 +188,7 @@
                 timeFormatter.allowedUnits = NSCalendarUnitDay | NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond;
                 timeFormatter.zeroFormattingBehavior = NSDateComponentsFormatterZeroFormattingBehaviorDropLeading;
             });
-            
+
             [fDownloadTimeField setStringValue: [timeFormatter stringFromTimeInterval:[torrent secondsDownloading]]];
             [fSeedTimeField setStringValue: [timeFormatter stringFromTimeInterval:[torrent secondsSeeding]]];
         }
@@ -203,7 +196,7 @@
             [fDownloadTimeField setStringValue: [NSString timeString: [torrent secondsDownloading] includesTimeRemainingPhrase:NO showSeconds: YES]];
             [fSeedTimeField setStringValue: [NSString timeString: [torrent secondsSeeding] includesTimeRemainingPhrase:NO showSeconds: YES]];
         }
-        
+
         [fPiecesView updateView];
     }
     else if (numberSelected > 1)
@@ -224,10 +217,10 @@
 - (void) updatePiecesView: (id) sender
 {
     const BOOL piecesAvailableSegment = [[NSUserDefaults standardUserDefaults] boolForKey: @"PiecesViewShowAvailability"];
-    
+
     [fPiecesControl setSelected: piecesAvailableSegment forSegment: PIECES_CONTROL_AVAILABLE];
     [fPiecesControl setSelected: !piecesAvailableSegment forSegment: PIECES_CONTROL_PROGRESS];
-    
+
     [fPiecesView updateView];
 }
 
@@ -254,19 +247,19 @@
             [fDateActivityField setObjectValue: @""]; //using [field setStringValue: @""] causes "December 31, 1969 7:00 PM" to be displayed, at least on 10.7.3
             [fRatioField setStringValue: @""];
         }
-        
+
         [fStateField setStringValue: @""];
         [fProgressField setStringValue: @""];
-        
+
         [fErrorMessageView setString: @""];
-        
+
         //using [field setStringValue: @""] causes "December 31, 1969 7:00 PM" to be displayed, at least on 10.7.3
         [fDateAddedField setObjectValue: @""];
         [fDateCompletedField setObjectValue: @""];
-        
+
         [fDownloadTimeField setStringValue: @""];
         [fSeedTimeField setStringValue: @""];
-        
+
         [fPiecesControl setSelected: NO forSegment: PIECES_CONTROL_AVAILABLE];
         [fPiecesControl setSelected: NO forSegment: PIECES_CONTROL_PROGRESS];
         [fPiecesControl setEnabled: NO];
@@ -274,16 +267,16 @@
     }
     else
     {
-        Torrent * torrent = [fTorrents objectAtIndex: 0];
-        
+        Torrent * torrent = fTorrents[0];
+
         const BOOL piecesAvailableSegment = [[NSUserDefaults standardUserDefaults] boolForKey: @"PiecesViewShowAvailability"];
         [fPiecesControl setSelected: piecesAvailableSegment forSegment: PIECES_CONTROL_AVAILABLE];
         [fPiecesControl setSelected: !piecesAvailableSegment forSegment: PIECES_CONTROL_PROGRESS];
         [fPiecesControl setEnabled: YES];
-        
+
         [fPiecesView setTorrent: torrent];
     }
-    
+
     fSet = YES;
 }
 

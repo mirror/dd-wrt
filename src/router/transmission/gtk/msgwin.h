@@ -4,15 +4,10 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id$
  */
 
-
-#ifndef GTR_MSGWIN_H
-#define GTR_MSGWIN_H
+#pragma once
 
 #include "tr-core.h"
 
-GtkWidget * gtr_message_log_window_new (GtkWindow * parent, TrCore * core);
-
-#endif
+GtkWidget* gtr_message_log_window_new(GtkWindow* parent, TrCore* core);

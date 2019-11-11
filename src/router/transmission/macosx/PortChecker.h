@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- *
  * Copyright (c) 2006-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -33,13 +31,13 @@ typedef enum
 } port_status_t;
 
 @interface PortChecker : NSObject
-{    
+{
     id fDelegate;
     port_status_t fStatus;
-    
+
     NSURLConnection * fConnection;
     NSMutableData * fPortProbeData;
-    
+
     NSTimer * fTimer;
 }
 

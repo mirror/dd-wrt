@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- *
  * Copyright (c) Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -22,28 +20,25 @@
  * DEALINGS IN THE SOFTWARE.
  *****************************************************************************/
 
-#ifndef GTR_CONFIG_H
-#define GTR_CONFIG_H
+#pragma once
 
 #include <inttypes.h>
 #include <libtransmission/transmission.h> /* tr_variant, tr_session */
 #include <libtransmission/quark.h>
 
-void                gtr_pref_init            (const char * config_dir);
+void gtr_pref_init(char const* config_dir);
 
-int64_t             gtr_pref_int_get         (const tr_quark key);
-void                gtr_pref_int_set         (const tr_quark key, int64_t value);
+int64_t gtr_pref_int_get(tr_quark const key);
+void gtr_pref_int_set(tr_quark const key, int64_t value);
 
-double              gtr_pref_double_get      (const tr_quark key);
-void                gtr_pref_double_set      (const tr_quark key, double value);
+double gtr_pref_double_get(tr_quark const key);
+void gtr_pref_double_set(tr_quark const key, double value);
 
-gboolean            gtr_pref_flag_get        (const tr_quark key);
-void                gtr_pref_flag_set        (const tr_quark key, gboolean value);
+gboolean gtr_pref_flag_get(tr_quark const key);
+void gtr_pref_flag_set(tr_quark const key, gboolean value);
 
-const char*         gtr_pref_string_get      (const tr_quark key);
-void                gtr_pref_string_set      (const tr_quark key, const char * value);
+char const* gtr_pref_string_get(tr_quark const key);
+void gtr_pref_string_set(tr_quark const key, char const* value);
 
-void                gtr_pref_save            (tr_session *);
-struct tr_variant*  gtr_pref_get_all         (void);
-
-#endif /* GTR_CONFIG_H */
+void gtr_pref_save(tr_session*);
+struct tr_variant* gtr_pref_get_all(void);

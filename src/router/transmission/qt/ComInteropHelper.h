@@ -4,11 +4,9 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id$
  */
 
-#ifndef QTR_COM_INTEROP_HELPER_H
-#define QTR_COM_INTEROP_HELPER_H
+#pragma once
 
 #include <memory>
 
@@ -19,19 +17,17 @@ class QVariant;
 
 class ComInteropHelper
 {
-  public:
-    ComInteropHelper ();
-    ~ComInteropHelper ();
+public:
+    ComInteropHelper();
+    ~ComInteropHelper();
 
-    bool isConnected () const;
+    bool isConnected() const;
 
-    QVariant addMetainfo (const QString& metainfo);
+    QVariant addMetainfo(QString const& metainfo);
 
-    static void initialize ();
-    static void registerObject (QObject * parent);
+    static void initialize();
+    static void registerObject(QObject* parent);
 
-  private:
+private:
     std::unique_ptr<QAxObject> m_client;
 };
-
-#endif // QTR_COM_INTEROP_HELPER_H

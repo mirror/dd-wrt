@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- *
  * Copyright (c) 2010-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -23,22 +21,23 @@
  *****************************************************************************/
 
 #import <Cocoa/Cocoa.h>
+
 #import "InfoViewController.h"
 
 @interface InfoGeneralViewController : NSViewController <InfoViewController>
 {
     NSArray * fTorrents;
-    
+
     BOOL fSet;
-    
+
     IBOutlet NSTextField * fPiecesField, * fHashField, * fSecureField,
                         * fDataLocationField,
                         * fCreatorField, * fDateCreatedField;
-    
+
     IBOutlet NSTextView * fCommentView;
-    
+
     IBOutlet NSButton * fRevealDataButton;
-    
+
     //remove when we switch to auto layout on 10.7
     IBOutlet NSTextField * fPiecesLabel, * fHashLabel, * fSecureLabel,
                         * fCreatorLabel, * fDateCreatedLabel,

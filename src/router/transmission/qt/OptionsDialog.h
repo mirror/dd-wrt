@@ -4,11 +4,9 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id$
  */
 
-#ifndef QTR_OPTIONS_DIALOG_H
-#define QTR_OPTIONS_DIALOG_H
+#pragma once
 
 #include <QCryptographicHash>
 #include <QDir>
@@ -29,45 +27,49 @@ class Session;
 
 extern "C"
 {
-  struct tr_variant;
+struct tr_variant;
 }
 
-class OptionsDialog: public BaseDialog
+class OptionsDialog : public BaseDialog
 {
     Q_OBJECT
 
-  public:
-    OptionsDialog (Session& session, const Prefs& prefs, const AddData& addme, QWidget * parent = nullptr);
-    virtual ~OptionsDialog ();
+public:
+    OptionsDialog(Session& session, Prefs const& prefs, AddData const& addme, QWidget* parent = nullptr);
+    virtual ~OptionsDialog();
 
-  private:
+private:
     typedef QMap<uint32_t, int32_t> mybins_t;
 
-  private:
-    void reload ();
-    void clearInfo ();
-    void clearVerify ();
+private:
+    void reload();
+    void updateWidgetsLocality();
+    void clearInfo();
+    void clearVerify();
 
-  private slots:
-    void onAccepted ();
-    void onPriorityChanged (const QSet<int>& fileIndices, int);
-    void onWantedChanged (const QSet<int>& fileIndices, bool);
-    void onVerify ();
-    void onTimeout ();
+private slots:
+    void onAccepted();
+    void onPriorityChanged(QSet<int> const& fileIndices, int);
+    void onWantedChanged(QSet<int> const& fileIndices, bool);
+    void onVerify();
+    void onTimeout();
 
-    void onSourceChanged ();
-    void onDestinationChanged ();
+    void onSourceChanged();
+    void onDestinationChanged();
 
-  private:
+    void onSessionUpdated();
+
+private:
     Session& mySession;
     AddData myAdd;
 
     Ui::OptionsDialog ui;
 
+    bool myIsLocal;
     QDir myLocalDestination;
     bool myHaveInfo;
     tr_info myInfo;
-    QPushButton * myVerifyButton;
+    QPushButton* myVerifyButton;
     QVector<int> myPriorities;
     QVector<bool> myWanted;
     FileList myFiles;
@@ -84,5 +86,3 @@ class OptionsDialog: public BaseDialog
     mybins_t myVerifyBins;
     QTimer myEditTimer;
 };
-
-#endif // QTR_OPTIONS_DIALOG_H

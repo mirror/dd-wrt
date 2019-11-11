@@ -4,39 +4,35 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id$
  */
 
-#ifndef __TRANSMISSION__
- #error only libtransmission should #include this header.
-#endif
+#pragma once
 
-#ifndef TR_MAGNET_H
-#define TR_MAGNET_H 1
+#ifndef __TRANSMISSION__
+#error only libtransmission should #include this header.
+#endif
 
 #include "transmission.h"
 #include "variant.h"
 
 typedef struct tr_magnet_info
 {
-  uint8_t hash[20];
+    uint8_t hash[20];
 
-  char * displayName;
+    char* displayName;
 
-  int trackerCount;
-  char ** trackers;
+    int trackerCount;
+    char** trackers;
 
-  int webseedCount;
-  char ** webseeds;
+    int webseedCount;
+    char** webseeds;
 }
 tr_magnet_info;
 
-tr_magnet_info * tr_magnetParse (const char * uri);
+tr_magnet_info* tr_magnetParse(char const* uri);
 
 struct tr_variant;
 
-void tr_magnetCreateMetainfo (const tr_magnet_info *, tr_variant *);
+void tr_magnetCreateMetainfo(tr_magnet_info const*, tr_variant*);
 
-void tr_magnetFree (tr_magnet_info * info);
-
-#endif
+void tr_magnetFree(tr_magnet_info* info);

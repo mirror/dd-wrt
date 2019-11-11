@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- * 
  * Copyright (c) 2009-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -29,14 +27,14 @@
 - (void) setStringValue: (NSString *) string
 {
     [super setStringValue: string];
-    
+
     [self setSelectable: ![[self stringValue] isEqualToString: @""]];
 }
 
 - (void) setObjectValue: (id <NSCopying>) object
 {
     [super setObjectValue: object];
-    
+
     [self setSelectable: ![[self stringValue] isEqualToString: @""]];
 }
 
