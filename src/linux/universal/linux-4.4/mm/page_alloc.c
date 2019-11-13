@@ -2010,14 +2010,6 @@ void drain_all_pages(struct zone *zone)
 	int cpu;
 
 	/*
-	 * The number of managed pages has changed due to the initialisation
-	 * so the pcpu batch and high limits needs to be updated or the limits
-	 * will be artificially small.
-	 */
-	for_each_populated_zone(zone)
-		zone_pcp_update(zone);
-
-	/*
 	 * Allocate in the BSS so we wont require allocation in
 	 * direct reclaim path for CONFIG_CPUMASK_OFFSTACK=y
 	 */
@@ -6876,6 +6868,7 @@ void free_contig_range(unsigned long pfn, unsigned nr_pages)
 }
 #endif
 
+#ifdef CONFIG_MEMORY_HOTPLUG
 /*
  * The zone indicated has a new number of managed_pages; batch sizes and percpu
  * page high values need to be recalulated.
@@ -6889,6 +6882,7 @@ void zone_pcp_update(struct zone *zone)
 				per_cpu_ptr(zone->pageset, cpu));
 	mutex_unlock(&pcp_batch_high_lock);
 }
+#endif
 
 void zone_pcp_reset(struct zone *zone)
 {

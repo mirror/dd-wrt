@@ -1998,14 +1998,6 @@ static void steal_suitable_fallback(struct zone *zone, struct page *page,
 	old_block_type = get_pageblock_migratetype(page);
 
 	/*
-	 * The number of managed pages has changed due to the initialisation
-	 * so the pcpu batch and high limits needs to be updated or the limits
-	 * will be artificially small.
-	 */
-	for_each_populated_zone(zone)
-		zone_pcp_update(zone);
-
-	/*
 	 * This can happen due to races and we want to prevent broken
 	 * highatomic accounting.
 	 */
@@ -7667,6 +7659,7 @@ void free_contig_range(unsigned long pfn, unsigned nr_pages)
 }
 #endif
 
+#ifdef CONFIG_MEMORY_HOTPLUG
 /*
  * The zone indicated has a new number of managed_pages; batch sizes and percpu
  * page high values need to be recalulated.
@@ -7680,6 +7673,7 @@ void zone_pcp_update(struct zone *zone)
 				per_cpu_ptr(zone->pageset, cpu));
 	mutex_unlock(&pcp_batch_high_lock);
 }
+#endif
 
 void zone_pcp_reset(struct zone *zone)
 {
