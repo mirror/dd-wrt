@@ -17,4 +17,22 @@
 			<input maxlength="32" size="16" name="samba3_workgrp" value="<% nvg("samba3_workgrp"); %>" />
 		</div>
 	</div>
+	<div class="setting">
+		<div class="label"><% tran("service.samba3_min_proto"); %></div>
+			<select name="samba3_min_proto" >
+				<option value="LANMAN1" <% nvsm("samba3_proto", "LANMAN1", "selected"); %> >LANMAN 1.0</option>
+				<option value="LANMAN2" <% nvsm("samba3_proto", "LANMAN2", "selected"); %> >LANMAN 2.0</option>
+				<option value="NT1" <% nvsm("samba3_proto", "NT1", "selected"); %> >NT 1.0</option>
+				<option value="SMB2" <% nvsm("samba3_proto", "SMB2", "selected"); %> >SMB 2</option>
+			</select>
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("service.samba3_max_proto"); %></div>
+			<select name="samba3_max_proto" >
+				<option value="LANMAN1" <% nvsm("samba3_proto", "LANMAN1", "selected"); %> >LANMAN 1.0</option>
+				<option value="LANMAN2" <% nvsm("samba3_proto", "LANMAN2", "selected"); %> >LANMAN 2.0</option>
+				<option value="NT1" <% nvsm("samba3_proto", "NT1", "selected"); %> >NT 1.0</option>
+				<option value="SMB2" <% nvsm("samba3_proto", "SMB2", "selected"); %> >SMB 2</option>
+			</select>
+	</div>
 </fieldset><br />
