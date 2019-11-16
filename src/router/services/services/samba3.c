@@ -150,16 +150,13 @@ void start_samba3(void)
 			"dead time = 15\n"	//
 			"getwd cache = yes\n"	//
 			"lpq cache time = 30\n"	//
-#ifndef HAVE_SAMBA4
-			"max protocol = SMB2\n"
-#else
-			"max protocol = SMB3_11\n"
-#endif
+			"max protocol = %s\n"
+			"max protocol = %s\n"
 #ifndef HAVE_SAMBA4
 			"printing = none\n"
 #endif
 			"load printers = No\n"	//
-			"usershare allow guests = Yes\n", nvram_safe_get("router_name"), nvram_safe_get("samba3_srvstr"), nvram_safe_get("samba3_workgrp"));
+			"usershare allow guests = Yes\n", nvram_safe_get("router_name"), nvram_safe_get("samba3_srvstr"), nvram_safe_get("samba3_workgrp"), nvram_default_get("samba3_min_proto","SMB2"), nvram_default_get("samba3_max_proto","SMB2"));
 
 		samba3shares = getsamba3shares();
 		for (cs = samba3shares; cs; cs = csnext) {
