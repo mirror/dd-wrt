@@ -23,10 +23,12 @@
 				<option value="LANMAN1" <% nvsm("samba3_proto", "LANMAN1", "selected"); %> >LANMAN 1.0</option>
 				<option value="LANMAN2" <% nvsm("samba3_proto", "LANMAN2", "selected"); %> >LANMAN 2.0</option>
 				<option value="NT1" <% nvsm("samba3_proto", "NT1", "selected"); %> >NT 1.0</option>
+				<option value="SMB2" <% nvsm("samba3_proto", "SMB2", "selected"); %> >SMB 2</option>
 				<option value="SMB2_02" <% nvsm("samba3_proto", "SMB2_02", "selected"); %> >SMB 2.02</option>
 				<option value="SMB2_10" <% nvsm("samba3_proto", "SMB2_10", "selected"); %> >SMB 2.10</option>
 				<option value="SMB2_22" <% nvsm("samba3_proto", "SMB2_22", "selected"); %> >SMB 2.22</option>
 				<option value="SMB2_24" <% nvsm("samba3_proto", "SMB2_24", "selected"); %> >SMB 2.24</option>
+				<option value="SMB3" <% nvsm("samba3_proto", "SMB3", "selected"); %> >SMB 3</option>
 				<option value="SMB3_00" <% nvsm("samba3_proto", "SMB3_00", "selected"); %> >SMB 3.00</option>
 				<option value="SMB3_02" <% nvsm("samba3_proto", "SMB3_02", "selected"); %> >SMB 3.02</option>
 				<option value="SMB3_10" <% nvsm("samba3_proto", "SMB3_10", "selected"); %> >SMB 3.10</option>
@@ -39,10 +41,12 @@
 				<option value="LANMAN1" <% nvsm("samba3_proto", "LANMAN1", "selected"); %> >LANMAN 1.0</option>
 				<option value="LANMAN2" <% nvsm("samba3_proto", "LANMAN2", "selected"); %> >LANMAN 2.0</option>
 				<option value="NT1" <% nvsm("samba3_proto", "NT1", "selected"); %> >NT 1.0</option>
+				<option value="SMB2" <% nvsm("samba3_proto", "SMB2", "selected"); %> >SMB 2</option>
 				<option value="SMB2_02" <% nvsm("samba3_proto", "SMB2_02", "selected"); %> >SMB 2.02</option>
 				<option value="SMB2_10" <% nvsm("samba3_proto", "SMB2_10", "selected"); %> >SMB 2.10</option>
 				<option value="SMB2_22" <% nvsm("samba3_proto", "SMB2_22", "selected"); %> >SMB 2.22</option>
 				<option value="SMB2_24" <% nvsm("samba3_proto", "SMB2_24", "selected"); %> >SMB 2.24</option>
+				<option value="SMB3" <% nvsm("samba3_proto", "SMB3", "selected"); %> >SMB 3</option>
 				<option value="SMB3_00" <% nvsm("samba3_proto", "SMB3_00", "selected"); %> >SMB 3.00</option>
 				<option value="SMB3_02" <% nvsm("samba3_proto", "SMB3_02", "selected"); %> >SMB 3.02</option>
 				<option value="SMB3_10" <% nvsm("samba3_proto", "SMB3_10", "selected"); %> >SMB 3.10</option>
