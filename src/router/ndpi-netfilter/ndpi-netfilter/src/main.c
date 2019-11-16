@@ -1671,8 +1671,8 @@ NDPI_STATIC unsigned int seq_print_ndpi(struct seq_file *s,
 #endif
 #endif
 
-NDPI_STATIC void ndpi_proto_markmask(struct ndpi_net *n, u_int32_t *var,
-		ndpi_protocol *proto, int mode)
+NDPI_STATIC u_int32_t ndpi_proto_markmask(struct ndpi_net *n, u_int32_t var,
+		const ndpi_protocol *proto, int mode, const struct xt_ndpi_tginfo *info)
 {
     if(mode && ( proto->master_protocol >= NDPI_NUM_BITS ||
 		 proto->app_protocol >= NDPI_NUM_BITS)) return var;
