@@ -35,14 +35,14 @@ static int wfflush(webs_t fp);
  * (0) 
  */
 
-static void nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
+static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 {
 
 	char buf[1024];
 	wp->restore_ret = EINVAL;
 #ifdef HAVE_REGISTER
 	if (!wp->isregistered_real) {
-		return;
+		return -1;
 	}
 #endif
 	/*
@@ -50,7 +50,7 @@ static void nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 	 */
 	while (len > 0) {
 		if (!wfgets(buf, MIN(len + 1, sizeof(buf)), wp))
-			return;
+			return -1;
 		len -= strlen(buf);
 		if (!strncasecmp(buf, "Content-Disposition:", 20)) {
 			if (strstr(buf, "name=\"file\"")) {
@@ -63,7 +63,7 @@ static void nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 	 */
 	while (len > 0) {
 		if (!wfgets(buf, sizeof(buf), wp))
-			return;
+			return -1;
 		len -= strlen(buf);
 		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
 			break;
@@ -76,10 +76,10 @@ static void nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 	unsigned short count;
 	FILE *fp = fopen("/tmp/restore.bin", "wb");
 	if (!fp)
-		return;
+		return -1;
 	char *mem = malloc(len);
 	if (!mem)
-		return;
+		return -1;
 	wfread(mem, len, 1, wp);
 	fwrite(mem, len, 1, fp);
 	fclose(fp);
@@ -90,6 +90,7 @@ static void nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 		wp->restore_ret = 0;
 	unlink("/tmp/restore.bin");
 	chdir("/www");
+	return 0;
 }
 
 static void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
@@ -139,7 +140,7 @@ static void nv_file_out(unsigned char method, struct mime_handler *handler, char
 	return;
 }
 
-static void td_file_in(char *url, webs_t wp, size_t len, char *boundary)	//load and set traffic data from config file
+static int td_file_in(char *url, webs_t wp, size_t len, char *boundary)	//load and set traffic data from config file
 {
 	char *buf = malloc(2048);
 	char *name = NULL;
@@ -151,7 +152,7 @@ static void td_file_in(char *url, webs_t wp, size_t len, char *boundary)	//load 
 	while (len > 0) {
 		if (!wfgets(buf, MIN(len + 1, 2048), wp)) {
 			free(buf);
-			return;
+			return -1;
 		}
 		len -= strlen(buf);
 		if (!strncasecmp(buf, "Content-Disposition:", 20)) {
@@ -166,7 +167,7 @@ static void td_file_in(char *url, webs_t wp, size_t len, char *boundary)	//load 
 	while (len > 0) {
 		if (!wfgets(buf, 2048, wp)) {
 			free(buf);
-			return;
+			return -1;
 		}
 		len -= strlen(buf);
 		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
@@ -200,6 +201,7 @@ static void td_file_in(char *url, webs_t wp, size_t len, char *boundary)	//load 
 	 */
 	wfgets(buf, len, wp);
 	nvram_commit();
+	return 0;
 }
 
 static void td_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
