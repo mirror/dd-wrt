@@ -64,12 +64,13 @@ struct ndpi_net {
 	int		gc_index6;
 	int		labels_word;
 
-	atomic_t		shutdown;	// stop netns
+	rwlock_t	ndpi_busy;	// ndpi in use
+	atomic_t	ndpi_ready;	// ndpi ready to work
+	struct mutex	rem_lock;	/* lock ndpi_delete_acct / ndpi_flow_read */
+	struct mutex	host_lock;	/* protect host_ac, hosts, hosts_tmp */
 
 	spinlock_t	id_lock;
 	spinlock_t	ipq_lock;	/* for proto & patricia tree */
-	spinlock_t	host_lock;	/* protect host_ac, hosts, hosts_tmp */
-	spinlock_t	rem_lock;	/* lock ndpi_delete_acct */
 	spinlock_t      w_buff_lock;
 
 	struct write_proc_cmd *w_buff[W_BUF_LAST];
@@ -80,8 +81,6 @@ struct ndpi_net {
 	int			str_buf_len,	// nflow_read data length
 				str_buf_offs;	// nflow_read data offset
 	char			str_buf[NF_STR_LBUF];	// buffer for nflow_read
-	atomic_t		init_done;	// ndpi_net_init() complete
-	atomic_t		acc_open;	// flow is open
 	int			acc_wait;	// delay for next run ndpi_delete_acct
 	atomic_t		acc_work;	// number of active flow info
 	atomic_t		acc_rem;	// number of inactive flow info

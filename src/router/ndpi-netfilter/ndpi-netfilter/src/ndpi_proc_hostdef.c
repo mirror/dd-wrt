@@ -28,22 +28,17 @@ int n_hostdef_proc_open(struct inode *inode, struct file *file)
 	AC_ERROR_t r;
 	int np,nh,ret = 0;
 
-spin_lock(&n->host_lock);
-do {
-	if(n->hosts_tmp) {
-		ret = EBUSY; break;
-	}
-		
-	n->hosts_tmp = str_collect_clone(n->hosts);
-	if(!n->hosts_tmp) {
-		ret = ENOMEM; break;
-	}
+	mutex_lock(&n->host_lock);
+	n->host_ac = NULL;
+	n->hosts_tmp = NULL;
 
+do {
 	if((file->f_mode & (FMODE_READ|FMODE_WRITE)) == FMODE_READ)
 		break;
 
-	if(n->host_ac) {
-		ret = EBUSY; break;
+	n->hosts_tmp = str_collect_clone(n->hosts);
+	if(!n->hosts_tmp) {
+		return ENOMEM; break;
 	}
 
 	n->host_ac = ndpi_init_automa();
@@ -78,11 +73,14 @@ do {
 	}
 } while(0);
 
-	spin_unlock(&n->host_lock);
 	if(ndpi_log_debug > 1)
-		pr_info("host_open:%s host_ac %px old %px\n",
+		pr_info("host_open:%s host_ac %px old %px %s\n",
 				n->ns_name,(void *)n->host_ac,
-				ndpi_automa_host(n->ndpi_struct));
+				ndpi_automa_host(n->ndpi_struct),
+				ret ? "ERROR":"OK");
+	if(ret)
+		mutex_unlock(&n->host_lock);
+
         return ret;
 }
 
@@ -106,7 +104,8 @@ ssize_t n_hostdef_proc_read(struct file *file, char __user *buf,
 			l = strlen(lbuf);
 		}
 
-		ph = n->hosts_tmp->p[hdp];
+		ph = n->hosts_tmp ? n->hosts_tmp->p[hdp]:
+				    n->hosts->p[hdp];
 		host = NULL;
 		if(ph && ph->last && hdh < ph->last ) {
 			t_proto = ndpi_get_proto_by_id(n->ndpi_struct,hdp);
@@ -200,9 +199,7 @@ int n_hostdef_proc_close(struct inode *inode, struct file *file)
 
 	generic_proc_close(n,parse_ndpi_hostdef,W_BUF_HOST);
 
-	spin_lock(&n->host_lock);
-
-	if(n->host_ac) {
+	if(n->host_ac) { // open for write
 		if(!n->host_error) {
 
 			ac_automata_finalize((AC_AUTOMATA_t*)n->host_ac);
@@ -222,11 +219,11 @@ int n_hostdef_proc_close(struct inode *inode, struct file *file)
 
 		ac_automata_release((AC_AUTOMATA_t*)n->host_ac);
 		n->host_ac = NULL;
+		str_hosts_done(n->hosts_tmp);
+		n->hosts_tmp = NULL;
 	}
-	str_hosts_done(n->hosts_tmp);
-	n->hosts_tmp = NULL;
 
-	spin_unlock(&n->host_lock);
+	mutex_unlock(&n->host_lock);
         return 0;
 }
 
