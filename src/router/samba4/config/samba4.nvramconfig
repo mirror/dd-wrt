@@ -9,6 +9,6 @@
  "samba3_pass2"  "Samba4 Pass2"  "NULL"  "FALSE" "0"
  "samba3_pubacl"  "Samba4 Public ACL" "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "samba3_advanced"  "Samba4 Advanced" "CHOICE" "2"  "0"  "1"  "FALSE" "0"
- "samba3_minproto"  "Samba4 protocol version"  "CHOICE" "13" "LANMAN1" "LANMAN2" "NT1" "SMB2" "SMB2_02" "SMB2_10" "SMB2_22" "SMB2_24" "SMB3" "SMB3_00" "SMB3_02" "SMB3_10" "SMB3_11" "FALSE" "0"
- "samba3_maxproto"  "Samba4 protocol version"  "CHOICE" "13" "LANMAN1" "LANMAN2" "NT1" "SMB2" "SMB2_02" "SMB2_10" "SMB2_22" "SMB2_24" "SMB3" "SMB3_00" "SMB3_02" "SMB3_10" "SMB3_11" "FALSE" "0"
+ "samba3_min_proto"  "Samba4 protocol version"  "CHOICE" "13" "LANMAN1" "LANMAN2" "NT1" "SMB2" "SMB2_02" "SMB2_10" "SMB2_22" "SMB2_24" "SMB3" "SMB3_00" "SMB3_02" "SMB3_10" "SMB3_11" "FALSE" "0"
+ "samba3_max_proto"  "Samba4 protocol version"  "CHOICE" "13" "LANMAN1" "LANMAN2" "NT1" "SMB2" "SMB2_02" "SMB2_10" "SMB2_22" "SMB2_24" "SMB3" "SMB3_00" "SMB3_02" "SMB3_10" "SMB3_11" "FALSE" "0"
  "samba3_conf"  "Samba4 Config"  "NULL"  "FALSE" "0"
