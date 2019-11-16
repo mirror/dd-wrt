@@ -1824,8 +1824,10 @@ do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 {
 	int count;
 	if (stream->post == 1) {
-		if (!(len + 1))
+		if (!(len + 1)) {
+			dd_logerror("httpd", "The POST data content length is bullshit\n");
 			return -1;
+		}
 		stream->post_buf = (char *)malloc(len + 1);
 
 		if (!stream->post_buf) {
