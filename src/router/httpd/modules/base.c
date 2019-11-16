@@ -1828,7 +1828,7 @@ do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 		stream->post_buf = (char *)malloc(len + 1);
 
 		if (!stream->post_buf) {
-			cprintf("The POST data exceed length limit!\n");
+			dd_logerror("httpd","The POST data exceed length limit!\n");
 			return;
 		}
 		/*
@@ -1843,7 +1843,7 @@ do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 		 */
 		char *buf = malloc(len);
 		if (!buf) {
-			cprintf("The POST data exceed length limit!\n");
+			dd_logerror("httpd","The POST data exceed length limit!\n");
 			return;		
 		}
 		wfgets(buf, len, stream);
