@@ -1,0 +1,331 @@
+# -*- text -*-
+######################################################################
+#
+#  This virtual server simplifies the process of sending CoA-Request or
+#  Disconnect-Request packets to a NAS.
+#
+#  This virtual server will receive CoA-Request or Disconnect-Request
+#  packets that contain *minimal* identifying information.  e.g. Just
+#  a User-Name, or maybe just an Acct-Session-Id attribute.  It will
+#  look up that information in a database in order to find the rest of
+#  the session data.  e.g. NAS-IP-Address, NAS-Identifier, NAS-Port,
+#  etc.  That information will be added to the packet, which will then
+#  be sent to the NAS.
+#
+#  This process is useful because NASes require the CoA packets to
+#  contain "session identification" attributes in order to to do CoA
+#  or Disconnect.  If the attributes aren't in the packet, then the
+#  NAS will NAK the request.  This NAK happens even if you ask to
+#  disconnect "User-Name = bob", and there is only one session with a
+#  "bob" active.
+#
+#  Using this virtual server makes the CoA or Disconnect process
+#  easier.  Just tell FreeRADIUS to disconnect "User-Name = bob", and
+#  FreeRADIUS will take care of adding the "session identification"
+#  attributes.
+#
+#  The process is as follows:
+#
+#    - A CoA/Disconnect-Request is received by FreeRADIUS.
+#    - The radacct table is searched for active sessions that match each of
+#      the provided identifier attributes: User-Name, Acct-Session-Id. The
+#      search returns the owning NAS and Acct-Unique-Id for the matching
+#      session/s.
+#    - The original CoA/Disconnect-Request content is written to a detail file
+#      with custom attributes representing the NAS and Acct-Session-Id.
+#    - A detail reader follows the file and originates CoA/Disconenct-Requests
+#      containing the original content, relayed to the corresponding NAS for
+#      each session using the custom attributes.
+#
+#  This simplifies scripting directly against a set of NAS devices since a
+#  script need only send a single CoA/Disconnect to FreeRADIUS which will
+#  then:
+#
+#    - Lookup all active sessions belonging to a user, in the case that only a
+#      User-Name attribute is provided in the request
+#    - Handle routing of the request to the correct NAS, in the case of a
+#      multi-NAS setup
+#
+#  For example, to disconnect a specific session:
+#
+#    $ echo 'Acct-Session-Id = "769df3 312343"' | \
+#      radclient 127.0.0.1 disconnect testing123
+#
+#  To perform a CoA update of all active sessions belonging to a user:
+#
+#    $ cat <<EOF | radclient 127.0.0.1 coa testing123
+#      User-Name = bob
+#      Cisco-AVPair = "subscriber:sub-qos-policy-out=q_out_uncapped"
+#      EOF
+#
+#  In addition to configuring and activating this site, a detail
+#  writer module must be configured in mods-enabled:
+#
+#    detail detail_coa {
+#        filename = ${radacctdir}/detail_coa
+#        escape_filenames = no
+#        permissions = 0600
+#        header = "%t"
+#        locking = yes
+#    }
+#
+
+
+#  Listen on a local CoA port.
+#
+#  This uses the normal set of clients, with the same secret as for
+#  authentication and accounting.
+#
+listen {
+	type = coa
+	ipaddr = 127.0.0.1
+	port = 3799
+	virtual_server = coa
+}
+
+#
+#  Receive CoA/Disconnect, lookup sessions, write them to a detail file
+#
+server coa {
+	#
+	#  When a packet is received, it is processed through the
+	#  recv-coa section.  This applies to *both* CoA-Request and
+	#  Disconnect-Request packets.
+	#
+	recv-coa {
+		#
+		#  Lookup all active sessions matching User-Name and/or
+		#  Acct-Session-Id and write each session (which includes to
+		#  owning NAS and session ID) to a detail file.
+		#
+		#  Returns a single result in the format:
+		#
+		#  NasIpAddress1#AcctSessionId1|NasIPAddress2#AcctSessionId2|...
+		#
+		#  i.e. each session is separated by '|', and attributes
+		#  within a session are separated by '#'
+		#
+		#  You will likely have to update the SELECT to add in
+		#  any other "session identification" attributes
+		#  needed by the NAS.  These may include NAS-Port,
+		#  NAS-Identifier, etc.  Only the NAS vendor knows
+		#  what these attributes are unfortunately, so we
+		#  cannot give more detailed advice here.
+		#
+		update control {
+
+			#
+			#  Example MySQL lookup
+			#
+#			Tmp-String-0 := "%{sql:SELECT IFNULL(GROUP_CONCAT(CONCAT(nasipaddress,'#',acctsessionid) separator '|'),'') FROM (SELECT * FROM radacct WHERE ('%{User-Name}'='' OR UserName='%{User-Name}') AND ('%{Acct-Session-Id}'='' OR acctsessionid = '%{Acct-Session-Id}') AND AcctStopTime IS NULL) a}"
+
+			#
+			#  Example PostgreSQL lookup
+			#
+#			Tmp-String-0 := "%{sql:SELECT STRING_AGG(CONCAT(nasipaddress,'#',acctsessionid),'|') FROM (SELECT * FROM radacct WHERE ('%{User-Name}'='' OR UserName='%{User-Name}') AND ('%{Acct-Session-Id}'='' OR acctsessionid = '%{Acct-Session-Id}') AND AcctStopTime IS NULL) a}"
+
+		}
+
+		#
+		#  Split the string and split into pieces.
+		#
+		if (&control:Tmp-String-0 != "" && "%{explode:&control:Tmp-String-0 |}") {
+			foreach &control:Tmp-String-0 {
+				if ("%{Foreach-Variable-0}" =~ /([^#]*)#(.*)/) {
+					update request {
+						COA-Packet-Type := "%{Packet-Type}"
+
+						COA-Packet-DST-IP-Address := "%{1}"
+						COA-Acct-Session-Id := "%{2}"
+
+						#
+						#  Add any other attributes here.
+						#
+
+						# Set the CoA/Disconnect port
+						COA-Packet-DST-Port := 1700
+
+						# SQL-User-Name was left over
+						# from the xlat
+						SQL-User-Name !* ANY
+
+						# Uncomment if the NAS does not
+						# expect User-Name
+						#User-Name !* ANY
+
+					}
+
+					#
+					#  If we're sending a CoA packet, send it out.
+					#
+					if (COA-Packet-DST-IP-Address && \
+					    COA-Acct-Session-Id != "") {
+						detail_coa.accounting
+					}
+				}
+			}
+		} else {
+			# No sessions found
+			reject
+		}
+
+	}
+}
+
+#
+#  Detail file reader that processes the queue of CoA/Disconnect requests
+#
+server coa-buffered-reader {
+	listen {
+		#
+		#  See sites-available/buffered-sql for more details on
+		#  all the options available for the detail reader.
+		#
+		type = detail
+		filename = "${radacctdir}/detail_coa"
+		load_factor = 90
+		track = yes
+	}
+
+	#
+	#  For historical reasons packets from the detail file reader are
+	#  processed through the "accounting" section.
+	#
+	accounting {
+		switch &COA-Packet-Type {
+			case "Disconnect-Request" {
+				update {
+					#  Include given attributes
+					disconnect: += request:[*]
+
+					disconnect:Packet-DST-IP-Address := \
+						&COA-Packet-DST-IP-Address
+					disconnect:Packet-DST-Port := \
+						&COA-Packet-DST-Port
+					disconnect:Acct-Session-Id := \
+						&COA-Acct-Session-Id
+
+					#  Some NASs want these, others don't
+					disconnect:Event-Timestamp := "%l"
+					disconnect:Message-Authenticator := 0x00
+
+					#  Remove this. We're not accounting
+					disconnect:Acct-Delay-Time !* ANY
+
+				}
+			}
+
+			case "CoA-Request" {
+				update {
+					#  Include given attributes
+					coa: += request:[*]
+
+					coa:Packet-DST-IP-Address := \
+						&COA-Packet-DST-IP-Address
+					coa:Packet-DST-Port := \
+						&COA-Packet-DST-Port
+					coa:Acct-Session-Id := \
+						&COA-Acct-Session-Id
+
+					#  Some NASs want these, others don't
+					coa:Event-Timestamp := "%l"
+					coa:Message-Authenticator := 0x00
+
+					#
+					#  Remove attributes which will confuse the NAS
+					#
+					#  The NAS will "helpfully" NAK the packet
+					#  if it contains attributes which are NOT
+					#  "session identification" attributes.
+					#
+					#  Those attributes should be listed here.
+					#
+					coa:Acct-Delay-Time !* ANY
+					coa:Proxy-State !* ANY
+				}
+			}
+
+		}
+
+		#
+		#  ACK the CoA / Disconnect packet.
+		#
+		ok
+	}
+}
+
+
+#  The CoA packet is in the "proxy-request" attribute list.
+#  The CoA reply (if any) is in the "proxy-reply" attribute list.
+#
+server originate-coa-relay {
+	#
+	#  Handle the responses here.
+	#
+	post-proxy {
+		switch &proxy-reply:Packet-Type {
+			case CoA-ACK {
+				ok
+			}
+
+			case CoA-NAK {
+				# the NAS didn't like the CoA request
+				ok
+			}
+
+			case Disconnect-ACK {
+				ok
+			}
+
+			case Disconnect-NAK {
+				# the NAS didn't like the Disconnect request
+				ok
+			}
+
+			#  Invalid packet type.  This shouldn't happen.
+			case {
+				fail
+			}
+		}
+
+		#
+		#  These methods are run when there is NO response
+		#  to the request.
+		#
+		Post-Proxy-Type Fail-CoA {
+			ok
+		}
+
+		Post-Proxy-Type Fail-Disconnect {
+			ok
+		}
+	}
+}
+
+
+#
+#  Homeserver CoA / Disconnect endpoints
+#
+#  See proxy.conf for more details on configuring a home_server and
+#  home_server_pool.
+#
+home_server coa-nas1 {
+	type = coa
+
+	# Update these to match your NAS
+	ipaddr = 192.0.2.1
+	port = 1700
+	secret = testing1234
+
+	coa {
+		irt = 2
+		mrt = 16
+		mrc = 5
+		mrd = 30
+	}
+}
+home_server_pool coa-nas1 {
+	type = fail-over
+	home_server = coa-nas1
+	virtual_server = originate-coa-relay
+}

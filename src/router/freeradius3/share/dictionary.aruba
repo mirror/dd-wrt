@@ -2,7 +2,7 @@
 # Copyright (C) 2019 The FreeRADIUS Server project and contributors
 # This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
 #
-#	Version: $Id: 4519621abde8b40fc0d69808f1b700358a2d86c4 $
+#	Version: $Id: b018f1090f48b8b48e7abad8749c2fc638297b76 $
 #
 VENDOR		Aruba				14823
 BEGIN-VENDOR	Aruba
@@ -55,9 +55,14 @@ ATTRIBUTE	Aruba-Port-Bounce-Host			40	integer
 ATTRIBUTE	Aruba-Calea-Server-Ip			41	ipaddr
 
 ATTRIBUTE	Aruba-Admin-Path			42	string
+ATTRIBUTE	Aruba-Captive-Portal-URL		43	string
+ATTRIBUTE	Aruba-MPSK-Passphrase			44	octets encrypt=2
+ATTRIBUTE	Aruba-ACL-Server-Query-Info		45	string
+ATTRIBUTE	Aruba-Command-String			46	string
 
 VALUE	Aruba-AirGroup-Device-Type	Personal-Device		1
 VALUE	Aruba-AirGroup-Device-Type	Shared-Device		2
+VALUE	Aruba-AirGroup-Device-Type	Deleted-Device		3
 
 VALUE	Aruba-AirGroup-Version		AirGroup-v1		1
 VALUE	Aruba-AirGroup-Version		AirGroup-v2		2

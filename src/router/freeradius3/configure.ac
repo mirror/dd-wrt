@@ -1729,6 +1729,7 @@ if test "x$developer" = "xyes"; then
   AX_CC_WDOCUMENTATION_FLAG
   if test "x$ax_cv_cc_wdocumentation_flag" = "xyes"; then
     devflags="-Wdocumentation"
+    AC_DEFINE([HAVE_WDOCUMENTATION],1,[Define if the compiler supports -Wdocumentation])
   fi
 
   dnl #
@@ -2031,6 +2032,11 @@ if test "x$REGEX" = "x"; then
     fi
   fi
 fi
+
+#
+#  Some platforms require an explicit -latomic
+#
+AC_SEARCH_LIBS([__atomic_load_4], [atomic])
 
 if test "x$REGEX" = "xyes"; then
   AC_DEFINE(HAVE_REGEX, 1, [Define if we have any regular expression library])

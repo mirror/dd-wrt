@@ -1,7 +1,7 @@
 /*
  * auth.c	User authentication.
  *
- * Version:	$Id: dec5c9f5e64009570a4a6bc338704d9b2982f960 $
+ * Version:	$Id: a10097637b0038ea38c1a92368524853c6352d30 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  Miquel van Smoorenburg <miquels@cistron.nl>
  * Copyright 2000  Jeff Carneal <jeff@apex.net>
  */
-RCSID("$Id: dec5c9f5e64009570a4a6bc338704d9b2982f960 $")
+RCSID("$Id: a10097637b0038ea38c1a92368524853c6352d30 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -826,6 +826,26 @@ int rad_virtual_server(REQUEST *request)
 	rad_assert(request->packet->code == PW_CODE_ACCESS_REQUEST);
 
 	result = rad_authenticate(request);
+
+	/*
+	 *	Allow bare "accept" and "reject" policies in the inner
+	 *	tunnel.
+	 */
+	if (!request->reply->code &&
+	    (vp = fr_pair_find_by_num(request->config, PW_AUTH_TYPE, 0, TAG_ANY)) != NULL) {
+		switch (vp->vp_integer) {
+		case PW_AUTH_TYPE_ACCEPT:
+			request->reply->code = PW_CODE_ACCESS_ACCEPT;
+			break;
+
+		case PW_AUTH_TYPE_REJECT:
+				request->reply->code = PW_CODE_ACCESS_REJECT;
+				break;
+
+		default:
+			break;
+		}
+	}
 
 	if (request->reply->code == PW_CODE_ACCESS_REJECT) {
 		fr_pair_delete_by_num(&request->config, PW_POST_AUTH_TYPE, 0, TAG_ANY);

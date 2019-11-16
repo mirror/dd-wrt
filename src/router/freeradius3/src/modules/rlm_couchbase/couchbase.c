@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: a278dca5f8f2cb891c3d578110f7a819eb42a474 $
+ * $Id: ab2d9d0ab8bec872243555323f0b8d9f82ba4904 $
  *
  * @brief Wrapper functions around the libcouchbase Couchbase client driver.
  * @file couchbase.c
@@ -24,11 +24,9 @@
  * @copyright 2013-2014 The FreeRADIUS Server Project.
  */
 
-RCSID("$Id: a278dca5f8f2cb891c3d578110f7a819eb42a474 $")
+RCSID("$Id: ab2d9d0ab8bec872243555323f0b8d9f82ba4904 $")
 
 #include <freeradius-devel/radiusd.h>
-
-#include <libcouchbase/couchbase.h>
 
 #include "couchbase.h"
 #include "jsonc_missing.h"

@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id: a5c1060676061f75d734899860085993a5d3554c $
+ * $Id: 0159465ea8bfeb162383baee1824b3f534068be6 $
  *
  * @file exec.c
  * @brief Execute external programs.
@@ -23,7 +23,7 @@
  * @copyright 2000-2004,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: a5c1060676061f75d734899860085993a5d3554c $")
+RCSID("$Id: 0159465ea8bfeb162383baee1824b3f534068be6 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -605,7 +605,7 @@ int radius_exec_program(TALLOC_CTX *ctx, char *out, size_t outlen, VALUE_PAIR **
 
 		if (fr_pair_list_afrom_str(ctx, answer, output_pairs) == T_INVALID) {
 			RERROR("Failed parsing output from: %s: %s", cmd, fr_strerror());
-			strlcpy(out, answer, len);
+			if (out) strlcpy(out, answer, len);
 			ret = -1;
 		}
 

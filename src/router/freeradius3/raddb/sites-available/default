@@ -11,7 +11,7 @@
 #	the "inner-tunnel" virtual server.  You will likely have to edit
 #	that, too, for authentication to work.
 #
-#	$Id: cfb973a9a8fd3d83e8e30c0599ddb911a3bdde9b $
+#	$Id: 902b6ca2361882b79197d4c5fb10e065deb3466f $
 #
 ######################################################################
 #
@@ -850,7 +850,7 @@ session {
 	#  post-auth section.
 	#
 	#  Add the ldap module name (or instance) if you have set
-	#  'edir_account_policy_check = yes' in the ldap module configuration
+	#  'edir = yes' in the ldap module configuration
 	#
 	#  The "session-state" attributes are not available here.
 	#
@@ -955,12 +955,19 @@ session {
 	#  will read the detail file, and send the packets to the
 	#  home server.
 	#
+	#  See the "mods-available/detail.example.com" file for more
+	#  details on writing a detail file specifically for one
+	#  destination.
+	#
+	#  See the "sites-available/robust-proxy-accounting" virtual
+	#  server for more details on reading this "detail" file.
+	#
 	#  With this configuration, the server always responds to
 	#  Accounting-Requests from the NAS, but only writes
 	#  accounting packets to disk if the home server is down.
 	#
 #	Post-Proxy-Type Fail-Accounting {
-#			detail
+#			detail.example.com
 #	}
 #}
 }

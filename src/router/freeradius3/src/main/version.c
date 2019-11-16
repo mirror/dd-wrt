@@ -1,7 +1,7 @@
 /*
  * version.c	Print version number and exit.
  *
- * Version:	$Id: 5bd565294d6a41e5fa56d6ebf93397c8956b6e5d $
+ * Version:	$Id: 62972d9f53e14dea9a8398cc203e04547a53d13a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Chris Parker <cparker@starnetusa.com>
  */
 
-RCSID("$Id: 5bd565294d6a41e5fa56d6ebf93397c8956b6e5d $")
+RCSID("$Id: 62972d9f53e14dea9a8398cc203e04547a53d13a $")
 
 #include <freeradius-devel/radiusd.h>
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
@@ -43,6 +43,8 @@ static long ssl_built = OPENSSL_VERSION_NUMBER;
  *
  * Where status >= 0 && < 10 means beta, and status 10 means release.
  *
+ *	https://wiki.openssl.org/index.php/Versioning
+ *
  * Startup check for whether the linked version of OpenSSL matches the
  * version the server was built against.
  *
@@ -53,6 +55,24 @@ int ssl_check_consistency(void)
 	long ssl_linked;
 
 	ssl_linked = SSLeay();
+
+	/*
+	 *	Major and minor versions mismatch, that's bad.
+	 */
+	if ((ssl_linked & 0xfff00000) != (ssl_built & 0xfff00000)) goto mismatch;
+
+	/*
+	 *	1.1.0 and later export all of the APIs we need, so we
+	 *	don't care about mismatches in fix / patch / status
+	 *	fields.  If the major && minor fields match, that's
+	 *	good enough.
+	 */
+	if ((ssl_linked & 0xfff00000) >= 0x10100000) return 0;
+
+	/*
+	 *	Before 1.1.0, we need all kinds of stupid checks to
+	 *	see if it might work.
+	 */
 
 	/*
 	 *	Status mismatch always triggers error.
@@ -409,6 +429,14 @@ void version_init_features(CONF_SECTION *cs)
 
 	version_add_feature(cs, "stats",
 #ifdef WITH_STATS
+				true
+#else
+				false
+#endif
+				);
+
+	version_add_feature(cs, "systemd",
+#ifdef HAVE_SYSTEMD
 				true
 #else
 				false

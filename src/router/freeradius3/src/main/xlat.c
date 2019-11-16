@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 1438406dbd6fba65a789b0a0cdd1ab65cfac5fe3 $
+ * $Id: 44b2edaae07411f6233d4fb288dc5bfe91baaebe $
  *
  * @file xlat.c
  * @brief String expansion ("translation"). Implements %Attribute -> value
@@ -24,7 +24,7 @@
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 1438406dbd6fba65a789b0a0cdd1ab65cfac5fe3 $")
+RCSID("$Id: 44b2edaae07411f6233d4fb288dc5bfe91baaebe $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -1912,6 +1912,12 @@ static char *xlat_getvp(TALLOC_CTX *ctx, REQUEST *request, vp_tmpl_t const *vpt,
 			if (request->reply) {
 				code = request->reply->code;
 			}
+
+		if (!code) return NULL;
+
+		if (code >= FR_MAX_PACKET_CODE) {
+			return talloc_typed_asprintf(ctx, "%d", packet->code);
+		}
 
 		return talloc_typed_strdup(ctx, fr_packet_codes[code]);
 	}

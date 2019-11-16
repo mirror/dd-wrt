@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 1e1ded49ec7d5f9096c498c86fdb1f0285d06b2b $
+ * $Id: 529bd72cb05f21b88275dc1b5e8fbd53433f4c7a $
  *
  * @brief Couchbase wrapper function prototypes and datatypes.
  * @file couchbase.h
@@ -27,9 +27,15 @@
 #ifndef _couchbase_h_
 #define _couchbase_h_
 
-RCSIDH(couchbase_h, "$Id: 1e1ded49ec7d5f9096c498c86fdb1f0285d06b2b $")
+RCSIDH(couchbase_h, "$Id: 529bd72cb05f21b88275dc1b5e8fbd53433f4c7a $")
 
+#ifdef HAVE_WDOCUMENTATION
+DIAG_OFF(documentation)
+#endif
 #include <libcouchbase/couchbase.h>
+#ifdef HAVE_WDOCUMENTATION
+DIAG_ON(documentation)
+#endif
 
 #include "jsonc_missing.h"
 

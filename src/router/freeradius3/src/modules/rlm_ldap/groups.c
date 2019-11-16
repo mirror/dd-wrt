@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 5e0a1819eb67e42186e5ff82e9908f7ec69da648 $
+ * $Id: 205f32d4adc0fc494bac63edbcb7787e0f965da9 $
  * @file groups.c
  * @brief LDAP module group functions.
  *
@@ -221,7 +221,7 @@ static rlm_rcode_t rlm_ldap_group_dn2name(rlm_ldap_t const *inst, REQUEST *reque
 
 	case LDAP_PROC_NO_RESULT:
 		REDEBUG("Group DN \"%s\" did not resolve to an object", dn);
-		return RLM_MODULE_INVALID;
+		return inst->allow_dangling_group_refs ? RLM_MODULE_NOOP : RLM_MODULE_INVALID;
 
 	default:
 		return RLM_MODULE_FAIL;
@@ -354,6 +354,9 @@ rlm_rcode_t rlm_ldap_cacheable_userobj(rlm_ldap_t const *inst, REQUEST *request,
 				dn = rlm_ldap_berval_to_string(value_ctx, values[i]);
 				rcode = rlm_ldap_group_dn2name(inst, request, pconn, dn, &name);
 				talloc_free(dn);
+
+				if (rcode == RLM_MODULE_NOOP) continue;
+
 				if (rcode != RLM_MODULE_OK) {
 					ldap_value_free_len(values);
 					talloc_free(value_ctx);
@@ -741,6 +744,9 @@ rlm_rcode_t rlm_ldap_check_userobj_dynamic(rlm_ldap_t const *inst, REQUEST *requ
 			RINDENT();
 			ret = rlm_ldap_group_dn2name(inst, request, pconn, check->vp_strvalue, &resolved);
 			REXDENT();
+
+			if (ret == RLM_MODULE_NOOP) continue;
+
 			if (ret != RLM_MODULE_OK) {
 				rcode = ret;
 				goto finish;
@@ -775,6 +781,9 @@ rlm_rcode_t rlm_ldap_check_userobj_dynamic(rlm_ldap_t const *inst, REQUEST *requ
 			ret = rlm_ldap_group_dn2name(inst, request, pconn, value, &resolved);
 			REXDENT();
 			talloc_free(value);
+
+			if (ret == RLM_MODULE_NOOP) continue;
+
 			if (ret != RLM_MODULE_OK) {
 				rcode = ret;
 				goto finish;

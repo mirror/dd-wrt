@@ -6,7 +6,7 @@
 #
 #	ftp://ftp.3gpp.org/specs/2002-06/R1999/29_series/29061-3a0.zip
 #
-#	$Id: 6926ca14d8d15aa8bdb93194ddf0c3beefe9dccd $
+#	$Id: ce5b6bc571f2d93183775ab983467ec44c0df19f $
 #
 VENDOR		3GPP				10415
 
@@ -49,6 +49,7 @@ ATTRIBUTE	3GPP-RAT-Type				21	byte
 #	http://www.3gpp.org/DynaReport/29274.htm
 #
 ATTRIBUTE	3GPP-Location-Info			22	octets
+ATTRIBUTE	3GPP-User-Location-Info			22	octets
 ATTRIBUTE	3GPP-MS-Time-Zone			23	octets[2]
 ATTRIBUTE	3GPP-Camel-Charging-Info		24	octets
 ATTRIBUTE	3GPP-Packet-Filter			25	octets

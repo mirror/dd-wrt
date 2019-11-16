@@ -1,8 +1,8 @@
 # -*- text -*-
 ##
-## sql.conf -- SQL modules
+## mods-available/sql -- SQL modules
 ##
-##	$Id: 4d2442aaec9ce2b64c5fb2f78fc030e4fc8e8a48 $
+##	$Id: 058c7255fe68c6ee21d64b59cacf111fb5dd8e79 $
 
 ######################################################################
 #
@@ -15,6 +15,13 @@
 #
 #  Where "DB" is mysql, mssql, oracle, or postgresql.
 #
+#  The name used to query SQL is sql_user_name, which is set in the file
+#
+#     raddb/mods-config/sql/main/${dialect}/queries.conf
+#
+#  If you are using realms, that configuration should be changed to use
+#  the Stripped-User-Name attribute.  See the comments around sql_user_name
+#  for more information.
 #
 
 sql {
@@ -28,6 +35,7 @@ sql {
 	#	oracle
 	#	postgresql
 	#	sqlite
+	#	mongo
 	#
 	dialect = "sqlite"
 
@@ -48,6 +56,7 @@ sql {
 	#	rlm_sql_freetds
 	#	rlm_sql_iodbc
 	#	rlm_sql_unixodbc
+	#	rlm_sql_mongo
 	#
 	driver = "rlm_sql_null"
 #	driver = "rlm_sql_${dialect}"
@@ -104,12 +113,63 @@ sql {
 		send_application_name = yes
 	}
 
+	#
+	#	Configuration for Mongo.
+	#
+	#	Note that the Mongo driver is experimental.  The FreeRADIUS developers
+	#	are unable to help with the syntax of the Mongo queries.  Please see
+	#	the Mongo documentation for that syntax.
+	#
+	#	The Mongo driver supports only the following methods:
+	#
+	#		aggregate
+	#		findAndModify
+	#		findOne
+	#		insert
+	#
+	#	For examples, see the query files:
+	#
+	#		raddb/mods-config/sql/main/mongo/queries.conf
+	#		raddb/mods-config/sql/main/ippool/queries.conf
+	#
+	mongo {
+		#
+		#  The application name to use.
+		#
+		appname = "freeradius"
+
+		#
+		#  The TLS parameters here map directly to the Mongo TLS configuration
+		#
+		tls {
+			certificate_file = /path/to/file
+			certificate_password = "password"
+			ca_file = /path/to/file
+			ca_dir = /path/to/directory
+			crl_file = /path/to/file
+			weak_cert_validation = false
+			allow_invalid_hostname = false
+		}
+	}
+
 	# Connection info:
 	#
 #	server = "localhost"
 #	port = 3306
 #	login = "radius"
 #	password = "radpass"
+
+	# Connection info for Mongo
+	# Authentication Without SSL
+	#	server = "mongodb://USER:PASSWORD@192.16.0.2:PORT/DATABASE?authSource=admin&ssl=false"
+
+	# Authentication With SSL
+	#	server = "mongodb://USER:PASSWORD@192.16.0.2:PORT/DATABASE?authSource=admin&ssl=true"
+
+	# Authentication with Certificate
+	# Use this command for retrieve Derived username:
+	# openssl x509 -in mycert.pem -inform PEM -subject -nameopt RFC2253
+	# server = mongodb://<DERIVED USERNAME>@192.168.0.2:PORT/DATABASE?authSource=$external&ssl=true&authMechanism=MONGODB-X509
 
 	# Database table configuration for everything except Oracle
 	radius_db = "radius"

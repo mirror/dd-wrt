@@ -34,7 +34,7 @@
 #ifndef _EAP_PWD_H
 #define _EAP_PWD_H
 
-RCSIDH(eap_pwd_h, "$Id: 013a6e79926a9427812f5f527b457a5a48a58b6b $")
+RCSIDH(eap_pwd_h, "$Id: ca12778f612c2f5b1c41f66a1705072d3257c46e $")
 #include "eap.h"
 
 #include <openssl/bn.h>
@@ -90,6 +90,7 @@ typedef struct _pwd_session_t {
     uint8_t *out;     /* message to fragment */
     size_t out_pos;
     size_t out_len;
+    BN_CTX *bnctx;
     EC_GROUP *group;
     EC_POINT *pwe;
     BIGNUM *order;

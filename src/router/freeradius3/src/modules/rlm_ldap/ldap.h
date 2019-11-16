@@ -1,5 +1,5 @@
 /**
- * $Id: fddcf7fb9084852183b2a72aa374dcff0f4dc158 $
+ * $Id: 7dc874d35ee089b75357478f2b812ad709bcb749 $
  * @file ldap.h
  * @brief LDAP authorization and authentication module headers.
  *
@@ -205,6 +205,10 @@ typedef struct ldap_instance {
 
 	DICT_ATTR const	*group_da;			//!< The DA associated with this specific instance of the
 							//!< rlm_ldap module.
+
+	bool		allow_dangling_group_refs;	//!< Don't error if we fail to resolve a group DN referenced
+							///< from a user object.
+
 
 	/*
 	 *	Dynamic clients

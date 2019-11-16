@@ -1,7 +1,7 @@
 /*
  * listen.c	Handle socket stuff
  *
- * Version:	$Id: 6edbfd62594364657ecd0fd56faa2208c9055b20 $
+ * Version:	$Id: ebf7f5221cee4a544892b5a337c5fde3edd51fdc $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2005  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 6edbfd62594364657ecd0fd56faa2208c9055b20 $")
+RCSID("$Id: ebf7f5221cee4a544892b5a337c5fde3edd51fdc $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -2870,7 +2870,7 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 #ifdef WITH_TLS
 	if ((home->proto == IPPROTO_TCP) && home->tls) {
 		DEBUG("Trying SSL to port %d\n", home->port);
-		sock->ssn = tls_new_client_session(sock, home->tls, this->fd);
+		sock->ssn = tls_new_client_session(sock, home->tls, this->fd, &sock->certs);
 		if (!sock->ssn) {
 			ERROR("Failed starting SSL to new proxy socket '%s'", buffer);
 			home->last_failed_open = now;

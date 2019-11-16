@@ -1,7 +1,7 @@
 /*
  * radclient.c	General radius packet debug tool.
  *
- * Version:	$Id: 0523c7769f5b51a0534338e86f994eb228323fa9 $
+ * Version:	$Id: 52d2872b13b5336284c44c7606161f2998d1e53b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 0523c7769f5b51a0534338e86f994eb228323fa9 $")
+RCSID("$Id: 52d2872b13b5336284c44c7606161f2998d1e53b $")
 
 #include <freeradius-devel/radclient.h>
 #include <freeradius-devel/radpaths.h>
@@ -1106,6 +1106,8 @@ static int recv_one_packet(int wait_time)
 	 *	packet matched that.
 	 */
 	if ((request->filter_code != PW_CODE_UNDEFINED) && (request->reply->code != request->filter_code)) {
+		fr_strerror_printf(NULL);
+
 		if (is_radius_code(request->reply->code)) {
 			REDEBUG("%s: Expected %s got %s", request->name, fr_packet_codes[request->filter_code],
 				fr_packet_codes[request->reply->code]);

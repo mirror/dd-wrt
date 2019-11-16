@@ -32,7 +32,7 @@
 #	the server will have time to read the detail file, and insert
 #	the data into a long-term SQL database.
 #
-#	$Id: 81150448040b78c1cb1340f3329bfd9475aadf26 $
+#	$Id: 74574ac5a36d446b2a72dcae64d1c0a1992014c8 $
 #
 ######################################################################
 
@@ -147,7 +147,7 @@ server buffered-sql {
 		#
 		#  Log traffic to an SQL database.
 		#
-		#  See "Accounting queries" in sql.conf
+		#  See "Accounting queries" in mods-config/sql/main/$driver/queries.conf
 	#	sql
 
 

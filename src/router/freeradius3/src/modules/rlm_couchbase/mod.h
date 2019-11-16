@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 5f40db9c9fed2aa16a149dd8c9f38e185d466199 $
+ * $Id: 9850f0488a3c853243f8097eaf7f35aba622f0b9 $
  *
  * @brief Function prototypes and datatypes used in the module.
  * @file mod.h
@@ -27,12 +27,11 @@
 #ifndef _mod_h_
 #define _mod_h_
 
-RCSIDH(mod_h, "$Id: 5f40db9c9fed2aa16a149dd8c9f38e185d466199 $")
+RCSIDH(mod_h, "$Id: 9850f0488a3c853243f8097eaf7f35aba622f0b9 $")
 
 #include <freeradius-devel/radiusd.h>
 
-#include <libcouchbase/couchbase.h>
-
+#include "couchbase.h"
 #include "jsonc_missing.h"
 
 /* maximum size of a stored value */
