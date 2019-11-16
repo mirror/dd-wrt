@@ -208,7 +208,7 @@ err:
 #endif
 }
 
-static void
+static int
 // do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy, 
 									// https, 
@@ -231,18 +231,18 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 	 */
 	while (len > 0) {
 		if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream))
-			return;
+			return -1;
 		len -= strlen(buf);
 		if (!strncasecmp(buf, "Content-Disposition:", 20)) {
 			if (strstr(buf, "name=\"erase\"")) {
 				while (len > 0 && strcmp(buf, "\n")
 				       && strcmp(buf, "\r\n")) {
 					if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream))
-						return;
+						return -1;
 					len -= strlen(buf);
 				}
 				if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream))
-					return;
+					return -1;
 				len -= strlen(buf);
 				buf[1] = '\0';	// we only want the 1st digit
 				nvram_set("sv_restore_defaults", buf);
@@ -260,7 +260,7 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 	 */
 	while (len > 0) {
 		if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream))
-			return;
+			return -1;
 		len -= strlen(buf);
 		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
 			break;
@@ -280,4 +280,5 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 	wfgets(buf, len, stream);
 	fprintf(stderr, "upgrade done()\n");
 #endif
+	return 0;
 }

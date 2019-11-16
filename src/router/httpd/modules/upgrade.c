@@ -739,7 +739,7 @@ err:
 #endif
 }
 
-static void
+static int
 // do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy, 
 									// https, 
@@ -758,7 +758,7 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 	while (len > 0) {
 		if (!wfgets(buf, MIN(len + 1, 1024), stream)) {
 			free(buf);
-			return;
+			return -1;
 		}
 
 		len -= strlen(buf);
@@ -768,14 +768,14 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 				       && strcmp(buf, "\r\n")) {
 					if (!wfgets(buf, MIN(len + 1, 1024), stream)) {
 						free(buf);
-						return;
+						return -1;
 					}
 
 					len -= strlen(buf);
 				}
 				if (!wfgets(buf, MIN(len + 1, 1024), stream)) {
 					free(buf);
-					return;
+					return -1;
 				}
 				len -= strlen(buf);
 				buf[1] = '\0';	// we only want the 1st digit
@@ -794,7 +794,7 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 	while (len > 0) {
 		if (!wfgets(buf, MIN(len + 1, 1024), stream)) {
 			free(buf);
-			return;
+			return -1;
 		}
 
 		len -= strlen(buf);
@@ -829,4 +829,5 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 	wfgets(buf, len, stream);
 	free(buf);
 #endif
+	return 0;
 }

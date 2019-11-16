@@ -72,7 +72,7 @@ static char *websGetVar(webs_t wp, char *var, char *d);
 static int websGetVari(webs_t wp, char *var, int d);
 static void start_gozila(char *name, webs_t wp);
 static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, struct variable *v);
-static void do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary);
+static int do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary);
 static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
 static char *wfgets(char *buf, int len, webs_t fp);
 static int wfprintf(webs_t fp, char *fmt, ...);
@@ -416,7 +416,6 @@ static void filteralphanum(char *str)
 	}
 }
 
-
 static char *_tran_string(char *buf, char *str)
 {
 	sprintf(buf, "<script type=\"text/javascript\">Capture(%s)</script>", str);
@@ -427,13 +426,13 @@ static char *readweb(webs_t wp, char *filename)
 {
 	FILE *web = getWebsFile(wp, filename);
 	if (!web) {
-	    return NULL;
+		return NULL;
 	}
 	unsigned int len = getWebsFileLen(wp, filename);
 	char *webfile = (char *)safe_malloc(len + 1);
 	if (!webfile) {
-	    fclose(web);
-	    return NULL;
+		fclose(web);
+		return NULL;
 	}
 	fread(webfile, len, 1, web);
 	fclose(web);
@@ -708,8 +707,8 @@ static void do_radiuscert(unsigned char method, struct mime_handler *handler, ch
 			char *serial = safe_malloc(len + 1);
 			char *output = safe_malloc(len + 1);
 			if (!serial || !output) {
-			    fclose(fp);
-			    return;
+				fclose(fp);
+				return;
 			}
 			fread(serial, len, 1, fp);
 			fclose(fp);
@@ -892,7 +891,7 @@ static void do_wds(unsigned char method, struct mime_handler *handler, char *pat
 
 	idx = strrchr(ifname, '.');
 	if (idx)
-	    *idx = 0;
+		*idx = 0;
 	if (!*(ifname) || strlen(ifname) < 2)
 		return;
 	char *temp = insert(stream, ifname, "0", "Wireless_WDS.asp");
@@ -1346,7 +1345,7 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 	}
 
 	next_page = websGetVar(wp, "next_page", NULL);
-	if (next_page && *next_page!='/' && *next_page!='.') {
+	if (next_page && *next_page != '/' && *next_page != '.') {
 		sprintf(path, "%s", next_page);
 	} else
 		sprintf(path, "%s.asp", submit_button);
@@ -1787,7 +1786,7 @@ static int do_auth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 
 static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if(nvram_matchi("info_passwd", 0))
+	if (nvram_matchi("info_passwd", 0))
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -1795,7 +1794,7 @@ static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 #ifdef HAVE_REGISTER
 static int do_auth_reg(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if(!wp->isregistered)
+	if (!wp->isregistered)
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -1820,22 +1819,24 @@ char ezc_version[128];
 
 // #endif
 
-void				// support GET and POST 2003-08-22
+int				// support GET and POST 2003-08-22
 do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 {
 	int count;
 	if (stream->post == 1) {
+		if (!(len + 1))
+			return -1;
 		stream->post_buf = (char *)malloc(len + 1);
 
 		if (!stream->post_buf) {
-			dd_logerror("httpd","The POST data exceed length limit!\n");
-			return;
+			dd_logerror("httpd", "The POST data exceed length limit!\n");
+			return -1;
 		}
 		/*
 		 * Get query 
 		 */
 		if (!(count = wfread(stream->post_buf, 1, len, stream)))
-			return;
+			return -1;
 		stream->post_buf[count] = '\0';;
 		len -= strlen(stream->post_buf);
 		/*
@@ -1843,13 +1844,14 @@ do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 		 */
 		char *buf = malloc(len);
 		if (!buf) {
-			dd_logerror("httpd","The POST data exceed length limit!\n");
-			return;		
+			dd_logerror("httpd", "The POST data exceed length limit!\n");
+			return -1;
 		}
 		wfgets(buf, len, stream);
 		free(buf);
 		init_cgi(stream, stream->post_buf);
 	}
+	return 0;
 }
 
 #if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
