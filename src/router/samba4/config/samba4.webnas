@@ -1,0 +1,52 @@
+<h2><% tran("nas.samba3"); %></h2>
+<fieldset>
+  <legend><% tran("service.samba3_srv"); %></legend>
+	<div class="setting">
+		<div class="label"><% tran("service.samba3_srv"); %></div>
+		<input class="spaceradio" type="radio" name="samba3_enable" value="1" <% nvc("samba3_enable", "1"); %> onclick="show_layer_ext(this, 'samba3config', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="samba3_enable" value="0" <% nvc("samba3_enable", "0"); %> onclick="show_layer_ext(this, 'samba3config', false)"/><% tran("share.disable"); %>
+	</div>
+						
+	<div id="samba3config">	
+		<div class="setting">
+			<div class="label"><% tran("service.samba3_srvstr"); %></div>
+			<input maxlength="32" size="16" name="samba3_srvstr" value="<% nvg("samba3_srvstr"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.samba3_workgrp"); %></div>
+			<input maxlength="32" size="16" name="samba3_workgrp" value="<% nvg("samba3_workgrp"); %>" />
+		</div>
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("service.samba3_min_proto"); %></div>
+			<select name="samba3_min_proto" >
+				<option value="LANMAN1" <% nvsm("samba3_proto", "LANMAN1", "selected"); %> >LANMAN 1.0</option>
+				<option value="LANMAN2" <% nvsm("samba3_proto", "LANMAN2", "selected"); %> >LANMAN 2.0</option>
+				<option value="NT1" <% nvsm("samba3_proto", "NT1", "selected"); %> >NT 1.0</option>
+				<option value="SMB2_02" <% nvsm("samba3_proto", "SMB2_02", "selected"); %> >SMB 2.02</option>
+				<option value="SMB2_10" <% nvsm("samba3_proto", "SMB2_10", "selected"); %> >SMB 2.10</option>
+				<option value="SMB2_22" <% nvsm("samba3_proto", "SMB2_22", "selected"); %> >SMB 2.22</option>
+				<option value="SMB2_24" <% nvsm("samba3_proto", "SMB2_24", "selected"); %> >SMB 2.24</option>
+				<option value="SMB3_00" <% nvsm("samba3_proto", "SMB3_00", "selected"); %> >SMB 3.00</option>
+				<option value="SMB3_02" <% nvsm("samba3_proto", "SMB3_02", "selected"); %> >SMB 3.02</option>
+				<option value="SMB3_10" <% nvsm("samba3_proto", "SMB3_10", "selected"); %> >SMB 3.10</option>
+				<option value="SMB3_11" <% nvsm("samba3_proto", "SMB3_11", "selected"); %> >SMB 3.11</option>
+			</select>
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("service.samba3_max_proto"); %></div>
+			<select name="samba3_max_proto" >
+				<option value="LANMAN1" <% nvsm("samba3_proto", "LANMAN1", "selected"); %> >LANMAN 1.0</option>
+				<option value="LANMAN2" <% nvsm("samba3_proto", "LANMAN2", "selected"); %> >LANMAN 2.0</option>
+				<option value="NT1" <% nvsm("samba3_proto", "NT1", "selected"); %> >NT 1.0</option>
+				<option value="SMB2_02" <% nvsm("samba3_proto", "SMB2_02", "selected"); %> >SMB 2.02</option>
+				<option value="SMB2_10" <% nvsm("samba3_proto", "SMB2_10", "selected"); %> >SMB 2.10</option>
+				<option value="SMB2_22" <% nvsm("samba3_proto", "SMB2_22", "selected"); %> >SMB 2.22</option>
+				<option value="SMB2_24" <% nvsm("samba3_proto", "SMB2_24", "selected"); %> >SMB 2.24</option>
+				<option value="SMB3_00" <% nvsm("samba3_proto", "SMB3_00", "selected"); %> >SMB 3.00</option>
+				<option value="SMB3_02" <% nvsm("samba3_proto", "SMB3_02", "selected"); %> >SMB 3.02</option>
+				<option value="SMB3_10" <% nvsm("samba3_proto", "SMB3_10", "selected"); %> >SMB 3.10</option>
+				<option value="SMB3_11" <% nvsm("samba3_proto", "SMB3_11", "selected"); %> >SMB 3.11</option>
+			</select>
+	</div>
+</fieldset><br />
