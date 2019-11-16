@@ -671,6 +671,15 @@ static struct ctl_table spl_kmem_table[] = {
 		.mode		= 0444,
 		.proc_handler	= &proc_doslab,
 	},
+	{
+		.procname	= "slab_kvmem_max",
+		.data		= (void *)(KMC_KVMEM | KMC_MAX),
+		.maxlen		= sizeof (unsigned long),
+		.extra1		= &table_min,
+		.extra2		= &table_max,
+		.mode		= 0444,
+		.proc_handler	= &proc_doslab,
+	},
 	{},
 };
 
@@ -721,9 +730,6 @@ static struct ctl_table spl_dir[] = {
 
 static struct ctl_table spl_root[] = {
 	{
-#ifdef HAVE_CTL_NAME
-	.ctl_name = CTL_KERN,
-#endif
 	.procname = "kernel",
 	.mode = 0555,
 	.child = spl_dir,

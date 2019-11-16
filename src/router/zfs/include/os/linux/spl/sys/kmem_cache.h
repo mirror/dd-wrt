@@ -43,15 +43,15 @@ typedef enum kmc_bit {
 	KMC_BIT_QCACHE		= 4,	/* XXX: Unsupported */
 	KMC_BIT_KMEM		= 5,	/* Use kmem cache */
 	KMC_BIT_VMEM		= 6,	/* Use vmem cache */
-	KMC_BIT_SLAB		= 7,	/* Use Linux slab cache */
-	KMC_BIT_OFFSLAB		= 8,	/* Objects not on slab */
+	KMC_BIT_KVMEM		= 7,	/* Use kvmalloc linux allocator  */
+	KMC_BIT_SLAB		= 8,	/* Use Linux slab cache */
+	KMC_BIT_OFFSLAB		= 9,	/* Objects not on slab */
 	KMC_BIT_DEADLOCKED	= 14,	/* Deadlock detected */
 	KMC_BIT_GROWING		= 15,	/* Growing in progress */
 	KMC_BIT_REAPING		= 16,	/* Reaping in progress */
 	KMC_BIT_DESTROY		= 17,	/* Destroy in progress */
 	KMC_BIT_TOTAL		= 18,	/* Proc handler helper bit */
 	KMC_BIT_ALLOC		= 19,	/* Proc handler helper bit */
-	KMC_BIT_KVMEM		= 20,	/* Use kvmalloc linux allocator  */
 	KMC_BIT_MAX		= 21,	/* Proc handler helper bit */
 } kmc_bit_t;
 

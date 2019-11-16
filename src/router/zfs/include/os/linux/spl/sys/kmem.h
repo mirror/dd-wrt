@@ -30,10 +30,6 @@
 #include <linux/sched.h>
 #include <linux/mm.h>
 #include <linux/vmalloc.h>
-#include <linux/slab.h>
-void *spl_kvmalloc(size_t size, gfp_t flags);
-void spl_kvfree(const void *addr);
-
 
 extern int kmem_debugging(void);
 extern char *kmem_vasprintf(const char *fmt, va_list ap);
@@ -55,6 +51,7 @@ extern void kmem_strfree(char *str);
 #define	KM_PUBLIC_MASK	(KM_SLEEP | KM_NOSLEEP | KM_PUSHPAGE | KM_ONCE)
 
 static int spl_fstrans_check(void);
+void *spl_kvmalloc(size_t size, gfp_t flags);
 
 /*
  * Convert a KM_* flags mask to its Linux GFP_* counterpart.  The conversion
