@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 10e3a7e18bcbbecc9930fd5bed722d82c42d92ac $
+ * $Id: 78c6d8a9e52223840b431c797228212b37d5bc83 $
  *
  * @file process.c
  * @brief Defines the state machines that control how requests are processed.
@@ -24,7 +24,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 10e3a7e18bcbbecc9930fd5bed722d82c42d92ac $")
+RCSID("$Id: 78c6d8a9e52223840b431c797228212b37d5bc83 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/process.h>
@@ -300,7 +300,7 @@ static bool we_are_master(void)
 #define FINAL_STATE(_x) NO_CHILD_THREAD; request->component = "<" #_x ">"; request->module = ""; request->child_state = _x
 
 
-static int event_new_fd(rad_listen_t *this);
+static void event_new_fd(rad_listen_t *this);
 
 /*
  *	We need mutexes around the event FD list *only* in certain
@@ -2382,6 +2382,7 @@ static int process_proxy_reply(REQUEST *request, RADIUS_PACKET *reply)
 	int rcode;
 	int post_proxy_type = 0;
 	VALUE_PAIR *vp;
+	char const *old_server;
 
 	VERIFY_REQUEST(request);
 
@@ -2472,19 +2473,31 @@ static int process_proxy_reply(REQUEST *request, RADIUS_PACKET *reply)
 		remove_from_proxy_hash(request);
 	}
 
-	if (request->home_pool && request->home_pool->virtual_server) {
-		char const *old_server = request->server;
+	old_server = request->server;
+	rad_assert(request->home_server != NULL);
 
-		request->server = request->home_pool->virtual_server;
-		RDEBUG2("server %s {", request->server);
-		RINDENT();
-		rcode = process_post_proxy(post_proxy_type, request);
-		REXDENT();
-		RDEBUG2("}");
-		request->server = old_server;
+	/*
+	 *	If the home server is virtual, just run pre_proxy from
+	 *	that section.
+	 */
+	if (request->home_server->server) {
+		request->server = request->home_server->server;
+
 	} else {
-		rcode = process_post_proxy(post_proxy_type, request);
+		if (request->home_pool && request->home_pool->virtual_server) {
+			request->server = request->home_pool->virtual_server;
+		}
 	}
+
+	/*
+	 *	Run the request through the given virtual server.
+	 */
+	RDEBUG2("server %s {", request->server);
+	RINDENT();
+	rcode = process_post_proxy(post_proxy_type, request);
+	REXDENT();
+	RDEBUG2("}");
+	request->server = old_server;
 
 #ifdef WITH_COA
 	if (request->proxy && request->packet->code == request->proxy->code) {
@@ -2902,6 +2915,7 @@ static int request_will_proxy(REQUEST *request)
 	home_server_t *home;
 	REALM *realm = NULL;
 	home_pool_t *pool = NULL;
+	char const *old_server;
 
 	VERIFY_REQUEST(request);
 
@@ -3166,22 +3180,16 @@ do_home:
 		pre_proxy_type = vp->vp_integer;
 	}
 
+	old_server = request->server;
+	rad_assert(request->home_server != NULL);
+
 	/*
 	 *	If the home server is virtual, just run pre_proxy from
 	 *	that section.
 	 */
 	if (request->home_server->server) {
-		char const *old_server = request->server;
-
 		request->server = request->home_server->server;
 
-		RDEBUG2("server %s {", request->server);
-		RINDENT();
-		rcode = process_pre_proxy(pre_proxy_type, request);
-		REXDENT();
-		RDEBUG2("}");
-
-		request->server = old_server;
 	} else {
 		char buffer[128];
 
@@ -3191,8 +3199,20 @@ do_home:
 				  buffer, sizeof(buffer)),
 			request->proxy->dst_port);
 
-		rcode = process_pre_proxy(pre_proxy_type, request);
+		if (request->home_pool && request->home_pool->virtual_server) {
+			request->server = request->home_pool->virtual_server;
+		}
 	}
+
+	/*
+	 *	Run the request through the given virtual server.
+	 */
+	RDEBUG2("server %s {", request->server);
+	RINDENT();
+	rcode = process_pre_proxy(pre_proxy_type, request);
+	REXDENT();
+	RDEBUG2("}");
+	request->server = old_server;
 
 	switch (rcode) {
 	case RLM_MODULE_FAIL:
@@ -4189,6 +4209,7 @@ static void request_coa_originate(REQUEST *request)
 	}
 
 	coa = request->coa;
+	coa->listener = NULL;	/* copied here by request_alloc_fake(), but not needed */
 
 	/*
 	 *	src_ipaddr will be set up in proxy_encode.
@@ -5002,13 +5023,13 @@ static int proxy_eol_cb(void *ctx, void *data)
 #endif	/* WITH_PROXY */
 #endif	/* WITH_TCP */
 
-static int event_new_fd(rad_listen_t *this)
+static void event_new_fd(rad_listen_t *this)
 {
 	char buffer[1024];
 
 	ASSERT_MASTER;
 
-	if (this->status == RAD_LISTEN_STATUS_KNOWN) return 1;
+	if (this->status == RAD_LISTEN_STATUS_KNOWN) return;
 
 	this->print(this, buffer, sizeof(buffer));
 
@@ -5051,7 +5072,7 @@ static int event_new_fd(rad_listen_t *this)
 			 *	Set up the first poll interval.
 			 */
 			event_poll_detail(this);
-			return 1;
+			return;
 #else
 			break;	/* add the FD to the list */
 #endif
@@ -5120,7 +5141,7 @@ static int event_new_fd(rad_listen_t *this)
 		if (fr_event_fd_insert(el, 0, this->fd,
 				       event_socket_handler, this)) {
 			this->status = RAD_LISTEN_STATUS_KNOWN;
-			return 1;
+			return;
 		}
 
 		ERROR("Failed adding event handler for socket: %s", fr_strerror());
@@ -5154,7 +5175,7 @@ static int event_new_fd(rad_listen_t *this)
 				rad_panic("Failed to insert event");
 			}
 
-			return 1;
+			return;
 		}
 
 		fr_event_fd_delete(el, 0, this->fd);
@@ -5211,7 +5232,7 @@ static int event_new_fd(rad_listen_t *this)
 				rad_panic("Failed to insert event");
 			}
 
-			return 1;
+			return;
 		}
 
 		/*
@@ -5307,7 +5328,7 @@ static int event_new_fd(rad_listen_t *this)
 			ASSERT_MASTER;
 			if (sock->ev) fr_event_delete(el, &sock->ev);
 			listen_free(&this);
-			return 1;
+			return;
 		}
 
 		/*
@@ -5324,7 +5345,7 @@ static int event_new_fd(rad_listen_t *this)
 #endif	/* WITH_TCP */
 	}
 
-	return 1;
+	return;
 }
 
 /***********************************************************************

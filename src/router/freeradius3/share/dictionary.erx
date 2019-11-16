@@ -5,7 +5,7 @@
 #	Juniper's (was Unisphere's) broadband RAS
 #	From Terje Krogdahl <tekr@nextra.com>
 #
-# Version:	$Id: ec54e677aa1a3cd6be69c04f779576e2e754d785 $
+# Version:	$Id: 73296913b59f5790c6d347743d0245c1e5506eae $
 #
 
 # This dictionary applies to access services on Juniper JUNOS (M/MX)
@@ -257,7 +257,7 @@ ATTRIBUTE	ERX-Re-Authentication-Catalyst		206	integer
 ATTRIBUTE	ERX-DHCPv6-Options			207	octets
 ATTRIBUTE	ERX-DHCP-Header				208	octets
 ATTRIBUTE	ERX-DHCPv6-Header			209	octets
-ATTRIBUTE	ERX-Acct-Request-Reason			210	octets
+ATTRIBUTE	ERX-Acct-Request-Reason			210	integer
 
 #
 #  Values	Attribute		Name			Number

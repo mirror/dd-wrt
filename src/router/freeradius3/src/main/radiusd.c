@@ -1,7 +1,7 @@
 /*
  * radiusd.c	Main loop of the radius server.
  *
- * Version:	$Id: 995a9d92df154064deb039149cf9c57af19a9704 $
+ * Version:	$Id: 97395145096cfa878e07abab5a921bbe500b358d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * Copyright 2000  Chad Miller <cmiller@surfsouth.com>
  */
 
-RCSID("$Id: 995a9d92df154064deb039149cf9c57af19a9704 $")
+RCSID("$Id: 97395145096cfa878e07abab5a921bbe500b358d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -401,6 +401,18 @@ int main(int argc, char *argv[])
 			INFO("systemd watchdog is disabled");
 		}
 	}
+#else
+	/*
+	 *	Some users get frustrated due to can't handle the service using "systemctl start radiusd"
+	 *	even when the SO supports systemd. The reason is because the FreeRADIUS version was built
+	 *	without the proper support.
+	 *
+	 *	Then, as can be seen in https://www.systutorials.com/docs/linux/man/3-sd_notify/
+	 *	We could assume that if find the NOTIFY_SOCKET, it's because we are under systemd.
+	 *
+	 */
+	if (getenv("NOTIFY_SOCKET"))
+		WARN("Built without support for systemd watchdog, but running under systemd.");
 #endif
 
 #ifndef __MINGW32__
@@ -468,9 +480,13 @@ int main(int argc, char *argv[])
 				exit(EXIT_FAILURE);
 			}
 
-#  ifdef HAVE_SYSTEMD
-			sd_notify(0, "READY=1");
-#  endif
+#ifdef HAVE_SYSTEMD
+			/*
+			 *	Update the systemd MAINPID to be our child,
+			 *	as the parent is about to exit.
+			 */
+			sd_notifyf(0, "MAINPID=%lu", (unsigned long)pid);
+#endif
 
 			exit(EXIT_SUCCESS);
 		}
@@ -608,6 +624,16 @@ int main(int argc, char *argv[])
 	 *  Initialise the state rbtree (used to link multiple rounds of challenges).
 	 */
 	state = fr_state_init(NULL);
+
+#ifdef HAVE_SYSTEMD
+	{
+		int ret_notif;
+
+		ret_notif = sd_notify(0, "READY=1\nSTATUS=Processing requests");
+		if (ret_notif < 0)
+			WARN("Failed notifying systemd that process is READY: %s", fr_syserror(ret_notif));
+	}
+#endif
 
 	/*
 	 *  Process requests until HUP or exit.

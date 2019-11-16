@@ -1,7 +1,7 @@
 /*
  * rlm_eap_tls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: 0eba0440ca6f2f89c066eb27127c29a93af25813 $
+ * Version:     $Id: 4d41cd42e6e5e353db9fc591e3c430ea8ac1c946 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  *
  */
 
-RCSID("$Id: 0eba0440ca6f2f89c066eb27127c29a93af25813 $")
+RCSID("$Id: 4d41cd42e6e5e353db9fc591e3c430ea8ac1c946 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #ifdef HAVE_OPENSSL_RAND_H
@@ -194,6 +194,11 @@ static int CC_HINT(nonnull) mod_process(void *type_arg, eap_handler_t *handler)
 			talloc_free(fake);
 			/* success */
 		}
+
+		/*
+		 *	Success: Automatically return MPPE keys.
+		 */
+		ret = eaptls_success(handler, 0);
 		break;
 
 		/*
@@ -203,7 +208,7 @@ static int CC_HINT(nonnull) mod_process(void *type_arg, eap_handler_t *handler)
 		 */
 	case FR_TLS_HANDLED:
 		ret = 1;
-		goto done;
+		break;
 
 		/*
 		 *	Handshake is done, proceed with decoding tunneled
@@ -232,7 +237,7 @@ static int CC_HINT(nonnull) mod_process(void *type_arg, eap_handler_t *handler)
 
 		eaptls_fail(handler, 0);
 		ret = 0;
-		goto done;
+		break;
 
 		/*
 		 *	Anything else: fail.
@@ -242,15 +247,8 @@ static int CC_HINT(nonnull) mod_process(void *type_arg, eap_handler_t *handler)
 		 */
 	default:
 		tls_fail(tls_session);
-
 		ret = 0;
-		goto done;
 	}
-
-	/*
-	 *	Success: Automatically return MPPE keys.
-	 */
-	ret = eaptls_success(handler, 0);
 
 done:
 	SSL_set_ex_data(tls_session->ssl, FR_TLS_EX_INDEX_REQUEST, NULL);

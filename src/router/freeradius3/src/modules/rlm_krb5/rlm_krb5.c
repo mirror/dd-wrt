@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 68c7c74c006ebdd06caf47c52ff07c3e45a3eea5 $
+ * $Id: 152e78b34596fd7269d3cd3e1c08ce73eca34fc3 $
  * @file rlm_krb5.c
  * @brief Authenticate users, retrieving their TGT from a Kerberos V5 TDC.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000  Nathan Neulinger <nneul@umr.edu>
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: 68c7c74c006ebdd06caf47c52ff07c3e45a3eea5 $")
+RCSID("$Id: 152e78b34596fd7269d3cd3e1c08ce73eca34fc3 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -339,7 +339,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(void *instance, REQUEST *re
 	memset(&client, 0, sizeof(client));
 
 	rcode = krb5_parse_user(&client, request, conn->context);
-	if (rcode != RLM_MODULE_OK) goto cleanup;
+	if (rcode != RLM_MODULE_OK) goto release;
 
 	/*
 	 *	Verify the user, using the options we set in instantiate
@@ -374,10 +374,9 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(void *instance, REQUEST *re
 	}
 
 cleanup:
-	if (client) {
-		krb5_free_principal(conn->context, client);
-	}
+	krb5_free_principal(conn->context, client);
 
+release:
 #  ifdef KRB5_IS_THREAD_SAFE
 	fr_connection_release(inst->pool, conn);
 #  endif
@@ -421,7 +420,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(void *instance, REQUEST *re
 	 *	into a principal.
 	 */
 	rcode = krb5_parse_user(&client, request, conn->context);
-	if (rcode != RLM_MODULE_OK) goto cleanup;
+	if (rcode != RLM_MODULE_OK) goto release;
 
 	/*
 	 * 	Retrieve the TGT from the TGS/KDC and check we can decrypt it.
@@ -440,9 +439,10 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(void *instance, REQUEST *re
 	if (ret) rcode = krb5_process_error(request, conn, ret);
 
 cleanup:
-	if (client) krb5_free_principal(conn->context, client);
+	krb5_free_principal(conn->context, client);
 	krb5_free_cred_contents(conn->context, &init_creds);
 
+release:
 #  ifdef KRB5_IS_THREAD_SAFE
 	fr_connection_release(inst->pool, conn);
 #  endif

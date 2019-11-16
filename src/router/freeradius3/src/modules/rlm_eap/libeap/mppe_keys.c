@@ -1,7 +1,7 @@
 /*
  * mppe_keys.c
  *
- * Version:     $Id: 1de344746340854d2d219298a03180c6fd5dd228 $
+ * Version:     $Id: 3a9e8641048317e57991bccbf33940428ce411bc $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Authors: Henrik Eriksson <henriken@axis.com> & Lars Viklund <larsv@axis.com>
  */
 
-RCSID("$Id: 1de344746340854d2d219298a03180c6fd5dd228 $")
+RCSID("$Id: 3a9e8641048317e57991bccbf33940428ce411bc $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_tls.h"
@@ -228,25 +228,26 @@ void eapttls_gen_challenge(SSL *s, uint8_t *buffer, size_t size)
 
 /*
  *	Actually generates EAP-Session-Id, which is an internal server
- *	attribute.  Not all systems want to send EAP-Key-Nam
+ *	attribute.  Not all systems want to send EAP-Key-Name.
  */
-void eaptls_gen_eap_key(RADIUS_PACKET *packet, SSL *s, uint32_t header)
+void eaptls_gen_eap_key(RADIUS_PACKET *packet, SSL *ssl, uint32_t header)
 {
 	VALUE_PAIR *vp;
-	uint8_t *p;
+	uint8_t *buff, *p;
 
 	vp = fr_pair_afrom_num(packet, PW_EAP_SESSION_ID, 0);
 	if (!vp) return;
 
 	vp->vp_length = 1 + 2 * SSL3_RANDOM_SIZE;
-	p = talloc_array(vp, uint8_t, vp->vp_length);
+	buff = p = talloc_array(vp, uint8_t, vp->vp_length);
 
-	p[0] = header & 0xff;
+	*p++ = header & 0xff;
 
-	SSL_get_client_random(s, p + 1, SSL3_RANDOM_SIZE);
-	SSL_get_server_random(s, p + 1 + SSL3_RANDOM_SIZE, SSL3_RANDOM_SIZE);
+	SSL_get_client_random(ssl, p, SSL3_RANDOM_SIZE);
+	p += SSL3_RANDOM_SIZE;
+	SSL_get_server_random(ssl, p, SSL3_RANDOM_SIZE);
 
-	vp->vp_octets = p;
+	vp->vp_octets = buff;
 	fr_pair_add(&packet->vps, vp);
 }
 

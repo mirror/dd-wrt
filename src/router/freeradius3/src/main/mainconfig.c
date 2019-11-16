@@ -1,7 +1,7 @@
 /*
  * mainconf.c	Handle the server's configuration.
  *
- * Version:	$Id: 67fbd21391fb8587ac78585a9bb52ecd527f7bd9 $
+ * Version:	$Id: e9dd412dee59dd0d60d25bb0a46a0508cd4fc991 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2002  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 67fbd21391fb8587ac78585a9bb52ecd527f7bd9 $")
+RCSID("$Id: e9dd412dee59dd0d60d25bb0a46a0508cd4fc991 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -38,6 +38,10 @@ RCSID("$Id: 67fbd21391fb8587ac78585a9bb52ecd527f7bd9 $")
 
 #ifdef HAVE_FCNTL_H
 #  include <fcntl.h>
+#endif
+
+#ifdef HAVE_SYSTEMD
+#  include <systemd/sd-daemon.h>
 #endif
 
 main_config_t		main_config;				//!< Main server configuration.
@@ -456,20 +460,35 @@ static ssize_t xlat_getclient(UNUSED void *instance, REQUEST *request, char cons
 }
 
 /*
- *	Xlat for %{listen:foo}
+ *	Common xlat for listeners
  */
-static ssize_t xlat_listen(UNUSED void *instance, REQUEST *request,
-			   char const *fmt, char *out, size_t outlen)
+static ssize_t xlat_listen_common(REQUEST *request, rad_listen_t *listen,
+				  char const *fmt, char *out, size_t outlen)
 {
 	char const *value = NULL;
 	CONF_PAIR *cp;
 
 	if (!fmt || !out || (outlen < 1)) return 0;
 
-	if (!request->listener) {
+	if (!listen) {
 		RWDEBUG("No listener associated with this request");
 		*out = '\0';
 		return 0;
+	}
+
+	/*
+	 *	When TLS is configured, we *require* the use of TLS.
+	 */
+	if (strcmp(fmt, "tls") == 0) {
+#ifdef WITH_TLS
+		if (listen->tls) {
+			strlcpy(out, "yes", outlen);
+			return strlen(out);
+		}
+#endif
+
+		strlcpy(out, "no", outlen);
+		return strlen(out);
 	}
 
 #ifdef WITH_TLS
@@ -478,7 +497,7 @@ static ssize_t xlat_listen(UNUSED void *instance, REQUEST *request,
 	 */
 	if (strncmp(fmt, "TLS-", 4) == 0) {
 		VALUE_PAIR *vp;
-		listen_socket_t *sock = request->listener->data;
+		listen_socket_t *sock = listen->data;
 
 		for (vp = sock->certs; vp != NULL; vp = vp->next) {
 			if (strcmp(fmt, vp->da->name) == 0) {
@@ -488,7 +507,7 @@ static ssize_t xlat_listen(UNUSED void *instance, REQUEST *request,
 	}
 #endif
 
-	cp = cf_pair_find(request->listener->cs, fmt);
+	cp = cf_pair_find(listen->cs, fmt);
 	if (!cp || !(value = cf_pair_value(cp))) {
 		RDEBUG("Listener does not contain config item \"%s\"", fmt);
 		*out = '\0';
@@ -498,6 +517,30 @@ static ssize_t xlat_listen(UNUSED void *instance, REQUEST *request,
 	strlcpy(out, value, outlen);
 
 	return strlen(out);
+}
+
+
+/*
+ *	Xlat for %{listen:foo}
+ */
+static ssize_t xlat_listen(UNUSED void *instance, REQUEST *request,
+			   char const *fmt, char *out, size_t outlen)
+{
+	return xlat_listen_common(request, request->listener, fmt, out, outlen);
+}
+
+/*
+ *	Xlat for %{proxy_listen:foo}
+ */
+static ssize_t xlat_proxy_listen(UNUSED void *instance, REQUEST *request,
+				 char const *fmt, char *out, size_t outlen)
+{
+	if (!request->proxy_listener) {
+		*out = '\0';
+		return 0;
+	}
+
+	return xlat_listen_common(request, request->proxy_listener, fmt, out, outlen);
 }
 
 #ifdef HAVE_SETUID
@@ -528,8 +571,8 @@ static int switch_users(CONF_SECTION *cs)
 	if (rad_debug_lvl && (getuid() != 0)) return 1;
 
 	if (cf_section_parse(cs, NULL, bootstrap_config) < 0) {
-		fprintf(stderr, "%s: Error: Failed to parse user/group information.\n",
-			main_config.name);
+		fr_strerror_printf("%s: Error: Failed to parse user/group information.\n",
+				   main_config.name);
 		return 0;
 	}
 
@@ -544,8 +587,8 @@ static int switch_users(CONF_SECTION *cs)
 
 		gr = getgrnam(gid_name);
 		if (!gr) {
-			fprintf(stderr, "%s: Cannot get ID for group %s: %s\n",
-				main_config.name, gid_name, fr_syserror(errno));
+			fr_strerror_printf("%s: Cannot get ID for group %s: %s\n",
+					   main_config.name, gid_name, fr_syserror(errno));
 			return 0;
 		}
 
@@ -565,8 +608,8 @@ static int switch_users(CONF_SECTION *cs)
 		struct passwd *user;
 
 		if (rad_getpwnam(cs, &user, uid_name) < 0) {
-			fprintf(stderr, "%s: Cannot get passwd entry for user %s: %s\n",
-				main_config.name, uid_name, fr_strerror());
+			fr_strerror_printf("%s: Cannot get passwd entry for user %s: %s\n",
+					   main_config.name, uid_name, fr_strerror());
 			return 0;
 		}
 
@@ -578,8 +621,8 @@ static int switch_users(CONF_SECTION *cs)
 			do_suid = true;
 #ifdef HAVE_INITGROUPS
 			if (initgroups(uid_name, server_gid) < 0) {
-				fprintf(stderr, "%s: Cannot initialize supplementary group list for user %s: %s\n",
-					main_config.name, uid_name, fr_syserror(errno));
+				fr_strerror_printf("%s: Cannot initialize supplementary group list for user %s: %s\n",
+						   main_config.name, uid_name, fr_syserror(errno));
 				talloc_free(user);
 				return 0;
 			}
@@ -594,8 +637,8 @@ static int switch_users(CONF_SECTION *cs)
 	 */
 	if (chroot_dir) {
 		if (chroot(chroot_dir) < 0) {
-			fprintf(stderr, "%s: Failed to perform chroot %s: %s",
-				main_config.name, chroot_dir, fr_syserror(errno));
+			fr_strerror_printf("%s: Failed to perform chroot %s: %s",
+					   main_config.name, chroot_dir, fr_syserror(errno));
 			return 0;
 		}
 
@@ -622,8 +665,8 @@ static int switch_users(CONF_SECTION *cs)
 	 */
 	if (do_sgid) {
 		if (setgid(server_gid) < 0){
-			fprintf(stderr, "%s: Failed setting group to %s: %s",
-				main_config.name, gid_name, fr_syserror(errno));
+			fr_strerror_printf("%s: Failed setting group to %s: %s",
+					   main_config.name, gid_name, fr_syserror(errno));
 			return 0;
 		}
 	}
@@ -670,8 +713,8 @@ static int switch_users(CONF_SECTION *cs)
 		default_log.fd = open(main_config.log_file,
 				      O_WRONLY | O_APPEND | O_CREAT, 0640);
 		if (default_log.fd < 0) {
-			fprintf(stderr, "%s: Failed to open log file %s: %s\n",
-				main_config.name, main_config.log_file, fr_syserror(errno));
+			fr_strerror_printf("%s: Failed to open log file %s: %s\n",
+					   main_config.name, main_config.log_file, fr_syserror(errno));
 			return 0;
 		}
 	}
@@ -687,8 +730,8 @@ static int switch_users(CONF_SECTION *cs)
 	if ((do_suid || do_sgid) &&
 	    (default_log.dst == L_DST_FILES)) {
 		if (fchown(default_log.fd, server_uid, server_gid) < 0) {
-			fprintf(stderr, "%s: Cannot change ownership of log file %s: %s\n",
-				main_config.name, main_config.log_file, fr_syserror(errno));
+			fr_strerror_printf("%s: Cannot change ownership of log file %s: %s\n",
+					   main_config.name, main_config.log_file, fr_syserror(errno));
 			return 0;
 		}
 	}
@@ -742,6 +785,12 @@ void set_radius_dir(TALLOC_CTX *ctx, char const *path)
 char const *get_radius_dir(void)
 {
 	return radius_dir;
+}
+
+static int _dlhandle_free(void **dl_handle)
+{
+	dlclose(*dl_handle);
+	return 0;
 }
 
 /*
@@ -875,9 +924,74 @@ do {\
 	snprintf(buffer, sizeof(buffer), "%.200s/%.50s.conf", radius_dir, main_config.name);
 	if (cf_file_read(cs, buffer) < 0) {
 		ERROR("Errors reading or parsing %s", buffer);
+	failure:
 		talloc_free(cs);
 		return -1;
 	}
+
+	/*
+	 *	Parse environment variables first.
+	 */
+	subcs = cf_section_sub_find(cs, "ENV");
+	if (subcs) {
+		char const *attr, *value;
+		CONF_PAIR *cp;
+		CONF_ITEM *ci;
+
+		for (ci = cf_item_find_next(subcs, NULL);
+		     ci != NULL;
+		     ci = cf_item_find_next(subcs, ci)) {
+			if (!cf_item_is_pair(ci)) {
+				cf_log_err(ci, "Unexpected item in ENV section");
+				goto failure;
+			}
+
+			cp = cf_item_to_pair(ci);
+			if (cf_pair_operator(cp) != T_OP_EQ) {
+				cf_log_err(ci, "Invalid operator for item in ENV section");
+				goto failure;
+			}
+
+			attr = cf_pair_attr(cp);
+			value = cf_pair_value(cp);
+			if (!value) {
+				if (unsetenv(attr) < 0) {
+					cf_log_err(ci, "Failed deleting environment variable %s: %s",
+						   attr, fr_syserror(errno));
+					goto failure;
+				}
+			} else {
+				void *handle;
+				void **handle_p;
+
+				if (setenv(attr, value, 1) < 0) {
+					cf_log_err(ci, "Failed setting environment variable %s: %s",
+						   attr, fr_syserror(errno));
+					goto failure;
+				}
+
+				/*
+				 *	Hacks for LD_PRELOAD.
+				 */
+				if (strcmp(attr, "LD_PRELOAD") != 0) continue;
+
+				handle = dlopen(value, RTLD_NOW | RTLD_GLOBAL);
+				if (!handle) {
+					cf_log_err(ci, "Failed loading library %s: %s", value, dlerror());
+					goto failure;
+				}
+
+				/*
+				 *	Wrap the pointer, so we can set a destructor.
+				 */
+				MEM(handle_p = talloc(NULL, void *));
+				*handle_p = handle;
+				talloc_set_destructor(handle_p, _dlhandle_free);
+
+				(void) cf_data_add(subcs, value, handle, NULL);
+			}
+		} /* loop over pairs in ENV */
+	} /* there's an ENV subsection */
 
 	/*
 	 *	If there was no log destination set on the command line,
@@ -1040,6 +1154,7 @@ do {\
 	xlat_register("client", xlat_client, NULL, NULL);
 	xlat_register("getclient", xlat_getclient, NULL, NULL);
 	xlat_register("listen", xlat_listen, NULL, NULL);
+	xlat_register("proxy_listen", xlat_proxy_listen, NULL, NULL);
 
 	/*
 	 *  Go update our behaviour, based on the configuration
@@ -1215,6 +1330,10 @@ void main_config_hup(void)
 	cs = cf_section_alloc(NULL, "main", NULL);
 	if (!cs) return;
 
+#ifdef HAVE_SYSTEMD
+	sd_notify(0, "RELOADING=1");
+#endif
+
 	/* Read the configuration file */
 	snprintf(buffer, sizeof(buffer), "%.200s/%.50s.conf", radius_dir, main_config.name);
 
@@ -1258,4 +1377,12 @@ void main_config_hup(void)
 	virtual_servers_load(cs);
 
 	virtual_servers_free(cc->created - (main_config.max_request_time * 4));
+
+#ifdef HAVE_SYSTEMD
+	/*
+	 * If RELOADING=1 event is sent then it needed also a "READY=1" notification
+	 * when it completed reloading its configuration.
+	 */
+	sd_notify(0, "READY=1");
+#endif
 }

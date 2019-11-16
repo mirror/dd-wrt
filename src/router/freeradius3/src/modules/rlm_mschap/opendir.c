@@ -18,7 +18,7 @@
  * Copyright 2007 Apple Inc.
  */
 
-RCSID("$Id: 1b8909cf4b00eff24cfbfdda9cf583c4589a0cef $")
+RCSID("$Id: 8ca0395fc8deda0045da33c5ea3512d9f55cd09f $")
 USES_APPLE_DEPRECATED_API
 
 #include	<freeradius-devel/radiusd.h>
@@ -138,14 +138,16 @@ static rlm_rcode_t getUserNodeRef(REQUEST *request, char* inUserName, char **out
 				if (strcmp(pAttrEntry->fAttributeSignature.fBufferData, kDSNAttrMetaNodeLocation) == 0) {
 					status = dsGetAttributeValue(nodeRef, tDataBuff, 1, valueRef, &pValueEntry);
 					if (status == eDSNoErr && pValueEntry != NULL) {
-						pUserLocation = talloc_zero_array(request, char, pValueEntry->fAttributeValueData.fBufferLength + 1);
+						pUserLocation = talloc_array(request, char, pValueEntry->fAttributeValueData.fBufferLength + 1);
 						memcpy(pUserLocation, pValueEntry->fAttributeValueData.fBufferData, pValueEntry->fAttributeValueData.fBufferLength);
+						pUserLocation[pValueEntry->fAttributeValueData.fBufferLength] = '\0';
 					}
 				} else if (strcmp(pAttrEntry->fAttributeSignature.fBufferData, kDSNAttrRecordName) == 0) {
 					status = dsGetAttributeValue(nodeRef, tDataBuff, 1, valueRef, &pValueEntry);
 					if (status == eDSNoErr && pValueEntry != NULL) {
 						*outUserName = talloc_array(request, char, pValueEntry->fAttributeValueData.fBufferLength + 1);
 						memcpy(*outUserName, pValueEntry->fAttributeValueData.fBufferData, pValueEntry->fAttributeValueData.fBufferLength);
+						*outUserName[pValueEntry->fAttributeValueData.fBufferLength] = '\0';
 					}
 				}
 
@@ -298,10 +300,12 @@ rlm_rcode_t od_mschap_auth(REQUEST *request, VALUE_PAIR *challenge, VALUE_PAIR *
 	pAuthType = dsDataNodeAllocateString(dsRef, kDSStdAuthMSCHAP2);
 	uiCurr = 0;
 
-	RDEBUG2("OD username_string = %s, OD shortUserName=%s (length = %lu)\n", username_string, shortUserName, strlen(shortUserName));
-
 	/* User name length + username */
-	uiLen = (uint32_t)strlen(shortUserName);
+	uiLen = (uint32_t)(shortUserName ? strlen(shortUserName) : 0);
+
+	RDEBUG2("OD username_string = %s, OD shortUserName=%s (length = %d)\n",
+				username_string, shortUserName, uiLen);
+
 	memcpy(&(tDataBuff->fBufferData[uiCurr]), &uiLen, sizeof(uiLen));
 	uiCurr += sizeof(uiLen);
 	memcpy(&(tDataBuff->fBufferData[uiCurr]), shortUserName, uiLen);

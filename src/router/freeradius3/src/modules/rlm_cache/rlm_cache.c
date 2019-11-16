@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 9dcf5ff42231a9678d9c6aa3a3663a45293ae6c9 $
+ * $Id: d40c27d88a4eade78149b6e25578db7fa82f61e2 $
  * @file rlm_cache.c
  * @brief Cache values and merge them back into future requests.
  *
  * @copyright 2012-2014 The FreeRADIUS server project
  */
-RCSID("$Id: 9dcf5ff42231a9678d9c6aa3a3663a45293ae6c9 $")
+RCSID("$Id: d40c27d88a4eade78149b6e25578db7fa82f61e2 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -413,6 +413,12 @@ static int cache_verify(vp_map_t *map, void *ctx)
 				   fr_int2str(tmpl_names, map->rhs->type, "<INVALID>"));
 			return -1;
 		}
+		break;
+
+	case TMPL_TYPE_ATTR_UNDEFINED:
+		cf_log_err(map->ci, "Unknown attribute '%s'", map->rhs->name);
+		return -1;
+
 	default:
 		break;
 	}

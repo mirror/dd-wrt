@@ -4,7 +4,7 @@
 #		NOTE: This top-level Makefile must not
 #		use GNU-make extensions. The lower ones can.
 #
-# Version:	$Id: b033aa1a81b263797aea46d8348ca22d981a736c $
+# Version:	$Id: 92097f2bf271b2452609212af7e1c2808bb25cf2 $
 #
 
 #
@@ -89,14 +89,13 @@ test: ${BUILD_DIR}/bin/radiusd ${BUILD_DIR}/bin/radclient tests.unit tests.xlat 
 
 #  Tests specifically for Travis.  We do a LOT more than just
 #  the above tests
-ifneq "$(findstring travis,${prefix})" ""
 travis-test: raddb/test.conf test
 	@FR_LIBRARY_PATH=./build/lib/local/.libs/ ./build/make/jlibtool --mode=execute ./build/bin/radiusd -xxxv -n test
 	@rm -f raddb/test.conf
 	@$(MAKE) install
 	@perl -p -i -e 's/allow_vulnerable_openssl = no/allow_vulnerable_openssl = yes/' ${raddbdir}/radiusd.conf
+	@sh ${HOME}/freeradius/etc/raddb/certs
 	@${sbindir}/radiusd -XC
-endif
 
 #
 # The $(R) is a magic variable not defined anywhere in this source.
@@ -125,9 +124,14 @@ $(R)$(dictdir)/%: share/%
 	@$(INSTALL) -m 644 $< $@
 
 MANFILES := $(wildcard man/man*/*.?)
+MANDIR   := $(wildcard man/man*)
 install.man: $(subst man/,$(R)$(mandir)/,$(MANFILES))
 
-$(R)$(mandir)/%: man/%
+$(MANDIR):
+	@echo INSTALL $(patsubst $(R)$(mandir)/%,man/%,$@)
+	@$(INSTALL) -d -m 755 $@
+
+$(R)$(mandir)/%: man/% | $(dir $@)
 	@echo INSTALL $(notdir $<)
 	@sed -e "s,/etc/raddb,$(raddbdir),g" \
 		-e "s,/usr/local/share,$(datarootdir),g" \

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: f8b37dfc2c027581f1095c1d294e818066c4c6e0 $
+ * $Id: f9af099551cdcbbed5269ac5027d5ed92505205b $
  *
  * @brief Utillity functions used in the module.
  * @file mod.c
@@ -24,11 +24,9 @@
  * @copyright 2013-2014 The FreeRADIUS Server Project.
  */
 
-RCSID("$Id: f8b37dfc2c027581f1095c1d294e818066c4c6e0 $")
+RCSID("$Id: f9af099551cdcbbed5269ac5027d5ed92505205b $")
 
 #include <freeradius-devel/radiusd.h>
-
-#include <libcouchbase/couchbase.h>
 
 #include "mod.h"
 #include "couchbase.h"
@@ -543,7 +541,7 @@ int mod_load_client_documents(rlm_couchbase_t *inst, CONF_SECTION *tmpl, CONF_SE
 	rlm_couchbase_handle_t *handle = NULL; /* connection pool handle */
 	char vpath[256], vid[MAX_KEY_SIZE], vkey[MAX_KEY_SIZE];  /* view path and fields */
 	char error[512];                                         /* view error return */
-	int idx = 0;                                             /* row array index counter */
+	size_t idx = 0;                                          /* row array index counter */
 	int retval = 0;                                          /* return value */
 	lcb_error_t cb_error = LCB_SUCCESS;                      /* couchbase error holder */
 	json_object *json, *jval;                                /* json object holders */
@@ -634,7 +632,7 @@ int mod_load_client_documents(rlm_couchbase_t *inst, CONF_SECTION *tmpl, CONF_SE
 	}
 
 	/* loop across all row elements */
-	for (idx = 0; idx < json_object_array_length(jrows); idx++) {
+	for (idx = 0; idx < (size_t)json_object_array_length(jrows); idx++) {
 		/* fetch current index */
 		json = json_object_array_get_idx(jrows, idx);
 

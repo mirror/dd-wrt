@@ -1,7 +1,7 @@
 /*
  * rlm_linelog.c
  *
- * Version:	$Id: 3c15bf04b309da384df5acdf871a8c9c5cbea47c $
+ * Version:	$Id: 3da07d9011c77b11e6fcbf5022ed57478cf5b3f4 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2004  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id: 3c15bf04b309da384df5acdf871a8c9c5cbea47c $")
+RCSID("$Id: 3da07d9011c77b11e6fcbf5022ed57478cf5b3f4 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -144,7 +144,13 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 		return -1;
 	}
 
-	inst->ef = exfile_init(inst, 256, 30, true);
+	/*
+	 *	If the admin wants the logs to go to stdout or stderr,
+	 *	then skip locking / seeking on those files.  Since
+	 *	everything in /dev/ isn't a real file, we can't seek
+	 *	or lock it.
+	 */
+	inst->ef = exfile_init(inst, 256, 30, (strncmp(inst->filename, "/dev/", 5) != 0));
 	if (!inst->ef) {
 		cf_log_err_cs(conf, "Failed creating log file context");
 		return -1;

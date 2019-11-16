@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: a67ca719b1d63c0bc771a9b05f57180b9bc34e32 $
+ * $Id: fdd6f01ecf008933de231c22787cc0947ad9fbc8 $
  * @file rlm_ldap.c
  * @brief LDAP authorization and authentication module.
  *
@@ -27,7 +27,7 @@
  * @copyright 2012 Alan DeKok <aland@freeradius.org>
  * @copyright 1999-2013 The FreeRADIUS Server Project.
  */
-RCSID("$Id: a67ca719b1d63c0bc771a9b05f57180b9bc34e32 $")
+RCSID("$Id: fdd6f01ecf008933de231c22787cc0947ad9fbc8 $")
 
 #include	<freeradius-devel/rad_assert.h>
 
@@ -153,6 +153,7 @@ static CONF_PARSER group_config[] = {
 	{ "cacheable_name", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_ldap_t, cacheable_group_name), "no" },
 	{ "cacheable_dn", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_ldap_t, cacheable_group_dn), "no" },
 	{ "cache_attribute", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_ldap_t, cache_attribute), NULL },
+	{ "allow_dangling_group_ref", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_ldap_t, allow_dangling_group_refs), "no" },
 	CONF_PARSER_TERMINATOR
 };
 

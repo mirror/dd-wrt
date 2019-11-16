@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: 542efa491c4624adfc89c8668573e1e89ee32d09 $
+ * Version:     $Id: db733996661f24858ff47f18119917b3961aae0f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 542efa491c4624adfc89c8668573e1e89ee32d09 $")
+RCSID("$Id: db733996661f24858ff47f18119917b3961aae0f $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -492,7 +492,7 @@ static int _tls_session_free(tls_session_t *ssn)
 	return 0;
 }
 
-tls_session_t *tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, int fd)
+tls_session_t *tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, int fd, VALUE_PAIR **certs)
 {
 	int ret;
 	int verify_mode;
@@ -536,6 +536,7 @@ tls_session_t *tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *con
 
 	SSL_set_ex_data(ssn->ssl, FR_TLS_EX_INDEX_CONF, (void *)conf);
 	SSL_set_ex_data(ssn->ssl, FR_TLS_EX_INDEX_SSN, (void *)ssn);
+	if (certs) SSL_set_ex_data(ssn->ssl, fr_tls_ex_index_certs, (void *)certs);
 	SSL_set_fd(ssn->ssl, fd);
 	ret = SSL_connect(ssn->ssl);
 
@@ -586,21 +587,6 @@ tls_session_t *tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQU
 	rad_assert(request != NULL);
 
 	RDEBUG2("Initiating new TLS session");
-
-	/*
-	 *	Manually flush the sessions every so often.  If HALF
-	 *	of the session lifetime has passed since we last
-	 *	flushed, then flush it again.
-	 *
-	 *	FIXME: Also do it every N sessions?
-	 */
-	if (conf->session_cache_enable &&
-	    ((conf->session_last_flushed + ((int)conf->session_timeout * 1800)) <= request->timestamp)){
-		RDEBUG2("Flushing SSL sessions (of #%ld)", SSL_CTX_sess_number(conf->ctx));
-
-		SSL_CTX_flush_sessions(conf->ctx, request->timestamp);
-		conf->session_last_flushed = request->timestamp;
-	}
 
 	new_tls = SSL_new(conf->ctx);
 	if (new_tls == NULL) {
@@ -1732,8 +1718,13 @@ static SSL_SESSION *cbtls_get_session(SSL *ssl, const unsigned char *data, int l
 		fr_pair_list_mcopy_by_num(talloc_ctx, &vps, &pairlist->reply, 0, 0, TAG_ANY);
 
 		SSL_SESSION_set_ex_data(sess, fr_tls_ex_index_vps, vps);
-		RWDEBUG("Successfully restored session %s", buffer);
+		RDEBUG("Successfully restored session %s", buffer);
 		rdebug_pair_list(L_DBG_LVL_2, request, vps, "reply:");
+
+		/*
+		 *	The "restore VPs from OpenSSL cache" code is
+		 *	now in eaptls_process()
+		 */
 	}
 error:
 	if (sess_data) talloc_free(sess_data);
@@ -2796,6 +2787,7 @@ SSL_CTX *tls_init_ctx(fr_tls_server_conf_t *conf, int client)
 #ifdef CHECK_FOR_PSK_CERTS
 	bool		psk_and_certs = false;
 #endif
+	bool		insecure_tls_version = false;
 
 	/*
 	 *	SHA256 is in all versions of OpenSSL, but isn't
@@ -2947,6 +2939,11 @@ SSL_CTX *tls_init_ctx(fr_tls_server_conf_t *conf, int client)
 		if (client) {
 			SSL_CTX_set_psk_client_callback(ctx,
 							psk_client_callback);
+		}
+
+		if (!conf->psk_password || !*conf->psk_password) {
+			ERROR(LOG_PREFIX ": psk_hexphrase cannot be empty");
+			return NULL;
 		}
 
 		psk_len = strlen(conf->psk_password);
@@ -3157,7 +3154,25 @@ post_ca:
 			ERROR("Failed setting TLS minimum version");
 			return NULL;
 		}
-#endif	/* OpenSSL version >1.1.0 */
+
+		/*
+		 *	No one should be using TLS 1.0 or TLS 1.1 any more
+		 */
+		if (min_version < TLS1_2_VERSION) insecure_tls_version = true;
+#else  /* OpenSSL version < 1.1.0 */
+
+#ifdef SSL_OP_NO_TLSv1
+		insecure_tls_version |= (conf->disable_tlsv1 == false);
+#endif
+#ifdef SSL_OP_NO_TLSv1_1
+		insecure_tls_version |= (conf->disable_tlsv1_1 == false);
+#endif
+#endif	/* OpenSSL version ? 1.1.0 */
+
+		if (rad_debug_lvl && insecure_tls_version) {
+			WARN("The configuration allows TLS 1.0 and/or TLS 1.1.  We STRONGLY recommned using only TLS 1.2 for security");
+			WARN("Please set: min_tls_version = \"1.2\"");
+		}
 	}
 
 	/*
@@ -3411,6 +3426,8 @@ static int _tls_server_conf_free(fr_tls_server_conf_t *conf)
 {
 	if (conf->ctx) SSL_CTX_free(conf->ctx);
 
+	if (conf->cache_ht) fr_hash_table_free(conf->cache_ht);
+
 #ifdef HAVE_OPENSSL_OCSP_H
 	if (conf->ocsp_store) X509_STORE_free(conf->ocsp_store);
 	conf->ocsp_store = NULL;
@@ -3435,6 +3452,20 @@ fr_tls_server_conf_t *tls_server_conf_alloc(TALLOC_CTX *ctx)
 	talloc_set_destructor(conf, _tls_server_conf_free);
 
 	return conf;
+}
+
+static uint32_t store_hash(void const *data)
+{
+	DICT_ATTR const *da = data;
+	return fr_hash(&da, sizeof(da));
+}
+
+static int store_cmp(void const *a, void const *b)
+{
+	DICT_ATTR const *one = a;
+	DICT_ATTR const *two = b;
+
+	return one - two;
 }
 
 fr_tls_server_conf_t *tls_server_conf_parse(CONF_SECTION *cs)
@@ -3499,6 +3530,63 @@ fr_tls_server_conf_t *tls_server_conf_parse(CONF_SECTION *cs)
 	if (conf->ctx == NULL) {
 		goto error;
 	}
+
+	if (conf->session_cache_enable) {
+		CONF_SECTION	*subcs;
+		CONF_ITEM	*ci;
+
+		subcs = cf_section_sub_find(cs, "cache");
+		if (!subcs) goto skip_list;
+		subcs = cf_section_sub_find(subcs, "store");
+		if (!subcs) goto skip_list;
+
+		/*
+		 *	Largely taken from rlm_detail for laziness.
+		 */
+		conf->cache_ht = fr_hash_table_create(store_hash, store_cmp, NULL);
+
+		for (ci = cf_item_find_next(subcs, NULL);
+		     ci != NULL;
+		     ci = cf_item_find_next(subcs, ci)) {
+			char const	*attr;
+			DICT_ATTR const	*da;
+
+			if (!cf_item_is_pair(ci)) continue;
+
+			attr = cf_pair_attr(cf_item_to_pair(ci));
+			if (!attr) continue; /* pair-anoia */
+
+			da = dict_attrbyname(attr);
+			if (!da) {
+				ERROR(LOG_PREFIX ": TLS Server requires a certificate file");
+				goto error;
+			}
+
+			/*
+			 *	Be kind to minor mistakes.
+			 */
+			if (fr_hash_table_finddata(conf->cache_ht, da)) {
+				WARN(LOG_PREFIX ": Ignoring duplicate entry '%s'", attr);
+				continue;
+			}
+
+
+			if (!fr_hash_table_insert(conf->cache_ht, da)) {
+				ERROR(LOG_PREFIX ": Failed inserting '%s' into cache list", attr);
+				goto error;
+			}
+		}
+
+		/*
+		 *	If we didn't suppress anything, delete the hash table.
+		 */
+		if (fr_hash_table_num_elements(conf->cache_ht) == 0) {
+			fr_hash_table_free(conf->cache_ht);
+			conf->cache_ht = NULL;
+		}
+	}
+
+skip_list:
 
 #ifdef HAVE_OPENSSL_OCSP_H
 	/*
@@ -3656,11 +3744,28 @@ int tls_success(tls_session_t *ssn, REQUEST *request)
 		vp = fr_pair_list_copy_by_num(talloc_ctx, request->reply->vps, PW_CACHED_SESSION_POLICY, 0, TAG_ANY);
 		if (vp) fr_pair_add(&vps, vp);
 
-		certs = (VALUE_PAIR **)SSL_get_ex_data(ssn->ssl, fr_tls_ex_index_certs);
+		if (conf->cache_ht) {
+			vp_cursor_t cursor;
+
+			/* Write each attribute/value to the log file */
+			for (vp = fr_cursor_init(&cursor, &request->reply->vps);
+			     vp;
+			     vp = fr_cursor_next(&cursor)) {
+				VALUE_PAIR *copy;
+
+				if (!fr_hash_table_finddata(conf->cache_ht, vp->da)) {
+					continue;
+				}
+
+				copy = fr_pair_copy(talloc_ctx, vp);
+				if (copy) fr_pair_add(&vps, copy);
+			}
+		}
 
 		/*
 		 *	Hmm... the certs should probably be session data.
 		 */
+		certs = (VALUE_PAIR **)SSL_get_ex_data(ssn->ssl, fr_tls_ex_index_certs);
 		if (certs) {
 			/*
 			 *	@todo: some go into reply, others into
@@ -3764,7 +3869,6 @@ int tls_success(tls_session_t *ssn, REQUEST *request)
 		 *	The "restore VPs from OpenSSL cache" code is
 		 *	now in eaptls_process()
 		 */
-
 		if (conf->session_cache_path) {
 			/* "touch" the cached session/vp file */
 			char filename[3 * MAX_SESSION_SIZE + 1];
@@ -3781,6 +3885,7 @@ int tls_success(tls_session_t *ssn, REQUEST *request)
 		 *	Mark the request as resumed.
 		 */
 		pair_make_request("EAP-Session-Resumed", "1", T_OP_SET);
+		RDEBUG("  &request:EAP-Session-Resumed := 1");
 	}
 
 	return 0;
@@ -3835,20 +3940,24 @@ fr_tls_status_t tls_application_data(tls_session_t *ssn, REQUEST *request)
 		code = SSL_get_error(ssn->ssl, err);
 		switch (code) {
 		case SSL_ERROR_WANT_READ:
-			DEBUG("Error in fragmentation logic: SSL_WANT_READ");
+			RDEBUG("Error in fragmentation logic: SSL_WANT_READ");
 			return FR_TLS_MORE_FRAGMENTS;
 
 		case SSL_ERROR_WANT_WRITE:
-			DEBUG("Error in fragmentation logic: SSL_WANT_WRITE");
+			RDEBUG("Error in fragmentation logic: SSL_WANT_WRITE");
+			return FR_TLS_FAIL;
+
+		case SSL_ERROR_NONE:
+			RDEBUG2("No application data received.  Assuming handshake is continuing...");
+			err = 0;
 			break;
 
 		default:
 			REDEBUG("Error in fragmentation logic");
 			tls_error_io_log(request, ssn, err,
 					 "Failed in " STRINGIFY(__FUNCTION__) " (SSL_read)");
-			break;
+			return FR_TLS_FAIL;
 		}
-		return FR_TLS_FAIL;
 	}
 
 	/*
@@ -3896,7 +4005,7 @@ fr_tls_status_t tls_ack_handler(tls_session_t *ssn, REQUEST *request)
 		return FR_TLS_FAIL;
 
 	case handshake:
-		if ((ssn->info.handshake_type == handshake_finished) && (ssn->dirty_out.used == 0)) {
+		if ((ssn->is_init_finished) && (ssn->dirty_out.used == 0)) {
 			RDEBUG2("Peer ACKed our handshake fragment.  handshake is finished");
 
 			/*

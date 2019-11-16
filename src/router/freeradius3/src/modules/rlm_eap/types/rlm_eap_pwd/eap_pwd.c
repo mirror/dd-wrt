@@ -31,7 +31,7 @@
  * license (including the GNU public license).
  */
 
-RCSID("$Id: c54f08c03081b8460f1b871dcf7ad11519527018 $")
+RCSID("$Id: d94851c3aa0fc31db9be2d01a4fb94c1a6c81e00 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_pwd.h"
@@ -192,7 +192,7 @@ int compute_password_element (pwd_session_t *session, uint16_t grp_num,
 	}
 	ctr = 0;
 	while (1) {
-		if (ctr > 10) {
+		if (ctr > 100) {
 			DEBUG("unable to find random point on curve for group %d, something's fishy", grp_num);
 			goto fail;
 		}

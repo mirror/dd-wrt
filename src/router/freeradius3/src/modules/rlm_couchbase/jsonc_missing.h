@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 5df68a89eccfa9e7a974557233bb0e49e72babda $
+ * $Id: 1100eff31f982faea95b27c49b649663db84c2dd $
  *
  * @brief Function prototypes for missing functions in older json-c libraries.
  * @file jsonc_missing.h
@@ -27,7 +27,7 @@
 #ifndef _jsonc_missing_h_
 #define _jsonc_missing_h_
 
-RCSIDH(jsonc_missing_h, "$Id: 5df68a89eccfa9e7a974557233bb0e49e72babda $")
+RCSIDH(jsonc_missing_h, "$Id: 1100eff31f982faea95b27c49b649663db84c2dd $")
 
 #include "config.h"
 
@@ -78,12 +78,12 @@ enum json_tokener_error json_tokener_get_error(json_tokener *tok);
 		entry = entry->next)
 #else /* ANSI C or MSC */
 #  define json_object_object_foreach(obj,key,val) \
-	char *key = NULL; \
+	char const *key = NULL; \
 	struct json_object *val = NULL; \
 	struct lh_entry *entry; \
 	union ctn_u {const void *cdata; void *data; } ctn; \
 	for (entry = json_object_get_object(obj)->head; \
-		(entry ? (key = (char *)entry->k, ctn.cdata = entry->v, \
+		(entry ? (key = (char const *)entry->k, ctn.cdata = entry->v, \
 		val = (struct json_object *)ctn.data, entry) : 0); entry = entry->next)
 #endif /* defined(__GNUC__) && !defined(__STRICT_ANSI__) */
 #endif /* _jsonc_missing_h_ */

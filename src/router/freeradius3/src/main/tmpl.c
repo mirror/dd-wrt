@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 6032db47474448f934180cb7c2314dd964d79581 $
+ * $Id: abcd7687f12df54427a3b1aeb85f7bc057d366a3 $
  *
  * @brief #VALUE_PAIR template functions
  * @file main/tmpl.c
@@ -24,7 +24,7 @@
  *
  * @copyright 2014-2015 The FreeRADIUS server project
  */
-RCSID("$Id: 6032db47474448f934180cb7c2314dd964d79581 $")
+RCSID("$Id: abcd7687f12df54427a3b1aeb85f7bc057d366a3 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -1092,15 +1092,17 @@ int tmpl_cast_in_place(vp_tmpl_t *vpt, PW_TYPE type, DICT_ATTR const *enumv)
 
 	switch (vpt->type) {
 	case TMPL_TYPE_LITERAL:
-		vpt->tmpl_data_type = type;
-
 		/*
 		 *	Why do we pass a pointer to the tmpl type? Goddamn WiMAX.
 		 */
-		ret = value_data_from_str(vpt, &vpt->tmpl_data_value, &vpt->tmpl_data_type,
+		ret = value_data_from_str(vpt, &vpt->tmpl_data_value, &type,
 					  enumv, vpt->name, vpt->len, '\0');
-		if (ret < 0) return -1;
+		if (ret < 0) {
+			VERIFY_TMPL(vpt);
+			return -1;
+		}
 
+		vpt->tmpl_data_type = type;
 		vpt->type = TMPL_TYPE_DATA;
 		vpt->tmpl_data_length = (size_t) ret;
 		break;

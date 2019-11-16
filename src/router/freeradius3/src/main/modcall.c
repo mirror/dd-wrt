@@ -1,7 +1,7 @@
 /*
  * @name modcall.c
  *
- * Version:	$Id: 0ad2c230a8dd7fd354c8432ce0569b0e54e1ed1d $
+ * Version:	$Id: 789bd667b08f610d0e330143c43dcf5df934224b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 0ad2c230a8dd7fd354c8432ce0569b0e54e1ed1d $")
+RCSID("$Id: 789bd667b08f610d0e330143c43dcf5df934224b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -482,7 +482,11 @@ redo:
 
 		RDEBUG2("%s %s{", unlang_keyword[c->type], c->name);
 
-		condition = radius_evaluate_cond(request, result, 0, g->cond);
+		/*
+		 *	Use "result" UNLESS it wasn't set, in which
+		 *	case we use the previous result on the stack.
+		 */
+		condition = radius_evaluate_cond(request, result != RLM_MODULE_UNKNOWN ? result : entry->result, 0, g->cond);
 		if (condition < 0) {
 			condition = false;
 			REDEBUG("Failed retrieving values required to evaluate condition");
