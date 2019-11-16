@@ -10,5 +10,5 @@
  "samba3_pubacl"  "Samba3 Public ACL" "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "samba3_advanced"  "Samba3 Advanced" "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "samba3_conf"  "Samba3 Config"  "NULL"  "FALSE" "0"
- "samba3_minproto"  "Samba4 protocol version"  "CHOICE" "4" "LANMAN1" "LANMAN2" "NT1" "SMB2" "FALSE" "0"
- "samba3_maxproto"  "Samba4 protocol version"  "CHOICE" "4" "LANMAN1" "LANMAN2" "NT1" "SMB2" "FALSE" "0"
+ "samba3_min_proto"  "Samba4 protocol version"  "CHOICE" "4" "LANMAN1" "LANMAN2" "NT1" "SMB2" "FALSE" "0"
+ "samba3_max_proto"  "Samba4 protocol version"  "CHOICE" "4" "LANMAN1" "LANMAN2" "NT1" "SMB2" "FALSE" "0"
