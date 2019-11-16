@@ -520,6 +520,7 @@ l7filters filters_list[] = {
 	{ "vevo", NDPI_ONLY },
 	{ "vhua", NDPI_ONLY },
 	{ "viber", NDPI_ONLY },
+	{ "vidto", NDPI_ONLY },
 	{ "vmware", NDPI_ONLY },
 #endif
 	{ "vnc", DPI },
