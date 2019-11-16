@@ -1023,6 +1023,11 @@ int getMTD(char *name)
 	return device;
 }
 
+void *dd_malloc(size_t len)
+{
+	return len ? malloc(len) : NULL;
+}
+
 int dd_sprintf(char *str, const char *fmt, ...)
 {
 	va_list ap;
