@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.9.200 Kernel Configuration
+# Linux/i386 4.9.202-rc1 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -496,6 +496,9 @@ CONFIG_X86_RESERVE_LOW=64
 CONFIG_ARCH_RANDOM=y
 CONFIG_X86_SMAP=y
 CONFIG_X86_INTEL_MPX=y
+# CONFIG_X86_INTEL_TSX_MODE_OFF is not set
+# CONFIG_X86_INTEL_TSX_MODE_ON is not set
+CONFIG_X86_INTEL_TSX_MODE_AUTO=y
 # CONFIG_EFI is not set
 CONFIG_SECCOMP=y
 CONFIG_HZ_100=y
