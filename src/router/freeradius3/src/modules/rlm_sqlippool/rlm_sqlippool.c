@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 7367a9e9290188706d4b4e5e4313299d815bbd7b $
+ * $Id: 48fba794d1b49eb00a0b797cd5caf97d3b57ca35 $
  * @file rlm_sqlippool.c
  * @brief Allocates an IP address / prefix from pools stored in SQL.
  *
@@ -23,7 +23,7 @@
  * @copyright 2006  The FreeRADIUS server project
  * @copyright 2006  Suntel Communications
  */
-RCSID("$Id: 7367a9e9290188706d4b4e5e4313299d815bbd7b $")
+RCSID("$Id: 48fba794d1b49eb00a0b797cd5caf97d3b57ca35 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -388,8 +388,6 @@ static int CC_HINT(nonnull (1, 3, 4, 5)) sqlippool_query1(char *out, int outlen,
 		REDEBUG("Failed fetching query result");
 		goto finish;
 	}
-
-	rad_assert(handle != NULL);
 
 	if (!(*handle)->row) {
 		REDEBUG("SQL query did not return any results");

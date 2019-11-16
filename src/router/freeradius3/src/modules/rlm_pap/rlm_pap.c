@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 6c8ef665719fdb2932526f9498a373158bd1a073 $
+ * $Id: 7f184ad3a43d06815d8ca0fde96c734192b8e50c $
  * @file rlm_pap.c
  * @brief Hashes plaintext passwords to compare against a prehashed reference.
  *
@@ -23,7 +23,7 @@
  * @copyright 2012       Matthew Newton <matthew@newtoncomputing.co.uk>
  * @copyright 2001       Kostas Kalevras <kkalev@noc.ntua.gr>
  */
-RCSID("$Id: 6c8ef665719fdb2932526f9498a373158bd1a073 $")
+RCSID("$Id: 7f184ad3a43d06815d8ca0fde96c734192b8e50c $")
 USES_APPLE_DEPRECATED_API
 
 #include <freeradius-devel/radiusd.h>
@@ -246,10 +246,10 @@ redo:
 		attr = fr_str2int(header_names, buffer, 0);
 		if (!attr) {
 			if (RDEBUG_ENABLED3) {
-				RDEBUG3("Unknown header {%s} in Password-With-Header = \"%s\", re-writing to "
+				RDEBUG3("Unknown header %s in Password-With-Header = \"%s\", re-writing to "
 					"Cleartext-Password", buffer, vp->vp_strvalue);
 			} else {
-				RDEBUG("Unknown header {%s} in Password-With-Header, re-writing to "
+				RDEBUG("Unknown header %s in Password-With-Header, re-writing to "
 				       "Cleartext-Password", buffer);
 			}
 			goto unknown_header;

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 893b6ed4523965f2f9efbd579487bc0b31040696 $
+ * $Id: c708470f0e01013e6a5c591738327e18542d2a5a $
  * @file trustrouter.c
  * @brief Integration with external trust router code
  *
@@ -423,9 +423,12 @@ static home_server_t *srvr_blk_to_home_server(TALLOC_CTX *ctx,
 
 	rad_assert(blk != NULL);
 	tid_srvr_get_address(blk, &sa, &sa_len);
+	if (sa == NULL) {
+		DEBUG2("tid_srvr_get_address failed");
+		return NULL;
+	}
 
 	fr_sockaddr2ipaddr((struct sockaddr_storage *) sa, sa_len, &home_server_ip, &port);
-
 	if (0 != getnameinfo(sa, sa_len,
 			     nametemp,
 			     sizeof nametemp,
@@ -525,7 +528,6 @@ static void tr_response_func( TIDC_INSTANCE *inst,
 	REALM *nr = opaque->orig_realm;
 
 	if (tid_resp_get_result(resp) != TID_SUCCESS) {
-
 		size_t err_msg_len;
 		opaque->result = tid_resp_get_result(resp);
 		memset(opaque->err_msg, 0, sizeof(opaque->err_msg));
@@ -546,6 +548,10 @@ static void tr_response_func( TIDC_INSTANCE *inst,
 		if (!nr) goto error;
 		nr->name = talloc_move(nr, &opaque->fr_realm_name);
 		nr->auth_pool = servers_to_pool(nr, inst, resp, nr->name);
+		if (!nr->auth_pool) {
+			ERROR("Unable to create pool for %s", nr->name);
+			goto error;
+		}
 		if (!realm_realm_add(nr, NULL)) goto error;
 
 	} else {
@@ -573,7 +579,9 @@ error:
 	if (nr && !opaque->orig_realm) {
 		talloc_free(nr);
 	}
-
+	opaque->result = TID_ERROR;
+	snprintf(opaque->err_msg, sizeof(opaque->err_msg),
+		     "There was an error creating the pool for %s", opaque->fr_realm_name);
 	pthread_mutex_unlock(&realm_tree_mutex);
 	return;
 }
@@ -683,7 +691,7 @@ REALM *tr_query_realm(REQUEST *request, char const *realm,
 		DEBUG2("TID response is error, rc = %d: %s.\n", cookie.result,
 		       cookie.err_msg?cookie.err_msg:"(NO ERROR TEXT)");
 		module_failure_msg(request, "TID response is error, rc = %d: %s.\n", cookie.result,
-		       cookie.err_msg?cookie.err_msg:"(NO ERROR TEXT)");
+				cookie.err_msg?cookie.err_msg:"(NO ERROR TEXT)");
 		if (cookie.err_msg)
 			pair_make_reply("Reply-Message", cookie.err_msg, T_OP_SET);
 		pair_make_reply("Error-Cause", "502", T_OP_SET); /*proxy unroutable*/

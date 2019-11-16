@@ -15,7 +15,7 @@
 #	This file is NOT meant to be used as-is.  It needs to be
 #	edited to match your local configuration.
 #
-#	$Id: 6b1b5b337216e433498c1fdb85ced8a53b34df94 $
+#	$Id: 4b50b422c169338e93f03320a01bbebe272dee41 $
 #
 ######################################################################
 
@@ -116,7 +116,7 @@ accounting {
 	#  was NOT handled properly, and will keep trying to process it
 	#  through this virtual server!
 	#
-	#  See "Accounting queries" in sql.conf
+	#  See "Accounting queries" in `mods-config/sql/main/$driver/queries.conf`
 #	sql
 
 	#  Cisco VoIP specific bulk accounting

@@ -2,13 +2,13 @@
  * admin.sql -- PostgreSQL commands for creating the RADIUS user.
  *
  *	WARNING: You should change 'localhost' and 'radpass'
- *		 to something else.  Also update raddb/sql.conf
+ *		 to something else.  Also update raddb/mods-available/sql
  *		 with the new RADIUS password.
  *
  *	WARNING: This example file is untested.  Use at your own risk.
  *		 Please send any bug fixes to the mailing list.
  *
- *	$Id: 6dfacb3b09a1b7da135a49a49cb75a573fd3bad4 $
+ *	$Id: cfa38b054c4d05aec9109d45115e0fd396545cbe $
  */
 
 /*

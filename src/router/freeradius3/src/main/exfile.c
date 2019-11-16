@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id: 380c5e322c75fcfe9cc11d2900c79e8aa15052f5 $
+ * $Id: 12be01b557d9f83d7ed0992a1c36706c36419225 $
  *
  * @file exfile.c
  * @brief Allow multiple threads to write to the same set of files.
@@ -145,7 +145,7 @@ static void exfile_cleanup_entry(exfile_entry_t *entry)
 
 
 /*
- *	Try to open the file. It it doesn't exist, try to
+ *	Try to open the file. If it doesn't exist, try to
  *	create it's parent directories.
  */
 static int exfile_open_mkdir(exfile_t *ef, char const *filename, mode_t permissions)
@@ -166,6 +166,7 @@ static int exfile_open_mkdir(exfile_t *ef, char const *filename, mode_t permissi
 		p = strrchr(dir, FR_DIR_SEP);
 		if (!p) {
 			fr_strerror_printf("No '/' in '%s'", filename);
+			talloc_free(dir);
 			return -1;
 		}
 		*p = '\0';
@@ -430,6 +431,33 @@ int exfile_open(exfile_t *ef, char const *filename, mode_t permissions)
 	    (st.st_ino != ef->entries[i].st_ino)) {
 		close(ef->entries[i].fd);
 		goto reopen;
+	}
+
+	/*
+	 *	Sometimes the file permissions are changed externally.
+	 *	just be sure to update the permission if necessary.
+	 */
+	if ((st.st_mode & ~S_IFMT) != permissions) {
+		char str_need[10], oct_need[5];
+		char str_have[10], oct_have[5];
+
+		rad_mode_to_oct(oct_need, permissions);
+		rad_mode_to_str(str_need, permissions);
+
+		rad_mode_to_oct(oct_have, st.st_mode & ~S_IFMT);
+		rad_mode_to_str(str_have, st.st_mode & ~S_IFMT);
+
+		WARN("File %s permissions are %s (%s) not %s (%s))", filename,
+		     oct_have, str_have, oct_need, str_need);
+
+		if (((st.st_mode | permissions) != st.st_mode) &&
+		    (fchmod(ef->entries[i].fd, (st.st_mode & ~S_IFMT) | permissions) < 0)) {
+			rad_mode_to_oct(oct_need, (st.st_mode & ~S_IFMT) | permissions);
+			rad_mode_to_str(str_need, (st.st_mode & ~S_IFMT) | permissions);
+			
+			WARN("Failed resetting file %s permissions to %s (%s): %s",
+			     filename, oct_need, str_need, fr_syserror(errno));
+		}
 	}
 
 	/*

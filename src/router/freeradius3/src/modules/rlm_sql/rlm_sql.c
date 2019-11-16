@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: f2a7951edc6b72c1d045bcbe3eddb5c60caa2303 $
+ * $Id: 0c872ea24653a1b68a71a56072b4324fe06e321a $
  * @file rlm_sql.c
  * @brief Implements SQL 'users' file, and SQL accounting.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000  Mike Machado <mike@innercite.com>
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: f2a7951edc6b72c1d045bcbe3eddb5c60caa2303 $")
+RCSID("$Id: 0c872ea24653a1b68a71a56072b4324fe06e321a $")
 
 #include <ctype.h>
 
@@ -1201,7 +1201,10 @@ static rlm_rcode_t mod_authorize(void *instance, REQUEST *request)
 			goto error;
 		}
 
-		if (rows == 0) goto skipreply;	/* Don't need to free VPs we don't have */
+		if (rows == 0) {
+			RWDEBUG2("User not found in radcheck table.");
+			goto skipreply;	/* Don't need to free VPs we don't have */
+		}
 
 		/*
 		 *	Only do this if *some* check pairs were returned
@@ -1209,6 +1212,7 @@ static rlm_rcode_t mod_authorize(void *instance, REQUEST *request)
 		RDEBUG2("User found in radcheck table");
 		user_found = true;
 		if (paircompare(request, request->packet->vps, check_tmp, &request->reply->vps) != 0) {
+			RWDEBUG2("check items do not match.");
 			fr_pair_list_free(&check_tmp);
 			check_tmp = NULL;
 			goto skipreply;
@@ -1263,12 +1267,6 @@ static rlm_rcode_t mod_authorize(void *instance, REQUEST *request)
 		rcode = RLM_MODULE_OK;
 		reply_tmp = NULL;
 	}
-
-	/*
-	 *	Neither group checks nor profiles will work without
-	 *	a group membership query.
-	 */
-	if (!inst->config->groupmemb_query) goto release;
 
 skipreply:
 	if ((do_fall_through == FALL_THROUGH_YES) ||

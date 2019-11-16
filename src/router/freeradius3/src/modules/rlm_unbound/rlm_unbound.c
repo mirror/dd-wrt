@@ -15,20 +15,27 @@
  */
 
 /**
- * $Id: 9f4b6ae06a0c75db0fe4146e9dca01ef29abab32 $
+ * $Id: 3284f312a37e820ed10031c05be6fc4fc46e960e $
  * @file rlm_unbound.c
  * @brief DNS services via libunbound.
  *
  * @copyright 2013 The FreeRADIUS server project
  * @copyright 2013 Brian S. Julin <bjulin@clarku.edu>
  */
-RCSID("$Id: 9f4b6ae06a0c75db0fe4146e9dca01ef29abab32 $")
+RCSID("$Id: 3284f312a37e820ed10031c05be6fc4fc46e960e $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
 #include <freeradius-devel/log.h>
 #include <fcntl.h>
+
+#ifdef HAVE_WDOCUMENTATION
+DIAG_OFF(documentation)
+#endif
 #include <unbound.h>
+#ifdef HAVE_WDOCUMENTATION
+DIAG_ON(documentation)
+#endif
 
 typedef struct rlm_unbound_t {
 	struct ub_ctx	*ub;   /* This must come first.  Do not move */

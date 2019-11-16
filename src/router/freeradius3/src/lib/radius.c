@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 0725857441cc08766c9eb7b0a8be56a823fcfa52 $
+ * $Id: 3881111f7d21b03671d6eca4d45a8e5facf615ca $
  *
  * @file radius.c
  * @brief Functions to send/receive radius packets.
@@ -23,7 +23,7 @@
  * @copyright 2000-2003,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 0725857441cc08766c9eb7b0a8be56a823fcfa52 $")
+RCSID("$Id: 3881111f7d21b03671d6eca4d45a8e5facf615ca $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -3253,7 +3253,7 @@ static ssize_t data2vp_extended(TALLOC_CTX *ctx, RADIUS_PACKET *packet,
 	attr += attrlen;
 
 	while (attr < end) {
-		memcpy(tail, attr + 4, attr[1] - 4);
+		if (attr[1] > 4) memcpy(tail, attr + 4, attr[1] - 4);
 		tail += attr[1] - 4;
 		attr += attr[1]; /* skip VID+WiMax header */
 	}
@@ -3610,7 +3610,7 @@ ssize_t data2vp(TALLOC_CTX *ctx,
 			return 0;
 		}
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) || defined(__clang_analyzer__)
 		/*
 		 *	Hacks for Coverity.  Editing the dictionary
 		 *	will break assumptions about CUI.  We know
@@ -3619,7 +3619,8 @@ ssize_t data2vp(TALLOC_CTX *ctx,
 		if (da->type != PW_TYPE_OCTETS) return -1;
 #endif
 
-		data = NULL;
+		data = buffer;
+		*buffer = '\0';
 		datalen = 0;
 		goto alloc_cui;	/* skip everything */
 	}
@@ -3959,9 +3960,16 @@ ssize_t data2vp(TALLOC_CTX *ctx,
 	vp->vp_length = datalen;
 	vp->tag = tag;
 
+#ifdef __clang_analyzer__
+	if (!datalen && da->type != PW_TYPE_OCTETS) return -1;
+#endif
+
 	switch (da->type) {
 	case PW_TYPE_STRING:
 		p = talloc_array(vp, char, vp->vp_length + 1);
+#ifdef __clang_analyzer__
+		if (!p) goto fail;
+#endif
 		memcpy(p, data, vp->vp_length);
 		p[vp->vp_length] = '\0';
 		vp->vp_strvalue = p;
@@ -4056,6 +4064,9 @@ ssize_t data2vp(TALLOC_CTX *ctx,
 		vp->vp_integer = ntohl(vp->vp_integer);
 		break;
 
+#ifdef __clang_analyzer__
+	fail:
+#endif
 	default:
 		fr_pair_list_free(&vp);
 		fr_strerror_printf("Internal sanity check %d", __LINE__);

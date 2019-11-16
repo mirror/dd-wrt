@@ -1,7 +1,7 @@
 /*
  * parser.c	Parse various things
  *
- * Version:	$Id: d83516b035eccd7c27e871039225ae2fd8a1f8e9 $
+ * Version:	$Id: acc13695ef9461e35263ed0a6c2a9dad7999cc6c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2013  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id: d83516b035eccd7c27e871039225ae2fd8a1f8e9 $")
+RCSID("$Id: acc13695ef9461e35263ed0a6c2a9dad7999cc6c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -560,12 +560,19 @@ static ssize_t condition_tokenize(TALLOC_CTX *ctx, CONF_ITEM *ci, char const *st
 		}
 		p += slen;
 
+#ifndef __clang_analyzer__
 		lhs_p = p;
+#endif
 		slen = condition_tokenize_word(c, p, &lhs, &lhs_type, error);
 		if (slen <= 0) {
 			return_SLEN;
 		}
 		p += slen;
+
+
+#ifdef __clang_analyzer__
+		if (!lhs) return_P("Internal error");
+#endif
 
 		/*
 		 *	If the LHS is 0xabcdef... automatically cast it to octets
@@ -745,6 +752,10 @@ static ssize_t condition_tokenize(TALLOC_CTX *ctx, CONF_ITEM *ci, char const *st
 				if (slen < 0) {
 					return_SLEN;
 				}
+
+#ifdef __clang_analyzer__
+				if (!cast_da) return_P("Internal error");
+#endif
 
 				if (!c->cast) {
 					return_P("Unexpected cast");
@@ -1145,7 +1156,6 @@ static ssize_t condition_tokenize(TALLOC_CTX *ctx, CONF_ITEM *ci, char const *st
 							 *	by modules.c, so we can't enforce strictness here.
 							 */
 							c->pass2_fixup = PASS2_FIXUP_TYPE;
-
 						} else {
 							return_rhs("Failed to parse value for attribute");
 						}
@@ -1361,6 +1371,8 @@ done:
 	 *	run-time evaluation has fewer cases to check.
 	 */
 	if (c->type == COND_TYPE_MAP) do {
+		VERIFY_MAP(c->data.map);
+
 		/*
 		 *	!FOO !~ BAR --> FOO =~ BAR
 		 */
@@ -1542,6 +1554,8 @@ done:
 	 *	"foo" is NOT the same as 'foo' or a bare foo.
 	 */
 	if (c->type == COND_TYPE_EXISTS) {
+		VERIFY_TMPL(c->data.vpt);
+
 		switch (c->data.vpt->type) {
 		case TMPL_TYPE_XLAT:
 		case TMPL_TYPE_ATTR:

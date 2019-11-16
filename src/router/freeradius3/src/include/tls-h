@@ -18,7 +18,7 @@
 
 #ifdef WITH_TLS
 /**
- * $Id: 90d2f97b6477c9ca6084464f0b5c343f009762aa $
+ * $Id: 62f57c4715a611284042edb28c284a7b91a6538b $
  *
  * @file tls.h
  * @brief Structures and prototypes for TLS wrappers
@@ -26,7 +26,7 @@
  * @copyright 2010 Network RADIUS SARL <info@networkradius.com>
  */
 
-RCSIDH(tls_h, "$Id: 90d2f97b6477c9ca6084464f0b5c343f009762aa $")
+RCSIDH(tls_h, "$Id: 62f57c4715a611284042edb28c284a7b91a6538b $")
 
 #include <freeradius-devel/conffile.h>
 
@@ -310,7 +310,7 @@ int		tls_error_io_log(REQUEST *request, tls_session_t *session, int ret, char co
 
 void		tls_global_cleanup(void);
 tls_session_t	*tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQUEST *request, bool client_cert);
-tls_session_t	*tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, int fd);
+tls_session_t	*tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, int fd, VALUE_PAIR **certs);
 fr_tls_server_conf_t *tls_server_conf_parse(CONF_SECTION *cs);
 fr_tls_server_conf_t *tls_client_conf_parse(CONF_SECTION *cs);
 fr_tls_server_conf_t *tls_server_conf_alloc(TALLOC_CTX *ctx);
@@ -381,8 +381,8 @@ struct fr_tls_server_conf_t {
 	uint32_t     	session_cache_size;
 	char const	*session_id_name;
 	char const	*session_cache_path;
+	fr_hash_table_t *cache_ht;
 	char		session_context_id[SSL_MAX_SSL_SESSION_ID_LENGTH];
-	time_t		session_last_flushed;
 
 	bool		verify_skip_if_ocsp_ok;
 	char const	*verify_tmp_dir;

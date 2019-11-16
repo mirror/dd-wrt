@@ -28,8 +28,8 @@
 
 Summary: High-performance and highly configurable free RADIUS server
 Name: freeradius
-Version: 3.0.19
-Release: 2%{?dist}
+Version: 3.0.20
+Release: 1%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Daemons
 URL: http://www.freeradius.org/
@@ -188,8 +188,10 @@ This plugin provides Perl support for the FreeRADIUS server project.
 Summary: Python support for FreeRADIUS
 Group: System Environment/Daemons
 Requires: %{name} = %{version}-%{release}
-Requires: python
-BuildRequires: python-devel
+%{!?el8:Requires: python}
+%{?el8:Requires: python2}
+%{!?el8:BuildRequires: python-devel}
+%{?el8:BuildRequires: python2-devel}
 
 %description python
 This plugin provides Python support for the FreeRADIUS server project.
@@ -349,6 +351,7 @@ export LDFLAGS="-Wl,--build-id"
         --without-rlm_sql_iodbc \
         --without-rlm_sql_firebird \
         --without-rlm_sql_db2 \
+        --without-rlm_sql_mongo \
         --with-jsonc-lib-dir=%{_libdir} \
         --with-jsonc-include-dir=/usr/include/json \
         --with-winbind-include-dir=/usr/include/samba-4.0 \
@@ -433,6 +436,8 @@ rm -rf $RPM_BUILD_ROOT/%{_includedir}
 # remove unsupported config files
 rm -f $RPM_BUILD_ROOT/%{_sysconfdir}/raddb/experimental.conf
 rm -rf $RPM_BUILD_ROOT/%{_sysconfdir}/raddb/mods-config/unbound
+rm -rf $RPM_BUILD_ROOT/%{_sysconfdir}/raddb/mods-config/sql/ippool/mongo
+rm -rf $RPM_BUILD_ROOT/%{_sysconfdir}/raddb/mods-config/sql/main/mongo
 
 # install doc files omitted by standard install
 for f in COPYRIGHT CREDITS INSTALL.rst README.rst; do
@@ -473,7 +478,11 @@ exit 0
 
 %post
 if [ $1 = 1 ]; then
+%if %{?_unitdir:1}%{!?_unitdir:0}
+  /bin/systemctl enable radiusd.service
+%else
   /sbin/chkconfig --add radiusd
+%endif
 fi
 
 %post config
@@ -487,7 +496,8 @@ fi
 %preun
 if [ $1 = 0 ]; then
 %if %{?_unitdir:1}%{!?_unitdir:0}
-  /bin/systemctl disable radiusd
+  /bin/systemctl stop radiusd.service || :
+  /bin/systemctl disable radiusd.service || :
 %else
   /sbin/chkconfig --del radiusd
 %endif

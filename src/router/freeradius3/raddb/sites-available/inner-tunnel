@@ -4,7 +4,7 @@
 #	This is a virtual server that handles *only* inner tunnel
 #	requests for EAP-TTLS and PEAP types.
 #
-#	$Id: 8bc463d0bbfe43ea8b36a4992000fe83b14f7d1a $
+#	$Id: 10eeb55db7a1129ea62f2195c17b286eb4acd1d2 $
 #
 ######################################################################
 
@@ -140,7 +140,7 @@ authorize {
 	#  Look in an SQL database.  The schema of the database
 	#  is meant to mirror the "users" file.
 	#
-	#  See "Authorization Queries" in sql.conf
+	#  See "Authorization Queries" in `mods-config/sql/main/$driver/queries.conf`
 	-sql
 
 	#
@@ -262,7 +262,7 @@ session {
 	radutmp
 
 	#
-	#  See "Simultaneous Use Checking Queries" in sql.conf
+	#  See "Simultaneous Use Checking Queries" in `mods-config/sql/main/$driver/queries.conf`
 #	sql
 }
 
@@ -303,12 +303,12 @@ post-auth {
 	#
 	#  After authenticating the user, do another SQL query.
 	#
-	#  See "Authentication Logging Queries" in sql.conf
+	#  See "Authentication Logging Queries" in `mods-config/sql/main/$driver/queries.conf`
 	-sql
 
 	#
 	#  Un-comment the following if you have set
-	#  'edir_account_policy_check = yes' in the ldap module sub-section of
+	#  'edir = yes' in the ldap module sub-section of
 	#  the 'modules' section.
 	#
 #	ldap
@@ -365,7 +365,7 @@ post-auth {
 	#  post-auth section.
 	#
 	#  Add the ldap module name (or instance) if you have set
-	#  'edir_account_policy_check = yes' in the ldap module configuration
+	#  'edir = yes' in the ldap module configuration
 	#
 	Post-Auth-Type REJECT {
 		# log failed authentications in SQL, too.

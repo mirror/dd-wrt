@@ -31,7 +31,7 @@
  * license (including the GNU public license).
  */
 
-RCSID("$Id: db8d619ca134aaed25dbf79e8d41c5b1c11e0424 $")
+RCSID("$Id: 18ab97f1485ab354b2d8caeb2c5d8276ed548355 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "rlm_eap_pwd.h"
@@ -49,17 +49,6 @@ static CONF_PARSER pwd_module_config[] = {
 	CONF_PARSER_TERMINATOR
 };
 
-static int mod_detach (void *arg)
-{
-	eap_pwd_t *inst;
-
-	inst = (eap_pwd_t *) arg;
-
-	if (inst->bnctx) BN_CTX_free(inst->bnctx);
-
-	return 0;
-}
-
 static int mod_instantiate (CONF_SECTION *cs, void **instance)
 {
 	eap_pwd_t *inst;
@@ -73,11 +62,6 @@ static int mod_instantiate (CONF_SECTION *cs, void **instance)
 
 	if (inst->fragment_size < 100) {
 		cf_log_err_cs(cs, "Fragment size is too small");
-		return -1;
-	}
-
-	if ((inst->bnctx = BN_CTX_new()) == NULL) {
-		cf_log_err_cs(cs, "Failed to get BN context");
 		return -1;
 	}
 
@@ -96,6 +80,7 @@ static int _free_pwd_session (pwd_session_t *session)
 	EC_POINT_clear_free(session->pwe);
 	BN_clear_free(session->order);
 	BN_clear_free(session->prime);
+	BN_CTX_free(session->bnctx);
 
 	return 0;
 }
@@ -216,6 +201,12 @@ static int mod_session_init (void *instance, eap_handler_t *handler)
 	session->pwe = NULL;
 	session->order = NULL;
 	session->prime = NULL;
+
+	session->bnctx = BN_CTX_new();
+	if (session->bnctx == NULL) {
+		ERROR("rlm_eap_pwd: Failed to get BN context");
+		return 0;
+	}
 
 	/*
 	 *	The admin can dynamically change the MTU.
@@ -338,7 +329,10 @@ static int mod_process(void *arg, eap_handler_t *handler)
 	 * buffer those fragments!
 	 */
 	if (EAP_PWD_GET_MORE_BIT(hdr)) {
-		rad_assert(session->in != NULL);
+		if (!session->in) {
+			RDEBUG2("Unexpected fragment.");
+			return 0;
+		}
 
 		if ((session->in_pos + in_len) > session->in_len) {
 			RDEBUG2("Fragment overflows packet.");
@@ -493,7 +487,7 @@ static int mod_process(void *arg, eap_handler_t *handler)
 		/*
 		 * compute our scalar and element
 		 */
-		if (compute_scalar_element(session, inst->bnctx)) {
+		if (compute_scalar_element(session, session->bnctx)) {
 			DEBUG2("failed to compute server's scalar and element");
 			return 0;
 		}
@@ -505,7 +499,7 @@ static int mod_process(void *arg, eap_handler_t *handler)
 		 * element is a point, get both coordinates: x and y
 		 */
 		if (!EC_POINT_get_affine_coordinates_GFp(session->group, session->my_element, x, y,
-							 inst->bnctx)) {
+							 session->bnctx)) {
 			DEBUG2("server point assignment failed");
 			BN_clear_free(x);
 			BN_clear_free(y);
@@ -549,7 +543,7 @@ static int mod_process(void *arg, eap_handler_t *handler)
 		/*
 		 * process the peer's commit and generate the shared key, k
 		 */
-		if (process_peer_commit(session, in, in_len, inst->bnctx)) {
+		if (process_peer_commit(session, in, in_len, session->bnctx)) {
 			RDEBUG2("failed to process peer's commit");
 			return 0;
 		}
@@ -557,7 +551,7 @@ static int mod_process(void *arg, eap_handler_t *handler)
 		/*
 		 * compute our confirm blob
 		 */
-		if (compute_server_confirm(session, session->my_confirm, inst->bnctx)) {
+		if (compute_server_confirm(session, session->my_confirm, session->bnctx)) {
 			ERROR("rlm_eap_pwd: failed to compute confirm!");
 			return 0;
 		}
@@ -588,7 +582,7 @@ static int mod_process(void *arg, eap_handler_t *handler)
 			RDEBUG2("pwd exchange is incorrect: not commit!");
 			return 0;
 		}
-		if (compute_peer_confirm(session, peer_confirm, inst->bnctx)) {
+		if (compute_peer_confirm(session, peer_confirm, session->bnctx)) {
 			RDEBUG2("pwd exchange cannot compute peer's confirm");
 			return 0;
 		}
@@ -632,6 +626,5 @@ rlm_eap_module_t rlm_eap_pwd = {
 	.instantiate	= mod_instantiate,	/* Create new submodule instance */
 	.session_init	= mod_session_init,		/* Create the initial request */
 	.process	= mod_process,		/* Process next round of EAP method */
-	.detach		= mod_detach		/* Destroy the submodule instance */
 };
 

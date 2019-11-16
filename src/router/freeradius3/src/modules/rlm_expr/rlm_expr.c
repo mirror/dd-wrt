@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: a51274cb04042701a19ba1bca11a688cc1ad7c62 $
+ * $Id: c449d7776b7cc50f332f0390eace3e809137dbc6 $
  * @file rlm_expr.c
  * @brief Register many xlat expansions including the expr expansion.
  *
  * @copyright 2001,2006  The FreeRADIUS server project
  * @copyright 2002  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: a51274cb04042701a19ba1bca11a688cc1ad7c62 $")
+RCSID("$Id: c449d7776b7cc50f332f0390eace3e809137dbc6 $")
 USES_APPLE_DEPRECATED_API
 
 #include <freeradius-devel/radiusd.h>
@@ -264,8 +264,8 @@ static bool get_number(REQUEST *request, char const **string, int64_t *answer)
 			}
 			if (value.integer64 > INT64_MAX) {
 			overflow:
-				REDEBUG("Value of &%.*s (%"PRIu64 ") would overflow a signed 64bit integer "
-					"(our internal arithmetic type)", (int)vpt.len, vpt.name, value.integer64);
+				REDEBUG("Value of &%.*s would overflow a signed 64bit integer "
+					"(our internal arithmetic type)", (int)vpt.len, vpt.name);
 				return false;
 			}
 			x = (int64_t)value.integer64;

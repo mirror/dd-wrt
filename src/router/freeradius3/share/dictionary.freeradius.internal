@@ -4,7 +4,7 @@
 #
 #	Non Protocol Attributes used by FreeRADIUS
 #
-#	$Id: 928ad61872f75939c401f2afbea59f1dea42e917 $
+#	$Id: 56fa5b7cdc14812fdc00fa7bec6d03203dfcb776 $
 #
 
 #	The attributes number ranges are allocates as follows:
@@ -180,6 +180,12 @@ ATTRIBUTE	Home-Server-Pool			1111	string
 
 # For delayed evaluation of maps
 ATTRIBUTE	Attribute-Map				1112	string
+
+# See sites-available/coa-relay
+ATTRIBUTE	COA-Packet-Type				1113	string
+ATTRIBUTE	COA-Packet-DST-IP-Address		1114	ipaddr
+ATTRIBUTE	COA-Packet-DST-Port			1115	integer
+ATTRIBUTE	COA-Acct-Session-Id			1116	string
 
 ATTRIBUTE	FreeRADIUS-Client-IP-Address		1120	ipaddr
 ATTRIBUTE	FreeRADIUS-Client-IPv6-Address		1121	ipv6addr

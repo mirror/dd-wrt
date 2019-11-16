@@ -1,7 +1,7 @@
 /*
  * dhcp.c	Functions to send/receive dhcp packets.
  *
- * Version:	$Id: 6dfc484e46f6e8dd967dda6a0b28d2fa420a2544 $
+ * Version:	$Id: 4431af3b27590e4536a28e221399dbd849c58cb9 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@
  * Copyright 2008 Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 6dfc484e46f6e8dd967dda6a0b28d2fa420a2544 $")
+RCSID("$Id: 4431af3b27590e4536a28e221399dbd849c58cb9 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/udpfromto.h>
@@ -500,6 +500,8 @@ static int fr_dhcp_attr2vp(TALLOC_CTX *ctx, VALUE_PAIR **vp_p, uint8_t const *p,
 static int fr_dhcp_array_members(size_t *len, DICT_ATTR const *da)
 {
 	int num_entries = 1;
+
+	if (!len || !da) return -1;
 
 	/*
 	 *	Could be an array of bytes, integers, etc.
