@@ -130,19 +130,24 @@ static void ndpi_check_rx(struct ndpi_detection_module_struct *ndpi_struct,
 	   header->flags == PLUS_2 || header->flags == REQ_ACK ||
 	   header->flags == MORE_1)
 	  goto security;
+	break;
       case ACK:
 	if(header->flags == CLIENT_INIT_1 || header->flags == CLIENT_INIT_2 ||
 	   header->flags == EMPTY)
 	  goto security;
+	break;
       case CHALLENGE:
 	if(header->flags == EMPTY || header->call_number == 0)
 	  goto security;
+	break;
       case RESPONSE:
 	if(header->flags == EMPTY || header->call_number == 0)
 	  goto security;
+	break;
       case ACKALL:
 	if(header->flags == EMPTY)
 	  goto security;
+	break;
       case BUSY:
 	goto security;
       case ABORT:

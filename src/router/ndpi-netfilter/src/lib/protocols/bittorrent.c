@@ -52,18 +52,6 @@ extern struct kmem_cache *bt_port_cache;
 #define BT_FREE(a) ndpi_free(a)
 #define BT_N_FREE(a) ndpi_free(a)
 
-#if 0
-#define atomic_inc(a) ((atomic_t *)(a))->counter++
-#define atomic_dec(a) ((atomic_t *)(a))->counter--
-#define spin_lock_init(a) (a)->val = 0
-
-/* FIXME!!! */
-static void spin_lock(spinlock_t *a) { a->val++; };
-static void spin_unlock(spinlock_t *a) { a->val--; };
-
-#define spin_lock_bh(a) spin_lock(a)
-#define spin_unlock_bh(a) spin_unlock(a)
-#endif
 #endif
 
 static time_t ndpi_bt_node_expire = 1200; /* time in seconds */
@@ -150,7 +138,6 @@ if(!ht) return ht;
 memset((char *)ht,0,sizeof(struct hash_ip4p_table) + 
 			sizeof(struct hash_ip4p)*size);
 ht->size = size;
-spin_lock_init(&ht->lock);
 
 for(key=0; key < size; key++) {
 	spin_lock_init(&ht->tbl[key].lock);
@@ -162,10 +149,8 @@ static void hash_ip4p_del(struct hash_ip4p_table *ht) {
 int key;
 struct hash_ip4p_node *n,*t;
 
-spin_lock(&ht->lock);
-
 for(key=0; key < ht->size; key++) {
-	spin_lock(&ht->tbl[key].lock);
+	// Locking is not needed!
 	n = ht->tbl[key].top;
 	while(n) {
 		t = n->next;
@@ -173,9 +158,7 @@ for(key=0; key < ht->size; key++) {
 		n = t;
 	}
 	ht->tbl[key].top = NULL;
-	spin_unlock(&ht->tbl[key].lock);
 }
-spin_unlock(&ht->lock);
 BT_FREE(ht);
 }
 
@@ -1467,6 +1450,7 @@ void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_struct, st
 
 void ndpi_bittorrent_init(struct ndpi_detection_module_struct *ndpi_struct,
 		u_int32_t size,u_int32_t size6,u_int32_t tmo,int logsize) {
+
 	ndpi_struct->bt_ht = hash_ip4p_init(size);
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
 	ndpi_struct->bt6_ht = hash_ip4p_init(size6);
