@@ -97,7 +97,7 @@ extern int zfs_append_partition(char *path, size_t max_len);
 extern int zfs_resolve_shortname(const char *name, char *path, size_t pathlen);
 
 extern char *zfs_strip_partition(char *);
-extern char *zfs_strip_partition_path(char *);
+extern char *zfs_strip_path(char *);
 
 extern int zfs_strcmp_pathname(const char *, const char *, int);
 
@@ -142,6 +142,9 @@ extern void zfs_nicetime(uint64_t, char *, size_t);
 extern void zpool_dump_ddt(const ddt_stat_t *, const ddt_histogram_t *);
 extern int zpool_history_unpack(char *, uint64_t, uint64_t *, nvlist_t ***,
     uint_t *);
+
+struct zfs_cmd;
+int zfs_ioctl_fd(int fd, unsigned long request, struct zfs_cmd *zc);
 
 #ifdef	__cplusplus
 }

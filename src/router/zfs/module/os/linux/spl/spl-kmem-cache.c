@@ -209,19 +209,23 @@ kv_alloc(spl_kmem_cache_t *skc, int size, int flags)
 	} else if (skc->skc_flags & KMC_KVMEM) {
 		ptr = spl_kvmalloc(size, lflags);
 	} else {
-	/*
-	 * GFP_KERNEL allocations can safe use kvmalloc allocator which
-	 * may increase performance since vmalloc overhead might not
-	 * be applicated since enough contiguous memory was available
-	 * at allocation time. unfortunatly the slab statistic will
-	 * show allocations as VMEM without any care if kmalloc was
-	 * used in reality. but this is just cosmetic
-	 */
-		if ((lflags & __GFP_RECLAIM) == __GFP_RECLAIM)
+		/*
+		 * GFP_KERNEL allocations can safely use kvmalloc which may
+		 * improve performance by avoiding a) high latency caused by
+		 * vmalloc's on-access allocation, b) performance loss due to
+		 * MMU memory address mapping and c) vmalloc locking overhead.
+		 * This has the side-effect that the slab statistics will
+		 * incorrectly report this as a vmem allocation, but that is
+		 * purely cosmetic.
+		 *
+		 * For non-GFP_KERNEL allocations we stick to __vmalloc.
+		 */
+		if ((lflags & GFP_KERNEL) == GFP_KERNEL) {
 			ptr = spl_kvmalloc(size, lflags);
-		else
+		} else {
 			ptr = __vmalloc(size, lflags | __GFP_HIGHMEM,
 			    PAGE_KERNEL);
+		}
 	}
 
 	/* Resulting allocated memory will be page aligned */
@@ -235,21 +239,24 @@ kv_free(spl_kmem_cache_t *skc, void *ptr, int size)
 {
 	ASSERT(IS_P2ALIGNED(ptr, PAGE_SIZE));
 
-	/*
-	 * The Linux direct reclaim path uses this out of band value to
-	 * determine if forward progress is being made.  Normally this is
-	 * incremented by kmem_freepages() which is part of the various
-	 * Linux slab implementations.  However, since we are using none
-	 * of that infrastructure we are responsible for incrementing it.
-	 */
-	if (current->reclaim_state)
-		current->reclaim_state->reclaimed_slab += size >> PAGE_SHIFT;
-
 	if (skc->skc_flags & KMC_KMEM) {
+		/*
+		 * The Linux direct reclaim path uses this out of band value to
+		 * determine if forward progress is being made.  Normally this
+		 * is incremented by kmem_freepages() which is part of the
+		 * various Linux slab implementations.  However, since we are
+		 * using none of that infrastructure we are responsible for
+		 * incrementing it.
+		 */
+
+		if (current->reclaim_state)
+			current->reclaim_state->reclaimed_slab +=
+			    size >> PAGE_SHIFT;
+
 		ASSERT(ISP2(size));
 		free_pages((unsigned long)ptr, get_order(size));
 	} else {
-		spl_kvfree(ptr);
+		spl_kmem_free_impl(ptr, size);
 	}
 }
 
@@ -895,11 +902,11 @@ spl_magazine_destroy(spl_kmem_cache_t *skc)
  *	KMC_KVMEM       Force kvmem backed cache
  *	KMC_SLAB        Force Linux slab backed cache
  *	KMC_OFFSLAB	Locate objects off the slab
- *	KMC_NOTOUCH	unsupported
- *	KMC_NODEBUG	unsupported
- *	KMC_NOHASH      unsupported
- *	KMC_QCACHE	unsupported
- *	KMC_NOMAGAZINE	unsupported
+ *	KMC_NOTOUCH	Disable cache object aging (unsupported)
+ *	KMC_NODEBUG	Disable debugging (unsupported)
+ *	KMC_NOHASH      Disable hashing (unsupported)
+ *	KMC_QCACHE	Disable qcache (unsupported)
+ *	KMC_NOMAGAZINE	Enabled for kmem/vmem, Disabled for Linux slab
  */
 spl_kmem_cache_t *
 spl_kmem_cache_create(char *name, size_t size, size_t align,
@@ -980,8 +987,7 @@ spl_kmem_cache_create(char *name, size_t size, size_t align,
 	 * linuxslab) then select a cache type based on the object size
 	 * and default tunables.
 	 */
-	if (!(skc->skc_flags & (KMC_KMEM | KMC_VMEM | KMC_KVMEM | KMC_SLAB))) {
-
+	if (!(skc->skc_flags & (KMC_KMEM | KMC_VMEM | KMC_SLAB | KMC_KVMEM))) {
 		if (spl_kmem_cache_slab_limit &&
 		    size <= (size_t)spl_kmem_cache_slab_limit) {
 			/*
@@ -999,9 +1005,9 @@ spl_kmem_cache_create(char *name, size_t size, size_t align,
 		} else {
 			/*
 			 * All other objects are considered large and are
-			 * placed on vmem or kvmem backed slabs.
+			 * placed on kvmem backed slabs.
 			 */
-			skc->skc_flags |= KMC_VMEM;
+			skc->skc_flags |= KMC_KVMEM;
 		}
 	}
 
@@ -1049,11 +1055,6 @@ spl_kmem_cache_create(char *name, size_t size, size_t align,
 			goto out;
 		}
 
-#if defined(HAVE_KMEM_CACHE_ALLOCFLAGS)
-		skc->skc_linux_cache->allocflags |= __GFP_COMP;
-#elif defined(HAVE_KMEM_CACHE_GFPFLAGS)
-		skc->skc_linux_cache->gfpflags |= __GFP_COMP;
-#endif
 		skc->skc_flags |= KMC_NOMAGAZINE;
 	}
 

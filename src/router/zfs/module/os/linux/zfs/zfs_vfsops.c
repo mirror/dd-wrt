@@ -1608,7 +1608,6 @@ zfs_root(zfsvfs_t *zfsvfs, struct inode **ipp)
 	return (error);
 }
 
-#ifdef HAVE_D_PRUNE_ALIASES
 /*
  * Linux kernels older than 3.1 do not support a per-filesystem shrinker.
  * To accommodate this we must improvise and manually walk the list of znodes
@@ -1666,7 +1665,6 @@ zfs_prune_aliases(zfsvfs_t *zfsvfs, unsigned long nr_to_scan)
 
 	return (objects);
 }
-#endif /* HAVE_D_PRUNE_ALIASES */
 
 /*
  * The ARC has requested that the filesystem drop entries from the dentry
@@ -1678,13 +1676,11 @@ zfs_prune(struct super_block *sb, unsigned long nr_to_scan, int *objects)
 {
 	zfsvfs_t *zfsvfs = sb->s_fs_info;
 	int error = 0;
-#if defined(HAVE_SHRINK) || defined(HAVE_SPLIT_SHRINKER_CALLBACK)
 	struct shrinker *shrinker = &sb->s_shrink;
 	struct shrink_control sc = {
 		.nr_to_scan = nr_to_scan,
 		.gfp_mask = GFP_KERNEL,
 	};
-#endif
 
 	ZFS_ENTER(zfsvfs);
 
@@ -1702,7 +1698,7 @@ zfs_prune(struct super_block *sb, unsigned long nr_to_scan, int *objects)
 
 #elif defined(HAVE_SPLIT_SHRINKER_CALLBACK)
 	*objects = (*shrinker->scan_objects)(shrinker, &sc);
-#elif defined(HAVE_SHRINK)
+#elif defined(HAVE_SINGLE_SHRINKER_CALLBACK)
 	*objects = (*shrinker->shrink)(shrinker, &sc);
 #elif defined(HAVE_D_PRUNE_ALIASES)
 #define	D_PRUNE_ALIASES_IS_DEFAULT
@@ -1877,8 +1873,7 @@ zfsvfs_teardown(zfsvfs_t *zfsvfs, boolean_t unmounting)
 	return (0);
 }
 
-#if !defined(HAVE_2ARGS_BDI_SETUP_AND_REGISTER) && \
-	!defined(HAVE_3ARGS_BDI_SETUP_AND_REGISTER)
+#if defined(HAVE_SUPER_SETUP_BDI_NAME)
 atomic_long_t zfs_bdi_seq = ATOMIC_LONG_INIT(0);
 #endif
 
@@ -1931,9 +1926,6 @@ zfs_domount(struct super_block *sb, zfs_mnt_t *zm, int silent)
 	sb->s_op = &zpl_super_operations;
 	sb->s_xattr = zpl_xattr_handlers;
 	sb->s_export_op = &zpl_export_operations;
-#ifdef HAVE_S_D_OP
-	sb->s_d_op = &zpl_dentry_operations;
-#endif /* HAVE_S_D_OP */
 
 	/* Set features for file system. */
 	zfs_set_fuid_feature(zfsvfs);
@@ -2303,6 +2295,16 @@ zfs_resume_fs(zfsvfs_t *zfsvfs, dsl_dataset_t *ds)
 		zfs_unlinked_drain(zfsvfs);
 	}
 
+	/*
+	 * Most of the time zfs_suspend_fs is used for changing the contents
+	 * of the underlying dataset. ZFS rollback and receive operations
+	 * might create files for which negative dentries are present in
+	 * the cache. Since walking the dcache would require a lot of GPL-only
+	 * code duplication, it's much easier on these rather rare occasions
+	 * just to flush the whole dcache for the given dataset/filesystem.
+	 */
+	shrink_dcache_sb(zfsvfs->z_sb);
+
 bail:
 	if (err != 0)
 		zfsvfs->z_unmounted = B_TRUE;
@@ -2351,6 +2353,26 @@ zfs_end_fs(zfsvfs_t *zfsvfs, dsl_dataset_t *ds)
 	(void) zfs_umount(zfsvfs->z_sb);
 	zfsvfs->z_unmounted = B_TRUE;
 	return (0);
+}
+
+/*
+ * Automounted snapshots rely on periodic revalidation
+ * to defer snapshots from being automatically unmounted.
+ */
+
+inline void
+zfs_exit_fs(zfsvfs_t *zfsvfs)
+{
+	if (!zfsvfs->z_issnap)
+		return;
+
+	if (time_after(jiffies, zfsvfs->z_snap_defer_time +
+	    MAX(zfs_expire_snapshot * HZ / 2, HZ))) {
+		zfsvfs->z_snap_defer_time = jiffies;
+		zfsctl_snapshot_unmount_delay(zfsvfs->z_os->os_spa,
+		    dmu_objset_id(zfsvfs->z_os),
+		    zfs_expire_snapshot);
+	}
 }
 
 int
