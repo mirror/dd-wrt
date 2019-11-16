@@ -135,6 +135,7 @@ ssize_t ndpi_dump_acct_info_bin(struct ndpi_net *n,int v6,
 		if(h_len)
 			memcpy(s,ct->host,h_len);
 	}
+	n->str_buf_len = ret_len; 
 	return ret_len;
 }
 
@@ -147,11 +148,11 @@ ssize_t ndpi_dump_acct_info(struct ndpi_net *n,
 	size_t buflen = sizeof(n->str_buf);
 	int is_ipv6 = test_ipv6(ct);
 
+	n->str_buf_offs = 0;
+	n->str_buf_len = 0;
+
 	if(n->acc_read_mode >= 4) {
-		l = ndpi_dump_acct_info_bin(n, is_ipv6, buf, buflen, ct);
-		n->str_buf_len = l; 
-		n->str_buf_offs = 0;
-		return l;
+		return ndpi_dump_acct_info_bin(n, is_ipv6, buf, buflen, ct);
 	}
 
 	*buf = 0;
@@ -224,7 +225,6 @@ ssize_t ndpi_dump_acct_info(struct ndpi_net *n,
 	buf[l++] = '\n';
 	buf[l] = 0;
 	n->str_buf_len = l; 
-	n->str_buf_offs = 0;
 	return l;
 }
 
@@ -289,9 +289,7 @@ int nflow_proc_open(struct inode *inode, struct file *file) {
 
 	if(!ndpi_enable_flow) return -EINVAL;
 
-	if(atomic_xchg(&n->acc_open,1)) {
-		return -EBUSY;
-	}
+	mutex_lock(&n->rem_lock);
 	n->acc_read_mode = 0;
 	if(!n->acc_wait) n->acc_wait = 60;
 	nflow_proc_read_start(n);
@@ -307,7 +305,7 @@ int nflow_proc_close(struct inode *inode, struct file *file)
 		pr_info("%s:%s view %ld dumped %ld deleted %ld\n",
 			__func__,n->ns_name,n->cnt_view,n->cnt_out,n->cnt_del);
 	n->acc_gc = jiffies + n->acc_wait*HZ;
-	atomic_set(&n->acc_open,0);
+	mutex_unlock(&n->rem_lock);
         return 0;
 }
 

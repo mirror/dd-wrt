@@ -353,7 +353,7 @@ struct hash_ip4p {
 struct hash_ip4p_table {
   size_t                  size;
   int			  ipv6;
-  spinlock_t              lock;
+//  spinlock_t              lock;
   atomic_t                count;
   struct hash_ip4p        tbl[0];
 };

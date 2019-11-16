@@ -716,9 +716,10 @@ static int ndpi_string_to_automa(struct ndpi_detection_module_struct *ndpi_struc
   else
     ac_pattern.length = strlen(ac_pattern.astring);
 
-  spin_lock(&ndpi_struct->host_automa_lock);
+//  no lock needed
+//  spin_lock(&ndpi_struct->host_automa_lock);
   r = ac_automata_add(((AC_AUTOMATA_t*)automa->ac_automa), &ac_pattern);
-  spin_unlock(&ndpi_struct->host_automa_lock);
+//  spin_unlock(&ndpi_struct->host_automa_lock);
   if(r == ACERR_DUPLICATE_PATTERN) {
 	char *tproto = ndpi_get_proto_by_id(ndpi_struct,protocol_id);
 	if(protocol_id == ac_pattern.rep.number) {
@@ -1012,20 +1013,31 @@ int ndpi_set_detection_preferences(struct ndpi_detection_module_struct *ndpi_mod
 
 /* ******************************************************************** */
 
-static void ndpi_validate_protocol_initialization(struct ndpi_detection_module_struct *ndpi_mod) {
-  int i;
+static int ndpi_validate_protocol_initialization(struct ndpi_detection_module_struct *ndpi_mod) {
+  int i,j;
 
   for(i=0; i<(int)ndpi_mod->ndpi_num_supported_protocols; i++) {
     if(ndpi_mod->proto_defaults[i].protoName == NULL) {
       NDPI_LOG_ERR(ndpi_mod, "[NDPI] INTERNAL ERROR missing protoName initialization for [protoId=%d]: recovering\n",  i);
+      return 1;
     } else {
       if((i != NDPI_PROTOCOL_UNKNOWN)
 	 && (ndpi_mod->proto_defaults[i].protoCategory == NDPI_PROTOCOL_CATEGORY_UNSPECIFIED)) {
 	NDPI_LOG_ERR(ndpi_mod, "[NDPI] INTERNAL ERROR missing category [protoId=%d/%s] initialization: recovering\n",
 		     i, ndpi_mod->proto_defaults[i].protoName ? ndpi_mod->proto_defaults[i].protoName : "???");
+	return 1;
       }
     }
+    if(!strcmp(ndpi_mod->proto_defaults[i].protoName,"Free")) continue;
+    for(j=0; j < i; j++) {
+	if(!strcmp(ndpi_mod->proto_defaults[i].protoName,ndpi_mod->proto_defaults[j].protoName)) {
+      		NDPI_LOG_ERR(ndpi_mod, "[NDPI] INTERNAL ERROR: Name of the protocols are the same for #%d and #%d '%s' \n",i,j,
+				ndpi_mod->proto_defaults[i].protoName);
+		return 1;
+        }
+    }
   }
+  return 0;
 }
 
 /* ******************************************************************** */
@@ -1320,7 +1332,7 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 			    ndpi_build_default_ports(ports_b, 51820, 0, 0, 0, 0) /* UDP */);
     ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_VIDTO,
 			    0 /* can_have_a_subprotocol */, no_master,
-			    no_master, "PPStream", NDPI_PROTOCOL_CATEGORY_MEDIA,
+			    no_master, "Vidto", NDPI_PROTOCOL_CATEGORY_MEDIA,
 			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
 			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
 
@@ -2031,7 +2043,6 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
     /* calling function for host and content matched protocols */
     init_string_based_protocols(ndpi_mod);
 
-    ndpi_validate_protocol_initialization(ndpi_mod);
 }
 
 /* ****************************************************** */
@@ -2338,9 +2349,22 @@ struct ndpi_detection_module_struct *ndpi_init_detection_module(void) {
 
   ndpi_init_protocol_defaults(ndpi_str);
 
+  ac_automata_finalize(ndpi_str->host_automa.ac_automa);
+//  ndpi_str->host_automa.ac_automa_finalized = 1;
+  ac_automata_finalize(ndpi_str->content_automa.ac_automa);
+//  ndpi_str->content_automa.ac_automa_finalized = 1;
+  ac_automata_finalize(ndpi_str->bigrams_automa.ac_automa);
+//  ndpi_str->bigrams_automa.ac_automa_finalized = 1;
+  
+
   for(i=0; i<NUM_CUSTOM_CATEGORIES; i++)
     snprintf(ndpi_str->custom_category_labels[i],
 	     CUSTOM_CATEGORY_LABEL_LEN, "User custom category %u", i+1);
+
+  if(ndpi_validate_protocol_initialization(ndpi_str)) {
+	ndpi_exit_detection_module(ndpi_str);
+	return NULL;
+  }
 
   return ndpi_str;
 }
@@ -2550,10 +2574,8 @@ void ndpi_exit_detection_module(struct ndpi_detection_module_struct *ndpi_struct
     if(ndpi_struct->tcpRoot != NULL)
       ndpi_tdestroy(ndpi_struct->tcpRoot, ndpi_free);
 
-    spin_lock(&ndpi_struct->host_automa_lock);
     if(ndpi_struct->host_automa.ac_automa != NULL)
       ac_automata_release((AC_AUTOMATA_t*)ndpi_struct->host_automa.ac_automa);
-    spin_unlock(&ndpi_struct->host_automa_lock);
 
     if(ndpi_struct->content_automa.ac_automa != NULL)
       ac_automata_release((AC_AUTOMATA_t*)ndpi_struct->content_automa.ac_automa);
@@ -6118,9 +6140,10 @@ int ndpi_match_string_subprotocol(struct ndpi_detection_module_struct *ndpi_stru
     return(NDPI_PROTOCOL_UNKNOWN);
 
   if(is_host_match)
-	spin_lock(&ndpi_struct->host_automa_lock);
+	spin_lock_bh(&ndpi_struct->host_automa_lock);
 
   if(!automa->ac_automa_finalized) {
+    // FIXME unused code!
     ac_automata_finalize((AC_AUTOMATA_t*)automa->ac_automa);
     automa->ac_automa_finalized = 1;
   }
@@ -6129,7 +6152,7 @@ int ndpi_match_string_subprotocol(struct ndpi_detection_module_struct *ndpi_stru
   ac_automata_search(((AC_AUTOMATA_t*)automa->ac_automa), &ac_input_text, &match);
   ac_automata_reset(((AC_AUTOMATA_t*)automa->ac_automa));
   if(is_host_match)
-  	spin_unlock(&ndpi_struct->host_automa_lock);
+  	spin_unlock_bh(&ndpi_struct->host_automa_lock);
  
   ret_match->protocol_id = match.number,
     ret_match->protocol_category = match.category,
@@ -6265,10 +6288,10 @@ int ndpi_match_bigram(struct ndpi_detection_module_struct *ndpi_struct,
   if((automa->ac_automa == NULL) || (bigram_to_match == NULL))
     return(-1);
 
-  if(!automa->ac_automa_finalized) {
-    ac_automata_finalize((AC_AUTOMATA_t*)automa->ac_automa);
-    automa->ac_automa_finalized = 1;
-  }
+//  if(!automa->ac_automa_finalized) {
+//    ac_automata_finalize((AC_AUTOMATA_t*)automa->ac_automa);
+//    automa->ac_automa_finalized = 1;
+//  }
 
   ac_input_text.astring = bigram_to_match, ac_input_text.length = 2;
   ac_automata_search(((AC_AUTOMATA_t*)automa->ac_automa), &ac_input_text, &match);

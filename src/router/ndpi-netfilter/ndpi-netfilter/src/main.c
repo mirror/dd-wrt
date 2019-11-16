@@ -1168,7 +1168,7 @@ NDPI_STATIC void ndpi_host_ssl(struct nf_ct_ext_ndpi *ct_ndpi) {
 	const char *name = ct_ndpi->flow->host_server_name;
 	if(*name)
 		ct_ndpi->host = kstrndup(name, 
-				sizeof(ct_ndpi->flow->host_server_name)-1, GFP_KERNEL);
+				sizeof(ct_ndpi->flow->host_server_name)-1, GFP_ATOMIC);
     }
 
     if(!ct_ndpi->ssl && (
@@ -1180,12 +1180,12 @@ NDPI_STATIC void ndpi_host_ssl(struct nf_ct_ext_ndpi *ct_ndpi) {
 	const size_t c_len = sizeof(ct_ndpi->flow->protos.stun_ssl.ssl.client_certificate);
 	if(*name_s && *name_c) {
 		ct_ndpi->ssl = strchr(name_s,'*') ?
-			kstrndup(name_c, c_len, GFP_KERNEL):
-			kstrndup(name_s, s_len, GFP_KERNEL);
+			kstrndup(name_c, c_len, GFP_ATOMIC):
+			kstrndup(name_s, s_len, GFP_ATOMIC);
 	} else if(*name_s) {
-		ct_ndpi->ssl = kstrndup(name_s, s_len, GFP_KERNEL);
+		ct_ndpi->ssl = kstrndup(name_s, s_len, GFP_ATOMIC);
 	} else if(*name_c) {
-	 	ct_ndpi->ssl = kstrndup(name_c, c_len, GFP_KERNEL);
+	 	ct_ndpi->ssl = kstrndup(name_c, c_len, GFP_ATOMIC);
 	}
     }
 }
@@ -1264,7 +1264,13 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	is_ipv6 = ip6h && ip6h->version == 6;
 #endif
 	n = ndpi_pernet(xt_net(par));
-	if(!atomic_read(&n->init_done)) return 0; // ndpi_net_init() not completed! 
+	
+	if(!atomic_read(&n->ndpi_ready)) return 0;
+
+	if(!read_trylock(&n->ndpi_busy)) {
+		/* ndpi_net_exit started */
+		return 0;
+	}
 
 	proto.app_protocol = NDPI_PROCESS_ERROR;
 
@@ -1320,7 +1326,7 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 
 	    }
 #endif
-	    if(ct_label && !atomic_read(&n->shutdown)) {
+	    if(ct_label) {
 		if(!ct_label->magic) {
 			ct_ndpi = kmem_cache_zalloc (ct_info_cache, GFP_ATOMIC);
 			if(ct_ndpi) {
@@ -1527,6 +1533,8 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	}
     } while(0);
 
+    read_unlock(&n->ndpi_busy);
+
     if (info->error)
 	return (proto.app_protocol == NDPI_PROCESS_ERROR) ^ (info->invert != 0);
 
@@ -1666,32 +1674,34 @@ NDPI_STATIC unsigned int seq_print_ndpi(struct seq_file *s,
 NDPI_STATIC void ndpi_proto_markmask(struct ndpi_net *n, u_int32_t *var,
 		ndpi_protocol *proto, int mode)
 {
-    if(mode == 1) {
-	if(proto->master_protocol < NDPI_NUM_BITS) {
-		*var &= ~n->mark[proto->master_protocol].mask;
-		*var |=  n->mark[proto->master_protocol].mark;
-	}
-	return;
-    }
-    if(mode == 2) {
-	if(proto->app_protocol < NDPI_NUM_BITS) {
-		*var &= ~n->mark[proto->app_protocol].mask;
-		*var |=  n->mark[proto->app_protocol].mark;
-	}
-	return;
-    }
-    if(proto->master_protocol != NDPI_PROTOCOL_UNKNOWN) {
-	if(proto->master_protocol < NDPI_NUM_BITS) {
-		*var &= ~n->mark[proto->master_protocol].mask;
-		*var |=  n->mark[proto->master_protocol].mark;
-	}
-    }
-    if(proto->app_protocol != NDPI_PROTOCOL_UNKNOWN) {
-	if(proto->app_protocol < NDPI_NUM_BITS) {
-		*var &= ~(n->mark[proto->app_protocol].mask << 16);
-		*var |=  n->mark[proto->app_protocol].mark << 16;
-	}
-    }
+    if(mode && ( proto->master_protocol >= NDPI_NUM_BITS ||
+		 proto->app_protocol >= NDPI_NUM_BITS)) return var;
+
+    switch (mode) {
+     case 0:
+	var &= ~info->mask;
+	var |=  info->mark;
+	break;
+     case 1:
+	var &= ~n->mark[proto->master_protocol].mask;
+	var |=  n->mark[proto->master_protocol].mark;
+	break;
+     case 2:
+	var &= ~n->mark[proto->app_protocol].mask;
+	var |=  n->mark[proto->app_protocol].mark;
+	break;
+     case 3:
+	if(proto->app_protocol != NDPI_PROTOCOL_UNKNOWN) {
+	    var &= ~n->mark[proto->app_protocol].mask;
+	    var |=  n->mark[proto->app_protocol].mark;
+	} else
+	  if(proto->master_protocol != NDPI_PROTOCOL_UNKNOWN) {
+		var &= ~n->mark[proto->master_protocol].mask;
+		var |=  n->mark[proto->master_protocol].mark;
+	  }
+	break;
+     }
+    return var;
 }
 
 NDPI_STATIC unsigned int
@@ -1703,11 +1713,13 @@ ndpi_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	struct ndpi_cb *c_proto;
 	int mode = 0;
 
-	if(!atomic_read(&n->init_done)) return XT_CONTINUE; // ndpi_net_init() not completed!
+	if(!atomic_read(&n->ndpi_ready)) return XT_CONTINUE; // ndpi_net_init() not completed!
+	if(!read_trylock(&n->ndpi_busy)) return XT_CONTINUE; // ndpi_net_init() not completed!
 
 	c_proto = skb_get_cproto(skb);
 
 	if(c_proto->magic != NDPI_ID) {
+		read_unlock(&n->ndpi_busy);
 		if(ndpi_log_debug > 1)
 			pr_info("%s: no ndpi magic\n",__func__);
 		return XT_CONTINUE;
@@ -1749,9 +1761,11 @@ ndpi_tg(struct sk_buff *skb, const struct xt_action_param *par)
 		spin_unlock_bh (&ct_ndpi->lock);
 	    } while(0);
 	}
+	read_unlock(&n->ndpi_busy);
 
 	if(c_proto->proto != NDPI_PROCESS_ERROR) {
 		uint32_t tmp_p = READ_ONCE(c_proto->proto);
+		/* see pack_proto() */
 		proto.master_protocol = tmp_p & 0xffff;
 		proto.app_protocol = (tmp_p >> 16) & 0xffff; 
 	}
@@ -1761,18 +1775,13 @@ ndpi_tg(struct sk_buff *skb, const struct xt_action_param *par)
 		if(info->p_proto_id) mode |= 2;
 		if(info->any_proto_id) mode |= 3;
 	}
+	if(info->t_mark)
+		skb->mark = ndpi_proto_markmask(n,skb->mark,&proto,mode,info);
 
-	if(info->t_mark) {
-	        skb->mark = (skb->mark & ~info->mask) | info->mark;
-		if(mode)
-			ndpi_proto_markmask(n,&skb->mark,&proto,mode);
-	}
-	if(info->t_clsf) {
-	        skb->priority = (skb->priority & ~info->mask) | info->mark;
-		if(mode)
-			ndpi_proto_markmask(n,&skb->priority,&proto,mode);
-	}
-        return info->t_accept ? NF_ACCEPT : XT_CONTINUE;
+	if(info->t_clsf)
+		skb->priority =	ndpi_proto_markmask(n,skb->priority,&proto,mode,info);
+
+ return info->t_accept ? NF_ACCEPT : XT_CONTINUE;
 }
 
 NDPI_STATIC int
@@ -1839,7 +1848,6 @@ NDPI_STATIC struct xt_target ndpi_tg_reg __read_mostly = {
         .me             = THIS_MODULE,
 };
 
-NDPI_STATIC int gc_1=0;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
 NDPI_STATIC void bt_port_gc(struct timer_list *t) {
 	struct ndpi_net *n = from_timer(n, t, gc);
@@ -1848,44 +1856,43 @@ NDPI_STATIC void bt_port_gc(unsigned long data) {
         struct ndpi_net *n = (struct ndpi_net *)data;
 #endif
         struct ndpi_detection_module_struct *ndpi_struct = n->ndpi_struct;
-	struct hash_ip4p_table *ht = ndpi_struct->bt_ht;
-#ifdef NDPI_DETECTION_SUPPORT_IPV6
-	struct hash_ip4p_table *ht6 = ndpi_struct->bt6_ht;
-#endif
 	struct timespec tm;
 	int i;
 	uint32_t st_j;
 	uint32_t en_j;
 	
-	if(!atomic_read(&n->init_done)) return; // ndpi_net_init() not completed!
+	if(!atomic_read(&n->ndpi_ready)) return; // ndpi_net_init() not completed!
+	if(!read_trylock(&n->ndpi_busy)) return; // ndpi_net_exit() started!
 
 	st_j = READ_ONCE(jiffies);
 	getnstimeofday(&tm);
-	if(ht && spin_trylock_bh(&ht->lock)) {
-	    gc_1 = 1;
-	    /* full period 64 seconds */
-	    for(i=0; i < ht->size/128;i++) {
-		if(n->gc_index < 0 ) n->gc_index = 0;
-		if(n->gc_index >= ht->size-1) n->gc_index = 0;
+	{
+	    struct hash_ip4p_table *ht = READ_ONCE(ndpi_struct->bt_ht);
+	    if(ht) {
+		/* full period 64 seconds */
+		for(i=0; i < ht->size/128;i++) {
+		    if(n->gc_index < 0 ) n->gc_index = 0;
+		    if(n->gc_index >= ht->size-1) n->gc_index = 0;
 
-		if(ht->tbl[n->gc_index].len)
+		    if(ht->tbl[n->gc_index].len)
 			n->gc_count += ndpi_bittorrent_gc(ht,n->gc_index,tm.tv_sec);
-		n->gc_index++;
+		    n->gc_index++;
+		}
 	    }
-	    spin_unlock_bh(&ht->lock);
 	}
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
-	if(ht6 && spin_trylock_bh(&ht6->lock))  {
-	    gc_1 = 1;
-	    for(i=0; i < ht6->size/128;i++) {
-		if(n->gc_index6 < 0 ) n->gc_index6 = 0;
-		if(n->gc_index6 >= ht6->size-1) n->gc_index6 = 0;
+	{
+	    struct hash_ip4p_table *ht6 = READ_ONCE(ndpi_struct->bt6_ht);
+	    if(ht6) {
+		for(i=0; i < ht6->size/128;i++) {
+		    if(n->gc_index6 < 0 ) n->gc_index6 = 0;
+		    if(n->gc_index6 >= ht6->size-1) n->gc_index6 = 0;
 
-		if(ht6->tbl[n->gc_index6].len)
+		    if(ht6->tbl[n->gc_index6].len)
 			n->gc_count += ndpi_bittorrent_gc(ht6,n->gc_index6,tm.tv_sec);
-		n->gc_index6++;
+		    n->gc_index6++;
+		}
 	    }
-	    spin_unlock_bh(&ht6->lock);
 	}
 #endif
 	ndpi_bt_gc = n->gc_count;
@@ -1902,7 +1909,7 @@ NDPI_STATIC void bt_port_gc(unsigned long data) {
 		n->acc_gc = ndpi_delete_acct(n,2) < 0 ?
 			jiffies + HZ/5 : jiffies + HZ;
 	    } else {
-		if(!atomic_read(&n->acc_open)) {
+		if(!mutex_is_locked(&n->rem_lock)) {
 		    if(time_after(jiffies,n->acc_gc)) {
 			if( atomic_read(&n->acc_work) > 0 || 
 			    atomic_read(&n->acc_rem)  > 0 )
@@ -1918,6 +1925,7 @@ NDPI_STATIC void bt_port_gc(unsigned long data) {
 	if(en_j > st_j+1 && flow_read_debug) 
 		pr_info("%s: FLOW jiffies %u\n",__func__,en_j - st_j);
 
+	read_unlock(&n->ndpi_busy);
 	mod_timer(&n->gc,jiffies + HZ/2);
 }
 
@@ -1945,9 +1953,9 @@ int ndpi_delete_acct(struct ndpi_net *n,int all) {
 
 	if(!ndpi_enable_flow) return 0;
 
-	if(!spin_trylock(&n->rem_lock)) return -1;
+	if(!mutex_trylock(&n->rem_lock)) return -1;
 
-	if(atomic_read(&n->shutdown)) all = 3;
+	if(!atomic_read(&n->ndpi_ready)) all = 3;
 
 	skip_del = all != 2 ? 0 : n->acc_limit*3/4;
 
@@ -2028,7 +2036,7 @@ int ndpi_delete_acct(struct ndpi_net *n,int all) {
 
 	}
 
-	spin_unlock(&n->rem_lock);
+	mutex_unlock(&n->rem_lock);
 	if( (all > 1 || i2) && flow_read_debug)
 		pr_info("%s:%s Delete %d flows. Active %d, rem %d\n",__func__,n->ns_name,
 			i2, atomic_read(&n->acc_work), atomic_read(&n->acc_rem));
@@ -2044,6 +2052,14 @@ NDPI_STATIC void ndpi_ct_counter_save(struct nf_ct_ext_ndpi *ct) {
 	ct->flinfo.p[3] = ct->flinfo.p[1];
 }
 
+static inline int nflow_str_data(struct ndpi_net *n) {
+	int rl = n->str_buf_len;
+	if(!rl)  return 0;
+
+	rl -= n->str_buf_offs;
+	return rl > 0;
+}
+
 static int nflow_put_str(struct ndpi_net *n, char __user *buf,
 	int *p, size_t *count, loff_t *ppos) {
 
@@ -2057,6 +2073,7 @@ static int nflow_put_str(struct ndpi_net *n, char __user *buf,
 		ro = rl - *count;
 		rl = *count;
 	}
+	if(!rl) return 1;
 
 	if (!(ACCESS_OK(VERIFY_WRITE, buf+(*p), rl) &&
 	      !__copy_to_user(buf+(*p), &n->str_buf[n->str_buf_offs], rl))) {
@@ -2089,14 +2106,11 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 
 	if(n->acc_end) return 0;
 
-	spin_lock(&n->rem_lock);
-
 	p = 0;
-
-	if(n->str_buf_len) {
+	r = 0;
+	if(nflow_str_data(n)) {
 		r = nflow_put_str(n,buf,&p,&count,ppos);
 		if (r != 0) {
-			spin_unlock(&n->rem_lock);
 			return r < 0 ? -EINVAL : p;
 		}
 	}
@@ -2113,7 +2127,6 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 		r = nflow_put_str(n,buf,&p,&count,ppos);
 
 		if (r != 0) {
-			spin_unlock(&n->rem_lock);
 			return r < 0 ? -EFAULT : p;
 		}
 
@@ -2132,7 +2145,6 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 			r = nflow_put_str(n,buf,&p,&count,ppos);
 
 			if (r != 0) {
-				spin_unlock(&n->rem_lock);
 				return r < 0 ? -EFAULT : p;
 			}
 		}
@@ -2186,7 +2198,6 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 				n->acc_end = 1;
 				n->str_buf_len = 0;
 				n->str_buf_offs = 0;
-				spin_unlock(&n->rem_lock);
 				return -EINVAL;
 			    }
 			} else {
@@ -2226,8 +2237,6 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 	n->cnt_view += cnt_view;
 	n->cnt_del  += cnt_del;
 	n->cnt_out  += cnt_out;
-
-	spin_unlock(&n->rem_lock);
 
 	if(!ct_ndpi ) {
 		n->acc_end = 1;
@@ -2412,13 +2421,23 @@ NDPI_STATIC void __net_exit ndpi_net_exit(struct net *net)
 	n = ndpi_pernet(net);
 	pr_info("%s:%s\n",__func__,n->ns_name);
 
-	atomic_set(&n->init_done,0);
+	atomic_set(&n->ndpi_ready,0);
+
+	write_lock(&n->ndpi_busy);
+	/* ndpi library code not busy */
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
 	del_timer(&n->gc);
 #else
 	del_timer_sync(&n->gc);
 #endif
+	write_unlock(&n->ndpi_busy);
+
+	if(ndpi_enable_flow) {
+	    nf_unregister_net_hooks(net, nf_nat_ipv4_ops, 
+			      ARRAY_SIZE(nf_nat_ipv4_ops));
+	}
+
 
 #ifndef NF_CT_CUSTOM
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
@@ -2426,12 +2445,7 @@ NDPI_STATIC void __net_exit ndpi_net_exit(struct net *net)
 #endif
 	net->ct.labels_used--;
 #endif
-	if(ndpi_enable_flow) {
-	    nf_unregister_net_hooks(net, nf_nat_ipv4_ops, 
-			      ARRAY_SIZE(nf_nat_ipv4_ops));
-	}
 
-	atomic_set(&n->shutdown,1);
 #if   LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0)
 	nf_ct_iterate_cleanup_net(net, __ndpi_free_flow, n, 0 ,0);
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0)
@@ -2491,14 +2505,15 @@ NDPI_STATIC int __net_init ndpi_net_init(struct net *net)
 
 	n = ndpi_pernet(net);
 	snprintf(n->ns_name,sizeof(n->ns_name)-1,"ns%d",net_ns_id);
-	atomic_set(&n->init_done,0);
+
+	rwlock_init(&n->ndpi_busy);
+	atomic_set(&n->ndpi_ready,0);
+
 	spin_lock_init(&n->id_lock);
 	spin_lock_init(&n->ipq_lock);
-	spin_lock_init(&n->host_lock);
 	spin_lock_init(&n->w_buff_lock);
-	spin_lock_init(&n->rem_lock);
-	atomic_set(&n->shutdown,0);
-	atomic_set(&n->acc_open,0);
+	mutex_init(&n->host_lock);
+	mutex_init(&n->rem_lock);
 	atomic_set(&n->acc_work,0);
 	atomic_set(&n->acc_rem,0);
 	n->acc_limit = ndpi_flow_limit;
@@ -2714,7 +2729,7 @@ NDPI_STATIC int __net_init ndpi_net_init(struct net *net)
 		    nf_register_net_hooks(net, nf_nat_ipv4_ops,
 	                                   ARRAY_SIZE(nf_nat_ipv4_ops))) break;
 		/* All success! */
-		atomic_set(&n->init_done,1);
+		atomic_set(&n->ndpi_ready,1);
 		pr_info("%s:%s OK\n",__func__,n->ns_name);
 		net_ns_id++;
 		return 0;
