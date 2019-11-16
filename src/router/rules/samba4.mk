@@ -114,8 +114,8 @@ samba4-install:
 	rm -rf $(INSTALLDIR)/samba4/usr/lib/pkgconfig
 	rm -rf $(INSTALLDIR)/samba4/var
 	rm -rf $(INSTALLDIR)/samba4/tmp
-	install -D samba36/config/samba3.webnas $(INSTALLDIR)/samba4/etc/config/02samba3.webnas
-	install -D samba36/config/samba3.nvramconfig $(INSTALLDIR)/samba4/etc/config/samba3.nvramconfig
+	install -D samba4/config/samba4.webnas $(INSTALLDIR)/samba4/etc/config/02samba4.webnas
+	install -D samba4/config/samba4.nvramconfig $(INSTALLDIR)/samba4/etc/config/samba4.nvramconfig
 	install -D filesharing/config/zfilesharing.webnas $(INSTALLDIR)/samba4/etc/config/03zfilesharing.webnas
 
 
