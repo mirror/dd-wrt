@@ -1227,7 +1227,9 @@ static void *handle_request(void *arg)
 			}
 
 			if (handler->input) {
-				handler->input(file, conn_fp, content_length, boundary);
+				if (handler->input(file, conn_fp, content_length, boundary)) {
+					goto out;
+				}
 			}
 #if defined(linux)
 			if (!DO_SSL(conn_fp) && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
@@ -1503,11 +1505,9 @@ int main(int argc, char **argv)
 		case 'i':
 			fprintf(stderr, "Usage: %s [-S] [-p port]\n"
 #ifdef HAVE_HTTPS
-				"	-S : Support https (port 443)\n"
-				"	-m port : Which SSL port to listen?\n"
+				"	-S : Support https (port 443)\n" "	-m port : Which SSL port to listen?\n"
 #endif
-				"	-n : Support http (port 80)\n"
-				"	-p port : Which port to listen?\n" "	-t secs : How many seconds to wait before timing out?\n"
+				"	-n : Support http (port 80)\n" "	-p port : Which port to listen?\n" "	-t secs : How many seconds to wait before timing out?\n"
 #ifdef DEBUG_CIPHER
 				"	-s ciphers: set cipher lists\n" "	-g: get cipher lists\n"
 #endif

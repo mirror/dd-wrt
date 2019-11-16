@@ -122,9 +122,9 @@ struct mime_handler {
 	char *pattern;
 	char *mime_type;
 	char *extra_header;
-	void (*input) (char *path, webs_t stream, size_t len, char *boundary);
-	void (*output) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream);
-	int (*auth) (webs_t wp, int (*auth_check) (webs_t conn_fp));
+	int (*input)(char *path, webs_t stream, size_t len, char *boundary);
+	void (*output)(unsigned char method, struct mime_handler * handler, char *path, webs_t stream);
+	int (*auth)(webs_t wp, int(*auth_check)(webs_t conn_fp));
 	unsigned char send_headers;
 	unsigned char handle_options;
 };
@@ -140,16 +140,16 @@ typedef struct {
 } websRomPageIndexType;
 
 struct Webenvironment {
-	void (*do_ej_buffer) (char *buffer, webs_t stream);
-	char *(*websGetVar) (webs_t wp, char *var, char *d);
-	int (*websGetVari) (webs_t wp, char *var, int d);
-	size_t (*vwebsWrite) (webs_t wp, char *fmt, va_list args);
-	void (*do_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream);	// jimmy, https, 8/4/2003
-	FILE *(*getWebsFile) (webs_t wp, char *path);
-	int (*wfputs) (char *buf, webs_t fp);
-	char *(*GOZILA_GET) (webs_t wp, char *name);
-	char *(*live_translate) (webs_t wp, const char *tran);
-	void (*validate_cgi) (webs_t fp);
+	void (*do_ej_buffer)(char *buffer, webs_t stream);
+	char *(*websGetVar)(webs_t wp, char *var, char *d);
+	int (*websGetVari)(webs_t wp, char *var, int d);
+	size_t (*vwebsWrite)(webs_t wp, char *fmt, va_list args);
+	void (*do_ej)(unsigned char method, struct mime_handler * handler, char *path, webs_t stream);	// jimmy, https, 8/4/2003
+	FILE *(*getWebsFile)(webs_t wp, char *path);
+	int (*wfputs)(char *buf, webs_t fp);
+	char *(*GOZILA_GET)(webs_t wp, char *name);
+	char *(*live_translate)(webs_t wp, const char *tran);
+	void (*validate_cgi)(webs_t fp);
 	const websRomPageIndexType *websRomPageIndex;
 };
 
