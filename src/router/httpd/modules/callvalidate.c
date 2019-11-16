@@ -279,7 +279,7 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 	cprintf("pointer init\n");
 	void (*fptr)(webs_t wp, int argc, char_t ** argv);
 
-	snprintf(service, sizeof(service),"ej_%s", name);
+	snprintf(service, sizeof(service), "ej_%s", name);
 	cprintf("resolving %s\n", service);
 	fptr = (void (*)(webs_t wp, int argc, char_t ** argv))dlsym(handle, service);
 
