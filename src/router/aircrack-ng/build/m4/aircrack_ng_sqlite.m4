@@ -16,7 +16,7 @@ dnl GNU General Public License for more details.
 dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with this program; if not, write to the Free Software
-dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+dnl Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
 dnl
 dnl In addition, as a special exception, the copyright holders give
 dnl permission to link the code of portions of this program with the
@@ -38,7 +38,21 @@ dnl If you delete this exception statement from all source files in the
 dnl program, then also delete it here.
 
 AC_DEFUN([AIRCRACK_NG_SQLITE],[
-AX_LIB_SQLITE3
+
+AC_ARG_ENABLE(static-sqlite3,
+    AS_HELP_STRING([--enable-static-sqlite3],
+		[Enable statically linked SQLite3 libsqlite3.]),
+    [static_sqlite3=$enableval], [static_sqlite3=no])
+
+if test "x$static_sqlite3" != "xno"; then
+	AC_REQUIRE([AX_EXT_HAVE_STATIC_LIB_DETECT])
+	AX_EXT_HAVE_STATIC_LIB(SQLITE3, ${DEFAULT_STATIC_LIB_SEARCH_PATHS}, sqlite3 libsqlite3, sqlite3_open, -lpthread -ldl)
+	if test "x$SQLITE3_FOUND" = xyes; then
+		HAVE_SQLITE3=yes
+	fi
+else
+	AX_LIB_SQLITE3
+fi
 
 if test x"$HAVE_SQLITE3" = xyes; then
     AC_DEFINE([HAVE_SQLITE], [1], [Define if you have sqlite3])

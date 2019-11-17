@@ -16,7 +16,7 @@ dnl GNU General Public License for more details.
 dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with this program; if not, write to the Free Software
-dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+dnl Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
 dnl
 dnl In addition, as a special exception, the copyright holders give
 dnl permission to link the code of portions of this program with the
@@ -54,27 +54,31 @@ case "$_aircrack_ng_enable_libnl" in
                 PKG_CHECK_MODULES([LIBNL3X], [libnl-3.0 >= 3.2], [
                     # CPPFLAGS="$CPPFLAGS $LIBNL3X_CFLAGS -DCONFIG_LIBNL30 -DCONFIG_LIBNL"
                     # LIBS="$LIBS $LIBNL3X_LIBS -lnl-genl-3"
-                    LIBNL_CFLAGS="$LIBNL3X_CFLAGS -DCONFIG_LIBNL30 -DCONFIG_LIBNL"
+                    AC_DEFINE([CONFIG_LIBNL30], [1], [Define this if libnl-3.0 is present on your system])
+                    LIBNL_CFLAGS="$LIBNL3X_CFLAGS"
                     LIBNL_LIBS="$LIBNL3X_LIBS -lnl-genl-3"
                     NLLIBNAME="libnl-3.0"
                 ], [
                     PKG_CHECK_MODULES([LIBNL31], [libnl-3.1 = 3.1], [
-                        LIBNL_CFLAGS="$LIBNL31_CFLAGS -DCONFIG_LIBNL30 -DCONFIG_LIBNL"
+                        AC_DEFINE([CONFIG_LIBNL30], [1], [Define this if libnl-3.0 is present on your system])
+                        LIBNL_CFLAGS="$LIBNL31_CFLAGS"
                         LIBNL_LIBS="$LIBNL31_LIBS -lnl-genl"
                         NLLIBNAME="libnl-3.1"
                     ], [
                         PKG_CHECK_MODULES([LIBNL30], [libnl-3.0 >= 3], [
-                            LIBNL_CFLAGS="$LIBNL30_CFLAGS -DCONFIG_LIBNL30 -DCONFIG_LIBNL"
+                            AC_DEFINE([CONFIG_LIBNL30], [1], [Define this if libnl-3.0 is present on your system])
+                            LIBNL_CFLAGS="$LIBNL30_CFLAGS"
                             LIBNL_LIBS="$LIBNL30_LIBS -lnl-genl"
                             NLLIBNAME="libnl-3.0"
                         ], [
                             PKG_CHECK_MODULES([LIBNL1], [libnl-1 >= 1], [
-                                LIBNL_CFLAGS="$LIBNL1_CFLAGS -DCONFIG_LIBNL"
+                                LIBNL_CFLAGS="$LIBNL1_CFLAGS"
                                 LIBNL_LIBS="$LIBNL1_LIBS"
                                 NLLIBNAME="libnl-1"
                             ], [
                                 PKG_CHECK_MODULES([LIBNLT], [libnl-tiny >= 1], [
-                                    LIBNL_CFLAGS="$LIBNLT_CFLAGS -DCONFIG_LIBNL -DCONFIG_LIBNL20"
+                                    AC_DEFINE([CONFIG_LIBNL20], [1], [Define this if libnl-tiny is present on your system])
+                                    LIBNL_CFLAGS="$LIBNLT_CFLAGS"
                                     LIBNL_LIBS="$LIBNLT_LIBS"
                                     NLLIBNAME="libnl-tiny"
                                 ], [
@@ -94,6 +98,7 @@ case "$_aircrack_ng_enable_libnl" in
                     NLLIBNAME_FOUND="no"
                 else
                     NLLIBNAME_FOUND="yes, found $NLLIBNAME"
+                    AC_DEFINE([CONFIG_LIBNL], [1], [Define this if you have any supported netlink library required])
                 fi
                 ;;
             *)

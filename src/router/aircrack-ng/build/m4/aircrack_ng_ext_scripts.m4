@@ -16,7 +16,7 @@ dnl GNU General Public License for more details.
 dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with this program; if not, write to the Free Software
-dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+dnl Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
 dnl
 dnl In addition, as a special exception, the copyright holders give
 dnl permission to link the code of portions of this program with the
@@ -41,8 +41,17 @@ AC_DEFUN([AIRCRACK_NG_EXT_SCRIPTS], [
 
 if test "$cross_compiling" = no;
 then
-    PC_INIT([2.7])
-    PC_PYTHON_SITE_PACKAGE_DIR
+	AC_CHECK_PROGS([PYTHON], [python python3 python2])
+	if test $PYTHON = no; then
+		AC_MSG_FAILURE(failed to find Python)
+	fi
+
+    if test "x$PYTHON" != "x"; then
+        pc_cv_python_site_dir=`$PYTHON -c 'import site; print(site.getsitepackages()[[-1]])'`
+        dnl AC_SUBST([pythondir], [\${prefix}/$pc_cv_python_site_dir])
+        AC_SUBST([pythondir], [$pc_cv_python_site_dir])
+        AC_SUBST([pkgpythondir], [\${pythondir}/$PACKAGE_NAME])
+    fi
 fi
 
 AC_CHECK_PROGS([READLINK], [greadlink readlink])
