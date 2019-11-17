@@ -6,12 +6,14 @@ aircrack-ng-install:
 	-cp $(TOP)/aircrack-ng/scan $(INSTALLDIR)/aircrack-ng/usr/sbin
 	-cp $(TOP)/aircrack-ng/scantidy $(INSTALLDIR)/aircrack-ng/usr/sbin
 	rm -rf $(INSTALLDIR)/aircrack-ng/usr/share
+	-rm -f $(INSTALLDIR)/aircrack-ng/usr/lib/*.la
 
 aircrack-ng-configure: pcre zlib
 	cd aircrack-ng && ./autogen.sh
 	cd aircrack-ng && ./configure --host=$(ARCH)-linux \
 	--with-openssl="$(TOP)/openssl" \
         --prefix=/usr \
+        --libdir=/usr/lib \
 	ZLIB_CFLAGS="-I$(TOP)/zlib" \
 	ZLIB_LIBS="-L$(TOP)/zlib -lz" \
 	PCRE_CFLAGS="-I$(TOP)/pcre" \
