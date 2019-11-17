@@ -151,7 +151,7 @@ int genlmsg_valid_hdr(struct nlmsghdr *nlh, int hdrlen)
 		return 0;
 
 	ghdr = nlmsg_data(nlh);
-	if (genlmsg_len(ghdr) < NLMSG_ALIGN(hdrlen))
+	if ((unsigned) genlmsg_len(ghdr) < (unsigned)NLMSG_ALIGN(hdrlen))
 		return 0;
 
 	return 1;
