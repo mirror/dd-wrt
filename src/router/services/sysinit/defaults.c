@@ -3490,6 +3490,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "samba3_advanced", "0" },
 	{ "samba3_min_proto", "SMB2" },
 	{ "samba3_max_proto", "SMB2" },
+	{ "samba3_encrypt", "auto" },
 #endif
 #ifdef HAVE_MINIDLNA
 	{ "dlna_enable", "0" },
