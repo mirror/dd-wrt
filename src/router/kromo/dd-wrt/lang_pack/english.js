@@ -1987,6 +1987,7 @@ service.samba3_password="Password";
 service.samba3_user_shares="Access Shares";
 service.samba3_min_proto="Minimum Protocol Version";
 service.samba3_max_proto="Maximum Protocol Version";
+service.samba3_encryption="Encryption";
 service.dlna_type_audio="Audio";
 service.dlna_type_video="Video";
 service.dlna_type_images="Images";
