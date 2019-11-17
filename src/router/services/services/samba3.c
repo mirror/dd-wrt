@@ -160,7 +160,7 @@ void start_samba3(void)
 
 #ifdef HAVE_SAMBA4
 		if (!strncmp(smbmaxproto, "SMB3", 4))
-			fprintf(fp, "smb encrypt = %s\n", nvram_safe_get("samba3_encryption"));
+			fprintf(fp, "smb encrypt = %s\n", nvram_safe_get("samba3_encrypt"));
 #endif
 		samba3shares = getsamba3shares();
 		for (cs = samba3shares; cs; cs = csnext) {
