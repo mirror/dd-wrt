@@ -400,7 +400,9 @@ int nl_recv(struct nl_sock *sk, struct sockaddr_nl *nla,
 		page_size = getpagesize() * 4;
 
 	iov.iov_len = page_size;
-	iov.iov_base = *buf = malloc(iov.iov_len);
+	iov.iov_base = *buf = calloc(1, iov.iov_len);
+	if (!*buf)
+		return -nl_syserr2nlerr(errno);
 
 	if (sk->s_flags & NL_SOCK_PASSCRED) {
 		msg.msg_controllen = CMSG_SPACE(sizeof(struct ucred));
@@ -421,11 +423,12 @@ retry:
 		} else {
 			free(msg.msg_control);
 			free(*buf);
+			*buf = NULL;
 			return -nl_syserr2nlerr(errno);
 		}
 	}
 
-	if (iov.iov_len < n ||
+	if (iov.iov_len < (size_t) n ||
 	    msg.msg_flags & MSG_TRUNC) {
 		/* Provided buffer is not long enough, enlarge it
 		 * and try again. */
@@ -445,6 +448,7 @@ retry:
 	if (msg.msg_namelen != sizeof(struct sockaddr_nl)) {
 		free(msg.msg_control);
 		free(*buf);
+		*buf = NULL;
 		return -NLE_NOADDR;
 	}
 
@@ -463,6 +467,7 @@ retry:
 abort:
 	free(msg.msg_control);
 	free(*buf);
+	*buf = NULL;
 	return 0;
 }
 
@@ -500,6 +505,9 @@ continue_reading:
 
 	if (n <= 0)
 		return n;
+
+	/* make clang analyzer happy */
+	assert(n > 0 && buf);
 
 	NL_DBG(3, "recvmsgs(%p): Read %d bytes\n", sk, n);
 
@@ -599,7 +607,7 @@ continue_reading:
 		else if (hdr->nlmsg_type == NLMSG_ERROR) {
 			struct nlmsgerr *e = nlmsg_data(hdr);
 
-			if (hdr->nlmsg_len < nlmsg_msg_size(sizeof(*e))) {
+			if (hdr->nlmsg_len < (unsigned) nlmsg_msg_size(sizeof(*e))) {
 				/* Truncated error message, the default action
 				 * is to stop parsing. The user may overrule
 				 * this action by returning NL_SKIP or
@@ -637,7 +645,6 @@ continue_reading:
 				NL_CB_CALL(cb, NL_CB_VALID, msg);
 		}
 skip:
-		err = 0;
 		hdr = nlmsg_next(hdr, &n);
 	}
 	

@@ -372,7 +372,7 @@ void __init ctrl_init(void)
 	genl_register(&genl_ctrl_ops);
 }
 
-static void __exit ctrl_exit(void)
+void __exit ctrl_exit(void)
 {
 	genl_unregister(&genl_ctrl_ops);
 }

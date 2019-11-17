@@ -400,9 +400,11 @@
  */
 int nla_ok(const struct nlattr *nla, int remaining)
 {
-	return remaining >= sizeof(*nla) &&
+	size_t r = remaining;
+
+	return r >= sizeof(*nla) &&
 	       nla->nla_len >= sizeof(*nla) &&
-	       nla->nla_len <= remaining;
+	       nla->nla_len <= r;
 }
 
 /**

@@ -1,4 +1,6 @@
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
@@ -17,8 +19,9 @@ static int unl_init(struct unl *unl)
 {
 	ctrl_init();
 	unl->sock = nl_socket_alloc();
-	if (!unl->sock)
-		return -1;
+	if (!unl->sock) {
+		    return -1;
+	}
 
 	return 0;
 }
@@ -42,9 +45,8 @@ int unl_genl_init(struct unl *unl, const char *family)
 		goto error;
 
 	unl->family = genl_ctrl_search_by_name(unl->cache, family);
-	if (!unl->family) {
+	if (!unl->family)
 		goto error;
-	}
 
 	return 0;
 
@@ -113,13 +115,10 @@ out:
 
 int unl_genl_request(struct unl *unl, struct nl_msg *msg, unl_cb handler, void *arg)
 {
-	struct nlmsghdr *nlh;
 	struct nl_cb *cb;
 	int err;
 
 	cb = nl_cb_alloc(NL_CB_CUSTOM);
-	nlh = nlmsg_hdr(msg);
-
 	err = nl_send_auto_complete(unl->sock, msg);
 	if (err < 0)
 		goto out;
