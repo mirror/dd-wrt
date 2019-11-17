@@ -52,5 +52,14 @@
 					<option value="SMB3_11" <% nvsm("samba3_max_proto", "SMB3_11", "selected"); %> >SMB 3.11</option>
 				</select>
 		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.samba3_encryption"); %></div>
+				<select name="samba3_encrypt" >
+					<option value="off" <% nvsm("samba3_encrypt", "off", "selected"); %> ><% tran("share.off"); %></option>
+					<option value="auto" <% nvsm("samba3_encrypt", "auto", "selected"); %> ><% tran("share.auto"); %></option>
+					<option value="desired" <% nvsm("samba3_encrypt", "desired", "selected"); %> ><% tran("share.desired"); %></option>
+					<option value="required" <% nvsm("samba3_encrypt", "required", "selected"); %> ><% tran("share.required"); %></option>
+				</select>
+		</div>
 	</div>
 </fieldset><br />
