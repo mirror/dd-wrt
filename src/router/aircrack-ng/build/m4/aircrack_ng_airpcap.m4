@@ -16,7 +16,7 @@ dnl GNU General Public License for more details.
 dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with this program; if not, write to the Free Software
-dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+dnl Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
 dnl
 dnl In addition, as a special exception, the copyright holders give
 dnl permission to link the code of portions of this program with the
@@ -50,18 +50,18 @@ case $with_airpcap in
         case "$(uname -m)" in
             x86_64* | amd64*)
                 AC_MSG_RESULT([no])
-                AIRPCAP_LIB="bin/x64/airpcap.dll"
+                AIRPCAP_LIB="bin/x64"
                 ;;
             *)
                 AC_MSG_RESULT([yes])
-                AIRPCAP_LIB="bin/x86/airpcap.dll"
+                AIRPCAP_LIB="bin/x86"
                 ;;
         esac
 
         AC_MSG_CHECKING([for airpcap.h])
         if test -r "$with_airpcap/Airpcap_Devpack/include/airpcap.h" ; then
             AIRPCAP_CFLAGS="-I$with_airpcap/Airpcap_Devpack/include"
-            AIRPCAP_LIBS="$with_airpcap/Airpcap_Devpack/${AIRPCAP_LIB}"
+            AIRPCAP_LIBS="-L$with_airpcap/Airpcap_Devpack/${AIRPCAP_LIB} -lairpcap"
             AC_SUBST(AIRPCAP_CFLAGS)
             AC_SUBST(AIRPCAP_LIBS)
             AC_DEFINE([HAVE_AIRPCAP], [1], [Define if you have AirPcap.])

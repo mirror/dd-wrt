@@ -11,15 +11,14 @@ fi
 
 find . -name .deps -o -name '*.la' -o -name .libs -o -name Makefile -print0 | xargs -0 rm -vfr
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-    ./autogen.sh --with-openssl=/usr/local/Cellar/openssl/1.0.2l --with-experimental --with-ext-scripts
+    ./autogen.sh --with-experimental --with-ext-scripts
 else
     ./autogen.sh
 fi
 make
 make dist
 
-V=$(./evalrev)
-BN="aircrack-ng-$V"
+BN=$(find . -name '*.tar.gz' | tail -n1 | sed -e 's/\.tar\.gz//g;s/^\.\///g')
 
 [ -d dist_build ] && rm -fr dist_build
 mkdir dist_build
@@ -27,9 +26,9 @@ cd dist_build
 
 tar xzf ../$BN.tar.gz
 cd "$BN"
-if [ "$TRAVIS_OS_NAME" == "osx" ]; then ./configure --with-openssl=/usr/local/Cellar/openssl/1.0.2l --with-experimental --with-ext-scripts; else ./configure --with-experimental --with-ext-scripts; fi
+if [ "$TRAVIS_OS_NAME" == "osx" ]; then ./configure --with-experimental --with-ext-scripts; else ./configure --with-experimental --with-ext-scripts; fi
 make
-make check
+make check || { find . -name 'test-suite.log' -exec cat {} ';' && exit 1; }
 make DESTDIR=/tmp/ac install
 
 exit 0

@@ -16,7 +16,7 @@ dnl GNU General Public License for more details.
 dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with this program; if not, write to the Free Software
-dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+dnl Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
 dnl
 dnl In addition, as a special exception, the copyright holders give
 dnl permission to link the code of portions of this program with the
@@ -46,7 +46,27 @@ AC_ARG_WITH(xcode,
 
 case "$host_os" in
     DARWIN*|MACOS*|darwin*|macos*)
+    	dnl
         dnl Homebrew
+        dnl
+		AC_ARG_VAR([BREW],[Use this brew for macOS dependencies.])
+		dnl Allow env override but do not be fooled by 'BREW=t'.
+		test t = "$BREW" && unset BREW
+		AC_CHECK_PROG([BREW], [brew], [$as_dir/$ac_word$ac_exec_ext], [], [$BREW_PATH$PATH_SEPARATOR$PATH$PATH_SEPARATOR/bin$PATH_SEPARATOR/usr/bin$PATH_SEPARATOR/usr/local/bin])
+		AS_IF([test "x$BREW" = "x"],[
+			AC_MSG_WARN([Homebrew not found])
+			BREW_FOUND=no
+		], [
+			BREW_FOUND=yes
+		])
+
+		if test "x$BREW_FOUND" = xyes; then
+			CFLAGS="$CFLAGS -I$(brew --prefix openssl)/include"
+			CXXFLAGS="$CXXFLAGS -I$(brew --prefix openssl)/include"
+			CPPFLAGS="$CPPFLAGS -I$(brew --prefix openssl)/include"
+			LDFLAGS="$LDFLAGS -L$(brew --prefix openssl)/lib"
+		fi
+
         AC_CHECK_FILE(/usr/local/Homebrew, [ CPPFLAGS="$CPPFLAGS -I/usr/local/include" ])
 
         dnl MacPorts

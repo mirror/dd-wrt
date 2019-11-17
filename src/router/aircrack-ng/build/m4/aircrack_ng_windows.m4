@@ -16,7 +16,7 @@ dnl GNU General Public License for more details.
 dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with this program; if not, write to the Free Software
-dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+dnl Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
 dnl
 dnl In addition, as a special exception, the copyright holders give
 dnl permission to link the code of portions of this program with the
@@ -41,6 +41,13 @@ AC_DEFUN([AIRCRACK_NG_WINDOWS],[
 AX_REQUIRE_DEFINED([AC_CHECK_HEADER])[]dnl
 AX_REQUIRE_DEFINED([AX_COMPILER_VENDOR])dnl
 
+AC_ARG_ENABLE(win32-portable,
+    AS_HELP_STRING([--enable-win32-portable],
+        [Enable portable WIN32 edition]),
+    [
+        AC_DEFINE([WIN32_PORTABLE], [1], [Define if portable WIN32 is supported])
+    ], [])
+
 case "$host_os" in
     CYGWIN*|MSYS*|cygwin*|msys*)
         AC_CHECK_FILE(/usr/include/w32api/windows.h, [ CPPFLAGS="$CPPFLAGS -I/usr/include/w32api" ], [])
@@ -50,6 +57,14 @@ case "$host_os" in
         CFLAGS="$CFLAGS -mconsole -mwindows"
         CXXFLAGS="$CXXFLAGS -mconsole -mwindows"
         LDFLAGS="$LDFLAGS -mconsole -mwindows"
+
+        case "$host_os" in
+            MSYS*|msys*)
+                CPPFLAGS="$CPPFLAGS -DMSYS2"
+                CFLAGS="$CFLAGS -DMSYS2"
+                CXXFLAGS="$CXXFLAGS -DMSYS2"
+                ;;
+        esac
 
         case "$ax_cv_c_compiler_vendor" in
             clang)

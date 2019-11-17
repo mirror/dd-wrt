@@ -18,7 +18,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
 #
 # In addition, as a special exception, the copyright holders give
 # permission to link the code of portions of this program with the
@@ -53,6 +53,7 @@ missing_tool()
 	_env="$2"
 
 	echo "Could not auto-detect '${_prog}'; please install or specify the '${_env}' environment variable."
+	exit 1
 }
 
 
@@ -101,7 +102,7 @@ fi
 "$LIBTOOLIZE" --force --copy --automake
 "$ACLOCAL" -I build/m4/stubs -I build/m4 ${ACLOCAL_FLAGS:-}
 "$AUTOCONF"
-# "$AUTOHEADER"
+"$AUTOHEADER"
 "$AUTOMAKE" \
     --gnu --add-missing --force --copy \
     -Wno-portability -Wno-portability
@@ -115,8 +116,5 @@ chmod +x reautogen.sh
 
 if [ ! -z "${NOCONFIGURE:-}" ]; then
     echo "Done. ./configure skipped."
-#    exit $?
+    exit $?
 fi
-
-#exec ./configure "$@"
-

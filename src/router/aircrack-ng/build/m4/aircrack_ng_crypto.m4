@@ -16,7 +16,7 @@ dnl GNU General Public License for more details.
 dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with this program; if not, write to the Free Software
-dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+dnl Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
 dnl
 dnl In addition, as a special exception, the copyright holders give
 dnl permission to link the code of portions of this program with the
@@ -38,8 +38,21 @@ dnl If you delete this exception statement from all source files in the
 dnl program, then also delete it here.
 
 AC_DEFUN([AIRCRACK_NG_CRYPTO],[
-AX_CHECK_OPENSSL([OPENSSL_FOUND=yes],[OPENSSL_FOUND=no])
-AX_LIB_GCRYPT
+
+AC_ARG_ENABLE(static-crypto,
+    AS_HELP_STRING([--enable-static-crypto],
+		[Enable statically linked OpenSSL libcrypto.]),
+    [static_crypto=$enableval], [static_crypto=no])
+
+if test "x$static_crypto" != "xno"; then
+	AC_REQUIRE([AX_EXT_HAVE_STATIC_LIB_DETECT])
+	AX_EXT_HAVE_STATIC_LIB(ZLIB, ${DEFAULT_STATIC_LIB_SEARCH_PATHS}, z libz, compress)
+	AX_EXT_HAVE_STATIC_LIB(OPENSSL, ${DEFAULT_STATIC_LIB_SEARCH_PATHS}, crypto libcrypto, HMAC, -lz -ldl)
+else
+	AX_CHECK_OPENSSL([OPENSSL_FOUND=yes],[OPENSSL_FOUND=no])
+
+	AX_LIB_GCRYPT
+fi
 
 CRYPTO_CFLAGS=
 CRYPTO_INCLUDES=
@@ -61,6 +74,11 @@ elif test "$OPENSSL_FOUND" = yes; then
     CRYPTO_LIBS="$OPENSSL_LIBS"
     CRYPTO_LDFLAGS="$OPENSSL_LDFLAGS"
     CRYPTO_TYPE=openssl
+
+    AC_CHECK_HEADERS([openssl/cmac.h], [
+        AC_DEFINE([HAVE_OPENSSL_CMAC_H], [1], [Define if you have openssl/cmac.h header present.])
+        HAVE_CMAC=yes
+    ], [HAVE_CMAC=no])
 else
     AC_MSG_ERROR([one of OpenSSL or Gcrypt was not found])
 fi
@@ -71,4 +89,5 @@ AC_SUBST(CRYPTO_LIBS)
 AC_SUBST(CRYPTO_LDFLAGS)
 
 AM_CONDITIONAL([LIBGCRYPT], [test "$CRYPTO_TYPE" = libgcrypt])
+AM_CONDITIONAL([STATIC_CRYPTO], [test "$static_crypto" != no])
 ])
