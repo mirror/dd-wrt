@@ -12,6 +12,8 @@
 #ifndef NETLINK_LIST_H_
 #define NETLINK_LIST_H_
 
+#include <stddef.h>
+
 struct nl_list_head
 {
 	struct nl_list_head *	next;
@@ -54,7 +56,7 @@ static inline int nl_list_empty(struct nl_list_head *head)
 
 #define nl_container_of(ptr, type, member) ({			\
         const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
-        (type *)( (char *)__mptr - ((size_t) &((type *)0)->member));})
+        (type *) ((char *) __mptr - (offsetof(type, member)));})
 
 #define nl_list_entry(ptr, type, member) \
 	nl_container_of(ptr, type, member)

@@ -187,9 +187,11 @@ static size_t default_msg_size = 4096;
  */
 int nlmsg_ok(const struct nlmsghdr *nlh, int remaining)
 {
-	return (remaining >= sizeof(struct nlmsghdr) &&
+	size_t r = remaining;
+
+	return (r >= sizeof(struct nlmsghdr) &&
 		nlh->nlmsg_len >= sizeof(struct nlmsghdr) &&
-		nlh->nlmsg_len <= remaining);
+		nlh->nlmsg_len <= r);
 }
 
 /**
@@ -358,7 +360,7 @@ struct nl_msg *nlmsg_alloc_simple(int nlmsgtype, int flags)
  */
 void nlmsg_set_default_size(size_t max)
 {
-	if (max < nlmsg_total_size(0))
+	if (max < (size_t) nlmsg_total_size(0))
 		max = nlmsg_total_size(0);
 
 	default_msg_size = max;
