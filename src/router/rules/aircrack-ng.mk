@@ -6,6 +6,7 @@ aircrack-ng-install:
 	-cp $(TOP)/aircrack-ng/scan $(INSTALLDIR)/aircrack-ng/usr/sbin
 	-cp $(TOP)/aircrack-ng/scantidy $(INSTALLDIR)/aircrack-ng/usr/sbin
 	rm -rf $(INSTALLDIR)/aircrack-ng/usr/share
+	rm -rf $(INSTALLDIR)/aircrack-ng/usr/include
 	-rm -f $(INSTALLDIR)/aircrack-ng/usr/lib/*.la
 
 aircrack-ng-configure: pcre zlib
