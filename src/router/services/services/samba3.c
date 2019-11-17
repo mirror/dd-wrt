@@ -114,7 +114,7 @@ void start_samba3(void)
 			cunext = cu->next;
 			free(cu);
 		}
-
+		char *smbmaxproto = nvram_safe_get("samba3_max_proto");
 		fp = fopen("/tmp/smb.conf", "wb");
 		fprintf(fp, "[global]\n"	//
 			"log level = 1\n"	//
@@ -150,16 +150,16 @@ void start_samba3(void)
 			"dead time = 15\n"	//
 			"getwd cache = yes\n"	//
 			"lpq cache time = 30\n"	//
-			"min protocol = %s\n"
-			"max protocol = %s\n"
+			"min protocol = %s\n" "max protocol = %s\n"
 #ifndef HAVE_SAMBA4
 			"printing = none\n"
 #endif
 			"load printers = No\n"	//
-			"usershare allow guests = Yes\n", nvram_safe_get("router_name"), nvram_safe_get("samba3_srvstr"), nvram_safe_get("samba3_workgrp"), nvram_default_get("samba3_min_proto","SMB2"), nvram_default_get("samba3_max_proto","SMB2"));
+			"usershare allow guests = Yes\n", nvram_safe_get("router_name"), nvram_safe_get("samba3_srvstr"), nvram_safe_get("samba3_workgrp"), nvram_safe_get("samba3_min_proto"), smbmaxproto);
 
 #ifdef HAVE_SAMBA4
-		fprintf(fp,"smb encryption = %s\n", nvram_safe_get("samba3_encryption"));
+		if (!strncmp(smbmaxproto, "SMB3", 4))
+			fprintf(fp, "smb encrypt = %s\n", nvram_safe_get("samba3_encryption"));
 #endif
 		samba3shares = getsamba3shares();
 		for (cs = samba3shares; cs; cs = csnext) {
