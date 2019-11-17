@@ -424,7 +424,7 @@ static inline int nla_get_flag(struct nlattr *nla)
  * @arg attrtype	attribute type
  * @arg msecs 		number of msecs
  */
-static inline int nla_put_msecs(struct nl_msg *n, int attrtype, unsigned long msecs)
+static inline int nla_put_msecs(struct nl_msg *n, int attrtype, uint64_t msecs)
 {
 	return nla_put_u64(n, attrtype, msecs);
 }
@@ -435,7 +435,7 @@ static inline int nla_put_msecs(struct nl_msg *n, int attrtype, unsigned long ms
  *
  * @return the number of milliseconds.
  */
-static inline unsigned long nla_get_msecs(struct nlattr *nla)
+static inline uint64_t nla_get_msecs(struct nlattr *nla)
 {
 	return nla_get_u64(nla);
 }
