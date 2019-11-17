@@ -1693,6 +1693,7 @@ service.samba3_password="Kennwort";
 service.samba3_user_shares="Zugang zu Freigaben"; 
 service.samba3_min_proto="Minimale Protokoll Version";
 service.samba3_max_proto="Maximale Protokoll Version";
+service.sambe3_encrypt="Verschl&uuml;sselung";
 service.dlna_type_video="Filme";
 service.dlna_type_audio="Musik";
 service.dlna_type_images="Bilder";
