@@ -57,7 +57,7 @@ class macOUI_lookup:
             # default
             aircrackOUI=self.OUI_PATH[1]
         #a poor fix where if we have no file it trys to download it
-        self.ouiTxtUrl   = "http://standards.ieee.org/regauth/oui/oui.txt"
+        self.ouiTxtUrl   = "http://standards-oui.ieee.org/oui.txt"
         self.ouiUnPath   = install_dir#path to oui.txt if module is installed
         self.ouiInPath   = install_dir + '/support/'         #path to oui.txt if module is not installed
         self.ouiTxt = aircrackOUI
@@ -71,7 +71,7 @@ class macOUI_lookup:
         check for valid company name key
         """
         compMatch = re.compile(name,re.I)
-        if self.company_oui.has_key(name):
+        if name in self.company_oui:
             return True
         for key in self.company_oui.keys():
                 if compMatch.search(key) is not None:   
@@ -83,7 +83,7 @@ class macOUI_lookup:
         check for a valid oui prefix
         """
 
-        if self.oui_company.has_key(name): 
+        if name in self.oui_company:
             return True
         else: 
             return False
@@ -106,7 +106,7 @@ class macOUI_lookup:
         if type(companyLst) is list:
             for name in companyLst:
                 compMatch = re.compile(name,re.I)
-                if self.company_oui.has_key(name):
+                if name in self.company_oui:
                     oui.extend(self.company_oui[name])
                 else:
                     for key in self.company_oui:
@@ -114,7 +114,7 @@ class macOUI_lookup:
                             oui.extend(self.company_oui[key])
 
         elif type(companyLst) is str:
-            if self.company_oui.has_key(companyLst):
+            if companyLst in self.company_oui:
                 oui = self.company_oui[companyLst]
             else:
                 
@@ -155,7 +155,7 @@ class macOUI_lookup:
         """
         company_oui = {}
         for oui in self.oui_company:
-            if company_oui.has_key(self.oui_company[oui][0]):
+            if self.oui_company[oui][0] in company_oui:
                 company_oui[self.oui_company[oui][0]].append(oui)
             else:
                 company_oui[self.oui_company[oui][0]] = [oui]

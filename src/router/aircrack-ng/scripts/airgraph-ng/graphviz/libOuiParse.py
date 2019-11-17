@@ -23,8 +23,11 @@ __data__ = 'a class for dealing with the oui txt file'
 """
 
 import re
-import urllib
 import sys
+if sys.version_info[0] >= 3:
+	import urllib.request, urllib.parse, urllib.error
+else:
+	import urllib
 import os
 import pdb
 #this lib is crap and needs to be rewritten -Textile 
@@ -47,7 +50,7 @@ class macOUI_lookup:
         generate the two dictionaries and return them
         """
         #a poor fix where if we have no file it trys to download it
-        self.ouiTxtUrl   = "http://standards.ieee.org/regauth/oui/oui.txt"
+        self.ouiTxtUrl   = "http://standards-oui.ieee.org/oui.txt"
 
         self.ouiTxt = oui
         if not oui or not os.path.isfile(self.ouiTxt):
@@ -65,9 +68,9 @@ class macOUI_lookup:
         check for valid company name key
         """
         compMatch = re.compile(name,re.I)
-        if self.company_oui.has_key(name):
+        if name in self.company_oui:
             return True
-        for key in self.company_oui.keys():
+        for key in list(self.company_oui.keys()):
                 if compMatch.search(key) is not None:   
                     return True
         return False
@@ -77,7 +80,7 @@ class macOUI_lookup:
         check for a valid oui prefix
         """
 
-        if self.oui_company.has_key(name): 
+        if name in self.oui_company: 
             return True
         else: 
             return False
@@ -88,9 +91,9 @@ class macOUI_lookup:
         """
         if self.ouiKeyChk(mac) is not False:
             return self.oui_company[mac]
-        else: 
+        else:
             return False
-    
+
     def lookup_company(self,companyLst):
         """
         look up a company name and return their OUI's
@@ -99,7 +102,7 @@ class macOUI_lookup:
         if type(companyLst) is list:
             for name in companyLst:
                 compMatch = re.compile(name,re.I)
-                if self.company_oui.has_key(name):
+                if name in self.company_oui:
                     oui.extend(self.company_oui[name])
                 else:
                     for key in self.company_oui:
@@ -107,16 +110,16 @@ class macOUI_lookup:
                             oui.extend(self.company_oui[key])
 
         elif type(companyLst) is str:
-            if self.company_oui.has_key(companyLst):
+            if companyLst in self.company_oui:
                 oui = self.company_oui[companyLst]
             else:
-                
+
                 compMatch = re.compile(companyLst,re.I)
                 for key in self.company_oui:
                     if compMatch.search(key) is not None:
                         oui.extend(self.company_oui[key]) #return the oui for that key
         return oui
-                
+
     def ouiOpen(self,fname,flag='R'):
         """
         open the file and read it in
@@ -132,8 +135,8 @@ class macOUI_lookup:
         except IOError:
             return False
 
-    
-    def ouiParse(self): 
+
+    def ouiParse(self):
         """
         generate a oui to company lookup dict
         """
@@ -149,32 +152,31 @@ class macOUI_lookup:
                 HexOui[lineList[0].replace("-",":")] = lineList[2].strip()
                 #build a dict in the format of mac:company name 
         return HexOui
-    
+
     def companyParse(self):
         """
         generate a company to oui lookup dict
         """
         company_oui = {}
         for oui in self.oui_company:
-            if company_oui.has_key(self.oui_company[oui]):
+            if self.oui_company[oui] in company_oui:
                 company_oui[self.oui_company[oui]].append(oui)
             else:
                 company_oui[self.oui_company[oui]] = [oui]
         return company_oui
-        
 
     def ouiUpdate(self):
         """
         Grab the oui txt file off the ieee.org website
         """
         try:
-            print("Getting OUI file from %s to %s" %(self.ouiTxtUrl, path))
-            urllib.urlretrieve(self.ouiTxtUrl, path + "oui.txt")
-            print "Completed Successfully"
-        except Exception, error:
-            print("Could not download file:\n %s\n Exiting airgraph-ng" %(error))
+            print(("Getting OUI file from %s to %s" %(self.ouiTxtUrl, path)))
+            urllib.request.urlretrieve(self.ouiTxtUrl, path + "oui.txt")
+            print("Completed Successfully")
+        except Exception as error:
+            print(("Could not download file:\n %s\n Exiting airgraph-ng" %(error)))
             sys.exit(0)
-   
+
     def identDeviceDict(self,fname):
         """
         Create two dicts allowing device type lookup
@@ -189,7 +191,7 @@ class macOUI_lookup:
         for line in data:
             dat = line.strip().split(',')
             self.ouitodevice[dat[1]] = dat[0]
-            if dat[0] in self.devicetooui.keys():
+            if dat[0] in list(self.devicetooui.keys()):
                 self.devicetooui[dat[0]].append(dat[1])
             else:
                 self.devicetooui[dat[0]] = [dat[1]]
@@ -211,7 +213,7 @@ class macOUI_lookup:
             dat[0] = dat[0].upper()
             self.ouitodeviceWhatmac[dat[0]] = dat[1]
             self.ouitodeviceWhatmac3[dat[0][0:8]] = dat[1] # a db to support the 3byte lookup from whatmac
-            if dat[1] in self.devicetoouiWhacmac.keys():
+            if dat[1] in list(self.devicetoouiWhacmac.keys()):
                 self.devicetoouiWhacmac[dat[1]].append(dat[0])
             else:
                 self.devicetoouiWhacmac[dat[1]] = [dat[0]]

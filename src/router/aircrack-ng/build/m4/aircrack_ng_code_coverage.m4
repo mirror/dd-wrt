@@ -16,7 +16,7 @@ dnl GNU General Public License for more details.
 dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with this program; if not, write to the Free Software
-dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+dnl Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
 dnl
 dnl In addition, as a special exception, the copyright holders give
 dnl permission to link the code of portions of this program with the
@@ -43,10 +43,9 @@ AX_REQUIRE_DEFINED([AX_APPEND_FLAG])
 
 CODE_COVERAGE_IGNORE_PATTERN="/usr/include/\* /usr/local/include/\* /usr/lib/gcc/\* /usr/local/lib/gcc/\*"
 AC_SUBST(CODE_COVERAGE_IGNORE_PATTERN)
-AX_CODE_COVERAGE
 
-AX_APPEND_FLAG($CODE_COVERAGE_CPPFLAGS, [opt_cppflags])
-AX_APPEND_FLAG($CODE_COVERAGE_CFLAGS, [opt_cflags])
-AX_APPEND_FLAG($CODE_COVERAGE_CXXFLAGS, [opt_cxxflags])
-AX_APPEND_FLAG($CODE_COVERAGE_LIBS, [opt_libs])
+CODE_COVERAGE_BRANCH_COVERAGE=1
+AC_SUBST(CODE_COVERAGE_BRANCH_COVERAGE)
+
+AX_CODE_COVERAGE
 ])

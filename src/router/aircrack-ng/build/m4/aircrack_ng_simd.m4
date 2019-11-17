@@ -16,7 +16,7 @@ dnl GNU General Public License for more details.
 dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with this program; if not, write to the Free Software
-dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+dnl Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
 dnl
 dnl In addition, as a special exception, the copyright holders give
 dnl permission to link the code of portions of this program with the
@@ -91,10 +91,25 @@ AS_IF([test $OPENBSD -eq 0], [
 
 if test $IS_ARM -eq 1
 then
-    AX_CHECK_COMPILE_FLAG([-mfpu=neon], [
+    AX_CHECK_COMPILE_FLAG([-Werror -mfpu=neon], [
         AX_APPEND_FLAG(-mfpu=neon, [arm_neon_[]_AC_LANG_ABBREV[]flags])
         AC_SUBST(arm_neon_[]_AC_LANG_ABBREV[]flags)
     ])
+
+    AS_VAR_PUSHDEF([CACHEVAR], [ax_cv_neon_[]_AC_LANG_ABBREV[]flags])
+    AC_CACHE_CHECK([whether _AC_LANG compiler supports NEON instructions], CACHEVAR, [
+        ax_check_save_flags=$[]_AC_LANG_PREFIX[]FLAGS
+        _AC_LANG_PREFIX[]FLAGS="$arm_neon_[]_AC_LANG_ABBREV[]flags $[]_AC_LANG_PREFIX[]FLAGS"
+        AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#if !defined(__ARM_NEON) && !defined(__ARM_NEON__) && !defined(__aarch64) && !defined(__aarch64__)
+#error macro not defined
+#endif
+        ]])], [AS_VAR_SET(CACHEVAR,[yes])], [AS_VAR_SET(CACHEVAR,[no])])
+        _AC_LANG_PREFIX[]FLAGS=$ax_check_save_flags
+    ])
+    AS_IF([test x"AS_VAR_GET(CACHEVAR)" = xyes],
+        [NEON_FOUND=1], [NEON_FOUND=0])
+    AS_VAR_POPDEF([CACHEVAR])
 fi
 
 if test $IS_PPC -eq 1
@@ -113,6 +128,40 @@ then
         AX_APPEND_FLAG(-fno-strict-aliasing, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
         AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
     ])
+
+    AX_CHECK_COMPILE_FLAG([-maltivec], [
+        AX_APPEND_FLAG(-maltivec, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-mabi=altivec], [
+        AX_APPEND_FLAG(-mabi=altivec, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+    ])
+
+    AS_VAR_PUSHDEF([CACHEVAR], [ax_cv_altivec_[]_AC_LANG_ABBREV[]flags])
+    AC_CACHE_CHECK([whether _AC_LANG compiler supports VSX instructions], CACHEVAR, [
+        ax_check_save_flags=$[]_AC_LANG_PREFIX[]FLAGS
+        _AC_LANG_PREFIX[]FLAGS="$ppc_altivec_[]_AC_LANG_ABBREV[]flags -mvsx -mpower8-vector $[]_AC_LANG_PREFIX[]FLAGS"
+        AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#if !defined(__VSX__) && !defined(__POWER8_VECTOR__)
+#error macro not defined
+#endif
+        ]])], [AS_VAR_SET(CACHEVAR,[yes])], [AS_VAR_SET(CACHEVAR,[no])])
+        _AC_LANG_PREFIX[]FLAGS=$ax_check_save_flags
+    ])
+    AS_IF([test x"AS_VAR_GET(CACHEVAR)" = xyes],
+        [
+            ALTIVEC_FOUND=1
+            POWER8_FOUND=1
+            AX_APPEND_FLAG(-mvsx, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+            AX_APPEND_FLAG(-mpower8-vector, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+            AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+        ], [
+            ALTIVEC_FOUND=0
+            POWER8_FOUND=0
+        ])
+    AS_VAR_POPDEF([CACHEVAR])
 fi
 
 if test $IS_X86 -eq 0
@@ -122,8 +171,66 @@ then
     ])
 fi
 
+AC_ARG_WITH(cacheline-size,
+    [AS_HELP_STRING([--with-cacheline-size=[width]], [use specific CPU L1 cache-line size, in bytes. [default=64]])])
+
+case $with_cacheline_size in
+    no | "") CACHELINE_SIZE=64;;
+    *)       CACHELINE_SIZE=$with_cacheline_size;;
+esac
+AC_SUBST([CACHELINE_SIZE])
+
+AC_DEFINE_UNQUOTED([CACHELINE_SIZE], [$CACHELINE_SIZE], [Define to set the specific CPU L1 cache-line size, in bytes.])
+
+AC_ARG_WITH(static-simd,
+    [AS_HELP_STRING([--with-static-simd[[=x86-sse2|x86-avx|x86-avx2|x86-avx512|ppc-altivec|ppc-power8|arm-neon|arm-asimd]], [use specific SIMD implementation at static link, [default=none]]])])
+
+case $with_static_simd in
+    no | "")
+        ;;
+    x86-sse2|x86-avx|x86-avx2|x86-avx512|ppc-altivec|ppc-power8|arm-neon|arm-asimd)
+        SIMD_SUFFIX=_$(echo $with_static_simd | tr '[a-z]' '[A-Z]' | tr '-' '_')
+        AC_SUBST([SIMD_SUFFIX])
+
+        case "$enable_static,$enable_shared" in
+            "yes,yes" | "no,yes" | "no,no" )
+                AC_MSG_ERROR([The --with-static-simd option is only valid with static builds.])
+                ;;
+        esac
+        ;;
+    *)
+        AC_MSG_ERROR([Invalid SIMD given to --with-static-simd option.])
+        ;;
+esac
+
+AC_ARG_WITH(avx512,
+    [AS_HELP_STRING([--with-avx512[[=yes|no]]], [use AVX-512F instruction set, [default=no]])])
+
 if test $IS_X86 -eq 1
 then
+	case $with_avx512 in
+		yes)
+			case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
+				intel)
+					AX_APPEND_FLAG(-march=skylake-avx512, [x86_avx512_[]_AC_LANG_ABBREV[]flags])
+					AC_SUBST(x86_avx512_[]_AC_LANG_ABBREV[]flags)
+					AVX512F_FOUND=1
+					AC_SUBST([AVX512F_FOUND], [1], [Define if your system supports AVX-512F])
+					;;
+				*)
+					AX_CHECK_COMPILE_FLAG([-mavx512f], [
+						AX_APPEND_FLAG(-mavx512f, [x86_avx512_[]_AC_LANG_ABBREV[]flags])
+						AC_SUBST(x86_avx512_[]_AC_LANG_ABBREV[]flags)
+						AVX512F_FOUND=1
+						AC_SUBST([AVX512F_FOUND], [1], [Define if your system supports AVX-512F])
+					])
+					;;
+			esac
+
+			AC_DEFINE_UNQUOTED([AVX512F_FOUND], [$AVX512F_FOUND], [Define to enable AVX-512F buffers.])
+			;;
+	esac
+
     case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
         intel)
             AX_APPEND_FLAG(-march=core-avx2, [x86_avx2_[]_AC_LANG_ABBREV[]flags])
@@ -165,6 +272,10 @@ fi
 AM_CONDITIONAL([X86], [test "$IS_X86" = 1])
 AM_CONDITIONAL([ARM], [test "$IS_ARM" = 1])
 AM_CONDITIONAL([PPC], [test "$IS_PPC" = 1])
+AM_CONDITIONAL([NEON], [test "$NEON_FOUND" = 1])
+AM_CONDITIONAL([AVX512F], [test "$AVX512F_FOUND" = 1])
+AM_CONDITIONAL([ALTIVEC], [test "$ALTIVEC_FOUND" = 1])
+AM_CONDITIONAL([POWER8], [test "$POWER8_FOUND" = 1])
 ])
 
 AC_DEFUN([AIRCRACK_NG_SIMD_C], [

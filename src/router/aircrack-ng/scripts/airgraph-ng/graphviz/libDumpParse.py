@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #airodump parsing lib
 #returns in an array of client and Ap information
 #part of the airdrop-ng project
@@ -19,7 +19,7 @@ class airDumpParse:
         self.clientApChannelRelationship()
         return {'NA':self.NA,'capr':self.capr,'apDict':self.apDict,
             'clientDict':self.clientDict,'NAP':self.NAP}
-        
+
     def airDumpOpen(self,file):
         """
         Takes one argument (the input file) and opens it for reading
@@ -28,13 +28,13 @@ class airDumpParse:
         try:
             openedFile = open(file, "r")
         except IOError:
-            print "Error Airodump File",file,"does not exist"
+            print("Error Airodump File",file,"does not exist")
             Exit(1)
-        data = openedFile.xreadlines()
+        data = openedFile
         cleanedData = [line.rstrip() for line in data]
         openedFile.close()
         return cleanedData
-    
+
     def airDumpParse(self,cleanedDump):
         """
         Function takes parsed dump file list and does some more cleaning.
@@ -51,16 +51,16 @@ class airDumpParse:
             except Exception:
                 stationStart = cleanedDump.index('Station MAC, First time seen, Last time seen, Power, # packets, BSSID, ESSID')
         except Exception:
-            print "Invalid input file. Please make sure you are loading an airodump txt file and not a pcap"
+            print("Invalid input file. Please make sure you are loading an airodump txt file and not a pcap")
             Exit(1)
-    
+
         del cleanedDump[stationStart] #Remove the heading line
         clientList = cleanedDump[stationStart:] #Splits all client data into its own list
         del cleanedDump[stationStart:] #The remaining list is all of the AP information
         self.apDict = self.apTag(cleanedDump)
         self.clientDict = self.clientTag(clientList)
         return
-    
+
     def apTag(self,devices):
         """
         Create a ap dictionary with tags of the data type on an incoming list
@@ -102,7 +102,7 @@ class airDumpParse:
             if len(ap) != 0:
                 dict[string_list[0]] = ap
         return dict
-    
+
     def clientTag(self,devices):
         """
         Create a client dictionary with tags of the data type on an incoming list
@@ -122,11 +122,11 @@ class airDumpParse:
             if len(client) != 0:
                 dict[string_list[0]] = client
         return dict
-    
+
     def clientApChannelRelationship(self):
         """
         parse the dic for the relationships of client to ap
-        in the process also populate list of     
+        in the process also populate list of
         """
         clients = self.clientDict
         AP = self.apDict
@@ -137,14 +137,14 @@ class airDumpParse:
         for key in (clients):
             mac = clients[key] #mac is the MAC address of the client
             if mac["bssid"] != ' (notassociated) ': #one line of our dictionary of clients
-                if AP.has_key(mac["bssid"]): # if it is check to see it's an AP we can see and have info on
-                    if apClient.has_key(mac["bssid"]): 
+                if mac["bssid"] in AP: # if it is check to see it's an AP we can see and have info on
+                    if mac["bssid"] in apClient: 
                         apClient[mac["bssid"]].extend([key]) #if key exists append new client
-                    else: 
+                    else:
                         apClient[mac["bssid"]] = [key] #create new key and append the client
                 else: NAP.append(key) # stores the clients that are talking to an access point we can't see
             else: NA.append(key) #stores the lines of the not associated AP's in a list
         self.NAP = NAP
         self.NA  = NA
         self.capr = apClient
-        return 
+        return

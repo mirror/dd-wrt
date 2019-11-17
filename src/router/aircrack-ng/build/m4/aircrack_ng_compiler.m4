@@ -16,7 +16,7 @@ dnl GNU General Public License for more details.
 dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with this program; if not, write to the Free Software
-dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+dnl Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
 dnl
 dnl In addition, as a special exception, the copyright holders give
 dnl permission to link the code of portions of this program with the
@@ -89,6 +89,39 @@ AC_LANG_CASE([C], [
     AX_CHECK_COMPILE_FLAG([-std=gnu99], [
         AX_APPEND_FLAG(-std=gnu99, [opt_[]_AC_LANG_ABBREV[]flags])
     ])
+
+    AX_CHECK_COMPILE_FLAG([-fno-strict-aliasing], [
+        AX_APPEND_FLAG(-fno-strict-aliasing, [opt_[]_AC_LANG_ABBREV[]flags])
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-Wpointer-arith], [
+        AX_APPEND_FLAG(-Wpointer-arith, [opt_[]_AC_LANG_ABBREV[]flags])
+    ])
+
+	case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
+        gnu|clang)
+            AX_CHECK_COMPILE_FLAG([-Wstrict-overflow=2], [
+                AX_APPEND_FLAG(-Wstrict-overflow=2, [opt_[]_AC_LANG_ABBREV[]flags])
+            ])
+            ;;
+    esac
+
+    case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
+        intel)
+			dnl warning 2218 is: result of call is not used
+            AX_APPEND_FLAG(-diag-disable 2218, [opt_[]_AC_LANG_ABBREV[]flags])
+            ;;
+    esac
+
+    case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
+        gnu|clang|intel)
+            AX_APPEND_FLAG(-Wstrict-prototypes, [opt_[]_AC_LANG_ABBREV[]flags])
+            ;;
+    esac
+])
+
+AX_CHECK_COMPILE_FLAG([-fvisibility=hidden], [
+	AX_APPEND_FLAG(-fvisibility=hidden, [opt_[]_AC_LANG_ABBREV[]flags])
 ])
 
 case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
@@ -108,19 +141,23 @@ case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
             CYGWIN*|MSYS*|cygwin*|msys*)
                 ;;
             *)
-                AS_IF([test "x$gcc_over49" = "xno"], [
-                    AS_IF([test "x$gcc_over41" = "xyes"], [
-                        AX_CHECK_COMPILE_FLAG([-fstack-protector], [
-                            AX_APPEND_FLAG(-fstack-protector, [opt_[]_AC_LANG_ABBREV[]flags])
-                        ])
-                    ], [])
-                ], [])
+                case $with_opt in
+                    yes | "")
+                        AS_IF([test "x$gcc_over49" = "xno"], [
+                            AS_IF([test "x$gcc_over41" = "xyes"], [
+                                AX_CHECK_COMPILE_FLAG([-fstack-protector], [
+                                    AX_APPEND_FLAG(-fstack-protector, [opt_[]_AC_LANG_ABBREV[]flags])
+                                ])
+                            ], [])
+                        ], [])
 
-                AS_IF([test "x$gcc_over49" = "xyes"], [
-                    AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [
-                        AX_APPEND_FLAG(-fstack-protector-strong, [opt_[]_AC_LANG_ABBREV[]flags])
-                    ])
-                ], [])
+                        AS_IF([test "x$gcc_over49" = "xyes"], [
+                            AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [
+                                AX_APPEND_FLAG(-fstack-protector-strong, [opt_[]_AC_LANG_ABBREV[]flags])
+                            ])
+                        ], [])
+                        ;;
+                esac
                 ;;
         esac
         ;;

@@ -16,7 +16,7 @@ dnl GNU General Public License for more details.
 dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with this program; if not, write to the Free Software
-dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+dnl Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
 dnl
 dnl In addition, as a special exception, the copyright holders give
 dnl permission to link the code of portions of this program with the
@@ -84,7 +84,7 @@ fi
 dnl
 dnl Verify that required headers are useable
 dnl
-save_cflags="$CFLAGS"
+saved_cflags="$CFLAGS"
 CFLAGS="$PCAP_INCLUDES $CFLAGS"
 AC_CHECK_HEADERS([pcap.h], [
 	PCAP_FOUND=yes
@@ -93,17 +93,30 @@ AC_CHECK_HEADERS([pcap.h], [
 ])
 CFLAGS="$saved_cflags"
 
+AC_ARG_ENABLE(static-pcap,
+    AS_HELP_STRING([--enable-static-pcap],
+		[Enable statically linked PCAP libpcap.]),
+    [static_pcap=$enableval], [static_pcap=no])
+
 dnl
 dnl Locate the library
 dnl
 AS_IF([test "$PCAP_FOUND" = yes], [
-	AC_CHECK_LIB([pcap], [pcap_open_live], [
-	    PCAP_LIBS=-lpcap
-	    AC_DEFINE([HAVE_PCAP], [1])
-	    AC_SUBST(PCAP_LIBS)
+	if test "x$static_pcap" != "xno"; then
+		AC_REQUIRE([AX_EXT_HAVE_STATIC_LIB_DETECT])
+		AX_EXT_HAVE_STATIC_LIB(PCAP, ${DEFAULT_STATIC_LIB_SEARCH_PATHS}, pcap libpcap, pcap_open_live)
+		if test "x$PCAP_FOUND" = xyes; then
+			AC_DEFINE([HAVE_PCAP], [1], [Define this if you have libpcap on your system])
+		fi
+	else
+		AC_CHECK_LIB([pcap], [pcap_open_live], [
+			PCAP_LIBS=-lpcap
+			AC_DEFINE([HAVE_PCAP], [1], [Define this if you have libpcap on your system])
+			AC_SUBST(PCAP_LIBS)
 
-	    PCAP_FOUND=yes
-	],[ PCAP_FOUND=no ])
+			PCAP_FOUND=yes
+		],[ PCAP_FOUND=no ])
+	fi
 ])
 
 AM_CONDITIONAL([HAVE_PCAP], [test "$PCAP_FOUND" = yes])
