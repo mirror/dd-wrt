@@ -150,7 +150,8 @@ void start_samba3(void)
 			"dead time = 15\n"	//
 			"getwd cache = yes\n"	//
 			"lpq cache time = 30\n"	//
-			"min protocol = %s\n" "max protocol = %s\n"
+			"min protocol = %s\n"	//
+			"max protocol = %s\n"	//
 #ifndef HAVE_SAMBA4
 			"printing = none\n"
 #endif
