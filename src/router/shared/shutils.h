@@ -135,6 +135,7 @@ extern int dd_sprintf(char *str, const char *fmt, ...);
 extern int dd_snprintf(char *str, int len, const char *fmt, ...);
 extern void *dd_malloc(size_t len);
 
+#define malloc(len) dd_malloc(len)
 #define sprintf(output,format,args...) dd_sprintf(output, format, ## args)
 #define snprintf(output,len,format,args...) dd_snprintf(output, len,format, ## args)
 #endif
