@@ -1844,13 +1844,15 @@ do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 		/*
 		 * Slurp anything remaining in the request 
 		 */
-		char *buf = malloc(len);
-		if (!buf) {
-			dd_logerror("httpd", "The POST data exceed length limit!\n");
-			return -1;
+		if (len) {
+			char *buf = malloc(len);
+			if (!buf) {
+				dd_logerror("httpd", "The POST data exceed length limit!\n");
+				return -1;
+			}
+			wfgets(buf, len, stream);
+			free(buf);
 		}
-		wfgets(buf, len, stream);
-		free(buf);
 		init_cgi(stream, stream->post_buf);
 	}
 	return 0;
