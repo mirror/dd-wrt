@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.202-rc1 Kernel Configuration
+# Linux/mips 4.9.202 Kernel Configuration
 #
 CONFIG_MIPS=y
 
