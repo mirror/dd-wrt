@@ -1022,6 +1022,7 @@ int getMTD(char *name)
 	fclose(fp);
 	return device;
 }
+#undef malloc
 
 void *dd_malloc(size_t len)
 {
