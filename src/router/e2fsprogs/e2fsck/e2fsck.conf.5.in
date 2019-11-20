@@ -175,7 +175,9 @@ defaults to false.
 .I log_dir
 If the
 .I log_filename
-relation contains a relative pathname, then the log file will be placed
+or
+.I problem_log_filename
+relations contains a relative pathname, then the log file will be placed
 in the directory named by the
 .I log_dir
 relation.
@@ -223,6 +225,16 @@ end up delaying the boot process for a long time (potentially hours).
 .I no_optimize_extents
 If this boolean relation is true, do not offer to optimize the extent
 tree by reducing the tree's width or depth.  This setting defaults to false.
+.TP
+.I problem_log_filename
+This relation specifies the file name where a log of problem codes
+found by e2fsck be written.  The filename may contain various
+percent-expressions (%D, %T, %N,
+etc.) which will be expanded so that the file name for the log file can
+include things like date, time, device name, and other run-time
+parameters.  See the
+.B LOGGING
+section for more details.
 .TP
 .I readahead_mem_pct
 Use this percentage of memory to try to read in metadata blocks ahead of the

@@ -91,24 +91,14 @@ cc_library {
         "test_io.c",
     ],
     shared_libs: [
+        "libext2_com_err",
         "libsparse",
         "libz",
     ],
-    whole_static_libs: [
-        "libext2_com_err"
-    ],
     cflags: ["-Wno-unused-parameter"],
     target: {
-        host: {
-            // Consider removing this library as a whole for the host. It is not
-            // in the android side.
-            whole_static_libs: ["libext2_com_err"],
-        },
         android: {
-            shared_libs: [
-                "libext2_com_err",
-                "libext2_uuid",
-            ],
+            shared_libs: [ "libext2_uuid" ],
         },
         windows: {
             enabled: true,

@@ -892,12 +892,13 @@ static int probe_luks(struct blkid_probe *probe,
 		       struct blkid_magic *id __BLKID_ATTR((unused)),
 		       unsigned char *buf)
 {
-	char uuid[40];
+	char uuid[41];
 
 	/* 168 is the offset to the 40 character uuid:
 	 * http://luks.endorphin.org/LUKS-on-disk-format.pdf */
 	strncpy(uuid, (char *) buf+168, 40);
-	blkid_set_tag(probe->dev, "UUID", uuid, sizeof(uuid));
+	uuid[40] = 0;
+	blkid_set_tag(probe->dev, "UUID", uuid, 40);
 	return 0;
 }
 
@@ -1503,24 +1504,25 @@ static struct exfat_entry_label *find_exfat_entry_label(
     return NULL;
 }
 
-static int probe_exfat(struct blkid_probe *probe, struct blkid_magic *id,
+static int probe_exfat(struct blkid_probe *probe,
+		       struct blkid_magic *id __BLKID_ATTR((unused)),
                        unsigned char *buf)
 {
     struct exfat_super_block *sb;
     struct exfat_entry_label *label;
-    uuid_t uuid;
+    char uuid[40];
 
     sb = (struct exfat_super_block *)buf;
-    if (!sb || !CLUSTER_SIZE(sb)) {
+    if (!sb || CLUSTER_SIZE(sb) == 0) {
         DBG(DEBUG_PROBE, printf("bad exfat superblock.\n"));
         return errno ? - errno : 1;
     }
 
     label = find_exfat_entry_label(probe, sb);
     if (label) {
-        char utf8_label[128];
+        unsigned char utf8_label[128];
         unicode_16le_to_utf8(utf8_label, sizeof(utf8_label), label->name, label->length * 2);
-        blkid_set_tag(probe->dev, "LABEL", utf8_label, 0);
+        blkid_set_tag(probe->dev, "LABEL", (char *) utf8_label, 0);
     } else {
         blkid_set_tag(probe->dev, "LABEL", "disk", 4);
     }

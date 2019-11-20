@@ -1,9 +1,12 @@
 libe2p.so.2 libext2fs2 #MINVER#
+* Build-Depends-Package: libext2fs-dev
  e2p_edit_feature2@Base 1.40.7
  e2p_edit_feature@Base 1.37
  e2p_edit_mntopts@Base 1.37
  e2p_encmode2string@Base 1.43
+ e2p_encoding2str@Base 1.45.1
  e2p_feature2string@Base 1.37
+ e2p_get_encoding_flags@Base 1.45
  e2p_hash2string@Base 1.37
  e2p_is_null_uuid@Base 1.37
  e2p_jrnl_feature2string@Base 1.41.1
@@ -12,6 +15,8 @@ libe2p.so.2 libext2fs2 #MINVER#
  e2p_mntopt2string@Base 1.37
  e2p_os2string@Base 1.37
  e2p_percent@Base 1.40
+ e2p_str2encoding@Base 1.45
+ e2p_str2encoding_flags@Base 1.45
  e2p_string2encmode@Base 1.43
  e2p_string2feature@Base 1.37
  e2p_string2hash@Base 1.37
@@ -38,6 +43,7 @@ libe2p.so.2 libext2fs2 #MINVER#
  setflags@Base 1.37
  setversion@Base 1.37
 libext2fs.so.2 libext2fs2 #MINVER#
+* Build-Depends-Package: libext2fs-dev
  badblocks_list_add@Base 1.37
  badblocks_list_create@Base 1.37
  badblocks_list_free@Base 1.37
@@ -169,6 +175,7 @@ libext2fs.so.2 libext2fs2 #MINVER#
  ext2fs_dirent_name_len@Base 1.43
  ext2fs_dirent_set_file_type@Base 1.43
  ext2fs_dirent_set_name_len@Base 1.43
+ ext2fs_dirhash2@Base 1.45
  ext2fs_dirhash@Base 1.37
  ext2fs_div64_ceil@Base 1.42
  ext2fs_div_ceil@Base 1.40
@@ -230,6 +237,7 @@ libext2fs.so.2 libext2fs2 #MINVER#
  ext2fs_file_get_lsize@Base 1.37
  ext2fs_file_get_size@Base 1.37
  ext2fs_file_llseek@Base 1.37
+ ext2fs_load_nls_table@Base 1.45.1
  ext2fs_file_lseek@Base 1.37
  ext2fs_file_open2@Base 1.37
  ext2fs_file_open@Base 1.37
@@ -247,6 +255,7 @@ libext2fs.so.2 libext2fs2 #MINVER#
  ext2fs_find_first_zero_generic_bmap@Base 1.42.2
  ext2fs_find_first_zero_inode_bitmap2@Base 1.42.2
  ext2fs_find_inode_goal@Base 1.43
+ ext2fs_fix_extents_checksums@Base 1.45
  ext2fs_flush2@Base 1.42
  ext2fs_flush@Base 1.37
  ext2fs_flush_icache@Base 1.37
@@ -459,6 +468,7 @@ libext2fs.so.2 libext2fs2 #MINVER#
  ext2fs_read_ext_attr3@Base 1.43
  ext2fs_read_ext_attr@Base 1.37
  ext2fs_read_ind_block@Base 1.37
+ ext2fs_read_inode2@Base 1.45
  ext2fs_read_inode@Base 1.37
  ext2fs_read_inode_bitmap@Base 1.37
  ext2fs_read_inode_full@Base 1.37
@@ -613,6 +623,7 @@ libext2fs.so.2 libext2fs2 #MINVER#
  ext2fs_write_ext_attr3@Base 1.43
  ext2fs_write_ext_attr@Base 1.37
  ext2fs_write_ind_block@Base 1.37
+ ext2fs_write_inode2@Base 1.45
  ext2fs_write_inode@Base 1.37
  ext2fs_write_inode_bitmap@Base 1.37
  ext2fs_write_inode_full@Base 1.37

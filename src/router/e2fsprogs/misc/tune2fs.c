@@ -497,64 +497,6 @@ static void convert_64bit(ext2_filsys fs, int direction)
 		fprintf(stderr, _("' to disable 64-bit mode.\n"));
 }
 
-/* Rewrite extents */
-static errcode_t rewrite_extents(ext2_filsys fs, ext2_ino_t ino,
-				 struct ext2_inode *inode)
-{
-	ext2_extent_handle_t	handle;
-	struct ext2fs_extent	extent;
-	errcode_t		errcode;
-	struct ext2_extent_info	info;
-
-	if (!(inode->i_flags & EXT4_EXTENTS_FL) ||
-	    !ext2fs_has_feature_metadata_csum(fs->super))
-		return 0;
-
-	errcode = ext2fs_extent_open(fs, ino, &handle);
-	if (errcode)
-		return errcode;
-
-	errcode = ext2fs_extent_get(handle, EXT2_EXTENT_ROOT, &extent);
-	if (errcode)
-		goto out;
-
-	do {
-		errcode = ext2fs_extent_get_info(handle, &info);
-		if (errcode)
-			break;
-
-		/*
-		 * If this is the first extent in an extent block that we
-		 * haven't visited, rewrite the extent to force the ETB
-		 * checksum to be rewritten.
-		 */
-		if (info.curr_entry == 1 && info.curr_level != 0 &&
-		    !(extent.e_flags & EXT2_EXTENT_FLAGS_SECOND_VISIT)) {
-			errcode = ext2fs_extent_replace(handle, 0, &extent);
-			if (errcode)
-				break;
-		}
-
-		/* Skip to the end of a block of leaf nodes */
-		if (extent.e_flags & EXT2_EXTENT_FLAGS_LEAF) {
-			errcode = ext2fs_extent_get(handle,
-						    EXT2_EXTENT_LAST_SIB,
-						    &extent);
-			if (errcode)
-				break;
-		}
-
-		errcode = ext2fs_extent_get(handle, EXT2_EXTENT_NEXT, &extent);
-	} while (errcode == 0);
-
-out:
-	/* Ok if we run off the end */
-	if (errcode == EXT2_ET_EXTENT_NO_NEXT)
-		errcode = 0;
-	ext2fs_extent_free(handle);
-	return errcode;
-}
-
 /*
  * Rewrite directory blocks with checksums
  */
@@ -849,7 +791,7 @@ static void rewrite_one_inode(struct rewrite_context *ctx, ext2_ino_t ino,
 	if (retval)
 		fatal_err(retval, "while writing inode");
 
-	retval = rewrite_extents(ctx->fs, ino, inode);
+	retval = ext2fs_fix_extents_checksums(ctx->fs, ino, inode);
 	if (retval)
 		fatal_err(retval, "while rewriting extents");
 
@@ -1459,6 +1401,12 @@ mmp_error:
 	}
 
 	if (FEATURE_ON(E2P_FEATURE_INCOMPAT, EXT4_FEATURE_INCOMPAT_ENCRYPT)) {
+		if (ext2fs_has_feature_casefold(sb)) {
+			fputs(_("Cannot enable encrypt feature on filesystems "
+				"with the encoding feature enabled.\n"),
+			      stderr);
+			return 1;
+		}
 		fs->super->s_encrypt_algos[0] =
 			EXT4_ENCRYPTION_MODE_AES_256_XTS;
 		fs->super->s_encrypt_algos[1] =
@@ -2125,6 +2073,10 @@ static int parse_extended_opts(ext2_filsys fs, const char *opts)
 			       intv);
 			fs->super->s_mmp_update_interval = intv;
 			ext2fs_mark_super_dirty(fs);
+		} else if (!strcmp(token, "force_fsck")) {
+			fs->super->s_state |= EXT2_ERROR_FS;
+			printf(_("Setting filesystem error flag to force fsck.\n"));
+			ext2fs_mark_super_dirty(fs);
 		} else if (!strcmp(token, "test_fs")) {
 			fs->super->s_flags |= EXT2_FLAGS_TEST_FILESYS;
 			printf("Setting test filesystem flag\n");
@@ -2207,6 +2159,7 @@ static int parse_extended_opts(ext2_filsys fs, const char *opts)
 			"\tmmp_update_interval=<mmp update interval in seconds>\n"
 			"\tstride=<RAID per-disk chunk size in blocks>\n"
 			"\tstripe_width=<RAID stride*data disks in blocks>\n"
+			"\tforce_fsck\n"
 			"\ttest_fs\n"
 			"\t^test_fs\n"));
 		free(buf);

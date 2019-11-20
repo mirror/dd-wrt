@@ -19,7 +19,7 @@ using in e4defrag, to avoid overflows when more than 2**32 files are
 defragmented.  (Addresses Debian Bug: #888899)
 
 Correctly translate Posix ACL's.  This was a regression introduced in
-v1.44.4.   (Addresses Launchpad Bug: #1807288)
+v1.44.   (Addresses Launchpad Bug: #1807288)
 
 Use the online free block counts so e2freefrag's percentages are
 correct.
@@ -42,14 +42,14 @@ target device/image.
 
 Fix a bug which could cause e2fsprogs tools to segfault on a corrupted
 file system where the journal's s_nr_users is impossibly large.
-    
+
 E2image now includes the mmp block (if needed) when creating a
 metadata-only image.
 
-If various Verity handling bugs which made it completely unusable in
+Fix various Verity handling bugs which made it completely unusable in
 e2fsprogs 1.44.4.
 
-Fox a bug in tune2fs where it would dereference of freed memory after
+Fix a bug in tune2fs where it would dereference of freed memory after
 replaying the journal.
 
 
@@ -62,7 +62,7 @@ Fix groff formatting nits in various man pages.  (Addresses Debian Bug:
 #916188)
 
 Fixed various debian packaging issues (Addresses Debian Bug: #915942)
-    
+
 Adjusted the copyright license for lib/blkid/version.c to be LGPL (and
 consistent with the rest of files in that directory).
 

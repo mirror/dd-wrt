@@ -42,6 +42,9 @@ dump core on error
 \fB-o\fR minixdf
 minix-style df
 .TP
+\fB-o\fR fakeroot
+pretend to be root for permission checks
+.TP
 \fB-o\fR no_default_opts
 do not include default fuse options
 .TP

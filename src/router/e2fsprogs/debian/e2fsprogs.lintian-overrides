@@ -1,1 +1,1 @@
-e2fsprogs: new-essential-package
+e2fsprogs: package-supports-alternative-init-but-no-init.d-script

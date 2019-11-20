@@ -80,3 +80,8 @@ unsigned int e2p_percent(int percent, unsigned int base);
 
 const char *e2p_encmode2string(int num);
 int e2p_string2encmode(char *string);
+
+int e2p_str2encoding(const char *string);
+const char *e2p_encoding2str(int encoding);
+int e2p_get_encoding_flags(int encoding);
+int e2p_str2encoding_flags(int encoding, char *param, __u16 *flags);

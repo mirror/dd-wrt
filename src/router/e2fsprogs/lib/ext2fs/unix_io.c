@@ -1126,6 +1126,31 @@ unimplemented:
 	return EXT2_ET_UNIMPLEMENTED;
 }
 
+/*
+ * If we know about ZERO_RANGE, try that before we try PUNCH_HOLE because
+ * ZERO_RANGE doesn't unmap preallocated blocks.  We prefer fallocate because
+ * it always invalidates page cache, and libext2fs requires that reads after
+ * ZERO_RANGE return zeroes.
+ */
+static int __unix_zeroout(int fd, off_t offset, off_t len)
+{
+	int ret = -1;
+
+#if defined(HAVE_FALLOCATE) && defined(FALLOC_FL_ZERO_RANGE)
+	ret = fallocate(fd, FALLOC_FL_ZERO_RANGE, offset, len);
+	if (ret == 0)
+		return 0;
+#endif
+#if defined(HAVE_FALLOCATE) && defined(FALLOC_FL_PUNCH_HOLE) && defined(FALLOC_FL_KEEP_SIZE)
+	ret = fallocate(fd, FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE,
+			offset,  len);
+	if (ret == 0)
+		return 0;
+#endif
+	errno = EOPNOTSUPP;
+	return ret;
+}
+
 /* parameters might not be used if OS doesn't support zeroout */
 #if __GNUC_PREREQ (4, 6)
 #pragma GCC diagnostic push
@@ -1144,10 +1169,7 @@ static errcode_t unix_zeroout(io_channel channel, unsigned long long block,
 	if (safe_getenv("UNIX_IO_NOZEROOUT"))
 		goto unimplemented;
 
-	if (channel->flags & CHANNEL_FLAGS_BLOCK_DEVICE) {
-		/* Not implemented until the BLKZEROOUT mess is fixed */
-		goto unimplemented;
-	} else {
+	if (!(channel->flags & CHANNEL_FLAGS_BLOCK_DEVICE)) {
 		/* Regular file, try to use truncate/punch/zero. */
 		struct stat statbuf;
 
@@ -1167,26 +1189,11 @@ static errcode_t unix_zeroout(io_channel channel, unsigned long long block,
 			if (ret)
 				goto err;
 		}
-#if defined(HAVE_FALLOCATE) && (defined(FALLOC_FL_ZERO_RANGE) || \
-	(defined(FALLOC_FL_PUNCH_HOLE) && defined(FALLOC_FL_KEEP_SIZE)))
-#if defined(FALLOC_FL_PUNCH_HOLE) && defined(FALLOC_FL_KEEP_SIZE)
-		ret = fallocate(data->dev,
-				FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE,
-				(off_t)(block) * channel->block_size + data->offset,
-				(off_t)(count) * channel->block_size);
-		if (ret == 0)
-			goto err;
-#endif
-#ifdef FALLOC_FL_ZERO_RANGE
-		ret = fallocate(data->dev,
-				FALLOC_FL_ZERO_RANGE,
-				(off_t)(block) * channel->block_size + data->offset,
-				(off_t)(count) * channel->block_size);
-#endif
-#else
-		goto unimplemented;
-#endif /* HAVE_FALLOCATE && (ZERO_RANGE || (PUNCH_HOLE && KEEP_SIZE)) */
 	}
+
+	ret = __unix_zeroout(data->dev,
+			(off_t)(block) * channel->block_size + data->offset,
+			(off_t)(count) * channel->block_size);
 err:
 	if (ret < 0) {
 		if (errno == EOPNOTSUPP)

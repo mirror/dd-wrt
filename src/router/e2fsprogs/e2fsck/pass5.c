@@ -838,6 +838,7 @@ static void check_inode_end(e2fsck_t ctx)
 	ext2_filsys fs = ctx->fs;
 	ext2_ino_t	end, save_inodes_count, i;
 	struct problem_context	pctx;
+	int asked = 0;
 
 	clear_problem_context(&pctx);
 
@@ -851,11 +852,12 @@ static void check_inode_end(e2fsck_t ctx)
 		return;
 	}
 	if (save_inodes_count == end)
-		return;
+		goto check_intra_bg_tail;
 
 	/* protect loop from wrap-around if end is maxed */
 	for (i = save_inodes_count + 1; i <= end && i > save_inodes_count; i++) {
 		if (!ext2fs_test_inode_bitmap(fs->inode_map, i)) {
+			asked = 1;
 			if (fix_problem(ctx, PR_5_INODE_BMAP_PADDING, &pctx)) {
 				for (; i <= end; i++)
 					ext2fs_mark_inode_bitmap(fs->inode_map,
@@ -875,6 +877,21 @@ static void check_inode_end(e2fsck_t ctx)
 		ctx->flags |= E2F_FLAG_ABORT; /* fatal */
 		return;
 	}
+	/*
+	 * If the number of inodes per block group != blocksize, we
+	 * can also have a potential problem with the tail bits in
+	 * each individual inode bitmap block.  If there is a problem,
+	 * it would have been noticed when the bitmap was loaded.  And
+	 * fixing this is easy; all we need to do force the bitmap to
+	 * be written back to disk.
+	 */
+check_intra_bg_tail:
+	if (!asked && fs->flags & EXT2_FLAG_IBITMAP_TAIL_PROBLEM) {
+		if (fix_problem(ctx, PR_5_INODE_BMAP_PADDING, &pctx))
+			ext2fs_mark_ib_dirty(fs);
+		else
+			ext2fs_unmark_valid(fs);
+	}
 }
 
 static void check_block_end(e2fsck_t ctx)
@@ -882,6 +899,7 @@ static void check_block_end(e2fsck_t ctx)
 	ext2_filsys fs = ctx->fs;
 	blk64_t	end, save_blocks_count, i;
 	struct problem_context	pctx;
+	int asked = 0;
 
 	clear_problem_context(&pctx);
 
@@ -896,12 +914,13 @@ static void check_block_end(e2fsck_t ctx)
 		return;
 	}
 	if (save_blocks_count == end)
-		return;
+		goto check_intra_bg_tail;
 
 	/* Protect loop from wrap-around if end is maxed */
 	for (i = save_blocks_count + 1; i <= end && i > save_blocks_count; i++) {
 		if (!ext2fs_test_block_bitmap2(fs->block_map,
 					       EXT2FS_C2B(fs, i))) {
+			asked = 1;
 			if (fix_problem(ctx, PR_5_BLOCK_BMAP_PADDING, &pctx)) {
 				for (; i <= end; i++)
 					ext2fs_mark_block_bitmap2(fs->block_map,
@@ -921,7 +940,19 @@ static void check_block_end(e2fsck_t ctx)
 		ctx->flags |= E2F_FLAG_ABORT; /* fatal */
 		return;
 	}
+	/*
+	 * If the number of blocks per block group != blocksize, we
+	 * can also have a potential problem with the tail bits in
+	 * each individual block bitmap block.  If there is a problem,
+	 * it would have been noticed when the bitmap was loaded.  And
+	 * fixing this is easy; all we need to do force the bitmap to
+	 * be written back to disk.
+	 */
+check_intra_bg_tail:
+	if (!asked && fs->flags & EXT2_FLAG_BBITMAP_TAIL_PROBLEM) {
+		if (fix_problem(ctx, PR_5_BLOCK_BMAP_PADDING, &pctx))
+			ext2fs_mark_bb_dirty(fs);
+		else
+			ext2fs_unmark_valid(fs);
+	}
 }
-
-
-

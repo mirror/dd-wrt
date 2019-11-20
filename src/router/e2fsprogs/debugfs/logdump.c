@@ -72,7 +72,8 @@ static void do_hexdump (FILE *, char *, int);
 		blocknr -= (be32_to_cpu((jsb)->s_maxlen) -	\
 			    be32_to_cpu((jsb)->s_first));
 
-void do_logdump(int argc, char **argv)
+void do_logdump(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+		    void *infop EXT2FS_ATTR((unused)))
 {
 	int		c;
 	int		retval;

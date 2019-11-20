@@ -260,7 +260,8 @@ static void dir_iterate(ext2_ino_t ino, struct filefrag_struct *fs)
 	}
 }
 
-void do_filefrag(int argc, char *argv[])
+void do_filefrag(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
+		 void *infop EXT2FS_ATTR((unused)))
 {
 	struct filefrag_struct fs;
 	struct ext2_inode inode;

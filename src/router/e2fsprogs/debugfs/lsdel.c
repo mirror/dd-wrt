@@ -71,7 +71,8 @@ static int lsdel_proc(ext2_filsys fs,
 	return 0;
 }
 
-void do_lsdel(int argc, char **argv)
+void do_lsdel(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+	      void *infop EXT2FS_ATTR((unused)))
 {
 	struct lsdel_struct 	lsd;
 	struct deleted_info	*delarray;

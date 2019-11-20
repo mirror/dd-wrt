@@ -73,10 +73,10 @@
 /* Define to 1 if you have the `backtrace' function. */
 #undef HAVE_BACKTRACE
 
-/* Define to 1 if you have the `blkid_probe_enable_partitions' function. */
+/* Define to 1 if blkid has blkid_probe_enable_partitions */
 #undef HAVE_BLKID_PROBE_ENABLE_PARTITIONS
 
-/* Define to 1 if you have the `blkid_probe_get_topology' function. */
+/* Define to 1 if blkid has blkid_probe_get_topology */
 #undef HAVE_BLKID_PROBE_GET_TOPOLOGY
 
 /* Define to 1 if the compiler understands __builtin_expect. */
@@ -312,6 +312,12 @@
 
 /* Define to 1 if you have the <mntent.h> header file. */
 #undef HAVE_MNTENT_H
+
+/* Define to 1 if mount supports nodev. */
+#undef HAVE_MOUNT_NODEV
+
+/* Define to 1 if mount supports nosuid. */
+#undef HAVE_MOUNT_NOSUID
 
 /* Define to 1 if you have the `msync' function. */
 #undef HAVE_MSYNC

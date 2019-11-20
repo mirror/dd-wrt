@@ -13,6 +13,7 @@ INSTALL = @INSTALL@
 @DEBUGFS_CMT@DEBUGFS_DIR= debugfs
 @UUID_CMT@UUID_LIB_SUBDIR= lib/uuid
 @BLKID_CMT@BLKID_LIB_SUBDIR= lib/blkid
+@E2SCRUB_CMT@E2SCRUB_DIR= scrub
 @ALL_CMT@SUPPORT_LIB_SUBDIR= lib/support
 @ALL_CMT@E2P_LIB_SUBDIR= lib/e2p
 @ALL_CMT@EXT2FS_LIB_SUBDIR= lib/ext2fs
@@ -20,7 +21,9 @@ INSTALL = @INSTALL@
 LIB_SUBDIRS=lib/et lib/ss $(E2P_LIB_SUBDIR) $(UUID_LIB_SUBDIR) \
 	$(BLKID_LIB_SUBDIR) $(SUPPORT_LIB_SUBDIR) $(EXT2FS_LIB_SUBDIR) intl
 
-PROG_SUBDIRS=e2fsck $(DEBUGFS_DIR) misc $(RESIZE_DIR) tests/progs po
+PROG_SUBDIRS=e2fsck $(DEBUGFS_DIR) misc $(RESIZE_DIR) tests/progs po \
+	$(E2SCRUB_DIR)
+
 SUBDIRS=util $(LIB_SUBDIRS) $(PROG_SUBDIRS) tests
 
 SUBS= util/subst.conf lib/config.h $(top_builddir)/lib/dirpaths.h \

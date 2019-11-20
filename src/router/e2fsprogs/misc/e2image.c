@@ -104,7 +104,8 @@ static int get_bits_from_size(size_t size)
 
 static void usage(void)
 {
-	fprintf(stderr, _("Usage: %s [ -r|Q ] [ -f ] device image-file\n"),
+	fprintf(stderr, _("Usage: %s [ -r|Q ] [ -f ] [ -b superblock ] [ -B blocksize]"
+			  "[ -fr ] device image-file\n"),
 		program_name);
 	fprintf(stderr, _("       %s -I device image-file\n"), program_name);
 	fprintf(stderr, _("       %s -ra  [  -cfnp  ] [ -o src_offset ] "
@@ -1267,7 +1268,8 @@ static void output_qcow2_meta_data_blocks(ext2_filsys fs, int fd)
 	free_qcow2_image(img);
 }
 
-static void write_raw_image_file(ext2_filsys fs, int fd, int type, int flags)
+static void write_raw_image_file(ext2_filsys fs, int fd, int type, int flags,
+				 blk64_t superblock)
 {
 	struct process_block_struct	pb;
 	struct ext2_inode		inode;
@@ -1293,6 +1295,22 @@ static void write_raw_image_file(ext2_filsys fs, int fd, int type, int flags)
 				_("while allocating scramble block bitmap"));
 			exit(1);
 		}
+	}
+
+	if (superblock) {
+		int j;
+
+		ext2fs_mark_block_bitmap2(meta_block_map, superblock);
+		meta_blocks_count++;
+
+		/*
+		 * Mark the backup superblock descriptors
+		 */
+		for (j = 0; j < fs->desc_blocks; j++) {
+			ext2fs_mark_block_bitmap2(meta_block_map,
+			ext2fs_descriptor_block_loc2(fs, superblock, j));
+		}
+		meta_blocks_count += fs->desc_blocks;
 	}
 
 	mark_table_blocks(fs);
@@ -1474,6 +1492,8 @@ int main (int argc, char ** argv)
 	int ignore_rw_mount = 0;
 	int check = 0;
 	struct stat st;
+	blk64_t superblock = 0;
+	int blocksize = 0;
 
 #ifdef ENABLE_NLS
 	setlocale(LC_MESSAGES, "");
@@ -1487,8 +1507,14 @@ int main (int argc, char ** argv)
 	if (argc && *argv)
 		program_name = *argv;
 	add_error_table(&et_ext2_error_table);
-	while ((c = getopt(argc, argv, "nrsIQafo:O:pc")) != EOF)
+	while ((c = getopt(argc, argv, "b:B:nrsIQafo:O:pc")) != EOF)
 		switch (c) {
+		case 'b':
+			superblock = strtoull(optarg, NULL, 0);
+			break;
+		case 'B':
+			blocksize = strtoul(optarg, NULL, 0);
+			break;
 		case 'I':
 			flags |= E2IMAGE_INSTALL_FLAG;
 			break;
@@ -1537,6 +1563,11 @@ int main (int argc, char ** argv)
 
 	if (all_data && !img_type) {
 		com_err(program_name, 0, "%s", _("-a option can only be used "
+						 "with raw or QCOW2 images."));
+		exit(1);
+	}
+	if (superblock && !img_type) {
+		com_err(program_name, 0, "%s", _("-b option can only be used "
 						 "with raw or QCOW2 images."));
 		exit(1);
 	}
@@ -1590,8 +1621,8 @@ int main (int argc, char ** argv)
 		}
 	}
 	sprintf(offset_opt, "offset=%llu", source_offset);
-	retval = ext2fs_open2(device_name, offset_opt, open_flag, 0, 0,
-			      unix_io_manager, &fs);
+	retval = ext2fs_open2(device_name, offset_opt, open_flag,
+			      superblock, blocksize, unix_io_manager, &fs);
         if (retval) {
 		com_err (program_name, retval, _("while trying to open %s"),
 			 device_name);
@@ -1681,7 +1712,7 @@ skip_device:
 		exit(1);
 	}
 	if (img_type)
-		write_raw_image_file(fs, fd, img_type, flags);
+		write_raw_image_file(fs, fd, img_type, flags, superblock);
 	else
 		write_image_file(fs, fd);
 

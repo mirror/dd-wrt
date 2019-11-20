@@ -534,7 +534,8 @@ error:
 	return err;
 }
 
-void do_journal_write(int argc, char *argv[])
+void do_journal_write(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
+		      void *infop EXT2FS_ATTR((unused)))
 {
 	blk64_t *blist = NULL, *rlist = NULL;
 	size_t bn = 0, rn = 0;
@@ -856,7 +857,8 @@ static void update_64bit_flag(journal_t *journal)
 	jfs_set_feature_64bit(journal);
 }
 
-void do_journal_open(int argc, char *argv[])
+void do_journal_open(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
+		     void *infop EXT2FS_ATTR((unused)))
 {
 	int opt, enable_csum = 0, csum_ver = 3;
 	journal_t *journal;
@@ -926,7 +928,9 @@ void do_journal_open(int argc, char *argv[])
 }
 
 void do_journal_close(int argc EXT2FS_ATTR((unused)),
-		      char *argv[] EXT2FS_ATTR((unused)))
+		      char *argv[] EXT2FS_ATTR((unused)),
+		      int sci_idx EXT2FS_ATTR((unused)),
+		      void *infop EXT2FS_ATTR((unused)))
 {
 	if (current_journal == NULL) {
 		printf("Journal not open.\n");
@@ -936,7 +940,9 @@ void do_journal_close(int argc EXT2FS_ATTR((unused)),
 	ext2fs_close_journal(current_fs, &current_journal);
 }
 
-void do_journal_run(int argc EXT2FS_ATTR((unused)), char *argv[])
+void do_journal_run(int argc EXT2FS_ATTR((unused)), char *argv[],
+		    int sci_idx EXT2FS_ATTR((unused)),
+		    void *infop EXT2FS_ATTR((unused)))
 {
 	errcode_t err;
 

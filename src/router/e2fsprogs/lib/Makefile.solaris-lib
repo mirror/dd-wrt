@@ -50,7 +50,7 @@ install-shlibs install:: $(ELF_LIB) installdirs-elf-lib
 install-strip: install
 	$(STRIP) -x $(DESTDIR)$(ELF_INSTALL_DIR)/$(ELF_LIB)
 
-install-shlibs-strip: install-shlibs
+install-shlibs-strip:: install-shlibs
 	$(STRIP) -x $(DESTDIR)$(ELF_INSTALL_DIR)/$(ELF_LIB)
 
 uninstall-shlibs uninstall::
