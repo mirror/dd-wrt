@@ -22,7 +22,7 @@
 
 void *MALLOC(size_t size)
 {
-	void *ptr = kmalloc(size, GFP_ATOMIC);
+	void *ptr = kmalloc(size, GFP_ATOMIC | __GFP_NOWARN);
 	if (!ptr)
 		ptr = vmalloc(size);
 	return ptr;
