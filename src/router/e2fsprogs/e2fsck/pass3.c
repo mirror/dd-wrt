@@ -157,7 +157,8 @@ static void check_root(e2fsck_t ctx)
 {
 	ext2_filsys fs = ctx->fs;
 	blk64_t			blk;
-	struct ext2_inode	inode;
+	struct ext2_inode_large	inode;
+	struct ext2_inode	*iptr = (struct ext2_inode *) &inode;
 	char *			block;
 	struct problem_context	pctx;
 
@@ -213,13 +214,15 @@ skip_new_block:
 	inode.i_size = fs->blocksize;
 	inode.i_atime = inode.i_ctime = inode.i_mtime = ctx->now;
 	inode.i_links_count = 2;
-	ext2fs_iblk_set(fs, &inode, 1);
+	ext2fs_iblk_set(fs, iptr, 1);
 	inode.i_block[0] = blk;
+	inode.i_extra_isize = sizeof(struct ext2_inode_large) -
+		EXT2_GOOD_OLD_INODE_SIZE;
 
 	/*
 	 * Write out the inode.
 	 */
-	pctx.errcode = ext2fs_write_new_inode(fs, EXT2_ROOT_INO, &inode);
+	pctx.errcode = ext2fs_write_new_inode(fs, EXT2_ROOT_INO, iptr);
 	if (pctx.errcode) {
 		pctx.str = "ext2fs_write_inode";
 		fix_problem(ctx, PR_3_CREATE_ROOT_ERROR, &pctx);
@@ -262,6 +265,9 @@ skip_new_block:
 	ext2fs_mark_inode_bitmap2(ctx->inode_dir_map, EXT2_ROOT_INO);
 	ext2fs_mark_inode_bitmap2(fs->inode_map, EXT2_ROOT_INO);
 	ext2fs_mark_ib_dirty(fs);
+	quota_data_add(ctx->qctx, &inode, EXT2_ROOT_INO,
+		       EXT2_CLUSTER_SIZE(fs->super));
+	quota_data_inodes(ctx->qctx, &inode, EXT2_ROOT_INO, +1);
 }
 
 /*

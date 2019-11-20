@@ -32,6 +32,14 @@ man8dir = $(mandir)/man8
 infodir = @infodir@
 datadir = @datadir@
 pkgconfigdir = $(libdir)/pkgconfig
+pkglibdir = $(libdir)/e2fsprogs
+
+HAVE_UDEV = @have_udev@
+UDEV_RULES_DIR = @pkg_udev_rules_dir@
+HAVE_CROND = @have_crond@
+CROND_DIR = @crond_dir@
+HAVE_SYSTEMD = @have_systemd@
+SYSTEMD_SYSTEM_UNIT_DIR = @systemd_system_unit_dir@
 
 @SET_MAKE@
 
@@ -73,21 +81,24 @@ pkgconfigdir = $(libdir)/pkgconfig
 @ifNotGNUmake@ CHECK_CMD=true
 @ifNotGNUmake@ CPPCHECK_CMD=true
 
+SANITIZER_CFLAGS = @lto_cflags@ @ubsan_cflags@ @addrsan_cflags@ @threadsan_cflags@
+SANITIZER_LDFLAGS = @lto_ldflags@ @ubsan_ldflags@ @addrsan_ldflags@ @threadsan_ldflags@
+
 CC = @CC@
 BUILD_CC = @BUILD_CC@
 CFLAGS = @CFLAGS@
 CFLAGS_SHLIB = @CFLAGS_SHLIB@
 CFLAGS_STLIB = @CFLAGS_STLIB@
 CPPFLAGS = @INCLUDES@
-ALL_CFLAGS = $(CPPFLAGS) $(CFLAGS) $(CFLAGS_WARN) @DEFS@ $(LOCAL_CFLAGS)
-ALL_CFLAGS_SHLIB = $(CPPFLAGS) $(CFLAGS_SHLIB) $(CFLAGS_WARN) @DEFS@ $(LOCAL_CFLAGS)
-ALL_CFLAGS_STLIB = $(CPPFLAGS) $(CFLAGS_STLIB) $(CFLAGS_WARN) @DEFS@ $(LOCAL_CFLAGS)
-LDFLAGS = @LDFLAGS@
-LDFLAGS_SHLIB = @LDFLAGS_SHLIB@
+ALL_CFLAGS = $(CPPFLAGS) $(SANITIZER_CFLAGS) $(CFLAGS) $(CFLAGS_WARN) @DEFS@ $(LOCAL_CFLAGS)
+ALL_CFLAGS_SHLIB = $(CPPFLAGS) $(SANITIZER_CFLAGS) $(CFLAGS_SHLIB) $(CFLAGS_WARN) @DEFS@ $(LOCAL_CFLAGS)
+ALL_CFLAGS_STLIB = $(CPPFLAGS) $(SANITIZER_CFLAGS) $(CFLAGS_STLIB) $(CFLAGS_WARN) @DEFS@ $(LOCAL_CFLAGS)
+LDFLAGS = $(SANITIZER_LDFLAGS) @LDFLAGS@
+LDFLAGS_SHLIB = $(SANITIZER_LDFLAGS) @LDFLAGS_SHLIB@
 ALL_LDFLAGS = $(LDFLAGS) @LDFLAG_DYNAMIC@
-LDFLAGS_STATIC = @LDFLAGS_STATIC@
-BUILD_CFLAGS = @BUILD_CFLAGS@
-BUILD_LDFLAGS = @BUILD_LDFLAGS@
+LDFLAGS_STATIC = $(SANITIZER_LDFLAGS) @LDFLAGS_STATIC@
+BUILD_CFLAGS = $(SANITIZER_CFLAGS) @BUILD_CFLAGS@
+BUILD_LDFLAGS = $(SANITIZER_LDFLAGS) @BUILD_LDFLAGS@
 RDYNAMIC = @RDYNAMIC@
 LINK_BUILD_FLAGS = @LINK_BUILD_FLAGS@
 LINK_INSTALL_FLAGS = @LINK_INSTALL_FLAGS@
@@ -170,6 +181,14 @@ DEP_SUBSTITUTE= $(top_builddir)/util/subst $(SUBST_CONF)
 
 $(top_builddir)/util/subst:
 	cd $(top_builddir)/util ; $(MAKE) subst
+
+#
+# Script for generating utf8data.h
+#
+MKUTF8DATA=$(top_builddir)/util/mkutf8data
+
+$(top_builddir)/util/mkutf8data:
+	 $(MAKE) -C $(top_builddir)/util mkutf8data
 
 #
 # Script for installing symlinks (for shared libraries)

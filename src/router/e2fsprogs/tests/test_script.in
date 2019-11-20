@@ -39,7 +39,7 @@ for i; do
 done
 
 if test "$TESTS"x = x ; then
-    if test -n "DO_FAILED"; then
+    if test -n "$DO_FAILED"; then
 	exit 0
     fi
     TESTS=`ls -d $SRCDIR/[a-zA-Z]_*`

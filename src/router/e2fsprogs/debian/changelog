@@ -1,3 +1,183 @@
+e2fsprogs (1.45.4-1) unstable; urgency=medium
+
+  * New upstream feature
+  * Fix CVE-2019-5094: A maliciously corrupted file systems can trigger
+    buffer overruns in the quota code used by e2fsck.
+  * E2fsck will now check to make sure the casefold flag is only set on
+    directories, and only when the casefold feature is enabled.
+  * E2fsck will not disable the low dtime checks when using a backup
+    superblock where the last mount time is zero to fix a failure in
+    xfstests ext4/007
+  * Fix e2fsck so that when it needs to recreate the root directory, the
+    quota counts are correctly updated
+  * Update the man pages to document the new fsverity feature, and improve
+    the documentation for the casefold and encrypt features
+  * Allow e2scrub_all to work when the VG free space is exactly the
+    snapshot size (Closes: #935009)
+  * Avoid spurious lvm warnings when e2scrub_all is run out of cron on
+    non-systemd systems (Closes: #940240)
+  * Update the Dutch, German, Malay, Spanish, and Vietnamese translations
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Mon, 23 Sep 2019 15:31:27 -0400
+
+e2fsprogs (1.45.3-4) unstable; urgency=medium
+
+  * stop using Link Time Optimization; it breaks reproducible builds
+  * skip "make check" if DEB_BUILD_OPTIONS contains nocheck; this is
+    needed for some ports builds to complete successfully (Closes: #933247)
+  * fix e2fsprogs build problems on non-Linux ports
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Tue, 06 Aug 2019 15:22:30 -0400
+
+e2fsprogs (1.45.3-3) unstable; urgency=medium
+
+  * Fix Breaks/Replace dependency for logsave (Closes: #932874)
+  * Mark logsave as Multi-Arch: foreign (Closes: #932876)
+  * Fix test bug on the x32 architecture (Closes: #932906)
+  * Fix FTBFS problem on FreeBSD and Hurd since they don't have systemd
+  * Fix blhc problem when running "make check"
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Thu, 25 Jul 2019 15:35:01 -0400
+
+e2fsprogs (1.45.3-2) unstable; urgency=medium
+
+  * Add a hard dependency on logsave to e2fsprogs to fix initramfs issues
+    (Closes: #932855, #932859, #932861, #932881, #932888)
+  * Add check in e2scrub_all.cron so that it doesn't fail if the package
+    is removed, since e2scrub_all.cron is marked as a config file.
+    (Closes: #932622)
+  * Update the Debian policy compliance to 4.4.0
+  * Update Czech, French, German, Polish, Portuguese, Swedish, and
+    Ukrainian translations
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Wed, 24 Jul 2019 12:56:52 -0400
+
+e2fsprogs (1.45.3-1) unstable; urgency=medium
+
+  * New upstream version
+  * Automatic online file system scrubs is now disabled by default.
+    They can be enabled by editing /etc/e2scrub.conf.
+  * fuse2fs is now installed in /usr/bin instead of /usr/sbin
+  * Fix fuse2fs compatibility with fuse3; but specifying the
+    nonempty option may be necessary if fusermount with fuse v2 is in use.
+    See NEWS.gz for more details.
+  * Fixed e2fsck support of file systems using large_dir and inline
+    directories at the same time.
+  * Fixed a bug in e2scrub_all so it correctly handles an LUKS volume
+    stacked on top of an LV.  (Closes: #931387)
+  * Fixed a bug in e2scrub_all so it correctl specifies the volumes to
+    clean up when using "e2scrub_all -r".   (Closes: #931679)
+  * Fixed improper use of positional markers in the Czech, Dutch,
+    German, and Vietnamese translations.  (Closes: #892173)
+  * Remove ancient special-case CFLAGS for Alpha and Powermac platforms
+  * Drop packaging support for Debian Jessie
+  * Use the same build tree for the e2fsprogs udeb package
+  * Restructure rules file to use dh
+  * Only require the udev, systemd, and cron build dependencies when
+    building on Linux. (Closes: #931266)
+  * Move logsave to its own package.  (Closes: #923372)
+  * Update the Czech and Dutch translations
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Sun, 14 Jul 2019 21:01:11 -0400
+
+e2fsprogs (1.45.2-1) unstable; urgency=medium
+
+  * New upstream version
+  * When mke2fs asks the user if she should proceed, fall back to the
+    English 'y' or 'Y' characters since there could be a missing
+    translation prompting the use of the English 'y' character.
+    (Closes: #907034)
+  * Fix spurious complaint of blocks beyond i_size for verity files.
+  * Update the Czech, Malay, Polish, Spanish, Swedish, and Ukarainian
+    translations.  Add the new Portuguese translation.  (Closes: #912185)
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Mon, 27 May 2019 21:46:31 -0400
+
+e2fsprogs (1.45.1-3) unstable; urgency=medium
+
+  * Fix e2scrub_all cron failures (Closes: #929287)
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Mon, 20 May 2019 21:48:40 -0400
+
+e2fsprogs (1.45.1-2) unstable; urgency=medium
+
+  * Avoid spurious e2scrub_all error messages spamming administrators from
+    cron/systemd timer units when lvm2 is not installed and/or there are
+    no lvm devices present in the system (Closes: #928977, #929186, #929254)
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Mon, 20 May 2019 11:02:09 -0400
+
+e2fsprogs (1.45.1-1) unstable; urgency=medium
+
+  * New upstream feature
+  * Drop lvm2 from the recommends line (Closes: #924275)
+  * Add the -n flag to the e2scrub and e2scrub_all commands
+  * Teach e2scrub to issue more useful error messages
+  * Update support for the case-folding file system feature to match what
+    finally will be landing in the kernel.
+  * Teach e2scrub_all to skip scrubing a file system if there is not
+    enough free space to create a snapshot.  (Closes: #924301)
+  * Fixed debugfs so it correctly prints ea_in_inode xattr values.
+  * Debugfs now prints non-printing characters using C-style hex escape
+    sequences.
+  * E2fsck now checks the unused portions of the bitmap blocks when the
+    number of blocks/inodes is less than the full blocksize to make sure
+    they are properly set.
+  * Fixed mke2fs's insanely large file system check, so that creating a
+    900TB file system will succeed.
+  * E2scrub now tags its temp snapshot volumes with UDISK_IGNORE to avoid
+    them showing up in GUI's.  (Closes: #926112)
+  * Mark the e2scrub systemd service files to indicate that it requires
+    CAP_SYS_ADMIN and CAP_SYS_RAWIO so e2scrub will get skipped when run
+    in cointainers that don't give root these capabilities.  (Closes: #926138)
+  * E2fsck can now save a problem code log for debugging or monitoring
+    purposes.
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Sun, 12 May 2019 21:23:25 -0400
+
+e2fsprogs (1.45.0-1) unstable; urgency=medium
+
+  * New upstream feature
+  * tune2fs can now set the file system error bit to force a check at the
+    next fsck by using the extended option "force_fsck".
+  * There is now an e2scrub script which will allow e2fsck to be run
+    on mounted file systems using an LVM device.  There will be a systemd
+    script to automatically run e2scrub on all ext4* file systems where it
+    can be supported.
+  * mke2fs will attempt avoid discarding pre-allocated blocks when
+    initializing a file system on a file.
+  * The fuse2fs command now supports a "fakeroot" option to allow an
+    unprivileged user to fuse2fs to modify rootfs images.
+  * Add initial support for the character set and case-folding file system
+    feature.
+  * Debugfs can now set the inode's checksum field
+  * E2image now accepts the -b and -B options to allow the user to specify
+    the superblock location when creating a raw or qcow2 image.
+  * Update the debhelper compatibility level to 11
+  * Update the Debian policy compliance to 4.3.0
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Wed, 06 Mar 2019 12:55:18 -0500
+
+e2fsprogs (1.44.6-1) unstable; urgency=medium
+
+  * New upstream version
+  * Fix e4defrag overflow problem when files are being created while it is
+    running (Closes: #888899)
+  * Fix e2fsck so it can correctly handle directories > 2 GiB when the
+    largedir feature is enabled.
+  * Fix mke2fs's hugefile creation so it works correctly for certain
+    unfortunately sized disks/partitions.
+  * Fix the libext2fs library to be more robust against
+    invalid/maliciously corrupted block group descriptors.
+  * Fix mke2fs and debugfs so they can correctly copy in files > 2 GiB.
+  * Fix debugfs so its stat command can correct supportly display directory
+    sizes > 2 GiB.
+  * Fix memory leaks in debugfs, mke2fs, and e2freefrag.
+  * Avoid unnecessarily linking badblocks with the libblkid shared library.
+    (Closes: #919958)
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Tue, 05 Mar 2019 15:10:40 -0500
+
 e2fsprogs (1.44.5-1) unstable; urgency=medium
 
   * New upstream version
@@ -11,8 +191,8 @@ e2fsprogs (1.44.5-1) unstable; urgency=medium
     are correct
   * Fix a false warning that tune2fs will take long time to change
     a UUID if the metadata_csum feature is not enabled
-  * Fix mk_cmds so it works on a usrmerge system when e2fsprogs is built
-    on a non-usrmerge system (Closes: #914087)
+  * Fix mk_cmds so it works on a non-usrmerge system when e2fsprogs
+    is built on a usrmerge system (Closes: #914087)
   * E2fsck will avoid offering to set the inline_data feature flag
     unnecessarily
   * E4defrag will handle the case where it is running as root and it can't

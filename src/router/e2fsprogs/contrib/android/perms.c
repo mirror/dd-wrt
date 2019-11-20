@@ -81,9 +81,10 @@ static errcode_t set_selinux_xattr(ext2_filsys fs, ext2_ino_t ino,
 	retval = selabel_lookup(params->sehnd, &secontext, params->filename,
 				inode.i_mode);
 	if (retval < 0) {
-		com_err(__func__, retval,
+		int saved_errno = errno;
+		com_err(__func__, errno,
 			_("searching for label \"%s\""), params->filename);
-		return retval;
+		return saved_errno;
 	}
 
 	retval = ino_add_xattr(fs, ino,  "security." XATTR_SELINUX_SUFFIX,
@@ -187,7 +188,7 @@ static errcode_t set_timestamp(ext2_filsys fs, ext2_ino_t ino,
 		}
 		retval = lstat(src_filename, &stat);
 		if (retval < 0) {
-			com_err(__func__, retval,
+			com_err(__func__, errno,
 				_("while lstat file %s"), src_filename);
 			goto end;
 		}
@@ -339,18 +340,19 @@ errcode_t android_configure_fs(ext2_filsys fs, char *src_dir, char *target_out,
 	if (nopt > 0) {
 		sehnd = selabel_open(SELABEL_CTX_FILE, seopts, nopt);
 		if (!sehnd) {
-			com_err(__func__, -EINVAL,
+			int saved_errno = errno;
+			com_err(__func__, errno,
 				_("while opening file contexts \"%s\""),
 				seopts[0].value);
-			return -EINVAL;
+			return saved_errno;
 		}
 	}
 #else
 	sehnd = selinux_android_file_context_handle();
 	if (!sehnd) {
-		com_err(__func__, -EINVAL,
+		com_err(__func__, EINVAL,
 			_("while opening android file_contexts"));
-		return -EINVAL;
+		return EINVAL;
 	}
 #endif
 

@@ -35,7 +35,7 @@ INSTALL = @INSTALL@
 SPROGS=		mke2fs badblocks tune2fs dumpe2fs $(BLKID_PROG) logsave \
 			$(E2IMAGE_PROG) @FSCK_PROG@ e2undo
 USPROGS=	mklost+found filefrag e2freefrag $(UUIDD_PROG) \
-			$(E4DEFRAG_PROG) $(E4CRYPT_PROG) $(FUSE_PROG)
+			$(E4DEFRAG_PROG) $(E4CRYPT_PROG)
 SMANPAGES=	tune2fs.8 mklost+found.8 mke2fs.8 dumpe2fs.8 badblocks.8 \
 			e2label.8 $(FINDFS_MAN) $(BLKID_MAN) $(E2IMAGE_MAN) \
 			logsave.8 filefrag.8 e2freefrag.8 e2undo.8 \
@@ -43,7 +43,7 @@ SMANPAGES=	tune2fs.8 mklost+found.8 mke2fs.8 dumpe2fs.8 badblocks.8 \
 			e2mmpstatus.8
 FMANPAGES=	mke2fs.conf.5 ext4.5
 
-UPROGS=		chattr lsattr @UUID_CMT@ uuidgen
+UPROGS=		chattr lsattr $(FUSE_PROG) @UUID_CMT@ uuidgen
 UMANPAGES=	chattr.1 lsattr.1 @UUID_CMT@ uuidgen.1
 UMANPAGES+=	@FUSE_CMT@ fuse2fs.1
 

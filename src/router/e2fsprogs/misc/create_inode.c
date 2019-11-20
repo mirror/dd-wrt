@@ -19,6 +19,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <limits.h> /* for PATH_MAX */
+#include <dirent.h> /* for scandir() and alphasort() */
 #if defined HAVE_SYS_XATTR_H
 #include <sys/xattr.h>
 #elif defined HAVE_ATTR_XATTR_H
@@ -438,8 +439,8 @@ static errcode_t copy_file_chunk(ext2_filsys fs, int fd, ext2_file_t e2_file,
 				ptr += blen;
 				continue;
 			}
-			err = ext2fs_file_lseek(e2_file, off + bpos,
-						EXT2_SEEK_SET, NULL);
+			err = ext2fs_file_llseek(e2_file, off + bpos,
+						 EXT2_SEEK_SET, NULL);
 			if (err)
 				goto fail;
 			while (blen > 0) {
@@ -480,8 +481,9 @@ static errcode_t try_lseek_copy(ext2_filsys fs, int fd, struct stat *statbuf,
 		if (hole < 0)
 			return EXT2_ET_UNIMPLEMENTED;
 
-		data_blk = data & ~(fs->blocksize - 1);
-		hole_blk = (hole + (fs->blocksize - 1)) & ~(fs->blocksize - 1);
+		data_blk = data & ~(off_t)(fs->blocksize - 1);
+		hole_blk = ((hole + (off_t)(fs->blocksize - 1)) &
+			    ~(off_t)(fs->blocksize - 1));
 		err = copy_file_chunk(fs, fd, e2_file, data_blk, hole_blk, buf,
 				      zerobuf);
 		if (err)
@@ -704,17 +706,81 @@ struct file_info {
 static errcode_t path_append(struct file_info *target, const char *file)
 {
 	if (strlen(file) + target->path_len + 1 > target->path_max_len) {
+		void *p;
 		target->path_max_len *= 2;
-		target->path = realloc(target->path, target->path_max_len);
-		if (!target->path)
+		p = realloc(target->path, target->path_max_len);
+		if (p == NULL)
 			return EXT2_ET_NO_MEMORY;
+		target->path = p;
 	}
 	target->path_len += sprintf(target->path + target->path_len, "/%s",
 				    file);
 	return 0;
 }
 
-/* Copy files from source_dir to fs */
+#ifdef _WIN32
+static int scandir(const char *dir_name, struct dirent ***name_list,
+		   int (*filter)(const struct dirent*),
+		   int (*compar)(const struct dirent**, const struct dirent**)) {
+	DIR *dir;
+	struct dirent *dent;
+	struct dirent **temp_list = NULL;
+	size_t temp_list_size = 0; // unit: num of dirent
+	size_t num_dent = 0;
+
+	dir = opendir(dir_name);
+	if (dir == NULL) {
+		return -1;
+	}
+
+	while ((dent = readdir(dir))) {
+		if (filter != NULL && !(*filter)(dent))
+			continue;
+
+		// re-allocate the list
+		if (num_dent == temp_list_size) {
+			size_t new_list_size = temp_list_size + 32;
+			struct dirent **new_list = (struct dirent**)realloc(
+				temp_list, new_list_size * sizeof(struct dirent*));
+			if (new_list == NULL) {
+				goto out;
+			}
+			temp_list_size = new_list_size;
+			temp_list = new_list;
+		}
+		// add the copy of dirent to the list
+		temp_list[num_dent] = (struct dirent*)malloc((dent->d_reclen + 3) & ~3);
+		memcpy(temp_list[num_dent], dent, dent->d_reclen);
+		num_dent++;
+	}
+
+	if (compar != NULL) {
+		qsort(temp_list, num_dent, sizeof(struct dirent*),
+		      (int (*)(const void*, const void*))compar);
+	}
+
+        // release the temp list
+	*name_list = temp_list;
+	temp_list = NULL;
+
+out:
+	if (temp_list != NULL) {
+		while (num_dent > 0) {
+			free(temp_list[--num_dent]);
+		}
+		free(temp_list);
+		num_dent = -1;
+	}
+	closedir(dir);
+	return num_dent;
+}
+
+static int alphasort(const struct dirent **a, const struct dirent **b) {
+	return strcoll((*a)->d_name, (*b)->d_name);
+}
+#endif
+
+/* Copy files from source_dir to fs in alphabetical order */
 static errcode_t __populate_fs(ext2_filsys fs, ext2_ino_t parent_ino,
 			       const char *source_dir, ext2_ino_t root,
 			       struct hdlinks_s *hdlinks,
@@ -722,8 +788,7 @@ static errcode_t __populate_fs(ext2_filsys fs, ext2_ino_t parent_ino,
 			       struct fs_ops_callbacks *fs_callbacks)
 {
 	const char	*name;
-	DIR		*dh;
-	struct dirent	*dent;
+	struct dirent	**dent;
 	struct stat	st;
 	char		*ln_target = NULL;
 	unsigned int	save_inode;
@@ -732,6 +797,7 @@ static errcode_t __populate_fs(ext2_filsys fs, ext2_ino_t parent_ino,
 	int		read_cnt;
 	int		hdlink;
 	size_t		cur_dir_path_len;
+	int		i, num_dents;
 
 	if (chdir(source_dir) < 0) {
 		retval = errno;
@@ -741,24 +807,25 @@ static errcode_t __populate_fs(ext2_filsys fs, ext2_ino_t parent_ino,
 		return retval;
 	}
 
-	if (!(dh = opendir("."))) {
+	num_dents = scandir(".", &dent, NULL, alphasort);
+
+	if (num_dents < 0) {
 		retval = errno;
 		com_err(__func__, retval,
-			_("while opening directory \"%s\""), source_dir);
+			_("while scanning directory \"%s\""), source_dir);
 		return retval;
 	}
 
-	while ((dent = readdir(dh))) {
-		if ((!strcmp(dent->d_name, ".")) ||
-		    (!strcmp(dent->d_name, "..")))
+	for (i = 0; i < num_dents; free(dent[i]), i++) {
+		name = dent[i]->d_name;
+		if ((!strcmp(name, ".")) || (!strcmp(name, "..")))
 			continue;
-		if (lstat(dent->d_name, &st)) {
+		if (lstat(name, &st)) {
 			retval = errno;
 			com_err(__func__, retval, _("while lstat \"%s\""),
-				dent->d_name);
+				name);
 			goto out;
 		}
-		name = dent->d_name;
 
 		/* Check for hardlinks */
 		save_inode = 0;
@@ -950,7 +1017,8 @@ find_lnf:
 	}
 
 out:
-	closedir(dh);
+	for (; i < num_dents; free(dent[i]), i++);
+	free(dent);
 	return retval;
 }
 

@@ -339,10 +339,11 @@ struct ext2_dx_tail {
 #define EXT4_SNAPFILE_SHRUNK_FL		0x08000000  /* Snapshot shrink has completed */
 #define EXT4_INLINE_DATA_FL		0x10000000 /* Inode has inline data */
 #define EXT4_PROJINHERIT_FL		0x20000000 /* Create with parents projid */
+#define EXT4_CASEFOLD_FL		0x40000000 /* Casefolded file */
 #define EXT2_RESERVED_FL		0x80000000 /* reserved for ext2 lib */
 
-#define EXT2_FL_USER_VISIBLE		0x204BDFFF /* User visible flags */
-#define EXT2_FL_USER_MODIFIABLE		0x204B80FF /* User modifiable flags */
+#define EXT2_FL_USER_VISIBLE		0x604BDFFF /* User visible flags */
+#define EXT2_FL_USER_MODIFIABLE		0x604B80FF /* User modifiable flags */
 
 /*
  * ioctl commands
@@ -748,7 +749,16 @@ struct ext2_super_block {
 /*268*/	__le32	s_lpf_ino;		/* Location of the lost+found inode */
 	__le32  s_prj_quota_inum;	/* inode for tracking project quota */
 /*270*/	__le32	s_checksum_seed;	/* crc32c(orig_uuid) if csum_seed set */
-	__le32	s_reserved[98];		/* Padding to the end of the block */
+/*274*/	__u8	s_wtime_hi;
+	__u8	s_mtime_hi;
+	__u8	s_mkfs_time_hi;
+	__u8	s_lastcheck_hi;
+	__u8	s_first_error_time_hi;
+	__u8	s_last_error_time_hi;
+	__u8	s_pad[2];
+/*27c*/ __le16	s_encoding;		/* Filename charset encoding */
+	__le16	s_encoding_flags;	/* Filename charset encoding flags */
+	__le32	s_reserved[95];		/* Padding to the end of the block */
 /*3fc*/	__u32	s_checksum;		/* crc32c(superblock) */
 };
 
@@ -839,6 +849,7 @@ struct ext2_super_block {
 #define EXT4_FEATURE_INCOMPAT_LARGEDIR		0x4000 /* >2GB or 3-lvl htree */
 #define EXT4_FEATURE_INCOMPAT_INLINE_DATA	0x8000 /* data in inode */
 #define EXT4_FEATURE_INCOMPAT_ENCRYPT		0x10000
+#define EXT4_FEATURE_INCOMPAT_CASEFOLD		0x20000
 
 #define EXT4_FEATURE_COMPAT_FUNCS(name, ver, flagname) \
 static inline int ext2fs_has_feature_##name(struct ext2_super_block *sb) \
@@ -932,6 +943,7 @@ EXT4_FEATURE_INCOMPAT_FUNCS(csum_seed,		4, CSUM_SEED)
 EXT4_FEATURE_INCOMPAT_FUNCS(largedir,		4, LARGEDIR)
 EXT4_FEATURE_INCOMPAT_FUNCS(inline_data,	4, INLINE_DATA)
 EXT4_FEATURE_INCOMPAT_FUNCS(encrypt,		4, ENCRYPT)
+EXT4_FEATURE_INCOMPAT_FUNCS(casefold,		4, CASEFOLD)
 
 #define EXT2_FEATURE_COMPAT_SUPP	0
 #define EXT2_FEATURE_INCOMPAT_SUPP    (EXT2_FEATURE_INCOMPAT_FILETYPE| \
@@ -1115,5 +1127,9 @@ struct mmp_struct {
  * Size of a parent inode in inline data directory.
  */
 #define EXT4_INLINE_DATA_DOTDOT_SIZE	(4)
+
+#define EXT4_ENC_UTF8_12_1	1
+
+#define EXT4_ENC_STRICT_MODE_FL			(1 << 0) /* Reject invalid sequences */
 
 #endif	/* _LINUX_EXT2_FS_H */

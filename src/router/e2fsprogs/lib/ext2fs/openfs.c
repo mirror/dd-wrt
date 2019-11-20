@@ -29,7 +29,6 @@
 
 #include "ext2_fs.h"
 
-
 #include "ext2fs.h"
 #include "e2image.h"
 
@@ -501,6 +500,9 @@ errcode_t ext2fs_open2(const char *name, const char *io_options,
 		}
 		ext2fs_set_feature_shared_blocks(fs->super);
 	}
+
+	if (ext2fs_has_feature_casefold(fs->super))
+		fs->encoding = ext2fs_load_nls_table(fs->super->s_encoding);
 
 	fs->flags &= ~EXT2_FLAG_NOFREE_ON_ERROR;
 	*ret_fs = fs;

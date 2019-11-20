@@ -53,6 +53,7 @@ static int array_idx;
 
 #define FLAG_ARRAY	0x0001
 #define FLAG_ALIAS	0x0002	/* Data intersects with other field */
+#define FLAG_CSUM	0x0004
 
 struct field_set_info {
 	const char	*name;
@@ -69,9 +70,12 @@ static errcode_t parse_int(struct field_set_info *info, char *field, char *arg);
 static errcode_t parse_string(struct field_set_info *info, char *field, char *arg);
 static errcode_t parse_uuid(struct field_set_info *info, char *field, char *arg);
 static errcode_t parse_hashalg(struct field_set_info *info, char *field, char *arg);
+static errcode_t parse_encoding(struct field_set_info *info, char *field, char *arg);
 static errcode_t parse_time(struct field_set_info *info, char *field, char *arg);
 static errcode_t parse_bmap(struct field_set_info *info, char *field, char *arg);
 static errcode_t parse_gd_csum(struct field_set_info *info, char *field, char *arg);
+static errcode_t parse_inode_csum(struct field_set_info *info, char *field,
+				  char *arg);
 static errcode_t parse_mmp_clear(struct field_set_info *info, char *field,
 				 char *arg);
 
@@ -178,6 +182,7 @@ static struct field_set_info super_fields[] = {
 	{ "encrypt_pw_salt", &set_sb.s_encrypt_pw_salt, NULL, 16, parse_uuid },
 	{ "lpf_ino", &set_sb.s_lpf_ino, NULL, 4, parse_uint },
 	{ "checksum_seed", &set_sb.s_checksum_seed, NULL, 4, parse_uint },
+	{ "encoding", &set_sb.s_encoding, NULL, 2, parse_encoding },
 	{ 0, 0, 0, 0 }
 };
 
@@ -218,7 +223,7 @@ static struct field_set_info inode_fields[] = {
 	{ "frag", &set_inode.osd2.hurd2.h_i_frag, NULL, 1, parse_uint, FLAG_ALIAS },
 	{ "fsize", &set_inode.osd2.hurd2.h_i_fsize, NULL, 1, parse_uint },
 	{ "checksum", &set_inode.osd2.linux2.l_i_checksum_lo, 
-		&set_inode.i_checksum_hi, 2, parse_uint },
+		&set_inode.i_checksum_hi, 2, parse_inode_csum, FLAG_CSUM },
 	{ "author", &set_inode.osd2.hurd2.h_i_author, NULL,
 		4, parse_uint, FLAG_ALIAS },
 	{ "extra_isize", &set_inode.i_extra_isize, NULL,
@@ -628,6 +633,19 @@ static errcode_t parse_hashalg(struct field_set_info *info,
 	return 0;
 }
 
+static errcode_t parse_encoding(struct field_set_info *info,
+				char *field EXT2FS_ATTR((unused)), char *arg)
+{
+	int	encoding;
+	unsigned char	*p = (unsigned char *) info->ptr;
+
+	encoding = e2p_str2encoding(arg);
+	if (encoding < 0)
+		return parse_uint(info, field, arg);
+	*p = encoding;
+	return 0;
+}
+
 static errcode_t parse_bmap(struct field_set_info *info,
 			    char *field EXT2FS_ATTR((unused)), char *arg)
 {
@@ -661,6 +679,67 @@ static errcode_t parse_gd_csum(struct field_set_info *info, char *field,
 		*checksum = ext2fs_group_desc_csum(current_fs, set_bg);
 		printf("Checksum set to 0x%04x\n", *checksum);
 		return 0;
+	}
+	return parse_uint(info, field, arg);
+}
+
+static errcode_t parse_inode_csum(struct field_set_info *info, char *field,
+				  char *arg)
+{
+	errcode_t	retval = 0;
+	__u32		crc;
+	int		is_large_inode = 0;
+
+	if (strcmp(arg, "calc") == 0) {
+		size_t sz = EXT2_INODE_SIZE(current_fs->super);
+		struct ext2_inode_large *tmp_inode = NULL;
+
+		retval = ext2fs_get_mem(sz, &tmp_inode);
+		if (retval)
+			goto out;
+
+		retval = ext2fs_read_inode_full(current_fs, set_ino,
+				     (struct ext2_inode *) tmp_inode,
+				     sz);
+		if (retval)
+			goto out;
+
+#ifdef WORDS_BIGENDIAN
+		ext2fs_swap_inode_full(current_fs, tmp_inode,
+				       tmp_inode, 1, sz);
+#endif
+
+		if (sz > EXT2_GOOD_OLD_INODE_SIZE)
+			is_large_inode = 1;
+
+		retval = ext2fs_inode_csum_set(current_fs, set_ino,
+					       tmp_inode);
+		if (retval)
+			goto out;
+#ifdef WORDS_BIGENDIAN
+		crc = set_inode.i_checksum_lo =
+			ext2fs_swab16(tmp_inode->i_checksum_lo);
+
+#else
+		crc = set_inode.i_checksum_lo = tmp_inode->i_checksum_lo;
+#endif
+		if (is_large_inode &&
+		    set_inode.i_extra_isize >=
+				(offsetof(struct ext2_inode_large,
+					  i_checksum_hi) -
+				 EXT2_GOOD_OLD_INODE_SIZE)) {
+#ifdef WORDS_BIGENDIAN
+			set_inode.i_checksum_lo =
+				ext2fs_swab16(tmp_inode->i_checksum_lo);
+#else
+			set_inode.i_checksum_hi = tmp_inode->i_checksum_hi;
+#endif
+			crc |= ((__u32)set_inode.i_checksum_hi) << 16;
+		}
+		printf("Checksum set to 0x%08x\n", crc);
+	out:
+		ext2fs_free_mem(&tmp_inode);
+		return retval;
 	}
 	return parse_uint(info, field, arg);
 }
@@ -723,7 +802,8 @@ static void print_possible_fields(struct field_set_info *fields)
 }
 
 
-void do_set_super(int argc, char *argv[])
+void do_set_super(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
+		  void *infop EXT2FS_ATTR((unused)))
 {
 	const char *usage = "<field> <value>\n"
 		"\t\"set_super_value -l\" will list the names of "
@@ -750,7 +830,8 @@ void do_set_super(int argc, char *argv[])
 	}
 }
 
-void do_set_inode(int argc, char *argv[])
+void do_set_inode(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
+		  void *infop EXT2FS_ATTR((unused)))
 {
 	const char *usage = "<inode> <field> <value>\n"
 		"\t\"set_inode_field -l\" will list the names of "
@@ -775,20 +856,25 @@ void do_set_inode(int argc, char *argv[])
 	if (!set_ino)
 		return;
 
-	if (debugfs_read_inode_full(set_ino,
-			(struct ext2_inode *) &set_inode, argv[1],
-				    sizeof(set_inode)))
+	if (debugfs_read_inode2(set_ino,
+				(struct ext2_inode *) &set_inode, argv[1],
+				sizeof(set_inode),
+				(ss->flags & FLAG_CSUM) ?
+				READ_INODE_NOCSUM : 0))
 		return;
 
 	if (ss->func(ss, argv[2], argv[3]) == 0) {
-		if (debugfs_write_inode_full(set_ino, 
-			     (struct ext2_inode *) &set_inode,
-			     argv[1], sizeof(set_inode)))
-			return;
+		debugfs_write_inode2(set_ino,
+				     (struct ext2_inode *) &set_inode,
+				     argv[1], sizeof(set_inode),
+				     (ss->flags & FLAG_CSUM) ?
+				     WRITE_INODE_NOCSUM : 0);
 	}
 }
 
-void do_set_block_group_descriptor(int argc, char *argv[])
+void do_set_block_group_descriptor(int argc, char *argv[],
+				   int sci_idx EXT2FS_ATTR((unused)),
+				   void *infop EXT2FS_ATTR((unused)))
 {
 	const char *usage = "<bg number> <field> <value>\n"
 		"\t\"set_block_group -l\" will list the names of "
@@ -866,7 +952,8 @@ static errcode_t parse_mmp_clear(struct field_set_info *info,
 }
 
 #ifdef CONFIG_MMP
-void do_set_mmp_value(int argc, char *argv[])
+void do_set_mmp_value(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
+		      void *infop EXT2FS_ATTR((unused)))
 {
 	const char *usage = "<field> <value>\n"
 		"\t\"set_mmp_value -l\" will list the names of "
@@ -925,7 +1012,9 @@ void do_set_mmp_value(int argc, char *argv[])
 }
 #else
 void do_set_mmp_value(int argc EXT2FS_ATTR((unused)),
-		      char *argv[] EXT2FS_ATTR((unused)))
+		      char *argv[] EXT2FS_ATTR((unused)),
+		      int sci_idx EXT2FS_ATTR((unused)),
+		      void *infop EXT2FS_ATTR((unused)))
 {
 	fprintf(stdout, "MMP is unsupported, please recompile with "
 	                "--enable-mmp\n");

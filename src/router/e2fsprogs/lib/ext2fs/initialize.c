@@ -186,6 +186,13 @@ errcode_t ext2fs_initialize(const char *name, int flags,
 	set_field(s_flags, 0);
 	assign_field(s_backup_bgs[0]);
 	assign_field(s_backup_bgs[1]);
+
+	assign_field(s_encoding);
+	assign_field(s_encoding_flags);
+
+	if (ext2fs_has_feature_casefold(param))
+		fs->encoding = ext2fs_load_nls_table(param->s_encoding);
+
 	if (super->s_feature_incompat & ~EXT2_LIB_FEATURE_INCOMPAT_SUPP) {
 		retval = EXT2_ET_UNSUPP_FEATURE;
 		goto cleanup;

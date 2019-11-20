@@ -45,3 +45,6 @@
 	     blocksize = 4096
 	     inode_size = 128
 	}
+
+[options]
+	fname_encoding = utf8

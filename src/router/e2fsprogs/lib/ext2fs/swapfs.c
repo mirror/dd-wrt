@@ -129,8 +129,11 @@ void ext2fs_swap_super(struct ext2_super_block * sb)
 	sb->s_lpf_ino = ext2fs_swab32(sb->s_lpf_ino);
 	sb->s_prj_quota_inum = ext2fs_swab32(sb->s_prj_quota_inum);
 	sb->s_checksum_seed = ext2fs_swab32(sb->s_checksum_seed);
+	/* s_*_time_hi are __u8 and does not need swabbing */
+	sb->s_encoding = ext2fs_swab16(sb->s_encoding);
+	sb->s_encoding_flags = ext2fs_swab16(sb->s_encoding_flags);
 	/* catch when new fields are used from s_reserved */
-	EXT2FS_BUILD_BUG_ON(sizeof(sb->s_reserved) != 98 * sizeof(__le32));
+	EXT2FS_BUILD_BUG_ON(sizeof(sb->s_reserved) != 95 * sizeof(__le32));
 	sb->s_checksum = ext2fs_swab32(sb->s_checksum);
 }
 

@@ -142,7 +142,16 @@ int main(int argc, char **argv)
 	check_field(s_lpf_ino, 4);
 	check_field(s_prj_quota_inum, 4);
 	check_field(s_checksum_seed, 4);
-	check_field(s_reserved, 98 * 4);
+	check_field(s_wtime_hi, 1);
+	check_field(s_mtime_hi, 1);
+	check_field(s_mkfs_time_hi, 1);
+	check_field(s_lastcheck_hi, 1);
+	check_field(s_first_error_time_hi, 1);
+	check_field(s_last_error_time_hi, 1);
+	check_field(s_pad, 2);
+	check_field(s_encoding, 2);
+	check_field(s_encoding_flags, 2);
+	check_field(s_reserved, 95 * 4);
 	check_field(s_checksum, 4);
 	do_field("Superblock end", 0, 0, cur_offset, 1024);
 #endif

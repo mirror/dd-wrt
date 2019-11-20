@@ -470,6 +470,9 @@ void list_super2(struct ext2_super_block * sb, FILE *f)
 	if (ext2fs_has_feature_csum_seed(sb))
 		fprintf(f, "Checksum seed:            0x%08x\n",
 			sb->s_checksum_seed);
+	if (ext2fs_has_feature_casefold(sb))
+		fprintf(f, "Character encoding:       %s\n",
+			e2p_encoding2str(sb->s_encoding));
 }
 
 void list_super (struct ext2_super_block * s)

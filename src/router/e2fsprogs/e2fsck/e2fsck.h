@@ -109,6 +109,7 @@ struct dx_dir_info {
 	int			hashversion;
 	short			depth;		/* depth of tree */
 	struct dx_dirblock_info	*dx_block; 	/* Array of size numblocks */
+	int			casefolded_hash;
 };
 
 #define DX_DIRBLOCK_ROOT	1
@@ -230,6 +231,8 @@ struct e2fsck_struct {
 	char *io_options;
 	FILE	*logf;
 	char	*log_fn;
+	FILE	*problem_logf;
+	char	*problem_log_fn;
 	int	flags;		/* E2fsck internal flags */
 	int	options;
 	int	blocksize;	/* blocksize */
@@ -471,7 +474,8 @@ extern int e2fsck_dir_info_get_dotdot(e2fsck_t ctx, ext2_ino_t ino,
 				      ext2_ino_t *dotdot);
 
 /* dx_dirinfo.c */
-extern void e2fsck_add_dx_dir(e2fsck_t ctx, ext2_ino_t ino, int num_blocks);
+extern void e2fsck_add_dx_dir(e2fsck_t ctx, ext2_ino_t ino,
+			      struct ext2_inode *inode, int num_blocks);
 extern struct dx_dir_info *e2fsck_get_dx_dir_info(e2fsck_t ctx, ext2_ino_t ino);
 extern void e2fsck_free_dx_dir_info(e2fsck_t ctx);
 extern int e2fsck_get_num_dx_dirinfo(e2fsck_t ctx);

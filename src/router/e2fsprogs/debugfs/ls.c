@@ -54,29 +54,20 @@ static int print_filename(FILE *f, struct ext2_dir_entry *dirent, int options)
 	if ((options & ENCRYPT_OPT) && !(options & RAW_OPT)) {
 		if (f)
 			return fprintf(f, "<encrypted (%d)>", len);
-		else {
-			char tmp[1];
-			return snprintf(tmp, sizeof(tmp),
-					"<encrypted (%d)>", len);
-		}
+		else
+			return snprintf(NULL, 0, "<encrypted (%d)>", len);
 	}
 	while (len--) {
 		ch = *cp++;
-		if (ch > 128) {
+		if (ch < 32 || ch >= 127 || ch == '\\') {
 			if (f)
-				fputs("M-", f);
-			ch -= 128;
-			retlen += 2;
-		}
-		if ((ch < 32) || (ch == 0x7f)) {
+				fprintf(f, "\\x%02x", ch);
+			retlen += 4;
+		} else {
 			if (f)
-				fputc('^', f);
-			ch ^= 0x40; /* ^@, ^A, ^B; ^? for DEL */
+				fputc(ch, f);
 			retlen++;
 		}
-		if (f)
-			fputc(ch, f);
-		retlen++;
 	}
 	return retlen;
 }
@@ -152,9 +143,6 @@ static int list_dir_proc(ext2_ino_t dir EXT2FS_ATTR((unused)),
 		fprintf(ls->f, "(%d)  %5d  %5d   ",
 			ext2fs_dirent_file_type(dirent),
 			inode_uid(inode), inode_gid(inode));
-		if (LINUX_S_ISDIR(inode.i_mode))
-			fprintf(ls->f, "%5d", inode.i_size);
-		else
 			fprintf(ls->f, "%5llu", EXT2_I_SIZE(&inode));
 		fprintf(ls->f, " %s ", datestr);
 		print_filename(ls->f, dirent, options);
@@ -189,7 +177,8 @@ static int list_dir_proc(ext2_ino_t dir EXT2FS_ATTR((unused)),
 	return 0;
 }
 
-void do_list_dir(int argc, char *argv[])
+void do_list_dir(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
+		 void *infop EXT2FS_ATTR((unused)))
 {
 	struct ext2_inode inode;
 	ext2_ino_t	ino;

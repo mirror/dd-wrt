@@ -238,6 +238,10 @@ program.
 This superblock setting is only honored in 2.6.35+ kernels;
 and not at all by the ext2 and ext3 file system drivers.
 .TP
+.B force_fsck
+Set a flag in the filesystem superblock indicating that errors have been found.
+This will force fsck to run at the next mount.
+.TP
 .B test_fs
 Set a flag in the filesystem superblock indicating that it may be
 mounted using experimental kernel code, such as the ext4dev filesystem.
@@ -546,7 +550,7 @@ extended attributes per file.
 currently only supports setting this filesystem feature.
 .TP
 .B encrypt
-Enable file system level encryption.
+Enable support for file system level encryption.
 .B Tune2fs
 currently only supports setting this filesystem feature.
 .TP
@@ -627,6 +631,11 @@ keep a high watermark for the unused inodes in a filesystem, to reduce
 time.  The first e2fsck run after enabling this feature will take the
 full time, but subsequent e2fsck runs will take only a fraction of the
 original time, depending on how full the file system is.
+.TP
+.B verity
+Enable support for verity protected files.
+.B Tune2fs
+currently only supports setting this filesystem feature.
 .RE
 .IP
 After setting or clearing

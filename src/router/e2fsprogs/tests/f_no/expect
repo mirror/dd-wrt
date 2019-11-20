@@ -12,6 +12,8 @@ Clear<y>? no
 Inode 13 has an invalid extent
 	(logical block 0, invalid physical block 888888888888, len 1)
 Clear<y>? no
+Inodes that were part of a corrupted orphan linked list found.  Fix<y>? no
+Inode 14 was part of the orphaned inode list.  IGNORED.
 Inode 14 is in use, but has dtime set.  Fix<y>? no
 Inode 14 has an invalid extent
 	(logical block 300, invalid physical block 777777777777, len 300)

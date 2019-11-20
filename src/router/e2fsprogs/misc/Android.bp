@@ -21,8 +21,9 @@ cc_library {
     ],
     cflags: ["-Wno-error=format-extra-args"],
     shared_libs: [
-        "libext2_quota",
         "libext2fs",
+        "libext2_com_err",
+        "libext2_quota",
     ],
     system_shared_libs: ["libc", "libdl"],
     export_include_dirs: ["."],
@@ -118,6 +119,7 @@ cc_defaults {
 
 tune2fs_libs = [
     "libext2_blkid",
+    "libext2_com_err",
     "libext2_quota",
     "libext2_uuid",
     "libext2_e2p",
@@ -268,6 +270,21 @@ cc_binary {
         "libext2_blkid",
         "libext2_com_err",
         "libext2_quota",
+    ],
+    system_shared_libs: ["libc", "libdl"],
+}
+
+//##########################################################################
+// Build filefrag
+
+cc_binary {
+    name: "filefrag",
+    host_supported: true,
+    defaults: ["e2fsprogs-defaults"],
+
+    srcs: ["filefrag.c"],
+    shared_libs: [
+        "libext2fs",
     ],
     system_shared_libs: ["libc", "libdl"],
 }

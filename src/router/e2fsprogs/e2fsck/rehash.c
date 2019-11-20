@@ -113,7 +113,7 @@ static int fill_dir_block(ext2_filsys fs,
 	struct ext2_dir_entry 	*dirent;
 	char			*dir;
 	unsigned int		offset, dir_offset, rec_len, name_len;
-	int			hash_alg;
+	int			hash_alg, hash_flags;
 
 	if (blockcnt < 0)
 		return 0;
@@ -139,6 +139,7 @@ static int fill_dir_block(ext2_filsys fs,
 		if (fd->err)
 			return BLOCK_ABORT;
 	}
+	hash_flags = fd->inode->i_flags & EXT4_CASEFOLD_FL;
 	hash_alg = fs->super->s_def_hash_version;
 	if ((hash_alg <= EXT2_HASH_TEA) &&
 	    (fs->super->s_flags & EXT2_FLAGS_UNSIGNED_HASH))
@@ -184,10 +185,11 @@ static int fill_dir_block(ext2_filsys fs,
 		if (fd->compress)
 			ent->hash = ent->minor_hash = 0;
 		else {
-			fd->err = ext2fs_dirhash(hash_alg, dirent->name,
-						 name_len,
-						 fs->super->s_hash_seed,
-						 &ent->hash, &ent->minor_hash);
+			fd->err = ext2fs_dirhash2(hash_alg,
+						  dirent->name, name_len,
+						  fs->encoding, hash_flags,
+						  fs->super->s_hash_seed,
+						  &ent->hash, &ent->minor_hash);
 			if (fd->err)
 				return BLOCK_ABORT;
 		}
@@ -371,6 +373,7 @@ static int duplicate_search_and_fix(e2fsck_t ctx, ext2_filsys fs,
 	char			new_name[256];
 	unsigned int		new_len;
 	int			hash_alg;
+	int hash_flags = fd->inode->i_flags & EXT4_CASEFOLD_FL;
 
 	clear_problem_context(&pctx);
 	pctx.ino = ino;
@@ -415,9 +418,10 @@ static int duplicate_search_and_fix(e2fsck_t ctx, ext2_filsys fs,
 		if (fix_problem(ctx, PR_2_NON_UNIQUE_FILE, &pctx)) {
 			memcpy(ent->dir->name, new_name, new_len);
 			ext2fs_dirent_set_name_len(ent->dir, new_len);
-			ext2fs_dirhash(hash_alg, new_name, new_len,
-				       fs->super->s_hash_seed,
-				       &ent->hash, &ent->minor_hash);
+			ext2fs_dirhash2(hash_alg, new_name, new_len,
+					fs->encoding, hash_flags,
+					fs->super->s_hash_seed,
+					&ent->hash, &ent->minor_hash);
 			fixed++;
 		}
 	}

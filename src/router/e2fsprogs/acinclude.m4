@@ -133,3 +133,50 @@ dnl If there was a GNU version, then set @ifGNUmake@ to the empty string, '#' ot
         AC_SUBST(ifGNUmake)
         AC_SUBST(ifNotGNUmake)
 ] )
+
+# AX_CHECK_MOUNT_OPT: an autoconf macro to check for generic filesystem-
+# agnostic 'mount' options. Written by Nicholas Clark. Looks for constants in
+# sys/mount.h to predict whether the 'mount' utility will support a specific
+# mounting option.
+#
+# This macro can be used to check for the presence of 'nodev' (or other mount
+# options), which isn't uniformly implemented in the BSD family at the time of
+# this writing. Tested on FreeBSD, NetBSD, OpenBSD, and Linux.
+#
+# Usage:
+#
+# AX_CHECK_MOUNT_OPT(option)
+#
+# Defines HAVE_MOUNT_$OPTION (in uppercase) if the option exists, and sets
+# ac_cv_mount_$option (in original case) otherwise.
+#
+# Copyright (c) 2018 Nicholas Clark <nicholas.clark@gmail.com>
+#
+# Copying and distribution of this file, with or without modification, are
+# permitted in any medium without royalty or attribution requirement.
+
+AC_DEFUN([AX_CHECK_MOUNT_OPT], [__AX_CHECK_MOUNT_OPT(m4_tolower([$1]),m4_toupper([$1]))])
+AC_DEFUN([__AX_CHECK_MOUNT_OPT],
+[
+    AS_IF([test "x$ac_cv_header_sys_mount_h" = x],
+          [AC_CHECK_HEADERS([sys/mount.h])])
+    AS_IF([test "x$ac_cv_header_sys_mount_h" = xno],
+          [AC_MSG_FAILURE([error: sys/mount.h not present on your system!])])
+    AS_ECHO_N("checking for mount '$1' option... ")
+    AC_TRY_COMPILE(
+        [#include <sys/mount.h>],
+        [void *temp = (void *)(MS_$2); (void) temp;],
+        [AC_DEFINE(HAVE_MOUNT_$2, 1, [Define to 1 if mount supports $1.])
+         AS_VAR_SET(ac_cv_mount_$1, yes)
+         AS_ECHO("yes")],
+        [AC_TRY_COMPILE(
+            [#include <sys/mount.h>],
+            [void *temp = (void *)(MNT_$2); (void) temp;],
+            [AC_DEFINE(HAVE_MOUNT_$2, 1, [Define to 1 if mount supports $1.])
+             AS_VAR_SET(ac_cv_mount_$1, yes)
+             AS_ECHO("yes")],
+            [AS_VAR_SET(ac_cv_mount_$1, no)
+             AS_ECHO("no")]
+        )]
+    )
+])
