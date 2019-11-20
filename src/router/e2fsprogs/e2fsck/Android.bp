@@ -44,6 +44,7 @@ cc_defaults {
 e2fsck_libs = [
     "libext2fs",
     "libext2_blkid",
+    "libext2_com_err",
     "libext2_uuid",
     "libext2_quota",
     "libext2_e2p",

@@ -540,6 +540,17 @@ struct dquot *qtree_read_dquot(struct quota_handle *h, qid_t id)
 	return dquot;
 }
 
+static int check_reference(struct quota_handle *h, unsigned int blk)
+{
+	if (blk >= h->qh_info.u.v2_mdqi.dqi_qtree.dqi_blocks) {
+		log_err("Illegal reference (%u >= %u) in %s quota file",
+			blk, h->qh_info.u.v2_mdqi.dqi_qtree.dqi_blocks,
+			quota_type2name(h->qh_type));
+		return -1;
+	}
+	return 0;
+}
+
 /*
  * Scan all dquots in file and call callback on each
  */
@@ -558,7 +569,7 @@ static int report_block(struct dquot *dquot, unsigned int blk, char *bitmap,
 	int entries, i;
 
 	if (!buf)
-		return 0;
+		return -1;
 
 	set_bit(bitmap, blk);
 	read_blk(dquot->dq_h, blk, buf);
@@ -580,23 +591,12 @@ static int report_block(struct dquot *dquot, unsigned int blk, char *bitmap,
 	return entries;
 }
 
-static void check_reference(struct quota_handle *h, unsigned int blk)
-{
-	if (blk >= h->qh_info.u.v2_mdqi.dqi_qtree.dqi_blocks)
-		log_err("Illegal reference (%u >= %u) in %s quota file. "
-			"Quota file is probably corrupted.\n"
-			"Please run e2fsck (8) to fix it.",
-			blk,
-			h->qh_info.u.v2_mdqi.dqi_qtree.dqi_blocks,
-			quota_type2name(h->qh_type));
-}
-
 static int report_tree(struct dquot *dquot, unsigned int blk, int depth,
 		       char *bitmap,
 		       int (*process_dquot) (struct dquot *, void *),
 		       void *data)
 {
-	int entries = 0, i;
+	int entries = 0, ret, i;
 	dqbuf_t buf = getdqbuf();
 	__le32 *ref = (__le32 *) buf;
 
@@ -607,22 +607,40 @@ static int report_tree(struct dquot *dquot, unsigned int blk, int depth,
 	if (depth == QT_TREEDEPTH - 1) {
 		for (i = 0; i < QT_BLKSIZE >> 2; i++) {
 			blk = ext2fs_le32_to_cpu(ref[i]);
-			check_reference(dquot->dq_h, blk);
-			if (blk && !get_bit(bitmap, blk))
-				entries += report_block(dquot, blk, bitmap,
-							process_dquot, data);
+			if (check_reference(dquot->dq_h, blk)) {
+				entries = -1;
+				goto errout;
+			}
+			if (blk && !get_bit(bitmap, blk)) {
+				ret = report_block(dquot, blk, bitmap,
+						   process_dquot, data);
+				if (ret < 0) {
+					entries = ret;
+					goto errout;
+				}
+				entries += ret;
+			}
 		}
 	} else {
 		for (i = 0; i < QT_BLKSIZE >> 2; i++) {
 			blk = ext2fs_le32_to_cpu(ref[i]);
 			if (blk) {
-				check_reference(dquot->dq_h, blk);
-				entries += report_tree(dquot, blk, depth + 1,
-						       bitmap, process_dquot,
-						       data);
+				if (check_reference(dquot->dq_h, blk)) {
+					entries = -1;
+					goto errout;
+				}
+				ret = report_tree(dquot, blk, depth + 1,
+						  bitmap, process_dquot,
+						  data);
+				if (ret < 0) {
+					entries = ret;
+					goto errout;
+				}
+				entries += ret;
 			}
 		}
 	}
+errout:
 	freedqbuf(buf);
 	return entries;
 }
@@ -642,6 +660,7 @@ int qtree_scan_dquots(struct quota_handle *h,
 		      int (*process_dquot) (struct dquot *, void *),
 		      void *data)
 {
+	int ret;
 	char *bitmap;
 	struct v2_mem_dqinfo *v2info = &h->qh_info.u.v2_mdqi;
 	struct qtree_mem_dqinfo *info = &v2info->dqi_qtree;
@@ -655,10 +674,14 @@ int qtree_scan_dquots(struct quota_handle *h,
 		ext2fs_free_mem(&dquot);
 		return -1;
 	}
-	v2info->dqi_used_entries = report_tree(dquot, QT_TREEOFF, 0, bitmap,
-					       process_dquot, data);
+	ret = report_tree(dquot, QT_TREEOFF, 0, bitmap, process_dquot, data);
+	if (ret < 0)
+		goto errout;
+	v2info->dqi_used_entries = ret;
 	v2info->dqi_data_blocks = find_set_bits(bitmap, info->dqi_blocks);
+	ret = 0;
+errout:
 	ext2fs_free_mem(&bitmap);
 	ext2fs_free_mem(&dquot);
-	return 0;
+	return ret;
 }

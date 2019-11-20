@@ -48,6 +48,7 @@
 
 #include "e2fsck.h"
 #include <ext2fs/ext2_ext_attr.h>
+#include <e2p/e2p.h>
 
 #include "problem.h"
 
@@ -1170,7 +1171,7 @@ void e2fsck_pass1(e2fsck_t ctx)
 	struct		scan_callback_struct scan_struct;
 	struct ext2_super_block *sb = ctx->fs->super;
 	const char	*old_op;
-	int		imagic_fs, extent_fs, inlinedata_fs;
+	int		imagic_fs, extent_fs, inlinedata_fs, casefold_fs;
 	int		low_dtime_check = 1;
 	unsigned int	inode_size = EXT2_INODE_SIZE(fs->super);
 	unsigned int	bufsize;
@@ -1216,6 +1217,7 @@ void e2fsck_pass1(e2fsck_t ctx)
 	imagic_fs = ext2fs_has_feature_imagic_inodes(sb);
 	extent_fs = ext2fs_has_feature_extents(sb);
 	inlinedata_fs = ext2fs_has_feature_inline_data(sb);
+	casefold_fs = ext2fs_has_feature_casefold(sb);
 
 	/*
 	 * Allocate bitmaps structures
@@ -1339,8 +1341,10 @@ void e2fsck_pass1(e2fsck_t ctx)
 	if (ctx->progress && ((ctx->progress)(ctx, 1, 0,
 					      ctx->fs->group_desc_count)))
 		goto endit;
-	if ((fs->super->s_wtime < fs->super->s_inodes_count) ||
-	    (fs->super->s_mtime < fs->super->s_inodes_count) ||
+	if ((fs->super->s_wtime &&
+	     fs->super->s_wtime < fs->super->s_inodes_count) ||
+	    (fs->super->s_mtime &&
+	     fs->super->s_mtime < fs->super->s_inodes_count) ||
 	    (fs->super->s_mkfs_time &&
 	     fs->super->s_mkfs_time < fs->super->s_inodes_count))
 		low_dtime_check = 0;
@@ -1477,6 +1481,15 @@ void e2fsck_pass1(e2fsck_t ctx)
 			}
 			FINISH_INODE_LOOP(ctx, ino, &pctx, failed_csum);
 			continue;
+		}
+
+		if ((inode->i_flags & EXT4_CASEFOLD_FL) &&
+		    ((!LINUX_S_ISDIR(inode->i_mode) &&
+		      fix_problem(ctx, PR_1_CASEFOLD_NONDIR, &pctx)) ||
+		     (!casefold_fs &&
+		      fix_problem(ctx, PR_1_CASEFOLD_FEATURE, &pctx)))) {
+			inode->i_flags &= ~EXT4_CASEFOLD_FL;
+			e2fsck_write_inode(ctx, ino, inode, "pass1");
 		}
 
 		/* Conflicting inlinedata/extents inode flags? */
@@ -2811,8 +2824,9 @@ static void scan_extent_node(e2fsck_t ctx, struct problem_context *pctx,
 		else if (extent.e_lblk < start_block)
 			problem = PR_1_OUT_OF_ORDER_EXTENTS;
 		else if ((end_block && last_lblk > end_block) &&
-			 (!(extent.e_flags & EXT2_EXTENT_FLAGS_UNINIT &&
-				last_lblk > eof_block)))
+			 !(last_lblk > eof_block &&
+			   ((extent.e_flags & EXT2_EXTENT_FLAGS_UNINIT) ||
+			    (pctx->inode->i_flags & EXT4_VERITY_FL))))
 			problem = PR_1_EXTENT_END_OUT_OF_BOUNDS;
 		else if (is_leaf && extent.e_len == 0)
 			problem = PR_1_EXTENT_LENGTH_ZERO;
@@ -3381,7 +3395,7 @@ static void check_blocks(e2fsck_t ctx, struct problem_context *pctx,
 			inode->i_flags &= ~EXT2_INDEX_FL;
 			dirty_inode++;
 		} else {
-			e2fsck_add_dx_dir(ctx, ino, pb.last_block+1);
+			e2fsck_add_dx_dir(ctx, ino, inode, pb.last_block+1);
 		}
 	}
 
@@ -3646,9 +3660,12 @@ static int process_block(ext2_filsys fs,
 		}
 	}
 
-	if (p->is_dir && blockcnt > (1 << (21 - fs->super->s_log_block_size)))
+	if (p->is_dir && !ext2fs_has_feature_largedir(fs->super) &&
+	    blockcnt > (1 << (21 - fs->super->s_log_block_size)))
 		problem = PR_1_TOOBIG_DIR;
-	if (p->is_reg && p->num_blocks+1 >= p->max_blocks)
+	if (p->is_dir && p->num_blocks + 1 >= p->max_blocks)
+		problem = PR_1_TOOBIG_DIR;
+	if (p->is_reg && p->num_blocks + 1 >= p->max_blocks)
 		problem = PR_1_TOOBIG_REG;
 	if (!p->is_dir && !p->is_reg && blockcnt > 0)
 		problem = PR_1_TOOBIG_SYMLINK;

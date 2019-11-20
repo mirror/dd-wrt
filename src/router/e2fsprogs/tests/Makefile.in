@@ -13,7 +13,7 @@ INSTALL = @INSTALL@
 
 all:: @DO_TEST_SUITE@ test_one test_script
 
-test_one: $(srcdir)/test_one.in Makefile mke2fs.conf
+test_one: $(srcdir)/test_one.in Makefile mke2fs.conf test_data.tmp
 	@echo "Creating test_one script..."
 	@[ -f test_one ] && chmod u+w test_one || true
 	@echo "#!/bin/sh" > test_one
@@ -26,7 +26,7 @@ test_one: $(srcdir)/test_one.in Makefile mke2fs.conf
 	@cat $(srcdir)/test_one.in >> test_one
 	@chmod +x-w test_one
 
-test_script: test_one test_script.in Makefile mke2fs.conf
+test_script: test_one test_script.in Makefile mke2fs.conf test_data.tmp
 	@echo "Creating test_script..."
 	@[ -f test_script ] && chmod u+w test_script || true
 	@echo "#!/bin/sh" > test_script
@@ -36,6 +36,9 @@ test_script: test_one test_script.in Makefile mke2fs.conf
 
 mke2fs.conf: $(srcdir)/mke2fs.conf.in
 	$(CP) $(srcdir)/mke2fs.conf.in mke2fs.conf
+
+test_data.tmp: $(srcdir)/scripts/gen-test-data
+	$(srcdir)/scripts/gen-test-data > test_data.tmp
 
 .PHONY : test_pre test_post check always_run
 

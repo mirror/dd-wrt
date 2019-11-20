@@ -518,6 +518,17 @@ to false, this step will always be skipped, which can be useful if it is
 known that the disk has been previously erased, or if the user programs
 that will have access to the huge files are trusted to not reveal stale
 data.
+.TP
+.I encoding
+This relation defines the file name encoding to be used if the casefold
+feature is enabled.   Currently the only valid encoding is utf8-12.1 or
+utf8, which requests the most recent Unicode version; since 12.1 is the only
+available Unicode version, utf8 and utf8-12.1 have the same result.
+.I encoding_flags
+This relation defines encoding-specific flags.  For utf8 encodings, the
+only available flag is strict, which will cause attempts to create file
+names containing invalid Unicode characters to be rejected by the
+kernel.  Strict mode is not enabled by default.
 .SH THE [devices] STANZA
 Each tag in the
 .I [devices]

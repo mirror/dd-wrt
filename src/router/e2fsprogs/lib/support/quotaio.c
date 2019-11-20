@@ -105,19 +105,6 @@ void update_grace_times(struct dquot *q)
 	}
 }
 
-static int compute_num_blocks_proc(ext2_filsys fs EXT2FS_ATTR((unused)),
-				   blk64_t *blocknr EXT2FS_ATTR((unused)),
-				   e2_blkcnt_t blockcnt EXT2FS_ATTR((unused)),
-				   blk64_t ref_block EXT2FS_ATTR((unused)),
-				   int ref_offset EXT2FS_ATTR((unused)),
-				   void *private)
-{
-	blk64_t *num_blocks = private;
-
-	*num_blocks += 1;
-	return 0;
-}
-
 errcode_t quota_inode_truncate(ext2_filsys fs, ext2_ino_t ino)
 {
 	struct ext2_inode inode;
@@ -145,18 +132,6 @@ errcode_t quota_inode_truncate(ext2_filsys fs, ext2_ino_t ino)
 	}
 	err = ext2fs_write_inode(fs, ino, &inode);
 	return err;
-}
-
-static ext2_off64_t compute_inode_size(ext2_filsys fs, ext2_ino_t ino)
-{
-	blk64_t num_blocks = 0;
-
-	ext2fs_block_iterate3(fs, ino,
-			      BLOCK_FLAG_READ_ONLY,
-			      NULL,
-			      compute_num_blocks_proc,
-			      &num_blocks);
-	return num_blocks * fs->blocksize;
 }
 
 /* Functions to read/write quota file. */
@@ -413,17 +388,8 @@ errcode_t quota_file_close(quota_ctx_t qctx, struct quota_handle *h)
 
 	if (h->qh_ops->end_io && h->qh_ops->end_io(h) < 0)
 		return EIO;
-	if (h->qh_qf.e2_file) {
-		__u64 new_size, size;
-
-		new_size = compute_inode_size(h->qh_qf.fs, h->qh_qf.ino);
-		ext2fs_file_flush(h->qh_qf.e2_file);
-		if (ext2fs_file_get_lsize(h->qh_qf.e2_file, &size))
-			new_size = 0;
-		if (size != new_size)
-			ext2fs_file_set_size2(h->qh_qf.e2_file, new_size);
+	if (h->qh_qf.e2_file)
 		ext2fs_file_close(h->qh_qf.e2_file);
-	}
 	if (qctx->quota_file[h->qh_type] == h)
 		ext2fs_free_mem(&qctx->quota_file[h->qh_type]);
 	return 0;

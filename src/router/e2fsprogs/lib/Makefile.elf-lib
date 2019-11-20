@@ -58,7 +58,7 @@ install-strip: install
 	$(Q) $(STRIP) --strip-unneeded --remove-section=.comment \
 		--remove-section=.note $(DESTDIR)$(ELF_INSTALL_DIR)/$(ELF_LIB)
 
-install-shlibs-strip: install-shlibs
+install-shlibs-strip:: install-shlibs
 	$(E) "	STRIP-LIB $(ELF_INSTALL_DIR)/$(ELF_LIB)"
 	$(Q) $(STRIP) --strip-unneeded --remove-section=.comment \
 		--remove-section=.note $(DESTDIR)$(ELF_INSTALL_DIR)/$(ELF_LIB)

@@ -111,9 +111,14 @@ typedef struct struct_ext2_filsys *ext2_filsys;
 #define EXT2FS_UNMARK_ERROR 	1
 #define EXT2FS_TEST_ERROR	2
 
-typedef struct ext2fs_struct_generic_bitmap *ext2fs_generic_bitmap;
-typedef struct ext2fs_struct_generic_bitmap *ext2fs_inode_bitmap;
-typedef struct ext2fs_struct_generic_bitmap *ext2fs_block_bitmap;
+struct ext2fs_struct_generic_bitmap_base {
+	errcode_t		magic;
+	ext2_filsys 		fs;
+};
+
+typedef struct ext2fs_struct_generic_bitmap_base *ext2fs_generic_bitmap;
+typedef struct ext2fs_struct_generic_bitmap_base *ext2fs_inode_bitmap;
+typedef struct ext2fs_struct_generic_bitmap_base *ext2fs_block_bitmap;
 
 #define EXT2_FIRST_INODE(s)	EXT2_FIRST_INO(s)
 
@@ -199,6 +204,8 @@ typedef struct ext2_file *ext2_file_t;
 #define EXT2_FLAG_IGNORE_CSUM_ERRORS	0x200000
 #define EXT2_FLAG_SHARE_DUP		0x400000
 #define EXT2_FLAG_IGNORE_SB_ERRORS	0x800000
+#define EXT2_FLAG_BBITMAP_TAIL_PROBLEM	0x1000000
+#define EXT2_FLAG_IBITMAP_TAIL_PROBLEM	0x2000000
 
 /*
  * Special flag in the ext2 inode i_flag field that means that this is
@@ -302,6 +309,8 @@ struct struct_ext2_filsys {
 
 	/* hashmap for SHA of data blocks */
 	struct ext2fs_hashmap* block_sha_map;
+
+	const struct ext2fs_nls_table *encoding;
 };
 
 #if EXT2_FLAT_INCLUDES
@@ -571,6 +580,16 @@ typedef struct ext2_icount *ext2_icount_t;
 #define BMAP_RET_UNINIT	0x0001
 
 /*
+ * Flags for ext2fs_read_inode2
+ */
+#define READ_INODE_NOCSUM	0x0001
+
+/*
+ * Flags for ext2fs_write_inode2
+ */
+#define WRITE_INODE_NOCSUM	0x0001
+
+/*
  * Flags for imager.c functions
  */
 #define IMAGER_FLAG_INODEMAP	1
@@ -611,6 +630,7 @@ typedef struct ext2_icount *ext2_icount_t;
 					 EXT4_FEATURE_INCOMPAT_64BIT|\
 					 EXT4_FEATURE_INCOMPAT_INLINE_DATA|\
 					 EXT4_FEATURE_INCOMPAT_ENCRYPT|\
+					 EXT4_FEATURE_INCOMPAT_CASEFOLD|\
 					 EXT4_FEATURE_INCOMPAT_CSUM_SEED|\
 					 EXT4_FEATURE_INCOMPAT_LARGEDIR)
 
@@ -1168,6 +1188,12 @@ extern errcode_t ext2fs_dirhash(int version, const char *name, int len,
 				ext2_dirhash_t *ret_hash,
 				ext2_dirhash_t *ret_minor_hash);
 
+extern errcode_t ext2fs_dirhash2(int version, const char *name, int len,
+				 const struct ext2fs_nls_table *charset,
+				 int hash_flags,
+				 const __u32 *seed,
+				 ext2_dirhash_t *ret_hash,
+				 ext2_dirhash_t *ret_minor_hash);
 
 /* dir_iterate.c */
 extern errcode_t ext2fs_get_rec_len(ext2_filsys fs,
@@ -1290,7 +1316,9 @@ extern errcode_t ext2fs_extent_goto(ext2_extent_handle_t handle,
 extern errcode_t ext2fs_extent_goto2(ext2_extent_handle_t handle,
 				     int leaf_level, blk64_t blk);
 extern errcode_t ext2fs_extent_fix_parents(ext2_extent_handle_t handle);
-size_t ext2fs_max_extent_depth(ext2_extent_handle_t handle);
+extern size_t ext2fs_max_extent_depth(ext2_extent_handle_t handle);
+extern errcode_t ext2fs_fix_extents_checksums(ext2_filsys fs, ext2_ino_t ino,
+					      struct ext2_inode *inode);
 
 /* fallocate.c */
 #define EXT2_FALLOCATE_ZERO_BLOCKS	(0x1)
@@ -1514,13 +1542,19 @@ extern int ext2fs_inode_scan_flags(ext2_inode_scan scan, int set_flags,
 extern errcode_t ext2fs_read_inode_full(ext2_filsys fs, ext2_ino_t ino,
 					struct ext2_inode * inode,
 					int bufsize);
-extern errcode_t ext2fs_read_inode (ext2_filsys fs, ext2_ino_t ino,
+extern errcode_t ext2fs_read_inode(ext2_filsys fs, ext2_ino_t ino,
 			    struct ext2_inode * inode);
+extern errcode_t ext2fs_read_inode2(ext2_filsys fs, ext2_ino_t ino,
+				    struct ext2_inode * inode,
+				    int bufsize, int flags);
 extern errcode_t ext2fs_write_inode_full(ext2_filsys fs, ext2_ino_t ino,
 					 struct ext2_inode * inode,
 					 int bufsize);
 extern errcode_t ext2fs_write_inode(ext2_filsys fs, ext2_ino_t ino,
 			    struct ext2_inode * inode);
+extern errcode_t ext2fs_write_inode2(ext2_filsys fs, ext2_ino_t ino,
+				     struct ext2_inode * inode,
+				     int bufsize, int flags);
 extern errcode_t ext2fs_write_new_inode(ext2_filsys fs, ext2_ino_t ino,
 			    struct ext2_inode * inode);
 extern errcode_t ext2fs_get_blocks(ext2_filsys fs, ext2_ino_t ino, blk_t *blocks);
@@ -1567,6 +1601,9 @@ extern errcode_t ext2fs_new_dir_block(ext2_filsys fs, ext2_ino_t dir_ino,
 				ext2_ino_t parent_ino, char **block);
 extern errcode_t ext2fs_new_dir_inline_data(ext2_filsys fs, ext2_ino_t dir_ino,
 				ext2_ino_t parent_ino, __u32 *iblock);
+
+/* nls_utf8.c */
+extern const struct ext2fs_nls_table *ext2fs_load_nls_table(int encoding);
 
 /* mkdir.c */
 extern errcode_t ext2fs_mkdir(ext2_filsys fs, ext2_ino_t parent, ext2_ino_t inum,

@@ -102,7 +102,8 @@ static int list_quota_callback(struct dquot *dq,
 	return 0;
 }
 
-void do_list_quota(int argc, char *argv[])
+void do_list_quota(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
+		   void *infop EXT2FS_ATTR((unused)))
 {
 	errcode_t	retval;
 	int		type;
@@ -131,7 +132,8 @@ void do_list_quota(int argc, char *argv[])
 	}
 }
 
-void do_get_quota(int argc, char *argv[])
+void do_get_quota(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
+		  void *infop EXT2FS_ATTR((unused)))
 {
 	int		err, type;
 	struct quota_handle *qh;

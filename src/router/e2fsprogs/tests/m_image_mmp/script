@@ -23,7 +23,7 @@ ONE_PASS_ONLY=true
 FSCK_OPT="-n -f"
 IMAGE=$TMPFILE
 SKIP_GUNZIP=true
-PREP_CMD="$E2IMAGE_EXE -r  $TMPFILE $TMPFILE.raw; \
+PREP_CMD="$E2IMAGE_EXE -r  $TMPFILE $TMPFILE.raw 2>/dev/null; \
           mv $TMPFILE.raw $TMPFILE"
 
 . $cmd_dir/run_e2fsck

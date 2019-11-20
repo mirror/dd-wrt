@@ -117,7 +117,8 @@ out:
 	err = ext2fs_xattrs_close(&h);
 }
 
-void do_list_xattr(int argc, char **argv)
+void do_list_xattr(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+		   void *infop EXT2FS_ATTR((unused)))
 {
 	ext2_ino_t ino;
 
@@ -137,7 +138,8 @@ void do_list_xattr(int argc, char **argv)
 	dump_inode_attributes(stdout, ino);
 }
 
-void do_get_xattr(int argc, char **argv)
+void do_get_xattr(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+		  void *infop EXT2FS_ATTR((unused)))
 {
 	ext2_ino_t ino;
 	struct ext2_xattr_handle *h;
@@ -234,7 +236,8 @@ out2:
 		fclose(fp);
 }
 
-void do_set_xattr(int argc, char **argv)
+void do_set_xattr(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+		  void *infop EXT2FS_ATTR((unused)))
 {
 	ext2_ino_t ino;
 	struct ext2_xattr_handle *h;
@@ -317,7 +320,8 @@ out2:
 	}
 }
 
-void do_rm_xattr(int argc, char **argv)
+void do_rm_xattr(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+		 void *infop EXT2FS_ATTR((unused)))
 {
 	ext2_ino_t ino;
 	struct ext2_xattr_handle *h;
@@ -448,7 +452,7 @@ static void dump_xattr_raw_entries(FILE *f, unsigned char *buf,
 		else if (ent.e_value_offs >= len ||
 			 (vstart + ent.e_value_size) > len)
 			fprintf(f, "<runs off end>");
-		if (is_mostly_printable((char *)(buf + vstart),
+		else if (is_mostly_printable((char *)(buf + vstart),
 					ent.e_value_size))
 			safe_print(f, (char *)(buf + vstart),
 				   ent.e_value_size);

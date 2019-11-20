@@ -36,6 +36,8 @@ Fix? yes
 Inode bitmap differences:  +(1--11)
 Fix? yes
 
+Padding at end of inode bitmap is not set. Fix? yes
+
 
 test_filesys: ***** FILE SYSTEM WAS MODIFIED *****
 test_filesys: 11/32768 files (0.0% non-contiguous), 6353/131072 blocks

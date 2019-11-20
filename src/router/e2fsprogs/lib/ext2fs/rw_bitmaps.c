@@ -195,6 +195,16 @@ static errcode_t mark_uninit_bg_group_blocks(ext2_filsys fs)
 	return 0;
 }
 
+static int bitmap_tail_verify(unsigned char *bitmap, int first, int last)
+{
+	int i;
+
+	for (i = first; i <= last; i++)
+		if (bitmap[i] != 0xff)
+			return 0;
+	return 1;
+}
+
 static errcode_t read_bitmaps(ext2_filsys fs, int do_inode, int do_block)
 {
 	dgrp_t i;
@@ -203,6 +213,7 @@ static errcode_t read_bitmaps(ext2_filsys fs, int do_inode, int do_block)
 	errcode_t retval;
 	int block_nbytes = EXT2_CLUSTERS_PER_GROUP(fs->super) / 8;
 	int inode_nbytes = EXT2_INODES_PER_GROUP(fs->super) / 8;
+	int tail_flags = 0;
 	int csum_flag;
 	unsigned int	cnt;
 	blk64_t	blk;
@@ -315,6 +326,9 @@ static errcode_t read_bitmaps(ext2_filsys fs, int do_inode, int do_block)
 					EXT2_ET_BLOCK_BITMAP_CSUM_INVALID;
 					goto cleanup;
 				}
+				if (!bitmap_tail_verify((unsigned char *) block_bitmap,
+							block_nbytes, fs->blocksize - 1))
+					tail_flags |= EXT2_FLAG_BBITMAP_TAIL_PROBLEM;
 			} else
 				memset(block_bitmap, 0, block_nbytes);
 			cnt = block_nbytes << 3;
@@ -347,6 +361,9 @@ static errcode_t read_bitmaps(ext2_filsys fs, int do_inode, int do_block)
 					EXT2_ET_INODE_BITMAP_CSUM_INVALID;
 					goto cleanup;
 				}
+				if (!bitmap_tail_verify((unsigned char *) inode_bitmap,
+							inode_nbytes, fs->blocksize - 1))
+					tail_flags |= EXT2_FLAG_IBITMAP_TAIL_PROBLEM;
 			} else
 				memset(inode_bitmap, 0, inode_nbytes);
 			cnt = inode_nbytes << 3;
@@ -366,10 +383,15 @@ static errcode_t read_bitmaps(ext2_filsys fs, int do_inode, int do_block)
 	}
 
 success_cleanup:
-	if (inode_bitmap)
+	if (inode_bitmap) {
 		ext2fs_free_mem(&inode_bitmap);
-	if (block_bitmap)
+		fs->flags &= ~EXT2_FLAG_IBITMAP_TAIL_PROBLEM;
+	}
+	if (block_bitmap) {
 		ext2fs_free_mem(&block_bitmap);
+		fs->flags &= ~EXT2_FLAG_BBITMAP_TAIL_PROBLEM;
+	}
+	fs->flags |= tail_flags;
 	return 0;
 
 cleanup:

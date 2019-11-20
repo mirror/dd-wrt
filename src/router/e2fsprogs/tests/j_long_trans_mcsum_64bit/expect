@@ -134,6 +134,8 @@ Fix? yes
 Free inodes count wrong (32756, counted=32757).
 Fix? yes
 
+Padding at end of inode bitmap is not set. Fix? yes
+
 Recreate journal? yes
 
 Creating journal (16384 blocks):  Done.

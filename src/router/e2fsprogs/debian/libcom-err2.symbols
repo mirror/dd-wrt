@@ -1,4 +1,5 @@
 libcom_err.so.2 libcom-err2 #MINVER#
+* Build-Depends-Package: comerr-dev
  _et_dynamic_list@Base 1.43.9
  _et_list@Base 1.43.9
  add_error_table@Base 1.43.9

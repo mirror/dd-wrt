@@ -15,6 +15,7 @@ cc_binary {
     ],
     shared_libs: [
         "libext2fs",
+        "libext2_com_err",
         "libext2_e2p",
         "libext2_uuid",
         "libext2_blkid",

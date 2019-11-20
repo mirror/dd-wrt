@@ -671,6 +671,7 @@ errcode_t quota_compare_and_update(quota_ctx_t qctx, enum quota_type qtype,
 	err = qh.qh_ops->scan_dquots(&qh, scan_dquots_callback, &scan_data);
 	if (err) {
 		log_debug("Error scanning dquots");
+		*usage_inconsistent = 1;
 		goto out_close_qh;
 	}
 

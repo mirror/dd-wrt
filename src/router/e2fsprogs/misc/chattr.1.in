@@ -29,7 +29,7 @@ The operator '+' causes the selected attributes to be added to the
 existing attributes of the files; '-' causes them to be removed; and '='
 causes them to be the only attributes that the files have.
 .PP
-The letters 'aAcCdDeijPsStTu' select the new attributes for the files:
+The letters 'aAcCdDeFijPsStTu' select the new attributes for the files:
 append only (a),
 no atime updates (A),
 compressed (c),
@@ -37,6 +37,7 @@ no copy on write (C),
 no dump (d),
 synchronous directory updates (D),
 extent format (e),
+case-insensitive directory lookups (F),
 immutable (i),
 data journalling (j),
 project hierarchy (P),
@@ -118,6 +119,11 @@ set or reset using
 .BR chattr (1),
 although it can be displayed by
 .BR lsattr (1).
+.PP
+A directory with the 'F' attribute set indicates that all the path
+lookups inside that directory are made in a case-insensitive fashion.
+This attribute can only be changed in empty directories on file systems
+with the casefold feature enabled.
 .PP
 A file with the 'i' attribute cannot be modified: it cannot be deleted or
 renamed, no link can be created to this file, most of the file's

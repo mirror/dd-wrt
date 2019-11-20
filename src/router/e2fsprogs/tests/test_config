@@ -14,13 +14,6 @@ E2IMAGE_EXE="../misc/e2image"
 DEBUGFS="$USE_VALGRIND ../debugfs/debugfs"
 DEBUGFS_EXE="../debugfs/debugfs"
 TEST_BITS="test_data.tmp"
-if [ ! -s $TEST_BITS ]; then
-	# create a non-sparse test file if possible, since debugfs may be
-	# sparse and cause "debugfs write" (using copy_file()) to skip holes
-	# during testing if SEEK_DATA/SEEK_HOLE or FS_IOC_FIEMAP are available
-	dd if=/dev/urandom of=$TEST_BITS bs=128k count=1 > /dev/null 2>&1 ||
-		TEST_BITS="$DEFBUGFS_EXE"
-fi
 RESIZE2FS_EXE="../resize/resize2fs"
 RESIZE2FS="$USE_VALGRIND $RESIZE2FS_EXE"
 E2UNDO_EXE="../misc/e2undo"

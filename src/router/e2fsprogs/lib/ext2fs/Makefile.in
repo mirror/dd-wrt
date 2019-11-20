@@ -112,6 +112,7 @@ OBJS= $(DEBUGFS_LIB_OBJS) $(RESIZE_LIB_OBJS) $(E2IMAGE_LIB_OBJS) \
 	namei.o \
 	native.o \
 	newdir.o \
+	nls_utf8.o \
 	openfs.o \
 	progress.o \
 	punch.o \
@@ -194,6 +195,7 @@ SRCS= ext2_err.c \
 	$(srcdir)/namei.c \
 	$(srcdir)/native.c \
 	$(srcdir)/newdir.c \
+	$(srcdir)/nls_utf8.c \
 	$(srcdir)/openfs.c \
 	$(srcdir)/progress.c \
 	$(srcdir)/punch.c \
@@ -615,6 +617,18 @@ $(top_builddir)/$(my_dir)/ext2_types.h: $(srcdir)/ext2_types.h.in \
 		$(top_builddir)/config.status
 	cd $(top_builddir); CONFIG_FILES=$(my_dir)/ext2_types.h ./config.status
 
+$(srcdir)/utf8data.h:
+	$(Q) $(MAKE) $(MKUTF8DATA)
+	$(E) "MKUTF8DATA $@"
+	$(Q) $(MKUTF8DATA) -a $(top_srcdir)/util/ucd/DerivedAge-11.0.0.txt \
+		-c $(top_srcdir)/util/ucd/DerivedCombiningClass-11.0.0.txt \
+		-p $(top_srcdir)/util/ucd/DerivedCoreProperties-11.0.0.txt \
+		-d $(top_srcdir)/util/ucd/UnicodeData-11.0.0.txt \
+		-f $(top_srcdir)/util/ucd/CaseFolding-11.0.0.txt \
+		-n $(top_srcdir)/util/ucd/NormalizationCorrections-11.0.0.txt \
+		-t $(top_srcdir)/util/ucd/NormalizationTest-11.0.0.txt \
+		-o $@
+
 # +++ Dependency line eater +++
 # 
 # Makefile dependencies follow.  This must be the last section in
@@ -774,7 +788,8 @@ dirhash.o: $(srcdir)/dirhash.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2fs.h \
  $(srcdir)/ext2_fs.h $(srcdir)/ext3_extents.h $(top_srcdir)/lib/et/com_err.h \
  $(srcdir)/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
- $(srcdir)/ext2_ext_attr.h $(srcdir)/hashmap.h $(srcdir)/bitops.h
+ $(srcdir)/ext2_ext_attr.h $(srcdir)/hashmap.h $(srcdir)/bitops.h \
+ $(srcdir)/ext2fsP.h
 dir_iterate.o: $(srcdir)/dir_iterate.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(srcdir)/ext2_fs.h \
  $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2fsP.h \
@@ -1002,6 +1017,13 @@ newdir.o: $(srcdir)/newdir.c $(top_builddir)/lib/config.h \
  $(srcdir)/ext2_fs.h $(srcdir)/ext3_extents.h $(top_srcdir)/lib/et/com_err.h \
  $(srcdir)/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
  $(srcdir)/ext2_ext_attr.h $(srcdir)/hashmap.h $(srcdir)/bitops.h
+nls_utf8.o: $(srcdir)/nls_utf8.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/ext2_fs.h \
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2fs.h \
+ $(srcdir)/ext2_fs.h $(srcdir)/ext3_extents.h $(top_srcdir)/lib/et/com_err.h \
+ $(srcdir)/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
+ $(srcdir)/ext2_ext_attr.h $(srcdir)/hashmap.h $(srcdir)/bitops.h \
+ $(srcdir)/ext2fsP.h $(srcdir)/utf8data.h
 openfs.o: $(srcdir)/openfs.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(srcdir)/ext2_fs.h \
  $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2fs.h \

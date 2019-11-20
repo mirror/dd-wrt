@@ -19,7 +19,7 @@
 # include <linux/fs.h>
 # include <linux/falloc.h>
 # include <linux/xattr.h>
-# define FUSE_PLATFORM_OPTS	",nonempty,big_writes"
+# define FUSE_PLATFORM_OPTS	",big_writes"
 # ifdef HAVE_SYS_ACL_H
 #  define TRANSLATE_LINUX_ACLS
 # endif
@@ -322,6 +322,7 @@ struct fuse2fs {
 	int no_default_opts;
 	int panic_on_error;
 	int minixdf;
+	int fakeroot;
 	int alloc_all_blocks;
 	FILE *err_fp;
 	unsigned int next_generation;
@@ -630,6 +631,7 @@ static int fs_writeable(ext2_filsys fs)
 static int check_inum_access(ext2_filsys fs, ext2_ino_t ino, mode_t mask)
 {
 	struct fuse_context *ctxt = fuse_get_context();
+	struct fuse2fs *ff = (struct fuse2fs *)ctxt->private_data;
 	struct ext2_inode inode;
 	mode_t perms;
 	errcode_t err;
@@ -659,7 +661,7 @@ static int check_inum_access(ext2_filsys fs, ext2_ino_t ino, mode_t mask)
 		return -EACCES;
 
 	/* Figure out what root's allowed to do */
-	if (ctxt->uid == 0) {
+	if (ff->fakeroot || ctxt->uid == 0) {
 		/* Non-file access always ok */
 		if (!LINUX_S_ISREG(inode.i_mode))
 			return 0;
@@ -1905,7 +1907,7 @@ static int op_chmod(const char *path, mode_t mode)
 		goto out;
 	}
 
-	if (ctxt->uid != 0 && ctxt->uid != inode.i_uid) {
+	if (!ff->fakeroot && ctxt->uid != 0 && ctxt->uid != inode.i_uid) {
 		ret = -EPERM;
 		goto out;
 	}
@@ -1915,7 +1917,7 @@ static int op_chmod(const char *path, mode_t mode)
 	 * of the user's groups, but FUSE only tells us about the primary
 	 * group.
 	 */
-	if (ctxt->uid != 0 && ctxt->gid != inode.i_gid)
+	if (!ff->fakeroot && ctxt->uid != 0 && ctxt->gid != inode.i_gid)
 		mode &= ~S_ISGID;
 
 	inode.i_mode &= ~0xFFF;
@@ -1968,7 +1970,7 @@ static int op_chown(const char *path, uid_t owner, gid_t group)
 	/* FUSE seems to feed us ~0 to mean "don't change" */
 	if (owner != (uid_t) ~0) {
 		/* Only root gets to change UID. */
-		if (ctxt->uid != 0 &&
+		if (!ff->fakeroot && ctxt->uid != 0 &&
 		    !(inode.i_uid == ctxt->uid && owner == ctxt->uid)) {
 			ret = -EPERM;
 			goto out;
@@ -1978,7 +1980,7 @@ static int op_chown(const char *path, uid_t owner, gid_t group)
 
 	if (group != (gid_t) ~0) {
 		/* Only root or the owner get to change GID. */
-		if (ctxt->uid != 0 && inode.i_uid != ctxt->uid) {
+		if (!ff->fakeroot && ctxt->uid != 0 && inode.i_uid != ctxt->uid) {
 			ret = -EPERM;
 			goto out;
 		}
@@ -3120,6 +3122,7 @@ static int ioctl_setflags(ext2_filsys fs, struct fuse2fs_file_handle *fh,
 	int ret;
 	__u32 flags = *(__u32 *)data;
 	struct fuse_context *ctxt = fuse_get_context();
+	struct fuse2fs *ff = (struct fuse2fs *)ctxt->private_data;
 
 	FUSE2FS_CHECK_MAGIC(fs, fh, FUSE2FS_FILE_MAGIC);
 	dbg_printf("%s: ino=%d\n", __func__, fh->ino);
@@ -3129,7 +3132,7 @@ static int ioctl_setflags(ext2_filsys fs, struct fuse2fs_file_handle *fh,
 	if (err)
 		return translate_error(fs, fh->ino, err);
 
-	if (ctxt->uid != 0 && inode.i_uid != ctxt->uid)
+	if (!ff->fakeroot && ctxt->uid != 0 && inode.i_uid != ctxt->uid)
 		return -EPERM;
 
 	if ((inode.i_flags ^ flags) & ~FUSE2FS_MODIFIABLE_IFLAGS)
@@ -3176,6 +3179,7 @@ static int ioctl_setversion(ext2_filsys fs, struct fuse2fs_file_handle *fh,
 	int ret;
 	__u32 generation = *(__u32 *)data;
 	struct fuse_context *ctxt = fuse_get_context();
+	struct fuse2fs *ff = (struct fuse2fs *)ctxt->private_data;
 
 	FUSE2FS_CHECK_MAGIC(fs, fh, FUSE2FS_FILE_MAGIC);
 	dbg_printf("%s: ino=%d\n", __func__, fh->ino);
@@ -3185,7 +3189,7 @@ static int ioctl_setversion(ext2_filsys fs, struct fuse2fs_file_handle *fh,
 	if (err)
 		return translate_error(fs, fh->ino, err);
 
-	if (ctxt->uid != 0 && inode.i_uid != ctxt->uid)
+	if (!ff->fakeroot && ctxt->uid != 0 && inode.i_uid != ctxt->uid)
 		return -EPERM;
 
 	inode.i_generation = generation;
@@ -3655,6 +3659,7 @@ static struct fuse_opt fuse2fs_opts[] = {
 	FUSE2FS_OPT("ro",		ro,			1),
 	FUSE2FS_OPT("errors=panic",	panic_on_error,		1),
 	FUSE2FS_OPT("minixdf",		minixdf,		1),
+	FUSE2FS_OPT("fakeroot",		fakeroot,		1),
 	FUSE2FS_OPT("fuse2fs_debug",	debug,			1),
 	FUSE2FS_OPT("no_default_opts",	no_default_opts,	1),
 
@@ -3693,6 +3698,7 @@ static int fuse2fs_opt_proc(void *data, const char *arg,
 	"    -o ro                  read-only mount\n"
 	"    -o errors=panic        dump core on error\n"
 	"    -o minixdf             minix-style df\n"
+	"    -o fakeroot            pretend to be root for permission checks\n"
 	"    -o no_default_opts     do not include default fuse options\n"
 	"    -o fuse2fs_debug       enable fuse2fs debugging\n"
 	"\n",
@@ -3848,6 +3854,15 @@ int main(int argc, char *argv[])
 		 fctx.device);
 	if (fctx.no_default_opts == 0)
 		fuse_opt_add_arg(&args, extra_args);
+
+	if (fctx.fakeroot) {
+#ifdef HAVE_MOUNT_NODEV
+		fuse_opt_add_arg(&args,"-onodev");
+#endif
+#ifdef HAVE_MOUNT_NOSUID
+		fuse_opt_add_arg(&args,"-onosuid");
+#endif
+	}
 
 	if (fctx.debug) {
 		int	i;

@@ -130,7 +130,7 @@ static void *allocate_buffer(size_t size)
 	void	*ret = 0;
 
 #ifdef HAVE_POSIX_MEMALIGN
-	if (posix_memalign(&ret, sys_page_size, size) < 0)
+	if (posix_memalign(&ret, sys_page_size, size) != 0)
 		ret = 0;
 #else
 #ifdef HAVE_MEMALIGN

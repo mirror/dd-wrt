@@ -50,6 +50,7 @@ extern int optind;
 #include "e2p/e2p.h"
 #include "et/com_err.h"
 #include "e2p/e2p.h"
+#include "uuid/uuid.h"
 #include "support/plausible.h"
 #include "e2fsck.h"
 #include "problem.h"
@@ -736,6 +737,12 @@ static void parse_extended_opts(e2fsck_t ctx, const char *opts)
 			else
 				ctx->log_fn = string_copy(ctx, arg, 0);
 			continue;
+		} else if (strcmp(token, "problem_log") == 0) {
+			if (!arg)
+				extended_usage++;
+			else
+				ctx->problem_log_fn = string_copy(ctx, arg, 0);
+			continue;
 		} else if (strcmp(token, "bmap2extent") == 0) {
 			ctx->options |= E2F_OPT_CONVERT_BMAP;
 			continue;
@@ -1417,6 +1424,7 @@ int main (int argc, char *argv[])
 	set_up_logging(ctx);
 	if (ctx->logf) {
 		int i;
+
 		fputs("E2fsck run: ", ctx->logf);
 		for (i = 0; i < argc; i++) {
 			if (i)
@@ -1424,6 +1432,19 @@ int main (int argc, char *argv[])
 			fputs(argv[i], ctx->logf);
 		}
 		fputc('\n', ctx->logf);
+	}
+	if (ctx->problem_logf) {
+		int i;
+
+		fputs("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n",
+		      ctx->problem_logf);
+		fprintf(ctx->problem_logf, "<problem_log time=\"%lu\">\n",
+			ctx->now);
+		fprintf(ctx->problem_logf, "<invocation prog=\"%s\"",
+			argv[0]);
+		for (i = 1; i < argc; i++)
+			fprintf(ctx->problem_logf, " arg%d=\"%s\"", i, argv[i]);
+		fputs("/>\n", ctx->problem_logf);
 	}
 
 	init_resource_track(&ctx->global_rtrack, NULL);
@@ -1682,6 +1703,23 @@ failure:
 		if (isspace(*cp) || *cp == ':')
 			*cp = '_';
 
+	if (ctx->problem_logf) {
+		char buf[48];
+
+		fprintf(ctx->problem_logf, "<filesystem dev=\"%s\"",
+			ctx->filesystem_name);
+		if (!uuid_is_null(sb->s_uuid)) {
+			uuid_unparse(sb->s_uuid, buf);
+			fprintf(ctx->problem_logf, " uuid=\"%s\"", buf);
+		}
+		if (sb->s_volume_name[0]) {
+			memset(buf, 0, sizeof(buf));
+			strncpy(buf, sb->s_volume_name, sizeof(buf));
+			fprintf(ctx->problem_logf, " label=\"%s\"", buf);
+		}
+		fputs("/>\n", ctx->problem_logf);
+	}
+
 	ehandler_init(fs->io);
 
 	if (ext2fs_has_feature_mmp(fs->super) &&
@@ -1781,6 +1819,12 @@ print_unsupp_features:
 			}
 		}
 		log_err(ctx, "\n");
+		goto get_newer;
+	}
+
+	if (ext2fs_has_feature_casefold(sb) && !fs->encoding) {
+		log_err(ctx, _("%s has unsupported encoding: %0x\n"),
+			ctx->filesystem_name, sb->s_encoding);
 		goto get_newer;
 	}
 
