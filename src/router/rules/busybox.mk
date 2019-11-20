@@ -511,6 +511,10 @@ endif
 ifeq ($(CONFIG_X86),y)
 	echo "CONFIG_POWEROFF=y" >> busybox/.config
 	sed -i 's/\# CONFIG_LSOF is not set/CONFIG_LSOF=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_USE_TERMIOS is not set/CONFIG_FEATURE_USE_TERMIOS=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_TOP_SMP_CPU is not set/CONFIG_FEATURE_TOP_SMP_CPU=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_TOP_SMP_PROCESS is not set/CONFIG_FEATURE_TOP_SMP_PROCESS=y/g' busybox/.config
+	echo "CONFIG_FEATURE_TOP_INTERACTIVE=y" >> busybox/.config
 else
 	echo "# CONFIG_POWEROFF is not set" >> busybox/.config
 endif
