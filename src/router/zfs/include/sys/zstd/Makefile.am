@@ -15,6 +15,12 @@ COMMON_H = \
 	$(top_srcdir)/include/sys/zstd/huf.h \
 	$(top_srcdir)/include/sys/zstd/xxhash.h \
 	$(top_srcdir)/include/sys/zstd/zstd_compress_internal.h \
+	$(top_srcdir)/include/sys/zstd/zstd_compress_literals.h \
+	$(top_srcdir)/include/sys/zstd/zstd_compress_sequences.h \
+	$(top_srcdir)/include/sys/zstd/zstd_cwksp.h \
+	$(top_srcdir)/include/sys/zstd/zstd_ddict.h \
+	$(top_srcdir)/include/sys/zstd/zstd_decompress_internal.h \
+	$(top_srcdir)/include/sys/zstd/zstd_decompress_block.h \
 	$(top_srcdir)/include/sys/zstd/zstd_errors.h \
 	$(top_srcdir)/include/sys/zstd/zstd_internal.h \
 	$(top_srcdir)/include/sys/zstd/zstd_ldm.h
