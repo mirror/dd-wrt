@@ -1315,12 +1315,11 @@ ar8xxx_sw_set_disable_all_leds(struct switch_dev *dev,
 			       struct switch_val *val)
 {
 	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
-	u32 mask;
 
 	if(val->value.i){
 		/* Set PATTERN_EN = 00 (LED always off) for
 		 * both LED_CTRL_RULE in single 32-bit register */
-		u32 mask = ~(BIT(31) | BIT(30) | BIT(14) | BIT(15));
+		u32 mask = ~(u32)((BIT(31) | BIT(30) | BIT(14) | BIT(15)));
 
 		ar8xxx_write(priv, AR8327_REG_LED_CTRL0,
 					ar8xxx_read(priv, AR8327_REG_LED_CTRL0) & mask);
@@ -1333,12 +1332,12 @@ ar8xxx_sw_set_disable_all_leds(struct switch_dev *dev,
 
 		/* Set LED_PATTERN_EN_XY = 00 (pattern enable for portX LEDY) for
 		 * all ports (1~3) */
-		mask = ~(BITS(8, 25));
+		mask = ~(u32)((BITS(8, 25)));
 		ar8xxx_write(priv, AR8327_REG_LED_CTRL3,
 					ar8xxx_read(priv, AR8327_REG_LED_CTRL3) & mask);
 	} else {
 		/* Set PATTERN_EN = 11 (LED controlled by LED_RULE registers) */
-		u32 mask = BIT(31) | BIT(30) | BIT(14) | BIT(15);
+		u32 mask = (u32)(BIT(31) | BIT(30) | BIT(14) | BIT(15));
 
 		ar8xxx_write(priv, AR8327_REG_LED_CTRL0,
 					ar8xxx_read(priv, AR8327_REG_LED_CTRL0) | mask);
@@ -1350,7 +1349,7 @@ ar8xxx_sw_set_disable_all_leds(struct switch_dev *dev,
 					ar8xxx_read(priv, AR8327_REG_LED_CTRL2) | mask);
 
 		/* Set LED_PATTERN_EN_XY = 11 */
-		mask = BITS(8, 25);
+		mask = (u32)(BITS(8, 25));
 
 		ar8xxx_write(priv, AR8327_REG_LED_CTRL3,
 				ar8xxx_read(priv, AR8327_REG_LED_CTRL3) | mask);
