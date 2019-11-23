@@ -1559,7 +1559,7 @@ static const struct switch_dev_ops ar8327_sw_ops = {
 };
 
 const struct ar8xxx_chip ar8327_chip = {
-	.caps = AR8XXX_CAP_GIGE //| AR8XXX_CAP_MIB_COUNTERS,
+	.caps = AR8XXX_CAP_GIGE, //| AR8XXX_CAP_MIB_COUNTERS,
 	.config_at_probe = true,
 	.mii_lo_first = true,
 
@@ -1594,7 +1594,7 @@ const struct ar8xxx_chip ar8327_chip = {
 };
 
 const struct ar8xxx_chip ar8337_chip = {
-	.caps = AR8XXX_CAP_GIGE //| AR8XXX_CAP_MIB_COUNTERS,
+	.caps = AR8XXX_CAP_GIGE, //| AR8XXX_CAP_MIB_COUNTERS,
 	.config_at_probe = true,
 	.mii_lo_first = true,
 
