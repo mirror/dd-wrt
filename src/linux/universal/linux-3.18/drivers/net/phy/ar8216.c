@@ -1718,7 +1718,7 @@ static const struct switch_dev_ops ar8xxx_sw_ops = {
 };
 
 static const struct ar8xxx_chip ar8216_chip = {
-	.caps = AR8XXX_CAP_MIB_COUNTERS,
+//	.caps = AR8XXX_CAP_MIB_COUNTERS,
 
 	.reg_port_stats_start = 0x19000,
 	.reg_port_stats_length = 0xa0,
@@ -1748,7 +1748,7 @@ static const struct ar8xxx_chip ar8216_chip = {
 };
 
 static const struct ar8xxx_chip ar8236_chip = {
-	.caps = AR8XXX_CAP_MIB_COUNTERS,
+//	.caps = AR8XXX_CAP_MIB_COUNTERS,
 
 	.reg_port_stats_start = 0x20000,
 	.reg_port_stats_length = 0x100,
@@ -1778,7 +1778,7 @@ static const struct ar8xxx_chip ar8236_chip = {
 };
 
 static const struct ar8xxx_chip ar8316_chip = {
-	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
+	.caps = AR8XXX_CAP_GIGE// | AR8XXX_CAP_MIB_COUNTERS,
 
 	.reg_port_stats_start = 0x20000,
 	.reg_port_stats_length = 0x100,
