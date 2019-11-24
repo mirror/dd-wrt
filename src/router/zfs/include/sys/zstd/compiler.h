@@ -53,9 +53,6 @@
 #else
 #  define HINT_INLINE static INLINE_KEYWORD FORCE_INLINE_ATTR
 #endif
-#ifdef noinline 
-#define FORCE_NOINLINE noinline
-#else
 
 /* UNUSED_ATTR tells the compiler it is okay if the function is unused. */
 #if defined(__GNUC__)
@@ -63,7 +60,6 @@
 #else
 #  define UNUSED_ATTR
 #endif
-
 #ifdef _KERNEL
 /* force no inlining */
 #  ifdef __GNUC__
@@ -72,6 +68,7 @@
 #    define FORCE_NOINLINE static
 #  endif
 #else
+#undef noinline
 #  ifdef __GNUC__
 #    define FORCE_NOINLINE static __attribute__((noinline))
 #  else
@@ -79,7 +76,6 @@
 #  endif
 
 
-#endif
 #endif
 
 /* target attribute */
