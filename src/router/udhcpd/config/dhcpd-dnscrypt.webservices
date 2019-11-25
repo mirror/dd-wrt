@@ -18,7 +18,7 @@
 		<script type="text/javascript">
 		//<![CDATA[
 		if (<% nvram_get("enable_jffs2"); %> == 1 ){
-			document.write('<input type="checkbox" value="1" name="_dhcpd_usejffs" <% nvram_checked("dhcpd_usejffs", "1"); %> />');
+			document.write('<input type="checkbox" value="1" name="_dhcpd_usejffs" <% nvc("dhcpd_usejffs", "1"); %> />');
 		}else{
 			document.write('<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>');
 		}
@@ -27,7 +27,7 @@
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("service.dhcp_nvramlease"); %></div>
-		<input type="checkbox" value="1" name="_dhcpd_usenvram" <% nvram_checked("dhcpd_usenvram", "1"); %> />
+		<input type="checkbox" value="1" name="_dhcpd_usenvram" <% nvc("dhcpd_usenvram", "1"); %> />
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("service.dhcp_domain"); %></div>
@@ -76,55 +76,64 @@
 		<legend><% tran("service.dnsmasq_legend"); %></legend>
 		<div class="setting">
 			<div class="label"><% tran("service.dnsmasq_srv"); %></div>
-			<input class="spaceradio" type="radio" name="dnsmasq_enable" value="1" <% nvram_checked("dnsmasq_enable", "1"); %> onclick="show_layer_ext(this, 'iddnsmasq', true)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="dnsmasq_enable" value="0" <% nvram_checked("dnsmasq_enable", "0"); %> onclick="show_layer_ext(this, 'iddnsmasq', false)" /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" name="dnsmasq_enable" value="1" <% nvc("dnsmasq_enable", "1"); %> onclick="show_layer_ext(this, 'iddnsmasq', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="dnsmasq_enable" value="0" <% nvc("dnsmasq_enable", "0"); %> onclick="show_layer_ext(this, 'iddnsmasq', false)" /><% tran("share.disable"); %>
 		</div>
 		<div id="iddnsmasq">
 			<div class="setting">
 				<div class="label"><% tran("service.dns_crypt"); %></div>
-				<input class="spaceradio" type="radio" name="dns_crypt" value="1" <% nvram_checked("dns_crypt", "1"); %> onclick="show_layer_ext(this, 'iddns_crypt', true)"/><% tran("share.enable"); %>&nbsp;
-				<input class="spaceradio" type="radio" name="dns_crypt" value="0" <% nvram_checked("dns_crypt", "0"); %> onclick="show_layer_ext(this, 'iddns_crypt', false)" /><% tran("share.disable"); %>
+				<input class="spaceradio" type="radio" name="dns_crypt" value="1" <% nvc("dns_crypt", "1"); %> onclick="show_layer_ext(this, 'iddns_crypt', true)"/><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="dns_crypt" value="0" <% nvc("dns_crypt", "0"); %> onclick="show_layer_ext(this, 'iddns_crypt', false)" /><% tran("share.disable"); %>
 			</div>
 			<div id="iddns_crypt">
 				<% show_dnscrypt(); %>
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.dnsmasq_dnssec_proxy"); %></div>
-				<input class="spaceradio" type="radio" name="dnssec_proxy" value="1" <% nvram_checked("dnssec_proxy", "1"); %> /><% tran("share.enable"); %>&nbsp;
-				<input class="spaceradio" type="radio" name="dnssec_proxy" value="0" <% nvram_checked("dnssec_proxy", "0"); %> /><% tran("share.disable"); %>
+				<input class="spaceradio" type="radio" name="dnssec_proxy" value="1" <% nvc("dnssec_proxy", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="dnssec_proxy" value="0" <% nvc("dnssec_proxy", "0"); %> /><% tran("share.disable"); %>
 			</div>
 <% ifndef("DNSSEC", "<!--"); %>
 			<div class="setting">
 				<div class="label"><% tran("service.dnsmasq_dnssec"); %></div>
-				<input class="spaceradio" type="radio" name="dnssec" value="1" <% nvram_checked("dnssec", "1"); %> /><% tran("share.enable"); %>&nbsp;
-				<input class="spaceradio" type="radio" name="dnssec" value="0" <% nvram_checked("dnssec", "0"); %> /><% tran("share.disable"); %>
+				<input class="spaceradio" type="radio" name="dnssec" value="1" <% nvc("dnssec", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="dnssec" value="0" <% nvc("dnssec", "0"); %> /><% tran("share.disable"); %>
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.dnsmasq_dnssec_cu"); %></div>
-				<input class="spaceradio" type="radio" name="dnssec_cu" value="1" <% nvram_checked("dnssec_cu", "1"); %> /><% tran("share.enable"); %>&nbsp;
-				<input class="spaceradio" type="radio" name="dnssec_cu" value="0" <% nvram_checked("dnssec_cu", "0"); %> /><% tran("share.disable"); %>
+				<input class="spaceradio" type="radio" name="dnssec_cu" value="1" <% nvc("dnssec_cu", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="dnssec_cu" value="0" <% nvc("dnssec_cu", "0"); %> /><% tran("share.disable"); %>
 			</div>
 <% ifndef("DNSSEC", "<!--"); %>
 
 			<div class="setting">
 				<div class="label"><% tran("service.dnsmasq_loc"); %></div>
-				<input class="spaceradio" type="radio" name="local_dns" value="1" <% nvram_checked("local_dns", "1"); %> /><% tran("share.enable"); %>&nbsp;
-				<input class="spaceradio" type="radio" name="local_dns" value="0" <% nvram_checked("local_dns", "0"); %> /><% tran("share.disable"); %>
+				<input class="spaceradio" type="radio" name="local_dns" value="1" <% nvc("local_dns", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="local_dns" value="0" <% nvc("local_dns", "0"); %> /><% tran("share.disable"); %>
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.dnsmasq_no_dns_rebind"); %></div>
-				<input class="spaceradio" type="radio" name="dnsmasq_no_dns_rebind" value="1" <% nvram_checked("dnsmasq_no_dns_rebind", "1"); %> /><% tran("share.enable"); %>&nbsp;
-				<input class="spaceradio" type="radio" name="dnsmasq_no_dns_rebind" value="0" <% nvram_checked("dnsmasq_no_dns_rebind", "0"); %> /><% tran("share.disable"); %>
+				<input class="spaceradio" type="radio" name="dnsmasq_no_dns_rebind" value="1" <% nvc("dnsmasq_no_dns_rebind", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="dnsmasq_no_dns_rebind" value="0" <% nvc("dnsmasq_no_dns_rebind", "0"); %> /><% tran("share.disable"); %>
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.dnsmasq_strict"); %></div>
-				<input class="spaceradio" type="radio" name="dnsmasq_strict" value="1" <% nvram_checked("dnsmasq_strict", "1"); %> /><% tran("share.enable"); %>&nbsp;
-				<input class="spaceradio" type="radio" name="dnsmasq_strict" value="0" <% nvram_checked("dnsmasq_strict", "0"); %> /><% tran("share.disable"); %>
+				<input class="spaceradio" type="radio" name="dnsmasq_strict" value="1" <% nvc("dnsmasq_strict", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="dnsmasq_strict" value="0" <% nvc("dnsmasq_strict", "0"); %> /><% tran("share.disable"); %>
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.dnsmasq_add_mac"); %></div>
-				<input class="spaceradio" type="radio" name="dnsmasq_add_mac" value="1" <% nvram_checked("dnsmasq_add_mac", "1"); %> /><% tran("share.enable"); %>&nbsp;
-				<input class="spaceradio" type="radio" name="dnsmasq_add_mac" value="0" <% nvram_checked("dnsmasq_add_mac", "0"); %> /><% tran("share.disable"); %>
+				<input class="spaceradio" type="radio" name="dnsmasq_add_mac" value="1" <% nvc("dnsmasq_add_mac", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="dnsmasq_add_mac" value="0" <% nvc("dnsmasq_add_mac", "0"); %> /><% tran("share.disable"); %>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.dnsmasq_rc"); %></div>
+				<input class="spaceradio" type="radio" name="dnsmasq_rc" value="1" <% nvc("dnsmasq_rc", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="dnsmasq_rc" value="0" <% nvc("dnsmasq_rc", "0"); %> /><% tran("share.disable"); %>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.dnsmasq_cachesize"); %></div>
+				<input class="num" maxlength="8" size="6" name="dnsmasq_cachesize" value="<% nvg("dnsmasq_cachesize"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.dnsmasq_opt"); %></div>
