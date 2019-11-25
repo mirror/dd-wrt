@@ -28,7 +28,7 @@
 /*
  * Copyright (c) 2016-2018 by Klara Systems Inc.
  * Copyright (c) 2016-2018 Allan Jude <allanjude@freebsd.org>
- * Copyright (c) 2018 Sebastian Gottschall <s.gottschall@dd-wrt.com>
+ * Copyright (c) 2018-2019 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  */
 
 #include <sys/param.h>
@@ -112,8 +112,10 @@ enum zstd_kmem_type {
 #define	ZSTD_POOL_MAX		16
 #define	ZSTD_POOL_TIMEOUT	60 * 2
 
+struct zstd_kmem;
+
 struct zstd_pool {
-	void *mem;
+	struct zstd_kmem *mem;
 	size_t size;
 	kmutex_t 		barrier;
 	time_t timeout;
@@ -129,16 +131,35 @@ struct zstd_kmem {
 };
 
 
-static struct zstd_pool zstd_mempool[ZSTD_POOL_MAX];
+static struct zstd_pool *zstd_mempool_cctx;
+static struct zstd_pool *zstd_mempool_dctx;
 
 /* initializes memory pool barrier mutexes */
 void
 zstd_mempool_init(void)
 {
 	int i;
+	zstd_mempool_cctx = (struct zstd_pool *)
+	    kmem_zalloc(ZSTD_POOL_MAX * sizeof (struct zstd_pool), KM_SLEEP);
+	zstd_mempool_dctx = (struct zstd_pool *)
+	    kmem_zalloc(ZSTD_POOL_MAX * sizeof (struct zstd_pool), KM_SLEEP);
 	for (i = 0; i < ZSTD_POOL_MAX; i++) {
-		mutex_init(&zstd_mempool[i].barrier, NULL, MUTEX_DEFAULT, NULL);
+		mutex_init(&zstd_mempool_cctx[i].barrier, NULL,
+		    MUTEX_DEFAULT, NULL);
+		mutex_init(&zstd_mempool_dctx[i].barrier, NULL,
+		    MUTEX_DEFAULT, NULL);
 	}
+}
+
+/* release object from pool and free memory */
+static void
+release_pool(struct zstd_pool *pool)
+{
+	mutex_tryenter(&pool->barrier);
+	mutex_exit(&pool->barrier);
+	kmem_free(pool->mem, pool->size);
+	pool->mem = NULL;
+	pool->size = 0;
 }
 
 /* releases memory pool objects */
@@ -146,15 +167,12 @@ void
 zstd_mempool_deinit(void)
 {
 	int i;
-	struct zstd_pool *pool;
 	for (i = 0; i < ZSTD_POOL_MAX; i++) {
-		pool = &zstd_mempool[i];
-		mutex_tryenter(&pool->barrier);
-		mutex_exit(&pool->barrier);
-		kmem_free(pool->mem, pool->size);
-		pool->mem = NULL;
-		pool->size = 0;
+		release_pool(&zstd_mempool_cctx[i]);
+		release_pool(&zstd_mempool_dctx[i]);
 	}
+	kmem_free(zstd_mempool_dctx, ZSTD_POOL_MAX * sizeof (struct zstd_pool));
+	kmem_free(zstd_mempool_cctx, ZSTD_POOL_MAX * sizeof (struct zstd_pool));
 }
 
 /*
@@ -163,11 +181,10 @@ zstd_mempool_deinit(void)
  * requested size, it will be released and a new cached entry will be allocated
  */
 struct zstd_kmem *
-zstd_mempool_alloc(size_t size)
+zstd_mempool_alloc(struct zstd_pool *zstd_mempool, size_t size)
 {
 	int i;
 	struct zstd_pool *pool;
-	struct zstd_kmem *z;
 	boolean_t reclaimed = B_FALSE;
 	struct zstd_kmem *mem = NULL;
 
@@ -175,7 +192,8 @@ zstd_mempool_alloc(size_t size)
 		pool = &zstd_mempool[i];
 		if (mutex_tryenter(&pool->barrier)) {
 			if (!pool->mem) {
-				z = kvmem_zalloc(size, KM_SLEEP);
+				struct zstd_kmem *z =
+				    kvmem_zalloc(size, KM_SLEEP);
 				pool->mem = z;
 				if (!pool->mem) {
 					mutex_exit(&pool->barrier);
@@ -190,7 +208,7 @@ zstd_mempool_alloc(size_t size)
 				if (size <= pool->size) {
 					pool->timeout = gethrestime_sec() +
 					    ZSTD_POOL_TIMEOUT;
-					return ((struct zstd_kmem *)pool->mem);
+					return (pool->mem);
 				}
 			}
 			/*
@@ -212,7 +230,7 @@ zstd_mempool_alloc(size_t size)
 	 * since we can now reallocate the slot with a new size
 	 */
 	if (reclaimed) {
-		mem = zstd_mempool_alloc(size);
+		mem = zstd_mempool_alloc(zstd_mempool, size);
 	}
 
 	return (mem ? mem : kvmem_zalloc(size, KM_NOSLEEP));
@@ -258,7 +276,7 @@ static struct zstd_vmem zstd_vmem_cache[ZSTD_KMEM_COUNT] = {
 		}
 	};
 static struct zstd_kmem_config zstd_cache_config[ZSTD_KMEM_COUNT] = {
-	{ 0, 0, "zstd_unknown", KM_SLEEP},
+	{ 0, 0, "zstd_unknown", KM_NOSLEEP},
 	{ 0, 0, "zstd_cctx", KM_NOSLEEP },
 	{ 4096, ZIO_ZSTD_LEVEL_MIN, "zstd_wrkspc_4k_min", KM_NOSLEEP},
 	{ 4096, ZIO_ZSTD_LEVEL_DEFAULT, "zstd_wrkspc_4k_def", KM_NOSLEEP},
@@ -278,7 +296,7 @@ static struct zstd_kmem_config zstd_cache_config[ZSTD_KMEM_COUNT] = {
 	    "zstd_wrkspc_16m_def", KM_NOSLEEP},
 	{ SPA_MAXBLOCKSIZE, ZIO_ZSTD_LEVEL_MAX, \
 	    "zstd_wrkspc_16m_max", KM_NOSLEEP},
-	{ 0, 0, "zstd_dctx", KM_SLEEP},
+	{ 0, 0, "zstd_dctx", KM_NOSLEEP},
 };
 
 static int
@@ -622,9 +640,12 @@ zstd_alloc(void *opaque __unused, size_t size)
 		 */
 #ifdef _KERNEL
 		if (type != ZSTD_KMEM_DCTX)
-			z = zstd_mempool_alloc(nbytes);
-		else
-			z = kmem_zalloc(nbytes, KM_NOSLEEP);
+			z = zstd_mempool_alloc(zstd_mempool_cctx, nbytes);
+		else {
+			z = zstd_mempool_alloc(zstd_mempool_dctx, nbytes);
+			if (!z)
+				z = kvmem_zalloc(nbytes, KM_SLEEP);
+		}
 #else
 		z = kmem_zalloc(nbytes, KM_SLEEP);
 #endif
