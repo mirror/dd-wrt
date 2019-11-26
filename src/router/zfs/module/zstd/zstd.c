@@ -115,7 +115,7 @@ enum zstd_kmem_type {
 struct zstd_kmem;
 
 struct zstd_pool {
-	struct zstd_kmem *mem;
+	void *mem;
 	size_t size;
 	kmutex_t 		barrier;
 	time_t timeout;
@@ -208,7 +208,7 @@ zstd_mempool_alloc(struct zstd_pool *zstd_mempool, size_t size)
 				if (size <= pool->size) {
 					pool->timeout = gethrestime_sec() +
 					    ZSTD_POOL_TIMEOUT;
-					return (pool->mem);
+					return ((struct zstd_kmem *)pool->mem);
 				}
 			}
 			/*
@@ -276,7 +276,7 @@ static struct zstd_vmem zstd_vmem_cache[ZSTD_KMEM_COUNT] = {
 		}
 	};
 static struct zstd_kmem_config zstd_cache_config[ZSTD_KMEM_COUNT] = {
-	{ 0, 0, "zstd_unknown", KM_NOSLEEP},
+	{ 0, 0, "zstd_unknown", KM_SLEEP},
 	{ 0, 0, "zstd_cctx", KM_NOSLEEP },
 	{ 4096, ZIO_ZSTD_LEVEL_MIN, "zstd_wrkspc_4k_min", KM_NOSLEEP},
 	{ 4096, ZIO_ZSTD_LEVEL_DEFAULT, "zstd_wrkspc_4k_def", KM_NOSLEEP},
