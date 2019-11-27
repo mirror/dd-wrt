@@ -35,7 +35,7 @@ libcap.pc: libcap.pc.in
 		$< >$@
 
 _makenames: _makenames.c cap_names.list.h
-	gcc -O2 $< -o $@
+	gcc -Iinclude -O2 $< -o $@
 
 cap_names.h: _makenames
 	./_makenames > cap_names.h
