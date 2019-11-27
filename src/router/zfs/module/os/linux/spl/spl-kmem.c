@@ -224,12 +224,16 @@ spl_kmem_alloc_impl(size_t size, int flags, int node)
 	 * through the vmem_alloc()/vmem_zalloc() interfaces.
 	 */
 	if ((spl_kmem_alloc_warn > 0) && (size > spl_kmem_alloc_warn) &&
-	    !(flags & KM_VMEM)) {
+	    !(flags & KM_VMEM) && !(flags & KM_KVMEM)) {
 		printk(KERN_WARNING
 		    "Large kmem_alloc(%lu, 0x%x), please file an issue at:\n"
 		    "https://github.com/zfsonlinux/zfs/issues/new\n",
 		    (unsigned long)size, flags);
 		dump_stack();
+	}
+
+	if (flags & KM_KVMEM) {
+		return (spl_kvmalloc(size, lflags));
 	}
 
 	/*
