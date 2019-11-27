@@ -34,6 +34,8 @@ frr-configure: ncurses json-c readline libyang libcap
 		--disable-backtrace \
 		--enable-opaque-lsa \
 		--disable-nhrpd \
+		--disable-fabricd \
+		--disable-vrrpd \
 		--enable-ospf-te --disable-ospfclient --enable-multipath=32  --enable-ipv6 --prefix=/usr --sysconfdir=/tmp --disable-ospf6d \
 		--enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi --disable-isisd --disable-pimd --disable-nhrpd \
 		--disable-staticd --disable-bfdd --disable-babeld --enable-pie=no --with-libreadline=$(TOP)/readline \
