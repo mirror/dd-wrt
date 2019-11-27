@@ -73,8 +73,8 @@ install: all
 ifeq ($(FAKEROOT),)
 	-/sbin/ldconfig
 endif
-	mkdir -p -m 0755 $(FAKEROOT)$(PKGCONFIGDIR)
-	install -m 0644 libcap.pc $(FAKEROOT)$(PKGCONFIGDIR)/libcap.pc
+#	mkdir -p -m 0755 $(FAKEROOT)$(PKGCONFIGDIR)
+#	install -m 0644 libcap.pc $(FAKEROOT)$(PKGCONFIGDIR)/libcap.pc
 
 clean:
 	$(LOCALCLEAN)
