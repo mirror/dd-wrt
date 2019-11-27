@@ -14,8 +14,8 @@ ifneq ($(PAM_CAP),no)
 	$(MAKE) -C pam_cap $@
 endif
 	$(MAKE) -C progs $@
-	$(MAKE) -C doc $@
-	$(MAKE) -C kdebug $@
+#	$(MAKE) -C doc $@
+#	$(MAKE) -C kdebug $@
 
 all-here:
 
