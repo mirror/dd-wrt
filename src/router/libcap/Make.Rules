@@ -1,0 +1,88 @@
+#
+## Optional prefixes:
+#
+
+# common 'packaging' directoty
+
+FAKEROOT=$(DESTDIR)
+
+# Autoconf-style prefixes are activated when $(prefix) is defined.
+# Otherwise binaries and libraries are installed in /{lib,sbin}/,
+# header files in /usr/include/ and documentation in /usr/man/man?/.
+# These choices are motivated by the fact that getcap and setcap are
+# administrative operations that could be needed to recover a system.
+
+#ifndef lib
+#lib=$(shell ldd /usr/bin/ld|egrep "ld-linux|ld.so"|cut -d/ -f2)
+#endif
+lib=lib
+
+ifdef prefix
+exec_prefix=$(prefix)
+lib_prefix=$(exec_prefix)
+inc_prefix=$(lib_prefix)
+man_prefix=$(prefix)/share
+else
+prefix=/usr
+exec_prefix=
+lib_prefix=$(exec_prefix)
+inc_prefix=$(prefix)
+man_prefix=$(prefix)/share
+endif
+
+# Target directories
+
+MANDIR=$(man_prefix)/man
+SBINDIR=$(exec_prefix)/sbin
+INCDIR=$(inc_prefix)/include
+LIBDIR=$(lib_prefix)/$(lib)
+PKGCONFIGDIR=$(prefix)/$(lib)/pkgconfig
+
+# common defines for libcap
+LIBTITLE=libcap
+VERSION=2
+MINOR=27
+#
+
+# Compilation specifics
+
+KERNEL_HEADERS := $(topdir)/libcap/include/uapi
+IPATH += -fPIC -I$(KERNEL_HEADERS) -I$(topdir)/libcap/include
+
+#CC := gcc
+CFLAGS := $(COPTS) $(MIPS16_OPT) -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
+BUILD_CC := $(CC)
+BUILD_CFLAGS := $(CFLAGS) $(IPATH)
+AR := ar
+RANLIB := ranlib
+DEBUG = -g #-DDEBUG
+WARNINGS=-Wall -Wwrite-strings \
+        -Wpointer-arith -Wcast-qual -Wcast-align \
+        -Wstrict-prototypes -Wmissing-prototypes \
+        -Wnested-externs -Winline -Wshadow
+LD=$(CC) -Wl,-x -shared
+LDFLAGS := #-g
+BUILD_GPERF := $(shell which gperf >/dev/null 2>/dev/null && echo yes)
+
+SYSTEM_HEADERS = /usr/include
+INCS=$(topdir)/libcap/include/sys/capability.h
+LDFLAGS += -L$(topdir)/libcap
+CFLAGS += -Dlinux $(WARNINGS) $(DEBUG)
+PAM_CAP := no
+INDENT := $(shell if [ -n "$$(which indent 2>/dev/null)" ]; then echo "| indent -kr" ; fi)
+DYNAMIC := $(shell if [ ! -d "$(topdir)/.git" ]; then echo yes; fi)
+
+# When installing setcap, set its inheritable bit to be able to place
+# capabilities on files. It can be used in conjunction with pam_cap
+# (associated with su and certain users say) to make it useful for
+# specially blessed users. If you wish to drop this install feature,
+# use this command when running install
+#
+#    make RAISE_SETFCAP=no install
+#
+RAISE_SETFCAP := no
+
+# Global cleanup stuff
+
+LOCALCLEAN=rm -f *~ core
+DISTCLEAN=@find . \( -name '*.orig' -o -name '*.rej' \) | xargs rm -f

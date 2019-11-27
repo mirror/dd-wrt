@@ -1,0 +1,173 @@
+.\"
+.\" capsh.1 Man page added 2009-12-23 Andrew G. Morgan <morgan@kernel.org>
+.\"
+.TH CAPSH 1 "2011-04-24" "libcap 2" "User Commands"
+.SH NAME
+capsh \- capability shell wrapper
+.SH SYNOPSIS
+.B capsh
+[\fIOPTION\fR]...
+.SH DESCRIPTION
+Linux capability support and use can be explored and constrained with
+this tool. This tool provides a handy wrapper for certain types
+of capability testing and environment creation. It also provides some
+debugging features useful for summarizing capability state.
+.SH OPTIONS
+The tool takes a number of optional arguments, acting on them in the
+order they are provided. They are as follows:
+.TP 22
+.B --print
+Display prevailing capability and related state.
+.TP
+.BI -- " [args]"
+Execute
+.B /bin/bash
+with trailing arguments. Note, you can use
+.B -c 'command to execute'
+for specific commands.
+.TP
+.B ==
+Execute
+.B capsh
+again with remaining arguments. Useful for testing
+.BR exec ()
+behavior.
+.TP
+.BI --caps= cap-set
+Set the prevailing process capabilities to those specified by
+.IR cap-set .
+Where
+.I cap-set
+is a text-representation of capability state as per
+.BR cap_from_text (3).
+.TP
+.BI --drop= cap-list
+Remove the listed capabilities from the prevailing bounding set. The
+capabilites are a comma separated list of capabilities as recognized
+by the
+.BR cap_from_name (3)
+function. Use of this feature requires that the capsh program is
+operating with
+.B CAP_SETPCAP
+in its effective set.
+.TP
+.BI --inh= cap-list
+Set the inheritable set of capabilities for the current process to
+equal those provided in the comma separated list. For this action to
+succeed, the prevailing process should already have each of these
+capabilities in the union of the current inheritable and permitted
+capability sets, or the capsh program is operating with
+.B CAP_SETPCAP
+in its effective set.
+.TP
+.BI --user= username
+Assume the identity of the named user. That is, look up the user's
+.IR uid " and " gid
+with
+.BR getpwuid (3)
+and their group memberships with
+.BR getgrouplist (3)
+and set them all.
+.TP
+.BI --uid= id
+Force all
+.B uid
+values to equal
+.I id
+using the
+.BR setuid (2)
+system call.
+.TP
+.BI --gid= <id>
+Force all
+.B gid
+values to equal
+.I id
+using the
+.BR setgid (2)
+system call.
+.TP
+.BI --groups= <id-list>
+Set the supplementary groups to the numerical list provided. The
+groups are set with the
+.BR setgroups (2)
+system call.
+.TP
+.BI --keep= <0|1>
+In a non-pure capability mode, the kernel provides liberal privilege
+to the super-user. However, it is normally the case that when the
+super-user changes
+.I uid
+to some lesser user, then capabilities are dropped. For these
+situations, the kernel can permit the process to retain its
+capabilities after a
+.BR setuid (2)
+system call. This feature is known as
+.I keep-caps
+support. The way to activate it using this script is with this
+argument. Setting the value to 1 will cause
+.I keep-caps
+to be active. Setting it to 0 will cause keep-caps to deactivate for
+the current process. In all cases,
+.I keep-caps
+is deactivated when an
+.BR exec ()
+is performed. See
+.B --secbits
+for ways to disable this feature.
+.TP
+.BI --secbits= N
+XXX - need to document this feature.
+.TP
+.BI --chroot= path
+Execute the
+.BR chroot (2)
+system call with the new root-directory (/) equal to
+.IR path .
+This operation requires
+.B CAP_SYS_CHROOT
+to be in effect.
+.TP
+.BI --forkfor= sec
+.TP
+.BI --killit= sig
+.TP
+.BI --decode= N
+This is a convenience feature. If you look at
+.B /proc/1/status
+there are some capability related fields of the following form:
+
+ CapInh:	0000000000000000
+ CapPrm:	ffffffffffffffff
+ CapEff:	fffffffffffffeff
+ CapBnd:	ffffffffffffffff
+
+This option provides a quick way to decode a capability vector
+represented in this form. For example, the missing capability from
+this effective set is 0x0100. By running:
+
+ capsh --decode=0x0100
+
+we observe that the missing capability is:
+.BR cap_setpcap .
+.TP
+.BI --supports= xxx
+As the kernel evolves, more capabilities are added. This option can be used
+to verify the existence of a capability on the system. For example,
+.BI --supports= cap_syslog
+will cause capsh to promptly exit with a status of 1 when run on
+kernel 2.6.27.  However, when run on kernel 2.6.38 it will silently
+succeed.
+.TP
+.SH "EXIT STATUS"
+Following successful execution the tool exits with status 0. Following
+an error, the tool immediately exits with status 1.
+.SH AUTHOR
+Written by Andrew G. Morgan <morgan@kernel.org>.
+.SH "REPORTING BUGS"
+Please report bugs to the author.
+.SH "SEE ALSO"
+.BR libcap (3),
+.BR getcap (8), setcap (8)
+and
+.BR capabilities (7).
