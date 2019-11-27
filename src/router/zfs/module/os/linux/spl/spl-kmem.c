@@ -27,7 +27,6 @@
 #include <sys/kmem.h>
 #include <sys/vmem.h>
 #include <linux/mm.h>
-#include <linux/version.h>
 
 /*
  * As a general rule kmem_alloc() allocations should be small, preferably
@@ -144,10 +143,8 @@ EXPORT_SYMBOL(kmem_strfree);
 #endif
 
 void *
-spl_kvmalloc(size_t size, gfp_t flags)
+spl_kvmalloc(size_t size, gfp_t lflags)
 {
-	gfp_t kmalloc_flags = flags;
-	void *ret;
 #ifdef HAVE_KVMALLOC
 	/*
 	 * GFP_KERNEL allocations can safely use kvmalloc which may
@@ -158,24 +155,54 @@ spl_kvmalloc(size_t size, gfp_t flags)
 	 * incorrectly report this as a vmem allocation, but that is
 	 * purely cosmetic.
 	 */
-	if ((flags & GFP_KERNEL) == GFP_KERNEL)
-		return (kvmalloc(size, flags));
+	if ((lflags & GFP_KERNEL) == GFP_KERNEL)
+		return (kvmalloc(size, lflags));
 #endif
 
+	gfp_t kmalloc_lflags = lflags;
+
 	if (size > PAGE_SIZE) {
-		kmalloc_flags |= __GFP_NOWARN;
-		if (!(kmalloc_flags & __GFP_RETRY_MAYFAIL) ||
-		    (size <= PAGE_SIZE << PAGE_ALLOC_COSTLY_ORDER))
-			kmalloc_flags |= __GFP_NORETRY;
+		/*
+		 * We need to set __GFP_NOWARN here since spl_kvmalloc is not
+		 * only called by spl_kmem_alloc_impl but can be called
+		 * directly with custom lflags, too. In that case
+		 * kmem_flags_convert does not get called, which would
+		 * implicitly set __GFP_NOWARN.
+		 */
+		kmalloc_lflags |= __GFP_NOWARN;
+
+		/*
+		 * N.B. __GFP_RETRY_MAYFAIL is supported only for large
+		 * e (>32kB) allocations.
+		 *
+		 * We have to override __GFP_RETRY_MAYFAIL by __GFP_NORETRY
+		 * for !costly requests because there is no other way to tell
+		 * the allocator that we want to fail rather than retry
+		 * endlessly.
+		 */
+		if (!(kmalloc_lflags & __GFP_RETRY_MAYFAIL) ||
+		    (size <= PAGE_SIZE << PAGE_ALLOC_COSTLY_ORDER)) {
+			kmalloc_lflags |= __GFP_NORETRY;
+		}
 	}
 
-	if (!(kmalloc_flags & __GFP_COMP)) {
-		ret = kmalloc_node(size, kmalloc_flags, NUMA_NO_NODE);
-		if (ret || size <= PAGE_SIZE)
-			return (ret);
+	/*
+	 * We first try kmalloc - even for big sizes - and fall back to
+	 * __vmalloc if that fails.
+	 *
+	 * For non-__GFP-RECLAIM allocations we always stick to
+	 * kmalloc_node, and fail when kmalloc is not successful (returns
+	 * NULL).
+	 * We cannot fall back to __vmalloc in this case because __vmalloc
+	 * internally uses GPF_KERNEL allocations.
+	 */
+	void *ptr = kmalloc_node(size, kmalloc_lflags, NUMA_NO_NODE);
+	if (ptr || size <= PAGE_SIZE ||
+	    (lflags & __GFP_RECLAIM) != __GFP_RECLAIM) {
+		return (ptr);
 	}
 
-	return (__vmalloc(size, flags | __GFP_HIGHMEM, PAGE_KERNEL));
+	return (__vmalloc(size, lflags | __GFP_HIGHMEM, PAGE_KERNEL));
 }
 
 /*
@@ -197,7 +224,7 @@ spl_kmem_alloc_impl(size_t size, int flags, int node)
 	 * through the vmem_alloc()/vmem_zalloc() interfaces.
 	 */
 	if ((spl_kmem_alloc_warn > 0) && (size > spl_kmem_alloc_warn) &&
-	    !(flags & KM_VMEM) && !(flags & KM_KVMEM)) {
+	    !(flags & KM_VMEM)) {
 		printk(KERN_WARNING
 		    "Large kmem_alloc(%lu, 0x%x), please file an issue at:\n"
 		    "https://github.com/zfsonlinux/zfs/issues/new\n",
@@ -205,9 +232,6 @@ spl_kmem_alloc_impl(size_t size, int flags, int node)
 		dump_stack();
 	}
 
-	if (flags & KM_KVMEM) {
-		return (spl_kvmalloc(size, lflags));
-	}
 	/*
 	 * Use a loop because kmalloc_node() can fail when GFP_KERNEL is used
 	 * unlike kmem_alloc() with KM_SLEEP on Illumos.
@@ -233,14 +257,22 @@ spl_kmem_alloc_impl(size_t size, int flags, int node)
 				return (NULL);
 			}
 		} else {
-			if (flags & KM_VMEM)
+			if (flags & KM_VMEM) {
 				ptr = spl_kvmalloc(size, lflags);
-			else
+			} else {
 				ptr = kmalloc_node(size, lflags, node);
+			}
 		}
 
-		if (likely(ptr) || (flags & KM_NOSLEEP) || (flags & KM_ONCE))
+		if (likely(ptr) || (flags & KM_NOSLEEP))
 			return (ptr);
+
+		/*
+		 * Try hard to satisfy the allocation. However, when progress
+		 * cannot be made, the allocation is allowed to fail.
+		 */
+		if ((lflags & GFP_KERNEL) == GFP_KERNEL)
+			lflags |= __GFP_RETRY_MAYFAIL;
 
 		/*
 		 * Use cond_resched() instead of congestion_wait() to avoid
