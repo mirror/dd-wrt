@@ -143,6 +143,4 @@ $(MODULE)-$(CONFIG_X86) += vdev_raidz_math_avx512bw.o
 $(MODULE)-$(CONFIG_ARM64) += vdev_raidz_math_aarch64_neon.o
 $(MODULE)-$(CONFIG_ARM64) += vdev_raidz_math_aarch64_neonx2.o
 
-all:
-
-include @abs_top_builddir@/module/os/linux/zfs/Makefile
+-include @abs_top_builddir@/module/os/linux/zfs/Makefile

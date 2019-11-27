@@ -153,8 +153,7 @@ zio_init(void)
 		size_t size = (c + 1) << SPA_MINBLOCKSHIFT;
 		size_t p2 = size;
 		size_t align = 0;
-		size_t cflags = (size > zio_buf_debug_limit) ?
-		    KMC_NODEBUG | KMC_KVMEM : KMC_KVMEM;
+		size_t cflags = (size > zio_buf_debug_limit) ? KMC_NODEBUG : 0;
 
 #if defined(_ILP32) && defined(_KERNEL)
 		/*

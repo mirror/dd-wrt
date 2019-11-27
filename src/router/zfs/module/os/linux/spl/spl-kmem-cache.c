@@ -193,10 +193,6 @@ SPL_SHRINKER_CALLBACK_FWD_DECLARE(spl_kmem_cache_generic_shrinker);
 SPL_SHRINKER_DECLARE(spl_kmem_cache_shrinker,
 	spl_kmem_cache_generic_shrinker, KMC_DEFAULT_SEEKS);
 
-#ifndef __GFP_RECLAIM
-#define	__GFP_RECLAIM		__GFP_WAIT
-#endif
-
 static void *
 kv_alloc(spl_kmem_cache_t *skc, int size, int flags)
 {
@@ -239,20 +235,17 @@ kv_free(spl_kmem_cache_t *skc, void *ptr, int size)
 {
 	ASSERT(IS_P2ALIGNED(ptr, PAGE_SIZE));
 
+	/*
+	 * The Linux direct reclaim path uses this out of band value to
+	 * determine if forward progress is being made.  Normally this is
+	 * incremented by kmem_freepages() which is part of the various
+	 * Linux slab implementations.  However, since we are using none
+	 * of that infrastructure we are responsible for incrementing it.
+	 */
+	if (current->reclaim_state)
+		current->reclaim_state->reclaimed_slab += size >> PAGE_SHIFT;
+
 	if (skc->skc_flags & KMC_KMEM) {
-		/*
-		 * The Linux direct reclaim path uses this out of band value to
-		 * determine if forward progress is being made.  Normally this
-		 * is incremented by kmem_freepages() which is part of the
-		 * various Linux slab implementations.  However, since we are
-		 * using none of that infrastructure we are responsible for
-		 * incrementing it.
-		 */
-
-		if (current->reclaim_state)
-			current->reclaim_state->reclaimed_slab +=
-			    size >> PAGE_SHIFT;
-
 		ASSERT(ISP2(size));
 		free_pages((unsigned long)ptr, get_order(size));
 	} else {
@@ -1007,7 +1000,7 @@ spl_kmem_cache_create(char *name, size_t size, size_t align,
 			 * All other objects are considered large and are
 			 * placed on kvmem backed slabs.
 			 */
-			skc->skc_flags |= KMC_VMEM;
+			skc->skc_flags |= KMC_KVMEM;
 		}
 	}
 
