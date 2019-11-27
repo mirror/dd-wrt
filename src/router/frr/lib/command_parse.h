@@ -1,9 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.3.2.  */
+/* A Bison parser, made by GNU Bison 3.0.4.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2019 Free Software Foundation,
-   Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,9 +30,6 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-/* Undocumented macros, especially those whose name start with YY_,
-   are private implementation details.  Do not rely on them.  */
-
 #ifndef YY_CMD_YY_LIB_COMMAND_PARSE_H_INCLUDED
 # define YY_CMD_YY_LIB_COMMAND_PARSE_H_INCLUDED
 /* Debug traces.  */
@@ -52,10 +48,11 @@
 extern int cmd_yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 46 "lib/command_parse.y" /* yacc.c:1921  */
+#line 46 "lib/command_parse.y" /* yacc.c:1909  */
 
   #include "config.h"
 
+  #include <stdbool.h>
   #include <stdlib.h>
   #include <string.h>
   #include <ctype.h>
@@ -74,7 +71,7 @@ extern int cmd_yydebug;
     struct graph_node *start, *end;
   };
 
-#line 78 "lib/command_parse.h" /* yacc.c:1921  */
+#line 75 "lib/command_parse.h" /* yacc.c:1909  */
 
 /* Token type.  */
 #ifndef CMD_YYTOKENTYPE
@@ -108,14 +105,14 @@ extern int cmd_yydebug;
 
 union CMD_YYSTYPE
 {
-#line 68 "lib/command_parse.y" /* yacc.c:1921  */
+#line 69 "lib/command_parse.y" /* yacc.c:1909  */
 
   long long number;
   char *string;
   struct graph_node *node;
   struct subgraph subgraph;
 
-#line 119 "lib/command_parse.h" /* yacc.c:1921  */
+#line 116 "lib/command_parse.h" /* yacc.c:1909  */
 };
 
 typedef union CMD_YYSTYPE CMD_YYSTYPE;
@@ -141,7 +138,7 @@ struct CMD_YYLTYPE
 
 int cmd_yyparse (struct parser_ctx *ctx);
 /* "%code provides" blocks.  */
-#line 75 "lib/command_parse.y" /* yacc.c:1921  */
+#line 76 "lib/command_parse.y" /* yacc.c:1909  */
 
   #ifndef FLEX_SCANNER
   #include "command_lex.h"
@@ -162,6 +159,6 @@ int cmd_yyparse (struct parser_ctx *ctx);
     char *docstr_start, *docstr;
   };
 
-#line 166 "lib/command_parse.h" /* yacc.c:1921  */
+#line 163 "lib/command_parse.h" /* yacc.c:1909  */
 
 #endif /* !YY_CMD_YY_LIB_COMMAND_PARSE_H_INCLUDED  */

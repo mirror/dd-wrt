@@ -21,6 +21,12 @@
 /* Consumed Time Check */
 #undef CONSUMED_TIME_CHECK
 
+/* Compile with internal cryptographic implementation */
+#undef CRYPTO_INTERNAL
+
+/* Compile with openssl support */
+#undef CRYPTO_OPENSSL
+
 /* daemon database directory */
 #undef DAEMON_DB_DIR
 
@@ -62,9 +68,6 @@
 
 /* Compile extensions to use with a fuzzer */
 #undef HANDLE_ZAPI_FUZZING
-
-/* Define to 1 if you have the `alarm' function. */
-#undef HAVE_ALARM
 
 /* Have history.h append_history */
 #undef HAVE_APPEND_HISTORY
@@ -123,12 +126,6 @@
 /* Have dlinfo RTLD_DI_ORIGIN */
 #undef HAVE_DLINFO_ORIGIN
 
-/* Define to 1 if your system has a working POSIX `fnmatch' function. */
-#undef HAVE_FNMATCH
-
-/* Define to 1 if you have the `fork' function. */
-#undef HAVE_FORK
-
 /* Define to 1 if you have the `getgrouplist' function. */
 #undef HAVE_GETGROUPLIST
 
@@ -159,8 +156,8 @@
 /* Define to 1 if you have the <json-c/json.h> header file. */
 #undef HAVE_JSON_C_JSON_H
 
-/* Define to 1 if you have the <kvm.h> header file. */
-#undef HAVE_KVM_H
+/* Define to 1 if you have the <lauxlib.h> header file. */
+#undef HAVE_LAUXLIB_H
 
 /* Capabilities */
 #undef HAVE_LCAPS
@@ -201,8 +198,17 @@
 /* Define to 1 if you have the <linux/version.h> header file. */
 #undef HAVE_LINUX_VERSION_H
 
-/* Lua enabled for development */
+/* Have support for Lua interpreter */
 #undef HAVE_LUA
+
+/* Define to 1 if you have the <luaconf.h> header file. */
+#undef HAVE_LUACONF_H
+
+/* Define to 1 if you have the <lualib.h> header file. */
+#undef HAVE_LUALIB_H
+
+/* Define to 1 if you have the <lua.h> header file. */
+#undef HAVE_LUA_H
 
 /* mallinfo */
 #undef HAVE_MALLINFO
@@ -273,9 +279,6 @@
 /* have NetBSD pollts() */
 #undef HAVE_POLLTS
 
-/* Define to 1 if you have the `pow' function. */
-#undef HAVE_POW
-
 /* have Linux/BSD ppoll() */
 #undef HAVE_PPOLL
 
@@ -326,10 +329,6 @@
 
 /* Enable sqlite3 database */
 #undef HAVE_SQLITE3
-
-/* Define to 1 if `stat' has the bug that it succeeds when given the
-   zero-length file name argument. */
-#undef HAVE_STAT_EMPTY_STRING_BUG
 
 /* found stdatomic.h */
 #undef HAVE_STDATOMIC_H
@@ -404,9 +403,6 @@
 /* Define to 1 if the system has the type `struct nd_opt_rdnss'. */
 #undef HAVE_STRUCT_ND_OPT_RDNSS
 
-/* Define to 1 if the system has the type `struct rt_addrinfo'. */
-#undef HAVE_STRUCT_RT_ADDRINFO
-
 /* Define to 1 if the system has the type `struct sioc_sg_req'. */
 #undef HAVE_STRUCT_SIOC_SG_REQ
 
@@ -452,9 +448,6 @@
 /* Define to 1 if you have the <sys/capability.h> header file. */
 #undef HAVE_SYS_CAPABILITY_H
 
-/* Define to 1 if you have the <sys/cdefs.h> header file. */
-#undef HAVE_SYS_CDEFS_H
-
 /* Define to 1 if you have the <sys/conf.h> header file. */
 #undef HAVE_SYS_CONF_H
 
@@ -469,9 +462,6 @@
 
 /* Define to 1 if you have the <sys/sysctl.h> header file. */
 #undef HAVE_SYS_SYSCTL_H
-
-/* Define to 1 if you have the <sys/time.h> header file. */
-#undef HAVE_SYS_TIME_H
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
@@ -497,20 +487,8 @@
 /* Compile in v6 Route Replacement Semantics */
 #undef HAVE_V6_RR_SEMANTICS
 
-/* Define to 1 if you have the `vfork' function. */
-#undef HAVE_VFORK
-
-/* Define to 1 if you have the <vfork.h> header file. */
-#undef HAVE_VFORK_H
-
 /* Define to 1 if the system has the type `vifi_t'. */
 #undef HAVE_VIFI_T
-
-/* Define to 1 if `fork' works. */
-#undef HAVE_WORKING_FORK
-
-/* Define to 1 if `vfork' works. */
-#undef HAVE_WORKING_VFORK
 
 /* Enable ZeroMQ support */
 #undef HAVE_ZEROMQ
@@ -551,18 +529,11 @@
 /* ldpd control socket */
 #undef LDPD_SOCKET
 
-/* path to libyang plugins */
-#undef LIBYANG_PLUGINS_PATH
-
 /* Linux IPv6 stack */
 #undef LINUX_IPV6
 
 /* Mask for log files */
 #undef LOGFILE_MASK
-
-/* Define to 1 if `lstat' dereferences a symlink specified with a trailing
-   slash. */
-#undef LSTAT_FOLLOWS_SLASHED_SYMLINK
 
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
@@ -621,12 +592,6 @@
 
 /* Realms support */
 #undef SUPPORT_REALMS
-
-/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
-#undef TIME_WITH_SYS_TIME
-
-/* Define to 1 if your <sys/time.h> declares `struct tm'. */
-#undef TM_IN_SYS_TIME
 
 /* Use PAM for authentication */
 #undef USE_PAM
@@ -717,36 +682,5 @@
 /* Define to 1 if you need to in order for `stat' and other things to work. */
 #undef _POSIX_SOURCE
 
-/* Define to empty if `const' does not conform to ANSI C. */
-#undef const
-
-/* Define to `int' if <sys/types.h> doesn't define. */
-#undef gid_t
-
-/* Define to `__inline__' or `__inline' if that's what the C compiler
-   calls it, or to nothing if 'inline' is not supported under any name.  */
-#ifndef __cplusplus
-#undef inline
-#endif
-
-/* Define to `int' if <sys/types.h> does not define. */
-#undef mode_t
-
-/* Define to `int' if <sys/types.h> does not define. */
-#undef pid_t
-
 /* Old readline */
 #undef rl_completion_matches
-
-/* Define to `unsigned int' if <sys/types.h> does not define. */
-#undef size_t
-
-/* Define to `int' if <sys/types.h> doesn't define. */
-#undef uid_t
-
-/* Define as `fork' if `vfork' does not work. */
-#undef vfork
-
-/* Define to empty if the keyword `volatile' does not work. Warning: valid
-   code using `volatile' can become incorrect without. Disable with care. */
-#undef volatile
