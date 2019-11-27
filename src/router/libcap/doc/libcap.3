@@ -1,0 +1,114 @@
+.TH LIBCAP 3 "2008-07-29" "" "Linux Programmer's Manual"
+.SH NAME
+cap_clear, cap_clear_flag, cap_compare, cap_copy_ext, cap_copy_int, \
+cap_free, cap_from_name, cap_from_text, cap_get_fd, cap_get_file, \
+cap_get_flag, cap_get_pid, cap_get_proc, cap_set_fd, cap_set_file, \
+cap_set_flag, cap_set_proc, cap_size, cap_to_name, cap_to_text, \
+cap_get_pid, cap_dup \- capability data object manipulation
+.SH SYNOPSIS
+.nf
+.B #include <sys/capability.h>
+.sp
+.BI "int cap_clear(cap_t " cap_p );
+.sp
+.BI "int cap_clear_flag(cap_t " cap_p ", cap_flag_t " flag ");"
+.sp
+.BI "int cap_compare(cap_t " cap_a ", cap_t " cap_b ");"
+.sp
+.BI "ssize_t cap_copy_ext(void *" ext_p ", cap_t " cap_p ", ssize_t " size );
+.sp
+.BI "cap_t cap_copy_int(const void *" ext_p );
+.sp
+.BI "int cap_free(void *" obj_d );
+.sp
+.BI "int cap_from_name(const char *" name ", cap_value_t *" cap_p );
+.sp
+.BI "cap_t cap_from_text(const char *" buf_p );
+.sp
+.BI "cap_t cap_get_fd(int " fd );
+.sp
+.BI "cap_t cap_get_file(const char *" path_p );
+.sp
+.BI "int cap_get_flag(cap_t " cap_p ", cap_value_t " cap ,
+.BI "                 cap_flag_t " flag ", cap_flag_value_t *" value_p ");"
+.sp
+.B #include <sys/types.h>
+.BI "cap_t cap_get_pid(pid_t " pid );
+.sp
+.B "cap_t cap_get_proc(void);"
+.sp
+.BI "int cap_set_fd(int " fd ", cap_t " caps );
+.sp
+.BI "int cap_set_file(const char *" path_p ", cap_t " cap_p );
+.sp
+.sp
+.BI "int cap_set_flag(cap_t " cap_p ", cap_flag_t " flag ", int " ncap ,
+.BI "                 const cap_value_t *" caps ", cap_flag_value_t " value ");"
+.BI "int cap_set_proc(cap_t " cap_p );
+.sp
+.BI "ssize_t cap_size(cap_t " cap_p );
+.sp
+.BI "char *cap_to_name(cap_value_t " cap );
+.sp
+.BI "char *cap_to_text(cap_t " caps ", ssize_t *" length_p );
+.sp
+.BI "cap_t cap_get_pid(pid_t " pid );
+.sp
+.BI "cap_t cap_dup(cap_t " cap_p );
+.sp
+Link with \fI-lcap\fP.
+.fi
+.SH DESCRIPTION
+These functions work on a capability state held in working storage.
+A
+.I cap_t
+holds information about the capabilities in each of the three sets,
+Permitted, Inheritable, and Effective.
+Each capability in a set may be clear (disabled, 0) or set (enabled, 1).
+.PP
+These functions work with the following data types:
+.TP 18
+.I cap_value_t
+identifies a capability, such as
+.BR CAP_CHOWN .
+.TP
+.I cap_flag_t
+identifies one of the three flags associated with a capability
+(i.e., it identifies one of the three capability sets).
+Valid values for this type are
+.BR CAP_EFFECTIVE ,
+.B CAP_INHERITABLE
+or
+.BR CAP_PERMITTED .
+.TP
+.I cap_flag_value_t
+identifies the setting of a particular capability flag
+(i.e, the value of a capability in a set).
+Valid values for this type are
+.BR CAP_CLEAR (0)
+or
+.BR CAP_SET (1).
+.SH "RETURN VALUE"
+The return value is generally specific to the individual function called.
+On failure,
+.I errno
+is set appropriately.
+.SH "CONFORMING TO"
+These functions are as per the withdrawn POSIX.1e draft specification.
+The following functions are Linux extensions:
+.BR cap_clear_flag (),
+.BR cap_compare (),
+.BR cap_from_name (),
+.BR cap_to_name (),
+and
+.BR cap_compare ().
+.SH "SEE ALSO"
+.BR cap_clear (3),
+.BR cap_copy_ext (3),
+.BR cap_from_text (3),
+.BR cap_get_file (3),
+.BR cap_get_proc (3),
+.BR cap_init (3),
+.BR capabilities (7),
+.BR getpid (2)
+.BR capsh (1)

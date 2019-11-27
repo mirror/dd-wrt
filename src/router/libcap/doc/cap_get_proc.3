@@ -1,0 +1,204 @@
+.\"
+.\" $Id: cap_get_proc.3,v 1.1.1.1 1999/04/17 22:16:31 morgan Exp $
+.\"
+.TH CAP_GET_PROC 3 "2008-05-11" "" "Linux Programmer's Manual"
+.SH NAME
+cap_get_proc, cap_set_proc, capgetp, cap_get_bound, cap_drop_bound \-
+capability manipulation on processes
+.SH SYNOPSIS
+.B #include <sys/capability.h>
+.sp
+.B "cap_t cap_get_proc(void);"
+.sp
+.BI "int cap_set_proc(cap_t " cap_p );
+.sp
+.BI "int cap_get_bound(cap_value_t " cap );
+.sp
+.BI "CAP_IS_SUPPORTED(cap_value_t " cap );
+.sp
+.BI "int cap_drop_bound(cap_value_t " cap );
+.sp
+.B #include <sys/types.h>
+.sp
+.BI "cap_t cap_get_pid(pid_t " pid );
+.sp
+Link with \fI-lcap\fP.
+.SH DESCRIPTION
+.BR cap_get_proc ()
+allocates a capability state in working storage, sets its state to
+that of the calling process, and returns a pointer to this newly
+created capability state.  The caller should free any releasable
+memory, when the capability state in working storage is no longer
+required, by calling
+.BR cap_free ()
+with the
+.I cap_t
+as an argument.
+.PP
+.BR cap_set_proc ()
+sets the values for all capability flags for all capabilities to the
+capability state identified by
+.IR cap_p .
+The new capability state of the process will be completely determined by
+the contents of
+.I cap_p
+upon successful return from this function.  If any flag in
+.I cap_p
+is set for any capability not currently permitted for the calling process,
+the function will fail, and the capability state of the process will remain
+unchanged.
+.PP
+.BR cap_get_pid ()
+returns
+.IR cap_t ,
+see 
+.BR cap_init (3),
+with the process capabilities of the process indicated by
+.IR pid .
+This information can also be obtained from the
+.I /proc/<pid>/status
+file.
+.PP
+.BR cap_get_bound ()
+with a
+.I  cap
+as an argument returns the current value of this bounding set
+capability flag in effect for the current process. This operation is
+unpriveged. Note, a macro function
+.BI "CAP_IS_SUPPORTED(cap_value_t " cap )
+is provided that evaluates to true (1) if the system supports the
+specified capability,
+.IR cap .
+If the system does not support the capability, this function returns
+0. This macro works by testing for an error condition with
+.BR cap_get_bound ().
+.PP
+.BR cap_drop_bound ()
+can be used to lower the specified bounding set capability,
+.BR cap ,
+To complete successfully, the prevailing
+.I effective
+capability set must have a raised
+.BR CAP_SETPCAP .
+.SH "RETURN VALUE"
+The functions
+.BR cap_get_proc ()
+and
+.BR cap_get_pid ()
+return a non-NULL value on success, and NULL on failure.
+.PP
+The function
+.BR cap_get_bound ()
+returns -1 if the requested capability is unknown, otherwise the
+return value reflects the current state of that capability in the
+prevailing bounding set. Note, a macro function,
+.PP
+The functions
+.BR cap_set_proc ()
+and
+.BR cap_drop_bound ()
+return zero for success, and \-1 on failure.
+.PP
+On failure,
+.I errno
+is set to
+.BR EINVAL ,
+.BR EPERM,
+or
+.BR ENOMEM .
+.SH "CONFORMING TO"
+.BR cap_set_proc ()
+and
+.BR cap_get_proc ()
+are specified in the withdrawn POSIX.1e draft specification.
+.BR cap_get_pid ()
+is a Linux extension.
+.SH "NOTES"
+The library also supports the deprecated functions:
+.PP
+.BI "int capgetp(pid_t " pid ", cap_t " cap_d );
+.PP
+.BI "int capsetp(pid_t " pid ", cap_t " cap_d );
+.PP
+.BR capgetp ()
+attempts to obtain the capabilities of some other process; storing the
+capabilities in a pre-allocated
+.IR cap_d . See
+.BR cap_init ()
+for information on allocating an empty capability set. This function,
+.BR capgetp (),
+is deprecated, you should use
+.BR cap_get_pid ().
+.PP
+.BR capsetp ()
+attempts to set the capabilities of some other process(es),
+.IR pid . 
+If
+.I pid
+is positive it refers to a specific process;  if it is zero, it refers
+to the current process; -1 refers to all processes other than the
+current process and process '1' (typically 
+.BR init (8));
+other negative values refer to the
+.I -pid
+process group.  In order to use this function, the kernel must support
+it and the current process must have
+.B CAP_SETPCAP
+raised in its Effective capability set. The capabilities set in the
+target process(es) are those contained in
+.IR cap_d .
+Kernels that support filesystem capabilities redefine the semantics of
+.B CAP_SETPCAP
+and on such systems this function will always fail for any target not
+equal to the current process.
+.BR capsetp ()
+returns zero for success, and \-1 on failure.
+
+Where supported by the kernel, the function
+.BR capsetp ()
+should be used with care.  It existed, primarily, to overcome an early
+lack of support for capabilities in the filesystems supported by
+Linux.  Note that, by default, the only processes that have
+.B CAP_SETPCAP
+available to them are processes started as a kernel thread.
+(Typically this includes
+.BR init (8),
+kflushd and kswapd). You will need to recompile the kernel to modify
+this default.
+.SH EXAMPLE
+The code segment below raises the
+.B CAP_FOWNER
+and
+.B CAP_SETFCAP
+effective capabilities for the caller:
+.nf
+
+    cap_t caps;
+    cap_value_t cap_list[2];
+
+    if (!CAP_IS_SUPPORTED(CAP_SETFCAP))
+        /* handle error */
+
+    caps = cap_get_proc();
+    if (caps == NULL)
+        /* handle error */;
+
+    cap_list[0] = CAP_FOWNER;
+    cap_list[1] = CAP_SETFCAP;
+    if (cap_set_flag(caps, CAP_EFFECTIVE, 2, cap_list, CAP_SET) == -1)
+        /* handle error */;
+
+    if (cap_set_proc(caps) == -1)
+        /* handle error */;
+
+    if (cap_free(caps) == -1)
+        /* handle error */;
+.fi
+.SH "SEE ALSO"
+.BR libcap (3),
+.BR cap_clear (3),
+.BR cap_copy_ext (3),
+.BR cap_from_text (3),
+.BR cap_get_file (3),
+.BR cap_init (3),
+.BR capabilities (7)

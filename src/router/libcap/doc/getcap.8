@@ -1,0 +1,33 @@
+.\"
+.\" $Id: getcap.8,v 1.1.1.1 1999/04/17 22:16:31 morgan Exp $
+.\" written by Andrew Main <zefram@dcs.warwick.ac.uk>
+.\"
+.TH GETCAP 8 "11 September 2018"
+.SH NAME
+getcap \- examine file capabilities
+.SH SYNOPSIS
+\fBgetcap\fP [-v] [-n] [-r] [-h] \fIfilename\fP [ ... ]
+.SH DESCRIPTION
+.B getcap
+displays the name and capabilities of each specified
+.SH OPTIONS
+.TP 4
+.B -h
+prints quick usage.
+.TP 4
+.B -n
+prints any non-zero namespace rootid value found to be associated with
+a file's capabilities.
+.TP 4
+.B -r
+enables recursive search.
+.TP 4
+.B -v
+enables to display all searched entries, even if it has no file-capabilities.
+.TP 4
+.IR filename
+One file per line.
+.SH "SEE ALSO"
+.BR cap_get_file (3),
+.BR cap_to_text (3),
+.BR setcap (8)
