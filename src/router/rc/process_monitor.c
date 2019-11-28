@@ -29,11 +29,11 @@ extern int timer_connect(timer_t timerid, void (*routine)(timer_t, int), int arg
 
 static unsigned int NTP_M_TIMER = 3600;
 static unsigned int NTP_N_TIMER = 30;
+static timer_t ntp1_id, ntp2_id, udhcpd_id;
+static struct itimerspec t1, t4, t5;
 
 static int process_monitor_main(int argc, char **argv)
 {
-	struct itimerspec t1, t4, t5;
-	timer_t ntp1_id, ntp2_id, udhcpd_id;
 	int time;
 	long int leasetime = 0;
 
