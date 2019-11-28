@@ -64,7 +64,7 @@ do
 					ENDPOINTARG1="endpoint"
 					ENDPOINTARG2="$($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p})"
 				fi
-				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips $($nv get oet${i}_aip${p}) $ENDPOINTARG1 $ENDPOINTARG2 &
+				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips "$($nv get oet${i}_aip${p})" $ENDPOINTARG1 $ENDPOINTARG2 &
 				#rm -f /tmp/wireguard/oet${i}_psk${p}
 			done
 			ifconfig oet${i} promisc up 2>&1 > /dev/null
