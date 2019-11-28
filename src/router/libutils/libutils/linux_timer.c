@@ -129,6 +129,15 @@ static struct event *event_freelist;
 static unsigned int g_granularity;
 static int g_maxevents = 0;
 
+#ifndef HAVE_MICRO
+static pthread_mutex_t mutex_unl = PTHREAD_MUTEX_INITIALIZER;
+#define lock() pthread_mutex_lock(&mutex_unl)
+#define unlock() pthread_mutex_unlock(&mutex_unl)
+#else
+#define lock()
+#define unlock()
+#endif
+
 uclock_t uclock()
 {
 	struct timeval tv;
@@ -141,6 +150,7 @@ void init_event_queue(int n)
 {
 	int i;
 	struct itimerval tv;
+	lock();
 
 	g_maxevents = n;
 	event_freelist = (struct event *)malloc(n * sizeof(struct event));
@@ -167,6 +177,7 @@ void init_event_queue(int n)
 	if (g_granularity < 1)
 		g_granularity = 1;
 	signal(SIGALRM, alarm_handler);
+	unlock();
 }
 
 int clock_gettime(clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
@@ -188,7 +199,6 @@ int dd_timer_create(clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
     )
 {
 	struct event *event;
-
 	if (clock_id != CLOCK_REALTIME) {
 		dd_loginfo("timer", "timer_create can only support clock id CLOCK_REALTIME");
 		return -1;
@@ -201,10 +211,12 @@ int dd_timer_create(clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
 		}
 	}
 
+	lock();
 	event = event_freelist;
 	if (event == NULL) {
 		print_event_queue();
 		dd_loginfo("timer", "eventlist is full\n");
+		unlock();
 		return -1;
 	}
 	assert(event != NULL);
@@ -217,6 +229,7 @@ int dd_timer_create(clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
 	check_event_queue();
 
 	*pTimer = (timer_t) event;
+	unlock();
 
 	return 0;
 }
@@ -232,12 +245,13 @@ int dd_timer_delete(timer_t timerid	/* timer ID */
 	}
 
 	dd_timer_cancel(timerid);
+	lock();
 
 	event->flags |= TFLAG_DELETED;
 
 	event->next = event_freelist;
 	event_freelist = event;
-
+	unlock();
 	return 0;
 }
 
@@ -246,7 +260,7 @@ int dd_timer_connect(timer_t timerid,	/* timer ID */
 		     int arg	/* user argument */
     )
 {
-	struct event *event = (struct event *)timerid;
+	struct event *event =(struct event *)timerid;
 
 	assert(routine != NULL);
 	event->func = routine;
@@ -290,6 +304,7 @@ int dd_timer_settime(timer_t timerid,	/* timer ID */
 		return 0;
 	}
 
+	lock();
 	dd_block_timer();
 
 #ifdef TIMER_PROFILE
@@ -386,7 +401,7 @@ int dd_timer_settime(timer_t timerid,	/* timer ID */
 	event->flags &= ~TFLAG_CANCELLED;
 
 	dd_unblock_timer();
-
+	unlock();
 	return 0;
 }
 
@@ -427,6 +442,7 @@ static void check_event_queue()
 		}
 		i++;
 	}
+
 }
 
 #if THIS_FINDS_USE
@@ -437,8 +453,10 @@ static int count_queue(struct event *event_queue)
 {
 	struct event *event;
 	int i = 0;
+	lock();
 	for (event = event_queue; event; event = event->next)
 		i++;
+	unlock();
 	return i;
 }
 #endif
@@ -471,6 +489,7 @@ static void alarm_handler(int i)
 	uclock_t end;
 	unsigned int actual;
 #endif
+	lock();
 
 	dd_block_timer();
 
@@ -479,6 +498,7 @@ static void alarm_handler(int i)
 	/* */
 	if (!event_queue) {
 		dd_unblock_timer();
+		unlock();
 		return;
 	}
 
@@ -571,6 +591,7 @@ static void alarm_handler(int i)
 	}
 
 	dd_unblock_timer();
+	unlock();
 }
 
 static int block_count = 0;
@@ -602,6 +623,7 @@ void dd_timer_cancel_all()
 	struct itimerval timeroff = { { 0, 0 }, { 0, 0 } };
 	struct event *event;
 	struct event **ppevent;
+	lock();
 
 	setitimer(ITIMER_REAL, &timeroff, NULL);
 
@@ -611,6 +633,7 @@ void dd_timer_cancel_all()
 		*ppevent = event->next;
 		event->next = NULL;
 	}
+	unlock();
 }
 
 void dd_timer_cancel(timer_t timerid)
@@ -624,6 +647,7 @@ void dd_timer_cancel(timer_t timerid)
 		dd_loginfo("timer", "Cannot cancel a cancelled event");
 		return;
 	}
+	lock();
 
 	dd_block_timer();
 
@@ -687,6 +711,7 @@ void dd_timer_cancel(timer_t timerid)
 	event->flags |= TFLAG_CANCELLED;
 
 	dd_unblock_timer();
+	unlock();
 }
 
 /*
