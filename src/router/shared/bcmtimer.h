@@ -36,6 +36,7 @@ typedef void (*bcm_timer_cb)(bcm_timer_id id, int data);
 /*
  * OS-independant interfaces, applications should call these functions only 
  */
+void dd_timer_cancel_all(void);
 int bcm_timer_module_init(int timer_entries, bcm_timer_module_id * module_id);
 int bcm_timer_module_cleanup(bcm_timer_module_id module_id);
 int bcm_timer_module_enable(bcm_timer_module_id module_id, int enable);
