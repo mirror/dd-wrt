@@ -125,7 +125,7 @@ void dd_block_timer();
 void dd_unblock_timer();
 
 static struct event *event_queue = NULL;
-static struct event *event_freelist;
+static struct event *event_freelist = NULL;
 static unsigned int g_granularity;
 static int g_maxevents = 0;
 
