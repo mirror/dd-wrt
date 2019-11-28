@@ -156,7 +156,7 @@ static int handle_service(const int method, const char *name, int force)
 			char dep_name[64];
 			char proc_name[64];
 			snprintf(dep_name, sizeof(dep_name), "%s_deps", name);
-			char *(*dep_func)(void) =(char * (*)(void))dlsym(handle, dep_name);
+			char *(*dep_func)(void) = (char *(*)(void))dlsym(handle, dep_name);
 			if (dep_func) {
 				deps = dep_func();
 				dd_debug(DEBUG_SERVICE, "%s exists, check nvram params %s\n", dep_name, deps);
@@ -164,7 +164,7 @@ static int handle_service(const int method, const char *name, int force)
 			}
 			if (!state) {
 				snprintf(proc_name, sizeof(proc_name), "%s_proc", name);
-				char *(*proc_func)(void) =(char * (*)(void))dlsym(handle, proc_name);
+				char *(*proc_func)(void) = (char *(*)(void))dlsym(handle, proc_name);
 				if (proc_func) {
 					dd_debug(DEBUG_SERVICE, "%s exists, check process\n", proc_name);
 					char *proc = proc_func();
