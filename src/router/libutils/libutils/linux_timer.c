@@ -130,6 +130,7 @@ static unsigned int g_granularity;
 static int g_maxevents = 0;
 
 #ifndef HAVE_MICRO
+#include <pthread.h>
 static pthread_mutex_t mutex_unl = PTHREAD_MUTEX_INITIALIZER;
 #define lock() pthread_mutex_lock(&mutex_unl)
 #define unlock() pthread_mutex_unlock(&mutex_unl)
@@ -166,7 +167,6 @@ void init_event_queue(int n)
 	tv.it_value.tv_sec = 0;
 	tv.it_value.tv_usec = 0;
 
-	memset(&nulltv, 0, sizeof(nulltv));
 	setitimer(ITIMER_REAL, &tv, NULL);
 	setitimer(ITIMER_REAL, NULL, &tv);
 
