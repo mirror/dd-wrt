@@ -34,8 +34,10 @@ static struct itimerspec t1, t4, t5;
 
 static void clear_process_timers(void)
 {
+	dd_loginfo("process_monitor", "cleanup timers");
 	dd_timer_delete(ntp1_id);
 	dd_timer_delete(ntp2_id);
+	exit(0);
 }
 
 void monitor_signal(int sig)
@@ -48,10 +50,15 @@ static int process_monitor_main(int argc, char **argv)
 {
 	int time;
 	long int leasetime = 0;
+	sigset_t sigs_to_catch;
 
 	init_event_queue(40);
 	NTP_M_TIMER = nvram_default_geti("ntp_timer", 3600);
 	openlog("process_monitor", LOG_PID | LOG_NDELAY, LOG_DAEMON);
+
+	sigemptyset(&sigs_to_catch);
+	sigaddset(&sigs_to_catch, SIGTERM);
+	sigprocmask(SIG_UNBLOCK, &sigs_to_catch, NULL);
 	signal(SIGTERM, monitor_signal);
 
 	if (nvram_invmatchi("ntp_enable", 0)) {	// && check_wan_link(0) ) {
