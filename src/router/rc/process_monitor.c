@@ -29,8 +29,20 @@ extern int timer_connect(timer_t timerid, void (*routine)(timer_t, int), int arg
 
 static unsigned int NTP_M_TIMER = 3600;
 static unsigned int NTP_N_TIMER = 30;
-static timer_t ntp1_id, ntp2_id, udhcpd_id;
+static timer_t ntp1_id, ntp2_id;
 static struct itimerspec t1, t4, t5;
+
+static void clear_process_timers(void)
+{
+	dd_timer_delete(ntp1_id);
+	dd_timer_delete(ntp2_id);
+}
+
+void monitor_signal(int sig)
+{
+	if (sig == SIGTERM)
+		clear_process_timers();
+}
 
 static int process_monitor_main(int argc, char **argv)
 {
@@ -40,6 +52,7 @@ static int process_monitor_main(int argc, char **argv)
 	init_event_queue(40);
 	NTP_M_TIMER = nvram_default_geti("ntp_timer", 3600);
 	openlog("process_monitor", LOG_PID | LOG_NDELAY, LOG_DAEMON);
+	signal(SIGTERM, monitor_signal);
 
 	if (nvram_invmatchi("ntp_enable", 0)) {	// && check_wan_link(0) ) {
 
