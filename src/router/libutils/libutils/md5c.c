@@ -455,7 +455,7 @@ char *hash_file(char *filename, char *hashbuf)
 	if (in == NULL) {
 		return NULL;
 	}
-	int cnt =0;
+	int cnt = 0;
 	while (1) {
 		int c = getc(in);
 		if (c == EOF)
@@ -466,7 +466,7 @@ char *hash_file(char *filename, char *hashbuf)
 	}
 	fclose(in);
 	if (!cnt)
-	    return NULL;
+		return NULL;
 	md5_end((unsigned char *)hashbuf, &MD);
 	return hashbuf;
 }
@@ -475,7 +475,7 @@ char *hash_file_string(char *filename, char *hashbuf)
 {
 	char hash[16];
 	int i;
-	memset(hashbuf,0,16);
+	memset(hashbuf, 0, 16);
 	if (!hash_file(filename, hash))
 		return NULL;
 	for (i = 0; i < 16; i++) {
@@ -488,7 +488,7 @@ char *hash_file_string(char *filename, char *hashbuf)
 char *hash_string(char *string, char *hashbuf)
 {
 	if (!strlen(string)) {
-	    return NULL;
+		return NULL;
 	}
 	md5_ctx_t MD;
 	md5_begin(&MD);
