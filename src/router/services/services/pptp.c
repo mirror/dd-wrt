@@ -139,6 +139,11 @@ void start_pptpd(void)
 	if (jffs == 1) {
 		fprintf(fp, "auth-up /jffs/etc/pptpd/auth-up.sh\n");
 		fprintf(fp, "auth-down /jffs/etc/pptpd/auth-down.sh\n");
+#ifdef HAVE_IPV6
+		if (nvram_matchi("ipv6_enable", 1)) {
+			fprintf(fp, "+ipv6\n");
+		}
+#endif
 		fclose(fp);
 		if ((fp = fopen("/jffs/etc/pptpd/auth-up.sh", "r")) == NULL) {
 			fclose(fp);
@@ -156,7 +161,14 @@ void start_pptpd(void)
 		}
 	} else
 #endif
+	{
+#ifdef HAVE_IPV6
+		if (nvram_matchi("ipv6_enable", 1)) {
+			fprintf(fp, "+ipv6\n");
+		}
+#endif
 		fclose(fp);
+	}
 
 	// Following is all crude and need to be revisited once testing confirms
 	// that it does work

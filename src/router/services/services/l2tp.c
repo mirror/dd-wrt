@@ -197,7 +197,11 @@ void start_l2tp(int status)
 			"lcp-echo-interval 30\n"	// echo-request frame to the peer       
 			"lock\n"	//
 			"noauth\n");
-
+#ifdef HAVE_IPV6
+		if (nvram_matchi("ipv6_enable", 1)) {
+			fprintf(fp, "+ipv6\n");
+		}
+#endif
 		fclose(fp);
 
 		/*
