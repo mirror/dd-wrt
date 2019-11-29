@@ -131,7 +131,7 @@ static struct zstd_pool *zstd_mempool_cctx;
 static struct zstd_pool *zstd_mempool_dctx;
 
 /* initializes memory pool barrier mutexes */
-void
+static void
 zstd_mempool_init(void)
 {
 	int i;
@@ -160,7 +160,7 @@ release_pool(struct zstd_pool *pool)
 }
 
 /* releases memory pool objects */
-void
+static void
 zstd_mempool_deinit(void)
 {
 	int i;
@@ -184,7 +184,7 @@ zstd_mempool_deinit(void)
  * be reused in that timeframe. the scheduled release will be updated every time
  * a object is reused.
  */
-struct zstd_kmem *
+static struct zstd_kmem *
 zstd_mempool_alloc(struct zstd_pool *zstd_mempool, size_t size)
 {
 	int i;
@@ -252,7 +252,7 @@ zstd_mempool_alloc(struct zstd_pool *zstd_mempool, size_t size)
  * mark object as released by releasing the barrier
  * mutex and clear the buffer
  */
-void
+static void
 zstd_mempool_free(struct zstd_kmem *z)
 {
 	struct zstd_pool *pool = z->pool;
@@ -635,6 +635,9 @@ zstd_free(void *opaque __unused, void *ptr)
 #ifndef _KERNEL
 #define	__init
 #define	__exit
+#define STATIC
+#else
+#define STATIC static
 #endif
 
 static void create_vmem_cache(struct zstd_vmem *mem, size_t size)
@@ -658,7 +661,7 @@ static int zstd_meminit(void)
 	return (0);
 }
 
-extern int __init
+STATIC int __init
 zstd_init(void)
 {
 	/*
@@ -669,7 +672,7 @@ zstd_init(void)
 	return (0);
 }
 
-extern void __exit
+STATIC void __exit
 zstd_fini(void)
 {
 	kmem_free(zstd_dctx_fallback.vm, zstd_dctx_fallback.vmem_size);
