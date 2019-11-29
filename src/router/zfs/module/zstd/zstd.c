@@ -67,13 +67,11 @@
 /* for BSD compat */
 #define	__unused			__attribute__((unused))
 
-
-#ifdef _KERNEL
-#include <linux/sort.h>
-#define	zstd_qsort(a, n, es, cmp) sort(a, n, es, cmp, NULL)
-#else
-#define	zstd_qsort qsort
+/* for userspace compile, we disable error debugging */
+#ifndef _KERNEL
+#define	printk(fmt, ...)
 #endif
+
 
 static size_t real_zstd_compress(const char *source, char *dest, int isize,
     int osize, int level);
@@ -81,6 +79,7 @@ static size_t real_zstd_decompress(const char *source, char *dest, int isize,
     int maxosize);
 
 static void *zstd_alloc(void *opaque, size_t size);
+static void *zstd_dctx_alloc(void *opaque, size_t size);
 static void zstd_free(void *opaque, void *ptr);
 
 static const ZSTD_customMem zstd_malloc = {
@@ -88,28 +87,27 @@ static const ZSTD_customMem zstd_malloc = {
 	zstd_free,
 	NULL,
 };
+
+static const ZSTD_customMem zstd_dctx_malloc = {
+	zstd_dctx_alloc,
+	zstd_free,
+	NULL,
+};
 /* these enums are index references to zstd_cache_config */
 
 enum zstd_kmem_type {
 	ZSTD_KMEM_UNKNOWN = 0,
-	ZSTD_KMEM_CCTX,
-	ZSTD_KMEM_WRKSPC_4K_MIN,
-	ZSTD_KMEM_WRKSPC_4K_DEF,
-	ZSTD_KMEM_WRKSPC_4K_MAX,
-	ZSTD_KMEM_WRKSPC_16K_MIN,
-	ZSTD_KMEM_WRKSPC_16K_DEF,
-	ZSTD_KMEM_WRKSPC_16K_MAX,
-	ZSTD_KMEM_WRKSPC_128K_MIN,
-	ZSTD_KMEM_WRKSPC_128K_DEF,
-	ZSTD_KMEM_WRKSPC_128K_MAX,
-	ZSTD_KMEM_WRKSPC_16M_MIN,
-	ZSTD_KMEM_WRKSPC_16M_DEF,
-	ZSTD_KMEM_WRKSPC_16M_MAX,
 	ZSTD_KMEM_DCTX,
 	ZSTD_KMEM_COUNT,
 };
+/*
+ * this variable should represent the maximum count of the pool based on
+ * the number of cpu's running in the system with some budged. by default
+ * we use the cpu count * 4. see init_zstd
+ */
+static int pool_count = 16;
 
-#define	ZSTD_POOL_MAX		16
+#define	ZSTD_POOL_MAX		pool_count
 #define	ZSTD_POOL_TIMEOUT	60 * 2
 
 struct zstd_kmem;
@@ -125,9 +123,7 @@ struct zstd_kmem {
 	uint_t			kmem_magic;
 	enum zstd_kmem_type	kmem_type;
 	size_t			kmem_size;
-	int			kmem_flags;
 	struct zstd_pool	*pool;
-	boolean_t		isvm;
 };
 
 
@@ -155,8 +151,9 @@ zstd_mempool_init(void)
 static void
 release_pool(struct zstd_pool *pool)
 {
-	mutex_tryenter(&pool->barrier);
+	mutex_enter(&pool->barrier);
 	mutex_exit(&pool->barrier);
+	mutex_destroy(&pool->barrier);
 	kmem_free(pool->mem, pool->size);
 	pool->mem = NULL;
 	pool->size = 0;
@@ -177,63 +174,78 @@ zstd_mempool_deinit(void)
 
 /*
  * tries to get cached allocated buffer from memory pool and allocate new one
- * if neccessary if a object is older than 2 minutes and does not fit to the
+ * if neccessary. if a object is older than 2 minutes and does not fit to the
  * requested size, it will be released and a new cached entry will be allocated
+ * if other pooled objects are detected without beeing used for 2 minutes,
+ * they will be released too.
+ * the concept is that high frequency memory allocations of bigger objects are
+ * expensive.
+ * so if alot of work is going on, allocations will be kept for a while and can
+ * be reused in that timeframe. the scheduled release will be updated every time
+ * a object is reused.
  */
 struct zstd_kmem *
 zstd_mempool_alloc(struct zstd_pool *zstd_mempool, size_t size)
 {
 	int i;
 	struct zstd_pool *pool;
-	boolean_t reclaimed = B_FALSE;
 	struct zstd_kmem *mem = NULL;
 
+	/*
+	 * seek for preallocated memory slot and free obsolete slots
+	 */
 	for (i = 0; i < ZSTD_POOL_MAX; i++) {
 		pool = &zstd_mempool[i];
 		if (mutex_tryenter(&pool->barrier)) {
-			if (!pool->mem) {
-				struct zstd_kmem *z =
-				    kvmem_zalloc(size, KM_SLEEP);
-				pool->mem = z;
-				if (!pool->mem) {
-					mutex_exit(&pool->barrier);
-					return (NULL);
-				}
-				z->pool = pool;
-				pool->size = size;
+			if (!mem && pool->mem && size <= pool->size) {
 				pool->timeout = gethrestime_sec() +
 				    ZSTD_POOL_TIMEOUT;
-				return (z);
-			} else {
-				if (size <= pool->size) {
-					pool->timeout = gethrestime_sec() +
-					    ZSTD_POOL_TIMEOUT;
-					return ((struct zstd_kmem *)pool->mem);
-				}
+				mem = (struct zstd_kmem *)pool->mem;
+				continue;
 			}
 			/*
-			 * free memory if size doesnt fit and object
-			 * is older than 2 minutes
+			 * free memory if object is older than 2 minutes
 			 */
 			if (pool->mem && gethrestime_sec() > pool->timeout) {
 				kmem_free(pool->mem, pool->size);
 				pool->mem = NULL;
 				pool->size = 0;
 				pool->timeout = 0;
-				reclaimed = B_TRUE;
 			}
 			mutex_exit(&pool->barrier);
 		}
 	}
 	/*
-	 * if a object was released from slot, we try a second attempt,
-	 * since we can now reallocate the slot with a new size
+	 * if no preallocated slot was found, try to fill in a new one
 	 */
-	if (reclaimed) {
-		mem = zstd_mempool_alloc(zstd_mempool, size);
+	if (!mem) {
+		for (i = 0; i < ZSTD_POOL_MAX; i++) {
+			pool = &zstd_mempool[i];
+			if (mutex_tryenter(&pool->barrier)) {
+				if (!pool->mem) {
+					struct zstd_kmem *z =
+					    vmem_alloc(size, KM_SLEEP);
+					pool->mem = z;
+					if (pool->mem) {
+						z->pool = pool;
+						pool->size = size;
+						pool->timeout =
+						    gethrestime_sec() +
+						    ZSTD_POOL_TIMEOUT;
+					} else {
+						mutex_exit(&pool->barrier);
+					}
+					return ((struct zstd_kmem *)z);
+				}
+				mutex_exit(&pool->barrier);
+			}
+		}
 	}
-
-	return (mem ? mem : kvmem_zalloc(size, KM_NOSLEEP));
+	/*
+	 * maybe pool is full or allocation failed, lets do lazy allocation
+	 * try in that case
+	 */
+	return (mem ? mem : vmem_zalloc(size, KM_NOSLEEP));
 }
 
 /*
@@ -254,64 +266,9 @@ struct zstd_vmem {
 	size_t			vmem_size;
 	void			*vm;
 	kmutex_t 		barrier;
-	boolean_t		inuse;
 };
 
-struct zstd_kmem_config {
-	size_t			block_size;
-	int			compress_level;
-	char			*cache_name;
-	int 			flags;
-};
-
-static kmem_cache_t *zstd_kmem_cache[ZSTD_KMEM_COUNT] = { NULL };
-static struct zstd_kmem zstd_cache_size[ZSTD_KMEM_COUNT] = {
-	{ ZSTD_KMEM_MAGIC, 0, 0, KM_NOSLEEP, B_FALSE} };
-
-static struct zstd_vmem zstd_vmem_cache[ZSTD_KMEM_COUNT] = {
-		{
-		.vmem_size = 0,
-		.vm = NULL,
-		.inuse = B_FALSE
-		}
-	};
-static struct zstd_kmem_config zstd_cache_config[ZSTD_KMEM_COUNT] = {
-	{ 0, 0, "zstd_unknown", KM_SLEEP},
-	{ 0, 0, "zstd_cctx", KM_NOSLEEP },
-	{ 4096, ZIO_ZSTD_LEVEL_MIN, "zstd_wrkspc_4k_min", KM_NOSLEEP},
-	{ 4096, ZIO_ZSTD_LEVEL_DEFAULT, "zstd_wrkspc_4k_def", KM_NOSLEEP},
-	{ 4096, ZIO_ZSTD_LEVEL_MAX, "zstd_wrkspc_4k_max", KM_NOSLEEP},
-	{ 16384, ZIO_ZSTD_LEVEL_MIN, "zstd_wrkspc_16k_min", KM_NOSLEEP},
-	{ 16384, ZIO_ZSTD_LEVEL_DEFAULT, "zstd_wrkspc_16k_def", KM_NOSLEEP},
-	{ 16384, ZIO_ZSTD_LEVEL_MAX, "zstd_wrkspc_16k_max", KM_NOSLEEP},
-	{ SPA_OLD_MAXBLOCKSIZE, ZIO_ZSTD_LEVEL_MIN, \
-	    "zstd_wrkspc_128k_min", KM_NOSLEEP},
-	{ SPA_OLD_MAXBLOCKSIZE, ZIO_ZSTD_LEVEL_DEFAULT,
-	    "zstd_wrkspc_128k_def", KM_NOSLEEP},
-	{ SPA_OLD_MAXBLOCKSIZE, ZIO_ZSTD_LEVEL_MAX, \
-	    "zstd_wrkspc_128k_max", KM_NOSLEEP},
-	{ SPA_MAXBLOCKSIZE, ZIO_ZSTD_LEVEL_MIN, \
-	    "zstd_wrkspc_16m_min", KM_NOSLEEP},
-	{ SPA_MAXBLOCKSIZE, ZIO_ZSTD_LEVEL_DEFAULT, \
-	    "zstd_wrkspc_16m_def", KM_NOSLEEP},
-	{ SPA_MAXBLOCKSIZE, ZIO_ZSTD_LEVEL_MAX, \
-	    "zstd_wrkspc_16m_max", KM_NOSLEEP},
-	{ 0, 0, "zstd_dctx", KM_NOSLEEP},
-};
-
-static int
-zstd_compare(const void *a, const void *b)
-{
-	struct zstd_kmem *x, *y;
-
-	x = (struct zstd_kmem *)a;
-	y = (struct zstd_kmem *)b;
-
-	ASSERT3U(x->kmem_magic, ==, ZSTD_KMEM_MAGIC);
-	ASSERT3U(y->kmem_magic, ==, ZSTD_KMEM_MAGIC);
-
-	return (TREE_CMP(x->kmem_size, y->kmem_size));
-}
+static struct zstd_vmem zstd_dctx_fallback;
 
 static enum zio_zstd_levels
 zstd_cookie_to_enum(int32_t level)
@@ -367,20 +324,16 @@ zstd_cookie_to_enum(int32_t level)
 				return (ZIO_ZSTDLVL_FAST_1000);
 			default:
 				/* This shouldn't happen. Cause a panic. */
-#ifdef _KERNEL
 			printk(KERN_ERR
 			    "%s:Invalid ZSTD level encountered: %d",
 			    __func__, level);
-#endif
 			return (ZIO_ZSTD_LEVEL_DEFAULT);
 		}
 	}
 
 	/* This shouldn't happen. Cause a panic. */
-#ifdef _KERNEL
 	printk(KERN_ERR "%s:Invalid ZSTD level encountered: %d",
 	    __func__, level);
-#endif
 	return (ZIO_ZSTD_LEVEL_DEFAULT);
 }
 
@@ -439,21 +392,17 @@ zstd_enum_to_cookie(enum zio_zstd_levels elevel)
 				return (-1000);
 			default:
 				/* This shouldn't happen. Cause a panic. */
-#ifdef _KERNEL
 			printk(KERN_ERR
 			    "%s:Invalid ZSTD enum level encountered: %d",
 			    __func__, elevel);
-#endif
 				return (3);
 		}
 	}
 
 	/* This shouldn't happen. Cause a panic. */
-#ifdef _KERNEL
 	printk(KERN_ERR
 	    "%s:Invalid ZSTD enum level encountered: %d",
 	    __func__, elevel);
-#endif
 
 	return (3);
 }
@@ -594,7 +543,7 @@ real_zstd_decompress(const char *source, char *dest, int isize, int maxosize)
 	size_t result;
 	ZSTD_DCtx *dctx;
 
-	dctx = ZSTD_createDCtx_advanced(zstd_malloc);
+	dctx = ZSTD_createDCtx_advanced(zstd_dctx_malloc);
 	if (dctx == NULL)
 		return (ZSTD_error_memory_allocation);
 
@@ -612,59 +561,42 @@ zstd_alloc(void *opaque __unused, size_t size)
 {
 	size_t nbytes = sizeof (struct zstd_kmem) + size;
 	struct zstd_kmem *z = NULL;
-	enum zstd_kmem_type type;
-	enum zstd_kmem_type newtype;
-	int i;
-	type = ZSTD_KMEM_UNKNOWN;
-	for (i = 0; i < ZSTD_KMEM_COUNT; i++) {
-		if (nbytes <= zstd_cache_size[i].kmem_size) {
-			type = zstd_cache_size[i].kmem_type;
-			if (zstd_kmem_cache[type]) {
-				z = kmem_cache_alloc( \
-				    zstd_kmem_cache[type], \
-				    zstd_cache_size[i].kmem_flags);
-				if (z) {
-					memset(z, 0, nbytes);
-					z->isvm = B_FALSE;
-				}
-			}
-			break;
-		}
-	}
-	newtype = type;
-	/* No matching cache */
-	if (type == ZSTD_KMEM_UNKNOWN || z == NULL) {
-		/*
-		 * consider max allocation size
-		 * so we need to use standard vmem allocator
-		 */
-#ifdef _KERNEL
-		if (type != ZSTD_KMEM_DCTX)
-			z = zstd_mempool_alloc(zstd_mempool_cctx, nbytes);
-		else {
-			z = zstd_mempool_alloc(zstd_mempool_dctx, nbytes);
-			if (!z)
-				z = kvmem_zalloc(nbytes, KM_SLEEP);
-		}
-#else
-		z = kmem_zalloc(nbytes, KM_SLEEP);
-#endif
-		if (z)
-			newtype = ZSTD_KMEM_UNKNOWN;
-	}
-	/* fallback if everything fails (decompression only) */
-	if (!z && zstd_vmem_cache[type].vm && type == ZSTD_KMEM_DCTX) {
-		mutex_enter(&zstd_vmem_cache[type].barrier);
-		mutex_exit(&zstd_vmem_cache[type].barrier);
 
-		mutex_enter(&zstd_vmem_cache[type].barrier);
-		newtype = ZSTD_KMEM_DCTX;
-		zstd_vmem_cache[type].inuse = B_TRUE;
-		z = zstd_vmem_cache[type].vm;
-		if (z) {
-			memset(z, 0, nbytes);
-			z->isvm = B_TRUE;
-		}
+	z = zstd_mempool_alloc(zstd_mempool_cctx, nbytes);
+
+	if (z == NULL) {
+		return (NULL);
+	}
+
+	z->kmem_magic = ZSTD_KMEM_MAGIC;
+	z->kmem_type = ZSTD_KMEM_UNKNOWN;
+	z->kmem_size = nbytes;
+
+	return ((void*)z + (sizeof (struct zstd_kmem)));
+}
+
+extern void *
+zstd_dctx_alloc(void *opaque __unused, size_t size)
+{
+	size_t nbytes = sizeof (struct zstd_kmem) + size;
+	struct zstd_kmem *z = NULL;
+	enum zstd_kmem_type type = ZSTD_KMEM_UNKNOWN;
+
+	z = zstd_mempool_alloc(zstd_mempool_dctx, nbytes);
+	if (!z) {
+		/* try harder, decompression shall not fail */
+		z = vmem_alloc(nbytes, KM_SLEEP);
+		z->pool = NULL;
+	}
+
+	/* fallback if everything fails */
+	if (z == NULL) {
+		/* barrier since we only can handle it in a single thread */
+		mutex_enter(&zstd_dctx_fallback.barrier);
+		mutex_exit(&zstd_dctx_fallback.barrier);
+		mutex_enter(&zstd_dctx_fallback.barrier);
+		z = zstd_dctx_fallback.vm;
+		type = ZSTD_KMEM_DCTX;
 	}
 
 	/* allocation should always be successful */
@@ -673,11 +605,12 @@ zstd_alloc(void *opaque __unused, size_t size)
 	}
 
 	z->kmem_magic = ZSTD_KMEM_MAGIC;
-	z->kmem_type = newtype;
+	z->kmem_type = type;
 	z->kmem_size = nbytes;
 
 	return ((void*)z + (sizeof (struct zstd_kmem)));
 }
+
 
 extern void
 zstd_free(void *opaque __unused, void *ptr)
@@ -696,15 +629,7 @@ zstd_free(void *opaque __unused, void *ptr)
 			kmem_free(z, z->kmem_size);
 		}
 	} else {
-		if (zstd_kmem_cache[type] && z->isvm == B_FALSE) {
-			kmem_cache_free(zstd_kmem_cache[type], z);
-		} else if (zstd_vmem_cache[type].vm && \
-		    zstd_vmem_cache[type].inuse == B_TRUE) {
-			zstd_vmem_cache[type].inuse = B_FALSE;
-			/* release barrier */
-			mutex_exit(&zstd_vmem_cache[type].barrier);
-		}
-
+		mutex_exit(&zstd_dctx_fallback.barrier);
 	}
 }
 #ifndef _KERNEL
@@ -712,71 +637,23 @@ zstd_free(void *opaque __unused, void *ptr)
 #define	__exit
 #endif
 
-static void create_vmem_cache(struct zstd_vmem *mem, char *name, size_t size)
+static void create_vmem_cache(struct zstd_vmem *mem, size_t size)
 {
-#ifdef _KERNEL
 	mem->vmem_size = size;
 	mem->vm = \
 	    vmem_zalloc(mem->vmem_size, \
 	    KM_SLEEP);
-	mem->inuse = B_FALSE;
 	mutex_init(&mem->barrier, \
 	    NULL, MUTEX_DEFAULT, NULL);
-#endif
 }
 static int zstd_meminit(void)
 {
-	int i;
-
 	zstd_mempool_init();
-	/* There is no estimate function for the CCtx itself */
-	zstd_cache_size[1].kmem_magic = ZSTD_KMEM_MAGIC;
-	zstd_cache_size[1].kmem_type = 1;
-	zstd_cache_size[1].kmem_size = P2ROUNDUP(zstd_cache_config[1].block_size
-	    + sizeof (struct zstd_kmem), PAGESIZE);
-	zstd_kmem_cache[1] = kmem_cache_create(
-	    zstd_cache_config[1].cache_name, zstd_cache_size[1].kmem_size,
-	    0, NULL, NULL, NULL, NULL, NULL, KMC_KVMEM);
-	zstd_cache_size[1].kmem_flags = zstd_cache_config[1].flags;
 
-	/*
-	 * Estimate the size of the ZSTD CCtx workspace required for each record
-	 * size at each compression level.
-	 */
-	for (i = 2; i < ZSTD_KMEM_DCTX; i++) {
-		ASSERT(zstd_cache_config[i].cache_name != NULL);
-		zstd_cache_size[i].kmem_magic = ZSTD_KMEM_MAGIC;
-		zstd_cache_size[i].kmem_type = i;
-		zstd_cache_size[i].kmem_size = P2ROUNDUP(
-		    ZSTD_estimateCCtxSize_usingCParams(
-		    ZSTD_getCParams(zstd_cache_config[i].compress_level,
-		    zstd_cache_config[i].block_size, 0)) +
-		    sizeof (struct zstd_kmem), PAGESIZE);
-		zstd_cache_size[i].kmem_flags = zstd_cache_config[i].flags;
-		zstd_kmem_cache[i] = kmem_cache_create(
-		    zstd_cache_config[i].cache_name,
-		    zstd_cache_size[i].kmem_size,
-		    0, NULL, NULL, NULL, NULL, NULL, KMC_KVMEM);
-	}
-
-	/* Estimate the size of the decompression context */
-	zstd_cache_size[i].kmem_magic = ZSTD_KMEM_MAGIC;
-	zstd_cache_size[i].kmem_type = i;
-	zstd_cache_size[i].kmem_size = P2ROUNDUP(ZSTD_estimateDCtxSize() +
-	    sizeof (struct zstd_kmem), PAGESIZE);
-	zstd_kmem_cache[i] = kmem_cache_create(zstd_cache_config[i].cache_name,
-	    zstd_cache_size[i].kmem_size, 0, NULL, NULL, NULL, NULL, NULL,
-	    KMC_KVMEM);
-	zstd_cache_size[i].kmem_flags = zstd_cache_config[i].flags;
-
-
-	create_vmem_cache(&zstd_vmem_cache[i], \
-	    zstd_cache_config[i].cache_name, \
-	    zstd_cache_size[i].kmem_size);
-
-	/* Sort the kmem caches for later searching */
-	zstd_qsort(zstd_cache_size, ZSTD_KMEM_COUNT, sizeof (struct zstd_kmem),
-	    zstd_compare);
+	/* Estimate the size of the fallback decompression context */
+	create_vmem_cache(&zstd_dctx_fallback,
+	    P2ROUNDUP(ZSTD_estimateDCtxSize() +
+	    sizeof (struct zstd_kmem), PAGESIZE));
 
 	return (0);
 }
@@ -784,6 +661,10 @@ static int zstd_meminit(void)
 extern int __init
 zstd_init(void)
 {
+	/*
+	 * set pool size by using maximum sane thread count * 4
+	 */
+	pool_count = boot_ncpus * 4;
 	zstd_meminit();
 	return (0);
 }
@@ -791,22 +672,8 @@ zstd_init(void)
 extern void __exit
 zstd_fini(void)
 {
-	int i, type;
-
-	for (i = 0; i < ZSTD_KMEM_COUNT; i++) {
-		type = zstd_cache_size[i].kmem_type;
-		if (zstd_vmem_cache[type].vm) {
-			kmem_free(zstd_vmem_cache[type].vm, \
-			    zstd_vmem_cache[type].vmem_size);
-			zstd_vmem_cache[type].vm = NULL;
-			zstd_vmem_cache[type].inuse = B_FALSE;
-			mutex_destroy(&zstd_vmem_cache[type].barrier);
-		} else {
-			if (zstd_kmem_cache[type] != NULL) {
-				kmem_cache_destroy(zstd_kmem_cache[type]);
-			}
-		}
-	}
+	kmem_free(zstd_dctx_fallback.vm, zstd_dctx_fallback.vmem_size);
+	mutex_destroy(&zstd_dctx_fallback.barrier);
 	zstd_mempool_deinit();
 }
 
