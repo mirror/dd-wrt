@@ -117,6 +117,7 @@ MODULE_LICENSE("GPL");
 #define ASUS_WMI_DEVID_LED6		0x00020016
 
 /* Backlight and Brightness */
+#define ASUS_WMI_DEVID_ALS_ENABLE	0x00050001 /* Ambient Light Sensor */
 #define ASUS_WMI_DEVID_BACKLIGHT	0x00050011
 #define ASUS_WMI_DEVID_BRIGHTNESS	0x00050012
 #define ASUS_WMI_DEVID_KBD_BACKLIGHT	0x00050021
@@ -157,6 +158,9 @@ MODULE_LICENSE("GPL");
 #define ASUS_FAN_SFUN_WRITE		0x07
 #define ASUS_FAN_CTRL_MANUAL		1
 #define ASUS_FAN_CTRL_AUTO		2
+
+#define USB_INTEL_XUSB2PR		0xD0
+#define PCI_DEVICE_ID_INTEL_LYNXPOINT_LP_XHCI	0x9c31
 
 struct bios_args {
 	u32 arg0;
@@ -1082,6 +1086,38 @@ exit:
 	return result;
 }
 
+static void asus_wmi_set_xusb2pr(struct asus_wmi *asus)
+{
+	struct pci_dev *xhci_pdev;
+	u32 orig_ports_available;
+	u32 ports_available = asus->driver->quirks->xusb2pr;
+
+	xhci_pdev = pci_get_device(PCI_VENDOR_ID_INTEL,
+			PCI_DEVICE_ID_INTEL_LYNXPOINT_LP_XHCI,
+			NULL);
+
+	if (!xhci_pdev)
+		return;
+
+	pci_read_config_dword(xhci_pdev, USB_INTEL_XUSB2PR,
+				&orig_ports_available);
+
+	pci_write_config_dword(xhci_pdev, USB_INTEL_XUSB2PR,
+				cpu_to_le32(ports_available));
+
+	pr_info("set USB_INTEL_XUSB2PR old: 0x%04x, new: 0x%04x\n",
+			orig_ports_available, ports_available);
+}
+
+/*
+ * Some devices dont support or have borcken get_als method
+ * but still support set method.
+ */
+static void asus_wmi_set_als(void)
+{
+	asus_wmi_set_devstate(ASUS_WMI_DEVID_ALS_ENABLE, 1, NULL);
+}
+
 /*
  * Hwmon device
  */
@@ -1733,6 +1769,7 @@ ASUS_WMI_CREATE_DEVICE_ATTR(touchpad, 0644, ASUS_WMI_DEVID_TOUCHPAD);
 ASUS_WMI_CREATE_DEVICE_ATTR(camera, 0644, ASUS_WMI_DEVID_CAMERA);
 ASUS_WMI_CREATE_DEVICE_ATTR(cardr, 0644, ASUS_WMI_DEVID_CARDREADER);
 ASUS_WMI_CREATE_DEVICE_ATTR(lid_resume, 0644, ASUS_WMI_DEVID_LID_RESUME);
+ASUS_WMI_CREATE_DEVICE_ATTR(als_enable, 0644, ASUS_WMI_DEVID_ALS_ENABLE);
 
 static ssize_t store_cpufv(struct device *dev, struct device_attribute *attr,
 			   const char *buf, size_t count)
@@ -1759,6 +1796,7 @@ static struct attribute *platform_attributes[] = {
 	&dev_attr_cardr.attr,
 	&dev_attr_touchpad.attr,
 	&dev_attr_lid_resume.attr,
+	&dev_attr_als_enable.attr,
 	NULL
 };
 
@@ -1779,6 +1817,8 @@ static umode_t asus_sysfs_is_visible(struct kobject *kobj,
 		devid = ASUS_WMI_DEVID_TOUCHPAD;
 	else if (attr == &dev_attr_lid_resume.attr)
 		devid = ASUS_WMI_DEVID_LID_RESUME;
+	else if (attr == &dev_attr_als_enable.attr)
+		devid = ASUS_WMI_DEVID_ALS_ENABLE;
 
 	if (devid != -1)
 		ok = !(asus_wmi_get_devstate_simple(asus, devid) < 0);
@@ -2067,9 +2107,14 @@ static int asus_wmi_add(struct platform_device *pdev)
 	if (err)
 		goto fail_leds;
 
-	err = asus_wmi_rfkill_init(asus);
-	if (err)
-		goto fail_rfkill;
+	if (!asus->driver->quirks->no_rfkill) {
+		err = asus_wmi_rfkill_init(asus);
+		if (err)
+			goto fail_rfkill;
+	}
+
+	if (asus->driver->quirks->wmi_force_als_set)
+		asus_wmi_set_als();
 
 	/* Some Asus desktop boards export an acpi-video backlight interface,
 	   stop this from showing up */
@@ -2080,11 +2125,17 @@ static int asus_wmi_add(struct platform_device *pdev)
 	if (asus->driver->quirks->wmi_backlight_power)
 		acpi_video_set_dmi_backlight_type(acpi_backlight_vendor);
 
+	if (asus->driver->quirks->wmi_backlight_native)
+		acpi_video_set_dmi_backlight_type(acpi_backlight_native);
+
+	if (asus->driver->quirks->xusb2pr)
+		asus_wmi_set_xusb2pr(asus);
+
 	if (acpi_video_get_backlight_type() == acpi_backlight_vendor) {
 		err = asus_wmi_backlight_init(asus);
 		if (err && err != -ENODEV)
 			goto fail_backlight;
-	} else
+	} else if (asus->driver->quirks->wmi_backlight_set_devstate)
 		err = asus_wmi_set_devstate(ASUS_WMI_DEVID_BACKLIGHT, 2, NULL);
 
 	status = wmi_install_notify_handler(asus->driver->event_guid,
