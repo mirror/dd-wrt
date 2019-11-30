@@ -238,6 +238,8 @@ int dd_timer_delete(timer_t timerid	/* timer ID */
     )
 {
 	struct event *event = (struct event *)timerid;
+	if (event == NULL)
+		return 2;
 
 	if (event->flags & TFLAG_DELETED) {
 		dd_loginfo("timer", "Cannot delete a deleted event");
