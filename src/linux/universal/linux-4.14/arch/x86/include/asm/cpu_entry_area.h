@@ -20,12 +20,8 @@ struct cpu_entry_area {
 
 	/*
 	 * The GDT is just below entry_stack and thus serves (on x86_64) as
-	 * a read-only guard page. On 32-bit the GDT must be writeable, so
-	 * it needs an extra guard page.
+	 * a a read-only guard page.
 	 */
-#ifdef CONFIG_X86_32
-	char guard_entry_stack[PAGE_SIZE];
-#endif
 	struct entry_stack_page entry_stack_page;
 
 	/*
@@ -45,6 +41,7 @@ struct cpu_entry_area {
 	 */
 	char exception_stacks[(N_EXCEPTION_STACKS - 1) * EXCEPTION_STKSZ + DEBUG_STKSZ];
 #endif
+#ifdef CONFIG_CPU_SUP_INTEL
 	/*
 	 * Per CPU debug store for Intel performance monitoring. Wastes a
 	 * full page at the moment.
@@ -55,27 +52,24 @@ struct cpu_entry_area {
 	 * Reserve enough fixmap PTEs.
 	 */
 	struct debug_store_buffers cpu_debug_buffers;
+#endif
 };
 
-#define CPU_ENTRY_AREA_SIZE		(sizeof(struct cpu_entry_area))
-#define CPU_ENTRY_AREA_ARRAY_SIZE	(CPU_ENTRY_AREA_SIZE * NR_CPUS)
-
-/* Total size includes the readonly IDT mapping page as well: */
-#define CPU_ENTRY_AREA_TOTAL_SIZE	(CPU_ENTRY_AREA_ARRAY_SIZE + PAGE_SIZE)
+#define CPU_ENTRY_AREA_SIZE	(sizeof(struct cpu_entry_area))
+#define CPU_ENTRY_AREA_TOT_SIZE	(CPU_ENTRY_AREA_SIZE * NR_CPUS)
 
 DECLARE_PER_CPU(struct cpu_entry_area *, cpu_entry_area);
 
 extern void setup_cpu_entry_areas(void);
 extern void cea_set_pte(void *cea_vaddr, phys_addr_t pa, pgprot_t flags);
 
-/* Single page reserved for the readonly IDT mapping: */
 #define	CPU_ENTRY_AREA_RO_IDT		CPU_ENTRY_AREA_BASE
 #define CPU_ENTRY_AREA_PER_CPU		(CPU_ENTRY_AREA_RO_IDT + PAGE_SIZE)
 
 #define CPU_ENTRY_AREA_RO_IDT_VADDR	((void *)CPU_ENTRY_AREA_RO_IDT)
 
 #define CPU_ENTRY_AREA_MAP_SIZE			\
-	(CPU_ENTRY_AREA_PER_CPU + CPU_ENTRY_AREA_ARRAY_SIZE - CPU_ENTRY_AREA_BASE)
+	(CPU_ENTRY_AREA_PER_CPU + CPU_ENTRY_AREA_TOT_SIZE - CPU_ENTRY_AREA_BASE)
 
 extern struct cpu_entry_area *get_cpu_entry_area(int cpu);
 
