@@ -4,34 +4,38 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
+ * $Id$
  */
 
-#pragma once
+#ifndef QTR_TORRENT_VIEW_H
+#define QTR_TORRENT_VIEW_H
 
 #include <QListView>
 
-class TorrentView : public QListView
+class TorrentView: public QListView
 {
     Q_OBJECT
 
-public:
-    TorrentView(QWidget* parent = nullptr);
+  public:
+    TorrentView (QWidget * parent = nullptr);
 
-public slots:
-    void setHeaderText(QString const& text);
+  public slots:
+    void setHeaderText (const QString& text);
 
-signals:
-    void headerDoubleClicked();
+  signals:
+    void headerDoubleClicked ();
 
-protected:
-    virtual void resizeEvent(QResizeEvent* event);
+  protected:
+    virtual void resizeEvent (QResizeEvent * event);
 
-private:
+  private:
     class HeaderWidget;
 
-private:
-    void adjustHeaderPosition();
+  private:
+    void adjustHeaderPosition ();
 
-private:
-    HeaderWidget* const myHeaderWidget;
+  private:
+    HeaderWidget * const myHeaderWidget;
 };
+
+#endif // QTR_TORRENT_VIEW_H

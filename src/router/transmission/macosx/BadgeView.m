@@ -1,4 +1,6 @@
 /******************************************************************************
+ * $Id$
+ *
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -38,7 +40,7 @@
     if ((self = [super init]))
     {
         fLib = lib;
-
+        
         fDownloadRate = 0.0;
         fUploadRate = 0.0;
         fQuitting = NO;
@@ -46,13 +48,18 @@
     return self;
 }
 
+- (void) dealloc
+{
+    [fAttributes release];
+    [super dealloc];
+}
 
 - (BOOL) setRatesWithDownload: (CGFloat) downloadRate upload: (CGFloat) uploadRate
 {
     //only needs update if the badges were displayed or are displayed now
     if (fDownloadRate == downloadRate && fUploadRate == uploadRate)
         return NO;
-
+    
     fDownloadRate = downloadRate;
     fUploadRate = uploadRate;
     return YES;
@@ -66,7 +73,7 @@
 - (void) drawRect: (NSRect) rect
 {
     [[NSApp applicationIconImage] drawInRect: rect fromRect: NSZeroRect operation: NSCompositeSourceOver fraction: 1.0];
-
+    
     if (fQuitting)
     {
         NSImage * quitBadge = [NSImage imageNamed: @"QuitBadge"];
@@ -74,7 +81,7 @@
                 atHeight: (NSHeight(rect) - [quitBadge size].height) * 0.5 adjustForQuit: YES];
         return;
     }
-
+    
     const BOOL upload = fUploadRate >= 0.1,
             download = fDownloadRate >= 0.1;
     CGFloat bottom = 0.0;
@@ -101,36 +108,37 @@
         NSShadow * stringShadow = [[NSShadow alloc] init];
         [stringShadow setShadowOffset: NSMakeSize(2.0, -2.0)];
         [stringShadow setShadowBlurRadius: 4.0];
-
+        
         fAttributes = [[NSMutableDictionary alloc] initWithCapacity: 3];
-        fAttributes[NSForegroundColorAttributeName] = [NSColor whiteColor];
-        fAttributes[NSShadowAttributeName] = stringShadow;
-
+        [fAttributes setObject: [NSColor whiteColor] forKey: NSForegroundColorAttributeName];
+        [fAttributes setObject: stringShadow forKey: NSShadowAttributeName];
+        
+        [stringShadow release];
     }
-
+    
     NSRect badgeRect;
     badgeRect.size = [badge size];
     badgeRect.origin.x = 0.0;
     badgeRect.origin.y = height;
-
+    
     [badge drawInRect: badgeRect fromRect: NSZeroRect operation: NSCompositeSourceOver fraction: 1.0];
-
+    
     //make sure text fits on the badge
     CGFloat fontSize = 26.0;
     NSSize stringSize;
     do
     {
-        fAttributes[NSFontAttributeName] = [NSFont boldSystemFontOfSize: fontSize];
+        [fAttributes setObject: [NSFont boldSystemFontOfSize: fontSize] forKey: NSFontAttributeName];
         stringSize = [string sizeWithAttributes: fAttributes];
         fontSize -= 1.0;
     } while (NSWidth(badgeRect) < stringSize.width);
-
+    
     //string is in center of image
     NSRect stringRect;
     stringRect.origin.x = NSMidX(badgeRect) - stringSize.width * 0.5;
     stringRect.origin.y = NSMidY(badgeRect) - stringSize.height * 0.5 + (quit ? 2.0 : 1.0); //adjust for shadow, extra for quit
     stringRect.size = stringSize;
-
+    
     [string drawInRect: stringRect withAttributes: fAttributes];
 }
 

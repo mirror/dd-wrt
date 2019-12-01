@@ -4,12 +4,13 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
+ * $Id$
  */
 
-#pragma once
+#ifndef QTR_TORRENT_FILTER_H
+#define QTR_TORRENT_FILTER_H
 
 #include <QSortFilterProxyModel>
-#include <QTimer>
 
 class QString;
 
@@ -17,40 +18,40 @@ class FilterMode;
 class Prefs;
 class Torrent;
 
-class TorrentFilter : public QSortFilterProxyModel
+class TorrentFilter: public QSortFilterProxyModel
 {
     Q_OBJECT
 
-public:
+  public:
     enum TextMode
     {
-        FILTER_BY_NAME,
-        FILTER_BY_FILES,
-        FILTER_BY_TRACKER
+      FILTER_BY_NAME,
+      FILTER_BY_FILES,
+      FILTER_BY_TRACKER
     };
 
-public:
-    TorrentFilter(Prefs const& prefs);
-    virtual ~TorrentFilter();
+  public:
+    TorrentFilter (const Prefs& prefs);
+    virtual ~TorrentFilter ();
 
-    int hiddenRowCount() const;
+    int hiddenRowCount () const;
 
-    void countTorrentsPerMode(int* setmeCounts) const;
+    void countTorrentsPerMode (int * setmeCounts) const;
 
-protected:
+  protected:
     // QSortFilterProxyModel
-    virtual bool filterAcceptsRow(int, QModelIndex const&) const;
-    virtual bool lessThan(QModelIndex const&, QModelIndex const&) const;
+    virtual bool filterAcceptsRow (int, const QModelIndex&) const;
+    virtual bool lessThan (const QModelIndex&, const QModelIndex&) const;
 
-private:
-    bool activityFilterAcceptsTorrent(Torrent const* tor, FilterMode const& mode) const;
-    bool trackerFilterAcceptsTorrent(Torrent const* tor, QString const& tracker) const;
+  private:
+    bool activityFilterAcceptsTorrent (const Torrent * tor, const FilterMode& mode) const;
+    bool trackerFilterAcceptsTorrent (const Torrent * tor, const QString& tracker) const;
 
-private slots:
-    void onPrefChanged(int key);
-    void refilter();
+  private slots:
+    void refreshPref (int key);
 
-private:
-    QTimer myRefilterTimer;
-    Prefs const& myPrefs;
+  private:
+    const Prefs& myPrefs;
 };
+
+#endif // QTR_TORRENT_FILTER_H

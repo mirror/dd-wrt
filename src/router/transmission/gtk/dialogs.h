@@ -1,4 +1,6 @@
 /******************************************************************************
+ * $Id$
+ *
  * Copyright (c) Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -20,7 +22,8 @@
  * DEALINGS IN THE SOFTWARE.
  *****************************************************************************/
 
-#pragma once
+#ifndef GTR_DIALOGS_H
+#define GTR_DIALOGS_H
 
 #include "tr-core.h"
 #include "util.h"
@@ -28,4 +31,9 @@
 /**
  * Prompt the user to confirm removing a torrent.
  */
-void gtr_confirm_remove(GtkWindow* parent, TrCore* core, GSList* gtorrents, gboolean doDelete);
+void gtr_confirm_remove (GtkWindow * parent,
+                          TrCore    * core,
+                          GSList    * gtorrents,
+                          gboolean    doDelete);
+
+#endif /* GTR_DIALOGS_H */
