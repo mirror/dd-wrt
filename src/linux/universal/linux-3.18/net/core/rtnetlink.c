@@ -1700,8 +1700,6 @@ static int do_setlink(const struct sk_buff *skb,
 		int vf;
 		int rem;
 
-		if (ivt->vf >= INT_MAX)
-			return -EINVAL;
 		err = -EOPNOTSUPP;
 		if (!ops->ndo_set_vf_port)
 			goto errout;
