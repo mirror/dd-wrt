@@ -1,4 +1,6 @@
 /******************************************************************************
+ * $Id$
+ *
  * Copyright (c) 2009-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -21,19 +23,18 @@
  *****************************************************************************/
 
 #import <Cocoa/Cocoa.h>
-
-#include <libtransmission/transmission.h>
+#import <transmission.h>
 
 @class Torrent;
 
 @interface TrackerNode : NSObject
 {
     tr_tracker_stat fStat;
-
-    Torrent * __weak fTorrent;
+    
+    Torrent * fTorrent;
 }
 
-@property (nonatomic, weak, readonly) Torrent * torrent;
+@property (nonatomic, readonly) Torrent * torrent;
 
 - (id) initWithTrackerStat: (tr_tracker_stat *) stat torrent: (Torrent *) torrent;
 

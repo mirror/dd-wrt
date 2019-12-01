@@ -4,9 +4,11 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
+ * $Id$
  */
 
-#pragma once
+#ifndef QTR_ABOUT_DIALOG_H
+#define QTR_ABOUT_DIALOG_H
 
 #include <QPointer>
 
@@ -16,20 +18,22 @@
 
 class LicenseDialog;
 
-class AboutDialog : public BaseDialog
+class AboutDialog: public BaseDialog
 {
     Q_OBJECT
 
-public:
-    AboutDialog(QWidget* parent = nullptr);
-    virtual ~AboutDialog() = default;
+  public:
+    AboutDialog (QWidget * parent = nullptr);
+    virtual ~AboutDialog () {}
 
-private slots:
-    void showCredits();
-    void showLicense();
+  private slots:
+    void showCredits ();
+    void showLicense ();
 
-private:
+  private:
     Ui::AboutDialog ui;
 
     QPointer<LicenseDialog> myLicenseDialog;
 };
+
+#endif // QTR_ABOUT_DIALOG_H

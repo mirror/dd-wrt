@@ -1,4 +1,6 @@
 /******************************************************************************
+ * $Id$
+ * 
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -31,7 +33,7 @@
     {
         [[NSUserDefaults standardUserDefaults] setBool: ![[NSUserDefaults standardUserDefaults]
             boolForKey: @"DisplayPeerProgressBarNumber"] forKey: @"DisplayPeerProgressBarNumber"];
-
+        
         NSIndexSet * rowIndexes = [NSIndexSet indexSetWithIndexesInRange: NSMakeRange(0, [self numberOfRows])],
                     * columnIndexes = [NSIndexSet indexSetWithIndex: [self columnAtPoint: point]];
         [self reloadDataForRowIndexes: rowIndexes columnIndexes: columnIndexes];

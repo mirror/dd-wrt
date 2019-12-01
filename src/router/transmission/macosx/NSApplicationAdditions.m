@@ -1,4 +1,6 @@
 /******************************************************************************
+ * $Id$
+ *
  * Copyright (c) 2009-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -24,23 +26,14 @@
 
 @implementation NSApplication (NSApplicationAdditions)
 
+- (BOOL) isOnMountainLionOrBetter
+{
+    return floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_7;
+}
+
 - (BOOL) isOnYosemiteOrBetter
 {
     return floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_9;
-}
-
-- (BOOL) isOnMojaveOrBetter
-{
-    return floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_13;
-}
-
-- (BOOL) isDarkMode
-{
-    if (@available(macOS 10.14, *)) {
-        return [self.effectiveAppearance.name isEqualToString:NSAppearanceNameDarkAqua];
-    } else {
-        return NO;
-    }
 }
 
 @end

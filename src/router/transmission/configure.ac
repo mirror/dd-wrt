@@ -3,8 +3,8 @@ dnl STATUS: "X" for prerelease beta builds,
 dnl         "Z" for unsupported trunk builds,
 dnl         "0" for stable, supported releases
 dnl these should be the only two lines you need to change
-m4_define([user_agent_prefix],[3.00+])
-m4_define([peer_id_prefix],[-TR300Z-])
+m4_define([user_agent_prefix],[2.94])
+m4_define([peer_id_prefix],[-TR2940-])
 
 AC_INIT([transmission],[user_agent_prefix],[https://github.com/transmission/transmission])
 AC_SUBST(USERAGENT_PREFIX,[user_agent_prefix])
@@ -16,7 +16,7 @@ AC_CONFIG_MACRO_DIR([m4])
 
 dnl AM_CONFIG_HEADER(config.h)
 AC_CONFIG_SRCDIR(libtransmission/transmission.h)
-AM_INIT_AUTOMAKE([1.9 tar-pax no-dist-gzip dist-xz foreign])
+AM_INIT_AUTOMAKE([1.9 tar-pax no-dist-gzip dist-xz])
 LT_INIT
 LT_LIB_M
 
@@ -83,7 +83,7 @@ AC_PROG_CXX
 AC_C_INLINE
 if test "x$GCC" = "xyes" ; then
 
-    CFLAGS="$CFLAGS -std=gnu99 -ggdb3 -Wall -W -Wpointer-arith -Wformat-security -Wundef -Wcast-align -Wstrict-prototypes -Wmissing-declarations -Wmissing-format-attribute -Wredundant-decls -Wnested-externs -Wunused-parameter -Wwrite-strings -Wfloat-equal"
+    CFLAGS="$CFLAGS -std=gnu99 -ggdb3 -Wall -W -Wpointer-arith -Wformat-security -Wundef -Wcast-align -Wstrict-prototypes -Wmissing-declarations -Wmissing-format-attribute -Wredundant-decls -Wnested-externs -Wunused-parameter -Wwrite-strings -Winline -Wfloat-equal"
 
     dnl figure out gcc version
     AC_MSG_CHECKING([gcc version])
@@ -103,14 +103,11 @@ if test "x$GCC" = "xyes" ; then
     fi
 fi
 
-AC_PROG_LN_S
-AC_PROG_MKDIR_P
-
 AC_HEADER_STDC
 AC_HEADER_TIME
 
-AC_CHECK_HEADERS([xlocale.h])
-AC_CHECK_FUNCS([iconv pread pwrite lrintf strlcpy daemon dirname basename canonicalize_file_name strcasecmp localtime_r fallocate64 posix_fallocate memmem strsep strtold syslog valloc getpagesize posix_memalign statvfs htonll ntohll mkdtemp uselocale _configthreadlocale strcasestr])
+AC_CHECK_HEADERS([stdbool.h xlocale.h])
+AC_CHECK_FUNCS([iconv pread pwrite lrintf strlcpy daemon dirname basename canonicalize_file_name strcasecmp localtime_r fallocate64 posix_fallocate memmem strsep strtold syslog valloc getpagesize posix_memalign statvfs htonll ntohll mkdtemp uselocale _configthreadlocale])
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 ACX_PTHREAD
@@ -142,7 +139,7 @@ AS_IF([test "x$want_crypto" = "xauto" -o "x$want_crypto" = "xopenssl"], [
 ])
 AS_IF([test "x$want_crypto" = "xauto" -o "x$want_crypto" = "xcyassl"], [
     PKG_CHECK_MODULES(WOLFSSL, [wolfssl >= $CYASSL_MINIMUM],
-        [want_crypto="cyassl"; CRYPTO_PKG="cyassl"; CRYPTO_CFLAGS="$WOLFSSL_CFLAGS"; CRYPTO_LIBS="$WOLFSSL_LIBS"; CYASSL_IS_WOLFSSL=yes],
+        [want_crypto="cyassl"; CRYPTO_PKG="cyassl"; CRYPTO_CFLAGS="$WOLFSSL_CFLAGS"; CRYPTO_LIBS="$WOLFSSL_LIBS"],
         [PKG_CHECK_MODULES(CYASSL, [cyassl >= $CYASSL_MINIMUM],
             [want_crypto="cyassl"; CRYPTO_PKG="cyassl"; CRYPTO_CFLAGS="$CYASSL_CFLAGS"; CRYPTO_LIBS="$CYASSL_LIBS"],
             [AS_IF([test "x$want_crypto" = "xcyassl"],
@@ -185,7 +182,6 @@ AS_IF([test "x$CRYPTO_PKG" = "x"], [
 
 AM_CONDITIONAL([CRYPTO_USE_OPENSSL],[test "x$CRYPTO_PKG" = "xopenssl"])
 AM_CONDITIONAL([CRYPTO_USE_CYASSL],[test "x$CRYPTO_PKG" = "xcyassl"])
-AM_CONDITIONAL([CYASSL_IS_WOLFSSL],[test "x$CYASSL_IS_WOLFSSL" = "xyes"])
 AM_CONDITIONAL([CRYPTO_USE_POLARSSL],[test "x$CRYPTO_PKG" = "xpolarssl"])
 AM_CONDITIONAL([POLARSSL_IS_MBEDTLS],[test "x$POLARSSL_IS_MBEDTLS" = "xyes"])
 AC_SUBST(CRYPTO_PKG)
@@ -248,15 +244,15 @@ dnl
 dnl file monitoring for the daemon
 
 # Check whether to enable systemd startup notification.
-# This requires libsystemd.
-AC_ARG_WITH([systemd], AS_HELP_STRING([--with-systemd],
+# This requires libsystemd-daemon.
+AC_ARG_WITH([systemd-daemon], AS_HELP_STRING([--with-systemd-daemon],
             [Add support for systemd startup notification (default is autodetected)]),
-            [USE_SYSTEMD=$withval], [USE_SYSTEMD=auto])
-AS_IF([test "x$USE_SYSTEMD" != "xno"], [
-    PKG_CHECK_MODULES([SYSTEMD], [libsystemd],
-        [AC_DEFINE(USE_SYSTEMD,1,[Use systemd startup notification])],
-        [AS_IF([test "x$USE_SYSTEMD" = "xyes"],
-            [AC_MSG_ERROR([systemd startup notification support requested, but libsystemd not found.])]
+            [USE_SYSTEMD_DAEMON=$withval], [USE_SYSTEMD_DAEMON=auto])
+AS_IF([test "x$USE_SYSTEMD_DAEMON" != "xno"], [
+    PKG_CHECK_MODULES([SYSTEMD_DAEMON], [libsystemd-daemon],
+        [AC_DEFINE(USE_SYSTEMD_DAEMON,1,[Use systemd startup notification])],
+        [AS_IF([test "x$USE_SYSTEMD_DAEMON" = "xyes"],
+            [AC_MSG_ERROR([systemd startup notification support requested, but libsystemd-daemon not found.])]
         )]
     )
 ])

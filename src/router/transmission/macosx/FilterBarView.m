@@ -1,4 +1,6 @@
 /******************************************************************************
+ * $Id$
+ * 
  * Copyright (c) 2011-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -38,6 +40,11 @@
     return self;
 }
 
+- (void) dealloc
+{
+    [fGradient release];
+    [super dealloc];
+}
 
 - (BOOL) mouseDownCanMoveWindow
 {
@@ -54,11 +61,11 @@
     if ([NSApp isOnYosemiteOrBetter]) {
         [[NSColor windowBackgroundColor] setFill];
         NSRectFill(rect);
-
+        
         const NSRect lineBorderRect = NSMakeRect(NSMinX(rect), 0.0, NSWidth(rect), 1.0);
         if (NSIntersectsRect(lineBorderRect, rect))
         {
-            [[NSColor gridColor] setFill];
+            [[NSColor lightGrayColor] setFill];
             NSRectFill(lineBorderRect);
         }
     }
@@ -66,34 +73,34 @@
         NSInteger count = 0;
         NSRect gridRects[2];
         NSColor * colorRects[2];
-
+        
         NSRect lineBorderRect = NSMakeRect(NSMinX(rect), NSHeight([self bounds]) - 1.0, NSWidth(rect), 1.0);
         if (NSIntersectsRect(lineBorderRect, rect))
         {
             gridRects[count] = lineBorderRect;
             colorRects[count] = [NSColor whiteColor];
             ++count;
-
+            
             rect.size.height -= 1.0;
         }
-
+        
         lineBorderRect.origin.y = 0.0;
         if (NSIntersectsRect(lineBorderRect, rect))
         {
             gridRects[count] = lineBorderRect;
             colorRects[count] = [NSColor colorWithCalibratedWhite: 0.65 alpha: 1.0];
             ++count;
-
+            
             rect.origin.y += 1.0;
             rect.size.height -= 1.0;
         }
-
+        
         if (!NSIsEmptyRect(rect))
         {
             const NSRect gradientRect = NSMakeRect(NSMinX(rect), 1.0, NSWidth(rect), NSHeight([self bounds]) - 1.0 - 1.0); //proper gradient requires the full height of the bar
             [fGradient drawInRect: gradientRect angle: 270.0];
         }
-
+        
         NSRectFillListWithColors(gridRects, colorRects, count);
     }
 }

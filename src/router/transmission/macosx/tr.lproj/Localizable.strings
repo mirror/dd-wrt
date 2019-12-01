@@ -1,3 +1,7 @@
+/* Inspector -> selected torrents
+   stats -> bytes */
+"%@ bytes" = "%@ bit";
+
 /* Add torrent -> info
    Create torrent -> info
    Drag overlay -> torrents
@@ -5,7 +9,7 @@
 "%@ files" = "%@ dosya";
 
 /* Prefs -> blocklist -> message */
-"%@ IP address rules in list" = "Listede %@ IP adresi kuralı";
+"%@ IP address rules in list" = "Dizelgede %@ IP adresi kuralları";
 
 /* Inspector -> selected torrents */
 "%@ magnetized transfers" = "%@ mıknatıslı aktarım";
@@ -13,12 +17,12 @@
 /* file size string
    Inspector -> Files tab -> file status string
    Status bar transfer count */
-"%@ of %@" = "%1$@ - %2$@";
+"%@ of %@" = "%1$@ (Toplam %2$@)";
 
 /* Torrent -> progress string */
-"%@ of torrent metadata retrieved" = "%@ torrent üstverisi alındı";
+"%@ of torrent metadata retrieved" = "%@ torrent üstbilgisi alındı";
 
-/* time remaining string */
+/* Torrent -> eta string */
 "%@ remaining" = "%@ kaldı";
 
 /* Add torrent -> info
@@ -241,7 +245,7 @@
 /* Preferences -> toolbar item title */
 "Bandwidth" = "Bant Genişliği";
 
-/* notification description */
+/* Growl notification description */
 "Bandwidth settings changed" = "Bant genişliği ayarları değiştirildi";
 
 /* Groups -> Name */
@@ -276,6 +280,12 @@
 
 /* View menu -> Quick Look */
 "Close Quick Look" = "Göz At'ı kapat";
+
+/* Prefs -> Notifications */
+"Configure In Growl" = "Growl'da Yapılandır";
+
+/* Prefs -> Notifications */
+"Configure In System Preferences" = "Sistem Tercihlerinde Yapılandır";
 
 /* Blocklist -> message */
 "Connecting to site" = "Alana bağlanıyor";
@@ -429,7 +439,8 @@
 /* Inspector -> Peers tab -> table row tooltip */
 "From: tracker" = "Kimden: izleyici";
 
-/* File size - gigabytes */
+/* File size - gigabytes
+   file/memory size - gigabytes */
 "GB" = "GB";
 
 /* Transfer speed (gigabytes per second) */
@@ -506,7 +517,8 @@
 /* Download not a torrent -> message */
 "It appears that the file \"%@\" from %@ is not a torrent file." = "Görünen o ki %2$@ içinden \"%1$@\" bir torrent dosyası değil.";
 
-/* File size - kilobytes */
+/* File size - kilobytes
+   file/memory size - kilobytes */
 "KB" = "KB";
 
 /* Transfer speed (kilobytes per second) */
@@ -527,7 +539,8 @@
 /* About window -> license button */
 "License" = "Lisans";
 
-/* torrent action menu -> upload/download limit */
+/* Action menu -> upload/download limit
+   torrent action menu -> upload/download limit */
 "Limit (%d KB/s)" = "Limit (%d KB/s)";
 
 /* Save log alert panel -> title */
@@ -546,7 +559,8 @@
    Torrent -> progress string */
 "Magnetized transfer" = "Mıknatıslı aktarım";
 
-/* File size - megabytes */
+/* File size - megabytes
+   file/memory size - megabytes */
 "MB" = "MB";
 
 /* Transfer speed (megabytes per second) */
@@ -775,6 +789,9 @@
 /* Groups -> Name */
 "Red" = "Kırmızı";
 
+/* Action menu -> status string toggle */
+"Remaining Time" = "Kalan Süre";
+
 /* Torrent -> eta string */
 "remaining time unknown" = "kalan süre bilinmiyor";
 
@@ -891,7 +908,7 @@
 "Session Transfer" = "Oturum Aktarımı";
 
 /* Share toolbar item -> label
-   Share toolbar item -> palette label */
+ Share toolbar item -> palette label */
 "Share" = "Paylaş";
 
 /* Share toolbar item -> tooltip */
@@ -922,10 +939,10 @@
    Status Bar -> speed tooltip */
 "Speed Limit" = "Hız Limiti";
 
-/* notification title */
+/* Growl notification title */
 "Speed Limit Auto Disabled" = "Hız Limiti Etkin Değil";
 
-/* notification title */
+/* Growl notification title */
 "Speed Limit Auto Enabled" = "Hız Limiti Etkin";
 
 /* Main window -> 2nd bottom left button (turtle) tooltip */
@@ -937,7 +954,11 @@
 /* Stats window -> title */
 "Statistics" = "İstatistikler";
 
-/* torrent action menu -> ratio stop */
+/* Action menu -> status string toggle */
+"Status of Selected Files" = "Seçili Dosyaların Durumu";
+
+/* Action menu -> ratio stop
+   torrent action menu -> ratio stop */
 "Stop at Ratio (%.2f)" = "(%.2f) oranında dur";
 
 /* Torrent cell -> button info */
@@ -946,7 +967,8 @@
 /* Donation beg -> title */
 "Support open-source indie software" = "Açık kaynaklı özgür yazılımları destekleyin";
 
-/* File size - terabytes */
+/* File size - terabytes
+   file/memory size - terabytes */
 "TB" = "TB";
 
 /* Transfer speed (terabytes per second) */

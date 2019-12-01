@@ -4,9 +4,11 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
+ * $Id$
  */
 
-#pragma once
+#ifndef QTR_PREFS_DIALOG_H
+#define QTR_PREFS_DIALOG_H
 
 #include <QMap>
 #include <QSet>
@@ -23,63 +25,60 @@ class QString;
 class Prefs;
 class Session;
 
-class PrefsDialog : public BaseDialog
+class PrefsDialog: public BaseDialog
 {
     Q_OBJECT
 
-public:
-    PrefsDialog(Session&, Prefs&, QWidget* parent = nullptr);
-    virtual ~PrefsDialog();
+  public:
+    PrefsDialog (Session&, Prefs&, QWidget * parent = nullptr);
+    virtual ~PrefsDialog ();
 
-private:
+  private:
     typedef QMap<int, QWidget*> key2widget_t;
 
-private:
-    bool updateWidgetValue(QWidget* widget, int prefKey);
-    void linkWidgetToPref(QWidget* widget, int prefKey);
-    void updateBlocklistLabel();
-    void updateDownloadingWidgetsLocality();
+  private:
+    bool updateWidgetValue (QWidget * widget, int prefKey);
+    void linkWidgetToPref (QWidget * widget, int prefKey);
+    void updateBlocklistLabel ();
 
-    void setPref(int key, QVariant const& v);
+    void setPref (int key, const QVariant& v);
 
-    void initDownloadingTab();
-    void initSeedingTab();
-    void initSpeedTab();
-    void initPrivacyTab();
-    void initNetworkTab();
-    void initDesktopTab();
-    void initRemoteTab();
+    void initDownloadingTab ();
+    void initSeedingTab ();
+    void initSpeedTab ();
+    void initPrivacyTab ();
+    void initNetworkTab ();
+    void initDesktopTab ();
+    void initRemoteTab ();
 
-private slots:
-    void checkBoxToggled(bool checked);
-    void spinBoxEditingFinished();
-    void timeEditingFinished();
-    void lineEditingFinished();
-    void pathChanged(QString const& path);
-    void refreshPref(int key);
-    void encryptionEdited(int);
-    void altSpeedDaysEdited(int);
-    void sessionUpdated();
-    void onPortTested(bool);
-    void onPortTest();
-    void onIdleLimitChanged();
-    void onQueueStalledMinutesChanged();
+  private slots:
+    void checkBoxToggled (bool checked);
+    void spinBoxEditingFinished ();
+    void timeEditingFinished ();
+    void lineEditingFinished ();
+    void pathChanged (const QString& path);
+    void refreshPref (int key);
+    void encryptionEdited (int);
+    void altSpeedDaysEdited (int);
+    void sessionUpdated ();
+    void onPortTested (bool);
+    void onPortTest ();
+    void onIdleLimitChanged ();
+    void onQueueStalledMinutesChanged ();
 
-    void onUpdateBlocklistClicked();
-    void onUpdateBlocklistCancelled();
-    void onBlocklistDialogDestroyed(QObject*);
-    void onBlocklistUpdated(int n);
+    void onUpdateBlocklistClicked ();
+    void onUpdateBlocklistCancelled ();
+    void onBlocklistDialogDestroyed (QObject *);
+    void onBlocklistUpdated (int n);
 
-private:
+  private:
     Session& mySession;
     Prefs& myPrefs;
 
     Ui::PrefsDialog ui;
 
-    bool const myIsServer;
-    bool myIsLocal;
-
     key2widget_t myWidgets;
+    const bool myIsServer;
     QWidgetList myWebWidgets;
     QWidgetList myWebAuthWidgets;
     QWidgetList myWebWhitelistWidgets;
@@ -90,6 +89,8 @@ private:
     QWidgetList myUnsupportedWhenRemote;
 
     int myBlocklistHttpTag;
-    QHttp* myBlocklistHttp;
-    QMessageBox* myBlocklistDialog;
+    QHttp * myBlocklistHttp;
+    QMessageBox * myBlocklistDialog;
 };
+
+#endif // QTR_PREFS_DIALOG_H

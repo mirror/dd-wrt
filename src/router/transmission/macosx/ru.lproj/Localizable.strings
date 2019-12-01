@@ -1,7 +1,15 @@
+/* Inspector -> selected torrents
+   stats -> bytes */
+
+"%@ bytes" = "%@ байтов";
+
 /* Add torrent -> info
    Create torrent -> info
    Drag overlay -> torrents
    Inspector -> selected torrents */
+
+
+
 "%@ files" = "%@ файлов";
 
 /* Prefs -> blocklist -> message */
@@ -10,20 +18,23 @@
 /* Inspector -> selected torrents */
 "%@ magnetized transfers" = "%@ maget-разд.";
 
-/* file size string
+/* Blocklist -> message
    Inspector -> Files tab -> file status string
-   Status bar transfer count */
+   Torrent -> progress string */
+
+
 "%@ of %@" = "%1$@ из %2$@";
 
 /* Torrent -> progress string */
 "%@ of torrent metadata retrieved" = "%@ метаданных торрента получено";
 
-/* time remaining string */
+/* Torrent -> eta string */
 "%@ remaining" = "осталось %@";
 
 /* Add torrent -> info
-   Inspector -> Activity tab -> progress
    Torrent -> progress string */
+
+
 "%@ selected" = "%@ выбрано";
 
 /* stats window -> times opened */
@@ -37,11 +48,14 @@
 
 /* Inspector -> selected torrents
    stats total */
+
 "%@ total" = "%@ всего";
 
 /* Filter Bar Button -> tool tip
    Status bar transfer count
    Torrent table -> group row -> tooltip */
+
+
 "%@ transfers" = "%@ разд.";
 
 /* Inspector -> Activity tab -> have */
@@ -64,6 +78,7 @@
 
 /* Action menu -> upload/download limit
    Status Bar -> speed tooltip */
+
 "%d KB/s" = "%d КБ/s";
 
 /* Inspector -> Peers tab -> peers */
@@ -112,6 +127,9 @@
    Create torrent -> info
    Drag overlay -> torrents
    Inspector -> selected torrents */
+
+
+
 "1 file" = "1 файл";
 
 /* Inspector -> selected torrents */
@@ -129,6 +147,8 @@
 /* Filter Button -> tool tip
    Status bar transfer count
    Torrent table -> group row -> tooltip */
+
+
 "1 transfer" = "1 раздача";
 
 /* time string */
@@ -157,6 +177,7 @@
 
 /* Open duplicate alert -> title
    Open duplicate magnet alert -> title */
+
 "A transfer of \"%@\" already exists." = "Раздача «%@» уже существует.";
 
 /* Filter Bar -> filter button */
@@ -164,6 +185,7 @@
 
 /* Inspector -> tab
    Inspector view -> title */
+
 "Activity" = "Активность";
 
 /* Add torrent -> same name -> button */
@@ -175,12 +197,12 @@
 /* Magnet link failed -> title */
 "Adding magnetized transfer failed." = "Ошибка при добавление magnet-раздачи";
 
-/* Filter Bar -> filter button
-   inspector -> check all */
+/* Filter Bar -> filter button */
+
 "All" = "Все";
 
-/* Filter Bar -> group filter menu
-   Groups -> Button */
+/* Groups -> Button */
+
 "All Groups" = "Все группы";
 
 /* Create torrent -> failed -> warning */
@@ -225,8 +247,8 @@
 /* Removal confirm panel -> title */
 "Are you sure you want to remove \"%@\" from the transfer list and trash the data file?" = "Вы действительно хотите удалить «%@» из списка раздач и переместить данные в Корзину?";
 
-/* Removal confirm panel -> title
-   Remove completed confirm panel -> title */
+/* Removal confirm panel -> title */
+
 "Are you sure you want to remove \"%@\" from the transfer list?" = "Вы действительно хотите удалить «%@» из списка раздач?";
 
 /* Remove trackers alert -> title */
@@ -241,7 +263,7 @@
 /* Preferences -> toolbar item title */
 "Bandwidth" = "Ширина канала";
 
-/* notification description */
+/* Growl notification description */
 "Bandwidth settings changed" = "Настройки ширины канала изменены";
 
 /* Groups -> Name */
@@ -252,11 +274,17 @@
    Confirm Quit panel -> button
    Create torrent -> blank address -> button
    Removal confirm panel -> button
-   Remove completed confirm panel -> button
    Remove trackers alert -> button
-   rename sheet button
-   Stats reset -> button
-   URL sheet button */
+   Stats reset -> button */
+
+
+
+
+
+
+
+
+
 "Cancel" = "Отменить";
 
 /* Torrent Table -> tooltip */
@@ -277,6 +305,12 @@
 /* View menu -> Quick Look */
 "Close Quick Look" = "Закрыть Quick Look";
 
+/* Prefs -> Notifications */
+"Configure In Growl" = "Параметры в Growl";
+
+/* Prefs -> Notifications */
+"Configure In System Preferences" = "Параметры в Системных настройках";
+
 /* Blocklist -> message */
 "Connecting to site" = "Подключаюсь к сайту";
 
@@ -291,6 +325,7 @@
 
 /* Create toolbar item -> label
    Create torrent -> blank address -> button */
+
 "Create" = "Создать";
 
 /* Drag overlay -> file */
@@ -301,6 +336,7 @@
 
 /* Create toolbar item -> palette label
    Create torrent -> select file */
+
 "Create Torrent File" = "Создать торрент-файл";
 
 /* Create torrent -> failed -> title */
@@ -317,6 +353,7 @@
 
 /* Message window -> level
    Message window -> level string */
+
 "Debug" = "Отладка";
 
 /* Info options -> global setting */
@@ -326,6 +363,9 @@
    inspector -> web seed table -> header
    status bar -> status label
    Torrent -> status string */
+
+
+
 "DL" = "С";
 
 /* Inspector -> Peers tab -> peers */
@@ -348,12 +388,13 @@
 
 /* file table -> header tool tip
    files tab -> tooltip */
+
 "Download" = "Скачать";
 
 /* Torrent disk space alert -> button */
 "Download Anyway" = "Скачать в любом случае";
 
-/* notification title */
+/* Growl notification title */
 "Download Complete" = "Скачивание завершено";
 
 /* Blocklist -> message */
@@ -367,10 +408,11 @@
 
 /* Stats window -> label
    tracker peer stat */
+
 "Downloaded" = "Скачали";
 
-/* Filter Bar -> filter button
-   Torrent -> status string */
+/* Torrent -> status string */
+
 "Downloading" = "Скачиваю";
 
 /* Blocklist -> message */
@@ -391,21 +433,27 @@
 /* Inspector -> Peers tab -> table row tooltip */
 "encrypted" = "зашифрованный";
 
-/* inspector -> peer table -> header tool tip */
+/* inspector -> peer table -> header tool tip
+   Inspector -> Peers tab -> table row tooltip */
 "Encrypted Connection" = "Зашифрованное соединение";
 
 /* Message window -> level
    Message window -> level string
    Torrent -> status string */
+
+
 "Error" = "Ошибка";
 
 /* Inspector -> tab
    Inspector view -> title */
+
 "Files" = "Файлы";
 
 /* Filter toolbar item -> label
    inspector -> file filter
    Message window -> filter field */
+
+
 "Filter" = "Фильтр";
 
 /* Inspector -> Peers tab -> table row tooltip */
@@ -430,6 +478,7 @@
 "From: tracker" = "Источник: трекер";
 
 /* File size - gigabytes */
+
 "GB" = "ГБ";
 
 /* Transfer speed (gigabytes per second) */
@@ -440,6 +489,7 @@
 
 /* Inspector -> tab
    Inspector view -> title */
+
 "General Info" = "Информация";
 
 /* Status Bar -> speed tooltip */
@@ -476,7 +526,7 @@
 "Hide Status Bar" = "Скрыть панель статуса";
 
 /* File Outline -> Priority Menu */
-"High" = "Высокий";
+"High" = "Выской";
 
 /* files tab -> tooltip */
 "High Priority" = "Высокий приоритет";
@@ -492,6 +542,7 @@
 
 /* Message window -> level
    Message window -> level string */
+
 "Info" = "Информация";
 
 /* Inspector toolbar item -> label */
@@ -507,6 +558,7 @@
 "It appears that the file \"%@\" from %@ is not a torrent file." = "Файл «%1$@» из %2$@ не является торрент-файлом.";
 
 /* File size - kilobytes */
+
 "KB" = "КБ";
 
 /* Transfer speed (kilobytes per second) */
@@ -527,7 +579,9 @@
 /* About window -> license button */
 "License" = "Лицензия";
 
-/* torrent action menu -> upload/download limit */
+/* Action menu -> upload/download limit
+   torrent action menu -> upload/download limit */
+
 "Limit (%d KB/s)" = "С ограничением (%d КБ/с)";
 
 /* Save log alert panel -> title */
@@ -544,9 +598,11 @@
 
 /* Inspector -> selected torrents
    Torrent -> progress string */
+
 "Magnetized transfer" = "Magnet-раздача";
 
 /* File size - megabytes */
+
 "MB" = "МБ";
 
 /* Transfer speed (megabytes per second) */
@@ -567,6 +623,11 @@
    Tracker last announce
    Tracker last scrape
    tracker peer stat */
+
+
+
+
+
 "N/A" = "Нет данных";
 
 /* Filter Bar -> filter menu */
@@ -591,8 +652,9 @@
 "No Torrents Selected" = "Ни один торрент не выбран";
 
 /* Groups -> Button
-   Groups -> Menu
-   inspector -> check all */
+   Groups -> Menu */
+
+
 "None" = "✕";
 
 /* Donation beg -> button */
@@ -624,15 +686,32 @@
    Save log alert panel -> button
    Torrent disk space alert -> button
    Torrent download failed -> button
-   Torrent file copy alert -> button
-   Transmission already running alert -> button */
+   Torrent file copy alert -> button */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 "OK" = "OK";
 
 /* Remove completed confirm panel -> message */
 "Once removed, continuing the transfer will require the torrent file or magnet link." = "Для восстановления удаленной раздачи потребуется торрент-файл или magnet-ссылка.";
 
-/* Removal confirm panel -> message part 2
-   Remove completed confirm panel -> message */
+/* Removal confirm panel -> message part 2 */
+
 "Once removed, continuing the transfers will require the torrent files or magnet links." = "После удаления продолжение раздач потребует наличия торрент-файла или magnet-ссылок.";
 
 /* Remove trackers alert -> message */
@@ -644,8 +723,8 @@
 /* File Outline -> Menu */
 "Only Check Selected" = "Отметить только выбранные";
 
-/* Open toolbar item -> label
-   URL sheet button */
+/* Open toolbar item -> label */
+
 "Open" = "Открыть";
 
 /* Open address toolbar item -> label */
@@ -665,6 +744,7 @@
 
 /* Inspector -> tab
    Inspector view -> title */
+
 "Options" = "Опции";
 
 /* Groups -> Name */
@@ -679,8 +759,8 @@
 /* Selected toolbar item -> palette label */
 "Pause / Resume Selected" = "Приостановить/возобновить выбранные";
 
-/* All toolbar item -> label
-   Dock item */
+/* All toolbar item -> label */
+
 "Pause All" = "Приостановить все";
 
 /* All toolbar item -> tooltip */
@@ -695,8 +775,8 @@
 /* Torrent Table -> tooltip */
 "Pause the transfer" = "Приостановить раздачу";
 
-/* Filter Bar -> filter button
-   Torrent -> status string */
+/* Torrent -> status string */
+
 "Paused" = "Приостановлены";
 
 /* Inspector -> peer -> status */
@@ -708,6 +788,8 @@
 /* Inspector -> tab
    Inspector view -> title
    Preferences -> toolbar item title */
+
+
 "Peers" = "Пользователи";
 
 /* Inspector -> Peers tab -> table row tooltip */
@@ -724,6 +806,7 @@
 
 /* File Outline -> Menu
    file table -> header tool tip */
+
 "Priority" = "Приоритет";
 
 /* files tab -> tooltip */
@@ -757,10 +840,15 @@
    QuickLook toolbar item -> palette label
    QuickLook toolbar item -> tooltip
    View menu -> Quick Look */
+
+
+
 "Quick Look" = "Быстрый просмотр";
 
 /* Confirm Quit panel -> button
-   Legal alert -> button */
+   Legal alert -> button
+   Transmission already running alert -> button */
+
 "Quit" = "Завершить";
 
 /* Dock Badger -> quit */
@@ -770,10 +858,16 @@
    status bar -> status label
    Torrent -> status string
    Torrent table -> group row -> tooltip */
+
+
+
 "Ratio" = "Рейтинг";
 
 /* Groups -> Name */
 "Red" = "Красная";
+
+/* Action menu -> status string toggle */
+"Remaining Time" = "Оставшееся время";
 
 /* Torrent -> eta string */
 "remaining time unknown" = "оставшееся время неизвестно";
@@ -782,9 +876,11 @@
 "Remote" = "Удаленное управление";
 
 /* Removal confirm panel -> button
-   Remove completed confirm panel -> button
    Remove toolbar item -> label
    Remove trackers alert -> button */
+
+
+
 "Remove" = "Удалить";
 
 /* Main window -> 3rd bottom left button (remove all) tooltip */
@@ -810,10 +906,11 @@
 
 /* Stats reset -> button
    Stats window -> reset button */
+
 "Reset" = "Очистить";
 
-/* All toolbar item -> label
-   Dock item */
+/* All toolbar item -> label */
+
 "Resume All" = "Возобновить все";
 
 /* All toolbar item -> tooltip */
@@ -846,14 +943,14 @@
 /* tracker peer stat */
 "Seeders" = "Раздающих";
 
-/* Filter Bar -> filter button
-   Torrent -> status string */
+/* Torrent -> status string */
+
 "Seeding" = "Раздаю";
 
 /* Torrent -> status string */
 "Seeding complete" = "Раздача завершена";
 
-/* notification title */
+/* Growl notification title */
 "Seeding Complete" = "Раздача завершена";
 
 /* Torrent -> status string */
@@ -867,6 +964,10 @@
    Move torrent -> prompt
    Open torrent -> prompt
    Preferences -> Open panel prompt */
+
+
+
+
 "Select" = "Выбрать";
 
 /* Create torrent -> select file */
@@ -892,6 +993,7 @@
 
 /* Share toolbar item -> label
    Share toolbar item -> palette label */
+
 "Share" = "Отправить";
 
 /* Share toolbar item -> tooltip */
@@ -918,14 +1020,14 @@
 /* Torrent cell -> button info */
 "Show the data file in Finder" = "Показать данные в Finder";
 
-/* Dock item
-   Status Bar -> speed tooltip */
+/* Status Bar -> speed tooltip */
+
 "Speed Limit" = "Ограничение скорости";
 
-/* notification title */
+/* Growl notification title */
 "Speed Limit Auto Disabled" = "Ограничение скорости отключено";
 
-/* notification title */
+/* Growl notification title */
 "Speed Limit Auto Enabled" = "Ограничение скорости включено";
 
 /* Main window -> 2nd bottom left button (turtle) tooltip */
@@ -937,7 +1039,12 @@
 /* Stats window -> title */
 "Statistics" = "Статистика";
 
-/* torrent action menu -> ratio stop */
+/* Action menu -> status string toggle */
+"Status of Selected Files" = "Статус выбранных файлов";
+
+/* Action menu -> ratio stop
+   torrent action menu -> ratio stop */
+
 "Stop at Ratio (%.2f)" = "Остановить при рейтинге (%.2f)";
 
 /* Torrent cell -> button info */
@@ -947,6 +1054,7 @@
 "Support open-source indie software" = "Поддержите независимую программу с открытым исходным кодом";
 
 /* File size - terabytes */
+
 "TB" = "ТБ";
 
 /* Transfer speed (terabytes per second) */
@@ -966,6 +1074,7 @@
 
 /* Move error alert -> message
    Move inside itself alert -> message */
+
 "The move operation of \"%@\" cannot be done." = "Не могу переместить «%@».";
 
 /* blocklist fail message */
@@ -1048,9 +1157,10 @@
 
 /* Download not a torrent -> title
    Torrent download error -> title */
+
 "Torrent download failed" = "Ошибка при скачивании торрента";
 
-/* notification title */
+/* Growl notification title */
 "Torrent File Auto Added" = "Торрент-файл добавлен";
 
 /* Inspector -> title */
@@ -1082,7 +1192,9 @@
 
 /* Inspector -> tab
    Inspector view -> title */
-"Trackers" = "Трекеры\n";
+
+"Trackers" = "Трекеры
+";
 
 /* Inspector -> Peers tab -> peers */
 "Transfer Not Active" = "Раздача неактивна";
@@ -1105,6 +1217,8 @@
 /* inspector -> peer table -> header
    status bar -> status label
    Torrent -> status string */
+
+
 "UL" = "Р";
 
 /* Inspector -> Peers tab -> peers */
@@ -1163,4 +1277,3 @@
 
 /* Inspector -> peer -> status */
 "You want to download, but peer does not want to send (interested and choked)" = "Вы заинтересованы в имеющихся у пользователя частях торрента, но он вас блокирует";
-

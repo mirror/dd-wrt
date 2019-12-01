@@ -2,25 +2,25 @@
 "%@ files" = "%@ bestanden";
 
 /* quicklook file header */
-"%@ Files" = "%@ bestanden";
+"%@ Files" = "%@ Bestanden";
 
 /* quicklook tracker header */
-"%@ Trackers" = "%@ trackers";
+"%@ Trackers" = "%@ Trackers";
 
 /* quicklook web seed header */
-"%@ Web Seeds" = "%@ webseeds";
+"%@ Web Seeds" = "%@ Web Seeds";
 
 /* quicklook file count */
 "1 file" = "1 bestand";
 
 /* quicklook file header */
-"1 File" = "1 bestand";
+"1 File" = "1 Bestand";
 
 /* quicklook tracker header */
-"1 Tracker" = "1 tracker";
+"1 Tracker" = "1 Tracker";
 
 /* quicklook web seed header */
-"1 Web Seed" = "1 webseed";
+"1 Web Seed" = "1 Web Seed";
 
 /* quicklook creation info */
 "Created on %@" = "Gemaakt op %@";
@@ -30,4 +30,3 @@
 
 /* quicklook creation info */
 "Created with %@" = "Gemaakt met %@";
-

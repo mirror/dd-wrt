@@ -1,4 +1,6 @@
 /******************************************************************************
+ * $Id$
+ *
  * Copyright (c) 2010-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -38,19 +40,25 @@
     {
         [self setTitle: NSLocalizedString(@"General Info", "Inspector view -> title")];
     }
-
+    
     return self;
 }
 
+- (void) dealloc
+{
+    [fTorrents release];
+    
+    [super dealloc];
+}
 
 - (void) awakeFromNib
 {
     #warning remove when 10.7-only with auto layout
     [fInfoSectionLabel sizeToFit];
     [fWhereSectionLabel sizeToFit];
-
+    
     NSArray * labels = @[ fPiecesLabel, fHashLabel, fSecureLabel, fCreatorLabel, fDateCreatedLabel, fCommentLabel, fDataLocationLabel ];
-
+    
     CGFloat oldMaxWidth = 0.0, originX, newMaxWidth = 0.0;
     for (NSTextField * label in labels)
     {
@@ -60,22 +68,22 @@
             oldMaxWidth = oldFrame.size.width;
             originX = oldFrame.origin.x;
         }
-
+        
         [label sizeToFit];
         const CGFloat newWidth = [label bounds].size.width;
         if (newWidth > newMaxWidth)
             newMaxWidth = newWidth;
     }
-
+    
     for (NSTextField * label in labels)
     {
         NSRect frame = [label frame];
         frame.origin.x = originX + (newMaxWidth - frame.size.width);
         [label setFrame: frame];
     }
-
+    
     NSArray * fields = @[ fPiecesField, fHashField, fSecureField, fCreatorField, fDateCreatedField, fCommentScrollView, fDataLocationField ];
-
+    
     const CGFloat widthIncrease = newMaxWidth - oldMaxWidth;
     for (NSView * field in fields) {
         NSRect frame = [field frame];
@@ -88,8 +96,9 @@
 - (void) setInfoForTorrents: (NSArray *) torrents
 {
     //don't check if it's the same in case the metadata changed
-    fTorrents = torrents;
-
+    [fTorrents release];
+    fTorrents = [torrents retain];
+    
     fSet = NO;
 }
 
@@ -97,28 +106,28 @@
 {
     if (!fSet)
         [self setupInfo];
-
+    
     if ([fTorrents count] != 1)
         return;
-
-    Torrent * torrent = fTorrents[0];
-
+    
+    Torrent * torrent = [fTorrents objectAtIndex: 0];
+    
     NSString * location = [torrent dataLocation];
     [fDataLocationField setStringValue: location ? [location stringByAbbreviatingWithTildeInPath] : @""];
     [fDataLocationField setToolTip: location ? location : @""];
-
+    
     [fRevealDataButton setHidden: !location];
 }
 
 - (void) revealDataFile: (id) sender
 {
-    Torrent * torrent = fTorrents[0];
+    Torrent * torrent = [fTorrents objectAtIndex: 0];
     NSString * location = [torrent dataLocation];
     if (!location)
         return;
-
+    
     NSURL * file = [NSURL fileURLWithPath: location];
-    [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs: @[file]];
+    [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs: [NSArray arrayWithObject: file]];
 }
 
 @end
@@ -129,23 +138,23 @@
 {
     if ([fTorrents count] == 1)
     {
-        Torrent * torrent = fTorrents[0];
-
+        Torrent * torrent = [fTorrents objectAtIndex: 0];
+        
         #warning candidate for localizedStringWithFormat (although then we'll get two commas)
         NSString * piecesString = ![torrent isMagnet] ? [NSString stringWithFormat: @"%ld, %@", [torrent pieceCount],
                                         [NSString stringForFileSize: [torrent pieceSize]]] : @"";
         [fPiecesField setStringValue: piecesString];
-
+                                        
         NSString * hashString = [torrent hashString];
         [fHashField setStringValue: hashString];
         [fHashField setToolTip: hashString];
         [fSecureField setStringValue: [torrent privateTorrent]
                         ? NSLocalizedString(@"Private Torrent, non-tracker peer discovery disabled", "Inspector -> private torrent")
                         : NSLocalizedString(@"Public Torrent", "Inspector -> private torrent")];
-
+        
         NSString * commentString = [torrent comment];
         [fCommentView setString: commentString];
-
+        
         NSString * creatorString = [torrent creator];
         [fCreatorField setStringValue: creatorString];
         [fDateCreatedField setObjectValue: [torrent dateCreated]];
@@ -157,16 +166,16 @@
         [fHashField setToolTip: nil];
         [fSecureField setStringValue: @""];
         [fCommentView setString: @""];
-
+        
         [fCreatorField setStringValue: @""];
         [fDateCreatedField setStringValue: @""];
-
+        
         [fDataLocationField setStringValue: @""];
         [fDataLocationField setToolTip: nil];
-
+        
         [fRevealDataButton setHidden: YES];
     }
-
+    
     fSet = YES;
 }
 

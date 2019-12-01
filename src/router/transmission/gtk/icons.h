@@ -3,13 +3,19 @@
  * "There is no problem for me, you can license
  * my code under whatever licence you wish :)"
  *
+ * $Id$
  */
 
-#pragma once
+#ifndef GTR_ICONS_H
+#define GTR_ICONS_H
 
 #define DIRECTORY_MIME_TYPE "folder"
 #define UNKNOWN_MIME_TYPE "unknown"
 
-char const* gtr_get_mime_type_from_filename(char const* file);
+const char * gtr_get_mime_type_from_filename (const char *file);
 
-GdkPixbuf* gtr_get_mime_type_icon(char const* mime_type, GtkIconSize icon_size, GtkWidget* for_widget);
+GdkPixbuf  * gtr_get_mime_type_icon (const char   * mime_type,
+                                     GtkIconSize    icon_size,
+                                     GtkWidget    * for_widget);
+
+#endif

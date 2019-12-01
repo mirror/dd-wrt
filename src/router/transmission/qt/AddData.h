@@ -1,12 +1,14 @@
 /*
- * This file Copyright (C) 2012-2016 Mnemosyne LLC
+ * This file Copyright (C) 2012-2015 Mnemosyne LLC
  *
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
+ * $Id$
  */
 
-#pragma once
+#ifndef QTR_ADD_DATA_H
+#define QTR_ADD_DATA_H
 
 #include <QByteArray>
 #include <QString>
@@ -14,42 +16,33 @@
 
 class AddData
 {
-public:
+  public:
     enum
     {
-        NONE,
-        MAGNET,
-        URL,
-        FILENAME,
-        METAINFO
+      NONE,
+      MAGNET,
+      URL,
+      FILENAME,
+      METAINFO
     };
 
-public:
-    AddData() :
-        type(NONE)
-    {
-    }
+  public:
+    AddData (): type (NONE) {}
+    AddData (const QString& str) { set (str); }
 
-    AddData(QString const& str)
-    {
-        set(str);
-    }
+    int set (const QString&);
 
-    int set(QString const&);
+    QByteArray toBase64 () const;
+    QString readableName () const;
 
-    QByteArray toBase64() const;
-    QString readableName() const;
-    QString readableShortName() const;
+    static bool isSupported (const QString& str) { return AddData (str).type != NONE; }
 
-    static bool isSupported(QString const& str)
-    {
-        return AddData(str).type != NONE;
-    }
-
-public:
+  public:
     int type;
     QByteArray metainfo;
     QString filename;
     QString magnet;
     QUrl url;
 };
+
+#endif // QTR_ADD_DATA_H

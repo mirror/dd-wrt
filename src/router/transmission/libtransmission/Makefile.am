@@ -57,12 +57,10 @@ libtransmission_la_SOURCES = \
   rpcimpl.c \
   rpc-server.c \
   session.c \
-  session-id.c \
   stats.c \
   torrent.c \
   torrent-ctor.c \
   torrent-magnet.c \
-  tr-assert.c \
   tr-dht.c \
   tr-lpd.c \
   tr-udp.c \
@@ -92,9 +90,9 @@ AM_CPPFLAGS += -DWITH_KQUEUE
 endif
 
 if WIN32
-libtransmission_la_SOURCES += file-win32.c subprocess-win32.c watchdir-win32.c
+libtransmission_la_SOURCES += file-win32.c watchdir-win32.c
 else
-libtransmission_la_SOURCES += file-posix.c subprocess-posix.c
+libtransmission_la_SOURCES += file-posix.c
 endif
 
 if CRYPTO_USE_OPENSSL
@@ -102,9 +100,6 @@ libtransmission_la_SOURCES += crypto-utils-openssl.c
 endif
 if CRYPTO_USE_CYASSL
 libtransmission_la_SOURCES += crypto-utils-cyassl.c
-if CYASSL_IS_WOLFSSL
-AM_CPPFLAGS += -DCYASSL_IS_WOLFSSL
-endif
 endif
 if CRYPTO_USE_POLARSSL
 libtransmission_la_SOURCES += crypto-utils-polarssl.c
@@ -146,7 +141,6 @@ noinst_HEADERS = \
   peer-io.h \
   peer-mgr.h \
   peer-msgs.h \
-  peer-socket.h \
   platform.h \
   platform-quota.h \
   port-forwarding.h \
@@ -156,16 +150,12 @@ noinst_HEADERS = \
   rpcimpl.h \
   rpc-server.h \
   session.h \
-  session-id.h \
   stats.h \
-  subprocess.h \
   torrent.h \
   torrent-magnet.h \
   tr-getopt.h \
   transmission.h \
-  tr-assert.h \
   tr-dht.h \
-  tr-macros.h \
   tr-udp.h \
   tr-utp.h \
   tr-lpd.h \
@@ -199,7 +189,6 @@ TESTS = \
   rename-test \
   rpc-test \
   session-test \
-  subprocess-test \
   tr-getopt-test \
   utils-test \
   variant-test \
@@ -288,10 +277,6 @@ rpc_test_LDFLAGS = ${apps_ldflags}
 session_test_SOURCES = session-test.c $(TEST_SOURCES)
 session_test_LDADD = ${apps_ldadd}
 session_test_LDFLAGS = ${apps_ldflags}
-
-subprocess_test_SOURCES = subprocess-test.c $(TEST_SOURCES)
-subprocess_test_LDADD = ${apps_ldadd}
-subprocess_test_LDFLAGS = ${apps_ldflags}
 
 tr_getopt_test_SOURCES = tr-getopt-test.c $(TEST_SOURCES)
 tr_getopt_test_LDADD = ${apps_ldadd}

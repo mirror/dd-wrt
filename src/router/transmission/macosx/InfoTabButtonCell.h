@@ -1,4 +1,6 @@
 /******************************************************************************
+ * $Id$
+ *
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -25,12 +27,10 @@
 @interface InfoTabButtonCell : NSButtonCell
 {
     NSImage * fIcon;
-
+    
     BOOL fSelected;
 }
 
 - (void) setSelectedTab: (BOOL) selected;
-
-- (void) reloadAppearance;
 
 @end
