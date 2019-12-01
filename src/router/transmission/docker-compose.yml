@@ -1,9 +1,0 @@
-version: '3'
-
-services:
-  code_style:
-    build: docker/code_style
-    volumes:
-      - .:/src
-      - ./code_style.sh:/code_style.sh:ro
-    command: ["/bin/sh", "/code_style.sh", "/src"]
