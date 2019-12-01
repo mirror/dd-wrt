@@ -1,4 +1,6 @@
 /******************************************************************************
+ * $Id$
+ * 
  * Copyright (c) 2011-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -22,16 +24,16 @@
 
 #import <Cocoa/Cocoa.h>
 
-#include <libtransmission/transmission.h>
+#import <transmission.h>
 
 @interface StatusBarController : NSViewController
 {
     IBOutlet NSButton * fStatusButton;
     IBOutlet NSTextField * fTotalDLField, * fTotalULField;
     IBOutlet NSImageView * fTotalDLImageView, * fTotalULImageView;
-
+    
     tr_session * fLib;
-
+    
     CGFloat fPreviousDownloadRate, fPreviousUploadRate;
 }
 

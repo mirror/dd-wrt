@@ -4,9 +4,11 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
+ * $Id$
  */
 
-#pragma once
+#ifndef QTR_UTILS_H
+#define QTR_UTILS_H
 
 #include <cctype> // isxdigit()
 
@@ -18,49 +20,42 @@ class QAbstractItemView;
 class QColor;
 class QHeaderView;
 class QIcon;
-class QModelIndex;
 
 class Utils
 {
-public:
-    static QIcon getFileIcon();
-    static QIcon getFolderIcon();
-    static QIcon guessMimeIcon(QString const& filename);
-    static QIcon getIconFromIndex(QModelIndex const& index);
-
+  public:
+    static QIcon guessMimeIcon (const QString& filename);
     // Test if string is UTF-8 or not
-    static bool isValidUtf8(char const* s);
+    static bool isValidUtf8 (const char * s);
 
-    static QString removeTrailingDirSeparator(QString const& path);
+    static QString removeTrailingDirSeparator (const QString& path);
 
-    static void narrowRect(QRect& rect, int dx1, int dx2, Qt::LayoutDirection direction)
+    static void narrowRect (QRect& rect, int dx1, int dx2, Qt::LayoutDirection direction)
     {
-        if (direction == Qt::RightToLeft)
-        {
-            qSwap(dx1, dx2);
-        }
-
-        rect.adjust(dx1, 0, -dx2, 0);
+      if (direction == Qt::RightToLeft)
+        qSwap (dx1, dx2);
+      rect.adjust (dx1, 0, -dx2, 0);
     }
 
-    static int measureViewItem(QAbstractItemView* view, QString const& text);
-    static int measureHeaderItem(QHeaderView* view, QString const& text);
+    static int measureViewItem (QAbstractItemView * view, const QString& text);
+    static int measureHeaderItem (QHeaderView * view, const QString& text);
 
-    static QColor getFadedColor(QColor const& color);
+    static QColor getFadedColor (const QColor& color);
 
     template<typename DialogT, typename... ArgsT>
-    static void openDialog(QPointer<DialogT>& dialog, ArgsT&& ... args)
+    static void
+    openDialog (QPointer<DialogT>& dialog, ArgsT&&... args)
     {
-        if (dialog.isNull())
+      if (dialog.isNull ())
         {
-            dialog = new DialogT(std::forward<ArgsT>(args)...);
-            dialog->setAttribute(Qt::WA_DeleteOnClose);
-            dialog->show();
+          dialog = new DialogT (std::forward<ArgsT> (args)...);
+          dialog->setAttribute (Qt::WA_DeleteOnClose);
+          dialog->show ();
         }
-        else
+      else
         {
-            dialog->raise();
-            dialog->activateWindow();
+          dialog->raise ();
+          dialog->activateWindow ();
         }
     }
 
@@ -68,34 +63,26 @@ public:
     /// URLs
     ///
 
-    static bool isMagnetLink(QString const& s)
+    static bool isMagnetLink (const QString& s)
     {
-        return s.startsWith(QString::fromUtf8("magnet:?"));
+      return s.startsWith (QString::fromUtf8 ("magnet:?"));
     }
 
-    static bool isHexHashcode(QString const& s)
+    static bool isHexHashcode (const QString& s)
     {
-        if (s.length() != 40)
-        {
-            return false;
-        }
-
-        for (QChar const ch : s)
-        {
-            if (!isxdigit(ch.unicode()))
-            {
-                return false;
-            }
-        }
-
-        return true;
+      if (s.length() != 40)
+        return false;
+      for (const QChar ch: s) if (!isxdigit (ch.unicode())) return false;
+      return true;
     }
 
-    static bool isUriWithSupportedScheme(QString const& s)
+    static bool isUriWithSupportedScheme (const QString& s)
     {
-        static QString const ftp = QString::fromUtf8("ftp://");
-        static QString const http = QString::fromUtf8("http://");
-        static QString const https = QString::fromUtf8("https://");
-        return s.startsWith(http) || s.startsWith(https) || s.startsWith(ftp);
+      static const QString ftp = QString::fromUtf8 ("ftp://");
+      static const QString http = QString::fromUtf8 ("http://");
+      static const QString https = QString::fromUtf8 ("https://");
+      return s.startsWith(http) || s.startsWith(https) || s.startsWith(ftp);
     }
 };
+
+#endif // QTR_UTILS_H

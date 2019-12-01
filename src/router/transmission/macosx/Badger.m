@@ -1,4 +1,6 @@
 /******************************************************************************
+ * $Id$
+ *
  * Copyright (c) 2006-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -32,16 +34,22 @@
     if ((self = [super init]))
     {
         fLib = lib;
-
+        
         BadgeView * view = [[BadgeView alloc] initWithLib: lib];
         [[NSApp dockTile] setContentView: view];
-
+        [view release];
+        
         fHashes = [[NSMutableSet alloc] init];
     }
-
+    
     return self;
 }
 
+- (void) dealloc
+{
+    [fHashes release];
+    [super dealloc];
+}
 
 - (void) updateBadgeWithDownload: (CGFloat) downloadRate upload: (CGFloat) uploadRate
 {
@@ -49,7 +57,7 @@
                                     ? downloadRate : 0.0;
     const CGFloat displayUlRate = [[NSUserDefaults standardUserDefaults] boolForKey: @"BadgeUploadRate"]
                                     ? uploadRate : 0.0;
-
+    
     //only update if the badged values change
     if ([(BadgeView *)[[NSApp dockTile] contentView] setRatesWithDownload: displayDlRate upload: displayUlRate])
         [[NSApp dockTile] display];
@@ -58,7 +66,7 @@
 - (void) addCompletedTorrent: (Torrent *) torrent
 {
     NSParameterAssert(torrent != nil);
-
+    
     [fHashes addObject: [torrent hashString]];
     [[NSApp dockTile] setBadgeLabel: [NSString formattedUInteger: [fHashes count]]];
 }

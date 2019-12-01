@@ -15,6 +15,7 @@ EXTRA_DIST = \
     Defaults.plist \
     Info.plist \
     Transmission_Prefix.pch \
+    Growl.framework \
     Sparkle.framework \
     sparkle_dsa_pub.pem \
     TransmissionHelp \

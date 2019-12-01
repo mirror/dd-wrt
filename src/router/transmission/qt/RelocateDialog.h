@@ -4,9 +4,11 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
+ * $Id$
  */
 
-#pragma once
+#ifndef QTR_RELOCATE_DIALOG_H
+#define QTR_RELOCATE_DIALOG_H
 
 #include <QSet>
 
@@ -17,29 +19,28 @@
 class Session;
 class TorrentModel;
 
-class RelocateDialog : public BaseDialog
+class RelocateDialog: public BaseDialog
 {
     Q_OBJECT
 
-public:
-    RelocateDialog(Session&, TorrentModel const&, QSet<int> const& ids, QWidget* parent = nullptr);
+  public:
+    RelocateDialog (Session&, const TorrentModel&, const QSet<int>& ids, QWidget * parent = nullptr);
+    virtual ~RelocateDialog () {}
 
-    virtual ~RelocateDialog()
-    {
-    }
+  private:
+    QString newLocation () const;
 
-private:
-    QString newLocation() const;
+  private slots:
+    void onSetLocation ();
+    void onMoveToggled (bool);
 
-private slots:
-    void onSetLocation();
-    void onMoveToggled(bool);
-
-private:
+  private:
     Session& mySession;
-    QSet<int> const myIds;
+    const QSet<int> myIds;
 
     Ui::RelocateDialog ui;
 
     static bool myMoveFlag;
 };
+
+#endif // QTR_RELOCATE_DIALOG_H

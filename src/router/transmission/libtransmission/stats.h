@@ -6,17 +6,18 @@
  *
  */
 
-#pragma once
-
 #ifndef __TRANSMISSION__
-#error only libtransmission should #include this header.
+ #error only libtransmission should #include this header.
 #endif
 
-extern struct tr_session_stats const TR_SESSION_STATS_INIT;
+#ifndef TR_STATS_H
+#define TR_STATS_H
 
-void tr_statsInit(tr_session* session);
-void tr_statsClose(tr_session* session);
-void tr_statsSaveDirty(tr_session* session);
-void tr_statsAddUploaded(tr_session* session, uint32_t bytes);
-void tr_statsAddDownloaded(tr_session* session, uint32_t bytes);
-void tr_statsFileCreated(tr_session* session);
+void tr_statsInit          (tr_session * session);
+void tr_statsClose         (tr_session * session);
+void tr_statsSaveDirty     (tr_session * session);
+void tr_statsAddUploaded   (tr_session * session, uint32_t bytes);
+void tr_statsAddDownloaded (tr_session * session, uint32_t bytes);
+void tr_statsFileCreated   (tr_session * session);
+
+#endif

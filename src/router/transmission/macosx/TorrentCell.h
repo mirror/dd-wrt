@@ -1,4 +1,6 @@
 /******************************************************************************
+ * $Id$
+ *
  * Copyright (c) 2006-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -20,17 +22,15 @@
  * DEALINGS IN THE SOFTWARE.
  *****************************************************************************/
 
-#import <AppKit/AppKit.h>
-
 @interface TorrentCell : NSActionCell
 {
     NSUserDefaults * fDefaults;
-
+    
     NSMutableDictionary * fTitleAttributes, * fStatusAttributes;
-
+    
     BOOL fTracking, fMouseDownControlButton, fMouseDownRevealButton, fMouseDownActionButton,
             fHover, fHoverControl, fHoverReveal, fHoverAction;
-
+    
     NSColor * fBarBorderColor, * fBluePieceColor, * fBarMinimalBorderColor;
 }
 

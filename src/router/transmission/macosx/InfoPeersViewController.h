@@ -1,4 +1,6 @@
 /******************************************************************************
+ * $Id$
+ *
  * Copyright (c) 2010-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -21,7 +23,6 @@
  *****************************************************************************/
 
 #import <Cocoa/Cocoa.h>
-
 #import "InfoViewController.h"
 
 @class WebSeedTableView;
@@ -29,14 +30,14 @@
 @interface InfoPeersViewController : NSViewController <InfoViewController, NSAnimationDelegate>
 {
     NSArray * fTorrents;
-
+    
     BOOL fSet;
-
+    
     NSMutableArray * fPeers, * fWebSeeds;
-
+    
     IBOutlet NSTableView * fPeerTable;
     IBOutlet WebSeedTableView * fWebSeedTable;
-
+    
     IBOutlet NSTextField * fConnectedPeersField;
 
     CGFloat fViewTopMargin;

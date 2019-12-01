@@ -4,6 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
+ * $Id$
  */
 
 #include <windows.h>
@@ -18,7 +19,7 @@
 #include "InteropObject.h"
 
 QAXFACTORY_BEGIN("{1e405fc2-1a3a-468b-8bd6-bfbb58770390}", "{792d1aac-53cc-4dc9-bc29-e5295fdb93a9}")
-QAXCLASS(InteropObject)
+  QAXCLASS(InteropObject)
 QAXFACTORY_END()
 
 // These are ActiveQt internals; declaring here as I don't like their WinMain much...
@@ -27,37 +28,41 @@ extern bool qAxOutProcServer;
 extern wchar_t qAxModuleFilename[MAX_PATH];
 extern QString qAxInit();
 
-ComInteropHelper::ComInteropHelper() :
-    m_client(new QAxObject(QLatin1String("Transmission.QtClient")))
+ComInteropHelper::ComInteropHelper ():
+  m_client (new QAxObject (QLatin1String ("Transmission.QtClient")))
 {
 }
 
-ComInteropHelper::~ComInteropHelper()
+ComInteropHelper::~ComInteropHelper ()
 {
 }
 
-bool ComInteropHelper::isConnected() const
+bool
+ComInteropHelper::isConnected () const
 {
-    return !m_client->isNull();
+  return !m_client->isNull ();
+}
+    
+QVariant
+ComInteropHelper::addMetainfo (const QString& metainfo)
+{
+  return m_client->dynamicCall ("AddMetainfo(QString)", metainfo);
 }
 
-QVariant ComInteropHelper::addMetainfo(QString const& metainfo)
+void
+ComInteropHelper::initialize ()
 {
-    return m_client->dynamicCall("AddMetainfo(QString)", metainfo);
+  qAxOutProcServer = true;
+  ::GetModuleFileNameW (0, qAxModuleFilename, MAX_PATH);
+  qAxInstance = ::GetModuleHandleW (NULL);
+
+  ::CoInitializeEx (NULL, COINIT_APARTMENTTHREADED);
+  qAxInit ();
 }
 
-void ComInteropHelper::initialize()
+void
+ComInteropHelper::registerObject (QObject * parent)
 {
-    qAxOutProcServer = true;
-    ::GetModuleFileNameW(nullptr, qAxModuleFilename, MAX_PATH);
-    qAxInstance = ::GetModuleHandleW(nullptr);
-
-    ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-    qAxInit();
-}
-
-void ComInteropHelper::registerObject(QObject* parent)
-{
-    QAxFactory::startServer();
-    QAxFactory::registerActiveObject(new InteropObject(parent));
+  QAxFactory::startServer();
+  QAxFactory::registerActiveObject(new InteropObject (parent));
 }

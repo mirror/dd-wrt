@@ -1,4 +1,6 @@
 /******************************************************************************
+ * $Id$
+ *
  * Copyright (c) 2011-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -26,10 +28,10 @@
 
 @interface URLSheetWindowController : NSWindowController
 {
-    IBOutlet NSTextField * fLabelField;
+	IBOutlet NSTextField * fLabelField;
     IBOutlet NSTextField * fTextField;
     IBOutlet NSButton * fOpenButton, * fCancelButton;
-
+    
     Controller * fController;
 }
 

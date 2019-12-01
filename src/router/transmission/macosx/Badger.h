@@ -1,4 +1,6 @@
 /******************************************************************************
+ * $Id$
+ *
  * Copyright (c) 2006-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -21,15 +23,14 @@
  *****************************************************************************/
 
 #import <Cocoa/Cocoa.h>
-
-#include <libtransmission/transmission.h>
+#import <transmission.h>
 
 @class Torrent;
 
 @interface Badger : NSObject
 {
     tr_session * fLib;
-
+    
     NSMutableSet * fHashes;
 }
 

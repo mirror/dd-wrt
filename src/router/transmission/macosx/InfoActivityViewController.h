@@ -1,4 +1,6 @@
 /******************************************************************************
+ * $Id$
+ *
  * Copyright (c) 2010-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -21,7 +23,6 @@
  *****************************************************************************/
 
 #import <Cocoa/Cocoa.h>
-
 #import "InfoViewController.h"
 
 @class PiecesView;
@@ -30,19 +31,19 @@
 @interface InfoActivityViewController : NSViewController <InfoViewController>
 {
     NSArray * fTorrents;
-
+    
     BOOL fSet;
-
+    
     IBOutlet NSTextField * fDateAddedField, * fDateCompletedField, * fDateActivityField,
                         * fStateField, * fProgressField,
                         * fHaveField, * fDownloadedTotalField, * fUploadedTotalField, * fFailedHashField,
                         * fRatioField,
                         * fDownloadTimeField, * fSeedTimeField;
     IBOutlet NSTextView * fErrorMessageView;
-
+    
     IBOutlet PiecesView * fPiecesView;
     IBOutlet NSSegmentedControl * fPiecesControl;
-
+    
     //remove when we switch to auto layout on 10.7
     IBOutlet NSTextField * fTransferSectionLabel, * fDatesSectionLabel, * fTimeSectionLabel;
     IBOutlet NSTextField * fStateLabel, * fProgressLabel, * fHaveLabel, * fDownloadedLabel, * fUploadedLabel,

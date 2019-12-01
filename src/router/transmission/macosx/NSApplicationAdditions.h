@@ -1,4 +1,6 @@
 /******************************************************************************
+ * $Id$
+ *
  * Copyright (c) 2009-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -20,12 +22,13 @@
  * DEALINGS IN THE SOFTWARE.
  *****************************************************************************/
 
-#import <AppKit/AppKit.h>
+#define NSByteCountFormatterMtLion NSClassFromString(@"NSByteCountFormatter")
+#define NSUserNotificationMtLion NSClassFromString(@"NSUserNotification")
+#define NSUserNotificationCenterMtLion NSClassFromString(@"NSUserNotificationCenter")
 
 @interface NSApplication (NSApplicationAdditions)
 
+- (BOOL) isOnMountainLionOrBetter;
 - (BOOL) isOnYosemiteOrBetter;
-- (BOOL) isOnMojaveOrBetter;
-- (BOOL) isDarkMode;
 
 @end

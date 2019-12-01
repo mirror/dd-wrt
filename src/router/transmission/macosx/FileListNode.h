@@ -1,4 +1,6 @@
 /******************************************************************************
+ * $Id$
+ *
  * Copyright (c) 2008-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -27,10 +29,10 @@
 @interface FileListNode : NSObject <NSCopying>
 {
     NSMutableIndexSet * fIndexes;
-
+    
     NSString * fName;
     NSString * fPath;
-    Torrent * __weak fTorrent;
+    Torrent * fTorrent;
     uint64_t fSize;
     NSImage * fIcon;
     BOOL fIsFolder;
@@ -40,14 +42,14 @@
 @property (nonatomic, copy, readonly) NSString * name;
 @property (nonatomic, copy, readonly) NSString * path;
 
-@property (nonatomic, weak, readonly) Torrent * torrent;
+@property (nonatomic, readonly) Torrent * torrent;
 
 @property (nonatomic, readonly) uint64_t size;
-@property (nonatomic, strong, readonly) NSImage * icon;
+@property (nonatomic, retain, readonly) NSImage * icon;
 @property (nonatomic, readonly) BOOL isFolder;
-@property (nonatomic, strong, readonly) NSMutableArray * children;
+@property (nonatomic, retain, readonly) NSMutableArray * children;
 
-@property (nonatomic, strong, readonly) NSIndexSet * indexes;
+@property (nonatomic, retain, readonly) NSIndexSet * indexes;
 
 - (id) initWithFolderName: (NSString *) name path: (NSString *) path torrent: (Torrent *) torrent;
 - (id) initWithFileName: (NSString *) name path: (NSString *) path size: (uint64_t) size index: (NSUInteger) index torrent: (Torrent *) torrent;

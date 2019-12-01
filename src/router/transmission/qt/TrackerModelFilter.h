@@ -4,30 +4,30 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
+ * $Id$
  */
 
-#pragma once
+#ifndef QTR_TRACKER_MODEL_FILTER_H
+#define QTR_TRACKER_MODEL_FILTER_H
 
 #include <QSortFilterProxyModel>
 
-class TrackerModelFilter : public QSortFilterProxyModel
+class TrackerModelFilter: public QSortFilterProxyModel
 {
     Q_OBJECT
 
-public:
-    TrackerModelFilter(QObject* parent = nullptr);
+  public:
+    TrackerModelFilter (QObject * parent = nullptr);
 
-    void setShowBackupTrackers(bool);
+    void setShowBackupTrackers (bool);
+    bool showBackupTrackers () const { return myShowBackups; }
 
-    bool showBackupTrackers() const
-    {
-        return myShowBackups;
-    }
-
-protected:
+  protected:
     // QSortFilterProxyModel
-    virtual bool filterAcceptsRow(int sourceRow, QModelIndex const& sourceParent) const;
+    virtual bool filterAcceptsRow (int sourceRow, const QModelIndex& sourceParent) const;
 
-private:
+  private:
     bool myShowBackups;
 };
+
+#endif // QTR_TRACKER_MODEL_FILTER_H
