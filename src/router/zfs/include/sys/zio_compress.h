@@ -158,8 +158,10 @@ extern void lz4_fini(void);
 /*
  * specific to zstd user space implementation only
  */
+#ifndef _KERNEL
 extern void zstd_fini(void);
 extern int zstd_init(void);
+#endif
 
 /*
  * Compression routines.
