@@ -151,6 +151,7 @@ void init_event_queue(int n)
 {
 	int i;
 	struct itimerval tv;
+	struct itimerval zero;
 	lock();
 
 	g_maxevents = n;
@@ -167,8 +168,10 @@ void init_event_queue(int n)
 	tv.it_value.tv_sec = 0;
 	tv.it_value.tv_usec = 0;
 
+	memset(&zero, 0, sizeof(zero));
+
 	setitimer(ITIMER_REAL, &tv, NULL);
-	setitimer(ITIMER_REAL, NULL, &tv);
+	setitimer(ITIMER_REAL, &zerot, &tv);
 
 	if (tv.it_interval.tv_usec == 0)
 		tv.it_interval.tv_usec = 1;
