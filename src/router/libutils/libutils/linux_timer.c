@@ -171,7 +171,7 @@ void init_event_queue(int n)
 	memset(&zero, 0, sizeof(zero));
 
 	setitimer(ITIMER_REAL, &tv, NULL);
-	setitimer(ITIMER_REAL, &zerot, &tv);
+	setitimer(ITIMER_REAL, &zero, &tv);
 
 	if (tv.it_interval.tv_usec == 0)
 		tv.it_interval.tv_usec = 1;
@@ -623,7 +623,7 @@ void dd_unblock_timer()
 	}
 }
 
-void dd_timer_cancel_all()
+void dd_timer_cancel_all(void)
 {
 	struct itimerval timeroff = { { 0, 0 }, { 0, 0 } };
 	struct event *event;
