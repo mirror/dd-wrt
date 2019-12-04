@@ -4617,6 +4617,11 @@ static void start_wan6_done(char *wan_ifname)
 		sysprintf("echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
 		eval("stopservice", "dhcp6c", "-f");
 		eval("startservice", "dhcp6c", "-f");
+		if (nvram_match("wan_proto", "disabled")) {
+			eval("ip", "route", "add", "::/0", "dev", nvram_safe_get("lan_ifname"), "metric", "2048");
+		} else {
+			eval("ip", "route", "add", "::/0", "dev", wan_ifname, "metric", "2048");
+		}
 	}
 
 	if (nvram_match("ipv6_typ", "ipv6in4")) {
