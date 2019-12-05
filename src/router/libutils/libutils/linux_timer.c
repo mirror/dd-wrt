@@ -132,8 +132,18 @@ static int g_maxevents = 0;
 #ifndef HAVE_MICRO
 #include <pthread.h>
 static pthread_mutex_t mutex_unl = PTHREAD_MUTEX_INITIALIZER;
+
 #define lock() pthread_mutex_lock(&mutex_unl)
+
+/*#define lock() { \
+while(!pthread_mutex_trylock(&mutex_unl)) { \
+    fprintf(stderr,"hang on %s:%d\n", __func__, __LINE__); \
+} \
+}*/
+
 #define unlock() pthread_mutex_unlock(&mutex_unl)
+
+
 #else
 #define lock()
 #define unlock()
@@ -520,10 +530,11 @@ static void alarm_handler(int i)
 			junk = end;
 		TIMERDBG("expected %d ms actual %d ms", event->expected_ms, ((end - event->start) / ((uclock_t) UCLOCKS_PER_SEC / 1000)));
 #endif
-
+		
+		unlock();
 		/* call the event callback function */
 		(*(event->func)) ((timer_t) event, (int)event->arg);
-
+		lock();
 		/* If the event has been cancelled, do NOT put it back on the queue. */
 		if (!(event->flags & TFLAG_CANCELLED)) {
 
