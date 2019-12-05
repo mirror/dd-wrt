@@ -1014,9 +1014,7 @@ int add_mtd_partitions(struct mtd_info *master,
 	struct mtd_part *slave;
 	uint64_t cur_offset = 0;
 	int i;
-#ifdef CONFIG_MTD_ROOTFS_SPLIT
 	int ret;
-#endif
 
 	printk(KERN_NOTICE "Creating %d MTD partitions on \"%s\":\n", nbparts, master->name);
 
