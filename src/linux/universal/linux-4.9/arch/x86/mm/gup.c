@@ -208,6 +208,7 @@ static int __gup_device_huge_pmd(pmd_t pmd, unsigned long addr,
 		}
 		SetPageReferenced(page);
 		pages[*nr] = page;
+		put_dev_pagemap(pgmap);
 		(*nr)++;
 		pfn++;
 	} while (addr += PAGE_SIZE, addr != end);
