@@ -47,7 +47,6 @@
  * Emulation of kernel services in userland.
  */
 
-int aok;
 uint64_t physmem;
 char hw_serial[HW_HOSTID_LEN];
 struct utsname hw_utsname;
@@ -1347,7 +1346,11 @@ zfs_file_fsync(zfs_file_t *fp, int flags)
 int
 zfs_file_fallocate(zfs_file_t *fp, int mode, loff_t offset, loff_t len)
 {
+#ifdef __linux__
 	return (fallocate(fp->f_fd, mode, offset, len));
+#else
+	return (EOPNOTSUPP);
+#endif
 }
 
 /*
