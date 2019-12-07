@@ -82,7 +82,10 @@ zfs_prop_init(void)
 		{ "noparity",   ZIO_CHECKSUM_NOPARITY },
 		{ "sha512",	ZIO_CHECKSUM_SHA512 },
 		{ "skein",	ZIO_CHECKSUM_SKEIN },
+#if !defined(__FreeBSD__)
+
 		{ "edonr",	ZIO_CHECKSUM_EDONR },
+#endif
 		{ NULL }
 	};
 
@@ -99,8 +102,11 @@ zfs_prop_init(void)
 		{ "skein",	ZIO_CHECKSUM_SKEIN },
 		{ "skein,verify",
 				ZIO_CHECKSUM_SKEIN | ZIO_CHECKSUM_VERIFY },
+#if !defined(__FreeBSD__)
+
 		{ "edonr,verify",
 				ZIO_CHECKSUM_EDONR | ZIO_CHECKSUM_VERIFY },
+#endif
 		{ NULL }
 	};
 
@@ -389,12 +395,22 @@ zfs_prop_init(void)
 	zprop_register_index(ZFS_PROP_CHECKSUM, "checksum",
 	    ZIO_CHECKSUM_DEFAULT, PROP_INHERIT, ZFS_TYPE_FILESYSTEM |
 	    ZFS_TYPE_VOLUME,
-	    "on | off | fletcher2 | fletcher4 | sha256 | sha512 | "
-	    "skein | edonr", "CHECKSUM", checksum_table);
+#if !defined(__FreeBSD__)
+	    "on | off | fletcher2 | fletcher4 | sha256 | sha512 | skein"
+	    " | edonr",
+#else
+	    "on | off | fletcher2 | fletcher4 | sha256 | sha512 | skein",
+#endif
+	    "CHECKSUM", checksum_table);
 	zprop_register_index(ZFS_PROP_DEDUP, "dedup", ZIO_CHECKSUM_OFF,
 	    PROP_INHERIT, ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME,
 	    "on | off | verify | sha256[,verify], sha512[,verify], "
-	    "skein[,verify], edonr,verify", "DEDUP", dedup_table);
+#if !defined(__FreeBSD__)
+	    "skein[,verify], edonr,verify",
+#else
+	    "skein[,verify]",
+#endif
+	    "DEDUP", dedup_table);
 	zprop_register_index(ZFS_PROP_COMPRESSION, "compression",
 	    ZIO_COMPRESS_DEFAULT, PROP_INHERIT,
 	    ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME,
@@ -638,7 +654,7 @@ zfs_prop_init(void)
 	    ZFS_TYPE_FILESYSTEM, "512 to 1M, power of 2", "RECSIZE");
 	zprop_register_number(ZFS_PROP_SPECIAL_SMALL_BLOCKS,
 	    "special_small_blocks", 0, PROP_INHERIT, ZFS_TYPE_FILESYSTEM,
-	    "zero or 512 to 128K, power of 2", "SPECIAL_SMALL_BLOCKS");
+	    "zero or 512 to 1M, power of 2", "SPECIAL_SMALL_BLOCKS");
 
 	/* hidden properties */
 	zprop_register_hidden(ZFS_PROP_NUMCLONES, "numclones", PROP_TYPE_NUMBER,

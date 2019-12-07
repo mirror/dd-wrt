@@ -20,14 +20,13 @@
 #
 
 #
-# Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
-# Use is subject to license terms.
-# Copyright (c) 2012, 2018 by Delphix. All rights reserved.
-# Copyright (c) 2017 by Tim Chase. All rights reserved.
-# Copyright (c) 2017 by Nexenta Systems, Inc. All rights reserved.
-# Copyright (c) 2017 Lawrence Livermore National Security, LLC.
-# Copyright (c) 2017 Datto Inc.
-# Copyright (c) 2017 Open-E, Inc. All Rights Reserved.
+# Copyright (c) 2009, Sun Microsystems Inc. All rights reserved.
+# Copyright (c) 2012, 2018, Delphix. All rights reserved.
+# Copyright (c) 2017, Tim Chase. All rights reserved.
+# Copyright (c) 2017, Nexenta Systems Inc. All rights reserved.
+# Copyright (c) 2017, Lawrence Livermore National Security LLC.
+# Copyright (c) 2017, Datto Inc. All rights reserved.
+# Copyright (c) 2017, Open-E Inc. All rights reserved.
 # Use is subject to license terms.
 #
 
@@ -2528,38 +2527,6 @@ function safe_to_destroy_pool { # $1 the pool name
 		log_note "Warning: it is not safe to destroy $1!"
 		return 1
 	fi
-}
-
-#
-# Get the available ZFS compression options
-# $1 option type zfs_set|zfs_compress
-#
-function get_compress_opts
-{
-	typeset COMPRESS_OPTS
-	typeset GZIP_OPTS="gzip gzip-1 gzip-2 gzip-3 gzip-4 gzip-5 \
-			gzip-6 gzip-7 gzip-8 gzip-9"
-	typeset ZSTD_OPTS="zstd zstd-1 zstd-2 zstd-3 zstd-4 zstd-5 zstd-6 \
-			zstd-7 zstd-8 zstd-9 zstd-10 zstd-11 zstd-12 zstd-13 \
-			zstd-14 zstd-15 zstd-16 zstd-17 zstd-18 zstd-19 \
-			zstd-fast-1 zstd-fast-2 zstd-fast-3 \
-			zstd-fast-4 zstd-fast-5 zstd-fast-6 zstd-fast-7 \
-			zstd-fast-8 zstd-fast-9 zstd-fast-10 zstd-fast-20 \
-			zstd-fast-30 zstd-fast-40 zstd-fast-50 zstd-fast-60 \
-			zstd-fast-70 zstd-fast-80 zstd-fast-90 zstd-fast-100 \
-			zstd-fast-500 zstd-fast-1000"
-
-	if [[ $1 == "zfs_compress" ]] ; then
-		COMPRESS_OPTS="on lzjb zle lz4 $ZSTD_OPTS"
-	elif [[ $1 == "zfs_set" ]] ; then
-		COMPRESS_OPTS="on off lzjb zle lz4 $ZSTD_OPTS"
-	fi
-	typeset valid_opts="$COMPRESS_OPTS"
-	zfs get 2>&1 | grep gzip >/dev/null 2>&1
-	if [[ $? -eq 0 ]]; then
-		valid_opts="$valid_opts $GZIP_OPTS"
-	fi
-	echo "$valid_opts"
 }
 
 #
