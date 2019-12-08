@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) 2018-2018 Zend Technologies Ltd. (http://www.zend.com) |
+   | Copyright (c) Zend Technologies Ltd. (http://www.zend.com)           |
    +----------------------------------------------------------------------+
    | This source file is subject to version 2.00 of the Zend license,     |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -22,7 +22,7 @@
 #include "zend.h"
 
 #define ZEND_CPU_EBX_MASK     (1<<30)
-#define ZEND_CPU_EDX_MASK     (1<<31)
+#define ZEND_CPU_EDX_MASK     (1U<<31)
 
 typedef enum _zend_cpu_feature {
 	/* ECX */
@@ -100,6 +100,10 @@ typedef enum _zend_cpu_feature {
 void zend_cpu_startup();
 ZEND_API int zend_cpu_supports(zend_cpu_feature feature);
 
+#ifndef __has_attribute
+# define __has_attribute(x) 0
+#endif
+
 /* Address sanitizer is incompatible with ifunc resolvers, so exclude the
  * CPU support helpers from asan.
  * See also https://github.com/google/sanitizers/issues/342. */
@@ -112,8 +116,8 @@ ZEND_API int zend_cpu_supports(zend_cpu_feature feature);
 #if PHP_HAVE_BUILTIN_CPU_SUPPORTS
 /* NOTE: you should use following inline function in
  * resolver functions (ifunc), as it could be called
- * before all PLT symbols are resloved. in other words,
- * resolver functions should not depends any external
+ * before all PLT symbols are resolved. in other words,
+ * resolver functions should not depend on any external
  * functions */
 ZEND_NO_SANITIZE_ADDRESS
 static zend_always_inline int zend_cpu_supports_sse2() {
@@ -203,11 +207,3 @@ static zend_always_inline int zend_cpu_supports_avx2() {
 #endif
 
 #endif
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * indent-tabs-mode: t
- * End:
- */

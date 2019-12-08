@@ -151,7 +151,7 @@ ZEND_END_ARG_INFO()
  * Every 'NumberFormatter' class method has an entry in this table
  */
 static const zend_function_entry NumberFormatter_class_functions[] = {
-	PHP_ME( NumberFormatter, __construct, arginfo_numberformatter___construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR )
+	PHP_ME( NumberFormatter, __construct, arginfo_numberformatter___construct, ZEND_ACC_PUBLIC )
 	ZEND_FENTRY( create, ZEND_FN( numfmt_create ), arginfo_numberformatter___construct, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC )
 	PHP_NAMED_FE( format, ZEND_FN( numfmt_format ), arginfo_numberformatter_format )
 	PHP_NAMED_FE( parse, ZEND_FN( numfmt_parse ), number_parse_arginfo )
@@ -191,12 +191,3 @@ void formatter_register_class( void )
 	NumberFormatter_handlers.free_obj = NumberFormatter_object_free;
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

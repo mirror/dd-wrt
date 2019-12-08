@@ -340,7 +340,7 @@ static zend_string* get_icu_value_internal( const char* loc_name , char* tag_nam
 				continue;
 			}
 
-			/* Error in retriving data */
+			/* Error in retrieving data */
 			*result = 0;
 			if( tag_value ){
 				zend_string_release_ex( tag_value, 0 );
@@ -1517,12 +1517,12 @@ static zend_string* lookup_loc_range(const char* loc_range, HashTable* hash_arr,
 /* }}} */
 
 /* {{{ proto string Locale::lookup(array $langtag, string $locale[, bool $canonicalize[, string $default = null]])
-* Searchs the items in $langtag for the best match to the language
+* Searches the items in $langtag for the best match to the language
 * range
 */
 /* }}} */
 /* {{{ proto string locale_lookup(array $langtag, string $locale[, bool $canonicalize[, string $default = null]])
-* Searchs the items in $langtag for the best match to the language
+* Searches the items in $langtag for the best match to the language
 * range
 */
 PHP_FUNCTION(locale_lookup)
@@ -1538,17 +1538,11 @@ PHP_FUNCTION(locale_lookup)
 
 	intl_error_reset( NULL );
 
-#if U_ICU_VERSION_MAJOR_NUM > 63
-# define BANG "!"
-#else
-# define BANG
-#endif	
-	if(zend_parse_parameters( ZEND_NUM_ARGS(), "as|bS" BANG, &arr, &loc_range, &loc_range_len,
+	if(zend_parse_parameters( ZEND_NUM_ARGS(), "as|bS!", &arr, &loc_range, &loc_range_len,
 		&boolCanonical,	&fallback_loc_str) == FAILURE) {
 		intl_error_set( NULL, U_ILLEGAL_ARGUMENT_ERROR,	"locale_lookup: unable to parse input params", 0 );
 		RETURN_FALSE;
 	}
-#undef BANG
 
 	if(loc_range_len == 0) {
 		if(fallback_loc_str) {
@@ -1635,13 +1629,3 @@ PHP_FUNCTION(locale_accept_from_http)
 	RETURN_STRINGL(resultLocale, len);
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- *can_loc_len
-*/

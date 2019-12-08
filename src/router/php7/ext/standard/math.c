@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -129,7 +129,7 @@ PHPAPI double _php_math_round(double value, int places, int mode) {
 	double tmp_value;
 	int precision_places;
 
-	if (!zend_finite(value)) {
+	if (!zend_finite(value) || value == 0.0) {
 		return value;
 	}
 
@@ -141,7 +141,7 @@ PHPAPI double _php_math_round(double value, int places, int mode) {
 	/* If the decimal precision guaranteed by FP arithmetic is higher than
 	   the requested places BUT is small enough to make sure a non-zero value
 	   is returned, pre-round the result to the precision */
-	if (precision_places > places && precision_places - places < 15) {
+	if (precision_places > places && precision_places - 15 < places) {
 		int64_t use_precision = precision_places < INT_MIN+1 ? INT_MIN+1 : precision_places;
 
 		f2 = php_intpow10(abs((int)use_precision));
@@ -850,22 +850,33 @@ PHPAPI int _php_math_basetozval(zval *arg, int base, zval *ret)
 {
 	zend_long num = 0;
 	double fnum = 0;
-	zend_long i;
 	int mode = 0;
-	char c, *s;
+	char c, *s, *e;
 	zend_long cutoff;
 	int cutlim;
+	int invalidchars = 0;
 
 	if (Z_TYPE_P(arg) != IS_STRING || base < 2 || base > 36) {
 		return FAILURE;
 	}
-
 	s = Z_STRVAL_P(arg);
+	e = s + Z_STRLEN_P(arg);
+
+	/* Skip leading whitespace */
+	while (s < e && isspace(*s)) s++;
+	/* Skip trailing whitespace */
+	while (s < e && isspace(*(e-1))) e--;
+
+	if (e - s >= 2) {
+		if (base == 16 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) s += 2;
+		if (base == 8 && s[0] == '0' && (s[1] == 'o' || s[1] == 'O')) s += 2;
+		if (base == 2 && s[0] == '0' && (s[1] == 'b' || s[1] == 'B')) s += 2;
+	}
 
 	cutoff = ZEND_LONG_MAX / base;
 	cutlim = ZEND_LONG_MAX % base;
 
-	for (i = Z_STRLEN_P(arg); i > 0; i--) {
+	while (s < e) {
 		c = *s++;
 
 		/* might not work for EBCDIC */
@@ -875,11 +886,15 @@ PHPAPI int _php_math_basetozval(zval *arg, int base, zval *ret)
 			c -= 'A' - 10;
 		else if (c >= 'a' && c <= 'z')
 			c -= 'a' - 10;
-		else
+		else {
+			invalidchars++;
 			continue;
+		}
 
-		if (c >= base)
+		if (c >= base) {
+			invalidchars++;
 			continue;
+		}
 
 		switch (mode) {
 		case 0: /* Integer */
@@ -894,6 +909,10 @@ PHPAPI int _php_math_basetozval(zval *arg, int base, zval *ret)
 		case 1: /* Float */
 			fnum = fnum * base + c;
 		}
+	}
+
+	if (invalidchars > 0) {
+		zend_error(E_DEPRECATED, "Invalid characters passed for attempted conversion, these have been ignored");
 	}
 
 	if (mode == 1) {
@@ -1090,7 +1109,10 @@ PHP_FUNCTION(base_convert)
 		Z_PARAM_LONG(frombase)
 		Z_PARAM_LONG(tobase)
 	ZEND_PARSE_PARAMETERS_END();
-	convert_to_string_ex(number);
+
+	if (!try_convert_to_string(number)) {
+		return;
+	}
 
 	if (frombase < 2 || frombase > 36) {
 		php_error_docref(NULL, E_WARNING, "Invalid `from base' (" ZEND_LONG_FMT ")", frombase);
@@ -1318,12 +1340,3 @@ PHP_FUNCTION(intdiv)
 	RETURN_LONG(dividend / divisor);
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: fdm=marker
- * vim: noet sw=4 ts=4
- */

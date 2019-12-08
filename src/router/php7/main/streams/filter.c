@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -239,8 +239,9 @@ PHPAPI php_stream_filter *php_stream_filter_create(const char *filtername, zval 
 		memcpy(wildname, filtername, n+1);
 		period = wildname + (period - filtername);
 		while (period && !filter) {
-			*period = '\0';
-			strncat(wildname, ".*", 2);
+			ZEND_ASSERT(period[0] == '.');
+			period[1] = '*';
+			period[2] = '\0';
 			if (NULL != (factory = zend_hash_str_find_ptr(filter_hash, wildname, strlen(wildname)))) {
 				filter = factory->create_filter(filtername, filterparams, persistent);
 			}
@@ -359,8 +360,6 @@ PHPAPI int php_stream_filter_append_ex(php_stream_filter_chain *chain, php_strea
 			case PSFS_PASS_ON:
 				/* If any data is consumed, we cannot rely upon the existing read buffer,
 				   as the filtered data must replace the existing data, so invalidate the cache */
-				/* note that changes here should be reflected in
-				   main/streams/streams.c::php_stream_fill_read_buffer */
 				stream->writepos = 0;
 				stream->readpos = 0;
 
@@ -503,12 +502,3 @@ PHPAPI php_stream_filter *php_stream_filter_remove(php_stream_filter *filter, in
 	}
 	return filter;
 }
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

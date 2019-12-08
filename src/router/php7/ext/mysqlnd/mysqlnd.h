@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 7                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 2006-2018 The PHP Group                                |
+  | Copyright (c) The PHP Group                                          |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -21,8 +21,8 @@
 #ifndef MYSQLND_H
 #define MYSQLND_H
 
-#define PHP_MYSQLND_VERSION "mysqlnd 5.0.12-dev - 20150407 - $Id: 7cc7cc96e675f6d72e5cf0f267f48e167c2abb23 $"
-#define MYSQLND_VERSION_ID 50012
+#define PHP_MYSQLND_VERSION "mysqlnd " PHP_VERSION
+#define MYSQLND_VERSION_ID PHP_VERSION_ID
 
 #define MYSQLND_PLUGIN_API_VERSION 2
 
@@ -78,7 +78,7 @@ PHPAPI void mysqlnd_plugin_apply_with_argument(apply_func_arg_t apply_func, void
 PHPAPI void mysqlnd_minfo_print_hash(zval *values);
 #define mysqlnd_thread_safe()	TRUE
 
-PHPAPI const MYSQLND_CHARSET * mysqlnd_find_charset_nr(unsigned int charsetno);
+PHPAPI const MYSQLND_CHARSET * mysqlnd_find_charset_nr(const unsigned int charsetno);
 PHPAPI const MYSQLND_CHARSET * mysqlnd_find_charset_name(const char * const charsetname);
 
 
@@ -338,13 +338,3 @@ ZEND_TSRMLS_CACHE_EXTERN()
 PHPAPI void mysqlnd_minfo_print_hash(zval *values);
 
 #endif	/* MYSQLND_H */
-
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

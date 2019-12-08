@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 7                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2018 The PHP Group                                |
+  | Copyright (c) The PHP Group                                          |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -58,7 +58,7 @@ static const filter_list_entry filter_list[] = {
 	{ "url",             FILTER_SANITIZE_URL,           php_filter_url             },
 	{ "number_int",      FILTER_SANITIZE_NUMBER_INT,    php_filter_number_int      },
 	{ "number_float",    FILTER_SANITIZE_NUMBER_FLOAT,  php_filter_number_float    },
-	{ "magic_quotes",    FILTER_SANITIZE_MAGIC_QUOTES,  php_filter_add_slashes     },
+	{ "magic_quotes",    FILTER_SANITIZE_MAGIC_QUOTES,  php_filter_magic_quotes    },
 	{ "add_slashes",     FILTER_SANITIZE_ADD_SLASHES,   php_filter_add_slashes     },
 
 	{ "callback",        FILTER_CALLBACK,               php_filter_callback        },
@@ -408,12 +408,11 @@ static void php_zval_filter(zval *value, zend_long filter, zend_long flags, zval
 	filter_func.function(value, flags, options, charset);
 
 handle_default:
-	if (options && (Z_TYPE_P(options) == IS_ARRAY || Z_TYPE_P(options) == IS_OBJECT) &&
+	if (options && Z_TYPE_P(options) == IS_ARRAY &&
 		((flags & FILTER_NULL_ON_FAILURE && Z_TYPE_P(value) == IS_NULL) ||
-		(!(flags & FILTER_NULL_ON_FAILURE) && Z_TYPE_P(value) == IS_FALSE)) &&
-		zend_hash_str_exists(HASH_OF(options), "default", sizeof("default") - 1)) {
+		(!(flags & FILTER_NULL_ON_FAILURE) && Z_TYPE_P(value) == IS_FALSE))) {
 		zval *tmp;
-		if ((tmp = zend_hash_str_find(HASH_OF(options), "default", sizeof("default") - 1)) != NULL) {
+		if ((tmp = zend_hash_str_find(Z_ARRVAL_P(options), "default", sizeof("default") - 1)) != NULL) {
 			ZVAL_COPY(value, tmp);
 		}
 	}
@@ -562,6 +561,11 @@ static zval *php_filter_get_storage(zend_long arg)/* {{{ */
 			break;
 	}
 
+	if (array_ptr && Z_TYPE_P(array_ptr) != IS_ARRAY) {
+		/* Storage not initialized */
+		return NULL;
+	}
+
 	return array_ptr;
 }
 /* }}} */
@@ -581,7 +585,7 @@ PHP_FUNCTION(filter_has_var)
 
 	array_ptr = php_filter_get_storage(arg);
 
-	if (array_ptr && HASH_OF(array_ptr) && zend_hash_exists(HASH_OF(array_ptr), var)) {
+	if (array_ptr && zend_hash_exists(Z_ARRVAL_P(array_ptr), var)) {
 		RETURN_TRUE;
 	}
 
@@ -609,11 +613,11 @@ static void php_filter_call(zval *filtered, zend_long filter, zval *filter_args,
 			filter = lval;
 		}
 	} else if (filter_args) {
-		if ((option = zend_hash_str_find(HASH_OF(filter_args), "filter", sizeof("filter") - 1)) != NULL) {
+		if ((option = zend_hash_str_find(Z_ARRVAL_P(filter_args), "filter", sizeof("filter") - 1)) != NULL) {
 			filter = zval_get_long(option);
 		}
 
-		if ((option = zend_hash_str_find(HASH_OF(filter_args), "flags", sizeof("flags") - 1)) != NULL) {
+		if ((option = zend_hash_str_find(Z_ARRVAL_P(filter_args), "flags", sizeof("flags") - 1)) != NULL) {
 			filter_flags = zval_get_long(option);
 
 			if (!(filter_flags & FILTER_REQUIRE_ARRAY ||  filter_flags & FILTER_FORCE_ARRAY)) {
@@ -621,10 +625,7 @@ static void php_filter_call(zval *filtered, zend_long filter, zval *filter_args,
 			}
 		}
 
-		if ((option = zend_hash_str_find(HASH_OF(filter_args), "options", sizeof("options") - 1)) != NULL) {
-			/* avoid reference type */
-			ZVAL_DEREF(option);
-
+		if ((option = zend_hash_str_find_deref(Z_ARRVAL_P(filter_args), "options", sizeof("options") - 1)) != NULL) {
 			if (filter != FILTER_CALLBACK) {
 				if (Z_TYPE_P(option) == IS_ARRAY) {
 					options = option;
@@ -675,11 +676,9 @@ static void php_filter_array_handler(zval *input, zval *op, zval *return_value, 
 	zval *tmp, *arg_elm;
 
 	if (!op) {
-		zval_ptr_dtor(return_value);
 		ZVAL_DUP(return_value, input);
 		php_filter_call(return_value, FILTER_DEFAULT, NULL, 0, FILTER_REQUIRE_ARRAY);
 	} else if (Z_TYPE_P(op) == IS_LONG) {
-		zval_ptr_dtor(return_value);
 		ZVAL_DUP(return_value, input);
 		php_filter_call(return_value, Z_LVAL_P(op), NULL, 0, FILTER_REQUIRE_ARRAY);
 	} else if (Z_TYPE_P(op) == IS_ARRAY) {
@@ -734,19 +733,19 @@ PHP_FUNCTION(filter_input)
 
 	input = php_filter_get_storage(fetch_from);
 
-	if (!input || !HASH_OF(input) || (tmp = zend_hash_find(HASH_OF(input), var)) == NULL) {
+	if (!input || (tmp = zend_hash_find(Z_ARRVAL_P(input), var)) == NULL) {
 		zend_long filter_flags = 0;
 		zval *option, *opt, *def;
 		if (filter_args) {
 			if (Z_TYPE_P(filter_args) == IS_LONG) {
 				filter_flags = Z_LVAL_P(filter_args);
-			} else if (Z_TYPE_P(filter_args) == IS_ARRAY && (option = zend_hash_str_find(HASH_OF(filter_args), "flags", sizeof("flags") - 1)) != NULL) {
+			} else if (Z_TYPE_P(filter_args) == IS_ARRAY && (option = zend_hash_str_find(Z_ARRVAL_P(filter_args), "flags", sizeof("flags") - 1)) != NULL) {
 				filter_flags = zval_get_long(option);
 			}
 			if (Z_TYPE_P(filter_args) == IS_ARRAY &&
-				(opt = zend_hash_str_find(HASH_OF(filter_args), "options", sizeof("options") - 1)) != NULL &&
+				(opt = zend_hash_str_find_deref(Z_ARRVAL_P(filter_args), "options", sizeof("options") - 1)) != NULL &&
 				Z_TYPE_P(opt) == IS_ARRAY &&
-				(def = zend_hash_str_find(HASH_OF(opt), "default", sizeof("default") - 1)) != NULL) {
+				(def = zend_hash_str_find_deref(Z_ARRVAL_P(opt), "default", sizeof("default") - 1)) != NULL) {
 				ZVAL_COPY(return_value, def);
 				return;
 			}
@@ -811,13 +810,13 @@ PHP_FUNCTION(filter_input_array)
 
 	array_input = php_filter_get_storage(fetch_from);
 
-	if (!array_input || !HASH_OF(array_input)) {
+	if (!array_input) {
 		zend_long filter_flags = 0;
 		zval *option;
 		if (op) {
 			if (Z_TYPE_P(op) == IS_LONG) {
 				filter_flags = Z_LVAL_P(op);
-			} else if (Z_TYPE_P(op) == IS_ARRAY && (option = zend_hash_str_find(HASH_OF(op), "flags", sizeof("flags") - 1)) != NULL) {
+			} else if (Z_TYPE_P(op) == IS_ARRAY && (option = zend_hash_str_find(Z_ARRVAL_P(op), "flags", sizeof("flags") - 1)) != NULL) {
 				filter_flags = zval_get_long(option);
 			}
 		}
@@ -897,12 +896,3 @@ PHP_FUNCTION(filter_id)
 	RETURN_FALSE;
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

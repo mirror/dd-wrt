@@ -28,9 +28,7 @@
 #include "normalizer_class.h"
 #include "normalizer_normalize.h"
 #include "intl_convert.h"
-#if U_ICU_VERSION_MAJOR_NUM >= 49
 #include <unicode/utf8.h>
-#endif
 
 
 #if U_ICU_VERSION_MAJOR_NUM >= 56
@@ -390,12 +388,3 @@ PHP_FUNCTION( normalizer_get_raw_decomposition )
 }
 #endif
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

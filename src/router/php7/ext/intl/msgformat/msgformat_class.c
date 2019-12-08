@@ -125,7 +125,7 @@ ZEND_END_ARG_INFO()
  * Every 'MessageFormatter' class method has an entry in this table
  */
 static const zend_function_entry MessageFormatter_class_functions[] = {
-	PHP_ME( MessageFormatter, __construct, arginfo_messageformatter___construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR )
+	PHP_ME( MessageFormatter, __construct, arginfo_messageformatter___construct, ZEND_ACC_PUBLIC )
 	ZEND_FENTRY(  create, ZEND_FN( msgfmt_create ), arginfo_messageformatter___construct, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC )
 	PHP_NAMED_FE( format, ZEND_FN( msgfmt_format ), arginfo_messageformatter_format )
 	ZEND_FENTRY(  formatMessage, ZEND_FN( msgfmt_format_message ), arginfo_messageformatter_formatmessage, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC )
@@ -159,12 +159,3 @@ void msgformat_register_class( void )
 	MessageFormatter_handlers.free_obj = MessageFormatter_object_free;
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

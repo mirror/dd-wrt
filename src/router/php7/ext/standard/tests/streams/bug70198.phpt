@@ -4,6 +4,8 @@ Bug #70198 Checking liveness does not work as expected
 <?php
 if (getenv("SKIP_SLOW_TESTS")) die("skip slow test");
 ?>
+--CONFLICTS--
+server
 --FILE--
 <?php
 
@@ -14,7 +16,7 @@ if (getenv("SKIP_SLOW_TESTS")) die("skip slow test");
 */
 
 $srv_addr = "tcp://127.0.0.1:8964";
-$srv_fl = dirname(__FILE__) . "/bug70198_svr_" . md5(uniqid()) . ".php";
+$srv_fl = __DIR__ . "/bug70198_svr_" . md5(uniqid()) . ".php";
 $srv_fl_cont = <<<SRV
 <?php
 \$socket = stream_socket_server('$srv_addr', \$errno, \$errstr);

@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -356,7 +356,7 @@ zval *dom_read_property(zval *object, zval *member, int type, void **cache_slot,
 /* }}} */
 
 /* {{{ dom_write_property */
-void dom_write_property(zval *object, zval *member, zval *value, void **cache_slot)
+zval *dom_write_property(zval *object, zval *member, zval *value, void **cache_slot)
 {
 	dom_object *obj = Z_DOMOBJ_P(object);
 	zend_string *member_str = zval_get_string(member);
@@ -368,10 +368,12 @@ void dom_write_property(zval *object, zval *member, zval *value, void **cache_sl
 	if (hnd) {
 		hnd->write_func(obj, value);
 	} else {
-		zend_std_write_property(object, member, value, cache_slot);
+		value = zend_std_write_property(object, member, value, cache_slot);
 	}
 
 	zend_string_release_ex(member_str, 0);
+
+	return value;
 }
 /* }}} */
 
@@ -1558,12 +1560,3 @@ int dom_nodelist_has_dimension(zval *object, zval *member, int check_empty)
 } /* }}} end dom_nodelist_has_dimension */
 
 #endif /* HAVE_DOM */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

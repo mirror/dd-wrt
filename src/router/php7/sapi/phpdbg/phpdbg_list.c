@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -248,6 +248,7 @@ zend_op_array *phpdbg_compile_file(zend_file_handle *file, int type) {
 		} else {
 			zend_message_dispatcher(ZMSG_FAILED_INCLUDE_FOPEN, file->filename);
 		}
+		return NULL;
 	}
 
 	data.buf = estrndup(bufptr, len);

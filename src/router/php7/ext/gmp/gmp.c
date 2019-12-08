@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -370,7 +370,6 @@ static inline void gmp_zval_unary_ui_op(zval *return_value, zval *a_arg, gmp_una
 /* Unary operations */
 #define gmp_unary_op(op)         _gmp_unary_op(INTERNAL_FUNCTION_PARAM_PASSTHRU, op)
 #define gmp_unary_opl(op)         _gmp_unary_opl(INTERNAL_FUNCTION_PARAM_PASSTHRU, op)
-#define gmp_unary_ui_op(op)      _gmp_unary_ui_op(INTERNAL_FUNCTION_PARAM_PASSTHRU, op)
 
 static void gmp_free_object_storage(zend_object *obj) /* {{{ */
 {
@@ -605,7 +604,7 @@ static int gmp_unserialize(zval *object, zend_class_entry *ce, const unsigned ch
 
 	/* The "object" variable may be modified during the execution of this unserialize handler
 	 * (it may turn into a reference). Keep the original object around for further operations. */
-	ZVAL_COPY_VALUE(&object_copy, object);
+	ZVAL_OBJ(&object_copy, Z_OBJ_P(object));
 
 	p = buf;
 	max = buf + buf_len;
@@ -828,13 +827,12 @@ static void gmp_cmp(zval *return_value, zval *a_arg, zval *b_arg) /* {{{ */
 static inline void gmp_zval_binary_ui_op(zval *return_value, zval *a_arg, zval *b_arg, gmp_binary_op_t gmp_op, gmp_binary_ui_op_t gmp_ui_op, int check_b_zero)
 {
 	mpz_ptr gmpnum_a, gmpnum_b, gmpnum_result;
-	int use_ui = 0;
 	gmp_temp_t temp_a, temp_b;
 
 	FETCH_GMP_ZVAL(gmpnum_a, a_arg, temp_a);
 
 	if (gmp_ui_op && Z_TYPE_P(b_arg) == IS_LONG && Z_LVAL_P(b_arg) >= 0) {
-		use_ui = 1;
+		gmpnum_b = NULL;
 		temp_b.is_used = 0;
 	} else {
 		FETCH_GMP_ZVAL_DEP(gmpnum_b, b_arg, temp_b, temp_a);
@@ -842,7 +840,7 @@ static inline void gmp_zval_binary_ui_op(zval *return_value, zval *a_arg, zval *
 
 	if (check_b_zero) {
 		int b_is_zero = 0;
-		if (use_ui) {
+		if (!gmpnum_b) {
 			b_is_zero = (Z_LVAL_P(b_arg) == 0);
 		} else {
 			b_is_zero = !mpz_cmp_ui(gmpnum_b, 0);
@@ -858,7 +856,7 @@ static inline void gmp_zval_binary_ui_op(zval *return_value, zval *a_arg, zval *
 
 	INIT_GMP_RETVAL(gmpnum_result);
 
-	if (use_ui) {
+	if (!gmpnum_b) {
 		gmp_ui_op(gmpnum_result, gmpnum_a, (gmp_ulong) Z_LVAL_P(b_arg));
 	} else {
 		gmp_op(gmpnum_result, gmpnum_a, gmpnum_b);
@@ -875,15 +873,13 @@ static inline void gmp_zval_binary_ui_op(zval *return_value, zval *a_arg, zval *
 static inline void gmp_zval_binary_ui_op2(zval *return_value, zval *a_arg, zval *b_arg, gmp_binary_op2_t gmp_op, gmp_binary_ui_op2_t gmp_ui_op, int check_b_zero)
 {
 	mpz_ptr gmpnum_a, gmpnum_b, gmpnum_result1, gmpnum_result2;
-	int use_ui = 0;
 	gmp_temp_t temp_a, temp_b;
 	zval result1, result2;
 
 	FETCH_GMP_ZVAL(gmpnum_a, a_arg, temp_a);
 
 	if (gmp_ui_op && Z_TYPE_P(b_arg) == IS_LONG && Z_LVAL_P(b_arg) >= 0) {
-		/* use _ui function */
-		use_ui = 1;
+		gmpnum_b = NULL;
 		temp_b.is_used = 0;
 	} else {
 		FETCH_GMP_ZVAL_DEP(gmpnum_b, b_arg, temp_b, temp_a);
@@ -891,7 +887,7 @@ static inline void gmp_zval_binary_ui_op2(zval *return_value, zval *a_arg, zval 
 
 	if (check_b_zero) {
 		int b_is_zero = 0;
-		if (use_ui) {
+		if (!gmpnum_b) {
 			b_is_zero = (Z_LVAL_P(b_arg) == 0);
 		} else {
 			b_is_zero = !mpz_cmp_ui(gmpnum_b, 0);
@@ -912,7 +908,7 @@ static inline void gmp_zval_binary_ui_op2(zval *return_value, zval *a_arg, zval 
 	add_next_index_zval(return_value, &result1);
 	add_next_index_zval(return_value, &result2);
 
-	if (use_ui) {
+	if (!gmpnum_b) {
 		gmp_ui_op(gmpnum_result1, gmpnum_result2, gmpnum_a, (gmp_ulong) Z_LVAL_P(b_arg));
 	} else {
 		gmp_op(gmpnum_result1, gmpnum_result2, gmpnum_a, gmpnum_b);
@@ -963,21 +959,6 @@ static inline void gmp_zval_unary_ui_op(zval *return_value, zval *a_arg, gmp_una
 
 	INIT_GMP_RETVAL(gmpnum_result);
 	gmp_op(gmpnum_result, zval_get_long(a_arg));
-}
-/* }}} */
-
-/* {{{ _gmp_unary_ui_op
-   Execute GMP unary operation.
-*/
-static inline void _gmp_unary_ui_op(INTERNAL_FUNCTION_PARAMETERS, gmp_unary_ui_op_t gmp_op)
-{
-	zval *a_arg;
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "z", &a_arg) == FAILURE){
-		return;
-	}
-
-	gmp_zval_unary_ui_op(return_value, a_arg, gmp_op);
 }
 /* }}} */
 
@@ -2206,12 +2187,3 @@ ZEND_FUNCTION(gmp_scan1)
 	FREE_GMP_TEMP(temp_a);
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

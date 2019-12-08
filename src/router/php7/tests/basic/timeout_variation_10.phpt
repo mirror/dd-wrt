@@ -7,14 +7,17 @@ Timeout within shutdown function, variation
 --FILE--
 <?php
 
-include dirname(__FILE__) . DIRECTORY_SEPARATOR . "timeout_config.inc";
+include __DIR__ . DIRECTORY_SEPARATOR . "timeout_config.inc";
 
 set_time_limit($t);
 
 function f()
 {
 	echo "call";
+	$startTime = microtime(true);
 	busy_wait(5);
+	$diff = microtime(true) - $startTime;
+	echo "\ntime spent waiting: $diff\n";
 }
 
 register_shutdown_function("f");

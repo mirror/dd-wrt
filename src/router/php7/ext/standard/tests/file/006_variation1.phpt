@@ -5,17 +5,7 @@ Test fileperms() & chmod() functions: usage variation - perms(0000-0777)
 if (substr(PHP_OS, 0, 3) == 'WIN') {
     die('skip Not on Windows');
 }
-// Skip if being run by root
-$filename = dirname(__FILE__)."/006_root_check.tmp";
-$fp = fopen($filename, 'w');
-fclose($fp);
-if(fileowner($filename) == 0) {
-        unlink ($filename);
-        die('skip cannot be run as root');
-}
-
-unlink($filename);
-
+require __DIR__ . '/../skipif_root.inc';
 ?>
 --FILE--
 <?php
@@ -30,10 +20,10 @@ unlink($filename);
 
 echo "*** Testing fileperms() & chmod() : usage variations ***\n";
 
-$file_name = dirname(__FILE__)."/006_variation1.tmp";
+$file_name = __DIR__."/006_variation1.tmp";
 $file_handle = fopen($file_name, "w");
 fclose($file_handle);
-$dir_name = dirname(__FILE__)."/006_variation1";
+$dir_name = __DIR__."/006_variation1";
 mkdir($dir_name);
 
 $count = 1;
@@ -56,10 +46,10 @@ echo "*** Done ***\n";
 ?>
 --CLEAN--
 <?php
-chmod(dirname(__FILE__)."/006_variation1.tmp", 0777);
-chmod(dirname(__FILE__)."/006_variation1", 0777);
-unlink(dirname(__FILE__)."/006_variation1.tmp");
-rmdir(dirname(__FILE__)."/006_variation1");
+chmod(__DIR__."/006_variation1.tmp", 0777);
+chmod(__DIR__."/006_variation1", 0777);
+unlink(__DIR__."/006_variation1.tmp");
+rmdir(__DIR__."/006_variation1");
 ?>
 --EXPECT--
 *** Testing fileperms() & chmod() : usage variations ***

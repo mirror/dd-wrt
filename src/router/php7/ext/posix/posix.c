@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -34,11 +34,6 @@
 #endif
 
 #include <sys/resource.h>
-
-#if defined(_GNU_SOURCE) && !defined(__USE_GNU)
-# define __USE_GNU
-#endif
-
 #include <sys/utsname.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -329,6 +324,9 @@ static PHP_MINFO_FUNCTION(posix)
 
 static PHP_GINIT_FUNCTION(posix) /* {{{ */
 {
+#if defined(COMPILE_DL_POSIX) && defined(ZTS)
+	ZEND_TSRMLS_CACHE_UPDATE();
+#endif
 	posix_globals->last_error = 0;
 }
 /* }}} */
@@ -432,6 +430,9 @@ zend_module_entry posix_module_entry = {
 /* }}} */
 
 #ifdef COMPILE_DL_POSIX
+#ifdef ZTS
+ZEND_TSRMLS_CACHE_DEFINE()
+#endif
 ZEND_GET_MODULE(posix)
 #endif
 
@@ -997,8 +998,15 @@ int php_posix_group_to_array(struct group *g, zval *array_group) /* {{{ */
 	} else {
 		add_assoc_null(array_group, "passwd");
 	}
-	for (count = 0; g->gr_mem[count] != NULL; count++) {
-		add_next_index_string(&array_members, g->gr_mem[count]);
+	for (count = 0;; count++) {
+		/* gr_mem entries may be misaligned on macos. */
+		char *gr_mem;
+		memcpy(&gr_mem, &g->gr_mem[count], sizeof(char *));
+		if (!gr_mem) {
+			break;
+		}
+
+		add_next_index_string(&array_members, gr_mem);
 	}
 	zend_hash_str_update(Z_ARRVAL_P(array_group), "members", sizeof("members")-1, &array_members);
 	add_assoc_long(array_group, "gid", g->gr_gid);
@@ -1479,12 +1487,3 @@ PHP_FUNCTION(posix_initgroups)
 }
 /* }}} */
 #endif
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

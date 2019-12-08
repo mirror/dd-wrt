@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -60,9 +60,10 @@ static zval *incomplete_class_get_property(zval *object, zval *member, int type,
 }
 /* }}} */
 
-static void incomplete_class_write_property(zval *object, zval *member, zval *value, void **cache_slot) /* {{{ */
+static zval *incomplete_class_write_property(zval *object, zval *member, zval *value, void **cache_slot) /* {{{ */
 {
 	incomplete_class_message(object, E_NOTICE);
+	return value;
 }
 /* }}} */
 
@@ -86,7 +87,7 @@ static int incomplete_class_has_property(zval *object, zval *member, int check_e
 }
 /* }}} */
 
-static union _zend_function *incomplete_class_get_method(zend_object **object, zend_string *method, const zval *key) /* {{{ */
+static zend_function *incomplete_class_get_method(zend_object **object, zend_string *method, const zval *key) /* {{{ */
 {
 	zval zobject;
 
@@ -157,12 +158,3 @@ PHPAPI void php_store_class_name(zval *object, const char *name, size_t len)
 	zend_hash_str_update(Z_OBJPROP_P(object), MAGIC_MEMBER, sizeof(MAGIC_MEMBER)-1, &val);
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

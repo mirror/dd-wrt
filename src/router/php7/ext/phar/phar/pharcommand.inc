@@ -402,7 +402,7 @@ class PharCommand extends CLICommand
 		$hash_avail = Phar::getSupportedSignatures();
 		if ($arg && !in_array('OpenSSL', $hash_avail))
 		{
-			self::error("Cannot specifiy private key without OpenSSL support.\n");
+			self::error("Cannot specify private key without OpenSSL support.\n");
 		}
 		return $arg;
 	}
@@ -563,7 +563,7 @@ class PharCommand extends CLICommand
 		$hashbang = $this->args['b']['val'];
 		$archive  = $this->args['f']['val'];
 		$hash     = $this->args['h']['val'];
-		$privkey  = $this->args['y']['val'];
+		$privkey  = $this->args['y']['val'] ?? null;
 		$regex    = $this->args['i']['val'];
 		$level    = $this->args['l']['val'];
 		$loader   = $this->args['p']['val'];
@@ -648,7 +648,7 @@ class PharCommand extends CLICommand
 					self::phar_add_file($phar, $level, $dir->getSubPathName(), $file, $compress, $noloader);
 				}
 			}
-		} catch(Excpetion $e) {
+		} catch(Exception $e) {
 			self::error("Unable to complete operation on file '$file'\n" . $e->getMessage() . "\n");
 		}
 	}
@@ -896,7 +896,7 @@ class PharCommand extends CLICommand
 	 *
 	 * @param string $pn
 	 * @param string $f     The file name
-	 * @param array $args   The directory and Blen informations
+	 * @param array $args   The directory and Blen information
 	 */
 	public function phar_dir_extract($pn, $f, $args)
 	{
@@ -936,7 +936,7 @@ class PharCommand extends CLICommand
 	/**
 	 * The cli command argument for deleting.
 	 *
-	 * @return array informations about the arguments to use.
+	 * @return array information about the arguments to use.
 	 */
 	static function cli_cmd_arg_delete()
 	{
@@ -1103,7 +1103,7 @@ class PharCommand extends CLICommand
 	/**
 	 * Cli Command Inf Compress
 	 *
-	 * Cli Command compress informations
+	 * Cli Command compress information
 	 *
 	 * @return string A description of the command.
 	 */
@@ -1566,7 +1566,7 @@ class PharCommand extends CLICommand
 		$use_ext = extension_loaded('phar');
 		$version = array(
 			'PHP Version' => phpversion(),
-			'phar.phar version' => '$Id: 9decdaf97238a5f769f75f4cd53318c1ae4193c0 $',
+			'phar.phar version' => '$Id: 341e5f3465f7f0cabb2fbde9d0551527ec7e8da3 $',
 			'Phar EXT version' => $use_ext ? phpversion('phar') : 'Not available',
 			'Phar API version' => Phar::apiVersion(),
 			'Phar-based phar archives' => true,

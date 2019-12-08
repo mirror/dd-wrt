@@ -5,16 +5,7 @@ Test mkdir() and rmdir() functions: usage variations - misc.
 if (substr(PHP_OS, 0, 3) == 'WIN') {
     die('skip.. only on LINUX');
 }
-// Skip if being run by root (files are always readable, writeable and executable)
-$filename = dirname(__FILE__)."/is_readable_root_check.tmp";
-$fp = fopen($filename, 'w');
-fclose($fp);
-if(fileowner($filename) == 0) {
-	unlink ($filename);
-	die('skip cannot be run as root');
-}
-
-unlink($filename);
+require __DIR__ . '/../skipif_root.inc';
 ?>
 --FILE--
 <?php
@@ -24,7 +15,7 @@ unlink($filename);
 
 $context = stream_context_create();
 
-$file_path = dirname(__FILE__);
+$file_path = __DIR__;
 
 echo "\n*** Testing mkdir() and rmdir() by giving stream context as fourth argument ***\n";
 var_dump( mkdir("$file_path/mkdir_variation2/test/", 0777, true, $context) );
@@ -49,8 +40,8 @@ echo "Done\n";
 ?>
 --CLEAN--
 <?php
-rmdir(dirname(__FILE__)."/mkdir_variation2/test/");
-rmdir(dirname(__FILE__)."/mkdir_variation2/");
+rmdir(__DIR__."/mkdir_variation2/test/");
+rmdir(__DIR__."/mkdir_variation2/");
 ?>
 --EXPECTF--
 *** Testing mkdir() and rmdir() by giving stream context as fourth argument ***

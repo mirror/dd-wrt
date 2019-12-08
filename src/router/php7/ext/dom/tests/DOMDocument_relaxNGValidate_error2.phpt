@@ -8,9 +8,9 @@ require_once('skipif.inc');
 ?>
 --FILE--
 <?php
-$rng = dirname(__FILE__).'/foo.rng';
+$rng = __DIR__.'/foo.rng';
 $xml = <<< XML
-<?xml version="1.0"?> 
+<?xml version="1.0"?>
 <apple> 
   <pear>Pear</pear> 
   <pear>Pear</pear> 

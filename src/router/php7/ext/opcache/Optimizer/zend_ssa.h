@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | Zend Engine, SSA - Static Single Assignment Form                     |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -220,7 +220,9 @@ static zend_always_inline zend_bool zend_ssa_is_no_val_use(const zend_op *opline
 	if (opline->opcode == ZEND_FE_FETCH_R) {
 		return ssa_op->op2_use == var && ssa_op->op1_use != var;
 	}
-	if (ssa_op->result_use == var && opline->opcode != ZEND_ADD_ARRAY_ELEMENT) {
+	if (ssa_op->result_use == var
+			&& opline->opcode != ZEND_ADD_ARRAY_ELEMENT
+			&& opline->opcode != ZEND_ADD_ARRAY_UNPACK) {
 		return ssa_op->op1_use != var && ssa_op->op2_use != var;
 	}
 	return 0;
@@ -316,11 +318,3 @@ static zend_always_inline void zend_ssa_rename_defs_of_instr(zend_ssa *ssa, zend
 } while (0)
 
 #endif /* ZEND_SSA_H */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * indent-tabs-mode: t
- * End:
- */

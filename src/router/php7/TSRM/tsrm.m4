@@ -1,23 +1,9 @@
-m4_include([TSRM/m4/ax_func_which_gethostbyname_r.m4])
+dnl This file contains TSRM specific autoconf macros.
 
-AC_DEFUN([TSRM_BASIC_CHECKS],[
-
-AC_REQUIRE([AC_PROG_CC])dnl
-dnl AC_REQUIRE([AM_PROG_CC_STDC])dnl
-AC_REQUIRE([AC_PROG_CC_C_O])dnl
-AC_REQUIRE([AC_PROG_RANLIB])dnl
-
-AC_CHECK_HEADERS(stdarg.h)
-
-AC_CHECK_FUNCS(sigprocmask)
-
-AX_FUNC_WHICH_GETHOSTBYNAME_R()
-
-])
-
-
+dnl
+dnl TSRM_CHECK_PTH
+dnl
 AC_DEFUN([TSRM_CHECK_PTH],[
-
 AC_MSG_CHECKING(for GNU Pth)
 PTH_PREFIX="`$1 --prefix`"
 if test -z "$PTH_PREFIX"; then
@@ -30,9 +16,11 @@ LIBS="$LIBS `$1 --libs`"
 
 AC_DEFINE(GNUPTH, 1, [Whether you use GNU Pth])
 AC_MSG_RESULT(yes - installed in $PTH_PREFIX)
-
 ])
 
+dnl
+dnl TSRM_CHECK_ST
+dnl
 AC_DEFUN([TSRM_CHECK_ST],[
   if test -r "$1/include/st.h"; then
     CPPFLAGS="$CPPFLAGS -I$1/include"
@@ -50,10 +38,10 @@ AC_DEFUN([TSRM_CHECK_ST],[
   AC_DEFINE(TSRM_ST, 1, [ ])
 ])
 
-sinclude(threads.m4)
-
+dnl
+dnl TSRM_CHECK_PTHREADS
+dnl
 AC_DEFUN([TSRM_CHECK_PTHREADS],[
-
 PTHREADS_CHECK
 
 if test "$pthreads_working" != "yes"; then
@@ -66,32 +54,30 @@ AC_MSG_CHECKING(for POSIX threads)
 AC_MSG_RESULT(yes)
 ])
 
+dnl
+dnl TSRM_THREADS_CHECKS
+dnl
+dnl For the thread implementations, we always use --with-* to maintain
+dnl consistency.
+dnl
 AC_DEFUN([TSRM_THREADS_CHECKS],[
+AC_ARG_WITH([tsrm-pth],
+  [AS_HELP_STRING([[--with-tsrm-pth[=pth-config]]],
+    [Use GNU Pth])],
+  [TSRM_PTH=$withval],
+  [TSRM_PTH=no])
 
-dnl For the thread implementations, we always use --with-*
-dnl to maintain consistency
+AC_ARG_WITH([tsrm-st],
+  [AS_HELP_STRING([--with-tsrm-st],
+    [Use SGI's State Threads])],
+  [TSRM_ST=$withval],
+  [TSRM_ST=no])
 
-AC_ARG_WITH(tsrm-pth,
-[  --with-tsrm-pth[=pth-config]
-                          Use GNU Pth],[
-  TSRM_PTH=$withval
-],[
-  TSRM_PTH=no
-])
-
-AC_ARG_WITH(tsrm-st,
-[  --with-tsrm-st          Use SGI's State Threads],[
-  TSRM_ST=$withval
-],[
-  TSRM_ST=no
-])
-
-AC_ARG_WITH(tsrm-pthreads,
-[  --with-tsrm-pthreads    Use POSIX threads (default)],[
-  TSRM_PTHREADS=$withval
-],[
-  TSRM_PTHREADS=yes
-])
+AC_ARG_WITH([tsrm-pthreads],
+  [AS_HELP_STRING([--with-tsrm-pthreads],
+    [Use POSIX threads (default)])],
+  [TSRM_PTHREADS=$withval],
+  [TSRM_PTHREADS=yes])
 
 test "$TSRM_PTH" = "yes" && TSRM_PTH=pth-config
 
@@ -102,5 +88,4 @@ elif test "$TSRM_ST" != "no"; then
 elif test "$TSRM_PTHREADS" != "no"; then
   TSRM_CHECK_PTHREADS
 fi
-
 ])

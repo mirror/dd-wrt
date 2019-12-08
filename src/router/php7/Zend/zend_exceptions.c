@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2018 Zend Technologies Ltd. (http://www.zend.com) |
+   | Copyright (c) Zend Technologies Ltd. (http://www.zend.com)           |
    +----------------------------------------------------------------------+
    | This source file is subject to version 2.00 of the Zend license,     |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -212,7 +212,9 @@ static zend_object *zend_default_exception_new_ex(zend_class_entry *class_type, 
 	object_properties_init(object, class_type);
 
 	if (EG(current_execute_data)) {
-		zend_fetch_debug_backtrace(&trace, skip_top_traces, 0, 0);
+		zend_fetch_debug_backtrace(&trace,
+			skip_top_traces,
+			EG(exception_ignore_args) ? DEBUG_BACKTRACE_IGNORE_ARGS : 0, 0);
 	} else {
 		array_init(&trace);
 	}
@@ -270,7 +272,7 @@ ZEND_METHOD(exception, __construct)
 	zend_class_entry *base_ce;
 	int    argc = ZEND_NUM_ARGS();
 
-	object = getThis();
+	object = ZEND_THIS;
 	base_ce = i_get_exception_base(object);
 
 	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, argc, "|SlO!", &message, &code, &previous, zend_ce_throwable) == FAILURE) {
@@ -314,7 +316,7 @@ ZEND_METHOD(exception, __construct)
 ZEND_METHOD(exception, __wakeup)
 {
 	zval value, *pvalue;
-	zval *object = getThis();
+	zval *object = ZEND_THIS;
 	CHECK_EXC_TYPE(ZEND_STR_MESSAGE,  IS_STRING);
 	CHECK_EXC_TYPE(ZEND_STR_STRING,   IS_STRING);
 	CHECK_EXC_TYPE(ZEND_STR_CODE,     IS_LONG);
@@ -353,7 +355,7 @@ ZEND_METHOD(error_exception, __construct)
 		return;
 	}
 
-	object = getThis();
+	object = ZEND_THIS;
 
 	if (message) {
 		ZVAL_STR_COPY(&tmp, message);
@@ -404,7 +406,7 @@ ZEND_METHOD(exception, getFile)
 
 	DEFAULT_0_PARAMS;
 
-	prop = GET_PROPERTY(getThis(), ZEND_STR_FILE);
+	prop = GET_PROPERTY(ZEND_THIS, ZEND_STR_FILE);
 	ZVAL_DEREF(prop);
 	ZVAL_COPY(return_value, prop);
 }
@@ -418,7 +420,7 @@ ZEND_METHOD(exception, getLine)
 
 	DEFAULT_0_PARAMS;
 
-	prop = GET_PROPERTY(getThis(), ZEND_STR_LINE);
+	prop = GET_PROPERTY(ZEND_THIS, ZEND_STR_LINE);
 	ZVAL_DEREF(prop);
 	ZVAL_COPY(return_value, prop);
 }
@@ -432,7 +434,7 @@ ZEND_METHOD(exception, getMessage)
 
 	DEFAULT_0_PARAMS;
 
-	prop = GET_PROPERTY(getThis(), ZEND_STR_MESSAGE);
+	prop = GET_PROPERTY(ZEND_THIS, ZEND_STR_MESSAGE);
 	ZVAL_DEREF(prop);
 	ZVAL_COPY(return_value, prop);
 }
@@ -446,7 +448,7 @@ ZEND_METHOD(exception, getCode)
 
 	DEFAULT_0_PARAMS;
 
-	prop = GET_PROPERTY(getThis(), ZEND_STR_CODE);
+	prop = GET_PROPERTY(ZEND_THIS, ZEND_STR_CODE);
 	ZVAL_DEREF(prop);
 	ZVAL_COPY(return_value, prop);
 }
@@ -460,7 +462,7 @@ ZEND_METHOD(exception, getTrace)
 
 	DEFAULT_0_PARAMS;
 
-	prop = GET_PROPERTY(getThis(), ZEND_STR_TRACE);
+	prop = GET_PROPERTY(ZEND_THIS, ZEND_STR_TRACE);
 	ZVAL_DEREF(prop);
 	ZVAL_COPY(return_value, prop);
 }
@@ -474,7 +476,7 @@ ZEND_METHOD(error_exception, getSeverity)
 
 	DEFAULT_0_PARAMS;
 
-	prop = GET_PROPERTY(getThis(), ZEND_STR_SEVERITY);
+	prop = GET_PROPERTY(ZEND_THIS, ZEND_STR_SEVERITY);
 	ZVAL_DEREF(prop);
 	ZVAL_COPY(return_value, prop);
 }
@@ -622,7 +624,7 @@ ZEND_METHOD(exception, getTraceAsString)
 
 	DEFAULT_0_PARAMS;
 
-	object = getThis();
+	object = ZEND_THIS;
 	base_ce = i_get_exception_base(object);
 
 	trace = zend_read_property_ex(base_ce, object, ZSTR_KNOWN(ZEND_STR_TRACE), 1, &rv);
@@ -655,7 +657,7 @@ ZEND_METHOD(exception, getPrevious)
 
 	DEFAULT_0_PARAMS;
 
-	ZVAL_COPY(return_value, GET_PROPERTY_SILENT(getThis(), ZEND_STR_PREVIOUS));
+	ZVAL_COPY(return_value, GET_PROPERTY_SILENT(ZEND_THIS, ZEND_STR_PREVIOUS));
 } /* }}} */
 
 /* {{{ proto string Exception|Error::__toString()
@@ -673,7 +675,7 @@ ZEND_METHOD(exception, __toString)
 
 	str = ZSTR_EMPTY_ALLOC();
 
-	exception = getThis();
+	exception = ZEND_THIS;
 	fname = zend_string_init("gettraceasstring", sizeof("gettraceasstring")-1, 0);
 
 	while (exception && Z_TYPE_P(exception) == IS_OBJECT && instanceof_function(Z_OBJCE_P(exception), zend_ce_throwable)) {
@@ -730,7 +732,7 @@ ZEND_METHOD(exception, __toString)
 	}
 	zend_string_release_ex(fname, 0);
 
-	exception = getThis();
+	exception = ZEND_THIS;
 	/* Reset apply counts */
 	while (exception && Z_TYPE_P(exception) == IS_OBJECT && (base_ce = i_get_exception_base(exception)) && instanceof_function(Z_OBJCE_P(exception), base_ce)) {
 		if (Z_IS_RECURSIVE_P(exception)) {
@@ -741,7 +743,7 @@ ZEND_METHOD(exception, __toString)
 		exception = GET_PROPERTY(exception, ZEND_STR_PREVIOUS);
 	}
 
-	exception = getThis();
+	exception = ZEND_THIS;
 	base_ce = i_get_exception_base(exception);
 
 	/* We store the result in the private property string so we can access
@@ -773,7 +775,7 @@ static const zend_function_entry zend_funcs_throwable[] = {
  * such exceptions in that handler.
  * Also all getXY() methods are final because thy serve as read only access to
  * their corresponding properties, no more, no less. If after all you need to
- * override somthing then it is method __toString().
+ * override something then it is method __toString().
  * And never try to change the state of exceptions and never implement anything
  * that gives the user anything to accomplish this.
  */
@@ -977,7 +979,7 @@ ZEND_API ZEND_COLD void zend_exception_error(zend_object *ex, int severity) /* {
 	zend_class_entry *ce_exception;
 
 	ZVAL_OBJ(&exception, ex);
-	ce_exception = Z_OBJCE(exception);
+	ce_exception = ex->ce;
 	EG(exception) = NULL;
 	if (ce_exception == zend_ce_parse_error || ce_exception == zend_ce_compile_error) {
 		zend_string *message = zval_get_string(GET_PROPERTY(&exception, ZEND_STR_MESSAGE));
@@ -990,7 +992,7 @@ ZEND_API ZEND_COLD void zend_exception_error(zend_object *ex, int severity) /* {
 		zend_string_release_ex(file, 0);
 		zend_string_release_ex(message, 0);
 	} else if (instanceof_function(ce_exception, zend_ce_throwable)) {
-		zval tmp, rv;
+		zval tmp;
 		zend_string *str, *file = NULL;
 		zend_long line = 0;
 
@@ -1058,13 +1060,3 @@ ZEND_API ZEND_COLD void zend_throw_exception_object(zval *exception) /* {{{ */
 	zend_throw_exception_internal(exception);
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * indent-tabs-mode: t
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

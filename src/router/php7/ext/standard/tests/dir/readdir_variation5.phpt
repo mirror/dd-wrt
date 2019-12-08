@@ -5,15 +5,7 @@ Test readdir() function : usage variations - different permissions
 if( substr(PHP_OS, 0, 3) == 'WIN') {
   die('skip Not for Windows');
 }
-// Skip if being run by root (files are always readable, writeable and executable)
-$filename = dirname(__FILE__)."/readdir_root_check.tmp";
-$fp = fopen($filename, 'w');
-fclose($fp);
-if(fileowner($filename) == 0) {
-        unlink ($filename);
-        die('skip...cannot be run as root\n');
-}
-unlink($filename);
+require __DIR__ . '/../skipif_root.inc';
 ?>
 --FILE--
 <?php
@@ -30,7 +22,7 @@ unlink($filename);
 echo "*** Testing readdir() : usage variations ***\n";
 
 // create the temporary directory
-$dir_path = dirname(__FILE__) . "/readdir_variation5";
+$dir_path = __DIR__ . "/readdir_variation5";
 mkdir($dir_path);
 
 /* different values for directory permissions */
@@ -76,7 +68,7 @@ foreach($permission_values as $perm) {
 ===DONE===
 --CLEAN--
 <?php
-$dir_path = dirname(__FILE__) . "/readdir_variation5";
+$dir_path = __DIR__ . "/readdir_variation5";
 rmdir($dir_path);
 ?>
 --EXPECTF--

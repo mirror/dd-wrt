@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -57,7 +57,7 @@ static void _php_gettimeofday(INTERNAL_FUNCTION_PARAMETERS, int mode)
 	ZEND_PARSE_PARAMETERS_END();
 
 	if (gettimeofday(&tp, NULL)) {
-		RETURN_FALSE;
+		ZEND_ASSERT(0 && "gettimeofday() can't fail");
 	}
 
 	if (get_as_float) {
@@ -156,12 +156,3 @@ PHP_FUNCTION(getrusage)
 #endif /* HAVE_GETRUSAGE */
 
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

@@ -1,5 +1,7 @@
 --TEST--
 Bug #73037 SoapServer reports Bad Request when gzipped, var 0
+--CONFLICTS--
+server
 --SKIPIF--
 <?php
 	require_once('skipif.inc');
@@ -7,14 +9,14 @@ Bug #73037 SoapServer reports Bad Request when gzipped, var 0
 		echo "skip zlib is required for this test";
 	}
 
-	if (!file_exists(dirname(__FILE__) . "/../../../sapi/cli/tests/php_cli_server.inc")) {
+	if (!file_exists(__DIR__ . "/../../../sapi/cli/tests/php_cli_server.inc")) {
 		echo "skip sapi/cli/tests/php_cli_server.inc required but not found";
 	}
 ?>
 --FILE--
 <?php
 
-include dirname(__FILE__) . "/../../../sapi/cli/tests/php_cli_server.inc";
+include __DIR__ . "/../../../sapi/cli/tests/php_cli_server.inc";
 
 function get_data($max)
 {
@@ -61,7 +63,8 @@ function get_data($max)
 }
 
 $router = "bug73037_server.php";
-$args = substr(PHP_OS, 0, 3) == 'WIN' ? "-d extension_dir=" . ini_get("extension_dir") . " -d extension=php_soap.dll" : "";
+$args = substr(PHP_OS, 0, 3) == 'WIN'
+    ? ["-d", "extension_dir=" . ini_get("extension_dir"), "-d", "extension=php_soap.dll"] : [];
 $code = <<<'PHP'
 $s = new SoapServer(NULL, array('uri' => 'http://here'));
 $s->setObject(new stdclass());
@@ -132,7 +135,7 @@ cleanup:
 ==DONE==
 --CLEAN--
 <?php
-unlink(dirname(__FILE__) . DIRECTORY_SEPARATOR . "bug73037_server.php");
+unlink(__DIR__ . DIRECTORY_SEPARATOR . "bug73037_server.php");
 ?>
 --EXPECT--
 Iteration 0

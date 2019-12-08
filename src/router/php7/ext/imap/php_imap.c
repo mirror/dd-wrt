@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -592,6 +592,9 @@ zend_module_entry imap_module_entry = {
 /* }}} */
 
 #ifdef COMPILE_DL_IMAP
+#ifdef ZTS
+ZEND_TSRMLS_CACHE_DEFINE()
+#endif
 ZEND_GET_MODULE(imap)
 #endif
 
@@ -808,6 +811,9 @@ void mail_getacl(MAILSTREAM *stream, char *mailbox, ACLLIST *alist)
  */
 static PHP_GINIT_FUNCTION(imap)
 {
+#if defined(COMPILE_DL_IMAP) && defined(ZTS)
+	ZEND_TSRMLS_CACHE_UPDATE();
+#endif
 	imap_globals->imap_user = NIL;
 	imap_globals->imap_password = NIL;
 
@@ -1345,12 +1351,12 @@ PHP_FUNCTION(imap_append)
 
 		/* Make sure the given internal_date string matches the RFC specifiedformat */
 		if ((pce = pcre_get_compiled_regex_cache(regex))== NULL) {
-			zend_string_free(regex);
+			zend_string_release(regex);
 			RETURN_FALSE;
 		}
 
-		zend_string_free(regex);
-		php_pcre_match_impl(pce, ZSTR_VAL(internal_date), ZSTR_LEN(internal_date), return_value, subpats, global,
+		zend_string_release(regex);
+		php_pcre_match_impl(pce, internal_date, return_value, subpats, global,
 			0, Z_L(0), Z_L(0));
 
 		if (!Z_LVAL_P(return_value)) {
@@ -2054,7 +2060,9 @@ PHP_FUNCTION(imap_delete)
 		RETURN_FALSE;
 	}
 
-	convert_to_string_ex(sequence);
+	if (!try_convert_to_string(sequence)) {
+		return;
+	}
 
 	mail_setflag_full(imap_le_struct->imap_stream, Z_STRVAL_P(sequence), "\\DELETED", (argc == 3 ? flags : NIL));
 	RETVAL_TRUE;
@@ -2078,7 +2086,9 @@ PHP_FUNCTION(imap_undelete)
 		RETURN_FALSE;
 	}
 
-	convert_to_string_ex(sequence);
+	if (!try_convert_to_string(sequence)) {
+		return;
+	}
 
 	mail_clearflag_full(imap_le_struct->imap_stream, Z_STRVAL_P(sequence), "\\DELETED", (argc == 3 ? flags : NIL));
 	RETVAL_TRUE;
@@ -2497,7 +2507,9 @@ PHP_FUNCTION(imap_savebody)
 		break;
 
 		default:
-			convert_to_string_ex(out);
+			if (!try_convert_to_string(out)) {
+				return;
+			}
 			writer = php_stream_open_wrapper(Z_STRVAL_P(out), "wb", REPORT_ERRORS, NULL);
 		break;
 	}
@@ -3353,13 +3365,13 @@ PHP_FUNCTION(imap_bodystruct)
 		RETURN_FALSE;
 	}
 
-	object_init(return_value);
 
 	body=mail_body(imap_le_struct->imap_stream, msg, (unsigned char*)ZSTR_VAL(section));
 	if (body == NULL) {
-		zval_ptr_dtor(return_value);
 		RETURN_FALSE;
 	}
+
+	object_init(return_value);
 	if (body->type <= TYPEMAX) {
 		add_property_long(return_value, "type", body->type);
 	}
@@ -4074,11 +4086,8 @@ int _php_imap_mail(char *to, char *subject, char *message, char *headers, char *
 		}
 		fprintf(sendmail, "\n%s\n", message);
 		ret = pclose(sendmail);
-		if (ret == -1) {
-			return 0;
-		} else {
-			return 1;
-		}
+
+		return ret != -1;
 	} else {
 		php_error_docref(NULL, E_WARNING, "Could not execute mail delivery program");
 		return 0;
@@ -5100,12 +5109,3 @@ PHP_IMAP_EXPORT void mm_fatal(char *str)
 {
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

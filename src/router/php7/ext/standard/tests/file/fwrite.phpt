@@ -3,7 +3,7 @@ fwrite() tests
 --FILE--
 <?php
 
-$filename = dirname(__FILE__)."/fwrite.dat";
+$filename = __DIR__."/fwrite.dat";
 
 $fp = fopen($filename, "w");
 var_dump(fwrite($fp));
@@ -35,7 +35,9 @@ bool(false)
 
 Warning: fwrite() expects parameter 2 to be string, array given in %s on line %d
 bool(false)
-int(0)
+
+Notice: fwrite(): write of 4 bytes failed with errno=9 Bad file descriptor in %s on line %d
+bool(false)
 int(0)
 int(4)
 int(0)
