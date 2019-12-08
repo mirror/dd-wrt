@@ -207,9 +207,10 @@ static bool encrypt_packet(struct sk_buff *skb, struct noise_keypair *keypair,
 	if (skb_to_sgvec(skb, sg, sizeof(struct message_data),
 			 noise_encrypted_len(plaintext_len)) <= 0)
 		return false;
-	return chacha20poly1305_encrypt_sg(sg, sg, plaintext_len, NULL, 0,
-					   PACKET_CB(skb)->nonce,
-					   keypair->sending.key, simd_context);
+	return chacha20poly1305_encrypt_sg_inplace(sg, plaintext_len, NULL, 0,
+						   PACKET_CB(skb)->nonce,
+						   keypair->sending.key,
+						   simd_context);
 }
 
 void wg_packet_send_keepalive(struct wg_peer *peer)
@@ -233,17 +234,6 @@ void wg_packet_send_keepalive(struct wg_peer *peer)
 	wg_packet_send_staged_packets(peer);
 }
 
-#define skb_walk_null_queue_safe(first, skb, next)                             \
-	for (skb = first, next = skb->next; skb;                               \
-	     skb = next, next = skb ? skb->next : NULL)
-static void skb_free_null_queue(struct sk_buff *first)
-{
-	struct sk_buff *skb, *next;
-
-	skb_walk_null_queue_safe(first, skb, next)
-		dev_kfree_skb(skb);
-}
-
 static void wg_packet_create_data_done(struct sk_buff *first,
 				       struct wg_peer *peer)
 {
@@ -252,7 +242,7 @@ static void wg_packet_create_data_done(struct sk_buff *first,
 
 	wg_timers_any_authenticated_packet_traversal(peer);
 	wg_timers_any_authenticated_packet_sent(peer);
-	skb_walk_null_queue_safe(first, skb, next) {
+	skb_list_walk_safe(first, skb, next) {
 		is_keepalive = skb->len == message_data_len(0);
 		if (likely(!wg_socket_send_skb_to_peer(peer, skb,
 				PACKET_CB(skb)->ds) && !is_keepalive))
@@ -284,7 +274,7 @@ void wg_packet_tx_worker(struct work_struct *work)
 		if (likely(state == PACKET_STATE_CRYPTED))
 			wg_packet_create_data_done(first, peer);
 		else
-			skb_free_null_queue(first);
+			kfree_skb_list(first);
 
 		wg_noise_keypair_put(keypair, false);
 		wg_peer_put(peer);
@@ -302,7 +292,7 @@ void wg_packet_encrypt_worker(struct work_struct *work)
 	while ((first = ptr_ring_consume_bh(&queue->ring)) != NULL) {
 		enum packet_state state = PACKET_STATE_CRYPTED;
 
-		skb_walk_null_queue_safe(first, skb, next) {
+		skb_list_walk_safe(first, skb, next) {
 			if (likely(encrypt_packet(skb,
 						  PACKET_CB(first)->keypair,
 						  &simd_context))) {
@@ -343,7 +333,7 @@ err:
 		return;
 	wg_noise_keypair_put(PACKET_CB(first)->keypair, false);
 	wg_peer_put(peer);
-	skb_free_null_queue(first);
+	kfree_skb_list(first);
 }
 
 void wg_packet_purge_staged_packets(struct wg_peer *peer)
