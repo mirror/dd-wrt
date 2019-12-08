@@ -13,6 +13,7 @@ icu-configure:
 	--disable-tracing \
 	--disable-extras \
 	--enable-dyload \
+	--libdir=$(TOP)/icu/staging/lib \
 	--prefix=$(TOP)/icu/staging
 	make -C icu
 	make -C icu install
@@ -44,6 +45,7 @@ icu-configure:
 	--enable-dyload \
 	--disable-tools \
 	--disable-tests \
+	--libdir=$(TOP)/icu/target_staging/lib \
 	--disable-samples \
 	--with-cross-build="$(TOP)/icu/staging/share/icu/61.1" \
 	--prefix=$(TOP)/icu/target_staging
@@ -83,13 +85,12 @@ icu-clean:
 icu-install:
 	mkdir -p $(INSTALLDIR)/icu/usr/lib
 	-cp -fpR $(TOP)/icu/target_staging/lib/*.so* $(INSTALLDIR)/icu/usr/lib/
-	-cp -fpR $(TOP)/icu/target_staging/lib64/*.so* $(INSTALLDIR)/icu/usr/lib/
 
 
 php7: libxml2 libmcrypt icu glib20 zlib libzip openssl
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/libzip -I$(TOP)/libzip/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/libzip -I$(TOP)/libzip/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/icu/target_staging/include -I$(TOP)/curl/include -I$(TOP)/zlib/include -I$(TOP)/openssl/include -I$(TOP)/libzip -I$(TOP)/libzip/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/icu/target_staging/include -I$(TOP)/curl/include -I$(TOP)/zlib/include -I$(TOP)/openssl/include -I$(TOP)/libzip -I$(TOP)/libzip/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/libpng/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/zlib -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs -fPIC" \
 	LIBS="-lssl -lcrypto" \
 	$(MAKE) -C php7
@@ -168,6 +169,10 @@ PHP_CONFIGURE_ARGS= \
 	ac_cv_glob="yes" \
 	ac_cv_lib_mcrypt_mcrypt_module_open="yes" \
 	ICONV_DIR="$(TOP)/glib20/libiconv" \
+	ICU_CFLAGS="-I$(TOP)/icu/target_staging/include" \
+	ICU_LIBS="-L$(TOP)/icu/target_staging/lib -licuuc -licudata -licui18n -licuio" \
+	SQLITE_CFLAGS="-I$(TOP)/sqlite" \
+	SQLITE_LIBS="-L$(TOP)/sqlite/.libs -lsqlite3" \
 	OPENSSL_LIBDIR="$(TOP)/openssl" \
 	OPENSSL_LIBS="$(TOP)/openssl" \
 	OPENSSL_INCS="$(TOP)/openssl/include" \
@@ -178,10 +183,10 @@ PHP_CONFIGURE_ARGS= \
 	PHP_CURL="$(TOP)/curl" \
 	PHP_ICONV="$(TOP)/glib20/libiconv" \
 	LIBS="-lc -lpthread -lm -lssl -lcrypto" \
-	EXTRA_CFLAGS="-L$(TOP)/glib20/libiconv/lib/.libs -I$(TOP)/libmcrypt -I$(TOP)/zlib -I$(TOP)/libpng -L$(TOP)/openssl -I$(TOP)/openssl/include  -I$(TOP)/curl/include -I$(TOP)/libzip -I$(TOP)/libzip/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	EXTRA_LIBS="-liconv -L$(TOP)/openssl -lcurl -lcrypto -lssl -lcrypt -lxml2 -liconv -lmcrypt -lpng16 -lgd -lz" \
-	EXTRA_LDFLAGS="-L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/minidlna/lib   -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	EXTRA_LDFLAGS_PROGRAM="-L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/libpng/.libs -L$(TOP)/minidlna/lib  -L$(TOP)/libgd/src/.libs -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs"
+	EXTRA_CFLAGS="-I$(TOP)/icu/target_staging/include -I$(TOP)/sqlite -L$(TOP)/glib20/libiconv/lib/.libs -I$(TOP)/libmcrypt -I$(TOP)/zlib  -I$(TOP)/zlib/include -I$(TOP)/libpng -L$(TOP)/openssl -I$(TOP)/openssl/include  -I$(TOP)/curl/include -I$(TOP)/libzip -I$(TOP)/libzip/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	EXTRA_LIBS="-liconv -L$(TOP)/openssl -lsqlite3 -lcurl -lcrypto -lssl -lcrypt -lxml2 -liconv -lmcrypt -lpng16 -lgd -lz" \
+	EXTRA_LDFLAGS="-L$(TOP)/icu/target_staging/lib -L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/sqlite/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/minidlna/jpeg-8/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	EXTRA_LDFLAGS_PROGRAM="-L$(TOP)/icu/target_staging/lib -L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/sqlite/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs"
 
 ifeq ($(ARCH),mips64)
 PHP_ENDIAN=ac_cv_c_bigendian_php="yes"
@@ -202,13 +207,13 @@ php7-configure: libpng libgd libxml2 zlib curl glib20 libzip openssl
 	rm -rf php7/autom4te.cach
 	cd php7 && touch configure.ac && autoconf
 	cd php7 && './configure'  '--host=$(ARCH)-linux-uclibc' $(PHP_ENDIAN) $(PHP_CONFIGURE_ARGS) \
-	'CFLAGS=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/minidlna/jpeg-8 -I$(TOP)/libmcrypt -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/glib20/libiconv/include -I$(TOP)/openssl/include -I$(TOP)/curl/include -DNEED_PRINTF -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs  -I$(TOP)/libzip -I$(TOP)/libzip/lib' \
-	'LDFLAGS=-ffunction-sections -fdata-sections -Wl,--gc-sections  -L$(TOP)/minidlna/lib -L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs' \
+	'CFLAGS=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/icu/target_staging/include -I$(TOP)/minidlna/jpeg-8 -I$(TOP)/zlib/include  -L$(TOP)/sqlite/.libs -I$(TOP)/libmcrypt -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/glib20/libiconv/include -I$(TOP)/openssl/include -I$(TOP)/curl/include -DNEED_PRINTF -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs  -I$(TOP)/libzip -I$(TOP)/libzip/lib' \
+	'LDFLAGS=-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/minidlna/jpeg-8/.libs -L$(TOP)/icu/target_staging/lib  -L$(TOP)/sqlite/.libs -L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs' \
 	'CXXFLAGS=$(COPTS) $(MIPS16_OPT) -std=c++0x -DNEED_PRINTF'
 	printf "#define HAVE_GLOB 1\n" >>$(TOP)/php7/main/php_config.h
-	sed -i 's/-L\/lib/ /g' $(TOP)/php7/Makefile
+	sed -i 's/-L\/lib/-L\/dummy\/lib/g' $(TOP)/php7/Makefile
 	sed -i 's/-lltdl/ /g' $(TOP)/php7/Makefile
-	sed -i 's/-I\/usr\/include/ /g' $(TOP)/php7/Makefile
+	sed -i 's/-I\/usr\/include/-I\/dummy\/usr\/include/g' $(TOP)/php7/Makefile
 
 php7-clean:
 	if test -e "php7/Makefile"; then make -C php7 clean; fi
