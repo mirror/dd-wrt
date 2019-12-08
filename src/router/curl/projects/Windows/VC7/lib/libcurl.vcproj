@@ -1110,6 +1110,9 @@
 			Name="Source Files"
 			Filter="">
 			<File
+				RelativePath="..\..\..\..\lib\altsvc.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\amigaos.c">
 			</File>
 			<File
@@ -1152,6 +1155,9 @@
 				RelativePath="..\..\..\..\lib\curl_gethostname.c">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\curl_get_line.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\curl_gssapi.c">
 			</File>
 			<File
@@ -1186,6 +1192,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\dict.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\doh.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\dotdot.c">
@@ -1326,9 +1335,6 @@
 				RelativePath="..\..\..\..\lib\pingpong.c">
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\pipeline.c">
-			</File>
-			<File
 				RelativePath="..\..\..\..\lib\pop3.c">
 			</File>
 			<File
@@ -1371,6 +1377,9 @@
 				RelativePath="..\..\..\..\lib\smtp.c">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\socketpair.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\socks.c">
 			</File>
 			<File
@@ -1384,12 +1393,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\splay.c">
-			</File>
-			<File
-				RelativePath="..\..\..\..\lib\ssh.c">
-			</File>
-			<File
-				RelativePath="..\..\..\..\lib\ssh-libssh.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\strcase.c">
@@ -1422,6 +1425,9 @@
 				RelativePath="..\..\..\..\lib\transfer.c">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\urlapi.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\url.c">
 			</File>
 			<File
@@ -1440,6 +1446,9 @@
 		<Filter
 			Name="Header Files"
 			Filter="">
+			<File
+				RelativePath="..\..\..\..\lib\altsvc.h">
+			</File>
 			<File
 				RelativePath="..\..\..\..\lib\amigaos.h">
 			</File>
@@ -1484,6 +1493,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_gethostname.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_get_line.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_gssapi.h">
@@ -1553,6 +1565,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\dict.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\doh.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\dotdot.h">
@@ -1657,9 +1672,6 @@
 				RelativePath="..\..\..\..\lib\pingpong.h">
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\pipeline.h">
-			</File>
-			<File
 				RelativePath="..\..\..\..\lib\pop3.h">
 			</File>
 			<File
@@ -1667,6 +1679,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\psl.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\quic.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\rand.h">
@@ -1703,6 +1718,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\sockaddr.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\socketpair.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\socks.h">
@@ -1745,6 +1763,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\transfer.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\urlapi-int.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\urldata.h">
@@ -1833,15 +1854,6 @@
 				Name="Source Files"
 				Filter="">
 				<File
-					RelativePath="..\..\..\..\lib\vtls\axtls.c">
-				</File>
-				<File
-					RelativePath="..\..\..\..\lib\vtls\cyassl.c">
-				</File>
-				<File
-					RelativePath="..\..\..\..\lib\vtls\darwinssl.c">
-				</File>
-				<File
 					RelativePath="..\..\..\..\lib\vtls\gskit.c">
 				</File>
 				<File
@@ -1849,6 +1861,9 @@
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\mbedtls.c">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\mesalink.c">
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\nss.c">
@@ -1869,21 +1884,18 @@
 					RelativePath="..\..\..\..\lib\vtls\schannel_verify.c">
 				</File>
 				<File
+					RelativePath="..\..\..\..\lib\vtls\sectransp.c">
+				</File>
+				<File
 					RelativePath="..\..\..\..\lib\vtls\vtls.c">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\wolfssl.c">
 				</File>
 			</Filter>
 			<Filter
 				Name="Header Files"
 				Filter="">
-				<File
-					RelativePath="..\..\..\..\lib\vtls\axtls.h">
-				</File>
-				<File
-					RelativePath="..\..\..\..\lib\vtls\cyassl.h">
-				</File>
-				<File
-					RelativePath="..\..\..\..\lib\vtls\darwinssl.h">
-				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\gskit.h">
 				</File>
@@ -1892,6 +1904,9 @@
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\mbedtls.h">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\mesalink.h">
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\nssg.h">
@@ -1909,7 +1924,13 @@
 					RelativePath="..\..\..\..\lib\vtls\schannel.h">
 				</File>
 				<File
+					RelativePath="..\..\..\..\lib\vtls\sectransp.h">
+				</File>
+				<File
 					RelativePath="..\..\..\..\lib\vtls\vtls.h">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\wolfssl.h">
 				</File>
 			</Filter>
 		</Filter>

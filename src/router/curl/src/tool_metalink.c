@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2019, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -73,7 +73,7 @@
    and later. If you're building for an older cat, well, sorry. */
 #  define COMMON_DIGEST_FOR_OPENSSL
 #  include <CommonCrypto/CommonDigest.h>
-#elif defined(_WIN32)
+#elif defined(WIN32)
 /* For Windows: If no other crypto library is provided, we fallback
    to the hash functions provided within the Microsoft Windows CryptoAPI */
 #  include <wincrypt.h>
@@ -104,6 +104,7 @@ struct win32_crypto_hash {
 #include "tool_paramhlp.h"
 #include "tool_cfgable.h"
 #include "tool_metalink.h"
+#include "tool_operate.h"
 #include "tool_msgs.h"
 
 #include "memdebug.h" /* keep this as LAST include */
@@ -380,7 +381,7 @@ static void SHA256_Final(unsigned char digest[32], SHA256_CTX *ctx)
   sha256_finish(ctx, digest);
 }
 
-#elif defined(_WIN32)
+#elif defined(WIN32)
 
 static void win32_crypto_final(struct win32_crypto_hash *ctx,
                                unsigned char *digest,
@@ -461,16 +462,11 @@ static void SHA256_Final(unsigned char digest[32], SHA256_CTX *ctx)
 
 #endif /* CRYPTO LIBS */
 
-/* Disable this picky gcc-8 compiler warning */
-#if defined(__GNUC__) && (__GNUC__ >= 8)
-#pragma GCC diagnostic ignored "-Wcast-function-type"
-#endif
-
 const digest_params MD5_DIGEST_PARAMS[] = {
   {
-    (Curl_digest_init_func) MD5_Init,
-    (Curl_digest_update_func) MD5_Update,
-    (Curl_digest_final_func) MD5_Final,
+    CURLX_FUNCTION_CAST(Curl_digest_init_func, MD5_Init),
+    CURLX_FUNCTION_CAST(Curl_digest_update_func, MD5_Update),
+    CURLX_FUNCTION_CAST(Curl_digest_final_func, MD5_Final),
     sizeof(MD5_CTX),
     16
   }
@@ -478,9 +474,9 @@ const digest_params MD5_DIGEST_PARAMS[] = {
 
 const digest_params SHA1_DIGEST_PARAMS[] = {
   {
-    (Curl_digest_init_func) SHA1_Init,
-    (Curl_digest_update_func) SHA1_Update,
-    (Curl_digest_final_func) SHA1_Final,
+    CURLX_FUNCTION_CAST(Curl_digest_init_func, SHA1_Init),
+    CURLX_FUNCTION_CAST(Curl_digest_update_func, SHA1_Update),
+    CURLX_FUNCTION_CAST(Curl_digest_final_func, SHA1_Final),
     sizeof(SHA_CTX),
     20
   }
@@ -488,9 +484,9 @@ const digest_params SHA1_DIGEST_PARAMS[] = {
 
 const digest_params SHA256_DIGEST_PARAMS[] = {
   {
-    (Curl_digest_init_func) SHA256_Init,
-    (Curl_digest_update_func) SHA256_Update,
-    (Curl_digest_final_func) SHA256_Final,
+    CURLX_FUNCTION_CAST(Curl_digest_init_func, SHA256_Init),
+    CURLX_FUNCTION_CAST(Curl_digest_update_func, SHA256_Update),
+    CURLX_FUNCTION_CAST(Curl_digest_final_func, SHA256_Final),
     sizeof(SHA256_CTX),
     32
   }
@@ -679,8 +675,9 @@ int metalink_check_hash(struct GlobalConfig *config,
   return rv;
 }
 
-static metalink_checksum *new_metalink_checksum_from_hex_digest
-(const metalink_digest_def *digest_def, const char *hex_digest)
+static metalink_checksum *
+checksum_from_hex_digest(const metalink_digest_def *digest_def,
+                         const char *hex_digest)
 {
   metalink_checksum *chksum;
   unsigned char *digest;
@@ -759,8 +756,8 @@ static metalinkfile *new_metalinkfile(metalink_file_t *fileinfo)
         if(curl_strequal(digest_alias->alias_name, (*p)->type) &&
            check_hex_digest((*p)->hash, digest_alias->digest_def)) {
           f->checksum =
-            new_metalink_checksum_from_hex_digest(digest_alias->digest_def,
-                                                  (*p)->hash);
+            checksum_from_hex_digest(digest_alias->digest_def,
+                                     (*p)->hash);
           break;
         }
       }
@@ -896,7 +893,8 @@ int parse_metalink(struct OperationConfig *config, struct OutStruct *outs,
 size_t metalink_write_cb(void *buffer, size_t sz, size_t nmemb,
                          void *userdata)
 {
-  struct OutStruct *outs = userdata;
+  struct per_transfer *per = userdata;
+  struct OutStruct *outs = &per->outs;
   struct OperationConfig *config = outs->config;
   int rv;
 
@@ -967,7 +965,7 @@ static void delete_metalink_resource(metalink_resource *res)
   Curl_safefree(res);
 }
 
-static void delete_metalinkfile(metalinkfile *mlfile)
+void delete_metalinkfile(metalinkfile *mlfile)
 {
   metalink_resource *res;
   if(mlfile == NULL) {
@@ -986,12 +984,14 @@ static void delete_metalinkfile(metalinkfile *mlfile)
 
 void clean_metalink(struct OperationConfig *config)
 {
-  while(config->metalinkfile_list) {
-    metalinkfile *mlfile = config->metalinkfile_list;
-    config->metalinkfile_list = config->metalinkfile_list->next;
-    delete_metalinkfile(mlfile);
+  if(config) {
+    while(config->metalinkfile_list) {
+      metalinkfile *mlfile = config->metalinkfile_list;
+      config->metalinkfile_list = config->metalinkfile_list->next;
+      delete_metalinkfile(mlfile);
+    }
+    config->metalinkfile_last = 0;
   }
-  config->metalinkfile_last = 0;
 }
 
 void metalink_cleanup(void)

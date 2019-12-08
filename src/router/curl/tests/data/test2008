@@ -4,6 +4,7 @@
 Metalink
 HTTP
 HTTP GET
+FILE
 </keywords>
 </info>
 
@@ -77,6 +78,9 @@ Accept: */*
 <file1 name="log/download2008">
 Some stuff delivered from an HTTP resource
 </file1>
+<stripfile2>
+s/Last-Modified:.*//
+</stripfile2>
 <file2 name="log/heads2008">
 HTTP/1.1 200 OK
 Date: Thu, 21 Jun 2012 15:23:48 GMT
@@ -90,7 +94,7 @@ Funny-head: yesyes
 </file2>
 <file3 name="log/stdout2008">
 </file3>
-<file4 name="log/stderr2008">
+<file4 name="log/stderr2008" mode="text">
 Metalink: parsing (file://%PWD/log/test2008.metalink) metalink/XML...
 Metalink: parsing (file://%PWD/log/test2008.metalink) OK
 Metalink: fetching (log/download2008) from (http://%HOSTIP:%HTTPPORT/2008)...

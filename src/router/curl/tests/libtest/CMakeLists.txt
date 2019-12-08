@@ -1,6 +1,10 @@
 set(TARGET_LABEL_PREFIX "Test ")
 
-function(SETUP_TEST TEST_NAME)          # ARGN are the files in the test
+if(MSVC)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4127")
+endif()
+
+function(setup_test TEST_NAME)          # ARGN are the files in the test
   add_executable( ${TEST_NAME} ${ARGN} )
   string(TOUPPER ${TEST_NAME} UPPER_TEST_NAME)
 
@@ -14,7 +18,7 @@ function(SETUP_TEST TEST_NAME)          # ARGN are the files in the test
     include_directories(${CARES_INCLUDE_DIR})
   endif()
 
-  target_link_libraries( ${TEST_NAME} libcurl ${CURL_LIBS})
+  target_link_libraries(${TEST_NAME} libcurl ${CURL_LIBS})
 
   set_target_properties(${TEST_NAME}
     PROPERTIES COMPILE_DEFINITIONS ${UPPER_TEST_NAME})
@@ -50,11 +54,14 @@ endif()
 
 add_custom_command(
   OUTPUT lib1521.c
-  COMMAND ${PERL_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/mk-lib1521.pl < ${CMAKE_SOURCE_DIR}/include/curl/curl.h > lib1521.c
+  COMMAND ${PERL_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/mk-lib1521.pl < ${CURL_SOURCE_DIR}/include/curl/curl.h > lib1521.c
   DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/mk-lib1521.pl"
-    "${CMAKE_SOURCE_DIR}/include/curl/curl.h"
+    "${CURL_SOURCE_DIR}/include/curl/curl.h"
   VERBATIM)
+
+set_property(TARGET chkdecimalpoint
+  APPEND PROPERTY COMPILE_DEFINITIONS "CURLX_NO_MEMORY_CALLBACKS;CURL_STATICLIB")
 
   # # files used only in some libcurl test programs
 # SET(TESTUTIL testutil.c testutil.h)

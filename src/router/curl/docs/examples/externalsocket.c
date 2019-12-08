@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2017, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2019, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -124,8 +124,10 @@ int main(void)
     servaddr.sin_port   = htons(PORTNUM);
 
     servaddr.sin_addr.s_addr = inet_addr(IPADDR);
-    if(INADDR_NONE == servaddr.sin_addr.s_addr)
+    if(INADDR_NONE == servaddr.sin_addr.s_addr) {
+      close(sockfd);
       return 2;
+    }
 
     if(connect(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr)) ==
        -1) {
@@ -157,10 +159,16 @@ int main(void)
 
     curl_easy_cleanup(curl);
 
+    close(sockfd);
+
     if(res) {
       printf("libcurl error: %d\n", res);
       return 4;
     }
   }
+
+#ifdef WIN32
+  WSACleanup();
+#endif
   return 0;
 }
