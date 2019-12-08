@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2019, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -75,6 +75,7 @@
 #include "ssh.h"
 #include "setopt.h"
 #include "http_digest.h"
+#include "system_win32.h"
 
 /* The last 3 #include files should be in this order */
 #include "curl_printf.h"
@@ -82,70 +83,6 @@
 #include "memdebug.h"
 
 void Curl_version_init(void);
-
-/* win32_cleanup() is for win32 socket cleanup functionality, the opposite
-   of win32_init() */
-static void win32_cleanup(void)
-{
-#ifdef USE_WINSOCK
-  WSACleanup();
-#endif
-#ifdef USE_WINDOWS_SSPI
-  Curl_sspi_global_cleanup();
-#endif
-}
-
-/* win32_init() performs win32 socket initialization to properly setup the
-   stack to allow networking */
-static CURLcode win32_init(void)
-{
-#ifdef USE_WINSOCK
-  WORD wVersionRequested;
-  WSADATA wsaData;
-  int res;
-
-#if defined(ENABLE_IPV6) && (USE_WINSOCK < 2)
-  Error IPV6_requires_winsock2
-#endif
-
-  wVersionRequested = MAKEWORD(USE_WINSOCK, USE_WINSOCK);
-
-  res = WSAStartup(wVersionRequested, &wsaData);
-
-  if(res != 0)
-    /* Tell the user that we couldn't find a usable */
-    /* winsock.dll.     */
-    return CURLE_FAILED_INIT;
-
-  /* Confirm that the Windows Sockets DLL supports what we need.*/
-  /* Note that if the DLL supports versions greater */
-  /* than wVersionRequested, it will still return */
-  /* wVersionRequested in wVersion. wHighVersion contains the */
-  /* highest supported version. */
-
-  if(LOBYTE(wsaData.wVersion) != LOBYTE(wVersionRequested) ||
-     HIBYTE(wsaData.wVersion) != HIBYTE(wVersionRequested) ) {
-    /* Tell the user that we couldn't find a usable */
-
-    /* winsock.dll. */
-    WSACleanup();
-    return CURLE_FAILED_INIT;
-  }
-  /* The Windows Sockets DLL is acceptable. Proceed. */
-#elif defined(USE_LWIPSOCK)
-  lwip_init();
-#endif
-
-#ifdef USE_WINDOWS_SSPI
-  {
-    CURLcode result = Curl_sspi_global_init();
-    if(result)
-      return result;
-  }
-#endif
-
-  return CURLE_OK;
-}
 
 /* true globals -- for curl_global_init() and curl_global_cleanup() */
 static unsigned int  initialized;
@@ -223,11 +160,12 @@ static CURLcode global_init(long flags, bool memoryfuncs)
     return CURLE_FAILED_INIT;
   }
 
-  if(flags & CURL_GLOBAL_WIN32)
-    if(win32_init()) {
-      DEBUGF(fprintf(stderr, "Error: win32_init failed\n"));
-      return CURLE_FAILED_INIT;
-    }
+#ifdef WIN32
+  if(Curl_win32_init(flags)) {
+    DEBUGF(fprintf(stderr, "Error: win32_init failed\n"));
+    return CURLE_FAILED_INIT;
+  }
+#endif
 
 #ifdef __AMIGA__
   if(!Curl_amiga_init()) {
@@ -249,16 +187,8 @@ static CURLcode global_init(long flags, bool memoryfuncs)
 
   (void)Curl_ipv6works();
 
-#if defined(USE_LIBSSH2) && defined(HAVE_LIBSSH2_INIT)
-  if(libssh2_init(0)) {
-    DEBUGF(fprintf(stderr, "Error: libssh2_init failed\n"));
-    return CURLE_FAILED_INIT;
-  }
-#endif
-
-#if defined(USE_LIBSSH)
-  if(ssh_init()) {
-    DEBUGF(fprintf(stderr, "Error: libssh_init failed\n"));
+#if defined(USE_SSH)
+  if(Curl_ssh_init()) {
     return CURLE_FAILED_INIT;
   }
 #endif
@@ -327,22 +257,16 @@ void curl_global_cleanup(void)
   if(--initialized)
     return;
 
-  Curl_global_host_cache_dtor();
   Curl_ssl_cleanup();
   Curl_resolver_global_cleanup();
 
-  if(init_flags & CURL_GLOBAL_WIN32)
-    win32_cleanup();
+#ifdef WIN32
+  Curl_win32_cleanup(init_flags);
+#endif
 
   Curl_amiga_cleanup();
 
-#if defined(USE_LIBSSH2) && defined(HAVE_LIBSSH2_EXIT)
-  (void)libssh2_exit();
-#endif
-
-#if defined(USE_LIBSSH)
-  (void)ssh_finalize();
-#endif
+  Curl_ssh_cleanup();
 
   init_flags  = 0;
 }
@@ -489,8 +413,8 @@ static int events_socket(struct Curl_easy *easy,      /* easy handle */
            mask. Convert from libcurl bitmask to the poll one. */
         m->socket.events = socketcb2poll(what);
         infof(easy, "socket cb: socket %d UPDATED as %s%s\n", s,
-              what&CURL_POLL_IN?"IN":"",
-              what&CURL_POLL_OUT?"OUT":"");
+              (what&CURL_POLL_IN)?"IN":"",
+              (what&CURL_POLL_OUT)?"OUT":"");
       }
       break;
     }
@@ -513,8 +437,8 @@ static int events_socket(struct Curl_easy *easy,      /* easy handle */
         m->socket.revents = 0;
         ev->list = m;
         infof(easy, "socket cb: socket %d ADDED as %s%s\n", s,
-              what&CURL_POLL_IN?"IN":"",
-              what&CURL_POLL_OUT?"OUT":"");
+              (what&CURL_POLL_IN)?"IN":"",
+              (what&CURL_POLL_OUT)?"OUT":"");
       }
       else
         return CURLE_OUT_OF_MEMORY;
@@ -621,7 +545,7 @@ static CURLcode wait_or_timeout(struct Curl_multi *multi, struct events *ev)
       return CURLE_RECV_ERROR;
 
     if(mcode)
-      return CURLE_URL_MALFORMAT; /* TODO: return a proper error! */
+      return CURLE_URL_MALFORMAT;
 
     /* we don't really care about the "msgs_in_queue" value returned in the
        second argument */
@@ -664,30 +588,15 @@ static CURLcode easy_transfer(struct Curl_multi *multi)
 
   while(!done && !mcode) {
     int still_running = 0;
-    int rc;
 
-    mcode = curl_multi_wait(multi, NULL, 0, 1000, &rc);
+    mcode = curl_multi_poll(multi, NULL, 0, 1000, NULL);
 
-    if(!mcode) {
-      if(!rc) {
-        long sleep_ms;
-
-        /* If it returns without any filedescriptor instantly, we need to
-           avoid busy-looping during periods where it has nothing particular
-           to wait for */
-        curl_multi_timeout(multi, &sleep_ms);
-        if(sleep_ms) {
-          if(sleep_ms > 1000)
-            sleep_ms = 1000;
-          Curl_wait_ms((int)sleep_ms);
-        }
-      }
-
+    if(!mcode)
       mcode = curl_multi_perform(multi, &still_running);
-    }
 
     /* only read 'still_running' if curl_multi_perform() return OK */
     if(!mcode && !still_running) {
+      int rc;
       CURLMsg *msg = curl_multi_info_read(multi, &rc);
       if(msg) {
         result = msg->data.result;
@@ -822,7 +731,7 @@ void curl_easy_cleanup(struct Curl_easy *data)
     return;
 
   sigpipe_ignore(data, &pipe_st);
-  Curl_close(data);
+  Curl_close(&data);
   sigpipe_restore(&pipe_st);
 }
 
@@ -958,8 +867,16 @@ struct Curl_easy *curl_easy_duphandle(struct Curl_easy *data)
     outcurl->change.referer_alloc = TRUE;
   }
 
+  /* Reinitialize an SSL engine for the new handle
+   * note: the engine name has already been copied by dupset */
+  if(outcurl->set.str[STRING_SSL_ENGINE]) {
+    if(Curl_ssl_set_engine(outcurl, outcurl->set.str[STRING_SSL_ENGINE]))
+      goto fail;
+  }
+
   /* Clone the resolver handle, if present, for the new handle */
-  if(Curl_resolver_duphandle(&outcurl->state.resolver,
+  if(Curl_resolver_duphandle(outcurl,
+                             &outcurl->state.resolver,
                              data->state.resolver))
     goto fail;
 
@@ -995,9 +912,7 @@ struct Curl_easy *curl_easy_duphandle(struct Curl_easy *data)
  */
 void curl_easy_reset(struct Curl_easy *data)
 {
-  Curl_safefree(data->state.pathbuffer);
-
-  data->state.path = NULL;
+  long old_buffer_size = data->set.buffer_size;
 
   Curl_free_request_state(data);
 
@@ -1018,7 +933,22 @@ void curl_easy_reset(struct Curl_easy *data)
   /* zero out authentication data: */
   memset(&data->state.authhost, 0, sizeof(struct auth));
   memset(&data->state.authproxy, 0, sizeof(struct auth));
-  Curl_digest_cleanup(data);
+
+#if !defined(CURL_DISABLE_HTTP) && !defined(CURL_DISABLE_CRYPTO_AUTH)
+  Curl_http_auth_cleanup_digest(data);
+#endif
+
+  /* resize receive buffer */
+  if(old_buffer_size != data->set.buffer_size) {
+    char *newbuff = realloc(data->state.buffer, data->set.buffer_size + 1);
+    if(!newbuff) {
+      DEBUGF(fprintf(stderr, "Error: realloc of buffer failed\n"));
+      /* nothing we can do here except use the old size */
+      data->set.buffer_size = old_buffer_size;
+    }
+    else
+      data->state.buffer = newbuff;
+  }
 }
 
 /*
@@ -1055,7 +985,7 @@ CURLcode curl_easy_pause(struct Curl_easy *data, int action)
     unsigned int i;
     unsigned int count = data->state.tempcount;
     struct tempbuf writebuf[3]; /* there can only be three */
-    struct connectdata *conn = data->easy_conn;
+    struct connectdata *conn = data->conn;
     struct Curl_easy *saved_data = NULL;
 
     /* copy the structs to allow for immediate re-pausing */
@@ -1090,10 +1020,12 @@ CURLcode curl_easy_pause(struct Curl_easy *data, int action)
 
   /* if there's no error and we're not pausing both directions, we want
      to have this handle checked soon */
-  if(!result &&
-     ((newstate&(KEEP_RECV_PAUSE|KEEP_SEND_PAUSE)) !=
-      (KEEP_RECV_PAUSE|KEEP_SEND_PAUSE)) )
+  if((newstate & (KEEP_RECV_PAUSE|KEEP_SEND_PAUSE)) !=
+     (KEEP_RECV_PAUSE|KEEP_SEND_PAUSE)) {
     Curl_expire(data, 0, EXPIRE_RUN_NOW); /* get this handle going again */
+    if(data->multi)
+      Curl_update_timer(data->multi);
+  }
 
   /* This transfer may have been moved in or out of the bundle, update
      the corresponding socket callback, if used */
@@ -1189,4 +1121,52 @@ CURLcode curl_easy_send(struct Curl_easy *data, const void *buffer,
   *n = (size_t)n1;
 
   return result;
+}
+
+/*
+ * Wrapper to call functions in Curl_conncache_foreach()
+ *
+ * Returns always 0.
+ */
+static int conn_upkeep(struct connectdata *conn,
+                       void *param)
+{
+  /* Param is unused. */
+  (void)param;
+
+  if(conn->handler->connection_check) {
+    /* Do a protocol-specific keepalive check on the connection. */
+    conn->handler->connection_check(conn, CONNCHECK_KEEPALIVE);
+  }
+
+  return 0; /* continue iteration */
+}
+
+static CURLcode upkeep(struct conncache *conn_cache, void *data)
+{
+  /* Loop over every connection and make connection alive. */
+  Curl_conncache_foreach(data,
+                         conn_cache,
+                         data,
+                         conn_upkeep);
+  return CURLE_OK;
+}
+
+/*
+ * Performs connection upkeep for the given session handle.
+ */
+CURLcode curl_easy_upkeep(struct Curl_easy *data)
+{
+  /* Verify that we got an easy handle we can work with. */
+  if(!GOOD_EASY_HANDLE(data))
+    return CURLE_BAD_FUNCTION_ARGUMENT;
+
+  if(data->multi_easy) {
+    /* Use the common function to keep connections alive. */
+    return upkeep(&data->multi_easy->conn_cache, data);
+  }
+  else {
+    /* No connections, so just return success */
+    return CURLE_OK;
+  }
 }

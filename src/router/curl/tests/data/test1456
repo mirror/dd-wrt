@@ -3,13 +3,15 @@
 <keywords>
 HTTP
 HTTP GET
+proxy
+haproxy
 IPv6
 </keywords>
 </info>
 #
 # Server-side
 <reply>
-<data nocheck=yes>
+<data nocheck="yes">
 HTTP/1.1 200 OK
 Date: Thu, 09 Nov 2010 14:49:00 GMT
 Server: test-server/fake
@@ -21,7 +23,7 @@ Connection: close
 Content-Type: text/html
 Funny-head: yesyes
 
--foo-
+These data aren't actually sent to the client
 </data>
 </reply>
 
@@ -40,6 +42,9 @@ HTTP-IPv6 GET with PROXY protocol
  <command>
 -g "http://%HOST6IP:%HTTP6PORT/1456" --local-port 44444 --haproxy-protocol
 </command>
+<features>
+proxy
+</features>
 </client>
 
 #

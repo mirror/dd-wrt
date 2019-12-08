@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2019, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -49,9 +49,8 @@ static curl_off_t sftpGetRemoteFileSize(const char *i_remoteFile)
 {
   CURLcode result = CURLE_GOT_NOTHING;
   curl_off_t remoteFileSizeByte = -1;
-  CURL *curlHandlePtr = NULL;
+  CURL *curlHandlePtr = curl_easy_init();
 
-  curlHandlePtr = curl_easy_init();
   curl_easy_setopt(curlHandlePtr, CURLOPT_VERBOSE, 1L);
 
   curl_easy_setopt(curlHandlePtr, CURLOPT_URL, i_remoteFile);
@@ -65,6 +64,8 @@ static curl_off_t sftpGetRemoteFileSize(const char *i_remoteFile)
     result = curl_easy_getinfo(curlHandlePtr,
                                CURLINFO_CONTENT_LENGTH_DOWNLOAD_T,
                                &remoteFileSizeByte);
+    if(result)
+      return -1;
     printf("filesize: %" CURL_FORMAT_CURL_OFF_T "\n", remoteFileSizeByte);
   }
   curl_easy_cleanup(curlHandlePtr);

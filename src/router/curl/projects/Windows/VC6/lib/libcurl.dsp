@@ -730,6 +730,10 @@ LIB32=link.exe -lib
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\altsvc.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\amigaos.c
 # End Source File
 # Begin Source File
@@ -786,6 +790,10 @@ SOURCE=..\..\..\..\lib\curl_gethostname.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\curl_get_line.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\curl_gssapi.c
 # End Source File
 # Begin Source File
@@ -831,6 +839,10 @@ SOURCE=..\..\..\..\lib\curl_threads.c
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\dict.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\doh.c
 # End Source File
 # Begin Source File
 
@@ -1018,10 +1030,6 @@ SOURCE=..\..\..\..\lib\pingpong.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\pipeline.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\lib\pop3.c
 # End Source File
 # Begin Source File
@@ -1078,6 +1086,10 @@ SOURCE=..\..\..\..\lib\smtp.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\socketpair.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\socks.c
 # End Source File
 # Begin Source File
@@ -1095,14 +1107,6 @@ SOURCE=..\..\..\..\lib\speedcheck.c
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\splay.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\lib\ssh.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\lib\ssh-libssh.c
 # End Source File
 # Begin Source File
 
@@ -1143,6 +1147,10 @@ SOURCE=..\..\..\..\lib\timeval.c
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\transfer.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\urlapi.c
 # End Source File
 # Begin Source File
 
@@ -1214,18 +1222,6 @@ SOURCE=..\..\..\..\lib\vauth\vauth.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\vtls\axtls.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\lib\vtls\cyassl.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\lib\vtls\darwinssl.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\lib\vtls\gskit.c
 # End Source File
 # Begin Source File
@@ -1235,6 +1231,10 @@ SOURCE=..\..\..\..\lib\vtls\gtls.c
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\vtls\mbedtls.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\vtls\mesalink.c
 # End Source File
 # Begin Source File
 
@@ -1262,12 +1262,24 @@ SOURCE=..\..\..\..\lib\vtls\schannel_verify.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\vtls\sectransp.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\vtls\vtls.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\vtls\wolfssl.c
 # End Source File
 # End Group
 # Begin Group "Header Files"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\altsvc.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\amigaos.h
@@ -1327,6 +1339,10 @@ SOURCE=..\..\..\..\lib\curl_fnmatch.h
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\curl_gethostname.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\curl_get_line.h
 # End Source File
 # Begin Source File
 
@@ -1419,6 +1435,10 @@ SOURCE=..\..\..\..\lib\curlx.h
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\dict.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\doh.h
 # End Source File
 # Begin Source File
 
@@ -1558,10 +1578,6 @@ SOURCE=..\..\..\..\lib\pingpong.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\pipeline.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\lib\pop3.h
 # End Source File
 # Begin Source File
@@ -1571,6 +1587,10 @@ SOURCE=..\..\..\..\lib\progress.h
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\psl.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\quic.h
 # End Source File
 # Begin Source File
 
@@ -1619,6 +1639,10 @@ SOURCE=..\..\..\..\lib\smtp.h
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\sockaddr.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\socketpair.h
 # End Source File
 # Begin Source File
 
@@ -1678,6 +1702,10 @@ SOURCE=..\..\..\..\lib\transfer.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\urlapi-int.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\urldata.h
 # End Source File
 # Begin Source File
@@ -1710,18 +1738,6 @@ SOURCE=..\..\..\..\lib\vauth\vauth.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\vtls\axtls.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\lib\vtls\cyassl.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\lib\vtls\darwinssl.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\lib\vtls\gskit.h
 # End Source File
 # Begin Source File
@@ -1731,6 +1747,10 @@ SOURCE=..\..\..\..\lib\vtls\gtls.h
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\vtls\mbedtls.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\vtls\mesalink.h
 # End Source File
 # Begin Source File
 
@@ -1754,7 +1774,15 @@ SOURCE=..\..\..\..\lib\vtls\schannel.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\vtls\sectransp.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\vtls\vtls.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\vtls\wolfssl.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"

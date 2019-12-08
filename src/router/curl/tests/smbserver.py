@@ -24,11 +24,14 @@
 from __future__ import (absolute_import, division, print_function)
 # unicode_literals)
 import argparse
-import ConfigParser
 import os
 import sys
 import logging
 import tempfile
+try: # Python 3
+    import configparser
+except ImportError: # Python 2
+    import ConfigParser as configparser
 
 # Import our curl test data helper
 import curl_test_data
@@ -58,7 +61,7 @@ def smbserver(options):
             f.write("{0}".format(pid))
 
     # Here we write a mini config for the server
-    smb_config = ConfigParser.ConfigParser()
+    smb_config = configparser.ConfigParser()
     smb_config.add_section("global")
     smb_config.set("global", "server_name", "SERVICE")
     smb_config.set("global", "server_os", "UNIX")
@@ -86,7 +89,7 @@ def smbserver(options):
 
     test_data_dir = os.path.join(options.srcdir, "data")
 
-    smb_server = TestSmbServer(("127.0.0.1", options.port),
+    smb_server = TestSmbServer((options.host, options.port),
                                config_parser=smb_config,
                                test_data_directory=test_data_dir)
     log.info("[SMB] setting up SMB server on port %s", options.port)
@@ -312,6 +315,8 @@ def get_options():
 
     parser.add_argument("--port", action="store", default=9017,
                       type=int, help="port to listen on")
+    parser.add_argument("--host", action="store", default="127.0.0.1",
+                      help="host to listen on")
     parser.add_argument("--verbose", action="store", type=int, default=0,
                         help="verbose output")
     parser.add_argument("--pidfile", action="store",

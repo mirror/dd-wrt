@@ -21,18 +21,33 @@
 #
 ###########################################################################
 
+use strict;
+use warnings;
+
 my $max_column = 79;
 my $indent = 2;
 
-my $warnings;
-my $errors;
+my $warnings = 0;
+my $swarnings = 0;
+my $errors = 0;
+my $serrors = 0;
 my $suppressed; # whitelisted problems
 my $file;
 my $dir=".";
-my $wlist;
+my $wlist="";
+my @alist;
 my $windows_os = $^O eq 'MSWin32' || $^O eq 'msys' || $^O eq 'cygwin';
 my $verbose;
 my %whitelist;
+
+my %ignore;
+my %ignore_set;
+my %ignore_used;
+my @ignore_line;
+
+my %warnings_extended = (
+    'COPYRIGHTYEAR'    => 'copyright year incorrect',
+    );
 
 my %warnings = (
     'LONGLINE'         => "Line longer than $max_column",
@@ -64,16 +79,46 @@ my %warnings = (
     'SEMINOSPACE'      => 'semicolon without following space',
     'MULTISPACE'       => 'multiple spaces used when not suitable',
     'SIZEOFNOPAREN'    => 'use of sizeof without parentheses',
+    'SNPRINTF'         => 'use of snprintf',
     );
 
 sub readwhitelist {
-    open(W, "<$dir/checksrc.whitelist");
+    open(W, "<$dir/checksrc.whitelist") or return;
     my @all=<W>;
     for(@all) {
         $windows_os ? $_ =~ s/\r?\n$// : chomp;
         $whitelist{$_}=1;
     }
     close(W);
+}
+
+# Reads the .checksrc in $dir for any extended warnings to enable locally.
+# Currently there is no support for disabling warnings from the standard set,
+# and since that's already handled via !checksrc! commands there is probably
+# little use to add it.
+sub readlocalfile {
+    my $i = 0;
+
+    open(my $rcfile, "<", "$dir/.checksrc") or return;
+
+    while(<$rcfile>) {
+        $i++;
+
+        # Lines starting with '#' are considered comments
+        if (/^\s*(#.*)/) {
+            next;
+        }
+        elsif (/^\s*enable ([A-Z]+)$/) {
+            if(!defined($warnings_extended{$1})) {
+                print STDERR "invalid warning specified in .checksrc: \"$1\"\n";
+                next;
+            }
+            $warnings{$1} = $warnings_extended{$1};
+        }
+        else {
+            die "Invalid format in $dir/.checksrc on line $i\n";
+        }
+    }
 }
 
 sub checkwarn {
@@ -97,7 +142,7 @@ sub checkwarn {
         $nowarn = 1;
         if(!$ignore{$name}) {
             # reached zero, enable again
-            enable_warn($name, $line, $file, $l);
+            enable_warn($name, $num, $file, $line);
         }
     }
 
@@ -131,7 +176,7 @@ sub checkwarn {
 
 $file = shift @ARGV;
 
-while(1) {
+while(defined $file) {
 
     if($file =~ /-D(.*)/) {
         $dir = $1;
@@ -140,6 +185,11 @@ while(1) {
     }
     elsif($file =~ /-W(.*)/) {
         $wlist .= " $1 ";
+        $file = shift @ARGV;
+        next;
+    }
+    elsif($file =~ /-A(.+)/) {
+        push @alist, $1;
         $file = shift @ARGV;
         next;
     }
@@ -164,6 +214,7 @@ while(1) {
 if(!$file) {
     print "checksrc.pl [option] <file1> [file2] ...\n";
     print " Options:\n";
+    print "  -A[rule]  Accept this violation, can be used multiple times\n";
     print "  -D[DIR]   Directory to prepend file names\n";
     print "  -h        Show help output\n";
     print "  -W[file]  Whitelist the given file - ignore all its flaws\n";
@@ -177,6 +228,7 @@ if(!$file) {
 }
 
 readwhitelist();
+readlocalfile();
 
 do {
     if("$wlist" !~ / $file /) {
@@ -187,6 +239,17 @@ do {
     $file = shift @ARGV;
 
 } while($file);
+
+sub accept_violations {
+    for my $r (@alist) {
+        if(!$warnings{$r}) {
+            print "'$r' is not a warning to accept!\n";
+            exit;
+        }
+        $ignore{$r}=999999;
+        $ignore_used{$r}=0;
+    }
+}
 
 sub checksrc_clear {
     undef %ignore;
@@ -239,7 +302,16 @@ sub checksrc {
                 $scope=999999;
             }
 
-            if($ignore_set{$warn}) {
+            # Comparing for a literal zero rather than the scalar value zero
+            # covers the case where $scope contains the ending '*' from the
+            # comment. If we use a scalar comparison (==) we induce warnings
+            # on non-scalar contents.
+            if($scope eq "0") {
+                checkwarn("BADCOMMAND",
+                          $line, 0, $file, $l,
+                          "Disable zero not supported, did you mean to enable?");
+            }
+            elsif($ignore_set{$warn}) {
                 checkwarn("BADCOMMAND",
                           $line, 0, $file, $l,
                           "$warn already disabled from line $ignore_set{$warn}");
@@ -271,13 +343,14 @@ sub scanfile {
     my ($file) = @_;
 
     my $line = 1;
-    my $prevl;
+    my $prevl="";
     my $l;
     open(R, "<$file") || die "failed to open $file";
 
     my $incomment=0;
-    my $copyright=0;
+    my @copyright=();
     checksrc_clear(); # for file based ignores
+    accept_violations();
 
     while(<R>) {
         $windows_os ? $_ =~ s/\r?\n$// : chomp;
@@ -291,9 +364,16 @@ sub scanfile {
             checksrc($cmd, $line, $file, $l)
         }
 
-        # check for a copyright statement
-        if(!$copyright && ($l =~ /copyright .* \d\d\d\d/i)) {
-            $copyright=1;
+        # check for a copyright statement and save the years
+        if($l =~ /\* +copyright .* \d\d\d\d/i) {
+            while($l =~ /([\d]{4})/g) {
+                push @copyright, {
+                  year => $1,
+                  line => $line,
+                  col => index($l, $1),
+                  code => $l
+                };
+            }
         }
 
         # detect long lines
@@ -359,10 +439,10 @@ sub scanfile {
             if($1 =~ / *\#/) {
                 # this is a #if, treat it differently
             }
-            elsif($3 eq "return") {
+            elsif(defined $3 && $3 eq "return") {
                 # return must have a space
             }
-            elsif($3 eq "case") {
+            elsif(defined $3 && $3 eq "case") {
                 # case must have a space
             }
             elsif($4 eq "*") {
@@ -492,6 +572,13 @@ sub scanfile {
                       "use of $2 is banned");
         }
 
+        # scan for use of snprintf for curl-internals reasons
+        if($l =~ /^(.*\W)(v?snprintf)\s*\(/x) {
+            checkwarn("SNPRINTF",
+                      $line, length($1), $file, $ol,
+                      "use of $2 is banned");
+        }
+
         # scan for use of non-binary fopen without the macro
         if($l =~ /^(.*\W)fopen\s*\([^,]*, *\"([^"]*)/) {
             my $mode = $2;
@@ -604,9 +691,49 @@ sub scanfile {
         $prevl = $ol;
     }
 
-    if(!$copyright) {
+    if(!scalar(@copyright)) {
         checkwarn("COPYRIGHT", 1, 0, $file, "", "Missing copyright statement", 1);
     }
+
+    # COPYRIGHTYEAR is a extended warning so we must first see if it has been
+    # enabled in .checksrc
+    if(defined($warnings{"COPYRIGHTYEAR"})) {
+        # The check for updated copyrightyear is overly complicated in order to
+        # not punish current hacking for past sins. The copyright years are
+        # right now a bit behind, so enforcing copyright year checking on all
+        # files would cause hundreds of errors. Instead we only look at files
+        # which are tracked in the Git repo and edited in the workdir, or
+        # committed locally on the branch without being in upstream master.
+        #
+        # The simple and naive test is to simply check for the current year,
+        # but updating the year even without an edit is against project policy
+        # (and it would fail every file on January 1st).
+        #
+        # A rather more interesting, and correct, check would be to not test
+        # only locally committed files but inspect all files wrt the year of
+        # their last commit. Removing the `git rev-list origin/master..HEAD`
+        # condition below will enfore copyright year checks against the year
+        # the file was last committed (and thus edited to some degree).
+        my $commityear = undef;
+        @copyright = sort {$$b{year} cmp $$a{year}} @copyright;
+
+        if(`git status -s -- $file` =~ /^ [MARCU]/) {
+            $commityear = (localtime(time))[5] + 1900;
+        }
+        elsif (`git rev-list --count origin/master..HEAD -- $file` !~ /^0/) {
+            my $grl = `git rev-list --max-count=1 --timestamp HEAD -- $file`;
+            $commityear = (localtime((split(/ /, $grl))[0]))[5] + 1900;
+        }
+
+        if(defined($commityear) && scalar(@copyright) &&
+           $copyright[0]{year} != $commityear) {
+            checkwarn("COPYRIGHTYEAR", $copyright[0]{line}, $copyright[0]{col},
+                      $file, $copyright[0]{code},
+                      "Copyright year out of date, should be $commityear, " .
+                      "is $copyright[0]{year}", 1);
+        }
+    }
+
     if($incomment) {
         checkwarn("OPENCOMMENT", 1, 0, $file, "", "Missing closing comment", 1);
     }

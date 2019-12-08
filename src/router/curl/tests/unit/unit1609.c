@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2019, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -27,12 +27,8 @@
 
 #include "memdebug.h" /* LAST include file */
 
-static struct Curl_easy *easy;
-static struct curl_hash *hostcache;
-
 static void unit_stop(void)
 {
-  curl_easy_cleanup(easy);
   curl_global_cleanup();
 }
 
@@ -41,18 +37,6 @@ static CURLcode unit_setup(void)
   int res = CURLE_OK;
 
   global_init(CURL_GLOBAL_ALL);
-
-  easy = curl_easy_init();
-  if(!easy) {
-    curl_global_cleanup();
-    return CURLE_OUT_OF_MEMORY;
-  }
-
-  hostcache = Curl_global_host_cache_init();
-  if(!hostcache) {
-    unit_stop();
-    return CURLE_OUT_OF_MEMORY;
-  }
 
   return res;
 }
@@ -113,17 +97,15 @@ static const struct testcase tests[] = {
 };
 
 UNITTEST_START
+{
   int i;
   int testnum = sizeof(tests) / sizeof(struct testcase);
 
 /* important: we setup cache outside of the loop
   and also clean cache after the loop. In contrast,for example,
   test 1607 sets up and cleans cache on each iteration. */
-  Curl_hostcache_clean(easy, hostcache);
-  easy->dns.hostcache = hostcache;
-  easy->dns.hostcachetype = HCACHE_GLOBAL;
 
-  for(i = 0; i < testnum; ++i, curl_easy_reset(easy)) {
+  for(i = 0; i < testnum; ++i) {
     int j;
     int addressnum = sizeof (tests[i].address) / sizeof (*tests[i].address);
     struct Curl_addrinfo *addr;
@@ -131,6 +113,16 @@ UNITTEST_START
     struct curl_slist *list;
     void *entry_id;
     bool problem = false;
+    struct Curl_multi *multi;
+    struct Curl_easy *easy = curl_easy_init();
+    if(!easy) {
+      curl_global_cleanup();
+      return CURLE_OUT_OF_MEMORY;
+    }
+    /* create a multi handle and add the easy handle to it so that the
+       hostcache is setup */
+    multi = curl_multi_init();
+    curl_multi_add_handle(multi, easy);
 
     list = curl_slist_append(NULL, tests[i].optval);
     if(!list)
@@ -158,9 +150,9 @@ UNITTEST_START
       if(!addr && !tests[i].address[j])
         break;
 
-      if(addr && !Curl_getaddressinfo(addr->ai_addr,
-                                      ipaddress, &port)) {
-        fprintf(stderr, "%s:%d tests[%d] failed. getaddressinfo failed.\n",
+      if(addr && !Curl_addr2string(addr->ai_addr, addr->ai_addrlen,
+                                   ipaddress, &port)) {
+        fprintf(stderr, "%s:%d tests[%d] failed. Curl_addr2string failed.\n",
                 __FILE__, __LINE__, i);
         problem = true;
         break;
@@ -201,6 +193,9 @@ UNITTEST_START
       addr = addr->ai_next;
     }
 
+    curl_easy_cleanup(easy);
+    Curl_hash_destroy(&multi->hostcache);
+    curl_multi_cleanup(multi);
     curl_slist_free_all(list);
 
     if(problem) {
@@ -208,7 +203,5 @@ UNITTEST_START
       continue;
     }
   }
-
-  Curl_hostcache_clean(easy, easy->dns.hostcache);
-
+}
 UNITTEST_STOP

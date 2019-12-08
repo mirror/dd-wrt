@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2017, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2019, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_LOCALPORT 3 "May 31, 2017" "libcurl 7.61.0" "curl_easy_setopt options"
+.TH CURLOPT_LOCALPORT 3 "October 31, 2019" "libcurl 7.67.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_LOCALPORT \- set local port number to use for socket
@@ -42,7 +42,7 @@ All
 CURL *curl = curl_easy_init();
 if(curl) {
   curl_easy_setopt(curl, CURLOPT_URL, "http://example.com/foo.bin");
-  curl_easy_setopt(curl, CURLOPT_LOCALPORT, 8080L);
+  curl_easy_setopt(curl, CURLOPT_LOCALPORT, 49152L);
   /* and try 20 more ports following that */
   curl_easy_setopt(curl, CURLOPT_LOCALPORTRANGE, 20L);
   ret = curl_easy_perform(curl);

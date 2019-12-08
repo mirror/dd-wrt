@@ -50,8 +50,8 @@ int test(char *URL)
   /* DNS cache injection */
   struct curl_slist *dns_cache_list;
 
-  snprintf(redirect, sizeof(redirect), "google.com:%s:%s", libtest_arg2,
-           libtest_arg3);
+  msnprintf(redirect, sizeof(redirect), "google.com:%s:%s", libtest_arg2,
+            libtest_arg3);
 
   start_test_timing();
 
@@ -79,6 +79,8 @@ int test(char *URL)
     easy = dup;
   }
   else {
+    curl_slist_free_all(dns_cache_list);
+    curl_easy_cleanup(easy);
     return CURLE_OUT_OF_MEMORY;
   }
 

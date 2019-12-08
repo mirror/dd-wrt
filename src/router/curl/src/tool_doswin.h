@@ -60,10 +60,10 @@ char **__crt0_glob_function(char *arg);
 CURLcode FindWin32CACert(struct OperationConfig *config,
                          curl_sslbackend backend,
                          const char *bundle_file);
+struct curl_slist *GetLoadedModulePaths(void);
 
 #endif /* WIN32 */
 
 #endif /* MSDOS || WIN32 */
 
 #endif /* HEADER_CURL_TOOL_DOSWIN_H */
-
