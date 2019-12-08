@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -18,15 +18,12 @@
    +----------------------------------------------------------------------+
  */
 
-#define IS_EXT_MODULE
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
 #include "php.h"
 
-#define PHP_XML_INTERNAL
 #include "zend_variables.h"
 #include "ext/standard/php_string.h"
 #include "ext/standard/info.h"
@@ -56,7 +53,74 @@
  * - Weird things happen with <![CDATA[]]> sections.
  */
 
+ZEND_BEGIN_MODULE_GLOBALS(xml)
+	XML_Char *default_encoding;
+ZEND_END_MODULE_GLOBALS(xml)
+
 ZEND_DECLARE_MODULE_GLOBALS(xml)
+
+#define XML(v) ZEND_MODULE_GLOBALS_ACCESSOR(xml, v)
+
+typedef struct {
+	int case_folding;
+	XML_Parser parser;
+	XML_Char *target_encoding;
+
+	zval index;
+	zval startElementHandler;
+	zval endElementHandler;
+	zval characterDataHandler;
+	zval processingInstructionHandler;
+	zval defaultHandler;
+	zval unparsedEntityDeclHandler;
+	zval notationDeclHandler;
+	zval externalEntityRefHandler;
+	zval unknownEncodingHandler;
+	zval startNamespaceDeclHandler;
+	zval endNamespaceDeclHandler;
+
+	zend_function *startElementPtr;
+	zend_function *endElementPtr;
+	zend_function *characterDataPtr;
+	zend_function *processingInstructionPtr;
+	zend_function *defaultPtr;
+	zend_function *unparsedEntityDeclPtr;
+	zend_function *notationDeclPtr;
+	zend_function *externalEntityRefPtr;
+	zend_function *unknownEncodingPtr;
+	zend_function *startNamespaceDeclPtr;
+	zend_function *endNamespaceDeclPtr;
+
+	zval object;
+
+	zval data;
+	zval info;
+	int level;
+	int toffset;
+	int curtag;
+	zval *ctag;
+	char **ltags;
+	int lastwasopen;
+	int skipwhite;
+	int isparsing;
+
+	XML_Char *baseURI;
+} xml_parser;
+
+
+typedef struct {
+	XML_Char *name;
+	char (*decoding_function)(unsigned short);
+	unsigned short (*encoding_function)(unsigned char);
+} xml_encoding;
+
+
+enum php_xml_option {
+    PHP_XML_OPTION_CASE_FOLDING = 1,
+    PHP_XML_OPTION_TARGET_ENCODING,
+    PHP_XML_OPTION_SKIP_TAGSTART,
+    PHP_XML_OPTION_SKIP_WHITE
+};
 
 /* {{{ dynamically loadable module stuff */
 #ifdef COMPILE_DL_XML
@@ -67,6 +131,7 @@ ZEND_GET_MODULE(xml)
 #endif /* COMPILE_DL_XML */
 /* }}} */
 
+#define XML_MAXLEVEL 255 /* XXX this should be dynamic */
 
 #define SKIP_TAGSTART(str) ((str) + (parser->toffset > (int)strlen(str) ? strlen(str) : parser->toffset))
 
@@ -76,6 +141,30 @@ PHP_MINIT_FUNCTION(xml);
 PHP_MINFO_FUNCTION(xml);
 static PHP_GINIT_FUNCTION(xml);
 
+PHP_FUNCTION(xml_parser_create);
+PHP_FUNCTION(xml_parser_create_ns);
+PHP_FUNCTION(xml_set_object);
+PHP_FUNCTION(xml_set_element_handler);
+PHP_FUNCTION(xml_set_character_data_handler);
+PHP_FUNCTION(xml_set_processing_instruction_handler);
+PHP_FUNCTION(xml_set_default_handler);
+PHP_FUNCTION(xml_set_unparsed_entity_decl_handler);
+PHP_FUNCTION(xml_set_notation_decl_handler);
+PHP_FUNCTION(xml_set_external_entity_ref_handler);
+PHP_FUNCTION(xml_set_start_namespace_decl_handler);
+PHP_FUNCTION(xml_set_end_namespace_decl_handler);
+PHP_FUNCTION(xml_parse);
+PHP_FUNCTION(xml_get_error_code);
+PHP_FUNCTION(xml_error_string);
+PHP_FUNCTION(xml_get_current_line_number);
+PHP_FUNCTION(xml_get_current_column_number);
+PHP_FUNCTION(xml_get_current_byte_index);
+PHP_FUNCTION(xml_parser_free);
+PHP_FUNCTION(xml_parser_set_option);
+PHP_FUNCTION(xml_parser_get_option);
+PHP_FUNCTION(xml_parse_into_struct);
+
+static zend_string *xml_utf8_decode(const XML_Char *, size_t, const XML_Char *);
 static void xml_parser_dtor(zend_resource *rsrc);
 static void xml_set_handler(zval *, zval *);
 inline static unsigned short xml_encode_iso_8859_1(unsigned char);
@@ -549,59 +638,8 @@ static const xml_encoding *xml_get_encoding(const XML_Char *name)
 }
 /* }}} */
 
-/* {{{ xml_utf8_encode() */
-PHP_XML_API zend_string *xml_utf8_encode(const char *s, size_t len, const XML_Char *encoding)
-{
-	size_t pos = len;
-	zend_string *str;
-	unsigned int c;
-	unsigned short (*encoder)(unsigned char) = NULL;
-	const xml_encoding *enc = xml_get_encoding(encoding);
-
-	if (enc) {
-		encoder = enc->encoding_function;
-	} else {
-		/* If the target encoding was unknown, fail */
-		return NULL;
-	}
-	if (encoder == NULL) {
-		/* If no encoder function was specified, return the data as-is.
-		 */
-		str = zend_string_init(s, len, 0);
-		return str;
-	}
-	/* This is the theoretical max (will never get beyond len * 2 as long
-	 * as we are converting from single-byte characters, though) */
-	str = zend_string_safe_alloc(len, 4, 0, 0);
-	ZSTR_LEN(str) = 0;
-	while (pos > 0) {
-		c = encoder ? encoder((unsigned char)(*s)) : (unsigned short)(*s);
-		if (c < 0x80) {
-			ZSTR_VAL(str)[ZSTR_LEN(str)++] = (char) c;
-		} else if (c < 0x800) {
-			ZSTR_VAL(str)[ZSTR_LEN(str)++] = (0xc0 | (c >> 6));
-			ZSTR_VAL(str)[ZSTR_LEN(str)++] = (0x80 | (c & 0x3f));
-		} else if (c < 0x10000) {
-			ZSTR_VAL(str)[ZSTR_LEN(str)++] = (0xe0 | (c >> 12));
-			ZSTR_VAL(str)[ZSTR_LEN(str)++] = (0xc0 | ((c >> 6) & 0x3f));
-			ZSTR_VAL(str)[ZSTR_LEN(str)++] = (0x80 | (c & 0x3f));
-		} else if (c < 0x200000) {
-			ZSTR_VAL(str)[ZSTR_LEN(str)++] = (0xf0 | (c >> 18));
-			ZSTR_VAL(str)[ZSTR_LEN(str)++] = (0xe0 | ((c >> 12) & 0x3f));
-			ZSTR_VAL(str)[ZSTR_LEN(str)++] = (0xc0 | ((c >> 6) & 0x3f));
-			ZSTR_VAL(str)[ZSTR_LEN(str)++] = (0x80 | (c & 0x3f));
-		}
-		pos--;
-		s++;
-	}
-	ZSTR_VAL(str)[ZSTR_LEN(str)] = '\0';
-	str = zend_string_truncate(str, ZSTR_LEN(str), 0);
-	return str;
-}
-/* }}} */
-
 /* {{{ xml_utf8_decode() */
-PHP_XML_API zend_string *xml_utf8_decode(const XML_Char *s, size_t len, const XML_Char *encoding)
+static zend_string *xml_utf8_decode(const XML_Char *s, size_t len, const XML_Char *encoding)
 {
 	size_t pos = 0;
 	unsigned int c;
@@ -652,19 +690,6 @@ static int _xml_xmlcharlen(const XML_Char *s)
 		s++;
 	}
 	return len;
-}
-/* }}} */
-
-/* {{{ _xml_zval_strdup() */
-PHP_XML_API char *_xml_zval_strdup(zval *val)
-{
-	if (Z_TYPE_P(val) == IS_STRING) {
-		char *buf = emalloc(Z_STRLEN_P(val) + 1);
-		memcpy(buf, Z_STRVAL_P(val), Z_STRLEN_P(val));
-		buf[Z_STRLEN_P(val)] = '\0';
-		return buf;
-	}
-	return NULL;
 }
 /* }}} */
 
@@ -1175,7 +1200,8 @@ PHP_FUNCTION(xml_set_object)
 	/* please leave this commented - or ask thies@thieso.net before doing it (again) */
 	/* zval_add_ref(&parser->object); */
 
-	ZVAL_COPY(&parser->object, mythis);
+	Z_ADDREF_P(mythis);
+	ZVAL_OBJ(&parser->object, Z_OBJ_P(mythis));
 
 	RETVAL_TRUE;
 }
@@ -1409,21 +1435,25 @@ PHP_FUNCTION(xml_parse_into_struct)
 	size_t data_len;
 	int ret;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "rsz/|z/", &pind, &data, &data_len, &xdata, &info) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "rsz|z", &pind, &data, &data_len, &xdata, &info) == FAILURE) {
 		return;
 	}
 
 	if (info) {
-		zval_ptr_dtor(info);
-		array_init(info);
+		info = zend_try_array_init(info);
+		if (!info) {
+			return;
+		}
 	}
 
 	if ((parser = (xml_parser *)zend_fetch_resource(Z_RES_P(pind), "XML Parser", le_xml_parser)) == NULL) {
 		RETURN_FALSE;
 	}
 
-	zval_ptr_dtor(xdata);
-	array_init(xdata);
+	xdata = zend_try_array_init(xdata);
+	if (!xdata) {
+		return;
+	}
 
 	ZVAL_COPY_VALUE(&parser->data, xdata);
 
@@ -1599,7 +1629,10 @@ PHP_FUNCTION(xml_parser_set_option)
 			break;
 		case PHP_XML_OPTION_TARGET_ENCODING: {
 			const xml_encoding *enc;
-			convert_to_string_ex(val);
+			if (!try_convert_to_string(val)) {
+				return;
+			}
+
 			enc = xml_get_encoding((XML_Char*)Z_STRVAL_P(val));
 			if (enc == NULL) {
 				php_error_docref(NULL, E_WARNING, "Unsupported target encoding \"%s\"", Z_STRVAL_P(val));
@@ -1657,12 +1690,3 @@ PHP_FUNCTION(xml_parser_get_option)
 /* }}} */
 
 #endif
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

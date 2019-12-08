@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,	  |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -31,7 +31,7 @@
  * Watch elements are either simple, recursive or implicit (PHPDBG_WATCH_* flags)
  * Simple means that a particular watchpoint was explicitly defined
  * Recursive watch elements are created recursively (recursive root flag is to distinguish the root element easily from its children recursive elements)
- * Implicit  watch elements are implicitely created on all ancestors of simple or recursive watch elements
+ * Implicit  watch elements are implicitly created on all ancestors of simple or recursive watch elements
  * Recursive and (simple or implicit) watch elements are mutually exclusive
  * Array/Object to distinguish watch elements on arrays
  *
@@ -1014,13 +1014,14 @@ void phpdbg_check_watchpoint(phpdbg_watchpoint_t *watch) {
 	}
 	if (watch->type == WATCH_ON_BUCKET) {
 		if (watch->backup.bucket.key != watch->addr.bucket->key || (watch->backup.bucket.key != NULL && watch->backup.bucket.h != watch->addr.bucket->h)) {
-			phpdbg_watch_element *element;
+			phpdbg_watch_element *element = NULL;
 			zval *new;
 
 			ZEND_HASH_FOREACH_PTR(&watch->elements, element) {
 				break;
 			} ZEND_HASH_FOREACH_END();
 
+			ZEND_ASSERT(element); /* elements must be non-empty */
 			new = zend_symtable_find(element->parent_container, element->name_in_parent);
 
 			if (!new) {

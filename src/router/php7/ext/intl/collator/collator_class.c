@@ -97,7 +97,7 @@ ZEND_END_ARG_INFO()
  */
 
 static const zend_function_entry Collator_class_functions[] = {
-	PHP_ME( Collator, __construct, collator_1_arg, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR )
+	PHP_ME( Collator, __construct, collator_1_arg, ZEND_ACC_PUBLIC )
 	ZEND_FENTRY( create, ZEND_FN( collator_create ), collator_1_arg, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC )
 	PHP_NAMED_FE( compare, ZEND_FN( collator_compare ), collator_2_args )
 	PHP_NAMED_FE( sort, ZEND_FN( collator_sort ), collator_sort_args )
@@ -176,12 +176,3 @@ void collator_object_destroy( Collator_object* co )
 	intl_error_reset( COLLATOR_ERROR_P( co ) );
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

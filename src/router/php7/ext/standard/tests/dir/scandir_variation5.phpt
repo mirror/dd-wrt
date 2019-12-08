@@ -5,15 +5,7 @@ Test scandir() function : usage variations - different directory permissions
 if( substr(PHP_OS, 0, 3) == 'WIN') {
 	die('skip Not for Windows');
 }
-// Skip if being run by root (files are always readable, writeable and executable)
-$filename = dirname(__FILE__)."/dir_root_check.tmp";
-$fp = fopen($filename, 'w');
-fclose($fp);
-if(fileowner($filename) == 0) {
-	unlink ($filename);
-	die('skip...cannot be run as root\n');
-}
-unlink($filename);
+require __DIR__ . '/../skipif_root.inc';
 ?>
 --FILE--
 <?php
@@ -37,7 +29,7 @@ echo "*** Testing scandir() : usage variations ***\n";
  *      |-> child_dir  ( child dir)
  */
 
-$parent_dir_path = dirname(__FILE__) . "/scandir_variation5";
+$parent_dir_path = __DIR__ . "/scandir_variation5";
 mkdir($parent_dir_path);
 chmod($parent_dir_path, 0777);
 
@@ -66,7 +58,7 @@ var_dump(scandir($child_dir_path));
 ===DONE===
 --CLEAN--
 <?php
-$parent_dir_path = dirname(__FILE__) . "/scandir_variation5";
+$parent_dir_path = __DIR__ . "/scandir_variation5";
 $sub_dir_path = $parent_dir_path."/sub_dir";
 $child_dir_path = $sub_dir_path."/child_dir";
 

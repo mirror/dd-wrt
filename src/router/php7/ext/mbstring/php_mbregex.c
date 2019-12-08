@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -39,6 +39,7 @@ typedef void OnigMatchParam;
 #define onig_new_match_param() (NULL)
 #define onig_initialize_match_param(x) (void)(x)
 #define onig_set_match_stack_limit_size_of_match_param(x, y)
+#define onig_set_retry_limit_in_match_of_match_param(x, y)
 #define onig_free_match_param(x)
 #define onig_search_with_param(reg, str, end, start, range, region, option, mp) \
 		onig_search(reg, str, end, start, range, region, option)
@@ -117,7 +118,13 @@ void php_mb_regex_globals_free(zend_mb_regex_globals *pglobals)
 /* {{{ PHP_MINIT_FUNCTION(mb_regex) */
 PHP_MINIT_FUNCTION(mb_regex)
 {
+	char version[256];
+
 	onig_init();
+
+	snprintf(version, sizeof(version), "%d.%d.%d",
+		ONIGURUMA_VERSION_MAJOR, ONIGURUMA_VERSION_MINOR, ONIGURUMA_VERSION_TEENY);
+	REGISTER_STRING_CONSTANT("MB_ONIGURUMA_VERSION", version, CONST_CS | CONST_PERSISTENT);
 	return SUCCESS;
 }
 /* }}} */
@@ -170,13 +177,6 @@ PHP_MINFO_FUNCTION(mb_regex)
 			ONIGURUMA_VERSION_MAJOR,
 			ONIGURUMA_VERSION_MINOR,
 			ONIGURUMA_VERSION_TEENY);
-#ifdef PHP_ONIG_BUNDLED
-#ifdef USE_COMBINATION_EXPLOSION_CHECK
-	php_info_print_table_row(2, "Multibyte regex (oniguruma) backtrack check", "On");
-#else	/* USE_COMBINATION_EXPLOSION_CHECK */
-	php_info_print_table_row(2, "Multibyte regex (oniguruma) backtrack check", "Off");
-#endif	/* USE_COMBINATION_EXPLOSION_CHECK */
-#endif /* PHP_BUNDLED_ONIG */
 	php_info_print_table_row(2, "Multibyte regex (oniguruma) version", buf);
 	php_info_print_table_end();
 }
@@ -875,6 +875,9 @@ static int _php_mb_onig_search(regex_t* reg, const OnigUChar* str, const OnigUCh
 	if (!ZEND_LONG_UINT_OVFL(MBSTRG(regex_stack_limit))) {
 		onig_set_match_stack_limit_size_of_match_param(mp, (unsigned int)MBSTRG(regex_stack_limit));
 	}
+	if (!ZEND_LONG_UINT_OVFL(MBSTRG(regex_retry_limit))) {
+		onig_set_retry_limit_in_match_of_match_param(mp, (unsigned int)MBSTRG(regex_retry_limit));
+	}
 	/* search */
 	err = onig_search_with_param(reg, str, end, start, range, region, option, mp);
 	onig_free_match_param(mp);
@@ -895,13 +898,15 @@ static void _php_mb_regex_ereg_exec(INTERNAL_FUNCTION_PARAMETERS, int icase)
 	OnigOptionType options;
 	char *str;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "zs|z/", &arg_pattern, &string, &string_len, &array) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "zs|z", &arg_pattern, &string, &string_len, &array) == FAILURE) {
 		RETURN_FALSE;
 	}
 
 	if (array != NULL) {
-		zval_ptr_dtor(array);
-		array_init(array);
+		array = zend_try_array_init(array);
+		if (!array) {
+			return;
+		}
 	}
 
 	if (!php_mb_check_encoding(
@@ -923,7 +928,9 @@ static void _php_mb_regex_ereg_exec(INTERNAL_FUNCTION_PARAMETERS, int icase)
 		if (Z_TYPE_P(arg_pattern) == IS_DOUBLE) {
 			convert_to_long_ex(arg_pattern);	/* get rid of decimal places */
 		}
-		convert_to_string_ex(arg_pattern);
+		if (!try_convert_to_string(arg_pattern)) {
+			return;
+		}
 		/* don't bother doing an extended regex with just a number */
 	}
 
@@ -1080,6 +1087,10 @@ static void _php_mb_regex_ereg_replace_exec(INTERNAL_FUNCTION_PARAMETERS, OnigOp
 		arg_pattern = Z_STRVAL_P(arg_pattern_zval);
 		arg_pattern_len = Z_STRLEN_P(arg_pattern_zval);
 	} else {
+		php_error_docref(NULL, E_DEPRECATED,
+			"Non-string patterns will be interpreted as strings in the future. "
+			"Use an explicit chr() call to preserve the current behavior");
+
 		/* FIXME: this code is not multibyte aware! */
 		convert_to_long_ex(arg_pattern_zval);
 		pat_buf[0] = (char)Z_LVAL_P(arg_pattern_zval);
@@ -1150,7 +1161,7 @@ static void _php_mb_regex_ereg_replace_exec(INTERNAL_FUNCTION_PARAMETERS, OnigOp
 				if (zend_eval_stringl(ZSTR_VAL(eval_str), ZSTR_LEN(eval_str), &v, description) == FAILURE) {
 					efree(description);
 					zend_throw_error(NULL, "Failed evaluating code: %s%s", PHP_EOL, ZSTR_VAL(eval_str));
-					onig_region_free(regs, 0);
+					onig_region_free(regs, 1);
 					smart_str_free(&out_buf);
 					smart_str_free(&eval_buf);
 					RETURN_FALSE;
@@ -1388,8 +1399,11 @@ PHP_FUNCTION(mb_ereg_match)
 
 	mp = onig_new_match_param();
 	onig_initialize_match_param(mp);
-	if(MBSTRG(regex_stack_limit) > 0 && MBSTRG(regex_stack_limit) < UINT_MAX) {
+	if (MBSTRG(regex_stack_limit) > 0 && MBSTRG(regex_stack_limit) < UINT_MAX) {
 		onig_set_match_stack_limit_size_of_match_param(mp, (unsigned int)MBSTRG(regex_stack_limit));
+	}
+	if (MBSTRG(regex_retry_limit) > 0 && MBSTRG(regex_retry_limit) < UINT_MAX) {
+		onig_set_retry_limit_in_match_of_match_param(mp, (unsigned int)MBSTRG(regex_retry_limit));
 	}
 	/* match */
 	err = onig_match_with_param(re, (OnigUChar *)string, (OnigUChar *)(string + string_len), (OnigUChar *)string, NULL, 0, mp);
@@ -1714,12 +1728,3 @@ PHP_FUNCTION(mb_regex_set_options)
 /* }}} */
 
 #endif	/* HAVE_MBREGEX */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: fdm=marker
- * vim: noet sw=4 ts=4
- */

@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -449,9 +449,9 @@ static int php_read_APP(php_stream * stream, unsigned int marker, zval *info)
 	}
 	length -= 2;				/* length includes itself */
 
-	buffer = emalloc(length);
+	buffer = emalloc((size_t)length);
 
-	if (php_stream_read(stream, buffer, (zend_long) length) != length) {
+	if (php_stream_read(stream, buffer, (size_t) length) != length) {
 		efree(buffer);
 		return 0;
 	}
@@ -613,7 +613,7 @@ static struct gfxinfo *php_handle_jpc(php_stream * stream)
 	   "bit depth" answer somewhat problematic. For this implementation
 	   we'll use the highest depth encountered. */
 
-	/* Get the single byte that remains after the file type indentification */
+	/* Get the single byte that remains after the file type identification */
 	first_marker_id = php_stream_getc(stream);
 
 	/* Ensure that this marker is SIZ (as is mandated by the standard) */
@@ -980,7 +980,7 @@ static int php_get_wbmp(php_stream *stream, struct gfxinfo **result, int check)
 			return 0;
 		}
 		height = (height << 7) | (i & 0x7f);
-        /* maximum valid heigth for wbmp (although 127 may be a more accurate one) */
+        /* maximum valid height for wbmp (although 127 may be a more accurate one) */
         if (height > 2048) {
             return 0;
         }
@@ -1493,12 +1493,14 @@ static void php_getimagesize_from_any(INTERNAL_FUNCTION_PARAMETERS, int mode) { 
 	ZEND_PARSE_PARAMETERS_START(1, 2)
 		Z_PARAM_STRING(input, input_len)
 		Z_PARAM_OPTIONAL
-		Z_PARAM_ZVAL_DEREF(info)
+		Z_PARAM_ZVAL(info)
 	ZEND_PARSE_PARAMETERS_END();
 
 	if (argc == 2) {
-		zval_ptr_dtor(info);
-		array_init(info);
+		info = zend_try_array_init(info);
+		if (!info) {
+			return;
+		}
 	}
 
 	if (mode == FROM_PATH) {
@@ -1531,12 +1533,3 @@ PHP_FUNCTION(getimagesizefromstring)
 	php_getimagesize_from_any(INTERNAL_FUNCTION_PARAM_PASSTHRU, FROM_DATA);
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

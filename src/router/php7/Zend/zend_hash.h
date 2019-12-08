@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2018 Zend Technologies Ltd. (http://www.zend.com) |
+   | Copyright (c) Zend Technologies Ltd. (http://www.zend.com)           |
    +----------------------------------------------------------------------+
    | This source file is subject to version 2.00 of the Zend license,     |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -35,7 +35,7 @@
 
 #define HASH_FLAG_CONSISTENCY      ((1<<0) | (1<<1))
 #define HASH_FLAG_PACKED           (1<<2)
-#define HASH_FLAG_INITIALIZED      (1<<3)
+#define HASH_FLAG_UNINITIALIZED    (1<<3)
 #define HASH_FLAG_STATIC_KEYS      (1<<4) /* long and interned strings */
 #define HASH_FLAG_HAS_EMPTY_IND    (1<<5)
 #define HASH_FLAG_ALLOW_COW_VIOLATION (1<<6)
@@ -44,6 +44,13 @@
 #define HASH_FLAG_MASK 0xff
 
 #define HT_FLAGS(ht) (ht)->u.flags
+
+#define HT_INVALIDATE(ht) do { \
+		HT_FLAGS(ht) = HASH_FLAG_UNINITIALIZED; \
+	} while (0)
+
+#define HT_IS_INITIALIZED(ht) \
+	((HT_FLAGS(ht) & HASH_FLAG_UNINITIALIZED) == 0)
 
 #define HT_IS_PACKED(ht) \
 	((HT_FLAGS(ht) & HASH_FLAG_PACKED) != 0)
@@ -131,6 +138,8 @@ ZEND_API zval* ZEND_FASTCALL zend_hash_index_add_empty_element(HashTable *ht, ze
 ZEND_API zval* ZEND_FASTCALL zend_hash_add_empty_element(HashTable *ht, zend_string *key);
 ZEND_API zval* ZEND_FASTCALL zend_hash_str_add_empty_element(HashTable *ht, const char *key, size_t len);
 
+ZEND_API zval* ZEND_FASTCALL zend_hash_set_bucket_key(HashTable *ht, Bucket *p, zend_string *key);
+
 #define ZEND_HASH_APPLY_KEEP				0
 #define ZEND_HASH_APPLY_REMOVE				1<<0
 #define ZEND_HASH_APPLY_STOP				1<<1
@@ -162,7 +171,7 @@ ZEND_API int ZEND_FASTCALL zend_hash_str_del_ind(HashTable *ht, const char *key,
 ZEND_API int ZEND_FASTCALL zend_hash_index_del(HashTable *ht, zend_ulong h);
 ZEND_API void ZEND_FASTCALL zend_hash_del_bucket(HashTable *ht, Bucket *p);
 
-/* Data retreival */
+/* Data retrieval */
 ZEND_API zval* ZEND_FASTCALL zend_hash_find(const HashTable *ht, zend_string *key);
 ZEND_API zval* ZEND_FASTCALL zend_hash_str_find(const HashTable *ht, const char *key, size_t len);
 ZEND_API zval* ZEND_FASTCALL zend_hash_index_find(const HashTable *ht, zend_ulong h);
@@ -200,9 +209,20 @@ static zend_always_inline zval *zend_hash_find_ex(const HashTable *ht, zend_stri
 
 
 /* Misc */
-ZEND_API zend_bool ZEND_FASTCALL zend_hash_exists(const HashTable *ht, zend_string *key);
-ZEND_API zend_bool ZEND_FASTCALL zend_hash_str_exists(const HashTable *ht, const char *str, size_t len);
-ZEND_API zend_bool ZEND_FASTCALL zend_hash_index_exists(const HashTable *ht, zend_ulong h);
+static zend_always_inline zend_bool zend_hash_exists(const HashTable *ht, zend_string *key)
+{
+	return zend_hash_find(ht, key) != NULL;
+}
+
+static zend_always_inline zend_bool zend_hash_str_exists(const HashTable *ht, const char *str, size_t len)
+{
+	return zend_hash_str_find(ht, str, len) != NULL;
+}
+
+static zend_always_inline zend_bool zend_hash_index_exists(const HashTable *ht, zend_ulong h)
+{
+	return zend_hash_index_find(ht, h) != NULL;
+}
 
 /* traversing */
 ZEND_API HashPosition ZEND_FASTCALL zend_hash_get_current_pos(const HashTable *ht);
@@ -277,6 +297,7 @@ ZEND_API int ZEND_FASTCALL zend_hash_rehash(HashTable *ht);
 
 ZEND_API HashTable* ZEND_FASTCALL _zend_new_array_0(void);
 ZEND_API HashTable* ZEND_FASTCALL _zend_new_array(uint32_t size);
+ZEND_API HashTable* ZEND_FASTCALL zend_new_pair(zval *val1, zval *val2);
 ZEND_API uint32_t zend_array_count(HashTable *ht);
 ZEND_API HashTable* ZEND_FASTCALL zend_array_dup(HashTable *source);
 ZEND_API void ZEND_FASTCALL zend_array_destroy(HashTable *ht);
@@ -1046,7 +1067,7 @@ static zend_always_inline void *zend_hash_get_current_data_ptr_ex(HashTable *ht,
 	_val = _z;
 
 /* The following macros are useful to insert a sequence of new elements
- * of packed array. They may be use insted of series of
+ * of packed array. They may be used instead of series of
  * zend_hash_next_index_insert_new()
  * (HashTable must have enough free buckets).
  */
@@ -1056,12 +1077,37 @@ static zend_always_inline void *zend_hash_get_current_data_ptr_ex(HashTable *ht,
 		uint32_t __fill_idx = __fill_ht->nNumUsed; \
 		ZEND_ASSERT(HT_FLAGS(__fill_ht) & HASH_FLAG_PACKED);
 
-#define ZEND_HASH_FILL_ADD(_val) do { \
-		ZVAL_COPY_VALUE(&__fill_bkt->val, _val); \
+#define ZEND_HASH_FILL_SET(_val) \
+		ZVAL_COPY_VALUE(&__fill_bkt->val, _val)
+
+#define ZEND_HASH_FILL_SET_NULL() \
+		ZVAL_NULL(&__fill_bkt->val)
+
+#define ZEND_HASH_FILL_SET_LONG(_val) \
+		ZVAL_LONG(&__fill_bkt->val, _val)
+
+#define ZEND_HASH_FILL_SET_DOUBLE(_val) \
+		ZVAL_DOUBLE(&__fill_bkt->val, _val)
+
+#define ZEND_HASH_FILL_SET_STR(_val) \
+		ZVAL_STR(&__fill_bkt->val, _val)
+
+#define ZEND_HASH_FILL_SET_STR_COPY(_val) \
+		ZVAL_STR_COPY(&__fill_bkt->val, _val)
+
+#define ZEND_HASH_FILL_SET_INTERNED_STR(_val) \
+		ZVAL_INTERNED_STR(&__fill_bkt->val, _val)
+
+#define ZEND_HASH_FILL_NEXT() do {\
 		__fill_bkt->h = (__fill_idx); \
 		__fill_bkt->key = NULL; \
 		__fill_bkt++; \
 		__fill_idx++; \
+	} while (0)
+
+#define ZEND_HASH_FILL_ADD(_val) do { \
+		ZEND_HASH_FILL_SET(_val); \
+		ZEND_HASH_FILL_NEXT(); \
 	} while (0)
 
 #define ZEND_HASH_FILL_END() \
@@ -1144,13 +1190,3 @@ static zend_always_inline void _zend_hash_append_ind(HashTable *ht, zend_string 
 }
 
 #endif							/* ZEND_HASH_H */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * indent-tabs-mode: t
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

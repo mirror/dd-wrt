@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -16,7 +16,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 9e3608810250a9e29249b953b4a3f18fa4eac0fb $ */
+/* $Id: 42cb3bb7617b5744add2ab117b45b3a1e37e7175 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -42,7 +42,7 @@
 /* {{{ inifile_version */
 char *inifile_version()
 {
-	return "1.0, $Id: 9e3608810250a9e29249b953b4a3f18fa4eac0fb $";
+	return "1.0, $Id: 42cb3bb7617b5744add2ab117b45b3a1e37e7175 $";
 }
 /* }}} */
 
@@ -602,12 +602,3 @@ int inifile_append(inifile *dba, const key_type *key, const val_type *value)
 	return inifile_delete_replace_append(dba, key, value, 1, NULL);
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

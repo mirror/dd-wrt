@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -237,6 +237,10 @@ PHP_FUNCTION(class_uses)
  Return an array containing the names of all clsses and interfaces defined in SPL */
 PHP_FUNCTION(spl_classes)
 {
+	if (zend_parse_parameters_none() == FAILURE) {
+		return;
+	}
+
 	array_init(return_value);
 
 	SPL_LIST_CLASSES(return_value, 0, 0, 0)
@@ -387,7 +391,7 @@ static void autoload_func_info_dtor(zval *element)
 }
 
 /* {{{ proto void spl_autoload_call(string class_name)
- Try all registerd autoload function to load the requested class */
+ Try all registered autoload function to load the requested class */
 PHP_FUNCTION(spl_autoload_call)
 {
 	zval *class_name, retval;
@@ -855,21 +859,20 @@ PHPAPI zend_string *php_spl_object_hash(zval *obj) /* {{{*/
 }
 /* }}} */
 
-int spl_build_class_list_string(zval *entry, char **list) /* {{{ */
+static void spl_build_class_list_string(zval *entry, char **list) /* {{{ */
 {
 	char *res;
 
 	spprintf(&res, 0, "%s, %s", *list, Z_STRVAL_P(entry));
 	efree(*list);
 	*list = res;
-	return ZEND_HASH_APPLY_KEEP;
 } /* }}} */
 
 /* {{{ PHP_MINFO(spl)
  */
 PHP_MINFO_FUNCTION(spl)
 {
-	zval list;
+	zval list, *zv;
 	char *strg;
 
 	php_info_print_table_start();
@@ -878,7 +881,9 @@ PHP_MINFO_FUNCTION(spl)
 	array_init(&list);
 	SPL_LIST_CLASSES(&list, 0, 1, ZEND_ACC_INTERFACE)
 	strg = estrdup("");
-	zend_hash_apply_with_argument(Z_ARRVAL_P(&list), (apply_func_arg_t)spl_build_class_list_string, &strg);
+	ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(&list), zv) {
+		spl_build_class_list_string(zv, &strg);
+	} ZEND_HASH_FOREACH_END();
 	zend_array_destroy(Z_ARR(list));
 	php_info_print_table_row(2, "Interfaces", strg + 2);
 	efree(strg);
@@ -886,7 +891,9 @@ PHP_MINFO_FUNCTION(spl)
 	array_init(&list);
 	SPL_LIST_CLASSES(&list, 0, -1, ZEND_ACC_INTERFACE)
 	strg = estrdup("");
-	zend_hash_apply_with_argument(Z_ARRVAL_P(&list), (apply_func_arg_t)spl_build_class_list_string, &strg);
+	ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(&list), zv) {
+		spl_build_class_list_string(zv, &strg);
+	} ZEND_HASH_FOREACH_END();
 	zend_array_destroy(Z_ARR(list));
 	php_info_print_table_row(2, "Classes", strg + 2);
 	efree(strg);
@@ -980,11 +987,9 @@ static const zend_function_entry spl_functions[] = {
 	PHP_FE(class_uses,              arginfo_class_uses)
 	PHP_FE(spl_object_hash,         arginfo_spl_object_hash)
 	PHP_FE(spl_object_id,           arginfo_spl_object_id)
-#ifdef SPL_ITERATORS_H
 	PHP_FE(iterator_to_array,       arginfo_iterator_to_array)
 	PHP_FE(iterator_count,          arginfo_iterator)
 	PHP_FE(iterator_apply,          arginfo_iterator_apply)
-#endif /* SPL_ITERATORS_H */
 	PHP_FE_END
 };
 /* }}} */
@@ -1054,12 +1059,3 @@ zend_module_entry spl_module_entry = {
 	STANDARD_MODULE_PROPERTIES_EX
 };
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: fdm=marker
- * vim: noet sw=4 ts=4
- */

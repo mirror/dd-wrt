@@ -2,7 +2,6 @@
 fopencookie detected and working (or cast mechanism works)
 --FILE--
 <?php
-# vim600:syn=php:
 
 /* This test verifies that the casting mechanism is working correctly.
  * On systems with fopencookie, a FILE* is created around the user
@@ -76,6 +75,9 @@ class userstream {
 	}
 	function stream_stat() {
 		return array('size' => strlen($this->data));
+	}
+	function stream_set_option($option, $arg1, $arg2) {
+		return false;
 	}
 }
 

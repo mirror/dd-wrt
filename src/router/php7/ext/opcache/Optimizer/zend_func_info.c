@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | Zend Engine, Func Info                                               |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -234,11 +234,12 @@ static const func_info_t func_infos[] = {
 	FC("defined",                 zend_b_s_info), // TODO: inline
 	FN("get_class",               MAY_BE_FALSE | MAY_BE_STRING),
 	FN("get_called_class",        MAY_BE_FALSE | MAY_BE_STRING),
-	FN("get_parrent_class",       MAY_BE_FALSE | MAY_BE_STRING),
+	FN("get_parent_class",        MAY_BE_FALSE | MAY_BE_STRING | MAY_BE_NULL),
 	F0("is_subclass_of",          MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE), // TODO: inline
 	F0("is_a",                    MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE), // TODO: inline
 	F1("get_class_vars",          MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_STRING | MAY_BE_ARRAY_OF_ANY | MAY_BE_ARRAY_OF_REF),
 	FN("get_object_vars",         MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_ANY | MAY_BE_ARRAY_OF_ANY | MAY_BE_ARRAY_OF_REF),
+	FN("get_mangled_object_vars", MAY_BE_NULL | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_ANY | MAY_BE_ARRAY_OF_ANY | MAY_BE_ARRAY_OF_REF),
 	F1("get_class_methods",       MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_LONG | MAY_BE_ARRAY_OF_STRING),
 	F0("method_exists",           MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("property_exists",         MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
@@ -274,7 +275,7 @@ static const func_info_t func_infos[] = {
 	F0("sleep",                        MAY_BE_FALSE | MAY_BE_LONG),
 	F0("usleep",                       MAY_BE_NULL | MAY_BE_FALSE),
 #if HAVE_NANOSLEEP
-	F0("time_nanosleep",               MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
+	F0("time_nanosleep",               MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_STRING | MAY_BE_ARRAY_OF_LONG),
 	F0("time_sleep_until",             MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 #endif
 #if HAVE_STRPTIME
@@ -334,9 +335,7 @@ static const func_info_t func_infos[] = {
 	F1("str_split",                    MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_LONG | MAY_BE_ARRAY_OF_STRING),
 	F1("strpbrk",                      MAY_BE_FALSE | MAY_BE_STRING),
 	F0("substr_compare",               MAY_BE_FALSE | MAY_BE_LONG),
-#ifdef HAVE_STRCOLL
 	F0("strcoll",                      MAY_BE_NULL | MAY_BE_LONG),
-#endif
 #ifdef HAVE_STRFMON
 	F1("money_format",                 MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
 #endif
@@ -401,7 +400,7 @@ static const func_info_t func_infos[] = {
 	F1("system",                       MAY_BE_FALSE | MAY_BE_STRING),
 	F1("escapeshellcmd",               MAY_BE_NULL | MAY_BE_STRING),
 	F1("escapeshellarg",               MAY_BE_NULL | MAY_BE_STRING),
-	F1("passthru",                     MAY_BE_FALSE | MAY_BE_STRING),
+	F1("passthru",                     MAY_BE_NULL | MAY_BE_FALSE),
 	F1("shell_exec",                   MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
 #ifdef PHP_CAN_SUPPORT_PROC_OPEN
 	F1("proc_open",                    MAY_BE_FALSE | MAY_BE_RESOURCE),
@@ -413,6 +412,8 @@ static const func_info_t func_infos[] = {
 	F0("proc_nice",                    MAY_BE_FALSE | MAY_BE_TRUE),
 #endif
 	F0("rand",                         MAY_BE_NULL | MAY_BE_LONG),
+	F1("random_bytes",                 MAY_BE_STRING),
+	F1("random_int",                   MAY_BE_LONG),
 	F0("srand",                        MAY_BE_NULL),
 	F0("getrandmax",                   MAY_BE_NULL | MAY_BE_LONG),
 	F0("mt_rand",                      MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
@@ -500,8 +501,8 @@ static const func_info_t func_infos[] = {
 	F1("sys_getloadavg",               MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_LONG | MAY_BE_ARRAY_OF_DOUBLE),
 #endif
 #ifdef HAVE_GETTIMEOFDAY
-	F1("microtime",                    MAY_BE_NULL | MAY_BE_DOUBLE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_LONG | MAY_BE_ARRAY_OF_LONG | MAY_BE_STRING),
-	F1("gettimeofday",                 MAY_BE_NULL | MAY_BE_DOUBLE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_STRING | MAY_BE_ARRAY_OF_LONG | MAY_BE_STRING),
+	F1("microtime",                    MAY_BE_NULL | MAY_BE_DOUBLE | MAY_BE_STRING),
+	F1("gettimeofday",                 MAY_BE_NULL | MAY_BE_DOUBLE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_STRING | MAY_BE_ARRAY_OF_LONG),
 #endif
 #ifdef HAVE_GETRUSAGE
 	F1("getrusage",                    MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_STRING | MAY_BE_ARRAY_OF_LONG),
@@ -606,6 +607,7 @@ static const func_info_t func_infos[] = {
 	F0("is_scalar",                    MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("is_callable",                  MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("is_countable",                 MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
+	F0("is_iterable",                  MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("pclose",                       MAY_BE_FALSE | MAY_BE_LONG),
 	F1("popen",                        MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_RESOURCE),
 	F0("readfile",                     MAY_BE_FALSE | MAY_BE_LONG),
@@ -670,7 +672,6 @@ static const func_info_t func_infos[] = {
 	F0("stream_set_write_buffer",      MAY_BE_FALSE | MAY_BE_LONG),
 	F0("set_file_buffer",              MAY_BE_FALSE | MAY_BE_LONG),
 	F0("stream_set_chunk_size",        MAY_BE_FALSE | MAY_BE_LONG),
-	F0("set_socket_blocking",          MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("stream_set_blocking",          MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("socket_set_blocking",          MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F1("stream_get_meta_data",         MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_STRING | MAY_BE_ARRAY_OF_ANY),
@@ -683,7 +684,7 @@ static const func_info_t func_infos[] = {
 	F1("stream_get_transports",        MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_LONG | MAY_BE_ARRAY_OF_STRING),
 	F1("stream_resolve_include_path",  MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
 	F0("stream_is_local",              MAY_BE_FALSE | MAY_BE_TRUE),
-	F1("get_headers",                  MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_LONG | MAY_BE_ARRAY_OF_STRING | MAY_BE_ARRAY_OF_ARRAY),
+	F1("get_headers",                  MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_ANY | MAY_BE_ARRAY_OF_STRING | MAY_BE_ARRAY_OF_ARRAY),
 #if HAVE_SYS_TIME_H || defined(PHP_WIN32)
 	F0("stream_set_timeout",           MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("socket_set_timeout",           MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
@@ -811,7 +812,7 @@ static const func_info_t func_infos[] = {
 	F0("array_unshift",                MAY_BE_NULL | MAY_BE_LONG),
 	F1("array_splice",                 MAY_BE_NULL | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_ANY | MAY_BE_ARRAY_OF_REF | MAY_BE_ARRAY_OF_ANY),
 	F1("array_slice",                  MAY_BE_NULL | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_ANY | MAY_BE_ARRAY_OF_REF | MAY_BE_ARRAY_OF_ANY),
-	F1("array_merge",                  MAY_BE_NULL | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_ANY | MAY_BE_ARRAY_OF_REF | MAY_BE_ARRAY_OF_ANY),
+	FN("array_merge",                  MAY_BE_NULL | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_ANY | MAY_BE_ARRAY_OF_REF | MAY_BE_ARRAY_OF_ANY),
 	F1("array_merge_recursive",        MAY_BE_NULL | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_ANY | MAY_BE_ARRAY_OF_REF | MAY_BE_ARRAY_OF_ANY),
 	F1("array_replace",                MAY_BE_NULL | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_ANY | MAY_BE_ARRAY_OF_REF | MAY_BE_ARRAY_OF_ANY),
 	F1("array_replace_recursive",      MAY_BE_NULL | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_ANY | MAY_BE_ARRAY_OF_REF | MAY_BE_ARRAY_OF_ANY),
@@ -849,6 +850,8 @@ static const func_info_t func_infos[] = {
 	F1("array_chunk",                  MAY_BE_NULL | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_ANY | MAY_BE_ARRAY_OF_REF | MAY_BE_ARRAY_OF_ANY),
 	F1("array_combine",                MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_ANY | MAY_BE_ARRAY_OF_REF | MAY_BE_ARRAY_OF_ANY),
 	F0("array_key_exists",             MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
+	FN("array_key_first",              MAY_BE_NULL | MAY_BE_LONG | MAY_BE_STRING),
+	FN("array_key_last",               MAY_BE_NULL | MAY_BE_LONG | MAY_BE_STRING),
 	F1("pos",                          UNKNOWN_INFO),
 	F0("sizeof",                       MAY_BE_NULL | MAY_BE_LONG),
 	F0("key_exists",                   MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
@@ -877,10 +880,8 @@ static const func_info_t func_infos[] = {
 	F0("mktime",                                MAY_BE_FALSE | MAY_BE_LONG),
 	F0("gmmktime",                              MAY_BE_FALSE | MAY_BE_LONG),
 	F0("checkdate",                             MAY_BE_FALSE | MAY_BE_TRUE),
-#ifdef HAVE_STRFTIME
 	F1("strftime",                              MAY_BE_FALSE | MAY_BE_STRING),
 	F1("gmstrftime",                            MAY_BE_FALSE | MAY_BE_STRING),
-#endif
 	F0("time",                                  MAY_BE_LONG),
 	F1("localtime",                             MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_ANY | MAY_BE_ARRAY_OF_LONG),
 	F1("getdate",                               MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_STRING | MAY_BE_ARRAY_OF_LONG | MAY_BE_ARRAY_OF_STRING),
@@ -932,82 +933,6 @@ static const func_info_t func_infos[] = {
 	F1("preg_grep",				                MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_ANY | MAY_BE_ARRAY_OF_REF | MAY_BE_ARRAY_OF_ANY),
 	F0("preg_last_error",			            MAY_BE_NULL | MAY_BE_LONG),
 
-	/* ext/ereg */
-	F0("ereg",			                        MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
-	F1("ereg_replace",	                        MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F0("eregi",			                        MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
-	F1("eregi_replace",	                        MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F1("split",			                        MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_LONG | MAY_BE_ARRAY_OF_STRING),
-	F1("spliti",			                    MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_LONG | MAY_BE_ARRAY_OF_STRING),
-	F1("sql_regcase",		                    MAY_BE_NULL | MAY_BE_STRING),
-
-	/* ext/mysql */
-	F1("mysql_connect",                         MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_RESOURCE),
-	F1("mysql_pconnect",                        MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_RESOURCE),
-	F0("mysql_close",                           MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
-	F0("mysql_select_db",                       MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
-	F0("mysql_create_db",                       MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
-	F0("mysql_drop_db",                         MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
-	F1("mysql_query",                           MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE | MAY_BE_RESOURCE),
-	F1("mysql_unbuffered_query",                MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE | MAY_BE_RESOURCE),
-	F1("mysql_db_query",                        MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE | MAY_BE_RESOURCE),
-	F1("mysql_list_dbs",                        MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_RESOURCE),
-	F1("mysql_list_tables",                     MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_RESOURCE),
-	F1("mysql_list_fields",                     MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_RESOURCE),
-	F1("mysql_list_processes",                  MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_RESOURCE),
-	F1("mysql_error",                           MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F0("mysql_errno",                           MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
-	F0("mysql_affected_rows",                   MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
-	F0("mysql_insert_id",                       MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
-	F1("mysql_result",							MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F0("mysql_num_rows",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
-	F0("mysql_num_fields",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
-	F1("mysql_fetch_row",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_LONG | MAY_BE_ARRAY_OF_ANY),
-	F1("mysql_fetch_array",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_ANY | MAY_BE_ARRAY_OF_ANY),
-	F1("mysql_fetch_assoc",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_STRING | MAY_BE_ARRAY_OF_ANY),
-	F1("mysql_fetch_object",					MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_OBJECT),
-	F0("mysql_data_seek",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
-	F1("mysql_fetch_lengths",					MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_LONG | MAY_BE_ARRAY_OF_LONG),
-	F1("mysql_fetch_field",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_OBJECT),
-	F0("mysql_field_seek",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
-	F0("mysql_free_result",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
-	F1("mysql_field_name",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F1("mysql_field_table",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F0("mysql_field_len",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
-	F1("mysql_field_type",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F1("mysql_field_flags",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F1("mysql_escape_string",					MAY_BE_NULL | MAY_BE_STRING),
-	F1("mysql_real_escape_string",				MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F1("mysql_stat",							MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F0("mysql_thread_id",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
-	F1("mysql_client_encoding",					MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F0("mysql_ping",							MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
-	F1("mysql_get_client_info",					MAY_BE_NULL | MAY_BE_STRING),
-	F1("mysql_get_host_info",					MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F0("mysql_get_proto_info",					MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
-	F1("mysql_get_server_info",					MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F1("mysql_info",							MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F0("mysql_set_charset",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
-	F1("mysql",									MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_RESOURCE),
-	F1("mysql_fieldname",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F1("mysql_fieldtable",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F0("mysql_fieldlen",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
-	F1("mysql_fieldtype",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F1("mysql_fieldflags",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F0("mysql_selectdb",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
-	F0("mysql_createdb",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
-	F0("mysql_dropdb",							MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
-	F0("mysql_freeresult",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
-	F0("mysql_numfields",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
-	F0("mysql_numrows",							MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
-	F1("mysql_listdbs",							MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_RESOURCE),
-	F1("mysql_listtables",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_RESOURCE),
-	F1("mysql_listfields",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_RESOURCE),
-	F1("mysql_db_name",							MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F1("mysql_dbname",							MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F1("mysql_tablename",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-	F1("mysql_table_name",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
-
 	/* ext/mysqli */
 	F1("mysqli_connect",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_OBJECT),
 	F0("mysqli_close",							MAY_BE_NULL | MAY_BE_TRUE),
@@ -1019,7 +944,7 @@ static const func_info_t func_infos[] = {
 	F1("mysqli_query",							MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE | MAY_BE_OBJECT),
 	F0("mysqli_multi_query",					MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("mysqli_set_charset",					MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
-	F1("mysqli_get_charset", 					MAY_BE_NULL | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_STRING | MAY_BE_ARRAY_OF_ANY),
+	F1("mysqli_get_charset", 					MAY_BE_NULL | MAY_BE_OBJECT),
 	F0("mysqli_begin_transaction",				MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("mysqli_savepoint",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("mysqli_release_savepoint",				MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
@@ -1028,7 +953,7 @@ static const func_info_t func_infos[] = {
 	F1("mysqli_fetch_all",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_ANY | MAY_BE_ARRAY_OF_ANY),
 	F1("mysqli_fetch_object",					MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_OBJECT),
 	F0("mysqli_free_result",					MAY_BE_NULL),
-	F0("mysqli_affected_rows",					MAY_BE_NULL | MAY_BE_LONG),
+	F1("mysqli_affected_rows",					MAY_BE_NULL | MAY_BE_LONG | MAY_BE_STRING),
 	F0("mysqli_autocommit",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("mysqli_stmt_bind_param",				MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("mysqli_stmt_bind_result",				MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
@@ -1064,14 +989,14 @@ static const func_info_t func_infos[] = {
 	F0("mysqli_get_server_version",				MAY_BE_NULL | MAY_BE_LONG),
 	F1("mysqli_info",							MAY_BE_NULL | MAY_BE_STRING),
 	F1("mysqli_init",							MAY_BE_FALSE | MAY_BE_OBJECT),
-	F0("mysqli_insert_id",						MAY_BE_NULL | MAY_BE_LONG),
+	F1("mysqli_insert_id",						MAY_BE_NULL | MAY_BE_LONG | MAY_BE_STRING),
 	F0("mysqli_kill",							MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("mysqli_more_results",					MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("mysqli_next_result",					MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("mysqli_stmt_more_results",				MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("mysqli_stmt_next_result",				MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("mysqli_num_fields",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
-	F0("mysqli_num_rows",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
+	F1("mysqli_num_rows",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG | MAY_BE_STRING),
 	F0("mysqli_options",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("mysqli_ping",							MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F1("mysqli_prepare",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_OBJECT),
@@ -1080,19 +1005,19 @@ static const func_info_t func_infos[] = {
 	F1("mysqli_real_escape_string",				MAY_BE_NULL | MAY_BE_STRING),
 	F0("mysqli_rollback",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("mysqli_stmt_send_long_data",			MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
-	F0("mysqli_stmt_affected_rows",				MAY_BE_NULL | MAY_BE_LONG),
+	F1("mysqli_stmt_affected_rows",				MAY_BE_NULL | MAY_BE_LONG | MAY_BE_STRING),
 	F0("mysqli_stmt_close",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("mysqli_stmt_data_seek",					MAY_BE_NULL | MAY_BE_FALSE),
 	F0("mysqli_stmt_field_count",				MAY_BE_NULL | MAY_BE_LONG),
 	F0("mysqli_stmt_free_result",				MAY_BE_NULL),
-	F0("mysqli_stmt_insert_id",					MAY_BE_NULL | MAY_BE_LONG),
+	F1("mysqli_stmt_insert_id",					MAY_BE_NULL | MAY_BE_LONG | MAY_BE_STRING),
 	F0("mysqli_stmt_param_count",				MAY_BE_NULL | MAY_BE_LONG),
 	F0("mysqli_stmt_reset",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
-	F0("mysqli_stmt_num_rows",					MAY_BE_NULL | MAY_BE_LONG),
+	F1("mysqli_stmt_num_rows",					MAY_BE_NULL | MAY_BE_LONG | MAY_BE_STRING),
 	F0("mysqli_select_db",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F1("mysqli_sqlstate",						MAY_BE_NULL | MAY_BE_STRING),
 	F0("mysqli_ssl_set",						MAY_BE_NULL | MAY_BE_TRUE),
-	F1("mysqli_stat",							MAY_BE_NULL | MAY_BE_STRING),
+	F1("mysqli_stat",							MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
 	F0("mysqli_refresh",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("mysqli_stmt_attr_set",					MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("mysqli_stmt_attr_get",					MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
@@ -1286,12 +1211,15 @@ static const func_info_t func_infos[] = {
 
 	/* ext/hash */
 	F1("hash",                                  MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
+	F0("hash_equals",                           MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F1("hash_file",                             MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
 	F1("hash_hmac",                             MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
+	F1("hash_hmac_algos",                       MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_LONG | MAY_BE_ARRAY_OF_STRING),
 	F1("hash_hmac_file",                        MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
+	F1("hash_hkdf",                             MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_STRING),
 	F1("hash_init",                             MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_OBJECT),
 	F0("hash_update",                           MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
-	F0("hash_update_stream",                    MAY_BE_NULL | MAY_BE_LONG),
+	F0("hash_update_stream",                    MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
 	F0("hash_update_file",                      MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F1("hash_final",                            MAY_BE_NULL | MAY_BE_STRING),
 	F1("hash_copy",                             MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_OBJECT),
@@ -1622,7 +1550,7 @@ static const func_info_t func_infos[] = {
 	F0("imagegd",								MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("imagegd2",								MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F0("imagedestroy",							MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
-	F0("magecolorallocate",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
+	F0("imagecolorallocate",					MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
 	F0("imagepalettecopy",						MAY_BE_NULL | MAY_BE_FALSE),
 	F0("imagecolorat",							MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
 	F0("imagecolorclosest",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_LONG),
@@ -1680,6 +1608,17 @@ static const func_info_t func_infos[] = {
 	F0("imagesetinterpolation",					MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE),
 	F1("imageresolution",						MAY_BE_NULL | MAY_BE_FALSE | MAY_BE_TRUE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_LONG | MAY_BE_ARRAY_OF_LONG),
 
+	/* ext/spl */
+	F1("class_implements",						MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_STRING | MAY_BE_ARRAY_OF_STRING),
+	F1("class_parents",							MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_STRING | MAY_BE_ARRAY_OF_STRING),
+	F1("class_uses",							MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_STRING | MAY_BE_ARRAY_OF_STRING),
+	F0("iterator_apply",						MAY_BE_NULL | MAY_BE_LONG),
+	F0("iterator_count",						MAY_BE_FALSE | MAY_BE_LONG),
+	F1("iterator_to_array",						MAY_BE_FALSE | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_ANY | MAY_BE_ARRAY_OF_REF | MAY_BE_ARRAY_OF_ANY),
+	F1("spl_classes",							MAY_BE_NULL | MAY_BE_ARRAY | MAY_BE_ARRAY_KEY_STRING | MAY_BE_ARRAY_OF_STRING),
+	F1("spl_object_hash",						MAY_BE_NULL | MAY_BE_STRING),
+	F0("spl_object_id",							MAY_BE_NULL | MAY_BE_LONG),
+
 };
 
 static HashTable func_info;
@@ -1694,8 +1633,7 @@ uint32_t zend_get_func_info(const zend_call_info *call_info, const zend_ssa *ssa
 		zval *zv;
 		func_info_t *info;
 
-		zv = zend_hash_find_ex(&func_info, Z_STR_P(CRT_CONSTANT_EX(call_info->caller_op_array, call_info->caller_init_opline, call_info->caller_init_opline->op2, ssa->rt_constants)), 1);
-		if (zv) {
+		if (!call_info->callee_func->common.scope && (zv = zend_hash_find_ex(&func_info, Z_STR_P(CRT_CONSTANT_EX(call_info->caller_op_array, call_info->caller_init_opline, call_info->caller_init_opline->op2, ssa->rt_constants)), 1))) {
 			info = Z_PTR_P(zv);
 			if (UNEXPECTED(zend_optimizer_is_disabled_func(info->name, info->name_len))) {
 				ret = MAY_BE_NULL;
@@ -1774,11 +1712,3 @@ int zend_func_info_shutdown(void)
 	}
 	return SUCCESS;
 }
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * indent-tabs-mode: t
- * End:
- */

@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -32,8 +32,6 @@
 
 ZEND_DECLARE_MODULE_GLOBALS(com_dotnet)
 static PHP_GINIT_FUNCTION(com_dotnet);
-
-TsHashTable php_com_typelibraries;
 
 zend_class_entry
 	*php_com_variant_class_entry,
@@ -237,6 +235,7 @@ static PHP_INI_MH(OnTypeLibFileUpdate)
 		modifier = php_strtok_r(NULL, "#", &strtok_buf);
 		if (modifier != NULL) {
 			if (!strcmp(modifier, "cis") || !strcmp(modifier, "case_insensitive")) {
+				php_error_docref("com.configuration", E_DEPRECATED, "Declaration of case-insensitive constants is deprecated");
 				mode &= ~CONST_CS;
 			}
 		}
@@ -265,11 +264,19 @@ static PHP_INI_MH(OnTypeLibFileUpdate)
 	return SUCCESS;
 }
 
+static ZEND_INI_MH(OnAutoregisterCasesensitive)
+{
+	if (!zend_ini_parse_bool(new_value)) {
+		php_error_docref("com.configuration", E_DEPRECATED, "Declaration of case-insensitive constants is deprecated");
+	}
+	return OnUpdateBool(entry, new_value, mh_arg1, mh_arg2, mh_arg3, stage);
+}
+
 PHP_INI_BEGIN()
     STD_PHP_INI_ENTRY("com.allow_dcom",				"0", PHP_INI_SYSTEM, OnUpdateBool, allow_dcom, zend_com_dotnet_globals, com_dotnet_globals)
     STD_PHP_INI_ENTRY("com.autoregister_verbose",	"0", PHP_INI_ALL, OnUpdateBool, autoreg_verbose, zend_com_dotnet_globals, com_dotnet_globals)
     STD_PHP_INI_ENTRY("com.autoregister_typelib",	"0", PHP_INI_ALL, OnUpdateBool, autoreg_on, zend_com_dotnet_globals, com_dotnet_globals)
-    STD_PHP_INI_ENTRY("com.autoregister_casesensitive",	"1", PHP_INI_ALL, OnUpdateBool, autoreg_case_sensitive, zend_com_dotnet_globals, com_dotnet_globals)
+    STD_PHP_INI_ENTRY("com.autoregister_casesensitive",	"1", PHP_INI_ALL, OnAutoregisterCasesensitive, autoreg_case_sensitive, zend_com_dotnet_globals, com_dotnet_globals)
 	STD_PHP_INI_ENTRY("com.code_page", "", PHP_INI_ALL, OnUpdateLong, code_page, zend_com_dotnet_globals, com_dotnet_globals)
 	PHP_INI_ENTRY("com.typelib_file", "", PHP_INI_SYSTEM, OnTypeLibFileUpdate)
 PHP_INI_END()
@@ -320,8 +327,6 @@ PHP_MINIT_FUNCTION(com_dotnet)
 	tmp->get_iterator = php_com_iter_get;
 	tmp->serialize = zend_class_serialize_deny;
 	tmp->unserialize = zend_class_unserialize_deny;
-
-	zend_ts_hash_init(&php_com_typelibraries, 0, NULL, php_com_typelibrary_dtor, 1);
 
 #if HAVE_MSCOREE_H
 	INIT_CLASS_ENTRY(ce, "dotnet", NULL);
@@ -409,6 +414,9 @@ PHP_MINIT_FUNCTION(com_dotnet)
 	COM_CONST(VT_UI8);
 	COM_CONST(VT_I8);
 #endif
+
+	PHP_MINIT(com_typeinfo)(INIT_FUNC_ARGS_PASSTHRU);
+
 	return SUCCESS;
 }
 /* }}} */
@@ -424,7 +432,8 @@ PHP_MSHUTDOWN_FUNCTION(com_dotnet)
 	}
 #endif
 
-	zend_ts_hash_destroy(&php_com_typelibraries);
+	PHP_MSHUTDOWN(com_typeinfo)(INIT_FUNC_ARGS_PASSTHRU);
+
 	return SUCCESS;
 }
 /* }}} */
@@ -472,12 +481,3 @@ PHP_MINFO_FUNCTION(com_dotnet)
 	DISPLAY_INI_ENTRIES();
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -69,7 +69,7 @@ static inline void clone_indices(php_com_saproxy *dest, php_com_saproxy *src, in
 	}
 }
 
-static zval *saproxy_property_read(zval *object, zval *member, int type, void **cahce_slot, zval *rv)
+static zval *saproxy_property_read(zval *object, zval *member, int type, void **cache_slot, zval *rv)
 {
 	ZVAL_NULL(rv);
 
@@ -78,9 +78,10 @@ static zval *saproxy_property_read(zval *object, zval *member, int type, void **
 	return rv;
 }
 
-static void saproxy_property_write(zval *object, zval *member, zval *value, void **cache_slot)
+static zval *saproxy_property_write(zval *object, zval *member, zval *value, void **cache_slot)
 {
 	php_com_throw_exception(E_INVALIDARG, "safearray has no properties");
+	return value;
 }
 
 static zval *saproxy_read_dimension(zval *object, zval *offset, int type, zval *rv)
@@ -314,7 +315,7 @@ static HashTable *saproxy_properties_get(zval *object)
 	return NULL;
 }
 
-static union _zend_function *saproxy_method_get(zend_object **object, zend_string *name, const zval *key)
+static zend_function *saproxy_method_get(zend_object **object, zend_string *name, const zval *key)
 {
 	/* no methods */
 	return NULL;
@@ -325,7 +326,7 @@ static int saproxy_call_method(zend_string *method, zend_object *object, INTERNA
 	return FAILURE;
 }
 
-static union _zend_function *saproxy_constructor_get(zend_object *object)
+static zend_function *saproxy_constructor_get(zend_object *object)
 {
 	/* user cannot instantiate */
 	return NULL;
@@ -373,6 +374,8 @@ static void saproxy_free_storage(zend_object *object)
 //???				FREE_ZVAL(proxy->indices[i]);
 //???		}
 //???	}
+
+	zend_object_std_dtor(object);
 
 	zval_ptr_dtor(proxy->zobj);
 	efree(proxy->indices);
@@ -547,7 +550,8 @@ zend_object_iterator *php_com_saproxy_iter_get(zend_class_entry *ce, zval *objec
 	Z_PTR(I->iter.data) = I;
 
 	I->proxy = proxy;
-	ZVAL_COPY(&I->proxy_obj, object);
+	Z_ADDREF_P(object);
+	ZVAL_OBJ(&I->proxy_obj, Z_OBJ_P(object));
 
 	I->indices = safe_emalloc(proxy->dimensions + 1, sizeof(LONG), 0);
 	for (i = 0; i < proxy->dimensions; i++) {

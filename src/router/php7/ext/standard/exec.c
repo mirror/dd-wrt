@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -31,9 +31,8 @@
 #if HAVE_SYS_WAIT_H
 #include <sys/wait.h>
 #endif
-#if HAVE_SIGNAL_H
+
 #include <signal.h>
-#endif
 
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -49,9 +48,7 @@
 #include <unistd.h>
 #endif
 
-#if HAVE_LIMITS_H
 #include <limits.h>
-#endif
 
 #ifdef PHP_WIN32
 # include "win32/nice.h"
@@ -181,8 +178,9 @@ PHPAPI int php_exec(int type, char *cmd, zval *array, zval *return_value)
 			RETVAL_EMPTY_STRING();
 		}
 	} else {
-		while((bufl = php_stream_read(stream, buf, EXEC_INPUT_BUF)) > 0) {
-			PHPWRITE(buf, bufl);
+		ssize_t read;
+		while ((read = php_stream_read(stream, buf, EXEC_INPUT_BUF)) > 0) {
+			PHPWRITE(buf, read);
 		}
 	}
 
@@ -216,9 +214,9 @@ static void php_exec_ex(INTERNAL_FUNCTION_PARAMETERS, int mode) /* {{{ */
 		Z_PARAM_STRING(cmd, cmd_len)
 		Z_PARAM_OPTIONAL
 		if (!mode) {
-			Z_PARAM_ZVAL_DEREF(ret_array)
+			Z_PARAM_ZVAL(ret_array)
 		}
-		Z_PARAM_ZVAL_DEREF(ret_code)
+		Z_PARAM_ZVAL(ret_code)
 	ZEND_PARSE_PARAMETERS_END_EX(RETURN_FALSE);
 
 	if (!cmd_len) {
@@ -233,18 +231,20 @@ static void php_exec_ex(INTERNAL_FUNCTION_PARAMETERS, int mode) /* {{{ */
 	if (!ret_array) {
 		ret = php_exec(mode, cmd, NULL, return_value);
 	} else {
-		if (Z_TYPE_P(ret_array) != IS_ARRAY) {
-			zval_ptr_dtor(ret_array);
-			array_init(ret_array);
-		} else if (Z_REFCOUNT_P(ret_array) > 1) {
-			zval_ptr_dtor(ret_array);
-			ZVAL_ARR(ret_array, zend_array_dup(Z_ARR_P(ret_array)));
+		if (Z_TYPE_P(Z_REFVAL_P(ret_array)) == IS_ARRAY) {
+			ZVAL_DEREF(ret_array);
+			SEPARATE_ARRAY(ret_array);
+		} else {
+			ret_array = zend_try_array_init(ret_array);
+			if (!ret_array) {
+				return;
+			}
 		}
+
 		ret = php_exec(2, cmd, ret_array, return_value);
 	}
 	if (ret_code) {
-		zval_ptr_dtor(ret_code);
-		ZVAL_LONG(ret_code, ret);
+		ZEND_TRY_ASSIGN_REF_LONG(ret_code, ret);
 	}
 }
 /* }}} */
@@ -564,7 +564,9 @@ PHP_FUNCTION(proc_nice)
 	php_ignore_value(nice(pri));
 	if (errno) {
 #ifdef PHP_WIN32
-		php_error_docref(NULL, E_WARNING, "%s", php_win_err());
+		char *err = php_win_err();
+		php_error_docref(NULL, E_WARNING, "%s", err);
+		php_win_err_free(err);
 #else
 		php_error_docref(NULL, E_WARNING, "Only a super user may attempt to increase the priority of a process");
 #endif
@@ -575,12 +577,3 @@ PHP_FUNCTION(proc_nice)
 }
 /* }}} */
 #endif
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

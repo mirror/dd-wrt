@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -297,7 +297,12 @@ PHP_FUNCTION(pack)
 				}
 
 				if (arg < 0) {
-					convert_to_string(&argv[currentarg]);
+					if (!try_convert_to_string(&argv[currentarg])) {
+						efree(formatcodes);
+						efree(formatargs);
+						return;
+					}
+
 					arg = Z_STRLEN(argv[currentarg]);
 					if (code == 'Z') {
 						/* add one because Z is always NUL-terminated:
@@ -1331,12 +1336,3 @@ PHP_MINIT_FUNCTION(pack)
 	return SUCCESS;
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

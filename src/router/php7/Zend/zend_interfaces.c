@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2018 Zend Technologies Ltd. (http://www.zend.com) |
+   | Copyright (c) Zend Technologies Ltd. (http://www.zend.com)           |
    +----------------------------------------------------------------------+
    | This source file is subject to version 2.00 of the Zend license,     |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -249,7 +249,8 @@ static zend_object_iterator *zend_user_it_get_iterator(zend_class_entry *ce, zva
 
 	zend_iterator_init((zend_object_iterator*)iterator);
 
-	ZVAL_COPY(&iterator->it.data, object);
+	Z_ADDREF_P(object);
+	ZVAL_OBJ(&iterator->it.data, Z_OBJ_P(object));
 	iterator->it.funcs = &zend_interface_iterator_funcs_iterator;
 	iterator->ce = Z_OBJCE_P(object);
 	ZVAL_UNDEF(&iterator->value);
@@ -290,9 +291,12 @@ static int zend_implement_traversable(zend_class_entry *interface, zend_class_en
 	if (class_type->get_iterator || (class_type->parent && class_type->parent->get_iterator)) {
 		return SUCCESS;
 	}
-	for (i = 0; i < class_type->num_interfaces; i++) {
-		if (class_type->interfaces[i] == zend_ce_aggregate || class_type->interfaces[i] == zend_ce_iterator) {
-			return SUCCESS;
+	if (class_type->num_interfaces) {
+		ZEND_ASSERT(class_type->ce_flags & ZEND_ACC_RESOLVED_INTERFACES);
+		for (i = 0; i < class_type->num_interfaces; i++) {
+			if (class_type->interfaces[i] == zend_ce_aggregate || class_type->interfaces[i] == zend_ce_iterator) {
+				return SUCCESS;
+			}
 		}
 	}
 	zend_error_noreturn(E_CORE_ERROR, "Class %s must implement interface %s as part of either %s or %s",
@@ -309,14 +313,16 @@ static int zend_implement_aggregate(zend_class_entry *interface, zend_class_entr
 {
 	uint32_t i;
 	int t = -1;
+	zend_class_iterator_funcs *funcs_ptr;
 
 	if (class_type->get_iterator) {
 		if (class_type->type == ZEND_INTERNAL_CLASS) {
 			/* inheritance ensures the class has necessary userland methods */
 			return SUCCESS;
 		} else if (class_type->get_iterator != zend_user_it_get_new_iterator) {
-			/* c-level get_iterator cannot be changed (exception being only Traversable is implmented) */
+			/* c-level get_iterator cannot be changed (exception being only Traversable is implemented) */
 			if (class_type->num_interfaces) {
+				ZEND_ASSERT(class_type->ce_flags & ZEND_ACC_RESOLVED_INTERFACES);
 				for (i = 0; i < class_type->num_interfaces; i++) {
 					if (class_type->interfaces[i] == zend_ce_iterator) {
 						zend_error_noreturn(E_ERROR, "Class %s cannot implement both %s and %s at the same time",
@@ -335,17 +341,28 @@ static int zend_implement_aggregate(zend_class_entry *interface, zend_class_entr
 			}
 		}
 	}
-	class_type->get_iterator = zend_user_it_get_new_iterator;
-	if (class_type->iterator_funcs_ptr != NULL) {
-		class_type->iterator_funcs_ptr->zf_new_iterator = NULL;
-	} else if (class_type->type == ZEND_INTERNAL_CLASS) {
-		class_type->iterator_funcs_ptr = calloc(1, sizeof(zend_class_iterator_funcs));
+	if (class_type->parent
+	 && (class_type->parent->ce_flags & ZEND_ACC_REUSE_GET_ITERATOR)) {
+		class_type->get_iterator = class_type->parent->get_iterator;
+		class_type->ce_flags |= ZEND_ACC_REUSE_GET_ITERATOR;
 	} else {
-		class_type->iterator_funcs_ptr = zend_arena_alloc(&CG(arena), sizeof(zend_class_iterator_funcs));
-		memset(class_type->iterator_funcs_ptr, 0, sizeof(zend_class_iterator_funcs));
+		class_type->get_iterator = zend_user_it_get_new_iterator;
 	}
+	funcs_ptr = class_type->iterator_funcs_ptr;
 	if (class_type->type == ZEND_INTERNAL_CLASS) {
-		class_type->iterator_funcs_ptr->zf_new_iterator = zend_hash_str_find_ptr(&class_type->function_table, "getiterator", sizeof("getiterator") - 1);
+		if (!funcs_ptr) {
+			funcs_ptr = calloc(1, sizeof(zend_class_iterator_funcs));
+			class_type->iterator_funcs_ptr = funcs_ptr;
+		}
+		funcs_ptr->zf_new_iterator = zend_hash_str_find_ptr(&class_type->function_table, "getiterator", sizeof("getiterator") - 1);
+	} else {
+		if (!funcs_ptr) {
+			funcs_ptr = zend_arena_alloc(&CG(arena), sizeof(zend_class_iterator_funcs));
+			class_type->iterator_funcs_ptr = funcs_ptr;
+			memset(funcs_ptr, 0, sizeof(zend_class_iterator_funcs));
+		} else {
+			funcs_ptr->zf_new_iterator = NULL;
+		}
 	}
 	return SUCCESS;
 }
@@ -354,6 +371,8 @@ static int zend_implement_aggregate(zend_class_entry *interface, zend_class_entr
 /* {{{ zend_implement_iterator */
 static int zend_implement_iterator(zend_class_entry *interface, zend_class_entry *class_type)
 {
+	zend_class_iterator_funcs *funcs_ptr;
+
 	if (class_type->get_iterator && class_type->get_iterator != zend_user_it_get_iterator) {
 		if (class_type->type == ZEND_INTERNAL_CLASS) {
 			/* inheritance ensures the class has the necessary userland methods */
@@ -369,25 +388,37 @@ static int zend_implement_iterator(zend_class_entry *interface, zend_class_entry
 			return FAILURE;
 		}
 	}
-	class_type->get_iterator = zend_user_it_get_iterator;
-	if (class_type->iterator_funcs_ptr != NULL) {
-		class_type->iterator_funcs_ptr->zf_valid = NULL;
-		class_type->iterator_funcs_ptr->zf_current = NULL;
-		class_type->iterator_funcs_ptr->zf_key = NULL;
-		class_type->iterator_funcs_ptr->zf_next = NULL;
-		class_type->iterator_funcs_ptr->zf_rewind = NULL;
-	} else if (class_type->type == ZEND_INTERNAL_CLASS) {
-		class_type->iterator_funcs_ptr = calloc(1, sizeof(zend_class_iterator_funcs));
+	if (class_type->parent
+	 && (class_type->parent->ce_flags & ZEND_ACC_REUSE_GET_ITERATOR)) {
+		class_type->get_iterator = class_type->parent->get_iterator;
+		class_type->ce_flags |= ZEND_ACC_REUSE_GET_ITERATOR;
 	} else {
-		class_type->iterator_funcs_ptr = zend_arena_alloc(&CG(arena), sizeof(zend_class_iterator_funcs));
-		memset(class_type->iterator_funcs_ptr, 0, sizeof(zend_class_iterator_funcs));
+		class_type->get_iterator = zend_user_it_get_iterator;
 	}
+	funcs_ptr = class_type->iterator_funcs_ptr;
 	if (class_type->type == ZEND_INTERNAL_CLASS) {
-		class_type->iterator_funcs_ptr->zf_rewind = zend_hash_str_find_ptr(&class_type->function_table, "rewind", sizeof("rewind") - 1);
-		class_type->iterator_funcs_ptr->zf_valid = zend_hash_str_find_ptr(&class_type->function_table, "valid", sizeof("valid") - 1);
-		class_type->iterator_funcs_ptr->zf_key = zend_hash_str_find_ptr(&class_type->function_table, "key", sizeof("key") - 1);
-		class_type->iterator_funcs_ptr->zf_current = zend_hash_str_find_ptr(&class_type->function_table, "current", sizeof("current") - 1);
-		class_type->iterator_funcs_ptr->zf_next = zend_hash_str_find_ptr(&class_type->function_table, "next", sizeof("next") - 1);
+		if (!funcs_ptr) {
+			funcs_ptr = calloc(1, sizeof(zend_class_iterator_funcs));
+			class_type->iterator_funcs_ptr = funcs_ptr;
+		} else {
+			funcs_ptr->zf_rewind = zend_hash_str_find_ptr(&class_type->function_table, "rewind", sizeof("rewind") - 1);
+			funcs_ptr->zf_valid = zend_hash_str_find_ptr(&class_type->function_table, "valid", sizeof("valid") - 1);
+			funcs_ptr->zf_key = zend_hash_str_find_ptr(&class_type->function_table, "key", sizeof("key") - 1);
+			funcs_ptr->zf_current = zend_hash_str_find_ptr(&class_type->function_table, "current", sizeof("current") - 1);
+			funcs_ptr->zf_next = zend_hash_str_find_ptr(&class_type->function_table, "next", sizeof("next") - 1);
+		}
+	} else {
+		if (!funcs_ptr) {
+			funcs_ptr = zend_arena_alloc(&CG(arena), sizeof(zend_class_iterator_funcs));
+			class_type->iterator_funcs_ptr = funcs_ptr;
+			memset(funcs_ptr, 0, sizeof(zend_class_iterator_funcs));
+		} else {
+			funcs_ptr->zf_valid = NULL;
+			funcs_ptr->zf_current = NULL;
+			funcs_ptr->zf_key = NULL;
+			funcs_ptr->zf_next = NULL;
+			funcs_ptr->zf_rewind = NULL;
+		}
 	}
 	return SUCCESS;
 }
@@ -544,7 +575,7 @@ ZEND_END_ARG_INFO()
 
 static const zend_function_entry zend_funcs_serializable[] = {
 	ZEND_ABSTRACT_ME(serializable, serialize,   NULL)
-	ZEND_FENTRY(unserialize, NULL, arginfo_serializable_serialize, ZEND_ACC_PUBLIC|ZEND_ACC_ABSTRACT|ZEND_ACC_CTOR)
+	ZEND_FENTRY(unserialize, NULL, arginfo_serializable_serialize, ZEND_ACC_PUBLIC|ZEND_ACC_ABSTRACT)
 	ZEND_FE_END
 };
 
@@ -575,13 +606,3 @@ ZEND_API void zend_register_interfaces(void)
 	REGISTER_MAGIC_INTERFACE(countable, Countable);
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * indent-tabs-mode: t
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

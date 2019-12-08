@@ -1,30 +1,26 @@
-dnl config.m4 for extension opcache
+PHP_ARG_ENABLE([opcache],
+  [whether to enable Zend OPcache support],
+  [AS_HELP_STRING([--disable-opcache],
+    [Disable Zend OPcache support])],
+  [yes])
 
-PHP_ARG_ENABLE(opcache, whether to enable Zend OPcache support,
-[  --disable-opcache       Disable Zend OPcache support], yes)
-
-PHP_ARG_ENABLE(opcache-file, whether to enable file based caching,
-[  --disable-opcache-file  Disable file based caching], yes, no)
-
-PHP_ARG_ENABLE(huge-code-pages, whether to enable copying PHP CODE pages into HUGE PAGES,
-[  --disable-huge-code-pages
-                          Disable copying PHP CODE pages into HUGE PAGES], yes, no)
+PHP_ARG_ENABLE([huge-code-pages],
+  [whether to enable copying PHP CODE pages into HUGE PAGES],
+  [AS_HELP_STRING([--disable-huge-code-pages],
+    [Disable copying PHP CODE pages into HUGE PAGES])],
+  [yes],
+  [no])
 
 if test "$PHP_OPCACHE" != "no"; then
 
-  if test "$PHP_OPCACHE_FILE" = "yes"; then
-    AC_DEFINE(HAVE_OPCACHE_FILE_CACHE, 1, [Define to enable file based caching (experimental)])
-  fi
+  dnl Always build as shared extension
+  ext_shared=yes
 
   if test "$PHP_HUGE_CODE_PAGES" = "yes"; then
     AC_DEFINE(HAVE_HUGE_CODE_PAGES, 1, [Define to enable copying PHP CODE pages into HUGE PAGES (experimental)])
   fi
 
-  AC_CHECK_FUNC(mprotect,[
-    AC_DEFINE(HAVE_MPROTECT, 1, [Define if you have mprotect() function])
-  ])
-
-  AC_CHECK_HEADERS([unistd.h sys/uio.h])
+  AC_CHECK_FUNCS([mprotect])
 
   AC_CHECK_FUNC(shmget,[
     AC_DEFINE(HAVE_SHM_IPC, 1, [Define if you have SysV IPC SHM support])
@@ -33,61 +29,7 @@ if test "$PHP_OPCACHE" != "no"; then
     AC_DEFINE(HAVE_SHM_MMAP_ANON, 1, [Define if you have mmap(MAP_ANON) SHM support])
   ])
 
-  AC_MSG_CHECKING(for mmap() using /dev/zero shared memory support)
-  AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <string.h>
-
-#ifndef MAP_FAILED
-# define MAP_FAILED ((void*)-1)
-#endif
-
-int main() {
-  pid_t pid;
-  int status;
-  int fd;
-  char *shm;
-
-  fd = open("/dev/zero", O_RDWR, S_IRUSR | S_IWUSR);
-  if (fd == -1) {
-    return 1;
-  }
-
-  shm = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-  if (shm == MAP_FAILED) {
-    return 2;
-  }
-
-  strcpy(shm, "hello");
-
-  pid = fork();
-  if (pid < 0) {
-    return 5;
-  } else if (pid == 0) {
-    strcpy(shm, "bye");
-    return 6;
-  }
-  if (wait(&status) != pid) {
-    return 7;
-  }
-  if (!WIFEXITED(status) || WEXITSTATUS(status) != 6) {
-    return 8;
-  }
-  if (strcmp(shm, "bye") != 0) {
-    return 9;
-  }
-  return 0;
-}
-]])],[dnl
-    AC_DEFINE(HAVE_SHM_MMAP_ZERO, 1, [Define if you have mmap("/dev/zero") SHM support])
-    msg=yes],[msg=no],[msg=no])
-  AC_MSG_RESULT([$msg])
-
+  PHP_CHECK_FUNC_LIB(shm_open, rt)
   AC_MSG_CHECKING(for mmap() using shm_open() shared memory support)
   AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <sys/types.h>
@@ -111,7 +53,7 @@ int main() {
   char *shm;
   char tmpname[4096];
 
-  sprintf(tmpname,"test.shm.%dXXXXXX", getpid());
+  sprintf(tmpname,"/opcache.test.shm.%dXXXXXX", getpid());
   if (mktemp(tmpname) == NULL) {
     return 1;
   }
@@ -154,77 +96,13 @@ int main() {
 }
 ]])],[dnl
     AC_DEFINE(HAVE_SHM_MMAP_POSIX, 1, [Define if you have POSIX mmap() SHM support])
-    msg=yes],[msg=no],[msg=no])
-  AC_MSG_RESULT([$msg])
-
-  AC_MSG_CHECKING(for mmap() using regular file shared memory support)
-  AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-
-#ifndef MAP_FAILED
-# define MAP_FAILED ((void*)-1)
-#endif
-
-int main() {
-  pid_t pid;
-  int status;
-  int fd;
-  char *shm;
-  char tmpname[4096];
-
-  sprintf(tmpname,"test.shm.%dXXXXXX", getpid());
-  if (mktemp(tmpname) == NULL) {
-    return 1;
-  }
-  fd = open(tmpname, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-  if (fd == -1) {
-    return 2;
-  }
-  if (ftruncate(fd, 4096) < 0) {
-    close(fd);
-    unlink(tmpname);
-    return 3;
-  }
-
-  shm = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-  if (shm == MAP_FAILED) {
-    return 4;
-  }
-  unlink(tmpname);
-  close(fd);
-
-  strcpy(shm, "hello");
-
-  pid = fork();
-  if (pid < 0) {
-    return 5;
-  } else if (pid == 0) {
-    strcpy(shm, "bye");
-    return 6;
-  }
-  if (wait(&status) != pid) {
-    return 7;
-  }
-  if (!WIFEXITED(status) || WEXITSTATUS(status) != 6) {
-    return 8;
-  }
-  if (strcmp(shm, "bye") != 0) {
-    return 9;
-  }
-  return 0;
-}
-]])],[dnl
-    AC_DEFINE(HAVE_SHM_MMAP_FILE, 1, [Define if you have mmap() SHM support])
-    msg=yes],[msg=no],[msg=no])
-  AC_MSG_RESULT([$msg])
+    AC_MSG_RESULT([yes])
+    PHP_CHECK_LIBRARY(rt, shm_unlink, [PHP_ADD_LIBRARY(rt,1,OPCACHE_SHARED_LIBADD)])
+  ],[
+    AC_MSG_RESULT([no])
+  ],[
+    AC_MSG_RESULT([no])
+  ])
 
   PHP_NEW_EXTENSION(opcache,
 	ZendAccelerator.c \
@@ -266,4 +144,5 @@ int main() {
 
   PHP_ADD_BUILD_DIR([$ext_builddir/Optimizer], 1)
   PHP_ADD_EXTENSION_DEP(opcache, pcre)
+  PHP_SUBST(OPCACHE_SHARED_LIBADD)
 fi

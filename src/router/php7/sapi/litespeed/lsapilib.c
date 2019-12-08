@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -92,6 +92,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef uint32
 #define uint32 uint32_t
 #endif
+
+#include <Zend/zend_portability.h>
 
 struct lsapi_MD5Context {
     uint32 buf[4];
@@ -779,7 +781,7 @@ static int (*fp_lve_leave)(struct liblve *, uint32_t *) = NULL;
 static int (*fp_lve_jail)( struct passwd *, char *) = NULL;
 static int lsapi_load_lve_lib(void)
 {
-    s_liblve = dlopen("liblve.so.0", RTLD_LAZY);
+    s_liblve = DL_LOAD("liblve.so.0");
     if (s_liblve)
     {
         fp_lve_is_available = dlsym(s_liblve, "lve_is_available");

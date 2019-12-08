@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -43,6 +43,9 @@
 #endif
 
 #include <errno.h>
+#ifdef HAVE_UNSHARE
+#include <sched.h>
+#endif
 
 #ifndef NSIG
 # ifdef SIGRTMAX
@@ -166,6 +169,12 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_pcntl_async_signals, 0, 0, 1)
         ZEND_ARG_INFO(0, on)
 ZEND_END_ARG_INFO()
+
+#ifdef HAVE_UNSHARE
+ZEND_BEGIN_ARG_INFO_EX(arginfo_pcntl_unshare, 0, 0, 1)
+	ZEND_ARG_INFO(0, flags)
+ZEND_END_ARG_INFO()
+#endif
 /* }}} */
 
 static const zend_function_entry pcntl_functions[] = {
@@ -205,6 +214,9 @@ static const zend_function_entry pcntl_functions[] = {
 	PHP_FE(pcntl_wifcontinued,	arginfo_pcntl_wifcontinued)
 #endif
 	PHP_FE(pcntl_async_signals,	arginfo_pcntl_async_signals)
+#ifdef HAVE_UNSHARE
+	PHP_FE(pcntl_unshare,		arginfo_pcntl_unshare)
+#endif
 	PHP_FE_END
 };
 
@@ -226,6 +238,9 @@ zend_module_entry pcntl_module_entry = {
 };
 
 #ifdef COMPILE_DL_PCNTL
+#ifdef ZTS
+ZEND_TSRMLS_CACHE_DEFINE()
+#endif
 ZEND_GET_MODULE(pcntl)
 #endif
 
@@ -464,6 +479,29 @@ void php_register_signal_constants(INIT_FUNC_ARGS)
 #endif
 #endif /* HAVE_SIGWAITINFO && HAVE_SIGTIMEDWAIT */
 	/* }}} */
+
+	/* unshare(/clone) constants */
+#ifdef HAVE_UNSHARE
+	REGISTER_LONG_CONSTANT("CLONE_NEWNS",		CLONE_NEWNS, CONST_CS | CONST_PERSISTENT);
+#ifdef CLONE_NEWIPC
+	REGISTER_LONG_CONSTANT("CLONE_NEWIPC",		CLONE_NEWIPC, CONST_CS | CONST_PERSISTENT);
+#endif
+#ifdef CLONE_NEWUTS
+	REGISTER_LONG_CONSTANT("CLONE_NEWUTS",		CLONE_NEWUTS, CONST_CS | CONST_PERSISTENT);
+#endif
+#ifdef CLONE_NEWNET
+	REGISTER_LONG_CONSTANT("CLONE_NEWNET",		CLONE_NEWNET, CONST_CS | CONST_PERSISTENT);
+#endif
+#ifdef CLONE_NEWPID
+	REGISTER_LONG_CONSTANT("CLONE_NEWPID",		CLONE_NEWPID, CONST_CS | CONST_PERSISTENT);
+#endif
+#ifdef CLONE_NEWUSER
+	REGISTER_LONG_CONSTANT("CLONE_NEWUSER",		CLONE_NEWUSER, CONST_CS | CONST_PERSISTENT);
+#endif
+#ifdef CLONE_NEWCGROUP
+	REGISTER_LONG_CONSTANT("CLONE_NEWCGROUP",	CLONE_NEWCGROUP, CONST_CS | CONST_PERSISTENT);
+#endif
+#endif
 }
 
 static void php_pcntl_register_errno_constants(INIT_FUNC_ARGS)
@@ -531,15 +569,25 @@ static void php_pcntl_register_errno_constants(INIT_FUNC_ARGS)
 #ifdef ETXTBSY
 	REGISTER_PCNTL_ERRNO_CONSTANT(ETXTBSY);
 #endif
+#ifdef ENOSPC
+	REGISTER_PCNTL_ERRNO_CONSTANT(ENOSPC);
+#endif
+#ifdef EUSERS
+	REGISTER_PCNTL_ERRNO_CONSTANT(EUSERS);
+#endif
 }
 
 static PHP_GINIT_FUNCTION(pcntl)
 {
+#if defined(COMPILE_DL_PCNTL) && defined(ZTS)
+	ZEND_TSRMLS_CACHE_UPDATE();
+#endif
 	memset(pcntl_globals, 0, sizeof(*pcntl_globals));
 }
 
 PHP_RINIT_FUNCTION(pcntl)
 {
+	php_add_tick_function(pcntl_signal_dispatch, NULL);
 	zend_hash_init(&PCNTL_G(php_signal_table), 16, NULL, ZVAL_PTR_DTOR, 0);
 	PCNTL_G(head) = PCNTL_G(tail) = PCNTL_G(spares) = NULL;
 	PCNTL_G(async_signals) = 0;
@@ -550,7 +598,6 @@ PHP_MINIT_FUNCTION(pcntl)
 {
 	php_register_signal_constants(INIT_FUNC_ARGS_PASSTHRU);
 	php_pcntl_register_errno_constants(INIT_FUNC_ARGS_PASSTHRU);
-	php_add_tick_function(pcntl_signal_dispatch, NULL);
 	orig_interrupt_function = zend_interrupt_function;
 	zend_interrupt_function = pcntl_interrupt_function;
 
@@ -663,7 +710,7 @@ PHP_FUNCTION(pcntl_waitpid)
 	struct rusage rusage;
 #endif
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "lz/|lz/", &pid, &z_status, &options, &z_rusage) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "lz|lz", &pid, &z_status, &options, &z_rusage) == FAILURE) {
 		return;
 	}
 
@@ -671,11 +718,9 @@ PHP_FUNCTION(pcntl_waitpid)
 
 #ifdef HAVE_WAIT4
 	if (z_rusage) {
-		if (Z_TYPE_P(z_rusage) != IS_ARRAY) {
-			zval_ptr_dtor(z_rusage);
-			array_init(z_rusage);
-		} else {
-			zend_hash_clean(Z_ARRVAL_P(z_rusage));
+		z_rusage = zend_try_array_init(z_rusage);
+		if (!z_rusage) {
+			return;
 		}
 
 		memset(&rusage, 0, sizeof(struct rusage));
@@ -697,8 +742,7 @@ PHP_FUNCTION(pcntl_waitpid)
 	}
 #endif
 
-	zval_ptr_dtor(z_status);
-	ZVAL_LONG(z_status, status);
+	ZEND_TRY_ASSIGN_REF_LONG(z_status, status);
 
 	RETURN_LONG((zend_long) child_id);
 }
@@ -716,18 +760,16 @@ PHP_FUNCTION(pcntl_wait)
 	struct rusage rusage;
 #endif
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "z/|lz/", &z_status, &options, &z_rusage) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "z|lz", &z_status, &options, &z_rusage) == FAILURE) {
 		return;
 	}
 
 	status = zval_get_long(z_status);
 #ifdef HAVE_WAIT3
 	if (z_rusage) {
-		if (Z_TYPE_P(z_rusage) != IS_ARRAY) {
-			zval_ptr_dtor(z_rusage);
-			array_init(z_rusage);
-		} else {
-			zend_hash_clean(Z_ARRVAL_P(z_rusage));
+		z_rusage = zend_try_array_init(z_rusage);
+		if (!z_rusage) {
+			return;
 		}
 
 		memset(&rusage, 0, sizeof(struct rusage));
@@ -750,8 +792,7 @@ PHP_FUNCTION(pcntl_wait)
 	}
 #endif
 
-	zval_ptr_dtor(z_status);
-	ZVAL_LONG(z_status, status);
+	ZEND_TRY_ASSIGN_REF_LONG(z_status, status);
 
 	RETURN_LONG((zend_long) child_id);
 }
@@ -926,6 +967,7 @@ PHP_FUNCTION(pcntl_exec)
 
 	if (ZEND_NUM_ARGS() > 1) {
 		/* Build argument list */
+		SEPARATE_ARRAY(args);
 		args_hash = Z_ARRVAL_P(args);
 		argc = zend_hash_num_elements(args_hash);
 
@@ -934,20 +976,25 @@ PHP_FUNCTION(pcntl_exec)
 		current_arg = argv+1;
 		ZEND_HASH_FOREACH_VAL(args_hash, element) {
 			if (argi >= argc) break;
-			convert_to_string_ex(element);
+			if (!try_convert_to_string(element)) {
+				efree(argv);
+				return;
+			}
+
 			*current_arg = Z_STRVAL_P(element);
 			argi++;
 			current_arg++;
 		} ZEND_HASH_FOREACH_END();
-		*(current_arg) = NULL;
+		*current_arg = NULL;
 	} else {
 		argv = emalloc(2 * sizeof(char *));
-		*argv = path;
-		*(argv+1) = NULL;
+		argv[0] = path;
+		argv[1] = NULL;
 	}
 
 	if ( ZEND_NUM_ARGS() == 3 ) {
 		/* Build environment pair list */
+		SEPARATE_ARRAY(envs);
 		envs_hash = Z_ARRVAL_P(envs);
 		envc = zend_hash_num_elements(envs_hash);
 
@@ -960,7 +1007,12 @@ PHP_FUNCTION(pcntl_exec)
 				zend_string_addref(key);
 			}
 
-			convert_to_string_ex(element);
+			if (!try_convert_to_string(element)) {
+				zend_string_release(key);
+				efree(argv);
+				efree(envp);
+				return;
+			}
 
 			/* Length of element + equal sign + length of key + null */
 			pair_length = Z_STRLEN_P(element) + ZSTR_LEN(key) + 2;
@@ -1005,8 +1057,9 @@ PHP_FUNCTION(pcntl_signal)
 	zval *handle;
 	zend_long signo;
 	zend_bool restart_syscalls = 1;
+	zend_bool restart_syscalls_is_null = 1;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "lz|b", &signo, &handle, &restart_syscalls) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "lz|b!", &signo, &handle, &restart_syscalls, &restart_syscalls_is_null) == FAILURE) {
 		return;
 	}
 
@@ -1026,6 +1079,13 @@ PHP_FUNCTION(pcntl_signal)
 			psig->next = PCNTL_G(spares);
 			PCNTL_G(spares) = psig;
 		}
+	}
+
+	/* If restart_syscalls was not explicitly specified and the signal is SIGALRM, then default
+	 * restart_syscalls to false. PHP used to enforce that restart_syscalls is false for SIGALRM,
+	 * so we keep this differing default to reduce the degree of BC breakage. */
+	if (restart_syscalls_is_null && signo == SIGALRM) {
+		restart_syscalls = 0;
 	}
 
 	/* Special long value case for SIG_DFL and SIG_IGN */
@@ -1105,7 +1165,7 @@ PHP_FUNCTION(pcntl_sigprocmask)
 	zval         *user_set, *user_oldset = NULL, *user_signo;
 	sigset_t      set, oldset;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "la|z/", &how, &user_set, &user_oldset) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "la|z", &how, &user_set, &user_oldset) == FAILURE) {
 		return;
 	}
 
@@ -1131,12 +1191,11 @@ PHP_FUNCTION(pcntl_sigprocmask)
 	}
 
 	if (user_oldset != NULL) {
-		if (Z_TYPE_P(user_oldset) != IS_ARRAY) {
-			zval_ptr_dtor(user_oldset);
-			array_init(user_oldset);
-		} else {
-			zend_hash_clean(Z_ARRVAL_P(user_oldset));
+		user_oldset = zend_try_array_init(user_oldset);
+		if (!user_oldset) {
+			return;
 		}
+
 		for (signo = 1; signo < NSIG; ++signo) {
 			if (sigismember(&oldset, signo) != 1) {
 				continue;
@@ -1162,11 +1221,11 @@ static void pcntl_sigwaitinfo(INTERNAL_FUNCTION_PARAMETERS, int timedwait) /* {{
 	struct timespec  timeout;
 
 	if (timedwait) {
-		if (zend_parse_parameters(ZEND_NUM_ARGS(), "a|z/ll", &user_set, &user_siginfo, &tv_sec, &tv_nsec) == FAILURE) {
+		if (zend_parse_parameters(ZEND_NUM_ARGS(), "a|zll", &user_set, &user_siginfo, &tv_sec, &tv_nsec) == FAILURE) {
 			return;
 		}
 	} else {
-		if (zend_parse_parameters(ZEND_NUM_ARGS(), "a|z/", &user_set, &user_siginfo) == FAILURE) {
+		if (zend_parse_parameters(ZEND_NUM_ARGS(), "a|z", &user_set, &user_siginfo) == FAILURE) {
 			return;
 		}
 	}
@@ -1230,12 +1289,11 @@ PHP_FUNCTION(pcntl_sigtimedwait)
 static void pcntl_siginfo_to_zval(int signo, siginfo_t *siginfo, zval *user_siginfo) /* {{{ */
 {
 	if (signo > 0 && user_siginfo) {
-		if (Z_TYPE_P(user_siginfo) != IS_ARRAY) {
-			zval_ptr_dtor(user_siginfo);
-			array_init(user_siginfo);
-		} else {
-			zend_hash_clean(Z_ARRVAL_P(user_siginfo));
+		user_siginfo = zend_try_array_init(user_siginfo);
+		if (!user_siginfo) {
+			return;
 		}
+
 		add_assoc_long_ex(user_siginfo, "signo", sizeof("signo")-1, siginfo->si_signo);
 		add_assoc_long_ex(user_siginfo, "errno", sizeof("errno")-1, siginfo->si_errno);
 		add_assoc_long_ex(user_siginfo, "code",  sizeof("code")-1,  siginfo->si_code);
@@ -1464,7 +1522,7 @@ void pcntl_signal_dispatch()
 
 				/* Call php signal handler - Note that we do not report errors, and we ignore the return value */
 				/* FIXME: this is probably broken when multiple signals are handled in this while loop (retval) */
-				call_user_function(EG(function_table), NULL, handle, &retval, 2, params);
+				call_user_function(NULL, NULL, handle, &retval, 2, params);
 				zval_ptr_dtor(&retval);
 #ifdef HAVE_STRUCT_SIGINFO_T
 				zval_ptr_dtor(&params[1]);
@@ -1504,6 +1562,59 @@ PHP_FUNCTION(pcntl_async_signals)
 }
 /* }}} */
 
+#ifdef HAVE_UNSHARE
+/* {{{ proto bool pcntl_unshare(int flags)
+   disassociate parts of the process execution context */
+PHP_FUNCTION(pcntl_unshare)
+{
+	zend_long flags;
+	int ret;
+
+	ZEND_PARSE_PARAMETERS_START(1, 1)
+		Z_PARAM_LONG(flags)
+	ZEND_PARSE_PARAMETERS_END();
+
+	ret = unshare(flags);
+	if (ret == -1) {
+		PCNTL_G(last_error) = errno;
+		switch (errno) {
+#ifdef EINVAL
+			case EINVAL:
+				php_error_docref(NULL, E_WARNING, "Error %d: Invalid flag specified", errno);
+				break;
+#endif
+#ifdef ENOMEM
+			case ENOMEM:
+				php_error_docref(NULL, E_WARNING, "Error %d: Insufficient memory for unshare", errno);
+				break;
+#endif
+#ifdef EPERM
+			case EPERM:
+				php_error_docref(NULL, E_WARNING, "Error %d: No privilege to use these flags", errno);
+				break;
+#endif
+#ifdef ENOSPC
+			case ENOSPC:
+				php_error_docref(NULL, E_WARNING, "Error %d: Reached the maximum nesting limit for one of the specified namespaces", errno);
+				break;
+#endif
+#ifdef EUSERS
+			case EUSERS:
+				php_error_docref(NULL, E_WARNING, "Error %d: Reached the maximum nesting limit for the user namespace", errno);
+				break;
+#endif
+			default:
+				php_error_docref(NULL, E_WARNING, "Unknown error %d has occurred", errno);
+				break;
+		}
+		RETURN_FALSE;
+	}
+
+	RETURN_TRUE;
+}
+/* }}} */
+#endif
+
 static void pcntl_interrupt_function(zend_execute_data *execute_data)
 {
 	pcntl_signal_dispatch();
@@ -1511,11 +1622,3 @@ static void pcntl_interrupt_function(zend_execute_data *execute_data)
 		orig_interrupt_function(execute_data);
 	}
 }
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * indent-tabs-mode: t
- * End:
- */

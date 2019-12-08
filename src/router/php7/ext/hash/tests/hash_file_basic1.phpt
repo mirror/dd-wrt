@@ -1,7 +1,5 @@
 --TEST--
-Test hash_file() function : basic functionality
---SKIPIF--
-<?php extension_loaded('hash') or die('skip: hash extension not loaded.'); ?>
+Hash: hash_file() function : basic functionality
 --FILE--
 <?php
 
@@ -13,7 +11,7 @@ Test hash_file() function : basic functionality
 
 echo "*** Testing hash_file() : basic functionality ***\n";
 
-$file = dirname(__FILE__) . "hash_file.txt";
+$file = __DIR__ . "hash_file.txt";
 /* Creating a temporary file file */
 if (($fp = fopen( $file, "w+")) == FALSE) {
 	echo "Cannot create file ($file)";

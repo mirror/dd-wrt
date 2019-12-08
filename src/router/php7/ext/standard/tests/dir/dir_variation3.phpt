@@ -5,15 +5,7 @@ Test dir() function : usage variations - different directory permissions
 if( substr(PHP_OS, 0, 3) == 'WIN') {
   die('skip Not for Windows');
 }
-// Skip if being run by root (files are always readable, writeable and executable)
-$filename = dirname(__FILE__)."/dir_root_check.tmp";
-$fp = fopen($filename, 'w');
-fclose($fp);
-if(fileowner($filename) == 0) {
-        unlink ($filename);
-        die('skip...cannot be run as root\n');
-}
-unlink($filename);
+require __DIR__ . '/../skipif_root.inc';
 ?>
 --FILE--
 <?php
@@ -31,7 +23,7 @@ unlink($filename);
 echo "*** Testing dir() : different directory permissions ***";
 
 // create the temporary directory
-$file_path = dirname(__FILE__);
+$file_path = __DIR__;
 $dir_path = $file_path."/dir_variation3";
 @mkdir($dir_path);
 
@@ -58,7 +50,7 @@ for($count = 0; $count < count($permission_values); $count++) {
   echo "\n-- Iteration ".($count + 1)." --\n";
 
   // try to remove the dir if exists  & create
-  $file_path = dirname(__FILE__);
+  $file_path = __DIR__;
   $dir_path = $file_path."/dir_variation3";
   @chmod ($dir_path, 0777); // change dir permission to allow all operation
   @rmdir ($dir_path);  // try n delete the dir
@@ -86,7 +78,7 @@ echo "Done";
 --CLEAN--
 <?php
 // deleting temporary directory
-$file_path = dirname(__FILE__);
+$file_path = __DIR__;
 $dir_path = $file_path."/dir_variation3";
 rmdir($dir_path);
 ?>

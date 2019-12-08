@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -16,7 +16,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 92cfbe7421bcb318d3fd0c02b188921d38296ef8 $ */
+/* $Id: 95b1c2518144e0151afa6b2b8c7bf31bf1f037ed $ */
 
 /* incorporated from D.J.Bernstein's cdb-0.75 (http://cr.yp.to/cdb.html)*/
 
@@ -240,5 +240,5 @@ int cdb_make_finish(struct cdb_make *c)
 /* {{{ cdb_make_version */
 char *cdb_make_version()
 {
-	return "0.75, $Id: 92cfbe7421bcb318d3fd0c02b188921d38296ef8 $";
+	return "0.75, $Id: 95b1c2518144e0151afa6b2b8c7bf31bf1f037ed $";
 }

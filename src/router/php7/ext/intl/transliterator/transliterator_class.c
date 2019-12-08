@@ -189,12 +189,14 @@ err:
 }
 /* }}} */
 
-#define TRANSLITERATOR_PROPERTY_HANDLER_PROLOG  \
+#define TRANSLITERATOR_PROPERTY_HANDLER_PROLOG(return_fail) \
 	zval tmp_member;							\
 	if( Z_TYPE_P( member ) != IS_STRING )		\
 	{											\
-		ZVAL_STR(&tmp_member,					\
-			zval_get_string_func(member));		\
+		zend_string *_str =						\
+			zval_try_get_string_func(member);	\
+		if (UNEXPECTED(!_str)) { return_fail; }	\
+		ZVAL_STR(&tmp_member, _str);			\
 		member = &tmp_member;					\
 		cache_slot = NULL;						\
     }
@@ -210,7 +212,7 @@ static zval *Transliterator_get_property_ptr_ptr( zval *object, zval *member, in
 {
 	zval *retval;
 
-	TRANSLITERATOR_PROPERTY_HANDLER_PROLOG;
+	TRANSLITERATOR_PROPERTY_HANDLER_PROLOG(return NULL);
 
 	if(zend_binary_strcmp( "id", sizeof( "id" ) - 1,
 		Z_STRVAL_P( member ), Z_STRLEN_P( member ) ) == 0 )
@@ -233,13 +235,13 @@ static zval *Transliterator_read_property( zval *object, zval *member, int type,
 {
 	zval *retval;
 
-	TRANSLITERATOR_PROPERTY_HANDLER_PROLOG;
+	TRANSLITERATOR_PROPERTY_HANDLER_PROLOG(return &EG(uninitialized_zval));
 
 	if( ( type != BP_VAR_R && type != BP_VAR_IS ) &&
 		( zend_binary_strcmp( "id", sizeof( "id" ) - 1,
 		Z_STRVAL_P( member ), Z_STRLEN_P( member ) ) == 0 ) )
 	{
-		php_error_docref0( NULL, E_WARNING, "The property \"id\" is read-only" );
+		php_error_docref(NULL, E_WARNING, "The property \"id\" is read-only" );
 		retval = &EG( uninitialized_zval );
 	}
 	else
@@ -255,11 +257,10 @@ static zval *Transliterator_read_property( zval *object, zval *member, int type,
 /* }}} */
 
 /* {{{ write_property handler */
-static void Transliterator_write_property( zval *object, zval *member, zval *value,
-	void **cache_slot )
+static zval *Transliterator_write_property( zval *object, zval *member, zval *value, void **cache_slot )
 {
 	zend_class_entry *scope;
-	TRANSLITERATOR_PROPERTY_HANDLER_PROLOG;
+	TRANSLITERATOR_PROPERTY_HANDLER_PROLOG(return value);
 
 	if (EG(fake_scope)) {
 		scope = EG(fake_scope);
@@ -270,14 +271,16 @@ static void Transliterator_write_property( zval *object, zval *member, zval *val
 		( zend_binary_strcmp( "id", sizeof( "id" ) - 1,
 		Z_STRVAL_P( member ), Z_STRLEN_P( member ) ) == 0 ) )
 	{
-		php_error_docref0( NULL, E_WARNING, "The property \"id\" is read-only" );
+		php_error_docref(NULL, E_WARNING, "The property \"id\" is read-only" );
 	}
 	else
 	{
-		zend_std_write_property( object, member, value, cache_slot );
+		value = zend_std_write_property( object, member, value, cache_slot );
 	}
 
 	TRANSLITERATOR_PROPERTY_HANDLER_EPILOG;
+
+	return value;
 }
 /* }}} */
 
@@ -311,7 +314,7 @@ ZEND_END_ARG_INFO()
  * Every 'Transliterator' class method has an entry in this table
  */
 static const zend_function_entry Transliterator_class_functions[] = {
-	PHP_ME( Transliterator,			__construct,						ainfo_trans_void,				ZEND_ACC_PRIVATE | ZEND_ACC_CTOR | ZEND_ACC_FINAL )
+	PHP_ME( Transliterator,			__construct,						ainfo_trans_void,				ZEND_ACC_PRIVATE | ZEND_ACC_FINAL )
 	PHP_ME_MAPPING( create,			transliterator_create,				ainfo_trans_create,				ZEND_ACC_STATIC |ZEND_ACC_PUBLIC )
 	PHP_ME_MAPPING( createFromRules,transliterator_create_from_rules,	ainfo_trans_create_from_rules,	ZEND_ACC_STATIC | ZEND_ACC_PUBLIC )
 	PHP_ME_MAPPING( createInverse,	transliterator_create_inverse,		ainfo_trans_void,				ZEND_ACC_PUBLIC )
@@ -358,12 +361,3 @@ void transliterator_register_Transliterator_class( void )
 
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

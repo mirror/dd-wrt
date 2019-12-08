@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.0.4.  */
+/* A Bison parser, made by GNU Bison 3.0.2.  */
 
 /* Bison implementation for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -44,13 +44,13 @@
 #define YYBISON 1
 
 /* Bison version.  */
-#define YYBISON_VERSION "3.0.4"
+#define YYBISON_VERSION "3.0.2"
 
 /* Skeleton name.  */
 #define YYSKELETON_NAME "yacc.c"
 
 /* Pure parsers.  */
-#define YYPURE 1
+#define YYPURE 2
 
 /* Push parsers.  */
 #define YYPUSH 0
@@ -74,7 +74,7 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2018 Zend Technologies Ltd. (http://www.zend.com) |
+   | Copyright (c) Zend Technologies Ltd. (http://www.zend.com)           |
    +----------------------------------------------------------------------+
    | This source file is subject to version 2.00 of the Zend license,     |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -166,7 +166,7 @@ static void zend_ini_do_op(char type, zval *result, zval *op1, zval *op2)
 			break;
 	}
 
-	str_len = zend_sprintf(str_result, "%d", i_result);
+	str_len = sprintf(str_result, "%d", i_result);
 	ZVAL_NEW_STR(result, zend_string_init(str_result, str_len, ZEND_SYSTEM_INI));
 }
 /* }}} */
@@ -410,22 +410,6 @@ extern int ini_debug;
     END_OF_LINE = 272
   };
 #endif
-/* Tokens.  */
-#define TC_SECTION 258
-#define TC_RAW 259
-#define TC_CONSTANT 260
-#define TC_NUMBER 261
-#define TC_STRING 262
-#define TC_WHITESPACE 263
-#define TC_LABEL 264
-#define TC_OFFSET 265
-#define TC_DOLLAR_CURLY 266
-#define TC_VARNAME 267
-#define TC_QUOTED_STRING 268
-#define BOOL_TRUE 269
-#define BOOL_FALSE 270
-#define NULL_NULL 271
-#define END_OF_LINE 272
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
