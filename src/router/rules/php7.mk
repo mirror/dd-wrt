@@ -1,4 +1,4 @@
-icu-configure: sqlite
+icu-configure:
 	-make -C icu clean
 	rm -f icu/config.cache
 	rm -rf icu/autom4te.cach
@@ -202,7 +202,7 @@ PHP_ENDIAN=ac_cv_c_bigendian_php="yes"
 endif
 
 	
-php7-configure: libpng libgd libxml2 zlib curl glib20 libzip openssl
+php7-configure: libpng libgd libxml2 zlib curl glib20 libzip openssl sqlite
 	rm -f php7/config.cache
 	rm -rf php7/autom4te.cach
 	cd php7 && touch configure.ac && autoconf
