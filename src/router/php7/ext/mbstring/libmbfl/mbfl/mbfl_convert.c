@@ -32,9 +32,7 @@
 #include "config.h"
 #endif
 
-#ifdef HAVE_STDDEF_H
 #include <stddef.h>
-#endif
 
 #include "mbfl_encoding.h"
 #include "mbfl_allocators.h"
@@ -429,6 +427,7 @@ mbfl_filt_conv_illegal_output(int c, mbfl_convert_filter *filter)
 			}
 		}
 		break;
+	case MBFL_OUTPUTFILTER_ILLEGAL_MODE_NONE:
 	default:
 		break;
 	}

@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -25,10 +25,6 @@
 #include "php_string.h"
 #include "php_scandir.h"
 #include "basic_functions.h"
-
-#ifdef HAVE_DIRENT_H
-#include <dirent.h>
-#endif
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -601,12 +597,3 @@ PHP_FUNCTION(scandir)
 	}
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

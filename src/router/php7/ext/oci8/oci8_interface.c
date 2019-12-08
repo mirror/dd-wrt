@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -1473,7 +1473,7 @@ PHP_FUNCTION(oci_fetch_all)
 
 	ZEND_PARSE_PARAMETERS_START(2, 5)
 		Z_PARAM_RESOURCE(z_statement)
-		Z_PARAM_ZVAL_DEREF_EX(array, 0, 1)
+		Z_PARAM_ZVAL(array)
 		Z_PARAM_OPTIONAL
 		Z_PARAM_LONG(skip)
 		Z_PARAM_LONG(maxrows)
@@ -1482,20 +1482,21 @@ PHP_FUNCTION(oci_fetch_all)
 
 	PHP_OCI_ZVAL_TO_STATEMENT(z_statement, statement);
 
-	zval_ptr_dtor(array);
-
 	while (skip--) {
 		if (php_oci_statement_fetch(statement, nrows)) {
-			array_init(array);
+			zend_try_array_init(array);
 			RETURN_LONG(0);
 		}
 	}
 
 	if (flags & PHP_OCI_FETCHSTATEMENT_BY_ROW) {
 		/* Fetch by Row: array will contain one sub-array per query row */
-		array_init(array);
-		columns = safe_emalloc(statement->ncolumns, sizeof(php_oci_out_column *), 0);
+		array = zend_try_array_init(array);
+		if (!array) {
+			return;
+		}
 
+		columns = safe_emalloc(statement->ncolumns, sizeof(php_oci_out_column *), 0);
 		for (i = 0; i < statement->ncolumns; i++) {
 			columns[ i ] = php_oci_statement_get_column(statement, i + 1, NULL, 0);
 		}
@@ -1534,7 +1535,11 @@ PHP_FUNCTION(oci_fetch_all)
 
 	} else { /* default to BY_COLUMN */
 		/* Fetch by columns: array will contain one sub-array per query column */
-		array_init_size(array, statement->ncolumns);
+		array = zend_try_array_init_size(array, statement->ncolumns);
+		if (!array) {
+			return;
+		}
+
 		columns = safe_emalloc(statement->ncolumns, sizeof(php_oci_out_column *), 0);
 		outarrs = safe_emalloc(statement->ncolumns, sizeof(zval*), 0);
 
@@ -2602,12 +2607,3 @@ PHP_FUNCTION(oci_get_implicit_resultset)
 /* }}} */
 
 #endif /* HAVE_OCI8 */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

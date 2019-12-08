@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -358,8 +358,18 @@ static const zend_function_entry sodium_functions[] = {
 	PHP_FE_END
 };
 
+/* Load after the "standard" module in order to give it
+ * priority in registering argon2i/argon2id password hashers.
+ */
+static const zend_module_dep sodium_deps[] = {
+	ZEND_MOD_REQUIRED("standard")
+	ZEND_MOD_END
+};
+
 zend_module_entry sodium_module_entry = {
-	STANDARD_MODULE_HEADER,
+	STANDARD_MODULE_HEADER_EX,
+	NULL,
+	sodium_deps,
 	"sodium",
 	sodium_functions,
 	PHP_MINIT(sodium),
@@ -632,6 +642,13 @@ PHP_MINIT_FUNCTION(sodium)
 	REGISTER_LONG_CONSTANT("SODIUM_BASE64_VARIANT_URLSAFE_NO_PADDING",
 						   sodium_base64_VARIANT_URLSAFE_NO_PADDING, CONST_CS | CONST_PERSISTENT);
 #endif
+
+#if SODIUM_LIBRARY_VERSION_MAJOR > 9 || (SODIUM_LIBRARY_VERSION_MAJOR == 9 && SODIUM_LIBRARY_VERSION_MINOR >= 6)
+	if (FAILURE == PHP_MINIT(sodium_password_hash)(INIT_FUNC_ARGS_PASSTHRU)) {
+		return FAILURE;
+	}
+#endif
+
 	return SUCCESS;
 }
 
@@ -935,6 +952,7 @@ PHP_FUNCTION(sodium_crypto_generichash_init)
 		zend_throw_exception(sodium_exception_ce, "unsupported key length", 0);
 		return;
 	}
+	memset(&state_tmp, 0, sizeof state_tmp);
 	if (crypto_generichash_init((void *) &state_tmp, key, (size_t) key_len,
 								(size_t) hash_len) != 0) {
 		zend_throw_exception(sodium_exception_ce, "internal error", 0);
@@ -3720,12 +3738,3 @@ PHP_FUNCTION(sodium_crypto_secretstream_xchacha20poly1305_rekey)
 	crypto_secretstream_xchacha20poly1305_rekey((void *) state);
 }
 #endif
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 tw=78 fdm=marker
- * vim<600: sw=4 ts=4 tw=78
- */

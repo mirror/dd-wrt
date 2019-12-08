@@ -85,18 +85,7 @@
 #endif
 
 #include <stddef.h>
-
-#ifdef HAVE_STRING_H
 #include <string.h>
-#endif
-
-#ifdef HAVE_STRINGS_H
-#include <strings.h>
-#endif
-
-#ifdef HAVE_STDDEF_H
-#include <stddef.h>
-#endif
 
 #include "mbfilter.h"
 #include "mbfl_filter_output.h"
@@ -2903,10 +2892,3 @@ mbfl_html_numeric_entity(
 
 	return result;
 }
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- */

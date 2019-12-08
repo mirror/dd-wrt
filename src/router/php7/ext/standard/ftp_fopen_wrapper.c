@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -613,7 +613,7 @@ errexit:
 
 /* {{{ php_ftp_dirsteam_read
  */
-static size_t php_ftp_dirstream_read(php_stream *stream, char *buf, size_t count)
+static ssize_t php_ftp_dirstream_read(php_stream *stream, char *buf, size_t count)
 {
 	php_stream_dirent *ent = (php_stream_dirent *)buf;
 	php_stream *innerstream;
@@ -623,7 +623,7 @@ static size_t php_ftp_dirstream_read(php_stream *stream, char *buf, size_t count
 	innerstream =  ((php_ftp_dirstream_data *)stream->abstract)->datastream;
 
 	if (count != sizeof(php_stream_dirent)) {
-		return 0;
+		return -1;
 	}
 
 	if (php_stream_eof(innerstream)) {
@@ -631,7 +631,7 @@ static size_t php_ftp_dirstream_read(php_stream *stream, char *buf, size_t count
 	}
 
 	if (!php_stream_get_line(innerstream, ent->d_name, sizeof(ent->d_name), &tmp_len)) {
-		return 0;
+		return -1;
 	}
 
 	basename = php_basename(ent->d_name, tmp_len, NULL, 0);
@@ -885,7 +885,7 @@ mdtm_error:
 	ssb->sb.st_rdev = -1;
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 	ssb->sb.st_blksize = 4096;				/* Guess since FTP won't expose this information */
-#ifdef HAVE_ST_BLOCKS
+#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
 	ssb->sb.st_blocks = (int)((4095 + ssb->sb.st_size) / ssb->sb.st_blksize); /* emulate ceil */
 #endif
 #endif
@@ -1061,7 +1061,7 @@ static int php_stream_ftp_mkdir(php_stream_wrapper *wrapper, const char *url, in
 		php_stream_printf(stream, "MKD %s\r\n", ZSTR_VAL(resource->path));
 		result = GET_FTP_RESULT(stream);
     } else {
-        /* we look for directory separator from the end of string, thus hopefuly reducing our work load */
+        /* we look for directory separator from the end of string, thus hopefully reducing our work load */
         char *p, *e, *buf;
 
         buf = estrndup(ZSTR_VAL(resource->path), ZSTR_LEN(resource->path));
@@ -1195,13 +1195,3 @@ PHPAPI const php_stream_wrapper php_stream_ftp_wrapper =	{
 	NULL,
 	1 /* is_url */
 };
-
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

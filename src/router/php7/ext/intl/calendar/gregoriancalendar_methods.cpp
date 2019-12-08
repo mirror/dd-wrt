@@ -185,12 +185,7 @@ static void _php_intlgregcal_constructor_body(
 		}
 
 		timelib_tzinfo *tzinfo = get_timezone_info();
-#if U_ICU_VERSION_MAJOR_NUM * 10 + U_ICU_VERSION_MINOR_NUM >= 42
 		UnicodeString tzstr = UnicodeString::fromUTF8(StringPiece(tzinfo->name));
-#else
-		UnicodeString tzstr = UnicodeString(tzinfo->name,
-			strlen(tzinfo->name), US_INV);
-#endif
 		if (tzstr.isBogus()) {
 			intl_error_set(NULL, U_ILLEGAL_ARGUMENT_ERROR,
 				"intlgregcal_create_instance: could not create UTF-8 string "
@@ -225,7 +220,7 @@ U_CFUNC PHP_METHOD(IntlGregorianCalendar, __construct)
 	zend_error_handling error_handling;
 
 	zend_replace_error_handling(EH_THROW, IntlException_ce_ptr, &error_handling);
-	return_value = getThis();
+	return_value = ZEND_THIS;
 	_php_intlgregcal_constructor_body(INTERNAL_FUNCTION_PARAM_PASSTHRU, 1);
 	zend_restore_error_handling(&error_handling);
 }

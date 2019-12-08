@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -37,16 +37,8 @@
 #  include <crypt.h>
 # endif
 #endif
-#if TM_IN_SYS_TIME
-#include <sys/time.h>
-#else
 #include <time.h>
-#endif
-#if HAVE_STRING_H
 #include <string.h>
-#else
-#include <strings.h>
-#endif
 
 #ifdef PHP_WIN32
 #include <process.h>
@@ -187,7 +179,7 @@ PHPAPI zend_string *php_crypt(const char *password, const int pass_len, const ch
 			memset(&buffer, 0, sizeof(buffer));
 			_crypt_extended_init_r();
 
-			crypt_res = _crypt_extended_r(password, salt, &buffer);
+			crypt_res = _crypt_extended_r((const unsigned char *) password, salt, &buffer);
 			if (!crypt_res || (salt[0] == '*' && salt[1] == '0')) {
 				return NULL;
 			} else {
@@ -263,7 +255,7 @@ PHP_FUNCTION(crypt)
 
 	/* The automatic salt generation covers standard DES, md5-crypt and Blowfish (simple) */
 	if (!*salt) {
-		strncpy(salt, "$1$", 3);
+		memcpy(salt, "$1$", 3);
 		php_random_bytes_throw(&salt[3], 8);
 		php_to64(&salt[3], 8);
 		strncpy(&salt[11], "$", PHP_MAX_SALT_LEN - 11);
@@ -283,12 +275,3 @@ PHP_FUNCTION(crypt)
 	RETURN_STR(result);
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

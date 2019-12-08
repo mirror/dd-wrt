@@ -123,7 +123,7 @@ function icacls_set($path, $mode, $perm) {
 		exec($cmd);
 
 		$cmd = $icacls . ' ' . $path_escaped . ' /' . $mode . ' ' . $user;
-		$cmd .= ':' . '(' . implode($perm_entry, ',') . ')';
+		$cmd .= ':' . '(' . implode(',', $perm_entry) . ')';
 		exec($cmd);
 	}
 }
@@ -167,33 +167,4 @@ function delete_dir($path) {
 		echo "delete_dir: '$path' is not a directory\n";
 		return;
 	}
-}
-if (0) {
-$path = __DIR__ . '/a.txt';
-create_file($path, PHPT_ACL_NONE);
-if (!is_writable($path)) {
-	echo "PHPT_ACL_NONE success!!\n";
-} else {
-	echo "PHPT_ACL_NONE failed!!\n";
-}
-delete_file($path);
-
-$path = __DIR__ . '/a.txt';
-create_file($path, PHPT_ACL_READ);
-if (!is_writable($path)) {
-	echo "PHPT_ACL_READ success!!\n";
-} else {
-	echo "PHPT_ACL_READ failed!!\n";
-}
-delete_file($path);
-
-$path = __DIR__ . '/adir';
-create_dir($path, PHPT_ACL_READ);
-if (!is_writable($path)) {
-	echo "PHPT_ACL_READ dir success!!\n";
-} else {
-	echo "PHPT_ACL_READ dir failed!!\n";
-}
-delete_dir($path);
-
 }

@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -250,8 +250,6 @@ static php_stream_filter *strfilter_strip_tags_create(const char *filtername, zv
 
 	php_error_docref(NULL, E_DEPRECATED, "The string.strip_tags filter is deprecated");
 
-	inst = pemalloc(sizeof(php_strip_tags_filter), persistent);
-
 	if (filterparams != NULL) {
 		if (Z_TYPE_P(filterparams) == IS_ARRAY) {
 			smart_str tags_ss = {0};
@@ -268,8 +266,17 @@ static php_stream_filter *strfilter_strip_tags_create(const char *filtername, zv
 		} else {
 			allowed_tags = zval_get_string(filterparams);
 		}
+
+		/* Exception during string conversion. */
+		if (EG(exception)) {
+			if (allowed_tags) {
+				zend_string_release(allowed_tags);
+			}
+			return NULL;
+		}
 	}
 
+	inst = pemalloc(sizeof(php_strip_tags_filter), persistent);
 	if (php_strip_tags_filter_ctor(inst, allowed_tags, persistent) == SUCCESS) {
 		filter = php_stream_filter_alloc(&strfilter_strip_tags_ops, inst, persistent);
 	} else {
@@ -2071,12 +2078,3 @@ PHP_MSHUTDOWN_FUNCTION(standard_filters)
 	return SUCCESS;
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

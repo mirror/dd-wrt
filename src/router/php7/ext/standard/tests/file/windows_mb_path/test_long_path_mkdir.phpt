@@ -2,11 +2,11 @@
 Mkdir with path length < 260 and > 248 has be a long path
 --SKIPIF--
 <?php
-include dirname(__FILE__) . DIRECTORY_SEPARATOR . "util.inc";
+include __DIR__ . DIRECTORY_SEPARATOR . "util.inc";
 
 skip_if_not_win();
 
-$start = realpath(dirname(__FILE__));
+$start = realpath(__DIR__);
 if (strlen($start) > 260 || strlen($start) > 248) {
 	die("skip the starting path length is unsuitable for this test");
 }
@@ -23,10 +23,12 @@ for ($i = 0; $i < $how_many; $i++) {
 	$p .= "$s\\";
 }
 
-$start = realpath(dirname(__FILE__));
+$start = realpath(__DIR__);
+$newstart = false;
 if (strlen($start) <= 248) {
 	// create the exact length
 	$start = $start . "\\" . str_repeat('a', 251 - strlen($start) - 1);
+	$newstart = true;
 }
 
 var_dump($start);
@@ -46,6 +48,9 @@ unlink($p7);
 for ($i = 0; $i < $how_many; $i++) {
 	$p0 = substr($p, 0, strlen($p) - $i*51);
 	rmdir($p0);
+}
+if ($newstart) {
+	rmdir($start);
 }
 
 ?>

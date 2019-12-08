@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -417,7 +417,6 @@ static void _free_odbc_result(zend_resource *rsrc)
 {
 	odbc_result *res = (odbc_result *)rsrc->ptr;
 	int i;
-	RETCODE rc;
 
 	if (res) {
 		if (res->values) {
@@ -434,7 +433,7 @@ static void _free_odbc_result(zend_resource *rsrc)
 			SQLTransact(res->conn_ptr->henv, res->conn_ptr->hdbc,
 						(SQLUSMALLINT) SQL_COMMIT);
 #endif
-			rc = SQLFreeStmt(res->stmt,SQL_DROP);
+			SQLFreeStmt(res->stmt,SQL_DROP);
 			/* We don't want the connection to be closed after the last statement has been closed
 			 * Connections will be closed on shutdown
 			 * zend_list_delete(res->conn_ptr->id);
@@ -856,7 +855,7 @@ PHP_MINFO_FUNCTION(odbc)
 	php_info_print_table_row(2, "ODBCVER", buf);
 #endif
 #ifndef PHP_WIN32
-	php_info_print_table_row(2, "ODBC_INCLUDE", PHP_ODBC_INCLUDE);
+	php_info_print_table_row(2, "ODBC_CFLAGS", PHP_ODBC_CFLAGS);
 	php_info_print_table_row(2, "ODBC_LFLAGS", PHP_ODBC_LFLAGS);
 	php_info_print_table_row(2, "ODBC_LIBS", PHP_ODBC_LIBS);
 #endif
@@ -956,6 +955,7 @@ int odbc_bindcols(odbc_result *result)
 
 		rc = PHP_ODBC_SQLCOLATTRIBUTE(result->stmt, (SQLUSMALLINT)(i+1), PHP_ODBC_SQL_DESC_NAME,
 				result->values[i].name, sizeof(result->values[i].name), &colnamelen, 0);
+		result->values[i].coltype = 0;
 		rc = PHP_ODBC_SQLCOLATTRIBUTE(result->stmt, (SQLUSMALLINT)(i+1), SQL_COLUMN_TYPE,
 				NULL, 0, NULL, &result->values[i].coltype);
 
@@ -1343,9 +1343,7 @@ PHP_FUNCTION(odbc_execute)
 			}
 
 			otype = Z_TYPE_P(tmp);
-			convert_to_string_ex(tmp);
-			if (Z_TYPE_P(tmp) != IS_STRING) {
-				php_error_docref(NULL, E_WARNING,"Error converting parameter");
+			if (!try_convert_to_string(tmp)) {
 				SQLFreeStmt(result->stmt, SQL_RESET_PARAMS);
 				for (i = 0; i < result->numparams; i++) {
 					if (params[i].fp != -1) {
@@ -1876,13 +1874,13 @@ PHP_FUNCTION(odbc_fetch_into)
 #endif /* HAVE_SQL_EXTENDED_FETCH */
 
 #ifdef HAVE_SQL_EXTENDED_FETCH
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "rz/|l", &pv_res, &pv_res_arr, &pv_row) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "rz|l", &pv_res, &pv_res_arr, &pv_row) == FAILURE) {
 		return;
 	}
 
 	rownum = pv_row;
 #else
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "rz/", &pv_res, &pv_res_arr) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "rz", &pv_res, &pv_res_arr) == FAILURE) {
 		return;
 	}
 #endif /* HAVE_SQL_EXTENDED_FETCH */
@@ -1896,8 +1894,9 @@ PHP_FUNCTION(odbc_fetch_into)
 		RETURN_FALSE;
 	}
 
-	if (Z_TYPE_P(pv_res_arr) != IS_ARRAY) {
-		array_init(pv_res_arr);
+	pv_res_arr = zend_try_array_init(pv_res_arr);
+	if (!pv_res_arr) {
+		return;
 	}
 
 #ifdef HAVE_SQL_EXTENDED_FETCH
@@ -2247,7 +2246,7 @@ PHP_FUNCTION(odbc_result)
 			efree(field);
 			RETURN_NULL();
 		}
-		/* chop the trailing \0 by outputing only 4095 bytes */
+		/* chop the trailing \0 by outputting only 4095 bytes */
 		PHPWRITE(field,(rc == SQL_SUCCESS_WITH_INFO) ? 4095 : result->values[field_ind].vallen);
 
 		if (rc == SQL_SUCCESS) { /* no more data avail */
@@ -2695,7 +2694,10 @@ PHP_FUNCTION(odbc_close)
 		return;
 	}
 
-	conn = (odbc_connection *)zend_fetch_resource2(Z_RES_P(pv_conn), "ODBC-Link", le_conn, le_pconn);
+	if (!(conn = (odbc_connection *)zend_fetch_resource2(Z_RES_P(pv_conn), "ODBC-Link", le_conn, le_pconn))) {
+		RETURN_FALSE;
+	}
+
 	if (Z_RES_P(pv_conn)->type == le_pconn) {
 		is_pconn = 1;
 	}
@@ -3043,7 +3045,7 @@ PHP_FUNCTION(odbc_errormsg)
    persistent connections. I think that SetStmtOption is of little use, since most
    of those can only be specified before preparing/executing statements.
    On the other hand, they can be made connection wide default through SetConnectOption
-   - but will be overidden by calls to SetStmtOption() in odbc_prepare/odbc_do
+   - but will be overridden by calls to SetStmtOption() in odbc_prepare/odbc_do
 */
 PHP_FUNCTION(odbc_setoption)
 {
@@ -3580,7 +3582,7 @@ PHP_FUNCTION(odbc_procedurecolumns)
 
 #if !defined(HAVE_SOLID) && !defined(HAVE_SOLID_30) && !defined(HAVE_SOLID_35)
 /* {{{ proto resource odbc_procedures(resource connection_id [, string qualifier, string owner, string name])
-   Returns a result identifier containg the list of procedure names in a datasource */
+   Returns a result identifier containing the list of procedure names in a datasource */
 PHP_FUNCTION(odbc_procedures)
 {
 	zval *pv_conn;
@@ -3853,12 +3855,3 @@ PHP_FUNCTION(odbc_tableprivileges)
 #endif /* HAVE_DBMAKER */
 
 #endif /* HAVE_UODBC */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

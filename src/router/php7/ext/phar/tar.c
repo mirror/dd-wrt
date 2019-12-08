@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | TAR archive support for Phar                                         |
   +----------------------------------------------------------------------+
-  | Copyright (c) 2005-2018 The PHP Group                                |
+  | Copyright (c) The PHP Group                                          |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -22,7 +22,7 @@
 static uint32_t phar_tar_number(char *buf, size_t len) /* {{{ */
 {
 	uint32_t num = 0;
-	int i = 0;
+	size_t i = 0;
 
 	while (i < len && buf[i] == ' ') {
 		++i;
@@ -772,9 +772,9 @@ static int phar_tar_writeheaders_int(phar_entry_info *entry, void *argument) /* 
 		}
 	}
 
-	strncpy(header.magic, "ustar", sizeof("ustar")-1);
-	strncpy(header.version, "00", sizeof("00")-1);
-	strncpy(header.checksum, "        ", sizeof("        ")-1);
+	memcpy(header.magic, "ustar", sizeof("ustar")-1);
+	memcpy(header.version, "00", sizeof("00")-1);
+	memcpy(header.checksum, "        ", sizeof("        ")-1);
 	entry->crc32 = phar_tar_checksum((char *)&header, sizeof(header));
 
 	if (FAILURE == phar_tar_octal(header.checksum, entry->crc32, sizeof(header.checksum)-1)) {
@@ -1364,12 +1364,3 @@ nostub:
 	return EOF;
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

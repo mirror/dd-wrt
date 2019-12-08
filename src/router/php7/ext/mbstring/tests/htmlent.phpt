@@ -2,7 +2,7 @@
 HTML input/output
 --SKIPIF--
 <?php
-	ini_set('include_path', dirname(__FILE__));
+	ini_set('include_path', __DIR__);
 	extension_loaded('mbstring') or die('skip mbstring not available');
 ?>
 --INI--
@@ -11,9 +11,8 @@ output_handler=mb_output_handler
 zlib.output_compression=
 arg_separator.input=x
 error_reporting=0
-mbstring.http_input=HTML-ENTITIES
-mbstring.internal_encoding=UTF-8
-mbstring.http_output=HTML-ENTITIES
+input_encoding=HTML-ENTITIES
+output_encoding=HTML-ENTITIES
 mbstring.encoding_translation=1
 filter.default=unsafe_raw
 --FILE--

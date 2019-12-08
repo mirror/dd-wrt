@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -198,11 +198,15 @@ static void php_str2num(bc_num *num, char *str)
 	char *p;
 
 	if (!(p = strchr(str, '.'))) {
-		bc_str2num(num, str, 0);
+		if (!bc_str2num(num, str, 0)) {
+			php_error_docref(NULL, E_WARNING, "bcmath function argument is not well-formed");
+		}
 		return;
 	}
 
-	bc_str2num(num, str, strlen(p+1));
+	if (!bc_str2num(num, str, strlen(p+1))) {
+		php_error_docref(NULL, E_WARNING, "bcmath function argument is not well-formed");
+	}
 }
 /* }}} */
 
@@ -472,7 +476,7 @@ PHP_FUNCTION(bcpow)
 /* }}} */
 
 /* {{{ proto string bcsqrt(string operand [, int scale])
-   Returns the square root of an arbitray precision number */
+   Returns the square root of an arbitrary precision number */
 PHP_FUNCTION(bcsqrt)
 {
 	zend_string *left;
@@ -527,8 +531,12 @@ PHP_FUNCTION(bccomp)
 	bc_init_num(&first);
 	bc_init_num(&second);
 
-	bc_str2num(&first, ZSTR_VAL(left), scale);
-	bc_str2num(&second, ZSTR_VAL(right), scale);
+	if (!bc_str2num(&first, ZSTR_VAL(left), scale)) {
+		php_error_docref(NULL, E_WARNING, "bcmath function argument is not well-formed");
+	}
+	if (!bc_str2num(&second, ZSTR_VAL(right), scale)) {
+	    php_error_docref(NULL, E_WARNING, "bcmath function argument is not well-formed");
+	}
 	RETVAL_LONG(bc_compare(first, second));
 
 	bc_free_num(&first);
@@ -560,12 +568,3 @@ PHP_FUNCTION(bcscale)
 
 
 #endif
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

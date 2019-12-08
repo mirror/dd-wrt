@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 7                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2018 The PHP Group                                |
+  | Copyright (c) The PHP Group                                          |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -379,17 +379,25 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_tidy_config_count, 0, 0, 1)
     ZEND_ARG_INFO(0, object)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_tidy_getopt, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_tidy_getopt_method, 0, 0, 1)
 	ZEND_ARG_INFO(0, option)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO(arginfo_tidy_get_root, 0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_tidy_getopt, 0, 0, 2)
+	ZEND_ARG_INFO(0, object)
+	ZEND_ARG_INFO(0, option)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO(arginfo_tidy_get_html, 0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_tidy_get_root, 0, 0, 1)
+	ZEND_ARG_INFO(0, object)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO(arginfo_tidy_get_head, 0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_tidy_get_html, 0, 0, 1)
+	ZEND_ARG_INFO(0, object)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_tidy_get_head, 0, 0, 1)
+	ZEND_ARG_INFO(0, object)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_tidy_get_body, 0, 0, 1)
@@ -435,7 +443,7 @@ static const zend_function_entry tidy_functions[] = {
 };
 
 static const zend_function_entry tidy_funcs_doc[] = {
-	TIDY_METHOD_MAP(getOpt, tidy_getopt, arginfo_tidy_getopt)
+	TIDY_METHOD_MAP(getOpt, tidy_getopt, arginfo_tidy_getopt_method)
 	TIDY_METHOD_MAP(cleanRepair, tidy_clean_repair, NULL)
 	TIDY_DOC_ME(parseFile, arginfo_tidy_parse_file)
 	TIDY_DOC_ME(parseString, arginfo_tidy_parse_string)
@@ -775,7 +783,11 @@ static int tidy_doc_cast_handler(zval *in, zval *out, int type)
 			obj = Z_TIDY_P(in);
 			tidyBufInit(&output);
 			tidySaveBuffer (obj->ptdoc->doc, &output);
-			ZVAL_STRINGL(out, (char *) output.bp, output.size ? output.size-1 : 0);
+			if (output.size) {
+				ZVAL_STRINGL(out, (char *) output.bp, output.size-1);
+			} else {
+				ZVAL_EMPTY_STRING(out);
+			}
 			tidyBufFree(&output);
 			break;
 
@@ -2021,15 +2033,36 @@ static void _php_tidy_register_tags(INIT_FUNC_ARGS)
 	TIDY_TAG_CONST(VAR);
 	TIDY_TAG_CONST(WBR);
 	TIDY_TAG_CONST(XMP);
+# if HAVE_TIDYBUFFIO_H
+	TIDY_TAG_CONST(ARTICLE);
+	TIDY_TAG_CONST(ASIDE);
+	TIDY_TAG_CONST(AUDIO);
+	TIDY_TAG_CONST(BDI);
+	TIDY_TAG_CONST(CANVAS);
+	TIDY_TAG_CONST(COMMAND);
+	TIDY_TAG_CONST(DATALIST);
+	TIDY_TAG_CONST(DETAILS);
+	TIDY_TAG_CONST(DIALOG);
+	TIDY_TAG_CONST(FIGCAPTION);
+	TIDY_TAG_CONST(FIGURE);
+	TIDY_TAG_CONST(FOOTER);
+	TIDY_TAG_CONST(HEADER);
+	TIDY_TAG_CONST(HGROUP);
+	TIDY_TAG_CONST(MAIN);
+	TIDY_TAG_CONST(MARK);
+	TIDY_TAG_CONST(MENUITEM);
+	TIDY_TAG_CONST(METER);
+	TIDY_TAG_CONST(NAV);
+	TIDY_TAG_CONST(OUTPUT);
+	TIDY_TAG_CONST(PROGRESS);
+	TIDY_TAG_CONST(SECTION);
+	TIDY_TAG_CONST(SOURCE);
+	TIDY_TAG_CONST(SUMMARY);
+	TIDY_TAG_CONST(TEMPLATE);
+	TIDY_TAG_CONST(TIME);
+	TIDY_TAG_CONST(TRACK);
+	TIDY_TAG_CONST(VIDEO);
+# endif
 }
 
 #endif
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

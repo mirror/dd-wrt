@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -227,12 +227,12 @@ PHP_FUNCTION(assert)
 
 		/* XXX do we want to check for error here? */
 		if (!description) {
-			call_user_function(CG(function_table), NULL, &ASSERTG(callback), &retval, 3, args);
+			call_user_function(NULL, NULL, &ASSERTG(callback), &retval, 3, args);
 			zval_ptr_dtor(&(args[2]));
 			zval_ptr_dtor(&(args[0]));
 		} else {
 			ZVAL_STR(&args[3], zval_get_string(description));
-			call_user_function(CG(function_table), NULL, &ASSERTG(callback), &retval, 4, args);
+			call_user_function(NULL, NULL, &ASSERTG(callback), &retval, 4, args);
 			zval_ptr_dtor(&(args[3]));
 			zval_ptr_dtor(&(args[2]));
 			zval_ptr_dtor(&(args[0]));
@@ -299,7 +299,11 @@ PHP_FUNCTION(assert_options)
 	case ASSERT_ACTIVE:
 		oldint = ASSERTG(active);
 		if (ac == 2) {
-			zend_string *value_str = zval_get_string(value);
+			zend_string *value_str = zval_try_get_string(value);
+			if (UNEXPECTED(!value_str)) {
+				return;
+			}
+
 			key = zend_string_init("assert.active", sizeof("assert.active")-1, 0);
 			zend_alter_ini_entry_ex(key, value_str, PHP_INI_USER, PHP_INI_STAGE_RUNTIME, 0);
 			zend_string_release_ex(key, 0);
@@ -311,7 +315,11 @@ PHP_FUNCTION(assert_options)
 	case ASSERT_BAIL:
 		oldint = ASSERTG(bail);
 		if (ac == 2) {
-			zend_string *value_str = zval_get_string(value);
+			zend_string *value_str = zval_try_get_string(value);
+			if (UNEXPECTED(!value_str)) {
+				return;
+			}
+
 			key = zend_string_init("assert.bail", sizeof("assert.bail")-1, 0);
 			zend_alter_ini_entry_ex(key, value_str, PHP_INI_USER, PHP_INI_STAGE_RUNTIME, 0);
 			zend_string_release_ex(key, 0);
@@ -323,7 +331,11 @@ PHP_FUNCTION(assert_options)
 	case ASSERT_QUIET_EVAL:
 		oldint = ASSERTG(quiet_eval);
 		if (ac == 2) {
-			zend_string *value_str = zval_get_string(value);
+			zend_string *value_str = zval_try_get_string(value);
+			if (UNEXPECTED(!value_str)) {
+				return;
+			}
+
 			key = zend_string_init("assert.quiet_eval", sizeof("assert.quiet_eval")-1, 0);
 			zend_alter_ini_entry_ex(key, value_str, PHP_INI_USER, PHP_INI_STAGE_RUNTIME, 0);
 			zend_string_release_ex(key, 0);
@@ -335,7 +347,11 @@ PHP_FUNCTION(assert_options)
 	case ASSERT_WARNING:
 		oldint = ASSERTG(warning);
 		if (ac == 2) {
-			zend_string *value_str = zval_get_string(value);
+			zend_string *value_str = zval_try_get_string(value);
+			if (UNEXPECTED(!value_str)) {
+				return;
+			}
+
 			key = zend_string_init("assert.warning", sizeof("assert.warning")-1, 0);
 			zend_alter_ini_entry_ex(key, value_str, PHP_INI_USER, PHP_INI_STAGE_RUNTIME, 0);
 			zend_string_release_ex(key, 0);
@@ -361,8 +377,12 @@ PHP_FUNCTION(assert_options)
 	case ASSERT_EXCEPTION:
 		oldint = ASSERTG(exception);
 		if (ac == 2) {
-			zend_string *key = zend_string_init("assert.exception", sizeof("assert.exception")-1, 0);
-			zend_string *val = zval_get_string(value);
+			zend_string *val = zval_try_get_string(value);
+			if (UNEXPECTED(!val)) {
+				return;
+			}
+
+			key = zend_string_init("assert.exception", sizeof("assert.exception")-1, 0);
 			zend_alter_ini_entry_ex(key, val, PHP_INI_USER, PHP_INI_STAGE_RUNTIME, 0);
 			zend_string_release_ex(val, 0);
 			zend_string_release_ex(key, 0);
@@ -378,12 +398,3 @@ PHP_FUNCTION(assert_options)
 	RETURN_FALSE;
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

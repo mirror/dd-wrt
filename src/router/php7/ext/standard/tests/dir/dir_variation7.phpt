@@ -5,15 +5,7 @@ Test dir() function : usage variations - directories with restricted permissions
 if( substr(PHP_OS, 0, 3) == 'WIN') {
   die('skip Not for Windows');
 }
-// Skip if being run by root (files are always readable, writeable and executable)
-$filename = dirname(__FILE__)."/dir_root_check.tmp";
-$fp = fopen($filename, 'w');
-fclose($fp);
-if(fileowner($filename) == 0) {
-        unlink ($filename);
-        die('skip...cannot be run as root\n');
-}
-unlink($filename);
+require __DIR__ . '/../skipif_root.inc';
 ?>
 --FILE--
 <?php
@@ -36,7 +28,7 @@ echo "*** Testing dir() : remove execute permission from the parent dir ***\n";
     |-> sub_dir    ( sub parent )
          |-> child_dir  ( child dir)
 */
-$file_path = dirname(__FILE__);
+$file_path = __DIR__;
 $parent_dir_path = $file_path."/dir_variation7";
 @mkdir($parent_dir_path);
 chmod($parent_dir_path, 0777);
@@ -67,7 +59,7 @@ echo "Done";
 ?>
 --CLEAN--
 <?php
-$file_path = dirname(__FILE__);
+$file_path = __DIR__;
 $parent_dir_path = $file_path."/dir_variation7";
 $sub_dir_path = $parent_dir_path."/sub_dir";
 $child_dir_path = $sub_dir_path."/child_dir";

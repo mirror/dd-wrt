@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -19,7 +19,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 464bb5af8f2e8462a17d20bf000e48ae24de5bd3 $ */
+/* $Id: 410f3405266f41bafffc8993929b8830b761436b $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -286,15 +286,6 @@ datum flatfile_nextkey(flatfile *dba) {
 /* {{{ flatfile_version */
 char *flatfile_version()
 {
-	return "1.0, $Id: 464bb5af8f2e8462a17d20bf000e48ae24de5bd3 $";
+	return "1.0, $Id: 410f3405266f41bafffc8993929b8830b761436b $";
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

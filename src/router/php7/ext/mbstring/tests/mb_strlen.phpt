@@ -8,8 +8,7 @@ mbstring.func_overload=0
 <?php
 // TODO: Add more encodings
 
-//$debug=true;
-ini_set('include_path', dirname(__FILE__));
+ini_set('include_path', __DIR__);
 include_once('common.inc');
 
 // restore detect_order to 'auto'
@@ -70,10 +69,8 @@ $r = mb_strlen($euc_jp, 'BAD_NAME');
 echo $r."\n";
 
 
-
-
 ?>
---EXPECT--
+--EXPECTF--
 == ASCII ==
 40
 40
@@ -90,8 +87,11 @@ echo $r."\n";
 43
 101
 == WRONG PARAMETERS ==
-ERR: Warning
 
-ERR: Warning
+Warning: strlen() expects parameter 1 to be string, array given in %s on line %d
 
-ERR: Warning
+
+Warning: strlen() expects parameter 1 to be string, object given in %s on line %d
+
+
+Warning: mb_strlen(): Unknown encoding "BAD_NAME" in %s on line %d

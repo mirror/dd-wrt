@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -23,11 +23,7 @@
 #include "SAPI.h"
 #include "php_main.h"
 #include "head.h"
-#ifdef TM_IN_SYS_TIME
-#include <sys/time.h>
-#else
 #include <time.h>
-#endif
 
 #include "php_globals.h"
 #include "zend_smart_str.h"
@@ -153,7 +149,7 @@ PHPAPI int php_setcookie(zend_string *name, zend_string *value, time_t expires, 
 			smart_str_append(&buf, dt);
 			zend_string_free(dt);
 
-			diff = difftime(expires, time(NULL));
+			diff = difftime(expires, php_time());
 			if (diff < 0) {
 				diff = 0;
 			}
@@ -262,10 +258,12 @@ PHP_FUNCTION(setcookie)
 		}
 	}
 
-	if (php_setcookie(name, value, expires, path, domain, secure, httponly, samesite, 1) == SUCCESS) {
-		RETVAL_TRUE;
-	} else {
-		RETVAL_FALSE;
+	if (!EG(exception)) {
+		if (php_setcookie(name, value, expires, path, domain, secure, httponly, samesite, 1) == SUCCESS) {
+			RETVAL_TRUE;
+		} else {
+			RETVAL_FALSE;
+		}
 	}
 
 	if (expires_or_options && Z_TYPE_P(expires_or_options) == IS_ARRAY) {
@@ -315,10 +313,12 @@ PHP_FUNCTION(setrawcookie)
 		}
 	}
 
-	if (php_setcookie(name, value, expires, path, domain, secure, httponly, samesite, 0) == SUCCESS) {
-		RETVAL_TRUE;
-	} else {
-		RETVAL_FALSE;
+	if (!EG(exception)) {
+		if (php_setcookie(name, value, expires, path, domain, secure, httponly, samesite, 0) == SUCCESS) {
+			RETVAL_TRUE;
+		} else {
+			RETVAL_FALSE;
+		}
 	}
 
 	if (expires_or_options && Z_TYPE_P(expires_or_options) == IS_ARRAY) {
@@ -346,8 +346,8 @@ PHP_FUNCTION(headers_sent)
 
 	ZEND_PARSE_PARAMETERS_START(0, 2)
 		Z_PARAM_OPTIONAL
-		Z_PARAM_ZVAL_DEREF(arg1)
-		Z_PARAM_ZVAL_DEREF(arg2)
+		Z_PARAM_ZVAL(arg1)
+		Z_PARAM_ZVAL(arg2)
 	ZEND_PARSE_PARAMETERS_END();
 
 	if (SG(headers_sent)) {
@@ -357,14 +357,12 @@ PHP_FUNCTION(headers_sent)
 
 	switch(ZEND_NUM_ARGS()) {
 	case 2:
-		zval_ptr_dtor(arg2);
-		ZVAL_LONG(arg2, line);
+		ZEND_TRY_ASSIGN_REF_LONG(arg2, line);
 	case 1:
-		zval_ptr_dtor(arg1);
 		if (file) {
-			ZVAL_STRING(arg1, file);
+			ZEND_TRY_ASSIGN_REF_STRING(arg1, file);
 		} else {
-			ZVAL_EMPTY_STRING(arg1);
+			ZEND_TRY_ASSIGN_REF_EMPTY_STRING(arg1);
 		}
 		break;
 	}
@@ -433,11 +431,3 @@ PHP_FUNCTION(http_response_code)
 	RETURN_LONG(SG(sapi_headers).http_response_code);
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4 * End:
- */

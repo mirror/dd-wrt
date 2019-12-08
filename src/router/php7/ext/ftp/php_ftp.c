@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -318,12 +318,14 @@ static void ftp_destructor_ftpbuf(zend_resource *rsrc)
 PHP_MINIT_FUNCTION(ftp)
 {
 #ifdef HAVE_FTP_SSL
+#if OPENSSL_VERSION_NUMBER < 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
 	SSL_library_init();
 	OpenSSL_add_all_ciphers();
 	OpenSSL_add_all_digests();
 	OpenSSL_add_all_algorithms();
 
 	SSL_load_error_strings();
+#endif
 #endif
 
 	le_ftpbuf = zend_register_list_destructors_ex(ftp_destructor_ftpbuf, NULL, le_ftpbuf_name, module_number);
@@ -677,7 +679,7 @@ PHP_FUNCTION(ftp_alloc)
 	zend_long		size, ret;
 	zend_string	*response = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "rl|z/", &z_ftp, &size, &zresponse) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "rl|z", &z_ftp, &size, &zresponse) == FAILURE) {
 		RETURN_FALSE;
 	}
 
@@ -686,9 +688,9 @@ PHP_FUNCTION(ftp_alloc)
 	}
 
 	ret = ftp_alloc(ftp, size, zresponse ? &response : NULL);
+
 	if (response) {
-		zval_ptr_dtor(zresponse);
-		ZVAL_STR(zresponse, response);
+		ZEND_TRY_ASSIGN_REF_STR(zresponse, response);
 	}
 
 	if (!ret) {
@@ -1613,11 +1615,3 @@ PHP_FUNCTION(ftp_get_option)
 /* }}} */
 
 #endif /* HAVE_FTP */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * indent-tabs-mode: t
- * End:
- */

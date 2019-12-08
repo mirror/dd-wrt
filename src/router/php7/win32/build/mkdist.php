@@ -251,7 +251,7 @@ if(sizeof($pecl_targets)) {
 $text_files = array(
 	"LICENSE" => "license.txt",
 	"NEWS" => "news.txt",
-	"INSTALL" => "install.txt",
+	"README.md" => "README.md",
 	"README.REDIST.BINS" => "readme-redist-bins.txt",
 	"php.ini-development" => "php.ini-development",
 	"php.ini-production" => "php.ini-production"
@@ -263,7 +263,6 @@ foreach ($text_files as $src => $dest) {
 
 /* general other files */
 $general_files = array(
-	"php.gif"				=>	"php.gif",
 	"$GLOBALS[build_dir]\\deplister.exe"	=>	"deplister.exe",
 );
 

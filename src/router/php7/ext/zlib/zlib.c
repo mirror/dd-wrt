@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -777,7 +777,7 @@ static zend_bool zlib_create_dictionary_string(HashTable *options, char **dict, 
 						size_t i;
 
 						*++ptr = zval_get_string(cur);
-						if (!*ptr || ZSTR_LEN(*ptr) == 0) {
+						if (!*ptr || ZSTR_LEN(*ptr) == 0 || EG(exception)) {
 							if (*ptr) {
 								efree(*ptr);
 							}
@@ -785,7 +785,9 @@ static zend_bool zlib_create_dictionary_string(HashTable *options, char **dict, 
 								efree(ptr);
 							}
 							efree(strings);
-							php_error_docref(NULL, E_WARNING, "dictionary entries must be non-empty strings");
+							if (!EG(exception)) {
+								php_error_docref(NULL, E_WARNING, "dictionary entries must be non-empty strings");
+							}
 							return 0;
 						}
 						for (i = 0; i < ZSTR_LEN(*ptr); i++) {
@@ -1624,12 +1626,3 @@ zend_module_entry php_zlib_module_entry = {
 	STANDARD_MODULE_PROPERTIES_EX
 };
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

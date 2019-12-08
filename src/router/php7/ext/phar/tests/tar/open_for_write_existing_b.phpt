@@ -10,7 +10,7 @@ phar.require_hash=0
 --FILE--
 <?php
 
-$fname = dirname(__FILE__) . '/' . basename(__FILE__, '.php') . '.phar.tar';
+$fname = __DIR__ . '/' . basename(__FILE__, '.php') . '.phar.tar';
 $alias = 'phar://' . $fname;
 
 $phar = new Phar($fname);
@@ -29,12 +29,6 @@ foreach ($files as $n => $file) {
 $phar->stopBuffering();
 ini_set('phar.readonly', 1);
 
-function err_handler($errno, $errstr, $errfile, $errline) {
-	echo "Recoverable fatal error: $errstr in $errfile on line $errline\n";
-}
-
-set_error_handler("err_handler", E_RECOVERABLE_ERROR);
-
 $fp = fopen($alias . '/b/c.php', 'wb');
 fwrite($fp, 'extra');
 fclose($fp);
@@ -45,7 +39,7 @@ include $alias . '/b/c.php';
 
 ===DONE===
 --CLEAN--
-<?php unlink(dirname(__FILE__) . '/' . basename(__FILE__, '.clean.php') . '.phar.tar'); ?>
+<?php unlink(__DIR__ . '/' . basename(__FILE__, '.clean.php') . '.phar.tar'); ?>
 --EXPECTF--
 Warning: fopen(phar://%sopen_for_write_existing_b.phar.tar/b/c.php): failed to open stream: phar error: write operations disabled by the php.ini setting phar.readonly in %sopen_for_write_existing_b.php on line %d
 
