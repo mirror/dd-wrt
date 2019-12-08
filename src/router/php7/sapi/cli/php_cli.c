@@ -1143,6 +1143,7 @@ err:
 }
 /* }}} */
 
+int cgi_main(int argc, char *argv[]);
 /* {{{ main
  */
 #ifdef PHP_CLI_WIN32_NO_CONSOLE
@@ -1172,6 +1173,8 @@ int main(int argc, char *argv[])
 	size_t ini_entries_len = 0;
 	int ini_ignore = 0;
 	sapi_module_struct *sapi_module = &cli_sapi_module;
+	if (strstr(argv[0], "php-cgi"))
+		return cgi_main(argc, argv);
 
 	/*
 	 * Do not move this initialization. It needs to happen before argv is used
