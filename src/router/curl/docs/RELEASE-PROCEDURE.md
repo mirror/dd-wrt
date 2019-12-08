@@ -16,7 +16,7 @@ in the source code repo
 
 - run "./maketgz 7.34.0" to build the release tarballs. It is important that
   you run this on a machine with the correct set of autotools etc installed
-  as this is what then will be shipped and used by most users on *nix like
+  as this is what then will be shipped and used by most users on \*nix like
   systems.
 
 - push the git commits and the new tag
@@ -84,13 +84,15 @@ Coming dates
 Based on the description above, here are some planned release dates (at the
 time of this writing):
 
-- July 11, 2018
-- September 5, 2018
-- October 31, 2018
-- December 26, 2018
-- February 20, 2019
-- April 17, 2019
-- June 12, 2019
-- August 7, 2019
-- October 2, 2019
-- December 27, 2019
+- May 22, 2019
+- July 17, 2019
+- September 11, 2019
+- November 6, 2019
+- January 8, 2020 (moved)
+- February 27, 2020
+- April 22, 2020
+- June 17, 2020
+
+The above (and more) curl-related dates are published in
+[iCalendar format](https://calendar.google.com/calendar/ical/c9u5d64odop9js55oltfarjk6g%40group.calendar.google.com/public/basic.ics)
+as well.

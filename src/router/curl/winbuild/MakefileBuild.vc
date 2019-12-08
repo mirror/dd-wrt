@@ -152,6 +152,9 @@ SSL_CFLAGS   = /DUSE_OPENSSL /I"$(SSL_INC_DIR)"
 !IF EXISTS("$(SSL_INC_DIR)\is_boringssl.h")
 SSL_CFLAGS   = $(SSL_CFLAGS) /DHAVE_BORINGSSL
 !ENDIF
+!IF "$(ENABLE_OPENSSL_AUTO_LOAD_CONFIG)"=="false"
+SSL_CFLAGS   = $(SSL_CFLAGS) /DCURL_DISABLE_OPENSSL_AUTO_LOAD_CONFIG
+!ENDIF
 !ENDIF
 
 
@@ -236,6 +239,7 @@ ZLIB_LIB_DIR = $(DEVEL_LIB)
 !IF "$(WITH_ZLIB)"=="dll"
 !IF EXISTS("$(ZLIB_LIB_DIR)\zlibwapi.lib")
 ZLIB_LIBS = zlibwapi.lib
+ADDITIONAL_ZLIB_CFLAGS = /DZLIB_WINAPI
 !ELSEIF EXISTS("$(ZLIB_LIB_DIR)\zdll.lib")
 ZLIB_LIBS   = zdll.lib
 !ELSE
@@ -246,6 +250,7 @@ ZLIB        = dll
 !ELSEIF "$(WITH_ZLIB)"=="static"
 !IF EXISTS("$(ZLIB_LIB_DIR)\zlibstat.lib")
 ZLIB_LIBS   = zlibstat.lib
+ADDITIONAL_ZLIB_CFLAGS = /DZLIB_WINAPI
 !ELSEIF EXISTS("$(ZLIB_LIB_DIR)\zlib.lib")
 ZLIB_LIBS   = zlib.lib
 !ELSE
@@ -256,7 +261,7 @@ ZLIB        = static
 !ENDIF
 
 !IFDEF USE_ZLIB
-ZLIB_CFLAGS = /DHAVE_ZLIB_H /DHAVE_ZLIB /DHAVE_LIBZ /I"$(ZLIB_INC_DIR)"
+ZLIB_CFLAGS = /DHAVE_ZLIB_H /DHAVE_ZLIB /DHAVE_LIBZ $(ADDITIONAL_ZLIB_CFLAGS) /I"$(ZLIB_INC_DIR)"
 !ENDIF
 
 
@@ -388,11 +393,11 @@ CFGSET = true
 !IF "$(DEBUG)"=="yes"
 RC_FLAGS = /dDEBUGBUILD=1 /Fo $@ $(LIBCURL_SRC_DIR)\libcurl.rc
 CURL_CC       = $(CC_DEBUG) $(RTLIB_DEBUG)
-CURL_RC_FLAGS = /i../include /dDEBUGBUILD=1 /Fo $@ $(CURL_SRC_DIR)\curl.rc
+CURL_RC_FLAGS = $(CURL_RC_FLAGS) /i../include /dDEBUGBUILD=1 /Fo $@ $(CURL_SRC_DIR)\curl.rc
 !ELSE
 RC_FLAGS = /dDEBUGBUILD=0 /Fo $@ $(LIBCURL_SRC_DIR)\libcurl.rc
 CURL_CC       = $(CC_NODEBUG) $(RTLIB)
-CURL_RC_FLAGS = /i../include /dDEBUGBUILD=0 /Fo $@ $(CURL_SRC_DIR)\curl.rc
+CURL_RC_FLAGS = $(CURL_RC_FLAGS) /i../include /dDEBUGBUILD=0 /Fo $@ $(CURL_SRC_DIR)\curl.rc
 !ENDIF
 
 !IF "$(AS_DLL)" == "true"
@@ -474,9 +479,24 @@ CFLAGS = $(CFLAGS) $(CFLAGS_PDB) /Fd"$(LIB_DIROBJ)\$(PDB)"
 LFLAGS = $(LFLAGS) $(LFLAGS_PDB)
 !ENDIF
 
+!IF ( "$(USE_SSL)"=="true" && "$(USE_WINSSL)"=="true" ) \
+ || ( "$(USE_SSL)"=="true" && "$(USE_MBEDTLS)"=="true" ) \
+ || ( "$(USE_MBEDTLS)"=="true" && "$(USE_WINSSL)"=="true" )
+CFLAGS = $(CFLAGS) /DCURL_WITH_MULTI_SSL
+!ENDIF
+
+!IF "$(USE_UNICODE)"=="true"
+CFLAGS = $(CFLAGS) /DUNICODE /D_UNICODE
+!ENDIF
+
 LIB_DIROBJ = ..\builds\$(CONFIG_NAME_LIB)-obj-lib
 CURL_DIROBJ = ..\builds\$(CONFIG_NAME_LIB)-obj-curl
+
+!IFDEF WITH_PREFIX
+DIRDIST = $(WITH_PREFIX)
+!ELSE
 DIRDIST = ..\builds\$(CONFIG_NAME_LIB)\
+!ENDIF
 
 #
 # curl.exe
@@ -543,6 +563,8 @@ $(LIB_DIROBJ):
 	@if not exist "$(LIB_DIROBJ)" mkdir $(LIB_DIROBJ)
 	@if not exist "$(LIB_DIROBJ)\vauth" mkdir $(LIB_DIROBJ)\vauth
 	@if not exist "$(LIB_DIROBJ)\vtls" mkdir $(LIB_DIROBJ)\vtls
+	@if not exist "$(LIB_DIROBJ)\vssh" mkdir $(LIB_DIROBJ)\vssh
+	@if not exist "$(LIB_DIROBJ)\vquic" mkdir $(LIB_DIROBJ)\vquic
 
 $(CURL_DIROBJ):
 	@if not exist "$(CURL_DIROBJ)" mkdir $(CURL_DIROBJ)
@@ -559,6 +581,12 @@ $(CURL_DIROBJ):
 	$(CURL_CC) $(CFLAGS) /Fo"$@"  $<
 
 {$(LIBCURL_SRC_DIR)\vtls\}.c{$(LIB_DIROBJ)\vtls\}.obj:
+	$(CURL_CC) $(CFLAGS) /Fo"$@"  $<
+
+{$(LIBCURL_SRC_DIR)\vssh\}.c{$(LIB_DIROBJ)\vssh\}.obj:
+	$(CURL_CC) $(CFLAGS) /Fo"$@"  $<
+
+{$(LIBCURL_SRC_DIR)\vquic\}.c{$(LIB_DIROBJ)\vquic\}.obj:
 	$(CURL_CC) $(CFLAGS) /Fo"$@"  $<
 
 $(LIB_DIROBJ)\libcurl.res: $(LIBCURL_SRC_DIR)\libcurl.rc
@@ -623,4 +651,3 @@ clean:
 	@if exist $(LIB_DIROBJ) rd /s/q $(LIB_DIROBJ)
 	@if exist $(CURL_DIROBJ)rd /s/q $(CURL_DIROBJ)
 	@if exist $(DIRDIST) rd /s/q $(DIRDIST)
-

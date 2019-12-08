@@ -29,7 +29,7 @@ http
 HTTP/0.9 GET and all zeroes
  </name>
  <command option="force-output">
-http://%HOSTIP:%HTTPPORT/1164 -w '%{size_download}\n'
+http://%HOSTIP:%HTTPPORT/1164 -w '%{size_download}\n' --http0.9
 </command>
 </client>
 
@@ -45,7 +45,7 @@ Host: %HOSTIP:%HTTPPORT
 Accept: */*
 
 </protocol>
-<stdout>
+<stdout mode="text">
 208
 </stdout>
 </verify>

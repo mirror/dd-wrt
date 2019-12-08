@@ -6,7 +6,7 @@
  *                             \___|\___/|_| \_\_____|
  *
  * Copyright (C) 2012 - 2016, Linus Nielsen Feltzing, <linus@haxx.se>
- * Copyright (C) 2012 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2012 - 2019, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -61,12 +61,13 @@
     Curl_share_unlock((x), CURL_LOCK_DATA_CONNECT)
 #endif
 
+#define HASHKEY_SIZE 128
+
 static void conn_llist_dtor(void *user, void *element)
 {
-  struct connectdata *data = element;
+  struct connectdata *conn = element;
   (void)user;
-
-  data->bundle = NULL;
+  conn->bundle = NULL;
 }
 
 static CURLcode bundle_create(struct Curl_easy *data,
@@ -142,10 +143,8 @@ int Curl_conncache_init(struct conncache *connc, int size)
 
   rc = Curl_hash_init(&connc->hash, size, Curl_hash_str,
                       Curl_str_key_compare, free_bundle_hash_entry);
-  if(rc) {
-    Curl_close(connc->closure_handle);
-    connc->closure_handle = NULL;
-  }
+  if(rc)
+    Curl_close(&connc->closure_handle);
   else
     connc->closure_handle->state.conn_cache = connc;
 
@@ -160,28 +159,32 @@ void Curl_conncache_destroy(struct conncache *connc)
 
 /* creates a key to find a bundle for this connection */
 static void hashkey(struct connectdata *conn, char *buf,
-                    size_t len) /* something like 128 is fine */
+                    size_t len,  /* something like 128 is fine */
+                    const char **hostp)
 {
   const char *hostname;
+  long port = conn->remote_port;
 
-  if(conn->bits.socksproxy)
-    hostname = conn->socks_proxy.host.name;
-  else if(conn->bits.httpproxy)
+  if(conn->bits.httpproxy && !conn->bits.tunnel_proxy) {
     hostname = conn->http_proxy.host.name;
+    port = conn->port;
+  }
   else if(conn->bits.conn_to_host)
     hostname = conn->conn_to_host.name;
   else
     hostname = conn->host.name;
 
-  DEBUGASSERT(len > 32);
+  if(hostp)
+    /* report back which name we used */
+    *hostp = hostname;
 
   /* put the number first so that the hostname gets cut off if too long */
-  snprintf(buf, len, "%ld%s", conn->port, hostname);
+  msnprintf(buf, len, "%ld%s", port, hostname);
 }
 
-void Curl_conncache_unlock(struct connectdata *conn)
+void Curl_conncache_unlock(struct Curl_easy *data)
 {
-  CONN_UNLOCK(conn->data);
+  CONN_UNLOCK(data);
 }
 
 /* Returns number of connections currently held in the connection cache.
@@ -213,13 +216,14 @@ size_t Curl_conncache_bundle_size(struct connectdata *conn)
 
    **NOTE**: When it returns, it holds the connection cache lock! */
 struct connectbundle *Curl_conncache_find_bundle(struct connectdata *conn,
-                                                 struct conncache *connc)
+                                                 struct conncache *connc,
+                                                 const char **hostp)
 {
   struct connectbundle *bundle = NULL;
   CONN_LOCK(conn->data);
   if(connc) {
-    char key[128];
-    hashkey(conn, key, sizeof(key));
+    char key[HASHKEY_SIZE];
+    hashkey(conn, key, sizeof(key), hostp);
     bundle = Curl_hash_pick(&connc->hash, key, strlen(key));
   }
 
@@ -268,17 +272,17 @@ CURLcode Curl_conncache_add_conn(struct conncache *connc,
   struct Curl_easy *data = conn->data;
 
   /* *find_bundle() locks the connection cache */
-  bundle = Curl_conncache_find_bundle(conn, data->state.conn_cache);
+  bundle = Curl_conncache_find_bundle(conn, data->state.conn_cache, NULL);
   if(!bundle) {
     int rc;
-    char key[128];
+    char key[HASHKEY_SIZE];
 
     result = bundle_create(data, &new_bundle);
     if(result) {
       goto unlock;
     }
 
-    hashkey(conn, key, sizeof(key));
+    hashkey(conn, key, sizeof(key), NULL);
     rc = conncache_add_bundle(data->state.conn_cache, key, new_bundle);
 
     if(!rc) {
@@ -303,9 +307,14 @@ CURLcode Curl_conncache_add_conn(struct conncache *connc,
   return result;
 }
 
-void Curl_conncache_remove_conn(struct connectdata *conn, bool lock)
+/*
+ * Removes the connectdata object from the connection cache *and* clears the
+ * ->data pointer association. Pass TRUE/FALSE in the 'lock' argument
+ * depending on if the parent function already holds the lock or not.
+ */
+void Curl_conncache_remove_conn(struct Curl_easy *data,
+                                struct connectdata *conn, bool lock)
 {
-  struct Curl_easy *data = conn->data;
   struct connectbundle *bundle = conn->bundle;
   struct conncache *connc = data->state.conn_cache;
 
@@ -313,7 +322,7 @@ void Curl_conncache_remove_conn(struct connectdata *conn, bool lock)
      due to a failed connection attempt, before being added to a bundle */
   if(bundle) {
     if(lock) {
-      CONN_LOCK(conn->data);
+      CONN_LOCK(data);
     }
     bundle_remove_conn(bundle, conn);
     if(bundle->num_connections == 0)
@@ -321,11 +330,12 @@ void Curl_conncache_remove_conn(struct connectdata *conn, bool lock)
     conn->bundle = NULL; /* removed from it */
     if(connc) {
       connc->num_conn--;
-      DEBUGF(infof(conn->data, "The cache now contains %zu members\n",
+      DEBUGF(infof(data, "The cache now contains %zu members\n",
                    connc->num_conn));
     }
+    conn->data = NULL; /* clear the association */
     if(lock) {
-      CONN_UNLOCK(conn->data);
+      CONN_UNLOCK(data);
     }
   }
 }
@@ -387,8 +397,8 @@ bool Curl_conncache_foreach(struct Curl_easy *data,
    NOTE: no locking is done here as this is presumably only done when cleaning
    up a cache!
 */
-struct connectdata *
-Curl_conncache_find_first_connection(struct conncache *connc)
+static struct connectdata *
+conncache_find_first_connection(struct conncache *connc)
 {
   struct curl_hash_iterator iter;
   struct curl_hash_element *he;
@@ -428,24 +438,18 @@ bool Curl_conncache_return_conn(struct connectdata *conn)
     data->multi->maxconnects;
   struct connectdata *conn_candidate = NULL;
 
+  conn->data = NULL; /* no owner anymore */
+  conn->lastused = Curl_now(); /* it was used up until now */
   if(maxconnects > 0 &&
      Curl_conncache_size(data) > maxconnects) {
     infof(data, "Connection cache is full, closing the oldest one.\n");
 
     conn_candidate = Curl_conncache_extract_oldest(data);
-
     if(conn_candidate) {
-      /* Set the connection's owner correctly */
-      conn_candidate->data = data;
-
       /* the winner gets the honour of being disconnected */
-      (void)Curl_disconnect(conn_candidate, /* dead_connection */ FALSE);
+      (void)Curl_disconnect(data, conn_candidate, /* dead_connection */ FALSE);
     }
   }
-  CONN_LOCK(data);
-  conn->inuse = FALSE; /* Mark the connection unused */
-  conn->data = NULL; /* no owner */
-  CONN_UNLOCK(data);
 
   return (conn_candidate == conn) ? FALSE : TRUE;
 
@@ -479,9 +483,9 @@ Curl_conncache_extract_bundle(struct Curl_easy *data,
   while(curr) {
     conn = curr->ptr;
 
-    if(!conn->inuse) {
+    if(!CONN_INUSE(conn) && !conn->data) {
       /* Set higher score for the age passed since the connection was used */
-      score = Curl_timediff(now, conn->now);
+      score = Curl_timediff(now, conn->lastused);
 
       if(score > highscore) {
         highscore = score;
@@ -496,6 +500,7 @@ Curl_conncache_extract_bundle(struct Curl_easy *data,
     data->state.conn_cache->num_conn--;
     DEBUGF(infof(data, "The cache now contains %zu members\n",
                  data->state.conn_cache->num_conn));
+    conn_candidate->data = data; /* associate! */
   }
 
   return conn_candidate;
@@ -536,9 +541,9 @@ Curl_conncache_extract_oldest(struct Curl_easy *data)
     while(curr) {
       conn = curr->ptr;
 
-      if(!conn->inuse) {
+      if(!CONN_INUSE(conn) && !conn->data) {
         /* Set higher score for the age passed since the connection was used */
-        score = Curl_timediff(now, conn->now);
+        score = Curl_timediff(now, conn->lastused);
 
         if(score > highscore) {
           highscore = score;
@@ -557,6 +562,7 @@ Curl_conncache_extract_oldest(struct Curl_easy *data)
     connc->num_conn--;
     DEBUGF(infof(data, "The cache now contains %zu members\n",
                  connc->num_conn));
+    conn_candidate->data = data; /* associate! */
   }
   CONN_UNLOCK(data);
 
@@ -567,20 +573,18 @@ void Curl_conncache_close_all_connections(struct conncache *connc)
 {
   struct connectdata *conn;
 
-  conn = Curl_conncache_find_first_connection(connc);
+  conn = conncache_find_first_connection(connc);
   while(conn) {
     SIGPIPE_VARIABLE(pipe_st);
     conn->data = connc->closure_handle;
 
     sigpipe_ignore(conn->data, &pipe_st);
-    conn->data->easy_conn = NULL; /* clear the easy handle's connection
-                                     pointer */
     /* This will remove the connection from the cache */
     connclose(conn, "kill all");
-    (void)Curl_disconnect(conn, FALSE);
+    (void)Curl_disconnect(connc->closure_handle, conn, FALSE);
     sigpipe_restore(&pipe_st);
 
-    conn = Curl_conncache_find_first_connection(connc);
+    conn = conncache_find_first_connection(connc);
   }
 
   if(connc->closure_handle) {
@@ -589,7 +593,7 @@ void Curl_conncache_close_all_connections(struct conncache *connc)
 
     Curl_hostcache_clean(connc->closure_handle,
                          connc->closure_handle->dns.hostcache);
-    Curl_close(connc->closure_handle);
+    Curl_close(&connc->closure_handle);
     sigpipe_restore(&pipe_st);
   }
 }

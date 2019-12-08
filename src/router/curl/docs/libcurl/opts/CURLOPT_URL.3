@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_URL 3 "April 30, 2018" "libcurl 7.61.0" "curl_easy_setopt options"
+.TH CURLOPT_URL 3 "November 11, 2018" "libcurl 7.67.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_URL \- provide the URL to use in the request
@@ -59,7 +59,10 @@ use for this transfer, independent of what libcurl has been compiled to
 support. That may be useful if you accept the URL from an external source and
 want to limit the accessibility.
 
-\fICURLOPT_URL(3)\fP is the only option that \fBmust\fP be set before a
+The \fICURLOPT_URL(3)\fP string will be ignored if \fICURLOPT_CURLU(3)\fP is
+set.
+
+\fICURLOPT_URL(3)\fP or \fICURLOPT_CURLU(3)\fP \fBmust\fP be set before a
 transfer is started.
 
 The host part of the URL contains the address of the server that you want to
@@ -188,7 +191,10 @@ imap://user:password@mail.example.com/INBOX - Performs a folder list on the
 user's inbox
 
 imap://user:password@mail.example.com/INBOX/;UID=1 - Selects the user's inbox
-and fetches message 1
+and fetches message with uid = 1
+
+imap://user:password@mail.example.com/INBOX/;MAILINDEX=1 - Selects the user's inbox
+and fetches the first message in the mail box
 
 imap://user:password@mail.example.com/INBOX;UIDVALIDITY=50/;UID=2 - Selects
 the user's inbox, checks the UIDVALIDITY of the mailbox is 50 and fetches
@@ -285,6 +291,7 @@ and get cut off by libcurl if provided literally. You will instead have to
 escape it by providing it as backslash and its ASCII value in hexadecimal:
 "\\23".
 
+.RS 0
 The application does not have to keep the string around after setting this
 option.
 .SH ENCODING
@@ -347,4 +354,4 @@ similar is called.
 .BR CURLOPT_VERBOSE "(3), " CURLOPT_PROTOCOLS "(3), "
 .BR CURLOPT_FORBID_REUSE "(3), " CURLOPT_FRESH_CONNECT "(3), "
 .BR curl_easy_perform "(3), "
-.BR CURLINFO_REDIRECT_URL "(3), " CURLOPT_PATH_AS_IS "(3), "
+.BR CURLINFO_REDIRECT_URL "(3), " CURLOPT_PATH_AS_IS "(3), " CURLOPT_CURLU "(3), "
