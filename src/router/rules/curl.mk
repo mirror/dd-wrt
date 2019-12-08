@@ -20,7 +20,7 @@ curl-clean:
 	$(MAKE) -C curl clean
 
 curl-configure: openssl zlib
-	cd curl && aclocal && automake && ./configure --with-ca-bundle=/etc/ssl/ca-bundle.crt --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --libdir=/usr/lib --target=$(ARCH)-linux --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
+	cd curl && ./buildconf && ./configure --with-ca-bundle=/etc/ssl/ca-bundle.crt --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --libdir=/usr/lib --target=$(ARCH)-linux --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib  -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/zlib -L$(TOP)/openssl -lcrypto -lssl -ldl" 
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
