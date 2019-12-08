@@ -1,4 +1,4 @@
-icu-configure:
+icu-configure: sqlite
 	-make -C icu clean
 	rm -f icu/config.cache
 	rm -rf icu/autom4te.cach
@@ -87,7 +87,7 @@ icu-install:
 	-cp -fpR $(TOP)/icu/target_staging/lib/*.so* $(INSTALLDIR)/icu/usr/lib/
 
 
-php7: libxml2 libmcrypt icu glib20 zlib libzip openssl
+php7: libxml2 libmcrypt icu glib20 zlib libzip openssl sqlite
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/icu/target_staging/include -I$(TOP)/curl/include -I$(TOP)/zlib/include -I$(TOP)/openssl/include -I$(TOP)/libzip -I$(TOP)/libzip/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/icu/target_staging/include -I$(TOP)/curl/include -I$(TOP)/zlib/include -I$(TOP)/openssl/include -I$(TOP)/libzip -I$(TOP)/libzip/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
