@@ -375,7 +375,7 @@ static const char *get_mime_type(const php_cli_server *server, const char *ext, 
 	return (const char*)zend_hash_str_find_ptr(&server->extension_mime_types, ext, ext_len);
 } /* }}} */
 
-PHP_FUNCTION(apache_request_headers) /* {{{ */
+static PHP_FUNCTION(apache_request_headers) /* {{{ */
 {
 	php_cli_server_client *client;
 	HashTable *headers;
@@ -427,7 +427,7 @@ static void add_response_header(sapi_header_struct *h, zval *return_value) /* {{
 }
 /* }}} */
 
-PHP_FUNCTION(apache_response_headers) /* {{{ */
+static PHP_FUNCTION(apache_response_headers) /* {{{ */
 {
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
