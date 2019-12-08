@@ -1,5 +1,5 @@
 sqlite-configure:
-	cd sqlite && ./configure --host=$(ARCH)-linux --disable-readline --prefix=/usr CFLAGS="$(COPTS) -fPIC"
+	cd sqlite && ./configure --host=$(ARCH)-linux --disable-readline --prefix=/usr --libdir=/usr/lib --disable-static-shell CFLAGS="$(COPTS) -fPIC"
 
 sqlite:
 	make -C sqlite
