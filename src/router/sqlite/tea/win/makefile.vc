@@ -21,7 +21,7 @@
 # RCS: @(#)$Id: makefile.vc,v 1.4 2004/07/26 08:22:05 patthoyts Exp $
 #-------------------------------------------------------------------------
 
-!if !defined(MSDEVDIR) && !defined(MSVCDIR) && !defined(VCToolkitInstallDir)
+!if !defined(MSDEVDIR) && !defined(MSVCDIR) && !defined(VCINSTALLDIR) && !defined(MSSDK) && !defined(WINDOWSSDKDIR)
 MSG = ^
 You will need to run vcvars32.bat from Developer Studio, first, to setup^
 the environment.  Jump to this line to read the new instructions.
@@ -153,16 +153,26 @@ Please `cd` to its location first.
 #
 #-------------------------------------------------------------------------
 
-PROJECT = sample
+PROJECT = sqlite3
 !include "rules.vc"
 
-DOTVERSION      = 0.5
+# nmakehelp -V <file> <tag> will search the file for tag, skips until a
+#	number and returns all character until a character not in [0-9.ab]
+#	is read.
+
+!if [echo REM = This file is generated from Makefile.vc > versions.vc]
+!endif
+# get project version from row "AC_INIT([sqlite], [3.7.14])"
+!if [echo DOTVERSION = \>> versions.vc] \
+   && [nmakehlp -V ..\configure.in AC_INIT >> versions.vc]
+!endif
+!include "versions.vc"
+
 VERSION         = $(DOTVERSION:.=)
 STUBPREFIX      = $(PROJECT)stub
 
 DLLOBJS = \
-	$(TMP_DIR)\tclsample.obj \
-	$(TMP_DIR)\sample.obj
+	$(TMP_DIR)\tclsqlite3.obj
 
 #-------------------------------------------------------------------------
 # Target names and paths ( shouldn't need changing )
@@ -215,14 +225,6 @@ cdebug	= -Z7 -WX -Od -GZ
 ### Declarations common to all compiler options
 cflags = -nologo -c -W3 -YX -Fp$(TMP_DIR)^\
 
-!if $(PENT_0F_ERRATA)
-cflags = $(cflags) -QI0f
-!endif
-
-!if $(ITAN_B_ERRATA)
-cflags = $(cflags) -QIA64_Bx
-!endif
-
 !if $(MSVCRT)
 !if $(DEBUG)
 crt = -MDd
@@ -237,11 +239,15 @@ crt = -MT
 !endif
 !endif
 
-INCLUDES	= $(TCL_INCLUDES) -I"$(WINDIR)" -I"$(GENERICDIR)"
-BASE_CLFAGS	= $(cflags) $(cdebug) $(crt) $(INCLUDES)
-CON_CFLAGS	= $(cflags) $(cdebug) $(crt) -DCONSOLE
-TCL_CFLAGS	= -DUSE_TCL_STUBS -DPACKAGE_VERSION="\"$(DOTVERSION)\"" \
-                  $(BASE_CLFAGS) $(OPTDEFINES)
+INCLUDES	= $(TCL_INCLUDES) -I"$(WINDIR)" -I"$(GENERICDIR)" \
+                  -I"$(ROOT)\.."
+BASE_CLFAGS	= $(cflags) $(cdebug) $(crt) $(INCLUDES) \
+                  -DSQLITE_3_SUFFIX_ONLY=1 -DSQLITE_ENABLE_RTREE=1 \
+                  -DSQLITE_ENABLE_FTS3=1 -DSQLITE_OMIT_DEPRECATED=1
+CON_CFLAGS	= $(cflags) $(cdebug) $(crt) -DCONSOLE -DSQLITE_ENABLE_FTS3=1
+TCL_CFLAGS	= -DBUILD_sqlite -DUSE_TCL_STUBS \
+                  -DPACKAGE_VERSION="\"$(DOTVERSION)\"" $(BASE_CLFAGS) \
+                  $(OPTDEFINES)
 
 #---------------------------------------------------------------------
 # Link flags
@@ -379,25 +385,13 @@ install-binaries:
 	@if not exist "$(SCRIPT_INSTALL_DIR)" mkdir "$(SCRIPT_INSTALL_DIR)"
 	@$(CPY) $(PRJLIB) "$(SCRIPT_INSTALL_DIR)" >NUL
 
-### Automatic creation of pkgIndex
-#install-libraries:
-#	@echo Installing library files to '$(SCRIPT_INSTALL_DIR)'
-#	@if exist $(LIBDIR) $(CPY) $(LIBDIR)\*.tcl "$(SCRIPT_INSTALL_DIR)"
-#	@echo cd "$(SCRIPT_INSTALL_DIR:\=/)" ; pkg_mkIndex . | $(TCLSH)
-
-### Manual creation of pkgIndex
-### Normally the ifneeded command would be:
-###   package ifneeded $(PROJECT) $(DOTVERSION) \
-###      [list load [file join $$dir $(PROJECT)$(VERSION).$(EXT)]]
-### but this project has been named oddly. It has Sample_Init but provides
-### the Tclsha1 package.
 install-libraries:
         @echo Installing libraries to '$(SCRIPT_INSTALL_DIR)'
         @if exist $(LIBDIR) $(CPY) $(LIBDIR)\*.tcl "$(SCRIPT_INSTALL_DIR)"
         @echo Installing package index in '$(SCRIPT_INSTALL_DIR)'
         @type << >"$(SCRIPT_INSTALL_DIR)\pkgIndex.tcl"
-# Hand-crafted pkgIndex.tcl
-package ifneeded Tclsha1 $(DOTVERSION) [list load [file join $$dir $(PROJECT)$(VERSION).$(EXT)] Sample]
+package ifneeded $(PROJECT) $(DOTVERSION) \
+    [list load [file join $$dir $(PRJLIBNAME)] sqlite3]
 <<
 
 install-docs:
