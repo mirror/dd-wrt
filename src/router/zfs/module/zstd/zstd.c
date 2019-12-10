@@ -62,6 +62,7 @@
 #include "decompress/zstd_decompress_block.c"
 #include "decompress/huf_decompress.c"
 
+
 /* for BSD compat */
 #define	__unused			__attribute__((unused))
 
@@ -90,8 +91,11 @@ static const ZSTD_customMem zstd_dctx_malloc = {
 
 enum zstd_kmem_type {
 	ZSTD_KMEM_UNKNOWN = 0,
+	/* allocation type using kmem_vmalloc */
 	ZSTD_KMEM_DEFAULT,
+	/* pool based allocation using mempool_alloc */
 	ZSTD_KMEM_POOL,
+	/* reserved fallback memory for decompression only */
 	ZSTD_KMEM_DCTX,
 	ZSTD_KMEM_COUNT,
 };
@@ -245,8 +249,6 @@ zstd_mempool_alloc(struct zstd_pool *zstd_mempool, size_t size)
 					pool->size = size;
 					mem->kmem_type = ZSTD_KMEM_POOL;
 					mem->kmem_size = size;
-				} else {
-					mutex_exit(&pool->barrier);
 				}
 			}
 			if (size <= pool->size) {
@@ -275,14 +277,12 @@ zstd_mempool_alloc(struct zstd_pool *zstd_mempool, size_t size)
 }
 
 /*
- * mark object as released by releasing the barrier
- * mutex and clear the buffer
+ * mark object as released by releasing the barrier mutex
  */
 void
 zstd_mempool_free(struct zstd_kmem *z)
 {
-	struct zstd_pool *pool = z->pool;
-	mutex_exit(&pool->barrier);
+	mutex_exit(&z->pool->barrier);
 }
 
 struct levelmap {
@@ -333,6 +333,9 @@ static struct levelmap fastlevels[] = {
 	{-1000, ZIO_ZSTDLVL_FAST_1000},
 };
 
+/*
+ * convert internal stored zfs level enum to zstd level
+ */
 static enum zio_zstd_levels
 zstd_cookie_to_enum(int32_t level)
 {
@@ -348,6 +351,9 @@ zstd_cookie_to_enum(int32_t level)
 	return (ZIO_ZSTD_LEVEL_DEFAULT);
 }
 
+/*
+ * convert zstd_level to internal stored zfs level
+ */
 static int32_t
 zstd_enum_to_cookie(enum zio_zstd_levels elevel)
 {
@@ -365,8 +371,11 @@ zstd_enum_to_cookie(enum zio_zstd_levels elevel)
 	return (3);
 }
 
+/*
+ * compress block using zstd
+ */
 size_t
-zstd_compress(void *s_start, void *d_start, size_t s_len, size_t d_len, int n)
+zstd_compress(void *s_start, void *d_start, size_t s_len, size_t d_len, int lvl)
 {
 	size_t c_len;
 	uint32_t bufsiz;
@@ -374,7 +383,7 @@ zstd_compress(void *s_start, void *d_start, size_t s_len, size_t d_len, int n)
 	char *dest = d_start;
 	ZSTD_CCtx *cctx;
 
-	levelcookie = zstd_enum_to_cookie(n);
+	levelcookie = zstd_enum_to_cookie(lvl);
 	ASSERT3U(d_len, >=, sizeof (bufsiz));
 	ASSERT3U(d_len, <=, s_len);
 	ASSERT3U(levelcookie, !=, 0);
@@ -427,22 +436,9 @@ zstd_compress(void *s_start, void *d_start, size_t s_len, size_t d_len, int n)
 	return (c_len + sizeof (bufsiz) + sizeof (levelcookie));
 }
 
-int
-zstd_get_level(void *s_start, size_t s_len, uint8_t *level)
-{
-	const char *src = s_start;
-	uint32_t levelcookie = BE_IN32(&src[sizeof (levelcookie)]);
-	uint8_t zstdlevel = zstd_cookie_to_enum(levelcookie);
-
-	ASSERT3U(zstdlevel, !=, ZIO_ZSTDLVL_INHERIT);
-
-	if (level != NULL) {
-		*level = zstdlevel;
-	}
-
-	return (0);
-}
-
+/*
+ * decompress block using zstd and return its stored level
+ */
 int
 zstd_decompress_level(void *s_start, void *d_start, size_t s_len, size_t d_len,
     uint8_t *level)
@@ -486,6 +482,9 @@ zstd_decompress_level(void *s_start, void *d_start, size_t s_len, size_t d_len,
 	return (0);
 }
 
+/*
+ * decompress datablock using zstd
+ */
 int
 zstd_decompress(void *s_start, void *d_start, size_t s_len, size_t d_len, int n)
 {
@@ -493,8 +492,10 @@ zstd_decompress(void *s_start, void *d_start, size_t s_len, size_t d_len, int n)
 	return (zstd_decompress_level(s_start, d_start, s_len, d_len, NULL));
 }
 
-static int zstd_meminit(void);
 
+/*
+ * allocator for zstd compression context using mempool_allocator
+ */
 extern void *
 zstd_alloc(void *opaque __unused, size_t size)
 {
@@ -510,6 +511,10 @@ zstd_alloc(void *opaque __unused, size_t size)
 	return ((void*)z + (sizeof (struct zstd_kmem)));
 }
 
+/*
+ * allocator for zstd decompression context, uses mempool_allocator but
+ * fallback to reserved memory if allocation fails
+ */
 extern void *
 zstd_dctx_alloc(void *opaque __unused, size_t size)
 {
@@ -548,7 +553,9 @@ zstd_dctx_alloc(void *opaque __unused, size_t size)
 	return ((void*)z + (sizeof (struct zstd_kmem)));
 }
 
-
+/*
+ * free allocated memory by its specific type
+ */
 extern void
 zstd_free(void *opaque __unused, void *ptr)
 {
@@ -577,6 +584,9 @@ zstd_free(void *opaque __unused, void *ptr)
 #define	__exit
 #endif
 
+/*
+ * allocate fallback memory to ensure safe decompression
+ */
 static void create_fallback_mem(struct zstd_fallback_mem *mem, size_t size)
 {
 	mem->mem_size = size;
@@ -586,6 +596,10 @@ static void create_fallback_mem(struct zstd_fallback_mem *mem, size_t size)
 	mutex_init(&mem->barrier, \
 	    NULL, MUTEX_DEFAULT, NULL);
 }
+
+/*
+ * initializes zstd related memory handling
+ */
 static int zstd_meminit(void)
 {
 	zstd_mempool_init();
@@ -624,7 +638,6 @@ module_exit(zstd_fini);
 EXPORT_SYMBOL(zstd_compress);
 EXPORT_SYMBOL(zstd_decompress_level);
 EXPORT_SYMBOL(zstd_decompress);
-EXPORT_SYMBOL(zstd_get_level);
 
 MODULE_DESCRIPTION("ZSTD Compression for ZFS");
 MODULE_LICENSE("Dual BSD/GPL");
