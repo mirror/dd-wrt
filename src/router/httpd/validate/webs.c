@@ -726,12 +726,12 @@ char *copytonv(webs_t wp, const char *fmt, ...)
 
 char *copytonv_prefix(webs_t wp, const char *var, const char *prefix)
 {
-	return copytonv(wp, "%s_%s",prefix, var);
+	return copytonv(wp, "%s_%s", prefix, var);
 }
 
 char *_copytonv_prefix(webs_t wp, const char *var, const char *prefix)
 {
-	return _copytonv(wp, "%s_%s",prefix, var);
+	return _copytonv(wp, "%s_%s", prefix, var);
 }
 
 static int copytonv_check(webs_t wp, const char *fmt, ...)
@@ -2409,7 +2409,7 @@ void remove_mdhcp(char *iface)
 		if (len > 0) {
 			pref = safe_malloc(len);
 			if (!pref)
-			    return;
+				return;
 			strncpy(pref, mdhcpds, len - 1);
 			pref[len - 1] = '\0';
 		} else {
@@ -4496,6 +4496,12 @@ void wireless_save(webs_t wp)
 #ifdef HAVE_ATH9K
 		copytonv(wp, "radio%d_timer_enable", i);
 		copytonv(wp, "radio%d_on_time", i);
+		int intval = atoi(nvram_nget("ath%d_bcn", i));
+		if (*vifs && has_beacon_limit(buf)) {
+			if (intval < 100)
+				nvram_nset("100", "ath%d_bcn", i);
+		}
+
 #endif
 	}
 
