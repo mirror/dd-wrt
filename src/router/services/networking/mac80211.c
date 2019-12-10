@@ -996,7 +996,15 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		fprintf(fp, "frequency=%d\n", freq);
 	char bcn[32];
 	sprintf(bcn, "%s_bcn", prefix);
-	fprintf(fp, "beacon_int=%s\n", nvram_default_get(bcn, "100"));
+#ifdef HAVE_ATH9K
+	char *vifs = nvram_nget("%s_vifs", prefix);
+	int intval = atoi(nvram_default_get(bcn, "100"));
+	if (*vifs && has_beacon_limit(prefix)) {
+		if (intval < 100) 
+			intval = 100;
+	}
+#endif
+	fprintf(fp, "beacon_int=%s\n", intval);
 	fprintf(fp, "\n");
 }
 
