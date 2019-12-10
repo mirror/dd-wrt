@@ -2358,6 +2358,7 @@ struct wifidevices {
 #define CHANNELSURVEY 0x1
 #define QBOOST 0x2		// qboost is a tdma like protocol. i just added this feature to ath10k for doing some experiments. its only supported on 10.4 based firmwares (9984, ipq40xx etc)
 #define TDMA 0x4		// older chipsets to not support tdma, just some sort of polling. so we need this flag
+#define BEACONVAP100 0x8 	// if used with vaps, beacon minimum must be 100ms
 
 #ifdef HAVE_ATH5K
 #define CHANNELSURVEY5K 0x1
@@ -2449,9 +2450,9 @@ static struct wifidevices wdevices[] = {
 	{ "QCA99X0 802.11ac", CHANNELSURVEY | QBOOST, 0x168c, 0x0040 },
 	{ "QCA6164 802.11ac", CHANNELSURVEY, 0x168c, 0x0041 },
 	{ "QCA9377 802.11ac", CHANNELSURVEY, 0x168c, 0x0042 },
-	{ "QCA9984 802.11ac", CHANNELSURVEY | QBOOST | TDMA, 0x168c, 0x0046 },
+	{ "QCA9984 802.11ac", CHANNELSURVEY | QBOOST | TDMA | BEACONVAP100, 0x168c, 0x0046 },
 	{ "QCA9887 802.11ac", CHANNELSURVEY, 0x168c, 0x0050 },
-	{ "QCA9888 802.11ac", CHANNELSURVEY | QBOOST | TDMA, 0x168c, 0x0056 },
+	{ "QCA9888 802.11ac", CHANNELSURVEY | QBOOST | TDMA | BEACONVAP100, 0x168c, 0x0056 },
 	{ "88W8964 802.11ac", CHANNELSURVEY, 0x11ab, 0x2b40 },
 	{ "88W8864 802.11ac", CHANNELSURVEY, 0x11ab, 0x2a55 },
 	{ "88W8897 802.11ac", CHANNELSURVEY, 0x11ab, 0x2b38 },
@@ -2574,6 +2575,10 @@ int has_qboost(const char *prefix)
 int has_qboost_tdma(const char *prefix)
 {
 	return flagcheck(prefix, TDMA, 0);
+}
+int has_beacon_limit(const char *prefix)
+{
+	return flagcheck(prefix, BEACONVAP100, 0);
 }
 #endif
 
