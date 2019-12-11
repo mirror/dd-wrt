@@ -4604,7 +4604,7 @@ static int alwaystrue(const char *prefix)
 
 static int wpa3_support(const char *prefix)
 {
-	return !is_brcmfmac(prefix);
+	return !is_brcmfmac(prefix) && has_wpa3(prefix);
 }
 
 static int noad(const char *prefix)
