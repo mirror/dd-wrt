@@ -1004,7 +1004,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			intval = 100;
 	}
 #endif
-	fprintf(fp, "beacon_int=%s\n", intval);
+	fprintf(fp, "beacon_int=%d\n", intval);
 	fprintf(fp, "\n");
 }
 
