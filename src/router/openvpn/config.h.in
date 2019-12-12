@@ -223,6 +223,9 @@
 /* Define to 1 if you have the `EVP_aes_256_gcm' function. */
 #undef HAVE_EVP_AES_256_GCM
 
+/* Define to 1 if you have the `EVP_CIPHER_CTX_reset' function. */
+#undef HAVE_EVP_CIPHER_CTX_RESET
+
 /* Define to 1 if you have the `EVP_CIPHER_CTX_set_key_length' function. */
 #undef HAVE_EVP_CIPHER_CTX_SET_KEY_LENGTH
 
@@ -685,6 +688,12 @@
 
 /* Define to 1 if you have the <ws2tcpip.h> header file. */
 #undef HAVE_WS2TCPIP_H
+
+/* Define to 1 if you have the `X509_get0_notAfter' function. */
+#undef HAVE_X509_GET0_NOTAFTER
+
+/* Define to 1 if you have the `X509_get0_notBefore' function. */
+#undef HAVE_X509_GET0_NOTBEFORE
 
 /* Define to 1 if you have the `X509_get0_pubkey' function. */
 #undef HAVE_X509_GET0_PUBKEY
