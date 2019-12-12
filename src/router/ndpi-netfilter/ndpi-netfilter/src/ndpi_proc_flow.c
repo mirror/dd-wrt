@@ -233,6 +233,12 @@ ssize_t nflow_proc_read(struct file *file, char __user *buf,
                               size_t count, loff_t *ppos)
 {
         struct ndpi_net *n = PDE_DATA(file_inode(file));
+	if(n->acc_last_op != 1) { // seek 0 after write command
+		n->acc_last_op = 1;
+		nflow_proc_read_start(n);
+		vfs_setpos(file,0,OFFSET_MAX);
+		*ppos = 0;
+	}
 	return nflow_read(n, buf, count, ppos);
 }
 
@@ -292,6 +298,7 @@ int nflow_proc_open(struct inode *inode, struct file *file) {
 	mutex_lock(&n->rem_lock);
 	n->acc_read_mode = 0;
 	if(!n->acc_wait) n->acc_wait = 60;
+	n->acc_last_op = 1;
 	nflow_proc_read_start(n);
 	return 0;
 }
@@ -313,7 +320,10 @@ ssize_t
 nflow_proc_write(struct file *file, const char __user *buffer,
 		                     size_t length, loff_t *loff)
 {
+struct ndpi_net *n = PDE_DATA(file_inode(file));
 	if(!ndpi_enable_flow) return -EINVAL;
+	if(n->flow_l) return -EINVAL; // Reading in progress!
+	n->acc_last_op = 2;
 	return generic_proc_write(PDE_DATA(file_inode(file)), buffer, length, loff,
 				  parse_ndpi_flow, 4060 , W_BUF_FLOW);
 }

@@ -34,7 +34,7 @@ struct write_proc_cmd {
 
 struct nf_ct_ext_ndpi;
 
-#define NF_STR_LBUF 388
+#define NF_STR_LBUF 384
 
 struct ndpi_net {
         struct		timer_list gc;
@@ -78,9 +78,9 @@ struct ndpi_net {
 	struct nf_ct_ext_ndpi	*flow_l;	// save point for next read info
 
 	
+	char			str_buf[NF_STR_LBUF];	// buffer for nflow_read
 	int			str_buf_len,	// nflow_read data length
 				str_buf_offs;	// nflow_read data offset
-	char			str_buf[NF_STR_LBUF];	// buffer for nflow_read
 	int			acc_wait;	// delay for next run ndpi_delete_acct
 	atomic_t		acc_work;	// number of active flow info
 	atomic_t		acc_rem;	// number of inactive flow info
@@ -92,6 +92,9 @@ struct ndpi_net {
 						// 1 - read closed connections info
 						// 2 - read connections info w/o reset counter
 						// +4 - binary mode
+	int			acc_last_op;	// 0 - open
+						// 1 - read
+						// 2 - write
 	atomic_t		acc_i_packets_lost; // lost traffic from flow info
 	atomic_t		acc_o_packets_lost;
 	atomic64_t		acc_i_bytes_lost;
