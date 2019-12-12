@@ -2509,6 +2509,8 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 					FILE *test = fopen(wpath, "rb");
 					if (test) {
 						fclose(test);
+						if (flags)
+							*flags = wdevices[i].flags;
 						return wdevices[i].name;
 					}
 				}
