@@ -2353,12 +2353,13 @@ struct wifidevices {
 	unsigned short device;
 	unsigned short subvendor;	//optional
 	unsigned short subdevice;
+	char *wmac;
 };
 #define NONE 0x0
 #define CHANNELSURVEY 0x1
 #define QBOOST 0x2		// qboost is a tdma like protocol. i just added this feature to ath10k for doing some experiments. its only supported on 10.4 based firmwares (9984, ipq40xx etc)
 #define TDMA 0x4		// older chipsets to not support tdma, just some sort of polling. so we need this flag
-#define BEACONVAP100 0x8 	// if used with vaps, beacon minimum must be 100ms
+#define BEACONVAP100 0x8	// if used with vaps, beacon minimum must be 100ms
 
 #ifdef HAVE_ATH5K
 #define CHANNELSURVEY5K 0x1
@@ -2366,118 +2367,124 @@ struct wifidevices {
 #define CHANNELSURVEY5K 0
 #endif
 static struct wifidevices wdevices[] = {
-	{ "Ubiquiti XR5", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3005 },	//UBNT XR5 offset 10
-	{ "Ubiquiti XR5", CHANNELSURVEY5K, 0x168c, 0x001b, 0x7777, 0x3005 },	//UBNT XR5 offset 10
-	{ "Ubiquiti XR4", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3004 },	//UBNT XR4
-	{ "Ubiquiti SRX", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3006 },	//UBNT XR7 offset 10
-	{ "Ubiquiti XR7", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3007 },	//UBNT XR7 offset 10
-	{ "Ubiquiti XR2-2.3", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3b02 },	//UBNT XR2.3
-	{ "Ubiquiti XR2-2.6", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3c02 },	//UBNT XR2.6 offset 10
-	{ "Ubiquiti XR2", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3002 },	//UBNT XR2
-	{ "Ubiquiti XR2", CHANNELSURVEY5K, 0x168c, 0x001b, 0x7777, 0x3002 },	//UBNT XR2
-	{ "Ubiquiti XR3", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3003 },	//UBNT XR3 offset 10
-	{ "Ubiquiti XR3-3.6", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3c03 },	//UBNT XR3-3.6 offset 10
-	{ "Ubiquiti XR3-2.8", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3b03 },	//UBNT XR3-2.8
-	{ "Ubiquiti XR9", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3009 },	//UBNT XR9 offset 10
-	{ "Ubiquiti UB5", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x1107 },	//UBNT UB5 
-	{ "Ubiquiti SR71A", CHANNELSURVEY, 0x168c, 0x0027, 0x0777, 0x4082 },	//UBNT SR71A offset 10
-	{ "Ubiquiti SR71", CHANNELSURVEY, 0x168c, 0x0027, 0x0777, 0x2082 },	//UBNT SR71 offset 10
-	{ "Ubiquiti SR71-E", CHANNELSURVEY, 0x168c, 0x0029, 0x0777, 0x4e05 },	//UBNT SR71-E offset 10
-	{ "Ubiquiti SR71-15", CHANNELSURVEY, 0x168c, 0x0029, 0x0777, 0x4005 },	//UBNT SR71-15 offset 10
-	{ "Ubiquiti SR71-12", CHANNELSURVEY, 0x168c, 0x0029, 0x0777, 0x4002 },	//UBNT SR71-12 offset 10
-	{ "Ubiquiti SR9", CHANNELSURVEY5K, 0x168c, 0x0013, 0x0777, 0x2009 },	//UBNT SR9 
-	{ "Ubiquiti SR9", CHANNELSURVEY5K, 0x168c, 0x0013, 0x7777, 0x2009 },	//UBNT SR9 offset 12 
-	{ "Ubiquiti SR4", CHANNELSURVEY5K, 0x168c, 0x0013, 0x7777, 0x2004 },	//UBNT SR4 offset 6
-	{ "Ubiquiti SR4", CHANNELSURVEY5K, 0x168c, 0x0013, 0x0777, 0x2004 },	//UBNT SR4 offset 6
-	{ "Ubiquiti SR4C", CHANNELSURVEY5K, 0x168c, 0x0013, 0x0777, 0x1004 },	//UBNT SR4C offset 6
-	{ "Ubiquiti SR4C", CHANNELSURVEY5K, 0x168c, 0x0013, 0x7777, 0x1004 },	//UBNT SR4C offset 6
-	{ "Ubiquiti SRC", CHANNELSURVEY5K, 0x168c, 0x0013, 0x168c, 0x1042 },	//UBNT SRC offset 1
-	{ "Ubiquiti SR2", CHANNELSURVEY5K, 0x168c, 0x0013, 0x168c, 0x2041 },	//UBNT SR2 offset 10
-	{ "Ubiquiti SR5", CHANNELSURVEY5K, 0x168c, 0x0013, 0x168c, 0x2042 },	//UBNT SR5 offset 7
-	{ "Ubiquiti SR2", CHANNELSURVEY5K, 0x168c, 0x0013, 0x168c, 0x2051 },	//UBNT SR2
-	{ "Ubiquiti SR71-X", CHANNELSURVEY, 0x168c, 0x0029, 0x0777, 0x4f05 },	//UBNT SR2
-	{ "Senao NMP8601 / AR5413", CHANNELSURVEY5K, 0x168c, 0x001b, 0x168c, 0x2063 },	//NMP
-	{ "Alfa Networks / AR5413", CHANNELSURVEY5K, 0x168c, 0x001b, 0x17f9, 0x000d },	//alfa
-	{ "Seano NMP8601 / AR5413", CHANNELSURVEY5K, 0x168c, 0x001b, 0x168c, 0x2062 },	//NMP
-	{ "Gigabyte / AR5413", CHANNELSURVEY5K, 0x168c, 0x001b, 0x1458, 0xe901 },	//Gigabyte
-	{ "Alfa Networks / AR5413", CHANNELSURVEY5K, 0x168c, 0x001b, 0x168d, 0x1031 },	//Alfa
-	{ "Alfa Networks / AR5413", CHANNELSURVEY5K, 0x168c, 0x001b, 0x168d, 0x10a2 },	//Alfa
-	{ "DoodleLabs DB-F15-PRO", CHANNELSURVEY5K, 0x168c, 0x001b, 0xdb11, 0xf50 },	//dbii F50-pro-i
-	{ "DoodleLabs DL4600", CHANNELSURVEY5K, 0x168c, 0x001b, 0x1c14, 0x19 },	//dl4600
-	{ "Mikrotik R52nM", CHANNELSURVEY, 0x168c, 0x0029, 0x198c, 0x4201 },
-	{ "Mikrotik R52nM", CHANNELSURVEY, 0x168c, 0x0029, 0x19b6, 0x5201 },
-	{ "Mikrotik R5H", CHANNELSURVEY5K, 0x168c, 0x001b, 0x19b6, 0x2201 },
-	{ "Mikrotik R5H", CHANNELSURVEY5K, 0x168c, 0x001b, 0x19b6, 0x2203 },
-	{ "Mikrotik R11e-5HnD", CHANNELSURVEY, 0x168c, 0x0033, 0x19b6, 0xd014 },
-	{ "Mikrotik R11e-5HnDr2", CHANNELSURVEY, 0x168c, 0x0033, 0x19b6, 0xd057 },
-	{ "Mikrotik R11e-2HPnD", CHANNELSURVEY, 0x168c, 0x0033, 0x19b6, 0xd016 },
-	{ "Mikrotik R11e-5HacT", CHANNELSURVEY, 0x168c, 0x003c, 0x19b6, 0xd03c },
-	{ "Wistron DCMA-82", CHANNELSURVEY5K, 0x168c, 0x001b, 0x185f, 0x1600 },
-	{ "Wistron DNMA-92", CHANNELSURVEY, 0x168c, 0x0029, 0x168c, 0x2096 },
-	{ "AR5210 802.11a", CHANNELSURVEY5K, 0x168c, 0x0007 },
-	{ "AR5210 802.11a", CHANNELSURVEY5K, 0x168c, 0x0207 },
-	{ "AR5211 802.11a", CHANNELSURVEY5K, 0x168c, 0x0011 },
-	{ "AR5211 802.11ab", CHANNELSURVEY5K, 0x168c, 0x0012 },
-	{ "AR5212", CHANNELSURVEY5K, 0x168c, 0x0013 },
-	{ "AR5212", CHANNELSURVEY5K, 0x168c, 0x1014 },
-	{ "AR2413", CHANNELSURVEY5K, 0x168c, 0x001a },
-	{ "AR5413", CHANNELSURVEY5K, 0x168c, 0x001b },
-	{ "AR542x", CHANNELSURVEY5K, 0x168c, 0x001c },
-	{ "AR2417", CHANNELSURVEY5K, 0x168c, 0x001d },
-	{ "AR5513", CHANNELSURVEY5K, 0x168c, 0x0020 },
-	{ "AR5416 802.11n", CHANNELSURVEY, 0x168c, 0x0023 },
-	{ "AR5418 802.11n", CHANNELSURVEY, 0x168c, 0x0024 },
-	{ "AR9160 802.11n", CHANNELSURVEY, 0x168c, 0x0027 },
-	{ "AR922X 802.11n", CHANNELSURVEY, 0x168c, 0x0029 },
-	{ "AR928X 802.11n", CHANNELSURVEY, 0x168c, 0x002a },
-	{ "AR9285 802.11n", CHANNELSURVEY, 0x168c, 0x002b },
-	{ "AR2427 802.11n", CHANNELSURVEY, 0x168c, 0x002c },
-	{ "AR9227 802.11n", CHANNELSURVEY, 0x168c, 0x002d },
-	{ "AR9287 802.11n", CHANNELSURVEY, 0x168c, 0x002e },
-	{ "AR93xx 802.11n", CHANNELSURVEY, 0x168c, 0x0030 },
-	{ "AR9485 802.11n", CHANNELSURVEY, 0x168c, 0x0032 },
-	{ "AR958x 802.11n", CHANNELSURVEY, 0x168c, 0x0033 },
-	{ "AR9462 802.11n", CHANNELSURVEY, 0x168c, 0x0034 },
-	{ "QCA9565 802.11n", CHANNELSURVEY, 0x168c, 0x0036 },
-	{ "AR9485 802.11n", CHANNELSURVEY, 0x168c, 0x0037 },
-	{ "AR5002X", CHANNELSURVEY5K, 0x168c, 0x9013 },
-	{ "AR5006X", CHANNELSURVEY5K, 0x168c, 0xff19 },
-	{ "AR2425", CHANNELSURVEY5K, 0x168c, 0xff1b },
-	{ "AR5008", CHANNELSURVEY5K, 0x168c, 0xff1c },
-	{ "AR922x 802.11n", CHANNELSURVEY, 0x168c, 0xff1d },
-	{ "QCA988x 802.11ac", CHANNELSURVEY, 0x168c, 0x003c },
-	{ "QCA6174 802.11ac", CHANNELSURVEY, 0x168c, 0x003e },
-	{ "QCA99X0 802.11ac", CHANNELSURVEY | QBOOST, 0x168c, 0x0040 },
-	{ "QCA6164 802.11ac", CHANNELSURVEY, 0x168c, 0x0041 },
-	{ "QCA9377 802.11ac", CHANNELSURVEY, 0x168c, 0x0042 },
-	{ "QCA9984 802.11ac", CHANNELSURVEY | QBOOST | TDMA | BEACONVAP100, 0x168c, 0x0046 },
-	{ "QCA9887 802.11ac", CHANNELSURVEY, 0x168c, 0x0050 },
-	{ "QCA9888 802.11ac", CHANNELSURVEY | QBOOST | TDMA | BEACONVAP100, 0x168c, 0x0056 },
-	{ "88W8964 802.11ac", CHANNELSURVEY, 0x11ab, 0x2b40 },
-	{ "88W8864 802.11ac", CHANNELSURVEY, 0x11ab, 0x2a55 },
-	{ "88W8897 802.11ac", CHANNELSURVEY, 0x11ab, 0x2b38 },
-	{ "WIL6210 802.11ad", NONE, 0x1ae9, 0x0310 },
-	{ "SD8887 802.11ac", CHANNELSURVEY, 0x02df, 0x9135 },
-	{ "MT7615 802.11ac", CHANNELSURVEY, 0x14c3, 0x7615 },
-	{ "MT7662E 802.11ac", NONE, 0x14c3, 0x7662 },
-	{ "BCM4350 802.11ac", NONE, 0x14e4, 0x4350 },
-	{ "BCM4356 802.11ac", NONE, 0x14e4, 0x4356 },
-	{ "BCM4358 802.11ac", NONE, 0x14e4, 0x4358 },
-	{ "BCM4365 802.11ac", NONE, 0x14e4, 0x4365 },
-	{ "BCM4366 802.11ac", NONE, 0x14e4, 0x4366 },
-	{ "BCM4371 802.11ac", NONE, 0x14e4, 0x4371 },
-	{ "BCM43570 802.11ac", NONE, 0x14e4, 43570 },
-	{ "BCM43566 802.11ac", NONE, 0x14e4, 43566 },
-	{ "BCM43567 802.11ac", NONE, 0x14e4, 43567 },
-	{ "BCM43569 802.11ac", NONE, 0x14e4, 43569 },
-	{ "BCM43602 802.11ac", NONE, 0x14e4, 43602 },
-	{ "BCM43664 802.11ac", NONE, 0x14e4, 43664 },
-
+	{ "Ubiquiti XR5", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3005, NULL },	//UBNT XR5 offset 10
+	{ "Ubiquiti XR5", CHANNELSURVEY5K, 0x168c, 0x001b, 0x7777, 0x3005, NULL },	//UBNT XR5 offset 10
+	{ "Ubiquiti XR4", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3004, NULL },	//UBNT XR4
+	{ "Ubiquiti SRX", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3006, NULL },	//UBNT XR7 offset 10
+	{ "Ubiquiti XR7", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3007, NULL },	//UBNT XR7 offset 10
+	{ "Ubiquiti XR2-2.3", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3b02, NULL },	//UBNT XR2.3
+	{ "Ubiquiti XR2-2.6", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3c02, NULL },	//UBNT XR2.6 offset 10
+	{ "Ubiquiti XR2", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3002, NULL },	//UBNT XR2
+	{ "Ubiquiti XR2", CHANNELSURVEY5K, 0x168c, 0x001b, 0x7777, 0x3002, NULL },	//UBNT XR2
+	{ "Ubiquiti XR3", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3003, NULL },	//UBNT XR3 offset 10
+	{ "Ubiquiti XR3-3.6", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3c03, NULL },	//UBNT XR3-3.6 offset 10
+	{ "Ubiquiti XR3-2.8", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3b03, NULL },	//UBNT XR3-2.8
+	{ "Ubiquiti XR9", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3009, NULL },	//UBNT XR9 offset 10
+	{ "Ubiquiti UB5", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x1107, NULL },	//UBNT UB5 
+	{ "Ubiquiti SR71A", CHANNELSURVEY, 0x168c, 0x0027, 0x0777, 0x4082, NULL },	//UBNT SR71A offset 10
+	{ "Ubiquiti SR71", CHANNELSURVEY, 0x168c, 0x0027, 0x0777, 0x2082, NULL },	//UBNT SR71 offset 10
+	{ "Ubiquiti SR71-E", CHANNELSURVEY, 0x168c, 0x0029, 0x0777, 0x4e05, NULL },	//UBNT SR71-E offset 10
+	{ "Ubiquiti SR71-15", CHANNELSURVEY, 0x168c, 0x0029, 0x0777, 0x4005, NULL },	//UBNT SR71-15 offset 10
+	{ "Ubiquiti SR71-12", CHANNELSURVEY, 0x168c, 0x0029, 0x0777, 0x4002, NULL },	//UBNT SR71-12 offset 10
+	{ "Ubiquiti SR9", CHANNELSURVEY5K, 0x168c, 0x0013, 0x0777, 0x2009, NULL },	//UBNT SR9 
+	{ "Ubiquiti SR9", CHANNELSURVEY5K, 0x168c, 0x0013, 0x7777, 0x2009, NULL },	//UBNT SR9 offset 12 
+	{ "Ubiquiti SR4", CHANNELSURVEY5K, 0x168c, 0x0013, 0x7777, 0x2004, NULL },	//UBNT SR4 offset 6
+	{ "Ubiquiti SR4", CHANNELSURVEY5K, 0x168c, 0x0013, 0x0777, 0x2004, NULL },	//UBNT SR4 offset 6
+	{ "Ubiquiti SR4C", CHANNELSURVEY5K, 0x168c, 0x0013, 0x0777, 0x1004, NULL },	//UBNT SR4C offset 6
+	{ "Ubiquiti SR4C", CHANNELSURVEY5K, 0x168c, 0x0013, 0x7777, 0x1004, NULL },	//UBNT SR4C offset 6
+	{ "Ubiquiti SRC", CHANNELSURVEY5K, 0x168c, 0x0013, 0x168c, 0x1042, NULL },	//UBNT SRC offset 1
+	{ "Ubiquiti SR2", CHANNELSURVEY5K, 0x168c, 0x0013, 0x168c, 0x2041, NULL },	//UBNT SR2 offset 10
+	{ "Ubiquiti SR5", CHANNELSURVEY5K, 0x168c, 0x0013, 0x168c, 0x2042, NULL },	//UBNT SR5 offset 7
+	{ "Ubiquiti SR2", CHANNELSURVEY5K, 0x168c, 0x0013, 0x168c, 0x2051, NULL },	//UBNT SR2
+	{ "Ubiquiti SR71-X", CHANNELSURVEY, 0x168c, 0x0029, 0x0777, 0x4f05, NULL },	//UBNT SR2
+	{ "Senao NMP8601 / AR5413", CHANNELSURVEY5K, 0x168c, 0x001b, 0x168c, 0x2063, NULL },	//NMP
+	{ "Alfa Networks / AR5413", CHANNELSURVEY5K, 0x168c, 0x001b, 0x17f9, 0x000d, NULL },	//alfa
+	{ "Seano NMP8601 / AR5413", CHANNELSURVEY5K, 0x168c, 0x001b, 0x168c, 0x2062, NULL },	//NMP
+	{ "Gigabyte / AR5413", CHANNELSURVEY5K, 0x168c, 0x001b, 0x1458, 0xe901, NULL },	//Gigabyte
+	{ "Alfa Networks / AR5413", CHANNELSURVEY5K, 0x168c, 0x001b, 0x168d, 0x1031, NULL },	//Alfa
+	{ "Alfa Networks / AR5413", CHANNELSURVEY5K, 0x168c, 0x001b, 0x168d, 0x10a2, NULL },	//Alfa
+	{ "DoodleLabs DB-F15-PRO", CHANNELSURVEY5K, 0x168c, 0x001b, 0xdb11, 0xf50, NULL },	//dbii F50-pro-i
+	{ "DoodleLabs DL4600", CHANNELSURVEY5K, 0x168c, 0x001b, 0x1c14, 0x19, NULL },	//dl4600
+	{ "Mikrotik R52nM", CHANNELSURVEY, 0x168c, 0x0029, 0x198c, 0x4201, NULL },
+	{ "Mikrotik R52nM", CHANNELSURVEY, 0x168c, 0x0029, 0x19b6, 0x5201, NULL },
+	{ "Mikrotik R5H", CHANNELSURVEY5K, 0x168c, 0x001b, 0x19b6, 0x2201, NULL },
+	{ "Mikrotik R5H", CHANNELSURVEY5K, 0x168c, 0x001b, 0x19b6, 0x2203, NULL },
+	{ "Mikrotik R11e-5HnD", CHANNELSURVEY, 0x168c, 0x0033, 0x19b6, 0xd014, NULL },
+	{ "Mikrotik R11e-5HnDr2", CHANNELSURVEY, 0x168c, 0x0033, 0x19b6, 0xd057, NULL },
+	{ "Mikrotik R11e-2HPnD", CHANNELSURVEY, 0x168c, 0x0033, 0x19b6, 0xd016, NULL },
+	{ "Mikrotik R11e-5HacT", CHANNELSURVEY, 0x168c, 0x003c, 0x19b6, 0xd03c, NULL },
+	{ "Wistron DCMA-82", CHANNELSURVEY5K, 0x168c, 0x001b, 0x185f, 0x1600, NULL },
+	{ "Wistron DNMA-92", CHANNELSURVEY, 0x168c, 0x0029, 0x168c, 0x2096, NULL },
+	{ "AR5210 802.11a", CHANNELSURVEY5K, 0x168c, 0x0007, 0, 0, NULL },
+	{ "AR5210 802.11a", CHANNELSURVEY5K, 0x168c, 0x0207, 0, 0, NULL },
+	{ "AR5211 802.11a", CHANNELSURVEY5K, 0x168c, 0x0011, 0, 0, NULL },
+	{ "AR5211 802.11ab", CHANNELSURVEY5K, 0x168c, 0x0012, 0, 0, NULL },
+	{ "AR5212", CHANNELSURVEY5K, 0x168c, 0x0013, 0, 0, NULL },
+	{ "AR5212", CHANNELSURVEY5K, 0x168c, 0x1014, 0, 0, NULL },
+	{ "AR2413", CHANNELSURVEY5K, 0x168c, 0x001a, 0, 0, NULL },
+	{ "AR5413", CHANNELSURVEY5K, 0x168c, 0x001b, 0, 0, NULL },
+	{ "AR542x", CHANNELSURVEY5K, 0x168c, 0x001c, 0, 0, NULL },
+	{ "AR2417", CHANNELSURVEY5K, 0x168c, 0x001d, 0, 0, NULL },
+	{ "AR5513", CHANNELSURVEY5K, 0x168c, 0x0020, 0, 0, NULL },
+	{ "AR5416 802.11n", CHANNELSURVEY, 0x168c, 0x0023, 0, 0, NULL },
+	{ "AR5418 802.11n", CHANNELSURVEY, 0x168c, 0x0024, 0, 0, NULL },
+	{ "AR9160 802.11n", CHANNELSURVEY, 0x168c, 0x0027, 0, 0, NULL },
+	{ "AR922X 802.11n", CHANNELSURVEY, 0x168c, 0x0029, 0, 0, NULL },
+	{ "AR928X 802.11n", CHANNELSURVEY, 0x168c, 0x002a, 0, 0, NULL },
+	{ "AR9285 802.11n", CHANNELSURVEY, 0x168c, 0x002b, 0, 0, NULL },
+	{ "AR2427 802.11n", CHANNELSURVEY, 0x168c, 0x002c, 0, 0, NULL },
+	{ "AR9227 802.11n", CHANNELSURVEY, 0x168c, 0x002d, 0, 0, NULL },
+	{ "AR9287 802.11n", CHANNELSURVEY, 0x168c, 0x002e, 0, 0, NULL },
+	{ "AR93xx 802.11n", CHANNELSURVEY, 0x168c, 0x0030, 0, 0, NULL },
+	{ "AR9485 802.11n", CHANNELSURVEY, 0x168c, 0x0032, 0, 0, NULL },
+	{ "AR958x 802.11n", CHANNELSURVEY, 0x168c, 0x0033, 0, 0, NULL },
+	{ "AR9462 802.11n", CHANNELSURVEY, 0x168c, 0x0034, 0, 0, NULL },
+	{ "QCA9565 802.11n", CHANNELSURVEY, 0x168c, 0x0036, 0, 0, NULL },
+	{ "AR9485 802.11n", CHANNELSURVEY, 0x168c, 0x0037, 0, 0, NULL },
+	{ "AR5002X", CHANNELSURVEY5K, 0x168c, 0x9013, 0, 0, NULL },
+	{ "AR5006X", CHANNELSURVEY5K, 0x168c, 0xff19, 0, 0, NULL },
+	{ "AR2425", CHANNELSURVEY5K, 0x168c, 0xff1b, 0, 0, NULL },
+	{ "AR5008", CHANNELSURVEY5K, 0x168c, 0xff1c, 0, 0, NULL },
+	{ "AR922x 802.11n", CHANNELSURVEY, 0x168c, 0xff1d, 0, 0, NULL },
+	{ "QCA988x 802.11ac", CHANNELSURVEY, 0x168c, 0x003c, 0, 0, NULL },
+	{ "QCA6174 802.11ac", CHANNELSURVEY, 0x168c, 0x003e, 0, 0, NULL },
+	{ "QCA99X0 802.11ac", CHANNELSURVEY | QBOOST, 0x168c, 0x0040, 0, 0, NULL },
+	{ "QCA6164 802.11ac", CHANNELSURVEY, 0x168c, 0x0041, 0, 0, NULL },
+	{ "QCA9377 802.11ac", CHANNELSURVEY, 0x168c, 0x0042, 0, 0, NULL },
+	{ "QCA9984 802.11ac", CHANNELSURVEY | QBOOST | TDMA | BEACONVAP100, 0x168c, 0x0046, 0, 0, NULL },
+	{ "QCA9887 802.11ac", CHANNELSURVEY, 0x168c, 0x0050, 0, 0, NULL },
+	{ "QCA9888 802.11ac", CHANNELSURVEY | QBOOST | TDMA | BEACONVAP100, 0x168c, 0x0056, 0, 0, NULL },
+	{ "88W8964 802.11ac", CHANNELSURVEY, 0x11ab, 0x2b40, 0, 0, NULL },
+	{ "88W8864 802.11ac", CHANNELSURVEY, 0x11ab, 0x2a55, 0, 0, NULL },
+	{ "88W8897 802.11ac", CHANNELSURVEY, 0x11ab, 0x2b38, 0, 0, NULL },
+	{ "WIL6210 802.11ad", NONE, 0x1ae9, 0x0310, 0, 0, NULL },
+	{ "SD8887 802.11ac", CHANNELSURVEY, 0x02df, 0x9135, 0, 0, NULL },
+	{ "MT7615 802.11ac", CHANNELSURVEY, 0x14c3, 0x7615, 0, 0, NULL },
+	{ "MT7662E 802.11ac", NONE, 0x14c3, 0x7662, 0, 0, NULL },
+	{ "BCM4350 802.11ac", NONE, 0x14e4, 0x4350, 0, 0, NULL },
+	{ "BCM4356 802.11ac", NONE, 0x14e4, 0x4356, 0, 0, NULL },
+	{ "BCM4358 802.11ac", NONE, 0x14e4, 0x4358, 0, 0, NULL },
+	{ "BCM4365 802.11ac", NONE, 0x14e4, 0x4365, 0, 0, NULL },
+	{ "BCM4366 802.11ac", NONE, 0x14e4, 0x4366, 0, 0, NULL },
+	{ "BCM4371 802.11ac", NONE, 0x14e4, 0x4371, 0, 0, NULL },
+	{ "BCM43570 802.11ac", NONE, 0x14e4, 43570, 0, 0, NULL },
+	{ "BCM43566 802.11ac", NONE, 0x14e4, 43566, 0, 0, NULL },
+	{ "BCM43567 802.11ac", NONE, 0x14e4, 43567, 0, 0, NULL },
+	{ "BCM43569 802.11ac", NONE, 0x14e4, 43569, 0, 0, NULL },
+	{ "BCM43602 802.11ac", NONE, 0x14e4, 43602, 0, 0, NULL },
+	{ "BCM43664 802.11ac", NONE, 0x14e4, 43664, 0, 0, NULL },
+	{ "AR9100 802.11n WiSOC", CHANNELSURVEY, 0, 0, 0, 0, "ath9k" },
+	{ "AR933x 802.11n WiSOC", CHANNELSURVEY, 0, 0, 0, 0, "ar933x_wmac" },
+	{ "AR934x 802.11n WiSOC", CHANNELSURVEY, 0, 0, 0, 0, "ar934x_wmac" },
+	{ "QCA955x 802.11n WiSOC", CHANNELSURVEY, 0, 0, 0, 0, "qca955x_wmac" },
+	{ "QCA953x 802.11n WiSOC", CHANNELSURVEY, 0, 0, 0, 0, "qca953x_wmac" },
+	{ "QCA956x 802.11n WiSOC", CHANNELSURVEY, 0, 0, 0, 0, "qca956x_wmac" },
 };
 
 char *getWifiDeviceName(const char *prefix, int *flags)
 {
 	int devnum;
+	int i;
 	int device = 0, vendor = 0, subdevice = 0, subvendor = 0;
 	int devcount;
 	sscanf(prefix, "ath%d", &devcount);
@@ -2494,6 +2501,20 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 		device = getValueFromPath("/sys/class/ieee80211/phy%d/device/device", devnum, "0x%x", NULL);
 		subvendor = getValueFromPath("/sys/class/ieee80211/phy%d/device/subsystem_vendor", devnum, "0x%x", NULL);
 		subdevice = getValueFromPath("/sys/class/ieee80211/phy%d/device/subsystem_device", devnum, "0x%x", NULL);
+		if (!vendor || !device) {
+			for (i = 0; i < sizeof(wdevices) / sizeof(wdevices[0]); i++) {
+				if (wdevices[i].wmac) {
+					char wpath[128];
+					sprintf(wpath, "/sys/devices/platform/%s/ieee80211/phy%d/index", wdevices[i].wmac, devnum);
+					FILE *test = fopen(wpath, "rb");
+					if (test) {
+						fclose(test);
+						return wdevices[i].name;
+					}
+				}
+			}
+
+		}
 	}
 #endif
 #ifdef HAVE_RT2880
@@ -2529,7 +2550,6 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 	if (!vendor || !device) {
 		return NULL;
 	}
-	int i;
 	for (i = 0; i < sizeof(wdevices) / sizeof(wdevices[0]); i++) {
 		if (wdevices[i].subvendor && wdevices[i].vendor == vendor && wdevices[i].device == device && wdevices[i].subvendor == subvendor && wdevices[i].subdevice == subdevice) {
 			if (flags)
@@ -2552,7 +2572,6 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 #ifdef HAVE_ATH9K
 static int flagcheck(const char *prefix, int flag, int nullvalid)
 {
-	int i;
 	int flags = 0;
 	if (!is_mac80211(prefix))
 		return 0;
@@ -2576,6 +2595,7 @@ int has_qboost_tdma(const char *prefix)
 {
 	return flagcheck(prefix, TDMA, 0);
 }
+
 int has_beacon_limit(const char *prefix)
 {
 	return flagcheck(prefix, BEACONVAP100, 0);
