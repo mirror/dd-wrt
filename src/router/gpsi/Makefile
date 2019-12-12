@@ -22,6 +22,9 @@ endif
 ifdef CONFIG_BKM
 	touch $(INSTALLDIR)/etc/config/gpsi_startraw
 endif
+ifdef CONFIG_ANTAIRA
+	touch $(INSTALLDIR)/etc/config/gpsi_startraw
+endif
 	#mkdir -p $(INSTALLDIR)/usr/sbin
 	#cp st $(INSTALLDIR)/usr/sbin/show_txpower
 
