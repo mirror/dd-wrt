@@ -22,6 +22,15 @@
 			//]]>
 			</script></span>
 		</div>
+		<div class="setting">
+			<div class="label">GPS TTY</div>
+			<input maxlength="20" size="20" name="gps_tty" value="<% nvram_get("gps_tty"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label">Use Sierra-Wireless GPS option</div>
+				<input class="spaceradio" type="radio" name="gps_sierra" value="1" <% nvram_checked("gps_sierra", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="gps_sierra" value="0" <% nvram_checked("gps_sierra", "0"); %> /><% tran("share.disable"); %>
+		</div>
 	</div>
 </fieldset><br />
 
