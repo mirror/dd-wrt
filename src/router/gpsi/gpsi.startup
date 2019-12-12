@@ -2,7 +2,9 @@
 
 /usr/bin/killall gpsd
 /usr/bin/killall gpsi
-/usr/bin/killall gpspipe
+/usr/bin/killall gpspipegpsi
+
+ln -s /usr/bin/gpspipe /tmp/gpspipegpsi
 
 GPS_NEED_SETUP=0
 if [ "$(nvram get gps)" = "1" ]; then
@@ -12,7 +14,11 @@ elif [ "$(nvram get gps_gpsd)" = "1" ]; then
 fi
 
 if [ x$GPS_NEED_SETUP = x1 ]; then
+	BOARD=$(nvram get DD_BOARD2 | cut -c11-17)
+	if test -z $BOARD
+	then
         BOARD=$(nvram get DD_BOARD | cut -c11-17) 
+	fi                                             
 	if [ x$BOARD = xCambria ]; then                     
         TTY=/dev/ttyS1
         BAUD=4800
@@ -32,7 +38,18 @@ if [ x$GPS_NEED_SETUP = x1 ]; then
         TTY=/dev/tts/0
         BAUD=4800
 	fi           
-	/bin/stty ${BAUD} -echo -echoe -echok -echoctl -echoke -ignbrk -ixon -opost < ${TTY}
+	if [ "$(nvram get gps_sierra)" = "1" ]; then
+		insmod usbserial
+		insmod usb_wwan
+		insmod qcserial.ko
+		insmod option.ko
+		sleep 5
+		TTY=$(nvram get gps_tty )
+		stty raw -F ${TTY}
+		echo \$GPS_START >${TTY}
+	else
+		/bin/stty ${BAUD} -echo -echoe -echok -echoctl -echoke -ignbrk -ixon -opost < ${TTY}
+	fi
 fi
 
 if [ "$(nvram get gps_gpsd)" = "1" ]; then
@@ -43,9 +60,17 @@ if [ "$(nvram get gps_gpsd)" = "1" ]; then
 		GPSDPORT=2947
 		nvram set gps_gpsd_port=2947
 	fi
+	GPSDINTERVAL=$(nvram get gps_gpsd_interval )
+	if test -z $GPSDINTERVAL 
+	then
+		GPSDINTERVAL=30
+		nvram set gps_gpsd_interval=30
+	fi
 if [ -f /etc/config/gpsi_startraw ]
 then
+	#/usr/sbin/gpsd -n -i ${GPSDINTERVAL} -R -S ${GPSDPORT} ${TTY}
 	/usr/sbin/gpsd -R -S ${GPSDPORT} ${TTY}
+	#/tmp/gpsd -n -R -S ${GPSDPORT} ${TTY}
 else
 	/usr/sbin/gpsd -S ${GPSDPORT} ${TTY}
 fi
@@ -70,20 +95,8 @@ fi
 
 /bin/cat >/tmp/gpsi << "EOF"
 #!/bin/sh
-BOARD=$(nvram get DD_BOARD2 | cut -c11-17)
-if test -z $BOARD
-then
-        BOARD=$(nvram get DD_BOARD | cut -c11-17) 
-fi                                             
-if [ x$BOARD = xCambria ] ; then                     
-	TTY=/dev/ttyS1
-elif [ x$BOARD = xLaguna ] ; then
-	TTY=/dev/ttyS2
-elif [ x$(nvram get DD_BOARD | cut -c1-7) = xOctagon ] ; then
-        TTY=/dev/ttyS1
-else                  
-	TTY=/dev/tts/0
-fi           
+TTY=$(nvram get gps_tty )
+WAITTIME=20
 GPSD=$(nvram get gps_gpsd) 
 if [ x$GPSD = x1 ]
 then
@@ -92,7 +105,9 @@ then
 	then
 		GPSDPORT=2947
 	fi
-	COMMAND="gpspipe -R 127.0.0.1:${GPSDPORT}"
+	GPSDINTERVAL=$(nvram get gps_gpsd_interval )
+	WAITTIME=$((${GPSDINTERVAL} + 2))
+	COMMAND="cat /tmp/gpsd.gpgga"
 	AWK_ADD="-v gpsdport=${GPSDPORT}"
 else
 	COMMAND="cat ${TTY}"
@@ -100,7 +115,65 @@ fi
 
 while true 
 do
-$COMMAND |  awk -F "," ${AWK_ADD} '
+GPSDF=$(nvram get gps_fixed) 
+if [ x${GPSDF} = x1 ]
+then
+		nvram get gps_fixed_json >/tmp/nsmd.gps.json
+		AWK_ADD_TEMP="${AWK_ADD} -v gpsfixed=1"
+else
+		AWK_ADD_TEMP="${AWK_ADD} -v gpsfixed=0"
+fi
+if [ x$GPSD = x1 ]
+then
+ /tmp/gpsd-helper.sh ${GPSDPORT} >/dev/null 2>&1
+ ERR=$?
+ if [ x$ERR = x1 ]
+ then
+	mkdir -p /tmp/gpsdlog
+	touch /tmp/gpsdlog/`date '+%Y%d%m%H%M'`
+	killall -9 gpsd
+	killall -9 gpspipegpsi
+    if [ -f /etc/config/gpsi_startraw ]
+    then
+	/usr/sbin/gpsd -R -S ${GPSDPORT} ${TTY}
+	#/tmp/gpsd -n -R -S ${GPSDPORT} ${TTY}
+    else
+	/usr/sbin/gpsd -S ${GPSDPORT} ${TTY}
+    fi
+ fi
+fi
+export COMMAND
+export AWK_ADD_TEMP
+/tmp/gpsi.sub >/dev/null 2>&1
+ERR=$?
+if [ x$GPSD = x1 ]
+then
+ if [ x$ERR = x137 ]
+ then
+  mkdir -p /tmp/gpsdlog
+  touch /tmp/gpsdlog/`date '+%Y%d%m%H%M'`
+  killall -9 gpsd
+  if [ -f /etc/config/gpsi_startraw ]
+  then
+	/usr/sbin/gpsd -R -S ${GPSDPORT} ${TTY}
+  else
+	/usr/sbin/gpsd -S ${GPSDPORT} ${TTY}
+  fi
+ fi
+fi
+#40 sekunden warten, wenn erfolgreich ausgelesen
+cp /tmp/gpsd.gpgga /tmp/gpsd.gpgga.stat
+sleep ${WAITTIME}
+done
+EOF
+/bin/cat >/tmp/gpsi.sub << "EOF"
+#!/bin/sh
+if [ -z $XTIMEOUT ]
+then
+        XTIMEOUT=5
+fi
+( sleep $XTIMEOUT; kill -9 $$ ) &
+exec $COMMAND |  awk -F "," ${AWK_ADD_TEMP} '
 function getgpstext(pos,extra)
 	{
 	deg=(int( int(pos)/100) )
@@ -113,7 +186,28 @@ function getgpstext(pos,extra)
 
 function setnvram(var,val)
 	{
-	system(sprintf("/usr/sbin/nvram set %s=\"%s\"",var,val))
+	printf("/usr/sbin/nvram set %s=\"%s\"\n",var,val);
+	}
+
+function setjson(fixed,lat,lat_e,lon,lon_e,status,sat,alt,ts)
+	{
+	if (fixed == 0) {
+		F="/tmp/nsmd.gps.json";
+		XX="\"";
+		latsign="";
+		lonsign=""
+		if (lat_e == "S") latsign="-";
+		if (lon_e == "W") lonsign="-"
+		printf "{" >F;
+		printf XX "gps_fixed" XX ":" fixed"," >>F; 
+		printf XX "gps_status" XX ":" status"," >>F; 
+		printf XX "gps_sat" XX ":" sat"," >>F; 
+		printf XX "gps_lat" XX ":" XX "" latsign "" lat "" XX "," >>F; 
+		printf XX "gps_lon" XX ":" XX "" lonsign "" lon "" XX "," >>F; 
+		printf XX "gps_alt" XX ":" alt"," >>F; 
+		printf XX "gps_ts" XX ":" XX "" ts "" XX >>F; 
+		printf "}" >>F;
+		}
 	}
 {
 if ($1 == "$GPGGA")
@@ -134,11 +228,13 @@ if ($1 == "$GPGGA")
 
 		setnvram("gps_lat_text",getgpstext($3,$4) )
 		setnvram("gps_lon_text",getgpstext($5,$6) )
-		if (int($8) == 0)	
-			setnvram("gps_sat","0 position estimated")
-		else
-			setnvram("gps_sat",int($8))
+		setnvram("gps_sat",int($8))
 		setnvram("gps_alt",int($10))
+		if ($2 != "") 
+			setnvram("gps_ts",$2)
+		else 
+			setnvram("gps_ts","-1")
+		setjson(gpsfixed,$3,$4,$5,$6,int($7),int($8),int($10),$2)
 		exit
 		}
 	else if (int($7) == 0)
@@ -156,15 +252,34 @@ if ($1 == "$GPGGA")
 		setnvram("gps_lon_text","");
 		setnvram("gps_sat","");
 		setnvram("gps_alt","");
+		if ($2 != "") 
+			setnvram("gps_ts",$2)
+		else 
+			setnvram("gps_ts","-1")
+		setjson(gpsfixed,$3,$4,$5,$6,int($7),int($8),int($10),$2)
+		exit
 		}
 	}
-}'
-#20 sekunden warten, wenn erfolgreich ausgelesen
-sleep 20
-done
+}' >/tmp/gpsd-nvram-updater-temp.$$
+sh /tmp/gpsd-nvram-updater-temp.$$
+rm /tmp/gpsd-nvram-updater-temp.$$
+EOF
+/bin/cat >/tmp/gpsd-helper.sh << "EOF"
+#!/bin/sh
+if [ ! -f /tmp/gpsd.gpgga ]
+then
+	exit 1
+fi
+if cmp -s /tmp/gpsd.gpgga /tmp/gpsd.gpgga.stat
+then
+        exit 1
+fi
+exit 0
 EOF
 /bin/chmod 755 /tmp/gpsi
-/usr/bin/nohup /tmp/gpsi >/dev/null 2>&1 &
+/bin/chmod 755 /tmp/gpsd-helper.sh
+/bin/chmod 755 /tmp/gpsi.sub
+/tmp/gpsi >/dev/null 2>&1 &
 elif [ "$(nvram get gps_gpsd)" = "1" ]; then
 nvram set gps_status=0
 nvram set gps_status_text="GPSD only mode port ${GPSDPORT}"
@@ -176,4 +291,5 @@ nvram set gps_lat_text=""
 nvram set gps_lon_text=""
 nvram set gps_sat=""
 nvram set gps_alt=""
+nvram set gps_ts=""
 fi

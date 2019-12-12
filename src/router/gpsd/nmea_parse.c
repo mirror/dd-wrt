@@ -258,7 +258,23 @@ static gps_mask_t processGPGGA(int c UNUSED, char *field[], struct gps_device_t 
            (empty field) DGPS station ID number (0000-1023)
     */
     gps_mask_t mask;
+// create a tmpfile with current gpgga statuses
+#if 1
+    int i;
+    static int gpswritecounter=0;
+    FILE *fp;
+    if ((fp = fopen("/tmp/gpsd.gpgga.temp", "w")) != NULL) {
+    (void)fprintf(fp, "$");
+    for  (i=0;i<10;i++) {
+	(void)fprintf(fp, "%s,", field[i]);
+    }
+    (void)fprintf(fp, ",%d\n", gpswritecounter++);
+    (void)fclose(fp);
+    rename("/tmp/gpsd.gpgga.temp","/tmp/gpsd.gpgga");
+}
+if ( gpswritecounter > 65535 ) gpswritecounter=0;
 
+#endif
     session->gpsdata.status = atoi(field[6]);
     gpsd_report(LOG_PROG, "GPGGA sets status %d\n", session->gpsdata.status);
     mask = STATUS_SET;
