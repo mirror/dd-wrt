@@ -2347,13 +2347,13 @@ int has_qtn(const char *prefix)
 #endif
 
 struct wifidevices {
-	char *name;
-	int flags;
+	char *name;			//chipset name for gui
+	int flags;			//see below
 	unsigned short vendor;
 	unsigned short device;
 	unsigned short subvendor;	//optional
 	unsigned short subdevice;
-	char *wmac;
+	char *wmac; // indicates a wisoc based chipset. ahb soc name must be defined here
 };
 #define NONE 0x0
 #define CHANNELSURVEY 0x1	// driver supports channelsurvey feature
