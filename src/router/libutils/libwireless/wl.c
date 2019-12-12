@@ -2356,10 +2356,10 @@ struct wifidevices {
 	char *wmac;
 };
 #define NONE 0x0
-#define CHANNELSURVEY 0x1
+#define CHANNELSURVEY 0x1	// driver supports channelsurvey feature
 #define QBOOST 0x2		// qboost is a tdma like protocol. i just added this feature to ath10k for doing some experiments. its only supported on 10.4 based firmwares (9984, ipq40xx etc)
 #define TDMA 0x4		// older chipsets to not support tdma, just some sort of polling. so we need this flag
-#define BEACONVAP100 0x8	// if used with vaps, beacon minimum must be 100ms
+#define BEACONVAP100 0x8	// limit if vaps are configured, beacon minimum must be 100ms (chipset specific)
 
 #ifdef HAVE_ATH5K
 #define CHANNELSURVEY5K 0x1
