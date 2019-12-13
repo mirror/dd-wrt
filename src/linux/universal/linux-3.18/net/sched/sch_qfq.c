@@ -1218,10 +1218,12 @@ static struct qfq_aggregate *qfq_choose_next_agg(struct qfq_sched *q)
 
 static int qfq_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 {
+	unsigned int len = qdisc_pkt_len(skb), gso_segs;
 	struct qfq_sched *q = qdisc_priv(sch);
 	struct qfq_class *cl;
 	struct qfq_aggregate *agg;
 	int err = 0;
+	bool first;
 
 	cl = qfq_classify(skb, sch, &err);
 	if (cl == NULL) {
@@ -1232,15 +1234,16 @@ static int qfq_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 	}
 	pr_debug("qfq_enqueue: cl = %x\n", cl->common.classid);
 
-	if (unlikely(cl->agg->lmax < qdisc_pkt_len(skb))) {
+	if (unlikely(cl->agg->lmax < len)) {
 		pr_debug("qfq: increasing maxpkt from %u to %u for class %u",
-			 cl->agg->lmax, qdisc_pkt_len(skb), cl->common.classid);
-		err = qfq_change_agg(sch, cl, cl->agg->class_weight,
-				     qdisc_pkt_len(skb));
+			 cl->agg->lmax, len, cl->common.classid);
+		err = qfq_change_agg(sch, cl, cl->agg->class_weight, len);
 		if (err)
 			return err;
 	}
 
+	gso_segs = skb_is_gso(skb) ? skb_shinfo(skb)->gso_segs : 1;
+	first = !cl->qdisc->q.qlen;
 	err = qdisc_enqueue(skb, cl->qdisc);
 	if (unlikely(err != NET_XMIT_SUCCESS)) {
 		pr_debug("qfq_enqueue: enqueue failed %d\n", err);
@@ -1251,15 +1254,16 @@ static int qfq_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 		return err;
 	}
 
-	bstats_update(&cl->bstats, skb);
+	cl->bstats.bytes += len;
+	cl->bstats.packets += gso_segs;
 	++sch->q.qlen;
 
 	agg = cl->agg;
 	/* if the queue was not empty, then done here */
-	if (cl->qdisc->q.qlen != 1) {
+	if (!first) {
 		if (unlikely(skb == cl->qdisc->ops->peek(cl->qdisc)) &&
 		    list_first_entry(&agg->active, struct qfq_class, alist)
-		    == cl && cl->deficit < qdisc_pkt_len(skb))
+		    == cl && cl->deficit < len)
 			list_move_tail(&cl->alist, &agg->active);
 
 		return err;
