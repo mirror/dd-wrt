@@ -3527,7 +3527,7 @@ void save_networking(webs_t wp)
 		if (!ifname)
 			break;
 		sprintf(var, "bridgestp%d", i);
-		tag = websGetVar(wp, var, NULL);
+		tag = websGetVar(wp, var, "Off");
 		if (!tag)
 			break;
 		sprintf(var, "bridgemcastbr%d", i);
