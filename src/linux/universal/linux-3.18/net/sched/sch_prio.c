@@ -69,6 +69,7 @@ prio_classify(struct sk_buff *skb, struct Qdisc *sch, int *qerr)
 static int
 prio_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 {
+	unsigned int len = qdisc_pkt_len(skb);
 	struct Qdisc *qdisc;
 	int ret;
 
