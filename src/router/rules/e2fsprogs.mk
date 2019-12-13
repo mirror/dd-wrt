@@ -33,7 +33,7 @@ ifneq ($(CONFIG_E2FSPROGS_ADV),y)
 	rm -f $(INSTALLDIR)/e2fsprogs/lib/e2initrd_helper	
 endif
 	rm -f $(INSTALLDIR)/e2fsprogs/lib/libss*
-	rm -f $(INSTALLDIR)/e2fsprogs/etc/cron.d
+	rm -rf $(INSTALLDIR)/e2fsprogs/etc/cron.d
 	rm -f $(INSTALLDIR)/e2fsprogs/lib/*.a
 	rm -f $(INSTALLDIR)/e2fsprogs/sbin/debugfs
 	rm -f $(INSTALLDIR)/e2fsprogs/sbin/blkid
