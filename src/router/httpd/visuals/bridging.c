@@ -95,28 +95,29 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 
 		count++;
 	}
-
 	foreach(word, wordlist, next) {
-
+		int sub = 0;
+		if (*word == '>')
+			sub = 1;
 		GETENTRYBYIDX(bridge, word, 0);
-		GETENTRYBYIDX(stp, word, 1);
-		GETENTRYBYIDX(prio, word, 2);
-		GETENTRYBYIDX(mtu, word, 3);
+		if (sub)
+			bridge = "";
+		GETENTRYBYIDX(stp, word, 1 - sub);
+		GETENTRYBYIDX(prio, word, 2 - sub);
+		GETENTRYBYIDX(mtu, word, 3 - sub);
 		if (!mtu) {
 			mtu = "1500";
 		}
-		GETENTRYBYIDX(forward_delay, word, 4);
+		GETENTRYBYIDX(forward_delay, word, 4 - sub);
 		if (!forward_delay) {
 			forward_delay = "15";
 		}
-		GETENTRYBYIDX(max_age, word, 5);
+		GETENTRYBYIDX(max_age, word, 5 - sub);
 		if (!max_age) {
 			max_age = "20";
 		}
-
 		if (!bridge || !stp)
 			break;
-
 		sprintf(bridge_name, "bridgename%d", count);
 		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" /></td>\n", bridge_name, bridge);
 		sprintf(bridge_name, "bridgestp%d", count);
