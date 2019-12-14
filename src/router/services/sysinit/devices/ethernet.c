@@ -180,6 +180,7 @@ static int detect_driver(char **drivers, char *list, int delay, int insmod)
 	int rcc = 0;
 	int cnt = 0;
 	char *driver;
+	nvram_unset(list);
 	while ((driver = drivers[cnt++]) != NULL) {
 		if (insmod)
 			ret = eval("insmod", driver);
