@@ -1283,7 +1283,7 @@ void showAutoOption(webs_t wp, char *propname, char *nvname, int nodisable)
 	websWrite(wp, "document.write(\"<option value=\\\"-1\\\" %s >\" + share.auto + \"</option>\");\n", nvram_default_matchi(nvname, 0, -1) ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + share.enabled + \"</option>\");\n", nvram_default_matchi(nvname, 1, -1) ? "selected=\\\"selected\\\"" : "");
 	if (!nodisable)
-	websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n", nvram_default_matchi(nvname, 0, -1) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n", nvram_default_matchi(nvname, 0, -1) ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 
 }
@@ -4141,7 +4141,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,20,wl_basic.sifs_trigger_time)\" value=\"%s\" />\n", wl_sifs_trigger_time,
 					  nvram_default_get(wl_sifs_trigger_time, "0"));
 				websWrite(wp, "</div>\n");
-			}else
+			} else
 				showRadio(wp, "wl_basic.qboost", wl_qboost);
 		}
 		if (!is_mac80211(prefix)) {
