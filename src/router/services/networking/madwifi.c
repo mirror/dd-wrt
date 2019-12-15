@@ -736,13 +736,13 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fclose(fp);
 		sprintf(psk, "-i%s", prefix);
 #ifdef HAVE_RELAYD
-		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")|| nvram_match(wmode, "wdssta_mtik"))
+		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik"))
 		    && nvram_matchi(bridged, 1))
 			eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #else
-		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "mesh")|| nvram_match(wmode, "wdssta_mtik"))
+		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik"))
 		    && nvram_matchi(bridged, 1))
 			eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
@@ -773,13 +773,13 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		eval("iwpriv", prefix, "hostroaming", "2");
 #ifdef HAVE_RELAYD
 		if (nvram_matchi(bridged, 1)
-		    && (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")|| nvram_match(wmode, "wdssta_mtik")))
+		    && (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik")))
 			eval("wpa_supplicant", "-P", pid, "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #else
 		if (nvram_matchi(bridged, 1)
-		    && (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")|| nvram_match(wmode, "wdssta_mtik")
+		    && (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik")
 			|| nvram_match(wmode, "wet")))
 			eval("wpa_supplicant", "-P", pid, "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c", fstr);
 		else
@@ -911,7 +911,8 @@ static void checkhostapd(char *ifname, int force)
 		if (fp)
 			sup = 1;
 	}
-	if (nvram_nmatch("mesh", "%s_mode", ifname) || nvram_nmatch("sta", "%s_mode", ifname) || nvram_nmatch("wdssta", "%s_mode", ifname) || nvram_nmatch("wdssta_mtik", "%s_mode", ifname) || nvram_nmatch("infra", "%s_mode", ifname))
+	if (nvram_nmatch("mesh", "%s_mode", ifname) || nvram_nmatch("sta", "%s_mode", ifname) || nvram_nmatch("wdssta", "%s_mode", ifname) || nvram_nmatch("wdssta_mtik", "%s_mode", ifname)
+	    || nvram_nmatch("infra", "%s_mode", ifname))
 		sup = 1;
 	if (fp || force) {
 		if (fp) {
@@ -1335,7 +1336,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 	if (ispsk3)
 		nvram_nseti(1, "%s_psk3", prefix);
 	if (iswpa)
-		nvram_nseti(1, "%s_wpa3", prefix);
+		nvram_nseti(1, "%s_wpa", prefix);
 	if (iswpa2)
 		nvram_nseti(1, "%s_wpa2", prefix);
 	if (iswpa2sha256)
@@ -1500,8 +1501,12 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 			fprintf(fp, "group_mgmt_cipher=AES-128-CMAC\n");
 #endif
 	}
-	fprintf(fp, "okc=0\n");
-	fprintf(fp, "disable_pmksa_caching=1\n");
+	if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128) {
+		fprintf(fp, "okc=1\n");
+	} else {
+		fprintf(fp, "okc=0\n");
+		fprintf(fp, "disable_pmksa_caching=1\n");
+	}
 
 	fprintf(fp, "wpa_group_rekey=%s\n", nvram_nget("%s_wpa_gtk_rekey", prefix));
 	if (ispsk3 || ispsk || ispsk2 || ispsk2sha256)
@@ -2034,7 +2039,7 @@ static void configure_single(int count)
 		}
 
 	if (strcmp(apm, "ap") && strcmp(apm, "wdsap")) {
-		if (!strcmp(apm, "wet")|| !strcmp(apm, "wdssta")  || !strcmp(apm, "wdssta_mtik")
+		if (!strcmp(apm, "wet") || !strcmp(apm, "wdssta") || !strcmp(apm, "wdssta_mtik")
 		    || !strcmp(apm, "sta")) {
 			if (vif)
 				eval("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta", "nosbeacon");
@@ -2311,7 +2316,7 @@ static void configure_single(int count)
 		set_scanlist(dev, wif);
 		setRTS(var);
 		eval("iwpriv", var, "bgscan", "0");
-		if (strcmp(mvap, "sta") && strcmp(mvap, "wdssta")&& strcmp(mvap, "wdssta_mtik")
+		if (strcmp(mvap, "sta") && strcmp(mvap, "wdssta") && strcmp(mvap, "wdssta_mtik")
 		    && strcmp(mvap, "wet")) {
 			cprintf("set channel\n");
 			char *ch = nvram_default_get(channel, "0");
