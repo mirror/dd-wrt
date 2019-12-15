@@ -757,22 +757,32 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 		    || nvram_nmatch("wdsap", "%s_mode", prefix)) {
 			//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
 #ifdef HAVE_80211W
-			if (is_mac80211(prefix) && (strstr(akm, "wpa2") || strstr(akm, "psk2")) {
-			    char mfp[64]; sprintf(mfp, "%s_mfp", prefix); nvram_default_get(mfp, "0"); showAutoOption(wp, "wpa.mfp", mfp, strstr(akm, "psk3") || strstr(akm, "wpa3"));}
+			if (is_mac80211(prefix) && strstr(akm, "wpa2") || strstr(akm, "psk2")) {
+				char mfp[64];
+				sprintf(mfp, "%s_mfp", prefix);
+				nvram_default_get(mfp, "0");
+				showAutoOption(wp, "wpa.mfp", mfp, strstr(akm, "psk3") || strstr(akm, "wpa3"));
+			}
 #endif
-			    char eap_key_retries[64]; sprintf(eap_key_retries, "%s_disable_eapol_key_retries", prefix); showRadio(wp, "wpa.eapol_key_retries", eap_key_retries);}
-			    }
-			    if (strstr(security_mode, "wep"))
-			    show_wep(wp, prefix); if (strstr(security_mode, "radius"))
-			    show_radius(wp, prefix, 1, 0);
+			char eap_key_retries[64];
+			sprintf(eap_key_retries, "%s_disable_eapol_key_retries", prefix);
+			showRadio(wp, "wpa.eapol_key_retries", eap_key_retries);
+		}
+	}
+	if (strstr(security_mode, "wep"))
+		show_wep(wp, prefix);
+	if (strstr(security_mode, "radius"))
+		show_radius(wp, prefix, 1, 0);
 #ifdef HAVE_WPA_SUPPLICANT
 #ifndef HAVE_MICRO
-			    if (strstr(security_mode, "8021X")) {
-			    show_authtable(wp, prefix, 1); show_80211X(wp, prefix);}
+	if (strstr(security_mode, "8021X")) {
+		show_authtable(wp, prefix, 1);
+		show_80211X(wp, prefix);
+	}
 #endif
 #endif
-			    if (show)
-			    show_addconfig(wp, prefix);
+	if (show)
+		show_addconfig(wp, prefix);
 #else
 	if (strstr(security_mode, "psk") || strstr(security_mode, "psk2") || strstr(security_mode, "psk2-sha256") || strstr(security_mode, "psk3")) {
 		show_preshared(wp, prefix);
