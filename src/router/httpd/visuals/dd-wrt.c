@@ -3052,7 +3052,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 	if (!is_mvebu(prefix)) {
 		if (is_mac80211(prefix)) {
-			showRadio(wp, "wl_basic.intmit", wl_intmit, 0);
+			showRadio(wp, "wl_basic.intmit", wl_intmit);
 		} else {
 			showAutoOption(wp, "wl_basic.intmit", wl_intmit, 0);
 		}
@@ -4129,7 +4129,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 	if (!is_mvebu(prefix)) {
 		if (is_mac80211(prefix)) {
-			showRadio(wp, "wl_basic.intmit", wl_intmit, 0);
+			showRadio(wp, "wl_basic.intmit", wl_intmit);
 		} else {
 			showAutoOption(wp, "wl_basic.intmit", wl_intmit, 0);
 		}
