@@ -313,17 +313,16 @@ static int getprefixlen(char *dev)
 		return 64;
 
 	while (fscanf
-		   (f, "%4s%4s%4s%4s%4s%4s%4s%4s %08x %02x %02x %02x %20s\n",
-			addr6p[0], addr6p[1], addr6p[2], addr6p[3], addr6p[4],
-			addr6p[5], addr6p[6], addr6p[7], &if_idx, &plen, &scope,
-			&dad_status, devname) != EOF) {
-	    if (!strcmp(devname, dev)) {
-		    return plen;
-	    }
+	       (f, "%4s%4s%4s%4s%4s%4s%4s%4s %08x %02x %02x %02x %20s\n", addr6p[0], addr6p[1], addr6p[2], addr6p[3], addr6p[4], addr6p[5], addr6p[6], addr6p[7], &if_idx, &plen, &scope, &dad_status, devname) != EOF) {
+		if (!strcmp(devname, dev)) {
+			fclose(f);
+			return plen;
+		}
 	}
 	fclose(f);
 	return 64;
 }
+
 int dhcp6c_state_main(int argc, char **argv)
 {
 	char prefix[INET6_ADDRSTRLEN];
