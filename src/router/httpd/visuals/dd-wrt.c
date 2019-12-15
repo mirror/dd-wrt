@@ -1274,7 +1274,7 @@ void showRadio(webs_t wp, char *propname, char *nvname)
 	} while(0)
 
 #ifdef HAVE_MADWIFI
-void showAutoOption(webs_t wp, char *propname, char *nvname)
+void showAutoOption(webs_t wp, char *propname, char *nvname, int nodisable)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", propname, NULL);
@@ -1282,6 +1282,7 @@ void showAutoOption(webs_t wp, char *propname, char *nvname)
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"-1\\\" %s >\" + share.auto + \"</option>\");\n", nvram_default_matchi(nvname, 0, -1) ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + share.enabled + \"</option>\");\n", nvram_default_matchi(nvname, 1, -1) ? "selected=\\\"selected\\\"" : "");
+	if (!nodisable)
 	websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n", nvram_default_matchi(nvname, 0, -1) ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 
@@ -3051,9 +3052,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 	if (!is_mvebu(prefix)) {
 		if (is_mac80211(prefix)) {
-			showRadio(wp, "wl_basic.intmit", wl_intmit);
+			showRadio(wp, "wl_basic.intmit", wl_intmit, 0);
 		} else {
-			showAutoOption(wp, "wl_basic.intmit", wl_intmit);
+			showAutoOption(wp, "wl_basic.intmit", wl_intmit, 0);
 		}
 		if (has_qboost(prefix)) {
 			if (has_qboost_tdma(prefix)) {
@@ -4128,9 +4129,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 	if (!is_mvebu(prefix)) {
 		if (is_mac80211(prefix)) {
-			showRadio(wp, "wl_basic.intmit", wl_intmit);
+			showRadio(wp, "wl_basic.intmit", wl_intmit, 0);
 		} else {
-			showAutoOption(wp, "wl_basic.intmit", wl_intmit);
+			showAutoOption(wp, "wl_basic.intmit", wl_intmit, 0);
 		}
 		if (has_qboost(prefix)) {
 			if (has_qboost_tdma(prefix)) {
