@@ -571,7 +571,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	if (!is_mac80211(prefix))
 #endif
 	{
-		showAutoOption(wp, "wl_basic.intmit", wl_intmit);
+		showAutoOption(wp, "wl_basic.intmit", wl_intmit, 0);
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.noise_immunity)</script></div>\n<select name=\"%s\">\n", wl_noise_immunity);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
