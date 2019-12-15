@@ -301,6 +301,29 @@ static int nvram_change(const char *name, char *value)
 	return 1;
 }
 
+static int getprefixlen(char *dev)
+{
+	char addr6[40], devname[21];
+	struct sockaddr_in6 sap;
+	int plen, scope, dad_status, if_idx;
+	char addr6p[8][5];
+
+	FILE *f = fopen("/proc/net/if_inet6", "rb");
+	if (f == NULL)
+		return 64;
+
+	while (fscanf
+		   (f, "%4s%4s%4s%4s%4s%4s%4s%4s %08x %02x %02x %02x %20s\n",
+			addr6p[0], addr6p[1], addr6p[2], addr6p[3], addr6p[4],
+			addr6p[5], addr6p[6], addr6p[7], &if_idx, &plen, &scope,
+			&dad_status, devname) != EOF) {
+	    if (!strcmp(devname, dev)) {
+		    return plen;
+	    }
+	}
+	fclose(f);
+	return 64;
+}
 int dhcp6c_state_main(int argc, char **argv)
 {
 	char prefix[INET6_ADDRSTRLEN];
@@ -308,7 +331,7 @@ int dhcp6c_state_main(int argc, char **argv)
 	int i, r;
 	int c = 0;
 	c |= nvram_change("ipv6_rtr_addr", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0));
-
+	c |= nvram_change("ipv6_pf_len", getprefixlen(nvram_safe_get("lan_ifname")));
 	// extract prefix from configured IPv6 address
 	if (inet_pton(AF_INET6, nvram_safe_get("ipv6_rtr_addr"), &addr) > 0) {
 
