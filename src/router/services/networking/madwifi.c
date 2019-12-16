@@ -1348,11 +1348,11 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 	if (iswpa3_192)
 		nvram_nseti(1, "%s_wpa3-192", prefix);
 #ifdef HAVE_80211W
-	if ((iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256) && (!ispsk && !ispsk2 && !iswpa && !iswpa2))
+	if ((iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256) && (!ispsk && !ispsk2 && !iswpa && !iswpa2)) {
 		fprintf(fp, "ieee80211w=2\n");
 		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128)
 			fprintf(fp, "sae_require_mfp=1\n");
-	} else if (is_psk3 || ispsk2sha256 && (!ispsk && !ispsk2 && !iswpa && !iswpa2))
+	} else if (ispsk3 || ispsk2sha256 && (!ispsk && !ispsk2 && !iswpa && !iswpa2)) {
 		fprintf(fp, "ieee80211w=1\n");
 		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128)
 			fprintf(fp, "sae_require_mfp=1\n");
