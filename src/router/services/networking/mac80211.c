@@ -967,13 +967,11 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		if (!strcmp(netmode, "b-only")) {
 			fprintf(fp, "hw_mode=b\n");
 			fprintf(fp, "supported_rates=10 20 55 110\n");
-		}
-		if (!strcmp(netmode, "bg-mixed")) {
+		} else if (!strcmp(netmode, "bg-mixed")) {
 			fprintf(fp, "hw_mode=g\n");
 			fprintf(fp, "basic_rates=10 20 55 60 110 120 240\n");
 			fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
-		}
-		if (!strcmp(netmode, "mixed")) {
+		} else if (!strcmp(netmode, "mixed")) {
 			fprintf(fp, "hw_mode=g\n");
 			fprintf(fp, "basic_rates=10 20 55 60 110 120 240\n");
 			fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
@@ -984,8 +982,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		}
 	} else {
 		fprintf(fp, "hw_mode=a\n");
+		fprintf(fp, "basic_rates=60 120 240\n");
 		if (!strcmp(netmode, "a-only")) {
-			fprintf(fp, "basic_rates=60 120 240\n");
 			fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
 		}
 
