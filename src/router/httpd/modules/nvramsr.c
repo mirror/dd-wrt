@@ -78,8 +78,10 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 	if (!fp)
 		return -1;
 	char *mem = malloc(len);
-	if (!mem)
+	if (!mem) {
+		fclose(fp);
 		return -1;
+	}
 	wfread(mem, len, 1, wp);
 	fwrite(mem, len, 1, fp);
 	fclose(fp);

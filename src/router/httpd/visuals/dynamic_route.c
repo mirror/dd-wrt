@@ -146,6 +146,6 @@ void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
 
 		count++;
 	}
-
+	fclose(fp);
 	return;
 }
