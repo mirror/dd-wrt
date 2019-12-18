@@ -18,18 +18,18 @@ function setWirelessTable() {
 		
 		var mac = val[i];
 		var cellmac = row.insertCell(-1);
-		if (val[11] == 0) {
+		if (val[i + 11] == 0) {
 			cellmac.title = share.oui;
 		} else {
-			cellmac.title = status_wireless.chaininfo + " [" + val[11];
-			if (val[12] != 0) {
-			cellmac.title = cellmac.title + "," + val[12];
+			cellmac.title = status_wireless.chaininfo + " [" + val[i + 11];
+			if (val[i + 12] != 0) {
+			cellmac.title = cellmac.title + "," + val[i + 12];
 			}
-			if (val[13] != 0) {
-			cellmac.title = cellmac.title + "," + val[13];
+			if (val[i + 13] != 0) {
+			cellmac.title = cellmac.title + "," + val[i + 13];
 			}
-			if (val[14] != 0) {
-			cellmac.title = cellmac.title + "," + val[14];
+			if (val[i + 14] != 0) {
+			cellmac.title = cellmac.title + "," + val[i + 14];
 			}
 			cellmac.title = cellmac.title + "]";
 		}
