@@ -499,8 +499,12 @@ static void get_chain_signal(struct nlattr *attr_list, char *signals)
 {
 	struct nlattr *attr;
 	int rem;
+	signals[0] = 0;
+	signals[1] = 0;
+	signals[2] = 0;
+	signals[3] = 0;
 	if (!attr_list)
-		return "";
+		return;
 	int cnt = 0;
 	nla_for_each_nested(attr, attr_list, rem) {
 		signals[cnt++] = nla_get_u8(attr);
