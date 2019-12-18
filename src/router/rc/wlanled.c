@@ -148,8 +148,14 @@ static int interface_cb(struct nl_msg *msg, void *arg)
 	if (!match_ifname(nla_data(tb[NL80211_ATTR_IFNAME])))
 		goto out;
 
-	if (list->count++ > 0)
-		list = realloc(list, sizeof(*list) + list->count * sizeof(int));
+	if (list->count++ > 0) {
+		wdev_list *newlist = realloc(list, sizeof(*list) + list->count * sizeof(int));
+		if (!newlist) {
+			free(list);
+			return NL_SKIP;
+		}
+		list = newlist;
+	}
 
 	list->wdev[list->count - 1] = nla_get_u32(tb[NL80211_ATTR_IFINDEX]);
 	*plist = list;

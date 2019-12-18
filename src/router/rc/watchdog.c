@@ -157,7 +157,7 @@ static void watchdog(void)
 //#endif
 //#endif
 #ifdef HAVE_R9000
-		int cpu, wifi1, wifi2, wifi3_mac = 0, wifi3_phy = 0;
+		int cpu = 0, wifi1 = 0, wifi2 = 0, wifi3_mac = 0, wifi3_phy = 0;
 		FILE *tempfp;
 		tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
 		if (tempfp) {
