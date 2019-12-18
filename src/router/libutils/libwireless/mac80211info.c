@@ -495,6 +495,20 @@ struct statdata {
 	int iftype;
 };
 
+static void get_chain_signal(struct nlattr *attr_list, char *signals)
+{
+	struct nlattr *attr;
+	int rem;
+	if (!attr_list)
+		return "";
+	int cnt = 0;
+	nla_for_each_nested(attr, attr_list, rem) {
+		signals[cnt++] = nla_get_u8(attr);
+		if (cnt == 4)
+			break;
+	}
+}
+
 static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 {
 	// struct nlattr *tb[NL80211_BAND_ATTR_MAX + 1];
@@ -527,6 +541,8 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		[NL80211_STA_INFO_RADIONAME] = {.type = NLA_STRING },
 		[NL80211_STA_INFO_STA_FLAGS] = {.minlen = sizeof(struct nl80211_sta_flag_update) },
 		[NL80211_STA_INFO_EXPECTED_THROUGHPUT] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_CHAIN_SIGNAL] = {.type = NLA_NESTED },
+		[NL80211_STA_INFO_CHAIN_SIGNAL_AVG] = {.type = NLA_NESTED },
 	};
 	static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1] = {
 		[NL80211_RATE_INFO_BITRATE] = {.type = NLA_U16 },
@@ -585,6 +601,9 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	if (sinfo[NL80211_STA_INFO_SIGNAL]) {
 		mac80211_info->wci->signal = (int8_t) nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]);
 	}
+	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL], mac80211_info->wci->chaininfo);
+	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL_AVG], mac80211_info->wci->chaininfo_avg);
+
 	if (sinfo[NL80211_STA_INFO_DATA_ACK_SIGNAL_AVG]) {
 		mac80211_info->wci->signal_avg = (int8_t) nla_get_u8(sinfo[NL80211_STA_INFO_DATA_ACK_SIGNAL_AVG]);
 		if (mac80211_info->wci->signal_avg > 0)
