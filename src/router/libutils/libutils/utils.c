@@ -193,7 +193,7 @@ void setWifiPass(void)
 int count_processes(char *pidName)
 {
 	FILE *fp;
-	char line[254];
+	char line[255];
 	char safename[64];
 
 	sprintf(safename, " %s ", pidName);
@@ -206,8 +206,8 @@ int count_processes(char *pidName)
 	if ((fp = popen("ps", "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			int len = strlen(line);
-			if (len > 254)
-				len = 254;
+			if (len > sizeof(line)-1)
+				len = sizeof(line)-1;
 			line[len - 1] = ' ';
 			line[len] = 0;
 			if (strstr(line, safename) && !strstr(line, zombie)) {
@@ -495,7 +495,7 @@ int check_wan_link(int num)
 
 		if (num == 0)
 			strcpy(filename, "/tmp/ppp/link");
-		if ((fp = fopen(filename, "r"))) {
+		if (!num && (fp = fopen(filename, "r"))) {
 			int pid = -1;
 
 			fclose(fp);
@@ -1161,7 +1161,7 @@ char *cpustring(void)
 #endif
 	}
 	getc(fcpu);
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < 255; i++) {
 		int c = getc(fcpu);
 
 		if (c == EOF) {

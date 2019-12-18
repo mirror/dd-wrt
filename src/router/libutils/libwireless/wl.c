@@ -1601,7 +1601,7 @@ int get_freqoffset(char *ifname)
 		sprintf(localvar, "%s_offset", ifname);
 		var = nvram_safe_get(localvar);
 	}
-	if (*var) {
+	if (var && *var) {
 		return atoi(var);
 	}
 	int vendor;

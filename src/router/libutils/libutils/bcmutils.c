@@ -404,7 +404,7 @@ char *get_mac_from_ip(char *mac, char *ip)
 		// IP address HW type Flags HW address Mask Device
 		// 192.168.1.1 0x1 0x2 00:90:4C:21:00:2A * eth0
 		while (fgets(line, sizeof(line) - 1, fp)) {
-			if (sscanf(line, "%s 0x%x 0x%x %100s %100s %100s\n", ipa, &type, &flags, hwa, mask, dev) != 6)
+			if (sscanf(line, "%s 0x%x 0x%x %49s %49s %49s\n", ipa, &type, &flags, hwa, mask, dev) != 6)
 				continue;
 			if (strcmp(ip, ipa))
 				continue;
