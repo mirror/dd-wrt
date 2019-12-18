@@ -1413,8 +1413,8 @@ int main(int argc, char **argv)
 	usockaddr usa;
 	int server_port;
 	int ssl_server_port;
-	int gotv4, gotv6;
-	int ssl_gotv4, ssl_gotv6;
+	int gotv4 = 0, gotv6 = 0;
+	int ssl_gotv4 = 0, ssl_gotv6 = 0;
 	int listen4_fd = -1;
 	int listen6_fd = -1;
 	int ssl_listen4_fd = -1;

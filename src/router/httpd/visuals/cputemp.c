@@ -210,6 +210,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	if (fp) {
 		fscanf(fp, "%d", &cputemp);
 		fclose(fp);
+		fp = NULL;
 		websWrite(wp, "CPU %d.%d &#176;C / ", cputemp / 10, cputemp % 10);
 	}
 #endif
@@ -284,6 +285,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 				char temp[32];
 				fscanf(fp, "%s", &temp[0]);
 				fclose(fp);
+		fp = NULL;
 				int l = strlen(temp);
 				if (l > 2) {
 					TEMP_MUL = 1;
@@ -316,6 +318,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		int temp;
 		fscanf(fp, "%d", &temp);
 		fclose(fp);
+		fp = NULL;
 		int high = temp / TEMP_MUL;
 		int low;
 		if (TEMP_MUL > 10)
@@ -375,6 +378,8 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		}
 	}
 #endif
+	if (fp)
+		fclose(fp);
 	if (!cpufound)
 		websWrite(wp, "%s", live_translate(wp, "status_router.notavail"));	// no 
 

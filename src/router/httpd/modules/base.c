@@ -2543,10 +2543,14 @@ static void do_ttgraph(unsigned char method, struct mime_handler *handler, char 
 static void ttraff_backup(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	FILE *out = fopen("/tmp/traffdata.bak", "wb");
+	if (!out)
+		return;
 	fprintf(out, "TRAFF-DATA\n");
 	FILE *fp = popen("nvram show | grep traff-", "rb");
-	if (!fp)
+	if (!fp) {
+		fclose(out);
 		return;
+	}
 	while (!feof(fp))
 		putc(getc(fp), out);
 	pclose(fp);

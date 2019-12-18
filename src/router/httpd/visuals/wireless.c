@@ -78,7 +78,7 @@ static char *wl_filter_mac_get(char *ifname2, char *type, int which, char *word)
 	rep(ifname, 'X', '.');
 #ifdef HAVE_SPOTPASS
 	int wildcard, count;
-	char mac[18];
+	static char mac[18];
 #endif
 
 	char var[32];
@@ -632,7 +632,7 @@ void ej_get_wl_active_mac(webs_t wp, int argc, char_t ** argv)
 	FILE *fp;
 	int count = 0;
 	char cmd[64];
-	sprintf(cmd, "wl %s > %s", ASSOCLIST_CMD);
+	sprintf(cmd, "wl %s", ASSOCLIST_CMD);
 
 	if ((fp = popen(cmd, "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
