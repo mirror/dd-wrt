@@ -135,6 +135,7 @@ struct wifi_client_info {
 	uint32_t noise;
 	uint32_t snr;
 	int8_t chaininfo[4];
+	int8_t chaininfo_avg[4];
 	int8_t mcs;
 	int8_t rx_mcs;
 	unsigned int is_40mhz:1, is_80mhz:1, is_160mhz:1, is_80p80mhz:1, is_ht:1, is_vht:1, is_short_gi:1, rx_is_40mhz:1, rx_is_80mhz:1, rx_is_160mhz:1, rx_is_80p80mhz:1, rx_is_ht:1, rx_is_vht:1, rx_is_short_gi:1,
