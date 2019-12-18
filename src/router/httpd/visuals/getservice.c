@@ -101,8 +101,10 @@ static struct servent *my_getservent(void)
 	if (servf == NULL && (servf = fopen(_PATH_SERVICES, "r")) == NULL)
 		return (NULL);
 again:
-	if ((p = fgets(line, BUFSIZ, servf)) == NULL)
+	if ((p = fgets(line, BUFSIZ, servf)) == NULL) {
+		fclose(servf);
 		return (NULL);
+	}
 	if (*p == '#')
 		goto again;
 	cp = strpbrk(p, "#\n");
