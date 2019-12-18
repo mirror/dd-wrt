@@ -509,6 +509,11 @@ ifeq ($(CONFIG_ONNET),y)
 	mkdir -p $(INSTALLDIR)/etc/config
 	cp onnet/extra/reboot.startup $(INSTALLDIR)/etc/config/
 
+  ifeq ($(CONFIG_ATH10K_CT),y)
+	mkdir -p $(INSTALLDIR)/lib/firmware/ath10k/QCA988X-CT
+	cp onnet/ath10k-ct/current/firmware-2-ct-full-community.bin $(INSTALLDIR)/lib/firmware/ath10k/QCA988X-CT/
+  endif
+
   ifeq ($(CONFIG_XD3200),y)
   ifneq ($(CONFIG_SR3200),y)
 	cp onnet/extra/xd3200.onnet $(INSTALLDIR)/etc/config/
