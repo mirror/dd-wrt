@@ -1262,8 +1262,10 @@ void ping_wol(webs_t wp)
 #endif
 	FILE *fp = popen(wol_cmd, "rb");
 	FILE *out = fopen(PING_TMP, "wb");
-	if (!fp)
+	if (!fp) {
+		fclose(out);
 		return;
+	}
 	if (out) {
 		while (!feof(fp))
 			putc(getc(fp), out);
