@@ -25,13 +25,13 @@ function setWirelessTable() {
 			cellmac.title = share.oui;
 		} else {
 			cellmac.title = status_wireless.chaininfo + " [" + val[11];
-			if (val[12]) {
+			if (val[12] != 0) {
 			cellmac.title = cellmac.title + "," + val[12];
 			}
-			if (val[13]) {
+			if (val[13] != 0) {
 			cellmac.title = cellmac.title + "," + val[13];
 			}
-			if (val[14]) {
+			if (val[14] != 0) {
 			cellmac.title = cellmac.title + "," + val[14];
 			}
 			cellmac.title = cellmac.title + "]";
