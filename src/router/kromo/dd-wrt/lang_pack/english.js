@@ -2231,7 +2231,7 @@ status_wireless.quality="Channel Quality";
 status_wireless.rx_time="Receive Time";
 status_wireless.tx_time="Transmission Time";
 status_wireless.assoc_count="Connected Clients";
-status.wireless.chaininfo="Chain Info";
+status_wireless.chaininfo="Chain Info";
 // ** GPS info **//
 var status_gpsi=new Object();
 status_gpsi.legend="GPS Info";
