@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r4864 | brainslayer | 2019-12-18 22:37:48 +0400 (Wed, 18 Dec 2019) | 1 line
+
+use real noise floor for rssi calculation. consider that his may change rssi values, but they are more accurate
+------------------------------------------------------------------------
+r4863 | brainslayer | 2019-12-18 21:53:56 +0400 (Wed, 18 Dec 2019) | 1 line
+
+fix index
+------------------------------------------------------------------------
+r4862 | brainslayer | 2019-12-18 14:00:57 +0400 (Wed, 18 Dec 2019) | 1 line
+
+fix signal reporting
+------------------------------------------------------------------------
 r4861 | brainslayer | 2019-12-18 10:53:03 +0400 (Wed, 18 Dec 2019) | 1 line
 
 fix
