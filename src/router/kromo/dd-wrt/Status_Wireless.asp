@@ -13,12 +13,26 @@ function setWirelessTable() {
 		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
-	for(var i = 0; i < val.length; i = i + 11) {
+	for(var i = 0; i < val.length; i = i + 15) {
 		var row = table.insertRow(-1);
 		
 		var mac = val[i];
 		var cellmac = row.insertCell(-1);
-		cellmac.title = share.oui;
+		if (val[11] == 0) {
+			cellmac.title = share.oui;
+		} else {
+			cellmac.title = status_wireless.chaininfo + "[" + val[11];
+			if (val[12]) {
+			cellmac.title = cellmac.title + "," + val[12];
+			}
+			if (val[13]) {
+			cellmac.title = cellmac.title + "," + val[13];
+			}
+			if (val[14]) {
+			cellmac.title = cellmac.title + "," + val[14];
+			}
+			cellmac.title = cellmac.title + "]";
+		}
 		cellmac.style.cursor = "pointer";
 		cellmac.style.textDecoration = "underline";
 		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
