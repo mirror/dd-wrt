@@ -176,8 +176,11 @@ static int generate_dropbear_rsa_host_key(void)
 
 	ret = fread(buf, 1, 4095, fp);
 
-	if (ret <= 0)
+	if (ret <= 0) {
+		fclose(fp);
+		free(buf);
 		return -1;
+	}
 
 	buf[ret] = 0;		// terminate by 0. buf isnt initialized
 	nvram_set(NVRAM_RSA_KEY_NAME, buf);

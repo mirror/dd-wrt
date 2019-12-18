@@ -128,10 +128,10 @@ void start_sysinit(void)
 			for (i = 0; i < 2116; i++)
 				putc(getc(fp), out);
 			fclose(fp);
-			fclose(out);
 			eval("rm", "-f", "/tmp/ath10k-board.bin");
 			eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 		}
+		fclose(out);
 		break;
 	}
 	switch (brand) {

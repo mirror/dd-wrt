@@ -863,8 +863,6 @@ static int svqos_iptables(void)
 		}
 	} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
 
-
-
 	// close mark-tables 
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-j", "SVQOS_SVCS");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--save-mark");
@@ -887,15 +885,16 @@ static int svqos_iptables(void)
 			if (!strcmp(pkt_filter, "ICMP"))
 				eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "icmp", "-j", "CLASSIFY", "--set-class", "1:100");
 			else
-				eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "tcp", "-m", "tcp", "--tcp-flags", pkt_filter, pkt_filter, "-m", "length", "--length", "0:64", "-j", "CLASSIFY", "--set-class","1:100");
+				eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "tcp", "-m", "tcp", "--tcp-flags", pkt_filter, pkt_filter, "-m", "length", "--length", "0:64", "-j", "CLASSIFY", "--set-class",
+				     "1:100");
 		} while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
 	}
 #endif
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--save-mark");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "RETURN");
 
-//	/* anything which doesnt match should get default class */
-//	eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-j", "MARK", "--set-mark", qos_nfmark(30));
+//      /* anything which doesnt match should get default class */
+//      eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-j", "MARK", "--set-mark", qos_nfmark(30));
 
 	eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-j", "RETURN");
 
