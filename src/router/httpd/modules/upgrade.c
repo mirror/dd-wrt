@@ -555,7 +555,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				}
 				goto write_data;
 			} else if (!strncmp(fh.magic, "FIRMWARE", 8)) {	// check for "FIRMWARE"
-				char *write_argv_buf[4];
+				char *write_argv_buf[5];
 				write_argv_buf[0] = "buffalo_flash";
 				write_argv_buf[1] = upload_fifo;
 				write_argv_buf[2] = "ralink";
