@@ -183,8 +183,8 @@ void start_dnsmasq(void)
 		if (nvram_matchi("hotss_enable", 1))
 			chilliif = nvram_safe_get("hotss_interface");
 		else
-			chilliif = nvram_safe_get("chilli_interface");
 #endif
+			chilliif = nvram_safe_get("chilli_interface");
 
 		fprintf(fp, "interface=%s", chilliif);
 		if (!canlan()) {

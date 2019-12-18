@@ -998,7 +998,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	char *vifs = nvram_nget("%s_vifs", prefix);
 	int intval = atoi(nvram_default_get(bcn, "100"));
 	if (*vifs && has_beacon_limit(prefix)) {
-		if (intval < 100) 
+		if (intval < 100)
 			intval = 100;
 	}
 #endif
