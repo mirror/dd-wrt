@@ -227,6 +227,7 @@ void start_sysinit(void)
 			copy[i] &= 0xff;
 		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		set_hwaddr("wifi0", mac1);
+		fclose(fp);
 	}
 #ifdef HAVE_ATH9K
 	writestr("/sys/devices/platform/leds-gpio/leds/soc:green:wlan/trigger", "phy0tpt");

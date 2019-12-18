@@ -3128,7 +3128,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpncl_sec", "1" },
 	{ "openvpncl_scramble", "off" },
 	{ "openvpncl_scrmblpw", "o54a72ReutDK" },
-    { "openvpncl_tls_btn", "0" },
+	{ "openvpncl_tls_btn", "0" },
 	{ "openvpn_enable", "0" },
 	{ "openvpn_net", "0.0.0.0" },
 	{ "openvpn_mask", "0.0.0.0" },

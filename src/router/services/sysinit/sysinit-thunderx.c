@@ -86,7 +86,6 @@ void start_sysinit(void)
 			if (in != NULL) {
 				fwrite(mem, size, 1, in);
 				fclose(in);
-				free(mem);
 				eval("sync");
 				sleep(5);
 				eval("event", "5", "1", "15");

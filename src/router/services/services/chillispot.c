@@ -262,15 +262,15 @@ void main_config(void)
 			if (fp == NULL)
 				return;
 			fprintf(fp, "#!/bin/sh\n");
-			fclose(fp);
 		}
+		fclose(fp);
 		if (!(fp = fopen("/jffs/etc/chilli/con-down.sh", "r"))) {
 			fp = fopen("/jffs/etc/chilli/con-down.sh", "w");
 			if (fp == NULL)
 				return;
 			fprintf(fp, "#!/bin/sh\n");
-			fclose(fp);
 		}
+		fclose(fp);
 		chmod("/jffs/etc/chilli/con-up.sh", 0700);
 		chmod("/jffs/etc/chilli/con-down.sh", 0700);
 	}

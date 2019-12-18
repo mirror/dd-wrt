@@ -94,9 +94,9 @@ void start_raid(void)
 #ifdef _SC_NPROCESSORS_ONLN
 	int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
 #else
-	int cpucount = 1
+	int cpucount = 1;
 #endif
-	    if (todo) {
+	if (todo) {
 		eval("stopservice", "cron");
 		eval("stopservice", "samba3");
 		eval("stopservice", "nfs");

@@ -249,7 +249,7 @@ void start_sysinit(void)
 	nvram_seti("sw_lancpuport", 0);
 	nvram_seti("sw_wancpuport", 6);
 	nvram_seti("sw_wan", 5);
-	nvram_seti("sw_lan1",1);
+	nvram_seti("sw_lan1", 1);
 	nvram_seti("sw_lan2", 2);
 	nvram_seti("sw_lan3", 3);
 	nvram_seti("sw_lan4", 4);
@@ -370,7 +370,7 @@ void start_sysinit(void)
 	nvram_seti("sw_wan", 1);
 	nvram_seti("sw_lan1", 2);
 	nvram_seti("sw_lan2", 3);
-	nvram_seti("sw_lan3",4);
+	nvram_seti("sw_lan3", 4);
 	nvram_seti("sw_lan4", 5);
 #elif defined (HAVE_WZR450HP2) || defined(HAVE_WR1043V2)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
@@ -551,10 +551,10 @@ void start_sysinit(void)
 		for (i = 0; i < 2116; i++)
 			putc(getc(fp), out);
 		fclose(fp);
-		fclose(out);
 		eval("rm", "-f", "/tmp/ath10k-board.bin");
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
+	fclose(out);
 #elif defined(HAVE_XD3200)
 	fp = fopen("/dev/mtdblock/5", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
@@ -564,10 +564,10 @@ void start_sysinit(void)
 		for (i = 0; i < 2116; i++)
 			putc(getc(fp), out);
 		fclose(fp);
-		fclose(out);
 		eval("rm", "-f", "/tmp/ath10k-board.bin");
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
+	fclose(out);
 #ifdef HAVE_CPE890
 	nvram_default_get("no_ath9k", "1");
 #endif
@@ -580,10 +580,10 @@ void start_sysinit(void)
 		for (i = 0; i < 2116; i++)
 			putc(getc(fp), out);
 		fclose(fp);
-		fclose(out);
 		eval("rm", "-f", "/tmp/ath10k-board.bin");
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
+	fclose(out);
 #elif defined(HAVE_WR650AC)
 	fp = fopen("/dev/mtdblock/0", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
@@ -593,10 +593,10 @@ void start_sysinit(void)
 		for (i = 0; i < 2116; i++)
 			putc(getc(fp), out);
 		fclose(fp);
-		fclose(out);
 		eval("rm", "-f", "/tmp/ath10k-board.bin");
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
+	fclose(out);
 #elif defined(HAVE_ARCHERC7V5) && !defined(HAVE_ARCHERA7V5)
 	fp = fopen("/dev/mtdblock/0", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
@@ -618,10 +618,10 @@ void start_sysinit(void)
 		for (i = 0; i < 2104; i++)
 			putc(getc(fp), out);
 		fclose(fp);
-		fclose(out);
 		eval("rm", "-f", "/tmp/ath10k-board.bin");
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
+	fclose(out);
 #elif defined(HAVE_ARCHERC7) || defined(HAVE_DIR859) || defined(HAVE_DAP3662)
 	fp = fopen("/dev/mtdblock/5", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
@@ -643,10 +643,10 @@ void start_sysinit(void)
 		for (i = 0; i < 2104; i++)
 			putc(getc(fp), out);
 		fclose(fp);
-		fclose(out);
 		eval("rm", "-f", "/tmp/ath10k-board.bin");
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
+	fclose(out);
 #elif defined(HAVE_DIR862)
 	fp = fopen("/lib/ath10k/board.bin", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
@@ -662,10 +662,10 @@ void start_sysinit(void)
 		for (i = 0; i < 2104; i++)
 			putc(getc(fp), out);
 		fclose(fp);
-		fclose(out);
 		eval("rm", "-f", "/tmp/ath10k-board.bin");
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
+	fclose(out);
 #endif
 	detect_wireless_devices(RADIO_ALL);
 #ifdef HAVE_RAMBUTAN
