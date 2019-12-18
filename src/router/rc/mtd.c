@@ -438,13 +438,13 @@ static int write_main(int argc, char *argv[])
 					break;
 				}
 			}
+			if (i == (sizeof(netgear_ids) / sizeof(netgear_ids[0]))) {
+				dd_logerror("flash", "Error: Flash to OEM for board %s not supported yet\n", board_id);
+				return -1;
+			}
 			if (fail) {
 				dd_logerror("flash", "Error: board id! but %s expected %s %s %s %s %s\n", board_id, c ? netgear_ids[i].name : "", c == 2 ? "and" : "or", c > 1 ? netgear_ids[i].name2 : "",
 					    c > 2 ? " or " : "", c > 2 ? netgear_ids[i].name3 : "");
-				return -1;
-			}
-			if (i == (sizeof(netgear_ids) / sizeof(netgear_ids[0]))) {
-				dd_logerror("flash", "Error: Flash to OEM for board %s not supported yet\n", board_id);
 				return -1;
 			}
 
