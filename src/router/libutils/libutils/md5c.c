@@ -487,12 +487,18 @@ char *hash_file_string(char *filename, char *hashbuf)
 
 char *hash_string(char *string, char *hashbuf)
 {
+	char hash[16];
+	int i;
 	if (!strlen(string)) {
 		return NULL;
 	}
 	md5_ctx_t MD;
 	md5_begin(&MD);
 	md5_hash(string, strlen(string), &MD);
-	md5_end((unsigned char *)hashbuf, &MD);
+	md5_end((unsigned char *)hash, &MD);
+	for (i = 0; i < 16; i++) {
+		unsigned int k = hash[i];
+		sprintf(hashbuf, "%s%02X", hashbuf, k & 0xff);
+	}
 	return hashbuf;
 }
