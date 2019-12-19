@@ -384,6 +384,21 @@ int weekday(int month, int day, int year)
 
 }
 
+char *get_ipfrominterface(char *ifname, char *ip)
+{
+	int fd;
+	struct ifreq ifr;
+
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	ifr.ifr_addr.sa_family = AF_INET;
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
+	ioctl(fd, SIOCGIFADDR, &ifr);
+	ioctl(fd, SIOCGIFNETMASK, &ifr);
+	close(fd);
+	inet_addr_to_cidr(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr, ((struct sockaddr_in *)&ifr.ifr_netmask)->sin_addr, ip);
+	return ip;
+}
+
 char *get_mac_from_ip(char *mac, char *ip)
 {
 	FILE *fp;
