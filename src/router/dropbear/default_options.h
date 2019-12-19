@@ -172,7 +172,7 @@ If you test it please contact the Dropbear author */
 
 /* Group14 (2048 bit) is recommended. Group1 is less secure (1024 bit) though
    is the only option for interoperability with some older SSH programs */
-#define DROPBEAR_DH_GROUP1 1
+#define DROPBEAR_DH_GROUP1 0
 #define DROPBEAR_DH_GROUP16 0
 #define DROPBEAR_DH_GROUP14_SHA1 0
 #define DROPBEAR_DH_GROUP14_SHA256 1
