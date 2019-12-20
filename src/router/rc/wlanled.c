@@ -149,7 +149,7 @@ static int interface_cb(struct nl_msg *msg, void *arg)
 		goto out;
 
 	if (list->count++ > 0) {
-		wdev_list *newlist = realloc(list, sizeof(*list) + list->count * sizeof(int));
+		struct wdev_list *newlist = realloc(list, sizeof(*list) + list->count * sizeof(int));
 		if (!newlist) {
 			free(list);
 			return NL_SKIP;
