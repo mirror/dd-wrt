@@ -256,6 +256,7 @@ void start_openvpnserver(void)
 		fprintf(fp, "iptables -I INPUT -i tap2 -m state --state NEW -j DROP\n");
 		fprintf(fp, "iptables -I FORWARD -i tap2 -m state --state NEW -j DROP\n");
 	}
+	char ipbuf[128];
 	fprintf(fp, "iptables -t raw -I PREROUTING \\! -i tun2 -d %s -j DROP\n",get_ipfrominterface("tun2", ipbuf));
 	/* "stopservice wshaper\n" disable wshaper, causes fw race condition
 	 * "startservice wshaper\n");*/
