@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4865 | brainslayer | 2019-12-20 16:07:44 +0400 (Fri, 20 Dec 2019) | 1 line
+
+play with gf detection
+------------------------------------------------------------------------
 r4864 | brainslayer | 2019-12-18 22:37:48 +0400 (Wed, 18 Dec 2019) | 1 line
 
 use real noise floor for rssi calculation. consider that his may change rssi values, but they are more accurate
