@@ -917,7 +917,7 @@ static int bgx_lmac_enable(struct bgx *bgx, u8 lmacid)
 							  lmac->lmac_type)))
 			return -ENODEV;
 
-		phy_start_aneg(lmac->phydev);
+		phy_start(lmac->phydev);
 		return 0;
 	}
 
