@@ -1155,14 +1155,14 @@ static void handle_wireless(void)
 		}
 	}
 #ifdef HAVE_VLANTAGGING
-	stop_service_f("bridgesif");
-	stop_service_f("vlantagging");
+	stop_service("bridgesif");
+	stop_service("vlantagging");
 #endif
 #ifdef HAVE_BONDING
 	stop_service_f("bonding");
 #endif
 #ifdef HAVE_VLANTAGGING
-	stop_service_f("bridging");
+	stop_service("bridging");
 #endif
 #ifdef HAVE_IPVS
 	stop_service_f("ipvs");
@@ -1175,7 +1175,7 @@ static void handle_wireless(void)
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 //      start_service("wlconf");
 #endif
-	start_service("lan");
+	start_service_force("lan");
 #ifdef HAVE_IPVS
 	start_service("ipvs");
 #endif
@@ -1270,8 +1270,8 @@ static void handle_wireless_2(void)
 		}
 	}
 #ifdef HAVE_VLANTAGGING
-	stop_service_f("bridgesif");
-	stop_service_f("vlantagging");
+	stop_service("bridgesif");
+	stop_service("vlantagging");
 #endif
 #ifdef HAVE_BONDING
 	stop_service_f("bonding");
@@ -1279,9 +1279,9 @@ static void handle_wireless_2(void)
 #ifdef HAVE_IPVS
 	stop_service_f("ipvs");
 #endif
-	stop_service_f("lan");
+	stop_service("lan");
 #ifdef HAVE_VLANTAGGING
-	stop_service_f("bridging");
+	stop_service("bridging");
 #endif
 	stop_running_main(0, NULL);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
@@ -1290,7 +1290,7 @@ static void handle_wireless_2(void)
 #ifdef HAVE_VLANTAGGING
 	start_service("bridging");
 #endif
-	start_service("lan");
+	start_service_force("lan");
 #ifdef HAVE_IPVS
 	start_service("ipvs");
 #endif
