@@ -255,6 +255,7 @@ static struct MAIN maincalls[] = {
 	{ "setuserpasswd", "setuserpasswd", NULL },
 	{ "getbridge", "getbridge", NULL },
 	{ "getmask", "getmask", NULL },
+	{ "getipmask", "getipmask", NULL },
 	{ "stopservices", NULL, stop_services_main },
 #ifdef HAVE_PPPOESERVER
 	{ "addpppoeconnected", "addpppoeconnected", NULL },
