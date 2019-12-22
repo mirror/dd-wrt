@@ -17,6 +17,9 @@ ifeq ($(CONFIG_OPENDPI),y)
 PF_EXT_SLIB += ndpi
 CFLAGS += -DOPENDPI_NETFILTER_MODULE -I$(TOP)/ndpi-netfilter -I$(TOP)/ndpi-netfilter/src/include -I$(TOP)/ndpi-netfilter/src/lib -I$(TOP)/ndpi-netfilter/ndpi-netfilter/src -I$(TOP)/ndpi-netfilter/ndpi-netfilter/libre
 endif
+ifeq ($(CONFIG_WIREGUARD),y)
+PF_EXT_SLIB += addrtype
+endif
 ifneq ($(ARCHITECTURE),broadcom)
 PF_EXT_SLIB+= string
 else
