@@ -43,11 +43,6 @@ static int tnode_destructor(struct ctdb_tcp_node *tnode)
 		tnode->out_fd = -1;
 	}
 
-	if (tnode->in_fd != -1) {
-		close(tnode->in_fd);
-		tnode->in_fd = -1;
-	}
-
 	return 0;
 }
 
@@ -61,7 +56,6 @@ static int ctdb_tcp_add_node(struct ctdb_node *node)
 	CTDB_NO_MEMORY(node->ctdb, tnode);
 
 	tnode->out_fd = -1;
-	tnode->in_fd = -1;
 	tnode->ctdb = node->ctdb;
 
 	node->private_data = tnode;
@@ -143,8 +137,14 @@ static void ctdb_tcp_shutdown(struct ctdb_context *ctdb)
 {
 	struct ctdb_tcp *ctcp = talloc_get_type(ctdb->private_data,
 						struct ctdb_tcp);
+	uint32_t i;
+
 	talloc_free(ctcp);
 	ctdb->private_data = NULL;
+
+	for (i=0; i<ctdb->num_nodes; i++) {
+		TALLOC_FREE(ctdb->nodes[i]->private_data);
+	}
 }
 
 /*

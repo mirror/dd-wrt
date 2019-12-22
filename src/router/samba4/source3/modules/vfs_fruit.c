@@ -1664,8 +1664,7 @@ static ssize_t ad_read_rsrc_adouble(vfs_handle_struct *handle,
 				    struct adouble *ad,
 				    const struct smb_filename *smb_fname)
 {
-	char *p_ad = NULL;
-	size_t size;
+	size_t to_read;
 	ssize_t len;
 	int ret;
 	bool ok;
@@ -1677,35 +1676,26 @@ static ssize_t ad_read_rsrc_adouble(vfs_handle_struct *handle,
 		return -1;
 	}
 
-	/*
-	 * AppleDouble file header content and size, two cases:
-	 *
-	 * - without xattrs it is exactly AD_DATASZ_DOT_UND (82) bytes large
-	 * - with embedded xattrs it can be larger, up to AD_XATTR_MAX_HDR_SIZE
-	 *
-	 * Read as much as we can up to AD_XATTR_MAX_HDR_SIZE.
-	 */
-	size = ad->ad_fsp->fsp_name->st.st_ex_size;
-	if (size > talloc_array_length(ad->ad_data)) {
-		if (size > AD_XATTR_MAX_HDR_SIZE) {
-			size = AD_XATTR_MAX_HDR_SIZE;
-		}
-		p_ad = talloc_realloc(ad, ad->ad_data, char, size);
-		if (p_ad == NULL) {
-			return -1;
-		}
-		ad->ad_data = p_ad;
+	to_read = ad->ad_fsp->fsp_name->st.st_ex_size;
+	if (to_read > AD_XATTR_MAX_HDR_SIZE) {
+		to_read = AD_XATTR_MAX_HDR_SIZE;
 	}
 
-	len = SMB_VFS_NEXT_PREAD(handle, ad->ad_fsp, ad->ad_data, talloc_array_length(ad->ad_data), 0);
-	if (len != talloc_array_length(ad->ad_data)) {
+	len = SMB_VFS_NEXT_PREAD(handle,
+				 ad->ad_fsp,
+				 ad->ad_data,
+				 to_read,
+				 0);
+	if (len != to_read) {
 		DBG_NOTICE("%s %s: bad size: %zd\n",
 			   smb_fname->base_name, strerror(errno), len);
 		return -1;
 	}
 
 	/* Now parse entries */
-	ok = ad_unpack(ad, ADEID_NUM_DOT_UND, size);
+	ok = ad_unpack(ad,
+		       ADEID_NUM_DOT_UND,
+		       ad->ad_fsp->fsp_name->st.st_ex_size);
 	if (!ok) {
 		DBG_ERR("invalid AppleDouble resource %s\n",
 			smb_fname->base_name);
@@ -1715,7 +1705,8 @@ static ssize_t ad_read_rsrc_adouble(vfs_handle_struct *handle,
 
 	if ((ad_getentryoff(ad, ADEID_FINDERI) != ADEDOFF_FINDERI_DOT_UND)
 	    || (ad_getentrylen(ad, ADEID_FINDERI) < ADEDLEN_FINDERI)
-	    || (ad_getentryoff(ad, ADEID_RFORK)	< ADEDOFF_RFORK_DOT_UND)) {
+	    || (ad_getentryoff(ad, ADEID_RFORK) < ADEDOFF_RFORK_DOT_UND))
+	{
 		DBG_ERR("invalid AppleDouble resource %s\n",
 			smb_fname->base_name);
 		errno = EINVAL;
@@ -1795,7 +1786,23 @@ static struct adouble *ad_alloc(TALLOC_CTX *ctx,
 		adsize = AD_DATASZ_XATTR;
 		break;
 	case ADOUBLE_RSRC:
-		adsize = AD_DATASZ_DOT_UND;
+		/*
+		 * AppleDouble ._ file case, optimize for fewer (but larger)
+		 * IOs. Two cases:
+		 *
+		 * - without xattrs size of the header is exactly
+		 *   AD_DATASZ_DOT_UND (82) bytes
+		 *
+		 * - with embedded xattrs it can be larger, up to
+		 *   AD_XATTR_MAX_HDR_SIZE
+		 *
+		 * Larger headers are not supported, but this is a reasonable
+		 * limit that is also employed by the macOS client.
+		 *
+		 * We used the largest possible size to be able to read the full
+		 * header with one IO.
+		 */
+		adsize = AD_XATTR_MAX_HDR_SIZE;
 		break;
 	default:
 		return NULL;

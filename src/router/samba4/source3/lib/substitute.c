@@ -795,16 +795,14 @@ char *talloc_sub_advanced(TALLOC_CTX *ctx,
 			const char *user,
 			const char *connectpath,
 			gid_t gid,
-			const char *smb_name,
-			const char *domain_name,
 			const char *str)
 {
-	char *a_string, *ret_string;
+	char *a_string;
 	char *b, *p, *s;
 
 	a_string = talloc_strdup(talloc_tos(), str);
 	if (a_string == NULL) {
-		DEBUG(0, ("talloc_sub_advanced: Out of memory!\n"));
+		DEBUG(0, ("talloc_sub_advanced_only: Out of memory!\n"));
 		return NULL;
 	}
 
@@ -858,25 +856,29 @@ char *talloc_sub_advanced(TALLOC_CTX *ctx,
 		}
 	}
 
+	return a_string;
+}
+
+char *talloc_sub_full(TALLOC_CTX *ctx,
+			const char *servicename,
+			const char *user,
+			const char *connectpath,
+			gid_t gid,
+			const char *smb_name,
+			const char *domain_name,
+			const char *str)
+{
+	char *a_string, *ret_string;
+
+	a_string = talloc_sub_advanced(ctx, servicename, user, connectpath,
+				       gid, str);
+	if (a_string == NULL) {
+		return NULL;
+	}
+
 	ret_string = talloc_sub_basic(ctx, smb_name, domain_name, a_string);
 	TALLOC_FREE(a_string);
 	return ret_string;
-}
-
-void standard_sub_advanced(const char *servicename, const char *user,
-			   const char *connectpath, gid_t gid,
-			   const char *smb_name, const char *domain_name,
-			   char *str, size_t len)
-{
-	char *s = talloc_sub_advanced(talloc_tos(),
-				servicename, user, connectpath,
-				gid, smb_name, domain_name, str);
-
-	if (!s) {
-		return;
-	}
-	strlcpy( str, s, len );
-	TALLOC_FREE( s );
 }
 
 /******************************************************************************
