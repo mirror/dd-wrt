@@ -12,14 +12,14 @@ do
 		$ipt -D INPUT -p 47 -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
 		$ipt -D INPUT -p 97 -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
 		$ipt -D INPUT -p udp --dport `$nv get oet${i}_port` -j ACCEPT 2>&1 > /dev/null
-		$ipt -t raw -D PREROUTING \! -i oet${i} -d $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) -j DROP 2>&1 > /dev/null
+		$ipt -t raw -D PREROUTING ! -i oet${i} -d $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) -j DROP 2>&1 > /dev/null
 	fi
 	if [ `$nv get oet${i}_en` -eq 1 ]
 	then
 		if [ `$nv get oet${i}_proto` -eq 2 ]
 		then
 			$ipt -I INPUT -p udp --dport `$nv get oet${i}_port` -j ACCEPT 2>&1 > /dev/null
-			$ipt -t raw -I PREROUTING \! -i oet${i} -d $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) -j DROP 2>&1 > /dev/null
+			$ipt -t raw -I PREROUTING ! -i oet${i} -d $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) -j DROP 2>&1 > /dev/null
 		fi
 		if [ `$nv get oet${i}_proto` -eq 1 ]
 		then
