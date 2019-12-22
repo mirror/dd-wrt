@@ -18,6 +18,7 @@ do
 	then
 		if [ `$nv get oet${i}_proto` -eq 2 ]
 		then
+			insmod xt_addrtype
 			$ipt -I INPUT -p udp --dport `$nv get oet${i}_port` -j ACCEPT 2>&1 > /dev/null
 			$ipt -t raw -I PREROUTING ! -i oet${i} -d $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) -m addrtype ! --src-type LOCAL -j DROP
 		fi
