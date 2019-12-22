@@ -393,9 +393,11 @@ char *get_ipfrominterface(char *ifname, char *ip)
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	ifr.ifr_addr.sa_family = AF_INET;
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
-	ioctl(fd, SIOCGIFADDR, &ifr);
+	if (ioctl(fd, SIOCGIFADDR, &ifr) < 0)
+		return "255.255.255.255/32";
 	memcpy(&ifrnm, &ifr, sizeof(ifr));
-	ioctl(fd, SIOCGIFNETMASK, &ifrnm);
+	if (ioctl(fd, SIOCGIFNETMASK, &ifrnm) < 0)
+		return "255.255.255.255/32";
 	close(fd);
 	inet_addr_to_cidr(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr, ((struct sockaddr_in *)&ifrnm.ifr_netmask)->sin_addr, ip);
 	return ip;
