@@ -6,6 +6,7 @@ define kernelfeatures
 	fi
 	if [ "$(CONFIG_WIREGUARD)" = "y" ]; then \
 		sed -i 's/\# CONFIG_NET_FOU is not set/CONFIG_NET_FOU=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_NETFILTER_XT_MATCH_ADDRTYPE is not set/CONFIG_NETFILTER_XT_MATCH_ADDRTYPE=m/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_FRR)" = "y" ]; then \
 		sed -i 's/\# CONFIG_NAMESPACES is not set/CONFIG_NAMESPACES=y/g' $(LINUXDIR)/.config; \
