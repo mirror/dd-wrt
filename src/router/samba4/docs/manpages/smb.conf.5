@@ -2,12 +2,12 @@
 .\"     Title: smb.conf
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 12/10/2019
+.\"      Date: 12/16/2019
 .\"    Manual: File Formats and Conventions
-.\"    Source: Samba 4.11.3
+.\"    Source: Samba 4.11.4
 .\"  Language: English
 .\"
-.TH "SMB\&.CONF" "5" "12/10/2019" "Samba 4\&.11\&.3" "File Formats and Conventions"
+.TH "SMB\&.CONF" "5" "12/16/2019" "Samba 4\&.11\&.4" "File Formats and Conventions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -835,6 +835,18 @@ Default:
 .sp
 Example:
 \fI\fIadd group script\fR\fR\fI = \fR\fI/usr/sbin/groupadd %g\fR\fI \fR
+.RE
+
+additional dns hostnames (G)
+.PP
+.RS 4
+A list of additional DNS names by which this host can be identified
+.sp
+Default:
+\fI\fIadditional dns hostnames\fR\fR\fI = \fR\fI # empty string (no additional dns names)\fR\fI \fR
+.sp
+Example:
+\fI\fIadditional dns hostnames\fR\fR\fI = \fR\fI host2\&.example\&.com host3\&.other\&.com \fR\fI \fR
 .RE
 
 add machine script (G)
@@ -13315,7 +13327,7 @@ and
 special sections make life for an administrator easy, but the various combinations of default attributes can be tricky\&. Take extreme care when designing these sections\&. In particular, ensure that the permissions on spool directories are correct\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.11\&.3 of the Samba suite\&.
+This man page is part of version 4\&.11\&.4 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 \fBsamba\fR(7),

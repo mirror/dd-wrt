@@ -1717,14 +1717,14 @@ static void print_queue_update(struct messaging_context *msg_ctx,
 	/* don't strip out characters like '$' from the printername */
 
 	lpqcommand = talloc_string_sub2(ctx,
-			lp_lpq_command(talloc_tos(), snum),
+			lp_lpq_command(snum),
 			"%p",
 			lp_printername(talloc_tos(), snum),
 			false, false, false);
 	if (!lpqcommand) {
 		return;
 	}
-	lpqcommand = talloc_sub_advanced(ctx,
+	lpqcommand = talloc_sub_full(ctx,
 			lp_servicename(talloc_tos(), snum),
 			current_user_info.unix_name,
 			"",
@@ -1737,14 +1737,14 @@ static void print_queue_update(struct messaging_context *msg_ctx,
 	}
 
 	lprmcommand = talloc_string_sub2(ctx,
-			lp_lprm_command(talloc_tos(), snum),
+			lp_lprm_command(snum),
 			"%p",
 			lp_printername(talloc_tos(), snum),
 			false, false, false);
 	if (!lprmcommand) {
 		return;
 	}
-	lprmcommand = talloc_sub_advanced(ctx,
+	lprmcommand = talloc_sub_full(ctx,
 			lp_servicename(talloc_tos(), snum),
 			current_user_info.unix_name,
 			"",
@@ -2199,7 +2199,7 @@ static bool print_job_delete1(struct tevent_context *ev,
 	{
 		result = (*(current_printif->job_delete))(
 			lp_printername(talloc_tos(), snum),
-			lp_lprm_command(talloc_tos(), snum),
+			lp_lprm_command(snum),
 			pjob);
 
 		/* Delete the tdb entry if the delete succeeded or the job hasn't
@@ -2819,7 +2819,7 @@ WERROR print_job_start(const struct auth_session_info *server_info,
 		       struct spoolss_DeviceMode *devmode, uint32_t *_jobid)
 {
 	uint32_t jobid;
-	char *path;
+	char *path = NULL, *userstr = NULL;
 	struct printjob pjob;
 	const char *sharename = lp_const_servicename(snum);
 	struct tdb_print_db *pdb = get_print_db_byname(sharename);
@@ -2866,12 +2866,19 @@ WERROR print_job_start(const struct auth_session_info *server_info,
 
 	fstrcpy(pjob.clientmachine, clientmachine);
 
-	fstrcpy(pjob.user, lp_printjob_username(snum));
-	standard_sub_advanced(sharename, server_info->unix_info->sanitized_username,
+	userstr = talloc_sub_full(talloc_tos(),
+			      sharename,
+			      server_info->unix_info->sanitized_username,
 			      path, server_info->unix_token->gid,
 			      server_info->unix_info->sanitized_username,
 			      server_info->info->domain_name,
-			      pjob.user, sizeof(pjob.user));
+			      lp_printjob_username(snum));
+	if (userstr == NULL) {
+		werr = WERR_NOT_ENOUGH_MEMORY;
+		goto fail;
+	}
+	strlcpy(pjob.user, userstr, sizeof(pjob.user));
+	TALLOC_FREE(userstr);
 
 	fstrcpy(pjob.queuename, lp_const_servicename(snum));
 
@@ -3020,7 +3027,7 @@ NTSTATUS print_job_end(struct messaging_context *msg_ctx, int snum,
 
 	/* don't strip out characters like '$' from the printername */
 	lpq_cmd = talloc_string_sub2(tmp_ctx,
-				     lp_lpq_command(talloc_tos(), snum),
+				     lp_lpq_command(snum),
 				     "%p",
 				     lp_printername(talloc_tos(), snum),
 				     false, false, false);
@@ -3028,7 +3035,7 @@ NTSTATUS print_job_end(struct messaging_context *msg_ctx, int snum,
 		status = NT_STATUS_PRINT_CANCELLED;
 		goto fail;
 	}
-	lpq_cmd = talloc_sub_advanced(tmp_ctx,
+	lpq_cmd = talloc_sub_full(tmp_ctx,
 				      lp_servicename(talloc_tos(), snum),
 				      current_user_info.unix_name,
 				      "",

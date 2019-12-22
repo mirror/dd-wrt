@@ -611,7 +611,7 @@ static void do_per_share_checks(int s)
 			"excludes octal 010 (S_IXGRP).\n\n",
 			lp_servicename(talloc_tos(), s));
 	}
-	if (lp_printing(s) == PRINT_CUPS && *(lp_print_command(talloc_tos(), s)) != '\0') {
+	if (lp_printing(s) == PRINT_CUPS && *(lp_print_command(s)) != '\0') {
 		fprintf(stderr,
 			"Warning: Service %s defines a print command, but "
 			"parameter is ignored when using CUPS libraries.\n\n",
@@ -741,8 +741,6 @@ static void do_per_share_checks(int s)
 		ret = 1;
 		goto done;
 	}
-
-	cmdline_messaging_context(config_file);
 
 	fprintf(stderr,"Load smb config files from %s\n",config_file);
 
