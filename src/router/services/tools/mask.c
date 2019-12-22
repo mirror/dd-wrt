@@ -46,7 +46,7 @@ int getipmask_main(int argc, char **argv)
 		fprintf(stderr, "%s <ifname>\n", argv[0]);
 		exit(1);
 	}
-	fprintf(stdout, "%d", get_ipfrominterface(argv[1], ipbuf));
+	fprintf(stdout, "%s", get_ipfrominterface(argv[1], ipbuf));
 
 	return 0;
 }
