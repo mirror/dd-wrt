@@ -323,6 +323,10 @@ static inline bool tcp_too_many_orphans(struct sock *sk, int shift)
 
 bool tcp_check_oom(struct sock *sk, int shift);
 
+#define MAX_SYNCOOKIE_AGE	2
+#define TCP_SYNCOOKIE_PERIOD	(60 * HZ)
+#define TCP_SYNCOOKIE_VALID	(MAX_SYNCOOKIE_AGE * TCP_SYNCOOKIE_PERIOD)
+
 /* syncookies: remember time of last synqueue overflow */
 static inline void tcp_synq_overflow(struct sock *sk)
 {
