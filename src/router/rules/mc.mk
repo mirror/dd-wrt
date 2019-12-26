@@ -38,8 +38,6 @@ mc-configure: glib20 ncurses
 	--with-internal-edit \
 	--with-subshell \
 	--without-gpm-mouse \
-	--without-included-gettext \
-	--without-gpm-mouse \
 	--with-ncurses-includes=$(TOP)/ncurses/include \
 	--with-ncurses-libs=$(TOP)/ncurses/lib \
 	--without-x \
