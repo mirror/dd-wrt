@@ -40,3 +40,4 @@
  "openvpn_ccddef"  "OpenVPN ccd dir DEFAULT file"  "NULL"   "FALSE" "0"
  "openvpn_dhcpbl"	"Block DHCP" "CHOICE" "2" "0" "1" "FALSE" "0"
  "openvpn_tls_btn" "TLS key choice" "CHOICE" "2" "0" "1" "FALSE" "0"
+ "openvpn_mit" "CVE Mitigation" "CHOICE" "2" "0" "1" "FALSE" "0"
