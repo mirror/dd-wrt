@@ -112,47 +112,8 @@ void *openlib(char *type)
 	return NULL;
 }
 
-static void *load_visual_service(char *name)
-{
-	cprintf("load service %s\n", name);
-	void *handle = openlib("visuals");
-	cprintf("done()\n");
-	if (handle == NULL && name != NULL) {
-		cprintf("not found, try to load alternate\n");
-		char dl[64];
-
-		snprintf(dl, sizeof(dl), "/lib/%s_visual.so", name);
-		cprintf("try to load %s\n", dl);
-		handle = dlopen(name, RTLD_LAZY | RTLD_GLOBAL);
-		if (handle == NULL) {
-			fprintf(stderr, "cannot load %s\n", dl);
-			return NULL;
-		}
-	}
-	cprintf("found it, returning handle\n");
-	return handle;
-}
-
-static void *load_service(char *name)
-{
-	cprintf("load service %s\n", name);
-	void *handle = openlib("validate");
-	cprintf("done()\n");
-	if (handle == NULL && name != NULL) {
-		cprintf("not found, try to load alternate\n");
-		char dl[64];
-
-		snprintf(dl, sizeof(dl), "/lib/%s_validate.so", name);
-		cprintf("try to load %s\n", dl);
-		handle = dlopen(dl, RTLD_LAZY | RTLD_GLOBAL);
-		if (handle == NULL) {
-			fprintf(stderr, "cannot load %s\n", dl);
-			return NULL;
-		}
-	}
-	cprintf("found it, returning handle\n");
-	return handle;
-}
+#define load_visual_service(name) openlib("visuals")
+#define load_service(name) openlib("validate")
 
 extern const websRomPageIndexType websRomPageIndex[];
 
