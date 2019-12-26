@@ -642,9 +642,9 @@ endif
 #	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26.trx $(ARCH)-uclibc/vmlinus.gzip  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
 #	../../opt/asus/asustrx-rt66u -p RT-AC66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3_RT-AC66U.trx $(ARCH)-uclibc/lzma_vmlinuz -a 1024 $(ARCH)-uclibc/rootfs.squashfs
 ifeq ($(CONFIG_MIPS32R1),y)
-	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3.trx mipsel-uclibc/lzma_vmlinuz -a 1024 $(ARCH)-uclibc/rootfs.squashfs
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3.trx mipsel-uclibc/lzma_vmlinuz -a 1024 $(ARCH)-uclibc/rootfs.squashfs -a 65536
 else
-	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz -a 1024 $(ARCH)-uclibc/rootfs.squashfs -a 65536
 endif
 
 	-./tools/trx_asus -i $(ARCH)-uclibc/dd-wrt.v24-K3-nandboot.trx -r RT-AC66U,3.0.0.4,380,3264,$(ARCH)-uclibc/dd-wrt.v24-K3_RT-AC66U.trx
