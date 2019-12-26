@@ -72,11 +72,7 @@
 
 #define my_setservent(f) \
 { \
-	if (servf == NULL) \
- 		servf = fopen(_PATH_SERVICES, "r"); \
-	else \
-		rewind(servf); \
-	serv_stayopen |= f; \
+	servf = fopen(_PATH_SERVICES, "r"); \
 }
 
 #define my_endservent() \
@@ -85,7 +81,6 @@
 		fclose(servf); \
 		servf = NULL; \
 	} \
-	serv_stayopen = 0; \
 }
 
 static struct servent *my_getservent(FILE * servf, struct servent *serv, char *serv_aliases, char *line)
@@ -139,27 +134,28 @@ again:
 
 struct servent *my_getservbyport(int port, const char *proto)
 {
-	register struct servent *p;
 	FILE *servf = NULL;
-	struct servent *serv = malloc(sizeof(*serv));
 	char *serv_aliases[MAXALIASES];
-	int serv_stayopen = 0;
-	char line[BUFSIZ + 1];
 	int found = 0;
-	my_setservent(serv_stayopen);
-	while ((p = my_getservent(servf, serv, serv_aliases, line)) != NULL) {
-		if (p->s_port != port)
+	my_setservent();
+	if (!servf) {
+	    return NULL;
+	}
+	struct servent *serv = malloc(sizeof(struct servent));
+	char *line = malloc(BUFSIZ + 1);
+	while ((my_getservent(servf, serv, serv_aliases, line)) != NULL) {
+		if (serv->s_port != port)
 			continue;
-		if (proto == 0 || strcasecmp(p->s_proto, proto) == 0) {
+		if (proto == 0 || strcasecmp(serv->s_proto, proto) == 0) {
 			found = 1;
 			break;
 		}
 	}
-	if (!serv_stayopen)
-		my_endservent();
+	my_endservent();
 	if (!found) {
 		free(serv);
-		p = NULL;
+		serv = NULL;
 	}
-	return (p);
+	free(line);
+	return (serv);
 }
