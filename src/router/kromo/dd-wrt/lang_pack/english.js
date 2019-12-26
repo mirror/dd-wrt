@@ -1799,6 +1799,7 @@ service.vpnd_dhcpbl="Block DHCP across the tunnel";
 service.vpnd_static="Static Key";
 service.vpn_redirgate="Redirect default Gateway";
 service.vpn_legend="OpenVPN Client";
+service.vpn_mit="CVE-2019-14899 Mitigation";
 service.vpn_srv="Start OpenVPN Client";
 service.vpn_ipname="Server IP/Name";
 service.vpn_mtu="Tunnel MTU setting";
