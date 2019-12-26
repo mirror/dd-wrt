@@ -74,32 +74,15 @@ static int search_hit(char *search, char *line, char *ret)
 
 	if (line == NULL || search == NULL || ret == NULL)
 		return 1;
-	lineLen = strlen(line);
-	searchLen = strlen(search);
-
-	if (searchLen > lineLen)
-		return (1);	// this can't match, invalid data?
-
-	for (i = 0; i < lineLen - searchLen; i++) {
-		if (!strncasecmp((char *)&line[i], search, searchLen))
-			goto gotit;
-	}
-	return 1;		// not found
-      gotit:;
-	int clamp = i + 15 + searchLen;
-	if (clamp > lineLen)
-		clamp = lineLen;	// out of bounds
-	if (i + searchLen > lineLen)
-		return 1;	// out of bounds
-	for (j = i + searchLen; j < clamp; j++) {
-		if (j >= lineLen)
-			break;	// end of line may be a delimiter too
-		// return(1); // incomplete data
-		if (line[j] == ' ')
-			break;	// we reach _space_ delimiter
-	}
-	memcpy(ret, &line[i + searchLen], j - (i + searchLen));
-	ret[j - (i + searchLen)] = 0;
+	char *p = strstr(line, search);
+	if (!p)
+		return 1;
+	p += strlen(search);
+	char *l = strchr(p, ' ');
+	if (!l)
+		return 1;
+	strcpy(ret, p);
+	ret[l - p] = 0;
 	return (0);
 }
 
@@ -213,6 +196,8 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		_dport = atoi(dstport);
 		servp = my_getservbyport(htons(_dport), protocol);
 		websWrite(wp, "<td align=\"right\">%s</td>", servp ? servp->s_name : dstport);
+		if (servp)
+			free(servp);
 		// State
 		if (string_search(line, "ESTABLISHED"))
 			sprintf(state, "ESTABLISHED");
