@@ -257,7 +257,8 @@ void start_openvpnserver(void)
 		fprintf(fp, "iptables -I FORWARD -i tap2 -m state --state NEW -j DROP\n");
 	}
 	char ipbuf[128];
-	fprintf(fp, "iptables -t raw -I PREROUTING ! -i tun2 -d $(getipmask %s) -j DROP\n", "tun2");
+	if (nvram_match("openvpn_mit", "1"))
+		fprintf(fp, "iptables -t raw -I PREROUTING ! -i tun2 -d $(getipmask %s) -j DROP\n", "tun2");
 	/* "stopservice wshaper\n" disable wshaper, causes fw race condition
 	 * "startservice wshaper\n");*/
 	fclose(fp);
@@ -290,7 +291,8 @@ void start_openvpnserver(void)
 		fprintf(fp, "iptables -D INPUT -i tap2 -m state --state NEW -j DROP\n");
 		fprintf(fp, "iptables -D FORWARD -i tap2 -m state --state NEW -j DROP\n");
 	}
-	fprintf(fp, "iptables -t raw -D PREROUTING ! -i tun2 -d $(getipmask %s) -j DROP\n", "tun2");
+	if (nvram_match("openvpn_mit", "1"))
+		fprintf(fp, "iptables -t raw -D PREROUTING ! -i tun2 -d $(getipmask %s) -j DROP\n", "tun2");
 
 /*      if ((nvram_matchi("openvpn_dhcpbl",1)
                         && nvram_match("openvpn_tuntap", "tap")
@@ -543,7 +545,8 @@ void start_openvpn(void)
 				"iptables -I FORWARD -o %s -j ACCEPT\n", ovpniface, ovpniface, ovpniface, ovpniface, ovpniface, ovpniface);
 	}
 	char ipbuf[128];
-	fprintf(fp, "iptables -t raw -I PREROUTING ! -i %s -d $(getipmask %s) -j DROP\n", ovpniface, ovpniface);
+	if (nvram_match("openvpncl_mit", "1"))
+		fprintf(fp, "iptables -t raw -I PREROUTING ! -i %s -d $(getipmask %s) -j DROP\n", ovpniface, ovpniface);
 	if (nvram_match("openvpncl_tuntap", "tun")) {
 		fprintf(fp, "cat /tmp/resolv.dnsmasq > /tmp/resolv.dnsmasq_isp\n");
 		fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ print \"nameserver \" $3 }' > /tmp/resolv.dnsmasq\n");
@@ -614,7 +617,8 @@ void start_openvpn(void)
 	if (nvram_match("openvpncl_tuntap", "tun")) {
 		fprintf(fp, "[ -f /tmp/resolv.dnsmasq_isp ] && mv -f /tmp/resolv.dnsmasq_isp /tmp/resolv.dnsmasq\n");
 	}
-	fprintf(fp, "iptables -t raw -D PREROUTING ! -i %s -d $(getipmask %s) -j DROP\n", ovpniface, ovpniface);
+	if (nvram_match("openvpncl_mit", "1"))
+		fprintf(fp, "iptables -t raw -D PREROUTING ! -i %s -d $(getipmask %s) -j DROP\n", ovpniface, ovpniface);
 /*      if (nvram_matchi("block_multicast",0) //block multicast on bridged vpns
                 && nvram_match("openvpncl_tuntap", "tap")
                 && nvram_matchi("openvpncl_bridge",1)) {
