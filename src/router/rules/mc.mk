@@ -7,7 +7,7 @@ export ac_cv_func_posix_getgrgid_r=no
 #export GLIB_CONFIG=$(TOP)/glib-1.2.10-install/bin/glib-config
 export GLIB_CFLAGS=-I$(TOP)/glib20/libglib/glib
 
-mc-configure: glib20 slang
+mc-configure: glib20 ncurses
 	make -C util-linux
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
@@ -24,34 +24,25 @@ mc-configure: glib20 slang
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 	cd mc && ./configure --host=$(ARCH)-uclibc-linux AWK="awk" \
-		CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -DSTAT_STATVFS -I$(TOP)/slang/src" \
-		LDFLAGS="-L$(TOP)/slang/src/$(ARCH)elfobjs -L$(TOP)/mc/intl" \
+		CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -DSTAT_STATVFS" \
+		LDFLAGS="-L$(TOP)/mc/intl" \
 		GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -L$(INSTALLDIR)/util-linux/usr/lib" \
 		GLIB_LIBS="-L$(TOP)/glib20/libglib/glib/.libs -lglib-2.0" \
 		GMODULE_CFLAGS="-pthread -I$(TOP)/glib20/libglib/gmodule -I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib" \
 		GMODULE_LIBS="-pthread -L$(TOP)/glib20/libglib/gmodule/.libs -L$(TOP)/glib20/libglib/glib/.libs -lrt -lglib-2.0" \
 	--with-included-gettext \
-	--without-ncurses \
-	--with-screen=slang \
-	--without-sco \
-	--without-sunos-curses \
-	--without-osf1-curses \
-	--without-vcurses \
+	--with-screen=ncurses \
+	--enable-charset \
+	--enable-background \
+	--enable-largefile \
+	--with-internal-edit \
+	--with-subshell \
 	--without-gpm-mouse \
-	--without-hsc \
-	--without-termnet \
-	--without-debug \
-	--without-efence \
-	--without-terminfo \
-	--without-termcap \
-	--with-slang-includes=$(TOP)/slang/src \
-	--with-slang-libs=$(TOP)/slang/src/$(ARCH)elfobjs \
-	--without-ext2undel \
-	--without-catgets \
+	--without-included-gettext \
+	--without-gpm-mouse \
+	--with-ncurses-includes=$(TOP)/ncurses/include \
+	--with-ncurses-libs=$(TOP)/ncurses/lib \
 	--without-x \
-	--without-tk \
-	--without-xview \
-	--disable-glibtest \
 	--disable-tests \
 	--disable-doxygen-doc \
 	--enable-silent-rules \
@@ -68,7 +59,7 @@ mc-configure: glib20 slang
 #	--with-glib-prefix="$(TOP)/mc/glib" \
 
 
-mc: glib20 slang
+mc: glib20 ncurses
 	make -C util-linux
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
@@ -84,7 +75,6 @@ mc: glib20 slang
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
-	$(MAKE) -j 4 -C mc LDFLAGS="-L$(TOP)/slang/src/$(ARCH)elfobjs -L$(TOP)/mc/intl"
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
 	rm -rf $(INSTALLDIR)/util-linux/bin
