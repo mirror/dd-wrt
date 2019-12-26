@@ -1535,6 +1535,7 @@ service.vpnd_dhcpbl="Blockiere DHCP &uuml;ber den Tunnel";
 service.vpnd_static="Statischer Schl&uuml;ssel";
 service.vpn_redirgate="&Uuml;bernehme Standartgateway";
 service.vpn_legend="OpenVPN-Client";
+service.vpn_mit="CVE-2019-14899 Entsch&auml;rfung";
 service.vpn_srv="Starte OpenVPN";
 service.vpn_ipname="Server-IP/Name";
 service.vpn_mtu="TUN-MTU-Einstellungen";
