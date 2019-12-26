@@ -285,7 +285,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 				char temp[32];
 				fscanf(fp, "%s", &temp[0]);
 				fclose(fp);
-		fp = NULL;
+				fp = NULL;
 				int l = strlen(temp);
 				if (l > 2) {
 					TEMP_MUL = 1;

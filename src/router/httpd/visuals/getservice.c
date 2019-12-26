@@ -69,31 +69,26 @@
 #ifndef _PATH_SERVICES
 #define	_PATH_SERVICES		"/etc/services"
 #endif
-static FILE *servf = NULL;
-static struct servent serv;
-static char *serv_aliases[MAXALIASES];
-static int serv_stayopen;
-static char line[BUFSIZ + 1];
 
-static void my_setservent(int f)
-{
-	if (servf == NULL)
-		servf = fopen(_PATH_SERVICES, "r");
-	else
-		rewind(servf);
-	serv_stayopen |= f;
+#define my_setservent(f) \
+{ \
+	if (servf == NULL) \
+ 		servf = fopen(_PATH_SERVICES, "r"); \
+	else \
+		rewind(servf); \
+	serv_stayopen |= f; \
 }
 
-static void my_endservent(void)
-{
-	if (servf) {
-		fclose(servf);
-		servf = NULL;
-	}
-	serv_stayopen = 0;
+#define my_endservent() \
+{ \
+	if (servf) { \
+		fclose(servf); \
+		servf = NULL; \
+	} \
+	serv_stayopen = 0; \
 }
 
-static struct servent *my_getservent(void)
+static struct servent *my_getservent(FILE * servf, struct servent *serv, char *serv_aliases, char *line)
 {
 	char *p;
 	register char *cp, **q;
@@ -102,7 +97,6 @@ static struct servent *my_getservent(void)
 		return (NULL);
 again:
 	if ((p = fgets(line, BUFSIZ, servf)) == NULL) {
-		fclose(servf);
 		return (NULL);
 	}
 	if (*p == '#')
@@ -111,7 +105,7 @@ again:
 	if (cp == NULL)
 		goto again;
 	*cp = '\0';
-	serv.s_name = p;
+	serv->s_name = p;
 	p = strpbrk(p, " \t");
 	if (p == NULL)
 		goto again;
@@ -122,9 +116,9 @@ again:
 	if (cp == NULL)
 		goto again;
 	*cp++ = '\0';
-	serv.s_port = htons((u_short) atoi(p));
-	serv.s_proto = cp;
-	q = serv.s_aliases = serv_aliases;
+	serv->s_port = htons((u_short) atoi(p));
+	serv->s_proto = cp;
+	q = serv->s_aliases = serv_aliases;
 	cp = strpbrk(cp, " \t");
 	if (cp != NULL)
 		*cp++ = '\0';
@@ -140,21 +134,32 @@ again:
 			*cp++ = '\0';
 	}
 	*q = NULL;
-	return (&serv);
+	return serv;
 }
 
 struct servent *my_getservbyport(int port, const char *proto)
 {
 	register struct servent *p;
-
+	FILE *servf = NULL;
+	struct servent *serv = malloc(sizeof(*serv));
+	char *serv_aliases[MAXALIASES];
+	int serv_stayopen = 0;
+	char line[BUFSIZ + 1];
+	int found = 0;
 	my_setservent(serv_stayopen);
-	while ((p = my_getservent()) != NULL) {
+	while ((p = my_getservent(servf, serv, serv_aliases, line)) != NULL) {
 		if (p->s_port != port)
 			continue;
-		if (proto == 0 || strcasecmp(p->s_proto, proto) == 0)
+		if (proto == 0 || strcasecmp(p->s_proto, proto) == 0) {
+			found = 1;
 			break;
+		}
 	}
 	if (!serv_stayopen)
 		my_endservent();
+	if (!found) {
+		free(serv);
+		p = NULL;
+	}
 	return (p);
 }
