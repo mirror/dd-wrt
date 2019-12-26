@@ -75,6 +75,8 @@
 //#define SERVICE_MODULE "/tmp/validate.so"
 //#define VISSERVICE_MODULE "/tmp/visuals.so"
 
+static char *path_modules[] = { "/jffs/usr/lib", "/tmp/debug", "/usr/lib", NULL };
+
 #define cprintf(fmt, args...)
 
 #ifndef cprintf
@@ -109,14 +111,27 @@ static char *_GOZILA_GET(webs_t wp, char *name)
 	return wp->gozila_action ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
 }
 
+void *openlib(char *type)
+{
+	int i = 0;
+	void *handle;
+	char *lib;
+	while ((lib = path_modules[i++])) {
+		char name[64];
+		snprintf(name, sizeof(name) - 1, "%s/%s.so", lib, type);
+		handle = dlopen(name, RTLD_LAZY | RTLD_GLOBAL);
+		if (handle)
+			return handle;
+	}
+	char *err = dlerror();
+	dd_logerror("httpd", "Cannot load %s/%s.so library (%s)\n", path_modules[i - 1], type, err ? err : "unknown");
+	return NULL;
+}
+
 static void *load_visual_service(char *name)
 {
 	cprintf("load service %s\n", name);
-	void *handle = dlopen(VISSERVICEALT_MODULE, RTLD_LAZY | RTLD_GLOBAL);
-	if (!handle) {
-		dd_debug(DEBUG_HTTPD, "cannot load %s\n", name);
-		handle = dlopen(VISSERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
-	}
+	void *handle = openlib("visuals");
 	cprintf("done()\n");
 	if (handle == NULL && name != NULL) {
 		cprintf("not found, try to load alternate\n");
@@ -137,9 +152,7 @@ static void *load_visual_service(char *name)
 static void *load_service(char *name)
 {
 	cprintf("load service %s\n", name);
-	void *handle = dlopen(SERVICEALT_MODULE, RTLD_LAZY | RTLD_GLOBAL);
-	if (!handle)
-		handle = dlopen(SERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
+	void *handle = openlib("validate");
 	cprintf("done()\n");
 	if (handle == NULL && name != NULL) {
 		cprintf("not found, try to load alternate\n");
@@ -293,8 +306,10 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 			timersub(&after, &before, &r);
 			dd_debug(DEBUG_HTTPD, " %s duration %ld.%06ld\n", service, (long int)r.tv_sec, (long int)r.tv_usec);
 
-		} else
-			dd_debug(DEBUG_HTTPD, " function %s not found \n", service);
+		} else {
+			char *err = dlerror();
+			dd_debug(DEBUG_HTTPD, " function %s not found (%s)\n", service, err ? err : "unknown");
+		}
 		memdebug_leave_info(service);
 	}
 	cprintf("start_sevice_nofree done()\n");
