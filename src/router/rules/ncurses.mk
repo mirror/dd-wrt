@@ -22,6 +22,9 @@ ncurses-clean:
 
 ncurses:
 	make -j 4 -C ncurses
+	rm -rf ncurses/include/ncurses
+	mkdir -p ncurses/include/ncurses
+	cp -a ncurses/include/*.h ncurses/include/ncurses
 
 ncurses-install:
 	make -C ncurses install.libs DESTDIR=$(INSTALLDIR)/ncurses
