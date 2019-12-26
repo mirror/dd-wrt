@@ -185,9 +185,11 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "%c'%s','%s','%s','%s','%d'\n", count ? ',' : ' ', proto, src, dst, servp ? servp->s_name : dpt, dir);
 			count++;
 		}
-		if (servp)
+		if (servp) {
+			free(servp->s_name);
+			free(servp->s_proto);
 			free(servp);
-
+		}
 		// if(s_service) free(s_service);
 		// if(d_service) free(d_service);
 	}
