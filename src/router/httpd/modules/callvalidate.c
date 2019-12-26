@@ -59,23 +59,7 @@
 #include <stdio.h>
 // #include <shutils.h>
 
-#if defined(HAVE_ADM5120) && !defined(HAVE_WP54G)
-#define SERVICE_MODULE "/lib/validate.so"
-#define VISSERVICE_MODULE "/lib/visuals.so"
-#else
-#define SERVICE_MODULE "/usr/lib/validate.so"
-#define VISSERVICE_MODULE "/usr/lib/visuals.so"
-#endif
-
-#define SERVICEALT_MODULE "/jffs/usr/lib/validate.so"
-#define VISSERVICEALT_MODULE "/jffs/usr/lib/visuals.so"
-//#define SERVICEALT_MODULE "/tmp/validate.so"
-//#define VISSERVICEALT_MODULE "/tmp/visuals.so"
-
-//#define SERVICE_MODULE "/tmp/validate.so"
-//#define VISSERVICE_MODULE "/tmp/visuals.so"
-
-static char *path_modules[] = { "/jffs/usr/lib", "/tmp/debug", "/usr/lib", NULL };
+static char *path_modules[] = { "/jffs/usr/lib", "/tmp/debug", "/usr/lib", "/lib", NULL };
 
 #define cprintf(fmt, args...)
 
