@@ -3101,6 +3101,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "fullswitch", "0" },
 #ifdef HAVE_OPENVPN
 	{ "openvpncl_enable", "0" },
+	{ "openvpncl_mit", "1" },
 	{ "openvpncl_remoteip", "0.0.0.0" },
 	{ "openvpncl_remoteport", "1194" },
 	{ "openvpncl_ca", "" },
@@ -3130,6 +3131,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpncl_scrmblpw", "o54a72ReutDK" },
 	{ "openvpncl_tls_btn", "0" },
 	{ "openvpn_enable", "0" },
+	{ "openvpn_mit", "1" },
 	{ "openvpn_net", "0.0.0.0" },
 	{ "openvpn_mask", "0.0.0.0" },
 	{ "openvpn_tunmask", "0.0.0.0" },
