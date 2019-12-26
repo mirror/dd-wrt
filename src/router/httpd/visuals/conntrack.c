@@ -81,8 +81,7 @@ static int search_hit(char *search, char *line, char *ret)
 	char *l = strchr(p, ' ');
 	if (!l)
 		return 1;
-	strcpy(ret, p);
-	ret[l - p] = 0;
+	strlcpy(ret, p, l - p);
 	return (0);
 }
 
@@ -116,10 +115,10 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 	char *line;
 	char *protocol;
 	int timeout = 0;
-	char srcip[32] = "";
-	char dstip[32] = "";
+	char srcip[64] = "";
+	char dstip[64] = "";
 	int _dport;
-	struct servent *servp;
+	struct servent *servp = NULL;
 	char dstport[32] = "";
 	char state[32] = "";
 	char dum1[32];
@@ -196,8 +195,11 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		_dport = atoi(dstport);
 		servp = my_getservbyport(htons(_dport), protocol);
 		websWrite(wp, "<td align=\"right\">%s</td>", servp ? servp->s_name : dstport);
-		if (servp)
+		if (servp) {
+			free(servp->s_name);
+			free(servp->s_proto);
 			free(servp);
+		}
 		// State
 		if (string_search(line, "ESTABLISHED"))
 			sprintf(state, "ESTABLISHED");
