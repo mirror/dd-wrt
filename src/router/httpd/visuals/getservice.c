@@ -129,6 +129,8 @@ again:
 			*cp++ = '\0';
 	}
 	*q = NULL;
+	serv->s_name = strdup(serv->s_name);
+	serv->s_proto = strdup(serv->s_proto);
 	return serv;
 }
 
@@ -139,7 +141,7 @@ struct servent *my_getservbyport(int port, const char *proto)
 	int found = 0;
 	my_setservent();
 	if (!servf) {
-	    return NULL;
+		return NULL;
 	}
 	struct servent *serv = malloc(sizeof(struct servent));
 	char *line = malloc(BUFSIZ + 1);
@@ -157,5 +159,6 @@ struct servent *my_getservbyport(int port, const char *proto)
 		serv = NULL;
 	}
 	free(line);
-	return (serv);
+	if (serv)
+		return (serv);
 }
