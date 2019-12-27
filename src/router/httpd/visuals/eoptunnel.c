@@ -96,6 +96,16 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<div id=\"idwireguard%d\">\n", tun);
 			{
 #ifdef HAVE_WIREGUARD
+				snprintf(temp, sizeof(temp), "oet%d_mit", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "service.vpn_mit", NULL);
+					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 1, 1) ? "checked=\"checked\"" : ""));
+					show_caption(wp, NULL, "share.enable", "&nbsp;");
+					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 0, 1) ? "checked=\"checked\"" : ""));
+					show_caption_simple(wp, "share.disable");
+				}
+
 				snprintf(temp, sizeof(temp), "oet%d_port", tun);
 				websWrite(wp, "<div class=\"setting\">\n");
 				{
