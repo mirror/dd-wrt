@@ -21,7 +21,7 @@ insert: debug
 	-sudo insmod wireguard.ko
 
 test: insert
-	sudo PATH="$(shell pwd)/tools:$$PATH:/usr/sbin:/sbin:/usr/bin:/bin:/usr/local/sbin:/usr/local/bin" ./tests/netns.sh
+	sudo PATH="$$PATH:/usr/sbin:/sbin:/usr/bin:/bin:/usr/local/sbin:/usr/local/bin" ./tests/netns.sh
 
 test-qemu:
 	$(MAKE) -C tests/qemu
