@@ -20,7 +20,10 @@ do
 		then
 			insmod xt_addrtype
 			$ipt -I INPUT -p udp --dport `$nv get oet${i}_port` -j ACCEPT 2>&1 > /dev/null
-			$ipt -t raw -I PREROUTING ! -i oet${i} -d $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) -m addrtype ! --src-type LOCAL -j DROP
+			if [ `$nv get oet${i}_mit` -eq 1 ]
+			then
+				$ipt -t raw -I PREROUTING ! -i oet${i} -d $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) -m addrtype ! --src-type LOCAL -j DROP
+			fi
 		fi
 		if [ `$nv get oet${i}_proto` -eq 1 ]
 		then
