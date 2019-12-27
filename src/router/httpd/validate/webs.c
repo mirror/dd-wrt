@@ -1585,6 +1585,7 @@ void tunnel_save(webs_t wp)
 	int tunnels = nvram_geti("oet_tunnels");
 	for (i = 1; i < tunnels + 1; i++) {
 		copytonv(wp, "oet%d_en", i);
+		copytonv(wp, "oet%d_mit", i);
 		copytonv(wp, "oet%d_proto", i);
 		copytonv(wp, "oet%d_peers", i);
 		copytonv(wp, "oet%d_id", i);
@@ -1791,6 +1792,7 @@ void add_tunnel(webs_t wp)
 #define default_set(name,val) if (*(nvram_nget("oet%d_%s",tunnels, name))==0)nvram_nset(val, "oet%d_%s",tunnels,name)
 #define default_seti(name,val) if (*(nvram_nget("oet%d_%s",tunnels, name))==0)nvram_nseti(val, "oet%d_%s",tunnels,name)
 	default_seti("en", 0);
+	default_seti("mit", 1);
 	default_set("rem", "192.168.90.1");
 	default_set("local", "0.0.0.0");
 	default_set("ipaddr", "1.2.3.4");
@@ -1817,6 +1819,7 @@ void del_tunnel(webs_t wp)
 	int i;
 	for (i = tun + 1; i < tunnels + 1; i++) {
 		copytunvalue("en", i, i - 1);
+		copytunvalue("mit", i, i - 1);
 		copytunvalue("rem", i, i - 1);
 		copytunvalue("local", i, i - 1);
 		copytunvalue("ipaddr", i, i - 1);
@@ -1843,6 +1846,7 @@ void del_tunnel(webs_t wp)
 	}
 #endif
 	deltunvalue("en", tunnels);
+	deltunvalue("mit", tunnels);
 	deltunvalue("rem", tunnels);
 	deltunvalue("local", tunnels);
 	deltunvalue("ipaddr", tunnels);
