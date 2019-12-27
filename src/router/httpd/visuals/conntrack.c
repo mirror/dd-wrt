@@ -81,7 +81,7 @@ static int search_hit(char *search, char *line, char *ret)
 	char *l = strchr(p, ' ');
 	if (!l)
 		return 1;
-	strlcpy(ret, p, l - p);
+	strlcpy(ret, p, (l - p) + 1);
 	return (0);
 }
 
