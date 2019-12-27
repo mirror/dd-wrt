@@ -8,6 +8,11 @@
 	</div>
 	<div id="idvpncl">
 		<div class="setting">
+		<div class="label"><% tran("service.vpn_mit"); %></div>
+			<input class="spaceradio" type="radio" name="openvpncl_mit" value="1" <% nvc("openvpncl_mit", "1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="openvpncl_mit" value="0" <% nvc("openvpncl_mit", "0"); %> /><% tran("share.disable"); %>
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("service.vpn_ipname"); %></div>
 			<input size="27" maxlength="64" name="openvpncl_remoteip" value="<% nvg("openvpncl_remoteip"); %>" />
 		</div>
