@@ -9,8 +9,8 @@
 	<div id="idvpn">
 		<div class="setting">
 		<div class="label"><% tran("service.vpn_mit"); %></div>
-			<input class="spaceradio" type="radio" name="openvpncl_mit" value="1" <% nvc("openvpncl_mit", "1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="openvpncl_mit" value="0" <% nvc("openvpncl_mit", "0"); %> /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" name="openvpn_mit" value="1" <% nvc("openvpn_mit", "1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="openvpn_mit" value="0" <% nvc("openvpn_mit", "0"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
 		<div class="label"><% tran("service.vpnd_starttype"); %></div>
