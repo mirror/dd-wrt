@@ -24,8 +24,8 @@ $(OBJS) $(SUBDIR)%.ho $(SUBDIR)%-test.o $(TESTOBJS): CPPFLAGS += -DHAVE_AV_CONFI
 
 $(SUBDIR)$(LIBNAME): $(OBJS)
 	$(RM) $@
-	$(AR) rc $@ $^ $(EXTRAOBJS)
-	$(RANLIB) $@
+	$(AR) rc $@ $^ $(EXTRAOBJS) $(LTOPLUGIN)
+	$(RANLIB) $@ $(LTOPLUGIN)
 
 install-headers: install-lib$(NAME)-headers install-lib$(NAME)-pkgconfig
 
