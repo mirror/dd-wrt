@@ -1310,7 +1310,7 @@ hostapd_multi.a: $(BCHECK) $(OBJS)
 	$(Q)$(CC) -c -o hostapd_multi.o -Dmain=hostapd_main $(CFLAGS) main.c
 	@$(E) "  CC " $<
 	@rm -f $@
-	@$(AR) cr $@ hostapd_multi.o $(OBJS)
+	@$(AR) cr $@ hostapd_multi.o $(OBJS) $(LTOPLUGIN)
 
 hostapd: $(BCHECK) $(OBJS)
 	$(Q)$(CC) $(LDFLAGS) -o hostapd $(OBJS) $(LIBS)
