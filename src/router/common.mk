@@ -1,3 +1,8 @@
+export LTO := -flto -fwhole-program
+export LDLTO := -flto=jobserver -fuse-linker-plugin
+export LTOPLUGIN := --plugin=$(shell $(CROSS_COMPILE)gcc --print-file-name=liblto_plugin.so)
+
+
 ifeq ($(ARCH),arm)
 MUSL_LD:=ld-musl-armhf.so.1
 KERNEL_HEADER_ARCH:=arm
