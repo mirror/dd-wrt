@@ -59,7 +59,7 @@ NO_DEBUG_MESSAGES = 1
 include $(TOP)/.config
 
 # the optimize option to be set for gcc
-OPTIMIZE = $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE
+OPTIMIZE = $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE $(LTO)
 
 ifeq ($(CONFIG_DIST),"micro")
 OPTIMIZE += -DNEED_NOPRINTF
@@ -139,7 +139,7 @@ SGW_POLICY_SCRIPT ?= sgw_policy_routing_setup.sh
 DOCDIR_OLSRD ?= $(DOCDIR)/$(EXENAME)
 
 
-CPPFLAGS  = -I$(TOPDIR)/src -I$(TOPDIR)/lib -I$(TOPDIR)/lib/pud/nmealib/include -I$(TOPDIR)/lib/pud/wireformat/include -D_GNU_SOURCE
+CPPFLAGS  = -I$(TOPDIR)/src -I$(TOPDIR)/lib -I$(TOPDIR)/lib/pud/nmealib/include -I$(TOPDIR)/lib/pud/wireformat/include -D_GNU_SOURCE $(LTO)
 
 # include OS specific compiler settings
 -include $(TOPDIR)/make/Makefile.$(OS).compiler
@@ -266,6 +266,7 @@ LDFLAGS +=	-Wl,-rpath,$(LIBDIR)
 endif
 # LDFLAGS for all 
 LDFLAGS +=	-Wl,--warn-common
+LDFLAGS +=	$(LDLTO)
 # See above at "-ffunction-sections" for an explanation (and why it is disabled).
 #LDOPTS +=	-Wl,--gc-sections
 #LDOPTS +=	-Wl,--print-gc-sections
