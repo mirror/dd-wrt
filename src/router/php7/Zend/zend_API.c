@@ -29,6 +29,7 @@
 #include "zend_exceptions.h"
 #include "zend_closures.h"
 #include "zend_inheritance.h"
+#include "zend_ini.h"
 
 #include <stdarg.h>
 
@@ -2562,6 +2563,12 @@ void module_destructor(zend_module_entry *module) /* {{{ */
 		module->module_shutdown_func(module->type, module->module_number);
 	}
 
+	if (module->module_started
+	 && !module->module_shutdown_func
+	 && module->type == MODULE_TEMPORARY) {
+		zend_unregister_ini_entries(module->module_number);
+	}
+
 	/* Deinitilaise module globals */
 	if (module->globals_size) {
 #ifdef ZTS
@@ -3117,11 +3124,13 @@ static zend_always_inline int zend_is_callable_check_func(int check_flags, zval 
 		     ((fcc->object && fcc->calling_scope->__call) ||
 		      (!fcc->object && fcc->calling_scope->__callstatic)))) {
 			scope = zend_get_executed_scope();
-			if (fcc->function_handler->common.scope != scope
-			 || !zend_check_protected(zend_get_function_root_class(fcc->function_handler), scope)) {
-				retval = 0;
-				fcc->function_handler = NULL;
-				goto get_function_via_handler;
+			if (fcc->function_handler->common.scope != scope) {
+				if ((fcc->function_handler->common.fn_flags & ZEND_ACC_PRIVATE)
+				 || !zend_check_protected(zend_get_function_root_class(fcc->function_handler), scope)) {
+					retval = 0;
+					fcc->function_handler = NULL;
+					goto get_function_via_handler;
+				}
 			}
 		}
 	} else {
@@ -4205,6 +4214,12 @@ ZEND_API int zend_update_static_property_ex(zend_class_entry *scope, zend_string
 	zval *property, tmp;
 	zend_property_info *prop_info;
 	zend_class_entry *old_scope = EG(fake_scope);
+
+	if (UNEXPECTED(!(scope->ce_flags & ZEND_ACC_CONSTANTS_UPDATED))) {
+		if (UNEXPECTED(zend_update_class_constants(scope)) != SUCCESS) {
+			return FAILURE;
+		}
+	}
 
 	EG(fake_scope) = scope;
 	property = zend_std_get_static_property_with_info(scope, name, BP_VAR_W, &prop_info);

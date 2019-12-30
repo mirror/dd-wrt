@@ -1199,14 +1199,14 @@ PHPAPI void php_implode(const zend_string *glue, zval *pieces, zval *return_valu
 		RETURN_EMPTY_STRING();
 	} else if (numelems == 1) {
 		/* loop to search the first not undefined element... */
-		ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(pieces), tmp) {
+		ZEND_HASH_FOREACH_VAL_IND(Z_ARRVAL_P(pieces), tmp) {
 			RETURN_STR(zval_get_string(tmp));
 		} ZEND_HASH_FOREACH_END();
 	}
 
 	ptr = strings = do_alloca((sizeof(*strings)) * numelems, use_heap);
 
-	ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(pieces), tmp) {
+	ZEND_HASH_FOREACH_VAL_IND(Z_ARRVAL_P(pieces), tmp) {
 		if (EXPECTED(Z_TYPE_P(tmp) == IS_STRING)) {
 			ptr->str = Z_STR_P(tmp);
 			len += ZSTR_LEN(ptr->str);
@@ -5118,7 +5118,7 @@ int php_tag_find(char *tag, size_t len, const char *set) {
 					if (state == 0) {
 						state=1;
 					}
-					if (c != '/') {
+					if (c != '/' || (*(t-1) != '<' && *(t+1) != '>')) {
 						*(n++) = c;
 					}
 				} else {
