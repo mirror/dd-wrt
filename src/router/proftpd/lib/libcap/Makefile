@@ -37,7 +37,7 @@ cap_names.sed: Makefile /usr/include/linux/capability.h
 #	@sed -ne '/^#define[ \t]CAP[_A-Z]\+[ \t]\+[0-9]\+/{s/^#define CAP_\([^ \t]*\)[ \t]*\([^ \t]*\)/  \{ \2, \"\1\" \},/;y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;p;}' < /usr/include/linux/capability.h | fgrep -v 0x > cap_names.sed
 
 $(LIBNAME): $(OBJS)
-	ar rcu $@ $(OBJS)
+	ar rcu $@ $(OBJS) $(LTOPLUGIN)
 
 %.o: %.c $(INCLS)
 	$(CC) $(CFLAGS) -c $< -o $@
