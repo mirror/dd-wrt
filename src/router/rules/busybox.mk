@@ -594,8 +594,14 @@ ifeq ($(CONFIG_OPENDPI),y)
 endif
 	echo "# CONFIG_FEATURE_SYSLOG_INFO is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_SH_MATH_BASE is not set" >> busybox/.config
-	echo "# CONFIG_FEATURE_TFTP_HPA_COMPAT is not set" >> busybox/.config
 	echo "# CONFIG_TS is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_TFTP_HPA_COMPAT is not set" >> busybox/.config
+ifeq ($(CONFIG_OPENSSL),y)
+	sed -i 's/\# CONFIG_FEATURE_WGET_HTTPS is not set/CONFIG_FEATURE_WGET_HTTPS=y/g' busybox/.config
+	sed -i 's/\# CONFIG_SSL_CLIENT is not set/CONFIG_SSL_CLIENT=y/g' busybox/.config
+	echo "# CONFIG_FEATURE_TLS_SHA1 is not set" >> busybox/.config
+endif
+
 	cd busybox && make oldconfig
 	
 	-$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
