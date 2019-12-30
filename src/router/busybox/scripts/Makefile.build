@@ -258,7 +258,7 @@ quiet_cmd_link_o_target = LD      $@
 # -nostdlib is added to make "make LD=gcc ..." work (some people use that)
 cmd_link_o_target = $(if $(strip $(obj-y)),\
 		$(LD) -nostdlib $(ld_flags) -r -o $@ $(filter $(obj-y), $^),\
-		rm -f $@; $(AR) rcs $@)
+		rm -f $@; $(AR) rcs $@ $(LTOPLUGIN))
 
 $(builtin-target): $(obj-y) FORCE
 	$(call if_changed,link_o_target)
@@ -271,7 +271,7 @@ endif # builtin-target
 #
 ifdef lib-target
 quiet_cmd_link_l_target = AR      $@
-cmd_link_l_target = rm -f $@; $(AR) $(EXTRA_ARFLAGS) rcs $@ $(lib-y)
+cmd_link_l_target = rm -f $@; $(AR) $(EXTRA_ARFLAGS) rcs $@ $(lib-y) $(LTOPLUGIN)
 
 $(lib-target): $(lib-y) FORCE
 	$(call if_changed,link_l_target)

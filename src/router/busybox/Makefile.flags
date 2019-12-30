@@ -33,6 +33,8 @@ CFLAGS += $(call cc-option,-Wmissing-prototypes -Wmissing-declarations,)
 CFLAGS += $(call cc-option,-Wno-format-security,)
 # warn about C99 declaration after statement
 CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
+CFLAGS += $(LTO)
+LDFLAGS += $(LDLTO)
 # If you want to add more -Wsomething above, make sure that it is
 # still possible to build bbox without warnings.
 
@@ -182,6 +184,9 @@ endif
 CFLAGS += -DNEED_PRINTF
 CFLAGS += $(COPTS)
 CFLAGS += $(MIPS16_OPT) 
+
+#CFLAGS += -flto 
+#LDFLAGS += -flto=jobserver -fuse-linker-plugin
 # If a flat binary should be built, CFLAGS_busybox="-elf2flt"
 # env var should be set for make invocation.
 # Here we check whether CFLAGS_busybox indeed contains that flag.
