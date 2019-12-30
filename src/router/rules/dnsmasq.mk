@@ -3,7 +3,7 @@ export DNSMASQ_MAKEFLAGS:=-DNO_IPV6
 endif
 
 
-DNSMASQ_COPTS += $(MIPS16_OPT) -DNO_AUTH
+DNSMASQ_COPTS += $(MIPS16_OPT) -DNO_AUTH $(LTO)
 ifeq ($(ARCH),armeb)
 DNSMASQ_COPTS += -DNEED_PRINTF
 endif
@@ -50,7 +50,7 @@ else
 endif
 endif
 endif
-	$(MAKE) -j 4 -C dnsmasq/contrib/lease-tools CFLAGS="$(COPTS) $(DNSMASQ_COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	$(MAKE) -j 4 -C dnsmasq/contrib/lease-tools CFLAGS="$(COPTS) $(DNSMASQ_COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO)"
 
 dnsmasq-install:
 	install -D dnsmasq/contrib/wrt/lease_update.sh $(INSTALLDIR)/dnsmasq/etc/lease_update.sh
