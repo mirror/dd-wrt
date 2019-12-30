@@ -28,8 +28,8 @@ libltdl: dummy
 	cd libltdl/ && $(MAKE)
 
 libsupp.a: $(LIB_OBJS)
-	$(AR) rc libsupp.a $(LIB_OBJS)
-	$(RANLIB) libsupp.a
+	$(AR) rc libsupp.a $(LIB_OBJS) $(LTOPLUGIN)
+	$(RANLIB) libsupp.a $(LTOPLUGIN)
 
 lib: libsupp.a $(LIB_DEPS)
 
