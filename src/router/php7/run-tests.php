@@ -25,7 +25,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 07e3d2d797d0ba0e5064450e08479a25d439999f $ */
+/* $Id: a6a9b2ae8242f5502b362c62fb815c2d869e6284 $ */
 
 /* Let there be no top-level code beyond this point:
  * Only functions and classes, thanks!
@@ -260,6 +260,7 @@ NO_PROC_OPEN_ERROR;
 		'opcache.file_update_protection=0',
 		'opcache.revalidate_freq=0',
 		'zend.assertions=1',
+		'zend.exception_ignore_args=0',
 	);
 
 	$no_file_cache = '-d opcache.file_cache= -d opcache.file_cache_only=0';
@@ -520,7 +521,7 @@ NO_PROC_OPEN_ERROR;
 					$html_output = is_resource($html_file);
 					break;
 				case '--version':
-					echo '$Id: 07e3d2d797d0ba0e5064450e08479a25d439999f $' . "\n";
+					echo '$Id: a6a9b2ae8242f5502b362c62fb815c2d869e6284 $' . "\n";
 					exit(1);
 
 				default:

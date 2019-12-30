@@ -3389,6 +3389,13 @@ static void get_unlinked_dependency(zend_class_entry *ce, const char **kind, con
 			*name = ZSTR_VAL(ce->parent_name);
 			return;
 		}
+#ifdef ZEND_WIN32
+		if (p->type == ZEND_INTERNAL_CLASS) {
+			*kind = "Windows can't link to internal parent ";
+			*name = ZSTR_VAL(ce->parent_name);
+			return;
+		}
+#endif
 		if (!(p->ce_flags & ZEND_ACC_CONSTANTS_UPDATED)) {
 			*kind = "Parent with unresolved initializers ";
 			*name = ZSTR_VAL(ce->parent_name);
@@ -3843,6 +3850,109 @@ static void preload_link(void)
 	} ZEND_HASH_FOREACH_END();
 }
 
+#ifdef ZEND_WIN32
+static void preload_check_windows_restriction(zend_class_entry *scope, zend_class_entry *ce) {
+	if (ce && ce->type == ZEND_INTERNAL_CLASS) {
+		zend_error_noreturn(E_ERROR,
+			"Class %s uses internal class %s during preloading, which is not supported on Windows",
+			ZSTR_VAL(scope->name), ZSTR_VAL(ce->name));
+	}
+}
+
+static void preload_check_windows_restrictions(zend_class_entry *scope) {
+	uint32_t i;
+
+	preload_check_windows_restriction(scope, scope->parent);
+
+	for (i = 0; i < scope->num_interfaces; i++) {
+		preload_check_windows_restriction(scope, scope->interfaces[i]);
+	}
+}
+#endif
+
+static inline int preload_update_class_constants(zend_class_entry *ce) {
+	/* This is a separate function to work around what appears to be a bug in GCC
+	 * maybe-uninitialized analysis. */
+	int result;
+	zend_try {
+		result = zend_update_class_constants(ce);
+	} zend_catch {
+		result = FAILURE;
+	} zend_end_try();
+	return result;
+}
+
+static zend_class_entry *preload_load_prop_type(zend_property_info *prop, zend_string *name) {
+	zend_class_entry *ce;
+	if (zend_string_equals_literal_ci(name, "self")) {
+		ce = prop->ce;
+	} else if (zend_string_equals_literal_ci(name, "parent")) {
+		ce = prop->ce->parent;
+	} else {
+		ce = zend_lookup_class(name);
+	}
+	if (ce) {
+		return ce;
+	}
+
+	zend_error_noreturn(E_ERROR,
+		"Failed to load class %s used by typed property %s::$%s during preloading",
+		ZSTR_VAL(name), ZSTR_VAL(prop->ce->name), zend_get_unmangled_property_name(prop->name));
+	return ce;
+}
+
+static void preload_ensure_classes_loadable() {
+	/* Run this in a loop, because additional classes may be loaded while updating constants etc. */
+	uint32_t checked_classes_idx = 0;
+	while (1) {
+		zend_class_entry *ce;
+		uint32_t num_classes = zend_hash_num_elements(EG(class_table));
+		if (num_classes == checked_classes_idx) {
+			return;
+		}
+
+		ZEND_HASH_REVERSE_FOREACH_PTR(EG(class_table), ce) {
+			if (ce->type == ZEND_INTERNAL_CLASS || _idx == checked_classes_idx) {
+				break;
+			}
+
+			if (!(ce->ce_flags & ZEND_ACC_LINKED)) {
+				/* Only require that already linked classes are loadable, we'll properly check
+				 * things when linking additional classes. */
+				continue;
+			}
+
+#ifdef ZEND_WIN32
+			preload_check_windows_restrictions(ce);
+#endif
+
+			if (!(ce->ce_flags & ZEND_ACC_CONSTANTS_UPDATED)) {
+				if (preload_update_class_constants(ce) == FAILURE) {
+					zend_error_noreturn(E_ERROR,
+						"Failed to resolve initializers of class %s during preloading",
+						ZSTR_VAL(ce->name));
+				}
+				ZEND_ASSERT(ce->ce_flags & ZEND_ACC_CONSTANTS_UPDATED);
+			}
+
+			if (!(ce->ce_flags & ZEND_ACC_PROPERTY_TYPES_RESOLVED)) {
+				if (ce->ce_flags & ZEND_ACC_HAS_TYPE_HINTS) {
+					zend_property_info *prop;
+					ZEND_HASH_FOREACH_PTR(&ce->properties_info, prop) {
+						if (ZEND_TYPE_IS_NAME(prop->type)) {
+							zend_class_entry *ce =
+								preload_load_prop_type(prop, ZEND_TYPE_NAME(prop->type));
+							prop->type = ZEND_TYPE_ENCODE_CE(ce, ZEND_TYPE_ALLOW_NULL(prop->type));
+						}
+					} ZEND_HASH_FOREACH_END();
+				}
+				ce->ce_flags |= ZEND_ACC_PROPERTY_TYPES_RESOLVED;
+			}
+		} ZEND_HASH_FOREACH_END();
+		checked_classes_idx = num_classes;
+	}
+}
+
 static zend_string *preload_resolve_path(zend_string *filename)
 {
 	if (is_stream_path(ZSTR_VAL(filename))) {
@@ -4197,6 +4307,10 @@ static int accel_preload(const char *config)
 		} else {
 			CG(unclean_shutdown) = 1;
 			ret = FAILURE;
+		}
+
+		if (ret == SUCCESS) {
+			preload_ensure_classes_loadable();
 		}
 	} zend_catch {
 		ret = FAILURE;
