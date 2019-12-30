@@ -14,7 +14,7 @@
 #CFLAGS = -Wall -g -Os -D_GNU_SOURCE
 
 LDFLAGS+= -Wl,--gc-sections
-CFLAGS = -Wall $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DHAVE_LIBAVUTIL_AVUTIL_H -DHAVE_LIBAVCODEC_AVCODEC_H -DHAVE_LIBAVFORMAT_AVFORMAT_H -DHAVE_VORBISFILE -DNEED_OGG\
+CFLAGS = -Wall $(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DHAVE_LIBAVUTIL_AVUTIL_H -DHAVE_LIBAVCODEC_AVCODEC_H -DHAVE_LIBAVFORMAT_AVFORMAT_H -DHAVE_VORBISFILE -DNEED_OGG\
          -I$(MINI_DLNA_PATH)/ffmpeg-3.1 \
          -I$(MINI_DLNA_PATH)/ffmpeg-3.1/libavcodec \
          -I$(MINI_DLNA_PATH)/ffmpeg-3.1/libavformat \
@@ -88,7 +88,7 @@ install-conf:
 
 minidlna: $(BASEOBJS) $(LNXOBJS)
 	@echo Linking $@
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(BASEOBJS) $(LNXOBJS) -Wl,--rpath -Wl,$(MINI_DLNA_PATH)/lib/ $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LDLTO) -o $@ $(BASEOBJS) $(LNXOBJS) -Wl,--rpath -Wl,$(MINI_DLNA_PATH)/lib/ $(LIBS)
 #	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(BASEOBJS) $(LNXOBJS)  -Wl,--rpath -Wl,$(MINI_DLNA_PATH)/lib/ $(LIBS)
 
 
