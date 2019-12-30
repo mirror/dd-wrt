@@ -1713,7 +1713,7 @@ wpa_supplicant_multi.a: .config $(BCHECK) $(OBJS) $(EXTRA_progs)
 	$(Q)$(CC) -c -o wpa_supplicant_multi.o -Dmain=wpa_supplicant_main $(CFLAGS) main.c
 	@$(E) "  CC " $<
 	@rm -f $@
-	@$(AR) cr $@ wpa_supplicant_multi.o $(OBJS)
+	@$(AR) cr $@ wpa_supplicant_multi.o $(OBJS) $(LTOPLUGIN)
 
 wpa_supplicant: $(BCHECK) $(OBJS) $(EXTRA_progs)
 	$(Q)$(LDO) $(LDFLAGS) -o wpa_supplicant $(OBJS) $(LIBS) $(EXTRALIBS)
