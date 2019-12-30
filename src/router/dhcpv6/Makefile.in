@@ -75,7 +75,7 @@ CLEANFILES+=	y.tab.h
 
 all:	$(TARGET)
 multicall:	$(CLIENTOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o multicall $(CLIENTOBJS) $(LIBOBJS) $(LIBS)
+	$(CC) $(LDFLAGS) -o multicall $(CLIENTOBJS) $(LIBOBJS) $(LIBS) $(LDLTO)
 dhcp6relay: $(RELAYOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RELAYOBJS) $(LIBOBJS) $(LIBS)
 dhcp6ctl: $(CTLOBJS)
