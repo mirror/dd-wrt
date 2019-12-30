@@ -54,7 +54,7 @@ CONFIGURE_ARGS_SMB += \
 	--with-shared-modules=pdb_tdbsam,pdb_wbc_sam,idmap_nss,nss_info_template,auth_winbind,auth_wbc,auth_domain
 
 samba3-preconfigure:
-	if ! test -e "samba36/source3/Makefile"; then	cd samba36/source3 && ./configure $(CONFIGURE_VARS) $(CONFIGURE_ARGS_SMB) CFLAGS="$(COPTS) -DMAX_DEBUG_LEVEL=-1  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)" LDFLAGS="$(COPTS) -DMAX_DEBUG_LEVEL=-1  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)"; fi
+	if ! test -e "samba36/source3/Makefile"; then	cd samba36/source3 && ./configure $(CONFIGURE_VARS) $(CONFIGURE_ARGS_SMB) CFLAGS="$(COPTS) $(LTO) -DMAX_DEBUG_LEVEL=-1  -ffunction-sections -fdata-sections -Wl,--gc-sections $(SAMBA3_EXTRA)" LDFLAGS="$(COPTS) $(LDLTO) -DMAX_DEBUG_LEVEL=-1  -ffunction-sections -fdata-sections -Wl,--gc-sections $(SAMBA3_EXTRA)"; fi
 
 samba3-configure: samba3-delete samba3-preconfigure
 	touch samba36/librpc/idl/*
@@ -64,7 +64,11 @@ samba3-delete:
 	rm -f samba36/source3/Makefile
 
 samba3: samba3-preconfigure
-	$(MAKE) -C samba36/source3 all WITH_LFS=yes DYNEXP= PICFLAG= MODULES= 
+	$(MAKE) -C samba36/source3 bin/libtalloc.a WITH_LFS=yes DYNEXP= PICFLAG= MODULES= 
+	$(MAKE) -C samba36/source3 bin/libtdb.a WITH_LFS=yes DYNEXP= PICFLAG= MODULES= 
+	$(MAKE) -C samba36/source3 bin/libtevent.a WITH_LFS=yes DYNEXP= PICFLAG= MODULES= 
+	$(MAKE) -C samba36/source3 bin/libwbclient.a WITH_LFS=yes DYNEXP= PICFLAG= MODULES= 
+	$(MAKE) -C samba36/source3 bin/samba_multicall WITH_LFS=yes DYNEXP= PICFLAG= MODULES= 
 
 
 
