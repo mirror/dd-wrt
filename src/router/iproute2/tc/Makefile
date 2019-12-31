@@ -104,7 +104,7 @@ LDLIBS += -L. -ltc -lm -ldl
 LDFLAGS += -Wl,-export-dynamic
 
 %.so: %.c
-	$(CC) $(CFLAGS) -shared -fpic $< -o $@
+	$(CC) $(CFLAGS) $(LDLTO) -shared -fpic $< -o $@
 
 
 all: libtc.a tc $(TCSO)
@@ -112,7 +112,7 @@ all: libtc.a tc $(TCSO)
 tc: $(TCOBJ) $(LIBNETLINK) $(LIBUTIL) $(TCLIB)
 
 libtc.a: $(TCLIB)
-	$(AR) rcs $@ $(TCLIB)
+	$(AR) rcs $@ $(TCLIB) $(LTOPLUGIN)
 
 install: all
 	mkdir -p $(DESTDIR)/usr/lib/tc
