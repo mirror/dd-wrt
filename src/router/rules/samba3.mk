@@ -69,6 +69,7 @@ samba3: samba3-preconfigure
 	$(MAKE) -C samba36/source3 bin/libtevent.a WITH_LFS=yes DYNEXP= PICFLAG= MODULES= 
 	$(MAKE) -C samba36/source3 bin/libwbclient.a WITH_LFS=yes DYNEXP= PICFLAG= MODULES= 
 	$(MAKE) -C samba36/source3 bin/samba_multicall WITH_LFS=yes DYNEXP= PICFLAG= MODULES= 
+	$(MAKE) -C samba36/source3 bin/smbpasswd WITH_LFS=yes DYNEXP= PICFLAG= MODULES= 
 
 
 
