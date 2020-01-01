@@ -3234,7 +3234,7 @@ void kfree_call_rcu(struct rcu_head *head,
 {
 	__call_rcu(head, func, rcu_state_p, -1, 1);
 }
-EXPORT_SYMBOL_GPL(kfree_call_rcu);
+EXPORT_SYMBOL(kfree_call_rcu);
 
 /*
  * Because a context switch is a grace period for RCU-sched and RCU-bh,
