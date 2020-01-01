@@ -5,15 +5,15 @@ libsodium-clean:
 	make -C libsodium clean
 	
 libsodium-configure:
-	cd libsodium && ./configure --host=$(ARCH)-linux-uclibc  \
+	cd libsodium && ./autogen.sh && ./configure --host=$(ARCH)-linux-uclibc  \
 	--disable-ssp \
 	--disable-shared \
 	--enable-static \
 	--enable-minimal \
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(LDLTO) $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections  -fPIC -v -Wl,--verbose" \
+	CFLAGS="$(LTO) -fno-fat-lto-objects -fno-devirtualize $(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -fno-fat-lto-objects -fno-devirtualize  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(LDLTO) $(COPTS) $(MIPS16_OPT) -fno-fat-lto-objects -fno-devirtualize -ffunction-sections -fdata-sections -Wl,--gc-sections  -fPIC -v -Wl,--verbose" \
 	AR_FLAGS="cru $(LTOPLUGIN)" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 	make -C libsodium
@@ -28,9 +28,9 @@ dnscrypt-configure: libsodium-configure
 	cd dnscrypt && ./autogen.sh && \
 	./configure --host=$(ARCH)-linux --prefix=/usr \
 	$(DNSCRYPT_CONFIGURE_ARGS) \
-	CFLAGS="-fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/libsodium/src/libsodium/include/ -I$(TOP)/gmp -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/libsodium/src/libsodium/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="-L$(TOP)/libsodium/src/libsodium/.libs $(LDFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CFLAGS="-fPIC -DNEED_PRINTF -fno-fat-lto-objects -fno-devirtualize $(COPTS) $(MIPS16_OPT) -I$(TOP)/libsodium/src/libsodium/include/ -I$(TOP)/gmp -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -fno-fat-lto-objects -fno-devirtualize -I$(TOP)/libsodium/src/libsodium/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="-L$(TOP)/libsodium/src/libsodium/.libs -fno-fat-lto-objects -fno-devirtualize $(LDFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	AR_FLAGS="cru $(LTOPLUGIN)" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
