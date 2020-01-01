@@ -2921,16 +2921,6 @@ void start_firewall(void)
 	 */
 	cprintf("Exec RC Filewall\n");
 	int runfw = 0;
-	if (nvram_match("wshaper_dev", "WAN")
-	    && (nvram_match("wan_proto", "disabled")
-		|| client_bridged_enabled()))
-		runfw = 1;
-
-	if (!nvram_matchi("wshaper_enable", 1)) {
-		runfw = 1;
-	}
-
-	if (runfw) {
 #ifdef HAVE_REGISTER
 #ifndef HAVE_ERC
 		if (isregistered_real())
@@ -2944,7 +2934,6 @@ void start_firewall(void)
 				system("/tmp/.rc_firewall");
 			}
 		}
-	}
 	cprintf("Ready\n");
 	/*
 	 * end Sveasoft add 
