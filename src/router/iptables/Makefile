@@ -24,7 +24,7 @@ LIBDIR:=$(PREFIX)/lib
 BINDIR:=$(PREFIX)/sbin
 MANDIR:=$(PREFIX)/man
 INCDIR:=$(PREFIX)/include
-
+ARFLAGS=rv $(LTOPLUGIN)
 # directory for new iptables releases
 RELEASE_DIR:=/tmp
 

@@ -110,10 +110,10 @@ endif
 
 ifdef NO_SHARED_LIBS
 extensions/libext.a: $(EXT_OBJS)
-	rm -f $@; ar crv $@ $(EXT_OBJS)
+	rm -f $@; ar crv $@ $(EXT_OBJS) $(LTOPLUGIN)
 
 extensions/libext6.a: $(EXT6_OBJS)
-	rm -f $@; ar crv $@ $(EXT6_OBJS)
+	rm -f $@; ar crv $@ $(EXT6_OBJS) $(LTOPLUGIN)
 
 extensions/initext.o: extensions/initext.c
 extensions/initext6.o: extensions/initext6.c
