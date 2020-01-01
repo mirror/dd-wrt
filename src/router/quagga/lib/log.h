@@ -98,30 +98,20 @@ struct message
 /* Default logging strucutre. */
 extern struct zlog *zlog_default;
 
-#ifdef NEED_PRINTF
-
 /* Open zlog function */
 extern struct zlog *openzlog (const char *progname, zlog_proto_t protocol,
 		              int syslog_options, int syslog_facility);
 
 /* Close zlog function. */
 extern void closezlog (struct zlog *zl);
-#else
 
-#define openzlog(progname, protocol,syslog_options,syslog_facility) 0
-
-/* Close zlog function. */
-#define closezlog(zl) do {   } while(0)
-
-
-#endif
 /* GCC have printf type attribute check.  */
 #ifdef __GNUC__
 #define PRINTF_ATTRIBUTE(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #else
 #define PRINTF_ATTRIBUTE(a,b)
 #endif /* __GNUC__ */
-#ifdef NEED_PRINTF
+
 /* Generic function for zlog. */
 extern void zlog (struct zlog *zl, int priority, const char *format, ...)
   PRINTF_ATTRIBUTE(3, 4);
@@ -160,55 +150,15 @@ extern int zlog_reset_file (struct zlog *zl);
 
 /* Rotate log. */
 extern int zlog_rotate (struct zlog *);
-#else
-/* Generic function for zlog. */
-#define zlog(zl, priority, fmt, ...) do {   } while(0)
 
-/* Handy zlog functions. */
-#define zlog_err(fmt , ...) do {   } while(0)
-#define zlog_warn(fmt , ...) do {   } while(0)
-#define zlog_info(fmt , ...) do {   } while(0)
-#define zlog_notice(fmt , ...) do {   } while(0)
-#define zlog_debug(fmt , ...) do {   } while(0)
-
-/* For bgpd's peer oriented log. */
-#define  plog_err(zlog ,fmt , ...)do {   } while(0)
-#define  plog_warn(zlog ,fmt , ...)do {   } while(0)
-#define  plog_info(zlog ,fmt , ...)do {   } while(0)
-#define  plog_notice(zlog ,fmt , ...)do {   } while(0)
-#define  plog_debug(zlog ,fmt , ...)do {   } while(0)
-
-#define  zlog_thread_info(log_level)
-
-/* Set logging level for the given destination.  If the log_level
-   argument is ZLOG_DISABLED, then the destination is disabled.
-   This function should not be used for file logging (use zlog_set_file
-   or zlog_reset_file instead). */
-#define  zlog_set_level(zl, zlog_dest_t, log_level)do {   } while(0)
-
-/* Set logging to the given filename at the specified level. */
-#define zlog_set_file(zl, filename, log_level) 1
-/* Disable file logging. */
-#define zlog_reset_file(zl)do {   } while(0)
-
-/* Rotate log. */
-#define zlog_rotate(zl)do {   } while(0)
-
-
-#endif
 /* For hackey message lookup and check */
 #define LOOKUP_DEF(x, y, def) mes_lookup(x, x ## _max, y, def, #x)
 #define LOOKUP(x, y) LOOKUP_DEF(x, y, "(no item found)")
 
-#ifdef NEED_PRINTF
 extern const char *lookup (const struct message *, int);
 extern const char *mes_lookup (const struct message *meslist, 
                                int max, int index,
                                const char *no_item, const char *mesname);
-#else
-#define lookup(message, i) NULL
-#define mes_lookup(meslist, max, index,no_item, mesname) NULL
-#endif
 
 extern const char *zlog_priority[];
 extern const char *zlog_proto_names[];
@@ -216,7 +166,6 @@ extern const char *zlog_proto_names[];
 /* Safe version of strerror -- never returns NULL. */
 extern const char *safe_strerror(int errnum);
 
-#ifdef NEED_PRINTF
 /* To be called when a fatal signal is caught. */
 extern void zlog_signal(int signo, const char *action
 #ifdef SA_SIGINFO
@@ -232,25 +181,7 @@ extern void zlog_backtrace(int priority);
    up the state of zlog file pointers.  If program_counter is non-NULL,
    that is logged in addition to the current backtrace. */
 extern void zlog_backtrace_sigsafe(int priority, void *program_counter);
-#else
 
-#ifdef SA_SIGINFO \
-
-#define  zlog_signal(isigno, action, siginfo, program_counter) do {   } while(0) 
-#else
-#define  zlog_signal(isigno, action) do {   } while(0) 
-
-#endif
-/* Log a backtrace. */
-#define zlog_backtrace(priority)do {   } while(0)
-
-/* Log a backtrace, but in an async-signal-safe way.  Should not be
-   called unless the program is about to exit or abort, since it messes
-   up the state of zlog file pointers.  If program_counter is non-NULL,
-   that is logged in addition to the current backtrace. */
-#define zlog_backtrace_sigsafe(priority, program_counter)do {   } while(0)
-
-#endif
 /* Puts a current timestamp in buf and returns the number of characters
    written (not including the terminating NUL).  The purpose of
    this function is to avoid calls to localtime appearing all over the code.

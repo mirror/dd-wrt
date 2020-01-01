@@ -1,4 +1,3 @@
-
 /*
  * Logging of zebra
  * Copyright (C) 1997, 1998, 1999 Kunihiro Ishiguro
@@ -35,10 +34,10 @@
 #ifdef HAVE_UCONTEXT_H
 #include <ucontext.h>
 #endif
-struct zlog *zlog_default = NULL;
 
 static int logfile_fd = -1;	/* Used in signal handler. */
 
+struct zlog *zlog_default = NULL;
 
 const char *zlog_proto_names[] = 
 {
@@ -71,6 +70,7 @@ const char *zlog_priority[] =
   NULL,
 };
   
+
 
 /* For time string format. */
 
@@ -134,7 +134,7 @@ quagga_timestamp(int timestamp_precision, char *buf, size_t buflen)
     buf[0] = '\0';
   return 0;
 }
-#ifdef NEED_PRINTF
+
 /* Utility routine for current time printing. */
 static void
 time_print(FILE *fp, struct timestamp_control *ctl)
@@ -863,8 +863,14 @@ mes_lookup (const struct message *meslist, int max, int index,
   return none;
 }
 
+/* Wrapper around strerror to handle case where it returns NULL. */
+const char *
+safe_strerror(int errnum)
+{
+  const char *s = strerror(errnum);
+  return (s != NULL) ? s : "Unknown error";
+}
 
-#endif
 #define DESC_ENTRY(T) [(T)] = { (T), (#T), '\0' }
 static const struct zebra_desc_table command_types[] = {
   DESC_ENTRY	(ZEBRA_INTERFACE_ADD),
@@ -956,6 +962,7 @@ proto_name2num(const char *s)
        return route_types[i].type;
    return -1;
 }
+
 int
 proto_redistnum(int afi, const char *s)
 {
@@ -972,19 +979,13 @@ proto_redistnum(int afi, const char *s)
 	return ZEBRA_ROUTE_STATIC;
       else if (strncmp (s, "r", 1) == 0)
 	return ZEBRA_ROUTE_RIP;
-      else if (strncmp (s, "os", 2) == 0)
+      else if (strncmp (s, "o", 1) == 0)
 	return ZEBRA_ROUTE_OSPF;
       else if (strncmp (s, "i", 1) == 0)
 	return ZEBRA_ROUTE_ISIS;
       else if (strncmp (s, "bg", 2) == 0)
 	return ZEBRA_ROUTE_BGP;
-      else if (strncmp (s, "h", 1) == 0)
-	return ZEBRA_ROUTE_HSLS;
-      else if (strncmp (s, "ol", 2) == 0)
-	return ZEBRA_ROUTE_OLSR;
-      else if (strncmp (s, "bat", 3) == 0)
-	return ZEBRA_ROUTE_BATMAN;
-      else if (strncmp (s, "bab", 3) == 0)
+      else if (strncmp (s, "ba", 2) == 0)
 	return ZEBRA_ROUTE_BABEL;
       else if (strncmp (s, "n", 1) == 0)
 	return ZEBRA_ROUTE_NHRP;
@@ -999,26 +1000,19 @@ proto_redistnum(int afi, const char *s)
 	return ZEBRA_ROUTE_STATIC;
       else if (strncmp (s, "r", 1) == 0)
 	return ZEBRA_ROUTE_RIPNG;
-      else if (strncmp (s, "os", 2) == 0)
+      else if (strncmp (s, "o", 1) == 0)
 	return ZEBRA_ROUTE_OSPF6;
       else if (strncmp (s, "i", 1) == 0)
 	return ZEBRA_ROUTE_ISIS;
       else if (strncmp (s, "bg", 2) == 0)
 	return ZEBRA_ROUTE_BGP;
-      else if (strncmp (s, "h", 1) == 0)
-	return ZEBRA_ROUTE_HSLS;
-      else if (strncmp (s, "ol", 2) == 0)
-	return ZEBRA_ROUTE_OLSR;
-      else if (strncmp (s, "bat", 3) == 0)
-	return ZEBRA_ROUTE_BATMAN;
-      else if (strncmp (s, "bab", 3) == 0)
+      else if (strncmp (s, "ba", 2) == 0)
 	return ZEBRA_ROUTE_BABEL;
       else if (strncmp (s, "n", 1) == 0)
 	return ZEBRA_ROUTE_NHRP;
     }
   return -1;
 }
-#ifdef NEED_PRINTF
 
 void
 zlog_hexdump (void *mem, unsigned int len) {
@@ -1060,14 +1054,4 @@ zlog_hexdump (void *mem, unsigned int len) {
         }
     }
     zlog_debug("\n%s", buf);
-}
-#endif
-
-
-/* Wrapper around strerror to handle case where it returns NULL. */
-const char *
-safe_strerror(int errnum)
-{
-  const char *s = strerror(errnum);
-  return (s != NULL) ? s : "Unknown error";
 }
