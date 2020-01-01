@@ -1,3 +1,32 @@
+== ChangeLog (CoovaChilli-v1.5) ==
+* Deal with the differing levels of support for 64 bit time_t by casting to long (#325)
+* Drop the incomplete support for Sun Solaris. (#326)
+* Use the md5 utility in scripts for checksums (#327)
+* Set empty argument sections of functions with void (#328 #330)
+* Switch from des_ to DES_ prefix functions. (#329)
+* dnslog is no longer an option
+* Fix indentation to indicate flow. (#331)
+* Debian packaging: missing dependencies and new changelog entry (#333)
+* Debian packaging: Updated compat and Standards-Version to current values (#333)
+* Debian packaging: Removed conffiles that are already auto-selected as such (#333)
+* Debian packaging: Turn python and python-gtk dependency into a Suggests (#333)
+* setsockopt() with TCP_NODELAY incorrectly used SOL_SOCKET protocol level (#364)
+* Fix TCP_NODELAY error. (#370)
+* Error Log set by debug option. (#371)
+* Fixed small typo in ChilliLibrary.js (#372)
+* setsockopt failed after last commit #368 (#374)
+* Fix build with ENABLE_SESSGARDEN but not HAVE_PATRICIA (#417)
+* Fix init script (#418)
+* Terminate if statement on a new line (#422)
+* Fix compile with musl (#445)
+* Change ifconfig to ip (#449)
+* Fix wrong RADIUS proxy reply socket (#483)
+* Fix compilation with --enable-redir and musl (#453)
+* Fix session handling on DHCP NAK packages (#486)
+* Fix macro expansion bug (#485)
+* Fix byte counting with xt_coova due to endian differences (#497)
+* Fix compilation without deprecated OpenSSL APIs (#498)
+
 == ChangeLog (CoovaChilli-v1.4) ==
 * input_packets and output_packets now exported for scripts to use. via #285
 * NetBSD now included in the BSD specific ifdef statements. via #289

@@ -58,12 +58,12 @@ kmod_coova_release(struct dhcp_conn_t *conn) {
 }
 
 int
-kmod_coova_clear() {
+kmod_coova_clear(void) {
   return kmod('/', 0);
 }
 
 int
-kmod_coova_sync() {
+kmod_coova_sync(void) {
   char file[128];
   char * line = 0;
   size_t len = 0;

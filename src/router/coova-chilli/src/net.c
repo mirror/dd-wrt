@@ -1082,9 +1082,6 @@ int net_route(struct in_addr *dst, struct in_addr *gateway,
   close(fd);
   return 0;
 
-#elif defined(__sun__)
-  syslog(LOG_ERR, "%s: Could not set up routing on Solaris. Please add route manually.", strerror(errno));
-  return 0;
 #else
 #error  "Unknown platform!"
 #endif

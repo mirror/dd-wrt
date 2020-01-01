@@ -303,6 +303,12 @@ int radius_pkt_send(struct radius_t *this,
       struct radius_packet_t *pack,
       struct sockaddr_in *peer);
 
+#ifdef ENABLE_RADPROXY
+int radius_pkt_send_proxy(struct radius_t *this,
+      struct radius_packet_t *pack,
+      struct sockaddr_in *peer);
+#endif
+
 /* Send of a request */
 int radius_req(struct radius_t *this,
 	       struct radius_packet_t *pack,

@@ -41,6 +41,7 @@ typedef struct {
 #include <openssl/ssl.h>
 #include <openssl/pem.h>
 #include <openssl/engine.h>
+#include <openssl/err.h>
 #elif HAVE_CYASSL
 #include <stdio.h>
 #include <stdlib.h>
