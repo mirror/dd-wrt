@@ -11,9 +11,11 @@ libsodium-configure:
 	--enable-static \
 	--enable-minimal \
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections  -fPIC -v -Wl,--verbose"
+	CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(LDLTO) $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections  -fPIC -v -Wl,--verbose" \
+	AR_FLAGS="cru $(LTOPLUGIN)" \
+	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 	make -C libsodium
 
 
