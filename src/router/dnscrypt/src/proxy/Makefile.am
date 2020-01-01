@@ -1,3 +1,5 @@
+AM_CFLAGS = $(LTO)
+AM_LDFLAGS = $(LDLTO)
 
 sbin_PROGRAMS = \
 	dnscrypt-proxy
