@@ -635,19 +635,16 @@ install_element (enum node_type ntype, struct cmd_element *cmd)
 	       ntype);
       exit (1);
     }
-#ifdef DEV_BUILD  
+
   if (hash_lookup (cnode->cmd_hash, cmd) != NULL)
     {
-#ifdef DEV_BUILD
       fprintf (stderr, 
                "Multiple command installs to node %d of command:\n%s\n",
                ntype, cmd->string);
-#endif
       return;
     }
   
   assert (hash_get (cnode->cmd_hash, cmd, hash_alloc_intern));
-#endif
   vector_set (cnode->cmd_vector, cmd);
   if (cmd->tokens == NULL)
     cmd->tokens = cmd_parse_format(cmd->string, cmd->doc);
