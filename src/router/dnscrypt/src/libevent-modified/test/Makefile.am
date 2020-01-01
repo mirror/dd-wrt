@@ -6,6 +6,9 @@
 
 AUTOMAKE_OPTIONS = foreign
 
+AM_CFLAGS = $(LTO)
+AM_LDFLAGS = $(LDLTO)
+
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/compat -I$(top_srcdir)/include -I../include -DTINYTEST_LOCAL
 
 EXTRA_DIST = regress.rpc regress.gen.h regress.gen.c rpcgen_wrapper.sh test.sh

@@ -6,6 +6,8 @@
 
 # 'foreign' means that we're not enforcing GNU package rules strictly.
 # '1.7' means that we need automake 1.7 or later (and we do).
+AM_CFLAGS = $(LTO)
+AM_LDFLAGS = $(LDLTO)
 AUTOMAKE_OPTIONS = foreign 1.7
 
 ACLOCAL_AMFLAGS = -I m4

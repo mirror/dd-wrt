@@ -1,3 +1,5 @@
+AM_CFLAGS = $(LTO)
+AM_LDFLAGS = $(LDLTO)
 
 pkglib_LTLIBRARIES = \
 	libdcplugin_example_ldns_blocking.la
