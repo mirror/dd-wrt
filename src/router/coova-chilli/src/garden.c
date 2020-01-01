@@ -74,13 +74,14 @@ int garden_print_appconn(struct app_conn_t *appconn, void *d) {
 		  inet_ntoa(appconn->hisip),
 		  appconn->s_params.pass_through_count,
 		  SESSION_PASS_THROUGH_MAX);
-    if (!safe_write(fd, line, strlen(line))) /* error */;
+    if (!safe_write(fd, line, strlen(line))) /* error */
+      ;
 #ifdef HAVE_PATRICIA
     if (appconn->ptree) {
       patricia_process(appconn->ptree, cb);
     } else
 #endif
-      garden_print_list(fd,
+    garden_print_list(fd,
 			appconn->s_params.pass_throughs,
 			appconn->s_params.pass_through_count);
   }
@@ -136,7 +137,8 @@ void garden_print(int fd) {
 		"authed garden (%d/%d):\n",
 		_options.num_authed_pass_throughs,
 		MAX_PASS_THROUGHS);
-  if (!safe_write(fd, line, strlen(line))) /* error */;
+  if (!safe_write(fd, line, strlen(line))) /* error */
+    ;
 
 #ifdef HAVE_PATRICIA
   if (dhcp->ptree_authed) {
@@ -320,7 +322,7 @@ void garden_patricia_load_list(patricia_tree_t **pptree,
     garden_patricia_add(&ptlist[i], ptree);
 }
 
-void garden_patricia_reload() {
+void garden_patricia_reload(void) {
   if (_options.patricia) {
     garden_patricia_load_list(&dhcp->ptree,
 			      _options.pass_throughs,
@@ -649,7 +651,7 @@ typedef struct uamdomain_regex_t {
 
 static uamdomain_regex * _list_head = 0;
 
-void garden_free_domainfile() {
+void garden_free_domainfile(void) {
   while (_list_head) {
     uamdomain_regex * n = _list_head;
     _list_head = _list_head->next;
@@ -658,7 +660,7 @@ void garden_free_domainfile() {
   }
 }
 
-void garden_load_domainfile() {
+void garden_load_domainfile(void) {
   garden_free_domainfile();
   if (!_options.uamdomainfile) return;
   else {

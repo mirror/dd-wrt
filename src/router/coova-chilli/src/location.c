@@ -509,7 +509,7 @@ void location_printlist(bstring s, char *loc, int json, int list) {
 
 #endif
 
-void location_init() {
+void location_init(void) {
 #ifdef HAVE_AVL
   struct app_conn_t *conn = firstusedconn;
   memset(&loc_search_tree, 0, sizeof(loc_search_tree));

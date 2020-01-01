@@ -102,12 +102,12 @@ int garden_patricia_check(patricia_tree_t *ptree,
 void garden_patricia_load_list(patricia_tree_t **pptree,
 			       pass_through *ptlist,
 			       uint32_t ptcnt);
-void garden_patricia_reload();
+void garden_patricia_reload(void);
 #endif
 
 #ifdef ENABLE_UAMDOMAINFILE
-void garden_load_domainfile();
-void garden_free_domainfile();
+void garden_load_domainfile(void);
+void garden_free_domainfile(void);
 int  garden_check_domainfile(char *question);
 #endif
 

@@ -506,14 +506,6 @@ int tun_addaddr(struct tun_t *this, struct in_addr *addr,
   this->addrs++;
   return 0;
 
-#elif defined (__sun__)
-
-  if (!this->addrs) /* Use ioctl for first addr to make ping work */
-    return tun_setaddr(this, addr, dstaddr, netmask);
-
-  syslog(LOG_ERR, "%s: Setting multiple addresses not possible on Solaris", strerror(errno));
-  return -1;
-
 #else
 #error  "Unknown platform!"
 #endif
@@ -539,12 +531,6 @@ int tuntap_interface(struct _net_interface *netif) {
   int devnum;
   struct ifaliasreq areq;
   int fd;
-
-#elif defined(__sun__)
-  int if_fd, ppa = -1;
-  static int ip_fd = 0;
-  int muxid;
-  struct ifreq ifr;
 
 #else
 #error  "Unknown platform!"
@@ -685,66 +671,6 @@ int tuntap_interface(struct _net_interface *netif) {
   while (ioctl(fd, SIOCDIFADDR, (void *) &areq) != -1);
 
   close(fd);
-  return 0;
-
-#elif defined(__sun__)
-
-  if ((ip_fd = open("/dev/udp", O_RDWR, 0)) < 0) {
-    syslog(LOG_ERR, "%s: Can't open /dev/udp", strerror(errno));
-    return -1;
-  }
-
-  if ((netif->fd = open("/dev/tun", O_RDWR, 0)) < 0) {
-    syslog(LOG_ERR, "%s: Can't open /dev/tun", strerror(errno));
-    return -1;
-  }
-
-  /* Assign a new PPA and get its unit number. */
-  if ((ppa = ioctl(netif->fd, TUNNEWPPA, -1)) < 0) {
-    syslog(LOG_ERR, "%s: Can't assign new interface", strerror(errno));
-    return -1;
-  }
-
-  if ((if_fd = open("/dev/tun", O_RDWR, 0)) < 0) {
-    syslog(LOG_ERR, "%s: Can't open /dev/tun (2)", strerror(errno));
-    return -1;
-  }
-
-  if (ioctl(if_fd, I_PUSH, "ip") < 0){
-    syslog(LOG_ERR, "%d Can't push IP module");
-    return -1;
-  }
-
-  /* Assign ppa according to the unit number returned by tun device */
-  if (ioctl(if_fd, IF_UNITSEL, (char *)&ppa) < 0) {
-    syslog(LOG_ERR, "%d Can't set PPA %d", ppa);
-    return -1;
-  }
-
-  /* Link the two streams */
-  if ((muxid = ioctl(ip_fd, I_LINK, if_fd)) < 0) {
-    syslog(LOG_ERR, "%d Can't link TUN device to IP");
-    return -1;
-  }
-
-  close (if_fd);
-
-  snprintf(netif->devname, sizeof(netif->devname),
-		"tun%d", ppa);
-
-  memset(&ifr, 0, sizeof(ifr));
-  strlcpy(ifr.ifr_name, netif->devname, sizeof(ifr.ifr_name));
-  ifr.ifr_ip_muxid = muxid;
-
-  if (ioctl(ip_fd, SIOCSIFMUXID, &ifr) < 0) {
-    ioctl(ip_fd, I_PUNLINK, muxid);
-    syslog(LOG_ERR, "%d Can't set multiplexor id");
-    return -1;
-  }
-
-  /*  if (fcntl (fd, F_SETFL, O_NONBLOCK) < 0)
-      msg (M_ERR, "Set file descriptor to non-blocking failed"); */
-
   return 0;
 
 #else
@@ -943,29 +869,6 @@ int tun_decaps(struct tun_t *this, int idx) {
   }
 
   return 0;
-
-#elif defined (__sun__)
-  struct pkt_buffer pb;
-  uint8_t packet[PKT_MAX_LEN+4];
-  ssize_t length;
-  struct strbuf sbuf;
-  int f = 0;
-
-  pkt_buffer_init(&pb, packet, sizeof(packet), 4);
-
-  sbuf.maxlen = pkt_buffer_size(&pb);
-  sbuf.buf = pkt_buffer_head(&pb);
-  if (getmsg(tun(this, idx).fd, NULL, &sbuf, &f) < 0) {
-    syslog(LOG_ERR, "%d getmsg() failed");
-    return -1;
-  }
-
-  pb.length = sbuf.len;
-
-  if (this->cb_ind)
-    return this->cb_ind(this, &pb);
-  return 0;
-
 #endif
 }
 
@@ -1006,13 +909,6 @@ int tun_write(struct tun_t *tun, uint8_t *pack, size_t len, int idx) {
 #endif
 
   return safe_write(tun(tun, idx).fd, pack, len);
-
-#elif defined (__sun__)
-
-  struct strbuf sbuf;
-  sbuf.len = len;
-  sbuf.buf = pack;
-  return putmsg(tun(tun, idx).fd, NULL, &sbuf, 0);
 
 #endif
 }

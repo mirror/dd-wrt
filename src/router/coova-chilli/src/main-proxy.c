@@ -87,7 +87,7 @@ static int still_running = 0;
 
 static char nas_hwaddr[PKT_ETH_ALEN];
 
-static void print_requests() {
+static void print_requests(void) {
   proxy_request * req = 0;
   int i;
 

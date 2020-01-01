@@ -508,20 +508,13 @@ check_regex(regex_t *re, char *regex, char *s) {
   syslog(LOG_DEBUG, "Checking %s =~ %s", s, regex);
 #endif
 
-#if defined (__FreeBSD__) || defined (__APPLE__) || defined (__OpenBSD__) || defined (__NetBSD__)
-  if (!re->re_g)
-#else
-    if (!re->allocated)
-#endif
-    {
-      if ((ret = regcomp(re, regex, REG_EXTENDED | REG_NOSUB)) != 0) {
-        char error[512];
-        regerror(ret, re, error, sizeof(error));
-        syslog(LOG_ERR, "regcomp(%s) failed (%s)", regex, error);
-        regex[0] = 0;
-        return -1;
-      }
-    }
+  if ((ret = regcomp(re, regex, REG_EXTENDED | REG_NOSUB)) != 0) {
+    char error[512];
+    regerror(ret, re, error, sizeof(error));
+    syslog(LOG_ERR, "regcomp(%s) failed (%s)", regex, error);
+    regex[0] = 0;
+    return -1;
+  }
 
   if ((ret = regexec(re, s, 0, 0, 0)) == 0) {
 
