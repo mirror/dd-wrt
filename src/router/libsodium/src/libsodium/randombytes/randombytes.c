@@ -13,14 +13,11 @@
 #include "core.h"
 #include "crypto_stream_chacha20.h"
 #include "randombytes.h"
-#ifdef RANDOMBYTES_DEFAULT_IMPLEMENTATION
-# include "randombytes_default.h"
-#else
-# ifdef __native_client__
-#  include "randombytes_nativeclient.h"
-# else
-#  include "randombytes_sysrandom.h"
+#ifndef RANDOMBYTES_CUSTOM_IMPLEMENTATION
+# ifdef RANDOMBYTES_DEFAULT_IMPLEMENTATION
+#  include "randombytes_internal.h"
 # endif
+# include "randombytes_sysrandom.h"
 #endif
 #include "private/common.h"
 
@@ -33,11 +30,7 @@ static const randombytes_implementation *implementation;
 # ifdef __EMSCRIPTEN__
 #  define RANDOMBYTES_DEFAULT_IMPLEMENTATION NULL
 # else
-#  ifdef __native_client__
-#   define RANDOMBYTES_DEFAULT_IMPLEMENTATION &randombytes_nativeclient_implementation;
-#  else
-#   define RANDOMBYTES_DEFAULT_IMPLEMENTATION &randombytes_sysrandom_implementation;
-#  endif
+#  define RANDOMBYTES_DEFAULT_IMPLEMENTATION &randombytes_sysrandom_implementation;
 # endif
 #endif
 
@@ -107,7 +100,7 @@ randombytes_stir(void)
                 try {
                     var crypto = require('crypto');
                     var randomValueNodeJS = function() {
-                        var buf = crypto.randomBytes(4);
+                        var buf = crypto['randomBytes'](4);
                         return (buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3]) >>> 0;
                     };
                     randomValueNodeJS();

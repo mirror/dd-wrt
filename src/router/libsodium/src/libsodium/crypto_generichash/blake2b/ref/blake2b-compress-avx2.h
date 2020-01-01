@@ -2,17 +2,19 @@
 #ifndef blake2b_compress_avx2_H
 #define blake2b_compress_avx2_H
 
-#define LOAD128(p) _mm_load_si128((__m128i *) (p))
-#define STORE128(p, r) _mm_store_si128((__m128i *) (p), r)
-
-#define LOADU128(p) _mm_loadu_si128((__m128i *) (p))
+#define LOADU128(p) _mm_loadu_si128((const __m128i *) (p))
 #define STOREU128(p, r) _mm_storeu_si128((__m128i *) (p), r)
 
-#define LOAD(p) _mm256_load_si256((__m256i *) (p))
-#define STORE(p, r) _mm256_store_si256((__m256i *) (p), r)
-
-#define LOADU(p) _mm256_loadu_si256((__m256i *) (p))
+#define LOADU(p) _mm256_loadu_si256((const __m256i *) (p))
 #define STOREU(p, r) _mm256_storeu_si256((__m256i *) (p), r)
+
+#if defined(__INTEL_COMPILER) || defined(_MSC_VER) || defined(__GNUC__)
+# define LOAD(p) _mm256_load_si256((const __m256i *) (p))
+# define STORE(p, r) _mm256_store_si256((__m256i *) (p), r)
+#else
+# define LOAD(p) LOADU(p)
+# define STORE(p, r) STOREU(p, r)
+#endif
 
 static inline uint64_t
 LOADU64(const void *p)
@@ -66,17 +68,17 @@ LOADU64(const void *p)
 
 #define BLAKE2B_DIAG_V1(a, b, c, d)                               \
     do {                                                          \
-        d = _mm256_permute4x64_epi64(d, _MM_SHUFFLE(2, 1, 0, 3)); \
-        c = _mm256_permute4x64_epi64(c, _MM_SHUFFLE(1, 0, 3, 2)); \
-        b = _mm256_permute4x64_epi64(b, _MM_SHUFFLE(0, 3, 2, 1)); \
-    } while (0)
+        a = _mm256_permute4x64_epi64(a, _MM_SHUFFLE(2, 1, 0, 3)); \
+        d = _mm256_permute4x64_epi64(d, _MM_SHUFFLE(1, 0, 3, 2)); \
+        c = _mm256_permute4x64_epi64(c, _MM_SHUFFLE(0, 3, 2, 1)); \
+    } while(0)
 
 #define BLAKE2B_UNDIAG_V1(a, b, c, d)                             \
     do {                                                          \
-        d = _mm256_permute4x64_epi64(d, _MM_SHUFFLE(0, 3, 2, 1)); \
-        c = _mm256_permute4x64_epi64(c, _MM_SHUFFLE(1, 0, 3, 2)); \
-        b = _mm256_permute4x64_epi64(b, _MM_SHUFFLE(2, 1, 0, 3)); \
-    } while (0)
+        a = _mm256_permute4x64_epi64(a, _MM_SHUFFLE(0, 3, 2, 1)); \
+        d = _mm256_permute4x64_epi64(d, _MM_SHUFFLE(1, 0, 3, 2)); \
+        c = _mm256_permute4x64_epi64(c, _MM_SHUFFLE(2, 1, 0, 3)); \
+    } while(0)
 
 #include "blake2b-load-avx2.h"
 

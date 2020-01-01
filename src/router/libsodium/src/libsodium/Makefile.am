@@ -82,6 +82,7 @@ libsodium_la_SOURCES = \
 	crypto_stream/salsa20/stream_salsa20.h \
 	crypto_stream/xsalsa20/stream_xsalsa20.c \
 	crypto_verify/sodium/verify.c \
+	include/sodium/private/chacha20_ietf_ext.h \
 	include/sodium/private/common.h \
 	include/sodium/private/ed25519_ref10.h \
 	include/sodium/private/implementations.h \
@@ -151,6 +152,7 @@ libsodium_la_SOURCES += \
 	crypto_box/curve25519xchacha20poly1305/box_curve25519xchacha20poly1305.c \
 	crypto_box/curve25519xchacha20poly1305/box_seal_curve25519xchacha20poly1305.c \
 	crypto_core/ed25519/core_ed25519.c \
+	crypto_core/ed25519/core_ristretto255.c \
 	crypto_pwhash/scryptsalsa208sha256/crypto_scrypt-common.c \
 	crypto_pwhash/scryptsalsa208sha256/crypto_scrypt.h \
 	crypto_pwhash/scryptsalsa208sha256/scrypt_platform.c \
@@ -159,6 +161,7 @@ libsodium_la_SOURCES += \
 	crypto_pwhash/scryptsalsa208sha256/pwhash_scryptsalsa208sha256.c \
 	crypto_pwhash/scryptsalsa208sha256/nosse/pwhash_scryptsalsa208sha256_nosse.c \
 	crypto_scalarmult/ed25519/ref10/scalarmult_ed25519_ref10.c \
+	crypto_scalarmult/ristretto255/ref10/scalarmult_ristretto255_ref10.c \
 	crypto_secretbox/xchacha20poly1305/secretbox_xchacha20poly1305.c \
 	crypto_shorthash/siphash24/shorthash_siphashx24.c \
 	crypto_shorthash/siphash24/ref/shorthash_siphashx24_ref.c \
@@ -170,7 +173,7 @@ libsodium_la_SOURCES += \
 	crypto_stream/xchacha20/stream_xchacha20.c
 endif
 
-randombytes_salsa20_randombytes_salsa20_random_CFLAGS = @CFLAGS_RDRAND@
+randombytes_internal_randombytes_internal_random_CFLAGS = @CFLAGS_RDRAND@
 
 libsodium_la_LDFLAGS = \
 	$(AM_LDFLAGS) \
@@ -201,20 +204,14 @@ librdrand_la_LDFLAGS = $(libsodium_la_LDFLAGS)
 librdrand_la_CPPFLAGS = $(libsodium_la_CPPFLAGS) \
 	@CFLAGS_RDRAND@
 librdrand_la_SOURCES = \
-	randombytes/salsa20/randombytes_salsa20_random.c
+	randombytes/internal/randombytes_internal_random.c
 
 if !EMSCRIPTEN
 libsodium_la_LIBADD += librdrand.la
 noinst_LTLIBRARIES  += librdrand.la
 
-if NATIVECLIENT
-libsodium_la_SOURCES += \
-	randombytes/nativeclient/randombytes_nativeclient.c
-else
 libsodium_la_SOURCES += \
 	randombytes/sysrandom/randombytes_sysrandom.c
-endif
-
 endif
 
 libaesni_la_LDFLAGS = $(libsodium_la_LDFLAGS)
