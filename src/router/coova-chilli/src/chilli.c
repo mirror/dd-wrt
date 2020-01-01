@@ -183,19 +183,19 @@ static pid_t launch_daemon(char *name, char *path) {
 #endif
 
 #ifdef ENABLE_CHILLIPROXY
-static void launch_chilliproxy() {
+static void launch_chilliproxy(void) {
   proxy_pid = launch_daemon("[chilli_proxy]", SBINDIR "/chilli_proxy");
 }
 #endif
 
 #ifdef ENABLE_CHILLIREDIR
-static void launch_chilliredir() {
+static void launch_chilliredir(void) {
   redir_pid = launch_daemon("[chilli_redir]", SBINDIR "/chilli_redir");
 }
 #endif
 
 #ifdef ENABLE_CHILLIRADSEC
-static void launch_chilliradsec() {
+static void launch_chilliradsec(void) {
   radsec_pid = launch_daemon("[chilli_radsec]", SBINDIR "/chilli_radsec");
 }
 #endif
@@ -317,19 +317,19 @@ static void _sigchld(int signum) {
       syslog(LOG_DEBUG, "%s(%d): child %d terminated", __FUNCTION__, __LINE__, pid);
 #endif
 #ifdef ENABLE_CHILLIRADSEC
-    if (!_options.debug && radsec_pid > 0 && radsec_pid == pid) {
+    if (radsec_pid > 0 && radsec_pid == pid) {
       syslog(LOG_ERR, "Having to re-launch chilli_radsec... PID %d exited", pid);
       launch_chilliradsec();
     }
 #endif
 #ifdef ENABLE_CHILLIPROXY
-    if (!_options.debug && proxy_pid > 0 && proxy_pid == pid) {
+    if (proxy_pid > 0 && proxy_pid == pid) {
       syslog(LOG_ERR, "Having to re-launch chilli_proxy... PID %d exited", pid);
       launch_chilliproxy();
     }
 #endif
 #ifdef ENABLE_CHILLIREDIR
-    if (!_options.debug && redir_pid > 0 && redir_pid == pid) {
+    if (redir_pid > 0 && redir_pid == pid) {
       syslog(LOG_ERR, "Having to re-launch chilli_redir... PID %d exited", pid);
       launch_chilliredir();
     }
@@ -464,11 +464,11 @@ time_t mainclock_towall(time_t t) {
   return mainclock.tv_sec;
 }
 
-time_t mainclock_wall() {
+time_t mainclock_wall(void) {
   return mainclock_towall(mainclock.tv_sec);
 }
 
-time_t mainclock_tick() {
+time_t mainclock_tick(void) {
 #ifdef HAVE_LIBRT
   struct timespec ts;
 #if defined(CLOCK_MONOTONIC)
@@ -496,11 +496,11 @@ time_t mainclock_tick() {
   return mainclock.tv_sec;
 }
 
-time_t mainclock_now() {
+time_t mainclock_now(void) {
   return mainclock.tv_sec;
 }
 
-time_t mainclock_rt() {
+time_t mainclock_rt(void) {
   time_t rt = 0;
 #ifdef HAVE_LIBRT
   struct timespec ts;
@@ -570,7 +570,7 @@ static void set_sessionid(struct app_conn_t *appconn, char full) {
 
   snprintf(appconn->s_state.sessionid,
 		sizeof(appconn->s_state.sessionid),
-		"%.8lx%.8x", appconn->rt, appconn->unit);
+		"%.8lld%.8x", (long long int)appconn->rt, appconn->unit);
 
   appconn->s_state.redir.classlen = 0;
   appconn->s_state.redir.statelen = 0;
@@ -899,7 +899,7 @@ static int newip(struct ippoolm_t **ipm, struct in_addr *hisip, uint8_t *hismac)
  * A few functions to manage connections
  */
 
-static int initconn() {
+static int initconn(void) {
   checktime = rereadtime = mainclock.tv_sec;
   return 0;
 }
@@ -1192,7 +1192,7 @@ void session_interval(struct app_conn_t *conn) {
 #endif
 }
 
-static int checkconn() {
+static int checkconn(void) {
   struct app_conn_t *conn;
   struct dhcp_conn_t* dhcpconn;
   uint32_t checkdiff;
@@ -1241,7 +1241,7 @@ static int checkconn() {
   return 0;
 }
 
-void chilli_freeconn() {
+void chilli_freeconn(void) {
   struct app_conn_t *conn, *c;
   struct dhcp_conn_t *d = NULL;
 
@@ -1261,7 +1261,7 @@ void chilli_freeconn() {
 }
 
 /* Kill all connections and send Radius Acct Stop */
-int static killconn() {
+int static killconn(void) {
   struct app_conn_t *conn;
 
   for (conn = firstusedconn; conn; conn = conn->next) {
@@ -7191,7 +7191,7 @@ static int rtmon_accept(struct rtmon_t *rtmon, int idx) {
 }
 #endif
 
-static inline void macauth_reserved() {
+static inline void macauth_reserved(void) {
   struct dhcp_conn_t *conn = dhcp->firstusedconn;
   struct app_conn_t *appconn;
 
@@ -7207,7 +7207,7 @@ static inline void macauth_reserved() {
 }
 
 #ifdef ENABLE_LAYER3
-static int session_timeout() {
+static int session_timeout(void) {
   struct app_conn_t *conn = firstusedconn;
 
   while (conn) {
@@ -7404,13 +7404,15 @@ int chilli_main(int argc, char **argv) {
       syslog(LOG_ERR, "%s: getting startup (realtime) time", strerror(errno));
     }
     if (_options.debug)
-      syslog(LOG_DEBUG, "%s(%d): clock realtime sec %ld nsec %ld", __FUNCTION__, __LINE__, startup_real.tv_sec, startup_real.tv_nsec);
+      syslog(LOG_DEBUG, "%s(%d): clock realtime sec %lld nsec %ld", __FUNCTION__, __LINE__,
+	(long long int)startup_real.tv_sec, startup_real.tv_nsec);
 #ifdef CLOCK_MONOTONIC
     if (clock_gettime(CLOCK_MONOTONIC, &startup_mono) < 0) {
       syslog(LOG_ERR, "%s: getting startup (monotonic) time", strerror(errno));
     }
     if (_options.debug)
-      syslog(LOG_DEBUG, "%s(%d): clock monotonic sec %ld nsec %ld", __FUNCTION__, __LINE__, startup_mono.tv_sec, startup_mono.tv_nsec);
+      syslog(LOG_DEBUG, "%s(%d): clock monotonic sec %lld nsec %ld", __FUNCTION__, __LINE__,
+	(long long int)startup_mono.tv_sec, startup_mono.tv_nsec);
 #endif
 #endif
 

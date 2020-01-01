@@ -57,7 +57,7 @@ static  struct nfq_q_handle *qh;
 /*static  struct nfnl_handle *nh;*/
 static  int fd;
 
-int q_setup() {
+int q_setup(void) {
   printf("opening library handle\n");
   h = nfq_open();
   if (!h) {

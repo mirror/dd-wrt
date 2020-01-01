@@ -1526,6 +1526,26 @@ int radius_pkt_send(struct radius_t *this,
   return 0;
 }
 
+#ifdef ENABLE_RADPROXY
+/*
+ * radius_pkt_send_proxy()
+ * Send of a proxied response
+ */
+int radius_pkt_send_proxy(struct radius_t *this,
+      struct radius_packet_t *pack,
+      struct sockaddr_in *peer) {
+
+  size_t len = ntohs(pack->length);
+
+  if (sendto(this->proxyfd, pack, len, 0,(struct sockaddr *) peer,
+       sizeof(struct sockaddr_in)) < 0) {
+    syslog(LOG_ERR, "%s: sendto() failed!", strerror(errno));
+    return -1;
+  }
+
+  return 0;
+}
+#endif
 
 /*
  * radius_req()
@@ -1592,7 +1612,7 @@ int radius_resp(struct radius_t *this,
 				this->proxysecret,
 				this->proxysecretlen);
 
-  return radius_pkt_send(this, pack, peer);
+  return radius_pkt_send_proxy(this, pack, peer);
 }
 #endif
 

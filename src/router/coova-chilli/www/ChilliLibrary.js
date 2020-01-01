@@ -250,7 +250,7 @@ chilliController.logonStep2 = function ( resp ) {
 		return chilliController.onError('Cannot get challenge');
 	}
 
-	if ( resp.clientSate === chilliController.stateCodes.AUTH ) {
+	if ( resp.clientState === chilliController.stateCodes.AUTH ) {
 		log('logonStep2: Already connected. Aborting.');
 		return chilliController.onError('Already connected.');
 	}

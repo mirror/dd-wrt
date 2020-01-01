@@ -20,7 +20,7 @@
 #include "chilli.h"
 
 int
-cmdsock_init() {
+cmdsock_init(void) {
   struct sockaddr_un local;
   int cmdsock;
 
@@ -61,7 +61,7 @@ cmdsock_init() {
 
 
 int
-cmdsock_port_init() {
+cmdsock_port_init(void) {
   struct sockaddr_in local;
   int cmdsock;
   int rc;

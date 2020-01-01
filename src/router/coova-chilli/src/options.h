@@ -437,9 +437,9 @@ int process_options(int argc, char **argv, int minimal);
 void reprocess_options(int argc, char **argv);
 int reload_options(int argc, char **argv);
 int options_save(char *file, bstring bt);
-void options_init();
-void options_destroy();
-void options_cleanup();
+void options_init(void);
+void options_destroy(void);
+void options_cleanup(void);
 
 #ifndef MAIN_FILE /* all main() files must implement _options */
 extern struct options_t _options;

@@ -35,11 +35,13 @@ openssl_env * initssl() {
     if (openssl_init == 0) {
       openssl_init = 1;
 #ifdef HAVE_OPENSSL
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
       if (_options.debug) {
 	SSL_load_error_strings();
       }
       SSL_library_init();
       OpenSSL_add_all_algorithms();
+#endif
 #else
       matrixSslOpen();
       syslog(LOG_DEBUG, "%s(%d): MatrixSslOpen()", __FUNCTION__, __LINE__);
@@ -55,11 +57,13 @@ openssl_env * initssl_cli() {
     if (openssl_init == 0) {
       openssl_init = 1;
 #ifdef HAVE_OPENSSL
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
       if (_options.debug) {
 	SSL_load_error_strings();
       }
       SSL_library_init();
       OpenSSL_add_all_algorithms();
+#endif
 #else
       matrixSslOpen();
       syslog(LOG_DEBUG, "%s(%d): MatrixSslOpen()", __FUNCTION__, __LINE__);
@@ -132,7 +136,7 @@ _openssl_env_init(openssl_env *env, char *engine, int server) {
   if (_options.sslciphers) {
     SSL_CTX_set_cipher_list(env->ctx, _options.sslciphers);
   }
-#ifdef HAVE_OPENSSL_ENGINE
+#ifndef OPENSSL_NO_ENGINE
   if (engine) {
  retry:
     if ((env->engine = ENGINE_by_id(engine)) == NULL) {
@@ -609,7 +613,7 @@ openssl_env_free(openssl_env *env) {
 #endif
 #ifdef HAVE_OPENSSL
   if (env->ctx) SSL_CTX_free(env->ctx);
-#ifdef HAVE_OPENSSL_ENGINE
+#ifndef OPENSSL_NO_ENGINE
   if (env->engine) ENGINE_free(env->engine);
 #endif
 #endif

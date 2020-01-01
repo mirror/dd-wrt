@@ -130,7 +130,12 @@ local_login_url() {
     if [ "$HS_USELOCALUSERS" = "on" ]; then
 	line=$(head -1 $USERS)
 	if [ "$line" = "" ]; then
+	    if [ -x /usr/bin/md5sum ] || [ -x /bin/md5sum ]; then
 	    echo "tos:$(echo '$$$(date)'|md5sum|cut -f1)" >> $USERS
+	    fi
+	    if [ -x /usr/bin/md5 ] || [ -x /sbin/md5 ] || [ -x /bin/md5 ]; then
+	    echo "tos:$(echo '$$$(date)'|md5)" >> $USERS
+	    fi
 	    line=$(head -1 $USERS)
 	fi
 	if [ "$line" != "" ]; then
@@ -237,7 +242,12 @@ then
 	[ "$HTTPS" = "on" ] && HTTP="https"
 	URL="$HTTP://$SERVER_NAME/$REQUEST_URI?$QS"
 	CHECK="$URL$HS_UAMSECRET"
+	if [ -x /usr/bin/md5sum ] || [ -x /bin/md5sum ]; then
 	CHECK_MD5=$(echo -n "$CHECK" |md5sum|cut -d' ' -f1|tr 'a-z' 'A-Z');
+	fi
+	if [ -x /usr/bin/md5 ] || [ -x /sbin/md5 ] || [ -x /bin/md5 ]; then
+	CHECK_MD5=$(echo -n "$CHECK" |md5 |tr 'a-z' 'A-Z');
+	fi
 	if [ "$CHECK_MD5" = "$FORM_md" ]; then
 	    COOVA_USERURL=$FORM_userurl
 	else
