@@ -59,7 +59,7 @@ struct list
 #define listtail(X) ((X) ? ((X)->tail) : NULL)
 #define listcount(X) ((X)->count)
 #define list_isempty(X) ((X)->head == NULL && (X)->tail == NULL)
-#define listgetdata(X) ((X)->data)
+#define listgetdata(X) (assert((X)->data != NULL), (X)->data)
 
 /* Prototypes. */
 extern struct list *list_new(void); /* encouraged: set list.del callback on new lists */
