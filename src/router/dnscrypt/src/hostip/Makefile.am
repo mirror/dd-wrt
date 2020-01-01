@@ -8,7 +8,8 @@ hostip_SOURCES = \
 	options.c \
 	options.h
 
-AM_CFLAGS = @CWFLAGS@
+AM_CFLAGS = @CWFLAGS@ $(LTO)
+AM_LDFLAGS = $(LDLTO)
 
 AM_CPPFLAGS = \
 	-I../libevent-modified/include \
