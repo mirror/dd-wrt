@@ -67,8 +67,8 @@ $(OBJDIR)/%.o:	%.c
 
 $(TARGET) : $(SOURCES.OBJ)
 	@echo "[AR] $@"	
-	@$(AR) -rcs $(TARGET) $(SOURCES.OBJ) 
-	@$(RANLIB) $(TARGET)
+	@$(AR) -rcs $(TARGET) $(SOURCES.OBJ) $(LTOPLUGIN)
+	@$(RANLIB) $(TARGET) $(LTOPLUGIN)
 	@$(SIZE)  $(TARGET)
 
 clean: 
