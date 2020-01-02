@@ -1,19 +1,17 @@
 #
-# $Id: configure.ac 4883 2018-12-30 14:48:54Z chrfranke $
+# $Id: configure.ac 5022 2019-12-30 15:00:49Z chrfranke $
 #
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.60])
-AC_INIT([smartmontools], [7.0], [smartmontools-support@listi.jpberlin.de])
+AC_INIT([smartmontools], [7.1], [smartmontools-support@listi.jpberlin.de])
 AM_INIT_AUTOMAKE([1.10 foreign])
-LT_INIT
-LT_LIB_M
 
 # Version of drive database branch
 smartmontools_drivedb_version=7.0
 
-smartmontools_cvs_tag=`echo '$Id: configure.ac 4883 2018-12-30 14:48:54Z chrfranke $'`
-smartmontools_release_date=2018-12-30
-smartmontools_release_time="14:47:55 UTC"
+smartmontools_cvs_tag=`echo '$Id: configure.ac 5022 2019-12-30 15:00:49Z chrfranke $'`
+smartmontools_release_date=2019-12-30
+smartmontools_release_time="15:00:11 UTC"
 
 AC_DEFINE_UNQUOTED(SMARTMONTOOLS_CONFIGURE_ARGS, "$ac_configure_args",             [smartmontools Configure Arguments])
 AC_DEFINE_UNQUOTED(SMARTMONTOOLS_RELEASE_DATE,   "$smartmontools_release_date",    [smartmontools Release Date])
@@ -38,11 +36,14 @@ if test "$cross_compiling" = "no"; then
     [AC_MSG_WARN([m4/pkg.m4 missing, systemd detection disabled])])
 fi
 
+AC_ARG_VAR(NM, [Symbol list command])
 AC_ARG_VAR(WINDMC, [Windows message compiler command])
 AC_ARG_VAR(WINDRES, [Windows resource compiler command])
 AC_ARG_VAR(MAKENSIS, [NSIS compiler command])
 
 AC_CANONICAL_HOST
+
+AC_CHECK_TOOL(NM, [nm])
 case "${host}" in
   *-*-mingw*)
     AC_CHECK_TOOL(WINDMC, [windmc])
@@ -471,12 +472,22 @@ case "$host:${LDFLAGS+set}" in
     LDFLAGS="-static -Wl,--nxcompat,--tsaware" ;;
 esac
 
+# ASLR related issues of MinGW-w64 toolchain and workarounds:
+# 1. '--dynamicbase' only sets DYNAMIC_BASE flag but does not enable relocation info:
+#    Add '-pie' (works despite 'man ld' says: "... currently only supported on ELF platforms")
+# 2. If both '-static' and '-pie' are specified, the entry point is not set properly:
+#    Specify entry point with '-emainCRTStartup' or '-e_mainCRTStartup'.
+# 3. Some versions of '*-w64-mingw32-g++' ignore '-pie' if '-static' is also specified:
+#    Pass '-pie' directly to the linker with '-Wl,-pie'.
+# 4. Linkage of some versions of 'libstdc++.a' fail with "relocation overflow" if a high
+#    '--image-base' is used: Do not use '--high-entropy-va' in these cases.
+
 case "$host:$with_mingw_aslr" in
   x86_64-*-mingw*:auto)
     AC_MSG_CHECKING([whether $CXX supports --high-entropy-va])
     save_LDFLAGS=$LDFLAGS
-    LDFLAGS="$LDFLAGS -pie -Wl,--dynamicbase,-emainCRTStartup,--high-entropy-va,--image-base,0x140000000"
-    # Link libstdc++ to detect MinGW 6.3.0 problems with high --image-base
+    LDFLAGS="$LDFLAGS -Wl,--dynamicbase,-pie,-emainCRTStartup,--high-entropy-va,--image-base,0x140000000"
+    # Link libstdc++ to detect MinGW-w64 problems with high '--image-base'
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[
         #include <string>
         std::string s(42, '.');]])],
@@ -489,11 +500,11 @@ esac
 
 case "$host:$with_mingw_aslr" in
   x86_64-*-mingw*:yes)
-    LDFLAGS="$LDFLAGS -pie -Wl,--dynamicbase,-emainCRTStartup,--high-entropy-va,--image-base,0x140000000" ;;
+    LDFLAGS="$LDFLAGS -Wl,--dynamicbase,-pie,-emainCRTStartup,--high-entropy-va,--image-base,0x140000000" ;;
   x86_64-*-mingw*:low)
-    LDFLAGS="$LDFLAGS -pie -Wl,--dynamicbase,-emainCRTStartup" ;;
+    LDFLAGS="$LDFLAGS -Wl,--dynamicbase,-pie,-emainCRTStartup" ;;
   *-*-mingw*:auto|*-*-mingw*:yes|*-*-mingw*:low)
-    LDFLAGS="$LDFLAGS -pie -Wl,--dynamicbase,-e_mainCRTStartup" ;;
+    LDFLAGS="$LDFLAGS -Wl,--dynamicbase,-pie,-e_mainCRTStartup" ;;
 esac
 
 os_win32_manifest=
@@ -615,7 +626,7 @@ case "${host}" in
   *-*-freebsd*|*-*-dragonfly*|*-*-kfreebsd*-gnu*)
     os_deps='os_freebsd.o cciss.o dev_areca.o'
     os_libs='-lcam -lsbuf'
-    os_dltools='curl wget lynx fetch svn'
+    os_dltools='fetch curl wget lynx svn'
     AC_CHECK_LIB(usb, libusb20_dev_get_device_desc)
     os_man_filter=FreeBSD
     os_nvme_devicescan=no
@@ -788,6 +799,35 @@ else
         *) CXXFLAGS="-erroff=%none,wbadinitl,wbadasgl,badargtypel2w,badargtype2w $CXXFLAGS" ;;
       esac ;;
   esac
+fi
+
+AC_MSG_CHECKING([whether _FORTIFY_SOURCE is predefined])
+# Use COMPILE check to detect compiler presets and C*FLAGS.
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+  #ifndef _FORTIFY_SOURCE
+  #error false
+  #endif]])], [res=yes], [res=no])
+AC_MSG_RESULT([$res])
+if test "$res" = "no"; then
+  # Heuristic to check for _FORTIFY_SOURCE=2 support.
+  # Done after check for -fstack-protector because this may add an additional lib.
+  # Note: Even if _FORTIFY_SOURCE is present in the include files, it may not be
+  # detected here because it is disabled for C++.
+  AC_MSG_CHECKING([whether $CXX supports _FORTIFY_SOURCE=2])
+  save_CPPFLAGS=$CPPFLAGS
+  CPPFLAGS="${CPPFLAGS}${CPPFLAGS:+ }-D_FORTIFY_SOURCE=2"
+  # Use LINK instead of COMPILE to make sure that the required lib is also present
+  # (does not work with LDFLAGS=-s).
+  AC_LINK_IFELSE([AC_LANG_SOURCE([[
+    #include <string.h>
+    char buf[42];
+    int main(int argc, char **argv) {
+      if (argc == 2) strcpy(buf, argv[1]); return buf[0];
+    }]])],
+    [res=yes; $NM conftest$EXEEXT 2>/dev/null | grep '_strcpy_chk' >/dev/null 2>&1 || res=no],
+    [res=unknown])
+  test "$res" = "yes" || CPPFLAGS=$save_CPPFLAGS
+  AC_MSG_RESULT([$res])
 fi
 
 AC_DEFINE_UNQUOTED(SMARTMONTOOLS_BUILD_HOST,     "${host}",                       [smartmontools Build Host])
