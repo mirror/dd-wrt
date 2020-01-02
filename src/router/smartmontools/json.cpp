@@ -3,7 +3,7 @@
  *
  * Home page of code is: https://www.smartmontools.org
  *
- * Copyright (C) 2017-18 Christian Franke
+ * Copyright (C) 2017-19 Christian Franke
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -13,7 +13,7 @@
 
 #include "json.h"
 
-const char * json_cvsid = "$Id: json.cpp 4830 2018-11-02 21:21:48Z chrfranke $"
+const char * json_cvsid = "$Id: json.cpp 4942 2019-08-08 19:01:13Z chrfranke $"
   JSON_H_CVSID;
 
 #include "sg_unaligned.h"
@@ -76,6 +76,10 @@ json::ref::ref(const ref & base, const char * /*dummy*/, const char * key_suffix
   jassert(i >= 0); // Limit: top level element must be an object
 }
 
+json::ref::~ref()
+{
+}
+
 void json::ref::operator=(bool value)
 {
   m_js.set_bool(m_path, value);
@@ -111,15 +115,14 @@ void json::ref::operator=(unsigned long value)
   operator=((unsigned long long)value);
 }
 
+void json::ref::operator=(const char * value)
+{
+  m_js.set_cstring(m_path, value);
+}
+
 void json::ref::operator=(const std::string & value)
 {
   m_js.set_string(m_path, value);
-}
-
-void json::ref::operator=(const char * value)
-{
-  jassert(value); // Limit: null not supported
-  operator=(std::string(value));
 }
 
 void json::ref::set_uint128(uint64_t value_hi, uint64_t value_lo)
@@ -353,6 +356,14 @@ void json::set_uint128(const node_path & path, uint64_t value_hi, uint64_t value
   p->intval = value_lo;
 }
 
+void json::set_cstring(const node_path & path, const char * value)
+{
+  if (!m_enabled)
+    return;
+  jassert(value != 0); // Limit: nullptr not supported
+  find_or_create_node(path, nt_string)->strval = value;
+}
+
 void json::set_string(const node_path & path, const std::string & value)
 {
   if (!m_enabled)
@@ -438,12 +449,13 @@ void json::print_json(FILE * f, bool pretty, bool sorted, const node * p, int le
   }
 }
 
-void json::print_flat(FILE * f, bool sorted, const node * p, std::string & path)
+void json::print_flat(FILE * f, const char * assign, bool sorted, const node * p,
+                      std::string & path)
 {
   switch (p->type) {
     case nt_object:
     case nt_array:
-      fprintf(f, "%s = %s;\n", path.c_str(), (p->type == nt_object ? "{}" : "[]"));
+      fprintf(f, "%s%s%s;\n", path.c_str(), assign, (p->type == nt_object ? "{}" : "[]"));
       if (!p->childs.empty()) {
         unsigned len = path.size();
         for (node::const_iterator it(p, sorted); !it.at_end(); ++it) {
@@ -458,11 +470,11 @@ void json::print_flat(FILE * f, bool sorted, const node * p, std::string & path)
           if (!p2) {
             // Unset element of sparse array
             jassert(p->type == nt_array);
-            fprintf(f, "%s = null;\n", path.c_str());
+            fprintf(f, "%s%snull;\n", path.c_str(), assign);
           }
           else {
             // Recurse
-            print_flat(f, sorted, p2, path);
+            print_flat(f, assign, sorted, p2, path);
           }
           path.erase(len);
         }
@@ -470,27 +482,27 @@ void json::print_flat(FILE * f, bool sorted, const node * p, std::string & path)
       break;
 
     case nt_bool:
-      fprintf(f, "%s = %s;\n", path.c_str(), (p->intval ? "true" : "false"));
+      fprintf(f, "%s%s%s;\n", path.c_str(), assign, (p->intval ? "true" : "false"));
       break;
 
     case nt_int:
-      fprintf(f, "%s = %" PRId64 ";\n", path.c_str(), (int64_t)p->intval);
+      fprintf(f, "%s%s%" PRId64 ";\n", path.c_str(), assign, (int64_t)p->intval);
       break;
 
     case nt_uint:
-      fprintf(f, "%s = %" PRIu64 ";\n", path.c_str(), p->intval);
+      fprintf(f, "%s%s%" PRIu64 ";\n", path.c_str(), assign, p->intval);
       break;
 
     case nt_uint128:
       {
         char buf[64];
-        fprintf(f, "%s = %s;\n", path.c_str(),
+        fprintf(f, "%s%s%s;\n", path.c_str(), assign,
                 uint128_hilo_to_str(buf, p->intval_hi, p->intval));
       }
       break;
 
     case nt_string:
-      fprintf(f, "%s = ", path.c_str());
+      fprintf(f, "%s%s", path.c_str(), assign);
       print_string(f, p->strval.c_str());
       fputs(";\n", f);
       break;
@@ -512,6 +524,6 @@ void json::print(FILE * f, const print_options & options) const
   }
   else {
     std::string path("json");
-    print_flat(f, options.sorted, &m_root_node, path);
+    print_flat(f, (options.pretty ? " = " : "="), options.sorted, &m_root_node, path);
   }
 }

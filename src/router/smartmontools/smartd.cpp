@@ -1,8 +1,8 @@
 /*
- * Home page of code is: http://www.smartmontools.org
+ * Home page of code is: https://www.smartmontools.org
  *
  * Copyright (C) 2002-11 Bruce Allen
- * Copyright (C) 2008-18 Christian Franke
+ * Copyright (C) 2008-19 Christian Franke
  * Copyright (C) 2000    Michael Cornwell <cornwell@acm.org>
  * Copyright (C) 2008    Oliver Bock <brevilo@users.sourceforge.net>
  *
@@ -84,7 +84,7 @@ typedef int pid_t;
 #define SIGQUIT_KEYNAME "CONTROL-\\"
 #endif // _WIN32
 
-const char * smartd_cpp_cvsid = "$Id: smartd.cpp 4864 2018-12-20 13:02:39Z chrfranke $"
+const char * smartd_cpp_cvsid = "$Id: smartd.cpp 5012 2019-12-29 13:10:18Z chrfranke $"
   CONFIG_H_CVSID;
 
 extern "C" {
@@ -262,8 +262,9 @@ static void notify_wait(time_t wakeuptime, int numdev)
 {
   if (!notify_enabled)
     return;
-  char ts[16], msg[64];
-  strftime(ts, sizeof(ts), "%H:%M:%S", localtime(&wakeuptime));
+  char ts[16] = ""; struct tm tmbuf;
+  strftime(ts, sizeof(ts), "%H:%M:%S", time_to_tm_local(&tmbuf, wakeuptime));
+  char msg[64];
   snprintf(msg, sizeof(msg), "Next check of %d device%s will start at %s",
            numdev, (numdev != 1 ? "s" : ""), ts);
   static bool ready = true; // first call notifies READY=1
@@ -879,7 +880,7 @@ static bool write_dev_attrlog(const char * path, const dev_state & state)
 
   
   time_t now = time(0);
-  struct tm * tms = gmtime(&now);
+  struct tm tmbuf, * tms = time_to_tm_local(&tmbuf, now);
   fprintf(f, "%d-%02d-%02d %02d:%02d:%02d;",
              1900+tms->tm_year, 1+tms->tm_mon, tms->tm_mday,
              tms->tm_hour, tms->tm_min, tms->tm_sec);
@@ -1149,7 +1150,11 @@ static void MailWarning(const dev_config & cfg, dev_state & state, int which, co
   mail->lastsent=epoch;
 
   // print warning string into message
-  char message[256];
+  // Note: Message length may reach ~300 characters as device names may be
+  // very long on certain platforms (macOS ~230 characters).
+  // Message length must not exceed email line length limit, see RFC 5322:
+  // "... MUST be no more than 998 characters, ... excluding the CRLF."
+  char message[512];
   va_list ap;
   va_start(ap, fmt);
   vsnprintf(message, sizeof(message), fmt, ap);
@@ -2865,12 +2870,16 @@ static char next_scheduled_test(const dev_config & cfg, dev_state & state, bool 
   
   // Is it time for next check?
   time_t now = (!usetime ? time(0) : usetime);
-  if (now < state.scheduled_test_next_check)
-    return 0;
-
-  // Limit time check interval to 90 days
-  if (state.scheduled_test_next_check + (3600L*24*90) < now)
+  if (now < state.scheduled_test_next_check) {
+    if (state.scheduled_test_next_check <= now + 3600)
+      return 0; // Next check within one hour
+    // More than one hour, assume system clock time adjusted to the past
+    state.scheduled_test_next_check = now;
+  }
+  else if (state.scheduled_test_next_check + (3600L*24*90) < now) {
+    // Limit time check interval to 90 days
     state.scheduled_test_next_check = now - (3600L*24*90);
+  }
 
   // Check interval [state.scheduled_test_next_check, now] for scheduled tests
   char testtype = 0;
@@ -2878,7 +2887,7 @@ static char next_scheduled_test(const dev_config & cfg, dev_state & state, bool 
   int maxtest = num_test_types-1;
 
   for (time_t t = state.scheduled_test_next_check; ; ) {
-    struct tm * tms = localtime(&t);
+    struct tm tmbuf, * tms = time_to_tm_local(&tmbuf, t);
     // tm_wday is 0 (Sunday) to 6 (Saturday).  We use 1 (Monday) to 7 (Sunday).
     int weekday = (tms->tm_wday ? tms->tm_wday : 7);
     for (int i = 0; i <= maxtest; i++) {
@@ -2916,7 +2925,7 @@ static char next_scheduled_test(const dev_config & cfg, dev_state & state, bool 
   }
   
   // Do next check not before next hour.
-  struct tm * tmnow = localtime(&now);
+  struct tm tmbuf, * tmnow = time_to_tm_local(&tmbuf, now);
   state.scheduled_test_next_check = now + (3600 - tmnow->tm_min*60 - tmnow->tm_sec);
 
   if (testtype) {
@@ -3913,7 +3922,7 @@ static time_t dosleep(time_t wakeuptime, bool & sigwakeup, int numdev)
   // If past wake-up-time, compute next wake-up-time
   time_t timenow=time(NULL);
   while (wakeuptime<=timenow){
-    int intervals=1+(timenow-wakeuptime)/checktime;
+    time_t intervals = 1 + (timenow-wakeuptime)/checktime;
     wakeuptime+=intervals*checktime;
   }
 
@@ -3925,7 +3934,7 @@ static time_t dosleep(time_t wakeuptime, bool & sigwakeup, int numdev)
     
     // protect user again system clock being adjusted backwards
     if (wakeuptime>timenow+checktime){
-      PrintOut(LOG_CRIT, "System clock time adjusted to the past. Resetting next wakeup time.\n");
+      PrintOut(LOG_INFO, "System clock time adjusted to the past. Resetting next wakeup time.\n");
       wakeuptime=timenow+checktime;
     }
     

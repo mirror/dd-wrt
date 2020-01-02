@@ -1,11 +1,11 @@
 /*
  * scsiprint.cpp
  *
- * Home page of code is: http://www.smartmontools.org
+ * Home page of code is: https://www.smartmontools.org
  *
  * Copyright (C) 2002-11 Bruce Allen
  * Copyright (C) 2000 Michael Cornwell <cornwell@acm.org>
- * Copyright (C) 2003-18 Douglas Gilbert <dgilbert@interlog.com>
+ * Copyright (C) 2003-19 Douglas Gilbert <dgilbert@interlog.com>
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -21,7 +21,7 @@
 #include <errno.h>
 
 #include "scsicmds.h"
-#include "atacmds.h" // smart_command_set
+#include "atacmds.h" // dont_print_serial_number
 #include "dev_interface.h"
 #include "scsiprint.h"
 #include "smartctl.h"
@@ -30,7 +30,7 @@
 
 #define GBUF_SIZE 65532
 
-const char * scsiprint_c_cvsid = "$Id: scsiprint.cpp 4870 2018-12-27 17:07:44Z chrfranke $"
+const char * scsiprint_c_cvsid = "$Id: scsiprint.cpp 5014 2019-12-29 13:14:34Z chrfranke $"
                                  SCSIPRINT_H_CVSID;
 
 
@@ -119,12 +119,13 @@ scsiGetSupportedLogPages(scsi_device * device)
 {
     bool got_subpages = false;
     int k, bump, err, payload_len, num_unreported, num_unreported_spg;
+    int payload_len_pg0_0 = 0;
     const uint8_t * up;
     uint8_t sup_lpgs[LOG_RESP_LEN];
 
     memset(gBuf, 0, LOG_RESP_LEN);
     if ((err = scsiLogSense(device, SUPPORTED_LPAGES, 0, gBuf,
-                            LOG_RESP_LEN, 0))) {
+                            LOG_RESP_LEN, 0 /* do double fetch */))) {
         if (scsi_debugmode > 0)
             pout("%s for supported pages failed [%s]\n", logSenStr,
                  scsiErrString(err));
@@ -142,6 +143,7 @@ scsiGetSupportedLogPages(scsi_device * device)
                (scsi_version <= SCSI_VERSION_HIGHEST)) {
         /* unclear what code T10 will choose for SPC-6 */
         memcpy(sup_lpgs, gBuf, LOG_RESP_LEN);
+        payload_len_pg0_0 = sup_lpgs[3];
         if ((err = scsiLogSense(device, SUPPORTED_LPAGES, SUPP_SPAGE_L_SPAGE,
                                 gBuf, LOG_RESP_LONG_LEN,
                                 -1 /* just single not double fetch */))) {
@@ -165,11 +167,20 @@ scsiGetSupportedLogPages(scsi_device * device)
         memcpy(sup_lpgs, gBuf, LOG_RESP_LEN);
 
     if (got_subpages) {
-         payload_len = sg_get_unaligned_be16(gBuf + 2);
-         bump = 2;
-         up = gBuf + LOGPAGEHDRSIZE;
+        payload_len = sg_get_unaligned_be16(gBuf + 2);
+        if (payload_len <= payload_len_pg0_0) {
+            /* something is rotten ....., ignore SUPP_SPAGE_L_SPAGE */
+            payload_len = payload_len_pg0_0;
+            bump = 1;
+            up = sup_lpgs + LOGPAGEHDRSIZE;
+            got_subpages = false;
+            (void)got_subpages; // not yet used below, suppress warning
+        } else {
+            bump = 2;
+            up = gBuf + LOGPAGEHDRSIZE;
+        }
     } else {
-        payload_len = sup_lpgs[3];
+        payload_len = payload_len_pg0_0;
         bump = 1;
         up = sup_lpgs + LOGPAGEHDRSIZE;
     }
@@ -211,17 +222,20 @@ scsiGetSupportedLogPages(scsi_device * device)
                     gEnviroReportingLPage = true;
                 else if (ENVIRO_LIMITS_L_SPAGE == sub_pg_num)
                     gEnviroLimitsLPage = true;
-                else {
+                else if (SUPP_SPAGE_L_SPAGE != sub_pg_num) {
                     ++num_unreported;
                     ++num_unreported_spg;
                 }
+                /* WDC/HGST report <lpage>,0xff tuples for all supported
+                   lpages; Seagate doesn't. T10 does not exclude the
+                   reporting of <lpage>,0xff so it is not an error. */
                 break;
             case STARTSTOP_CYCLE_COUNTER_LPAGE:
                 if (NO_SUBPAGE_L_SPAGE == sub_pg_num)
                     gStartStopLPage = true;
                 else if (UTILIZATION_L_SPAGE == sub_pg_num)
                     gUtilizationLPage = true;
-                else {
+                else if (SUPP_SPAGE_L_SPAGE != sub_pg_num) {
                     ++num_unreported;
                     ++num_unreported_spg;
                 }
@@ -241,7 +255,7 @@ scsiGetSupportedLogPages(scsi_device * device)
                     gBackgroundOpLPage = true;
                 else if (LPS_MISALIGN_L_SPAGE == sub_pg_num)
                     gLPSMisalignLPage = true;
-                else {
+                else if (SUPP_SPAGE_L_SPAGE != sub_pg_num) {
                     ++num_unreported;
                     ++num_unreported_spg;
                 }
@@ -277,7 +291,7 @@ scsiGetSupportedLogPages(scsi_device * device)
             default:
                 if (pg_num < 0x30) {     /* don't count VS pages */
                     ++num_unreported;
-                    if (sub_pg_num > 0)
+                    if ((sub_pg_num > 0) && (SUPP_SPAGE_L_SPAGE != sub_pg_num))
                         ++num_unreported_spg;
                 }
                 break;
@@ -604,6 +618,8 @@ scsiPrintGrownDefectListLen(scsi_device * device)
         case 4:     /* bytes from index */
         case 5:     /* physical sector */
             div = 8;
+            break;
+        case 6:     /* vendor specific */
             break;
         default:
             print_on();
@@ -2520,7 +2536,9 @@ scsiPrintMain(scsi_device * device, const scsi_print_options & options)
             t += durationSec;
             pout("Please wait %d minutes for test to complete.\n",
                  durationSec / 60);
-            pout("Estimated completion time: %s\n", ctime(&t));
+            char comptime[DATEANDEPOCHLEN];
+            dateandtimezoneepoch(comptime, t);
+            pout("Estimated completion time: %s\n", comptime);
         }
         pout("Use smartctl -X to abort test\n");
         any_output = true;
