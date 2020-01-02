@@ -88,7 +88,7 @@ export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/.. && p
 #export CFLAGS += -DBCMWPA2 
 #endif
 
-export BASEOPT:=-O2
+export BASEOPT:=-Os
 #export ARCH:= mipsel
 
 ifeq ($(ARCH),mipsel)
@@ -98,7 +98,7 @@ ifeq ($(ARCH),armeb)
 export COPTS:=$(BASEOPT) -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb 
 endif
 ifeq ($(ARCH),arm)
-export COPTS:=$(BASEOPT) -pipe -march=armv6k -mtune=mpcore -mfloat-abi=hard -mfpu=vfp -fno-caller-saves -fno-plt
+export COPTS:=$(BASEOPT) -pipe -march=armv6k -mtune=mpcore -mfpu=vfp -fno-caller-saves -fno-plt
 #-D_FILE_OFFSET_BITS=64
 endif
 ifeq ($(ARCH),mips)
@@ -169,7 +169,7 @@ endif
 	$(kernelfeatures)
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 
-	$(MAKE) -j 4 -C $(LINUXDIR) uImage  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
+	$(MAKE) -j 4 -C $(LINUXDIR) zImage  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 	$(MAKE) -j 4 -C $(LINUXDIR) modules  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 	rm -rf $(TARGETDIR)/lib/modules
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
@@ -225,9 +225,9 @@ endif
 		echo; \
 	) > $(LINUXDIR)/symtab.h
 	rm -f $(LINUXDIR)/vmlinux
-	$(MAKE) -j 4 -C $(LINUXDIR) uImage EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h"  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
+	$(MAKE) -j 4 -C $(LINUXDIR) zImage EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h"  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 
-include common.mk
+include common-nolto.mk
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory
@@ -305,6 +305,8 @@ endif
 	#$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le
 	mkfs.jffs2 --pad --big-endian --squash -e 0x20000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target
 	echo -ne '\xde\xad\xc0\xde' >> $(ARCH)-uclibc/dd-wrt.jffs2
+	mkimage -A arm -O linux -T kernel -C none -a 0x20008000 -e 0x20008000 -n 'dd-wrt' -d $(LINUXDIR)/arch/arm/boot/zImage $(LINUXDIR)/arch/arm/boot/uImage
+
 	dd if=$(LINUXDIR)/arch/arm/boot/uImage of=$(ARCH)-uclibc/laguna-firmware.raw1 bs=131072 conv=sync
 	dd if=$(LINUXDIR)/arch/arm/boot/uImage of=$(ARCH)-uclibc/laguna-firmware.raw2 bs=131072 conv=sync
 	cat $(ARCH)-uclibc/dd-wrt.jffs2>>$(ARCH)-uclibc/laguna-firmware.raw1
