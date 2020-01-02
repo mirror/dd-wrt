@@ -93,7 +93,7 @@ ifeq ($(ARCH),mipsel)
 export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
 endif
 ifeq ($(ARCH),armeb)
-export COPTS:=$(BASEOPT) -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -fno-caller-saves -fno-plt
+export COPTS:=$(BASEOPT) -pipe -mtune=xscale -march=armv5te -mcpu=xscale -mno-thumb-interwork -fno-caller-saves -fno-plt
 endif
 ifeq ($(ARCH),mips)
 export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
@@ -112,6 +112,7 @@ export STRIP := $(CROSS_COMPILE)strip
 export SIZE := $(CROSS_COMPILE)size
 
 export CFLAGS := $(COPTS)
+export LTOFIXUP := -fno-fat-lto-objects -fno-devirtualize
 
 #
 # Install and target directories
@@ -150,7 +151,11 @@ else
 ifeq ($(CONFIG_USB),y)
 	cp $(LINUXDIR)/.config_xscale_usb $(LINUXDIR)/.config
 else
+ifeq ($(CONFIG_SMALL),y)
+	cp $(LINUXDIR)/.config_xscale_small $(LINUXDIR)/.config
+else
 	cp $(LINUXDIR)/.config_xscale $(LINUXDIR)/.config
+endif
 endif
 endif
 ifeq ($(CONFIG_WRT300NV2),y)
