@@ -189,7 +189,7 @@ bootloader:
 	$(ARCH)-linux-objcopy -O binary $(ARCH)-uclibc/lzma_vmlinux $(ARCH)-uclibc/lzma_vmlinus 
 
 
-include common.mk
+include common-nolto.mk
 
 install package: clean_target $(filter-out lib.mipsel-install,$(obj-install)) $(LINUXDIR)/.config
 	install -d $(TARGETDIR)
