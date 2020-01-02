@@ -3,13 +3,13 @@
  *
  * Home page of code is: https://www.smartmontools.org
  *
- * Copyright (C) 2017-18 Christian Franke
+ * Copyright (C) 2017-19 Christian Franke
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef JSON_H_CVSID
-#define JSON_H_CVSID "$Id: json.h 4825 2018-10-25 19:47:35Z chrfranke $"
+#define JSON_H_CVSID "$Id: json.h 4942 2019-08-08 19:01:13Z chrfranke $"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -48,13 +48,15 @@ public:
   class ref
   {
   public:
+    ~ref();
+
     /// Return reference to object element.
     ref operator[](const char * key) const
-      { return ref(*this, key); };
+      { return ref(*this, key); }
 
     /// Return reference to array element.
     ref operator[](int index) const
-      { return ref(*this, index); };
+      { return ref(*this, index); }
 
     // Assignment operators create or change element.
     void operator=(bool value);
@@ -98,7 +100,7 @@ public:
 
   /// Return reference to element of top level object.
   ref operator[](const char * key)
-    { return ref(*this, key); };
+    { return ref(*this, key); }
 
   /// Enable/disable JSON output.
   void enable(bool yes = true)
@@ -186,10 +188,12 @@ private:
   void set_int64(const node_path & path, int64_t value);
   void set_uint64(const node_path & path, uint64_t value);
   void set_uint128(const node_path & path, uint64_t value_hi, uint64_t value_lo);
+  void set_cstring(const node_path & path, const char * value);
   void set_string(const node_path & path, const std::string & value);
 
   static void print_json(FILE * f, bool pretty, bool sorted, const node * p, int level);
-  static void print_flat(FILE * f, bool sorted, const node * p, std::string & path);
+  static void print_flat(FILE * f, const char * assign, bool sorted, const node * p,
+                         std::string & path);
 };
 
 #endif // JSON_H_CVSID

@@ -5,7 +5,7 @@
 # This also adds files like missing,depcomp,install-sh to the source
 # directory. To update these files at a later date use:
 #	autoreconf -f -i -v
-libtoolize -c
+
 force=; warnings=
 while [ $# -gt 0 ]; do case $1 in
   --force) force=$1; shift ;;
