@@ -38,6 +38,9 @@ if NEED_REGEX
 AM_CPPFLAGS += -I$(srcdir)/regex -D_REGEX_STANDALONE
 endif
 
+lib_LTLIBRARIES = libsmart.la
+
+
 sbin_PROGRAMS = \
         smartctl \
         smartd
@@ -49,18 +52,11 @@ sbin_SCRIPTS = update-smart-drivedb
 endif
 endif
 
-
-smartctl_SOURCES = \
-        smartctl.cpp \
-        smartctl.h \
+libsmart_la_SOURCES = \
         atacmdnames.cpp \
         atacmdnames.h \
         atacmds.cpp \
         atacmds.h \
-        ataidentify.cpp \
-        ataidentify.h \
-        ataprint.cpp \
-        ataprint.h \
         dev_ata_cmd_set.cpp \
         dev_ata_cmd_set.h \
         dev_intelliprop.cpp \
@@ -69,101 +65,60 @@ smartctl_SOURCES = \
         dev_interface.h \
         dev_jmb39x_raid.cpp \
         dev_tunnelled.h \
-        drivedb.h \
-        json.cpp \
-        json.h \
         knowndrives.cpp \
         knowndrives.h \
         nvmecmds.cpp \
         nvmecmds.h \
-        nvmeprint.cpp \
-        nvmeprint.h \
         scsicmds.cpp \
         scsicmds.h \
         scsiata.cpp \
         scsinvme.cpp \
-        scsiprint.cpp \
-        scsiprint.h \
+        drivedb.h \
         static_assert.h \
         utility.cpp \
         utility.h \
         sg_unaligned.h
 
-smartctl_LDADD = $(os_deps) $(os_libs)
-smartctl_DEPENDENCIES = $(os_deps)
-
-EXTRA_smartctl_SOURCES = \
-        os_darwin.cpp \
-        os_darwin.h \
-        os_linux.cpp \
-        os_linux.h \
-        os_freebsd.cpp \
-        os_freebsd.h \
-        os_netbsd.cpp \
-        os_netbsd.h \
-        os_openbsd.cpp \
-        os_openbsd.h \
-        os_os2.cpp \
-        os_os2.h \
-        os_qnxnto.cpp \
-        os_qnxnto.h \
-        os_solaris.cpp \
-        os_solaris.h \
-        os_win32.cpp \
-        os_generic.cpp \
-        os_generic.h \
-        aacraid.h \
-        cciss.cpp \
-        cciss.h \
-        cissio_freebsd.h \
-        dev_areca.cpp \
-        dev_areca.h \
-        dev_legacy.cpp \
+EXTRA_libsmart_la_SOURCES = \
         linux_nvme_ioctl.h \
-        megaraid.h
+        netbsd_nvme_ioctl.h
+
+smartctl_SOURCES = \
+        smartctl.cpp \
+        smartctl.h \
+        ataidentify.cpp \
+        ataidentify.h \
+        ataprint.cpp \
+        ataprint.h \
+        json.cpp \
+        json.h \
+        nvmeprint.cpp \
+        nvmeprint.h \
+        scsiprint.cpp \
+        scsiprint.h
+
+libsmart_la_LIBADD = $(os_deps)
+libsmart_la_DEPENDENCIES = $(os_deps)
+smartctl_LDADD =  $(os_libs) libsmart.la
+smartctl_DEPENDENCIES =
 
 if OS_WIN32_MINGW
 
-smartctl_SOURCES += \
+libsmart_la_SOURCES += \
         os_win32/popen_win32.cpp \
         os_win32/popen.h
 
-smartctl_LDADD        += smartctl_res.o
-smartctl_DEPENDENCIES += smartctl_res.o
+libsmart_la_LIBADD        += smartctl_res.o
+libsmart_la_DEPENDENCIES += smartctl_res.o
 
 endif
 
 
 smartd_SOURCES = \
-        smartd.cpp \
-        atacmdnames.cpp \
-        atacmdnames.h \
-        atacmds.cpp \
-        atacmds.h \
-        dev_ata_cmd_set.cpp \
-        dev_ata_cmd_set.h \
-        dev_intelliprop.cpp \
-        dev_intelliprop.h \
-        dev_interface.cpp \
-        dev_interface.h \
-        dev_jmb39x_raid.cpp \
-        dev_tunnelled.h \
-        drivedb.h \
-        knowndrives.cpp \
-        knowndrives.h \
-        nvmecmds.cpp \
-        nvmecmds.h \
-        scsicmds.cpp \
-        scsicmds.h \
-        scsiata.cpp \
-        scsinvme.cpp \
-        static_assert.h \
-        utility.cpp \
-        utility.h \
-        sg_unaligned.h
+        smartd.cpp
 
-smartd_LDADD = $(os_deps) $(os_libs) $(CAPNG_LDADD) $(SYSTEMD_LDADD)
-smartd_DEPENDENCIES = $(os_deps)
+smartd_LDADD = $(os_libs) $(CAPNG_LDADD) $(SYSTEMD_LDADD) libsmart.la
+smartd_DEPENDENCIES =
 
 EXTRA_smartd_SOURCES = \
         os_darwin.cpp \
@@ -218,15 +173,7 @@ nodist_EXTRA_smartd_SOURCES   = os_solaris_ata.s
 
 if NEED_GETOPT_LONG
 
-smartctl_SOURCES += \
-        getopt/getopt.c \
-        getopt/getopt.h \
-        getopt/getopt1.c \
-        getopt/getopt_int.h \
-        getopt/bits/getopt_core.h \
-        getopt/bits/getopt_ext.h
-
-smartd_SOURCES += \
+libsmart_la_SOURCES += \
         getopt/getopt.c \
         getopt/getopt.h \
         getopt/getopt1.c \
@@ -238,37 +185,22 @@ endif
 
 if NEED_REGEX
 
-smartctl_SOURCES += \
-        regex/regex.c \
-        regex/regex.h \
-        regex/regex_internal.h
-
-smartd_SOURCES += \
+libsmart_la_SOURCES += \
         regex/regex.c \
         regex/regex.h \
         regex/regex_internal.h
 
 # Included by regex.c:
-EXTRA_smartctl_SOURCES += \
+
+EXTRA_libsmart_la_SOURCES += \
         regex/regcomp.c \
         regex/regexec.c \
         regex/regex_internal.c
-
-EXTRA_smartd_SOURCES += \
-        regex/regcomp.c \
-        regex/regexec.c \
-        regex/regex_internal.c
-
 endif
 
 if OS_WIN32
 
-smartctl_SOURCES += \
-        csmisas.h \
-        os_win32/wmiquery.cpp \
-        os_win32/wmiquery.h
-
-smartd_SOURCES += \
+libsmart_la_SOURCES += \
         csmisas.h \
         os_win32/wmiquery.cpp \
         os_win32/wmiquery.h
