@@ -95,7 +95,8 @@ smartctl_SOURCES = \
         nvmeprint.cpp \
         nvmeprint.h \
         scsiprint.cpp \
-        scsiprint.h
+        scsiprint.h \
+        static_assert.h
 
 libsmart_la_LIBADD = $(os_deps)
 libsmart_la_DEPENDENCIES = $(os_deps)
@@ -157,8 +158,6 @@ if OS_WIN32_MINGW
 smartd_SOURCES += \
         os_win32/daemon_win32.cpp \
         os_win32/daemon_win32.h \
-        os_win32/popen_win32.cpp \
-        os_win32/popen.h \
         os_win32/syslog_win32.cpp \
         os_win32/syslog.h
 
