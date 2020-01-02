@@ -35,7 +35,7 @@ CC="${ARCH}-linux-uclibc-gcc" CFLAGS="${2}" \
 	glib_cv_func_pthread_cond_timedwait_posix=yes \
 	glib_cv_sizeof_gmutex=24 \
 	glib_cv_byte_contents_gmutex="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" \
-	./configure --prefix=${PWD}/../glib-1.2.10-install \
+	./configure --prefix=${PWD}/../glib-1.2.10-install --disable-shared --enable-static \
 	--cache-file=config.cache --host=mipsel-linux \
 	AR_FLAGS="cru ${3}" \
 	RANLIB="${ARCH}-linux-ranlib ${3}"
