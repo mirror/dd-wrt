@@ -117,6 +117,7 @@ export STRIP := $(CROSS_COMPILE)strip
 export SIZE := $(CROSS_COMPILE)size
 
 export CFLAGS := $(COPTS)
+#export LTOFIXUP := -fno-fat-lto-objects -fno-devirtualize
 
 #
 # Install and target directories
@@ -232,7 +233,7 @@ endif
 	rm -f $(LINUXDIR)/vmlinux
 	$(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 
-include common.mk
+include common-nolto.mk
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory
