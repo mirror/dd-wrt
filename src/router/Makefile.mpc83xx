@@ -243,7 +243,7 @@ endif
 #	make -C lzma-loader/rb500 
 #	cp lzma-loader/rb500/lzma.elf $(ARCH)-uclibc/vmlinux
 
-include common.mk
+include common-nolto.mk
 
 dtc:
 	$(LINUXDIR)/scripts/dtc/dtc -q -I dts -O dtb -o tools/uniwip/uniwip.dtb $(LINUXDIR)/arch/powerpc/boot/dts/uniwip.dts
