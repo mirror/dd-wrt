@@ -252,8 +252,10 @@ static int burl_normalize_2F_to_slash_fix (buffer *b, int qs, int i)
         }
     }
     if (qs >= 0) {
-        memmove(s+j, s+qs, blen - qs);
-        j += blen - qs;
+        const int qslen = blen - qs;
+        memmove(s+j, s+qs, (size_t)qslen);
+        qs = j;
+        j += qslen;
     }
     buffer_string_set_length(b, j);
     return qs;
@@ -287,7 +289,7 @@ static int burl_normalize_path (buffer *b, buffer *t, int qs, int flags)
             path_simplify = 1;
             break;
         }
-        do { ++i; } while (i < len && s[i] != '/');
+        while (i < len && s[i] != '/') ++i;
         if (s[i] == '/' && s[i+1] == '/') { /*(s[len] != '/')*/
             path_simplify = 1;
             break;

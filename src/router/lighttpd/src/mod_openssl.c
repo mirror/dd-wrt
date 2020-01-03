@@ -82,13 +82,14 @@ static int ssl_is_init;
 /* need assigned p->id for deep access of module handler_ctx for connection
  *   i.e. handler_ctx *hctx = con->plugin_ctx[plugin_data_singleton->id]; */
 static plugin_data *plugin_data_singleton;
-#define LOCAL_SEND_BUFSIZE (64 * 1024)
+#define LOCAL_SEND_BUFSIZE (16 * 1024)
 static char *local_send_buffer;
 
 typedef struct {
     SSL *ssl;
     connection *con;
-    int renegotiations; /* count of SSL_CB_HANDSHAKE_START */
+    short renegotiations; /* count of SSL_CB_HANDSHAKE_START */
+    short close_notify;
     unsigned short request_env_patched;
     unsigned short alpn;
     plugin_config conf;
@@ -327,32 +328,16 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 static int mod_openssl_patch_connection (server *srv, connection *con, handler_ctx *hctx);
 
 static int
-network_ssl_servername_callback (SSL *ssl, int *al, server *srv)
+mod_openssl_SNI (SSL *ssl, server *srv, handler_ctx *hctx, const char *servername, size_t len)
 {
-    const char *servername;
-    handler_ctx *hctx = (handler_ctx *) SSL_get_app_data(ssl);
-    connection *con = hctx->con;
-    size_t len;
-    UNUSED(al);
-
-    buffer_copy_string(con->uri.scheme, "https");
-
-    servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-    if (NULL == servername) {
-#if 0
-        /* this "error" just means the client didn't support it */
-        log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
-                "failed to get TLS server name");
-#endif
-        return SSL_TLSEXT_ERR_NOACK;
-    }
-    len = strlen(servername);
-    if (len >= 1024) { /*(expecting < 256)*/
-        log_error_write(srv, __FILE__, __LINE__, "sss", "SSL:",
-                        "SNI name too long", servername);
+    if (len >= 1024) { /*(expecting < 256; TLSEXT_MAXLEN_host_name is 255)*/
+        log_error(srv->errh, __FILE__, __LINE__,
+                  "SSL: SNI name too long %.*s", (int)len, servername);
         return SSL_TLSEXT_ERR_ALERT_FATAL;
     }
+
     /* use SNI to patch mod_openssl config and then reset COMP_HTTP_HOST */
+    connection * const con = hctx->con;
     buffer_copy_string_len(con->uri.authority, servername, len);
     buffer_to_lower(con->uri.authority);
   #if 0
@@ -425,6 +410,47 @@ network_ssl_servername_callback (SSL *ssl, int *al, server *srv)
 
     return SSL_TLSEXT_ERR_OK;
 }
+
+#ifdef SSL_CLIENT_HELLO_SUCCESS
+static int
+mod_openssl_client_hello_cb (SSL *ssl, int *al, void *srv)
+{
+    handler_ctx *hctx = (handler_ctx *) SSL_get_app_data(ssl);
+    buffer_copy_string(hctx->con->uri.scheme, "https");
+
+    const unsigned char *name;
+    size_t len, slen;
+    if (!SSL_client_hello_get0_ext(ssl, TLSEXT_TYPE_server_name, &name, &len)) {
+        return SSL_CLIENT_HELLO_SUCCESS; /* client did not provide SNI */
+    }
+
+    /* expecting single element in the server_name extension; parse first one */
+    if (len > 5
+        && (size_t)((name[0] << 8) + name[1]) == len-2
+        && name[2] == TLSEXT_TYPE_server_name
+        && (slen = (name[3] << 8) + name[4]) <= len-5) { /*(first)*/
+        int rc = mod_openssl_SNI(ssl, srv, hctx, (const char *)name+5, slen);
+        if (rc == SSL_TLSEXT_ERR_OK)
+            return SSL_CLIENT_HELLO_SUCCESS;
+    }
+
+    *al = TLS1_AD_UNRECOGNIZED_NAME;
+    return SSL_CLIENT_HELLO_ERROR;
+}
+#else
+static int
+network_ssl_servername_callback (SSL *ssl, int *al, server *srv)
+{
+    handler_ctx *hctx = (handler_ctx *) SSL_get_app_data(ssl);
+    buffer_copy_string(hctx->con->uri.scheme, "https");
+    UNUSED(al);
+
+    const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+    return (NULL != servername)
+      ? mod_openssl_SNI(ssl, srv, hctx, servername, strlen(servername))
+      : SSL_TLSEXT_ERR_NOACK; /* client did not provide SNI */
+}
+#endif
 #endif
 
 
@@ -1151,6 +1177,9 @@ network_init_ssl (server *srv, void *p_d)
                                    | SSL_MODE_RELEASE_BUFFERS);
 
       #ifndef OPENSSL_NO_TLSEXT
+       #ifdef SSL_CLIENT_HELLO_SUCCESS
+        SSL_CTX_set_client_hello_cb(s->ssl_ctx,mod_openssl_client_hello_cb,srv);
+       #else
         if (!SSL_CTX_set_tlsext_servername_callback(
                s->ssl_ctx, network_ssl_servername_callback) ||
             !SSL_CTX_set_tlsext_servername_arg(s->ssl_ctx, srv)) {
@@ -1160,6 +1189,7 @@ network_init_ssl (server *srv, void *p_d)
                             "extension");
             return -1;
         }
+       #endif
 
        #if OPENSSL_VERSION_NUMBER >= 0x10002000
         SSL_CTX_set_alpn_select_cb(s->ssl_ctx,mod_openssl_alpn_select_cb,NULL);
@@ -1207,7 +1237,7 @@ SETDEFAULTS_FUNC(mod_openssl_set_defaults)
 
     if (!p) return HANDLER_ERROR;
 
-    p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
+    p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
 
     for (size_t i = 0; i < srv->config_context->used; i++) {
         data_config const* config = (data_config const*)srv->config_context->data[i];
@@ -1235,8 +1265,20 @@ SETDEFAULTS_FUNC(mod_openssl_set_defaults)
         s->ssl_read_ahead = (0 == i)
           ? 0
           : p->config_storage[0]->ssl_read_ahead;
-        if (0 != i) buffer_copy_buffer(s->ssl_ca_crl_file, p->config_storage[0]->ssl_ca_crl_file);
-        if (0 != i) buffer_copy_buffer(s->ssl_ca_dn_file, p->config_storage[0]->ssl_ca_dn_file);
+        if (0 == i)
+            buffer_copy_string_len(s->ssl_cipher_list, CONST_STR_LEN("HIGH"));
+        if (0 != i) {
+            buffer *b;
+            b = p->config_storage[0]->ssl_ca_crl_file;
+            if (!buffer_string_is_empty(b))
+                buffer_copy_buffer(s->ssl_ca_crl_file, b);
+            b = p->config_storage[0]->ssl_ca_dn_file;
+            if (!buffer_string_is_empty(b))
+                buffer_copy_buffer(s->ssl_ca_dn_file, b);
+            b = p->config_storage[0]->ssl_cipher_list;
+            if (!buffer_string_is_empty(b))
+                buffer_copy_buffer(s->ssl_cipher_list, b);
+        }
         s->ssl_conf_cmd = (0 == i)
           ? array_init()
           : array_init_array(p->config_storage[0]->ssl_conf_cmd);
@@ -1422,7 +1464,7 @@ load_next_chunk (server *srv, chunkqueue *cq, off_t max_bytes,
 {
     chunk *c = cq->first;
 
-    /* local_send_buffer is a 64k sendbuffer (LOCAL_SEND_BUFSIZE)
+    /* local_send_buffer is a static buffer of size (LOCAL_SEND_BUFSIZE)
      *
      * it has to stay at the same location all the time to satisfy the needs
      * of SSL_write to pass the SAME parameter in case of a _WANT_WRITE
@@ -1509,11 +1551,17 @@ load_next_chunk (server *srv, chunkqueue *cq, off_t max_bytes,
 
 
 static int
+mod_openssl_close_notify(server *srv, handler_ctx *hctx);
+
+
+static int
 connection_write_cq_ssl (server *srv, connection *con,
                          chunkqueue *cq, off_t max_bytes)
 {
     handler_ctx *hctx = con->plugin_ctx[plugin_data_singleton->id];
     SSL *ssl = hctx->ssl;
+
+    if (0 != hctx->close_notify) return mod_openssl_close_notify(srv, hctx);
 
     chunkqueue_remove_finished_chunks(cq);
 
@@ -1621,6 +1669,8 @@ connection_read_cq_ssl (server *srv, connection *con,
     /*(code transform assumption; minimize diff)*/
     force_assert(cq == con->read_queue);
     UNUSED(max_bytes);
+
+    if (0 != hctx->close_notify) return mod_openssl_close_notify(srv, hctx);
 
     ERR_clear_error();
     do {
@@ -1798,7 +1848,16 @@ CONNECTION_FUNC(mod_openssl_handle_con_accept)
 
 
 static void
-mod_openssl_close_notify(server *srv, handler_ctx *hctx);
+mod_openssl_detach(handler_ctx *hctx)
+{
+    /* step aside from futher SSL processing
+     * (used after handle_connection_shut_wr hook) */
+    /* future: might restore prior network_read and network_write fn ptrs */
+    hctx->con->is_ssl_sock = 0;
+    /* if called after handle_connection_shut_wr hook, shutdown SHUT_WR */
+    if (-1 == hctx->close_notify) shutdown(hctx->con->fd, SHUT_WR);
+    hctx->close_notify = 1;
+}
 
 
 CONNECTION_FUNC(mod_openssl_handle_con_shut_wr)
@@ -1807,34 +1866,36 @@ CONNECTION_FUNC(mod_openssl_handle_con_shut_wr)
     handler_ctx *hctx = con->plugin_ctx[p->id];
     if (NULL == hctx) return HANDLER_GO_ON;
 
+    hctx->close_notify = -2;
     if (SSL_is_init_finished(hctx->ssl)) {
         mod_openssl_close_notify(srv, hctx);
+    }
+    else {
+        mod_openssl_detach(hctx);
     }
 
     return HANDLER_GO_ON;
 }
 
 
-static void
+static int
 mod_openssl_close_notify(server *srv, handler_ctx *hctx)
 {
         int ret, ssl_r;
         unsigned long err;
+
+        if (1 == hctx->close_notify) return -2;
+
         ERR_clear_error();
         switch ((ret = SSL_shutdown(hctx->ssl))) {
         case 1:
-            /* ok */
-            break;
+            mod_openssl_detach(hctx);
+            return -2;
         case 0:
-            /* wait for fd-event
-             *
-             * FIXME: wait for fdevent and call SSL_shutdown again
-             *
-             */
-
             /* Drain SSL read buffers in case pending records need processing.
-             * Limit to reading 16k to avoid denial of service when the CPU
+             * Limit to reading next record to avoid denial of service when CPU
              * processing TLS is slower than arrival speed of TLS data packets.
+             * (unless hctx->conf.ssl_read_ahead is set)
              *
              * references:
              *
@@ -1852,25 +1913,40 @@ mod_openssl_close_notify(server *srv, handler_ctx *hctx)
              * Additional discussion in "Auto retry in shutdown"
              * https://github.com/openssl/openssl/pull/6340
              */
-            err = 0;
-            do {
-                char buf[4096];
-                ret = SSL_read(hctx->ssl, buf, (int)sizeof(buf));
-            } while (ret > 0 && (err += (unsigned long)ret) < 16384);
+            ssl_r = SSL_pending(hctx->ssl);
+            if (ssl_r) {
+                do {
+                    char buf[4096];
+                    ret = SSL_read(hctx->ssl, buf, (int)sizeof(buf));
+                } while (ret > 0 && (hctx->conf.ssl_read_ahead||(ssl_r-=ret)));
+            }
 
             ERR_clear_error();
-            if (-1 != (ret = SSL_shutdown(hctx->ssl))) break;
+            switch ((ret = SSL_shutdown(hctx->ssl))) {
+            case 1:
+                mod_openssl_detach(hctx);
+                return -2;
+            case 0:
+                hctx->close_notify = -1;
+                return 0;
+            default:
+                break;
+            }
 
             /* fall through */
         default:
 
+            if (!SSL_is_init_finished(hctx->ssl)) {
+                mod_openssl_detach(hctx);
+                return -2;
+            }
+
             switch ((ssl_r = SSL_get_error(hctx->ssl, ret))) {
             case SSL_ERROR_ZERO_RETURN:
-                break;
             case SSL_ERROR_WANT_WRITE:
-                /*con->is_writable=-1;*//*(no effect; shutdown() called below)*/
             case SSL_ERROR_WANT_READ:
-                break;
+                hctx->close_notify = -1;
+                return 0; /* try again later */
             case SSL_ERROR_SYSCALL:
                 /* perhaps we have error waiting in our error-queue */
                 if (0 != (err = ERR_get_error())) {
@@ -1905,6 +1981,8 @@ mod_openssl_close_notify(server *srv, handler_ctx *hctx)
             }
         }
         ERR_clear_error();
+        hctx->close_notify = -1;
+        return ret;
 }
 
 

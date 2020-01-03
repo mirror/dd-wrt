@@ -82,8 +82,8 @@ typedef struct {
 	pid_t pid;
 	int fd;
 	int fdtocgi;
-	int fde_ndx; /* index into the fd-event buffer */
-	int fde_ndx_tocgi; /* index into the fd-event buffer */
+	fdnode *fdn;
+	fdnode *fdntocgi;
 
 	connection *remote_conn;  /* dumb pointer */
 	plugin_data *plugin_data; /* dumb pointer */
@@ -186,7 +186,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 
 	if (!p) return HANDLER_ERROR;
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
+	p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
 	force_assert(p->config_storage);
 
 	for (i = 0; i < srv->config_context->used; i++) {
@@ -249,11 +249,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 static void cgi_pid_add(plugin_data *p, pid_t pid, void *ctx) {
 	buffer_pid_t *r = &(p->cgi_pid);
 
-	if (r->size == 0) {
-		r->size = 16;
-		r->ptr = malloc(sizeof(*r->ptr) * r->size);
-		force_assert(r->ptr);
-	} else if (r->used == r->size) {
+	if (r->used == r->size) {
 		r->size += 16;
 		r->ptr = realloc(r->ptr, sizeof(*r->ptr) * r->size);
 		force_assert(r->ptr);
@@ -287,9 +283,10 @@ static void cgi_pid_del(plugin_data *p, size_t i) {
 
 static void cgi_connection_close_fdtocgi(server *srv, handler_ctx *hctx) {
 	/*(closes only hctx->fdtocgi)*/
-	fdevent_event_del(srv->ev, &(hctx->fde_ndx_tocgi), hctx->fdtocgi);
+	fdevent_fdnode_event_del(srv->ev, hctx->fdntocgi);
 	/*fdevent_unregister(srv->ev, hctx->fdtocgi);*//*(handled below)*/
 	fdevent_sched_close(srv->ev, hctx->fdtocgi, 0);
+	hctx->fdntocgi = NULL;
 	hctx->fdtocgi = -1;
 }
 
@@ -305,9 +302,10 @@ static void cgi_connection_close(server *srv, handler_ctx *hctx) {
 
 	if (hctx->fd != -1) {
 		/* close connection to the cgi-script */
-		fdevent_event_del(srv->ev, &(hctx->fde_ndx), hctx->fd);
+		fdevent_fdnode_event_del(srv->ev, hctx->fdn);
 		/*fdevent_unregister(srv->ev, hctx->fd);*//*(handled below)*/
 		fdevent_sched_close(srv->ev, hctx->fd, 0);
+		hctx->fdn = NULL;
 	}
 
 	if (hctx->fdtocgi != -1) {
@@ -414,7 +412,7 @@ static handler_t cgi_response_headers(server *srv, connection *con, struct http_
 
 static int cgi_recv_response(server *srv, handler_ctx *hctx) {
 		switch (http_response_read(srv, hctx->remote_conn, &hctx->opts,
-					   hctx->response, hctx->fd, &hctx->fde_ndx)) {
+					   hctx->response, hctx->fdn)) {
 		default:
 			return HANDLER_GO_ON;
 		case HANDLER_ERROR:
@@ -553,7 +551,7 @@ static ssize_t cgi_write_file_chunk_mmap(server *srv, connection *con, int fd, c
 	/*(simplified from chunk.c:chunkqueue_open_file_chunk())*/
 	UNUSED(con);
 	if (-1 == c->file.fd) {
-		if (-1 == (c->file.fd = fdevent_open_cloexec(c->mem->ptr, O_RDONLY, 0))) {
+		if (-1 == (c->file.fd = fdevent_open_cloexec(c->mem->ptr, con->conf.follow_symlink, O_RDONLY, 0))) {
 			log_error_write(srv, __FILE__, __LINE__, "ssb", "open failed:", strerror(errno), c->mem);
 			return -1;
 		}
@@ -620,10 +618,7 @@ static ssize_t cgi_write_file_chunk_mmap(server *srv, connection *con, int fd, c
 		}
 	}
 
-	if (r >= 0) {
-		chunkqueue_mark_written(cq, r);
-	}
-
+	chunkqueue_mark_written(cq, r);
 	return r;
 }
 
@@ -709,29 +704,27 @@ static int cgi_write_request(server *srv, handler_ctx *hctx, int fd) {
 		}
 		if (-1 == hctx->fdtocgi) { /*(not registered yet)*/
 			hctx->fdtocgi = fd;
-			hctx->fde_ndx_tocgi = -1;
-			fdevent_register(srv->ev, hctx->fdtocgi, cgi_handle_fdevent_send, hctx);
+			hctx->fdntocgi = fdevent_register(srv->ev, hctx->fdtocgi, cgi_handle_fdevent_send, hctx);
 		}
 		if (0 == cqlen) { /*(chunkqueue_is_empty(cq))*/
-			if ((fdevent_event_get_interest(srv->ev, hctx->fdtocgi) & FDEVENT_OUT)) {
-				fdevent_event_set(srv->ev, &(hctx->fde_ndx_tocgi), hctx->fdtocgi, 0);
+			if ((fdevent_fdnode_interest(hctx->fdntocgi) & FDEVENT_OUT)) {
+				fdevent_fdnode_event_set(srv->ev, hctx->fdntocgi, 0);
 			}
 		} else {
 			/* more request body remains to be sent to CGI so register for fdevents */
-			fdevent_event_set(srv->ev, &(hctx->fde_ndx_tocgi), hctx->fdtocgi, FDEVENT_OUT);
+			fdevent_fdnode_event_set(srv->ev, hctx->fdntocgi, FDEVENT_OUT);
 		}
 	}
 
 	return 0;
 }
 
-static struct stat * cgi_stat(server *srv, connection *con, buffer *path, struct stat *st) {
-    /* CGI might be executable even if it is not readable
-     * (stat_cache_get_entry() currently checks file is readable)*/
+static struct stat * cgi_stat(server *srv, connection *con, buffer *path) {
+    /* CGI might be executable even if it is not readable */
     stat_cache_entry *sce;
     return (HANDLER_ERROR != stat_cache_get_entry(srv, con, path, &sce))
       ? &sce->st
-      : (0 == stat(path->ptr, st)) ? st : NULL;
+      : NULL;
 }
 
 static int cgi_create_env(server *srv, connection *con, plugin_data *p, handler_ctx *hctx, buffer *cgi_handler) {
@@ -742,9 +735,7 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, handler_
 	UNUSED(p);
 
 	if (!buffer_string_is_empty(cgi_handler)) {
-		/* stat the exec file */
-		struct stat st;
-		if (NULL == cgi_stat(srv, con, cgi_handler, &st)) {
+		if (NULL == cgi_stat(srv, con, cgi_handler)) {
 			log_error_write(srv, __FILE__, __LINE__, "sbss",
 					"stat for cgi-handler", cgi_handler,
 					"failed:", strerror(errno));
@@ -810,7 +801,7 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, handler_
 		args[i  ] = NULL;
 	}
 
-	dfd = fdevent_open_dirname(con->physical.path->ptr);
+	dfd = fdevent_open_dirname(con->physical.path->ptr, con->conf.follow_symlink);
 	if (-1 == dfd) {
 		log_error_write(srv, __FILE__, __LINE__, "ssb", "open dirname failed:", strerror(errno), con->physical.path);
 	}
@@ -832,7 +823,6 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, handler_
 		close(to_cgi_fds[0]);
 
 		hctx->fd = from_cgi_fds[0];
-		hctx->fde_ndx = -1;
 
 		++srv->cur_fds;
 
@@ -858,13 +848,13 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, handler_
 			++srv->cur_fds;
 		}
 
-		fdevent_register(srv->ev, hctx->fd, cgi_handle_fdevent, hctx);
+		hctx->fdn = fdevent_register(srv->ev, hctx->fd, cgi_handle_fdevent, hctx);
 		if (-1 == fdevent_fcntl_set_nb(srv->ev, hctx->fd)) {
 			log_error_write(srv, __FILE__, __LINE__, "ss", "fcntl failed: ", strerror(errno));
 			cgi_connection_close(srv, hctx);
 			return -1;
 		}
-		fdevent_event_set(srv->ev, &(hctx->fde_ndx), hctx->fd, FDEVENT_IN | FDEVENT_RDHUP);
+		fdevent_fdnode_event_set(srv->ev, hctx->fdn, FDEVENT_IN | FDEVENT_RDHUP);
 
 		return 0;
 	}
@@ -917,7 +907,6 @@ static int mod_cgi_patch_connection(server *srv, connection *con, plugin_data *p
 
 URIHANDLER_FUNC(cgi_is_handled) {
 	plugin_data *p = p_d;
-	struct stat stbuf;
 	struct stat *st;
 	data_string *ds;
 
@@ -929,7 +918,7 @@ URIHANDLER_FUNC(cgi_is_handled) {
 	ds = (data_string *)array_match_key_suffix(p->conf.cgi, con->physical.path);
 	if (NULL == ds) return HANDLER_GO_ON;
 
-	st = cgi_stat(srv, con, con->physical.path, &stbuf);
+	st = cgi_stat(srv, con, con->physical.path);
 	if (NULL == st) return HANDLER_GO_ON;
 
 	if (!S_ISREG(st->st_mode)) return HANDLER_GO_ON;
@@ -976,12 +965,12 @@ SUBREQUEST_FUNC(mod_cgi_handle_subrequest) {
 	if ((con->conf.stream_response_body & FDEVENT_STREAM_RESPONSE_BUFMIN)
 	    && con->file_started) {
 		if (chunkqueue_length(con->write_queue) > 65536 - 4096) {
-			fdevent_event_clr(srv->ev, &(hctx->fde_ndx), hctx->fd, FDEVENT_IN);
-		} else if (!(fdevent_event_get_interest(srv->ev, hctx->fd) & FDEVENT_IN)) {
+			fdevent_fdnode_event_clr(srv->ev,hctx->fdn,FDEVENT_IN);
+		} else if (!(fdevent_fdnode_interest(hctx->fdn) & FDEVENT_IN)) {
 			/* optimistic read from backend */
 			handler_t rc = cgi_recv_response(srv, hctx); /*(might invalidate hctx)*/
 			if (rc != HANDLER_GO_ON) return rc;          /*(unless HANDLER_GO_ON)*/
-			fdevent_event_add(srv->ev, &(hctx->fde_ndx), hctx->fd, FDEVENT_IN);
+			fdevent_fdnode_event_add(srv->ev, hctx->fdn, FDEVENT_IN);
 		}
 	}
 
@@ -995,7 +984,7 @@ SUBREQUEST_FUNC(mod_cgi_handle_subrequest) {
 		} else {
 			handler_t r = connection_handle_read_post_state(srv, con);
 			if (!chunkqueue_is_empty(cq)) {
-				if (fdevent_event_get_interest(srv->ev, hctx->fdtocgi) & FDEVENT_OUT) {
+				if (fdevent_fdnode_interest(hctx->fdntocgi) & FDEVENT_OUT) {
 					return (r == HANDLER_GO_ON) ? HANDLER_WAIT_FOR_EVENT : r;
 				}
 			}

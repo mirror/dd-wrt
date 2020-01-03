@@ -311,8 +311,8 @@ typedef struct gw_handler_ctx {
 
     buffer   *response;
 
+    fdnode   *fdn;       /* fdevent (fdnode *) object */
     int       fd;        /* fd to the gw process */
-    int       fde_ndx;   /* index into the fd-event buffer */
 
     pid_t     pid;
     int       reconnects; /* number of reconnect attempts */

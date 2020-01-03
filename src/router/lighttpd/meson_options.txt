@@ -48,6 +48,11 @@ option('with_lua',
 	value: false,
 	description: 'with lua 5.1 for mod_magnet [default: off]',
 )
+option('with_maxminddb',
+	type: 'boolean',
+	value: false,
+	description: 'with MaxMind GeoIP2-support mod_maxminddb [default: off]',
+)
 option('with_memcached',
 	type: 'boolean',
 	value: false,
@@ -121,7 +126,7 @@ option('build_extra_warnings',
 )
 option('warn_cflags',
 	type: 'string',
-	value: '-g -g2 -Wall -Wmissing-declarations -Wdeclaration-after-statement -Wcast-align -Wsign-compare -Wnested-externs -Wpointer-arith -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security',
+	value: '-g -g2 -Wall -Wmissing-declarations -Wcast-align -Wsign-compare -Wnested-externs -Wpointer-arith -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security',
 	description: 'CFLAGS to use when build_extra_warnings is active',
 )
 

@@ -87,7 +87,7 @@ SETDEFAULTS_FUNC(mod_staticfile_set_defaults) {
 
 	if (!p) return HANDLER_ERROR;
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
+	p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		data_config const* config = (data_config const*)srv->config_context->data[i];
@@ -185,7 +185,7 @@ URIHANDLER_FUNC(mod_staticfile_subrequest) {
 	}
 
 	/* ignore certain extensions */
-	if (array_match_value_suffix(p->conf.exclude_ext, con->physical.path)) {
+	if (0 != p->conf.exclude_ext->used && array_match_value_suffix(p->conf.exclude_ext, con->physical.path)) {
 			if (con->conf.log_request_handling) {
 				log_error_write(srv, __FILE__, __LINE__,  "s",  "-- NOT handling file as static file, extension forbidden");
 			}

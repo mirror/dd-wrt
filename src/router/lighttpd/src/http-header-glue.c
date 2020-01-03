@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #include <time.h>
 
@@ -91,7 +92,7 @@ int http_response_buffer_append_authority(server *srv, connection *con, buffer *
 	return 0;
 }
 
-int http_response_redirect_to_directory(server *srv, connection *con) {
+int http_response_redirect_to_directory(server *srv, connection *con, int status) {
 	buffer *o = srv->tmp_buf;
 	buffer_copy_buffer(o, con->uri.scheme);
 	buffer_append_string_len(o, CONST_STR_LEN("://"));
@@ -105,10 +106,15 @@ int http_response_redirect_to_directory(server *srv, connection *con) {
 		buffer_append_string_buffer(o, con->uri.query);
 	}
 
-	http_header_response_set(con, HTTP_HEADER_LOCATION, CONST_STR_LEN("Location"), CONST_BUF_LEN(o));
+	if (status >= 300) {
+		http_header_response_set(con, HTTP_HEADER_LOCATION, CONST_STR_LEN("Location"), CONST_BUF_LEN(o));
+		con->http_status = status;
+		con->file_finished = 1;
+	}
+	else {
+		http_header_response_set(con, HTTP_HEADER_CONTENT_LOCATION, CONST_STR_LEN("Content-Location"), CONST_BUF_LEN(o));
+	}
 
-	con->http_status = 301;
-	con->file_finished = 1;
 	return 0;
 }
 
@@ -152,10 +158,12 @@ int http_response_handle_cachable(server *srv, connection *con, buffer *mtime) {
 	 */
 
 	if ((vb = http_header_request_get(con, HTTP_HEADER_IF_NONE_MATCH, CONST_STR_LEN("If-None-Match")))) {
-		/* use strong etag checking for now: weak comparison must not be used
-		 * for ranged requests
-		 */
-		if (etag_is_equal(con->physical.etag, vb->ptr, 0)) {
+		/*(weak etag comparison must not be used for ranged requests)*/
+		int range_request =
+		  (con->conf.range_requests
+		   && (200 == con->http_status || 0 == con->http_status)
+		   && NULL != http_header_request_get(con, HTTP_HEADER_RANGE, CONST_STR_LEN("Range")));
+		if (etag_is_equal(con->physical.etag, vb->ptr, !range_request)) {
 			if (head_or_get) {
 				con->http_status = 304;
 				return HANDLER_FINISHED;
@@ -438,9 +446,8 @@ void http_response_send_file (server *srv, connection *con, buffer *path) {
 		return;
 	}
 
-	/* we only handline regular files */
-#ifdef HAVE_LSTAT
-	if ((sce->is_symlink == 1) && !con->conf.follow_symlink) {
+	if (!con->conf.follow_symlink
+	    && 0 != stat_cache_path_contains_symlink(srv, path)) {
 		con->http_status = 403;
 
 		if (con->conf.log_request_handling) {
@@ -450,7 +457,8 @@ void http_response_send_file (server *srv, connection *con, buffer *path) {
 
 		return;
 	}
-#endif
+
+	/* we only handle regular files */
 	if (!S_ISREG(sce->st.st_mode)) {
 		con->http_status = 403;
 
@@ -460,6 +468,19 @@ void http_response_send_file (server *srv, connection *con, buffer *path) {
 					"->", sce->name);
 		}
 
+		return;
+	}
+
+	/*(Note: O_NOFOLLOW affects only the final path segment,
+	 * the target file, not any intermediate symlinks along path)*/
+	const int fd = (0 != sce->st.st_size)
+	  ? fdevent_open_cloexec(path->ptr, con->conf.follow_symlink, O_RDONLY, 0)
+	  : -1;
+	if (fd < 0 && 0 != sce->st.st_size) {
+		con->http_status = (errno == ENOENT) ? 404 : 403;
+		if (con->conf.log_request_handling) {
+			log_error_write(srv, __FILE__, __LINE__,  "sbs", "file open failed:", path, strerror(errno));
+		}
 		return;
 	}
 
@@ -505,8 +526,15 @@ void http_response_send_file (server *srv, connection *con, buffer *path) {
 		}
 
 		if (HANDLER_FINISHED == http_response_handle_cachable(srv, con, mtime)) {
+			if (fd >= 0) close(fd);
 			return;
 		}
+	}
+
+	if (fd < 0) { /* 0-length file */
+		con->http_status = 200;
+		con->file_finished = 1;
+		return;
 	}
 
 	if (con->conf.range_requests
@@ -552,6 +580,7 @@ void http_response_send_file (server *srv, connection *con, buffer *path) {
 			if (0 == http_response_parse_range(srv, con, path, sce, range->ptr+6)) {
 				con->http_status = 206;
 			}
+			close(fd);
 			return;
 		}
 	}
@@ -561,11 +590,13 @@ void http_response_send_file (server *srv, connection *con, buffer *path) {
 	/* we add it here for all requests
 	 * the HEAD request will drop it afterwards again
 	 */
-	if (0 == sce->st.st_size || 0 == http_chunk_append_file(srv, con, path)) {
+
+	if (0 == http_chunk_append_file_fd(srv, con, path, fd, sce->st.st_size)) {
 		con->http_status = 200;
 		con->file_finished = 1;
-	} else {
-		con->http_status = 403;
+	}
+	else {
+		con->http_status = 500;
 	}
 }
 
@@ -988,8 +1019,10 @@ static int http_response_process_headers(server *srv, connection *con, http_resp
             break;
           case HTTP_HEADER_CONNECTION:
             if (opts->backend == BACKEND_PROXY) continue;
-            con->response.keep_alive =
-              (0 == strcasecmp(value, "Keep-Alive")) ? 1 : 0;
+            /*(should parse for tokens and do case-insensitive match for "close"
+             * but this is an imperfect though simplistic attempt to honor
+             * backend request to close)*/
+            if (NULL != strstr(value, "lose")) con->keep_alive = 0;
             break;
           case HTTP_HEADER_CONTENT_LENGTH:
             con->response.content_length = strtoul(value, NULL, 10);
@@ -1173,7 +1206,8 @@ handler_t http_response_parse_headers(server *srv, connection *con, http_respons
 }
 
 
-handler_t http_response_read(server *srv, connection *con, http_response_opts *opts, buffer *b, int fd, int *fde_ndx) {
+handler_t http_response_read(server *srv, connection *con, http_response_opts *opts, buffer *b, fdnode *fdn) {
+    const int fd = fdn->fd;
     while (1) {
         ssize_t n;
         size_t avail = buffer_string_space(b);
@@ -1189,11 +1223,11 @@ handler_t http_response_read(server *srv, connection *con, http_response_opts *o
             }
             else if (0 == toread) {
               #if 0
-                return (fdevent_event_get_interest(srv->ev, fd) & FDEVENT_IN)
+                return (fdevent_fdnode_interest(fdn) & FDEVENT_IN)
                   ? HANDLER_FINISHED  /* read finished */
                   : HANDLER_GO_ON;    /* optimistic read; data not ready */
               #else
-                if (!(fdevent_event_get_interest(srv->ev, fd) & FDEVENT_IN)) {
+                if (!(fdevent_fdnode_interest(fdn) & FDEVENT_IN)) {
                     if (!(con->conf.stream_response_body
                           & FDEVENT_STREAM_RESPONSE_POLLRDHUP))
                         return HANDLER_GO_ON;/*optimistic read; data not ready*/
@@ -1216,7 +1250,7 @@ handler_t http_response_read(server *srv, connection *con, http_response_opts *o
                      * immediately, unless !con->is_writable, where
                      * connection_state_machine() might not loop back to call
                      * mod_proxy_handle_subrequest())*/
-                    fdevent_event_clr(srv->ev, fde_ndx, fd, FDEVENT_IN);
+                    fdevent_fdnode_event_clr(srv->ev, fdn, FDEVENT_IN);
                 }
                 if (cqlen >= 65536-1) return HANDLER_GO_ON;
                 toread = 65536 - 1 - (unsigned int)cqlen;
@@ -1287,7 +1321,7 @@ handler_t http_response_read(server *srv, connection *con, http_response_opts *o
                  * data immediately, unless !con->is_writable, where
                  * connection_state_machine() might not loop back to
                  * call the subrequest handler)*/
-                fdevent_event_clr(srv->ev, fde_ndx, fd, FDEVENT_IN);
+                fdevent_fdnode_event_clr(srv->ev, fdn, FDEVENT_IN);
             }
             break;
         }

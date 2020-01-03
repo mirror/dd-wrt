@@ -101,7 +101,7 @@ SETDEFAULTS_FUNC(mod_userdir_set_defaults) {
 
 	if (!p) return HANDLER_ERROR;
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
+	p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		data_config const* config = (data_config const*)srv->config_context->data[i];
@@ -215,7 +215,7 @@ URIHANDLER_FUNC(mod_userdir_docroot_handler) {
 
 	if (NULL == (rel_url = strchr(con->uri.path->ptr + 2, '/'))) {
 		/* / is missing -> redirect to .../ as we are a user - DIRECTORY ! :) */
-		http_response_redirect_to_directory(srv, con);
+		http_response_redirect_to_directory(srv, con, 301);
 
 		return HANDLER_FINISHED;
 	}

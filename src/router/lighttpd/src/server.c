@@ -1,6 +1,6 @@
 #include "first.h"
 
-#include "server.h"
+#include "base.h"
 #include "buffer.h"
 #include "burl.h"
 #include "network.h"
@@ -94,6 +94,7 @@ static volatile sig_atomic_t srv_shutdown = 0;
 static volatile sig_atomic_t handle_sig_child = 0;
 static volatile sig_atomic_t handle_sig_alarm = 1;
 static volatile sig_atomic_t handle_sig_hup = 0;
+static time_t idle_limit = 0;
 
 #if defined(HAVE_SIGACTION) && defined(SA_SIGINFO)
 static volatile siginfo_t last_sigterm_info;
@@ -221,6 +222,7 @@ static int daemonize(void) {
 }
 #endif
 
+__attribute_cold__
 static server *server_init(void) {
 	int i;
 	server *srv = calloc(1, sizeof(*srv));
@@ -230,9 +232,7 @@ static server *server_init(void) {
 
 	CLEAN(response_header);
 	CLEAN(parse_full_path);
-	CLEAN(ts_debug_str);
 	CLEAN(ts_date_str);
-	CLEAN(errorlog_buf);
 	CLEAN(response_range);
 	CLEAN(tmp_buf);
 	srv->empty_string = buffer_init_string("");
@@ -278,6 +278,8 @@ static server *server_init(void) {
 	srv->fdwaitqueue = calloc(1, sizeof(*srv->fdwaitqueue));
 	force_assert(srv->fdwaitqueue);
 
+	srv->errh = log_error_st_init(&srv->cur_ts, &srv->last_generated_debug_ts);
+
 	srv->srvconf.modules = array_init();
 	srv->srvconf.modules_dir = buffer_init_string(LIBRARY_DIR);
 	srv->srvconf.network_backend = buffer_init();
@@ -287,15 +289,11 @@ static server *server_init(void) {
 	srv->srvconf.http_header_strict  = 1;
 	srv->srvconf.http_host_strict    = 1; /*(implies http_host_normalize)*/
 	srv->srvconf.http_host_normalize = 0;
-      #if 0
 	srv->srvconf.http_url_normalize = HTTP_PARSEOPT_URL_NORMALIZE
 					| HTTP_PARSEOPT_URL_NORMALIZE_UNRESERVED
 					| HTTP_PARSEOPT_URL_NORMALIZE_CTRLS_REJECT
-					| HTTP_PARSEOPT_URL_NORMALIZE_PATH_BACKSLASH_TRANS
 					| HTTP_PARSEOPT_URL_NORMALIZE_PATH_2F_DECODE
 					| HTTP_PARSEOPT_URL_NORMALIZE_PATH_DOTSEG_REMOVE;
-      #endif
-	srv->srvconf.http_url_normalize = 0; /* temporary; change in future */
 	srv->srvconf.high_precision_timestamps = 0;
 	srv->srvconf.max_request_field_size = 8192;
 	srv->srvconf.loadavg[0] = 0.0;
@@ -304,16 +302,13 @@ static server *server_init(void) {
 	srv->srvconf.compat_module_load = 1;
 	srv->srvconf.systemd_socket_activation = 0;
 
-	/* use syslog */
-	srv->errorlog_fd = STDERR_FILENO;
-	srv->errorlog_mode = ERRORLOG_FD;
-
 	srv->split_vals = array_init();
 	srv->request_env = plugins_call_handle_request_env;
 
 	return srv;
 }
 
+__attribute_cold__
 static void server_free(server *srv) {
 	size_t i;
 
@@ -330,9 +325,7 @@ static void server_free(server *srv) {
 
 	CLEAN(response_header);
 	CLEAN(parse_full_path);
-	CLEAN(ts_debug_str);
 	CLEAN(ts_date_str);
-	CLEAN(errorlog_buf);
 	CLEAN(response_range);
 	CLEAN(tmp_buf);
 	CLEAN(empty_string);
@@ -354,9 +347,6 @@ static void server_free(server *srv) {
 	CLEAN(tmp_chunk_len);
 #undef CLEAN
 
-#if 0
-	fdevent_unregister(srv->ev, srv->fd);
-#endif
 	fdevent_free(srv->ev);
 
 	free(srv->conns);
@@ -403,9 +393,11 @@ static void server_free(server *srv) {
 	li_rand_cleanup();
 	chunkqueue_chunk_pool_free();
 
+	log_error_st_free(srv->errh);
 	free(srv);
 }
 
+__attribute_cold__
 static void remove_pid_file(server *srv) {
 	if (pid_fd <= -2) return;
 	if (!buffer_string_is_empty(srv->srvconf.pid_file) && 0 <= pid_fd) {
@@ -436,6 +428,7 @@ static void remove_pid_file(server *srv) {
 }
 
 
+__attribute_cold__
 static server_socket * server_oneshot_getsock(server *srv, sock_addr *cnt_addr) {
 	server_socket *srv_socket, *srv_socket_wild = NULL;
 	size_t i;
@@ -461,6 +454,7 @@ static server_socket * server_oneshot_getsock(server *srv, sock_addr *cnt_addr) 
 }
 
 
+__attribute_cold__
 static int server_oneshot_init(server *srv, int fd) {
 	/* Note: does not work with netcat due to requirement that fd be socket.
 	 * STDOUT_FILENO was not saved earlier in startup, and that is to where
@@ -525,6 +519,7 @@ static int server_oneshot_init(server *srv, int fd) {
 }
 
 
+__attribute_cold__
 static void show_version (void) {
 	char *b = PACKAGE_DESC TEXT_SSL \
 " - a light and fast webserver\n"
@@ -535,6 +530,7 @@ static void show_version (void) {
 	write_all(STDOUT_FILENO, b, strlen(b));
 }
 
+__attribute_cold__
 static void show_features (void) {
   static const char features[] =
       "\nFeatures:\n\n"
@@ -633,6 +629,7 @@ static void show_features (void) {
   printf("%s%s%s\n", fdevent_show_event_handlers(), network_write_show_handlers(), features);
 }
 
+__attribute_cold__
 static void show_help (void) {
 	char *b = PACKAGE_DESC TEXT_SSL
 #ifdef NONREPRODUCIBLE_BUILD
@@ -668,6 +665,7 @@ static void show_help (void) {
  */
 
 static int log_error_open(server *srv) {
+    log_error_st *errh = srv->errh;
     int errfd;
   #ifdef HAVE_SYSLOG_H
     /* perhaps someone wants to use syslog() */
@@ -737,11 +735,11 @@ static int log_error_open(server *srv) {
     openlog("lighttpd", LOG_CONS|LOG_PID, -1==facility ? LOG_DAEMON : facility);
   #endif
 
-    srv->errorlog_mode = ERRORLOG_FD;
-    srv->errorlog_fd = STDERR_FILENO;
+    errh->errorlog_mode = ERRORLOG_FD;
+    errh->errorlog_fd = STDERR_FILENO;
 
     if (srv->srvconf.errorlog_use_syslog) {
-        srv->errorlog_mode = ERRORLOG_SYSLOG;
+        errh->errorlog_mode = ERRORLOG_SYSLOG;
     }
     else if (!buffer_string_is_empty(srv->srvconf.errorlog_file)) {
         const char *logfile = srv->srvconf.errorlog_file->ptr;
@@ -752,24 +750,24 @@ static int log_error_open(server *srv) {
                             "' failed: ", strerror(errno));
             return -1;
         }
-        srv->errorlog_fd = fd;
-        srv->errorlog_mode = logfile[0] == '|' ? ERRORLOG_PIPE : ERRORLOG_FILE;
+        errh->errorlog_fd = fd;
+        errh->errorlog_mode = logfile[0] == '|' ? ERRORLOG_PIPE : ERRORLOG_FILE;
     }
 
-    if (srv->errorlog_mode == ERRORLOG_FD && !srv->srvconf.dont_daemonize) {
+    if (errh->errorlog_mode == ERRORLOG_FD && !srv->srvconf.dont_daemonize) {
         /* We can only log to stderr in dont-daemonize mode;
          * if we do daemonize and no errorlog file is specified,
          * we log into /dev/null
          */
-        srv->errorlog_fd = -1;
+        errh->errorlog_fd = -1;
     }
 
     if (!buffer_string_is_empty(srv->srvconf.breakagelog_file)) {
         const char *logfile = srv->srvconf.breakagelog_file->ptr;
 
-        if (srv->errorlog_mode == ERRORLOG_FD) {
-            srv->errorlog_fd = dup(STDERR_FILENO);
-            fdevent_setfd_cloexec(srv->errorlog_fd);
+        if (errh->errorlog_mode == ERRORLOG_FD) {
+            errh->errorlog_fd = dup(STDERR_FILENO);
+            fdevent_setfd_cloexec(errh->errorlog_fd);
         }
 
         if (-1 == (errfd = fdevent_open_logger(logfile))) {
@@ -817,9 +815,10 @@ static int log_error_open(server *srv) {
 static int log_error_cycle(server *srv) {
     /* cycle only if the error log is a file */
 
-    if (srv->errorlog_mode == ERRORLOG_FILE) {
+    log_error_st *errh = srv->errh;
+    if (errh->errorlog_mode == ERRORLOG_FILE) {
         const char *logfile = srv->srvconf.errorlog_file->ptr;
-        if (-1 == fdevent_cycle_logger(logfile, &srv->errorlog_fd)) {
+        if (-1 == fdevent_cycle_logger(logfile, &errh->errorlog_fd)) {
             /* write to old log */
             log_error_write(srv, __FILE__, __LINE__, "SSSS",
                             "cycling errorlog '", logfile,
@@ -830,19 +829,21 @@ static int log_error_cycle(server *srv) {
     return 0;
 }
 
+__attribute_cold__
 static int log_error_close(server *srv) {
-    switch(srv->errorlog_mode) {
+    log_error_st *errh = srv->errh;
+    switch(errh->errorlog_mode) {
     case ERRORLOG_PIPE:
     case ERRORLOG_FILE:
     case ERRORLOG_FD:
-        if (-1 != srv->errorlog_fd) {
+        if (-1 != errh->errorlog_fd) {
             /* don't close STDERR */
             /* fdevent_close_logger_pipes() closes ERRORLOG_PIPE */
-            if (STDERR_FILENO != srv->errorlog_fd
-                && srv->errorlog_mode != ERRORLOG_PIPE) {
-                close(srv->errorlog_fd);
+            if (STDERR_FILENO != errh->errorlog_fd
+                && ERRORLOG_PIPE != errh->errorlog_mode) {
+                close(errh->errorlog_fd);
             }
-            srv->errorlog_fd = -1;
+            errh->errorlog_fd = -1;
         }
         break;
     case ERRORLOG_SYSLOG:
@@ -855,6 +856,7 @@ static int log_error_close(server *srv) {
     return 0;
 }
 
+__attribute_cold__
 static void server_sockets_save (server *srv) {    /* graceful_restart */
     memcpy(&graceful_sockets, &srv->srv_sockets, sizeof(server_socket_array));
     memset(&srv->srv_sockets, 0, sizeof(server_socket_array));
@@ -862,6 +864,7 @@ static void server_sockets_save (server *srv) {    /* graceful_restart */
     memset(&srv->srv_sockets_inherited, 0, sizeof(server_socket_array));
 }
 
+__attribute_cold__
 static void server_sockets_restore (server *srv) { /* graceful_restart */
     memcpy(&srv->srv_sockets, &graceful_sockets, sizeof(server_socket_array));
     memset(&graceful_sockets, 0, sizeof(server_socket_array));
@@ -869,6 +872,7 @@ static void server_sockets_restore (server *srv) { /* graceful_restart */
     memset(&inherited_sockets, 0, sizeof(server_socket_array));
 }
 
+__attribute_cold__
 static int server_sockets_set_nb_cloexec (server *srv) {
     if (srv->sockets_disabled) return 0; /* lighttpd -1 (one-shot mode) */
     for (size_t i = 0; i < srv->srv_sockets.used; ++i) {
@@ -882,34 +886,42 @@ static int server_sockets_set_nb_cloexec (server *srv) {
     return 0;
 }
 
+__attribute_cold__
 static void server_sockets_set_event (server *srv, int event) {
     for (size_t i = 0; i < srv->srv_sockets.used; ++i) {
         server_socket *srv_socket = srv->srv_sockets.ptr[i];
-        fdevent_event_set(srv->ev,&(srv_socket->fde_ndx),srv_socket->fd,event);
+        fdevent_fdnode_event_set(srv->ev, srv_socket->fdn, event);
     }
 }
 
+__attribute_cold__
 static void server_sockets_unregister (server *srv) {
+    if (2 == srv->sockets_disabled) return;
+    srv->sockets_disabled = 2;
     for (size_t i = 0; i < srv->srv_sockets.used; ++i)
         network_unregister_sock(srv, srv->srv_sockets.ptr[i]);
 }
 
+__attribute_cold__
 static void server_sockets_close (server *srv) {
     /* closing socket right away will make it possible for the next lighttpd
      * to take over (old-style graceful restart), but only if backends
      * (e.g. fastcgi, scgi, etc) are independent from lighttpd, rather
      * than started by lighttpd via "bin-path")
      */
+    if (3 == srv->sockets_disabled) return;
     for (size_t i = 0; i < srv->srv_sockets.used; ++i) {
         server_socket *srv_socket = srv->srv_sockets.ptr[i];
         if (-1 == srv_socket->fd) continue;
-        network_unregister_sock(srv, srv_socket);
+        if (2 != srv->sockets_disabled) network_unregister_sock(srv,srv_socket);
         close(srv_socket->fd);
         srv_socket->fd = -1;
         /* network_close() will cleanup after us */
     }
+    srv->sockets_disabled = 3;
 }
 
+__attribute_cold__
 static void server_graceful_shutdown_maint (server *srv) {
     connections *conns = srv->conns;
     for (size_t ndx = 0; ndx < conns->used; ++ndx) {
@@ -946,14 +958,13 @@ static void server_graceful_shutdown_maint (server *srv) {
     }
 }
 
+__attribute_cold__
 static void server_graceful_state (server *srv) {
 
     if (!srv_shutdown) server_graceful_shutdown_maint(srv);
 
-    if (!oneshot_fd) {
-        if (0==srv->srv_sockets.used || -1 == srv->srv_sockets.ptr[0]->fde_ndx)
-            return;
-    }
+    if (!oneshot_fd
+        && (2 == srv->sockets_disabled || 3 == srv->sockets_disabled)) return;
 
     log_error_write(srv, __FILE__, __LINE__, "s",
                     "[note] graceful shutdown started");
@@ -974,6 +985,52 @@ static void server_graceful_state (server *srv) {
     }
 }
 
+__attribute_cold__
+static void server_sockets_enable (server *srv) {
+    server_sockets_set_event(srv, FDEVENT_IN);
+    srv->sockets_disabled = 0;
+    log_error_write(srv, __FILE__, __LINE__, "s",
+                    "[note] sockets enabled again");
+}
+
+__attribute_cold__
+static void server_sockets_disable (server *srv) {
+    server_sockets_set_event(srv, 0);
+    srv->sockets_disabled = 1;
+    log_error_write(srv, __FILE__, __LINE__, "s",
+                    (srv->conns->used >= srv->max_conns)
+                    ? "[note] sockets disabled, connection limit reached"
+                    : "[note] sockets disabled, out-of-fds");
+}
+
+__attribute_cold__
+static void server_overload_check (server *srv) {
+    if (srv->cur_fds + srv->want_fds < srv->max_fds_lowat
+        && srv->conns->used <= srv->max_conns * 9 / 10) {
+
+        server_sockets_enable(srv);
+    }
+}
+
+static void server_load_check (server *srv) {
+    if (srv->cur_fds + srv->want_fds > srv->max_fds_hiwat  /* out of fds */
+        || srv->conns->used >= srv->max_conns) {   /* out of connections */
+
+        server_sockets_disable(srv);
+    }
+}
+
+__attribute_cold__
+static void server_process_want_fds (server *srv) {
+    for (int n = srv->max_fds - srv->cur_fds - 16; n > 0; --n) {
+        connection *con = fdwaitqueue_unshift(srv, srv->fdwaitqueue);
+        if (NULL == con) break;
+        connection_state_machine(srv, con);
+        --srv->want_fds;
+    }
+}
+
+__attribute_cold__
 static int server_main (server * const srv, int argc, char **argv) {
 	int print_config = 0;
 	int test_config = 0;
@@ -983,7 +1040,6 @@ static int server_main (server * const srv, int argc, char **argv) {
 	int num_childs = 0;
 #endif
 	size_t i;
-	time_t idle_limit = 0, last_active_ts = time(NULL);
 #ifdef HAVE_SIGACTION
 	struct sigaction act;
 #endif
@@ -1003,6 +1059,7 @@ static int server_main (server * const srv, int argc, char **argv) {
 	graceful_shutdown = 0;
 	handle_sig_alarm = 1;
 	handle_sig_hup = 0;
+	idle_limit = 0;
 	chunkqueue_set_tempdirs_default_reset();
 	http_auth_dumbdata_reset();
 	http_vhostdb_dumbdata_reset();
@@ -1203,7 +1260,7 @@ static int server_main (server * const srv, int argc, char **argv) {
 	/* open pid file BEFORE chroot */
 	if (-2 == pid_fd) pid_fd = -1; /*(initial startup state)*/
 	if (-1 == pid_fd && !buffer_string_is_empty(srv->srvconf.pid_file)) {
-		if (-1 == (pid_fd = fdevent_open_cloexec(srv->srvconf.pid_file->ptr, O_WRONLY | O_CREAT | O_EXCL | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))) {
+		if (-1 == (pid_fd = fdevent_open_cloexec(srv->srvconf.pid_file->ptr, 0, O_WRONLY | O_CREAT | O_EXCL | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))) {
 			struct stat st;
 			if (errno != EEXIST) {
 				log_error_write(srv, __FILE__, __LINE__, "sbs",
@@ -1222,7 +1279,7 @@ static int server_main (server * const srv, int argc, char **argv) {
 				return -1;
 			}
 
-			if (-1 == (pid_fd = fdevent_open_cloexec(srv->srvconf.pid_file->ptr, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))) {
+			if (-1 == (pid_fd = fdevent_open_cloexec(srv->srvconf.pid_file->ptr, 0, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))) {
 				log_error_write(srv, __FILE__, __LINE__, "sbs",
 						"opening pid-file failed:", srv->srvconf.pid_file, strerror(errno));
 				return -1;
@@ -1671,6 +1728,9 @@ static int server_main (server * const srv, int argc, char **argv) {
 		return -1;
 	}
 
+	srv->max_fds_lowat = srv->max_fds * 8 / 10;
+	srv->max_fds_hiwat = srv->max_fds * 9 / 10;
+
 	/* libev backend overwrites our SIGCHLD handler and calls waitpid on SIGCHLD; we want our own SIGCHLD handling. */
 #ifdef HAVE_SIGACTION
 	sigaction(SIGCHLD, &act, NULL);
@@ -1723,22 +1783,21 @@ static int server_main (server * const srv, int argc, char **argv) {
 		return -1;
 	}
 
+	/* plugin hook for worker_init */
+	if (HANDLER_GO_ON != plugins_call_worker_init(srv))
+		return -1;
+
 	if (oneshot_fd && server_oneshot_init(srv, oneshot_fd)) {
 		oneshot_fd = -1;
 	}
 
-	/* main-loop */
-	while (!srv_shutdown) {
-		int n;
-		size_t ndx;
-		time_t min_ts;
+	return 1;
+}
 
-		if (handle_sig_hup) {
+__attribute_cold__
+__attribute_noinline__
+static int server_handle_sighup (server * const srv) {
 			handler_t r;
-
-			/* reset notification */
-			handle_sig_hup = 0;
-
 
 			/* cycle logfiles */
 
@@ -1766,23 +1825,12 @@ static int server_main (server * const srv, int argc, char **argv) {
 					"logfiles cycled");
 #endif
 			}
-		}
 
-		if (handle_sig_alarm) {
-			/* a new second */
+			return 0;
+}
 
-#ifdef USE_ALARM
-			/* reset notification */
-			handle_sig_alarm = 0;
-#endif
-
-			/* get current time */
-			min_ts = time(NULL);
-
-			if (min_ts != srv->cur_ts) {
-#ifdef DEBUG_CONNECTION_STATES
-				int cs = 0;
-#endif
+__attribute_noinline__
+static void server_handle_sigalrm (server * const srv, time_t min_ts, time_t last_active_ts) {
 				connections *conns = srv->conns;
 				handler_t r;
 
@@ -1825,7 +1873,7 @@ static int server_main (server * const srv, int argc, char **argv) {
 				/* cleanup stat-cache */
 				stat_cache_trigger_cleanup(srv);
 				/* reset global/aggregate rate limit counters */
-				for (i = 0; i < srv->config_context->used; ++i) {
+				for (size_t i = 0; i < srv->config_context->used; ++i) {
 					srv->config_storage[i]->global_bytes_per_second_cnt = 0;
 				}
 				/* if graceful_shutdown, accelerate cleanup of recently completed request/responses */
@@ -1834,9 +1882,9 @@ static int server_main (server * const srv, int argc, char **argv) {
 				 * check all connections for timeouts
 				 *
 				 */
-				for (ndx = 0; ndx < conns->used; ndx++) {
+				for (size_t ndx = 0; ndx < conns->used; ++ndx) {
 					connection * const con = conns->ptr[ndx];
-					const int waitevents = fdevent_event_get_interest(srv->ev, con->fd);
+					const int waitevents = fdevent_fdnode_interest(con->fdn);
 					int changed = 0;
 					int t_diff;
 
@@ -1920,29 +1968,12 @@ static int server_main (server * const srv, int argc, char **argv) {
 					if (changed) {
 						connection_state_machine(srv, con);
 					}
-
-#if DEBUG_CONNECTION_STATES
-					if (cs == 0) {
-						fprintf(stderr, "connection-state: ");
-						cs = 1;
-					}
-
-					fprintf(stderr, "c[%d,%d]: %s ",
-						con->fd,
-						con->fcgi.fd,
-						connection_get_state(con->state));
-#endif
 				}
+}
 
-#ifdef DEBUG_CONNECTION_STATES
-				if (cs == 1) fprintf(stderr, "\n");
-#endif
-			}
-		}
-
-		if (handle_sig_child) {
+__attribute_noinline__
+static void server_handle_sigchld (server * const srv) {
 			pid_t pid;
-			handle_sig_child = 0;
 			do {
 				int status;
 				pid = waitpid(-1, &status, WNOHANG);
@@ -1958,118 +1989,69 @@ static int server_main (server * const srv, int argc, char **argv) {
 					}
 				}
 			} while (pid > 0 || (-1 == pid && errno == EINTR));
+}
+
+__attribute_hot__
+__attribute_noinline__
+static int server_main_loop (server * const srv) {
+	connections * const joblist = srv->joblist;
+	time_t last_active_ts = time(NULL);
+
+	while (!srv_shutdown) {
+
+		if (handle_sig_hup) {
+			handle_sig_hup = 0;
+			if (server_handle_sighup(srv)) return -1;
+		}
+
+		if (handle_sig_alarm) {
+			time_t min_ts = time(NULL);
+		      #ifdef USE_ALARM
+			handle_sig_alarm = 0;
+		      #endif
+			if (min_ts != srv->cur_ts) {
+				server_handle_sigalrm(srv, min_ts, last_active_ts);
+			}
+		}
+
+		if (handle_sig_child) {
+			handle_sig_child = 0;
+			server_handle_sigchld(srv);
 		}
 
 		if (graceful_shutdown) {
 			server_graceful_state(srv);
-			srv->sockets_disabled = 1;
+			if (srv->conns->used == 0) {
+				/* we are in graceful shutdown phase and all connections are closed
+				 * we are ready to terminate without harming anyone */
+				srv_shutdown = 1;
+				break;
+			}
 		} else if (srv->sockets_disabled) {
-			/* our server sockets are disabled, why ? */
-
-			if ((srv->cur_fds + srv->want_fds < srv->max_fds * 8 / 10) && /* we have enough unused fds */
-			    (srv->conns->used <= srv->max_conns * 9 / 10)) {
-				server_sockets_set_event(srv, FDEVENT_IN);
-				log_error_write(srv, __FILE__, __LINE__, "s", "[note] sockets enabled again");
-
-				srv->sockets_disabled = 0;
-			}
+			server_overload_check(srv);
 		} else {
-			if ((srv->cur_fds + srv->want_fds > srv->max_fds * 9 / 10) || /* out of fds */
-			    (srv->conns->used >= srv->max_conns)) { /* out of connections */
-				/* disable server-fds */
-				server_sockets_set_event(srv, 0);
-
-				if (srv->conns->used >= srv->max_conns) {
-					log_error_write(srv, __FILE__, __LINE__, "s", "[note] sockets disabled, connection limit reached");
-				} else {
-					log_error_write(srv, __FILE__, __LINE__, "s", "[note] sockets disabled, out-of-fds");
-				}
-
-				srv->sockets_disabled = 1;
-			}
+			server_load_check(srv);
 		}
 
-		if (graceful_shutdown && srv->conns->used == 0) {
-			/* we are in graceful shutdown phase and all connections are closed
-			 * we are ready to terminate without harming anyone */
-			srv_shutdown = 1;
-			break;
-		}
-
-		/* we still have some fds to share */
 		if (srv->want_fds) {
-			/* check the fdwaitqueue for waiting fds */
-			int free_fds = srv->max_fds - srv->cur_fds - 16;
-			connection *con;
-
-			for (; free_fds > 0 && NULL != (con = fdwaitqueue_unshift(srv, srv->fdwaitqueue)); free_fds--) {
-				connection_state_machine(srv, con);
-
-				srv->want_fds--;
-			}
+			server_process_want_fds(srv);
 		}
 
-		if ((n = fdevent_poll(srv->ev, 1000)) > 0) {
-			/* n is the number of events */
-			int fd;
-			int revents;
-			int fd_ndx;
+		if (fdevent_poll(srv->ev, 1000) > 0) {
 			last_active_ts = srv->cur_ts;
-			fd_ndx = -1;
-			do {
-				fdevent_handler handler;
-				void *context;
-
-				fd_ndx  = fdevent_event_next_fdndx (srv->ev, fd_ndx);
-				if (-1 == fd_ndx) break; /* not all fdevent handlers know how many fds got an event */
-
-				revents = fdevent_event_get_revent (srv->ev, fd_ndx);
-				fd      = fdevent_event_get_fd     (srv->ev, fd_ndx);
-				handler = fdevent_get_handler(srv->ev, fd);
-				context = fdevent_get_context(srv->ev, fd);
-				if (NULL != handler) {
-					(*handler)(srv, context, revents);
-				}
-			} while (--n > 0);
-		} else if (n < 0 && errno != EINTR) {
-			log_error_write(srv, __FILE__, __LINE__, "ss",
-					"fdevent_poll failed:",
-					strerror(errno));
 		}
 
-		if (n >= 0) fdevent_sched_run(srv, srv->ev);
-
-		for (ndx = 0; ndx < srv->joblist->used; ndx++) {
-			connection *con = srv->joblist->ptr[ndx];
+		for (size_t ndx = 0; ndx < joblist->used; ++ndx) {
+			connection *con = joblist->ptr[ndx];
 			connection_state_machine(srv, con);
 		}
-
-		srv->joblist->used = 0;
-	}
-
-	if (graceful_shutdown || graceful_restart) {
-		server_graceful_state(srv);
-	}
-
-	if (2 == graceful_shutdown) { /* value 2 indicates idle timeout */
-		log_error_write(srv, __FILE__, __LINE__, "s",
-				"server stopped after idle timeout");
-	} else {
-#ifdef HAVE_SIGACTION
-		log_error_write(srv, __FILE__, __LINE__, "sdsd",
-				"server stopped by UID =",
-				last_sigterm_info.si_uid,
-				"PID =",
-				last_sigterm_info.si_pid);
-#else
-		log_error_write(srv, __FILE__, __LINE__, "s",
-				"server stopped");
-#endif
+		joblist->used = 0;
 	}
 
 	return 0;
 }
 
+__attribute_cold__
 int main (int argc, char **argv) {
     int rc;
 
@@ -2096,6 +2078,27 @@ int main (int argc, char **argv) {
         }
 
         rc = server_main(srv, argc, argv);
+        if (rc > 0 && 0 == (rc = server_main_loop(srv))) {
+            if (graceful_shutdown || graceful_restart) {
+                server_graceful_state(srv);
+            }
+
+            if (2 == graceful_shutdown) { /* value 2 indicates idle timeout */
+                log_error_write(srv, __FILE__, __LINE__, "s",
+                                "server stopped after idle timeout");
+            } else {
+              #ifdef HAVE_SIGACTION
+                log_error_write(srv, __FILE__, __LINE__, "sdsd",
+                                "server stopped by UID =",
+                                last_sigterm_info.si_uid,
+                                "PID =",
+                                last_sigterm_info.si_pid);
+              #else
+                log_error_write(srv, __FILE__, __LINE__, "s",
+                                "server stopped");
+              #endif
+            }
+        }
 
         /* clean-up */
         remove_pid_file(srv);

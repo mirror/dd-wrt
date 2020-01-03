@@ -100,7 +100,7 @@ modules = {
 	'mod_access' : { 'src' : [ 'mod_access.c' ] },
 	'mod_accesslog' : { 'src' : [ 'mod_accesslog.c' ] },
 	'mod_alias' : { 'src' : [ 'mod_alias.c' ] },
-	'mod_auth' : { 'src' : [ 'mod_auth.c' ] },
+	'mod_auth' : { 'src' : [ 'mod_auth.c' ], 'lib' : [ env['LIBCRYPTO'] ] },
 	'mod_authn_file' : { 'src' : [ 'mod_authn_file.c' ], 'lib' : [ env['LIBCRYPT'], env['LIBCRYPTO'] ] },
 	'mod_cgi' : { 'src' : [ 'mod_cgi.c' ] },
 	'mod_compress' : { 'src' : [ 'mod_compress.c' ], 'lib' : [ env['LIBZ'], env['LIBBZ2'] ] },
@@ -135,6 +135,9 @@ modules = {
 
 if env['with_geoip']:
 	modules['mod_geoip'] = { 'src' : [ 'mod_geoip.c' ], 'lib' : [ env['LIBGEOIP'] ] }
+
+if env['with_maxminddb']:
+	modules['mod_maxminddb'] = { 'src' : [ 'mod_maxminddb.c' ], 'lib' : [ env['LIBMAXMINDDB'] ] }
 
 if env['with_krb5']:
 	modules['mod_authn_gssapi'] = { 'src' : [ 'mod_authn_gssapi.c' ], 'lib' : [ env['LIBKRB5'], env['LIBGSSAPI_KRB5'] ] }
@@ -259,7 +262,8 @@ fullstatic_libs = GatherLibs(env, fullstaticlib)
 fullstatic_linkflags = [staticenv['LINKFLAGS'], '-static']
 if (('pthread' in fullstatic_libs) or ('pcre' in fullstatic_libs)) and (platform.system() == 'Linux'):
 	fullstatic_linkflags += ['-Wl,--whole-archive','-lpthread','-Wl,--no-whole-archive']
-	fullstatic_libs.remove('pthread')
+	if 'pthread' in fullstatic_libs:
+		fullstatic_libs.remove('pthread')
 if 'gcc_s' in fullstatic_libs:
 	fullstatic_linkflags += ['-static-libgcc']
 	fullstatic_libs.remove('gcc_s')

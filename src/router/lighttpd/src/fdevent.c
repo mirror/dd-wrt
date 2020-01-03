@@ -165,10 +165,16 @@ fdevents *fdevent_init(server *srv) {
 	 * (reported on Android running a custom ROM)
 	 * https://redmine.lighttpd.net/issues/2883
 	 */
+       #ifdef SOCK_NONBLOCK
 	int fd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
+       #else
+	int fd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
+       #endif
 	if (fd >= 0) {
 		int flags = fcntl(fd, F_GETFL, 0);
+              #ifdef SOCK_NONBLOCK
 		use_sock_nonblock = (-1 != flags && (flags & O_NONBLOCK));
+              #endif
 		use_sock_cloexec = 1;
 		close(fd);
 	}
@@ -196,66 +202,51 @@ fdevents *fdevent_init(server *srv) {
 	ev->maxfds = maxfds;
 
 	switch(type) {
+	#ifdef FDEVENT_USE_POLL
 	case FDEVENT_HANDLER_POLL:
-		if (0 != fdevent_poll_init(ev)) {
-			log_error_write(srv, __FILE__, __LINE__, "S",
-				"event-handler poll failed");
-			goto error;
-		}
-		return ev;
+		if (0 == fdevent_poll_init(ev)) return ev;
+		break;
+	#endif
+	#ifdef FDEVENT_USE_SELECT
 	case FDEVENT_HANDLER_SELECT:
-		if (0 != fdevent_select_init(ev)) {
-			log_error_write(srv, __FILE__, __LINE__, "S",
-				"event-handler select failed");
-			goto error;
-		}
-		return ev;
+		if (0 == fdevent_select_init(ev)) return ev;
+		break;
+	#endif
+	#ifdef FDEVENT_USE_LINUX_EPOLL
 	case FDEVENT_HANDLER_LINUX_SYSEPOLL:
-		if (0 != fdevent_linux_sysepoll_init(ev)) {
-			log_error_write(srv, __FILE__, __LINE__, "S",
-				"event-handler linux-sysepoll failed, try to set server.event-handler = \"poll\" or \"select\"");
-			goto error;
-		}
-		return ev;
+		if (0 == fdevent_linux_sysepoll_init(ev)) return ev;
+		break;
+	#endif
+	#ifdef FDEVENT_USE_SOLARIS_DEVPOLL
 	case FDEVENT_HANDLER_SOLARIS_DEVPOLL:
-		if (0 != fdevent_solaris_devpoll_init(ev)) {
-			log_error_write(srv, __FILE__, __LINE__, "S",
-				"event-handler solaris-devpoll failed, try to set server.event-handler = \"poll\" or \"select\"");
-			goto error;
-		}
-		return ev;
+		if (0 == fdevent_solaris_devpoll_init(ev)) return ev;
+		break;
+	#endif
+	#ifdef FDEVENT_USE_SOLARIS_PORT
 	case FDEVENT_HANDLER_SOLARIS_PORT:
-		if (0 != fdevent_solaris_port_init(ev)) {
-			log_error_write(srv, __FILE__, __LINE__, "S",
-				"event-handler solaris-eventports failed, try to set server.event-handler = \"poll\" or \"select\"");
-			goto error;
-		}
-		return ev;
+		if (0 == fdevent_solaris_port_init(ev)) return ev;
+		break;
+	#endif
+	#ifdef FDEVENT_USE_FREEBSD_KQUEUE
 	case FDEVENT_HANDLER_FREEBSD_KQUEUE:
-		if (0 != fdevent_freebsd_kqueue_init(ev)) {
-			log_error_write(srv, __FILE__, __LINE__, "S",
-				"event-handler freebsd-kqueue failed, try to set server.event-handler = \"poll\" or \"select\"");
-			goto error;
-		}
-		return ev;
+		if (0 == fdevent_freebsd_kqueue_init(ev)) return ev;
+		break;
+	#endif
+	#ifdef FDEVENT_USE_LIBEV
 	case FDEVENT_HANDLER_LIBEV:
-		if (0 != fdevent_libev_init(ev)) {
-			log_error_write(srv, __FILE__, __LINE__, "S",
-				"event-handler libev failed, try to set server.event-handler = \"poll\" or \"select\"");
-			goto error;
-		}
-		return ev;
+		if (0 == fdevent_libev_init(ev)) return ev;
+		break;
+	#endif
 	case FDEVENT_HANDLER_UNSET:
 	default:
 		break;
 	}
 
-error:
 	free(ev->fdarray);
 	free(ev);
 
-	log_error_write(srv, __FILE__, __LINE__, "S",
-		"event-handler is unknown, try to set server.event-handler = \"poll\" or \"select\"");
+	log_error_write(srv, __FILE__, __LINE__, "sBS",
+		"event-handler failed:", srv->srvconf.event_handler, "; try to set server.event-handler = \"poll\" or \"select\"");
 	return NULL;
 }
 
@@ -277,64 +268,54 @@ void fdevent_free(fdevents *ev) {
 }
 
 int fdevent_reset(fdevents *ev) {
-	if (ev->reset) return ev->reset(ev);
-
-	return 0;
+	int rc = (NULL != ev->reset) ? ev->reset(ev) : 0;
+	if (-1 == rc) {
+		log_error_write(ev->srv, __FILE__, __LINE__, "sBS",
+			"event-handler failed:", ev->srv->srvconf.event_handler, "; try to set server.event-handler = \"poll\" or \"select\"");
+	}
+	return rc;
 }
 
 static fdnode *fdnode_init(void) {
-	fdnode *fdn;
-
-	fdn = calloc(1, sizeof(*fdn));
-	force_assert(NULL != fdn);
-	fdn->fd = -1;
-	return fdn;
+	return calloc(1, sizeof(fdnode));
 }
 
 static void fdnode_free(fdnode *fdn) {
 	free(fdn);
 }
 
-int fdevent_register(fdevents *ev, int fd, fdevent_handler handler, void *ctx) {
-	fdnode *fdn;
-
-	fdn = fdnode_init();
+fdnode * fdevent_register(fdevents *ev, int fd, fdevent_handler handler, void *ctx) {
+	fdnode *fdn  = ev->fdarray[fd] = fdnode_init();
+	force_assert(NULL != fdn);
 	fdn->handler = handler;
 	fdn->fd      = fd;
 	fdn->ctx     = ctx;
-	fdn->handler_ctx = NULL;
 	fdn->events  = 0;
-
-	ev->fdarray[fd] = fdn;
-
-	return 0;
+	fdn->fde_ndx = -1;
+      #ifdef FDEVENT_USE_LIBEV
+	fdn->handler_ctx = NULL;
+      #endif
+	return fdn;
 }
 
-int fdevent_unregister(fdevents *ev, int fd) {
-	fdnode *fdn;
-
-	if (!ev) return 0;
-	fdn = ev->fdarray[fd];
-	if ((uintptr_t)fdn & 0x3) return 0; /*(should not happen)*/
-
-	fdnode_free(fdn);
-
+void fdevent_unregister(fdevents *ev, int fd) {
+	fdnode *fdn = ev->fdarray[fd];
+	if ((uintptr_t)fdn & 0x3) return; /*(should not happen)*/
 	ev->fdarray[fd] = NULL;
-
-	return 0;
+	fdnode_free(fdn);
 }
 
 void fdevent_sched_close(fdevents *ev, int fd, int issock) {
-	fdnode *fdn;
-	if (!ev) return;
-	fdn = ev->fdarray[fd];
+	fdnode *fdn = ev->fdarray[fd];
 	if ((uintptr_t)fdn & 0x3) return;
 	ev->fdarray[fd] = (fdnode *)((uintptr_t)fdn | (issock ? 0x1 : 0x2));
+	fdn->handler = (fdevent_handler)NULL;
 	fdn->ctx = ev->pendclose;
 	ev->pendclose = fdn;
 }
 
-void fdevent_sched_run(server *srv, fdevents *ev) {
+static void fdevent_sched_run(fdevents *ev) {
+	server *srv = ev->srv;
 	for (fdnode *fdn = ev->pendclose; fdn; ) {
 		int fd, rc;
 		fdnode *fdn_tmp;
@@ -370,86 +351,56 @@ void fdevent_sched_run(server *srv, fdevents *ev) {
 	ev->pendclose = NULL;
 }
 
-int fdevent_event_get_interest(const fdevents *ev, int fd) {
-	return fd >= 0 ? ev->fdarray[fd]->events : 0;
+static void fdevent_fdnode_event_unsetter(fdevents *ev, fdnode *fdn) {
+    if (-1 == fdn->fde_ndx) return;
+    if (0 == ev->event_del(ev, fdn)) {
+        fdn->fde_ndx = -1;
+        fdn->events = 0;
+    }
+    else {
+        log_error_write(ev->srv, __FILE__, __LINE__, "SS",
+                        "fdevent event_del failed: ", strerror(errno));
+    }
 }
 
-void fdevent_event_del(fdevents *ev, int *fde_ndx, int fd) {
-	if (-1 == fd) return;
-	if ((uintptr_t)ev->fdarray[fd] & 0x3) return;
+static void fdevent_fdnode_event_setter(fdevents *ev, fdnode *fdn, int events) {
+    /*(Note: skips registering with kernel if initial events is 0,
+     * so caller should pass non-zero events for initial registration.
+     * If never registered due to never being called with non-zero events,
+     * then FDEVENT_HUP or FDEVENT_ERR will never be returned.) */
+    if (fdn->events == events) return;/*(no change; nothing to do)*/
 
-	if (ev->event_del) *fde_ndx = ev->event_del(ev, *fde_ndx, fd);
-	ev->fdarray[fd]->events = 0;
+    if (0 == ev->event_set(ev, fdn, events))
+        fdn->events = events;
+    else
+        log_error_write(ev->srv, __FILE__, __LINE__, "SS",
+                        "fdevent event_set failed: ", strerror(errno));
 }
 
-void fdevent_event_set(fdevents *ev, int *fde_ndx, int fd, int events) {
-	if (-1 == fd) return;
-
-	/*(Note: skips registering with kernel if initial events is 0,
-         * so caller should pass non-zero events for initial registration.
-         * If never registered due to never being called with non-zero events,
-         * then FDEVENT_HUP or FDEVENT_ERR will never be returned.) */
-	if (ev->fdarray[fd]->events == events) return;/*(no change; nothing to do)*/
-
-	if (ev->event_set) *fde_ndx = ev->event_set(ev, *fde_ndx, fd, events);
-	ev->fdarray[fd]->events = events;
+void fdevent_fdnode_event_del(fdevents *ev, fdnode *fdn) {
+    if (NULL != fdn) fdevent_fdnode_event_unsetter(ev, fdn);
 }
 
-void fdevent_event_add(fdevents *ev, int *fde_ndx, int fd, int event) {
-	int events;
-	if (-1 == fd) return;
-
-	events = ev->fdarray[fd]->events;
-	if ((events & event) == event) return; /*(no change; nothing to do)*/
-
-	events |= event;
-	if (ev->event_set) *fde_ndx = ev->event_set(ev, *fde_ndx, fd, events);
-	ev->fdarray[fd]->events = events;
+void fdevent_fdnode_event_set(fdevents *ev, fdnode *fdn, int events) {
+    if (NULL != fdn) fdevent_fdnode_event_setter(ev, fdn, events);
 }
 
-void fdevent_event_clr(fdevents *ev, int *fde_ndx, int fd, int event) {
-	int events;
-	if (-1 == fd) return;
+void fdevent_fdnode_event_add(fdevents *ev, fdnode *fdn, int event) {
+    if (NULL != fdn) fdevent_fdnode_event_setter(ev, fdn, (fdn->events|event));
+}
 
-	events = ev->fdarray[fd]->events;
-	if (!(events & event)) return; /*(no change; nothing to do)*/
-
-	events &= ~event;
-	if (ev->event_set) *fde_ndx = ev->event_set(ev, *fde_ndx, fd, events);
-	ev->fdarray[fd]->events = events;
+void fdevent_fdnode_event_clr(fdevents *ev, fdnode *fdn, int event) {
+    if (NULL != fdn) fdevent_fdnode_event_setter(ev, fdn, (fdn->events&~event));
 }
 
 int fdevent_poll(fdevents *ev, int timeout_ms) {
-	if (ev->poll == NULL) SEGFAULT();
-	return ev->poll(ev, timeout_ms);
-}
-
-int fdevent_event_get_revent(fdevents *ev, size_t ndx) {
-	if (ev->event_get_revent == NULL) SEGFAULT();
-
-	return ev->event_get_revent(ev, ndx);
-}
-
-int fdevent_event_get_fd(fdevents *ev, size_t ndx) {
-	if (ev->event_get_fd == NULL) SEGFAULT();
-
-	return ev->event_get_fd(ev, ndx);
-}
-
-fdevent_handler fdevent_get_handler(fdevents *ev, int fd) {
-	if (ev->fdarray[fd] == NULL) SEGFAULT();
-	if ((uintptr_t)ev->fdarray[fd] & 0x3) return NULL;
-	if (ev->fdarray[fd]->fd != fd) SEGFAULT();
-
-	return ev->fdarray[fd]->handler;
-}
-
-void * fdevent_get_context(fdevents *ev, int fd) {
-	if (ev->fdarray[fd] == NULL) SEGFAULT();
-	if ((uintptr_t)ev->fdarray[fd] & 0x3) return NULL;
-	if (ev->fdarray[fd]->fd != fd) SEGFAULT();
-
-	return ev->fdarray[fd]->ctx;
+    int n = ev->poll(ev, timeout_ms);
+    if (n >= 0)
+        fdevent_sched_run(ev);
+    else if (errno != EINTR)
+        log_error_write(ev->srv, __FILE__, __LINE__, "SS",
+                        "fdevent_poll failed: ", strerror(errno));
+    return n;
 }
 
 void fdevent_setfd_cloexec(int fd) {
@@ -509,8 +460,18 @@ int fdevent_socket_cloexec(int domain, int type, int protocol) {
 int fdevent_socket_nb_cloexec(int domain, int type, int protocol) {
 	int fd;
 #ifdef SOCK_CLOEXEC
+       #ifdef SOCK_NONBLOCK
 	if (use_sock_cloexec && use_sock_nonblock)
 		return socket(domain, type | SOCK_CLOEXEC | SOCK_NONBLOCK, protocol);
+       #else
+	if (use_sock_cloexec) {
+		fd = socket(domain, type | SOCK_CLOEXEC, protocol);
+	      #ifdef O_NONBLOCK
+		if (-1 != fd) force_assert(-1 != fcntl(fd,F_SETFL,O_NONBLOCK|O_RDWR));
+	      #endif
+		return fd;
+	}
+       #endif
 #endif
 	if (-1 != (fd = socket(domain, type, protocol))) {
 #ifdef FD_CLOEXEC
@@ -523,15 +484,38 @@ int fdevent_socket_nb_cloexec(int domain, int type, int protocol) {
 	return fd;
 }
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+#ifndef O_LARGEFILE
+#define O_LARGEFILE 0
+#endif
 #ifndef O_NOCTTY
 #define O_NOCTTY 0
 #endif
+#ifndef O_NOFOLLOW
+#define O_NOFOLLOW 0
+#endif
 
-int fdevent_open_cloexec(const char *pathname, int flags, mode_t mode) {
-#ifdef O_CLOEXEC
-	return open(pathname, flags | O_CLOEXEC | O_NOCTTY, mode);
+/*(O_NOFOLLOW is not handled here)*/
+/*(Note: O_NOFOLLOW affects only the final path segment, the target file,
+ * not any intermediate symlinks along the path)*/
+
+/* O_CLOEXEC handled further below, if defined) */
+#ifdef O_NONBLOCK
+#define FDEVENT_O_FLAGS \
+        (O_BINARY | O_LARGEFILE | O_NOCTTY | O_NONBLOCK)
 #else
-	int fd = open(pathname, flags | O_NOCTTY, mode);
+#define FDEVENT_O_FLAGS \
+        (O_BINARY | O_LARGEFILE | O_NOCTTY )
+#endif
+
+int fdevent_open_cloexec(const char *pathname, int symlinks, int flags, mode_t mode) {
+	if (!symlinks) flags |= O_NOFOLLOW;
+#ifdef O_CLOEXEC
+	return open(pathname, flags | O_CLOEXEC | FDEVENT_O_FLAGS, mode);
+#else
+	int fd = open(pathname, flags | FDEVENT_O_FLAGS, mode);
 #ifdef FD_CLOEXEC
 	if (fd != -1)
 		force_assert(-1 != fcntl(fd, F_SETFD, FD_CLOEXEC));
@@ -543,14 +527,14 @@ int fdevent_open_cloexec(const char *pathname, int flags, mode_t mode) {
 
 int fdevent_open_devnull(void) {
   #if defined(_WIN32)
-    return fdevent_open_cloexec("nul", O_RDWR, 0);
+    return fdevent_open_cloexec("nul", 0, O_RDWR, 0);
   #else
-    return fdevent_open_cloexec("/dev/null", O_RDWR, 0);
+    return fdevent_open_cloexec("/dev/null", 0, O_RDWR, 0);
   #endif
 }
 
 
-int fdevent_open_dirname(char *path) {
+int fdevent_open_dirname(char *path, int symlinks) {
     /*(handle special cases of no dirname or dirname is root directory)*/
     char * const c = strrchr(path, '/');
     const char * const dname = (NULL != c ? c == path ? "/" : path : ".");
@@ -560,9 +544,31 @@ int fdevent_open_dirname(char *path) {
     flags |= O_DIRECTORY;
   #endif
     if (NULL != c) *c = '\0';
-    dfd = fdevent_open_cloexec(dname, flags, 0);
+    dfd = fdevent_open_cloexec(dname, symlinks, flags, 0);
     if (NULL != c) *c = '/';
     return dfd;
+}
+
+
+int fdevent_mkstemp_append(char *path) {
+  #ifdef __COVERITY__
+    /* POSIX-2008 requires mkstemp create file with 0600 perms */
+    umask(0600);
+  #endif
+    /* coverity[secure_temp : FALSE] */
+    const int fd = mkstemp(path);
+    if (fd < 0) return fd;
+
+    if (0 != fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_APPEND)) {
+        /* (should not happen; fd is regular file) */
+        int errnum = errno;
+        close(fd);
+        errno = errnum;
+        return -1;
+    }
+
+    fdevent_setfd_cloexec(fd);
+    return fd;
 }
 
 
@@ -607,13 +613,6 @@ int fdevent_accept_listenfd(int listenfd, struct sockaddr *addr, size_t *addrlen
 		}
 	}
 	return fd;
-}
-
-
-int fdevent_event_next_fdndx(fdevents *ev, int ndx) {
-	if (ev->event_next_fdndx) return ev->event_next_fdndx(ev, ndx);
-
-	return -1;
 }
 
 
@@ -907,14 +906,10 @@ static int fdevent_open_logger_pipe(const char *logger) {
 }
 
 
-#ifndef O_LARGEFILE
-#define O_LARGEFILE 0
-#endif
-
 int fdevent_open_logger(const char *logger) {
-    if (logger[0] != '|') {
-        int flags = O_APPEND | O_WRONLY | O_CREAT | O_LARGEFILE;
-        return fdevent_open_cloexec(logger, flags, 0644);
+    if (logger[0] != '|') { /*(permit symlinks)*/
+        int flags = O_APPEND | O_WRONLY | O_CREAT;
+        return fdevent_open_cloexec(logger, 1, flags, 0644);
     }
     else {
         return fdevent_open_logger_pipe(logger+1); /*(skip the '|')*/

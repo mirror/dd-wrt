@@ -161,6 +161,12 @@ if not(conf_data.get('HAVE_CLOCK_GETTIME'))
 	endif
 endif
 
+libelftc = []
+if compiler.has_function('elftc_copyfile', args: defs + ['-lelftc'], prefix: '#include <libelftc.h>')
+	conf_data.set('HAVE_ELFTC_COPYFILE', true)
+	libelftc = [ compiler.find_library('elftc') ]
+endif
+
 conf_data.set('HAVE_IPV6', compiler.compiles('''
 	#include <sys/types.h>
 	#include <sys/socket.h>
@@ -465,7 +471,7 @@ if get_option('with_webdav_locks')
 			error('Couldn\'t find uuid/uuid.h or uuid_generate in lib c and uuid')
 		endif
 	endif
-	conf_data.set('HAVE_UUID', true)
+	conf_data.set('HAVE_LIBUUID', true)
 	conf_data.set('HAVE_UUID_UUID_H', true)
 endif
 
@@ -853,7 +859,7 @@ modules = [
 	[ 'mod_access', [ 'mod_access.c' ] ],
 	[ 'mod_accesslog', [ 'mod_accesslog.c' ] ],
 	[ 'mod_alias', [ 'mod_alias.c' ] ],
-	[ 'mod_auth', [ 'mod_auth.c' ] ],
+	[ 'mod_auth', [ 'mod_auth.c' ], [ libcrypto ] ],
 	[ 'mod_authn_file', [ 'mod_authn_file.c' ], [ libcrypt, libcrypto ] ],
 	[ 'mod_compress', [ 'mod_compress.c' ], libbz2 + libz ],
 	[ 'mod_deflate', [ 'mod_deflate.c' ], libbz2 + libz ],
@@ -881,7 +887,7 @@ modules = [
 	[ 'mod_userdir', [ 'mod_userdir.c' ] ],
 	[ 'mod_usertrack', [ 'mod_usertrack.c' ] ],
 	[ 'mod_vhostdb', [ 'mod_vhostdb.c' ] ],
-	[ 'mod_webdav', [ 'mod_webdav.c' ], libsqlite3 + libuuid + libxml2 ],
+	[ 'mod_webdav', [ 'mod_webdav.c' ], libsqlite3 + libuuid + libxml2 + libelftc ],
 	[ 'mod_wstunnel', [ 'mod_wstunnel.c' ], libcrypto ],
 ]
 
@@ -901,6 +907,12 @@ if get_option('with_lua')
 	modules += [
 		[ 'mod_cml', [ 'mod_cml.c', 'mod_cml_lua.c', 'mod_cml_funcs.c' ], liblua + libmemcached ],
 		[ 'mod_magnet', [ 'mod_magnet.c', 'mod_magnet_cache.c' ], liblua ],
+	]
+endif
+
+if get_option('with_maxminddb')
+	modules += [
+		[ 'mod_maxminddb', [ 'mod_maxminddb.c' ], libmaxminddb ],
 	]
 endif
 

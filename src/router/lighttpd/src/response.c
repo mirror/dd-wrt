@@ -138,6 +138,12 @@ static handler_t http_response_physical_path_check(server *srv, connection *con)
 		case ENAMETOOLONG:
 			/* file name to be read was too long. return 404 */
 		case ENOENT:
+			if (con->request.http_method == HTTP_METHOD_OPTIONS
+			    && NULL != http_header_response_get(con, HTTP_HEADER_OTHER, CONST_STR_LEN("Allow"))) {
+				con->http_status = 200;
+				return HANDLER_FINISHED;
+			}
+
 			con->http_status = 404;
 
 			if (con->conf.log_request_handling) {
@@ -152,13 +158,13 @@ static handler_t http_response_physical_path_check(server *srv, connection *con)
 			break;
 		default:
 			/* we have no idea what happend. let's tell the user so. */
-			con->http_status = 500;
-			buffer_reset(con->physical.path);
-
 			log_error_write(srv, __FILE__, __LINE__, "ssbsb",
 					"file not found ... or so: ", strerror(errno),
 					con->uri.path,
 					"->", con->physical.path);
+
+			con->http_status = 500;
+			buffer_reset(con->physical.path);
 
 			return HANDLER_FINISHED;
 		}
@@ -228,8 +234,8 @@ static handler_t http_response_physical_path_check(server *srv, connection *con)
 		}
 	}
 
-#ifdef HAVE_LSTAT
-	if ((sce->is_symlink != 0) && !con->conf.follow_symlink) {
+	if (!con->conf.follow_symlink
+	    && 0 != stat_cache_path_contains_symlink(srv, con->physical.path)) {
 		con->http_status = 403;
 
 		if (con->conf.log_request_handling) {
@@ -239,21 +245,17 @@ static handler_t http_response_physical_path_check(server *srv, connection *con)
 
 		buffer_reset(con->physical.path);
 		return HANDLER_FINISHED;
-	};
-#endif
+	}
+
 	if (S_ISDIR(sce->st.st_mode)) {
 		if (con->uri.path->ptr[buffer_string_length(con->uri.path) - 1] != '/') {
 			/* redirect to .../ */
 
-			http_response_redirect_to_directory(srv, con);
+			http_response_redirect_to_directory(srv, con, 301);
 
 			return HANDLER_FINISHED;
 		}
-#ifdef HAVE_LSTAT
-	} else if (!S_ISREG(sce->st.st_mode) && !sce->is_symlink) {
-#else
 	} else if (!S_ISREG(sce->st.st_mode)) {
-#endif
 		/* any special handling of non-reg files ?*/
 	}
 
@@ -374,9 +376,13 @@ handler_t http_response_prepare(server *srv, connection *con) {
 				}
 			      #endif
 			} else {
-				qstr = strchr(con->request.uri->ptr, '#');/* discard fragment */
-				if (qstr) buffer_string_set_length(con->request.uri, qstr - con->request.uri->ptr);
-				qstr = strchr(con->request.uri->ptr, '?');
+				size_t rlen = buffer_string_length(con->request.uri);
+				qstr = memchr(con->request.uri->ptr, '#', rlen);/* discard fragment */
+				if (qstr) {
+					rlen = (size_t)(qstr - con->request.uri->ptr);
+					buffer_string_set_length(con->request.uri, rlen);
+				}
+				qstr = memchr(con->request.uri->ptr, '?', rlen);
 			}
 
 			/** extract query string from request.uri */

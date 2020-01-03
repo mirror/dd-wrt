@@ -135,6 +135,13 @@ mod_geoip_la_LDFLAGS = $(common_module_ldflags)
 mod_geoip_la_LIBADD = $(common_libadd) $(GEOIP_LIB)
 endif
 
+if BUILD_WITH_MAXMINDDB
+lib_LTLIBRARIES += mod_maxminddb.la
+mod_maxminddb_la_SOURCES = mod_maxminddb.c
+mod_maxminddb_la_LDFLAGS = $(common_module_ldflags)
+mod_maxminddb_la_LIBADD = $(common_libadd) $(MAXMINDDB_LIB)
+endif
+
 lib_LTLIBRARIES += mod_evasive.la
 mod_evasive_la_SOURCES = mod_evasive.c
 mod_evasive_la_LDFLAGS = $(common_module_ldflags)
@@ -144,7 +151,7 @@ lib_LTLIBRARIES += mod_webdav.la
 mod_webdav_la_SOURCES = mod_webdav.c
 mod_webdav_la_CFLAGS = $(AM_CFLAGS) $(XML_CFLAGS) $(SQLITE_CFLAGS) 
 mod_webdav_la_LDFLAGS = $(common_module_ldflags)
-mod_webdav_la_LIBADD = $(common_libadd) $(XML_LIBS) $(SQLITE_LIBS) $(UUID_LIBS)
+mod_webdav_la_LIBADD = $(common_libadd) $(XML_LIBS) $(SQLITE_LIBS) $(UUID_LIBS) $(ELFTC_LIB)
 
 if BUILD_WITH_LUA
 lib_LTLIBRARIES += mod_magnet.la
@@ -331,7 +338,7 @@ mod_deflate_la_LIBADD = $(Z_LIB) $(BZ_LIB) $(common_libadd)
 lib_LTLIBRARIES += mod_auth.la
 mod_auth_la_SOURCES = mod_auth.c
 mod_auth_la_LDFLAGS = $(common_module_ldflags)
-mod_auth_la_LIBADD = $(common_libadd)
+mod_auth_la_LIBADD = $(CRYPTO_LIB) $(common_libadd)
 
 lib_LTLIBRARIES += mod_authn_file.la
 mod_authn_file_la_SOURCES = mod_authn_file.c
@@ -413,7 +420,7 @@ mod_wstunnel_la_LDFLAGS = $(common_module_ldflags)
 mod_wstunnel_la_LIBADD = $(common_libadd) $(CRYPTO_LIB)
 
 
-hdr = server.h base64.h buffer.h burl.h network.h log.h http_kv.h keyvalue.h \
+hdr = base64.h buffer.h burl.h network.h log.h http_kv.h keyvalue.h \
 	response.h request.h fastcgi.h chunk.h \
 	first.h settings.h http_chunk.h \
 	algo_sha1.h md5.h http_auth.h http_header.h http_vhostdb.h stream.h \
@@ -477,7 +484,7 @@ lighttpd_CPPFLAGS = \
 lighttpd_LDADD = \
   $(common_libadd) \
   $(CRYPT_LIB) $(CRYPTO_LIB) \
-  $(XML_LIBS) $(SQLITE_LIBS) $(UUID_LIBS) \
+  $(XML_LIBS) $(SQLITE_LIBS) $(UUID_LIBS) $(ELFTC_LIB) \
   $(PCRE_LIB) $(Z_LIB) $(BZ_LIB) $(DL_LIB) $(SENDFILE_LIB) $(ATTR_LIB) \
   $(FAM_LIBS) $(LIBEV_LIBS) $(LIBUNWIND_LIBS)
 lighttpd_LDFLAGS = -export-dynamic
@@ -485,6 +492,10 @@ lighttpd_LDFLAGS = -export-dynamic
 if BUILD_WITH_GEOIP
 lighttpd_SOURCES += mod_geoip.c
 lighttpd_LDADD += $(GEOIP_LIB)
+endif
+if BUILD_WITH_MAXMINDDB
+lighttpd_SOURCES += mod_maxminddb.c
+lighttpd_LDADD += $(MAXMINDDB_LIB)
 endif
 if BUILD_WITH_LUA
 lighttpd_SOURCES += mod_cml.c mod_cml_lua.c mod_cml_funcs.c \

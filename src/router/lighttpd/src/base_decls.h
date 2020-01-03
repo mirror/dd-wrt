@@ -12,6 +12,11 @@ typedef struct connection connection;
 union sock_addr;
 typedef union sock_addr sock_addr;
 
+struct fdnode_st;
+typedef struct fdnode_st fdnode;
+
+struct log_error_st;
+typedef struct log_error_st log_error_st;
 
 enum handler_t {
   HANDLER_UNSET,
