@@ -174,10 +174,11 @@ send_control_done(control_connection_t *conn)
  * @param conn control connection
  * @param code numeric result code
  * @param c separator character, usually ' ', '-', or '+'
- * @param s string
+ * @param s string reply content
  */
-void
-control_write_reply(control_connection_t *conn, int code, int c, const char *s)
+MOCK_IMPL(void,
+control_write_reply, (control_connection_t *conn, int code, int c,
+                      const char *s))
 {
   connection_printf_to_buf(conn, "%03d%c%s\r\n", code, c, s);
 }

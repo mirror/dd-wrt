@@ -1390,9 +1390,11 @@ handle_get_hs_descriptor_v3(dir_connection_t *conn,
   const char *pubkey_str = NULL;
   const char *url = args->url;
 
-  /* Reject unencrypted dir connections */
-  if (!connection_dir_is_encrypted(conn)) {
-    write_short_http_response(conn, 404, "Not found");
+  /* Reject non anonymous dir connections (which also tests if encrypted). We
+   * do not allow single hop clients to query an HSDir. */
+  if (!connection_dir_is_anonymous(conn)) {
+    write_short_http_response(conn, 503,
+                              "Rejecting single hop HS v3 descriptor request");
     goto done;
   }
 
@@ -1632,10 +1634,15 @@ directory_handle_command_post,(dir_connection_t *conn, const char *headers,
     goto done;
   }
 
-  /* Handle HS descriptor publish request. */
-  /* XXX: This should be disabled with a consensus param until we want to
-   * the prop224 be deployed and thus use. */
-  if (connection_dir_is_encrypted(conn) && !strcmpstart(url, "/tor/hs/")) {
+  /* Handle HS descriptor publish request. We force an anonymous connection
+   * (which also tests for encrypted). We do not allow single-hop client to
+   * post a descriptor onto an HSDir. */
+  if (!strcmpstart(url, "/tor/hs/")) {
+    if (!connection_dir_is_anonymous(conn)) {
+      write_short_http_response(conn, 503,
+                                "Rejecting single hop HS descriptor post");
+      goto done;
+    }
     const char *msg = "HS descriptor stored successfully.";
 
     /* We most probably have a publish request for an HS descriptor. */

@@ -4,7 +4,7 @@ dnl Copyright (c) 2007-2019, The Tor Project, Inc.
 dnl See LICENSE for licensing information
 
 AC_PREREQ([2.63])
-AC_INIT([tor],[0.4.1.6])
+AC_INIT([tor],[0.4.2.5])
 AC_CONFIG_SRCDIR([src/app/main/tor_main.c])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -14,7 +14,7 @@ AC_CONFIG_MACRO_DIR([m4])
 # version number changes.  Tor uses it to make sure that it
 # only shuts down for missing "required protocols" when those protocols
 # are listed as required by a consensus after this date.
-AC_DEFINE(APPROX_RELEASE_DATE, ["2019-09-17"], # for 0.4.1.6
+AC_DEFINE(APPROX_RELEASE_DATE, ["2019-12-05"], # for 0.4.2.5
           [Approximate date when this software was released. (Updated when the version changes.)])
 
 # "foreign" means we don't follow GNU package layout standards
@@ -29,6 +29,18 @@ AC_USE_SYSTEM_EXTENSIONS
 AC_CANONICAL_HOST
 
 PKG_PROG_PKG_CONFIG
+if test "x$PKG_CONFIG" = "x" ; then
+    pkg_config_user_action="install pkg-config, and check the PKG_CONFIG_PATH environment variable"
+    AC_MSG_NOTICE([Some libraries need pkg-config, including systemd, nss, lzma, zstd, and custom mallocs.])
+    AC_MSG_NOTICE([To use those libraries, $pkg_config_user_action.])
+else
+    pkg_config_user_action="check the PKG_CONFIG_PATH environment variable"
+fi
+
+if test "x$PKG_CONFIG_PATH" = "x" && test "x$prefix" != "xNONE" && test "$host" != "$build"; then
+   export PKG_CONFIG_PATH=$prefix/lib/pkgconfig
+   AC_MSG_NOTICE([set PKG_CONFIG_PATH=$PKG_CONFIG_PATH to support cross-compiling])
+fi
 
 AC_ARG_ENABLE(openbsd-malloc,
    AS_HELP_STRING(--enable-openbsd-malloc, [use malloc code from OpenBSD.  Linux only. Deprecated: see --with-malloc]))
@@ -105,6 +117,12 @@ if test "$enable_memory_sentinels" = "no"; then
            [Defined if we're turning off memory safety code to look for bugs])
 fi
 
+AC_ARG_ENABLE(manpage,
+              AS_HELP_STRING(--disable-manpage, [Disable manpage generation.]))
+
+AC_ARG_ENABLE(html-manual,
+              AS_HELP_STRING(--disable-html-manual, [Disable HTML documentation.]))
+
 AC_ARG_ENABLE(asciidoc,
      AS_HELP_STRING(--disable-asciidoc, [don't use asciidoc (disables building of manpages)]),
      [case "${enableval}" in
@@ -154,13 +172,13 @@ if test "x$have_systemd" = "xyes"; then
     TOR_SYSTEMD_CFLAGS="${SYSTEMD_CFLAGS}"
     TOR_SYSTEMD_LIBS="${SYSTEMD_LIBS}"
     PKG_CHECK_MODULES(LIBSYSTEMD209, [libsystemd >= 209],
-         [AC_DEFINE(HAVE_SYSTEMD_209,1,[Have systemd v209 or more])], [])
+         [AC_DEFINE(HAVE_SYSTEMD_209,1,[Have systemd v209 or greater])], [])
 fi
 AC_SUBST(TOR_SYSTEMD_CFLAGS)
 AC_SUBST(TOR_SYSTEMD_LIBS)
 
 if test "x$enable_systemd" = "xyes" -a "x$have_systemd" != "xyes" ; then
-    AC_MSG_ERROR([Explicitly requested systemd support, but systemd not found])
+    AC_MSG_ERROR([Explicitly requested systemd support, but systemd not found, $pkg_config_user_action, or set SYSTEMD_CFLAGS and SYSTEMD_LIBS.])
 fi
 
 case "$host" in
@@ -245,11 +263,11 @@ m4_define(MODULES, dirauth)
 dnl Directory Authority module.
 AC_ARG_ENABLE([module-dirauth],
               AS_HELP_STRING([--disable-module-dirauth],
-                             [Do not build tor with the dirauth module]),
-              [], dnl Action if-given
-              AC_DEFINE([HAVE_MODULE_DIRAUTH], [1],
-                        [Compile with Directory Authority feature support]))
-AM_CONDITIONAL(BUILD_MODULE_DIRAUTH, [test "x$enable_module_dirauth" != "xno"])
+                             [Build tor without the Directory Authority module: tor can not run as a directory authority or bridge authority]))
+AM_CONDITIONAL(BUILD_MODULE_DIRAUTH,[test "x$enable_module_dirauth" != "xno"])
+AM_COND_IF(BUILD_MODULE_DIRAUTH,
+           AC_DEFINE([HAVE_MODULE_DIRAUTH], [1],
+                     [Compile with Directory Authority feature support]))
 
 dnl Helper variables.
 TOR_MODULES_ALL_ENABLED=
@@ -299,6 +317,8 @@ AC_PATH_PROG([ASCIIDOC], [asciidoc], none)
 AC_PATH_PROGS([A2X], [a2x a2x.py], none)
 
 AM_CONDITIONAL(USE_ASCIIDOC, test "x$asciidoc" = "xtrue")
+AM_CONDITIONAL(BUILD_MANPAGE, [test "x$enable_manpage" != "xno"])
+AM_CONDITIONAL(BUILD_HTML_DOCS, [test "x$enable_html_manual" != "xno"])
 
 AM_PROG_CC_C_O
 AC_PROG_CC_C99
@@ -550,8 +570,8 @@ if test "x$enable_rust" = "xyes"; then
   if test "x$RUSTC_VERSION_MAJOR" = "x" -o "x$RUSTC_VERSION_MINOR" = "x"; then
     AC_MSG_ERROR([rustc version couldn't be identified])
   fi
-  if test "$RUSTC_VERSION_MAJOR" -lt 2 -a "$RUSTC_VERSION_MINOR" -lt 14; then
-    AC_MSG_ERROR([rustc must be at least version 1.14])
+  if test "$RUSTC_VERSION_MAJOR" -lt 2 -a "$RUSTC_VERSION_MINOR" -lt 31; then
+    AC_MSG_ERROR([rustc must be at least version 1.31.0])
   fi
   AC_MSG_RESULT([$RUSTC_VERSION])
 fi
@@ -862,7 +882,7 @@ if test "x$enable_nss" = "xyes"; then
   PKG_CHECK_MODULES(NSS,
      [nss],
      [have_nss=yes],
-     [have_nss=no; AC_MSG_ERROR([You asked for NSS but I can't find it.])])
+     [have_nss=no; AC_MSG_ERROR([You asked for NSS but I can't find it, $pkg_config_user_action, or set NSS_CFLAGS and NSS_LIBS.])])
   AC_SUBST(NSS_CFLAGS)
   AC_SUBST(NSS_LIBS)
 fi
@@ -1068,7 +1088,7 @@ else
                       have_lzma=no)
 
     if test "x$have_lzma" = "xno" ; then
-        AC_MSG_WARN([Unable to find liblzma.])
+        AC_MSG_WARN([Unable to find liblzma, $pkg_config_user_action, or set LZMA_CFLAGS and LZMA_LIBS.])
     fi
 fi
 
@@ -1100,7 +1120,7 @@ else
                       have_zstd=no)
 
     if test "x$have_zstd" = "xno" ; then
-        AC_MSG_WARN([Unable to find libzstd.])
+        AC_MSG_WARN([Unable to find libzstd, $pkg_config_user_action, or set ZSTD_CFLAGS and ZSTD_LIBS.])
     fi
 fi
 
@@ -1188,6 +1208,17 @@ m4_ifdef([AS_VAR_IF],[
        TOR_CHECK_LDFLAGS(-pie, "$all_ldflags_for_check", "$all_libs_for_check")
     fi
     TOR_TRY_COMPILE_WITH_CFLAGS(-fwrapv, also_link, CFLAGS_FWRAPV="-fwrapv", true)
+
+   AC_MSG_CHECKING([whether we can run hardened binaries])
+   AC_RUN_IFELSE([AC_LANG_PROGRAM([], [return 0;])],
+        [AC_MSG_RESULT([yes])],
+        [AC_MSG_RESULT([no])
+         AC_MSG_ERROR([dnl
+ We can link with compiler hardening options, but we can't run with them.
+ That's a bad sign! If you must, you can pass --disable-gcc-hardening to
+ configure, but it would be better to figure out what the underlying problem
+ is.])],
+        [AC_MSG_RESULT([cross])])
 fi
 
 if test "$fragile_hardening" = "yes"; then
@@ -1868,8 +1899,7 @@ if test "$tor_cv_uint8_uchar" = "no"; then
 fi
 
 AC_ARG_WITH(tcmalloc,
-AS_HELP_STRING(--with-tcmalloc, [use tcmalloc memory allocation library. Deprecated; see --with-malloc]),
-[ tcmalloc=yes ], [ tcmalloc=no ])
+AS_HELP_STRING(--with-tcmalloc, [use tcmalloc memory allocation library. Deprecated; see --with-malloc]))
 
 default_malloc=system
 
@@ -1878,7 +1908,7 @@ if test "x$enable_openbsd_malloc" = "xyes" ; then
   default_malloc=openbsd
 fi
 
-if test "x$tcmalloc" = "xyes"; then
+if test "x$with_tcmalloc" = "xyes"; then
   AC_MSG_NOTICE([The --with-tcmalloc argument is deprecated; use --with-malloc=tcmalloc instead.])
   default_malloc=tcmalloc
 fi
@@ -1896,7 +1926,7 @@ AS_CASE([$malloc],
 			have_tcmalloc=no)
 
       if test "x$have_tcmalloc" = "xno" ; then
-          AC_MSG_ERROR([Unable to find tcmalloc requested by --with-malloc.])
+          AC_MSG_ERROR([Unable to find tcmalloc requested by --with-malloc, $pkg_config_user_action, or set TCMALLOC_CFLAGS and TCMALLOC_LIBS.])
       fi
 
       CFLAGS="$CFLAGS $TCMALLOC_CFLAGS"
@@ -1909,8 +1939,8 @@ AS_CASE([$malloc],
 			have_jemalloc=yes,
 			have_jemalloc=no)
 
-      if test "x$have_tcmalloc" = "xno" ; then
-          AC_MSG_ERROR([Unable to find jemalloc requested by --with-malloc.])
+      if test "x$have_jemalloc" = "xno" ; then
+          AC_MSG_ERROR([Unable to find jemalloc requested by --with-malloc, $pkg_config_user_action, or set JEMALLOC_CFLAGS and JEMALLOC_LIBS.])
       fi
 
       CFLAGS="$CFLAGS $JEMALLOC_CFLAGS"
@@ -2458,7 +2488,6 @@ AC_CONFIG_FILES([
 	Makefile
 	config.rust
 	contrib/operator-tools/tor.logrotate
-	contrib/dist/torctl
 	contrib/dist/tor.service
 	src/config/torrc.sample
 	src/config/torrc.minimal

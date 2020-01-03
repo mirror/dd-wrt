@@ -259,8 +259,7 @@ create_rp_circuit_identifier(const hs_service_t *service,
   tor_assert(server_pk);
   tor_assert(keys);
 
-  ident = hs_ident_circuit_new(&service->keys.identity_pk,
-                               HS_IDENT_CIRCUIT_RENDEZVOUS);
+  ident = hs_ident_circuit_new(&service->keys.identity_pk);
   /* Copy the RENDEZVOUS_COOKIE which is the unique identifier. */
   memcpy(ident->rendezvous_cookie, rendezvous_cookie,
          sizeof(ident->rendezvous_cookie));
@@ -294,8 +293,7 @@ create_intro_circuit_identifier(const hs_service_t *service,
   tor_assert(service);
   tor_assert(ip);
 
-  ident = hs_ident_circuit_new(&service->keys.identity_pk,
-                               HS_IDENT_CIRCUIT_INTRO);
+  ident = hs_ident_circuit_new(&service->keys.identity_pk);
   ed25519_pubkey_copy(&ident->intro_auth_pk, &ip->auth_key_kp.pubkey);
 
   return ident;
@@ -319,7 +317,7 @@ send_establish_intro(const hs_service_t *service,
 
   /* Encode establish intro cell. */
   cell_len = hs_cell_build_establish_intro(circ->cpath->prev->rend_circ_nonce,
-                                           ip, payload);
+                                           &service->config, ip, payload);
   if (cell_len < 0) {
     log_warn(LD_REND, "Unable to encode ESTABLISH_INTRO cell for service %s "
                       "on circuit %u. Closing circuit.",
@@ -389,10 +387,7 @@ launch_rendezvous_point_circuit(const hs_service_t *service,
                                         &data->onion_pk,
                                         service->config.is_single_onion);
   if (info == NULL) {
-    /* We are done here, we can't extend to the rendezvous point.
-     * If you're running an IPv6-only v3 single onion service on 0.3.2 or with
-     * 0.3.2 clients, and somehow disable the option check, it will fail here.
-     */
+    /* We are done here, we can't extend to the rendezvous point. */
     log_fn(LOG_PROTOCOL_WARN, LD_REND,
            "Not enough info to open a circuit to a rendezvous point for "
            "%s service %s.",
