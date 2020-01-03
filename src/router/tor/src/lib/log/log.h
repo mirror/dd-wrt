@@ -26,7 +26,7 @@
 #error "Your syslog.h thinks high numbers are more important.  " \
        "We aren't prepared to deal with that."
 #endif
-#else /* !(defined(HAVE_SYSLOG_H)) */
+#else /* !defined(HAVE_SYSLOG_H) */
 /* Note: Syslog's logging code refers to priorities, with 0 being the most
  * important.  Thus, all our comparisons needed to be reversed when we added
  * syslog support.
@@ -117,10 +117,21 @@
 #define LD_BTRACK    (UINT64_C(1)<<28)
 /** Message-passing backend. */
 #define LD_MESG      (UINT64_C(1)<<29)
-#define N_LOGGING_DOMAINS 30
 
+/** The number of log domains. */
+#define N_LOGGING_DOMAINS 30
+/** The highest log domain */
+#define HIGHEST_RESERVED_LD_DOMAIN_ (UINT64_C(1)<<(N_LOGGING_DOMAINS - 1))
+/** All log domains. */
+#define LD_ALL_DOMAINS ((~(UINT64_C(0)))>>(64 - N_LOGGING_DOMAINS))
+
+/** The number of log flags. */
+#define N_LOGGING_FLAGS 3
 /** First bit that is reserved in log_domain_mask_t for non-domain flags. */
-#define LOWEST_RESERVED_LD_FLAG_ (UINT64_C(1)<<61)
+#define LOWEST_RESERVED_LD_FLAG_ (UINT64_C(1)<<(64 - N_LOGGING_FLAGS))
+/** All log flags. */
+#define LD_ALL_FLAGS ((~(UINT64_C(0)))<<(64 - N_LOGGING_FLAGS))
+
 #ifdef TOR_UNIT_TESTS
 /** This log message should not be intercepted by mock_saving_logv */
 #define LD_NO_MOCK (UINT64_C(1)<<61)
@@ -173,6 +184,7 @@ void logs_set_domain_logging(int enabled);
 int get_min_log_level(void);
 void switch_logs_debug(void);
 void logs_free_all(void);
+void logs_close_sigsafe(void);
 void add_temp_log(int min_severity);
 void close_temp_logs(void);
 void rollback_log_changes(void);
@@ -294,6 +306,12 @@ extern const log_domain_mask_t LD_GENERAL_;
 MOCK_DECL(STATIC void, logv, (int severity, log_domain_mask_t domain,
     const char *funcname, const char *suffix, const char *format,
     va_list ap) CHECK_PRINTF(5,0));
+#endif
+
+#if defined(LOG_PRIVATE) || defined(TOR_UNIT_TESTS)
+/** Given a severity, yields an index into log_severity_list_t.masks to use
+ * for that severity. */
+#define SEVERITY_MASK_IDX(sev) ((sev) - LOG_ERR)
 #endif
 
 #endif /* !defined(TOR_TORLOG_H) */

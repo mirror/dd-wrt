@@ -171,8 +171,7 @@ test_e2e_rend_circuit_setup(void *arg)
     tt_int_op(0, OP_EQ, ed25519_secret_key_generate(&sk, 0));
     tt_int_op(0, OP_EQ, ed25519_public_key_generate(&service_pk, &sk));
 
-    or_circ->hs_ident = hs_ident_circuit_new(&service_pk,
-                                             HS_IDENT_CIRCUIT_RENDEZVOUS);
+    or_circ->hs_ident = hs_ident_circuit_new(&service_pk);
 
     TO_CIRCUIT(or_circ)->state = CIRCUIT_STATE_OPEN;
   }
@@ -675,9 +674,11 @@ test_service_intro_point(void *arg)
 
   (void) arg;
 
+  update_approx_time(1481621834);
+
   /* Test simple creation of an object. */
   {
-    time_t now = time(NULL);
+    time_t now = approx_time();
     ip = helper_create_service_ip();
     tt_assert(ip);
     /* Make sure the authentication keypair is not zeroes. */
@@ -1105,8 +1106,7 @@ test_closing_intro_circs(void *arg)
 
   /* Initialize intro circuit */
   intro_circ = origin_circuit_init(CIRCUIT_PURPOSE_S_ESTABLISH_INTRO, flags);
-  intro_circ->hs_ident = hs_ident_circuit_new(&service->keys.identity_pk,
-                                              HS_IDENT_CIRCUIT_INTRO);
+  intro_circ->hs_ident = hs_ident_circuit_new(&service->keys.identity_pk);
   /* Register circuit in the circuitmap . */
   hs_circuitmap_register_intro_circ_v3_service_side(intro_circ,
                                                     &ip->auth_key_kp.pubkey);
@@ -1132,8 +1132,7 @@ test_closing_intro_circs(void *arg)
   /* Now pretend that a new intro point circ was launched and opened. Check
    * that the intro point will be established correctly. */
   intro_circ = origin_circuit_init(CIRCUIT_PURPOSE_S_ESTABLISH_INTRO, flags);
-  intro_circ->hs_ident = hs_ident_circuit_new(&service->keys.identity_pk,
-                                              HS_IDENT_CIRCUIT_INTRO);
+  intro_circ->hs_ident = hs_ident_circuit_new(&service->keys.identity_pk);
   ed25519_pubkey_copy(&intro_circ->hs_ident->intro_auth_pk,
                       &ip->auth_key_kp.pubkey);
   /* Register circuit in the circuitmap . */
@@ -1181,7 +1180,7 @@ test_introduce2(void *arg)
   MOCK(get_or_state,
        get_or_state_replacement);
 
-  dummy_state = tor_malloc_zero(sizeof(or_state_t));
+  dummy_state = or_state_new();
 
   circ = helper_create_origin_circuit(CIRCUIT_PURPOSE_S_INTRO, flags);
   tt_assert(circ);
@@ -1265,6 +1264,7 @@ test_service_event(void *arg)
 
   /* Set a service for this circuit. */
   service = helper_create_service();
+  tt_assert(service);
   ed25519_pubkey_copy(&circ->hs_ident->identity_pk,
                       &service->keys.identity_pk);
 
@@ -1300,8 +1300,14 @@ test_service_event(void *arg)
     run_housekeeping_event(now);
     tt_int_op(digest256map_size(service->desc_current->intro_points.map),
               OP_EQ, 1);
+    /* No removal if we have an established circuit after retries. */
+    ip->circuit_retries = MAX_INTRO_POINT_CIRCUIT_RETRIES + 1;
+    run_housekeeping_event(now);
+    tt_int_op(digest256map_size(service->desc_current->intro_points.map),
+              OP_EQ, 1);
     /* Remove the IP object at once for the next test. */
     ip->circuit_retries = MAX_INTRO_POINT_CIRCUIT_RETRIES + 1;
+    ip->circuit_established = 0;
     run_housekeeping_event(now);
     tt_int_op(digest256map_size(service->desc_current->intro_points.map),
               OP_EQ, 0);
@@ -1345,7 +1351,7 @@ test_rotate_descriptors(void *arg)
 
   (void) arg;
 
-  dummy_state = tor_malloc_zero(sizeof(or_state_t));
+  dummy_state = or_state_new();
 
   hs_init();
   MOCK(get_or_state, get_or_state_replacement);
@@ -1462,7 +1468,7 @@ test_build_update_descriptors(void *arg)
   MOCK(networkstatus_get_live_consensus,
        mock_networkstatus_get_live_consensus);
 
-  dummy_state = tor_malloc_zero(sizeof(or_state_t));
+  dummy_state = or_state_new();
 
   ret = parse_rfc1123_time("Sat, 26 Oct 1985 03:00:00 UTC",
                            &mock_ns.valid_after);
@@ -1693,7 +1699,7 @@ test_build_descriptors(void *arg)
   MOCK(networkstatus_get_live_consensus,
        mock_networkstatus_get_live_consensus);
 
-  dummy_state = tor_malloc_zero(sizeof(or_state_t));
+  dummy_state = or_state_new();
 
   ret = parse_rfc1123_time("Sat, 26 Oct 1985 03:00:00 UTC",
                            &mock_ns.valid_after);
@@ -1794,7 +1800,7 @@ test_upload_descriptors(void *arg)
   MOCK(networkstatus_get_live_consensus,
        mock_networkstatus_get_live_consensus);
 
-  dummy_state = tor_malloc_zero(sizeof(or_state_t));
+  dummy_state = or_state_new();
 
   ret = parse_rfc1123_time("Sat, 26 Oct 1985 13:00:00 UTC",
                            &mock_ns.valid_after);

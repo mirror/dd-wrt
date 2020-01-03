@@ -3,7 +3,7 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
-/* # for 0.4.1.6 Approximate date when this software was released. (Updated
+/* # for 0.4.2.5 Approximate date when this software was released. (Updated
    when the version changes.) */
 #undef APPROX_RELEASE_DATE
 
@@ -513,7 +513,7 @@
 /* Have systemd */
 #undef HAVE_SYSTEMD
 
-/* Have systemd v209 or more */
+/* Have systemd v209 or greater */
 #undef HAVE_SYSTEMD_209
 
 /* Define to 1 if you have the <sys/capability.h> header file. */

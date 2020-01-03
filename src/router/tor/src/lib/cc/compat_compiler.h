@@ -82,7 +82,7 @@
 #    define ENABLE_GCC_WARNING(warningopt) \
          PRAGMA_DIAGNOSTIC_(warning PRAGMA_JOIN_STRINGIFY_(-W,warningopt))
 #endif /* defined(__clang__) || GCC_VERSION >= 406 */
-#else /* !(defined(__GNUC__)) */
+#else /* !defined(__GNUC__) */
 /* not gcc at all */
 # define DISABLE_GCC_WARNING(warning)
 # define ENABLE_GCC_WARNING(warning)
@@ -195,7 +195,7 @@
  * structure <b>st</b>.  Example:
  * <pre>
  *   struct a { int foo; int bar; } x;
- *   off_t bar_offset = offsetof(struct a, bar);
+ *   ptrdiff_t bar_offset = offsetof(struct a, bar);
  *   int *bar_p = STRUCT_VAR_P(&x, bar_offset);
  *   *bar_p = 3;
  * </pre>
