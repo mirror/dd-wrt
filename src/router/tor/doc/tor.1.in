@@ -2,12 +2,12 @@
 .\"     Title: tor
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 06/25/2019
+.\"      Date: 11/15/2019
 .\"    Manual: Tor Manual
 .\"    Source: Tor
 .\"  Language: English
 .\"
-.TH "TOR" "1" "06/25/2019" "Tor" "Tor Manual"
+.TH "TOR" "1" "11/15/2019" "Tor" "Tor Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -41,7 +41,7 @@ Basically, Tor provides a distributed network of servers or relays ("onion route
 By default, \fBtor\fR will act as a client only\&. To help the network by providing bandwidth as a relay, change the \fBORPort\fR configuration option \(em see below\&. Please also consult the documentation on the Tor Project\(cqs website\&.
 .SH "COMMAND\-LINE OPTIONS"
 .PP
-\fB\-h\fR, \fB\-help\fR
+\fB\-h\fR, \fB\-\-help\fR
 .RS 4
 Display a short help message and exit\&.
 .RE
@@ -193,7 +193,10 @@ A token bucket limits the average incoming bandwidth usage on this node to the s
 Note that this option, and other bandwidth\-limiting options, apply to TCP data only: They do not count TCP headers or DNS traffic\&.
 
 
-With this option, and in other options that take arguments in bytes, KBytes, and so on, other formats are also supported\&. Notably, "KBytes" can also be written as "kilobytes" or "kb"; "MBytes" can be written as "megabytes" or "MB"; "kbits" can be written as "kilobits"; and so forth\&. Tor also accepts "byte" and "bit" in the singular\&. The prefixes "tera" and "T" are also recognized\&. If no units are given, we default to bytes\&. To avoid confusion, we recommend writing "bytes" or "bits" explicitly, since it\(cqs easy to forget that "B" means bytes, not bits\&.
+Tor uses powers of two, not powers of ten, so 1 GByte is 1024*1024*1024 bytes as opposed to 1 billion bytes\&.
+
+
+With this option, and in other options that take arguments in bytes, KBytes, and so on, other formats are also supported\&. Notably, "KBytes" can also be written as "kilobytes" or "kb"; "MBytes" can be written as "megabytes" or "MB"; "kbits" can be written as "kilobits"; and so forth\&. Case doesn\(cqt matter\&. Tor also accepts "byte" and "bit" in the singular\&. The prefixes "tera" and "T" are also recognized\&. If no units are given, we default to bytes\&. To avoid confusion, we recommend writing "bytes" or "bits" explicitly, since it\(cqs easy to forget that "B" means bytes, not bits\&.
 .RE
 .PP
 \fBBandwidthBurst\fR \fIN\fR \fBbytes\fR|\fBKBytes\fR|\fBMBytes\fR|\fBGBytes\fR|\fBTBytes\fR|\fBKBits\fR|\fBMBits\fR|\fBGBits\fR|\fBTBits\fR
@@ -415,9 +418,15 @@ Store cached directory data in DIR\&. Can not be changed while tor is running\&.
 If this option is set to 0, don\(cqt allow the filesystem group to read the CacheDirectory\&. If the option is set to 1, make the CacheDirectory readable by the default GID\&. If the option is "auto", then we use the setting for DataDirectoryGroupReadable when the CacheDirectory is the same as the DataDirectory, and 0 otherwise\&. (Default: auto)
 .RE
 .PP
-\fBFallbackDir\fR \fIipv4address\fR:\fIport\fR orport=\fIport\fR id=\fIfingerprint\fR [weight=\fInum\fR] [ipv6=\fB[\fR\fIipv6address\fR\fB]\fR:\fIorport\fR]
+\fBFallbackDir\fR \fIipv4address\fR:\fIdirport\fR orport=\fIorport\fR id=\fIfingerprint\fR [weight=\fInum\fR] [ipv6=\fB[\fR\fIipv6address\fR\fB]\fR:\fIorport\fR]
 .RS 4
-When we\(cqre unable to connect to any directory cache for directory info (usually because we don\(cqt know about any yet) we try a directory authority\&. Clients also simultaneously try a FallbackDir, to avoid hangs on client startup if a directory authority is down\&. Clients retry FallbackDirs more often than directory authorities, to reduce the load on the directory authorities\&. By default, the directory authorities are also FallbackDirs\&. Specifying a FallbackDir replaces Tor\(cqs default hard\-coded FallbackDirs (if any)\&. (See the
+When tor is unable to connect to any directory cache for directory info (usually because it doesn\(cqt know about any yet) it tries a hard\-coded directory\&. Relays try one directory authority at a time\&. Clients try multiple directory authorities and FallbackDirs, to avoid hangs on startup if a hard\-coded directory is down\&. Clients wait for a few seconds between each attempt, and retry FallbackDirs more often than directory authorities, to reduce the load on the directory authorities\&.
+
+
+FallbackDirs should be stable relays with stable IP addresses, ports, and identity keys\&. They must have a DirPort\&.
+
+
+By default, the directory authorities are also FallbackDirs\&. Specifying a FallbackDir replaces Tor\(cqs default hard\-coded FallbackDirs (if any)\&. (See the
 \fBDirAuthority\fR
 entry for an explanation of each flag\&.)
 .RE
@@ -427,17 +436,18 @@ entry for an explanation of each flag\&.)
 Use Tor\(cqs default hard\-coded FallbackDirs (if any)\&. (When a FallbackDir line is present, it replaces the hard\-coded FallbackDirs, regardless of the value of UseDefaultFallbackDirs\&.) (Default: 1)
 .RE
 .PP
-\fBDirAuthority\fR [\fInickname\fR] [\fBflags\fR] \fIipv4address\fR:\fIport\fR \fIfingerprint\fR
+\fBDirAuthority\fR [\fInickname\fR] [\fBflags\fR] \fIipv4address\fR:\fIdirport\fR \fIfingerprint\fR
 .RS 4
-Use a nonstandard authoritative directory server at the provided address and port, with the specified key fingerprint\&. This option can be repeated many times, for multiple authoritative directory servers\&. Flags are separated by spaces, and determine what kind of an authority this directory is\&. By default, an authority is not authoritative for any directory style or version unless an appropriate flag is given\&. Tor will use this authority as a bridge authoritative directory if the "bridge" flag is set\&. If a flag "orport=\fBport\fR" is given, Tor will use the given port when opening encrypted tunnels to the dirserver\&. If a flag "weight=\fBnum\fR" is given, then the directory server is chosen randomly with probability proportional to that weight (default 1\&.0)\&. If a flag "v3ident=\fBfp\fR" is given, the dirserver is a v3 directory authority whose v3 long\-term signing key has the fingerprint
+Use a nonstandard authoritative directory server at the provided address and port, with the specified key fingerprint\&. This option can be repeated many times, for multiple authoritative directory servers\&. Flags are separated by spaces, and determine what kind of an authority this directory is\&. By default, an authority is not authoritative for any directory style or version unless an appropriate flag is given\&.
+
+
+Tor will use this authority as a bridge authoritative directory if the "bridge" flag is set\&. If a flag "orport=\fBorport\fR" is given, Tor will use the given port when opening encrypted tunnels to the dirserver\&. If a flag "weight=\fBnum\fR" is given, then the directory server is chosen randomly with probability proportional to that weight (default 1\&.0)\&. If a flag "v3ident=\fBfp\fR" is given, the dirserver is a v3 directory authority whose v3 long\-term signing key has the fingerprint
 \fBfp\fR\&. Lastly, if an "ipv6=\fB[\fR\fIipv6address\fR\fB]\fR:\fIorport\fR" flag is present, then the directory authority is listening for IPv6 connections on the indicated IPv6 address and OR Port\&.
 
 
 Tor will contact the authority at
 \fIipv4address\fR
-to download directory documents\&. The provided
-\fIport\fR
-value is a dirport; clients ignore this in favor of the specified "orport=" value\&. If an IPv6 ORPort is supplied, Tor will also download directory documents at the IPv6 ORPort\&.
+to download directory documents\&. Clients always use the ORPort\&. Relays usually use the DirPort, but will use the ORPort in some circumstances\&. If an IPv6 ORPort is supplied, clients will also download directory documents at the IPv6 ORPort, if they are configured to use IPv6\&.
 
 
 If no
@@ -590,6 +600,9 @@ Send all messages between
 and
 \fImaxSeverity\fR
 to the standard output stream, the standard error stream, or to the system log\&. (The "syslog" value is only supported on Unix\&.) Recognized severity levels are debug, info, notice, warn, and err\&. We advise using "notice" in most cases, since anything more verbose may provide sensitive information to an attacker who obtains the logs\&. If only one severity level is given, all messages of that level or higher will be sent to the listed destination\&.
+
+
+Some low\-level logs may be sent from signal handlers, so their destination logs must be signal\-safe\&. These low\-level logs include backtraces, logging function errors, and errors in code called by logging functions\&. Signal\-safe logs are always sent to stderr or stdout\&. They are also sent to a limited number of log files that are configured to log messages at error severity from the bug or general domains\&. They are never sent as syslogs, android logs, control port log events, or to any API\-based log destinations\&.
 .RE
 .PP
 \fBLog\fR \fIminSeverity\fR[\-\fImaxSeverity\fR] \fBfile\fR \fIFILENAME\fR
@@ -989,7 +1002,7 @@ and
 .PP
 \fBHidServAuth\fR \fIonion\-address\fR \fIauth\-cookie\fR [\fIservice\-name\fR]
 .RS 4
-Client authorization for a hidden service\&. Valid onion addresses contain 16 characters in a\-z2\-7 plus "\&.onion", and valid auth cookies contain 22 characters in A\-Za\-z0\-9+/\&. The service name is only used for internal purposes, e\&.g\&., for Tor controllers\&. This option may be used multiple times for different hidden services\&. If a hidden service uses authorization and this option is not set, the hidden service is not accessible\&. Hidden services can be configured to require authorization using the
+Client authorization for a v2 hidden service\&. Valid onion addresses contain 16 characters in a\-z2\-7 plus "\&.onion", and valid auth cookies contain 22 characters in A\-Za\-z0\-9+/\&. The service name is only used for internal purposes, e\&.g\&., for Tor controllers\&. This option may be used multiple times for different hidden services\&. If a hidden service uses authorization and this option is not set, the hidden service is not accessible\&. Hidden services can be configured to require authorization using the
 \fBHiddenServiceAuthorizeClient\fR
 option\&.
 .RE
@@ -1364,7 +1377,7 @@ If UseEntryGuards is set to 1, we try to make sure we have at least NUM routers 
 .PP
 \fBGuardLifetime\fR \fIN\fR \fBdays\fR|\fBweeks\fR|\fBmonths\fR
 .RS 4
-If nonzero, and UseEntryGuards is set, minimum time to keep a guard before picking a new one\&. If zero, we use the GuardLifetime parameter from the consensus directory\&. No value here may be less than 1 month or greater than 5 years; out\-of\-range values are clamped\&. (Default: 0)
+If UseEntryGuards is set, minimum time to keep a guard on our guard list before picking a new one\&. If less than one day, we use defaults from the consensus directory\&. (Default: 0)
 .RE
 .PP
 \fBSafeSocks\fR \fB0\fR|\fB1\fR
@@ -1759,8 +1772,6 @@ Note: make sure that no MyFamily lines are present in your torrc when relay is c
 \fBBridgeDistribution\fR \fIstring\fR
 .RS 4
 If set along with BridgeRelay, Tor will include a new line in its bridge descriptor which indicates to the BridgeDB service how it would like its bridge address to be given out\&. Set it to "none" if you want BridgeDB to avoid distributing your bridge address, or "any" to let BridgeDB decide\&. (Default: any)
-
-Note: as of Oct 2017, the BridgeDB part of this option is not yet implemented\&. Until BridgeDB is updated to obey this option, your bridge will make this request, but it will not (yet) be obeyed\&.
 .RE
 .PP
 \fBContactInfo\fR \fIemail_address\fR
@@ -2082,7 +2093,10 @@ message designed to help developers instrumenting Tor\(cqs main event loop\&. (D
 .PP
 \fBAccountingMax\fR \fIN\fR \fBbytes\fR|\fBKBytes\fR|\fBMBytes\fR|\fBGBytes\fR|\fBTBytes\fR|\fBKBits\fR|\fBMBits\fR|\fBGBits\fR|\fBTBits\fR
 .RS 4
-Limits the max number of bytes sent and received within a set time period using a given calculation rule (see: AccountingStart, AccountingRule)\&. Useful if you need to stay under a specific bandwidth\&. By default, the number used for calculation is the max of either the bytes sent or received\&. For example, with AccountingMax set to 1 GByte, a server could send 900 MBytes and receive 800 MBytes and continue running\&. It will only hibernate once one of the two reaches 1 GByte\&. This can be changed to use the sum of the both bytes received and sent by setting the AccountingRule option to "sum" (total bandwidth in/out)\&. When the number of bytes remaining gets low, Tor will stop accepting new connections and circuits\&. When the number of bytes is exhausted, Tor will hibernate until some time in the next accounting period\&. To prevent all servers from waking at the same time, Tor will also wait until a random point in each period before waking up\&. If you have bandwidth cost issues, enabling hibernation is preferable to setting a low bandwidth, since it provides users with a collection of fast servers that are up some of the time, which is more useful than a set of slow servers that are always "available"\&.
+Limits the max number of bytes sent and received within a set time period using a given calculation rule (see: AccountingStart, AccountingRule)\&. Useful if you need to stay under a specific bandwidth\&. By default, the number used for calculation is the max of either the bytes sent or received\&. For example, with AccountingMax set to 1 TByte, a server could send 900 GBytes and receive 800 GBytes and continue running\&. It will only hibernate once one of the two reaches 1 TByte\&. This can be changed to use the sum of the both bytes received and sent by setting the AccountingRule option to "sum" (total bandwidth in/out)\&. When the number of bytes remaining gets low, Tor will stop accepting new connections and circuits\&. When the number of bytes is exhausted, Tor will hibernate until some time in the next accounting period\&. To prevent all servers from waking at the same time, Tor will also wait until a random point in each period before waking up\&. If you have bandwidth cost issues, enabling hibernation is preferable to setting a low bandwidth, since it provides users with a collection of fast servers that are up some of the time, which is more useful than a set of slow servers that are always "available"\&.
+
+
+Note that (as also described in the Bandwidth section) Tor uses powers of two, not powers of ten: 1 GByte is 1024*1024*1024, not one billion\&. Be careful: some internet service providers might count GBytes differently\&.
 .RE
 .PP
 \fBAccountingRule\fR \fBsum\fR|\fBmax\fR|\fBin\fR|\fBout\fR
@@ -2435,11 +2449,6 @@ STRING is a comma\-separated list of Tor versions currently believed to be safe\
 should be set too\&.
 .RE
 .PP
-\fBRecommendedPackages\fR \fIPACKAGENAME\fR \fIVERSION\fR \fIURL\fR \fIDIGESTTYPE\fR\fB=\fR\fIDIGEST\fR
-.RS 4
-Adds "package" line to the directory authority\(cqs vote\&. This information is used to vote on the correct URL and digest for the released versions of different Tor\-related packages, so that the consensus can certify them\&. This line may appear any number of times\&.
-.RE
-.PP
 \fBRecommendedClientVersions\fR \fISTRING\fR
 .RS 4
 STRING is a comma\-separated list of Tor versions currently believed to be safe for clients to use\&. This information is included in version 2 directories\&. If this is not set then the value of
@@ -2642,7 +2651,11 @@ A total value, in abstract bandwidth units, describing how much measured total b
 .RE
 .SH "HIDDEN SERVICE OPTIONS"
 .sp
-The following options are used to configure a hidden service\&.
+The following options are used to configure a hidden service\&. Some options apply per service and some apply for the whole tor instance\&.
+.sp
+The next section describes the per service options that can only be set \fBafter\fR the \fBHiddenServiceDir\fR directive
+.sp
+\fBPER SERVICE OPTIONS:\fR
 .PP
 \fBHiddenServiceDir\fR \fIDIRECTORY\fR
 .RS 4
@@ -2657,11 +2670,6 @@ Configure a virtual port VIRTPORT for a hidden service\&. You may use this optio
 \fBunix:\fR\fIpath\fR\&. (You can specify an IPv6 target as [addr]:port\&. Unix paths may be quoted, and may use standard C escapes\&.) You may also have multiple lines with the same VIRTPORT: when a user connects to that VIRTPORT, one of the TARGETs from those lines will be chosen at random\&. Note that address\-port pairs have to be comma\-separated\&.
 .RE
 .PP
-\fBPublishHidServDescriptors\fR \fB0\fR|\fB1\fR
-.RS 4
-If set to 0, Tor will run any hidden services you configure, but it won\(cqt advertise them to the rendezvous directory\&. This option is only useful if you\(cqre using a Tor controller that handles hidserv publishing for you\&. (Default: 1)
-.RE
-.PP
 \fBHiddenServiceVersion\fR \fB2\fR|\fB3\fR
 .RS 4
 A list of rendezvous service descriptor versions to publish for the hidden service\&. Currently, versions 2 and 3 are supported\&. (Default: 3)
@@ -2669,7 +2677,7 @@ A list of rendezvous service descriptor versions to publish for the hidden servi
 .PP
 \fBHiddenServiceAuthorizeClient\fR \fIauth\-type\fR \fIclient\-name\fR,\fIclient\-name\fR,\fI\&...\fR
 .RS 4
-If configured, the hidden service is accessible for authorized clients only\&. The auth\-type can either be \*(Aqbasic\*(Aq for a general\-purpose authorization protocol or \*(Aqstealth\*(Aq for a less scalable protocol that also hides service activity from unauthorized clients\&. Only clients that are listed here are authorized to access the hidden service\&. Valid client names are 1 to 16 characters long and only use characters in A\-Za\-z0\-9+\-_ (no spaces)\&. If this option is set, the hidden service is not accessible for clients without authorization any more\&. Generated authorization data can be found in the hostname file\&. Clients need to put this authorization data in their configuration file using
+If configured, the v2 hidden service is accessible for authorized clients only\&. The auth\-type can either be \*(Aqbasic\*(Aq for a general\-purpose authorization protocol or \*(Aqstealth\*(Aq for a less scalable protocol that also hides service activity from unauthorized clients\&. Only clients that are listed here are authorized to access the hidden service\&. Valid client names are 1 to 16 characters long and only use characters in A\-Za\-z0\-9+\-_ (no spaces)\&. If this option is set, the hidden service is not accessible for clients without authorization any more\&. Generated authorization data can be found in the hostname file\&. Clients need to put this authorization data in their configuration file using
 \fBHidServAuth\fR\&. This option is only for v2 services; v3 services configure client authentication in a subdirectory of HiddenServiceDir instead (see the
 \fBClient Authorization\fR
 section)\&.
@@ -2682,7 +2690,7 @@ If set to 1, then connections to unrecognized ports do not cause the current hid
 .PP
 \fBHiddenServiceExportCircuitID\fR \fIprotocol\fR
 .RS 4
-The onion service will use the given protocol to expose the global circuit identifier of each inbound client circuit via the selected protocol\&. The only protocol supported right now \*(Aqhaproxy\*(Aq\&. This option is only for v3 services\&. (Default: none)
+The onion service will use the given protocol to expose the global circuit identifier of each inbound client circuit\&. The only protocol supported right now \*(Aqhaproxy\*(Aq\&. This option is only for v3 services\&. (Default: none)
 
 
 The haproxy option works in the following way: when the feature is enabled, the Tor process will write a header line when a client is connecting to the onion service\&. The header will look like this:
@@ -2697,10 +2705,10 @@ We encode the "global circuit identifier" as the last 32\-bits of the first IPv6
 global_circuit_id = (0xAA << 24) + (0xBB << 16) + (0xCC << 8) + 0xDD;
 
 
-In the case above, where the last 32\-bit is 0xffffffff, the global circuit identifier would be 4294967295\&. You can use this value together with Tor\(cqs control port where it is possible to terminate a circuit given the global circuit identifier\&. For more information about this see controls\-spec\&.txt\&.
+In the case above, where the last 32\-bits are 0xffffffff, the global circuit identifier would be 4294967295\&. You can use this value together with Tor\(cqs control port to terminate particular circuits using their global circuit identifiers\&. For more information about this see control\-spec\&.txt\&.
 
 
-The HAProxy version 1 proxy protocol is described in detail at
+The HAProxy version 1 protocol is described in detail at
 https://www\&.haproxy\&.org/download/1\&.8/doc/proxy\-protocol\&.txt
 .RE
 .PP
@@ -2731,6 +2739,34 @@ If this option is set to 1, allow the filesystem group to read the hidden servic
 Number of introduction points the hidden service will have\&. You can\(cqt have more than 10 for v2 service and 20 for v3\&. (Default: 3)
 .RE
 .PP
+\fBHiddenServiceEnableIntroDoSDefense\fR \fB0\fR|\fB1\fR
+.RS 4
+Enable DoS defense at the intropoint level\&. When this is enabled, the rate and burst parameter (see below) will be sent to the intro point which will then use them to apply rate limiting for introduction request to this service\&.
+
+The introduction point honors the consensus parameters except if this is specifically set by the service operator using this option\&. The service never looks at the consensus parameters in order to enable or disable this defense\&. (Default: 0)
+.RE
+.PP
+\fBHiddenServiceEnableIntroDoSRatePerSec\fR \fINUM\fR
+.RS 4
+The allowed client introduction rate per second at the introduction point\&. If this option is 0, it is considered infinite and thus if
+\fBHiddenServiceEnableIntroDoSDefense\fR
+is set, it then effectively disables the defenses\&. (Default: 25)
+.RE
+.PP
+\fBHiddenServiceEnableIntroDoSBurstPerSec\fR \fINUM\fR
+.RS 4
+The allowed client introduction burst per second at the introduction point\&. If this option is 0, it is considered infinite and thus if
+\fBHiddenServiceEnableIntroDoSDefense\fR
+is set, it then effectively disables the defenses\&. (Default: 200)
+.RE
+.sp
+\fBPER INSTANCE OPTIONS:\fR
+.PP
+\fBPublishHidServDescriptors\fR \fB0\fR|\fB1\fR
+.RS 4
+If set to 0, Tor will run any hidden services you configure, but it won\(cqt advertise them to the rendezvous directory\&. This option is only useful if you\(cqre using a Tor controller that handles hidserv publishing for you\&. (Default: 1)
+.RE
+.PP
 \fBHiddenServiceSingleHopMode\fR \fB0\fR|\fB1\fR
 .RS 4
 \fBExperimental \- Non Anonymous\fR
@@ -2755,7 +2791,20 @@ Makes hidden services non\-anonymous on this tor instance\&. Allows the non\-ano
 .sp
 (Version 3 only)
 .sp
-To configure client authorization on the service side, the "<HiddenServiceDir>/authorized_clients/" directory needs to exist\&. Each file in that directory should be suffixed with "\&.auth" (i\&.e\&. "alice\&.auth"; the file name is irrelevant) and its content format MUST be:
+Service side:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+To configure client authorization on the service side, the
+"<HiddenServiceDir>/authorized_clients/" directory needs to exist\&. Each file
+in that directory should be suffixed with "\&.auth" (i\&.e\&. "alice\&.auth"; the
+file name is irrelevant) and its content format MUST be:
+.fi
+.if n \{\
+.RE
+.\}
 .sp
 .if n \{\
 .RS 4
@@ -2767,15 +2816,81 @@ To configure client authorization on the service side, the "<HiddenServiceDir>/a
 .RE
 .\}
 .sp
-The supported <auth\-type> are: "descriptor"\&. The supported <key\-type> are: "x25519"\&. The <base32\-encoded\-public\-key> is the base32 representation of the raw key bytes only (32 bytes for x25519)\&.
+.if n \{\
+.RS 4
+.\}
+.nf
+The supported <auth\-type> are: "descriptor"\&. The supported <key\-type> are:
+"x25519"\&. The <base32\-encoded\-public\-key> is the base32 representation of
+the raw key bytes only (32 bytes for x25519)\&.
+.fi
+.if n \{\
+.RE
+.\}
 .sp
-Each file MUST contain one line only\&. Any malformed file will be ignored\&. Client authorization will only be enabled for the service if tor successfully loads at least one authorization file\&.
+.if n \{\
+.RS 4
+.\}
+.nf
+Each file MUST contain one line only\&. Any malformed file will be
+ignored\&. Client authorization will only be enabled for the service if tor
+successfully loads at least one authorization file\&.
+.fi
+.if n \{\
+.RE
+.\}
 .sp
-Note that once you\(cqve configured client authorization, anyone else with the address won\(cqt be able to access it from this point on\&. If no authorization is configured, the service will be accessible to anyone with the onion address\&.
+.if n \{\
+.RS 4
+.\}
+.nf
+Note that once you\*(Aqve configured client authorization, anyone else with the
+address won\*(Aqt be able to access it from this point on\&. If no authorization is
+configured, the service will be accessible to anyone with the onion address\&.
+.fi
+.if n \{\
+.RE
+.\}
 .sp
-Revoking a client can be done by removing their "\&.auth" file, however the revocation will be in effect only after the tor process gets restarted even if a SIGHUP takes place\&.
+.if n \{\
+.RS 4
+.\}
+.nf
+Revoking a client can be done by removing their "\&.auth" file, however the
+revocation will be in effect only after the tor process gets restarted even if
+a SIGHUP takes place\&.
+.fi
+.if n \{\
+.RE
+.\}
 .sp
-See the Appendix G in the rend\-spec\-v3\&.txt file of torspec for more information\&.
+Client side:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+To access a v3 onion service with client authorization as a client, make sure
+you have ClientOnionAuthDir set in your torrc\&. Then, in the
+<ClientOnionAuthDir> directory, create an \&.auth_private file for the onion
+service corresponding to this key (i\&.e\&. \*(Aqbob_onion\&.auth_private\*(Aq)\&.  The
+contents of the <ClientOnionAuthDir>/<user>\&.auth_private file should look like:
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<56\-char\-onion\-addr\-without\-\&.onion\-part>:descriptor:x25519:<x25519 private key in base32>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+For more information, please see https://2019\&.www\&.torproject\&.org/docs/tor\-onion\-service\&.html\&.en#ClientAuthorization \&.
 .SH "TESTING NETWORK OPTIONS"
 .sp
 The following options are used for running a testing Tor network\&.

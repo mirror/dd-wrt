@@ -167,6 +167,7 @@ test_upgrade_from_guard_wait(void *arg)
   tt_assert(!list);
 
  done:
+  smartlist_free(list);
   circuit_free(circ);
   entry_guard_free_(guard);
 }
@@ -177,6 +178,6 @@ struct testcase_t circuitbuild_tests[] = {
   { "unsafe_exit", test_new_route_len_unsafe_exit, 0, NULL, NULL },
   { "unhandled_exit", test_new_route_len_unhandled_exit, 0, NULL, NULL },
   { "upgrade_from_guard_wait", test_upgrade_from_guard_wait, TT_FORK,
-    NULL, NULL },
+    &helper_pubsub_setup, NULL },
   END_OF_TESTCASES
 };

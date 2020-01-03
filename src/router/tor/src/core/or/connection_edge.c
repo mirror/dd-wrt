@@ -1224,7 +1224,7 @@ connection_ap_rescan_and_attach_pending(void)
     entry_conn->marked_pending_circ_line = 0;   \
     entry_conn->marked_pending_circ_file = 0;   \
   } while (0)
-#else /* !(defined(DEBUGGING_17659)) */
+#else /* !defined(DEBUGGING_17659) */
 #define UNMARK() do { } while (0)
 #endif /* defined(DEBUGGING_17659) */
 
@@ -1611,8 +1611,10 @@ connection_ap_handshake_rewrite(entry_connection_t *conn,
    * disallowed when they're coming straight from the client, but you're
    * allowed to have them in MapAddress commands and so forth. */
   if (!strcmpend(socks->address, ".exit")) {
-    log_warn(LD_APP, "The  \".exit\" notation is disabled in Tor due to "
-             "security risks.");
+    static ratelim_t exit_warning_limit = RATELIM_INIT(60*15);
+    log_fn_ratelim(&exit_warning_limit, LOG_WARN, LD_APP,
+                   "The  \".exit\" notation is disabled in Tor due to "
+                   "security risks.");
     control_event_client_status(LOG_WARN, "SOCKS_BAD_HOSTNAME HOSTNAME=%s",
                                 escaped(socks->address));
     out->end_reason = END_STREAM_REASON_TORPROTOCOL;
@@ -3836,6 +3838,7 @@ connection_exit_begin_conn(cell_t *cell, circuit_t *circ)
 
   if (! bcell.is_begindir) {
     /* Steal reference */
+    tor_assert(bcell.address);
     address = bcell.address;
     port = bcell.port;
 

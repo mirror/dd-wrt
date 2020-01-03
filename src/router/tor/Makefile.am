@@ -41,6 +41,7 @@ TOR_UTIL_LIBS = \
         src/lib/libtor-geoip.a \
 	src/lib/libtor-process.a \
         src/lib/libtor-buf.a \
+	src/lib/libtor-confmgt.a \
 	src/lib/libtor-pubsub.a \
 	src/lib/libtor-dispatch.a \
 	src/lib/libtor-time.a \
@@ -74,6 +75,7 @@ TOR_UTIL_TESTING_LIBS = \
         src/lib/libtor-geoip-testing.a \
 	src/lib/libtor-process-testing.a \
         src/lib/libtor-buf-testing.a \
+	src/lib/libtor-confmgt-testing.a \
 	src/lib/libtor-pubsub-testing.a \
 	src/lib/libtor-dispatch-testing.a \
 	src/lib/libtor-time-testing.a \
@@ -166,10 +168,26 @@ EXTRA_DIST+= \
 	ReleaseNotes					\
 	scripts/maint/checkIncludes.py                  \
 	scripts/maint/checkSpace.pl 			\
+	scripts/maint/checkShellScripts.sh			\
+	scripts/maint/practracker/README                \
 	scripts/maint/practracker/exceptions.txt	\
+	scripts/maint/practracker/includes.py		\
 	scripts/maint/practracker/metrics.py		\
 	scripts/maint/practracker/practracker.py	\
+	scripts/maint/practracker/practracker_tests.py	\
 	scripts/maint/practracker/problem.py		\
+	scripts/maint/practracker/testdata/.may_include	\
+	scripts/maint/practracker/testdata/a.c		\
+	scripts/maint/practracker/testdata/b.c 		\
+	scripts/maint/practracker/testdata/ex0-expected.txt \
+	scripts/maint/practracker/testdata/ex0.txt 	\
+	scripts/maint/practracker/testdata/ex1-expected.txt \
+	scripts/maint/practracker/testdata/ex1.txt 	\
+	scripts/maint/practracker/testdata/ex1-overbroad-expected.txt 	\
+	scripts/maint/practracker/testdata/ex.txt 	\
+	scripts/maint/practracker/testdata/header.h 	\
+	scripts/maint/practracker/testdata/not_c_file	\
+	scripts/maint/practracker/test_practracker.sh   \
 	scripts/maint/practracker/util.py
 
 ## This tells etags how to find mockable function definitions.
@@ -188,7 +206,7 @@ TEST_CFLAGS=
 TEST_CPPFLAGS=-DTOR_UNIT_TESTS @TOR_MODULES_ALL_ENABLED@
 TEST_NETWORK_FLAGS=--hs-multi-client 1
 endif
-TEST_NETWORK_WARNING_FLAGS=--quiet --only-warnings
+TEST_NETWORK_SHOW_WARNINGS_FOR_LAST_RUN_FLAGS=--quiet --only-warnings
 
 if LIBFUZZER_ENABLED
 TEST_CFLAGS += -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-div
@@ -225,15 +243,9 @@ test: all
 	$(top_builddir)/src/test/test
 
 shellcheck:
-        # Only use shellcheck if it is present
-	if command -v shellcheck; then \
-	        find $(top_srcdir)/scripts/ -name "*.sh" -exec shellcheck {} +; \
-	        if [ -d "$(top_srcdir)/scripts/test" ]; then \
-                        shellcheck $(top_srcdir)/scripts/test/cov-diff $(top_srcdir)/scripts/test/coverage; \
-                fi; \
-	fi
+	$(top_srcdir)/scripts/maint/checkShellScripts.sh
 
-check-local: check-spaces check-changes check-includes shellcheck
+check-local: check-spaces check-changes check-includes check-best-practices shellcheck
 
 need-chutney-path:
 	@if test ! -d "$$CHUTNEY_PATH"; then \
@@ -253,12 +265,15 @@ test-network: need-chutney-path $(TESTING_TOR_BINARY) src/tools/tor-gencert
 	$(top_srcdir)/src/test/test-network.sh $(TEST_NETWORK_FLAGS)
 
 # Run all available tests using automake's test-driver
-# only run IPv6 tests if we can ping6 ::1 (localhost)
-# only run IPv6 tests if we can ping ::1 (localhost)
-# some IPv6 tests will fail without an IPv6 DNS server (see #16971 and #17011)
-# only run mixed tests if we have a tor-stable binary
-# Try the syntax for BSD ping6, Linux ping6, and Linux ping -6,
-# because they're incompatible
+#   - only run IPv6 tests if we can ping6 or ping -6 ::1 (localhost)
+#     we try the syntax for BSD ping6, Linux ping6, and Linux ping -6,
+#     because they're incompatible
+#   - some IPv6 tests may fail without an IPv6 DNS server
+#     (see #16971 and #17011)
+#   - only run mixed tests if we have a tor-stable binary
+#   - show tor warnings on the console after each network run
+#     (otherwise, warnings go to the logs, and people don't see them unless
+#     there is a network failure)
 test-network-all: need-chutney-path test-driver $(TESTING_TOR_BINARY) src/tools/tor-gencert
 	mkdir -p $(TEST_NETWORK_ALL_LOG_DIR)
 	rm -f $(TEST_NETWORK_ALL_LOG_DIR)/*.log $(TEST_NETWORK_ALL_LOG_DIR)/*.trs
@@ -282,7 +297,7 @@ test-network-all: need-chutney-path test-driver $(TESTING_TOR_BINARY) src/tools/
 	done; \
 	for f in $$flavors; do \
 		$(SHELL) $(top_srcdir)/test-driver --test-name $$f --log-file $(TEST_NETWORK_ALL_LOG_DIR)/$$f.log --trs-file $(TEST_NETWORK_ALL_LOG_DIR)/$$f.trs $(TEST_NETWORK_ALL_DRIVER_FLAGS) $(top_srcdir)/src/test/test-network.sh --flavor $$f $(TEST_NETWORK_FLAGS); \
-		$(top_srcdir)/src/test/test-network.sh $(TEST_NETWORK_WARNING_FLAGS); \
+		$(top_srcdir)/src/test/test-network.sh $(TEST_NETWORK_SHOW_WARNINGS_FOR_LAST_RUN_FLAGS); \
 	done; \
 	echo "Log and result files are available in $(TEST_NETWORK_ALL_LOG_DIR)."; \
 	! grep -q FAIL $(TEST_NETWORK_ALL_LOG_DIR)/*.trs
@@ -355,12 +370,12 @@ endif
 
 check-includes:
 if USEPYTHON
-	$(PYTHON) $(top_srcdir)/scripts/maint/checkIncludes.py
+	$(PYTHON) $(top_srcdir)/scripts/maint/practracker/includes.py $(top_srcdir)
 endif
 
 check-best-practices:
 if USEPYTHON
-	$(PYTHON) $(top_srcdir)/scripts/maint/practracker/practracker.py $(top_srcdir)
+	@$(PYTHON) $(top_srcdir)/scripts/maint/practracker/practracker.py $(top_srcdir) $(TOR_PRACTRACKER_OPTIONS)
 endif
 
 practracker-regen:
@@ -463,7 +478,7 @@ version:
 
 .PHONY: autostyle-ifdefs
 autostyle-ifdefs:
-	$(PYTHON) scripts/maint/annotate_ifdef_directives $(OWNED_TOR_C_FILES)
+	$(PYTHON) scripts/maint/annotate_ifdef_directives.py $(OWNED_TOR_C_FILES)
 
 .PHONY: autostyle-ifdefs
 autostyle-operators:
