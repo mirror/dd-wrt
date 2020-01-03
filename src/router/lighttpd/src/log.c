@@ -1,3 +1,8 @@
+/* _XOPEN_SOURCE >= 500 for vsnprintf() */
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+#endif
+
 #include "first.h"
 
 #include "base.h"
@@ -8,6 +13,8 @@
 #include <time.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdio.h>      /* vsnprintf() */
+#include <stdlib.h>     /* malloc() free() */
 #include <unistd.h>
 
 #ifdef HAVE_SYSLOG_H
@@ -115,21 +122,20 @@ static void log_buffer_append_printf(buffer *out, const char *fmt, va_list ap) {
 	}
 }
 
-static int log_buffer_prepare(buffer *b, server *srv, const char *filename, unsigned int line) {
-	switch(srv->errorlog_mode) {
+static int log_buffer_prepare(const log_error_st *errh, const char *filename, unsigned int line, buffer *b) {
+	switch(errh->errorlog_mode) {
 	case ERRORLOG_PIPE:
 	case ERRORLOG_FILE:
 	case ERRORLOG_FD:
-		if (-1 == srv->errorlog_fd) return -1;
+		if (-1 == errh->errorlog_fd) return -1;
 		/* cache the generated timestamp */
-		if (srv->cur_ts != srv->last_generated_debug_ts) {
-			buffer_clear(srv->ts_debug_str);
-			buffer_append_strftime(srv->ts_debug_str, "%Y-%m-%d %H:%M:%S", localtime(&(srv->cur_ts)));
-
-			srv->last_generated_debug_ts = srv->cur_ts;
+		if (*errh->last_ts != *errh->cur_ts) {
+			*errh->last_ts = *errh->cur_ts;
+			buffer_clear(errh->tb);
+			buffer_append_strftime(errh->tb, "%Y-%m-%d %H:%M:%S", localtime(errh->cur_ts));
 		}
 
-		buffer_copy_buffer(b, srv->ts_debug_str);
+		buffer_copy_buffer(b, errh->tb);
 		buffer_append_string_len(b, CONST_STR_LEN(": ("));
 		break;
 	case ERRORLOG_SYSLOG:
@@ -146,13 +152,13 @@ static int log_buffer_prepare(buffer *b, server *srv, const char *filename, unsi
 	return 0;
 }
 
-static void log_write(server *srv, buffer *b) {
-	switch(srv->errorlog_mode) {
+static void log_write(const log_error_st *errh, buffer *b) {
+	switch(errh->errorlog_mode) {
 	case ERRORLOG_PIPE:
 	case ERRORLOG_FILE:
 	case ERRORLOG_FD:
 		buffer_append_string_len(b, CONST_STR_LEN("\n"));
-		write_all(srv->errorlog_fd, CONST_BUF_LEN(b));
+		write_all(errh->errorlog_fd, CONST_BUF_LEN(b));
 		break;
 	case ERRORLOG_SYSLOG:
 		syslog(LOG_ERR, "%s", b->ptr);
@@ -161,28 +167,30 @@ static void log_write(server *srv, buffer *b) {
 }
 
 int log_error_write(server *srv, const char *filename, unsigned int line, const char *fmt, ...) {
+	const log_error_st *errh = srv->errh;
+	buffer *b = errh->b;
+	if (-1 == log_buffer_prepare(errh, filename, line, b)) return 0;
+
 	va_list ap;
-
-	if (-1 == log_buffer_prepare(srv->errorlog_buf, srv, filename, line)) return 0;
-
 	va_start(ap, fmt);
-	log_buffer_append_printf(srv->errorlog_buf, fmt, ap);
+	log_buffer_append_printf(b, fmt, ap);
 	va_end(ap);
 
-	log_write(srv, srv->errorlog_buf);
+	log_write(errh, b);
 
 	return 0;
 }
 
 int log_error_write_multiline_buffer(server *srv, const char *filename, unsigned int line, buffer *multiline, const char *fmt, ...) {
+	const log_error_st *errh = srv->errh;
+	buffer *b = errh->b;
 	va_list ap;
 	size_t prefix_len;
-	buffer *b = srv->errorlog_buf;
 	char *pos, *end, *current_line;
 
 	if (buffer_string_is_empty(multiline)) return 0;
 
-	if (-1 == log_buffer_prepare(b, srv, filename, line)) return 0;
+	if (-1 == log_buffer_prepare(errh, filename, line, b)) return 0;
 
 	va_start(ap, fmt);
 	log_buffer_append_printf(b, fmt, ap);
@@ -203,7 +211,7 @@ int log_error_write_multiline_buffer(server *srv, const char *filename, unsigned
 				buffer_string_set_length(b, prefix_len);
 
 				buffer_append_string_len(b, current_line, pos - current_line);
-				log_write(srv, b);
+				log_write(errh, b);
 			}
 			current_line = pos + 1;
 			break;
@@ -213,4 +221,111 @@ int log_error_write_multiline_buffer(server *srv, const char *filename, unsigned
 	}
 
 	return 0;
+}
+
+
+static void
+log_buffer_vprintf (buffer * const b,
+                    const char * const fmt, va_list ap)
+{
+    /* NOTE: log_buffer_prepare() ensures 0 != b->used */
+    /*assert(0 != b->used);*//*(only because code calcs below assume this)*/
+    /*assert(0 != b->size);*//*(errh->b should not have 0 size here)*/
+    size_t blen = buffer_string_length(b);
+    size_t bsp  = buffer_string_space(b)+1;
+    char *s = b->ptr + blen;
+    size_t n;
+
+    va_list aptry;
+    va_copy(aptry, ap);
+    n = (size_t)vsnprintf(s, bsp, fmt, aptry);
+    va_end(aptry);
+
+    if (n >= bsp) {
+        buffer_string_prepare_append(b, n); /*(must re-read s after realloc)*/
+        vsnprintf((s = b->ptr + blen), buffer_string_space(b)+1, fmt, ap);
+    }
+
+    size_t i;
+    for (i = 0; i < n && ' ' <= s[i] && s[i] <= '~'; ++i) ;/*(ASCII isprint())*/
+    if (i == n) {
+        buffer_string_set_length(b, blen + n);
+        return; /* common case; nothing to encode */
+    }
+
+    /* need to encode log line
+     * copy original line fragment, append encoded line to buffer, free copy */
+    char * const src = (char *)malloc(n);
+    memcpy(src, s, n); /*(note: not '\0'-terminated)*/
+    buffer_append_string_c_escaped(b, src, n);
+    free(src);
+}
+
+
+static void
+log_error_va_list_impl (const log_error_st * const errh,
+                        const char * const filename,
+                        const unsigned int line,
+                        const char * const fmt, va_list ap,
+                        const int perr)
+{
+    const int errnum = errno;
+    buffer * const b = errh->b;
+    if (-1 == log_buffer_prepare(errh, filename, line, b)) return;
+    log_buffer_vprintf(b, fmt, ap);
+    if (perr) {
+        buffer_append_string_len(b, CONST_STR_LEN(": "));
+        buffer_append_string(b, strerror(errnum));
+    }
+    log_write(errh, b);
+    errno = errnum;
+}
+
+
+void
+log_error(const log_error_st * const errh,
+          const char * const filename, const unsigned int line,
+          const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    log_error_va_list_impl(errh, filename, line, fmt, ap, 0);
+    va_end(ap);
+}
+
+
+void
+log_perror (const log_error_st * const errh,
+            const char * const filename, const unsigned int line,
+            const char * const fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    log_error_va_list_impl(errh, filename, line, fmt, ap, 1);
+    va_end(ap);
+}
+
+
+log_error_st *
+log_error_st_init (time_t *cur_ts_ptr, time_t *last_ts_ptr)
+{
+    log_error_st *errh = calloc(1, sizeof(log_error_st));
+    force_assert(errh);
+    errh->errorlog_fd = STDERR_FILENO;
+    errh->errorlog_mode = ERRORLOG_FD;
+    errh->b = buffer_init();
+    errh->tb = buffer_init();
+    errh->cur_ts = cur_ts_ptr;
+    errh->last_ts = last_ts_ptr;
+    return errh;
+}
+
+
+void
+log_error_st_free (log_error_st *errh)
+{
+    if (NULL == errh) return;
+    buffer_free(errh->tb);
+    buffer_free(errh->b);
+    free(errh);
 }

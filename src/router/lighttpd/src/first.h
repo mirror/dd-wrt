@@ -75,6 +75,15 @@
 #define __GNUC_PREREQ(maj,min) 0
 #endif
 
+#ifndef __attribute_noinline__
+#if __has_attribute(noinline) \
+ || __GNUC_PREREQ(3,1)
+#define __attribute_noinline__  __attribute__((__noinline__))
+#else
+#define __attribute_noinline__
+#endif
+#endif
+
 #ifndef __attribute_cold__
 #if __has_attribute(cold) \
  || __GNUC_PREREQ(4,3)
@@ -84,12 +93,39 @@
 #endif
 #endif
 
+#ifndef __attribute_hot__
+#if __has_attribute(hot) \
+ || __GNUC_PREREQ(4,3)
+#define __attribute_hot__  __attribute__((__hot__))
+#else
+#define __attribute_hot__
+#endif
+#endif
+
 #ifndef __attribute_noreturn__
 #if __has_attribute(noreturn) \
  || __GNUC_PREREQ(2,5)
 #define __attribute_noreturn__  __attribute__((__noreturn__))
 #else
 #define __attribute_noreturn__
+#endif
+#endif
+
+#ifndef __attribute_fallthrough__
+#if __has_attribute(fallthrough) \
+ || __GNUC_PREREQ(7,0)
+#define __attribute_fallthrough__  __attribute__((__fallthrough__));
+#else
+#define __attribute_fallthrough__  /* fall through */
+#endif
+#endif
+
+#ifndef __attribute_format__
+#if __has_attribute(format) \
+ || __GNUC_PREREQ(2,95) /*(maybe earlier gcc, too)*/
+#define __attribute_format__(x)  __attribute__((__format__ x))
+#else
+#define __attribute_format__(x)
 #endif
 #endif
 

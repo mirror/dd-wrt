@@ -14,7 +14,7 @@ dnl - if an argument uses more than one line and is not a single
 dnl   function call, the argument should be on different lines than the
 dnl   wrapping braces
 AC_PREREQ(2.60)
-AC_INIT([lighttpd], [1.4.53], [contact@lighttpd.net])
+AC_INIT([lighttpd], [1.4.54], [contact@lighttpd.net])
 AC_CONFIG_SRCDIR([src/server.c])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -155,6 +155,19 @@ AC_SEARCH_LIBS([accept], [network])
 
 dnl clock_gettime() needs -lrt with glibc < 2.17, and possibly other platforms
 AC_SEARCH_LIBS([clock_gettime], [rt])
+
+dnl FreeBSD elftc_copyfile()
+save_LIBS=$LIBS
+LIBS=
+AC_SEARCH_LIBS([elftc_copyfile], [elftc], [
+  AC_CHECK_HEADERS([libelftc.h], [
+    ELFTC_LIB=$LIBS
+    AC_DEFINE([HAVE_LIBELFTC], [1], [libelftc])
+    AC_DEFINE([HAVE_ELFTC_COPYFILE], [1], [elftc_copyfile])
+  ])
+])
+LIBS=$save_LIBS
+AC_SUBST([ELFTC_LIB])
 
 dnl need dlopen/-ldl to load plugins (when not on windows)
 save_LIBS=$LIBS
@@ -963,8 +976,8 @@ if test "$WITH_WEBDAV_LOCKS" != no; then
     )
   fi
 
-  AC_DEFINE([HAVE_UUID], [1], [libuuid])
-  AC_DEFINE([HAVE_UUID_H], [1], [uuid/uuid.h is available])
+  AC_DEFINE([HAVE_LIBUUID], [1], [libuuid])
+  AC_DEFINE([HAVE_UUID_UUID_H], [1], [uuid/uuid.h is available])
   AC_SUBST([UUID_LIBS])
 fi
 
@@ -1027,6 +1040,36 @@ if test "$WITH_GEOIP" != no; then
   AC_SUBST([GEOIP_LIB])
 fi
 AM_CONDITIONAL([BUILD_WITH_GEOIP], [test "$WITH_GEOIP" != no])
+
+dnl Check for maxminddb
+AC_MSG_NOTICE([----------------------------------------])
+AC_MSG_CHECKING([for maxminddb])
+AC_ARG_WITH([maxminddb],
+  [AC_HELP_STRING([--with-maxminddb], [IP-based geolocation lookup])],
+  [WITH_MAXMINDDB=$withval],
+  [WITH_MAXMINDDB=no]
+)
+AC_MSG_RESULT([$WITH_MAXMINDDB])
+
+if test "$WITH_MAXMINDDB" != no; then
+  if test "$WITH_MAXMINDDB" != yes; then
+    MAXMINDDB_LIB="-L$WITH_MAXMINDDB -lmaxminddb"
+    CPPFLAGS="$CPPFLAGS -I$WITH_MAXMINDDB"
+  else
+    AC_CHECK_LIB([maxminddb], [MMDB_open],
+      [MAXMINDDB_LIB=-lmaxminddb],
+      [AC_MSG_ERROR([maxminddb lib not found, install it or build without --with-maxminddb])]
+    )
+    AC_CHECK_HEADERS([maxminddb.h], [],
+      [AC_MSG_ERROR([maxminddb headers not found, install them or build without --with-maxminddb])]
+    )
+  fi
+
+  AC_DEFINE([HAVE_MAXMINDDB], [1], [libmaxminddb])
+  AC_DEFINE([HAVE_MAXMINDDB_H], [1])
+  AC_SUBST([MAXMINDDB_LIB])
+fi
+AM_CONDITIONAL([BUILD_WITH_MAXMINDDB], [test "$WITH_MAXMINDDB" != no])
 
 dnl Check for memcached
 AC_MSG_NOTICE([----------------------------------------])
@@ -1353,7 +1396,7 @@ AC_ARG_ENABLE([extra-warnings],
 )
 
 if test "$extrawarnings" = true || test "$extrawarnings" = error; then
-  TRY_CFLAGS([-g -O2 -g2 -Wall -Wmissing-declarations -Wdeclaration-after-statement -Wcast-align -Wsign-compare -Wnested-externs -Wpointer-arith -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security])
+  TRY_CFLAGS([-g -O2 -g2 -Wall -Wmissing-declarations -Wcast-align -Wsign-compare -Wnested-externs -Wpointer-arith -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security])
   TRY_LDFLAGS([-Wl,--as-needed])
   if test "$extrawarnings" = error; then
     AS_VAR_APPEND([CFLAGS], [" -Werror"])
@@ -1457,6 +1500,9 @@ lighty_track_feature "lua" "mod_cml mod_magnet" \
 
 lighty_track_feature "geoip" "mod_geoip" \
   'test "$WITH_GEOIP" != no'
+
+lighty_track_feature "maxminddb" "mod_maxminddb" \
+  'test "$WITH_MAXMINDDB" != no'
 
 lighty_track_feature "compress-gzip compress-deflate" "" \
   'test "$WITH_ZLIB" != no'

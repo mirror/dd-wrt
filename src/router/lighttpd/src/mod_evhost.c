@@ -152,7 +152,7 @@ SETDEFAULTS_FUNC(mod_evhost_set_defaults) {
 
 	if (!p) return HANDLER_ERROR;
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
+	p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		data_config const* config = (data_config const*)srv->config_context->data[i];
@@ -196,6 +196,20 @@ static void mod_evhost_parse_host(buffer *key, array *host, buffer *authority) {
 	char *colon = ptr; /* needed to filter out the colon (if exists) */
 	int first = 1;
 	int i;
+
+	/*if (ptr == authority->ptr) return;*//*(no authority checked earlier)*/
+
+	if (*authority->ptr == '[') { /* authority is IPv6 literal address */
+                colon = ptr;
+                if (ptr[-1] != ']') {
+			do { --ptr; } while (ptr > authority->ptr && ptr[-1] != ']');
+			if (*ptr != ':') return; /*(should not happen for valid authority)*/
+			colon = ptr;
+		}
+		ptr = authority->ptr;
+		array_insert_key_value(host,CONST_STR_LEN("%0"),ptr,colon-ptr);
+		return;
+	}
 
 	/* first, find the domain + tld */
 	for(; ptr > authority->ptr; --ptr) {

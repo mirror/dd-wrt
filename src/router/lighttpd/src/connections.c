@@ -2,6 +2,7 @@
 
 #include "base.h"
 #include "buffer.h"
+#include "burl.h"       /* HTTP_PARSEOPT_HEADER_STRICT */
 #include "log.h"
 #include "connections.h"
 #include "fdevent.h"
@@ -35,6 +36,12 @@
 typedef struct {
 	        PLUGIN_DATA;
 } plugin_data;
+
+__attribute_cold__
+static connection *connection_init(server *srv);
+
+static int connection_reset(server *srv, connection *con);
+
 
 static connection *connections_get_new_connection(server *srv) {
 	connections *conns = srv->conns;
@@ -100,8 +107,12 @@ static int connection_close(server *srv, connection *con) {
 
 	plugins_call_handle_connection_close(srv, con);
 
-	fdevent_event_del(srv->ev, &(con->fde_ndx), con->fd);
+	con->request_count = 0;
+	chunkqueue_reset(con->read_queue);
+
+	fdevent_fdnode_event_del(srv->ev, con->fdn);
 	fdevent_unregister(srv->ev, con->fd);
+	con->fdn = NULL;
 #ifdef __WIN32
 	if (closesocket(con->fd)) {
 		log_error_write(srv, __FILE__, __LINE__, "sds",
@@ -122,6 +133,7 @@ static int connection_close(server *srv, connection *con) {
 				"connection closed for fd", con->fd);
 	}
 	con->fd = -1;
+	con->is_ssl_sock = 0;
 
 	/* plugins should have cleaned themselves up */
 	for (size_t i = 0; i < srv->plugins.used; ++i) {
@@ -139,7 +151,7 @@ static int connection_close(server *srv, connection *con) {
 	return 0;
 }
 
-static void connection_read_for_eos(server *srv, connection *con) {
+static void connection_read_for_eos_plain(server *srv, connection *con) {
 	/* we have to do the linger_on_close stuff regardless
 	 * of con->keep_alive; even non-keepalive sockets may
 	 * still have unread data, and closing before reading
@@ -162,6 +174,18 @@ static void connection_read_for_eos(server *srv, connection *con) {
 		con->close_timeout_ts = srv->cur_ts - (HTTP_LINGER_TIMEOUT+1);
 }
 
+static void connection_read_for_eos_ssl(server *srv, connection *con) {
+	if (con->network_read(srv, con, con->read_queue, MAX_READ_LIMIT) < 0)
+		con->close_timeout_ts = srv->cur_ts - (HTTP_LINGER_TIMEOUT+1);
+	chunkqueue_reset(con->read_queue);
+}
+
+static void connection_read_for_eos(server *srv, connection *con) {
+	!con->is_ssl_sock
+	  ? connection_read_for_eos_plain(srv, con)
+	  : connection_read_for_eos_ssl(srv, con);
+}
+
 static void connection_handle_close_state(server *srv, connection *con) {
 	connection_read_for_eos(srv, con);
 
@@ -177,7 +201,8 @@ static void connection_handle_shutdown(server *srv, connection *con) {
 	connection_reset(srv, con);
 
 	/* close the connection */
-	if (con->fd >= 0 && 0 == shutdown(con->fd, SHUT_WR)) {
+	if (con->fd >= 0
+	    && (con->is_ssl_sock || 0 == shutdown(con->fd, SHUT_WR))) {
 		con->close_timeout_ts = srv->cur_ts;
 		connection_set_state(srv, con, CON_STATE_CLOSE);
 
@@ -412,22 +437,6 @@ static int connection_handle_write_prepare(server *srv, connection *con) {
 				con->keep_alive = 0;
 			}
 		}
-
-		/**
-		 * if the backend sent a Connection: close, follow the wish
-		 *
-		 * NOTE: if the backend sent Connection: Keep-Alive, but no Content-Length, we
-		 * will close the connection. That's fine. We can always decide the close 
-		 * the connection
-		 *
-		 * FIXME: to be nice we should remove the Connection: ... 
-		 */
-		if (con->response.htags & HTTP_HEADER_CONNECTION) {
-			/* a subrequest disable keep-alive although the client wanted it */
-			if (con->keep_alive && !con->response.keep_alive) {
-				con->keep_alive = 0;
-			}
-		}
 	}
 
 	if (con->request.http_method == HTTP_METHOD_HEAD) {
@@ -444,7 +453,7 @@ static int connection_handle_write_prepare(server *srv, connection *con) {
 	return 0;
 }
 
-static int connection_handle_write(server *srv, connection *con) {
+static void connection_handle_write(server *srv, connection *con) {
 	switch(connection_write_chunkqueue(srv, con, con->write_queue, MAX_WRITE_LIMIT)) {
 	case 0:
 		con->write_request_ts = srv->cur_ts;
@@ -467,13 +476,53 @@ static int connection_handle_write(server *srv, connection *con) {
 		/* not finished yet -> WRITE */
 		break;
 	}
+}
 
-	return 0;
+static void connection_handle_write_state(server *srv, connection *con) {
+    do {
+        /* only try to write if we have something in the queue */
+        if (!chunkqueue_is_empty(con->write_queue)) {
+            if (con->is_writable) {
+                connection_handle_write(srv, con);
+                if (con->state != CON_STATE_WRITE) break;
+            }
+        } else if (con->file_finished) {
+            connection_set_state(srv, con, CON_STATE_RESPONSE_END);
+            break;
+        }
+
+        if (con->mode != DIRECT && !con->file_finished) {
+            int r = plugins_call_handle_subrequest(srv, con);
+            switch(r) {
+            case HANDLER_WAIT_FOR_EVENT:
+            case HANDLER_FINISHED:
+            case HANDLER_GO_ON:
+                break;
+            case HANDLER_WAIT_FOR_FD:
+                srv->want_fds++;
+                fdwaitqueue_append(srv, con);
+                break;
+            case HANDLER_COMEBACK:
+            default:
+                log_error_write(srv, __FILE__, __LINE__, "sdd",
+                                "unexpected subrequest handler ret-value:",
+                                con->fd, r);
+                /* fall through */
+            case HANDLER_ERROR:
+                connection_set_state(srv, con, CON_STATE_ERROR);
+                break;
+            }
+        }
+    } while (con->state == CON_STATE_WRITE
+             && (!chunkqueue_is_empty(con->write_queue)
+                 ? con->is_writable
+                 : con->file_finished));
 }
 
 
 
-connection *connection_init(server *srv) {
+__attribute_cold__
+static connection *connection_init(server *srv) {
 	connection *con;
 
 	UNUSED(srv);
@@ -483,7 +532,6 @@ connection *connection_init(server *srv) {
 
 	con->fd = 0;
 	con->ndx = -1;
-	con->fde_ndx = -1;
 	con->bytes_written = 0;
 	con->bytes_read = 0;
 	con->bytes_header = 0;
@@ -493,7 +541,6 @@ connection *connection_init(server *srv) {
 	con->x = buffer_init();
 
 	CLEAN(request.uri);
-	CLEAN(request.request_line);
 	CLEAN(request.request);
 	CLEAN(request.pathinfo);
 
@@ -510,7 +557,6 @@ connection *connection_init(server *srv) {
 	CLEAN(physical.basedir);
 	CLEAN(physical.rel_path);
 	CLEAN(physical.etag);
-	CLEAN(parse_request);
 
 	CLEAN(server_name);
 	CLEAN(proto);
@@ -559,7 +605,6 @@ void connections_free(server *srv) {
 	buffer_free(con->x);
 
 		CLEAN(request.uri);
-		CLEAN(request.request_line);
 		CLEAN(request.request);
 		CLEAN(request.pathinfo);
 
@@ -576,7 +621,6 @@ void connections_free(server *srv) {
 		CLEAN(physical.basedir);
 		CLEAN(physical.etag);
 		CLEAN(physical.rel_path);
-		CLEAN(parse_request);
 
 		CLEAN(server_name);
 		CLEAN(proto);
@@ -594,7 +638,7 @@ void connections_free(server *srv) {
 }
 
 
-int connection_reset(server *srv, connection *con) {
+static int connection_reset(server *srv, connection *con) {
 	plugins_call_connection_reset(srv, con);
 
 	connection_response_reset(srv, con);
@@ -613,18 +657,13 @@ int connection_reset(server *srv, connection *con) {
 	buffer_reset(con->x);
 
 	CLEAN(request.uri);
-	CLEAN(request.request_line);
 	CLEAN(request.pathinfo);
-	CLEAN(request.request);
 
 	/* CLEAN(request.orig_uri); */
 
 	/* CLEAN(uri.path); */
 	CLEAN(uri.path_raw);
 	/* CLEAN(uri.query); */
-
-	CLEAN(parse_request);
-
 #undef CLEAN
 
 	buffer_clear(con->uri.scheme);
@@ -657,118 +696,110 @@ int connection_reset(server *srv, connection *con) {
 }
 
 static void connection_read_header(server *srv, connection *con)  {
-	chunk *c, *last_chunk;
-	off_t last_offset;
-	chunkqueue *cq = con->read_queue;
+    chunkqueue * const cq = con->read_queue;
+    chunk *c;
+    size_t hlen = 0;
+    int le = 0;
+    buffer *save = NULL;
 
-	chunkqueue_remove_finished_chunks(cq);
+    for (c = cq->first; c; c = c->next) {
+        size_t clen = buffer_string_length(c->mem) - c->offset;
+        const char * const b = c->mem->ptr + c->offset;
+        const char *n = b;
+        if (0 == clen) continue;
+        if (le) { /*(line end sequence cross chunk boundary)*/
+            if (n[0] == '\r')   ++n;
+            if (n[0] == '\n') { ++n; hlen += n - b; break; }
+            if (n[0] == '\0') { hlen += n - b; continue; }
+            le = 0;
+        }
+        for (const char * const end = b+clen; (n = memchr(n,'\n',end-n)); ++n) {
+            if (n[1] == '\r')   ++n;
+            if (n[1] == '\n') { hlen += n - b + 2; break; }
+            if (n[1] == '\0') { n = NULL; le = 1; break; }
+        }
+        if (n) break;
+        hlen += clen;
+    }
 
-	/* we might have got several packets at once
-	 */
+    if (hlen > srv->srvconf.max_request_field_size) {
+        log_error_write(srv, __FILE__, __LINE__, "s",
+                        "oversized request-header -> sending Status 431");
+        con->http_status = 431; /* Request Header Fields Too Large */
+        con->keep_alive = 0;
+        connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
+    }
 
-		/* if there is a \r\n\r\n in the chunkqueue
-		 *
-		 * scan the chunk-queue twice
-		 * 1. to find the \r\n\r\n
-		 * 2. to copy the header-packet
-		 *
-		 */
+    if (NULL == c) return; /* incomplete request headers */
 
-		last_chunk = NULL;
-		last_offset = 0;
+    con->header_len = hlen;
 
-		for (c = cq->first; c; c = c->next) {
-			size_t i;
-			size_t len = buffer_string_length(c->mem) - c->offset;
-			const char *b = c->mem->ptr + c->offset;
+    buffer_clear(con->request.request);
 
-			for (i = 0; i < len; ++i) {
-				char ch = b[i];
+    for (c = cq->first; c; c = c->next) {
+        size_t len = buffer_string_length(c->mem) - c->offset;
+        if (len > hlen) len = hlen;
+        buffer_append_string_len(con->request.request,
+                                 c->mem->ptr + c->offset, len);
+        if (0 == (hlen -= len)) break;
+    }
 
-				if ('\r' == ch) {
-					/* chec if \n\r\n follows */
-					size_t j = i+1;
-					chunk *cc = c;
-					const char header_end[] = "\r\n\r\n";
-					int header_end_match_pos = 1;
+    chunkqueue_mark_written(cq, con->header_len);
 
-					for ( ; cc; cc = cc->next, j = 0 ) {
-						size_t bblen = buffer_string_length(cc->mem) - cc->offset;
-						const char *bb = cc->mem->ptr + cc->offset;
+    /* skip past \r\n or \n after previous POST request when keep-alive */
+    if (con->request_count > 1) {
+        char * const s = con->request.request->ptr;
+      #ifdef __COVERITY__
+        if (buffer_string_length(con->request.request) < 2) {
+            return;
+        }
+      #endif
+        if (s[0] == '\r' && s[1] == '\n') {
+            size_t len = buffer_string_length(con->request.request);
+            memmove(s, s+2, len-2);
+            buffer_string_set_length(con->request.request, len-2);
+        }
+        else if (s[0] == '\n') {
+            if (!(con->conf.http_parseopts & HTTP_PARSEOPT_HEADER_STRICT)) {
+                size_t len = buffer_string_length(con->request.request);
+                memmove(s, s+1, len-1);
+                buffer_string_set_length(con->request.request, len-1);
+            }
+        }
+    }
 
-						for ( ; j < bblen; j++) {
-							ch = bb[j];
+    if (con->conf.log_request_header) {
+        log_error_write(srv, __FILE__, __LINE__, "sdsdSb",
+          "fd:", con->fd,
+          "request-len:", buffer_string_length(con->request.request),
+          "\n", con->request.request);
+    }
 
-							if (ch == header_end[header_end_match_pos]) {
-								header_end_match_pos++;
-								if (4 == header_end_match_pos) {
-									last_chunk = cc;
-									last_offset = j+1;
-									goto found_header_end;
-								}
-							} else {
-								goto reset_search;
-							}
-						}
-					}
-				} else if ('\n' == ch) {
-					/* check if \n follows */
-					if (i+1 < len) {
-						if (b[i+1] == '\n') {
-							last_chunk = c;
-							last_offset = i+2;
-							break;
-						} /* else goto reset_search; */
-					} else {
-						for (chunk *cc = c->next; cc; cc = cc->next) {
-							size_t bblen = buffer_string_length(cc->mem) - cc->offset;
-							const char *bb = cc->mem->ptr + cc->offset;
-							if (0 == bblen) continue;
-							if (bb[0] == '\n') {
-								last_chunk = cc;
-								last_offset = 1;
-								goto found_header_end;
-							} else {
-								goto reset_search;
-							}
-						}
-					}
-				}
-reset_search: ;
-			}
-		}
-found_header_end:
+    buffer_clear(con->uri.authority);
+    buffer_reset(con->uri.path);
+    buffer_reset(con->uri.query);
+    buffer_reset(con->request.orig_uri);
 
-		/* found */
-		if (last_chunk) {
-			buffer_reset(con->request.request);
+    if (srv->srvconf.log_request_header_on_error) {
+        /* copy request only if we may need to log it upon error */
+        save = buffer_init_buffer(con->request.request);
+    }
 
-			for (c = cq->first; c; c = c->next) {
-				size_t len = buffer_string_length(c->mem) - c->offset;
+    con->http_status = http_request_parse(srv, con, con->request.request);
+    if (0 != con->http_status) {
+        con->keep_alive = 0;
+        con->request.content_length = 0;
 
-				if (c == last_chunk) {
-					len = last_offset;
-				}
+        if (srv->srvconf.log_request_header_on_error) {
+            log_error_write(srv, __FILE__, __LINE__, "Sb",
+                            "request-header:\n", save);
+        }
+    }
 
-				buffer_append_string_len(con->request.request, c->mem->ptr + c->offset, len);
-				c->offset += len;
-				cq->bytes_out += len;
+    if (NULL != save) buffer_free(save);
+    buffer_reset(con->request.request);
 
-				if (c == last_chunk) break;
-			}
-
-			connection_set_state(srv, con, CON_STATE_REQUEST_END);
-		}
-
-		if ((last_chunk ? buffer_string_length(con->request.request) : (size_t)chunkqueue_length(cq))
-		    > srv->srvconf.max_request_field_size) {
-			log_error_write(srv, __FILE__, __LINE__, "s", "oversized request-header -> sending Status 431");
-			con->http_status = 431; /* Request Header Fields Too Large */
-			con->keep_alive = 0;
-			connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
-		}
-
-	chunkqueue_remove_finished_chunks(cq);
+    connection_set_state(srv, con, CON_STATE_REQUEST_END);
 }
 
 /**
@@ -829,7 +860,7 @@ static handler_t connection_handle_fdevent(server *srv, void *context, int reven
 
 	joblist_append(srv, con);
 
-	if (con->srv_socket->is_ssl) {
+	if (con->is_ssl_sock) {
 		/* ssl may read and write for both reads and writes */
 		if (revents & (FDEVENT_IN | FDEVENT_OUT)) {
 			con->is_readable = 1;
@@ -853,14 +884,7 @@ static handler_t connection_handle_fdevent(server *srv, void *context, int reven
 	if (con->state == CON_STATE_WRITE &&
 	    !chunkqueue_is_empty(con->write_queue) &&
 	    con->is_writable) {
-
-		if (-1 == connection_handle_write(srv, con)) {
-			connection_set_state(srv, con, CON_STATE_ERROR);
-
-			log_error_write(srv, __FILE__, __LINE__, "ds",
-					con->fd,
-					"handle write failed.");
-		}
+		connection_handle_write(srv, con);
 	}
 
 	if (con->state == CON_STATE_CLOSE) {
@@ -878,18 +902,18 @@ static handler_t connection_handle_fdevent(server *srv, void *context, int reven
 		} else if (revents & FDEVENT_HUP) {
 			connection_set_state(srv, con, CON_STATE_ERROR);
 		} else if (revents & FDEVENT_RDHUP) {
-			int events = fdevent_event_get_interest(srv->ev, con->fd);
+			int events = fdevent_fdnode_interest(con->fdn);
 			events &= ~(FDEVENT_IN|FDEVENT_RDHUP);
 			con->conf.stream_request_body &= ~(FDEVENT_STREAM_REQUEST_BUFMIN|FDEVENT_STREAM_REQUEST_POLLIN);
 			con->conf.stream_request_body |= FDEVENT_STREAM_REQUEST_POLLRDHUP;
 			con->is_readable = 1; /*(can read 0 for end-of-stream)*/
-			con->keep_alive = 0;
+			if (chunkqueue_is_empty(con->read_queue)) con->keep_alive = 0;
 			if (con->request.content_length < -1) { /*(transparent proxy mode; no more data to read)*/
 				con->request.content_length = con->request_content_queue->bytes_in;
 			}
 			if (sock_addr_get_family(&con->dst_addr) == AF_UNIX) {
 				/* future: will getpeername() on AF_UNIX properly check if still connected? */
-				fdevent_event_set(srv->ev, &con->fde_ndx, con->fd, events);
+				fdevent_fdnode_event_set(srv->ev, con->fdn, events);
 			} else if (fdevent_is_tcp_half_closed(con->fd)) {
 				/* Success of fdevent_is_tcp_half_closed() after FDEVENT_RDHUP indicates TCP FIN received,
 				 * but does not distinguish between client shutdown(fd, SHUT_WR) and client close(fd).
@@ -899,7 +923,7 @@ static handler_t connection_handle_fdevent(server *srv, void *context, int reven
 				 * (without FDEVENT_RDHUP interest) when checking for write timeouts
 				 * once a second in server.c, though getpeername() on Windows might not indicate this */
 				con->conf.stream_request_body |= FDEVENT_STREAM_REQUEST_TCP_FIN;
-				fdevent_event_set(srv->ev, &con->fde_ndx, con->fd, events);
+				fdevent_fdnode_event_set(srv->ev, con->fdn, events);
 			} else {
 				/* Failure of fdevent_is_tcp_half_closed() indicates TCP RST
 				 * (or unable to tell (unsupported OS), though should not
@@ -1066,10 +1090,10 @@ connection *connection_accepted(server *srv, server_socket *srv_socket, sock_add
 		srv->con_opened++;
 
 		con = connections_get_new_connection(srv);
+		con->errh = srv->errh;
 
 		con->fd = cnt;
-		con->fde_ndx = -1;
-		fdevent_register(srv->ev, con->fd, connection_handle_fdevent, con);
+		con->fdn = fdevent_register(srv->ev, con->fd, connection_handle_fdevent, con);
 		con->network_read = connection_read_cq;
 		con->network_write = connection_write_cq;
 
@@ -1079,6 +1103,7 @@ connection *connection_accepted(server *srv, server_socket *srv_socket, sock_add
 		con->dst_addr = *cnt_addr;
 		buffer_copy_string(con->dst_addr_buf, inet_ntop_cache_get_ip(srv, &(con->dst_addr)));
 		con->srv_socket = srv_socket;
+		con->is_ssl_sock = srv_socket->is_ssl;
 
 		config_cond_cache_reset(srv, con);
 		con->conditional_is_valid[COMP_SERVER_SOCKET] = 1;
@@ -1095,66 +1120,9 @@ connection *connection_accepted(server *srv, server_socket *srv_socket, sock_add
 }
 
 
-int connection_state_machine(server *srv, connection *con) {
-	int done = 0, r;
-
-	if (srv->srvconf.log_state_handling) {
-		log_error_write(srv, __FILE__, __LINE__, "sds",
-				"state at start",
-				con->fd,
-				connection_get_state(con->state));
-	}
-
-	while (done == 0) {
-		size_t ostate = con->state;
-
-		if (srv->srvconf.log_state_handling) {
-			log_error_write(srv, __FILE__, __LINE__, "sds",
-					"state for fd", con->fd, connection_get_state(con->state));
-		}
-
-		switch (con->state) {
-		case CON_STATE_REQUEST_START: /* transient */
-			con->request_start = srv->cur_ts;
-			con->read_idle_ts = srv->cur_ts;
-			if (con->conf.high_precision_timestamps)
-				log_clock_gettime_realtime(&con->request_start_hp);
-
-			con->request_count++;
-			con->loops_per_request = 0;
-
-			connection_set_state(srv, con, CON_STATE_READ);
-
-			break;
-		case CON_STATE_REQUEST_END: /* transient */
-			buffer_clear(con->uri.authority);
-			buffer_reset(con->uri.path);
-			buffer_reset(con->uri.query);
-			buffer_reset(con->request.orig_uri);
-
-			if (http_request_parse(srv, con)) {
-				/* we have to read some data from the POST request */
-
-				connection_set_state(srv, con, CON_STATE_READ_POST);
-
-				break;
-			}
-
-			connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
-
-			break;
-		case CON_STATE_READ_POST:
-		case CON_STATE_HANDLE_REQUEST:
-			/*
-			 * the request is parsed
-			 *
-			 * decided what to do with the request
-			 * -
-			 *
-			 *
-			 */
-
-			switch (r = http_response_prepare(srv, con)) {
+static int connection_handle_request(server *srv, connection *con) {
+			int r = http_response_prepare(srv, con);
+			switch (r) {
 			case HANDLER_WAIT_FOR_EVENT:
 				if (!con->file_finished && (!con->file_started || 0 == con->conf.stream_response_body)) {
 					break; /* come back here */
@@ -1215,7 +1183,6 @@ int connection_state_machine(server *srv, connection *con) {
 								con->is_writable = 1;
 								con->file_finished = 0;
 								con->file_started = 0;
-								con->response.keep_alive = 0;
 
 								con->error_handler_saved_status = con->http_status;
 								con->error_handler_saved_method = con->request.http_method;
@@ -1225,12 +1192,13 @@ int connection_state_machine(server *srv, connection *con) {
 								con->error_handler_saved_status = -con->http_status; /*(negative to flag old behavior)*/
 							}
 
+							if (con->request.http_version == HTTP_VERSION_UNSET) con->request.http_version = HTTP_VERSION_1_0;
+
 							buffer_copy_buffer(con->request.uri, error_handler);
 							connection_handle_errdoc_init(con);
 							con->http_status = 0; /*(after connection_handle_errdoc_init())*/
 
-							done = -1;
-							break;
+							return 1;
 						}
 					}
 				}
@@ -1245,8 +1213,7 @@ int connection_state_machine(server *srv, connection *con) {
 
 				break;
 			case HANDLER_COMEBACK:
-				done = -1;
-				break;
+				return 1;
 			case HANDLER_ERROR:
 				/* something went wrong */
 				connection_set_state(srv, con, CON_STATE_ERROR);
@@ -1256,97 +1223,93 @@ int connection_state_machine(server *srv, connection *con) {
 				break;
 			}
 
-			if (con->state == CON_STATE_HANDLE_REQUEST && ostate == CON_STATE_READ_POST) {
-				ostate = CON_STATE_HANDLE_REQUEST;
-			}
-			break;
-		case CON_STATE_RESPONSE_START:
-			/*
-			 * the decision is done
-			 * - create the HTTP-Response-Header
-			 *
-			 */
+			return 0;
+}
 
-			if (-1 == connection_handle_write_prepare(srv, con)) {
-				connection_set_state(srv, con, CON_STATE_ERROR);
 
+int connection_state_machine(server *srv, connection *con) {
+	connection_state_t ostate;
+	int r;
+	const int log_state_handling = srv->srvconf.log_state_handling;
+
+	if (log_state_handling) {
+		log_error_write(srv, __FILE__, __LINE__, "sds",
+				"state at enter",
+				con->fd,
+				connection_get_state(con->state));
+	}
+
+	do {
+		if (log_state_handling) {
+			log_error_write(srv, __FILE__, __LINE__, "sds",
+					"state for fd", con->fd, connection_get_state(con->state));
+		}
+
+		switch ((ostate = con->state)) {
+		case CON_STATE_REQUEST_START: /* transient */
+			con->request_start = srv->cur_ts;
+			con->read_idle_ts = srv->cur_ts;
+			if (con->conf.high_precision_timestamps)
+				log_clock_gettime_realtime(&con->request_start_hp);
+
+			con->request_count++;
+			con->loops_per_request = 0;
+
+			connection_set_state(srv, con, CON_STATE_READ);
+			/* fall through */
+		case CON_STATE_READ:
+			connection_handle_read_state(srv, con);
+			if (con->state != CON_STATE_REQUEST_END) break;
+			/* fall through */
+		case CON_STATE_REQUEST_END: /* transient */
+			ostate = (0 == con->request.content_length)
+			  ? CON_STATE_HANDLE_REQUEST
+			  : CON_STATE_READ_POST;
+			connection_set_state(srv, con, ostate);
+			/* fall through */
+		case CON_STATE_READ_POST:
+		case CON_STATE_HANDLE_REQUEST:
+			if (connection_handle_request(srv, con)) {
+				/* redo loop; will not match con->state */
+				ostate = CON_STATE_CONNECT;
 				break;
 			}
 
+			if (con->state == CON_STATE_HANDLE_REQUEST
+			    && ostate == CON_STATE_READ_POST) {
+				ostate = CON_STATE_HANDLE_REQUEST;
+			}
+
+			if (con->state != CON_STATE_RESPONSE_START) break;
+			/* fall through */
+		case CON_STATE_RESPONSE_START: /* transient */
+			if (-1 == connection_handle_write_prepare(srv, con)) {
+				connection_set_state(srv, con, CON_STATE_ERROR);
+				break;
+			}
 			connection_set_state(srv, con, CON_STATE_WRITE);
-			break;
+			/* fall through */
+		case CON_STATE_WRITE:
+			connection_handle_write_state(srv, con);
+			if (con->state != CON_STATE_RESPONSE_END) break;
+			/* fall through */
 		case CON_STATE_RESPONSE_END: /* transient */
 		case CON_STATE_ERROR:        /* transient */
 			connection_handle_response_end_state(srv, con);
 			break;
-		case CON_STATE_CONNECT:
-			chunkqueue_reset(con->read_queue);
-
-			con->request_count = 0;
-
-			break;
 		case CON_STATE_CLOSE:
 			connection_handle_close_state(srv, con);
 			break;
-		case CON_STATE_READ:
-			connection_handle_read_state(srv, con);
-			break;
-		case CON_STATE_WRITE:
-			do {
-				/* only try to write if we have something in the queue */
-				if (!chunkqueue_is_empty(con->write_queue)) {
-					if (con->is_writable) {
-						if (-1 == connection_handle_write(srv, con)) {
-							log_error_write(srv, __FILE__, __LINE__, "ds",
-									con->fd,
-									"handle write failed.");
-							connection_set_state(srv, con, CON_STATE_ERROR);
-							break;
-						}
-						if (con->state != CON_STATE_WRITE) break;
-					}
-				} else if (con->file_finished) {
-					connection_set_state(srv, con, CON_STATE_RESPONSE_END);
-					break;
-				}
-
-				if (con->mode != DIRECT && !con->file_finished) {
-					switch(r = plugins_call_handle_subrequest(srv, con)) {
-					case HANDLER_WAIT_FOR_EVENT:
-					case HANDLER_FINISHED:
-					case HANDLER_GO_ON:
-						break;
-					case HANDLER_WAIT_FOR_FD:
-						srv->want_fds++;
-						fdwaitqueue_append(srv, con);
-						break;
-					case HANDLER_COMEBACK:
-					default:
-						log_error_write(srv, __FILE__, __LINE__, "sdd", "unexpected subrequest handler ret-value: ", con->fd, r);
-						/* fall through */
-					case HANDLER_ERROR:
-						connection_set_state(srv, con, CON_STATE_ERROR);
-						break;
-					}
-				}
-			} while (con->state == CON_STATE_WRITE && (!chunkqueue_is_empty(con->write_queue) ? con->is_writable : con->file_finished));
-
+		case CON_STATE_CONNECT:
 			break;
 		default:
 			log_error_write(srv, __FILE__, __LINE__, "sdd",
 					"unknown state:", con->fd, con->state);
-
 			break;
 		}
+	} while (ostate != con->state);
 
-		if (done == -1) {
-			done = 0;
-		} else if (ostate == con->state) {
-			done = 1;
-		}
-	}
-
-	if (srv->srvconf.log_state_handling) {
+	if (log_state_handling) {
 		log_error_write(srv, __FILE__, __LINE__, "sds",
 				"state at exit:",
 				con->fd,
@@ -1381,7 +1344,7 @@ int connection_state_machine(server *srv, connection *con) {
 		break;
 	}
 	if (con->fd >= 0) {
-		const int events = fdevent_event_get_interest(srv->ev, con->fd);
+		const int events = fdevent_fdnode_interest(con->fdn);
 		if (con->is_readable < 0) {
 			con->is_readable = 0;
 			r |= FDEVENT_IN;
@@ -1401,7 +1364,7 @@ int connection_state_machine(server *srv, connection *con) {
 			if ((r & FDEVENT_OUT) && !(events & FDEVENT_OUT)) {
 				con->write_request_ts = srv->cur_ts;
 			}
-			fdevent_event_set(srv->ev, &con->fde_ndx, con->fd, r);
+			fdevent_fdnode_event_set(srv->ev, con->fdn, r);
 		}
 	}
 

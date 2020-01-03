@@ -3,6 +3,7 @@
 #include "base.h"
 #include "log.h"
 #include "buffer.h"
+#include "fdevent.h"
 #include "http_header.h"
 
 #include "plugin.h"
@@ -95,16 +96,7 @@ static int excludes_buffer_append(excludes_buffer *exb, buffer *string) {
 
 	if (!string) return -1;
 
-	if (exb->size == 0) {
-		exb->size = 4;
-		exb->used = 0;
-
-		exb->ptr = malloc(exb->size * sizeof(*exb->ptr));
-
-		for(i = 0; i < exb->size ; i++) {
-			exb->ptr[i] = calloc(1, sizeof(**exb->ptr));
-		}
-	} else if (exb->used == exb->size) {
+	if (exb->used == exb->size) {
 		exb->size += 4;
 
 		exb->ptr = realloc(exb->ptr, exb->size * sizeof(*exb->ptr));
@@ -238,7 +230,7 @@ SETDEFAULTS_FUNC(mod_dirlisting_set_defaults) {
 
 	if (!p) return HANDLER_ERROR;
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
+	p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		data_config const* config = (data_config const*)srv->config_context->data[i];
@@ -498,15 +490,8 @@ static int http_list_directory_sizefmt(char *buf, size_t bufsz, off_t size) {
 	return buflen + 3;
 }
 
-/* don't want to block when open()ing a fifo */
-#if defined(O_NONBLOCK)
-# define FIFO_NONBLOCK O_NONBLOCK
-#else
-# define FIFO_NONBLOCK 0
-#endif
-
-static void http_list_directory_include_file(buffer *out, buffer *path, const char *classname, int encode) {
-	int fd = open(path->ptr, O_RDONLY | FIFO_NONBLOCK);
+static void http_list_directory_include_file(buffer *out, int symlinks, buffer *path, const char *classname, int encode) {
+	int fd = fdevent_open_cloexec(path->ptr, symlinks, O_RDONLY, 0);
 	ssize_t rd;
 	char buf[8192];
 
@@ -811,7 +796,7 @@ static void http_list_directory_header(server *srv, connection *con, plugin_data
 			hb = p->tmp_buf;
 		}
 
-		http_list_directory_include_file(out, hb, "header", p->conf.encode_header);
+		http_list_directory_include_file(out, con->conf.follow_symlink, hb, "header", p->conf.encode_header);
 	}
 
 	buffer_append_string_len(out, CONST_STR_LEN("<h2>Index of "));
@@ -861,7 +846,7 @@ static void http_list_directory_footer(server *srv, connection *con, plugin_data
 			rb = p->tmp_buf;
 		}
 
-		http_list_directory_include_file(out, rb, "readme", p->conf.encode_readme);
+		http_list_directory_include_file(out, con->conf.follow_symlink, rb, "readme", p->conf.encode_readme);
 	}
 
 	if(p->conf.auto_layout) {

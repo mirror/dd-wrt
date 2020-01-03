@@ -133,7 +133,7 @@ config_values_t cv[] = {
         { NULL,                             NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
     };
 
-    p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
+    p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
 
     for (i = 0; i < srv->config_context->used; i++) {
         data_config const* config = (data_config const*)srv->config_context->data[i];
@@ -403,6 +403,9 @@ static LDAP * mod_authn_ldap_host_init(server *srv, plugin_config *s) {
         ldap_destroy(ld);
         return NULL;
     }
+
+    /* restart ldap functions if interrupted by a signal, e.g. SIGCHLD */
+    ldap_set_option(ld, LDAP_OPT_RESTART, LDAP_OPT_ON);
 
     if (s->auth_ldap_starttls) {
         /* if no CA file is given, it is ok, as we will use encryption

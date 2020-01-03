@@ -32,8 +32,6 @@ typedef struct {
 	http_method_t  http_method;
 	http_version_t http_version;
 
-	buffer *request_line;
-
 	/* strings to the header */
 	buffer *http_host; /* not alloced */
 
@@ -50,8 +48,6 @@ typedef struct {
 
 typedef struct {
 	off_t   content_length;
-	int     keep_alive;               /* used by  the subrequests in proxy, cgi and fcgi to say the subrequest was keep-alive or not */
-
 	unsigned int htags; /* bitfield of flagged headers present in response */
 	array  *headers;
 	int send_chunked;
@@ -216,13 +212,14 @@ struct connection {
 				      * this is self-protection
 				      */
 
+	fdnode *fdn;                 /* fdevent (fdnode *) object */
 	int fd;                      /* the FD for this connection */
-	int fde_ndx;                 /* index for the fdevent-handler */
 	int ndx;                     /* reverse mapping to server->connection[ndx] */
 
 	/* fd states */
 	int is_readable;
 	int is_writable;
+	int is_ssl_sock;
 
 	int keep_alive;              /* only request.c can enable it, all other just disable */
 	int keep_alive_idle;         /* remember max_keep_alive_idle from config */
@@ -247,8 +244,6 @@ struct connection {
 	buffer *dst_addr_buf;
 
 	/* request */
-	buffer *parse_request;
-
 	request  request;
 	request_uri uri;
 	physical physical;
@@ -260,6 +255,8 @@ struct connection {
 
 	unsigned int mode;           /* DIRECT (0) or plugin id */
 	int async_callback;
+
+	log_error_st *errh;
 
 	void **plugin_ctx;           /* plugin connection specific config */
 
@@ -341,6 +338,7 @@ typedef struct {
 	unsigned short http_host_strict;
 	unsigned short http_host_normalize;
 	unsigned short http_url_normalize;
+	unsigned short http_method_get_body;
 	unsigned short high_precision_timestamps;
 	time_t loadts;
 	double loadavg[3];
@@ -353,11 +351,11 @@ typedef struct {
 typedef struct server_socket {
 	sock_addr addr;
 	int       fd;
-	int       fde_ndx;
 
 	unsigned short is_ssl;
 	unsigned short sidx;
 
+	fdnode *fdn;
 	buffer *srv_token;
 } server_socket;
 
@@ -371,11 +369,6 @@ typedef struct {
 struct server {
 	server_socket_array srv_sockets;
 
-	/* the errorlog */
-	int errorlog_fd;
-	enum { ERRORLOG_FILE, ERRORLOG_FD, ERRORLOG_SYSLOG, ERRORLOG_PIPE } errorlog_mode;
-	buffer *errorlog_buf;
-
 	struct fdevents *ev;
 
 	buffer_plugin plugins;
@@ -388,6 +381,8 @@ struct server {
 	int con_closed;
 
 	int max_fds;    /* max possible fds */
+	int max_fds_lowat;/* low  watermark */
+	int max_fds_hiwat;/* high watermark */
 	int cur_fds;    /* currently used fds */
 	int want_fds;   /* waiting fds */
 	int sockets_disabled;
@@ -410,6 +405,8 @@ struct server {
 	mtime_cache_type mtime_cache[FILE_CACHE_MAX];
 
 	array *split_vals;
+
+	log_error_st *errh;
 
 	/* Timestamps */
 	time_t cur_ts;

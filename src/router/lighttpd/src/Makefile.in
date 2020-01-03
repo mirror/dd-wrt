@@ -99,47 +99,50 @@ sbin_PROGRAMS = lighttpd$(EXEEXT) lighttpd-angel$(EXEEXT)
 @NO_RDYNAMIC_TRUE@am__append_1 = liblightcomp.la
 @NO_RDYNAMIC_FALSE@am__append_2 = $(common_src)
 @BUILD_WITH_GEOIP_TRUE@am__append_3 = mod_geoip.la
-@BUILD_WITH_LUA_TRUE@am__append_4 = mod_magnet.la mod_cml.la
-@BUILD_MOD_TRIGGER_B4_DL_TRUE@am__append_5 = mod_trigger_b4_dl.la
-@BUILD_WITH_LDAP_TRUE@am__append_6 = mod_vhostdb_ldap.la
-@BUILD_WITH_MYSQL_TRUE@am__append_7 = mod_mysql_vhost.la \
+@BUILD_WITH_MAXMINDDB_TRUE@am__append_4 = mod_maxminddb.la
+@BUILD_WITH_LUA_TRUE@am__append_5 = mod_magnet.la mod_cml.la
+@BUILD_MOD_TRIGGER_B4_DL_TRUE@am__append_6 = mod_trigger_b4_dl.la
+@BUILD_WITH_LDAP_TRUE@am__append_7 = mod_vhostdb_ldap.la
+@BUILD_WITH_MYSQL_TRUE@am__append_8 = mod_mysql_vhost.la \
 @BUILD_WITH_MYSQL_TRUE@	mod_vhostdb_mysql.la
-@BUILD_WITH_PGSQL_TRUE@am__append_8 = mod_vhostdb_pgsql.la
-@BUILD_WITH_DBI_TRUE@am__append_9 = mod_vhostdb_dbi.la
-@BUILD_WITH_KRB5_TRUE@am__append_10 = mod_authn_gssapi.la
-@BUILD_WITH_LDAP_TRUE@am__append_11 = mod_authn_ldap.la
-@BUILD_WITH_PAM_TRUE@am__append_12 = mod_authn_pam.la
-@BUILD_WITH_MYSQL_TRUE@am__append_13 = mod_authn_mysql.la
-@BUILD_WITH_SASL_TRUE@am__append_14 = mod_authn_sasl.la
-@BUILD_WITH_OPENSSL_TRUE@am__append_15 = mod_openssl.la
-@BUILD_WITH_GEOIP_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_16 = mod_geoip.c
-@BUILD_WITH_GEOIP_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_17 = $(GEOIP_LIB)
-@BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_18 = mod_cml.c mod_cml_lua.c mod_cml_funcs.c \
+@BUILD_WITH_PGSQL_TRUE@am__append_9 = mod_vhostdb_pgsql.la
+@BUILD_WITH_DBI_TRUE@am__append_10 = mod_vhostdb_dbi.la
+@BUILD_WITH_KRB5_TRUE@am__append_11 = mod_authn_gssapi.la
+@BUILD_WITH_LDAP_TRUE@am__append_12 = mod_authn_ldap.la
+@BUILD_WITH_PAM_TRUE@am__append_13 = mod_authn_pam.la
+@BUILD_WITH_MYSQL_TRUE@am__append_14 = mod_authn_mysql.la
+@BUILD_WITH_SASL_TRUE@am__append_15 = mod_authn_sasl.la
+@BUILD_WITH_OPENSSL_TRUE@am__append_16 = mod_openssl.la
+@BUILD_WITH_GEOIP_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_17 = mod_geoip.c
+@BUILD_WITH_GEOIP_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_18 = $(GEOIP_LIB)
+@BUILD_WITH_MAXMINDDB_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_19 = mod_maxminddb.c
+@BUILD_WITH_MAXMINDDB_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_20 = $(MAXMINDDB_LIB)
+@BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_21 = mod_cml.c mod_cml_lua.c mod_cml_funcs.c \
 @BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@                    mod_magnet.c mod_magnet_cache.c
 
-@BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_19 = $(LUA_CFLAGS)
-@BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_20 = $(LUA_LIBS) -lm
-@BUILD_WITH_KRB5_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_21 = mod_authn_gssapi.c
-@BUILD_WITH_KRB5_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_22 = $(KRB5_LIB)
-@BUILD_WITH_LDAP_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_23 = mod_authn_ldap.c mod_vhostdb_ldap.c
-@BUILD_WITH_LDAP_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_24 = $(LDAP_LIB) $(LBER_LIB)
-@BUILD_WITH_PAM_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_25 = mod_authn_pam.c
-@BUILD_WITH_PAM_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_26 = $(PAM_LIB)
-@BUILD_WITH_MYSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_27 = mod_authn_mysql.c mod_mysql_vhost.c mod_vhostdb_mysql.c
-@BUILD_WITH_MYSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_28 = $(MYSQL_CFLAGS)
-@BUILD_WITH_MYSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_29 = $(MYSQL_LIBS)
-@BUILD_WITH_PGSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_30 = mod_vhostdb_pgsql.c
-@BUILD_WITH_PGSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_31 = $(PGSQL_INCLUDE)
-@BUILD_WITH_PGSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_32 = $(PGSQL_LIBS)
-@BUILD_WITH_DBI_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_33 = mod_vhostdb_dbi.c
-@BUILD_WITH_DBI_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_34 = $(DBI_CFLAGS)
-@BUILD_WITH_DBI_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_35 = $(DBI_LIBS)
-@BUILD_WITH_OPENSSL_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_36 = mod_openssl.c
-@BUILD_WITH_OPENSSL_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_37 = $(SSL_LIB)
-@BUILD_WITH_MEMCACHED_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_38 = $(MEMCACHED_CFLAGS)
-@BUILD_WITH_MEMCACHED_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_39 = $(MEMCACHED_LIB)
-@BUILD_WITH_GDBM_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_40 = $(GDBM_LIB)
-@BUILD_MOD_TRIGGER_B4_DL_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_41 = mod_trigger_b4_dl.c
+@BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_22 = $(LUA_CFLAGS)
+@BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_23 = $(LUA_LIBS) -lm
+@BUILD_WITH_KRB5_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_24 = mod_authn_gssapi.c
+@BUILD_WITH_KRB5_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_25 = $(KRB5_LIB)
+@BUILD_WITH_LDAP_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_26 = mod_authn_ldap.c mod_vhostdb_ldap.c
+@BUILD_WITH_LDAP_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_27 = $(LDAP_LIB) $(LBER_LIB)
+@BUILD_WITH_PAM_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_28 = mod_authn_pam.c
+@BUILD_WITH_PAM_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_29 = $(PAM_LIB)
+@BUILD_WITH_MYSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_30 = mod_authn_mysql.c mod_mysql_vhost.c mod_vhostdb_mysql.c
+@BUILD_WITH_MYSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_31 = $(MYSQL_CFLAGS)
+@BUILD_WITH_MYSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_32 = $(MYSQL_LIBS)
+@BUILD_WITH_PGSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_33 = mod_vhostdb_pgsql.c
+@BUILD_WITH_PGSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_34 = $(PGSQL_INCLUDE)
+@BUILD_WITH_PGSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_35 = $(PGSQL_LIBS)
+@BUILD_WITH_DBI_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_36 = mod_vhostdb_dbi.c
+@BUILD_WITH_DBI_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_37 = $(DBI_CFLAGS)
+@BUILD_WITH_DBI_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_38 = $(DBI_LIBS)
+@BUILD_WITH_OPENSSL_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_39 = mod_openssl.c
+@BUILD_WITH_OPENSSL_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_40 = $(SSL_LIB)
+@BUILD_WITH_MEMCACHED_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_41 = $(MEMCACHED_CFLAGS)
+@BUILD_WITH_MEMCACHED_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_42 = $(MEMCACHED_LIB)
+@BUILD_WITH_GDBM_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_43 = $(GDBM_LIB)
+@BUILD_MOD_TRIGGER_B4_DL_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_44 = mod_trigger_b4_dl.c
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
@@ -258,7 +261,7 @@ mod_alias_la_OBJECTS = $(am_mod_alias_la_OBJECTS)
 mod_alias_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(mod_alias_la_LDFLAGS) $(LDFLAGS) -o $@
-mod_auth_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
+mod_auth_la_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
 am_mod_auth_la_OBJECTS = mod_auth.lo
 mod_auth_la_OBJECTS = $(am_mod_auth_la_OBJECTS)
 mod_auth_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
@@ -444,6 +447,19 @@ mod_magnet_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(mod_magnet_la_CFLAGS) \
 	$(CFLAGS) $(mod_magnet_la_LDFLAGS) $(LDFLAGS) -o $@
 @BUILD_WITH_LUA_TRUE@am_mod_magnet_la_rpath = -rpath $(libdir)
+@BUILD_WITH_MAXMINDDB_TRUE@mod_maxminddb_la_DEPENDENCIES =  \
+@BUILD_WITH_MAXMINDDB_TRUE@	$(am__DEPENDENCIES_2) \
+@BUILD_WITH_MAXMINDDB_TRUE@	$(am__DEPENDENCIES_1)
+am__mod_maxminddb_la_SOURCES_DIST = mod_maxminddb.c
+@BUILD_WITH_MAXMINDDB_TRUE@am_mod_maxminddb_la_OBJECTS =  \
+@BUILD_WITH_MAXMINDDB_TRUE@	mod_maxminddb.lo
+mod_maxminddb_la_OBJECTS = $(am_mod_maxminddb_la_OBJECTS)
+mod_maxminddb_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) $(mod_maxminddb_la_LDFLAGS) $(LDFLAGS) \
+	-o $@
+@BUILD_WITH_MAXMINDDB_TRUE@am_mod_maxminddb_la_rpath = -rpath \
+@BUILD_WITH_MAXMINDDB_TRUE@	$(libdir)
 @BUILD_WITH_MYSQL_TRUE@mod_mysql_vhost_la_DEPENDENCIES =  \
 @BUILD_WITH_MYSQL_TRUE@	$(am__DEPENDENCIES_1) \
 @BUILD_WITH_MYSQL_TRUE@	$(am__DEPENDENCIES_2)
@@ -644,7 +660,7 @@ mod_vhostdb_pgsql_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 @BUILD_WITH_PGSQL_TRUE@	$(libdir)
 mod_webdav_la_DEPENDENCIES = $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_mod_webdav_la_OBJECTS = mod_webdav_la-mod_webdav.lo
 mod_webdav_la_OBJECTS = $(am_mod_webdav_la_OBJECTS)
 mod_webdav_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
@@ -678,12 +694,12 @@ am__lighttpd_SOURCES_DIST = server.c response.c connections.c \
 	mod_setenv.c mod_simple_vhost.c mod_ssi_exprparser.c \
 	mod_ssi_expr.c mod_ssi.c mod_staticfile.c mod_status.c \
 	mod_uploadprogress.c mod_userdir.c mod_usertrack.c \
-	mod_vhostdb.c mod_webdav.c mod_geoip.c mod_cml.c mod_cml_lua.c \
-	mod_cml_funcs.c mod_magnet.c mod_magnet_cache.c \
-	mod_authn_gssapi.c mod_authn_ldap.c mod_vhostdb_ldap.c \
-	mod_authn_pam.c mod_authn_mysql.c mod_mysql_vhost.c \
-	mod_vhostdb_mysql.c mod_vhostdb_pgsql.c mod_vhostdb_dbi.c \
-	mod_openssl.c mod_trigger_b4_dl.c
+	mod_vhostdb.c mod_webdav.c mod_geoip.c mod_maxminddb.c \
+	mod_cml.c mod_cml_lua.c mod_cml_funcs.c mod_magnet.c \
+	mod_magnet_cache.c mod_authn_gssapi.c mod_authn_ldap.c \
+	mod_vhostdb_ldap.c mod_authn_pam.c mod_authn_mysql.c \
+	mod_mysql_vhost.c mod_vhostdb_mysql.c mod_vhostdb_pgsql.c \
+	mod_vhostdb_dbi.c mod_openssl.c mod_trigger_b4_dl.c
 am__objects_2 = lighttpd-base64.$(OBJEXT) lighttpd-buffer.$(OBJEXT) \
 	lighttpd-burl.$(OBJEXT) lighttpd-log.$(OBJEXT) \
 	lighttpd-http_header.$(OBJEXT) lighttpd-http_kv.$(OBJEXT) \
@@ -717,22 +733,23 @@ am__objects_4 = lighttpd-server.$(OBJEXT) lighttpd-response.$(OBJEXT) \
 	lighttpd-network_write.$(OBJEXT) lighttpd-configfile.$(OBJEXT) \
 	lighttpd-configparser.$(OBJEXT) $(am__objects_3)
 @BUILD_WITH_GEOIP_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_5 = lighttpd-mod_geoip.$(OBJEXT)
-@BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_6 = lighttpd-mod_cml.$(OBJEXT) \
+@BUILD_WITH_MAXMINDDB_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_6 = lighttpd-mod_maxminddb.$(OBJEXT)
+@BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_7 = lighttpd-mod_cml.$(OBJEXT) \
 @BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@	lighttpd-mod_cml_lua.$(OBJEXT) \
 @BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@	lighttpd-mod_cml_funcs.$(OBJEXT) \
 @BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@	lighttpd-mod_magnet.$(OBJEXT) \
 @BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@	lighttpd-mod_magnet_cache.$(OBJEXT)
-@BUILD_WITH_KRB5_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_7 = lighttpd-mod_authn_gssapi.$(OBJEXT)
-@BUILD_WITH_LDAP_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_8 = lighttpd-mod_authn_ldap.$(OBJEXT) \
+@BUILD_WITH_KRB5_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_8 = lighttpd-mod_authn_gssapi.$(OBJEXT)
+@BUILD_WITH_LDAP_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_9 = lighttpd-mod_authn_ldap.$(OBJEXT) \
 @BUILD_WITH_LDAP_TRUE@@LIGHTTPD_STATIC_TRUE@	lighttpd-mod_vhostdb_ldap.$(OBJEXT)
-@BUILD_WITH_PAM_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_9 = lighttpd-mod_authn_pam.$(OBJEXT)
-@BUILD_WITH_MYSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_10 = lighttpd-mod_authn_mysql.$(OBJEXT) \
+@BUILD_WITH_PAM_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_10 = lighttpd-mod_authn_pam.$(OBJEXT)
+@BUILD_WITH_MYSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_11 = lighttpd-mod_authn_mysql.$(OBJEXT) \
 @BUILD_WITH_MYSQL_TRUE@@LIGHTTPD_STATIC_TRUE@	lighttpd-mod_mysql_vhost.$(OBJEXT) \
 @BUILD_WITH_MYSQL_TRUE@@LIGHTTPD_STATIC_TRUE@	lighttpd-mod_vhostdb_mysql.$(OBJEXT)
-@BUILD_WITH_PGSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_11 = lighttpd-mod_vhostdb_pgsql.$(OBJEXT)
-@BUILD_WITH_DBI_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_12 = lighttpd-mod_vhostdb_dbi.$(OBJEXT)
-@BUILD_WITH_OPENSSL_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_13 = lighttpd-mod_openssl.$(OBJEXT)
-@BUILD_MOD_TRIGGER_B4_DL_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_14 = lighttpd-mod_trigger_b4_dl.$(OBJEXT)
+@BUILD_WITH_PGSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_12 = lighttpd-mod_vhostdb_pgsql.$(OBJEXT)
+@BUILD_WITH_DBI_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_13 = lighttpd-mod_vhostdb_dbi.$(OBJEXT)
+@BUILD_WITH_OPENSSL_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_14 = lighttpd-mod_openssl.$(OBJEXT)
+@BUILD_MOD_TRIGGER_B4_DL_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_15 = lighttpd-mod_trigger_b4_dl.$(OBJEXT)
 @LIGHTTPD_STATIC_FALSE@am_lighttpd_OBJECTS = $(am__objects_4)
 @LIGHTTPD_STATIC_TRUE@am_lighttpd_OBJECTS = $(am__objects_4) \
 @LIGHTTPD_STATIC_TRUE@	lighttpd-mod_access.$(OBJEXT) \
@@ -772,20 +789,22 @@ am__objects_4 = lighttpd-server.$(OBJEXT) lighttpd-response.$(OBJEXT) \
 @LIGHTTPD_STATIC_TRUE@	$(am__objects_7) $(am__objects_8) \
 @LIGHTTPD_STATIC_TRUE@	$(am__objects_9) $(am__objects_10) \
 @LIGHTTPD_STATIC_TRUE@	$(am__objects_11) $(am__objects_12) \
-@LIGHTTPD_STATIC_TRUE@	$(am__objects_13) $(am__objects_14)
+@LIGHTTPD_STATIC_TRUE@	$(am__objects_13) $(am__objects_14) \
+@LIGHTTPD_STATIC_TRUE@	$(am__objects_15)
 lighttpd_OBJECTS = $(am_lighttpd_OBJECTS)
 @BUILD_WITH_GEOIP_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
-@BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
-@BUILD_WITH_KRB5_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_5 = $(am__DEPENDENCIES_1)
-@BUILD_WITH_LDAP_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_6 = $(am__DEPENDENCIES_1) \
+@BUILD_WITH_MAXMINDDB_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
+@BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_5 = $(am__DEPENDENCIES_1)
+@BUILD_WITH_KRB5_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_6 = $(am__DEPENDENCIES_1)
+@BUILD_WITH_LDAP_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_7 = $(am__DEPENDENCIES_1) \
 @BUILD_WITH_LDAP_TRUE@@LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_1)
-@BUILD_WITH_PAM_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_7 = $(am__DEPENDENCIES_1)
-@BUILD_WITH_MYSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_8 = $(am__DEPENDENCIES_1)
-@BUILD_WITH_PGSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_9 = $(am__DEPENDENCIES_1)
-@BUILD_WITH_DBI_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_10 = $(am__DEPENDENCIES_1)
-@BUILD_WITH_OPENSSL_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_11 = $(am__DEPENDENCIES_1)
-@BUILD_WITH_MEMCACHED_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_12 = $(am__DEPENDENCIES_1)
-@BUILD_WITH_GDBM_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_13 = $(am__DEPENDENCIES_1)
+@BUILD_WITH_PAM_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_8 = $(am__DEPENDENCIES_1)
+@BUILD_WITH_MYSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_9 = $(am__DEPENDENCIES_1)
+@BUILD_WITH_PGSQL_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_10 = $(am__DEPENDENCIES_1)
+@BUILD_WITH_DBI_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_11 = $(am__DEPENDENCIES_1)
+@BUILD_WITH_OPENSSL_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_12 = $(am__DEPENDENCIES_1)
+@BUILD_WITH_MEMCACHED_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_13 = $(am__DEPENDENCIES_1)
+@BUILD_WITH_GDBM_TRUE@@LIGHTTPD_STATIC_TRUE@am__DEPENDENCIES_14 = $(am__DEPENDENCIES_1)
 @LIGHTTPD_STATIC_FALSE@lighttpd_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 @LIGHTTPD_STATIC_FALSE@	$(am__DEPENDENCIES_1) \
 @LIGHTTPD_STATIC_FALSE@	$(am__DEPENDENCIES_1) \
@@ -810,6 +829,7 @@ lighttpd_OBJECTS = $(am_lighttpd_OBJECTS)
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_1) \
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_1) \
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_1) \
+@LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_1) \
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_3) \
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_4) \
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_5) \
@@ -820,7 +840,8 @@ lighttpd_OBJECTS = $(am_lighttpd_OBJECTS)
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_10) \
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_11) \
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_12) \
-@LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_13)
+@LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_13) \
+@LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_14)
 lighttpd_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(lighttpd_LDFLAGS) $(LDFLAGS) -o $@
@@ -1010,6 +1031,7 @@ am__depfiles_remade = ./$(DEPDIR)/array.Po ./$(DEPDIR)/base64.Po \
 	./$(DEPDIR)/lighttpd-mod_indexfile.Po \
 	./$(DEPDIR)/lighttpd-mod_magnet.Po \
 	./$(DEPDIR)/lighttpd-mod_magnet_cache.Po \
+	./$(DEPDIR)/lighttpd-mod_maxminddb.Po \
 	./$(DEPDIR)/lighttpd-mod_mysql_vhost.Po \
 	./$(DEPDIR)/lighttpd-mod_openssl.Po \
 	./$(DEPDIR)/lighttpd-mod_proxy.Po \
@@ -1065,6 +1087,7 @@ am__depfiles_remade = ./$(DEPDIR)/array.Po ./$(DEPDIR)/base64.Po \
 	./$(DEPDIR)/mod_indexfile.Plo \
 	./$(DEPDIR)/mod_magnet_la-mod_magnet.Plo \
 	./$(DEPDIR)/mod_magnet_la-mod_magnet_cache.Plo \
+	./$(DEPDIR)/mod_maxminddb.Plo \
 	./$(DEPDIR)/mod_mysql_vhost_la-mod_mysql_vhost.Plo \
 	./$(DEPDIR)/mod_openssl.Plo ./$(DEPDIR)/mod_proxy.Plo \
 	./$(DEPDIR)/mod_redirect.Plo ./$(DEPDIR)/mod_rewrite.Plo \
@@ -1121,14 +1144,15 @@ SOURCES = $(liblightcomp_la_SOURCES) $(mod_access_la_SOURCES) \
 	$(mod_expire_la_SOURCES) $(mod_extforward_la_SOURCES) \
 	$(mod_fastcgi_la_SOURCES) $(mod_flv_streaming_la_SOURCES) \
 	$(mod_geoip_la_SOURCES) $(mod_indexfile_la_SOURCES) \
-	$(mod_magnet_la_SOURCES) $(mod_mysql_vhost_la_SOURCES) \
-	$(mod_openssl_la_SOURCES) $(mod_proxy_la_SOURCES) \
-	$(mod_redirect_la_SOURCES) $(mod_rewrite_la_SOURCES) \
-	$(mod_rrdtool_la_SOURCES) $(mod_scgi_la_SOURCES) \
-	$(mod_secdownload_la_SOURCES) $(mod_setenv_la_SOURCES) \
-	$(mod_simple_vhost_la_SOURCES) $(mod_sockproxy_la_SOURCES) \
-	$(mod_ssi_la_SOURCES) $(mod_staticfile_la_SOURCES) \
-	$(mod_status_la_SOURCES) $(mod_trigger_b4_dl_la_SOURCES) \
+	$(mod_magnet_la_SOURCES) $(mod_maxminddb_la_SOURCES) \
+	$(mod_mysql_vhost_la_SOURCES) $(mod_openssl_la_SOURCES) \
+	$(mod_proxy_la_SOURCES) $(mod_redirect_la_SOURCES) \
+	$(mod_rewrite_la_SOURCES) $(mod_rrdtool_la_SOURCES) \
+	$(mod_scgi_la_SOURCES) $(mod_secdownload_la_SOURCES) \
+	$(mod_setenv_la_SOURCES) $(mod_simple_vhost_la_SOURCES) \
+	$(mod_sockproxy_la_SOURCES) $(mod_ssi_la_SOURCES) \
+	$(mod_staticfile_la_SOURCES) $(mod_status_la_SOURCES) \
+	$(mod_trigger_b4_dl_la_SOURCES) \
 	$(mod_uploadprogress_la_SOURCES) $(mod_userdir_la_SOURCES) \
 	$(mod_usertrack_la_SOURCES) $(mod_vhostdb_la_SOURCES) \
 	$(mod_vhostdb_dbi_la_SOURCES) $(mod_vhostdb_ldap_la_SOURCES) \
@@ -1157,6 +1181,7 @@ DIST_SOURCES = $(am__liblightcomp_la_SOURCES_DIST) \
 	$(mod_fastcgi_la_SOURCES) $(mod_flv_streaming_la_SOURCES) \
 	$(am__mod_geoip_la_SOURCES_DIST) $(mod_indexfile_la_SOURCES) \
 	$(am__mod_magnet_la_SOURCES_DIST) \
+	$(am__mod_maxminddb_la_SOURCES_DIST) \
 	$(am__mod_mysql_vhost_la_SOURCES_DIST) \
 	$(am__mod_openssl_la_SOURCES_DIST) $(mod_proxy_la_SOURCES) \
 	$(mod_redirect_la_SOURCES) $(mod_rewrite_la_SOURCES) \
@@ -1264,6 +1289,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+ELFTC_LIB = @ELFTC_LIB@
 EXEEXT = @EXEEXT@
 FAM_CFLAGS = @FAM_CFLAGS@
 FAM_LIBS = @FAM_LIBS@
@@ -1297,6 +1323,7 @@ LUA_CFLAGS = @LUA_CFLAGS@
 LUA_LIBS = @LUA_LIBS@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
+MAXMINDDB_LIB = @MAXMINDDB_LIB@
 MEMCACHED_LIB = @MEMCACHED_LIB@
 MKDIR_P = @MKDIR_P@
 MYSQL_CFLAGS = @MYSQL_CFLAGS@
@@ -1444,19 +1471,19 @@ src = server.c response.c connections.c inet_ntop_cache.c network.c \
 #mod_httptls_la_LDFLAGS = $(common_module_ldflags)
 #mod_httptls_la_LIBADD = $(common_libadd)
 lib_LTLIBRARIES = $(am__append_1) mod_flv_streaming.la $(am__append_3) \
-	mod_evasive.la mod_webdav.la $(am__append_4) $(am__append_5) \
-	mod_vhostdb.la $(am__append_6) $(am__append_7) $(am__append_8) \
-	$(am__append_9) mod_cgi.la mod_scgi.la mod_staticfile.la \
-	mod_dirlisting.la mod_indexfile.la mod_setenv.la mod_alias.la \
-	mod_userdir.la mod_rrdtool.la mod_usertrack.la mod_proxy.la \
-	mod_sockproxy.la mod_ssi.la mod_secdownload.la mod_expire.la \
-	mod_evhost.la mod_simple_vhost.la mod_fastcgi.la \
-	mod_extforward.la mod_access.la mod_compress.la mod_deflate.la \
-	mod_auth.la mod_authn_file.la $(am__append_10) \
-	$(am__append_11) $(am__append_12) $(am__append_13) \
-	$(am__append_14) $(am__append_15) mod_rewrite.la \
-	mod_redirect.la mod_status.la mod_accesslog.la \
-	mod_uploadprogress.la mod_wstunnel.la
+	$(am__append_4) mod_evasive.la mod_webdav.la $(am__append_5) \
+	$(am__append_6) mod_vhostdb.la $(am__append_7) $(am__append_8) \
+	$(am__append_9) $(am__append_10) mod_cgi.la mod_scgi.la \
+	mod_staticfile.la mod_dirlisting.la mod_indexfile.la \
+	mod_setenv.la mod_alias.la mod_userdir.la mod_rrdtool.la \
+	mod_usertrack.la mod_proxy.la mod_sockproxy.la mod_ssi.la \
+	mod_secdownload.la mod_expire.la mod_evhost.la \
+	mod_simple_vhost.la mod_fastcgi.la mod_extforward.la \
+	mod_access.la mod_compress.la mod_deflate.la mod_auth.la \
+	mod_authn_file.la $(am__append_11) $(am__append_12) \
+	$(am__append_13) $(am__append_14) $(am__append_15) \
+	$(am__append_16) mod_rewrite.la mod_redirect.la mod_status.la \
+	mod_accesslog.la mod_uploadprogress.la mod_wstunnel.la
 @NO_RDYNAMIC_FALSE@common_ldflags = -avoid-version
 
 # if the linker doesn't allow referencing symbols of the binary
@@ -1476,13 +1503,16 @@ mod_flv_streaming_la_LIBADD = $(common_libadd)
 @BUILD_WITH_GEOIP_TRUE@mod_geoip_la_SOURCES = mod_geoip.c
 @BUILD_WITH_GEOIP_TRUE@mod_geoip_la_LDFLAGS = $(common_module_ldflags)
 @BUILD_WITH_GEOIP_TRUE@mod_geoip_la_LIBADD = $(common_libadd) $(GEOIP_LIB)
+@BUILD_WITH_MAXMINDDB_TRUE@mod_maxminddb_la_SOURCES = mod_maxminddb.c
+@BUILD_WITH_MAXMINDDB_TRUE@mod_maxminddb_la_LDFLAGS = $(common_module_ldflags)
+@BUILD_WITH_MAXMINDDB_TRUE@mod_maxminddb_la_LIBADD = $(common_libadd) $(MAXMINDDB_LIB)
 mod_evasive_la_SOURCES = mod_evasive.c
 mod_evasive_la_LDFLAGS = $(common_module_ldflags)
 mod_evasive_la_LIBADD = $(common_libadd)
 mod_webdav_la_SOURCES = mod_webdav.c
 mod_webdav_la_CFLAGS = $(AM_CFLAGS) $(XML_CFLAGS) $(SQLITE_CFLAGS) 
 mod_webdav_la_LDFLAGS = $(common_module_ldflags)
-mod_webdav_la_LIBADD = $(common_libadd) $(XML_LIBS) $(SQLITE_LIBS) $(UUID_LIBS)
+mod_webdav_la_LIBADD = $(common_libadd) $(XML_LIBS) $(SQLITE_LIBS) $(UUID_LIBS) $(ELFTC_LIB)
 @BUILD_WITH_LUA_TRUE@mod_magnet_la_SOURCES = mod_magnet.c mod_magnet_cache.c
 @BUILD_WITH_LUA_TRUE@mod_magnet_la_CFLAGS = $(AM_CFLAGS) $(LUA_CFLAGS)
 @BUILD_WITH_LUA_TRUE@mod_magnet_la_LDFLAGS = $(common_module_ldflags)
@@ -1584,7 +1614,7 @@ mod_deflate_la_LDFLAGS = $(common_module_ldflags)
 mod_deflate_la_LIBADD = $(Z_LIB) $(BZ_LIB) $(common_libadd)
 mod_auth_la_SOURCES = mod_auth.c
 mod_auth_la_LDFLAGS = $(common_module_ldflags)
-mod_auth_la_LIBADD = $(common_libadd)
+mod_auth_la_LIBADD = $(CRYPTO_LIB) $(common_libadd)
 mod_authn_file_la_SOURCES = mod_authn_file.c
 mod_authn_file_la_LDFLAGS = $(common_module_ldflags)
 mod_authn_file_la_LIBADD = $(CRYPT_LIB) $(CRYPTO_LIB) $(common_libadd)
@@ -1626,7 +1656,7 @@ mod_uploadprogress_la_LIBADD = $(common_libadd)
 mod_wstunnel_la_SOURCES = mod_wstunnel.c
 mod_wstunnel_la_LDFLAGS = $(common_module_ldflags)
 mod_wstunnel_la_LIBADD = $(common_libadd) $(CRYPTO_LIB)
-hdr = server.h base64.h buffer.h burl.h network.h log.h http_kv.h keyvalue.h \
+hdr = base64.h buffer.h burl.h network.h log.h http_kv.h keyvalue.h \
 	response.h request.h fastcgi.h chunk.h \
 	first.h settings.h http_chunk.h \
 	algo_sha1.h md5.h http_auth.h http_header.h http_vhostdb.h stream.h \
@@ -1659,31 +1689,32 @@ hdr = server.h base64.h buffer.h burl.h network.h log.h http_kv.h keyvalue.h \
 @LIGHTTPD_STATIC_TRUE@	mod_staticfile.c mod_status.c \
 @LIGHTTPD_STATIC_TRUE@	mod_uploadprogress.c mod_userdir.c \
 @LIGHTTPD_STATIC_TRUE@	mod_usertrack.c mod_vhostdb.c \
-@LIGHTTPD_STATIC_TRUE@	mod_webdav.c $(am__append_16) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_18) $(am__append_21) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_23) $(am__append_25) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_27) $(am__append_30) \
+@LIGHTTPD_STATIC_TRUE@	mod_webdav.c $(am__append_17) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_19) $(am__append_21) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_24) $(am__append_26) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_28) $(am__append_30) \
 @LIGHTTPD_STATIC_TRUE@	$(am__append_33) $(am__append_36) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_41)
+@LIGHTTPD_STATIC_TRUE@	$(am__append_39) $(am__append_44)
 @LIGHTTPD_STATIC_FALSE@lighttpd_CPPFLAGS = $(FAM_CFLAGS) $(LIBEV_CFLAGS)
 @LIGHTTPD_STATIC_TRUE@lighttpd_CPPFLAGS = -DLIGHTTPD_STATIC \
 @LIGHTTPD_STATIC_TRUE@	$(XML_CFLAGS) $(SQLITE_CFLAGS) \
 @LIGHTTPD_STATIC_TRUE@	$(FAM_CFLAGS) $(LIBEV_CFLAGS) \
-@LIGHTTPD_STATIC_TRUE@	$(LIBUNWIND_CFLAGS) $(am__append_19) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_28) $(am__append_31) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_34) $(am__append_38)
+@LIGHTTPD_STATIC_TRUE@	$(LIBUNWIND_CFLAGS) $(am__append_22) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_31) $(am__append_34) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_37) $(am__append_41)
 @LIGHTTPD_STATIC_FALSE@lighttpd_LDADD = $(PCRE_LIB) $(DL_LIB) $(SENDFILE_LIB) $(ATTR_LIB) $(common_libadd) $(CRYPTO_LIB) $(FAM_LIBS) $(LIBEV_LIBS) $(LIBUNWIND_LIBS)
 @LIGHTTPD_STATIC_TRUE@lighttpd_LDADD = $(common_libadd) $(CRYPT_LIB) \
 @LIGHTTPD_STATIC_TRUE@	$(CRYPTO_LIB) $(XML_LIBS) $(SQLITE_LIBS) \
-@LIGHTTPD_STATIC_TRUE@	$(UUID_LIBS) $(PCRE_LIB) $(Z_LIB) \
-@LIGHTTPD_STATIC_TRUE@	$(BZ_LIB) $(DL_LIB) $(SENDFILE_LIB) \
-@LIGHTTPD_STATIC_TRUE@	$(ATTR_LIB) $(FAM_LIBS) $(LIBEV_LIBS) \
-@LIGHTTPD_STATIC_TRUE@	$(LIBUNWIND_LIBS) $(am__append_17) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_20) $(am__append_22) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_24) $(am__append_26) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_29) $(am__append_32) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_35) $(am__append_37) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_39) $(am__append_40)
+@LIGHTTPD_STATIC_TRUE@	$(UUID_LIBS) $(ELFTC_LIB) $(PCRE_LIB) \
+@LIGHTTPD_STATIC_TRUE@	$(Z_LIB) $(BZ_LIB) $(DL_LIB) \
+@LIGHTTPD_STATIC_TRUE@	$(SENDFILE_LIB) $(ATTR_LIB) $(FAM_LIBS) \
+@LIGHTTPD_STATIC_TRUE@	$(LIBEV_LIBS) $(LIBUNWIND_LIBS) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_18) $(am__append_20) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_23) $(am__append_25) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_27) $(am__append_29) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_32) $(am__append_35) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_38) $(am__append_40) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_42) $(am__append_43)
 @LIGHTTPD_STATIC_FALSE@lighttpd_LDFLAGS = -export-dynamic
 @LIGHTTPD_STATIC_TRUE@lighttpd_LDFLAGS = -export-dynamic
 t_test_array_SOURCES = t/test_array.c array.c data_array.c data_integer.c data_string.c buffer.c
@@ -1919,6 +1950,9 @@ mod_indexfile.la: $(mod_indexfile_la_OBJECTS) $(mod_indexfile_la_DEPENDENCIES) $
 
 mod_magnet.la: $(mod_magnet_la_OBJECTS) $(mod_magnet_la_DEPENDENCIES) $(EXTRA_mod_magnet_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(mod_magnet_la_LINK) $(am_mod_magnet_la_rpath) $(mod_magnet_la_OBJECTS) $(mod_magnet_la_LIBADD) $(LIBS)
+
+mod_maxminddb.la: $(mod_maxminddb_la_OBJECTS) $(mod_maxminddb_la_DEPENDENCIES) $(EXTRA_mod_maxminddb_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(mod_maxminddb_la_LINK) $(am_mod_maxminddb_la_rpath) $(mod_maxminddb_la_OBJECTS) $(mod_maxminddb_la_LIBADD) $(LIBS)
 
 mod_mysql_vhost.la: $(mod_mysql_vhost_la_OBJECTS) $(mod_mysql_vhost_la_DEPENDENCIES) $(EXTRA_mod_mysql_vhost_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(mod_mysql_vhost_la_LINK) $(am_mod_mysql_vhost_la_rpath) $(mod_mysql_vhost_la_OBJECTS) $(mod_mysql_vhost_la_LIBADD) $(LIBS)
@@ -2188,6 +2222,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lighttpd-mod_indexfile.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lighttpd-mod_magnet.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lighttpd-mod_magnet_cache.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lighttpd-mod_maxminddb.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lighttpd-mod_mysql_vhost.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lighttpd-mod_openssl.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lighttpd-mod_proxy.Po@am__quote@ # am--include-marker
@@ -2254,6 +2289,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mod_indexfile.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mod_magnet_la-mod_magnet.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mod_magnet_la-mod_magnet_cache.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mod_maxminddb.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mod_mysql_vhost_la-mod_mysql_vhost.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mod_openssl.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mod_proxy.Plo@am__quote@ # am--include-marker
@@ -3879,6 +3915,20 @@ lighttpd-mod_geoip.obj: mod_geoip.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lighttpd-mod_geoip.obj `if test -f 'mod_geoip.c'; then $(CYGPATH_W) 'mod_geoip.c'; else $(CYGPATH_W) '$(srcdir)/mod_geoip.c'; fi`
 
+lighttpd-mod_maxminddb.o: mod_maxminddb.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lighttpd-mod_maxminddb.o -MD -MP -MF $(DEPDIR)/lighttpd-mod_maxminddb.Tpo -c -o lighttpd-mod_maxminddb.o `test -f 'mod_maxminddb.c' || echo '$(srcdir)/'`mod_maxminddb.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lighttpd-mod_maxminddb.Tpo $(DEPDIR)/lighttpd-mod_maxminddb.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mod_maxminddb.c' object='lighttpd-mod_maxminddb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lighttpd-mod_maxminddb.o `test -f 'mod_maxminddb.c' || echo '$(srcdir)/'`mod_maxminddb.c
+
+lighttpd-mod_maxminddb.obj: mod_maxminddb.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lighttpd-mod_maxminddb.obj -MD -MP -MF $(DEPDIR)/lighttpd-mod_maxminddb.Tpo -c -o lighttpd-mod_maxminddb.obj `if test -f 'mod_maxminddb.c'; then $(CYGPATH_W) 'mod_maxminddb.c'; else $(CYGPATH_W) '$(srcdir)/mod_maxminddb.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lighttpd-mod_maxminddb.Tpo $(DEPDIR)/lighttpd-mod_maxminddb.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mod_maxminddb.c' object='lighttpd-mod_maxminddb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lighttpd-mod_maxminddb.obj `if test -f 'mod_maxminddb.c'; then $(CYGPATH_W) 'mod_maxminddb.c'; else $(CYGPATH_W) '$(srcdir)/mod_maxminddb.c'; fi`
+
 lighttpd-mod_cml.o: mod_cml.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lighttpd-mod_cml.o -MD -MP -MF $(DEPDIR)/lighttpd-mod_cml.Tpo -c -o lighttpd-mod_cml.o `test -f 'mod_cml.c' || echo '$(srcdir)/'`mod_cml.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lighttpd-mod_cml.Tpo $(DEPDIR)/lighttpd-mod_cml.Po
@@ -4455,6 +4505,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/lighttpd-mod_indexfile.Po
 	-rm -f ./$(DEPDIR)/lighttpd-mod_magnet.Po
 	-rm -f ./$(DEPDIR)/lighttpd-mod_magnet_cache.Po
+	-rm -f ./$(DEPDIR)/lighttpd-mod_maxminddb.Po
 	-rm -f ./$(DEPDIR)/lighttpd-mod_mysql_vhost.Po
 	-rm -f ./$(DEPDIR)/lighttpd-mod_openssl.Po
 	-rm -f ./$(DEPDIR)/lighttpd-mod_proxy.Po
@@ -4521,6 +4572,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/mod_indexfile.Plo
 	-rm -f ./$(DEPDIR)/mod_magnet_la-mod_magnet.Plo
 	-rm -f ./$(DEPDIR)/mod_magnet_la-mod_magnet_cache.Plo
+	-rm -f ./$(DEPDIR)/mod_maxminddb.Plo
 	-rm -f ./$(DEPDIR)/mod_mysql_vhost_la-mod_mysql_vhost.Plo
 	-rm -f ./$(DEPDIR)/mod_openssl.Plo
 	-rm -f ./$(DEPDIR)/mod_proxy.Plo
@@ -4722,6 +4774,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/lighttpd-mod_indexfile.Po
 	-rm -f ./$(DEPDIR)/lighttpd-mod_magnet.Po
 	-rm -f ./$(DEPDIR)/lighttpd-mod_magnet_cache.Po
+	-rm -f ./$(DEPDIR)/lighttpd-mod_maxminddb.Po
 	-rm -f ./$(DEPDIR)/lighttpd-mod_mysql_vhost.Po
 	-rm -f ./$(DEPDIR)/lighttpd-mod_openssl.Po
 	-rm -f ./$(DEPDIR)/lighttpd-mod_proxy.Po
@@ -4788,6 +4841,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/mod_indexfile.Plo
 	-rm -f ./$(DEPDIR)/mod_magnet_la-mod_magnet.Plo
 	-rm -f ./$(DEPDIR)/mod_magnet_la-mod_magnet_cache.Plo
+	-rm -f ./$(DEPDIR)/mod_maxminddb.Plo
 	-rm -f ./$(DEPDIR)/mod_mysql_vhost_la-mod_mysql_vhost.Plo
 	-rm -f ./$(DEPDIR)/mod_openssl.Plo
 	-rm -f ./$(DEPDIR)/mod_proxy.Plo

@@ -9,16 +9,30 @@ typedef struct fdevents fdevents;
 
 typedef handler_t (*fdevent_handler)(struct server *srv, void *ctx, int revents);
 
-/* these are the POLL* values from <bits/poll.h> (linux poll)
- */
+struct fdnode_st {
+    fdevent_handler handler;
+    void *ctx;
+    int fd;
+    int events;
+    int fde_ndx;
+  #ifdef HAVE_LIBEV
+    void *handler_ctx;
+  #endif
+};
 
-#define FDEVENT_IN     BV(0)
-#define FDEVENT_PRI    BV(1)
-#define FDEVENT_OUT    BV(2)
-#define FDEVENT_ERR    BV(3)
-#define FDEVENT_HUP    BV(4)
-#define FDEVENT_NVAL   BV(5)
-#define FDEVENT_RDHUP  BV(13)
+/* These must match POLL* values from operating system headers */
+
+#define FDEVENT_IN     0x0001
+#define FDEVENT_PRI    0x0002
+#define FDEVENT_OUT    0x0004
+#define FDEVENT_ERR    0x0008
+#define FDEVENT_HUP    0x0010
+#define FDEVENT_NVAL   0x0020
+#if defined(__sun) && defined(__SVR4) /* Solaris */
+#define FDEVENT_RDHUP  0x4000
+#else
+#define FDEVENT_RDHUP  0x2000
+#endif
 
 #define FDEVENT_STREAM_REQUEST                  BV(0)
 #define FDEVENT_STREAM_REQUEST_BUFMIN           BV(1)
@@ -31,30 +45,32 @@ typedef handler_t (*fdevent_handler)(struct server *srv, void *ctx, int revents)
 #define FDEVENT_STREAM_RESPONSE_BUFMIN    BV(1)
 #define FDEVENT_STREAM_RESPONSE_POLLRDHUP BV(15)
 
+__attribute_cold__
 int fdevent_config(server *srv);
+
+__attribute_cold__
 const char * fdevent_show_event_handlers(void);
+
+__attribute_cold__
 fdevents *fdevent_init(struct server *srv);
+
+__attribute_cold__
 int fdevent_reset(fdevents *ev); /* "init" after fork() */
+
+__attribute_cold__
 void fdevent_free(fdevents *ev);
 
-int fdevent_event_get_interest(const fdevents *ev, int fd);
-void fdevent_event_set(fdevents *ev, int *fde_ndx, int fd, int events); /* events can be FDEVENT_IN, FDEVENT_OUT or FDEVENT_IN | FDEVENT_OUT */
-void fdevent_event_add(fdevents *ev, int *fde_ndx, int fd, int event); /* events can be FDEVENT_IN or FDEVENT_OUT */
-void fdevent_event_clr(fdevents *ev, int *fde_ndx, int fd, int event); /* events can be FDEVENT_IN or FDEVENT_OUT */
-void fdevent_event_del(fdevents *ev, int *fde_ndx, int fd);
-int fdevent_event_get_revent(fdevents *ev, size_t ndx);
-int fdevent_event_get_fd(fdevents *ev, size_t ndx);
-fdevent_handler fdevent_get_handler(fdevents *ev, int fd);
-void * fdevent_get_context(fdevents *ev, int fd);
-
-int fdevent_event_next_fdndx(fdevents *ev, int ndx);
+#define fdevent_fdnode_interest(fdn) (NULL != (fdn) ? (fdn)->events : 0)
+void fdevent_fdnode_event_del(fdevents *ev, fdnode *fdn);
+void fdevent_fdnode_event_set(fdevents *ev, fdnode *fdn, int events);
+void fdevent_fdnode_event_add(fdevents *ev, fdnode *fdn, int event);
+void fdevent_fdnode_event_clr(fdevents *ev, fdnode *fdn, int event);
 
 int fdevent_poll(fdevents *ev, int timeout_ms);
 
-int fdevent_register(fdevents *ev, int fd, fdevent_handler handler, void *ctx);
-int fdevent_unregister(fdevents *ev, int fd);
+fdnode * fdevent_register(fdevents *ev, int fd, fdevent_handler handler, void *ctx);
+void fdevent_unregister(fdevents *ev, int fd);
 void fdevent_sched_close(fdevents *ev, int fd, int issock);
-void fdevent_sched_run(struct server *srv, fdevents *ev);
 
 void fdevent_setfd_cloexec(int fd);
 void fdevent_clrfd_cloexec(int fd);
@@ -63,14 +79,15 @@ int fdevent_fcntl_set_nb_cloexec(fdevents *ev, int fd);
 int fdevent_fcntl_set_nb_cloexec_sock(fdevents *ev, int fd);
 int fdevent_socket_cloexec(int domain, int type, int protocol);
 int fdevent_socket_nb_cloexec(int domain, int type, int protocol);
-int fdevent_open_cloexec(const char *pathname, int flags, mode_t mode);
+int fdevent_open_cloexec(const char *pathname, int symlinks, int flags, mode_t mode);
+int fdevent_mkstemp_append(char *path);
 
 struct sockaddr;
 int fdevent_accept_listenfd(int listenfd, struct sockaddr *addr, size_t *addrlen);
 
 char ** fdevent_environ(void);
 int fdevent_open_devnull(void);
-int fdevent_open_dirname(char *path);
+int fdevent_open_dirname(char *path, int symlinks);
 int fdevent_set_stdin_stdout_stderr(int fdin, int fdout, int fderr);
 pid_t fdevent_fork_execve(const char *name, char *argv[], char *envp[], int fdin, int fdout, int fderr, int dfd);
 int fdevent_open_logger(const char *logger);

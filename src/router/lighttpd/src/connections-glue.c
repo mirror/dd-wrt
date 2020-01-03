@@ -190,6 +190,7 @@ static handler_t connection_handle_read_post_chunked(server *srv, connection *co
                                 /* ignore excessively long trailers;
                                  * disable keep-alive on connection */
                                 con->keep_alive = 0;
+                                p = c->mem->ptr + buffer_string_length(c->mem) - 4;
                             }
                         }
                         hsz = p + 4 - (c->mem->ptr+c->offset);
@@ -343,7 +344,6 @@ int connection_write_chunkqueue(server *srv, connection *con, chunkqueue *cq, of
 
 	ret = con->network_write(srv, con, cq, max_bytes);
 	if (ret >= 0) {
-		chunkqueue_remove_finished_chunks(cq);
 		ret = chunkqueue_is_empty(cq) ? 0 : 1;
 	}
 
@@ -393,9 +393,7 @@ static int connection_write_100_continue(server *srv, connection *con) {
 		return 0; /* error */
 	}
 
-	if (written == sizeof(http_100_continue)-1) {
-		chunkqueue_remove_finished_chunks(cq);
-	} else if (0 == written) {
+	if (0 == written) {
 		/* skip sending 100 Continue if send would block */
 		chunkqueue_mark_written(cq, sizeof(http_100_continue)-1);
 		con->is_writable = 0;
@@ -492,7 +490,6 @@ void connection_response_reset(server *srv, connection *con) {
 	con->is_writable = 1;
 	con->file_finished = 0;
 	con->file_started = 0;
-	con->response.keep_alive = 0;
 	if (con->physical.path) { /*(skip for mod_fastcgi authorizer)*/
 		buffer_clear(con->physical.doc_root);
 		buffer_reset(con->physical.path);

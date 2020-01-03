@@ -78,13 +78,7 @@ static int connection_map_insert(connection_map *cm, connection *con, const char
 	connection_map_entry *cme;
 	size_t i;
 
-	if (cm->size == 0) {
-		cm->size = 16;
-		cm->ptr = malloc(cm->size * sizeof(*(cm->ptr)));
-		for (i = 0; i < cm->size; i++) {
-			cm->ptr[i] = NULL;
-		}
-	} else if (cm->used == cm->size) {
+	if (cm->used == cm->size) {
 		cm->size += 16;
 		cm->ptr = realloc(cm->ptr, cm->size * sizeof(*(cm->ptr)));
 		for (i = cm->used; i < cm->size; i++) {
@@ -202,7 +196,7 @@ SETDEFAULTS_FUNC(mod_uploadprogress_set_defaults) {
 
 	if (!p) return HANDLER_ERROR;
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
+	p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		data_config const* config = (data_config const*)srv->config_context->data[i];

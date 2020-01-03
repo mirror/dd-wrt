@@ -3,6 +3,7 @@
 #include "base.h"
 #include "log.h"
 #include "buffer.h"
+#include "fdevent.h"
 #include "http_header.h"
 #include "response.h"
 #include "stat_cache.h"
@@ -22,10 +23,6 @@
 #include <string.h>
 #include <errno.h>
 #include <time.h>
-
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
 
 #if defined HAVE_ZLIB_H && defined HAVE_LIBZ
 # define USE_ZLIB
@@ -185,7 +182,7 @@ SETDEFAULTS_FUNC(mod_compress_setdefaults) {
 		{ NULL,                             NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
 	};
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
+	p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		data_config const* config = (data_config const*)srv->config_context->data[i];
@@ -470,14 +467,13 @@ static void mod_compress_note_ratio(server *srv, connection *con, off_t in, off_
     UNUSED(srv);
 }
 
-static int deflate_file_to_file(server *srv, connection *con, plugin_data *p, buffer *fn, stat_cache_entry *sce, int type) {
-	int ifd, ofd;
+static int deflate_file_to_file(server *srv, connection *con, plugin_data *p, int ifd, buffer *fn, stat_cache_entry *sce, int type) {
+	int ofd;
 	int ret;
 #ifdef USE_MMAP
 	volatile int mapped = 0;/* quiet warning: might be clobbered by 'longjmp' */
 #endif
 	void *start;
-	const char *filename = fn->ptr;
 	stat_cache_entry *sce_ofn;
 	ssize_t r;
 
@@ -540,7 +536,8 @@ static int deflate_file_to_file(server *srv, connection *con, plugin_data *p, bu
 		return -1;
 	}
 
-	if (-1 == (ofd = open(p->ofn->ptr, O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600))) {
+	/*(note: follows symlinks in protected cache dir)*/
+	if (-1 == (ofd = fdevent_open_cloexec(p->ofn->ptr, 1, O_WRONLY | O_CREAT | O_EXCL, 0600))) {
 		if (errno == EEXIST) {
 			return -1; /* cache file being created */
 		}
@@ -552,18 +549,6 @@ static int deflate_file_to_file(server *srv, connection *con, plugin_data *p, bu
 #if 0
 	log_error_write(srv, __FILE__, __LINE__, "bs", p->ofn, "compress-cache miss");
 #endif
-	if (-1 == (ifd = open(filename, O_RDONLY | O_BINARY))) {
-		log_error_write(srv, __FILE__, __LINE__, "sbss", "opening plain-file", fn, "failed", strerror(errno));
-
-		close(ofd);
-
-		/* Remove the incomplete cache file, so that later hits aren't served from it */
-		if (-1 == unlink(p->ofn->ptr)) {
-			log_error_write(srv, __FILE__, __LINE__, "sbss", "unlinking incomplete cachefile", p->ofn, "failed:", strerror(errno));
-		}
-
-		return -1;
-	}
 
 #ifdef USE_MMAP
 	if (MAP_FAILED != (start = mmap(NULL, sce->st.st_size, PROT_READ, MAP_SHARED, ifd, 0))
@@ -665,8 +650,7 @@ static int deflate_file_to_file(server *srv, connection *con, plugin_data *p, bu
 	return 0;
 }
 
-static int deflate_file_to_buffer(server *srv, connection *con, plugin_data *p, buffer *fn, stat_cache_entry *sce, int type) {
-	int ifd;
+static int deflate_file_to_buffer(server *srv, connection *con, plugin_data *p, int ifd, buffer *fn, stat_cache_entry *sce, int type) {
 	int ret = -1;
 #ifdef USE_MMAP
 	volatile int mapped = 0;/* quiet warning: might be clobbered by 'longjmp' */
@@ -687,9 +671,9 @@ static int deflate_file_to_buffer(server *srv, connection *con, plugin_data *p, 
 		return -1;
 	}
 
-	if (-1 == (ifd = open(fn->ptr, O_RDONLY | O_BINARY))) {
-		log_error_write(srv, __FILE__, __LINE__, "sbss", "opening plain-file", fn, "failed", strerror(errno));
-
+	if (-1 == ifd) {
+		/* not called; call exists to de-optimize and avoid "clobbered by 'longjmp'" compiler warning */
+		log_error_write(srv, __FILE__, __LINE__, "s", "");
 		return -1;
 	}
 
@@ -865,11 +849,6 @@ PHYSICALPATH_FUNC(mod_compress_physical) {
 	}
 
 	/* we only handle regular files */
-#ifdef HAVE_LSTAT
-	if ((sce->is_symlink == 1) && !con->conf.follow_symlink) {
-		return HANDLER_GO_ON;
-	}
-#endif
 	if (!S_ISREG(sce->st.st_mode)) {
 		return HANDLER_GO_ON;
 	}
@@ -944,6 +923,18 @@ PHYSICALPATH_FUNC(mod_compress_physical) {
 					const char *compression_name = NULL;
 					int compression_type = 0;
 
+					if (!con->conf.follow_symlink
+					    && 0 != stat_cache_path_contains_symlink(srv, con->physical.path)) {
+						return HANDLER_GO_ON;
+					}
+
+					const int fd = fdevent_open_cloexec(con->physical.path->ptr, con->conf.follow_symlink, O_RDONLY, 0);
+					if (fd < 0) {
+						log_error_write(srv, __FILE__, __LINE__, "sbss",
+								"opening plain-file", con->physical.path, "failed", strerror(errno));
+						return HANDLER_GO_ON;
+					}
+
 					mtime = strftime_cache_get(srv, sce->st.st_mtime);
 
 					/* try matching original etag of uncompressed version */
@@ -953,6 +944,7 @@ PHYSICALPATH_FUNC(mod_compress_physical) {
 							http_header_response_set(con, HTTP_HEADER_CONTENT_TYPE, CONST_STR_LEN("Content-Type"), CONST_BUF_LEN(sce->content_type));
 							http_header_response_set(con, HTTP_HEADER_LAST_MODIFIED, CONST_STR_LEN("Last-Modified"), CONST_BUF_LEN(mtime));
 							http_header_response_set(con, HTTP_HEADER_ETAG, CONST_STR_LEN("ETag"), CONST_BUF_LEN(con->physical.etag));
+							close(fd);
 							return HANDLER_FINISHED;
 						}
 					}
@@ -991,17 +983,23 @@ PHYSICALPATH_FUNC(mod_compress_physical) {
 						if (use_etag) {
 							http_header_response_set(con, HTTP_HEADER_ETAG, CONST_STR_LEN("ETag"), CONST_BUF_LEN(con->physical.etag));
 						}
+						close(fd);
 						return HANDLER_FINISHED;
 					}
 
 					/* deflate it */
 					if (use_etag && !buffer_string_is_empty(p->conf.compress_cache_dir)) {
-						if (0 != deflate_file_to_file(srv, con, p, con->physical.path, sce, compression_type))
+						if (0 != deflate_file_to_file(srv, con, p, fd, con->physical.path, sce, compression_type)) {
+							close(fd);
 							return HANDLER_GO_ON;
+						}
 					} else {
-						if (0 != deflate_file_to_buffer(srv, con, p, con->physical.path, sce, compression_type))
+						if (0 != deflate_file_to_buffer(srv, con, p, fd, con->physical.path, sce, compression_type)) {
+							close(fd);
 							return HANDLER_GO_ON;
+						}
 					}
+					close(fd);
 					http_header_response_set(con, HTTP_HEADER_CONTENT_ENCODING, CONST_STR_LEN("Content-Encoding"), compression_name, strlen(compression_name));
 					http_header_response_set(con, HTTP_HEADER_LAST_MODIFIED, CONST_STR_LEN("Last-Modified"), CONST_BUF_LEN(mtime));
 					if (use_etag) {

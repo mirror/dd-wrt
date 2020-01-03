@@ -121,6 +121,10 @@ static int config_http_parseopts (server *srv, array *a) {
             srv->srvconf.http_host_normalize = val;
             continue;
         }
+        else if (buffer_is_equal_string(ds->key, CONST_STR_LEN("method-get-body"))) {
+            srv->srvconf.http_method_get_body = val;
+            continue;
+        }
         else {
             log_error_write(srv, __FILE__, __LINE__, "sb",
                             "unrecognized key for server.http-parseopts:",
@@ -362,9 +366,7 @@ static int config_insert(server *srv) {
 		s->use_ipv6      = (i == 0) ? 0 : srv->config_storage[0]->use_ipv6;
 		s->set_v6only    = (i == 0) ? 1 : srv->config_storage[0]->set_v6only;
 		s->defer_accept  = (i == 0) ? 0 : srv->config_storage[0]->defer_accept;
-#ifdef HAVE_LSTAT
 		s->follow_symlink = 1;
-#endif
 		s->kbytes_per_second = 0;
 		s->allow_http11  = 1;
 		s->etag_use_inode = 1;
@@ -396,9 +398,7 @@ static int config_insert(server *srv) {
 		cv[20].destination = &(s->max_read_idle);
 		cv[21].destination = &(s->max_write_idle);
 		cv[22].destination = s->error_handler;
-#ifdef HAVE_LSTAT
 		cv[24].destination = &(s->follow_symlink);
-#endif
 		cv[25].destination = &(s->global_kbytes_per_second);
 		cv[26].destination = &(s->kbytes_per_second);
 		cv[27].destination = &(s->use_xattr);
@@ -528,7 +528,8 @@ static int config_insert(server *srv) {
 		   (srv->srvconf.http_header_strict  ?(HTTP_PARSEOPT_HEADER_STRICT) :0)
 		  |(srv->srvconf.http_host_strict    ?(HTTP_PARSEOPT_HOST_STRICT
 		                                      |HTTP_PARSEOPT_HOST_NORMALIZE):0)
-		  |(srv->srvconf.http_host_normalize ?(HTTP_PARSEOPT_HOST_NORMALIZE):0);
+		  |(srv->srvconf.http_host_normalize ?(HTTP_PARSEOPT_HOST_NORMALIZE):0)
+		  |(srv->srvconf.http_method_get_body?(HTTP_PARSEOPT_METHOD_GET_BODY):0);
 		s->http_parseopts |= srv->srvconf.http_url_normalize;
 
 		if (s->log_request_handling || s->log_request_header)
@@ -687,9 +688,7 @@ int config_setup_connection(server *srv, connection *con) {
 	PATCH(error_handler_404);
 	PATCH(error_intercept);
 	PATCH(errorfile_prefix);
-#ifdef HAVE_LSTAT
 	PATCH(follow_symlink);
-#endif
 	PATCH(server_tag);
 	PATCH(kbytes_per_second);
 	PATCH(global_kbytes_per_second);
@@ -766,10 +765,8 @@ int config_patch_connection(server *srv, connection *con) {
 				PATCH(etag_use_mtime);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("etag.use-size"))) {
 				PATCH(etag_use_size);
-#ifdef HAVE_LSTAT
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.follow-symlink"))) {
 				PATCH(follow_symlink);
-#endif
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.name"))) {
 				buffer_copy_buffer(con->server_name, s->server_name);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.tag"))) {
@@ -833,6 +830,7 @@ typedef struct {
 	int in_key;
 	int in_brace;
 	int in_cond;
+	int simulate_eol;
 } tokenizer_t;
 
 #if 0
@@ -897,7 +895,14 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, buffer *
 	int tid = 0;
 	size_t i;
 
-	for (tid = 0; tid == 0 && t->offset < t->size && t->input[t->offset] ; ) {
+	if (t->simulate_eol) {
+		t->simulate_eol = 0;
+		t->in_key = 1;
+		tid = TK_EOL;
+		buffer_copy_string_len(token, CONST_STR_LEN("(EOL)"));
+	}
+
+	while (tid == 0 && t->offset < t->size && t->input[t->offset]) {
 		char c = t->input[t->offset];
 		const char *start = NULL;
 
@@ -1144,6 +1149,21 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, buffer *
 
 			buffer_copy_string_len(token, CONST_STR_LEN("}"));
 
+			for (; t->offset < t->size; ++t->offset,++t->line_pos) {
+				c = t->input[t->offset];
+				if (c == '\r' || c == '\n') {
+					break;
+				}
+				else if (c == '#') {
+					t->line_pos += config_skip_comment(t);
+					break;
+				}
+				else if (c != ' ' && c != '\t') {
+					t->simulate_eol = 1;
+					break;
+				} /* else (c == ' ' || c == '\t') */
+			}
+
 			break;
 
 		case '[':
@@ -1309,6 +1329,7 @@ static int tokenizer_init(tokenizer_t *t, const buffer *source, const char *inpu
 	t->in_key = 1;
 	t->in_brace = 0;
 	t->in_cond = 0;
+	t->simulate_eol = 0;
 	return 0;
 }
 

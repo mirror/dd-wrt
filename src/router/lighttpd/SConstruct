@@ -12,7 +12,7 @@ except NameError:
 	string_types = str
 
 package = 'lighttpd'
-version = '1.4.53'
+version = '1.4.54'
 
 underscorify_reg = re.compile('[^A-Z0-9]')
 def underscorify(id):
@@ -243,6 +243,7 @@ vars.AddVariables(
 	BoolVariable('with_fam', 'enable FAM/gamin support', 'no'),
 	BoolVariable('with_gdbm', 'enable gdbm support', 'no'),
 	BoolVariable('with_geoip', 'enable GeoIP support', 'no'),
+	BoolVariable('with_maxminddb', 'enable MaxMind GeoIP2 support', 'no'),
 	BoolVariable('with_krb5', 'enable krb5 auth support', 'no'),
 	BoolVariable('with_ldap', 'enable ldap auth support', 'no'),
 	# with_libev not supported
@@ -350,7 +351,6 @@ if 1:
 		'getopt.h',
 		'inttypes.h',
 		'linux/random.h',
-		'netinet/in.h',
 		'poll.h',
 		'pwd.h',
 		'stdint.h',
@@ -359,26 +359,19 @@ if 1:
 		'strings.h',
 		'sys/devpoll.h',
 		'sys/epoll.h',
-		'sys/event.h',
 		'sys/filio.h',
-		'sys/mman.h',
 		'sys/poll.h',
 		'sys/port.h',
 		'sys/prctl.h',
-		'sys/resource.h',
-		'sys/select.h',
 		'sys/sendfile.h',
-		'sys/socket.h',
 		'sys/time.h',
-		'sys/uio.h',
-		'sys/un.h',
 		'sys/wait.h',
 		'syslog.h',
 		'unistd.h',
 		'winsock2.h',
 
 		# "have" the last header if we include others before?
-		['sys/time.h', 'sys/types.h', 'sys/resource.h'],
+		['sys/types.h', 'sys/time.h', 'sys/resource.h'],
 		['sys/types.h', 'netinet/in.h'],
 		['sys/types.h', 'sys/event.h'],
 		['sys/types.h', 'sys/mman.h'],
@@ -461,6 +454,12 @@ if 1:
 	if autoconf.CheckType('struct sockaddr_storage', '#include <sys/socket.h>\n'):
 		autoconf.env.Append(CPPFLAGS = [ '-DHAVE_STRUCT_SOCKADDR_STORAGE' ])
 
+	if autoconf.CheckLibWithHeader('elftc', 'libelftc.h', 'c', 'elftc_copyfile(0, 1);'):
+		autoconf.env.Append(
+			CPPFLAGS = [ '-DHAVE_ELFTC_COPYFILE' ],
+			LIBS = [ 'elftc' ],
+		)
+
 	if autoconf.CheckLibWithHeader('rt', 'time.h', 'c', 'clock_gettime(CLOCK_MONOTONIC, (struct timespec*)0);'):
 		autoconf.env.Append(
 			CPPFLAGS = [ '-DHAVE_CLOCK_GETTIME' ],
@@ -522,6 +521,14 @@ if 1:
 		autoconf.env.Append(
 			CPPFLAGS = [ '-DHAVE_GEOIP' ],
 			LIBGEOIP = 'GeoIP',
+		)
+
+	if env['with_maxminddb']:
+		if not autoconf.CheckLibWithHeader('maxminddb', 'maxminddb.h', 'C'):
+			fail("Couldn't find maxminddb")
+		autoconf.env.Append(
+			CPPFLAGS = [ '-DHAVE_MAXMINDDB' ],
+			LIBMAXMINDDB = 'maxminddb',
 		)
 
 	if env['with_krb5']:

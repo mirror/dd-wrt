@@ -36,6 +36,9 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
+/* elftc_copyfile */
+#undef HAVE_ELFTC_COPYFILE
+
 /* Define to 1 if you have the `epoll_ctl' function. */
 #undef HAVE_EPOLL_CTL
 
@@ -132,6 +135,12 @@
 /* libdl */
 #undef HAVE_LIBDL
 
+/* libelftc */
+#undef HAVE_LIBELFTC
+
+/* Define to 1 if you have the <libelftc.h> header file. */
+#undef HAVE_LIBELFTC_H
+
 /* libev support */
 #undef HAVE_LIBEV
 
@@ -155,6 +164,9 @@
 
 /* Have libunwind support */
 #undef HAVE_LIBUNWIND
+
+/* libuuid */
+#undef HAVE_LIBUUID
 
 /* libxml2 */
 #undef HAVE_LIBXML2
@@ -182,6 +194,12 @@
 
 /* Define to 1 if you have the `madvise' function. */
 #undef HAVE_MADVISE
+
+/* libmaxminddb */
+#undef HAVE_MAXMINDDB
+
+/* Define to 1 if you have the <maxminddb.h> header file. */
+#undef HAVE_MAXMINDDB_H
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -351,13 +369,7 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* libuuid */
-#undef HAVE_UUID
-
 /* uuid/uuid.h is available */
-#undef HAVE_UUID_H
-
-/* Define to 1 if you have the <uuid/uuid.h> header file. */
 #undef HAVE_UUID_UUID_H
 
 /* Define to 1 if you have the <valgrind/valgrind.h> header file. */
