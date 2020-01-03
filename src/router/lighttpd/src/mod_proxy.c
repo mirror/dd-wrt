@@ -122,7 +122,7 @@ SETDEFAULTS_FUNC(mod_proxy_set_defaults) {
 		{ NULL,                        NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
 	};
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
+	p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		data_config const* config = (data_config const*)srv->config_context->data[i];
@@ -752,9 +752,10 @@ static handler_t proxy_create_env(server *srv, gw_handler_ctx *gwhctx) {
 	/* "Forwarded" and legacy X- headers */
 	proxy_set_Forwarded(con, hctx->conf.forwarded);
 
-	if (HTTP_METHOD_GET != con->request.http_method
-	    && HTTP_METHOD_HEAD != con->request.http_method
-	    && con->request.content_length >= 0) {
+	if (con->request.content_length > 0
+	    || (0 == con->request.content_length
+		&& HTTP_METHOD_GET != con->request.http_method
+		&& HTTP_METHOD_HEAD != con->request.http_method)) {
 		/* set Content-Length if client sent Transfer-Encoding: chunked
 		 * and not streaming to backend (request body has been fully received) */
 		buffer *vb = http_header_request_get(con, HTTP_HEADER_CONTENT_LENGTH, CONST_STR_LEN("Content-Length"));

@@ -107,7 +107,7 @@ typedef struct {
     gw_plugin_config gw;
     buffer *frame_type;
     array *origins;
-    unsigned int ping_interval;
+    unsigned short int ping_interval;
 } plugin_config;
 
 typedef struct plugin_data {
@@ -214,7 +214,7 @@ SETDEFAULTS_FUNC(mod_wstunnel_set_defaults) {
         { NULL,                     NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
     };
 
-    p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
+    p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
     force_assert(p->config_storage);
     for (size_t i = 0; i < srv->config_context->used; ++i) {
         array *ca = ((data_config *)(srv->config_context->data[i]))->value;
@@ -884,7 +884,7 @@ handler_t mod_wstunnel_handshake_create_response(handler_ctx *hctx) {
         /* 8 bytes should have been sent with request
          * for draft-ietf-hybi-thewebsocketprotocol-00 */
         chunkqueue *cq = con->request_content_queue;
-        if (0 == hctx->hybivers && chunkqueue_length(cq) < 8)
+        if (chunkqueue_length(cq) < 8)
             return HANDLER_WAIT_FOR_EVENT;
       #endif /* _MOD_WEBSOCKET_SPEC_IETF_00_ */
 

@@ -124,16 +124,12 @@ static int network_host_parse_addr(server *srv, sock_addr *addr, socklen_t *addr
 }
 
 static void network_srv_sockets_append(server *srv, server_socket *srv_socket) {
-	if (srv->srv_sockets.size == 0) {
-		srv->srv_sockets.size = 4;
-		srv->srv_sockets.used = 0;
-		srv->srv_sockets.ptr = malloc(srv->srv_sockets.size * sizeof(server_socket*));
-		force_assert(NULL != srv->srv_sockets.ptr);
-	} else if (srv->srv_sockets.used == srv->srv_sockets.size) {
+	if (srv->srv_sockets.used == srv->srv_sockets.size) {
 		srv->srv_sockets.size += 4;
 		srv->srv_sockets.ptr = realloc(srv->srv_sockets.ptr, srv->srv_sockets.size * sizeof(server_socket*));
 		force_assert(NULL != srv->srv_sockets.ptr);
 	}
+
 	srv->srv_sockets.ptr[srv->srv_sockets.used++] = srv_socket;
 }
 
@@ -208,7 +204,6 @@ static int network_server_init(server *srv, buffer *host_token, size_t sidx, int
 	force_assert(NULL != srv_socket);
 	memcpy(&srv_socket->addr, &addr, addr_len);
 	srv_socket->fd = -1;
-	srv_socket->fde_ndx = -1;
 	srv_socket->sidx = sidx;
 	srv_socket->is_ssl = s->ssl_enabled;
 	srv_socket->srv_token = buffer_init_buffer(host_token);
@@ -269,7 +264,10 @@ static int network_server_init(server *srv, buffer *host_token, size_t sidx, int
 			return -1;
 		}
 
-		fdevent_fcntl_set_nb(srv->ev, srv_socket->fd);
+		if (-1 == fdevent_fcntl_set_nb(srv->ev, srv_socket->fd)) {
+			log_error_write(srv, __FILE__, __LINE__, "ss", "fcntl:", strerror(errno));
+			return -1;
+		}
 	} else
 #endif
 	{
@@ -515,9 +513,11 @@ int network_init(server *srv, int stdin_fd) {
 }
 
 void network_unregister_sock(server *srv, server_socket *srv_socket) {
-	if (-1 == srv_socket->fd || -1 == srv_socket->fde_ndx) return;
-	fdevent_event_del(srv->ev, &srv_socket->fde_ndx, srv_socket->fd);
-	fdevent_unregister(srv->ev, srv_socket->fd);
+	fdnode *fdn = srv_socket->fdn;
+	if (NULL == fdn) return;
+	fdevent_fdnode_event_del(srv->ev, fdn);
+	fdevent_unregister(srv->ev, fdn->fd);
+	srv_socket->fdn = NULL;
 }
 
 int network_register_fdevents(server *srv) {
@@ -533,8 +533,8 @@ int network_register_fdevents(server *srv) {
 	for (i = 0; i < srv->srv_sockets.used; i++) {
 		server_socket *srv_socket = srv->srv_sockets.ptr[i];
 
-		fdevent_register(srv->ev, srv_socket->fd, network_server_handle_fdevent, srv_socket);
-		fdevent_event_set(srv->ev, &(srv_socket->fde_ndx), srv_socket->fd, FDEVENT_IN);
+		srv_socket->fdn = fdevent_register(srv->ev, srv_socket->fd, network_server_handle_fdevent, srv_socket);
+		fdevent_fdnode_event_set(srv->ev, srv_socket->fdn, FDEVENT_IN);
 	}
 	return 0;
 }

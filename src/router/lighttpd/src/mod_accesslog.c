@@ -257,11 +257,7 @@ static int accesslog_parse_format(server *srv, format_fields *fields, buffer *fo
 		case '%':
 			if (i > 0 && start != i) {
 				/* copy the string before this % */
-				if (fields->size == 0) {
-					fields->size = 16;
-					fields->used = 0;
-					fields->ptr = malloc(fields->size * sizeof(format_field * ));
-				} else if (fields->used == fields->size) {
+				if (fields->used == fields->size) {
 					fields->size += 16;
 					fields->ptr = realloc(fields->ptr, fields->size * sizeof(format_field * ));
 				}
@@ -277,11 +273,7 @@ static int accesslog_parse_format(server *srv, format_fields *fields, buffer *fo
 
 			/* we need a new field */
 
-			if (fields->size == 0) {
-				fields->size = 16;
-				fields->used = 0;
-				fields->ptr = malloc(fields->size * sizeof(format_field * ));
-			} else if (fields->used == fields->size) {
+			if (fields->used == fields->size) {
 				fields->size += 16;
 				fields->ptr = realloc(fields->ptr, fields->size * sizeof(format_field * ));
 			}
@@ -412,11 +404,7 @@ static int accesslog_parse_format(server *srv, format_fields *fields, buffer *fo
 
 	if (start < i) {
 		/* copy the string */
-		if (fields->size == 0) {
-			fields->size = 16;
-			fields->used = 0;
-			fields->ptr = malloc(fields->size * sizeof(format_field * ));
-		} else if (fields->used == fields->size) {
+		if (fields->used == fields->size) {
 			fields->size += 16;
 			fields->ptr = realloc(fields->ptr, fields->size * sizeof(format_field * ));
 		}
@@ -499,7 +487,7 @@ SETDEFAULTS_FUNC(log_access_open) {
 
 	if (!p) return HANDLER_ERROR;
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
+	p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		data_config const* config = (data_config const*)srv->config_context->data[i];
@@ -946,9 +934,12 @@ REQUESTDONE_FUNC(log_access_write) {
 				}
 				break;
 			case FORMAT_REQUEST_LINE:
-				if (!buffer_string_is_empty(con->request.request_line)) {
-					accesslog_append_escaped(b, con->request.request_line);
-				}
+				/*(attempt to reconstruct request line)*/
+				buffer_append_string(b, get_http_method_name(con->request.http_method));
+				buffer_append_string_len(b, CONST_STR_LEN(" "));
+				accesslog_append_escaped(b, con->request.orig_uri);
+				buffer_append_string_len(b, CONST_STR_LEN(" "));
+				buffer_append_string(b, get_http_version_name(con->request.http_version));
 				break;
 			case FORMAT_STATUS:
 				buffer_append_int(b, con->http_status);

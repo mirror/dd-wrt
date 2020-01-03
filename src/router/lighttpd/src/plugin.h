@@ -14,12 +14,13 @@
 		static handler_t x(server *srv, connection *con, void *p_d)
 
 #define INIT_FUNC(x) \
+		__attribute_cold__ \
 		static void *x(void)
 
-#define FREE_FUNC          SERVER_FUNC
+#define FREE_FUNC          __attribute_cold__ SERVER_FUNC
+#define SETDEFAULTS_FUNC   __attribute_cold__ SERVER_FUNC
+#define SIGHUP_FUNC        __attribute_cold__ SERVER_FUNC
 #define TRIGGER_FUNC       SERVER_FUNC
-#define SETDEFAULTS_FUNC   SERVER_FUNC
-#define SIGHUP_FUNC        SERVER_FUNC
 
 #define SUBREQUEST_FUNC    CONNECTION_FUNC
 #define PHYSICALPATH_FUNC  CONNECTION_FUNC
@@ -36,6 +37,7 @@ typedef struct {
 	void *(* init)                       ();
 	handler_t (* priv_defaults)          (server *srv, void *p_d);
 	handler_t (* set_defaults)           (server *srv, void *p_d);
+	handler_t (* worker_init)            (server *srv, void *p_d); /* at server startup (each worker after fork()) */
 	handler_t (* cleanup)                (server *srv, void *p_d);
 	                                                                                   /* is called ... */
 	handler_t (* handle_trigger)         (server *srv, void *p_d);                     /* once a second */
@@ -68,7 +70,10 @@ typedef struct {
 	void *lib;
 } plugin;
 
+__attribute_cold__
 int plugins_load(server *srv);
+
+__attribute_cold__
 void plugins_free(server *srv);
 
 handler_t plugins_call_handle_uri_raw(server *srv, connection *con);
@@ -86,11 +91,21 @@ handler_t plugins_call_handle_connection_close(server *srv, connection *con);
 handler_t plugins_call_connection_reset(server *srv, connection *con);
 
 handler_t plugins_call_handle_trigger(server *srv);
-handler_t plugins_call_handle_sighup(server *srv);
 handler_t plugins_call_handle_waitpid(server *srv, pid_t pid, int status);
 
+__attribute_cold__
+handler_t plugins_call_handle_sighup(server *srv);
+
+__attribute_cold__
 handler_t plugins_call_init(server *srv);
+
+__attribute_cold__
 handler_t plugins_call_set_defaults(server *srv);
+
+__attribute_cold__
+handler_t plugins_call_worker_init(server *srv);
+
+__attribute_cold__
 handler_t plugins_call_cleanup(server *srv);
 
 #endif

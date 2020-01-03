@@ -50,6 +50,7 @@ typedef enum {
 	PLUGIN_FUNC_INIT,
 	PLUGIN_FUNC_CLEANUP,
 	PLUGIN_FUNC_SET_DEFAULTS,
+	PLUGIN_FUNC_WORKER_INIT,
 
 	PLUGIN_FUNC_SIZEOF
 } plugin_t;
@@ -88,12 +89,7 @@ static void plugin_free(plugin *p) {
 
 static int plugins_register(server *srv, plugin *p) {
 	plugin **ps;
-	if (0 == srv->plugins.size) {
-		srv->plugins.size = 4;
-		srv->plugins.ptr  = malloc(srv->plugins.size * sizeof(*ps));
-		force_assert(NULL != srv->plugins.ptr);
-		srv->plugins.used = 0;
-	} else if (srv->plugins.used == srv->plugins.size) {
+	if (srv->plugins.used == srv->plugins.size) {
 		srv->plugins.size += 4;
 		srv->plugins.ptr   = realloc(srv->plugins.ptr, srv->plugins.size * sizeof(*ps));
 		force_assert(NULL != srv->plugins.ptr);
@@ -296,28 +292,14 @@ int plugins_load(server *srv) {
 
 #define PLUGIN_TO_SLOT(x, y) \
 	handler_t plugins_call_##y(server *srv, connection *con) {\
-		plugin **slot;\
-		size_t j;\
-		slot = ((plugin ***)(srv->plugin_slots))[x];\
-		if (!slot) return HANDLER_GO_ON;\
-		for (j = 0; j < srv->plugins.used && slot[j]; j++) { \
-			plugin *p = slot[j];\
-			handler_t r;\
-			switch(r = p->y(srv, con, p->data)) {\
-			case HANDLER_GO_ON:\
-				break;\
-			case HANDLER_FINISHED:\
-			case HANDLER_COMEBACK:\
-			case HANDLER_WAIT_FOR_EVENT:\
-			case HANDLER_WAIT_FOR_FD:\
-			case HANDLER_ERROR:\
-				return r;\
-			default:\
-				log_error_write(srv, __FILE__, __LINE__, "sbs", #x, p->name, "unknown state");\
-				return HANDLER_ERROR;\
-			}\
+		plugin ** const slot = ((plugin ***)(srv->plugin_slots))[x];\
+		const size_t used = srv->plugins.used;\
+		handler_t rc = HANDLER_GO_ON;\
+		if (slot) {\
+			const plugin *p;\
+			for (size_t i = 0; i < used && (p = slot[i]) && (rc = p->y(srv, con, p->data)) == HANDLER_GO_ON; ++i) ;\
 		}\
-		return HANDLER_GO_ON;\
+		return rc;\
 	}
 
 /**
@@ -346,29 +328,14 @@ PLUGIN_TO_SLOT(PLUGIN_FUNC_CONNECTION_RESET, connection_reset)
 
 #define PLUGIN_TO_SLOT(x, y) \
 	handler_t plugins_call_##y(server *srv) {\
-		plugin **slot;\
-		size_t j;\
-		if (!srv->plugin_slots) return HANDLER_GO_ON;\
-		slot = ((plugin ***)(srv->plugin_slots))[x];\
-		if (!slot) return HANDLER_GO_ON;\
-		for (j = 0; j < srv->plugins.used && slot[j]; j++) { \
-			plugin *p = slot[j];\
-			handler_t r;\
-			switch(r = p->y(srv, p->data)) {\
-			case HANDLER_GO_ON:\
-				break;\
-			case HANDLER_FINISHED:\
-			case HANDLER_COMEBACK:\
-			case HANDLER_WAIT_FOR_EVENT:\
-			case HANDLER_WAIT_FOR_FD:\
-			case HANDLER_ERROR:\
-				return r;\
-			default:\
-				log_error_write(srv, __FILE__, __LINE__, "sbsd", #x, p->name, "unknown state:", r);\
-				return HANDLER_ERROR;\
-			}\
+		plugin ** const slot = ((plugin ***)(srv->plugin_slots))[x];\
+		const size_t used = srv->plugins.used; \
+		handler_t rc = HANDLER_GO_ON;\
+		if (slot) {\
+			const plugin *p;\
+			for (size_t i = 0; i < used && (p = slot[i]) && (rc = p->y(srv, p->data)) == HANDLER_GO_ON; ++i) ;\
 		}\
-		return HANDLER_GO_ON;\
+		return rc;\
 	}
 
 /**
@@ -382,6 +349,7 @@ PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_TRIGGER, handle_trigger)
 PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_SIGHUP, handle_sighup)
 PLUGIN_TO_SLOT(PLUGIN_FUNC_CLEANUP, cleanup)
 PLUGIN_TO_SLOT(PLUGIN_FUNC_SET_DEFAULTS, set_defaults)
+PLUGIN_TO_SLOT(PLUGIN_FUNC_WORKER_INIT, worker_init)
 
 #undef PLUGIN_TO_SLOT
 
@@ -490,6 +458,7 @@ handler_t plugins_call_init(server *srv) {
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_CONNECTION_RESET, connection_reset);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_CLEANUP, cleanup);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_SET_DEFAULTS, set_defaults);
+		PLUGIN_TO_SLOT(PLUGIN_FUNC_WORKER_INIT, worker_init);
 #undef PLUGIN_TO_SLOT
 
 		if (p->init) {
@@ -521,7 +490,7 @@ handler_t plugins_call_init(server *srv) {
 
 void plugins_free(server *srv) {
 	size_t i;
-	plugins_call_cleanup(srv);
+	if (srv->plugin_slots) plugins_call_cleanup(srv);
 
 	for (i = 0; i < srv->plugins.used; i++) {
 		plugin *p = ((plugin **)srv->plugins.ptr)[i];

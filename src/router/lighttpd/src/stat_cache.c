@@ -25,46 +25,17 @@
 #endif
 
 #ifndef HAVE_LSTAT
-# define lstat stat
+#define lstat stat
+#ifndef S_ISLNK
+#define S_ISLNK(mode) (0)
+#endif
 #endif
 
 /*
  * stat-cache
  *
- * we cache the stat() calls in our own storage
- * the directories are cached in FAM
- *
- * if we get a change-event from FAM, we increment the version in the FAM->dir mapping
- *
- * if the stat()-cache is queried we check if the version id for the directory is the
- * same and return immediatly.
- *
- *
- * What we need:
- *
- * - for each stat-cache entry we need a fast indirect lookup on the directory name
- * - for each FAMRequest we have to find the version in the directory cache (index as userdata)
- *
- * stat <<-> directory <-> FAMRequest
- *
- * if file is deleted, directory is dirty, file is rechecked ...
- * if directory is deleted, directory mapping is removed
- *
- * */
-
-/* the directory name is too long to always compare on it
- * - we need a hash
- * - the hash-key is used as sorting criteria for a tree
  * - a splay-tree is used as we can use the caching effect of it
  */
-
-/* we want to cleanup the stat-cache every few seconds, let's say 10
- *
- * - remove entries which are outdated since 30s
- * - remove entries which are fresh but havn't been used since 60s
- * - if we don't have a stat-cache entry for a directory, release it from the monitor
- */
-
 
 enum {
   STAT_CACHE_ENGINE_UNSET,
@@ -73,145 +44,308 @@ enum {
   STAT_CACHE_ENGINE_FAM
 };
 
-#ifdef HAVE_FAM_H
-struct stat_cache_fam;
-#endif
+struct stat_cache_fam;  /* declaration */
 
 typedef struct stat_cache {
-	splay_tree *files; /* the nodes of the tree are stat_cache_entry's */
-      #ifdef HAVE_FAM_H
+	splay_tree *files; /* nodes of tree are (stat_cache_entry *) */
 	struct stat_cache_fam *scf;
-      #endif
 } stat_cache;
 
 
 /* the famous DJB hash function for strings */
-static uint32_t hashme(const char *str, int z) {
-	uint32_t hash = 5381;
-	for (const unsigned char *s = (const unsigned char *)str; *s; ++s) {
-		hash = ((hash << 5) + hash) ^ *s;
-	}
+static uint32_t djbhash(const char *str, const size_t len)
+{
+    const unsigned char * const s = (const unsigned char *)str;
+    uint32_t hash = 5381;
+    for (size_t i = 0; i < len; ++i) hash = ((hash << 5) + hash) ^ s[i];
+    return hash;
+}
 
-	/* customizations */
 
-	/* (differentiate hash values with and w/o con->conf.follow_symlink) */
-	hash = ((hash << 5) + hash) ^ (z ? '1' : '0');
+static uint32_t hashme(const char *str, const size_t len)
+{
+    /* strip highest bit of hash value for splaytree */
+    return djbhash(str,len) & ~(((uint32_t)1) << 31);
+}
 
-	hash &= ~(((uint32_t)1) << 31); /* strip the highest bit */
 
-	return hash;
+static void * stat_cache_sptree_find(splay_tree ** const sptree,
+                                     const char * const name,
+                                     size_t len)
+{
+    const int ndx = hashme(name, len);
+    *sptree = splaytree_splay(*sptree, ndx);
+    return (*sptree && (*sptree)->key == ndx) ? (*sptree)->data : NULL;
 }
 
 
 #ifdef HAVE_FAM_H
 
+/* monitor changes in directories using FAM
+ *
+ * This implementation employing FAM monitors directories as they are used,
+ * and maintains a reference count for cache use within stat_cache.c.
+ * A periodic job runs in lighttpd every 32 seconds, expiring entires unused
+ * in last 64 seconds out of the cache and cancelling FAM monitoring.  Items
+ * within the cache are checked against the filesystem upon use if last stat()
+ * was greater than or equal to 16 seconds ago.
+ *
+ * This implementation does not monitor every directory in a tree, and therefore
+ * the cache may get out-of-sync with the filesystem.  Delays in receiving and
+ * processing events from FAM might also lead to stale cache entries.
+ *
+ * For many websites, a large number of files are seldom, if ever, modified,
+ * and a common practice with images is to create a new file with a new name
+ * when a new version is needed, in order for client browsers and CDNs to better
+ * cache the content.  Given this, most use will see little difference in
+ * performance between server.stat-cache-engine = "fam" and "simple" (default).
+ * The default server.stat-cache-engine = "simple" calls stat() on a target once
+ * per second, and reuses that information until the next second.  For use where
+ * changes must be immediately visible, server.stat-cache-engine = "disable"
+ * should be used.
+ *
+ * When considering use of server.stat-cache-engine = "fam", there are a few
+ * additional limitations for this cache implementation using FAM.
+ * - symlinks to files located outside of the current directory do not result
+ *   in changes to that file being monitored (unless that file is in a directory
+ *   which is monitored as a result of a different request).  symlinks can be
+ *   chained and can be circular.  This implementation *does not* readlink() or
+ *   realpath() to resolve the chains to find and monitor the ultimate target
+ *   directory.  While symlinks to files located outside the current directory
+ *   are not monitored, symlinks to directories *are* monitored, though chains
+ *   of symlinks to directories do not result in monitoring of the directories
+ *   containing intermediate symlinks to the target directory.
+ * - directory rename of a directory which is not currently being monitored will
+ *   result in stale information in the cache if there is a subdirectory that is
+ *   being monitored.
+ * Even though lighttpd will not receive FAM events in the above cases, lighttpd
+ * does re-validate the information in the cache upon use if the cache entry has
+ * not been checked in 16 seconds, so that is the upper limit for use of stale
+ * data.
+ *
+ * Use of server.stat-cache-engine = "fam" is discouraged for extremely volatile
+ * directories such as temporary directories (e.g. /tmp and maybe /var/tmp) due
+ * to the overhead of processing the additional noise generated from changes.
+ * Related, server.stat-cache-engine = "fam" is not recommended on trees of
+ * untrusted files where a malicious user could generate an excess of change
+ * events.
+ *
+ * Internal note: lighttpd walks the caches to prune trees in stat_cache when an
+ * event is received for a directory (or symlink to a directory) which has been
+ * deleted or renamed.  The splaytree data structure is suboptimal for frequent
+ * changes of large directories trees where there have been a large number of
+ * different files recently accessed and part of the stat_cache.
+ */
+
 #include <fam.h>
 
-typedef struct {
-	FAMRequest *req;
+typedef struct fam_dir_entry {
 	buffer *name;
-	int version;
+	int refcnt;
+	FAMRequest req;
+	time_t stat_ts;
+	dev_t st_dev;
+	ino_t st_ino;
+	struct fam_dir_entry *fam_parent;
 } fam_dir_entry;
 
 typedef struct stat_cache_fam {
 	splay_tree *dirs; /* the nodes of the tree are fam_dir_entry */
-
 	FAMConnection fam;
-	int    fam_fcce_ndx;
-
-	int dir_ndx;
-	fam_dir_entry *fam_dir;
-	buffer *dir_name; /* for building the dirname from the filename */
+	fdnode *fdn;
+	int fd;
 } stat_cache_fam;
 
-static fam_dir_entry * fam_dir_entry_init(void) {
-	fam_dir_entry *fam_dir = NULL;
+static fam_dir_entry * fam_dir_entry_init(const char *name, size_t len)
+{
+    fam_dir_entry * const fam_dir = calloc(1, sizeof(*fam_dir));
+    force_assert(NULL != fam_dir);
 
-	fam_dir = calloc(1, sizeof(*fam_dir));
-	force_assert(NULL != fam_dir);
+    fam_dir->name = buffer_init();
+    buffer_copy_string_len(fam_dir->name, name, len);
+    fam_dir->refcnt = 0;
 
-	fam_dir->name = buffer_init();
-
-	return fam_dir;
+    return fam_dir;
 }
 
-static void fam_dir_entry_free(FAMConnection *fc, void *data) {
-	fam_dir_entry *fam_dir = data;
-
-	if (!fam_dir) return;
-
-	FAMCancelMonitor(fc, fam_dir->req);
-
-	buffer_free(fam_dir->name);
-	free(fam_dir->req);
-
-	free(fam_dir);
+static void fam_dir_entry_free(fam_dir_entry *fam_dir)
+{
+    if (!fam_dir) return;
+    /*(fam_dir->parent might be invalid pointer here; ignore)*/
+    buffer_free(fam_dir->name);
+    free(fam_dir);
 }
 
-static handler_t stat_cache_handle_fdevent(server *srv, void *_fce, int revent) {
-	size_t i;
+static void fam_dir_invalidate_node(fam_dir_entry *fam_dir)
+{
+    fam_dir->stat_ts = 0;
+    if (fam_dir->fam_parent) {
+        --fam_dir->fam_parent->refcnt;
+        fam_dir->fam_parent = NULL;
+    }
+}
+
+/*
+ * walk though splay_tree and collect contents of dir tree.
+ * remove tagged entries in a second loop
+ */
+
+static void fam_dir_tag_refcnt(splay_tree *t, int *keys, int *ndx)
+{
+    if (*ndx == 8192) return; /*(must match num array entries in keys[])*/
+    if (t->left)  fam_dir_tag_refcnt(t->left,  keys, ndx);
+    if (t->right) fam_dir_tag_refcnt(t->right, keys, ndx);
+    if (*ndx == 8192) return; /*(must match num array entries in keys[])*/
+
+    fam_dir_entry * const fam_dir = t->data;
+    if (0 == fam_dir->refcnt) {
+        fam_dir_invalidate_node(fam_dir);
+        keys[(*ndx)++] = t->key;
+    }
+}
+
+static void fam_dir_periodic_cleanup(server *srv) {
+    int max_ndx, i;
+    int keys[8192]; /* 32k size on stack */
+    stat_cache_fam * const scf = srv->stat_cache->scf;
+    do {
+        if (!scf->dirs) return;
+        max_ndx = 0;
+        fam_dir_tag_refcnt(scf->dirs, keys, &max_ndx);
+        for (i = 0; i < max_ndx; ++i) {
+            const int ndx = keys[i];
+            splay_tree *node = scf->dirs = splaytree_splay(scf->dirs, ndx);
+            if (node && node->key == ndx) {
+                fam_dir_entry *fam_dir = node->data;
+                scf->dirs = splaytree_delete(scf->dirs, ndx);
+                FAMCancelMonitor(&scf->fam, &fam_dir->req);
+                fam_dir_entry_free(fam_dir);
+            }
+        }
+    } while (max_ndx == sizeof(keys)/sizeof(int));
+}
+
+static void fam_dir_invalidate_tree(splay_tree *t, const char *name, size_t len)
+{
+    /*force_assert(t);*/
+    if (t->left)  fam_dir_invalidate_tree(t->left,  name, len);
+    if (t->right) fam_dir_invalidate_tree(t->right, name, len);
+
+    fam_dir_entry * const fam_dir = t->data;
+    buffer *b = fam_dir->name;
+    size_t blen = buffer_string_length(b);
+    if (blen > len && b->ptr[len] == '/' && 0 == memcmp(b->ptr, name, len))
+        fam_dir_invalidate_node(fam_dir);
+}
+
+/* declarations */
+static void stat_cache_delete_tree(server *srv, const char *name, size_t len);
+static void stat_cache_invalidate_dir_tree(server *srv, const char *name, size_t len);
+
+static void stat_cache_handle_fdevent_in(server *srv, stat_cache_fam *scf)
+{
+    for (int i = 0, ndx; i || (i = FAMPending(&scf->fam)) > 0; --i) {
+        FAMEvent fe;
+        if (FAMNextEvent(&scf->fam, &fe) < 0) break;
+
+        /* ignore events which may have been pending for
+         * paths recently cancelled via FAMCancelMonitor() */
+        ndx = (int)(intptr_t)fe.userdata;
+        scf->dirs = splaytree_splay(scf->dirs, ndx);
+        if (!scf->dirs || scf->dirs->key != ndx) {
+            continue;
+        }
+        fam_dir_entry *fam_dir = scf->dirs->data;
+        if (FAMREQUEST_GETREQNUM(&fam_dir->req)
+            != FAMREQUEST_GETREQNUM(&fe.fr)) {
+            continue;
+        }
+
+        if (fe.filename[0] != '/') {
+            buffer * const n = fam_dir->name;
+            fam_dir_entry *fam_link;
+            size_t len;
+            switch(fe.code) {
+            case FAMCreated:
+                /* file created in monitored dir modifies dir and
+                 * we should get a separate FAMChanged event for dir.
+                 * Therefore, ignore file FAMCreated event here.
+                 * Also, if FAMNoExists() is used, might get spurious
+                 * FAMCreated events as changes are made e.g. in monitored
+                 * sub-sub-sub dirs and the library discovers new (already
+                 * existing) dir entries */
+                continue;
+            case FAMChanged:
+                /* file changed in monitored dir does not modify dir */
+            case FAMDeleted:
+            case FAMMoved:
+                /* file deleted or moved in monitored dir modifies dir,
+                 * but FAM provides separate notification for that */
+
+                /* temporarily append filename to dir in fam_dir->name to
+                 * construct path, then delete stat_cache entry (if any)*/
+                len = buffer_string_length(n);
+                buffer_append_string_len(n, CONST_STR_LEN("/"));
+                buffer_append_string_len(n,fe.filename,strlen(fe.filename));
+                /* (alternatively, could chose to stat() and update)*/
+                stat_cache_invalidate_entry(srv, CONST_BUF_LEN(n));
+
+                fam_link = /*(check if might be symlink to monitored dir)*/
+                  stat_cache_sptree_find(&scf->dirs, CONST_BUF_LEN(n));
+                if (fam_link && !buffer_is_equal(fam_link->name, n))
+                    fam_link = NULL;
+
+                buffer_string_set_length(n, len);
+
+                if (fam_link) {
+                    /* replaced symlink changes containing dir */
+                    stat_cache_invalidate_entry(srv, CONST_BUF_LEN(n));
+                    /* handle symlink to dir as deleted dir below */
+                    fe.code = FAMDeleted;
+                    fam_dir = fam_link;
+                    break;
+                }
+                continue;
+            default:
+                continue;
+            }
+        }
+
+        switch(fe.code) {
+        case FAMChanged:
+            stat_cache_invalidate_entry(srv, CONST_BUF_LEN(fam_dir->name));
+            break;
+        case FAMDeleted:
+        case FAMMoved:
+            stat_cache_delete_tree(srv, CONST_BUF_LEN(fam_dir->name));
+            fam_dir_invalidate_node(fam_dir);
+            if (scf->dirs)
+                fam_dir_invalidate_tree(scf->dirs,CONST_BUF_LEN(fam_dir->name));
+            fam_dir_periodic_cleanup(srv);
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+static handler_t stat_cache_handle_fdevent(server *srv, void *_fce, int revent)
+{
 	stat_cache_fam *scf = srv->stat_cache->scf;
-	size_t events;
-
 	UNUSED(_fce);
-	/* */
 
 	if (revent & FDEVENT_IN) {
-		events = FAMPending(&scf->fam);
-
-		for (i = 0; i < events; i++) {
-			FAMEvent fe;
-			fam_dir_entry *fam_dir;
-			splay_tree *node;
-			int ndx, j;
-
-			FAMNextEvent(&scf->fam, &fe);
-
-			/* handle event */
-
-			switch(fe.code) {
-			case FAMChanged:
-			case FAMDeleted:
-			case FAMMoved:
-				/* if the filename is a directory remove the entry */
-
-				fam_dir = fe.userdata;
-				fam_dir->version++;
-
-				/* file/dir is still here */
-				if (fe.code == FAMChanged) break;
-
-				/* we have 2 versions, follow and no-follow-symlink */
-
-				for (j = 0; j < 2; j++) {
-
-					ndx = hashme(fe.filename, j);
-
-					scf->dirs = splaytree_splay(scf->dirs, ndx);
-					node = scf->dirs;
-
-					if (node && (node->key == ndx)) {
-						int osize = splaytree_size(scf->dirs);
-
-						fam_dir_entry_free(&scf->fam, node->data);
-						scf->dirs = splaytree_delete(scf->dirs, ndx);
-
-						force_assert(osize - 1 == splaytree_size(scf->dirs));
-					}
-				}
-				break;
-			default:
-				break;
-			}
-		}
+		stat_cache_handle_fdevent_in(srv, scf);
 	}
 
 	if (revent & (FDEVENT_HUP|FDEVENT_RDHUP)) {
 		/* fam closed the connection */
-		fdevent_event_del(srv->ev, &(scf->fam_fcce_ndx), FAMCONNECTION_GETFD(&scf->fam));
-		fdevent_unregister(srv->ev, FAMCONNECTION_GETFD(&scf->fam));
+		fdevent_fdnode_event_del(srv->ev, scf->fdn);
+		fdevent_unregister(srv->ev, scf->fd);
+		scf->fdn = NULL;
 
 		FAMClose(&scf->fam);
+		scf->fd = -1;
 	}
 
 	return HANDLER_GO_ON;
@@ -219,8 +353,8 @@ static handler_t stat_cache_handle_fdevent(server *srv, void *_fce, int revent) 
 
 static stat_cache_fam * stat_cache_init_fam(server *srv) {
 	stat_cache_fam *scf = calloc(1, sizeof(*scf));
-	scf->fam_fcce_ndx = -1;
-	scf->dir_name = buffer_init();
+	force_assert(scf);
+	scf->fd = -1;
 
 	/* setup FAM */
 	if (0 != FAMOpen2(&scf->fam, "lighttpd")) {
@@ -232,138 +366,150 @@ static stat_cache_fam * stat_cache_init_fam(server *srv) {
 	FAMNoExists(&scf->fam);
       #endif
 
-	fdevent_setfd_cloexec(FAMCONNECTION_GETFD(&scf->fam));
-	fdevent_register(srv->ev, FAMCONNECTION_GETFD(&scf->fam), stat_cache_handle_fdevent, NULL);
-	fdevent_event_set(srv->ev, &(scf->fam_fcce_ndx), FAMCONNECTION_GETFD(&scf->fam), FDEVENT_IN | FDEVENT_RDHUP);
+	scf->fd = FAMCONNECTION_GETFD(&scf->fam);
+	fdevent_setfd_cloexec(scf->fd);
+	scf->fdn = fdevent_register(srv->ev, scf->fd, stat_cache_handle_fdevent, NULL);
+	fdevent_fdnode_event_set(srv->ev, scf->fdn, FDEVENT_IN | FDEVENT_RDHUP);
 
 	return scf;
 }
 
 static void stat_cache_free_fam(stat_cache_fam *scf) {
 	if (NULL == scf) return;
-	buffer_free(scf->dir_name);
 
 	while (scf->dirs) {
-		int osize;
+		/*(skip entry invalidation and FAMCancelMonitor())*/
 		splay_tree *node = scf->dirs;
-
-		osize = scf->dirs->size;
-
-		fam_dir_entry_free(&scf->fam, node->data);
+		fam_dir_entry_free((fam_dir_entry *)node->data);
 		scf->dirs = splaytree_delete(scf->dirs, node->key);
-
-		if (osize == 1) {
-			force_assert(NULL == scf->dirs);
-		} else {
-			force_assert(osize == (scf->dirs->size + 1));
-		}
 	}
 
-	if (-1 != scf->fam_fcce_ndx) {
-		/* fd events already gone */
-		scf->fam_fcce_ndx = -1;
-
+	if (-1 != scf->fd) {
+		/*scf->fdn already cleaned up in fdevent_free()*/
 		FAMClose(&scf->fam);
+		/*scf->fd = -1;*/
 	}
 
 	free(scf);
 }
 
-static int buffer_copy_dirname(buffer *dst, const buffer *file) {
-	size_t i;
+static fam_dir_entry * fam_dir_monitor(server *srv, stat_cache_fam *scf, char *fn, size_t dirlen, struct stat *st)
+{
+    const int fn_is_dir = S_ISDIR(st->st_mode);
+    /*force_assert(0 != dirlen);*/
+    /*force_assert(fn[0] == '/');*/
+    /* consistency: ensure fn does not end in '/' unless root "/"
+     * FAM events will not end in '/', so easier to match this way */
+    if (fn[dirlen-1] == '/') --dirlen;
+    if (0 == dirlen) dirlen = 1; /* root dir ("/") */
+    /* Note: paths are expected to be normalized before calling stat_cache,
+     * e.g. without repeated '/' */
+    if (!fn_is_dir) {
+        while (fn[--dirlen] != '/') ;
+        if (0 == dirlen) dirlen = 1; /*(should not happen for file)*/
+    }
+    int dir_ndx = hashme(fn, dirlen);
+    fam_dir_entry *fam_dir = NULL;
 
-	if (buffer_string_is_empty(file)) return -1;
+    scf->dirs = splaytree_splay(scf->dirs, dir_ndx);
+    if (NULL != scf->dirs && scf->dirs->key == dir_ndx) {
+        fam_dir = scf->dirs->data;
+        if (!buffer_is_equal_string(fam_dir->name, fn, dirlen)) {
+            /* hash collision; preserve existing
+             * do not monitor new to avoid cache thrashing */
+            return NULL;
+        }
+        /* directory already registered */
+    }
 
-	for (i = buffer_string_length(file); i > 0; i--) {
-		if (file->ptr[i] == '/') {
-			buffer_copy_string_len(dst, file->ptr, i);
-			return 0;
-		}
-	}
+    struct stat lst;
+    int ck_dir = fn_is_dir;
+    if (!fn_is_dir && (NULL==fam_dir || srv->cur_ts - fam_dir->stat_ts >= 16)) {
+        ck_dir = 1;
+        /*(temporarily modify fn)*/
+        fn[dirlen] = '\0';
+        if (0 != lstat(fn, &lst)) {
+            fn[dirlen] = '/';
+            return NULL;
+        }
+        if (!S_ISLNK(lst.st_mode)) {
+            st = &lst;
+        }
+        else if (0 != stat(fn, st)) { /*st passed in now is stat() of dir*/
+            fn[dirlen] = '/';
+            return NULL;
+        }
+        fn[dirlen] = '/';
+    }
 
-	return -1;
-}
+    int ck_lnk = (NULL == fam_dir);
+    if (ck_dir && NULL != fam_dir) {
+        /* check stat() matches device and inode, just in case an external event
+         * not being monitored occurs (e.g. rename of unmonitored parent dir)*/
+        if (st->st_dev != fam_dir->st_dev || st->st_ino != fam_dir->st_ino) {
+            ck_lnk = 1;
+            /*(modifies scf->dirs but no need to re-splay for dir_ndx since
+             * fam_dir is not NULL and so splaytree_insert not called below)*/
+            if (scf->dirs) fam_dir_invalidate_tree(scf->dirs, fn, dirlen);
+            if (!fn_is_dir) /*(if dir, caller is updating stat_cache_entry)*/
+                stat_cache_update_entry(srv, fn, dirlen, st, NULL);
+            /*(must not delete tree since caller is holding a valid node)*/
+            stat_cache_invalidate_dir_tree(srv, fn, dirlen);
+            if (0 != FAMCancelMonitor(&scf->fam, &fam_dir->req)
+                || 0 != FAMMonitorDirectory(&scf->fam, fam_dir->name->ptr,
+                                            &fam_dir->req,
+                                            (void *)(intptr_t)dir_ndx)) {
+                fam_dir->stat_ts = 0; /* invalidate */
+                return NULL;
+            }
+            fam_dir->st_dev = st->st_dev;
+            fam_dir->st_ino = st->st_ino;
+        }
+        fam_dir->stat_ts = srv->cur_ts;
+    }
 
-static handler_t stat_cache_fam_dir_check(server *srv, stat_cache_fam *scf, stat_cache_entry *sce, const buffer *name, unsigned int follow_symlink) {
-	if (0 != buffer_copy_dirname(scf->dir_name, name)) {
-		log_error_write(srv, __FILE__, __LINE__, "sb",
-				"no '/' found in filename:", name);
-		return HANDLER_ERROR;
-	}
+    if (NULL == fam_dir) {
+        fam_dir = fam_dir_entry_init(fn, dirlen);
 
-	scf->dir_ndx = hashme(scf->dir_name->ptr, follow_symlink);
+        if (0 != FAMMonitorDirectory(&scf->fam,fam_dir->name->ptr,&fam_dir->req,
+                                     (void *)(intptr_t)dir_ndx)) {
+            log_error_write(srv, __FILE__, __LINE__, "sbsss",
+                    "monitoring dir failed:",
+                    fam_dir->name,
+                    "file:", fn,
+                    FamErrlist[FAMErrno]);
+            fam_dir_entry_free(fam_dir);
+            return NULL;
+        }
 
-	scf->dirs = splaytree_splay(scf->dirs, scf->dir_ndx);
+        scf->dirs = splaytree_insert(scf->dirs, dir_ndx, fam_dir);
+        fam_dir->stat_ts= srv->cur_ts;
+        fam_dir->st_dev = st->st_dev;
+        fam_dir->st_ino = st->st_ino;
+    }
 
-	if ((NULL != scf->dirs) && (scf->dirs->key == scf->dir_ndx)) {
-		scf->fam_dir = scf->dirs->data;
+    if (ck_lnk) {
+        if (fn_is_dir) {
+            /*(temporarily modify fn)*/
+            char e = fn[dirlen];
+            fn[dirlen] = '\0';
+            if (0 != lstat(fn, &lst)) {
+                fn[dirlen] = e;
+                return NULL;
+            }
+            fn[dirlen] = e;
+        }
+        if (fam_dir->fam_parent) {
+            --fam_dir->fam_parent->refcnt;
+            fam_dir->fam_parent = NULL;
+        }
+        if (S_ISLNK(lst.st_mode)) {
+            fam_dir->fam_parent = fam_dir_monitor(srv, scf, fn, dirlen, &lst);
+        }
+    }
 
-		/* check whether we got a collision */
-		if (buffer_is_equal(scf->dir_name, scf->fam_dir->name)) {
-			/* test whether a found file cache entry is still ok */
-			if ((NULL != sce) && (scf->fam_dir->version == sce->dir_version)) {
-				/* the stat()-cache entry is still ok */
-				return HANDLER_FINISHED;
-			}
-		} else {
-			/* hash collision, forget about the entry */
-			scf->fam_dir = NULL;
-		}
-	} else {
-		scf->fam_dir = NULL;
-	}
-
-	return HANDLER_GO_ON;
-}
-
-static void stat_cache_fam_dir_monitor(server *srv, stat_cache_fam *scf, stat_cache_entry *sce, const buffer *name) {
-	/* is this directory already registered ? */
-	fam_dir_entry *fam_dir = scf->fam_dir;
-	if (NULL == fam_dir) {
-		fam_dir = fam_dir_entry_init();
-
-		buffer_copy_buffer(fam_dir->name, scf->dir_name);
-
-		fam_dir->version = 1;
-
-		fam_dir->req = calloc(1, sizeof(FAMRequest));
-		force_assert(NULL != fam_dir);
-
-		if (0 != FAMMonitorDirectory(&scf->fam, fam_dir->name->ptr,
-					     fam_dir->req, fam_dir)) {
-
-			log_error_write(srv, __FILE__, __LINE__, "sbsbs",
-					"monitoring dir failed:",
-					fam_dir->name,
-					"file:", name,
-					FamErrlist[FAMErrno]);
-
-			fam_dir_entry_free(&scf->fam, fam_dir);
-			fam_dir = NULL;
-		} else {
-			int osize = splaytree_size(scf->dirs);
-
-			/* already splayed scf->dir_ndx */
-			if ((NULL != scf->dirs) && (scf->dirs->key == scf->dir_ndx)) {
-				/* hash collision: replace old entry */
-				fam_dir_entry_free(&scf->fam, scf->dirs->data);
-				scf->dirs->data = fam_dir;
-			} else {
-				scf->dirs = splaytree_insert(scf->dirs, scf->dir_ndx, fam_dir);
-				force_assert(osize == (splaytree_size(scf->dirs) - 1));
-			}
-
-			force_assert(scf->dirs);
-			force_assert(scf->dirs->data == fam_dir);
-			scf->fam_dir = fam_dir;
-		}
-	}
-
-	/* bind the fam_fc to the stat() cache entry */
-
-	if (fam_dir) {
-		sce->dir_version = fam_dir->version;
-	}
+    ++fam_dir->refcnt;
+    return fam_dir;
 }
 
 #endif
@@ -406,6 +552,12 @@ static void stat_cache_entry_free(void *data) {
 	stat_cache_entry *sce = data;
 	if (!sce) return;
 
+      #ifdef HAVE_FAM_H
+	/*(decrement refcnt only;
+	 * defer cancelling FAM monitor on dir even if refcnt reaches zero)*/
+	if (sce->fam_dir) --((fam_dir_entry *)sce->fam_dir)->refcnt;
+      #endif
+
 	buffer_free(sce->etag);
 	buffer_free(sce->name);
 	buffer_free(sce->content_type);
@@ -415,15 +567,9 @@ static void stat_cache_entry_free(void *data) {
 
 void stat_cache_free(stat_cache *sc) {
 	while (sc->files) {
-		int osize;
 		splay_tree *node = sc->files;
-
-		osize = sc->files->size;
-
 		stat_cache_entry_free(node->data);
 		sc->files = splaytree_delete(sc->files, node->key);
-
-		force_assert(osize - 1 == splaytree_size(sc->files));
 	}
 
 #ifdef HAVE_FAM_H
@@ -572,19 +718,145 @@ const buffer * stat_cache_etag_get(stat_cache_entry *sce, etag_flags_t flags) {
     return NULL;
 }
 
-#ifdef HAVE_LSTAT
-static int stat_cache_lstat(server *srv, buffer *dname, struct stat *lst) {
-	if (lstat(dname->ptr, lst) == 0) {
-		return S_ISLNK(lst->st_mode) ? 0 : 1;
-	}
-	else {
-		log_error_write(srv, __FILE__, __LINE__, "sbs",
-				"lstat failed for:",
-				dname, strerror(errno));
-	};
-	return -1;
+void stat_cache_update_entry(server *srv, const char *name, size_t len,
+                             struct stat *st, buffer *etagb)
+{
+    if (srv->srvconf.stat_cache_engine == STAT_CACHE_ENGINE_NONE) return;
+    force_assert(0 != len);
+    if (name[len-1] == '/') { if (0 == --len) len = 1; }
+    splay_tree **sptree = &srv->stat_cache->files;
+    stat_cache_entry *sce =
+      stat_cache_sptree_find(sptree, name, len);
+    if (sce && buffer_is_equal_string(sce->name, name, len)) {
+        sce->stat_ts = srv->cur_ts;
+        sce->st = *st; /* etagb might be NULL to clear etag (invalidate) */
+        buffer_copy_string_len(sce->etag, CONST_BUF_LEN(etagb));
+      #if defined(HAVE_XATTR) || defined(HAVE_EXTATTR)
+        buffer_clear(sce->content_type);
+      #endif
+    }
 }
+
+void stat_cache_delete_entry(server *srv, const char *name, size_t len)
+{
+    if (srv->srvconf.stat_cache_engine == STAT_CACHE_ENGINE_NONE) return;
+    force_assert(0 != len);
+    if (name[len-1] == '/') { if (0 == --len) len = 1; }
+    splay_tree **sptree = &srv->stat_cache->files;
+    stat_cache_entry *sce = stat_cache_sptree_find(sptree, name, len);
+    if (sce && buffer_is_equal_string(sce->name, name, len)) {
+        stat_cache_entry_free(sce);
+        *sptree = splaytree_delete(*sptree, (*sptree)->key);
+    }
+}
+
+void stat_cache_invalidate_entry(server *srv, const char *name, size_t len)
+{
+    splay_tree **sptree = &srv->stat_cache->files;
+    stat_cache_entry *sce = stat_cache_sptree_find(sptree, name, len);
+    if (sce && buffer_is_equal_string(sce->name, name, len)) {
+        sce->stat_ts = 0;
+      #ifdef HAVE_FAM_H
+        if (sce->fam_dir != NULL) {
+            --((fam_dir_entry *)sce->fam_dir)->refcnt;
+            sce->fam_dir = NULL;
+        }
+      #endif
+    }
+}
+
+#ifdef HAVE_FAM_H
+
+static void stat_cache_invalidate_dir_tree_walk(splay_tree *t,
+                                                const char *name, size_t len)
+{
+    if (t->left)  stat_cache_invalidate_dir_tree_walk(t->left,  name, len);
+    if (t->right) stat_cache_invalidate_dir_tree_walk(t->right, name, len);
+
+    buffer *b = ((stat_cache_entry *)t->data)->name;
+    size_t blen = buffer_string_length(b);
+    if (blen > len && b->ptr[len] == '/' && 0 == memcmp(b->ptr, name, len)) {
+        stat_cache_entry *sce = t->data;
+        sce->stat_ts = 0;
+      #ifdef HAVE_FAM_H
+        if (sce->fam_dir != NULL) {
+            --((fam_dir_entry *)sce->fam_dir)->refcnt;
+            sce->fam_dir = NULL;
+        }
+      #endif
+    }
+}
+
+static void stat_cache_invalidate_dir_tree(server *srv,
+                                           const char *name, size_t len)
+{
+    splay_tree *sptree = srv->stat_cache->files;
+    if (sptree) stat_cache_invalidate_dir_tree_walk(sptree, name, len);
+}
+
 #endif
+
+/*
+ * walk though splay_tree and collect contents of dir tree.
+ * remove tagged entries in a second loop
+ */
+
+static void stat_cache_tag_dir_tree(splay_tree *t, const char *name, size_t len,
+                                    int *keys, int *ndx)
+{
+    if (*ndx == 8192) return; /*(must match num array entries in keys[])*/
+    if (t->left)  stat_cache_tag_dir_tree(t->left,  name, len, keys, ndx);
+    if (t->right) stat_cache_tag_dir_tree(t->right, name, len, keys, ndx);
+    if (*ndx == 8192) return; /*(must match num array entries in keys[])*/
+
+    buffer *b = ((stat_cache_entry *)t->data)->name;
+    size_t blen = buffer_string_length(b);
+    if (blen > len && b->ptr[len] == '/' && 0 == memcmp(b->ptr, name, len))
+        keys[(*ndx)++] = t->key;
+}
+
+static void stat_cache_prune_dir_tree(stat_cache * const sc,
+                                      const char *name, size_t len)
+{
+    int max_ndx, i;
+    int keys[8192]; /* 32k size on stack */
+    do {
+        if (!sc->files) return;
+        max_ndx = 0;
+        stat_cache_tag_dir_tree(sc->files, name, len, keys, &max_ndx);
+        for (i = 0; i < max_ndx; ++i) {
+            const int ndx = keys[i];
+            splay_tree *node = sc->files = splaytree_splay(sc->files, ndx);
+            if (node && node->key == ndx) {
+                stat_cache_entry_free(node->data);
+                sc->files = splaytree_delete(sc->files, ndx);
+            }
+        }
+    } while (max_ndx == sizeof(keys)/sizeof(int));
+}
+
+static void stat_cache_delete_tree(server *srv, const char *name, size_t len)
+{
+    stat_cache_delete_entry(srv, name, len);
+    stat_cache_prune_dir_tree(srv->stat_cache, name, len);
+}
+
+void stat_cache_delete_dir(server *srv, const char *name, size_t len)
+{
+    force_assert(0 != len);
+    if (name[len-1] == '/') { if (0 == --len) len = 1; }
+    stat_cache_delete_tree(srv, name, len);
+  #ifdef HAVE_FAM_H
+    if (srv->srvconf.stat_cache_engine == STAT_CACHE_ENGINE_FAM) {
+        splay_tree **sptree = &srv->stat_cache->scf->dirs;
+        fam_dir_entry *fam_dir = stat_cache_sptree_find(sptree, name, len);
+        if (fam_dir && buffer_is_equal_string(fam_dir->name, name, len))
+            fam_dir_invalidate_node(fam_dir);
+        if (*sptree) fam_dir_invalidate_tree(*sptree, name, len);
+        fam_dir_periodic_cleanup(srv);
+    }
+  #endif
+}
 
 /***
  *
@@ -599,12 +871,21 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 	stat_cache_entry *sce = NULL;
 	stat_cache *sc;
 	struct stat st;
-	int fd;
-	const int follow_symlink = con->conf.follow_symlink;
-	struct stat lst;
 	int file_ndx;
+	UNUSED(con);
 
 	*ret_sce = NULL;
+
+	/* consistency: ensure lookup name does not end in '/' unless root "/"
+	 * (but use full path given with stat(), even with trailing '/') */
+	int final_slash = 0;
+	size_t len = buffer_string_length(name);
+	force_assert(0 != len);
+	if (name->ptr[len-1] == '/') { final_slash = 1; if (0 == --len) len = 1; }
+	/* Note: paths are expected to be normalized before calling stat_cache,
+	 * e.g. without repeated '/' */
+
+	if (name->ptr[0] != '/') return HANDLER_ERROR;
 
 	/*
 	 * check if the directory for this file has changed
@@ -612,7 +893,7 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 
 	sc = srv->stat_cache;
 
-	file_ndx = hashme(name->ptr, follow_symlink);
+	file_ndx = hashme(name->ptr, len);
 	sc->files = splaytree_splay(sc->files, file_ndx);
 
 	if (sc->files && (sc->files->key == file_ndx)) {
@@ -623,45 +904,42 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 
 		/* check if the name is the same, we might have a collision */
 
-		if (buffer_is_equal(name, sce->name)) {
+		if (buffer_is_equal_string(sce->name, name->ptr, len)) {
 			if (srv->srvconf.stat_cache_engine == STAT_CACHE_ENGINE_SIMPLE) {
-				if (sce->stat_ts == srv->cur_ts && follow_symlink) {
+				if (sce->stat_ts == srv->cur_ts) {
+					if (final_slash && !S_ISDIR(sce->st.st_mode)) {
+						errno = ENOTDIR;
+						return HANDLER_ERROR;
+					}
 					*ret_sce = sce;
 					return HANDLER_GO_ON;
 				}
 			}
+		      #ifdef HAVE_FAM_H
+			else if (srv->srvconf.stat_cache_engine == STAT_CACHE_ENGINE_FAM
+				 && sce->fam_dir) { /* entry is in monitored dir */
+				/* re-stat() periodically, even if monitoring for changes
+				 * (due to limitations in stat_cache.c use of FAM)
+				 * (gaps due to not continually monitoring an entire tree) */
+				if (srv->cur_ts - sce->stat_ts < 16) {
+					if (final_slash && !S_ISDIR(sce->st.st_mode)) {
+						errno = ENOTDIR;
+						return HANDLER_ERROR;
+					}
+					*ret_sce = sce;
+					return HANDLER_GO_ON;
+				}
+			}
+		      #endif
 		} else {
 			/* collision, forget about the entry */
 			sce = NULL;
 		}
 	}
 
-#ifdef HAVE_FAM_H
-	/* dir-check */
-	if (srv->srvconf.stat_cache_engine == STAT_CACHE_ENGINE_FAM) {
-		switch (stat_cache_fam_dir_check(srv, sc->scf, sce, name, follow_symlink)) {
-		case HANDLER_GO_ON:
-			break;
-		case HANDLER_FINISHED:
-			*ret_sce = sce;
-			return HANDLER_GO_ON;
-		case HANDLER_ERROR:
-		default:
-			return HANDLER_ERROR;
-		}
-	}
-#endif
-
-	/*
-	 * *lol*
-	 * - open() + fstat() on a named-pipe results in a (intended) hang.
-	 * - stat() if regular file + open() to see if we can read from it is better
-	 *
-	 * */
 	if (-1 == stat(name->ptr, &st)) {
 		return HANDLER_ERROR;
 	}
-
 
 	if (S_ISREG(st.st_mode)) {
 		/* fix broken stat/open for symlinks to reg files with appended slash on freebsd,osx */
@@ -669,18 +947,12 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 			errno = ENOTDIR;
 			return HANDLER_ERROR;
 		}
-
-		/* try to open the file to check if we can read it */
-		if (-1 == (fd = open(name->ptr, O_RDONLY))) {
-			return HANDLER_ERROR;
-		}
-		close(fd);
 	}
 
 	if (NULL == sce) {
 
 		sce = stat_cache_entry_init();
-		buffer_copy_buffer(sce->name, name);
+		buffer_copy_string_len(sce->name, name->ptr, len);
 
 		/* already splayed file_ndx */
 		if ((NULL != sc->files) && (sc->files->key == file_ndx)) {
@@ -688,13 +960,8 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 			stat_cache_entry_free(sc->files->data);
 			sc->files->data = sce;
 		} else {
-			int osize = splaytree_size(sc->files);
-
 			sc->files = splaytree_insert(sc->files, file_ndx, sce);
-			force_assert(osize + 1 == splaytree_size(sc->files));
 		}
-		force_assert(sc->files);
-		force_assert(sc->files->data == sce);
 
 	} else {
 
@@ -705,89 +972,78 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 
 	}
 
-	sce->st = st;
-	sce->stat_ts = srv->cur_ts;
-
-	/* catch the obvious symlinks
-	 *
-	 * this is not a secure check as we still have a race-condition between
-	 * the stat() and the open. We can only solve this by
-	 * 1. open() the file
-	 * 2. fstat() the fd
-	 *
-	 * and keeping the file open for the rest of the time. But this can
-	 * only be done at network level.
-	 *
-	 * per default it is not a symlink
-	 * */
-#ifdef HAVE_LSTAT
-	sce->is_symlink = 0;
-
-	/* we want to only check for symlinks if we should block symlinks.
-	 */
-	if (!follow_symlink) {
-		if (stat_cache_lstat(srv, name, &lst)  == 0) {
-				sce->is_symlink = 1;
-		}
-
-		/*
-		 * we assume "/" can not be symlink, so
-		 * skip the symlink stuff if our path is /
-		 **/
-		else if (buffer_string_length(name) > 1) {
-			buffer *dname;
-			char *s_cur;
-
-			dname = buffer_init();
-			buffer_copy_buffer(dname, name);
-
-			while ((s_cur = strrchr(dname->ptr, '/'))) {
-				buffer_string_set_length(dname, s_cur - dname->ptr);
-				if (dname->ptr == s_cur) {
-					break;
-				}
-				if (stat_cache_lstat(srv, dname, &lst)  == 0) {
-					sce->is_symlink = 1;
-					break;
-				};
-			};
-			buffer_free(dname);
-		};
-	}
-#endif
+	sce->st = st; /*(copy prior to calling fam_dir_monitor())*/
 
 #ifdef HAVE_FAM_H
 	if (srv->srvconf.stat_cache_engine == STAT_CACHE_ENGINE_FAM) {
-		stat_cache_fam_dir_monitor(srv, sc->scf, sce, name);
+		if (sce->fam_dir) --((fam_dir_entry *)sce->fam_dir)->refcnt;
+		sce->fam_dir =
+		  fam_dir_monitor(srv, sc->scf, CONST_BUF_LEN(name), &st);
+	      #if 0 /*(performed below)*/
+		if (NULL != sce->fam_dir) {
+			/*(may have been invalidated by dir change)*/
+			sce->stat_ts = srv->cur_ts;
+		}
+	      #endif
 	}
 #endif
 
+	sce->stat_ts = srv->cur_ts;
 	*ret_sce = sce;
 
 	return HANDLER_GO_ON;
 }
 
-int stat_cache_open_rdonly_fstat (server *srv, connection *con, buffer *name, struct stat *st) {
+int stat_cache_path_contains_symlink(server *srv, buffer *name) {
+    /* caller should check for symlinks only if we should block symlinks. */
+
+    /* catch the obvious symlinks
+     *
+     * this is not a secure check as we still have a race-condition between
+     * the stat() and the open. We can only solve this by
+     * 1. open() the file
+     * 2. fstat() the fd
+     *
+     * and keeping the file open for the rest of the time. But this can
+     * only be done at network level.
+     * */
+
+  #ifdef HAVE_LSTAT
+    /* we assume "/" can not be symlink,
+     * so skip the symlink stuff if path is "/" */
+    size_t len = buffer_string_length(name);
+    force_assert(0 != len);
+    force_assert(name->ptr[0] == '/');
+    if (1 == len) return 0;
+   #ifndef PATH_MAX
+   #define PATH_MAX 4096
+   #endif
+    if (len >= PATH_MAX) return -1;
+
+    char buf[PATH_MAX];
+    memcpy(buf, name->ptr, len);
+    char *s_cur = buf+len;
+    do {
+        *s_cur = '\0';
+        struct stat st;
+        if (0 == lstat(buf, &st)) {
+            if (S_ISLNK(st.st_mode)) return 1;
+        }
+        else {
+            log_error_write(srv, __FILE__, __LINE__, "sss",
+                            "lstat failed for:", buf, strerror(errno));
+            return -1;
+        }
+    } while ((s_cur = strrchr(buf, '/')) != buf);
+  #endif
+
+    return 0;
+}
+
+int stat_cache_open_rdonly_fstat (buffer *name, struct stat *st, int symlinks) {
 	/*(Note: O_NOFOLLOW affects only the final path segment, the target file,
 	 * not any intermediate symlinks along the path)*/
-	#ifndef O_BINARY
-	#define O_BINARY 0
-	#endif
-	#ifndef O_LARGEFILE
-	#define O_LARGEFILE 0
-	#endif
-	#ifndef O_NOCTTY
-	#define O_NOCTTY 0
-	#endif
-	#ifndef O_NONBLOCK
-	#define O_NONBLOCK 0
-	#endif
-	#ifndef O_NOFOLLOW
-	#define O_NOFOLLOW 0
-	#endif
-	const int oflags = O_BINARY | O_LARGEFILE | O_NOCTTY | O_NONBLOCK
-			 | (con->conf.follow_symlink ? 0 : O_NOFOLLOW);
-	const int fd = fdevent_open_cloexec(name->ptr, O_RDONLY | oflags, 0);
+	const int fd = fdevent_open_cloexec(name->ptr, symlinks, O_RDONLY, 0);
 	if (fd >= 0) {
 		if (0 == fstat(fd, st)) {
 			return fd;
@@ -795,37 +1051,36 @@ int stat_cache_open_rdonly_fstat (server *srv, connection *con, buffer *name, st
 			close(fd);
 		}
 	}
-	UNUSED(srv); /*(might log_error_write(srv, ...) in the future)*/
 	return -1;
 }
 
 /**
- * remove stat() from cache which havn't been stat()ed for
- * more than 10 seconds
+ * remove stat() from cache which haven't been stat()ed for
+ * more than 2 seconds
  *
  *
  * walk though the stat-cache, collect the ids which are too old
  * and remove them in a second loop
  */
 
-static int stat_cache_tag_old_entries(server *srv, splay_tree *t, int *keys, size_t *ndx) {
+static int stat_cache_tag_old_entries(server *srv, splay_tree *t, int *keys, size_t *ndx, time_t max_age) {
 	stat_cache_entry *sce;
 
 	if (!t) return 0;
 
-	stat_cache_tag_old_entries(srv, t->left, keys, ndx);
-	stat_cache_tag_old_entries(srv, t->right, keys, ndx);
+	stat_cache_tag_old_entries(srv, t->left, keys, ndx, max_age);
+	stat_cache_tag_old_entries(srv, t->right, keys, ndx, max_age);
 
 	sce = t->data;
 
-	if (srv->cur_ts - sce->stat_ts > 2) {
+	if (srv->cur_ts - sce->stat_ts > max_age) {
 		keys[(*ndx)++] = t->key;
 	}
 
 	return 0;
 }
 
-int stat_cache_trigger_cleanup(server *srv) {
+static int stat_cache_periodic_cleanup(server *srv, time_t max_age) {
 	stat_cache *sc;
 	size_t max_ndx = 0, i;
 	int *keys;
@@ -837,7 +1092,7 @@ int stat_cache_trigger_cleanup(server *srv) {
 	keys = calloc(1, sizeof(int) * sc->files->size);
 	force_assert(NULL != keys);
 
-	stat_cache_tag_old_entries(srv, sc->files, keys, &max_ndx);
+	stat_cache_tag_old_entries(srv, sc->files, keys, &max_ndx, max_age);
 
 	for (i = 0; i < max_ndx; i++) {
 		int ndx = keys[i];
@@ -854,6 +1109,27 @@ int stat_cache_trigger_cleanup(server *srv) {
 	}
 
 	free(keys);
+
+	return 0;
+}
+
+int stat_cache_trigger_cleanup(server *srv) {
+	time_t max_age = 2;
+
+      #ifdef HAVE_FAM_H
+	if (srv->srvconf.stat_cache_engine == STAT_CACHE_ENGINE_FAM) {
+		if (srv->cur_ts & 0x1F) return 0;
+		/* once every 32 seconds (0x1F == 31) */
+		max_age = 32;
+		fam_dir_periodic_cleanup(srv);
+		/* By doing this before stat_cache_periodic_cleanup(),
+		 * entries used within the next max_age secs will remain
+		 * monitored, instead of effectively flushing and
+		 * rebuilding the FAM monitoring every max_age seconds */
+	}
+      #endif
+
+	stat_cache_periodic_cleanup(srv, max_age);
 
 	return 0;
 }

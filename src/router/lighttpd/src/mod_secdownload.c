@@ -158,7 +158,7 @@ static int secdl_verify_mac(server *srv, plugin_config *config, const char* prot
 			unsigned char HA1[16];
 			unsigned char md5bin[16];
 
-			if (0 != http_auth_md5_hex2bin(mac, maclen, md5bin)) return 0;
+			if (0 != http_auth_digest_hex2bin(mac, maclen, md5bin, sizeof(md5bin))) return 0;
 
 			/* legacy message:
 			 *   protected_path := '/' <timestamp-hex> <rel-path>
@@ -283,7 +283,7 @@ SETDEFAULTS_FUNC(mod_secdownload_set_defaults) {
 
 	if (!p) return HANDLER_ERROR;
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
+	p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		data_config const* config = (data_config const*)srv->config_context->data[i];

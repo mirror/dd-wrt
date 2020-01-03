@@ -50,7 +50,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 		{ NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
 	};
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
+	p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
 	force_assert(p->config_storage);
 
 	for (i = 0; i < srv->config_context->used; i++) {
@@ -347,7 +347,7 @@ static handler_t fcgi_recv_parse(server *srv, connection *con, struct http_respo
 
 	if (0 == n) {
 		if (-1 == hctx->request_id) return HANDLER_FINISHED; /*(flag request ended)*/
-		if (!(fdevent_event_get_interest(srv->ev, hctx->fd) & FDEVENT_IN)
+		if (!(fdevent_fdnode_interest(hctx->fdn) & FDEVENT_IN)
 		    && !(con->conf.stream_response_body & FDEVENT_STREAM_RESPONSE_POLLRDHUP))
 			return HANDLER_GO_ON;
 		log_error_write(srv, __FILE__, __LINE__, "ssdsb",
