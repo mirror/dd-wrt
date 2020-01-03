@@ -23,9 +23,11 @@ tor-configure: openssl xz zstd libevent
 	--enable-zstd \
 	--disable-tool-name-check \
 	--disable-gcc-hardening \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -std=gnu99 -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib -I$(TOP) -I$(TOP)/openssl/include -I$(TOP)/libevent -I$(TOP)/libevent/include -I$(TOP)/xz/src/liblzma/api -I$(TOP)/zstd/lib" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -std=gnu99 -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib -I$(TOP) -I$(TOP)/openssl/include -I$(TOP)/libevent  -I$(TOP)/libevent/include -I$(TOP)/xz/src/liblzma/api -I$(TOP)/zstd/lib" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) -std=gnu99  -L$(TOP)/zlib   -L$(TOP)/openssl -L$(TOP)/libevent/.libs -L$(TOP)/xz/src/liblzma/.libs -L$(TOP)/zstd/lib" \
+	CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -std=gnu99 -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib -I$(TOP) -I$(TOP)/openssl/include -I$(TOP)/libevent -I$(TOP)/libevent/include -I$(TOP)/xz/src/liblzma/api -I$(TOP)/zstd/lib" \
+	CPPFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -std=gnu99 -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib -I$(TOP) -I$(TOP)/openssl/include -I$(TOP)/libevent  -I$(TOP)/libevent/include -I$(TOP)/xz/src/liblzma/api -I$(TOP)/zstd/lib" \
+	LDFLAGS="$(LDLTO) $(COPTS) $(MIPS16_OPT) -std=gnu99  -L$(TOP)/zlib   -L$(TOP)/openssl -L$(TOP)/libevent/.libs -L$(TOP)/xz/src/liblzma/.libs -L$(TOP)/zstd/lib" \
+	AR_FLAGS="cru $(LTOPLUGIN)" \
+	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 	ZSTD_CFLAGS="-I$(TOP)/zstd/lib" \
 	ZSTD_LIBS="-I$(TOP)/zstd/lib -lzstd"
 
