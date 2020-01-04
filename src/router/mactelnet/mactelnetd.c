@@ -932,6 +932,7 @@ void sighup_handler() {
 	}
 
 	setup_sockets();
+	struct mt_connection tmp;
 
 	/* Reassign outgoing interfaces to connections again, since they may have changed */
 	DL_FOREACH(connections_head, p) {
@@ -940,11 +941,10 @@ void sighup_handler() {
 			if (interface != NULL) {
 				p->interface = interface;
 			} else {
-				struct mt_connection *tmp = calloc(1, sizeof(*tmp));
 				syslog(LOG_NOTICE, _("(%d) Connection closed because interface %s is gone."), p->seskey, p->interface_name);
-				tmp->next = p->next;
+				tmp.next = p->next;
 				list_remove_connection(p);
-				p = tmp;
+				p = &tmp;
 			}
 		}
 	}
@@ -1155,13 +1155,13 @@ int mactelnetd_main (int argc, char **argv) {
 				}
 			}
 			/* Handle data from terminal sessions */
+			struct mt_connection tmp;
 			DL_FOREACH(connections_head, p) {
 				/* Check if we have data ready in the pty buffer for the active session */
 				
 				if (p->state == STATE_ACTIVE && p->ptsfd > 0 && p->wait_for_ack == 0 && FD_ISSET(p->ptsfd, &read_fds)) {
 					unsigned char keydata[1024];
 					int datalen,plen;
-					struct mt_connection *tmp;
 					/* Read it */
 					datalen = read(p->ptsfd, &keydata, sizeof(keydata));
 					if (datalen > 0) {
@@ -1180,10 +1180,9 @@ int mactelnetd_main (int argc, char **argv) {
 						} else {
 							syslog(LOG_INFO, _("(%d) Connection closed."), p->seskey);
 						}
-						tmp = calloc(1, sizeof(*tmp));
-						tmp->next = p->next;
+						tmp.next = p->next;
 						list_remove_connection(p);
-						p = tmp;
+						p = &tmp;
 					}
 				}
 				else if (p->state == STATE_ACTIVE && p->ptsfd > 0 && p->wait_for_ack == 1 && FD_ISSET(p->ptsfd, &read_fds)) {
@@ -1200,7 +1199,7 @@ int mactelnetd_main (int argc, char **argv) {
 			last_mndp_time = now;
 		}
 		if (connections_head != NULL) {
-			struct mt_connection *p,*tmp;
+			struct mt_connection *p,tmp;
 			DL_FOREACH(connections_head, p) {
 				if (now - p->lastdata >= MT_CONNECTION_TIMEOUT) {
 					syslog(LOG_INFO, _("(%d) Session timed out"), p->seskey);
@@ -1210,10 +1209,9 @@ int mactelnetd_main (int argc, char **argv) {
 					send_udp(p, &pdata);
 					init_packet(&pdata, MT_PTYPE_END, p->dstmac, p->srcmac, p->seskey, p->outcounter);
 					send_udp(p, &pdata);
-					tmp = calloc(1, sizeof(*tmp));
-					tmp->next = p->next;
+					tmp.next = p->next;
 					list_remove_connection(p);
-					p = tmp;
+					p = &tmp;
 				}
 			}
 		}
