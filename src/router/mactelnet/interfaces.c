@@ -108,6 +108,10 @@ static void net_update_mac(struct net_interface *interfaces) {
 	DL_FOREACH(interfaces, interface) {
 		/* Find interface hardware address from device_name */
 		strncpy(ifr.ifr_name, interface->name, 16);
+		if (ioctl(tmpsock, SIOCGIFFLAGS, &ifr))
+		    continue;
+		if (!(ifr.ifr_flags & IFF_UP))
+		    continue;
 		if (ioctl(tmpsock, SIOCGIFHWADDR, &ifr) == 0) {
 			/* Fetch mac address */
 			memcpy(interface->mac_addr, ifr.ifr_hwaddr.sa_data, ETH_ALEN);
@@ -156,12 +160,15 @@ int net_get_interfaces(struct net_interface **interfaces) {
 		if (!strcmp(ifaddrsp->ifa_name,"br0:0"))
 			continue;
 
-		if (ifaddrsp->ifa_addr->sa_family == AF_INET) {
+		if (ifaddrsp->ifa_addr->sa_family == AF_INET || ifaddrsp->ifa_addr->sa_family == AF_PACKET) {
 			struct net_interface *interface =
 			  net_get_interface_ptr(interfaces, ifaddrsp->ifa_name, 1);
 			if (interface != NULL) {
 				found++;
-				memcpy(interface->ipv4_addr, &dl_addr->sin_addr, IPV4_ALEN);
+				if (ifaddrsp->ifa_addr->sa_family == AF_INET)
+					memcpy(interface->ipv4_addr, &dl_addr->sin_addr, IPV4_ALEN);
+				else
+					memset(interface->ipv4_addr, 0, IPV4_ALEN);
 			}
 #ifdef __linux__
 			interface->ifindex = get_device_index(interface->name);
