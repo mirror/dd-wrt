@@ -367,12 +367,7 @@ int net_send_udp(const int fd, struct net_interface *interface, const unsigned c
 	socket_address.sll_addr[6]  = 0x00;/*not used*/
 	socket_address.sll_addr[7]  = 0x00;/*not used*/
 #endif
-#if 0
-	fprintf(stderr, "send from 0x%04X to ", sourceip->s_addr);
-	fprintf(stderr, "0x%04X \n", destip->s_addr); 
-	fprintf(stderr, "source mac %02X:%02X:%02X:%02X:%02X:%02X to ", sourcemac[0],sourcemac[1],sourcemac[2],sourcemac[3],sourcemac[4],sourcemac[5]);
-	fprintf(stderr, "%02X:%02X:%02X:%02X:%02X:%02X\n", destmac[0],destmac[1],destmac[2],destmac[3],destmac[4],destmac[5]);
-#endif
+
 	/* Init IP Header */
 #if defined(__FreeBSD__) || defined(__APPLE__)
 	ip->ip_v = 4;
