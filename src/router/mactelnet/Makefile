@@ -1,7 +1,7 @@
 
 #CC?=gcc
 
-CFLAGS += $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF
+CFLAGS += $(LTO) $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF
 # Run this with make LIBS=-lrt if you want to compile on kfreebsd
 LIBS = -L$(TOP)/nvram -lnvram
 all: multicall
@@ -56,4 +56,4 @@ touch:
 	touch mactelnetd.c
 
 multicall: touch config.h multicall.o mactelnet.o mactelnetd.o mndp.o macping.o mactelnet.h protocol.o console.o interfaces.o md5.o autologin.o users.o
-	${CC} -Wall ${CFLAGS} ${LDFLAGS} -o multicall multicall.o mactelnet.o mndp.o mactelnetd.o macping.o protocol.o console.o interfaces.o md5.o autologin.o users.o ${LIBS}
+	${CC} -Wall ${CFLAGS} ${LDFLAGS} $(LDLTO) -o multicall multicall.o mactelnet.o mndp.o mactelnetd.o macping.o protocol.o console.o interfaces.o md5.o autologin.o users.o ${LIBS}
