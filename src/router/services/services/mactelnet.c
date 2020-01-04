@@ -42,7 +42,7 @@ void start_mactelnetd(void)
 {
 	pid_t pid;
 	int ret = 0;
-	char *telnetd_argv[] = { "mactelnetd", NULL };
+	char *telnetd_argv[] = { "mactelnetd", "-n", NULL };
 	stop_mactelnetd();
 
 	if (!nvram_invmatchi("mactelnetd_enable", 0))
