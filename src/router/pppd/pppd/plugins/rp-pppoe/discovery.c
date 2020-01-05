@@ -636,7 +636,9 @@ discovery(PPPoEConnection *conn)
 	conn->discoveryState = STATE_SENT_PADI;
 	waitForPADO(conn, timeout);
 
+#if 0
 	timeout *= 2;
+#endif
     } while (conn->discoveryState == STATE_SENT_PADI);
 
     timeout = conn->discoveryTimeout;
@@ -651,7 +653,9 @@ discovery(PPPoEConnection *conn)
 	sendPADR(conn);
 	conn->discoveryState = STATE_SENT_PADR;
 	waitForPADS(conn, timeout);
+#if 0
 	timeout *= 2;
+#endif
     } while (conn->discoveryState == STATE_SENT_PADR);
 
     if (!conn->seenMaxPayload) {

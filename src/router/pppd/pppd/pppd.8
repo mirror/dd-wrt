@@ -564,6 +564,11 @@ to 1) if the \fIproxyarp\fR option is used, and will enable the
 dynamic IP address option (i.e. set /proc/sys/net/ipv4/ip_dynaddr to
 1) in demand mode if the local address changes.
 .TP
+.B lcp\-echo\-adaptive
+If this option is used with the \fIlcp\-echo\-failure\fR option then
+pppd will send LCP echo\-request frames only if no traffic was received
+from the peer since the last echo\-request was sent.
+.TP
 .B lcp\-echo\-failure \fIn
 If this option is given, pppd will presume the peer to be dead
 if \fIn\fR LCP echo\-requests are sent without receiving a valid LCP
