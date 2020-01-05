@@ -127,6 +127,17 @@ is no other default route with the same metric.  With the default
 value of -1, the route is only added if there is no default route at
 all.
 .TP
+.B defaultroute6
+Add a default IPv6 route to the system routing tables, using the peer as
+the gateway, when IPv6CP negotiation is successfully completed.
+This entry is removed when the PPP connection is broken.  This option
+is privileged if the \fInodefaultroute6\fR option has been specified.
+.TP
+.B replacedefaultroute
+This option is a flag to the defaultroute option. If defaultroute is
+set and this flag is also set, pppd replaces an existing default route
+with the new default route.
+.TP
 .B disconnect \fIscript
 Execute the command specified by \fIscript\fR, by passing it to a
 shell, after
@@ -659,35 +670,16 @@ modem to be asserted when opening the serial device (unless a connect
 script is specified), and it will drop the DTR (Data Terminal Ready)
 signal briefly when the connection is terminated and before executing
 the connect script.  On Ultrix, this option implies hardware flow
-control, as for the \fIcrtscts\fR option.
+control, as for the \fIcrtscts\fR option.  This is the opposite of the
+\fBlocal\fR option.
 .TP
 .B mp
 Enables the use of PPP multilink; this is an alias for the `multilink'
 option.  This option is currently only available under Linux.
 .TP
-.B mppc
-Enables MPPC (Microsoft Point to Point Compression).  This is the default.
-.TP
-.B mppe \fIsubopt1[,subopt2[,subopt3[..]]]
-Modify MPPE (Microsoft Point to Point Encryption) parameters. In order
-for MPPE to successfully come up, you must have authenticated with either
-MS-CHAP or MS-CHAPv2. By default MPPE is optional, it means that pppd will
-not propose MPPE to the peer, but will negotiate MPPE if peer wants that.
-You can change this using \fIrequired\fR suboption.
-This option is presently only supported under Linux, and only if your
-kernel has been configured to include MPPE support.
-.IP
-MPPE suboptions:
-.br
-\fIrequired\fR - require MPPE; disconnect if peer doesn't support it,
-.br
-\fIstateless\fR - try to negotiate stateless mode; default is stateful,
-.br
-\fIno40\fR - disable 40 bit keys,
-.br
-\fIno56\fR - disable 56 bit keys,
-.br
-\fIno128\fR - disable 128 bit keys
+.B mppe\-stateful
+Allow MPPE to use stateful mode.  Stateless mode is still attempted first.
+The default is to disallow stateful mode.  
 .TP
 .B mpshortseq
 Enables the use of short (12-bit) sequence numbers in multilink
@@ -764,7 +756,17 @@ disable both forms of hardware flow control.
 .TP
 .B nodefaultroute
 Disable the \fIdefaultroute\fR option.  The system administrator who
-wishes to prevent users from creating default routes with pppd
+wishes to prevent users from adding a default route with pppd
+can do so by placing this option in the /etc/ppp/options file.
+.TP
+.B noreplacedefaultroute
+Disable the \fIreplacedefaultroute\fR option. The system administrator who
+wishes to prevent users from replacing a default route with pppd
+can do so by placing this option in the /etc/ppp/options file.
+.TP
+.B nodefaultroute6
+Disable the \fIdefaultroute6\fR option.  The system administrator who
+wishes to prevent users from adding a default route with pppd
 can do so by placing this option in the /etc/ppp/options file.
 .TP
 .B nodeflate
@@ -825,11 +827,17 @@ peer is buggy.
 Disables the use of PPP multilink.  This option is currently only
 available under Linux.
 .TP
-.B nomppc
-Disables MPPC (Microsoft Point to Point Compression).
-.TP
 .B nomppe
-Disables MPPE (Microsoft Point to Point Encryption).
+Disables MPPE (Microsoft Point to Point Encryption).  This is the default.
+.TP
+.B nomppe\-40
+Disable 40-bit encryption with MPPE.
+.TP
+.B nomppe\-128
+Disable 128-bit encryption with MPPE.
+.TP
+.B nomppe\-stateful
+Disable MPPE stateful mode.  This is the default.
 .TP
 .B nompshortseq
 Disables the use of short (12-bit) sequence numbers in the PPP
@@ -1022,6 +1030,19 @@ peer using PAP.
 Require the peer to authenticate itself using CHAP [Challenge
 Handshake Authentication Protocol] authentication.
 .TP
+.B require\-mppe
+Require the use of MPPE (Microsoft Point to Point Encryption).  This
+option disables all other compression types.  This option enables
+both 40-bit and 128-bit encryption.  In order for MPPE to successfully
+come up, you must have authenticated with either MS\-CHAP or MS\-CHAPv2.
+This option is presently only supported under Linux, and only if your
+kernel has been configured to include MPPE support.
+.TP
+.B require\-mppe\-40
+Require the use of MPPE, with 40-bit encryption.
+.TP
+.B require\-mppe\-128
+Require the use of MPPE, with 128-bit encryption.
 .TP
 .B require\-mschap
 Require the peer to authenticate itself using MS\-CHAP [Microsoft Challenge
@@ -1104,6 +1125,15 @@ With this option, pppd will detach from its controlling terminal once
 it has successfully established the ppp connection (to the point where
 the first network control protocol, usually the IP control protocol,
 has come up).
+.TP
+.B up_sdnotify
+Use this option to run pppd in systemd service units of Type=notify
+(\fBup_sdnotify\fR implies \fBnodetach\fR).
+When \fBup_sdnotify\fR is enabled, pppd will notify systemd once
+it has successfully established the ppp connection (to the point where
+the first network control protocl, usually the IP control protocol,
+has come up). This option is only availble when pppd is compiled with
+systemd support.
 .TP
 .B usehostname
 Enforce the use of the hostname (with domain name appended, if given)

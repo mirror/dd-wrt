@@ -39,7 +39,6 @@
 
 #include "pppd.h"
 
-static const char rcsid[] = RCSID;
 
 /*
  * eui64_ntoa - Make an ascii representation of an interface identifier

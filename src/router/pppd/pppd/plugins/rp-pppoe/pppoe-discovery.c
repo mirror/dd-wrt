@@ -15,9 +15,9 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <time.h>
 
 #include "pppoe.h"
-#include <pppd/pppd.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -27,6 +27,10 @@
 #include <netpacket/packet.h>
 #elif defined(HAVE_LINUX_IF_PACKET_H)
 #include <linux/if_packet.h>
+#endif
+
+#ifdef HAVE_NET_ETHERNET_H
+#include <net/ethernet.h>
 #endif
 
 #ifdef HAVE_ASM_TYPES_H
@@ -53,7 +57,6 @@ void die(int status)
 	exit(status);
 }
 
-#ifdef NEED_PRINTF
 void error(char *fmt, ...)
 {
     va_list pvar;
@@ -61,7 +64,7 @@ void error(char *fmt, ...)
     vfprintf(stderr, fmt, pvar);
     va_end(pvar);
 }
-#endif
+
 /* Initialize frame types to RFC 2516 values.  Some broken peers apparently
    use different frame types... sigh... */
 
@@ -373,6 +376,12 @@ packetIsForMe(PPPoEConnection *conn, PPPoEPacket *packet)
 *%RETURNS:
 * Nothing
 *%DESCRIPTION:
+
+	char acname[64];
+	strncpy(acname,(char *)data,sizeof(acname)-1);
+	acname[len > (sizeof(acname)-1) ? 63 : len] = 0;
+	nvram_set("pppoe_ac_name",acname);
+
 * Picks interesting tags out of a PADO packet
 ***********************************************************************/
 void
@@ -389,12 +398,6 @@ parsePADOTags(UINT16_t type, UINT16_t len, unsigned char *data,
 	if (conn->printACNames) {
 	    printf("Access-Concentrator: %.*s\n", (int) len, data);
 	}
-
-	char acname[64];
-	strncpy(acname,(char *)data,sizeof(acname)-1);
-	acname[len > (sizeof(acname)-1) ? 63 : len] = 0;
-	nvram_set("pppoe_ac_name",acname);
-
 	if (conn->acName && len == strlen(conn->acName) &&
 	    !strncmp((char *) data, conn->acName, len)) {
 	    pc->acNameOK = 1;
@@ -720,7 +723,7 @@ int main(int argc, char *argv[])
 	case 'D':
 	    conn->debugFile = fopen(optarg, "w");
 	    if (!conn->debugFile) {
-		printf( "Could not open %s: %s\n",
+		fprintf(stderr, "Could not open %s: %s\n",
 			optarg, strerror(errno));
 		exit(1);
 	    }
@@ -781,34 +784,14 @@ char *xstrdup(const char *s)
 	sysErr("strdup");
     return ret;
 }
-int error_count;
-
-#ifdef NEED_PRINTF
-void
-error(char *fmt, ...)
-{
-    va_list pvar;
-
-#if defined(__STDC__)
-    va_start(pvar, fmt);
-#else
-    char *fmt;
-    va_start(pvar);
-    fmt = va_arg(pvar, char *);
-#endif
-
-    fprintf(stderr, fmt, pvar);
-    va_end(pvar);
-}
-#endif
 
 void usage(void)
 {
-    printf( "Usage: pppoe-discovery [options]\n");
-    printf( "Options:\n");
-    printf( "   -I if_name     -- Specify interface (default eth0)\n");
-    printf( "   -D filename    -- Log debugging information in filename.\n");
-    printf(
+    fprintf(stderr, "Usage: pppoe-discovery [options]\n");
+    fprintf(stderr, "Options:\n");
+    fprintf(stderr, "   -I if_name     -- Specify interface (default eth0)\n");
+    fprintf(stderr, "   -D filename    -- Log debugging information in filename.\n");
+    fprintf(stderr,
 	    "   -t timeout     -- Initial timeout for discovery packets in seconds\n"
 	    "   -a attempts    -- Number of discovery attempts\n"
 	    "   -V             -- Print version and exit.\n"
@@ -818,5 +801,5 @@ void usage(void)
 	    "   -U             -- Use Host-Unique to allow multiple PPPoE sessions.\n"
 	    "   -W hexvalue    -- Set the Host-Unique to the supplied hex string.\n"
 	    "   -h             -- Print usage information.\n");
-    printf( "\nVersion " RP_VERSION "\n");
+    fprintf(stderr, "\nVersion " RP_VERSION "\n");
 }

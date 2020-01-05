@@ -164,7 +164,7 @@ plugin_init(void)
 
     memset(&rstate, 0, sizeof(rstate));
 
-    strlcpy(rstate.config_file, "/tmp/ppp/radius/radiusclient.conf",
+    strlcpy(rstate.config_file, "/etc/radiusclient/radiusclient.conf",
 	    sizeof(rstate.config_file));
 
     add_options(Options);
@@ -658,12 +658,12 @@ radius_setparams(VALUE_PAIR *vp, char *msg, REQUEST_INFO *req_info,
 #ifdef CHAPMS
 	    switch (vp->attribute) {
 	    case PW_MS_CHAP2_SUCCESS:
-		if ((vp->lvalue != 43) || strncmp((char*)vp->strvalue + 1, "S=", 2)) {
+		if ((vp->lvalue != 43) || strncmp(vp->strvalue + 1, "S=", 2)) {
 		    slprintf(msg,BUF_LEN,"RADIUS: bad MS-CHAP2-Success packet");
 		    return -1;
 		}
 		if (message != NULL)
-		    strlcpy(message, (char*)vp->strvalue + 1, message_space);
+		    strlcpy(message, vp->strvalue + 1, message_space);
 		ms_chap2_success = 1;
 		break;
 
@@ -727,22 +727,6 @@ radius_setparams(VALUE_PAIR *vp, char *msg, REQUEST_INFO *req_info,
 	    }
 #endif /* CHAPMS */
 	}
-#ifdef HAVE_AQOS
-	else if (vp->vendorcode == VENDOR_WISPR)
-	{
-	    switch (vp->attribute) {	    
-	    case PW_WISPR_BANDWIDTH_MAX_DOWN:
-		bandwidthdown=vp->lvalue;
-		fprintf(stderr,"set bandwidth down value to %d\n",bandwidthdown);
-	    break;
-	    case PW_WISPR_BANDWIDTH_MAX_UP:
-		bandwidthup=vp->lvalue;
-		fprintf(stderr,"set bandwidth up value to %d\n",bandwidthup);
-	    break;
-	    }
-	
-	}
-#endif
 	vp = vp->next;
     }
 

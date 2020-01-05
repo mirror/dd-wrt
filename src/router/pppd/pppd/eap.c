@@ -76,7 +76,6 @@
 #define	SHA_DIGESTSIZE 20
 #endif
 
-static const char rcsid[] = RCSID;
 
 eap_state eap_states[NUM_PPP];		/* EAP state; one for each unit */
 #ifdef USE_SRP
@@ -673,11 +672,9 @@ eap_state *esp;
 	if (esp->es_server.ea_maxrequests > 0 &&
 	    esp->es_server.ea_requests >= esp->es_server.ea_maxrequests) {
 		if (esp->es_server.ea_responses > 0)
-		{
 			error("EAP: too many Requests sent");
-		}else{
+		else
 			error("EAP: no response to Requests");
-		}
 		eap_send_failure(esp);
 		return;
 	}

@@ -1,7 +1,7 @@
 #CC	= gcc
-#COPTS	= -O2 -g
-CFLAGS	= $(COPTS) $(MIPS16_OPT) -I.. -I../../include -fPIC
-LDFLAGS	= -shared
+COPTS	= -O2 -g
+CFLAGS	= $(COPTS) -I.. -I../../include -fPIC
+LDFLAGS_SHARED	= -shared
 INSTALL	= install
 
 DESTDIR = $(INSTROOT)@DESTDIR@
@@ -9,9 +9,9 @@ BINDIR = $(DESTDIR)/sbin
 MANDIR = $(DESTDIR)/share/man/man8
 LIBDIR = $(DESTDIR)/lib/pppd/$(VERSION)
 
-SUBDIRS := rp-pppoe pppoatm pppol2tp radius
+SUBDIRS := rp-pppoe pppoatm pppol2tp pptp
 # Uncomment the next line to include the radius authentication plugin
-# SUBDIRS += radius
+SUBDIRS += radius
 PLUGINS := minconn.so passprompt.so passwordfd.so winbind.so
 
 # This setting should match the one in ../Makefile.linux
@@ -30,7 +30,7 @@ all:	$(PLUGINS)
 	for d in $(SUBDIRS); do $(MAKE) $(MFLAGS) -C $$d all || exit $$?; done
 
 %.so: %.c
-	$(CC) -o $@ $(LDFLAGS) $(CFLAGS) $^
+	$(CC) -o $@ $(LDFLAGS) $(LDFLAGS_SHARED) $(CFLAGS) $^
 
 VERSION = $(shell awk -F '"' '/VERSION/ { print $$2; }' ../patchlevel.h)
 

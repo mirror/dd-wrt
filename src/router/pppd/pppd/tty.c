@@ -83,7 +83,6 @@
 #include <netdb.h>
 #include <utmp.h>
 #include <pwd.h>
-#include <setjmp.h>
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -146,7 +145,7 @@ char	*disconnect_script = NULL; /* Script to disestablish physical link */
 char	*welcomer = NULL;	/* Script to run after phys link estab. */
 char	*ptycommand = NULL;	/* Command to run on other side of pty */
 bool	notty = 0;		/* Stdin/out is not a tty */
-char	*record_file = NULL;	/* File to record chars sent/received */
+static  char	*const record_file = NULL;	/* File to record chars sent/received */
 int	max_data_rate;		/* max bytes/sec through charshunt */
 bool	sync_serial = 0;	/* Device is synchronous serial device */
 char	*pty_socket = NULL;	/* Socket to connect to pty */
@@ -202,8 +201,10 @@ option_t tty_options[] = {
       "Send and receive over socket, arg is host:port",
       OPT_PRIO | OPT_DEVNAM },
 
+#if 0
     { "record", o_string, &record_file,
       "Record characters sent/received to file", OPT_PRIO },
+#endif
 
     { "crtscts", o_int, &crtscts,
       "Set hardware (RTS/CTS) flow control",

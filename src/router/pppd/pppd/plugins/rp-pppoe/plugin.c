@@ -21,7 +21,6 @@
 * 2 of the License, or (at your option) any later version.
 *
 ***********************************************************************/
-#define __packed			__attribute__((packed))
 
 static char const RCSID[] =
 "$Id: plugin.c,v 1.17 2008/06/15 04:35:50 paulus Exp $";
@@ -37,10 +36,6 @@ static char const RCSID[] =
 /* #include "pppd/pathnames.h" */
 
 #include <linux/types.h>
-
-#ifndef aligned_u64
-#define aligned_u64 unsigned long long __attribute__((aligned(8)))
-#endif
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -51,12 +46,9 @@ static char const RCSID[] =
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <net/ethernet.h>
 #include <net/if_arp.h>
-#include <linux/socket.h>
 #include <linux/ppp_defs.h>
-#include <linux/if_ether.h>
-#include <linux/if_ppp.h>
-#include <linux/if_pppol2tp.h>
 #include <linux/if_pppox.h>
 
 #ifndef _ROOT_PATH
@@ -67,9 +59,6 @@ static char const RCSID[] =
 
 char pppd_version[] = VERSION;
 
-/* From sys-linux.c in pppd -- MUST FIX THIS! */
-extern int new_style_driver;
-
 char *pppd_pppoe_service = NULL;
 static char *acName = NULL;
 static char *existingSession = NULL;
@@ -77,6 +66,8 @@ static int printACNames = 0;
 static char *pppoe_reqd_mac = NULL;
 unsigned char pppoe_reqd_mac_addr[6];
 static char *host_uniq;
+static int pppoe_padi_timeout = PADI_TIMEOUT;
+static int pppoe_padi_attempts = MAX_PADI_ATTEMPTS;
 
 static int PPPoEDevnameHook(char *cmd, char **argv, int doit);
 static option_t Options[] = {
@@ -96,6 +87,10 @@ static option_t Options[] = {
       "Only connect to specified MAC address" },
     { "host-uniq", o_string, &host_uniq,
       "Set the Host-Uniq to the supplied hex string" },
+    { "pppoe-padi-timeout", o_int, &pppoe_padi_timeout,
+      "Initial timeout for discovery packets in seconds" },
+    { "pppoe-padi-attempts", o_int, &pppoe_padi_attempts,
+      "Number of discovery attempts" },
     { NULL }
 };
 int (*OldDevnameHook)(char *cmd, char **argv, int doit) = NULL;
@@ -122,91 +117,10 @@ PPPOEInitDevice(void)
     conn->discoverySocket = -1;
     conn->sessionSocket = -1;
     conn->printACNames = printACNames;
-    conn->discoveryTimeout = PADI_TIMEOUT;
+    conn->discoveryTimeout = pppoe_padi_timeout;
+    conn->discoveryAttempts = pppoe_padi_attempts;
     return 1;
 }
-
-#ifdef HAVE_AQOS
-int stricmp(char *a,char *b)
-{
-int l1 = strlen(a);
-int l2 = strlen(b);
-if (l2>l1)
-    return -1;
-int i;
-int i2=0;
-for (i=0;i<l2;i++)
-    {
-    if (i2==strlen(b))
-	{
-	return -1;
-	break;
-	}
-    if (a[i]==' ')
-	continue;
-    if (b[i2]==' ')
-	{
-	i2++;
-	i--;
-	continue;
-	}
-    if (toupper(a[i])!=toupper(b[i2]))
-	return -1;
-    i2++;
-    }
-return 0;
-}
-extern void add_usermac( char *mac, int idx, char *upstream,
-			 char *downstream, char *lanstream );
-extern char *nvram_safe_get(const char *name);
-
-int addrule(char *mac, char *upstream, char *downstream)
-{
-    char *qos_mac = nvram_safe_get( "svqos_macs" );
-    int ret = 0;
-    if (strlen(qos_mac)>0)
-    {
-    char *newqos = malloc(strlen(qos_mac)*2);
-    memset(newqos,0,strlen(qos_mac)*2);
-    char level[32], level2[32], level3[32], data[32], type[32], prio[32];
-    strcpy(level3, "0");
-	do
-    {
-	if( sscanf( qos_mac, "%31s %31s %31s %31s %31s %31s |", data, level, level2 , type, level3, prio) < 6 )
-	    break;
-	if (!stricmp(data,mac) && !strcmp(level,upstream) && !strcmp(level2,downstream))
-	    {
-	    sprintf(newqos,"%s %s %s %s %s %s %s |",newqos,data,level,level2,type,level3,prio);	    
-	    ret |=1;
-	    }
-	    else
-	    {
-	    if (!stricmp(data,mac))
-	    {
-	    ret |=2;
-	    }
-	    sprintf(newqos,"%s %s %s %s %s %s %s |",newqos,data,upstream,downstream,"pppd",level3,prio);	    
-//	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,level,level2,type);	    
-	    }
-    }
-    while( ( qos_mac = strpbrk( ++qos_mac, "|" ) ) && qos_mac++ );
-    nvram_set("svqos_macs",newqos);
-    free(newqos);
-    }else
-    {
-    char newqos[128];
-    sprintf(newqos,"%s %s %s %s %s %s |",mac,upstream,downstream,"pppd",level3,prio);	    
-    nvram_set("svqos_macs",newqos);    
-    }
-return ret;
-
-}
-#endif
-
-#ifndef MAC2STR
-#define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
-#define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
-#endif
 
 /**********************************************************************
  * %FUNCTION: PPPOEConnectDevice
@@ -221,7 +135,6 @@ static int
 PPPOEConnectDevice(void)
 {
     struct sockaddr_pppox sp;
-    static int qosidx=6410;
     struct ifreq ifr;
     int s;
 
@@ -312,6 +225,7 @@ PPPOEConnectDevice(void)
 	    (unsigned) conn->peerEth[3],
 	    (unsigned) conn->peerEth[4],
 	    (unsigned) conn->peerEth[5]);
+
     warn("Connected to %02X:%02X:%02X:%02X:%02X:%02X via interface %s",
 	 (unsigned) conn->peerEth[0],
 	 (unsigned) conn->peerEth[1],
@@ -325,33 +239,10 @@ PPPOEConnectDevice(void)
 
     if (connect(conn->sessionSocket, (struct sockaddr *) &sp,
 		sizeof(struct sockaddr_pppox)) < 0) {
-	fatal("Failed to connect PPPoE socket: %d %m", errno);
+	error("Failed to connect PPPoE socket: %d %m", errno);
 	goto errout;
     }
-#ifdef HAVE_AQOS
-    if (bandwidthup!=0 && bandwidthdown!=0)
-	{
-	char uplevel[64];
-	char downlevel[64];
-	char mac[64];
-	sprintf(mac, MACSTR, MAC2STR(conn->myEth));
-	sprintf(uplevel,"%d",bandwidthup/1000);
-	sprintf(downlevel,"%d",bandwidthdown/1000);
-	fprintf(stderr,"use bandwidth down value to %d\n",bandwidthdown);
-	fprintf(stderr,"use bandwidth up value to %d\n",bandwidthdown);
-	int ret = addrule(mac,uplevel,downlevel);
-		    if (!ret)
-			{
-			qosidx+=10;
-			if (qosidx>8190)
-			    qosidx=0;
-			add_usermac(mac, qosidx, uplevel,downlevel,"0" );
-			}else if (ret>1)
-			{
-			system("startstop_f wshaper");
-			}	    
-	}
-#endif
+
     return conn->sessionSocket;
 
  errout:
@@ -362,37 +253,8 @@ PPPOEConnectDevice(void)
     }
     close(conn->sessionSocket);
     return -1;
-
 }
 
-/*static void
-PPPOESendConfig(int mtu,
-		u_int32_t asyncmap,
-		int pcomp,
-		int accomp)
-{
-    int sock;
-    struct ifreq ifr;
-
-    if (mtu > MAX_PPPOE_MTU) {
-	warn("Couldn't increase MTU to %d", mtu);
-	mtu = MAX_PPPOE_MTU;
-    }
-    sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sock < 0) {
-	error("Couldn't create IP socket: %m");
-	return;
-    }
-    strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
-//    info("set mtu rp-pppoe to %s (%d)\n",ifname,mtu);
-    ifr.ifr_mtu = mtu;
-    if (ioctl(sock, SIOCSIFMTU, &ifr) < 0) {
-	error("Couldn't set interface MTU to %d: %m", mtu);
-	return;
-    }
-    (void) close (sock);
-}
-*/
 static void
 PPPOERecvConfig(int mru,
 		u_int32_t asyncmap,
@@ -428,9 +290,8 @@ PPPOEDisconnectDevice(void)
 		sizeof(struct sockaddr_pppox)) < 0 && errno != EALREADY)
 	error("Failed to disconnect PPPoE socket: %d %m", errno);
     close(conn->sessionSocket);
-    /* don't send PADT?? */
     if (conn->discoverySocket >= 0) {
-	sendPADT(conn, NULL);
+        sendPADT(conn, NULL);
 	close(conn->discoverySocket);
     }
 }
@@ -438,8 +299,10 @@ PPPOEDisconnectDevice(void)
 static void
 PPPOEDeviceOptions(void)
 {
-    char buf[256];
-    snprintf(buf, 256, _PATH_ETHOPT "%s", devnam);
+    char buf[MAXPATHLEN];
+
+    strlcpy(buf, _PATH_ETHOPT, MAXPATHLEN);
+    strlcat(buf, devnam, MAXPATHLEN);
     if (!options_from_file(buf, 0, 0, 1))
 	exit(EXIT_OPTION_ERROR);
 
@@ -528,10 +391,6 @@ PPPoEDevnameHook(char *cmd, char **argv, int doit)
 void
 plugin_init(void)
 {
-    if (!ppp_available() && !new_style_driver) {
-	fatal("Linux kernel does not support PPPoE -- are you running 2.4.x?");
-    }
-
     add_options(Options);
 
     info("RP-PPPoE plugin version %s compiled against pppd %s",

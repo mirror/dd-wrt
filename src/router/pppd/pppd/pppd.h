@@ -50,6 +50,8 @@
 #define __PPPD_H__
 
 #include <stdio.h>		/* for FILE */
+#include <stdlib.h>		/* for encrypt */
+#include <unistd.h>		/* for setkey */
 #include <limits.h>		/* for NGROUPS_MAX */
 #include <sys/param.h>		/* for MAXPATHLEN and BSD4_4, if defined */
 #include <sys/types.h>		/* for u_int32_t, if defined */
@@ -66,9 +68,6 @@
 #define const
 #define volatile
 #endif
-
-#undef __P
-#define __P(args) args
 
 #ifdef INET6
 #include "eui64.h"
@@ -249,9 +248,7 @@ extern unsigned	link_connect_time; /* time the link was up for */
 extern int	using_pty;	/* using pty as device (notty or pty opt.) */
 extern int	log_to_fd;	/* logging to this fd as well as syslog */
 extern bool	log_default;	/* log_to_fd is default (stdout) */
-#ifdef NEED_PRINTF
 extern char	*no_ppp_msg;	/* message to print if ppp not in kernel */
-#endif
 extern volatile int status;	/* exit status for pppd */
 extern bool	devnam_fixed;	/* can no longer change devnam */
 extern int	unsuccess;	/* # unsuccessful connection attempts */
@@ -300,6 +297,9 @@ extern int	inspeed;	/* Input/Output speed requested */
 extern u_int32_t netmask;	/* IP netmask to set on interface */
 extern bool	lockflag;	/* Create lock file to lock the serial dev */
 extern bool	nodetach;	/* Don't detach from controlling tty */
+#ifdef SYSTEMD
+extern bool	up_sdnotify;	/* Notify systemd once link is up (implies nodetach) */
+#endif
 extern bool	updetach;	/* Detach from controlling tty when link up */
 extern bool	master_detach;	/* Detach when multilink master without link */
 extern char	*initializer;	/* Script to initialize physical link */
@@ -319,18 +319,12 @@ extern char	remote_name[MAXNAMELEN]; /* Peer's name for authentication */
 extern bool	explicit_remote;/* remote_name specified with remotename opt */
 extern bool	demand;		/* Do dial-on-demand */
 extern char	*ipparam;	/* Extra parameter for ip up/down scripts */
-extern char	*ipupcustom;	/* Custom ip up script */
-extern char	*ipdowncustom;	/* Custom ip down script */
-extern char	*chapseccustom;	/* Custom chap-secrets file */
-extern char	*papseccustom;	/* Custom pap-secrets file */
-extern char	*srpseccustom;	/* Custom srp-secrets file */
 extern bool	cryptpap;	/* Others' PAP passwords are encrypted */
 extern int	idle_time_limit;/* Shut down link if idle for this long */
 extern int	holdoff;	/* Dead time before restarting */
 extern bool	holdoff_specified; /* true if user gave a holdoff value */
 extern bool	notty;		/* Stdin/out is not a tty */
 extern char	*pty_socket;	/* Socket to connect to pty */
-extern char	*record_file;	/* File to record chars sent/received */
 extern bool	sync_serial;	/* Device is synchronous serial device */
 extern int	maxfail;	/* Max # of unsuccessful connection attempts */
 extern char	linkname[MAXPATHLEN]; /* logical name for link */
@@ -339,6 +333,10 @@ extern int	connect_delay;	/* Time to delay after connect script */
 extern int	max_data_rate;	/* max bytes/sec through charshunt */
 extern int	req_unit;	/* interface unit number to use */
 extern char	req_ifname[MAXIFNAMELEN]; /* interface name to use */
+extern char	path_ipup[MAXPATHLEN]; /* pathname of ip-up script */
+extern char	path_ipdown[MAXPATHLEN]; /* pathname of ip-down script */
+extern char	path_ipv6up[MAXPATHLEN]; /* pathname of ipv6-up script */
+extern char	path_ipv6down[MAXPATHLEN]; /* pathname of ipv6-down script */
 extern bool	multilink;	/* enable multilink operation */
 extern bool	noendpoint;	/* don't send or accept endpt. discrim. */
 extern char	*bundle_name;	/* bundle name for multilink */
@@ -346,14 +344,6 @@ extern bool	dump_options;	/* print out option values */
 extern bool	dryrun;		/* check everything, print options, exit */
 extern int	child_wait;	/* # seconds to wait for children at end */
 
-#ifdef CHAPMS
-extern bool	ms_ignore_domain; /* Ignore any MS domain prefix */
-#endif
-
-#ifdef HAVE_AQOS
-extern int bandwidthup;
-extern int bandwidthdown;
-#endif
 #ifdef MAXOCTETS
 extern unsigned int maxoctets;	     /* Maximum octetes per session (in bytes) */
 extern int       maxoctets_dir;      /* Direction :
@@ -558,30 +548,12 @@ int slprintf __P((char *, int, char *, ...));		/* sprintf++ */
 int vslprintf __P((char *, int, char *, va_list));	/* vsprintf++ */
 size_t strlcpy __P((char *, const char *, size_t));	/* safe strcpy */
 size_t strlcat __P((char *, const char *, size_t));	/* safe strncpy */
-
-#ifndef NEED_PRINTF
-#define option_error(fmt,args...) do { } while(0)
-
-
-#define notice(fmt,...)do { } while(0)
-#define info(fmt,...) do { } while(0)
-#define dbglog(fmt,...) do { } while(0)
-#define warn(fmt,...) do { } while(0)
-#define error(fmt,...) { ++error_count; }
-#define fatal(fmt,...) { die(1); }
-#else
-
-void option_error __P((char *fmt, ...));
-
 void dbglog __P((char *, ...));	/* log a debug message */
 void info __P((char *, ...));	/* log an informational message */
 void notice __P((char *, ...));	/* log a notice-level message */
-
 void warn __P((char *, ...));	/* log a warning message */
 void error __P((char *, ...));	/* log an error message */
 void fatal __P((char *, ...));	/* log an error message and die(1) */
-#endif
-
 void init_pr_log __P((const char *, int)); /* initialize for using pr_log */
 void pr_log __P((void *, char *, ...));	/* printer fn, output to syslog */
 void end_pr_log __P((void));	/* finish up after using pr_log */
@@ -630,7 +602,7 @@ void demand_conf __P((void));	/* config interface(s) for demand-dial */
 void demand_block __P((void));	/* set all NPs to queue up packets */
 void demand_unblock __P((void)); /* set all NPs to pass packets */
 void demand_discard __P((void)); /* set all NPs to discard packets */
-void demand_rexmit __P((int));	/* retransmit saved frames for an NP */
+void demand_rexmit __P((int, u_int32_t)); /* retransmit saved frames for an NP*/
 int  loop_chars __P((unsigned char *, int)); /* process chars from loopback */
 int  loop_frame __P((unsigned char *, int)); /* should we bring link up? */
 
@@ -712,10 +684,16 @@ int  sif6addr __P((int, eui64_t, eui64_t));
 int  cif6addr __P((int, eui64_t, eui64_t));
 				/* Remove an IPv6 address from i/f */
 #endif
-int  sifdefaultroute __P((int, u_int32_t, u_int32_t));
+int  sifdefaultroute __P((int, u_int32_t, u_int32_t, bool replace_default_rt));
 				/* Create default route through i/f */
 int  cifdefaultroute __P((int, u_int32_t, u_int32_t));
 				/* Delete default route through i/f */
+#ifdef INET6
+int  sif6defaultroute __P((int, eui64_t, eui64_t));
+				/* Create default IPv6 route through i/f */
+int  cif6defaultroute __P((int, eui64_t, eui64_t));
+				/* Delete default IPv6 route through i/f */
+#endif
 int  sifproxyarp __P((int, u_int32_t));
 				/* Add proxy ARP entry for peer */
 int  cifproxyarp __P((int, u_int32_t));
@@ -752,8 +730,7 @@ int  options_from_list __P((struct wordlist *, int privileged));
 				/* Parse options from a wordlist */
 int  getword __P((FILE *f, char *word, int *newlinep, char *filename));
 				/* Read a word from a file */
-
-
+void option_error __P((char *fmt, ...));
 				/* Print an error message about an option */
 int int_option __P((char *, int *));
 				/* Simplified number_option for decimal ints */

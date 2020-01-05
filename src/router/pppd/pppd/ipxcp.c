@@ -62,7 +62,6 @@
 #include "pathnames.h"
 #include "magic.h"
 
-static const char rcsid[] = RCSID;
 
 /* global vars */
 ipxcp_options ipxcp_wantoptions[NUM_PPP];	/* Options that we want to request */
@@ -1337,9 +1336,7 @@ ipxcp_up(f)
     /* bring the interface up */
     if (!sifup(unit)) {
 	if (debug)
-	{
 	    warn("sifup failed (IPX)");
-	}
 	ipxcp_close(unit, "Interface configuration failed");
 	return;
     }
@@ -1348,9 +1345,7 @@ ipxcp_up(f)
     /* set the network number for IPX */
     if (!sipxfaddr(unit, go->network, go->our_node)) {
 	if (debug)
-	{
 	    warn("sipxfaddr failed");
-	}
 	ipxcp_close(unit, "Interface configuration failed");
 	return;
     }

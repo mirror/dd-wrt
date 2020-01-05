@@ -1,6 +1,6 @@
 #CC	= gcc
 #COPTS	= $(COPTS)
-CFLAGS	= $(COPTS) $(MIPS16_OPT) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include -I. -I../.. -I../../../include -fPIC
+CFLAGS	= $(COPTS) $(MIPS16_OPT) $(LTO) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include -I. -I../.. -I../../../include -fPIC
 
 LDFLAGS	= -shared
 INSTALL	= install
@@ -17,7 +17,7 @@ PLUGINS := pppol2tp.so openl2tp.so
 all: $(PLUGINS)
 
 %.so: %.o
-	$(CC) $(CFLAGS) -o $@ -shared $^ $(LIBS)
+	$(CC) $(CFLAGS) $(LDLTO) -o $@ -shared $^ $(LIBS)
 
 install: all
 	$(INSTALL) -d -m 755 $(LIBDIR)

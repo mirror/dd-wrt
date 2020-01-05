@@ -11,7 +11,7 @@ INSTALL= install
 all:	pppdump
 
 pppdump: $(OBJS)
-	$(CC) -o pppdump $(OBJS)
+	$(CC) $(LDFLAGS) -o pppdump $(OBJS)
 
 clean:
 	rm -f pppdump $(OBJS) *~

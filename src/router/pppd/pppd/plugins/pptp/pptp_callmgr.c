@@ -25,6 +25,7 @@
 #include "dirutil.h"
 #include "vector.h"
 #include "util.h"
+#include "pppd.h"
 
 extern struct in_addr localbind; /* from pptp.c */
 extern int call_ID;
@@ -76,7 +77,7 @@ void call_callback(PPTP_CONN *conn, PPTP_CALL *call, enum call_state state)
         case CALL_CLOSE_DONE:
             /* don't need to do anything here, except make sure tables
              * are sync'ed */
-            log("Closing connection (call state)");
+            dbglog("Closing connection (call state)");
             conninfo = pptp_conn_closure_get(conn);
             lci = pptp_call_closure_get(conn, call);
             assert(lci != NULL && conninfo != NULL);
@@ -84,12 +85,10 @@ void call_callback(PPTP_CONN *conn, PPTP_CALL *call, enum call_state state)
                 vector_remove(conninfo->call_list, lci->unix_sock);
                 close(lci->unix_sock);
                 FD_CLR(lci->unix_sock, conninfo->call_set);
-                if(lci->pid[0] > 1) kill(lci->pid[0], SIGTERM);
-                if(lci->pid[1] > 1) kill(lci->pid[1], SIGTERM);
             }
             break;
         default:
-            log("Unhandled call callback state [%d].", (int) state);
+            dbglog("Unhandled call callback state [%d].", (int) state);
             break;
     }
 }
@@ -102,9 +101,8 @@ void call_callback(PPTP_CONN *conn, PPTP_CALL *call, enum call_state state)
  *****************************************************************************/
 
 /*** Call Manager *************************************************************/
-int callmgr_main(int argc, char **argv, char **envp)
+int callmgr_main(struct in_addr inetaddr, char phonenr[], int window, int pcallid)
 {
-    struct in_addr inetaddr;
     int inet_sock, unix_sock;
     fd_set call_set;
     PPTP_CONN * conn;
@@ -113,31 +111,16 @@ int callmgr_main(int argc, char **argv, char **envp)
     volatile int first = 1;
     int retval;
     int i;
-    char * volatile phonenr=NULL;
-    int volatile window=10;
-    //int volatile call_id=0;
-    /* Step 0: Check arguments */
-    if (argc < 2)
-        fatal("Usage: %s ip.add.ress.here [--phone <phone number>]", argv[0]);
-    //phonenr = argc == 3 ? argv[2] : NULL;
-    for(i=2; i<argc; i++)
-    {
-    	//log("%s",argv[i]);
-    	if (strcmp(argv[i],"--phone")==0 && i+1<argc) phonenr=argv[++i];
-    	else if (strcmp(argv[i],"--window")==0 && i+1<argc) window=atoi(argv[++i]);
-    	else if (strcmp(argv[i],"--call_id")==0 && i+1<argc) call_ID=atoi(argv[++i]);
-    }
-    if (inet_aton(argv[1], &inetaddr) == 0)
-        fatal("Invalid IP address: %s", argv[1]);
-     log("IP: %s\n",inet_ntoa(inetaddr));
+    if (pcallid>0) call_ID=pcallid;
+
     /* Step 1: Open sockets. */
     if ((inet_sock = open_inetsock(inetaddr)) < 0)
-        fatal("Could not open control connection to %s", argv[1]);
-    log("control connection");
+        fatal("Could not open control connection to %s", inet_ntoa(inetaddr));
+    dbglog("control connection");
     if ((unix_sock = open_unixsock(inetaddr)) < 0)
-        fatal("Could not open unix socket for %s", argv[1]);
+        fatal("Could not open unix socket for %s", inet_ntoa(inetaddr));
     /* Step 1b: FORK and return status to calling process. */
-    log("unix_sock");
+    dbglog("unix_sock");
 
     switch (fork()) {
         case 0: /* child. stick around. */
@@ -242,9 +225,7 @@ skip_accept: /* Step 5c: Handle socket close */
                 if (retval) {
                     struct local_callinfo *lci =
                         pptp_call_closure_get(conn, call);
-                    log("Closing connection (unhandled)");
-                    if(lci->pid[0] > 1) kill(lci->pid[0], SIGTERM);
-                    if(lci->pid[1] > 1) kill(lci->pid[1], SIGTERM);
+                    dbglog("Closing connection (unhandled)");
                     free(lci);
                     /* soft shutdown.  Callback will do hard shutdown later */
                     pptp_call_close(conn, call);
@@ -265,11 +246,8 @@ shutdown:
         /* kill all open calls */
         for (i = 0; i < vector_size(call_list); i++) {
             PPTP_CALL *call = vector_get_Nth(call_list, i);
-            struct local_callinfo *lci = pptp_call_closure_get(conn, call);
-            log("Closing connection (shutdown)");
+            dbglog("Closing connection (shutdown)");
             pptp_call_close(conn, call);
-            if(lci->pid[0] > 1) kill(lci->pid[0], SIGTERM);
-            if(lci->pid[1] > 1) kill(lci->pid[1], SIGTERM);
         }
         /* attempt to dispatch these messages */
         FD_ZERO(&read_set);

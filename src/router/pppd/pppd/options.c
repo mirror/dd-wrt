@@ -57,6 +57,7 @@
 
 #ifdef PPP_FILTER
 #include <pcap.h>
+#include <pcap-bpf.h>
 /*
  * There have been 3 or 4 different names for this in libpcap CVS, but
  * this seems to be what they have settled on...
@@ -79,7 +80,6 @@
 char *strdup __P((char *));
 #endif
 
-static const char rcsid[] = RCSID;
 
 struct option_value {
     struct option_value *next;
@@ -97,6 +97,9 @@ char	devnam[MAXPATHLEN];	/* Device name */
 bool	nodetach = 0;		/* Don't detach from controlling tty */
 bool	updetach = 0;		/* Detach once link is up */
 bool	master_detach;		/* Detach when we're (only) multilink master */
+#ifdef SYSTEMD
+bool	up_sdnotify = 0;	/* Notify systemd once link is up */
+#endif
 int	maxconnect = 0;		/* Maximum connect time */
 char	user[MAXNAMELEN];	/* Username for PAP */
 char	passwd[MAXSECRETLEN];	/* Password for PAP */
@@ -104,12 +107,6 @@ bool	persist = 0;		/* Reopen link after it goes down */
 char	our_name[MAXNAMELEN];	/* Our name for authentication purposes */
 bool	demand = 0;		/* do dial-on-demand */
 char	*ipparam = NULL;	/* Extra parameter for ip up/down scripts */
-char	*ipupcustom = NULL;	/* Custom ip up scripts */
-char	*ipdowncustom = NULL;	/* Custom ip down scripts */
-char	*chapseccustom = NULL;	/* Custom chap-secrets file */
-char	*papseccustom = NULL;	/* Custom pap-secrets file */
-char	*srpseccustom = NULL;	/* Custom pap-secrets file */
-
 int	idle_time_limit = 0;	/* Disconnect if idle for this many seconds */
 int	holdoff = 30;		/* # seconds to pause before reconnecting */
 bool	holdoff_specified;	/* true if a holdoff value has been given */
@@ -121,6 +118,10 @@ bool	tune_kernel;		/* may alter kernel settings */
 int	connect_delay = 1000;	/* wait this many ms after connect script */
 int	req_unit = -1;		/* requested interface unit */
 char	req_ifname[MAXIFNAMELEN];	/* requested interface name */
+char	path_ipup[MAXPATHLEN];	/* pathname of ip-up script */
+char	path_ipdown[MAXPATHLEN];/* pathname of ip-down script */
+char	path_ipv6up[MAXPATHLEN];	/* pathname of ipv6-up script */
+char	path_ipv6down[MAXPATHLEN];/* pathname of ipv6-down script */
 bool	multilink = 0;		/* Enable multilink operation */
 char	*bundle_name = NULL;	/* bundle name for multilink */
 bool	dump_options;		/* print out option values */
@@ -136,11 +137,6 @@ int maxoctets_dir = 0;       /* default - sum of traffic */
 int maxoctets_timeout = 1;   /* default 1 second */ 
 #endif
 
-
-#ifdef HAVE_AQOS
-int bandwidthup=0;
-int bandwidthdown=0;
-#endif
 
 extern option_t auth_options[];
 extern struct stat devstat;
@@ -168,11 +164,17 @@ static int readfile __P((char **));
 static int callfile __P((char **));
 static int showversion __P((char **));
 static int showhelp __P((char **));
-#define usage() { }
-//static void usage __P((void));
+static void usage __P((void));
 static int setlogfile __P((char **));
 #ifdef PLUGIN
 static int loadplugin __P((char **));
+#endif
+
+#ifdef PPP_PRECOMPILED_FILTER
+#include "pcap_pcc.h"
+static int setprecompiledpassfilter __P((char **));
+static int setprecompiledactivefilter __P((char **));
+#undef PPP_FILTER
 #endif
 
 #ifdef PPP_FILTER
@@ -221,6 +223,11 @@ option_t general_options[] = {
       "Don't detach from controlling tty", OPT_PRIO | 1 },
     { "-detach", o_bool, &nodetach,
       "Don't detach from controlling tty", OPT_ALIAS | OPT_PRIOSUB | 1 },
+#ifdef SYSTEMD
+    { "up_sdnotify", o_bool, &up_sdnotify,
+      "Notify systemd once link is up (implies nodetach)",
+      OPT_PRIOSUB | OPT_A2COPY | 1, &nodetach },
+#endif
     { "updetach", o_bool, &updetach,
       "Detach from controlling tty once link is up",
       OPT_PRIOSUB | OPT_A2CLR | 1, &nodetach },
@@ -321,6 +328,20 @@ option_t general_options[] = {
       "Metric to use for the default route (Linux only; -1 for default behavior)",
       OPT_PRIV|OPT_LLIMIT|OPT_INITONLY, NULL, 0, -1 },
 
+    { "ip-up-script", o_string, path_ipup,
+      "Set pathname of ip-up script",
+      OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
+    { "ip-down-script", o_string, path_ipdown,
+      "Set pathname of ip-down script",
+      OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
+
+    { "ipv6-up-script", o_string, path_ipv6up,
+      "Set pathname of ipv6-up script",
+      OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
+    { "ipv6-down-script", o_string, path_ipv6down,
+      "Set pathname of ipv6-down script",
+      OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
+
 #ifdef HAVE_MULTILINK
     { "multilink", o_bool, &multilink,
       "Enable multilink operation", OPT_PRIO | 1 },
@@ -328,12 +349,13 @@ option_t general_options[] = {
       "Enable multilink operation", OPT_PRIOSUB | OPT_ALIAS | 1 },
     { "nomultilink", o_bool, &multilink,
       "Disable multilink operation", OPT_PRIOSUB | 0 },
-    { "nomp", o_bool, &multilink,
-      "Disable multilink operation", OPT_PRIOSUB | OPT_ALIAS | 0 },
 
     { "bundle", o_string, &bundle_name,
       "Bundle name for multilink", OPT_PRIO },
 #endif /* HAVE_MULTILINK */
+
+    { "nomp", o_bool, &multilink,
+      "Disable multilink operation", OPT_PRIOSUB | OPT_ALIAS | 0 },
 
 #ifdef PLUGIN
     { "plugin", o_special, (void *)loadplugin,
@@ -346,6 +368,14 @@ option_t general_options[] = {
 
     { "active-filter", o_special, setactivefilter,
       "set filter for active pkts", OPT_PRIO },
+#endif
+
+#ifdef PPP_PRECOMPILED_FILTER
+    { "precompiled-pass-filter", 1, setprecompiledpassfilter,
+      "set precompiled filter for packets to pass", OPT_PRIO },
+
+    { "precompiled-active-filter", 1, setprecompiledactivefilter,
+      "set precompiled filter for active pkts", OPT_PRIO },
 #endif
 
 #ifdef MAXOCTETS
@@ -1064,12 +1094,12 @@ print_options(printer, arg)
 /*
  * usage - print out a message telling how to use the program.
  */
-//static void
-//usage()
-//{
-//    if (phase == PHASE_INITIALIZE)
-//	fprintf(stderr, usage_string, VERSION, progname);
-//}
+static void
+usage()
+{
+    if (phase == PHASE_INITIALIZE)
+	fprintf(stderr, usage_string, VERSION, progname);
+}
 
 /*
  * showhelp - print out usage message and exit.
@@ -1362,6 +1392,7 @@ getword(f, word, newlinep, filename)
 
 	c = getc(f);
     }
+    word[MAXWORDLEN-1] = 0;	/* make sure word is null-terminated */
 
     /*
      * End of the word: check for errors.
@@ -1496,6 +1527,29 @@ callfile(argv)
     free(fname);
     return ok;
 }
+
+#ifdef PPP_PRECOMPILED_FILTER
+/*
+ * setprecompiledpassfilter - Set the pass filter for packets using a
+ * precompiled expression
+ */
+static int
+setprecompiledpassfilter(argv)
+    char **argv;
+{
+    return pcap_pre_compiled (*argv, &pass_filter);
+}
+
+/*
+ * setactivefilter - Set the active filter for packets
+ */
+static int
+setprecompiledactivefilter(argv)
+    char **argv;
+{
+    return pcap_pre_compiled (*argv, &active_filter);
+}
+#endif
 
 #ifdef PPP_FILTER
 /*
@@ -1637,8 +1691,8 @@ loadplugin(argv)
     if (handle == 0) {
 	err = dlerror();
 	if (err != 0)
-	    fprintf(stderr, "%s\n", err);
-	fprintf(stderr,"Couldn't load plugin %s\n", arg);
+	    option_error("%s", err);
+	option_error("Couldn't load plugin %s", arg);
 	goto err;
     }
     init = (void (*)(void))dlsym(handle, "plugin_init");

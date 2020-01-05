@@ -70,20 +70,18 @@ static int setdevname_pppoatm(const char *cp, const char **argv, int doit)
 {
 	struct sockaddr_atmpvc addr;
 	extern struct stat devstat;
-
 	if (device_got_set)
 		return 0;
-
+	//info("PPPoATM setdevname_pppoatm: '%s'", cp);
 	memset(&addr, 0, sizeof addr);
 	if (text2atm(cp, (struct sockaddr *) &addr, sizeof(addr),
 	    T2A_PVC | T2A_NAME | T2A_WILDCARD) < 0) {
-		if (doit)
-			info("cannot parse the ATM address: %s", cp);
+               if(doit)
+                   info("atm does not recognize: %s", cp);
 		return 0;
-	}
-	if (!doit)
-		return 1;
-
+           }
+	if (!doit) return 1;
+	//if (!dev_set_ok()) return -1;
 	memcpy(&pvcaddr, &addr, sizeof pvcaddr);
 	strlcpy(devnam, cp, sizeof devnam);
 	devstat.st_mode = S_IFSOCK;
@@ -95,6 +93,7 @@ static int setdevname_pppoatm(const char *cp, const char **argv, int doit)
 		lcp_allowoptions[0].neg_asyncmap = 0;
 		lcp_wantoptions[0].neg_pcompression = 0;
 	}
+	info("PPPoATM setdevname_pppoatm - SUCCESS:%s", cp);
 	device_got_set = 1;
 	return 1;
 }
@@ -109,7 +108,6 @@ static void no_device_given_pppoatm(void)
 static void set_line_discipline_pppoatm(int fd)
 {
 	struct atm_backend_ppp be;
-
 	be.backend_num = ATM_BACKEND_PPP;
 	if (!llc_encaps)
 		be.encaps = PPPOATM_ENCAPS_VC;
@@ -117,7 +115,6 @@ static void set_line_discipline_pppoatm(int fd)
 		be.encaps = PPPOATM_ENCAPS_LLC;
 	else
 		be.encaps = PPPOATM_ENCAPS_AUTODETECT;
-
 	if (ioctl(fd, ATM_SETBACKEND, &be) < 0)
 		fatal("ioctl(ATM_SETBACKEND): %m");
 }
@@ -169,20 +166,11 @@ static void disconnect_pppoatm(void)
 	close(pppoa_fd);
 }
 
-
 void plugin_init(void)
 {
-#ifdef linux
-	extern int new_style_driver;	/* From sys-linux.c */
-	if (!ppp_available() && !new_style_driver)
-		fatal("Kernel doesn't support ppp_generic - "
-		    "needed for PPPoATM");
-#else
-	fatal("No PPPoATM support on this OS");
-#endif
+	info("PPPoATM plugin_init");
 	add_options(pppoa_options);
 }
-
 struct channel pppoa_channel = {
     options: pppoa_options,
     process_extra_options: NULL,
