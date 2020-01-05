@@ -120,8 +120,10 @@ int	req_unit = -1;		/* requested interface unit */
 char	req_ifname[MAXIFNAMELEN];	/* requested interface name */
 char	path_ipup[MAXPATHLEN];	/* pathname of ip-up script */
 char	path_ipdown[MAXPATHLEN];/* pathname of ip-down script */
+#ifdef INET6
 char	path_ipv6up[MAXPATHLEN];	/* pathname of ipv6-up script */
 char	path_ipv6down[MAXPATHLEN];/* pathname of ipv6-down script */
+#endif
 bool	multilink = 0;		/* Enable multilink operation */
 char	*bundle_name = NULL;	/* bundle name for multilink */
 bool	dump_options;		/* print out option values */
@@ -335,13 +337,14 @@ option_t general_options[] = {
       "Set pathname of ip-down script",
       OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
 
+#ifdef INET6
     { "ipv6-up-script", o_string, path_ipv6up,
       "Set pathname of ipv6-up script",
       OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
     { "ipv6-down-script", o_string, path_ipv6down,
       "Set pathname of ipv6-down script",
       OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
-
+#endif
 #ifdef HAVE_MULTILINK
     { "multilink", o_bool, &multilink,
       "Enable multilink operation", OPT_PRIO | 1 },
