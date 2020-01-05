@@ -61,10 +61,11 @@ void start_privoxy(void)
 		sysprintf("iptables -t nat -I PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT", ip, mask, ip, webif_port);
 		sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s -d %s --dport %s -j DROP", ip, ip, webif_port);
 		sysprintf("iptables -t nat -I PREROUTING -p tcp -s %s -d %s --dport %s -j DROP", ip, ip, webif_port);
+		char *transp = nvram_safe_get("privoxy_transp_exclude");
 		/* no gui setting yet - redirect all except this IP */
-		if (strlen(nvram_safe_get("privoxy_transp_exclude"))) {
-			sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", nvram_safe_get("privoxy_transp_exclude"));
-			sysprintf("iptables -t nat -I PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", nvram_safe_get("privoxy_transp_exclude"));
+		if (*transp) {
+			sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", transp);
+			sysprintf("iptables -t nat -I PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", transp);
 		}
 		mode = 1;
 		getIfLists(vifs, 256);
@@ -129,6 +130,7 @@ void stop_privoxy(void)
 	char *wan = get_wan_ipaddr();
 	char *mask = nvram_safe_get("lan_netmask");
 	char *webif_port = nvram_safe_get("http_lanport");
+	char *transp = nvram_safe_get("privoxy_transp_exclude");
 	char *next;
 	char var[80];
 	char vifs[256];
@@ -136,7 +138,8 @@ void stop_privoxy(void)
 	sysprintf("iptables -t nat -D PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118", wan, ip);
 	sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT", ip, mask, ip, webif_port);
 	sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s -d %s --dport %s -j DROP", ip, ip, webif_port);
-	sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", nvram_safe_get("privoxy_transp_exclude"));
+	if (*transp)
+	sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT");
 
 	getIfLists(vifs, 256);
 	char vif_ip[32];
