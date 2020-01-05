@@ -90,6 +90,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/sysinfo.h>
 
 #include "pppd.h"
 #include "magic.h"
@@ -230,6 +231,7 @@ static struct subprocess *children;
 
 /* Prototypes for procedures local to this file. */
 
+static void check_time(void);
 static void setup_signals __P((void));
 static void create_pidfile __P((int pid));
 static void create_linkpidfile __P((int pid));
@@ -524,6 +526,7 @@ main(argc, argv)
 	    info("Starting link");
 	}
 
+	check_time();
 	gettimeofday(&start_time, NULL);
 	script_unsetenv("CONNECT_TIME");
 	script_unsetenv("BYTES_SENT");
@@ -869,14 +872,17 @@ struct protocol_list {
     const char	*name;
 } protocol_list[] = {
     { 0x21,	"IP" },
+#if 0
     { 0x23,	"OSI Network Layer" },
     { 0x25,	"Xerox NS IDP" },
     { 0x27,	"DECnet Phase IV" },
     { 0x29,	"Appletalk" },
     { 0x2b,	"Novell IPX" },
+#endif
     { 0x2d,	"VJ compressed TCP/IP" },
     { 0x2f,	"VJ uncompressed TCP/IP" },
     { 0x31,	"Bridging PDU" },
+#if 0
     { 0x33,	"Stream Protocol ST-II" },
     { 0x35,	"Banyan Vines" },
     { 0x39,	"AppleTalk EDDP" },
@@ -890,8 +896,11 @@ struct protocol_list {
     { 0x49,	"Serial Data Transport Protocol (PPP-SDTP)" },
     { 0x4b,	"SNA over 802.2" },
     { 0x4d,	"SNA" },
+#endif
     { 0x4f,	"IP6 Header Compression" },
+#if 0
     { 0x51,	"KNX Bridging Data" },
+#endif
     { 0x53,	"Encryption" },
     { 0x55,	"Individual Link Encryption" },
     { 0x57,	"IPv6" },
@@ -902,12 +911,15 @@ struct protocol_list {
     { 0x65,	"RTP IPHC Compressed non-TCP" },
     { 0x67,	"RTP IPHC Compressed UDP 8" },
     { 0x69,	"RTP IPHC Compressed RTP 8" },
+#if 0
     { 0x6f,	"Stampede Bridging" },
     { 0x73,	"MP+" },
     { 0xc1,	"NTCITS IPI" },
+#endif
     { 0xfb,	"single-link compression" },
     { 0xfd,	"Compressed Datagram" },
     { 0x0201,	"802.1d Hello Packets" },
+#if 0
     { 0x0203,	"IBM Source Routing BPDU" },
     { 0x0205,	"DEC LANBridge100 Spanning Tree" },
     { 0x0207,	"Cisco Discovery Protocol" },
@@ -919,15 +931,19 @@ struct protocol_list {
     { 0x0231,	"Luxcom" },
     { 0x0233,	"Sigma Network Systems" },
     { 0x0235,	"Apple Client Server Protocol" },
+#endif
     { 0x0281,	"MPLS Unicast" },
     { 0x0283,	"MPLS Multicast" },
+#if 0
     { 0x0285,	"IEEE p1284.4 standard - data packets" },
     { 0x0287,	"ETSI TETRA Network Protocol Type 1" },
+#endif
     { 0x0289,	"Multichannel Flow Treatment Protocol" },
     { 0x2063,	"RTP IPHC Compressed TCP No Delta" },
     { 0x2065,	"RTP IPHC Context State" },
     { 0x2067,	"RTP IPHC Compressed UDP 16" },
     { 0x2069,	"RTP IPHC Compressed RTP 16" },
+#if 0
     { 0x4001,	"Cray Communications Control Protocol" },
     { 0x4003,	"CDPD Mobile Network Registration Protocol" },
     { 0x4005,	"Expand accelerator protocol" },
@@ -938,8 +954,10 @@ struct protocol_list {
     { 0x4023,	"RefTek Protocol" },
     { 0x4025,	"Fibre Channel" },
     { 0x4027,	"EMIT Protocols" },
+#endif
     { 0x405b,	"Vendor-Specific Protocol (VSP)" },
     { 0x8021,	"Internet Protocol Control Protocol" },
+#if 0
     { 0x8023,	"OSI Network Layer Control Protocol" },
     { 0x8025,	"Xerox NS IDP Control Protocol" },
     { 0x8027,	"DECnet Phase IV Control Protocol" },
@@ -948,7 +966,9 @@ struct protocol_list {
     { 0x8031,	"Bridging NCP" },
     { 0x8033,	"Stream Protocol Control Protocol" },
     { 0x8035,	"Banyan Vines Control Protocol" },
+#endif
     { 0x803d,	"Multi-Link Control Protocol" },
+#if 0
     { 0x803f,	"NETBIOS Framing Control Protocol" },
     { 0x8041,	"Cisco Systems Control Protocol" },
     { 0x8043,	"Ascom Timeplex" },
@@ -957,18 +977,24 @@ struct protocol_list {
     { 0x8049,	"Serial Data Control Protocol (PPP-SDCP)" },
     { 0x804b,	"SNA over 802.2 Control Protocol" },
     { 0x804d,	"SNA Control Protocol" },
+#endif
     { 0x804f,	"IP6 Header Compression Control Protocol" },
+#if 0
     { 0x8051,	"KNX Bridging Control Protocol" },
+#endif
     { 0x8053,	"Encryption Control Protocol" },
     { 0x8055,	"Individual Link Encryption Control Protocol" },
     { 0x8057,	"IPv6 Control Protocol" },
     { 0x8059,	"PPP Muxing Control Protocol" },
     { 0x805b,	"Vendor-Specific Network Control Protocol (VSNCP)" },
+#if 0
     { 0x806f,	"Stampede Bridging Control Protocol" },
     { 0x8073,	"MP+ Control Protocol" },
     { 0x80c1,	"NTCITS IPI Control Protocol" },
+#endif
     { 0x80fb,	"Single Link Compression Control Protocol" },
     { 0x80fd,	"Compression Control Protocol" },
+#if 0
     { 0x8207,	"Cisco Discovery Protocol Control" },
     { 0x8209,	"Netcs Twin Routing" },
     { 0x820b,	"STP - Control Protocol" },
@@ -977,24 +1003,29 @@ struct protocol_list {
     { 0x8281,	"MPLSCP" },
     { 0x8285,	"IEEE p1284.4 standard - Protocol Control" },
     { 0x8287,	"ETSI TETRA TNP1 Control Protocol" },
+#endif
     { 0x8289,	"Multichannel Flow Treatment Protocol" },
     { 0xc021,	"Link Control Protocol" },
     { 0xc023,	"Password Authentication Protocol" },
     { 0xc025,	"Link Quality Report" },
+#if 0
     { 0xc027,	"Shiva Password Authentication Protocol" },
     { 0xc029,	"CallBack Control Protocol (CBCP)" },
     { 0xc02b,	"BACP Bandwidth Allocation Control Protocol" },
     { 0xc02d,	"BAP" },
+#endif
     { 0xc05b,	"Vendor-Specific Authentication Protocol (VSAP)" },
     { 0xc081,	"Container Control Protocol" },
     { 0xc223,	"Challenge Handshake Authentication Protocol" },
     { 0xc225,	"RSA Authentication Protocol" },
     { 0xc227,	"Extensible Authentication Protocol" },
+#if 0
     { 0xc229,	"Mitsubishi Security Info Exch Ptcl (SIEP)" },
     { 0xc26f,	"Stampede Bridging Authorization Protocol" },
     { 0xc281,	"Proprietary Authentication Protocol" },
     { 0xc283,	"Proprietary Authentication Protocol" },
     { 0xc481,	"Proprietary Node ID Authentication Protocol" },
+#endif
     { 0,	NULL },
 };
 
@@ -1265,6 +1296,36 @@ struct	callout {
 
 static struct callout *callout = NULL;	/* Callout list */
 static struct timeval timenow;		/* Current time */
+static long uptime_diff = 0;
+static int uptime_diff_set = 0;
+
+static void check_time(void)
+{
+	long new_diff;
+	struct timeval t;
+	struct sysinfo i;
+    struct callout *p;
+	
+	gettimeofday(&t, NULL);
+	sysinfo(&i);
+	new_diff = t.tv_sec - i.uptime;
+	
+	if (!uptime_diff_set) {
+		uptime_diff = new_diff;
+		uptime_diff_set = 1;
+		return;
+	}
+
+	if ((new_diff - 5 > uptime_diff) || (new_diff + 5 < uptime_diff)) {
+		/* system time has changed, update counters and timeouts */
+		info("System time change detected.");
+		start_time.tv_sec += new_diff - uptime_diff;
+		
+    	for (p = callout; p != NULL; p = p->c_next)
+			p->c_time.tv_sec += new_diff - uptime_diff;
+	}
+	uptime_diff = new_diff;
+}
 
 /*
  * timeout - Schedule a timeout.
@@ -1335,6 +1396,8 @@ calltimeout()
 {
     struct callout *p;
 
+	check_time();
+	
     while (callout != NULL) {
 	p = callout;
 
@@ -1362,6 +1425,8 @@ timeleft(tvp)
 {
     if (callout == NULL)
 	return NULL;
+	
+	check_time();
 
     gettimeofday(&timenow, NULL);
     tvp->tv_sec = callout->c_time.tv_sec - timenow.tv_sec;
