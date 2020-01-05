@@ -1,10 +1,9 @@
-#
 # pppd makefile for Linux
 # $Id: Makefile.linux,v 1.70 2007/06/19 02:08:34 carlsonj Exp $
 #
 
 # Default installation locations
-DESTDIR = @DESTDIR@
+DESTDIR = $(INSTROOT)@DESTDIR@
 BINDIR = $(DESTDIR)/sbin
 MANDIR = $(DESTDIR)/share/man/man8
 INCDIR = $(DESTDIR)/include
@@ -33,7 +32,6 @@ endif
 # CC = gcc
 #
 #COPTS = -O2 -pipe -Wall -g
-#COPTS 
 LIBS =
 
 # Uncomment the next 2 lines to include support for Microsoft's
@@ -51,6 +49,9 @@ MPPE=y
 # and that the kernel driver support PPP packet filtering.
 #FILTER=y
 
+# Support for precompiled filters
+#PRECOMPILED_FILTER=y
+
 # Uncomment the next line to enable multilink PPP (enabled by default)
 # Linux distributions: Please leave multilink ENABLED in your builds
 # of pppd!
@@ -62,18 +63,19 @@ endif
 endif
 
 LDFLAGS = $(LDLTO)
-#ifeq ($(CONFIG_AQOS),y)
-#CFLAGS += -DHAVE_AQOS 
-#LDFLAGS = -L$(TOP)/libutils -L$(TOP)/nvram -lutils -lnvram 
-#endif
+
 # Uncomment the next line to enable the TDB database (enabled by default.)
 # If you enable multilink, then TDB is automatically enabled also.
 # Linux distributions: Please leave TDB ENABLED in your builds.
 #USE_TDB=y
 
+# Uncomment the next line to enable Type=notify services in systemd
+# If enabled, and the user sets the up_sdnotify option, then
+# pppd will not detach and will notify systemd when up.
+#SYSTEMD=y
+
 #HAS_SHADOW=y
 #USE_PAM=y
-
 ifeq ($(CONFIG_IPV6),y)
 HAVE_INET6=y
 endif
@@ -104,9 +106,7 @@ CFLAGS= -DBROADCOM
 endif
 endif
 
-CFLAGS+= -Wall $(COMPILE_FLAGS) $(COPTS) $(MIPS16_OPT) $(LTO) -Os -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,-u,set_mppe_enc_types $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"'
-#CFLAGS+= -Wall $(COMPILE_FLAGS) $(COPTS) $(MIPS16_OPT) -Os  $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"'
-
+CFLAGS= $(COPTS) $(MIPS16_OPT) $(LTO) $(COMPILE_FLAGS) $(INCLUDE_DIRS) -ffunction-sections -fdata-sections -Wl,--gc-sections '-DDESTDIR="@DESTDIR@"'
 
 ifdef CHAPMS
 CFLAGS   += -DCHAPMS=1
@@ -144,12 +144,10 @@ CFLAGS   += -DHAS_SHADOW
 #LIBS     += -lshadow $(LIBS)
 endif
 
-#ifneq ($(wildcard /usr/include/crypt.h),)
-CFLAGS   += -DHAVE_CRYPT_H=1
-#endif
-#ifneq ($(wildcard /usr/lib/libcrypt.*),)
+ifneq ($(wildcard $(shell $(CC) --print-sysroot)/usr/include/crypt.h),)
+CFLAGS  += -DHAVE_CRYPT_H=1
 LIBS	+= -lcrypt
-#endif
+endif
 
 ifdef USE_LIBUTIL
 CFLAGS	+= -DHAVE_LOGWTMP=1
@@ -171,7 +169,6 @@ ifdef USE_PAM
 CFLAGS   += -DUSE_PAM
 LIBS     += -lpam -ldl
 endif
-LIBS += -L$(TOP)/nvram -lnvram
 
 # Multi-linnk
 ifdef HAVE_MULTILINK
@@ -197,17 +194,30 @@ LIBS     += -llock
 CFLAGS   += -DLOCKLIB=1
 endif
 
+ifdef SYSTEMD
+LIBS += -lsystemd
+CFLAGS   += -DSYSTEMD=1
+endif
+
 ifdef PLUGIN
 CFLAGS	+= -DPLUGIN
-LDFLAGS	+= -Wl,-E
+LDFLAGS_PLUGIN	+= -Wl,-E
 LIBS	+= -ldl
 endif
 
 ifdef FILTER
 ifneq ($(wildcard /usr/include/pcap-bpf.h),)
-LIBS    += -lpcap
-CFLAGS  += -DPPP_FILTER
+LIBS    += -lpcap -L$(STAGING_DIR)/usr/lib
+CFLAGS  += -DPPP_FILTER -I$(STAGING_DIR)/usr/include
 endif
+endif
+
+ifdef PRECOMPILED_FILTER
+PPPDSRCS += pcap_pcc.c
+HEADERS  += pcap_pcc.h
+PPPDOBJS += pcap_pcc.o
+LIBS	+= $(STAGING_DIR)/usr/lib/libpcap.a
+CFLAGS	+= -DPPP_FILTER -DPPP_PRECOMPILED_FILTER
 endif
 
 ifdef HAVE_INET6
@@ -241,7 +251,7 @@ install: pppd
 	$(INSTALL) -c -m 444 pppd.8 $(MANDIR)
 
 pppd: $(PPPDOBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o pppd $(PPPDOBJS) $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_PLUGIN) -o pppd $(PPPDOBJS) $(LIBS)
 
 srp-entry:	srp-entry.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ srp-entry.c $(LIBS)

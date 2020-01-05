@@ -168,7 +168,6 @@
 #include "magic.h"
 #include "pathnames.h"
 
-static const char rcsid[] = RCSID;
 
 /* global vars */
 ipv6cp_options ipv6cp_wantoptions[NUM_PPP];     /* Options that we want to request */
@@ -178,6 +177,7 @@ ipv6cp_options ipv6cp_hisoptions[NUM_PPP];	/* Options that we ack'd */
 int no_ifaceid_neg = 0;
 
 /* local vars */
+static int default_route_set[NUM_PPP];		/* Have set up a default route */
 static int ipv6cp_is_up;
 
 /* Hook for a plugin to know when IPv6 protocol has come up */
@@ -245,6 +245,15 @@ static option_t ipv6cp_option_list[] = {
 
     { "ipv6cp-accept-local", o_bool, &ipv6cp_allowoptions[0].accept_local,
       "Accept peer's interface identifier for us", 1 },
+
+    { "defaultroute6", o_bool, &ipv6cp_wantoptions[0].default_route,
+      "Add default IPv6 route", OPT_ENABLE|1, &ipv6cp_allowoptions[0].default_route },
+    { "nodefaultroute6", o_bool, &ipv6cp_allowoptions[0].default_route,
+      "disable defaultroute6 option", OPT_A2CLR,
+      &ipv6cp_wantoptions[0].default_route },
+    { "-defaultroute6", o_bool, &ipv6cp_allowoptions[0].default_route,
+      "disable defaultroute6 option", OPT_ALIAS | OPT_A2CLR,
+      &ipv6cp_wantoptions[0].default_route },
 
     { "ipv6cp-use-ipaddr", o_bool, &ipv6cp_allowoptions[0].use_ip,
       "Use (default) IPv4 address as interface identifier", 1 },
@@ -444,6 +453,10 @@ ipv6cp_init(unit)
     wo->vj_protocol = IPV6CP_COMP;
 #endif
 
+    /*
+     * XXX This controls whether the user may use the defaultroute option.
+     */
+    ao->default_route = 1;
 }
 
 
@@ -1152,6 +1165,9 @@ ipv6_demand_conf(u)
 #endif
     if (!sifnpmode(u, PPP_IPV6, NPMODE_QUEUE))
 	return 0;
+    if (wo->default_route)
+	if (sif6defaultroute(u, wo->ourid, wo->hisid))
+	    default_route_set[u] = 1;
 
     notice("ipv6_demand_conf");
     notice("local  LL address %s", llv6_ntoa(wo->ourid));
@@ -1231,8 +1247,12 @@ ipv6cp_up(f)
 		return;
 	    }
 
+	    /* assign a default route through the interface if required */
+	    if (ipv6cp_wantoptions[f->unit].default_route)
+		if (sif6defaultroute(f->unit, go->ourid, ho->hisid))
+		    default_route_set[f->unit] = 1;
 	}
-	demand_rexmit(PPP_IPV6);
+	demand_rexmit(PPP_IPV6,0);
 	sifnpmode(f->unit, PPP_IPV6, NPMODE_PASS);
 
     } else {
@@ -1252,6 +1272,11 @@ ipv6cp_up(f)
 	}
 	sifnpmode(f->unit, PPP_IPV6, NPMODE_PASS);
 
+	/* assign a default route through the interface if required */
+	if (ipv6cp_wantoptions[f->unit].default_route)
+	    if (sif6defaultroute(f->unit, go->ourid, ho->hisid))
+		default_route_set[f->unit] = 1;
+
 	notice("local  LL address %s", llv6_ntoa(go->ourid));
 	notice("remote LL address %s", llv6_ntoa(ho->hisid));
     }
@@ -1269,7 +1294,7 @@ ipv6cp_up(f)
      */
     if (ipv6cp_script_state == s_down && ipv6cp_script_pid == 0) {
 	ipv6cp_script_state = s_up;
-	ipv6cp_script(_PATH_IPV6UP);
+	ipv6cp_script(path_ipv6up);
     }
 }
 
@@ -1321,7 +1346,7 @@ ipv6cp_down(f)
     /* Execute the ipv6-down script */
     if (ipv6cp_script_state == s_up && ipv6cp_script_pid == 0) {
 	ipv6cp_script_state = s_down;
-	ipv6cp_script(_PATH_IPV6DOWN);
+	ipv6cp_script(path_ipv6down);
     }
 }
 
@@ -1364,13 +1389,13 @@ ipv6cp_script_done(arg)
     case s_up:
 	if (ipv6cp_fsm[0].state != OPENED) {
 	    ipv6cp_script_state = s_down;
-	    ipv6cp_script(_PATH_IPV6DOWN);
+	    ipv6cp_script(path_ipv6down);
 	}
 	break;
     case s_down:
 	if (ipv6cp_fsm[0].state == OPENED) {
 	    ipv6cp_script_state = s_up;
-	    ipv6cp_script(_PATH_IPV6UP);
+	    ipv6cp_script(path_ipv6up);
 	}
 	break;
     }

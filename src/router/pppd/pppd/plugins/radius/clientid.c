@@ -110,7 +110,7 @@ UINT4 rc_map2id(char *name)
 	if (*name != '/')
 		strcpy(ttyname, "/dev/");
 
-	strncat(ttyname, name, sizeof(ttyname));
+	strncat(ttyname, name, sizeof(ttyname) - strlen(ttyname) -1);
 
 	for(p = map2id_list; p; p = p->next)
 		if (!strcmp(ttyname, p->name)) return p->id;

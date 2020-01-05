@@ -488,26 +488,14 @@ int rc_find_server (char *server_name, UINT4 *ip_addr, char *secret)
 		if ((h = strtok (buffer, " \t\n")) == NULL) /* first hostname */
 			continue;
 
-		memset (hostnm, '\0', AUTH_ID_LEN);
-		len = strlen (h);
-		if (len > AUTH_ID_LEN)
-		{
-			len = AUTH_ID_LEN;
-		}
-		strncpy (hostnm, h, (size_t) len);
-		hostnm[AUTH_ID_LEN] = '\0';
+		memset (hostnm, '\0', AUTH_ID_LEN + 1);
+		strlcpy (hostnm, h, AUTH_ID_LEN + 1);
 
 		if ((s = strtok (NULL, " \t\n")) == NULL) /* and secret field */
 			continue;
 
-		memset (secret, '\0', MAX_SECRET_LENGTH);
-		len = strlen (s);
-		if (len > MAX_SECRET_LENGTH)
-		{
-			len = MAX_SECRET_LENGTH;
-		}
-		strncpy (secret, s, (size_t) len);
-		secret[MAX_SECRET_LENGTH] = '\0';
+		memset (secret, '\0', MAX_SECRET_LENGTH + 1);
+		strlcpy (secret, s, MAX_SECRET_LENGTH + 1);
 
 		if (!strchr (hostnm, '/')) /* If single name form */
 		{

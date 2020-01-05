@@ -20,8 +20,6 @@
  *  as published by the Free Software Foundation; either version
  *  2 of the License, or (at your option) any later version.
  */
-#define __packed			__attribute__((packed))
-
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
@@ -149,6 +147,10 @@ static int setdevname_pppol2tp(char **argv)
 		       &tmp, &tmp_len) < 0) {
 		fatal("PPPoL2TP kernel driver not installed");
 	}
+
+	pppol2tp_fd_str = strdup(*argv);
+	if (pppol2tp_fd_str == NULL)
+		novm("PPPoL2TP FD");
 
 	pppol2tp_fd_str = strdup(*argv);
 	if (pppol2tp_fd_str == NULL)
@@ -492,12 +494,7 @@ static void pppol2tp_cleanup(void)
 
 void plugin_init(void)
 {
-#if defined(__linux__)
-	extern int new_style_driver;	/* From sys-linux.c */
-	if (!ppp_available() && !new_style_driver)
-		fatal("Kernel doesn't support ppp_generic - "
-		    "needed for PPPoL2TP");
-#else
+#if !defined(__linux__)
 	fatal("No PPPoL2TP support on this OS");
 #endif
 	add_options(pppol2tp_options);
@@ -507,10 +504,8 @@ void plugin_init(void)
 	 */
 	add_notifier(&ip_up_notifier, pppol2tp_ip_up, NULL);
 	add_notifier(&ip_down_notifier, pppol2tp_ip_down, NULL);
-#ifdef INET6
 	add_notifier(&ipv6_up_notifier, pppol2tp_ip_up, NULL);
 	add_notifier(&ipv6_down_notifier, pppol2tp_ip_down, NULL);
-#endif
 }
 
 struct channel pppol2tp_channel = {

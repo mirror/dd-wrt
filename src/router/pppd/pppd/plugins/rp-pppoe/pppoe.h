@@ -15,16 +15,12 @@
 
 #include "config.h"
 
-#if defined(HAVE_NETPACKET_PACKET_H) || defined(HAVE_LINUX_IF_PACKET_H)
-#define _POSIX_SOURCE 1 /* For sigaction defines */
-#endif
-
 #include <stdio.h>		/* For FILE */
 #include <sys/types.h>		/* For pid_t */
 #include <ctype.h>
 #include <string.h>
 
-//#include "pppd/pppd.h"		/* For error */
+#include "pppd/pppd.h"		/* For error */
 
 /* How do we access raw Ethernet devices? */
 #undef USE_LINUX_PACKET
@@ -43,10 +39,6 @@
 #error Unknown method for accessing raw Ethernet frames
 #endif
 
-#ifdef HAVE_SYS_CDEFS_H
-#include <sys/cdefs.h>
-#endif
-
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
@@ -56,11 +48,7 @@
 #include <netinet/in.h>
 
 /* Ugly header files on some Linux boxes... */
-#if defined(HAVE_LINUX_IF_H)
-#include <linux/if.h>
-#elif defined(HAVE_NET_IF_H)
 #include <net/if.h>
-#endif
 
 #ifdef HAVE_NET_IF_TYPES_H
 #include <net/if_types.h>
@@ -88,11 +76,7 @@ typedef unsigned long UINT32_t;
 #error Could not find a 32-bit integer type
 #endif
 
-#ifdef HAVE_LINUX_IF_ETHER_H
-#include <linux/if_ether.h>
-#endif
-
-
+#include <net/ethernet.h>
 
 
 /* Ethernet frame types according to RFC 2516 */

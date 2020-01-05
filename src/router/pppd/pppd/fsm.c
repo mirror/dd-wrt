@@ -55,7 +55,6 @@
 #include "pppd.h"
 #include "fsm.h"
 
-static const char rcsid[] = RCSID;
 
 static void fsm_timeout __P((void *));
 static void fsm_rconfreq __P((fsm *, int, u_char *, int));
@@ -454,14 +453,8 @@ fsm_rconfreq(f, id, inp, len)
     else
 	code = CONFACK;
 
-    if ( code != TERMREQ )
     /* send the Ack, Nak or Rej to the peer */
     fsm_sdata(f, code, id, inp, len);
-    else {
-    	/* terminate_layer(f,STOPPING); /* should this be stopping or closing? */
-	return;
-    }
-    	
 
     if (code == CONFACK) {
 	if (f->state == ACKRCVD) {

@@ -384,8 +384,8 @@ session_start(flags, user, passwd, ttyName, msg)
                 memset((void *)&ll, 0, sizeof(ll));
 		(void)time(&tnow);
                 ll.ll_time = tnow;
-                (void)strncpy(ll.ll_line, ttyName, sizeof(ll.ll_line));
-                (void)strncpy(ll.ll_host, ifname, sizeof(ll.ll_host));
+                strlcpy(ll.ll_line, ttyName, sizeof(ll.ll_line));
+                strlcpy(ll.ll_host, ifname, sizeof(ll.ll_host));
                 (void)write(fd, (char *)&ll, sizeof(ll));
                 (void)close(fd);
             }

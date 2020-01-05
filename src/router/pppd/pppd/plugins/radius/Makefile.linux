@@ -13,15 +13,8 @@ INSTALL	= install
 
 PLUGIN=radius.so radattr.so radrealms.so
 #COPTS = -O2
-CFLAGS=-Wall  -I. -I../.. -I../../../include $(COPTS)  $(MIPS16_OPT) -fPIC -DRC_LOG_FACILITY=LOG_DAEMON 
-
-
-include $(TOP)/.config
-
-#ifeq ($(CONFIG_AQOS),y)
-#CFLAGS += -DHAVE_AQOS 
-#endif
-
+CFLAGS= $(LTO) -I. -I../.. -I../../../include $(COPTS) -fPIC -DRC_LOG_FACILITY=LOG_DAEMON
+LDFLAGS = $(LDLTO)
 # Uncomment the next line to include support for Microsoft's
 # MS-CHAP authentication protocol.
 CHAPMS=y
@@ -51,18 +44,18 @@ install: all
 	$(INSTALL) -c -m 444 pppd-radattr.8 $(MANDIR)
 
 radius.so: radius.o libradiusclient.a
-	$(CC) -o radius.so -shared radius.o libradiusclient.a
+	$(CC) $(LDFLAGS) -fPIC -o radius.so -shared radius.o libradiusclient.a
 
 radattr.so: radattr.o
-	$(CC) -o radattr.so -shared radattr.o
+	$(CC) $(LDFLAGS) -fPIC -o radattr.so -shared radattr.o
 
 radrealms.so: radrealms.o
-	$(CC) -o radrealms.so -shared radrealms.o
+	$(CC) $(LDFLAGS) -fPIC -o radrealms.so -shared radrealms.o
 
 CLIENTOBJS = avpair.o buildreq.o config.o dict.o ip_util.o \
 	clientid.o sendserver.o lock.o util.o md5.o
 libradiusclient.a: $(CLIENTOBJS)
-	$(AR) rv $@ $?
+	$(AR) rv $(LTOPLUGIN) $@ $?
 
 clean:
 	rm -f *.o *.so *.a

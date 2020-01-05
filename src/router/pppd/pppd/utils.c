@@ -59,7 +59,6 @@
 #include "fsm.h"
 #include "lcp.h"
 
-static const char rcsid[] = RCSID;
 
 #if defined(SUNOS4)
 extern char *strerror();
@@ -167,6 +166,7 @@ vslprintf(buf, buflen, fmt, args)
     u_int32_t ip;
     static char hexchars[] = "0123456789abcdef";
     struct buffer_info bufinfo;
+    int termch;
 
     buf0 = buf;
     --buflen;
@@ -300,13 +300,17 @@ vslprintf(buf, buflen, fmt, args)
 		    p = (unsigned char *)"<NULL>";
 	    if (fillch == '0' && prec >= 0) {
 		n = prec;
+		termch = -1;	/* matches no unsigned char value */
 	    } else {
-		n = strlen((char *)p);
-		if (prec >= 0 && n > prec)
+		n = buflen;
+		if (prec != -1 && n > prec)
 		    n = prec;
+		termch = 0;	/* stop on null byte */
 	    }
 	    while (n > 0 && buflen > 0) {
 		c = *p++;
+		if (c == termch)
+		    break;
 		--n;
 		if (!quoted && c >= 0x80) {
 		    OUTCHAR('M');
@@ -386,9 +390,9 @@ vslprintf(buf, buflen, fmt, args)
 	    }
 	    len = num + sizeof(num) - 1 - str;
 	} else {
-	    len = strlen(str);
-	    if (prec >= 0 && len > prec)
-		len = prec;
+	    for (len = 0; len < buflen && (prec == -1 || len < prec); ++len)
+		if (str[len] == 0)
+		    break;
 	}
 	if (width > 0) {
 	    if (width > buflen)
@@ -667,7 +671,6 @@ log_write(level, buf)
 /*
  * fatal - log an error message and die horribly.
  */
-#ifdef NEED_PRINTF
 void
 fatal __V((char *fmt, ...))
 {
@@ -684,9 +687,12 @@ fatal __V((char *fmt, ...))
     logit(LOG_ERR, fmt, pvar);
     va_end(pvar);
 
-    die(1);			
+    die(1);			/* as promised */
 }
 
+/*
+ * error - log an error message.
+ */
 void
 error __V((char *fmt, ...))
 {
@@ -705,6 +711,9 @@ error __V((char *fmt, ...))
     ++error_count;
 }
 
+/*
+ * warn - log a warning message.
+ */
 void
 warn __V((char *fmt, ...))
 {
@@ -722,6 +731,9 @@ warn __V((char *fmt, ...))
     va_end(pvar);
 }
 
+/*
+ * notice - log a notice-level message.
+ */
 void
 notice __V((char *fmt, ...))
 {
@@ -739,6 +751,9 @@ notice __V((char *fmt, ...))
     va_end(pvar);
 }
 
+/*
+ * info - log an informational message.
+ */
 void
 info __V((char *fmt, ...))
 {
@@ -756,7 +771,9 @@ info __V((char *fmt, ...))
     va_end(pvar);
 }
 
-
+/*
+ * dbglog - log a debug message.
+ */
 void
 dbglog __V((char *fmt, ...))
 {
@@ -773,7 +790,7 @@ dbglog __V((char *fmt, ...))
     logit(LOG_DEBUG, fmt, pvar);
     va_end(pvar);
 }
-#endif
+
 /*
  * dump_packet - print out a packet in readable form if it is interesting.
  * Assumes len >= PPP_HDRLEN.
