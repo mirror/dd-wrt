@@ -182,9 +182,7 @@ mp_join_bundle()
 	 * and attach the link.
 	 */
 	mtu = MIN(ho->mrru, ao->mru);
-	script_setenv("REMOTE_ENDPOINT", epdisc_to_str(&(ho->endpoint)), 0 );
 	if (demand) {
-	    warn("at this point");
 		cfg_bundle(go->mrru, ho->mrru, go->neg_ssnhf, ho->neg_ssnhf);
 		netif_set_mtu(0, mtu);
 		script_setenv("BUNDLE", bundle_id + 7, 1);
@@ -206,7 +204,7 @@ mp_join_bundle()
 			/* make sure the string is null-terminated */
 			rec.dptr[rec.dsize-1] = 0;
 			/* parse the interface number */
-			parse_num(rec.dptr, "IFNAME=ppp", &unit);
+			parse_num(rec.dptr, "UNIT=", &unit);
 			/* check the pid value */
 			if (!parse_num(rec.dptr, "PPPD_PID=", &pppd_pid)
 			    || !process_exists(pppd_pid)
@@ -422,7 +420,7 @@ owns_unit(key, unit)
 	TDB_DATA kd, vd;
 	int ret = 0;
 
-	slprintf(ifkey, sizeof(ifkey), "IFNAME=ppp%d", unit);
+	slprintf(ifkey, sizeof(ifkey), "UNIT=%d", unit);
 	kd.dptr = ifkey;
 	kd.dsize = strlen(ifkey);
 	vd = tdb_fetch(pppdb, kd);
@@ -447,12 +445,8 @@ get_default_epdisc(ep)
 	if (p != 0 && get_if_hwaddr(ep->value, p) >= 0) {
 		ep->class = EPD_MAC;
 		ep->length = 6;
-		free(p);
 		return 1;
 	}
-
-	if (p)
-		free(p);
 
 	/* see if our hostname corresponds to a reasonable IP address */
 	hp = gethostbyname(hostname);
@@ -595,4 +589,3 @@ str_to_epdisc(ep, str)
 	ep->length = l;
 	return 1;
 }
-

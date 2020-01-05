@@ -100,6 +100,10 @@
 #endif
 #include <time.h>
 
+#ifdef SYSTEMD
+#include <systemd/sd-daemon.h>
+#endif
+
 #include "pppd.h"
 #include "fsm.h"
 #include "lcp.h"
@@ -115,7 +119,6 @@
 #include "pathnames.h"
 #include "session.h"
 
-static const char rcsid[] = RCSID;
 
 /* Bits in scan_authfile return value */
 #define NONWILD_SERVER	1
@@ -227,7 +230,6 @@ bool refuse_eap = 0;		/* Don't wanna auth. ourselves with EAP */
 #ifdef CHAPMS
 bool refuse_mschap = 0;		/* Don't wanna auth. ourselves with MS-CHAP */
 bool refuse_mschap_v2 = 0;	/* Don't wanna auth. ourselves with MS-CHAPv2 */
-bool ms_ignore_domain = 0;
 #else
 bool refuse_mschap = 1;		/* Don't wanna auth. ourselves with MS-CHAP */
 bool refuse_mschap_v2 = 1;	/* Don't wanna auth. ourselves with MS-CHAPv2 */
@@ -298,13 +300,6 @@ option_t auth_options[] = {
       "Require CHAP authentication from peer",
       OPT_ALIAS | OPT_PRIOSUB | OPT_A2OR | MDTYPE_MD5,
       &lcp_wantoptions[0].chap_mdtype },
-    { "chap-secrets", o_string, &chapseccustom,
-      "Specify custom chap-secrets file", OPT_PRIO },
-    { "pap-secrets", o_string, &papseccustom,
-      "Specify custom pap-secrets file", OPT_PRIO },
-    { "srp-secrets", o_string, &srpseccustom,
-      "Specify custom srp-secrets file", OPT_PRIO },
-
 #ifdef CHAPMS
     { "require-mschap", o_bool, &auth_required,
       "Require MS-CHAP authentication from peer",
@@ -322,9 +317,6 @@ option_t auth_options[] = {
       "Require MS-CHAPv2 authentication from peer",
       OPT_ALIAS | OPT_PRIOSUB | OPT_A2OR | MDTYPE_MICROSOFT_V2,
       &lcp_wantoptions[0].chap_mdtype },
-    { "ms-ignore-domain", o_bool, &ms_ignore_domain,
-      "Ignore any MS domain prefix in the username", 1 },
-
 #endif
 
     { "refuse-pap", o_bool, &refuse_pap,
@@ -437,16 +429,13 @@ setupapfile(argv)
     euid = geteuid();
     if (seteuid(getuid()) == -1) {
 	option_error("unable to reset uid before opening %s: %m", fname);
-	free(fname);
+        free(fname);
 	return 0;
     }
     ufile = fopen(fname, "r");
-    if (seteuid(euid) == -1) {
-	free(fname);
-	fatal("unable to regain privileges: %m"); // fatal exits here. there is no use after free
-    }
+    if (seteuid(euid) == -1)
+	fatal("unable to regain privileges: %m");
     if (ufile == NULL) {
-	free(fname);
 	option_error("unable to open user login data file %s", fname);
         free(fname);
 	return 0;
@@ -458,7 +447,6 @@ setupapfile(argv)
     if (fgets(u, MAXNAMELEN - 1, ufile) == NULL
 	|| fgets(p, MAXSECRETLEN - 1, ufile) == NULL) {
 	fclose(ufile);
-	free(fname);
 	option_error("unable to read user login data file %s", fname);
         free(fname);
 	return 0;
@@ -602,13 +590,9 @@ void start_link(unit)
      * incoming events (reply, timeout, etc.).
      */
     if (ifunit >= 0)
-    {
 	notice("Connect: %s <--> %s", ifname, ppp_devnam);
-    }
     else
-    {
 	notice("Starting negotiation on %s", ppp_devnam);
-    }
     add_fd(fd_ppp);
 
     status = EXIT_NEGOTIATION_FAILED;
@@ -1122,8 +1106,15 @@ np_up(unit, proto)
 	/*
 	 * Detach now, if the updetach option was given.
 	 */
-	if (updetach && !nodetach)
+	if (updetach && !nodetach) {
+	    dbglog("updetach is set. Now detaching.");
 	    detach();
+#ifdef SYSTEMD
+	} else if (nodetach && up_sdnotify) {
+	    dbglog("up_sdnotify is set. Now notifying systemd: READY=1");
+	    sd_notify(0, "READY=1");
+#endif
+	}
     }
     ++num_np_up;
 }
@@ -1307,23 +1298,18 @@ auth_check_options()
 	    option_error(
 "(because this system has a default route to the internet)");
 	} else if (explicit_remote)
-	{
 	    option_error(
 "The remote system (%s) is required to authenticate itself",
 			 remote_name);
-	}
 	else
-	{
 	    option_error(
 "The remote system is required to authenticate itself");
-	}
 	option_error(
 "but I couldn't find any suitable secret (password) for it to use to do so.");
 	if (lacks_ip)
-	{
 	    option_error(
 "(None of the available passwords would let it use an IP address.)");
-	}
+
 	exit(1);
     }
 
@@ -1438,7 +1424,7 @@ check_passwd(unit, auser, userlen, apasswd, passwdlen, msg)
      * Open the file of pap secrets and scan for a suitable secret
      * for authenticating this user.
      */
-    filename = papseccustom ? papseccustom : _PATH_UPAPFILE;
+    filename = _PATH_UPAPFILE;
     addrs = opts = NULL;
     ret = UPAP_AUTHNAK;
     f = fopen(filename, "r");
@@ -1538,7 +1524,7 @@ null_login(unit)
      * Open the file of pap secrets and scan for a suitable secret.
      */
     if (ret <= 0) {
-	filename = papseccustom ? papseccustom : _PATH_UPAPFILE;
+	filename = _PATH_UPAPFILE;
 	addrs = NULL;
 	f = fopen(filename, "r");
 	if (f == NULL)
@@ -1624,7 +1610,7 @@ have_pap_secret(lacks_ipp)
 	    return ret;
     }
 
-    filename = papseccustom ? papseccustom : _PATH_UPAPFILE;
+    filename = _PATH_UPAPFILE;
     f = fopen(filename, "r");
     if (f == NULL)
 	return 0;
@@ -1669,7 +1655,7 @@ have_chap_secret(client, server, need_ip, lacks_ipp)
 	}
     }
 
-    filename = chapseccustom ? chapseccustom : _PATH_CHAPFILE;
+    filename = _PATH_CHAPFILE;
     f = fopen(filename, "r");
     if (f == NULL)
 	return 0;
@@ -1711,7 +1697,7 @@ have_srp_secret(client, server, need_ip, lacks_ipp)
     char *filename;
     struct wordlist *addrs;
 
-    filename = srpseccustom ? srpseccustom : _PATH_SRPFILE;
+    filename = _PATH_SRPFILE;
     f = fopen(filename, "r");
     if (f == NULL)
 	return 0;
@@ -1764,7 +1750,7 @@ get_secret(unit, client, server, secret, secret_len, am_server)
 	    return 0;
 	}
     } else {
-	filename = chapseccustom ? chapseccustom : _PATH_CHAPFILE;
+	filename = _PATH_CHAPFILE;
 	addrs = NULL;
 	secbuf[0] = 0;
 

@@ -166,7 +166,6 @@
 #define	UDP6_DEV_NAME	"/dev/udp6"
 #endif /* !defined(UDP6_DEV_NAME) && defined(SOL2) */
 
-static const char rcsid[] = RCSID;
 
 #if defined(SOL2)
 /*
@@ -189,6 +188,12 @@ static int	ip6fd;		/* IP file descriptor */
 static int	ip6muxid = -1;	/* Multiplexer file descriptor */
 static int	if6_is_up = 0;	/* IPv6 interface has been marked up */
 
+#define IN6_SOCKADDR_FROM_EUI64(s, eui64) do { \
+	(s)->sin6_family = AF_INET6; \
+	(s)->sin6_addr.s6_addr32[0] = htonl(0xfe800000); \
+	eui64_copy(eui64, (s)->sin6_addr.s6_addr32[2]); \
+	} while(0)
+
 #define _IN6_LLX_FROM_EUI64(l, s, eui64, as) do {	\
 	s->sin6_addr.s6_addr32[0] = htonl(as); 	\
 	eui64_copy(eui64, s->sin6_addr.s6_addr32[2]);	\
@@ -198,11 +203,19 @@ static int	if6_is_up = 0;	/* IPv6 interface has been marked up */
 	l.lifr_addr = laddr;			\
 	} while (0)
 
+#define _IN6A_LLX_FROM_EUI64(s, eui64, as) do {	\
+	s->s6_addr32[0] = htonl(as); 	\
+	eui64_copy(eui64, s->s6_addr32[2]);	\
+	} while (0)
+
 #define IN6_LLADDR_FROM_EUI64(l, s, eui64)  \
     _IN6_LLX_FROM_EUI64(l, s, eui64, 0xfe800000)
 
 #define IN6_LLTOKEN_FROM_EUI64(l, s, eui64) \
     _IN6_LLX_FROM_EUI64(l, s, eui64, 0)
+
+#define IN6A_LLADDR_FROM_EUI64(s, eui64)  \
+    _IN6A_LLX_FROM_EUI64(s, eui64, 0xfe800000)
 
 #endif /* defined(INET6) && defined(SOL2) */
 
@@ -238,6 +251,7 @@ static int	tty_npushed;
 static int	if_is_up;	/* Interface has been marked up */
 static u_int32_t remote_addr;		/* IP address of peer */
 static u_int32_t default_route_gateway;	/* Gateway for default route added */
+static eui64_t	default_route_gateway6;	/* Gateway for default IPv6 route added */
 static u_int32_t proxy_arp_addr;	/* Addr for proxy arp entry added */
 
 /* Prototypes for procedures local to this file. */
@@ -787,6 +801,8 @@ sys_cleanup()
 	sifdown(0);
     if (default_route_gateway)
 	cifdefaultroute(0, default_route_gateway, default_route_gateway);
+    if (default_route_gateway6.e32[0] != 0 || default_route_gateway6.e32[1] != 0)
+	cif6defaultroute(0, default_route_gateway6, default_route_gateway6);
     if (proxy_arp_addr)
 	cifproxyarp(0, proxy_arp_addr);
 #if defined(SOL2)
@@ -1957,6 +1973,70 @@ cif6addr(u, o, h)
     return 1;
 }
 
+/*
+ * sif6defaultroute - assign a default route through the address given.
+ */
+int
+sif6defaultroute(u, l, g)
+    int u;
+    eui64_t l, g;
+{
+    struct {
+	struct rt_msghdr rtm;
+	struct sockaddr_in6 dst;
+	struct sockaddr_in6 gw;
+    } rmsg;
+    static int seq;
+    int rtsock;
+
+#if defined(__USLC__)
+    g = l;			/* use the local address as gateway */
+#endif
+    memset(&rmsg, 0, sizeof(rmsg));
+
+    rmsg.rtm.rtm_msglen = sizeof (rmsg);
+    rmsg.rtm.rtm_version = RTM_VERSION;
+    rmsg.rtm.rtm_type = RTM_ADD;
+    rmsg.rtm.rtm_flags = RTF_GATEWAY;
+    rmsg.rtm.rtm_addrs = RTA_DST | RTA_GATEWAY;
+    rmsg.rtm.rtm_pid = getpid();
+    rmsg.rtm.rtm_seq = seq++;
+
+    rmsg.dst.sin6_family = AF_INET6;
+
+    rmsg.gw.sin6_family = AF_INET6;
+    IN6_SOCKADDR_FROM_EUI64(&rmsg.gw, g);
+
+    rtsock = socket(PF_ROUTE, SOCK_RAW, 0);
+
+    if (rtsock < 0) {
+	error("Can't add default route: %m");
+	return 0;
+    }
+
+    if (write(rtsock, &rmsg, sizeof(rmsg)) < 0)
+	error("Can't add default route: %m");
+
+    close(rtsock);
+
+    default_route_gateway6 = g;
+    return 1;
+}
+
+/*
+ * cif6defaultroute - delete a default route through the address given.
+ */
+int
+cif6defaultroute(u, l, g)
+    int u;
+    eui64_t l, g;
+{
+    /* No need to do this on Solaris; the kernel deletes the
+       route when the interface goes down. */
+    memset(&default_route_gateway6, 0, sizeof(default_route_gateway6));
+    return 1;
+}
+
 #endif /* defined(SOL2) && defined(INET6) */
 
 
@@ -2039,11 +2119,17 @@ cifaddr(u, o, h)
  * sifdefaultroute - assign a default route through the address given.
  */
 int
-sifdefaultroute(u, l, g)
+sifdefaultroute(u, l, g, replace)
     int u;
     u_int32_t l, g;
+    bool replace;
 {
     struct rtentry rt;
+
+    if (replace) {
+	error("replacedefaultroute not supported on this platform");
+	return 0;
+    }
 
 #if defined(__USLC__)
     g = l;			/* use the local address as gateway */

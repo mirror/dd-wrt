@@ -1,5 +1,7 @@
-CFLAGS	= $(COPTS)  $(MIPS16_OPT) -I../.. -I../../../include -fPIC
-LDFLAGS	= -shared
+#CC	= gcc
+COPTS	= -O2 -g
+CFLAGS	= $(COPTS) -I../.. -I../../../include -fPIC
+LDFLAGS_SHARED	= -shared
 INSTALL	= install
 
 #***********************************************************************
@@ -20,10 +22,9 @@ PLUGIN_OBJS := pppoatm.o
 #HAVE_LIBATM=yes
 
 ifdef HAVE_LIBATM
-CFLAGS += -I$(TOP)/linux-atm/src/include -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include 
-LIBS := $(TOP)/linux-atm/src/lib/.libs/libatm.so.1
+LIBS := -latm
 else
-CFLAGS += -I. -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include
+CFLAGS += -I.
 PLUGIN_OBJS += text2qos.o text2atm.o misc.o ans.o
 LIBS := -lresolv
 endif
@@ -32,7 +33,7 @@ endif
 all: $(PLUGIN)
 
 $(PLUGIN): $(PLUGIN_OBJS)
-	$(CC) $(CFLAGS) -o $@ -shared $^ $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(LDFLAGS_SHARED) $^ $(LIBS)
 
 install: all
 	$(INSTALL) -d -m 755 $(LIBDIR)

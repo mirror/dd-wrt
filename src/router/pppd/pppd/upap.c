@@ -52,7 +52,6 @@
 #include "pppd.h"
 #include "upap.h"
 
-static const char rcsid[] = RCSID;
 
 static bool hide_password = 1;
 

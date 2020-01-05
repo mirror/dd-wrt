@@ -45,7 +45,6 @@
 #include "fsm.h"
 #include "lcp.h"
 
-static const char rcsid[] = RCSID;
 
 /*
  * Options.

@@ -150,6 +150,7 @@
 typedef struct ipv6cp_options {
     int neg_ifaceid;		/* Negotiate interface identifier? */
     int req_ifaceid;		/* Ask peer to send interface identifier? */
+    int default_route;		/* Assign default route through interface? */
     int accept_local;		/* accept peer's value for iface id? */
     int opt_local;		/* ourtoken set by option */
     int opt_remote;		/* histoken set by option */

@@ -43,10 +43,10 @@
  * various compression methods.
  */
 #ifndef DO_BSD_COMPRESS
-#define DO_BSD_COMPRESS	0	/* by default, don't include BSD-Compress */
+#define DO_BSD_COMPRESS	1	/* by default, include BSD-Compress */
 #endif
 #ifndef DO_DEFLATE
-#define DO_DEFLATE	0	/* by default, don't include Deflate */
+#define DO_DEFLATE	1	/* by default, include Deflate */
 #endif
 #define DO_PREDICTOR_1	0
 #define DO_PREDICTOR_2	0
@@ -167,7 +167,6 @@ struct compressor {
  */
 #define CI_MPPE			18	/* config option for MPPE */
 #define CILEN_MPPE		6	/* length of config option */
-
 
 /* MPPE/MPPC definitions by J.D.*/
 #define MPPE_STATELESS          MPPE_H_BIT	/* configuration bit H */

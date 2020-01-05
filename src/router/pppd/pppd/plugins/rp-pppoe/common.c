@@ -65,7 +65,7 @@ parsePacket(PPPoEPacket *packet, ParseFunc *func, void *extra)
 
     /* Step through the tags */
     curTag = packet->payload;
-    while(curTag - packet->payload < len) {
+    while (curTag - packet->payload + TAG_HDR_SIZE <= len) {
 	/* Alignment is not guaranteed, so do this by hand... */
 	tagType = (curTag[0] << 8) + curTag[1];
 	tagLen = (curTag[2] << 8) + curTag[3];

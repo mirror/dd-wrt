@@ -76,7 +76,7 @@ int rc_avpair_assign (VALUE_PAIR *vp, void *pval, int len)
 				vp->strvalue[len] = '\0';
 				vp->lvalue = len;
 			} else {
-			strncpy ((char*)vp->strvalue, (char *) pval, AUTH_STRING_LEN);
+			strncpy (vp->strvalue, (char *) pval, AUTH_STRING_LEN);
 			vp->lvalue = strlen((char *) pval);
 			}
 
@@ -196,8 +196,8 @@ VALUE_PAIR *rc_avpair_gen (AUTH_HDR *auth)
 				x_len > 0 ;
 				x_len--, x_ptr++)
 			{
-				sprintf ((char*)hex, "%2.2X", *x_ptr);
-				strcat (buffer, (char*)hex);
+				sprintf (hex, "%2.2X", *x_ptr);
+				strcat (buffer, hex);
 			}
 			warn("rc_avpair_gen: received unknown attribute %d of length %d: 0x%s",
 				attribute, attrlen, buffer);
@@ -597,7 +597,7 @@ int rc_avpair_parse (char *buffer, VALUE_PAIR **first_pair)
 			{
 
 			    case PW_TYPE_STRING:
-				strcpy ((char*)pair->strvalue, valstr);
+				strcpy (pair->strvalue, valstr);
 				pair->lvalue = strlen(valstr);
 				break;
 
@@ -721,7 +721,7 @@ int rc_avpair_tostr (VALUE_PAIR *pair, char *name, int ln, char *value, int lv)
 			}
 			else
 			{
-				strncat(value, (char*)ptr, 1);
+				strncat(value, ptr, 1);
 				lv--;
 				if (lv < 0) break;
 			}

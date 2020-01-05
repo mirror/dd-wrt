@@ -102,7 +102,6 @@ typedef struct lcp_options {
     bool neg_mrru;		/* negotiate multilink MRRU */
     bool neg_ssnhf;		/* negotiate short sequence numbers */
     bool neg_endpoint;		/* negotiate endpoint discriminator */
-    bool need_endpoint;		/* require endpoint discriminator */
     int  mru;			/* Value of MRU */
     int	 mrru;			/* Value of MRRU, and multilink enable */
     u_char chap_mdtype;		/* which MD types (hashing algorithm) */
@@ -111,7 +110,6 @@ typedef struct lcp_options {
     int  numloops;		/* Number of loops during magic number neg. */
     u_int32_t lqr_period;	/* Reporting period for LQR 1/100ths second */
     struct epdisc endpoint;	/* endpoint discriminator */
-    struct epdisc req_endpoint;	/* required endpoint discriminator */
 } lcp_options;
 
 extern fsm lcp_fsm[];

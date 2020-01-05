@@ -92,7 +92,6 @@
 #include <ctype.h>
 #include <termios.h>
 #include <unistd.h>
-#include <linux/sockios.h>
 
 /* This is in netdevice.h. However, this compile will fail miserably if
    you attempt to include netdevice.h because it has so many references
@@ -103,7 +102,7 @@
 #define MAX_ADDR_LEN 7
 #endif
 
-#if 1//__GLIBC__ >= 2
+#if !defined(__GLIBC__) || __GLIBC__ >= 2
 #include <asm/types.h>		/* glibc 2 conflicts with linux/types.h */
 #include <net/if.h>
 #include <net/if_arp.h>
@@ -164,6 +163,7 @@ struct in6_ifreq {
 	eui64_copy(eui64, sin6.s6_addr32[2]);			\
 	} while (0)
 
+static const eui64_t nulleui64;
 #endif /* INET6 */
 
 /* We can get an EIO error on an ioctl if the modem has hung up */
@@ -200,7 +200,7 @@ static int driver_is_old       = 0;
 static int restore_term        = 0;	/* 1 => we've munged the terminal */
 static struct termios inittermios;	/* Initial TTY termios */
 
-int new_style_driver = 0;
+static const int new_style_driver = 1;
 
 static char loop_name[20];
 static unsigned char inbuf[512]; /* buffer for chars read from loopback */
@@ -208,6 +208,9 @@ static unsigned char inbuf[512]; /* buffer for chars read from loopback */
 static int	if_is_up;	/* Interface has been marked up */
 static int	if6_is_up;	/* Interface has been marked up for IPv6, to help differentiate */
 static int	have_default_route;	/* Gateway for default route added */
+static int	have_default_route6;	/* Gateway for default IPv6 route added */
+static struct	rtentry old_def_rt;	/* Old default route */
+static int	default_rt_repl_rest;	/* replace and restore old default rt */
 static u_int32_t proxy_arp_addr;	/* Addr for proxy arp entry added */
 static char proxy_arp_dev[16];		/* Device for proxy arp entry */
 static u_int32_t our_old_addr;		/* for detecting address changes */
@@ -216,8 +219,8 @@ static int	looped;			/* 1 if using loop */
 static int	link_mtu;		/* mtu for the link (not bundle) */
 
 static struct utsname utsname;	/* for the kernel version */
-static int kernel_version;
 #define KVERSION(j,n,p)	((j)*1000000 + (n)*1000 + (p))
+static const int kernel_version = KVERSION(2,6,37);
 
 #define MAX_IFS		100
 
@@ -235,6 +238,7 @@ static void close_route_table (void);
 static int open_route_table (void);
 static int read_route_table (struct rtentry *rt);
 static int defaultroute_exists (struct rtentry *rt, int metric);
+static int defaultroute6_exists (struct in6_rtmsg *rt, int metric);
 static int get_ether_addr (u_int32_t ipaddr, struct sockaddr *hwaddr,
 			   char *name, int namelen);
 static void decode_version (char *buf, int *version, int *mod, int *patch);
@@ -343,16 +347,18 @@ void sys_cleanup(void)
 	if_is_up = 0;
 	sifdown(0);
     }
-
-#ifdef INET6
     if (if6_is_up)
 	sif6down(0);
-#endif
+
 /*
  * Delete any routes through the device.
  */
     if (have_default_route)
 	cifdefaultroute(0, 0, 0);
+#ifdef INET6
+    if (have_default_route6)
+	cif6defaultroute(0, nulleui64, nulleui64);
+#endif
 
     if (has_proxy_arp)
 	cifproxyarp(0, proxy_arp_addr);
@@ -410,9 +416,7 @@ int tty_establish_ppp (int tty_fd)
  */
     if (ioctl(tty_fd, TIOCEXCL, 0) < 0) {
 	if ( ! ok_error ( errno ))
-	{
 	    warn("Couldn't make tty exclusive: %m");
-	}
     }
 /*
  * Demand mode - prime the old ppp device to relinquish the unit.
@@ -448,9 +452,7 @@ int tty_establish_ppp (int tty_fd)
 		     (kdebugflag * SC_DEBUG) & SC_LOGB);
     } else {
 	if (ioctl(tty_fd, TIOCSETD, &tty_disc) < 0 && !ok_error(errno))
-	{
 	    warn("Couldn't reset tty to normal line discipline: %m");
-	}
     }
 
     return ret_fd;
@@ -538,9 +540,7 @@ int generic_establish_ppp (int fd)
 	if (initfdflags == -1 ||
 	    fcntl(fd, F_SETFL, initfdflags | O_NONBLOCK) == -1) {
 	    if ( ! ok_error (errno))
-	    {
 		warn("Couldn't set device to non-blocking mode: %m");
-	    }
 	}
     }
 
@@ -582,24 +582,18 @@ void tty_disestablish_ppp(int tty_fd)
  */
 	if (ioctl(tty_fd, TIOCSETD, &tty_disc) < 0) {
 	    if ( ! ok_error (errno))
-	    {
 		error("ioctl(TIOCSETD, N_TTY): %m (line %d)", __LINE__);
-	    }
 	}
 
 	if (ioctl(tty_fd, TIOCNXCL, 0) < 0) {
 	    if ( ! ok_error (errno))
-	    {
 		warn("ioctl(TIOCNXCL): %m (line %d)", __LINE__);
-	    }
 	}
 
 	/* Reset non-blocking mode on fd. */
 	if (initfdflags != -1 && fcntl(tty_fd, F_SETFL, initfdflags) < 0) {
 	    if ( ! ok_error (errno))
-	    {
 		warn("Couldn't restore device fd flags: %m");
-	    }
 	}
     }
 flushfailed:
@@ -650,15 +644,11 @@ static int make_ppp_unit()
 	}
 	ppp_dev_fd = open("/dev/ppp", O_RDWR);
 	if (ppp_dev_fd < 0)
-	 {
 		fatal("Couldn't open /dev/ppp: %m");
-	 }
 	flags = fcntl(ppp_dev_fd, F_GETFL);
 	if (flags == -1
 	    || fcntl(ppp_dev_fd, F_SETFL, flags | O_NONBLOCK) == -1)
-	    {
 		warn("Couldn't set /dev/ppp to nonblock: %m");
-	    }
 
 	ifunit = req_unit;
 	x = ioctl(ppp_dev_fd, PPPIOCNEWUNIT, &ifunit);
@@ -668,23 +658,20 @@ static int make_ppp_unit()
 		x = ioctl(ppp_dev_fd, PPPIOCNEWUNIT, &ifunit);
 	}
 	if (x < 0)
-	{
 		error("Couldn't create new ppp unit: %m");
-	}
 
 	if (x == 0 && req_ifname[0] != '\0') {
 		struct ifreq ifr;
 		char t[MAXIFNAMELEN];
 		memset(&ifr, 0, sizeof(struct ifreq));
 		slprintf(t, sizeof(t), "%s%d", PPP_DRV_NAME, ifunit);
-		strncpy(ifr.ifr_name, t, IF_NAMESIZE);
-		strncpy(ifr.ifr_newname, req_ifname, IF_NAMESIZE);
+		strlcpy(ifr.ifr_name, t, IF_NAMESIZE);
+		strlcpy(ifr.ifr_newname, req_ifname, IF_NAMESIZE);
 		x = ioctl(sock_fd, SIOCSIFNAME, &ifr);
-		if (x < 0) {
+		if (x < 0)
 		    error("Couldn't rename interface %s to %s: %m", t, req_ifname);
-		} else {
+		else
 		    info("Renamed interface %s to %s", t, req_ifname);
-		}
 	}
 
 	return x;
@@ -1076,9 +1063,7 @@ void restore_tty (int tty_fd)
 
 	if (tcsetattr(tty_fd, TCSAFLUSH, &inittermios) < 0) {
 	    if (! ok_error (errno))
-	    {
 		warn("tcsetattr: %m (line %d)", __LINE__);
-	    }
 	}
     }
 }
@@ -1108,12 +1093,9 @@ void output (int unit, unsigned char *p, int len)
     if (write(fd, p, len) < 0) {
 	if (errno == EWOULDBLOCK || errno == EAGAIN || errno == ENOBUFS
 	    || errno == ENXIO || errno == EIO || errno == EINTR)
-	    {
 	    warn("write: warning: %m (%d)", errno);
-	    }
-	else{
+	else
 	    error("write: %m (%d)", errno);
-	    }
     }
 }
 
@@ -1242,7 +1224,7 @@ netif_set_mtu(int unit, int mtu)
     memset (&ifr, '\0', sizeof (ifr));
     strlcpy(ifr.ifr_name, ifname, sizeof (ifr.ifr_name));
     ifr.ifr_mtu = mtu;
-//    info("set mtu ppp to %s (%d)\n",ifname,mtu);
+
     if (ifunit >= 0 && ioctl(sock_fd, SIOCSIFMTU, (caddr_t) &ifr) < 0)
 	error("ioctl(SIOCSIFMTU): %m (line %d)", __LINE__);
 }
@@ -1280,9 +1262,7 @@ void tty_send_config(int mtu, u_int32_t asyncmap, int pcomp, int accomp)
 	link_mtu = mtu;
 	if (ioctl(ppp_fd, PPPIOCSASYNCMAP, (caddr_t) &asyncmap) < 0) {
 		if (errno != EIO && errno != ENOTTY)
-		{
 			error("Couldn't set transmit async character map: %m");
-		}
 		++error_count;
 		return;
 	}
@@ -1386,13 +1366,9 @@ int set_filters(struct bpf_program *pass, struct bpf_program *active)
 	fp.filter = (struct sock_filter *) pass->bf_insns;
 	if (ioctl(ppp_dev_fd, PPPIOCSPASS, &fp) < 0) {
 		if (errno == ENOTTY)
-		{
 			warn("kernel does not support PPP filtering");
-		}
 		else
-		{
 			error("Couldn't set pass-filter in kernel: %m");
-		}
 		return 0;
 	}
 	fp.len = active->bf_len;
@@ -1465,11 +1441,12 @@ int ccp_fatal_error (int unit)
  *
  * path_to_procfs - find the path to the proc file system mount point
  */
-static char proc_path[MAXPATHLEN];
-static int proc_path_len;
+static char proc_path[MAXPATHLEN] = "/proc";
+static int proc_path_len = 5;
 
 static char *path_to_procfs(const char *tail)
 {
+#if 0
     struct mntent *mntent;
     FILE *fp;
 
@@ -1491,6 +1468,7 @@ static char *path_to_procfs(const char *tail)
 	    fclose (fp);
 	}
     }
+#endif
 
     strlcpy(proc_path + proc_path_len, tail,
 	    sizeof(proc_path) - proc_path_len);
@@ -1603,6 +1581,9 @@ static int read_route_table(struct rtentry *rt)
 	p = NULL;
     }
 
+    SET_SA_FAMILY (rt->rt_dst,     AF_INET);
+    SET_SA_FAMILY (rt->rt_gateway, AF_INET);
+
     SIN_ADDR(rt->rt_dst) = strtoul(cols[route_dest_col], NULL, 16);
     SIN_ADDR(rt->rt_gateway) = strtoul(cols[route_gw_col], NULL, 16);
     SIN_ADDR(rt->rt_genmask) = strtoul(cols[route_mask_col], NULL, 16);
@@ -1675,26 +1656,59 @@ int have_route_to(u_int32_t addr)
 /********************************************************************
  *
  * sifdefaultroute - assign a default route through the address given.
+ *
+ * If the global default_rt_repl_rest flag is set, then this function
+ * already replaced the original system defaultroute with some other
+ * route and it should just replace the current defaultroute with
+ * another one, without saving the current route. Use: demand mode,
+ * when pppd sets first a defaultroute it it's temporary ppp0 addresses
+ * and then changes the temporary addresses to the addresses for the real
+ * ppp connection when it has come up.
  */
 
-int sifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
+int sifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway, bool replace)
 {
-    struct rtentry rt;
+    struct rtentry rt, tmp_rt;
+    struct rtentry *del_rt = NULL;
 
-    if (defaultroute_exists(&rt, dfl_route_metric) && strcmp(rt.rt_dev, ifname) != 0) {
-	if (rt.rt_flags & RTF_GATEWAY) {
-	    error("not replacing existing default route via %I with metric %d",
-		  SIN_ADDR(rt.rt_gateway), dfl_route_metric);
-	}
-	else {
+    if (default_rt_repl_rest) {
+	/* We have already reclaced the original defaultroute, if we
+	   are called again, we will delete the current default route
+	   and set the new default route in this function.
+	   - this is normally only the case the doing demand: */
+	if (defaultroute_exists(&tmp_rt, dfl_route_metric))
+	    del_rt = &tmp_rt;
+    } else if (defaultroute_exists(&old_def_rt, dfl_route_metric) &&
+	       strcmp(old_def_rt.rt_dev, ifname) != 0) {
+	/* We did not yet replace an existing default route, let's
+	   check if we should save and replace a default route: */
+	if (old_def_rt.rt_flags & RTF_GATEWAY) {
+	    if (!replace) {
+		error("not replacing existing default route via %I with metric %d",
+		      SIN_ADDR(old_def_rt.rt_gateway), dfl_route_metric);
+		return 0;
+	    } else {
+		/* we need to copy rt_dev because we need it permanent too: */
+		char *tmp_dev = malloc(strlen(old_def_rt.rt_dev) + 1);
+		strcpy(tmp_dev, old_def_rt.rt_dev);
+		old_def_rt.rt_dev = tmp_dev;
+
+		notice("replacing old default route to %s [%I] with metric %d",
+			old_def_rt.rt_dev, SIN_ADDR(old_def_rt.rt_gateway),
+		        dfl_route_metric);
+		default_rt_repl_rest = 1;
+		del_rt = &old_def_rt;
+	    }
+	} else
 	    error("not replacing existing default route through %s with metric %d",
-		  rt.rt_dev, dfl_route_metric);
-	}
-	return 0;
+		  old_def_rt.rt_dev, dfl_route_metric);
     }
 
     memset (&rt, 0, sizeof (rt));
     SET_SA_FAMILY (rt.rt_dst, AF_INET);
+
+    SET_SA_FAMILY(rt.rt_gateway, AF_INET);
+    SIN_ADDR(rt.rt_gateway) = gateway;
 
     rt.rt_dev = ifname;
     rt.rt_metric = dfl_route_metric + 1; /* +1 for binary compatibility */
@@ -1704,12 +1718,18 @@ int sifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
 	SIN_ADDR(rt.rt_genmask) = 0L;
     }
 
-    rt.rt_flags = RTF_UP;
+    rt.rt_flags = RTF_UP | RTF_GATEWAY;
     if (ioctl(sock_fd, SIOCADDRT, &rt) < 0) {
-	if ( ! ok_error ( errno ))
+	if (!ok_error(errno))
 	    error("default route ioctl(SIOCADDRT): %m");
 	return 0;
     }
+    if (default_rt_repl_rest && del_rt)
+        if (ioctl(sock_fd, SIOCDELRT, del_rt) < 0) {
+	    if (!ok_error(errno))
+	        error("del old default route ioctl(SIOCDELRT): %m");
+	    return 0;
+        }
 
     have_default_route = 1;
     return 1;
@@ -1740,8 +1760,210 @@ int cifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
 	SIN_ADDR(rt.rt_genmask) = 0L;
     }
 
+    rt.rt_dev = ifname;
     rt.rt_flags = RTF_UP;
     if (ioctl(sock_fd, SIOCDELRT, &rt) < 0 && errno != ESRCH) {
+	if (still_ppp()) {
+	    if (!ok_error(errno))
+		error("default route ioctl(SIOCDELRT): %m");
+	    return 0;
+	}
+    }
+    if (default_rt_repl_rest) {
+	notice("restoring old default route to %s [%I]",
+		old_def_rt.rt_dev, SIN_ADDR(old_def_rt.rt_gateway));
+        if (ioctl(sock_fd, SIOCADDRT, &old_def_rt) < 0) {
+	    if (!ok_error(errno))
+	        error("restore default route ioctl(SIOCADDRT): %m");
+	    return 0;
+        }
+        default_rt_repl_rest = 0;
+    }
+
+    return 1;
+}
+
+#ifdef INET6
+/*
+ * /proc/net/ipv6_route parsing stuff.
+ */
+static int route_dest_plen_col;
+static int open_route6_table (void);
+static int read_route6_table (struct in6_rtmsg *rt);
+
+/********************************************************************
+ *
+ * open_route6_table - open the interface to the route table
+ */
+static int open_route6_table (void)
+{
+    char *path;
+
+    close_route_table();
+
+    path = path_to_procfs("/net/ipv6_route");
+    route_fd = fopen (path, "r");
+    if (route_fd == NULL) {
+	error("can't open routing table %s: %m", path);
+	return 0;
+    }
+
+    /* default to usual columns */
+    route_dest_col = 0;
+    route_dest_plen_col = 1;
+    route_gw_col = 4;
+    route_metric_col = 5;
+    route_flags_col = 8;
+    route_dev_col = 9;
+    route_num_cols = 10;
+
+    return 1;
+}
+
+/********************************************************************
+ *
+ * read_route6_table - read the next entry from the route table
+ */
+
+static void hex_to_in6_addr(struct in6_addr *addr, const char *s)
+{
+    char hex8[9];
+    unsigned i;
+    uint32_t v;
+
+    hex8[8] = 0;
+    for (i = 0; i < 4; i++) {
+	memcpy(hex8, s + 8*i, 8);
+	v = strtoul(hex8, NULL, 16);
+	addr->s6_addr32[i] = v;
+    }
+}
+
+static int read_route6_table(struct in6_rtmsg *rt)
+{
+    char *cols[ROUTE_MAX_COLS], *p;
+    int col;
+
+    memset (rt, '\0', sizeof (struct in6_rtmsg));
+
+    if (fgets (route_buffer, sizeof (route_buffer), route_fd) == (char *) 0)
+	return 0;
+
+    p = route_buffer;
+    for (col = 0; col < route_num_cols; ++col) {
+	cols[col] = strtok(p, route_delims);
+	if (cols[col] == NULL)
+	    return 0;		/* didn't get enough columns */
+	p = NULL;
+    }
+
+    hex_to_in6_addr(&rt->rtmsg_dst, cols[route_dest_col]);
+    rt->rtmsg_dst_len = strtoul(cols[route_dest_plen_col], NULL, 16);
+    hex_to_in6_addr(&rt->rtmsg_gateway, cols[route_gw_col]);
+
+    rt->rtmsg_metric = strtoul(cols[route_metric_col], NULL, 16);
+    rt->rtmsg_flags = strtoul(cols[route_flags_col], NULL, 16);
+    rt->rtmsg_ifindex = if_nametoindex(cols[route_dev_col]);
+
+    return 1;
+}
+
+/********************************************************************
+ *
+ * defaultroute6_exists - determine if there is a default route
+ */
+
+static int defaultroute6_exists (struct in6_rtmsg *rt, int metric)
+{
+    int result = 0;
+
+    if (!open_route6_table())
+	return 0;
+
+    while (read_route6_table(rt) != 0) {
+	if ((rt->rtmsg_flags & RTF_UP) == 0)
+	    continue;
+
+	if (rt->rtmsg_dst_len != 0)
+	    continue;
+	if (rt->rtmsg_dst.s6_addr32[0] == 0L
+	 && rt->rtmsg_dst.s6_addr32[1] == 0L
+	 && rt->rtmsg_dst.s6_addr32[2] == 0L
+	 && rt->rtmsg_dst.s6_addr32[3] == 0L
+	 && (metric < 0 || rt->rtmsg_metric == metric)) {
+	    result = 1;
+	    break;
+	}
+    }
+
+    close_route_table();
+    return result;
+}
+
+/********************************************************************
+ *
+ * sif6defaultroute - assign a default route through the address given.
+ *
+ * If the global default_rt_repl_rest flag is set, then this function
+ * already replaced the original system defaultroute with some other
+ * route and it should just replace the current defaultroute with
+ * another one, without saving the current route. Use: demand mode,
+ * when pppd sets first a defaultroute it it's temporary ppp0 addresses
+ * and then changes the temporary addresses to the addresses for the real
+ * ppp connection when it has come up.
+ */
+
+int sif6defaultroute (int unit, eui64_t ouraddr, eui64_t gateway)
+{
+    struct in6_rtmsg rt;
+    char buf[IF_NAMESIZE];
+
+    if (defaultroute6_exists(&rt, dfl_route_metric) &&
+	    rt.rtmsg_ifindex != if_nametoindex(ifname)) {
+	if (rt.rtmsg_flags & RTF_GATEWAY)
+	    error("not replacing existing default route via gateway");
+	else
+	    error("not replacing existing default route through %s",
+		  if_indextoname(rt.rtmsg_ifindex, buf));
+	return 0;
+    }
+
+    memset (&rt, 0, sizeof (rt));
+
+    rt.rtmsg_ifindex = if_nametoindex(ifname);
+    rt.rtmsg_metric = dfl_route_metric + 1; /* +1 for binary compatibility */
+    rt.rtmsg_dst_len = 0;
+
+    rt.rtmsg_flags = RTF_UP;
+    if (ioctl(sock6_fd, SIOCADDRT, &rt) < 0) {
+	if ( ! ok_error ( errno ))
+	    error("default route ioctl(SIOCADDRT): %m");
+	return 0;
+    }
+
+    have_default_route6 = 1;
+    return 1;
+}
+
+/********************************************************************
+ *
+ * cif6defaultroute - delete a default route through the address given.
+ */
+
+int cif6defaultroute (int unit, eui64_t ouraddr, eui64_t gateway)
+{
+    struct in6_rtmsg rt;
+
+    have_default_route6 = 0;
+
+    memset (&rt, '\0', sizeof (rt));
+
+    rt.rtmsg_ifindex = if_nametoindex(ifname);
+    rt.rtmsg_metric = dfl_route_metric + 1; /* +1 for binary compatibility */
+    rt.rtmsg_dst_len = 0;
+
+    rt.rtmsg_flags = RTF_UP;
+    if (ioctl(sock6_fd, SIOCDELRT, &rt) < 0 && errno != ESRCH) {
 	if (still_ppp()) {
 	    if ( ! ok_error ( errno ))
 		error("default route ioctl(SIOCDELRT): %m");
@@ -1751,6 +1973,7 @@ int cifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
 
     return 1;
 }
+#endif /* INET6 */
 
 /********************************************************************
  *
@@ -1793,9 +2016,7 @@ int sifproxyarp (int unit, u_int32_t his_adr)
 		int fd = open(forw_path, O_WRONLY);
 		if (fd >= 0) {
 		    if (write(fd, "1", 1) != 1)
-		    {
 			error("Couldn't enable IP forwarding: %m");
-		    }
 		    close(fd);
 		}
 	    }
@@ -1824,9 +2045,7 @@ int cifproxyarp (int unit, u_int32_t his_adr)
 
 	if (ioctl(sock_fd, SIOCDARP, (caddr_t)&arpreq) < 0) {
 	    if ( ! ok_error ( errno ))
-	    {
 		warn("ioctl(SIOCDARP): %m");
-	    }
 	    return 0;
 	}
     }
@@ -1993,9 +2212,7 @@ u_int32_t GetMask (u_int32_t addr)
     ifc.ifc_req = ifs;
     if (ioctl(sock_fd, SIOCGIFCONF, &ifc) < 0) {
 	if ( ! ok_error ( errno ))
-	{
 	    warn("ioctl(SIOCGIFCONF): %m (line %d)", __LINE__);
-	}
 	return mask;
     }
 
@@ -2074,9 +2291,7 @@ ppp_registered(void)
      * So we grab a pty master/slave pair and use that.
      */
     if (!get_pty(&mfd, &local_fd, slave, 0)) {
-#ifdef NEED_PRINTF
 	no_ppp_msg = "Couldn't determine if PPP is supported (no free ptys)";
-#endif
 	return 0;
     }
 
@@ -2107,15 +2322,19 @@ int ppp_available(void)
     int    my_version, my_modification, my_patch;
     int osmaj, osmin, ospatch;
 
+#if 0
     /* get the kernel version now, since we are called before sys_init */
     uname(&utsname);
     osmaj = osmin = ospatch = 0;
     sscanf(utsname.release, "%d.%d.%d", &osmaj, &osmin, &ospatch);
     kernel_version = KVERSION(osmaj, osmin, ospatch);
+#endif
 
     fd = open("/dev/ppp", O_RDWR);
     if (fd >= 0) {
+#if 0
 	new_style_driver = 1;
+#endif
 
 	/* XXX should get from driver */
 	driver_version = 2;
@@ -2127,7 +2346,6 @@ int ppp_available(void)
 
     if (kernel_version >= KVERSION(2,3,13)) {
 	error("Couldn't open the /dev/ppp device: %m");
-#ifdef NEED_PRINTF
 	if (errno == ENOENT)
 	    no_ppp_msg =
 		"You need to create the /dev/ppp device node by\n"
@@ -2136,12 +2354,10 @@ int ppp_available(void)
 	else if (errno == ENODEV || errno == ENXIO)
 	    no_ppp_msg =
 		"Please load the ppp_generic kernel module.\n";
-#endif
 	return 0;
     }
 
     /* we are running on a really really old kernel */
-#ifdef NEED_PRINTF
     no_ppp_msg =
 	"This system lacks kernel support for PPP.  This could be because\n"
 	"the PPP kernel module could not be loaded, or because PPP was not\n"
@@ -2149,7 +2365,7 @@ int ppp_available(void)
 	"module, try `/sbin/modprobe -v ppp'.  If that fails, check that\n"
 	"ppp.o exists in /lib/modules/`uname -r`/net.\n"
 	"See README.linux file in the ppp distribution for more details.\n";
-#endif
+
 /*
  * Open a socket for doing the ioctl operations.
  */
@@ -2178,6 +2394,7 @@ int ppp_available(void)
 
     if (ok && ((ifr.ifr_hwaddr.sa_family & ~0xFF) != ARPHRD_PPP))
 	ok = 0;
+	return ok;
 
 /*
  *  This is the PPP device. Validate the version of the driver at this
@@ -2191,9 +2408,7 @@ int ppp_available(void)
 	if (size < 0) {
 	    error("Couldn't read driver version: %m");
 	    ok = 0;
-#ifdef NEED_PRINTF
 	    no_ppp_msg = "Sorry, couldn't verify kernel driver version\n";
-#endif
 
 	} else {
 	    decode_version(abBuffer,
@@ -2223,13 +2438,11 @@ int ppp_available(void)
 	    }
 
 	    if (!ok) {
-#ifdef NEED_PRINTF
 		slprintf(route_buffer, sizeof(route_buffer),
 			 "Sorry - PPP driver version %d.%d.%d is out of date\n",
 			 driver_version, driver_modification, driver_patch);
 
 		no_ppp_msg = route_buffer;
-#endif
 	    }
 	}
     }
@@ -2245,6 +2458,7 @@ int ppp_available(void)
 
 void logwtmp (const char *line, const char *name, const char *host)
 {
+#if 0
     struct utmp ut, *utp;
     pid_t  mypid = getpid();
 #if __GLIBC__ < 2
@@ -2303,14 +2517,13 @@ void logwtmp (const char *line, const char *name, const char *host)
 	flock(wtmp, LOCK_EX);
 
 	if (write (wtmp, (char *)&ut, sizeof(ut)) != sizeof(ut))
-	{
 	    warn("error writing %s: %m", _PATH_WTMP);
-	}
 
 	flock(wtmp, LOCK_UN);
 
 	close (wtmp);
     }
+#endif
 #endif
 }
 #endif /* HAVE_LOGWTMP */
@@ -2709,9 +2922,7 @@ get_pty(master_fdp, slave_fdp, slave_name, uid)
 #ifdef TIOCSPTLCK
 	    ptn = 0;
 	    if (ioctl(mfd, TIOCSPTLCK, &ptn) < 0)
-	    {
 		warn("Couldn't unlock pty slave %s: %m", pty_name);
-	    }
 #endif
 	    if ((sfd = open(pty_name, O_RDWR | O_NOCTTY)) < 0)
 	    {
@@ -2722,6 +2933,7 @@ get_pty(master_fdp, slave_fdp, slave_name, uid)
     }
 #endif /* TIOCGPTN */
 
+#if 0
     if (sfd < 0) {
 	/* the old way - scan through the pty name space */
 	for (i = 0; i < 64; ++i) {
@@ -2740,6 +2952,7 @@ get_pty(master_fdp, slave_fdp, slave_name, uid)
 	    }
 	}
     }
+#endif
 
     if (sfd < 0)
 	return 0;
@@ -2754,13 +2967,9 @@ get_pty(master_fdp, slave_fdp, slave_name, uid)
 	tios.c_oflag  = 0;
 	tios.c_lflag  = 0;
 	if (tcsetattr(sfd, TCSAFLUSH, &tios) < 0)
-	{
 	    warn("couldn't set attributes on pty: %m");
-	}
     } else
-    {
 	warn("couldn't get attributes on pty: %m");
-    }
 
     return 1;
 }
@@ -2794,19 +3003,15 @@ open_ppp_loopback(void)
     flags = fcntl(master_fd, F_GETFL);
     if (flags == -1 ||
 	fcntl(master_fd, F_SETFL, flags | O_NONBLOCK) == -1)
-	{
 	warn("couldn't set master loopback to nonblock: %m");
-	}
+
     flags = fcntl(ppp_fd, F_GETFL);
     if (flags == -1 ||
 	fcntl(ppp_fd, F_SETFL, flags | O_NONBLOCK) == -1)
-	{
 	warn("couldn't set slave loopback to nonblock: %m");
-	}
+
     if (ioctl(ppp_fd, TIOCSETD, &ppp_disc) < 0)
-    {
 	fatal("ioctl(TIOCSETD): %m (line %d)", __LINE__);
-    }
 /*
  * Find out which interface we were given.
  */

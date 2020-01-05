@@ -23,28 +23,27 @@ PPPDVERSION = $(shell awk -F '"' '/VERSION/ { print $$2; }' ../../patchlevel.h)
 INSTALL	= install
 
 # Version is set ONLY IN THE MAKEFILE!  Don't delete this!
-RP_VERSION=3.8
+RP_VERSION=3.8p
 
-#COPTS=-O2 -g
-CFLAGS=$(COPTS)  $(MIPS16_OPT) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include -I../../../include -I../../../ '-DRP_VERSION="$(RP_VERSION)"'
+CFLAGS=$(COPTS) $(LTO) $(MIPS16_OPT) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include -I../../../include -I../../../ '-DRP_VERSION="$(RP_VERSION)"'
 #CFLAGS=$(COPTS) -I$(LINUXDIR)/include/linux
-LDFLAGS = -L$(TOP)/nvram -lnvram
+LDFLAGS = $(LDLTO) -L$(TOP)/nvram -lnvram
+
 include $(TOP)/.config
-
-#ifeq ($(CONFIG_AQOS),y)
-#CFLAGS += -DHAVE_AQOS 
-#endif
-
 all: rp-pppoe.so pppoe-discovery
+LDFLAGS = -L$(TOP)/nvram -lnvram
 
 pppoe-discovery: pppoe-discovery.o debug.o
-	$(CC) $(LDFLAGS) -I../../.. -o pppoe-discovery pppoe-discovery.o debug.o
+	$(CC) $(LDFLAGS) -o pppoe-discovery pppoe-discovery.o debug.o
+
+pppoe-discovery.o: pppoe-discovery.c
+	$(CC) $(CFLAGS) -I../../.. -c -o pppoe-discovery.o pppoe-discovery.c
 
 debug.o: debug.c
 	$(CC) $(CFLAGS) -I../../.. -c -o debug.o debug.c
 
 rp-pppoe.so: plugin.o discovery.o if.o common.o
-	$(CC) $(LDFLAGS) -o rp-pppoe.so -shared plugin.o discovery.o if.o common.o
+	$(CC) $(LDFLAGS) -fPIC -o rp-pppoe.so -shared plugin.o discovery.o if.o common.o
 
 install: all
 	$(INSTALL) -d -m 755 $(LIBDIR)

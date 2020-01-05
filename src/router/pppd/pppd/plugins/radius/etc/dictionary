@@ -30,30 +30,12 @@
 #
 # For example:
 #
-VENDOR		RoaringPenguin		10055	RoaringPenguin
-
-ATTRIBUTE	RP-Upstream-Speed-Limit		1	integer	RoaringPenguin
-ATTRIBUTE	RP-Downstream-Speed-Limit	2	integer	RoaringPenguin
-ATTRIBUTE	RP-HURL				3	string	RoaringPenguin
-ATTRIBUTE	RP-MOTM				4	string	RoaringPenguin
-ATTRIBUTE	RP-Max-Sessions-Per-User	5	integer	RoaringPenguin
-
-VENDOR		WISPr			14122	WISPr
-
-ATTRIBUTE	WISPr-Location-ID		1	string	WISPr
-ATTRIBUTE	WISPr-Location-Name		2	string	WISPr
-ATTRIBUTE	WISPr-Logoff-URL		3	string	WISPr
-ATTRIBUTE	WISPr-Redirection-URL		4	string	WISPr
-ATTRIBUTE	WISPr-Bandwidth-Min-Up		5	integer	WISPr
-ATTRIBUTE	WISPr-Bandwidth-Min-Down	6	integer	WISPr
-ATTRIBUTE	WISPr-Bandwidth-Max-Up		7	integer	WISPr
-ATTRIBUTE	WISPr-Bandwidth-Max-Down	8	integer	WISPr
-
+#	VENDOR RoaringPenguin 10055
 #
 # Vendor-specific attributes have a fifth field with the name of the
 # vendor.  For example:
 #
-#       
+#       ATTRIBUTE RP-Upstream-Speed-Limit 1 integer RoaringPenguin
 #
 # introduces a Roaring Penguin vendor-specific attribbute with name
 # RP-Upstream-Speed-Limit, number 1, type integer and vendor RoaringPenguin.
@@ -268,4 +250,4 @@ VALUE		Octets-Direction        Output			2
 VALUE		Octets-Direction        MaxOveral		3
 VALUE		Octets-Direction        MaxSession		4
 
-INCLUDE /etc/dictionary.microsoft
+INCLUDE /etc/radiusclient/dictionary.microsoft
