@@ -668,10 +668,11 @@ static int make_ppp_unit()
 		strlcpy(ifr.ifr_name, t, IF_NAMESIZE);
 		strlcpy(ifr.ifr_newname, req_ifname, IF_NAMESIZE);
 		x = ioctl(sock_fd, SIOCSIFNAME, &ifr);
-		if (x < 0)
+		if (x < 0) {
 		    error("Couldn't rename interface %s to %s: %m", t, req_ifname);
-		else
+		} else {
 		    info("Renamed interface %s to %s", t, req_ifname);
+		}
 	}
 
 	return x;
@@ -1092,10 +1093,11 @@ void output (int unit, unsigned char *p, int len)
     }
     if (write(fd, p, len) < 0) {
 	if (errno == EWOULDBLOCK || errno == EAGAIN || errno == ENOBUFS
-	    || errno == ENXIO || errno == EIO || errno == EINTR)
+	    || errno == ENXIO || errno == EIO || errno == EINTR) {
 	    warn("write: warning: %m (%d)", errno);
-	else
+	} else {
 	    error("write: %m (%d)", errno);
+	}
     }
 }
 
@@ -1920,11 +1922,12 @@ int sif6defaultroute (int unit, eui64_t ouraddr, eui64_t gateway)
 
     if (defaultroute6_exists(&rt, dfl_route_metric) &&
 	    rt.rtmsg_ifindex != if_nametoindex(ifname)) {
-	if (rt.rtmsg_flags & RTF_GATEWAY)
+	if (rt.rtmsg_flags & RTF_GATEWAY) {
 	    error("not replacing existing default route via gateway");
-	else
+	} else {
 	    error("not replacing existing default route through %s",
 		  if_indextoname(rt.rtmsg_ifindex, buf));
+	}
 	return 0;
     }
 
@@ -1936,8 +1939,9 @@ int sif6defaultroute (int unit, eui64_t ouraddr, eui64_t gateway)
 
     rt.rtmsg_flags = RTF_UP;
     if (ioctl(sock6_fd, SIOCADDRT, &rt) < 0) {
-	if ( ! ok_error ( errno ))
+	if ( ! ok_error ( errno )) {
 	    error("default route ioctl(SIOCADDRT): %m");
+	}
 	return 0;
     }
 
@@ -2291,7 +2295,9 @@ ppp_registered(void)
      * So we grab a pty master/slave pair and use that.
      */
     if (!get_pty(&mfd, &local_fd, slave, 0)) {
+#ifdef NEED_PRINTF
 	no_ppp_msg = "Couldn't determine if PPP is supported (no free ptys)";
+#endif
 	return 0;
     }
 
@@ -2346,6 +2352,7 @@ int ppp_available(void)
 
     if (kernel_version >= KVERSION(2,3,13)) {
 	error("Couldn't open the /dev/ppp device: %m");
+#ifdef NEED_PRINTF
 	if (errno == ENOENT)
 	    no_ppp_msg =
 		"You need to create the /dev/ppp device node by\n"
@@ -2354,9 +2361,11 @@ int ppp_available(void)
 	else if (errno == ENODEV || errno == ENXIO)
 	    no_ppp_msg =
 		"Please load the ppp_generic kernel module.\n";
+#endif
 	return 0;
     }
 
+#ifdef NEED_PRINTF
     /* we are running on a really really old kernel */
     no_ppp_msg =
 	"This system lacks kernel support for PPP.  This could be because\n"
@@ -2365,7 +2374,7 @@ int ppp_available(void)
 	"module, try `/sbin/modprobe -v ppp'.  If that fails, check that\n"
 	"ppp.o exists in /lib/modules/`uname -r`/net.\n"
 	"See README.linux file in the ppp distribution for more details.\n";
-
+#endif
 /*
  * Open a socket for doing the ioctl operations.
  */
@@ -2408,8 +2417,9 @@ int ppp_available(void)
 	if (size < 0) {
 	    error("Couldn't read driver version: %m");
 	    ok = 0;
+#ifdef NEED_PRINTF
 	    no_ppp_msg = "Sorry, couldn't verify kernel driver version\n";
-
+#endif
 	} else {
 	    decode_version(abBuffer,
 			   &driver_version,
@@ -2438,11 +2448,13 @@ int ppp_available(void)
 	    }
 
 	    if (!ok) {
+#ifdef NEED_PRINTF
 		slprintf(route_buffer, sizeof(route_buffer),
 			 "Sorry - PPP driver version %d.%d.%d is out of date\n",
 			 driver_version, driver_modification, driver_patch);
 
 		no_ppp_msg = route_buffer;
+#endif
 	    }
 	}
     }

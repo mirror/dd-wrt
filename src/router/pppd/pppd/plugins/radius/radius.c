@@ -164,7 +164,7 @@ plugin_init(void)
 
     memset(&rstate, 0, sizeof(rstate));
 
-    strlcpy(rstate.config_file, "/etc/radiusclient/radiusclient.conf",
+    strlcpy(rstate.config_file, "/tmp/ppp/radius/radiusclient.conf",
 	    sizeof(rstate.config_file));
 
     add_options(Options);

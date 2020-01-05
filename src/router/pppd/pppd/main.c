@@ -192,9 +192,11 @@ static int n_children;		/* # child processes still running */
 static int got_sigchld;		/* set if we have received a SIGCHLD */
 
 int privopen;			/* don't lock, open device as root */
-
+#ifdef NEED_PRINTF
 char *no_ppp_msg = "Sorry - this system lacks PPP kernel support\n";
-
+#else
+#define no_ppp_msg NULL
+#endif
 GIDSET_TYPE groups[NGROUPS_MAX];/* groups the user is in */
 int ngroups;			/* How many groups valid in groups */
 
@@ -1140,10 +1142,11 @@ get_input()
 
     if (debug) {
 	const char *pname = protocol_name(protocol);
-	if (pname != NULL)
+	if (pname != NULL) {
 	    warn("Unsupported protocol '%s' (0x%x) received", pname, protocol);
-	else
+	}else {
 	    warn("Unsupported protocol 0x%x received", protocol);
+	}
     }
     lcp_sprotrej(0, p - PPP_HDRLEN, len + PPP_HDRLEN);
 }

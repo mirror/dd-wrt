@@ -668,6 +668,7 @@ log_write(level, buf)
     }
 }
 
+#ifdef NEED_PRINTF
 /*
  * fatal - log an error message and die horribly.
  */
@@ -790,7 +791,7 @@ dbglog __V((char *fmt, ...))
     logit(LOG_DEBUG, fmt, pvar);
     va_end(pvar);
 }
-
+#endif
 /*
  * dump_packet - print out a packet in readable form if it is interesting.
  * Assumes len >= PPP_HDRLEN.
