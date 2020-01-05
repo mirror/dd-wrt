@@ -65,7 +65,6 @@ endif
 #CFLAGS += -DHAVE_AQOS 
 #LDFLAGS = -L$(TOP)/libutils -L$(TOP)/nvram -lutils -lnvram 
 #endif
-LDFLAGS = $(LDLTO)
 # Uncomment the next line to enable the TDB database (enabled by default.)
 # If you enable multilink, then TDB is automatically enabled also.
 # Linux distributions: Please leave TDB ENABLED in your builds.
@@ -104,7 +103,7 @@ CFLAGS= -DBROADCOM
 endif
 endif
 
-CFLAGS+= -Wall $(COMPILE_FLAGS) $(COPTS) $(MIPS16_OPT) $(LTO) -Os -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,-u,set_mppe_enc_types $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"'
+CFLAGS+= -Wall $(COMPILE_FLAGS) $(COPTS) $(MIPS16_OPT) -Os -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,-u,set_mppe_enc_types $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"'
 #CFLAGS+= -Wall $(COMPILE_FLAGS) $(COPTS) $(MIPS16_OPT) -Os  $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"'
 
 
