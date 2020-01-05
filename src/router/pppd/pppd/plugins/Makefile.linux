@@ -1,6 +1,6 @@
 #CC	= gcc
-COPTS	= -O2 -g
-CFLAGS	= $(COPTS) -I.. -I../../include -fPIC
+#COPTS	= -O2 -g
+CFLAGS	= $(COPTS) $(MIPS16_OPT) -I.. -I../../include -fPIC
 LDFLAGS_SHARED	= -shared
 INSTALL	= install
 
