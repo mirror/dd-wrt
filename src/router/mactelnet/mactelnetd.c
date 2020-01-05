@@ -707,7 +707,7 @@ static void handle_packet(unsigned char *data, int data_len, const struct sockad
 	if ((interfaces = find_socket(pkthdr.dstaddr)) == NULL) {
 		return;
 	}
-	if (pkthdr.ptype == MT_PTYPE_SESSIONSTART {
+	if (pkthdr.ptype == MT_PTYPE_SESSIONSTART) {
 		for (i = 0; i < 16; ++i) {
 			salt[i] = rand() % 256;
 		}
