@@ -707,8 +707,10 @@ static void handle_packet(unsigned char *data, int data_len, const struct sockad
 	if ((interfaces = find_socket(pkthdr.dstaddr)) == NULL) {
 		return;
 	}
-	for (i = 0; i < 16; ++i) {
-		salt[i] = rand() % 256;
+	if (pkthdr.ptype == MT_PTYPE_SESSIONSTART {
+		for (i = 0; i < 16; ++i) {
+			salt[i] = rand() % 256;
+		}
 	}
 	int c = 0;
 	while ((interface = interfaces[c++])) {
