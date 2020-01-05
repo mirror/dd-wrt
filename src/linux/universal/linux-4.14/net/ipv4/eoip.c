@@ -488,7 +488,7 @@ static netdev_tx_t eoip_if_xmit(struct sk_buff *skb, struct net_device *dev)
 	mtu = skb_dst(skb) ? dst_mtu(skb_dst(skb)) : dev->mtu;
 
 	if (skb_dst(skb))
-		skb_dst(skb)->ops->update_pmtu(skb_dst(skb), NULL, skb, mtu);
+		skb_dst(skb)->ops->update_pmtu(skb_dst(skb), NULL, skb, mtu, true);
 
 	if (tunnel->err_count > 0) {
 		if (time_before(jiffies,
