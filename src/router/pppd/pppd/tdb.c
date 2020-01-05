@@ -80,7 +80,11 @@
 /* NB assumes there is a local variable called "tdb" that is the
  * current context, also takes doubly-parenthesized print-style
  * argument. */
+#ifdef NEED_PRINTF
 #define TDB_LOG(x) (tdb->log_fn?((tdb->log_fn x),0) : 0)
+#else
+#define TDB_LOG(x) do {} while(0)
+#endif
 
 /* lock offsets */
 #define GLOBAL_LOCK 0

@@ -1129,6 +1129,7 @@ showversion(argv)
     return 0;
 }
 
+#ifdef NEED_PRINTF
 /*
  * option_error - print a message about an error in an option.
  * The message is logged, and also sent to
@@ -1153,7 +1154,7 @@ option_error __V((char *fmt, ...))
 	fprintf(stderr, "%s: %s\n", progname, buf);
     syslog(LOG_ERR, "%s", buf);
 }
-
+#endif
 #if 0
 /*
  * readable - check if a file is readable by the real user.

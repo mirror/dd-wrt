@@ -248,7 +248,9 @@ extern unsigned	link_connect_time; /* time the link was up for */
 extern int	using_pty;	/* using pty as device (notty or pty opt.) */
 extern int	log_to_fd;	/* logging to this fd as well as syslog */
 extern bool	log_default;	/* log_to_fd is default (stdout) */
+#ifdef NEED_PRINTF
 extern char	*no_ppp_msg;	/* message to print if ppp not in kernel */
+#endif
 extern volatile int status;	/* exit status for pppd */
 extern bool	devnam_fixed;	/* can no longer change devnam */
 extern int	unsuccess;	/* # unsuccessful connection attempts */
@@ -548,12 +550,25 @@ int slprintf __P((char *, int, char *, ...));		/* sprintf++ */
 int vslprintf __P((char *, int, char *, va_list));	/* vsprintf++ */
 size_t strlcpy __P((char *, const char *, size_t));	/* safe strcpy */
 size_t strlcat __P((char *, const char *, size_t));	/* safe strncpy */
+
+#ifndef NEED_PRINTF
+static inline void option_error(char *fmt,...) { }
+static inline void notice(char *fmt,...){ }
+static inline void info(char *fmt,...) { }
+static inline void dbglog(char *fmt,...){  }
+static inline void warn(char *fmt,...) {  }
+static inline void error(char *fmt,...) { ++error_count; }
+static inline void fatal(char *fmt,...) { die(1); }
+#else
+void option_error __P((char *fmt, ...));
+				/* Print an error message about an option */
 void dbglog __P((char *, ...));	/* log a debug message */
 void info __P((char *, ...));	/* log an informational message */
 void notice __P((char *, ...));	/* log a notice-level message */
 void warn __P((char *, ...));	/* log a warning message */
 void error __P((char *, ...));	/* log an error message */
 void fatal __P((char *, ...));	/* log an error message and die(1) */
+#endif
 void init_pr_log __P((const char *, int)); /* initialize for using pr_log */
 void pr_log __P((void *, char *, ...));	/* printer fn, output to syslog */
 void end_pr_log __P((void));	/* finish up after using pr_log */
@@ -730,8 +745,6 @@ int  options_from_list __P((struct wordlist *, int privileged));
 				/* Parse options from a wordlist */
 int  getword __P((FILE *f, char *word, int *newlinep, char *filename));
 				/* Read a word from a file */
-void option_error __P((char *fmt, ...));
-				/* Print an error message about an option */
 int int_option __P((char *, int *));
 				/* Simplified number_option for decimal ints */
 void add_options __P((option_t *)); /* Add extra options */
