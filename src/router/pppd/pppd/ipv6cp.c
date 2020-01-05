@@ -1331,13 +1331,17 @@ ipv6cp_down(f)
     } else {
 	sifnpmode(f->unit, PPP_IPV6, NPMODE_DROP);
 #if !defined(__linux__) && !(defined(SVR4) && (defined(SNI) || defined(__USLC)))
+#ifdef INET6
 	sif6down(f->unit);
+#endif
 #endif
 	ipv6cp_clear_addrs(f->unit, 
 			   ipv6cp_gotoptions[f->unit].ourid,
 			   ipv6cp_hisoptions[f->unit].hisid);
 #if defined(__linux__)
+#ifdef INET6
 	sif6down(f->unit);
+#endif
 #elif defined(SVR4) && (defined(SNI) || defined(__USLC))
 	sifdown(f->unit);
 #endif
