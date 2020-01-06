@@ -1,4 +1,5 @@
 export LTO := -flto -fwhole-program
+export LTOMIN := -flto
 export LDLTO := -flto=jobserver -fuse-linker-plugin
 export LTOPLUGIN := --plugin=$(shell $(CROSS_COMPILE)gcc --print-file-name=liblto_plugin.so)
 
