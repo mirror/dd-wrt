@@ -25,7 +25,7 @@ CONFIGURE_ARGS+= \
 lighttpd-configure: pcre-configure pcre openssl
 	cd lighttpd && autoreconf -fiv || exit 1
 	cd lighttpd && rm -Rf autom4te.cache
-	cd lighttpd && ./configure --host=$(ARCH)-linux $(CONFIGURE_ARGS) CFLAGS="-fPIC -DNEED_PRINTF $(LTO) $(COPTS) $(MIPS16_OPT) -I$(TOP)/pcre -I$(TOP)/zlib" CPPFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT)" LDFLAGS="$(LDLTO) -L$(TOP)/pcre/.libs -lpthread -lpcre -L$(TOP)/zlib $(LDFLAGS) -lz" PCRE_LIB="-lpcre" PCRECONFIG="true" \
+	cd lighttpd && ./configure --host=$(ARCH)-linux $(CONFIGURE_ARGS) CFLAGS="-fPIC -DNEED_PRINTF $(MINLTO) $(COPTS) $(MIPS16_OPT) -I$(TOP)/pcre -I$(TOP)/zlib" CPPFLAGS="$(MINLTO) $(COPTS) $(MIPS16_OPT)" LDFLAGS="$(LDLTO) -L$(TOP)/pcre/.libs -lpthread -lpcre -L$(TOP)/zlib $(LDFLAGS) -lz" PCRE_LIB="-lpcre" PCRECONFIG="true" \
 	AR_FLAGS="cru $(LTOPLUGIN)" \
 	ARFLAGS="cru $(LTOPLUGIN)" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
