@@ -106,7 +106,7 @@ CFLAGS= -DBROADCOM
 endif
 endif
 
-CFLAGS= $(COPTS) $(MIPS16_OPT) $(LTO) $(COMPILE_FLAGS) $(INCLUDE_DIRS) -ffunction-sections -fdata-sections -Wl,--gc-sections '-DDESTDIR="@DESTDIR@"'
+CFLAGS+= $(COPTS) $(MIPS16_OPT) $(LTOMIN) $(COMPILE_FLAGS) $(INCLUDE_DIRS) -ffunction-sections -fdata-sections -Wl,--gc-sections '-DDESTDIR="@DESTDIR@"' -DNEED_PRINTF
 
 ifdef CHAPMS
 CFLAGS   += -DCHAPMS=1
