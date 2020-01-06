@@ -59,7 +59,7 @@ NO_DEBUG_MESSAGES = 1
 include $(TOP)/.config
 
 # the optimize option to be set for gcc
-OPTIMIZE = $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE $(LTO)
+OPTIMIZE = $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE $(MINLTO)
 
 ifeq ($(CONFIG_DIST),"micro")
 OPTIMIZE += -DNEED_NOPRINTF
