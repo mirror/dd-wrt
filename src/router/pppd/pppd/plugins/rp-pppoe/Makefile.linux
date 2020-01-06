@@ -31,7 +31,7 @@ LDFLAGS = $(LDLTO) -L$(TOP)/nvram -lnvram
 
 include $(TOP)/.config
 all: rp-pppoe.so pppoe-discovery
-LDFLAGS = -L$(TOP)/nvram -lnvram
+
 
 pppoe-discovery: pppoe-discovery.o debug.o
 	$(CC) $(LDFLAGS) -o pppoe-discovery pppoe-discovery.o debug.o
