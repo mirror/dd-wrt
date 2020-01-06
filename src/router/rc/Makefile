@@ -24,7 +24,7 @@ CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/iptables/include/libipq -I$(TOP)/l
 CFLAGS  += $(COPTS) 
 # -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/libutils -lutils -ldl
-CFLAGS += -I$(LINUXDIR) -I$(TOP)/libutils/include -fPIC  -D_GNU_SOURCE 
+CFLAGS += $(LTO) -I$(LINUXDIR) -I$(TOP)/libutils/include -fPIC  -D_GNU_SOURCE 
 CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 CFLAGS += $(MIPS16_OPT) $(LERROR)
 
@@ -1226,16 +1226,16 @@ endif
 
 wland: wland.o
 	@echo "[CC] $@"
-	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwireless -lshutils -lqos
+	@$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lwireless -lshutils -lqos
 
 
 resetbutton: resetbutton.o
 	@echo "[CC] $@"
-	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lshutils
+	@$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lshutils
 
 init:
 	@echo "[LD] init"
-	@$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lshutils 
+	@$(CC) $(CFLAGS) $(LTO) $(LDLTO) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lshutils 
 
 et:
 ifeq ($(CONFIG_NORTHSTAR),y)
@@ -1246,6 +1246,6 @@ endif
 
 rc: $(OBJS)
 	@echo "[LD] $@"
-	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwireless -lshutils -lqos
+	@$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lwireless -lshutils -lqos
 
 $(OBJS): $(CY_DEPS)
