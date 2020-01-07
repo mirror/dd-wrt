@@ -116,12 +116,16 @@ obj-$(CONFIG_RTPPROXY) += rtpproxy
 obj-$(CONFIG_ZABBIX) += pcre zabbix
 obj-$(CONFIG_SAMBA) += samba
 ifneq ($(CONFIG_SAMBA4),y)
+ifneq ($(CONFIG_SMBD),y)
 obj-$(CONFIG_SAMBA3) += samba3
 endif
-obj-$(CONFIG_SMBD) += libnl smbd
+endif
+obj-$(CONFIG_SMBD) += libnl glib20 smbd
+ifneq ($(CONFIG_SMBD),y)
 obj-$(CONFIG_SAMBA4) += gmp nettle gnutls samba4
 obj-$(CONFIG_SAMBA3) += jansson
 obj-$(CONFIG_SAMBA4) += jansson
+endif
 obj-$(CONFIG_MINIDLNA) += jansson
 obj-$(CONFIG_NTFS3G) += ntfs-3g
 obj-$(CONFIG_SPEEDTEST_CLI) += curl speedtest-cli zlib
