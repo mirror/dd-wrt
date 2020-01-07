@@ -110,6 +110,10 @@ void start_samba3(void)
 			if (*cu->username && cu->sharetype & SHARETYPE_SAMBA) {
 				sysprintf("echo \"%s\"\":*:%d:1000:\"%s\":/var:/bin/false\" >> /etc/passwd", cu->username, uniqueuserid++, cu->username);
 				eval("smbpasswd", cu->username, cu->password);
+#ifdef HAVE_SMBD
+				eval("smbuseradd", "-a", cu->username, "-p", cu->password, "-i", "/tmp/smb.db");
+				eval("smbuseradd", "-u", cu->username, "-p", cu->password, "-i", "/tmp/smb.db");
+#endif
 			}
 			cunext = cu->next;
 			free(cu);
@@ -134,7 +138,7 @@ void start_samba3(void)
 			"mangled names = no\n"	//
 			"max stat cache size = 64\n"	//
 			"workgroup = %s\n"	//
-			"bind interfaces only = Yes\n"	//
+			"bind interfaces only = yes\n"	//
 			"guest account = nobody\n"	//
 			"map to guest = Bad User\n"	//
 			"smb passwd file = /var/samba/smbpasswd\n"	//
@@ -177,10 +181,15 @@ void start_samba3(void)
 			}
 			if (*cs->label) {
 				fprintf(fp, "[%s]\n", cs->label);
+#ifdef HAVE_SMBD
+				fprintf(fp, "comment = %s\n", cs->label);
+				fprintf(fp, "path = %s/%s\n", cs->mp, cs->sd);
+#else
 				fprintf(fp, "comment = \"%s\"\n", cs->label);
 				fprintf(fp, "path = \"%s/%s\"\n", cs->mp, cs->sd);
-				fprintf(fp, "read only = %s\n", !strcmp(cs->access_perms, "ro") ? "Yes" : "No");
-				fprintf(fp, "guest ok = %s\n", cs->public == 1 ? "Yes" : "No");
+#endif
+				fprintf(fp, "read only = %s\n", !strcmp(cs->access_perms, "ro") ? "yes" : "no");
+				fprintf(fp, "guest ok = %s\n", cs->public == 1 ? "yes" : "no");
 				if (!cs->public) {
 					fprintf(fp, "valid users =");
 					int first = 0;
@@ -211,6 +220,7 @@ void start_samba3(void)
 	}
 	chmod("/jffs", 0777);
 
+#ifndef HAVE_SMBD
 	char conffile[64];
 
 	fp = fopen("/jffs/etc/smb.conf", "r");	//test if custom config is available
@@ -220,11 +230,11 @@ void start_samba3(void)
 	} else {
 		strcpy(conffile, "--configfile=/tmp/smb.conf");
 	}
+
 #ifdef HAVE_SMP
 	if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", conffile))
 #endif
 		eval("/usr/sbin/smbd", "-D", conffile);
-
 	eval("/usr/sbin/nmbd", "-D", conffile);
 	if (pidof("nmbd") <= 0) {
 		eval("/usr/sbin/nmbd", "-D", conffile);
@@ -238,6 +248,10 @@ void start_samba3(void)
 #ifdef HAVE_SAMBA4
 	eval("/usr/sbin/winbindd", "-D", conffile);
 #endif
+#endif
+	insmod("smbd");
+	eval("usmbd", "-c", "/tmp/smb.conf", "-u", "/tmp/smb.db");
+
 	dd_loginfo("smbd", "samba started\n");
 	return;
 }
@@ -250,11 +264,14 @@ void start_samba3_hotplug(void)
 
 void stop_samba3(void)
 {
+#ifdef HAVE_SMBD
+	stop_process("usmbd", "samba daemon");
+#else
 	stop_process("smbd", "samba daemon");
 	stop_process("nmbd", "daemon");
 	//samba has changed the way pidfiles are named, thus stop process will not kill smbd and nmbd pidfiles, see pidfile.c in samba 
 	sysprintf("rm -rf /var/run/*smb.conf.pid");
-
+#endif
 }
 #endif
 
