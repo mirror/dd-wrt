@@ -118,6 +118,7 @@ obj-$(CONFIG_SAMBA) += samba
 ifneq ($(CONFIG_SAMBA4),y)
 obj-$(CONFIG_SAMBA3) += samba3
 endif
+obj-$(CONFIG_SMBD) += libnl smbd
 obj-$(CONFIG_SAMBA4) += gmp nettle gnutls samba4
 obj-$(CONFIG_SAMBA3) += jansson
 obj-$(CONFIG_SAMBA4) += jansson
