@@ -271,6 +271,59 @@ static int smbd_vfs_stream_read(struct smbd_file *fp, char *buf, loff_t *pos,
  *
  * Return:	0 on success, otherwise error
  */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+static inline bool d_really_is_negative(const struct dentry *dentry)
+{
+	return dentry->d_inode == NULL;
+}
+static inline bool d_really_is_positive(const struct dentry *dentry)
+{
+	return dentry->d_inode != NULL;
+}
+
+static int check_lock_range(struct file *filp,
+			    loff_t start,
+			    loff_t end,
+			    unsigned char type)
+{
+	struct file_lock *flock;
+	struct inode *inode = file_inode(filp);
+	int error = 0;
+	
+	if (inode->i_flock == NULL)
+		return 0;
+
+	spin_lock(&inode->i_lock);
+	for (flock = inode->i_flock; flock != NULL; flock = flock->fl_next) {
+		if (filp == flock->fl_owner)
+			continue;
+		/* check conflict locks */
+		if (flock->fl_end >= start && end >= flock->fl_start) {
+			if (flock->fl_type == F_RDLCK) {
+				if (type == WRITE) {
+					smbd_err("not allow write by shared lock\n");
+					error = 1;
+					goto out;
+				}
+			} else if (flock->fl_type == F_WRLCK) {
+				/* check owner in lock */
+				if (flock->fl_file != filp) {
+					error = 1;
+					smbd_err("not allow rw access by exclusive lock from other opens\n");
+					goto out;
+				}
+			}
+		}
+	}
+out:
+	spin_unlock(&inode->i_lock);
+	return error;
+}
+
+
+
+
+#else
 static int check_lock_range(struct file *filp,
 			    loff_t start,
 			    loff_t end,
@@ -309,7 +362,7 @@ out:
 	spin_unlock(&ctx->flc_lock);
 	return error;
 }
-
+#endif
 /**
  * smbd_vfs_read() - vfs helper for smb file read
  * @work:	smb work
@@ -1411,6 +1464,15 @@ out:
 	return err;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
+	/* EMPTY */
+#else /* LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0) */
+static struct backing_dev_info *inode_to_bdi(struct inode *bd_inode)
+{
+	return bd_inode->i_mapping->backing_dev_info;
+}
+#endif
+
 /**
  * smbd_vfs_set_fadvise() - convert smb IO caching options to linux options
  * @filp:	file pointer for IO
@@ -1728,6 +1790,16 @@ struct smbd_file *smbd_vfs_dentry_open(struct smbd_work *work,
 }
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+static int __dir_empty(void *arg,
+				   const char *name,
+				   int namlen,
+				   loff_t offset,
+				   u64 ino,
+				   unsigned d_type)
+{
+struct dir_context *ctx = arg;
+#else
 static int __dir_empty(struct dir_context *ctx,
 				   const char *name,
 				   int namlen,
@@ -1735,6 +1807,7 @@ static int __dir_empty(struct dir_context *ctx,
 				   u64 ino,
 				   unsigned int d_type)
 {
+#endif
 	struct smbd_readdir_data *buf;
 
 	buf = container_of(ctx, struct smbd_readdir_data, ctx);
@@ -1766,6 +1839,16 @@ int smbd_vfs_empty_dir(struct smbd_file *fp)
 	return err;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+static int __caseless_lookup(void *arg,
+			     const char *name,
+			     int namlen,
+			     loff_t offset,
+			     u64 ino,
+			     unsigned d_type)
+{
+struct dir_context *ctx = arg;
+#else
 static int __caseless_lookup(struct dir_context *ctx,
 			     const char *name,
 			     int namlen,
@@ -1773,6 +1856,7 @@ static int __caseless_lookup(struct dir_context *ctx,
 			     u64 ino,
 			     unsigned int d_type)
 {
+#endif
 	struct smbd_readdir_data *buf;
 
 	buf = container_of(ctx, struct smbd_readdir_data, ctx);

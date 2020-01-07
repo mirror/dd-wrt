@@ -2057,7 +2057,7 @@ static int create_andx_pipe(struct smbd_work *work)
 	fid = rc;
 
 	rsp->hdr.WordCount = 42;
-	rsp->AndXCommand = cpu_to_le16(0xff);
+	rsp->AndXCommand = 0xff;
 	rsp->AndXReserved = 0;
 	rsp->OplockLevel = 0;
 	rsp->Fid = cpu_to_le16(fid);
@@ -5711,6 +5711,16 @@ static int smb_populate_readdir_entry(struct smbd_conn *conn,
  *
  * Return:	0 on success, otherwise -EINVAL
  */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+static int smbd_fill_dirent(void *arg,
+			     const char *name,
+			     int namlen,
+			     loff_t offset,
+			     u64 ino,
+			     unsigned d_type)
+{
+struct dir_context *ctx = arg;
+#else
 static int smbd_fill_dirent(struct dir_context *ctx,
 			     const char *name,
 			     int namlen,
@@ -5718,6 +5728,7 @@ static int smbd_fill_dirent(struct dir_context *ctx,
 			     u64 ino,
 			     unsigned int d_type)
 {
+#endif
 	struct smbd_readdir_data *buf =
 		container_of(ctx, struct smbd_readdir_data, ctx);
 	struct smbd_dirent *de = (void *)(buf->dirent + buf->used);
