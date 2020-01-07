@@ -162,7 +162,10 @@ void start_samba3(void)
 			"load printers = No\n"	//
 			"usershare allow guests = Yes\n", nvram_safe_get("router_name"), nvram_safe_get("samba3_srvstr"), nvram_safe_get("samba3_workgrp"), nvram_safe_get("samba3_min_proto"), smbmaxproto);
 
-#ifdef HAVE_SAMBA4
+#ifdef HAVE_SMBD
+		if (!strncmp(smbmaxproto, "SMB3", 4))
+			fprintf(fp, "smb3 encryption = %s\n", nvram_safe_get("samba3_encrypt"));
+#elif defined(HAVE_SAMBA4)
 		if (!strncmp(smbmaxproto, "SMB3", 4))
 			fprintf(fp, "smb encrypt = %s\n", nvram_safe_get("samba3_encrypt"));
 #endif
