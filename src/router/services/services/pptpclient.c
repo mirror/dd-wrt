@@ -130,6 +130,7 @@ static void create_pptp_config(char *servername, char *username)
 	fprintf(fp, "nodeflate\n");	// Disables Deflate compression
 	fprintf(fp, "lcp-echo-failure 20\n");
 	fprintf(fp, "lcp-echo-interval 3\n");	// echo-request frame to the peer
+	fprintf(fp, "lcp-echo-adaptive\n");
 	fprintf(fp, "noipdefault\n");
 	fprintf(fp, "lock\n");
 	fprintf(fp, "noauth\n");
