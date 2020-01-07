@@ -256,8 +256,10 @@ void start_pppoe_dual(int status)
 	if (nvram_matchi("ppp_debug", 1))
 		fprintf(fp, "debug\n");
 
-	fprintf(fp, "persist\n" "lcp-echo-interval 3\n" "lcp-echo-failure 20\n");
-
+	fprintf(fp, "persist\n" //
+		"lcp-echo-interval 3\n" //
+		"lcp-echo-failure 20\n" //
+		"lcp-echo-adaptive\n");
 #ifdef HAVE_IPV6
 	if (nvram_matchi("ipv6_enable", 1))
 		fprintf(fp, "ipv6 ,\n");
