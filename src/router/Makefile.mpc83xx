@@ -191,6 +191,10 @@ endif
 	-$(MAKE) -f Makefile.mpc83xx batman-adv-install
 	-$(MAKE) -f Makefile.mpc83xx ndpi-netfilter
 	-$(MAKE) -f Makefile.mpc83xx ndpi-netfilter-install
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.mpc83xx smbd
+	-$(MAKE) -f Makefile.mpc83xx smbd-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.mpc83xx wireguard
 	-$(MAKE) -f Makefile.mpc83xx wireguard-install

@@ -212,6 +212,10 @@ endif
 	-$(MAKE) -f Makefile.armbe batman-adv-install
 	-$(MAKE) -f Makefile.armbe ndpi-netfilter
 	-$(MAKE) -f Makefile.armbe ndpi-netfilter-install
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.armbe smbd
+	-$(MAKE) -f Makefile.armbe smbd-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.armbe wireguard
 	-$(MAKE) -f Makefile.armbe wireguard-install

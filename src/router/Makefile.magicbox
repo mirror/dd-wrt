@@ -198,6 +198,10 @@ endif
 	-$(MAKE) -f Makefile.magicbox batman-adv-install
 	-$(MAKE) -f Makefile.magicbox ndpi-netfilter
 	-$(MAKE) -f Makefile.magicbox ndpi-netfilter-install
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.magicbox smbd
+	-$(MAKE) -f Makefile.magicbox smbd-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.magicbox wireguard
 	-$(MAKE) -f Makefile.magicbox wireguard-install

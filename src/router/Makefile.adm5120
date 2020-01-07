@@ -194,6 +194,10 @@ ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.adm5120 zfs-install
 endif
 
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.adm5120 smbd
+	-$(MAKE) -f Makefile.adm5120 smbd-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.adm5120 wireguard
 	-$(MAKE) -f Makefile.adm5120 wireguard-install

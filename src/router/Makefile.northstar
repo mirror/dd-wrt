@@ -228,6 +228,10 @@ ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.northstar zfs
 	-$(MAKE) -f Makefile.northstar zfs-install
 endif
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.northstar smbd
+	-$(MAKE) -f Makefile.northstar smbd-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.northstar wireguard
 	-$(MAKE) -f Makefile.northstar wireguard-install

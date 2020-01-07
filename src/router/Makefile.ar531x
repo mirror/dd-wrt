@@ -295,6 +295,10 @@ endif
 	-$(MAKE) -f Makefile.ar531x batman-adv-install
 	-$(MAKE) -f Makefile.ar531x ndpi-netfilter
 	-$(MAKE) -f Makefile.ar531x ndpi-netfilter-install
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.ar531x smbd
+	-$(MAKE) -f Makefile.ar531x smbd-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.ar531x wireguard
 	-$(MAKE) -f Makefile.ar531x wireguard-install
