@@ -275,6 +275,10 @@ ifeq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.rt2880 ndpi-netfilter
 	-$(MAKE) -f Makefile.rt2880 ndpi-netfilter-install
 endif
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.rt2880 smbd
+	-$(MAKE) -f Makefile.rt2880 smbd-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.rt2880 wireguard
 	-$(MAKE) -f Makefile.rt2880 wireguard-install

@@ -146,6 +146,10 @@ ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.mvebu zfs
 	-$(MAKE) -f Makefile.mvebu zfs-install
 endif
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.mvebu smbd
+	-$(MAKE) -f Makefile.mvebu smbd-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.mvebu wireguard
 	-$(MAKE) -f Makefile.mvebu wireguard-install

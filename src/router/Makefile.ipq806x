@@ -162,6 +162,10 @@ ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.ipq806x zfs
 	-$(MAKE) -f Makefile.ipq806x zfs-install
 endif
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.ipq806x smbd
+	-$(MAKE) -f Makefile.ipq806x smbd-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.ipq806x wireguard
 	-$(MAKE) -f Makefile.ipq806x wireguard-install

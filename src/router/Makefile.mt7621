@@ -262,6 +262,10 @@ ifeq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.mt7621 ndpi-netfilter
 	-$(MAKE) -f Makefile.mt7621 ndpi-netfilter-install
 endif
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.mt7621 smbd
+	-$(MAKE) -f Makefile.mt7621 smbd-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.mt7621 wireguard
 	-$(MAKE) -f Makefile.mt7621 wireguard-install

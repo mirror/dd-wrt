@@ -158,6 +158,10 @@ ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.alpine zfs
 	-$(MAKE) -f Makefile.alpine zfs-install
 endif
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.alpine smbd
+	-$(MAKE) -f Makefile.alpine smbd-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.alpine wireguard
 	-$(MAKE) -f Makefile.alpine wireguard-install

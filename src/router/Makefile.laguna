@@ -185,6 +185,10 @@ endif
 	-$(MAKE) -f Makefile.laguna batman-adv-install
 	-$(MAKE) -f Makefile.laguna ndpi-netfilter
 	-$(MAKE) -f Makefile.laguna ndpi-netfilter-install
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.laguna smbd
+	-$(MAKE) -f Makefile.laguna smbd-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.laguna wireguard
 	-$(MAKE) -f Makefile.laguna wireguard-install
