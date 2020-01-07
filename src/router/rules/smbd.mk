@@ -15,7 +15,7 @@ libnl-clean:
 libnl-install:
 	@true
 
-smbd-configure:
+smbd-configure: glib20 libnl
 	cd smbd/tools && ./autogen.sh
 	cd smbd/tools && ./configure --prefix=/usr --host=$(ARCH)-linux --disable-shared --enable-static \
 	    CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) -D_GNU_SOURCE -DNEED_PRINTF -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections" \
@@ -27,7 +27,7 @@ smbd-configure:
 	    AR_FLAGS="cru $(LTOPLUGIN)" \
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
-smbd:
+smbd: glib20 libnl
 	$(MAKE) -C smbd/smbd all
 	$(MAKE) -C smbd/tools all
 
