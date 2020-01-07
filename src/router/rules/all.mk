@@ -328,6 +328,7 @@ include rules/smartmontools.mk
 include rules/sispmctl.mk
 include rules/samba4.mk
 include rules/gnutls.mk
+include rules/smbd.mk
 
 #
 # Generic rules
