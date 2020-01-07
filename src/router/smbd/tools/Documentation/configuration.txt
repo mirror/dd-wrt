@@ -1,0 +1,190 @@
+
+Define smbd configuration parameters list.
+
+* Supported [global] level parameters list:
+	- server string (default: SMBD)
+		This controls what string will show up in browse lists next
+		to the machine name
+	- workgroup (default : WORKGROUP)
+		This controls what workgroup your server will appear to be
+		in when queried by clients
+	- netbios name (default : SMBD SERVER)
+		This sets the NetBIOS name by which a SMB server is known.
+		By default it is the same as the first component of the host's
+		DNS name. If a machine is a browse server or logon server this
+		name (or the first component of the hosts DNS name) will be
+		the name that these services are advertised under.
+	- server min protocol (default: SMB2_10)
+		This setting controls the minimum protocol version that the
+		server will allow the client to use.
+	- server max protocol (default: SMB3_11)
+		The value of the parameter (a string) is the highest protocol
+		level that will be supported by the server.
+	- server signing (default: disabled)
+		This controls whether the client is allowed or required to use
+		SMB1 and SMB2 signing. Possible values are auto,
+		mandatory and disabled.
+	- guest account (default: nobody)
+		This is a username which will be used for access to services
+		which are specified as guest ok.
+	- max active sessions (default: 1024)
+		This option allows the number of simultaneous connections to
+		a service to be limited.
+	- ipc timeout (default: 0)
+		This option specifies the number of seconds server will wait
+		for the userspace to reply to heartbeat frames. If user space
+		is down for more than `ipc timeout` seconds the server will
+		reset itself - close all sessions and all TCP connections.
+	- restrict anonymous (default: 0)
+		The setting of this parameter determines whether user and
+		group list information is returned for an anonymous connection.
+	- map to guest (default: never)
+		This parameter can take four different values, which tell smbd
+		what to do with user login requests.(never, bad user,
+		bad password, bad uid)
+	- bind interfaces only (default: no)
+		This global parameter allows the smbd admin to limit what
+		interfaces on a machine will serve SMB requests.
+	- interfaces (default: none)
+		This option allows you to override the default network
+		interfaces list that smbd will use for browsing. The option
+		takes only list of interface name.
+	- deadtime (default: 0)
+		The value of the parameter (a decimal integer) represents
+		the number of minutes of inactivity before a connection is
+		considered dead, and it is disconnected. The deadtime only
+		takes effect if the number of open files is zero.
+	- root directory (default: none)
+		Sets up a root (base) directory for all shares. In some
+		sense it's equal to chroot(). When this option set all shares'
+		paths become relative to root directory, IOW the file name
+		lookup resolves '/root directory/share path/file path' path.
+	- max open files (default: 10000)
+		This parameter limits the maximum number of open files that
+		one ksmbd file serving process may have open for a client
+		at any one time.
+	- tcp port (default: 445)
+		Specifies which ports the server should listen on for SMB
+		traffic.
+	- smb2 max read (default: 4MB)
+		This option specifies the protocol value that ksmbd will
+		return to a client, informing the client of the largest size
+		that may be returned by a single SMB2 read call.
+	- smb2 max write (default: 4MB)
+		This option specifies the protocol value that ksmbd will
+		return to a client, informing the client of the largest size
+		that may be sent to the server by a single SMB2 write call.
+	- smb2 max trans (default: 1MB)
+		This option specifies the protocol value that ksmbd will
+		return to a client, informing the client of the largest size
+		of buffer that may be used in querying file meta-data
+		via QUERY_INFO and related SMB2 calls.
+	- smb3 encryption (default: no)
+		This parameter controls whether a remote client is allowed or
+		required to use SMB encryption.
+	- smb2 leases (default: no)
+		This boolean option tells ksmbd whether to globally negotiate
+		SMB2 leases on file open requests. Leasing is an SMB2-only
+		feature which allows clients to aggressively cache files
+		locally.
+	- cache read buffers (default: yes)
+	- cache trans buffers (default: yes)
+		This parameter allows ksmbd use buffer cache(pool) to avoid huge
+		alloc/dealloc pressure from read and trans response buffer.
+
+* Supported [share] level parameters list:
+	- comment (default: none)
+		comment string to associate with the new share
+	- path (default: none)
+		This parameter specifies a directory to which the user of the
+		service is to be given access.
+	- guest ok (default: no)
+		If this parameter is yes for a service, then no password is
+		required to connect to the service.
+	- read only (default: yes)
+		If this parameter is yes, then users of a service may not
+		create or modify files in the service's directory.
+	- browseable (default: yes)
+		This controls whether this share is seen in the list of
+		available shares in a net view and in the browse list.
+	- write ok  (default: no)
+	- writeable (default: no)
+		Inverted synonym for read only.
+	- store dos attributes (default: no)
+		If this parameter is set smbd attempts to first read DOS
+		attributes (SYSTEM, HIDDEN, ARCHIVE or READ-ONLY) from a
+		filesystem extended attribute, before mapping DOS attributes
+		to UNIX permission bits (such as occurs with map hidden and
+		map readonly).
+	- oplocks (default: no)
+		This boolean option tells smbd whether to issue oplocks
+		(opportunistic locks) to file open requests on this share.
+	- create mask (default: 0744)
+		When a file is created, the necessary permissions are calculated
+		according to the mapping from DOS modes to UNIX permissions, and
+		the resulting UNIX mode is then bit-wise 'AND'ed with this
+		parameter.
+	- directory mask (default: 0755)
+		This parameter is the octal modes which are used when converting
+		DOS modes to UNIX modes when creating UNIX directories.
+	- force group (default: 0)
+		This specifies a UNIX group name that will be assigned as
+		the default primary group for all users connecting to this
+		service.
+	- force user (default: 0)
+		This specifies a UNIX user name that will be assigned as
+		the default user for all users connecting to this service.
+	- hide dot files (default: yes)
+		This is a boolean parameter that controls whether files starting
+		with a dot appear as hidden files.
+	- hosts allow (default: none)
+		This parameter is a comma, space, or tab delimited set of hosts
+		which are permitted to access a service
+	- hosts deny (default: none)
+		The opposite of allow hosts - hosts listed here are NOT
+		permitted access to services unless the specific services have
+		their own lists to override this one. Where the lists conflict,
+		the allow list takes precedence.
+	- valid users (default: none)
+		This is a list of users that should be allowed to login to this
+		service.
+	- invalid users (default: none)
+		This is a list of users that should not be allowed to login to
+		this service.
+	- read list (default: none)
+		This is a list of users that are given read-only access to
+		a service.
+	- write list (default: none)
+		This is a list of users that are given read-write access to
+		a service.
+	- max connections (default: 0)
+		This option allows the number of simultaneous connections to
+		a service to be limited.
+	- veto files (default: none)
+		This is a list of files and directories that are neither visible
+		nor accessible.
+
+		Veto any files containing the word Security,
+		any ending in .tmp, and any directory containing the
+		word root.
+		veto files = /*Security*/*.tmp/*root*/
+
+		Veto the Apple specific files that a NetAtalk server
+		creates.
+		veto files = /.AppleDouble/.bin/.AppleDesktop/Network Trash Folder/
+	- inherit owner (default: no)
+		The ownership for new files and directories should be controlled
+		by the ownership of the parent directory.
+		Valid options are yes or no.
+	- inherit smack (default: no)
+		This parameter can be used to ensure that if smack label exist
+		on parent directories.
+		Valid options are yes or no.
+	- force create mode (default: 0)
+		This parameter specifies a set of UNIX mode bit permissions
+		that will always be set on a file created by smbd.
+	- force directory mode (default: 0)
+		This parameter specifies a set of UNIX mode bit permissions
+		that will always be set on a directory created by smbd.
+	- streams (default: no)
+		Alternate Data Streams support.
