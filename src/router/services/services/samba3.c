@@ -164,7 +164,7 @@ void start_samba3(void)
 
 #ifdef HAVE_SMBD
 		if (!strncmp(smbmaxproto, "SMB3", 4))
-			fprintf(fp, "smb3 encryption = %s\n", nvram_safe_get("samba3_encrypt"));
+			fprintf(fp, "smb3 encryption = %s\n", !strcmp(nvram_safe_get("samba3_encrypt"), "off") ? "no" : "yes");
 #elif defined(HAVE_SAMBA4)
 		if (!strncmp(smbmaxproto, "SMB3", 4))
 			fprintf(fp, "smb encrypt = %s\n", nvram_safe_get("samba3_encrypt"));
