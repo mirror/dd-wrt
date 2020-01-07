@@ -104,7 +104,7 @@ ifeq ($(ARCHITECTURE),broadcom)
 ifneq ($(CONFIG_BCMMODERN),y)
 endif
 endif
-CFLAGS+= -DNEED_PRINTF
+#CFLAGS+= -DNEED_PRINTF
 
 CFLAGS+= $(COPTS) $(MIPS16_OPT) $(LTOMIN) $(COMPILE_FLAGS) $(INCLUDE_DIRS) -ffunction-sections -fdata-sections -Wl,--gc-sections '-DDESTDIR="@DESTDIR@"'
 
