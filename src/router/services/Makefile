@@ -1112,6 +1112,9 @@ endif
 ifeq ($(CONFIG_SAMBA4),y)
 CFLAGS_EXTRA += -DHAVE_SAMBA4
 endif
+ifeq ($(CONFIG_SMBD),y)
+CFLAGS_EXTRA += -DHAVE_SMBD
+endif
 ifeq ($(CONFIG_RB500),y)
 CFLAGS_EXTRA += -DHAVE_RB500
 endif
