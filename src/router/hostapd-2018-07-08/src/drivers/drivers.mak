@@ -171,7 +171,7 @@ ifndef CONFIG_LIBNL32
 ifndef CONFIG_LIBNL20
 ifndef CONFIG_LIBNL_TINY
 PKG_CONFIG ?= pkg-config
-HAVE_LIBNL3 := $(shell $(PKG_CONFIG) --exists libnl-3.0; echo $$?)
+#HAVE_LIBNL3 := $(shell $(PKG_CONFIG) --exists libnl-3.0; echo $$?)
 ifeq ($(HAVE_LIBNL3),0)
 CONFIG_LIBNL32=y
 endif
