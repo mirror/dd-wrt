@@ -36,6 +36,9 @@ static char const RCSID[] =
 /* #include "pppd/pathnames.h" */
 
 #include <linux/types.h>
+#ifndef aligned_u64
+#define aligned_u64 unsigned long long __attribute__((aligned(8)))
+#endif
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
