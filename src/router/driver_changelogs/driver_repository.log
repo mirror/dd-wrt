@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4875 | brainslayer | 2020-01-07 04:11:41 +0400 (Tue, 07 Jan 2020) | 1 line
+
+Fix TKIP replay protection immediately after key setup
+------------------------------------------------------------------------
 r4874 | brainslayer | 2020-01-03 17:47:08 +0400 (Fri, 03 Jan 2020) | 1 line
 
 fix invalid rate for mesh
