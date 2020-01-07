@@ -88,12 +88,19 @@ void start_pptpd(void)
 	else
 		fprintf(fp, "mppe stateless\n");
 	fprintf(fp, "mppc\n"	//enable compression
-		"debug\n" "logfd 2\n"
-		"ms-ignore-domain\n"
-		"chap-secrets /tmp/pptpd/chap-secrets\n"
-		"ip-up-script /tmp/pptpd/ip-up\n" "ip-down-script /tmp/pptpd/ip-down\n" "proxyarp\n" "ipcp-accept-local\n" "ipcp-accept-remote\n" "lcp-echo-failure 15\n" "lcp-echo-interval 4\n"
-//              "lcp-echo-adaptive"     //disable interval
-		"mtu %s\n" "mru %s\n", nvram_safe_get("pptpd_mtu"), nvram_safe_get("pptpd_mru"));
+		"debug\n" "logfd 2\n" //
+		"ms-ignore-domain\n" //
+		"chap-secrets /tmp/pptpd/chap-secrets\n" //
+		"ip-up-script /tmp/pptpd/ip-up\n" //
+		"ip-down-script /tmp/pptpd/ip-down\n" //
+		"proxyarp\n" //
+		"ipcp-accept-local\n" //
+		"ipcp-accept-remote\n" //
+		"lcp-echo-failure 15\n" //
+		"lcp-echo-interval 4\n" //
+		"lcp-echo-adaptive\n" //
+		"mtu %s\n" //
+		"mru %s\n", nvram_safe_get("pptpd_mtu"), nvram_safe_get("pptpd_mru"));
 	if (!nowins) {
 		fprintf(fp, "ms-wins %s\n", nvram_safe_get("wan_wins"));
 	}
