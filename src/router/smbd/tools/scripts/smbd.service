@@ -1,0 +1,9 @@
+[Unit]
+Description=SMBD userspace service
+
+[Service]
+Type=forking
+ExecStart=/usr/local/sbin/smbd -s
+
+[Install]
+WantedBy=multi-user.target

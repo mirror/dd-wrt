@@ -1,0 +1,17 @@
+;******************************************************************************
+; Rules to update this file:
+;	- Every [share] definition should start on new line
+;	- Every parameter should be indented with single tab
+;	- There should be single spaces around equal (eg: " = ")
+;	- Multiple parameters should be separated with comma
+;		eg: "invalid users = usr1,usr2,usr3"
+;
+; Make sure to configure the server after making changes to this file.
+;******************************************************************************
+
+[global]
+	netbios name = SMBD
+
+[homes]
+	comment = content server share
+	path = /tmp
