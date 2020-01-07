@@ -8,11 +8,11 @@ m4_define([smbd_tools_version],
 	[smbd_tools_major_ver.smbd_tools_minor_ver.smbd_tools_micro_ver])
 
 AC_INIT([SMBD tools],
-	[m4_esyscmd_s([git describe --tags --dirty --always --long || echo unknown])],
+	[m4_esyscmd_s([echo unknown])],
 	[linux-cifsd-devel@lists.sourceforge.net])
 
 AC_DEFINE([SMBD_TOOLS_VERSION],
-	"smbd_tools_version [m4_esyscmd_s([git describe --tags --dirty --always --long || echo unknown])]",
+	"smbd_tools_version [m4_esyscmd_s([echo unknown])]",
 	["smbd-tools version"])
 
 AC_CONFIG_SRCDIR([config.h.in])
