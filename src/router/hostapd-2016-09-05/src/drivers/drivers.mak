@@ -45,8 +45,8 @@ ifdef CONFIG_LIBNL32
   ifdef LIBNL_INC
     DRV_CFLAGS += -I$(LIBNL_INC)
   else
-    PKG_CONFIG ?= pkg-config
-    DRV_CFLAGS += $(shell $(PKG_CONFIG) --cflags libnl-3.0)
+#    PKG_CONFIG ?= pkg-config
+#    DRV_CFLAGS += $(shell $(PKG_CONFIG) --cflags libnl-3.0)
   endif
 ifdef CONFIG_LIBNL3_ROUTE
   DRV_LIBS += -lnl-route-3
