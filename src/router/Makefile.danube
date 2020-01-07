@@ -194,6 +194,10 @@ endif
 	-$(MAKE) -f Makefile.danube batman-adv-install
 	-$(MAKE) -f Makefile.danube ndpi-netfilter
 	-$(MAKE) -f Makefile.danube ndpi-netfilter-install
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.danube smbd
+	-$(MAKE) -f Makefile.danube smbd-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.danube wireguard
 	-$(MAKE) -f Makefile.dabube wireguard-install

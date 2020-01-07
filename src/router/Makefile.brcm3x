@@ -224,6 +224,10 @@ ifeq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.brcm3x ndpi-netfilter
 	-$(MAKE) -f Makefile.brcm3x ndpi-netfilter-install
 endif
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.brcm3x smbd
+	-$(MAKE) -f Makefile.brcm3x smbd-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.brcm3x wireguard
 	-$(MAKE) -f Makefile.brcm3x wireguard-install

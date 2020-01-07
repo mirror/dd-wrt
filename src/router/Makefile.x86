@@ -189,6 +189,10 @@ ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.x86 fq_codel_fast
 	-$(MAKE) -f Makefile.x86 fq_codel_fast-install
 endif
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.x86 smbd
+	-$(MAKE) -f Makefile.x86 smbd-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.x86 wireguard
 	-$(MAKE) -f Makefile.x86 wireguard-install

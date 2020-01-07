@@ -225,6 +225,10 @@ ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.octeon zfs
 	-$(MAKE) -f Makefile.octeon zfs-install
 endif
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.octeon smbd
+	-$(MAKE) -f Makefile.octeon smbd-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.octeon wireguard
 	-$(MAKE) -f Makefile.octeon wireguard-install

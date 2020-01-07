@@ -166,6 +166,10 @@ kernel:
 	-$(MAKE) -f Makefile.openrisc batman-adv-install
 	-$(MAKE) -f Makefile.openrisc ndpi-netfilter
 	-$(MAKE) -f Makefile.openrisc ndpi-netfilter-install
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.openrisc smbd
+	-$(MAKE) -f Makefile.openrisc smbd-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.openrisc wireguard
 	-$(MAKE) -f Makefile.openrisc wireguard-install

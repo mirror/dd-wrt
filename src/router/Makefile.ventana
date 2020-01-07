@@ -187,6 +187,10 @@ ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.ventana zfs
 	-$(MAKE) -f Makefile.ventana zfs-install
 endif
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.ventana smbd
+	-$(MAKE) -f Makefile.ventana smbd-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.ventana wireguard
 	-$(MAKE) -f Makefile.ventana wireguard-install
