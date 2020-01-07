@@ -3320,6 +3320,16 @@ static int reserve_populate_dentry(struct smbd_dir_info *d_info,
 	return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+static int __query_dir(void *arg,
+		       const char *name,
+		       int namlen,
+		       loff_t offset,
+		       u64 ino,
+		       unsigned int d_type)
+{
+struct dir_context *ctx = arg;
+#else
 static int __query_dir(struct dir_context *ctx,
 		       const char *name,
 		       int namlen,
@@ -3327,6 +3337,7 @@ static int __query_dir(struct dir_context *ctx,
 		       u64 ino,
 		       unsigned int d_type)
 {
+#endif
 	struct smbd_readdir_data	*buf;
 	struct smb2_query_dir_private	*priv;
 	struct smbd_dir_info		*d_info;
