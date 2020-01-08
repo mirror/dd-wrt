@@ -208,7 +208,9 @@ cflags-$(CONFIG_CAVIUM_CN63XXP1) += -Wa,-mfix-cn63xxp1
 cflags-$(CONFIG_CPU_BMIPS)	+= -march=mips32 -Wa,-mips32 -Wa,--trap
 
 
-
+#ifdef CONFIG_CPU_MIPS32_R2
+#cflags-$(CONFIG_MIPS_BRCM)	+= -mdspr2 -ftree-vectorize -ftree-slp-vectorize -fopt-info-vec
+#endif
 #
 # Ralink SoC common stuff
 #

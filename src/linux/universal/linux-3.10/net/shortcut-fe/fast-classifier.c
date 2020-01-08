@@ -1965,10 +1965,13 @@ static int __init fast_classifier_init(void)
 		goto exit5;
 	}
 
-	result = genl_register_ops(&fast_classifier_gnl_family, fast_classifier_gnl_ops);
-	if (result) {
-		printk(KERN_CRIT "unable to register ops\n");
-		goto exit6;
+	for (i = 0; i < ARRAY_SIZE(fast_classifier_gnl_ops); i++) {
+		result = genl_register_ops(&fast_classifier_gnl_family,
+				&fast_classifier_gnl_ops[i]);
+		if (result) {
+			printk(KERN_CRIT "unable to register ops\n");
+			goto exit6;
+		}
 	}
 
 	result = genl_register_mc_group(&fast_classifier_gnl_family,

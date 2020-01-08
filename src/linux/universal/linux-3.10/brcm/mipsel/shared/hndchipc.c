@@ -1,5 +1,5 @@
 /*
- * BCM47XX support code for some chipcommon facilities (uart, jtagm)
+ * Support code for chipcommon facilities (uart, jtagm) - OS independent.
  *
  * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: hndchipc.c 310902 2012-01-26 19:45:33Z $
+ * $Id: hndchipc.c 473343 2014-04-29 01:45:22Z $
  */
 
 #include <bcm_cfg.h>
@@ -43,51 +43,6 @@
 #define	CC_MSG(args)
 #endif	/* BCMDBG */
 
-/* interested chipcommon interrupt source
- *  - GPIO
- *  - EXTIF
- *  - ECI
- *  - PMU
- *  - UART
- */
-#define	MAX_CC_INT_SOURCE 5
-
-/* chipc secondary isr info */
-typedef struct {
-	uint intmask;		/* int mask */
-	cc_isr_fn isr;		/* secondary isr handler */
-	void *cbdata;		/* pointer to private data */
-} cc_isr_info_t;
-
-static cc_isr_info_t cc_isr_desc[MAX_CC_INT_SOURCE];
-
-/* chip common intmask */
-static uint32 cc_intmask = 0;
-
-/*
- * ROM accessor to avoid struct in shdat
- */
-static cc_isr_info_t *
-get_cc_isr_desc(void)
-{
-	return cc_isr_desc;
-}
-
-static bool
-BCMINITFN(serial_exists)(osl_t *osh, uint8 *regs)
-{
-	uint8 save_mcr, status1;
-
-	save_mcr = R_REG(osh, &regs[UART_MCR]);
-	W_REG(osh, &regs[UART_MCR], UART_MCR_LOOP | 0x0a);
-	status1 = R_REG(osh, &regs[UART_MSR]) & 0xf0;
-	W_REG(osh, &regs[UART_MCR], save_mcr);
-
-	return (status1 == 0x90);
-}
-
-extern uint32 sb_base(uint32 admatch);
-
 /*
  * Initializes UART access. The callback function will be called once
  * per found UART.
@@ -97,114 +52,76 @@ BCMATTACHFN(si_serial_init)(si_t *sih, si_serial_init_fn add)
 {
 	osl_t *osh;
 	void *regs;
-	ulong base;
 	chipcregs_t *cc;
-	extifregs_t *eir;
+	uint32 rev, cap, pll, baud_base, div;
 	uint irq;
 	int i, n;
 
 	osh = si_osh(sih);
 
-	if ((eir = (extifregs_t *)si_setcore(sih, EXTIF_CORE_ID, 0))) {
-		sbconfig_t *sb;
+	cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX);
+	ASSERT(cc);
 
-		/* Determine external UART register base */
-		sb = (sbconfig_t *)((ulong) eir + SBCONFIGOFF);
-		base = EXTIF_CFGIF_BASE(sb_base(R_REG(osh, &sb->sbadmatch1)));
+	/* Determine core revision and capabilities */
+	rev = sih->ccrev;
+	cap = sih->cccaps;
+	pll = cap & CC_CAP_PLL_MASK;
 
-		/* Determine IRQ */
-		irq = si_irq(sih);
+	/* Determine IRQ */
+	irq = si_irq(sih);
 
-		/* Disable GPIO interrupt initially */
-		W_REG(osh, &eir->gpiointpolarity, 0);
-		W_REG(osh, &eir->gpiointmask, 0);
-
-		/* Search for external UARTs */
-		n = 2;
-		for (i = 0; i < 2; i++) {
-			regs = (void *) REG_MAP(base + (i * 8), 8);
-			if (serial_exists(osh, regs)) {
-				/* Set GPIO 1 to be the external UART IRQ */
-				W_REG(osh, &eir->gpiointmask, 2);
-				/* XXXDetermine external UART clock */
-				if (add)
-					add(regs, irq, 13500000, 0);
-			}
-		}
-
-		/* Add internal UART if enabled */
-		if (R_REG(osh, &eir->corecontrol) & CC_UE)
-			if (add)
-				add((void *) &eir->uartdata, irq, si_clock(sih), 2);
-	} else if ((cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX))) {
-		uint32 rev, cap, pll, baud_base, div;
-
-		/* Determine core revision and capabilities */
-		rev = sih->ccrev;
-		cap = sih->cccaps;
-		pll = cap & CC_CAP_PLL_MASK;
-
-		/* Determine IRQ */
-		irq = si_irq(sih);
-
-		if (CCPLL_ENAB(sih) && pll == PLL_TYPE1) {
-			/* PLL clock */
-			baud_base = si_clock_rate(pll,
-			                          R_REG(osh, &cc->clockcontrol_n),
-			                          R_REG(osh, &cc->clockcontrol_m2));
+	if (CCPLL_ENAB(sih) && pll == PLL_TYPE1) {
+		/* PLL clock */
+		baud_base = si_clock_rate(pll,
+		                          R_REG(osh, &cc->clockcontrol_n),
+		                          R_REG(osh, &cc->clockcontrol_m2));
+		div = 1;
+	} else {
+		/* Fixed ALP clock */
+		if (rev >= 11 && rev != 15) {
+			baud_base = si_alp_clock(sih);
 			div = 1;
+			/* Turn off UART clock before switching clock source */
+			if (rev >= 21)
+				AND_REG(osh, &cc->corecontrol, ~CC_UARTCLKEN);
+			/* Set the override bit so we don't divide it */
+			OR_REG(osh, &cc->corecontrol, CC_UARTCLKO);
+			if (rev >= 21)
+				OR_REG(osh, &cc->corecontrol, CC_UARTCLKEN);
+		} else if (rev >= 3) {
+			/* Internal backplane clock */
+			baud_base = si_clock(sih);
+			div = 2;	/* Minimum divisor */
+			W_REG(osh, &cc->clkdiv,
+			      ((R_REG(osh, &cc->clkdiv) & ~CLKD_UART) | div));
 		} else {
-			/* 5354 chip common uart uses a constant clock
-			 * frequency of 25MHz */
-			if (rev == 20) {
-				/* Set the override bit so we don't divide it */
-				W_REG(osh, &cc->corecontrol, CC_UARTCLKO);
-				baud_base = 25000000;
-			} else if (rev >= 11 && rev != 15) {
-				/* Fixed ALP clock */
-				baud_base = si_alp_clock(sih);
-				div = 1;
-				/* Turn off UART clock before switching clock source */
-				if (rev >= 21)
-					AND_REG(osh, &cc->corecontrol, ~CC_UARTCLKEN);
-				/* Set the override bit so we don't divide it */
-				OR_REG(osh, &cc->corecontrol, CC_UARTCLKO);
-				if (rev >= 21)
-					OR_REG(osh, &cc->corecontrol, CC_UARTCLKEN);
-			} else if (rev >= 3) {
-				/* Internal backplane clock */
-				baud_base = si_clock(sih);
-				div = 2;	/* Minimum divisor */
-				W_REG(osh, &cc->clkdiv,
-				      ((R_REG(osh, &cc->clkdiv) & ~CLKD_UART) | div));
-			} else {
-				/* Fixed internal backplane clock */
-				baud_base = 88000000;
-				div = 48;
-			}
-
-			/* Clock source depends on strapping if UartClkOverride is unset */
-			if ((R_REG(osh, &cc->corecontrol) & CC_UARTCLKO) == 0) {
-				if ((cap & CC_CAP_UCLKSEL) == CC_CAP_UINTCLK) {
-					/* Internal divided backplane clock */
-					baud_base /= div;
-				} else {
-					/* Assume external clock of 1.8432 MHz */
-					baud_base = 1843200;
-				}
-			}
+			/* Fixed internal backplane clock */
+			baud_base = 88000000;
+			div = 48;
 		}
 
-		/* Add internal UARTs */
-		n = cap & CC_CAP_UARTS_MASK;
-		for (i = 0; i < n; i++) {
-			/* Register offset changed after revision 0 */
-			if (rev)
-				regs = (void *)((ulong) &cc->uart0data + (i * 256));
-			else
-				regs = (void *)((ulong) &cc->uart0data + (i * 8));
-			if (add)
-				add(regs, irq, baud_base, 0);
+		/* Clock source depends on strapping if UartClkOverride is unset */
+		if ((R_REG(osh, &cc->corecontrol) & CC_UARTCLKO) == 0) {
+			if ((cap & CC_CAP_UCLKSEL) == CC_CAP_UINTCLK) {
+				/* Internal divided backplane clock */
+				baud_base /= div;
+			} else {
+				/* Assume external clock of 1.8432 MHz */
+				baud_base = 1843200;
+			}
+		}
+	}
+
+	/* Add internal UARTs */
+	n = cap & CC_CAP_UARTS_MASK;
+	for (i = 0; i < n; i++) {
+		regs = (void *)((ulong) &cc->uart0data + (i * 256));
+		if (add != NULL) {
+#ifdef RTE_UART
+			add(sih, regs, irq, baud_base, 0);
+#else
+			add(regs, irq, baud_base, 0);
+#endif
 		}
 	}
 }
@@ -351,72 +268,4 @@ jtag_scan(si_t *sih, void *h, uint irsz, uint32 ir0, uint32 ir1,
 		*dr1 = jtm_wait(cc, TRUE);
 	}
 	return (tmp);
-}
-
-
-/*
- * Interface to register chipc secondary isr
- */
-
-bool
-BCMATTACHFN(si_cc_register_isr)(si_t *sih, cc_isr_fn isr, uint32 ccintmask, void *cbdata)
-{
-	bool done = FALSE;
-	chipcregs_t *regs;
-	uint origidx;
-	uint i;
-
-	/* Save the current core index */
-	origidx = si_coreidx(sih);
-	regs = si_setcoreidx(sih, SI_CC_IDX);
-	ASSERT(regs);
-
-	for (i = 0; i < MAX_CC_INT_SOURCE; i++) {
-		if (cc_isr_desc[i].isr == NULL) {
-			cc_isr_desc[i].isr = isr;
-			cc_isr_desc[i].cbdata = cbdata;
-			cc_isr_desc[i].intmask = ccintmask;
-			done = TRUE;
-			break;
-		}
-	}
-
-	if (done) {
-		cc_intmask = R_REG(si_osh(sih), &regs->intmask);
-		cc_intmask |= ccintmask;
-		W_REG(si_osh(sih), &regs->intmask, cc_intmask);
-	}
-
-	/* restore original coreidx */
-	si_setcoreidx(sih, origidx);
-	return done;
-}
-
-/*
- * chipc primary interrupt handler
- *
- */
-
-void
-si_cc_isr(si_t *sih, chipcregs_t *regs)
-{
-	uint32 ccintstatus;
-	uint32 intstatus;
-	uint32 i;
-	cc_isr_info_t *desc;
-
-	/* prior to rev 21 chipc interrupt means uart and gpio */
-	if (sih->ccrev >= 21)
-		ccintstatus = R_REG(si_osh(sih), &regs->intstatus) & cc_intmask;
-	else
-		ccintstatus = (CI_UART | CI_GPIO);
-
-	desc = get_cc_isr_desc();
-	ASSERT(desc);
-	for (i = 0; i < MAX_CC_INT_SOURCE; i++, desc++) {
-		if ((desc->isr != NULL) &&
-		    (intstatus = (desc->intmask & ccintstatus))) {
-			(desc->isr)(desc->cbdata, intstatus);
-		}
-	}
 }
