@@ -1865,6 +1865,7 @@ static const struct device_attribute fast_classifier_exceptions_attr =
 static int __init fast_classifier_init(void)
 {
 	struct fast_classifier *sc = &__fsc;
+	int i;
 	int result = -1;
 
 	sfe_ipv4_init();
