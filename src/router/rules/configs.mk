@@ -120,7 +120,7 @@ ifneq ($(CONFIG_SMBD),y)
 obj-$(CONFIG_SAMBA3) += samba3
 endif
 endif
-obj-$(CONFIG_SMBD) += libnl glib20 smbd
+obj-$(CONFIG_SMBD) += libnl libffi glib20 smbd
 ifneq ($(CONFIG_SMBD),y)
 obj-$(CONFIG_SAMBA4) += gmp nettle gnutls samba4
 obj-$(CONFIG_SAMBA3) += jansson
