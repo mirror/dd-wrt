@@ -266,7 +266,7 @@ smb_strtoUTF16(__le16 *to, const char *from, int len,
 		 */
 	}
 
-	for (i = 0; len && *from; i++, from += charlen, len -= charlen) {
+	for (i = 0; len > 0 && *from; i++, from += charlen, len -= charlen) {
 		charlen = codepage->char2uni(from, len, &wchar_to);
 		if (charlen < 1) {
 			/* A question mark */
