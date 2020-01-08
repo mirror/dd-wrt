@@ -5711,7 +5711,7 @@ static int smb_populate_readdir_entry(struct smbd_conn *conn,
  *
  * Return:	0 on success, otherwise -EINVAL
  */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
 static int smbd_fill_dirent(void *arg,
 			     const char *name,
 			     int namlen,
@@ -5719,7 +5719,18 @@ static int smbd_fill_dirent(void *arg,
 			     u64 ino,
 			     unsigned d_type)
 {
-struct dir_context *ctx = arg;
+	struct smbd_readdir_data *buf = arg;
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+static int smbd_fill_dirent(void *arg,
+			     const char *name,
+			     int namlen,
+			     loff_t offset,
+			     u64 ino,
+			     unsigned d_type)
+{
+	struct dir_context *ctx = arg;
+	struct smbd_readdir_data *buf =
+		container_of(ctx, struct smbd_readdir_data, ctx);
 #else
 static int smbd_fill_dirent(struct dir_context *ctx,
 			     const char *name,
@@ -5728,9 +5739,9 @@ static int smbd_fill_dirent(struct dir_context *ctx,
 			     u64 ino,
 			     unsigned int d_type)
 {
-#endif
 	struct smbd_readdir_data *buf =
 		container_of(ctx, struct smbd_readdir_data, ctx);
+#endif
 	struct smbd_dirent *de = (void *)(buf->dirent + buf->used);
 	unsigned int reclen;
 
@@ -5804,7 +5815,11 @@ static int find_first(struct smbd_work *work)
 		goto err_out;
 	}
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 	set_ctx_actor(&dir_fp->readdir_data.ctx, smbd_fill_dirent);
+#else
+	dir_fp->readdir_data.filldir = smbd_fill_dirent;
+#endif
 	dir_fp->readdir_data.dirent = (void *)__get_free_page(GFP_KERNEL);
 	if (!dir_fp->readdir_data.dirent) {
 		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
@@ -6039,7 +6054,11 @@ static int find_next(struct smbd_work *work)
 		goto err_out;
 	}
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 	set_ctx_actor(&dir_fp->readdir_data.ctx, smbd_fill_dirent);
+#else
+	dir_fp->readdir_data.filldir = smbd_fill_dirent;
+#endif
 	pathname = kmalloc(PATH_MAX, GFP_KERNEL);
 	if (!pathname) {
 		smbd_debug("Failed to allocate memory\n");

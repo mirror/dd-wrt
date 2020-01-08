@@ -734,9 +734,15 @@ int smbd_vfs_setattr(struct smbd_work *work, const char *name,
 	err = notify_change(dentry, attrs, NULL);
 	inode_unlock(inode);
 #else
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+	mutex_lock(&inode->i_mutex);
+	err = notify_change(dentry, attrs);
+	mutex_unlock(&inode->i_mutex);
+#else
 	mutex_lock(&inode->i_mutex);
 	err = notify_change(dentry, attrs, NULL);
 	mutex_unlock(&inode->i_mutex);
+#endif
 #endif
 
 	if (update_size)
@@ -1010,7 +1016,11 @@ int smbd_vfs_remove_file(char *name)
 		if (err && err != -ENOTEMPTY)
 			smbd_debug("%s: rmdir failed, err %d\n", name, err);
 	} else {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+		err = vfs_unlink(d_inode(dir), dentry);
+#else
 		err = vfs_unlink(d_inode(dir), dentry, NULL);
+#endif
 		if (err)
 			smbd_debug("%s: unlink failed, err %d\n", name, err);
 	}
@@ -1062,7 +1072,11 @@ int smbd_vfs_link(const char *oldname, const char *newname)
 		goto out3;
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+	err = vfs_link(oldpath.dentry, d_inode(newpath.dentry), dentry);
+#else
 	err = vfs_link(oldpath.dentry, d_inode(newpath.dentry), dentry, NULL);
+#endif
 	if (err)
 		smbd_debug("vfs_link failed err %d\n", err);
 
@@ -1118,12 +1132,19 @@ static int __smbd_vfs_rename(struct dentry *src_dent_parent,
 
 	err = -ENOTEMPTY;
 	if (dst_dent != trap_dent && !d_really_is_positive(dst_dent)) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+		err = vfs_rename(d_inode(src_dent_parent),
+				 src_dent,
+				 d_inode(dst_dent_parent),
+				 dst_dent);
+#else
 		err = vfs_rename(d_inode(src_dent_parent),
 				 src_dent,
 				 d_inode(dst_dent_parent),
 				 dst_dent,
 				 NULL,
 				 0);
+#endif
 	}
 	if (err)
 		smbd_err("vfs_rename failed err %d\n", err);
@@ -1518,7 +1539,11 @@ int smbd_vfs_lock(struct file *filp, int cmd,
 
 int smbd_vfs_readdir(struct file *file, struct smbd_readdir_data *rdata)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+	return vfs_readdir(file, rdata->filldir, rdata);
+#else
 	return iterate_dir(file, &rdata->ctx);
+#endif
 }
 
 int smbd_vfs_alloc_size(struct smbd_work *work,
@@ -1535,7 +1560,11 @@ int smbd_vfs_zero_data(struct smbd_work *work,
 			 loff_t len)
 {
 	smb_break_all_levII_oplock(work, fp, 1);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+	return vfs_fallocate(fp->filp, 0, off, len);
+#else
 	return vfs_fallocate(fp->filp, FALLOC_FL_ZERO_RANGE, off, len);
+#endif
 }
 
 int smbd_vfs_fiemap(struct smbd_file *fp, u64 start, u64 length,
@@ -1654,11 +1683,17 @@ int smbd_vfs_unlink(struct dentry *dir, struct dentry *dentry)
 		goto out;
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+	if (S_ISDIR(d_inode(dentry)->i_mode))
+		err = vfs_rmdir(d_inode(dir), dentry);
+	else
+		err = vfs_unlink(d_inode(dir), dentry);
+#else
 	if (S_ISDIR(d_inode(dentry)->i_mode))
 		err = vfs_rmdir(d_inode(dir), dentry);
 	else
 		err = vfs_unlink(d_inode(dir), dentry, NULL);
-
+#endif
 out:
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 	inode_unlock(d_inode(dir));
@@ -1790,7 +1825,7 @@ struct smbd_file *smbd_vfs_dentry_open(struct smbd_work *work,
 }
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
 static int __dir_empty(void *arg,
 				   const char *name,
 				   int namlen,
@@ -1798,7 +1833,18 @@ static int __dir_empty(void *arg,
 				   u64 ino,
 				   unsigned d_type)
 {
-struct dir_context *ctx = arg;
+	struct smbd_readdir_data *buf = arg;
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+static int __dir_empty(void *arg,
+				   const char *name,
+				   int namlen,
+				   loff_t offset,
+				   u64 ino,
+				   unsigned d_type)
+{
+	struct dir_context *ctx = arg;
+	struct smbd_readdir_data *buf;
+	buf = container_of(ctx, struct smbd_readdir_data, ctx);
 #else
 static int __dir_empty(struct dir_context *ctx,
 				   const char *name,
@@ -1807,10 +1853,9 @@ static int __dir_empty(struct dir_context *ctx,
 				   u64 ino,
 				   unsigned int d_type)
 {
-#endif
 	struct smbd_readdir_data *buf;
-
 	buf = container_of(ctx, struct smbd_readdir_data, ctx);
+#endif
 	buf->dirent_count++;
 
 	if (buf->dirent_count > 2)
@@ -1828,7 +1873,11 @@ int smbd_vfs_empty_dir(struct smbd_file *fp)
 {
 	int err;
 
-	set_ctx_actor(&fp->readdir_data.ctx, __dir_empty);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
+	set_ctx_actor(&fp->readdir_data.ctx, __query_dir);
+#else
+	fp->readdir_data.filldir = __dir_empty;
+#endif
 	fp->readdir_data.dirent_count	= 0;
 
 	err = smbd_vfs_readdir(fp->filp, &fp->readdir_data);
@@ -1839,7 +1888,7 @@ int smbd_vfs_empty_dir(struct smbd_file *fp)
 	return err;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
 static int __caseless_lookup(void *arg,
 			     const char *name,
 			     int namlen,
@@ -1847,7 +1896,18 @@ static int __caseless_lookup(void *arg,
 			     u64 ino,
 			     unsigned d_type)
 {
-struct dir_context *ctx = arg;
+	struct smbd_readdir_data *buf = arg; 
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+static int __caseless_lookup(void *arg,
+			     const char *name,
+			     int namlen,
+			     loff_t offset,
+			     u64 ino,
+			     unsigned d_type)
+{
+	struct dir_context *ctx = arg;
+	struct smbd_readdir_data *buf;
+	buf = container_of(ctx, struct smbd_readdir_data, ctx);
 #else
 static int __caseless_lookup(struct dir_context *ctx,
 			     const char *name,
@@ -1856,10 +1916,10 @@ static int __caseless_lookup(struct dir_context *ctx,
 			     u64 ino,
 			     unsigned int d_type)
 {
-#endif
 	struct smbd_readdir_data *buf;
-
 	buf = container_of(ctx, struct smbd_readdir_data, ctx);
+#endif
+
 
 	if (buf->used != namlen)
 		return 0;
@@ -1886,7 +1946,11 @@ static int smbd_vfs_lookup_in_dir(char *dirname, char *filename)
 	int flags = O_RDONLY|O_LARGEFILE;
 	int dirnamelen = strlen(dirname);
 	struct smbd_readdir_data readdir_data = {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+		.filldir	= __caseless_lookup,
+#else
 		.ctx.actor	= __caseless_lookup,
+#endif
 		.private	= filename,
 		.used		= strlen(filename),
 	};
@@ -2047,6 +2111,10 @@ int smbd_vfs_xattr_stream_name(char *stream_name,
 	return xattr_stream_name_size;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
+extern long do_splice_direct(struct file *in, loff_t *ppos, struct file *out,
+		loff_t *opos, size_t len, unsigned int flags);
+#endif
 
 static int smbd_vfs_copy_file_range(struct file *file_in, loff_t pos_in,
 				struct file *file_out, loff_t pos_out,
@@ -2191,7 +2259,9 @@ int smbd_vfs_posix_lock_wait_timeout(struct file_lock *flock, long timeout)
 
 void smbd_vfs_posix_lock_unblock(struct file_lock *flock)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
+	posix_unblock_lock(NULL, flock);
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	posix_unblock_lock(flock);
 #else
 	locks_delete_block(flock);

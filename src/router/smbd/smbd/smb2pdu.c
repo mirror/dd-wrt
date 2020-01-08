@@ -9,6 +9,7 @@
 #include <linux/syscalls.h>
 #include <linux/namei.h>
 #include <linux/statfs.h>
+#include <linux/magic.h>
 
 #include "glob.h"
 #include "smb2pdu.h"
@@ -3202,11 +3203,13 @@ static int process_query_dir_entries(struct smb2_query_dir_private *priv)
 				     PTR_ERR(dent));
 			continue;
 		}
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 		if (d_is_negative(dent)) {
 			smbd_debug("Negative dentry `%s'\n",
 				    priv->d_info->name);
 			continue;
 		}
+#endif
 
 		smbd_kstat.kstat = &kstat;
 		if (priv->info_level != FILE_NAMES_INFORMATION)
@@ -3320,7 +3323,7 @@ static int reserve_populate_dentry(struct smbd_dir_info *d_info,
 	return 0;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
 static int __query_dir(void *arg,
 		       const char *name,
 		       int namlen,
@@ -3328,7 +3331,18 @@ static int __query_dir(void *arg,
 		       u64 ino,
 		       unsigned int d_type)
 {
-struct dir_context *ctx = arg;
+	struct smbd_readdir_data	*buf = arg;
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+static int __query_dir(void *arg,
+		       const char *name,
+		       int namlen,
+		       loff_t offset,
+		       u64 ino,
+		       unsigned int d_type)
+{
+	struct dir_context *ctx = arg;
+	struct smbd_readdir_data	*buf;
+	buf	= container_of(ctx, struct smbd_readdir_data, ctx);
 #else
 static int __query_dir(struct dir_context *ctx,
 		       const char *name,
@@ -3337,13 +3351,13 @@ static int __query_dir(struct dir_context *ctx,
 		       u64 ino,
 		       unsigned int d_type)
 {
-#endif
 	struct smbd_readdir_data	*buf;
+	buf	= container_of(ctx, struct smbd_readdir_data, ctx);
+#endif
 	struct smb2_query_dir_private	*priv;
 	struct smbd_dir_info		*d_info;
 	int				rc;
 
-	buf	= container_of(ctx, struct smbd_readdir_data, ctx);
 	priv	= buf->private;
 	d_info	= priv->d_info;
 
@@ -3368,11 +3382,12 @@ static int __query_dir(struct dir_context *ctx,
 	return 0;
 }
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 static void restart_ctx(struct dir_context *ctx)
 {
 	ctx->pos = 0;
 }
-
+#endif
 static int verify_info_level(int info_level)
 {
 	switch (info_level) {
@@ -3454,7 +3469,9 @@ int smb2_query_dir(struct smbd_work *work)
 	if (srch_flag & SMB2_REOPEN || srch_flag & SMB2_RESTART_SCANS) {
 		smbd_debug("Restart directory scan\n");
 		generic_file_llseek(dir_fp->filp, 0, SEEK_SET);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 		restart_ctx(&dir_fp->readdir_data.ctx);
+#endif
 	}
 
 	memset(&d_info, 0, sizeof(struct smbd_dir_info));
@@ -3495,11 +3512,17 @@ int smb2_query_dir(struct smbd_work *work)
 	query_dir_private.info_level		= req->FileInformationClass;
 	query_dir_private.flags			= srch_flag;
 	dir_fp->readdir_data.private		= &query_dir_private;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 	set_ctx_actor(&dir_fp->readdir_data.ctx, __query_dir);
+#else
+	dir_fp->readdir_data.filldir = __query_dir;
+#endif
 
 	rc = smbd_vfs_readdir(dir_fp->filp, &dir_fp->readdir_data);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 	if (rc == 0)
 		restart_ctx(&dir_fp->readdir_data.ctx);
+#endif
 	if (rc == -ENOSPC)
 		rc = 0;
 	if (rc)
