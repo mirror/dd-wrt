@@ -2037,6 +2037,8 @@ nla_put_failure:
 static int match_cipher(const char *prefix, __u32 cipher)
 {
 	__u32 num;
+	if (!is_mac80211(prefix))
+		return 0;
 	__u32 *ciphers = mac80211_get_ciphers(prefix, &num);
 	if (!ciphers)
 		return 0;
