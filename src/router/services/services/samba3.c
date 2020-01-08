@@ -251,9 +251,11 @@ void start_samba3(void)
 #ifdef HAVE_SAMBA4
 	eval("/usr/sbin/winbindd", "-D", conffile);
 #endif
-#endif
+#else
+	insmod("crypto_hash crypto_null aead aead2 sha256_generic sha512_generic seqiv arc4 gf128mul ctr ghash-generic gcm ccm aes-generic");
 	insmod("smbd");
 	eval("usmbd", "-c", "/tmp/smb.conf", "-u", "/tmp/smb.db");
+#endif
 
 	dd_loginfo("smbd", "samba started\n");
 	return;
