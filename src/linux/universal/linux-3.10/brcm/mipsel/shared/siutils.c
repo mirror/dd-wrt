@@ -2362,7 +2362,7 @@ BCMATTACHFN(si_doattach)(si_info_t *sii, uint devid, osl_t *osh, void *regs,
 	savewin = 0;
 
 	sih->buscoreidx = BADIDX;
-	sii->gpioidx = BADIDX;
+
 	sii->curmap = regs;
 	sii->sdh = sdh;
 	sii->osh = osh;
@@ -3768,7 +3768,6 @@ BCMINITFN(si_clock)(si_t *sih)
 {
 	si_info_t *sii = SI_INFO(sih);
 	si_cores_info_t *cores_info = (si_cores_info_t *)sii->cores_info;
-	extifregs_t *eir;
 	chipcregs_t *cc;
 	uint32 n, m;
 	uint idx;
@@ -3789,54 +3788,24 @@ BCMINITFN(si_clock)(si_t *sih)
 	}
 
 	idx = sii->curidx;
+	cc = (chipcregs_t *)si_setcore(sih, CC_CORE_ID, 0);
+	ASSERT(cc != NULL);
 
-	/* switch to extif or chipc core */
-	if ((eir = (extifregs_t *) si_setcore(sih, EXTIF_CORE_ID, 0))) {
-		n = R_REG(sii->osh, &eir->clockcontrol_n);
-		m = R_REG(sii->osh, &eir->clockcontrol_sb);
-	} else if ((cc = (chipcregs_t *) si_setcore(sih, CC_CORE_ID, 0))) {
-	
-		if (sih->cccaps & CC_CAP_PMU) {
+	n = R_REG(sii->osh, &cc->clockcontrol_n);
+	pll_type = sih->cccaps & CC_CAP_PLL_MASK;
+	if (pll_type == PLL_TYPE6)
+		m = R_REG(sii->osh, &cc->clockcontrol_m3);
+	else if (pll_type == PLL_TYPE3)
+		m = R_REG(sii->osh, &cc->clockcontrol_m2);
+	else
+		m = R_REG(sii->osh, &cc->clockcontrol_sb);
 
-			if (CHIPID(sih->chip) == BCM5354_CHIP_ID) {
-				/* 5354 has a constant sb clock of 120MHz */
-				rate = 120000000;
-				goto end;
-			} else
-#ifdef BCM4328
-			if (CHIPID(sih->chip) == BCM4328_CHIP_ID) {
-				rate = 80000000;
-				goto end;
-			}
-			else
-#endif	/* BCM4328 */
-				ASSERT(0);
-		}
-	
-		pll_type = sih->cccaps & CC_CAP_PLL_MASK;
-		if (pll_type == PLL_NONE) {
-			INTR_RESTORE(sii, intr_val);
-			return 80000000;
-		}
-		n = R_REG(sii->osh, &cc->clockcontrol_n);
-		if (pll_type == PLL_TYPE6)
-			m = R_REG(sii->osh, &cc->clockcontrol_m3);
-		else if (pll_type == PLL_TYPE3)
-			m = R_REG(sii->osh, &cc->clockcontrol_m2);
-		else
-			m = R_REG(sii->osh, &cc->clockcontrol_sb);
-	    
-	}
 	/* calculate rate */
-	if (CHIPID(sih->chip) == 0x5365)
-		rate = 100000000;
-	else {
-		rate = si_clock_rate(pll_type, n, m);
+	rate = si_clock_rate(pll_type, n, m);
 
-		if (pll_type == PLL_TYPE3)
-			rate = rate / 2;
-	}
-end:
+	if (pll_type == PLL_TYPE3)
+		rate = rate / 2;
+
 	/* switch back to previous core */
 	si_setcoreidx(sih, idx);
 exit:
@@ -3917,7 +3886,6 @@ BCMINITFN(si_ilp_clock)(si_t *sih)
 void
 si_watchdog(si_t *sih, uint ticks)
 {
-	si_info_t *sii = SI_INFO(sih);
 	uint nb, maxt;
 	uint pmu_wdt = 1;
 
@@ -3945,49 +3913,45 @@ si_watchdog(si_t *sih, uint ticks)
 		}
 	}
 
-	if (sii->gpioid  == EXTIF_CORE_ID) {
-		si_corereg(sih, sii->gpioidx, OFFSETOF(extifregs_t, watchdog), ~0, ticks);
-	} else {
-		if (PMUCTL_ENAB(sih) && pmu_wdt) {
+	if (PMUCTL_ENAB(sih) && pmu_wdt) {
 #if (!defined(_CFE_) && !defined(_CFEZ_)) || defined(CFG_WL)
-			if ((CHIPID(sih->chip) == BCM4319_CHIP_ID) &&
-			    (CHIPREV(sih->chiprev) == 0) && (ticks != 0)) {
-				si_corereg(sih, SI_CC_IDX, OFFSETOF(chipcregs_t, clk_ctl_st), ~0, 0x2);
-				si_setcore(sih, USB20D_CORE_ID, 0);
-				si_core_disable(sih, 1);
-				si_setcore(sih, CC_CORE_ID, 0);
-			}
+		if ((CHIPID(sih->chip) == BCM4319_CHIP_ID) &&
+		    (CHIPREV(sih->chiprev) == 0) && (ticks != 0)) {
+			si_corereg(sih, SI_CC_IDX, OFFSETOF(chipcregs_t, clk_ctl_st), ~0, 0x2);
+			si_setcore(sih, USB20D_CORE_ID, 0);
+			si_core_disable(sih, 1);
+			si_setcore(sih, CC_CORE_ID, 0);
+		}
 #endif /* (!_CFE_ && !_CFEZ_) || CFG_WL */
 
-			if (CHIPID(sih->chip) == BCM4706_CHIP_ID)
-				nb = 32;
-			else
-				nb = (sih->ccrev < 26) ? 16 : ((sih->ccrev >= 37) ? 32 : 24);
-			/* The mips compiler uses the sllv instruction,
-			 * so we specially handle the 32-bit case.
-			 */
-			if (nb == 32)
-				maxt = 0xffffffff;
-			else
-				maxt = ((1 << nb) - 1);
+		if (CHIPID(sih->chip) == BCM4706_CHIP_ID)
+			nb = 32;
+		else
+			nb = (sih->ccrev < 26) ? 16 : ((sih->ccrev >= 37) ? 32 : 24);
+		/* The mips compiler uses the sllv instruction,
+		 * so we specially handle the 32-bit case.
+		 */
+		if (nb == 32)
+			maxt = 0xffffffff;
+		else
+			maxt = ((1 << nb) - 1);
 
-			if (ticks == 1)
-				ticks = 2;
-			else if (ticks > maxt)
-				ticks = maxt;
+		if (ticks == 1)
+			ticks = 2;
+		else if (ticks > maxt)
+			ticks = maxt;
 
-			pmu_corereg(sih, SI_CC_IDX, pmuwatchdog, ~0, ticks);
-		} else {
-			if (!BCM4707_CHIP(CHIPID(sih->chip))) {
-				/* make sure we come up in fast clock mode; or if clearing, clear clock */
-				si_clkctl_cc(sih, ticks ? CLK_FAST : CLK_DYNAMIC);
-			}
-			maxt = (1 << 28) - 1;
-			if (ticks > maxt)
-				ticks = maxt;
-
-			si_corereg(sih, SI_CC_IDX, OFFSETOF(chipcregs_t, watchdog), ~0, ticks);
+		pmu_corereg(sih, SI_CC_IDX, pmuwatchdog, ~0, ticks);
+	} else {
+		if (!BCM4707_CHIP(CHIPID(sih->chip))) {
+			/* make sure we come up in fast clock mode; or if clearing, clear clock */
+			si_clkctl_cc(sih, ticks ? CLK_FAST : CLK_DYNAMIC);
 		}
+		maxt = (1 << 28) - 1;
+		if (ticks > maxt)
+			ticks = maxt;
+
+		si_corereg(sih, SI_CC_IDX, OFFSETOF(chipcregs_t, watchdog), ~0, ticks);
 	}
 }
 
@@ -4125,7 +4089,6 @@ BCMATTACHFN(si_corepciid)(si_t *sih, uint func, uint16 *pcivendor, uint16 *pcide
 		device = (uint16)core;
 		header = PCI_HEADER_BRIDGE;
 		break;
-	case MIPS_CORE_ID:
 	case MIPS33_CORE_ID:
 	case MIPS74K_CORE_ID:
 		class = PCI_CLASS_CPU;
@@ -4174,7 +4137,6 @@ BCMATTACHFN(si_corepciid)(si_t *sih, uint func, uint16 *pcivendor, uint16 *pcide
 		subclass = PCI_COMM_OTHER;
 		device = BCM47XX_ROBO_ID;
 		break;
-	case EXTIF_CORE_ID:
 	case CC_CORE_ID:
 		class = PCI_CLASS_MEMORY;
 		subclass = PCI_MEMORY_FLASH;
