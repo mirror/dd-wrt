@@ -841,11 +841,12 @@ int smbd_ipc_init(void)
 				ret);
 		return ret;
 	}
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
 	for (i = 0; i < ARRAY_SIZE(smbd_genl_ops); i++) {
 		genl_register_ops(&smbd_genl_family,
 				&smbd_genl_ops[i]);
 	}
-
+#endif
 	ida = smbd_ida_alloc();
 	if (!ida)
 		return -ENOMEM;
