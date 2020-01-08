@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: hndmips.c 404499 2013-05-28 01:06:37Z $
+ * $Id: hndmips.c 467150 2014-04-02 17:30:43Z $
  */
 
 #include <bcm_cfg.h>
@@ -105,7 +105,7 @@ si_getirq(si_t *sih)
 			          (1 << flag))
 				break;
 		}
-	} else if ((regs = si_setcore(sih, MIPS33_CORE_ID, 0)) != NULL || (regs = si_setcore(sih, MIPS_CORE_ID, 0)) != NULL) {
+	} else if ((regs = si_setcore(sih, MIPS33_CORE_ID, 0)) != NULL) {
 		sb = (sbconfig_t *)((ulong) regs + SBCONFIGOFF);
 
 		/* sbipsflag specifies which core is routed to interrupts 1 to 4 */
@@ -154,7 +154,7 @@ BCMINITFN(si_clearirq)(si_t *sih, uint irq)
 
 	if ((regs = si_setcore(sih, MIPS74K_CORE_ID, 0)) != NULL) {
 		W_REG(osh, &((mips74kregs_t *)regs)->intmask[irq], 0);
-	} else if ((regs = si_setcore(sih, MIPS33_CORE_ID, 0)) != NULL || (regs = si_setcore(sih, MIPS_CORE_ID, 0)) != NULL) {
+	} else if ((regs = si_setcore(sih, MIPS33_CORE_ID, 0)) != NULL) {
 		sb = (sbconfig_t *)((ulong) regs + SBCONFIGOFF);
 		if (irq == 0)
 			W_REG(osh, &sb->sbintvec, 0);
@@ -197,7 +197,7 @@ BCMATTACHFN(si_setirq)(si_t *sih, uint irq, uint coreid, uint coreunit)
 		else {
 			W_REG(osh, &((mips74kregs_t *)regs)->intmask[irq], 1 << flag);
 		}
-	} else if ((regs = si_setcore(sih, MIPS33_CORE_ID, 0)) != NULL  || (regs = si_setcore(sih, MIPS_CORE_ID, 0)) != NULL) {
+	} else if ((regs = si_setcore(sih, MIPS33_CORE_ID, 0)) != NULL) {
 		sb = (sbconfig_t *)((ulong) regs + SBCONFIGOFF);
 
 		if (!oldirq)
@@ -228,7 +228,6 @@ BCMATTACHFN(si_mips_init)(si_t *sih, uint shirqmap)
 	uint32 c0reg;
 	ulong hz, ns, tmp;
 	chipcregs_t *cc;
-	extifregs_t *eir;
 	uint irq;
 
 	osh = si_osh(sih);
@@ -243,41 +242,24 @@ BCMATTACHFN(si_mips_init)(si_t *sih, uint shirqmap)
 		hz = 100000000;
 	ns = 1000000000 / hz;
 
+	/* Setup external interface timing */
+	cc = si_setcoreidx(sih, SI_CC_IDX);
+	ASSERT(cc);
 
-	if ((si_setcore(sih, EXTIF_CORE_ID, 0))) {
-		printk(KERN_INFO "init SB_EXTIF\n");
-		/* Initialize extif so we can get to the LEDs and external UART */
-		W_REG(osh, &eir->prog_config, CF_EN);
+	/* Set timing for the flash */
+	tmp = CEIL(10, ns) << FW_W3_SHIFT;	/* W3 = 10nS */
+	tmp |= CEIL(10, ns) << FW_W1_SHIFT;	/* W1 = 10nS */
+	tmp |= CEIL(120, ns);			/* W0 = 120nS */
+	if (sih->ccrev < 9)
+		W_REG(osh, &cc->flash_waitcount, tmp);
 
-		/* Set timing for the flash */
-		tmp = CEIL(10, ns) << FW_W3_SHIFT;	/* W3 = 10nS */
-		tmp = tmp | (CEIL(40, ns) << FW_W1_SHIFT); /* W1 = 40nS */
-		tmp = tmp | CEIL(120, ns);		/* W0 = 120nS */
-		W_REG(osh, &eir->prog_waitcount, tmp);	/* 0x01020a0c for a 100Mhz clock */
-
-		/* Set programmable interface timing for external uart */
-		tmp = CEIL(10, ns) << FW_W3_SHIFT;	/* W3 = 10nS */
-		tmp = tmp | (CEIL(20, ns) << FW_W2_SHIFT); /* W2 = 20nS */
-		tmp = tmp | (CEIL(100, ns) << FW_W1_SHIFT); /* W1 = 100nS */
-		tmp = tmp | CEIL(120, ns);		/* W0 = 120nS */
-		W_REG(osh, &eir->prog_waitcount, tmp);	/* 0x01020a0c for a 100Mhz clock */
-	} else if ((si_setcore(sih, CC_CORE_ID, 0))) {
-		printk(KERN_INFO "init SB_CC\n");
-		/* Setup external interface timing */
-		/* Set timing for the flash */
-		tmp = CEIL(10, ns) << FW_W3_SHIFT;	/* W3 = 10nS */
-		tmp |= CEIL(10, ns) << FW_W1_SHIFT;	/* W1 = 10nS */
-		tmp |= CEIL(120, ns);			/* W0 = 120nS */
-		if (sih->ccrev < 9 || (CHIPID(sih->chip) == 0x5365))
-			W_REG(osh, &cc->flash_waitcount, tmp);
-
-		if ((sih->ccrev < 9) ||
-		    ((CHIPID(sih->chip) == BCM5350_CHIP_ID) && CHIPREV(sih->chiprev) == 0) || (CHIPID(sih->chip) == 0x5365)) {
-			W_REG(osh, &cc->pcmcia_memwait, tmp);
-		}
-		/* Save shared IRQ mapping base */
-		shirq_map_base = shirqmap;
+	if ((sih->ccrev < 9) ||
+	    ((CHIPID(sih->chip) == BCM5350_CHIP_ID) && CHIPREV(sih->chiprev) == 0)) {
+		W_REG(osh, &cc->pcmcia_memwait, tmp);
 	}
+
+	/* Save shared IRQ mapping base */
+	shirq_map_base = shirqmap;
 
 	/* Chip specific initialization */
 	switch (CHIPID(sih->chip)) {
@@ -357,7 +339,6 @@ BCMINITFN(si_cpu_clock)(si_t *sih)
 {
 	osl_t *osh;
 	chipcregs_t *cc;
-	extifregs_t *eir;
 	uint32 n, m;
 	uint idx;
 	uint32 pll_type, rate = 0;
@@ -371,44 +352,33 @@ BCMINITFN(si_cpu_clock)(si_t *sih)
 	/* get index of the current core */
 	idx = si_coreidx(sih);
 
-
-
-	/* switch to extif or chipc core */
-	if ((eir = (extifregs_t *) si_setcore(sih, EXTIF_CORE_ID, 0))) {
-		n = R_REG(osh, &eir->clockcontrol_n);
-		m = R_REG(osh, &eir->clockcontrol_sb);
-	} else if ((cc = (chipcregs_t *)si_setcore(sih, CC_CORE_ID, 0))) {
 	/* switch to chipc core */
-		if (CHIPID(sih->chip) == BCM5354_CHIP_ID) {
-			rate = 240000000;
-			goto out;
-		}
-		pll_type = sih->cccaps & CC_CAP_PLL_MASK;
-		n = R_REG(osh, &cc->clockcontrol_n);
-		if ((pll_type == PLL_TYPE2) ||
-		    (pll_type == PLL_TYPE4) ||
-		    (pll_type == PLL_TYPE6) ||
-		    (pll_type == PLL_TYPE7))
-			m = R_REG(osh, &cc->clockcontrol_m3);
-		else if (pll_type == PLL_TYPE5) {
+	cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX);
+	ASSERT(cc);
+
+	pll_type = sih->cccaps & CC_CAP_PLL_MASK;
+	n = R_REG(osh, &cc->clockcontrol_n);
+	if ((pll_type == PLL_TYPE2) ||
+	    (pll_type == PLL_TYPE4) ||
+	    (pll_type == PLL_TYPE6) ||
+	    (pll_type == PLL_TYPE7))
+		m = R_REG(osh, &cc->clockcontrol_m3);
+	else if (pll_type == PLL_TYPE5) {
+		rate = 200000000;
+		goto out;
+	} else if (pll_type == PLL_TYPE3) {
+		if (CHIPID(sih->chip) == BCM5365_CHIP_ID) {
 			rate = 200000000;
 			goto out;
-		} else if (pll_type == PLL_TYPE3) {
-			if (CHIPID(sih->chip) == BCM5365_CHIP_ID) {
-				rate = 200000000;
-				goto out;
-			}
-			/* 5350 uses m2 to control mips */
-			else
-				m = R_REG(osh, &cc->clockcontrol_m2);
-		} else
-			m = R_REG(osh, &cc->clockcontrol_sb);
-	}
+		}
+		/* 5350 uses m2 to control mips */
+		else
+			m = R_REG(osh, &cc->clockcontrol_m2);
+	} else
+		m = R_REG(osh, &cc->clockcontrol_sb);
+
 	/* calculate rate */
-	if (CHIPID(sih->chip) == 0x5365)
-		rate = 100000000;
-	else
-		rate = si_clock_rate(pll_type, n, m);
+	rate = si_clock_rate(pll_type, n, m);
 
 	if (pll_type == PLL_TYPE6)
 		rate = SB2MIPS_T6(rate);
@@ -1681,8 +1651,6 @@ BCMINITFN(si_mips_setclock)(si_t *sih, uint32 mipsclock, uint32 siclock, uint32 
 
 			/* Enable MIPS timer interrupt */
 			mipsr = si_setcore(sih, MIPS33_CORE_ID, 0);
-			if (!mipsr)
-				mipsr = si_setcore(sih, MIPS_CORE_ID, 0);
 			ASSERT(mipsr);
 			W_REG(osh, &mipsr->intmask, 1);
 

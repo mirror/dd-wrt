@@ -96,9 +96,6 @@ typedef struct si_info {
 
 	bool	memseg;			/* flag to toggle MEM_SEG register */
 
-	uint	gpioidx;		/* gpio control core index */
-	uint	gpioid;			/* gpio control coretype */
-
 	char *vars;
 	uint varsz;
 

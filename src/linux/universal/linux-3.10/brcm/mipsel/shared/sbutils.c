@@ -548,8 +548,6 @@ BCMATTACHFN(_sb_scan)(si_info_t *sii, uint32 sba, void *regs, uint bus, uint32 s
 	uint i;
 	si_cores_info_t *cores_info = (si_cores_info_t *)sii->cores_info;
 
-	sii->gpioidx = BADIDX;
-
 	if (bus >= SB_MAXBUSES) {
 		SI_ERROR(("_sb_scan: bus 0x%08x at level %d is too deep to scan\n", sbba, bus));
 		return 0;
@@ -630,7 +628,6 @@ BCMATTACHFN(_sb_scan)(si_info_t *sii, uint32 sba, void *regs, uint bus, uint32 s
 	SI_MSG(("_sb_scan: found %u cores on bus 0x%08x\n", i, sbba));
 
 	sii->numcores = i + ncc;
-
 	return sii->numcores;
 }
 
@@ -653,18 +650,6 @@ BCMATTACHFN(sb_scan)(si_t *sih, void *regs, uint devid)
 
 	/* scan all SB(s) starting from SI_ENUM_BASE */
 	sii->numcores = _sb_scan(sii, origsba, regs, 0, SI_ENUM_BASE, 1);
-
-	if (GOODIDX(si_findcoreidx(sih, CC_CORE_ID, 0))) {
-		sii->gpioidx = si_findcoreidx(sih, CC_CORE_ID, 0);
-		sii->gpioid = CC_CORE_ID;
-	} else if (PCI(sii) && (sii->pub.buscorerev >= 2)) {
-		sii->gpioidx = sii->pub.buscoreidx;
-		sii->gpioid = PCI_CORE_ID;
-	} else if (si_findcoreidx(sih, EXTIF_CORE_ID, 0)) {
-		sii->gpioidx = si_findcoreidx(sih, EXTIF_CORE_ID, 0);
-		sii->gpioid = EXTIF_CORE_ID;
-	} else
-		ASSERT(sii->gpioidx != BADIDX);
 }
 
 /*
@@ -1182,8 +1167,7 @@ sb_set_initiator_to(si_t *sih, uint32 to, uint idx)
 			idx = si_findcoreidx(sih, PCMCIA_CORE_ID, 0);
 			break;
 		case SI_BUS:
-			if ((idx = si_findcoreidx(sih, MIPS33_CORE_ID, 0)) == BADIDX)
-				idx = si_findcoreidx(sih, MIPS_CORE_ID, 0);
+			idx = si_findcoreidx(sih, MIPS33_CORE_ID, 0);
 			break;
 		default:
 			ASSERT(0);
