@@ -559,6 +559,7 @@ MODULE_AUTHOR("Namjae Jeon <linkinjeon@gmail.com>");
 MODULE_VERSION(SMBD_VERSION);
 MODULE_DESCRIPTION("Linux kernel CIFS/SMB SERVER");
 MODULE_LICENSE("GPL");
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 MODULE_SOFTDEP("pre: arc4");
 MODULE_SOFTDEP("pre: ecb");
 MODULE_SOFTDEP("pre: hmac");
@@ -572,5 +573,6 @@ MODULE_SOFTDEP("pre: sha512");
 MODULE_SOFTDEP("pre: aead2");
 MODULE_SOFTDEP("pre: ccm");
 MODULE_SOFTDEP("pre: gcm");
+#endif
 module_init(smbd_server_init)
 module_exit(smbd_server_exit)

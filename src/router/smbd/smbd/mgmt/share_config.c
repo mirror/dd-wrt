@@ -217,6 +217,47 @@ struct smbd_share_config *smbd_share_config_get(char *name)
 	return share_config_request(name);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
+static bool match_wildcard(const char *pattern, const char *str)
+{
+	const char *s = str;
+	const char *p = pattern;
+	bool star = false;
+
+	while (*s) {
+		switch (*p) {
+		case '?':
+			s++;
+			p++;
+			break;
+		case '*':
+			star = true;
+			str = s;
+			if (!*++p)
+				return true;
+			pattern = p;
+			break;
+		default:
+			if (*s == *p) {
+				s++;
+				p++;
+			} else {
+				if (!star)
+					return false;
+				str++;
+				s = str;
+				p = pattern;
+			}
+			break;
+		}
+	}
+
+	if (*p == '*')
+		++p;
+	return !*p;
+}
+#endif
+
 bool smbd_share_veto_filename(struct smbd_share_config *share,
 			       const char *filename)
 {

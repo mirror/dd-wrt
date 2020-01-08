@@ -192,8 +192,10 @@ static struct genl_family smbd_genl_family = {
 	.maxattr	= SMBD_EVENT_MAX,
 	.netnsok	= true,
 	.module		= THIS_MODULE,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
 	.ops		= smbd_genl_ops,
 	.n_ops		= ARRAY_SIZE(smbd_genl_ops),
+#endif
 };
 
 static void smbd_nl_init_fixup(void)
@@ -828,6 +830,7 @@ void smbd_ipc_soft_reset(void)
 int smbd_ipc_init(void)
 {
 	int ret;
+	int i;
 
 	smbd_nl_init_fixup();
 	INIT_DELAYED_WORK(&ipc_timer_work, ipc_timer_heartbeat);
@@ -837,6 +840,10 @@ int smbd_ipc_init(void)
 		smbd_err("Failed to register SMBD netlink interface %d\n",
 				ret);
 		return ret;
+	}
+	for (i = 0; i < ARRAY_SIZE(smbd_genl_ops); i++) {
+		genl_register_ops(&smbd_genl_family,
+				&smbd_genl_ops[i]);
 	}
 
 	ida = smbd_ida_alloc();
