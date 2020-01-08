@@ -98,7 +98,11 @@ struct smbd_dir_info {
 };
 
 struct smbd_readdir_data {
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 	struct dir_context	ctx;
+#else
+	filldir_t filldir;
+#endif
 	union {
 		void		*private;
 		char		*dirent;

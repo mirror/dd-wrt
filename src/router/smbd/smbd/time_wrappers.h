@@ -45,7 +45,12 @@ static inline struct timespec from_kern_timespec(struct timespec64 ts)
 
 static inline long long smbd_systime(void)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+	struct timespec		ts;
+
+	getnstimeofday(&ts);
+	return smbd_UnixTimeToNT(ts);
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	struct timespec64	ts;
 
 	getnstimeofday64(&ts);
