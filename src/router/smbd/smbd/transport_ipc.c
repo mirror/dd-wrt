@@ -830,7 +830,9 @@ void smbd_ipc_soft_reset(void)
 int smbd_ipc_init(void)
 {
 	int ret;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
 	int i;
+#endif
 
 	smbd_nl_init_fixup();
 	INIT_DELAYED_WORK(&ipc_timer_work, ipc_timer_heartbeat);

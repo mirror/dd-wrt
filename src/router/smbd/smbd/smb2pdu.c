@@ -3332,6 +3332,9 @@ static int __query_dir(void *arg,
 		       unsigned int d_type)
 {
 	struct smbd_readdir_data	*buf = arg;
+	struct smb2_query_dir_private	*priv;
+	struct smbd_dir_info		*d_info;
+	int				rc;
 #elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
 static int __query_dir(void *arg,
 		       const char *name,
@@ -3342,6 +3345,9 @@ static int __query_dir(void *arg,
 {
 	struct dir_context *ctx = arg;
 	struct smbd_readdir_data	*buf;
+	struct smb2_query_dir_private	*priv;
+	struct smbd_dir_info		*d_info;
+	int				rc;
 	buf	= container_of(ctx, struct smbd_readdir_data, ctx);
 #else
 static int __query_dir(struct dir_context *ctx,
@@ -3352,11 +3358,11 @@ static int __query_dir(struct dir_context *ctx,
 		       unsigned int d_type)
 {
 	struct smbd_readdir_data	*buf;
-	buf	= container_of(ctx, struct smbd_readdir_data, ctx);
-#endif
 	struct smb2_query_dir_private	*priv;
 	struct smbd_dir_info		*d_info;
 	int				rc;
+	buf	= container_of(ctx, struct smbd_readdir_data, ctx);
+#endif
 
 	priv	= buf->private;
 	d_info	= priv->d_info;
