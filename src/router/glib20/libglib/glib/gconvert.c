@@ -21,9 +21,9 @@
 #include "config.h"
 #include "glibconfig.h"
 
-#ifndef G_OS_WIN32
+//#if !defined G_OS_WIN32 && defined HAVE_ICONV_H
 #include <iconv.h>
-#endif
+//#endif
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -59,6 +59,28 @@
 #error GNU libiconv not in use but included iconv.h is from libiconv
 #endif
 
+#ifndef HAVE_ICONV_H
+typedef void *iconv_t;
+
+iconv_t iconv_open(const char *tocode, const char *fromcode)
+{
+	return (iconv_t)(-1);
+}
+
+int iconv_close(iconv_t cd)
+{
+	free(cd);
+
+	return 0;
+}
+size_t iconv (iconv_t __cd, char **__inbuf,
+                     size_t *__inbytesleft,
+                     char **__outbuf,
+                     size_t *__outbytesleft)
+{
+	return 0;
+}
+#endif
 
 /**
  * SECTION:conversions
