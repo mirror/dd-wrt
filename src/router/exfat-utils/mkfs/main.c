@@ -161,7 +161,7 @@ static int setup(struct exfat_dev* dev, int sector_bits, int spc_bits,
 	param.sector_bits = sector_bits;
 	param.first_sector = first_sector;
 	param.volume_size = exfat_get_size(dev);
-
+	fprintf(stdout, "setup sector bits %d/%d\n", sector_bits, spc_bits);
 	param.spc_bits = setup_spc_bits(sector_bits, spc_bits, param.volume_size);
 	if (param.spc_bits == -1)
 		return 1;
@@ -189,7 +189,7 @@ static int logarithm2(int n)
 static void usage(const char* prog)
 {
 	fprintf(stderr, "Usage: %s [-i volume-id] [-n label] "
-			"[-p partition-first-sector] "
+			"[-p partition-first-sector] [-b sector bits]"
 			"[-s sectors-per-cluster] [-V] <device>\n", prog);
 	exit(1);
 }
@@ -203,10 +203,11 @@ int main(int argc, char* argv[])
 	uint32_t volume_serial = 0;
 	uint64_t first_sector = 0;
 	struct exfat_dev* dev;
+	int sector_bits = 9;
 
 	printf("mkexfatfs %s\n", VERSION);
 
-	while ((opt = getopt(argc, argv, "i:n:p:s:V")) != -1)
+	while ((opt = getopt(argc, argv, "i:n:p:s:b:V")) != -1)
 	{
 		switch (opt)
 		{
@@ -218,6 +219,9 @@ int main(int argc, char* argv[])
 			break;
 		case 'p':
 			first_sector = strtoll(optarg, NULL, 10);
+			break;
+		case 'b':
+			sector_bits = strtoll(optarg, NULL, 10);
 			break;
 		case 's':
 			spc_bits = logarithm2(atoi(optarg));
@@ -242,7 +246,7 @@ int main(int argc, char* argv[])
 	dev = exfat_open(spec, EXFAT_MODE_RW);
 	if (dev == NULL)
 		return 1;
-	if (setup(dev, 9, spc_bits, volume_label, volume_serial,
+	if (setup(dev, sector_bits, spc_bits, volume_label, volume_serial,
 				first_sector) != 0)
 	{
 		exfat_close(dev);
