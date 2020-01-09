@@ -43,7 +43,7 @@
 #endif
 
 #ifdef HAVE_GLIBC_ICONV
-#include <gnu/libc-version.h>
+//#include <gnu/libc-version.h>
 #endif
 
 #ifdef HAVE_LIBICONV
@@ -285,7 +285,7 @@ PHP_MINIT_FUNCTION(miconv)
 		version = buf;
 	}
 #elif HAVE_GLIBC_ICONV
-	version = (char *)gnu_get_libc_version();
+	version = "2.0";
 #endif
 
 #ifdef PHP_ICONV_IMPL
