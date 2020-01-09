@@ -26,26 +26,19 @@ glib20-configure: libffi zlib util-linux
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 
-	cd glib20/libiconv && ./configure --enable-shared --enable-static --host=$(ARCH)-linux CFLAGS="$(COPTS) -std=gnu89 $(MIPS16_OPT)  -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc"
-	cd glib20/libiconv && touch *
-	$(MAKE) -C glib20/libiconv clean all
-
-	cd glib20/gettext && autoreconf
-	cd glib20/gettext && ./configure --disable-libmount --enable-shared --disable-static --disable-openmp --host=$(ARCH)-linux  LDFLAGS="$(COPTS) -std=gnu89 $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc " CFLAGS="$(COPTS)  $(MIPS16_OPT)  -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/libiconv/include -L$(TOP)/glib20/libiconv/lib/.libs" CXXFLAGS="$(COPTS)  $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/libiconv/include -L$(TOP)/glib20/libiconv/lib/.libs"
-	cd glib20/gettext && touch *
-	cd glib20/gettext/gettext-tools/examples && touch *
+	cd glib20/gettext && ./autogen.sh
+	cd glib20/gettext && ./configure --enable-static --disable-shared --host=$(ARCH)-linux  LDFLAGS="$(COPTS) $(MINLTO) -std=gnu89 $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc " CFLAGS="$(COPTS)  $(MIPS16_OPT)  -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc" CXXFLAGS="$(COPTS)  $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc"
 	$(MAKE) -C glib20/gettext clean all
 
 	-cd glib20/libglib && ./autogen.sh
-	cd glib20/libglib && ./configure --enable-shared --enable-static --disable-fam --disable-libelf --with-pcre=internal --disable-libmount --enable-debug=no --disable-selinux --disable-man --host=$(ARCH)-linux  CFLAGS="$(COPTS) -std=gnu89  -DNVALGRIND=1 $(MIPS16_OPT) -D_GNU_SOURCE=1  -I$(TOP)/zlib -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/gettext/gettext-runtime/intl  -I$(TOP)/glib20/libiconv/include -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include  -L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/glib20/gettext/gettext-runtime/intl/.libs -L$(TOP)/glib20/libglib/gmodule/.libs   -L$(TOP)/zlib -L$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/lib -pthread -lpthread -liconv -lz" --with-libiconv=gnu --disable-modular-tests \
+	cd glib20/libglib && ./configure --enable-shared --enable-static --disable-fam --with-libiconv=gnu --disable-libelf --with-pcre=internal --disable-libmount --enable-debug=no --disable-selinux --disable-man --host=$(ARCH)-linux  CFLAGS="$(COPTS) $(MINLTO) -std=gnu89  -DNVALGRIND=1 $(MIPS16_OPT) -D_GNU_SOURCE=1  -I$(TOP)/zlib -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/gettext -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include  -L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/glib20/gettext/.libs -L$(TOP)/glib20/libglib/gmodule/.libs   -L$(TOP)/zlib -L$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/lib -pthread -lpthread -lz" --disable-modular-tests \
 	LIBFFI_CFLAGS="-I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include" \
 	LIBFFI_LIBS="-L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi" \
 	ZLIB_CFLAGS="-I$(TOP)/zlib" \
 	ZLIB_LIBS="-L$(TOP)/zlib -lz" \
+	AR_FLAGS="cru $(LTOPLUGIN)" \
+	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 	glib_cv_stack_grows=no glib_cv_uscore=no ac_cv_func_mmap_fixed_mapped=yes ac_cv_func_posix_getpwuid_r=yes ac_cv_func_posix_getgrgid_r=yes
-	touch glib20/libiconv/*
-	touch glib20/gettext/*
-	touch glib20/libglib/*
 
 	$(MAKE) -C glib20/libglib clean all
 
@@ -64,7 +57,6 @@ glib20: libffi zlib util-linux util-linux-install
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
-	$(MAKE) -C glib20/libiconv all
 	$(MAKE) -C glib20/gettext all
 	$(MAKE) -C glib20/libglib all
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
@@ -102,7 +94,6 @@ endif
 
 
 glib20-clean:
-	$(MAKE) -C glib20/libiconv clean
 	$(MAKE) -C glib20/gettext clean
 	$(MAKE) -C glib20/libglib clean
 
@@ -123,7 +114,6 @@ ifeq ($(CONFIG_LIBMBIM),y)
 	install -D glib20/libglib/gobject/.libs/libgobject-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libgobject-2.0.so.0
 	install -D glib20/libglib/gio/.libs/libgio-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libgio-2.0.so.0
 endif
-	install -D glib20/libiconv/lib/.libs/libiconv.so.2 $(INSTALLDIR)/glib20/usr/lib/libiconv.so.2
 	-install -D glib20/gettext/gettext-runtime/intl/.libs/libintl.so.8 $(INSTALLDIR)/glib20/usr/lib/libintl.so.8
 	-install -D glib20/gettext/gettext-runtime/intl/.libs/libgnuintl.so.8 $(INSTALLDIR)/glib20/usr/lib/libgnuintl.so.8
 #	install -D glib20/gettext/gettext-runtime/libasprintf/.libs/libasprintf.so.0 $(INSTALLDIR)/glib20/usr/lib/libasprintf.so.0
