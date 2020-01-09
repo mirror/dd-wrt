@@ -352,45 +352,8 @@ dnl ***********************
 dnl
 dnl We do this before the gettext checks, to avoid distortion
 
-dnl On Windows we use a native implementation
-
-AS_IF([ test x"$glib_native_win32" = xyes], [
-  with_libiconv=native
-], [
-  AC_ARG_WITH(libiconv,
-	      [AS_HELP_STRING([--with-libiconv=@<:@no/gnu/native@:>@],
-			      [use the libiconv library])],,
-	      [with_libiconv=maybe])
-
-  found_iconv=no
-  case $with_libiconv in
-    maybe)
-      # Check in the C library first
-      AC_CHECK_FUNC(iconv_open, [with_libiconv=no; found_iconv=yes])
-      # Check if we have GNU libiconv
-      if test $found_iconv = "no"; then
-	AC_CHECK_LIB(iconv, libiconv_open, [with_libiconv=gnu; found_iconv=yes])
-      fi
-      # Check if we have a iconv in -liconv, possibly from vendor
-      if test $found_iconv = "no"; then
-	AC_CHECK_LIB(iconv, iconv_open, [with_libiconv=native; found_iconv=yes])
-      fi
-      ;;
-    no)
-      AC_CHECK_FUNC(iconv_open, [with_libiconv=no; found_iconv=yes])
-      ;;
-    gnu|yes)
-      AC_CHECK_LIB(iconv, libiconv_open, [with_libiconv=gnu; found_iconv=yes])
-      ;;
-    native)
-      AC_CHECK_LIB(iconv, iconv_open, [with_libiconv=native; found_iconv=yes])
-      ;;
-  esac
-
-  if test "x$found_iconv" = "xno" ; then
-     AC_MSG_ERROR([*** No iconv() implementation found in C library or libiconv])
-  fi
-])
+found_iconv=yes
+with_libiconv=no
 
 dnl
 dnl zlib support
@@ -436,25 +399,8 @@ GLIB_DEFINE_LOCALEDIR(GLIB_LOCALE_DIR)
 dnl
 dnl Now we are done with gettext checks, figure out ICONV_LIBS
 dnl
-
-AS_IF([test x"$glib_native_win32" != xyes], [
-  if test x$with_libiconv != xno ; then
-    case " $INTLLIBS " in
-    *[[\ \	]]-liconv[[\ \	]]*) ;;
-    *) ICONV_LIBS="-liconv" ;;
-    esac
-  fi
-])
+AC_DEFINE(USE_LIBICONV_NATIVE, 1, [Using GNU libiconv])
 AC_SUBST(ICONV_LIBS)
-
-case $with_libiconv in
-  gnu)
-    AC_DEFINE(USE_LIBICONV_GNU, 1, [Using GNU libiconv])
-    ;;
-  native)
-    AC_DEFINE(USE_LIBICONV_NATIVE, 1, [Using a native implementation of iconv in a separate library])
-    ;;
-esac
 
 dnl Initialize libtool
 LT_PREREQ([2.2])
