@@ -59,5 +59,5 @@ bindtextdomain(const char *domain, const char *dir)
 char *
 bind_textdomain_codeset(const char *domain, const char *codeset)
 {
-	return codeset;
+	return (char*)codeset;
 }
