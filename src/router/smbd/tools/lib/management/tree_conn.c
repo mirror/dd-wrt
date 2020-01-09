@@ -120,6 +120,10 @@ int tcm_handle_tree_connect(struct smbd_tree_connect_request *req,
 	    !test_share_flag(share, SMBD_SHARE_FLAG_PIPE) &&
 	    !test_share_flag(share, SMBD_SHARE_FLAG_GUEST_OK)) {
 		pr_debug("treecon: deny. Not allow guest\n");
+		if (req->account_flags & SMBD_USER_FLAG_BAD_PASSWORD)
+		    pr_debug("bad password\n");
+		if (req->account_flags & SMBD_USER_FLAG_GUEST_ACCOUNT)
+		    pr_debug("uses guest account\n");
 		resp->status = SMBD_TREE_CONN_STATUS_ERROR;
 		goto out_error;
 	}
@@ -193,7 +197,7 @@ int tcm_handle_tree_connect(struct smbd_tree_connect_request *req,
 		goto bind;
 	if (ret == -ENOENT) {
 		resp->status = SMBD_TREE_CONN_STATUS_INVALID_USER;
-		pr_err("treecon: user is not on the valid list\n");
+		pr_err("treecon: user %s is not on the valid list\n", req->account);
 		goto out_error;
 	}
 
