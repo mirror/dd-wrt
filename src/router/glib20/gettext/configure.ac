@@ -1,59 +1,72 @@
-dnl Configuration for the toplevel directory of GNU gettext
-dnl Copyright (C) 1995-2003, 2005-2006, 2009-2010, 2015-2016 Free Software
-dnl Foundation, Inc.
-dnl
-dnl This program is free software: you can redistribute it and/or modify
-dnl it under the terms of the GNU General Public License as published by
-dnl the Free Software Foundation; either version 3 of the License, or
-dnl (at your option) any later version.
-dnl
-dnl This program is distributed in the hope that it will be useful,
-dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
-dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-dnl GNU General Public License for more details.
-dnl
-dnl You should have received a copy of the GNU General Public License
-dnl along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
 
-dnl Process this file with autoconf to produce a configure script.
+AC_PREREQ(2.61)
+AC_INIT([gettext-dummy], [1.0.1], [bugs@pengutronix.de])
+AC_CONFIG_SRCDIR([libintl.h])
+AC_CONFIG_HEADER([config.h])
 
-AC_PREREQ([2.62])
-AC_INIT([gettext],
-	m4_esyscmd([build-aux/git-version-gen .tarball-version]),
-	[bug-gnu-gettext@gnu.org])
-AC_CONFIG_SRCDIR([gettext-tools/src/msgfmt.c])
-AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([1.13 silent-rules parallel-tests dist-xz dist-lzip])
-
-dnl Override automake's tar command used for creating distributions.
-am__tar='${AMTAR} chof - --owner=root --group=root "$$tardir"'
-
-dnl Checks for programs.
-
-dnl Checks for libraries.
-
-dnl Checks for header files.
-
-dnl Checks for typedefs, structures, and compiler characteristics.
-
-dnl Checks for library functions.
-
-AC_CONFIG_SUBDIRS([gettext-runtime gettext-tools])
-
-AM_EXTRA_RECURSIVE_TARGETS([maintainer-update-po])
-
-dnl Ensure that "configure --help" lists all the command line options that
-dnl are usable with the subdir configures. Really AC_CONFIG_SUBDIRS should
-dnl do it by itself.
-dnl System types:
+AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
-dnl Optional Features: AC_ARG_ENABLE calls
-dnl Optional Packages: AC_ARG_WITH calls
-dnl Some influential environment variables: AC_ARG_VAR calls
-esyscmd([{ cd gettext-runtime && autoconf --trace=AC_ARG_ENABLE:'$n([$1],[$2])' --trace=AC_ARG_WITH:'$n([$1],[$2])' --trace=AC_ARG_VAR:'$n($@)' && cd ..; cd gettext-tools && autoconf --trace=AC_ARG_ENABLE:'$n([$1],[$2])' --trace=AC_ARG_WITH:'$n([$1],[$2])' --trace=AC_ARG_VAR:'$n($@)' && cd ..; } | sed -f build-aux/ac-help.sed ])
+
+AM_MAINTAINER_MODE
+
+CFLAGS="${CFLAGS} -Wall -Wsign-compare -Wfloat-equal -Wformat-security"
+
+#
+# libtool library versioning stuff
+#
+# Library code modified:	    REVISION++
+# Interfaces changed/added/removed: CURRENT++	REVISION=0
+# Interfaces added:		    AGE++
+# Interfaces removed:		    AGE=0
+LT_CURRENT=1
+LT_REVISION=1
+LT_AGE=0
+AC_SUBST(LT_CURRENT)
+AC_SUBST(LT_REVISION)
+AC_SUBST(LT_AGE)
+
+#
+# Checks for programs.
+#
+AC_PROG_CC
+AC_PROG_LIBTOOL
+
+AM_INIT_AUTOMAKE([foreign no-exeext dist-bzip2])
+
+#
+# Checks for libraries.
+#
+
+#
+# Checks for header files.
+#
+
+#
+# Checks for typedefs, structures, and compiler characteristics.
+#
+AC_C_CONST
+
+#
+# Debugging
+#
+AC_MSG_CHECKING([whether to enable debugging])
+AC_ARG_ENABLE(debug,
+    AS_HELP_STRING([--enable-debug], [enable debugging @<:@default=no@:>@]),
+	[case "$enableval" in
+	y | yes) CONFIG_DEBUG=yes ;;
+        *) CONFIG_DEBUG=no ;;
+    esac],
+    [CONFIG_DEBUG=no])
+AC_MSG_RESULT([${CONFIG_DEBUG}])
+if test "${CONFIG_DEBUG}" = "yes"; then
+    CFLAGS="${CFLAGS} -g -O1"
+    AC_DEFINE(DEBUG, 1, [debugging])
+else
+    CFLAGS="${CFLAGS} -Werror -O2"
+fi
 
 AC_CONFIG_FILES([Makefile])
-
-AC_CONFIG_FILES([gnulib-local/Makefile])
-
 AC_OUTPUT
+
