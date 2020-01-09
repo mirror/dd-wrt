@@ -114,7 +114,9 @@ int tcm_handle_tree_connect(struct smbd_tree_connect_request *req,
 		}
 	}
 
-	if (global_conf.map_to_guest == SMBD_CONF_MAP_TO_GUEST_BAD_USER &&
+	if (((req->account_flags & SMBD_USER_FLAG_BAD_PASSWORD ||
+	     req->account_flags & SMBD_USER_FLAG_GUEST_ACCOUNT) && 
+	    global_conf.map_to_guest == SMBD_CONF_MAP_TO_GUEST_BAD_USER)  &&
 	    !test_share_flag(share, SMBD_SHARE_FLAG_PIPE) &&
 	    !test_share_flag(share, SMBD_SHARE_FLAG_GUEST_OK)) {
 		pr_debug("treecon: deny. Not allow guest\n");
