@@ -36,6 +36,10 @@ smbd-install:
 	$(MAKE) -C smbd/smbd install
 	$(MAKE) -C smbd/tools install DESTDIR=$(INSTALLDIR)/smbd
 	rm -rf $(INSTALLDIR)/smbd/usr/lib
+	cd $(INSTALLDIR)/smbd/usr/sbin && ln -sf smbd_multicall usmbd
+	cd $(INSTALLDIR)/smbd/usr/sbin && ln -sf smbd_multicall smbuseradd
+	cd $(INSTALLDIR)/smbd/usr/sbin && ln -sf smbd_multicall smbshareadd
+
 	install -D samba4/config/samba4.webnas $(INSTALLDIR)/smbd/etc/config/02samba4.webnas
 	install -D samba4/config/samba4.nvramconfig $(INSTALLDIR)/smbd/etc/config/samba4.nvramconfig
 	install -D filesharing/config/zfilesharing.webnas $(INSTALLDIR)/smbd/etc/config/03zfilesharing.webnas
