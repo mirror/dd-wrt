@@ -91,7 +91,7 @@ samba4-configure: gnutls
 		--with-lockdir=/tmp/var \
 		--destdir=$(INSTALLDIR)/samba4 \
 		--private-libraries=talloc,tevent,tevent-util,texpect,tdb,ldb,tdr,cmocka,replace \
-		CFLAGS="$(MINLTO) $(COPTS) $(MIPS16_OPT) -DNODEBUG -DNEED_PRINTF -I$(TOP)/gnutls/lib/includes -ffunction-sections -fdata-sections -fPIC" \
+		CFLAGS="$(LTOMIN) $(COPTS) $(MIPS16_OPT) -DNODEBUG -DNEED_PRINTF -I$(TOP)/gnutls/lib/includes -ffunction-sections -fdata-sections -fPIC" \
 		LDFLAGS="$(LDLTO) -Wl,--gc-sections -L$(TOP)/gnutls/lib/.libs -lgnutls -L$(TOP)/nettle -lnettle -lhogweed -L$(TOP)/gmp/.libs -lgmp -fPIC"
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
