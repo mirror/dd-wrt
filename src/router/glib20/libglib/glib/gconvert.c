@@ -59,6 +59,7 @@
 #error GNU libiconv not in use but included iconv.h is from libiconv
 #endif
 
+#if 0
 #ifndef HAVE_ICONV_H
 typedef void *iconv_t;
 
@@ -81,7 +82,7 @@ size_t iconv (iconv_t __cd, char **__inbuf,
 	return 0;
 }
 #endif
-
+#endif
 /**
  * SECTION:conversions
  * @title: Character Set Conversion
