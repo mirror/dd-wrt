@@ -95,7 +95,11 @@ static int sanity_check_user_name_simple(char *uname)
 	return -EINVAL;
 }
 
+#ifdef MULTICALL
+int smbuseradd_main(int argc, char *argv[])
+#else
 int main(int argc, char *argv[])
+#endif
 {
 	int ret = EXIT_FAILURE;
 	char *pwddb = PATH_PWDDB;
