@@ -22,7 +22,7 @@ smbd-configure: glib20 libnl
 	    CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) -D_GNU_SOURCE -DNEED_PRINTF -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -L$(INSTALLDIR)/util-linux/usr/lib" \
-	    GLIB_LIBS="-L$(TOP)/glib20/libglib/glib/.libs -lglib-2.0" \
+	    GLIB_LIBS="$(TOP)/glib20/libglib/glib/.libs/libglib-2.0.a" \
 	    LIBNL_CFLAGS="-I$(TOP)/libnl/include" \
 	    LIBNL_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-3 -lnl-genl-3" \
 	    AR_FLAGS="cru $(LTOPLUGIN)" \
