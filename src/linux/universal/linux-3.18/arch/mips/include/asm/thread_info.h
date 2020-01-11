@@ -57,11 +57,15 @@ struct thread_info {
 #define init_thread_info	(init_thread_union.thread_info)
 #define init_stack		(init_thread_union.stack)
 
+#ifdef __VDSO__
+extern struct thread_info *__current_thread_info;
+#else
+register struct thread_info *__current_thread_info __asm__("$28");
+#endif
+
 /* How to get the thread information struct from C.  */
 static inline struct thread_info *current_thread_info(void)
 {
-	register struct thread_info *__current_thread_info __asm__("$28");
-
 	return __current_thread_info;
 }
 
