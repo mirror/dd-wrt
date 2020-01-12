@@ -198,7 +198,7 @@ static int match(const char *pattern, const char *string);
 static int match_one(const char *pattern, int patternlen, const char *string);
 static void *handle_request(void *conn_fp);
 
-#ifndef HAVE_MICRO
+#if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
 
 #define PTHREAD_MUTEX_INIT pthread_mutex_init
 #define PTHREAD_MUTEX_LOCK pthread_mutex_lock
@@ -1885,7 +1885,7 @@ int main(int argc, char **argv)
 			}
 		}
 
-#ifndef HAVE_MICRO
+#if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
 		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
