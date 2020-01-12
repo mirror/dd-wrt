@@ -3423,6 +3423,7 @@ static struct obj_file *obj_load(FILE *fp, int loadprogbits UNUSED_PARAM)
 			case SHT_NULL:
 			case SHT_NOTE:
 			case SHT_NOBITS:
+			case 0x6ffffff5:
 				/* ignore */
 				break;
 
