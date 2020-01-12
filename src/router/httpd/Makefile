@@ -106,16 +106,16 @@ LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared 
 BCFLAGS += -DLINUX -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 ifeq ($(CONFIG_DIST),"micro")
-BCFLAGS += -DNEED_NOPRINTF
+#BCFLAGS += -DNEED_NOPRINTF
 endif
 ifneq ($(CONFIG_DIST),"micro-special")
-BCFLAGS += -DNEED_NOPRINTF
+#BCFLAGS += -DNEED_NOPRINTF
 endif
 
 
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
-LDFLAGS += -lpthread
+LDFLAGS += -pthread -lpthread
 endif
 endif
 
