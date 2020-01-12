@@ -5,6 +5,7 @@
  *
  * Copyright (C) 2003, 2004 Ralf Baechle (ralf@linux-mips.org)
  */
+#define _HACK
 #include <linux/config.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -39,7 +40,7 @@
 
 static unsigned int clear_page_array[0x130 / 4];
 
-void clear_page(void * page) __attribute__((alias("clear_page_array")));
+extern unsigned int clear_page __attribute__((alias("clear_page_array")));
 
 /*
  * Maximum sizes:
@@ -51,7 +52,7 @@ void clear_page(void * page) __attribute__((alias("clear_page_array")));
  */
 static unsigned int copy_page_array[0x148 / 4];
 
-void copy_page(void *to, void *from) __attribute__((alias("copy_page_array")));
+extern unsigned int copy_page __attribute__((alias("copy_page_array")));
 
 /*
  * An address fits into a single register so it's safe to use 64-bit registers

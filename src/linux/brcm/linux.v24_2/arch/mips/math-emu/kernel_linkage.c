@@ -24,6 +24,7 @@
  * manipulation primitives for the Algorithmics MIPS
  * FPU Emulator
  */
+#include <linux/config.h>
 #include <linux/sched.h>
 #include <asm/processor.h>
 #include <asm/signal.h>
@@ -31,6 +32,7 @@
 
 #include <asm/fpu_emulator.h>
 
+#ifdef CONFIG_MIPS_FPU_EMU
 extern struct mips_fpu_emulator_private fpuemuprivate;
 
 #define SIGNALLING_NAN 0x7ff800007ff80000LL
@@ -122,3 +124,35 @@ int fpu_emulator_restore_context32(struct sigcontext32 *sc)
 	return err;
 }
 #endif
+#else
+
+void fpu_emulator_init_fpu(void)
+{
+	printk(KERN_INFO "FPU emulator disabled, make sure your toolchain"
+		"was compiled with software floating point support (soft-float)\n");
+	return;
+}
+
+int fpu_emulator_save_context(struct sigcontext  *sc)
+{
+	return 0;
+}
+
+int fpu_emulator_restore_context(struct sigcontext  *sc)
+{
+	return 0;
+}
+
+int fpu_emulator_save_context32(struct sigcontext32  *sc)
+{
+	return 0;
+}
+
+int fpu_emulator_restore_context32(struct sigcontext32  *sc)
+{
+	return 0;
+}
+
+#ifdef CONFIG_64BIT
+#endif	/* CONFIG_64BIT */
+#endif /* CONFIG_MIPS_FPU_EMU */

@@ -163,7 +163,7 @@ struct request_queue
 #define blk_fs_request(rq)	((rq)->cmd == READ || (rq)->cmd == WRITE)
 #define blk_queue_empty(q)	list_empty(&(q)->queue_head)
 
-extern inline int rq_data_dir(struct request *rq)
+static inline int rq_data_dir(struct request *rq)
 {
 	if (rq->cmd == READ)
 		return READ;

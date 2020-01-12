@@ -25,15 +25,15 @@ CROSS_COMPILE   = mipsel-linux-uclibc-
 # Include the make variables (CC, etc...)
 #
 
-AS		= /opt/3.3.6/bin/$(CROSS_COMPILE)as
-LD		= /opt/3.3.6/bin/$(CROSS_COMPILE)ld
-CC		= /opt/3.3.6/bin/$(CROSS_COMPILE)gcc
+AS		= /opt/9.2.0/bin/$(CROSS_COMPILE)as
+LD		= /opt/9.2.0/bin/$(CROSS_COMPILE)ld
+CC		= /opt/9.2.0/bin/$(CROSS_COMPILE)gcc
 CPP		= $(CC) -E
-AR		= /opt/3.3.6/bin/$(CROSS_COMPILE)ar
-NM		= /opt/3.3.6/bin/$(CROSS_COMPILE)nm
-STRIP		= /opt/3.3.6/bin/$(CROSS_COMPILE)strip
-OBJCOPY		= /opt/3.3.6/bin/$(CROSS_COMPILE)objcopy
-OBJDUMP		= /opt/3.3.6/bin/$(CROSS_COMPILE)objdump
+AR		= /opt/9.2.0/bin/$(CROSS_COMPILE)ar
+NM		= /opt/9.2.0/bin/$(CROSS_COMPILE)nm
+STRIP		= /opt/9.2.0/bin/$(CROSS_COMPILE)strip
+OBJCOPY		= /opt/9.2.0/bin/$(CROSS_COMPILE)objcopy
+OBJDUMP		= /opt/9.2.0/bin/$(CROSS_COMPILE)objdump
 MAKEFILES	= $(TOPDIR)/.config
 GENKSYMS	= /sbin/genksyms
 DEPMOD		= /sbin/depmod
@@ -95,8 +95,10 @@ if_gcc4 = $(shell if echo __GNUC__ | $(CC) -E -xc - | grep -q '^4$$' > /dev/null
 CPPFLAGS := -D__KERNEL__ -I$(HPATH)
 
 CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs \
-	  -fno-strict-aliasing -fno-common
-CFLAGS += -fno-builtin-strpbrk
+	    -fno-strict-aliasing -fno-common -fshort-wchar \
+	     -Wno-format-security \
+	  -fno-strict-aliasing -fno-common -fno-caller-saves -fno-stack-protector -fno-var-tracking-assignments -funit-at-a-time
+CFLAGS += -fno-builtin-strpbrk -std=gnu89 -fno-delete-null-pointer-checks
 CFLAGS += -fno-builtin-sprintf -DBCMDRIVER -DBCMVISTAROUTER -DBCM5354 -DBCMWPA2 
 #-ffunction-sections -fdata-sections -Wl,--gc-sections
 

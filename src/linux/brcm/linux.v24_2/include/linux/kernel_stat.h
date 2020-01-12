@@ -55,7 +55,7 @@ static inline int kstat_irqs (int irq)
 /*
  * Number of interrupts per specific IRQ source, since bootup
  */
-extern inline int kstat_irqs (int irq)
+static inline int kstat_irqs (int irq)
 {
 	int i, sum=0;
 

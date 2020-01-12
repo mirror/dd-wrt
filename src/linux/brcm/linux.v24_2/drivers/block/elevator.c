@@ -33,7 +33,7 @@
  * the tests below to check if we want to insert here if we can't merge
  * bh into an existing request
  */
-inline int bh_rq_in_between(struct buffer_head *bh, struct request *rq,
+static inline int bh_rq_in_between(struct buffer_head *bh, struct request *rq,
 			    struct list_head *head)
 {
 	struct list_head *next;

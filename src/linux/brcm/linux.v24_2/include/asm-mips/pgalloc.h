@@ -147,6 +147,7 @@ static __inline__ void free_pmd_slow(pmd_t *pmd)
 
 extern void __bad_pte(pmd_t *pmd);
 
+#ifndef _HACK
 static inline pte_t *pte_alloc_one(struct mm_struct *mm, unsigned long address)
 {
 	pte_t *pte;
@@ -156,7 +157,7 @@ static inline pte_t *pte_alloc_one(struct mm_struct *mm, unsigned long address)
 		clear_page(pte);
 	return pte;
 }
-
+#endif
 static inline pte_t *pte_alloc_one_fast(struct mm_struct *mm, unsigned long address)
 {
 	unsigned long *ret;

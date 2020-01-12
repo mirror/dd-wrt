@@ -1391,7 +1391,7 @@ static struct file *pppol2tp_fget(pid_t pid, unsigned int fd)
 }
 
 /* Copied from net/socket.c */
-extern __inline__ struct socket *socki_lookup(struct inode *inode)
+static __inline__ struct socket *socki_lookup(struct inode *inode)
 {
 	return &inode->u.socket_i;
 }

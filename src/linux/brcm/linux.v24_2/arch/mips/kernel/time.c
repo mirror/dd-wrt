@@ -262,10 +262,11 @@ static unsigned long fixed_rate_gettimeoffset(void)
 	/* .. relative to previous jiffy (32 bits is enough) */
 	count -= timerlo;
 
-	__asm__("multu	%1,%2"
-		: "=h" (res)
-		: "r" (count), "r" (sll32_usecs_per_cycle)
-		: "lo", GCC_REG_ACCUM);
+	__asm__("multu\t%1,%2\n\t"
+		"mfhi\t%0"
+		:"=r" (res)
+		:"r" (count),
+		"r" (sll32_usecs_per_cycle));
 
 	/*
 	 * Due to possible jiffies inconsistencies, we need to check
@@ -317,10 +318,11 @@ static unsigned long calibrate_div32_gettimeoffset(void)
 	/* .. relative to previous jiffy (32 bits is enough) */
 	count -= timerlo;
 
-	__asm__("multu  %1,%2"
-		: "=h" (res)
-		: "r" (count), "r" (quotient)
-		: "lo", GCC_REG_ACCUM);
+	__asm__("multu\t%1,%2\n\t"
+		"mfhi\t%0"
+		:"=r" (res)
+		:"r" (count),
+		"r" (quotient));
 
 	/*
 	 * Due to possible jiffies inconsistencies, we need to check
@@ -373,10 +375,11 @@ static unsigned long calibrate_div64_gettimeoffset(void)
 	/* .. relative to previous jiffy (32 bits is enough) */
 	count -= timerlo;
 
-	__asm__("multu	%1,%2"
-		: "=h" (res)
-		: "r" (count), "r" (quotient)
-		: "lo", GCC_REG_ACCUM);
+	__asm__("multu\t%1,%2\n\t"
+		"mfhi\t%0"
+		:"=r" (res)
+		:"r" (count),
+		"r" (quotient));
 
 	/*
 	 * Due to possible jiffies inconsistencies, we need to check

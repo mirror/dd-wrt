@@ -74,9 +74,10 @@
 	li	t1, ~ST0_CU1
 	and	t0, t0, t1
 	sw	t0, ST_OFF(a0)
-
+	.set push
+	SET_HARDFLOAT
 	FPU_SAVE_DOUBLE(a0, t0)			# clobbers t0
-
+	.set pop
 1:
 	/*
 	 * The order of restoring the registers takes care of the race
@@ -111,7 +112,10 @@
  * Save a thread's fp context.
  */
 LEAF(_save_fp)
+	.set push
+	SET_HARDFLOAT
 	FPU_SAVE_DOUBLE(a0, t1)			# clobbers t1
+	.set pop
 	jr	ra
 	END(_save_fp)
 
@@ -119,7 +123,10 @@ LEAF(_save_fp)
  * Restore a thread's fp context.
  */
 LEAF(_restore_fp)
+	.set push
+	SET_HARDFLOAT
 	FPU_RESTORE_DOUBLE(a0, t1)		# clobbers t1
+	.set pop
 	jr	ra
 	END(_restore_fp)
 
@@ -135,6 +142,8 @@ LEAF(_restore_fp)
 
 LEAF(_init_fpu)
 	.set	mips3
+	.set push
+	SET_HARDFLOAT
 	mfc0	t0, CP0_STATUS
 	li	t1, ST0_CU1
 	or	t0, t1
@@ -164,6 +173,7 @@ LEAF(_init_fpu)
 	.set	noreorder
 	jr	ra
 	 dmtc1	t0, $f30
+	.set 	pop
 	.set	reorder
 	END(_init_fpu)
 

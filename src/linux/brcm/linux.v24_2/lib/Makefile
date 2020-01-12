@@ -9,10 +9,10 @@
 L_TARGET := lib.a
 
 export-objs := cmdline.o dec_and_lock.o rwsem-spinlock.o rwsem.o \
-	       rbtree.o crc32.o firmware_class.o string.o
+	       rbtree.o crc32.o firmware_class.o string.o div64.o
 
 obj-y := errno.o ctype.o string.o vsprintf.o brlock.o cmdline.o \
-	 bust_spinlocks.o rbtree.o dump_stack.o
+	 bust_spinlocks.o rbtree.o dump_stack.o div64.o
 
 obj-$(CONFIG_FW_LOADER) += firmware_class.o
 obj-$(CONFIG_RWSEM_GENERIC_SPINLOCK) += rwsem-spinlock.o
