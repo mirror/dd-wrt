@@ -10,7 +10,10 @@ USE_STANDARD_AS_RULE := true
 
 O_TARGET:= fpu_emulator.o
 
-obj-y	:= cp1emu.o ieee754m.o ieee754d.o ieee754dp.o ieee754sp.o ieee754.o \
+obj-y	:=	kernel_linkage.o dsemul.o cp1emu.o
+
+
+obj-$(CONFIG_MIPS_FPU_EMU)	+= cp1emu.o ieee754m.o ieee754d.o ieee754dp.o ieee754sp.o ieee754.o \
 	   ieee754xcpt.o dp_frexp.o dp_modf.o dp_div.o dp_mul.o dp_sub.o \
 	   dp_add.o dp_fsp.o dp_cmp.o dp_logb.o dp_scalb.o dp_simple.o \
 	   dp_tint.o dp_fint.o dp_tlong.o dp_flong.o sp_frexp.o sp_modf.o \

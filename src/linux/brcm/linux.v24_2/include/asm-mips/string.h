@@ -12,6 +12,7 @@
 #include <linux/config.h>
 
 #define __HAVE_ARCH_STRCPY
+
 static __inline__ char *strcpy(char *__dest, __const__ char *__src)
 {
   char *__xdest = __dest;
@@ -27,7 +28,7 @@ static __inline__ char *strcpy(char *__dest, __const__ char *__src)
 	".set\tat\n\t"
 	".set\treorder"
 	: "=r" (__dest), "=r" (__src)
-        : "0" (__dest), "1" (__src)
+	: "0" (__dest), "1" (__src)
 	: "memory");
 
   return __xdest;

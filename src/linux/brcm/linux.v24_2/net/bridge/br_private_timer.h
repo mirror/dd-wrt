@@ -21,12 +21,12 @@ struct br_timer
 	unsigned long expires;
 };
 
-extern __inline__ void br_timer_clear(struct br_timer *t)
+static __inline__ void br_timer_clear(struct br_timer *t)
 {
 	t->running = 0;
 }
 
-extern __inline__ unsigned long br_timer_get_residue(struct br_timer *t)
+static __inline__ unsigned long br_timer_get_residue(struct br_timer *t)
 {
 	if (t->running)
 		return jiffies - t->expires;
@@ -34,18 +34,18 @@ extern __inline__ unsigned long br_timer_get_residue(struct br_timer *t)
 	return 0;
 }
 
-extern __inline__ void br_timer_set(struct br_timer *t, unsigned long x)
+static __inline__ void br_timer_set(struct br_timer *t, unsigned long x)
 {
 	t->expires = x;
 	t->running = 1;
 }
 
-extern __inline__ int br_timer_is_running(struct br_timer *t)
+static __inline__ int br_timer_is_running(struct br_timer *t)
 {
 	return t->running;
 }
 
-extern __inline__ int br_timer_has_expired(struct br_timer *t, unsigned long to)
+static __inline__ int br_timer_has_expired(struct br_timer *t, unsigned long to)
 {
 	return t->running && time_after_eq(jiffies, t->expires + to);
 }

@@ -10,6 +10,7 @@
 
 #include <asm/compiler.h>
 
+
 /*
  * No traps on overflows for any of these...
  */
@@ -50,30 +51,40 @@
 	(res) = __quot; \
 	__mod; })
 
-#define do_div(n, base) ({ \
-	unsigned long long __quot; \
-	unsigned long __mod; \
-	unsigned long long __div; \
-	unsigned long __upper, __low, __high, __base; \
-	\
-	__div = (n); \
-	__base = (base); \
-	\
-	__high = __div >> 32; \
-	__low = __div; \
-	__upper = __high; \
-	\
-	if (__high) \
-		__asm__("divu	$0, %z2, %z3" \
-			: "=h" (__upper), "=l" (__high) \
-			: "Jr" (__high), "Jr" (__base) \
-			: GCC_REG_ACCUM); \
-	\
-	__mod = do_div64_32(__low, __upper, __low, __base); \
-	\
-	__quot = __high; \
-	__quot = __quot << 32 | __low; \
-	(n) = __quot; \
-	__mod; })
+
+#if BITS_PER_LONG == 64
+
+# define do_div(n,base) ({					\
+	uint32_t __base = (base);				\
+	uint32_t __rem;						\
+	__rem = ((uint64_t)(n)) % __base;			\
+	(n) = ((uint64_t)(n)) / __base;				\
+	__rem;							\
+ })
+
+#elif BITS_PER_LONG == 32
+
+extern uint32_t __div64_32(uint64_t *dividend, uint32_t divisor);
+
+/* The unnecessary pointer compare is there
+ * to check for type safety (n must be 64bit)
+ */
+# define do_div(n,base) ({				\
+	uint32_t __base = (base);			\
+	uint32_t __rem;					\
+	(void)(((typeof((n)) *)0) == ((uint64_t *)0));	\
+	if (likely(((n) >> 32) == 0)) {			\
+		__rem = (uint32_t)(n) % __base;		\
+		(n) = (uint32_t)(n) / __base;		\
+	} else 						\
+		__rem = __div64_32(&(n), __base);	\
+	__rem;						\
+ })
+
+#else /* BITS_PER_LONG == ?? */
+
+# error do_div() does not yet support the C64
+
+#endif /* BITS_PER_LONG */
 
 #endif /* _ASM_DIV64_H */

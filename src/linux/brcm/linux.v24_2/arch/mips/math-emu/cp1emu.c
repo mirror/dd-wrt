@@ -34,6 +34,7 @@
  * Note if you know that you won't have an fpu, then you'll get much
  * better performance by compiling with -msoft-float!
  */
+#include <linux/config.h>
 #include <asm/inst.h>
 #include <asm/bootinfo.h>
 #include <asm/cpu.h>
@@ -54,8 +55,12 @@
 #undef __mips
 #endif
 #define __mips 4
+/* Further private data for which no space exists in mips_fpu_soft_struct */
+
+struct mips_fpu_emulator_private fpuemuprivate;
 
 /* Function which emulates a floating point instruction. */
+#ifdef CONFIG_MIPS_FPU_EMU
 
 static int fpu_emu(struct pt_regs *, struct mips_fpu_soft_struct *,
 	mips_instruction);
@@ -65,9 +70,6 @@ static int fpux_emu(struct pt_regs *,
 	struct mips_fpu_soft_struct *, mips_instruction);
 #endif
 
-/* Further private data for which no space exists in mips_fpu_soft_struct */
-
-struct mips_fpu_emulator_private fpuemuprivate;
 
 /* Control registers */
 
@@ -1312,3 +1314,11 @@ int fpu_emulator_cop1Handler(int xcptno, struct pt_regs *xcp,
 
 	return sig;
 }
+#else
+int fpu_emulator_cop1Handler(struct pt_regs *xcp,
+				    struct mips_fpu_struct *ctx, int has_fpu,
+				    void *__user *fault_addr)
+{
+	return 0;
+}
+#endif /* CONFIG_MIPS_FPU_EMU */

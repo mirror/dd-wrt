@@ -232,23 +232,32 @@ struct __large_struct { unsigned long buf[100]; };
 #define __get_user_nocheck(x,ptr,size)					\
 ({									\
 	long __gu_err = 0;						\
-	__typeof(*(ptr)) __gu_val = (__typeof(*(ptr))) 0;					\
 	long __gu_addr;							\
 	__gu_addr = (long) (ptr);					\
 	switch (size) {							\
-	case 1: __get_user_asm("lb", __gu_err); break;			\
-	case 2: __get_user_asm("lh", __gu_err); break;			\
-	case 4: __get_user_asm("lw", __gu_err); break;			\
-	case 8: __GET_USER_DW(__gu_err); break;				\
-	default: __get_user_unknown(); break;				\
+	case 1: {							\
+		unsigned char __gu_val = 0;				\
+		__get_user_asm("lb", __gu_err); 			\
+		x = (__typeof__(*(ptr))) __gu_val; break;		\
+	} case 2: {							\
+		unsigned short __gu_val = 0;				\
+		__get_user_asm("lh", __gu_err);				\
+		x = (__typeof__(*(ptr))) __gu_val; break;		\
+	} case 4: {							\
+		unsigned int __gu_val = 0;				\
+		__get_user_asm("lw", __gu_err);				\
+		x = (__typeof__(*(ptr))) __gu_val; break;		\
+	} case 8: {							\
+		unsigned long long __gu_val = 0;			\
+		 __GET_USER_DW(__gu_err);				\
+		x = (__typeof__(*(ptr))) __gu_val; break;		\
+	} default: __get_user_unknown(); break;				\
 	}								\
-	 x = (__typeof__(*(ptr))) __gu_val;				\
 	__gu_err;							\
 })
 
 #define __get_user_check(x,ptr,size)					\
 ({									\
-	__typeof__(*(ptr)) __gu_val = 0;				\
 	long __gu_addr = (long) (ptr);					\
 	long __gu_err;							\
 									\
@@ -256,14 +265,25 @@ struct __large_struct { unsigned long buf[100]; };
 									\
 	if (likely(!__gu_err)) {					\
 		switch (size) {						\
-		case 1: __get_user_asm("lb", __gu_err); break;		\
-		case 2: __get_user_asm("lh", __gu_err); break;		\
-		case 4: __get_user_asm("lw", __gu_err); break;		\
-		case 8: __GET_USER_DW(__gu_err); break;			\
-		default: __get_user_unknown(); break;			\
+		case 1: {						\
+			unsigned char __gu_val = 0;			\
+			__get_user_asm("lb", __gu_err);		\
+			x = (__typeof__(*(ptr))) __gu_val; break;	\
+		} case 2: {						\
+			unsigned short __gu_val = 0;			\
+			__get_user_asm("lh", __gu_err);			\
+			x = (__typeof__(*(ptr))) __gu_val; break;	\
+		} case 4: {						\
+			unsigned int __gu_val = 0;			\
+			__get_user_asm("lw", __gu_err); 		\
+			x = (__typeof__(*(ptr))) __gu_val; break;	\
+		} case 8: {						\
+			unsigned long long __gu_val = 0;		\
+			__GET_USER_DW(__gu_err);			\
+			x = (__typeof__(*(ptr))) __gu_val; break;	\
+		} default: __get_user_unknown(); break;			\
 		}							\
 	}								\
-	x = (__typeof__(*(ptr))) __gu_val;				\
 	 __gu_err;							\
 })
 

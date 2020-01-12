@@ -44,6 +44,7 @@ do {									\
 */
 #define PAGE_BUG(page) do {  BUG(); } while (0)
 
+#ifndef _HACK
 extern void clear_page(void * page);
 extern void copy_page(void * to, void * from);
 
@@ -72,6 +73,7 @@ static inline void copy_user_page(void * to, void * from, unsigned long vaddr)
 	if (pages_do_alias(kto, vaddr))
 		flush_data_cache_page(kto);
 }
+#endif
 
 /*
  * These are used to make use of C type-checking..

@@ -45,12 +45,12 @@ int ipcperms (struct kern_ipc_perm *ipcp, short flg);
 void* ipc_alloc(int size);
 void ipc_free(void* ptr, int size);
 
-extern inline void ipc_lockall(struct ipc_ids* ids)
+static inline void ipc_lockall(struct ipc_ids* ids)
 {
 	spin_lock(&ids->ary);
 }
 
-extern inline struct kern_ipc_perm* ipc_get(struct ipc_ids* ids, int id)
+static inline struct kern_ipc_perm* ipc_get(struct ipc_ids* ids, int id)
 {
 	struct kern_ipc_perm* out;
 	int lid = id % SEQ_MULTIPLIER;
@@ -61,11 +61,11 @@ extern inline struct kern_ipc_perm* ipc_get(struct ipc_ids* ids, int id)
 	return out;
 }
 
-extern inline void ipc_unlockall(struct ipc_ids* ids)
+static inline void ipc_unlockall(struct ipc_ids* ids)
 {
 	spin_unlock(&ids->ary);
 }
-extern inline struct kern_ipc_perm* ipc_lock(struct ipc_ids* ids, int id)
+static inline struct kern_ipc_perm* ipc_lock(struct ipc_ids* ids, int id)
 {
 	struct kern_ipc_perm* out;
 	int lid = id % SEQ_MULTIPLIER;
@@ -79,17 +79,17 @@ extern inline struct kern_ipc_perm* ipc_lock(struct ipc_ids* ids, int id)
 	return out;
 }
 
-extern inline void ipc_unlock(struct ipc_ids* ids, int id)
+static inline void ipc_unlock(struct ipc_ids* ids, int id)
 {
 	spin_unlock(&ids->ary);
 }
 
-extern inline int ipc_buildid(struct ipc_ids* ids, int id, int seq)
+static inline int ipc_buildid(struct ipc_ids* ids, int id, int seq)
 {
 	return SEQ_MULTIPLIER*seq + id;
 }
 
-extern inline int ipc_checkid(struct ipc_ids* ids, struct kern_ipc_perm* ipcp, int uid)
+static inline int ipc_checkid(struct ipc_ids* ids, struct kern_ipc_perm* ipcp, int uid)
 {
 	if(uid/SEQ_MULTIPLIER != ipcp->seq)
 		return 1;

@@ -125,7 +125,7 @@ void BCMINITFN (sb_serial_init) (sb_t * sbh, sb_serial_init_fn add)
 		rev = sb_corerev(sbh);
 		cap = R_REG(osh, &cc->capabilities);
 		pll = cap & CC_CAP_PLL_MASK;
-
+		printk(KERN_INFO "core revision %d\n", rev);
 		/* Determine IRQ */
 		irq = sb_irq(sbh);
 
@@ -177,6 +177,7 @@ void BCMINITFN (sb_serial_init) (sb_t * sbh, sb_serial_init_fn add)
 		n = cap & CC_CAP_UARTS_MASK;
 		for (i = 0; i < n; i++) {
 			/* Register offset changed after revision 0 */
+			printk(KERN_INFO "add uart%d at %X\n", i, &cc->uart0data + (i * 256));
 			if (rev)
 				regs = (void *)((ulong) &cc->uart0data + (i * 256));
 			else

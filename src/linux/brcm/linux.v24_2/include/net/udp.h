@@ -72,10 +72,23 @@ extern int	udp_ioctl(struct sock *sk, int cmd, unsigned long arg);
 extern int	udp_disconnect(struct sock *sk, int flags);
 extern unsigned int udp_poll(struct file *file, struct socket *sock,
 			     poll_table *wait);
+struct sock *udp_v4_lookup_longway(u32 saddr, u16 sport, u32 daddr, u16 dport, int dif);
 
 extern struct udp_mib udp_statistics[NR_CPUS*2];
 #define UDP_INC_STATS(field)		SNMP_INC_STATS(udp_statistics, field)
 #define UDP_INC_STATS_BH(field)		SNMP_INC_STATS_BH(udp_statistics, field)
 #define UDP_INC_STATS_USER(field) 	SNMP_INC_STATS_USER(udp_statistics, field)
+
+static __inline__ struct sock *udp_v4_lookup(u32 saddr, u16 sport, u32 daddr, u16 dport, int dif)
+{
+	struct sock *sk;
+
+	read_lock(&udp_hash_lock);
+	sk = udp_v4_lookup_longway(saddr, sport, daddr, dport, dif);
+	if (sk)
+		sock_hold(sk);
+	read_unlock(&udp_hash_lock);
+	return sk;
+}
 
 #endif	/* _UDP_H */

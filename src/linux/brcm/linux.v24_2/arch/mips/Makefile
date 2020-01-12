@@ -44,7 +44,7 @@ MAKEBOOT = $(MAKE) -C arch/$(ARCH)/boot
 # crossformat linking we rely on the elf2ecoff tool for format conversion.
 #
 GCCFLAGS	:= -I $(TOPDIR)/include/asm/gcc
-GCCFLAGS	+= -G 0 -mno-abicalls -fno-pic -pipe -DBCMGPIO2
+GCCFLAGS	+= -G 0 -mno-abicalls -fno-pic -pipe -DBCMGPIO2 -mhard-float
 GCCFLAGS	+= $(call check_gcc, -finline-limit=100000,)
 LINKFLAGS	+= -G 0 -static -n -nostdlib
 MODFLAGS	+= -mlong-calls -fno-common

@@ -33,7 +33,7 @@
 asmlinkage long long __ashldi3 (long long, int);
 asmlinkage long long __ashrdi3 (long long, int);
 asmlinkage long long __lshrdi3 (long long, int);
-asmlinkage long long __muldi3 (long long, long long);
+//asmlinkage long long __muldi3 (long long, long long);
 extern void *__bzero(void *__s, size_t __count);
 extern long __strncpy_from_user_nocheck_asm(char *__to,
                                             const char *__from, long __len);
@@ -86,7 +86,7 @@ EXPORT_SYMBOL_NOVERS(__strnlen_user_asm);
 EXPORT_SYMBOL_NOVERS(__ashldi3);
 EXPORT_SYMBOL_NOVERS(__ashrdi3);
 EXPORT_SYMBOL_NOVERS(__lshrdi3);
-EXPORT_SYMBOL_NOVERS(__muldi3);
+//EXPORT_SYMBOL_NOVERS(__muldi3);
 
 
 /* Networking helper routines. */
