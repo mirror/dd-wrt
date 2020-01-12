@@ -82,6 +82,9 @@ $(MAP): $(OPTINFO)/libc.a
 	    grep -q "^$${symbol}$$" $(MAP) && echo "-u $${symbol}" >> $@ ; \
 	    true ; \
 	done
+#ifeq ($(CONFIG_PTHREAD),y)
+#	echo "__libc_pthread_init >> .symbols
+#endif
 
 # Re-link uClibc
 $(LIBC): .symbols $(OBJS)
@@ -124,6 +127,7 @@ endif
 
 # Also install extra libraries
 install: $(wildcard $(foreach lib,$(LINKER) $(lib-y),$(LIBDIR)/$(lib) $(LIBDIR)/$(lib).so.?))
+#	$(NM) -o --defined-only --no-sort $(OPTINFO)/libc.a | cut -d' ' -f3 > uClibc.map
 	install -d $(TARGETDIR)/lib
 	install $^ $(TARGETDIR)/lib/
 #	install libgcc_s.so.1 $(TARGETDIR)/lib/
