@@ -261,18 +261,6 @@ struct sock *udp_v4_lookup_longway(u32 saddr, u16 sport, u32 daddr, u16 dport, i
 	return result;
 }
 
-__inline__ struct sock *udp_v4_lookup(u32 saddr, u16 sport, u32 daddr, u16 dport, int dif)
-{
-	struct sock *sk;
-
-	read_lock(&udp_hash_lock);
-	sk = udp_v4_lookup_longway(saddr, sport, daddr, dport, dif);
-	if (sk)
-		sock_hold(sk);
-	read_unlock(&udp_hash_lock);
-	return sk;
-}
-
 extern int ip_mc_sf_allow(struct sock *sk, u32 local, u32 rmt, int dif);
 
 static inline struct sock *udp_v4_mcast_next(struct sock *sk,

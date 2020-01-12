@@ -2090,4 +2090,77 @@ static inline int tcp_westwood_complete_cwr(struct tcp_opt *tp)
 	return ret;
 }
 
+static __inline__ int tcp_hashfn(__u32 laddr, __u16 lport,
+				 __u32 faddr, __u16 fport)
+{
+	int h = ((laddr ^ lport) ^ (faddr ^ fport));
+	h ^= h>>16;
+	h ^= h>>8;
+	return h & (tcp_ehash_size - 1);
+}
+
+/* Sockets in TCP_CLOSE state are _always_ taken out of the hash, so
+ * we need not check it for TCP lookups anymore, thanks Alexey. -DaveM
+ *
+ * Local BH must be disabled here.
+ */
+
+static inline struct sock *__tcp_v4_lookup_established(u32 saddr, u16 sport,
+						       u32 daddr, u16 hnum, int dif)
+{
+	struct tcp_ehash_bucket *head;
+	TCP_V4_ADDR_COOKIE(acookie, saddr, daddr)
+	__u32 ports = TCP_COMBINED_PORTS(sport, hnum);
+	struct sock *sk;
+	int hash;
+
+	/* Optimize here for direct hit, only listening connections can
+	 * have wildcards anyways.
+	 */
+	hash = tcp_hashfn(daddr, hnum, saddr, sport);
+	head = &tcp_ehash[hash];
+	read_lock(&head->lock);
+	for(sk = head->chain; sk; sk = sk->next) {
+		if(TCP_IPV4_MATCH(sk, acookie, saddr, daddr, ports, dif))
+			goto hit; /* You sunk my battleship! */
+	}
+
+	/* Must check for a TIME_WAIT'er before going to listener hash. */
+	for(sk = (head + tcp_ehash_size)->chain; sk; sk = sk->next)
+		if(TCP_IPV4_MATCH(sk, acookie, saddr, daddr, ports, dif))
+			goto hit;
+	read_unlock(&head->lock);
+
+	return NULL;
+
+hit:
+	sock_hold(sk);
+	read_unlock(&head->lock);
+	return sk;
+}
+
+static inline struct sock *__tcp_v4_lookup(u32 saddr, u16 sport,
+					   u32 daddr, u16 hnum, int dif)
+{
+	struct sock *sk;
+
+	sk = __tcp_v4_lookup_established(saddr, sport, daddr, hnum, dif);
+
+	if (sk)
+		return sk;
+		
+	return tcp_v4_lookup_listener(daddr, hnum, dif);
+}
+
+static __inline__ struct sock *tcp_v4_lookup(u32 saddr, u16 sport, u32 daddr, u16 dport, int dif)
+{
+	struct sock *sk;
+
+	local_bh_disable();
+	sk = __tcp_v4_lookup(saddr, sport, daddr, ntohs(dport), dif);
+	local_bh_enable();
+
+	return sk;
+}
+
 #endif	/* _TCP_H */

@@ -1,3 +1,4 @@
+#include <linux/config.h>
 #include <linux/compiler.h>
 #include <linux/mm.h>
 #include <linux/signal.h>
@@ -114,6 +115,7 @@ int mips_dsemul(struct pt_regs *regs, mips_instruction ir, gpreg_t cpc)
 
 	return SIGILL;		/* force out of emulation loop */
 }
+#ifdef CONFIG_MIPS_FPU_EMU
 
 int do_dsemulret(struct pt_regs *xcp)
 {
@@ -168,3 +170,9 @@ int do_dsemulret(struct pt_regs *xcp)
 
 	return 1;
 }
+#else
+int do_dsemulret(struct pt_regs *xcp)
+{
+	return 0;
+}
+#endif /* CONFIG_MIPS_FPU_EMU */

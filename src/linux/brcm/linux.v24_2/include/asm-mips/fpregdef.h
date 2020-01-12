@@ -10,6 +10,7 @@
 #ifndef __ASM_MIPS_FPREGDEF_H
 #define __ASM_MIPS_FPREGDEF_H
 
+#define SET_HARDFLOAT		.set hardfloat
 /*
  * These definitions only cover the R3000-ish 16/32 register model.
  * But we're trying to be R3000 friendly anyway ...

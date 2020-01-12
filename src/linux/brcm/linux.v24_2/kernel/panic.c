@@ -128,7 +128,8 @@ const char *print_tainted()
 			tainted & 2 ? 'F' : ' ');
 	}
 	else
-		snprintf(buf, sizeof(buf), "Not tainted");
+		strcpy(buf, "Not tainted");
+		
 	return(buf);
 }
 

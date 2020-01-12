@@ -79,7 +79,7 @@ static inline void *kmap(struct page *page) { return page_address(page); }
 #define bh_kunmap_irq(bh, flags)	do { *(flags) = 0; } while (0)
 
 #endif /* CONFIG_HIGHMEM */
-
+#ifndef _HACK
 /* when CONFIG_HIGHMEM is not set these will be plain clear/copy_page */
 static inline void clear_user_highpage(struct page *page, unsigned long vaddr)
 {
@@ -131,5 +131,6 @@ static inline void copy_highpage(struct page *to, struct page *from)
 	kunmap_atomic(vfrom, KM_USER0);
 	kunmap_atomic(vto, KM_USER1);
 }
+#endif
 
 #endif /* _LINUX_HIGHMEM_H */

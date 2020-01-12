@@ -14,96 +14,13 @@
 
 #include <asm/compiler.h>
 
+
+extern void __delay(unsigned long loops);
+extern void __ndelay(unsigned long ns, unsigned int lpj);
+extern void __udelay(unsigned long us, unsigned int lpj);
+
+
 extern unsigned long loops_per_jiffy;
-
-static inline void __delay(unsigned long loops)
-{
-	if (sizeof(long) == 4)
-		__asm__ __volatile__ (
-		"	.set	noreorder				\n"
-		"	.align	3					\n"
-		"1:	bnez	%0, 1b					\n"
-		"	subu	%0, 1					\n"
-		"	.set	reorder					\n"
-		: "=r" (loops)
-		: "0" (loops));
-	else if (sizeof(long) == 8)
-		__asm__ __volatile__ (
-		"	.set	noreorder				\n"
-		"	.align	3					\n"
-		"1:	bnez	%0, 1b					\n"
-		"	dsubu	%0, 1					\n"
-		"	.set	reorder					\n"
-		: "=r" (loops)
-		: "0" (loops));
-}
-
-
-/*
-static __inline__ void __delay(unsigned long loops)
-{
-	__asm__ __volatile__ (
-		".set\tnoreorder\n"
-		"1:\tbnez\t%0,1b\n\t"
-		"subu\t%0,1\n\t"
-		".set\treorder"
-		:"=r" (loops)
-		:"0" (loops));
-}
-*/
-/*
- * Division by multiplication: you don't have to worry about
- * loss of precision.
- *
- * Use only for very small delays ( < 1 msec).  Should probably use a
- * lookup table, really, as the multiplications take much too long with
- * short delays.  This is a "reasonable" implementation, though (and the
- * first constant multiplications gets optimized away if the delay is
- * a constant)
- */
-static __inline__ void __udelay(unsigned long usecs, unsigned long lpj)
-{
-	unsigned long lo;
-
-	/*
-	 * Excessive precission?  Probably ...
-	 */
-	usecs *= (unsigned long) (((0x8000000000000000ULL / (500000 / HZ)) +
-	                           0x80000000ULL) >> 32);
-	__asm__("multu\t%2,%3"
-		: "=h" (usecs), "=l" (lo)
-		: "r" (usecs), "r" (lpj)
-		: GCC_REG_ACCUM);
-	__delay(usecs);
-}
-
-static __inline__ void __ndelay(unsigned long nsecs, unsigned long lpj)
-{
-	unsigned long lo;
-
-	/*
-	 * Excessive precission?  Probably ...
-	 */
-	nsecs *= (unsigned long) (((0x8000000000000000ULL / (500000000 / HZ)) +
-	                           0x80000000ULL) >> 32);
-	if (sizeof(long) == 4)
-		__asm__("multu\t%2, %3"
-		: "=h" (nsecs), "=l" (lo)
-		: "r" (nsecs), "r" (lpj)
-		: GCC_REG_ACCUM);
-	else if (sizeof(long) == 8)
-		__asm__("dmultu\t%2, %3"
-		: "=h" (nsecs), "=l" (lo)
-		: "r" (nsecs), "r" (lpj)
-		: GCC_REG_ACCUM);
-
-	__delay(nsecs);
-//	__asm__("multu\t%2,%3"
-//		: "=h" (nsecs), "=l" (lo)
-//		: "r" (nsecs), "r" (lpj)
-//		: GCC_REG_ACCUM);
-//	__delay(nsecs);
-}
 
 #ifdef CONFIG_SMP
 #define __udelay_val cpu_data[smp_processor_id()].udelay_val
