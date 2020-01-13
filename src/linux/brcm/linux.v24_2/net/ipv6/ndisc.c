@@ -925,7 +925,7 @@ static void ndisc_router_discovery(struct sk_buff *skb)
 		ND_PRINTK1("RA: can't find in6 device\n");
 		return;
 	}
-	if (in6_dev->cnf.forwarding && in6_dev->cnf.accept_ra < 2) {
+	if ((in6_dev->cnf.forwarding && in6_dev->cnf.accept_ra < 2) || !in6_dev->cnf.accept_ra) {
 		in6_dev_put(in6_dev);
 		return;
 	}
