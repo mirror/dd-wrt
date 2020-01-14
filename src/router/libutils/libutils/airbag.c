@@ -246,7 +246,7 @@ static const int gregOffset = 3;
 #elif defined(__mips__)
 #include "sysdeps/generic_backtrace.c"
 #define NMCTXREGS NGREG
-#if (defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
+#ifdef CTX_EPC			/* Pre-2007 uclibc */
 #define MCTXREG(uc, i) (uc->uc_mcontext.gpregs[i])
 #define MCTX_PC(uc) (uc->uc_mcontext.gpregs[35])
 #else
@@ -594,7 +594,7 @@ static int airbag_walkstack(void **buffer, int *repeat, int size, ucontext_t * u
 	unsigned long *addr, *pc, *ra, *sp;
 	unsigned long raOffset, stackSize;
 
-#if (defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
+#ifdef CTX_EPC			/* Pre-2007 uclibc */
 	pc = (unsigned long *)uc->uc_mcontext.gpregs[35];
 	ra = (unsigned long *)uc->uc_mcontext.gpregs[31];
 	sp = (unsigned long *)uc->uc_mcontext.gpregs[29];
@@ -614,7 +614,7 @@ static int airbag_walkstack(void **buffer, int *repeat, int size, ucontext_t * u
 		unsigned long v;
 		if (load32(addr, &v)) {
 			airbag_printf("%sText at 0x%" FMTBIT "lx is not mapped; trying prior frame pointer.\n", comment, addr);
-#if (defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
+#ifdef CTX_EPC			/* Pre-2007 uclibc */
 			uc->uc_mcontext.gpregs[35] = (unsigned long)ra;
 #else
 			uc->uc_mcontext.pc = (unsigned long)ra;
