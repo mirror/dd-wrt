@@ -196,8 +196,8 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		servp = my_getservbyport(htons(_dport), protocol);
 		websWrite(wp, "<td align=\"right\">%s</td>", servp ? servp->s_name : dstport);
 		if (servp) {
-			free(servp->s_name);
 			free(servp->s_proto);
+			free(servp->s_name);
 			free(servp);
 		}
 		// State
