@@ -67,8 +67,9 @@ function setWirelessTable() {
 function setWDSTable() {
 	var table = document.getElementById("wds_table");
 	var val = arguments;
-	if (table)
+	if (table) {
 		cleanTable(table);
+	}
 	if(!val.length) {
 		setElementVisible("wds", false);
 		return;
