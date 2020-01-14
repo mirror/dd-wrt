@@ -1,6 +1,7 @@
 #
 # Makefile for the linux squashfs routines.
 #
+  EXTRA_CFLAGS  += -O2
 
 O_TARGET := squashfs.o
 
