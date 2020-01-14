@@ -3,7 +3,7 @@ xl2tpd-configure:
 	@true
 
 xl2tpd:
-	$(MAKE) -C xl2tpd CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -Wall -DSANITY -DLINUX -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include/ -DUSE_KERNEL -DIP_ALLOCATION -I$(TOP)/libpcap" LDFLAGS+="-L$(TOP)/libpcap"
+	$(MAKE) -C xl2tpd CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -Wall -DSANITY -DLINUX -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include/ -DUSE_KERNEL -DIP_ALLOCATION -I$(TOP)/libpcap" LDFLAGS+=" $(LDLTO) -L$(TOP)/libpcap"
 
 xl2tpd-clean:
 	$(MAKE) -C xl2tpd clean
