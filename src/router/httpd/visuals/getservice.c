@@ -146,8 +146,11 @@ struct servent *my_getservbyport(int port, const char *proto)
 	struct servent *serv = malloc(sizeof(struct servent));
 	char *line = malloc(BUFSIZ + 1);
 	while ((my_getservent(servf, serv, serv_aliases, line)) != NULL) {
-		if (serv->s_port != port)
+		if (serv->s_port != port) {
+			free(serv->s_proto);
+			free(serv->s_name);
 			continue;
+		}
 		if (proto == 0 || strcasecmp(serv->s_proto, proto) == 0) {
 			found = 1;
 			break;
@@ -159,6 +162,8 @@ struct servent *my_getservbyport(int port, const char *proto)
 		serv = NULL;
 	}
 	free(line);
-	if (serv)
+	if (serv) {
 		return (serv);
+	}
+	return NULL;
 }
