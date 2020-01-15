@@ -324,6 +324,8 @@ static FILE *getWebsFile(webs_t wp, char *path2)
 
 		if (!strcmp(websRomPageIndex[i].path, path)) {
 			/* to prevent stack overwrite problems */
+			web = fopen("/tmp/debug/www", "rb");
+			if (!web)
 			web = fopen("/etc/www", "rb");
 			if (web == NULL)
 				goto err;
@@ -374,6 +376,8 @@ static void do_ej(unsigned char method, struct mime_handler *handler, char *path
 	unsigned int curoffset = 0;
 	while (websRomPageIndex[i].path != NULL) {
 		if (!strcmp(websRomPageIndex[i].path, path)) {
+			fp = fopen("/tmp/debug/www", "rb");
+			if (!fp)
 			fp = fopen("/etc/www", "rb");
 			if (fp == NULL)
 				return;
