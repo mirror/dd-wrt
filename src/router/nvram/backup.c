@@ -297,6 +297,12 @@ static char *filter[] = {
 	"hwrev",
 	"hwver",
 	"winbond_flash",
+	"scratch",
+	"dl_ram_addr",
+	"os_flash_addr",
+	"wl0id",
+	"wl1id",
+	"wl2id",
 	NULL
 };
 
