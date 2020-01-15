@@ -525,7 +525,10 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 		case 0x2000:
 		case 0x2800:
 		case 0x3000:
-			websWrite(wp, "%d + %d", bi->ctl_ch, bi->chanspec & 0xff);
+			if (!bi->ctl_ch)
+				websWrite(wp, "%d", bi->chanspec & 0xff);
+			else
+				websWrite(wp, "%d + %d", bi->ctl_ch, bi->chanspec & 0xff);
 		}
 	}
 	return;
