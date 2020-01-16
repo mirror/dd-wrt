@@ -262,6 +262,23 @@ define kernelfeatures
 	echo "CONFIG_IP_VS_NFCT=y" >> $(LINUXDIR)/.config; \
 	echo "CONFIG_IP_VS_PE_SIP=m" >> $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_SMBD)" = "y" ]; then \
+		sed -i 's/\# CONFIG_CRYPTO_MD5 is not set/CONFIG_CRYPTO_MD5=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_DES is not set/CONFIG_CRYPTO_DES=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CBC is not set/CONFIG_CRYPTO_CBC=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CTS is not set/CONFIG_CRYPTO_CTS=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_ECB is not set/CONFIG_CRYPTO_ECB=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_HMAC is not set/CONFIG_CRYPTO_HMAC=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_SHA1 is not set/CONFIG_CRYPTO_SHA1=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_AES is not set/CONFIG_CRYPTO_AES=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_ARC4 is not set/CONFIG_CRYPTO_ARC4=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_SHA256 is not set/CONFIG_CRYPTO_SHA256=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_SHA512 is not set/CONFIG_CRYPTO_SHA512=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_GCM is not set/CONFIG_CRYPTO_GCM=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CCM is not set/CONFIG_CRYPTO_CCM=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_AEAD is not set/CONFIG_CRYPTO_AEAD=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_AEAD2 is not set/CONFIG_CRYPTO_AEAD2=m/g' $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_NFS)" = "y" ]; then \
 		sed -i 's/\# CONFIG_NFS_FS is not set/CONFIG_NFS_FS=m/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_NFS_V2=y" >> $(LINUXDIR)/.config; \
