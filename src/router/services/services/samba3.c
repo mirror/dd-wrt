@@ -255,7 +255,7 @@ void start_samba3(void)
 	insmod("crypto_hash crypto_null aead aead2 sha256_generic sha512_generic seqiv arc4 ecb" \ //
 	       " hmac cmac md4 md5 gf128mul ctr ghash-generic gcm ccm aes-generic aes-arm" \ //
 	       " aes-arm-ce aes-arm-bs sha256-arm sha512-arm ghash-ce aes-ce-cipher aes-ce-ccm" \ //
-	       " aes-ce-blk aes-neon-blk aes-i586 aes-x86_64 aesni-intel ghash-clmulni-intel sha256-ssse3 sha512-ssse3");
+	       " aes-ce-blk aes-neon-blk aes-i586 aes-x86_64 aesni-intel ghash-clmulni-intel sha256-ssse3 sha512-ssse3 sha256-mb sha512-mb");
 	insmod("smbd");
 	eval("usmbd", "-c", "/tmp/smb.conf", "-u", "/tmp/smb.db");
 #endif
