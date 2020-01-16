@@ -29,11 +29,13 @@
 #include <exfat.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/mount.h>
 #include <unistd.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <fcntl.h>
 
 const struct fs_object* objects[] =
 {
@@ -186,6 +188,18 @@ static int logarithm2(int n)
 	return -1;
 }
 
+static inline unsigned int sector_size_bits(unsigned int size)
+{
+	unsigned int bits = 8;
+
+	do {
+		bits++;
+		size >>= 1;
+	} while (size > 256);
+
+	return bits;
+}
+
 static void usage(const char* prog)
 {
 	fprintf(stderr, "Usage: %s [-i volume-id] [-n label] "
@@ -242,6 +256,15 @@ int main(int argc, char* argv[])
 	if (argc - optind != 1)
 		usage(argv[0]);
 	spec = argv[optind];
+	int fd = open(spec, O_RDWR);
+	if (fd) {
+		int sector_size;
+		if (ioctl(fd, BLKSSZGET, &sector_size) < 0)
+			sector_size = 512;
+		sector_bits = sector_size_bits(sector_size);
+	close(fd);
+	}
+	
 
 	dev = exfat_open(spec, EXFAT_MODE_RW);
 	if (dev == NULL)
