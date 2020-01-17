@@ -25,7 +25,7 @@
 #include "crypto_ctx.h"
 
 #ifdef CONFIG_SMB_SERVER_DEBUGGING
-int smbd_debugging;
+int smbd_debugging = 1;
 #endif
 
 struct smbd_server_config server_conf;

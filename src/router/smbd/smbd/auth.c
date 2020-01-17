@@ -224,9 +224,12 @@ static int smbd_gen_sess_key(struct smbd_session *sess,
 	struct smbd_crypto_ctx *ctx;
 	int rc = -EINVAL;
 
+	smbd_debug("enter %s\n", __func__);
 	ctx = smbd_crypto_ctx_find_hmacmd5();
-	if (!ctx)
+	if (!ctx) {
+		smbd_debug("hmacmd5 crypto error\n");
 		goto out;
+	}
 
 	rc = crypto_shash_setkey(CRYPTO_HMACMD5_TFM(ctx),
 				 hash,
@@ -242,6 +245,8 @@ static int smbd_gen_sess_key(struct smbd_session *sess,
 		goto out;
 	}
 
+	smbd_debug("%s hmac  %*ph\n",__func__, 
+			SMB2_NTLMV2_SESSKEY_SIZE, hmac);
 	rc = crypto_shash_update(CRYPTO_HMACMD5(ctx),
 				 hmac,
 				 SMB2_NTLMV2_SESSKEY_SIZE);
@@ -255,6 +260,8 @@ static int smbd_gen_sess_key(struct smbd_session *sess,
 		smbd_debug("Could not generate hmacmd5 hash error %d\n", rc);
 		goto out;
 	}
+	smbd_debug("%s   %*ph\n",__func__, 
+			SMB2_NTLMV2_SESSKEY_SIZE, sess->sess_key);
 
 out:
 	smbd_release_crypto_ctx(ctx);
@@ -296,7 +303,8 @@ static int calc_ntlmv2_hash(struct smbd_session *sess, char *ntlmv2_hash,
 		ret = -ENOMEM;
 		goto out;
 	}
-
+	smbd_debug("convert username to unicode %s\n", user_name(sess->user));
+	
 	if (len) {
 		len = smb_strtoUTF16(uniname, user_name(sess->user), len,
 			sess->conn->local_nls);
@@ -320,6 +328,7 @@ static int calc_ntlmv2_hash(struct smbd_session *sess, char *ntlmv2_hash,
 		goto out;
 	}
 
+	smbd_debug("convert dname to unicode %s\n", dname);
 	len = smb_strtoUTF16((__le16 *)domain, dname, len,
 			     sess->conn->local_nls);
 
@@ -716,6 +725,8 @@ int smbd_sign_smb1_pdu(struct smbd_session *sess,
 		goto out;
 	}
 
+	smbd_debug("%s   %*ph\n",__func__, 
+			SMB2_NTLMV2_SESSKEY_SIZE, sess->sess_key);
 	rc = crypto_shash_update(CRYPTO_MD5(ctx), sess->sess_key, 40);
 	if (rc) {
 		smbd_debug("md5 update error %d\n", rc);
@@ -886,6 +897,8 @@ static int generate_key(struct smbd_session *sess, struct kvec label,
 		goto smb3signkey_ret;
 	}
 
+	smbd_debug("%s   %*ph\n",__func__, 
+			SMB2_NTLMV2_SESSKEY_SIZE, sess->sess_key);
 	rc = crypto_shash_setkey(CRYPTO_HMACSHA256_TFM(ctx),
 				 sess->sess_key,
 				 SMB2_NTLMV2_SESSKEY_SIZE);
