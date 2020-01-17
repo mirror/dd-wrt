@@ -3171,14 +3171,6 @@ void start_drivers(void)
 		rmmod("msdos");
 		rmmod("vfat");
 		rmmod("fat");
-		rmmod("nls_utf8");
-		rmmod("nls_iso8859-2");
-		rmmod("nls_iso8859-1");
-		rmmod("nls_cp437");
-		rmmod("nls_cp932");
-		rmmod("nls_cp936");
-		rmmod("nls_cp950");
-		rmmod("nls_base");
 //
 /* ext3 */
 #ifdef HAVE_USB_ADVANCED
