@@ -606,7 +606,7 @@ zfs_device_get_physical(struct udev_device *dev, char *bufptr, size_t buflen)
 int
 zpool_label_disk_wait(const char *path, int timeout_ms)
 {
-#ifdef HAVE_LIBUDEV
+#if 0 //def HAVE_LIBUDEV
 	struct udev *udev;
 	struct udev_device *dev = NULL;
 	char nodepath[MAXPATHLEN];
