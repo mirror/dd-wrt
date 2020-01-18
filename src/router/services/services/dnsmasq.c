@@ -106,7 +106,7 @@ static int hasmdhcp(void)
 
 static int canlan(void)
 {
-	if (landhcp() && (nvram_matchi("dhcpfwd_enable", 0) || nvram_matchi("dns_crypt", 1)))
+	if ((nvram_matchi("dhcpfwd_enable", 0) || nvram_matchi("dns_crypt", 1)))
 		return 1;
 	return 0;
 }
