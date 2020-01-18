@@ -1,6 +1,6 @@
 include $(top_srcdir)/config/Rules.am
 
-noinst_LTLIBRARIES = libtpool.la
+lib_LTLIBRARIES = libtpool.la
 
 USER_C = \
 	thread_pool.c \

@@ -12,7 +12,7 @@ AM_CFLAGS += $(LIBTIRPC_CFLAGS)
 AM_CCASFLAGS = \
 	$(CFLAGS)
 
-noinst_LTLIBRARIES = libspl.la
+lib_LTLIBRARIES = libspl.la
 
 USER_C = \
 	list.c \
