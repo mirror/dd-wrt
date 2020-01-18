@@ -1469,6 +1469,16 @@ void start_lan(void)
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
+#elif HAVE_WA901V5
+	nvram_setz(lan_ifnames, "eth0 ath0");
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		PORTSETUPWAN("");
+	} else {
+		PORTSETUPWAN("eth0");
+	}
+	if (nvram_match("et0macaddr", ""))
+		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
+	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WR941V6
 	nvram_setz(lan_ifnames, "eth0 eth1 ath0");
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -3107,6 +3117,9 @@ void start_wan(int status)
 #elif HAVE_WR841V9
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
+#elif HAVE_WA901V5
+	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_WR941V6
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
