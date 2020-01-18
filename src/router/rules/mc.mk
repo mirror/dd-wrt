@@ -23,18 +23,22 @@ mc-configure: glib20 ncurses
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
+	cd mc && autoreconf -fi
 	cd mc && ./configure --host=$(ARCH)-uclibc-linux AWK="awk" \
-		CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -DSTAT_STATVFS" \
-		LDFLAGS="-L$(TOP)/mc/intl" \
+		CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -DSTAT_STATVFS -I$(TOP)/glib20/gettext" \
+		LDFLAGS="-L$(TOP)/glib20/gettext/.libs -lintl" \
 		GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -L$(INSTALLDIR)/util-linux/usr/lib" \
 		GLIB_LIBS="-L$(TOP)/glib20/libglib/glib/.libs -lglib-2.0" \
 		GMODULE_CFLAGS="-pthread -I$(TOP)/glib20/libglib/gmodule -I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib" \
 		GMODULE_LIBS="-pthread -L$(TOP)/glib20/libglib/gmodule/.libs -L$(TOP)/glib20/libglib/glib/.libs -lrt -lglib-2.0" \
-	--with-included-gettext \
+	--without-included-gettext \
 	--with-screen=ncurses \
+	--disable-nls \
 	--enable-charset \
 	--enable-background \
 	--enable-largefile \
+	--disable-vfs-sftp \
+	--with-mmap \
 	--with-internal-edit \
 	--with-subshell \
 	--without-gpm-mouse \
@@ -45,7 +49,6 @@ mc-configure: glib20 ncurses
 	--disable-doxygen-doc \
 	--enable-silent-rules \
 	--with-homedir=/tmp/mc \
-	--disable-vfs-sftp \
 	--prefix=/usr \
 	--libdir=/usr/lib \
 
@@ -104,7 +107,7 @@ endif
 endif
 	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
 	rm -f $(INSTALLDIR)/util-linux/lib/libsmartcols.so*
-
+	if test -e "mc/Makefile"; then $(MAKE) -C mc; fi
 
 
 mc-install:
