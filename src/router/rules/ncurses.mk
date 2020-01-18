@@ -5,6 +5,8 @@ ncurses-configure:
 		--enable-const \
 		--enable-overwrite \
 		--disable-rpath \
+		--disable-termcap \
+		--disable-rpath-hack \
 		--without-ada \
 		--without-cxx \
 		--without-cxx-binding \
@@ -13,6 +15,7 @@ ncurses-configure:
 		--without-progs \
 		--with-normal \
 		--with-shared \
+		--enable-widec \
 		--with-terminfo-dirs=/etc/terminfo \
 		--with-default-terminfo-dir=/etc/terminfo 
 	make -j 4 -C ncurses
