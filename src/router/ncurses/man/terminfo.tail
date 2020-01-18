@@ -1,7 +1,32 @@
-.\" $Id: terminfo.tail,v 1.88 2017/08/12 22:26:02 tom Exp $
-.\" Beginning of terminfo.tail file
-.\" This file is part of ncurses.
-.\" See "terminfo.head" for copyright.
+.\"***************************************************************************
+.\" Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
+.\"                                                                          *
+.\" Permission is hereby granted, free of charge, to any person obtaining a  *
+.\" copy of this software and associated documentation files (the            *
+.\" "Software"), to deal in the Software without restriction, including      *
+.\" without limitation the rights to use, copy, modify, merge, publish,      *
+.\" distribute, distribute with modifications, sublicense, and/or sell       *
+.\" copies of the Software, and to permit persons to whom the Software is    *
+.\" furnished to do so, subject to the following conditions:                 *
+.\"                                                                          *
+.\" The above copyright notice and this permission notice shall be included  *
+.\" in all copies or substantial portions of the Software.                   *
+.\"                                                                          *
+.\" THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS  *
+.\" OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF               *
+.\" MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.   *
+.\" IN NO EVENT SHALL THE ABOVE COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,   *
+.\" DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR    *
+.\" OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR    *
+.\" THE USE OR OTHER DEALINGS IN THE SOFTWARE.                               *
+.\"                                                                          *
+.\" Except as contained in this notice, the name(s) of the above copyright   *
+.\" holders shall not be used in advertising or otherwise to promote the     *
+.\" sale, use or other dealings in this Software without prior written       *
+.\" authorization.                                                           *
+.\"***************************************************************************
+.\"
+.\" $Id: terminfo.tail,v 1.98 2019/11/30 20:54:32 tom Exp $
 .ps +1
 .SS User-Defined Capabilities
 .
@@ -286,7 +311,7 @@ series, as well as hard copy and APL terminals.)
 If there is a code to move the cursor to the left edge of the current
 row, give this as
 .BR cr .
-(Normally this will be carriage return, control M.)
+(Normally this will be carriage return, control/M.)
 If there is a code to produce an audible signal (bell, beep, etc)
 give this as
 .BR bel .
@@ -370,7 +395,7 @@ it may still be possible to craft a working
 .B nel
 out of one or both of them.
 .PP
-These capabilities suffice to describe hard-copy and \*(lqglass-tty\*(rq terminals.
+These capabilities suffice to describe hard-copy and \*(``glass-tty\*('' terminals.
 Thus the model 33 teletype is described as
 .PP
 .DT
@@ -428,9 +453,9 @@ The \fB%\fR encodings have the following meanings:
 outputs \*(``%\*(''
 .TP
 \fB%\fP\fI[[\fP:\fI]flags][width[.precision]][\fP\fBdoxXs\fP\fI]\fP
-as in \fBprintf\fP, flags are \fI[\-+#]\fP and \fIspace\fP.
+as in \fBprintf\fP(3), flags are \fI[\-+#]\fP and \fIspace\fP.
 Use a \*(``:\*('' to allow the next character to be a \*(``\-\*('' flag,
-avoiding interpreting "%\-" as an operator.
+avoiding interpreting \*(``%\-\*('' as an operator.
 .TP
 \f(CW%c\fP
 print \fIpop()\fP like %c in \fBprintf\fP
@@ -453,7 +478,7 @@ set static variable \fI[a\-z]\fP to \fIpop()\fP
 \fB%g\fP\fI[A\-Z]\fP
 get static variable \fI[a\-z]\fP and push it
 .IP
-The terms "static" and "dynamic" are misleading.
+The terms \*(``static\*('' and \*(``dynamic\*('' are misleading.
 Historically, these are simply two different sets of variables,
 whose values are not reset between calls to \fBtparm\fP(3X).
 However, that fact is not documented in other implementations.
@@ -516,12 +541,12 @@ to be sent \eE&a12c03Y padded for 6 milliseconds.
 Note that the order
 of the rows and columns is inverted here, and that the row and column
 are printed as two digits.
-Thus its \fBcup\fR capability is \*(lqcup=6\eE&%p2%2dc%p1%2dY\*(rq.
+Thus its \fBcup\fR capability is \*(``cup=6\eE&%p2%2dc%p1%2dY\*(''.
 .PP
 The Microterm \s-1ACT-IV\s0 needs the current row and column sent
 preceded by a \fB^T\fR, with the row and column simply encoded in binary,
-\*(lqcup=^T%p1%c%p2%c\*(rq.
-Terminals which use \*(lq%c\*(rq need to be able to
+\*(``cup=^T%p1%c%p2%c\*(''.
+Terminals which use \*(``%c\*('' need to be able to
 backspace the cursor (\fBcub1\fR),
 and to move the cursor up one line on the screen (\fBcuu1\fR).
 This is necessary because it is not always safe to transmit \fB\en\fR
@@ -531,7 +556,7 @@ tabs are never expanded, so \et is safe to send.
 This turns out to be essential for the Ann Arbor 4080.)
 .PP
 A final example is the \s-1LSI ADM\s0-3a, which uses row and column
-offset by a blank character, thus \*(lqcup=\eE=%p1%' '%+%c%p2%' '%+%c\*(rq.
+offset by a blank character, thus \*(``cup=\eE=%p1%' '%+%c%p2%' '%+%c\*(''.
 After sending \*(``\eE=\*('', this pushes the first parameter, pushes the
 ASCII value for a space (32), adds them (pushing the sum on the stack
 in place of the two previous values) and outputs that value as a character.
@@ -569,7 +594,7 @@ spaces to the right) these can be given as
 .BR cub ,
 .BR cuf ,
 and
-.BR cuu
+.B cuu
 with a single parameter indicating how many spaces to move.
 These are primarily useful if the terminal does not have
 .BR cup ,
@@ -700,18 +725,18 @@ either eliminated, or expanded to two untyped blanks.
 You can determine the
 kind of terminal you have by clearing the screen and then typing
 text separated by cursor motions.
-Type \*(lqabc\ \ \ \ def\*(rq using local
-cursor motions (not spaces) between the \*(lqabc\*(rq and the \*(lqdef\*(rq.
-Then position the cursor before the \*(lqabc\*(rq and put the terminal in insert
+Type \*(``abc\ \ \ \ def\*('' using local
+cursor motions (not spaces) between the \*(``abc\*('' and the \*(``def\*(''.
+Then position the cursor before the \*(``abc\*('' and put the terminal in insert
 mode.
 If typing characters causes the rest of the line to shift
 rigidly and characters to fall off the end, then your terminal does
 not distinguish between blanks and untyped positions.
-If the \*(lqabc\*(rq
-shifts over to the \*(lqdef\*(rq which then move together around the end of the
+If the \*(``abc\*(''
+shifts over to the \*(``def\*('' which then move together around the end of the
 current line and onto the next as you insert, you have the second type of
 terminal, and should give the capability \fBin\fR, which stands for
-\*(lqinsert null\*(rq.
+\*(``insert null\*(''.
 .PP
 While these are two logically separate attributes (one line versus multi-line
 insert mode, and special treatment of untyped spaces) we have seen no
@@ -959,7 +984,7 @@ give this sequence as
 If there is a way to make the cursor completely invisible, give that as
 .BR civis .
 The capability
-.BR cnorm
+.B cnorm
 should be given which undoes the effects of both of these modes.
 .PP
 If your terminal correctly generates underlined characters
@@ -1082,13 +1107,17 @@ sequences to make sure that the change becomes visible.
 .PP
 .SS Tabs and Initialization
 .PP
+A few capabilities are used only for tabs:
+.bP
 If the terminal has hardware tabs, the command to advance to the next
 tab stop can be given as
 .B ht
-(usually control I).
+(usually control/I).
+.bP
 A \*(``back-tab\*('' command which moves leftward to the preceding tab stop can
 be given as
 .BR cbt .
+.IP
 By convention, if the teletype modes indicate that tabs are being
 expanded by the computer rather than being sent to the terminal,
 programs should not use
@@ -1097,13 +1126,15 @@ or
 .B cbt
 even if they are present, since the user may not have the tab stops
 properly set.
+.bP
 If the terminal has hardware tabs which are initially set every
 .I n
 spaces when the terminal is powered up,
 the numeric parameter
 .B it
 is given, showing the number of spaces the tabs are set to.
-This is normally used by the \fB@TSET@\fP
+.IP
+The \fBit\fP capability is normally used by the \fB@TSET@\fP
 command to determine whether to set the mode for hardware tab expansion,
 and whether to set the tab stops.
 If the terminal has tab stops that can be saved in non-volatile memory,
@@ -1111,14 +1142,18 @@ the terminfo description can assume that they are properly set.
 .PP
 Other capabilities
 include
+.bP
 .BR is1 ,
 .BR is2 ,
 and
 .BR is3 ,
 initialization strings for the terminal,
+.bP
 .BR iprog ,
 the path name of a program to be run to initialize the terminal,
+.bP
 and \fBif\fR, the name of a file containing long initialization strings.
+.PP
 These strings are expected to set the terminal into modes consistent
 with the rest of the terminfo description.
 They are normally sent to the terminal, by the
@@ -1128,29 +1163,31 @@ They will be printed in the following order:
 .RS
 .TP
 run the program
-.BR iprog
+.B iprog
 .TP
 output
-.BR is1
-.BR is2
+.br
+\fBis1\fP and
+.br
+\fBis2\fP
 .TP
 set the margins using
-.BR mgc ,
-.BR smgl
-and
-.BR smgr
+\fBmgc\fP or
+.br
+\fBsmglp\fP and \fBsmgrp\fP or
+.br
+\fBsmgl\fP and \fBsmgr\fP
 .TP
 set tabs using
 .B tbc
 and
-.BR hts
+.B hts
 .TP
 print the file
-.BR if
+\fBif\fP
 .TP
-and finally
-output
-.BR is3 .
+and finally output
+\fBis3\fP.
 .RE
 .PP
 Most initialization is done with
@@ -1167,7 +1204,7 @@ A set of sequences that does a harder reset from a totally unknown state
 can be given as
 .BR rs1 ,
 .BR rs2 ,
-.BR rf
+.B rf
 and
 .BR rs3 ,
 analogous to
@@ -1175,13 +1212,16 @@ analogous to
 .B is2 ,
 .B if
 and
-.BR is3
+.B is3
 respectively.
-These strings are output by the \fB@RESET@\fP program,
+These strings are output
+by \fIreset\fP option of \fB@TPUT@\fP,
+or by the \fB@RESET@\fP program
+(an alias of \fB@TSET@\fP),
 which is used when the terminal gets into a wedged state.
 Commands are normally placed in
 .BR rs1 ,
-.BR rs2
+.B rs2
 .B rs3
 and
 .B rf
@@ -1191,12 +1231,12 @@ For example, the command to set the vt100 into 80-column mode would
 normally be part of
 .BR is2 ,
 but it causes an annoying glitch of the screen and is not normally
-needed since the terminal is usually already in 80 column mode.
+needed since the terminal is usually already in 80-column mode.
 .PP
 The \fB@RESET@\fP program writes strings including
 .BR iprog ,
 etc., in the same order as the
-.IR init
+.I init
 program, using 
 .BR rs1 ,
 etc., instead of
@@ -1207,9 +1247,10 @@ If any of
 .BR rs2 ,
 .BR rs3 ,
 or
-.BR rf
-reset capability strings are missing, the \fB@RESET@\fP 
-program falls back upon the corresponding initialization capability string.
+.B rf
+reset capability strings are missing,
+the \fB@RESET@\fP program
+falls back upon the corresponding initialization capability string.
 .PP
 If there are commands to set and clear tab stops, they can be given as
 .B tbc
@@ -1222,6 +1263,33 @@ described by this, the sequence can be placed in
 .B is2
 or
 .BR if .
+.PP
+The \fB@TPUT@ reset\fP command uses the same capability strings
+as the \fB@RESET@\fP command,
+although the two programs (\fB@TPUT@\fP and \fB@RESET@\fP)
+provide different command-line options.
+.PP
+In practice, these terminfo capabilities are not often used in
+initialization of tabs
+(though they are required for the \fB@TABS@\fP program):
+.bP
+Almost all hardware terminals (at least those which supported tabs)
+initialized those to every \fIeight\fP columns:
+.IP
+The only exception was the AT&T 2300 series,
+which set tabs to every \fIfive\fP columns.
+.bP
+In particular, developers of the hardware terminals which are commonly used
+as models for modern terminal emulators provided documentation demonstrating
+that \fIeight\fP columns were the standard.
+.bP
+Because of this, the terminal initialization programs
+\fB@TPUT@\fP and \fB@TSET@\fP
+use the
+\fBtbc\fP (\fBclear_all_tabs\fP) and
+\fBhts\fP (\fBset_tab\fP) capabilities directly
+only when the \fBit\fP (\fBinit_tabs\fP) capability
+is set to a value other than \fIeight\fP.
 .SS Delays and Padding
 .PP
 Many older and slower terminals do not support either XON/XOFF or DTR
@@ -1548,7 +1616,7 @@ and
 This is primarily useful for superscripts and subscripts on hard-copy terminals.
 If a hard-copy terminal can eject to the next page (form feed), give this as
 .B ff
-(usually control L).
+(usually control/L).
 .PP
 If there is a command to repeat a given character a given number of
 times (to save time transmitting a large number of identical characters)
@@ -1661,9 +1729,9 @@ delete and insert line.
 The ncurses implementation ignores this glitch.
 .PP
 The Beehive Superbee, which is unable to correctly transmit the escape
-or control C characters, has
+or control/C characters, has
 .BR xsb ,
-indicating that the f1 key is used for escape and f2 for control C.
+indicating that the f1 key is used for escape and f2 for control/C.
 (Only certain Superbees have this problem, depending on the ROM.)
 Note that in older terminfo versions, this capability was called
 \*(``beehive_glitch\*(''; it is now \*(``no_esc_ctl_c\*(''.
@@ -1695,14 +1763,14 @@ Some application programs allocate more than
 the recommended 1K for the termcap entry; others do not.
 .PP
 Each termcap entry has two important sizes associated with it: before
-"tc" expansion, and after "tc" expansion.
-"tc" is the capability that
+\*(``tc\*('' expansion, and after \*(``tc\*('' expansion.
+\*(``tc\*('' is the capability that
 tacks on another termcap entry to the end of the current one, to add
 on its capabilities.
-If a termcap entry does not use the "tc"
+If a termcap entry does not use the \*(``tc\*(''
 capability, then of course the two lengths are the same.
 .PP
-The "before tc expansion" length is the most important one, because it
+The \*(``before tc expansion\*('' length is the most important one, because it
 affects more than just users of that particular terminal.
 This is the
 length of the entry as it exists in /etc/termcap, minus the
@@ -1734,16 +1802,16 @@ If a
 termcap library truncates long entries, like OSF/1 3.0, it is immune to dying
 here but will return incorrect data for the terminal.
 .PP
-The "after tc expansion" length will have a similar effect to the
+The \*(``after tc expansion\*('' length will have a similar effect to the
 above, but only for people who actually set TERM to that terminal
-type, since \fBtgetent\fP only does "tc" expansion once it is found the
+type, since \fBtgetent\fP only does \*(``tc\*('' expansion once it is found the
 terminal type it was looking for, not while searching.
 .PP
 In summary, a termcap entry that is longer than 1023 bytes can cause,
 on various combinations of termcap libraries and applications, a core
 dump, warnings, or incorrect operation.
 If it is too long even before
-"tc" expansion, it will have this effect even for users of some other
+\*(``tc\*('' expansion, it will have this effect even for users of some other
 terminal types and users whose TERM variable does not have a termcap
 entry.
 .PP
@@ -1836,10 +1904,12 @@ Supports both the SVr4 set and the AIX extensions.
 \*d/?/*
 files containing terminal descriptions
 .SH SEE ALSO
+\fB@TABS@\fR(1),
 \fB@TIC@\fR(1M),
 \fB@INFOCMP@\fR(1M),
 \fBcurses\fR(3X),
 \fBcurs_color\fR(3X),
+\fBcurs_variables\fR(3X),
 \fBprintf\fR(3),
 \fBterm\fR(\*n).
 \fBterm_variables\fR(3X).

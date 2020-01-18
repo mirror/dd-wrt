@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2017 Free Software Foundation, Inc.                        *
+ * Copyright (c) 2017-2018,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,7 +26,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: demo_new_pair.c,v 1.18 2017/10/11 22:16:14 tom Exp $
+ * $Id: demo_new_pair.c,v 1.20 2019/12/14 23:26:09 tom Exp $
  *
  * Demonstrate the alloc_pair() function.
  */
@@ -223,7 +223,7 @@ main(int argc, char *argv[])
 
     if (isatty(fileno(stderr))) {
 	output = stderr;
-    } else if ((ch = open("/dev/tty", O_WRONLY)) != 0) {
+    } else if ((ch = open("/dev/tty", O_WRONLY)) >= 0) {
 	output = fdopen(ch, "w");
     } else {
 	fprintf(stderr, "cannot open terminal for output\n");
@@ -336,7 +336,7 @@ main(int argc, char *argv[])
 	total_cells += 1 + (use_wide ? 1 : 0);
 	++current;
     }
-    exit_curses();
+    stop_curses();
     fclose(output);
 
     printf("%.1f cells/second\n",

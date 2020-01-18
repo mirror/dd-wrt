@@ -1,5 +1,5 @@
 .\"***************************************************************************
-.\" Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
+.\" Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
 .\" copy of this software and associated documentation files (the            *
@@ -26,7 +26,7 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: tic.1m,v 1.66 2017/11/18 23:51:17 tom Exp $
+.\" $Id: tic.1m,v 1.76 2019/11/30 20:51:55 tom Exp $
 .TH @TIC@ 1M ""
 .ie \n(.g .ds `` \(lq
 .el       .ds `` ``
@@ -98,7 +98,7 @@ default directory name (only adding a ".db" suffix).
 .PP
 In either case (directory or hashed database),
 \fB@TIC@\fP will create the container if it does not exist.
-For a directory, this would be the "terminfo" leaf,
+For a directory, this would be the \*(``terminfo\*('' leaf,
 versus a "terminfo.db" file.
 .PP
 The results are normally placed in the system terminfo database \fB\*d\fR.
@@ -128,6 +128,14 @@ directories listed in the TERMINFO_DIRS environment variable,
 a compiled-in list of directories (@TERMINFO_DIRS@), and
 .bP
 the system terminfo database (\fI\*d\fR).
+.SS ALIASES
+.PP
+This is the same program as @INFOTOCAP@ and @CAPTOINFO@;
+usually those are linked to, or copied from this program:
+.bP
+When invoked as @INFOTOCAP@, @TIC@ sets the \fB\-I\fP option.
+.bP
+When invoked as @CAPTOINFO@, @TIC@ sets the \fB\-C\fP option.
 .SS OPTIONS
 .TP
 \fB\-0\fR
@@ -172,8 +180,8 @@ the string will not convert completely.
 .RE
 .TP
 \fB\-c\fR
-tells \fB@TIC@\fP to only check \fIfile\fR for errors, including syntax problems and
-bad use links.
+tells \fB@TIC@\fP to only check \fIfile\fR for errors,
+including syntax problems and bad use-links.
 If you specify \fB\-C\fR (\fB\-I\fR) with this option, the code
 will print warnings about entries which, after use resolution, are more than
 1023 (4096) bytes long.
@@ -205,7 +213,8 @@ the list, the entry will be written or translated as normal.
 Otherwise no output will be generated for it.
 The option value is interpreted as a file containing the list if it
 contains a '/'.
-(Note: depending on how tic was compiled, this option may require \fB\-I\fR or \fB\-C\fR.)
+(Note: depending on how @TIC@ was compiled,
+this option may require \fB\-I\fR or \fB\-C\fR.)
 .TP
 \fB\-f\fR
 Display complex terminfo strings which contain if/then/else/endif expressions
@@ -273,7 +282,8 @@ versions of terminfo like those on SVr1, Ultrix, or HP/UX that do not support
 the full set of SVR4/XSI Curses terminfo; and outright broken ports like AIX 3.x
 that have their own extensions incompatible with SVr4/XSI.
 Available subsets
-are "SVr1", "Ultrix", "HP", "BSD" and "AIX"; see \fBterminfo\fR(\*n) for details.
+are \*(``SVr1\*('', \*(``Ultrix\*('', \*(``HP\*('', \*(``BSD\*('' and \*(``AIX\*('';
+see \fBterminfo\fR(\*n) for details.
 .TP
 \fB\-r\fR
 Force entry resolution (so there are no remaining tc capabilities) even
@@ -356,7 +366,7 @@ The parameter is optional.
 If it is omitted, it defaults to 60.
 .TP
 \fB\-x\fR
-Treat unknown capabilities as user-defined.
+Treat unknown capabilities as user-defined (see \fBuser_caps(\*n)\fP).
 That is, if you supply a capability name which \fB@TIC@\fP does not recognize,
 it will infer its type (boolean, number or string) from the syntax and
 make an extended table entry for that.
@@ -398,15 +408,103 @@ The name field cannot
 exceed 512 bytes.
 Terminal names exceeding the maximum alias length
 (32 characters on systems with long filenames, 14 characters otherwise)
-will be truncated to the maximum alias length and a warning message will be printed.
-.SH COMPATIBILITY
+will be truncated to the maximum alias length
+and a warning message will be printed.
+.SH HISTORY
+.PP
+System V Release 2 provided a \fBtic\fP utility.
+It accepted a single option: \fB\-v\fP (optionally followed by a number).
+According to Ross Ridge's comment in \fImytinfo\fP,
+this version of \fBtic\fP was
+unable to represent cancelled capabilities.
+.PP
+System V Release 3 provided a different \fBtic\fP utility,
+written by Pavel Curtis,
+(originally named \*(``compile\*('' in \fIpcurses\fP).
+This added an option \fB\-c\fP to check the file for
+errors, with the caveat that errors in \*(``use=\*('' links
+would not be reported.
+System V Release 3 documented a few warning messages which
+did not appear in \fIpcurses\fP.
+While the program itself was changed little as development
+continued with System V Release 4,
+the table of capabilities grew from 180 (\fIpcurses\fP) to 464 (Solaris).
+.PP
+In early development of ncurses (1993),
+Zeyd Ben-Halim used the table from \fImytinfo\fP to
+extend the \fIpcurses\fP table to 469 capabilities
+(456 matched SVr4, 8 were only in SVr4, 13 were not in SVr4).
+Of those 13, 11 were ultimately discarded
+(perhaps to match the draft of X/Open Curses).
+The exceptions were
+\fBmemory_lock_above\fP and
+\fBmemory_unlock\fP (see \fBuser_caps\fP(5)).
+.PP
+Eric Raymond incorporated parts of \fImytinfo\fP into ncurses
+to implement the termcap-to-terminfo source conversion,
+and extended that to begin development of 
+the corresponding terminfo-to-termcap source conversion,
+Thomas Dickey completed that development over the course of several years.
+.PP
+In 1999, Thomas Dickey added the \fB\-x\fP option
+to support user-defined capabilities.
+.PP
+In 2010, Roy Marples provided a \fBtic\fP program
+and terminfo library for NetBSD.
+That implementation adapts several features from ncurses,
+including \fB@TIC@\fP's \fB\-x\fP option.
+.PP
+The \fB\-c\fP option tells \fB@TIC@\fP to check for problems in the
+terminfo source file.
+Continued development provides additional checks:
+.bP
+\fIpcurses\fP had 8 warnings
+.bP
+ncurses in 1996 had 16 warnings
+.bP
+Solaris (SVr4) curses has 28 warnings
+.bP
+NetBSD tic in 2019 has 19 warnings.
+.bP
+ncurses in 2019 has 96 warnings
+.PP
+The checking done in ncurses' \fB@TIC@\fP helps with the conversion to
+termcap, as well as pointing out errors and inconsistencies.
+It is also used to ensure consistency with the user-defined capabilities.
+There are 527 distinct capabilities in ncurses' terminal database;
+128 of those are user-defined.
+.SH PORTABILITY
+.PP
+X/Open Curses, Issue 7 (2009) provides a brief description of \fBtic\fP.
+It lists one option: \fB\-c\fP.
+The omission of \fB\-v\fP is unexpected.
+The change history states that the description is derived from True64 UNIX.
+According to its manual pages, that system also supported the \fB\-v\fP option.
+.PP
+Shortly after Issue 7 was released, Tru64 was discontinued.
+As of 2019, the surviving implementations of \fBtic\fP
+are SVr4 (AIX, HP-UX and Solaris),
+ncurses
+and NetBSD curses.
+The SVr4 \fBtic\fP programs all support the \fB\-v\fP option.
+The NetBSD \fBtic\fP program follows X/Open's documentation,
+omitting the \fB\-v\fP option.
+.PP
+The X/Open rationale states that some implementations of \fBtic\fP
+read terminal descriptions from the standard input if the \fIfile\fP
+parameter is omitted.
+None of these implementations do that.
+Further, it comments that some may choose to read from \*(''./terminfo.src\*(''
+but that is obsolescent behavior from SVr2,
+and is not (for example) a documented feature of SVr3.
+.SS COMPATIBILITY
 There is some evidence that historic \fB@TIC@\fR implementations treated
 description fields with no whitespace in them as additional aliases or
 short names.
 This \fB@TIC@\fR does not do that, but it does warn when
 description fields may be treated that way and check them for dangerous
 characters.
-.SH EXTENSIONS
+.SS EXTENSIONS
 Unlike the SVr4 \fB@TIC@\fR command, this implementation can actually
 compile termcap sources.
 In fact, entries in terminfo and termcap syntax can
@@ -427,28 +525,45 @@ compiled entries.
 The error messages from this \fB@TIC@\fR have the same format as GNU C
 error messages, and can be parsed by GNU Emacs's compile facility.
 .PP
-The
-\fB\-0\fR,
-\fB\-1\fR,
-\fB\-C\fR,
-\fB\-G\fR,
-\fB\-I\fR,
-\fB\-N\fR,
-\fB\-R\fR,
-\fB\-T\fR,
-\fB\-V\fR,
-\fB\-a\fR,
-\fB\-e\fR,
-\fB\-f\fR,
-\fB\-g\fR,
-\fB\-o\fR,
-\fB\-r\fR,
-\fB\-s\fR,
-\fB\-t\fR and
+Aside from \fB\-c\fP and \fB\-v\fP, options are not portable:
+.bP
+Most of @TIC@'s options 
+are not supported by SVr4 \fBtic\fP:
+.sp
+.RS
+\fB\-0\fR
+\fB\-1\fR
+\fB\-C\fR
+\fB\-G\fR
+\fB\-I\fR
+\fB\-N\fR
+\fB\-R\fR
+\fB\-T\fR
+\fB\-V\fR
+\fB\-a\fR
+\fB\-e\fR
+\fB\-f\fR
+\fB\-g\fR
+\fB\-o\fR
+\fB\-r\fR
+\fB\-s\fR
+\fB\-t\fR
 \fB\-x\fR
-options
-are not supported under SVr4.
-The SVr4 \fB\-c\fR mode does not report bad use links.
+.RE
+.bP
+The NetBSD \fBtic\fP  supports a few of the ncurses options
+.sp
+.RS
+\fB\-a\fP
+\fB\-o\fP
+\fB\-x\fP
+.RE
+.IP
+and adds \fB\-S\fP
+(a feature which does the same thing
+as @INFOCMP@'s \fB\-e\fP and \fB\-E\fP options).
+.PP
+The SVr4 \fB\-c\fR mode does not report bad \*(``use=\*('' links.
 .PP
 System V does not compile entries to or read entries from your
 \fI$HOME/.terminfo\fR database unless TERMINFO is explicitly set to it.
@@ -464,6 +579,7 @@ Compiled terminal description database.
 \fBcurses\fR(3X),
 \fBterm\fR(\*n).
 \fBterminfo\fR(\*n).
+\fBuser_caps\fR(\*n).
 .PP
 This describes \fBncurses\fR
 version @NCURSES_MAJOR@.@NCURSES_MINOR@ (patch @NCURSES_PATCH@).

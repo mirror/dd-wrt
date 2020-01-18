@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2017,2018 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -41,7 +41,7 @@
 #define CUR SP_TERMTYPE
 #endif
 
-MODULE_ID("$Id: lib_screen.c,v 1.93 2018/01/14 17:39:47 tom Exp $")
+MODULE_ID("$Id: lib_screen.c,v 1.96 2019/07/20 20:23:21 tom Exp $")
 
 #define MAX_SIZE 0x3fff		/* 16k is big enough for a window or pad */
 
@@ -447,7 +447,7 @@ read_row(char *source, NCURSES_CH_T * prior, NCURSES_CH_T * target, int length)
 	int len;
 
 	source = decode_cchar(source, prior, target);
-	len = wcwidth(target->chars[0]);
+	len = _nc_wacs_width(target->chars[0]);
 	if (len > 1) {
 	    int n;
 
@@ -514,13 +514,13 @@ NCURSES_SP_NAME(getwin) (NCURSES_SP_DCLx FILE *filep)
      * Read the first 4 bytes to determine first if this is an old-format
      * screen-dump, or new-format.
      */
-    if (read_block(&tmp, 4, filep) < 0) {
+    if (read_block(&tmp, (size_t) 4, filep) < 0) {
 	returnWin(0);
     }
     /*
      * If this is a new-format file, and we do not support it, give up.
      */
-    if (!memcmp(&tmp, my_magic, 4)) {
+    if (!memcmp(&tmp, my_magic, (size_t) 4)) {
 #if NCURSES_EXT_PUTWIN
 	if (read_win(&tmp, filep) < 0)
 #endif
@@ -823,7 +823,7 @@ putwin(WINDOW *win, FILE *filep)
 	    attr_t attr;
 
 	    *buffer = '\0';
-	    if (!strncmp(name, "_pad.", 5) && !(win->_flags & _ISPAD)) {
+	    if (!strncmp(name, "_pad.", (size_t) 5) && !(win->_flags & _ISPAD)) {
 		continue;
 	    }
 	    switch (scr_params[y].type) {
@@ -894,7 +894,7 @@ putwin(WINDOW *win, FILE *filep)
 		returnCode(code);
 	    for (x = 0; x <= win->_maxx; x++) {
 #if NCURSES_WIDECHAR
-		int len = wcwidth(data[x].chars[0]);
+		int len = _nc_wacs_width(data[x].chars[0]);
 		encode_cell(buffer, TOP_SLIMIT CHREF(data[x]), CHREF(last_cell));
 		last_cell = data[x];
 		PUTS(buffer);
@@ -948,7 +948,7 @@ NCURSES_SP_NAME(scr_restore) (NCURSES_SP_DCLx const char *file)
     T((T_CALLED("scr_restore(%p,%s)"), (void *) SP_PARM, _nc_visbuf(file)));
 
     if (_nc_access(file, R_OK) >= 0
-	&& (fp = fopen(file, "rb")) != 0) {
+	&& (fp = fopen(file, BIN_R)) != 0) {
 	delwin(NewScreen(SP_PARM));
 	NewScreen(SP_PARM) = getwin(fp);
 #if !USE_REENTRANT
@@ -979,7 +979,7 @@ scr_dump(const char *file)
     T((T_CALLED("scr_dump(%s)"), _nc_visbuf(file)));
 
     if (_nc_access(file, W_OK) < 0
-	|| (fp = fopen(file, "wb")) == 0) {
+	|| (fp = fopen(file, BIN_W)) == 0) {
 	result = ERR;
     } else {
 	(void) putwin(newscr, fp);
@@ -1006,7 +1006,7 @@ NCURSES_SP_NAME(scr_init) (NCURSES_SP_DCLx const char *file)
 	FILE *fp = 0;
 
 	if (_nc_access(file, R_OK) >= 0
-	    && (fp = fopen(file, "rb")) != 0) {
+	    && (fp = fopen(file, BIN_R)) != 0) {
 	    delwin(CurScreen(SP_PARM));
 	    CurScreen(SP_PARM) = getwin(fp);
 #if !USE_REENTRANT

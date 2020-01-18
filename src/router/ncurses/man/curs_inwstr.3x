@@ -1,5 +1,5 @@
 .\"***************************************************************************
-.\" Copyright (c) 2002-2012,2017 Free Software Foundation, Inc.              *
+.\" Copyright (c) 2002-2018,2019 Free Software Foundation, Inc.              *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
 .\" copy of this software and associated documentation files (the            *
@@ -26,8 +26,12 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: curs_inwstr.3x,v 1.9 2017/10/28 23:42:58 tom Exp $
+.\" $Id: curs_inwstr.3x,v 1.12 2019/11/30 21:06:30 tom Exp $
 .TH curs_inwstr 3X ""
+.ie \n(.g .ds `` \(lq
+.el       .ds `` ``
+.ie \n(.g .ds '' \(rq
+.el       .ds '' ''
 .SH NAME
 \fBinwstr\fR,
 \fBinnwstr\fR,
@@ -62,8 +66,9 @@
 These routines return a string of \fBwchar_t\fR wide characters in \fIwstr\fR,
 extracted starting at the current cursor position in the named window.
 .PP
-The four functions with \fIn\fR as the last argument return a leading substring at most
-\fIn\fR characters long (exclusive of the trailing NUL).
+The four functions with \fIn\fR as the last argument return
+a leading substring at most \fIn\fR characters long
+(exclusive of the trailing NUL).
 Transfer stops at the end of the current line, or when \fIn\fR characters have
 been stored at the location referenced by \fIwstr\fR.
 .PP
@@ -83,14 +88,15 @@ Use \fBin_wchstr\fP to return the complex characters from a window.
 .SH RETURN VALUE
 All routines return
 \fBERR\fR
-upon failure. Upon
+upon failure.
+Upon
 successful completion, the *\fBinwstr\fR
 routines return
 \fBOK\fR, and the *\fBinnwstr\fR
 routines return the
 number of characters read into the string.
 .PP
-Functions with a "mv" prefix first perform a cursor movement using
+Functions with a \*(``mv\*('' prefix first perform a cursor movement using
 \fBwmove\fP, and return an error if the position is outside the window,
 or if the window pointer is null.
 .SH SEE ALSO

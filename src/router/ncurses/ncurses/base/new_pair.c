@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2017 Free Software Foundation, Inc.                        *
+ * Copyright (c) 2017-2018,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -48,7 +48,7 @@
 #define MaxColors      max_colors
 #endif
 
-#if USE_NEW_PAIR
+#if NCURSES_EXT_COLORS
 
 /* fix redefinition versys tic.h */
 #undef entry
@@ -60,9 +60,9 @@
 
 #endif
 
-MODULE_ID("$Id: new_pair.c,v 1.14 2017/08/11 18:20:22 tom Exp $")
+MODULE_ID("$Id: new_pair.c,v 1.18 2019/01/21 14:54:47 tom Exp $")
 
-#if USE_NEW_PAIR
+#if NCURSES_EXT_COLORS
 
 #ifdef NEW_PAIR_DEBUG
 
@@ -102,13 +102,17 @@ dumpit(SCREEN *sp, int pair, const char *tag)
     char bigbuf[256 * 20];
     char *p = bigbuf;
     int n;
-    sprintf(p, "%s", tag);
-    p += strlen(p);
+    size_t have = sizeof(bigbuf);
+
+    _nc_STRCPY(p, tag, have);
     for (n = 0; n < sp->_pair_limit; ++n) {
 	if (list[n].mode != cpFREE) {
-	    sprintf(p, " %d%c(%d,%d)",
-		    n, n == pair ? '@' : ':', list[n].next, list[n].prev);
 	    p += strlen(p);
+	    if ((size_t) (p - bigbuf) + 50 > have)
+		break;
+	    _nc_SPRINTF(p, _nc_SLIMIT(have - (p - bigbuf))
+			" %d%c(%d,%d)",
+			n, n == pair ? '@' : ':', list[n].next, list[n].prev);
 	}
     }
     T(("(%d/%d) %ld - %s",
@@ -193,7 +197,8 @@ _nc_reset_color_pair(SCREEN *sp, int pair, colorpair_t * next)
 {
     colorpair_t *last;
     if (ValidPair(sp, pair)) {
-	last = _nc_reserve_pairs(sp, pair);
+	ReservePairs(sp, pair);
+	last = &(sp->_color_pairs[pair]);
 	delink_color_pair(sp, pair);
 	if (last->mode > cpFREE &&
 	    (last->fg != next->fg || last->bg != next->bg)) {
@@ -277,7 +282,8 @@ NCURSES_SP_NAME(alloc_pair) (NCURSES_SP_DCLx int fg, int bg)
 	    }
 	    if (!found && (SP_PARM->_pair_alloc < SP_PARM->_pair_limit)) {
 		pair = SP_PARM->_pair_alloc;
-		if (_nc_reserve_pairs(sp, pair) == 0) {
+		ReservePairs(SP_PARM, pair);
+		if (SP_PARM->_color_pairs == 0) {
 		    pair = -1;
 		} else {
 		    found = TRUE;
@@ -376,4 +382,4 @@ void
 _nc_new_pair(void)
 {
 }
-#endif /* USE_NEW_PAIR */
+#endif /* NCURSES_EXT_COLORS */

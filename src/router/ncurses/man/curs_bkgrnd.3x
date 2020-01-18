@@ -1,5 +1,5 @@
 .\"***************************************************************************
-.\" Copyright (c) 2002-2015,2017 Free Software Foundation, Inc.              *
+.\" Copyright (c) 2002-2017,2018 Free Software Foundation, Inc.              *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
 .\" copy of this software and associated documentation files (the            *
@@ -26,7 +26,7 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: curs_bkgrnd.3x,v 1.8 2017/11/18 23:47:37 tom Exp $
+.\" $Id: curs_bkgrnd.3x,v 1.10 2018/12/09 00:50:50 tom Exp $
 .de bP
 .ie n  .IP \(bu 4
 .el    .IP \(bu 2
@@ -63,7 +63,8 @@ background of the named window.
 The window background is a \fBcchar_t\fR consisting of
 any combination of attributes (i.e., rendition) and a complex character.
 The attribute part of the background is combined (OR'ed) with all non-blank
-characters that are written into the window with \fBwaddch\fR.  Both
+characters that are written into the window with \fBwaddch\fR.
+Both
 the character and attribute parts of the background are combined with
 the blank characters.
 The background becomes a property of the
@@ -96,6 +97,10 @@ Note that
 \fBbkgrndset\fR, and
 \fBgetbkgrnd\fR
 may be macros.
+.PP
+X/Open Curses does not provide details on how the rendition is changed.
+This implementation follows the approach used in SVr4 curses,
+which is explained in the manual page for \fBwbkgd\fP.
 .SH RETURN VALUE
 .PP
 The \fBbkgrndset\fR and \fBwbkgrndset\fR routines do not return a value.
@@ -106,6 +111,10 @@ Otherwise, they return \fBERR\fR:
 A null window pointer is treated as an error.
 .bP
 A null character pointer is treated as an error.
+.SH PORTABILITY
+.PP
+These functions are described in the XSI Curses standard, Issue 4
+(X/Open Curses).
 .SH SEE ALSO
 \fBcurses\fR(3X),
 \fBcurs_bkgd\fR(3X)

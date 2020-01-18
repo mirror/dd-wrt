@@ -1,7 +1,7 @@
 #! /bin/sh
-# $Id: adacurses-config.in,v 1.11 2016/11/05 20:48:35 tom Exp $
+# $Id: adacurses-config.in,v 1.13 2019/09/07 20:20:52 tom Exp $
 ##############################################################################
-# Copyright (c) 2007-2012,2016 Free Software Foundation, Inc.                #
+# Copyright (c) 2007-2016,2019 Free Software Foundation, Inc.                #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -41,14 +41,14 @@ ADA_OBJECTS=@ADA_OBJECTS@
 VERSION=@NCURSES_MAJOR@.@NCURSES_MINOR@.@NCURSES_PATCH@
 
 CFLAGS="-aI$ADA_INCLUDE -aO$ADA_OBJECTS"
-LIBS="-L$ADA_OBJECTS -lAdaCurses"
+LIBS="-L$ADA_OBJECTS -l@ADA_LIBNAME@"
 
-THIS="adacurses"
+THIS="@ADA_LIBNAME@"
 THIS_CFG="$THIS@DFT_ARG_SUFFIX@-config"
 
 case "x$1" in
 	x--version)
-		echo AdaCurses $VERSION
+		echo @ADA_LIBNAME@ $VERSION
 		;;
 	x--cflags)
 		echo $CFLAGS

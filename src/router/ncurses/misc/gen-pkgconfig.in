@@ -1,7 +1,7 @@
 #!@SHELL@
-# $Id: gen-pkgconfig.in,v 1.33 2018/01/01 22:51:23 tom Exp $
+# $Id: gen-pkgconfig.in,v 1.42 2019/12/25 23:09:13 tom Exp $
 ##############################################################################
-# Copyright (c) 2009-2015,2018 Free Software Foundation, Inc.                #
+# Copyright (c) 2009-2018,2019 Free Software Foundation, Inc.                #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -53,6 +53,9 @@ exec_prefix="@exec_prefix@"
 includedir="@includedir@@includesubdir@"
 libdir="@libdir@"
 
+RPATH_LIST=@RPATH_LIST@
+PRIVATE_LIBS="@PRIVATE_LIBS@"
+
 show_prefix='@prefix@'
 show_exec_prefix='@exec_prefix@'
 show_includedir='@includedir@@includesubdir@'
@@ -65,30 +68,59 @@ MENU_LIBRARY="${MENU_NAME}@USE_ARG_SUFFIX@"
 FORM_LIBRARY="${FORM_NAME}@USE_ARG_SUFFIX@"
 
 CFLAGS="@PKG_CFLAGS@"
-if test "$includedir" != "/usr/include" ; then
+if [ "$includedir" != "/usr/include" ]; then
 	includetop=`echo "$includedir" | sed -e 's,/include/[^/]*$,/include,'`
-	test "$includetop" = "/usr/include" && includetop="$includedir"
-	if test "x$includetop" != "x$includedir"
+	[ "$includetop" = "/usr/include" ] && includetop="$includedir"
+	CFLAGS="$CFLAGS -I\${includedir}"
+	if [ "x$includetop" != "x$includedir" ]
 	then
 		CFLAGS="$CFLAGS -I${includetop}"
 	fi
-	CFLAGS="$CFLAGS -I\${includedir}"
 fi
 
-LDFLAGS=
-if test "$libdir" != "/usr/lib" ; then
-	LDFLAGS="$LDFLAGS -L\${libdir}"
-fi
-if test "x@EXTRA_LDFLAGS@" != "x" ; then
-	LDFLAGS="$LDFLAGS @EXTRA_LDFLAGS@"
-fi
+lib_flags=
+for opt in -L$libdir @LDFLAGS@ @EXTRA_LDFLAGS@ @LIBS@
+do
+	case $opt in
+	-l*) # LIBS is handled specially below
+		continue
+		;;
+	-specs*) # ignore linker specs-files which were used to build library
+		continue
+		;;
+	-Wl,-z,*) # ignore flags used to manipulate shared image
+		continue
+		;;
+	-L*)
+		[ -d ${opt##-L} ] || continue
+		case ${opt##-L} in
+		@LD_SEARCHPATH@) # skip standard libdir
+			continue
+			;;
+		*)
+			found=no
+			for check in $lib_flags
+			do
+				if [ "x$check" = "x$opt" ]
+				then
+					found=yes
+					break
+				fi
+			done
+			[ $found = yes ] && continue
+			;;
+		esac
+		;;
+	esac
+	lib_flags="$lib_flags $opt"
+done
 
 # Check if we should specify the tinfo library explicitly so that terminfo
 # functions or curses variables (which also reside in tinfo) can be linked
 # using the -lncurses option.
 NEED_TINFO=no
-if test "x@TINFO_LIBS@" != "x" && \
-   test "x$TINFO_ARG_SUFFIX" != "x$MAIN_LIBRARY"
+if [ "x@TINFO_LIBS@" != "x" ] && \
+   [ "x$TINFO_ARG_SUFFIX" != "x$MAIN_LIBRARY" ]
 then
 	NEED_TINFO=yes
 fi
@@ -101,10 +133,11 @@ do
 	desc="ncurses @NCURSES_MAJOR@.@NCURSES_MINOR@"
 	reqs=
 
-	if test $name = $MAIN_LIBRARY ; then
+	if [ $name = $MAIN_LIBRARY ]; then
 		desc="$desc library"
-		test $NEED_TINFO = yes && LIBS="$LIBS -l$TINFO_ARG_SUFFIX"
-	elif test $name = $SUB_LIBRARY ; then
+		[ $NEED_TINFO = yes ] && LIBS="$LIBS -l$TINFO_ARG_SUFFIX"
+		[ -n "@LIBS@" ] && LIBS="$LIBS @LIBS@"
+	elif [ $name = $SUB_LIBRARY ]; then
 		desc="$desc terminal interface library"
 	elif expr $name : ".*${CXX_NAME}.*" >/dev/null ; then
 		reqs="$PANEL_LIBRARY${suffix}, $MENU_LIBRARY${suffix}, $FORM_LIBRARY${suffix}, $MAIN_LIBRARY${suffix}"
@@ -114,12 +147,19 @@ do
 		desc="$desc add-on library"
 	fi
 
-	if test $name != $SUB_LIBRARY && \
-	   test $SUB_LIBRARY != $MAIN_LIBRARY && \
-	   test $name != $TINFO_NAME && \
-	   test $NEED_TINFO != yes ; then
-		test -n "$reqs" && reqs="$reqs, "
+	if [ $name != $SUB_LIBRARY ] && \
+	   [ $SUB_LIBRARY != $MAIN_LIBRARY ] && \
+	   [ $name != $TINFO_NAME ] && \
+	   [ $NEED_TINFO != yes ] ; then
+		[ -n "$reqs" ] && reqs="$reqs, "
 		reqs="${reqs}${SUB_LIBRARY}${suffix}"
+	fi
+
+	if [ $name = $MAIN_LIBRARY ]
+	then
+		main_libs="$PRIVATE_LIBS"
+	else
+		main_libs=
 	fi
 
 	echo "** creating ${name}${suffix}.pc"
@@ -140,10 +180,10 @@ Description: $desc
 Version: \${version}
 URL: https://invisible-island.net/ncurses
 Requires.private: $reqs
-Libs: $LDFLAGS $LIBS
-Libs.private: @LIBS@ @PTHREAD@
+Libs: $lib_flags $LIBS
+Libs.private: @LIBS@ $main_libs
 Cflags: $CFLAGS
 EOF
 
 done
-# vile:shmode
+# vile:shmode ts=4 sw=4
