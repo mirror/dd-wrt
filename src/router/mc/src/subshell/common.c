@@ -819,7 +819,7 @@ init_subshell_precmd (char *precmd, size_t buff_size)
     {
     case SHELL_BASH:
         g_snprintf (precmd, buff_size,
-                    " PROMPT_COMMAND=${PROMPT_COMMAND:+$PROMPT_COMMAND;}'pwd>&%d;kill -STOP $$'\n"
+                    " PROMPT_COMMAND=${PROMPT_COMMAND:+$PROMPT_COMMAND\n}'pwd>&%d;kill -STOP $$'\n"
                     "PS1='\\u@\\h:\\w\\$ '\n", subshell_pipe[WRITE]);
         break;
 
@@ -865,9 +865,16 @@ init_subshell_precmd (char *precmd, size_t buff_size)
          * "PS1='$($PRECMD)$ '\n",
          */
         g_snprintf (precmd, buff_size,
-                    "precmd() { pwd>&%d; kill -STOP $$; }; "
-                    "PRECMD=precmd; "
-                    "PS1='$(eval $PRECMD)\\u@\\h:\\w\\$ '\n", subshell_pipe[WRITE]);
+                    "precmd() { "
+                    "if [ ! \"${PWD##$HOME}\" ]; then "
+                    "MC_PWD=\"~\"; "
+                    "else "
+                    "[ \"${PWD##$HOME/}\" = \"$PWD\" ] && MC_PWD=\"$PWD\" || MC_PWD=\"~/${PWD##$HOME/}\"; "
+                    "fi; "
+                    "echo \"$USER@$(hostname -s):$MC_PWD\"; "
+                    "pwd>&%d; "
+                    "kill -STOP $$; "
+                    "}; " "PRECMD=precmd; " "PS1='$($PRECMD)$ '\n", subshell_pipe[WRITE]);
         break;
 
     case SHELL_ZSH:
