@@ -2190,16 +2190,6 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "3");
 	setRouter("Dlink DAP-2230");
 	return ROUTER_BOARD_PB42;
-#elif HAVE_WR940V6
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
-	setRouter("TP-Link TL-WR940ND v6");
-	return ROUTER_BOARD_PB42;
-#elif HAVE_WR940V4
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
-	setRouter("TP-Link TL-WR940ND v4/v5");
-	return ROUTER_BOARD_PB42;
 #elif HAVE_WA901V4
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
@@ -2209,6 +2199,16 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
 	setRouter("TP-Link TL-WA901ND v5");
+	return ROUTER_BOARD_PB42;
+#elif HAVE_WR940V6
+	nvram_default_get("ath0_rxantenna", "7");
+	nvram_default_get("ath0_txantenna", "7");
+	setRouter("TP-Link TL-WR940ND v6");
+	return ROUTER_BOARD_PB42;
+#elif HAVE_WR940V4
+	nvram_default_get("ath0_rxantenna", "7");
+	nvram_default_get("ath0_txantenna", "7");
+	setRouter("TP-Link TL-WR940ND v4/v5");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR941V6
 	nvram_default_get("ath0_rxantenna", "7");
