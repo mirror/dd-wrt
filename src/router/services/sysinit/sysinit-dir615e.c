@@ -137,6 +137,7 @@ void start_sysinit(void)
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
 #ifdef HAVE_SWCONFIG
+#ifndef HAVE_WA901V5
 	eval("swconfig", "dev", "eth1", "set", "reset", "1");
 	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
@@ -153,6 +154,7 @@ void start_sysinit(void)
 	nvram_default_geti("port2vlans", 1);
 	nvram_default_geti("port3vlans", 1);
 	nvram_default_geti("port4vlans", 1);
+#endif
 
 #ifndef HAVE_DAP2230
 #ifndef HAVE_DIR615I
