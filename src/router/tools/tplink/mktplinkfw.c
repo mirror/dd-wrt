@@ -60,6 +60,8 @@
 #define HWID_TL_WA901ND_V1	0x09010001
 #define HWID_TL_WA901ND_V3	0x09010003
 #define HWID_TL_WA901ND_V2	0x09010002
+#define HWID_TL_WA901ND_V4	0x09010004
+#define HWID_TL_WA901ND_V5	0x09010005
 #define HWID_TL_WA801ND_V1	0x08010001
 #define HWID_TL_WR840N_V1	0x08400001
 #define HWID_TL_WR842ND_V1	0x08420001
@@ -411,6 +413,22 @@ static struct board_info boards[] = {
 	}, {
 		.id		= "TL-WA901NDv3",
 		.hw_id		= HWID_TL_WA901ND_V3,
+		.hw_rev		= 1,
+		.fw_max_len	= 0x3c0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0xf0000,
+	}, {
+		.id		= "TL-WA901NDv4",
+		.hw_id		= HWID_TL_WA901ND_V4,
+		.hw_rev		= 1,
+		.fw_max_len	= 0x3c0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0xf0000,
+	}, {
+		.id		= "TL-WA901NDv5",
+		.hw_id		= HWID_TL_WA901ND_V5,
 		.hw_rev		= 1,
 		.fw_max_len	= 0x3c0000,
 		.kernel_la	= 0x80060000,
