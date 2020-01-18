@@ -123,7 +123,6 @@ export NM := $(CROSS_COMPILE)nm
 export RANLIB := $(CROSS_COMPILE)ranlib
 export STRIP := $(CROSS_COMPILE)strip
 export SIZE := $(CROSS_COMPILE)size
-export LTO :=
 export CFLAGS := $(COPTS)
 export MIPS16_OPT:= -minterlink-mips16 -mips16
 
@@ -470,6 +469,11 @@ ifeq ($(CONFIG_ARCHERC7),y)
 	echo CONFIG_ARCHERC7=y >> $(LINUXDIR)/.config
 else
 	echo "# CONFIG_ARCHERC7 is not set" >> $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_WDR4900V2),y)
+	echo CONFIG_WDR4900V2=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_WDR4900V2 is not set" >> $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_WR1043V4),y)
 	echo CONFIG_WR1043V4=y >> $(LINUXDIR)/.config
@@ -1873,6 +1877,16 @@ ifeq ($(CONFIG_WR940V4),y)
 	-./tools/tplink/mktplinkfw -s "00000000;45550000;" -B TL-WR940NDv6 -N "TP-LINK Technologies" -V "ver. 1.0" -v 3.99.99 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR940NDv6-firmware-eu.bin
 	-./tools/tplink/mktplinkfw -s "00000000;55530000;" -B TL-WR940NDv6 -N "TP-LINK Technologies" -V "ver. 1.0" -v 3.99.99 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR940NDv6-firmware-us.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR940NDv6-firmware.bin mips-uclibc/tplink-WR940NDv6-firmware-eu.bin
+endif
+
+ifeq ($(CONFIG_WA901V5),y)
+	-./tools/tplink/mktplinkfw -s "00000000;45550000;" -B TL-WA901NDv4 -N "TP-LINK Technologies" -V "ver. 1.0" -v 3.99.99 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA901NDv4-firmware-eu.bin
+	-./tools/tplink/mktplinkfw -s "00000000;55530000;" -B TL-WA901NDv4 -N "TP-LINK Technologies" -V "ver. 1.0" -v 3.99.99 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA901NDv4-firmware-us.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WA901NDv4-firmware.bin mips-uclibc/tplink-WA901NDv4-firmware-eu.bin
+
+	-./tools/tplink/mktplinkfw -s "00000000;45550000;" -B TL-WA901NDv5 -N "TP-LINK Technologies" -V "ver. 1.0" -v 3.99.99 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA901NDv5-firmware-eu.bin
+	-./tools/tplink/mktplinkfw -s "00000000;55530000;" -B TL-WA901NDv5 -N "TP-LINK Technologies" -V "ver. 1.0" -v 3.99.99 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA901NDv5-firmware-us.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WA901NDv5-firmware.bin mips-uclibc/tplink-WA901NDv5-firmware-eu.bin
 endif
 ifeq ($(CONFIG_WR842V2),y)
 	-./tools/tplink/mktplinkfw -B TL-WR842NDv2 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR842NDv2-firmware.bin
