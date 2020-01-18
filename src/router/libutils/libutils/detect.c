@@ -2200,6 +2200,16 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "7");
 	setRouter("TP-Link TL-WR940ND v4/v5");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WA901V4
+	nvram_default_get("ath0_rxantenna", "7");
+	nvram_default_get("ath0_txantenna", "7");
+	setRouter("TP-Link TL-WA901ND v4");
+	return ROUTER_BOARD_PB42;
+#elif HAVE_WA901V5
+	nvram_default_get("ath0_rxantenna", "7");
+	nvram_default_get("ath0_txantenna", "7");
+	setRouter("TP-Link TL-WA901ND v5");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WR941V6
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
