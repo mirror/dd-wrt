@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2015,2016 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -42,7 +42,7 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_getch.c,v 1.136 2016/09/10 21:59:16 tom Exp $")
+MODULE_ID("$Id: lib_getch.c,v 1.138 2019/11/03 00:11:16 tom Exp $")
 
 #include <fifo_defs.h>
 
@@ -69,16 +69,20 @@ NCURSES_EXPORT(int)
 NCURSES_SP_NAME(set_escdelay) (NCURSES_SP_DCLx int value)
 {
     int code = OK;
-#if USE_REENTRANT
-    if (SP_PARM) {
-	SET_ESCDELAY(value);
-    } else {
+    if (value < 0) {
 	code = ERR;
-    }
+    } else {
+#if USE_REENTRANT
+	if (SP_PARM) {
+	    SET_ESCDELAY(value);
+	} else {
+	    code = ERR;
+	}
 #else
-    (void) SP_PARM;
-    ESCDELAY = value;
+	(void) SP_PARM;
+	ESCDELAY = value;
 #endif
+    }
     return code;
 }
 
@@ -87,12 +91,16 @@ NCURSES_EXPORT(int)
 set_escdelay(int value)
 {
     int code;
+    if (value < 0) {
+	code = ERR;
+    } else {
 #if USE_REENTRANT
-    code = NCURSES_SP_NAME(set_escdelay) (CURRENT_SCREEN, value);
+	code = NCURSES_SP_NAME(set_escdelay) (CURRENT_SCREEN, value);
 #else
-    ESCDELAY = value;
-    code = OK;
+	ESCDELAY = value;
+	code = OK;
 #endif
+    }
     return code;
 }
 #endif
@@ -125,7 +133,7 @@ _nc_use_meta(WINDOW *win)
 }
 
 #ifdef USE_TERM_DRIVER
-# ifdef __MINGW32__
+# ifdef _WIN32
 static HANDLE
 _nc_get_handle(int fd)
 {
@@ -146,7 +154,7 @@ check_mouse_activity(SCREEN *sp, int delay EVENTLIST_2nd(_nc_eventlist * evl))
 #ifdef USE_TERM_DRIVER
     TERMINAL_CONTROL_BLOCK *TCB = TCBOf(sp);
     rc = TCBOf(sp)->drv->td_testmouse(TCBOf(sp), delay EVENTLIST_2nd(evl));
-# ifdef __MINGW32__
+# ifdef _WIN32
     /* if we emulate terminfo on console, we have to use the console routine */
     if (IsTermInfoOnConsole(sp)) {
 	HANDLE fd = _nc_get_handle(sp->_ifd);
@@ -283,7 +291,7 @@ fifo_push(SCREEN *sp EVENTLIST_2nd(_nc_eventlist * evl))
     {				/* Can block... */
 #ifdef USE_TERM_DRIVER
 	int buf;
-#ifdef __MINGW32__
+#ifdef _WIN32
 	if (NC_ISATTY(sp->_ifd) && IsTermInfoOnConsole(sp) && sp->_cbreak)
 	    n = _nc_mingw_console_read(sp,
 				       _nc_get_handle(sp->_ifd),

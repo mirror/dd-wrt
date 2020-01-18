@@ -1,5 +1,5 @@
 dnl***************************************************************************
-dnl Copyright (c) 1998-2017,2018 Free Software Foundation, Inc.              *
+dnl Copyright (c) 1998-2019,2020 Free Software Foundation, Inc.              *
 dnl                                                                          *
 dnl Permission is hereby granted, free of charge, to any person obtaining a  *
 dnl copy of this software and associated documentation files (the            *
@@ -28,7 +28,7 @@ dnl***************************************************************************
 dnl
 dnl Author: Thomas E. Dickey 1996-on
 dnl
-dnl $Id: configure.in,v 1.149 2018/01/15 16:13:05 tom Exp $
+dnl $Id: configure.in,v 1.156 2020/01/12 00:00:16 tom Exp $
 dnl This is a simple configuration-script for the ncurses test programs that
 dnl allows the test-directory to be separately configured against a reference
 dnl system (i.e., sysvr4 curses)
@@ -38,9 +38,10 @@ dnl It's only for testing purposes.
 dnl
 dnl For additional information, see
 dnl		https://invisible-island.net/autoconf/
+dnl		https://invisible-island.net/autoconf/my-autoconf.html
 dnl		https://invisible-island.net/ncurses/ncurses-examples.html
 dnl ---------------------------------------------------------------------------
-AC_PREREQ(2.52.20170501)
+AC_PREREQ(2.52.20200111)
 AC_INIT(ncurses.c)
 AC_CONFIG_HEADER(ncurses_cfg.h:ncurses_tst.hin)
 
@@ -104,7 +105,7 @@ AC_OBJEXT
 
 CF_GCC_ATTRIBUTES
 CF_ENABLE_STRING_HACKS
-CF_XOPEN_SOURCE
+CF_XOPEN_SOURCE(600)
 CF_SIG_ATOMIC_T
 
 # Work around breakage on OS X
@@ -250,7 +251,7 @@ CF_GETOPT_HEADER
 AC_CHECK_FUNCS( \
 getopt \
 gettimeofday \
-tdestroy \
+strstr \
 tsearch \
 )
 
@@ -258,12 +259,37 @@ tsearch \
 AC_CACHE_CHECK(if we can use termcap.h,cf_cv_have_termcap_h,[
 	AC_TRY_COMPILE([
 #include <curses.h>
+#ifdef NCURSES_VERSION
+#undef NCURSES_VERSION
+#endif
 #include <termcap.h>
+#ifndef NCURSES_VERSION
+#error wrong header
+#endif
 ],
 	[return 0;],
 	[cf_cv_have_termcap_h=yes],
 	[cf_cv_have_termcap_h=no])])
-test "x$cf_cv_have_termcap_h" = xyes && AC_DEFINE(HAVE_TERMCAP_H)
+if test "x$cf_cv_have_termcap_h" = xyes
+then
+	AC_DEFINE(HAVE_TERMCAP_H,1,[Define to 1 if we can use termcap.h])
+else
+AC_CACHE_CHECK(if we can use ncurses/termcap.h,cf_cv_have_ncurses_termcap_h,[
+	AC_TRY_COMPILE([
+#include <ncurses/curses.h>
+#ifdef NCURSES_VERSION
+#undef NCURSES_VERSION
+#endif
+#include <ncurses/termcap.h>
+#ifndef NCURSES_VERSION
+#error wrong header
+#endif
+],
+	[return 0;],
+	[cf_cv_have_ncurses_termcap_h=yes],
+	[cf_cv_have_ncurses_termcap_h=no])])
+test "x$cf_cv_have_ncurses_termcap_h" = xyes && AC_DEFINE(HAVE_NCURSES_TERMCAP_H,1,[Define to 1 if we can use ncurses/termcap.h])
+fi
 
 if test "x$ac_cv_func_getopt" = xno; then
 	AC_MSG_ERROR(getopt is required for building programs)
@@ -401,7 +427,7 @@ extern void _nc_init_pthreads(void);
 	[cf_cv_use_pthreads=yes],
 	[cf_cv_use_pthreads=no])
 ])
-test $cf_cv_use_pthreads = yes && AC_DEFINE(USE_PTHREADS)
+test $cf_cv_use_pthreads = yes && AC_DEFINE(USE_PTHREADS,1,[Define to 1 if $cf_cv_screen library uses pthreads])
 
 CF_SYS_TIME_SELECT
 
@@ -444,6 +470,7 @@ if test "$cf_enable_widec" = yes; then
 fi
 
 CF_CURSES_CHECK_DATA(\
+TABSIZE \
 curscr \
 ospeed \
 boolnames \

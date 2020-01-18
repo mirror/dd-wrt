@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2006-2016,2017 Free Software Foundation, Inc.              *
+ * Copyright (c) 2006-2018,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -29,7 +29,7 @@
 /*
  * Author: Thomas E. Dickey, 2006
  *
- * $Id: foldkeys.c,v 1.6 2017/06/17 19:36:33 tom Exp $
+ * $Id: foldkeys.c,v 1.8 2019/08/24 23:11:01 tom Exp $
  *
  * Demonstrate a method for altering key definitions at runtime.
  *
@@ -38,20 +38,10 @@
  * merging only for the keys which are defined in the terminal description.
  */
 
+#define NEED_TIME_H
 #include <test.priv.h>
 
 #if defined(NCURSES_VERSION) && NCURSES_EXT_FUNCS
-
-#if TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
 
 #define MY_LOGFILE "demo_foldkeys.log"
 #define MY_KEYS (KEY_MAX + 1)
@@ -63,10 +53,10 @@ static void
 log_last_line(WINDOW *win)
 {
     FILE *fp;
-    int y, x, n;
-    char temp[256];
 
     if ((fp = fopen(MY_LOGFILE, "a")) != 0) {
+	char temp[256];
+	int y, x, n;
 	int need = sizeof(temp) - 1;
 	if (need > COLS)
 	    need = COLS;
@@ -205,8 +195,7 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 {
     int ch;
 #if HAVE_GETTIMEOFDAY
-    int secs, msecs;
-    struct timeval current, previous;
+    struct timeval previous;
 #endif
 
     if (newterm(0, stdout, stdin) == 0) {
@@ -234,6 +223,9 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 	const char *name = keyname(escaped ? (ch - MY_KEYS) : ch);
 
 #if HAVE_GETTIMEOFDAY
+	int secs, msecs;
+	struct timeval current;
+
 	gettimeofday(&current, 0);
 	secs = (int) (current.tv_sec - previous.tv_sec);
 	msecs = (int) ((current.tv_usec - previous.tv_usec) / 1000);

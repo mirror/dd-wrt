@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -52,7 +52,7 @@
   traces will be dumped.  The program stops and waits for one character of
   input at the beginning and end of the interval.
 
-  $Id: worm.c,v 1.76 2017/11/18 22:41:08 tom Exp $
+  $Id: worm.c,v 1.81 2019/12/14 23:25:29 tom Exp $
 */
 
 #include <test.priv.h>
@@ -197,12 +197,25 @@ static const struct options {
 };
 /* *INDENT-ON* */
 
+#if HAVE_USE_WINDOW
+static int
+safe_wgetch(WINDOW *w, void *data GCC_UNUSED)
+{
+    return wgetch(w);
+}
+static int
+safe_wrefresh(WINDOW *w, void *data GCC_UNUSED)
+{
+    return wrefresh(w);
+}
+#endif
+
 #ifdef KEY_RESIZE
 static void
 failed(const char *s)
 {
     perror(s);
-    exit_curses();
+    stop_curses();
     ExitProgram(EXIT_FAILURE);
 }
 #endif
@@ -210,8 +223,8 @@ failed(const char *s)
 static void
 cleanup(void)
 {
-    USING_WINDOW(stdscr, wrefresh);
-    exit_curses();
+    USING_WINDOW1(stdscr, wrefresh, safe_wrefresh);
+    stop_curses();
 }
 
 static void
@@ -382,17 +395,18 @@ static int
 get_input(void)
 {
     int ch;
-    ch = USING_WINDOW(stdscr, wgetch);
+    ch = USING_WINDOW1(stdscr, wgetch, safe_wgetch);
     return ch;
 }
 
 #ifdef KEY_RESIZE
 static int
-update_refs(WINDOW *win)
+update_refs(WINDOW *win, void *data)
 {
     int x, y;
 
     (void) win;
+    (void) data;
     if (last_x != COLS - 1) {
 	for (y = 0; y <= last_y; y++) {
 	    refs[y] = typeRealloc(int, (size_t) COLS, refs[y]);
@@ -585,7 +599,7 @@ main(int argc, char *argv[])
 	    }
 	}
     }
-    USING_WINDOW(stdscr, wrefresh);
+    USING_WINDOW1(stdscr, wrefresh, safe_wrefresh);
     nodelay(stdscr, TRUE);
 
     while (!done) {
@@ -594,10 +608,10 @@ main(int argc, char *argv[])
 #ifdef TRACE
 	    if (trace_start || trace_end) {
 		if (generation == trace_start) {
-		    trace(TRACE_CALLS);
+		    curses_trace(TRACE_CALLS);
 		    get_input();
 		} else if (generation == trace_end) {
-		    trace(0);
+		    curses_trace(0);
 		    get_input();
 		}
 
@@ -629,7 +643,7 @@ main(int argc, char *argv[])
 
 	done = draw_all_worms();
 	napms(10);
-	USING_WINDOW(stdscr, wrefresh);
+	USING_WINDOW1(stdscr, wrefresh, safe_wrefresh);
     }
 
     Trace(("Cleanup"));

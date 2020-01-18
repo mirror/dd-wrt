@@ -2,7 +2,7 @@
  *  newdemo.c	-	A demo program using PDCurses. The program illustrate
  *  	 		the use of colours for text output.
  *
- * $Id: newdemo.c,v 1.45 2017/09/30 15:43:08 tom Exp $
+ * $Id: newdemo.c,v 1.47 2019/12/14 23:25:29 tom Exp $
  */
 
 #include <test.priv.h>
@@ -50,7 +50,7 @@ static const char *messages[] =
 static void
 trap(int sig GCC_UNUSED)
 {
-    exit_curses();
+    stop_curses();
     ExitProgram(EXIT_FAILURE);
 }
 
@@ -61,11 +61,12 @@ static int
 WaitForUser(WINDOW *win)
 {
     time_t t;
-    chtype key;
 
     nodelay(win, TRUE);
     t = time((time_t *) 0);
+
     while (1) {
+	chtype key;
 	if ((int) (key = (chtype) wgetch(win)) != ERR) {
 	    if (key == 'q' || key == 'Q')
 		return 1;
@@ -221,12 +222,10 @@ int
 main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 {
     WINDOW *win;
-    int w, x, y, i, j, k;
+    int x, y, i, k;
     char buffer[SIZEOF(messages) * 80];
-    const char *message;
     int width, height;
     chtype save[80];
-    chtype c;
 
     setlocale(LC_ALL, "");
 
@@ -239,11 +238,16 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
     height = 14;		/* Create a drawing window */
     win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
     if (win == NULL) {
-	exit_curses();
+	stop_curses();
 	ExitProgram(EXIT_FAILURE);
     }
 
     while (1) {
+	int w;
+	int j;
+	chtype c;
+	const char *message;
+
 	set_colors(win, 1, COLOR_WHITE, COLOR_BLUE);
 	werase(win);
 
@@ -358,6 +362,6 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 	if (WaitForUser(win) == 1)
 	    break;
     }
-    exit_curses();
+    stop_curses();
     ExitProgram(EXIT_SUCCESS);
 }

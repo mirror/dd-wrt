@@ -1,5 +1,5 @@
 dnl***************************************************************************
-dnl Copyright (c) 1998-2017,2018 Free Software Foundation, Inc.              *
+dnl Copyright (c) 1998-2019,2020 Free Software Foundation, Inc.              *
 dnl                                                                          *
 dnl Permission is hereby granted, free of charge, to any person obtaining a  *
 dnl copy of this software and associated documentation files (the            *
@@ -28,16 +28,20 @@ dnl***************************************************************************
 dnl
 dnl Author: Thomas E. Dickey 1995-on
 dnl
-dnl $Id: configure.in,v 1.653 2018/01/19 22:45:56 tom Exp $
+dnl $Id: configure.in,v 1.693 2020/01/11 23:27:16 tom Exp $
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl See https://invisible-island.net/autoconf/ for additional information.
+dnl For additional information, see
+dnl     https://invisible-island.net/autoconf/
+dnl     https://invisible-island.net/autoconf/my-autoconf.html
 dnl
 dnl ---------------------------------------------------------------------------
-AC_PREREQ(2.52.20170501)
-AC_REVISION($Revision: 1.653 $)
+AC_PREREQ(2.52.20200111)
+AC_REVISION($Revision: 1.693 $)
 AC_INIT(ncurses/base/lib_initscr.c)
 AC_CONFIG_HEADER(include/ncurses_cfg.h:include/ncurses_cfg.hin)
+
+AC_DEFUN([AC_PATH_XTRA],[])dnl ignore dependencies on this
 
 CF_TOP_BUILDDIR
 CF_SUBST_NCURSES_VERSION
@@ -58,17 +62,17 @@ CF_ABI_DEFAULTS
 
 ###	Checks for programs.
 AC_ARG_WITH(ada,
-	[  --without-ada           suppress check for Ada95, don't build demo],
+	[  --without-ada           suppress check for Ada compiler, don't build demo],
 	[cf_with_ada=$withval],
 	[cf_with_ada=yes])
+
 if test "x$cf_with_ada" = xyes
 then
-	cf_PROG_CC="gnatgcc gcc cc"
+	cf_prog_cc="gnatgcc gcc cc"
 else
-	cf_PROG_CC="gcc cc"
+	cf_prog_cc="gcc cc"
 fi
-
-CF_PROG_CC($cf_PROG_CC)
+CF_PROG_CC($cf_prog_cc)
 
 AC_PROG_CPP
 AC_PROG_GCC_TRADITIONAL
@@ -154,7 +158,7 @@ AC_ARG_WITH(cxx-binding,
 	[cf_with_cxx_binding=$cf_with_cxx])
 AC_MSG_RESULT($cf_with_cxx_binding)
 
-AC_MSG_CHECKING(if you want to build with Ada95)
+AC_MSG_CHECKING(if you want to build with Ada)
 AC_MSG_RESULT($cf_with_ada)
 
 AC_MSG_CHECKING(if you want to install terminal database)
@@ -423,36 +427,6 @@ AC_ARG_WITH(ticlib,
 	[with_ticlib=no])
 AC_MSG_RESULT($with_ticlib)
 
-### Checks for special libraries, must be done up-front.
-SHLIB_LIST=""
-CF_WITH_GPM
-if test "$with_gpm" != no ; then
-	AC_MSG_CHECKING(if you want to load GPM dynamically)
-	AC_ARG_WITH(dlsym,
-		[  --without-dlsym         do not use dlsym() to load GPM dynamically],
-		[with_dlsym=$withval],
-		[with_dlsym=yes])
-	AC_MSG_RESULT($with_dlsym)
-	if test "x$with_dlsym" = xyes ; then
-		CF_FUNC_DLSYM
-		if test "x$with_gpm" != xyes ; then
-			CF_VERBOSE(assuming soname for gpm is $with_gpm)
-			cf_cv_gpm_soname="$with_gpm"
-		else
-			CF_LIB_SONAME([#include <gpm.h>],[if (Gpm_Open(0,0)) Gpm_Close();],gpm)
-		fi
-		test "$cf_cv_gpm_soname" != "unknown" && AC_DEFINE_UNQUOTED(LIBGPM_SONAME,"$cf_cv_gpm_soname",[Define as needed to set the gpm share library soname])
-		SHLIB_LIST="-ldl $SHLIB_LIST"
-	else
-		SHLIB_LIST="-lgpm $SHLIB_LIST"
-		CF_ADD_LIB(gpm,TEST_LIBS)
-	fi
-	AC_DEFINE(HAVE_LIBGPM,1,[Define to 1 if we have the gpm library])
-	CF_CHECK_GPM_WGETCH
-fi
-
-CF_WITH_SYSMOUSE
-
 dnl Not all ports of gcc support the -g option
 
 if test X"$CC_G_OPT" = X"" ; then
@@ -521,6 +495,39 @@ for model in $cf_list_models; do
 	esac
 done
 
+### Checks for special libraries, must be done up-front.
+SHLIB_LIST=""
+CF_WITH_GPM
+if test "$with_gpm" != no ; then
+	AC_MSG_CHECKING(if you want to load GPM dynamically)
+	AC_ARG_WITH(dlsym,
+		[  --without-dlsym         do not use dlsym() to load GPM dynamically],
+		[with_dlsym=$withval],
+		[with_dlsym=yes])
+	AC_MSG_RESULT($with_dlsym)
+	if test "x$with_dlsym" = xyes ; then
+		CF_FUNC_DLSYM
+		if test "x$with_gpm" != xyes ; then
+			CF_VERBOSE(assuming soname for gpm is $with_gpm)
+			cf_cv_gpm_soname="$with_gpm"
+		else
+			CF_LIB_SONAME([#include <gpm.h>],[if (Gpm_Open(0,0)) Gpm_Close();],gpm)
+		fi
+		test "$cf_cv_gpm_soname" != "unknown" && AC_DEFINE_UNQUOTED(LIBGPM_SONAME,"$cf_cv_gpm_soname",[Define as needed to set the gpm share library soname])
+		SHLIB_LIST="-ldl $SHLIB_LIST"
+		CF_ADD_LIB(dl,PRIVATE_LIBS)
+	else
+		SHLIB_LIST="-lgpm $SHLIB_LIST"
+		CF_ADD_LIB(gpm,TEST_LIBS)
+		CF_ADD_LIB(gpm,PRIVATE_LIBS)
+	fi
+	AC_DEFINE(HAVE_LIBGPM,1,[Define to 1 if we have the gpm library])
+	CF_CHECK_GPM_WGETCH
+fi
+
+CF_WITH_PCRE2
+CF_WITH_SYSMOUSE
+
 # pretend that ncurses==ncursesw==ncursest
 AC_MSG_CHECKING(if you want to disable library suffixes)
 CF_ARG_DISABLE(lib-suffixes,
@@ -531,7 +538,7 @@ CF_ARG_DISABLE(lib-suffixes,
 AC_MSG_RESULT($disable_lib_suffixes)
 
 ### If we're building with rpath, try to link non-standard libs that way too.
-if test "$DFT_LWR_MODEL" = "shared"; then
+if test "$DFT_LWR_MODEL" = "shared" && test "x$cf_cv_enable_rpath" != xno; then
 	CF_DISABLE_RPATH_HACK
 fi
 
@@ -608,8 +615,39 @@ AC_ARG_WITH(fallbacks,
 	[with_fallback=$withval],
 	[with_fallback=])
 AC_MSG_RESULT($with_fallback)
-FALLBACK_LIST=`test "$with_fallback" != no && echo "$with_fallback" | sed -e 's/,/ /g'`
+
+case ".$with_fallback" in
+(.|.no)
+	FALLBACK_LIST=
+	;;
+(.yes)
+	AC_MSG_WARN(expected a list of terminal descriptions)
+	;;
+(*)
+	FALLBACK_LIST=`echo "$with_fallback" | sed -e 's/,/ /g'`
+	;;
+esac
+
+USE_FALLBACKS=
+test -z "$FALLBACK_LIST" && USE_FALLBACKS="#"
 AC_SUBST(FALLBACK_LIST)
+AC_SUBST(USE_FALLBACKS)
+
+# The fallback feature in ncurses relies upon tic/infocmp outside the build
+# tree for generating the terminal descriptions that will be compiled into the
+# library.  If your toolchain is old, it may not handle current terminal
+# databases.  Use configure-options to point to the tools which will be used,
+# rather than the first ones found on the $PATH.
+if test -n "$FALLBACK_LIST"
+then
+	CF_WITH_PATH_PROG(TIC,     tic,     [for fallbacks], $PATH:/usr/local/ncurses/bin)
+	CF_WITH_PATH_PROG(INFOCMP, infocmp, [for fallbacks], $PATH:/usr/local/ncurses/bin)
+else
+	: ${TIC:=tic}
+	: ${INFOCMP:=infocmp}
+fi
+AC_SUBST(TIC)
+AC_SUBST(INFOCMP)
 
 AC_MSG_CHECKING(if you want modern xterm or antique)
 AC_ARG_WITH(xterm-new,
@@ -658,6 +696,13 @@ CF_WITH_PATHLIST(terminfo-dirs,
 	${datadir}/terminfo)
 AC_MSG_RESULT($TERMINFO_DIRS)
 test -n "$TERMINFO_DIRS" && AC_DEFINE_UNQUOTED(TERMINFO_DIRS,"$TERMINFO_DIRS",[Define as needed to predefine the TERMINFO_DIR searchlist])
+
+case "x$TERMINFO" in
+x???:*)
+	AC_MSG_WARN(ignoring non-directory/file TERMINFO value)
+	unset TERMINFO
+	;;
+esac
 
 AC_MSG_CHECKING(for default terminfo directory)
 CF_WITH_PATH(default-terminfo-dir,
@@ -853,7 +898,7 @@ NCURSES_WINT_T=0
 
 # Check to define _XOPEN_SOURCE "automatically"
 CPPFLAGS_before_XOPEN="$CPPFLAGS"
-CF_XOPEN_SOURCE(500)
+CF_XOPEN_SOURCE(600)
 CPPFLAGS_after_XOPEN="$CPPFLAGS"
 
 # Work around breakage on OS X
@@ -1024,6 +1069,21 @@ AC_ARG_WITH(ccharw-max,
 AC_MSG_RESULT($NCURSES_CCHARW_MAX)
 AC_SUBST(NCURSES_CCHARW_MAX)
 
+AC_CHECK_SIZEOF([signed char], 0)
+if test "$ac_cv_sizeof_signed_char" = 1 ; then
+	NCURSES_SBOOL="signed char"
+else
+	NCURSES_SBOOL="char"
+fi
+AC_MSG_CHECKING(if you want to use signed Boolean array in term.h)
+AC_ARG_ENABLE(signed-char,
+	[  --enable-signed-char    compile using signed Boolean's in term.h],
+	[with_signed_char=$enableval],
+	[with_signed_char=no])
+AC_MSG_RESULT($with_signed_char)
+test "x$with_signed_char" != xyes && NCURSES_SBOOL="char"
+AC_SUBST(NCURSES_SBOOL)
+
 ###   use option --with-tparm-arg to override tparm's argument type
 AC_MSG_CHECKING(for type of tparm args)
 AC_ARG_WITH(tparm-arg,
@@ -1181,21 +1241,6 @@ AC_ARG_ENABLE(no-padding,
 AC_MSG_RESULT($with_no_padding)
 test "x$with_no_padding" = xyes && AC_DEFINE(NCURSES_NO_PADDING,1,[Define to 1 to compile with $NCURSES_NO_PADDING code])
 
-AC_CHECK_SIZEOF([signed char], 0)
-if test "$ac_cv_sizeof_signed_char" = 1 ; then
-	NCURSES_SBOOL="signed char"
-else
-	NCURSES_SBOOL="char"
-fi
-AC_MSG_CHECKING(if you want to use signed Boolean array in term.h)
-AC_ARG_ENABLE(signed-char,
-	[  --enable-signed-char    compile using signed Boolean's in term.h],
-	[with_signed_char=$enableval],
-	[with_signed_char=no])
-AC_MSG_RESULT($with_signed_char)
-test "x$with_signed_char" != xyes && NCURSES_SBOOL="char"
-AC_SUBST(NCURSES_SBOOL)
-
 ###   use option --enable-sigwinch to turn on use of SIGWINCH logic
 AC_MSG_CHECKING(if you want SIGWINCH handler)
 AC_ARG_ENABLE(sigwinch,
@@ -1217,6 +1262,7 @@ test "x$with_tcap_names" = xyes && NCURSES_XNAMES=1
 AC_SUBST(NCURSES_XNAMES)
 
 ##############################################################################
+CF_HELP_MESSAGE(Reentrant Code:)
 CF_WITH_PTHREAD
 
 if test "x$with_pthread" != xno; then
@@ -1254,6 +1300,7 @@ if test "x$with_pthread" = "xyes" ; then
 	enable_reentrant=yes
 	if test "x$cf_cv_weak_symbols" = xyes ; then
 		PTHREAD=-lpthread
+		CF_ADD_LIB(pthread,PRIVATE_LIBS)
 	fi
 fi
 AC_SUBST(PTHREAD)
@@ -1276,6 +1323,7 @@ if test "x$with_reentrant" = xyes ; then
 		CF_REMOVE_LIB(LIBS,$LIBS,pthread)
 		CF_ADD_LIB(pthread,TEST_LIBS)
 		CF_ADD_LIB(pthread,TEST_LIBS2)
+		CF_ADD_LIB(pthread,PRIVATE_LIBS)
 	else
 		# when not using weak symbols but with_reentrant,
 		# add 't' to the library suffix on all platforms
@@ -1437,7 +1485,6 @@ AC_ARG_ENABLE(safe-sprintf,
 	[with_safe_sprintf=$enableval],
 	[with_safe_sprintf=no])
 AC_MSG_RESULT($with_safe_sprintf)
-test "x$with_safe_sprintf" = xyes && AC_DEFINE(USE_SAFE_SPRINTF,1,[Define to 1 to compile with experimental safe-sprintf code])
 
 ###   use option --disable-scroll-hints to turn off use of scroll-hints scrolling logic
 # when hashmap is used scroll hints are useless
@@ -1475,6 +1522,21 @@ AC_SUBST(ECHO_LINK)
 
 # --disable-stripping is used for debugging
 CF_INSTALL_OPTS
+
+# If we're avoiding relinking of shared libraries during install, that is to
+# avoid modifying the build-tree.  For the same reason, avoid doing ranlib if
+# the install program has "-p" (for preserving timestamps).
+cf_cv_do_reranlib=yes
+if test "x$cf_cv_install_p" = xyes
+then
+	if test "x$cf_cv_do_relink" != xyes
+	then
+		cf_cv_do_reranlib=no
+		INSTALL_OPT_P="-p"
+		INSTALL_LIB="$INSTALL_LIB $INSTALL_OPT_P"
+	fi
+fi
+AC_SUBST(INSTALL_OPT_P)
 
 ###	use option --enable-warnings to turn on all gcc warnings
 AC_MSG_CHECKING(if you want to see compiler warnings)
@@ -1558,7 +1620,7 @@ CF_DISABLE_GNAT_PROJECTS
 case $cf_cv_system_name in
 (*mingw32*|*mingw64*)
 	CPPFLAGS="$CPPFLAGS -DWINVER=0x0501 -DWIN32_LEAN_AND_MEAN"
-	LIBS=" -lpsapi $LIBS"
+	# Note: WINVER may be a problem with Windows 10
 	;;
 (*)
 AC_CHECK_FUNC(gettimeofday,
@@ -1600,6 +1662,14 @@ wctype.h \
 )
 
 CF_GETOPT_HEADER
+
+CF_CHECK_ENVIRON(environ)
+CF_CHECK_GETENV
+if test "x$cf_cv_consistent_getenv" = xno && \
+	test "x$cf_with_trace" = xyes
+then
+	AC_MSG_WARN(The NCURSES_TRACE environment variable is not supported with this configuration)
+fi
 
 # check for ISC (this may also define _POSIX_SOURCE)
 # Note: even non-Posix ISC needs <sys/bsdtypes.h> to declare fd_set
@@ -1650,6 +1720,7 @@ geteuid \
 getopt \
 getttynam \
 issetugid \
+localeconv \
 poll \
 putenv \
 remove \
@@ -1662,8 +1733,8 @@ sigaction \
 sigvec \
 strdup \
 strstr \
+sysconf \
 tcgetpgrp \
-tdestroy \
 times \
 tsearch \
 vsnprintf \
@@ -1672,6 +1743,16 @@ vsnprintf \
 if test "x$ac_cv_func_getopt" = xno && \
    test "x$cf_with_progs$cf_with_tests" != xnono; then
 	AC_MSG_ERROR(getopt is required for building programs)
+fi
+
+if test "x$with_safe_sprintf" = xyes
+then
+	if test "x$ac_cv_func_vsnprintf" = xyes
+	then
+		AC_MSG_WARN(will use vsnprintf instead of safe-sprintf option)
+	else
+		AC_DEFINE(USE_SAFE_SPRINTF,1,[Define to 1 to compile with experimental safe-sprintf code])
+	fi
 fi
 
 if test "x$with_getcap" = "xyes" ; then
@@ -1702,6 +1783,7 @@ CF_FUNC_MEMMOVE
 CF_FUNC_POLL
 CF_VA_COPY
 AC_FUNC_VFORK
+CF_FOPEN_BIN_R
 
 # special check for test/ditto.c
 CF_FUNC_OPENPTY
@@ -1806,7 +1888,7 @@ else
 fi
 AC_SUBST(USE_CXX_BOOL)
 
-CF_HELP_MESSAGE(Ada95 Binding Options:)
+CF_HELP_MESSAGE(Ada Binding Options:)
 
 dnl If the Ada95 source-tree is present, add that to the build unless it will
 dnl not work, or was not requested.
@@ -1823,7 +1905,7 @@ dnl libtool -TD 20070714
 	fi
 
 dnl Check for availability of GNU Ada Translator (GNAT).
-dnl At the moment we support no other Ada95 compiler.
+dnl At the moment we support no other Ada compiler.
 	if test "$cf_with_ada" != "no" ; then
 		CF_PROG_GNAT
 		if test	"x$cf_cv_prog_gnat_correct" = xyes; then
@@ -1844,6 +1926,9 @@ dnl At the moment we support no other Ada95 compiler.
 			CF_WITH_ADA_INCLUDE
 			CF_WITH_ADA_OBJECTS
 			CF_WITH_ADA_SHAREDLIB
+
+			# allow the Ada binding to be renamed
+			CF_WITH_ADA_LIBNAME(AdaCurses)
 		fi
 	fi
 else
@@ -2123,6 +2208,7 @@ AC_DEFINE(HAVE_SLK_COLOR,1,[Define to 1 if we have slk_color for test-programs])
 CF_SRC_MODULES($modules_to_build)
 
 if test "x$cf_with_ada" = "xyes" && test "x$cf_cv_prog_gnat_correct" = "xyes"; then
+   SUB_MAKEFILES="$SUB_MAKEFILES Ada95/src/library.gpr:Ada95/src/library.gpr.in"
    SUB_MAKEFILES="$SUB_MAKEFILES Ada95/gen/adacurses${USE_CFG_SUFFIX}-config:Ada95/gen/adacurses-config.in"
    SUB_MAKEFILES="$SUB_MAKEFILES man/adacurses${USE_CFG_SUFFIX}-config.1:man/MKada_config.in"
 fi
@@ -2158,16 +2244,6 @@ if test "x$enable_pc_files" = xyes && test -z "$MAKE_PC_FILES" ; then
 SUB_MAKEFILES="$SUB_MAKEFILES misc/gen-pkgconfig:misc/gen-pkgconfig.in"
 fi
 AC_SUBST(cross_compiling)
-
-AC_PATH_PROG(TIC_PATH,tic,unknown,$PATH:/usr/local/ncurses/bin)
-if test -n "$FALLBACK_LIST"
-then
-	if test "$TIC_PATH" = unknown
-	then
-		AC_MSG_WARN(no tic program found for fallbacks)
-	fi
-fi
-AC_SUBST(TIC_PATH)
 
 if test "x$cf_with_tests" != xno ; then
 	MAKE_TESTS=
@@ -2270,7 +2346,12 @@ fi
 AC_SUBST(MISC_INSTALL_DATA)
 AC_SUBST(MISC_UNINSTALL_DATA)
 
-SUB_SCRIPTS=
+if test "x$cf_with_db_install" = "xno" || test "x$TERMINFO_SRC" = "xno"; then
+	MAKE_DATABASE="#"
+else
+	MAKE_DATABASE="$MAKE_TERMINFO"
+fi
+AC_SUBST(MAKE_DATABASE)
 
 dnl Override the package used for exported symbols
 if test -n "$PACKAGE"
@@ -2312,6 +2393,10 @@ else
 fi
 AC_SUBST(ADAGEN_LDFLAGS)
 AC_SUBST(CHECK_BUILD)
+AC_SUBST(PRIVATE_LIBS)
+
+# This is used for the *-config script and *.pc data files.
+CF_LD_SEARCHPATH
 
 AC_DEFINE(HAVE_CURSES_DATA_BOOLNAMES,1,[definition needed for in-tree build of tack])
 
@@ -2321,7 +2406,6 @@ AC_OUTPUT( \
 	include/ncurses_dll.h \
 	include/termcap.h \
 	include/unctrl.h \
-	$SUB_SCRIPTS \
 	$SUB_MAKEFILES \
 	Makefile,[
 if test "x$cf_with_tests" != xno ; then
@@ -2380,6 +2464,7 @@ WITH_OVERWRITE="$with_overwrite"
 cf_LIST_MODELS="$cf_list_models"
 cf_cv_abi_version="$cf_cv_abi_version"
 cf_cv_do_relink="$cf_cv_do_relink"
+cf_cv_do_reranlib="$cf_cv_do_reranlib"
 cf_cv_do_symlinks="$cf_cv_do_symlinks"
 cf_cv_enable_lp64="$cf_cv_enable_lp64"
 cf_cv_enable_opaque="$cf_cv_enable_opaque"

@@ -94,7 +94,7 @@
 ./Ada95/samples/sample-curses_demo-mouse.ads
 ./Ada95/samples/sample-curses_demo.adb
 ./Ada95/samples/sample-curses_demo.ads
-./Ada95/samples/sample-explanation.adb
+./Ada95/samples/sample-explanation.adb_p
 ./Ada95/samples/sample-explanation.ads
 ./Ada95/samples/sample-form_demo-aux.adb
 ./Ada95/samples/sample-form_demo-aux.ads
@@ -133,7 +133,7 @@
 ./Ada95/src/c_varargs_to_ada.c
 ./Ada95/src/c_varargs_to_ada.h
 ./Ada95/src/library-cfg.sh
-./Ada95/src/library.gpr
+./Ada95/src/library.gpr.in
 ./Ada95/src/modules
 ./Ada95/src/ncurses_compat.c
 ./Ada95/src/terminal_interface-curses-aux.adb
@@ -533,6 +533,7 @@
 ./form/llib-lformw
 ./form/modules
 ./include/Caps
+./include/Caps-ncurses
 ./include/Caps.aix4
 ./include/Caps.hpux11
 ./include/Caps.keys
@@ -900,6 +901,7 @@
 ./ncurses/tinfo/MKfallback.sh
 ./ncurses/tinfo/MKkeys_list.sh
 ./ncurses/tinfo/MKnames.awk
+./ncurses/tinfo/MKuserdefs.sh
 ./ncurses/tinfo/README
 ./ncurses/tinfo/access.c
 ./ncurses/tinfo/add_tries.c
@@ -1016,7 +1018,9 @@
 ./package/debian/control
 ./package/debian/copyright
 ./package/debian/ncurses6.lintian-overrides
+./package/debian/ncurses6.triggers
 ./package/debian/ncursest6.lintian-overrides
+./package/debian/ncursest6.triggers
 ./package/debian/rules
 ./package/debian/source/format
 ./package/debian/watch
@@ -1026,6 +1030,7 @@
 ./package/ncurses.spec
 ./package/ncurses.sym
 ./package/ncursest.map
+./package/ncursest.spec
 ./package/ncursest.sym
 ./package/ncursestw.map
 ./package/ncursestw.sym
@@ -1092,6 +1097,7 @@
 ./test/cardfile.dat
 ./test/chgat.c
 ./test/clip_printw.c
+./test/color_content.c
 ./test/color_name.h
 ./test/color_set.c
 ./test/configure
@@ -1104,6 +1110,7 @@
 ./test/demo_menus.c
 ./test/demo_new_pair.c
 ./test/demo_panels.c
+./test/demo_tabs.c
 ./test/demo_termcap.c
 ./test/demo_terminfo.c
 ./test/ditto.c
@@ -1112,6 +1119,8 @@
 ./test/dots_mvcur.c
 ./test/dots_termcap.c
 ./test/dots_xcurses.c
+./test/dump_window.c
+./test/dump_window.h
 ./test/echochar.c
 ./test/edit_field.c
 ./test/edit_field.h
@@ -1172,6 +1181,8 @@
 ./test/package/mingw-ncurses-examples.spec
 ./test/package/ncurses-examples.spec
 ./test/padview.c
+./test/pair_content.c
+./test/parse_rgb.h
 ./test/picsmap.c
 ./test/picsmap.h
 ./test/popup_msg.c

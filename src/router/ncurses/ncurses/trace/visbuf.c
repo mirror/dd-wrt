@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2001-2016,2017 Free Software Foundation, Inc.              *
+ * Copyright (c) 2001-2017,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -42,7 +42,7 @@
 #include <tic.h>
 #include <ctype.h>
 
-MODULE_ID("$Id: visbuf.c,v 1.49 2017/10/21 23:34:20 tom Exp $")
+MODULE_ID("$Id: visbuf.c,v 1.51 2019/05/04 20:31:31 tom Exp $")
 
 #define NUM_VISBUFS 4
 
@@ -80,6 +80,9 @@ _nc_vischar(char *tp, unsigned c LIMIT_ARG)
     } else if (c == '\b') {
 	*tp++ = '\\';
 	*tp++ = 'b';
+    } else if (c == '\t') {
+	*tp++ = '\\';
+	*tp++ = 't';
     } else if (c == '\033') {
 	*tp++ = '\\';
 	*tp++ = 'e';
@@ -335,7 +338,7 @@ _nc_viscbuf2(int bufnum, const NCURSES_CH_T * buf, int len)
 			if (PUTC_n <= 0 || buf[j].chars[PUTC_i] > 255) {
 			    _nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp))
 					"{%d:\\u%lx}",
-					wcwidth(buf[j].chars[PUTC_i]),
+					_nc_wacs_width(buf[j].chars[PUTC_i]),
 					(unsigned long) buf[j].chars[PUTC_i]);
 			    (void) _nc_trace_bufcat(bufnum, temp);
 			    break;

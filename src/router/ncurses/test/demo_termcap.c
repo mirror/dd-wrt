@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2005-2016,2017 Free Software Foundation, Inc.              *
+ * Copyright (c) 2005-2017,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -29,7 +29,7 @@
 /*
  * Author: Thomas E. Dickey
  *
- * $Id: demo_termcap.c,v 1.56 2017/12/26 22:41:47 tom Exp $
+ * $Id: demo_termcap.c,v 1.58 2019/08/24 21:47:19 tom Exp $
  *
  * A simple demo of the termcap interface.
  */
@@ -46,8 +46,12 @@
 #endif
 #endif
 
-#if defined(NCURSES_VERSION) && HAVE_TERMCAP_H
+#if defined(NCURSES_VERSION)
+#if HAVE_NCURSES_TERMCAP_H
+#include <ncurses/termcap.h>
+#elif HAVE_TERMCAP_H
 #include <termcap.h>
+#endif
 #endif
 
 static void failed(const char *) GCC_NORETURN;
@@ -155,7 +159,8 @@ next_dbitem(void)
 	    db_item++;
 	}
     }
-    printf("** %s\n", result);
+    if (result != 0)
+	printf("** %s\n", result);
     return result;
 }
 
@@ -323,8 +328,6 @@ dump_xname(NCURSES_CONST char *cap)
 static void
 demo_termcap(NCURSES_CONST char *name)
 {
-    unsigned n;
-    NCURSES_CONST char *cap;
     char buffer[1024];
 
     if (db_list) {
@@ -333,6 +336,8 @@ demo_termcap(NCURSES_CONST char *name)
     if (!q_opt)
 	printf("Terminal type \"%s\"\n", name);
     if (tgetent(buffer, name) >= 0) {
+	NCURSES_CONST char *cap;
+	unsigned n;
 
 	if (b_opt) {
 	    for (n = 0;; ++n) {
@@ -694,7 +699,6 @@ copy_code_list(NCURSES_CONST char *const *list)
     size_t count;
     size_t length = 1;
     char **result = 0;
-    char *blob = 0;
     char *unused = 0;
 
     for (pass = 0; pass < 2; ++pass) {
@@ -709,7 +713,7 @@ copy_code_list(NCURSES_CONST char *const *list)
 	    }
 	}
 	if (pass == 0) {
-	    blob = malloc(length);
+	    char *blob = malloc(length);
 	    result = typeCalloc(char *, count + 1);
 	    unused = blob;
 	    if (blob == 0 || result == 0)

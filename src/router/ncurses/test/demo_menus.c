@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2005-2016,2017 Free Software Foundation, Inc.              *
+ * Copyright (c) 2005-2017,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,7 +26,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: demo_menus.c,v 1.65 2017/11/24 21:03:30 tom Exp $
+ * $Id: demo_menus.c,v 1.70 2019/12/07 18:06:12 tom Exp $
  *
  * Demonstrate a variety of functions from the menu library.
  * Thomas Dickey - 2005/4/9
@@ -110,6 +110,8 @@ static WINDOW *status;
 static bool loaded_file = FALSE;
 
 static char empty[1];
+
+#ifdef TRACE
 static void failed(const char *s) GCC_NORETURN;
 
 static void
@@ -119,6 +121,7 @@ failed(const char *s)
     endwin();
     ExitProgram(EXIT_FAILURE);
 }
+#endif
 
 /* Common function to allow ^T to toggle trace-mode in the middle of a test
  * so that trace-files can be made smaller.
@@ -136,7 +139,7 @@ wGetchar(WINDOW *win)
 	} else {
 	    _nc_tracing = save_trace;
 	}
-	trace(_nc_tracing);
+	curses_trace(_nc_tracing);
 	if (_nc_tracing)
 	    Trace(("TOGGLE-TRACING ON"));
     }
@@ -306,12 +309,11 @@ menu_create(ITEM ** items, int count, int ncols, MenuNo number)
 static void
 menu_destroy(MENU * m)
 {
-    int count;
-
     Trace(("menu_destroy %p", (void *) m));
     if (m != 0) {
 	ITEM **items = menu_items(m);
 	const char *blob = 0;
+	int count;
 
 	count = item_count(m);
 	Trace(("menu_destroy %p count %d", (void *) m, count));
@@ -426,7 +428,6 @@ build_select_menu(MenuNo number, char *filename)
 	    && (sb.st_mode & S_IFMT) == S_IFREG
 	    && sb.st_size != 0) {
 	    size_t size = (size_t) sb.st_size;
-	    unsigned j, k;
 	    char *blob = typeMalloc(char, size + 1);
 	    MENU_DATA *list = typeCalloc(MENU_DATA, size + 1);
 
@@ -439,6 +440,7 @@ build_select_menu(MenuNo number, char *filename)
 		if (fp != 0) {
 		    if (fread(blob, sizeof(char), size, fp) == size) {
 			bool mark = TRUE;
+			unsigned j, k;
 			for (j = k = 0; j < size; ++j) {
 			    if (mark) {
 				list[k++].name = blob + j;
@@ -584,13 +586,14 @@ static bool
 update_trace_menu(MENU * m)
 {
     ITEM **items;
-    ITEM *i, **p;
+    ITEM *i;
     bool changed = FALSE;
 
     items = menu_items(m);
     i = current_item(m);
     if (i == items[0]) {
 	if (item_value(i)) {
+	    ITEM **p;
 	    for (p = items + 1; *p != 0; p++)
 		if (item_value(*p)) {
 		    set_item_value(*p, FALSE);
@@ -606,7 +609,6 @@ perform_trace_menu(int cmd)
 /* interactively set the trace level */
 {
     ITEM **ip;
-    unsigned newtrace;
     int result;
 
     for (ip = menu_items(mpTrace); *ip; ip++) {
@@ -622,14 +624,14 @@ perform_trace_menu(int cmd)
 
     if (result == E_OK) {
 	if (update_trace_menu(mpTrace) || cmd == REQ_TOGGLE_ITEM) {
-	    newtrace = 0;
+	    unsigned newtrace = 0;
 	    for (ip = menu_items(mpTrace); *ip; ip++) {
 		if (item_value(*ip)) {
 		    MENU_DATA *td = (MENU_DATA *) item_userptr(*ip);
 		    newtrace |= td->mask;
 		}
 	    }
-	    trace(newtrace);
+	    curses_trace(newtrace);
 	    Trace(("trace level interactively set to %s", tracetrace(_nc_tracing)));
 
 	    MvWPrintw(status, 1, 0,
@@ -764,7 +766,7 @@ move_menus(MENU * current, int by_y, int by_x)
     }
 }
 
-#ifdef KEY_RESIZE
+#if defined(KEY_RESIZE) && NCURSES_EXT_FUNCS
 static void
 resize_menu(MENU ** menu)
 {
@@ -792,7 +794,7 @@ resize_menus(MENU * current)
     resize_menu(&mpTrace);
 #endif
 }
-#endif
+#endif /* defined(KEY_RESIZE) && NCURSES_EXT_FUNCS */
 
 static void
 show_status(int ch, MENU * menu)
@@ -846,7 +848,7 @@ perform_menus(void)
 	case KEY_SRIGHT:
 	    move_menus(last_menu, 0, 1);
 	    continue;
-#ifdef KEY_RESIZE
+#if defined(KEY_RESIZE) && NCURSES_EXT_FUNCS
 	case KEY_RESIZE:
 	    resize_menus(last_menu);
 	    continue;
@@ -1014,7 +1016,7 @@ main(int argc, char *argv[])
 #endif /* HAVE_RIPOFFLINE */
 #ifdef TRACE
 	case 't':
-	    trace((unsigned) strtoul(optarg, 0, 0));
+	    curses_trace((unsigned) strtoul(optarg, 0, 0));
 	    break;
 #endif
 	default:

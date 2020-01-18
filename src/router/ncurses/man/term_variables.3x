@@ -1,5 +1,5 @@
 .\"***************************************************************************
-.\" Copyright (c) 2011-2015,2017 Free Software Foundation, Inc.              *
+.\" Copyright (c) 2011-2017,2019 Free Software Foundation, Inc.              *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
 .\" copy of this software and associated documentation files (the            *
@@ -26,7 +26,7 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: term_variables.3x,v 1.9 2017/04/14 08:33:25 tom Exp $
+.\" $Id: term_variables.3x,v 1.11 2019/11/30 20:51:36 tom Exp $
 .TH term_variables 3X ""
 .ds n 5
 .ie \n(.g .ds `` \(lq
@@ -66,23 +66,23 @@
 .sp
 \fBchar ttytype[];\fR
 .sp
-\fBNCURSES_CONST char * const * boolcodes;\fR
+\fBNCURSES_CONST char * const boolcodes[];\fR
 .br
-\fBNCURSES_CONST char * const * boolfnames;\fR
+\fBNCURSES_CONST char * const boolfnames[];\fR
 .br
-\fBNCURSES_CONST char * const * boolnames;\fR
+\fBNCURSES_CONST char * const boolnames[];\fR
 .sp
-\fBNCURSES_CONST char * const * numcodes;\fR
+\fBNCURSES_CONST char * const numcodes[];\fR
 .br
-\fBNCURSES_CONST char * const * numfnames;\fR
+\fBNCURSES_CONST char * const numfnames[];\fR
 .br
-\fBNCURSES_CONST char * const * numnames;\fR
+\fBNCURSES_CONST char * const numnames[];\fR
 .sp
-\fBNCURSES_CONST char * const * strcodes;\fR
+\fBNCURSES_CONST char * const strcodes[];\fR
 .br
-\fBNCURSES_CONST char * const * strfnames;\fR
+\fBNCURSES_CONST char * const strfnames[];\fR
 .br
-\fBNCURSES_CONST char * const * strnames;\fR
+\fBNCURSES_CONST char * const strnames[];\fR
 .br
 .fi
 .SH DESCRIPTION
@@ -101,7 +101,7 @@ the \fBacs_map\fP array holds information used to translate cells
 with the \fBA_ALTCHARSET\fP video attribute into line-drawing characters.
 .PP
 The encoding of the information in this array has changed periodically.
-Application developers need only know that it is used for the "ACS_"
+Application developers need only know that it is used for the \*(``ACS_\*(''
 constants in <curses.h>.
 .PP
 The comparable data for the wide-character library is a private variable.
@@ -123,7 +123,7 @@ These are available to other applications,
 although the hash-tables used by
 the terminfo and termcap functions are not available.
 .PP
-The long terminfo capability names use a "l" (ell) in their names:
+The long terminfo capability names use a \*(``l\*('' (ell) in their names:
 \fBboolfnames\fP,
 \fBnumfnames\fP, and
 \fBstrfnames\fP.

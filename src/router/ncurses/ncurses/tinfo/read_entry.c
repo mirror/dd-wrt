@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -41,7 +41,7 @@
 
 #include <tic.h>
 
-MODULE_ID("$Id: read_entry.c,v 1.144 2017/10/23 21:20:06 tom Exp $")
+MODULE_ID("$Id: read_entry.c,v 1.155 2019/07/20 20:23:11 tom Exp $")
 
 #define TYPE_CALLOC(type,elts) typeCalloc(type, (unsigned)(elts))
 
@@ -57,9 +57,9 @@ convert_16bits(char *buf, NCURSES_INT2 *Numbers, int count)
     int i;
     size_t j;
     size_t size = SIZEOF_SHORT;
-    unsigned char ch;
     for (i = 0; i < count; i++) {
 	unsigned mask = 0xff;
+	unsigned char ch = 0;
 	Numbers[i] = 0;
 	for (j = 0; j < size; ++j) {
 	    ch = UChar(*buf++);
@@ -384,18 +384,18 @@ _nc_read_termtype(TERMTYPE2 *ptr, char *buffer, int limit)
 	int ext_bool_count = MyNumber(buf + 0);
 	int ext_num_count = MyNumber(buf + 2);
 	int ext_str_count = MyNumber(buf + 4);
-	int ext_str_size = MyNumber(buf + 6);
+	int ext_str_usage = MyNumber(buf + 6);
 	int ext_str_limit = MyNumber(buf + 8);
 	unsigned need = (unsigned) (ext_bool_count + ext_num_count + ext_str_count);
 	int base = 0;
 
 	if ((int) need >= (max_entry_size / 2)
-	    || ext_str_size >= max_entry_size
+	    || ext_str_usage >= max_entry_size
 	    || ext_str_limit >= max_entry_size
 	    || ext_bool_count < 0
 	    || ext_num_count < 0
 	    || ext_str_count < 0
-	    || ext_str_size < 0
+	    || ext_str_usage < 0
 	    || ext_str_limit < 0) {
 	    returnDB(TGETENT_NO);
 	}
@@ -408,9 +408,15 @@ _nc_read_termtype(TERMTYPE2 *ptr, char *buffer, int limit)
 	TYPE_REALLOC(NCURSES_INT2, ptr->num_Numbers, ptr->Numbers);
 	TYPE_REALLOC(char *, ptr->num_Strings, ptr->Strings);
 
-	TR(TRACE_DATABASE, ("extended header is %d/%d/%d(%d:%d)",
-			    ext_bool_count, ext_num_count, ext_str_count,
-			    ext_str_size, ext_str_limit));
+	TR(TRACE_DATABASE, ("extended header: "
+			    "bool %d, "
+			    "number %d, "
+			    "string %d(%d:%d)",
+			    ext_bool_count,
+			    ext_num_count,
+			    ext_str_count,
+			    ext_str_usage,
+			    ext_str_limit));
 
 	TR(TRACE_DATABASE, ("READ %d extended-booleans @%d",
 			    ext_bool_count, offset));
@@ -456,8 +462,11 @@ _nc_read_termtype(TERMTYPE2 *ptr, char *buffer, int limit)
 	}
 
 	if ((ptr->ext_Strings = UShort(ext_str_count)) != 0) {
+	    int check = (ext_bool_count + ext_num_count + ext_str_count);
+
 	    TR(TRACE_DATABASE,
-	       ("Before computing extended-string capabilities str_count=%d, ext_str_count=%d",
+	       ("Before computing extended-string capabilities "
+		"str_count=%d, ext_str_count=%d",
 		str_count, ext_str_count));
 	    convert_strings(buf, ptr->Strings + str_count, ext_str_count,
 			    ext_str_limit, ptr->ext_str_table);
@@ -466,12 +475,22 @@ _nc_read_termtype(TERMTYPE2 *ptr, char *buffer, int limit)
 				    i, i + str_count,
 				    _nc_visbuf(ptr->Strings[i + str_count])));
 		ptr->Strings[i + STRCOUNT] = ptr->Strings[i + str_count];
-		if (VALID_STRING(ptr->Strings[i + STRCOUNT]))
+		if (VALID_STRING(ptr->Strings[i + STRCOUNT])) {
 		    base += (int) (strlen(ptr->Strings[i + STRCOUNT]) + 1);
+		    ++check;
+		}
 		TR(TRACE_DATABASE, ("... to    [%d] %s",
 				    i + STRCOUNT,
 				    _nc_visbuf(ptr->Strings[i + STRCOUNT])));
 	    }
+	    TR(TRACE_DATABASE, ("Check table-size: %d/%d", check, ext_str_usage));
+#if 0
+	    /*
+	     * Phasing in a proper check will be done "later".
+	     */
+	    if (check != ext_str_usage)
+		returnDB(TGETENT_NO);
+#endif
 	}
 
 	if (need) {
@@ -533,7 +552,7 @@ _nc_read_file_entry(const char *const filename, TERMTYPE2 *ptr)
     int code;
 
     if (_nc_access(filename, R_OK) < 0
-	|| (fp = fopen(filename, "rb")) == 0) {
+	|| (fp = fopen(filename, BIN_R)) == 0) {
 	TR(TRACE_DATABASE, ("cannot open terminfo %s (errno=%d)", filename, errno));
 	code = TGETENT_NO;
     } else {
@@ -675,7 +694,7 @@ decode_quickdump(char *target, const char *source)
     char *base = target;
     int result = 0;
 
-    if (!strncmp(source, "b64:", 4)) {
+    if (!strncmp(source, "b64:", (size_t) 4)) {
 	source += 4;
 	while (*source != '\0') {
 	    int bits[4];
@@ -693,7 +712,7 @@ decode_quickdump(char *target, const char *source)
 		}
 	    }
 	}
-    } else if (!strncmp(source, "hex:", 4)) {
+    } else if (!strncmp(source, "hex:", (size_t) 4)) {
 	source += 4;
 	while (*source != '\0') {
 	    int ch = decode_hex(&source);
@@ -730,10 +749,14 @@ _nc_read_tic_entry(char *filename,
        (T_CALLED("_nc_read_tic_entry(file=%p, path=%s, name=%s)"),
 	filename, path, name));
 
+    assert(TGETENT_YES == TRUE);	/* simplify call for _nc_name_match */
+
     if ((used = decode_quickdump(buffer, path)) != 0
 	&& (code = _nc_read_termtype(tp, buffer, used)) == TGETENT_YES
-	&& _nc_name_match(tp->term_names, name, "|")) {
+	&& (code = _nc_name_match(tp->term_names, name, "|")) == TGETENT_YES) {
 	TR(TRACE_DATABASE, ("loaded quick-dump for %s", name));
+	/* shorten name shown by infocmp */
+	_nc_STRCPY(filename, "$TERMINFO", limit);
     } else
 #if USE_HASHED_DB
 	if (make_db_filename(filename, limit, path)
@@ -798,7 +821,7 @@ _nc_read_tic_entry(char *filename,
 	code = _nc_read_file_entry(filename, tp);
     }
 #if NCURSES_USE_TERMCAP
-    else if (code != TGETENT_YES) {
+    if (code != TGETENT_YES) {
 	code = _nc_read_termcap_entry(name, tp);
 	_nc_SPRINTF(filename, _nc_SLIMIT(PATH_MAX)
 		    "%.*s", PATH_MAX - 1, _nc_get_source());
@@ -817,6 +840,9 @@ NCURSES_EXPORT(int)
 _nc_read_entry2(const char *const name, char *const filename, TERMTYPE2 *const tp)
 {
     int code = TGETENT_NO;
+
+    if (name == 0)
+	return _nc_read_entry2("", filename, tp);
 
     _nc_SPRINTF(filename, _nc_SLIMIT(PATH_MAX)
 		"%.*s", PATH_MAX - 1, name);

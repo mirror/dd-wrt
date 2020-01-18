@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2014,2017 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,7 +26,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: rain.c,v 1.47 2017/09/30 18:10:05 tom Exp $
+ * $Id: rain.c,v 1.50 2019/12/14 23:26:09 tom Exp $
  */
 #include <test.priv.h>
 #include <popup_msg.h>
@@ -67,10 +67,18 @@ typedef struct {
 static STATS drop_threads[MAX_THREADS];
 #endif
 
+#if HAVE_USE_WINDOW
+static int
+safe_wgetch(WINDOW *w, void *data GCC_UNUSED)
+{
+    return wgetch(w);
+}
+#endif
+
 static void
 onsig(int n GCC_UNUSED)
 {
-    exit_curses();
+    stop_curses();
     ExitProgram(EXIT_FAILURE);
 }
 
@@ -219,7 +227,7 @@ draw_drop(void *arg)
      * Find myself in the list of threads so we can count the number of loops.
      */
     for (mystats = 0; mystats < MAX_THREADS; ++mystats) {
-#if defined(__MINGW32__) && !defined(__WINPTHREADS_VERSION)
+#if defined(_WIN32) && !defined(__WINPTHREADS_VERSION)
 	if (drop_threads[mystats].myself.p == pthread_self().p)
 #else
 	if (drop_threads[mystats].myself == pthread_self())
@@ -285,7 +293,7 @@ start_drop(DATA * data)
 static int
 get_input(void)
 {
-    return USING_WINDOW(stdscr, wgetch);
+    return USING_WINDOW1(stdscr, wgetch, safe_wgetch);
 }
 
 static void
@@ -429,7 +437,7 @@ main(int argc, char *argv[])
 	}
 	napms(50);
     }
-    exit_curses();
+    stop_curses();
 #ifdef USE_PTHREADS
     printf("Counts per thread:\n");
     for (j = 0; j < MAX_THREADS; ++j)

@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
--- Copyright (c) 1998-2017,2018 Free Software Foundation, Inc.               --
+-- Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.               --
 --                                                                           --
 -- Permission is hereby granted, free of charge, to any person obtaining a   --
 -- copy of this software and associated documentation files (the             --
@@ -25,7 +25,7 @@
 -- sale, use or other dealings in this Software without prior written        --
 -- authorization.                                                            --
 -------------------------------------------------------------------------------
--- $Id: INSTALL,v 1.203 2018/01/23 00:59:19 tom Exp $
+-- $Id: INSTALL,v 1.214 2019/09/07 22:44:40 tom Exp $
 ---------------------------------------------------------------------
              How to install Ncurses/Terminfo on your system
 ---------------------------------------------------------------------
@@ -310,7 +310,7 @@ SUMMARY OF CONFIGURE OPTIONS:
 	and termcap data from disk.  You can configure ncurses to have a
 	built-in database, aka "fallback" entries.  Embedded applications may
 	have no need for an external database.  Some, but not all of the
-	programs are useful in this configuration, e.g., reset and tput versus
+	programs are useful in this configuration, e.g., tset and tput versus
 	infocmp and tic.
 
     --disable-db-install
@@ -440,10 +440,18 @@ SUMMARY OF CONFIGURE OPTIONS:
 
     --disable-relink
 	If --enable-rpath is given, the generated makefiles normally will
-	rebuild the libraries during install.  Use this option to simply
-	copy whatever the linked produced.
+	rebuild shared libraries during install.  Use this option to simply
+	copy whatever the linker produced.
 
-	This option is ignored if --enable-rpath is not given.
+	Static libraries cannot simply be copied because tools use timestamps
+	to determine if the library's symbol table is up to date.  If your
+	install program supports the "-p" (preserve timestamp) option, that
+	is used when --disable-relink is given, to avoid rebuilding the symbol
+	table.
+
+	Finally, some tools ignore the subsecond timestamps supported by some
+	filesystems.  This option adds a 1-second sleep to help those tools
+	avoid unnecessary relinking during the install process.
 
     --disable-root-environ
 	Compile with environment restriction, so certain environment variables
@@ -667,14 +675,8 @@ SUMMARY OF CONFIGURE OPTIONS:
     --enable-safe-sprintf
 	Compile with experimental safe-sprintf code.  You may consider using
 	this if you are building ncurses for a system that has neither
-	vsnprintf() or vsprintf().  It is slow, however.
-
-    --enable-sigwinch
-	Compile support for ncurses' SIGWINCH handler.  If your application has
-	its own SIGWINCH handler, ncurses will not use its own.  The ncurses
-	handler causes wgetch() to return KEY_RESIZE when the screen-size
-	changes.  This option is the default, unless you have disabled the
-	extended functions.
+	vsnprintf() or vsprintf().  It is slow, however, and is used only on
+	very old systems which lack vsnprintf().
 
     --enable-signed-char
 	The term.h header declares a Booleans[] array typed "char".  But it
@@ -682,6 +684,13 @@ SUMMARY OF CONFIGURE OPTIONS:
 	Some packagers choose to alter the type of Booleans[] though this
 	is not strictly compatible.  This option allows one to implement this
 	alteration without patching the source code.
+
+    --enable-sigwinch
+	Compile support for ncurses' SIGWINCH handler.  If your application has
+	its own SIGWINCH handler, ncurses will not use its own.  The ncurses
+	handler causes wgetch() to return KEY_RESIZE when the screen-size
+	changes.  This option is the default, unless you have disabled the
+	extended functions.
 
     --enable-sp-funcs
 	Compile-in support for extended functions which accept a SCREEN pointer,
@@ -769,6 +778,9 @@ SUMMARY OF CONFIGURE OPTIONS:
 	Tell where to install the Ada includes (default:
 	PREFIX/lib/ada/adainclude)
 
+    --with-ada-libname=NAME
+	Override the name of the Ada binding (default: "AdaCurses")
+
     --with-ada-objects=DIR
 	Tell where to install the Ada objects (default:  PREFIX/lib/ada/adalib)
 
@@ -785,10 +797,6 @@ SUMMARY OF CONFIGURE OPTIONS:
 	correspond with that in <stdbool.h>, or defaults to platform-specific
 	sizes).
 
-    --with-build-cpp=XXX
-	This option is provided by the same macro used for $BUILD_CC, etc.,
-	but is not directly used by ncurses.
-
     --with-build-cc=XXX
 	If cross-compiling, specify a host C compiler, which is needed to
 	compile a few utilities which generate source modules for ncurses.
@@ -802,6 +810,10 @@ SUMMARY OF CONFIGURE OPTIONS:
 
 	You can also set the environment variable $BUILD_CFLAGS rather than
 	use this option.
+
+    --with-build-cpp=XXX
+	This option is provided by the same macro used for $BUILD_CC, etc.,
+	but is not directly used by ncurses.
 
     --with-build-cppflags=XXX
 	If cross-compiling, specify the host C preprocessor-flags.  You might
@@ -894,6 +906,8 @@ SUMMARY OF CONFIGURE OPTIONS:
 	Specify a list of fallback terminal descriptions which will be
 	compiled into the ncurses library.  See CONFIGURING FALLBACK ENTRIES.
 
+	See also "--with-tic-path" and "--with-infocmp-path".
+
     --with-gpm
 	use Alessandro Rubini's GPM library to provide mouse support on the
 	Linux console.  Prior to ncurses 5.5, this introduced a dependency on
@@ -945,6 +959,10 @@ SUMMARY OF CONFIGURE OPTIONS:
 
 	See also the --enable-getcap option.
 
+    --with-infocmp-path[=XXX]
+	Use this option to override the automatic detection of tic in your
+	$PATH when building fallbacks (see "--with-fallbacks").
+
     --with-install-prefix=XXX
 	Allows you to specify an alternate location for installing ncurses
 	after building it.  The value you specify is prepended to the "real"
@@ -986,9 +1004,6 @@ SUMMARY OF CONFIGURE OPTIONS:
 		https://invisible-island.net/autoconf/
 
     --with-libtool-opts=XXX
-	Specify additional libtool options.
-
-    --with-libtool-opts
 	Allow user to pass additional libtool options into the library creation
 	and link steps.  The main use for this is to do something like
 		./configure --with-libtool-opts=-static
@@ -1058,6 +1073,15 @@ SUMMARY OF CONFIGURE OPTIONS:
 	If ".pc" files are installed, optionally add a suffix to the files
 	and corresponding package names to separate unusual configurations.
 	If no option value is given (or if it is "none"), no suffix is added.
+
+    --with-pcre2
+	Add PCRE2 (Perl-compatible regular expressions v2) to the build if it
+	is available and the user requests it.  Assume the application will
+	otherwise use the POSIX interface.
+
+	This is useful for MinGW builds because the usual POSIX interface is
+	not supplied by the development environment, while ncurses' form
+	library uses a regular expression feature for one of the field types.
 
     --with-pkg-config=[DIR]
 	Check for pkg-config, optionally specifying its path.
@@ -1158,6 +1182,10 @@ SUMMARY OF CONFIGURE OPTIONS:
 	Specify a search-list of termcap files which will be compiled into the
 	ncurses library (default:  /etc/termcap:/usr/share/misc/termcap)
 
+    --with-tic-path[=XXX]
+	Use this option to override the automatic detection of tic in your
+	$PATH when building fallbacks (see "--with-fallbacks").
+
     --with-ticlib[=XXX]
 	When building the ncurses library, build a separate library for
 	the modules that are used only by the utility programs.  Normally
@@ -1185,6 +1213,10 @@ SUMMARY OF CONFIGURE OPTIONS:
     --with-trace
 	Configure the trace() function as part of the all models of the ncurses
 	library.  Normally it is part of the debug (libncurses_g) library only.
+
+    --with-valgrind
+	For testing, compile with debug option.
+	This also sets the --disable-leaks option.
 
     --with-versioned-syms[=XXX]
 	The Solaris, GNU and reportedly some other linkers (ld) accept a
@@ -1217,18 +1249,6 @@ SUMMARY OF CONFIGURE OPTIONS:
 	may prefer to use a different ".map" file by setting this option's
 	value.
 
-    --with-xterm-kbs=XXX
-	Configure xterm's terminfo entries to use either BS (^H, i.e., ASCII
-	backspace) or DEL (^?, or 127).  XXX can be BS (or bs, 8) or DEL
-	(or del, 127).
-
-	During installation, the makefile and scripts modifies the "xterm+kbs"
-	terminfo entry to use this setting.
-
-    --with-valgrind
-	For testing, compile with debug option.
-	This also sets the --disable-leaks option.
-
     --with-wrap-prefix=XXX
 	When using the --enable-reentrant option, ncurses redefines variables
 	that would be global in curses, e.g., LINES, as a macro that calls a
@@ -1244,6 +1264,14 @@ SUMMARY OF CONFIGURE OPTIONS:
 	Provide a pathname for the X11 rgb file, used by the picsmap program.
 	This overrides a configure check which usually works, but is needed
 	due to the lack of standardization for X11's files.
+
+    --with-xterm-kbs=XXX
+	Configure xterm's terminfo entries to use either BS (^H, i.e., ASCII
+	backspace) or DEL (^?, or 127).  XXX can be BS (or bs, 8) or DEL
+	(or del, 127).
+
+	During installation, the makefile and scripts modifies the "xterm+kbs"
+	terminfo entry to use this setting.
 
     --without-ada
 	Suppress the configure script's check for Ada95, do not build the
@@ -2105,9 +2133,10 @@ CONFIGURING FALLBACK ENTRIES:
 			$TERMINFO \
 			../misc/terminfo.src \
 			`which tic` \
+			`which infocmp` \
 			linux vt100 xterm >fallback.c
 
-	The first three parameters of the script are normally supplied by
+	The first four parameters of the script are normally supplied by
 	the configured makefiles via the "--with-fallbacks" option.  They
 	are
 
@@ -2115,6 +2144,8 @@ CONFIGURING FALLBACK ENTRIES:
 		2) the source for the terminfo entries
 		3) the location of the tic program, used to create a terminfo
 		   database.
+		4) the location of the infocmp program, used to print a terminfo
+		   description.
 
 	Then just rebuild and reinstall the library as you would normally.
 	You can restore the default empty fallback list with
@@ -2123,6 +2154,7 @@ CONFIGURING FALLBACK ENTRIES:
 			$TERMINFO \
 			../misc/terminfo.src \
 			`which tic` \
+			`which infocmp` \
 			>fallback.c
 
 	The overhead for an empty fallback list is one trivial stub function.
