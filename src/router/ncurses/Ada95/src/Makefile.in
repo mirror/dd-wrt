@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 1998-2016,2018 Free Software Foundation, Inc.                #
+# Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.                #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -28,7 +28,7 @@
 #
 #  Author:  Juergen Pfeifer, 1996
 #
-#  $Id: Makefile.in,v 1.80 2018/01/15 22:12:07 tom Exp $
+#  $Id: Makefile.in,v 1.87 2019/09/07 20:53:06 tom Exp $
 #
 .SUFFIXES:
 
@@ -83,14 +83,14 @@ LDFLAGS		= @LDFLAGS@ @LD_MODEL@ @LIBS@
 RANLIB		= @RANLIB@
 
 ################################################################################
-ADA             = @cf_ada_compiler@
+ADA		= @cf_ada_compiler@
 ADAPREP		= gnatprep
-ADAFLAGS        = @ADAFLAGS@ -I. -I$(srcdir)
+ADAFLAGS	= @ADAFLAGS@ -I. -I$(srcdir)
 
-LIB_NAME	= AdaCurses
+LIB_NAME	= @ADA_LIBNAME@
 SONAME		= @ADA_SHAREDLIB@
 
-GNAT_PROJECT	= AdaCurses.gpr
+GNAT_PROJECT	= @ADA_LIBNAME@.gpr
 
 # build/source are the Ada95 tree
 BUILD_DIR	= ..
@@ -99,8 +99,8 @@ SOURCE_DIR	= ..
 BUILD_DIR_LIB	= $(BUILD_DIR)/lib
 SOURCE_DIR_SRC	= $(SOURCE_DIR)/src
 
-ADAMAKE         = @cf_ada_make@
-ADAMAKEFLAGS    = \
+ADAMAKE		= @cf_ada_make@
+ADAMAKEFLAGS	= \
 	-P$(GNAT_PROJECT) \
 	-XBUILD_DIR=`cd $(BUILD_DIR);pwd` \
 	-XSOURCE_DIR=`cd $(SOURCE_DIR);pwd` \
@@ -213,7 +213,7 @@ clean :: mostlyclean
 	rm -f $(ABASE)-trace.adb
 
 distclean :: clean
-	rm -f Makefile
+	rm -f Makefile library.gpr
 
 realclean :: distclean
 

@@ -3,7 +3,7 @@
 Summary: shared libraries for terminal handling
 Name: mingw32-ncurses6
 Version: 6.1
-Release: 20180127
+Release: 20200111
 License: X11
 Group: Development/Libraries
 Source: ncurses-%{version}-%{release}.tgz
@@ -52,23 +52,27 @@ This package is used for testing ABI %{MY_ABI} with cross-compiles to MinGW.
 	--disable-macros \\\
 	--disable-overwrite \\\
 	--disable-termcap \\\
-	--enable-const \\\
-	--enable-ext-colors \\\
-	--enable-ext-mouse \\\
-	--enable-ext-putwin \\\
 	--enable-interop \\\
+	--enable-opaque-curses \\\
+	--enable-opaque-form \\\
+	--enable-opaque-menu \\\
+	--enable-opaque-panel \\\
 	--enable-pc-files \\\
 	--enable-sp-funcs \\\
 	--enable-term-driver \\\
 	--enable-warnings \\\
+	--enable-wgetch-events \\\
 	--enable-widec \\\
 	--with-config-suffix=dev \\\
 	--verbose \\\
 	--with-cxx-shared \\\
 	--with-develop \\\
-	--with-fallbacks=unknown,rxvt \\\
+	--with-fallbacks=unknown,xterm \\\
+	--with-tic-path=/usr/bin/tic%{MY_ABI} \\\
+	--with-infocmp-path=/usr/bin/infocmp%{MY_ABI} \\\
 	--with-install-prefix=$RPM_BUILD_ROOT \\\
 	--with-pc-suffix=%{MY_ABI} \\\
+	--with-pcre2 \\\
 	--with-shared \\\
 	--with-tparm-arg=intptr_t \\\
 	--with-trace \\\
@@ -142,6 +146,12 @@ rm -rf $RPM_BUILD_ROOT
 %{mingw64_libdir}/*
 
 %changelog
+
+* Sun Jun 30 2019 Thomas E. Dickey
+- use tic-path and infocmp-path options for fallbacks
+
+* Sat Feb 10 2018 Thomas E. Dickey
+- add several development features
 
 * Tue Dec 26 2017 Thomas E. Dickey
 - add --with-config-suffix option

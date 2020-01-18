@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -39,7 +39,7 @@
 extern int malloc_errfd;	/* FIXME */
 #endif
 
-MODULE_ID("$Id: lib_freeall.c,v 1.68 2017/08/04 09:01:46 tom Exp $")
+MODULE_ID("$Id: lib_freeall.c,v 1.71 2019/12/15 00:30:49 tom Exp $")
 
 /*
  * Free all ncurses data.  This is used for testing only (there's no practical
@@ -60,7 +60,7 @@ NCURSES_SP_NAME(_nc_freeall) (NCURSES_SP_DCL0)
 	if (SP_PARM->_panelHook.destroy != 0) {
 	    SP_PARM->_panelHook.destroy(SP_PARM->_panelHook.stdscr_pseudo_panel);
 	}
-#if USE_NEW_PAIR
+#if NCURSES_EXT_COLORS
 	_nc_new_pair_leaks(SP_PARM);
 #endif
     }
@@ -150,7 +150,7 @@ NCURSES_SP_NAME(_nc_free_and_exit) (NCURSES_SP_DCLx int code)
     NCURSES_SP_NAME(_nc_flush) (NCURSES_SP_ARG);
     NCURSES_SP_NAME(_nc_freeall) (NCURSES_SP_ARG);
 #ifdef TRACE
-    trace(0);			/* close trace file, freeing its setbuf */
+    curses_trace(0);		/* close trace file, freeing its setbuf */
     {
 	static va_list fake;
 	free(_nc_varargs("?", fake));
@@ -159,7 +159,7 @@ NCURSES_SP_NAME(_nc_free_and_exit) (NCURSES_SP_DCLx int code)
     exit(code);
 }
 
-#else
+#else /* !HAVE_NC_FREEALL */
 NCURSES_EXPORT(void)
 _nc_freeall(void)
 {
@@ -175,7 +175,7 @@ NCURSES_SP_NAME(_nc_free_and_exit) (NCURSES_SP_DCLx int code)
     }
     exit(code);
 }
-#endif
+#endif /* HAVE_NC_FREEALL */
 
 #if NCURSES_SP_FUNCS
 NCURSES_EXPORT(void)
@@ -184,3 +184,16 @@ _nc_free_and_exit(int code)
     NCURSES_SP_NAME(_nc_free_and_exit) (CURRENT_SCREEN, code);
 }
 #endif
+
+NCURSES_EXPORT(void)
+exit_curses(int code)
+{
+#if NO_LEAKS
+#if NCURSES_SP_FUNCS
+    NCURSES_SP_NAME(_nc_free_and_exit) (CURRENT_SCREEN, code);
+#else
+    _nc_free_and_exit(code);	/* deprecated... */
+#endif
+#endif
+    exit(code);
+}

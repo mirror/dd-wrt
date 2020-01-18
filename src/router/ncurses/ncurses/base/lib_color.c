@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -48,7 +48,7 @@
 #define CUR SP_TERMTYPE
 #endif
 
-MODULE_ID("$Id: lib_color.c,v 1.136 2017/10/22 15:19:37 tom Exp $")
+MODULE_ID("$Id: lib_color.c,v 1.142 2019/12/22 00:57:53 tom Exp $")
 
 #ifdef USE_TERM_DRIVER
 #define CanChange      InfoOf(SP_PARM).canchange
@@ -396,8 +396,10 @@ NCURSES_SP_NAME(start_color) (NCURSES_SP_DCL0)
 	     * allow for default-color as a component of a color-pair.
 	     */
 	    SP_PARM->_pair_limit += (1 + (2 * maxcolors));
+#if !NCURSES_EXT_COLORS
 	    SP_PARM->_pair_limit = limit_PAIRS(SP_PARM->_pair_limit);
 #endif
+#endif /* NCURSES_EXT_FUNCS */
 	    SP_PARM->_pair_count = maxpairs;
 	    SP_PARM->_color_count = maxcolors;
 #if !USE_REENTRANT
@@ -405,7 +407,7 @@ NCURSES_SP_NAME(start_color) (NCURSES_SP_DCL0)
 	    COLORS = maxcolors;
 #endif
 
-	    _nc_reserve_pairs(SP_PARM, 16);
+	    ReservePairs(SP_PARM, 16);
 	    if (SP_PARM->_color_pairs != 0) {
 		if (init_direct_colors(NCURSES_SP_ARG)) {
 		    result = OK;
@@ -514,49 +516,41 @@ _nc_change_pair(SCREEN *sp, int pair)
     }
 }
 
-NCURSES_EXPORT(colorpair_t *)
+NCURSES_EXPORT(void)
 _nc_reserve_pairs(SCREEN *sp, int want)
 {
-    colorpair_t *result = 0;
     int have = sp->_pair_alloc;
 
-    if ((sp->_color_pairs != 0) && (want < sp->_pair_alloc)) {
-	result = &(sp->_color_pairs[want]);
-    } else {
+    if (have == 0)
+	have = 1;
+    while (have <= want)
+	have *= 2;
+    if (have > sp->_pair_limit)
+	have = sp->_pair_limit;
 
-	if (have == 0)
-	    have = 1;
-	while (have <= want)
-	    have *= 2;
-	if (have > sp->_pair_limit)
-	    have = sp->_pair_limit;
+    if (sp->_color_pairs == 0) {
+	sp->_color_pairs = TYPE_CALLOC(colorpair_t, have);
+    } else if (have > sp->_pair_alloc) {
+#if NCURSES_EXT_COLORS
+	colorpair_t *next;
 
-	if (sp->_color_pairs == 0) {
-	    sp->_color_pairs = TYPE_CALLOC(colorpair_t, have);
-	} else if (have > sp->_pair_alloc) {
-#if USE_NEW_PAIR
-	    colorpair_t *next;
-
-	    if ((next = typeCalloc(colorpair_t, have)) == 0)
-		_nc_err_abort(MSG_NO_MEMORY);
-	    memcpy(next, sp->_color_pairs, (size_t) sp->_pair_alloc * sizeof(*next));
-	    _nc_copy_pairs(sp, next, sp->_color_pairs, sp->_pair_alloc);
-	    free(sp->_color_pairs);
-	    sp->_color_pairs = next;
+	if ((next = typeCalloc(colorpair_t, have)) == 0)
+	    _nc_err_abort(MSG_NO_MEMORY);
+	memcpy(next, sp->_color_pairs, (size_t) sp->_pair_alloc * sizeof(*next));
+	_nc_copy_pairs(sp, next, sp->_color_pairs, sp->_pair_alloc);
+	free(sp->_color_pairs);
+	sp->_color_pairs = next;
 #else
-	    TYPE_REALLOC(colorpair_t, have, sp->_color_pairs);
-	    if (sp->_color_pairs != 0) {
-		memset(sp->_color_pairs + sp->_pair_alloc, 0,
-		       sizeof(colorpair_t) * (size_t) (have - sp->_pair_alloc));
-	    }
-#endif
-	}
+	TYPE_REALLOC(colorpair_t, have, sp->_color_pairs);
 	if (sp->_color_pairs != 0) {
-	    sp->_pair_alloc = have;
-	    result = &(sp->_color_pairs[want]);
+	    memset(sp->_color_pairs + sp->_pair_alloc, 0,
+		   sizeof(colorpair_t) * (size_t) (have - sp->_pair_alloc));
 	}
+#endif
     }
-    return result;
+    if (sp->_color_pairs != 0) {
+	sp->_pair_alloc = have;
+    }
 }
 
 /*
@@ -578,7 +572,7 @@ _nc_init_pair(SCREEN *sp, int pair, int f, int b)
 
     maxcolors = MaxColors;
 
-    _nc_reserve_pairs(sp, pair);
+    ReservePairs(sp, pair);
     previous = sp->_color_pairs[pair];
 #if NCURSES_EXT_FUNCS
     if (sp->_default_color || sp->_assumed_color) {
@@ -809,7 +803,7 @@ NCURSES_SP_NAME(has_colors) (NCURSES_SP_DCL0)
     int code = FALSE;
 
     (void) SP_PARM;
-    T((T_CALLED("has_colors()")));
+    T((T_CALLED("has_colors(%p)"), (void *) SP_PARM));
     if (HasTerminal(SP_PARM)) {
 #ifdef USE_TERM_DRIVER
 	code = HasColor;
@@ -938,9 +932,12 @@ _nc_pair_content(SCREEN *sp, int pair, int *f, int *b)
     if (!ValidPair(sp, pair)) {
 	result = ERR;
     } else {
-	int fg = FORE_OF(sp->_color_pairs[pair]);
-	int bg = BACK_OF(sp->_color_pairs[pair]);
+	int fg;
+	int bg;
 
+	ReservePairs(sp, pair);
+	fg = FORE_OF(sp->_color_pairs[pair]);
+	bg = BACK_OF(sp->_color_pairs[pair]);
 #if NCURSES_EXT_FUNCS
 	if (isDefaultColor(fg))
 	    fg = -1;
@@ -1082,7 +1079,7 @@ _nc_do_color(int old_pair, int pair, int reverse, NCURSES_OUTC outc)
 }
 #endif
 
-#if USE_EXTENDED_COLORS
+#if NCURSES_EXT_COLORS
 NCURSES_EXPORT(int)
 NCURSES_SP_NAME(init_extended_pair) (NCURSES_SP_DCLx int pair, int f, int b)
 {
@@ -1122,7 +1119,7 @@ NCURSES_SP_NAME(reset_color_pairs) (NCURSES_SP_DCL0)
 	    free(SP_PARM->_color_pairs);
 	    SP_PARM->_color_pairs = 0;
 	    SP_PARM->_pair_alloc = 0;
-	    _nc_reserve_pairs(SP_PARM, 16);
+	    ReservePairs(SP_PARM, 16);
 	    clearok(CurScreen(SP_PARM), TRUE);
 	    touchwin(StdScreen(SP_PARM));
 	}
@@ -1164,4 +1161,4 @@ reset_color_pairs(void)
     NCURSES_SP_NAME(reset_color_pairs) (CURRENT_SCREEN);
 }
 #endif /* NCURSES_SP_FUNCS */
-#endif /* USE_EXTENDED_COLORS */
+#endif /* NCURSES_EXT_COLORS */

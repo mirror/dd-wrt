@@ -1,5 +1,5 @@
 .\"***************************************************************************
-.\" Copyright (c) 2017 Free Software Foundation, Inc.                        *
+.\" Copyright (c) 2017,2018 Free Software Foundation, Inc.                   *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
 .\" copy of this software and associated documentation files (the            *
@@ -26,7 +26,7 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: scr_dump.5,v 1.12 2017/11/25 20:12:55 tom Exp $
+.\" $Id: scr_dump.5,v 1.15 2018/07/28 21:46:15 tom Exp $
 .TH scr_dump 5
 .ie \n(.g .ds `` \(lq
 .el       .ds `` ``
@@ -43,7 +43,8 @@
 .de NE
 .fi
 .ft R
-.in -4
+.ie n  .in -4
+.el    .in -2
 ..
 .de bP
 .ie n  .IP \(bu 4
@@ -155,12 +156,14 @@ because it did not meet the criteria for \fIbase curses\fP).
 The document explained the term \*(``enhanced\*('' as follows:
 .RS 3
 .bP
-Shading is used to identify \fIX/Open Enhanced Curses\fP material, relating to interfaces
-included to provide enhanced capabilities for applications originally written to be
-compiled on systems based on the UNIX operating system. Therefore, the features
-described may not be present on systems that conform to \fBXPG4 or to earlier XPG releases\fP.
-The relevant reference pages may provide additional or more specific portability warnings
-about use of the material.
+Shading is used to identify \fIX/Open Enhanced Curses\fP material,
+relating to interfaces included to provide enhanced capabilities
+for applications originally written to be compiled on systems
+based on the UNIX operating system.
+Therefore, the features described may not be present on systems
+that conform to \fBXPG4 or to earlier XPG releases\fP.
+The relevant reference pages may provide additional
+or more specific portability warnings about use of the material.
 .RE
 .PP
 In the foregoing, emphasis was added to \fBunspecified format\fP
@@ -383,8 +386,8 @@ The \fIxpg4\fP curses library does not know about the \fBbce\fP
 (back color erase) capability, and does not color the window background.
 .ne 10
 .PP
-On the other hand, the SVr4 curses library does know about the background
-color.  However, its screen dumps are in binary.
+On the other hand, the SVr4 curses library does know about the background color.
+However, its screen dumps are in binary.
 Here is the corresponding dump (using \*(``od -t x1\*(''):
 .NS
 0000000 1c 01 c3 d6 f3 58 05 00 0b 00 0a 00 14 00 00 00

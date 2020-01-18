@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -84,7 +84,7 @@
 #define CUR SP_TERMTYPE
 #endif
 
-MODULE_ID("$Id: lib_mouse.c,v 1.176 2017/11/18 22:12:06 Vassili.Courzakis Exp $")
+MODULE_ID("$Id: lib_mouse.c,v 1.183 2019/08/10 17:11:50 tom Exp $")
 
 #include <tic.h>
 
@@ -438,7 +438,7 @@ allow_gpm_mouse(SCREEN *sp GCC_UNUSED)
 
 #if USE_WEAK_SYMBOLS
     /* Danger Robinson: do not use dlopen for libgpm if already loaded */
-    if ((Gpm_Wgetch)) {
+    if ((Gpm_Wgetch) != 0) {
 	if (!sp->_mouse_gpm_loaded) {
 	    T(("GPM library was already dlopen'd, not by us"));
 	}
@@ -605,7 +605,7 @@ initialize_mousetype(SCREEN *sp)
 #if USE_EMX_MOUSE
     if (!sp->_emxmouse_thread
 	&& strstr(SP_TERMTYPE term_names, "xterm") == 0
-	&& key_mouse) {
+	&& NonEmpty(key_mouse)) {
 	int handles[2];
 
 	if (pipe(handles) < 0) {
@@ -716,11 +716,8 @@ initialize_mousetype(SCREEN *sp)
     CallDriver(sp, td_initmouse);
 #else
     /* we know how to recognize mouse events under "xterm" */
-    if (key_mouse != 0) {
-	if (!strcmp(key_mouse, xterm_kmous)
-	    || strstr(SP_TERMTYPE term_names, "xterm") != 0) {
-	    init_xterm_mouse(sp);
-	}
+    if (NonEmpty(key_mouse)) {
+	init_xterm_mouse(sp);
     } else if (strstr(SP_TERMTYPE term_names, "xterm") != 0) {
 	if (_nc_add_to_try(&(sp->_keytry), xterm_kmous, KEY_MOUSE) == OK)
 	    init_xterm_mouse(sp);
@@ -1106,7 +1103,7 @@ decode_xterm_1005(SCREEN *sp, MEVENT * eventp)
 #else
 			    sp->_ifd,
 #endif
-			    kbuf + grabbed, 1);
+			    (kbuf + grabbed), (size_t) 1);
 	if (res == -1)
 	    break;
 	grabbed += (size_t) res;
@@ -1191,7 +1188,7 @@ read_SGR(SCREEN *sp, SGR_DATA * result)
 #else
 			    sp->_ifd,
 #endif
-			    kbuf + grabbed, 1);
+			    (kbuf + grabbed), (size_t) 1);
 	if (res == -1)
 	    break;
 	if ((grabbed + MAX_KBUF) >= (int) sizeof(kbuf)) {
@@ -1276,6 +1273,15 @@ decode_xterm_SGR1006(SCREEN *sp, MEVENT * eventp)
 	    } else {
 		eventp->bstate = REPORT_MOUSE_POSITION;
 	    }
+	}
+	if (b & 4) {
+	    eventp->bstate |= BUTTON_SHIFT;
+	}
+	if (b & 8) {
+	    eventp->bstate |= BUTTON_ALT;
+	}
+	if (b & 16) {
+	    eventp->bstate |= BUTTON_CTRL;
 	}
 	result = (eventp->bstate & REPORT_MOUSE_POSITION) ? TRUE : FALSE;
 	eventp->x = (data.params[1] ? (data.params[1] - 1) : 0);

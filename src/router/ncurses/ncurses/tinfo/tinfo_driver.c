@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2008-2016,2017 Free Software Foundation, Inc.              *
+ * Copyright (c) 2008-2018,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -51,7 +51,7 @@
 # endif
 #endif
 
-MODULE_ID("$Id: tinfo_driver.c,v 1.59 2017/09/10 21:08:46 tom Exp $")
+MODULE_ID("$Id: tinfo_driver.c,v 1.66 2019/08/10 18:36:08 tom Exp $")
 
 /*
  * SCO defines TIOCGSIZE and the corresponding struct.  Other systems (SunOS,
@@ -144,6 +144,8 @@ get_baudrate(TERMINAL *termp)
 #undef SETUP_FAIL
 #define SETUP_FAIL FALSE
 
+#define NO_COPY {}
+
 static bool
 drv_CanHandle(TERMINAL_CONTROL_BLOCK * TCB, const char *tname, int *errret)
 {
@@ -162,7 +164,9 @@ drv_CanHandle(TERMINAL_CONTROL_BLOCK * TCB, const char *tname, int *errret)
 
 #if (NCURSES_USE_DATABASE || NCURSES_USE_TERMCAP)
     status = _nc_setup_tinfo(tname, &TerminalType(termp));
+    T(("_nc_setup_tinfo returns %d", status));
 #else
+    T(("no database available"));
     status = TGETENT_NO;
 #endif
 
@@ -171,6 +175,7 @@ drv_CanHandle(TERMINAL_CONTROL_BLOCK * TCB, const char *tname, int *errret)
 	const TERMTYPE2 *fallback = _nc_fallback2(tname);
 
 	if (fallback) {
+	    T(("found fallback entry"));
 	    TerminalType(termp) = *fallback;
 	    status = TGETENT_YES;
 	}
@@ -181,7 +186,10 @@ drv_CanHandle(TERMINAL_CONTROL_BLOCK * TCB, const char *tname, int *errret)
 	if (status == TGETENT_ERR) {
 	    ret_error0(status, "terminals database is inaccessible\n");
 	} else if (status == TGETENT_NO) {
-	    ret_error1(status, "unknown terminal type.\n", tname);
+	    ret_error1(status, "unknown terminal type.\n",
+		       tname, NO_COPY);
+	} else {
+	    ret_error0(status, "unexpected return-code\n");
 	}
     }
     result = TRUE;
@@ -222,15 +230,18 @@ drv_CanHandle(TERMINAL_CONTROL_BLOCK * TCB, const char *tname, int *errret)
 	     || (VALID_STRING(cursor_down) && VALID_STRING(cursor_home)))
 	    && VALID_STRING(clear_screen)) {
 	    cleanup_termtype();
-	    ret_error1(TGETENT_YES, "terminal is not really generic.\n", tname);
+	    ret_error1(TGETENT_YES, "terminal is not really generic.\n",
+		       tname, NO_COPY);
 	} else {
 	    cleanup_termtype();
-	    ret_error1(TGETENT_NO, "I need something more specific.\n", tname);
+	    ret_error1(TGETENT_NO, "I need something more specific.\n",
+		       tname, NO_COPY);
 	}
     }
     if (hard_copy) {
 	cleanup_termtype();
-	ret_error1(TGETENT_YES, "I can't handle hardcopy terminals.\n", tname);
+	ret_error1(TGETENT_YES, "I can't handle hardcopy terminals.\n",
+		   tname, NO_COPY);
     }
 
     returnBool(result);
@@ -894,11 +905,8 @@ drv_initmouse(TERMINAL_CONTROL_BLOCK * TCB)
 
     /* we know how to recognize mouse events under "xterm" */
     if (sp != 0) {
-	if (key_mouse != 0) {
-	    if (!strcmp(key_mouse, xterm_kmous)
-		|| strstr(SP_TERMTYPE term_names, "xterm") != 0) {
-		init_xterm_mouse(sp);
-	    }
+	if (NonEmpty(key_mouse)) {
+	    init_xterm_mouse(sp);
 	} else if (strstr(SP_TERMTYPE term_names, "xterm") != 0) {
 	    if (_nc_add_to_try(&(sp->_keytry), xterm_kmous, KEY_MOUSE) == OK)
 		init_xterm_mouse(sp);
@@ -1082,8 +1090,13 @@ drv_initacs(TERMINAL_CONTROL_BLOCK * TCB, chtype *real_map, chtype *fake_map)
 	while (i + 1 < length) {
 	    if (acs_chars[i] != 0 && UChar(acs_chars[i]) < ACS_LEN) {
 		real_map[UChar(acs_chars[i])] = UChar(acs_chars[i + 1]) | A_ALTCHARSET;
-		if (sp != 0)
+		T(("#%d real_map[%s] = %s",
+		   (int) i,
+		   _tracechar(UChar(acs_chars[i])),
+		   _tracechtype(real_map[UChar(acs_chars[i])])));
+		if (sp != 0) {
 		    sp->_screen_acs_map[UChar(acs_chars[i])] = TRUE;
+		}
 	    }
 	    i += 2;
 	}
@@ -1113,7 +1126,6 @@ drv_initacs(TERMINAL_CONTROL_BLOCK * TCB, chtype *real_map, chtype *fake_map)
 		   ? "DIFF"
 		   : "SAME"),
 		_nc_visbuf(show));
-
 	_nc_unlock_global(tracef);
     }
 #endif /* TRACE */
@@ -1330,23 +1342,29 @@ drv_keyok(TERMINAL_CONTROL_BLOCK * TCB, int c, int flag)
 	unsigned ch = (unsigned) c;
 	if (flag) {
 	    while ((s = _nc_expand_try(sp->_key_ok,
-				       ch, &count, (size_t) 0)) != 0
-		   && _nc_remove_key(&(sp->_key_ok), ch)) {
-		code = _nc_add_to_try(&(sp->_keytry), s, ch);
-		free(s);
-		count = 0;
-		if (code != OK)
-		    break;
+				       ch, &count, (size_t) 0)) != 0) {
+		if (_nc_remove_key(&(sp->_key_ok), ch)) {
+		    code = _nc_add_to_try(&(sp->_keytry), s, ch);
+		    free(s);
+		    count = 0;
+		    if (code != OK)
+			break;
+		} else {
+		    free(s);
+		}
 	    }
 	} else {
 	    while ((s = _nc_expand_try(sp->_keytry,
-				       ch, &count, (size_t) 0)) != 0
-		   && _nc_remove_key(&(sp->_keytry), ch)) {
-		code = _nc_add_to_try(&(sp->_key_ok), s, ch);
-		free(s);
-		count = 0;
-		if (code != OK)
-		    break;
+				       ch, &count, (size_t) 0)) != 0) {
+		if (_nc_remove_key(&(sp->_keytry), ch)) {
+		    code = _nc_add_to_try(&(sp->_key_ok), s, ch);
+		    free(s);
+		    count = 0;
+		    if (code != OK)
+			break;
+		} else {
+		    free(s);
+		}
 	    }
 	}
     }

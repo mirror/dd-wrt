@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2014,2017 Free Software Foundation, Inc.                   *
+ * Copyright (c) 2014-2018,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -29,13 +29,13 @@
 /*
  * Author: Thomas E. Dickey
  *
- * $Id: dots_curses.c,v 1.12 2017/11/24 19:25:28 tom Exp $
+ * $Id: dots_curses.c,v 1.15 2019/08/24 21:50:35 tom Exp $
  *
  * A simple demo of the curses interface used for comparison with termcap.
  */
 #include <test.priv.h>
 
-#if !defined(__MINGW32__)
+#if !defined(_WIN32)
 #include <sys/time.h>
 #endif
 
@@ -113,7 +113,7 @@ usage(void)
 int
 main(int argc, char *argv[])
 {
-    int x, y, z, p;
+    int ch;
     int fg, bg;
     double r;
     double c;
@@ -122,11 +122,16 @@ main(int argc, char *argv[])
 #endif
     int m_option = 2;
     int s_option = 1;
+    size_t need;
+    char *my_env;
 
-    while ((x = getopt(argc, argv, "T:dem:s:")) != -1) {
-	switch (x) {
+    while ((ch = getopt(argc, argv, "T:dem:s:")) != -1) {
+	switch (ch) {
 	case 'T':
-	    putenv(strcat(strcpy(malloc(6 + strlen(optarg)), "TERM="), optarg));
+	    need = 6 + strlen(optarg);
+	    my_env = malloc(need);
+	    _nc_SPRINTF(my_env, _nc_SLIMIT(need) "TERM=%s", optarg);
+	    putenv(my_env);
 	    break;
 #if HAVE_USE_DEFAULT_COLORS
 	case 'd':
@@ -180,13 +185,13 @@ main(int argc, char *argv[])
     fg = COLOR_WHITE;
     bg = COLOR_BLACK;
     while (!interrupted) {
-	x = (int) (c * ranf()) + m_option;
-	y = (int) (r * ranf()) + m_option;
-	p = (ranf() > 0.9) ? '*' : ' ';
+	int x = (int) (c * ranf()) + m_option;
+	int y = (int) (r * ranf()) + m_option;
+	int p = (ranf() > 0.9) ? '*' : ' ';
 
 	move(y, x);
 	if (has_colors()) {
-	    z = (int) (ranf() * COLORS);
+	    int z = (int) (ranf() * COLORS);
 	    if (ranf() > 0.01) {
 		set_colors(fg = z, bg);
 		attron(COLOR_PAIR(mypair(fg, bg)));

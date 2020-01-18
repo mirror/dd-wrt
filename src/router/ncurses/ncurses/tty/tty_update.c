@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -84,7 +84,7 @@
 
 #include <ctype.h>
 
-MODULE_ID("$Id: tty_update.c,v 1.297 2017/09/02 21:45:44 Jeb.Rosen Exp $")
+MODULE_ID("$Id: tty_update.c,v 1.304 2019/06/23 16:22:17 tom Exp $")
 
 /*
  * This define controls the line-breakout optimization.  Every once in a
@@ -210,73 +210,8 @@ GoTo(NCURSES_SP_DCLx int const row, int const col)
 }
 
 #if !NCURSES_WCWIDTH_GRAPHICS
-static bool
-is_wacs_value(unsigned ch)
-{
-    bool result;
-    switch (ch) {
-    case 0x00a3:		/* FALLTHRU - ncurses pound-sterling symbol */
-    case 0x00b0:		/* FALLTHRU - VT100 degree symbol */
-    case 0x00b1:		/* FALLTHRU - VT100 plus/minus */
-    case 0x00b7:		/* FALLTHRU - VT100 bullet */
-    case 0x03c0:		/* FALLTHRU - ncurses greek pi */
-    case 0x2190:		/* FALLTHRU - Teletype arrow pointing left */
-    case 0x2191:		/* FALLTHRU - Teletype arrow pointing up */
-    case 0x2192:		/* FALLTHRU - Teletype arrow pointing right */
-    case 0x2193:		/* FALLTHRU - Teletype arrow pointing down */
-    case 0x2260:		/* FALLTHRU - ncurses not-equal */
-    case 0x2264:		/* FALLTHRU - ncurses less-than-or-equal-to */
-    case 0x2265:		/* FALLTHRU - ncurses greater-than-or-equal-to */
-    case 0x23ba:		/* FALLTHRU - VT100 scan line 1 */
-    case 0x23bb:		/* FALLTHRU - ncurses scan line 3 */
-    case 0x23bc:		/* FALLTHRU - ncurses scan line 7 */
-    case 0x23bd:		/* FALLTHRU - VT100 scan line 9 */
-    case 0x2500:		/* FALLTHRU - VT100 horizontal line */
-    case 0x2501:		/* FALLTHRU - thick horizontal line */
-    case 0x2502:		/* FALLTHRU - VT100 vertical line */
-    case 0x2503:		/* FALLTHRU - thick vertical line */
-    case 0x250c:		/* FALLTHRU - VT100 upper left corner */
-    case 0x250f:		/* FALLTHRU - thick upper left corner */
-    case 0x2510:		/* FALLTHRU - VT100 upper right corner */
-    case 0x2513:		/* FALLTHRU - thick upper right corner */
-    case 0x2514:		/* FALLTHRU - VT100 lower left corner */
-    case 0x2517:		/* FALLTHRU - thick lower left corner */
-    case 0x2518:		/* FALLTHRU - VT100 lower right corner */
-    case 0x251b:		/* FALLTHRU - thick lower right corner */
-    case 0x251c:		/* FALLTHRU - VT100 tee pointing left */
-    case 0x2523:		/* FALLTHRU - thick tee pointing left */
-    case 0x2524:		/* FALLTHRU - VT100 tee pointing right */
-    case 0x252b:		/* FALLTHRU - thick tee pointing right */
-    case 0x252c:		/* FALLTHRU - VT100 tee pointing down */
-    case 0x2533:		/* FALLTHRU - thick tee pointing down */
-    case 0x2534:		/* FALLTHRU - VT100 tee pointing up */
-    case 0x253b:		/* FALLTHRU - thick tee pointing up */
-    case 0x253c:		/* FALLTHRU - VT100 large plus or crossover */
-    case 0x254b:		/* FALLTHRU - thick large plus or crossover */
-    case 0x2550:		/* FALLTHRU - double horizontal line */
-    case 0x2551:		/* FALLTHRU - double vertical line */
-    case 0x2554:		/* FALLTHRU - double upper left corner */
-    case 0x2557:		/* FALLTHRU - double upper right corner */
-    case 0x255a:		/* FALLTHRU - double lower left corner */
-    case 0x255d:		/* FALLTHRU - double lower right corner */
-    case 0x2560:		/* FALLTHRU - double tee pointing right */
-    case 0x2563:		/* FALLTHRU - double tee pointing left */
-    case 0x2566:		/* FALLTHRU - double tee pointing down */
-    case 0x2569:		/* FALLTHRU - double tee pointing up */
-    case 0x256c:		/* FALLTHRU - double large plus or crossover */
-    case 0x2592:		/* FALLTHRU - VT100 checker board (stipple) */
-    case 0x25ae:		/* FALLTHRU - Teletype solid square block */
-    case 0x25c6:		/* FALLTHRU - VT100 diamond */
-    case 0x2603:		/* FALLTHRU - Teletype lantern symbol */
-	result = TRUE;
-	break;
-    default:
-	result = FALSE;
-	break;
-    }
-    return result;
-}
-#endif
+#define is_wacs_value(ch) (_nc_wacs_width(ch) == 1 && wcwidth(ch) > 1)
+#endif /* !NCURSES_WCWIDTH_GRAPHICS */
 
 static NCURSES_INLINE void
 PutAttrChar(NCURSES_SP_DCLx CARG_CH_T ch)
@@ -304,7 +239,7 @@ PutAttrChar(NCURSES_SP_DCLx CARG_CH_T ch)
      * Determine the number of character cells which the 'ch' value will use
      * on the screen.  It should be at least one.
      */
-    if ((chlen = wcwidth(CharOf(CHDEREF(ch)))) <= 0) {
+    if ((chlen = _nc_wacs_width(CharOf(CHDEREF(ch)))) <= 0) {
 	static const NCURSES_CH_T blank = NewChar(BLANK_TEXT);
 
 	/*
@@ -344,7 +279,9 @@ PutAttrChar(NCURSES_SP_DCLx CARG_CH_T ch)
 	    || is_wacs_value(CharOfD(ch))
 #endif
 	)) {
+	int c8;
 	my_ch = CHDEREF(ch);	/* work around const param */
+	c8 = CharOf(my_ch);
 #if USE_WIDEC_SUPPORT
 	/*
 	 * This is crude & ugly, but works most of the time.  It checks if the
@@ -368,8 +305,23 @@ PutAttrChar(NCURSES_SP_DCLx CARG_CH_T ch)
 		chlen = 1;
 	    }
 #endif /* !NCURSES_WCWIDTH_GRAPHICS */
-	}
+	} else
 #endif
+	if (!SP_PARM->_screen_acs_map[c8]) {
+	    /*
+	     * If we found no mapping for a given alternate-character set item
+	     * in the terminal description, attempt to use the ASCII fallback
+	     * code which is populated in the _acs_map[] array.  If that did
+	     * not correspond to a line-drawing, etc., graphics character, the
+	     * array entry would be empty.
+	     */
+	    chtype temp = UChar(SP_PARM->_acs_map[c8]);
+	    if (temp) {
+		RemAttr(attr, A_ALTCHARSET);
+		SetChar(my_ch, temp, AttrOf(attr));
+	    }
+	}
+
 	/*
 	 * If we (still) have alternate character set, it is the normal 8bit
 	 * flavor.  The _screen_acs_map[] array tells if the character was
@@ -535,7 +487,7 @@ wrap_cursor(NCURSES_SP_DCL0)
 	    TR(TRACE_CHARPUT, ("turning off (%#lx) %s before wrapping",
 			       (unsigned long) AttrOf(SCREEN_ATTRS(SP_PARM)),
 			       _traceattr(AttrOf(SCREEN_ATTRS(SP_PARM)))));
-	    (void) VIDATTR(SP_PARM, A_NORMAL, 0);
+	    VIDPUTS(SP_PARM, A_NORMAL, 0);
 	}
     } else {
 	SP_PARM->_curscol--;
@@ -669,8 +621,9 @@ EmitRange(NCURSES_SP_DCLx const NCURSES_CH_T * ntext, int num)
 	    } else if (repeat_char != 0 &&
 #if USE_WIDEC_SUPPORT
 		       (!SP_PARM->_screen_unicode &&
-			((AttrOf(ntext0) & A_ALTCHARSET) == 0 ||
-			 (CharOf(ntext0) < ACS_LEN))) &&
+			(CharOf(ntext0) < ((AttrOf(ntext0) & A_ALTCHARSET)
+					   ? ACS_LEN
+					   : 256))) &&
 #endif
 		       runcount > SP_PARM->_rep_cost) {
 		NCURSES_CH_T temp;

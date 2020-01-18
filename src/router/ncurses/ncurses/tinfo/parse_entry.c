@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -47,7 +47,7 @@
 #include <ctype.h>
 #include <tic.h>
 
-MODULE_ID("$Id: parse_entry.c,v 1.92 2017/08/26 19:49:50 tom Exp $")
+MODULE_ID("$Id: parse_entry.c,v 1.98 2019/10/12 00:50:31 tom Exp $")
 
 #ifdef LINT
 static short const parametrized[] =
@@ -63,7 +63,7 @@ static struct name_table_entry const *lookup_fullname(const char *name);
 #if NCURSES_XNAMES
 
 static struct name_table_entry const *
-_nc_extend_names(ENTRY * entryp, char *name, int token_type)
+_nc_extend_names(ENTRY * entryp, const char *name, int token_type)
 {
     static struct name_table_entry temp;
     TERMTYPE2 *tp = &(entryp->tterm);
@@ -177,6 +177,39 @@ _nc_extend_names(ENTRY * entryp, char *name, int token_type)
     temp.nte_link = -1;
 
     return &temp;
+}
+
+static const char *
+usertype2s(int mask)
+{
+    const char *result = "unknown";
+    if (mask & (1 << BOOLEAN)) {
+	result = "boolean";
+    } else if (mask & (1 << NUMBER)) {
+	result = "number";
+    } else if (mask & (1 << STRING)) {
+	result = "string";
+    }
+    return result;
+}
+
+static bool
+expected_type(const char *name, int token_type, bool silent)
+{
+    struct user_table_entry const *entry = _nc_find_user_entry(name);
+    bool result = TRUE;
+    if ((entry != 0) && (token_type != CANCEL)) {
+	int have_type = (1 << token_type);
+	if (!(entry->ute_type & have_type)) {
+	    if (!silent)
+		_nc_warning("expected %s-type for %s, have %s",
+			    usertype2s(entry->ute_type),
+			    name,
+			    usertype2s(have_type));
+	    result = FALSE;
+	}
+    }
+    return result;
 }
 #endif /* NCURSES_XNAMES */
 
@@ -385,12 +418,20 @@ _nc_parse_entry(ENTRY * entryp, int literal, bool silent)
 	     * define a name based on its context.
 	     */
 	    if (entry_ptr == NOTFOUND
-		&& _nc_user_definable
-		&& (entry_ptr = _nc_extend_names(entryp,
-						 _nc_curr_token.tk_name,
-						 token_type)) != 0) {
-		if (_nc_tracing >= DEBUG_LEVEL(1))
-		    _nc_warning("extended capability '%s'", _nc_curr_token.tk_name);
+		&& _nc_user_definable) {
+		if (expected_type(_nc_curr_token.tk_name, token_type, silent)) {
+		    if ((entry_ptr = _nc_extend_names(entryp,
+						      _nc_curr_token.tk_name,
+						      token_type)) != 0) {
+			if (_nc_tracing >= DEBUG_LEVEL(1)) {
+			    _nc_warning("extended capability '%s'",
+					_nc_curr_token.tk_name);
+			}
+		    }
+		} else {
+		    /* ignore it: we have already printed error message */
+		    continue;
+		}
 	    }
 #endif /* NCURSES_XNAMES */
 
@@ -489,11 +530,14 @@ _nc_parse_entry(ENTRY * entryp, int literal, bool silent)
 		break;
 
 	    case NUMBER:
+#if !NCURSES_EXT_NUMBERS
 		if (_nc_curr_token.tk_valnumber > MAX_NUMBER) {
 		    entryp->tterm.Numbers[entry_ptr->nte_index] = MAX_NUMBER;
-		} else {
+		} else
+#endif
+		{
 		    entryp->tterm.Numbers[entry_ptr->nte_index] =
- 			(NCURSES_INT2) _nc_curr_token.tk_valnumber;
+			(NCURSES_INT2) _nc_curr_token.tk_valnumber;
 		}
 		break;
 
@@ -543,9 +587,11 @@ _nc_parse_entry(ENTRY * entryp, int literal, bool silent)
 		 * Otherwise, look for a base entry that will already
 		 * have picked up defaults via translation.
 		 */
-		for (i = 0; i < entryp->nuses; i++)
-		    if (!strchr((char *) entryp->uses[i].name, '+'))
+		for (i = 0; i < entryp->nuses; i++) {
+		    if (entryp->uses[i].name != 0
+			&& !strchr(entryp->uses[i].name, '+'))
 			has_base_entry = TRUE;
+		}
 	    }
 
 	    postprocess_termcap(&entryp->tterm, has_base_entry);
@@ -608,12 +654,12 @@ _nc_capcmp(const char *s, const char *t)
 }
 
 static void
-append_acs0(string_desc * dst, int code, int src)
+append_acs0(string_desc * dst, int code, char *src, size_t off)
 {
-    if (src != 0) {
+    if (src != 0 && off < strlen(src)) {
 	char temp[3];
 	temp[0] = (char) code;
-	temp[1] = (char) src;
+	temp[1] = src[off];
 	temp[2] = 0;
 	_nc_safe_strcat(dst, temp);
     }
@@ -623,7 +669,7 @@ static void
 append_acs(string_desc * dst, int code, char *src)
 {
     if (VALID_STRING(src) && strlen(src) == 1) {
-	append_acs0(dst, code, *src);
+	append_acs0(dst, code, src, 0);
     }
 }
 
@@ -992,17 +1038,17 @@ postprocess_terminfo(TERMTYPE2 *tp)
 	_nc_str_init(&result, buf2, sizeof(buf2));
 	_nc_safe_strcat(&result, acs_chars);
 
-	append_acs0(&result, 'l', box_chars_1[0]);	/* ACS_ULCORNER */
-	append_acs0(&result, 'q', box_chars_1[1]);	/* ACS_HLINE */
-	append_acs0(&result, 'k', box_chars_1[2]);	/* ACS_URCORNER */
-	append_acs0(&result, 'x', box_chars_1[3]);	/* ACS_VLINE */
-	append_acs0(&result, 'j', box_chars_1[4]);	/* ACS_LRCORNER */
-	append_acs0(&result, 'm', box_chars_1[5]);	/* ACS_LLCORNER */
-	append_acs0(&result, 'w', box_chars_1[6]);	/* ACS_TTEE */
-	append_acs0(&result, 'u', box_chars_1[7]);	/* ACS_RTEE */
-	append_acs0(&result, 'v', box_chars_1[8]);	/* ACS_BTEE */
-	append_acs0(&result, 't', box_chars_1[9]);	/* ACS_LTEE */
-	append_acs0(&result, 'n', box_chars_1[10]);	/* ACS_PLUS */
+	append_acs0(&result, 'l', box_chars_1, 0);	/* ACS_ULCORNER */
+	append_acs0(&result, 'q', box_chars_1, 1);	/* ACS_HLINE */
+	append_acs0(&result, 'k', box_chars_1, 2);	/* ACS_URCORNER */
+	append_acs0(&result, 'x', box_chars_1, 3);	/* ACS_VLINE */
+	append_acs0(&result, 'j', box_chars_1, 4);	/* ACS_LRCORNER */
+	append_acs0(&result, 'm', box_chars_1, 5);	/* ACS_LLCORNER */
+	append_acs0(&result, 'w', box_chars_1, 6);	/* ACS_TTEE */
+	append_acs0(&result, 'u', box_chars_1, 7);	/* ACS_RTEE */
+	append_acs0(&result, 'v', box_chars_1, 8);	/* ACS_BTEE */
+	append_acs0(&result, 't', box_chars_1, 9);	/* ACS_LTEE */
+	append_acs0(&result, 'n', box_chars_1, 10);	/* ACS_PLUS */
 
 	if (buf2[0]) {
 	    acs_chars = _nc_save_str(buf2);

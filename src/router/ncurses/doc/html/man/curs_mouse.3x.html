@@ -1,7 +1,7 @@
 <!-- 
   * t
   ****************************************************************************
-  * Copyright (c) 1998-2015,2017 Free Software Foundation, Inc.              *
+  * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
   *                                                                          *
   * Permission is hereby granted, free of charge, to any person obtaining a  *
   * copy of this software and associated documentation files (the            *
@@ -27,7 +27,7 @@
   * sale, use or other dealings in this Software without prior written       *
   * authorization.                                                           *
   ****************************************************************************
-  * @Id: curs_mouse.3x,v 1.47 2017/11/18 23:52:45 tom Exp @
+  * @Id: curs_mouse.3x,v 1.51 2019/07/13 23:45:12 tom Exp @
 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <HTML>
@@ -35,7 +35,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=us-ascii">
 <meta name="generator" content="Manpage converted by man2html - see https://invisible-island.net/scripts/readme.html#others_scripts">
 <TITLE>curs_mouse 3x</TITLE>
-<link rev=made href="mailto:bug-ncurses@gnu.org">
+<link rel="author" href="mailto:bug-ncurses@gnu.org">
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 </HEAD>
 <BODY>
@@ -319,6 +319,10 @@
 
           \E[?1000%?%p1%{1}%=%th%el%;
 
+       The mouse driver also recognizes a newer xterm private mode 1006, e.g.,
+
+          \E[?1006;1000%?%p1%{1}%=%th%el%;
+
        The  <EM>z</EM>  member in the event structure is not presently used.  It is in-
        tended for use with touch screens (which may be pressure-sensitive)  or
        with 3D-mice/trackballs/power gloves.
@@ -343,9 +347,11 @@
 
        Because  there  are  no standard terminal responses that would serve to
        identify terminals which support the xterm mouse protocol, <STRONG>ncurses</STRONG>  as-
-       sumes  that  if  your  $TERM  environment variable contains "xterm", or
-       <STRONG>kmous</STRONG> is defined in the terminal description,  then  the  terminal  may
-       send mouse events.
+       sumes  that  if <STRONG>kmous</STRONG> is defined in the terminal description, or if the
+       terminal description's primary  name  or  aliases  contain  the  string
+       "xterm", then the terminal may send mouse events.  The <STRONG>kmous</STRONG> capability
+       is checked first, allowing the use of newer xterm mouse protocols  such
+       as xterm's private mode 1006.
 
 
 </PRE><H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>

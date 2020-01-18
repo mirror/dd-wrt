@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2003-2013,2017 Free Software Foundation, Inc.              *
+ * Copyright (c) 2003-2017,2018 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,9 +26,9 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: popup_msg.h,v 1.3 2017/04/15 19:16:35 tom Exp $
+ * $Id: popup_msg.h,v 1.4 2018/02/03 21:07:55 tom Exp $
  *
- * Interface of edit_field.c
+ * Utility functions for a popup-message or help-screen.
  */
 
 #ifndef POPUP_MSG_H_incl

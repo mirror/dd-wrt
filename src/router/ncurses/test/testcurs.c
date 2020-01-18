@@ -6,7 +6,7 @@
  *  wrs(5/28/93) -- modified to be consistent (perform identically) with either
  *                  PDCurses or under Unix System V, R4
  *
- * $Id: testcurs.c,v 1.53 2017/12/23 21:38:26 tom Exp $
+ * $Id: testcurs.c,v 1.55 2019/12/14 23:25:29 tom Exp $
  */
 
 #include <test.priv.h>
@@ -59,7 +59,7 @@ initTest(WINDOW **win)
     PDC_debug("initTest called\n");
 #endif
 #ifdef TRACE
-    trace(TRACE_MAXIMUM);
+    curses_trace(TRACE_MAXIMUM);
 #endif
     initscr();
 #ifdef PDCDEBUG
@@ -73,7 +73,7 @@ initTest(WINDOW **win)
     height = 13;		/* Create a drawing window */
     *win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
     if (*win == NULL) {
-	exit_curses();
+	stop_curses();
 	return 0;
     }
     return 1;
@@ -557,7 +557,7 @@ resizeTest(WINDOW *dummy GCC_UNUSED)
 
     win1 = newwin(10, 50, 14, 25);
     if (win1 == NULL) {
-	exit_curses();
+	stop_curses();
 	return;
     }
 #ifdef A_COLOR
@@ -760,7 +760,7 @@ main(
 
     delwin(win);
 
-    exit_curses();
+    stop_curses();
 #ifdef XCURSES
     XCursesExit();
 #endif

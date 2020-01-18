@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -159,7 +159,7 @@
 #define CUR SP_TERMTYPE
 #endif
 
-MODULE_ID("$Id: lib_mvcur.c,v 1.145 2017/07/23 00:08:37 tom Exp $")
+MODULE_ID("$Id: lib_mvcur.c,v 1.150 2019/06/01 23:42:09 tom Exp $")
 
 #define WANT_CHAR(sp, y, x) NewScreen(sp)->_line[y].text[x]	/* desired state */
 
@@ -344,7 +344,9 @@ NCURSES_SP_NAME(_nc_mvcur_init) (NCURSES_SP_DCL0)
     SP_PARM->_home_cost = CostOf(cursor_home, 0);
     SP_PARM->_ll_cost = CostOf(cursor_to_ll, 0);
 #if USE_HARD_TABS
-    if (getenv("NCURSES_NO_HARD_TABS") == 0) {
+    if (getenv("NCURSES_NO_HARD_TABS") == 0
+	&& dest_tabs_magic_smso == 0
+	&& HasHardTabs()) {
 	SP_PARM->_ht_cost = CostOf(tab, 0);
 	SP_PARM->_cbt_cost = CostOf(back_tab, 0);
     } else {
@@ -935,6 +937,7 @@ onscreen_mvcur(NCURSES_SP_DCLx
 #endif /* MAIN */
 
     if (usecost != INFINITY) {
+	TR(TRACE_MOVE, ("mvcur tactic %d", tactic));
 	TPUTS_TRACE("mvcur");
 	NCURSES_SP_NAME(tputs) (NCURSES_SP_ARGx
 				buffer, 1, myOutCh);
@@ -988,7 +991,7 @@ _nc_real_mvcur(NCURSES_SP_DCLx
 	    TR(TRACE_CHARPUT, ("turning off (%#lx) %s before move",
 			       (unsigned long) AttrOf(oldattr),
 			       _traceattr(AttrOf(oldattr))));
-	    (void) VIDATTR(SP_PARM, A_NORMAL, 0);
+	    VIDPUTS(SP_PARM, A_NORMAL, 0);
 	}
 
 	if (xold >= screen_columns(SP_PARM)) {
@@ -1042,7 +1045,7 @@ _nc_real_mvcur(NCURSES_SP_DCLx
 	    TR(TRACE_CHARPUT, ("turning on (%#lx) %s after move",
 			       (unsigned long) AttrOf(oldattr),
 			       _traceattr(AttrOf(oldattr))));
-	    (void) VIDATTR(SP_PARM, AttrOf(oldattr), GetPair(oldattr));
+	    VIDPUTS(SP_PARM, AttrOf(oldattr), GetPair(oldattr));
 	}
     }
     returnCode(code);
@@ -1216,24 +1219,21 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 	if (fgets(buf, sizeof(buf), stdin) == 0)
 	    break;
 
+#define PUTS(s)   (void) puts(s)
+#define PUTF(s,t) (void) printf(s,t)
 	if (buf[0] == '?') {
-	    (void) puts("?                -- display this help message");
-	    (void)
-		puts("fy fx ty tx      -- (4 numbers) display (fy,fx)->(ty,tx) move");
-	    (void) puts("s[croll] n t b m -- display scrolling sequence");
-	    (void)
-		printf("r[eload]         -- reload terminal info for %s\n",
-		       termname());
-	    (void)
-		puts("l[oad] <term>    -- load terminal info for type <term>");
-	    (void) puts("d[elete] <cap>   -- delete named capability");
-	    (void) puts("i[nspect]        -- display terminal capabilities");
-	    (void)
-		puts("c[ost]           -- dump cursor-optimization cost table");
-	    (void) puts("o[optimize]      -- toggle movement optimization");
-	    (void)
-		puts("t[orture] <num>  -- torture-test with <num> random moves");
-	    (void) puts("q[uit]           -- quit the program");
+	    PUTS("?                -- display this help message");
+	    PUTS("fy fx ty tx      -- (4 numbers) display (fy,fx)->(ty,tx) move");
+	    PUTS("s[croll] n t b m -- display scrolling sequence");
+	    PUTF("r[eload]         -- reload terminal info for %s\n",
+		 termname());
+	    PUTS("l[oad] <term>    -- load terminal info for type <term>");
+	    PUTS("d[elete] <cap>   -- delete named capability");
+	    PUTS("i[nspect]        -- display terminal capabilities");
+	    PUTS("c[ost]           -- dump cursor-optimization cost table");
+	    PUTS("o[optimize]      -- toggle movement optimization");
+	    PUTS("t[orture] <num>  -- torture-test with <num> random moves");
+	    PUTS("q[uit]           -- quit the program");
 	} else if (sscanf(buf, "%d %d %d %d", &fy, &fx, &ty, &tx) == 4) {
 	    struct timeval before, after;
 

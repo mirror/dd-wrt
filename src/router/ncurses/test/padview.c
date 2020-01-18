@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2017 Free Software Foundation, Inc.                        *
+ * Copyright (c) 2017,2019 Free Software Foundation, Inc.                   *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -28,7 +28,7 @@
 /*
  * clone of view.c, using pads
  *
- * $Id: padview.c,v 1.12 2017/10/23 00:37:21 tom Exp $
+ * $Id: padview.c,v 1.15 2019/12/07 18:06:12 tom Exp $
  */
 
 #include <test.priv.h>
@@ -89,7 +89,7 @@ show_all(const char *tag, WINDOW *my_pad, int my_row)
     _nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp))
 		"view %.*s", (int) strlen(tag), tag);
     i = (int) strlen(temp);
-    _nc_SPRINTF(temp + i, _nc_SLIMIT(sizeof(temp) - i)
+    _nc_SPRINTF(temp + i, _nc_SLIMIT(sizeof(temp) - (size_t) i)
 		" %.*s", (int) sizeof(temp) - i - 2, fname);
     mvprintw(0, 0, "%.*s", COLS, temp);
     this_time = time((time_t *) 0);
@@ -191,7 +191,7 @@ read_file(const char *filename)
 	failed("cannot allocate pad workspace");
     if (try_color) {
 	wattrset(my_pad, COLOR_PAIR(my_pair));
-	wbkgd(my_pad, (chtype) COLOR_PAIR(my_pair));
+	wbkgd(my_pad, (chtype) (' ' | COLOR_PAIR(my_pair)));
     }
 
     /*
@@ -324,11 +324,11 @@ main(int argc, char *argv[])
 		int tvalue = (int) strtol(optarg, &next, 0);
 		if (tvalue < 0 || (next != 0 && *next != 0))
 		    usage();
-		trace((unsigned) tvalue);
+		curses_trace((unsigned) tvalue);
 	    }
 	    break;
 	case 't':
-	    trace(TRACE_CALLS);
+	    curses_trace(TRACE_CALLS);
 	    break;
 #endif
 	default:
@@ -347,17 +347,21 @@ main(int argc, char *argv[])
 	nodelay(stdscr, TRUE);
     idlok(stdscr, TRUE);	/* allow use of insert/delete line */
 
-    my_pad = read_file(fname = argv[optind]);
-
     if (try_color) {
 	if (has_colors()) {
 	    start_color();
 	    init_pair(my_pair, COLOR_WHITE, COLOR_BLUE);
-	    bkgd((chtype) COLOR_PAIR(my_pair));
+	    bkgd((chtype) (' ' | COLOR_PAIR(my_pair)));
 	} else {
 	    try_color = FALSE;
 	}
     }
+
+    /*
+     * Do this after starting color, otherwise the pad's background will be
+     * uncolored after the ncurses 6.1.20181208 fixes.
+     */
+    my_pad = read_file(fname = argv[optind]);
 
     my_row = 0;
     while (!done) {

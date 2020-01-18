@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2017,2018 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -43,7 +43,7 @@
 #define CUR SP_TERMTYPE
 #endif
 
-MODULE_ID("$Id: lib_traceatr.c,v 1.91 2018/01/07 02:22:01 tom Exp $")
+MODULE_ID("$Id: lib_traceatr.c,v 1.93 2019/05/04 20:46:24 tom Exp $")
 
 #define COLOR_OF(c) ((c < 0) ? "default" : (c > 7 ? color_of(c) : colors[c].name))
 
@@ -285,19 +285,21 @@ _tracechtype2(int bufnum, chtype ch)
 
     if (result != 0) {
 	const char *found;
+	attr_t attr = ChAttrOf(ch);
 
 	_nc_STRCPY(result, l_brace, TRACE_BUF_SIZE(bufnum));
-	if ((found = _nc_altcharset_name(ChAttrOf(ch), ch)) != 0) {
+	if ((found = _nc_altcharset_name(attr, ch)) != 0) {
 	    (void) _nc_trace_bufcat(bufnum, found);
+	    attr &= ~A_ALTCHARSET;
 	} else
 	    (void) _nc_trace_bufcat(bufnum,
 				    _nc_tracechar(CURRENT_SCREEN,
 						  (int) ChCharOf(ch)));
 
-	if (ChAttrOf(ch) != A_NORMAL) {
+	if (attr != A_NORMAL) {
 	    (void) _nc_trace_bufcat(bufnum, " | ");
 	    (void) _nc_trace_bufcat(bufnum,
-				    _traceattr2(bufnum + 20, ChAttrOf(ch)));
+				    _traceattr2(bufnum + 20, attr));
 	}
 
 	result = _nc_trace_bufcat(bufnum, r_brace);
@@ -363,7 +365,7 @@ _tracecchar_t2(int bufnum, const cchar_t *ch)
 			char temp[80];
 			_nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp))
 				    "{%d:\\u%lx}",
-				    wcwidth(ch->chars[PUTC_i]),
+				    _nc_wacs_width(ch->chars[PUTC_i]),
 				    (unsigned long) ch->chars[PUTC_i]);
 			(void) _nc_trace_bufcat(bufnum, temp);
 			break;

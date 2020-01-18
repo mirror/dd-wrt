@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2007-2017,2018 Free Software Foundation, Inc.              *
+ * Copyright (c) 2007-2018,2019 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,30 +26,21 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: savescreen.c,v 1.51 2018/01/14 17:39:47 tom Exp $
+ * $Id: savescreen.c,v 1.56 2019/12/14 23:25:29 tom Exp $
  *
  * Demonstrate save/restore functions from the curses library.
  * Thomas Dickey - 2007/7/14
  */
 
+#define NEED_TIME_H
 #include <test.priv.h>
 #include <popup_msg.h>
+#include <parse_rgb.h>
 
 #if HAVE_SCR_DUMP
 
 #include <sys/types.h>
 #include <sys/stat.h>
-
-#if TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
 
 #if defined(__hpux)
 #define MyMarker 'X'
@@ -68,10 +59,12 @@ static wchar_t
 BaseChar(cchar_t data)
 {
     wchar_t my_wchar[CCHARW_MAX];
+    wchar_t result = 0;
     attr_t my_attr;
     short my_pair;
-    getcchar(&data, my_wchar, &my_attr, &my_pair, NULL);
-    return my_wchar[0];
+    if (getcchar(&data, my_wchar, &my_attr, &my_pair, NULL) == OK)
+	result = my_wchar[0];
+    return result;
 }
 #endif
 
@@ -374,37 +367,37 @@ main(int argc, char *argv[])
 		    init_pair((short) (n + MAX_ANSI), (short) n, (short) n);
 	    }
 #if HAVE_TIGETSTR && USE_WIDEC_SUPPORT
-	    else if (tigetflag("RGB") > 0) {
-		int rows = LINES - 1;
-		int cols = COLS - 1;
-		/* FIXME: test all 3 types of capability */
-		int b_max = 255;
-		int r_max = 255;
-		int g_max = 255;
-		int b_delta = (b_max / rows);
-		int r_delta = (r_max / cols);
-		int g_delta = (g_max / cols);
-		int row = 0;
+	    else {
+		int r_max, g_max, b_max;
 
-		b = 0;
-		using_rgb = TRUE;
-		while (row++ < rows) {
-		    int col = 0;
-		    r = 0;
-		    g = g_max;
-		    while (col++ < cols) {
-			int color = (((r * (g_max + 1)) + g) * (b_max + 1)
-				     + b + MAX_ANSI);
-#if HAVE_INIT_EXTENDED_COLOR
-			init_extended_pair(pair, color, color);
+		if (parse_rgb(&r_max, &g_max, &b_max) > 0) {
+		    int rows = LINES - 1;
+		    int cols = COLS - 1;
+		    int b_delta = (b_max / rows);
+		    int r_delta = (r_max / cols);
+		    int g_delta = (g_max / cols);
+		    int row = 0;
+
+		    b = 0;
+		    using_rgb = TRUE;
+		    while (row++ < rows) {
+			int col = 0;
+			r = 0;
+			g = g_max;
+			while (col++ < cols) {
+			    int color = (((r * (g_max + 1)) + g) * (b_max + 1)
+					 + b + MAX_ANSI);
+#if USE_EXTENDED_COLOR
+			    init_extended_pair(pair, color, color);
 #else
-			init_pair(pair, color, color);
+			    init_pair(pair, color, color);
 #endif
-			pair++;
-			r += r_delta;
-			g -= g_delta;
+			    pair++;
+			    r += r_delta;
+			    g -= g_delta;
+			}
+			b += b_delta;
 		    }
-		    b += b_delta;
 		}
 	    }
 #endif
@@ -502,7 +495,7 @@ main(int argc, char *argv[])
 	    }
 	    move(0, 0);
 	} else {
-	    exit_curses();
+	    stop_curses();
 	    fprintf(stderr, "Cannot open \"%s\"\n", fill_by);
 	    ExitProgram(EXIT_FAILURE);
 	}
@@ -514,14 +507,14 @@ main(int argc, char *argv[])
 	 * Use the last file as the initial/current screen.
 	 */
 	if (last < 0) {
-	    exit_curses();
+	    stop_curses();
 	    printf("No screen-dumps given\n");
 	    ExitProgram(EXIT_FAILURE);
 	}
 
 	which = last;
 	if (load_screen(files[which]) == ERR) {
-	    exit_curses();
+	    stop_curses();
 	    printf("Cannot load screen-dump %s\n", files[which]);
 	    ExitProgram(EXIT_FAILURE);
 	}
