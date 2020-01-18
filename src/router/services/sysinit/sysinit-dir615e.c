@@ -170,6 +170,8 @@ void start_sysinit(void)
 	setSwitchLED(18, 0x4);
 	setSwitchLED(6, 0x8);
 	setSwitchLED(8, 0x10);
+#elif HAVE_WA901V5
+	setEthLED(7, "eth0");
 #elif HAVE_WR941V6
 	setEthLED(14, "eth1");
 	setSwitchLED(7, 0x2);
@@ -207,6 +209,8 @@ void start_sysinit(void)
 #ifndef HAVE_DAP3320
 #ifdef HAVE_DAP2230
 //      setWirelessLedGeneric(0, 11);
+#elif HAVE_WA901V5
+	setWirelessLedGeneric(0, 8);
 #elif HAVE_WR940V4
 	setWirelessLedGeneric(0, 7);
 #elif HAVE_WR941V6
