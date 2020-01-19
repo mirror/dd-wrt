@@ -230,6 +230,7 @@ bool refuse_eap = 0;		/* Don't wanna auth. ourselves with EAP */
 #ifdef CHAPMS
 bool refuse_mschap = 0;		/* Don't wanna auth. ourselves with MS-CHAP */
 bool refuse_mschap_v2 = 0;	/* Don't wanna auth. ourselves with MS-CHAPv2 */
+bool ms_ignore_domain = 0;	/* Ignore any MS domain prefix */
 #else
 bool refuse_mschap = 1;		/* Don't wanna auth. ourselves with MS-CHAP */
 bool refuse_mschap_v2 = 1;	/* Don't wanna auth. ourselves with MS-CHAPv2 */
@@ -317,6 +318,8 @@ option_t auth_options[] = {
       "Require MS-CHAPv2 authentication from peer",
       OPT_ALIAS | OPT_PRIOSUB | OPT_A2OR | MDTYPE_MICROSOFT_V2,
       &lcp_wantoptions[0].chap_mdtype },
+    { "ms-ignore-domain", o_bool, &ms_ignore_domain,
+      "Ignore any MS domain prefix in the username", 1 },
 #endif
 
     { "refuse-pap", o_bool, &refuse_pap,
