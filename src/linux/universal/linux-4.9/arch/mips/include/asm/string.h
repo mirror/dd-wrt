@@ -173,9 +173,6 @@ extern void *memmove(void *__dest, __const__ void *__src, size_t __n);
 		__ret = __builtin_memmove((dst), (src), __len);	\
 	__ret;							\
 })
-
-#define __HAVE_ARCH_MEMCMP
-#define memcmp(src1, src2, len) __builtin_memcmp((src1), (src2), (len))
 #endif
 
 #endif /* _ASM_STRING_H */

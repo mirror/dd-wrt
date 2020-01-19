@@ -489,6 +489,9 @@ unsigned long read_word_at_a_time(const void *addr)
 #define __assume_aligned(a, ...)
 #endif
 
+#ifndef __noreorder
+#define __noreorder
+#endif
 
 /* Are two types/vars the same type (ignoring qualifiers)? */
 #ifndef __same_type

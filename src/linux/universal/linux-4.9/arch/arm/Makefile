@@ -117,6 +117,10 @@ tune-$(CONFIG_CPU_V6)		=$(call cc-option,-mtune=arm1136j-s,-mtune=strongarm)
 # Evaluate tune cc-option calls now
 tune-y := $(tune-y)
 
+ifeq ($(CONFIG_CPU_XSCALE),y)
+# fix segfault at final link
+CFLAGS_LDFINAL = -march=armv5te -mtune=xscale -mfpu=vfp
+endif
 ifeq ($(CONFIG_AEABI),y)
 CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfp
 else

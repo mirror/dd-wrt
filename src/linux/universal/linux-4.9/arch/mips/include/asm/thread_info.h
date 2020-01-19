@@ -67,14 +67,14 @@ struct thread_info {
  * __current_thread_info anyway we declare it extern in order to cause a link
  * failure if it's referenced.
  */
+
+static inline struct thread_info *current_thread_info(void)
+{
 #ifdef __VDSO__
 extern struct thread_info *__current_thread_info;
 #else
 register struct thread_info *__current_thread_info __asm__("$28");
 #endif
-
-static inline struct thread_info *current_thread_info(void)
-{
 	return __current_thread_info;
 }
 
