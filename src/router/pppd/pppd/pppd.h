@@ -321,6 +321,9 @@ extern char	remote_name[MAXNAMELEN]; /* Peer's name for authentication */
 extern bool	explicit_remote;/* remote_name specified with remotename opt */
 extern bool	demand;		/* Do dial-on-demand */
 extern char	*ipparam;	/* Extra parameter for ip up/down scripts */
+extern char	*chapseccustom;	/* Custom chap-secrets file */
+extern char	*papseccustom;	/* Custom pap-secrets file */
+extern char	*srpseccustom;	/* Custom srp-secrets file */
 extern bool	cryptpap;	/* Others' PAP passwords are encrypted */
 extern int	idle_time_limit;/* Shut down link if idle for this long */
 extern int	holdoff;	/* Dead time before restarting */
