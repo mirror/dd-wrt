@@ -63,7 +63,7 @@
 #endif
 
 #endif	/* CONFIG_THUMB2_KERNEL */
-
+#ifndef CONFIG_LTO
 #ifndef CONFIG_ARM_ASM_UNIFIED
 
 /*
@@ -136,5 +136,5 @@ __asm__(
 #endif	/* __ASSEMBLY__ */
 
 #endif	/* CONFIG_ARM_ASM_UNIFIED */
-
+#endif
 #endif	/* !__ASM_UNIFIED_H */

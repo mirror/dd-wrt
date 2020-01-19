@@ -1,6 +1,8 @@
 config ARM
 	bool
 	default y
+	select ARCH_SUPPORTS_LTO
+	select THIN_ARCHIVES
 	select ARCH_CLOCKSOURCE_DATA
 	select ARCH_HAS_DEVMEM_IS_ALLOWED
 	select ARCH_HAS_ELF_RANDOMIZE

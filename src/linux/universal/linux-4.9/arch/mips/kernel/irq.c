@@ -44,12 +44,12 @@ int arch_show_interrupts(struct seq_file *p, int prec)
 	return 0;
 }
 
-asmlinkage void spurious_interrupt(void)
+__visible asmlinkage void spurious_interrupt(void)
 {
 	atomic_inc(&irq_err_count);
 }
 
-void __init init_IRQ(void)
+__visible void __init init_IRQ(void)
 {
 	int i;
 	unsigned int order = get_order(IRQ_STACK_SIZE);
@@ -99,7 +99,7 @@ static inline void check_stack_overflow(void) {}
  * SMP cross-CPU interrupts have their own specific
  * handlers).
  */
-void __irq_entry do_IRQ(unsigned int irq)
+__visible void __irq_entry do_IRQ(unsigned int irq)
 {
 	irq_enter();
 	check_stack_overflow();

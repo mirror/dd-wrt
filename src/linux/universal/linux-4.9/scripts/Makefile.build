@@ -222,6 +222,11 @@ cmd_modversions_c =								\
 endif
 
 ifdef CONFIG_FTRACE_MCOUNT_RECORD
+# gcc 5 supports generating the mcount tables directly
+ifneq ($(call cc-option,-mrecord-mcount,y),y)
+KBUILD_CFLAGS += -mrecord-mcount
+else
+# else do it all manually
 ifdef BUILD_C_RECORDMCOUNT
 ifeq ("$(origin RECORDMCOUNT_WARN)", "command line")
   RECORDMCOUNT_FLAGS = -w
@@ -250,6 +255,7 @@ cmd_record_mcount =						\
 	     "$(CC_FLAGS_FTRACE)" ]; then			\
 		$(sub_cmd_record_mcount)			\
 	fi;
+endif
 endif
 
 ifdef CONFIG_STACK_VALIDATION
@@ -438,12 +444,12 @@ $(sort $(subdir-obj-y)): $(subdir-ym) ;
 ifdef builtin-target
 
 ifdef CONFIG_THIN_ARCHIVES
-  cmd_make_builtin = rm -f $@; $(AR) rcST$(KBUILD_ARFLAGS)
-  cmd_make_empty_builtin = rm -f $@; $(AR) rcST$(KBUILD_ARFLAGS)
+  cmd_make_builtin = rm -f $@; $(AR) rcST$(KBUILD_ARFLAGS) --plugin=$(shell $(CROSS_COMPILE)gcc --print-file-name=liblto_plugin.so)
+  cmd_make_empty_builtin = rm -f $@; $(AR) rcST$(KBUILD_ARFLAGS) --plugin=$(shell $(CROSS_COMPILE)gcc --print-file-name=liblto_plugin.so)
   quiet_cmd_link_o_target = AR      $@
 else
-  cmd_make_builtin = $(LD) $(ld_flags) -r -o
-  cmd_make_empty_builtin = rm -f $@; $(AR) rcs$(KBUILD_ARFLAGS)
+  cmd_make_builtin = $(LD) $(ld_flags) -r -o 
+  cmd_make_empty_builtin = rm -f $@; $(AR) rcs$(KBUILD_ARFLAGS) --plugin=$(shell $(CROSS_COMPILE)gcc --print-file-name=liblto_plugin.so)
   quiet_cmd_link_o_target = LD      $@
 endif
 
@@ -479,9 +485,9 @@ ifdef lib-target
 quiet_cmd_link_l_target = AR      $@
 
 ifdef CONFIG_THIN_ARCHIVES
-  cmd_link_l_target = rm -f $@; $(AR) rcsT$(KBUILD_ARFLAGS) $@ $(lib-y)
+  cmd_link_l_target = rm -f $@; $(AR) rcsT$(KBUILD_ARFLAGS) --plugin=$(shell $(CROSS_COMPILE)gcc --print-file-name=liblto_plugin.so) $@ $(lib-y)
 else
-  cmd_link_l_target = rm -f $@; $(AR) rcs$(KBUILD_ARFLAGS) $@ $(lib-y)
+  cmd_link_l_target = rm -f $@; $(AR) rcs$(KBUILD_ARFLAGS) --plugin=$(shell $(CROSS_COMPILE)gcc --print-file-name=liblto_plugin.so) $@ $(lib-y)
 endif
 
 $(lib-target): $(lib-y) FORCE
@@ -499,9 +505,9 @@ endif
 
 quiet_cmd_export_list = EXPORTS $@
 cmd_export_list = $(OBJDUMP) -h $< | \
-	sed -ne '/___ksymtab/{s/.*+/$(ref_prefix)/;s/ .*/)/;p}' >$(ksyms-lds);\
+	sed -ne '/___ksymtab/s/.*+\([^ ]*\).*/EXTERN(\1)/p' >$(ksyms-lds);\
 	rm -f $(dummy-object);\
-	$(AR) rcs$(KBUILD_ARFLAGS) $(dummy-object);\
+	$(AR) rcs$(KBUILD_ARFLAGS) --plugin=$(shell $(CROSS_COMPILE)gcc --print-file-name=liblto_plugin.so) $(dummy-object);\
 	$(LD) $(ld_flags) -r -o $@ -T $(ksyms-lds) $(dummy-object);\
 	rm $(dummy-object) $(ksyms-lds)
 
