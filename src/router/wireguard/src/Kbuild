@@ -5,8 +5,10 @@
 ccflags-y := -fvisibility=hidden
 ccflags-$(CONFIG_WIREGUARD_DEBUG) += -DDEBUG -g
 ccflags-y += -D'pr_fmt(fmt)=KBUILD_MODNAME ": " fmt'
-ccflags-y += -Wframe-larger-than=2048
+ccflags-y += -Wframe-larger-than=2048 $(DISABLE_LTO)
+
 wireguard-y := wireguard_opt.o
+
 
 include $(src)/crypto/Kbuild.include
 include $(src)/compat/Kbuild.include
