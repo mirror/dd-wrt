@@ -301,6 +301,12 @@ option_t auth_options[] = {
       "Require CHAP authentication from peer",
       OPT_ALIAS | OPT_PRIOSUB | OPT_A2OR | MDTYPE_MD5,
       &lcp_wantoptions[0].chap_mdtype },
+    { "chap-secrets", o_string, &chapseccustom,
+      "Specify custom chap-secrets file", OPT_PRIO },
+    { "pap-secrets", o_string, &papseccustom,
+      "Specify custom pap-secrets file", OPT_PRIO },
+    { "srp-secrets", o_string, &srpseccustom,
+      "Specify custom srp-secrets file", OPT_PRIO },
 #ifdef CHAPMS
     { "require-mschap", o_bool, &auth_required,
       "Require MS-CHAP authentication from peer",
@@ -1427,7 +1433,7 @@ check_passwd(unit, auser, userlen, apasswd, passwdlen, msg)
      * Open the file of pap secrets and scan for a suitable secret
      * for authenticating this user.
      */
-    filename = _PATH_UPAPFILE;
+    filename = papseccustom ? papseccustom : _PATH_UPAPFILE;
     addrs = opts = NULL;
     ret = UPAP_AUTHNAK;
     f = fopen(filename, "r");
@@ -1527,7 +1533,7 @@ null_login(unit)
      * Open the file of pap secrets and scan for a suitable secret.
      */
     if (ret <= 0) {
-	filename = _PATH_UPAPFILE;
+	filename = papseccustom ? papseccustom : _PATH_UPAPFILE;
 	addrs = NULL;
 	f = fopen(filename, "r");
 	if (f == NULL)
@@ -1613,7 +1619,7 @@ have_pap_secret(lacks_ipp)
 	    return ret;
     }
 
-    filename = _PATH_UPAPFILE;
+    filename = papseccustom ? papseccustom : _PATH_UPAPFILE;
     f = fopen(filename, "r");
     if (f == NULL)
 	return 0;
@@ -1658,7 +1664,7 @@ have_chap_secret(client, server, need_ip, lacks_ipp)
 	}
     }
 
-    filename = _PATH_CHAPFILE;
+    filename = chapseccustom ? chapseccustom : _PATH_CHAPFILE;
     f = fopen(filename, "r");
     if (f == NULL)
 	return 0;
@@ -1700,7 +1706,7 @@ have_srp_secret(client, server, need_ip, lacks_ipp)
     char *filename;
     struct wordlist *addrs;
 
-    filename = _PATH_SRPFILE;
+    filename = srpseccustom ? srpseccustom : _PATH_SRPFILE;
     f = fopen(filename, "r");
     if (f == NULL)
 	return 0;
@@ -1753,7 +1759,7 @@ get_secret(unit, client, server, secret, secret_len, am_server)
 	    return 0;
 	}
     } else {
-	filename = _PATH_CHAPFILE;
+	filename = chapseccustom ? chapseccustom : _PATH_CHAPFILE;
 	addrs = NULL;
 	secbuf[0] = 0;
 
