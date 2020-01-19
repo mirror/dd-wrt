@@ -42,7 +42,7 @@ extern int smbd_caseless_search;
 				##__VA_ARGS__);			\
 	} while (0)
 #else
-#define smbd_debug(fmt, ...)
+#define smbd_debug(fmt, ...) do { } while(0)
 #endif
 
 #define smbd_info(fmt, ...)					\
