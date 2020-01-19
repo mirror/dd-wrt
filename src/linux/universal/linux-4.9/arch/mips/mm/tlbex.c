@@ -1581,8 +1581,7 @@ static void build_setup_pgd(void)
 	long pgdc = (long)pgd_current;
 #endif
 
-	memset(tlbmiss_handler_setup_pgd, 0, tlbmiss_handler_setup_pgd_size *
-					sizeof(tlbmiss_handler_setup_pgd[0]));
+	memset(&tlbmiss_handler_setup_pgd, 0, tlbmiss_handler_setup_pgd_size);
 	memset(labels, 0, sizeof(labels));
 	memset(relocs, 0, sizeof(relocs));
 	pgd_reg = allocate_kscratch();
@@ -1645,9 +1644,9 @@ static void build_setup_pgd(void)
 
 	uasm_resolve_relocs(relocs, labels);
 	pr_debug("Wrote tlbmiss_handler_setup_pgd (%u instructions).\n",
-		 (unsigned int)(p - tlbmiss_handler_setup_pgd));
+		 (unsigned int)(p - (u32*)&tlbmiss_handler_setup_pgd));
 
-	dump_handler("tlbmiss_handler", tlbmiss_handler_setup_pgd,
+	dump_handler("tlbmiss_handler", (u32*)&tlbmiss_handler_setup_pgd,
 					tlbmiss_handler_setup_pgd_size);
 }
 

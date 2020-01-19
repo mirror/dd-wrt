@@ -3,12 +3,12 @@
 # used as a wrapper to execute link time optimizations
 # yes virginia, this is not pretty
 
-ARGS="-nostdlib"
+ARGS="-nostdlib ${CFLAGS_LDFINAL}"
 
 while [ "$1" != "" ] ; do
 	case "$1" in
-	-save-temps|-m32|-m64) N="$1" ;;
-	-r) N="$1" ;;
+	-save-temps*|-m32|-m64) N="$1" ;;
+	-r) N="$1 -flinker-output=nolto-rel" ;;
 	-[Wg]*) N="$1" ;;
 	-[olv]|-[Ofd]*|-nostdlib) N="$1" ;;
 	--end-group|--start-group)
@@ -18,7 +18,7 @@ while [ "$1" != "" ] ; do
 -rpath-link|--sort-section|--section-start|-Tbss|-Tdata|-Ttext|\
 --version-script|--dynamic-list|--version-exports-symbol|--wrap|-m)
 		A="$1" ; shift ; N="-Wl,$A,$1" ;;
-	-[m]*) N="$1" ;;
+	-[mp]*) N="$1" ;;
 	-*) N="-Wl,$1" ;;
 	*)  N="$1" ;;
 	esac
@@ -26,4 +26,5 @@ while [ "$1" != "" ] ; do
 	shift
 done
 
+echo $CC $ARGS
 exec $CC $ARGS

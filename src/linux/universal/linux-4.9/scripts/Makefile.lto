@@ -1,0 +1,95 @@
+#
+# Support for gcc link time optimization
+#
+
+DISABLE_LTO :=
+LTO_CFLAGS :=
+
+export DISABLE_LTO
+export LTO_CFLAGS
+
+ifdef CONFIG_LTO
+ifdef CONFIG_UBSAN
+ifeq ($(call cc-ifversion,-lt,0600,y),y)
+        # work around compiler asserts due to UBSAN
+        $(warning Disabling LTO for gcc 5.x because UBSAN is active)
+        undefine CONFIG_LTO
+endif
+endif
+endif
+
+ifdef CONFIG_LTO
+# 4.7 works mostly, but it sometimes loses symbols on large builds
+# This can be worked around by marking those symbols visible,
+# but that is fairly ugly and the problem is gone with 4.8
+# 4.8 was very slow
+# 4.9 was missing __attribute__((noreorder)) for ordering initcalls,
+# and needed -fno-toplevel-reorder, which can lead to missing symbols
+# so only support 5.0+
+ifeq ($(call cc-ifversion, -ge, 0500,y),y)
+# is the compiler compiled with LTO?
+ifneq ($(call cc-option,${LTO_CFLAGS},n),n)
+# binutils before 2.27 has various problems with plugins
+ifeq ($(call ld-ifversion,-ge,227000000,y),y)
+
+	LTO_CFLAGS := -flto $(DISABLE_TL_REORDER)
+	LTO_FINAL_CFLAGS := -fuse-linker-plugin
+
+# would be needed to support < 5.0
+#	LTO_FINAL_CFLAGS += -fno-toplevel-reorder
+
+	LTO_FINAL_CFLAGS += -flto=jobserver
+
+	# don't compile everything twice
+	# requires plugin ar
+	LTO_CFLAGS += -fno-fat-lto-objects
+
+	# Used to disable LTO for specific files (e.g. vdso)
+	DISABLE_LTO := -fno-lto
+
+	# shut up lots of warnings for the compat syscalls
+	LTO_CFLAGS += $(call cc-disable-warning,attribute-alias,)
+
+	LTO_FINAL_CFLAGS += ${LTO_CFLAGS} -fwhole-program
+
+	# most options are passed through implicitely in the LTO
+	# files per function, but not all.
+	# should not pass any that may need to be disabled for
+	# individual files.
+	LTO_FINAL_CFLAGS += $(filter -pg,${KBUILD_CFLAGS})
+	LTO_FINAL_CFLAGS += $(filter -fno-strict-aliasing,${KBUILD_CFLAGS})
+
+ifdef CONFIG_LTO_DEBUG
+	LTO_FINAL_CFLAGS += -fdump-ipa-cgraph -fdump-ipa-inline-details
+	# add for debugging compiler crashes:
+	# LTO_FINAL_CFLAGS += -dH -save-temps
+endif
+ifdef CONFIG_LTO_CP_CLONE
+	LTO_FINAL_CFLAGS += -fipa-cp-clone
+	LTO_CFLAGS += -fipa-cp-clone
+endif
+
+	KBUILD_CFLAGS += ${LTO_CFLAGS}
+
+	LDFINAL := ${CONFIG_SHELL} ${srctree}/scripts/gcc-ld \
+                  ${LTO_FINAL_CFLAGS}
+
+	# LTO gcc creates a lot of files in TMPDIR, and with /tmp as tmpfs
+	# it's easy to drive the machine OOM. Use the object directory
+	# instead.
+	TMPDIR ?= $(objtree)
+	export TMPDIR
+
+	# use plugin aware tools
+	AR = $(CROSS_COMPILE)ar
+	NM = $(CROSS_COMPILE)nm
+else
+        $(warning WARNING old binutils. LTO disabled)
+endif
+else
+        $(warning "WARNING: Compiler/Linker does not support LTO/WHOPR with linker plugin. CONFIG_LTO disabled.")
+endif
+else
+        $(warning "WARNING: GCC $(call cc-version) too old for LTO/WHOPR. CONFIG_LTO disabled")
+endif
+endif

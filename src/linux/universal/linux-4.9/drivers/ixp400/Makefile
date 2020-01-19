@@ -225,4 +225,4 @@ ixp400-objs += ixp400_xscale_sw/src/cryptoAcc/IxCryptoAccXScaleWep.o
 ixp400-objs += ixp400_xscale_sw/src/cryptoAcc/IxCryptoAccSymbols.o
 
 drivers/ixp400/ixp400_xscale_sw/src/cryptoAcc/IxCryptoAccXScaleWep.o: drivers/ixp400/ixp400_xscale_sw/src/cryptoAcc/IxCryptoAccXScaleWep.s
-	$(CC) $(CFLAGS)	$(EXTRA_CFLAGS) -P -x assembler-with-cpp  	$< -c -o $@
+	$(CC) $(KBUILD_CFLAGS) $(CFLAGS)	$(EXTRA_CFLAGS) -P -x assembler-with-cpp  	$< -c -o $@
