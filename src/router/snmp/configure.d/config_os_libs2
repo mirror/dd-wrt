@@ -244,31 +244,8 @@ if test "x$with_nl" != "xno"; then
         # - The LIBNL3_CFLAGS and LIBNL3_LIBS configure variables can be used
         #   even if the pkg-config executable is not present on the system on
         #   which the configure script is run.
-        ifdef(
-          [PKG_CHECK_EXISTS],
-          [PKG_CHECK_EXISTS([libnl-3.0],
-            [PKG_CHECK_MODULES([LIBNL3], [libnl-3.0])])
-          ],
-          AC_MSG_WARN([pkg-config has not been installed or is too old.])
-          AC_MSG_WARN([Detection of libnl-3.0 will be skipped.])
-        )
 
         netsnmp_save_CPPFLAGS="$CPPFLAGS"
-        CPPFLAGS="${LIBNL3_CFLAGS} $CPPFLAGS"
-        NETSNMP_SEARCH_LIBS(nl_connect, nl-3,
-            [AC_CHECK_HEADERS(netlink/netlink.h)
-            EXTERNAL_MIBGROUP_INCLUDES="$EXTERNAL_MIBGROUP_INCLUDES ${LIBNL3_CFLAGS}"],
-            [CPPFLAGS="$netsnmp_save_CPPFLAGS"], [], [], [LMIBLIBS])
-        if test "x$ac_cv_header_netlink_netlink_h" != xyes; then
-            NETSNMP_SEARCH_LIBS(nl_connect, nl, [
-                AC_CHECK_HEADERS(netlink/netlink.h)], [], [], LMIBLIBS)
-        fi
-        if test "x$ac_cv_header_netlink_netlink_h" = xyes; then
-            AC_EGREP_HEADER([nl_socket_free], [netlink/socket.h],
-                            [AC_DEFINE([HAVE_LIBNL3], [1],
-                            [Define to 1 if <netlink/netlink.h> provides the
-                            libnl3 API])])
-        fi
     ;;
     esac
 fi
