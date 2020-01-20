@@ -8,7 +8,7 @@
 #include <linux/string.h>
 
 #undef memcmp
-__visible int memcmp(const void *cs, const void *ct, size_t count)
+int memcmp(const void *cs, const void *ct, size_t count)
 {
 	register const unsigned char *r1 = (const unsigned char *) cs;
 	register const unsigned char *r2 = (const unsigned char *) ct;

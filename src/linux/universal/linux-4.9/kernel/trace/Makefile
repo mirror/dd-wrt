@@ -7,7 +7,7 @@ KBUILD_CFLAGS = $(subst $(CC_FLAGS_FTRACE),,$(ORIG_CFLAGS))
 
 ifdef CONFIG_FTRACE_SELFTEST
 # selftest needs instrumentation
-CFLAGS_trace_selftest_dynamic.o = $(CC_FLAGS_FTRACE) ${DISABLE_LTO}
+CFLAGS_trace_selftest_dynamic.o = $(CC_FLAGS_FTRACE)
 obj-y += trace_selftest_dynamic.o
 endif
 endif

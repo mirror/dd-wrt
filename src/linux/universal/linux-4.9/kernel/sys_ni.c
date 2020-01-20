@@ -6,12 +6,12 @@
 
 /*  we can't #include <linux/syscalls.h> here,
     but tell gcc to not warn with -Wmissing-prototypes  */
-__visible asmlinkage long sys_ni_syscall(void);
+asmlinkage long sys_ni_syscall(void);
 
 /*
  * Non-implemented system calls get redirected here.
  */
-__visible asmlinkage long sys_ni_syscall(void)
+asmlinkage long sys_ni_syscall(void)
 {
 	return -ENOSYS;
 }
