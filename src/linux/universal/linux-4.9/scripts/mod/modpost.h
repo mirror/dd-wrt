@@ -140,6 +140,8 @@ struct elf_info {
 	char         *strtab;
 	char	     *modinfo;
 	unsigned int modinfo_len;
+	void	     *lto_symtab_start;
+	void	     *lto_symtab_end;
 
 	/* support for 32bit section numbers */
 
