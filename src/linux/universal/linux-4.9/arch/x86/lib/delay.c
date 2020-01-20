@@ -161,11 +161,7 @@ void __delay(unsigned long loops)
 }
 EXPORT_SYMBOL(__delay);
 
-#ifdef CONFIG_LTO
-void __const_udelay(unsigned long xloops)
-#else
 inline void __const_udelay(unsigned long xloops)
-#endif
 {
 	int d0;
 

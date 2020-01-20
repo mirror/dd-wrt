@@ -24,25 +24,6 @@ $(warning $(ce-obj-y) $(ce-obj-m))
 endif
 endif
 
-CFLAGS_aes_glue.o += $(DISABLE_LTO)
-CFLAGS_aesbs_glue.o += $(DISABLE_LTO)
-CFLAGS_sha1_glue.o += $(DISABLE_LTO)
-CFLAGS_sha1_neon_glue.o += $(DISABLE_LTO)
-CFLAGS_sha256_neon_glue.o += $(DISABLE_LTO)
-CFLAGS_sha256_glue.o += $(DISABLE_LTO)
-CFLAGS_sha512_neon_glue.o += $(DISABLE_LTO)
-CFLAGS_sha512-glue.o += $(DISABLE_LTO)
-CFLAGS_sha1-ce-glue.o += $(DISABLE_LTO)
-CFLAGS_sha2-ce-glue.o += $(DISABLE_LTO)
-CFLAGS_aes-ce-glue.o += $(DISABLE_LTO)
-CFLAGS_ghash-ce-glue.o += $(DISABLE_LTO)
-CFLAGS_sha512-core.o += $(DISABLE_LTO)
-CFLAGS_aesbs-core.o += $(DISABLE_LTO)
-CFLAGS_sha1-ce-core.o += $(DISABLE_LTO)
-CFLAGS_sha2-ce-core.o += $(DISABLE_LTO)
-CFLAGS_aes-ce-core.o += $(DISABLE_LTO)
-CFLAGS_ghash-ce-core.o += $(DISABLE_LTO)
-
 aes-arm-y	:= aes-armv4.o aes_glue.o
 aes-arm-bs-y	:= aesbs-core.o aesbs-glue.o
 sha1-arm-y	:= sha1-armv4-large.o sha1_glue.o

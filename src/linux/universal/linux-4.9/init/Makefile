@@ -4,8 +4,6 @@
 
 ccflags-y := -fno-function-sections -fno-data-sections
 
-CFLAGS_version.o = $(DISABLE_LTO)
-
 obj-y                          := main.o version.o mounts.o
 ifneq ($(CONFIG_BLK_DEV_INITRD),y)
 obj-y                          += noinitramfs.o

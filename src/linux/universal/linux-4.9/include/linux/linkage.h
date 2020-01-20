@@ -29,8 +29,10 @@
 #endif
 
 #ifndef SYSCALL_ALIAS
-#define SYSCALL_ALIAS(a, name) \
-	__visible typeof(a) a __attribute__((alias(__stringify(name))))
+#define SYSCALL_ALIAS(alias, name) asm(			\
+	".globl " VMLINUX_SYMBOL_STR(alias) "\n\t"	\
+	".set   " VMLINUX_SYMBOL_STR(alias) ","		\
+		  VMLINUX_SYMBOL_STR(name))
 #endif
 
 #define __page_aligned_data	__section(.data..page_aligned) __aligned(PAGE_SIZE)

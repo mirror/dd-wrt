@@ -63,7 +63,6 @@ serpent-sse2-i586-y := serpent-sse2-i586-asm_32.o serpent_sse2_glue.o
 
 aes-x86_64-y := aes-x86_64-asm_64.o aes_glue.o
 des3_ede-x86_64-y := des3_ede-asm_64.o des3_ede_glue.o
-CFLAGS_camellia_glue.o += $(DISABLE_LTO)
 camellia-x86_64-y := camellia-x86_64-asm_64.o camellia_glue.o
 blowfish-x86_64-y := blowfish-x86_64-asm_64.o blowfish_glue.o
 twofish-x86_64-y := twofish-x86_64-asm_64.o twofish_glue.o
@@ -91,19 +90,6 @@ endif
 
 aesni-intel-y := aesni-intel_asm.o aesni-intel_glue.o fpu.o
 aesni-intel-$(CONFIG_64BIT) += aesni-intel_avx-x86_64.o aes_ctrby8_avx-x86_64.o
-
-
-CFLAGS_aesni-intel.o += $(DISABLE_LTO)
-CFLAGS_aesni-intel_asm.o += $(DISABLE_LTO)
-CFLAGS_aesni-intel_glue.o += $(DISABLE_LTO)
-CFLAGS_aes_ctrby8_avx-x86_64.o += $(DISABLE_LTO)
-CFLAGS_aesni-intel_avx-x86_64.o += $(DISABLE_LTO)
-CFLAGS_fpu.o += $(DISABLE_LTO)
-CFLAGS_aes-i586-asm_32.o += $(DISABLE_LTO)
-CFLAGS_aes-x86_64-asm_64.o += $(DISABLE_LTO)
-CFLAGS_aes_glue.o += $(DISABLE_LTO)
-CFLAGS_des3_ede_glue.o += $(DISABLE_LTO)
-
 ghash-clmulni-intel-y := ghash-clmulni-intel_asm.o ghash-clmulni-intel_glue.o
 sha1-ssse3-y := sha1_ssse3_asm.o sha1_ssse3_glue.o
 poly1305-x86_64-y := poly1305-sse2-x86_64.o poly1305_glue.o
@@ -115,16 +101,11 @@ ifeq ($(sha1_ni_supported),yes)
 sha1-ssse3-y += sha1_ni_asm.o
 endif
 crc32c-intel-y := crc32c-intel_glue.o
-CFLAGS_crc32c-intel_glue.o += $(DISABLE_LTO)
 crc32c-intel-$(CONFIG_64BIT) += crc32c-pcl-intel-asm_64.o
 crc32-pclmul-y := crc32-pclmul_asm.o crc32-pclmul_glue.o
-CFLAGS_crc32-pclmul_glue.o += $(DISABLE_LTO)
 sha256-ssse3-y := sha256-ssse3-asm.o sha256-avx-asm.o sha256-avx2-asm.o sha256_ssse3_glue.o
 ifeq ($(sha256_ni_supported),yes)
 sha256-ssse3-y += sha256_ni_asm.o
 endif
 sha512-ssse3-y := sha512-ssse3-asm.o sha512-avx-asm.o sha512-avx2-asm.o sha512_ssse3_glue.o
 crct10dif-pclmul-y := crct10dif-pcl-asm_64.o crct10dif-pclmul_glue.o
-CFLAGS_crct10dif-pclmul_glue.o += $(DISABLE_LTO)
-CFLAGS_sha512_ssse3_glue.o += $(DISABLE_LTO)
-CFLAGS_sha256_ssse3_glue.o += $(DISABLE_LTO)

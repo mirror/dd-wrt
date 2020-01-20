@@ -44,7 +44,7 @@ endif
 endif
 
 
-CFLAGS_ixp400_eth.o	= $(DISABLE_LTO) -DWall \
+CFLAGS_ixp400_eth.o	= -DWall \
 			  -I$(IX_XSCALE_SW)/src/include \
 			  ${OSAL_INCLUDES} \
 			  ${OSAL_CFLAGS}
