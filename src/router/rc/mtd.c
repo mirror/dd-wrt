@@ -628,7 +628,7 @@ static int write_main(int argc, char *argv[])
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
 			int redo = 0;
 		      again:;
-			dd_loginfo("flash", "write block [%d] at [0x%08X]\r", (base + (i * mtd_info.erasesize)) - badblocks, base + (i * mtd_info.erasesize));
+			dd_loginfo("flash", "write block [%d] at [0x%08X]\n", (base + (i * mtd_info.erasesize)) - badblocks, base + (i * mtd_info.erasesize));
 			erase_info.start = base + (i * mtd_info.erasesize);
 			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 			if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
