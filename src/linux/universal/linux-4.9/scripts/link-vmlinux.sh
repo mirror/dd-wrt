@@ -70,8 +70,7 @@ modpost_link()
 			${KBUILD_VMLINUX_MAIN}				\
 			--end-group"
 	fi
-	${LDFINAL} ${LDFLAGS} -r -o ${1} ${objects}
-	#--plugin=$(${CROSS_COMPILE}gcc --print-file-name=liblto_plugin.so) --plugin-opt=$(${CROSS_COMPILE}gcc --print-file-name=lto-wrapper) --plugin-opt=-fresolution=${1}.lto
+	${LD} ${LDFLAGS} -r -o ${1} ${objects}
 }
 
 # Link of vmlinux
@@ -93,7 +92,7 @@ vmlinux_link()
 				${1}"
 		fi
 
-		${LDFINAL} ${LDFLAGS} ${LDFLAGS_vmlinux} -o ${2}		\
+		${LD} ${LDFLAGS} ${LDFLAGS_vmlinux} -o ${2}		\
 			-T ${lds} ${objects}
 	else
 		if [ -n "${CONFIG_THIN_ARCHIVES}" ]; then
@@ -281,7 +280,7 @@ if [ -n "${CONFIG_KALLSYMS}" ]; then
 	fi
 fi
 
-info LDFINAL vmlinux
+info LD vmlinux
 vmlinux_link "${kallsymso}" vmlinux
 
 if [ -n "${CONFIG_BUILDTIME_EXTABLE_SORT}" ]; then

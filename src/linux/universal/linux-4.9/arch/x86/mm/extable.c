@@ -17,7 +17,7 @@ ex_fixup_handler(const struct exception_table_entry *x)
 	return (ex_handler_t)((unsigned long)&x->handler + x->handler);
 }
 
-__visible bool ex_handler_default(const struct exception_table_entry *fixup,
+bool ex_handler_default(const struct exception_table_entry *fixup,
 		       struct pt_regs *regs, int trapnr)
 {
 	regs->ip = ex_fixup_addr(fixup);
@@ -25,7 +25,7 @@ __visible bool ex_handler_default(const struct exception_table_entry *fixup,
 }
 EXPORT_SYMBOL(ex_handler_default);
 
-__visible bool ex_handler_fault(const struct exception_table_entry *fixup,
+bool ex_handler_fault(const struct exception_table_entry *fixup,
 		     struct pt_regs *regs, int trapnr)
 {
 	regs->ip = ex_fixup_addr(fixup);
@@ -34,7 +34,7 @@ __visible bool ex_handler_fault(const struct exception_table_entry *fixup,
 }
 EXPORT_SYMBOL_GPL(ex_handler_fault);
 
-__visible bool ex_handler_ext(const struct exception_table_entry *fixup,
+bool ex_handler_ext(const struct exception_table_entry *fixup,
 		   struct pt_regs *regs, int trapnr)
 {
 	/* Special hack for uaccess_err */
@@ -44,7 +44,7 @@ __visible bool ex_handler_ext(const struct exception_table_entry *fixup,
 }
 EXPORT_SYMBOL(ex_handler_ext);
 
-__visible bool ex_handler_rdmsr_unsafe(const struct exception_table_entry *fixup,
+bool ex_handler_rdmsr_unsafe(const struct exception_table_entry *fixup,
 			     struct pt_regs *regs, int trapnr)
 {
 	if (pr_warn_once("unchecked MSR access error: RDMSR from 0x%x at rIP: 0x%lx (%pF)\n",
@@ -59,7 +59,7 @@ __visible bool ex_handler_rdmsr_unsafe(const struct exception_table_entry *fixup
 }
 EXPORT_SYMBOL(ex_handler_rdmsr_unsafe);
 
-__visible bool ex_handler_wrmsr_unsafe(const struct exception_table_entry *fixup,
+bool ex_handler_wrmsr_unsafe(const struct exception_table_entry *fixup,
 			     struct pt_regs *regs, int trapnr)
 {
 	if (pr_warn_once("unchecked MSR access error: WRMSR to 0x%x (tried to write 0x%08x%08x) at rIP: 0x%lx (%pF)\n",
@@ -73,7 +73,7 @@ __visible bool ex_handler_wrmsr_unsafe(const struct exception_table_entry *fixup
 }
 EXPORT_SYMBOL(ex_handler_wrmsr_unsafe);
 
-__visible bool ex_handler_clear_fs(const struct exception_table_entry *fixup,
+bool ex_handler_clear_fs(const struct exception_table_entry *fixup,
 			 struct pt_regs *regs, int trapnr)
 {
 	if (static_cpu_has(X86_BUG_NULL_SEG))
@@ -83,7 +83,7 @@ __visible bool ex_handler_clear_fs(const struct exception_table_entry *fixup,
 }
 EXPORT_SYMBOL(ex_handler_clear_fs);
 
-__visible bool ex_has_fault_handler(unsigned long ip)
+bool ex_has_fault_handler(unsigned long ip)
 {
 	const struct exception_table_entry *e;
 	ex_handler_t handler;

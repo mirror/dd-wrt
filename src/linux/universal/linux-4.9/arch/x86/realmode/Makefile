@@ -6,7 +6,6 @@
 # for more details.
 #
 #
-KBUILD_CFLAGS += $(DISABLE_LTO)
 KASAN_SANITIZE			:= n
 OBJECT_FILES_NON_STANDARD	:= y
 
