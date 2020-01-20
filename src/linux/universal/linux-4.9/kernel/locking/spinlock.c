@@ -128,6 +128,9 @@ BUILD_LOCK_OPS(read, rwlock);
 BUILD_LOCK_OPS(write, rwlock);
 
 #endif
+#ifndef CONFIG_LTO
+#undef noinline
+#endif
 
 #ifndef CONFIG_INLINE_SPIN_TRYLOCK
 noinline int __lockfunc _raw_spin_trylock(raw_spinlock_t *lock)
