@@ -519,6 +519,12 @@ static int parse_elf(struct elf_info *info, const char *filename)
 			info->export_unused_gpl_sec = i;
 		else if (strcmp(secname, "__ksymtab_gpl_future") == 0)
 			info->export_gpl_future_sec = i;
+		else if (strstarts(secname, ".gnu.lto_.symtab")) {
+			info->lto_symtab_start = (void *)hdr +
+				sechdrs[i].sh_offset;
+			info->lto_symtab_end = (void *)hdr +
+				sechdrs[i].sh_offset + sechdrs[i].sh_size;
+		}
 
 		if (sechdrs[i].sh_type == SHT_SYMTAB) {
 			unsigned int sh_link_idx;
@@ -839,6 +845,7 @@ static const char *const section_white_list[] =
 	".fmt_slot*",			/* EZchip */
 	".gnu.lto*",
 	".discard.*",
+	".gnu.debuglto_.*",
 	NULL
 };
 
@@ -1960,7 +1967,7 @@ static void read_symbols(char *modname)
 	}
 
 	license = get_modinfo(info.modinfo, info.modinfo_len, "license");
-	if (info.modinfo && !license && !is_vmlinux(modname))
+	if (info.modinfo && !license && !is_vmlinux(modname) && !info.lto_symtab_start)
 		warn("modpost: missing MODULE_LICENSE() in %s\n"
 		     "see include/linux/module.h for "
 		     "more information\n", modname);
