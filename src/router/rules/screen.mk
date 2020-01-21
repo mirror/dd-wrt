@@ -13,5 +13,5 @@ screen-install:
 	rm -rf $(INSTALLDIR)/screen/usr/share/man
 	rm -rf $(INSTALLDIR)/screen/usr/share/info
 	rm -rf $(INSTALLDIR)/screen/usr/lib
-	install -Dm644 etc/etcscreenrc $(INSTALLDIR)/screen/etc/screenrc
-	install -Dm644 etc/screenrc $(INSTALLDIR)/screen/etc/skel/.screenrc
+	install -Dm644 $(TOP)/screen/etc/etcscreenrc $(INSTALLDIR)/screen/etc/screenrc
+	install -Dm644 $(TOP)/screen/etc/screenrc $(INSTALLDIR)/screen/etc/skel/.screenrc
