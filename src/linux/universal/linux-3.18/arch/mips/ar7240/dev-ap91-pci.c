@@ -76,6 +76,7 @@ void ap91_pci_init(u8 *cal_data, u8 *mac_addr)
 #ifndef CONFIG_LIMA
 #ifndef CONFIG_MMS344
 #ifndef CONFIG_RAMBUTAN
+#ifndef CONFIG_ARCHERC25
 	if (cal_data)
 		memcpy(wmac_data.eeprom_data, cal_data, sizeof(wmac_data.eeprom_data));
 
@@ -86,6 +87,7 @@ void ap91_pci_init(u8 *cal_data, u8 *mac_addr)
 
 	ar71xx_pci_plat_dev_init = ap91_pci_plat_dev_init;
 	pci_enable_ath9k_fixup(0, wmac_data.eeprom_data);
+#endif
 #endif
 #endif
 #endif
