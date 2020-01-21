@@ -46,6 +46,7 @@ do
 			wg set oet${i} private-key /tmp/wireguard/oet${i}_private
 			rm /tmp/wireguard/oet${i}_private
 			peers=$((`$nv get oet${i}_peers` - 1))
+			$nv set oet${i}_bridged=0
 			for p in `seq 0 $peers`
 			do
 				PSKARG1=
