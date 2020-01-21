@@ -878,6 +878,15 @@ static inline void skb_mark_not_on_list(struct sk_buff *skb)
 #define ipv6_dst_lookup_flow(a, b, c, d) ipv6_dst_lookup(a, b, &dst, c) + (void *)0 ?: dst
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 0)
+#include <linux/skbuff.h>
+#ifndef skb_list_walk_safe
+#define skb_list_walk_safe(first, skb, next)                                   \
+	for ((skb) = (first), (next) = (skb) ? (skb)->next : NULL; (skb);      \
+	     (skb) = (next), (next) = (skb) ? (skb)->next : NULL)
+#endif
+#endif
+
 #if defined(ISUBUNTU1604)
 #include <linux/siphash.h>
 #ifndef _WG_LINUX_SIPHASH_H
