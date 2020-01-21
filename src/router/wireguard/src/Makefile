@@ -19,33 +19,20 @@ ifneq ($(V),1)
 MAKEFLAGS += --no-print-directory
 endif
 
-version.h:
-	@export GIT_CEILING_DIRECTORIES="$$(readlink -f ../..)" && \
-	ver="#define WIREGUARD_VERSION \"$$(git describe --dirty 2>/dev/null)\"" && \
-	[ "$$(cat version.h 2>/dev/null)" != "$$ver" ] && \
-	echo "$$ver" > version.h && \
-	git update-index --assume-unchanged version.h || true
+WIREGUARD_VERSION = $(patsubst v%,%,$(shell GIT_CEILING_DIRECTORIES="$(PWD)/../.." git describe --dirty 2>/dev/null))
 
-dkms.conf:
-	@export GIT_CEILING_DIRECTORIES="$$(readlink -f ../..)" && \
-	ver="$$(git describe --dirty 2>/dev/null)" && \
-	. ./dkms.conf && \
-	[ "$$PACKAGE_VERSION" != "$$ver" ] && \
-	sed -i "s/PACKAGE_VERSION=.*/PACKAGE_VERSION=\"$$ver\"/" dkms.conf && \
-	git update-index --assume-unchanged dkms.conf || true
+module:
+	@$(MAKE) -C $(KERNELDIR) M=$(PWD) WIREGUARD_VERSION="$(WIREGUARD_VERSION)" modules
 
-module: version.h
-	@$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
-
-module-debug: version.h
-	@$(MAKE) -C $(KERNELDIR) M=$(PWD) V=1 CONFIG_WIREGUARD_DEBUG=y modules
+module-debug:
+	@$(MAKE) -C $(KERNELDIR) M=$(PWD) V=1 CONFIG_WIREGUARD_DEBUG=y WIREGUARD_VERSION="$(WIREGUARD_VERSION)" modules
 
 clean:
 	@$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
 	@$(MAKE) -C tools clean
 
 module-install:
-	@$(MAKE) -C $(KERNELDIR) M=$(PWD) modules_install
+	@$(MAKE) -C $(KERNELDIR) M=$(PWD) WIREGUARD_VERSION="$(WIREGUARD_VERSION)" modules_install
 	$(DEPMOD) -a $(KERNELRELEASE)
 
 install: module-install tools-install
@@ -85,4 +72,4 @@ cloc:
 
 -include tests/debug.mk
 
-.PHONY: all module module-debug module-install tools tools-install install dkms-install clean core-cloc check style version.h dkms.conf
+.PHONY: all module module-debug module-install tools tools-install install dkms-install clean core-cloc check style
