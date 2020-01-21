@@ -83,6 +83,9 @@ int guessbootsize(void *offset, unsigned int maxscan)
 #ifdef CONFIG_WILLY
 	return 0x50000;
 #endif
+#ifdef CONFIG_ARCHERC25
+	return 0x30000;
+#endif
 	if (!strncmp((char *)(ofsb + 0x29da), "myloram.bin", 11) || !strncmp((char *)(ofsb + 0x2aba), "myloram.bin", 11)) {
 		printk(KERN_EMERG "compex WP72E detected\n");
 		nocalibration = 1;
@@ -134,6 +137,7 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			printk(KERN_EMERG "WRT160NL uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
+#ifndef CONFIG_ARCHERC25
 		if (ofs[i] == SQUASHFS_MAGIC_SWAP) {
 			printk(KERN_EMERG "ZCom quirk found\n");
 			zcom = 1;
@@ -146,6 +150,7 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			}
 			return i * 4;	// filesys starts earlier
 		}
+#endif
 
 	}
 	return -1;
@@ -286,7 +291,11 @@ static int __init ar7240_flash_init(void)
 	ar7240_reg_wr_nf(AR7240_SPI_CLOCK, 0x43);
 #endif
 #endif
+#ifdef CONFIG_ARCHERC25
+	buf = (char *)0xbf1b0000;
+#else
 	buf = (char *)0xbf000000;
+#endif
 	fsize = flash_get_geom(&flash_info);
 
 	for (i = 0; i < AR7240_FLASH_MAX_BANKS; i++) {
@@ -312,8 +321,11 @@ static int __init ar7240_flash_init(void)
 
 		printk(KERN_EMERG "scanning for root partition\n");
 
+#ifdef CONFIG_ARCHERC25
+		offset = 0x1b0000;
+#else
 		offset = 0;
-
+#endif
 		guess = guessbootsize(buf, mtd->size);
 		if (guess > 0) {
 			printk(KERN_EMERG "guessed bootloader size = %X\n", guess);
@@ -363,7 +375,10 @@ static int __init ar7240_flash_init(void)
 
 				dir_parts[5].offset = mtd->size - mtd->erasesize;	//fis config
 				dir_parts[5].size = mtd->erasesize;
-#if defined(CONFIG_ARCHERC7V4) || defined(CONFIG_WR1043V4) || defined(CONFIG_WR1043V5)
+#if defined(CONFIG_ARCHERC25)
+				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize * 3);	//nvram
+				dir_parts[4].size = mtd->erasesize;
+#elif defined(CONFIG_ARCHERC7V4) || defined(CONFIG_WR1043V4) || defined(CONFIG_WR1043V5)
 				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize * 16);	//nvram
 				dir_parts[4].size = mtd->erasesize;
 #elif (defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR4300) && !defined(CONFIG_WR1043V2) && !defined(CONFIG_WR841V8) && !defined(CONFIG_UBNTXW)) || defined(CONFIG_DIR862)
