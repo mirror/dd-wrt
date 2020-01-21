@@ -573,7 +573,19 @@ void start_sysinit(void)
 	if (fp) {
 		fseek(fp, 0x5000, SEEK_SET);
 		int i;
-		for (i = 0; i < 2116; i++)
+
+		for (i = 0; i < 6; i++)
+			putc(getc(fp), out);
+		char eabuf[32];
+		char macaddr[32];
+		get_hwaddr("eth0", macaddr);
+		MAC_ADD(macaddr);
+		MAC_ADD(macaddr);
+		ether_atoe(macaddr, mac);
+		for (i = 0; i < 6; i++)
+			putc(mac[i], out);
+		fseek(fp, 0x5000 + 12, SEEK_SET);
+		for (i = 0; i < 2104; i++)
 			putc(getc(fp), out);
 		fclose(fp);
 		eval("rm", "-f", "/tmp/ath10k-board.bin");
@@ -736,6 +748,28 @@ void start_sysinit(void)
 	if (!nvram_matchi("wlanled", 0))
 		eval("/sbin/wlanled", "-L", "generic_17:-94", "-L", "generic_16:-80", "-L", "generic_15:-73", "-L", "generic_14:-65");
 #elif  HAVE_ARCHERC25
+/*
+#define ARCHER_C25_74HC_GPIO_BASE		120
+#define ARCHER_C25_74HC_GPIO_LED_WAN_AMBER	(ARCHER_C25_74HC_GPIO_BASE + 4)
+#define ARCHER_C25_74HC_GPIO_LED_WAN_GREEN	(ARCHER_C25_74HC_GPIO_BASE + 5)
+#define ARCHER_C25_74HC_GPIO_LED_WLAN2		(ARCHER_C25_74HC_GPIO_BASE + 6)
+#define ARCHER_C25_74HC_GPIO_LED_WLAN5		(ARCHER_C25_74HC_GPIO_BASE + 7)
+#define ARCHER_C25_74HC_GPIO_LED_LAN1		(ARCHER_C25_74HC_GPIO_BASE + 0)
+#define ARCHER_C25_74HC_GPIO_LED_LAN2		(ARCHER_C25_74HC_GPIO_BASE + 1)
+#define ARCHER_C25_74HC_GPIO_LED_LAN3		(ARCHER_C25_74HC_GPIO_BASE + 2)
+#define ARCHER_C25_74HC_GPIO_LED_LAN4		(ARCHER_C25_74HC_GPIO_BASE + 3)
+*/
+
+	set_gpio(21, 0); // enable output
+	set_gpio(19, 1); // reset 
+	setEthLED(125, "eth1");
+	setSwitchLED(120, 0x10);	// lan1
+	setSwitchLED(121, 0x08);	// lan2
+	setSwitchLED(122, 0x04);	// lan3
+	setSwitchLED(123, 0x02);	// lan4
+	setWirelessLed(0, 126 + 32);
+	setWirelessLed(1, 127 + 32);
+
 #elif  HAVE_JWAP606
 //      setWirelessLed(0, 14);
 	setWirelessLed(1, 14);

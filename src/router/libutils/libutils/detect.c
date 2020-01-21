@@ -2220,6 +2220,13 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "3");
 	setRouter("TP-Link TL-WR841ND v12");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_ARCHERC25
+	nvram_default_get("ath0_rxantenna", "7");
+	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("ath1_rxantenna", "1");
+	nvram_default_get("ath1_txantenna", "1");
+	setRouter("TP-Link TL-ARCHER C25");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WR841V11
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
