@@ -313,6 +313,13 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->ses_gpio = 0x103;
 		cfg->sec0_gpio = 0x103;
 		cfg->connected_gpio = 0x102;
+#elif HAVE_ARCHERC25
+		cfg->power_gpio = 0x111;
+		cfg->diag_gpio = 0x011;
+		cfg->ses_gpio = 0x102;
+		cfg->sec0_gpio = 0x102;
+		cfg->connected_gpio = 0x07d;
+		cfg->disconnected_gpio = 0x07c;
 #elif HAVE_WR841V9
 		cfg->diag_gpio = 0x103;
 #elif HAVE_WR842V2
