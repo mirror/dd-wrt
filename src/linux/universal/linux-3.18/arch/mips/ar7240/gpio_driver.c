@@ -407,6 +407,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	 .active_low = 0,
 	 },
 #endif
+#ifndef CONFIG_ARCHERC25
 	{
 	 .name = "generic_14",
 	 .gpio = 14,
@@ -434,6 +435,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	 .active_low = 0,
 #endif
 	 },
+#endif
 #ifndef CONFIG_RAMBUTAN
 #if defined(CONFIG_MACH_HORNET) && !defined(CONFIG_ERC)
 	{
@@ -466,6 +468,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	 .active_low = 0,
 #endif
 	 },
+#ifndef CONFIG_ARCHERC25
 	{
 	 .name = "generic_19",
 	 .gpio = 19,
@@ -479,6 +482,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	 .active_low = 0,
 #endif
 	 },
+#endif
 	{
 	 .name = "generic_20",
 	 .gpio = 20,
@@ -490,6 +494,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	 .active_low = 0,
 #endif
 	 },
+#ifndef CONFIG_ARCHERC25
 	{
 	 .name = "generic_21",
 	 .gpio = 21,
@@ -501,6 +506,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	 .active_low = 0,
 #endif
 	 },
+#endif
 #ifndef CONFIG_FMS2111
 	{
 	 .name = "generic_22",
@@ -887,8 +893,9 @@ void __init ar71xx_gpio_init(void)
 	for (i = 0; i < sizeof(generic_leds_gpio) / sizeof(struct gpio_led); i++) {
 		generic_leds_gpio[i].default_state = LEDS_GPIO_DEFSTATE_KEEP;
 	}
+#ifndef CONFIG_ARCHERC25
 	ar71xx_add_device_leds_gpio(-1, sizeof(generic_leds_gpio) / sizeof(struct gpio_led), generic_leds_gpio);
-
+#endif
 #ifdef CONFIG_MACH_HORNET
 	printk(KERN_INFO "disable Hornet LED\n");
 	ar71xx_gpio_function_disable(AR933X_GPIO_FUNC_ETH_SWITCH_LED0_EN |

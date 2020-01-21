@@ -426,6 +426,156 @@ static struct platform_device *ar724x_platform_devices[] __initdata = {
 #endif
 };
 
+
+#ifdef HAVE_ARCHERC25
+#include <linux/leds.h>
+#include <linux/gpio.h>
+#include <linux/spi/spi_gpio.h>
+#include <linux/spi/74x164.h>
+void __init ath79_register_leds_gpio(int id,
+				     unsigned num_leds,
+				     struct gpio_led *leds)
+{
+	struct platform_device *pdev;
+	struct gpio_led_platform_data pdata;
+	struct gpio_led *p;
+	int err;
+
+	p = kmemdup(leds, num_leds * sizeof(*p), GFP_KERNEL);
+	if (!p)
+		return;
+
+	pdev = platform_device_alloc("leds-gpio", id);
+	if (!pdev)
+		goto err_free_leds;
+
+	memset(&pdata, 0, sizeof(pdata));
+	pdata.num_leds = num_leds;
+	pdata.leds = p;
+
+	err = platform_device_add_data(pdev, &pdata, sizeof(pdata));
+	if (err)
+		goto err_put_pdev;
+
+	err = platform_device_add(pdev);
+	if (err)
+		goto err_put_pdev;
+
+	return;
+
+err_put_pdev:
+	platform_device_put(pdev);
+
+err_free_leds:
+	kfree(p);
+}
+
+
+#define ARCHER_C25_GPIO_SHIFT_OE	21 /* OE,   Output Enable */
+#define ARCHER_C25_GPIO_SHIFT_SER	14 /* DS,   Data Serial Input */
+#define ARCHER_C25_GPIO_SHIFT_SRCLK	15 /* SHCP, Shift Reg Clock Input */
+#define ARCHER_C25_GPIO_SHIFT_SRCLR	19 /* MR,   Master Reset */
+#define ARCHER_C25_GPIO_SHIFT_RCLK	16 /* STCP, Storage Reg Clock Input */
+
+#define ARCHER_C25_74HC_GPIO_BASE		120
+#define ARCHER_C25_74HC_GPIO_LED_WAN_AMBER	(ARCHER_C25_74HC_GPIO_BASE + 4)
+#define ARCHER_C25_74HC_GPIO_LED_WAN_GREEN	(ARCHER_C25_74HC_GPIO_BASE + 5)
+#define ARCHER_C25_74HC_GPIO_LED_WLAN2		(ARCHER_C25_74HC_GPIO_BASE + 6)
+#define ARCHER_C25_74HC_GPIO_LED_WLAN5		(ARCHER_C25_74HC_GPIO_BASE + 7)
+#define ARCHER_C25_74HC_GPIO_LED_LAN1		(ARCHER_C25_74HC_GPIO_BASE + 0)
+#define ARCHER_C25_74HC_GPIO_LED_LAN2		(ARCHER_C25_74HC_GPIO_BASE + 1)
+#define ARCHER_C25_74HC_GPIO_LED_LAN3		(ARCHER_C25_74HC_GPIO_BASE + 2)
+#define ARCHER_C25_74HC_GPIO_LED_LAN4		(ARCHER_C25_74HC_GPIO_BASE + 3)
+
+#define ARCHER_C25_V1_SSR_BIT_0			0
+#define ARCHER_C25_V1_SSR_BIT_1			1
+#define ARCHER_C25_V1_SSR_BIT_2			2
+#define ARCHER_C25_V1_SSR_BIT_3			3
+#define ARCHER_C25_V1_SSR_BIT_4			4
+#define ARCHER_C25_V1_SSR_BIT_5			5
+#define ARCHER_C25_V1_SSR_BIT_6			6
+#define ARCHER_C25_V1_SSR_BIT_7			7
+
+static struct spi_gpio_platform_data archer_c25_v1_spi_data = {
+	.sck		= ARCHER_C25_GPIO_SHIFT_SRCLK,
+	.miso		= SPI_GPIO_NO_MISO,
+	.mosi		= ARCHER_C25_GPIO_SHIFT_SER,
+	.num_chipselect	= 1,
+};
+
+static u8 archer_c25_v1_ssr_initdata[] = {
+	BIT(ARCHER_C25_V1_SSR_BIT_7) |
+	BIT(ARCHER_C25_V1_SSR_BIT_6) |
+	BIT(ARCHER_C25_V1_SSR_BIT_5) |
+	BIT(ARCHER_C25_V1_SSR_BIT_4) |
+	BIT(ARCHER_C25_V1_SSR_BIT_3) |
+	BIT(ARCHER_C25_V1_SSR_BIT_2) |
+	BIT(ARCHER_C25_V1_SSR_BIT_1)
+};
+
+static struct gen_74x164_chip_platform_data archer_c25_v1_ssr_data = {
+	.base = ARCHER_C25_74HC_GPIO_BASE,
+	.num_registers = ARRAY_SIZE(archer_c25_v1_ssr_initdata),
+	.init_data = archer_c25_v1_ssr_initdata,
+};
+
+static struct platform_device archer_c25_v1_spi_device = {
+	.name		= "spi_gpio",
+	.id		= 1,
+	.dev = {
+		.platform_data = &archer_c25_v1_spi_data,
+	},
+};
+
+static struct spi_board_info archer_c25_v1_spi_info[] = {
+	{
+		.bus_num		= 1,
+		.chip_select		= 0,
+		.max_speed_hz		= 10000000,
+		.modalias		= "74x164",
+		.platform_data		= &archer_c25_v1_ssr_data,
+		.controller_data	= (void *) ARCHER_C25_GPIO_SHIFT_RCLK,
+	},
+};
+
+static struct gpio_led archer_c25_v1_leds_gpio[] __initdata = {
+	{
+		.name		= "wireless_generic_126",
+		.gpio		= ARCHER_C25_74HC_GPIO_LED_WLAN2,
+		.active_low	= 1,
+	}, {
+		.name		= "wireless_generic_127",
+		.gpio		= ARCHER_C25_74HC_GPIO_LED_WLAN5,
+		.active_low	= 1,
+	}, {
+		.name		= "generic_120",
+		.gpio		= ARCHER_C25_74HC_GPIO_LED_LAN1,
+		.active_low	= 1,
+	}, {
+		.name		= "generic_121",
+		.gpio		= ARCHER_C25_74HC_GPIO_LED_LAN2,
+		.active_low	= 1,
+	}, {
+		.name		= "generic_122",
+		.gpio		= ARCHER_C25_74HC_GPIO_LED_LAN3,
+		.active_low	= 1,
+	}, {
+		.name		= "generic_123",
+		.gpio		= ARCHER_C25_74HC_GPIO_LED_LAN4,
+		.active_low	= 1,
+	}, {
+		.name		= "generic_125",
+		.gpio		=  ARCHER_C25_74HC_GPIO_LED_WAN_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "generic_124",
+		.gpio		=  ARCHER_C25_74HC_GPIO_LED_WAN_AMBER,
+		.active_low	= 1,
+	},
+};
+
+#endif
+
 static struct ar8327_led_cfg wr1043nd_v2_ar8327_led_cfg = {
 	.led_ctrl0 = 0xcc35cc35,
 	.led_ctrl1 = 0xca35ca35,
@@ -1190,7 +1340,10 @@ int __init ar7240_platform_init(void)
 #ifdef CONFIG_WASP_SUPPORT
 #define DB120_MAC0_OFFSET	0
 #define DB120_MAC1_OFFSET	6
-    #if defined(CONFIG_ARCHERC7V5) && !defined(CONFIG_ARCHERA7V5)
+    #if defined(CONFIG_ARCHERC25)
+//	u8 art = (u8 *)KSEG1ADDR(0x1fff0000);	
+	mac = (u8 *)KSEG1ADDR(0x1f7e0008);
+    #elif defined(CONFIG_ARCHERC7V5) && !defined(CONFIG_ARCHERA7V5)
 	u8 *art = (u8 *)KSEG1ADDR(0x1f050000);
 	ee = (u8 *)KSEG1ADDR(0x1f051000);
     #elif defined(CONFIG_DIR825C1)
@@ -1206,7 +1359,10 @@ int __init ar7240_platform_init(void)
 	u32 t;
 
     #if !defined(CONFIG_WDR4300) && !defined(CONFIG_AP135) && !defined(CONFIG_UBNTXW) && !defined(CONFIG_DAP2230)
-    #ifdef CONFIG_JWAP606
+    #if defined(CONFIG_ARCHERC25)
+//	u8 art = (u8 *)KSEG1ADDR(0x1fff0000);	
+	mac = (u8 *)KSEG1ADDR(0x1f7e0008);
+    #elif CONFIG_JWAP606
 	mac = (u8 *)KSEG1ADDR(0x1fff0000);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);
@@ -1357,7 +1513,9 @@ int __init ar7240_platform_init(void)
        ath79_setup_ar933x_phy4_switch(false, false);
     #elif CONFIG_WR941V6
     #elif CONFIG_WR841V9
+    #ifndef CONFIG_ARCHERC25
        ath79_setup_ar933x_phy4_switch(false, false);
+    #endif
 
     #elif CONFIG_JWAP606
 
@@ -1795,6 +1953,25 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_eth0_data.phy_mask = BIT(4);
 	ar71xx_add_device_eth(0);
+	
+#ifdef CONFIG_ARCHERC25
+	spi_register_board_info(archer_c25_v1_spi_info,
+				ARRAY_SIZE(archer_c25_v1_spi_info));
+
+	platform_device_register(&archer_c25_v1_spi_device);
+
+	gpio_request_one(ARCHER_C25_GPIO_SHIFT_OE,
+			 GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_DIR_FIXED,
+			 "LED control");
+
+	gpio_request_one(ARCHER_C25_GPIO_SHIFT_SRCLR,
+			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 "LED reset");
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(archer_c25_v1_leds_gpio),
+				 archer_c25_v1_leds_gpio);
+
+#endif
     #elif CONFIG_WR810N
 	ar71xx_add_device_mdio(1, 0x0);
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, -1);
@@ -2181,6 +2358,8 @@ int __init ar7240_platform_init(void)
 
 #elif defined(CONFIG_DIR825C1)
 	ap91_pci_init(ee + 0x4000, mac1);
+#elif defined(CONFIG_ARCHERC25)
+	ap91_pci_init(NULL, NULL);
 #elif !defined(CONFIG_DIR615I) && !defined(CONFIG_WR841V8) || defined(CONFIG_LIMA)
 	ap91_pci_init(NULL, NULL);
 #endif
