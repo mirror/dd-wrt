@@ -427,11 +427,6 @@ static __always_inline void fscalar(u64 *output, u64 *b, u64 s)
 	fproduct_copy_from_wide_(output, tmp);
 }
 
-static __always_inline void fmul(u64 *output, u64 *a, u64 *b)
-{
-	fmul_fmul(output, a, b);
-}
-
 static __always_inline void crecip(u64 *output, u64 *input)
 {
 	crecip_crecip(output, input);
@@ -498,8 +493,8 @@ static __always_inline void addanddouble_fmonty(u64 *pp, u64 *ppq, u64 *p,
 	memcpy(origxprime0, xprime, 5 * sizeof(*xprime));
 	fsum(xprime, zprime);
 	fdifference(zprime, origxprime0);
-	fmul(xxprime0, xprime, z);
-	fmul(zzprime0, x, zprime);
+	fmul_fmul(xxprime0, xprime, z);
+	fmul_fmul(zzprime0, x, zprime);
 	origxprime = buf + 5;
 	{
 		u64 *xx0;
@@ -517,7 +512,7 @@ static __always_inline void addanddouble_fmonty(u64 *pp, u64 *ppq, u64 *p,
 		fdifference(zzprime, origxprime);
 		fsquare_fsquare_times(x3, xxprime, 1);
 		fsquare_fsquare_times(zzzprime, zzprime, 1);
-		fmul(z3, zzzprime, qx);
+		fmul_fmul(z3, zzzprime, qx);
 		fsquare_fsquare_times(xx0, x, 1);
 		fsquare_fsquare_times(zz0, z, 1);
 		{
@@ -528,12 +523,12 @@ static __always_inline void addanddouble_fmonty(u64 *pp, u64 *ppq, u64 *p,
 			zzz = buf + 10;
 			xx = buf + 15;
 			zz = buf + 20;
-			fmul(x2, xx, zz);
+			fmul_fmul(x2, xx, zz);
 			fdifference(zz, xx);
 			scalar = 121665;
 			fscalar(zzz, zz, scalar);
 			fsum(zzz, xx);
-			fmul(z2, zzz, zz);
+			fmul_fmul(z2, zzz, zz);
 		}
 	}
 }
@@ -748,7 +743,7 @@ static __always_inline void format_scalar_of_point(u8 *scalar, u64 *point)
 	u64 *zmone = buf;
 	u64 *sc = buf + 5;
 	crecip(zmone, z);
-	fmul(sc, x, zmone);
+	fmul_fmul(sc, x, zmone);
 	format_fcontract(scalar, sc);
 }
 
