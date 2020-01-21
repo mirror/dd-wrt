@@ -253,6 +253,18 @@ void start_sysinit(void)
 	nvram_seti("sw_lan2", 2);
 	nvram_seti("sw_lan3", 3);
 	nvram_seti("sw_lan4", 4);
+#elif defined (HAVE_ARCHERC25)
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
+	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
+	nvram_seti("sw_cpuport", 0);
+	nvram_seti("sw_wan", -1);
+	nvram_seti("sw_lan1", 1);
+	nvram_seti("sw_lan2", 2);
+	nvram_seti("sw_lan3", 3);
+	nvram_seti("sw_lan4", 4);
 #elif defined (HAVE_XD9531)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
@@ -555,6 +567,19 @@ void start_sysinit(void)
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
 	fclose(out);
+#elif defined(HAVE_ARCHERC25)
+	fp = fopen("/dev/mtdblock/5", "rb");
+	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
+	if (fp) {
+		fseek(fp, 0x5000, SEEK_SET);
+		int i;
+		for (i = 0; i < 2116; i++)
+			putc(getc(fp), out);
+		fclose(fp);
+		eval("rm", "-f", "/tmp/ath10k-board.bin");
+		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
+	}
+	fclose(out);
 #elif defined(HAVE_XD3200)
 	fp = fopen("/dev/mtdblock/5", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
@@ -710,6 +735,7 @@ void start_sysinit(void)
 	writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 	if (!nvram_matchi("wlanled", 0))
 		eval("/sbin/wlanled", "-L", "generic_17:-94", "-L", "generic_16:-80", "-L", "generic_15:-73", "-L", "generic_14:-65");
+#elif  HAVE_ARCHERC25
 #elif  HAVE_JWAP606
 //      setWirelessLed(0, 14);
 	setWirelessLed(1, 14);
