@@ -427,7 +427,7 @@ static struct platform_device *ar724x_platform_devices[] __initdata = {
 };
 
 
-#ifdef HAVE_ARCHERC25
+#ifdef CONFIG_ARCHERC25
 #include <linux/leds.h>
 #include <linux/gpio.h>
 #include <linux/spi/spi_gpio.h>
