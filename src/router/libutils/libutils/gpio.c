@@ -495,7 +495,9 @@ void set_gpio(int gpio, int value)
 {
 	FILE *in;
 	char buf[64];
-#ifdef HAVE_DANUBE
+#if defined(HAVE_ARCHERC25)
+#define GPIOMAX 128
+#elif defined(HAVE_DANUBE)
 #define GPIOMAX 64
 #else
 #define GPIOMAX 32
@@ -508,10 +510,9 @@ void set_gpio(int gpio, int value)
 			return;
 		}
 #endif
-#ifdef HAVE_ARCHERC7V4
+#if defined(HAVE_ARCHERC7V4) || defined(HAVE_ARCHERC25)
 		if (gpio >= 24) {
 			sysprintf("echo %d > /sys/devices/platform/leds-gpio/leds/generic_%d/brightness", value, gpio);
-//              set_linux_gpio(gpio, value);
 			return;
 		}
 #endif
@@ -520,7 +521,7 @@ void set_gpio(int gpio, int value)
 			return;
 		sprintf(buf, "/proc/gpio/%d_out", gpio);
 	} else
-#ifdef HAVE_ERC
+#if defined(HAVE_ERC)
 	if (gpio >= 55) {
 		set_linux_gpio(gpio, value);
 		return;
