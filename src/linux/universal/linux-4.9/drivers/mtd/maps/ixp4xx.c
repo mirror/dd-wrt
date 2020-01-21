@@ -277,9 +277,10 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 	 */
 	info->map.bankwidth = 2;
 	info->map.name = dev_name(&dev->dev);
-	info->map.read = ixp4xx_read16,
-	    info->map.write = ixp4xx_probe_write16,
-	    info->map.copy_from = ixp4xx_copy_from, printk(KERN_ERR "try to reserve 0x%08X with size of 0x%08X\n", dev->resource->start, dev->resource->end - dev->resource->start + 1);
+	info->map.read = ixp4xx_read16;
+	info->map.write = ixp4xx_probe_write16;
+	info->map.copy_from = ixp4xx_copy_from;
+	printk(KERN_ERR "try to reserve 0x%08X with size of 0x%08X\n", dev->resource->start, dev->resource->end - dev->resource->start + 1);
 	info->map.virt = devm_ioremap_resource(&dev->dev, dev->resource);
 	if (IS_ERR(info->map.virt)) {
 		err = PTR_ERR(info->map.virt);
@@ -294,7 +295,8 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 	info->mtd->dev.parent = &dev->dev;
 
 	/* Use the fast version */
-	info->map.write = ixp4xx_write16, printk(KERN_EMERG "scanning for root partition\n");
+	info->map.write = ixp4xx_write16;
+	printk(KERN_EMERG "scanning for root partition\n");
 	mtd = info->mtd;
 	offset = 0;
 	buf = info->map.virt;
