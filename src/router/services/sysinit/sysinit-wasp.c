@@ -592,6 +592,8 @@ void start_sysinit(void)
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
 	fclose(out);
+	eval("ifconfig", "eth0", "up");
+	eval("ifconfig", "eth1", "up");
 #elif defined(HAVE_XD3200)
 	fp = fopen("/dev/mtdblock/5", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
