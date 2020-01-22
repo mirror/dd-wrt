@@ -13,14 +13,14 @@
 #include <fcntl.h>
 
 #include <stdio.h>
-#include <smbdtools.h>
+#include <usmbdtools.h>
 
 static const char *app_name = "unknown";
 static int log_open;
 
 typedef void (*logger)(int level, const char *fmt, va_list list);
 
-char *smbd_conv_charsets[SMBD_CHARSET_MAX + 1] = {
+char *usmbd_conv_charsets[USMBD_CHARSET_MAX + 1] = {
 	"UTF-8",
 	"UTF-16LE",
 	"UCS-2LE",
@@ -75,7 +75,7 @@ char *strerr(int err)
 	return buf;
 }
 
-void __pr_log(int level, const char *fmt,...)
+void __pr_log(int level, const char *fmt, ...)
 {
 	va_list list;
 
@@ -91,7 +91,7 @@ void pr_logger_init(int flag)
 			closelog();
 			log_open = 0;
 		}
-		openlog("smbd", LOG_NDELAY, LOG_LOCAL5);
+		openlog("usmbd", LOG_NDELAY, LOG_LOCAL5);
 		__logger = __pr_log_syslog;
 		log_open = 1;
 	}
@@ -123,6 +123,7 @@ void pr_hex_dump(const void *mem, size_t sz)
 
 	if (xi) {
 		int sz = PR_HEX_DUMP_WIDTH / 2 - xi + 1;
+
 		if (sz > 0) {
 			memset(xline + xi, ' ', sz);
 			xline[PR_HEX_DUMP_WIDTH / 2 + 1] = 0x00;
@@ -144,6 +145,7 @@ char *base64_encode(unsigned char *src, size_t srclen)
 unsigned char *base64_decode(char const *src, size_t *dstlen)
 {
 	unsigned char *ret = g_base64_decode(src, dstlen);
+
 	if (ret)
 		ret[*dstlen] = 0x00;
 	return ret;
@@ -151,13 +153,13 @@ unsigned char *base64_decode(char const *src, size_t *dstlen)
 
 static int codeset_has_altname(int codeset)
 {
-	if (codeset == SMBD_CHARSET_UTF16LE ||
-			codeset == SMBD_CHARSET_UTF16BE)
+	if (codeset == USMBD_CHARSET_UTF16LE ||
+			codeset == USMBD_CHARSET_UTF16BE)
 		return 1;
 	return 0;
 }
 
-gchar *smbd_gconvert(const gchar *str,
+gchar *usmbd_gconvert(const gchar *str,
 		      gssize       str_len,
 		      int          to_codeset,
 		      int          from_codeset,
@@ -169,20 +171,20 @@ gchar *smbd_gconvert(const gchar *str,
 
 retry:
 	err = NULL;
-	if (from_codeset >= SMBD_CHARSET_MAX) {
+	if (from_codeset >= USMBD_CHARSET_MAX) {
 		pr_err("Unknown source codeset: %d\n", from_codeset);
 		return NULL;
 	}
 
-	if (to_codeset >= SMBD_CHARSET_MAX) {
+	if (to_codeset >= USMBD_CHARSET_MAX) {
 		pr_err("Unknown target codeset: %d\n", to_codeset);
 		return NULL;
 	}
 
 	converted = g_convert(str,
 			      str_len,
-			      smbd_conv_charsets[to_codeset],
-			      smbd_conv_charsets[from_codeset],
+			      usmbd_conv_charsets[to_codeset],
+			      usmbd_conv_charsets[from_codeset],
 			      bytes_read,
 			      bytes_written,
 			      &err);
@@ -204,8 +206,8 @@ retry:
 
 		if (has_altname) {
 			pr_info("Will try '%s' and '%s'\n",
-				smbd_conv_charsets[to_codeset],
-				smbd_conv_charsets[from_codeset]);
+				usmbd_conv_charsets[to_codeset],
+				usmbd_conv_charsets[from_codeset]);
 			goto retry;
 		}
 
@@ -217,13 +219,13 @@ retry:
 	return converted;
 }
 
-void notify_smbd_daemon(void)
+void notify_usmbd_daemon(void)
 {
 	char manager_pid[10] = {0, };
 	int pid = 0;
 	int lock_fd;
 
-	lock_fd = open(SMBD_LOCK_FILE, O_RDONLY);
+	lock_fd = open(USMBD_LOCK_FILE, O_RDONLY);
 	if (lock_fd < 0)
 		return;
 
