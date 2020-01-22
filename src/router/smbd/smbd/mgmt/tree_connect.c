@@ -6,7 +6,7 @@
 #include <linux/list.h>
 #include <linux/slab.h>
 
-#include "../smbd_server.h" /* FIXME */
+#include "../ksmbd_server.h" /* FIXME */
 #include "../buffer_pool.h"
 #include "../transport_ipc.h"
 #include "../connection.h"
@@ -16,33 +16,33 @@
 #include "share_config.h"
 #include "user_session.h"
 
-struct smbd_tree_conn_status
-smbd_tree_conn_connect(struct smbd_session *sess, char *share_name)
+struct ksmbd_tree_conn_status
+ksmbd_tree_conn_connect(struct ksmbd_session *sess, char *share_name)
 {
-	struct smbd_tree_conn_status status = {-EINVAL, NULL};
-	struct smbd_tree_connect_response *resp = NULL;
-	struct smbd_share_config *sc;
-	struct smbd_tree_connect *tree_conn = NULL;
+	struct ksmbd_tree_conn_status status = {-EINVAL, NULL};
+	struct ksmbd_tree_connect_response *resp = NULL;
+	struct ksmbd_share_config *sc;
+	struct ksmbd_tree_connect *tree_conn = NULL;
 	struct sockaddr *peer_addr;
 
-	sc = smbd_share_config_get(share_name);
+	sc = ksmbd_share_config_get(share_name);
 	if (!sc)
 		return status;
 
-	tree_conn = smbd_alloc(sizeof(struct smbd_tree_connect));
+	tree_conn = ksmbd_alloc(sizeof(struct ksmbd_tree_connect));
 	if (!tree_conn) {
 		status.ret = -ENOMEM;
 		goto out_error;
 	}
 
-	tree_conn->id = smbd_acquire_tree_conn_id(sess);
+	tree_conn->id = ksmbd_acquire_tree_conn_id(sess);
 	if (tree_conn->id < 0) {
 		status.ret = -EINVAL;
 		goto out_error;
 	}
 
-	peer_addr = SMBD_TCP_PEER_SOCKADDR(sess->conn);
-	resp = smbd_ipc_tree_connect_request(sess,
+	peer_addr = KSMBD_TCP_PEER_SOCKADDR(sess->conn);
+	resp = ksmbd_ipc_tree_connect_request(sess,
 					      sc,
 					      tree_conn,
 					      peer_addr);
@@ -52,7 +52,7 @@ smbd_tree_conn_connect(struct smbd_session *sess, char *share_name)
 	}
 
 	status.ret = resp->status;
-	if (status.ret != SMBD_TREE_CONN_STATUS_OK)
+	if (status.ret != KSMBD_TREE_CONN_STATUS_OK)
 		goto out_error;
 
 	tree_conn->flags = resp->connection_flags;
@@ -62,67 +62,67 @@ smbd_tree_conn_connect(struct smbd_session *sess, char *share_name)
 
 	list_add(&tree_conn->list, &sess->tree_conn_list);
 
-	smbd_free(resp);
+	ksmbd_free(resp);
 	return status;
 
 out_error:
 	if (tree_conn)
-		smbd_release_tree_conn_id(sess, tree_conn->id);
-	smbd_share_config_put(sc);
-	smbd_free(tree_conn);
-	smbd_free(resp);
+		ksmbd_release_tree_conn_id(sess, tree_conn->id);
+	ksmbd_share_config_put(sc);
+	ksmbd_free(tree_conn);
+	ksmbd_free(resp);
 	return status;
 }
 
-int smbd_tree_conn_disconnect(struct smbd_session *sess,
-			       struct smbd_tree_connect *tree_conn)
+int ksmbd_tree_conn_disconnect(struct ksmbd_session *sess,
+			       struct ksmbd_tree_connect *tree_conn)
 {
 	int ret;
 
-	ret = smbd_ipc_tree_disconnect_request(sess->id, tree_conn->id);
-	smbd_release_tree_conn_id(sess, tree_conn->id);
+	ret = ksmbd_ipc_tree_disconnect_request(sess->id, tree_conn->id);
+	ksmbd_release_tree_conn_id(sess, tree_conn->id);
 	list_del(&tree_conn->list);
-	smbd_share_config_put(tree_conn->share_conf);
-	smbd_free(tree_conn);
+	ksmbd_share_config_put(tree_conn->share_conf);
+	ksmbd_free(tree_conn);
 	return ret;
 }
 
-struct smbd_tree_connect *smbd_tree_conn_lookup(struct smbd_session *sess,
+struct ksmbd_tree_connect *ksmbd_tree_conn_lookup(struct ksmbd_session *sess,
 						  unsigned int id)
 {
-	struct smbd_tree_connect *tree_conn;
+	struct ksmbd_tree_connect *tree_conn;
 	struct list_head *tmp;
 
 	list_for_each(tmp, &sess->tree_conn_list) {
-		tree_conn = list_entry(tmp, struct smbd_tree_connect, list);
+		tree_conn = list_entry(tmp, struct ksmbd_tree_connect, list);
 		if (tree_conn->id == id)
 			return tree_conn;
 	}
 	return NULL;
 }
 
-struct smbd_share_config *smbd_tree_conn_share(struct smbd_session *sess,
+struct ksmbd_share_config *ksmbd_tree_conn_share(struct ksmbd_session *sess,
 						 unsigned int id)
 {
-	struct smbd_tree_connect *tc;
+	struct ksmbd_tree_connect *tc;
 
-	tc = smbd_tree_conn_lookup(sess, id);
+	tc = ksmbd_tree_conn_lookup(sess, id);
 	if (tc)
 		return tc->share_conf;
 	return NULL;
 }
 
-int smbd_tree_conn_session_logoff(struct smbd_session *sess)
+int ksmbd_tree_conn_session_logoff(struct ksmbd_session *sess)
 {
 	int ret = 0;
 
 	while (!list_empty(&sess->tree_conn_list)) {
-		struct smbd_tree_connect *tc;
+		struct ksmbd_tree_connect *tc;
 
 		tc = list_entry(sess->tree_conn_list.next,
-				struct smbd_tree_connect,
+				struct ksmbd_tree_connect,
 				list);
-		ret |= smbd_tree_conn_disconnect(sess, tc);
+		ret |= ksmbd_tree_conn_disconnect(sess, tc);
 	}
 
 	return ret;

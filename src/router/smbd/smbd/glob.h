@@ -4,8 +4,8 @@
  *   Copyright (C) 2018 Samsung Electronics Co., Ltd.
  */
 
-#ifndef __SMBD_GLOB_H
-#define __SMBD_GLOB_H
+#ifndef __KSMBD_GLOB_H
+#define __KSMBD_GLOB_H
 
 #include <linux/ctype.h>
 #include <linux/version.h>
@@ -14,42 +14,42 @@
 #include "vfs_cache.h"
 #include "smberr.h"
 
-#define SMBD_VERSION	"3.0.1"
+#define KSMBD_VERSION	"3.1.0"
 
 /* @FIXME clean up this code */
 
-extern int smbd_debugging;
-extern int smbd_caseless_search;
+extern int ksmbd_debugging;
+extern int ksmbd_caseless_search;
 
 #define DATA_STREAM	1
 #define DIR_STREAM	2
 
-#ifndef smbd_pr_fmt
+#ifndef ksmbd_pr_fmt
 #ifdef SUBMOD_NAME
-#define smbd_pr_fmt(fmt)	"ksmbd: " SUBMOD_NAME ": " fmt
+#define ksmbd_pr_fmt(fmt)	"ksmbd: " SUBMOD_NAME ": " fmt
 #else
-#define smbd_pr_fmt(fmt)	"ksmbd: " fmt
+#define ksmbd_pr_fmt(fmt)	"ksmbd: " fmt
 #endif
 #endif
 
 #ifdef CONFIG_SMB_SERVER_DEBUGGING
-#define smbd_debug(fmt, ...)					\
+#define ksmbd_debug(fmt, ...)					\
 	do {							\
-		if (smbd_debugging)				\
-			pr_info(smbd_pr_fmt("%s:%d: " fmt),	\
+		if (ksmbd_debugging)				\
+			pr_info(ksmbd_pr_fmt("%s:%d: " fmt),	\
 				__func__,			\
 				__LINE__,			\
 				##__VA_ARGS__);			\
 	} while (0)
 #else
-#define smbd_debug(fmt, ...) do { } while(0)
+#define ksmbd_debug(fmt, ...) do { } while(0)
 #endif
 
-#define smbd_info(fmt, ...)					\
-			pr_info(smbd_pr_fmt(fmt), ##__VA_ARGS__)
+#define ksmbd_info(fmt, ...)					\
+			pr_info(ksmbd_pr_fmt(fmt), ##__VA_ARGS__)
 
-#define smbd_err(fmt, ...)					\
-			pr_err(smbd_pr_fmt("%s:%d: " fmt),	\
+#define ksmbd_err(fmt, ...)					\
+			pr_err(ksmbd_pr_fmt("%s:%d: " fmt),	\
 				__func__,			\
 				__LINE__,			\
 				##__VA_ARGS__)
@@ -60,6 +60,6 @@ extern int smbd_caseless_search;
 /* @FIXME clean up this code */
 /* @FIXME clean up this code */
 
-/* smbd misc functions */
+/* ksmbd misc functions */
 extern void ntstatus_to_dos(__u32 ntstatus, __u8 *eclass, __u16 *ecode);
-#endif /* __SMBD_GLOB_H */
+#endif /* __KSMBD_GLOB_H */

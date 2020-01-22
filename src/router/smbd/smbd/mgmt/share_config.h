@@ -12,7 +12,7 @@
 
 #include "../glob.h"  /* FIXME */
 
-struct smbd_share_config {
+struct ksmbd_share_config {
 	char			*name;
 	char			*path;
 
@@ -33,7 +33,7 @@ struct smbd_share_config {
 	unsigned short		force_gid;
 };
 
-static inline int share_config_create_mode(struct smbd_share_config *share,
+static inline int share_config_create_mode(struct ksmbd_share_config *share,
 	umode_t posix_mode)
 {
 	if (!share->force_create_mode) {
@@ -45,7 +45,7 @@ static inline int share_config_create_mode(struct smbd_share_config *share,
 	return share->force_create_mode & share->create_mask;
 }
 
-static inline int share_config_directory_mode(struct smbd_share_config *share,
+static inline int share_config_directory_mode(struct ksmbd_share_config *share,
 	umode_t posix_mode)
 {
 	if (!share->force_directory_mode) {
@@ -58,24 +58,24 @@ static inline int share_config_directory_mode(struct smbd_share_config *share,
 	return share->force_directory_mode & share->directory_mask;
 }
 
-static inline int test_share_config_flag(struct smbd_share_config *share,
+static inline int test_share_config_flag(struct ksmbd_share_config *share,
 					 int flag)
 {
 	return share->flags & flag;
 }
 
-extern void __smbd_share_config_put(struct smbd_share_config *share);
+extern void __ksmbd_share_config_put(struct ksmbd_share_config *share);
 
-static inline void smbd_share_config_put(struct smbd_share_config *share)
+static inline void ksmbd_share_config_put(struct ksmbd_share_config *share)
 {
 	if (!atomic_dec_and_test(&share->refcount))
 		return;
-	__smbd_share_config_put(share);
+	__ksmbd_share_config_put(share);
 }
 
-struct smbd_share_config *smbd_share_config_get(char *name);
-bool smbd_share_veto_filename(struct smbd_share_config *share,
+struct ksmbd_share_config *ksmbd_share_config_get(char *name);
+bool ksmbd_share_veto_filename(struct ksmbd_share_config *share,
 			       const char *filename);
-void smbd_share_configs_cleanup(void);
+void ksmbd_share_configs_cleanup(void);
 
 #endif /* __SHARE_CONFIG_MANAGEMENT_H__ */

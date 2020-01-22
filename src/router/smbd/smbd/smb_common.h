@@ -12,7 +12,7 @@
 #include "nterr.h"
 #include "smb2pdu.h"
 
-/* smbd's Specific ERRNO */
+/* ksmbd's Specific ERRNO */
 #define ESHARE			50000
 
 #define SMB1_PROT		0
@@ -340,67 +340,67 @@ struct smb_version_values {
 };
 
 struct smb_version_ops {
-	int (*get_cmd_val)(struct smbd_work *swork);
-	int (*init_rsp_hdr)(struct smbd_work *swork);
-	void (*set_rsp_status)(struct smbd_work *swork, __le32 err);
-	int (*allocate_rsp_buf)(struct smbd_work *work);
-	int (*check_user_session)(struct smbd_work *work);
-	int (*get_smbd_tcon)(struct smbd_work *work);
-	int (*is_sign_req)(struct smbd_work *work, unsigned int command);
-	int (*check_sign_req)(struct smbd_work *work);
-	void (*set_sign_rsp)(struct smbd_work *work);
-	int (*generate_signingkey)(struct smbd_session *sess);
-	int (*generate_encryptionkey)(struct smbd_session *sess);
+	int (*get_cmd_val)(struct ksmbd_work *swork);
+	int (*init_rsp_hdr)(struct ksmbd_work *swork);
+	void (*set_rsp_status)(struct ksmbd_work *swork, __le32 err);
+	int (*allocate_rsp_buf)(struct ksmbd_work *work);
+	int (*check_user_session)(struct ksmbd_work *work);
+	int (*get_ksmbd_tcon)(struct ksmbd_work *work);
+	int (*is_sign_req)(struct ksmbd_work *work, unsigned int command);
+	int (*check_sign_req)(struct ksmbd_work *work);
+	void (*set_sign_rsp)(struct ksmbd_work *work);
+	int (*generate_signingkey)(struct ksmbd_session *sess);
+	int (*generate_encryptionkey)(struct ksmbd_session *sess);
 	int (*is_transform_hdr)(void *buf);
-	int (*decrypt_req)(struct smbd_work *work);
-	int (*encrypt_resp)(struct smbd_work *work);
+	int (*decrypt_req)(struct ksmbd_work *work);
+	int (*encrypt_resp)(struct ksmbd_work *work);
 };
 
 struct smb_version_cmds {
-	int (*proc)(struct smbd_work *swork);
+	int (*proc)(struct ksmbd_work *swork);
 };
 
 
 
-int smbd_min_protocol(void);
-int smbd_max_protocol(void);
+int ksmbd_min_protocol(void);
+int ksmbd_max_protocol(void);
 
-int smbd_lookup_protocol_idx(char *str);
+int ksmbd_lookup_protocol_idx(char *str);
 
-int smbd_verify_smb_message(struct smbd_work *work);
-bool smbd_smb_request(struct smbd_conn *conn);
+int ksmbd_verify_smb_message(struct ksmbd_work *work);
+bool ksmbd_smb_request(struct ksmbd_conn *conn);
 
-int smbd_lookup_dialect_by_id(__le16 *cli_dialects, __le16 dialects_count);
+int ksmbd_lookup_dialect_by_id(__le16 *cli_dialects, __le16 dialects_count);
 
-int smbd_negotiate_smb_dialect(void *buf);
-int smbd_init_smb_server(struct smbd_work *work);
+int ksmbd_negotiate_smb_dialect(void *buf);
+int ksmbd_init_smb_server(struct ksmbd_work *work);
 
-bool smbd_pdu_size_has_room(unsigned int pdu);
+bool ksmbd_pdu_size_has_room(unsigned int pdu);
 
-struct smbd_kstat;
-int smbd_populate_dot_dotdot_entries(struct smbd_conn *conn,
+struct ksmbd_kstat;
+int ksmbd_populate_dot_dotdot_entries(struct ksmbd_conn *conn,
 				      int info_level,
-				      struct smbd_file *dir,
-				      struct smbd_dir_info *d_info,
+				      struct ksmbd_file *dir,
+				      struct ksmbd_dir_info *d_info,
 				      char *search_pattern,
-				      int (*fn)(struct smbd_conn *,
+				      int (*fn)(struct ksmbd_conn *,
 						int,
-						struct smbd_dir_info *,
-						struct smbd_kstat *));
+						struct ksmbd_dir_info *,
+						struct ksmbd_kstat *));
 
-int smbd_extract_shortname(struct smbd_conn *conn,
+int ksmbd_extract_shortname(struct ksmbd_conn *conn,
 			    const char *longname,
 			    char *shortname);
 
-void smbd_init_smb2_server_common(struct smbd_conn *conn);
-int smbd_smb_negotiate_common(struct smbd_work *work, unsigned int command);
+void ksmbd_init_smb2_server_common(struct ksmbd_conn *conn);
+int ksmbd_smb_negotiate_common(struct ksmbd_work *work, unsigned int command);
 
-int smbd_smb_check_shared_mode(struct file *filp, struct smbd_file *curr_fp);
+int ksmbd_smb_check_shared_mode(struct file *filp, struct ksmbd_file *curr_fp);
 
-unsigned int smbd_small_buffer_size(void);
-unsigned int smbd_server_side_copy_max_chunk_count(void);
-unsigned int smbd_server_side_copy_max_chunk_size(void);
-unsigned int smbd_server_side_copy_max_total_size(void);
+unsigned int ksmbd_small_buffer_size(void);
+unsigned int ksmbd_server_side_copy_max_chunk_count(void);
+unsigned int ksmbd_server_side_copy_max_chunk_size(void);
+unsigned int ksmbd_server_side_copy_max_total_size(void);
 bool is_asterisk(char *p);
 
 static inline unsigned int get_rfc1002_len(void *buf)

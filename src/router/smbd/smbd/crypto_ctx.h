@@ -30,7 +30,7 @@ enum {
 	CRYPTO_BLK_MAX,
 };
 
-struct smbd_crypto_ctx {
+struct ksmbd_crypto_ctx {
 	struct list_head		list;
 
 	struct shash_desc		*desc[CRYPTO_SHASH_MAX];
@@ -63,23 +63,23 @@ struct smbd_crypto_ctx {
 #define CRYPTO_ECBDES_TFM(c)	((c)->blk_desc[CRYPTO_BLK_ECBDES]->tfm)
 #endif
 
-void smbd_release_crypto_ctx(struct smbd_crypto_ctx *ctx);
+void ksmbd_release_crypto_ctx(struct ksmbd_crypto_ctx *ctx);
 
-struct smbd_crypto_ctx *smbd_crypto_ctx_find_hmacmd5(void);
-struct smbd_crypto_ctx *smbd_crypto_ctx_find_hmacsha256(void);
-struct smbd_crypto_ctx *smbd_crypto_ctx_find_cmacaes(void);
-struct smbd_crypto_ctx *smbd_crypto_ctx_find_sha512(void);
-struct smbd_crypto_ctx *smbd_crypto_ctx_find_md4(void);
-struct smbd_crypto_ctx *smbd_crypto_ctx_find_md5(void);
+struct ksmbd_crypto_ctx *ksmbd_crypto_ctx_find_hmacmd5(void);
+struct ksmbd_crypto_ctx *ksmbd_crypto_ctx_find_hmacsha256(void);
+struct ksmbd_crypto_ctx *ksmbd_crypto_ctx_find_cmacaes(void);
+struct ksmbd_crypto_ctx *ksmbd_crypto_ctx_find_sha512(void);
+struct ksmbd_crypto_ctx *ksmbd_crypto_ctx_find_md4(void);
+struct ksmbd_crypto_ctx *ksmbd_crypto_ctx_find_md5(void);
 
-struct smbd_crypto_ctx *smbd_crypto_ctx_find_gcm(void);
-struct smbd_crypto_ctx *smbd_crypto_ctx_find_ccm(void);
+struct ksmbd_crypto_ctx *ksmbd_crypto_ctx_find_gcm(void);
+struct ksmbd_crypto_ctx *ksmbd_crypto_ctx_find_ccm(void);
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
-struct smbd_crypto_ctx *smbd_crypto_ctx_find_ecbdes(void);
+struct ksmbd_crypto_ctx *ksmbd_crypto_ctx_find_ecbdes(void);
 #endif
 
-void smbd_crypto_destroy(void);
-int smbd_crypto_create(void);
+void ksmbd_crypto_destroy(void);
+int ksmbd_crypto_create(void);
 
 #endif /* __CRYPTO_CTX_H__ */
