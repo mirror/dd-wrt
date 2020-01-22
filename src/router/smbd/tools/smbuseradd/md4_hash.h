@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * Cryptographic API.
  *
@@ -29,8 +29,9 @@ struct md4_ctx {
 	unsigned long	long byte_count;
 };
 
-void md4_init(struct md4_ctx *);
-void md4_update(struct md4_ctx *, const unsigned char *, unsigned int);
-void md4_final(struct md4_ctx *, unsigned char *);
+void md4_init(struct md4_ctx *mctx);
+void md4_update(struct md4_ctx *mctx, const unsigned char *data,
+		unsigned int len);
+void md4_final(struct md4_ctx *mctx, unsigned char *out);
 
 #endif /* __MD4_HASH_H__ */

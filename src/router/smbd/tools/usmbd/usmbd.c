@@ -5,7 +5,7 @@
  *   linux-cifsd-devel@lists.sourceforge.net
  */
 
-#include <smbdtools.h>
+#include <usmbdtools.h>
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -31,7 +31,7 @@
 #include <management/tree_conn.h>
 
 static int no_detach = 0;
-int smbd_health_status;
+int usmbd_health_status;
 static pid_t worker_pid;
 static int lock_fd = -1;
 static char *pwddb = PATH_PWDDB;
@@ -41,7 +41,7 @@ typedef int (*worker_fn)(void);
 
 static void usage(void)
 {
-	fprintf(stderr, "Usage: smbd\n");
+	fprintf(stderr, "Usage: usmbd\n");
 	fprintf(stderr, "\t--p=NUM | --port=NUM              TCP port NUM\n");
 	fprintf(stderr, "\t--c=smb.conf | --config=smb.conf  config file\n");
 	fprintf(stderr, "\t--u=pwd.db | --users=pwd.db       Users DB\n");
@@ -55,7 +55,7 @@ static void usage(void)
 
 static void show_version(void)
 {
-	printf("smbd-tools version : %s\n", SMBD_TOOLS_VERSION);
+	printf("ksmbd-tools version : %s\n", KSMBD_TOOLS_VERSION);
 	exit(EXIT_FAILURE);
 }
 
@@ -66,7 +66,7 @@ static int handle_orphaned_lock_file(void)
 	int pid = 0;
 	int fd;
 
-	fd = open(SMBD_LOCK_FILE, O_RDONLY);
+	fd = open(USMBD_LOCK_FILE, O_RDONLY);
 	if (fd < 0)
 		return -EINVAL;
 
@@ -82,12 +82,12 @@ static int handle_orphaned_lock_file(void)
 	snprintf(proc_ent, sizeof(proc_ent), "/proc/%d", pid);
 	fd = open(proc_ent, O_RDONLY);
 	if (fd < 0) {
-		pr_info("Unlink orphaned '%s'\n", SMBD_LOCK_FILE);
-		return unlink(SMBD_LOCK_FILE);
+		pr_info("Unlink orphaned '%s'\n", USMBD_LOCK_FILE);
+		return unlink(USMBD_LOCK_FILE);
 	}
 
 	close(fd);
-	pr_info("File '%s' belongs to pid %d\n", SMBD_LOCK_FILE, pid);
+	pr_info("File '%s' belongs to pid %d\n", USMBD_LOCK_FILE, pid);
 	return -EINVAL;
 }
 
@@ -97,7 +97,7 @@ static int create_lock_file(void)
 	size_t sz;
 
 retry:
-	lock_fd = open(SMBD_LOCK_FILE, O_CREAT | O_EXCL | O_WRONLY,
+	lock_fd = open(USMBD_LOCK_FILE, O_CREAT | O_EXCL | O_WRONLY,
 			S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
 	if (lock_fd < 0) {
 		if (handle_orphaned_lock_file())
@@ -122,7 +122,7 @@ static void delete_lock_file(void)
 	flock(lock_fd, LOCK_UN);
 	close(lock_fd);
 	lock_fd = -1;
-	remove(SMBD_LOCK_FILE);
+	remove(USMBD_LOCK_FILE);
 }
 
 static int wait_group_kill(int signo)
@@ -232,7 +232,7 @@ static void child_sig_handler(int signo)
 		 * a flag and wait for normal execution context to re-read
 		 * the configs.
 		 */
-		smbd_health_status |= SMBD_SHOULD_RELOAD_CONFIG;
+		usmbd_health_status |= USMBD_SHOULD_RELOAD_CONFIG;
 		pr_debug("Scheduled a config reload action.\n");
 		return;
 	}
@@ -243,7 +243,7 @@ static void child_sig_handler(int signo)
 	if (!g_atomic_int_compare_and_exchange(&fatal_delivered, 0, 1))
 		return;
 
-	smbd_health_status &= ~SMBD_HEALTH_RUNNING;
+	usmbd_health_status &= ~USMBD_HEALTH_RUNNING;
 	worker_process_free();
 	exit(EXIT_SUCCESS);
 }
@@ -257,7 +257,7 @@ static void manager_sig_handler(int signo)
 		if (!worker_pid)
 			return;
 
-		smbd_health_status |= SMBD_SHOULD_RELOAD_CONFIG;
+		usmbd_health_status |= USMBD_SHOULD_RELOAD_CONFIG;
 		if (kill(worker_pid, signo))
 			pr_err("Unable to send SIGHUP to %d: %s\n",
 				worker_pid, strerr(errno));
@@ -295,7 +295,7 @@ static int worker_process_init(void)
 	int ret;
 
 	setup_signals(child_sig_handler);
-	set_logger_app_name("smbd-worker");
+	set_logger_app_name("usmbd-worker");
 
 	ret = usm_init();
 	if (ret) {
@@ -339,18 +339,18 @@ static int worker_process_init(void)
 		goto out;
 	}
 
-	while (smbd_health_status & SMBD_HEALTH_RUNNING) {
-		if (smbd_health_status & SMBD_SHOULD_RELOAD_CONFIG) {
+	while (usmbd_health_status & USMBD_HEALTH_RUNNING) {
+		if (usmbd_health_status & USMBD_SHOULD_RELOAD_CONFIG) {
 			ret = parse_reload_configs(pwddb, smbconf);
 			if (ret)
 				pr_err("Failed to reload configs. "
 					"Continue with the old one.\n");
-			smbd_health_status &= ~SMBD_SHOULD_RELOAD_CONFIG;
+			usmbd_health_status &= ~USMBD_SHOULD_RELOAD_CONFIG;
 		}
 
 		ret = ipc_process_event();
-		if (ret == -SMBD_STATUS_IPC_FATAL_ERROR) {
-			ret = SMBD_STATUS_IPC_FATAL_ERROR;
+		if (ret == -USMBD_STATUS_IPC_FATAL_ERROR) {
+			ret = USMBD_STATUS_IPC_FATAL_ERROR;
 			break;
 		}
 	}
@@ -414,9 +414,9 @@ static int manager_process_init(void)
 		pid_t child;
 
 		child = waitpid(-1, &status, 0);
-		if (smbd_health_status & SMBD_SHOULD_RELOAD_CONFIG &&
+		if (usmbd_health_status & USMBD_SHOULD_RELOAD_CONFIG &&
 				errno == EINTR) {
-			smbd_health_status &= ~SMBD_SHOULD_RELOAD_CONFIG;
+			usmbd_health_status &= ~USMBD_SHOULD_RELOAD_CONFIG;
 			continue;
 		}
 
@@ -429,7 +429,7 @@ static int manager_process_init(void)
 		}
 
 		if (WIFEXITED(status) &&
-			WEXITSTATUS(status) == SMBD_STATUS_IPC_FATAL_ERROR) {
+			WEXITSTATUS(status) == USMBD_STATUS_IPC_FATAL_ERROR) {
 			pr_err("Fatal IPC error. Terminating. Check dmesg.\n");
 			goto out;
 		}
@@ -478,7 +478,7 @@ int main(int argc, char *argv[])
 	int systemd_service = 0;
 	int c;
 
-	set_logger_app_name("smbd-manager");
+	set_logger_app_name("usmbd-manager");
 	memset(&global_conf, 0x00, sizeof(struct smbconf_global));
 	pr_logger_init(PR_LOGGER_STDIO);
 

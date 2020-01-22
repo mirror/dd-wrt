@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  *   Copyright (C) 2018 Samsung Electronics Co., Ltd.
  *
@@ -12,7 +12,7 @@
 #include <pwd.h>
 #include <glib.h>
 
-struct smbd_user {
+struct usmbd_user {
 	char		*name;
 	char		*pass_b64;
 
@@ -23,26 +23,26 @@ struct smbd_user {
 	gid_t		gid;
 
 	int		ref_count;
-	int 		flags;
+	int		flags;
 	GRWLock		update_lock;
 };
 
-static inline void set_user_flag(struct smbd_user *user, int bit)
+static inline void set_user_flag(struct usmbd_user *user, int bit)
 {
 	user->flags |= bit;
 }
 
-static inline int test_user_flag(struct smbd_user *user, int bit)
+static inline int test_user_flag(struct usmbd_user *user, int bit)
 {
 	return user->flags & bit;
 }
 
-struct smbd_user *get_smbd_user(struct smbd_user *user);
-void put_smbd_user(struct smbd_user *user);
+struct usmbd_user *get_usmbd_user(struct usmbd_user *user);
+void put_usmbd_user(struct usmbd_user *user);
 
-struct smbd_user *usm_lookup_user(char *name);
+struct usmbd_user *usm_lookup_user(char *name);
 
-int usm_update_user_password(struct smbd_user *user, char *pass);
+int usm_update_user_password(struct usmbd_user *user, char *pass);
 
 int usm_add_new_user(char *name, char *pwd);
 int usm_add_update_user_from_pwdentry(char *data);
@@ -53,12 +53,12 @@ int usm_init(void);
 typedef void (*walk_users)(gpointer key,
 			   gpointer value,
 			   gpointer user_data);
-void for_each_smbd_user(walk_users cb, gpointer user_data);
+void for_each_usmbd_user(walk_users cb, gpointer user_data);
 
-struct smbd_login_request;
-struct smbd_login_response;
+struct usmbd_login_request;
+struct usmbd_login_response;
 
-int usm_handle_login_request(struct smbd_login_request *req,
-			     struct smbd_login_response *resp);
+int usm_handle_login_request(struct usmbd_login_request *req,
+			     struct usmbd_login_response *resp);
 
 #endif /* __MANAGEMENT_USER_H__ */

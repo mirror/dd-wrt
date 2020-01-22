@@ -15,38 +15,37 @@
 #include <linux/genetlink.h>
 #include <netlink/genl/mngt.h>
 
-#include <linux/smbd_server.h>
+#include <linux/usmbd_server.h>
 
-#include <smbdtools.h>
+#include <usmbdtools.h>
 #include <ipc.h>
 #include <worker.h>
 #include <config_parser.h>
 
 static struct nl_sock *sk;
 
-struct smbd_ipc_msg *ipc_msg_alloc(size_t sz)
+struct usmbd_ipc_msg *ipc_msg_alloc(size_t sz)
 {
-	struct smbd_ipc_msg *msg;
-	size_t msg_sz = sz + sizeof(struct smbd_ipc_msg) + 1;
+	struct usmbd_ipc_msg *msg;
+	size_t msg_sz = sz + sizeof(struct usmbd_ipc_msg) + 1;
 
-	if (msg_sz > SMBD_IPC_MAX_MESSAGE_SIZE)
+	if (msg_sz > USMBD_IPC_MAX_MESSAGE_SIZE)
 		pr_err("IPC message is too large: %zu\n", msg_sz);
 
 	msg = calloc(1, msg_sz);
-	if (msg) {
+	if (msg)
 		msg->sz = sz;
-	}
 	return msg;
 }
 
-void ipc_msg_free(struct smbd_ipc_msg *msg)
+void ipc_msg_free(struct usmbd_ipc_msg *msg)
 {
 	free(msg);
 }
 
 static int generic_event(int type, void *payload, size_t sz)
 {
-	struct smbd_ipc_msg *event;
+	struct usmbd_ipc_msg *event;
 
 	event = ipc_msg_alloc(sz);
 	if (!event)
@@ -55,7 +54,7 @@ static int generic_event(int type, void *payload, size_t sz)
 	event->type = type;
 	event->sz = sz;
 
-	memcpy(SMBD_IPC_MSG_PAYLOAD(event),
+	memcpy(USMBD_IPC_MSG_PAYLOAD(event),
 	       payload,
 	       sz);
 	wp_ipc_msg_push(event);
@@ -79,7 +78,7 @@ static int nlink_msg_cb(struct nl_msg *msg, void *arg)
 {
 	struct genlmsghdr *gnlh = genlmsg_hdr(nlmsg_hdr(msg));
 
-	if (gnlh->version != SMBD_GENL_VERSION) {
+	if (gnlh->version != USMBD_GENL_VERSION) {
 		pr_err("IPC message version mistamtch: %d\n", gnlh->version);
 		return NL_SKIP;
 	}
@@ -109,17 +108,18 @@ static int ifc_list_size(void)
 		char *ifc = global_conf.interfaces[i];
 
 		ifc = cp_ltrim(ifc);
-		if (!ifc) continue;
+		if (!ifc)
+			continue;
 
 		len += strlen(ifc) + 1;
 	}
 	return len;
 }
 
-static int ipc_smbd_starting_up(void)
+static int ipc_usmbd_starting_up(void)
 {
-	struct smbd_startup_request *ev;
-	struct smbd_ipc_msg *msg;
+	struct usmbd_startup_request *ev;
+	struct usmbd_ipc_msg *msg;
 	int ifc_list_sz = 0;
 	int ret;
 
@@ -130,8 +130,8 @@ static int ipc_smbd_starting_up(void)
 	if (!msg)
 		return -ENOMEM;
 
-	ev = SMBD_IPC_MSG_PAYLOAD(msg);
-	msg->type = SMBD_EVENT_STARTING_UP;
+	ev = USMBD_IPC_MSG_PAYLOAD(msg);
+	msg->type = USMBD_EVENT_STARTING_UP;
 
 	ev->flags = global_conf.flags;
 	ev->signing = global_conf.server_signing;
@@ -172,7 +172,7 @@ static int ipc_smbd_starting_up(void)
 	if (ifc_list_sz) {
 		int i;
 		int sz = 0;
-		char *config_payload = SMBD_STARTUP_CONFIG_INTERFACES(ev);
+		char *config_payload = USMBD_STARTUP_CONFIG_INTERFACES(ev);
 
 		ev->ifc_list_sz = ifc_list_sz;
 
@@ -180,7 +180,8 @@ static int ipc_smbd_starting_up(void)
 			char *ifc = global_conf.interfaces[i];
 
 			ifc = cp_ltrim(ifc);
-			if (!ifc) continue;
+			if (!ifc)
+				continue;
 
 			strcpy(config_payload + sz, ifc);
 			sz += strlen(ifc) + 1;
@@ -195,7 +196,7 @@ static int ipc_smbd_starting_up(void)
 	return ret;
 }
 
-static int ipc_smbd_shutting_down(void)
+static int ipc_usmbd_shutting_down(void)
 {
 	return 0;
 }
@@ -207,163 +208,163 @@ int ipc_process_event(void)
 	ret = nl_recvmsgs_default(sk);
 	if (ret < 0) {
 		pr_err("Recv() error %s [%d]\n", nl_geterror(ret), ret);
-		return -SMBD_STATUS_IPC_FATAL_ERROR;
+		return -USMBD_STATUS_IPC_FATAL_ERROR;
 	}
 	return ret;
 }
 
-static struct nla_policy smbd_nl_policy[SMBD_EVENT_MAX] = {
-	[SMBD_EVENT_UNSPEC] = {
+static struct nla_policy usmbd_nl_policy[USMBD_EVENT_MAX] = {
+	[USMBD_EVENT_UNSPEC] = {
 		.minlen = 0,
 	},
 
-	[SMBD_EVENT_HEARTBEAT_REQUEST] = {
-		.minlen = sizeof(struct smbd_heartbeat),
+	[USMBD_EVENT_HEARTBEAT_REQUEST] = {
+		.minlen = sizeof(struct usmbd_heartbeat),
 	},
 
-	[SMBD_EVENT_STARTING_UP] = {
-		.minlen = sizeof(struct smbd_startup_request),
+	[USMBD_EVENT_STARTING_UP] = {
+		.minlen = sizeof(struct usmbd_startup_request),
 	},
 
-	[SMBD_EVENT_SHUTTING_DOWN] = {
-		.minlen = sizeof(struct smbd_startup_request),
+	[USMBD_EVENT_SHUTTING_DOWN] = {
+		.minlen = sizeof(struct usmbd_startup_request),
 	},
 
-	[SMBD_EVENT_LOGIN_REQUEST] = {
-		.minlen = sizeof(struct smbd_login_request),
+	[USMBD_EVENT_LOGIN_REQUEST] = {
+		.minlen = sizeof(struct usmbd_login_request),
 	},
 
-	[SMBD_EVENT_LOGIN_RESPONSE] = {
-		.minlen = sizeof(struct smbd_login_response),
+	[USMBD_EVENT_LOGIN_RESPONSE] = {
+		.minlen = sizeof(struct usmbd_login_response),
 	},
 
-	[SMBD_EVENT_SHARE_CONFIG_REQUEST] = {
-		.minlen = sizeof(struct smbd_share_config_request),
+	[USMBD_EVENT_SHARE_CONFIG_REQUEST] = {
+		.minlen = sizeof(struct usmbd_share_config_request),
 	},
 
-	[SMBD_EVENT_SHARE_CONFIG_RESPONSE] = {
-		.minlen = sizeof(struct smbd_share_config_response),
+	[USMBD_EVENT_SHARE_CONFIG_RESPONSE] = {
+		.minlen = sizeof(struct usmbd_share_config_response),
 	},
 
-	[SMBD_EVENT_TREE_CONNECT_REQUEST] = {
-		.minlen = sizeof(struct smbd_tree_connect_request),
+	[USMBD_EVENT_TREE_CONNECT_REQUEST] = {
+		.minlen = sizeof(struct usmbd_tree_connect_request),
 	},
 
-	[SMBD_EVENT_TREE_CONNECT_RESPONSE] = {
-		.minlen = sizeof(struct smbd_tree_connect_response),
+	[USMBD_EVENT_TREE_CONNECT_RESPONSE] = {
+		.minlen = sizeof(struct usmbd_tree_connect_response),
 	},
 
-	[SMBD_EVENT_TREE_DISCONNECT_REQUEST] = {
-		.minlen = sizeof(struct smbd_tree_disconnect_request),
+	[USMBD_EVENT_TREE_DISCONNECT_REQUEST] = {
+		.minlen = sizeof(struct usmbd_tree_disconnect_request),
 	},
 
-	[SMBD_EVENT_LOGOUT_REQUEST] = {
-		.minlen = sizeof(struct smbd_logout_request),
+	[USMBD_EVENT_LOGOUT_REQUEST] = {
+		.minlen = sizeof(struct usmbd_logout_request),
 	},
 
-	[SMBD_EVENT_RPC_REQUEST] = {
-		.minlen = sizeof(struct smbd_rpc_command),
+	[USMBD_EVENT_RPC_REQUEST] = {
+		.minlen = sizeof(struct usmbd_rpc_command),
 	},
 
-	[SMBD_EVENT_RPC_RESPONSE] = {
-		.minlen = sizeof(struct smbd_rpc_command),
+	[USMBD_EVENT_RPC_RESPONSE] = {
+		.minlen = sizeof(struct usmbd_rpc_command),
 	},
 };
 
-static struct genl_cmd smbd_genl_cmds[] = {
+static struct genl_cmd usmbd_genl_cmds[] = {
 	{
-		.c_id		= SMBD_EVENT_UNSPEC,
-		.c_attr_policy	= smbd_nl_policy,
+		.c_id		= USMBD_EVENT_UNSPEC,
+		.c_attr_policy	= usmbd_nl_policy,
 		.c_msg_parser	= &handle_unsupported_event,
-		.c_maxattr	= SMBD_EVENT_MAX,
+		.c_maxattr	= USMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= SMBD_EVENT_HEARTBEAT_REQUEST,
-		.c_attr_policy	= smbd_nl_policy,
+		.c_id		= USMBD_EVENT_HEARTBEAT_REQUEST,
+		.c_attr_policy	= usmbd_nl_policy,
 		.c_msg_parser	= &handle_generic_event,
-		.c_maxattr	= SMBD_EVENT_MAX,
+		.c_maxattr	= USMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= SMBD_EVENT_STARTING_UP,
-		.c_attr_policy	= smbd_nl_policy,
+		.c_id		= USMBD_EVENT_STARTING_UP,
+		.c_attr_policy	= usmbd_nl_policy,
 		.c_msg_parser	= &handle_unsupported_event,
-		.c_maxattr	= SMBD_EVENT_MAX,
+		.c_maxattr	= USMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= SMBD_EVENT_SHUTTING_DOWN,
-		.c_attr_policy	= smbd_nl_policy,
+		.c_id		= USMBD_EVENT_SHUTTING_DOWN,
+		.c_attr_policy	= usmbd_nl_policy,
 		.c_msg_parser	= &handle_unsupported_event,
-		.c_maxattr	= SMBD_EVENT_MAX,
+		.c_maxattr	= USMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= SMBD_EVENT_LOGIN_REQUEST,
-		.c_attr_policy	= smbd_nl_policy,
+		.c_id		= USMBD_EVENT_LOGIN_REQUEST,
+		.c_attr_policy	= usmbd_nl_policy,
 		.c_msg_parser	= &handle_generic_event,
-		.c_maxattr	= SMBD_EVENT_MAX,
+		.c_maxattr	= USMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= SMBD_EVENT_LOGIN_RESPONSE,
-		.c_attr_policy	= smbd_nl_policy,
+		.c_id		= USMBD_EVENT_LOGIN_RESPONSE,
+		.c_attr_policy	= usmbd_nl_policy,
 		.c_msg_parser	= &handle_unsupported_event,
-		.c_maxattr	= SMBD_EVENT_MAX,
+		.c_maxattr	= USMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= SMBD_EVENT_SHARE_CONFIG_REQUEST,
-		.c_attr_policy	= smbd_nl_policy,
+		.c_id		= USMBD_EVENT_SHARE_CONFIG_REQUEST,
+		.c_attr_policy	= usmbd_nl_policy,
 		.c_msg_parser	= &handle_generic_event,
-		.c_maxattr	= SMBD_EVENT_MAX,
+		.c_maxattr	= USMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= SMBD_EVENT_SHARE_CONFIG_RESPONSE,
-		.c_attr_policy	= smbd_nl_policy,
+		.c_id		= USMBD_EVENT_SHARE_CONFIG_RESPONSE,
+		.c_attr_policy	= usmbd_nl_policy,
 		.c_msg_parser	= &handle_unsupported_event,
-		.c_maxattr	= SMBD_EVENT_MAX,
+		.c_maxattr	= USMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= SMBD_EVENT_TREE_CONNECT_REQUEST,
-		.c_attr_policy	= smbd_nl_policy,
+		.c_id		= USMBD_EVENT_TREE_CONNECT_REQUEST,
+		.c_attr_policy	= usmbd_nl_policy,
 		.c_msg_parser	= &handle_generic_event,
-		.c_maxattr	= SMBD_EVENT_MAX,
+		.c_maxattr	= USMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= SMBD_EVENT_TREE_CONNECT_RESPONSE,
-		.c_attr_policy	= smbd_nl_policy,
+		.c_id		= USMBD_EVENT_TREE_CONNECT_RESPONSE,
+		.c_attr_policy	= usmbd_nl_policy,
 		.c_msg_parser	= &handle_unsupported_event,
-		.c_maxattr	= SMBD_EVENT_MAX,
+		.c_maxattr	= USMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= SMBD_EVENT_TREE_DISCONNECT_REQUEST,
-		.c_attr_policy	= smbd_nl_policy,
+		.c_id		= USMBD_EVENT_TREE_DISCONNECT_REQUEST,
+		.c_attr_policy	= usmbd_nl_policy,
 		.c_msg_parser	= &handle_generic_event,
-		.c_maxattr	= SMBD_EVENT_MAX,
+		.c_maxattr	= USMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= SMBD_EVENT_LOGOUT_REQUEST,
-		.c_attr_policy	= smbd_nl_policy,
+		.c_id		= USMBD_EVENT_LOGOUT_REQUEST,
+		.c_attr_policy	= usmbd_nl_policy,
 		.c_msg_parser	= &handle_generic_event,
-		.c_maxattr	= SMBD_EVENT_MAX,
+		.c_maxattr	= USMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= SMBD_EVENT_RPC_REQUEST,
-		.c_attr_policy	= smbd_nl_policy,
+		.c_id		= USMBD_EVENT_RPC_REQUEST,
+		.c_attr_policy	= usmbd_nl_policy,
 		.c_msg_parser	= &handle_generic_event,
-		.c_maxattr	= SMBD_EVENT_MAX,
+		.c_maxattr	= USMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= SMBD_EVENT_RPC_RESPONSE,
-		.c_attr_policy	= smbd_nl_policy,
+		.c_id		= USMBD_EVENT_RPC_RESPONSE,
+		.c_attr_policy	= usmbd_nl_policy,
 		.c_msg_parser	= &handle_unsupported_event,
-		.c_maxattr	= SMBD_EVENT_MAX,
+		.c_maxattr	= USMBD_EVENT_MAX,
 	},
 };
 
-static struct genl_ops smbd_family_ops = {
-	.o_name = SMBD_GENL_NAME,
-	.o_cmds = smbd_genl_cmds,
-	.o_ncmds = ARRAY_SIZE(smbd_genl_cmds),
+static struct genl_ops usmbd_family_ops = {
+	.o_name = USMBD_GENL_NAME,
+	.o_cmds = usmbd_genl_cmds,
+	.o_ncmds = ARRAY_SIZE(usmbd_genl_cmds),
 };
 
-int ipc_msg_send(struct smbd_ipc_msg *msg)
+int ipc_msg_send(struct usmbd_ipc_msg *msg)
 {
 	struct nl_msg *nlmsg;
 	struct nlmsghdr *hdr;
@@ -376,15 +377,15 @@ int ipc_msg_send(struct smbd_ipc_msg *msg)
 	}
 
 	nlmsg_set_proto(nlmsg, NETLINK_GENERIC);
-	hdr = genlmsg_put(nlmsg, getpid(), 0, smbd_family_ops.o_id,
-			  0, 0, msg->type, SMBD_GENL_VERSION);
+	hdr = genlmsg_put(nlmsg, getpid(), 0, usmbd_family_ops.o_id,
+			  0, 0, msg->type, USMBD_GENL_VERSION);
 	if (!hdr) {
 		pr_err("genlmsg_put() has failed, aborting IPC send()\n");
 		goto out_error;
 	}
 
 	/* Use msg->type as attribute TYPE */
-	ret = nla_put(nlmsg, msg->type, msg->sz, SMBD_IPC_MSG_PAYLOAD(msg));
+	ret = nla_put(nlmsg, msg->type, msg->sz, USMBD_IPC_MSG_PAYLOAD(msg));
 	if (ret) {
 		pr_err("nla_put() has failed, aborting IPC send()\n");
 		goto out_error;
@@ -409,9 +410,9 @@ out_error:
 
 void ipc_destroy(void)
 {
-	if (smbd_health_status & SMBD_HEALTH_RUNNING) {
-		ipc_smbd_shutting_down();
-		genl_unregister_family(&smbd_family_ops);
+	if (usmbd_health_status & USMBD_HEALTH_RUNNING) {
+		ipc_usmbd_shutting_down();
+		genl_unregister_family(&usmbd_family_ops);
 	}
 
 	nl_socket_free(sk);
@@ -438,30 +439,30 @@ int ipc_init(void)
 		goto out_error;
 	}
 
-	if (genl_register_family(&smbd_family_ops)) {
+	if (genl_register_family(&usmbd_family_ops)) {
 		pr_err("Cannot register netlink family\n");
 		goto out_error;
 	}
 
 	do {
 		/*
-		 * Chances are we can start before smbd kernel module is up
-		 * and running. So just wait for the ksmbd to register the
+		 * Chances are we can start before usmbd kernel module is up
+		 * and running. So just wait for the kusmbd to register the
 		 * netlink family and accept our connection.
 		 */
-		ret = genl_ops_resolve(sk, &smbd_family_ops);
+		ret = genl_ops_resolve(sk, &usmbd_family_ops);
 		if (ret) {
 			pr_err("Cannot resolve netlink family\n");
 			sleep(5);
 		}
 	} while (ret);
 
-	if (ipc_smbd_starting_up()) {
+	if (ipc_usmbd_starting_up()) {
 		pr_err("Unable to send startup event\n");
 		return -EINVAL;
 	}
 
-	smbd_health_status = SMBD_HEALTH_RUNNING;
+	usmbd_health_status = USMBD_HEALTH_RUNNING;
 	return 0;
 
 out_error:

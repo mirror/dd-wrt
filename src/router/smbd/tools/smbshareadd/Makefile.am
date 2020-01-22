@@ -1,6 +1,6 @@
 AM_CFLAGS = -I$(top_srcdir)/include $(GLIB_CFLAGS) $(LIBNL_CFLAGS) -fno-common
 LIBS = $(GLIB_LIBS)
-smbshareadd_LDADD = $(top_builddir)/lib/libsmbdtools.la
+smbshareadd_LDADD = $(top_builddir)/lib/libusmbdtools.la
 
 sbin_PROGRAMS = smbshareadd
 

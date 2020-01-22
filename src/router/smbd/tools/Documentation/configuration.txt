@@ -1,8 +1,8 @@
 
-Define smbd configuration parameters list.
+Define ksmbd configuration parameters list.
 
 * Supported [global] level parameters list:
-	- server string (default: SMBD)
+	- server string (default: SMB SERVER)
 		This controls what string will show up in browse lists next
 		to the machine name
 	- workgroup (default : WORKGROUP)
@@ -39,15 +39,15 @@ Define smbd configuration parameters list.
 		The setting of this parameter determines whether user and
 		group list information is returned for an anonymous connection.
 	- map to guest (default: never)
-		This parameter can take four different values, which tell smbd
+		This parameter can take four different values, which tell ksmbd
 		what to do with user login requests.(never, bad user,
 		bad password, bad uid)
 	- bind interfaces only (default: no)
-		This global parameter allows the smbd admin to limit what
+		This global parameter allows the ksmbd admin to limit what
 		interfaces on a machine will serve SMB requests.
 	- interfaces (default: none)
 		This option allows you to override the default network
-		interfaces list that smbd will use for browsing. The option
+		interfaces list that ksmbd will use for browsing. The option
 		takes only list of interface name.
 	- deadtime (default: 0)
 		The value of the parameter (a decimal integer) represents
@@ -111,13 +111,13 @@ Define smbd configuration parameters list.
 	- writeable (default: no)
 		Inverted synonym for read only.
 	- store dos attributes (default: no)
-		If this parameter is set smbd attempts to first read DOS
+		If this parameter is set ksmbd attempts to first read DOS
 		attributes (SYSTEM, HIDDEN, ARCHIVE or READ-ONLY) from a
 		filesystem extended attribute, before mapping DOS attributes
 		to UNIX permission bits (such as occurs with map hidden and
 		map readonly).
 	- oplocks (default: no)
-		This boolean option tells smbd whether to issue oplocks
+		This boolean option tells ksmbd whether to issue oplocks
 		(opportunistic locks) to file open requests on this share.
 	- create mask (default: 0744)
 		When a file is created, the necessary permissions are calculated
@@ -182,9 +182,9 @@ Define smbd configuration parameters list.
 		Valid options are yes or no.
 	- force create mode (default: 0)
 		This parameter specifies a set of UNIX mode bit permissions
-		that will always be set on a file created by smbd.
+		that will always be set on a file created by ksmbd.
 	- force directory mode (default: 0)
 		This parameter specifies a set of UNIX mode bit permissions
-		that will always be set on a directory created by smbd.
+		that will always be set on a directory created by ksmbd.
 	- streams (default: no)
 		Alternate Data Streams support.

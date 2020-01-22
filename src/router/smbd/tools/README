@@ -1,5 +1,5 @@
 ________________________
-BUILDING SMBD TOOLS
+BUILDING KSMBD TOOLS
 ________________________
 
 Install preprequisite packages:
@@ -14,24 +14,24 @@ Install preprequisite packages:
 	sudo yum install glib2-devel libnl3-devel
 
 Build steps:
-        - cd into the smbd-tools directory
+        - cd into the ksmbd-tools directory
         - ./autogen.sh
         - ./configure
         - make
         - make install
 
 _____________________
-USING SMBD TOOLS
+USING KSMBD TOOLS
 _____________________
 
 Setup steps:
 	- install smbd kernel driver
-		modprobe smbd
+		modprobe ksmbd
 	- create user/password for SMB share
-		mkdir /etc/smbd/
+		mkdir /etc/ksmbd/
 		smbuseradd -a <Enter USERNAME for SMB share access>
 		Enter password for SMB share access
-	- create /etc/smbd/smb.conf file, add SMB share in smb.conf file
+	- create /etc/ksmbd/smb.conf file, add SMB share in smb.conf file
 		Refer smb.conf.example
 	- start smbd user space daemon
 		usmbd
@@ -42,7 +42,7 @@ ADMIN TOOLS
 --------------------
 
 - smbuseradd
-	Adds, updates or removes (-a/-u/-d) a user from smbd pwd file.
+	Adds, updates or removes (-a/-u/-d) a user from ksmbd pwd file.
 
 - smbshareadd
 	Adds, updates or removes (-a/-u/-d) a net share from smb.conf file.
