@@ -8,15 +8,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <glib.h>
-#include <linux/smbd_server.h>
+#include <linux/usmbd_server.h>
 
 #include <management/user.h>
-#include <smbdtools.h>
+#include <usmbdtools.h>
 
 static GHashTable	*users_table;
 static GRWLock		users_table_lock;
 
-static void kill_smbd_user(struct smbd_user *user)
+static void kill_usmbd_user(struct usmbd_user *user)
 {
 	pr_debug("Kill user %s\n", user->name);
 
@@ -27,7 +27,7 @@ static void kill_smbd_user(struct smbd_user *user)
 	free(user);
 }
 
-static int __usm_remove_user(struct smbd_user *user)
+static int __usm_remove_user(struct usmbd_user *user)
 {
 	int ret = -EINVAL;
 
@@ -37,11 +37,11 @@ static int __usm_remove_user(struct smbd_user *user)
 	g_rw_lock_writer_unlock(&users_table_lock);
 
 	if (!ret)
-		kill_smbd_user(user);
+		kill_usmbd_user(user);
 	return ret;
 }
 
-struct smbd_user *get_smbd_user(struct smbd_user *user)
+struct usmbd_user *get_usmbd_user(struct usmbd_user *user)
 {
 	g_rw_lock_writer_lock(&user->update_lock);
 	if (user->ref_count != 0)
@@ -52,7 +52,7 @@ struct smbd_user *get_smbd_user(struct smbd_user *user)
 	return user;
 }
 
-void put_smbd_user(struct smbd_user *user)
+void put_usmbd_user(struct usmbd_user *user)
 {
 	int drop;
 
@@ -70,13 +70,13 @@ void put_smbd_user(struct smbd_user *user)
 	__usm_remove_user(user);
 }
 
-static struct smbd_user *new_smbd_user(char *name, char *pwd)
+static struct usmbd_user *new_usmbd_user(char *name, char *pwd)
 {
-	struct smbd_user *user;
+	struct usmbd_user *user;
 	struct passwd *passwd;
 	size_t pass_sz;
 
-	user = calloc(1, sizeof(struct smbd_user));
+	user = calloc(1, sizeof(struct usmbd_user));
 	if (!user)
 		return NULL;
 
@@ -99,7 +99,7 @@ static struct smbd_user *new_smbd_user(char *name, char *pwd)
 
 static void free_hash_entry(gpointer k, gpointer u, gpointer user_data)
 {
-	kill_smbd_user(u);
+	kill_usmbd_user(u);
 }
 
 static void usm_clear_users(void)
@@ -125,14 +125,14 @@ int usm_init(void)
 	return 0;
 }
 
-static struct smbd_user *__usm_lookup_user(char *name)
+static struct usmbd_user *__usm_lookup_user(char *name)
 {
 	return g_hash_table_lookup(users_table, name);
 }
 
-struct smbd_user *usm_lookup_user(char *name)
+struct usmbd_user *usm_lookup_user(char *name)
 {
-	struct smbd_user *user, *ret;
+	struct usmbd_user *user, *ret;
 
 	if (!name)
 		return NULL;
@@ -140,7 +140,7 @@ struct smbd_user *usm_lookup_user(char *name)
 	g_rw_lock_reader_lock(&users_table_lock);
 	user = __usm_lookup_user(name);
 	if (user) {
-		ret = get_smbd_user(user);
+		ret = get_usmbd_user(user);
 		if (!ret)
 			user = NULL;
 	}
@@ -151,7 +151,7 @@ struct smbd_user *usm_lookup_user(char *name)
 int usm_add_new_user(char *name, char *pwd)
 {
 	int ret = 0;
-	struct smbd_user *user = new_smbd_user(name, pwd);
+	struct usmbd_user *user = new_usmbd_user(name, pwd);
 
 	if (!user) {
 		free(name);
@@ -163,12 +163,12 @@ int usm_add_new_user(char *name, char *pwd)
 	if (__usm_lookup_user(name)) {
 		g_rw_lock_writer_unlock(&users_table_lock);
 		pr_info("User already exists %s\n", name);
-		kill_smbd_user(user);
+		kill_usmbd_user(user);
 		return 0;
 	}
 
 	if (!g_hash_table_insert(users_table, user->name, user)) {
-		kill_smbd_user(user);
+		kill_usmbd_user(user);
 		ret = -EINVAL;
 	}
 	g_rw_lock_writer_unlock(&users_table_lock);
@@ -177,7 +177,7 @@ int usm_add_new_user(char *name, char *pwd)
 
 int usm_add_update_user_from_pwdentry(char *data)
 {
-	struct smbd_user *user;
+	struct usmbd_user *user;
 	char *name;
 	char *pwd;
 	char *pos = strchr(data, ':');
@@ -201,7 +201,7 @@ int usm_add_update_user_from_pwdentry(char *data)
 	user = usm_lookup_user(name);
 	if (user) {
 		ret = usm_update_user_password(user, pwd);
-		put_smbd_user(user);
+		put_usmbd_user(user);
 
 		free(name);
 		free(pwd);
@@ -210,14 +210,14 @@ int usm_add_update_user_from_pwdentry(char *data)
 	return usm_add_new_user(name, pwd);
 }
 
-void for_each_smbd_user(walk_users cb, gpointer user_data)
+void for_each_usmbd_user(walk_users cb, gpointer user_data)
 {
 	g_rw_lock_reader_lock(&users_table_lock);
 	g_hash_table_foreach(users_table, cb, user_data);
 	g_rw_lock_reader_unlock(&users_table_lock);
 }
 
-int usm_update_user_password(struct smbd_user *user, char *pswd)
+int usm_update_user_password(struct usmbd_user *user, char *pswd)
 {
 	size_t pass_sz;
 	char *pass_b64 = g_strdup(pswd);
@@ -242,13 +242,13 @@ int usm_update_user_password(struct smbd_user *user, char *pswd)
 	return 0;
 }
 
-static int usm_copy_user_passhash(struct smbd_user *user,
+static int usm_copy_user_passhash(struct usmbd_user *user,
 				  char *pass,
 				  size_t sz)
 {
 	int ret = -ENOSPC;
 
-	if (test_user_flag(user, SMBD_USER_FLAG_GUEST_ACCOUNT))
+	if (test_user_flag(user, USMBD_USER_FLAG_GUEST_ACCOUNT))
 		return 0;
 
 	g_rw_lock_reader_lock(&user->update_lock);
@@ -261,13 +261,13 @@ static int usm_copy_user_passhash(struct smbd_user *user,
 	return ret;
 }
 
-static int usm_copy_user_account(struct smbd_user *user,
+static int usm_copy_user_account(struct usmbd_user *user,
 				 char *account,
 				 size_t sz)
 {
 	int account_sz;
 
-	if (test_user_flag(user, SMBD_USER_FLAG_GUEST_ACCOUNT))
+	if (test_user_flag(user, USMBD_USER_FLAG_GUEST_ACCOUNT))
 		return 0;
 
 	account_sz = strlen(user->name);
@@ -279,34 +279,34 @@ static int usm_copy_user_account(struct smbd_user *user,
 	return -ENOSPC;
 }
 
-static void __handle_login_request(struct smbd_login_response *resp,
-				   struct smbd_user *user)
+static void __handle_login_request(struct usmbd_login_response *resp,
+				   struct usmbd_user *user)
 {
 	int hash_sz;
 
 	resp->gid = user->gid;
 	resp->uid = user->uid;
 	resp->status = user->flags;
-	resp->status |= SMBD_USER_FLAG_OK;
+	resp->status |= USMBD_USER_FLAG_OK;
 
 	hash_sz = usm_copy_user_passhash(user,
 					 resp->hash,
 					 sizeof(resp->hash));
 	if (hash_sz < 0) {
-		resp->status = SMBD_USER_FLAG_INVALID;
+		resp->status = USMBD_USER_FLAG_INVALID;
 	} else {
 		resp->hash_sz = (unsigned short)hash_sz;
 		if (usm_copy_user_account(user,
 					  resp->account,
 					  sizeof(resp->account)))
-			resp->status = SMBD_USER_FLAG_INVALID;
+			resp->status = USMBD_USER_FLAG_INVALID;
 	}
 }
 
-int usm_handle_login_request(struct smbd_login_request *req,
-			     struct smbd_login_response *resp)
+int usm_handle_login_request(struct usmbd_login_request *req,
+			     struct usmbd_login_response *resp)
 {
-	struct smbd_user *user = NULL;
+	struct usmbd_user *user = NULL;
 	int null_session = 0;
 
 	if (req->account[0] == '\0')
@@ -316,23 +316,23 @@ int usm_handle_login_request(struct smbd_login_request *req,
 		user = usm_lookup_user(req->account);
 	if (user) {
 		__handle_login_request(resp, user);
-		put_smbd_user(user);
+		put_usmbd_user(user);
 		return 0;
 	}
 
-	resp->status = SMBD_USER_FLAG_BAD_USER;
+	resp->status = USMBD_USER_FLAG_BAD_USER;
 	if (!null_session &&
-		global_conf.map_to_guest == SMBD_CONF_MAP_TO_GUEST_NEVER)
+		global_conf.map_to_guest == USMBD_CONF_MAP_TO_GUEST_NEVER)
 		return 0;
 
 	if (null_session ||
-		global_conf.map_to_guest == SMBD_CONF_MAP_TO_GUEST_BAD_USER)
+		global_conf.map_to_guest == USMBD_CONF_MAP_TO_GUEST_BAD_USER)
 		user = usm_lookup_user(global_conf.guest_account);
 
 	if (!user)
 		return 0;
 
 	__handle_login_request(resp, user);
-	put_smbd_user(user);
+	put_usmbd_user(user);
 	return 0;
 }

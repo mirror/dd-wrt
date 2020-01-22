@@ -18,13 +18,13 @@
 #include <ctype.h>
 
 #include <config_parser.h>
-#include <smbdtools.h>
+#include <usmbdtools.h>
 
 #include <management/user.h>
 #include <management/share.h>
 #include <user_admin.h>
 
-#include <linux/smbd_server.h>
+#include <linux/usmbd_server.h>
 
 static char *arg_account = NULL;
 static char *arg_password = NULL;
@@ -53,7 +53,7 @@ static void usage(void)
 
 static void show_version(void)
 {
-	printf("smbd-tools version : %s\n", SMBD_TOOLS_VERSION);
+	printf("ksmbd-tools version : %s\n", KSMBD_TOOLS_VERSION);
 	exit(EXIT_FAILURE);
 }
 
@@ -81,7 +81,7 @@ static int sanity_check_user_name_simple(char *uname)
 	sz = strlen(uname);
 	if (sz < 1)
 		return -EINVAL;
-	if (sz >= SMBD_REQ_MAX_ACCOUNT_NAME_SZ)
+	if (sz >= USMBD_REQ_MAX_ACCOUNT_NAME_SZ)
 		return -EINVAL;
 
 	/* 1'; Drop table users -- */
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 	 * We support only ADD_USER command at this moment
 	 */
 	if (ret == 0 && cmd == COMMAND_ADD_USER)
-		notify_smbd_daemon();
+		notify_usmbd_daemon();
 out:
 	shm_destroy();
 	usm_destroy();

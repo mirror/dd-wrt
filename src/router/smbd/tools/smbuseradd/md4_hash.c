@@ -192,8 +192,6 @@ void md4_update(struct md4_ctx *mctx, const u8 *data, unsigned int len)
 	}
 
 	memcpy(mctx->block, data, len);
-
-	return;
 }
 
 void md4_final(struct md4_ctx *mctx, u8 *out)
@@ -219,6 +217,4 @@ void md4_final(struct md4_ctx *mctx, u8 *out)
 	cpu_to_le32_array(mctx->hash, ARRAY_SIZE(mctx->hash));
 	memcpy(out, mctx->hash, sizeof(mctx->hash));
 	memset(mctx, 0, sizeof(*mctx));
-
-	return;
 }

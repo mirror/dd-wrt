@@ -18,10 +18,10 @@
 #include <ctype.h>
 
 #include <config_parser.h>
-#include <smbdtools.h>
+#include <usmbdtools.h>
 
 #include <management/share.h>
-#include <linux/smbd_server.h>
+#include <linux/usmbd_server.h>
 #include <share_admin.h>
 
 static char *arg_name;
@@ -49,14 +49,14 @@ static void usage(void)
 	fprintf(stderr, "\t-v | --verbose\n");
 
 	fprintf(stderr, "Supported share options:\n");
-	for (i = 0; i < SMBD_SHARE_CONF_MAX; i++)
-		fprintf(stderr,"\t%s\n", SMBD_SHARE_CONF[i]);
+	for (i = 0; i < USMBD_SHARE_CONF_MAX; i++)
+		fprintf(stderr, "\t%s\n", USMBD_SHARE_CONF[i]);
 	exit(EXIT_FAILURE);
 }
 
 static void show_version(void)
 {
-	printf("smbd-tools version : %s\n", SMBD_TOOLS_VERSION);
+	printf("ksmbd-tools version : %s\n", KSMBD_TOOLS_VERSION);
 	exit(EXIT_FAILURE);
 }
 
@@ -84,7 +84,7 @@ static int sanity_check_share_name_simple(char *name)
 	sz = strlen(name);
 	if (sz < 1)
 		return -EINVAL;
-	if (sz >= SMBD_REQ_MAX_SHARE_NAME)
+	if (sz >= USMBD_REQ_MAX_SHARE_NAME)
 		return -EINVAL;
 
 	if (!cp_key_cmp(name, "global"))
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 	 * We support only ADD_SHARE command for the time being
 	 */
 	if (ret == 0 && cmd == COMMAND_ADD_SHARE)
-		notify_smbd_daemon();
+		notify_usmbd_daemon();
 out:
 	cp_smbconfig_destroy();
 	return ret;

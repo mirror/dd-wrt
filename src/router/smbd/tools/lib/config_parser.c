@@ -12,10 +12,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <linux/smbd_server.h>
+#include <linux/usmbd_server.h>
 
 #include <config_parser.h>
-#include <smbdtools.h>
+#include <usmbdtools.h>
 #include <management/user.h>
 #include <management/share.h>
 
@@ -47,8 +47,6 @@ unsigned long long memparse(const char *v)
 	case 'K':
 	case 'k':
 		ret <<= 10;
-	default:
-		break;
 	}
 
 	return ret;
@@ -134,7 +132,7 @@ out_free:
 static int add_group_key_value(char *line)
 {
 	char *key, *value;
-	
+
 	key = strchr(line, '=');
 	if (!key)
 		return -EINVAL;
@@ -144,8 +142,10 @@ static int add_group_key_value(char *line)
 	key--;
 	value++;
 
-	while (is_ascii_space_tab(*key)) key--;
-	while (is_ascii_space_tab(*value)) value++;
+	while (is_ascii_space_tab(*key))
+		key--;
+	while (is_ascii_space_tab(*value))
+		value++;
 
 	if (is_a_comment(value))
 		return 0;
@@ -171,7 +171,8 @@ static int add_group_key_value(char *line)
 
 static int process_smbconf_entry(char *data)
 {
-	while (is_ascii_space_tab(*data)) data++;
+	while (is_ascii_space_tab(*data))
+		data++;
 
 	if (is_a_comment(data))
 		return 0;
@@ -300,7 +301,8 @@ char *cp_ltrim(char *v)
 	if (!v)
 		return NULL;
 
-	while (*v && *v == ' ') v++;
+	while (*v && *v == ' ')
+		v++;
 	if (*v == 0x00)
 		return NULL;
 	return v;
@@ -331,14 +333,14 @@ int cp_get_group_kv_bool(char *v)
 int cp_get_group_kv_config_opt(char *v)
 {
 	if (!g_ascii_strncasecmp(v, "disabled", 8))
-		return SMBD_CONFIG_OPT_DISABLED;
+		return USMBD_CONFIG_OPT_DISABLED;
 	if (!g_ascii_strncasecmp(v, "enabled", 7))
-		return SMBD_CONFIG_OPT_ENABLED;
+		return USMBD_CONFIG_OPT_ENABLED;
 	if (!g_ascii_strncasecmp(v, "auto", 4))
-		return SMBD_CONFIG_OPT_AUTO;
+		return USMBD_CONFIG_OPT_AUTO;
 	if (!g_ascii_strncasecmp(v, "mandatory", 9))
-		return SMBD_CONFIG_OPT_MANDATORY;
-	return SMBD_CONFIG_OPT_DISABLED;
+		return USMBD_CONFIG_OPT_MANDATORY;
+	return USMBD_CONFIG_OPT_DISABLED;
 }
 
 unsigned long cp_get_group_kv_long_base(char *v, int base)
@@ -366,7 +368,7 @@ void cp_group_kv_list_free(char **list)
 
 static int cp_add_global_guest_account(gpointer _v)
 {
-	struct smbd_user *user;
+	struct usmbd_user *user;
 
 	if (usm_add_new_user(cp_get_group_kv_string(_v),
 			     g_strdup("NULL"))) {
@@ -381,8 +383,8 @@ static int cp_add_global_guest_account(gpointer _v)
 		return -EINVAL;
 	}
 
-	set_user_flag(user, SMBD_USER_FLAG_GUEST_ACCOUNT);
-	put_smbd_user(user);
+	set_user_flag(user, USMBD_USER_FLAG_GUEST_ACCOUNT);
+	put_usmbd_user(user);
 	global_conf.guest_account = cp_get_group_kv_string(_v);
 	return 0;
 }
@@ -447,7 +449,7 @@ static void global_group_kv(gpointer _k, gpointer _v, gpointer user_data)
 
 	if (!cp_key_cmp(_k, "restrict anonymous")) {
 		global_conf.restrict_anon = cp_get_group_kv_long(_v);
-		if (global_conf.restrict_anon > SMBD_RESTRICT_ANON_TYPE_2 ||
+		if (global_conf.restrict_anon > USMBD_RESTRICT_ANON_TYPE_2 ||
 				global_conf.restrict_anon < 0) {
 			global_conf.restrict_anon = 0;
 			pr_err("Invalid restrict anonymous value\n");
@@ -457,16 +459,16 @@ static void global_group_kv(gpointer _k, gpointer _v, gpointer user_data)
 	}
 
 	if (!cp_key_cmp(_k, "map to guest")) {
-		global_conf.map_to_guest = SMBD_CONF_MAP_TO_GUEST_NEVER;
+		global_conf.map_to_guest = USMBD_CONF_MAP_TO_GUEST_NEVER;
 		if (!cp_key_cmp(_v, "bad user"))
 			global_conf.map_to_guest =
-				SMBD_CONF_MAP_TO_GUEST_BAD_USER;
+				USMBD_CONF_MAP_TO_GUEST_BAD_USER;
 		if (!cp_key_cmp(_v, "bad password"))
 			global_conf.map_to_guest =
-				SMBD_CONF_MAP_TO_GUEST_BAD_PASSWORD;
+				USMBD_CONF_MAP_TO_GUEST_BAD_PASSWORD;
 		if (!cp_key_cmp(_v, "bad uid"))
 			global_conf.map_to_guest =
-				SMBD_CONF_MAP_TO_GUEST_BAD_UID;
+				USMBD_CONF_MAP_TO_GUEST_BAD_UID;
 		return;
 	}
 
@@ -487,9 +489,9 @@ static void global_group_kv(gpointer _k, gpointer _v, gpointer user_data)
 
 	if (!cp_key_cmp(_k, "smb2 leases")) {
 		if (cp_get_group_kv_bool(_v))
-			global_conf.flags |= SMBD_GLOBAL_FLAG_SMB2_LEASES;
+			global_conf.flags |= USMBD_GLOBAL_FLAG_SMB2_LEASES;
 		else
-			global_conf.flags &= ~SMBD_GLOBAL_FLAG_SMB2_LEASES;
+			global_conf.flags &= ~USMBD_GLOBAL_FLAG_SMB2_LEASES;
 
 		return;
 	}
@@ -516,34 +518,34 @@ static void global_group_kv(gpointer _k, gpointer _v, gpointer user_data)
 
 	if (!cp_key_cmp(_k, "cache trans buffers")) {
 		if (cp_get_group_kv_bool(_v))
-			global_conf.flags |= SMBD_GLOBAL_FLAG_CACHE_TBUF;
+			global_conf.flags |= USMBD_GLOBAL_FLAG_CACHE_TBUF;
 		else
-			global_conf.flags &= ~SMBD_GLOBAL_FLAG_CACHE_TBUF;
+			global_conf.flags &= ~USMBD_GLOBAL_FLAG_CACHE_TBUF;
 		return;
 	}
 
 	if (!cp_key_cmp(_k, "cache read buffers")) {
 		if (cp_get_group_kv_bool(_v))
-			global_conf.flags |= SMBD_GLOBAL_FLAG_CACHE_RBUF;
+			global_conf.flags |= USMBD_GLOBAL_FLAG_CACHE_RBUF;
 		else
-			global_conf.flags &= ~SMBD_GLOBAL_FLAG_CACHE_RBUF;
+			global_conf.flags &= ~USMBD_GLOBAL_FLAG_CACHE_RBUF;
 		return;
 	}
 
 	if (!cp_key_cmp(_k, "smb3 encryption")) {
 		if (cp_get_group_kv_bool(_v))
-			global_conf.flags |= SMBD_GLOBAL_FLAG_SMB3_ENCRYPTION;
+			global_conf.flags |= USMBD_GLOBAL_FLAG_SMB3_ENCRYPTION;
 		else
-			global_conf.flags &= ~SMBD_GLOBAL_FLAG_SMB3_ENCRYPTION;
+			global_conf.flags &= ~USMBD_GLOBAL_FLAG_SMB3_ENCRYPTION;
 
 		return;
 	}
 
 	if (!cp_key_cmp(_k, "durable handle")) {
 		if (cp_get_group_kv_bool(_v))
-			global_conf.flags |= SMBD_GLOBAL_FLAG_DURABLE_HANDLE;
+			global_conf.flags |= USMBD_GLOBAL_FLAG_DURABLE_HANDLE;
 		else
-			global_conf.flags &= ~SMBD_GLOBAL_FLAG_DURABLE_HANDLE;
+			global_conf.flags &= ~USMBD_GLOBAL_FLAG_DURABLE_HANDLE;
 
 		return;
 	}
@@ -558,29 +560,30 @@ static void fixup_missing_global_group(void)
 	 * in smb.conf
 	 */
 	if (!global_conf.file_max)
-		global_conf.file_max = SMBD_CONF_FILE_MAX;
+		global_conf.file_max = USMBD_CONF_FILE_MAX;
 	if (!global_conf.server_string)
 		global_conf.server_string =
-			cp_get_group_kv_string(SMBD_CONF_DEFAULT_SERVER_STRING);
+			cp_get_group_kv_string(
+					USMBD_CONF_DEFAULT_SERVER_STRING);
 	if (!global_conf.netbios_name)
 		global_conf.netbios_name =
-			cp_get_group_kv_string(SMBD_CONF_DEFAULT_NETBIOS_NAME);
+			cp_get_group_kv_string(USMBD_CONF_DEFAULT_NETBIOS_NAME);
 	if (!global_conf.work_group)
 		global_conf.work_group =
-			cp_get_group_kv_string(SMBD_CONF_DEFAULT_WORK_GROUP);
+			cp_get_group_kv_string(USMBD_CONF_DEFAULT_WORK_GROUP);
 	if (!global_conf.tcp_port)
-		global_conf.tcp_port = SMBD_CONF_DEFAULT_TPC_PORT;
+		global_conf.tcp_port = USMBD_CONF_DEFAULT_TPC_PORT;
 
 	if (global_conf.sessions_cap <= 0)
-		global_conf.sessions_cap = SMBD_CONF_DEFAULT_SESS_CAP;
+		global_conf.sessions_cap = USMBD_CONF_DEFAULT_SESS_CAP;
 
 	if (global_conf.guest_account)
 		return;
 
-	ret = cp_add_global_guest_account(SMBD_CONF_DEFAULT_GUEST_ACCOUNT);
+	ret = cp_add_global_guest_account(USMBD_CONF_DEFAULT_GUEST_ACCOUNT);
 	if (!ret)
 		return;
-	ret = cp_add_global_guest_account(SMBD_CONF_FALLBACK_GUEST_ACCOUNT);
+	ret = cp_add_global_guest_account(USMBD_CONF_FALLBACK_GUEST_ACCOUNT);
 	if (ret)
 		pr_err("Fatal error: Cannot set a global guest account %d\n",
 			ret);
@@ -588,8 +591,8 @@ static void fixup_missing_global_group(void)
 
 static void default_global_group(void)
 {
-	global_conf.flags |= SMBD_GLOBAL_FLAG_CACHE_TBUF;
-	global_conf.flags |= SMBD_GLOBAL_FLAG_CACHE_RBUF;
+	global_conf.flags |= USMBD_GLOBAL_FLAG_CACHE_TBUF;
+	global_conf.flags |= USMBD_GLOBAL_FLAG_CACHE_RBUF;
 }
 
 static void global_group(struct smbconf_group *group)
@@ -702,8 +705,8 @@ int cp_parse_external_smbconf_group(char *name, char *opts)
 
 	len = strlen(opts);
 	/* fake smb.conf input */
-	for (i = 0; i < SMBD_SHARE_CONF_MAX; i++) {
-		pos = strstr(opts, SMBD_SHARE_CONF[i]);
+	for (i = 0; i < USMBD_SHARE_CONF_MAX; i++) {
+		pos = strstr(opts, USMBD_SHARE_CONF[i]);
 		if (!pos)
 			continue;
 		if (pos != opts)
