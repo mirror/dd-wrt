@@ -3,13 +3,13 @@
  *   Copyright (C) 2018 Samsung Electronics Co., Ltd.
  */
 
-#include "smbd_ida.h"
+#include "ksmbd_ida.h"
 
-struct smbd_ida *smbd_ida_alloc(void)
+struct ksmbd_ida *ksmbd_ida_alloc(void)
 {
-	struct smbd_ida *ida;
+	struct ksmbd_ida *ida;
 
-	ida = kmalloc(sizeof(struct smbd_ida), GFP_KERNEL);
+	ida = kmalloc(sizeof(struct ksmbd_ida), GFP_KERNEL);
 	if (!ida)
 		return NULL;
 
@@ -17,7 +17,7 @@ struct smbd_ida *smbd_ida_alloc(void)
 	return ida;
 }
 
-void smbd_ida_free(struct smbd_ida *ida)
+void ksmbd_ida_free(struct ksmbd_ida *ida)
 {
 	if (!ida)
 		return;
@@ -26,17 +26,17 @@ void smbd_ida_free(struct smbd_ida *ida)
 	kfree(ida);
 }
 
-static inline int __acquire_id(struct smbd_ida *ida, int from, int to)
+static inline int __acquire_id(struct ksmbd_ida *ida, int from, int to)
 {
 	return ida_simple_get(&ida->map, from, to, GFP_KERNEL);
 }
 
-int smbd_acquire_smb1_tid(struct smbd_ida *ida)
+int ksmbd_acquire_smb1_tid(struct ksmbd_ida *ida)
 {
 	return __acquire_id(ida, 0, 0xFFFF);
 }
 
-int smbd_acquire_smb2_tid(struct smbd_ida *ida)
+int ksmbd_acquire_smb2_tid(struct ksmbd_ida *ida)
 {
 	int id;
 
@@ -47,12 +47,12 @@ int smbd_acquire_smb2_tid(struct smbd_ida *ida)
 	return id;
 }
 
-int smbd_acquire_smb1_uid(struct smbd_ida *ida)
+int ksmbd_acquire_smb1_uid(struct ksmbd_ida *ida)
 {
 	return __acquire_id(ida, 1, 0xFFFE);
 }
 
-int smbd_acquire_smb2_uid(struct smbd_ida *ida)
+int ksmbd_acquire_smb2_uid(struct ksmbd_ida *ida)
 {
 	int id;
 
@@ -63,17 +63,17 @@ int smbd_acquire_smb2_uid(struct smbd_ida *ida)
 	return id;
 }
 
-int smbd_acquire_async_msg_id(struct smbd_ida *ida)
+int ksmbd_acquire_async_msg_id(struct ksmbd_ida *ida)
 {
 	return __acquire_id(ida, 1, 0);
 }
 
-int smbd_acquire_id(struct smbd_ida *ida)
+int ksmbd_acquire_id(struct ksmbd_ida *ida)
 {
 	return __acquire_id(ida, 0, 0);
 }
 
-void smbd_release_id(struct smbd_ida *ida, int id)
+void ksmbd_release_id(struct ksmbd_ida *ida, int id)
 {
 	ida_simple_remove(&ida->map, id);
 }
