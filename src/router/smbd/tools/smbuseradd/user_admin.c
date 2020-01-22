@@ -15,21 +15,21 @@
 #include <termios.h>
 
 #include <config_parser.h>
-#include <smbdtools.h>
+#include <usmbdtools.h>
 
 #include <md4_hash.h>
 #include <user_admin.h>
 #include <management/user.h>
 #include <management/share.h>
 
-#include <linux/smbd_server.h>
+#include <linux/usmbd_server.h>
 
 #define MAX_NT_PWD_LEN 129
 
 static char *arg_account = NULL;
 static char *arg_password = NULL;
 static int conf_fd = -1;
-static char wbuf[2 * MAX_NT_PWD_LEN + 2 * SMBD_REQ_MAX_ACCOUNT_NAME_SZ];
+static char wbuf[2 * MAX_NT_PWD_LEN + 2 * USMBD_REQ_MAX_ACCOUNT_NAME_SZ];
 
 static int __opendb_file(char *pwddb)
 {
@@ -143,10 +143,10 @@ static char *get_utf8_password(long *len)
 	if (!pswd_raw)
 		return NULL;
 
-	pswd_converted = smbd_gconvert(pswd_raw,
+	pswd_converted = usmbd_gconvert(pswd_raw,
 					raw_sz,
-					SMBD_CHARSET_UTF16LE,
-					SMBD_CHARSET_DEFAULT,
+					USMBD_CHARSET_UTF16LE,
+					USMBD_CHARSET_DEFAULT,
 					&bytes_read,
 					&bytes_written);
 	if (!pswd_converted) {
@@ -206,16 +206,17 @@ static char *get_hashed_b64_password(void)
 	return pswd_b64;
 }
 
-static void write_user(struct smbd_user *user)
+static void write_user(struct usmbd_user *user)
 {
 	char *data;
 	int ret, nr = 0;
 	size_t wsz;
 
-	if (test_user_flag(user, SMBD_USER_FLAG_GUEST_ACCOUNT))
+	if (test_user_flag(user, USMBD_USER_FLAG_GUEST_ACCOUNT))
 		return;
 
-	wsz = snprintf(wbuf, sizeof(wbuf), "%s:%s\n", user->name, user->pass_b64);
+	wsz = snprintf(wbuf, sizeof(wbuf), "%s:%s\n", user->name,
+			user->pass_b64);
 	if (wsz > sizeof(wbuf)) {
 		pr_err("Entry size is above the limit: %zu > %zu\n",
 			wsz,
@@ -238,7 +239,8 @@ static void write_user(struct smbd_user *user)
 
 static void write_user_cb(gpointer key, gpointer value, gpointer user_data)
 {
-	struct smbd_user *user = (struct smbd_user *)value;
+	struct usmbd_user *user = (struct usmbd_user *)value;
+
 	write_user(user);
 }
 
@@ -246,7 +248,7 @@ static void write_remove_user_cb(gpointer key,
 				 gpointer value,
 				 gpointer user_data)
 {
-	struct smbd_user *user = (struct smbd_user *)value;
+	struct usmbd_user *user = (struct usmbd_user *)value;
 
 	if (!g_ascii_strcasecmp(user->name, arg_account)) {
 		pr_info("User '%s' removed\n", user->name);
@@ -260,7 +262,7 @@ static void lookup_can_del_user(gpointer key,
 				gpointer value,
 				gpointer user_data)
 {
-	struct smbd_share *share = (struct smbd_share *)value;
+	struct usmbd_share *share = (struct usmbd_share *)value;
 	int ret = 0;
 	int *abort_del_user = (int *)user_data;
 
@@ -268,19 +270,19 @@ static void lookup_can_del_user(gpointer key,
 		return;
 
 	ret = shm_lookup_users_map(share,
-				   SMBD_SHARE_ADMIN_USERS_MAP,
+				   USMBD_SHARE_ADMIN_USERS_MAP,
 				   arg_account);
 	if (ret == 0)
 		goto conflict;
 
 	ret = shm_lookup_users_map(share,
-				   SMBD_SHARE_WRITE_LIST_MAP,
+				   USMBD_SHARE_WRITE_LIST_MAP,
 				   arg_account);
 	if (ret == 0)
 		goto conflict;
 
 	ret = shm_lookup_users_map(share,
-				   SMBD_SHARE_VALID_USERS_MAP,
+				   USMBD_SHARE_VALID_USERS_MAP,
 				   arg_account);
 	if (ret == 0)
 		goto conflict;
@@ -296,7 +298,7 @@ conflict:
 
 int command_add_user(char *pwddb, char *account, char *password)
 {
-	struct smbd_user *user;
+	struct usmbd_user *user;
 	char *pswd;
 
 	arg_account = account;
@@ -304,7 +306,7 @@ int command_add_user(char *pwddb, char *account, char *password)
 
 	user = usm_lookup_user(arg_account);
 	if (user) {
-		put_smbd_user(user);
+		put_usmbd_user(user);
 		pr_err("Account `%s' already exists\n", arg_account);
 		return -EEXIST;
 	}
@@ -319,21 +321,20 @@ int command_add_user(char *pwddb, char *account, char *password)
 	if (usm_add_new_user(arg_account, pswd)) {
 		pr_err("Could not add new account\n");
 		return -EINVAL;
-	} else {
-		pr_info("User '%s' added\n", arg_account);
 	}
 
+	pr_info("User '%s' added\n", arg_account);
 	if (__opendb_file(pwddb))
 		return -EINVAL;
 
-	for_each_smbd_user(write_user_cb, NULL);
+	for_each_usmbd_user(write_user_cb, NULL);
 	close(conf_fd);
 	return 0;
 }
 
 int command_update_user(char *pwddb, char *account, char *password)
 {
-	struct smbd_user *user;
+	struct usmbd_user *user;
 	char *pswd;
 
 	arg_password = password;
@@ -348,25 +349,24 @@ int command_update_user(char *pwddb, char *account, char *password)
 	pswd = get_hashed_b64_password();
 	if (!pswd) {
 		pr_err("Out of memory\n");
-		put_smbd_user(user);
+		put_usmbd_user(user);
 		return -EINVAL;
 	}
 
 	if (usm_update_user_password(user, pswd)) {
 		pr_err("Out of memory\n");
-		put_smbd_user(user);
+		put_usmbd_user(user);
 		return -ENOMEM;
-	} else {
-		pr_info("User '%s' updated\n", account);
 	}
 
-	put_smbd_user(user);
+	pr_info("User '%s' updated\n", account);
+	put_usmbd_user(user);
 	free(pswd);
 
 	if (__opendb_file(pwddb))
 		return -EINVAL;
 
-	for_each_smbd_user(write_user_cb, NULL);
+	for_each_usmbd_user(write_user_cb, NULL);
 	close(conf_fd);
 	return 0;
 }
@@ -382,7 +382,7 @@ int command_del_user(char *pwddb, char *account)
 		return -EINVAL;
 	}
 
-	for_each_smbd_share(lookup_can_del_user, &abort_del_user);
+	for_each_usmbd_share(lookup_can_del_user, &abort_del_user);
 
 	if (abort_del_user) {
 		pr_err("Aborting user deletion\n");
@@ -392,7 +392,7 @@ int command_del_user(char *pwddb, char *account)
 	if (__opendb_file(pwddb))
 		return -EINVAL;
 
-	for_each_smbd_user(write_remove_user_cb, NULL);
+	for_each_usmbd_user(write_remove_user_cb, NULL);
 	close(conf_fd);
 	return 0;
 }

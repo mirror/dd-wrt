@@ -1,12 +1,12 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  *   Copyright (C) 2018 Samsung Electronics Co., Ltd.
  *
  *   linux-cifsd-devel@lists.sourceforge.net
  */
 
-#ifndef __SMBD_CONFIG_H__
-#define __SMBD_CONFIG_H__
+#ifndef __USMBD_CONFIG_H__
+#define __USMBD_CONFIG_H__
 
 #include <glib.h>
 
@@ -40,4 +40,4 @@ int cp_get_group_kv_config_opt(char *v);
 char **cp_get_group_kv_list(char *v);
 void cp_group_kv_list_free(char **list);
 
-#endif /* __SMBD_CONFIG_H__ */
+#endif /* __USMBD_CONFIG_H__ */

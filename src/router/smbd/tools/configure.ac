@@ -1,19 +1,19 @@
 AC_PREREQ([2.68])
 
-m4_define([smbd_tools_major_ver], [3])
-m4_define([smbd_tools_minor_ver], [0])
-m4_define([smbd_tools_micro_ver], [1])
+m4_define([ksmbd_tools_major_ver], [3])
+m4_define([ksmbd_tools_minor_ver], [1])
+m4_define([ksmbd_tools_micro_ver], [0])
 
-m4_define([smbd_tools_version],
-	[smbd_tools_major_ver.smbd_tools_minor_ver.smbd_tools_micro_ver])
+m4_define([ksmbd_tools_version],
+	[ksmbd_tools_major_ver.ksmbd_tools_minor_ver.ksmbd_tools_micro_ver])
 
-AC_INIT([SMBD tools],
+AC_INIT([KSMBD tools],
 	[m4_esyscmd_s([echo unknown])],
 	[linux-cifsd-devel@lists.sourceforge.net])
 
-AC_DEFINE([SMBD_TOOLS_VERSION],
-	"smbd_tools_version [m4_esyscmd_s([echo unknown])]",
-	["smbd-tools version"])
+AC_DEFINE([KSMBD_TOOLS_VERSION],
+	"ksmbd_tools_version [m4_esyscmd_s([echo unknown])]",
+	["ksmbd-tools version"])
 
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADER([config.h])

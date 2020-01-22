@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  *   Copyright (C) 2018 Samsung Electronics Co., Ltd.
  *
@@ -10,25 +10,25 @@
 
 #include <glib.h>
 
-struct smbd_user;
+struct usmbd_user;
 
-struct smbd_session {
+struct usmbd_session {
 	unsigned long long	id;
 
-	struct smbd_user	*user;
+	struct usmbd_user	*user;
 
 	GRWLock			update_lock;
 	GList			*tree_conns;
 	int			ref_counter;
 };
 
-struct smbd_tree_conn;
+struct usmbd_tree_conn;
 
 int sm_check_sessions_capacity(unsigned long long id);
 
 int sm_handle_tree_connect(unsigned long long id,
-			   struct smbd_user *user,
-			   struct smbd_tree_conn *tree_conn);
+			   struct usmbd_user *user,
+			   struct usmbd_tree_conn *tree_conn);
 int sm_handle_tree_disconnect(unsigned long long sess_id,
 			      unsigned long long tree_conn_id);
 

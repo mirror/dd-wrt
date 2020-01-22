@@ -14,11 +14,11 @@
 #include <fcntl.h>
 
 #include <config_parser.h>
-#include <smbdtools.h>
+#include <usmbdtools.h>
 
 #include <management/share.h>
 
-#include <linux/smbd_server.h>
+#include <linux/usmbd_server.h>
 #include <share_admin.h>
 
 static int conf_fd = -1;
