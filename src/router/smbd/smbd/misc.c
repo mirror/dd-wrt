@@ -83,14 +83,14 @@ static inline int is_char_allowed(char ch)
 	return 1;
 }
 
-int smbd_validate_filename(char *filename)
+int ksmbd_validate_filename(char *filename)
 {
 	while (*filename) {
 		char c = *filename;
 
 		filename++;
 		if (!is_char_allowed(c)) {
-			smbd_err("File name validation failed: 0x%x\n", c);
+			ksmbd_err("File name validation failed: 0x%x\n", c);
 			return -ENOENT;
 		}
 	}
@@ -98,14 +98,14 @@ int smbd_validate_filename(char *filename)
 	return 0;
 }
 
-static int smbd_validate_stream_name(char *stream_name)
+static int ksmbd_validate_stream_name(char *stream_name)
 {
 	while (*stream_name) {
 		char c = *stream_name;
 
 		stream_name++;
 		if (c == '/' || c == ':' || c == '\\') {
-			smbd_err("Stream name validation failed: %c\n", c);
+			ksmbd_err("Stream name validation failed: %c\n", c);
 			return -ENOENT;
 		}
 	}
@@ -121,18 +121,18 @@ int parse_stream_name(char *filename, char **stream_name, int *s_type)
 
 	s_name = filename;
 	filename = strsep(&s_name, ":");
-	smbd_debug("filename : %s, streams : %s\n", filename, s_name);
+	ksmbd_debug("filename : %s, streams : %s\n", filename, s_name);
 	if (strchr(s_name, ':')) {
 		stream_type = s_name;
 		s_name = strsep(&stream_type, ":");
 
-		rc = smbd_validate_stream_name(s_name);
+		rc = ksmbd_validate_stream_name(s_name);
 		if (rc < 0) {
 			rc = -ENOENT;
 			goto out;
 		}
 
-		smbd_debug("stream name : %s, stream type : %s\n", s_name,
+		ksmbd_debug("stream name : %s, stream type : %s\n", s_name,
 				stream_type);
 		if (!strncasecmp("$data", stream_type, 5))
 			*s_type = DATA_STREAM;
@@ -176,7 +176,7 @@ char *convert_to_nt_pathname(char *filename, char *sharepath)
 #else
 		strscpy(ab_pathname, &filename[len], name_len);
 #endif
-		smbd_conv_path_to_windows(ab_pathname);
+		ksmbd_conv_path_to_windows(ab_pathname);
 	}
 
 	return ab_pathname;
@@ -202,12 +202,12 @@ static void strreplace(char *s, char old, char new)
 }
 #endif
 
-void smbd_conv_path_to_unix(char *path)
+void ksmbd_conv_path_to_unix(char *path)
 {
 	strreplace(path, '\\', '/');
 }
 
-void smbd_conv_path_to_windows(char *path)
+void ksmbd_conv_path_to_windows(char *path)
 {
 	strreplace(path, '/', '\\');
 }
@@ -241,7 +241,7 @@ char *extract_sharename(char *treename)
  *
  * Return:	converted name on success, otherwise NULL
  */
-char *convert_to_unix_name(struct smbd_share_config *share, char *name)
+char *convert_to_unix_name(struct ksmbd_share_config *share, char *name)
 {
 	int no_slash = 0, name_len, path_len;
 	char *new_name;
@@ -267,7 +267,7 @@ char *convert_to_unix_name(struct smbd_share_config *share, char *name)
 	return new_name;
 }
 
-char *smbd_convert_dir_info_name(struct smbd_dir_info *d_info,
+char *ksmbd_convert_dir_info_name(struct ksmbd_dir_info *d_info,
 				  const struct nls_table *local_nls,
 				  int *conv_len)
 {

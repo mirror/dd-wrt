@@ -14,53 +14,53 @@
 #ifdef CONFIG_SMB_INSECURE_SERVER
 #include "smb1pdu.h"
 #endif
-#include "mgmt/smbd_ida.h"
+#include "mgmt/ksmbd_ida.h"
 #include "connection.h"
 #include "transport_tcp.h"
 #include "transport_rdma.h"
 
 static DEFINE_MUTEX(init_lock);
 
-static struct smbd_conn_ops default_conn_ops;
+static struct ksmbd_conn_ops default_conn_ops;
 
 static LIST_HEAD(conn_list);
 static DEFINE_RWLOCK(conn_list_lock);
 
 /**
- * smbd_conn_free() - free resources of the connection instance
+ * ksmbd_conn_free() - free resources of the connection instance
  *
  * @conn:	connection instance to be cleand up
  *
  * During the thread termination, the corresponding conn instance
  * resources(sock/memory) are released and finally the conn object is freed.
  */
-void smbd_conn_free(struct smbd_conn *conn)
+void ksmbd_conn_free(struct ksmbd_conn *conn)
 {
 	write_lock(&conn_list_lock);
 	list_del(&conn->conns_list);
 	write_unlock(&conn_list_lock);
 
-	smbd_free_request(conn->request_buf);
-	smbd_ida_free(conn->async_ida);
+	ksmbd_free_request(conn->request_buf);
+	ksmbd_ida_free(conn->async_ida);
 	kfree(conn->preauth_info);
 	kfree(conn);
 }
 
 /**
- * smbd_conn_alloc() - initialize a new connection instance
+ * ksmbd_conn_alloc() - initialize a new connection instance
  *
- * Return:	smbd_conn struct on success, otherwise NULL
+ * Return:	ksmbd_conn struct on success, otherwise NULL
  */
-struct smbd_conn *smbd_conn_alloc(void)
+struct ksmbd_conn *ksmbd_conn_alloc(void)
 {
-	struct smbd_conn *conn;
+	struct ksmbd_conn *conn;
 
-	conn = kzalloc(sizeof(struct smbd_conn), GFP_KERNEL);
+	conn = kzalloc(sizeof(struct ksmbd_conn), GFP_KERNEL);
 	if (!conn)
 		return NULL;
 
 	conn->need_neg = true;
-	conn->status = SMBD_SESS_NEW;
+	conn->status = KSMBD_SESS_NEW;
 	conn->local_nls = load_nls("utf8");
 	if (!conn->local_nls)
 		conn->local_nls = load_nls_default();
@@ -73,7 +73,7 @@ struct smbd_conn *smbd_conn_alloc(void)
 	INIT_LIST_HEAD(&conn->async_requests);
 	spin_lock_init(&conn->request_lock);
 	spin_lock_init(&conn->credits_lock);
-	conn->async_ida = smbd_ida_alloc();
+	conn->async_ida = ksmbd_ida_alloc();
 
 	write_lock(&conn_list_lock);
 	list_add(&conn->conns_list, &conn_list);
@@ -81,9 +81,9 @@ struct smbd_conn *smbd_conn_alloc(void)
 	return conn;
 }
 
-bool smbd_conn_lookup_dialect(struct smbd_conn *c)
+bool ksmbd_conn_lookup_dialect(struct ksmbd_conn *c)
 {
-	struct smbd_conn *t;
+	struct ksmbd_conn *t;
 	bool ret = false;
 
 	read_lock(&conn_list_lock);
@@ -98,9 +98,9 @@ bool smbd_conn_lookup_dialect(struct smbd_conn *c)
 	return ret;
 }
 
-void smbd_conn_enqueue_request(struct smbd_work *work)
+void ksmbd_conn_enqueue_request(struct ksmbd_work *work)
 {
-	struct smbd_conn *conn = work->conn;
+	struct ksmbd_conn *conn = work->conn;
 	struct list_head *requests_queue = NULL;
 #ifdef CONFIG_SMB_INSECURE_SERVER
 	struct smb2_hdr *hdr = REQUEST_BUF(work);
@@ -129,9 +129,9 @@ void smbd_conn_enqueue_request(struct smbd_work *work)
 	}
 }
 
-int smbd_conn_try_dequeue_request(struct smbd_work *work)
+int ksmbd_conn_try_dequeue_request(struct ksmbd_work *work)
 {
-	struct smbd_conn *conn = work->conn;
+	struct ksmbd_conn *conn = work->conn;
 	int ret = 1;
 
 	if (list_empty(&work->request_entry) &&
@@ -152,33 +152,33 @@ int smbd_conn_try_dequeue_request(struct smbd_work *work)
 	return ret;
 }
 
-static void smbd_conn_lock(struct smbd_conn *conn)
+static void ksmbd_conn_lock(struct ksmbd_conn *conn)
 {
 	mutex_lock(&conn->srv_mutex);
 }
 
-static void smbd_conn_unlock(struct smbd_conn *conn)
+static void ksmbd_conn_unlock(struct ksmbd_conn *conn)
 {
 	mutex_unlock(&conn->srv_mutex);
 }
 
-void smbd_conn_wait_idle(struct smbd_conn *conn)
+void ksmbd_conn_wait_idle(struct ksmbd_conn *conn)
 {
 	wait_event(conn->req_running_q, atomic_read(&conn->req_running) < 2);
 }
 
-int smbd_conn_write(struct smbd_work *work)
+int ksmbd_conn_write(struct ksmbd_work *work)
 {
-	struct smbd_conn *conn = work->conn;
+	struct ksmbd_conn *conn = work->conn;
 	struct smb_hdr *rsp_hdr = RESPONSE_BUF(work);
 	size_t len = 0;
 	int sent;
 	struct kvec iov[3];
 	int iov_idx = 0;
 
-	smbd_conn_try_dequeue_request(work);
+	ksmbd_conn_try_dequeue_request(work);
 	if (!rsp_hdr) {
-		smbd_err("NULL response header\n");
+		ksmbd_err("NULL response header\n");
 		return -EINVAL;
 	}
 
@@ -203,22 +203,22 @@ int smbd_conn_write(struct smbd_work *work)
 		len += iov[iov_idx++].iov_len;
 	}
 
-	smbd_conn_lock(conn);
+	ksmbd_conn_lock(conn);
 	sent = conn->transport->ops->writev(conn->transport, &iov[0],
 					iov_idx, len,
 					work->need_invalidate_rkey,
 					work->remote_key);
-	smbd_conn_unlock(conn);
+	ksmbd_conn_unlock(conn);
 
 	if (sent < 0) {
-		smbd_err("Failed to send message: %d\n", sent);
+		ksmbd_err("Failed to send message: %d\n", sent);
 		return sent;
 	}
 
 	return 0;
 }
 
-int smbd_conn_rdma_read(struct smbd_conn *conn,
+int ksmbd_conn_rdma_read(struct ksmbd_conn *conn,
 				void *buf, unsigned int buflen,
 				u32 remote_key, u64 remote_offset,
 				u32 remote_len)
@@ -233,7 +233,7 @@ int smbd_conn_rdma_read(struct smbd_conn *conn,
 	return ret;
 }
 
-int smbd_conn_rdma_write(struct smbd_conn *conn,
+int ksmbd_conn_rdma_write(struct ksmbd_conn *conn,
 				void *buf, unsigned int buflen,
 				u32 remote_key, u64 remote_offset,
 				u32 remote_len)
@@ -248,12 +248,12 @@ int smbd_conn_rdma_write(struct smbd_conn *conn,
 	return ret;
 }
 
-bool smbd_conn_alive(struct smbd_conn *conn)
+bool ksmbd_conn_alive(struct ksmbd_conn *conn)
 {
-	if (!smbd_server_running())
+	if (!ksmbd_server_running())
 		return false;
 
-	if (conn->status == SMBD_SESS_EXITING)
+	if (conn->status == KSMBD_SESS_EXITING)
 		return false;
 
 	if (kthread_should_stop())
@@ -269,7 +269,7 @@ bool smbd_conn_alive(struct smbd_conn *conn)
 	 */
 	if (server_conf.deadtime > 0 &&
 		time_after(jiffies, conn->last_active + server_conf.deadtime)) {
-		smbd_debug("No response from client in %lu minutes\n",
+		ksmbd_debug("No response from client in %lu minutes\n",
 			server_conf.deadtime);
 		return false;
 	}
@@ -277,17 +277,17 @@ bool smbd_conn_alive(struct smbd_conn *conn)
 }
 
 /**
- * smbd_conn_handler_loop() - session thread to listen on new smb requests
+ * ksmbd_conn_handler_loop() - session thread to listen on new smb requests
  * @p:		connection instance
  *
  * One thread each per connection
  *
  * Return:	0 on success
  */
-int smbd_conn_handler_loop(void *p)
+int ksmbd_conn_handler_loop(void *p)
 {
-	struct smbd_conn *conn = (struct smbd_conn *)p;
-	struct smbd_transport *t = conn->transport;
+	struct ksmbd_conn *conn = (struct ksmbd_conn *)p;
+	struct ksmbd_transport *t = conn->transport;
 	unsigned int pdu_size;
 	char hdr_buf[4] = {0,};
 	int size;
@@ -299,11 +299,11 @@ int smbd_conn_handler_loop(void *p)
 		goto out;
 
 	conn->last_active = jiffies;
-	while (smbd_conn_alive(conn)) {
+	while (ksmbd_conn_alive(conn)) {
 		if (try_to_freeze())
 			continue;
 
-		smbd_free_request(conn->request_buf);
+		ksmbd_free_request(conn->request_buf);
 		conn->request_buf = NULL;
 
 		size = t->ops->read(t, hdr_buf, sizeof(hdr_buf));
@@ -311,23 +311,23 @@ int smbd_conn_handler_loop(void *p)
 			break;
 
 		pdu_size = get_rfc1002_len(hdr_buf);
-		smbd_debug("RFC1002 header %u bytes\n", pdu_size);
+		ksmbd_debug("RFC1002 header %u bytes\n", pdu_size);
 
 		/* make sure we have enough to get to SMB header end */
-		if (!smbd_pdu_size_has_room(pdu_size)) {
-			smbd_debug("SMB request too short (%u bytes)\n",
+		if (!ksmbd_pdu_size_has_room(pdu_size)) {
+			ksmbd_debug("SMB request too short (%u bytes)\n",
 				    pdu_size);
 			continue;
 		}
 
 		/* 4 for rfc1002 length field */
 		size = pdu_size + 4;
-		conn->request_buf = smbd_alloc_request(size);
+		conn->request_buf = ksmbd_alloc_request(size);
 		if (!conn->request_buf)
 			continue;
 
 		memcpy(conn->request_buf, hdr_buf, sizeof(hdr_buf));
-		if (!smbd_smb_request(conn))
+		if (!ksmbd_smb_request(conn))
 			break;
 
 		/*
@@ -336,24 +336,24 @@ int smbd_conn_handler_loop(void *p)
 		 */
 		size = t->ops->read(t, conn->request_buf + 4, pdu_size);
 		if (size < 0) {
-			smbd_err("sock_read failed: %d\n", size);
+			ksmbd_err("sock_read failed: %d\n", size);
 			break;
 		}
 
 		if (size != pdu_size) {
-			smbd_err("PDU error. Read: %d, Expected: %d\n",
+			ksmbd_err("PDU error. Read: %d, Expected: %d\n",
 				  size,
 				  pdu_size);
 			continue;
 		}
 
 		if (!default_conn_ops.process_fn) {
-			smbd_err("No connection request callback\n");
+			ksmbd_err("No connection request callback\n");
 			break;
 		}
 
 		if (default_conn_ops.process_fn(conn)) {
-			smbd_err("Cannot handle request\n");
+			ksmbd_err("Cannot handle request\n");
 			break;
 		}
 	}
@@ -371,26 +371,26 @@ out:
 	return 0;
 }
 
-void smbd_conn_init_server_callbacks(struct smbd_conn_ops *ops)
+void ksmbd_conn_init_server_callbacks(struct ksmbd_conn_ops *ops)
 {
 	default_conn_ops.process_fn = ops->process_fn;
 	default_conn_ops.terminate_fn = ops->terminate_fn;
 }
 
-int smbd_conn_transport_init(void)
+int ksmbd_conn_transport_init(void)
 {
 	int ret;
 
 	mutex_lock(&init_lock);
-	ret = smbd_tcp_init();
+	ret = ksmbd_tcp_init();
 	if (ret) {
 		pr_err("Failed to init TCP subsystem: %d\n", ret);
 		goto out;
 	}
 
-	ret = smbd_rdma_init();
+	ret = ksmbd_rdma_init();
 	if (ret) {
-		pr_err("Failed to init SMBD subsystem: %d\n", ret);
+		pr_err("Failed to init KSMBD subsystem: %d\n", ret);
 		goto out;
 	}
 out:
@@ -400,7 +400,7 @@ out:
 
 static void stop_sessions(void)
 {
-	struct smbd_conn *conn;
+	struct ksmbd_conn *conn;
 
 again:
 	read_lock(&conn_list_lock);
@@ -409,10 +409,10 @@ again:
 
 		task = conn->transport->handler;
 		if (task)
-			smbd_debug("Stop session handler %s/%d\n",
+			ksmbd_debug("Stop session handler %s/%d\n",
 				  task->comm,
 				  task_pid_nr(task));
-		conn->status = SMBD_SESS_EXITING;
+		conn->status = KSMBD_SESS_EXITING;
 	}
 	read_unlock(&conn_list_lock);
 
@@ -422,11 +422,11 @@ again:
 	}
 }
 
-void smbd_conn_transport_destroy(void)
+void ksmbd_conn_transport_destroy(void)
 {
 	mutex_lock(&init_lock);
-	smbd_tcp_destroy();
-	smbd_rdma_destroy();
+	ksmbd_tcp_destroy();
+	ksmbd_rdma_destroy();
 	stop_sessions();
 	mutex_unlock(&init_lock);
 }

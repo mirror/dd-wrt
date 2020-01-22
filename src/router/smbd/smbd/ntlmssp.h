@@ -4,13 +4,13 @@
  *   Author(s): Steve French (sfrench@us.ibm.com)
  */
 
-#ifndef __SMBD_NTLMSSP_H
-#define __SMBD_NTLMSSP_H
+#ifndef __KSMBD_NTLMSSP_H
+#define __KSMBD_NTLMSSP_H
 
 #define NTLMSSP_SIGNATURE "NTLMSSP"
 
 /* Security blob target info data */
-#define TGT_Name        "SMBD"
+#define TGT_Name        "KSMBD"
 
 /*
  * Size of the crypto key returned on the negotiate SMB in bytes
@@ -166,4 +166,4 @@ struct ntlmssp_auth {
 	/* used by ntlmssp */
 	char		cryptkey[CIFS_CRYPTO_KEY_SIZE];
 };
-#endif /* __SMBD_NTLMSSP_H */
+#endif /* __KSMBD_NTLMSSP_H */

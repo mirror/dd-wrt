@@ -7,7 +7,7 @@
 #include "glob.h"
 #include "asn1.h"
 #include "nterr.h"
-#include "smbd_work.h"
+#include "ksmbd_work.h"
 #include "smb_common.h"
 #include "smb1pdu.h"
 #include "mgmt/user_session.h"
@@ -25,18 +25,18 @@ static int check_smb1_hdr(struct smb_hdr *smb)
 {
 	/* does it have the right SMB "signature" ? */
 	if (*(__le32 *) smb->Protocol != SMB1_PROTO_NUMBER) {
-		smbd_debug("Bad protocol string signature header 0x%x\n",
+		ksmbd_debug("Bad protocol string signature header 0x%x\n",
 				*(unsigned int *)smb->Protocol);
 		return 1;
 	}
-	smbd_debug("got SMB\n");
+	ksmbd_debug("got SMB\n");
 
 	/* if it's not a response then accept */
 	/* TODO : check for oplock break */
 	if (!(smb->Flags & SMBFLG_RESPONSE))
 		return 0;
 
-	smbd_debug("Server sent request, not response\n");
+	ksmbd_debug("Server sent request, not response\n");
 	return 1;
 }
 
@@ -192,11 +192,11 @@ static unsigned int smb1_calc_size(struct smb_hdr *hdr)
 	bc = smb1_get_byte_count(hdr);
 	if (bc < 0)
 		return bc;
-	smbd_debug("SMB2 byte count %d, struct size : %d\n", bc,
+	ksmbd_debug("SMB2 byte count %d, struct size : %d\n", bc,
 		struct_size);
 	len += bc;
 
-	smbd_debug("SMB1 len %d\n", len);
+	ksmbd_debug("SMB1 len %d\n", len);
 	return len;
 }
 
@@ -237,7 +237,7 @@ static int smb1_get_data_len(struct smb_hdr *hdr)
 	return data_len;
 }
 
-int smbd_smb1_check_message(struct smbd_work *work)
+int ksmbd_smb1_check_message(struct ksmbd_work *work)
 {
 	struct smb_hdr *hdr = (struct smb_hdr *)REQUEST_BUF(work);
 	char *buf = REQUEST_BUF(work);
@@ -251,17 +251,17 @@ int smbd_smb1_check_message(struct smbd_work *work)
 
 	wc = smb1_req_struct_size(hdr);
 	if (wc == -EOPNOTSUPP) {
-		smbd_err("Not support cmd %x\n", command);
+		ksmbd_err("Not support cmd %x\n", command);
 		return 1;
 	} else if (hdr->WordCount != wc) {
-		smbd_err("Invalid word count, %d not %d. cmd %x\n",
+		ksmbd_err("Invalid word count, %d not %d. cmd %x\n",
 			hdr->WordCount, wc, command);
 		return 1;
 	}
 
 	data_len = smb1_get_data_len(hdr);
 	if (len < data_len) {
-		smbd_err("Invalid data area length %u not %u. cmd : %x\n",
+		ksmbd_err("Invalid data area length %u not %u. cmd : %x\n",
 			len, data_len, command);
 		return 1;
 	}
@@ -275,7 +275,7 @@ int smbd_smb1_check_message(struct smbd_work *work)
 		if (command == SMB_COM_WRITE_ANDX)
 			return 0;
 
-		smbd_err("cli req too short, len %d not %d. cmd:%x\n",
+		ksmbd_err("cli req too short, len %d not %d. cmd:%x\n",
 			len, clc_len, command);
 
 		return 1;
@@ -284,7 +284,7 @@ int smbd_smb1_check_message(struct smbd_work *work)
 	return 0;
 }
 
-int smb_negotiate_request(struct smbd_work *work)
+int smb_negotiate_request(struct ksmbd_work *work)
 {
-	return smbd_smb_negotiate_common(work, SMB_COM_NEGOTIATE);
+	return ksmbd_smb_negotiate_common(work, SMB_COM_NEGOTIATE);
 }
