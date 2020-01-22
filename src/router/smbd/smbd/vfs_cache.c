@@ -31,10 +31,10 @@ static unsigned int inode_hash_shift __read_mostly;
 static struct hlist_head *inode_hashtable __read_mostly;
 static DEFINE_RWLOCK(inode_hash_lock);
 
-static struct smbd_file_table global_ft;
+static struct ksmbd_file_table global_ft;
 static atomic_long_t fd_limit;
 
-void smbd_set_fd_limit(unsigned long limit)
+void ksmbd_set_fd_limit(unsigned long limit)
 {
 	limit = min(limit, get_max_files());
 	atomic_long_set(&fd_limit, limit);
@@ -69,11 +69,11 @@ static unsigned long inode_hash(struct super_block *sb, unsigned long hashval)
 	return tmp & inode_hash_mask;
 }
 
-static struct smbd_inode *__smbd_inode_lookup(struct inode *inode)
+static struct ksmbd_inode *__ksmbd_inode_lookup(struct inode *inode)
 {
 	struct hlist_head *head = inode_hashtable +
 		inode_hash(inode->i_sb, inode->i_ino);
-	struct smbd_inode *ci = NULL, *ret_ci = NULL;
+	struct ksmbd_inode *ci = NULL, *ret_ci = NULL;
 
 	hlist_for_each_entry(ci, head, m_hash) {
 		if (ci->m_inode == inode) {
@@ -85,57 +85,57 @@ static struct smbd_inode *__smbd_inode_lookup(struct inode *inode)
 	return ret_ci;
 }
 
-static struct smbd_inode *smbd_inode_lookup(struct smbd_file *fp)
+static struct ksmbd_inode *ksmbd_inode_lookup(struct ksmbd_file *fp)
 {
-	return __smbd_inode_lookup(FP_INODE(fp));
+	return __ksmbd_inode_lookup(FP_INODE(fp));
 }
 
-static struct smbd_inode *smbd_inode_lookup_by_vfsinode(struct inode *inode)
+static struct ksmbd_inode *ksmbd_inode_lookup_by_vfsinode(struct inode *inode)
 {
-	struct smbd_inode *ci;
+	struct ksmbd_inode *ci;
 
 	read_lock(&inode_hash_lock);
-	ci = __smbd_inode_lookup(inode);
+	ci = __ksmbd_inode_lookup(inode);
 	read_unlock(&inode_hash_lock);
 	return ci;
 }
 
-int smbd_query_inode_status(struct inode *inode)
+int ksmbd_query_inode_status(struct inode *inode)
 {
-	struct smbd_inode *ci;
-	int ret = SMBD_INODE_STATUS_UNKNOWN;
+	struct ksmbd_inode *ci;
+	int ret = KSMBD_INODE_STATUS_UNKNOWN;
 
 	read_lock(&inode_hash_lock);
-	ci = __smbd_inode_lookup(inode);
+	ci = __ksmbd_inode_lookup(inode);
 	if (ci) {
-		ret = SMBD_INODE_STATUS_OK;
+		ret = KSMBD_INODE_STATUS_OK;
 		if (ci->m_flags & S_DEL_PENDING)
-			ret = SMBD_INODE_STATUS_PENDING_DELETE;
+			ret = KSMBD_INODE_STATUS_PENDING_DELETE;
 		atomic_dec(&ci->m_count);
 	}
 	read_unlock(&inode_hash_lock);
 	return ret;
 }
 
-bool smbd_inode_pending_delete(struct smbd_file *fp)
+bool ksmbd_inode_pending_delete(struct ksmbd_file *fp)
 {
 	return (fp->f_ci->m_flags & S_DEL_PENDING);
 }
 
-void smbd_set_inode_pending_delete(struct smbd_file *fp)
+void ksmbd_set_inode_pending_delete(struct ksmbd_file *fp)
 {
 	fp->f_ci->m_flags |= S_DEL_PENDING;
 }
 
-void smbd_clear_inode_pending_delete(struct smbd_file *fp)
+void ksmbd_clear_inode_pending_delete(struct ksmbd_file *fp)
 {
 	fp->f_ci->m_flags &= ~S_DEL_PENDING;
 }
 
-void smbd_fd_set_delete_on_close(struct smbd_file *fp,
+void ksmbd_fd_set_delete_on_close(struct ksmbd_file *fp,
 				  int file_info)
 {
-	if (smbd_stream_fd(fp)) {
+	if (ksmbd_stream_fd(fp)) {
 		fp->f_ci->m_flags |= S_DEL_ON_CLS_STREAM;
 		return;
 	}
@@ -145,7 +145,7 @@ void smbd_fd_set_delete_on_close(struct smbd_file *fp,
 		fp->f_ci->m_flags |= S_DEL_ON_CLS;
 }
 
-static void smbd_inode_hash(struct smbd_inode *ci)
+static void ksmbd_inode_hash(struct ksmbd_inode *ci)
 {
 	struct hlist_head *b = inode_hashtable +
 		inode_hash(ci->m_inode->i_sb, ci->m_inode->i_ino);
@@ -153,14 +153,14 @@ static void smbd_inode_hash(struct smbd_inode *ci)
 	hlist_add_head(&ci->m_hash, b);
 }
 
-static void smbd_inode_unhash(struct smbd_inode *ci)
+static void ksmbd_inode_unhash(struct ksmbd_inode *ci)
 {
 	write_lock(&inode_hash_lock);
 	hlist_del_init(&ci->m_hash);
 	write_unlock(&inode_hash_lock);
 }
 
-static int smbd_inode_init(struct smbd_inode *ci, struct smbd_file *fp)
+static int ksmbd_inode_init(struct ksmbd_inode *ci, struct ksmbd_file *fp)
 {
 	ci->m_inode = FP_INODE(fp);
 	atomic_set(&ci->m_count, 1);
@@ -173,32 +173,32 @@ static int smbd_inode_init(struct smbd_inode *ci, struct smbd_file *fp)
 	return 0;
 }
 
-static struct smbd_inode *smbd_inode_get(struct smbd_file *fp)
+static struct ksmbd_inode *ksmbd_inode_get(struct ksmbd_file *fp)
 {
-	struct smbd_inode *ci, *tmpci;
+	struct ksmbd_inode *ci, *tmpci;
 	int rc;
 
 	read_lock(&inode_hash_lock);
-	ci = smbd_inode_lookup(fp);
+	ci = ksmbd_inode_lookup(fp);
 	read_unlock(&inode_hash_lock);
 	if (ci)
 		return ci;
 
-	ci = kmalloc(sizeof(struct smbd_inode), GFP_KERNEL);
+	ci = kmalloc(sizeof(struct ksmbd_inode), GFP_KERNEL);
 	if (!ci)
 		return NULL;
 
-	rc = smbd_inode_init(ci, fp);
+	rc = ksmbd_inode_init(ci, fp);
 	if (rc) {
-		smbd_err("inode initialized failed\n");
+		ksmbd_err("inode initialized failed\n");
 		kfree(ci);
 		return NULL;
 	}
 
 	write_lock(&inode_hash_lock);
-	tmpci = smbd_inode_lookup(fp);
+	tmpci = ksmbd_inode_lookup(fp);
 	if (!tmpci) {
-		smbd_inode_hash(ci);
+		ksmbd_inode_hash(ci);
 	} else {
 		kfree(ci);
 		ci = tmpci;
@@ -207,19 +207,19 @@ static struct smbd_inode *smbd_inode_get(struct smbd_file *fp)
 	return ci;
 }
 
-static void smbd_inode_free(struct smbd_inode *ci)
+static void ksmbd_inode_free(struct ksmbd_inode *ci)
 {
-	smbd_inode_unhash(ci);
+	ksmbd_inode_unhash(ci);
 	kfree(ci);
 }
 
-static void smbd_inode_put(struct smbd_inode *ci)
+static void ksmbd_inode_put(struct ksmbd_inode *ci)
 {
 	if (atomic_dec_and_test(&ci->m_count))
-		smbd_inode_free(ci);
+		ksmbd_inode_free(ci);
 }
 
-int __init smbd_inode_hash_init(void)
+int __init ksmbd_inode_hash_init(void)
 {
 	unsigned int loop;
 	unsigned long numentries = 16384;
@@ -241,27 +241,27 @@ int __init smbd_inode_hash_init(void)
 	return 0;
 }
 
-void __exit smbd_release_inode_hash(void)
+void __exit ksmbd_release_inode_hash(void)
 {
 	vfree(inode_hashtable);
 }
 
 /*
- * SMBD FP cache
+ * KSMBD FP cache
  */
 
 /* copy-pasted from old fh */
-static void inherit_delete_pending(struct smbd_file *fp)
+static void inherit_delete_pending(struct ksmbd_file *fp)
 {
 	struct list_head *cur;
-	struct smbd_file *prev_fp;
-	struct smbd_inode *ci = fp->f_ci;
+	struct ksmbd_file *prev_fp;
+	struct ksmbd_inode *ci = fp->f_ci;
 
 	fp->delete_on_close = 0;
 
 	write_lock(&ci->m_lock);
 	list_for_each_prev(cur, &ci->m_fp_list) {
-		prev_fp = list_entry(cur, struct smbd_file, node);
+		prev_fp = list_entry(cur, struct ksmbd_file, node);
 		if (fp != prev_fp && (fp->tcon == prev_fp->tcon ||
 				ci->m_flags & S_DEL_ON_CLS))
 			ci->m_flags |= S_DEL_PENDING;
@@ -270,15 +270,15 @@ static void inherit_delete_pending(struct smbd_file *fp)
 }
 
 /* copy-pasted from old fh */
-static void invalidate_delete_on_close(struct smbd_file *fp)
+static void invalidate_delete_on_close(struct ksmbd_file *fp)
 {
 	struct list_head *cur;
-	struct smbd_file *prev_fp;
-	struct smbd_inode *ci = fp->f_ci;
+	struct ksmbd_file *prev_fp;
+	struct ksmbd_inode *ci = fp->f_ci;
 
 	read_lock(&ci->m_lock);
 	list_for_each_prev(cur, &ci->m_fp_list) {
-		prev_fp = list_entry(cur, struct smbd_file, node);
+		prev_fp = list_entry(cur, struct ksmbd_file, node);
 		if (fp == prev_fp)
 			break;
 		if (fp->tcon == prev_fp->tcon)
@@ -288,10 +288,10 @@ static void invalidate_delete_on_close(struct smbd_file *fp)
 }
 
 /* copy-pasted from old fh */
-static void __smbd_inode_close(struct smbd_file *fp)
+static void __ksmbd_inode_close(struct ksmbd_file *fp)
 {
 	struct dentry *dir, *dentry;
-	struct smbd_inode *ci = fp->f_ci;
+	struct ksmbd_inode *ci = fp->f_ci;
 	int err;
 	struct file *filp;
 
@@ -303,12 +303,12 @@ static void __smbd_inode_close(struct smbd_file *fp)
 			invalidate_delete_on_close(fp);
 	}
 
-	if (smbd_stream_fd(fp) && (ci->m_flags & S_DEL_ON_CLS_STREAM)) {
+	if (ksmbd_stream_fd(fp) && (ci->m_flags & S_DEL_ON_CLS_STREAM)) {
 		ci->m_flags &= ~S_DEL_ON_CLS_STREAM;
-		err = smbd_vfs_remove_xattr(filp->f_path.dentry,
+		err = ksmbd_vfs_remove_xattr(filp->f_path.dentry,
 					     fp->stream.name);
 		if (err)
-			smbd_err("remove xattr failed : %s\n",
+			ksmbd_err("remove xattr failed : %s\n",
 				fp->stream.name);
 	}
 
@@ -320,16 +320,16 @@ static void __smbd_inode_close(struct smbd_file *fp)
 			dir = dentry->d_parent;
 			ci->m_flags &= ~(S_DEL_ON_CLS | S_DEL_PENDING);
 			write_unlock(&ci->m_lock);
-			smbd_vfs_unlink(dir, dentry);
+			ksmbd_vfs_unlink(dir, dentry);
 			write_lock(&ci->m_lock);
 		}
 		write_unlock(&ci->m_lock);
 
-		smbd_inode_free(ci);
+		ksmbd_inode_free(ci);
 	}
 }
 
-static void __smbd_remove_durable_fd(struct smbd_file *fp)
+static void __ksmbd_remove_durable_fd(struct ksmbd_file *fp)
 {
 	if (!HAS_FILE_ID(fp->persistent_id))
 		return;
@@ -339,8 +339,8 @@ static void __smbd_remove_durable_fd(struct smbd_file *fp)
 	write_unlock(&global_ft.lock);
 }
 
-static void __smbd_remove_fd(struct smbd_file_table *ft,
-			      struct smbd_file *fp)
+static void __ksmbd_remove_fd(struct ksmbd_file_table *ft,
+			      struct ksmbd_file *fp)
 {
 	if (!HAS_FILE_ID(fp->volatile_id))
 		return;
@@ -355,15 +355,15 @@ static void __smbd_remove_fd(struct smbd_file_table *ft,
 }
 
 /* copy-pasted from old fh */
-static void __smbd_close_fd(struct smbd_file_table *ft,
-			     struct smbd_file *fp)
+static void __ksmbd_close_fd(struct ksmbd_file_table *ft,
+			     struct ksmbd_file *fp)
 {
 	struct file *filp;
-	struct smbd_work *cancel_work, *ctmp;
+	struct ksmbd_work *cancel_work, *ctmp;
 
 	fd_limit_close();
-	__smbd_remove_durable_fd(fp);
-	__smbd_remove_fd(ft, fp);
+	__ksmbd_remove_durable_fd(fp);
+	__ksmbd_remove_fd(ft, fp);
 
 	close_id_del_oplock(fp);
 	filp = fp->filp;
@@ -372,37 +372,37 @@ static void __smbd_close_fd(struct smbd_file_table *ft,
 	list_for_each_entry_safe(cancel_work, ctmp, &fp->blocked_works,
 		fp_entry) {
 		list_del(&cancel_work->fp_entry);
-		cancel_work->state = SMBD_WORK_CLOSED;
+		cancel_work->state = KSMBD_WORK_CLOSED;
 		cancel_work->cancel_fn(cancel_work->cancel_argv);
 	}
 	spin_unlock(&fp->f_lock);
 
-	__smbd_inode_close(fp);
+	__ksmbd_inode_close(fp);
 	if (!IS_ERR_OR_NULL(filp))
 		fput(filp);
 	kfree(fp->filename);
-	if (smbd_stream_fd(fp))
+	if (ksmbd_stream_fd(fp))
 		kfree(fp->stream.name);
-	smbd_free_file_struct(fp);
+	ksmbd_free_file_struct(fp);
 }
 
-static struct smbd_file *smbd_fp_get(struct smbd_file *fp)
+static struct ksmbd_file *ksmbd_fp_get(struct ksmbd_file *fp)
 {
 	if (!atomic_inc_not_zero(&fp->refcount))
 		return NULL;
 	return fp;
 }
 
-static struct smbd_file *__smbd_lookup_fd(struct smbd_file_table *ft,
+static struct ksmbd_file *__ksmbd_lookup_fd(struct ksmbd_file_table *ft,
 					    unsigned int id)
 {
 	bool unclaimed = true;
-	struct smbd_file *fp;
+	struct ksmbd_file *fp;
 
 	read_lock(&ft->lock);
 	fp = idr_find(ft->idr, id);
 	if (fp)
-		fp = smbd_fp_get(fp);
+		fp = ksmbd_fp_get(fp);
 
 	if (fp && fp->f_ci) {
 		read_lock(&fp->f_ci->m_lock);
@@ -416,17 +416,17 @@ static struct smbd_file *__smbd_lookup_fd(struct smbd_file_table *ft,
 	return fp;
 }
 
-static void __put_fd_final(struct smbd_work *work,
-			   struct smbd_file *fp)
+static void __put_fd_final(struct ksmbd_work *work,
+			   struct ksmbd_file *fp)
 {
-	__smbd_close_fd(&work->sess->file_table, fp);
+	__ksmbd_close_fd(&work->sess->file_table, fp);
 	atomic_dec(&work->conn->stats.open_files_count);
 }
 
-int smbd_close_fd(struct smbd_work *work, unsigned int id)
+int ksmbd_close_fd(struct ksmbd_work *work, unsigned int id)
 {
-	struct smbd_file	*fp;
-	struct smbd_file_table	*ft;
+	struct ksmbd_file	*fp;
+	struct ksmbd_file_table	*ft;
 
 	if (!HAS_FILE_ID(id))
 		return 0;
@@ -447,8 +447,8 @@ int smbd_close_fd(struct smbd_work *work, unsigned int id)
 	return 0;
 }
 
-void smbd_fd_put(struct smbd_work *work,
-		  struct smbd_file *fp)
+void ksmbd_fd_put(struct ksmbd_work *work,
+		  struct ksmbd_file *fp)
 {
 	if (!fp)
 		return;
@@ -458,8 +458,8 @@ void smbd_fd_put(struct smbd_work *work,
 	__put_fd_final(work, fp);
 }
 
-static bool __sanity_check(struct smbd_tree_connect *tcon,
-			   struct smbd_file *fp)
+static bool __sanity_check(struct ksmbd_tree_connect *tcon,
+			   struct ksmbd_file *fp)
 {
 	if (!fp)
 		return false;
@@ -468,27 +468,27 @@ static bool __sanity_check(struct smbd_tree_connect *tcon,
 	return true;
 }
 
-struct smbd_file *smbd_lookup_foreign_fd(struct smbd_work *work,
+struct ksmbd_file *ksmbd_lookup_foreign_fd(struct ksmbd_work *work,
 					   unsigned int id)
 {
-	return __smbd_lookup_fd(&work->sess->file_table, id);
+	return __ksmbd_lookup_fd(&work->sess->file_table, id);
 }
 
-struct smbd_file *smbd_lookup_fd_fast(struct smbd_work *work,
+struct ksmbd_file *ksmbd_lookup_fd_fast(struct ksmbd_work *work,
 					unsigned int id)
 {
-	struct smbd_file *fp = __smbd_lookup_fd(&work->sess->file_table, id);
+	struct ksmbd_file *fp = __ksmbd_lookup_fd(&work->sess->file_table, id);
 
 	if (__sanity_check(work->tcon, fp))
 		return fp;
 	return NULL;
 }
 
-struct smbd_file *smbd_lookup_fd_slow(struct smbd_work *work,
+struct ksmbd_file *ksmbd_lookup_fd_slow(struct ksmbd_work *work,
 					unsigned int id,
 					unsigned int pid)
 {
-	struct smbd_file *fp;
+	struct ksmbd_file *fp;
 
 	if (!HAS_FILE_ID(id)) {
 		id = work->compound_fid;
@@ -498,7 +498,7 @@ struct smbd_file *smbd_lookup_fd_slow(struct smbd_work *work,
 	if (!HAS_FILE_ID(id))
 		return NULL;
 
-	fp = __smbd_lookup_fd(&work->sess->file_table, id);
+	fp = __ksmbd_lookup_fd(&work->sess->file_table, id);
 	if (!__sanity_check(work->tcon, fp))
 		return NULL;
 	if (fp->persistent_id != pid)
@@ -506,15 +506,15 @@ struct smbd_file *smbd_lookup_fd_slow(struct smbd_work *work,
 	return fp;
 }
 
-struct smbd_file *smbd_lookup_durable_fd(unsigned long long id)
+struct ksmbd_file *ksmbd_lookup_durable_fd(unsigned long long id)
 {
-	return __smbd_lookup_fd(&global_ft, id);
+	return __ksmbd_lookup_fd(&global_ft, id);
 }
 
-int smbd_close_fd_app_id(struct smbd_work *work,
+int ksmbd_close_fd_app_id(struct ksmbd_work *work,
 			  char *app_id)
 {
-	struct smbd_file	*fp = NULL;
+	struct ksmbd_file	*fp = NULL;
 	unsigned int		id;
 
 	read_lock(&global_ft.lock);
@@ -536,9 +536,9 @@ int smbd_close_fd_app_id(struct smbd_work *work,
 	return 0;
 }
 
-struct smbd_file *smbd_lookup_fd_cguid(char *cguid)
+struct ksmbd_file *ksmbd_lookup_fd_cguid(char *cguid)
 {
-	struct smbd_file	*fp = NULL;
+	struct ksmbd_file	*fp = NULL;
 	unsigned int		id;
 
 	read_lock(&global_ft.lock);
@@ -546,7 +546,7 @@ struct smbd_file *smbd_lookup_fd_cguid(char *cguid)
 		if (!memcmp(fp->create_guid,
 			    cguid,
 			    SMB2_CREATE_GUID_SIZE)) {
-			fp = smbd_fp_get(fp);
+			fp = ksmbd_fp_get(fp);
 			break;
 		}
 	}
@@ -555,16 +555,16 @@ struct smbd_file *smbd_lookup_fd_cguid(char *cguid)
 	return fp;
 }
 
-struct smbd_file *smbd_lookup_fd_filename(struct smbd_work *work,
+struct ksmbd_file *ksmbd_lookup_fd_filename(struct ksmbd_work *work,
 					    char *filename)
 {
-	struct smbd_file	*fp = NULL;
+	struct ksmbd_file	*fp = NULL;
 	unsigned int		id;
 
 	read_lock(&work->sess->file_table.lock);
 	idr_for_each_entry(work->sess->file_table.idr, fp, id) {
 		if (!strcmp(fp->filename, filename)) {
-			fp = smbd_fp_get(fp);
+			fp = ksmbd_fp_get(fp);
 			break;
 		}
 	}
@@ -574,19 +574,19 @@ struct smbd_file *smbd_lookup_fd_filename(struct smbd_work *work,
 }
 
 /* copy-pasted from old fh */
-struct smbd_file *smbd_lookup_fd_inode(struct inode *inode)
+struct ksmbd_file *ksmbd_lookup_fd_inode(struct inode *inode)
 {
-	struct smbd_file	*lfp;
-	struct smbd_inode	*ci;
+	struct ksmbd_file	*lfp;
+	struct ksmbd_inode	*ci;
 	struct list_head	*cur;
 
-	ci = smbd_inode_lookup_by_vfsinode(inode);
+	ci = ksmbd_inode_lookup_by_vfsinode(inode);
 	if (!ci)
 		return NULL;
 
 	read_lock(&ci->m_lock);
 	list_for_each(cur, &ci->m_fp_list) {
-		lfp = list_entry(cur, struct smbd_file, node);
+		lfp = list_entry(cur, struct ksmbd_file, node);
 		if (inode == FP_INODE(lfp)) {
 			atomic_dec(&ci->m_count);
 			read_unlock(&ci->m_lock);
@@ -601,7 +601,7 @@ struct smbd_file *smbd_lookup_fd_inode(struct inode *inode)
 #define OPEN_ID_TYPE_VOLATILE_ID	(0)
 #define OPEN_ID_TYPE_PERSISTENT_ID	(1)
 
-static void __open_id_set(struct smbd_file *fp, unsigned int id, int type)
+static void __open_id_set(struct ksmbd_file *fp, unsigned int id, int type)
 {
 	if (type == OPEN_ID_TYPE_VOLATILE_ID)
 		fp->volatile_id = id;
@@ -609,15 +609,15 @@ static void __open_id_set(struct smbd_file *fp, unsigned int id, int type)
 		fp->persistent_id = id;
 }
 
-static int __open_id(struct smbd_file_table *ft,
-		     struct smbd_file *fp,
+static int __open_id(struct ksmbd_file_table *ft,
+		     struct ksmbd_file *fp,
 		     int type)
 {
 	unsigned int		id = 0;
 	int			ret;
 
 	if (type == OPEN_ID_TYPE_VOLATILE_ID && fd_limit_depleted()) {
-		__open_id_set(fp, SMBD_NO_FID, type);
+		__open_id_set(fp, KSMBD_NO_FID, type);
 		return -EMFILE;
 	}
 
@@ -628,7 +628,7 @@ static int __open_id(struct smbd_file_table *ft,
 		id = ret;
 		ret = 0;
 	} else {
-		id = SMBD_NO_FID;
+		id = KSMBD_NO_FID;
 		fd_limit_close();
 	}
 
@@ -638,21 +638,21 @@ static int __open_id(struct smbd_file_table *ft,
 	return ret;
 }
 
-unsigned int smbd_open_durable_fd(struct smbd_file *fp)
+unsigned int ksmbd_open_durable_fd(struct ksmbd_file *fp)
 {
 	__open_id(&global_ft, fp, OPEN_ID_TYPE_PERSISTENT_ID);
 	return fp->persistent_id;
 }
 
-struct smbd_file *smbd_open_fd(struct smbd_work *work,
+struct ksmbd_file *ksmbd_open_fd(struct ksmbd_work *work,
 				 struct file *filp)
 {
-	struct smbd_file	*fp;
+	struct ksmbd_file	*fp;
 	int ret;
 
-	fp = smbd_alloc_file_struct();
+	fp = ksmbd_alloc_file_struct();
 	if (!fp) {
-		smbd_err("Failed to allocate memory\n");
+		ksmbd_err("Failed to allocate memory\n");
 		return ERR_PTR(-ENOMEM);
 	}
 
@@ -664,19 +664,19 @@ struct smbd_file *smbd_open_fd(struct smbd_work *work,
 	fp->filp		= filp;
 	fp->conn		= work->sess->conn;
 	fp->tcon		= work->tcon;
-	fp->volatile_id		= SMBD_NO_FID;
-	fp->persistent_id	= SMBD_NO_FID;
-	fp->f_ci		= smbd_inode_get(fp);
+	fp->volatile_id		= KSMBD_NO_FID;
+	fp->persistent_id	= KSMBD_NO_FID;
+	fp->f_ci		= ksmbd_inode_get(fp);
 
 	if (!fp->f_ci) {
-		smbd_free_file_struct(fp);
+		ksmbd_free_file_struct(fp);
 		return ERR_PTR(-ENOMEM);
 	}
 
 	ret = __open_id(&work->sess->file_table, fp, OPEN_ID_TYPE_VOLATILE_ID);
 	if (ret) {
-		smbd_inode_put(fp->f_ci);
-		smbd_free_file_struct(fp);
+		ksmbd_inode_put(fp->f_ci);
+		ksmbd_free_file_struct(fp);
 		return ERR_PTR(ret);
 	}
 
@@ -689,7 +689,7 @@ struct smbd_file *smbd_open_fd(struct smbd_work *work,
 }
 
 /* copy-pasted from old fh */
-static inline bool is_reconnectable(struct smbd_file *fp)
+static inline bool is_reconnectable(struct ksmbd_file *fp)
 {
 	struct oplock_info *opinfo = opinfo_get(fp);
 	int reconn = 0;
@@ -716,44 +716,44 @@ static inline bool is_reconnectable(struct smbd_file *fp)
 }
 
 static int
-__close_file_table_ids(struct smbd_file_table *ft,
-		       struct smbd_tree_connect *tcon,
-		       bool (*skip)(struct smbd_tree_connect *tcon,
-				    struct smbd_file *fp))
+__close_file_table_ids(struct ksmbd_file_table *ft,
+		       struct ksmbd_tree_connect *tcon,
+		       bool (*skip)(struct ksmbd_tree_connect *tcon,
+				    struct ksmbd_file *fp))
 {
 	unsigned int			id;
-	struct smbd_file		*fp;
+	struct ksmbd_file		*fp;
 	int				num = 0;
 
 	idr_for_each_entry(ft->idr, fp, id) {
 		if (skip(tcon, fp))
 			continue;
 
-		__smbd_close_fd(ft, fp);
+		__ksmbd_close_fd(ft, fp);
 		num++;
 	}
 	return num;
 }
 
-static bool tree_conn_fd_check(struct smbd_tree_connect *tcon,
-			       struct smbd_file *fp)
+static bool tree_conn_fd_check(struct ksmbd_tree_connect *tcon,
+			       struct ksmbd_file *fp)
 {
 	return fp->tcon != tcon;
 }
 
-static bool session_fd_check(struct smbd_tree_connect *tcon,
-			     struct smbd_file *fp)
+static bool session_fd_check(struct ksmbd_tree_connect *tcon,
+			     struct ksmbd_file *fp)
 {
 	if (!is_reconnectable(fp))
 		return false;
 
 	fp->conn = NULL;
 	fp->tcon = NULL;
-	fp->volatile_id = SMBD_NO_FID;
+	fp->volatile_id = KSMBD_NO_FID;
 	return true;
 }
 
-void smbd_close_tree_conn_fds(struct smbd_work *work)
+void ksmbd_close_tree_conn_fds(struct ksmbd_work *work)
 {
 	int num = __close_file_table_ids(&work->sess->file_table,
 					 work->tcon,
@@ -762,7 +762,7 @@ void smbd_close_tree_conn_fds(struct smbd_work *work)
 	atomic_sub(num, &work->conn->stats.open_files_count);
 }
 
-void smbd_close_session_fds(struct smbd_work *work)
+void ksmbd_close_session_fds(struct ksmbd_work *work)
 {
 	int num = __close_file_table_ids(&work->sess->file_table,
 					 work->tcon,
@@ -771,35 +771,35 @@ void smbd_close_session_fds(struct smbd_work *work)
 	atomic_sub(num, &work->conn->stats.open_files_count);
 }
 
-int smbd_init_global_file_table(void)
+int ksmbd_init_global_file_table(void)
 {
-	return smbd_init_file_table(&global_ft);
+	return ksmbd_init_file_table(&global_ft);
 }
 
-void smbd_free_global_file_table(void)
+void ksmbd_free_global_file_table(void)
 {
-	struct smbd_file	*fp = NULL;
+	struct ksmbd_file	*fp = NULL;
 	unsigned int		id;
 
 	idr_for_each_entry(global_ft.idr, fp, id) {
-		__smbd_remove_durable_fd(fp);
-		smbd_free_file_struct(fp);
+		__ksmbd_remove_durable_fd(fp);
+		ksmbd_free_file_struct(fp);
 	}
 
-	smbd_destroy_file_table(&global_ft);
+	ksmbd_destroy_file_table(&global_ft);
 }
 
-int smbd_reopen_durable_fd(struct smbd_work *work,
-			    struct smbd_file *fp)
+int ksmbd_reopen_durable_fd(struct ksmbd_work *work,
+			    struct ksmbd_file *fp)
 {
 	if (!fp->is_durable || fp->conn || fp->tcon) {
-		smbd_err("Invalid durable fd [%p:%p]\n",
+		ksmbd_err("Invalid durable fd [%p:%p]\n",
 				fp->conn, fp->tcon);
 		return -EBADF;
 	}
 
 	if (HAS_FILE_ID(fp->volatile_id)) {
-		smbd_err("Still in use durable fd: %u\n", fp->volatile_id);
+		ksmbd_err("Still in use durable fd: %u\n", fp->volatile_id);
 		return -EBADF;
 	}
 
@@ -815,26 +815,26 @@ int smbd_reopen_durable_fd(struct smbd_work *work,
 	return 0;
 }
 
-static void close_fd_list(struct smbd_work *work, struct list_head *head)
+static void close_fd_list(struct ksmbd_work *work, struct list_head *head)
 {
 	while (!list_empty(head)) {
-		struct smbd_file *fp;
+		struct ksmbd_file *fp;
 
-		fp = list_first_entry(head, struct smbd_file, node);
+		fp = list_first_entry(head, struct ksmbd_file, node);
 		list_del_init(&fp->node);
 
-		__smbd_close_fd(&work->sess->file_table, fp);
+		__ksmbd_close_fd(&work->sess->file_table, fp);
 	}
 }
 
-int smbd_close_inode_fds(struct smbd_work *work, struct inode *inode)
+int ksmbd_close_inode_fds(struct ksmbd_work *work, struct inode *inode)
 {
-	struct smbd_inode *ci;
+	struct ksmbd_inode *ci;
 	bool unlinked = true;
-	struct smbd_file *fp, *fptmp;
+	struct ksmbd_file *fp, *fptmp;
 	LIST_HEAD(dispose);
 
-	ci = smbd_inode_lookup_by_vfsinode(inode);
+	ci = ksmbd_inode_lookup_by_vfsinode(inode);
 	if (!ci)
 		return true;
 
@@ -856,15 +856,15 @@ int smbd_close_inode_fds(struct smbd_work *work, struct inode *inode)
 	return unlinked;
 }
 
-int smbd_file_table_flush(struct smbd_work *work)
+int ksmbd_file_table_flush(struct ksmbd_work *work)
 {
-	struct smbd_file	*fp = NULL;
+	struct ksmbd_file	*fp = NULL;
 	unsigned int		id;
 	int			ret;
 
 	read_lock(&work->sess->file_table.lock);
 	idr_for_each_entry(work->sess->file_table.idr, fp, id) {
-		ret = smbd_vfs_fsync(work, fp->volatile_id, SMBD_NO_FID);
+		ret = ksmbd_vfs_fsync(work, fp->volatile_id, KSMBD_NO_FID);
 		if (ret)
 			break;
 	}
@@ -872,9 +872,9 @@ int smbd_file_table_flush(struct smbd_work *work)
 	return ret;
 }
 
-int smbd_init_file_table(struct smbd_file_table *ft)
+int ksmbd_init_file_table(struct ksmbd_file_table *ft)
 {
-	ft->idr = smbd_alloc(sizeof(struct idr));
+	ft->idr = ksmbd_alloc(sizeof(struct idr));
 	if (!ft->idr)
 		return -ENOMEM;
 
@@ -883,13 +883,13 @@ int smbd_init_file_table(struct smbd_file_table *ft)
 	return 0;
 }
 
-void smbd_destroy_file_table(struct smbd_file_table *ft)
+void ksmbd_destroy_file_table(struct ksmbd_file_table *ft)
 {
 	if (!ft->idr)
 		return;
 
 	__close_file_table_ids(ft, NULL, session_fd_check);
 	idr_destroy(ft->idr);
-	smbd_free(ft->idr);
+	ksmbd_free(ft->idr);
 	ft->idr = NULL;
 }

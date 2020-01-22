@@ -21,8 +21,8 @@
 #define	FILE_GENERIC_WRITE	0x120116
 #define	FILE_GENERIC_EXECUTE	0X1200a0
 
-#define SMBD_START_FID		0
-#define SMBD_NO_FID		(UINT_MAX)
+#define KSMBD_START_FID		0
+#define KSMBD_NO_FID		(UINT_MAX)
 #define SMB2_NO_FID		(0xFFFFFFFFFFFFFFFFULL)
 
 #define FP_FILENAME(fp)		fp->filp->f_path.dentry->d_name.name
@@ -34,10 +34,10 @@
 		fp->cdoption != FILE_OVERWRITE_LE && \
 		fp->cdoption != FILE_SUPERSEDE_LE))
 
-struct smbd_conn;
-struct smbd_session;
+struct ksmbd_conn;
+struct ksmbd_session;
 
-struct smbd_lock {
+struct ksmbd_lock {
 	struct file_lock *fl;
 	struct list_head glist;
 	struct list_head llist;
@@ -54,7 +54,7 @@ struct stream {
 	ssize_t size;
 };
 
-struct smbd_inode {
+struct ksmbd_inode {
 	rwlock_t			m_lock;
 	atomic_t			m_count;
 	atomic_t			op_count;
@@ -67,7 +67,7 @@ struct smbd_inode {
 	__le32				m_fattr;
 };
 
-struct smbd_file {
+struct ksmbd_file {
 	struct file			*filp;
 	char				*filename;
 	unsigned int			persistent_id;
@@ -75,11 +75,11 @@ struct smbd_file {
 
 	spinlock_t			f_lock;
 
-	struct smbd_inode		*f_ci;
-	struct smbd_inode		*f_parent_ci;
+	struct ksmbd_inode		*f_ci;
+	struct ksmbd_inode		*f_parent_ci;
 	struct oplock_info __rcu	*f_opinfo;
-	struct smbd_conn		*conn;
-	struct smbd_tree_connect	*tcon;
+	struct ksmbd_conn		*conn;
+	struct ksmbd_tree_connect	*tcon;
 
 	atomic_t			refcount;
 	__le32				daccess;
@@ -117,7 +117,7 @@ struct smbd_file {
 	int				dirent_offset;
 #endif
 	/* if ls is happening on directory, below is valid*/
-	struct smbd_readdir_data	readdir_data;
+	struct ksmbd_readdir_data	readdir_data;
 	int				dot_dotdot[2];
 };
 
@@ -153,9 +153,9 @@ static inline struct inode *d_inode(const struct dentry *dentry)
 	return dentry->d_inode;
 }
 #endif
-#define SMBD_NR_OPEN_DEFAULT BITS_PER_LONG
+#define KSMBD_NR_OPEN_DEFAULT BITS_PER_LONG
 
-struct smbd_file_table {
+struct ksmbd_file_table {
 	rwlock_t		lock;
 	struct idr		*idr;
 };
@@ -164,76 +164,76 @@ static inline bool HAS_FILE_ID(unsigned long long req)
 {
 	unsigned int id = (unsigned int)req;
 
-	return id < SMBD_NO_FID;
+	return id < KSMBD_NO_FID;
 }
 
-static inline bool smbd_stream_fd(struct smbd_file *fp)
+static inline bool ksmbd_stream_fd(struct ksmbd_file *fp)
 {
 	return fp->stream.name != NULL;
 }
 
-int smbd_init_file_table(struct smbd_file_table *ft);
-void smbd_destroy_file_table(struct smbd_file_table *ft);
+int ksmbd_init_file_table(struct ksmbd_file_table *ft);
+void ksmbd_destroy_file_table(struct ksmbd_file_table *ft);
 
-int smbd_close_fd(struct smbd_work *work, unsigned int id);
+int ksmbd_close_fd(struct ksmbd_work *work, unsigned int id);
 
-struct smbd_file *smbd_lookup_fd_fast(struct smbd_work *work,
+struct ksmbd_file *ksmbd_lookup_fd_fast(struct ksmbd_work *work,
 					unsigned int id);
-struct smbd_file *smbd_lookup_foreign_fd(struct smbd_work *work,
+struct ksmbd_file *ksmbd_lookup_foreign_fd(struct ksmbd_work *work,
 					   unsigned int id);
-struct smbd_file *smbd_lookup_fd_slow(struct smbd_work *work,
+struct ksmbd_file *ksmbd_lookup_fd_slow(struct ksmbd_work *work,
 					unsigned int id,
 					unsigned int pid);
 
-void smbd_fd_put(struct smbd_work *work, struct smbd_file *fp);
+void ksmbd_fd_put(struct ksmbd_work *work, struct ksmbd_file *fp);
 
-int smbd_close_fd_app_id(struct smbd_work *work, char *app_id);
-struct smbd_file *smbd_lookup_durable_fd(unsigned long long id);
-struct smbd_file *smbd_lookup_fd_cguid(char *cguid);
-struct smbd_file *smbd_lookup_fd_filename(struct smbd_work *work,
+int ksmbd_close_fd_app_id(struct ksmbd_work *work, char *app_id);
+struct ksmbd_file *ksmbd_lookup_durable_fd(unsigned long long id);
+struct ksmbd_file *ksmbd_lookup_fd_cguid(char *cguid);
+struct ksmbd_file *ksmbd_lookup_fd_filename(struct ksmbd_work *work,
 					    char *filename);
-struct smbd_file *smbd_lookup_fd_inode(struct inode *inode);
+struct ksmbd_file *ksmbd_lookup_fd_inode(struct inode *inode);
 
-unsigned int smbd_open_durable_fd(struct smbd_file *fp);
+unsigned int ksmbd_open_durable_fd(struct ksmbd_file *fp);
 
-struct smbd_file *smbd_open_fd(struct smbd_work *work,
+struct ksmbd_file *ksmbd_open_fd(struct ksmbd_work *work,
 				 struct file *filp);
 
-void smbd_close_tree_conn_fds(struct smbd_work *work);
-void smbd_close_session_fds(struct smbd_work *work);
+void ksmbd_close_tree_conn_fds(struct ksmbd_work *work);
+void ksmbd_close_session_fds(struct ksmbd_work *work);
 
-int smbd_close_inode_fds(struct smbd_work *work, struct inode *inode);
+int ksmbd_close_inode_fds(struct ksmbd_work *work, struct inode *inode);
 
-int smbd_reopen_durable_fd(struct smbd_work *work,
-			    struct smbd_file *fp);
+int ksmbd_reopen_durable_fd(struct ksmbd_work *work,
+			    struct ksmbd_file *fp);
 
-int smbd_init_global_file_table(void);
-void smbd_free_global_file_table(void);
+int ksmbd_init_global_file_table(void);
+void ksmbd_free_global_file_table(void);
 
-int smbd_file_table_flush(struct smbd_work *work);
+int ksmbd_file_table_flush(struct ksmbd_work *work);
 
-void smbd_set_fd_limit(unsigned long limit);
+void ksmbd_set_fd_limit(unsigned long limit);
 
 
 /*
  * INODE hash
  */
 
-int __init smbd_inode_hash_init(void);
-void __exit smbd_release_inode_hash(void);
+int __init ksmbd_inode_hash_init(void);
+void __exit ksmbd_release_inode_hash(void);
 
-enum SMBD_INODE_STATUS {
-	SMBD_INODE_STATUS_OK,
-	SMBD_INODE_STATUS_UNKNOWN,
-	SMBD_INODE_STATUS_PENDING_DELETE,
+enum KSMBD_INODE_STATUS {
+	KSMBD_INODE_STATUS_OK,
+	KSMBD_INODE_STATUS_UNKNOWN,
+	KSMBD_INODE_STATUS_PENDING_DELETE,
 };
 
-int smbd_query_inode_status(struct inode *inode);
+int ksmbd_query_inode_status(struct inode *inode);
 
-bool smbd_inode_pending_delete(struct smbd_file *fp);
-void smbd_set_inode_pending_delete(struct smbd_file *fp);
-void smbd_clear_inode_pending_delete(struct smbd_file *fp);
+bool ksmbd_inode_pending_delete(struct ksmbd_file *fp);
+void ksmbd_set_inode_pending_delete(struct ksmbd_file *fp);
+void ksmbd_clear_inode_pending_delete(struct ksmbd_file *fp);
 
-void smbd_fd_set_delete_on_close(struct smbd_file *fp,
+void ksmbd_fd_set_delete_on_close(struct ksmbd_file *fp,
 				  int file_info);
 #endif /* __VFS_CACHE_H__ */

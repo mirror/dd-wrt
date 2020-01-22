@@ -12,7 +12,7 @@
 #include "connection.h"
 #include "smb_common.h"
 #include "server.h"
-#include "smbd_server.h"
+#include "ksmbd_server.h"
 
 #ifdef CONFIG_SMB_INSECURE_SERVER
 static struct smb_version_values smb20_server_values = {
@@ -145,7 +145,7 @@ static struct smb_version_ops smb2_0_server_ops = {
 	.set_rsp_status		=	set_smb2_rsp_status,
 	.allocate_rsp_buf       =       smb2_allocate_rsp_buf,
 	.check_user_session	=	smb2_check_user_session,
-	.get_smbd_tcon		=	smb2_get_smbd_tcon,
+	.get_ksmbd_tcon		=	smb2_get_ksmbd_tcon,
 	.is_sign_req		=	smb2_is_sign_req,
 	.check_sign_req		=	smb2_check_sign_req,
 	.set_sign_rsp		=	smb2_set_sign_rsp
@@ -157,12 +157,12 @@ static struct smb_version_ops smb3_0_server_ops = {
 	.set_rsp_status		=	set_smb2_rsp_status,
 	.allocate_rsp_buf       =       smb2_allocate_rsp_buf,
 	.check_user_session	=	smb2_check_user_session,
-	.get_smbd_tcon		=	smb2_get_smbd_tcon,
+	.get_ksmbd_tcon		=	smb2_get_ksmbd_tcon,
 	.is_sign_req		=	smb2_is_sign_req,
 	.check_sign_req		=	smb3_check_sign_req,
 	.set_sign_rsp		=	smb3_set_sign_rsp,
-	.generate_signingkey	=	smbd_gen_smb30_signingkey,
-	.generate_encryptionkey	=	smbd_gen_smb30_encryptionkey,
+	.generate_signingkey	=	ksmbd_gen_smb30_signingkey,
+	.generate_encryptionkey	=	ksmbd_gen_smb30_encryptionkey,
 	.is_transform_hdr	=	smb3_is_transform_hdr,
 	.decrypt_req		=	smb3_decrypt_req,
 	.encrypt_resp		=	smb3_encrypt_resp
@@ -174,12 +174,12 @@ static struct smb_version_ops smb3_11_server_ops = {
 	.set_rsp_status		=	set_smb2_rsp_status,
 	.allocate_rsp_buf       =       smb2_allocate_rsp_buf,
 	.check_user_session	=	smb2_check_user_session,
-	.get_smbd_tcon		=	smb2_get_smbd_tcon,
+	.get_ksmbd_tcon		=	smb2_get_ksmbd_tcon,
 	.is_sign_req		=	smb2_is_sign_req,
 	.check_sign_req		=	smb3_check_sign_req,
 	.set_sign_rsp		=	smb3_set_sign_rsp,
-	.generate_signingkey	=	smbd_gen_smb311_signingkey,
-	.generate_encryptionkey	=	smbd_gen_smb311_encryptionkey,
+	.generate_signingkey	=	ksmbd_gen_smb311_signingkey,
+	.generate_encryptionkey	=	ksmbd_gen_smb311_encryptionkey,
 	.is_transform_hdr	=	smb3_is_transform_hdr,
 	.decrypt_req		=	smb3_decrypt_req,
 	.encrypt_resp		=	smb3_encrypt_resp
@@ -213,7 +213,7 @@ static struct smb_version_cmds smb2_0_server_cmds[NUMBER_OF_SMB2_COMMANDS] = {
  *			command dispatcher
  * @conn:	connection instance
  */
-int init_smb2_0_server(struct smbd_conn *conn)
+int init_smb2_0_server(struct ksmbd_conn *conn)
 {
 	conn->vals = &smb20_server_values;
 	conn->ops = &smb2_0_server_ops;
@@ -224,7 +224,7 @@ int init_smb2_0_server(struct smbd_conn *conn)
 	return 0;
 }
 #else
-int init_smb2_0_server(struct smbd_conn *conn)
+int init_smb2_0_server(struct ksmbd_conn *conn)
 {
 	return -ENOTSUPP;
 }
@@ -235,7 +235,7 @@ int init_smb2_0_server(struct smbd_conn *conn)
  *			command dispatcher
  * @conn:	connection instance
  */
-void init_smb2_1_server(struct smbd_conn *conn)
+void init_smb2_1_server(struct ksmbd_conn *conn)
 {
 	conn->vals = &smb21_server_values;
 	conn->ops = &smb2_0_server_ops;
@@ -243,7 +243,7 @@ void init_smb2_1_server(struct smbd_conn *conn)
 	conn->max_cmds = ARRAY_SIZE(smb2_0_server_cmds);
 	conn->max_credits = SMB2_MAX_CREDITS;
 
-	if (server_conf.flags & SMBD_GLOBAL_FLAG_SMB2_LEASES)
+	if (server_conf.flags & KSMBD_GLOBAL_FLAG_SMB2_LEASES)
 		conn->vals->capabilities |= SMB2_GLOBAL_CAP_LEASING;
 }
 
@@ -252,7 +252,7 @@ void init_smb2_1_server(struct smbd_conn *conn)
  *			command dispatcher
  * @conn:	connection instance
  */
-void init_smb3_0_server(struct smbd_conn *conn)
+void init_smb3_0_server(struct ksmbd_conn *conn)
 {
 	conn->vals = &smb30_server_values;
 	conn->ops = &smb3_0_server_ops;
@@ -260,10 +260,10 @@ void init_smb3_0_server(struct smbd_conn *conn)
 	conn->max_cmds = ARRAY_SIZE(smb2_0_server_cmds);
 	conn->max_credits = SMB2_MAX_CREDITS;
 
-	if (server_conf.flags & SMBD_GLOBAL_FLAG_SMB2_LEASES)
+	if (server_conf.flags & KSMBD_GLOBAL_FLAG_SMB2_LEASES)
 		conn->vals->capabilities |= SMB2_GLOBAL_CAP_LEASING;
 
-	if (server_conf.flags & SMBD_GLOBAL_FLAG_SMB2_ENCRYPTION &&
+	if (server_conf.flags & KSMBD_GLOBAL_FLAG_SMB2_ENCRYPTION &&
 		conn->cli_cap & SMB2_GLOBAL_CAP_ENCRYPTION)
 		conn->vals->capabilities |= SMB2_GLOBAL_CAP_ENCRYPTION;
 }
@@ -273,7 +273,7 @@ void init_smb3_0_server(struct smbd_conn *conn)
  *			command dispatcher
  * @conn:	connection instance
  */
-void init_smb3_02_server(struct smbd_conn *conn)
+void init_smb3_02_server(struct ksmbd_conn *conn)
 {
 	conn->vals = &smb302_server_values;
 	conn->ops = &smb3_0_server_ops;
@@ -281,10 +281,10 @@ void init_smb3_02_server(struct smbd_conn *conn)
 	conn->max_cmds = ARRAY_SIZE(smb2_0_server_cmds);
 	conn->max_credits = SMB2_MAX_CREDITS;
 
-	if (server_conf.flags & SMBD_GLOBAL_FLAG_SMB2_LEASES)
+	if (server_conf.flags & KSMBD_GLOBAL_FLAG_SMB2_LEASES)
 		conn->vals->capabilities |= SMB2_GLOBAL_CAP_LEASING;
 
-	if (server_conf.flags & SMBD_GLOBAL_FLAG_SMB2_ENCRYPTION &&
+	if (server_conf.flags & KSMBD_GLOBAL_FLAG_SMB2_ENCRYPTION &&
 		conn->cli_cap & SMB2_GLOBAL_CAP_ENCRYPTION)
 		conn->vals->capabilities |= SMB2_GLOBAL_CAP_ENCRYPTION;
 }
@@ -294,7 +294,7 @@ void init_smb3_02_server(struct smbd_conn *conn)
  *			command dispatcher
  * @conn:	connection instance
  */
-int init_smb3_11_server(struct smbd_conn *conn)
+int init_smb3_11_server(struct ksmbd_conn *conn)
 {
 	conn->vals = &smb311_server_values;
 	conn->ops = &smb3_11_server_ops;
@@ -302,7 +302,7 @@ int init_smb3_11_server(struct smbd_conn *conn)
 	conn->max_cmds = ARRAY_SIZE(smb2_0_server_cmds);
 	conn->max_credits = SMB2_MAX_CREDITS;
 
-	if (server_conf.flags & SMBD_GLOBAL_FLAG_SMB2_LEASES)
+	if (server_conf.flags & KSMBD_GLOBAL_FLAG_SMB2_LEASES)
 		conn->vals->capabilities |= SMB2_GLOBAL_CAP_LEASING;
 
 	if (conn->cipher_type)

@@ -10,13 +10,13 @@
 #ifndef __ASN1_H__
 #define __ASN1_H__
 
-int smbd_decode_negTokenInit(unsigned char *security_blob,
+int ksmbd_decode_negTokenInit(unsigned char *security_blob,
 			      int length,
-			      struct smbd_conn *conn);
+			      struct ksmbd_conn *conn);
 
-int smbd_decode_negTokenTarg(unsigned char *security_blob,
+int ksmbd_decode_negTokenTarg(unsigned char *security_blob,
 			      int length,
-			      struct smbd_conn *conn);
+			      struct ksmbd_conn *conn);
 
 int build_spnego_ntlmssp_neg_blob(unsigned char **pbuffer,
 				  u16 *buflen,

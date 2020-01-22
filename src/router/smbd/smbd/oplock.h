@@ -4,8 +4,8 @@
  *   Copyright (C) 2018 Samsung Electronics Co., Ltd.
  */
 
-#ifndef __SMBD_OPLOCK_H
-#define __SMBD_OPLOCK_H
+#ifndef __KSMBD_OPLOCK_H
+#define __KSMBD_OPLOCK_H
 
 #include "smb_common.h"
 
@@ -61,10 +61,10 @@ struct lease {
 };
 
 struct oplock_info {
-	struct smbd_conn	*conn;
-	struct smbd_session	*sess;
-	struct smbd_work	*work;
-	struct smbd_file	*o_fp;
+	struct ksmbd_conn	*conn;
+	struct ksmbd_session	*sess;
+	struct ksmbd_work	*work;
+	struct ksmbd_file	*o_fp;
 	int                     level;
 	int                     op_state;
 	uint64_t                fid;
@@ -97,19 +97,19 @@ struct oplock_break_info {
 	int fid;
 };
 
-extern int smb_grant_oplock(struct smbd_work *work, int req_op_level,
-		uint64_t pid, struct smbd_file *fp, __u16 tid,
+extern int smb_grant_oplock(struct ksmbd_work *work, int req_op_level,
+		uint64_t pid, struct ksmbd_file *fp, __u16 tid,
 		struct lease_ctx_info *lctx, int share_ret);
-extern void smb_break_all_levII_oplock(struct smbd_work *work,
-	struct smbd_file *fp, int is_trunc);
+extern void smb_break_all_levII_oplock(struct ksmbd_work *work,
+	struct ksmbd_file *fp, int is_trunc);
 
 int opinfo_write_to_read(struct oplock_info *opinfo);
 int opinfo_read_handle_to_read(struct oplock_info *opinfo);
 int opinfo_write_to_none(struct oplock_info *opinfo);
 int opinfo_read_to_none(struct oplock_info *opinfo);
-void close_id_del_oplock(struct smbd_file *fp);
-void smb_break_all_oplock(struct smbd_work *work, struct smbd_file *fp);
-struct oplock_info *opinfo_get(struct smbd_file *fp);
+void close_id_del_oplock(struct ksmbd_file *fp);
+void smb_break_all_oplock(struct ksmbd_work *work, struct ksmbd_file *fp);
+struct oplock_info *opinfo_get(struct ksmbd_file *fp);
 void opinfo_put(struct oplock_info *opinfo);
 
 /* Lease related functions */
@@ -120,20 +120,20 @@ int lease_read_to_write(struct oplock_info *opinfo);
 
 /* Durable related functions */
 void create_durable_rsp_buf(char *cc);
-void create_durable_v2_rsp_buf(char *cc, struct smbd_file *fp);
+void create_durable_v2_rsp_buf(char *cc, struct ksmbd_file *fp);
 void create_mxac_rsp_buf(char *cc, int maximal_access);
 void create_disk_id_rsp_buf(char *cc, __u64 file_id, __u64 vol_id);
 struct create_context *smb2_find_context_vals(void *open_req, const char *str);
-int smbd_durable_verify_and_del_oplock(struct smbd_session *curr_sess,
-					  struct smbd_session *prev_sess,
+int ksmbd_durable_verify_and_del_oplock(struct ksmbd_session *curr_sess,
+					  struct ksmbd_session *prev_sess,
 					  int fid, struct file **filp,
 					  uint64_t sess_id);
-struct oplock_info *lookup_lease_in_table(struct smbd_conn *conn,
+struct oplock_info *lookup_lease_in_table(struct ksmbd_conn *conn,
 	char *lease_key);
-int find_same_lease_key(struct smbd_session *sess, struct smbd_inode *ci,
+int find_same_lease_key(struct ksmbd_session *sess, struct ksmbd_inode *ci,
 	struct lease_ctx_info *lctx);
-void destroy_lease_table(struct smbd_conn *conn);
-int smb2_check_durable_oplock(struct smbd_file *fp,
+void destroy_lease_table(struct ksmbd_conn *conn);
+int smb2_check_durable_oplock(struct ksmbd_file *fp,
 	struct lease_ctx_info *lctx, char *name);
 
-#endif /* __SMBD_OPLOCK_H */
+#endif /* __KSMBD_OPLOCK_H */

@@ -6,8 +6,8 @@
  * uniupr.h - Unicode compressed case ranges
  *
  */
-#ifndef __SMBD_UNIUPR_H
-#define __SMBD_UNIUPR_H
+#ifndef __KSMBD_UNIUPR_H
+#define __KSMBD_UNIUPR_H
 
 #ifndef UNIUPR_NOUPPER
 /*
@@ -265,4 +265,4 @@ const struct UniCaseRange CifsUniLowerRange[] = {
 };
 #endif
 
-#endif /* __SMBD_UNIUPR_H */
+#endif /* __KSMBD_UNIUPR_H */

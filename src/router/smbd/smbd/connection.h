@@ -3,8 +3,8 @@
  *   Copyright (C) 2018 Samsung Electronics Co., Ltd.
  */
 
-#ifndef __SMBD_CONNECTION_H__
-#define __SMBD_CONNECTION_H__
+#ifndef __KSMBD_CONNECTION_H__
+#define __KSMBD_CONNECTION_H__
 
 #include <linux/list.h>
 #include <linux/ip.h>
@@ -16,33 +16,33 @@
 #include <linux/nls.h>
 
 #include "smb_common.h"
-#include "smbd_work.h"
+#include "ksmbd_work.h"
 
-#define SMBD_SOCKET_BACKLOG		16
+#define KSMBD_SOCKET_BACKLOG		16
 
 /*
  * WARNING
  *
  * This is nothing but a HACK. Session status should move to channel
- * or to session. As of now we have 1 tcp_conn : 1 smbd_session, but
- * we need to change it to 1 tcp_conn : N smbd_sessions.
+ * or to session. As of now we have 1 tcp_conn : 1 ksmbd_session, but
+ * we need to change it to 1 tcp_conn : N ksmbd_sessions.
  */
 enum {
-	SMBD_SESS_NEW = 0,
-	SMBD_SESS_GOOD,
-	SMBD_SESS_EXITING,
-	SMBD_SESS_NEED_RECONNECT,
-	SMBD_SESS_NEED_NEGOTIATE
+	KSMBD_SESS_NEW = 0,
+	KSMBD_SESS_GOOD,
+	KSMBD_SESS_EXITING,
+	KSMBD_SESS_NEED_RECONNECT,
+	KSMBD_SESS_NEED_NEGOTIATE
 };
 
-struct smbd_stats {
+struct ksmbd_stats {
 	atomic_t			open_files_count;
 	atomic64_t			request_served;
 };
 
-struct smbd_transport;
+struct ksmbd_transport;
 
-struct smbd_conn {
+struct ksmbd_conn {
 	struct smb_version_values	*vals;
 	struct smb_version_ops		*ops;
 	struct smb_version_cmds		*cmds;
@@ -51,7 +51,7 @@ struct smbd_conn {
 	int				status;
 	unsigned int			cli_cap;
 	char				*request_buf;
-	struct smbd_transport		*transport;
+	struct ksmbd_transport		*transport;
 	struct nls_table		*local_nls;
 	struct list_head		conns_list;
 	/* smb session 1 per user */
@@ -70,7 +70,7 @@ struct smbd_conn {
 	struct list_head		requests;
 	struct list_head		async_requests;
 	int				connection_type;
-	struct smbd_stats		stats;
+	struct ksmbd_stats		stats;
 	char				ClientGUID[SMB2_CLIENT_GUID_SIZE];
 	union {
 		/* pending trans request table */
@@ -99,7 +99,7 @@ struct smbd_conn {
 
 	char				*mechToken;
 
-	struct smbd_conn_ops	*conn_ops;
+	struct ksmbd_conn_ops	*conn_ops;
 
 	/* Preauth Session Table */
 	struct list_head		preauth_sess_table;
@@ -107,68 +107,68 @@ struct smbd_conn {
 	struct sockaddr_storage		peer_addr;
 
 	/* Identifier for async message */
-	struct smbd_ida		*async_ida;
+	struct ksmbd_ida		*async_ida;
 
 	__le16				cipher_type;
 	__le16				compress_algorithm;
 	bool				posix_ext_supported;
 };
 
-struct smbd_conn_ops {
-	int	(*process_fn)(struct smbd_conn *conn);
-	int	(*terminate_fn)(struct smbd_conn *conn);
+struct ksmbd_conn_ops {
+	int	(*process_fn)(struct ksmbd_conn *conn);
+	int	(*terminate_fn)(struct ksmbd_conn *conn);
 };
 
-struct smbd_transport_ops {
-	int (*prepare)(struct smbd_transport *t);
-	void (*disconnect)(struct smbd_transport *t);
-	int (*read)(struct smbd_transport *t,
+struct ksmbd_transport_ops {
+	int (*prepare)(struct ksmbd_transport *t);
+	void (*disconnect)(struct ksmbd_transport *t);
+	int (*read)(struct ksmbd_transport *t,
 			char *buf, unsigned int size);
-	int (*writev)(struct smbd_transport *t,
+	int (*writev)(struct ksmbd_transport *t,
 			struct kvec *iovs, int niov, int size,
 			bool need_invalidate_rkey, unsigned int remote_key);
-	int (*rdma_read)(struct smbd_transport *t,
+	int (*rdma_read)(struct ksmbd_transport *t,
 				void *buf, unsigned int len, u32 remote_key,
 				u64 remote_offset, u32 remote_len);
-	int (*rdma_write)(struct smbd_transport *t,
+	int (*rdma_write)(struct ksmbd_transport *t,
 				void *buf, unsigned int len, u32 remote_key,
 				u64 remote_offset, u32 remote_len);
 };
 
-struct smbd_transport {
-	struct smbd_conn		*conn;
-	struct smbd_transport_ops	*ops;
+struct ksmbd_transport {
+	struct ksmbd_conn		*conn;
+	struct ksmbd_transport_ops	*ops;
 	struct task_struct		*handler;
 };
 
-#define SMBD_TCP_RECV_TIMEOUT	(7 * HZ)
-#define SMBD_TCP_SEND_TIMEOUT	(5 * HZ)
-#define SMBD_TCP_PEER_SOCKADDR(c)	((struct sockaddr *)&((c)->peer_addr))
+#define KSMBD_TCP_RECV_TIMEOUT	(7 * HZ)
+#define KSMBD_TCP_SEND_TIMEOUT	(5 * HZ)
+#define KSMBD_TCP_PEER_SOCKADDR(c)	((struct sockaddr *)&((c)->peer_addr))
 
-bool smbd_conn_alive(struct smbd_conn *conn);
-void smbd_conn_wait_idle(struct smbd_conn *conn);
+bool ksmbd_conn_alive(struct ksmbd_conn *conn);
+void ksmbd_conn_wait_idle(struct ksmbd_conn *conn);
 
-struct smbd_conn *smbd_conn_alloc(void);
-void smbd_conn_free(struct smbd_conn *conn);
-bool smbd_conn_lookup_dialect(struct smbd_conn *c);
-int smbd_conn_write(struct smbd_work *work);
-int smbd_conn_rdma_read(struct smbd_conn *conn,
+struct ksmbd_conn *ksmbd_conn_alloc(void);
+void ksmbd_conn_free(struct ksmbd_conn *conn);
+bool ksmbd_conn_lookup_dialect(struct ksmbd_conn *c);
+int ksmbd_conn_write(struct ksmbd_work *work);
+int ksmbd_conn_rdma_read(struct ksmbd_conn *conn,
 				void *buf, unsigned int buflen,
 				u32 remote_key, u64 remote_offset,
 				u32 remote_len);
-int smbd_conn_rdma_write(struct smbd_conn *conn,
+int ksmbd_conn_rdma_write(struct ksmbd_conn *conn,
 				void *buf, unsigned int buflen,
 				u32 remote_key, u64 remote_offset,
 				u32 remote_len);
 
-void smbd_conn_enqueue_request(struct smbd_work *work);
-int smbd_conn_try_dequeue_request(struct smbd_work *work);
-void smbd_conn_init_server_callbacks(struct smbd_conn_ops *ops);
+void ksmbd_conn_enqueue_request(struct ksmbd_work *work);
+int ksmbd_conn_try_dequeue_request(struct ksmbd_work *work);
+void ksmbd_conn_init_server_callbacks(struct ksmbd_conn_ops *ops);
 
-int smbd_conn_handler_loop(void *p);
+int ksmbd_conn_handler_loop(void *p);
 
-int smbd_conn_transport_init(void);
-void smbd_conn_transport_destroy(void);
+int ksmbd_conn_transport_init(void);
+void ksmbd_conn_transport_destroy(void);
 
 /*
  * WARNING
@@ -176,43 +176,43 @@ void smbd_conn_transport_destroy(void);
  * This is a hack. We will move status to a proper place once we land
  * a multi-sessions support.
  */
-static inline bool smbd_conn_good(struct smbd_work *work)
+static inline bool ksmbd_conn_good(struct ksmbd_work *work)
 {
-	return work->conn->status == SMBD_SESS_GOOD;
+	return work->conn->status == KSMBD_SESS_GOOD;
 }
 
-static inline bool smbd_conn_need_negotiate(struct smbd_work *work)
+static inline bool ksmbd_conn_need_negotiate(struct ksmbd_work *work)
 {
-	return work->conn->status == SMBD_SESS_NEED_NEGOTIATE;
+	return work->conn->status == KSMBD_SESS_NEED_NEGOTIATE;
 }
 
-static inline bool smbd_conn_need_reconnect(struct smbd_work *work)
+static inline bool ksmbd_conn_need_reconnect(struct ksmbd_work *work)
 {
-	return work->conn->status == SMBD_SESS_NEED_RECONNECT;
+	return work->conn->status == KSMBD_SESS_NEED_RECONNECT;
 }
 
-static inline bool smbd_conn_exiting(struct smbd_work *work)
+static inline bool ksmbd_conn_exiting(struct ksmbd_work *work)
 {
-	return work->conn->status == SMBD_SESS_EXITING;
+	return work->conn->status == KSMBD_SESS_EXITING;
 }
 
-static inline void smbd_conn_set_good(struct smbd_work *work)
+static inline void ksmbd_conn_set_good(struct ksmbd_work *work)
 {
-	work->conn->status = SMBD_SESS_GOOD;
+	work->conn->status = KSMBD_SESS_GOOD;
 }
 
-static inline void smbd_conn_set_need_negotiate(struct smbd_work *work)
+static inline void ksmbd_conn_set_need_negotiate(struct ksmbd_work *work)
 {
-	work->conn->status = SMBD_SESS_NEED_NEGOTIATE;
+	work->conn->status = KSMBD_SESS_NEED_NEGOTIATE;
 }
 
-static inline void smbd_conn_set_need_reconnect(struct smbd_work *work)
+static inline void ksmbd_conn_set_need_reconnect(struct ksmbd_work *work)
 {
-	work->conn->status = SMBD_SESS_NEED_RECONNECT;
+	work->conn->status = KSMBD_SESS_NEED_RECONNECT;
 }
 
-static inline void smbd_conn_set_exiting(struct smbd_work *work)
+static inline void ksmbd_conn_set_exiting(struct ksmbd_work *work)
 {
-	work->conn->status = SMBD_SESS_EXITING;
+	work->conn->status = KSMBD_SESS_EXITING;
 }
 #endif /* __CONNECTION_H__ */
