@@ -40,7 +40,7 @@ static DEFINE_MUTEX(startup_lock);
 
 static struct ksmbd_ida *ida;
 
-static unsigned int ksmbd_tools_pid;
+static unsigned int ksmbd_tools_pid = 0;
 
 #define KSMBD_IPC_MSG_HANDLE(m)	(*(unsigned int *)m)
 
@@ -354,7 +354,7 @@ static int handle_startup_event(struct sk_buff *skb, struct genl_info *info)
 		ksmbd_err("Server reset is in progress, can't start daemon\n");
 		return -EINVAL;
 	}
-
+	printk(KERN_INFO "pid %d\n", ksmbd_tools_pid);
 	if (ksmbd_tools_pid) {
 		if (ksmbd_ipc_heartbeat_request() == 0) {
 			ret = -EINVAL;
@@ -363,6 +363,7 @@ static int handle_startup_event(struct sk_buff *skb, struct genl_info *info)
 
 		ksmbd_err("Reconnect to a new user space daemon\n");
 	} else {
+		ksmbd_err("init config\n");
 		struct ksmbd_startup_request *req;
 
 		req = nla_data(info->attrs[info->genlhdr->cmd]);
