@@ -354,7 +354,7 @@ static int handle_startup_event(struct sk_buff *skb, struct genl_info *info)
 		ksmbd_err("Server reset is in progress, can't start daemon\n");
 		return -EINVAL;
 	}
-	printk(KERN_INFO "pid %d\n", ksmbd_tools_pid);
+
 	if (ksmbd_tools_pid) {
 		if (ksmbd_ipc_heartbeat_request() == 0) {
 			ret = -EINVAL;
