@@ -79,16 +79,16 @@ static bool usb_stop_services()
 static bool usb_start_services()
 {
 	eval("startservice_f", "cron");
-	eval("startservice_f", "samba3_hotplug");
-	eval("startservice_f", "nfs_hotplug");
-	eval("startservice_f", "rsync_hotplug");
-	eval("startservice_f", "dlna_hotplug");
-	eval("startservice_f", "ftpsrv_hotplug");
+	eval("startservice_f", "samba3");
+	eval("startservice_f", "nfs");
+	eval("startservice_f", "rsync");
+	eval("startservice_f", "dlna");
+	eval("startservice_f", "ftpsrv");
 #ifdef HAVE_WEBSERVER
-	eval("startservice_f", "lighttpd_hotplug");
+	eval("startservice_f", "lighttpd");
 #endif
 #ifdef HAVE_TRANSMISSION
-	eval("startservice_f", "transmission_hotplug");
+	eval("startservice_f", "transmission");
 #endif
 	return 0;
 }

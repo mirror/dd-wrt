@@ -143,12 +143,6 @@ void start_lighttpd(void)
 	return;
 }
 
-void start_lighttpd_hotplug(void)
-{
-	network_delay("lighttpd");
-	start_lighttpd();
-}
-
 void stop_lighttpd(void)
 {
 	stop_process("lighttpd", "daemon");

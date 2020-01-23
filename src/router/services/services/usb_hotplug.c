@@ -295,11 +295,11 @@ static int usb_process_path(char *path, char *fs, char *target)
 //      writeprocsys("vm/swappiness","90");
 //      writeprocsys("vm/overcommit_memory","2");
 //      writeprocsys("vm/overcommit_ratio","145");
-	eval("startservice_f", "samba3_hotplug");
-	eval("startservice_f", "nfs_hotplug");
-	eval("startservice_f", "rsync_hotplug");
-	eval("startservice_f", "ftpsrv_hotplug");
-	eval("startservice_f", "dlna_hotplug");
+	eval("startservice_f", "samba3");
+	eval("startservice_f", "nfs");
+	eval("startservice_f", "rsync");
+	eval("startservice_f", "ftpsrv");
+	eval("startservice_f", "dlna");
 	if (ret == 0)
 		run_on_mount(path);
 	return ret;

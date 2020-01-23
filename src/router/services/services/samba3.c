@@ -264,12 +264,6 @@ void start_samba3(void)
 	return;
 }
 
-void start_samba3_hotplug(void)
-{
-	network_delay("smbd");
-	start_samba3();
-}
-
 void stop_samba3(void)
 {
 #ifdef HAVE_SMBD
