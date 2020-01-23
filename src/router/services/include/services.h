@@ -1,5 +1,3 @@
-extern void start_drivers(void);
-
 extern void start_httpd(void);
 extern void stop_httpd(void);
 
