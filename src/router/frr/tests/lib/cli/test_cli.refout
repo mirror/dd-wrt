@@ -307,7 +307,7 @@ test# show run
 
 Current configuration:
 !
-frr version 7.2
+frr version 7.2.1
 frr defaults traditional
 !
 hostname test
@@ -324,7 +324,7 @@ foohost(config)# do show run
 
 Current configuration:
 !
-frr version 7.2
+frr version 7.2.1
 frr defaults traditional
 !
 hostname foohost
