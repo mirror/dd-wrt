@@ -22,6 +22,9 @@ extern void stop_vpn_modules(void);
 extern void start_tftpd(void);
 extern void stop_tftpd(void);
 
+extern void start_drivers(int boot);
+extern void start_drivers_net(void);
+
 extern void start_cron(void);
 extern void stop_cron(void);
 
