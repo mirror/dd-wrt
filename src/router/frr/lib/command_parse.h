@@ -1,8 +1,9 @@
-/* A Bison parser, made by GNU Bison 3.0.4.  */
+/* A Bison parser, made by GNU Bison 3.4.2.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2019 Free Software Foundation,
+   Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,6 +31,9 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
+/* Undocumented macros, especially those whose name start with YY_,
+   are private implementation details.  Do not rely on them.  */
+
 #ifndef YY_CMD_YY_LIB_COMMAND_PARSE_H_INCLUDED
 # define YY_CMD_YY_LIB_COMMAND_PARSE_H_INCLUDED
 /* Debug traces.  */
@@ -48,7 +52,7 @@
 extern int cmd_yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 46 "lib/command_parse.y" /* yacc.c:1909  */
+#line 46 "lib/command_parse.y"
 
   #include "config.h"
 
@@ -71,7 +75,7 @@ extern int cmd_yydebug;
     struct graph_node *start, *end;
   };
 
-#line 75 "lib/command_parse.h" /* yacc.c:1909  */
+#line 79 "lib/command_parse.h"
 
 /* Token type.  */
 #ifndef CMD_YYTOKENTYPE
@@ -102,19 +106,18 @@ extern int cmd_yydebug;
 
 /* Value type.  */
 #if ! defined CMD_YYSTYPE && ! defined CMD_YYSTYPE_IS_DECLARED
-
 union CMD_YYSTYPE
 {
-#line 69 "lib/command_parse.y" /* yacc.c:1909  */
+#line 69 "lib/command_parse.y"
 
   long long number;
   char *string;
   struct graph_node *node;
   struct subgraph subgraph;
 
-#line 116 "lib/command_parse.h" /* yacc.c:1909  */
-};
+#line 119 "lib/command_parse.h"
 
+};
 typedef union CMD_YYSTYPE CMD_YYSTYPE;
 # define CMD_YYSTYPE_IS_TRIVIAL 1
 # define CMD_YYSTYPE_IS_DECLARED 1
@@ -138,7 +141,7 @@ struct CMD_YYLTYPE
 
 int cmd_yyparse (struct parser_ctx *ctx);
 /* "%code provides" blocks.  */
-#line 76 "lib/command_parse.y" /* yacc.c:1909  */
+#line 76 "lib/command_parse.y"
 
   #ifndef FLEX_SCANNER
   #include "command_lex.h"
@@ -159,6 +162,6 @@ int cmd_yyparse (struct parser_ctx *ctx);
     char *docstr_start, *docstr;
   };
 
-#line 163 "lib/command_parse.h" /* yacc.c:1909  */
+#line 166 "lib/command_parse.h"
 
 #endif /* !YY_CMD_YY_LIB_COMMAND_PARSE_H_INCLUDED  */
