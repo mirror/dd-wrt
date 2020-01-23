@@ -344,7 +344,7 @@ static int check_lock_range(struct file *filp,
 		if (flock->fl_end >= start && end >= flock->fl_start) {
 			if (flock->fl_type == F_RDLCK) {
 				if (type == WRITE) {
-					smbd_err("not allow write by shared lock\n");
+					ksmbd_err("not allow write by shared lock\n");
 					error = 1;
 					goto out;
 				}
@@ -352,7 +352,7 @@ static int check_lock_range(struct file *filp,
 				/* check owner in lock */
 				if (flock->fl_file != filp) {
 					error = 1;
-					smbd_err("not allow rw access by exclusive lock from other opens\n");
+					ksmbd_err("not allow rw access by exclusive lock from other opens\n");
 					goto out;
 				}
 			}
