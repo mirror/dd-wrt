@@ -3458,7 +3458,7 @@ void start_wan(int status)
 		if (!nvram_matchi("usb_enable", 1)) {
 			nvram_seti("usb_enable", 1);	//  simply enable it, otherwise 3g might not work
 			nvram_commit();
-			start_drivers();
+			start_drivers(1);
 		}
 
 		stop_dhcpc();
@@ -4372,7 +4372,7 @@ void start_wan(int status)
 		if (!nvram_matchi("usb_enable", 1)) {
 			nvram_seti("usb_enable", 1);	//  simply enable it, otherwise 3g might not work
 			nvram_commit();
-			start_drivers();
+			start_drivers(1);
 		}
 		insmod("ipheth");
 		stop_process("ipheth-loop", "IPhone Pairing daemon");
