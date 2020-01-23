@@ -1,10 +1,16 @@
-frr (7.2-0) UNRELEASED; urgency=medium
+frr (7.2.1-0) UNRELEASED; urgency=medium
 
   * autoconf changelog entry -- for git autobuilds only.
     remove and replace when creating releases!
     (tools/tarsource.sh will handle this)
 
- -- FRRouting-Dev <dev@lists.frrouting.org>  Thu, 17 Oct 2019 16:43:00 +0200
+ -- FRRouting-Dev <dev@lists.frrouting.org>  Fri, 17 Jan 2020 16:41:00 +0200
+
+frr (7.2-1) testing; urgency=medium
+
+  * upstream 7.2.1 release
+
+ -- Martin Winter <mwinter@opensourcerouting.org>  Fri, 17 Jan 2020 16:40:00 +0200
 
 frr (7.2-0) testing; urgency=medium
 
