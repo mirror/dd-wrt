@@ -363,7 +363,6 @@ static int handle_startup_event(struct sk_buff *skb, struct genl_info *info)
 
 		ksmbd_err("Reconnect to a new user space daemon\n");
 	} else {
-		ksmbd_err("init config\n");
 		struct ksmbd_startup_request *req;
 
 		req = nla_data(info->attrs[info->genlhdr->cmd]);
