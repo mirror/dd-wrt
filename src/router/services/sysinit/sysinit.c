@@ -3072,7 +3072,7 @@ static void set_led_usbport(char *led, char *ports)
 
 }
 
-void start_drivers(void)
+void start_drivers(int boot)
 {
 	/*
 	 * #ifdef HAVE_USB //load usb driver. we will add samba server, ftp
@@ -3120,7 +3120,7 @@ void start_drivers(void)
 //ahci
 
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
-	} else {
+	} else if (!boot) {
 		eval("stopservice", "cron");
 		eval("stopservice", "samba3");
 		eval("stopservice", "nfs");
@@ -3269,6 +3269,11 @@ void start_drivers(void)
 
 	}
 #endif
+}
+
+void start_drivers_net(void)
+{
+	start_drivers(0);
 }
 
 /*

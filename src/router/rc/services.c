@@ -1357,7 +1357,7 @@ static void handle_dhcp_release(void)
 #ifdef HAVE_USB
 static void handle_usbdrivers(void)
 {
-	restart("drivers");	//stop is not yet implemented but we dont care about yet
+	restart("drivers_net");	//stop is not yet implemented but we dont care about yet
 #ifdef HAVE_P910ND
 	restart("printer");
 #endif

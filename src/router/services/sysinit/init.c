@@ -405,6 +405,7 @@ void start_init_start(void)
 	stop_resetbutton();
 	start_resetbutton();
 #endif
+	start_drivers(1);
 	eval("startservice_f", "modules_wait");
 
 }

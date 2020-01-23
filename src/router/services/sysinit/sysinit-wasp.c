@@ -762,8 +762,8 @@ void start_sysinit(void)
 #define ARCHER_C25_74HC_GPIO_LED_LAN4		(ARCHER_C25_74HC_GPIO_BASE + 3)
 */
 
-	set_gpio(21, 0); // enable output
-	set_gpio(19, 1); // reset 
+	set_gpio(21, 0);	// enable output
+	set_gpio(19, 1);	// reset 
 	setEthLED(125, "eth1");
 	setSwitchLED(120, 0x10);	// lan1
 	setSwitchLED(121, 0x08);	// lan2

@@ -247,7 +247,7 @@ void start_sysinit(void)
 	nvram_set("wl0_ifname", "ath0");
 
 #ifdef HAVE_ERC
-	start_drivers();
+	start_drivers(1);
 	if (nvram_matchi("radiooff_boot_off", 0)) {
 		set_gpio(0, 1);
 		set_gpio(1, 1);
