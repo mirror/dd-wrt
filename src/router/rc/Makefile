@@ -832,6 +832,9 @@ endif
 ifeq ($(CONFIG_SAMBA3),y)
 CFLAGS += -DHAVE_SAMBA3
 endif
+ifeq ($(CONFIG_SMBD),y)
+CFLAGS += -DHAVE_SMBD
+endif
 ifeq ($(CONFIG_NFS),y)
 CFLAGS += -DHAVE_NFS
 endif

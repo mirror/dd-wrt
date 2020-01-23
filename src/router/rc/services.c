@@ -484,7 +484,7 @@ static void handle_index(void)
 #ifdef HAVE_NOCAT
 	restart_f("splashd");
 #endif
-#ifdef HAVE_SAMBA3
+#ifdef HAVE_SMBD
 	restart_f("samba3");
 #endif
 
@@ -602,7 +602,7 @@ static void handle_hotspot(void)
 #endif
 	//since start/stop is faster now we need to sleep, otherwise httpd is stopped/started while response is sent to client
 	restart_fdelay("httpd", 2);	// httpd will not accept connection anymore
-#ifdef HAVE_SAMBA3
+#ifdef HAVE_SMBD
 	restart_f("samba3");
 #endif
 
@@ -919,7 +919,7 @@ static void handle_pppoe(void)
 	start_service_f("nas");
 #endif
 	start_service_f("radio_timer");
-#ifdef HAVE_SAMBA3
+#ifdef HAVE_SMBD
 	restart_f("samba3");
 #endif
 
@@ -1241,7 +1241,7 @@ static void handle_wireless(void)
 #else
 	restart_fdelay("httpd", 4);	// httpd will not accept connection anymore on wan/lan ip changes changes
 #endif
-#ifdef HAVE_SAMBA3
+#ifdef HAVE_SMBD
 	restart_f("samba3");
 #endif
 
@@ -1356,7 +1356,7 @@ static void handle_wireless_2(void)
 #ifdef HAVE_IPV6
 	restart_f("dhcp6c");
 #endif
-#ifdef HAVE_SAMBA3
+#ifdef HAVE_SMBD
 	restart_f("samba3");
 #endif
 
