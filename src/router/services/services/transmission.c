@@ -284,12 +284,6 @@ void start_transmission(void)
 	return;
 }
 
-void start_transmission_hotplug(void)
-{
-	network_delay("transmission");
-	start_transmission();
-}
-
 void stop_transmission(void)
 {
 	stop_process("transmissiond", "daemon");

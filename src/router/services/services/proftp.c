@@ -200,12 +200,6 @@ void start_ftpsrv(void)
 	return;
 }
 
-void start_ftpsrv_hotplug(void)
-{
-	network_delay("proftpd");
-	start_ftpsrv();
-}
-
 void stop_ftpsrv(void)
 {
 	unlink("/tmp/proftpd/etc/passwd");
