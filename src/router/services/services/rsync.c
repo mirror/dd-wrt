@@ -86,12 +86,6 @@ void start_rsync(void)
 	return;
 }
 
-void start_rsync_hotplug(void)
-{
-	network_delay("rsyncd");
-	start_rsync();
-}
-
 void stop_rsync(void)
 {
 	stop_process("rsyncd", "rsync daemon");

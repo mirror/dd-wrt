@@ -137,12 +137,6 @@ void start_dlna(void)
 	return;
 }
 
-void start_dlna_hotplug(void)
-{
-	network_delay("minidlna");
-	start_dlna();
-}
-
 void start_dlna_rescan(void)
 {
 	if (nvram_match("dlna_enable", "1") && nvram_match("dlna_rescan", "1")) {

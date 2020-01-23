@@ -87,12 +87,6 @@ void start_nfs(void)
 	return;
 }
 
-void start_nfs_hotplug(void)
-{
-	network_delay("nfsd");
-	start_nfs();
-}
-
 void stop_nfs(void)
 {
 	eval("exportfs", "-a", "-u");
