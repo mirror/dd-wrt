@@ -8,15 +8,15 @@
 #ifndef __USMBD_CONFIG_H__
 #define __USMBD_CONFIG_H__
 
-#include <glib.h>
+#include <usmbdtools.h>
 
 struct smbconf_group {
 	char			*name;
-	GHashTable		*kv;
+	struct LIST		*kv;
 };
 
 struct smbconf_parser {
-	GHashTable		*groups;
+	struct LIST		*groups;
 	struct smbconf_group	*current;
 };
 

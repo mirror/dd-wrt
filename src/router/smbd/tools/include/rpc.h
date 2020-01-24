@@ -9,7 +9,6 @@
 #define __USMBD_RPC_H__
 
 #include <linux/types.h>
-#include <glib.h>
 
 #define USMBD_DCERPC_LITTLE_ENDIAN	(1 << 0)
 #define USMBD_DCERPC_ALIGN2		(1 << 1)
@@ -251,27 +250,27 @@ struct usmbd_dcerpc {
 	 * restriction
 	 */
 	int			(*entry_size)(struct usmbd_dcerpc *dce,
-					      gpointer entry);
+					      void *entry);
 	/*
 	 * Entry representation under the given container level
 	 * restriction for array representation
 	 */
 	int			(*entry_rep)(struct usmbd_dcerpc *dce,
-					      gpointer entry);
+					      void *entry);
 	/*
 	 * Entry data under the given container level restriction
 	 * for array representation
 	 */
 	int			(*entry_data)(struct usmbd_dcerpc *dce,
-					      gpointer entry);
+					      void *entry);
 };
 
 struct usmbd_rpc_pipe {
-	unsigned int		id;
+	unsigned int	id;
 
 	int			num_entries;
 	int			num_processed;
-	GArray			*entries;
+	struct LIST		*entries;
 
 	struct usmbd_dcerpc	*dce;
 

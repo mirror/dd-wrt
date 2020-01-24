@@ -7,7 +7,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <glib.h>
 #include <linux/usmbd_server.h>
 
 #include <management/tree_conn.h>
@@ -50,7 +49,7 @@ int tcm_handle_tree_connect(struct usmbd_tree_connect_request *req,
 
 	if (sm_check_sessions_capacity(req->session_id)) {
 		resp->status = USMBD_TREE_CONN_STATUS_TOO_MANY_SESSIONS;
-		pr_debug("treecon: Too many active sessions\n");
+		pr_debug("treecon: Too many active sessions %d\n", req->session_id);
 		goto out_error;
 	}
 

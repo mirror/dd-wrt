@@ -8,7 +8,7 @@
 #ifndef __MANAGEMENT_SHARE_H__
 #define __MANAGEMENT_SHARE_H__
 
-#include <glib.h>
+#include <usmbdtools.h>
 
 
 enum share_users {
@@ -44,7 +44,7 @@ struct usmbd_share {
 	int		max_connections;
 	int		num_connections;
 
-	GRWLock		update_lock;
+	pthread_rwlock_t	update_lock;
 	int		ref_count;
 
 	unsigned short	create_mask;
@@ -61,19 +61,19 @@ struct usmbd_share {
 
 	char		*guest_account;
 
-	GHashTable	*maps[USMBD_SHARE_USERS_MAX];
+	struct LIST	*maps[USMBD_SHARE_USERS_MAX];
 	/*
 	 * FIXME
 	 * We need to support IP ranges, netmasks, etc.
 	 * This is just a silly hostname matching, hence
 	 * these two are not in ->maps[].
 	 */
-	GHashTable	*hosts_allow_map;
+	struct LIST	*hosts_allow_map;
 	/* Deny access */
-	GHashTable	*hosts_deny_map;
+	struct LIST	*hosts_deny_map;
 
 	/* One lock to rule them all [as of now] */
-	GRWLock		maps_lock;
+	pthread_rwlock_t maps_lock;
 
 	char		*comment;
 };
@@ -158,10 +158,8 @@ int shm_lookup_hosts_map(struct usmbd_share *share,
 int shm_open_connection(struct usmbd_share *share);
 int shm_close_connection(struct usmbd_share *share);
 
-typedef void (*walk_shares)(gpointer key,
-			    gpointer value,
-			    gpointer user_data);
-void for_each_usmbd_share(walk_shares cb, gpointer user_data);
+typedef void (*walk_shares)(void *item, unsigned long long id, void *user_data);
+void for_each_usmbd_share(walk_shares cb, void *user_data);
 
 struct usmbd_share_config_response;
 
