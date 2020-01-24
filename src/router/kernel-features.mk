@@ -312,6 +312,8 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_CRYPTO_SHA1 is not set/CONFIG_CRYPTO_SHA1=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CRYPTO_AES is not set/CONFIG_CRYPTO_AES=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CRYPTO_ARC4 is not set/CONFIG_CRYPTO_ARC4=m/g' $(LINUXDIR)/.config; \
+	else \
+		echo "# CONFIG_RPCSEC_GSS_KRB5 is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_VSOCKETS)" = "y" ]; then \
 		sed -i 's/\# CONFIG_VSOCKETS is not set/CONFIG_VSOCKETS=m/g' $(LINUXDIR)/.config; \
