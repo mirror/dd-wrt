@@ -5,7 +5,6 @@
  *   linux-cifsd-devel@lists.sourceforge.net
  */
 
-#include <glib.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -34,7 +33,7 @@ static char *new_group_name(char *name)
 	if (strchr(name, '['))
 		return name;
 
-	gn = g_malloc(strlen(name) + 3);
+	gn = malloc(strlen(name) + 3);
 	if (gn)
 		sprintf(gn, "[%s]", name);
 	return gn;
@@ -44,7 +43,7 @@ static char *aux_group_name(char *name)
 {
 	char *gn;
 
-	gn = g_malloc(strlen(name) + 3 + strlen(AUX_GROUP_PREFIX));
+	gn = malloc(strlen(name) + 3 + strlen(AUX_GROUP_PREFIX));
 	if (gn)
 		sprintf(gn, "[%s%s]", AUX_GROUP_PREFIX, name);
 	return gn;
@@ -85,9 +84,9 @@ static void __write(void)
 	}
 }
 
-static void __write_share(gpointer key, gpointer value, gpointer buf)
+static void __write_share(void *value, unsigned long long key, void *buf)
 {
-	char *k = (char *)key;
+	char *k = (char *)list_fromkey(key);
 	char *v = (char *)value;
 
 	wsz = snprintf(wbuf, sizeof(wbuf), "\t%s = %s\n", k, v);
@@ -106,10 +105,10 @@ static void write_share(struct smbconf_group *g)
 
 	wsz = snprintf(wbuf, sizeof(wbuf), "[%s]\n", g->name);
 	__write();
-	g_hash_table_foreach(g->kv, __write_share, NULL);
+	list_foreach(&g->kv, __write_share, NULL);
 }
 
-static void write_share_cb(gpointer key, gpointer value, gpointer share_data)
+static void write_share_cb(void *value, unsigned long long key, void *share_data)
 {
 	struct smbconf_group *g = (struct smbconf_group *)value;
 
@@ -120,13 +119,13 @@ static void write_share_cb(gpointer key, gpointer value, gpointer share_data)
 		write_share(g);
 }
 
-static void write_remove_share_cb(gpointer key,
-				  gpointer value,
-				  gpointer name)
+static void write_remove_share_cb(void *value,
+				  unsigned long long key,
+				  void *name)
 {
 	struct smbconf_group *g = (struct smbconf_group *)value;
 
-	if (!g_ascii_strcasecmp(g->name, name)) {
+	if (!strcasecmp(g->name, name)) {
 		pr_info("share '%s' removed\n", g->name);
 		return;
 	}
@@ -134,26 +133,23 @@ static void write_remove_share_cb(gpointer key,
 	write_share(g);
 }
 
-static void update_share_cb(gpointer key,
-			    gpointer value,
-			    gpointer g)
+static void update_share_cb(void *value,
+			    unsigned long long key,
+			    void *g)
 {
-	char *nk, *nv;
-
-	nk = g_strdup(key);
-	nv = g_strdup(value);
-	if (!nk || !nv)
+	struct LIST *list = (struct LIST *) g;
+	if (!key || !value)
 		exit(EXIT_FAILURE);
 
 	/* This will call .dtor for already existing key/value pairs */
-	g_hash_table_insert(g, nk, nv);
+	list_add_str(&list, value, list_fromkey(key));
 }
 
 int command_add_share(char *smbconf, char *name, char *opts)
 {
 	char *new_name = NULL;
 
-	if (g_hash_table_lookup(parser.groups, name)) {
+	if (list_get(&parser.groups, list_tokey(name))) {
 		pr_err("Share already exists: %s\n", name);
 		return -EEXIST;
 	}
@@ -164,13 +160,13 @@ int command_add_share(char *smbconf, char *name, char *opts)
 
 	if (__open_smbconf(smbconf))
 		goto error;
-	g_hash_table_foreach(parser.groups, write_share_cb, NULL);
+	list_foreach(&parser.groups, write_share_cb, NULL);
 	close(conf_fd);
-	g_free(new_name);
+	free(new_name);
 	return 0;
 
 error:
-	g_free(new_name);
+	free(new_name);
 	return -EINVAL;
 }
 
@@ -180,7 +176,7 @@ int command_update_share(char *smbconf, char *name, char *opts)
 	struct smbconf_group *update_group;
 	char *aux_name = NULL;
 
-	existing_group = g_hash_table_lookup(parser.groups, name);
+	existing_group = list_get(&parser.groups, list_tokey(name));
 	if (!existing_group) {
 		pr_err("Unknown share: %s\n", name);
 		goto error;
@@ -192,26 +188,26 @@ int command_update_share(char *smbconf, char *name, char *opts)
 
 	/* get rid of [] */
 	sprintf(aux_name, "%s%s", AUX_GROUP_PREFIX, name);
-	update_group = g_hash_table_lookup(parser.groups, aux_name);
+	update_group = list_get(&parser.groups, list_tokey(aux_name));
 	if (!update_group) {
 		pr_err("Cannot find the external group\n");
 		goto error;
 	}
 
-	g_hash_table_foreach(update_group->kv,
+	list_foreach(&update_group->kv,
 			     update_share_cb,
 			     existing_group->kv);
 
 	if (__open_smbconf(smbconf))
 		goto error;
 
-	g_hash_table_foreach(parser.groups, write_share_cb, NULL);
+	list_foreach(&parser.groups, write_share_cb, NULL);
 	close(conf_fd);
-	g_free(aux_name);
+	free(aux_name);
 	return 0;
 
 error:
-	g_free(aux_name);
+	free(aux_name);
 	return -EINVAL;
 }
 
@@ -220,9 +216,9 @@ int command_del_share(char *smbconf, char *name)
 	if (__open_smbconf(smbconf))
 		return -EINVAL;
 
-	g_hash_table_foreach(parser.groups,
+	list_foreach(&parser.groups,
 			     write_remove_share_cb,
-			     name);
+			     (void *)name);
 	close(conf_fd);
 	return 0;
 }

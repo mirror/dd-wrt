@@ -10,7 +10,6 @@
 
 #include <sys/types.h>
 #include <pwd.h>
-#include <glib.h>
 
 struct usmbd_user {
 	char		*name;
@@ -24,7 +23,7 @@ struct usmbd_user {
 
 	int		ref_count;
 	int		flags;
-	GRWLock		update_lock;
+	pthread_rwlock_t	update_lock;
 };
 
 static inline void set_user_flag(struct usmbd_user *user, int bit)
@@ -50,10 +49,10 @@ int usm_add_update_user_from_pwdentry(char *data);
 void usm_destroy(void);
 int usm_init(void);
 
-typedef void (*walk_users)(gpointer key,
-			   gpointer value,
-			   gpointer user_data);
-void for_each_usmbd_user(walk_users cb, gpointer user_data);
+typedef void (*walk_users)(void *value,
+			   unsigned long long key,
+			   void *user_data);
+void for_each_usmbd_user(walk_users cb, void *user_data);
 
 struct usmbd_login_request;
 struct usmbd_login_response;

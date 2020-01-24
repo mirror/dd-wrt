@@ -7,7 +7,6 @@
 
 #include <memory.h>
 #include <endian.h>
-#include <glib.h>
 #include <errno.h>
 #include <linux/usmbd_server.h>
 
@@ -40,19 +39,19 @@ static int __share_type(struct usmbd_share *share)
 {
 	if (test_share_flag(share, USMBD_SHARE_FLAG_PIPE))
 		return SHARE_TYPE_IPC;
-	if (!g_ascii_strncasecmp(share->name, "IPC", strlen("IPC")))
+	if (!strncasecmp(share->name, "IPC", strlen("IPC")))
 		return SHARE_TYPE_IPC;
 	return SHARE_TYPE_DISKTREE;
 }
 
-static int __share_entry_size_ctr0(struct usmbd_dcerpc *dce, gpointer entry)
+static int __share_entry_size_ctr0(struct usmbd_dcerpc *dce, void *entry)
 {
 	struct usmbd_share *share = entry;
 
 	return strlen(share->name) * 2 + 4 * sizeof(__u32);
 }
 
-static int __share_entry_size_ctr1(struct usmbd_dcerpc *dce, gpointer entry)
+static int __share_entry_size_ctr1(struct usmbd_dcerpc *dce, void *entry)
 {
 	struct usmbd_share *share = entry;
 	int sz = 0;
@@ -71,13 +70,13 @@ static int __share_entry_size_ctr1(struct usmbd_dcerpc *dce, gpointer entry)
  * An embedded reference pointer is represented in two parts, a 4 octet
  * value in place and a possibly deferred representation of the referent.
  */
-static int __share_entry_rep_ctr0(struct usmbd_dcerpc *dce, gpointer entry)
+static int __share_entry_rep_ctr0(struct usmbd_dcerpc *dce, void *entry)
 {
 	dce->num_pointers++;
 	return ndr_write_int32(dce, dce->num_pointers); /* ref pointer */
 }
 
-static int __share_entry_rep_ctr1(struct usmbd_dcerpc *dce, gpointer entry)
+static int __share_entry_rep_ctr1(struct usmbd_dcerpc *dce, void *entry)
 {
 	struct usmbd_share *share = entry;
 	int ret;
@@ -90,14 +89,14 @@ static int __share_entry_rep_ctr1(struct usmbd_dcerpc *dce, gpointer entry)
 	return ret;
 }
 
-static int __share_entry_data_ctr0(struct usmbd_dcerpc *dce, gpointer entry)
+static int __share_entry_data_ctr0(struct usmbd_dcerpc *dce, void *entry)
 {
 	struct usmbd_share *share = entry;
 
 	return ndr_write_vstring(dce, share->name);
 }
 
-static int __share_entry_data_ctr1(struct usmbd_dcerpc *dce, gpointer entry)
+static int __share_entry_data_ctr1(struct usmbd_dcerpc *dce, void *entry)
 {
 	struct usmbd_share *share = entry;
 	int ret;
@@ -108,13 +107,13 @@ static int __share_entry_data_ctr1(struct usmbd_dcerpc *dce, gpointer entry)
 }
 
 static int __share_entry_null_rep_ctr0(struct usmbd_dcerpc *dce,
-				       gpointer entry)
+				       void *entry)
 {
 	return ndr_write_int32(dce, 0); /* ref pointer */
 }
 
 static int __share_entry_null_rep_ctr1(struct usmbd_dcerpc *dce,
-				       gpointer entry)
+				       void *entry)
 {
 	int ret;
 
@@ -128,8 +127,9 @@ static int __share_entry_processed(struct usmbd_rpc_pipe *pipe, int i)
 {
 	struct usmbd_share *share;
 
-	share = g_array_index(pipe->entries,  gpointer, i);
-	pipe->entries = g_array_remove_index(pipe->entries, i);
+	share = list_get(&pipe->entries,  i);
+
+	list_remove_dec(&pipe->entries, i);
 	pipe->num_entries--;
 	pipe->num_processed++;
 	put_usmbd_share(share);
@@ -137,7 +137,7 @@ static int __share_entry_processed(struct usmbd_rpc_pipe *pipe, int i)
 	return 0;
 }
 
-static void __enum_all_shares(gpointer key, gpointer value, gpointer user_data)
+static void __enum_all_shares(void *value, unsigned long long id, void *user_data)
 {
 	struct usmbd_rpc_pipe *pipe = (struct usmbd_rpc_pipe *)user_data;
 	struct usmbd_share *share = (struct usmbd_share *)value;
@@ -154,8 +154,7 @@ static void __enum_all_shares(gpointer key, gpointer value, gpointer user_data)
 		put_usmbd_share(share);
 		return;
 	}
-
-	pipe->entries = g_array_append_val(pipe->entries, share);
+	list_append(&pipe->entries, share);
 	pipe->num_entries++;
 }
 
@@ -199,7 +198,7 @@ static int srvsvc_share_get_info_invoke(struct usmbd_rpc_pipe *pipe,
 		}
 	}
 
-	pipe->entries = g_array_append_val(pipe->entries, share);
+	list_append(&pipe->entries, share);
 	pipe->num_entries++;
 	pipe->entry_processed = __share_entry_processed;
 	return 0;
@@ -327,8 +326,9 @@ static int srvsvc_clear_headers(struct usmbd_rpc_pipe *pipe,
 		return 0;
 
 	ndr_free_uniq_vsting_ptr(&pipe->dce->si_req.server_name);
-	if (pipe->dce->req_hdr.opnum == SRVSVC_OPNUM_GET_SHARE_INFO)
+	if (pipe->dce->req_hdr.opnum == SRVSVC_OPNUM_GET_SHARE_INFO) {
 		ndr_free_vstring_ptr(&pipe->dce->si_req.share_name);
+	}
 
 	return 0;
 }
@@ -362,15 +362,17 @@ static int srvsvc_share_info_return(struct usmbd_rpc_pipe *pipe)
 		rpc_pipe_reset(pipe);
 	}
 
-	if (dce->req_hdr.opnum == SRVSVC_OPNUM_GET_SHARE_INFO)
+	if (dce->req_hdr.opnum == SRVSVC_OPNUM_GET_SHARE_INFO) {
 		status = srvsvc_share_get_info_return(pipe);
-	if (dce->req_hdr.opnum == SRVSVC_OPNUM_SHARE_ENUM_ALL)
+	}
+	if (dce->req_hdr.opnum == SRVSVC_OPNUM_SHARE_ENUM_ALL) {
 		status = srvsvc_share_enum_all_return(pipe);
+	}
 
 	if (rpc_restricted_context(dce->rpc_req))
 		status = USMBD_RPC_EACCESS_DENIED;
 
-	srvsvc_clear_headers(pipe, status);
+	//srvsvc_clear_headers(pipe, status);
 
 	/*
 	 * [out] DWORD Return value/code

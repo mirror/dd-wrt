@@ -23,11 +23,58 @@
 #include <time.h>
 #include <poll.h>
 #include <getopt.h>
-#include <glib.h>
+#include <pthread.h>
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+#define _S_NEW(struct_type, n_structs, func) \
+        ((struct_type *) func ((n_structs), sizeof (struct_type)))
+#define s_new(struct_type, n_structs)			_S_NEW (struct_type, n_structs, calloc)
+
+char *ascii_strdown(char *str, size_t len);
+
+int atomic_int_add(volatile int *atomic, int val);
+void atomic_int_inc (volatile int *atomic);
+
+int atomic_int_compare_and_exchange (volatile int *atomic,
+                                     int           oldval,
+                                     int           newval);
+
+#define KEY_ID 0x0
+#define KEY_STRING 0x1
+struct LIST {
+	struct LIST *prev;
+	struct LIST *next;
+	int type;
+	unsigned long long id;
+	char *keystr;
+	void *item;
+};
+
+struct LIST *list_init(struct LIST **list);
+long long list_maxid(struct LIST **list);
+int list_add_str(struct LIST **list, void *item, char *str);
+int list_add(struct LIST **list, void *item, unsigned long long id);
+void list_append(struct LIST **list, void *item);
+int list_remove(struct LIST **list, unsigned long long id);
+int list_remove_dec(struct LIST **list, unsigned long long id);
+void *list_get(struct LIST **list, unsigned long long id);
+void list_clear(struct LIST **list);
+int list_foreach(struct LIST **list, void (*func)(void *item, unsigned long long id, void *user_data), void *user_data);
+
+static unsigned long long list_tokey(void *ptr)
+{
+size_t p = (size_t)ptr;
+return p;
+}
+
+static void *list_fromkey(unsigned long long key)
+{
+size_t p = key;
+return (void *)p;
+}
 
 struct smbconf_global {
 	int			flags;
@@ -141,12 +188,12 @@ void pr_hex_dump(const void *mem, size_t sz);
 char *base64_encode(unsigned char *src, size_t srclen);
 unsigned char *base64_decode(char const *src, size_t *dstlen);
 
-gchar *usmbd_gconvert(const gchar *str,
-		      gssize       str_len,
+char *usmbd_gconvert(const char *str,
+		      size_t       str_len,
 		      int          to_codeset,
 		      int          from_codeset,
-		      gsize       *bytes_read,
-		      gsize       *bytes_written);
+		      size_t       *bytes_read,
+		      size_t       *bytes_written);
 
 enum charset_idx {
 	USMBD_CHARSET_UTF8		= 0,

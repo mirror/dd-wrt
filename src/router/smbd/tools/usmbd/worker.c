@@ -5,7 +5,8 @@
  *   linux-cifsd-devel@lists.sourceforge.net
  */
 #include <memory.h>
-#include <glib.h>
+#include <pthread.h>
+#include <semaphore.h>
 #include <errno.h>
 #include <linux/usmbd_server.h>
 
@@ -19,7 +20,7 @@
 #include <management/tree_conn.h>
 
 #define MAX_WORKER_THREADS	4
-static GThreadPool *pool;
+static sem_t semaphore;
 
 #define VALID_IPC_MSG(m, t)					\
 	({							\
@@ -193,7 +194,7 @@ out:
 	return 0;
 }
 
-static void worker_pool_fn(gpointer event, gpointer user_data)
+static void *worker_pool_fn(void *event)
 {
 	struct usmbd_ipc_msg *msg = (struct usmbd_ipc_msg *)event;
 
@@ -232,38 +233,34 @@ static void worker_pool_fn(gpointer event, gpointer user_data)
 	}
 
 	ipc_msg_free(msg);
+	sem_post(&semaphore);
+	return NULL;
 }
 
 int wp_ipc_msg_push(struct usmbd_ipc_msg *msg)
 {
-	return g_thread_pool_push(pool, msg, NULL);
-}
+	pthread_attr_t attr;
+	sem_wait(&semaphore);
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+	pthread_t thread;
+	if (pthread_create(&thread, &attr, worker_pool_fn, msg) != 0) {
+	    pthread_attr_destroy(&attr);
+	    sem_post(&semaphore);
+	    pr_err("error while creating worker thread\n");
+	    return -1;
+	}
+	pthread_attr_destroy(&attr);
+	return 0;
 
-void wp_destroy(void)
-{
-	if (pool)
-		g_thread_pool_free(pool, 1, 1);
 }
 
 int wp_init(void)
 {
-	GError *err;
+	return sem_init(&semaphore, 0, MAX_WORKER_THREADS);
+}
 
-	pool = g_thread_pool_new(worker_pool_fn,
-				 NULL,
-				 MAX_WORKER_THREADS,
-				 0,
-				 &err);
-	if (!pool) {
-		if (err) {
-			pr_err("Can't create pool: %s\n", err->message);
-			g_error_free(err);
-		}
-		goto out_error;
-	}
-
-	return 0;
-out_error:
-	wp_destroy();
-	return -ENOMEM;
+void wp_destroy(void) 
+{
+	sem_destroy(&semaphore);
 }

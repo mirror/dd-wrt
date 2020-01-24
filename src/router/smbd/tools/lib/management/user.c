@@ -7,14 +7,14 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <glib.h>
+#include <pthread.h>
 #include <linux/usmbd_server.h>
 
 #include <management/user.h>
 #include <usmbdtools.h>
 
-static GHashTable	*users_table;
-static GRWLock		users_table_lock;
+static struct LIST *users_table;
+static pthread_rwlock_t users_table_lock;
 
 static void kill_usmbd_user(struct usmbd_user *user)
 {
@@ -23,7 +23,7 @@ static void kill_usmbd_user(struct usmbd_user *user)
 	free(user->name);
 	free(user->pass_b64);
 	free(user->pass);
-	g_rw_lock_clear(&user->update_lock);
+	pthread_rwlock_destroy(&user->update_lock);
 	free(user);
 }
 
@@ -31,10 +31,10 @@ static int __usm_remove_user(struct usmbd_user *user)
 {
 	int ret = -EINVAL;
 
-	g_rw_lock_writer_lock(&users_table_lock);
-	if (g_hash_table_remove(users_table, user->name))
+	pthread_rwlock_wrlock(&users_table_lock);
+	if (list_remove(&users_table, list_tokey(user->name)))
 		ret = 0;
-	g_rw_lock_writer_unlock(&users_table_lock);
+	pthread_rwlock_unlock(&users_table_lock);
 
 	if (!ret)
 		kill_usmbd_user(user);
@@ -43,12 +43,12 @@ static int __usm_remove_user(struct usmbd_user *user)
 
 struct usmbd_user *get_usmbd_user(struct usmbd_user *user)
 {
-	g_rw_lock_writer_lock(&user->update_lock);
+	pthread_rwlock_wrlock(&user->update_lock);
 	if (user->ref_count != 0)
 		user->ref_count++;
 	else
 		user = NULL;
-	g_rw_lock_writer_unlock(&user->update_lock);
+	pthread_rwlock_unlock(&user->update_lock);
 	return user;
 }
 
@@ -59,10 +59,10 @@ void put_usmbd_user(struct usmbd_user *user)
 	if (!user)
 		return;
 
-	g_rw_lock_writer_lock(&user->update_lock);
+	pthread_rwlock_wrlock(&user->update_lock);
 	user->ref_count--;
 	drop = !user->ref_count;
-	g_rw_lock_writer_unlock(&user->update_lock);
+	pthread_rwlock_unlock(&user->update_lock);
 
 	if (!drop)
 		return;
@@ -80,7 +80,7 @@ static struct usmbd_user *new_usmbd_user(char *name, char *pwd)
 	if (!user)
 		return NULL;
 
-	g_rw_lock_clear(&user->update_lock);
+	pthread_rwlock_destroy(&user->update_lock);
 	user->name = name;
 	user->pass_b64 = pwd;
 	user->ref_count = 1;
@@ -97,37 +97,37 @@ static struct usmbd_user *new_usmbd_user(char *name, char *pwd)
 	return user;
 }
 
-static void free_hash_entry(gpointer k, gpointer u, gpointer user_data)
+static void free_hash_entry(void *u,unsigned long long id, void *user_data)
 {
 	kill_usmbd_user(u);
 }
 
 static void usm_clear_users(void)
 {
-	g_hash_table_foreach(users_table, free_hash_entry, NULL);
+	list_foreach(&users_table, free_hash_entry, NULL);
 }
 
 void usm_destroy(void)
 {
 	if (users_table) {
 		usm_clear_users();
-		g_hash_table_destroy(users_table);
+		list_clear(&users_table);
 	}
-	g_rw_lock_clear(&users_table_lock);
+	pthread_rwlock_destroy(&users_table_lock);
 }
 
 int usm_init(void)
 {
-	users_table = g_hash_table_new(g_str_hash, g_str_equal);
+	list_init(&users_table);
 	if (!users_table)
 		return -ENOMEM;
-	g_rw_lock_init(&users_table_lock);
+	pthread_rwlock_init(&users_table_lock, NULL);
 	return 0;
 }
 
 static struct usmbd_user *__usm_lookup_user(char *name)
 {
-	return g_hash_table_lookup(users_table, name);
+	return list_get(&users_table, list_tokey(name));
 }
 
 struct usmbd_user *usm_lookup_user(char *name)
@@ -137,14 +137,14 @@ struct usmbd_user *usm_lookup_user(char *name)
 	if (!name)
 		return NULL;
 
-	g_rw_lock_reader_lock(&users_table_lock);
+	pthread_rwlock_rdlock(&users_table_lock);
 	user = __usm_lookup_user(name);
 	if (user) {
 		ret = get_usmbd_user(user);
 		if (!ret)
 			user = NULL;
 	}
-	g_rw_lock_reader_unlock(&users_table_lock);
+	pthread_rwlock_unlock(&users_table_lock);
 	return user;
 }
 
@@ -159,19 +159,18 @@ int usm_add_new_user(char *name, char *pwd)
 		return -ENOMEM;
 	}
 
-	g_rw_lock_writer_lock(&users_table_lock);
+	pthread_rwlock_wrlock(&users_table_lock);
 	if (__usm_lookup_user(name)) {
-		g_rw_lock_writer_unlock(&users_table_lock);
+		pthread_rwlock_unlock(&users_table_lock);
 		pr_info("User already exists %s\n", name);
 		kill_usmbd_user(user);
 		return 0;
 	}
-
-	if (!g_hash_table_insert(users_table, user->name, user)) {
+	if (!list_add_str(&users_table, user, user->name)) {
 		kill_usmbd_user(user);
 		ret = -EINVAL;
 	}
-	g_rw_lock_writer_unlock(&users_table_lock);
+	pthread_rwlock_unlock(&users_table_lock);
 	return ret;
 }
 
@@ -189,8 +188,8 @@ int usm_add_update_user_from_pwdentry(char *data)
 	}
 
 	*pos = 0x00;
-	name = g_strdup(data);
-	pwd = g_strdup(pos + 1);
+	name = strdup(data);
+	pwd = strdup(pos + 1);
 
 	if (!name || !pwd) {
 		free(name);
@@ -210,17 +209,17 @@ int usm_add_update_user_from_pwdentry(char *data)
 	return usm_add_new_user(name, pwd);
 }
 
-void for_each_usmbd_user(walk_users cb, gpointer user_data)
+void for_each_usmbd_user(walk_users cb, void *user_data)
 {
-	g_rw_lock_reader_lock(&users_table_lock);
-	g_hash_table_foreach(users_table, cb, user_data);
-	g_rw_lock_reader_unlock(&users_table_lock);
+	pthread_rwlock_rdlock(&users_table_lock);
+	list_foreach(&users_table, cb, user_data);
+	pthread_rwlock_unlock(&users_table_lock);
 }
 
 int usm_update_user_password(struct usmbd_user *user, char *pswd)
 {
 	size_t pass_sz;
-	char *pass_b64 = g_strdup(pswd);
+	char *pass_b64 = strdup(pswd);
 	char *pass = base64_decode(pass_b64, &pass_sz);
 
 	if (!pass_b64 || !pass) {
@@ -231,13 +230,13 @@ int usm_update_user_password(struct usmbd_user *user, char *pswd)
 	}
 
 	pr_debug("Update user password: %s\n", user->name);
-	g_rw_lock_writer_lock(&user->update_lock);
+	pthread_rwlock_wrlock(&user->update_lock);
 	free(user->pass_b64);
 	free(user->pass);
 	user->pass_b64 = pass_b64;
 	user->pass = pass;
 	user->pass_sz = (int)pass_sz;
-	g_rw_lock_writer_unlock(&user->update_lock);
+	pthread_rwlock_unlock(&user->update_lock);
 
 	return 0;
 }
@@ -251,12 +250,12 @@ static int usm_copy_user_passhash(struct usmbd_user *user,
 	if (test_user_flag(user, USMBD_USER_FLAG_GUEST_ACCOUNT))
 		return 0;
 
-	g_rw_lock_reader_lock(&user->update_lock);
+	pthread_rwlock_rdlock(&user->update_lock);
 	if (sz >= user->pass_sz) {
 		memcpy(pass, user->pass, user->pass_sz);
 		ret = user->pass_sz;
 	}
-	g_rw_lock_reader_unlock(&user->update_lock);
+	pthread_rwlock_unlock(&user->update_lock);
 
 	return ret;
 }

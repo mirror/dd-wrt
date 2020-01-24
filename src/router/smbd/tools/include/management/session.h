@@ -8,7 +8,7 @@
 #ifndef __MANAGEMENT_TCONNECTION_H__
 #define __MANAGEMENT_TCONNECTION_H__
 
-#include <glib.h>
+#include <usmbdtools.h>
 
 struct usmbd_user;
 
@@ -17,8 +17,8 @@ struct usmbd_session {
 
 	struct usmbd_user	*user;
 
-	GRWLock			update_lock;
-	GList			*tree_conns;
+	pthread_rwlock_t	update_lock;
+	struct LIST		*tree_conns;
 	int			ref_counter;
 };
 

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-License-Identi	fier: GPL-2.0-or-later
 /*
  *   Copyright (C) 2018 Samsung Electronics Co., Ltd.
  *
@@ -7,17 +7,17 @@
 
 #include <memory.h>
 #include <endian.h>
-#include <glib.h>
 #include <errno.h>
 #include <linux/usmbd_server.h>
 
 #include <rpc.h>
 #include <rpc_srvsvc.h>
 #include <rpc_wkssvc.h>
+#include <pthread.h>
 #include <usmbdtools.h>
 
-static GHashTable	*pipes_table;
-static GRWLock		pipes_table_lock;
+static struct LIST *pipes_table;
+static pthread_rwlock_t pipes_table_lock;
 
 /*
  * Version 2.0 data representation protocol
@@ -99,9 +99,9 @@ static struct usmbd_rpc_pipe *rpc_pipe_lookup(unsigned int id)
 {
 	struct usmbd_rpc_pipe *pipe;
 
-	g_rw_lock_reader_lock(&pipes_table_lock);
-	pipe = g_hash_table_lookup(pipes_table, &id);
-	g_rw_lock_reader_unlock(&pipes_table_lock);
+	pthread_rwlock_wrlock(&pipes_table_lock);
+	pipe = list_get(&pipes_table, id);
+	pthread_rwlock_unlock(&pipes_table_lock);
 
 	return pipe;
 }
@@ -179,16 +179,16 @@ static void __rpc_pipe_free(struct usmbd_rpc_pipe *pipe)
 	rpc_pipe_reset(pipe);
 	if (pipe->dce)
 		dcerpc_free(pipe->dce);
-	g_array_free(pipe->entries, 1);
+	list_clear(&pipe->entries);
 	free(pipe);
 }
 
 static void rpc_pipe_free(struct usmbd_rpc_pipe *pipe)
 {
 	if (pipe->id != (unsigned int)-1) {
-		g_rw_lock_writer_lock(&pipes_table_lock);
-		g_hash_table_remove(pipes_table, &(pipe->id));
-		g_rw_lock_writer_unlock(&pipes_table_lock);
+		pthread_rwlock_wrlock(&pipes_table_lock);
+		list_remove(&pipes_table, pipe->id);
+		pthread_rwlock_unlock(&pipes_table_lock);
 	}
 
 	__rpc_pipe_free(pipe);
@@ -203,7 +203,7 @@ static struct usmbd_rpc_pipe *rpc_pipe_alloc(void)
 		return NULL;
 
 	pipe->id = -1;
-	pipe->entries = g_array_new(0, 0, sizeof(void *));
+	list_init(&pipe->entries);
 	if (!pipe->entries) {
 		rpc_pipe_free(pipe);
 		return NULL;
@@ -220,28 +220,28 @@ static struct usmbd_rpc_pipe *rpc_pipe_alloc_bind(unsigned int id)
 		return NULL;
 
 	pipe->id = id;
-	g_rw_lock_writer_lock(&pipes_table_lock);
-	ret = g_hash_table_insert(pipes_table, &(pipe->id), pipe);
-	g_rw_lock_writer_unlock(&pipes_table_lock);
-
+	pthread_rwlock_wrlock(&pipes_table_lock);
+	ret = list_add(&pipes_table, pipe, pipe->id);
 	if (!ret) {
 		pipe->id = (unsigned int)-1;
 		rpc_pipe_free(pipe);
-		pipe = NULL;
+		pipe = NULL;	
 	}
+	pthread_rwlock_unlock(&pipes_table_lock);
+
 	return pipe;
 }
 
-static void free_hash_entry(gpointer k, gpointer s, gpointer user_data)
+static void free_hash_entry(void *s, unsigned long long id, void *user_data)
 {
 	__rpc_pipe_free(s);
 }
 
 static void __clear_pipes_table(void)
 {
-	g_rw_lock_writer_lock(&pipes_table_lock);
-	g_hash_table_foreach(pipes_table, free_hash_entry, NULL);
-	g_rw_lock_writer_unlock(&pipes_table_lock);
+	pthread_rwlock_wrlock(&pipes_table_lock);
+	list_foreach(&pipes_table, free_hash_entry, NULL);
+	pthread_rwlock_unlock(&pipes_table_lock);
 }
 
 static void align_offset(struct usmbd_dcerpc *dce, size_t n)
@@ -384,9 +384,9 @@ int ndr_read_bytes(struct usmbd_dcerpc *dce, void *value, size_t sz)
 
 int ndr_write_vstring(struct usmbd_dcerpc *dce, char *value)
 {
-	gchar *out;
-	gsize bytes_read = 0;
-	gsize bytes_written = 0;
+	char *out;
+	size_t bytes_read = 0;
+	size_t bytes_written = 0;
 
 	size_t raw_len;
 	char *raw_value = value;
@@ -428,15 +428,15 @@ int ndr_write_vstring(struct usmbd_dcerpc *dce, char *value)
 	ret |= ndr_write_bytes(dce, out, bytes_written);
 	auto_align_offset(dce);
 
-	g_free(out);
+	free(out);
 	return ret;
 }
 
 char *ndr_read_vstring(struct usmbd_dcerpc *dce)
 {
-	gchar *out;
-	gsize bytes_read = 0;
-	gsize bytes_written = 0;
+	char *out;
+	size_t bytes_read = 0;
+	size_t bytes_written = 0;
 
 	size_t raw_len;
 	int charset = USMBD_CHARSET_UTF16LE;
@@ -528,9 +528,7 @@ static int __max_entries(struct usmbd_dcerpc *dce, struct usmbd_rpc_pipe *pipe)
 
 	current_size = 0;
 	for (i = 0; i < pipe->num_entries; i++) {
-		gpointer entry;
-
-		entry = g_array_index(pipe->entries,  gpointer, i);
+		void *entry = list_get(&pipe->entries,  i);
 		current_size += dce->entry_size(dce, entry);
 
 		if (current_size < 4 * dce->payload_sz / 5)
@@ -545,23 +543,17 @@ int __ndr_write_array_of_structs(struct usmbd_rpc_pipe *pipe, int max_entry_nr)
 {
 	struct usmbd_dcerpc *dce = pipe->dce;
 	int i;
-
 	for (i = 0; i < max_entry_nr; i++) {
-		gpointer entry;
-
-		entry = g_array_index(pipe->entries,  gpointer, i);
+		void *entry = list_get(&pipe->entries,  i);
 		if (dce->entry_rep(dce, entry))
 			return USMBD_RPC_EBAD_DATA;
 	}
 
 	for (i = 0; i < max_entry_nr; i++) {
-		gpointer entry;
-
-		entry = g_array_index(pipe->entries,  gpointer, i);
+		void *entry = list_get(&pipe->entries,  i);
 		if (dce->entry_data(dce, entry))
 			return USMBD_RPC_EBAD_DATA;
 	}
-
 	if (pipe->entry_processed) {
 		for (i = 0; i < max_entry_nr; i++)
 			pipe->entry_processed(pipe, 0);
@@ -627,10 +619,10 @@ int ndr_write_array_of_structs(struct usmbd_rpc_pipe *pipe)
 
 int rpc_init(void)
 {
-	pipes_table = g_hash_table_new(g_int_hash, g_int_equal);
+	list_init(&pipes_table);
 	if (!pipes_table)
 		return -ENOMEM;
-	g_rw_lock_init(&pipes_table_lock);
+	pthread_rwlock_init(&pipes_table_lock, NULL);
 	return 0;
 }
 
@@ -638,9 +630,9 @@ void rpc_destroy(void)
 {
 	if (pipes_table) {
 		__clear_pipes_table();
-		g_hash_table_destroy(pipes_table);
+		list_clear(&pipes_table);
 	}
-	g_rw_lock_clear(&pipes_table_lock);
+	pthread_rwlock_destroy(&pipes_table_lock);
 }
 
 static int dcerpc_hdr_write(struct usmbd_dcerpc *dce,
@@ -990,10 +982,11 @@ int rpc_ioctl_request(struct usmbd_rpc_command *req,
 		      int max_resp_sz)
 {
 	int ret;
-
 	ret = rpc_write_request(req, resp);
-	if (ret == USMBD_RPC_OK)
-		return rpc_read_request(req, resp, max_resp_sz);
+	
+	if (ret == USMBD_RPC_OK) {
+		ret = rpc_read_request(req, resp, max_resp_sz);
+	}
 	return ret;
 }
 
