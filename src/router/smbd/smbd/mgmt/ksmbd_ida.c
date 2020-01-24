@@ -31,10 +31,12 @@ static inline int __acquire_id(struct ksmbd_ida *ida, int from, int to)
 	return ida_simple_get(&ida->map, from, to, GFP_KERNEL);
 }
 
+#ifdef CONFIG_SMB_INSECURE_SERVER
 int ksmbd_acquire_smb1_tid(struct ksmbd_ida *ida)
 {
 	return __acquire_id(ida, 0, 0xFFFF);
 }
+#endif
 
 int ksmbd_acquire_smb2_tid(struct ksmbd_ida *ida)
 {
@@ -47,10 +49,12 @@ int ksmbd_acquire_smb2_tid(struct ksmbd_ida *ida)
 	return id;
 }
 
+#ifdef CONFIG_SMB_INSECURE_SERVER
 int ksmbd_acquire_smb1_uid(struct ksmbd_ida *ida)
 {
 	return __acquire_id(ida, 1, 0xFFFE);
 }
+#endif
 
 int ksmbd_acquire_smb2_uid(struct ksmbd_ida *ida)
 {
