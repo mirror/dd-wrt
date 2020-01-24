@@ -433,8 +433,8 @@ char *base64_encode(unsigned char *src, size_t srclen)
       char *out = malloc ((srclen / 3 + 1) * 4 + 1);
       base64_encodestate state;
       base64_init_encodestate(&state);
-      base64_encode_block(src, srclen, out, &state);
-      base64_encode_blockend(out, &state);
+      int len = base64_encode_block(src, srclen, out, &state);
+      base64_encode_blockend(out + len, &state);
       return out;
 }
 
@@ -464,13 +464,12 @@ void base64_init_decodestate(base64_decodestate* state_in)
 	state_in->plainchar = 0;
 }
 
-int base64_decode_block(const char* code_in, const int length_in, char* plaintext_out,const int outlen, base64_decodestate* state_in)
+int base64_decode_block(const char* code_in, int length_in, char* plaintext_out,const int outlen, base64_decodestate* state_in)
 {
 	const char* codechar = code_in;
 	char* plainchar = plaintext_out;
 	char fragment;
 	int count=0;
-	
 	*plainchar = state_in->plainchar;
 	
 	switch (state_in->step)
@@ -546,10 +545,9 @@ unsigned char *base64_decode(char const *src, size_t *dstlen)
 {
 	base64_decodestate state;
 	base64_init_decodestate(&state);
-	int outlen = (strlen(src) / 4) * 3 + 1;
-	char *out = malloc (outlen);
-	*dstlen = base64_decode_block(src, strlen(src), out, outlen, &state);
-	out[*dstlen] = 0x00;
+	int len = ((strlen(src) / 4) * 3) +1;
+	char *out = malloc (len);
+	*dstlen = base64_decode_block(src, strlen(src), out, len, &state);
 	return out;
 }
 
