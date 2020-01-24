@@ -1891,8 +1891,10 @@ int main(int argc, char **argv)
 		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 //              pthread_attr_setstacksize(&attr, 4096);
 		pthread_t thread;
-		if (pthread_create(&thread, &attr, handle_request, conn_fp) != 0)
+		if (pthread_create(&thread, &attr, handle_request, conn_fp) != 0) {
+			SEM_POST(&semaphore);
 			fprintf(stderr, "Failed to create thread\n");
+		}
 		pthread_attr_destroy(&attr);
 
 //              conn_fp->do_ssl = do_ssl;
