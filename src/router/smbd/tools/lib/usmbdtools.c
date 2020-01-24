@@ -17,6 +17,7 @@
 #include <stdarg.h>
 #include <usmbdtools.h>
 
+
 struct LIST *list_init(struct LIST **list)
 {
 	*list = malloc(sizeof(struct LIST));
@@ -126,37 +127,7 @@ void list_append(struct LIST **list, void *item)
 	list_add(list, item, list_maxid(list) + 1);
 }
 
-int list_remove(struct LIST **list, unsigned long long id)
-{
-	struct LIST *head = *list;
-	while ((head = head->next)) {
-		if (head->type == KEY_STRING) {
-			char *c = (char *)list_fromkey(id);
-			if (!strcmp(head->keystr, c)) {
-				if (head->prev) {
-					head->prev->next = head->next;
-				}
-				if (head->next) {
-					head->next->prev = head->prev;
-				}
-				free(head);
-				return 0;
-			}
-		} else if (head->id == id) {
-			if (head->prev) {
-				head->prev->next = head->next;
-			}
-			if (head->next) {
-				head->next->prev = head->prev;
-			}
-			free(head);
-			return 0;
-		}
-	}
-	return -1;
-}
-
-int list_remove_dec(struct LIST **list, unsigned long long id)
+int _list_remove(struct LIST **list, unsigned long long id, int dec)
 {
 	int ret = -1;
 	struct LIST *head = *list;
@@ -181,7 +152,6 @@ int list_remove_dec(struct LIST **list, unsigned long long id)
 			}
 			if (head->next) {
 				head->next->prev = head->prev;
-				next = head->next;
 			}
 			free(head);
 			ret = 0;
@@ -189,37 +159,36 @@ int list_remove_dec(struct LIST **list, unsigned long long id)
 		}
 	}
       out:;
-	if (!ret && next) {
+	if (dec && !ret && next) {
 		while (next) {
 			next->id--;
 			next = next->next;
 		}
 
 	}
-	return -1;
+	return ret;
+}
+
+int list_remove_dec(struct LIST **list, unsigned long long id)
+{
+	return _list_remove(list, id, 1);
+}
+
+int list_remove(struct LIST **list, unsigned long long id)
+{
+	return _list_remove(list, id, 0);
 }
 
 void *list_get(struct LIST **list, unsigned long long id)
 {
-	struct LIST *head = *list;
-	while ((head = head->next)) {
-		if (head->type == KEY_STRING) {
-			char *c = (char *)list_fromkey(id);
-			if (!strcmp(head->keystr, c)) {
-				return head->item;
-			}
-		} else {
-			if (head->id == id) {
-				return head->item;
-			}
-		}
-	}
+	struct LIST *head =  head_get(list, id);
+	if (head)
+	    return head->item;
 	return NULL;
 }
 
 void list_clear(struct LIST **list)
 {
-
 	if (!*list)
 		return;
 	struct LIST *head = *list;
