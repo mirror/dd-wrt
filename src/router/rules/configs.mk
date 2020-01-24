@@ -85,6 +85,9 @@ endif
 ifeq ($(CONFIG_TOR),y)
 obj-$(CONFIG_SNMP) += snmp
 endif
+ifeq ($(CONFIG_UBNTM),y)
+obj-$(CONFIG_SNMP) += snmp
+endif
 obj-$(CONFIG_RADVD) += radvd aiccu
 obj-$(CONFIG_L2TPV3TUN) += l2tpv3tun
 obj-$(CONFIG_SPUTNIK_APD) += sputnik
