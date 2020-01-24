@@ -52,10 +52,12 @@ unsigned int
 ksmbd_build_ntlmssp_challenge_blob(struct challenge_message *chgblob,
 		struct ksmbd_session *sess);
 
+#ifdef CONFIG_SMB_INSECURE_SERVER
 int ksmbd_sign_smb1_pdu(struct ksmbd_session *sess,
 			struct kvec *iov,
 			int n_vec,
 			char *sig);
+#endif
 int ksmbd_sign_smb2_pdu(struct ksmbd_conn *conn,
 			char *key,
 			struct kvec *iov,

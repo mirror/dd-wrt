@@ -78,7 +78,9 @@ static inline void clear_session_flag(struct ksmbd_session *sess, int bit)
 	sess->flags &= ~bit;
 }
 
+#ifdef CONFIG_SMB_INSECURE_SERVER
 struct ksmbd_session *ksmbd_smb1_session_create(void);
+#endif
 struct ksmbd_session *ksmbd_smb2_session_create(void);
 
 void ksmbd_session_destroy(struct ksmbd_session *sess);
