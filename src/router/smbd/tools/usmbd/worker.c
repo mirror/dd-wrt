@@ -197,7 +197,7 @@ out:
 static void *worker_pool_fn(void *event)
 {
 	struct usmbd_ipc_msg *msg = (struct usmbd_ipc_msg *)event;
-
+	pr_debug("run thread\n");
 	switch (msg->type) {
 	case USMBD_EVENT_LOGIN_REQUEST:
 		login_request(msg);
@@ -234,16 +234,19 @@ static void *worker_pool_fn(void *event)
 
 	ipc_msg_free(msg);
 	sem_post(&semaphore);
+	pr_debug("thread exit\n");
 	return NULL;
 }
 
 int wp_ipc_msg_push(struct usmbd_ipc_msg *msg)
 {
 	pthread_attr_t attr;
+	pr_debug("sem_wait\n");
 	sem_wait(&semaphore);
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 	pthread_t thread;
+	pr_debug("pthread_create\n");
 	if (pthread_create(&thread, &attr, worker_pool_fn, msg) != 0) {
 	    pthread_attr_destroy(&attr);
 	    sem_post(&semaphore);
@@ -251,6 +254,7 @@ int wp_ipc_msg_push(struct usmbd_ipc_msg *msg)
 	    return -1;
 	}
 	pthread_attr_destroy(&attr);
+	pr_debug("exit push\n");
 	return 0;
 
 }
