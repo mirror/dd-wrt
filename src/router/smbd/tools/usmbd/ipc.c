@@ -6,7 +6,6 @@
  */
 
 #include <memory.h>
-#include <glib.h>
 #include <errno.h>
 #include <netlink/netlink.h>
 #include <netlink/msg.h>

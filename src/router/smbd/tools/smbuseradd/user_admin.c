@@ -5,7 +5,6 @@
  *   linux-cifsd-devel@lists.sourceforge.net
  */
 
-#include <glib.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -136,8 +135,8 @@ static char *get_utf8_password(long *len)
 {
 	size_t raw_sz;
 	char *pswd_raw, *pswd_converted;
-	gsize bytes_read = 0;
-	gsize bytes_written = 0;
+	size_t bytes_read = 0;
+	size_t bytes_written = 0;
 
 	pswd_raw = prompt_password(&raw_sz);
 	if (!pswd_raw)
@@ -237,30 +236,30 @@ static void write_user(struct usmbd_user *user)
 	}
 }
 
-static void write_user_cb(gpointer key, gpointer value, gpointer user_data)
+static void write_user_cb(void *value, unsigned long long id, void *user_data)
 {
 	struct usmbd_user *user = (struct usmbd_user *)value;
 
 	write_user(user);
 }
 
-static void write_remove_user_cb(gpointer key,
-				 gpointer value,
-				 gpointer user_data)
+static void write_remove_user_cb(void *value,
+				 unsigned long long key,
+				 void *user_data)
 {
 	struct usmbd_user *user = (struct usmbd_user *)value;
 
-	if (!g_ascii_strcasecmp(user->name, arg_account)) {
+	if (!strcasecmp(user->name, arg_account)) {
 		pr_info("User '%s' removed\n", user->name);
 		return;
 	}
 
-	write_user_cb(key, value, user_data);
+	write_user_cb(value, key, user_data);
 }
 
-static void lookup_can_del_user(gpointer key,
-				gpointer value,
-				gpointer user_data)
+static void lookup_can_del_user(void *value,
+				unsigned long long key,
+				void *user_data)
 {
 	struct usmbd_share *share = (struct usmbd_share *)value;
 	int ret = 0;

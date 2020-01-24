@@ -7,7 +7,6 @@
 
 #include <memory.h>
 #include <endian.h>
-#include <glib.h>
 #include <errno.h>
 #include <linux/usmbd_server.h>
 
@@ -36,7 +35,7 @@ static int wkssvc_clear_headers(struct usmbd_rpc_pipe *pipe,
 }
 
 static int __netwksta_entry_rep_ctr100(struct usmbd_dcerpc *dce,
-				       gpointer entry)
+				       void *entry)
 {
 	int ret = 0;
 
@@ -58,7 +57,7 @@ static int __netwksta_entry_rep_ctr100(struct usmbd_dcerpc *dce,
 }
 
 static int __netwksta_entry_data_ctr100(struct usmbd_dcerpc *dce,
-					gpointer entry)
+					void *entry)
 {
 	int ret = 0;
 
