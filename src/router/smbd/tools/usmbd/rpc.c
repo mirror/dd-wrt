@@ -1,4 +1,4 @@
-// SPDX-License-Identi	fier: GPL-2.0-or-later
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  *   Copyright (C) 2018 Samsung Electronics Co., Ltd.
  *
@@ -222,12 +222,13 @@ static struct usmbd_rpc_pipe *rpc_pipe_alloc_bind(unsigned int id)
 	pipe->id = id;
 	pthread_rwlock_wrlock(&pipes_table_lock);
 	ret = list_add(&pipes_table, pipe, pipe->id);
+	pthread_rwlock_unlock(&pipes_table_lock);
+
 	if (!ret) {
 		pipe->id = (unsigned int)-1;
 		rpc_pipe_free(pipe);
 		pipe = NULL;	
 	}
-	pthread_rwlock_unlock(&pipes_table_lock);
 
 	return pipe;
 }
