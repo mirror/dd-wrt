@@ -301,10 +301,12 @@ error:
 	return NULL;
 }
 
+#ifdef CONFIG_SMB_INSECURE_SERVER
 struct ksmbd_session *ksmbd_smb1_session_create(void)
 {
 	return __session_create(CIFDS_SESSION_FLAG_SMB1);
 }
+#endif
 
 struct ksmbd_session *ksmbd_smb2_session_create(void)
 {
@@ -315,8 +317,10 @@ int ksmbd_acquire_tree_conn_id(struct ksmbd_session *sess)
 {
 	int id = -EINVAL;
 
+#ifdef CONFIG_SMB_INSECURE_SERVER
 	if (test_session_flag(sess, CIFDS_SESSION_FLAG_SMB1))
 		id = ksmbd_acquire_smb1_tid(sess->tree_conn_ida);
+#endif
 	if (test_session_flag(sess, CIFDS_SESSION_FLAG_SMB2))
 		id = ksmbd_acquire_smb2_tid(sess->tree_conn_ida);
 

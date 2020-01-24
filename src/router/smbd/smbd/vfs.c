@@ -905,41 +905,6 @@ int ksmbd_vfs_readdir_name(struct ksmbd_work *work,
 	kfree(name);
 	return 0;
 }
-#else
-static inline void smb_check_attrs(struct inode *inode, struct iattr *attrs)
-{
-}
-
-int ksmbd_vfs_setattr(struct ksmbd_work *work, const char *name,
-		      uint64_t fid, struct iattr *attrs)
-{
-	return -ENOTSUPP;
-}
-
-int ksmbd_vfs_getattr(struct ksmbd_work *work, uint64_t fid,
-		      struct kstat *stat)
-{
-	return -ENOTSUPP;
-}
-
-int ksmbd_vfs_symlink(const char *name, const char *symname)
-{
-	return -ENOTSUPP;
-}
-
-int ksmbd_vfs_readlink(struct path *path, char *buf, int lenp)
-{
-	return -ENOTSUPP;
-}
-
-int ksmbd_vfs_readdir_name(struct ksmbd_work *work,
-			   struct ksmbd_kstat *ksmbd_kstat,
-			   const char *de_name,
-			   int de_name_len,
-			   const char *dir_path)
-{
-	return 0;
-}
 #endif
 
 /**
@@ -1443,15 +1408,6 @@ int ksmbd_vfs_fsetxattr(const char *filename,
 		ksmbd_debug("setxattr failed, err %d\n", err);
 	path_put(&path);
 	return err;
-}
-#else
-int ksmbd_vfs_fsetxattr(const char *filename,
-			const char *attr_name,
-			const void *attr_value,
-			size_t attr_size,
-			int flags)
-{
-	return -ENOTSUPP;
 }
 #endif
 

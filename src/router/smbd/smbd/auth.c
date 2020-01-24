@@ -751,14 +751,6 @@ out:
 	ksmbd_release_crypto_ctx(ctx);
 	return rc;
 }
-#else
-int ksmbd_sign_smb1_pdu(struct ksmbd_session *sess,
-			struct kvec *iov,
-			int n_vec,
-			char *sig)
-{
-	return -ENOTSUPP;
-}
 #endif
 
 /**

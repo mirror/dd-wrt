@@ -30,11 +30,6 @@ int smb1_utf16_name_length(const __le16 *from, int maxbytes)
 
 	return len;
 }
-#else
-int smb1_utf16_name_length(const __le16 *from, int maxbytes)
-{
-	return -ENOTSUPP;
-}
 #endif
 
 /*

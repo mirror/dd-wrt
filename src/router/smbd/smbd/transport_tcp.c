@@ -418,15 +418,17 @@ static int create_socket(struct interface *iface)
 	struct sockaddr_in sin;
 	struct socket *ksmbd_socket;
 	bool ipv4 = false;
-	
+
 	ret = sock_create(PF_INET6, SOCK_STREAM, IPPROTO_TCP, &ksmbd_socket);
 	if (ret) {
 		ksmbd_err("Can't create socket for ipv6, try ipv4: %d\n", ret);
-		ret = sock_create(PF_INET, SOCK_STREAM, IPPROTO_TCP, &ksmbd_socket);
+		ret = sock_create(PF_INET, SOCK_STREAM, IPPROTO_TCP,
+				&ksmbd_socket);
 		if (ret) {
 			ksmbd_err("Can't create socket for ipv4: %d\n", ret);
 			goto out_error;
 		}
+
 		sin.sin_family = PF_INET;
 		sin.sin_addr.s_addr = INADDR_ANY;
 		sin.sin_port = htons(server_conf.tcp_port);
@@ -436,6 +438,7 @@ static int create_socket(struct interface *iface)
 		sin6.sin6_addr = in6addr_any;
 		sin6.sin6_port = htons(server_conf.tcp_port);
 	}
+
 	ksmbd_tcp_nodelay(ksmbd_socket);
 	ksmbd_tcp_reuseaddr(ksmbd_socket);
 
@@ -448,11 +451,13 @@ static int create_socket(struct interface *iface)
 		ksmbd_err("Failed to set SO_BINDTODEVICE: %d\n", ret);
 		goto out_error;
 	}
-	
+
 	if (ipv4)
-	    ret = kernel_bind(ksmbd_socket, (struct sockaddr *)&sin, sizeof(sin));
+		ret = kernel_bind(ksmbd_socket, (struct sockaddr *)&sin,
+				sizeof(sin));
 	else
-	    ret = kernel_bind(ksmbd_socket, (struct sockaddr *)&sin6, sizeof(sin6));
+		ret = kernel_bind(ksmbd_socket, (struct sockaddr *)&sin6,
+				sizeof(sin6));
 	if (ret) {
 		ksmbd_err("Failed to bind socket: %d\n", ret);
 		goto out_error;
