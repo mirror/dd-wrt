@@ -68,58 +68,48 @@ struct LIST *head_get(struct LIST **list, unsigned long long id)
 	}
 	return NULL;
 }
-
-int list_add(struct LIST **list, void *item, unsigned long long id)
+int _list_add(struct LIST **list, void *item, unsigned long long id, char *str)
 {
 	int ret = 1;
 	struct LIST *new;
 	if (!*list)
 		list_init(list);
-	if (new = head_get(list, id)) {
+	if (new = head_get(list, str ? list_tokey(str) : id)) {
 		ret = 0;
 	} else
 		new = malloc(sizeof(struct LIST));
 	if (!new)
 		return 0;
 
-	struct LIST *head = *list;
-	struct LIST *target = head;
-	while (head = head->next) {
-		target = head;
-	}
 	new->item = item;
-	new->id = id;
-	new->type = KEY_ID;
-	new->prev = target;
-	new->next = NULL;
-	target->next = new;
+	if (ret) {
+		struct LIST *head = *list;
+		struct LIST *target = head;
+		while (head = head->next) {
+			target = head;
+		}
+		if (str) {
+			new->keystr = str;
+			new->type = KEY_STRING;
+		} else {
+			new->id = id;
+			new->type = KEY_ID;
+		}
+		new->prev = target;
+		new->next = NULL;
+		target->next = new;
+	}
 	return ret;
+}
+
+int list_add(struct LIST **list, void *item, unsigned long long id)
+{
+	return _list_add(list, item, id, NULL);
 }
 
 int list_add_str(struct LIST **list, void *item, char *str)
 {
-	int ret = 1;
-	struct LIST *new;
-	if (!*list)
-		list_init(list);
-	if (new = head_get(list, list_tokey(str))) {
-		ret = 0;
-	} else
-		new = malloc(sizeof(struct LIST));
-	if (!new)
-		return 0;
-	struct LIST *head = *list;
-	struct LIST *target = head;
-	while ((head = head->next)) {
-		target = head;
-	}
-	new->item = item;
-	new->keystr = strdup(str);
-	new->type = KEY_STRING;
-	new->prev = target;
-	new->next = NULL;
-	target->next = new;
-	return ret;
+	return _list_add(list, item, 0, str);
 }
 
 void list_append(struct LIST **list, void *item)
