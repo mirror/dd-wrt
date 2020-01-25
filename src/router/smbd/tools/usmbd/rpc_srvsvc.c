@@ -372,7 +372,7 @@ static int srvsvc_share_info_return(struct usmbd_rpc_pipe *pipe)
 	if (rpc_restricted_context(dce->rpc_req))
 		status = USMBD_RPC_EACCESS_DENIED;
 
-	//srvsvc_clear_headers(pipe, status);
+	srvsvc_clear_headers(pipe, status);
 
 	/*
 	 * [out] DWORD Return value/code
