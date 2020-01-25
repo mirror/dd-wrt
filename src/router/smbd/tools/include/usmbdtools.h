@@ -43,7 +43,6 @@ int atomic_int_compare_and_exchange (volatile int *atomic,
 struct LIST {
 	struct LIST *prev;
 	struct LIST *next;
-	struct LIST *last;
 	int type;
 	unsigned long long id;
 	char *keystr;
