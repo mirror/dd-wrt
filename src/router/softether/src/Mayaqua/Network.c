@@ -76,13 +76,7 @@ struct ROUTE_CHANGE_DATA
 #endif	// IPV6_V6ONLY
 #endif	// UNIX_SOLARIS
 
-
-
 // HTTP constant
-static char http_404_str[] = "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\r\n<HTML><HEAD>\r\n<TITLE>404 Not Found</TITLE>\r\n</HEAD><BODY>\r\n<H1>Not Found</H1>\r\nThe requested URL $TARGET$ was not found on this server.<P>\r\n<HR>\r\n<ADDRESS>HTTP Server at $HOST$ Port $PORT$</ADDRESS>\r\n</BODY></HTML>\r\n";
-static char http_403_str[] = "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\r\n<HTML><HEAD>\r\n<TITLE>403 Forbidden</TITLE>\r\n</HEAD><BODY>\r\n<H1>Forbidden</H1>\r\nYou don't have permission to access $TARGET$\r\non this server.<P>\r\n<HR>\r\n<ADDRESS>HTTP Server at $HOST$ Port $PORT$</ADDRESS>\r\n</BODY></HTML>\r\n";
-static char http_500_str[] = "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\r\n<HTML><HEAD>\r\n<TITLE>500 Server Error</TITLE>\r\n</HEAD><BODY>\r\n<H1>Server Error</H1>\r\nServer Error<P>\r\n<HR>\r\n<ADDRESS>HTTP Server at $HOST$ Port $PORT$</ADDRESS>\r\n</BODY></HTML>\r\n";
-static char http_501_str[] = "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\r\n<HTML><HEAD>\r\n<TITLE>501 Method Not Implemented</TITLE>\r\n</HEAD><BODY>\r\n<H1>Method Not Implemented</H1>\r\n$METHOD$ to $TARGET$ not supported.<P>\r\nInvalid method in request $METHOD$ $TARGET$ $VERSION$<P>\r\n<HR>\r\n<ADDRESS>HTTP Server at $HOST$ Port $PORT$</ADDRESS>\r\n</BODY></HTML>\r\n";
 static char http_detect_server_startwith[] = "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\r\n<HTML><HEAD>\r\n<TITLE>403 Forbidden</TITLE>\r\n</HEAD><BODY>\r\n<H1>Forbidden</H1>\r\nYou don't have permission to access ";
 static char http_detect_server_tag_future[] = "9C37197CA7C2428388C2E6E59B829B30";
 
@@ -2403,65 +2397,109 @@ void RUDPInterruptProc(RUDP_STACK *r)
 void RUDPBulkSend(RUDP_STACK *r, RUDP_SESSION *se, void *data, UINT data_size)
 {
 	UCHAR *buf;
-	UINT buf_size;
-	UINT padding_size;
-	UINT i;
-	CRYPT *c;
-	UCHAR crypt_key_src[SHA1_SIZE * 2];
-	UCHAR crypt_key[SHA1_SIZE];
-	UINT icmp_type = 0;
-	UCHAR sign[SHA1_SIZE];
-	UCHAR iv[SHA1_SIZE + 1];
+	UINT i, icmp_type, buf_size, padding_size;
 	// Validate arguments
 	if (r == NULL || se == NULL || (data == NULL && data_size != 0))
 	{
 		return;
 	}
 
-	padding_size = Rand32() % 31 + 1;
-
-	buf_size = SHA1_SIZE + SHA1_SIZE + sizeof(UINT64) + data_size + padding_size;
-	buf = Malloc(buf_size);
-
-	// SEQ NO
-	WRITE_UINT64(buf + SHA1_SIZE + SHA1_SIZE, se->BulkNextSeqNo);
-	se->BulkNextSeqNo++;
-
-	// Data
-	Copy(buf + SHA1_SIZE + SHA1_SIZE + sizeof(UINT64), data, data_size);
-
-	// Padding
-	for (i = 0;i < padding_size;i++)
+	if (se->BulkSendKey->Size == RUDP_BULK_KEY_SIZE_V2)
 	{
-		buf[SHA1_SIZE + SHA1_SIZE + sizeof(UINT64) + data_size + i] = (UCHAR)padding_size;
-	}
+		UCHAR *tmp, iv[RUDP_BULK_IV_SIZE_V2];
+		UINT size;
+		CIPHER *c;
 
-	// Encryption
-	Copy(iv, se->BulkNextIv, SHA1_SIZE);
-	Copy(crypt_key_src + 0, se->BulkSendKey->Data, SHA1_SIZE);
-	Copy(crypt_key_src + SHA1_SIZE, iv, SHA1_SIZE);
-	Sha1(crypt_key, crypt_key_src, SHA1_SIZE * 2);
-	c = NewCrypt(crypt_key, sizeof(crypt_key));
-	Encrypt(c, buf + SHA1_SIZE + SHA1_SIZE, buf + SHA1_SIZE + SHA1_SIZE, sizeof(UINT64) + data_size + padding_size);
-	FreeCrypt(c);
+		padding_size = Rand32() % 31 + 1;
 
-	// IV
-	Copy(buf + SHA1_SIZE, iv, SHA1_SIZE);
+		size = sizeof(UINT64) + data_size + padding_size;
 
-	// Sign
-	if (se->UseHMac == false)
-	{
-		Copy(buf + 0, se->BulkSendKey->Data, SHA1_SIZE);
-		Sha1(sign, buf, SHA1_SIZE + SHA1_SIZE + sizeof(UINT64) + data_size + padding_size);
-		Copy(buf + 0, sign, SHA1_SIZE);
+		// Packet: IV + Encrypted(SEQ_NO + Data + padding) + MAC
+		buf_size = RUDP_BULK_IV_SIZE_V2 + sizeof(UINT64) + data_size + padding_size + RUDP_BULK_MAC_SIZE_V2;
+		buf = Malloc(buf_size);
+
+		// IV
+		Copy(iv, se->BulkNextIv_V2, RUDP_BULK_IV_SIZE_V2);
+		Copy(buf, iv, RUDP_BULK_IV_SIZE_V2);
+
+		// SEQ NO
+		WRITE_UINT64(buf + RUDP_BULK_IV_SIZE_V2, se->BulkNextSeqNo);
+		se->BulkNextSeqNo++;
+
+		// Data
+		Copy(buf + RUDP_BULK_IV_SIZE_V2 + sizeof(UINT64), data, data_size);
+
+		// Padding
+		for (i = 0;i < padding_size;i++)
+		{
+			buf[RUDP_BULK_IV_SIZE_V2 + sizeof(UINT64) + data_size + i] = (UCHAR)padding_size;
+		}
+
+		size = sizeof(UINT64) + data_size + padding_size;
+		tmp = buf + RUDP_BULK_IV_SIZE_V2;
+
+		// Encryption
+		c = NewCipher("ChaCha20-Poly1305");
+		SetCipherKey(c, se->BulkSendKey->Data, true);
+		CipherProcessAead(c, iv, tmp + size, RUDP_BULK_MAC_SIZE_V2, tmp, tmp, size - RUDP_BULK_MAC_SIZE_V2, NULL, 0);
+		FreeCipher(c);
+
+		// Next IV
+		Copy(se->BulkNextIv_V2, buf + sizeof(UINT64) + data_size + padding_size, RUDP_BULK_IV_SIZE_V2);
 	}
 	else
 	{
-		HMacSha1(buf + 0, se->BulkSendKey->Data, SHA1_SIZE, buf + SHA1_SIZE, SHA1_SIZE + sizeof(UINT64) + data_size + padding_size);
-	}
+		UCHAR crypt_key_src[SHA1_SIZE * 2];
+		UCHAR crypt_key[SHA1_SIZE];
+		UCHAR sign[SHA1_SIZE];
+		UCHAR iv[SHA1_SIZE];
+		CRYPT *c;
 
-	// Next IV
-	Copy(se->BulkNextIv, buf + buf_size - SHA1_SIZE, SHA1_SIZE);
+		padding_size = Rand32() % 31 + 1;
+
+		buf_size = SHA1_SIZE + SHA1_SIZE + sizeof(UINT64) + data_size + padding_size;
+		buf = Malloc(buf_size);
+
+		// SEQ NO
+		WRITE_UINT64(buf + SHA1_SIZE + SHA1_SIZE, se->BulkNextSeqNo);
+		se->BulkNextSeqNo++;
+
+		// Data
+		Copy(buf + SHA1_SIZE + SHA1_SIZE + sizeof(UINT64), data, data_size);
+
+		// Padding
+		for (i = 0;i < padding_size;i++)
+		{
+			buf[SHA1_SIZE + SHA1_SIZE + sizeof(UINT64) + data_size + i] = (UCHAR)padding_size;
+		}
+
+		// Encryption
+		Copy(iv, se->BulkNextIv, SHA1_SIZE);
+		Copy(crypt_key_src + 0, se->BulkSendKey->Data, SHA1_SIZE);
+		Copy(crypt_key_src + SHA1_SIZE, iv, SHA1_SIZE);
+		Sha1(crypt_key, crypt_key_src, SHA1_SIZE * 2);
+		c = NewCrypt(crypt_key, sizeof(crypt_key));
+		Encrypt(c, buf + SHA1_SIZE + SHA1_SIZE, buf + SHA1_SIZE + SHA1_SIZE, sizeof(UINT64) + data_size + padding_size);
+		FreeCrypt(c);
+
+		// IV
+		Copy(buf + SHA1_SIZE, iv, SHA1_SIZE);
+
+		// Sign
+		if (se->UseHMac == false)
+		{
+			Copy(buf + 0, se->BulkSendKey->Data, SHA1_SIZE);
+			Sha1(sign, buf, SHA1_SIZE + SHA1_SIZE + sizeof(UINT64) + data_size + padding_size);
+			Copy(buf + 0, sign, SHA1_SIZE);
+		}
+		else
+		{
+			HMacSha1(buf + 0, se->BulkSendKey->Data, SHA1_SIZE, buf + SHA1_SIZE, SHA1_SIZE + sizeof(UINT64) + data_size + padding_size);
+		}
+
+		// Next IV
+		Copy(se->BulkNextIv, buf + buf_size - SHA1_SIZE, SHA1_SIZE);
+	}
 
 	if (r->Protocol == RUDP_PROTOCOL_ICMP)
 	{
@@ -2471,6 +2509,7 @@ void RUDPBulkSend(RUDP_STACK *r, RUDP_SESSION *se, void *data, UINT data_size)
 	{
 		icmp_type = se->Dns_TranId;
 	}
+
 	RUDPSendPacket(r, &se->YourIp, se->YourPort, buf, buf_size, icmp_type);
 
 	Free(buf);
@@ -2534,14 +2573,17 @@ SOCK *AcceptRUDP(SOCK *s)
 			{
 			case RUDP_PROTOCOL_UDP:
 				StrCpy(ret->UnderlayProtocol, sizeof(ret->UnderlayProtocol), SOCK_UNDERLAY_NAT_T);
+				AddProtocolDetailsStr(ret->ProtocolDetails, sizeof(ret->ProtocolDetails), "RUDP/UDP");
 				break;
 
 			case RUDP_PROTOCOL_DNS:
 				StrCpy(ret->UnderlayProtocol, sizeof(ret->UnderlayProtocol), SOCK_UNDERLAY_DNS);
+				AddProtocolDetailsStr(ret->ProtocolDetails, sizeof(ret->ProtocolDetails), "RUDP/DNS");
 				break;
 
 			case RUDP_PROTOCOL_ICMP:
 				StrCpy(ret->UnderlayProtocol, sizeof(ret->UnderlayProtocol), SOCK_UNDERLAY_ICMP);
+				AddProtocolDetailsStr(ret->ProtocolDetails, sizeof(ret->ProtocolDetails), "RUDP/ICMP");
 				break;
 			}
 
@@ -2594,24 +2636,60 @@ bool RUDPCheckSignOfRecvPacket(RUDP_STACK *r, RUDP_SESSION *se, void *recv_data,
 	}
 
 	// Verification signature (bulk packet)
-	if (se->UseHMac == false)
+	if (se->BulkRecvKey->Size == RUDP_BULK_KEY_SIZE_V2)
 	{
-		Copy(sign, p, SHA1_SIZE);
-		Copy(p, se->BulkRecvKey->Data, SHA1_SIZE);
-		Sha1(sign2, p, recv_size);
-		Copy(p, sign, SHA1_SIZE);
+		UCHAR *iv = p;
+		CIPHER *c;
 
-		if (Cmp(sign, sign2, SHA1_SIZE) == 0)
+		// Packet: IV + Encrypted(SEQ_NO + Data + padding) + MAC
+		// IV
+		if (size < RUDP_BULK_IV_SIZE_V2)
 		{
+			return false;
+		}
+		iv = p;
+		p += RUDP_BULK_IV_SIZE_V2;
+		size -= RUDP_BULK_IV_SIZE_V2;
+
+		// Decrypt
+		if (size < (RUDP_BULK_MAC_SIZE_V2 + 1))
+		{
+			return false;
+		}
+
+		c = NewCipher("ChaCha20-Poly1305");
+		SetCipherKey(c, se->BulkRecvKey->Data, false);
+		size = CipherProcessAead(c, iv, p + size, RUDP_BULK_MAC_SIZE_V2, r->TmpBuf, p, size - RUDP_BULK_MAC_SIZE_V2, NULL, 0);
+		FreeCipher(c);
+
+		if (size == 0)
+		{
+			return false;
+		}
+
+		return true;
+	}
+	else
+	{
+		if (se->UseHMac == false)
+		{
+			Copy(sign, p, SHA1_SIZE);
+			Copy(p, se->BulkRecvKey->Data, SHA1_SIZE);
+			Sha1(sign2, p, recv_size);
+			Copy(p, sign, SHA1_SIZE);
+
+			if (Cmp(sign, sign2, SHA1_SIZE) == 0)
+			{
+				return true;
+			}
+		}
+
+		HMacSha1(sign2, se->BulkRecvKey->Data, SHA1_SIZE, p + SHA1_SIZE, size - SHA1_SIZE);
+		if (Cmp(p, sign2, SHA1_SIZE) == 0)
+		{
+			se->UseHMac = true;
 			return true;
 		}
-	}
-
-	HMacSha1(sign2, se->BulkRecvKey->Data, SHA1_SIZE, p + SHA1_SIZE, size - SHA1_SIZE);
-	if (Cmp(p, sign2, SHA1_SIZE) == 0)
-	{
-		se->UseHMac = true;
-		return true;
 	}
 
 	return false;
@@ -2620,14 +2698,9 @@ bool RUDPCheckSignOfRecvPacket(RUDP_STACK *r, RUDP_SESSION *se, void *recv_data,
 // Process the received packet (bulk)
 bool RUDPProcessBulkRecvPacket(RUDP_STACK *r, RUDP_SESSION *se, void *recv_data, UINT recv_size)
 {
-	UCHAR sign[SHA1_SIZE];
-	UCHAR sign2[SHA1_SIZE];
 	UCHAR *p;
 	UCHAR *iv;
 	UINT size;
-	UCHAR keygen[SHA1_SIZE * 2];
-	UCHAR key[SHA1_SIZE];
-	CRYPT *c;
 	UCHAR padlen;
 	UINT64 seq_no;
 	UCHAR *payload;
@@ -2645,15 +2718,85 @@ bool RUDPProcessBulkRecvPacket(RUDP_STACK *r, RUDP_SESSION *se, void *recv_data,
 		return false;
 	}
 
-	// Validate the signature
-	if (se->UseHMac == false)
+	if (se->BulkRecvKey->Size == RUDP_BULK_KEY_SIZE_V2)
 	{
-		Copy(sign, p, SHA1_SIZE);
-		Copy(p, se->BulkRecvKey->Data, SHA1_SIZE);
-		Sha1(sign2, p, recv_size);
-		Copy(p, sign, SHA1_SIZE);
+		UINT ret;
+		CIPHER *c;
 
-		if (Cmp(sign, sign2, SHA1_SIZE) != 0)
+		// Packet: IV + Encrypted(SEQ_NO + Data + padding) + MAC
+		// IV
+		if (size < RUDP_BULK_IV_SIZE_V2)
+		{
+			WHERE;
+			return false;
+		}
+		iv = p;
+		p += RUDP_BULK_IV_SIZE_V2;
+		size -= RUDP_BULK_IV_SIZE_V2;
+
+		// Decrypt
+		if (size < (RUDP_BULK_MAC_SIZE_V2 + 1))
+		{
+			WHERE;
+			return false;
+		}
+
+		c = NewCipher("ChaCha20-Poly1305");
+		SetCipherKey(c, se->BulkRecvKey->Data, false);
+		ret = CipherProcessAead(c, iv, p + size, RUDP_BULK_MAC_SIZE_V2, p, p, size - RUDP_BULK_MAC_SIZE_V2, NULL, 0);
+		FreeCipher(c);
+
+		if (ret == 0)
+		{
+			WHERE;
+			return false;
+		}
+
+		size -= RUDP_BULK_MAC_SIZE_V2;
+
+		// padlen
+		padlen = p[size - 1];
+		if (padlen == 0)
+		{
+			WHERE;
+			return false;
+		}
+		if (size < padlen)
+		{
+			WHERE;
+			return false;
+		}
+		size -= padlen;
+	}
+	else
+	{
+		CRYPT *c;
+		UCHAR sign[SHA1_SIZE], sign2[SHA1_SIZE];
+		UCHAR key[SHA1_SIZE], keygen[SHA1_SIZE * 2];
+
+		// Validate the signature
+		if (se->UseHMac == false)
+		{
+			Copy(sign, p, SHA1_SIZE);
+			Copy(p, se->BulkRecvKey->Data, SHA1_SIZE);
+			Sha1(sign2, p, recv_size);
+			Copy(p, sign, SHA1_SIZE);
+
+			if (Cmp(sign, sign2, SHA1_SIZE) != 0)
+			{
+				HMacSha1(sign2, se->BulkRecvKey->Data, SHA1_SIZE, p + SHA1_SIZE, recv_size - SHA1_SIZE);
+
+				if (Cmp(p, sign2, SHA1_SIZE) != 0)
+				{
+					return false;
+				}
+				else
+				{
+					se->UseHMac = true;
+				}
+			}
+		}
+		else
 		{
 			HMacSha1(sign2, se->BulkRecvKey->Data, SHA1_SIZE, p + SHA1_SIZE, recv_size - SHA1_SIZE);
 
@@ -2661,61 +2804,45 @@ bool RUDPProcessBulkRecvPacket(RUDP_STACK *r, RUDP_SESSION *se, void *recv_data,
 			{
 				return false;
 			}
-			else
-			{
-				se->UseHMac = true;
-			}
 		}
-		else
-		{
-		}
-	}
-	else
-	{
-		HMacSha1(sign2, se->BulkRecvKey->Data, SHA1_SIZE, p + SHA1_SIZE, recv_size - SHA1_SIZE);
 
-		if (Cmp(p, sign2, SHA1_SIZE) != 0)
+		p += SHA1_SIZE;
+		size -= SHA1_SIZE;
+
+		// IV
+		if (size < SHA1_SIZE)
 		{
 			return false;
 		}
-	}
+		iv = p;
+		p += SHA1_SIZE;
+		size -= SHA1_SIZE;
 
-	p += SHA1_SIZE;
-	size -= SHA1_SIZE;
+		// Decrypt
+		if (size < 1)
+		{
+			return false;
+		}
+		Copy(keygen + 0, se->BulkRecvKey->Data, SHA1_SIZE);
+		Copy(keygen + SHA1_SIZE, iv, SHA1_SIZE);
+		Sha1(key, keygen, sizeof(keygen));
 
-	// IV
-	if (size < SHA1_SIZE)
-	{
-		return false;
-	}
-	iv = p;
-	p += SHA1_SIZE;
-	size -= SHA1_SIZE;
+		c = NewCrypt(key, sizeof(key));
+		Encrypt(c, p, p, size);
+		FreeCrypt(c);
 
-	// Decrypt
-	if (size < 1)
-	{
-		return false;
+		// padlen
+		padlen = p[size - 1];
+		if (padlen == 0)
+		{
+			return false;
+		}
+		if (size < padlen)
+		{
+			return false;
+		}
+		size -= padlen;
 	}
-	Copy(keygen + 0, se->BulkRecvKey->Data, SHA1_SIZE);
-	Copy(keygen + SHA1_SIZE, iv, SHA1_SIZE);
-	Sha1(key, keygen, sizeof(keygen));
-
-	c = NewCrypt(key, sizeof(key));
-	Encrypt(c, p, p, size);
-	FreeCrypt(c);
-
-	// padlen
-	padlen = p[size - 1];
-	if (padlen == 0)
-	{
-		return false;
-	}
-	if (size < padlen)
-	{
-		return false;
-	}
-	size -= padlen;
 
 	// SEQ NO
 	seq_no = READ_UINT64(p);
@@ -3528,8 +3655,8 @@ RUDP_SESSION *RUDPNewSession(bool server_mode, IP *my_ip, UINT my_port, IP *your
 	RUDP_SESSION *se;
 	UCHAR key1[SHA1_SIZE];
 	UCHAR key2[SHA1_SIZE];
-	UCHAR bulk_send_key[SHA1_SIZE];
-	UCHAR bulk_recv_key[SHA1_SIZE];
+	UCHAR bulk_send_key[RUDP_BULK_KEY_SIZE_MAX];
+	UCHAR bulk_recv_key[RUDP_BULK_KEY_SIZE_MAX];
 	BUF *b;
 
 	se = ZeroMalloc(sizeof(RUDP_SESSION));
@@ -3615,6 +3742,8 @@ RUDP_SESSION *RUDPNewSession(bool server_mode, IP *my_ip, UINT my_port, IP *your
 	se->BulkRecvKey = NewSharedBuffer(bulk_recv_key, sizeof(bulk_recv_key));
 
 	Rand(se->BulkNextIv, sizeof(se->BulkNextIv));
+	Rand(se->BulkNextIv_V2, sizeof(se->BulkNextIv_V2));
+
 	se->BulkNextSeqNo = 1;
 
 	return se;
@@ -5563,7 +5692,7 @@ int SslCertVerifyCallback(int preverify_ok, X509_STORE_CTX *ctx)
 		if (!preverify_ok)
 		{
 			const char *msg = X509_verify_cert_error_string(clientcert->PreverifyErr);
-			StrCpy(clientcert->PreverifyErrMessage, PREVERIFY_ERR_MESSAGE_SIZE, msg);
+			StrCpy(clientcert->PreverifyErrMessage, PREVERIFY_ERR_MESSAGE_SIZE, (char *)msg);
 			Debug("SslCertVerifyCallback preverify error: '%s'\n", msg);
 		}
 		else
@@ -12765,6 +12894,8 @@ SOCK *Accept(SOCK *sock)
 
 	StrCpy(ret->UnderlayProtocol, sizeof(ret->UnderlayProtocol), SOCK_UNDERLAY_NATIVE_V4);
 
+	AddProtocolDetailsStr(ret->ProtocolDetails, sizeof(ret->ProtocolDetails), "IPv4");
+
 	return ret;
 }
 
@@ -12874,6 +13005,8 @@ SOCK *Accept6(SOCK *sock)
 	}
 
 	StrCpy(ret->UnderlayProtocol, sizeof(ret->UnderlayProtocol), SOCK_UNDERLAY_NATIVE_V6);
+
+	AddProtocolDetailsStr(ret->ProtocolDetails, sizeof(ret->ProtocolDetails), "IPv6");
 
 	return ret;
 }
@@ -14076,6 +14209,7 @@ SOCK *ConnectEx4(char *hostname, UINT port, UINT timeout, bool *cancel_flag, cha
 			if (nat_t_sock != NULL)
 			{
 				StrCpy(nat_t_sock->UnderlayProtocol, sizeof(nat_t_sock->UnderlayProtocol), SOCK_UNDERLAY_NAT_T);
+				AddProtocolDetailsStr(nat_t_sock->ProtocolDetails, sizeof(nat_t_sock->ProtocolDetails), "RUDP");
 			}
 
 			Copy(ret_ip, &ip4, sizeof(IP));
@@ -14300,8 +14434,8 @@ SOCK *ConnectEx4(char *hostname, UINT port, UINT timeout, bool *cancel_flag, cha
 				Disconnect(p4.Result_Nat_T_Sock);
 				ReleaseSock(p4.Result_Nat_T_Sock);
 
-				StrCpy(p2.Result_Nat_T_Sock->UnderlayProtocol, sizeof(p2.Result_Nat_T_Sock->UnderlayProtocol),
-					SOCK_UNDERLAY_NAT_T);
+				StrCpy(p2.Result_Nat_T_Sock->UnderlayProtocol, sizeof(p2.Result_Nat_T_Sock->UnderlayProtocol), SOCK_UNDERLAY_NAT_T);
+				AddProtocolDetailsStr(p2.Result_Nat_T_Sock->UnderlayProtocol, sizeof(p2.Result_Nat_T_Sock->UnderlayProtocol), "RUDP/UDP");
 
 				Copy(ret_ip, &ip4, sizeof(IP));
 
@@ -14314,8 +14448,8 @@ SOCK *ConnectEx4(char *hostname, UINT port, UINT timeout, bool *cancel_flag, cha
 				Disconnect(p3.Result_Nat_T_Sock);
 				ReleaseSock(p3.Result_Nat_T_Sock);
 
-				StrCpy(p4.Result_Nat_T_Sock->UnderlayProtocol, sizeof(p4.Result_Nat_T_Sock->UnderlayProtocol),
-					SOCK_UNDERLAY_DNS);
+				StrCpy(p4.Result_Nat_T_Sock->UnderlayProtocol, sizeof(p4.Result_Nat_T_Sock->UnderlayProtocol), SOCK_UNDERLAY_DNS);
+				AddProtocolDetailsStr(p4.Result_Nat_T_Sock->UnderlayProtocol, sizeof(p4.Result_Nat_T_Sock->UnderlayProtocol), "RUDP/DNS");
 
 				Copy(ret_ip, &ip4, sizeof(IP));
 
@@ -14324,8 +14458,8 @@ SOCK *ConnectEx4(char *hostname, UINT port, UINT timeout, bool *cancel_flag, cha
 			else if (p3.Ok)
 			{
 				// Use this if over ICMP success
-				StrCpy(p3.Result_Nat_T_Sock->UnderlayProtocol, sizeof(p3.Result_Nat_T_Sock->UnderlayProtocol),
-					SOCK_UNDERLAY_ICMP);
+				StrCpy(p3.Result_Nat_T_Sock->UnderlayProtocol, sizeof(p3.Result_Nat_T_Sock->UnderlayProtocol), SOCK_UNDERLAY_ICMP);
+				AddProtocolDetailsStr(p3.Result_Nat_T_Sock->UnderlayProtocol, sizeof(p3.Result_Nat_T_Sock->UnderlayProtocol), "RUDP/ICMP");
 
 				Copy(ret_ip, &ip4, sizeof(IP));
 
@@ -14389,8 +14523,8 @@ SOCK *ConnectEx4(char *hostname, UINT port, UINT timeout, bool *cancel_flag, cha
 	sock->Type = SOCK_TCP;
 	sock->ServerMode = false;
 
-	StrCpy(sock->UnderlayProtocol, sizeof(sock->UnderlayProtocol),
-		(is_ipv6 ? SOCK_UNDERLAY_NATIVE_V6 : SOCK_UNDERLAY_NATIVE_V4));
+	StrCpy(sock->UnderlayProtocol, sizeof(sock->UnderlayProtocol), is_ipv6 ? SOCK_UNDERLAY_NATIVE_V6 : SOCK_UNDERLAY_NATIVE_V4);
+	AddProtocolDetailsStr(sock->ProtocolDetails, sizeof(sock->ProtocolDetails), is_ipv6 ? "IPv6" : "IPv4");
 
 	// Host name resolution
 	if (no_get_hostname || (GetHostName(tmp, sizeof(tmp), &current_ip) == false))
@@ -14439,6 +14573,59 @@ SOCK *ConnectEx4(char *hostname, UINT port, UINT timeout, bool *cancel_flag, cha
 
 	return sock;
 }
+
+// Add a protocol details strings
+void AddProtocolDetailsStr(char *dst, UINT dst_size, char *str)
+{
+	TOKEN_LIST *t1, *t2;
+	UINT i, j;
+	if (dst == NULL || str == NULL)
+	{
+		return;
+	}
+
+	t1 = ParseTokenWithoutNullStr(dst, " ");
+	t2 = ParseTokenWithoutNullStr(str, " ");
+
+	for (i = 0;i < t2->NumTokens;i++)
+	{
+		bool exists = false;
+		for (j = 0;j < t1->NumTokens;j++)
+		{
+			if (StrCmpi(t1->Token[j], t2->Token[i]) == 0)
+			{
+				exists = true;
+				break;
+			}
+		}
+
+		if (exists == false)
+		{
+			StrCat(dst, dst_size, t2->Token[i]);
+			StrCat(dst, dst_size, " ");
+		}
+	}
+
+	FreeToken(t1);
+	FreeToken(t2);
+}
+
+void AddProtocolDetailsKeyValueStr(char *dst, UINT dst_size, char *key, char *value)
+{
+	char tmp[128];
+	StrCpy(tmp, sizeof(tmp), key);
+	StrCat(tmp, sizeof(tmp), "=");
+	StrCat(tmp, sizeof(tmp), value);
+	AddProtocolDetailsStr(dst, dst_size, tmp);
+}
+
+void AddProtocolDetailsKeyValueInt(char *dst, UINT dst_size, char *key, UINT value)
+{
+	char tmp[128];
+	ToStr(tmp, value);
+	AddProtocolDetailsKeyValueStr(dst, dst_size, key, tmp);
+}
+
 
 // Setting the buffer size of the socket
 bool SetSocketBufferSize(SOCKET s, bool send, UINT size)
@@ -16532,12 +16719,12 @@ TOKEN_LIST *GetCipherList()
 	sk = SSL_get_ciphers(ssl);
 #endif
 
-	for (i = 0; i < sk_SSL_CIPHER_num(sk); i++)
+	for (i = 0; i < (UINT)sk_SSL_CIPHER_num(sk); i++)
 	{
 		const SSL_CIPHER *c = sk_SSL_CIPHER_value(sk, i);
 
 		name = SSL_CIPHER_get_name(c);
-		if (IsEmptyStr(name))
+		if (IsEmptyStr((char *)name))
 		{
 			break;
 		}
@@ -16553,7 +16740,7 @@ TOKEN_LIST *GetCipherList()
 			ciphers->Token = Malloc(sizeof(char *));
 		}
 
-		ciphers->Token[i] = CopyStr(name);
+		ciphers->Token[i] = CopyStr((char *)name);
 	}
 
 	sk_SSL_CIPHER_free(sk);
@@ -18792,6 +18979,8 @@ LABEL_FATAL_ERROR:
 							p->SrcPort = p->DestPort = MAKE_SPECIAL_PORT(50);
 						}
 
+						p->Type = u->PacketType;
+
 						Add(recv_list, p);
 					}
 
@@ -18980,6 +19169,40 @@ UDPLISTENER_SOCK *DetermineUdpSocketForSending(UDPLISTENER *u, UDPPACKET *p)
 	return NULL;
 }
 
+void FreeTcpRawData(TCP_RAW_DATA *trd)
+{
+	// Validate arguments
+	if (trd == NULL)
+	{
+		return;
+	}
+
+	ReleaseFifo(trd->Data);
+	Free(trd);
+}
+
+TCP_RAW_DATA *NewTcpRawData(IP *src_ip, UINT src_port, IP *dst_ip, UINT dst_port)
+{
+	TCP_RAW_DATA *trd;
+	// Validate arguments
+	if (dst_ip == NULL || dst_port == 0)
+	{
+		return NULL;
+	}
+
+	trd = ZeroMalloc(sizeof(TCP_RAW_DATA));
+
+	Copy(&trd->SrcIP, src_ip, sizeof(IP));
+	trd->SrcPort = src_port;
+
+	Copy(&trd->DstIP, dst_ip, sizeof(IP));
+	trd->DstPort = dst_port;
+
+	trd->Data = NewFifoFast();
+
+	return trd;
+}
+
 // Release of the UDP packet
 void FreeUdpPacket(UDPPACKET *p)
 {
@@ -19051,6 +19274,11 @@ void UdpListenerSendPackets(UDPLISTENER *u, LIST *packet_list)
 // Creating a UDP listener
 UDPLISTENER *NewUdpListener(UDPLISTENER_RECV_PROC *recv_proc, void *param, IP *listen_ip)
 {
+	return NewUdpListenerEx(recv_proc, param, listen_ip, INFINITE);
+}
+
+UDPLISTENER *NewUdpListenerEx(UDPLISTENER_RECV_PROC *recv_proc, void *param, IP *listen_ip, UINT packet_type)
+{
 	UDPLISTENER *u;
 	// Validate arguments
 	if (recv_proc == NULL)
@@ -19061,6 +19289,7 @@ UDPLISTENER *NewUdpListener(UDPLISTENER_RECV_PROC *recv_proc, void *param, IP *l
 	u = ZeroMalloc(sizeof(UDPLISTENER));
 
 	u->Param = param;
+	u->PacketType = packet_type;
 
 	u->PortList = NewList(NULL);
 	u->Event = NewSockEvent();
@@ -19409,6 +19638,8 @@ SOCK *AcceptReverse(SOCK *s)
 		{
 			StrCpy(ret->UnderlayProtocol, sizeof(ret->UnderlayProtocol), SOCK_UNDERLAY_AZURE);
 
+			AddProtocolDetailsStr(ret->ProtocolDetails, sizeof(ret->ProtocolDetails), "VPN Azure");
+
 			return ret;
 		}
 
@@ -19456,6 +19687,8 @@ SOCK *AcceptInProc(SOCK *s)
 		if (ret != NULL)
 		{
 			StrCpy(ret->UnderlayProtocol, sizeof(ret->UnderlayProtocol), SOCK_UNDERLAY_INPROC);
+
+			AddProtocolDetailsStr(ret->ProtocolDetails, sizeof(ret->ProtocolDetails), "InProc");
 
 			return ret;
 		}
@@ -19903,104 +20136,6 @@ void FlushTubeFlushList(TUBE_FLUSH_LIST *f)
 	DeleteAll(f->List);
 }
 
-// The server receives a PACK from the client
-PACK *HttpServerRecv(SOCK *s)
-{
-	BUF *b;
-	PACK *p;
-	HTTP_HEADER *h;
-	UINT size;
-	UCHAR *tmp;
-	HTTP_VALUE *v;
-	UINT num_noop = 0;
-	// Validate arguments
-	if (s == NULL)
-	{
-		return NULL;
-	}
-
-START:
-
-	h = RecvHttpHeader(s);
-	if (h == NULL)
-	{
-		goto BAD_REQUEST;
-	}
-
-	if (StrCmpi(h->Method, "POST") != 0 ||
-		StrCmpi(h->Target, HTTP_VPN_TARGET) != 0 ||
-		StrCmpi(h->Version, "HTTP/1.1") != 0)
-	{
-		FreeHttpHeader(h);
-		goto BAD_REQUEST;
-	}
-
-	v = GetHttpValue(h, "Content-Type");
-	if (v == NULL || StrCmpi(v->Data, HTTP_CONTENT_TYPE2) != 0)
-	{
-		FreeHttpHeader(h);
-		goto BAD_REQUEST;
-	}
-
-	size = GetContentLength(h);
-	if (size == 0 || size > HTTP_PACK_MAX_SIZE)
-	{
-		FreeHttpHeader(h);
-		goto BAD_REQUEST;
-	}
-
-	tmp = MallocEx(size, true);
-	if (RecvAll(s, tmp, size, s->SecureMode) == false)
-	{
-		Free(tmp);
-		FreeHttpHeader(h);
-		return NULL;
-	}
-
-	b = NewBuf();
-	WriteBuf(b, tmp, size);
-	Free(tmp);
-	FreeHttpHeader(h);
-
-	SeekBuf(b, 0, 0);
-	p = BufToPack(b);
-	FreeBuf(b);
-
-	// Determine whether it's a NOOP
-	if (PackGetInt(p, "noop") != 0)
-	{
-		Debug("recv: noop\n");
-		FreePack(p);
-
-		p = PackError(0);
-		PackAddInt(p, "noop", 1);
-		if (HttpServerSend(s, p) == false)
-		{
-			FreePack(p);
-			return NULL;
-		}
-
-		FreePack(p);
-
-		num_noop++;
-
-		if (num_noop > MAX_NOOP_PER_SESSION)
-		{
-			return NULL;
-		}
-
-		goto START;
-	}
-
-	return p;
-
-BAD_REQUEST:
-	// Return an error
-
-
-	return NULL;
-}
-
 // Store the error value into PACK
 PACK *PackError(UINT error)
 {
@@ -20024,68 +20159,6 @@ UINT GetErrorFromPack(PACK *p)
 	return PackGetInt(p, "error");
 }
 
-// Client receives a PACK from the server
-PACK *HttpClientRecv(SOCK *s)
-{
-	BUF *b;
-	PACK *p;
-	HTTP_HEADER *h;
-	UINT size;
-	UCHAR *tmp;
-	HTTP_VALUE *v;
-	// Validate arguments
-	if (s == NULL)
-	{
-		return NULL;
-	}
-
-	h = RecvHttpHeader(s);
-	if (h == NULL)
-	{
-		return NULL;
-	}
-
-	if (StrCmpi(h->Method, "HTTP/1.1") != 0 ||
-		StrCmpi(h->Target, "200") != 0)
-	{
-		FreeHttpHeader(h);
-		return NULL;
-	}
-
-	v = GetHttpValue(h, "Content-Type");
-	if (v == NULL || StrCmpi(v->Data, HTTP_CONTENT_TYPE2) != 0)
-	{
-		FreeHttpHeader(h);
-		return NULL;
-	}
-
-	size = GetContentLength(h);
-	if (size == 0 || size > MAX_PACK_SIZE)
-	{
-		FreeHttpHeader(h);
-		return NULL;
-	}
-
-	tmp = MallocEx(size, true);
-	if (RecvAll(s, tmp, size, s->SecureMode) == false)
-	{
-		Free(tmp);
-		FreeHttpHeader(h);
-		return NULL;
-	}
-
-	b = NewBuf();
-	WriteBuf(b, tmp, size);
-	Free(tmp);
-	FreeHttpHeader(h);
-
-	SeekBuf(b, 0, 0);
-	p = BufToPack(b);
-	FreeBuf(b);
-
-	return p;
-}
-
 // Create an entry to PACK for the dummy
 void CreateDummyValue(PACK *p)
 {
@@ -20104,497 +20177,6 @@ void CreateDummyValue(PACK *p)
 	PackAddData(p, "pencore", buf, size);
 
 	Free(buf);
-}
-
-// Client sends a PACK to the server
-bool HttpClientSend(SOCK *s, PACK *p)
-{
-	BUF *b;
-	bool ret;
-	HTTP_HEADER *h;
-	char date_str[MAX_SIZE];
-	char ip_str[MAX_SIZE];
-
-	// Validate arguments
-	if (s == NULL || p == NULL)
-	{
-		return false;
-	}
-
-	IPToStr(ip_str, sizeof(ip_str), &s->RemoteIP);
-
-	CreateDummyValue(p);
-
-	b = PackToBuf(p);
-	if (b == NULL)
-	{
-		return false;
-	}
-
-	h = NewHttpHeader("POST", HTTP_VPN_TARGET, "HTTP/1.1");
-
-	GetHttpDateStr(date_str, sizeof(date_str), SystemTime64());
-	AddHttpValue(h, NewHttpValue("Date", date_str));
-	AddHttpValue(h, NewHttpValue("Host", ip_str));
-	AddHttpValue(h, NewHttpValue("Keep-Alive", HTTP_KEEP_ALIVE));
-	AddHttpValue(h, NewHttpValue("Connection", "Keep-Alive"));
-	AddHttpValue(h, NewHttpValue("Content-Type", HTTP_CONTENT_TYPE2));
-
-	ret = PostHttp(s, h, b->Buf, b->Size);
-
-	FreeHttpHeader(h);
-	FreeBuf(b);
-
-	return ret;
-}
-
-// Server sends a PACK to the client
-bool HttpServerSend(SOCK *s, PACK *p)
-{
-	BUF *b;
-	bool ret;
-	HTTP_HEADER *h;
-	char date_str[MAX_SIZE];
-	// Validate arguments
-	if (s == NULL || p == NULL)
-	{
-		return false;
-	}
-
-	CreateDummyValue(p);
-
-	b = PackToBuf(p);
-	if (b == NULL)
-	{
-		return false;
-	}
-
-	h = NewHttpHeader("HTTP/1.1", "200", "OK");
-
-	GetHttpDateStr(date_str, sizeof(date_str), SystemTime64());
-	AddHttpValue(h, NewHttpValue("Date", date_str));
-	AddHttpValue(h, NewHttpValue("Keep-Alive", HTTP_KEEP_ALIVE));
-	AddHttpValue(h, NewHttpValue("Connection", "Keep-Alive"));
-	AddHttpValue(h, NewHttpValue("Content-Type", HTTP_CONTENT_TYPE2));
-
-	ret = PostHttp(s, h, b->Buf, b->Size);
-
-	FreeHttpHeader(h);
-	FreeBuf(b);
-
-	return ret;
-}
-
-// Replace unsafe characters in target
-void ReplaceUnsafeCharInTarget(char *target){
-	UINT i;
-	for(i = 0; target[i] ; i++) {
-		if(target[i] == '<')
-			target[i] = '(';
-		else if(target[i] == '>')
-			target[i] = ')';
-	}
-}
-
-// Sending the 501 Not Implemented error
-bool HttpSendNotImplemented(SOCK *s, char *method, char *target, char *version)
-{
-	HTTP_HEADER *h;
-	char date_str[MAX_SIZE];
-	char *str;
-	UINT str_size;
-	char port_str[MAX_SIZE];
-	bool ret;
-	char host[MAX_SIZE];
-	UINT port;
-	// Validate arguments
-	if (s == NULL || target == NULL)
-	{
-		return false;
-	}
-
-	// Get the host name
-	//GetMachineName(host, MAX_SIZE);
-	Zero(host, sizeof(host));
-	IPToStr(host, sizeof(host), &s->LocalIP);
-	// Get the port number
-	port = s->LocalPort;
-
-	// Creating a header
-	GetHttpDateStr(date_str, sizeof(date_str), SystemTime64());
-
-	h = NewHttpHeader("HTTP/1.1", "501", "Method Not Implemented");
-
-	AddHttpValue(h, NewHttpValue("Date", date_str));
-	AddHttpValue(h, NewHttpValue("Keep-Alive", HTTP_KEEP_ALIVE));
-	AddHttpValue(h, NewHttpValue("Connection", "Keep-Alive"));
-	AddHttpValue(h, NewHttpValue("Content-Type", HTTP_CONTENT_TYPE));
-
-	// Creating a Data
-	str_size = sizeof(http_501_str) * 2 + StrLen(target) + StrLen(host) + StrLen(method) + StrLen(version);
-	str = Malloc(str_size);
-	StrCpy(str, str_size, http_501_str);
-
-	// TARGET
-	ReplaceUnsafeCharInTarget(target);
-	ReplaceStri(str, str_size, str, "$TARGET$", target);
-
-	// HOST
-	ReplaceStri(str, str_size, str, "$HOST$", host);
-
-	// PORT
-	ToStr(port_str, port);
-	ReplaceStri(str, str_size, str, "$PORT$", port_str);
-
-	// METHOD
-	ReplaceStri(str, str_size, str, "$METHOD$", method);
-
-	// VERSION
-	ReplaceStri(str, str_size, str, "$VERSION$", version);
-
-	// Transmission
-	ret = PostHttp(s, h, str, StrLen(str));
-
-	FreeHttpHeader(h);
-	Free(str);
-
-	return ret;
-}
-
-// Sending a 404 Not Found error
-bool HttpSendNotFound(SOCK *s, char *target)
-{
-	HTTP_HEADER *h;
-	char date_str[MAX_SIZE];
-	char *str;
-	UINT str_size;
-	char port_str[MAX_SIZE];
-	bool ret;
-	char host[MAX_SIZE];
-	UINT port;
-	// Validate arguments
-	if (s == NULL || target == NULL)
-	{
-		return false;
-	}
-
-	// Get the host name
-	//GetMachineName(host, MAX_SIZE);
-	Zero(host, sizeof(host));
-	IPToStr(host, sizeof(host), &s->LocalIP);
-	// Get the port number
-	port = s->LocalPort;
-
-	// Creating a header
-	GetHttpDateStr(date_str, sizeof(date_str), SystemTime64());
-
-	h = NewHttpHeader("HTTP/1.1", "404", "Not Found");
-
-	AddHttpValue(h, NewHttpValue("Date", date_str));
-	AddHttpValue(h, NewHttpValue("Keep-Alive", HTTP_KEEP_ALIVE));
-	AddHttpValue(h, NewHttpValue("Connection", "Keep-Alive"));
-	AddHttpValue(h, NewHttpValue("Content-Type", HTTP_CONTENT_TYPE));
-
-	// Creating a Data
-	str_size = sizeof(http_404_str) * 2 + StrLen(target) + StrLen(host);
-	str = Malloc(str_size);
-	StrCpy(str, str_size, http_404_str);
-
-	// TARGET
-	ReplaceUnsafeCharInTarget(target);
-	ReplaceStri(str, str_size, str, "$TARGET$", target);
-
-	// HOST
-	ReplaceStri(str, str_size, str, "$HOST$", host);
-
-	// PORT
-	ToStr(port_str, port);
-	ReplaceStri(str, str_size, str, "$PORT$", port_str);
-
-	// Transmission
-	ret = PostHttp(s, h, str, StrLen(str));
-
-	FreeHttpHeader(h);
-	Free(str);
-
-	return ret;
-}
-
-// Sending a 403 Forbidden error
-bool HttpSendForbidden(SOCK *s, char *target, char *server_id)
-{
-	HTTP_HEADER *h;
-	char date_str[MAX_SIZE];
-	char *str;
-	UINT str_size;
-	char port_str[MAX_SIZE];
-	bool ret;
-	char host[MAX_SIZE];
-	UINT port;
-	// Validate arguments
-	if (s == NULL || target == NULL)
-	{
-		return false;
-	}
-
-	// Get the host name
-	//GetMachineName(host, MAX_SIZE);
-	Zero(host, sizeof(host));
-	IPToStr(host, sizeof(host), &s->LocalIP);
-	// Get the port number
-	port = s->LocalPort;
-
-	// Creating a header
-	GetHttpDateStr(date_str, sizeof(date_str), SystemTime64());
-
-	h = NewHttpHeader("HTTP/1.1", "403", "Forbidden");
-
-	AddHttpValue(h, NewHttpValue("Date", date_str));
-	AddHttpValue(h, NewHttpValue("Keep-Alive", HTTP_KEEP_ALIVE));
-	AddHttpValue(h, NewHttpValue("Connection", "Keep-Alive"));
-	AddHttpValue(h, NewHttpValue("Content-Type", HTTP_CONTENT_TYPE));
-
-	// Creating a Data
-	str_size = sizeof(http_403_str) * 2 + StrLen(target) + StrLen(host);
-	str = Malloc(str_size);
-	StrCpy(str, str_size, http_403_str);
-
-	// TARGET
-	ReplaceUnsafeCharInTarget(target);
-	ReplaceStri(str, str_size, str, "$TARGET$", target);
-
-	// HOST
-	ReplaceStri(str, str_size, str, "$HOST$", host);
-
-	// PORT
-	ToStr(port_str, port);
-	ReplaceStri(str, str_size, str, "$PORT$", port_str);
-
-	// Transmission
-	ret = PostHttp(s, h, str, StrLen(str));
-
-	FreeHttpHeader(h);
-	Free(str);
-
-	return ret;
-}
-
-// Get the date and time string for the HTTP header
-void GetHttpDateStr(char *str, UINT size, UINT64 t)
-{
-	SYSTEMTIME s;
-	static char *wday[] =
-	{
-		"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
-	};
-	static char *month[] =
-	{
-		"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
-		"Nov", "Dec",
-	};
-	// Validate arguments
-	if (str == NULL)
-	{
-		return;
-	}
-	UINT64ToSystem(&s, t);
-
-	Format(str, size, "%s, %02u %s %04u %02u:%02u:%02u GMT",
-		wday[s.wDayOfWeek], s.wDay, month[s.wMonth - 1], s.wYear,
-		s.wHour, s.wMinute, s.wSecond);
-}
-
-// Get the Content-Length from the HTTP header
-UINT GetContentLength(HTTP_HEADER *header)
-{
-	UINT ret;
-	HTTP_VALUE *v;
-	// Validate arguments
-	if (header == NULL)
-	{
-		return 0;
-	}
-
-	v = GetHttpValue(header, "Content-Length");
-	if (v == NULL)
-	{
-		return 0;
-	}
-
-	ret = ToInt(v->Data);
-
-	return ret;
-}
-
-// Send the data in the HTTP
-bool PostHttp(SOCK *s, HTTP_HEADER *header, void *post_data, UINT post_size)
-{
-	char *header_str;
-	BUF *b;
-	bool ret;
-	// Validate arguments
-	if (s == NULL || header == NULL || (post_size != 0 && post_data == NULL))
-	{
-		return false;
-	}
-
-	// Check whether the Content-Length exists?
-	if (GetHttpValue(header, "Content-Length") == NULL)
-	{
-		char tmp[MAX_SIZE];
-		// Add because it does not exist
-		ToStr(tmp, post_size);
-		AddHttpValue(header, NewHttpValue("Content-Length", tmp));
-	}
-
-	// Convert the header to string
-	header_str = HttpHeaderToStr(header);
-	if (header_str == NULL)
-	{
-		return false;
-	}
-	b = NewBuf();
-	WriteBuf(b, header_str, StrLen(header_str));
-	Free(header_str);
-
-	// Append the data
-	WriteBuf(b, post_data, post_size);
-
-	// Send
-	ret = SendAll(s, b->Buf, b->Size, s->SecureMode);
-
-	FreeBuf(b);
-
-	return ret;
-}
-
-// Convert a HTTP header to a string
-char *HttpHeaderToStr(HTTP_HEADER *header)
-{
-	BUF *b;
-	char *tmp;
-	UINT i;
-	char *s;
-	// Validate arguments
-	if (header == NULL)
-	{
-		return NULL;
-	}
-
-	tmp = Malloc(HTTP_HEADER_LINE_MAX_SIZE);
-	b = NewBuf();
-
-	// Header
-	Format(tmp, HTTP_HEADER_LINE_MAX_SIZE,
-		"%s %s %s\r\n", header->Method, header->Target, header->Version);
-	WriteBuf(b, tmp, StrLen(tmp));
-
-	// Value
-	for (i = 0;i < LIST_NUM(header->ValueList);i++)
-	{
-		HTTP_VALUE *v = (HTTP_VALUE *)LIST_DATA(header->ValueList, i);
-		Format(tmp, HTTP_HEADER_LINE_MAX_SIZE,
-			"%s: %s\r\n", v->Name, v->Data);
-		WriteBuf(b, tmp, StrLen(tmp));
-	}
-
-	// Trailing newline
-	WriteBuf(b, "\r\n", 2);
-	s = Malloc(b->Size + 1);
-	Copy(s, b->Buf, b->Size);
-	s[b->Size] = 0;
-
-	FreeBuf(b);
-	Free(tmp);
-
-	return s;
-}
-
-// Send the HTTP header
-bool SendHttpHeader(SOCK *s, HTTP_HEADER *header)
-{
-	char *str;
-	bool ret;
-	// Validate arguments
-	if (s == NULL || header == NULL)
-	{
-		return false;
-	}
-
-	// Convert to string
-	str = HttpHeaderToStr(header);
-
-	// Transmission
-	ret = SendAll(s, str, StrLen(str), s->SecureMode);
-
-	Free(str);
-
-	return ret;
-}
-
-// Receive an HTTP header
-HTTP_HEADER *RecvHttpHeader(SOCK *s)
-{
-	TOKEN_LIST *token = NULL;
-	char *str = NULL;
-	HTTP_HEADER *header = NULL;
-	// Validate arguments
-	if (s == NULL)
-	{
-		return NULL;
-	}
-
-	// Get the first line
-	str = RecvLine(s, HTTP_HEADER_LINE_MAX_SIZE);
-	if (str == NULL)
-	{
-		return NULL;
-	}
-
-	// Split into tokens
-	token = ParseToken(str, " ");
-
-	FreeSafe(PTR_TO_PTR(str));
-
-	if (token->NumTokens < 3)
-	{
-		FreeToken(token);
-		return NULL;
-	}
-
-	// Creating a header object
-	header = NewHttpHeader(token->Token[0], token->Token[1], token->Token[2]);
-	FreeToken(token);
-
-	if (StrCmpi(header->Version, "HTTP/0.9") == 0)
-	{
-		// The header ends with this line
-		return header;
-	}
-
-	// Get the subsequent lines
-	while (true)
-	{
-		str = RecvLine(s, HTTP_HEADER_LINE_MAX_SIZE);
-		Trim(str);
-		if (IsEmptyStr(str))
-		{
-			// End of header
-			FreeSafe(PTR_TO_PTR(str));
-			break;
-		}
-
-		if (AddHttpValueStr(header, str) == false)
-		{
-			FreeSafe(PTR_TO_PTR(str));
-			FreeHttpHeaderSafe(&header);
-			break;
-		}
-
-		FreeSafe(PTR_TO_PTR(str));
-	}
-
-	return header;
 }
 
 // Receive a line
@@ -20646,207 +20228,6 @@ char *RecvLine(SOCK *s, UINT max_size)
 			}
 		}
 	}
-}
-
-// Creating a new HTTP value
-HTTP_VALUE *NewHttpValue(char *name, char *data)
-{
-	HTTP_VALUE *v;
-	// Validate arguments
-	if (name == NULL || data == NULL)
-	{
-		return NULL;
-	}
-
-	v = ZeroMalloc(sizeof(HTTP_VALUE));
-
-	v->Name = CopyStr(name);
-	v->Data = CopyStr(data);
-
-	Trim(v->Name);
-	Trim(v->Data);
-
-	return v;
-}
-
-// Look for the HTTP value from the HTTP header
-HTTP_VALUE *GetHttpValue(HTTP_HEADER *header, char *name)
-{
-	HTTP_VALUE *v, t;
-	// Validate arguments
-	if (header == NULL || name == NULL)
-	{
-		return NULL;
-	}
-
-	t.Name = name;
-	v = Search(header->ValueList, &t);
-	if (v == NULL)
-	{
-		return NULL;
-	}
-
-	return v;
-}
-
-// Add a HTTP value to the HTTP header
-void AddHttpValue(HTTP_HEADER *header, HTTP_VALUE *value)
-{
-	// Validate arguments
-	if (header == NULL || value == NULL)
-	{
-		return;
-	}
-
-	if (LIST_NUM(header->ValueList) < HTTP_HEADER_MAX_LINES)
-	{
-		Insert(header->ValueList, value);
-	}
-	else
-	{
-		FreeHttpValue(value);
-	}
-}
-
-// Adds the HTTP value contained in the string to the HTTP header
-bool AddHttpValueStr(HTTP_HEADER* header, char *string)
-{
-	HTTP_VALUE *value = NULL;
-	UINT pos = 0;
-	char *value_name = NULL;
-	char *value_data = NULL;
-
-	// Validate arguments
-	if (header == NULL || IsEmptyStr(string))
-	{
-		return false;
-	}
-
-	// Sanitize string
-	EnSafeHttpHeaderValueStr(string, ' ');
-
-	// Get the position of the colon
-	pos = SearchStr(string, ":", 0);
-	if (pos == INFINITE)
-	{
-		// The colon does not exist
-		return false;
-	}
-
-	if ((pos + 1) >= StrLen(string))
-	{
-		// There is no data
-		return false;
-	}
-
-	// Divide into the name and the data
-	value_name = Malloc(pos + 1);
-	Copy(value_name, string, pos);
-	value_name[pos] = 0;
-	value_data = &string[pos + 1];
-
-	value = NewHttpValue(value_name, value_data);
-	if (value == NULL)
-	{
-		Free(value_name);
-		return false;
-	}
-
-	Free(value_name);
-
-	AddHttpValue(header, value);
-
-	return true;
-}
-
-// Create an HTTP header
-HTTP_HEADER *NewHttpHeader(char *method, char *target, char *version)
-{
-	return NewHttpHeaderEx(method, target, version, false);
-}
-HTTP_HEADER *NewHttpHeaderEx(char *method, char *target, char *version, bool no_sort)
-{
-	HTTP_HEADER *header;
-	// Validate arguments
-	if (method == NULL || target == NULL || version == NULL)
-	{
-		return NULL;
-	}
-
-	header = ZeroMalloc(sizeof(HTTP_HEADER));
-
-	header->Method = CopyStr(method);
-	header->Target = CopyStr(target);
-	header->Version = CopyStr(version);
-	header->ValueList = NewListFast(no_sort ? NULL : CompareHttpValue);
-
-	return header;
-}
-
-// Comparison function of the HTTP value
-int CompareHttpValue(void *p1, void *p2)
-{
-	HTTP_VALUE *v1, *v2;
-	if (p1 == NULL || p2 == NULL)
-	{
-		return 0;
-	}
-	v1 = *(HTTP_VALUE **)p1;
-	v2 = *(HTTP_VALUE **)p2;
-	if (v1 == NULL || v2 == NULL)
-	{
-		return 0;
-	}
-	return StrCmpi(v1->Name, v2->Name);
-}
-
-// Release the HTTP value
-void FreeHttpValue(HTTP_VALUE *value)
-{
-	// Validate arguments
-	if (value == NULL)
-	{
-		return;
-	}
-
-	Free(value->Data);
-	Free(value->Name);
-
-	Free(value);
-}
-
-// Release the HTTP header
-void FreeHttpHeader(HTTP_HEADER *header)
-{
-	UINT i;
-	HTTP_VALUE **values;
-	// Validate arguments
-	if (header == NULL)
-	{
-		return;
-	}
-
-	Free(header->Method);
-	Free(header->Target);
-	Free(header->Version);
-
-	values = ToArray(header->ValueList);
-	for (i = 0;i < LIST_NUM(header->ValueList);i++)
-	{
-		FreeHttpValue(values[i]);
-	}
-	Free(values);
-
-	ReleaseList(header->ValueList);
-
-	Free(header);
-}
-
-// Release the HTTP header and set pointer's value to NULL
-void FreeHttpHeaderSafe(HTTP_HEADER **header)
-{
-	FreeHttpHeader(*header);
-	*header = NULL;
 }
 
 // Receive a PACK

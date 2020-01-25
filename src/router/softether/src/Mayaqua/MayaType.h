@@ -39,7 +39,7 @@ typedef struct x509_crl_st X509_CRL;
 #define	BUF_SIZE			512
 
 // Support Windows OS list
-#define	SUPPORTED_WINDOWS_LIST		"Windows 98 / 98 SE / ME / NT 4.0 SP6a / 2000 SP4 / XP SP2, SP3 / Vista SP1, SP2 / 7 SP1 / 8 / 8.1 / 10 / Server 2003 SP2 / Server 2008 SP1, SP2 / Hyper-V Server 2008 / Server 2008 R2 SP1 / Hyper-V Server 2008 R2 / Server 2012 / Hyper-V Server 2012 / Server 2012 R2 / Hyper-V Server 2012 R2 / Server 2016"
+#define	SUPPORTED_WINDOWS_LIST		"Windows 98 / 98 SE / ME / NT 4.0 SP6a / 2000 SP4 / XP SP2, SP3 / Vista SP1, SP2 / 7 SP1 / 8 / 8.1 / 10 / Server 2003 SP2 / Server 2008 SP1, SP2 / Hyper-V Server 2008 / Server 2008 R2 SP1 / Hyper-V Server 2008 R2 / Server 2012 / Hyper-V Server 2012 / Server 2012 R2 / Hyper-V Server 2012 R2 / Server 2016 / Server 2019"
 
 // Infinite
 #ifndef	WINDOWS_H
@@ -421,6 +421,7 @@ typedef struct TUBEPAIR_DATA TUBEPAIR_DATA;
 typedef struct UDPLISTENER UDPLISTENER;
 typedef struct UDPLISTENER_SOCK UDPLISTENER_SOCK;
 typedef struct UDPPACKET UDPPACKET;
+typedef struct TCP_RAW_DATA TCP_RAW_DATA;
 typedef struct INTERRUPT_MANAGER INTERRUPT_MANAGER;
 typedef struct TUBE_FLUSH_LIST TUBE_FLUSH_LIST;
 typedef struct ICMP_RESULT ICMP_RESULT;
@@ -506,7 +507,11 @@ typedef struct DHCP_MODIFY_OPTION DHCP_MODIFY_OPTION;
 typedef struct NBTDG_HEADER NBTDG_HEADER;
 typedef struct IKE_HEADER IKE_HEADER;
 
+// HTTP.h
+typedef struct HTTP_MIME_TYPE HTTP_MIME_TYPE;
 
+// Proxy.h
+typedef struct PROXY_PARAM_IN PROXY_PARAM_IN;
+typedef struct PROXY_PARAM_OUT PROXY_PARAM_OUT;
 
 #endif	// MAYATYPE_H
-
