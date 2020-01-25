@@ -138,11 +138,15 @@ static void update_share_cb(void *value,
 			    void *g)
 {
 	struct LIST *list = (struct LIST *) g;
-	if (!key || !value)
+	char *nk, *nv;
+
+	nk = strdup(list_fromkey(key));
+	nv = strdup(value);
+	if (!nk || !nv)
 		exit(EXIT_FAILURE);
 
 	/* This will call .dtor for already existing key/value pairs */
-	list_add_str(&list, value, list_fromkey(key));
+	list_add_str(&list, nv, nk);
 }
 
 int command_add_share(char *smbconf, char *name, char *opts)

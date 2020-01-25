@@ -17,6 +17,7 @@
 #include <stdarg.h>
 #include <usmbdtools.h>
 
+/* special simple linked list implementation, just made for the need of usmbd. not yet optimized */
 
 struct LIST *list_init(struct LIST **list)
 {
@@ -25,6 +26,7 @@ struct LIST *list_init(struct LIST **list)
 		return NULL;
 	(*list)->prev = NULL;
 	(*list)->next = NULL;
+	(*list)->last = *list;
 	return *list;
 }
 
@@ -83,11 +85,6 @@ int _list_add(struct LIST **list, void *item, unsigned long long id, char *str)
 
 	new->item = item;
 	if (ret) {
-		struct LIST *head = *list;
-		struct LIST *target = head;
-		while (head = head->next) {
-			target = head;
-		}
 		if (str) {
 			new->keystr = str;
 			new->type = KEY_STRING;
@@ -95,9 +92,10 @@ int _list_add(struct LIST **list, void *item, unsigned long long id, char *str)
 			new->id = id;
 			new->type = KEY_ID;
 		}
-		new->prev = target;
+		new->prev = (*list)->last;
 		new->next = NULL;
-		target->next = new;
+		(*list)->last->next = new;
+		(*list)->last = new;
 	}
 	return ret;
 }
@@ -119,37 +117,26 @@ void list_append(struct LIST **list, void *item)
 
 int _list_remove(struct LIST **list, unsigned long long id, int dec)
 {
-	int ret = -1;
+	int ret = 0;
 	struct LIST *head = *list;
 	struct LIST *next = NULL;
 	while ((head = head->next)) {
-		if (head->type == KEY_STRING) {
-			char *c = (char *)list_fromkey(id);
-			if (!strcmp(head->keystr, c)) {
-				if (head->prev) {
-					head->prev->next = head->next;
-				}
-				if (head->next) {
-					head->next->prev = head->prev;
-				}
-				free(head);
-				ret = 0;
-				goto out;
-			}
-		} else if (head->id == id) {
+		if ((head->type == KEY_ID && head->id == id) || (head->type == KEY_STRING && !strcmp(head->keystr, list_fromkey(id)))) {
 			if (head->prev) {
 				head->prev->next = head->next;
 			}
 			if (head->next) {
+				next = head->next;
 				head->next->prev = head->prev;
 			}
 			free(head);
-			ret = 0;
+			ret = 1;
 			goto out;
 		}
 	}
       out:;
 	if (dec && !ret && next) {
+		/* reorder all following ids after removing slot */
 		while (next) {
 			next->id--;
 			next = next->next;
