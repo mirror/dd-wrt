@@ -169,9 +169,12 @@ extern void pr_logger_init(int flags);
 					getpid(),			\
 					##__VA_ARGS__);			\
 	} while (0)
-
+#ifdef NEED_DEBUG
 #define pr_debug(f, ...)	\
 	pr_log(PR_DEBUG, PRDEBUG f, ##__VA_ARGS__)
+#else
+#define pr_debug(f, ...) do {  } while(0)
+#endif
 #define pr_info(f, ...)	\
 	pr_log(PR_INFO, PRINF f, ##__VA_ARGS__)
 #define pr_err(f, ...)	\
