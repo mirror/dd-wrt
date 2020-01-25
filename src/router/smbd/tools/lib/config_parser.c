@@ -392,7 +392,7 @@ strsplit_set (const char *string,
 
   if (*string == '\0')
     {
-      result = s_new (char *, 1);
+      result = malloc(sizeof(char *));
       result[0] = NULL;
       return result;
     }
@@ -423,7 +423,7 @@ strsplit_set (const char *string,
   tokens = slist_prepend (tokens, token);
   ++n_tokens;
 
-  result = s_new (char *, n_tokens + 1);
+  result = malloc(sizeof(char *) * (n_tokens + 1));
 
   result[n_tokens] = NULL;
   for (list = tokens; list != NULL; list = list->next)

@@ -29,10 +29,6 @@
 #include <config.h>
 #endif
 
-#define _S_NEW(struct_type, n_structs, func) \
-        ((struct_type *) func ((n_structs), sizeof (struct_type)))
-#define s_new(struct_type, n_structs)			_S_NEW (struct_type, n_structs, calloc)
-
 char *ascii_strdown(char *str, size_t len);
 
 int atomic_int_add(volatile int *atomic, int val);
@@ -47,6 +43,7 @@ int atomic_int_compare_and_exchange (volatile int *atomic,
 struct LIST {
 	struct LIST *prev;
 	struct LIST *next;
+	struct LIST *last;
 	int type;
 	unsigned long long id;
 	char *keystr;
@@ -66,14 +63,14 @@ int list_foreach(struct LIST **list, void (*func)(void *item, unsigned long long
 
 static unsigned long long list_tokey(void *ptr)
 {
-size_t p = (size_t)ptr;
-return p;
+	size_t p = (size_t)ptr;
+	return p;
 }
 
 static void *list_fromkey(unsigned long long key)
 {
-size_t p = key;
-return (void *)p;
+	size_t p = key;
+	return (void *)p;
 }
 
 struct smbconf_global {
