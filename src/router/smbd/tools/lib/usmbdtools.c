@@ -26,7 +26,6 @@ struct LIST *list_init(struct LIST **list)
 		return NULL;
 	(*list)->prev = NULL;
 	(*list)->next = NULL;
-	(*list)->last = *list;
 	return *list;
 }
 
@@ -56,6 +55,7 @@ int list_foreach(struct LIST **list, void (*func)(void *item, unsigned long long
 struct LIST *head_get(struct LIST **list, unsigned long long id)
 {
 	struct LIST *head = *list;
+	head = *list;
 	while ((head = head->next)) {
 		if (head->type == KEY_STRING) {
 			char *c = (char *)list_fromkey(id);
@@ -76,9 +76,10 @@ int _list_add(struct LIST **list, void *item, unsigned long long id, char *str)
 	struct LIST *new;
 	if (!*list)
 		list_init(list);
-	if (new = head_get(list, str ? list_tokey(str) : id)) {
+	if (new = head_get(list, str ? list_tokey(str) : id))
 		ret = 0;
-	} else
+
+	if (!new)
 		new = malloc(sizeof(struct LIST));
 	if (!new)
 		return 0;
@@ -92,11 +93,15 @@ int _list_add(struct LIST **list, void *item, unsigned long long id, char *str)
 			new->id = id;
 			new->type = KEY_ID;
 		}
-		new->prev = (*list)->last;
 		new->next = NULL;
-		(*list)->last->next = new;
-		(*list)->last = new;
 	}
+	struct LIST *head = *list;
+	struct LIST *last = head;
+	while ((head = head->next)) {
+		last = head;
+	}	
+	last->next = new;
+	new->prev = last;
 	return ret;
 }
 
@@ -112,7 +117,7 @@ int list_add_str(struct LIST **list, void *item, char *str)
 
 void list_append(struct LIST **list, void *item)
 {
-	list_add(list, item, list_maxid(list) + 1);
+	_list_add(list, item, list_maxid(list) + 1, NULL);
 }
 
 int _list_remove(struct LIST **list, unsigned long long id, int dec)
@@ -138,10 +143,9 @@ int _list_remove(struct LIST **list, unsigned long long id, int dec)
 	if (dec && !ret && next) {
 		/* reorder all following ids after removing slot */
 		while (next) {
-			next->id--;
+			next->id = next->prev->id + 1;
 			next = next->next;
 		}
-
 	}
 	return ret;
 }
