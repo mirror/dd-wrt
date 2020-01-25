@@ -207,7 +207,7 @@ static int process_smbconf_entry(char *data)
 
 static int __mmap_parse_file(const char *fname, int (*callback)(char *d))
 {
-	char *contents;
+	char *contents, *buf;
 	size_t len;
 	char *delim;
 	int ret = 0;
@@ -221,7 +221,7 @@ static int __mmap_parse_file(const char *fname, int (*callback)(char *d))
 	fseek(fd, 0, SEEK_END);
 	len = ftell(fd);
 	rewind(fd);
-	contents = malloc(len + 1);
+	buf = contents = malloc(len + 1);
 	if (!contents)
 		goto out;
 	fread(contents, 1, len, fd);
@@ -258,8 +258,8 @@ static int __mmap_parse_file(const char *fname, int (*callback)(char *d))
 
 	ret = 0;
 out:
-	if (contents)
-		free(contents);
+	if (buf)
+		free(buf);
 
 	if (fd) {
 		fclose(fd);
