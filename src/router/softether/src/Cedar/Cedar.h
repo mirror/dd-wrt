@@ -116,8 +116,6 @@
 #define	MAX_ACCOUNT_NAME_LEN		255		// Maximum account name length
 #define	MAX_USERNAME_LEN			255		// User name maximum length
 #define	MAX_PASSWORD_LEN			255		// Password name maximum length
-#define	MAX_PROXY_USERNAME_LEN		255		// Proxy user name maximum length
-#define	MAX_PROXY_PASSWORD_LEN		255		// Proxy Password maximum length
 #define	MAX_SERVER_STR_LEN			255		// Maximum length of server string
 #define	MAX_CLIENT_STR_LEN			255		// Maximum length of client string
 #define	MAX_HUBNAME_LEN				255		// Maximum length of HUB name
@@ -190,7 +188,6 @@
 #define	TIMEOUT_MAX					(60 * 1000)	// Maximum timeout in seconds
 #define	TIMEOUT_DEFAULT				(30 * 1000) // Default number of seconds to timeout
 #define	CONNECTING_TIMEOUT			(15 * 1000)	// Timeout in seconds of being connected
-#define	CONNECTING_TIMEOUT_PROXY	(4 * 1000)	// Timeout in seconds of being connected (Proxy)
 #define	CONNECTING_POOLING_SPAN		(3 * 1000) // Polling interval of connected
 #define	MIN_RETRY_INTERVAL			(5 * 1000)		// Minimum retry interval
 #define	MAX_RETRY_INTERVAL			(300 * 1000)	// Maximum retry interval
@@ -305,8 +302,7 @@
 #define	CONNECTION_TYPE_ADMIN_RPC		5	// RPC for Management
 #define	CONNECTION_TYPE_ENUM_HUB		6	// HUB enumeration
 #define	CONNECTION_TYPE_PASSWORD		7	// Password change
-#define	CONNECTION_TYPE_SSTP			8	// SSTP
-#define	CONNECTION_TYPE_OPENVPN			9	// OpenVPN
+#define	CONNECTION_TYPE_OTHER			0xffffffff	// E.g. Third-party protocol
 
 // Protocol
 #define	CONNECTION_TCP					0	// TCP protocol
@@ -435,19 +431,23 @@
 #define	LOG_ENGINE_BUFFER_CACHE_SIZE_MAX	(10 * 1024 * 1024)	// Write cache size
 
 // Constant such as a file name
-#define	SERVER_LOG_DIR_NAME			"@server_log"
+#define	SERVER_LOG_DIR				"server_log"
+#define	SERVER_LOG_DIR_NAME			"@"SERVER_LOG_DIR
 #define	BRIDGE_LOG_DIR_NAME			SERVER_LOG_DIR_NAME
 #define	SERVER_LOG_PERFIX			"vpn"
 
-#define	HUB_SECURITY_LOG_DIR_NAME	"@security_log"
-#define	HUB_SECURITY_LOG_FILE_NAME	"@security_log/%s"
+#define	HUB_SECURITY_LOG_DIR		"security_log"
+#define	HUB_SECURITY_LOG_DIR_NAME	"@"HUB_SECURITY_LOG_DIR
+#define	HUB_SECURITY_LOG_FILE_NAME	HUB_SECURITY_LOG_DIR_NAME"/%s"
 #define	HUB_SECURITY_LOG_PREFIX		"sec"
-#define	HUB_PACKET_LOG_DIR_NAME		"@packet_log"
-#define	HUB_PACKET_LOG_FILE_NAME	"@packet_log/%s"
+#define	HUB_PACKET_LOG_DIR		"packet_log"
+#define	HUB_PACKET_LOG_DIR_NAME		"@"HUB_PACKET_LOG_DIR
+#define	HUB_PACKET_LOG_FILE_NAME	HUB_PACKET_LOG_DIR_NAME"/%s"
 #define	HUB_PACKET_LOG_PREFIX		"pkt"
 
-#define	NAT_LOG_DIR_NAME			"@secure_nat_log"
-#define	NAT_LOG_FILE_NAME			"@secure_nat_log/%s"
+#define	NAT_LOG_DIR				"secure_nat_log"
+#define	NAT_LOG_DIR_NAME			"@"NAT_LOG_DIR
+#define	NAT_LOG_FILE_NAME			NAT_LOG_DIR_NAME"/%s"
 #define	NAT_LOG_PREFIX				"snat"
 
 #define	CLIENT_LOG_DIR_NAME			"@client_log"
@@ -568,8 +568,9 @@
 
 #define	EL_ADMIN_PORT			22888
 #define	EL_CONFIG_FILENAME		"@etherlogger.config"
-#define	EL_PACKET_LOG_DIR_NAME	"@etherlogger_log"
-#define	EL_PACKET_LOG_FILE_NAME	"@etherlogger_log/%s"
+#define	EL_PACKET_LOG_DIR	"etherlogger_log"
+#define	EL_PACKET_LOG_DIR_NAME	"@"EL_PACKET_LOG_DIR
+#define	EL_PACKET_LOG_FILE_NAME	EL_PACKET_LOG_DIR_NAME"/%s"
 #define	EL_PACKET_LOG_PREFIX	"pkt"
 #define	EL_LICENSE_CHECK_SPAN	(10 * 1000)
 
@@ -1031,6 +1032,7 @@ typedef struct CEDAR
 // Layer-2/Layer-3 converter
 #include <Cedar/IPC.h>
 // Third party protocols
+#include <Cedar/Proto.h>
 #include <Cedar/Proto_IPsec.h>
 #include <Cedar/Proto_EtherIP.h>
 #include <Cedar/Proto_IkePacket.h>

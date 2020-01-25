@@ -7,10 +7,6 @@
 
 #include "CedarPch.h"
 
-
-static bool g_no_openvpn_tcp = false;
-static bool g_no_openvpn_udp = false;
-
 // Ping signature of the OpenVPN protocol
 static UCHAR ping_signature[] =
 {
@@ -18,18 +14,210 @@ static UCHAR ping_signature[] =
 	0x07, 0xed, 0x2d, 0x0a, 0x98, 0x1f, 0xc7, 0x48
 };
 
-// Get the OpenVPN over TCP disabling flag
-bool OvsGetNoOpenVpnTcp()
+PROTO_IMPL *OvsGetProtoImpl()
 {
-	return g_no_openvpn_tcp;
+	static PROTO_IMPL impl =
+	{
+		OvsInit,
+		OvsFree,
+		OvsName,
+		OvsSupportedModes,
+		OvsIsPacketForMe,
+		OvsProcessData,
+		OvsBufferLimit,
+		OvsIsOk,
+		OvsEstablishedSessions
+	};
+
+	return &impl;
 }
 
-// Get the OpenVPN over UDP disabling flag
-bool OvsGetNoOpenVpnUdp()
+bool OvsInit(void **param, CEDAR *cedar, INTERRUPT_MANAGER *im, SOCK_EVENT *se)
 {
-	return g_no_openvpn_udp;
+	if (param == NULL || cedar == NULL || im == NULL || se == NULL)
+	{
+		return false;
+	}
+
+	*param = NewOpenVpnServer(cedar, im, se);
+
+	return true;
 }
 
+void OvsFree(void *param)
+{
+	FreeOpenVpnServer(param);
+}
+
+// Return the protocol name
+char *OvsName()
+{
+	return "OpenVPN";
+}
+
+// Return the supported modes (TCP & UDP)
+UINT OvsSupportedModes()
+{
+	return PROTO_MODE_TCP | PROTO_MODE_UDP;
+}
+
+// Check whether it's an OpenVPN packet
+bool OvsIsPacketForMe(const UCHAR *buf, const UINT size)
+{
+	if (buf == NULL || size != 2)
+	{
+		return false;
+	}
+
+	if (buf[0] == 0x00 && buf[1] == 0x0E)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool OvsProcessData(void *param, TCP_RAW_DATA *received_data, FIFO *data_to_send)
+{
+	bool ret = true;
+	UINT i;
+	OPENVPN_SERVER *server;
+	UCHAR buf[OPENVPN_TCP_MAX_PACKET_SIZE];
+
+	if (param == NULL || received_data == NULL || data_to_send == NULL)
+	{
+		return false;
+	}
+
+	server = param;
+
+	// Separate to a list of datagrams by interpreting the data received from the TCP socket
+	while (true)
+	{
+		UDPPACKET *packet;
+		USHORT payload_size, packet_size;
+		FIFO *fifo = received_data->Data;
+		const UINT fifo_size = FifoSize(fifo);
+
+		if (fifo_size < sizeof(USHORT))
+		{
+			// Non-arrival
+			break;
+		}
+
+		// The beginning of a packet contains the data size
+		payload_size = READ_USHORT(FifoPtr(fifo));
+		packet_size = payload_size + sizeof(USHORT);
+
+		if (payload_size == 0 || packet_size > sizeof(buf))
+		{
+			ret = false;
+			Debug("OvsProcessData(): Invalid payload size: %u bytes\n", payload_size);
+			break;
+		}
+
+		if (fifo_size < packet_size)
+		{
+			// Non-arrival
+			break;
+		}
+
+		if (ReadFifo(fifo, buf, packet_size) != packet_size)
+		{
+			ret = false;
+			Debug("OvsProcessData(): ReadFifo() failed to read the packet\n");
+			break;
+		}
+
+		// Insert packet into the list
+		packet = NewUdpPacket(&received_data->SrcIP, received_data->SrcPort, &received_data->DstIP, received_data->DstPort, Clone(buf + sizeof(USHORT), payload_size), payload_size);
+		packet->Type = OPENVPN_PROTOCOL_TCP;
+		Add(server->RecvPacketList, packet);
+	}
+
+	// Process the list of received datagrams
+	OvsRecvPacket(server, server->RecvPacketList);
+
+	// Release the received packet list
+	for (i = 0; i < LIST_NUM(server->RecvPacketList); ++i)
+	{
+		UDPPACKET *p = LIST_DATA(server->RecvPacketList, i);
+		FreeUdpPacket(p);
+	}
+
+	DeleteAll(server->RecvPacketList);
+
+	// Store in the queue by getting a list of the datagrams to be transmitted from the OpenVPN server
+	for (i = 0; i < LIST_NUM(server->SendPacketList); ++i)
+	{
+		UDPPACKET *p = LIST_DATA(server->SendPacketList, i);
+
+		// Store the size in the TCP send queue first
+		USHORT us = Endian16((USHORT)p->Size);
+
+		WriteFifo(data_to_send, &us, sizeof(USHORT));
+
+		// Write the data body
+		WriteFifo(data_to_send, p->Data, p->Size);
+
+		// Packet release
+		FreeUdpPacket(p);
+	}
+
+	DeleteAll(server->SendPacketList);
+
+	return ret;
+}
+
+void OvsBufferLimit(void *param, const bool reached)
+{
+	if (param == NULL)
+	{
+		return;
+	}
+
+	((OPENVPN_SERVER *)param)->SupressSendPacket = reached;
+}
+
+bool OvsIsOk(void *param)
+{
+	OPENVPN_SERVER *s;
+
+	if (param == NULL)
+	{
+		return false;
+	}
+
+	s = param;
+
+	return (s->DisconnectCount < 1) && (s->SessionEstablishedCount > 0);
+}
+
+UINT OvsEstablishedSessions(void *param)
+{
+	LIST *sessions;
+	UINT i;
+	UINT established_sessions = 0;
+
+	if (param == NULL)
+	{
+		return 0;
+	}
+
+	sessions = ((OPENVPN_SERVER *)param)->SessionList;
+
+	for (i = 0;i < LIST_NUM(sessions);i++)
+	{
+		OPENVPN_SESSION *se = LIST_DATA(sessions, i);
+
+		if (se->Established)
+		{
+			++established_sessions;
+		}
+	}
+
+	return established_sessions;
+}
 
 // Write the OpenVPN log
 void OvsLog(OPENVPN_SERVER *s, OPENVPN_SESSION *se, OPENVPN_CHANNEL *c, char *name, ...)
@@ -341,7 +529,7 @@ final:
 }
 
 // Process the received packet
-void OvsProceccRecvPacket(OPENVPN_SERVER *s, UDPPACKET *p, UINT protocol)
+void OvsProceccRecvPacket(OPENVPN_SERVER *s, UDPPACKET *p)
 {
 	OPENVPN_CHANNEL *c;
 	OPENVPN_SESSION *se;
@@ -353,7 +541,7 @@ void OvsProceccRecvPacket(OPENVPN_SERVER *s, UDPPACKET *p, UINT protocol)
 	}
 
 	// Search for the session
-	se = OvsFindOrCreateSession(s, &p->DstIP, p->DestPort, &p->SrcIP, p->SrcPort, protocol);
+	se = OvsFindOrCreateSession(s, &p->DstIP, p->DestPort, &p->SrcIP, p->SrcPort, p->Type);
 	if (se == NULL)
 	{
 		return;
@@ -490,10 +678,12 @@ void OvsProceccRecvPacket(OPENVPN_SERVER *s, UDPPACKET *p, UINT protocol)
 			{
 				// Decrypt
 				size = OvsDecrypt(c->CipherDecrypt, c->MdRecv, c->IvRecv, data, recv_packet->Data, recv_packet->DataSize);
-
-				// Seek buffer after the packet ID
-				data += sizeof(UINT);
-				size -= sizeof(UINT);
+				if (size > sizeof(UINT))
+				{
+					// Seek buffer after the packet ID
+					data += sizeof(UINT);
+					size -= sizeof(UINT);
+				}
 			}
 
 			// Update of last communication time
@@ -630,7 +820,7 @@ void OvsProcessRecvControlPacket(OPENVPN_SERVER *s, OPENVPN_SESSION *se, OPENVPN
 
 		case OPENVPN_P_CONTROL_HARD_RESET_CLIENT_V2:
 			// New connection (hard reset)
-			OvsSendControlPacket(c, OPENVPN_P_CONTROL_HARD_RESET_SERVER_V2, NULL, 0);
+			OvsSendControlPacketEx(c, OPENVPN_P_CONTROL_HARD_RESET_SERVER_V2, NULL, 0, true);
 
 			c->Status = OPENVPN_CHANNEL_STATUS_TLS_WAIT_CLIENT_KEY;
 			break;
@@ -879,6 +1069,8 @@ void OvsBeginIPCAsyncConnectionIfEmpty(OPENVPN_SERVER *s, OPENVPN_SESSION *se, O
 				p.ClientCertificate = c->ClientCert.X;
 			}
 		}
+
+		p.Layer = (se->Mode == OPENVPN_MODE_L2) ? IPC_LAYER_2 : IPC_LAYER_3;
 
 		// Calculate the MSS
 		p.Mss = OvsCalcTcpMss(s, se, c);
@@ -1360,6 +1552,10 @@ void OvsSendControlPacketWithAutoSplit(OPENVPN_CHANNEL *c, UCHAR opcode, UCHAR *
 // Send the control packet
 void OvsSendControlPacket(OPENVPN_CHANNEL *c, UCHAR opcode, UCHAR *data, UINT data_size)
 {
+	OvsSendControlPacketEx(c, opcode, data, data_size, false);
+}
+void OvsSendControlPacketEx(OPENVPN_CHANNEL *c, UCHAR opcode, UCHAR *data, UINT data_size, bool no_resend)
+{
 	OPENVPN_CONTROL_PACKET *p;
 	// Validate arguments
 	if (c == NULL || (data_size != 0 && data == NULL))
@@ -1368,6 +1564,8 @@ void OvsSendControlPacket(OPENVPN_CHANNEL *c, UCHAR opcode, UCHAR *data, UINT da
 	}
 
 	p = ZeroMalloc(sizeof(OPENVPN_CONTROL_PACKET));
+
+	p->NoResend = no_resend;
 
 	p->OpCode = opcode;
 	p->PacketId = c->NextSendPacketId++;
@@ -1989,7 +2187,7 @@ OPENVPN_SESSION *OvsSearchSession(OPENVPN_SERVER *s, IP *server_ip, UINT server_
 }
 
 // Receive packets in the OpenVPN server
-void OvsRecvPacket(OPENVPN_SERVER *s, LIST *recv_packet_list, UINT protocol)
+void OvsRecvPacket(OPENVPN_SERVER *s, LIST *recv_packet_list)
 {
 	UINT i, j;
 	LIST *delete_session_list = NULL;
@@ -2021,7 +2219,7 @@ void OvsRecvPacket(OPENVPN_SERVER *s, LIST *recv_packet_list, UINT protocol)
 	{
 		UDPPACKET *p = LIST_DATA(recv_packet_list, i);
 
-		OvsProceccRecvPacket(s, p, protocol);
+		OvsProceccRecvPacket(s, p);
 	}
 
 	// Treat for all sessions and all channels
@@ -2366,20 +2564,25 @@ void OvsRecvPacket(OPENVPN_SERVER *s, LIST *recv_packet_list, UINT protocol)
 
 					if (cp->NextSendTime <= s->Now)
 					{
-						OPENVPN_PACKET *p;
+						if (cp->NoResend == false || cp->NumSent == 0) // To address the UDP reflection amplification attack: https://github.com/SoftEtherVPN/SoftEtherVPN/issues/1001
+						{
+							OPENVPN_PACKET *p;
 
-						num = OvsGetAckReplyList(c, acks);
+							cp->NumSent++;
 
-						p = OvsNewControlPacket(cp->OpCode, j, se->ServerSessionId, num, acks,
-							se->ClientSessionId, cp->PacketId, cp->DataSize, cp->Data);
+							num = OvsGetAckReplyList(c, acks);
 
-						OvsSendPacketNow(s, se, p);
+							p = OvsNewControlPacket(cp->OpCode, j, se->ServerSessionId, num, acks,
+								se->ClientSessionId, cp->PacketId, cp->DataSize, cp->Data);
 
-						OvsFreePacket(p);
+							OvsSendPacketNow(s, se, p);
 
-						cp->NextSendTime = s->Now + (UINT64)OPENVPN_CONTROL_PACKET_RESEND_INTERVAL;
+							OvsFreePacket(p);
 
-						AddInterrupt(s->Interrupt, cp->NextSendTime);
+							cp->NextSendTime = s->Now + (UINT64)OPENVPN_CONTROL_PACKET_RESEND_INTERVAL;
+
+							AddInterrupt(s->Interrupt, cp->NextSendTime);
+						}
 					}
 				}
 
@@ -2702,23 +2905,16 @@ OPENVPN_SERVER *NewOpenVpnServer(CEDAR *cedar, INTERRUPT_MANAGER *interrupt, SOC
 	s = ZeroMalloc(sizeof(OPENVPN_SERVER));
 
 	s->Cedar = cedar;
-
-	AddRef(s->Cedar->ref);
-
 	s->Interrupt = interrupt;
+	s->SockEvent = sock_event;
 
 	s->SessionList = NewList(OvsCompareSessionList);
+	s->RecvPacketList = NewListFast(NULL);
 	s->SendPacketList = NewListFast(NULL);
 
 	s->Now = Tick64();
 
 	s->NextSessionId = 1;
-
-	if (sock_event != NULL)
-	{
-		s->SockEvent = sock_event;
-		AddRef(s->SockEvent->ref);
-	}
 
 	OvsLog(s, NULL, NULL, "LO_START");
 
@@ -2739,32 +2935,32 @@ void FreeOpenVpnServer(OPENVPN_SERVER *s)
 
 	OvsLog(s, NULL, NULL, "LO_STOP");
 
-	// Release the session list
-	for (i = 0;i < LIST_NUM(s->SessionList);i++)
+	// Release the sessions list
+	for (i = 0; i < LIST_NUM(s->SessionList); ++i)
 	{
 		OPENVPN_SESSION *se = LIST_DATA(s->SessionList, i);
-
 		OvsFreeSession(se);
 	}
 
 	ReleaseList(s->SessionList);
 
-	// Release the packet which is attempting to send
-	for (i = 0;i < LIST_NUM(s->SendPacketList);i++)
+	// Release the incoming packets list
+	for (i = 0; i < LIST_NUM(s->RecvPacketList); ++i)
+	{
+		UDPPACKET *p = LIST_DATA(s->RecvPacketList, i);
+		FreeUdpPacket(p);
+	}
+
+	ReleaseList(s->RecvPacketList);
+
+	// Release the outgoing packets list
+	for (i = 0; i < LIST_NUM(s->SendPacketList); ++i)
 	{
 		UDPPACKET *p = LIST_DATA(s->SendPacketList, i);
-
 		FreeUdpPacket(p);
 	}
 
 	ReleaseList(s->SendPacketList);
-
-	ReleaseCedar(s->Cedar);
-
-	if (s->SockEvent != NULL)
-	{
-		ReleaseSockEvent(s->SockEvent);
-	}
 
 	DhFree(s->Dh);
 
@@ -2783,12 +2979,6 @@ void OpenVpnServerUdpListenerProc(UDPLISTENER *u, LIST *packet_list)
 
 	us = (OPENVPN_SERVER_UDP *)u->Param;
 
-	if (OvsGetNoOpenVpnUdp())
-	{
-		// OpenVPN over UDP is disabled
-		return;
-	}
-
 	if (us->OpenVpnServer != NULL)
 	{
 		{
@@ -2797,7 +2987,7 @@ void OpenVpnServerUdpListenerProc(UDPLISTENER *u, LIST *packet_list)
 			ClearStr(us->Cedar->OpenVPNPublicPorts, sizeof(us->Cedar->OpenVPNPublicPorts));
 		}
 
-		OvsRecvPacket(us->OpenVpnServer, packet_list, OPENVPN_PROTOCOL_UDP);
+		OvsRecvPacket(us->OpenVpnServer, packet_list);
 
 		UdpListenerSendPackets(u, us->OpenVpnServer->SendPacketList);
 		DeleteAll(us->OpenVpnServer->SendPacketList);
@@ -2821,7 +3011,7 @@ OPENVPN_SERVER_UDP *NewOpenVpnServerUdp(CEDAR *cedar)
 	AddRef(u->Cedar->ref);
 
 	// Create a UDP listener
-	u->UdpListener = NewUdpListener(OpenVpnServerUdpListenerProc, u, &cedar->Server->ListenIP);
+	u->UdpListener = NewUdpListenerEx(OpenVpnServerUdpListenerProc, u, &cedar->Server->ListenIP, OPENVPN_PROTOCOL_UDP);
 
 	// Create an OpenVPN server
 	u->OpenVpnServer = NewOpenVpnServer(cedar, u->UdpListener->Interrupts, u->UdpListener->Event);
@@ -2896,269 +3086,3 @@ void FreeOpenVpnServerUdp(OPENVPN_SERVER_UDP *u)
 
 	Free(u);
 }
-
-// Check whether it's OpenSSL protocol by looking the first receive buffer of the TCP
-bool OvsCheckTcpRecvBufIfOpenVPNProtocol(UCHAR *buf, UINT size)
-{
-	if (buf == NULL || size != 2)
-	{
-		return false;
-	}
-
-	if (buf[0] == 0x00 && buf[1] == 0x0E)
-	{
-		return true;
-	}
-
-	return false;
-}
-
-// Run the OpenVPN server in TCP mode
-bool OvsPerformTcpServer(CEDAR *cedar, SOCK *sock)
-{
-	OPENVPN_SERVER *s;
-	INTERRUPT_MANAGER *im;
-	SOCK_EVENT *se;
-	FIFO *tcp_recv_fifo;
-	FIFO *tcp_send_fifo;
-	UINT buf_size = (128 * 1024);
-	UCHAR *buf;
-	UINT64 giveup_time = Tick64() + (UINT64)OPENVPN_NEW_SESSION_DEADLINE_TIMEOUT;
-	LIST *ovs_recv_packet;
-	UINT i;
-	bool ret = false;
-	// Validate arguments
-	if (cedar == NULL || sock == NULL)
-	{
-		return false;
-	}
-
-	// Initialize
-	buf = Malloc(buf_size);
-	im = NewInterruptManager();
-	se = NewSockEvent();
-	SetTimeout(sock, TIMEOUT_INFINITE);
-	JoinSockToSockEvent(sock, se);
-
-	tcp_recv_fifo = NewFifoFast();
-	tcp_send_fifo = NewFifoFast();
-
-	ovs_recv_packet = NewListFast(NULL);
-
-	// Create an OpenVPN server
-	s = NewOpenVpnServer(cedar, im, se);
-
-	// Main loop
-	Debug("Entering OpenVPN TCP Server Main Loop.\n");
-	while (true)
-	{
-		UINT next_interval;
-		bool disconnected = false;
-		UINT64 now = Tick64();
-
-		// Receive data from a TCP socket
-		while (true)
-		{
-			UINT r = Recv(sock, buf, buf_size, false);
-			if (r == SOCK_LATER)
-			{
-				// Can not read any more
-				break;
-			}
-			else if (r == 0)
-			{
-				// Disconnected
-				disconnected = true;
-				break;
-			}
-			else
-			{
-				// Read
-				WriteFifo(tcp_recv_fifo, buf, r);
-			}
-		}
-
-		// Separate to a list of datagrams by interpreting the data received from the TCP socket
-		while (true)
-		{
-			UINT r = FifoSize(tcp_recv_fifo);
-			if (r >= sizeof(USHORT))
-			{
-				void *ptr = FifoPtr(tcp_recv_fifo);
-				USHORT packet_size = READ_USHORT(ptr);
-				if (packet_size != 0 && packet_size <= OPENVPN_TCP_MAX_PACKET_SIZE)
-				{
-					UINT total_len = (UINT)packet_size + sizeof(USHORT);
-					if (r >= total_len)
-					{
-						if (ReadFifo(tcp_recv_fifo, buf, total_len) != total_len)
-						{
-							// Mismatch
-							disconnected = true;
-							break;
-						}
-						else
-						{
-							// Read one packet
-							UINT payload_len = packet_size;
-							UCHAR *payload_ptr = buf + sizeof(USHORT);
-
-							// Pass the packet to the OpenVPN server
-							Add(ovs_recv_packet, NewUdpPacket(&sock->RemoteIP, sock->RemotePort,
-								&sock->LocalIP, sock->LocalPort,
-								Clone(payload_ptr, payload_len), payload_len));
-						}
-					}
-					else
-					{
-						// Non-arrival
-						break;
-					}
-				}
-				else
-				{
-					// Invalid packet size
-					disconnected = true;
-					break;
-				}
-			}
-			else
-			{
-				// Non-arrival
-				break;
-			}
-		}
-
-		// Pass a list of received datagrams to the OpenVPN server
-		OvsRecvPacket(s, ovs_recv_packet, OPENVPN_PROTOCOL_TCP);
-
-		// Release the received packet list
-		for (i = 0;i < LIST_NUM(ovs_recv_packet);i++)
-		{
-			UDPPACKET *p = LIST_DATA(ovs_recv_packet, i);
-
-			FreeUdpPacket(p);
-		}
-
-		DeleteAll(ovs_recv_packet);
-
-		// Store in the queue by getting a list of the datagrams to be transmitted from the OpenVPN server
-		for (i = 0;i < LIST_NUM(s->SendPacketList);i++)
-		{
-			UDPPACKET *p = LIST_DATA(s->SendPacketList, i);
-			// Store the size to the TCP send queue first
-			USHORT us = (USHORT)p->Size;
-			//Debug(" *** TCP SEND %u\n", us);
-			us = Endian16(us);
-			WriteFifo(tcp_send_fifo, &us, sizeof(USHORT));
-
-			// Write the data body
-			WriteFifo(tcp_send_fifo, p->Data, p->Size);
-
-			// Packet release
-			FreeUdpPacket(p);
-		}
-		DeleteAll(s->SendPacketList);
-
-		// Send data to the TCP socket
-		while (FifoSize(tcp_send_fifo) >= 1)
-		{
-			UINT r = Send(sock, FifoPtr(tcp_send_fifo), FifoSize(tcp_send_fifo), false);
-
-			if (r == SOCK_LATER)
-			{
-				// Can not write any more
-				break;
-			}
-			else if (r == 0)
-			{
-				// Disconnected
-				disconnected = true;
-				break;
-			}
-			else
-			{
-				// Wrote out
-				ReadFifo(tcp_send_fifo, NULL, r);
-			}
-		}
-
-		if (FifoSize(tcp_send_fifo) > MAX_BUFFERING_PACKET_SIZE)
-		{
-			s->SupressSendPacket = true;
-		}
-		else
-		{
-			s->SupressSendPacket = false;
-		}
-
-		if (s->DisconnectCount >= 1)
-		{
-			// Session disconnection has occurred on OpenVPN server-side
-			disconnected = true;
-		}
-
-		if (giveup_time <= now)
-		{
-			UINT i;
-			UINT num_established_sessions = 0;
-			for (i = 0;i < LIST_NUM(s->SessionList);i++)
-			{
-				OPENVPN_SESSION *se = LIST_DATA(s->SessionList, i);
-
-				if (se->Established)
-				{
-					num_established_sessions++;
-				}
-			}
-
-			if (num_established_sessions == 0)
-			{
-				// If the number of sessions is 0 even if wait a certain period of time after the start of server, abort
-				disconnected = true;
-			}
-		}
-
-		if (disconnected)
-		{
-			// Error or disconnect occurs
-			Debug("Breaking OpenVPN TCP Server Main Loop.\n");
-			break;
-		}
-
-		// Wait until the next event occurs
-		next_interval = GetNextIntervalForInterrupt(im);
-		next_interval = MIN(next_interval, UDPLISTENER_WAIT_INTERVAL);
-		WaitSockEvent(se, next_interval);
-	}
-
-	if (s != NULL && s->SessionEstablishedCount != 0)
-	{
-		ret = true;
-	}
-
-	// Release the OpenVPN server
-	FreeOpenVpnServer(s);
-
-	// Release object
-	FreeInterruptManager(im);
-	ReleaseSockEvent(se);
-	ReleaseFifo(tcp_recv_fifo);
-	ReleaseFifo(tcp_send_fifo);
-	Free(buf);
-
-	// Release the received packet list
-	for (i = 0;i < LIST_NUM(ovs_recv_packet);i++)
-	{
-		UDPPACKET *p = LIST_DATA(ovs_recv_packet, i);
-
-		FreeUdpPacket(p);
-	}
-
-	ReleaseList(ovs_recv_packet);
-
-	return ret;
-}
-
-
-

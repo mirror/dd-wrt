@@ -34,7 +34,9 @@
 #include <openssl/sha.h>
 #include <openssl/des.h>
 #include <openssl/aes.h>
+#include <openssl/rsa.h>
 #include <openssl/dh.h>
+#include <openssl/bn.h>
 #include <openssl/pem.h>
 #include <openssl/conf.h>
 #include <openssl/x509v3.h>
@@ -756,9 +758,18 @@ BUF *BigNumToBuf(const BIGNUM *bn)
 	return b;
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+// Return the thread ID
+static void OpenSSL_Id(CRYPTO_THREADID *id)
+{
+	CRYPTO_THREADID_set_numeric(id, (unsigned long)ThreadId());
+}
+#endif
+
 // Initialization of the lock of OpenSSL
 void OpenSSL_InitLock()
 {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 	UINT i;
 
 	// Initialization of the lock object
@@ -771,12 +782,14 @@ void OpenSSL_InitLock()
 
 	// Setting the lock function
 	CRYPTO_set_locking_callback(OpenSSL_Lock);
-	CRYPTO_set_id_callback(OpenSSL_Id);
+	CRYPTO_THREADID_set_callback(OpenSSL_Id);
+#endif
 }
 
 // Release of the lock of OpenSSL
 void OpenSSL_FreeLock()
 {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 	UINT i;
 
 	for (i = 0;i < ssl_lock_num;i++)
@@ -787,12 +800,14 @@ void OpenSSL_FreeLock()
 	ssl_lock_obj = NULL;
 
 	CRYPTO_set_locking_callback(NULL);
-	CRYPTO_set_id_callback(NULL);
+	CRYPTO_THREADID_set_callback(NULL);
+#endif
 }
 
 // Lock function for OpenSSL
 void OpenSSL_Lock(int mode, int n, const char *file, int line)
 {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 	LOCK *lock = ssl_lock_obj[n];
 
 	if (mode & CRYPTO_LOCK)
@@ -805,12 +820,7 @@ void OpenSSL_Lock(int mode, int n, const char *file, int line)
 		// Unlock
 		Unlock(lock);
 	}
-}
-
-// Return the thread ID
-unsigned long OpenSSL_Id(void)
-{
-	return (unsigned long)ThreadId();
+#endif
 }
 
 char *OpenSSL_Error()
@@ -1604,7 +1614,7 @@ X509 *NewX509(K *pub, K *priv, X *ca, NAME *name, UINT days, X_SERIAL *serial)
 {
 	X509 *x509;
 	UINT64 notBefore, notAfter;
-	ASN1_TIME *t1, *t2;
+	const ASN1_TIME *t1, *t2;
 	X509_NAME *subject_name, *issuer_name;
 	X509_EXTENSION *ex = NULL;
 	X509_EXTENSION *eku = NULL;
@@ -1638,14 +1648,14 @@ X509 *NewX509(K *pub, K *priv, X *ca, NAME *name, UINT days, X_SERIAL *serial)
 	X509_set_version(x509, 2L);
 
 	// Set the Expiration
-	t1 = X509_get_notBefore(x509);
-	t2 = X509_get_notAfter(x509);
-	if (!UINT64ToAsn1Time(t1, notBefore))
+	t1 = X509_get0_notBefore(x509);
+	t2 = X509_get0_notAfter(x509);
+	if (!UINT64ToAsn1Time((void *)t1, notBefore))
 	{
 		FreeX509(x509);
 		return NULL;
 	}
-	if (!UINT64ToAsn1Time(t2, notAfter))
+	if (!UINT64ToAsn1Time((void *)t2, notAfter))
 	{
 		FreeX509(x509);
 		return NULL;
@@ -1742,7 +1752,7 @@ X509 *NewRootX509(K *pub, K *priv, NAME *name, UINT days, X_SERIAL *serial)
 {
 	X509 *x509;
 	UINT64 notBefore, notAfter;
-	ASN1_TIME *t1, *t2;
+	const ASN1_TIME *t1, *t2;
 	X509_NAME *subject_name, *issuer_name;
 	X509_EXTENSION *ex = NULL;
 	X509_EXTENSION *eku = NULL;
@@ -1780,14 +1790,14 @@ X509 *NewRootX509(K *pub, K *priv, NAME *name, UINT days, X_SERIAL *serial)
 	X509_set_version(x509, 2L);
 
 	// Set the Expiration
-	t1 = X509_get_notBefore(x509);
-	t2 = X509_get_notAfter(x509);
-	if (!UINT64ToAsn1Time(t1, notBefore))
+	t1 = X509_get0_notBefore(x509);
+	t2 = X509_get0_notAfter(x509);
+	if (!UINT64ToAsn1Time((void *)t1, notBefore))
 	{
 		FreeX509(x509);
 		return NULL;
 	}
-	if (!UINT64ToAsn1Time(t2, notAfter))
+	if (!UINT64ToAsn1Time((void *)t2, notAfter))
 	{
 		FreeX509(x509);
 		return NULL;
@@ -3721,7 +3731,7 @@ void FreeCryptLibrary()
 	openssl_lock = NULL;
 //	RAND_Free_For_SoftEther();
 	OpenSSL_FreeLock();
-
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 #ifdef OPENSSL_FIPS
 	FIPS_mode_set(0);
 #endif
@@ -3738,6 +3748,7 @@ void FreeCryptLibrary()
 #ifndef OPENSSL_NO_COMP
 	SSL_COMP_free_compression_methods();
 #endif
+#endif
 }
 
 // Initialize the Crypt library
@@ -3745,6 +3756,7 @@ void InitCryptLibrary()
 {
 	char tmp[16];
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 //	RAND_Init_For_SoftEther()
 	openssl_lock = NewLock();
 	SSL_library_init();
@@ -3753,6 +3765,7 @@ void InitCryptLibrary()
 	OpenSSL_add_all_digests();
 	ERR_load_crypto_strings();
 	SSL_load_error_strings();
+#endif
 
 	ssl_clientcert_index = SSL_get_ex_new_index(0, "struct SslClientCertInfo *", NULL, NULL, NULL);
 
@@ -4419,7 +4432,7 @@ static UINT Internal_HMac(const EVP_MD *md, void *dest, void *key, UINT key_size
 		goto final;
 	}
 
-	len = MdProcess(m, dest, src, src_size);
+	len = MdProcess(m, dest, (void *)src, src_size);
 	if (len == 0)
 	{
 		Debug("Internal_HMac(): MdProcess() returned 0!\n");
