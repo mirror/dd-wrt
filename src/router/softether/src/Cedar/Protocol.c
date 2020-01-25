@@ -9,726 +9,6 @@
 
 static UCHAR ssl_packet_start[3] = {0x17, 0x03, 0x00};
 
-// MIME list from https://www.freeformatter.com/mime-types-list.html
-static HTTP_MIME_TYPE http_mime_types[] =
-{
-	{".x3d", "application/vnd.hzn-3d-crossword"},
-	{".3gp", "video/3gpp"},
-	{".3g2", "video/3gpp2"},
-	{".mseq", "application/vnd.mseq"},
-	{".pwn", "application/vnd.3m.post-it-notes"},
-	{".plb", "application/vnd.3gpp.pic-bw-large"},
-	{".psb", "application/vnd.3gpp.pic-bw-small"},
-	{".pvb", "application/vnd.3gpp.pic-bw-var"},
-	{".tcap", "application/vnd.3gpp2.tcap"},
-	{".7z", "application/x-7z-compressed"},
-	{".abw", "application/x-abiword"},
-	{".ace", "application/x-ace-compressed"},
-	{".acc", "application/vnd.americandynamics.acc"},
-	{".acu", "application/vnd.acucobol"},
-	{".atc", "application/vnd.acucorp"},
-	{".adp", "audio/adpcm"},
-	{".aab", "application/x-authorware-bin"},
-	{".aam", "application/x-authorware-map"},
-	{".aas", "application/x-authorware-seg"},
-	{".air", "application/vnd.adobe.air-application-installer-package+zip"},
-	{".swf", "application/x-shockwave-flash"},
-	{".fxp", "application/vnd.adobe.fxp"},
-	{".pdf", "application/pdf"},
-	{".ppd", "application/vnd.cups-ppd"},
-	{".dir", "application/x-director"},
-	{".xdp", "application/vnd.adobe.xdp+xml"},
-	{".xfdf", "application/vnd.adobe.xfdf"},
-	{".aac", "audio/x-aac"},
-	{".ahead", "application/vnd.ahead.space"},
-	{".azf", "application/vnd.airzip.filesecure.azf"},
-	{".azs", "application/vnd.airzip.filesecure.azs"},
-	{".azw", "application/vnd.amazon.ebook"},
-	{".ami", "application/vnd.amiga.ami"},
-	{".apk", "application/vnd.android.package-archive"},
-	{".cii", "application/vnd.anser-web-certificate-issue-initiation"},
-	{".fti", "application/vnd.anser-web-funds-transfer-initiation"},
-	{".atx", "application/vnd.antix.game-component"},
-	{".dmg", "application/x-apple-diskimage"},
-	{".mpkg", "application/vnd.apple.installer+xml"},
-	{".aw", "application/applixware"},
-	{".les", "application/vnd.hhe.lesson-player"},
-	{".swi", "application/vnd.aristanetworks.swi"},
-	{".s", "text/x-asm"},
-	{".atomcat", "application/atomcat+xml"},
-	{".atomsvc", "application/atomsvc+xml"},
-	{".atom", "application/atom+xml"},
-	{".ac", "application/pkix-attr-cert"},
-	{".aif", "audio/x-aiff"},
-	{".avi", "video/x-msvideo"},
-	{".aep", "application/vnd.audiograph"},
-	{".dxf", "image/vnd.dxf"},
-	{".dwf", "model/vnd.dwf"},
-	{".par", "text/plain-bas"},
-	{".bcpio", "application/x-bcpio"},
-	{".bin", "application/octet-stream"},
-	{".bmp", "image/bmp"},
-	{".torrent", "application/x-bittorrent"},
-	{".cod", "application/vnd.rim.cod"},
-	{".mpm", "application/vnd.blueice.multipass"},
-	{".bmi", "application/vnd.bmi"},
-	{".sh", "application/x-sh"},
-	{".btif", "image/prs.btif"},
-	{".rep", "application/vnd.businessobjects"},
-	{".bz", "application/x-bzip"},
-	{".bz2", "application/x-bzip2"},
-	{".csh", "application/x-csh"},
-	{".c", "text/x-c"},
-	{".cdxml", "application/vnd.chemdraw+xml"},
-	{".css", "text/css"},
-	{".cdx", "chemical/x-cdx"},
-	{".cml", "chemical/x-cml"},
-	{".csml", "chemical/x-csml"},
-	{".cdbcmsg", "application/vnd.contact.cmsg"},
-	{".cla", "application/vnd.claymore"},
-	{".c4g", "application/vnd.clonk.c4group"},
-	{".sub", "image/vnd.dvb.subtitle"},
-	{".cdmia", "application/cdmi-capability"},
-	{".cdmic", "application/cdmi-container"},
-	{".cdmid", "application/cdmi-domain"},
-	{".cdmio", "application/cdmi-object"},
-	{".cdmiq", "application/cdmi-queue"},
-	{".c11amc", "application/vnd.cluetrust.cartomobile-config"},
-	{".c11amz", "application/vnd.cluetrust.cartomobile-config-pkg"},
-	{".ras", "image/x-cmu-raster"},
-	{".dae", "model/vnd.collada+xml"},
-	{".csv", "text/csv"},
-	{".cpt", "application/mac-compactpro"},
-	{".wmlc", "application/vnd.wap.wmlc"},
-	{".cgm", "image/cgm"},
-	{".ice", "x-conference/x-cooltalk"},
-	{".cmx", "image/x-cmx"},
-	{".xar", "application/vnd.xara"},
-	{".cmc", "application/vnd.cosmocaller"},
-	{".cpio", "application/x-cpio"},
-	{".clkx", "application/vnd.crick.clicker"},
-	{".clkk", "application/vnd.crick.clicker.keyboard"},
-	{".clkp", "application/vnd.crick.clicker.palette"},
-	{".clkt", "application/vnd.crick.clicker.template"},
-	{".clkw", "application/vnd.crick.clicker.wordbank"},
-	{".wbs", "application/vnd.criticaltools.wbs+xml"},
-	{".cryptonote", "application/vnd.rig.cryptonote"},
-	{".cif", "chemical/x-cif"},
-	{".cmdf", "chemical/x-cmdf"},
-	{".cu", "application/cu-seeme"},
-	{".cww", "application/prs.cww"},
-	{".curl", "text/vnd.curl"},
-	{".dcurl", "text/vnd.curl.dcurl"},
-	{".mcurl", "text/vnd.curl.mcurl"},
-	{".scurl", "text/vnd.curl.scurl"},
-	{".car", "application/vnd.curl.car"},
-	{".pcurl", "application/vnd.curl.pcurl"},
-	{".cmp", "application/vnd.yellowriver-custom-menu"},
-	{".dssc", "application/dssc+der"},
-	{".xdssc", "application/dssc+xml"},
-	{".deb", "application/x-debian-package"},
-	{".uva", "audio/vnd.dece.audio"},
-	{".uvi", "image/vnd.dece.graphic"},
-	{".uvh", "video/vnd.dece.hd"},
-	{".uvm", "video/vnd.dece.mobile"},
-	{".uvu", "video/vnd.uvvu.mp4"},
-	{".uvp", "video/vnd.dece.pd"},
-	{".uvs", "video/vnd.dece.sd"},
-	{".uvv", "video/vnd.dece.video"},
-	{".dvi", "application/x-dvi"},
-	{".seed", "application/vnd.fdsn.seed"},
-	{".dtb", "application/x-dtbook+xml"},
-	{".res", "application/x-dtbresource+xml"},
-	{".ait", "application/vnd.dvb.ait"},
-	{".svc", "application/vnd.dvb.service"},
-	{".eol", "audio/vnd.digital-winds"},
-	{".djvu", "image/vnd.djvu"},
-	{".dtd", "application/xml-dtd"},
-	{".mlp", "application/vnd.dolby.mlp"},
-	{".wad", "application/x-doom"},
-	{".dpg", "application/vnd.dpgraph"},
-	{".dra", "audio/vnd.dra"},
-	{".dfac", "application/vnd.dreamfactory"},
-	{".dts", "audio/vnd.dts"},
-	{".dtshd", "audio/vnd.dts.hd"},
-	{".dwg", "image/vnd.dwg"},
-	{".geo", "application/vnd.dynageo"},
-	{".es", "application/ecmascript"},
-	{".mag", "application/vnd.ecowin.chart"},
-	{".mmr", "image/vnd.fujixerox.edmics-mmr"},
-	{".rlc", "image/vnd.fujixerox.edmics-rlc"},
-	{".exi", "application/exi"},
-	{".mgz", "application/vnd.proteus.magazine"},
-	{".epub", "application/epub+zip"},
-	{".eml", "message/rfc822"},
-	{".nml", "application/vnd.enliven"},
-	{".xpr", "application/vnd.is-xpr"},
-	{".xif", "image/vnd.xiff"},
-	{".xfdl", "application/vnd.xfdl"},
-	{".emma", "application/emma+xml"},
-	{".ez2", "application/vnd.ezpix-album"},
-	{".ez3", "application/vnd.ezpix-package"},
-	{".fst", "image/vnd.fst"},
-	{".fvt", "video/vnd.fvt"},
-	{".fbs", "image/vnd.fastbidsheet"},
-	{".fe_launch", "application/vnd.denovo.fcselayout-link"},
-	{".f4v", "video/x-f4v"},
-	{".flv", "video/x-flv"},
-	{".fpx", "image/vnd.fpx"},
-	{".npx", "image/vnd.net-fpx"},
-	{".flx", "text/vnd.fmi.flexstor"},
-	{".fli", "video/x-fli"},
-	{".ftc", "application/vnd.fluxtime.clip"},
-	{".fdf", "application/vnd.fdf"},
-	{".f", "text/x-fortran"},
-	{".mif", "application/vnd.mif"},
-	{".fm", "application/vnd.framemaker"},
-	{".fh", "image/x-freehand"},
-	{".fsc", "application/vnd.fsc.weblaunch"},
-	{".fnc", "application/vnd.frogans.fnc"},
-	{".ltf", "application/vnd.frogans.ltf"},
-	{".ddd", "application/vnd.fujixerox.ddd"},
-	{".xdw", "application/vnd.fujixerox.docuworks"},
-	{".xbd", "application/vnd.fujixerox.docuworks.binder"},
-	{".oas", "application/vnd.fujitsu.oasys"},
-	{".oa2", "application/vnd.fujitsu.oasys2"},
-	{".oa3", "application/vnd.fujitsu.oasys3"},
-	{".fg5", "application/vnd.fujitsu.oasysgp"},
-	{".bh2", "application/vnd.fujitsu.oasysprs"},
-	{".spl", "application/x-futuresplash"},
-	{".fzs", "application/vnd.fuzzysheet"},
-	{".g3", "image/g3fax"},
-	{".gmx", "application/vnd.gmx"},
-	{".gtw", "model/vnd.gtw"},
-	{".txd", "application/vnd.genomatix.tuxedo"},
-	{".ggb", "application/vnd.geogebra.file"},
-	{".ggt", "application/vnd.geogebra.tool"},
-	{".gdl", "model/vnd.gdl"},
-	{".gex", "application/vnd.geometry-explorer"},
-	{".gxt", "application/vnd.geonext"},
-	{".g2w", "application/vnd.geoplan"},
-	{".g3w", "application/vnd.geospace"},
-	{".gsf", "application/x-font-ghostscript"},
-	{".bdf", "application/x-font-bdf"},
-	{".gtar", "application/x-gtar"},
-	{".texinfo", "application/x-texinfo"},
-	{".gnumeric", "application/x-gnumeric"},
-	{".kml", "application/vnd.google-earth.kml+xml"},
-	{".kmz", "application/vnd.google-earth.kmz"},
-	{".gqf", "application/vnd.grafeq"},
-	{".gif", "image/gif"},
-	{".gv", "text/vnd.graphviz"},
-	{".gac", "application/vnd.groove-account"},
-	{".ghf", "application/vnd.groove-help"},
-	{".gim", "application/vnd.groove-identity-message"},
-	{".grv", "application/vnd.groove-injector"},
-	{".gtm", "application/vnd.groove-tool-message"},
-	{".tpl", "application/vnd.groove-tool-template"},
-	{".vcg", "application/vnd.groove-vcard"},
-	{".h261", "video/h261"},
-	{".h263", "video/h263"},
-	{".h264", "video/h264"},
-	{".hpid", "application/vnd.hp-hpid"},
-	{".hps", "application/vnd.hp-hps"},
-	{".hdf", "application/x-hdf"},
-	{".rip", "audio/vnd.rip"},
-	{".hbci", "application/vnd.hbci"},
-	{".jlt", "application/vnd.hp-jlyt"},
-	{".pcl", "application/vnd.hp-pcl"},
-	{".hpgl", "application/vnd.hp-hpgl"},
-	{".hvs", "application/vnd.yamaha.hv-script"},
-	{".hvd", "application/vnd.yamaha.hv-dic"},
-	{".hvp", "application/vnd.yamaha.hv-voice"},
-	{".sfd-hdstx", "application/vnd.hydrostatix.sof-data"},
-	{".stk", "application/hyperstudio"},
-	{".hal", "application/vnd.hal+xml"},
-	{".htm", "text/html; charset=utf-8"},
-	{".html", "text/html; charset=utf-8"},
-	{".irm", "application/vnd.ibm.rights-management"},
-	{".sc", "application/vnd.ibm.secure-container"},
-	{".ics", "text/calendar"},
-	{".icc", "application/vnd.iccprofile"},
-	{".ico", "image/x-icon"},
-	{".igl", "application/vnd.igloader"},
-	{".ief", "image/ief"},
-	{".ivp", "application/vnd.immervision-ivp"},
-	{".ivu", "application/vnd.immervision-ivu"},
-	{".rif", "application/reginfo+xml"},
-	{".3dml", "text/vnd.in3d.3dml"},
-	{".spot", "text/vnd.in3d.spot"},
-	{".igs", "model/iges"},
-	{".i2g", "application/vnd.intergeo"},
-	{".cdy", "application/vnd.cinderella"},
-	{".xpw", "application/vnd.intercon.formnet"},
-	{".fcs", "application/vnd.isac.fcs"},
-	{".ipfix", "application/ipfix"},
-	{".cer", "application/pkix-cert"},
-	{".pki", "application/pkixcmp"},
-	{".crl", "application/pkix-crl"},
-	{".pkipath", "application/pkix-pkipath"},
-	{".igm", "application/vnd.insors.igm"},
-	{".rcprofile", "application/vnd.ipunplugged.rcprofile"},
-	{".irp", "application/vnd.irepository.package+xml"},
-	{".jad", "text/vnd.sun.j2me.app-descriptor"},
-	{".jar", "application/java-archive"},
-	{".class", "application/java-vm"},
-	{".jnlp", "application/x-java-jnlp-file"},
-	{".ser", "application/java-serialized-object"},
-	{".java", "text/x-java-source"},
-	{".js", "application/javascript"},
-	{".json", "application/json"},
-	{".joda", "application/vnd.joost.joda-archive"},
-	{".jpm", "video/jpm"},
-	{".jpg", "image/jpeg"},
-	{".jpeg", "image/jpeg"},
-	{".pjpeg", "image/pjpeg"},
-	{".jpgv", "video/jpeg"},
-	{".ktz", "application/vnd.kahootz"},
-	{".mmd", "application/vnd.chipnuts.karaoke-mmd"},
-	{".karbon", "application/vnd.kde.karbon"},
-	{".chrt", "application/vnd.kde.kchart"},
-	{".kfo", "application/vnd.kde.kformula"},
-	{".flw", "application/vnd.kde.kivio"},
-	{".kon", "application/vnd.kde.kontour"},
-	{".kpr", "application/vnd.kde.kpresenter"},
-	{".ksp", "application/vnd.kde.kspread"},
-	{".kwd", "application/vnd.kde.kword"},
-	{".htke", "application/vnd.kenameaapp"},
-	{".kia", "application/vnd.kidspiration"},
-	{".kne", "application/vnd.kinar"},
-	{".sse", "application/vnd.kodak-descriptor"},
-	{".lasxml", "application/vnd.las.las+xml"},
-	{".latex", "application/x-latex"},
-	{".lbd", "application/vnd.llamagraphics.life-balance.desktop"},
-	{".lbe", "application/vnd.llamagraphics.life-balance.exchange+xml"},
-	{".jam", "application/vnd.jam"},
-	{"0.123", "application/vnd.lotus-1-2-3"},
-	{".apr", "application/vnd.lotus-approach"},
-	{".pre", "application/vnd.lotus-freelance"},
-	{".nsf", "application/vnd.lotus-notes"},
-	{".org", "application/vnd.lotus-organizer"},
-	{".scm", "application/vnd.lotus-screencam"},
-	{".lwp", "application/vnd.lotus-wordpro"},
-	{".lvp", "audio/vnd.lucent.voice"},
-	{".m3u", "audio/x-mpegurl"},
-	{".m4v", "video/x-m4v"},
-	{".hqx", "application/mac-binhex40"},
-	{".portpkg", "application/vnd.macports.portpkg"},
-	{".mgp", "application/vnd.osgeo.mapguide.package"},
-	{".mrc", "application/marc"},
-	{".mrcx", "application/marcxml+xml"},
-	{".mxf", "application/mxf"},
-	{".nbp", "application/vnd.wolfram.player"},
-	{".ma", "application/mathematica"},
-	{".mathml", "application/mathml+xml"},
-	{".mbox", "application/mbox"},
-	{".mc1", "application/vnd.medcalcdata"},
-	{".mscml", "application/mediaservercontrol+xml"},
-	{".cdkey", "application/vnd.mediastation.cdkey"},
-	{".mwf", "application/vnd.mfer"},
-	{".mfm", "application/vnd.mfmp"},
-	{".msh", "model/mesh"},
-	{".mads", "application/mads+xml"},
-	{".mets", "application/mets+xml"},
-	{".mods", "application/mods+xml"},
-	{".meta4", "application/metalink4+xml"},
-	{".mcd", "application/vnd.mcd"},
-	{".flo", "application/vnd.micrografx.flo"},
-	{".igx", "application/vnd.micrografx.igx"},
-	{".es3", "application/vnd.eszigno3+xml"},
-	{".mdb", "application/x-msaccess"},
-	{".asf", "video/x-ms-asf"},
-	{".exe", "application/x-msdownload"},
-	{".cil", "application/vnd.ms-artgalry"},
-	{".cab", "application/vnd.ms-cab-compressed"},
-	{".ims", "application/vnd.ms-ims"},
-	{".application", "application/x-ms-application"},
-	{".clp", "application/x-msclip"},
-	{".mdi", "image/vnd.ms-modi"},
-	{".eot", "application/vnd.ms-fontobject"},
-	{".xls", "application/vnd.ms-excel"},
-	{".xlam", "application/vnd.ms-excel.addin.macroenabled.12"},
-	{".xlsb", "application/vnd.ms-excel.sheet.binary.macroenabled.12"},
-	{".xltm", "application/vnd.ms-excel.template.macroenabled.12"},
-	{".xlsm", "application/vnd.ms-excel.sheet.macroenabled.12"},
-	{".chm", "application/vnd.ms-htmlhelp"},
-	{".crd", "application/x-mscardfile"},
-	{".lrm", "application/vnd.ms-lrm"},
-	{".mvb", "application/x-msmediaview"},
-	{".mny", "application/x-msmoney"},
-	{".pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"},
-	{".sldx", "application/vnd.openxmlformats-officedocument.presentationml.slide"},
-	{".ppsx", "application/vnd.openxmlformats-officedocument.presentationml.slideshow"},
-	{".potx", "application/vnd.openxmlformats-officedocument.presentationml.template"},
-	{".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
-	{".xltx", "application/vnd.openxmlformats-officedocument.spreadsheetml.template"},
-	{".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"},
-	{".dotx", "application/vnd.openxmlformats-officedocument.wordprocessingml.template"},
-	{".obd", "application/x-msbinder"},
-	{".thmx", "application/vnd.ms-officetheme"},
-	{".onetoc", "application/onenote"},
-	{".pya", "audio/vnd.ms-playready.media.pya"},
-	{".pyv", "video/vnd.ms-playready.media.pyv"},
-	{".ppt", "application/vnd.ms-powerpoint"},
-	{".ppam", "application/vnd.ms-powerpoint.addin.macroenabled.12"},
-	{".sldm", "application/vnd.ms-powerpoint.slide.macroenabled.12"},
-	{".pptm", "application/vnd.ms-powerpoint.presentation.macroenabled.12"},
-	{".ppsm", "application/vnd.ms-powerpoint.slideshow.macroenabled.12"},
-	{".potm", "application/vnd.ms-powerpoint.template.macroenabled.12"},
-	{".mpp", "application/vnd.ms-project"},
-	{".pub", "application/x-mspublisher"},
-	{".scd", "application/x-msschedule"},
-	{".xap", "application/x-silverlight-app"},
-	{".stl", "application/vnd.ms-pki.stl"},
-	{".cat", "application/vnd.ms-pki.seccat"},
-	{".vsd", "application/vnd.visio"},
-	{".vsdx", "application/vnd.visio2013"},
-	{".wm", "video/x-ms-wm"},
-	{".wma", "audio/x-ms-wma"},
-	{".wax", "audio/x-ms-wax"},
-	{".wmx", "video/x-ms-wmx"},
-	{".wmd", "application/x-ms-wmd"},
-	{".wpl", "application/vnd.ms-wpl"},
-	{".wmz", "application/x-ms-wmz"},
-	{".wmv", "video/x-ms-wmv"},
-	{".wvx", "video/x-ms-wvx"},
-	{".wmf", "application/x-msmetafile"},
-	{".trm", "application/x-msterminal"},
-	{".doc", "application/msword"},
-	{".docm", "application/vnd.ms-word.document.macroenabled.12"},
-	{".dotm", "application/vnd.ms-word.template.macroenabled.12"},
-	{".wri", "application/x-mswrite"},
-	{".wps", "application/vnd.ms-works"},
-	{".xbap", "application/x-ms-xbap"},
-	{".xps", "application/vnd.ms-xpsdocument"},
-	{".mid", "audio/midi"},
-	{".mpy", "application/vnd.ibm.minipay"},
-	{".afp", "application/vnd.ibm.modcap"},
-	{".rms", "application/vnd.jcp.javame.midlet-rms"},
-	{".tmo", "application/vnd.tmobile-livetv"},
-	{".prc", "application/x-mobipocket-ebook"},
-	{".mbk", "application/vnd.mobius.mbk"},
-	{".dis", "application/vnd.mobius.dis"},
-	{".plc", "application/vnd.mobius.plc"},
-	{".mqy", "application/vnd.mobius.mqy"},
-	{".msl", "application/vnd.mobius.msl"},
-	{".txf", "application/vnd.mobius.txf"},
-	{".daf", "application/vnd.mobius.daf"},
-	{".fly", "text/vnd.fly"},
-	{".mpc", "application/vnd.mophun.certificate"},
-	{".mpn", "application/vnd.mophun.application"},
-	{".mj2", "video/mj2"},
-	{".mpga", "audio/mpeg"},
-	{".mxu", "video/vnd.mpegurl"},
-	{".mpeg", "video/mpeg"},
-	{".m21", "application/mp21"},
-	{".mp4a", "audio/mp4"},
-	{".mp4", "video/mp4"},
-	{".mp4", "application/mp4"},
-	{".m3u8", "application/vnd.apple.mpegurl"},
-	{".mus", "application/vnd.musician"},
-	{".msty", "application/vnd.muvee.style"},
-	{".mxml", "application/xv+xml"},
-	{".ngdat", "application/vnd.nokia.n-gage.data"},
-	{".n-gage", "application/vnd.nokia.n-gage.symbian.install"},
-	{".ncx", "application/x-dtbncx+xml"},
-	{".nc", "application/x-netcdf"},
-	{".nlu", "application/vnd.neurolanguage.nlu"},
-	{".dna", "application/vnd.dna"},
-	{".nnd", "application/vnd.noblenet-directory"},
-	{".nns", "application/vnd.noblenet-sealer"},
-	{".nnw", "application/vnd.noblenet-web"},
-	{".rpst", "application/vnd.nokia.radio-preset"},
-	{".rpss", "application/vnd.nokia.radio-presets"},
-	{".n3", "text/n3"},
-	{".edm", "application/vnd.novadigm.edm"},
-	{".edx", "application/vnd.novadigm.edx"},
-	{".ext", "application/vnd.novadigm.ext"},
-	{".gph", "application/vnd.flographit"},
-	{".ecelp4800", "audio/vnd.nuera.ecelp4800"},
-	{".ecelp7470", "audio/vnd.nuera.ecelp7470"},
-	{".ecelp9600", "audio/vnd.nuera.ecelp9600"},
-	{".oda", "application/oda"},
-	{".ogx", "application/ogg"},
-	{".oga", "audio/ogg"},
-	{".ogv", "video/ogg"},
-	{".dd2", "application/vnd.oma.dd2+xml"},
-	{".oth", "application/vnd.oasis.opendocument.text-web"},
-	{".opf", "application/oebps-package+xml"},
-	{".qbo", "application/vnd.intu.qbo"},
-	{".oxt", "application/vnd.openofficeorg.extension"},
-	{".osf", "application/vnd.yamaha.openscoreformat"},
-	{".weba", "audio/webm"},
-	{".webm", "video/webm"},
-	{".odc", "application/vnd.oasis.opendocument.chart"},
-	{".otc", "application/vnd.oasis.opendocument.chart-template"},
-	{".odb", "application/vnd.oasis.opendocument.database"},
-	{".odf", "application/vnd.oasis.opendocument.formula"},
-	{".odft", "application/vnd.oasis.opendocument.formula-template"},
-	{".odg", "application/vnd.oasis.opendocument.graphics"},
-	{".otg", "application/vnd.oasis.opendocument.graphics-template"},
-	{".odi", "application/vnd.oasis.opendocument.image"},
-	{".oti", "application/vnd.oasis.opendocument.image-template"},
-	{".odp", "application/vnd.oasis.opendocument.presentation"},
-	{".otp", "application/vnd.oasis.opendocument.presentation-template"},
-	{".ods", "application/vnd.oasis.opendocument.spreadsheet"},
-	{".ots", "application/vnd.oasis.opendocument.spreadsheet-template"},
-	{".odt", "application/vnd.oasis.opendocument.text"},
-	{".odm", "application/vnd.oasis.opendocument.text-master"},
-	{".ott", "application/vnd.oasis.opendocument.text-template"},
-	{".ktx", "image/ktx"},
-	{".sxc", "application/vnd.sun.xml.calc"},
-	{".stc", "application/vnd.sun.xml.calc.template"},
-	{".sxd", "application/vnd.sun.xml.draw"},
-	{".std", "application/vnd.sun.xml.draw.template"},
-	{".sxi", "application/vnd.sun.xml.impress"},
-	{".sti", "application/vnd.sun.xml.impress.template"},
-	{".sxm", "application/vnd.sun.xml.math"},
-	{".sxw", "application/vnd.sun.xml.writer"},
-	{".sxg", "application/vnd.sun.xml.writer.global"},
-	{".stw", "application/vnd.sun.xml.writer.template"},
-	{".otf", "application/x-font-otf"},
-	{".osfpvg", "application/vnd.yamaha.openscoreformat.osfpvg+xml"},
-	{".dp", "application/vnd.osgi.dp"},
-	{".pdb", "application/vnd.palm"},
-	{".p", "text/x-pascal"},
-	{".paw", "application/vnd.pawaafile"},
-	{".pclxl", "application/vnd.hp-pclxl"},
-	{".efif", "application/vnd.picsel"},
-	{".pcx", "image/x-pcx"},
-	{".psd", "image/vnd.adobe.photoshop"},
-	{".prf", "application/pics-rules"},
-	{".pic", "image/x-pict"},
-	{".chat", "application/x-chat"},
-	{".p10", "application/pkcs10"},
-	{".p12", "application/x-pkcs12"},
-	{".p7m", "application/pkcs7-mime"},
-	{".p7s", "application/pkcs7-signature"},
-	{".p7r", "application/x-pkcs7-certreqresp"},
-	{".p7b", "application/x-pkcs7-certificates"},
-	{".p8", "application/pkcs8"},
-	{".plf", "application/vnd.pocketlearn"},
-	{".pnm", "image/x-portable-anymap"},
-	{".pbm", "image/x-portable-bitmap"},
-	{".pcf", "application/x-font-pcf"},
-	{".pfr", "application/font-tdpfr"},
-	{".pgn", "application/x-chess-pgn"},
-	{".pgm", "image/x-portable-graymap"},
-	{".png", "image/png"},
-	{".png", "image/x-citrix-png"},
-	{".png", "image/x-png"},
-	{".ppm", "image/x-portable-pixmap"},
-	{".pskcxml", "application/pskc+xml"},
-	{".pml", "application/vnd.ctc-posml"},
-	{".ai", "application/postscript"},
-	{".pfa", "application/x-font-type1"},
-	{".pbd", "application/vnd.powerbuilder6"},
-	{".pgp", "application/pgp-encrypted"},
-	{".pgp", "application/pgp-signature"},
-	{".box", "application/vnd.previewsystems.box"},
-	{".ptid", "application/vnd.pvi.ptid1"},
-	{".pls", "application/pls+xml"},
-	{".str", "application/vnd.pg.format"},
-	{".ei6", "application/vnd.pg.osasli"},
-	{".dsc", "text/prs.lines.tag"},
-	{".psf", "application/x-font-linux-psf"},
-	{".qps", "application/vnd.publishare-delta-tree"},
-	{".wg", "application/vnd.pmi.widget"},
-	{".qxd", "application/vnd.quark.quarkxpress"},
-	{".esf", "application/vnd.epson.esf"},
-	{".msf", "application/vnd.epson.msf"},
-	{".ssf", "application/vnd.epson.ssf"},
-	{".qam", "application/vnd.epson.quickanime"},
-	{".qfx", "application/vnd.intu.qfx"},
-	{".qt", "video/quicktime"},
-	{".rar", "application/x-rar-compressed"},
-	{".ram", "audio/x-pn-realaudio"},
-	{".rmp", "audio/x-pn-realaudio-plugin"},
-	{".rsd", "application/rsd+xml"},
-	{".rm", "application/vnd.rn-realmedia"},
-	{".bed", "application/vnd.realvnc.bed"},
-	{".mxl", "application/vnd.recordare.musicxml"},
-	{".musicxml", "application/vnd.recordare.musicxml+xml"},
-	{".rnc", "application/relax-ng-compact-syntax"},
-	{".rdz", "application/vnd.data-vision.rdz"},
-	{".rdf", "application/rdf+xml"},
-	{".rp9", "application/vnd.cloanto.rp9"},
-	{".jisp", "application/vnd.jisp"},
-	{".rtf", "application/rtf"},
-	{".rtx", "text/richtext"},
-	{".link66", "application/vnd.route66.link66+xml"},
-	{".rss", "application/rss+xml"},
-	{".shf", "application/shf+xml"},
-	{".st", "application/vnd.sailingtracker.track"},
-	{".svg", "image/svg+xml"},
-	{".sus", "application/vnd.sus-calendar"},
-	{".sru", "application/sru+xml"},
-	{".setpay", "application/set-payment-initiation"},
-	{".setreg", "application/set-registration-initiation"},
-	{".sema", "application/vnd.sema"},
-	{".semd", "application/vnd.semd"},
-	{".semf", "application/vnd.semf"},
-	{".see", "application/vnd.seemail"},
-	{".snf", "application/x-font-snf"},
-	{".spq", "application/scvp-vp-request"},
-	{".spp", "application/scvp-vp-response"},
-	{".scq", "application/scvp-cv-request"},
-	{".scs", "application/scvp-cv-response"},
-	{".sdp", "application/sdp"},
-	{".etx", "text/x-setext"},
-	{".movie", "video/x-sgi-movie"},
-	{".ifm", "application/vnd.shana.informed.formdata"},
-	{".itp", "application/vnd.shana.informed.formtemplate"},
-	{".iif", "application/vnd.shana.informed.interchange"},
-	{".ipk", "application/vnd.shana.informed.package"},
-	{".tfi", "application/thraud+xml"},
-	{".shar", "application/x-shar"},
-	{".rgb", "image/x-rgb"},
-	{".slt", "application/vnd.epson.salt"},
-	{".aso", "application/vnd.accpac.simply.aso"},
-	{".imp", "application/vnd.accpac.simply.imp"},
-	{".twd", "application/vnd.simtech-mindmapper"},
-	{".csp", "application/vnd.commonspace"},
-	{".saf", "application/vnd.yamaha.smaf-audio"},
-	{".mmf", "application/vnd.smaf"},
-	{".spf", "application/vnd.yamaha.smaf-phrase"},
-	{".teacher", "application/vnd.smart.teacher"},
-	{".svd", "application/vnd.svd"},
-	{".rq", "application/sparql-query"},
-	{".srx", "application/sparql-results+xml"},
-	{".gram", "application/srgs"},
-	{".grxml", "application/srgs+xml"},
-	{".ssml", "application/ssml+xml"},
-	{".skp", "application/vnd.koan"},
-	{".sgml", "text/sgml"},
-	{".sdc", "application/vnd.stardivision.calc"},
-	{".sda", "application/vnd.stardivision.draw"},
-	{".sdd", "application/vnd.stardivision.impress"},
-	{".smf", "application/vnd.stardivision.math"},
-	{".sdw", "application/vnd.stardivision.writer"},
-	{".sgl", "application/vnd.stardivision.writer-global"},
-	{".sm", "application/vnd.stepmania.stepchart"},
-	{".sit", "application/x-stuffit"},
-	{".sitx", "application/x-stuffitx"},
-	{".sdkm", "application/vnd.solent.sdkm+xml"},
-	{".xo", "application/vnd.olpc-sugar"},
-	{".au", "audio/basic"},
-	{".wqd", "application/vnd.wqd"},
-	{".sis", "application/vnd.symbian.install"},
-	{".smi", "application/smil+xml"},
-	{".xsm", "application/vnd.syncml+xml"},
-	{".bdm", "application/vnd.syncml.dm+wbxml"},
-	{".xdm", "application/vnd.syncml.dm+xml"},
-	{".sv4cpio", "application/x-sv4cpio"},
-	{".sv4crc", "application/x-sv4crc"},
-	{".sbml", "application/sbml+xml"},
-	{".tsv", "text/tab-separated-values"},
-	{".tiff", "image/tiff"},
-	{".tao", "application/vnd.tao.intent-module-archive"},
-	{".tar", "application/x-tar"},
-	{".tcl", "application/x-tcl"},
-	{".tex", "application/x-tex"},
-	{".tfm", "application/x-tex-tfm"},
-	{".tei", "application/tei+xml"},
-	{".txt", "text/plain; charset=utf-8"},
-	{".md", "text/markdown; charset=utf-8"},
-	{".dxp", "application/vnd.spotfire.dxp"},
-	{".sfs", "application/vnd.spotfire.sfs"},
-	{".tsd", "application/timestamped-data"},
-	{".tpt", "application/vnd.trid.tpt"},
-	{".mxs", "application/vnd.triscape.mxs"},
-	{".t", "text/troff"},
-	{".tra", "application/vnd.trueapp"},
-	{".ttf", "application/x-font-ttf"},
-	{".ttl", "text/turtle"},
-	{".umj", "application/vnd.umajin"},
-	{".uoml", "application/vnd.uoml+xml"},
-	{".unityweb", "application/vnd.unity"},
-	{".ufd", "application/vnd.ufdl"},
-	{".uri", "text/uri-list"},
-	{".utz", "application/vnd.uiq.theme"},
-	{".ustar", "application/x-ustar"},
-	{".uu", "text/x-uuencode"},
-	{".vcs", "text/x-vcalendar"},
-	{".vcf", "text/x-vcard"},
-	{".vcd", "application/x-cdlink"},
-	{".vsf", "application/vnd.vsf"},
-	{".wrl", "model/vrml"},
-	{".vcx", "application/vnd.vcx"},
-	{".mts", "model/vnd.mts"},
-	{".vtu", "model/vnd.vtu"},
-	{".vis", "application/vnd.visionary"},
-	{".viv", "video/vnd.vivo"},
-	{".ccxml", "application/ccxml+xml"},
-	{".vxml", "application/voicexml+xml"},
-	{".src", "application/x-wais-source"},
-	{".wbxml", "application/vnd.wap.wbxml"},
-	{".wbmp", "image/vnd.wap.wbmp"},
-	{".wav", "audio/x-wav"},
-	{".davmount", "application/davmount+xml"},
-	{".woff", "application/x-font-woff"},
-	{".wspolicy", "application/wspolicy+xml"},
-	{".webp", "image/webp"},
-	{".wtb", "application/vnd.webturbo"},
-	{".wgt", "application/widget"},
-	{".hlp", "application/winhlp"},
-	{".wml", "text/vnd.wap.wml"},
-	{".wmls", "text/vnd.wap.wmlscript"},
-	{".wmlsc", "application/vnd.wap.wmlscriptc"},
-	{".wpd", "application/vnd.wordperfect"},
-	{".stf", "application/vnd.wt.stf"},
-	{".wsdl", "application/wsdl+xml"},
-	{".xbm", "image/x-xbitmap"},
-	{".xpm", "image/x-xpixmap"},
-	{".xwd", "image/x-xwindowdump"},
-	{".der", "application/x-x509-ca-cert"},
-	{".fig", "application/x-xfig"},
-	{".xhtml", "application/xhtml+xml"},
-	{".xml", "application/xml"},
-	{".xdf", "application/xcap-diff+xml"},
-	{".xenc", "application/xenc+xml"},
-	{".xer", "application/patch-ops-error+xml"},
-	{".rl", "application/resource-lists+xml"},
-	{".rs", "application/rls-services+xml"},
-	{".rld", "application/resource-lists-diff+xml"},
-	{".xslt", "application/xslt+xml"},
-	{".xop", "application/xop+xml"},
-	{".xpi", "application/x-xpinstall"},
-	{".xspf", "application/xspf+xml"},
-	{".xul", "application/vnd.mozilla.xul+xml"},
-	{".xyz", "chemical/x-xyz"},
-	{".yaml", "text/yaml"},
-	{".yang", "application/yang"},
-	{".yin", "application/yin+xml"},
-	{".zir", "application/vnd.zul"},
-	{".zip", "application/zip"},
-	{".zmm", "application/vnd.handheld-entertainment+xml"},
-	{".zaz", "application/vnd.zzazz.deck+xml"},
-};
-
-// Get HTTP MIME type from filename
-char *GetMimeTypeFromFileName(char *filename)
-{
-	UINT i;
-	UINT num = sizeof(http_mime_types) / sizeof(HTTP_MIME_TYPE);
-	if (filename == NULL)
-	{
-		return NULL;
-	}
-
-	for (i = 0;i < num;i++)
-	{
-		HTTP_MIME_TYPE *a = &http_mime_types[i];
-
-		if (EndWith(filename, a->Extension))
-		{
-			return a->MimeType;
-		}
-	}
-
-	return NULL;
-}
-
 // Download and save intermediate certificates if necessary
 bool DownloadAndSaveIntermediateCertificatesIfNecessary(X *x)
 {
@@ -1788,6 +1068,7 @@ bool ServerAccept(CONNECTION *c)
 	UINT authtype;
 	POLICY *policy;
 	UINT assigned_vlan_id = 0;
+	UCHAR assigned_ipc_mac_address[6];
 	HUB *hub;
 	SESSION *s = NULL;
 	UINT64 user_expires = 0;
@@ -1796,12 +1077,17 @@ bool ServerAccept(CONNECTION *c)
 	bool half_connection;
 	UINT adjust_mss;
 	bool use_udp_acceleration_client;
+	UINT client_udp_acceleration_max_version = 1;
+	UINT udp_acceleration_version = 1;
+	UINT client_rudp_bulk_max_version = 1;
+	UINT rudp_bulk_version = 1;
 	bool support_hmac_on_udp_acceleration_client = false;
 	bool support_udp_accel_fast_disconnect_detect;
 	bool use_hmac_on_udp_acceleration = false;
 	bool supress_return_pack_error = false;
 	IP udp_acceleration_client_ip;
-	UCHAR udp_acceleration_client_key[UDP_ACCELERATION_COMMON_KEY_SIZE];
+	UCHAR udp_acceleration_client_key[UDP_ACCELERATION_COMMON_KEY_SIZE_V1];
+	UCHAR udp_acceleration_client_key_v2[UDP_ACCELERATION_COMMON_KEY_SIZE_V2];
 	UINT udp_acceleration_client_port;
 	bool admin_mode = false;
 	UINT direction;
@@ -1856,11 +1142,14 @@ bool ServerAccept(CONNECTION *c)
 
 	Zero(ctoken_hash_str, sizeof(ctoken_hash_str));
 
+	Zero(assigned_ipc_mac_address, sizeof(assigned_ipc_mac_address));
+
 	Zero(mschap_v2_server_response_20, sizeof(mschap_v2_server_response_20));
 
 	Zero(&udp_acceleration_client_ip, sizeof(udp_acceleration_client_ip));
 	udp_acceleration_client_port = 0;
 	Zero(udp_acceleration_client_key, sizeof(udp_acceleration_client_key));
+	Zero(udp_acceleration_client_key_v2, sizeof(udp_acceleration_client_key_v2));
 
 	Zero(&winver, sizeof(winver));
 
@@ -2170,6 +1459,16 @@ bool ServerAccept(CONNECTION *c)
 			client_id = PackGetInt(p, "client_id");
 			adjust_mss = PackGetInt(p, "adjust_mss");
 			use_udp_acceleration_client = PackGetBool(p, "use_udp_acceleration");
+			client_udp_acceleration_max_version = PackGetInt(p, "udp_acceleration_max_version");
+			if (client_udp_acceleration_max_version == 0)
+			{
+				client_udp_acceleration_max_version = 1;
+			}
+			client_rudp_bulk_max_version = PackGetInt(p, "rudp_bulk_max_version");
+			if (client_rudp_bulk_max_version == 0)
+			{
+				client_rudp_bulk_max_version = 1;
+			}
 			support_hmac_on_udp_acceleration_client = PackGetBool(p, "support_hmac_on_udp_acceleration");
 			support_udp_accel_fast_disconnect_detect = PackGetBool(p, "support_udp_accel_fast_disconnect_detect");
 			support_bulk_on_rudp = PackGetBool(p, "support_bulk_on_rudp");
@@ -2190,13 +1489,14 @@ bool ServerAccept(CONNECTION *c)
 				PackGetStr(p, "inproc_postfix", c->InProcPrefix, sizeof(c->InProcPrefix));
 				Zero(tmp, sizeof(tmp));
 				PackGetStr(p, "inproc_cryptname", tmp, sizeof(tmp));
+				c->InProcLayer = PackGetInt(p, "inproc_layer");
 
 				if (c->FirstSock != NULL)
 				{
 					if (IsEmptyStr(c->InProcPrefix) == false)
 					{
-						Format(c->FirstSock->UnderlayProtocol, sizeof(c->FirstSock->UnderlayProtocol),
-							SOCK_UNDERLAY_INPROC_EX, c->InProcPrefix);
+						Format(c->FirstSock->UnderlayProtocol, sizeof(c->FirstSock->UnderlayProtocol), SOCK_UNDERLAY_INPROC_EX, c->InProcPrefix);
+						AddProtocolDetailsStr(c->FirstSock->UnderlayProtocol, sizeof(c->FirstSock->UnderlayProtocol), c->InProcPrefix);
 					}
 				}
 
@@ -2214,6 +1514,9 @@ bool ServerAccept(CONNECTION *c)
 				}
 
 				use_udp_acceleration_client = false;
+
+				Format(radius_login_opt.In_VpnProtocolState, sizeof(radius_login_opt.In_VpnProtocolState),
+					"L%u:%s", c->InProcLayer, c->InProcPrefix);
 			}
 			else
 			{
@@ -2227,12 +1530,15 @@ bool ServerAccept(CONNECTION *c)
 				{
 					c->CipherName = CopyStr(c->FirstSock->CipherName);
 				}
+
+				Format(radius_login_opt.In_VpnProtocolState, sizeof(radius_login_opt.In_VpnProtocolState),
+					"L%u:%s", IPC_LAYER_2, "SEVPN");
 			}
 
 			if (support_bulk_on_rudp && c->FirstSock != NULL && c->FirstSock->IsRUDPSocket &&
 				c->FirstSock->BulkRecvKey != NULL && c->FirstSock->BulkSendKey != NULL)
 			{
-				// RAllow UDP bulk transfer if the client side supports
+				// Allow UDP bulk transfer if the client side supports
 				// in the case of using R-UDP Socket
 				enable_bulk_on_rudp = true;
 
@@ -2247,9 +1553,11 @@ bool ServerAccept(CONNECTION *c)
 
 			if (use_udp_acceleration_client)
 			{
+				PackGetData2(p, "udp_acceleration_client_key", udp_acceleration_client_key, UDP_ACCELERATION_COMMON_KEY_SIZE_V1);
+				PackGetData2(p, "udp_acceleration_client_key_v2", udp_acceleration_client_key_v2, UDP_ACCELERATION_COMMON_KEY_SIZE_V2);
+
 				// Get the parameters for the UDP acceleration function
-				if (PackGetIp(p, "udp_acceleration_client_ip", &udp_acceleration_client_ip) == false ||
-					PackGetData2(p, "udp_acceleration_client_key", udp_acceleration_client_key, UDP_ACCELERATION_COMMON_KEY_SIZE) == false)
+				if (PackGetIp(p, "udp_acceleration_client_ip", &udp_acceleration_client_ip) == false)
 				{
 					use_udp_acceleration_client = false;
 				}
@@ -2784,11 +2092,19 @@ bool ServerAccept(CONNECTION *c)
 				}
 			}
 
+			// Check the assigned MAC Address
+			if (radius_login_opt.Out_IsRadiusLogin)
+			{
+				Copy(assigned_ipc_mac_address, radius_login_opt.Out_VirtualMacAddress, 6);
+			}
+
 			if (StrCmpi(username, ADMINISTRATOR_USERNAME) != 0)
 			{
 				// Get the policy
 				if (farm_member == false)
 				{
+					bool is_asterisk_user = false;
+
 					// In the case of not a farm member
 					user = AcGetUser(hub, username);
 					if (user == NULL)
@@ -2803,12 +2119,29 @@ bool ServerAccept(CONNECTION *c)
 							error_detail = "AcGetUser";
 							goto CLEANUP;
 						}
+
+						is_asterisk_user = true;
 					}
 
 					policy = NULL;
 
 					Lock(user->lock);
 					{
+						if (is_asterisk_user == false)
+						{
+							UCHAR associated_mac_address[6];
+
+							// Get the associated virtual MAC address
+							if (GetUserMacAddressFromUserNote(associated_mac_address, user->Note))
+							{
+								if (IsZero(assigned_ipc_mac_address, 6))
+								{
+									WHERE;
+									Copy(assigned_ipc_mac_address, associated_mac_address, 6);
+								}
+							}
+						}
+
 						// Get the expiration date
 						user_expires = user->ExpireTime;
 
@@ -3478,7 +2811,8 @@ bool ServerAccept(CONNECTION *c)
 
 			// Create a Session
 			StrLower(username);
-			s = NewServerSessionEx(c->Cedar, c, hub, username, policy, c->IsInProc);
+			s = NewServerSessionEx(c->Cedar, c, hub, username, policy, c->IsInProc,
+				(c->IsInProc && IsZero(assigned_ipc_mac_address, 6) == false) ? assigned_ipc_mac_address : NULL);
 
 			s->EnableUdpRecovery = enable_udp_recovery;
 			s->LocalHostSession = local_host_session;
@@ -3491,7 +2825,8 @@ bool ServerAccept(CONNECTION *c)
 				// R-UDP session
 				s->IsRUDPSession = true;
 				s->RUdpMss = c->FirstSock->RUDP_OptimizedMss;
-				Debug("Optimized MSS Value for R-UDP: %u\n", s->RUdpMss);
+				Debug("ServerAccept(): Optimized MSS Value for R-UDP: %u\n", s->RUdpMss);
+				AddProtocolDetailsKeyValueInt(s->ProtocolDetails, sizeof(s->ProtocolDetails), "RUDP_MSS", s->RUdpMss);
 			}
 
 			if (enable_bulk_on_rudp)
@@ -3504,6 +2839,8 @@ bool ServerAccept(CONNECTION *c)
 			s->IsAzureSession = c->FirstSock->IsReverseAcceptedSocket;
 
 			StrCpy(s->UnderlayProtocol, sizeof(s->UnderlayProtocol), c->FirstSock->UnderlayProtocol);
+
+			AddProtocolDetailsStr(s->ProtocolDetails, sizeof(s->ProtocolDetails), c->FirstSock->ProtocolDetails);
 
 			if (server != NULL)
 			{
@@ -3533,6 +2870,22 @@ bool ServerAccept(CONNECTION *c)
 				s->UseUdpAcceleration = true;
 
 				s->UdpAccelFastDisconnectDetect = support_udp_accel_fast_disconnect_detect;
+
+				udp_acceleration_version = 1;
+				if (client_udp_acceleration_max_version >= 2)
+				{
+					udp_acceleration_version = 2;
+				}
+			}
+
+			if (client_rudp_bulk_max_version >= 2)
+			{
+				rudp_bulk_version = 2;
+			}
+
+			if (s->EnableBulkOnRUDP)
+			{
+				AddProtocolDetailsKeyValueInt(s->ProtocolDetails, sizeof(s->ProtocolDetails), "RUDP_Bulk_Ver", s->BulkOnRUDPVersion);
 			}
 
 			if (hub->Option != NULL && hub->Option->DisableUdpAcceleration)
@@ -3556,6 +2909,7 @@ bool ServerAccept(CONNECTION *c)
 
 			Debug("UseUdpAcceleration = %u\n", s->UseUdpAcceleration);
 			Debug("UseHMacOnUdpAcceleration = %u\n", s->UseHMacOnUdpAcceleration);
+			Debug("UdpAccelerationVersion = %u\n", s->UdpAccelerationVersion);
 
 			if (s->UseUdpAcceleration)
 			{
@@ -3571,8 +2925,11 @@ bool ServerAccept(CONNECTION *c)
 				}
 				else
 				{
-					if (UdpAccelInitServer(s->UdpAccel, udp_acceleration_client_key, &udp_acceleration_client_ip, udp_acceleration_client_port,
-						&c->FirstSock->RemoteIP) == false)
+					s->UdpAccel->Version = udp_acceleration_version;
+
+					if (UdpAccelInitServer(s->UdpAccel,
+						s->UdpAccel->Version == 2 ? udp_acceleration_client_key_v2 : udp_acceleration_client_key,
+						&udp_acceleration_client_ip, udp_acceleration_client_port, &c->FirstSock->RemoteIP) == false)
 					{
 						Debug("UdpAccelInitServer Failed.\n");
 						s->UseUdpAcceleration = false;
@@ -3586,6 +2943,12 @@ bool ServerAccept(CONNECTION *c)
 					}
 
 					s->UdpAccel->UseHMac = s->UseHMacOnUdpAcceleration;
+
+					AddProtocolDetailsKeyValueInt(s->ProtocolDetails, sizeof(s->ProtocolDetails), "UDPAccel_Ver", s->UdpAccel->Version);
+
+					AddProtocolDetailsStr(s->ProtocolDetails, sizeof(s->ProtocolDetails), s->UdpAccel->Version > 1 ? "ChaCha20-Poly1305" : "RC4");
+
+					AddProtocolDetailsKeyValueInt(s->ProtocolDetails, sizeof(s->ProtocolDetails), "UDPAccel_MSS", UdpAccelCalcMss(s->UdpAccel));
 				}
 			}
 
@@ -3596,6 +2959,7 @@ bool ServerAccept(CONNECTION *c)
 			if (s->AdjustMss != 0)
 			{
 				Debug("AdjustMSS: %u\n", s->AdjustMss);
+				AddProtocolDetailsKeyValueInt(s->ProtocolDetails, sizeof(s->ProtocolDetails), "AdjustMSS", s->AdjustMss);
 			}
 
 			s->IsBridgeMode = (policy->NoBridge == false) || (policy->NoRouting == false);
@@ -3641,8 +3005,7 @@ bool ServerAccept(CONNECTION *c)
 			{
 				char ip[128];
 				IPToStr(ip, sizeof(ip), &c->FirstSock->RemoteIP);
-				HLog(hub, "LH_NEW_SESSION", c->Name, s->Name, ip, c->FirstSock->RemotePort,
-					c->FirstSock->UnderlayProtocol);
+				HLog(hub, "LH_NEW_SESSION", c->Name, s->Name, ip, c->FirstSock->RemotePort, c->FirstSock->UnderlayProtocol, c->FirstSock->ProtocolDetails);
 			}
 
 			c->Session = s;
@@ -4018,6 +3381,19 @@ bool ServerAccept(CONNECTION *c)
 
 		// Add the socket of this connection to the connection list of the session (TCP)
 		sock = c->FirstSock;
+
+		if (sock->IsRUDPSocket && sock->BulkRecvKey != NULL && sock->BulkSendKey != NULL)
+		{
+			if (s->BulkRecvKeySize != 0 && s->BulkSendKeySize != 0)
+			{
+				// Restore R-UDP bulk send/recv keys for additional connections
+				Copy(sock->BulkRecvKey->Data, s->BulkRecvKey, s->BulkRecvKeySize);
+				sock->BulkRecvKey->Size = s->BulkRecvKeySize;
+				Copy(sock->BulkSendKey->Data, s->BulkSendKey, s->BulkSendKeySize);
+				sock->BulkSendKey->Size = s->BulkSendKeySize;
+			}
+		}
+
 		ts = NewTcpSock(sock);
 		SetTimeout(sock, CONNECTING_TIMEOUT);
 		direction = TCP_BOTH;
@@ -4664,6 +4040,19 @@ bool ClientAdditionalConnect(CONNECTION *c, THREAD *t)
 	}
 
 	Debug("Additional Connect Succeed!\n");
+
+	if (s->IsRUDPSocket && s->BulkRecvKey != NULL && s->BulkSendKey != NULL)
+	{
+		// Restore R-UDP bulk send/recv keys for additional connections
+		if (c->Session->BulkRecvKeySize != 0 && c->Session->BulkSendKeySize != 0)
+		{
+			Copy(s->BulkRecvKey->Data, c->Session->BulkRecvKey, c->Session->BulkRecvKeySize);
+			s->BulkRecvKey->Size = c->Session->BulkRecvKeySize;
+
+			Copy(s->BulkSendKey->Data, c->Session->BulkSendKey, c->Session->BulkSendKeySize);
+			s->BulkSendKey->Size = c->Session->BulkSendKeySize;
+		}
+	}
 
 	// Success the additional connection
 	// Add to the TcpSockList of the connection
@@ -5388,9 +4777,13 @@ REDIRECTED:
 		// Physical communication protocol
 		StrCpy(c->Session->UnderlayProtocol, sizeof(c->Session->UnderlayProtocol), s->UnderlayProtocol);
 
+		AddProtocolDetailsStr(c->Session->ProtocolDetails, sizeof(c->Session->ProtocolDetails), s->ProtocolDetails);
+
 		if (c->Session->IsAzureSession)
 		{
 			StrCpy(c->Session->UnderlayProtocol, sizeof(c->Session->UnderlayProtocol), SOCK_UNDERLAY_AZURE);
+
+			AddProtocolDetailsStr(c->Session->ProtocolDetails, sizeof(c->Session->ProtocolDetails), "VPN Azure");
 		}
 
 		if (c->Protocol == CONNECTION_UDP)
@@ -5409,22 +4802,44 @@ REDIRECTED:
 
 		sess->EnableBulkOnRUDP = false;
 		sess->EnableHMacOnBulkOfRUDP = false;
-		if (s->IsRUDPSocket && s->BulkRecvKey != NULL && s->BulkSendKey != NULL)
+		if (s != NULL && s->IsRUDPSocket && s->BulkRecvKey != NULL && s->BulkSendKey != NULL)
 		{
 			// Bulk transfer on R-UDP
+			sess->EnableHMacOnBulkOfRUDP = PackGetBool(p, "enable_hmac_on_bulk_of_rudp");
+			sess->BulkOnRUDPVersion = PackGetInt(p, "rudp_bulk_version");
+
 			if (PackGetBool(p, "enable_bulk_on_rudp"))
 			{
 				// Receive the key
-				UCHAR key_send[SHA1_SIZE];
-				UCHAR key_recv[SHA1_SIZE];
+				UCHAR key_send[RUDP_BULK_KEY_SIZE_MAX];
+				UCHAR key_recv[RUDP_BULK_KEY_SIZE_MAX];
 
-				if (PackGetData2(p, "bulk_on_rudp_send_key", key_send, SHA1_SIZE) &&
-					PackGetData2(p, "bulk_on_rudp_recv_key", key_recv, SHA1_SIZE))
+				UINT key_size = SHA1_SIZE;
+
+				if (sess->BulkOnRUDPVersion == 2)
+				{
+					key_size = RUDP_BULK_KEY_SIZE_V2;
+				}
+
+				if (PackGetData2(p, "bulk_on_rudp_send_key", key_send, key_size) &&
+					PackGetData2(p, "bulk_on_rudp_recv_key", key_recv, key_size))
 				{
 					sess->EnableBulkOnRUDP = true;
 
-					Copy(s->BulkSendKey->Data, key_send, SHA1_SIZE);
-					Copy(s->BulkRecvKey->Data, key_recv, SHA1_SIZE);
+					Copy(s->BulkSendKey->Data, key_send, key_size);
+					Copy(s->BulkRecvKey->Data, key_recv, key_size);
+
+					s->BulkSendKey->Size = key_size;
+					s->BulkRecvKey->Size = key_size;
+
+					// Backup R-UDP bulk send/recv keys for additional connections
+					Copy(sess->BulkSendKey, s->BulkSendKey->Data, s->BulkSendKey->Size);
+					sess->BulkSendKeySize = s->BulkSendKey->Size;
+
+					Copy(sess->BulkRecvKey, s->BulkRecvKey->Data, s->BulkRecvKey->Size);
+					sess->BulkRecvKeySize = s->BulkRecvKey->Size;
+
+					AddProtocolDetailsKeyValueInt(sess->ProtocolDetails, sizeof(sess->ProtocolDetails), "RUDP_Bulk_Ver", sess->BulkOnRUDPVersion);
 				}
 			}
 
@@ -5434,6 +4849,7 @@ REDIRECTED:
 		Debug("EnableBulkOnRUDP = %u\n", sess->EnableBulkOnRUDP);
 		Debug("EnableHMacOnBulkOfRUDP = %u\n", sess->EnableHMacOnBulkOfRUDP);
 		Debug("EnableUdpRecovery = %u\n", sess->EnableUdpRecovery);
+		Debug("BulkOnRUDPVersion = %u\n", sess->BulkOnRUDPVersion);
 
 		sess->UseUdpAcceleration = false;
 		sess->IsUsingUdpAcceleration = false;
@@ -5447,7 +4863,13 @@ REDIRECTED:
 
 			if (PackGetBool(p, "use_udp_acceleration"))
 			{
+				UINT udp_acceleration_version = PackGetInt(p, "udp_acceleration_version");
 				IP udp_acceleration_server_ip;
+
+				if (udp_acceleration_version == 0)
+				{
+					udp_acceleration_version = 1;
+				}
 
 				sess->UdpAccelFastDisconnectDetect = PackGetBool(p, "udp_accel_fast_disconnect_detect");
 
@@ -5462,46 +4884,62 @@ REDIRECTED:
 
 					if (udp_acceleration_server_port != 0)
 					{
-						UCHAR udp_acceleration_server_key[UDP_ACCELERATION_COMMON_KEY_SIZE];
+						UCHAR udp_acceleration_server_key[UDP_ACCELERATION_COMMON_KEY_SIZE_V1];
+						UCHAR udp_acceleration_server_key_v2[UDP_ACCELERATION_COMMON_KEY_SIZE_V2];
+						UINT server_cookie = PackGetInt(p, "udp_acceleration_server_cookie");
+						UINT client_cookie = PackGetInt(p, "udp_acceleration_client_cookie");
+						bool encryption = PackGetBool(p, "udp_acceleration_use_encryption");
 
-						if (PackGetData2(p, "udp_acceleration_server_key", udp_acceleration_server_key, UDP_ACCELERATION_COMMON_KEY_SIZE))
+						Zero(udp_acceleration_server_key, sizeof(udp_acceleration_server_key));
+						Zero(udp_acceleration_server_key_v2, sizeof(udp_acceleration_server_key_v2));
+
+						PackGetData2(p, "udp_acceleration_server_key", udp_acceleration_server_key, UDP_ACCELERATION_COMMON_KEY_SIZE_V1);
+						PackGetData2(p, "udp_acceleration_server_key_v2", udp_acceleration_server_key_v2, UDP_ACCELERATION_COMMON_KEY_SIZE_V2);
+
+						if (server_cookie != 0 && client_cookie != 0)
 						{
-							UINT server_cookie = PackGetInt(p, "udp_acceleration_server_cookie");
-							UINT client_cookie = PackGetInt(p, "udp_acceleration_client_cookie");
-							bool encryption = PackGetBool(p, "udp_acceleration_use_encryption");
+							IP remote_ip;
 
-							if (server_cookie != 0 && client_cookie != 0)
+							Copy(&remote_ip, &s->RemoteIP, sizeof(IP));
+
+							if (IsZeroIp(&c->Session->AzureRealServerGlobalIp) == false)
 							{
-								IP remote_ip;
+								Copy(&remote_ip, &c->Session->AzureRealServerGlobalIp, sizeof(IP));
+							}
 
-								Copy(&remote_ip, &s->RemoteIP, sizeof(IP));
+							sess->UdpAccel->Version = 1;
+							if (udp_acceleration_version == 2)
+							{
+								sess->UdpAccel->Version = 2;
+							}
 
-								if (IsZeroIp(&c->Session->AzureRealServerGlobalIp) == false)
+							if (UdpAccelInitClient(sess->UdpAccel,
+								sess->UdpAccel->Version == 2 ? udp_acceleration_server_key_v2 : udp_acceleration_server_key,
+								&udp_acceleration_server_ip, udp_acceleration_server_port,
+								server_cookie, client_cookie, &remote_ip) == false)
+							{
+								Debug("UdpAccelInitClient failed.\n");
+							}
+							else
+							{
+								sess->UseUdpAcceleration = true;
+
+								sess->UdpAccel->FastDetect = sess->UdpAccelFastDisconnectDetect;
+
+								sess->UdpAccel->PlainTextMode = !encryption;
+
+								sess->UseHMacOnUdpAcceleration = PackGetBool(p, "use_hmac_on_udp_acceleration");
+
+								if (sess->UseHMacOnUdpAcceleration)
 								{
-									Copy(&remote_ip, &c->Session->AzureRealServerGlobalIp, sizeof(IP));
+									sess->UdpAccel->UseHMac = true;
 								}
 
-								if (UdpAccelInitClient(sess->UdpAccel, udp_acceleration_server_key,
-									&udp_acceleration_server_ip, udp_acceleration_server_port,
-									server_cookie, client_cookie, &remote_ip) == false)
-								{
-									Debug("UdpAccelInitClient failed.\n");
-								}
-								else
-								{
-									sess->UseUdpAcceleration = true;
+								AddProtocolDetailsKeyValueInt(sess->ProtocolDetails, sizeof(sess->ProtocolDetails), "UDPAccel_Ver", sess->UdpAccel->Version);
 
-									sess->UdpAccel->FastDetect = sess->UdpAccelFastDisconnectDetect;
+								AddProtocolDetailsStr(sess->ProtocolDetails, sizeof(sess->ProtocolDetails), sess->UdpAccel->Version > 1 ? "ChaCha20-Poly1305" : "RC4");
 
-									sess->UdpAccel->PlainTextMode = !encryption;
-
-									sess->UseHMacOnUdpAcceleration = PackGetBool(p, "use_hmac_on_udp_acceleration");
-
-									if (sess->UseHMacOnUdpAcceleration)
-									{
-										sess->UdpAccel->UseHMac = true;
-									}
-								}
+								AddProtocolDetailsKeyValueInt(sess->ProtocolDetails, sizeof(sess->ProtocolDetails), "UDPAccel_MSS", UdpAccelCalcMss(sess->UdpAccel));
 							}
 						}
 					}
@@ -5728,15 +5166,25 @@ PACK *PackWelcome(SESSION *s)
 
 		// Virtual HUB name
 		PackAddStr(p, "IpcHubName", s->Hub->Name);
+
+		// Shared Buffer
+		s->IpcSessionSharedBuffer = NewSharedBuffer(NULL, sizeof(IPC_SESSION_SHARED_BUFFER_DATA));
+		AddRef(s->IpcSessionSharedBuffer->Ref);
+
+		s->IpcSessionShared = s->IpcSessionSharedBuffer->Data;
+
+		PackAddInt64(p, "IpcSessionSharedBuffer", (UINT64)s->IpcSessionSharedBuffer);
 	}
 
 	if (s->UdpAccel != NULL)
 	{
 		// UDP acceleration function
 		PackAddBool(p, "use_udp_acceleration", true);
+		PackAddInt(p, "udp_acceleration_version", s->UdpAccel->Version);
 		PackAddIp(p, "udp_acceleration_server_ip", &s->UdpAccel->MyIp);
 		PackAddInt(p, "udp_acceleration_server_port", s->UdpAccel->MyPort);
-		PackAddData(p, "udp_acceleration_server_key", s->UdpAccel->MyKey, UDP_ACCELERATION_COMMON_KEY_SIZE);
+		PackAddData(p, "udp_acceleration_server_key", s->UdpAccel->MyKey, sizeof(s->UdpAccel->MyKey));
+		PackAddData(p, "udp_acceleration_server_key_v2", s->UdpAccel->MyKey_V2, sizeof(s->UdpAccel->MyKey_V2));
 		PackAddInt(p, "udp_acceleration_server_cookie", s->UdpAccel->MyCookie);
 		PackAddInt(p, "udp_acceleration_client_cookie", s->UdpAccel->YourCookie);
 		PackAddBool(p, "udp_acceleration_use_encryption", !s->UdpAccel->PlainTextMode);
@@ -5749,9 +5197,35 @@ PACK *PackWelcome(SESSION *s)
 		// Allow bulk transfer on R-UDP
 		PackAddBool(p, "enable_bulk_on_rudp", true);
 		PackAddBool(p, "enable_hmac_on_bulk_of_rudp", s->EnableHMacOnBulkOfRUDP);
+		PackAddInt(p, "rudp_bulk_version", s->BulkOnRUDPVersion);
 
-		PackAddData(p, "bulk_on_rudp_send_key", s->Connection->FirstSock->BulkRecvKey->Data, SHA1_SIZE);
-		PackAddData(p, "bulk_on_rudp_recv_key", s->Connection->FirstSock->BulkSendKey->Data, SHA1_SIZE);
+		if (s->BulkOnRUDPVersion == 2)
+		{
+			PackAddData(p, "bulk_on_rudp_send_key", s->Connection->FirstSock->BulkRecvKey->Data, RUDP_BULK_KEY_SIZE_V2);
+			s->Connection->FirstSock->BulkRecvKey->Size = RUDP_BULK_KEY_SIZE_V2;
+
+			PackAddData(p, "bulk_on_rudp_recv_key", s->Connection->FirstSock->BulkSendKey->Data, RUDP_BULK_KEY_SIZE_V2);
+			s->Connection->FirstSock->BulkSendKey->Size = RUDP_BULK_KEY_SIZE_V2;
+		}
+		else
+		{
+			PackAddData(p, "bulk_on_rudp_send_key", s->Connection->FirstSock->BulkRecvKey->Data, SHA1_SIZE);
+			s->Connection->FirstSock->BulkRecvKey->Size = SHA1_SIZE;
+
+			PackAddData(p, "bulk_on_rudp_recv_key", s->Connection->FirstSock->BulkSendKey->Data, SHA1_SIZE);
+			s->Connection->FirstSock->BulkSendKey->Size = SHA1_SIZE;
+		}
+
+		// Backup R-UDP bulk send/recv keys for additional connections
+		Copy(s->BulkSendKey, s->Connection->FirstSock->BulkSendKey->Data,
+			s->Connection->FirstSock->BulkSendKey->Size);
+
+		s->BulkSendKeySize = s->Connection->FirstSock->BulkSendKey->Size;
+
+		Copy(s->BulkRecvKey, s->Connection->FirstSock->BulkRecvKey->Data,
+			s->Connection->FirstSock->BulkRecvKey->Size);
+
+		s->BulkRecvKeySize = s->Connection->FirstSock->BulkRecvKey->Size;
 	}
 
 	if (s->IsAzureSession)
@@ -6126,6 +5600,8 @@ bool ClientUploadAuth(CONNECTION *c)
 
 		PackAddBool(p, "use_udp_acceleration", true);
 
+		PackAddInt(p, "udp_acceleration_version", c->Session->UdpAccel->Version);
+
 		Copy(&my_ip, &c->Session->UdpAccel->MyIp, sizeof(IP));
 		if (IsLocalHostIP(&my_ip))
 		{
@@ -6141,10 +5617,14 @@ bool ClientUploadAuth(CONNECTION *c)
 
 		PackAddIp(p, "udp_acceleration_client_ip", &my_ip);
 		PackAddInt(p, "udp_acceleration_client_port", c->Session->UdpAccel->MyPort);
-		PackAddData(p, "udp_acceleration_client_key", c->Session->UdpAccel->MyKey, UDP_ACCELERATION_COMMON_KEY_SIZE);
+		PackAddData(p, "udp_acceleration_client_key", c->Session->UdpAccel->MyKey, UDP_ACCELERATION_COMMON_KEY_SIZE_V1);
+		PackAddData(p, "udp_acceleration_client_key_v2", c->Session->UdpAccel->MyKey_V2, UDP_ACCELERATION_COMMON_KEY_SIZE_V2);
 		PackAddBool(p, "support_hmac_on_udp_acceleration", true);
 		PackAddBool(p, "support_udp_accel_fast_disconnect_detect", true);
+		PackAddInt(p, "udp_acceleration_max_version", 2);
 	}
+
+	PackAddInt(p, "rudp_bulk_max_version", 2);
 
 	// Brand string for the connection limit
 	{
@@ -6412,7 +5892,7 @@ bool ServerDownloadSignature(CONNECTION *c, char **error_detail_str)
 			{
 				bool sstp_ret;
 				// Accept the SSTP connection
-				c->Type = CONNECTION_TYPE_SSTP;
+				c->Type = CONNECTION_TYPE_OTHER;
 
 				sstp_ret = AcceptSstp(c);
 
@@ -6451,14 +5931,31 @@ bool ServerDownloadSignature(CONNECTION *c, char **error_detail_str)
 			}
 			else
 			{
-
 				if (StrCmpi(h->Target, "/") == 0)
 				{
 					// Root directory
+					BUF *b = NULL;
 					*error_detail_str = "HTTP_ROOT";
 
+					if (server->DisableJsonRpcWebApi == false)
 					{
-						// Other than free version
+						b = ReadDump("|wwwroot\\index.html");
+					}
+
+					if (b != NULL)
+					{
+						FreeHttpHeader(h);
+						h = NewHttpHeader("HTTP/1.1", "202", "OK");
+						AddHttpValue(h, NewHttpValue("Content-Type", HTTP_CONTENT_TYPE4));
+						AddHttpValue(h, NewHttpValue("Connection", "Keep-Alive"));
+						AddHttpValue(h, NewHttpValue("Keep-Alive", HTTP_KEEP_ALIVE));
+
+						PostHttp(c->FirstSock, h, b->Buf, b->Size);
+
+						FreeBuf(b);
+					}
+					else
+					{
 						HttpSendForbidden(c->FirstSock, h->Target, "");
 					}
 				}
@@ -6680,104 +6177,89 @@ SOCK *ClientConnectToServer(CONNECTION *c)
 // Return a socket by connecting to the server
 SOCK *ClientConnectGetSocket(CONNECTION *c, bool additional_connect)
 {
-	SOCK *s = NULL;
-	CLIENT_OPTION *o;
-	WPC_CONNECT w;
-	wchar_t tmp[MAX_SIZE];
-	SESSION *sess;
 	volatile bool *cancel_flag = NULL;
-	void *hWnd;
-	UINT nat_t_err = 0;
-	bool is_additional_rudp_session = false;
-	UCHAR uc = 0;
-	IP ret_ip;
+	char hostname[MAX_HOST_NAME_LEN];
+	bool save_resolved_ip = false;
+	CLIENT_OPTION *o;
+	SESSION *sess;
+	SOCK *sock = NULL;
+	IP resolved_ip;
 	// Validate arguments
-	if (c == NULL)
+	if (c == NULL || c->Session == NULL || c->Session->ClientOption == NULL)
 	{
 		return NULL;
 	}
 
-	Zero(&ret_ip, sizeof(IP));
-	Zero(&w, sizeof(w));
-
+	cancel_flag = &c->Halt;
 	sess = c->Session;
-
-	if (sess != NULL)
-	{
-		cancel_flag = &sess->CancelConnect;
-		is_additional_rudp_session = sess->IsRUDPSession;
-	}
-
-	hWnd = c->hWndForUI;
-
 	o = c->Session->ClientOption;
 
-	if (additional_connect)
-	{
-		if (sess != NULL)
-		{
-			Copy(&ret_ip, &sess->ServerIP_CacheForNextConnect, sizeof(IP));
-		}
-	}
+	Zero(&resolved_ip, sizeof(resolved_ip));
 
-	if (c->RestoreServerNameAndPort && additional_connect)
+	if (additional_connect == false && c->RestoreServerNameAndPort)
 	{
-		// Restore to the original server name and port number
+		// Update server name and port number.
+		// At the time of writing this comment RestoreServerNameAndPort is never true.
 		c->RestoreServerNameAndPort = false;
 
 		if (StrCmpi(c->ServerName, o->Hostname) != 0)
 		{
 			StrCpy(c->ServerName, sizeof(c->ServerName), o->Hostname);
-			Zero(&ret_ip, sizeof(IP));
 		}
 
 		c->ServerPort = o->Port;
 	}
 
-	StrCpy(w.HostName, sizeof(w.HostName), c->ServerName);
-	w.Port = c->ServerPort;
-	StrCpy(w.ProxyHostName, sizeof(w.ProxyHostName), o->ProxyName);
-	w.ProxyPort = o->ProxyPort;
-	StrCpy(w.ProxyUsername, sizeof(w.ProxyUsername), o->ProxyUsername);
-	StrCpy(w.ProxyPassword, sizeof(w.ProxyPassword), o->ProxyPassword);
-	StrCpy(w.CustomHttpHeader, sizeof(w.CustomHttpHeader), w.CustomHttpHeader);
-
-	switch (o->ProxyType)
+	if (IsZeroIP(&sess->ServerIP_CacheForNextConnect) == false)
 	{
-	case PROXY_DIRECT:	// TCP/IP
-		UniFormat(tmp, sizeof(tmp), _UU("STATUS_4"), w.HostName);
+		IPToStr(hostname, sizeof(hostname), &sess->ServerIP_CacheForNextConnect);
+		Debug("ClientConnectGetSocket(): Using cached IP address %s\n", hostname);
+	}
+	else
+	{
+		IP tmp;
+
+		StrCpy(hostname, sizeof(hostname), o->ProxyType == PROXY_DIRECT ? c->ServerName : o->ProxyName);
+
+		if (StrToIP(&tmp, hostname) == false)
+		{
+			// The hostname is not an IP address
+			save_resolved_ip = true;
+		}
+	}
+
+	if (o->ProxyType == PROXY_DIRECT)
+	{
+		UINT nat_t_err = 0;
+		wchar_t tmp[MAX_SIZE];
+		UniFormat(tmp, sizeof(tmp), _UU("STATUS_4"), hostname);
 		PrintStatus(sess, tmp);
 
-		// Production job
 		if (o->PortUDP == 0)
 		{
-			{
-				// If additional_connect == false, enable trying to NAT-T connection
-				// If additional_connect == true, follow the IsRUDPSession setting in this session
-				s = TcpIpConnectEx(w.HostName, w.Port,
-					(bool *)cancel_flag, hWnd, &nat_t_err, (additional_connect ? (!is_additional_rudp_session) : false),
-					true, &ret_ip);
-			}
+			// If additional_connect == false, enable trying to NAT-T connection
+			// If additional_connect == true, follow the IsRUDPSession setting in this session
+			sock = TcpIpConnectEx(hostname, c->ServerPort,
+				(bool *)cancel_flag, c->hWndForUI, &nat_t_err, (additional_connect ? (!sess->IsRUDPSession) : false),
+				true, &resolved_ip);
 		}
 		else
 		{
 			// Mode to connect with R-UDP directly without using NAT-T server when using UDP
 			IP ip;
-
-			Zero(&ip, sizeof(ip));
-
-			StrToIP(&ip, o->Hostname);
-
-
-			s = NewRUDPClientDirect(VPN_RUDP_SVC_NAME, &ip, o->PortUDP, &nat_t_err,
-				TIMEOUT_TCP_PORT_CHECK, (bool *)cancel_flag, NULL, NULL, 0, false);
-
-			if (s != NULL)
+			if (StrToIP(&ip, hostname))
 			{
-				StrCpy(s->UnderlayProtocol, sizeof(s->UnderlayProtocol), SOCK_UNDERLAY_NAT_T);
+				sock = NewRUDPClientDirect(VPN_RUDP_SVC_NAME, &ip, o->PortUDP, &nat_t_err,
+					TIMEOUT_TCP_PORT_CHECK, (bool *)cancel_flag, NULL, NULL, 0, false);
+
+				if (sock != NULL)
+				{
+					StrCpy(sock->UnderlayProtocol, sizeof(sock->UnderlayProtocol), SOCK_UNDERLAY_NAT_T);
+				}
 			}
 		}
-		if (s == NULL)
+
+		if (sock == NULL)
 		{
 			// Connection failure
 			if (nat_t_err != RUDP_ERROR_NAT_T_TWO_OR_MORE)
@@ -6788,822 +6270,108 @@ SOCK *ClientConnectGetSocket(CONNECTION *c, bool additional_connect)
 			{
 				c->Err = ERR_NAT_T_TWO_OR_MORE;
 			}
+
 			return NULL;
 		}
-		break;
-
-	case PROXY_HTTP:	// HTTP Proxy
-		UniFormat(tmp, sizeof(tmp), _UU("STATUS_2"), w.HostName, w.ProxyHostName);
-		PrintStatus(sess, tmp);
-
-		// Proxy connection
-		s = ProxyConnectEx3(c, &w, additional_connect, (bool *)cancel_flag, hWnd, 0);
-		if (s == NULL)
-		{
-			// Connection failure
-			return NULL;
-		}
-		break;
-
-	case PROXY_SOCKS:	// SOCKS4 Proxy
-		UniFormat(tmp, sizeof(tmp), _UU("STATUS_2"), w.HostName, w.ProxyHostName);
-		PrintStatus(sess, tmp);
-
-		// SOCKS4 connection
-		s = SocksConnectEx2(c, w.ProxyHostName, w.ProxyPort,
-			w.HostName, w.Port, w.ProxyUsername, additional_connect, (bool *)cancel_flag,
-			hWnd, 0, &ret_ip);
-		if (s == NULL)
-		{
-			// Connection failure
-			return NULL;
-		}
-		break;
-
-	case PROXY_SOCKS5:	// SOCKS5 Proxy
-		UniFormat(tmp, sizeof(tmp), _UU("STATUS_2"), w.HostName, w.ProxyHostName);
-		PrintStatus(sess, tmp);
-
-		// SOCKS5 connection
-		s = Socks5Connect(c, &w, additional_connect, (bool *)cancel_flag, hWnd, 0, &ret_ip);
-		if (s == NULL)
-		{
-			// Connection failure
-			return NULL;
-		}
-		break;
-	}
-
-	if (s == NULL)
-	{
-		// Connection failure
-		c->Err = ERR_CONNECT_FAILED;
 	}
 	else
-	{
-		// Success to connect
-		// Keep a note of the IP address
-		if (additional_connect == false || IsZeroIP(&s->RemoteIP))
-		{
-			char *hostname = o->ProxyType == PROXY_DIRECT ? w.HostName : w.ProxyHostName;
-			if (((s->IsRUDPSocket || s->IPv6) && IsZeroIP(&s->RemoteIP) == false && o->ProxyType == PROXY_DIRECT) || GetIP(&c->Session->ServerIP, hostname) == false)
-			{
-				Copy(&c->Session->ServerIP, &s->RemoteIP, sizeof(IP));
-			}
-		}
-
-		if (IsZeroIP(&ret_ip) == false)
-		{
-			if (c->Session != NULL)
-			{
-				if (additional_connect == false)
-				{
-					Copy(&c->Session->ServerIP_CacheForNextConnect, &ret_ip, sizeof(IP));
-
-					Debug("Saved ServerIP_CacheForNextConnect: %s = %r\n", c->ServerName, &ret_ip);
-				}
-			}
-		}
-	}
-
-	return s;
-}
-
-// Connect via SOCKS4
-SOCK *SocksConnectEx2(CONNECTION *c, char *proxy_host_name, UINT proxy_port,
-				   char *server_host_name, UINT server_port,
-				   char *username, bool additional_connect,
-				   bool *cancel_flag, void *hWnd, UINT timeout, IP *ret_ip)
-{
-	SOCK *s = NULL;
-	IP ip;
-	// Validate arguments
-	if (c == NULL || proxy_host_name == NULL || proxy_port == 0 || server_host_name == NULL
-		|| server_port == 0)
-	{
-		if (c != NULL)
-		{
-			c->Err = ERR_PROXY_CONNECT_FAILED;
-		}
-		return NULL;
-	}
-
-	// Get the IP address of the destination server
-	if (GetIP(&ip, server_host_name) == false)
-	{
-		// Failure
-		c->Err = ERR_CONNECT_FAILED;
-		return NULL;
-	}
-
-	if (c->Halt)
-	{
-		// Stop
-		c->Err = ERR_USER_CANCEL;
-		return NULL;
-	}
-
-	// Connection
-	s = TcpConnectEx3(proxy_host_name, proxy_port, timeout, cancel_flag, hWnd, true, NULL, false, ret_ip);
-	if (s == NULL)
-	{
-		// Failure
-		c->Err = ERR_PROXY_CONNECT_FAILED;
-		return NULL;
-	}
-
-	// Timeout setting
-	SetTimeout(s, MIN(CONNECTING_TIMEOUT_PROXY, (timeout == 0 ? INFINITE : timeout)));
-
-	if (additional_connect == false)
-	{
-		c->FirstSock = s;
-	}
-
-	// Request packet transmission
-	if (SocksSendRequestPacket(c, s, server_port, &ip, username) == false)
-	{
-		// Failure
-		if (additional_connect == false)
-		{
-			c->FirstSock = NULL;
-		}
-		Disconnect(s);
-		ReleaseSock(s);
-		return NULL;
-	}
-
-	// Receive a response packet
-	if (SocksRecvResponsePacket(c, s) == false)
-	{
-		// Failure
-		if (additional_connect == false)
-		{
-			c->FirstSock = NULL;
-		}
-		Disconnect(s);
-		ReleaseSock(s);
-		return NULL;
-	}
-
-	SetTimeout(s, INFINITE);
-
-	return s;
-}
-
-// Receive a SOCKS4 response packet
-bool SocksRecvResponsePacket(CONNECTION *c, SOCK *s)
-{
-	BUF *b;
-	UCHAR tmp[8];
-	UCHAR vn, cd;
-	// Validate arguments
-	if (c == NULL || s == NULL)
-	{
-		return false;
-	}
-
-	if (RecvAll(s, tmp, sizeof(tmp), false) == false)
-	{
-		c->Err = ERR_DISCONNECTED;
-		return false;
-	}
-
-	b = NewBuf();
-	WriteBuf(b, tmp, sizeof(tmp));
-	SeekBuf(b, 0, 0);
-
-	ReadBuf(b, &vn, 1);
-	ReadBuf(b, &cd, 1);
-
-	FreeBuf(b);
-
-	if (vn != 0)
-	{
-		c->Err = ERR_PROXY_ERROR;
-		return false;
-	}
-
-	switch (cd)
-	{
-	case 90:
-		// Success
-		return true;
-
-	case 93:
-		// Authentication failure
-		c->Err = ERR_PROXY_AUTH_FAILED;
-		return false;
-
-	default:
-		// Connection to the server failure
-		c->Err = ERR_CONNECT_FAILED;
-		return false;
-	}
-}
-
-// Send a SOCKS4 request packet
-bool SocksSendRequestPacket(CONNECTION *c, SOCK *s, UINT dest_port, IP *dest_ip, char *userid)
-{
-	BUF *b;
-	UCHAR vn, cd;
-	USHORT port;
-	UINT ip;
-	bool ret;
-	// Validate arguments
-	if (s == NULL || dest_port == 0 || dest_ip == NULL || c == NULL)
-	{
-		return false;
-	}
-	if (userid == NULL)
-	{
-		userid = "";
-	}
-
-	b = NewBuf();
-	vn = 4;
-	cd = 1;
-	WriteBuf(b, &vn, 1);
-	WriteBuf(b, &cd, 1);
-	port = Endian16((USHORT)dest_port);
-	ip = IPToUINT(dest_ip);
-	WriteBuf(b, &port, 2);
-	WriteBuf(b, &ip, 4);
-	WriteBuf(b, userid, StrLen(userid) + 1);
-
-	ret = SendAll(s, b->Buf, b->Size, false);
-	if (ret == false)
-	{
-		c->Err = ERR_DISCONNECTED;
-	}
-
-	FreeBuf(b);
-
-	return ret;
-}
-
-// Connect via SOCKS5 (RFC1928)
-SOCK *Socks5Connect(CONNECTION *c, WPC_CONNECT *w, bool additional_connect, bool *cancel_flag, void *hWnd, UINT timeout, IP *ret_ip)
-{
-	UCHAR tmp, recv_buf[2], *recv_buf_final;
-	USHORT port;
-	bool ret;
-	SOCK *s;
-	BUF *b;
-	IP ip;
-	// Validate arguments
-	if (c == NULL || w == NULL || w->Port == 0 || w->ProxyPort == 0 || IsEmptyStr(w->HostName) || IsEmptyStr(w->ProxyHostName))
-	{
-		if (c != NULL)
-		{
-			c->Err = ERR_PROXY_CONNECT_FAILED;
-		}
-		return NULL;
-	}
-
-	if (c->Halt)
-	{
-		// Stop
-		c->Err = ERR_USER_CANCEL;
-		return NULL;
-	}
-
-	// Open TCP connection to the proxy server
-	s = TcpConnectEx3(w->ProxyHostName, w->ProxyPort, timeout, cancel_flag, hWnd, true, NULL, false, ret_ip);
-	if (s == NULL)
-	{
-		// Failure
-		c->Err = ERR_PROXY_CONNECT_FAILED;
-		return NULL;
-	}
-
-	// Set the timeout setting
-	SetTimeout(s, MIN(CONNECTING_TIMEOUT_PROXY, (timeout == 0 ? INFINITE : timeout)));
-
-	if (additional_connect == false)
-	{
-		c->FirstSock = s;
-	}
-
-	// +----+----------+----------+
-	// |VER | NMETHODS | METHODS  |
-	// +----+----------+----------+
-	// | 1  |    1     | 1 to 255 |
-	// +----+----------+----------+
-	//
-	// X'00'			NO AUTHENTICATION REQUIRED
-	// X'01'			GSSAPI
-	// X'02'			USERNAME/PASSWORD
-	// X'03' to X'7F'	IANA ASSIGNED
-	// X'80' to X'FE'	RESERVED FOR PRIVATE METHODS
-	// X'FF'			NO ACCEPTABLE METHOD
-
-	b = NewBuf();
-	tmp = 5;
-	WriteBuf(b, &tmp, sizeof(tmp));	// SOCKS version
-	tmp = 2;
-	WriteBuf(b, &tmp, sizeof(tmp));	// Number of supported methods
-	tmp = 0;
-	WriteBuf(b, &tmp, sizeof(tmp));	// No authentication
-	tmp = 2;
-	WriteBuf(b, &tmp, sizeof(tmp));	// Username/password
-
-	ret = SendAll(s, b->Buf, b->Size, false);
-	FreeBuf(b);
-
-	if (ret == false)
-	{
-		Debug("Socks5Connect(): [Phase 1] Failed to send initial data to the server.\n");
-		c->Err = ERR_DISCONNECTED;
-		goto failure;
-	}
-
-	// +----+--------+
-	// |VER | METHOD |
-	// +----+--------+
-	// | 1  |   1    |
-	// +----+--------+
-
-	if (RecvAll(s, recv_buf, sizeof(recv_buf), false) == false)
-	{
-		Debug("Socks5Connect(): [Phase 1] Failed to receive initial data response from the server.\n");
-		c->Err = ERR_DISCONNECTED;
-		goto failure;
-	}
-
-	if (recv_buf[0] != 5)
-	{
-		Debug("Socks5Connect(): [Phase 1] Unmatching version: %u.\n", recv_buf[0]);
-		c->Err = ERR_PROXY_ERROR;
-		goto failure;
-	}
-
-	// Username/password authentication (RFC1929)
-	if (recv_buf[1] == 2)
-	{
-		// +----+------+----------+------+----------+
-		// |VER | ULEN |  UNAME   | PLEN |  PASSWD  |
-		// +----+------+----------+------+----------+
-		// | 1  |  1   | 1 to 255 |  1   | 1 to 255 |
-		// +----+------+----------+------+----------+
-
-		b = NewBuf();
-		tmp = 1;
-		WriteBuf(b, &tmp, sizeof(tmp));		// Authentication protocol version
-		tmp = StrLen(w->ProxyUsername);
-		WriteBuf(b, &tmp, sizeof(tmp));		// Username length
-		WriteBuf(b, w->ProxyUsername, tmp);	// Username
-		tmp = StrLen(w->ProxyPassword);
-		WriteBuf(b, &tmp, sizeof(tmp));		// Password length
-		WriteBuf(b, w->ProxyPassword, tmp);	// Password
-
-		ret = SendAll(s, b->Buf, b->Size, false);
-		FreeBuf(b);
-
-		if (ret == false)
-		{
-			Debug("Socks5Connect(): [Phase 1] Failed to send authentication data to the server.\n");
-			c->Err = ERR_DISCONNECTED;
-			goto failure;
-		}
-
-		// +----+--------+
-		// |VER | STATUS |
-		// +----+--------+
-		// | 1  |   1    |
-		// +----+--------+
-
-		if (RecvAll(s, recv_buf, sizeof(recv_buf), false) == false)
-		{
-			Debug("Socks5Connect(): [Phase 1] Failed to receive authentication data response from the server.\n");
-			c->Err = ERR_DISCONNECTED;
-			goto failure;
-		}
-
-		if (recv_buf[1] != 0)
-		{
-			Debug("Socks5Connect(): [Phase 1] Authentication failure error code sent by the server: %u.\n", recv_buf[1]);
-			c->Err = ERR_PROXY_AUTH_FAILED;
-			goto failure;
-		}
-	}
-
-	// +----+-----+-------+------+----------+----------+
-	// |VER | CMD |  RSV  | ATYP | DST.ADDR | DST.PORT |
-	// +----+-----+-------+------+----------+----------+
-	// | 1  |  1  | X'00' |  1   | Variable |    2     |
-	// +----+-----+-------+------+----------+----------+
-	//
-	// VER				protocol version: X'05'
-	// CMD
-	// CONNECT			X'01'
-	// BIND				X'02'
-	// UDP ASSOCIATE	X'03'
-	// RSV				RESERVED
-	// ATYP				address type of following address
-	// IP V4 address	X'01'
-	// DOMAINNAME		X'03'
-	// IP V6 address	X'04'
-	// DST.ADDR			desired destination address
-	// DST.PORT			desired destination port in network octet order
-
-	// Prepare data to send
-	b = NewBuf();
-	tmp = 5;
-	WriteBuf(b, &tmp, sizeof(tmp));	// SOCKS version
-	tmp = 1;
-	WriteBuf(b, &tmp, sizeof(tmp));	// Command
-	tmp = 0;
-	WriteBuf(b, &tmp, sizeof(tmp));	// Reserved byte
-
-	// Convert the hostname to an IP structure (if it's an IP address)
-	StrToIP(&ip, w->HostName);
-
-	// If the IP structure doesn't contain an IP address, it means that the string is an hostname
-	if (IsZeroIp(&ip))
-	{
-		UCHAR dest_length = StrLen(w->HostName);
-		tmp = 3;
-		WriteBuf(b, &tmp, sizeof(tmp));							// Destination type (hostname)
-		WriteBuf(b, &dest_length, sizeof(dest_length));			// Destination hostname length
-		WriteBuf(b, w->HostName, dest_length);					// Destination hostname
-	}
-	else
-	{
-		if (IsIP6(&ip))
-		{
-			tmp = 4;
-			WriteBuf(b, &tmp, sizeof(tmp));						// Destination type (IPv6)
-			WriteBuf(b, ip.ipv6_addr, sizeof(ip.ipv6_addr));	// Destination IPv6 address
-		}
-		else
-		{
-			tmp = 1;
-			WriteBuf(b, &tmp, sizeof(tmp));						// Destination type (IPv4)
-			WriteBuf(b, ip.addr, sizeof(ip.addr));				// Destination IPv4 address
-		}
-	}
-
-	// Convert the port in network octet order
-	port = Endian16((USHORT)w->Port);
-	WriteBuf(b, &port, sizeof(port));							// Destination port
-
-	// Send data
-	ret = SendAll(s, b->Buf, b->Size, false);
-	FreeBuf(b);
-
-	if (ret == false)
-	{
-		Debug("Socks5Connect(): [Phase 2] Failed to send data to the server.\n");
-		c->Err = ERR_DISCONNECTED;
-		goto failure;
-	}
-
-	// +----+-----+-------+------+----------+----------+
-	// |VER | REP |  RSV  | ATYP | BND.ADDR | BND.PORT |
-	// +----+-----+-------+------+----------+----------+
-	// | 1  |  1  | X’00’ |  1   | Variable |   2      |
-	// +----+-----+-------+------+----------+----------+
-	//
-	// VER protocol version: X’05’
-	// REP Reply field:
-	// X’00’	succeeded
-	// X’01’	general SOCKS server failure
-	// X’02’	connection not allowed by ruleset
-	// X’03’	Network unreachable
-	// X’04’	Host unreachable
-	// X’05’	Connection refused
-	// X’06’	TTL expired
-	// X’07’	Command not supported
-	// X’08’	Address type not supported
-	// X’09’	to X’FF’ unassigned
-
-	// The packet sent by the server should always have the same size as the one we sent to it.
-	// However, there are some implementations which send fixed values (aside from the first 2 bytes).
-	// In order to support such implementations, we read the first 4 bytes in order to know the address type before trying to read the rest of the packet.
-	recv_buf_final = Malloc(4);
-
-	if (RecvAll(s, recv_buf_final, 4, false) == false)
-	{
-		Free(recv_buf_final);
-		Debug("Socks5Connect(): [Phase 2] Failed to receive response from the server.\n");
-		c->Err = ERR_DISCONNECTED;
-		goto failure;
-	}
-
-	// We only need the first two bytes (version and response code), but we have to read the entire packet from the socket
-	recv_buf[0] = recv_buf_final[0];
-	recv_buf[1] = recv_buf_final[1];
-
-	// We receive the rest of the packet by knowing the size according to the address type
-	switch (recv_buf_final[3])
-	{
-	case 1:
-		// IPv4
-		recv_buf_final = ReAlloc(recv_buf_final, 6);			// 4 bytes (IPv4) + 2 bytes (port)
-		ret = RecvAll(s, recv_buf_final, 6, false);
-		break;
-	case 4:
-		// IPv6
-		recv_buf_final = ReAlloc(recv_buf_final, 18);			// 4 bytes (IPv4) + 2 bytes (port)
-		ret = RecvAll(s, recv_buf_final, 18, false);
-		break;
-	case 3:
-		// Hostname
-		ret = RecvAll(s, &tmp, 1, false);
-		if (ret == true)
-		{
-			recv_buf_final = ReAlloc(recv_buf_final, tmp + 2);	// Hostname length + 2 bytes (port)
-			ret = RecvAll(s, recv_buf_final, tmp + 2, false);
-		}
-	}
-
-	Free(recv_buf_final);
-
-	if (ret == false)
-	{
-		Debug("Socks5Connect(): [Phase 2] Malformed response received from the server.\n");
-		c->Err = ERR_DISCONNECTED;
-		goto failure;
-	}
-
-	if (recv_buf[0] != 5)
-	{
-		Debug("Socks5Connect(): [Phase 2] Unmatching version: %u.\n", recv_buf_final[0]);
-		c->Err = ERR_PROXY_ERROR;
-		goto failure;
-	}
-
-	if (recv_buf[1] == 0)
-	{
-		// Success
-		SetTimeout(s, INFINITE);
-		return s;
-	}
-	else
-	{
-		Debug("Socks5Connect(): [Phase 2] Connection failed with error: %u\n", recv_buf[1]);
-		c->Err = ERR_PROXY_ERROR;
-	}
-
-failure:
-	if (additional_connect == false)
-	{
-		c->FirstSock = NULL;
-	}
-
-	Disconnect(s);
-	ReleaseSock(s);
-	return NULL;
-}
-
-// Connect through a proxy
-SOCK *ProxyConnectEx2(CONNECTION *c, char *proxy_host_name, UINT proxy_port,
-				   char *server_host_name, UINT server_port,
-				   char *username, char *password, bool additional_connect,
-				   bool *cancel_flag, void *hWnd, UINT timeout)
-{
-	WPC_CONNECT wpc_connect;
-	Zero(&wpc_connect, sizeof(wpc_connect));
-
-	StrCpy(wpc_connect.ProxyHostName, sizeof(wpc_connect.ProxyHostName), proxy_host_name);
-	wpc_connect.ProxyPort = proxy_port;
-	StrCpy(wpc_connect.HostName, sizeof(wpc_connect.HostName), server_host_name);
-	wpc_connect.Port = server_port;
-	StrCpy(wpc_connect.ProxyUsername, sizeof(wpc_connect.ProxyUsername), username);
-	StrCpy(wpc_connect.ProxyPassword, sizeof(wpc_connect.ProxyPassword), password);
-
-	return ProxyConnectEx3(c, &wpc_connect, additional_connect, cancel_flag, hWnd, timeout);
-}
-SOCK *ProxyConnectEx3(CONNECTION *c, WPC_CONNECT *wpc_connect,
-					  bool additional_connect, bool *cancel_flag, void *hWnd,
-					  UINT timeout)
-{
-	SOCK *s = NULL;
-	bool use_auth = false;
-	char tmp[MAX_SIZE];
-	char auth_tmp_str[MAX_SIZE], auth_b64_str[MAX_SIZE * 2];
-	char basic_str[MAX_SIZE * 2];
-	UINT http_error_code;
-	HTTP_HEADER *h;
-	char server_host_name_tmp[256];
-	UINT i, len;
-	// Validate arguments
-	if (c == NULL || IsEmptyStr(wpc_connect->ProxyHostName) || wpc_connect->ProxyPort == 0 || IsEmptyStr(wpc_connect->HostName) || wpc_connect->Port == 0)
-	{
-		if (c != NULL)
-		{
-			c->Err = ERR_PROXY_CONNECT_FAILED;
-		}
-		return NULL;
-	}
-
-	if ((IsEmptyStr(wpc_connect->ProxyUsername) || IsEmptyStr(wpc_connect->ProxyPassword)) == false)
-	{
-		use_auth = true;
-	}
-
-	if (c->Halt)
-	{
-		// Stop
-		c->Err = ERR_USER_CANCEL;
-		return NULL;
-	}
-
-	Zero(server_host_name_tmp, sizeof(server_host_name_tmp));
-	StrCpy(server_host_name_tmp, sizeof(server_host_name_tmp), wpc_connect->HostName);
-
-	len = StrLen(server_host_name_tmp);
-
-	for (i = 0;i < len;i++)
-	{
-		if (server_host_name_tmp[i] == '/')
-		{
-			server_host_name_tmp[i] = 0;
-		}
-	}
-
-	// Connection
-	s = TcpConnectEx3(wpc_connect->ProxyHostName, wpc_connect->ProxyPort, timeout, cancel_flag, hWnd, true, NULL, false, NULL);
-	if (s == NULL)
-	{
-		// Failure
-		c->Err = ERR_PROXY_CONNECT_FAILED;
-		return NULL;
-	}
-
-	// Timeout setting
-	SetTimeout(s, MIN(CONNECTING_TIMEOUT_PROXY, (timeout == 0 ? INFINITE : timeout)));
-
-	if (additional_connect == false)
-	{
-		c->FirstSock = s;
-	}
-
-	// HTTP header generation
-	if (IsStrIPv6Address(server_host_name_tmp))
-	{
-		IP ip;
-		char iptmp[MAX_PATH];
-
-		StrToIP(&ip, server_host_name_tmp);
-		IPToStr(iptmp, sizeof(iptmp), &ip);
-
-		Format(tmp, sizeof(tmp), "[%s]:%u", iptmp, wpc_connect->Port);
-	}
-	else
-	{
-		Format(tmp, sizeof(tmp), "%s:%u", server_host_name_tmp, wpc_connect->Port);
-	}
-
-	h = NewHttpHeader("CONNECT", tmp, "HTTP/1.0");
-
-	if (IsEmptyStr(wpc_connect->CustomHttpHeader) == false)
-	{
-		TOKEN_LIST *tokens = ParseToken(wpc_connect->CustomHttpHeader, "\r\n");
-		if (tokens != NULL)
-		{
-			for (i = 0; i < tokens->NumTokens; i++)
-			{
-				AddHttpValueStr(h, tokens->Token[i]);
-			}
-
-			FreeToken(tokens);
-		}
-	}
-
-	if (GetHttpValue(h, "User-Agent") == NULL)
-	{
-		AddHttpValue(h, NewHttpValue("User-Agent", (c->Cedar == NULL ? DEFAULT_USER_AGENT : c->Cedar->HttpUserAgent)));
-	}
-
-	if (GetHttpValue(h, "Host") == NULL)
-	{
-		AddHttpValue(h, NewHttpValue("Host", server_host_name_tmp));
-	}
-
-	if (GetHttpValue(h, "Content-Length") == NULL)
-	{
-		AddHttpValue(h, NewHttpValue("Content-Length", "0"));
-	}
-
-	if (GetHttpValue(h, "Proxy-Connection") == NULL)
-	{
-		AddHttpValue(h, NewHttpValue("Proxy-Connection", "Keep-Alive"));
-	}
-
-	if (GetHttpValue(h, "Pragma") == NULL)
-	{
-		AddHttpValue(h, NewHttpValue("Pragma", "no-cache"));
-	}
-
-	if (use_auth && GetHttpValue(h, "Proxy-Authorization") == NULL)
 	{
 		wchar_t tmp[MAX_SIZE];
-		UniFormat(tmp, sizeof(tmp), _UU("STATUS_3"), server_host_name_tmp);
-		// Generate the authentication string
-		Format(auth_tmp_str, sizeof(auth_tmp_str), "%s:%s",
-			   wpc_connect->ProxyUsername, wpc_connect->ProxyPassword);
+		PROXY_PARAM_OUT out;
+		PROXY_PARAM_IN in;
+		UINT ret;
 
-		// Base64 encode
-		Zero(auth_b64_str, sizeof(auth_b64_str));
-		Encode64(auth_b64_str, auth_tmp_str);
-		Format(basic_str, sizeof(basic_str), "Basic %s", auth_b64_str);
+		Zero(&in, sizeof(in));
 
-		AddHttpValue(h, NewHttpValue("Proxy-Authorization", basic_str));
-	}
+		in.Timeout = 0;
 
-	// Transmission
-	if (SendHttpHeader(s, h) == false)
-	{
-		// Failure
-		if (additional_connect == false)
+		StrCpy(in.TargetHostname, sizeof(in.TargetHostname), c->ServerName);
+		in.TargetPort = c->ServerPort;
+
+		StrCpy(in.Hostname, sizeof(in.Hostname), IsEmptyStr(hostname) ? o->ProxyName : hostname);
+		in.Port = o->ProxyPort;
+
+		StrCpy(in.Username, sizeof(in.Username), o->ProxyUsername);
+		StrCpy(in.Password, sizeof(in.Password), o->ProxyPassword);
+
+		StrCpy(in.HttpCustomHeader, sizeof(in.HttpCustomHeader), o->CustomHttpHeader);
+		StrCpy(in.HttpUserAgent, sizeof(in.HttpUserAgent), c->Cedar->HttpUserAgent);
+
+#ifdef OS_WIN32
+		in.Hwnd = c->hWndForUI;
+#endif
+
+		UniFormat(tmp, sizeof(tmp), _UU("STATUS_2"), in.TargetHostname, in.Hostname);
+		PrintStatus(sess, tmp);
+
+		switch (o->ProxyType)
 		{
-			c->FirstSock = NULL;
-		}
-		FreeHttpHeader(h);
-		Disconnect(s);
-		ReleaseSock(s);
-		c->Err = ERR_PROXY_ERROR;
-		return NULL;
-	}
-
-	FreeHttpHeader(h);
-
-	if (c->Halt)
-	{
-		// Stop
-		if (additional_connect == false)
-		{
-			c->FirstSock = NULL;
-		}
-		Disconnect(s);
-		ReleaseSock(s);
-		c->Err = ERR_USER_CANCEL;
-		return NULL;
-	}
-
-	// Receive the results
-	h = RecvHttpHeader(s);
-	if (h == NULL)
-	{
-		// Failure
-		if (additional_connect == false)
-		{
-			c->FirstSock = NULL;
-		}
-		FreeHttpHeader(h);
-		Disconnect(s);
-		ReleaseSock(s);
-		c->Err = ERR_PROXY_ERROR;
-		return NULL;
-	}
-
-	http_error_code = 0;
-	if (StrLen(h->Method) == 8)
-	{
-		if (Cmp(h->Method, "HTTP/1.", 7) == 0)
-		{
-			http_error_code = ToInt(h->Target);
-		}
-	}
-	FreeHttpHeader(h);
-
-	// Check the code
-	switch (http_error_code)
-	{
-	case 401:
-	case 403:
-	case 407:
-		// Authentication failure
-		if (additional_connect == false)
-		{
-			c->FirstSock = NULL;
-		}
-		Disconnect(s);
-		ReleaseSock(s);
-		c->Err = ERR_PROXY_AUTH_FAILED;
-		return NULL;
-
-	default:
-		if ((http_error_code / 100) == 2)
-		{
-			// Success
-			SetTimeout(s, INFINITE);
-			return s;
-		}
-		else
-		{
-			// Receive an unknown result
-			if (additional_connect == false)
-			{
-				c->FirstSock = NULL;
-			}
-			Disconnect(s);
-			ReleaseSock(s);
-			c->Err = ERR_PROXY_ERROR;
+		case PROXY_HTTP:
+			ret = ProxyHttpConnect(&out, &in, cancel_flag);
+			break;
+		case PROXY_SOCKS:
+			ret = ProxySocks4Connect(&out, &in, cancel_flag);
+			break;
+		case PROXY_SOCKS5:
+			ret = ProxySocks5Connect(&out, &in, cancel_flag);
+			break;
+		default:
+			c->Err = ERR_INTERNAL_ERROR;
+			Debug("ClientConnectGetSocket(): Unknown proxy type: %u!\n", o->ProxyType);
 			return NULL;
 		}
+
+		c->Err = ProxyCodeToCedar(ret);
+
+		if (c->Err != ERR_NO_ERROR)
+		{
+			Debug("ClientConnectGetSocket(): Connection via proxy server failed with error %u\n", ret);
+			return NULL;
+		}
+
+		sock = out.Sock;
+
+		CopyIP(&resolved_ip, &out.ResolvedIp);
+	}
+
+	if (additional_connect == false || IsZeroIP(&sock->RemoteIP))
+	{
+		if (((sock->IsRUDPSocket || sock->IPv6) && IsZeroIP(&sock->RemoteIP) == false && o->ProxyType == PROXY_DIRECT) || GetIP(&c->Session->ServerIP, hostname) == false)
+		{
+			Copy(&c->Session->ServerIP, &sock->RemoteIP, sizeof(c->Session->ServerIP));
+		}
+	}
+
+	if (save_resolved_ip && IsZeroIP(&resolved_ip) == false)
+	{
+		Copy(&c->Session->ServerIP_CacheForNextConnect, &resolved_ip, sizeof(c->Session->ServerIP_CacheForNextConnect));
+		Debug("ClientConnectGetSocket(): Saved %s IP address %r for future connections.\n", hostname, &resolved_ip);
+	}
+
+	return sock;
+}
+
+UINT ProxyCodeToCedar(UINT code)
+{
+	switch (code)
+	{
+	case PROXY_ERROR_SUCCESS:
+		return ERR_NO_ERROR;
+	case PROXY_ERROR_GENERIC:
+	case PROXY_ERROR_VERSION:
+		return ERR_PROXY_ERROR;
+	case PROXY_ERROR_CANCELED:
+		return ERR_USER_CANCEL;
+	case PROXY_ERROR_CONNECTION:
+		return ERR_PROXY_CONNECT_FAILED;
+	case PROXY_ERROR_TARGET:
+		return ERR_CONNECT_FAILED;
+	case PROXY_ERROR_DISCONNECTED:
+		return ERR_DISCONNECTED;
+	case PROXY_ERROR_AUTHENTICATION:
+		return ERR_PROXY_AUTH_FAILED;
+	default:
+		return ERR_INTERNAL_ERROR;
 	}
 }
 

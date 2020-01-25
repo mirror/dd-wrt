@@ -209,6 +209,7 @@ struct SOCK
 	UINT CurrentTtl;			// Current TTL value
 	RUDP_STACK *R_UDP_Stack;	// R-UDP stack
 	char UnderlayProtocol[64];	// Underlying protocol
+	char ProtocolDetails[256];	// Protocol details
 	QUEUE *ReverseAcceptQueue;	// Accept queue for the reverse socket
 	EVENT *ReverseAcceptEvent;	// Accept event for the reverse socket
 	bool IsReverseAcceptedSocket;	// Whether it is a reverse socket
@@ -456,6 +457,16 @@ struct TUBEPAIR_DATA
 	SOCK_EVENT *SockEvent1, *SockEvent2;	// SockEvent
 };
 
+// TCP raw data
+struct TCP_RAW_DATA
+{
+	IP SrcIP;							// Source IP address
+	IP DstIP;							// Destination IP address
+	UINT SrcPort;						// Source port
+	UINT DstPort;						// Destination port
+	FIFO *Data;							// Data body
+};
+
 // UDP listener socket entry
 struct UDPLISTENER_SOCK
 {
@@ -496,6 +507,7 @@ struct UDPLISTENER
 	UINT64 LastCheckTick;				// Time which the socket list was checked last
 	UDPLISTENER_RECV_PROC *RecvProc;	// Receive procedure
 	LIST *SendPacketList;				// Transmission packet list
+	UINT PacketType;					// The type to set when creating an UDPPACKET
 	void *Param;						// Parameters
 	INTERRUPT_MANAGER *Interrupts;		// Interrupt manager
 	bool HostIPAddressListChanged;		// IP address list of the host has changed
@@ -564,6 +576,12 @@ struct IPBLOCK
 #define	RUDP_TIMEOUT					12000		// Time-out of R-UDP communication
 #define	RUDP_DIRECT_CONNECT_TIMEOUT		5000		// R-UDP direct connection time-out
 #define	RUDP_MAX_SEGMENT_SIZE			512			// Maximum segment size
+#define	RUDP_BULK_KEY_SIZE_MAX			128			// Bulk key size Max
+
+#define	RUDP_BULK_KEY_SIZE_V2			32			// V2: Bulk key size
+#define	RUDP_BULK_IV_SIZE_V2			12			// V2: Bulk IV size
+#define	RUDP_BULK_MAC_SIZE_V2			16			// V2: Bulk MAC size
+
 // Maximum R-UDP packet size
 #define	RUDP_MAX_PACKET_SIZE			(RUDP_MAX_SEGMENT_SIZE + sizeof(UINT64) * RUDP_MAX_NUM_ACK + SHA1_SIZE * 2 + sizeof(UINT64) * 4 + sizeof(UINT) + 255)
 #define	RUDP_MAX_NUM_ACK				64			// Maximum number of ACKs
@@ -652,6 +670,7 @@ struct RUDP_SESSION
 	UINT64 BulkNextSeqNo;				// Next SEQ NO to the bulk send
 	bool FlushBulkSendTube;				// Flag to be Flush the bulk send Tube
 	UINT64 BulkRecvSeqNoMax;			// Highest sequence number received
+	UCHAR BulkNextIv_V2[RUDP_BULK_IV_SIZE_V2];	// Next IV to the bulk send (version 2)
 };
 
 // NAT Traversal Server Information
@@ -863,53 +882,6 @@ struct NIC_ENTRY
 	UCHAR MacAddress[6];
 };
 
-
-// HTTP value
-struct HTTP_VALUE
-{
-	char *Name;						// Name
-	char *Data;						// Data
-};
-
-// HTTP header
-struct HTTP_HEADER
-{
-	char *Method;					// Method
-	char *Target;					// Target
-	char *Version;					// Version
-	LIST *ValueList;				// Value list
-};
-
-// HTTPS server / client related string constant
-#define	DEFAULT_USER_AGENT	"Mozilla/5.0 (Windows NT 6.3; WOW64; rv:29.0) Gecko/20100101 Firefox/29.0"
-#define	DEFAULT_ACCEPT		"image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, application/x-shockwave-flash, application/msword, application/vnd.ms-powerpoint, application/vnd.ms-excel, */*"
-#define	DEFAULT_ENCODING	"gzip, deflate"
-#define	HTTP_CONTENT_TYPE	"text/html; charset=iso-8859-1"
-#define	HTTP_CONTENT_TYPE2	"application/octet-stream"
-#define	HTTP_CONTENT_TYPE3	"image/jpeg"
-#define	HTTP_CONTENT_TYPE4	"text/html"
-#define	HTTP_CONTENT_TYPE5	"message/rfc822"
-#define	HTTP_KEEP_ALIVE		"timeout=15; max=19"
-#define	HTTP_VPN_TARGET		"/vpnsvc/vpn.cgi"
-#define	HTTP_VPN_TARGET2	"/vpnsvc/connect.cgi"
-#define HTTP_VPN_TARGET_POSTDATA	"VPNCONNECT"
-#define	HTTP_SAITAMA		"/saitama.jpg"
-#define	HTTP_PICTURES		"/picture"
-// Maximum size of the custom HTTP header
-#define	HTTP_CUSTOM_HEADER_MAX_SIZE	1024
-// Maximum size of a single line in the HTTP header
-#define	HTTP_HEADER_LINE_MAX_SIZE	4096
-// Maximum number of lines in the HTTP header
-#define	HTTP_HEADER_MAX_LINES		128
-// Maximum size of the random number to be included in the PACK
-#define	HTTP_PACK_RAND_SIZE_MAX		1000
-// Maximum PACK size in the HTTP
-#define	HTTP_PACK_MAX_SIZE			65536
-
-
-
-
-
 int GetCurrentTimezone();
 
 bool GetSniNameFromSslPacket(UCHAR *packet_buf, UINT packet_size, char *sni, UINT sni_size);
@@ -923,16 +895,6 @@ bool IsUseAlternativeHostname();
 int GetCurrentTimezoneWin32();
 #endif	// OS_WIN32
 
-HTTP_VALUE *GetHttpValue(HTTP_HEADER *header, char *name);
-void AddHttpValue(HTTP_HEADER *header, HTTP_VALUE *value);
-bool AddHttpValueStr(HTTP_HEADER* header, char *string);
-HTTP_HEADER *NewHttpHeader(char *method, char *target, char *version);
-HTTP_HEADER *NewHttpHeaderEx(char *method, char *target, char *version, bool no_sort);
-int CompareHttpValue(void *p1, void *p2);
-void FreeHttpValue(HTTP_VALUE *value);
-void FreeHttpHeader(HTTP_HEADER *header);
-void FreeHttpHeaderSafe(HTTP_HEADER **header);
-
 bool SendPack(SOCK *s, PACK *p);
 PACK *RecvPack(SOCK *s);
 PACK *RecvPackWithHash(SOCK *s);
@@ -943,22 +905,7 @@ PACK *PackError(UINT error);
 
 void CreateDummyValue(PACK *p);
 
-HTTP_VALUE *NewHttpValue(char *name, char *data);
 char *RecvLine(SOCK *s, UINT max_size);
-HTTP_HEADER *RecvHttpHeader(SOCK *s);
-bool SendHttpHeader(SOCK *s, HTTP_HEADER *header);
-char *HttpHeaderToStr(HTTP_HEADER *header);
-bool PostHttp(SOCK *s, HTTP_HEADER *header, void *post_data, UINT post_size);
-UINT GetContentLength(HTTP_HEADER *header);
-void GetHttpDateStr(char *str, UINT size, UINT64 t);
-bool HttpSendForbidden(SOCK *s, char *target, char *server_id);
-bool HttpSendNotFound(SOCK *s, char *target);
-bool HttpSendBody(SOCK *s, void *data, UINT size, char *contents_type);
-bool HttpSendNotImplemented(SOCK *s, char *method, char *target, char *version);
-bool HttpServerSend(SOCK *s, PACK *p);
-bool HttpClientSend(SOCK *s, PACK *p);
-PACK *HttpServerRecv(SOCK *s);
-PACK *HttpClientRecv(SOCK *s);
 
 bool GetIPViaDnsProxyForJapanFlets(IP *ip_ret, char *hostname, bool ipv6, UINT timeout, bool *cancel, char *dns_proxy_hostname);
 bool GetDnsProxyIPAddressForJapanBFlets(IP *ip_ret, UINT timeout, bool *cancel);
@@ -1299,6 +1246,9 @@ void RouteToStr(char *str, UINT str_size, ROUTE_ENTRY *e);
 void DebugPrintRoute(ROUTE_ENTRY *e);
 void DebugPrintRouteTable(ROUTE_TABLE *r);
 bool IsIPv6LocalNetworkAddress(IP *ip);
+void AddProtocolDetailsStr(char *dst, UINT dst_size, char *str);
+void AddProtocolDetailsKeyValueStr(char *dst, UINT dst_size, char *key, char *value);
+void AddProtocolDetailsKeyValueInt(char *dst, UINT dst_size, char *key, UINT value);
 
 #ifdef	ENABLE_SSL_LOGGING
 void SockEnableSslLogging(SOCK *s);
@@ -1405,12 +1355,15 @@ int CmpIpAddressList(void *p1, void *p2);
 UINT64 GetHostIPAddressListHash();
 
 UDPLISTENER *NewUdpListener(UDPLISTENER_RECV_PROC *recv_proc, void *param, IP *listen_ip);
+UDPLISTENER *NewUdpListenerEx(UDPLISTENER_RECV_PROC *recv_proc, void *param, IP *listen_ip, UINT packet_type);
 void UdpListenerThread(THREAD *thread, void *param);
 void FreeUdpListener(UDPLISTENER *u);
 void AddPortToUdpListener(UDPLISTENER *u, UINT port);
 void DeletePortFromUdpListener(UDPLISTENER *u, UINT port);
 void DeleteAllPortFromUdpListener(UDPLISTENER *u);
 void UdpListenerSendPackets(UDPLISTENER *u, LIST *packet_list);
+TCP_RAW_DATA *NewTcpRawData(IP *src_ip, UINT src_port, IP *dst_ip, UINT dst_port);
+void FreeTcpRawData(TCP_RAW_DATA *trd);
 UDPPACKET *NewUdpPacket(IP *src_ip, UINT src_port, IP *dst_ip, UINT dst_port, void *data, UINT size);
 void FreeUdpPacket(UDPPACKET *p);
 UDPLISTENER_SOCK *DetermineUdpSocketForSending(UDPLISTENER *u, UDPPACKET *p);

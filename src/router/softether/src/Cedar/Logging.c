@@ -14,11 +14,11 @@ static char *delete_targets[] =
 	"backup.vpn_server.config",
 	"backup.vpn_gate_svc.config",
 	"backup.etherlogger.config",
-	"packet_log",
-	"etherlogger_log",
+	HUB_PACKET_LOG_DIR,
+	EL_PACKET_LOG_DIR,
 	"secure_nat_log",
-	"security_log",
-	"server_log",
+	HUB_SECURITY_LOG_DIR,
+	SERVER_LOG_DIR,
 	"bridge_log",
 	"packet_log_archive",
 	"azure_log",
@@ -2181,7 +2181,7 @@ void MakeLogFileNameStringFromTick(LOG *g, char *str, UINT size, UINT64 tick, UI
 		break;
 
 	default:				// Without switching
-		snprintf(str, size, "%s");
+		StrCpy(str, size, "");
 		break;
 	}
 

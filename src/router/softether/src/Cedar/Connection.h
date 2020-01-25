@@ -64,8 +64,8 @@ struct CLIENT_OPTION
 	UINT ProxyType;											// Type of proxy
 	char ProxyName[MAX_HOST_NAME_LEN + 1];					// Proxy server name
 	UINT ProxyPort;											// Port number of the proxy server
-	char ProxyUsername[MAX_PROXY_USERNAME_LEN + 1];			// Maximum user name length
-	char ProxyPassword[MAX_PROXY_PASSWORD_LEN + 1];			// Maximum password length
+	char ProxyUsername[PROXY_MAX_USERNAME_LEN + 1];			// Maximum user name length
+	char ProxyPassword[PROXY_MAX_PASSWORD_LEN + 1];			// Maximum password length
 	char CustomHttpHeader[HTTP_CUSTOM_HEADER_MAX_SIZE + 1];	// Custom HTTP proxy header
 	UINT NumRetry;											// Automatic retries
 	UINT RetryInterval;										// Retry interval
@@ -155,6 +155,7 @@ struct BLOCK
 	UINT Ttl;						// TTL value (Used only in ICMP NAT of Virtual.c)
 	UINT Param1;					// Parameter 1
 	bool IsFlooding;				// Is flooding packet
+	UCHAR RawFlagRetUdpAccel;		// Raw flag returned by UDP accel
 };
 
 // Connection structure
@@ -207,6 +208,7 @@ struct CONNECTION
 	void *hWndForUI;				// Parent window
 	bool IsInProc;					// In-process
 	char InProcPrefix[64];			// Prefix
+	UINT InProcLayer;				// InProc layer
 	UINT AdditionalConnectionFailedCounter;		// Additional connection failure counter
 	UINT64 LastCounterResetTick;	// Time the counter was reset finally
 	bool WasSstp;					// Processed the SSTP

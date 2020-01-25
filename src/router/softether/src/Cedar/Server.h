@@ -52,6 +52,7 @@ extern char *SERVER_CONFIG_FILE_NAME;
 #define	MEMBER_SELECTOR_CONNECT_TIMEOUT	2000
 #define	MEMBER_SELECTOR_DATA_TIMEOUT	5000
 
+#define FIRM_SERV_RECV_PACK_MAX_SIZE	(100 * 1024 * 1024)
 
 // Virtual HUB list hosted by each farm member
 struct HUB_LIST
@@ -192,6 +193,7 @@ struct SERVER
 	bool NoMoreSave;					// Do not save any more
 	bool EnableConditionalAccept;		// Apply the Conditional Accept the Listener
 	bool EnableLegacySSL;				// Enable Legacy SSL
+	bool DisableIPsecAggressiveMode;	// Disable IPsec's aggressive mode
 
 	volatile bool Halt;					// Halting flag
 	LOCK *lock;							// Lock
