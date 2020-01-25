@@ -55,8 +55,16 @@ int list_foreach(struct LIST **list, void (*func)(void *item, unsigned long long
 struct LIST *head_get(struct LIST **list, unsigned long long id)
 {
 	struct LIST *head = *list;
+	struct LIST *last = NULL;
 	head = *list;
 	while ((head = head->next)) {
+		if (head == last) {
+		    /* should not happen. if this triggers we have a bug */
+		    pr_debug("fixup list\n");
+		    head->next = NULL;
+		    break;
+		}
+		last = head;
 		if (head->type == KEY_STRING) {
 			char *c = (char *)list_fromkey(id);
 			if (!strcmp(head->keystr, c)) {
@@ -78,7 +86,6 @@ int _list_add(struct LIST **list, void *item, unsigned long long id, char *str)
 		list_init(list);
 	if (new = head_get(list, str ? list_tokey(str) : id))
 		ret = 0;
-
 	if (!new)
 		new = malloc(sizeof(struct LIST));
 	if (!new)
@@ -94,14 +101,14 @@ int _list_add(struct LIST **list, void *item, unsigned long long id, char *str)
 			new->type = KEY_ID;
 		}
 		new->next = NULL;
+		struct LIST *head = *list;
+		struct LIST *last = head;
+		while ((head = head->next)) {
+			last = head;
+		}
+		last->next = new;
+		new->prev = last;
 	}
-	struct LIST *head = *list;
-	struct LIST *last = head;
-	while ((head = head->next)) {
-		last = head;
-	}	
-	last->next = new;
-	new->prev = last;
 	return ret;
 }
 
