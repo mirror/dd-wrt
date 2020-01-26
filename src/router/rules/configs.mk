@@ -112,7 +112,7 @@ obj-$(CONFIG_OTHERS) += others
 obj-$(CONFIG_EOU) += eou
 obj-$(CONFIG_OPENSER) += openser
 obj-$(CONFIG_MILKFISH) += milkfish
-obj-$(CONFIG_MC) += libffi glib20 unrar ncurses mc util-linux
+obj-$(CONFIG_MC) += libffi zlib glib20 unrar ncurses mc util-linux
 obj-$(CONFIG_NOCAT) += nocat
 obj-$(CONFIG_POWERTOP) += pciutils ncurses powertop
 obj-$(CONFIG_RTPPROXY) += rtpproxy
@@ -123,7 +123,7 @@ ifneq ($(CONFIG_SMBD),y)
 obj-$(CONFIG_SAMBA3) += samba3
 endif
 endif
-obj-$(CONFIG_SMBD) += libnl libffi glib20 smbd
+obj-$(CONFIG_SMBD) += libnl libffi smbd
 ifneq ($(CONFIG_SMBD),y)
 obj-$(CONFIG_SAMBA4) += gmp nettle gnutls samba4
 obj-$(CONFIG_SAMBA3) += jansson
@@ -201,7 +201,7 @@ obj-$(CONFIG_SQUID) += squid
 obj-$(CONFIG_IPERF) += iperf
 obj-$(CONFIG_NTPD) += ntpd
 obj-$(CONFIG_GPSD) += ncurses gpsd
-obj-$(CONFIG_PHP5) += icu glib20 php7
+obj-$(CONFIG_PHP5) += icu zlib glib20 php7
 obj-$(CONFIG_FREERADIUS) += libtalloc freeradius3
 #obj-$(CONFIG_FREERADIUS3) += talloc freeradius3
 #obj-$(CONFIG_EAD) += ead
@@ -287,7 +287,7 @@ obj-$(CONFIG_LINKS) += links
 obj-$(CONFIG_SOFTFLOWD) += softflowd
 obj-$(CONFIG_LIGHTTPD) += pcre lighttpd
 obj-$(CONFIG_NEXTMEDIAEXTRA) += nextmediaextra
-obj-$(CONFIG_LIBQMI) += libffi glib20 libqmi
+obj-$(CONFIG_LIBQMI) += libffi zlib glib20 libqmi
 obj-$(CONFIG_UQMI) += json-c libubox uqmi
 obj-$(CONFIG_LIBMBIM) += zlib libffi glib20 libmbim
 obj-$(CONFIG_MTDUTILS) += mtd-utils
