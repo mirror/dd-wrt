@@ -268,6 +268,8 @@ void stop_samba3(void)
 {
 #ifdef HAVE_SMBD
 	stop_process("usmbd", "samba daemon");
+	sysprintf("echo hard > /sys/class/ksmbd-control/kill_server");
+	rmmod("ksmbd");
 #else
 	stop_process("smbd", "samba daemon");
 	stop_process("nmbd", "daemon");
