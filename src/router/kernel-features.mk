@@ -271,6 +271,7 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_CRYPTO_HMAC is not set/CONFIG_CRYPTO_HMAC=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CRYPTO_SHA1 is not set/CONFIG_CRYPTO_SHA1=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CRYPTO_AES is not set/CONFIG_CRYPTO_AES=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CMAC is not set/CONFIG_CRYPTO_CMAC=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CRYPTO_ARC4 is not set/CONFIG_CRYPTO_ARC4=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CRYPTO_SHA256 is not set/CONFIG_CRYPTO_SHA256=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CRYPTO_SHA512 is not set/CONFIG_CRYPTO_SHA512=m/g' $(LINUXDIR)/.config; \
