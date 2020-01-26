@@ -25,8 +25,8 @@
 
 #define MAX_NT_PWD_LEN 129
 
-static char *arg_account = NULL;
-static char *arg_password = NULL;
+static char *arg_account;
+static char *arg_password;
 static int conf_fd = -1;
 static char wbuf[2 * MAX_NT_PWD_LEN + 2 * USMBD_REQ_MAX_ACCOUNT_NAME_SZ];
 
@@ -326,7 +326,7 @@ int command_add_user(char *pwddb, char *account, char *password)
 	if (__opendb_file(pwddb))
 		return -EINVAL;
 
-	for_each_usmbd_user(write_user_cb, NULL);
+	foreach_usmbd_user(write_user_cb, NULL);
 	close(conf_fd);
 	return 0;
 }
@@ -365,7 +365,7 @@ int command_update_user(char *pwddb, char *account, char *password)
 	if (__opendb_file(pwddb))
 		return -EINVAL;
 
-	for_each_usmbd_user(write_user_cb, NULL);
+	foreach_usmbd_user(write_user_cb, NULL);
 	close(conf_fd);
 	return 0;
 }
@@ -381,7 +381,7 @@ int command_del_user(char *pwddb, char *account)
 		return -EINVAL;
 	}
 
-	for_each_usmbd_share(lookup_can_del_user, &abort_del_user);
+	foreach_usmbd_share(lookup_can_del_user, &abort_del_user);
 
 	if (abort_del_user) {
 		pr_err("Aborting user deletion\n");
@@ -391,7 +391,7 @@ int command_del_user(char *pwddb, char *account)
 	if (__opendb_file(pwddb))
 		return -EINVAL;
 
-	for_each_usmbd_user(write_remove_user_cb, NULL);
+	foreach_usmbd_user(write_remove_user_cb, NULL);
 	close(conf_fd);
 	return 0;
 }

@@ -20,8 +20,8 @@
 #include <management/user.h>
 #include <management/share.h>
 
-struct smbconf_global global_conf;
-struct smbconf_parser parser;
+const struct smbconf_global global_conf;
+const struct smbconf_parser parser;
 
 unsigned long long memparse(const char *v)
 {
@@ -68,24 +68,17 @@ static int is_a_comment(char *line)
 	return (*line == 0x00 || *line == ';' || *line == '\n' || *line == '#');
 }
 
-static char *
-utf8_find_next_char (const char *p,
-		       const char *end)
+static char *utf8_find_next_char(const char *p, const char *end)
 {
-  if (end)
-    {
-      for (++p; p < end && (*p & 0xc0) == 0x80; ++p)
-        ;
-      return (p >= end) ? NULL : (char *)p;
-    }
-  else
-    {
-      for (++p; (*p & 0xc0) == 0x80; ++p)
-        ;
-      return (char *)p;
-    }
+	if (end) {
+		for (++p; p < end && (*p & 0xc0) == 0x80; ++p)
+		;
+		return (p >= end) ? NULL : (char *)p;
+	}
+	for (++p; (*p & 0xc0) == 0x80; ++p)
+	;
+	return (char *)p;
 }
-
 
 static int is_a_group(char *line)
 {
@@ -115,13 +108,11 @@ static int add_new_group(char *line)
 	name = ascii_strdown(begin + 1, end - begin - 1);
 	if (!name)
 		goto out_free;
-	
-	
+
 	lookup = list_get(&parser.groups, list_tokey(name));
 	if (lookup) {
 		parser.current = lookup;
-		pr_info("SMB conf: multiple group definitions `%s'\n",
-				name);
+		pr_info("SMB conf: multiple group definitions `%s'\n", name);
 		free(name);
 		return 0;
 	}
@@ -138,8 +129,7 @@ static int add_new_group(char *line)
 
 	parser.current = group;
 	list_add_str(&parser.groups, group, group->name);
-	
-	
+
 	return 0;
 
 out_free:
@@ -163,9 +153,8 @@ static int add_group_key_value(char *line)
 	key--;
 	value++;
 
-	while (is_ascii_space_tab(*key)) {
+	while (is_ascii_space_tab(*key))
 		key--;
-	}
 	while (is_ascii_space_tab(*value))
 		value++;
 
@@ -174,7 +163,7 @@ static int add_group_key_value(char *line)
 
 	if (list_get(&parser.current->kv, list_tokey(key))) {
 		pr_info("SMB conf: multuple key-value [%s] %s\n",
-				parser.current->name, key);
+			parser.current->name, key);
 		return 0;
 	}
 
@@ -199,9 +188,9 @@ static int process_smbconf_entry(char *data)
 	if (is_a_comment(data))
 		return 0;
 
-	if (is_a_group(data)) {
+	if (is_a_group(data))
 		return add_new_group(data);
-	}
+
 	return add_group_key_value(data);
 }
 
@@ -212,6 +201,7 @@ static int __mmap_parse_file(const char *fname, int (*callback)(char *d))
 	char *delim;
 	int ret = 0;
 	FILE *fd;
+
 	fd = fopen(fname, "rb");
 	if (fd == NULL) {
 		ret = errno;
@@ -244,6 +234,7 @@ static int __mmap_parse_file(const char *fname, int (*callback)(char *d))
 			if (!sz)
 				break;
 			char *data = strndup(contents, sz);
+
 			ret = callback(data);
 			if (ret) {
 				free(data);
@@ -261,9 +252,9 @@ out:
 	if (buf)
 		free(buf);
 
-	if (fd) {
+	if (fd)
 		fclose(fd);
-	}
+
 	return ret;
 }
 
@@ -278,9 +269,11 @@ static int init_smbconf_parser(void)
 	return 0;
 }
 
-static void release_smbconf_group(void *v,unsigned long long id, void *user_data)
+static void release_smbconf_group(void *v, unsigned long long id,
+				  void *user_data)
 {
 	struct smbconf_group *g = v;
+
 	list_foreach(&g->kv, kv_release_cb, NULL);
 	list_clear(&g->kv);
 	free(g->name);
@@ -323,9 +316,8 @@ char *cp_get_group_kv_string(char *v)
 int cp_get_group_kv_bool(char *v)
 {
 	if (!strncasecmp(v, "yes", 3) ||
-		!strncasecmp(v, "1", 1) ||
-		!strncasecmp(v, "true", 4) ||
-		!strncasecmp(v, "enable", 6))
+	    !strncasecmp(v, "1", 1) ||
+	    !strncasecmp(v, "true", 4) || !strncasecmp(v, "enable", 6))
 		return 1;
 	return 0;
 }
@@ -358,86 +350,80 @@ struct SList {
 	struct SList *next;
 };
 
-struct SList*
-slist_prepend (struct SList   *list,
-                 void *data)
+struct SList *slist_prepend(struct SList *list, void *data)
 {
-  struct SList *new_list;
+	struct SList *new_list;
 
-  new_list = malloc(sizeof(*list));
-  new_list->data = data;
-  new_list->next = list;
+	new_list = malloc(sizeof(*list));
+	new_list->data = data;
+	new_list->next = list;
 
-  return new_list;
+	return new_list;
 }
 
-
-static char **
-strsplit_set (const char *string,
-                const char *delimiters,
-                int         max_tokens)
+static char **strsplit_set(const char *string,
+			   const char *delimiters, int max_tokens)
 {
-  unsigned int delim_table[256];
-  struct SList *list, *tokens;
-  int n_tokens;
-  const char *s;
-  const char *current;
-  char *token;
-  char **result;
-  if (!string || !delimiters)
-    return NULL;
+	unsigned int delim_table[256];
+	struct SList *list, *tokens;
+	int n_tokens;
+	const char *s;
+	const char *current;
+	char *token;
+	char **result;
 
-  if (max_tokens < 1)
-    max_tokens = INT_MAX;
+	if (!string || !delimiters)
+		return NULL;
 
-  if (*string == '\0')
-    {
-      result = malloc(sizeof(char *));
-      result[0] = NULL;
-      return result;
-    }
+	if (max_tokens < 1)
+		max_tokens = INT_MAX;
 
-  memset (delim_table, 0, sizeof (delim_table));
-  for (s = delimiters; *s != '\0'; ++s)
-    delim_table[*(unsigned char *)s] = 1;
+	if (*string == '\0') {
+		result = malloc(sizeof(char *));
+		result[0] = NULL;
+		return result;
+	}
 
-  tokens = NULL;
-  n_tokens = 0;
+	memset(delim_table, 0, sizeof(delim_table));
+	for (s = delimiters; *s != '\0'; ++s)
+		delim_table[*(unsigned char *)s] = 1;
 
-  s = current = string;
-  while (*s != '\0')
-    {
-      if (delim_table[*(unsigned char *)s] && n_tokens + 1 < max_tokens)
-        {
-          token = strndup (current, s - current);
-          tokens = slist_prepend (tokens, token);
-          ++n_tokens;
+	tokens = NULL;
+	n_tokens = 0;
 
-          current = s + 1;
-        }
+	s = current = string;
+	while (*s != '\0') {
+		if (delim_table[*(unsigned char *)s]
+		    && n_tokens + 1 < max_tokens) {
+			token = strndup(current, s - current);
+			tokens = slist_prepend(tokens, token);
+			++n_tokens;
 
-      ++s;
-    }
+			current = s + 1;
+		}
 
-  token = strndup (current, s - current);
-  tokens = slist_prepend (tokens, token);
-  ++n_tokens;
+		++s;
+	}
 
-  result = malloc(sizeof(char *) * (n_tokens + 1));
+	token = strndup(current, s - current);
+	tokens = slist_prepend(tokens, token);
+	++n_tokens;
 
-  result[n_tokens] = NULL;
-  for (list = tokens; list != NULL; list = list->next)
-    result[--n_tokens] = list->data;
+	result = malloc(sizeof(char *) * (n_tokens + 1));
 
-  list = tokens;
-  while (list) {
-    struct SList *old = list;
-    list = list->next;
-    free(old);
-  }
-  return result;
+	result[n_tokens] = NULL;
+	for (list = tokens; list != NULL; list = list->next)
+		result[--n_tokens] = list->data;
+
+	list = tokens;
+	while (list) {
+		struct SList *old = list;
+
+		list = list->next;
+		free(old);
+	}
+	return result;
 }
-
 
 char **cp_get_group_kv_list(char *v)
 {
@@ -449,21 +435,20 @@ char **cp_get_group_kv_list(char *v)
 
 void cp_group_kv_list_free(char **list)
 {
-  if (list)
-    {
-      int i;
-      for (i = 0; list[i] != NULL; i++)
-        free (list[i]);
-      free (list);
-    }
+	if (list) {
+		int i;
+
+		for (i = 0; list[i] != NULL; i++)
+			free(list[i]);
+		free(list);
+	}
 }
 
 static int cp_add_global_guest_account(void *_v)
 {
 	struct usmbd_user *user;
 
-	if (usm_add_new_user(cp_get_group_kv_string(_v),
-			     strdup("NULL"))) {
+	if (usm_add_new_user(cp_get_group_kv_string(_v), strdup("NULL"))) {
 		pr_err("Unable to add guest account\n");
 		return -ENOMEM;
 	}
@@ -471,7 +456,7 @@ static int cp_add_global_guest_account(void *_v)
 	user = usm_lookup_user(_v);
 	if (!user) {
 		pr_err("Fatal error: unable to find `%s' account.\n",
-			(const char *) _v);
+		       (const char *)_v);
 		return -EINVAL;
 	}
 
@@ -484,6 +469,7 @@ static int cp_add_global_guest_account(void *_v)
 static void global_group_kv(void *_v, unsigned long long id, void *user_data)
 {
 	void *_k = list_fromkey(id);
+
 	if (!cp_key_cmp(_k, "server string")) {
 		global_conf.server_string = cp_get_group_kv_string(_v);
 		return;
@@ -543,7 +529,7 @@ static void global_group_kv(void *_v, unsigned long long id, void *user_data)
 	if (!cp_key_cmp(_k, "restrict anonymous")) {
 		global_conf.restrict_anon = cp_get_group_kv_long(_v);
 		if (global_conf.restrict_anon > USMBD_RESTRICT_ANON_TYPE_2 ||
-				global_conf.restrict_anon < 0) {
+		    global_conf.restrict_anon < 0) {
 			global_conf.restrict_anon = 0;
 			pr_err("Invalid restrict anonymous value\n");
 		}
@@ -555,13 +541,13 @@ static void global_group_kv(void *_v, unsigned long long id, void *user_data)
 		global_conf.map_to_guest = USMBD_CONF_MAP_TO_GUEST_NEVER;
 		if (!cp_key_cmp(_v, "bad user"))
 			global_conf.map_to_guest =
-				USMBD_CONF_MAP_TO_GUEST_BAD_USER;
+			    USMBD_CONF_MAP_TO_GUEST_BAD_USER;
 		if (!cp_key_cmp(_v, "bad password"))
 			global_conf.map_to_guest =
-				USMBD_CONF_MAP_TO_GUEST_BAD_PASSWORD;
+			    USMBD_CONF_MAP_TO_GUEST_BAD_PASSWORD;
 		if (!cp_key_cmp(_v, "bad uid"))
 			global_conf.map_to_guest =
-				USMBD_CONF_MAP_TO_GUEST_BAD_UID;
+			    USMBD_CONF_MAP_TO_GUEST_BAD_UID;
 		return;
 	}
 
@@ -656,14 +642,13 @@ static void fixup_missing_global_group(void)
 		global_conf.file_max = USMBD_CONF_FILE_MAX;
 	if (!global_conf.server_string)
 		global_conf.server_string =
-			cp_get_group_kv_string(
-					USMBD_CONF_DEFAULT_SERVER_STRING);
+		    cp_get_group_kv_string(USMBD_CONF_DEFAULT_SERVER_STRING);
 	if (!global_conf.netbios_name)
 		global_conf.netbios_name =
-			cp_get_group_kv_string(USMBD_CONF_DEFAULT_NETBIOS_NAME);
+		    cp_get_group_kv_string(USMBD_CONF_DEFAULT_NETBIOS_NAME);
 	if (!global_conf.work_group)
 		global_conf.work_group =
-			cp_get_group_kv_string(USMBD_CONF_DEFAULT_WORK_GROUP);
+		    cp_get_group_kv_string(USMBD_CONF_DEFAULT_WORK_GROUP);
 	if (!global_conf.tcp_port)
 		global_conf.tcp_port = USMBD_CONF_DEFAULT_TPC_PORT;
 
@@ -679,7 +664,7 @@ static void fixup_missing_global_group(void)
 	ret = cp_add_global_guest_account(USMBD_CONF_FALLBACK_GUEST_ACCOUNT);
 	if (ret)
 		pr_err("Fatal error: Cannot set a global guest account %d\n",
-			ret);
+		       ret);
 }
 
 static void default_global_group(void)
@@ -696,9 +681,10 @@ static void global_group(struct smbconf_group *group)
 #define GROUPS_CALLBACK_STARTUP_INIT	0x1
 #define GROUPS_CALLBACK_REINIT		0x2
 
-static void groups_callback(void *_v, unsigned long long id,  void *flags)
+static void groups_callback(void *_v, unsigned long long id, void *flags)
 {
 	void *_k = list_fromkey(id);
+
 	if (strncasecmp(_k, "global", 6)) {
 		shm_add_new_share((struct smbconf_group *)_v);
 		return;
@@ -752,14 +738,12 @@ static int __cp_parse_smbconfig(const char *smbconf, long flags)
 
 int cp_parse_reload_smbconf(const char *smbconf)
 {
-	return __cp_parse_smbconfig(smbconf,
-				    GROUPS_CALLBACK_REINIT);
+	return __cp_parse_smbconfig(smbconf, GROUPS_CALLBACK_REINIT);
 }
 
 int cp_parse_smbconf(const char *smbconf)
 {
-	return __cp_parse_smbconfig(smbconf,
-				    GROUPS_CALLBACK_STARTUP_INIT);
+	return __cp_parse_smbconfig(smbconf, GROUPS_CALLBACK_STARTUP_INIT);
 }
 
 int cp_parse_pwddb(const char *pwddb)

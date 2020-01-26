@@ -30,7 +30,7 @@
 #include <management/session.h>
 #include <management/tree_conn.h>
 
-static int no_detach = 0;
+static int no_detach;
 int usmbd_health_status;
 static pid_t worker_pid;
 static int lock_fd = -1;
@@ -224,7 +224,7 @@ static void worker_process_free(void)
 
 static void child_sig_handler(int signo)
 {
-	static volatile int fatal_delivered = 0;
+	static volatile int fatal_delivered;
 
 	if (signo == SIGHUP) {
 		/*
@@ -323,7 +323,7 @@ static int worker_process_init(void)
 		pr_err("Failed to init user session management\n");
 		goto out;
 	}
-	
+
 	ret = rpc_init();
 	if (ret) {
 		pr_err("Failed to init RPC subsystem\n");

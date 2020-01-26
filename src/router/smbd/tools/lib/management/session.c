@@ -118,19 +118,6 @@ static struct usmbd_session *sm_lookup_session(unsigned long long id)
 	return sess;
 }
 
-/*static int sm_insert_session(struct usmbd_session *sess)
-{
-	int ret;
-
-	pthread_rwlock_wrlock(&sessions_table_lock);
-	ret = list_get(sess->id) ? 1 : 0;
-	list_add(&sessions_table, sess, sess->id);
-	pthread_rwlock_unlock(&sessions_table_lock);
-
-	return ret;
-}
-*/
-
 int sm_handle_tree_connect(unsigned long long id,
 			   struct usmbd_user *user,
 			   struct usmbd_tree_conn *tree_conn)
@@ -155,7 +142,7 @@ retry:
 		if (!list_add(&sessions_table, sess, sess->id)) {
 			kill_usmbd_session(sess);
 			sess = NULL;
-		} 
+		}
 		pthread_rwlock_unlock(&sessions_table_lock);
 
 		if (!sess)
@@ -171,6 +158,7 @@ retry:
 int sm_check_sessions_capacity(unsigned long long id)
 {
 	int ret = 0;
+
 	if (sm_lookup_session(id))
 		return ret;
 
@@ -203,7 +191,7 @@ int sm_handle_tree_disconnect(unsigned long long sess_id,
 
 	atomic_int_inc(&global_conf.sessions_cap);
 	pthread_rwlock_wrlock(&sess->update_lock);
-	tree_conn = list_get(&sess->tree_conns,tree_conn_id);
+	tree_conn = list_get(&sess->tree_conns, tree_conn_id);
 	if (tree_conn) {
 		list_remove(&sess->tree_conns, tree_conn_id);
 		sess->ref_counter--;

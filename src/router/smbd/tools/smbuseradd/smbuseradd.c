@@ -25,8 +25,8 @@
 
 #include <linux/usmbd_server.h>
 
-static char *arg_account = NULL;
-static char *arg_password = NULL;
+static char *arg_account;
+static char *arg_password;
 
 enum {
 	COMMAND_ADD_USER = 1,
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 		case 'h':
 		default:
 			usage();
-	}
+		}
 
 	if (sanity_check_user_name_simple(arg_account)) {
 		pr_err("User name sanity check failure\n");

@@ -52,7 +52,7 @@ int usm_init(void);
 typedef void (*walk_users)(void *value,
 			   unsigned long long key,
 			   void *user_data);
-void for_each_usmbd_user(walk_users cb, void *user_data);
+void foreach_usmbd_user(walk_users cb, void *user_data);
 
 struct usmbd_login_request;
 struct usmbd_login_response;

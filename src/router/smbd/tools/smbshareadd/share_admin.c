@@ -92,8 +92,7 @@ static void __write_share(void *value, unsigned long long key, void *buf)
 	wsz = snprintf(wbuf, sizeof(wbuf), "\t%s = %s\n", k, v);
 	if (wsz > sizeof(wbuf)) {
 		pr_err("smb.conf entry size is above the limit: %zu > %zu\n",
-			wsz,
-			sizeof(wbuf));
+		       wsz, sizeof(wbuf));
 		exit(EXIT_FAILURE);
 	}
 	__write();
@@ -108,7 +107,8 @@ static void write_share(struct smbconf_group *g)
 	list_foreach(&g->kv, __write_share, NULL);
 }
 
-static void write_share_cb(void *value, unsigned long long key, void *share_data)
+static void write_share_cb(void *value, unsigned long long key,
+			   void *share_data)
 {
 	struct smbconf_group *g = (struct smbconf_group *)value;
 
@@ -120,8 +120,7 @@ static void write_share_cb(void *value, unsigned long long key, void *share_data
 }
 
 static void write_remove_share_cb(void *value,
-				  unsigned long long key,
-				  void *name)
+				  unsigned long long key, void *name)
 {
 	struct smbconf_group *g = (struct smbconf_group *)value;
 
@@ -133,11 +132,9 @@ static void write_remove_share_cb(void *value,
 	write_share(g);
 }
 
-static void update_share_cb(void *value,
-			    unsigned long long key,
-			    void *g)
+static void update_share_cb(void *value, unsigned long long key, void *g)
 {
-	struct LIST *list = (struct LIST *) g;
+	struct LIST *list = (struct LIST *)g;
 	char *nk, *nv;
 
 	nk = strdup(list_fromkey(key));
@@ -198,9 +195,7 @@ int command_update_share(char *smbconf, char *name, char *opts)
 		goto error;
 	}
 
-	list_foreach(&update_group->kv,
-			     update_share_cb,
-			     existing_group->kv);
+	list_foreach(&update_group->kv, update_share_cb, existing_group->kv);
 
 	if (__open_smbconf(smbconf))
 		goto error;
@@ -220,9 +215,7 @@ int command_del_share(char *smbconf, char *name)
 	if (__open_smbconf(smbconf))
 		return -EINVAL;
 
-	list_foreach(&parser.groups,
-			     write_remove_share_cb,
-			     (void *)name);
+	list_foreach(&parser.groups, write_remove_share_cb, (void *)name);
 	close(conf_fd);
 	return 0;
 }

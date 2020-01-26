@@ -97,7 +97,7 @@ static struct usmbd_user *new_usmbd_user(char *name, char *pwd)
 	return user;
 }
 
-static void free_hash_entry(void *u,unsigned long long id, void *user_data)
+static void free_hash_entry(void *u, unsigned long long id, void *user_data)
 {
 	kill_usmbd_user(u);
 }
@@ -209,7 +209,7 @@ int usm_add_update_user_from_pwdentry(char *data)
 	return usm_add_new_user(name, pwd);
 }
 
-void for_each_usmbd_user(walk_users cb, void *user_data)
+void foreach_usmbd_user(walk_users cb, void *user_data)
 {
 	pthread_rwlock_rdlock(&users_table_lock);
 	list_foreach(&users_table, cb, user_data);
