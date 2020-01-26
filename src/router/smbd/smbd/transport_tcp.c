@@ -435,7 +435,7 @@ static int create_socket(struct interface *iface)
 		ipv4 = true;
 	} else {
 		sin6.sin6_family = PF_INET6;
-		sin6.sin6_addr = in6addr_any;
+		sin6.sin6_addr = IN6ADDR_ANY_INIT;
 		sin6.sin6_port = htons(server_conf.tcp_port);
 	}
 
