@@ -97,6 +97,8 @@ samba4-configure: gnutls
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 		-make -C samba4
 		sed -i 's/\/USR\/BIN\/PYTHON3/PYTHON3/g' $(TOP)/samba4/bin/default/source3/smbd/build_options.c
+		-make -C samba4
+		sed -i 's/\/USR\/BIN\/PYTHON3/PYTHON3/g' $(TOP)/samba4/bin/default/source3/smbd/build_options.c
 
 
 samba4: gnutls
