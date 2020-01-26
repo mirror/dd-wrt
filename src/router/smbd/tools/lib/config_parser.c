@@ -20,8 +20,8 @@
 #include <management/user.h>
 #include <management/share.h>
 
-const struct smbconf_global global_conf;
-const struct smbconf_parser parser;
+struct smbconf_global global_conf;
+struct smbconf_parser parser;
 
 unsigned long long memparse(const char *v)
 {
