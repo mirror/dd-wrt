@@ -523,6 +523,7 @@ void ksmbd_tcp_destroy(void)
 	struct interface *iface, *tmp;
 
 	list_for_each_entry_safe(iface, tmp, &iface_list, entry) {
+		ksmbd_info("remove interface %s\n", iface->name);
 		list_del(&iface->entry);
 		tcp_stop_kthread(iface->ksmbd_kthread);
 		mutex_lock(&iface->sock_release_lock);
@@ -573,7 +574,7 @@ static int alloc_iface(char *ifname)
 int ksmbd_tcp_set_interfaces(char *ifc_list, int ifc_list_sz)
 {
 	int sz = 0;
-
+	ksmbd_tcp_destroy();
 	if (!ifc_list_sz) {
 		struct net_device *netdev;
 

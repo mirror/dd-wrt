@@ -356,10 +356,17 @@ static int handle_startup_event(struct sk_buff *skb, struct genl_info *info)
 	}
 
 	if (ksmbd_tools_pid) {
+		struct ksmbd_startup_request *req;
+
 		if (ksmbd_ipc_heartbeat_request() == 0) {
 			ret = -EINVAL;
 			goto out;
 		}
+
+		req = nla_data(info->attrs[info->genlhdr->cmd]);
+		ret = ipc_server_config_on_startup(req);
+		if (!ret)
+			server_queue_ctrl_init_work();
 
 		ksmbd_err("Reconnect to a new user space daemon\n");
 	} else {
