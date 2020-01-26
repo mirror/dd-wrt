@@ -49,7 +49,8 @@ int tcm_handle_tree_connect(struct usmbd_tree_connect_request *req,
 
 	if (sm_check_sessions_capacity(req->session_id)) {
 		resp->status = USMBD_TREE_CONN_STATUS_TOO_MANY_SESSIONS;
-		pr_debug("treecon: Too many active sessions %d\n", req->session_id);
+		pr_debug("treecon: Too many active sessions %d\n",
+			 req->session_id);
 		goto out_error;
 	}
 
@@ -80,8 +81,7 @@ int tcm_handle_tree_connect(struct usmbd_tree_connect_request *req,
 	}
 
 	ret = shm_lookup_hosts_map(share,
-				   USMBD_SHARE_HOSTS_ALLOW_MAP,
-				   req->peer_addr);
+				   USMBD_SHARE_HOSTS_ALLOW_MAP, req->peer_addr);
 	if (ret == -ENOENT) {
 		resp->status = USMBD_TREE_CONN_STATUS_HOST_DENIED;
 		pr_debug("treecon: host denied: %s\n", req->peer_addr);
@@ -105,8 +105,8 @@ int tcm_handle_tree_connect(struct usmbd_tree_connect_request *req,
 		deny = !test_share_flag(share, USMBD_SHARE_FLAG_GUEST_OK);
 		deny |= test_share_flag(share, USMBD_SHARE_FLAG_PIPE);
 
-		if (req->account_flags & USMBD_USER_FLAG_GUEST_ACCOUNT &&
-				deny) {
+		if (req->account_flags & USMBD_USER_FLAG_GUEST_ACCOUNT
+			&& deny) {
 			pr_debug("treecon: deny. Restricted session\n");
 			resp->status = USMBD_TREE_CONN_STATUS_ERROR;
 			goto out_error;
@@ -114,15 +114,15 @@ int tcm_handle_tree_connect(struct usmbd_tree_connect_request *req,
 	}
 
 	if (((req->account_flags & USMBD_USER_FLAG_BAD_PASSWORD ||
-	     req->account_flags & USMBD_USER_FLAG_GUEST_ACCOUNT) && 
-	    global_conf.map_to_guest == USMBD_CONF_MAP_TO_GUEST_BAD_USER)  &&
+	      req->account_flags & USMBD_USER_FLAG_GUEST_ACCOUNT) &&
+	     global_conf.map_to_guest == USMBD_CONF_MAP_TO_GUEST_BAD_USER) &&
 	    !test_share_flag(share, USMBD_SHARE_FLAG_PIPE) &&
 	    !test_share_flag(share, USMBD_SHARE_FLAG_GUEST_OK)) {
 		pr_debug("treecon: deny. Not allow guest\n");
 		if (req->account_flags & USMBD_USER_FLAG_BAD_PASSWORD)
-		    pr_debug("bad password\n");
+			pr_debug("bad password\n");
 		if (req->account_flags & USMBD_USER_FLAG_GUEST_ACCOUNT)
-		    pr_debug("uses guest account\n");
+			pr_debug("uses guest account\n");
 		resp->status = USMBD_TREE_CONN_STATUS_ERROR;
 		goto out_error;
 	}
@@ -156,16 +156,14 @@ int tcm_handle_tree_connect(struct usmbd_tree_connect_request *req,
 		set_conn_flag(conn, USMBD_TREE_CONN_FLAG_GUEST_ACCOUNT);
 
 	ret = shm_lookup_users_map(share,
-				   USMBD_SHARE_ADMIN_USERS_MAP,
-				   req->account);
+				   USMBD_SHARE_ADMIN_USERS_MAP, req->account);
 	if (ret == 0) {
 		set_conn_flag(conn, USMBD_TREE_CONN_FLAG_ADMIN_ACCOUNT);
 		goto bind;
 	}
 
 	ret = shm_lookup_users_map(share,
-				   USMBD_SHARE_INVALID_USERS_MAP,
-				   req->account);
+				   USMBD_SHARE_INVALID_USERS_MAP, req->account);
 	if (ret == 0) {
 		resp->status = USMBD_TREE_CONN_STATUS_INVALID_USER;
 		pr_err("treecon: user is on invalid list\n");
@@ -173,8 +171,7 @@ int tcm_handle_tree_connect(struct usmbd_tree_connect_request *req,
 	}
 
 	ret = shm_lookup_users_map(share,
-				   USMBD_SHARE_READ_LIST_MAP,
-				   req->account);
+				   USMBD_SHARE_READ_LIST_MAP, req->account);
 	if (ret == 0) {
 		set_conn_flag(conn, USMBD_TREE_CONN_FLAG_READ_ONLY);
 		clear_conn_flag(conn, USMBD_TREE_CONN_FLAG_WRITABLE);
@@ -182,21 +179,20 @@ int tcm_handle_tree_connect(struct usmbd_tree_connect_request *req,
 	}
 
 	ret = shm_lookup_users_map(share,
-				   USMBD_SHARE_WRITE_LIST_MAP,
-				   req->account);
+				   USMBD_SHARE_WRITE_LIST_MAP, req->account);
 	if (ret == 0) {
 		set_conn_flag(conn, USMBD_TREE_CONN_FLAG_WRITABLE);
 		goto bind;
 	}
 
 	ret = shm_lookup_users_map(share,
-				   USMBD_SHARE_VALID_USERS_MAP,
-				   req->account);
+				   USMBD_SHARE_VALID_USERS_MAP, req->account);
 	if (ret == 0)
 		goto bind;
 	if (ret == -ENOENT) {
 		resp->status = USMBD_TREE_CONN_STATUS_INVALID_USER;
-		pr_err("treecon: user %s is not on the valid list\n", req->account);
+		pr_err("treecon: user %s is not on the valid list\n",
+		       req->account);
 		goto out_error;
 	}
 

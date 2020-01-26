@@ -35,31 +35,31 @@ static pthread_rwlock_t pipes_table_lock;
  * Interface: SRVSVC UUID: 4b324fc8-1670-01d3-1278-5a47bf6ee188
  */
 struct dcerpc_syntax_table {
-	struct dcerpc_syntax	syn;
-	int			ack_result;
+	struct dcerpc_syntax syn;
+	int ack_result;
 };
 
 static struct dcerpc_syntax_table known_syntaxes[] = {
 	{
-		.syn.uuid.time_low = 0x8a885d04,
-		.syn.uuid.time_mid = 0x1ceb,
-		.syn.uuid.time_hi_and_version = 0x11c9,
-		.syn.uuid.clock_seq = {0x9f, 0xe8},
-		.syn.uuid.node = {0x8, 0x0, 0x2b, 0x10, 0x48, 0x60},
-		.syn.ver_major = 0x2,
-		.syn.ver_minor = 0x0,
-		.ack_result = DCERPC_BIND_ACK_RES_ACCEPT,
-	},
+	 .syn.uuid.time_low = 0x8a885d04,
+	 .syn.uuid.time_mid = 0x1ceb,
+	 .syn.uuid.time_hi_and_version = 0x11c9,
+	 .syn.uuid.clock_seq = { 0x9f, 0xe8},
+	 .syn.uuid.node = { 0x8, 0x0, 0x2b, 0x10, 0x48, 0x60},
+	 .syn.ver_major = 0x2,
+	 .syn.ver_minor = 0x0,
+	 .ack_result = DCERPC_BIND_ACK_RES_ACCEPT,
+	  },
 	{
-		.syn.uuid.time_low = 0x6CB71C2C,
-		.syn.uuid.time_mid = 0x9812,
-		.syn.uuid.time_hi_and_version = 0x4540,
-		.syn.uuid.clock_seq = {0x0, 0x0},
-		.syn.uuid.node = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
-		.syn.ver_major = 0x1,
-		.syn.ver_minor = 0x0,
-		.ack_result = DCERPC_BIND_ACK_RES_NEGOTIATE_ACK,
-	},
+	 .syn.uuid.time_low = 0x6CB71C2C,
+	 .syn.uuid.time_mid = 0x9812,
+	 .syn.uuid.time_hi_and_version = 0x4540,
+	 .syn.uuid.clock_seq = { 0x0, 0x0},
+	 .syn.uuid.node = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+	 .syn.ver_major = 0x1,
+	 .syn.ver_minor = 0x0,
+	 .ack_result = DCERPC_BIND_ACK_RES_NEGOTIATE_ACK,
+	  },
 };
 
 /*
@@ -137,8 +137,7 @@ static struct usmbd_dcerpc *dcerpc_alloc(unsigned int flags, int sz)
 }
 
 static struct usmbd_dcerpc *dcerpc_ext_alloc(unsigned int flags,
-					     void *payload,
-					     int payload_sz)
+					     void *payload, int payload_sz)
 {
 	struct usmbd_dcerpc *dce;
 
@@ -227,7 +226,7 @@ static struct usmbd_rpc_pipe *rpc_pipe_alloc_bind(unsigned int id)
 	if (!ret) {
 		pipe->id = (unsigned int)-1;
 		rpc_pipe_free(pipe);
-		pipe = NULL;	
+		pipe = NULL;
 	}
 
 	return pipe;
@@ -306,7 +305,7 @@ int ndr_write_##name(struct usmbd_dcerpc *dce, type value)		\
 	return 0;							\
 }
 
-NDR_WRITE_INT(int8,  __u8, htobe_n, htole_n);
+NDR_WRITE_INT(int8, __u8, htobe_n, htole_n);
 NDR_WRITE_INT(int16, __u16, htobe16, htole16);
 NDR_WRITE_INT(int32, __u32, htobe32, htole32);
 NDR_WRITE_INT(int64, __u64, htobe64, htole64);
@@ -325,7 +324,7 @@ type ndr_read_##name(struct usmbd_dcerpc *dce)				\
 	return ret;							\
 }
 
-NDR_READ_INT(int8,  __u8, betoh_n, letoh_n);
+NDR_READ_INT(int8, __u8, betoh_n, letoh_n);
 NDR_READ_INT(int16, __u16, be16toh, le16toh);
 NDR_READ_INT(int32, __u32, be32toh, le32toh);
 NDR_READ_INT(int64, __u64, be64toh, le64toh);
@@ -408,8 +407,7 @@ int ndr_write_vstring(struct usmbd_dcerpc *dce, char *value)
 			     raw_len,
 			     charset,
 			     USMBD_CHARSET_DEFAULT,
-			     &bytes_read,
-			     &bytes_written);
+			     &bytes_read, &bytes_written);
 	if (!out)
 		return -EINVAL;
 
@@ -443,7 +441,7 @@ char *ndr_read_vstring(struct usmbd_dcerpc *dce)
 	int charset = USMBD_CHARSET_UTF16LE;
 
 	raw_len = ndr_read_int32(dce);
-	ndr_read_int32(dce); /* read in offset */
+	ndr_read_int32(dce);	/* read in offset */
 	ndr_read_int32(dce);
 
 	if (!(dce->flags & USMBD_DCERPC_LITTLE_ENDIAN))
@@ -460,9 +458,7 @@ char *ndr_read_vstring(struct usmbd_dcerpc *dce)
 	out = usmbd_gconvert(PAYLOAD_HEAD(dce),
 			     raw_len * 2,
 			     USMBD_CHARSET_DEFAULT,
-			     charset,
-			     &bytes_read,
-			     &bytes_written);
+			     charset, &bytes_read, &bytes_written);
 	if (!out)
 		return NULL;
 
@@ -529,7 +525,8 @@ static int __max_entries(struct usmbd_dcerpc *dce, struct usmbd_rpc_pipe *pipe)
 
 	current_size = 0;
 	for (i = 0; i < pipe->num_entries; i++) {
-		void *entry = list_get(&pipe->entries,  i);
+		void *entry = list_get(&pipe->entries, i);
+
 		current_size += dce->entry_size(dce, entry);
 
 		if (current_size < 4 * dce->payload_sz / 5)
@@ -544,14 +541,17 @@ int __ndr_write_array_of_structs(struct usmbd_rpc_pipe *pipe, int max_entry_nr)
 {
 	struct usmbd_dcerpc *dce = pipe->dce;
 	int i;
+
 	for (i = 0; i < max_entry_nr; i++) {
-		void *entry = list_get(&pipe->entries,  i);
+		void *entry = list_get(&pipe->entries, i);
+
 		if (dce->entry_rep(dce, entry))
 			return USMBD_RPC_EBAD_DATA;
 	}
 
 	for (i = 0; i < max_entry_nr; i++) {
-		void *entry = list_get(&pipe->entries,  i);
+		void *entry = list_get(&pipe->entries, i);
+
 		if (dce->entry_data(dce, entry))
 			return USMBD_RPC_EBAD_DATA;
 	}
@@ -636,8 +636,7 @@ void rpc_destroy(void)
 	pthread_rwlock_destroy(&pipes_table_lock);
 }
 
-static int dcerpc_hdr_write(struct usmbd_dcerpc *dce,
-			    struct dcerpc_header *hdr)
+static int dcerpc_hdr_write(struct usmbd_dcerpc *dce, struct dcerpc_header *hdr)
 {
 	ndr_write_int8(dce, hdr->rpc_vers);
 	ndr_write_int8(dce, hdr->rpc_vers_minor);
@@ -650,8 +649,7 @@ static int dcerpc_hdr_write(struct usmbd_dcerpc *dce,
 	return 0;
 }
 
-static int dcerpc_hdr_read(struct usmbd_dcerpc *dce,
-			   struct dcerpc_header *hdr)
+static int dcerpc_hdr_read(struct usmbd_dcerpc *dce, struct dcerpc_header *hdr)
 {
 	/* Common Type Header for the Serialization Stream */
 
@@ -901,7 +899,7 @@ static int dcerpc_bind_ack_return(struct usmbd_rpc_pipe *pipe)
 
 	ndr_write_int16(dce, strlen(addr));
 	ndr_write_bytes(dce, addr, strlen(addr));
-	align_offset(dce, 4); /* [flag(NDR_ALIGN4)]    DATA_BLOB _pad1; */
+	align_offset(dce, 4);	/* [flag(NDR_ALIGN4)]    DATA_BLOB _pad1; */
 
 	num_trans = dce->bi_req.num_contexts;
 	ndr_write_int8(dce, num_trans);
@@ -961,7 +959,7 @@ static int dcerpc_bind_return(struct usmbd_rpc_pipe *pipe)
 
 	if (!ack) {
 		pr_err("Unsupported transfer syntax\n");
-		ret =  dcerpc_bind_nack_return(pipe);
+		ret = dcerpc_bind_nack_return(pipe);
 	} else {
 		ret = dcerpc_bind_ack_return(pipe);
 	}
@@ -979,21 +977,19 @@ int rpc_restricted_context(struct usmbd_rpc_command *req)
 }
 
 int rpc_ioctl_request(struct usmbd_rpc_command *req,
-		      struct usmbd_rpc_command *resp,
-		      int max_resp_sz)
+		      struct usmbd_rpc_command *resp, int max_resp_sz)
 {
 	int ret;
+
 	ret = rpc_write_request(req, resp);
-	
-	if (ret == USMBD_RPC_OK) {
+	if (ret == USMBD_RPC_OK)
 		ret = rpc_read_request(req, resp, max_resp_sz);
-	}
+
 	return ret;
 }
 
 int rpc_read_request(struct usmbd_rpc_command *req,
-		     struct usmbd_rpc_command *resp,
-		     int max_resp_sz)
+		     struct usmbd_rpc_command *resp, int max_resp_sz)
 {
 	int ret = USMBD_RPC_ENOTIMPLEMENTED;
 	struct usmbd_rpc_pipe *pipe;
@@ -1002,7 +998,7 @@ int rpc_read_request(struct usmbd_rpc_command *req,
 	pipe = rpc_pipe_lookup(req->handle);
 	if (!pipe || !pipe->dce) {
 		pr_err("RPC: no pipe or pipe has no associated DCE [%d]\n",
-			req->handle);
+		       req->handle);
 		return USMBD_RPC_EBAD_FID;
 	}
 
@@ -1041,7 +1037,7 @@ int rpc_write_request(struct usmbd_rpc_command *req,
 
 	if (pipe->num_entries)
 		pr_err("RPC: A call on unflushed pipe. Pending %d\n",
-			pipe->num_entries);
+		       pipe->num_entries);
 
 	dce = pipe->dce;
 	dce->rpc_req = req;
@@ -1086,8 +1082,7 @@ int rpc_open_request(struct usmbd_rpc_command *req,
 
 	pipe->dce = dcerpc_ext_alloc(USMBD_DCERPC_LITTLE_ENDIAN |
 				     USMBD_DCERPC_ALIGN4,
-				     req->payload,
-				     req->payload_sz);
+				     req->payload, req->payload_sz);
 	if (!pipe->dce) {
 		rpc_pipe_free(pipe);
 		return USMBD_RPC_ENOMEM;

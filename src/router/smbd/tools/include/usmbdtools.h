@@ -32,11 +32,10 @@
 char *ascii_strdown(char *str, size_t len);
 
 int atomic_int_add(volatile int *atomic, int val);
-void atomic_int_inc (volatile int *atomic);
+void atomic_int_inc(volatile int *atomic);
 
-int atomic_int_compare_and_exchange (volatile int *atomic,
-                                     int           oldval,
-                                     int           newval);
+int atomic_int_compare_and_exchange(volatile int *atomic,
+				    int oldval, int newval);
 
 #define KEY_ID 0x0
 #define KEY_STRING 0x1
@@ -58,7 +57,9 @@ int list_remove(struct LIST **list, unsigned long long id);
 int list_remove_dec(struct LIST **list, unsigned long long id);
 void *list_get(struct LIST **list, unsigned long long id);
 void list_clear(struct LIST **list);
-int list_foreach(struct LIST **list, void (*func)(void *item, unsigned long long id, void *user_data), void *user_data);
+int list_foreach(struct LIST **list,
+		 void (*func)(void *item, unsigned long long id,
+			      void *user_data), void *user_data);
 
 static unsigned long long list_tokey(void *ptr)
 {
@@ -69,32 +70,52 @@ static unsigned long long list_tokey(void *ptr)
 static void *list_fromkey(unsigned long long key)
 {
 	size_t p = key;
+
 	return (void *)p;
 }
 
-struct smbconf_global {
-	int			flags;
-	int			map_to_guest;
-	char			*guest_account;
+typedef enum {
+	step_A, step_B, step_C
+} base64_encodestep;
 
-	char			*server_string;
-	char			*work_group;
-	char			*netbios_name;
-	char			*server_min_protocol;
-	char			*server_max_protocol;
-	char			*root_dir;
-	int			server_signing;
-	int			sessions_cap;
-	int			restrict_anon;
-	unsigned short		tcp_port;
-	unsigned short		ipc_timeout;
-	unsigned int		deadtime;
-	int			bind_interfaces_only;
-	char			**interfaces;
-	unsigned long		file_max;
-	unsigned int		smb2_max_read;
-	unsigned int		smb2_max_write;
-	unsigned int		smb2_max_trans;
+typedef struct {
+	base64_encodestep step;
+	char result;
+	int stepcount;
+} base64_encodestate;
+
+typedef enum {
+	step_a, step_b, step_c, step_d
+} base64_decodestep;
+
+typedef struct {
+	base64_decodestep step;
+	char plainchar;
+} base64_decodestate;
+
+struct smbconf_global {
+	int flags;
+	int map_to_guest;
+	char *guest_account;
+
+	char *server_string;
+	char *work_group;
+	char *netbios_name;
+	char *server_min_protocol;
+	char *server_max_protocol;
+	char *root_dir;
+	int server_signing;
+	int sessions_cap;
+	int restrict_anon;
+	unsigned short tcp_port;
+	unsigned short ipc_timeout;
+	unsigned int deadtime;
+	int bind_interfaces_only;
+	char **interfaces;
+	unsigned long file_max;
+	unsigned int smb2_max_read;
+	unsigned int smb2_max_write;
+	unsigned int smb2_max_trans;
 };
 
 #define USMBD_LOCK_FILE		"/tmp/usmbd.lock"
@@ -102,7 +123,7 @@ struct smbconf_global {
 #define USMBD_RESTRICT_ANON_TYPE_1	1
 #define USMBD_RESTRICT_ANON_TYPE_2	2
 
-extern struct smbconf_global global_conf;
+extern const struct smbconf_global global_conf;
 
 #define USMBD_CONF_MAP_TO_GUEST_NEVER		(0)
 #define USMBD_CONF_MAP_TO_GUEST_BAD_USER	(1 << 0)
@@ -156,7 +177,7 @@ static int log_level = PR_DEBUG;
  */
 char *strerr(int err);
 
-__attribute__ ((format (printf, 2, 3)))
+__attribute__((format(printf, 2, 3)))
 extern void __pr_log(int level, const char *fmt, ...);
 extern void set_logger_app_name(const char *an);
 extern const char *get_logger_app_name(void);
@@ -169,11 +190,11 @@ extern void pr_logger_init(int flags);
 					getpid(),			\
 					##__VA_ARGS__);			\
 	} while (0)
-#ifdef NEED_DEBUG
+#ifdef HAVE_DEBUG
 #define pr_debug(f, ...)	\
 	pr_log(PR_DEBUG, PRDEBUG f, ##__VA_ARGS__)
 #else
-#define pr_debug(f, ...) do {  } while(0)
+#define pr_debug(f, ...) do {} while (0)
 #endif
 #define pr_info(f, ...)	\
 	pr_log(PR_INFO, PRINF f, ##__VA_ARGS__)
@@ -188,19 +209,18 @@ char *base64_encode(unsigned char *src, size_t srclen);
 unsigned char *base64_decode(char const *src, size_t *dstlen);
 
 char *usmbd_gconvert(const char *str,
-		      size_t       str_len,
-		      int          to_codeset,
-		      int          from_codeset,
-		      size_t       *bytes_read,
-		      size_t       *bytes_written);
+		     size_t str_len,
+		     int to_codeset,
+		     int from_codeset,
+		     size_t *bytes_read, size_t *bytes_written);
 
 enum charset_idx {
-	USMBD_CHARSET_UTF8		= 0,
+	USMBD_CHARSET_UTF8 = 0,
 	USMBD_CHARSET_UTF16LE,
 	USMBD_CHARSET_UCS2LE,
 	USMBD_CHARSET_UTF16BE,
 	USMBD_CHARSET_UCS2BE,
-	USMBD_CHARSET_MAX		= 5,
+	USMBD_CHARSET_MAX = 5,
 };
 
 #define USMBD_CHARSET_DEFAULT		USMBD_CHARSET_UTF8
