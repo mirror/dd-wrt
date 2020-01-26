@@ -123,7 +123,7 @@ struct smbconf_global {
 #define USMBD_RESTRICT_ANON_TYPE_1	1
 #define USMBD_RESTRICT_ANON_TYPE_2	2
 
-extern const struct smbconf_global global_conf;
+extern struct smbconf_global global_conf;
 
 #define USMBD_CONF_MAP_TO_GUEST_NEVER		(0)
 #define USMBD_CONF_MAP_TO_GUEST_BAD_USER	(1 << 0)
