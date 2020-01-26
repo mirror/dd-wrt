@@ -406,6 +406,8 @@ static void tcp_destroy_socket(struct socket *ksmbd_socket)
 		sock_release(ksmbd_socket);
 }
 
+static const struct in6_addr my_in6addr_any = IN6ADDR_ANY_INIT;
+
 /**
  * create_socket - create socket for ksmbd/0
  *
@@ -435,7 +437,7 @@ static int create_socket(struct interface *iface)
 		ipv4 = true;
 	} else {
 		sin6.sin6_family = PF_INET6;
-		sin6.sin6_addr = IN6ADDR_ANY_INIT;
+		sin6.sin6_addr = my_in6addr_any;
 		sin6.sin6_port = htons(server_conf.tcp_port);
 	}
 
