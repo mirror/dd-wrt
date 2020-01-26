@@ -157,7 +157,7 @@ static int rpc_request(struct usmbd_ipc_msg *msg)
 	req = USMBD_IPC_MSG_PAYLOAD(msg);
 	if (req->flags & USMBD_RPC_METHOD_RETURN)
 		resp_msg = ipc_msg_alloc(USMBD_IPC_MAX_MESSAGE_SIZE -
-				sizeof(struct usmbd_rpc_command));
+					 sizeof(struct usmbd_rpc_command));
 	else
 		resp_msg = ipc_msg_alloc(sizeof(struct usmbd_rpc_command));
 	if (!resp_msg)
@@ -197,6 +197,7 @@ out:
 static void *worker_pool_fn(void *event)
 {
 	struct usmbd_ipc_msg *msg = (struct usmbd_ipc_msg *)event;
+
 	switch (msg->type) {
 	case USMBD_EVENT_LOGIN_REQUEST:
 		login_request(msg);
@@ -239,15 +240,16 @@ static void *worker_pool_fn(void *event)
 int wp_ipc_msg_push(struct usmbd_ipc_msg *msg)
 {
 	pthread_attr_t attr;
+	pthread_t thread;
+
 	sem_wait(&semaphore);
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-	pthread_t thread;
 	if (pthread_create(&thread, &attr, worker_pool_fn, msg) != 0) {
-	    pthread_attr_destroy(&attr);
-	    sem_post(&semaphore);
-	    pr_err("error while creating worker thread\n");
-	    return -1;
+		pthread_attr_destroy(&attr);
+		sem_post(&semaphore);
+		pr_err("error while creating worker thread\n");
+		return -1;
 	}
 	pthread_attr_destroy(&attr);
 	return 0;
@@ -259,7 +261,7 @@ int wp_init(void)
 	return sem_init(&semaphore, 0, MAX_WORKER_THREADS);
 }
 
-void wp_destroy(void) 
+void wp_destroy(void)
 {
 	sem_destroy(&semaphore);
 }

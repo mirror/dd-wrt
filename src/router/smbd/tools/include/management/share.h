@@ -159,7 +159,7 @@ int shm_open_connection(struct usmbd_share *share);
 int shm_close_connection(struct usmbd_share *share);
 
 typedef void (*walk_shares)(void *item, unsigned long long id, void *user_data);
-void for_each_usmbd_share(walk_shares cb, void *user_data);
+void foreach_usmbd_share(walk_shares cb, void *user_data);
 
 struct usmbd_share_config_response;
 
