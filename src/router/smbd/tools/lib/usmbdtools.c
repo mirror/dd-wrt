@@ -150,9 +150,10 @@ int _list_remove(struct LIST **list, unsigned long long id, int dec)
 			if (head->prev)
 				head->prev->next = head->next;
 
-			if (head->next)
+			if (head->next) {
 				next = head->next;
-			head->next->prev = head->prev;
+				head->next->prev = head->prev;
+			}
 
 			free(head);
 			ret = 1;
