@@ -33,18 +33,18 @@ ${CROSS_COMPILE}objcopy \
 	exit 0
 }
 
-#${CROSS_COMPILE}nm "$MODULE.tmp" | awk '
-#BEGIN {
-#	n = 0
-#}
-#
-#$3 && $2 ~ /[brtd]/ && $3 !~ /\$LC/ && !def[$3] {
-#	print "--redefine-sym "$3"=_"n;
-#	n = n + 1
-#	def[$3] = 1
-#}
-#' > "$MODULE.tmp1"
-#
-#${CROSS_COMPILE}objcopy `cat ${MODULE}.tmp1` ${MODULE}.tmp ${MODULE}.out
-#mv "${MODULE}.out" "${MODULE}"
+${CROSS_COMPILE}nm "$MODULE.tmp" | awk '
+BEGIN {
+	n = 0
+}
+
+$3 && $2 ~ /[brtd]/ && $3 !~ /\$LC/ && !def[$3] {
+	print "--redefine-sym "$3"=_"n;
+	n = n + 1
+	def[$3] = 1
+}
+' > "$MODULE.tmp1"
+
+${CROSS_COMPILE}objcopy `cat ${MODULE}.tmp1` ${MODULE}.tmp ${MODULE}.out
+mv "${MODULE}.out" "${MODULE}"
 rm -f "${MODULE}".t*
