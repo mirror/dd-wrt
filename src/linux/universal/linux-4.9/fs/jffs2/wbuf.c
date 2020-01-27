@@ -254,14 +254,14 @@ static int jffs2_verify_write(struct jffs2_sb_info *c, unsigned char *buf,
 	else
 		eccstr = "OK or unused";
 
-	pr_warn("Write verify error (ECC %s) at %08x.\n",
+	pr_warn("Write verify error (ECC %s) at %08x. Wrote:\n",
 		eccstr, c->wbuf_ofs);
-//	print_hex_dump(KERN_WARNING, "", DUMP_PREFIX_OFFSET, 16, 1,
-//		       c->wbuf, c->wbuf_pagesize, 0);
+	print_hex_dump(KERN_WARNING, "", DUMP_PREFIX_OFFSET, 16, 1,
+		       c->wbuf, c->wbuf_pagesize, 0);
 
-//	pr_warn("Read back:\n");
-//	print_hex_dump(KERN_WARNING, "", DUMP_PREFIX_OFFSET, 16, 1,
-//		       c->wbuf_verify, c->wbuf_pagesize, 0);
+	pr_warn("Read back:\n");
+	print_hex_dump(KERN_WARNING, "", DUMP_PREFIX_OFFSET, 16, 1,
+		       c->wbuf_verify, c->wbuf_pagesize, 0);
 
 	return -EIO;
 }
