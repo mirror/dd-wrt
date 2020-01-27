@@ -17,6 +17,7 @@
 #include <usmbdtools.h>
 
 #define WKSSVC_NETWKSTA_GET_INFO	(0)
+#define WKSSVC_NETWKSTA_NETCHARDEVENUM	(21)
 
 #define WKSSVC_PLATFORM_ID_DOS		300
 #define WKSSVC_PLATFORM_ID_OS2		400
@@ -171,6 +172,8 @@ static int wkssvc_invoke(struct usmbd_rpc_pipe *pipe)
 	switch (pipe->dce->req_hdr.opnum) {
 	case WKSSVC_NETWKSTA_GET_INFO:
 		ret = wkssvc_netwksta_info_invoke(pipe);
+		break;
+	case WKSSVC_NETWKSTA_NETCHARDEVENUM: /* silently ignore */
 		break;
 	default:
 		pr_err("WKSSVC: unsupported INVOKE method %d\n",
