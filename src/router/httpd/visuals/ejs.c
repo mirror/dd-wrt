@@ -2291,7 +2291,11 @@ void ej_get_service_state(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<div class=\"setting\"><div class=\"label\">%s</div>", tran_string(buf, "service.samba3_srv"));
 	if (nvram_matchi("samba3_enable", 1)) {
 		websWrite(wp, "%s", tran_string(buf, "share.enabled"));
+#ifdef HAVE_SMBD
+		if (pidof("usmbd") > 0) {
+#else
 		if (pidof("smbd") > 0) {
+#endif
 			websWrite(wp, " - %s", tran_string(buf, "diag.running"));
 		} else {
 			websWrite(wp, " - %s", tran_string(buf, "diag.stopped"));
