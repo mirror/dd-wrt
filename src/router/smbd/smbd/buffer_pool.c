@@ -20,14 +20,13 @@ static struct kmem_cache *filp_cache;
 
 struct wm {
 	struct list_head	list;
-	size_t			sz;
-	size_t			realsize;
+	unsigned int		sz;
 	char			buffer[0];
 };
 
 struct wm_list {
 	struct list_head	list;
-	size_t			sz;
+	unsigned int		sz;
 
 	spinlock_t		wm_lock;
 	int			avail_wm;
@@ -141,36 +140,12 @@ static struct wm_list *match_wm_list(size_t size)
 	return rl;
 }
 
-
-static struct wm_list *search_wm_list(size_t size, size_t *realsize)
-{
-	struct wm_list *l, *rl = NULL;
-	size_t last_size = (size_t)-1;
-
-	read_lock(&wm_lists_lock);
-	list_for_each_entry(l, &wm_lists, list) {
-		if (l->sz == size) {
-			rl = l;
-			break;
-		}
-		if (l->sz > size && l->sz < last_size) {
-			last_size = l->sz;
-			rl = l;
-		}
-	}
-	if (rl)
-		*realsize = rl->sz;
-	read_unlock(&wm_lists_lock);
-	return rl;
-}
-
 static struct wm *find_wm(size_t size, gfp_t flags)
 {
 	struct wm_list *wm_list;
 	struct wm *wm;
-	size_t realsize = size;
 
-	wm_list = search_wm_list(size, &realsize);
+	wm_list = match_wm_list(size);
 	if (!wm_list) {
 		if (register_wm_size_class(size))
 			return NULL;
@@ -188,7 +163,6 @@ static struct wm *find_wm(size_t size, gfp_t flags)
 					list);
 			list_del(&wm->list);
 			spin_unlock(&wm_list->wm_lock);
-			wm->realsize = realsize;
 			return wm;
 		}
 
@@ -216,7 +190,6 @@ static struct wm *find_wm(size_t size, gfp_t flags)
 
 	if (flags & __GFP_ZERO)
 		memset(wm->buffer, 0x00, wm->sz);
-	wm->realsize = realsize;
 	return wm;
 }
 
@@ -297,11 +270,12 @@ void ksmbd_release_buffer(void *buffer)
 {
 	struct wm_list *wm_list;
 	struct wm *wm;
+
 	if (!buffer)
 		return;
 
 	wm = container_of(buffer, struct wm, buffer);
-	wm_list = match_wm_list(wm->realsize);
+	wm_list = match_wm_list(wm->sz);
 	WARN_ON(!wm_list);
 	if (wm_list)
 		release_wm(wm, wm_list);
