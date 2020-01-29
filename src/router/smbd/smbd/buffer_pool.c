@@ -288,9 +288,8 @@ void *ksmbd_find_buffer(size_t size)
 	wm = find_wm(size, GFP_KERNEL | __GFP_ZERO);
 
 	WARN_ON(!wm);
-	if (wm) {
+	if (wm)
 		return wm->buffer;
-	}
 	return NULL;
 }
 
