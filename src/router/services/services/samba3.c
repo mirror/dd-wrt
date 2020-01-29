@@ -257,7 +257,6 @@ void start_samba3(void)
 	       " aes-arm-ce aes-arm-bs sha256-arm sha512-arm ghash-ce aes-ce-cipher aes-ce-ccm" //
 	       " aes-ce-blk aes-neon-blk aes-i586 aes-x86_64 aesni-intel ghash-clmulni-intel sha256-ssse3 sha512-ssse3 sha256-mb sha512-mb");
 	insmod("ksmbd");
-	sleep(1);
 	eval("usmbd", "-c", "/tmp/smb.conf", "-u", "/tmp/smb.db");
 #endif
 
