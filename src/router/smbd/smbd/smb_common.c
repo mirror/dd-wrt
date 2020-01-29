@@ -109,7 +109,7 @@ inline int ksmbd_min_protocol(void)
 #ifdef CONFIG_SMB_INSECURE_SERVER
 	return SMB1_PROT;
 #else
-	return SMB2_PROT;
+	return SMB21_PROT;
 #endif
 }
 
