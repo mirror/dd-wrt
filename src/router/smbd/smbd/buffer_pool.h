@@ -6,7 +6,8 @@
 #ifndef __KSMBD_BUFFER_POOL_H__
 #define __KSMBD_BUFFER_POOL_H__
 
-void *ksmbd_find_buffer(size_t size);
+void *_ksmbd_find_buffer(size_t size, const char *func);
+#define ksmbd_find_buffer(size) _ksmbd_find_buffer(size, __func__)
 void ksmbd_release_buffer(void *buffer);
 
 void *ksmbd_alloc(size_t size);
