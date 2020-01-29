@@ -307,6 +307,9 @@ static int ieee80211n_check_40mhz_5g(struct hostapd_iface *iface,
 		else if (bss->freq == sec_freq)
 			sec_bss++;
 	}
+	if (!iface->conf->dynamic_ht40)
+		return 1;
+
 	if (sec_bss && !pri_bss) {
 		wpa_printf(MSG_INFO, "Switch own primary and secondary "
 			   "channel to get secondary channel with no Beacons "
