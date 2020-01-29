@@ -878,6 +878,9 @@ ifeq ($(CONFIG_QTN),y)
 CFLAGS += -DHAVE_QTN  -DRPCOVERRIDE
 endif
 
+ifeq ($(CONFIG_SMBD),y)
+CFLAGS += -DHAVE_SMBD
+endif
 
 ifeq ($(CONFIG_FTP),y)
 WEBSLDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
