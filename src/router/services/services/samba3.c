@@ -121,7 +121,7 @@ void start_samba3(void)
 		char *smbmaxproto = nvram_safe_get("samba3_max_proto");
 		fp = fopen("/tmp/smb.conf", "wb");
 		fprintf(fp, "[global]\n"	//
-#ifdef HAVE_SMBD
+#if !defined(HAVE_NORTHSTAR) && !defined(HAVE_ALPINE) && !defined(HAVE_MVEBU) && !defined(HAVE_X86)
 			"cache trans buffers = no\n"
 			"cache read buffers = no\n"
 #endif
