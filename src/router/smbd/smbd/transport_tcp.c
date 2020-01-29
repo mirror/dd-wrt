@@ -5,6 +5,7 @@
  */
 
 #include <linux/freezer.h>
+#include <linux/etherdevice.h>
 
 #include "smb_common.h"
 #include "server.h"
@@ -453,7 +454,6 @@ static int create_socket(struct interface *iface)
 		ksmbd_err("Failed to set SO_BINDTODEVICE: %d\n", ret);
 		goto out_error;
 	}
-
 	if (ipv4)
 		ret = kernel_bind(ksmbd_socket, (struct sockaddr *)&sin,
 				sizeof(sin));
@@ -461,7 +461,7 @@ static int create_socket(struct interface *iface)
 		ret = kernel_bind(ksmbd_socket, (struct sockaddr *)&sin6,
 				sizeof(sin6));
 	if (ret) {
-		ksmbd_err("Failed to bind socket: %d\n", ret);
+		ksmbd_err("Failed to bind socket: %d (%s)\n", ret, iface->name);
 		goto out_error;
 	}
 
@@ -493,7 +493,7 @@ int ksmbd_tcp_init(void)
 {
 	struct interface *iface;
 	struct list_head *tmp;
-	int ret;
+	int ret = 0;
 
 	if (list_empty(&iface_list))
 		return 0;
@@ -501,8 +501,6 @@ int ksmbd_tcp_init(void)
 	list_for_each(tmp, &iface_list) {
 		iface = list_entry(tmp, struct interface, entry);
 		ret = create_socket(iface);
-		if (ret)
-			break;
 	}
 
 	return ret;
@@ -581,6 +579,12 @@ int ksmbd_tcp_set_interfaces(char *ifc_list, int ifc_list_sz)
 
 		rtnl_lock();
 		for_each_netdev(&init_net, netdev) {
+			if (netdev->priv_flags & IFF_BRIDGE_PORT)
+				continue;
+			if ((netdev->flags & IFF_LOOPBACK) ||
+			     netdev->type != ARPHRD_ETHER || netdev->addr_len != ETH_ALEN ||
+			    !is_valid_ether_addr(netdev->dev_addr))
+				continue;
 			if (alloc_iface(kstrdup(netdev->name, GFP_KERNEL)))
 				return -ENOMEM;
 		}
