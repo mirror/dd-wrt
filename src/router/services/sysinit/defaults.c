@@ -3490,8 +3490,13 @@ struct nvram_param srouter_defaults[] = {
 	{ "samba3_dirpath", "/jffs" },
 	{ "samba3_pubacl", "1" },
 	{ "samba3_advanced", "0" },
+#ifdef HAVE_SMBD
+	{ "samba3_min_proto", "SMB2_10" },
+	{ "samba3_max_proto", "SMB3_11" },
+#else
 	{ "samba3_min_proto", "SMB2" },
 	{ "samba3_max_proto", "SMB2" },
+#endif
 	{ "samba3_encrypt", "auto" },
 #endif
 #ifdef HAVE_MINIDLNA
