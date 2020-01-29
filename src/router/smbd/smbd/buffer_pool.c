@@ -20,14 +20,14 @@ static struct kmem_cache *filp_cache;
 
 struct wm {
 	struct list_head	list;
-	const char		*func;
-	unsigned int		sz;
+	size_t			sz;
+	size_t			realsize;
 	char			buffer[0];
 };
 
 struct wm_list {
 	struct list_head	list;
-	unsigned int		sz;
+	size_t			sz;
 
 	spinlock_t		wm_lock;
 	int			avail_wm;
@@ -141,12 +141,36 @@ static struct wm_list *match_wm_list(size_t size)
 	return rl;
 }
 
-static struct wm *find_wm(size_t size, gfp_t flags, const char *func)
+
+static struct wm_list *search_wm_list(size_t size, size_t *realsize)
+{
+	struct wm_list *l, *rl = NULL;
+	size_t last_size = (size_t)-1;
+
+	read_lock(&wm_lists_lock);
+	list_for_each_entry(l, &wm_lists, list) {
+		if (l->sz == size) {
+			rl = l;
+			break;
+		}
+		if (l->sz > size && l->sz < last_size) {
+			last_size = l->sz;
+			rl = l;
+		}
+	}
+	if (rl)
+		*realsize = rl->sz;
+	read_unlock(&wm_lists_lock);
+	return rl;
+}
+
+static struct wm *find_wm(size_t size, gfp_t flags)
 {
 	struct wm_list *wm_list;
 	struct wm *wm;
+	size_t realsize = size;
 
-	wm_list = match_wm_list(size);
+	wm_list = search_wm_list(size, &realsize);
 	if (!wm_list) {
 		if (register_wm_size_class(size))
 			return NULL;
@@ -164,7 +188,7 @@ static struct wm *find_wm(size_t size, gfp_t flags, const char *func)
 					list);
 			list_del(&wm->list);
 			spin_unlock(&wm_list->wm_lock);
-			wm->func = func;
+			wm->realsize = realsize;
 			return wm;
 		}
 
@@ -192,7 +216,7 @@ static struct wm *find_wm(size_t size, gfp_t flags, const char *func)
 
 	if (flags & __GFP_ZERO)
 		memset(wm->buffer, 0x00, wm->sz);
-	wm->func = func;
+	wm->realsize = realsize;
 	return wm;
 }
 
@@ -221,7 +245,6 @@ static void wm_list_free(struct wm_list *l)
 	while (!list_empty(&l->idle_wm)) {
 		wm = list_entry(l->idle_wm.next, struct wm, list);
 		list_del(&wm->list);
-		printk(KERN_INFO "%s is left\n", wm->func);
 		__free(wm);
 	}
 	__free(l);
@@ -258,11 +281,11 @@ void *ksmbd_alloc_response(size_t size)
 	return __alloc(size, GFP_KERNEL | __GFP_ZERO);
 }
 
-void *_ksmbd_find_buffer(size_t size, const char *func)
+void *ksmbd_find_buffer(size_t size)
 {
 	struct wm *wm;
 
-	wm = find_wm(size, GFP_KERNEL | __GFP_ZERO, func);
+	wm = find_wm(size, GFP_KERNEL | __GFP_ZERO);
 
 	WARN_ON(!wm);
 	if (wm) {
@@ -279,7 +302,7 @@ void ksmbd_release_buffer(void *buffer)
 		return;
 
 	wm = container_of(buffer, struct wm, buffer);
-	wm_list = match_wm_list(wm->sz);
+	wm_list = match_wm_list(wm->realsize);
 	WARN_ON(!wm_list);
 	if (wm_list)
 		release_wm(wm, wm_list);
