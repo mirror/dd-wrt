@@ -89,6 +89,7 @@ int _list_add(struct LIST **list, void *item, unsigned long long id, char *str)
 {
 	int ret = 1;
 	struct LIST *new;
+pr_debug("%s:%d %lld %s\n",__func__, __LINE__, id, str); 
 
 	if (!*list)
 		list_init(list);
@@ -142,7 +143,7 @@ int _list_remove(struct LIST **list, unsigned long long id, int dec)
 	int ret = 0;
 	struct LIST *head = *list;
 	struct LIST *next = NULL;
-
+pr_debug("%s:%d %lld %d\n",__func__, __LINE__, id, dec); 
 	while ((head = head->next)) {
 		if ((head->type == KEY_ID && head->id == id)
 		    || (head->type == KEY_STRING
