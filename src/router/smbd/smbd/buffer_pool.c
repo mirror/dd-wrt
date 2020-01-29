@@ -27,7 +27,7 @@ struct wm {
 
 struct wm_list {
 	struct list_head	list;
-	unsigned int		sz;
+	size_t			sz;
 
 	spinlock_t		wm_lock;
 	int			avail_wm;
