@@ -387,6 +387,8 @@ static int ieee80211n_check_40mhz_5g(struct hostapd_iface *iface,
 		ieee80211n_switch_pri_sec(iface);
 		return 1;
 	}
+	if (!iface->conf->dynamic_ht40)
+		return 1;
 
 	/*
 	 * Match PRI/SEC channel with any existing HT40 BSS on the same

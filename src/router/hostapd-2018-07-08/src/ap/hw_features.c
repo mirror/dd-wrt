@@ -341,7 +341,7 @@ static int ieee80211n_check_40mhz_5g(struct hostapd_iface *iface,
 
 	res = check_40mhz_5g(iface->current_mode, scan_res, pri_chan, sec_chan);
 
-	if (res == 2) {
+	if (res == 2 && iface->conf->dynamic_ht40) {
 		if (iface->conf->no_pri_sec_switch) {
 			wpa_printf(MSG_DEBUG,
 				   "Cannot switch PRI/SEC channels due to local constraint");
