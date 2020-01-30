@@ -23,12 +23,22 @@ define kernelfeatures
 	if [ "$(CONFIG_SAMBA)" != "y" ]; then \
 		sed -i 's/\CONFIG_CIFS=m/# CONFIG_CIFS is not set/g' $(LINUXDIR)/.config; \
 	else \
+		sed -i 's/\# CONFIG_CIFS_SMB2 is not set/CONFIG_CIFS_SMBD=m/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_DNS_RESOLVER=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_FSCACHE=m" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_FSCACHE_STATS is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_FSCACHE_HISTOGRAM is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_FSCACHE_DEBUG is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_FSCACHE_OBJECT_LIST is not set" >> $(LINUXDIR)/.config; \
-		echo "# CONFIG_CACHEFILES is not set" >> $(LINUXDIR)/.config; \	
+		echo "# CONFIG_CACHEFILES is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_CIFS_UPCALL is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_CIFS_ACL is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_CIFS_DFS_UPCALL is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_CIFS_FSCACHE is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_ECRYPT_FS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_ENCRYPTED_KEYS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_KEYS_DEBUG_PROC_KEYS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_ASYMMETRIC_KEY_TYPE is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_WPA3)" = "y" ]; then \
 		sed -i 's/\# CONFIG_CRYPTO_GCM is not set/CONFIG_CRYPTO_GCM=m/g' $(LINUXDIR)/.config; \
