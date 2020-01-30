@@ -43,7 +43,6 @@ static DEFINE_RWLOCK(wm_lists_lock);
  */
 static inline void *__alloc(size_t size, gfp_t flags)
 {
-	gfp_t kmalloc_flags = flags;
 	void *ret;
 
 	/*
@@ -53,10 +52,8 @@ static inline void *__alloc(size_t size, gfp_t flags)
 	 * However make sure that larger requests are not too disruptive - no
 	 * OOM killer and no allocation failure warnings as we have a fallback.
 	 */
-	if (size > PAGE_SIZE)
-		kmalloc_flags |= __GFP_NOWARN;
 
-	ret = kmalloc(size, kmalloc_flags);
+	ret = kmalloc(size,  GFP_NOWAIT | __GFP_NORETRY | __GFP_NOWARN);
 
 	/*
 	 * It doesn't really make sense to fallback to vmalloc for sub page
@@ -77,6 +74,11 @@ static inline void __free(void *addr)
 }
 
 void *ksmbd_alloc(size_t size)
+{
+	return __alloc(size, GFP_KERNEL);
+}
+
+void *ksmbd_zalloc(size_t size)
 {
 	return __alloc(size, GFP_KERNEL | __GFP_ZERO);
 }
@@ -102,7 +104,7 @@ static int register_wm_size_class(size_t sz)
 {
 	struct wm_list *l, *nl;
 
-	nl = __alloc(sizeof(struct wm_list), GFP_KERNEL | __GFP_ZERO);
+	nl = __alloc(sizeof(struct wm_list), GFP_KERNEL);
 	if (!nl)
 		return -ENOMEM;
 
@@ -213,8 +215,6 @@ static struct wm *find_wm(size_t size, gfp_t flags)
 		break;
 	}
 
-	if (flags & __GFP_ZERO)
-		memset(wm->buffer, 0x00, wm->sz);
 	wm->realsize = realsize;
 	return wm;
 }
@@ -267,7 +267,7 @@ void ksmbd_free_request(void *addr)
 
 void *ksmbd_alloc_request(size_t size)
 {
-	return __alloc(size, GFP_KERNEL | __GFP_ZERO);
+	return __alloc(size, GFP_KERNEL);
 }
 
 void ksmbd_free_response(void *buffer)
@@ -277,14 +277,14 @@ void ksmbd_free_response(void *buffer)
 
 void *ksmbd_alloc_response(size_t size)
 {
-	return __alloc(size, GFP_KERNEL | __GFP_ZERO);
+	return __alloc(size, GFP_KERNEL);
 }
 
 void *ksmbd_find_buffer(size_t size)
 {
 	struct wm *wm;
 
-	wm = find_wm(size, GFP_KERNEL | __GFP_ZERO);
+	wm = find_wm(size, GFP_KERNEL);
 
 	WARN_ON(!wm);
 	if (wm)

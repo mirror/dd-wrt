@@ -29,7 +29,7 @@ ksmbd_tree_conn_connect(struct ksmbd_session *sess, char *share_name)
 	if (!sc)
 		return status;
 
-	tree_conn = ksmbd_alloc(sizeof(struct ksmbd_tree_connect));
+	tree_conn = ksmbd_zalloc(sizeof(struct ksmbd_tree_connect));
 	if (!tree_conn) {
 		status.ret = -ENOMEM;
 		goto out_error;
