@@ -49,7 +49,7 @@ static inline void ksmbd_tcp_reuseaddr(struct socket *sock)
 {
 	int val = 1;
 
-	kernel_setsockopt(sock, SOL_TCP, SO_REUSEADDR,
+	kernel_setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 		(char *)&val, sizeof(val));
 }
 
