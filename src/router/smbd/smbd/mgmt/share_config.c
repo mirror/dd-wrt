@@ -99,7 +99,7 @@ static int parse_veto_list(struct ksmbd_share_config *share,
 	while (veto_list_sz > 0) {
 		struct ksmbd_veto_pattern *p;
 
-		p = ksmbd_alloc(sizeof(struct ksmbd_veto_pattern));
+		p = ksmbd_zalloc(sizeof(struct ksmbd_veto_pattern));
 		if (!p)
 			return -ENOMEM;
 
@@ -136,7 +136,7 @@ static struct ksmbd_share_config *share_config_request(char *name)
 	if (resp->flags == KSMBD_SHARE_FLAG_INVALID)
 		goto out;
 
-	share = ksmbd_alloc(sizeof(struct ksmbd_share_config));
+	share = ksmbd_zalloc(sizeof(struct ksmbd_share_config));
 	if (!share)
 		goto out;
 

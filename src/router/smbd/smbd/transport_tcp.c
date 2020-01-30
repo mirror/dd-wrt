@@ -558,7 +558,7 @@ static int alloc_iface(char *ifname)
 	if (!ifname)
 		return -ENOMEM;
 
-	iface = ksmbd_alloc(sizeof(struct interface));
+	iface = ksmbd_zalloc(sizeof(struct interface));
 	if (!iface) {
 		kfree(ifname);
 		return -ENOMEM;
