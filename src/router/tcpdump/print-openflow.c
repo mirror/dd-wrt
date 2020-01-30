@@ -33,16 +33,17 @@
 /* \summary: version-independent OpenFlow printer */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
-#include "netdissect-stdinc.h"
+#include <netdissect-stdinc.h>
 
 #include "netdissect.h"
 #include "extract.h"
 #include "openflow.h"
 #include "oui.h"
 
+static const char tstr[] = " [|openflow]";
 
 #define OF_VER_1_0    0x01
 
@@ -69,8 +70,8 @@ static void
 of_header_print(netdissect_options *ndo, const uint8_t version, const uint8_t type,
                       const uint16_t length, const uint32_t xid)
 {
-	ND_PRINT("\n\tversion unknown (0x%02x), type 0x%02x, length %u, xid 0x%08x",
-	       version, type, length, xid);
+	ND_PRINT((ndo, "\n\tversion unknown (0x%02x), type 0x%02x, length %u, xid 0x%08x",
+	       version, type, length, xid));
 }
 
 /* Print a single OpenFlow message. */
@@ -84,20 +85,20 @@ of_header_body_print(netdissect_options *ndo, const u_char *cp, const u_char *ep
 	if (ep < cp + OF_HEADER_LEN)
 		goto invalid;
 	/* version */
-	ND_TCHECK_1(cp);
-	version = GET_U_1(cp);
+	ND_TCHECK2(*cp, 1);
+	version = *cp;
 	cp += 1;
 	/* type */
-	ND_TCHECK_1(cp);
-	type = GET_U_1(cp);
+	ND_TCHECK2(*cp, 1);
+	type = *cp;
 	cp += 1;
 	/* length */
-	ND_TCHECK_2(cp);
-	length = GET_BE_U_2(cp);
+	ND_TCHECK2(*cp, 2);
+	length = EXTRACT_16BITS(cp);
 	cp += 2;
 	/* xid */
-	ND_TCHECK_4(cp);
-	xid = GET_BE_U_4(cp);
+	ND_TCHECK2(*cp, 4);
+	xid = EXTRACT_32BITS(cp);
 	cp += 4;
 	/* Message length includes the header length and a message always includes
 	 * the basic header. A message length underrun fails decoding of the rest of
@@ -115,16 +116,16 @@ of_header_body_print(netdissect_options *ndo, const u_char *cp, const u_char *ep
 		return of10_header_body_print(ndo, cp, ep, type, length, xid);
 	default:
 		of_header_print(ndo, version, type, length, xid);
-		ND_TCHECK_LEN(cp, length - OF_HEADER_LEN);
+		ND_TCHECK2(*cp, length - OF_HEADER_LEN);
 		return cp + length - OF_HEADER_LEN; /* done with current message */
 	}
 
 invalid: /* fail current packet */
-	nd_print_invalid(ndo);
-	ND_TCHECK_LEN(cp, ep - cp);
+	ND_PRINT((ndo, "%s", istr));
+	ND_TCHECK2(*cp, ep - cp);
 	return ep;
 trunc:
-	nd_print_trunc(ndo);
+	ND_PRINT((ndo, "%s", tstr));
 	return ep;
 }
 
@@ -133,8 +134,7 @@ trunc:
 void
 openflow_print(netdissect_options *ndo, const u_char *cp, const u_int len _U_)
 {
-	ndo->ndo_protocol = "openflow";
-	ND_PRINT(": OpenFlow");
+	ND_PRINT((ndo, ": OpenFlow"));
 	while (cp < ndo->ndo_snapend)
 		cp = of_header_body_print(ndo, cp, ndo->ndo_snapend);
 }

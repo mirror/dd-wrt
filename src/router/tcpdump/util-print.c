@@ -36,10 +36,10 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
-#include "netdissect-stdinc.h"
+#include <netdissect-stdinc.h>
 
 #include <sys/stat.h>
 
@@ -53,14 +53,20 @@
 #include <string.h>
 
 #include "netdissect.h"
-#include "extract.h"
 #include "ascii_strcasecmp.h"
 #include "timeval-operations.h"
 
-#define TOKBUFSIZE 128
+int32_t thiszone;		/* seconds offset from gmt to local time */
+/* invalid string to print '(invalid)' for malformed or corrupted packets */
+const char istr[] = " (invalid)";
 
-enum date_flag { WITHOUT_DATE = 0, WITH_DATE = 1 };
-enum time_flag { UTC_TIME = 0, LOCAL_TIME = 1 };
+/*
+ * timestamp display buffer size, the biggest size of both formats is needed
+ * sizeof("0000000000.000000000") > sizeof("00:00:00.000000000")
+ */
+#define TS_BUF_SIZE sizeof("0000000000.000000000")
+
+#define TOKBUFSIZE 128
 
 /*
  * Print out a character, filtering out the non-printable ones
@@ -70,58 +76,50 @@ fn_print_char(netdissect_options *ndo, u_char c)
 {
 	if (!ND_ISASCII(c)) {
 		c = ND_TOASCII(c);
-		ND_PRINT("M-");
+		ND_PRINT((ndo, "M-"));
 	}
 	if (!ND_ISPRINT(c)) {
 		c ^= 0x40;	/* DEL to ?, others to alpha */
-		ND_PRINT("^");
+		ND_PRINT((ndo, "^"));
 	}
-	ND_PRINT("%c", c);
+	ND_PRINT((ndo, "%c", c));
 }
 
 /*
- * Print a null-terminated string, filtering out non-printable characters.
- * DON'T USE IT with a pointer on the packet buffer because there is no
- * truncation check. For this use, see the nd_printX() functions below.
- */
-void
-fn_print_str(netdissect_options *ndo, const u_char *s)
-{
-	while (*s != '\0') {
-		fn_print_char(ndo, *s);
-		s++;
-       }
-}
-
-/*
- * Print out a null-terminated filename (or other ASCII string), part of
- * the packet buffer.
+ * Print out a null-terminated filename (or other ascii string).
  * If ep is NULL, assume no truncation check is needed.
  * Return true if truncated.
  * Stop at ep (if given) or before the null char, whichever is first.
  */
 int
-nd_print(netdissect_options *ndo,
-         const u_char *s, const u_char *ep)
+fn_print(netdissect_options *ndo,
+         register const u_char *s, register const u_char *ep)
 {
-	int ret;
-	u_char c;
+	register int ret;
+	register u_char c;
 
 	ret = 1;			/* assume truncated */
 	while (ep == NULL || s < ep) {
-		c = GET_U_1(s);
-		s++;
+		c = *s++;
 		if (c == '\0') {
 			ret = 0;
 			break;
 		}
-		fn_print_char(ndo, c);
+		if (!ND_ISASCII(c)) {
+			c = ND_TOASCII(c);
+			ND_PRINT((ndo, "M-"));
+		}
+		if (!ND_ISPRINT(c)) {
+			c ^= 0x40;	/* DEL to ?, others to alpha */
+			ND_PRINT((ndo, "^"));
+		}
+		ND_PRINT((ndo, "%c", c));
 	}
 	return(ret);
 }
 
 /*
- * Print out a null-terminated filename (or other ASCII string) from
+ * Print out a null-terminated filename (or other ascii string) from
  * a fixed-length field in the packet buffer, or from what remains of
  * the packet.
  *
@@ -139,11 +137,11 @@ nd_print(netdissect_options *ndo,
  * this will always be non-zero.  Return 0 if truncated.
  */
 u_int
-nd_printztn(netdissect_options *ndo,
-         const u_char *s, u_int n, const u_char *ep)
+fn_printztn(netdissect_options *ndo,
+         register const u_char *s, register u_int n, register const u_char *ep)
 {
-	u_int bytes;
-	u_char c;
+	register u_int bytes;
+	register u_char c;
 
 	bytes = 0;
 	for (;;) {
@@ -162,146 +160,162 @@ nd_printztn(netdissect_options *ndo,
 			break;
 		}
 
-		c = GET_U_1(s);
-		s++;
+		c = *s++;
 		bytes++;
 		n--;
 		if (c == '\0') {
 			/* End of string */
 			break;
 		}
-		fn_print_char(ndo, c);
+		if (!ND_ISASCII(c)) {
+			c = ND_TOASCII(c);
+			ND_PRINT((ndo, "M-"));
+		}
+		if (!ND_ISPRINT(c)) {
+			c ^= 0x40;	/* DEL to ?, others to alpha */
+			ND_PRINT((ndo, "^"));
+		}
+		ND_PRINT((ndo, "%c", c));
 	}
 	return(bytes);
 }
 
 /*
- * Print out a counted filename (or other ASCII string), part of
- * the packet buffer.
+ * Print out a counted filename (or other ascii string).
  * If ep is NULL, assume no truncation check is needed.
  * Return true if truncated.
  * Stop at ep (if given) or after n bytes, whichever is first.
  */
 int
-nd_printn(netdissect_options *ndo,
-          const u_char *s, u_int n, const u_char *ep)
+fn_printn(netdissect_options *ndo,
+          register const u_char *s, register u_int n, register const u_char *ep)
 {
-	u_char c;
+	register u_char c;
 
 	while (n > 0 && (ep == NULL || s < ep)) {
 		n--;
-		c = GET_U_1(s);
-		s++;
-		fn_print_char(ndo, c);
+		c = *s++;
+		if (!ND_ISASCII(c)) {
+			c = ND_TOASCII(c);
+			ND_PRINT((ndo, "M-"));
+		}
+		if (!ND_ISPRINT(c)) {
+			c ^= 0x40;	/* DEL to ?, others to alpha */
+			ND_PRINT((ndo, "^"));
+		}
+		ND_PRINT((ndo, "%c", c));
 	}
 	return (n == 0) ? 0 : 1;
 }
 
 /*
- * Print out a null-padded filename (or other ASCII string), part of
- * the packet buffer.
+ * Print out a null-padded filename (or other ascii string).
  * If ep is NULL, assume no truncation check is needed.
  * Return true if truncated.
  * Stop at ep (if given) or after n bytes or before the null char,
  * whichever is first.
  */
 int
-nd_printzp(netdissect_options *ndo,
-           const u_char *s, u_int n,
-           const u_char *ep)
+fn_printzp(netdissect_options *ndo,
+           register const u_char *s, register u_int n,
+           register const u_char *ep)
 {
-	int ret;
-	u_char c;
+	register int ret;
+	register u_char c;
 
 	ret = 1;			/* assume truncated */
 	while (n > 0 && (ep == NULL || s < ep)) {
 		n--;
-		c = GET_U_1(s);
-		s++;
+		c = *s++;
 		if (c == '\0') {
 			ret = 0;
 			break;
 		}
-		fn_print_char(ndo, c);
+		if (!ND_ISASCII(c)) {
+			c = ND_TOASCII(c);
+			ND_PRINT((ndo, "M-"));
+		}
+		if (!ND_ISPRINT(c)) {
+			c ^= 0x40;	/* DEL to ?, others to alpha */
+			ND_PRINT((ndo, "^"));
+		}
+		ND_PRINT((ndo, "%c", c));
 	}
 	return (n == 0) ? 0 : ret;
 }
 
 /*
- * Print the timestamp .FRAC part (Microseconds/nanoseconds)
+ * Format the timestamp
  */
-static void
-ts_frac_print(netdissect_options *ndo, int usec)
+static char *
+ts_format(netdissect_options *ndo
+#ifndef HAVE_PCAP_SET_TSTAMP_PRECISION
+_U_
+#endif
+, int sec, int usec, char *buf)
 {
+	const char *format;
+
 #ifdef HAVE_PCAP_SET_TSTAMP_PRECISION
 	switch (ndo->ndo_tstamp_precision) {
 
 	case PCAP_TSTAMP_PRECISION_MICRO:
-		ND_PRINT(".%06u", (unsigned)usec);
+		format = "%02d:%02d:%02d.%06u";
 		break;
 
 	case PCAP_TSTAMP_PRECISION_NANO:
-		ND_PRINT(".%09u", (unsigned)usec);
+		format = "%02d:%02d:%02d.%09u";
 		break;
 
 	default:
-		ND_PRINT(".{unknown}");
+		format = "%02d:%02d:%02d.{unknown}";
 		break;
 	}
 #else
-	ND_PRINT(".%06u", (unsigned)usec);
+	format = "%02d:%02d:%02d.%06u";
 #endif
+
+	snprintf(buf, TS_BUF_SIZE, format,
+                 sec / 3600, (sec % 3600) / 60, sec % 60, usec);
+
+        return buf;
 }
 
 /*
- * Print the timestamp as [YY:MM:DD] HH:MM:SS.FRAC.
- *   if time_flag == LOCAL_TIME print local time else UTC/GMT time
- *   if date_flag == WITH_DATE print YY:MM:DD before HH:MM:SS.FRAC
+ * Format the timestamp - Unix timeval style
  */
-static void
-ts_date_hmsfrac_print(netdissect_options *ndo, int sec, int usec,
-		      enum date_flag date_flag, enum time_flag time_flag)
+static char *
+ts_unix_format(netdissect_options *ndo
+#ifndef HAVE_PCAP_SET_TSTAMP_PRECISION
+_U_
+#endif
+, int sec, int usec, char *buf)
 {
-	time_t Time = sec;
-	struct tm *tm;
-	char timestr[32];
+	const char *format;
 
-	if ((unsigned)sec & 0x80000000) {
-		ND_PRINT("[Error converting time]");
-		return;
+#ifdef HAVE_PCAP_SET_TSTAMP_PRECISION
+	switch (ndo->ndo_tstamp_precision) {
+
+	case PCAP_TSTAMP_PRECISION_MICRO:
+		format = "%u.%06u";
+		break;
+
+	case PCAP_TSTAMP_PRECISION_NANO:
+		format = "%u.%09u";
+		break;
+
+	default:
+		format = "%u.{unknown}";
+		break;
 	}
+#else
+	format = "%u.%06u";
+#endif
 
-	if (time_flag == LOCAL_TIME)
-		tm = localtime(&Time);
-	else
-		tm = gmtime(&Time);
+	snprintf(buf, TS_BUF_SIZE, format,
+		 (unsigned)sec, (unsigned)usec);
 
-	if (!tm) {
-		ND_PRINT("[Error converting time]");
-		return;
-	}
-	if (date_flag == WITH_DATE)
-		strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", tm);
-	else
-		strftime(timestr, sizeof(timestr), "%H:%M:%S", tm);
-	ND_PRINT("%s", timestr);
-
-	ts_frac_print(ndo, usec);
-}
-
-/*
- * Print the timestamp - Unix timeval style, as SECS.FRAC.
- */
-static void
-ts_unix_print(netdissect_options *ndo, int sec, int usec)
-{
-	if ((unsigned)sec & 0x80000000) {
-		ND_PRINT("[Error converting time]");
-		return;
-	}
-
-	ND_PRINT("%u", (unsigned)sec);
-	ts_frac_print(ndo, usec);
+	return buf;
 }
 
 /*
@@ -309,8 +323,12 @@ ts_unix_print(netdissect_options *ndo, int sec, int usec)
  */
 void
 ts_print(netdissect_options *ndo,
-         const struct timeval *tvp)
+         register const struct timeval *tvp)
 {
+	register int s;
+	struct tm *tm;
+	time_t Time;
+	char buf[TS_BUF_SIZE];
 	static struct timeval tv_ref;
 	struct timeval tv_result;
 	int negative_offset;
@@ -319,17 +337,16 @@ ts_print(netdissect_options *ndo,
 	switch (ndo->ndo_tflag) {
 
 	case 0: /* Default */
-		ts_date_hmsfrac_print(ndo, tvp->tv_sec, tvp->tv_usec,
-				      WITHOUT_DATE, LOCAL_TIME);
-		ND_PRINT(" ");
+		s = (tvp->tv_sec + thiszone) % 86400;
+		ND_PRINT((ndo, "%s ", ts_format(ndo, s, tvp->tv_usec, buf)));
 		break;
 
 	case 1: /* No time stamp */
 		break;
 
 	case 2: /* Unix timeval style */
-		ts_unix_print(ndo, tvp->tv_sec, tvp->tv_usec);
-		ND_PRINT(" ");
+		ND_PRINT((ndo, "%s ", ts_unix_format(ndo,
+			  tvp->tv_sec, tvp->tv_usec, buf)));
 		break;
 
 	case 3: /* Microseconds/nanoseconds since previous packet */
@@ -358,19 +375,25 @@ ts_print(netdissect_options *ndo,
 		else
 			netdissect_timevalsub(tvp, &tv_ref, &tv_result, nano_prec);
 
-		ND_PRINT((negative_offset ? "-" : " "));
-		ts_date_hmsfrac_print(ndo, tv_result.tv_sec, tv_result.tv_usec,
-				      WITHOUT_DATE, UTC_TIME);
-		ND_PRINT(" ");
+		ND_PRINT((ndo, (negative_offset ? "-" : " ")));
+
+		ND_PRINT((ndo, "%s ", ts_format(ndo,
+			  tv_result.tv_sec, tv_result.tv_usec, buf)));
 
                 if (ndo->ndo_tflag == 3)
 			tv_ref = *tvp; /* set timestamp for previous packet */
 		break;
 
-	case 4: /* Date + Default */
-		ts_date_hmsfrac_print(ndo, tvp->tv_sec, tvp->tv_usec,
-				      WITH_DATE, LOCAL_TIME);
-		ND_PRINT(" ");
+	case 4: /* Default + Date */
+		s = (tvp->tv_sec + thiszone) % 86400;
+		Time = (tvp->tv_sec + thiszone) - s;
+		tm = gmtime (&Time);
+		if (!tm)
+			ND_PRINT((ndo, "Date fail  "));
+		else
+			ND_PRINT((ndo, "%04d-%02d-%02d %s ",
+                               tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday,
+                               ts_format(ndo, s, tvp->tv_usec, buf)));
 		break;
 	}
 }
@@ -390,12 +413,12 @@ unsigned_relts_print(netdissect_options *ndo,
 	const u_int *s = seconds;
 
 	if (secs == 0) {
-		ND_PRINT("0s");
+		ND_PRINT((ndo, "0s"));
 		return;
 	}
 	while (secs > 0) {
 		if (secs >= *s) {
-			ND_PRINT("%u%s", secs / *s, *l);
+			ND_PRINT((ndo, "%d%s", secs / *s, *l));
 			secs -= (secs / *s) * *s;
 		}
 		s++;
@@ -413,7 +436,7 @@ signed_relts_print(netdissect_options *ndo,
                    int32_t secs)
 {
 	if (secs < 0) {
-		ND_PRINT("-");
+		ND_PRINT((ndo, "-"));
 		if (secs == INT32_MIN) {
 			/*
 			 * -2^31; you can't fit its absolute value into
@@ -439,32 +462,6 @@ signed_relts_print(netdissect_options *ndo,
 	unsigned_relts_print(ndo, secs);
 }
 
-/* Print the truncated string */
-void nd_print_trunc(netdissect_options *ndo)
-{
-	ND_PRINT(" [|%s]", ndo->ndo_protocol);
-}
-
-/* Print the protocol name */
-void nd_print_protocol(netdissect_options *ndo)
-{
-	ND_PRINT("%s", ndo->ndo_protocol);
-}
-
-/* Print the protocol name in caps (uppercases) */
-void nd_print_protocol_caps(netdissect_options *ndo)
-{
-	const char *p;
-        for (p = ndo->ndo_protocol; *p != '\0'; p++)
-                ND_PRINT("%c", ND_TOUPPER((u_char)*p));
-}
-
-/* Print the invalid string */
-void nd_print_invalid(netdissect_options *ndo)
-{
-	ND_PRINT(" (invalid)");
-}
-
 /*
  *  this is a generic routine for printing unknown data;
  *  we pass on the linefeed plus indentation string to
@@ -475,15 +472,15 @@ int
 print_unknown_data(netdissect_options *ndo, const u_char *cp,const char *ident,int len)
 {
 	if (len < 0) {
-          ND_PRINT("%sDissector error: print_unknown_data called with negative length",
-		    ident);
+          ND_PRINT((ndo,"%sDissector error: print_unknown_data called with negative length",
+		    ident));
 		return(0);
 	}
 	if (ndo->ndo_snapend - cp < len)
 		len = ndo->ndo_snapend - cp;
 	if (len < 0) {
-          ND_PRINT("%sDissector error: print_unknown_data called with pointer past end of packet",
-		    ident);
+          ND_PRINT((ndo,"%sDissector error: print_unknown_data called with pointer past end of packet",
+		    ident));
 		return(0);
 	}
         hex_print(ndo, ident,cp,len);
@@ -494,8 +491,8 @@ print_unknown_data(netdissect_options *ndo, const u_char *cp,const char *ident,i
  * Convert a token value to a string; use "fmt" if not found.
  */
 const char *
-tok2strbuf(const struct tok *lp, const char *fmt,
-	   u_int v, char *buf, size_t bufsize)
+tok2strbuf(register const struct tok *lp, register const char *fmt,
+	   register u_int v, char *buf, size_t bufsize)
 {
 	if (lp != NULL) {
 		while (lp->s != NULL) {
@@ -507,18 +504,16 @@ tok2strbuf(const struct tok *lp, const char *fmt,
 	if (fmt == NULL)
 		fmt = "#%d";
 
-	(void)nd_snprintf(buf, bufsize, fmt, v);
+	(void)snprintf(buf, bufsize, fmt, v);
 	return (const char *)buf;
 }
 
 /*
  * Convert a token value to a string; use "fmt" if not found.
- * Uses tok2strbuf() on one of four local static buffers of size TOKBUFSIZE
- * in round-robin fashion.
  */
 const char *
-tok2str(const struct tok *lp, const char *fmt,
-	u_int v)
+tok2str(register const struct tok *lp, register const char *fmt,
+	register u_int v)
 {
 	static char buf[4][TOKBUFSIZE];
 	static int idx = 0;
@@ -531,18 +526,18 @@ tok2str(const struct tok *lp, const char *fmt,
 
 /*
  * Convert a bit token value to a string; use "fmt" if not found.
- * this is useful for parsing bitfields, the output strings are separated
+ * this is useful for parsing bitfields, the output strings are seperated
  * if the s field is positive.
  */
 static char *
-bittok2str_internal(const struct tok *lp, const char *fmt,
-	   u_int v, const char *sep)
+bittok2str_internal(register const struct tok *lp, register const char *fmt,
+	   register u_int v, const char *sep)
 {
         static char buf[1024+1]; /* our string buffer */
         char *bufp = buf;
         size_t space_left = sizeof(buf), string_size;
-        u_int rotbit; /* this is the bit we rotate through all bitpositions */
-        u_int tokval;
+        register u_int rotbit; /* this is the bit we rotate through all bitpositions */
+        register u_int tokval;
         const char * sepstr = "";
 
 	while (lp != NULL && lp->s != NULL) {
@@ -579,28 +574,28 @@ bittok2str_internal(const struct tok *lp, const char *fmt,
 
         if (bufp == buf)
             /* bummer - lets print the "unknown" message as advised in the fmt string if we got one */
-            (void)nd_snprintf(buf, sizeof(buf), fmt == NULL ? "#%08x" : fmt, v);
+            (void)snprintf(buf, sizeof(buf), fmt == NULL ? "#%08x" : fmt, v);
         return (buf);
 }
 
 /*
  * Convert a bit token value to a string; use "fmt" if not found.
- * this is useful for parsing bitfields, the output strings are not separated.
+ * this is useful for parsing bitfields, the output strings are not seperated.
  */
 char *
-bittok2str_nosep(const struct tok *lp, const char *fmt,
-	   u_int v)
+bittok2str_nosep(register const struct tok *lp, register const char *fmt,
+	   register u_int v)
 {
     return (bittok2str_internal(lp, fmt, v, ""));
 }
 
 /*
  * Convert a bit token value to a string; use "fmt" if not found.
- * this is useful for parsing bitfields, the output strings are comma separated.
+ * this is useful for parsing bitfields, the output strings are comma seperated.
  */
 char *
-bittok2str(const struct tok *lp, const char *fmt,
-	   u_int v)
+bittok2str(register const struct tok *lp, register const char *fmt,
+	   register u_int v)
 {
     return (bittok2str_internal(lp, fmt, v, ", "));
 }
@@ -612,8 +607,8 @@ bittok2str(const struct tok *lp, const char *fmt,
  * correct for bounds-checking.
  */
 const char *
-tok2strary_internal(const char **lp, int n, const char *fmt,
-	int v)
+tok2strary_internal(register const char **lp, int n, register const char *fmt,
+	register int v)
 {
 	static char buf[TOKBUFSIZE];
 
@@ -621,7 +616,7 @@ tok2strary_internal(const char **lp, int n, const char *fmt,
 		return lp[v];
 	if (fmt == NULL)
 		fmt = "#%d";
-	(void)nd_snprintf(buf, sizeof(buf), fmt, v);
+	(void)snprintf(buf, sizeof(buf), fmt, v);
 	return (buf);
 }
 
@@ -705,19 +700,19 @@ fetch_token(netdissect_options *ndo, const u_char *pptr, u_int idx, u_int len,
 	size_t toklen = 0;
 
 	for (; idx < len; idx++) {
-		if (!ND_TTEST_1(pptr + idx)) {
+		if (!ND_TTEST(*(pptr + idx))) {
 			/* ran past end of captured data */
 			return (0);
 		}
-		if (!isascii(GET_U_1(pptr + idx))) {
+		if (!isascii(*(pptr + idx))) {
 			/* not an ASCII character */
 			return (0);
 		}
-		if (isspace(GET_U_1(pptr + idx))) {
+		if (isspace(*(pptr + idx))) {
 			/* end of token */
 			break;
 		}
-		if (!isprint(GET_U_1(pptr + idx))) {
+		if (!isprint(*(pptr + idx))) {
 			/* not part of a command token or response code */
 			return (0);
 		}
@@ -725,7 +720,7 @@ fetch_token(netdissect_options *ndo, const u_char *pptr, u_int idx, u_int len,
 			/* no room for this character and terminating '\0' */
 			return (0);
 		}
-		tbuf[toklen] = GET_U_1(pptr + idx);
+		tbuf[toklen] = *(pptr + idx);
 		toklen++;
 	}
 	if (toklen == 0) {
@@ -739,19 +734,19 @@ fetch_token(netdissect_options *ndo, const u_char *pptr, u_int idx, u_int len,
 	 * an end-of-line (CR or LF).
 	 */
 	for (; idx < len; idx++) {
-		if (!ND_TTEST_1(pptr + idx)) {
+		if (!ND_TTEST(*(pptr + idx))) {
 			/* ran past end of captured data */
 			break;
 		}
-		if (GET_U_1(pptr + idx) == '\r' || GET_U_1(pptr + idx) == '\n') {
+		if (*(pptr + idx) == '\r' || *(pptr + idx) == '\n') {
 			/* end of line */
 			break;
 		}
-		if (!isascii(GET_U_1(pptr + idx)) || !isprint(GET_U_1(pptr + idx))) {
+		if (!isascii(*(pptr + idx)) || !isprint(*(pptr + idx))) {
 			/* not a printable ASCII character */
 			break;
 		}
-		if (!isspace(GET_U_1(pptr + idx))) {
+		if (!isspace(*(pptr + idx))) {
 			/* beginning of next token */
 			break;
 		}
@@ -766,16 +761,16 @@ fetch_token(netdissect_options *ndo, const u_char *pptr, u_int idx, u_int len,
  * the line ending.
  */
 static u_int
-print_txt_line(netdissect_options *ndo, const char *prefix,
-	       const u_char *pptr, u_int idx, u_int len)
+print_txt_line(netdissect_options *ndo, const char *protoname,
+    const char *prefix, const u_char *pptr, u_int idx, u_int len)
 {
 	u_int startidx;
 	u_int linelen;
 
 	startidx = idx;
 	while (idx < len) {
-		ND_TCHECK_1(pptr + idx);
-		if (GET_U_1(pptr + idx) == '\n') {
+		ND_TCHECK(*(pptr+idx));
+		if (*(pptr+idx) == '\n') {
 			/*
 			 * LF without CR; end of line.
 			 * Skip the LF and print the line, with the
@@ -784,14 +779,14 @@ print_txt_line(netdissect_options *ndo, const char *prefix,
 			linelen = idx - startidx;
 			idx++;
 			goto print;
-		} else if (GET_U_1(pptr + idx) == '\r') {
+		} else if (*(pptr+idx) == '\r') {
 			/* CR - any LF? */
 			if ((idx+1) >= len) {
 				/* not in this packet */
 				return (0);
 			}
-			ND_TCHECK_1(pptr + idx + 1);
-			if (GET_U_1(pptr + idx + 1) == '\n') {
+			ND_TCHECK(*(pptr+idx+1));
+			if (*(pptr+idx+1) == '\n') {
 				/*
 				 * CR-LF; end of line.
 				 * Skip the CR-LF and print the line, with
@@ -808,9 +803,8 @@ print_txt_line(netdissect_options *ndo, const char *prefix,
 			 * it.
 			 */
 			return (0);
-		} else if (!isascii(GET_U_1(pptr + idx)) ||
-			   (!isprint(GET_U_1(pptr + idx)) &&
-			    GET_U_1(pptr + idx) != '\t')) {
+		} else if (!isascii(*(pptr+idx)) ||
+		    (!isprint(*(pptr+idx)) && *(pptr+idx) != '\t')) {
 			/*
 			 * Not a printable ASCII character and not a tab;
 			 * treat this as if it were binary data, and
@@ -827,37 +821,30 @@ print_txt_line(netdissect_options *ndo, const char *prefix,
 	 */
 trunc:
 	linelen = idx - startidx;
-	ND_PRINT("%s%.*s", prefix, (int)linelen, pptr + startidx);
-	nd_print_trunc(ndo);
+	ND_PRINT((ndo, "%s%.*s[!%s]", prefix, (int)linelen, pptr + startidx,
+	    protoname));
 	return (0);
 
 print:
-	ND_PRINT("%s%.*s", prefix, (int)linelen, pptr + startidx);
+	ND_PRINT((ndo, "%s%.*s", prefix, (int)linelen, pptr + startidx));
 	return (idx);
 }
 
-/* Assign needed before calling txtproto_print(): ndo->ndo_protocol = "proto" */
 void
 txtproto_print(netdissect_options *ndo, const u_char *pptr, u_int len,
-	       const char **cmds, u_int flags)
+    const char *protoname, const char **cmds, u_int flags)
 {
 	u_int idx, eol;
 	u_char token[MAX_TOKEN+1];
 	const char *cmd;
-	int print_this = 0;
+	int is_reqresp = 0;
+	const char *pnp;
 
 	if (cmds != NULL) {
 		/*
 		 * This protocol has more than just request and
 		 * response lines; see whether this looks like a
-		 * request or response and, if so, print it and,
-		 * in verbose mode, print everything after it.
-		 *
-		 * This is for HTTP-like protocols, where we
-		 * want to print requests and responses, but
-		 * don't want to print continuations of request
-		 * or response bodies in packets that don't
-		 * contain the request or response line.
+		 * request or response.
 		 */
 		idx = fetch_token(ndo, pptr, 0, len, token, sizeof(token));
 		if (idx != 0) {
@@ -865,7 +852,7 @@ txtproto_print(netdissect_options *ndo, const u_char *pptr, u_int len,
 			while ((cmd = *cmds++) != NULL) {
 				if (ascii_strcasecmp((const char *)token, cmd) == 0) {
 					/* Yes. */
-					print_this = 1;
+					is_reqresp = 1;
 					break;
 				}
 			}
@@ -887,34 +874,28 @@ txtproto_print(netdissect_options *ndo, const u_char *pptr, u_int len,
 				if (isdigit(token[0]) && isdigit(token[1]) &&
 				    isdigit(token[2]) && token[3] == '\0') {
 					/* Yes. */
-					print_this = 1;
+					is_reqresp = 1;
 				}
 			}
 		}
 	} else {
 		/*
-		 * Either:
-		 *
-		 * 1) This protocol has only request and response lines
-		 *    (e.g., FTP, where all the data goes over a different
-		 *    connection); assume the payload is a request or
-		 *    response.
-		 *
-		 * or
-		 *
-		 * 2) This protocol is just text, so that we should
-		 *    always, at minimum, print the first line and,
-		 *    in verbose mode, print all lines.
+		 * This protocol has only request and response lines
+		 * (e.g., FTP, where all the data goes over a
+		 * different connection); assume the payload is
+		 * a request or response.
 		 */
-		print_this = 1;
+		is_reqresp = 1;
 	}
 
-	nd_print_protocol_caps(ndo);
+	/* Capitalize the protocol name */
+	for (pnp = protoname; *pnp != '\0'; pnp++)
+		ND_PRINT((ndo, "%c", toupper((u_char)*pnp)));
 
-	if (print_this) {
+	if (is_reqresp) {
 		/*
 		 * In non-verbose mode, just print the protocol, followed
-		 * by the first line.
+		 * by the first line as the request or response info.
 		 *
 		 * In verbose mode, print lines as text until we run out
 		 * of characters or see something that's not a
@@ -926,52 +907,45 @@ txtproto_print(netdissect_options *ndo, const u_char *pptr, u_int len,
 			 * request or response; just print the length
 			 * on the first line of the output.
 			 */
-			ND_PRINT(", length: %u", len);
+			ND_PRINT((ndo, ", length: %u", len));
 			for (idx = 0;
-			    idx < len && (eol = print_txt_line(ndo, "\n\t", pptr, idx, len)) != 0;
+			    idx < len && (eol = print_txt_line(ndo, protoname, "\n\t", pptr, idx, len)) != 0;
 			    idx = eol)
 				;
 		} else {
 			/*
 			 * Just print the first text line.
 			 */
-			print_txt_line(ndo, ": ", pptr, 0, len);
+			print_txt_line(ndo, protoname, ": ", pptr, 0, len);
 		}
 	}
 }
 
-#if (defined(__i386__) || defined(_M_IX86) || defined(__X86__) || defined(__x86_64__) || defined(_M_X64)) || \
-    (defined(__arm__) || defined(_M_ARM) || defined(__aarch64__)) || \
-    (defined(__m68k__) && (!defined(__mc68000__) && !defined(__mc68010__))) || \
-    (defined(__ppc__) || defined(__ppc64__) || defined(_M_PPC) || defined(_ARCH_PPC) || defined(_ARCH_PPC64)) || \
-    (defined(__s390__) || defined(__s390x__) || defined(__zarch__)) || \
-    defined(__vax__)
+void
+safeputs(netdissect_options *ndo,
+         const u_char *s, const u_int maxlen)
+{
+	u_int idx = 0;
+
+	while (idx < maxlen && *s) {
+		safeputchar(ndo, *s);
+		idx++;
+		s++;
+	}
+}
+
+void
+safeputchar(netdissect_options *ndo,
+            const u_char c)
+{
+	ND_PRINT((ndo, (c < 0x80 && ND_ISPRINT(c)) ? "%c" : "\\0x%02x", c));
+}
+
+#ifdef LBL_ALIGN
 /*
- * The procesor natively handles unaligned loads, so just use memcpy()
- * and memcmp(), to enable those optimizations.
- *
- * XXX - are those all the x86 tests we need?
- * XXX - do we need to worry about ARMv1 through ARMv5, which didn't
- * support unaligned loads, and, if so, do we need to worry about all
- * of them, or just some of them, e.g. ARMv5?
- * XXX - are those the only 68k tests we need not to generated
- * unaligned accesses if the target is the 68000 or 68010?
- * XXX - are there any tests we don't need, because some definitions are for
- * compilers that also predefine the GCC symbols?
- * XXX - do we need to test for both 32-bit and 64-bit versions of those
- * architectures in all cases?
- */
-#else
-/*
- * The processor doesn't natively handle unaligned loads,
- * and the compiler might "helpfully" optimize memcpy()
- * and memcmp(), when handed pointers that would normally
- * be properly aligned, into sequences that assume proper
- * alignment.
- *
- * Do copies and compares of possibly-unaligned data by
- * calling routines that wrap memcpy() and memcmp(), to
- * prevent that optimization.
+ * Some compilers try to optimize memcpy(), using the alignment constraint
+ * on the argument pointer type.  by using this function, we try to avoid the
+ * optimization.
  */
 void
 unaligned_memcpy(void *p, const void *q, size_t l)

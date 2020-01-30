@@ -36,10 +36,10 @@
 /* \summary: Stream Control Transmission Protocol (SCTP) printer */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
-#include "netdissect-stdinc.h"
+#include <netdissect-stdinc.h>
 
 #include "netdissect.h"
 #include "addrtoname.h"
@@ -89,7 +89,7 @@
  * qxie1@email.mot.com
  *
  * Any bugs reported given to us we will try to fix... any fixes shared will
- * be incorporated into the next SCTP release.
+ * be incorperated into the next SCTP release.
  */
 
 /* The valid defines for all message
@@ -153,36 +153,36 @@ static const struct tok sctp_chunkid_str[] = {
 /* the sctp common header */
 
 struct sctpHeader{
-  nd_uint16_t source;
-  nd_uint16_t destination;
-  nd_uint32_t verificationTag;
-  nd_uint32_t adler32;
+  uint16_t source;
+  uint16_t destination;
+  uint32_t verificationTag;
+  uint32_t adler32;
 };
 
 /* various descriptor parsers */
 
 struct sctpChunkDesc{
-  nd_uint8_t  chunkID;
-  nd_uint8_t  chunkFlg;
-  nd_uint16_t chunkLength;
+  uint8_t chunkID;
+  uint8_t chunkFlg;
+  uint16_t chunkLength;
 };
 
 struct sctpParamDesc{
-  nd_uint16_t paramType;
-  nd_uint16_t paramLength;
+  uint16_t paramType;
+  uint16_t paramLength;
 };
 
 
 struct sctpRelChunkDesc{
   struct sctpChunkDesc chk;
-  nd_uint32_t serialNumber;
+  uint32_t serialNumber;
 };
 
 struct sctpVendorSpecificParam {
   struct sctpParamDesc p;  /* type must be 0xfffe */
-  nd_uint32_t vendorId;	   /* vendor ID from RFC 1700 */
-  nd_uint16_t vendorSpecificType;
-  nd_uint16_t vendorSpecificLen;
+  uint32_t vendorId;	   /* vendor ID from RFC 1700 */
+  uint16_t vendorSpecificType;
+  uint16_t vendorSpecificLen;
 };
 
 
@@ -194,40 +194,57 @@ struct sctpVendorSpecificParam {
 
 /* this is used for init ack, too */
 struct sctpInitiation{
-  nd_uint32_t initTag;			/* tag of mine */
-  nd_uint32_t rcvWindowCredit;		/* rwnd */
-  nd_uint16_t NumPreopenStreams;	/* OS */
-  nd_uint16_t MaxInboundStreams;	/* MIS */
-  nd_uint32_t initialTSN;
+  uint32_t initTag;		/* tag of mine */
+  uint32_t rcvWindowCredit;	/* rwnd */
+  uint16_t NumPreopenStreams;	/* OS */
+  uint16_t MaxInboundStreams;     /* MIS */
+  uint32_t initialTSN;
   /* optional param's follow in sctpParamDesc form */
 };
 
 struct sctpV4IpAddress{
   struct sctpParamDesc p;	/* type is set to SCTP_IPV4_PARAM_TYPE, len=10 */
-  nd_ipv4  ipAddress;
+  uint32_t  ipAddress;
 };
 
 
 struct sctpV6IpAddress{
   struct sctpParamDesc p;	/* type is set to SCTP_IPV6_PARAM_TYPE, len=22 */
-  nd_ipv6  ipAddress;
+  uint8_t  ipAddress[16];
 };
 
 struct sctpDNSName{
   struct sctpParamDesc param;
-  nd_byte name[1];
+  uint8_t name[1];
 };
 
 
 struct sctpCookiePreserve{
   struct sctpParamDesc p;	/* type is set to SCTP_COOKIE_PRESERVE, len=8 */
-  nd_uint32_t extraTime;
+  uint32_t extraTime;
 };
 
 
 struct sctpTimeStamp{
-  nd_uint32_t ts_sec;
-  nd_uint32_t ts_usec;
+  uint32_t ts_sec;
+  uint32_t ts_usec;
+};
+
+/* wire structure of my cookie */
+struct cookieMessage{
+  uint32_t TieTag_curTag;		/* copied from assoc if present */
+  uint32_t TieTag_hisTag; 		/* copied from assoc if present */
+  int32_t cookieLife;			/* life I will award this cookie */
+  struct sctpTimeStamp timeEnteringState; /* the time I built cookie */
+  struct sctpInitiation initAckISent;	/* the INIT-ACK that I sent to my peer */
+  uint32_t addressWhereISent[4];	/* I make this 4 ints so I get 128bits for future */
+  int32_t addrtype;			/* address type */
+  uint16_t locScope;			/* V6 local scope flag */
+  uint16_t siteScope;			/* V6 site scope flag */
+  /* at the end is tacked on the INIT chunk sent in
+   * its entirety and of course our
+   * signature.
+   */
 };
 
 
@@ -249,21 +266,21 @@ struct sctpSendableInit{
 
 /* Selective Acknowledgement
  * has the following structure with
- * a optional amount of trailing int's
+ * a optional ammount of trailing int's
  * on the last part (based on the numberOfDesc
  * field).
  */
 
 struct sctpSelectiveAck{
-  nd_uint32_t highestConseqTSN;
-  nd_uint32_t updatedRwnd;
-  nd_uint16_t numberOfdesc;
-  nd_uint16_t numDupTsns;
+  uint32_t highestConseqTSN;
+  uint32_t updatedRwnd;
+  uint16_t numberOfdesc;
+  uint16_t numDupTsns;
 };
 
 struct sctpSelectiveFrag{
-  nd_uint16_t fragmentStart;
-  nd_uint16_t fragmentEnd;
+  uint16_t fragmentStart;
+  uint16_t fragmentEnd;
 };
 
 
@@ -271,6 +288,33 @@ struct sctpUnifiedSack{
   struct sctpChunkDesc uh;
   struct sctpSelectiveAck sack;
 };
+
+/* for both RTT request/response the
+ * following is sent
+ */
+
+struct sctpHBrequest {
+  uint32_t time_value_1;
+  uint32_t time_value_2;
+};
+
+/* here is what I read and respond with to. */
+struct sctpHBunified{
+  struct sctpChunkDesc hdr;
+  struct sctpParamDesc hb;
+};
+
+
+/* here is what I send */
+struct sctpHBsender{
+  struct sctpChunkDesc hdr;
+  struct sctpParamDesc hb;
+  struct sctpHBrequest rtt;
+  int8_t addrFmt[SCTP_ADDRMAX];
+  uint16_t userreq;
+};
+
+
 
 /* for the abort and shutdown ACK
  * we must carry the init tag in the common header. Just the
@@ -288,15 +332,15 @@ struct sctpUnifiedAbortLight{
 struct sctpUnifiedAbortHeavy{
   struct sctpHeader mh;
   struct sctpChunkDesc uh;
-  nd_uint16_t causeCode;
-  nd_uint16_t causeLen;
+  uint16_t causeCode;
+  uint16_t causeLen;
 };
 
 /* For the graceful shutdown we must carry
  * the tag (in common header)  and the highest consequitive acking value
  */
 struct sctpShutdown {
-  nd_uint32_t TSN_Seen;
+  uint32_t TSN_Seen;
 };
 
 struct sctpUnifiedShutdown{
@@ -309,8 +353,8 @@ struct sctpUnifiedShutdown{
  * that is defined as a operation error.
  */
 struct sctpOpErrorCause{
-  nd_uint16_t cause;
-  nd_uint16_t causeLen;
+  uint16_t cause;
+  uint16_t causeLen;
 };
 
 struct sctpUnifiedOpError{
@@ -322,15 +366,15 @@ struct sctpUnifiedStreamError{
   struct sctpHeader mh;
   struct sctpChunkDesc uh;
   struct sctpOpErrorCause c;
-  nd_uint16_t strmNum;
-  nd_uint16_t reserved;
+  uint16_t strmNum;
+  uint16_t reserved;
 };
 
 struct staleCookieMsg{
   struct sctpHeader mh;
   struct sctpChunkDesc uh;
   struct sctpOpErrorCause c;
-  nd_uint32_t moretime;
+  uint32_t moretime;
 };
 
 /* the following is used in all sends
@@ -343,10 +387,10 @@ struct sctpUnifiedSingleMsg{
 };
 
 struct sctpDataPart{
-  nd_uint32_t TSN;
-  nd_uint16_t streamId;
-  nd_uint16_t sequence;
-  nd_uint32_t payloadtype;
+  uint32_t TSN;
+  uint16_t streamId;
+  uint16_t sequence;
+  uint32_t payloadtype;
 };
 
 struct sctpUnifiedDatagram{
@@ -356,13 +400,13 @@ struct sctpUnifiedDatagram{
 
 struct sctpECN_echo{
   struct sctpChunkDesc uh;
-  nd_uint32_t Lowest_TSN;
+  uint32_t Lowest_TSN;
 };
 
 
 struct sctpCWR{
   struct sctpChunkDesc uh;
-  nd_uint32_t TSN_reduced_at;
+  uint32_t TSN_reduced_at;
 };
 
 static const struct tok ForCES_channels[] = {
@@ -434,8 +478,7 @@ static const struct tok PayloadProto_idents[] = {
 };
 
 
-static int
-isForCES_port(u_short Port)
+static inline int isForCES_port(u_short Port)
 {
 	if (Port == CHAN_HP)
 		return 1;
@@ -447,36 +490,33 @@ isForCES_port(u_short Port)
 	return 0;
 }
 
-void
-sctp_print(netdissect_options *ndo,
-	   const u_char *bp,        /* beginning of sctp packet */
-	   const u_char *bp2,       /* beginning of enclosing */
-	   u_int sctpPacketLength)  /* ip packet */
+void sctp_print(netdissect_options *ndo,
+                const u_char *bp,        /* beginning of sctp packet */
+                const u_char *bp2,       /* beginning of enclosing */
+                u_int sctpPacketLength)  /* ip packet */
 {
   u_int sctpPacketLengthRemaining;
   const struct sctpHeader *sctpPktHdr;
   const struct ip *ip;
   const struct ip6_hdr *ip6;
-  uint8_t chunkID;
   u_short sourcePort, destPort;
-  u_int chunkCount;
+  int chunkCount;
   const struct sctpChunkDesc *chunkDescPtr;
   const char *sep;
   int isforces = 0;
 
-  ndo->ndo_protocol = "sctp";
   if (sctpPacketLength < sizeof(struct sctpHeader))
     {
-      ND_PRINT("truncated-sctp - %ld bytes missing!",
-		   (long)(sizeof(struct sctpHeader) - sctpPacketLength));
+      ND_PRINT((ndo, "truncated-sctp - %ld bytes missing!",
+		   (long)(sizeof(struct sctpHeader) - sctpPacketLength)));
       return;
     }
   sctpPktHdr = (const struct sctpHeader*) bp;
-  ND_TCHECK_SIZE(sctpPktHdr);
+  ND_TCHECK(*sctpPktHdr);
   sctpPacketLengthRemaining = sctpPacketLength;
 
-  sourcePort = GET_BE_U_2(sctpPktHdr->source);
-  destPort = GET_BE_U_2(sctpPktHdr->destination);
+  sourcePort = EXTRACT_16BITS(&sctpPktHdr->source);
+  destPort = EXTRACT_16BITS(&sctpPktHdr->destination);
 
   ip = (const struct ip *)bp2;
   if (IP_V(ip) == 6)
@@ -485,27 +525,27 @@ sctp_print(netdissect_options *ndo,
     ip6 = NULL;
 
   if (ip6) {
-    ND_PRINT("%s.%u > %s.%u: sctp",
-      ip6addr_string(ndo, ip6->ip6_src),
+    ND_PRINT((ndo, "%s.%d > %s.%d: sctp",
+      ip6addr_string(ndo, &ip6->ip6_src),
       sourcePort,
-      ip6addr_string(ndo, ip6->ip6_dst),
-      destPort);
+      ip6addr_string(ndo, &ip6->ip6_dst),
+      destPort));
   } else
   {
-    ND_PRINT("%s.%u > %s.%u: sctp",
-      ipaddr_string(ndo, ip->ip_src),
+    ND_PRINT((ndo, "%s.%d > %s.%d: sctp",
+      ipaddr_string(ndo, &ip->ip_src),
       sourcePort,
-      ipaddr_string(ndo, ip->ip_dst),
-      destPort);
+      ipaddr_string(ndo, &ip->ip_dst),
+      destPort));
   }
 
   if (isForCES_port(sourcePort)) {
-	 ND_PRINT("[%s]", tok2str(ForCES_channels, NULL, sourcePort));
-	 isforces = 1;
+         ND_PRINT((ndo, "[%s]", tok2str(ForCES_channels, NULL, sourcePort)));
+         isforces = 1;
   }
   if (isForCES_port(destPort)) {
-	 ND_PRINT("[%s]", tok2str(ForCES_channels, NULL, destPort));
-	 isforces = 1;
+         ND_PRINT((ndo, "[%s]", tok2str(ForCES_channels, NULL, destPort)));
+         isforces = 1;
   }
 
   bp += sizeof(struct sctpHeader);
@@ -525,14 +565,14 @@ sctp_print(netdissect_options *ndo,
 
       chunkDescPtr = (const struct sctpChunkDesc *)bp;
       if (sctpPacketLengthRemaining < sizeof(*chunkDescPtr)) {
-	ND_PRINT("%s%u) [chunk descriptor cut off at end of packet]", sep, chunkCount+1);
-	break;
+        ND_PRINT((ndo, "%s%d) [chunk descriptor cut off at end of packet]", sep, chunkCount+1));
+        break;
       }
-      ND_TCHECK_SIZE(chunkDescPtr);
-      chunkLength = GET_BE_U_2(chunkDescPtr->chunkLength);
+      ND_TCHECK(*chunkDescPtr);
+      chunkLength = EXTRACT_16BITS(&chunkDescPtr->chunkLength);
       if (chunkLength < sizeof(*chunkDescPtr)) {
-	ND_PRINT("%s%u) [Bad chunk length %u, < size of chunk descriptor]", sep, chunkCount+1, chunkLength);
-	break;
+        ND_PRINT((ndo, "%s%d) [Bad chunk length %u, < size of chunk descriptor]", sep, chunkCount+1, chunkLength));
+        break;
       }
       chunkLengthRemaining = chunkLength;
 
@@ -541,56 +581,61 @@ sctp_print(netdissect_options *ndo,
 	align = 4 - align;
 
       if (sctpPacketLengthRemaining < align) {
-	ND_PRINT("%s%u) [Bad chunk length %u, > remaining data in packet]", sep, chunkCount+1, chunkLength);
-	break;
+        ND_PRINT((ndo, "%s%d) [Bad chunk length %u, > remaining data in packet]", sep, chunkCount+1, chunkLength));
+        break;
       }
 
-      ND_TCHECK_LEN(bp, chunkLength);
+      ND_TCHECK2(*bp, chunkLength);
 
       bp += sizeof(*chunkDescPtr);
       sctpPacketLengthRemaining -= sizeof(*chunkDescPtr);
       chunkLengthRemaining -= sizeof(*chunkDescPtr);
 
-      ND_PRINT("%s%u) ", sep, chunkCount+1);
-      chunkID = GET_U_1(chunkDescPtr->chunkID);
-      ND_PRINT("[%s] ", tok2str(sctp_chunkid_str, "Unknown chunk type: 0x%x",
-	       chunkID));
-      switch (chunkID)
+      ND_PRINT((ndo, "%s%d) ", sep, chunkCount+1));
+      ND_PRINT((ndo, "[%s] ", tok2str(sctp_chunkid_str, "Unknown chunk type: 0x%x",
+                                      chunkDescPtr->chunkID)));
+      switch (chunkDescPtr->chunkID)
 	{
 	case SCTP_DATA :
 	  {
 	    const struct sctpDataPart *dataHdrPtr;
-	    uint8_t chunkFlg;
 	    uint32_t ppid;
-	    uint16_t payload_size;
+	    u_int payload_size;
 
-	    chunkFlg = GET_U_1(chunkDescPtr->chunkFlg);
-	    if ((chunkFlg & SCTP_DATA_UNORDERED) == SCTP_DATA_UNORDERED)
-	      ND_PRINT("(U)");
+	    if ((chunkDescPtr->chunkFlg & SCTP_DATA_UNORDERED)
+		== SCTP_DATA_UNORDERED)
+	      ND_PRINT((ndo, "(U)"));
 
-	    if ((chunkFlg & SCTP_DATA_FIRST_FRAG) == SCTP_DATA_FIRST_FRAG)
-	      ND_PRINT("(B)");
+	    if ((chunkDescPtr->chunkFlg & SCTP_DATA_FIRST_FRAG)
+		== SCTP_DATA_FIRST_FRAG)
+	      ND_PRINT((ndo, "(B)"));
 
-	    if ((chunkFlg & SCTP_DATA_LAST_FRAG) == SCTP_DATA_LAST_FRAG)
-	      ND_PRINT("(E)");
+	    if ((chunkDescPtr->chunkFlg & SCTP_DATA_LAST_FRAG)
+		== SCTP_DATA_LAST_FRAG)
+	      ND_PRINT((ndo, "(E)"));
 
-	    if( ((chunkFlg & SCTP_DATA_UNORDERED) == SCTP_DATA_UNORDERED) ||
-		((chunkFlg & SCTP_DATA_FIRST_FRAG) == SCTP_DATA_FIRST_FRAG) ||
-		((chunkFlg & SCTP_DATA_LAST_FRAG) == SCTP_DATA_LAST_FRAG) )
-	      ND_PRINT(" ");
+	    if( ((chunkDescPtr->chunkFlg & SCTP_DATA_UNORDERED)
+		 == SCTP_DATA_UNORDERED)
+		||
+		((chunkDescPtr->chunkFlg & SCTP_DATA_FIRST_FRAG)
+		 == SCTP_DATA_FIRST_FRAG)
+		||
+		((chunkDescPtr->chunkFlg & SCTP_DATA_LAST_FRAG)
+		 == SCTP_DATA_LAST_FRAG) )
+	      ND_PRINT((ndo, " "));
 
 	    if (chunkLengthRemaining < sizeof(*dataHdrPtr)) {
-		ND_PRINT("bogus chunk length %u]", chunkLength);
+		ND_PRINT((ndo, "bogus chunk length %u]", chunkLength));
 		return;
 	    }
 	    dataHdrPtr=(const struct sctpDataPart*)bp;
 
-	    ppid = GET_BE_U_4(dataHdrPtr->payloadtype);
-	    ND_PRINT("[TSN: %u] ", GET_BE_U_4(dataHdrPtr->TSN));
-	    ND_PRINT("[SID: %u] ", GET_BE_U_2(dataHdrPtr->streamId));
-	    ND_PRINT("[SSEQ %u] ", GET_BE_U_2(dataHdrPtr->sequence));
-	    ND_PRINT("[PPID %s] ",
-		    tok2str(PayloadProto_idents, "0x%x", ppid));
+	    ppid = EXTRACT_32BITS(&dataHdrPtr->payloadtype);
+	    ND_PRINT((ndo, "[TSN: %u] ", EXTRACT_32BITS(&dataHdrPtr->TSN)));
+	    ND_PRINT((ndo, "[SID: %u] ", EXTRACT_16BITS(&dataHdrPtr->streamId)));
+	    ND_PRINT((ndo, "[SSEQ %u] ", EXTRACT_16BITS(&dataHdrPtr->sequence)));
+	    ND_PRINT((ndo, "[PPID %s] ",
+		    tok2str(PayloadProto_idents, "0x%x", ppid)));
 
 	    if (!isforces) {
 		isforces = (ppid == SCTP_PPID_FORCES_HP) ||
@@ -603,29 +648,25 @@ sctp_print(netdissect_options *ndo,
 	    chunkLengthRemaining -= sizeof(*dataHdrPtr);
 	    payload_size = chunkLengthRemaining;
 	    if (payload_size == 0) {
-		ND_PRINT("bogus chunk length %u]", chunkLength);
+		ND_PRINT((ndo, "bogus chunk length %u]", chunkLength));
 		return;
 	    }
 
 	    if (isforces) {
 		forces_print(ndo, bp, payload_size);
-		/* ndo_protocol reassignment after forces_print() call */
-		ndo->ndo_protocol = "sctp";
 	    } else if (ndo->ndo_vflag >= 2) {	/* if verbose output is specified */
 					/* at the command line */
 		switch (ppid) {
 		case SCTP_PPID_M3UA :
 			m3ua_print(ndo, bp, payload_size);
-			/* ndo_protocol reassignment after m3ua_print() call */
-			ndo->ndo_protocol = "sctp";
 			break;
 		default:
-			ND_PRINT("[Payload");
+			ND_PRINT((ndo, "[Payload"));
 			if (!ndo->ndo_suppress_default_print) {
-				ND_PRINT(":");
+				ND_PRINT((ndo, ":"));
 				ND_DEFAULTPRINT(bp, payload_size);
 			}
-			ND_PRINT("]");
+			ND_PRINT((ndo, "]"));
 			break;
 		}
 	    }
@@ -639,27 +680,27 @@ sctp_print(netdissect_options *ndo,
 	    const struct sctpInitiation *init;
 
 	    if (chunkLengthRemaining < sizeof(*init)) {
-		ND_PRINT("bogus chunk length %u]", chunkLength);
+		ND_PRINT((ndo, "bogus chunk length %u]", chunkLength));
 		return;
 	    }
 	    init=(const struct sctpInitiation*)bp;
-	    ND_PRINT("[init tag: %u] ", GET_BE_U_4(init->initTag));
-	    ND_PRINT("[rwnd: %u] ", GET_BE_U_4(init->rcvWindowCredit));
-	    ND_PRINT("[OS: %u] ", GET_BE_U_2(init->NumPreopenStreams));
-	    ND_PRINT("[MIS: %u] ", GET_BE_U_2(init->MaxInboundStreams));
-	    ND_PRINT("[init TSN: %u] ", GET_BE_U_4(init->initialTSN));
+	    ND_PRINT((ndo, "[init tag: %u] ", EXTRACT_32BITS(&init->initTag)));
+	    ND_PRINT((ndo, "[rwnd: %u] ", EXTRACT_32BITS(&init->rcvWindowCredit)));
+	    ND_PRINT((ndo, "[OS: %u] ", EXTRACT_16BITS(&init->NumPreopenStreams)));
+	    ND_PRINT((ndo, "[MIS: %u] ", EXTRACT_16BITS(&init->MaxInboundStreams)));
+	    ND_PRINT((ndo, "[init TSN: %u] ", EXTRACT_32BITS(&init->initialTSN)));
 	    bp += sizeof(*init);
-	    sctpPacketLengthRemaining -= sizeof(*init);
+ 	    sctpPacketLengthRemaining -= sizeof(*init);
 	    chunkLengthRemaining -= sizeof(*init);
 
 #if 0 /* ALC you can add code for optional params here */
 	    if( chunkLengthRemaining != 0 )
-	      ND_PRINT(" @@@@@ UNFINISHED @@@@@@%s\n",
-		     "Optional params present, but not printed.");
+	      ND_PRINT((ndo, " @@@@@ UNFINISHED @@@@@@%s\n",
+		     "Optional params present, but not printed."));
 #endif
-	    bp += chunkLengthRemaining;
+            bp += chunkLengthRemaining;
 	    sctpPacketLengthRemaining -= chunkLengthRemaining;
-	    chunkLengthRemaining = 0;
+            chunkLengthRemaining = 0;
 	    break;
 	  }
 	case SCTP_INITIATION_ACK :
@@ -667,84 +708,84 @@ sctp_print(netdissect_options *ndo,
 	    const struct sctpInitiation *init;
 
 	    if (chunkLengthRemaining < sizeof(*init)) {
-		ND_PRINT("bogus chunk length %u]", chunkLength);
+		ND_PRINT((ndo, "bogus chunk length %u]", chunkLength));
 		return;
 	    }
 	    init=(const struct sctpInitiation*)bp;
-	    ND_PRINT("[init tag: %u] ", GET_BE_U_4(init->initTag));
-	    ND_PRINT("[rwnd: %u] ", GET_BE_U_4(init->rcvWindowCredit));
-	    ND_PRINT("[OS: %u] ", GET_BE_U_2(init->NumPreopenStreams));
-	    ND_PRINT("[MIS: %u] ", GET_BE_U_2(init->MaxInboundStreams));
-	    ND_PRINT("[init TSN: %u] ", GET_BE_U_4(init->initialTSN));
-	    bp += sizeof(*init);
-	    sctpPacketLengthRemaining -= sizeof(*init);
-	    chunkLengthRemaining -= sizeof(*init);
+	    ND_PRINT((ndo, "[init tag: %u] ", EXTRACT_32BITS(&init->initTag)));
+	    ND_PRINT((ndo, "[rwnd: %u] ", EXTRACT_32BITS(&init->rcvWindowCredit)));
+	    ND_PRINT((ndo, "[OS: %u] ", EXTRACT_16BITS(&init->NumPreopenStreams)));
+	    ND_PRINT((ndo, "[MIS: %u] ", EXTRACT_16BITS(&init->MaxInboundStreams)));
+	    ND_PRINT((ndo, "[init TSN: %u] ", EXTRACT_32BITS(&init->initialTSN)));
+            bp += sizeof(*init);
+            sctpPacketLengthRemaining -= sizeof(*init);
+            chunkLengthRemaining -= sizeof(*init);
 
 #if 0 /* ALC you can add code for optional params here */
 	    if( chunkLengthRemaining != 0 )
-	      ND_PRINT(" @@@@@ UNFINISHED @@@@@@%s\n",
-		     "Optional params present, but not printed.");
+	      ND_PRINT((ndo, " @@@@@ UNFINISHED @@@@@@%s\n",
+		     "Optional params present, but not printed."));
 #endif
-	    bp += chunkLengthRemaining;
+            bp += chunkLengthRemaining;
 	    sctpPacketLengthRemaining -= chunkLengthRemaining;
-	    chunkLengthRemaining = 0;
+            chunkLengthRemaining = 0;
 	    break;
 	  }
 	case SCTP_SELECTIVE_ACK:
 	  {
 	    const struct sctpSelectiveAck *sack;
 	    const struct sctpSelectiveFrag *frag;
-	    u_int fragNo, tsnNo;
+	    int fragNo, tsnNo;
 	    const u_char *dupTSN;
 
 	    if (chunkLengthRemaining < sizeof(*sack)) {
-	      ND_PRINT("bogus chunk length %u]", chunkLength);
+	      ND_PRINT((ndo, "bogus chunk length %u]", chunkLength));
 	      return;
 	    }
 	    sack=(const struct sctpSelectiveAck*)bp;
-	    ND_PRINT("[cum ack %u] ", GET_BE_U_4(sack->highestConseqTSN));
-	    ND_PRINT("[a_rwnd %u] ", GET_BE_U_4(sack->updatedRwnd));
-	    ND_PRINT("[#gap acks %u] ", GET_BE_U_2(sack->numberOfdesc));
-	    ND_PRINT("[#dup tsns %u] ", GET_BE_U_2(sack->numDupTsns));
-	    bp += sizeof(*sack);
+	    ND_PRINT((ndo, "[cum ack %u] ", EXTRACT_32BITS(&sack->highestConseqTSN)));
+	    ND_PRINT((ndo, "[a_rwnd %u] ", EXTRACT_32BITS(&sack->updatedRwnd)));
+	    ND_PRINT((ndo, "[#gap acks %u] ", EXTRACT_16BITS(&sack->numberOfdesc)));
+	    ND_PRINT((ndo, "[#dup tsns %u] ", EXTRACT_16BITS(&sack->numDupTsns)));
+            bp += sizeof(*sack);
 	    sctpPacketLengthRemaining -= sizeof(*sack);
-	    chunkLengthRemaining -= sizeof(*sack);
+            chunkLengthRemaining -= sizeof(*sack);
 
 
 	    /* print gaps */
 	    for (fragNo=0;
-		 chunkLengthRemaining != 0 && fragNo < GET_BE_U_2(sack->numberOfdesc);
+		 chunkLengthRemaining != 0 && fragNo < EXTRACT_16BITS(&sack->numberOfdesc);
 		 bp += sizeof(*frag), sctpPacketLengthRemaining -= sizeof(*frag), chunkLengthRemaining -= sizeof(*frag), fragNo++) {
 	      if (chunkLengthRemaining < sizeof(*frag)) {
-		ND_PRINT("bogus chunk length %u]", chunkLength);
+		ND_PRINT((ndo, "bogus chunk length %u]", chunkLength));
 		return;
 	      }
 	      frag = (const struct sctpSelectiveFrag *)bp;
-	      ND_PRINT("\n\t\t[gap ack block #%u: start = %u, end = %u] ",
+	      ND_PRINT((ndo, "\n\t\t[gap ack block #%d: start = %u, end = %u] ",
 		     fragNo+1,
-		     GET_BE_U_4(sack->highestConseqTSN) + GET_BE_U_2(frag->fragmentStart),
-		     GET_BE_U_4(sack->highestConseqTSN) + GET_BE_U_2(frag->fragmentEnd));
+		     EXTRACT_32BITS(&sack->highestConseqTSN) + EXTRACT_16BITS(&frag->fragmentStart),
+		     EXTRACT_32BITS(&sack->highestConseqTSN) + EXTRACT_16BITS(&frag->fragmentEnd)));
 	    }
 
 	    /* print duplicate TSNs */
 	    for (tsnNo=0;
-		 chunkLengthRemaining != 0 && tsnNo<GET_BE_U_2(sack->numDupTsns);
+		 chunkLengthRemaining != 0 && tsnNo<EXTRACT_16BITS(&sack->numDupTsns);
 		 bp += 4, sctpPacketLengthRemaining -= 4, chunkLengthRemaining -= 4, tsnNo++) {
 	      if (chunkLengthRemaining < 4) {
-		ND_PRINT("bogus chunk length %u]", chunkLength);
+		ND_PRINT((ndo, "bogus chunk length %u]", chunkLength));
 		return;
 	      }
-	      dupTSN = (const u_char *)bp;
-	      ND_PRINT("\n\t\t[dup TSN #%u: %u] ", tsnNo+1,
-		       GET_BE_U_4(dupTSN));
+              dupTSN = (const u_char *)bp;
+	      ND_PRINT((ndo, "\n\t\t[dup TSN #%u: %u] ", tsnNo+1,
+	        EXTRACT_32BITS(dupTSN)));
 	    }
 	    break;
 	  }
 	default :
 	  {
-	    bp += chunkLengthRemaining;
-	    sctpPacketLengthRemaining -= chunkLengthRemaining;
-	    chunkLengthRemaining = 0;
+            bp += chunkLengthRemaining;
+            sctpPacketLengthRemaining -= chunkLengthRemaining;
+            chunkLengthRemaining = 0;
 	    break;
 	  }
 	}
@@ -757,14 +798,14 @@ sctp_print(netdissect_options *ndo,
       sctpPacketLengthRemaining -= chunkLengthRemaining;
 
       if (ndo->ndo_vflag < 2)
-	sep = ", (";
+        sep = ", (";
 
       if (align != 0) {
 	/*
 	 * Fail if the alignment padding isn't in the captured data.
 	 * Otherwise, skip it.
 	 */
-	ND_TCHECK_LEN(bp, align);
+	ND_TCHECK2(*bp, align);
 	bp += align;
 	sctpPacketLengthRemaining -= align;
       }
@@ -772,5 +813,5 @@ sctp_print(netdissect_options *ndo,
     return;
 
 trunc:
-    nd_print_trunc(ndo);
+    ND_PRINT((ndo, "[|sctp]"));
 }

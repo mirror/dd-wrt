@@ -21,19 +21,11 @@
 
 /* \summary: Internet Group Management Protocol (IGMP) printer */
 
-/*
- * specification:
- *
- *	RFC 2236 for IGMPv2
- *	RFC 3376 for IGMPv3
- *	draft-asaeda-mboned-mtrace-v2 for the mtrace message
- */
-
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
-#include "netdissect-stdinc.h"
+#include <netdissect-stdinc.h>
 
 #include "netdissect.h"
 #include "addrtoname.h"
@@ -43,6 +35,7 @@
 #define IN_CLASSD(i) (((int32_t)(i) & 0xf0000000) == 0xe0000000)
 #endif
 
+static const char tstr[] = "[|igmp]";
 
 /* (following from ipmulti/mrouted/prune.h) */
 
@@ -50,29 +43,31 @@
  * The packet format for a traceroute request.
  */
 struct tr_query {
-    nd_uint32_t  tr_src;        /* traceroute source */
-    nd_uint32_t  tr_dst;        /* traceroute destination */
-    nd_uint32_t  tr_raddr;      /* traceroute response address */
-    nd_uint8_t   tr_rttl;       /* response ttl */
-    nd_uint24_t  tr_qid;        /* qid */
+    uint32_t  tr_src;          /* traceroute source */
+    uint32_t  tr_dst;          /* traceroute destination */
+    uint32_t  tr_raddr;        /* traceroute response address */
+    uint32_t  tr_rttlqid;      /* response ttl and qid */
 };
+
+#define TR_GETTTL(x)        (int)(((x) >> 24) & 0xff)
+#define TR_GETQID(x)        ((x) & 0x00ffffff)
 
 /*
  * Traceroute response format.  A traceroute response has a tr_query at the
  * beginning, followed by one tr_resp for each hop taken.
  */
 struct tr_resp {
-    nd_uint32_t tr_qarr;        /* query arrival time */
-    nd_uint32_t tr_inaddr;      /* incoming interface address */
-    nd_uint32_t tr_outaddr;     /* outgoing interface address */
-    nd_uint32_t tr_rmtaddr;     /* parent address in source tree */
-    nd_uint32_t tr_vifin;       /* input packet count on interface */
-    nd_uint32_t tr_vifout;      /* output packet count on interface */
-    nd_uint32_t tr_pktcnt;      /* total incoming packets for src-grp */
-    nd_uint8_t  tr_rproto;      /* routing proto deployed on router */
-    nd_uint8_t  tr_fttl;        /* ttl required to forward on outvif */
-    nd_uint8_t  tr_smask;       /* subnet mask for src addr */
-    nd_uint8_t  tr_rflags;      /* forwarding error codes */
+    uint32_t tr_qarr;          /* query arrival time */
+    uint32_t tr_inaddr;        /* incoming interface address */
+    uint32_t tr_outaddr;       /* outgoing interface address */
+    uint32_t tr_rmtaddr;       /* parent address in source tree */
+    uint32_t tr_vifin;         /* input packet count on interface */
+    uint32_t tr_vifout;        /* output packet count on interface */
+    uint32_t tr_pktcnt;        /* total incoming packets for src-grp */
+    uint8_t  tr_rproto;      /* routing proto deployed on router */
+    uint8_t  tr_fttl;        /* ttl required to forward on outvif */
+    uint8_t  tr_smask;       /* subnet mask for src addr */
+    uint8_t  tr_rflags;      /* forwarding error codes */
 };
 
 /* defs within mtrace */
@@ -109,218 +104,217 @@ static const struct tok igmpv3report2str[] = {
 
 static void
 print_mtrace(netdissect_options *ndo,
-             const u_char *bp, u_int len)
+             register const u_char *bp, register u_int len)
 {
-    const struct tr_query *tr = (const struct tr_query *)(bp + 8);
+    register const struct tr_query *tr = (const struct tr_query *)(bp + 8);
 
-    ND_TCHECK_SIZE(tr);
+    ND_TCHECK(*tr);
     if (len < 8 + sizeof (struct tr_query)) {
-	ND_PRINT(" [invalid len %u]", len);
+	ND_PRINT((ndo, " [invalid len %d]", len));
 	return;
     }
-    ND_PRINT("mtrace %u: %s to %s reply-to %s",
-        GET_BE_U_3(tr->tr_qid),
-        ipaddr_string(ndo, tr->tr_src), ipaddr_string(ndo, tr->tr_dst),
-        ipaddr_string(ndo, tr->tr_raddr));
-    if (IN_CLASSD(GET_BE_U_4(tr->tr_raddr)))
-        ND_PRINT(" with-ttl %u", GET_U_1(tr->tr_rttl));
+    ND_PRINT((ndo, "mtrace %u: %s to %s reply-to %s",
+        TR_GETQID(EXTRACT_32BITS(&tr->tr_rttlqid)),
+        ipaddr_string(ndo, &tr->tr_src), ipaddr_string(ndo, &tr->tr_dst),
+        ipaddr_string(ndo, &tr->tr_raddr)));
+    if (IN_CLASSD(EXTRACT_32BITS(&tr->tr_raddr)))
+        ND_PRINT((ndo, " with-ttl %d", TR_GETTTL(EXTRACT_32BITS(&tr->tr_rttlqid))));
     return;
 trunc:
-    nd_print_trunc(ndo);
+    ND_PRINT((ndo, "%s", tstr));
 }
 
 static void
 print_mresp(netdissect_options *ndo,
-            const u_char *bp, u_int len)
+            register const u_char *bp, register u_int len)
 {
-    const struct tr_query *tr = (const struct tr_query *)(bp + 8);
+    register const struct tr_query *tr = (const struct tr_query *)(bp + 8);
 
-    ND_TCHECK_SIZE(tr);
+    ND_TCHECK(*tr);
     if (len < 8 + sizeof (struct tr_query)) {
-	ND_PRINT(" [invalid len %u]", len);
+	ND_PRINT((ndo, " [invalid len %d]", len));
 	return;
     }
-    ND_PRINT("mresp %u: %s to %s reply-to %s",
-        GET_BE_U_3(tr->tr_qid),
-        ipaddr_string(ndo, tr->tr_src), ipaddr_string(ndo, tr->tr_dst),
-        ipaddr_string(ndo, tr->tr_raddr));
-    if (IN_CLASSD(GET_BE_U_4(tr->tr_raddr)))
-        ND_PRINT(" with-ttl %u", GET_U_1(tr->tr_rttl));
+    ND_PRINT((ndo, "mresp %lu: %s to %s reply-to %s",
+        (u_long)TR_GETQID(EXTRACT_32BITS(&tr->tr_rttlqid)),
+        ipaddr_string(ndo, &tr->tr_src), ipaddr_string(ndo, &tr->tr_dst),
+        ipaddr_string(ndo, &tr->tr_raddr)));
+    if (IN_CLASSD(EXTRACT_32BITS(&tr->tr_raddr)))
+        ND_PRINT((ndo, " with-ttl %d", TR_GETTTL(EXTRACT_32BITS(&tr->tr_rttlqid))));
     return;
 trunc:
-    nd_print_trunc(ndo);
+    ND_PRINT((ndo, "%s", tstr));
 }
 
 static void
 print_igmpv3_report(netdissect_options *ndo,
-                    const u_char *bp, u_int len)
+                    register const u_char *bp, register u_int len)
 {
     u_int group, nsrcs, ngroups;
-    u_int i, j;
+    register u_int i, j;
 
     /* Minimum len is 16, and should be a multiple of 4 */
     if (len < 16 || len & 0x03) {
-	ND_PRINT(" [invalid len %u]", len);
+	ND_PRINT((ndo, " [invalid len %d]", len));
 	return;
     }
-    ND_TCHECK_2(bp + 6);
-    ngroups = GET_BE_U_2(bp + 6);
-    ND_PRINT(", %u group record(s)", ngroups);
+    ND_TCHECK2(bp[6], 2);
+    ngroups = EXTRACT_16BITS(&bp[6]);
+    ND_PRINT((ndo, ", %d group record(s)", ngroups));
     if (ndo->ndo_vflag > 0) {
 	/* Print the group records */
 	group = 8;
         for (i=0; i<ngroups; i++) {
 	    if (len < group+8) {
-		ND_PRINT(" [invalid number of groups]");
+		ND_PRINT((ndo, " [invalid number of groups]"));
 		return;
 	    }
-	    ND_TCHECK_4(bp + (group + 4));
-            ND_PRINT(" [gaddr %s", ipaddr_string(ndo, bp + group + 4));
-	    ND_PRINT(" %s", tok2str(igmpv3report2str, " [v3-report-#%u]",
-								GET_U_1(bp + group)));
-            nsrcs = GET_BE_U_2(bp + group + 2);
+	    ND_TCHECK2(bp[group+4], 4);
+            ND_PRINT((ndo, " [gaddr %s", ipaddr_string(ndo, &bp[group+4])));
+	    ND_PRINT((ndo, " %s", tok2str(igmpv3report2str, " [v3-report-#%d]",
+								bp[group])));
+            nsrcs = EXTRACT_16BITS(&bp[group+2]);
 	    /* Check the number of sources and print them */
 	    if (len < group+8+(nsrcs<<2)) {
-		ND_PRINT(" [invalid number of sources %u]", nsrcs);
+		ND_PRINT((ndo, " [invalid number of sources %d]", nsrcs));
 		return;
 	    }
             if (ndo->ndo_vflag == 1)
-                ND_PRINT(", %u source(s)", nsrcs);
+                ND_PRINT((ndo, ", %d source(s)", nsrcs));
             else {
 		/* Print the sources */
-                ND_PRINT(" {");
+                ND_PRINT((ndo, " {"));
                 for (j=0; j<nsrcs; j++) {
-		    ND_TCHECK_4(bp + (group + 8 + (j << 2)));
-		    ND_PRINT(" %s", ipaddr_string(ndo, bp + group + 8 + (j << 2)));
+		    ND_TCHECK2(bp[group+8+(j<<2)], 4);
+		    ND_PRINT((ndo, " %s", ipaddr_string(ndo, &bp[group+8+(j<<2)])));
 		}
-                ND_PRINT(" }");
+                ND_PRINT((ndo, " }"));
             }
 	    /* Next group record */
             group += 8 + (nsrcs << 2);
-	    ND_PRINT("]");
+	    ND_PRINT((ndo, "]"));
         }
     }
     return;
 trunc:
-    nd_print_trunc(ndo);
+    ND_PRINT((ndo, "%s", tstr));
 }
 
 static void
 print_igmpv3_query(netdissect_options *ndo,
-                   const u_char *bp, u_int len)
+                   register const u_char *bp, register u_int len)
 {
     u_int mrc;
     u_int mrt;
     u_int nsrcs;
-    u_int i;
+    register u_int i;
 
-    ND_PRINT(" v3");
+    ND_PRINT((ndo, " v3"));
     /* Minimum len is 12, and should be a multiple of 4 */
     if (len < 12 || len & 0x03) {
-	ND_PRINT(" [invalid len %u]", len);
+	ND_PRINT((ndo, " [invalid len %d]", len));
 	return;
     }
-    ND_TCHECK_1(bp + 1);
-    mrc = GET_U_1(bp + 1);
+    ND_TCHECK(bp[1]);
+    mrc = bp[1];
     if (mrc < 128) {
 	mrt = mrc;
     } else {
         mrt = ((mrc & 0x0f) | 0x10) << (((mrc & 0x70) >> 4) + 3);
     }
     if (mrc != 100) {
-	ND_PRINT(" [max resp time ");
+	ND_PRINT((ndo, " [max resp time "));
         if (mrt < 600) {
-            ND_PRINT("%.1fs", mrt * 0.1);
+            ND_PRINT((ndo, "%.1fs", mrt * 0.1));
         } else {
             unsigned_relts_print(ndo, mrt / 10);
         }
-	ND_PRINT("]");
+	ND_PRINT((ndo, "]"));
     }
-    ND_TCHECK_4(bp + 4);
-    if (GET_BE_U_4(bp + 4) == 0)
+    ND_TCHECK2(bp[4], 4);
+    if (EXTRACT_32BITS(&bp[4]) == 0)
 	return;
-    ND_PRINT(" [gaddr %s", ipaddr_string(ndo, bp + 4));
-    ND_TCHECK_2(bp + 10);
-    nsrcs = GET_BE_U_2(bp + 10);
+    ND_PRINT((ndo, " [gaddr %s", ipaddr_string(ndo, &bp[4])));
+    ND_TCHECK2(bp[10], 2);
+    nsrcs = EXTRACT_16BITS(&bp[10]);
     if (nsrcs > 0) {
 	if (len < 12 + (nsrcs << 2))
-	    ND_PRINT(" [invalid number of sources]");
+	    ND_PRINT((ndo, " [invalid number of sources]"));
 	else if (ndo->ndo_vflag > 1) {
-	    ND_PRINT(" {");
+	    ND_PRINT((ndo, " {"));
 	    for (i=0; i<nsrcs; i++) {
-		ND_TCHECK_4(bp + (12 + (i << 2)));
-		ND_PRINT(" %s", ipaddr_string(ndo, bp + 12 + (i << 2)));
+		ND_TCHECK2(bp[12+(i<<2)], 4);
+		ND_PRINT((ndo, " %s", ipaddr_string(ndo, &bp[12+(i<<2)])));
 	    }
-	    ND_PRINT(" }");
+	    ND_PRINT((ndo, " }"));
 	} else
-	    ND_PRINT(", %u source(s)", nsrcs);
+	    ND_PRINT((ndo, ", %d source(s)", nsrcs));
     }
-    ND_PRINT("]");
+    ND_PRINT((ndo, "]"));
     return;
 trunc:
-    nd_print_trunc(ndo);
+    ND_PRINT((ndo, "%s", tstr));
 }
 
 void
 igmp_print(netdissect_options *ndo,
-           const u_char *bp, u_int len)
+           register const u_char *bp, register u_int len)
 {
     struct cksum_vec vec[1];
 
-    ndo->ndo_protocol = "igmp";
     if (ndo->ndo_qflag) {
-        ND_PRINT("igmp");
+        ND_PRINT((ndo, "igmp"));
         return;
     }
 
-    ND_TCHECK_1(bp);
-    switch (GET_U_1(bp)) {
+    ND_TCHECK(bp[0]);
+    switch (bp[0]) {
     case 0x11:
-        ND_PRINT("igmp query");
+        ND_PRINT((ndo, "igmp query"));
 	if (len >= 12)
 	    print_igmpv3_query(ndo, bp, len);
 	else {
-            ND_TCHECK_1(bp + 1);
-	    if (GET_U_1(bp + 1)) {
-		ND_PRINT(" v2");
-		if (GET_U_1(bp + 1) != 100)
-		    ND_PRINT(" [max resp time %u]", GET_U_1(bp + 1));
+            ND_TCHECK(bp[1]);
+	    if (bp[1]) {
+		ND_PRINT((ndo, " v2"));
+		if (bp[1] != 100)
+		    ND_PRINT((ndo, " [max resp time %d]", bp[1]));
 	    } else
-		ND_PRINT(" v1");
-            ND_TCHECK_4(bp + 4);
-	    if (GET_BE_U_4(bp + 4))
-                ND_PRINT(" [gaddr %s]", ipaddr_string(ndo, bp + 4));
+		ND_PRINT((ndo, " v1"));
+            ND_TCHECK2(bp[4], 4);
+	    if (EXTRACT_32BITS(&bp[4]))
+                ND_PRINT((ndo, " [gaddr %s]", ipaddr_string(ndo, &bp[4])));
             if (len != 8)
-                ND_PRINT(" [len %u]", len);
+                ND_PRINT((ndo, " [len %d]", len));
 	}
         break;
     case 0x12:
-        ND_TCHECK_4(bp + 4);
-        ND_PRINT("igmp v1 report %s", ipaddr_string(ndo, bp + 4));
+        ND_TCHECK2(bp[4], 4);
+        ND_PRINT((ndo, "igmp v1 report %s", ipaddr_string(ndo, &bp[4])));
         if (len != 8)
-            ND_PRINT(" [len %u]", len);
+            ND_PRINT((ndo, " [len %d]", len));
         break;
     case 0x16:
-        ND_TCHECK_4(bp + 4);
-        ND_PRINT("igmp v2 report %s", ipaddr_string(ndo, bp + 4));
+        ND_TCHECK2(bp[4], 4);
+        ND_PRINT((ndo, "igmp v2 report %s", ipaddr_string(ndo, &bp[4])));
         break;
     case 0x22:
-        ND_PRINT("igmp v3 report");
+        ND_PRINT((ndo, "igmp v3 report"));
 	print_igmpv3_report(ndo, bp, len);
         break;
     case 0x17:
-        ND_TCHECK_4(bp + 4);
-        ND_PRINT("igmp leave %s", ipaddr_string(ndo, bp + 4));
+        ND_TCHECK2(bp[4], 4);
+        ND_PRINT((ndo, "igmp leave %s", ipaddr_string(ndo, &bp[4])));
         break;
     case 0x13:
-        ND_PRINT("igmp dvmrp");
+        ND_PRINT((ndo, "igmp dvmrp"));
         if (len < 8)
-            ND_PRINT(" [len %u]", len);
+            ND_PRINT((ndo, " [len %d]", len));
         else
             dvmrp_print(ndo, bp, len);
         break;
     case 0x14:
-        ND_PRINT("igmp pimv1");
+        ND_PRINT((ndo, "igmp pimv1"));
         pimv1_print(ndo, bp, len);
         break;
     case 0x1e:
@@ -330,18 +324,18 @@ igmp_print(netdissect_options *ndo,
         print_mtrace(ndo, bp, len);
         break;
     default:
-        ND_PRINT("igmp-%u", GET_U_1(bp));
+        ND_PRINT((ndo, "igmp-%d", bp[0]));
         break;
     }
 
-    if (ndo->ndo_vflag && len >= 4 && ND_TTEST_LEN(bp, len)) {
+    if (ndo->ndo_vflag && len >= 4 && ND_TTEST2(bp[0], len)) {
         /* Check the IGMP checksum */
         vec[0].ptr = bp;
         vec[0].len = len;
         if (in_cksum(vec, 1))
-            ND_PRINT(" bad igmp cksum %x!", GET_BE_U_2(bp + 2));
+            ND_PRINT((ndo, " bad igmp cksum %x!", EXTRACT_16BITS(&bp[2])));
     }
     return;
 trunc:
-    nd_print_trunc(ndo);
+    ND_PRINT((ndo, "%s", tstr));
 }

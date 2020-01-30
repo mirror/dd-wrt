@@ -22,9 +22,9 @@
  */
 
 struct LAP {
-	nd_uint8_t	dst;
-	nd_uint8_t	src;
-	nd_uint8_t	type;
+	uint8_t		dst;
+	uint8_t		src;
+	uint8_t		type;
 };
 #define lapShortDDP	1	/* short DDP type */
 #define lapDDP		2	/* DDP type */
@@ -33,22 +33,22 @@ struct LAP {
 /* Datagram Delivery Protocol */
 
 struct atDDP {
-	nd_uint16_t	length;
-	nd_uint16_t	checksum;
-	nd_uint16_t	dstNet;
-	nd_uint16_t	srcNet;
-	nd_uint8_t	dstNode;
-	nd_uint8_t	srcNode;
-	nd_uint8_t	dstSkt;
-	nd_uint8_t	srcSkt;
-	nd_uint8_t	type;
+	uint16_t	length;
+	uint16_t	checksum;
+	uint16_t	dstNet;
+	uint16_t	srcNet;
+	uint8_t		dstNode;
+	uint8_t		srcNode;
+	uint8_t		dstSkt;
+	uint8_t		srcSkt;
+	uint8_t		type;
 };
 
 struct atShortDDP {
-	nd_uint16_t	length;
-	nd_uint8_t	dstSkt;
-	nd_uint8_t	srcSkt;
-	nd_uint8_t	type;
+	uint16_t	length;
+	uint8_t		dstSkt;
+	uint8_t		srcSkt;
+	uint8_t		type;
 };
 
 #define	ddpMaxWKS	0x7F
@@ -72,10 +72,10 @@ struct atShortDDP {
 /* AppleTalk Transaction Protocol */
 
 struct atATP {
-	nd_uint8_t	control;
-	nd_uint8_t	bitmap;
-	nd_uint16_t	transID;
-	nd_uint32_t	userData;
+	uint8_t		control;
+	uint8_t		bitmap;
+	uint16_t	transID;
+	int32_t		userData;
 };
 
 #define	atpReqCode	0x40
@@ -93,8 +93,8 @@ struct atATP {
 /* AppleTalk Echo Protocol */
 
 struct atEcho {
-	nd_uint8_t	echoFunction;
-	nd_uint8_t	echoData[1];	/* Should be [], C99-style */
+	uint8_t		echoFunction;
+	uint8_t		*echoData;
 };
 
 #define echoSkt		4		/* the echoer socket */
@@ -106,15 +106,15 @@ struct atEcho {
 /* Name Binding Protocol */
 
 struct atNBP {
-	nd_uint8_t	control;
-	nd_uint8_t	id;
+	uint8_t		control;
+	uint8_t		id;
 };
 
 struct atNBPtuple {
-	nd_uint16_t	net;
-	nd_uint8_t	node;
-	nd_uint8_t	skt;
-	nd_uint8_t	enumerator;
+	uint16_t	net;
+	uint8_t		node;
+	uint8_t		skt;
+	uint8_t		enumerator;
 };
 
 #define	nbpBrRq		0x10
@@ -140,8 +140,8 @@ struct atNBPtuple {
 /* Zone Information Protocol */
 
 struct zipHeader {
-	nd_uint8_t		command;
-	nd_uint8_t		netcount;
+	uint8_t		command;
+	uint8_t		netcount;
 };
 
 #define	zipHeaderSize	2

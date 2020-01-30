@@ -13,25 +13,26 @@ dnl
 # config.sub.
 #
 
-AC_PREREQ(2.64)
-AC_INIT(tcpdump, m4_esyscmd_s([cat VERSION]))
-AC_CONFIG_SRCDIR(tcpdump.c)
+AC_PREREQ(2.61)
+AC_INIT(tcpdump.c)
 
 AC_CANONICAL_HOST
 
 AC_LBL_C_INIT_BEFORE_CC(V_INCLS)
-#
-# Try to enable as many C99 features as we can.
-# At minimum, we want C++/C99-style // comments.
-#
-AC_PROG_CC_C99
-if test "$ac_cv_prog_cc_c99" = "no"; then
-	AC_MSG_WARN([The C compiler does not support C99; there may be compiler errors])
-fi
+AC_PROG_CC
 AC_LBL_C_INIT(V_CCOPT, V_INCLS)
 AC_LBL_C_INLINE
+AC_C___ATTRIBUTE__
+if test "$ac_cv___attribute__" = "yes"; then
+	AC_C___ATTRIBUTE___UNUSED
+	AC_C___ATTRIBUTE___NORETURN_FUNCTION_POINTER
+	AC_C___ATTRIBUTE___FORMAT
+	if test "$ac_cv___attribute___format" = "yes"; then
+		AC_C___ATTRIBUTE___FORMAT_FUNCTION_POINTER
+	fi
+fi
 
-AC_CHECK_HEADERS(fcntl.h rpc/rpc.h rpc/rpcent.h net/if.h)
+AC_CHECK_HEADERS(fcntl.h rpc/rpc.h rpc/rpcent.h)
 AC_CHECK_HEADERS(net/pfvar.h, , , [#include <sys/types.h>
 #include <sys/socket.h>
 #include <net/if.h>])
@@ -44,12 +45,33 @@ if test "$ac_cv_header_net_pfvar_h" = yes; then
 		LOCALSRC="print-pflog.c $LOCALSRC"
 	fi
 fi
+AC_CHECK_HEADERS(netinet/if_ether.h, , , [#include <sys/types.h>
+#include <sys/socket.h>])
+if test "$ac_cv_header_netinet_if_ether_h" != yes; then
+	#
+	# The simple test didn't work.
+	# Do we need to include <net/if.h> first?
+	# Unset ac_cv_header_netinet_if_ether_h so we don't
+	# treat the previous failure as a cached value and
+	# suppress the next test.
+	#
+	AC_MSG_NOTICE([Rechecking with some additional includes])
+	unset ac_cv_header_netinet_if_ether_h
+	AC_CHECK_HEADERS(netinet/if_ether.h, , , [#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+struct mbuf;
+struct rtentry;
+#include <net/if.h>])
+fi
+
+AC_HEADER_TIME
 
 case "$host_os" in
 
 darwin*)
 	AC_ARG_ENABLE(universal,
-	AC_HELP_STRING([--disable-universal],[don't build universal on macOS]))
+	AC_HELP_STRING([--disable-universal],[don't build universal on OS X]))
 	if test "$enable_universal" != "no"; then
 		case "$host_os" in
 
@@ -147,9 +169,9 @@ fi
 
 AC_MSG_CHECKING([whether to enable the possibly-buggy SMB printer])
 AC_ARG_ENABLE(smb,
-[  --enable-smb            enable possibly-buggy SMB printer [default=yes]
+[  --enable-smb            enable possibly-buggy SMB printer [default=no]
   --disable-smb           disable possibly-buggy SMB printer],,
-   enableval=yes)
+   enableval=no)
 case "$enableval" in
 yes)	AC_MSG_RESULT(yes)
 	AC_DEFINE(ENABLE_SMB, 1,
@@ -198,32 +220,14 @@ AC_ARG_WITH(sandbox-capsicum,
 # XXX - do we need to check for all of them, or are there some that, if
 # present, imply others are present?
 #
-if test ! -z "$with_sandbox_capsicum" && test "$with_sandbox_capsicum" != "no" ; then
-	#
-	# First, make sure we have the required header.
-	#
-	AC_CHECK_HEADER(sys/capsicum.h,
-	[
-		#
-		# We do; now make sure we have the required functions.
-		#
-		AC_CHECK_FUNCS(cap_enter cap_rights_limit cap_ioctls_limit openat,
-		    ac_lbl_capsicum_function_seen=yes,
-		    ac_lbl_capsicum_function_not_seen=yes)
-	])
-	AC_CHECK_LIB(casper, cap_init, LIBS="$LIBS -lcasper")
-	AC_CHECK_LIB(cap_dns, cap_gethostbyaddr, LIBS="$LIBS -lcap_dns")
+if test ! -z "$with_sandbox-capsicum" && test "$with_sandbox-capsicum" != "no" ; then
+	AC_CHECK_FUNCS(cap_enter cap_rights_limit cap_ioctls_limit openat,
+	    ac_lbl_capsicum_function_seen=yes,
+	    ac_lbl_capsicum_function_not_seen=yes)
 fi
 AC_MSG_CHECKING([whether to sandbox using capsicum])
 if test "x$ac_lbl_capsicum_function_seen" = "xyes" -a "x$ac_lbl_capsicum_function_not_seen" != "xyes"; then
 	AC_DEFINE(HAVE_CAPSICUM, 1, [capsicum support available])
-	AC_MSG_RESULT(yes)
-else
-	AC_MSG_RESULT(no)
-fi
-AC_MSG_CHECKING([whether to sandbox using Casper library])
-if test "x$ac_cv_lib_casper_cap_init" = "xyes" -a "x$ac_cv_lib_cap_dns_cap_gethostbyaddr" = "xyes"; then
-	AC_DEFINE(HAVE_CASPER, 1, [Casper support available])
 	AC_MSG_RESULT(yes)
 else
 	AC_MSG_RESULT(no)
@@ -249,12 +253,8 @@ AC_COMPILE_IFELSE(
 	[[
 /* AF_INET6 available check */
 #include <sys/types.h>
-#ifdef _WIN32
-#include <ws2tcpip.h>
-#else
 #include <sys/socket.h>
 #include <netinet/in.h>
-#endif
 #ifdef AF_INET6
 void
 foo(struct in6_addr *addr)
@@ -385,48 +385,9 @@ if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
 	fi
 fi
 
-AC_SEARCH_LIBS(dnet_htoa, dnet,
-[
-	AC_DEFINE(HAVE_DNET_HTOA, 1,
-	    [define if you have the dnet_htoa function])
-	#
-	# OK, we have dnet_htoa().  Do we have netdnet/dnetdb.h?
-	#
-	AC_CHECK_HEADERS(netdnet/dnetdb.h)
-	if test "$ac_cv_header_netdnet_dnetdb_h" = "yes"; then
-		#
-		# Yes.  Does it declare dnet_htoa()?
-		#
-		AC_CHECK_DECL(dnet_htoa,
-		[
-			# Yes.
-			AC_DEFINE(NETDNET_DNETDB_H_DECLARES_DNET_HTOA,,
-			    [Define to 1 if netenet/dnetdb.h declares `dnet_htoa'])
-		],,
-		[
-AC_INCLUDES_DEFAULT
-#include <netdnet/dnetdb.h>
-		])
-	fi
-
-	#
-	# Do we have netdnet/dn.h?
-	#
-	AC_CHECK_HEADERS(netdnet/dn.h)
-	if test "$ac_cv_header_netdnet_dn_h" = "yes"; then
-		#
-		# Yes.  Does it declare struct dn_naddr?
-		#
-		AC_CHECK_TYPES(struct dn_naddr,,,
-		[
-#include <netdnet/dn.h>
-		])
-	fi
-])
-
-AC_REPLACE_FUNCS(strlcat strlcpy strdup strsep getservent getopt_long)
+AC_REPLACE_FUNCS(vfprintf strlcat strlcpy strdup strsep getopt_long)
 AC_CHECK_FUNCS(fork vfork strftime)
-AC_CHECK_FUNCS(setlinebuf)
+AC_CHECK_FUNCS(setlinebuf alarm)
 
 needsnprintf=no
 AC_CHECK_FUNCS(vsnprintf snprintf,,
@@ -434,6 +395,8 @@ AC_CHECK_FUNCS(vsnprintf snprintf,,
 if test $needsnprintf = yes; then
 	AC_LIBOBJ(snprintf)
 fi
+
+AC_LBL_TYPE_SIGNAL
 
 AC_CHECK_LIB(rpc, main)		dnl It's unclear why we might need -lrpc
 
@@ -449,12 +412,11 @@ AC_LBL_LIBPCAP(V_PCAPDEP, V_INCLS)
 #
 # You are in a twisty little maze of UN*Xes, all different.
 # Some might not have ether_ntohost().
-# Some might have it and declare it in <net/ethernet.h>.
-# Some might have it and declare it in <netinet/ether.h>
-# Some might have it and declare it in <sys/ethernet.h>.
-# Some might have it and declare it in <arpa/inet.h>.
-# Some might have it and declare it in <netinet/if_ether.h>.
-# Some might have it and not declare it in any header file.
+# Some might have it, but not declare it in any header file.
+# Some might have it, but declare it in <netinet/if_ether.h>.
+# Some might have it, but declare it in <netinet/ether.h>
+# (And some might have it but document it as something declared in
+# <netinet/ethernet.h>, although <netinet/if_ether.h> appears to work.)
 #
 # Before you is a C compiler.
 #
@@ -486,114 +448,12 @@ AC_CHECK_FUNCS(ether_ntohost, [
 if test "$ac_cv_func_ether_ntohost" = yes -a \
     "$ac_cv_buggy_ether_ntohost" = "no"; then
 	#
-	# OK, we have ether_ntohost().  Is it declared in <net/ethernet.h>?
+	# OK, we have ether_ntohost().  Do we have <netinet/if_ether.h>?
 	#
-	# This test fails if we don't have <net/ethernet.h> or if we do
-	# but it doesn't declare ether_ntohost().
-	#
-	AC_CHECK_DECL(ether_ntohost,
-	    [
-		AC_DEFINE(NET_ETHERNET_H_DECLARES_ETHER_NTOHOST,,
-		    [Define to 1 if net/ethernet.h declares `ether_ntohost'])
-	    ],,
-	    [
-#include <net/ethernet.h>
-	    ])
-	#
-	# Did that succeed?
-	#
-	if test "$ac_cv_have_decl_ether_ntohost" != yes; then
+	if test "$ac_cv_header_netinet_if_ether_h" = yes; then
 		#
-		# No, how about <netinet/ether.h>, as on Linux?
+		# Yes.  Does it declare ether_ntohost()?
 		#
-		# This test fails if we don't have <netinet/ether.h>
-		# or if we do but it doesn't declare ether_ntohost().
-		#
-		# Unset ac_cv_have_decl_ether_ntohost so we don't
-		# treat the previous failure as a cached value and
-		# suppress the next test.
-		#
-		unset ac_cv_have_decl_ether_ntohost
-		AC_CHECK_DECL(ether_ntohost,
-		    [
-			AC_DEFINE(NETINET_ETHER_H_DECLARES_ETHER_NTOHOST,,
-			    [Define to 1 if netinet/ether.h declares `ether_ntohost'])
-		    ],,
-		    [
-#include <netinet/ether.h>
-		    ])
-	fi
-	#
-	# Did that succeed?
-	#
-	if test "$ac_cv_have_decl_ether_ntohost" != yes; then
-		#
-		# No, how about <sys/ethernet.h>, as on Solaris 10
-		# and later?
-		#
-		# This test fails if we don't have <sys/ethernet.h>
-		# or if we do but it doesn't declare ether_ntohost().
-		#
-		# Unset ac_cv_have_decl_ether_ntohost so we don't
-		# treat the previous failure as a cached value and
-		# suppress the next test.
-		#
-		unset ac_cv_have_decl_ether_ntohost
-		AC_CHECK_DECL(ether_ntohost,
-		    [
-			AC_DEFINE(SYS_ETHERNET_H_DECLARES_ETHER_NTOHOST,,
-			    [Define to 1 if sys/ethernet.h declares `ether_ntohost'])
-		    ],,
-		    [
-#include <sys/ethernet.h>
-		    ])
-	fi
-	#
-	# Did that succeed?
-	#
-	if test "$ac_cv_have_decl_ether_ntohost" != yes; then
-		#
-		# No, how about <arpa/inet.h>, as in AIX?
-		#
-		# This test fails if we don't have <arpa/inet.h>
-		# (if we have ether_ntohost(), we should have
-		# networking, and if we have networking, we should
-		# have <arpa/inet.h>) or if we do but it doesn't
-		# declare ether_ntohost().
-		#
-		# Unset ac_cv_have_decl_ether_ntohost so we don't
-		# treat the previous failure as a cached value and
-		# suppress the next test.
-		#
-		unset ac_cv_have_decl_ether_ntohost
-		AC_CHECK_DECL(ether_ntohost,
-		    [
-			AC_DEFINE(ARPA_INET_H_DECLARES_ETHER_NTOHOST,,
-			    [Define to 1 if arpa/inet.h declares `ether_ntohost'])
-		    ],,
-		    [
-#include <arpa/inet.h>
-		    ])
-	fi
-	#
-	# Did that succeed?
-	#
-	if test "$ac_cv_have_decl_ether_ntohost" != yes; then
-		#
-		# No, how about <netinet/if_ether.h>?
-		# On some platforms, it requires <net/if.h> and
-		# <netinet/in.h>, and we always include it with
-		# both of them, so test it with both of them.
-		#
-		# This test fails if we don't have <netinet/if_ether.h>
-		# and the headers we include before it, or if we do but
-		# <netinet/if_ether.h> doesn't declare ether_hostton().
-		#
-		# Unset ac_cv_have_decl_ether_ntohost so we don't
-		# treat the previous failure as a cached value and
-		# suppress the next test.
-		#
-		unset ac_cv_have_decl_ether_ntohost
 		AC_CHECK_DECL(ether_ntohost,
 		    [
 			AC_DEFINE(NETINET_IF_ETHER_H_DECLARES_ETHER_NTOHOST,,
@@ -602,45 +462,76 @@ if test "$ac_cv_func_ether_ntohost" = yes -a \
 		    [
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <net/if.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
+struct mbuf;
+struct rtentry;
+#include <net/if.h>
 #include <netinet/if_ether.h>
 		    ])
 	fi
 	#
-	# After all that, is ether_ntohost() declared?
+	# Did that succeed?
 	#
-	if test "$ac_cv_have_decl_ether_ntohost" = yes; then
+	if test "$ac_cv_have_decl_ether_ntohost" != yes; then
 		#
-		# Yes.
+		# No, how about <netinet/ether.h>, as on Linux?
 		#
-		AC_DEFINE(HAVE_DECL_ETHER_NTOHOST, 1,
-		    [Define to 1 if you have the declaration of `ether_ntohost'])
-	else
+		AC_CHECK_HEADERS(netinet/ether.h)
+		if test "$ac_cv_header_netinet_ether_h" = yes; then
+			#
+			# We have it - does it declare ether_ntohost()?
+			# Unset ac_cv_have_decl_ether_ntohost so we don't
+			# treat the previous failure as a cached value and
+			# suppress the next test.
+			#
+			unset ac_cv_have_decl_ether_ntohost
+			AC_CHECK_DECL(ether_ntohost,
+			    [
+				AC_DEFINE(NETINET_ETHER_H_DECLARES_ETHER_NTOHOST,,
+				    [Define to 1 if netinet/ether.h declares `ether_ntohost'])
+			    ],,
+			    [
+#include <netinet/ether.h>
+			    ])
+		fi
+	fi
+	#
+	# Is ether_ntohost() declared?
+	#
+	if test "$ac_cv_have_decl_ether_ntohost" != yes; then
 		#
 		# No, we'll have to declare it ourselves.
-		# Do we have "struct ether_addr" if we include
-		# <netinet/if_ether.h>?
+		# Do we have "struct ether_addr"?
 		#
 		AC_CHECK_TYPES(struct ether_addr,,,
 		    [
-			#include <sys/types.h>
-			#include <sys/socket.h>
-			#include <net/if.h>
-			#include <netinet/in.h>
-			#include <netinet/if_ether.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+struct mbuf;
+struct rtentry;
+#include <net/if.h>
+#include <netinet/if_ether.h>
 		    ])
+		AC_DEFINE(HAVE_DECL_ETHER_NTOHOST, 0,
+		    [Define to 1 if you have the declaration of `ether_ntohost', and to 0 if you
+don't.])
+	else
+		AC_DEFINE(HAVE_DECL_ETHER_NTOHOST, 1,
+		    [Define to 1 if you have the declaration of `ether_ntohost', and to 0 if you
+don't.])
 	fi
 fi
 
+# libdlpi is needed for Solaris 11 and later.
+AC_CHECK_LIB(dlpi, dlpi_walk, LIBS="$LIBS -ldlpi" LDFLAGS="-L/lib $LDFLAGS", ,-L/lib)
+
 dnl
-dnl Check for "pcap_list_datalinks()" and use a substitute version if
-dnl it's not present.  If it is present, check for "pcap_free_datalinks()";
-dnl if it's not present, we don't replace it for now.  (We could do so
-dnl on UN*X, but not on Windows, where hilarity ensues if a program
-dnl built with one version of the MSVC support library tries to free
-dnl something allocated by a library built with another version of
-dnl the MSVC support library.)
+dnl Check for "pcap_list_datalinks()", "pcap_set_datalink()",
+dnl and "pcap_datalink_name_to_val()", and use substitute versions
+dnl if they're not present.
 dnl
 AC_CHECK_FUNC(pcap_list_datalinks,
 	[
@@ -651,13 +542,7 @@ AC_CHECK_FUNC(pcap_list_datalinks,
 	[
 	    AC_LIBOBJ(datalinks)
 	])
-
-dnl
-dnl Check for "pcap_datalink_name_to_val()", and use a substitute
-dnl version if it's not present.  If it is present, check for
-dnl "pcap_datalink_val_to_description()", and if we don't have it,
-dnl use a substitute version.
-dnl
+AC_CHECK_FUNCS(pcap_set_datalink)
 AC_CHECK_FUNC(pcap_datalink_name_to_val,
 	[
 	    AC_DEFINE(HAVE_PCAP_DATALINK_NAME_TO_VAL, 1,
@@ -674,18 +559,22 @@ AC_CHECK_FUNC(pcap_datalink_name_to_val,
 	])
 
 dnl
-dnl Check for "pcap_set_datalink()"; you can't substitute for it if
-dnl it's absent (it has hooks into libpcap), so just define the
-dnl HAVE_ value if it's there.
-dnl
-AC_CHECK_FUNCS(pcap_set_datalink)
-
-dnl
 dnl Check for "pcap_breakloop()"; you can't substitute for it if
 dnl it's absent (it has hooks into the live capture routines),
 dnl so just define the HAVE_ value if it's there.
 dnl
 AC_CHECK_FUNCS(pcap_breakloop)
+
+dnl
+dnl Check for "pcap_dump_ftell()" and use a substitute version
+dnl if it's not present.
+dnl
+AC_CHECK_FUNC(pcap_dump_ftell,
+	AC_DEFINE(HAVE_PCAP_DUMP_FTELL, 1,
+	    [define if libpcap has pcap_dump_ftell()]),
+	[
+	    AC_LIBOBJ(pcap_dump_ftell)
+	])
 
 #
 # Do we have the new open API?  Check for pcap_create, and assume that,
@@ -710,18 +599,17 @@ fi
 # Check for a miscellaneous collection of functions which we use
 # if we have them.
 #
-AC_CHECK_FUNCS(pcap_findalldevs)
+AC_CHECK_FUNCS(pcap_findalldevs pcap_dump_flush pcap_lib_version pcap_setdirection pcap_set_immediate_mode)
 if test $ac_cv_func_pcap_findalldevs = "yes" ; then
-dnl Check for libpcap having pcap_findalldevs() but the pcap.h header
-dnl not having pcap_if_t; some versions of Mac OS X shipped with pcap.h
-dnl from 0.6 and libpcap 0.8, so that libpcap had pcap_findalldevs but
-dnl pcap.h didn't have pcap_if_t.
+dnl Check for Mac OS X, which may ship pcap.h from 0.6 but libpcap may
+dnl be 0.8; this means that lib has pcap_findalldevs but header doesn't
+dnl have pcap_if_t.
     savedcppflags="$CPPFLAGS"
     CPPFLAGS="$CPPFLAGS $V_INCLS"
     AC_CHECK_TYPES(pcap_if_t, , , [#include <pcap.h>])
     CPPFLAGS="$savedcppflags"
 fi
-AC_CHECK_FUNCS(pcap_dump_flush pcap_lib_version)
+
 if test $ac_cv_func_pcap_lib_version = "no" ; then
     AC_MSG_CHECKING(whether pcap_version is defined by libpcap)
     AC_TRY_LINK([],
@@ -739,9 +627,6 @@ if test $ac_cv_func_pcap_lib_version = "no" ; then
 	AC_MSG_RESULT(no)
     fi
 fi
-AC_CHECK_FUNCS(pcap_setdirection pcap_set_immediate_mode pcap_dump_ftell64)
-AC_CHECK_FUNCS(pcap_open pcap_findalldevs_ex)
-AC_REPLACE_FUNCS(pcap_dump_ftell)
 
 #
 # Check for special debugging functions
@@ -850,19 +735,23 @@ if test -f /dev/bpf0 ; then
 fi
 
 #
+# Make sure we have definitions for all the C99 specified-width types
+# (regardless of whether the environment is a C99 environment or not).
+#
+AC_TYPE_INT8_T
+AC_TYPE_INT16_T
+AC_TYPE_INT32_T
+AC_TYPE_INT64_T
+AC_TYPE_UINT8_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
+
+#
 # Make sure we have a definition for C99's uintptr_t (regardless of
 # whether the environment is a C99 environment or not).
 #
 AC_TYPE_UINTPTR_T
-
-#
-# Check whether we have pcap/pcap-inttypes.h.
-# If we do, we use that to get the C99 types defined.
-#
-savedcppflags="$CPPFLAGS"
-CPPFLAGS="$CPPFLAGS $V_INCLS"
-AC_CHECK_HEADERS(pcap/pcap-inttypes.h)
-CPPFLAGS="$savedcppflags"
 
 #
 # Define the old BSD specified-width types in terms of the C99 types;
@@ -893,10 +782,87 @@ AC_CHECK_TYPE([u_int64_t], ,
 #include <sys/types.h>
 ])
 
+#
+# Check for <inttypes.h>
+#
+AC_CHECK_HEADERS(inttypes.h,
+  [
+    #
+    # OK, we have inttypes.h, but does it define all the PRI[doxu]64 macros?
+    # Some systems have an inttypes.h that doesn't define all of them.
+    #
+    AC_MSG_CHECKING([[whether inttypes.h defines the PRI[doxu]64 macros]])
+    AC_COMPILE_IFELSE(
+      [
+	AC_LANG_SOURCE(
+	  [[
+	    #include <inttypes.h>
+	    #include <stdio.h>
+	    #include <sys/types.h>
+
+	    main()
+	    {
+	      printf("%" PRId64 "\n", (uint64_t)1);
+	      printf("%" PRIo64 "\n", (uint64_t)1);
+	      printf("%" PRIx64 "\n", (uint64_t)1);
+	      printf("%" PRIu64 "\n", (uint64_t)1);
+	    }
+	  ]])
+      ],
+      [
+	AC_MSG_RESULT(yes)
+	ac_lbl_inttypes_h_defines_formats=yes
+      ],
+      [
+	AC_MSG_RESULT(no)
+	ac_lbl_inttypes_h_defines_formats=no
+      ])
+  ],
+  [
+    #
+    # We don't have inttypes.h, so it obviously can't define those
+    # macros.
+    #
+    ac_lbl_inttypes_h_defines_formats=no
+  ])
+if test "$ac_lbl_inttypes_h_defines_formats" = no; then
+  AC_LBL_CHECK_64BIT_FORMAT(l,
+    [
+      AC_LBL_CHECK_64BIT_FORMAT(ll,
+        [
+          AC_LBL_CHECK_64BIT_FORMAT(L,
+	    [
+	      AC_LBL_CHECK_64BIT_FORMAT(q,
+	        [
+	          AC_MSG_ERROR([neither %llx nor %Lx nor %qx worked on a 64-bit integer])
+	        ])
+	    ])
+	])
+    ])
+fi
+
+#
+# Check for some headers introduced in later versions of libpcap
+# and used by some printers.
+#
+# Those headers use the {u_}intN_t types, so we must do this after
+# we check for what's needed to get them defined.
+#
+savedcppflags="$CPPFLAGS"
+CPPFLAGS="$CPPFLAGS $V_INCLS"
+AC_CHECK_HEADERS(pcap/bluetooth.h,,,[#include "netdissect-stdinc.h"])
+AC_CHECK_HEADERS(pcap/nflog.h,,,[#include "netdissect-stdinc.h"])
+AC_CHECK_HEADERS(pcap/usb.h,,,[#include "netdissect-stdinc.h"])
+CPPFLAGS="$savedcppflags"
+
 AC_PROG_RANLIB
 AC_CHECK_TOOL([AR], [ar])
 
 AC_LBL_DEVEL(V_CCOPT)
+
+AC_LBL_SOCKADDR_SA_LEN
+
+AC_LBL_UNALIGNED_ACCESS
 
 # Check for OpenSSL/libressl libcrypto
 AC_MSG_CHECKING(whether to use OpenSSL/libressl libcrypto)
@@ -947,7 +913,7 @@ if test "$want_libcrypto" != "no"; then
 	# El Capitan, probably because they don't want you writing
 	# nasty portable code that could run on other UN*Xes, they
 	# want you writing code that uses their Shiny New Crypto
-	# Library and that only runs on macOS.
+	# Library and that only runs on OS X.
 	#
 	AC_CHECK_HEADER(openssl/crypto.h,
 	[

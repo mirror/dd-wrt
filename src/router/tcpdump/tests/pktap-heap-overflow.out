@@ -1,2 +1,4 @@
-    1  05:27:35.808464432  [|pktap_if]
-    2  05:27:12.808595504  [|ppp_hdlc_if]
+[|pktap]
+[|ppp]
+
+EXIT CODE 00000100: dump:0 code: 1
