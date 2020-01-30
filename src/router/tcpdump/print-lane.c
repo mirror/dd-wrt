@@ -23,26 +23,27 @@
 /* \summary: ATM LANE printer */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
-#include "netdissect-stdinc.h"
+#include <netdissect-stdinc.h>
 
 #include "netdissect.h"
 #include "extract.h"
+#include "ether.h"
 
 struct lecdatahdr_8023 {
-  nd_uint16_t le_header;
-  nd_mac_addr h_dest;
-  nd_mac_addr h_source;
-  nd_uint16_t h_type;
+  uint16_t le_header;
+  uint8_t h_dest[ETHER_ADDR_LEN];
+  uint8_t h_source[ETHER_ADDR_LEN];
+  uint16_t h_type;
 };
 
 struct lane_controlhdr {
-  nd_uint16_t lec_header;
-  nd_uint8_t  lec_proto;
-  nd_uint8_t  lec_vers;
-  nd_uint16_t lec_opcode;
+  uint16_t lec_header;
+  uint8_t lec_proto;
+  uint8_t lec_vers;
+  uint16_t lec_opcode;
 };
 
 static const struct tok lecop2str[] = {
@@ -68,7 +69,7 @@ static const struct tok lecop2str[] = {
 static void
 lane_hdr_print(netdissect_options *ndo, const u_char *bp)
 {
-	ND_PRINT("lecid:%x ", GET_BE_U_2(bp));
+	ND_PRINT((ndo, "lecid:%x ", EXTRACT_16BITS(bp)));
 }
 
 /*
@@ -84,21 +85,19 @@ lane_print(netdissect_options *ndo, const u_char *p, u_int length, u_int caplen)
 {
 	const struct lane_controlhdr *lec;
 
-	ndo->ndo_protocol = "lane";
 	if (caplen < sizeof(struct lane_controlhdr)) {
-		nd_print_trunc(ndo);
+		ND_PRINT((ndo, "[|lane]"));
 		return;
 	}
 
 	lec = (const struct lane_controlhdr *)p;
-	if (GET_BE_U_2(lec->lec_header) == 0xff00) {
+	if (EXTRACT_16BITS(&lec->lec_header) == 0xff00) {
 		/*
 		 * LE Control.
 		 */
-		ND_PRINT("lec: proto %x vers %x %s",
-		    GET_U_1(lec->lec_proto),
-		    GET_U_1(lec->lec_vers),
-		    tok2str(lecop2str, "opcode-#%u", GET_BE_U_2(lec->lec_opcode)));
+		ND_PRINT((ndo, "lec: proto %x vers %x %s",
+		    lec->lec_proto, lec->lec_vers,
+		    tok2str(lecop2str, "opcode-#%u", EXTRACT_16BITS(&lec->lec_opcode))));
 		return;
 	}
 
@@ -119,7 +118,6 @@ lane_print(netdissect_options *ndo, const u_char *p, u_int length, u_int caplen)
 u_int
 lane_if_print(netdissect_options *ndo, const struct pcap_pkthdr *h, const u_char *p)
 {
-	ndo->ndo_protocol = "lane_if";
 	lane_print(ndo, p, h->len, h->caplen);
 
 	return (sizeof(struct lecdatahdr_8023));

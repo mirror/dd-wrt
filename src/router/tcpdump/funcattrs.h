@@ -35,8 +35,6 @@
 #ifndef lib_funcattrs_h
 #define lib_funcattrs_h
 
-#include "compiler-tests.h"
-
 /*
  * Attributes to apply to functions and their arguments, using various
  * compiler-specific extensions.
@@ -67,10 +65,10 @@
  * declaration, as the MSVC version has to go before the declaration.)
  */
 #if __has_attribute(noreturn) \
-    || ND_IS_AT_LEAST_GNUC_VERSION(2,5) \
-    || ND_IS_AT_LEAST_SUNC_VERSION(5,9) \
-    || ND_IS_AT_LEAST_XL_C_VERSION(10,1) \
-    || ND_IS_AT_LEAST_HP_C_VERSION(6,10)
+    || (defined(__GNUC__) && ((__GNUC__ * 100 + __GNUC_MINOR__) >= 205)) \
+    || (defined(__SUNPRO_C) && (__SUNPRO_C >= 0x590)) \
+    || (defined(__xlC__) && __xlC__ >= 0x0A01) \
+    || (defined(__HP_aCC) && __HP_aCC >= 61000)
   /*
    * Compiler with support for __attribute((noreturn)), or GCC 2.5 and
    * later, or Solaris Studio 12 (Sun C 5.9) and later, or IBM XL C 10.1
@@ -78,30 +76,13 @@
    * HP aCC A.06.10 and later.
    */
   #define NORETURN __attribute((noreturn))
-
-  /*
-   * However, GCC didn't support that for function *pointers* until GCC
-   * 4.1.0; see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=3481.
-   *
-   * Sun C/Oracle Studio C doesn't seem to support it, either.
-   */
-  #if (defined(__GNUC__) && ((__GNUC__ * 100 + __GNUC_MINOR__) < 401)) \
-      || (defined(__SUNPRO_C))
-    #define NORETURN_FUNCPTR
-  #else
-    #define NORETURN_FUNCPTR __attribute((noreturn))
-  #endif
 #elif defined(_MSC_VER)
   /*
    * MSVC.
-   * It doesn't allow __declspec(noreturn) to be applied to function
-   * pointers.
    */
   #define NORETURN __declspec(noreturn)
-  #define NORETURN_FUNCPTR
 #else
   #define NORETURN
-  #define NORETURN_FUNCPTR
 #endif
 
 /*
@@ -111,28 +92,17 @@
  * string".
  */
 #if __has_attribute(__format__) \
-    || ND_IS_AT_LEAST_GNUC_VERSION(2,3) \
-    || ND_IS_AT_LEAST_XL_C_VERSION(10,1) \
-    || ND_IS_AT_LEAST_HP_C_VERSION(6,10)
+    || (defined(__GNUC__) && ((__GNUC__ * 100 + __GNUC_MINOR__) >= 203)) \
+    || (defined(__xlC__) && __xlC__ >= 0x0A01) \
+    || (defined(__HP_aCC) && __HP_aCC >= 61000)
   /*
    * Compiler with support for it, or GCC 2.3 and later, or IBM XL C 10.1
    * and later (do any earlier versions of XL C support this?),
    * or HP aCC A.06.10 and later.
    */
   #define PRINTFLIKE(x,y) __attribute__((__format__(__printf__,x,y)))
-
-  /*
-   * However, GCC didn't support that for function *pointers* until GCC
-   * 4.1.0; see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=3481.
-   */
-  #if (defined(__GNUC__) && ((__GNUC__ * 100 + __GNUC_MINOR__) < 401))
-    #define PRINTFLIKE_FUNCPTR(x,y)
-  #else
-    #define PRINTFLIKE_FUNCPTR(x,y) __attribute__((__format__(__printf__,x,y)))
-  #endif
 #else
   #define PRINTFLIKE(x,y)
-  #define PRINTFLIKE_FUNCPTR(x,y)
 #endif
 
 /*

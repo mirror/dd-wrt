@@ -1,2 +1,3 @@
-    1  10:23:33.663606 IP6, wrong link-layer encapsulation (invalid)
-EXIT CODE 00000100
+IP6, wrong link-layer encapsulation 
+
+EXIT CODE 00000100: dump:0 code: 1

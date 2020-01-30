@@ -456,13 +456,13 @@ xyzprintf (struct state *state, const char *char_format, va_list ap)
 
 #ifndef HAVE_SNPRINTF
 int
-nd_snprintf (char *str, size_t sz, const char *format, ...)
+snprintf (char *str, size_t sz, const char *format, ...)
 {
   va_list args;
   int ret;
 
   va_start(args, format);
-  ret = nd_vsnprintf (str, sz, format, args);
+  ret = vsnprintf (str, sz, format, args);
 
 #ifdef PARANOIA
   {
@@ -518,13 +518,13 @@ asprintf (char **ret, const char *format, ...)
 
 #ifndef HAVE_ASNPRINTF
 int
-nd_asnprintf (char **ret, size_t max_sz, const char *format, ...)
+asnprintf (char **ret, size_t max_sz, const char *format, ...)
 {
   va_list args;
   int val;
 
   va_start(args, format);
-  val = nd_vasnprintf (ret, max_sz, format, args);
+  val = vasnprintf (ret, max_sz, format, args);
 
 #ifdef PARANOIA
   {
@@ -550,14 +550,14 @@ nd_asnprintf (char **ret, size_t max_sz, const char *format, ...)
 int
 vasprintf (char **ret, const char *format, va_list args)
 {
-  return nd_vasnprintf (ret, 0, format, args);
+  return vasnprintf (ret, 0, format, args);
 }
 #endif
 
 
 #ifndef HAVE_VASNPRINTF
 int
-nd_vasnprintf (char **ret, size_t max_sz, const char *format, va_list args)
+vasnprintf (char **ret, size_t max_sz, const char *format, va_list args)
 {
   int st;
   size_t len;
@@ -600,7 +600,7 @@ nd_vasnprintf (char **ret, size_t max_sz, const char *format, va_list args)
 
 #ifndef HAVE_VSNPRINTF
 int
-nd_vsnprintf (char *str, size_t sz, const char *format, va_list args)
+vsnprintf (char *str, size_t sz, const char *format, va_list args)
 {
   struct state state;
   int ret;

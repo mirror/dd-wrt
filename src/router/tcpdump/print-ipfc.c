@@ -24,44 +24,46 @@
 /* specification: RFC 2625 */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
-#include "netdissect-stdinc.h"
+#include <netdissect-stdinc.h>
 
 #include <string.h>
 
 #include "netdissect.h"
 #include "addrtoname.h"
 
+#include "ether.h"
 
 struct ipfc_header {
-	nd_byte ipfc_dhost[2+MAC_ADDR_LEN];
-	nd_byte ipfc_shost[2+MAC_ADDR_LEN];
+	u_char  ipfc_dhost[8];
+	u_char  ipfc_shost[8];
 };
 
 #define IPFC_HDRLEN 16
 
 /* Extract src, dst addresses */
-static void
+static inline void
 extract_ipfc_addrs(const struct ipfc_header *ipfcp, char *ipfcsrc,
-		   char *ipfcdst)
+    char *ipfcdst)
 {
 	/*
 	 * We assume that, as per RFC 2625, the lower 48 bits of the
 	 * source and destination addresses are MAC addresses.
 	 */
-	memcpy(ipfcdst, (const char *)&ipfcp->ipfc_dhost[2], MAC_ADDR_LEN);
-	memcpy(ipfcsrc, (const char *)&ipfcp->ipfc_shost[2], MAC_ADDR_LEN);
+	memcpy(ipfcdst, (const char *)&ipfcp->ipfc_dhost[2], 6);
+	memcpy(ipfcsrc, (const char *)&ipfcp->ipfc_shost[2], 6);
 }
 
 /*
  * Print the Network_Header
  */
-static void
+static inline void
 ipfc_hdr_print(netdissect_options *ndo,
-	       const struct ipfc_header *ipfcp _U_, u_int length,
-	       const u_char *ipfcsrc, const u_char *ipfcdst)
+	   register const struct ipfc_header *ipfcp _U_,
+	   register u_int length, register const u_char *ipfcsrc,
+	   register const u_char *ipfcdst)
 {
 	const char *srcname, *dstname;
 
@@ -83,32 +85,32 @@ ipfc_hdr_print(netdissect_options *ndo,
 	 * so, for captures following this specification, the upper 16
 	 * bits should be 0x1000, followed by a MAC address.
 	 */
-	ND_PRINT("%s > %s, length %u: ", srcname, dstname, length);
+	ND_PRINT((ndo, "%s > %s, length %u: ", srcname, dstname, length));
 }
 
 static u_int
 ipfc_print(netdissect_options *ndo, const u_char *p, u_int length, u_int caplen)
 {
 	const struct ipfc_header *ipfcp = (const struct ipfc_header *)p;
-	nd_mac_addr srcmac, dstmac;
+	struct ether_header ehdr;
 	struct lladdr_info src, dst;
 	int llc_hdrlen;
 
-	ndo->ndo_protocol = "ipfc";
-	if (caplen < IPFC_HDRLEN)
-		goto trunc;
+	if (caplen < IPFC_HDRLEN) {
+		ND_PRINT((ndo, "[|ipfc]"));
+		return (caplen);
+	}
 	/*
 	 * Get the network addresses into a canonical form
 	 */
-	ND_TCHECK_SIZE(ipfcp);
-	extract_ipfc_addrs(ipfcp, (char *)srcmac, (char *)dstmac);
+	extract_ipfc_addrs(ipfcp, (char *)ESRC(&ehdr), (char *)EDST(&ehdr));
 
 	if (ndo->ndo_eflag)
-		ipfc_hdr_print(ndo, ipfcp, length, srcmac, dstmac);
+		ipfc_hdr_print(ndo, ipfcp, length, ESRC(&ehdr), EDST(&ehdr));
 
-	src.addr = srcmac;
+	src.addr = ESRC(&ehdr);
 	src.addr_string = etheraddr_string;
-	dst.addr = dstmac;
+	dst.addr = EDST(&ehdr);
 	dst.addr_string = etheraddr_string;
 
 	/* Skip over Network_Header */
@@ -128,9 +130,6 @@ ipfc_print(netdissect_options *ndo, const u_char *p, u_int length, u_int caplen)
 		llc_hdrlen = -llc_hdrlen;
 	}
 	return (IPFC_HDRLEN + llc_hdrlen);
-trunc:
-	nd_print_trunc(ndo);
-	return caplen;
 }
 
 /*
@@ -140,8 +139,7 @@ trunc:
  * is the number of bytes actually captured.
  */
 u_int
-ipfc_if_print(netdissect_options *ndo, const struct pcap_pkthdr *h, const u_char *p)
+ipfc_if_print(netdissect_options *ndo, const struct pcap_pkthdr *h, register const u_char *p)
 {
-	ndo->ndo_protocol = "ipfc_if";
 	return (ipfc_print(ndo, p, h->len, h->caplen));
 }
