@@ -1501,7 +1501,7 @@ int ksmbd_vfs_fiemap(struct ksmbd_file *fp, u64 start, u64 length,
 	struct inode *inode = FP_INODE(fp);
 	struct super_block *sb = inode->i_sb;
 	struct fiemap_extent_info fieinfo = { 0, };
-	u64 maxbytes = (u64) sb->s_maxbytes, extent_len;
+	u64 maxbytes = (u64) sb->s_maxbytes, extent_len, end;
 	int ret = 0;
 	struct file_allocated_range_buffer *range;
 	struct fiemap_extent *extents;
@@ -1530,22 +1530,44 @@ int ksmbd_vfs_fiemap(struct ksmbd_file *fp, u64 start, u64 length,
 	range->file_offset = cpu_to_le64(start);
 	range->length = 0;
 
-	while (length > 0) {
+	end = start + length;
+	*out_count = 0;
+
+	while (start < end) {
 		ret = inode->i_op->fiemap(inode, &fieinfo, start, length);
 		if (ret)
 			goto out;
+		else if (fieinfo.fi_extents_mapped == 0) {
+			if (le64_to_cpu(range->length))
+				*out_count = range_idx + 1;
+			else
+				*out_count = range_idx;
+			goto out;
+		}
 
 		extents = (struct fiemap_extent *)(fieinfo.fi_extents_start);
 		for (i = 0; i < fieinfo.fi_extents_mapped; i++) {
 			if (extents[i].fe_logical <=
 					le64_to_cpu(range->file_offset) +
 					le64_to_cpu(range->length)) {
-				extent_len =
-					extents[i].fe_length - (
-					le64_to_cpu(range->file_offset) -
-					extents[i].fe_logical);
-				range->length += cpu_to_le64(extent_len);
+				length = end - le64_to_cpu(range->file_offset);
+				extent_len = extents[i].fe_length;
+				if (extents[i].fe_logical <
+					le64_to_cpu(range->file_offset)) {
+					u64 first_half =
+						le64_to_cpu(range->file_offset)
+						- extents[i].fe_logical;
+					if (first_half > extent_len)
+						continue;
+					extent_len -= first_half;
+				}
+				extent_len = min_t(u64, extent_len,
+						length);
+				le64_add_cpu(&range->length,
+						extent_len);
 			} else {
+				if (extents[i].fe_logical >= end)
+					break;
 				/* skip this increment if the range is
 				 * not initialized
 				 */
@@ -1556,28 +1578,28 @@ int ksmbd_vfs_fiemap(struct ksmbd_file *fp, u64 start, u64 length,
 					ret = -E2BIG;
 					goto out;
 				}
+
+				length = end - extents[i].fe_logical;
+				extent_len = min_t(u64, extents[i].fe_length,
+						length);
+
 				range = ranges + range_idx;
 				range->file_offset =
 					cpu_to_le64(extents[i].fe_logical);
-				extent_len = extents[i].fe_length;
 				range->length = cpu_to_le64(extent_len);
 			}
 
 			if ((extents[i].fe_flags & FIEMAP_EXTENT_LAST) ||
-				extent_len >= length) {
-				if (extent_len > length) {
-					u64 last_len =
-						le64_to_cpu(range->length) -
-						(extent_len - length);
-					range->length = cpu_to_le64(last_len);
-				}
+					le64_to_cpu(range->file_offset) +
+					le64_to_cpu(range->length) >= end) {
 				*out_count = range_idx + 1;
 				goto out;
 			}
-			length -= extent_len;
-			start += length;
 		}
 
+		start = cpu_to_le64(range->file_offset) +
+			cpu_to_le64(range->length);
+		length = end - start;
 	}
 
 out:
