@@ -4,7 +4,7 @@
 #CC=~/buildroot/staging_dir_mipsel/bin/mipsel-linux-gcc
 include $(TOP)/.config
 
-LIBS=-L../libpcap -lpcap -lcrypt -lnvram -lutils -lshutils -lwireless
+LIBS=-lcrypt -lnvram -lutils -lshutils -lwireless
 ifeq ($(CONFIG_ATH9K),y)
 LIBS += -L$(TOP)/libnl-tiny -lnl-tiny
 endif
