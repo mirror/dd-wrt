@@ -6,7 +6,7 @@ libpcap-configure:
 		--exec-prefix=/usr --bindir=/usr/bin --sbindir=/usr/sbin \
 		--libexecdir=/usr/lib --sysconfdir=/etc --datadir=/usr/share \
 		--localstatedir=/var --mandir=/usr/man --infodir=/usr/info \
-		--disable-nls --enabled-shared --disable-static \
+		--disable-nls --disable-static \
 		--disable-yydebug --enable-ipv6 --with-build-cc=gcc \
 		--with-pcap=linux --without-septel --without-dag \
 		--disable-canusb --disable-can --disable-bluetooth \
