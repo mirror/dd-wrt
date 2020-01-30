@@ -22,6 +22,13 @@ define kernelfeatures
 	fi
 	if [ "$(CONFIG_SAMBA)" != "y" ]; then \
 		sed -i 's/\CONFIG_CIFS=m/# CONFIG_CIFS is not set/g' $(LINUXDIR)/.config; \
+	else \
+		echo "CONFIG_FSCACHE=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_FSCACHE_STATS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_FSCACHE_HISTOGRAM is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_FSCACHE_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_FSCACHE_OBJECT_LIST is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_CACHEFILES is not set" >> $(LINUXDIR)/.config; \	
 	fi
 	if [ "$(CONFIG_WPA3)" = "y" ]; then \
 		sed -i 's/\# CONFIG_CRYPTO_GCM is not set/CONFIG_CRYPTO_GCM=m/g' $(LINUXDIR)/.config; \
