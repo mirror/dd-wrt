@@ -16,7 +16,7 @@ libpcap:
 	$(MAKE) -C libpcap CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB)
 ifeq ($(CONFIG_LIBPCAP_SHARED),y)
 	$(MAKE) -C libpcap CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) libpcap.so 
-	-cd libpcap ; ln -s libpcap.so.1.9.0 libpcap.so
+	-cd libpcap ; ln -s libpcap.so.1.9.1 libpcap.so
 	-cd libpcap ; ln -s libpcap.so libpcap.so.1
 else
 	$(MAKE) -C libpcap CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) libpcap.a 
