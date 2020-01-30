@@ -20,26 +20,18 @@
 /* \summary: Bluetooth printer */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
-#include "netdissect-stdinc.h"
+#include <netdissect-stdinc.h>
 
 #include "netdissect.h"
 #include "extract.h"
 
-#ifdef DLT_BLUETOOTH_HCI_H4_WITH_PHDR
+#if defined(DLT_BLUETOOTH_HCI_H4_WITH_PHDR) && defined(HAVE_PCAP_BLUETOOTH_H)
+#include <pcap/bluetooth.h>
 
-/*
- * Header prepended by libpcap to each bluetooth h4 frame;
- * the direction field is in network byte order.
- */
-typedef struct _bluetooth_h4_header {
-	nd_uint32_t direction; /* if first bit is set direction is incoming */
-} bluetooth_h4_header;
-
-#define	BT_HDRLEN sizeof(bluetooth_h4_header)
-
+#define	BT_HDRLEN sizeof(pcap_bluetooth_h4_header)
 /*
  * This is the top level routine of the printer.  'p' points
  * to the bluetooth header of the packet, 'h->ts' is the timestamp,
@@ -51,26 +43,29 @@ bt_if_print(netdissect_options *ndo, const struct pcap_pkthdr *h, const u_char *
 {
 	u_int length = h->len;
 	u_int caplen = h->caplen;
-	const bluetooth_h4_header* hdr = (const bluetooth_h4_header*)p;
+	const pcap_bluetooth_h4_header* hdr = (const pcap_bluetooth_h4_header*)p;
 
-	ndo->ndo_protocol = "bluetooth";
-	nd_print_protocol(ndo);
-	if (caplen < BT_HDRLEN)
-		goto trunc;
+	if (caplen < BT_HDRLEN) {
+		ND_PRINT((ndo, "[|bt]"));
+		return (BT_HDRLEN);
+	}
 	caplen -= BT_HDRLEN;
 	length -= BT_HDRLEN;
 	p += BT_HDRLEN;
-	ND_TCHECK_4(hdr->direction);
 	if (ndo->ndo_eflag)
-		ND_PRINT(", hci length %u, direction %s", length,
-			 (GET_BE_U_4(hdr->direction)&0x1) ? "in" : "out");
+		ND_PRINT((ndo, "hci length %d, direction %s, ", length, (EXTRACT_32BITS(&hdr->direction)&0x1)?"in":"out"));
 
 	if (!ndo->ndo_suppress_default_print)
 		ND_DEFAULTPRINT(p, caplen);
-	return (BT_HDRLEN);
 
-trunc:
-	nd_print_trunc(ndo);
 	return (BT_HDRLEN);
 }
 #endif
+
+
+/*
+ * Local Variables:
+ * c-style: whitesmith
+ * c-basic-offset: 8
+ * End:
+ */

@@ -1,12 +1,16 @@
-This file lists people who have contributed to tcpdump.
+This file lists people who have contributed to tcpdump:
 
-The current maintainers (in alphabetical order):
+The current maintainers:
+    Bill Fenner                   <fenner at research dot att dot com>
     Denis Ovsienko                <denis at ovsienko dot info>
-    Francois-Xavier Le Bail       <devel dot fx dot lebail at orange dot fr>
+    Fulvio Risso                  <risso at polito dot it>
     Guy Harris                    <guy at alum dot mit dot edu>
+    Hannes Gredler                <hannes at gredler dot at>
     Michael Richardson            <mcr at sandelman dot ottawa dot on dot ca>
+    Francois-Xavier Le Bail       <fx dot lebail at yahoo dot com>
 
-Additional people who have contributed patches (in alphabetical order):
+Additional people who have contributed patches:
+
     Aaron Campbell                <aaron at arbor dot net>
     A Costa                       <agcosta at gis dot net>
     Albert Chin                   <china at thewrittenword dot com>
@@ -93,7 +97,6 @@ Additional people who have contributed patches (in alphabetical order):
     Jacek Tobiasz                 <Jacek dot Tobiasz at atm dot com dot pl>
     Jakob Schlyter                <jakob at openbsd dot org>
     Jamal Hadi Salim              <hadi at cyberus dot ca>
-    James Ko                      <jck at exegin dot com>
     Jan Oravec                    <wsx at wsx6 dot net>
     Jason R. Thorpe               <thorpej at netbsd dot org>
     Jefferson Ogata               <jogata at nodc dot noaa dot gov>
@@ -123,7 +126,7 @@ Additional people who have contributed patches (in alphabetical order):
     Krzysztof Halasa              <khc at pm dot waw dot pl>
     Larry Lile                    <lile at stdio dot com>
     Lennert Buytenhek             <buytenh at gnu dot org>
-    Loganaden Velvindron          <logan at cyberstorm dot mu>
+    Loganaden Velvindron          <logan at elandsys dot com>
     Loris Degioanni               <loris at netgroup-serv dot polito dot it>
     Love Hörnquist-Åstrand        <lha at stacken dot kth dot se>
     Lucas C. Villa Real           <lucasvr at us dot ibm dot com>
@@ -158,7 +161,6 @@ Additional people who have contributed patches (in alphabetical order):
     Nickolai Zeldovich            <kolya at MIT dot EDU>
     Nicolas Ferrero               <toorop at babylo dot net>
     Niels Provos                  <provos at openbsd dot org>
-    Nikhil AP                     <nikhilap at arista dot com>
     Noritoshi Demizu              <demizu at users dot sourceforge dot net>
     Olaf Kirch                    <okir at caldera dot de>
     Ola Martin Lykkja             <ola dot lykkja at q-free dot com>
@@ -232,8 +234,5 @@ The original LBL crew:
     Craig Leres
     Van Jacobson
 
-Past maintainers (in alphabetical order):
-    Bill Fenner                   <fenner at research dot att dot com>
-    Fulvio Risso                  <risso at polito dot it>
-    Hannes Gredler                <hannes at gredler dot at>
-    Jun-ichiro itojun Hagino      <itojun at iijlab dot net>		Also see: http://www.wide.ad.jp/itojun-award/
+Past maintainers:
+    Jun-ichiro itojun Hagino         <itojun at iijlab dot net>		Also see: http://www.wide.ad.jp/itojun-award/

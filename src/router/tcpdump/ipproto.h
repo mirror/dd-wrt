@@ -36,7 +36,7 @@
  */
 
 extern const struct tok ipproto_values[];
-extern const char *netdb_protoname (const uint8_t);
+extern const char *netdb_protoname (const nd_uint8_t);
 
 #ifndef IPPROTO_IP
 #define	IPPROTO_IP		0		/* dummy for IP */
@@ -130,7 +130,10 @@ extern const char *netdb_protoname (const uint8_t);
 #define IPPROTO_IPCOMP		108
 #endif
 #ifndef IPPROTO_VRRP
-#define IPPROTO_VRRP		112 /* See also CARP. */
+#define IPPROTO_VRRP		112
+#endif
+#ifndef IPPROTO_CARP
+#define IPPROTO_CARP		112
 #endif
 #ifndef IPPROTO_PGM
 #define IPPROTO_PGM             113

@@ -1,14 +1,15 @@
 /* \summary: Solaris DLT_IPNET printer */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
-#include "netdissect-stdinc.h"
+#include <netdissect-stdinc.h>
 
 #include "netdissect.h"
 #include "extract.h"
 
+static const char tstr[] = "[|ipnet]";
 
 typedef struct ipnet_hdr {
 	nd_uint8_t	iph_version;
@@ -32,32 +33,32 @@ static const struct tok ipnet_values[] = {
 	{ 0,			NULL }
 };
 
-static void
+static inline void
 ipnet_hdr_print(netdissect_options *ndo, const u_char *bp, u_int length)
 {
 	const ipnet_hdr_t *hdr;
 	hdr = (const ipnet_hdr_t *)bp;
 
-	ND_TCHECK_SIZE(hdr);
-	ND_PRINT("%u > %u", GET_BE_U_4(hdr->iph_zsrc),
-		  GET_BE_U_4(hdr->iph_zdst));
+	ND_TCHECK(*hdr);
+	ND_PRINT((ndo, "%d > %d", EXTRACT_32BITS(hdr->iph_zsrc),
+		  EXTRACT_32BITS(hdr->iph_zdst)));
 
 	if (!ndo->ndo_qflag) {
-		ND_PRINT(", family %s (%u)",
+		ND_PRINT((ndo,", family %s (%d)",
                           tok2str(ipnet_values, "Unknown",
-                                  GET_U_1(hdr->iph_family)),
-                          GET_U_1(hdr->iph_family));
+                                  EXTRACT_8BITS(&hdr->iph_family)),
+                          EXTRACT_8BITS(&hdr->iph_family)));
         } else {
-		ND_PRINT(", %s",
+		ND_PRINT((ndo,", %s",
                           tok2str(ipnet_values,
                                   "Unknown Ethertype (0x%04x)",
-				  GET_U_1(hdr->iph_family)));
+				  EXTRACT_8BITS(&hdr->iph_family))));
         }
 
-	ND_PRINT(", length %u: ", length);
+	ND_PRINT((ndo, ", length %u: ", length));
 	return;
 trunc:
-	nd_print_trunc(ndo);
+	ND_PRINT((ndo, " %s", tstr));
 }
 
 static void
@@ -65,7 +66,6 @@ ipnet_print(netdissect_options *ndo, const u_char *p, u_int length, u_int caplen
 {
 	const ipnet_hdr_t *hdr;
 
-	ndo->ndo_protocol = "ipnet";
 	if (caplen < sizeof(ipnet_hdr_t))
 		goto trunc;
 
@@ -77,8 +77,8 @@ ipnet_print(netdissect_options *ndo, const u_char *p, u_int length, u_int caplen
 	hdr = (const ipnet_hdr_t *)p;
 	p += sizeof(ipnet_hdr_t);
 
-	ND_TCHECK_1(hdr->iph_family);
-	switch (GET_U_1(hdr->iph_family)) {
+	ND_TCHECK2(hdr->iph_family, 1);
+	switch (EXTRACT_8BITS(&hdr->iph_family)) {
 
 	case IPH_AF_INET:
 	        ip_print(ndo, p, length);
@@ -99,7 +99,7 @@ ipnet_print(netdissect_options *ndo, const u_char *p, u_int length, u_int caplen
 	}
 	return;
 trunc:
-	nd_print_trunc(ndo);
+	ND_PRINT((ndo, " %s", tstr));
 }
 
 /*
@@ -112,9 +112,16 @@ u_int
 ipnet_if_print(netdissect_options *ndo,
                const struct pcap_pkthdr *h, const u_char *p)
 {
-	ndo->ndo_protocol = "ipnet_if";
 	ipnet_print(ndo, p, h->len, h->caplen);
 
 	return (sizeof(ipnet_hdr_t));
 }
+
+/*
+ * Local Variables:
+ * c-style: whitesmith
+ * c-basic-offset: 8
+ * End:
+ */
+
 #endif /* DLT_IPNET */

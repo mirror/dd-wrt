@@ -55,9 +55,9 @@
 char *
 strsep(char **stringp, const char *delim)
 {
-	char *s;
-	const char *spanp;
-	int c, sc;
+	register char *s;
+	register const char *spanp;
+	register int c, sc;
 	char *tok;
 
 	if ((s = *stringp) == NULL)

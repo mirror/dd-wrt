@@ -1,4 +1,35 @@
-print-arista.c : Print Arista Specific Protocol.
+Friday, September 20, 2019, by mcr@sandelman.ca
+  A huge thank you to Denis, Francois-Xavier and Guy who did much of the heavy lifting.
+  Summary for 4.9.3 tcpdump release
+    Fix buffer overflow/overread vulnerabilities:
+      CVE-2017-16808 (AoE)
+      CVE-2018-14468 (FrameRelay)
+      CVE-2018-14469 (IKEv1)
+      CVE-2018-14470 (BABEL)
+      CVE-2018-14466 (AFS/RX)
+      CVE-2018-14461 (LDP)
+      CVE-2018-14462 (ICMP)
+      CVE-2018-14465 (RSVP)
+      CVE-2018-14881 (BGP)
+      CVE-2018-14464 (LMP)
+      CVE-2018-14463 (VRRP)
+      CVE-2018-14467 (BGP)
+      CVE-2018-10103 (SMB - partially fixed, but SMB printing disabled)
+      CVE-2018-10105 (SMB - too unreliably reproduced, SMB printing disabled)
+      CVE-2018-14880 (OSPF6)
+      CVE-2018-16451 (SMB)
+      CVE-2018-14882 (RPL)
+      CVE-2018-16227 (802.11)
+      CVE-2018-16229 (DCCP)
+      CVE-2018-16301 (was fixed in libpcap)
+      CVE-2018-16230 (BGP)
+      CVE-2018-16452 (SMB)
+      CVE-2018-16300 (BGP)
+      CVE-2018-16228 (HNCP)
+      CVE-2019-15166 (LMP)
+      CVE-2019-15167 (VRRP)
+    Fix for cmdline argument/local issues:
+      CVE-2018-14879 (tcpdump -V)
 
 Sunday September 3, 2017 denis@ovsienko.info
   Summary for 4.9.2 tcpdump release
@@ -35,6 +66,8 @@ Sunday September 3, 2017 denis@ovsienko.info
       CVE-2017-12991 (BGP)
       CVE-2017-12992 (RIPng)
       CVE-2017-12993 (Juniper)
+      CVE-2017-11542 (PIMv1)
+      CVE-2017-11541 (safeputs)
       CVE-2017-12994 (BGP)
       CVE-2017-12996 (PIMv2)
       CVE-2017-12998 (ISO IS-IS)
@@ -720,7 +753,7 @@ Tue.   March 30, 2004. mcr@sandelman.ottawa.on.ca. Summary for 3.8.3 release
 Mon.   March 29, 2004. mcr@sandelman.ottawa.on.ca. Summary for 3.8.2 release
 
 	Fixes for print-isakmp.c      CVE:    CAN-2004-0183, CAN-2004-0184
-			     http://www.rapid7.com/advisories/R7-0017.html
+	  		     http://www.rapid7.com/advisories/R7-0017.html
 	IP-over-IEEE1394 printing.
 	some MINGW32 changes.
 	updates for autoconf 2.5
