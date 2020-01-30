@@ -6,13 +6,12 @@ libpcap-configure:
 		--exec-prefix=/usr --bindir=/usr/bin --sbindir=/usr/sbin \
 		--libexecdir=/usr/lib --sysconfdir=/etc --datadir=/usr/share \
 		--localstatedir=/var --mandir=/usr/man --infodir=/usr/info \
-		--disable-nls --enable-shared --disable-static \
+		--disable-nls --enabled-shared --disable-static \
 		--disable-yydebug --enable-ipv6 --with-build-cc=gcc \
 		--with-pcap=linux --without-septel --without-dag \
 		--disable-canusb --disable-can --disable-bluetooth \
 		CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC"
 libpcap:
-	$(MAKE) -C libpcap CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB)
 	$(MAKE) -C libpcap CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) libpcap.so 
 	-cd libpcap ; ln -s libpcap.so.1.9.1 libpcap.so
 	-cd libpcap ; ln -s libpcap.so libpcap.so.1
