@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.203 Kernel Configuration
+# Linux/mips 4.9.212 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -2264,7 +2264,6 @@ CONFIG_CRYPTO_JITTERENTROPY=m
 CONFIG_CRYPTO_HW=y
 # CONFIG_CRYPTO_DEV_HIFN_795X is not set
 # CONFIG_CRYPTO_DEV_IMGTEC_HASH is not set
-# CONFIG_CRYPTO_DEV_AL_AHASH_CRC is not set
 
 #
 # Certificates for signature checking
