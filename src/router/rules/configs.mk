@@ -123,7 +123,7 @@ ifneq ($(CONFIG_SMBD),y)
 obj-$(CONFIG_SAMBA3) += samba3
 endif
 endif
-obj-$(CONFIG_SMBD) += libnl smbd jansson
+obj-$(CONFIG_SMBD) += libnl smbd jansson wsdd2
 ifneq ($(CONFIG_SMBD),y)
 obj-$(CONFIG_SAMBA4) += gmp nettle gnutls samba4
 obj-$(CONFIG_SAMBA3) += jansson
