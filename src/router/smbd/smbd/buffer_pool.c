@@ -62,7 +62,6 @@ static inline void *__alloc(size_t size, gfp_t flags)
 	if (ret || size <= PAGE_SIZE)
 		return ret;
 
-
 	return __vmalloc(size, flags, PAGE_KERNEL);
 }
 
@@ -216,10 +215,10 @@ static struct wm *find_wm(size_t size, gfp_t flags)
 		break;
 	}
 
-	wm->realsize = realsize;
 	if (flags & __GFP_ZERO)
-	    memset(wm->buffer, 0, wm->sz);
+		memset(wm->buffer, 0, wm->sz);
 
+	wm->realsize = realsize;
 	return wm;
 }
 
