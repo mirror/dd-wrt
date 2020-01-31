@@ -257,7 +257,8 @@ void start_samba3(void)
 	       " aes-arm-ce aes-arm-bs sha256-arm sha512-arm ghash-ce aes-ce-cipher aes-ce-ccm"	//
 	       " aes-ce-blk aes-neon-blk aes-i586 aes-x86_64 aesni-intel ghash-clmulni-intel sha256-ssse3 sha512-ssse3 sha256-mb sha512-mb");
 	insmod("ksmbd");
-	char *nbname = nvram_safe_get("router_name");
+	char buf[128];
+	char *nbname = gethostname(buf, sizeof(buf)-1);
 	char *wgname = nvram_safe_get("samba3_workgrp");
 	if (*wgname == 0)
 		wgname = "WORKGROUP";
