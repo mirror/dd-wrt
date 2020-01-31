@@ -53,7 +53,7 @@ static inline void *__alloc(size_t size, gfp_t flags)
 	 * OOM killer and no allocation failure warnings as we have a fallback.
 	 */
 
-	ret = kmalloc(size,  flags | GFP_NOWAIT | __GFP_NORETRY | __GFP_NOWARN);
+	ret = kmalloc(size,  flags | __GFP_NOWARN);
 
 	/*
 	 * It doesn't really make sense to fallback to vmalloc for sub page
@@ -61,7 +61,8 @@ static inline void *__alloc(size_t size, gfp_t flags)
 	 */
 	if (ret || size <= PAGE_SIZE)
 		return ret;
-
+	
+	flags &= ~(GFP_NOWAIT | __GFP_NORETRY);
 	return __vmalloc(size, flags, PAGE_KERNEL);
 }
 
@@ -75,12 +76,12 @@ static inline void __free(void *addr)
 
 void *ksmbd_alloc(size_t size)
 {
-	return __alloc(size, 0);
+	return __alloc(size, GFP_KERNEL);
 }
 
 void *ksmbd_zalloc(size_t size)
 {
-	return __alloc(size, __GFP_ZERO);
+	return __alloc(size, GFP_KERNEL | __GFP_ZERO);
 }
 
 void ksmbd_free(void *ptr)
@@ -93,7 +94,7 @@ static struct wm *wm_alloc(size_t sz, gfp_t flags)
 	struct wm *wm;
 	size_t alloc_sz = sz + sizeof(struct wm);
 
-	wm = __alloc(alloc_sz, flags);
+	wm = __alloc(alloc_sz, flags | GFP_NOWAIT | __GFP_NORETRY);
 	if (!wm)
 		return NULL;
 	wm->sz = sz;
@@ -270,7 +271,7 @@ void ksmbd_free_request(void *addr)
 
 void *ksmbd_alloc_request(size_t size)
 {
-	return __alloc(size, 0);
+	return __alloc(size, GFP_KERNEL);
 }
 
 void ksmbd_free_response(void *buffer)
@@ -280,7 +281,7 @@ void ksmbd_free_response(void *buffer)
 
 void *ksmbd_alloc_response(size_t size)
 {
-	return __alloc(size, 0);
+	return __alloc(size, GFP_KERNEL | __GFP_ZERO);
 }
 
 void *ksmbd_find_buffer(size_t size)
