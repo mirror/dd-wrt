@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.9.203 Kernel Configuration
+# Linux/arm 4.9.212 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -1489,10 +1489,10 @@ CONFIG_BLK_DEV_SR=m
 CONFIG_BLK_DEV_SR_VENDOR=y
 CONFIG_CHR_DEV_SG=m
 CONFIG_CHR_DEV_SCH=m
-
 # CONFIG_SCSI_CONSTANTS is not set
 # CONFIG_SCSI_LOGGING is not set
 CONFIG_SCSI_SCAN_ASYNC=y
+
 #
 # SCSI Transports
 #
@@ -3685,7 +3685,6 @@ CONFIG_CRYPTO_HW=y
 # CONFIG_CRYPTO_DEV_MV_CESA is not set
 CONFIG_CRYPTO_DEV_MARVELL_CESA=y
 # CONFIG_CRYPTO_DEV_HIFN_795X is not set
-# CONFIG_CRYPTO_DEV_AL_AHASH_CRC is not set
 # CONFIG_ASYMMETRIC_KEY_TYPE is not set
 
 #

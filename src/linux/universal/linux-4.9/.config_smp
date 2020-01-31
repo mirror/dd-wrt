@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.9.203 Kernel Configuration
+# Linux/i386 4.9.212 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -4423,7 +4423,6 @@ CONFIG_CRYPTO_DEV_QAT_C62X=y
 # CONFIG_CRYPTO_DEV_QAT_C3XXXVF is not set
 # CONFIG_CRYPTO_DEV_QAT_C62XVF is not set
 CONFIG_CRYPTO_DEV_CHELSIO=m
-# CONFIG_CRYPTO_DEV_AL_AHASH_CRC is not set
 # CONFIG_ASYMMETRIC_KEY_TYPE is not set
 
 #
