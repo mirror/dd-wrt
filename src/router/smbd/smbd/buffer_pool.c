@@ -59,9 +59,9 @@ static inline void *__alloc(size_t size, gfp_t flags)
 	 * It doesn't really make sense to fallback to vmalloc for sub page
 	 * requests
 	 */
-	if (ret || size <= PAGE_SIZE) {
+	if (ret || size <= PAGE_SIZE)
 		return ret;
-	}
+
 
 	return __vmalloc(size, flags, PAGE_KERNEL);
 }
