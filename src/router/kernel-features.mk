@@ -26,6 +26,7 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_CIFS_SMB2 is not set/CONFIG_CIFS_SMB2=y/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_DNS_RESOLVER=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_FSCACHE=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_CIFS_SMB311=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_FSCACHE_STATS is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_FSCACHE_HISTOGRAM is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_FSCACHE_DEBUG is not set" >> $(LINUXDIR)/.config; \
