@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.9.203 Kernel Configuration
+# Linux/arm 4.9.212 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -3799,7 +3799,6 @@ CONFIG_CRYPTO_JITTERENTROPY=y
 CONFIG_CRYPTO_HW=y
 # CONFIG_CRYPTO_DEV_HIFN_795X is not set
 CONFIG_CRYPTO_DEV_QCE=y
-# CONFIG_CRYPTO_DEV_AL_AHASH_CRC is not set
 # CONFIG_ASYMMETRIC_KEY_TYPE is not set
 
 #
