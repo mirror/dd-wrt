@@ -252,11 +252,20 @@ void start_samba3(void)
 	eval("/usr/sbin/winbindd", "-D", conffile);
 #endif
 #else
-	insmod("nls_base nls_utf8 crypto_hash crypto_null aead aead2 sha256_generic sha512_generic seqiv arc4 ecb" //
-	       " hmac cmac md4 md5 gf128mul ctr ghash-generic gcm ccm aes-generic aes-arm" //
-	       " aes-arm-ce aes-arm-bs sha256-arm sha512-arm ghash-ce aes-ce-cipher aes-ce-ccm" //
+	insmod("nls_base nls_utf8 crypto_hash crypto_null aead aead2 sha256_generic sha512_generic seqiv arc4 ecb"	//
+	       " hmac cmac md4 md5 gf128mul ctr ghash-generic gcm ccm aes-generic aes-arm"	//
+	       " aes-arm-ce aes-arm-bs sha256-arm sha512-arm ghash-ce aes-ce-cipher aes-ce-ccm"	//
 	       " aes-ce-blk aes-neon-blk aes-i586 aes-x86_64 aesni-intel ghash-clmulni-intel sha256-ssse3 sha512-ssse3 sha256-mb sha512-mb");
 	insmod("ksmbd");
+	char *nbname = nvram_safe_get("router_name");
+	char *wgname = nvram_safe_get("samba3_workgrp");
+	if (*wgname == 0)
+		wgname = "WORKGROUP";
+	if (*nbname) {
+		char parm[128];
+		sprintf(parm, "vendor:dd-wrt,model:%s,sku:%s", nvram_safe_get("DD_BOARD"), nvram_safe_get("os_version"));
+		eval("wsdd2", "-N", nbname, "-G", wgname, "-b", parm);
+	}
 	eval("usmbd", "-c", "/tmp/smb.conf", "-u", "/tmp/smb.db");
 #endif
 
