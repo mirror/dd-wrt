@@ -264,7 +264,7 @@ void start_samba3(void)
 	if (*nbname) {
 		char parm[128];
 		sprintf(parm, "vendor:dd-wrt,model:%s,sku:%s", nvram_safe_get("DD_BOARD"), nvram_safe_get("os_version"));
-		eval("wsdd2", "-N", nbname, "-G", wgname, "-b", parm);
+		eval("wsdd2", "-d", "-N", nbname, "-G", wgname, "-b", parm);
 	}
 	eval("usmbd", "-c", "/tmp/smb.conf", "-u", "/tmp/smb.db");
 #endif
