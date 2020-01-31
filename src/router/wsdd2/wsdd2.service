@@ -1,0 +1,11 @@
+[Unit]
+Description=WSD/LLMNR Discovery/Name Service Daemon
+BindsTo=smbd.service
+
+[Service]
+ExecStart=/usr/sbin/wsdd2
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
