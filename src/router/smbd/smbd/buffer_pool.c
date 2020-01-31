@@ -53,14 +53,20 @@ static inline void *__alloc(size_t size, gfp_t flags)
 	 * OOM killer and no allocation failure warnings as we have a fallback.
 	 */
 
-	ret = kmalloc(size,  GFP_NOWAIT | __GFP_NORETRY | __GFP_NOWARN);
+	ret = kmalloc(size,  flags | GFP_NOWAIT | __GFP_NORETRY | __GFP_NOWARN);
 
 	/*
 	 * It doesn't really make sense to fallback to vmalloc for sub page
 	 * requests
 	 */
-	if (ret || size <= PAGE_SIZE)
+	if (ret || size <= PAGE_SIZE) {
+		if (!ret)
+			printk(KERN_EMERG "alloc fail %d\n", size);
 		return ret;
+	} else {
+		printk(KERN_EMERG "alloc success %d\n", size);
+	
+	}
 
 	return __vmalloc(size, flags, PAGE_KERNEL);
 }
@@ -75,12 +81,12 @@ static inline void __free(void *addr)
 
 void *ksmbd_alloc(size_t size)
 {
-	return __alloc(size, GFP_KERNEL);
+	return __alloc(size, 0);
 }
 
 void *ksmbd_zalloc(size_t size)
 {
-	return __alloc(size, GFP_KERNEL | __GFP_ZERO);
+	return __alloc(size, __GFP_ZERO);
 }
 
 void ksmbd_free(void *ptr)
@@ -104,7 +110,7 @@ static int register_wm_size_class(size_t sz)
 {
 	struct wm_list *l, *nl;
 
-	nl = __alloc(sizeof(struct wm_list), GFP_KERNEL);
+	nl = __alloc(sizeof(struct wm_list), 0);
 	if (!nl)
 		return -ENOMEM;
 
@@ -216,6 +222,9 @@ static struct wm *find_wm(size_t size, gfp_t flags)
 	}
 
 	wm->realsize = realsize;
+	if (flags & __GFP_ZERO)
+	    memset(wm->buffer, 0, wm->sz);
+
 	return wm;
 }
 
@@ -267,7 +276,7 @@ void ksmbd_free_request(void *addr)
 
 void *ksmbd_alloc_request(size_t size)
 {
-	return __alloc(size, GFP_KERNEL);
+	return __alloc(size, 0);
 }
 
 void ksmbd_free_response(void *buffer)
@@ -277,14 +286,14 @@ void ksmbd_free_response(void *buffer)
 
 void *ksmbd_alloc_response(size_t size)
 {
-	return __alloc(size, GFP_KERNEL);
+	return __alloc(size, 0);
 }
 
 void *ksmbd_find_buffer(size_t size)
 {
 	struct wm *wm;
 
-	wm = find_wm(size, GFP_KERNEL);
+	wm = find_wm(size, 0);
 
 	WARN_ON(!wm);
 	if (wm)
@@ -327,7 +336,7 @@ void ksmbd_free_file_struct(void *filp)
 
 void *ksmbd_alloc_file_struct(void)
 {
-	return kmem_cache_zalloc(filp_cache, GFP_KERNEL);
+	return kmem_cache_zalloc(filp_cache, 0);
 }
 
 void ksmbd_destroy_buffer_pools(void)
