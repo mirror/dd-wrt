@@ -258,7 +258,7 @@ void start_samba3(void)
 	       " aes-ce-blk aes-neon-blk aes-i586 aes-x86_64 aesni-intel ghash-clmulni-intel sha256-ssse3 sha512-ssse3 sha256-mb sha512-mb");
 	insmod("ksmbd");
 	char buf[128];
-	char *nbname = gethostname(buf, sizeof(buf)-1);
+	char *nbname = gethostname(buf, sizeof(buf) - 1);
 	char *wgname = nvram_safe_get("samba3_workgrp");
 	if (*wgname == 0)
 		wgname = "WORKGROUP";
@@ -277,6 +277,7 @@ void start_samba3(void)
 void stop_samba3(void)
 {
 #ifdef HAVE_SMBD
+	stop_process("wsdd2", "windows service discovery daemon");
 	stop_process("usmbd", "samba daemon");
 	sysprintf("echo hard > /sys/class/ksmbd-control/kill_server");
 	rmmod("ksmbd");
