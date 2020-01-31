@@ -28,6 +28,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/utsname.h>
 #include <syslog.h>
 #include <signal.h>
 #include <utils.h>
@@ -257,8 +258,10 @@ void start_samba3(void)
 	       " aes-arm-ce aes-arm-bs sha256-arm sha512-arm ghash-ce aes-ce-cipher aes-ce-ccm"	//
 	       " aes-ce-blk aes-neon-blk aes-i586 aes-x86_64 aesni-intel ghash-clmulni-intel sha256-ssse3 sha512-ssse3 sha256-mb sha512-mb");
 	insmod("ksmbd");
-	char buf[128];
-	char *nbname = gethostname(buf, sizeof(buf) - 1);
+	struct utsname uts;
+	/* Uname can fail only if you pass a bad pointer to it. */
+	uname(&uts);
+	char *nbname = !uts.nodename[0] ? NULL : uts.nodename;
 	char *wgname = nvram_safe_get("samba3_workgrp");
 	if (*wgname == 0)
 		wgname = "WORKGROUP";
