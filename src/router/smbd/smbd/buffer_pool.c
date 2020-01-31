@@ -60,12 +60,7 @@ static inline void *__alloc(size_t size, gfp_t flags)
 	 * requests
 	 */
 	if (ret || size <= PAGE_SIZE) {
-		if (!ret)
-			printk(KERN_EMERG "alloc fail %d\n", size);
 		return ret;
-	} else {
-		printk(KERN_EMERG "alloc success %d\n", size);
-	
 	}
 
 	return __vmalloc(size, flags, PAGE_KERNEL);
