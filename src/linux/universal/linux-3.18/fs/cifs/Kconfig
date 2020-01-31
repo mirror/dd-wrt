@@ -111,7 +111,7 @@ config CIFS_XATTR
 
 config CIFS_POSIX
         bool "CIFS POSIX Extensions"
-        depends on CIFS && CIFS_ALLOW_INSECURE_LEGACY && CIFS_XATTR
+        depends on CIFS_XATTR
         help
           Enabling this option will cause the cifs client to attempt to
 	  negotiate a newer dialect with servers, such as Samba 3.0.5
@@ -191,6 +191,15 @@ config CIFS_SMB2
 	  than SMB3 mounts do though). Note that SMB2/SMB3 mount
 	  options are also slightly simpler (compared to CIFS) due
 	  to protocol improvements.
+
+config CIFS_SMB311
+	bool "SMB3.1.1 network file system support (Experimental)"
+	depends on CIFS_SMB2 && INET
+
+	help
+	  This enables experimental support for the newest, SMB3.1.1, dialect.
+	  This dialect includes improved security negotiation features.
+	  If unsure, say N
 
 config CIFS_FSCACHE
 	  bool "Provide CIFS client caching support"

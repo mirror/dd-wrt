@@ -171,6 +171,10 @@ enum smb_version {
 	Smb_21,
 	Smb_30,
 	Smb_302,
+#ifdef CONFIG_CIFS_SMB311
+	Smb_311,
+#endif /* SMB311 */
+	Smb_version_err
 };
 
 struct mid_q_entry;
@@ -371,6 +375,8 @@ struct smb_version_operations {
 	void (*new_lease_key)(struct cifs_fid *);
 	int (*generate_signingkey)(struct cifs_ses *);
 	int (*calc_signature)(struct smb_rqst *, struct TCP_Server_Info *);
+	int (*set_integrity)(const unsigned int, struct cifs_tcon *tcon,
+			     struct cifsFileInfo *src_file);
 	int (*query_mf_symlink)(unsigned int, struct cifs_tcon *,
 				struct cifs_sb_info *, const unsigned char *,
 				char *, unsigned int *);
@@ -387,6 +393,9 @@ struct smb_version_operations {
 	/* parse lease context buffer and return oplock/epoch info */
 	__u8 (*parse_lease_buf)(void *, unsigned int *);
 	int (*clone_range)(const unsigned int, struct cifsFileInfo *src_file,
+			struct cifsFileInfo *target_file, u64 src_off, u64 len,
+			u64 dest_off);
+	int (*duplicate_extents)(const unsigned int, struct cifsFileInfo *src,
 			struct cifsFileInfo *target_file, u64 src_off, u64 len,
 			u64 dest_off);
 	int (*validate_negotiate)(const unsigned int, struct cifs_tcon *);
@@ -487,7 +496,10 @@ struct smb_vol {
 	bool mfsymlinks:1; /* use Minshall+French Symlinks */
 	bool multiuser:1;
 	bool rwpidforward:1; /* pid forward for read/write operations */
-	bool nosharesock;
+	bool nosharesock:1;
+	bool persistent:1;
+	bool nopersistent:1;
+	bool resilient:1; /* noresilient not required since not fored for CA */
 	unsigned int rsize;
 	unsigned int wsize;
 	bool sockopt_tcp_nodelay:1;
@@ -666,16 +678,16 @@ set_credits(struct TCP_Server_Info *server, const int val)
 	server->ops->set_credits(server, val);
 }
 
-static inline __u64
+static inline __le64
 get_next_mid64(struct TCP_Server_Info *server)
 {
-	return server->ops->get_next_mid(server);
+	return cpu_to_le64(server->ops->get_next_mid(server));
 }
 
 static inline __le16
 get_next_mid(struct TCP_Server_Info *server)
 {
-	__u16 mid = get_next_mid64(server);
+	__u16 mid = server->ops->get_next_mid(server);
 	/*
 	 * The value in the SMB header should be little endian for easy
 	 * on-the-wire decoding.
@@ -821,6 +833,7 @@ struct cifs_tcon {
 	int tc_count;
 	struct list_head rlist; /* reconnect list */
 	struct list_head openFileList;
+	spinlock_t open_file_lock; /* protects list above */
 	struct cifs_ses *ses;	/* pointer to session associated with */
 	char treeName[MAX_TREE_SIZE + 1]; /* UNC name of resource in ASCII */
 	char *nativeFileSystem;
@@ -877,7 +890,7 @@ struct cifs_tcon {
 #endif /* CONFIG_CIFS_STATS2 */
 	__u64    bytes_read;
 	__u64    bytes_written;
-	spinlock_t stat_lock;
+	spinlock_t stat_lock;  /* protects the two fields above */
 #endif /* CONFIG_CIFS_STATS */
 	FILE_SYSTEM_DEVICE_INFO fsDevInfo;
 	FILE_SYSTEM_ATTRIBUTE_INFO fsAttrInfo; /* ok if fs name truncated */
@@ -892,6 +905,8 @@ struct cifs_tcon {
 	bool broken_posix_open; /* e.g. Samba server versions < 3.3.2, 3.2.9 */
 	bool broken_sparse_sup; /* if server or share does not support sparse */
 	bool need_reconnect:1; /* connection reset, tid now invalid */
+	bool use_resilient:1; /* use resilient instead of durable handles */
+	bool use_persistent:1; /* use persistent instead of durable handles */
 #ifdef CONFIG_CIFS_SMB2
 	bool print:1;		/* set if connection to printer share */
 	__le32 capabilities;
@@ -1011,6 +1026,7 @@ struct cifs_fid {
 	__u64 persistent_fid;	/* persist file id for smb2 */
 	__u64 volatile_fid;	/* volatile file id for smb2 */
 	__u8 lease_key[SMB2_LEASE_KEY_SIZE];	/* lease key for smb2 */
+	__u8 create_guid[16];
 #endif
 	struct cifs_pending_open *pending_open;
 	unsigned int epoch;
@@ -1024,8 +1040,10 @@ struct cifs_fid_locks {
 };
 
 struct cifsFileInfo {
+	/* following two lists are protected by tcon->open_file_lock */
 	struct list_head tlist;	/* pointer to next fid owned by tcon */
 	struct list_head flist;	/* next fid (file instance) for this inode */
+	/* lock list below protected by cifsi->lock_sem */
 	struct cifs_fid_locks *llist;	/* brlocks held by this fid */
 	kuid_t uid;		/* allows finding which FileInfo structure */
 	__u32 pid;		/* process id who opened file */
@@ -1033,11 +1051,12 @@ struct cifsFileInfo {
 	/* BB add lock scope info here if needed */ ;
 	/* lock scope id (0 if none) */
 	struct dentry *dentry;
-	unsigned int f_flags;
 	struct tcon_link *tlink;
+	unsigned int f_flags;
 	bool invalidHandle:1;	/* file closed via session abend */
 	bool oplock_break_cancelled:1;
-	int count;		/* refcount protected by cifs_file_list_lock */
+	int count;
+	spinlock_t file_info_lock; /* protects four flag/count fields above */
 	struct mutex fh_mutex; /* prevents reopen race after dead ses*/
 	struct cifs_search_info srch_inf;
 	struct work_struct oplock_break; /* work for oplock breaks */
@@ -1104,7 +1123,7 @@ struct cifs_writedata {
 
 /*
  * Take a reference on the file private data. Must be called with
- * cifs_file_list_lock held.
+ * cfile->file_info_lock held.
  */
 static inline void
 cifsFileInfo_get_locked(struct cifsFileInfo *cifs_file)
@@ -1133,6 +1152,11 @@ void cifsFileInfo_put(struct cifsFileInfo *cifs_file);
 struct cifsInodeInfo {
 	bool can_cache_brlcks;
 	struct list_head llist;	/* locks helb by this inode */
+	/*
+	 * NOTE: Some code paths call down_read(lock_sem) twice, so
+	 * we must always use use cifs_down_write() instead of down_write()
+	 * for this semaphore to avoid deadlocks.
+	 */
 	struct rw_semaphore lock_sem;	/* protect the fields above */
 	/* BB add in lists for dirty pages i.e. write caching info for oplock */
 	struct list_head openFileList;
@@ -1171,6 +1195,12 @@ static inline struct cifs_sb_info *
 CIFS_SB(struct super_block *sb)
 {
 	return sb->s_fs_info;
+}
+
+static inline struct cifs_sb_info *
+CIFS_FILE_SB(struct file *file)
+{
+	return CIFS_SB(file_inode(file)->i_sb);
 }
 
 static inline char CIFS_DIR_SEP(const struct cifs_sb_info *cifs_sb)
@@ -1502,8 +1532,10 @@ require use of the stronger protocol */
  *  GlobalMid_Lock protects:
  *	list operations on pending_mid_q and oplockQ
  *      updates to XID counters, multiplex id  and SMB sequence numbers
- *  cifs_file_list_lock protects:
- *	list operations on tcp and SMB session lists and tCon lists
+ *  tcp_ses_lock protects:
+ *	list operations on tcp and SMB session lists
+ *  tcon->open_file_lock protects the list of open files hanging off the tcon
+ *  cfile->file_info_lock protects counters and fields in cifs file struct
  *  f_owner.lock protects certain per file struct operations
  *  mapping->page_lock protects certain per page operations
  *
@@ -1535,17 +1567,11 @@ GLOBAL_EXTERN struct list_head		cifs_tcp_ses_list;
  * tcp session, and the list of tcon's per smb session. It also protects
  * the reference counters for the server, smb session, and tcon. Finally,
  * changes to the tcon->tidStatus should be done while holding this lock.
+ * generally the locks should be taken in order tcp_ses_lock before
+ * tcon->open_file_lock and that before file->file_info_lock since the
+ * structure order is cifs_socket-->cifs_ses-->cifs_tcon-->cifs_file
  */
 GLOBAL_EXTERN spinlock_t		cifs_tcp_ses_lock;
-
-/*
- * This lock protects the cifs_file->llist and cifs_file->flist
- * list operations, and updates to some flags (cifs_file->invalidHandle)
- * It will be moved to either use the tcon->stat_lock or equivalent later.
- * If cifs_tcp_ses_lock and the lock below are both needed to be held, then
- * the cifs_tcp_ses_lock must be grabbed first and released last.
- */
-GLOBAL_EXTERN spinlock_t	cifs_file_list_lock;
 
 #ifdef CONFIG_CIFS_DNOTIFY_EXPERIMENTAL /* unused temporarily */
 /* Outstanding dir notify requests */
@@ -1582,11 +1608,11 @@ GLOBAL_EXTERN atomic_t midCount;
 
 /* Misc globals */
 GLOBAL_EXTERN bool enable_oplocks; /* enable or disable oplocks */
-GLOBAL_EXTERN unsigned int lookupCacheEnabled;
+GLOBAL_EXTERN bool lookupCacheEnabled;
 GLOBAL_EXTERN unsigned int global_secflags;	/* if on, session setup sent
 				with more secure ntlmssp2 challenge/resp */
 GLOBAL_EXTERN unsigned int sign_CIFS_PDUs;  /* enable smb packet signing */
-GLOBAL_EXTERN unsigned int linuxExtEnabled;/*enable Linux/Unix CIFS extensions*/
+GLOBAL_EXTERN bool linuxExtEnabled;/*enable Linux/Unix CIFS extensions*/
 GLOBAL_EXTERN unsigned int CIFSMaxBufSize;  /* max size not including hdr */
 GLOBAL_EXTERN unsigned int cifs_min_rcv;    /* min size of big ntwrk buf pool */
 GLOBAL_EXTERN unsigned int cifs_min_small;  /* min size of small buf pool */
@@ -1626,4 +1652,8 @@ extern struct smb_version_values smb30_values;
 #define SMB302_VERSION_STRING	"3.02"
 /*extern struct smb_version_operations smb302_operations;*/ /* not needed yet */
 extern struct smb_version_values smb302_values;
+#define SMB311_VERSION_STRING	"3.1.1"
+#define ALT_SMB311_VERSION_STRING "3.11"
+extern struct smb_version_operations smb311_operations;
+extern struct smb_version_values smb311_values;
 #endif	/* _CIFS_GLOB_H */
