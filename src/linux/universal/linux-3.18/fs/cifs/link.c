@@ -419,7 +419,7 @@ smb3_query_mf_symlink(unsigned int xid, struct cifs_tcon *tcon,
 	struct cifs_io_parms io_parms;
 	int buf_type = CIFS_NO_BUFFER;
 	__le16 *utf16_path;
-	__u8 oplock = SMB2_OPLOCK_LEVEL_II;
+	__u8 oplock = SMB2_OPLOCK_LEVEL_NONE;
 	struct smb2_file_all_info *pfile_info = NULL;
 
 	oparms.tcon = tcon;
@@ -481,7 +481,7 @@ smb3_create_mf_symlink(unsigned int xid, struct cifs_tcon *tcon,
 	struct cifs_io_parms io_parms;
 	int create_options = CREATE_NOT_DIR;
 	__le16 *utf16_path;
-	__u8 oplock = SMB2_OPLOCK_LEVEL_EXCLUSIVE;
+	__u8 oplock = SMB2_OPLOCK_LEVEL_NONE;
 	struct kvec iov[2];
 
 	if (backup_cred(cifs_sb))
@@ -587,11 +587,11 @@ cifs_hardlink(struct dentry *old_file, struct inode *inode,
 	 * until the file is closed or oplock broken so update nlinks locally
 	 */
 	if (old_file->d_inode) {
-		cifsInode = CIFS_I(old_file->d_inode);
+		cifsInode = CIFS_I(d_inode(old_file));
 		if (rc == 0) {
-			spin_lock(&old_file->d_inode->i_lock);
-			inc_nlink(old_file->d_inode);
-			spin_unlock(&old_file->d_inode->i_lock);
+			spin_lock(&d_inode(old_file)->i_lock);
+			inc_nlink(d_inode(old_file));
+			spin_unlock(&d_inode(old_file)->i_lock);
 
 			/*
 			 * parent dir timestamps will update from srv within a
@@ -629,7 +629,7 @@ cifs_hl_exit:
 void *
 cifs_follow_link(struct dentry *direntry, struct nameidata *nd)
 {
-	struct inode *inode = direntry->d_inode;
+	struct inode *inode = d_inode(direntry);
 	int rc = -ENOMEM;
 	unsigned int xid;
 	char *full_path = NULL;
@@ -673,7 +673,7 @@ cifs_follow_link(struct dentry *direntry, struct nameidata *nd)
 out:
 	if (rc != 0) {
 		kfree(target_path);
-		target_path = ERR_PTR(rc);
+		return ERR_PTR(rc);
 	}
 
 	free_xid(xid);
@@ -717,7 +717,8 @@ cifs_symlink(struct inode *inode, struct dentry *direntry, const char *symname)
 		rc = create_mf_symlink(xid, pTcon, cifs_sb, full_path, symname);
 	else if (pTcon->unix_ext)
 		rc = CIFSUnixCreateSymLink(xid, pTcon, full_path, symname,
-					   cifs_sb->local_nls);
+					   cifs_sb->local_nls,
+					   cifs_remap(cifs_sb));
 	/* else
 	   rc = CIFSCreateReparseSymLink(xid, pTcon, fromName, toName,
 					cifs_sb_target->local_nls); */

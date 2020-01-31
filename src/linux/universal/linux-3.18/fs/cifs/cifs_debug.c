@@ -123,25 +123,41 @@ static int cifs_debug_data_proc_show(struct seq_file *m, void *v)
 	seq_printf(m, "CIFS Version %s\n", CIFS_VERSION);
 	seq_printf(m, "Features:");
 #ifdef CONFIG_CIFS_DFS_UPCALL
-	seq_printf(m, " dfs");
+	seq_printf(m, " DFS");
 #endif
 #ifdef CONFIG_CIFS_FSCACHE
-	seq_printf(m, " fscache");
+	seq_printf(m, ",FSCACHE");
+#endif
+#ifdef CONFIG_CIFS_SMB_DIRECT
+	seq_printf(m, ",SMB_DIRECT");
+#endif
+#ifdef CONFIG_CIFS_STATS2
+	seq_printf(m, ",STATS2");
+#elif defined(CONFIG_CIFS_STATS)
+	seq_printf(m, ",STATS");
+#endif
+#ifdef CONFIG_CIFS_DEBUG2
+	seq_printf(m, ",DEBUG2");
+#elif defined(CONFIG_CIFS_DEBUG)
+	seq_printf(m, ",DEBUG");
+#endif
+#ifdef CONFIG_CIFS_ALLOW_INSECURE_LEGACY
+	seq_printf(m, ",ALLOW_INSECURE_LEGACY");
 #endif
 #ifdef CONFIG_CIFS_WEAK_PW_HASH
-	seq_printf(m, " lanman");
+	seq_printf(m, ",WEAK_PW_HASH");
 #endif
 #ifdef CONFIG_CIFS_POSIX
-	seq_printf(m, " posix");
+	seq_printf(m, ",CIFS_POSIX");
 #endif
 #ifdef CONFIG_CIFS_UPCALL
-	seq_printf(m, " spnego");
+	seq_printf(m, ",UPCALL(SPNEGO)");
 #endif
 #ifdef CONFIG_CIFS_XATTR
-	seq_printf(m, " xattr");
+	seq_printf(m, ",XATTR");
 #endif
 #ifdef CONFIG_CIFS_ACL
-	seq_printf(m, " acl");
+	seq_printf(m, ",ACL");
 #endif
 	seq_putc(m, '\n');
 	seq_printf(m, "Active VFS Requests: %d\n", GlobalTotalActiveXid);
@@ -152,6 +168,7 @@ static int cifs_debug_data_proc_show(struct seq_file *m, void *v)
 	list_for_each(tmp1, &cifs_tcp_ses_list) {
 		server = list_entry(tmp1, struct TCP_Server_Info,
 				    tcp_ses_list);
+		seq_printf(m, "\nNumber of credits: %d", server->credits);
 		i++;
 		list_for_each(tmp2, &server->smb_ses_list) {
 			ses = list_entry(tmp2, struct cifs_ses,
@@ -255,7 +272,7 @@ static const struct file_operations cifs_debug_data_proc_fops = {
 static ssize_t cifs_stats_proc_write(struct file *file,
 		const char __user *buffer, size_t count, loff_t *ppos)
 {
-	char c;
+	bool bv;
 	int rc;
 	struct list_head *tmp1, *tmp2, *tmp3;
 	struct TCP_Server_Info *server;
@@ -300,6 +317,8 @@ static ssize_t cifs_stats_proc_write(struct file *file,
 			}
 		}
 		spin_unlock(&cifs_tcp_ses_lock);
+	} else {
+		return rc;
 	}
 
 	return count;
@@ -443,18 +462,17 @@ static int cifsFYI_proc_open(struct inode *inode, struct file *file)
 static ssize_t cifsFYI_proc_write(struct file *file, const char __user *buffer,
 		size_t count, loff_t *ppos)
 {
-	char c;
+	char c[2] = { '\0' };
+	bool bv;
 	int rc;
 
-	rc = get_user(c, buffer);
+	rc = get_user(c[0], buffer);
 	if (rc)
 		return rc;
-	if (c == '0' || c == 'n' || c == 'N')
-		cifsFYI = 0;
-	else if (c == '1' || c == 'y' || c == 'Y')
-		cifsFYI = 1;
-	else if ((c > '1') && (c <= '9'))
-		cifsFYI = (int) (c - '0'); /* see cifs_debug.h for meanings */
+	if (strtobool(c, &bv) == 0)
+		cifsFYI = bv;
+	else if ((c[0] > '1') && (c[0] <= '9'))
+		cifsFYI = (int) (c[0] - '0'); /* see cifs_debug.h for meanings */
 
 	return count;
 }
@@ -486,8 +504,8 @@ static ssize_t cifs_linux_ext_proc_write(struct file *file,
 	int rc;
 
 	rc = get_user(c, buffer);
-	if (rc)
-		return rc;
+ 	if (rc)
+ 		return rc;
 	if (c == '0' || c == 'n' || c == 'N')
 		linuxExtEnabled = 0;
 	else if (c == '1' || c == 'y' || c == 'Y')
@@ -520,11 +538,11 @@ static ssize_t cifs_lookup_cache_proc_write(struct file *file,
 		const char __user *buffer, size_t count, loff_t *ppos)
 {
 	char c;
-	int rc;
-
+ 	int rc;
+ 
 	rc = get_user(c, buffer);
-	if (rc)
-		return rc;
+ 	if (rc)
+ 		return rc;
 	if (c == '0' || c == 'n' || c == 'N')
 		lookupCacheEnabled = 0;
 	else if (c == '1' || c == 'y' || c == 'Y')
@@ -557,11 +575,11 @@ static ssize_t traceSMB_proc_write(struct file *file, const char __user *buffer,
 		size_t count, loff_t *ppos)
 {
 	char c;
-	int rc;
-
+ 	int rc;
+ 
 	rc = get_user(c, buffer);
-	if (rc)
-		return rc;
+ 	if (rc)
+ 		return rc;
 	if (c == '0' || c == 'n' || c == 'N')
 		traceSMB = 0;
 	else if (c == '1' || c == 'y' || c == 'Y')
@@ -608,9 +626,11 @@ cifs_security_flags_handle_must_flags(unsigned int *flags)
 		*flags = CIFSSEC_MUST_NTLMV2;
 	else if ((*flags & CIFSSEC_MUST_NTLM) == CIFSSEC_MUST_NTLM)
 		*flags = CIFSSEC_MUST_NTLM;
-	else if ((*flags & CIFSSEC_MUST_LANMAN) == CIFSSEC_MUST_LANMAN)
+	else if (CIFSSEC_MUST_LANMAN &&
+		 (*flags & CIFSSEC_MUST_LANMAN) == CIFSSEC_MUST_LANMAN)
 		*flags = CIFSSEC_MUST_LANMAN;
-	else if ((*flags & CIFSSEC_MUST_PLNTXT) == CIFSSEC_MUST_PLNTXT)
+	else if (CIFSSEC_MUST_PLNTXT &&
+		 (*flags & CIFSSEC_MUST_PLNTXT) == CIFSSEC_MUST_PLNTXT)
 		*flags = CIFSSEC_MUST_PLNTXT;
 
 	*flags |= signflags;
@@ -622,7 +642,7 @@ static ssize_t cifs_security_flags_proc_write(struct file *file,
 	int rc;
 	unsigned int flags;
 	char flags_string[12];
-	char c;
+	bool bv;
 
 	if ((count < 1) || (count > 11))
 		return -EINVAL;
@@ -634,14 +654,10 @@ static ssize_t cifs_security_flags_proc_write(struct file *file,
 
 	if (count < 3) {
 		/* single char or single char followed by null */
-		c = flags_string[0];
-		if (c == '0' || c == 'n' || c == 'N') {
-			global_secflags = CIFSSEC_DEF; /* default */
+		if (strtobool(flags_string, &bv) == 0) {
+			global_secflags = bv ? CIFSSEC_MAX : CIFSSEC_DEF;
 			return count;
-		} else if (c == '1' || c == 'y' || c == 'Y') {
-			global_secflags = CIFSSEC_MAX;
-			return count;
-		} else if (!isdigit(c)) {
+		} else if (!isdigit(flags_string[0])) {
 			cifs_dbg(VFS, "Invalid SecurityFlags: %s\n",
 					flags_string);
 			return -EINVAL;
