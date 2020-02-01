@@ -89,12 +89,12 @@ void ksmbd_free(void *ptr)
 	__free(ptr);
 }
 
-static struct wm *wm_alloc(size_t sz, gfp_t flags)
+static struct wm *wm_alloc(size_t sz)
 {
 	struct wm *wm;
 	size_t alloc_sz = sz + sizeof(struct wm);
 
-	wm = __alloc(alloc_sz, flags | GFP_NOWAIT | __GFP_NORETRY);
+	wm = __alloc(alloc_sz, GFP_NOWAIT | __GFP_NORETRY);
 	if (!wm)
 		return NULL;
 	wm->sz = sz;
@@ -204,7 +204,7 @@ static struct wm *find_wm(size_t size)
 		wm_list->avail_wm++;
 		spin_unlock(&wm_list->wm_lock);
 
-		wm = wm_alloc(realsize, GFP_KERNEL | flags);
+		wm = wm_alloc(realsize);
 		if (!wm) {
 			spin_lock(&wm_list->wm_lock);
 			wm_list->avail_wm--;
