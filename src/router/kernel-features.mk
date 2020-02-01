@@ -38,6 +38,7 @@ define kernelfeatures
 		echo "# CONFIG_CIFS_FSCACHE is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_ECRYPT_FS is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_ENCRYPTED_KEYS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_KEY_DH_OPERATIONS is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_KEYS_DEBUG_PROC_KEYS is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_ASYMMETRIC_KEY_TYPE is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_SYSTEM_TRUSTED_KEYRING is not set" >> $(LINUXDIR)/.config; \
