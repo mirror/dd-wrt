@@ -166,7 +166,7 @@ static struct wm_list *search_wm_list(size_t size, size_t *realsize)
 	return rl;
 }
 
-static struct wm *find_wm(size_t size, gfp_t flags)
+static struct wm *find_wm(size_t size)
 {
 	struct wm_list *wm_list;
 	struct wm *wm;
@@ -204,7 +204,7 @@ static struct wm *find_wm(size_t size, gfp_t flags)
 		wm_list->avail_wm++;
 		spin_unlock(&wm_list->wm_lock);
 
-		wm = wm_alloc(realsize, flags);
+		wm = wm_alloc(realsize, GFP_KERNEL | flags);
 		if (!wm) {
 			spin_lock(&wm_list->wm_lock);
 			wm_list->avail_wm--;
@@ -288,7 +288,7 @@ void *ksmbd_find_buffer(size_t size)
 {
 	struct wm *wm;
 
-	wm = find_wm(size, 0);
+	wm = find_wm(size);
 
 	WARN_ON(!wm);
 	if (wm)
