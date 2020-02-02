@@ -2465,6 +2465,9 @@ wl_basic.country_settings="L&auml;ndereinstellungen";
 wl_basic.uapsd="U-APSD (Automatisches Stromsparen)";
 wl_basic.smps="Spatial Multiplex Power Save";
 wl_basic.add="Virtuellen AP Hinzuf&uuml;gen";
+wl_basic.airtime_policy="Airtime Stategie";
+wl_basic.airtime_dynamic="Dynamischer Modus";
+wl_basic.airtime_limit="Limit Modus";
 
 
 //help container
