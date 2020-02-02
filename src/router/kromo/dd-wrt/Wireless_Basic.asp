@@ -648,19 +648,19 @@ function setChannelProperties(channels) {
 		}
 	}
 }
-function show_airtime_policy(F, prefix) {
+function show_airtime_policy(F, prefix, idname) {
 var elem = F.elements[prefix + "_at_policy"];
 if (elem.value == 0) {
-    show_layer_ext(F, prefix + "_idairtimelimit", false);
-    show_layer_ext(F, prefix + "_idairtimeweight", false);
+    show_layer_ext(F, idname + "_idairtimelimit", false);
+    show_layer_ext(F, idname + "_idairtimeweight", false);
 }
 if (elem.value == 1) {
-    show_layer_ext(F, prefix + "_idairtimelimit", false);
-    show_layer_ext(F, prefix + "_idairtimeweight", true);
+    show_layer_ext(F, idname + "_idairtimelimit", false);
+    show_layer_ext(F, idname + "_idairtimeweight", true);
 }
 if (elem.value == 2) {
-    show_layer_ext(F, prefix + "_idairtimelimit", true);
-    show_layer_ext(F, prefix + "_idairtimeweight", true);
+    show_layer_ext(F, idname + "_idairtimelimit", true);
+    show_layer_ext(F, idname + "_idairtimeweight", true);
 }
 }
 
