@@ -1,6 +1,6 @@
 AM_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/smbuseradd -I$(top_srcdir)/smbshareadd $(GLIB_CFLAGS) $(LIBNL_CFLAGS) -fno-common -DMULTICALL
 LIBS = $(GLIB_LIBS) $(LIBNL_LIBS)
-smbd_multicall_LDADD = $(top_builddir)/lib/libusmbdtools.la
+smbd_multicall_LDADD = $(top_builddir)/lib/libusmbdtools.la -L$(TOP)/libutils -L$(TOP)/nvram -lshutils -lutils -lnvram
 
 sbin_PROGRAMS = smbd_multicall
 

@@ -166,7 +166,12 @@ static int setup_signal_handler(int signo, sighandler_t handler)
 
 static int setup_signals(sighandler_t handler)
 {
-	if (setup_signal_handler(SIGINT, handler) != 0)
+	if (setup_signal_handler(SIGHUP, handler) != 0)
+		return -EINVAL;
+	int airbag_init(void);
+	airbag_init();
+
+/*	if (setup_signal_handler(SIGINT, handler) != 0)
 		return -EINVAL;
 
 	if (setup_signal_handler(SIGTERM, handler) != 0)
@@ -183,7 +188,7 @@ static int setup_signals(sighandler_t handler)
 
 	if (setup_signal_handler(SIGSEGV, handler) != 0)
 		return -EINVAL;
-
+*/
 	return 0;
 }
 
@@ -474,7 +479,8 @@ int main(int argc, char *argv[])
 {
 	int systemd_service = 0;
 	int c;
-
+	int airbag_init(void);
+	airbag_init();
 	set_logger_app_name("usmbd-manager");
 	memset(&global_conf, 0x00, sizeof(struct smbconf_global));
 	pr_logger_init(PR_LOGGER_STDIO);
