@@ -2133,28 +2133,32 @@ static void showrtssettings(webs_t wp, char *var)
 }
 
 #ifdef HAVE_WPA3
-static void showairtimepolicy(webs_t wp, char *var)
+static void showairtimepolicy(webs_t wp, char *var, char *sub)
 {
+	if (nvram_nmatch("sta", "%s_mode", sub))
+		return;
+	if (nvram_nmatch("wdssta", "%s_mode", sub))
+		return;
+	if (nvram_nmatch("wdssta_mtik", "%s_mode", sub))
+		return;
 	char vvar[32];
 	char wl_airtime[32];
 	if (has_airtime_policy(var)) {
 		strcpy(vvar, var);
 		rep(vvar, '.', 'X');
 		sprintf(wl_airtime, "%s_at_policy", var);
-		nvram_default_get(wl_airtime,"0");
-    
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wl_basic.airtime_policy", NULL);
-		websWrite(wp, "<select name=\"%s_at_policy\" onclick=\"show_airtime_policy(this.form, '%s');\">\n", var, var);
-		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n",
-			  nvram_match(wl_airtime, "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.airtime_dynamic + \"</option>\");\n",
-			  nvram_match(wl_airtime, "1") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.airtime_limit + \"</option>\");\n",
-			  nvram_match(wl_airtime, "2") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "//]]>\n</script>\n</select>\n");
+		nvram_default_get(wl_airtime, "0");
 
+		websWrite(wp, "<div class=\"setting\">\n");
+		if (!sub) {
+			show_caption(wp, "label", "wl_basic.airtime_policy", NULL);
+			websWrite(wp, "<select name=\"%s_at_policy\" onclick=\"show_airtime_policy(this.form, '%s', '%s');\">\n", var, var, vvar);
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n", nvram_match(wl_airtime, "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.airtime_dynamic + \"</option>\");\n", nvram_match(wl_airtime, "1") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.airtime_limit + \"</option>\");\n", nvram_match(wl_airtime, "2") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "//]]>\n</script>\n</select>\n");
+		}
 		websWrite(wp, "<div id=\"%s_idairtimeweight\">\n", vvar);
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.airtime_weight", NULL);
@@ -2177,13 +2181,13 @@ static void showairtimepolicy(webs_t wp, char *var)
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_airtime_policy(document.wireless, \"%s\", \"%s\");\n", var, vvar);
+		websWrite(wp, "show_airtime_policy(document.wireless, \"%s\", \"%s\");\n", sub, vvar);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
 	}
 }
 #else
-#define showairtimepolicy(wp, var)
+#define showairtimepolicy(wp, var, sub)
 #endif
 
 #endif
@@ -2442,7 +2446,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 //      show_chanshift( wp, wl_chanshift );
 
 		showrtssettings(wp, var);
-		showairtimepolicy(wp, var);
+		showairtimepolicy(wp, var, prefix);
 #endif
 
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -2553,7 +2557,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 //      show_chanshift( wp, wl_chanshift );
 
 		showrtssettings(wp, var);
-		showairtimepolicy(wp, var);
+		showairtimepolicy(wp, var, prefix);
 		if (is_mac80211(prefix) && !is_mvebu(prefix)) {
 			char wl_fc[16];
 			sprintf(wl_fc, "%s_fc", var);
@@ -3134,7 +3138,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 
 	showrtssettings(wp, prefix);
-	showairtimepolicy(wp, prefix);
+	showairtimepolicy(wp, prefix, prefix);
 	if (!is_mac80211(prefix)) {
 		show_rates(wp, prefix, 0);
 		show_rates(wp, prefix, 1);
@@ -3729,7 +3733,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 //#endif
 #else
 			websWrite(wp, "document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n", nvram_match(wl_mode, "wdssta") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta_mtik + \"</option>\");\n", nvram_match(wl_mode, "wdssta_mtik") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"wdssta_mtik\\\" %s >\" + wl_basic.wdssta_mtik + \"</option>\");\n", nvram_match(wl_mode, "wdssta_mtik") ? "selected=\\\"selected\\\"" : "");
 			if (!cpeonly) {
 				websWrite(wp, "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n", nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
 			}
@@ -4211,7 +4215,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 
 	showrtssettings(wp, prefix);
-	showairtimepolicy(wp, prefix);
+	showairtimepolicy(wp, prefix, prefix);
 	if (!is_mac80211(prefix)) {
 		show_rates(wp, prefix, 0);
 		show_rates(wp, prefix, 1);
