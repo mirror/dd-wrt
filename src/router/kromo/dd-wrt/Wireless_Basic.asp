@@ -650,15 +650,15 @@ function setChannelProperties(channels) {
 }
 function show_airtime_policy(F, prefix) {
 var elem = F.elements[prefix + "_at_policy"];
-if (elem == 0) {
+if (elem.value == 0) {
     show_layer_ext(F, prefix + "_idairtimelimit", false);
     show_layer_ext(F, prefix + "_idairtimeweight", false);
 }
-if (elem == 1) {
+if (elem.value == 1) {
     show_layer_ext(F, prefix + "_idairtimelimit", false);
     show_layer_ext(F, prefix + "_idairtimeweight", true);
 }
-if (elem == 2) {
+if (elem.value == 2) {
     show_layer_ext(F, prefix + "_idairtimelimit", true);
     show_layer_ext(F, prefix + "_idairtimeweight", true);
 }

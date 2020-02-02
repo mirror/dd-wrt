@@ -1352,10 +1352,6 @@ static void showOptionsChoose(webs_t wp, char *propname, char *names, char *sele
 
 static void showOptionsLabel(webs_t wp, char *labelname, char *propname, char *names, char *select)
 {
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", labelname, NULL);
-	showOptions(wp, propname, names, select);
-	websWrite(wp, "</div>\n");
 
 }
 
@@ -2106,36 +2102,34 @@ static void showrtssettings(webs_t wp, char *var)
 	char ssid[32];
 	char vvar[32];
 	char wl_protmode[32];
-	if (has_airtime_policy(var)) {
-		sprintf(wl_protmode, "%s_protmode", var);
-		showOptionsLabel(wp, "wl_basic.protmode", wl_protmode, "None CTS RTS/CTS", nvram_default_get(wl_protmode, "None"));
+	sprintf(wl_protmode, "%s_protmode", var);
+	showOptionsLabel(wp, "wl_basic.protmode", wl_protmode, "None CTS RTS/CTS", nvram_default_get(wl_protmode, "None"));
 
-		strcpy(vvar, var);
-		rep(vvar, '.', 'X');
-		sprintf(ssid, "%s_rts", var);
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rts)</script></div>\n");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idrts', true);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			  vvar, var, nvram_default_matchi(ssid, 1, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idrts', false);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-			  vvar, var, nvram_default_matchi(ssid, 0, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
+	strcpy(vvar, var);
+	rep(vvar, '.', 'X');
+	sprintf(ssid, "%s_rts", var);
+	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rts)</script></div>\n");
+	websWrite(wp,
+		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idrts', true);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+		  vvar, var, nvram_default_matchi(ssid, 1, 0) ? "checked=\"checked\"" : "");
+	websWrite(wp,
+		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idrts', false);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+		  vvar, var, nvram_default_matchi(ssid, 0, 0) ? "checked=\"checked\"" : "");
+	websWrite(wp, "</div>\n");
 
-		websWrite(wp, "<div id=\"%s_idrts\">\n", vvar);
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wl_basic.rtsvalue", NULL);
-		char ip[32];
+	websWrite(wp, "<div id=\"%s_idrts\">\n", vvar);
+	websWrite(wp, "<div class=\"setting\">\n");
+	show_caption(wp, "label", "wl_basic.rtsvalue", NULL);
+	char ip[32];
 
-		sprintf(ip, "%s_rtsvalue", var);
-		websWrite(wp, "<input class=\"num\" maxlength=\"4\" size=\"4\" onblur=\"valid_range(this,1,2346,share.ip)\" name=\"%s_rtsvalue\" value=\"%s\" />", var, nvram_default_get(ip, "500"));
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "</div>\n");
+	sprintf(ip, "%s_rtsvalue", var);
+	websWrite(wp, "<input class=\"num\" maxlength=\"4\" size=\"4\" onblur=\"valid_range(this,1,2346,share.ip)\" name=\"%s_rtsvalue\" value=\"%s\" />", var, nvram_default_get(ip, "500"));
+	websWrite(wp, "</div>\n");
+	websWrite(wp, "</div>\n");
 
-		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_rts\"), \"%s_idrts\", %s);\n", var, vvar, nvram_matchi(ssid, 1) ? "true" : "false");
-		websWrite(wp, "//]]>\n</script>\n");
-	}
+	websWrite(wp, "<script>\n//<![CDATA[\n ");
+	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_rts\"), \"%s_idrts\", %s);\n", var, vvar, nvram_matchi(ssid, 1) ? "true" : "false");
+	websWrite(wp, "//]]>\n</script>\n");
 }
 
 #ifdef HAVE_WPA3
@@ -2143,43 +2137,50 @@ static void showairtimepolicy(webs_t wp, char *var)
 {
 	char vvar[32];
 	char wl_airtime[32];
-	strcpy(vvar, var);
-	rep(vvar, '.', 'X');
-	sprintf(wl_airtime, "%s_at_policy", var);
-	websWrite(wp, "<select name=\"%s_at_policy\">\n", var);
-	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	websWrite(wp, "document.write(\"<option value=\\\"0\\\" onclick=\\\"show_airtime_poliy(this.form, '%s');\\\" %s ><script type=\"text/javascript\">Capture(shared.disabled)</script></option>\");\n", var,
-		  nvram_match(wl_airtime, "0") ? "selected=\\\"selected\\\"" : "");
-	websWrite(wp, "document.write(\"<option value=\\\"1\\\" onclick=\\\"show_airtime_poliy(this.form, '%s');\\\" %s ><script type=\"text/javascript\">Capture(wl_basic.airtime_dynamic)</script></option>\");\n", var,
-		  nvram_match(wl_airtime, "1") ? "selected=\\\"selected\\\"" : "");
-	websWrite(wp, "document.write(\"<option value=\\\"2\\\" onclick=\\\"show_airtime_poliy(this.form, '%s');\\\" %s ><script type=\"text/javascript\">Capture(wl_basic.airtime_limit)</script></option>\");\n", var,
-		  nvram_match(wl_airtime, "2") ? "selected=\\\"selected\\\"" : "");
-	websWrite(wp, "//]]>\n</script>\n</select>\n");
+	if (has_airtime_policy(var)) {
+		strcpy(vvar, var);
+		rep(vvar, '.', 'X');
+		sprintf(wl_airtime, "%s_at_policy", var);
+		nvram_default_get(wl_airtime,"0");
+    
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wl_basic.airtime_policy", NULL);
+		websWrite(wp, "<select name=\"%s_at_policy\" onclick=\"show_airtime_policy(this.form, '%s');\">\n", var, var);
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n",
+			  nvram_match(wl_airtime, "0") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.airtime_dynamic + \"</option>\");\n",
+			  nvram_match(wl_airtime, "1") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.airtime_limit + \"</option>\");\n",
+			  nvram_match(wl_airtime, "2") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "//]]>\n</script>\n</select>\n");
 
-	websWrite(wp, "<div id=\"%s_idairtimeweight\">\n", vvar);
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "wl_basic.airtime_weight", NULL);
-	char ip[32];
-	sprintf(ip, "%s_at_weight", var);
-	websWrite(wp, "<input class=\"num\" maxlength=\"4\" size=\"4\" onblur=\"valid_range(this,0,65536,share.ip)\" name=\"%s_at_weight\" value=\"%s\" />", var, nvram_default_get(ip, "1"));
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "</div>\n");
+		websWrite(wp, "<div id=\"%s_idairtimeweight\">\n", vvar);
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wl_basic.airtime_weight", NULL);
+		char ip[32];
+		sprintf(ip, "%s_at_weight", var);
+		websWrite(wp, "<input class=\"num\" maxlength=\"4\" size=\"4\" onblur=\"valid_range(this,0,65536,share.ip)\" name=\"%s_at_weight\" value=\"%s\" />", var, nvram_default_get(ip, "1"));
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</div>\n");
 
-	sprintf(ip, "%s_at_limit", var);
-	websWrite(wp, "<div id=\"%s_idairtimelimit\">\n", vvar);
-	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.airtime_dolimit)</script></div>\n");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_at_limit\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-		  var, nvram_default_matchi(ip, 1, 0) ? "checked=\"checked\"" : "");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_at_limit\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-		  var, nvram_default_matchi(ip, 0, 0) ? "checked=\"checked\"" : "");
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "</div>\n");
+		sprintf(ip, "%s_at_limit", var);
+		websWrite(wp, "<div id=\"%s_idairtimelimit\">\n", vvar);
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.airtime_dolimit)</script></div>\n");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_at_limit\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  var, nvram_default_matchi(ip, 1, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_at_limit\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+			  var, nvram_default_matchi(ip, 0, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</div>\n");
 
-	websWrite(wp, "<script>\n//<![CDATA[\n ");
-	websWrite(wp, "show_airtime_policy(document.getElementsByName(this.form, \"%s\");\n", var, vvar);
-	websWrite(wp, "//]]>\n</script>\n");
+		websWrite(wp, "<script>\n//<![CDATA[\n ");
+		websWrite(wp, "show_airtime_policy(document.wireless, \"%s\");\n", var, vvar);
+		websWrite(wp, "//]]>\n</script>\n");
+		websWrite(wp, "</div>\n");
+	}
 }
 #else
 #define showairtimepolicy(wp, var)

@@ -2919,7 +2919,7 @@ wl_basic.airtime_policy="Airtime Policy";
 wl_basic.airtime_dynamic="Dynamic Mode";
 wl_basic.airtime_limit="Limit Mode";
 wl_basic.airtime_weight="Weight";
-wl_basic.airtime_dolimit="Limitiere";
+wl_basic.airtime_dolimit="Limit";
 
 //help container
 var hwl_basic=new Object();

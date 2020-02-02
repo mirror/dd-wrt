@@ -2469,7 +2469,7 @@ wl_basic.airtime_policy="Airtime Stategie";
 wl_basic.airtime_dynamic="Dynamischer Modus";
 wl_basic.airtime_limit="Limit Modus";
 wl_basic.airtime_weight="Wichtung";
-wl_basic.airtime_dolimit="Limit";
+wl_basic.airtime_dolimit="Limitiere";
 
 
 //help container
