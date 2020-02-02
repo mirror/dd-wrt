@@ -216,9 +216,6 @@ static struct wm *find_wm(size_t size)
 		break;
 	}
 
-	if (flags & __GFP_ZERO)
-		memset(wm->buffer, 0, wm->sz);
-
 	wm->realsize = realsize;
 	return wm;
 }
