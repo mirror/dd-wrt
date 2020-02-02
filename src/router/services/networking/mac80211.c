@@ -1003,6 +1003,19 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	}
 #endif
 	fprintf(fp, "beacon_int=%d\n", intval);
+#ifdef HAVE_WPA3
+	char airtime[32];
+	sprintf(airtime, "%s_at_policy", prefix);
+	if (nvram_matchi(airtime, 0)) {
+		fprintf("airtime_mode=0\n");
+	}
+	if (nvram_matchi(airtime, 1)) {
+		fprintf("airtime_mode=1\n");
+	}
+	if (nvram_matchi(airtime, 2)) {
+		fprintf("airtime_mode=2\n");
+	}
+#endif
 	fprintf(fp, "\n");
 }
 
@@ -1378,6 +1391,16 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	fprintf(fp, "signal_poll_time=%s\n", nvram_default_get(signal, "10"));
 	sprintf(signal, "%s_strikes", ifname);
 	fprintf(fp, "signal_strikes=%s\n", nvram_default_get(signal, "3"));
+#ifdef HAVE_WPA3
+	char airtime[32];
+	sprintf(airtime, "%s_at_policy", prefix);
+	if (nvram_matchi(airtime, 1) || nvram_matchi(airtime, 2)) {
+		fprintf("airtime_bss_weight=%d\n", nvram_ngeti("%s_at_weight", ifname));
+	}
+	if (nvram_matchi(airtime, 2)) {
+		fprintf("airtime_bss_limit=%d\n", nvram_ngeti("%s_at_limit", ifname));
+	}
+#endif
 #ifdef HAVE_HOTSPOT20
 	setupHS20(fp, ifname);
 #endif
