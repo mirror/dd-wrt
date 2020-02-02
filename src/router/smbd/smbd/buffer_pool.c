@@ -44,6 +44,7 @@ static DEFINE_RWLOCK(wm_lists_lock);
 static inline void *__alloc(size_t size, gfp_t flags)
 {
 	void *ret;
+	gfp_t kmalloc_flags = flags;
 
 	/*
 	 * We want to attempt a large physically contiguous block first because
@@ -52,8 +53,15 @@ static inline void *__alloc(size_t size, gfp_t flags)
 	 * However make sure that larger requests are not too disruptive - no
 	 * OOM killer and no allocation failure warnings as we have a fallback.
 	 */
-
-	ret = kmalloc(size,  flags | __GFP_NOWARN);
+	if (size > PAGE_SIZE) {
+		kmalloc_flags |= __GFP_NORETRY | __GFP_NOWARN;
+		if (kmalloc_flags & GFP_KERNEL) {
+			kmalloc_flags &= ~GFP_KERNEL;
+			kmalloc_flags |= GFP_NOWAIT;
+		}
+	}
+	
+	ret = kmalloc(size,  kmalloc_flags);
 
 	/*
 	 * It doesn't really make sense to fallback to vmalloc for sub page
@@ -62,7 +70,6 @@ static inline void *__alloc(size_t size, gfp_t flags)
 	if (ret || size <= PAGE_SIZE)
 		return ret;
 	
-	flags &= ~(GFP_NOWAIT | __GFP_NORETRY);
 	return __vmalloc(size, flags, PAGE_KERNEL);
 }
 
@@ -94,7 +101,7 @@ static struct wm *wm_alloc(size_t sz)
 	struct wm *wm;
 	size_t alloc_sz = sz + sizeof(struct wm);
 
-	wm = __alloc(alloc_sz, GFP_NOWAIT | __GFP_NORETRY);
+	wm = __alloc(alloc_sz, GFP_KERNEL);
 	if (!wm)
 		return NULL;
 	wm->sz = sz;
@@ -105,7 +112,7 @@ static int register_wm_size_class(size_t sz)
 {
 	struct wm_list *l, *nl;
 
-	nl = __alloc(sizeof(struct wm_list), 0);
+	nl = __alloc(sizeof(struct wm_list), GFP_KERNEL);
 	if (!nl)
 		return -ENOMEM;
 
