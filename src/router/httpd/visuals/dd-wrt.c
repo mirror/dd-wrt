@@ -2177,7 +2177,7 @@ static void showairtimepolicy(webs_t wp, char *var)
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_airtime_policy(document.wireless, \"%s\");\n", var, vvar);
+		websWrite(wp, "show_airtime_policy(document.wireless, \"%s\", \"%s\");\n", var, vvar);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
 	}
