@@ -2347,13 +2347,13 @@ int has_qtn(const char *prefix)
 #endif
 
 struct wifidevices {
-	char *name;			//chipset name for gui
-	int flags;			//see below
+	char *name;		//chipset name for gui
+	int flags;		//see below
 	unsigned short vendor;
 	unsigned short device;
 	unsigned short subvendor;	//optional
 	unsigned short subdevice;
-	char *wmac; // indicates a wisoc based chipset. ahb soc name must be defined here
+	char *wmac;		// indicates a wisoc based chipset. ahb soc name must be defined here
 };
 #define NONE 0x0
 #define CHANNELSURVEY 0x1	// driver supports channelsurvey feature
@@ -2815,6 +2815,14 @@ int is_mt76x2(const char *prefix)
 int is_mt76(const char *prefix)
 {
 	return (is_mt7615(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix));
+}
+#endif
+#ifdef HAVE_WPA3
+int has_airtime_policy(const char *prefix)
+{
+	if (is_mt7615(prefix) || is_ath10k(prefix) || is_ath9k(prefix))
+		return 1;
+	return 0;
 }
 #endif
 

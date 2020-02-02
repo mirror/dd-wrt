@@ -360,6 +360,14 @@ extern char *mac80211_get_caps(const char *interface, int shortgi, int greenfiel
 extern int has_greenfield(const char *interface);
 #ifdef HAVE_ATH9K
 extern int has_airtime_fairness(const char *prefix);
+#ifdef HAVE_WPA3
+extern int has_airtime_policy(const char *prefix);
+#else
+static inline int has_airtime_policy(const char *prefix)
+{
+	return 0;
+}
+#endif
 extern int has_shortgi(const char *interface);
 extern int has_uapsd(const char *interface);
 extern int has_smps(const char *interface);
@@ -367,6 +375,10 @@ extern int has_dynamic_smps(const char *interface);
 extern int has_static_smps(const char *interface);
 #else
 static inline int has_airtime_fairness(const char *prefix)
+{
+	return 0;
+}
+static inline int has_airtime_policy(const char *prefix)
 {
 	return 0;
 }
