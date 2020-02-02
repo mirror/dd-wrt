@@ -391,6 +391,8 @@ static int srvsvc_invoke(struct usmbd_rpc_pipe *pipe)
 	case SRVSVC_OPNUM_GET_SHARE_INFO:
 		ret = srvsvc_share_info_invoke(pipe);
 		break;
+	case 21:
+		break;
 	default:
 		pr_err("SRVSVC: unsupported INVOKE method %d\n",
 		       pipe->dce->req_hdr.opnum);
