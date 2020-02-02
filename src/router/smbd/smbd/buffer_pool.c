@@ -17,7 +17,7 @@
 #include "mgmt/ksmbd_ida.h"
 
 static struct kmem_cache *filp_cache;
-
+static int threads; 
 struct wm {
 	struct list_head	list;
 	size_t			sz;
@@ -194,7 +194,7 @@ static struct wm *find_wm(size_t size)
 			return wm;
 		}
 
-		if (wm_list->avail_wm > num_online_cpus()) {
+		if (wm_list->avail_wm > threads) {
 			spin_unlock(&wm_list->wm_lock);
 			wait_event(wm_list->wm_wait,
 				   !list_empty(&wm_list->idle_wm));
@@ -226,7 +226,7 @@ static void release_wm(struct wm *wm, struct wm_list *wm_list)
 		return;
 
 	spin_lock(&wm_list->wm_lock);
-	if (wm_list->avail_wm <= num_online_cpus()) {
+	if (wm_list->avail_wm <= threads) {
 		list_add(&wm->list, &wm_list->idle_wm);
 		spin_unlock(&wm_list->wm_lock);
 		wake_up(&wm_list->wm_wait);
@@ -340,9 +340,10 @@ void ksmbd_destroy_buffer_pools(void)
 
 int ksmbd_init_buffer_pools(void)
 {
+	threads = num_online_cpus() * 2;
 	if (ksmbd_work_pool_init())
 		goto out;
-
+	
 	filp_cache = kmem_cache_create("ksmbd_file_cache",
 					sizeof(struct ksmbd_file), 0,
 					SLAB_HWCACHE_ALIGN, NULL);
