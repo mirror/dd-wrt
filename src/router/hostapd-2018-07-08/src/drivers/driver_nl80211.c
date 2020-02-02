@@ -5192,6 +5192,28 @@ fail:
 }
 
 
+static int driver_nl80211_sta_set_airtime_weight(void *priv, const u8 *addr,
+						 unsigned int weight)
+{
+	struct i802_bss *bss = priv;
+	struct nl_msg *msg;
+
+	wpa_printf(MSG_DEBUG,
+		   "nl80211: Set STA airtime weight - ifname=%s addr=" MACSTR
+		   " weight=%u", bss->ifname, MAC2STR(addr), weight);
+
+	if (!(msg = nl80211_bss_msg(bss, 0, NL80211_CMD_SET_STATION)) ||
+	    nla_put(msg, NL80211_ATTR_MAC, ETH_ALEN, addr) ||
+	    nla_put_u16(msg, NL80211_ATTR_AIRTIME_WEIGHT, weight))
+		goto fail;
+
+	return send_and_recv_msgs(bss->drv, msg, NULL, NULL);
+fail:
+	nlmsg_free(msg);
+	return -ENOBUFS;
+}
+
+
 static int wpa_driver_nl80211_ap(struct wpa_driver_nl80211_data *drv,
 				 struct wpa_driver_associate_params *params)
 {
@@ -6318,6 +6340,36 @@ static int i802_flush(void *priv)
 }
 
 
+static void get_sta_tid_stats(struct hostap_sta_driver_data *data,
+			      struct nlattr *attr)
+{
+	struct nlattr *tid_stats[NL80211_TID_STATS_MAX + 1], *tidattr;
+	struct nlattr *txq_stats[NL80211_TXQ_STATS_MAX + 1];
+	static struct nla_policy txq_stats_policy[NL80211_TXQ_STATS_MAX + 1] = {
+		[NL80211_TXQ_STATS_BACKLOG_BYTES] = { .type = NLA_U32 },
+		[NL80211_TXQ_STATS_BACKLOG_PACKETS] = { .type = NLA_U32 },
+	};
+	int rem;
+
+	nla_for_each_nested(tidattr, attr, rem) {
+		if (nla_parse_nested(tid_stats, NL80211_TID_STATS_MAX,
+				     tidattr, NULL) != 0 ||
+		    !tid_stats[NL80211_TID_STATS_TXQ_STATS] ||
+		    nla_parse_nested(txq_stats, NL80211_TXQ_STATS_MAX,
+				     tid_stats[NL80211_TID_STATS_TXQ_STATS],
+				     txq_stats_policy) != 0)
+			continue;
+		/* sum the backlogs over all TIDs for station */
+		if (txq_stats[NL80211_TXQ_STATS_BACKLOG_BYTES])
+			data->backlog_bytes += nla_get_u32(
+				txq_stats[NL80211_TXQ_STATS_BACKLOG_BYTES]);
+		if (txq_stats[NL80211_TXQ_STATS_BACKLOG_PACKETS])
+			data->backlog_bytes += nla_get_u32(
+				txq_stats[NL80211_TXQ_STATS_BACKLOG_PACKETS]);
+	}
+}
+
+
 static int get_sta_handler(struct nl_msg *msg, void *arg)
 {
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
@@ -6335,6 +6387,8 @@ static int get_sta_handler(struct nl_msg *msg, void *arg)
 		[NL80211_STA_INFO_TX_BYTES64] = { .type = NLA_U64 },
 		[NL80211_STA_INFO_SIGNAL] = { .type = NLA_U8 },
 		[NL80211_STA_INFO_SIGNAL_AVG] = { .type = NLA_U8 },
+		[NL80211_STA_INFO_RX_DURATION] = { .type = NLA_U64 },
+		[NL80211_STA_INFO_TX_DURATION] = { .type = NLA_U64 },
 	};
 	struct nlattr *rate[NL80211_RATE_INFO_MAX + 1];
 	static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1] = {
@@ -6392,6 +6446,12 @@ static int get_sta_handler(struct nl_msg *msg, void *arg)
 	if (stats[NL80211_STA_INFO_TX_PACKETS])
 		data->tx_packets =
 			nla_get_u32(stats[NL80211_STA_INFO_TX_PACKETS]);
+	if (stats[NL80211_STA_INFO_RX_DURATION])
+		data->rx_airtime =
+			nla_get_u64(stats[NL80211_STA_INFO_RX_DURATION]);
+	if (stats[NL80211_STA_INFO_TX_DURATION])
+		data->tx_airtime =
+			nla_get_u64(stats[NL80211_STA_INFO_TX_DURATION]);
 	if (stats[NL80211_STA_INFO_TX_FAILED])
 		data->tx_retry_failed =
 			nla_get_u32(stats[NL80211_STA_INFO_TX_FAILED]);
@@ -6461,6 +6521,9 @@ static int get_sta_handler(struct nl_msg *msg, void *arg)
 			data->flags |= STA_DRV_DATA_RX_VHT_NSS;
 		}
 	}
+
+	if (stats[NL80211_STA_INFO_TID_STATS])
+		get_sta_tid_stats(data, stats[NL80211_STA_INFO_TID_STATS]);
 
 	return NL_SKIP;
 }
@@ -10974,6 +11037,7 @@ const struct wpa_driver_ops wpa_driver_nl80211_ops = {
 	.sta_remove = driver_nl80211_sta_remove,
 	.hapd_send_eapol = wpa_driver_nl80211_hapd_send_eapol,
 	.sta_set_flags = wpa_driver_nl80211_sta_set_flags,
+	.sta_set_airtime_weight = driver_nl80211_sta_set_airtime_weight,
 	.hapd_init = i802_init,
 	.hapd_deinit = i802_deinit,
 	.set_wds_sta = i802_set_wds_sta,

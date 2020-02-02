@@ -1765,6 +1765,7 @@ struct hostapd_data;
 struct hostap_sta_driver_data {
 	unsigned long rx_packets, tx_packets;
 	unsigned long long rx_bytes, tx_bytes;
+	unsigned long long rx_airtime, tx_airtime;
 	int bytes_64bit; /* whether 64-bit byte counters are supported */
 	unsigned long current_tx_rate;
 	unsigned long current_rx_rate;
@@ -1774,6 +1775,8 @@ struct hostap_sta_driver_data {
 	unsigned long tx_retry_failed;
 	unsigned long tx_retry_count;
 	s8 last_ack_rssi;
+	unsigned long backlog_packets;
+	unsigned long backlog_bytes;
 	s8 signal;
 	u8 rx_vhtmcs;
 	u8 tx_vhtmcs;
@@ -2949,6 +2952,16 @@ struct wpa_driver_ops {
 	int (*sta_set_flags)(void *priv, const u8 *addr,
 			     unsigned int total_flags, unsigned int flags_or,
 			     unsigned int flags_and);
+
+	/**
+	 * sta_set_airtime_weight - Set station airtime weight (AP only)
+	 * @priv: Private driver interface data
+	 * @addr: Station address
+	 * @weight: New weight for station airtime assignment
+	 * Returns: 0 on success, -1 on failure
+	 */
+	int (*sta_set_airtime_weight)(void *priv, const u8 *addr,
+				      unsigned int weight);
 
 	/**
 	 * set_tx_queue_params - Set TX queue parameters
