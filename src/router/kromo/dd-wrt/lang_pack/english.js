@@ -2915,6 +2915,9 @@ wl_basic.lower="lower";
 wl_basic.uapsd="U-APSD (Automatic Power Save)";
 wl_basic.smps="Spatial Multiplex Power Save";
 wl_basic.add="Add Virtual AP";
+wl_basic.airtime_policy="Airtime Policy";
+wl_basic.airtime_dynamic="Dynamic Mode";
+wl_basic.airtime_limit="Limit Mode";
 
 //help container
 var hwl_basic=new Object();
