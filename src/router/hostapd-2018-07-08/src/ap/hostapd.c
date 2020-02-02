@@ -51,6 +51,7 @@
 #include "fils_hlp.h"
 #include "acs.h"
 #include "hs20.h"
+#include "airtime_policy.h"
 #include "eapol_auth/eapol_auth_sm.h"
 #include "eapol_auth/eapol_auth_sm_i.h"
 
@@ -531,6 +532,7 @@ static void hostapd_cleanup_iface_partial(struct hostapd_iface *iface)
 	iface->basic_rates = NULL;
 	ap_list_deinit(iface);
 	sta_track_deinit(iface);
+	airtime_policy_update_deinit(iface);
 }
 
 
@@ -2107,6 +2109,7 @@ dfs_offload:
 
 	hostapd_set_state(iface, HAPD_IFACE_ENABLED);
 	hostapd_owe_update_trans(iface);
+	airtime_policy_update_init(iface);
 	wpa_msg(iface->bss[0]->msg_ctx, MSG_INFO, AP_EVENT_ENABLED);
 	if (hapd->setup_complete_cb)
 		hapd->setup_complete_cb(hapd->setup_complete_cb_ctx);
@@ -3122,6 +3125,8 @@ void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,
 			hostapd_p2p_non_p2p_sta_connected(hapd);
 	}
 #endif /* CONFIG_P2P */
+
+	airtime_policy_new_sta(hapd, sta);
 
 	/* Start accounting here, if IEEE 802.1X and WPA are not used.
 	 * IEEE 802.1X/WPA code will start accounting after the station has
