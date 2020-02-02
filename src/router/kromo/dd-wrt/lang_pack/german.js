@@ -2468,8 +2468,8 @@ wl_basic.add="Virtuellen AP Hinzuf&uuml;gen";
 wl_basic.airtime_policy="Airtime Stategie";
 wl_basic.airtime_dynamic="Dynamischer Modus";
 wl_basic.airtime_limit="Limit Modus";
-wl_basic.airtime_weight="Wichtung";
-wl_basic.airtime_dolimit="Limitiere";
+wl_basic.airtime_weight="Airtime Wichtung";
+wl_basic.airtime_dolimit="Airtime Limitiere";
 
 
 //help container
