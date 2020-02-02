@@ -2145,7 +2145,7 @@ static void showairtimepolicy(webs_t wp, char *var)
 	char wl_airtime[32];
 	strcpy(vvar, var);
 	rep(vvar, '.', 'X');
-	sprintf(wl_airtime, "%s_airtime", var);
+	sprintf(wl_airtime, "%s_at_policy", var);
 	websWrite(wp, "<select name=\"%s_at_policy\">\n", var);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"0\\\" onclick=\\\"show_airtime_poliy(this.form, '%s');\\\" %s ><script type=\"text/javascript\">Capture(shared.disabled)</script></option>\");\n", var,
@@ -2161,7 +2161,7 @@ static void showairtimepolicy(webs_t wp, char *var)
 	show_caption(wp, "label", "wl_basic.airtime_weight", NULL);
 	char ip[32];
 	sprintf(ip, "%s_at_weight", var);
-	websWrite(wp, "<input class=\"num\" maxlength=\"4\" size=\"4\" onblur=\"valid_range(this,0,65536,share.ip)\" name=\"%s_weight\" value=\"%s\" />", var, nvram_default_get(ip, "1"));
+	websWrite(wp, "<input class=\"num\" maxlength=\"4\" size=\"4\" onblur=\"valid_range(this,0,65536,share.ip)\" name=\"%s_at_weight\" value=\"%s\" />", var, nvram_default_get(ip, "1"));
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "</div>\n");
 
