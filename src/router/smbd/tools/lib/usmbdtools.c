@@ -29,10 +29,12 @@ struct LIST *list_init(struct LIST **list)
 		return NULL;
 	(*list)->prev = NULL;
 	(*list)->next = NULL;
+	(*list)->mutex = malloc(sizeof(pthread_mutex_t));
+	pthread_mutex_init((*list)->mutex, NULL);
 	return *list;
 }
 
-long long list_maxid(struct LIST **list)
+static long long list_maxid(struct LIST **list)
 {
 	long long id = -1;
 	struct LIST *head = *list;
@@ -49,13 +51,15 @@ int list_foreach(struct LIST **list,
 			      void *user_data), void *user_data)
 {
 	struct LIST *head = *list;
-
+	pthread_mutex_lock((*list)->mutex);
 	while ((head = head->next)) {
 		if (head->type == KEY_STRING)
 			func(head->item, list_tokey(head->keystr), user_data);
 		else
 			func(head->item, head->id, user_data);
 	}
+	pthread_mutex_unlock((*list)->mutex);
+	return 0;
 }
 
 struct LIST *head_get(struct LIST **list, unsigned long long id)
@@ -77,8 +81,9 @@ struct LIST *head_get(struct LIST **list, unsigned long long id)
 			if (!strcmp(head->keystr, c))
 				return head;
 		} else {
-			if (head->id == id)
+			if (head->id == id) {
 				return head;
+			}
 		}
 	}
 	return NULL;
@@ -91,14 +96,16 @@ int _list_add(struct LIST **list, void *item, unsigned long long id, char *str)
 
 	if (!*list)
 		list_init(list);
+	pthread_mutex_lock((*list)->mutex);
 	new = head_get(list, str ? list_tokey(str) : id);
 	if (new)
 		ret = 0;
 	if (!new)
 		new = malloc(sizeof(struct LIST));
-	if (!new)
+	if (!new) {
+		pthread_mutex_unlock((*list)->mutex);
 		return 0;
-
+	}
 	new->item = item;
 	if (ret) {
 		if (str) {
@@ -117,7 +124,9 @@ int _list_add(struct LIST **list, void *item, unsigned long long id, char *str)
 
 		last->next = new;
 		new->prev = last;
+		new->mutex = last->mutex;
 	}
+	pthread_mutex_unlock((*list)->mutex);
 	return ret;
 }
 
@@ -141,6 +150,7 @@ int _list_remove(struct LIST **list, unsigned long long id, int dec)
 	int ret = 0;
 	struct LIST *head = *list;
 	struct LIST *next = NULL;
+	pthread_mutex_lock((*list)->mutex);
 	while ((head = head->next)) {
 		if ((head->type == KEY_ID && head->id == id)
 		    || (head->type == KEY_STRING
@@ -166,6 +176,7 @@ out:
 			next = next->next;
 		}
 	}
+	pthread_mutex_unlock((*list)->mutex);
 	return ret;
 }
 
@@ -181,10 +192,12 @@ int list_remove(struct LIST **list, unsigned long long id)
 
 void *list_get(struct LIST **list, unsigned long long id)
 {
+	pthread_mutex_lock((*list)->mutex);
 	struct LIST *head = head_get(list, id);
 
 	if (head)
 		return head->item;
+	pthread_mutex_unlock((*list)->mutex);
 	return NULL;
 }
 
@@ -195,12 +208,16 @@ void list_clear(struct LIST **list)
 	if (head)
 		return;
 
+	pthread_mutex_lock((*list)->mutex);
 	while (head) {
 		struct LIST *h = head->next;
 
 		free(head);
 		head = h;
 	}
+	pthread_mutex_unlock((*list)->mutex);
+	pthread_mutex_destroy((*list)->mutex);
+	free((*list)->mutex);
 	*list = NULL;
 }
 

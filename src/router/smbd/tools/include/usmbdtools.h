@@ -46,10 +46,10 @@ struct LIST {
 	unsigned long long id;
 	char *keystr;
 	void *item;
+	pthread_mutex_t *mutex;
 };
 
 struct LIST *list_init(struct LIST **list);
-long long list_maxid(struct LIST **list);
 int list_add_str(struct LIST **list, void *item, char *str);
 int list_add(struct LIST **list, void *item, unsigned long long id);
 void list_append(struct LIST **list, void *item);
