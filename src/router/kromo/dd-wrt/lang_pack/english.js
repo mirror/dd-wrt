@@ -2918,8 +2918,8 @@ wl_basic.add="Add Virtual AP";
 wl_basic.airtime_policy="Airtime Policy";
 wl_basic.airtime_dynamic="Dynamic Mode";
 wl_basic.airtime_limit="Limit Mode";
-wl_basic.airtime_weight="Weight";
-wl_basic.airtime_dolimit="Limit";
+wl_basic.airtime_weight="Airtime Weight";
+wl_basic.airtime_dolimit="Airtime Limit";
 
 //help container
 var hwl_basic=new Object();
