@@ -190,7 +190,7 @@ extern void pr_logger_init(int flags);
 					getpid(),			\
 					##__VA_ARGS__);			\
 	} while (0)
-#ifdef HAVE_DEBUG
+#if 1 //def HAVE_DEBUG
 #define pr_debug(f, ...)	\
 	pr_log(PR_DEBUG, PRDEBUG f, ##__VA_ARGS__)
 #else
