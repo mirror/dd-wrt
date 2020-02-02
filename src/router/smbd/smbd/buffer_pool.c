@@ -310,7 +310,7 @@ void ksmbd_release_buffer(void *buffer)
 
 	wm = container_of(buffer, struct wm, buffer);
 	wm_list = match_wm_list(wm->realsize);
-	WARN_ON(!wm_list);
+	//WARN_ON(!wm_list);
 	if (wm_list)
 		release_wm(wm, wm_list);
 }
