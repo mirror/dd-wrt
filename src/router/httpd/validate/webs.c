@@ -2752,7 +2752,8 @@ static char *vapsettings[] = {
 	"wds6_if", "wds6_ipaddr", "wds6_netmask", "wds6_ospf", "wds7", "wds7_desc", "wds7_enable", "wds7_hwaddr", "wds7_if", "wds7_ipaddr", "wds7_netmask", "wds7_ospf", "wds8", "wds8_desc", "wds8_enable",
 	"wds8_hwaddr", "wds8_if", "wds8_ipaddr", "wds8_netmask", "wds8_ospf", "wds9", "wds9_desc", "wds9_enable", "wds9_hwaddr", "wds9_if", "wds9_ipaddr", "wds9_netmask", "wds9_ospf", "web_filter", "wep", "wep_bit",
 	"wep_buf", "wme", "wme_ap_be", "wme_ap_bk", "wme_ap_vi", "wme_ap_vo", "wme_apsd", "wme_no_ack", "wme_sta_be", "wme_sta_bk", "wme_sta_vi", "wme_sta_vo", "wme_txp_be", "wme_txp_bk", "wme_txp_vi", "wme_txp_vo",
-	"wmf_bss_enable", "wmf_igmpq_filter", "wmf_mdata_sendup", "wmf_ucast_upnp", "wmf_ucigmp_query", "wmm", "wpa", "wpa2", "wpa2-sha256", "wpa3", "wpa3-128", "wpa3-192", "wpa_gtk_rekey", "wpa_psk", "xr"
+	"wmf_bss_enable", "wmf_igmpq_filter", "wmf_mdata_sendup", "wmf_ucast_upnp", "wmf_ucigmp_query", "wmm", "wpa", "wpa2", "wpa2-sha256", "wpa3", "wpa3-128", "wpa3-192", "wpa_gtk_rekey", "wpa_psk", "xr", "at_policy", 
+	"at_weight", "at_limit"
 };
 
 static void movevap(char *prefix, int source, int target, int bonly)
@@ -4197,6 +4198,9 @@ static void save_prefix(webs_t wp, char *prefix)
 			nvram_nset(tw, "%s_rtsvalue", prefix);
 		}
 	}
+	copytonv_prefix(wp, "at_policy", prefix);
+	copytonv_prefix(wp, "at_limit", prefix);
+	copytonv_prefix(wp, "at_prefix", prefix);
 	copytonv_prefix(wp, "protmode", prefix);
 	copytonv_prefix(wp, "minrate", prefix);
 	copytonv_prefix(wp, "maxrate", prefix);
