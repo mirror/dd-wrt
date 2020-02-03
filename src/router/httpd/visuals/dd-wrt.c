@@ -2153,7 +2153,7 @@ static void showairtimepolicy(webs_t wp, char *var, char *sub)
 		nvram_default_get(wl_airtime, "0");
 
 		websWrite(wp, "<div class=\"setting\">\n");
-		if (!sub) {
+		if (!strcmp(var, sub)) {
 			show_caption(wp, "label", "wl_basic.airtime_policy", NULL);
 			websWrite(wp, "<select name=\"%s_at_policy\" onclick=\"show_airtime_policy(this.form, '%s', '%s');\">\n", var, var, vvar);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
