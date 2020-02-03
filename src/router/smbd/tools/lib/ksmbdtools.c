@@ -194,8 +194,10 @@ void *list_get(struct LIST **list, unsigned long long id)
 	pthread_mutex_lock((*list)->mutex);
 	struct LIST *head = head_get(list, id);
 
-	if (head)
+	if (head) {
+		pthread_mutex_unlock((*list)->mutex);
 		return head->item;
+	}
 	pthread_mutex_unlock((*list)->mutex);
 	return NULL;
 }
