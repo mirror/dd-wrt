@@ -351,7 +351,7 @@ void ksmbd_destroy_buffer_pools(void)
 
 int ksmbd_init_buffer_pools(void)
 {
-	threads = num_online_cpus();
+	threads = num_online_cpus() * 2;
 	if (ksmbd_work_pool_init())
 		goto out;
 	
