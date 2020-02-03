@@ -1393,12 +1393,16 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	fprintf(fp, "signal_strikes=%s\n", nvram_default_get(signal, "3"));
 #ifdef HAVE_WPA3
 	char airtime[32];
-	sprintf(airtime, "%s_at_policy", ifname);
+	sprintf(airtime, "%s_at_policy", maininterface);
 	if (nvram_matchi(airtime, 1) || nvram_matchi(airtime, 2)) {
-		fprintf(fp,"airtime_bss_weight=%d\n", nvram_ngeti("%s_at_weight", ifname));
+		char at_weight[32];
+		sprintf(at_weight, "%s_at_weight", ifname);
+		fprintf(fp,"airtime_bss_weight=%d\n", nvram_default_geti(at_weight, 1));
 	}
 	if (nvram_matchi(airtime, 2)) {
-		fprintf(fp,"airtime_bss_limit=%d\n", nvram_ngeti("%s_at_limit", ifname));
+		char at_limit[32];
+		sprintf(at_limit, "%s_at_limit", ifname);
+		fprintf(fp,"airtime_bss_limit=%d\n", nvram_default_geti(at_limit, 0));
 	}
 #endif
 #ifdef HAVE_HOTSPOT20
