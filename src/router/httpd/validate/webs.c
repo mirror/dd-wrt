@@ -4199,8 +4199,8 @@ static void save_prefix(webs_t wp, char *prefix)
 		}
 	}
 	copytonv_prefix(wp, "at_policy", prefix);
+	copytonv_prefix(wp, "at_weight", prefix);
 	copytonv_prefix(wp, "at_limit", prefix);
-	copytonv_prefix(wp, "at_prefix", prefix);
 	copytonv_prefix(wp, "protmode", prefix);
 	copytonv_prefix(wp, "minrate", prefix);
 	copytonv_prefix(wp, "maxrate", prefix);
