@@ -32,7 +32,7 @@ obj-$(CONFIG_MOXA) += moxa
 obj-$(CONFIG_IPTABLES) += iptables
 obj-$(CONFIG_LIBIPT) += iptables
 obj-$(CONFIG_IPSEC) += ipsec
-obj-$(CONFIG_LIBPCAP) += libpcap
+#obj-$(CONFIG_LIBPCAP) += libpcap
 obj-$(CONFIG_WIVIZ) += wiviz2
 obj-$(CONFIG_TCPDUMP) += libpcap openssl tcpdump
 obj-$(CONFIG_KISMETDRONE) += kismet-devel
@@ -230,6 +230,10 @@ obj-$(CONFIG_RT3062) += rt3062
 obj-$(CONFIG_RT2860) += rt2860
 obj-$(CONFIG_P910ND) += p910nd
 obj-$(CONFIG_DRIVER_WIRED) += libnfnetlink libnetfilter_log
+ifneq ($(CONFIG_OPENSSL),y)
+obj-$(CONFIG_WPA3) += wolfssl
+endif
+obj-$(CONFIG_WOLFSSL) += wolfssl
 obj-$(CONFIG_HOSTAPD2) += hostapd2
 obj-$(CONFIG_WPA_SUPPLICANT2) += wpa_supplicant2
 obj-$(CONFIG_MIITOOL) += net-tools
@@ -327,10 +331,6 @@ obj-y+=ttraff
 #obj-y+=speedtest
 obj-$(CONFIG_MKIMAGE) += mkimage
 obj-$(CONFIG_SPEEDCHECKER) +=  json-c libubox speedchecker shownf
-ifneq ($(CONFIG_OPENSSL),y)
-obj-$(CONFIG_WPA3) += wolfssl
-endif
-obj-$(CONFIG_WOLFSSL) += wolfssl
 obj-$(CONFIG_MIKROTIK_BTEST) += mikrotik_btest
 obj-$(CONFIG_BKM) += multisim
 obj-$(CONFIG_TMK) += multisim
