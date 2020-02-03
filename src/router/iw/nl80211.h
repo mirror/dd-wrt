@@ -2653,6 +2653,7 @@ enum nl80211_attrs {
 	NL80211_ATTR_PMKR0_NAME,
 	NL80211_ATTR_PORT_AUTHORIZED,
 
+
 	NL80211_ATTR_EXTERNAL_AUTH_ACTION,
 	NL80211_ATTR_EXTERNAL_AUTH_SUPPORT,
 
@@ -2677,6 +2678,36 @@ enum nl80211_attrs {
 	NL80211_ATTR_PEER_MEASUREMENTS,
 
 	NL80211_ATTR_AIRTIME_WEIGHT,
+
+	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
+
+	NL80211_ATTR_TDMA_VERSION,
+
+	NL80211_ATTR_TDMA_NODES,
+
+	NL80211_ATTR_TDMA_BWMODE,
+
+	NL80211_ATTR_TDMA_EXT_TSF,
+
+	NL80211_ATTR_COMPR,
+
+	NL80211_ATTR_COMPR_THRESHOLD,
+
+	NL80211_ATTR_TDMA_SLOT_SIZE,
+
+	NL80211_ATTR_TDMA_TX_RATIO,
+
+	NL80211_ATTR_TDMA_RX_RATIO,
+
+	NL80211_ATTR_TDMA_AGGREGATION,
+
+	NL80211_ATTR_TDMA_GACK,
+
+	NL80211_ATTR_TDMA_REORDER,
+
+	NL80211_ATTR_TDMA_POLLING,
+
+	NL80211_ATTR_MTIKWDS,
 
 	/* add attributes here, update the policy in nl80211.c */
 
@@ -5115,6 +5146,10 @@ enum nl80211_feature_flags {
  *	fairness for transmitted packets and has enabled airtime fairness
  *	scheduling.
  *
+ * @NL80211_EXT_FEATURE_AQL: The driver supports the Airtime Queue Limit (AQL)
+ *	feature, which prevents bufferbloat by using the expected transmission
+ *	time to limit the amount of data buffered in the hardware.
+ *
  * @NUM_NL80211_EXT_FEATURES: number of extended features.
  * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
  */
@@ -5153,6 +5188,8 @@ enum nl80211_ext_feature_index {
 	NL80211_EXT_FEATURE_CAN_REPLACE_PTK0,
 	NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER,
 	NL80211_EXT_FEATURE_AIRTIME_FAIRNESS,
+	NL80211_EXT_FEATURE_VLAN_OFFLOAD,
+	NL80211_EXT_FEATURE_AQL,
 
 	/* add new features before the definition below */
 	NUM_NL80211_EXT_FEATURES,
