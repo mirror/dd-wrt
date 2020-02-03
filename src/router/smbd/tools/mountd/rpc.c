@@ -8,13 +8,13 @@
 #include <memory.h>
 #include <endian.h>
 #include <errno.h>
-#include <linux/usmbd_server.h>
+#include <linux/ksmbd_server.h>
 
 #include <rpc.h>
 #include <rpc_srvsvc.h>
 #include <rpc_wkssvc.h>
 #include <pthread.h>
-#include <usmbdtools.h>
+#include <ksmbdtools.h>
 
 static struct LIST *pipes_table;
 static pthread_rwlock_t pipes_table_lock;

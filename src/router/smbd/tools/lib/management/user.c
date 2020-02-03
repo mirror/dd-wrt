@@ -8,10 +8,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <linux/usmbd_server.h>
+#include <linux/ksmbd_server.h>
 
 #include <management/user.h>
-#include <usmbdtools.h>
+#include <ksmbdtools.h>
 
 static struct LIST *users_table;
 static pthread_rwlock_t users_table_lock;

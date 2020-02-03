@@ -8,7 +8,7 @@
 #ifndef __MANAGEMENT_SHARE_H__
 #define __MANAGEMENT_SHARE_H__
 
-#include <usmbdtools.h>
+#include <ksmbdtools.h>
 
 
 enum share_users {

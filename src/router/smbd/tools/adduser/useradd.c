@@ -17,13 +17,13 @@
 #include <ctype.h>
 
 #include <config_parser.h>
-#include <usmbdtools.h>
+#include <ksmbdtools.h>
 
 #include <management/user.h>
 #include <management/share.h>
 #include <user_admin.h>
 
-#include <linux/usmbd_server.h>
+#include <linux/ksmbd_server.h>
 
 static char *arg_account;
 static char *arg_password;

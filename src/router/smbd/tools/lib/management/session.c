@@ -7,12 +7,12 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <linux/usmbd_server.h>
+#include <linux/ksmbd_server.h>
 #include <pthread.h>
 #include <management/session.h>
 #include <management/tree_conn.h>
 #include <management/user.h>
-#include <usmbdtools.h>
+#include <ksmbdtools.h>
 
 static struct LIST *sessions_table;
 static pthread_rwlock_t sessions_table_lock;
