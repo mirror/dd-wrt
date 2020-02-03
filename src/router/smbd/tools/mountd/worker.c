@@ -8,9 +8,9 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <errno.h>
-#include <linux/usmbd_server.h>
+#include <linux/ksmbd_server.h>
 
-#include <usmbdtools.h>
+#include <ksmbdtools.h>
 #include <worker.h>
 #include <ipc.h>
 #include <rpc.h>

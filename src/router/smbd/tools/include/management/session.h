@@ -8,7 +8,7 @@
 #ifndef __MANAGEMENT_TCONNECTION_H__
 #define __MANAGEMENT_TCONNECTION_H__
 
-#include <usmbdtools.h>
+#include <ksmbdtools.h>
 
 struct usmbd_user;
 

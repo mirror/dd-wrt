@@ -11,11 +11,11 @@
 #include <pwd.h>
 #include <grp.h>
 #include <config_parser.h>
-#include <linux/usmbd_server.h>
+#include <linux/ksmbd_server.h>
 
 #include <management/share.h>
 #include <management/user.h>
-#include <usmbdtools.h>
+#include <ksmbdtools.h>
 
 /*
  * WARNING:

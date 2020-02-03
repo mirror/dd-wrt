@@ -13,10 +13,10 @@
 #include <ctype.h>
 #include <sys/mman.h>
 #include <limits.h>
-#include <linux/usmbd_server.h>
+#include <linux/ksmbd_server.h>
 
 #include <config_parser.h>
-#include <usmbdtools.h>
+#include <ksmbdtools.h>
 #include <management/user.h>
 #include <management/share.h>
 

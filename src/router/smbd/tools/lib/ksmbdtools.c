@@ -81,9 +81,8 @@ struct LIST *head_get(struct LIST **list, unsigned long long id)
 			if (!strcmp(head->keystr, c))
 				return head;
 		} else {
-			if (head->id == id) {
+			if (head->id == id)
 				return head;
-			}
 		}
 	}
 	return NULL;

@@ -13,11 +13,11 @@
 #include <fcntl.h>
 
 #include <config_parser.h>
-#include <usmbdtools.h>
+#include <ksmbdtools.h>
 
 #include <management/share.h>
 
-#include <linux/usmbd_server.h>
+#include <linux/ksmbd_server.h>
 #include <share_admin.h>
 
 static int conf_fd = -1;

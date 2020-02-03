@@ -8,7 +8,7 @@
 #ifndef __USMBD_CONFIG_H__
 #define __USMBD_CONFIG_H__
 
-#include <usmbdtools.h>
+#include <ksmbdtools.h>
 
 struct smbconf_group {
 	char			*name;
