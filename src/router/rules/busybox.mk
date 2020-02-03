@@ -321,6 +321,15 @@ endif
 	sed -i 's/\# CONFIG_IFUPDOWN_UDHCPC_CMD_OPTIONS is not set/CONFIG_IFUPDOWN_UDHCPC_CMD_OPTIONS=""/g' busybox/.config
 #endif
 
+ifeq ($(CONFIG_BUSYBOX_NTPD),y)
+	sed -i 's/\# CONFIG_NTPD is not set/CONFIG_NTPD=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_NTPD_SERVER is not set/CONFIG_FEATURE_NTPD_SERVER=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_NTPD_CONF is not set/CONFIG_FEATURE_NTPD_CONF=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_NTPD_AUTH is not set/CONFIG_FEATURE_NTPD_AUTH=y/g' busybox/.config
+	echo "CONFIG_FEATURE_NTPD_CONF=y" >> busybox/.config
+	echo "CONFIG_FEATURE_NTPD_AUTH=y" >> busybox/.config
+endif
+
 ifeq ($(CONFIG_IPV6),y)
 	sed -i 's/\# CONFIG_FEATURE_IPV6 is not set/CONFIG_FEATURE_IPV6=y/g' busybox/.config
 	echo "CONFIG_TRACEROUTE6=y" >> busybox/.config
