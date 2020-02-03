@@ -4013,7 +4013,7 @@ static int get_file_all_info(struct ksmbd_work *work,
 				FILE_GENERIC_READ_LE |
 				FILE_MAXIMAL_ACCESS_LE |
 				FILE_GENERIC_ALL_LE))) {
-		ksmbd_err("no right to read the attributes : 0x%x\n",
+		ksmbd_debug("no right to read the attributes : 0x%x\n",
 				fp->daccess);
 		return -EACCES;
 	}
@@ -6025,9 +6025,12 @@ out:
  */
 int smb2_flush(struct ksmbd_work *work)
 {
-	struct smb2_flush_req *req = REQUEST_BUF(work);
-	struct smb2_flush_rsp *rsp = RESPONSE_BUF(work);
+	struct smb2_flush_req *req;
+	struct smb2_flush_rsp *rsp, *rsp_org;
 	int err;
+
+	rsp_org = RESPONSE_BUF(work);
+	WORK_BUFFERS(work, req, rsp);
 
 	ksmbd_debug("SMB2_FLUSH called for fid %llu\n",
 			le64_to_cpu(req->VolatileFileId));
@@ -6040,7 +6043,7 @@ int smb2_flush(struct ksmbd_work *work)
 
 	rsp->StructureSize = cpu_to_le16(4);
 	rsp->Reserved = 0;
-	inc_rfc1001_len(rsp, 4);
+	inc_rfc1001_len(rsp_org, 4);
 	return 0;
 
 out:
