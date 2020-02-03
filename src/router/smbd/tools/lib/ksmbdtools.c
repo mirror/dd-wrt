@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <usmbdtools.h>
+#include <ksmbdtools.h>
 
 /*
  * special simple linked list implementation, just made for the need of usmbd.
