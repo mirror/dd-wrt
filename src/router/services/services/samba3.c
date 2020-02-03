@@ -112,8 +112,8 @@ void start_samba3(void)
 				sysprintf("echo \"%s\"\":*:%d:1000:\"%s\":/var:/bin/false\" >> /etc/passwd", cu->username, uniqueuserid++, cu->username);
 				eval("smbpasswd", cu->username, cu->password);
 #ifdef HAVE_SMBD
-				eval("smbuseradd", "-a", cu->username, "-p", cu->password, "-i", "/tmp/smb.db");
-				eval("smbuseradd", "-u", cu->username, "-p", cu->password, "-i", "/tmp/smb.db");
+				eval("ksmbd.adduser", "-a", cu->username, "-p", cu->password, "-i", "/tmp/smb.db");
+				eval("ksmbd.adduser", "-u", cu->username, "-p", cu->password, "-i", "/tmp/smb.db");
 #endif
 			}
 			cunext = cu->next;
@@ -270,7 +270,7 @@ void start_samba3(void)
 		sprintf(parm, "vendor:dd-wrt,model:%s,sku:%s", nvram_safe_get("DD_BOARD"), nvram_safe_get("os_version"));
 		eval("wsdd2", "-d", "-N", nbname, "-G", wgname, "-b", parm);
 	}
-	eval("usmbd", "-c", "/tmp/smb.conf", "-u", "/tmp/smb.db");
+	eval("ksmbd.mountd", "-c", "/tmp/smb.conf", "-u", "/tmp/smb.db");
 #endif
 
 	dd_loginfo("smbd", "samba started\n");
@@ -281,7 +281,7 @@ void stop_samba3(void)
 {
 #ifdef HAVE_SMBD
 	stop_process("wsdd2", "windows service discovery daemon");
-	stop_process("usmbd", "samba daemon");
+	stop_process("ksmbd.mountd", "samba daemon");
 	sysprintf("echo hard > /sys/class/ksmbd-control/kill_server");
 	rmmod("ksmbd");
 #else
