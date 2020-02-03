@@ -34,9 +34,9 @@ smbd-install:
 	$(MAKE) -C smbd/smbd install
 	$(MAKE) -C smbd/tools install DESTDIR=$(INSTALLDIR)/smbd
 	rm -rf $(INSTALLDIR)/smbd/usr/lib
-	cd $(INSTALLDIR)/smbd/usr/sbin && ln -sf smbd_multicall usmbd
-	cd $(INSTALLDIR)/smbd/usr/sbin && ln -sf smbd_multicall smbuseradd
-	cd $(INSTALLDIR)/smbd/usr/sbin && ln -sf smbd_multicall smbshareadd
+	cd $(INSTALLDIR)/smbd/usr/sbin && ln -sf smbd_multicall ksmbd.mountd
+	cd $(INSTALLDIR)/smbd/usr/sbin && ln -sf smbd_multicall ksmbd.adduser
+	cd $(INSTALLDIR)/smbd/usr/sbin && ln -sf smbd_multicall ksmbd.addshare
 
 	install -D smbd/config/samba_ksmbd.webnas $(INSTALLDIR)/smbd/etc/config/02samba_ksmbd.webnas
 	install -D smbd/config/samba_ksmbd.nvramconfig $(INSTALLDIR)/smbd/etc/config/samba_ksmbd.nvramconfig
