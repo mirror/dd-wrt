@@ -13,11 +13,11 @@ int main(int argc, char **argv)
 	const char *prog = argv[0];
 //	airbag_init();
 restart:
-	if (strstr(argv[0], "usmbd"))
+	if (strstr(argv[0], "ksmbd.mountd"))
 		return usmbd_main(argc, argv);
-	else if (strstr(argv[0], "smbshareadd"))
+	else if (strstr(argv[0], "ksmbd.addshare"))
 		return smbshareadd_main(argc, argv);
-	else if (strstr(argv[0], "smbuseradd"))
+	else if (strstr(argv[0], "ksmbd.adduser"))
 		return smbuseradd_main(argc, argv);
 
 	if (!restart && argc > 1) {
