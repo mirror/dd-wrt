@@ -99,7 +99,7 @@ static struct usmbd_rpc_pipe *rpc_pipe_lookup(unsigned int id)
 {
 	struct usmbd_rpc_pipe *pipe;
 
-	pthread_rwlock_wrlock(&pipes_table_lock);
+	pthread_rwlock_rdlock(&pipes_table_lock);
 	pipe = list_get(&pipes_table, id);
 	pthread_rwlock_unlock(&pipes_table_lock);
 
