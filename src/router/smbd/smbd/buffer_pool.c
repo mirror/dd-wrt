@@ -105,6 +105,7 @@ static struct wm *wm_alloc(size_t sz)
 	if (!wm)
 		return NULL;
 	wm->sz = sz;
+	wm->realsize = sz;
 	return wm;
 }
 
@@ -310,10 +311,10 @@ void ksmbd_release_buffer(void *buffer)
 
 	wm = container_of(buffer, struct wm, buffer);
 	wm_list = match_wm_list(wm->realsize);
-	WARN_ON(!wm_list);
-	if (wm_list)
+//	WARN_ON(!wm_list);
+	if (wm_list) {
 		release_wm(wm, wm_list);
-	else {
+	}else {
 		ksmbd_info("wm list empty sz=%zu realsize %zu\n", wm->sz, wm->realsize);
 	}
 }
@@ -350,7 +351,7 @@ void ksmbd_destroy_buffer_pools(void)
 
 int ksmbd_init_buffer_pools(void)
 {
-	threads = num_online_cpus() * 2;
+	threads = num_online_cpus();
 	if (ksmbd_work_pool_init())
 		goto out;
 	
