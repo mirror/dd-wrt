@@ -8,13 +8,13 @@
 #include <memory.h>
 #include <endian.h>
 #include <errno.h>
-#include <linux/usmbd_server.h>
+#include <linux/ksmbd_server.h>
 
 #include <management/share.h>
 
 #include <rpc.h>
 #include <rpc_srvsvc.h>
-#include <usmbdtools.h>
+#include <ksmbdtools.h>
 
 #define SHARE_TYPE_TEMP			0x40000000
 #define SHARE_TYPE_HIDDEN		0x80000000

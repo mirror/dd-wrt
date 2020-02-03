@@ -7,13 +7,13 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <linux/usmbd_server.h>
+#include <linux/ksmbd_server.h>
 
 #include <management/tree_conn.h>
 #include <management/session.h>
 #include <management/share.h>
 #include <management/user.h>
-#include <usmbdtools.h>
+#include <ksmbdtools.h>
 
 static struct usmbd_tree_conn *new_usmbd_tree_conn(void)
 {

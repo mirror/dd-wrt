@@ -5,7 +5,7 @@
  *   linux-cifsd-devel@lists.sourceforge.net
  */
 
-#include <usmbdtools.h>
+#include <ksmbdtools.h>
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE

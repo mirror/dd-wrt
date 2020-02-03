@@ -58,9 +58,9 @@ AS_IF([test "$has_libnl_ver" -eq 0], [
 AC_CONFIG_FILES([
 	Makefile
 	lib/Makefile
-	usmbd/Makefile
-	smbuseradd/Makefile
-	smbshareadd/Makefile
+	mountd/Makefile
+	adduser/Makefile
+	addshare/Makefile
 ])
 
 AC_OUTPUT
