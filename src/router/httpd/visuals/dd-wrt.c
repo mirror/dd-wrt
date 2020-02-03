@@ -1352,7 +1352,10 @@ static void showOptionsChoose(webs_t wp, char *propname, char *names, char *sele
 
 static void showOptionsLabel(webs_t wp, char *labelname, char *propname, char *names, char *select)
 {
-
+	websWrite(wp, "<div class=\"setting\">\n");
+	show_caption(wp, "label", labelname, NULL);
+	showOptions(wp, propname, names, select);
+	websWrite(wp, "</div>\n");
 }
 
 void show_inputlabel(webs_t wp, char *labelname, char *propertyname, int propertysize, char *inputclassname, int inputmaxlength)
