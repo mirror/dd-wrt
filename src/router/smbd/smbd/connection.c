@@ -152,16 +152,6 @@ int ksmbd_conn_try_dequeue_request(struct ksmbd_work *work)
 	return ret;
 }
 
-static void ksmbd_conn_lock(struct ksmbd_conn *conn)
-{
-	mutex_lock(&conn->srv_mutex);
-}
-
-static void ksmbd_conn_unlock(struct ksmbd_conn *conn)
-{
-	mutex_unlock(&conn->srv_mutex);
-}
-
 void ksmbd_conn_wait_idle(struct ksmbd_conn *conn)
 {
 	wait_event(conn->req_running_q, atomic_read(&conn->req_running) < 2);
@@ -203,13 +193,12 @@ int ksmbd_conn_write(struct ksmbd_work *work)
 		len += iov[iov_idx++].iov_len;
 	}
 
-	ksmbd_conn_lock(conn);
+	mutex_lock(&conn->sock_mutex);
 	sent = conn->transport->ops->writev(conn->transport, &iov[0],
 					iov_idx, len,
 					work->need_invalidate_rkey,
 					work->remote_key);
-	ksmbd_conn_unlock(conn);
-
+	mutex_unlock(&conn->sock_mutex);
 	if (sent < 0) {
 		ksmbd_err("Failed to send message: %d\n", sent);
 		return sent;
@@ -292,7 +281,8 @@ int ksmbd_conn_handler_loop(void *p)
 	char hdr_buf[4] = {0,};
 	int size;
 
-	mutex_init(&conn->srv_mutex);
+	init_rwsem(&conn->srv_rwsem);
+	mutex_init(&conn->sock_mutex);
 	__module_get(THIS_MODULE);
 
 	if (t->ops->prepare && t->ops->prepare(t))
