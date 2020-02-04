@@ -2153,15 +2153,21 @@ static void showairtimepolicy(webs_t wp, char *var, char *sub)
 		nvram_default_get(wl_airtime, "0");
 
 		if (!strcmp(var, sub)) {
+			char *vifs = nvram_nget("%s_vifs", sub);
+			char *m = malloc(strlen(vifs) + 1);
+			strcpy(m, vifs);
+			rep(m, '.', 'X');
+
 			websWrite(wp, "<div class=\"setting\">\n");
 			show_caption(wp, "label", "wl_basic.airtime_policy", NULL);
-			websWrite(wp, "<select name=\"%s_at_policy\" onclick=\"show_airtime_policy(this.form, '%s', '%s');\">\n", var, var, vvar);
+			websWrite(wp, "<select name=\"%s_at_policy\" onclick=\"show_airtime_policy(this.form, '%s', '%s', '%s');\">\n", var, var, vvar, m);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n", nvram_match(wl_airtime, "0") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.airtime_dynamic + \"</option>\");\n", nvram_match(wl_airtime, "1") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.airtime_limit + \"</option>\");\n", nvram_match(wl_airtime, "2") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script>\n</select>\n");
 			websWrite(wp, "</div>\n");
+			free(m);
 
 		}
 		websWrite(wp, "<div id=\"%s_idairtimeweight\">\n", vvar);
@@ -2186,7 +2192,7 @@ static void showairtimepolicy(webs_t wp, char *var, char *sub)
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_airtime_policy(document.wireless, \"%s\", \"%s\");\n", sub, vvar);
+		websWrite(wp, "show_airtime_policy(document.wireless, \"%s\", \"%s\", '');\n", sub, vvar);
 		websWrite(wp, "//]]>\n</script>\n");
 	}
 }
