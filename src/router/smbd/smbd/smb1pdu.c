@@ -186,13 +186,16 @@ int smb_allocate_rsp_buf(struct ksmbd_work *work)
 			sz = large_sz;
 	}
 
-	work->response_buf = ksmbd_alloc_response(sz);
-	work->response_sz = sz;
+	if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_TBUF)
+		work->response_buf = ksmbd_find_buffer(sz);
+	else
+		work->response_buf = ksmbd_alloc_response(sz);
 
 	if (!RESPONSE_BUF(work)) {
 		ksmbd_err("Failed to allocate %zu bytes buffer\n", sz);
 		return -ENOMEM;
 	}
+	work->response_sz = sz;
 
 	return 0;
 }
