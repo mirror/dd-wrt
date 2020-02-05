@@ -1,0 +1,18 @@
+#!/bin/bash
+
+. ./test.common
+test_start "ratelimit directive"
+
+server_conf="ratelimit interval 6 burst 2 leak 4"
+client_server_options="minpoll 3 maxpoll 3"
+min_sync_time=16
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+check_file_messages "	2	1	" 1200 1300 log.packets || test_fail
+check_file_messages "	1	2	" 180 220 log.packets || test_fail
+
+test_pass

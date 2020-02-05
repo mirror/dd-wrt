@@ -1,0 +1,40 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "source selection"
+
+# Falsetickers should be detected if their number is less than half of all
+
+base_delay=1e-3
+servers=5
+
+for falsetickers in 1 2; do
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_source_selection || test_fail
+	check_packet_interval || test_fail
+	check_sync || test_fail
+done
+
+for falsetickers in 3 4; do
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_packet_interval || test_fail
+	# These check are expected to fail
+	check_source_selection && test_fail
+	check_sync && test_fail
+done
+
+# Sources with large asymmetric delay should be excluded
+
+servers=3
+falsetickers=0
+base_delay="(+ 1e-3 (equal 0.1 to 2) (equal 0.1 to 3))"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+
+test_pass

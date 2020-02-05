@@ -1,0 +1,87 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "NTP authentication"
+
+server_conf="keyfile tmp/server.keys"
+client_conf="keyfile tmp/client.keys"
+
+cat > tmp/server.keys <<-EOF
+1 MD5 HEX:6B5D3C6A2E4A74775E4F6F3B7A35453E6E5C5F302D783D2979505C663C295A5E
+2 MD5 HEX:6B5D3C6A2E4A74775E4F6F3B7A35453E6E5C5F302D783D2979505C663C295A5E
+3 MD5 HEX:6B5D3C6A2E4A74775E4F6F3B7A35453E6E5C5F302D783D2979505C663C295A5E
+4 MD5 HEX:6B5D3C6A2E4A74775E4F6F3B7A35453E6E5C5F302D783D2979505C663C295A5E
+EOF
+
+cat > tmp/client.keys <<-EOF
+1 k]<j.Jtw^Oo;z5E>n\_0-x=)yP\f<)Z^
+2 ASCII:k]<j.Jtw^Oo;z5E>n\_0-x=)yP\f<)Z^
+3 MD5 ASCII:k]<j.Jtw^Oo;z5E>n\_0-x=)yP\f<)Z^
+4 MD5 HEX:6B5D3C6A2E4A74775E4F6F3B7A35453E6E5C5F302D783D2979505C663C295A5E
+EOF
+
+keys=4
+
+if check_config_h 'FEAT_SECHASH 1'; then
+	hashes="MD5 SHA1 SHA256 SHA384 SHA512"
+else
+	hashes="MD5"
+fi
+
+for hash in $hashes; do
+	keys=$[$keys + 1]
+	key=$(echo $keys $hash HEX:$(tr -c -d '0-9A-F' < /dev/urandom 2> /dev/null | \
+		head -c $[$RANDOM % 64 * 2 + 2]))
+	echo "$key" >> tmp/server.keys
+	echo "$key" >> tmp/client.keys
+done
+
+for version in 3 4; do
+	for key in $(seq $keys); do
+		client_server_options="version $version key $key"
+		run_test || test_fail
+		check_chronyd_exit || test_fail
+		check_source_selection || test_fail
+		check_packet_interval || test_fail
+		check_sync || test_fail
+	done
+done
+
+server_conf=""
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+# This check must fail as the server doesn't know the key
+check_sync && test_fail
+check_packet_interval || test_fail
+
+server_conf="keyfile tmp/server.keys"
+client_conf=""
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+# This check must fail as the client doesn't know the key
+check_sync && test_fail
+check_packet_interval || test_fail
+
+client_conf="keyfile tmp/client.keys"
+clients=2
+peers=2
+max_sync_time=500
+base_delay="$default_base_delay (* -1 (equal 0.1 from 3) (equal 0.1 to 1))"
+client_lpeer_options="key 1"
+client_rpeer_options="key 1"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_sync || test_fail
+
+client_rpeer_options="key 2"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+# This check must fail as the peers are using different keys"
+check_sync && test_fail
+
+test_pass

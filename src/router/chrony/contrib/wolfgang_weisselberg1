@@ -1,0 +1,118 @@
+
+> Is it possible to limit chronyc to only those commands that
+> are readonly plus those necessary to bring a dialup connection up
+> and down? That is: online offline dump writertc and password.
+
+This is trivial on the same host and workable for non-local
+hosts: use a wrapper program or script.  An *untested*
+sample follows.  To use it, best create a special user (say
+chronyc) and a special group (say chronyg).  Make the script
+chronyc:chronyg, and 4750 (suid, rwxr-x---).  Add all users
+who may run the script to the group chronyg.
+
+Make a chrony password file e.g.
+/usr/local/etc/chrony_password.  It should be owned by chronyc
+and readable only for the owner, containing only the chrony
+password (and maybe a newline) in the first line.
+
+In this way only the script (call it run_chrony, for example)
+can read the password.  It will allow only those commands you
+explicitely allow.  You can add a password check -- especially
+if you add an internet port so you can access it over the
+internet this is advisable.  You really want to add logging
+to this untested script as well.
+
+
+BTW, if you use some sort of PPP, you probably can use
+/etc/ppp/ip-up and /etc/ppp/ip-down to transparently set chrony
+on- and offline as the ip connection goes up and comes down.
+This is _far_ more user friendly, IMHO, and a DOS by switching
+chrony offline all the time is avoided as well.
+
+
+#! /usr/bin/perl -T
+use v5.6.1;
+use warnings;
+use strict;
+
+sub laundered_command();
+sub order_chrony($$);
+sub read_password();
+sub usage($);
+
+our $CHRONY = "/usr/local/bin/chronyc";
+
+# NOTE: select the file system protection wisely for the
+# PASSWORDFILE!
+our $PASSWORDFILE = "/usr/local/etc/chrony_password";
+
+our @ALLOWED_COMMANDS = (
+    'online',                 # switch online mode on
+    'offline',                # switch online mode off
+    'dump',                   # save measurements to file
+    'writerc',                # save RTC accumulated data
+
+    'clients',                # which clients are served by us?
+    'rtcdata',                # Quality of RTC measurements
+    'sources(?: -v)?',        # Show our sources (verbose)
+    'sourcestats(?: -v)?',    # How good are our sources (verbose)?
+    'tracking',               # whom do we adjust to?
+
+    # 'burst \d+/\d+',          # allow them to send bursts?
+);
+
+usage("No command given.") unless $ARGV[0];
+
+%ENV = ();    # nuke all environment variables.  Rather
+              # drastic, but better safe than sorry!
+              # Add whatever you really need to get it
+              # working (again).
+$ENV{'PATH'} = '/usr/local/bin:/bin:/usr/bin';
+
+order_chrony(laundered_command(), read_password());
+
+exit 0; # command succeeded
+                        
+############################################################
+
+sub usage($) {
+    print STDERR "Error: ", shift, "\n";
+
+    # OK, this eats the -v...
+    print STDERR "Legal commands are:\n\t", join "\n",
+      map { $_ =~ m:(\w+):; $1 } @ALLOWED_COMMANDS;
+    exit 1;     # error
+}
+
+############################################################
+
+sub laundered_command() {
+    my $regexp = "^(" . join ( "|", @ALLOWED_COMMANDS ) . ")\$";
+    my $parameters = join " ", @ARGV;
+    $parameters =~ m:$regexp: or usage("Command $parameters not allowed.");
+
+    return $1;    # this value, then, is untainted.
+};
+
+############################################################
+
+sub read_password() {
+    open PASS, $PASSWORDFILE
+      or die "Could not read protected password file: $!";
+    my $password = <PASS>;
+    chomp $password;
+    return $password;
+};
+
+############################################################
+
+sub order_chrony($$) {
+    my ($clean_command, $password) = @_;
+    open CHRONY, "| $CHRONY &> /dev/null" or die "could not run $CHRONY: $!\n";
+    print CHRONY "password $password\n";
+    print CHRONY "$clean_command\n";
+    close CHRONY
+      or die "Error running command $clean_command\n", "\ton $CHRONY: $!\n";
+}
+
+############################################################

@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+test_start "process priority"
+
+extra_chronyd_options="-P 1"
+
+start_chronyd || test_fail
+wait_for_sync || test_fail
+stop_chronyd || test_fail
+check_chronyd_messages || test_fail
+check_chronyd_files || test_fail
+
+test_pass

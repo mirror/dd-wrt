@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+check_chronyd_features SCFILTER || test_skip "SCFILTER support disabled"
+
+test_start "system call filter"
+
+for extra_chronyd_options in "-F -1" "-F 1"; do
+	start_chronyd || test_fail
+	wait_for_sync || test_fail
+	stop_chronyd || test_fail
+	check_chronyd_messages || test_fail
+	check_chronyd_files || test_fail
+done
+
+test_pass

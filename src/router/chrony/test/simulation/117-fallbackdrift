@@ -1,0 +1,24 @@
+#!/bin/bash
+
+. ./test.common
+test_start "fallback drift"
+
+limit=100000
+wander=0.0
+jitter=1e-6
+time_offset=10
+freq_offset="(* 1e-4 (sine 1000))"
+base_delay="(* -1.0 (equal 0.1 (min time 4250) 4250))"
+client_server_options="minpoll 4 maxpoll 4"
+client_conf="fallbackdrift 6 10"
+max_sync_time=4500
+time_max_limit=1e0
+time_rms_limit=1e0
+freq_max_limit=2e-4
+freq_rms_limit=1e-4
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_sync || test_fail
+
+test_pass

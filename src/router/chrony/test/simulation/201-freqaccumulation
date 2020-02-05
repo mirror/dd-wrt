@@ -1,0 +1,35 @@
+#!/bin/bash
+
+. ./test.common
+
+# Test fix in commit 60d0fa299307076143da94d36deb7b908fa9bdb7
+
+test_start "frequency accumulation"
+
+time_offset=100.0
+jitter=1e-6
+base_delay=1e-6
+wander=0.0
+
+limit=180
+time_max_limit=1e-5
+freq_max_limit=1e-7
+time_rms_limit=1e-5
+freq_rms_limit=1e-7
+min_sync_time=120
+max_sync_time=140
+
+client_server_options="minpoll 6 maxpoll 6"
+client_conf="driftfile tmp/drift
+makestep 1 1"
+
+for freq_offset in -5e-2 -5e-4 5e-4 5e-2; do
+	for drift in -1e+4 -1e+2 1e+2 1e+4; do
+		echo "$drift 100000" > tmp/drift
+		run_test || test_fail
+		check_chronyd_exit || test_fail
+		check_sync || test_fail
+	done
+done
+
+test_pass

@@ -1,0 +1,162 @@
+From stephan@nevis1.nevis.columbia.edu Mon Jun  7 20:51:57 1999
+Date: 04 Jun 1999 00:17:25 -0400
+From: Stephan I. Boettcher <stephan@nevis1.nevis.columbia.edu>
+To: richard@rrbcurnow.freeserve.co.uk
+Subject: chrony 1.1 sysV startup script for notebooks
+
+
+Dear Richard,
+
+I installed chrony on my notebook, running RedHat 5.1 Linux.
+It looks like it works.  No problems.
+
+Thank you!
+
+I like to donate my sysV startup script, appended below.
+
+Special feature:  the `online' command scans the config file to
+selectively turn some servers online, depending on the pcmcia SCHEME.
+
+booting:                 /etc/rc.d/init.d/chrony start
+/etc/ppp/ip-up:          /etc/rc.d/init.d/chrony online
+/etc/ppp/ip-down:        /etc/rc.d/init.d/chrony offline
+logrotate cron:          /etc/rc.d/init.d/chrony cyclelogs
+a user:                  /etc/rc.d/init.d/chrony status
+a sysadmin:              /etc/rc.d/init.d/chrony restart
+shutdown:                /etc/rc.d/init.d/chrony stop
+
+Best regards
+Stephan
+
+-- 
+
+------------------------------------------------------------------------
+Stephan Boettcher                                   FAX: +1-914-591-4540
+Columbia University, Nevis Labs                     Tel: +1-914-591-2863
+P.O. Box 137, 136 South Broadway      mailto:stephan@nevis1.columbia.edu
+Irvington, NY 10533, USA          http://www.nevis.columbia.edu/~stephan
+------------------------------------------------------------------------
+
+########################### cut here ###################################
+#! /bin/bash
+#
+#  /etc/rc.d/init.d/chrony
+#
+#  SYS V startup script for  
+#  chrony ntp daemon 
+#  on Linux 2.0.3x notebooks with pcmcia scheme support
+#  $Id: stephan_boettcher_1,v 1.1 2000/04/24 21:36:04 richard Exp $
+#
+#  1999-06-02 SiB <stephan@nevis1.columbia.edu>
+#
+# For PCMCIA users:
+# In /etc/chrony.conf, precede the server commands for each SCHEME 
+# with a comment line that contains the word SCHEME and the name of
+# the scheme(s) that should use the servers, up to the next line that
+# contains the word SCHEME.  The servers must be `offline' and 
+# specified by their IP address.  The hostname will not do.
+#
+# Like:
+#
+#	# SCHEME nevisppp nevislan
+#	#       stephanpc.nevis.columbia.edu
+#	server  192.12.82.222   offline
+#
+#	# SCHEME desyppp desylan
+#
+#	#       dsygw2.desy.de
+#	server  131.169.30.15   offline
+#	#       dscomsa.desy.de
+#	server  131.169.197.35  offline
+
+CONF=/etc/chrony.conf
+CHRONYD=/usr/local/sbin/chronyd
+CHRONYC=/usr/local/bin/chronyc
+KEYS=/etc/chrony.keys
+
+# See if we got all we need:
+
+[ -f $CHRONYD -a -f $CHRONYC -a -r $CONF ] || exit
+
+
+[ -r $KEYS ]							\
+&& CMDKEY=`awk '/^commandkey/{print $2}' $CONF`			\
+&& PASSWORD=`awk -v KEY=$CMDKEY '$1==KEY{print $2}' $KEYS`
+
+
+case "$1" in
+
+  start)
+	echo -n "Starting chronyd "
+        $CHRONYD -r -s -f $CONF
+        echo
+        ;;
+
+  stop)
+        echo -n "Shutting down chronyd "
+	/usr/bin/killall chronyd
+        echo
+        ;;
+
+  restart)
+	$0 stop
+	$0 start
+	;;
+
+  on*)
+
+	[ -f /var/run/pcmcia-scheme ] && SCHEME=`cat /var/run/pcmcia-scheme`
+
+	awk  -v SCHEME=${SCHEME:-default}  -v PASSWORD=$PASSWORD  \
+		'
+		BEGIN { 
+			SEL=1;
+			print "password", PASSWORD; 
+		}
+		/SCHEME/ { 
+			SEL=match($0, SCHEME); 
+		}
+		SEL && /^server[ \t]*[0-9.]+[ \t].*offline/ { 
+			print "online 255.255.255.255/"  $2; 
+		}
+		'	\
+		$CONF	\
+	| $CHRONYC
+
+	;;
+
+  off*)
+	cat <<-EOF | $CHRONYC
+		password $PASSWORD
+		offline
+		trimrtc
+		dump
+		EOF
+	;;
+
+  *log*)
+	cat <<-EOF | $CHRONYC
+		password $PASSWORD
+		cyclelogs
+		EOF
+	;;
+
+  stat*)
+	cat <<-EOF | $CHRONYC
+		sources
+		sourcestats
+		tracking
+		rtcdata
+		EOF
+	;;
+
+  *)
+        echo "Usage: chronyd {start|stop|restart|status|online|offline|cyclelogs}"
+        exit 1
+	;;
+
+esac
+
+exit 0
+
+

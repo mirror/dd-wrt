@@ -1,0 +1,13 @@
+# This is an example chrony keys file.  It enables authentication of NTP
+# packets with symmetric keys when its location is specified by the keyfile
+# directive in chrony.conf(5).  It should be readable only by root and the
+# user under which chronyd is running.
+#
+# Don't use the example keys!  It's recommended to generate random keys using
+# the chronyc keygen command.
+
+# Examples of valid keys:
+
+#1 MD5 AVeryLongAndRandomPassword
+#2 MD5 HEX:12114855C7931009B4049EF3EFC48A139C3F989F
+#3 SHA1 HEX:B2159C05D6A219673A3B7E896B6DE07F6A440995

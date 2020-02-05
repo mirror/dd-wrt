@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+[ "$(uname -s)" = "Linux" ] || test_skip "non-Linux system"
+
+hwts_iface=""
+for iface_path in /sys/class/net/*; do
+	iface=$(basename "$iface_path")
+	if ethtool -T "$iface" 2> /dev/null | grep -q HWTSTAMP_FILTER_ALL; then
+		hwts_iface="$iface"
+		break
+	fi
+done
+
+[ -n "$hwts_iface" ] || test_skip "no HW timestamping interface found"
+
+test_start "hardware timestamping"
+
+minimal_config=1
+extra_chronyd_directives="hwtimestamp $hwts_iface"
+
+start_chronyd || test_fail
+stop_chronyd || test_fail
+check_chronyd_messages || test_fail
+check_chronyd_message_count "Enabled HW timestamping on $hwts_iface" 1 1 || test_fail
+
+test_pass

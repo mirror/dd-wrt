@@ -1,6 +1,11 @@
 extern void start_httpd(void);
 extern void stop_httpd(void);
 
+#ifdef HAVE_CHRONY
+extern void stop_chronyd(void);
+extern void start_chronyd(void);
+#endif
+
 #ifdef HAVE_TELNET
 extern void start_telnetd(void);
 extern void stop_telnetd(void);

@@ -1,0 +1,95 @@
+From amb@gedanken.demon.co.uk Wed Sep  1 22:26:59 1999
+Date: Thu, 19 Aug 1999 17:30:14 +0100
+From: Andrew M. Bishop <amb@gedanken.demon.co.uk>
+To: richard@rrbcurnow.freeserve.co.uk
+Subject: [amb@gedanken.demon.co.uk: Chrony and laptop configuration]
+
+Hi,
+
+What you need to do is replace 10.0.0.0 with the network of the
+freeserve nameservers in the two scripts below.
+
+Other than that you can use it as is.
+
+------- Start of forwarded message -------
+From: "Andrew M. Bishop" <amb@gedanken.demon.co.uk>
+To: richard@rrbcurnow.freeserve.co.uk
+Subject: Chrony and laptop configuration
+Date: Sat, 31 Jul 1999 11:02:04 +0100
+
+Attached are the ip-up and ip-down files that I use for chrony.
+(Actually because of the way that debian works they are separate file
+in the /etc/ppp/ip-up.d directory that are run in a SysV init style).
+
+They rely on the presence of an 'ipparam demon' or 'ipparam freeserve'
+line in the PPP options file.
+
+-------------------- /etc/ppp/ip-up --------------------
+#!/bin/sh -f
+#
+# A script to start chrony
+#
+
+PPP_IPPARAM="$6"
+
+if [ $PPP_IPPARAM = "demon" ]; then
+
+   /usr/local/bin/chronyc << EOF
+password xxxxxxx
+online 255.255.255.0/158.152.1.0
+online 255.255.255.0/194.159.253.0
+EOF
+
+fi
+
+if [ $PPP_IPPARAM = "freeserve" ]; then
+
+   /usr/local/bin/chronyc << EOF
+password xxxxxxx
+online 255.255.255.0/10.0.0.0
+EOF
+
+fi
+-------------------- /etc/ppp/ip-up --------------------
+
+-------------------- /etc/ppp/ip-down --------------------
+#!/bin/sh -f
+#
+# A script to stop chrony
+#
+
+PPP_IPPARAM="$6"
+
+if [ $PPP_IPPARAM = "demon" ]; then
+
+   /usr/local/bin/chronyc << EOF
+password xxxxxxx
+offline 255.255.255.0/158.152.1.0
+offline 255.255.255.0/194.159.253.0
+EOF
+
+fi
+
+if [ $PPP_IPPARAM = "freeserve" ]; then
+
+   /usr/local/bin/chronyc << EOF
+password xxxxxxx
+offline 255.255.255.0/10.0.0.0
+EOF
+
+fi
+-------------------- /etc/ppp/ip-down --------------------
+
+-- 
+Andrew.
+----------------------------------------------------------------------
+Andrew M. Bishop                             amb@gedanken.demon.co.uk
+                                      http://www.gedanken.demon.co.uk/
+------- End of forwarded message -------
+
+-- 
+Andrew.
+----------------------------------------------------------------------
+Andrew M. Bishop                             amb@gedanken.demon.co.uk
+                                      http://www.gedanken.demon.co.uk/
+

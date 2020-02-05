@@ -1,0 +1,1027 @@
+#!/bin/sh
+# =======================================================================
+#
+# chronyd/chronyc - Programs for keeping computer clocks accurate.
+#
+# Copyright (C) Richard P. Curnow  1997-2003
+# Copyright (C) Bryan Christianson  2016
+# Copyright (C) Miroslav Lichvar  2009, 2012-2018
+# Copyright (C) Stefan R. Filipek  2019
+#
+# =======================================================================
+
+# This configure script determines the operating system type and version
+
+# ======================================================================
+# FUNCTIONS
+
+#{{{ test_code
+test_code () {
+  name=$1
+  headers=$2
+  cflags=$3
+  ldflags=$4
+  code=$5
+
+  printf "%s" "Checking for $name : "
+
+  (
+    echo "#include \"config.h\""
+    for h in $headers; do
+      echo "#include <$h>"
+    done
+    echo "int main(int argc, char **argv) {"
+    echo "$code"
+    echo "return 0; }"
+  ) > docheck.c
+
+  echo "docheck.c:" >> config.log
+  cat docheck.c >> config.log
+  echo $MYCC $MYCFLAGS $MYCPPFLAGS $cflags -o docheck docheck.c $ldflags \
+    $MYLDFLAGS >> config.log
+  $MYCC $MYCFLAGS $MYCPPFLAGS $cflags -o docheck docheck.c $ldflags \
+    $MYLDFLAGS >> config.log 2>&1
+
+  if [ $? -eq 0 ]
+  then
+    echo "Yes"
+    result=0
+  else
+    echo "No"
+    result=1
+  fi
+  rm -f docheck.c docheck
+  echo >> config.log
+  return $result
+}
+#}}}
+#{{{ usage
+usage () {
+  cat <<EOF
+\`configure' configures this package to adapt to many kinds of systems.
+
+Usage: ./configure [OPTION]...
+
+Defaults for the options are specified in brackets.
+
+Configuration:
+  -h, --help              display this help and exit
+
+Installation directories:
+  --prefix=PREFIX         install architecture-independent files in PREFIX
+                          [/usr/local]
+  --exec-prefix=EPREFIX   install architecture-dependent files in EPREFIX
+                          [PREFIX]
+
+By default, \`make install' will install all the files in
+\`/usr/local/bin', \`/usr/local/lib' etc.  You can specify
+an installation prefix other than \`/usr/local' using \`--prefix',
+for instance \`--prefix=$HOME'.
+
+For better control, use the options below.
+  --disable-readline     Disable line editing support
+  --without-readline     Don't use GNU readline even if it is available
+  --without-editline     Don't use editline even if it is available
+  --with-readline-includes=DIR Specify where readline include directory is
+  --with-readline-library=DIR Specify where readline lib directory is
+  --with-ncurses-library=DIR Specify where ncurses lib directory is
+  --disable-sechash      Disable support for hashes other than MD5
+  --without-nettle       Don't use nettle even if it is available
+  --without-nss          Don't use NSS even if it is available
+  --without-tomcrypt     Don't use libtomcrypt even if it is available
+  --disable-cmdmon       Disable command and monitoring support
+  --disable-ntp          Disable NTP support
+  --disable-refclock     Disable reference clock support
+  --disable-phc          Disable PHC refclock driver
+  --disable-pps          Disable PPS refclock driver
+  --disable-ipv6         Disable IPv6 support
+  --disable-rtc          Don't include RTC even on Linux
+  --disable-privdrop     Disable support for dropping root privileges
+  --without-libcap       Don't use libcap even if it is available
+  --enable-scfilter      Enable support for system call filtering
+  --without-seccomp      Don't use seccomp even if it is available
+  --disable-asyncdns     Disable asynchronous name resolving
+  --disable-forcednsretry Don't retry on permanent DNS error
+  --without-clock-gettime Don't use clock_gettime() even if it is available
+  --disable-timestamping Disable support for SW/HW timestamping
+  --enable-ntp-signd     Enable support for MS-SNTP authentication in Samba
+  --with-ntp-era=SECONDS Specify earliest assumed NTP time in seconds
+                         since 1970-01-01 [50*365 days ago]
+  --with-user=USER       Specify default chronyd user [root]
+  --with-hwclockfile=PATH Specify default path to hwclock(8) adjtime file
+  --with-pidfile=PATH    Specify default pidfile [/var/run/chrony/chronyd.pid]
+  --with-rtcdevice=PATH  Specify default path to RTC device [/dev/rtc]
+  --with-sendmail=PATH   Path to sendmail binary [/usr/lib/sendmail]
+  --enable-debug         Enable debugging support
+
+Fine tuning of the installation directories:
+  --sysconfdir=DIR       chrony.conf location [/etc]
+  --bindir=DIR           user executables [EPREFIX/bin]
+  --sbindir=DIR          system admin executables [EPREFIX/sbin]
+  --datarootdir=DIR      data root [PREFIX/share]
+  --mandir=DIR           man documentation [DATAROOTDIR/man]
+  --docdir=DIR           documentation root [DATAROOTDIR/doc/chrony]
+  --localstatedir=DIR    modifiable single-machine data [/var]
+  --chronyrundir=DIR     location for chrony sockets [LOCALSTATEDIR/run/chrony]
+  --chronyvardir=DIR     location for chrony data [LOCALSTATEDIR/lib/chrony]
+
+Overriding system detection when cross-compiling:
+  --host-system=OS       Specify system name (uname -s)
+  --host-release=REL     Specify system release (uname -r)
+  --host-machine=CPU     Specify machine (uname -m)
+
+Some influential environment variables:
+  CC          C compiler command
+  CFLAGS      C compiler flags
+  CPPFLAGS    C preprocessor flags, e.g. -I<include dir> if you have
+              headers in a nonstandard directory <include dir>
+  LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
+              nonstandard directory <lib dir>
+
+Use these variables to override the choices made by \`configure' or to help
+it to find libraries and programs with nonstandard names/locations.
+
+EOF
+
+}
+#}}}
+#{{{
+add_def () {
+  if [ "x$2" = "x" ]; then
+    echo "#define $1 1" >> config.h
+  else
+    echo "#define $1 $2" >> config.h
+  fi
+}
+#}}}
+#{{{ pkg_config
+pkg_config () {
+  type pkg-config > /dev/null 2> /dev/null || return 1
+
+  pkg-config $@ 2> /dev/null
+}
+#}}}
+#{{{ get_features
+get_features () {
+  ff=1
+  for f; do
+    if [ "$ff" = "0" ]; then
+      printf " "
+    fi
+    if grep "define FEAT_$f" config.h > /dev/null; then
+      printf "%s" "+$f"
+    else
+      printf "%s" "-$f"
+    fi
+    ff=0
+  done
+}
+#}}}
+
+# ======================================================================
+
+
+
+OPERATINGSYSTEM=`uname -s`
+VERSION=`uname -r`
+MACHINE=`uname -m`
+
+EXTRA_LIBS=""
+EXTRA_CLI_LIBS=""
+EXTRA_OBJECTS=""
+EXTRA_DEFS=""
+SYSDEFS=""
+
+feat_debug=0
+feat_cmdmon=1
+feat_ntp=1
+feat_refclock=1
+feat_readline=1
+try_readline=1
+try_editline=1
+feat_sechash=1
+try_nettle=1
+try_nss=1
+try_tomcrypt=1
+feat_rtc=1
+try_rtc=0
+feat_droproot=1
+try_libcap=-1
+try_clockctl=0
+feat_scfilter=0
+try_seccomp=-1
+priv_ops=""
+readline_lib=""
+readline_inc=""
+ncurses_lib=""
+feat_ipv6=1
+feat_phc=1
+try_phc=0
+feat_pps=1
+try_setsched=0
+try_lockmem=0
+feat_asyncdns=1
+feat_forcednsretry=1
+try_clock_gettime=1
+try_recvmmsg=1
+feat_timestamping=1
+try_timestamping=0
+feat_ntp_signd=0
+ntp_era_split=""
+use_pthread=0
+default_user="root"
+default_hwclockfile=""
+default_pidfile="/var/run/chrony/chronyd.pid"
+default_rtcdevice="/dev/rtc"
+mail_program="/usr/lib/sendmail"
+
+for option
+do
+    case "$option" in
+    --enable-debug )
+      feat_debug=1
+    ;;
+    --disable-readline )
+      feat_readline=0
+    ;;
+    --without-readline )
+      try_readline=0
+    ;;
+    --without-editline )
+      try_editline=0
+    ;;
+    --with-readline-library=* )
+      readline_lib=-L`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --with-readline-includes=* )
+      readline_inc=-I`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --with-ncurses-library=* )
+      ncurses_lib=-L`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --prefix=* | --install_prefix=* )
+      SETPREFIX=`echo $option | sed -e 's/[^=]*=//;'`
+    ;;
+    --exec-prefix=* )
+      SETEPREFIX=`echo $option | sed -e 's/[^=]*=//;'`
+    ;;
+    --sysconfdir=* )
+      SETSYSCONFDIR=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --bindir=* )
+      SETBINDIR=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --sbindir=* )
+      SETSBINDIR=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --datarootdir=* )
+      SETDATAROOTDIR=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --mandir=* )
+      SETMANDIR=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --docdir=* )
+      SETDOCDIR=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --localstatedir=* )
+      SETLOCALSTATEDIR=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --chronyrundir=* | --chronysockdir=* )
+      SETCHRONYRUNDIR=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --chronyvardir=* )
+      SETCHRONYVARDIR=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --disable-cmdmon)
+      feat_cmdmon=0
+    ;;
+    --disable-ntp)
+      feat_ntp=0
+    ;;
+    --disable-refclock)
+      feat_refclock=0
+    ;;
+    --disable-rtc)
+      feat_rtc=0
+    ;;
+    --disable-ipv6)
+      feat_ipv6=0
+    ;;
+    --disable-phc)
+      feat_phc=0
+    ;;
+    --disable-pps)
+      feat_pps=0
+    ;;
+    --disable-privdrop)
+      feat_droproot=0
+    ;;
+    --without-libcap|--disable-linuxcaps)
+      try_libcap=0
+    ;;
+    --enable-scfilter)
+      feat_scfilter=1
+    ;;
+    --disable-scfilter)
+      feat_scfilter=0
+    ;;
+    --without-seccomp)
+      try_seccomp=0
+    ;;
+    --disable-asyncdns)
+      feat_asyncdns=0
+    ;;
+    --disable-forcednsretry)
+      feat_forcednsretry=0
+    ;;
+    --without-clock-gettime)
+      try_clock_gettime=0
+    ;;
+    --disable-timestamping)
+      feat_timestamping=0
+    ;;
+    --enable-ntp-signd)
+      feat_ntp_signd=1
+    ;;
+    --with-ntp-era=* )
+      ntp_era_split=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --with-user=* )
+      default_user=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --with-hwclockfile=* )
+      default_hwclockfile=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --with-pidfile=* )
+      default_pidfile=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --with-rtcdevice=* )
+      default_rtcdevice=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --with-sendmail=* )
+      mail_program=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --disable-sechash )
+      feat_sechash=0
+    ;;
+    --without-nettle )
+      try_nettle=0
+    ;;
+    --without-nss )
+      try_nss=0
+    ;;
+    --without-tomcrypt )
+      try_tomcrypt=0
+    ;;
+    --host-system=* )
+      OPERATINGSYSTEM=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --host-release=* )
+      VERSION=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --host-machine=* )
+      MACHINE=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --help | -h )
+      usage
+      exit 0
+    ;;
+    * )
+    echo "Unrecognized option : " $option
+    esac
+done
+
+rm -f config.h config.log
+
+SYSTEM=${OPERATINGSYSTEM}-${MACHINE}
+
+case $OPERATINGSYSTEM in
+    Linux)
+        EXTRA_OBJECTS="sys_generic.o sys_linux.o sys_timex.o sys_posix.o"
+        [ $try_libcap != "0" ] && try_libcap=1
+        try_rtc=1
+        [ $try_seccomp != "0" ] && try_seccomp=1
+        try_timestamping=1
+        try_setsched=1
+        try_lockmem=1
+        try_phc=1
+        add_def LINUX
+        echo "Configuring for " $SYSTEM
+    ;;
+    FreeBSD)
+        # recvmmsg() seems to be broken on FreeBSD 11.0 and it's just
+        # a wrapper around recvmsg()
+        try_recvmmsg=0
+        EXTRA_OBJECTS="sys_generic.o sys_netbsd.o sys_timex.o sys_posix.o"
+        try_setsched=1
+        try_lockmem=1
+        add_def FREEBSD
+        if [ $feat_droproot = "1" ]; then
+          add_def FEAT_PRIVDROP
+          priv_ops="ADJUSTTIME ADJUSTTIMEX SETTIME BINDSOCKET"
+        fi
+        echo "Configuring for $SYSTEM"
+    ;;
+    NetBSD)
+        EXTRA_OBJECTS="sys_generic.o sys_netbsd.o sys_timex.o sys_posix.o"
+        try_clockctl=1
+        try_setsched=1
+        try_lockmem=1
+        add_def NETBSD
+        echo "Configuring for $SYSTEM"
+    ;;
+    Darwin)
+        EXTRA_OBJECTS="sys_macosx.o"
+        EXTRA_LIBS="-lresolv"
+        EXTRA_CLI_LIBS="-lresolv"
+        add_def MACOSX
+        if [ $feat_droproot = "1" ]; then
+          add_def FEAT_PRIVDROP
+          priv_ops="ADJUSTTIME SETTIME BINDSOCKET"
+        fi
+        major=`echo $VERSION | cut -d. -f1`
+        # ntp_adjtime is not available in macOS 10.12 (Darwin 16.x.x) and earlier
+        if [ $major -gt "16" ]; then
+          add_def HAVE_MACOS_SYS_TIMEX
+          EXTRA_OBJECTS="$EXTRA_OBJECTS sys_generic.o sys_netbsd.o sys_timex.o"
+          if [ $feat_droproot = "1" ]; then
+            priv_ops="$priv_ops ADJUSTTIMEX"
+          fi
+        fi
+        echo "Configuring for macOS (" $SYSTEM "macOS version" $VERSION ")"
+    ;;
+    SunOS)
+        EXTRA_OBJECTS="sys_generic.o sys_solaris.o sys_timex.o sys_posix.o"
+        EXTRA_LIBS="-lsocket -lnsl -lresolv"
+        EXTRA_CLI_LIBS="-lsocket -lnsl -lresolv"
+        try_setsched=1
+        try_lockmem=1
+        add_def SOLARIS
+        # These are needed to have msg_control in struct msghdr
+        add_def __EXTENSIONS__
+        add_def _XOPEN_SOURCE 1
+        add_def _XOPEN_SOURCE_EXTENDED 1
+        if [ $feat_droproot = "1" ]; then
+          add_def FEAT_PRIVDROP
+          priv_ops="ADJUSTTIMEX SETTIME BINDSOCKET"
+        fi
+        echo "Configuring for Solaris (" $SYSTEM "SunOS version" $VERSION ")" 
+    ;;                                                                        
+    * )
+        echo "error: $SYSTEM is not supported (yet?)"
+        exit 1
+    ;;
+esac
+
+if [ $feat_debug = "1" ]; then
+  add_def FEAT_DEBUG
+fi
+add_def DEBUG $feat_debug
+
+if [ $feat_cmdmon = "1" ]; then
+  add_def FEAT_CMDMON
+  EXTRA_OBJECTS="$EXTRA_OBJECTS cmdmon.o manual.o pktlength.o"
+fi
+
+if [ $feat_ntp = "1" ]; then
+  add_def FEAT_NTP
+  EXTRA_OBJECTS="$EXTRA_OBJECTS ntp_core.o ntp_io.o ntp_sources.o"
+  if [ $feat_ntp_signd = "1" ]; then
+    add_def FEAT_SIGND
+    EXTRA_OBJECTS="$EXTRA_OBJECTS ntp_signd.o"
+  fi
+else
+  feat_asyncdns=0
+  feat_timestamping=0
+fi
+
+if [ "$feat_cmdmon" = "1" ] || [ $feat_ntp = "1" ]; then
+  EXTRA_OBJECTS="$EXTRA_OBJECTS addrfilt.o clientlog.o keys.o nameserv.o"
+else
+  feat_ipv6=0
+fi
+
+if [ $feat_refclock = "1" ]; then
+  add_def FEAT_REFCLOCK
+  EXTRA_OBJECTS="$EXTRA_OBJECTS refclock.o refclock_phc.o refclock_pps.o refclock_shm.o refclock_sock.o"
+fi
+
+MYCC="$CC"
+MYCFLAGS="$CFLAGS"
+MYCPPFLAGS="$CPPFLAGS"
+MYLDFLAGS="$LDFLAGS"
+
+if [ "x$MYCC" = "x" ]; then
+  for cc in gcc clang cc ""; do
+    if [ "x$cc" = "x" ]; then
+      echo "error: no C compiler found"
+      exit 1
+    fi
+    MYCC=$cc
+    if test_code "$MYCC" '' '' '' ''; then
+      break
+    fi
+  done
+else
+  if ! test_code "$MYCC" '' '' '' ''; then
+    echo "error: C compiler $MYCC cannot create executables"
+    exit 1
+  fi
+fi
+
+if [ "x$MYCFLAGS" = "x" ]; then
+  MYCFLAGS="-O2 -g"
+
+  TESTCFLAGS="-D_FORTIFY_SOURCE=2 -fPIE"
+  TESTLDFLAGS="-pie -Wl,-z,relro,-z,now"
+  if test_code 'hardening compiler options' '' "$TESTCFLAGS" "$TESTLDFLAGS" ''; then
+    MYCFLAGS="$MYCFLAGS $TESTCFLAGS"
+    MYLDFLAGS="$MYLDFLAGS $TESTLDFLAGS"
+  fi
+  TESTCFLAGS="-fstack-protector-strong --param=ssp-buffer-size=4"
+  if test_code '-fstack-protector-strong' '' "$TESTCFLAGS" '' ''; then
+    MYCFLAGS="$MYCFLAGS $TESTCFLAGS"
+  else
+    TESTCFLAGS="-fstack-protector --param=ssp-buffer-size=4"
+    if test_code '-fstack-protector' '' "$TESTCFLAGS" '' ''; then
+      MYCFLAGS="$MYCFLAGS $TESTCFLAGS"
+    fi
+  fi
+fi
+
+if [ "x$MYCC" = "xgcc" ] || [ "x$MYCC" = "xclang" ]; then
+  MYCFLAGS="$MYCFLAGS -Wmissing-prototypes -Wall"
+fi
+
+if test_code '64-bit time_t' 'time.h' '' '' '
+  char x[sizeof(time_t) > 4 ? 1 : -1] = {0};
+  return x[0];'
+then
+  add_def HAVE_LONG_TIME_T 1
+
+  if [ "x$ntp_era_split" != "x" ]; then
+    split_seconds=$ntp_era_split
+    split_days=0
+  else
+    if [ "x$SOURCE_DATE_EPOCH" != "x" ]; then
+      split_seconds=$SOURCE_DATE_EPOCH
+    else
+      split_seconds=`date '+%s'`
+    fi
+    if [ "x$split_seconds" = "x" ]; then
+      echo "error: could not get current time, --with-ntp-era option is needed"
+      exit 1
+    fi
+    split_days=$((50 * 365))
+  fi
+
+  add_def NTP_ERA_SPLIT "(${split_seconds}LL - $split_days * 24 * 3600)"
+
+  date_format='+%Y-%m-%dT%H:%M:%SZ'
+
+  # Print the full NTP interval if a suitable date is found
+  if [ "x`date -u -d '1970-01-01 UTC 9 days ago 5 seconds 3 seconds' \
+    $date_format 2> /dev/null`" = "x1969-12-23T00:00:08Z" ]
+  then
+    time1="`date -u -d "1970-01-01 UTC $split_days days ago $split_seconds seconds" \
+      $date_format`"
+    time2="`date -u -d "1970-01-01 UTC $split_days days ago $split_seconds seconds 4294967296 seconds" \
+      $date_format`"
+    echo "NTP time mapped to $time1/$time2"
+  fi
+fi
+
+MATHCODE='return (int) pow(2.0, log(sqrt((double)argc)));'
+if test_code 'math' 'math.h' '' '' "$MATHCODE"; then
+  LIBS=""
+else
+  if test_code 'math in -lm' 'math.h' '' '-lm' "$MATHCODE"; then
+    LIBS="-lm"
+  else
+    echo "error: could not compile/link a program which uses sqrt(), log(), pow()"
+    exit 1
+  fi
+fi
+  
+if test_code 'struct in_pktinfo' 'sys/socket.h netinet/in.h' '' '' '
+  struct in_pktinfo ipi;
+  return sizeof (ipi.ipi_spec_dst.s_addr) + IP_PKTINFO;'
+then
+  add_def HAVE_IN_PKTINFO
+fi
+
+if [ $feat_ipv6 = "1" ] && \
+  test_code 'IPv6 support' 'arpa/inet.h sys/socket.h netinet/in.h' '' "$EXTRA_LIBS" '
+    struct sockaddr_in6 n;
+    char p[100];
+    n.sin6_addr = in6addr_any;
+    return !inet_ntop(AF_INET6, &n.sin6_addr.s6_addr, p, sizeof(p));'
+then
+  add_def FEAT_IPV6
+  if test_code 'struct in6_pktinfo' 'sys/socket.h netinet/in.h' '' '' '
+    return sizeof (struct in6_pktinfo) + IPV6_PKTINFO;'
+  then
+    add_def HAVE_IN6_PKTINFO
+  else
+    if test_code 'struct in6_pktinfo with _GNU_SOURCE' 'sys/socket.h netinet/in.h' \
+      '-D_GNU_SOURCE' '' 'return sizeof (struct in6_pktinfo) + IPV6_PKTINFO;'
+    then
+      add_def _GNU_SOURCE
+      add_def HAVE_IN6_PKTINFO
+    fi
+  fi
+fi
+
+if [ $try_clock_gettime = "1" ]; then
+  if test_code 'clock_gettime()' 'time.h' '' '' \
+    'clock_gettime(CLOCK_REALTIME, NULL);'
+  then
+    add_def HAVE_CLOCK_GETTIME
+  else
+    if test_code 'clock_gettime() in -lrt' 'time.h' '' '-lrt' \
+      'clock_gettime(CLOCK_REALTIME, NULL);'
+    then
+      add_def HAVE_CLOCK_GETTIME
+      EXTRA_LIBS="$EXTRA_LIBS -lrt"
+    fi
+  fi
+fi
+
+if test_code 'getaddrinfo()' 'sys/types.h sys/socket.h netdb.h' '' "$EXTRA_LIBS" \
+  'return getaddrinfo(0, 0, 0, 0);'
+then
+  add_def HAVE_GETADDRINFO
+fi
+
+if [ $feat_asyncdns = "1" ] && \
+  test_code 'pthread' 'pthread.h' '-pthread' '' \
+    'return (int)pthread_create((void *)1, NULL, (void *)1, NULL);'
+then
+  add_def FEAT_ASYNCDNS
+  add_def USE_PTHREAD_ASYNCDNS
+  EXTRA_OBJECTS="$EXTRA_OBJECTS nameserv_async.o"
+  use_pthread=1
+fi
+
+if test_code 'arc4random_buf()' 'stdlib.h' '' '' 'arc4random_buf(NULL, 0);'; then
+  add_def HAVE_ARC4RANDOM
+fi
+
+if test_code 'getrandom()' 'stdlib.h sys/random.h' '' '' \
+    'return getrandom(NULL, 256, 0);'; then
+  add_def HAVE_GETRANDOM
+fi
+
+RECVMMSG_CODE='
+  struct mmsghdr hdr;
+  return !recvmmsg(0, &hdr, 1, MSG_DONTWAIT, 0);'
+if [ $try_recvmmsg = "1" ]; then
+  if test_code 'recvmmsg()' 'sys/socket.h' '' "$EXTRA_LIBS" "$RECVMMSG_CODE"; then
+    add_def HAVE_RECVMMSG
+  else
+    if test_code 'recvmmsg() with _GNU_SOURCE' 'sys/socket.h' '-D_GNU_SOURCE' \
+      "$EXTRA_LIBS" "$RECVMMSG_CODE"
+    then
+      add_def _GNU_SOURCE
+      add_def HAVE_RECVMMSG
+    fi
+  fi
+fi
+
+if [ $feat_timestamping = "1" ] && [ $try_timestamping = "1" ] &&
+  test_code 'SW/HW timestamping' 'sys/types.h sys/socket.h linux/net_tstamp.h
+                                  linux/errqueue.h linux/ptp_clock.h' '' '' '
+    int val = SOF_TIMESTAMPING_SOFTWARE | SOF_TIMESTAMPING_RX_SOFTWARE |
+              SOF_TIMESTAMPING_RAW_HARDWARE | SOF_TIMESTAMPING_OPT_CMSG;
+    return sizeof (struct scm_timestamping) + SCM_TSTAMP_SND + PTP_SYS_OFFSET +
+           setsockopt(0, SOL_SOCKET, SO_SELECT_ERR_QUEUE + SO_TIMESTAMPING,
+                      &val, sizeof (val));'
+then
+  add_def HAVE_LINUX_TIMESTAMPING
+  EXTRA_OBJECTS="$EXTRA_OBJECTS hwclock.o ntp_io_linux.o"
+
+  if test_code 'other timestamping options' \
+    'sys/types.h sys/socket.h linux/net_tstamp.h' '' '' '
+    struct scm_ts_pktinfo pktinfo;
+    pktinfo.if_index = pktinfo.pkt_length = 0;
+    return pktinfo.if_index + pktinfo.pkt_length + HWTSTAMP_FILTER_NTP_ALL +
+           SCM_TIMESTAMPING_PKTINFO +
+           SOF_TIMESTAMPING_OPT_PKTINFO + SOF_TIMESTAMPING_OPT_TX_SWHW;'; then
+    add_def HAVE_LINUX_TIMESTAMPING_RXFILTER_NTP 1
+    add_def HAVE_LINUX_TIMESTAMPING_OPT_PKTINFO 1
+    add_def HAVE_LINUX_TIMESTAMPING_OPT_TX_SWHW 1
+  fi
+fi
+
+timepps_h=""
+if [ $feat_refclock = "1" ] && [ $feat_pps = "1" ]; then
+  if test_code '<sys/timepps.h>' 'inttypes.h time.h sys/timepps.h' '' '' ''; then
+    timepps_h="sys/timepps.h"
+    add_def HAVE_SYS_TIMEPPS_H
+  else
+    if test_code '<timepps.h>' 'inttypes.h time.h timepps.h' '' '' ''; then
+      timepps_h="timepps.h"
+      add_def HAVE_TIMEPPS_H
+    fi
+  fi
+fi
+
+if [ "x$timepps_h" != "x" ] && \
+  test_code 'PPSAPI' "inttypes.h string.h time.h $timepps_h" '' '' '
+    pps_handle_t h = 0;
+    pps_info_t i;
+    struct timespec ts;
+    return time_pps_fetch(h, PPS_TSFMT_TSPEC, &i, &ts);'
+then
+  add_def FEAT_PPS
+fi
+
+if [ $feat_droproot = "1" ] && [ $try_libcap = "1" ] && \
+  test_code \
+    libcap \
+    'sys/types.h pwd.h sys/prctl.h sys/capability.h grp.h' \
+    '' '-lcap' \
+    'prctl(PR_SET_KEEPCAPS, 1);cap_set_proc(cap_from_text("cap_sys_time=ep"));'
+then
+    add_def FEAT_PRIVDROP
+    EXTRA_LIBS="$EXTRA_LIBS -lcap"
+fi
+
+if [ $feat_droproot = "1" ] && [ $try_clockctl = "1" ] && \
+  test_code '<sys/clockctl.h>' 'sys/clockctl.h' '' '' ''
+then
+  add_def FEAT_PRIVDROP
+  priv_ops="BINDSOCKET"
+fi
+
+if [ $feat_scfilter = "1" ] && [ $try_seccomp = "1" ] && \
+  test_code seccomp 'seccomp.h' '' '-lseccomp' \
+    'seccomp_init(SCMP_ACT_KILL);'
+then
+  add_def FEAT_SCFILTER
+  # NAME2IPADDRESS shouldn't be enabled with other operations as the helper
+  # process works on one request at the time and the async resolver could
+  # block the main thread
+  priv_ops="NAME2IPADDRESS RELOADDNS"
+  EXTRA_LIBS="$EXTRA_LIBS -lseccomp"
+fi
+
+if [ "x$priv_ops" != "x" ]; then
+  EXTRA_OBJECTS="$EXTRA_OBJECTS privops.o"
+  add_def PRIVOPS_HELPER
+  for o in $priv_ops; do
+    add_def PRIVOPS_$o
+  done
+fi
+
+if [ $feat_rtc = "1" ] && [ $try_rtc = "1" ] && \
+  test_code '<linux/rtc.h>' 'sys/ioctl.h linux/rtc.h' '' '' \
+    'ioctl(1, RTC_UIE_ON&RTC_UIE_OFF&RTC_RD_TIME&RTC_SET_TIME, 0&RTC_UF);'
+then
+    EXTRA_OBJECTS="$EXTRA_OBJECTS rtc_linux.o"
+    add_def FEAT_RTC
+fi
+
+if [ $feat_refclock = "1" ] && [ $feat_phc = "1" ] && [ $try_phc = "1" ] && \
+  grep '#define HAVE_CLOCK_GETTIME' config.h > /dev/null && \
+  test_code '<linux/ptp_clock.h>' 'sys/ioctl.h linux/ptp_clock.h' '' '' \
+    'ioctl(1, PTP_CLOCK_GETCAPS + PTP_SYS_OFFSET, 0);'
+then
+  grep 'HAVE_LINUX_TIMESTAMPING' config.h > /dev/null ||
+    EXTRA_OBJECTS="$EXTRA_OBJECTS hwclock.o"
+  add_def FEAT_PHC
+fi
+
+if [ $try_setsched = "1" ] && \
+  test_code \
+    'pthread_setschedparam()' \
+    'pthread.h sched.h' '-pthread' '' '
+     struct sched_param sched;
+     sched_get_priority_max(SCHED_FIFO);
+     pthread_setschedparam(pthread_self(), SCHED_FIFO, &sched);'
+then
+  add_def HAVE_PTHREAD_SETSCHEDPARAM
+  use_pthread=1
+fi
+
+if [ $try_lockmem = "1" ] && \
+  test_code \
+    'mlockall()' \
+    'sys/mman.h' '' '' '
+     mlockall(MCL_CURRENT|MCL_FUTURE);'
+then
+  add_def HAVE_MLOCKALL
+fi
+if [ $try_lockmem = "1" ] && \
+  test_code \
+    'setrlimit(RLIMIT_MEMLOCK, ...)' \
+    'sys/resource.h' '' '' '
+     struct rlimit rlim;
+     setrlimit(RLIMIT_MEMLOCK, &rlim);'
+then
+  add_def HAVE_SETRLIMIT_MEMLOCK
+fi
+
+if [ $feat_forcednsretry = "1" ]
+then
+  add_def FORCE_DNSRETRY
+fi
+
+READLINE_LINK=""
+if [ $feat_readline = "1" ]; then
+  if [ $try_editline = "1" ]; then
+    if test_code editline 'stdio.h editline/readline.h' \
+      "$readline_inc" "$readline_lib -ledit" \
+      'add_history(readline("prompt"));'
+    then
+      add_def FEAT_READLINE
+      add_def USE_EDITLINE
+      MYCPPFLAGS="$MYCPPFLAGS $readline_inc"
+      READLINE_LINK="$readline_lib -ledit"
+    fi
+  fi
+
+  if [ "x$READLINE_LINK" = "x" ] && [ $try_readline = "1" ]; then
+    if test_code readline 'stdio.h readline/readline.h readline/history.h' \
+      "$readline_inc" "$readline_lib -lreadline" \
+      'add_history(readline("prompt"));'
+    then
+      add_def FEAT_READLINE
+      MYCPPFLAGS="$MYCPPFLAGS $readline_inc"
+      READLINE_LINK="$readline_lib -lreadline"
+    fi
+  fi
+
+  if [ "x$READLINE_LINK" = "x" ] && [ $try_readline = "1" ]; then
+    if test_code 'readline with -lncurses' \
+      'stdio.h readline/readline.h readline/history.h' \
+      "$readline_inc" "$readline_lib $ncurses_lib -lreadline -lncurses" \
+      'add_history(readline("prompt"));'
+    then
+      add_def FEAT_READLINE
+      MYCPPFLAGS="$MYCPPFLAGS $readline_inc"
+      READLINE_LINK="$readline_lib $ncurses_lib -lreadline -lncurses"
+    fi
+  fi
+
+  EXTRA_CLI_LIBS="$EXTRA_CLI_LIBS $READLINE_LINK"
+fi
+
+HASH_OBJ="hash_intmd5.o"
+HASH_LINK=""
+
+if [ $feat_sechash = "1" ] && [ "x$HASH_LINK" = "x" ]  && [ $try_nettle = "1" ]; then
+  test_cflags="`pkg_config --cflags nettle`"
+  test_link="`pkg_config --libs nettle`"
+  if test_code 'nettle' 'nettle/nettle-meta.h nettle/sha2.h' \
+    "$test_cflags" "$test_link" \
+    'return nettle_hashes[0]->context_size;'
+  then
+    HASH_OBJ="hash_nettle.o"
+    HASH_LINK="$test_link"
+    LIBS="$LIBS $HASH_LINK"
+    MYCPPFLAGS="$MYCPPFLAGS $test_cflags"
+    add_def FEAT_SECHASH
+  fi
+fi
+
+if [ $feat_sechash = "1" ] && [ "x$HASH_LINK" = "x" ]  && [ $try_nss = "1" ]; then
+  test_cflags="`pkg_config --cflags nss`"
+  test_link="`pkg_config --libs-only-L nss` -lfreebl3"
+  if test_code 'NSS' 'nss.h hasht.h nsslowhash.h' \
+    "$test_cflags" "$test_link" \
+    'NSSLOWHASH_Begin(NSSLOWHASH_NewContext(NSSLOW_Init(), HASH_AlgSHA512));'
+  then
+    HASH_OBJ="hash_nss.o"
+    HASH_LINK="$test_link"
+    LIBS="$LIBS $HASH_LINK"
+    MYCPPFLAGS="$MYCPPFLAGS $test_cflags"
+    add_def FEAT_SECHASH
+  fi
+fi
+
+if [ $feat_sechash = "1" ] && [ "x$HASH_LINK" = "x" ] && [ $try_tomcrypt = "1" ]; then
+  if test_code 'tomcrypt' 'tomcrypt.h' '-I/usr/include/tomcrypt' '-ltomcrypt' \
+    'hash_memory_multi(find_hash("md5"), NULL, NULL, NULL, 0, NULL, 0);'
+  then
+    HASH_OBJ="hash_tomcrypt.o"
+    HASH_LINK="-ltomcrypt"
+    LIBS="$LIBS $HASH_LINK"
+    MYCPPFLAGS="$MYCPPFLAGS -I/usr/include/tomcrypt"
+    add_def FEAT_SECHASH
+  fi
+fi
+
+if [ $use_pthread = "1" ]; then
+  MYCFLAGS="$MYCFLAGS -pthread"
+fi
+
+SYSCONFDIR=/etc
+if [ "x$SETSYSCONFDIR" != "x" ]; then
+  SYSCONFDIR=$SETSYSCONFDIR
+fi
+
+PREFIX=/usr/local
+if [ "x$SETPREFIX" != "x" ]; then
+  PREFIX=$SETPREFIX
+fi
+
+EPREFIX=${PREFIX}
+if [ "x$SETEPREFIX" != "x" ]; then
+  EPREFIX=$SETEPREFIX
+fi
+
+BINDIR=${EPREFIX}/bin
+if [ "x$SETBINDIR" != "x" ]; then
+  BINDIR=$SETBINDIR
+fi
+
+SBINDIR=${EPREFIX}/sbin
+if [ "x$SETSBINDIR" != "x" ]; then
+  SBINDIR=$SETSBINDIR
+fi
+
+DATAROOTDIR=${PREFIX}/share
+if [ "x$SETDATAROOTDIR" != "x" ]; then
+  DATAROOTDIR=$SETDATAROOTDIR
+fi
+
+MANDIR=${DATAROOTDIR}/man
+if [ "x$SETMANDIR" != "x" ]; then
+  MANDIR=$SETMANDIR
+fi
+
+DOCDIR=${DATAROOTDIR}/doc/chrony
+if [ "x$SETDOCDIR" != "x" ]; then
+  DOCDIR=$SETDOCDIR
+fi
+
+LOCALSTATEDIR=/var
+if [ "x$SETLOCALSTATEDIR" != "x" ]; then
+  LOCALSTATEDIR=$SETLOCALSTATEDIR
+fi
+
+CHRONYRUNDIR=${LOCALSTATEDIR}/run/chrony
+if [ "x$SETCHRONYRUNDIR" != "x" ]; then
+  CHRONYRUNDIR=$SETCHRONYRUNDIR
+fi
+
+CHRONYVARDIR=${LOCALSTATEDIR}/lib/chrony
+if [ "x$SETCHRONYVARDIR" != "x" ]; then
+  CHRONYVARDIR=$SETCHRONYVARDIR
+fi
+
+add_def DEFAULT_CONF_FILE "\"$SYSCONFDIR/chrony.conf\""
+add_def DEFAULT_HWCLOCK_FILE "\"$default_hwclockfile\""
+add_def DEFAULT_PID_FILE "\"$default_pidfile\""
+add_def DEFAULT_RTC_DEVICE "\"$default_rtcdevice\""
+add_def DEFAULT_USER "\"$default_user\""
+add_def DEFAULT_COMMAND_SOCKET "\"$CHRONYRUNDIR/chronyd.sock\""
+add_def MAIL_PROGRAM "\"$mail_program\""
+
+common_features="`get_features SECHASH IPV6 DEBUG`"
+chronyc_features="`get_features READLINE`"
+chronyd_features="`get_features CMDMON NTP REFCLOCK RTC PRIVDROP SCFILTER SIGND ASYNCDNS`"
+add_def CHRONYC_FEATURES "\"$chronyc_features $common_features\""
+add_def CHRONYD_FEATURES "\"$chronyd_features $common_features\""
+echo "Features : $chronyd_features $chronyc_features $common_features"
+
+if [ -f version.txt ]; then
+  CHRONY_VERSION="`cat version.txt`"
+else
+  CHRONY_VERSION="DEVELOPMENT"
+fi
+
+add_def CHRONY_VERSION "\"${CHRONY_VERSION}\""
+
+for f in Makefile doc/Makefile test/unit/Makefile
+do
+  echo Creating $f
+  sed -e "s%@EXTRA_OBJECTS@%${EXTRA_OBJECTS}%;\
+          s%@CC@%${MYCC}%;\
+          s%@CFLAGS@%${MYCFLAGS}%;\
+          s%@CPPFLAGS@%${MYCPPFLAGS}%;\
+          s%@LIBS@%${LIBS}%;\
+          s%@LDFLAGS@%${MYLDFLAGS}%;\
+          s%@EXTRA_LIBS@%${EXTRA_LIBS}%;\
+          s%@EXTRA_CLI_LIBS@%${EXTRA_CLI_LIBS}%;\
+          s%@HASH_OBJ@%${HASH_OBJ}%;\
+          s%@SYSCONFDIR@%${SYSCONFDIR}%;\
+          s%@BINDIR@%${BINDIR}%;\
+          s%@SBINDIR@%${SBINDIR}%;\
+          s%@DOCDIR@%${DOCDIR}%;\
+          s%@MANDIR@%${MANDIR}%;\
+          s%@LOCALSTATEDIR@%${LOCALSTATEDIR}%;\
+          s%@CHRONYRUNDIR@%${CHRONYRUNDIR}%;\
+          s%@CHRONYVARDIR@%${CHRONYVARDIR}%;\
+          s%@DEFAULT_HWCLOCK_FILE@%${default_hwclockfile}%;\
+          s%@DEFAULT_PID_FILE@%${default_pidfile}%;\
+          s%@DEFAULT_RTC_DEVICE@%${default_rtcdevice}%;\
+          s%@DEFAULT_USER@%${default_user}%;\
+          s%@CHRONY_VERSION@%${CHRONY_VERSION}%;" \
+          < ${f}.in > $f
+done
+
+# =======================================================================
+# vim:et:sw=2:ht=2:sts=2:fdm=marker:cms=#%s
+
