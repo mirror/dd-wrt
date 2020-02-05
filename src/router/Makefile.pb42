@@ -309,6 +309,9 @@ endif
 ifeq ($(CONFIG_DIR825C1),y)
 	cp $(LINUXDIR)/.config_dir825c1 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_ARCHERC25),y)
+	cp $(LINUXDIR)/.config_archerc25 $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_MMS344),y)
 	cp $(LINUXDIR)/.config_dir825c1 $(LINUXDIR)/.config
 endif
@@ -469,6 +472,12 @@ ifeq ($(CONFIG_ARCHERC7),y)
 	echo CONFIG_ARCHERC7=y >> $(LINUXDIR)/.config
 else
 	echo "# CONFIG_ARCHERC7 is not set" >> $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_ARCHERC25),y)
+	sed -i 's/\CONFIG_DIR825C1=y/# CONFIG_DIR825C1 is not set/g' $(LINUXDIR)/.config
+	echo CONFIG_ARCHERC25=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_ARCHERC25 is not set" >> $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_WDR4900V2),y)
 	echo CONFIG_WDR4900V2=y >> $(LINUXDIR)/.config
@@ -1916,6 +1925,11 @@ ifeq ($(CONFIG_WDR4300),y)
 
 	-./tools/tplink/mktplinkfw -B TL-WDR3500 -u -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR3500_US-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR3500_US-firmware.bin mips-uclibc/tplink-TL-WDR3500_US-firmware.bin
+endif
+ifeq ($(CONFIG_ARCHERC25),y)
+	-./tools/safeloader/tplink-safeloader -B ARCHER-C25-V1 -V 1 -k $(ARCH)-uclibc/root.uimage -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C25-firmware.bin
+	-./tools/safeloader/tplink-safeloader -B ARCHER-C25-V1 -V 1 -S -k $(ARCH)-uclibc/root.uimage -r $(ARCH)-uclibc/root.fs -o mips-uclibc/archerC25_tp_recovery.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C25-firmware.bin mips-uclibc/archerC25_tp_recovery.bin
 endif
 ifeq ($(CONFIG_WR1043V2),y)
 	-./tools/tplink/mktplinkfw -B TL-WR1043NDv2 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WR1043V2-firmware.bin
