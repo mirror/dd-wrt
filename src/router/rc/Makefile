@@ -1060,6 +1060,10 @@ ifeq ($(CONFIG_ATH10K),y)
 CFLAGS += -DHAVE_ATH10K
 endif
 
+ifeq ($(CONFIG_CHRONY),y)
+CFLAGS += -DHAVE_CHRONY
+endif
+
 include $(TOP)/rules/generic.mk
 
 CFLAGS += $(DD_CFLAGS)
