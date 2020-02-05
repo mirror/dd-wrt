@@ -292,7 +292,7 @@ static int __init ar7240_flash_init(void)
 #endif
 #endif
 #ifdef CONFIG_ARCHERC25
-	buf = (char *)0xbf1b0000;
+	buf = (char *)0xbf160000;
 #else
 	buf = (char *)0xbf000000;
 #endif
@@ -322,7 +322,7 @@ static int __init ar7240_flash_init(void)
 		printk(KERN_EMERG "scanning for root partition\n");
 
 #ifdef CONFIG_ARCHERC25
-		offset = 0x1b0000;
+		offset = 0x160000;
 #else
 		offset = 0;
 #endif
