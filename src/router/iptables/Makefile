@@ -103,39 +103,6 @@ endif
 EXTRA_INSTALLS+=$(DESTDIR)$(BINDIR)/ip6tables-save $(DESTDIR)$(BINDIR)/ip6tables-restore # $(DESTDIR)$(MANDIR)/man8/iptables-restore.8 $(DESTDIR)$(MANDIR)/man8/iptables-save.8 $(DESTDIR)$(MANDIR)/man8/ip6tables-save.8 $(DESTDIR)$(MANDIR)/man8/ip6tables-restore.8
 endif
 
-# Sparc64 hack
-ifeq ($(shell uname -m),sparc64)
-	POINTERTEST:=1
-	32bituser := $(shell echo -e "\#include <stdio.h>\n\#if !defined(__sparcv9) && !defined(__arch64__) && !defined(_LP64)\nuserspace_is_32bit\n\#endif" | $(CC) $(CFLAGS) -E - | grep userspace_is_32bit)
-	ifdef 32bituser
-		# The kernel is 64-bit, even though userspace is 32.
-		CFLAGS+=-DIPT_MIN_ALIGN=8 -DKERNEL_64_USERSPACE_32
-	else
-		EXT_LDFLAGS+=-Wl,-m,elf64_sparc
-	endif
-endif
-
-# Alpha only has 64bit userspace and fails the test below
-ifeq ($(shell uname -m), alpha)
-	POINTERTEST:=1
-endif
-
-# Generic test if arch wasn't found above
-ifneq ($(POINTERTEST),1)
-	# Try to determine if kernel is 64bit and we are compiling for 32bit
-	ifeq ($(shell [ -a $(KERNEL_DIR)/include/asm ] && echo YES), YES)
-		64bitkernel := $(shell echo -e "\#include <asm/types.h>\n\#if BITS_PER_LONG == 64\nkernel_is_64bits\n\#endif" | $(CC) $(CFLAGS) -D__KERNEL__ -E - | grep kernel_is_64bits)
-		ifdef 64bitkernel
-			32bituser := $(shell echo -e "\#include <stdio.h>\n\#if !defined(__arch64__) && !defined(_LP64)\nuserspace_is_32bit\n\#endif" | $(CC) $(CFLAGS) -E - | grep userspace_is_32bit)
-			ifdef 32bituser
-				CFLAGS+=-DIPT_MIN_ALIGN=8 -DKERNEL_64_USERSPACE_32
-			endif
-		endif
-	else
-		CFLAGS+=-D_UNKNOWN_KERNEL_POINTER_SIZE
-	endif
-endif
-
 ifndef IPT_LIBDIR
 IPT_LIBDIR:=$(LIBDIR)/iptables
 endif
