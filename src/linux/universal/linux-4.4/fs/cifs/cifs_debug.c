@@ -24,7 +24,7 @@
 #include <linux/ctype.h>
 #include <linux/module.h>
 #include <linux/proc_fs.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include "cifspdu.h"
 #include "cifsglob.h"
 #include "cifsproto.h"
@@ -261,7 +261,6 @@ static int cifs_debug_data_proc_open(struct inode *inode, struct file *file)
 }
 
 static const struct file_operations cifs_debug_data_proc_fops = {
-	.owner		= THIS_MODULE,
 	.open		= cifs_debug_data_proc_open,
 	.read		= seq_read,
 	.llseek		= seq_lseek,
@@ -389,7 +388,6 @@ static int cifs_stats_proc_open(struct inode *inode, struct file *file)
 }
 
 static const struct file_operations cifs_stats_proc_fops = {
-	.owner		= THIS_MODULE,
 	.open		= cifs_stats_proc_open,
 	.read		= seq_read,
 	.llseek		= seq_lseek,
@@ -475,7 +473,6 @@ static ssize_t cifsFYI_proc_write(struct file *file, const char __user *buffer,
 }
 
 static const struct file_operations cifsFYI_proc_fops = {
-	.owner		= THIS_MODULE,
 	.open		= cifsFYI_proc_open,
 	.read		= seq_read,
 	.llseek		= seq_lseek,
@@ -507,7 +504,6 @@ static ssize_t cifs_linux_ext_proc_write(struct file *file,
 }
 
 static const struct file_operations cifs_linux_ext_proc_fops = {
-	.owner		= THIS_MODULE,
 	.open		= cifs_linux_ext_proc_open,
 	.read		= seq_read,
 	.llseek		= seq_lseek,
@@ -539,7 +535,6 @@ static ssize_t cifs_lookup_cache_proc_write(struct file *file,
 }
 
 static const struct file_operations cifs_lookup_cache_proc_fops = {
-	.owner		= THIS_MODULE,
 	.open		= cifs_lookup_cache_proc_open,
 	.read		= seq_read,
 	.llseek		= seq_lseek,
@@ -571,7 +566,6 @@ static ssize_t traceSMB_proc_write(struct file *file, const char __user *buffer,
 }
 
 static const struct file_operations traceSMB_proc_fops = {
-	.owner		= THIS_MODULE,
 	.open		= traceSMB_proc_open,
 	.read		= seq_read,
 	.llseek		= seq_lseek,
@@ -683,7 +677,6 @@ static ssize_t cifs_security_flags_proc_write(struct file *file,
 }
 
 static const struct file_operations cifs_security_flags_proc_fops = {
-	.owner		= THIS_MODULE,
 	.open		= cifs_security_flags_proc_open,
 	.read		= seq_read,
 	.llseek		= seq_lseek,

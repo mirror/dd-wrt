@@ -97,10 +97,7 @@ smb2_hdr_assemble(struct smb2_hdr *hdr, __le16 smb2_cmd /* command */ ,
 	hdr->smb2_buf_length = cpu_to_be32(parmsize + sizeof(struct smb2_hdr)
 			- 4 /*  RFC 1001 length field itself not counted */);
 
-	hdr->ProtocolId[0] = 0xFE;
-	hdr->ProtocolId[1] = 'S';
-	hdr->ProtocolId[2] = 'M';
-	hdr->ProtocolId[3] = 'B';
+	hdr->ProtocolId = SMB2_PROTO_NUMBER;
 	hdr->StructureSize = cpu_to_le16(64);
 	hdr->Command = smb2_cmd;
 	if (tcon && tcon->ses && tcon->ses->server) {
@@ -108,11 +105,11 @@ smb2_hdr_assemble(struct smb2_hdr *hdr, __le16 smb2_cmd /* command */ ,
 
 		spin_lock(&server->req_lock);
 		/* Request up to 2 credits but don't go over the limit. */
-		if (server->credits >= SMB2_MAX_CREDITS_AVAILABLE)
+		if (server->credits >= server->max_credits)
 			hdr->CreditRequest = cpu_to_le16(0);
 		else
 			hdr->CreditRequest = cpu_to_le16(
-				min_t(int, SMB2_MAX_CREDITS_AVAILABLE -
+				min_t(int, server->max_credits -
 						server->credits, 2));
 		spin_unlock(&server->req_lock);
 	} else {
@@ -259,11 +256,19 @@ smb2_reconnect(__le16 smb2_command, struct cifs_tcon *tcon)
 	}
 
 	cifs_mark_open_files_invalid(tcon);
+	if (tcon->use_persistent)
+		tcon->need_reopen_files = true;
+
 	rc = SMB2_tcon(0, tcon->ses, tcon->treeName, tcon, nls_codepage);
 	mutex_unlock(&tcon->ses->session_mutex);
+
 	cifs_dbg(FYI, "reconnect tcon rc = %d\n", rc);
 	if (rc)
 		goto out;
+
+	if (smb2_command != SMB2_INTERNAL_CMD)
+		queue_delayed_work(cifsiod_wq, &server->reconnect, 0);
+
 	atomic_inc(&tconInfoReconnectCount);
 out:
 	/*
@@ -607,54 +612,32 @@ vneg_out:
 	return -EIO;
 }
 
-int
-SMB2_sess_setup(const unsigned int xid, struct cifs_ses *ses,
-		const struct nls_table *nls_cp)
-{
-	struct smb2_sess_setup_req *req;
-	struct smb2_sess_setup_rsp *rsp = NULL;
+struct SMB2_sess_data {
+	unsigned int xid;
+	struct cifs_ses *ses;
+	struct nls_table *nls_cp;
+	void (*func)(struct SMB2_sess_data *);
+	int result;
+	u64 previous_session;
+
+	/* we will send the SMB in three pieces:
+	 * a fixed length beginning part, an optional
+	 * SPNEGO blob (which can be zero length), and a
+	 * last part which will include the strings
+	 * and rest of bcc area. This allows us to avoid
+	 * a large buffer 17K allocation
+	 */
+	int buf0_type;
 	struct kvec iov[2];
-	int rc = 0;
-	int resp_buftype = CIFS_NO_BUFFER;
-	__le32 phase = NtLmNegotiate; /* NTLMSSP, if needed, is multistage */
+};
+
+static int
+SMB2_sess_alloc_buffer(struct SMB2_sess_data *sess_data)
+{
+	int rc;
+	struct cifs_ses *ses = sess_data->ses;
+	struct smb2_sess_setup_req *req;
 	struct TCP_Server_Info *server = ses->server;
-	u16 blob_length = 0;
-	struct key *spnego_key = NULL;
-	char *security_blob = NULL;
-	unsigned char *ntlmssp_blob = NULL;
-	bool use_spnego = false; /* else use raw ntlmssp */
-	u64 previous_session = ses->Suid;
-
-	cifs_dbg(FYI, "Session Setup\n");
-
-	if (!server) {
-		WARN(1, "%s: server is NULL!\n", __func__);
-		return -EIO;
-	}
-
-	/*
-	 * If we are here due to reconnect, free per-smb session key
-	 * in case signing was required.
-	 */
-	kfree(ses->auth_key.response);
-	ses->auth_key.response = NULL;
-
-	/*
-	 * If memory allocation is successful, caller of this function
-	 * frees it.
-	 */
-	ses->ntlmssp = kmalloc(sizeof(struct ntlmssp_auth), GFP_KERNEL);
-	if (!ses->ntlmssp)
-		return -ENOMEM;
-	ses->ntlmssp->sesskey_per_smbsess = true;
-
-	/* FIXME: allow for other auth types besides NTLMSSP (e.g. krb5) */
-	if (ses->sectype != Kerberos && ses->sectype != RawNTLMSSP)
-		ses->sectype = RawNTLMSSP;
-
-ssetup_ntlmssp_authenticate:
-	if (phase == NtLmChallenge)
-		phase = NtLmAuthenticate; /* if ntlmssp, now final phase */
 
 	rc = small_smb2_init(SMB2_SESSION_SETUP, NULL, (void **) &req);
 	if (rc)
@@ -663,7 +646,7 @@ ssetup_ntlmssp_authenticate:
 	req->hdr.SessionId = 0; /* First session, not a reauthenticate */
 
 	/* if reconnect, we need to send previous sess id, otherwise it is 0 */
-	req->PreviousSessionId = previous_session;
+	req->PreviousSessionId = sess_data->previous_session;
 
 	req->Flags = 0; /* MBZ */
 	/* to enable echos and oplocks */
@@ -685,193 +668,363 @@ ssetup_ntlmssp_authenticate:
 
 	req->Channel = 0; /* MBZ */
 
-	iov[0].iov_base = (char *)req;
+	sess_data->iov[0].iov_base = (char *)req;
 	/* 4 for rfc1002 length field and 1 for pad */
-	iov[0].iov_len = get_rfc1002_length(req) + 4 - 1;
+	sess_data->iov[0].iov_len = get_rfc1002_length(req) + 4 - 1;
+	/*
+	 * This variable will be used to clear the buffer
+	 * allocated above in case of any error in the calling function.
+	 */
+	sess_data->buf0_type = CIFS_SMALL_BUFFER;
 
-	if (ses->sectype == Kerberos) {
-#ifdef CONFIG_CIFS_UPCALL
-		struct cifs_spnego_msg *msg;
+	return 0;
+}
 
-		spnego_key = cifs_get_spnego_key(ses);
-		if (IS_ERR(spnego_key)) {
-			rc = PTR_ERR(spnego_key);
-			spnego_key = NULL;
-			goto ssetup_exit;
-		}
+static void
+SMB2_sess_free_buffer(struct SMB2_sess_data *sess_data)
+{
+	free_rsp_buf(sess_data->buf0_type, sess_data->iov[0].iov_base);
+	sess_data->buf0_type = CIFS_NO_BUFFER;
+}
 
-		msg = spnego_key->payload.data[0];
-		/*
-		 * check version field to make sure that cifs.upcall is
-		 * sending us a response in an expected form
-		 */
-		if (msg->version != CIFS_SPNEGO_UPCALL_VERSION) {
-			cifs_dbg(VFS,
-				  "bad cifs.upcall version. Expected %d got %d",
-				  CIFS_SPNEGO_UPCALL_VERSION, msg->version);
-			rc = -EKEYREJECTED;
-			goto ssetup_exit;
-		}
-		ses->auth_key.response = kmemdup(msg->data, msg->sesskey_len,
-						 GFP_KERNEL);
-		if (!ses->auth_key.response) {
-			cifs_dbg(VFS,
-				"Kerberos can't allocate (%u bytes) memory",
-				msg->sesskey_len);
-			rc = -ENOMEM;
-			goto ssetup_exit;
-		}
-		ses->auth_key.len = msg->sesskey_len;
-		blob_length = msg->secblob_len;
-		iov[1].iov_base = msg->data + msg->sesskey_len;
-		iov[1].iov_len = blob_length;
-#else
-		rc = -EOPNOTSUPP;
-		goto ssetup_exit;
-#endif /* CONFIG_CIFS_UPCALL */
-	} else if (phase == NtLmNegotiate) { /* if not krb5 must be ntlmssp */
-		ntlmssp_blob = kmalloc(sizeof(struct _NEGOTIATE_MESSAGE),
-				       GFP_KERNEL);
-		if (ntlmssp_blob == NULL) {
-			rc = -ENOMEM;
-			goto ssetup_exit;
-		}
-		build_ntlmssp_negotiate_blob(ntlmssp_blob, ses);
-		if (use_spnego) {
-			/* blob_length = build_spnego_ntlmssp_blob(
-					&security_blob,
-					sizeof(struct _NEGOTIATE_MESSAGE),
-					ntlmssp_blob); */
-			/* BB eventually need to add this */
-			cifs_dbg(VFS, "spnego not supported for SMB2 yet\n");
-			rc = -EOPNOTSUPP;
-			kfree(ntlmssp_blob);
-			goto ssetup_exit;
-		} else {
-			blob_length = sizeof(struct _NEGOTIATE_MESSAGE);
-			/* with raw NTLMSSP we don't encapsulate in SPNEGO */
-			security_blob = ntlmssp_blob;
-		}
-		iov[1].iov_base = security_blob;
-		iov[1].iov_len = blob_length;
-	} else if (phase == NtLmAuthenticate) {
-		req->hdr.SessionId = ses->Suid;
-		rc = build_ntlmssp_auth_blob(&ntlmssp_blob, &blob_length, ses,
-					     nls_cp);
-		if (rc) {
-			cifs_dbg(FYI, "build_ntlmssp_auth_blob failed %d\n",
-				 rc);
-			goto ssetup_exit; /* BB double check error handling */
-		}
-		if (use_spnego) {
-			/* blob_length = build_spnego_ntlmssp_blob(
-							&security_blob,
-							blob_length,
-							ntlmssp_blob); */
-			cifs_dbg(VFS, "spnego not supported for SMB2 yet\n");
-			rc = -EOPNOTSUPP;
-			kfree(ntlmssp_blob);
-			goto ssetup_exit;
-		} else {
-			security_blob = ntlmssp_blob;
-		}
-		iov[1].iov_base = security_blob;
-		iov[1].iov_len = blob_length;
-	} else {
-		cifs_dbg(VFS, "illegal ntlmssp phase\n");
-		rc = -EIO;
-		goto ssetup_exit;
-	}
+static int
+SMB2_sess_sendreceive(struct SMB2_sess_data *sess_data)
+{
+	int rc;
+	struct smb2_sess_setup_req *req = sess_data->iov[0].iov_base;
 
 	/* Testing shows that buffer offset must be at location of Buffer[0] */
 	req->SecurityBufferOffset =
-				cpu_to_le16(sizeof(struct smb2_sess_setup_req) -
-					    1 /* pad */ - 4 /* rfc1001 len */);
-	req->SecurityBufferLength = cpu_to_le16(blob_length);
+		cpu_to_le16(sizeof(struct smb2_sess_setup_req) -
+			1 /* pad */ - 4 /* rfc1001 len */);
+	req->SecurityBufferLength = cpu_to_le16(sess_data->iov[1].iov_len);
 
-	inc_rfc1001_len(req, blob_length - 1 /* pad */);
+	inc_rfc1001_len(req, sess_data->iov[1].iov_len - 1 /* pad */);
 
 	/* BB add code to build os and lm fields */
 
-	rc = SendReceive2(xid, ses, iov, 2, &resp_buftype,
-			  CIFS_LOG_ERROR | CIFS_NEG_OP);
+	rc = SendReceive2(sess_data->xid, sess_data->ses,
+				sess_data->iov, 2,
+				&sess_data->buf0_type,
+				CIFS_LOG_ERROR | CIFS_NEG_OP);
 
-	kfree(security_blob);
-	rsp = (struct smb2_sess_setup_rsp *)iov[0].iov_base;
-	ses->Suid = rsp->hdr.SessionId;
-	if (resp_buftype != CIFS_NO_BUFFER &&
-	    rsp->hdr.Status == STATUS_MORE_PROCESSING_REQUIRED) {
-		if (phase != NtLmNegotiate) {
-			cifs_dbg(VFS, "Unexpected more processing error\n");
-			goto ssetup_exit;
-		}
-		if (offsetof(struct smb2_sess_setup_rsp, Buffer) - 4 !=
-				le16_to_cpu(rsp->SecurityBufferOffset)) {
-			cifs_dbg(VFS, "Invalid security buffer offset %d\n",
-				 le16_to_cpu(rsp->SecurityBufferOffset));
-			rc = -EIO;
-			goto ssetup_exit;
-		}
+	return rc;
+}
 
-		/* NTLMSSP Negotiate sent now processing challenge (response) */
-		phase = NtLmChallenge; /* process ntlmssp challenge */
-		rc = 0; /* MORE_PROCESSING is not an error here but expected */
-		rc = decode_ntlmssp_challenge(rsp->Buffer,
-				le16_to_cpu(rsp->SecurityBufferLength), ses);
+static int
+SMB2_sess_establish_session(struct SMB2_sess_data *sess_data)
+{
+	int rc = 0;
+	struct cifs_ses *ses = sess_data->ses;
+
+	mutex_lock(&ses->server->srv_mutex);
+	if (ses->server->ops->generate_signingkey) {
+		rc = ses->server->ops->generate_signingkey(ses);
+		if (rc) {
+			cifs_dbg(FYI,
+				"SMB3 session key generation failed\n");
+			mutex_unlock(&ses->server->srv_mutex);
+			return rc;
+		}
+	}
+	if (!ses->server->session_estab) {
+		ses->server->sequence_number = 0x2;
+		ses->server->session_estab = true;
+	}
+	mutex_unlock(&ses->server->srv_mutex);
+
+	cifs_dbg(FYI, "SMB2/3 session established successfully\n");
+	spin_lock(&GlobalMid_Lock);
+	ses->status = CifsGood;
+	ses->need_reconnect = false;
+	spin_unlock(&GlobalMid_Lock);
+	return rc;
+}
+
+#ifdef CONFIG_CIFS_UPCALL
+static void
+SMB2_auth_kerberos(struct SMB2_sess_data *sess_data)
+{
+	int rc;
+	struct cifs_ses *ses = sess_data->ses;
+	struct cifs_spnego_msg *msg;
+	struct key *spnego_key = NULL;
+	struct smb2_sess_setup_rsp *rsp = NULL;
+
+	rc = SMB2_sess_alloc_buffer(sess_data);
+	if (rc)
+		goto out;
+
+	spnego_key = cifs_get_spnego_key(ses);
+	if (IS_ERR(spnego_key)) {
+		rc = PTR_ERR(spnego_key);
+		spnego_key = NULL;
+		goto out;
 	}
 
+	msg = spnego_key->payload.data[0];
 	/*
-	 * BB eventually add code for SPNEGO decoding of NtlmChallenge blob,
-	 * but at least the raw NTLMSSP case works.
+	 * check version field to make sure that cifs.upcall is
+	 * sending us a response in an expected form
 	 */
-	/*
-	 * No tcon so can't do
-	 * cifs_stats_inc(&tcon->stats.smb2_stats.smb2_com_fail[SMB2...]);
-	 */
-	if (rc != 0)
-		goto ssetup_exit;
+	if (msg->version != CIFS_SPNEGO_UPCALL_VERSION) {
+		cifs_dbg(VFS,
+			  "bad cifs.upcall version. Expected %d got %d",
+			  CIFS_SPNEGO_UPCALL_VERSION, msg->version);
+		rc = -EKEYREJECTED;
+		goto out_put_spnego_key;
+	}
+
+	ses->auth_key.response = kmemdup(msg->data, msg->sesskey_len,
+					 GFP_KERNEL);
+	if (!ses->auth_key.response) {
+		cifs_dbg(VFS,
+			"Kerberos can't allocate (%u bytes) memory",
+			msg->sesskey_len);
+		rc = -ENOMEM;
+		goto out_put_spnego_key;
+	}
+	ses->auth_key.len = msg->sesskey_len;
+
+	sess_data->iov[1].iov_base = msg->data + msg->sesskey_len;
+	sess_data->iov[1].iov_len = msg->secblob_len;
+
+	rc = SMB2_sess_sendreceive(sess_data);
+	if (rc)
+		goto out_put_spnego_key;
+
+	rsp = (struct smb2_sess_setup_rsp *)sess_data->iov[0].iov_base;
+	ses->Suid = rsp->hdr.SessionId;
 
 	ses->session_flags = le16_to_cpu(rsp->SessionFlags);
 	if (ses->session_flags & SMB2_SESSION_FLAG_ENCRYPT_DATA)
 		cifs_dbg(VFS, "SMB3 encryption not supported yet\n");
-ssetup_exit:
-	free_rsp_buf(resp_buftype, rsp);
 
-	/* if ntlmssp, and negotiate succeeded, proceed to authenticate phase */
-	if ((phase == NtLmChallenge) && (rc == 0))
-		goto ssetup_ntlmssp_authenticate;
+	rc = SMB2_sess_establish_session(sess_data);
+out_put_spnego_key:
+	key_invalidate(spnego_key);
+	key_put(spnego_key);
+out:
+	sess_data->result = rc;
+	sess_data->func = NULL;
+	SMB2_sess_free_buffer(sess_data);
+}
+#else
+static void
+SMB2_auth_kerberos(struct SMB2_sess_data *sess_data)
+{
+	cifs_dbg(VFS, "Kerberos negotiated but upcall support disabled!\n");
+	sess_data->result = -EOPNOTSUPP;
+	sess_data->func = NULL;
+}
+#endif
 
+static void
+SMB2_sess_auth_rawntlmssp_authenticate(struct SMB2_sess_data *sess_data);
+
+static void
+SMB2_sess_auth_rawntlmssp_negotiate(struct SMB2_sess_data *sess_data)
+{
+	int rc;
+	struct cifs_ses *ses = sess_data->ses;
+	struct smb2_sess_setup_rsp *rsp = NULL;
+	char *ntlmssp_blob = NULL;
+	bool use_spnego = false; /* else use raw ntlmssp */
+	u16 blob_length = 0;
+
+	/*
+	 * If memory allocation is successful, caller of this function
+	 * frees it.
+	 */
+	ses->ntlmssp = kmalloc(sizeof(struct ntlmssp_auth), GFP_KERNEL);
+	if (!ses->ntlmssp) {
+		rc = -ENOMEM;
+		goto out_err;
+	}
+	ses->ntlmssp->sesskey_per_smbsess = true;
+
+	rc = SMB2_sess_alloc_buffer(sess_data);
+	if (rc)
+		goto out_err;
+
+	ntlmssp_blob = kmalloc(sizeof(struct _NEGOTIATE_MESSAGE),
+			       GFP_KERNEL);
+	if (ntlmssp_blob == NULL) {
+		rc = -ENOMEM;
+		goto out;
+	}
+
+	build_ntlmssp_negotiate_blob(ntlmssp_blob, ses);
+	if (use_spnego) {
+		/* BB eventually need to add this */
+		cifs_dbg(VFS, "spnego not supported for SMB2 yet\n");
+		rc = -EOPNOTSUPP;
+		goto out;
+	} else {
+		blob_length = sizeof(struct _NEGOTIATE_MESSAGE);
+		/* with raw NTLMSSP we don't encapsulate in SPNEGO */
+	}
+	sess_data->iov[1].iov_base = ntlmssp_blob;
+	sess_data->iov[1].iov_len = blob_length;
+
+	rc = SMB2_sess_sendreceive(sess_data);
+	rsp = (struct smb2_sess_setup_rsp *)sess_data->iov[0].iov_base;
+
+	/* If true, rc here is expected and not an error */
+	if (sess_data->buf0_type != CIFS_NO_BUFFER &&
+		rsp->hdr.Status == STATUS_MORE_PROCESSING_REQUIRED)
+		rc = 0;
+
+	if (rc)
+		goto out;
+
+	if (offsetof(struct smb2_sess_setup_rsp, Buffer) - 4 !=
+			le16_to_cpu(rsp->SecurityBufferOffset)) {
+		cifs_dbg(VFS, "Invalid security buffer offset %d\n",
+			le16_to_cpu(rsp->SecurityBufferOffset));
+		rc = -EIO;
+		goto out;
+	}
+	rc = decode_ntlmssp_challenge(rsp->Buffer,
+			le16_to_cpu(rsp->SecurityBufferLength), ses);
+	if (rc)
+		goto out;
+
+	cifs_dbg(FYI, "rawntlmssp session setup challenge phase\n");
+
+
+	ses->Suid = rsp->hdr.SessionId;
+	ses->session_flags = le16_to_cpu(rsp->SessionFlags);
+	if (ses->session_flags & SMB2_SESSION_FLAG_ENCRYPT_DATA)
+		cifs_dbg(VFS, "SMB3 encryption not supported yet\n");
+
+out:
+	kfree(ntlmssp_blob);
+	SMB2_sess_free_buffer(sess_data);
 	if (!rc) {
-		mutex_lock(&server->srv_mutex);
-		if (server->ops->generate_signingkey) {
-			rc = server->ops->generate_signingkey(ses);
-			if (rc) {
-				cifs_dbg(FYI,
-					"SMB3 session key generation failed\n");
-				mutex_unlock(&server->srv_mutex);
-				goto keygen_exit;
-			}
-		}
-		if (!server->session_estab) {
-			server->sequence_number = 0x2;
-			server->session_estab = true;
-		}
-		mutex_unlock(&server->srv_mutex);
-
-		cifs_dbg(FYI, "SMB2/3 session established successfully\n");
-		spin_lock(&GlobalMid_Lock);
-		ses->status = CifsGood;
-		ses->need_reconnect = false;
-		spin_unlock(&GlobalMid_Lock);
+		sess_data->result = 0;
+		sess_data->func = SMB2_sess_auth_rawntlmssp_authenticate;
+		return;
 	}
-
-keygen_exit:
-	if (spnego_key) {
-		key_invalidate(spnego_key);
-		key_put(spnego_key);
-	}
+out_err:
 	kfree(ses->ntlmssp);
+	ses->ntlmssp = NULL;
+	sess_data->result = rc;
+	sess_data->func = NULL;
+}
 
+static void
+SMB2_sess_auth_rawntlmssp_authenticate(struct SMB2_sess_data *sess_data)
+{
+	int rc;
+	struct cifs_ses *ses = sess_data->ses;
+	struct smb2_sess_setup_req *req;
+	struct smb2_sess_setup_rsp *rsp = NULL;
+	unsigned char *ntlmssp_blob = NULL;
+	bool use_spnego = false; /* else use raw ntlmssp */
+	u16 blob_length = 0;
+
+	rc = SMB2_sess_alloc_buffer(sess_data);
+	if (rc)
+		goto out;
+
+	req = (struct smb2_sess_setup_req *) sess_data->iov[0].iov_base;
+	req->hdr.SessionId = ses->Suid;
+
+	rc = build_ntlmssp_auth_blob(&ntlmssp_blob, &blob_length, ses,
+					sess_data->nls_cp);
+	if (rc) {
+		cifs_dbg(FYI, "build_ntlmssp_auth_blob failed %d\n", rc);
+		goto out;
+	}
+
+	if (use_spnego) {
+		/* BB eventually need to add this */
+		cifs_dbg(VFS, "spnego not supported for SMB2 yet\n");
+		rc = -EOPNOTSUPP;
+		goto out;
+	}
+	sess_data->iov[1].iov_base = ntlmssp_blob;
+	sess_data->iov[1].iov_len = blob_length;
+
+	rc = SMB2_sess_sendreceive(sess_data);
+	if (rc)
+		goto out;
+
+	rsp = (struct smb2_sess_setup_rsp *)sess_data->iov[0].iov_base;
+
+	ses->Suid = rsp->hdr.SessionId;
+	ses->session_flags = le16_to_cpu(rsp->SessionFlags);
+	if (ses->session_flags & SMB2_SESSION_FLAG_ENCRYPT_DATA)
+		cifs_dbg(VFS, "SMB3 encryption not supported yet\n");
+
+	rc = SMB2_sess_establish_session(sess_data);
+out:
+	kfree(ntlmssp_blob);
+	SMB2_sess_free_buffer(sess_data);
+	kfree(ses->ntlmssp);
+	ses->ntlmssp = NULL;
+	sess_data->result = rc;
+	sess_data->func = NULL;
+}
+
+static int
+SMB2_select_sec(struct cifs_ses *ses, struct SMB2_sess_data *sess_data)
+{
+	if (ses->sectype != Kerberos && ses->sectype != RawNTLMSSP)
+		ses->sectype = RawNTLMSSP;
+
+	switch (ses->sectype) {
+	case Kerberos:
+		sess_data->func = SMB2_auth_kerberos;
+		break;
+	case RawNTLMSSP:
+		sess_data->func = SMB2_sess_auth_rawntlmssp_negotiate;
+		break;
+	default:
+		cifs_dbg(VFS, "secType %d not supported!\n", ses->sectype);
+		return -EOPNOTSUPP;
+	}
+
+	return 0;
+}
+
+int
+SMB2_sess_setup(const unsigned int xid, struct cifs_ses *ses,
+		const struct nls_table *nls_cp)
+{
+	int rc = 0;
+	struct TCP_Server_Info *server = ses->server;
+	struct SMB2_sess_data *sess_data;
+
+	cifs_dbg(FYI, "Session Setup\n");
+
+	if (!server) {
+		WARN(1, "%s: server is NULL!\n", __func__);
+		return -EIO;
+	}
+
+	sess_data = kzalloc(sizeof(struct SMB2_sess_data), GFP_KERNEL);
+	if (!sess_data)
+		return -ENOMEM;
+
+	rc = SMB2_select_sec(ses, sess_data);
+	if (rc)
+		goto out;
+	sess_data->xid = xid;
+	sess_data->ses = ses;
+	sess_data->buf0_type = CIFS_NO_BUFFER;
+	sess_data->nls_cp = (struct nls_table *) nls_cp;
+	sess_data->previous_session = ses->Suid;
+
+	while (sess_data->func)
+		sess_data->func(sess_data);
+
+	if ((ses->session_flags & SMB2_SESSION_FLAG_IS_GUEST) && (ses->sign))
+		cifs_dbg(VFS, "signing requested but authenticated as guest\n");
+	rc = sess_data->result;
+out:
+	kfree(sess_data);
 	return rc;
 }
 
@@ -1615,7 +1768,8 @@ SMB2_ioctl(const unsigned int xid, struct cifs_tcon *tcon, u64 persistent_fid,
 		goto ioctl_exit;
 	}
 
-	memcpy(*out_data, rsp->hdr.ProtocolId + le32_to_cpu(rsp->OutputOffset),
+	memcpy(*out_data,
+	       (char *)&rsp->hdr.ProtocolId + le32_to_cpu(rsp->OutputOffset),
 	       *plen);
 ioctl_exit:
 	free_rsp_buf(resp_buftype, rsp);
@@ -1855,6 +2009,9 @@ void smb2_reconnect_server(struct work_struct *work)
 	struct cifs_tcon *tcon, *tcon2;
 	struct list_head tmp_list;
 	int tcon_exist = false;
+	int rc;
+	int resched = false;
+
 
 	/* Prevent simultaneous reconnects that can corrupt tcon->rlist list */
 	mutex_lock(&server->reconnect_mutex);
@@ -1865,7 +2022,7 @@ void smb2_reconnect_server(struct work_struct *work)
 	spin_lock(&cifs_tcp_ses_lock);
 	list_for_each_entry(ses, &server->smb_ses_list, smb_ses_list) {
 		list_for_each_entry(tcon, &ses->tcon_list, tcon_list) {
-			if (tcon->need_reconnect) {
+			if (tcon->need_reconnect || tcon->need_reopen_files) {
 				tcon->tc_count++;
 				list_add_tail(&tcon->rlist, &tmp_list);
 				tcon_exist = true;
@@ -1882,12 +2039,18 @@ void smb2_reconnect_server(struct work_struct *work)
 	spin_unlock(&cifs_tcp_ses_lock);
 
 	list_for_each_entry_safe(tcon, tcon2, &tmp_list, rlist) {
-		smb2_reconnect(SMB2_ECHO, tcon);
+		rc = smb2_reconnect(SMB2_INTERNAL_CMD, tcon);
+		if (!rc)
+			cifs_reopen_persistent_handles(tcon);
+		else
+			resched = true;
 		list_del_init(&tcon->rlist);
 		cifs_put_tcon(tcon);
 	}
 
 	cifs_dbg(FYI, "Reconnecting tcons finished\n");
+	if (resched)
+		queue_delayed_work(cifsiod_wq, &server->reconnect, 2 * HZ);
 	mutex_unlock(&server->reconnect_mutex);
 
 	/* now we can safely release srv struct */
@@ -2190,7 +2353,7 @@ SMB2_read(const unsigned int xid, struct cifs_io_parms *io_parms,
 	}
 
 	if (*buf) {
-		memcpy(*buf, (char *)rsp->hdr.ProtocolId + rsp->DataOffset,
+		memcpy(*buf, (char *)&rsp->hdr.ProtocolId + rsp->DataOffset,
 		       *nbytes);
 		free_rsp_buf(resp_buftype, iov[0].iov_base);
 	} else if (resp_buftype != CIFS_NO_BUFFER) {
