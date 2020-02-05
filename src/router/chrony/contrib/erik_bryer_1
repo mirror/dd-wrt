@@ -1,0 +1,65 @@
+#!/bin/sh
+#
+# chrony        Start time synchronization. This script
+#               starts chronyd.
+#
+# Hacked by:    Erik Bryer <ebryer@spots.ab.ca> using inet as a template
+#
+# chkconfig: 2345 02 82
+# description: chronyd helps keep the system time accurate by calculating \
+#              and applying correction factors to compensate for the drift \
+#              in the clock. chronyd can also correct the hardware clock \
+#              (RTC) on some systems.
+# processname: chronyd
+# config: /etc/chrony.conf
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+. /etc/sysconfig/network
+
+# Set path to include chronyd in /usr/local/sbin
+PATH="$PATH:/usr/local/sbin"
+
+[ -f /usr/local/sbin/chronyd ] || exit 0
+
+[ -f /etc/chrony.conf ] || exit 0
+
+RETVAL=0
+
+# See how we were called.
+case "$1" in
+  start)
+        # Start daemons.
+        echo -n "Starting chronyd: "
+        daemon chronyd
+	RETVAL=$?
+ 	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/chrony
+	echo
+        ;;
+  stop)
+        # Stop daemons.
+        echo -n "Shutting down chronyd: "
+# If not dead killproc automatically sleeps for 4.1 seconds then does 
+# kill -9. "chrony.txt" prefers a 5 second delay, but this should be ok.
+        killproc chronyd -15
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/chrony
+        echo
+        ;;
+  status)
+	status chronyd
+	exit $?
+	;;
+  restart)
+	$0 stop
+	$0 start
+	;;
+  *)
+        echo "Usage: named {start|stop|status|restart}"
+        exit 1
+esac
+
+exit $RETVAL
+

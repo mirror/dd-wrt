@@ -1,0 +1,27 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "-x option"
+
+check_config_h 'FEAT_CMDMON 1' || test_skip
+
+wander=0.0
+time_offset=0.0
+freq_offset=0.0
+time_max_limit=1e-6
+freq_max_limit=1e-9
+min_sync_time=0
+max_sync_time=0
+client_chronyd_options="-x"
+chronyc_start=300
+chronyc_conf="tracking"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+check_chronyc_output "^.*Stratum *: 2.*$" || test_fail
+
+test_pass

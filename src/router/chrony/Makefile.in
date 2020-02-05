@@ -1,0 +1,138 @@
+##################################################
+#
+# chronyd/chronyc - Programs for keeping computer clocks accurate.
+# 
+# Copyright (C) Richard P. Curnow  1997-2003
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+# =======================================================================
+#
+# Makefile template
+
+SYSCONFDIR=@SYSCONFDIR@
+BINDIR=@BINDIR@
+SBINDIR=@SBINDIR@
+LOCALSTATEDIR=@LOCALSTATEDIR@
+CHRONYVARDIR=@CHRONYVARDIR@
+
+CC = @CC@
+CFLAGS = @CFLAGS@
+CPPFLAGS = @CPPFLAGS@
+
+DESTDIR=
+
+HASH_OBJ = @HASH_OBJ@
+
+OBJS = array.o cmdparse.o conf.o local.o logging.o main.o memory.o \
+       reference.o regress.o rtc.o samplefilt.o sched.o sources.o sourcestats.o stubs.o \
+       smooth.o sys.o sys_null.o tempcomp.o util.o $(HASH_OBJ)
+
+EXTRA_OBJS=@EXTRA_OBJECTS@
+
+CLI_OBJS = array.o client.o cmdparse.o getdate.o memory.o nameserv.o \
+           pktlength.o util.o $(HASH_OBJ)
+
+ALL_OBJS = $(OBJS) $(EXTRA_OBJS) $(CLI_OBJS)
+
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+
+EXTRA_LIBS=@EXTRA_LIBS@
+EXTRA_CLI_LIBS=@EXTRA_CLI_LIBS@
+
+# Until we have a main procedure we can link, just build object files
+# to test compilation
+
+all : chronyd chronyc
+
+chronyd : $(OBJS) $(EXTRA_OBJS)
+	$(CC) $(CFLAGS) -o chronyd $(OBJS) $(EXTRA_OBJS) $(LDFLAGS) $(LIBS) $(EXTRA_LIBS)
+
+chronyc : $(CLI_OBJS)
+	$(CC) $(CFLAGS) -o chronyc $(CLI_OBJS) $(LDFLAGS) $(LIBS) $(EXTRA_CLI_LIBS)
+
+distclean : clean
+	$(MAKE) -C doc distclean
+	$(MAKE) -C test/unit distclean
+	-rm -f .DS_Store
+	-rm -f Makefile config.h config.log
+
+clean :
+	-rm -f *.o *.s chronyc chronyd core.* *~
+	-rm -f *.gcda *.gcno
+	-rm -rf .deps
+	-rm -rf *.dSYM
+
+getdate.c : getdate.y
+	bison -o getdate.c getdate.y
+
+# This can be used to force regeneration of getdate.c
+getdate :
+	bison -o getdate.c getdate.y
+
+# For install, don't use the install command, because its switches
+# seem to vary between systems.
+
+install: chronyd chronyc
+	[ -d $(DESTDIR)$(SYSCONFDIR) ] || mkdir -p $(DESTDIR)$(SYSCONFDIR)
+	[ -d $(DESTDIR)$(SBINDIR) ] || mkdir -p $(DESTDIR)$(SBINDIR)
+	[ -d $(DESTDIR)$(BINDIR) ] || mkdir -p $(DESTDIR)$(BINDIR)
+	[ -d $(DESTDIR)$(CHRONYVARDIR) ] || mkdir -p $(DESTDIR)$(CHRONYVARDIR)
+	if [ -f $(DESTDIR)$(SBINDIR)/chronyd ]; then rm -f $(DESTDIR)$(SBINDIR)/chronyd ; fi
+	if [ -f $(DESTDIR)$(BINDIR)/chronyc ]; then rm -f $(DESTDIR)$(BINDIR)/chronyc ; fi
+	cp chronyd $(DESTDIR)$(SBINDIR)/chronyd
+	chmod 755 $(DESTDIR)$(SBINDIR)/chronyd
+	cp chronyc $(DESTDIR)$(BINDIR)/chronyc
+	chmod 755 $(DESTDIR)$(BINDIR)/chronyc
+	$(MAKE) -C doc install
+
+docs :
+	$(MAKE) -C doc docs
+
+install-docs :
+	$(MAKE) -C doc install-docs
+
+%.o : %.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $<
+
+%.s : %.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -S $<
+
+quickcheck : chronyd chronyc
+	$(MAKE) -C test/unit check
+	cd test/simulation && ./run
+	cd test/system && ./run
+
+check : chronyd chronyc
+	$(MAKE) -C test/unit check
+	cd test/simulation && ./run -i 20 -m 2
+	cd test/system && ./run
+
+print-chronyd-objects :
+	@echo $(OBJS) $(EXTRA_OBJS)
+
+Makefile : Makefile.in configure
+	@echo
+	@echo Makefile needs to be regenerated, run ./configure
+	@echo
+	@exit 1
+
+.deps:
+	@mkdir .deps
+
+.deps/%.d: %.c | .deps
+	@$(CC) -MM $(CPPFLAGS) -MT '$(<:%.c=%.o) $@' $< -o $@
+
+-include $(ALL_OBJS:%.o=.deps/%.d)

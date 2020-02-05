@@ -1,0 +1,164 @@
+This is the README for chrony.
+
+What is chrony?
+===============
+
+chrony is a versatile implementation of the Network Time Protocol (NTP).
+It can synchronise the system clock with NTP servers, reference clocks
+(e.g. GPS receiver), and manual input using wristwatch and keyboard.
+It can also operate as an NTPv4 (RFC 5905) server and peer to provide
+a time service to other computers in the network.
+
+It is designed to perform well in a wide range of conditions, including
+intermittent network connections, heavily congested networks, changing
+temperatures (ordinary computer clocks are sensitive to temperature),
+and systems that do not run continuosly, or run on a virtual machine.
+
+Typical accuracy between two machines synchronised over the Internet is
+within a few milliseconds; on a LAN, accuracy is typically in tens of
+microseconds.  With hardware timestamping, or a hardware reference clock,
+sub-microsecond accuracy may be possible.
+
+Two programs are included in chrony, chronyd is a daemon that can be
+started at boot time and chronyc is a command-line interface program
+which can be used to monitor chronyd's performance and to change various
+operating parameters whilst it is running.
+
+What will chrony run on?
+========================
+
+The software is known to work on Linux, FreeBSD, NetBSD, macOS and
+Solaris.  Closely related systems may work too.  Any other system will
+likely require a porting exercise.  You would need to start from one
+of the existing system-specific drivers and look into the quirks of
+certain system calls and the kernel on your target system.
+
+How do I set it up?
+===================
+
+The file INSTALL gives instructions.  On supported systems the
+compilation process should be automatic.  You will need a C compiler,
+e.g. gcc or clang.
+
+What documentation is there?
+============================
+
+The distribution includes manual pages and a document containing
+Frequently Asked Questions (FAQ).
+
+The documentation is also available on the chrony web pages, accessible
+through the URL 
+
+    https://chrony.tuxfamily.org/
+
+Where are new versions announced?
+=================================
+
+There is a low volume mailing list where new versions and other
+important news relating to chrony is announced.  You can join this list
+by sending mail with the subject "subscribe" to
+
+chrony-announce-request@chrony.tuxfamily.org
+
+These messages will be copied to chrony-users (see below).
+
+How can I get support for chrony?
+and where can I discuss new features, possible bugs etc?
+========================================================
+
+There are 3 mailing lists relating to chrony.  chrony-announce was
+mentioned above.  chrony-users is a users' discussion list, e.g. for
+general questions and answers about using chrony.  chrony-dev is a more
+technical list, e.g. for discussing how new features should be
+implemented, exchange of information between developers etc.  To
+subscribe to either of these lists, send a message with the subject
+"subscribe" to
+
+chrony-users-request@chrony.tuxfamily.org
+or
+chrony-dev-request@chrony.tuxfamily.org
+
+as applicable.
+
+When you are reporting a bug, please send us all the information you can.
+Unfortunately, chrony has proven to be one of those programs where it is very
+difficult to reproduce bugs in a different environment. So we may have to
+interact with you quite a lot to obtain enough extra logging and tracing to
+pin-point the problem in some cases. Please be patient and plan for this!
+
+License
+=======
+
+chrony is distributed under the GNU General Public License version 2.
+
+Authors
+=======
+
+Richard P. Curnow <rc@rc0.org.uk>
+Miroslav Lichvar <mlichvar@redhat.com>
+
+Acknowledgements
+================
+
+In writing the chronyd program, extensive use has been made of RFC 1305
+and RFC 5905, written by David Mills. The source code of the NTP reference
+implementation has been used to check the details of the protocol.
+
+The following people have provided patches and other major contributions
+to the program :
+
+Lonnie Abelbeck <lonnie@abelbeck.com>
+Benny Lyne Amorsen <benny@amorsen.dk>
+Andrew Bishop <amb@gedanken.demon.co.uk>
+Vincent Blut <vincent.debian@free.fr>
+Stephan I. Boettcher <stephan@nevis1.columbia.edu>
+Goswin Brederlow <brederlo@informatik.uni-tuebingen.de>
+Leigh Brown <leigh@solinno.co.uk>
+Erik Bryer <ebryer@spots.ab.ca>
+Jonathan Cameron <jic23@cam.ac.uk>
+Bryan Christianson <bryan@whatroute.net>
+Juliusz Chroboczek <jch@pps.jussieu.fr>
+Christian Ehrhardt <christian.ehrhardt@canonical.com>
+Paul Elliott <pelliott@io.com>
+Stefan R. Filipek <srfilipek@gmail.com>
+Mike Fleetwood <mike@rockover.demon.co.uk>
+Alexander Gretencord <arutha@gmx.de>
+Andrew Griffiths <agriffit@redhat.com>
+Walter Haidinger <walter.haidinger@gmx.at>
+Juergen Hannken-Illjes <hannken@eis.cs.tu-bs.de>
+John Hasler <john@dhh.gt.org>
+Tjalling Hattink <t.hattink@fugro.nl>
+Liam Hatton <me@liamhatton.com>
+Jachym Holecek <jakym@volny.cz>
+Håkan Johansson <f96hajo@chalmers.se>
+Jim Knoble <jmknoble@pobox.com>
+Antti Jrvinen <costello@iki.fi>
+Eric Lammerts <eric@lammerts.org>
+Stefan Lucke <stefan@lucke.in-berlin.de>
+Victor Lum <viclum@vanu.com>
+Kevin Lyda <kevin@ie.suberic.net>
+Paul Menzel <paulepanter@users.sourceforge.net>
+Vladimir Michl <vladimir.michl@seznam.cz>
+Victor Moroz <vim@prv.adlum.ru>
+Kalle Olavi Niemitalo  <tosi@stekt.oulu.fi>
+Frank Otto <sandwichmacher@web.de>
+Denny Page <dennypage@me.com>
+Chris Perl <cperl@janestreet.com>
+Gautier PHILIPPON <gautier.philippon@ensimag.grenoble-inp.fr>
+Andreas Piesk <apiesk@virbus.de>
+Andreas Steinmetz <ast@domdv.de>
+NAKAMURA Takumi <takumi@ps.sakura.ne.jp>
+Timo Teras <timo.teras@iki.fi>
+Bill Unruh <unruh@physics.ubc.ca>
+Stephen Wadeley <swadeley@redhat.com>
+Bernhard Weiss <lisnablagh@web.de>
+Wolfgang Weisselberg <weissel@netcologne.de>
+Bernhard M. Wiedemann <bwiedemann@suse.de>
+Joachim Wiedorn <ad_debian@joonet.de>
+Ralf Wildenhues <Ralf.Wildenhues@gmx.de>
+Ulrich Windl <ulrich.windl@rz.uni-regensburg.de>
+Doug Woodward <dougw@whistler.com>
+Thomas Zajic <zlatko@zlatko.fdns.net>
+
+Many other people have contributed bug reports and suggestions.  We are sorry
+we cannot identify all of you individually.

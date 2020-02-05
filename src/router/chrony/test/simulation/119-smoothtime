@@ -1,0 +1,82 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "smoothtime option"
+
+check_config_h 'FEAT_REFCLOCK 1' || test_skip
+
+server_strata=2
+server_conf="smoothtime 400 0.001"
+server_server_options="minpoll 8"
+min_sync_time=600
+max_sync_time=800
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+
+limit=10000
+refclock_jitter=1e-4
+refclock_offset="(* 10.0 (equal 0.1 (max (sum 1.0) 1000) 1000))"
+server_step="(* -10.0 (equal 0.1 (sum 1.0) 1))"
+server_strata=1
+server_conf="refclock SHM 0 dpoll 4 poll 6
+smoothtime 2000 1
+maxjitter 10.0"
+time_offset=-10
+server_server_options=""
+client_server_options="minpoll 6 maxpoll 6"
+client_conf="corrtimeratio 100"
+min_sync_time=8000
+max_sync_time=9000
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+
+client_server_options="minpoll 6 maxpoll 6 xleave maxdelay 1e-1"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+
+client_server_options="minpoll 6 maxpoll 6"
+min_sync_time=$default_min_sync_time
+max_sync_time=$default_max_sync_time
+time_max_limit=11
+time_rms_limit=11
+freq_max_limit=1e-2
+freq_rms_limit=2e-3
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+
+refclock_jitter=1e-9
+refclock_offset="(* 1e-1 (triangle 1000) (+ -1.0 (pulse 1000 10000)))"
+server_step=""
+server_conf="refclock SHM 0 dpoll 4 poll 6 minsamples 4 maxsamples 4
+smoothtime 1e4 1e-6"
+client_server_options="minpoll 4 maxpoll 4"
+time_offset=0.1
+jitter=1e-6
+wander=0.0
+min_sync_time=30
+max_sync_time=40
+time_max_limit=1e-5
+time_rms_limit=5e-6
+freq_max_limit=1e-6
+freq_rms_limit=1e-7
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+test_pass

@@ -1,0 +1,339 @@
+# Copyright (C) Miroslav Lichvar  2009
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+export LC_ALL=C
+export PATH=${CHRONY_PATH:-../..}:$PATH
+
+TEST_DIR=${TEST_DIR:-$(pwd)/tmp}
+TEST_LIBDIR=${TEST_LIBDIR:-$TEST_DIR}
+TEST_LOGDIR=${TEST_LOGDIR:-$TEST_DIR}
+TEST_RUNDIR=${TEST_RUNDIR:-$TEST_DIR}
+
+test_start() {
+	check_chronyd_features NTP CMDMON || test_skip "NTP/CMDMON support disabled"
+
+	[ "${#TEST_DIR}" -ge 5 ] || test_skip "invalid TEST_DIR"
+
+	rm -rf "$TEST_DIR"
+	mkdir -p "$TEST_DIR" && chmod 700 "$TEST_DIR" || test_skip "could not create $TEST_DIR"
+
+	[ -d "$TEST_LIBDIR" ] || test_skip "missing $TEST_LIBDIR"
+	[ -d "$TEST_LOGDIR" ] || test_skip "missing $TEST_LOGDIR"
+	[ -d "$TEST_RUNDIR" ] || test_skip "missing $TEST_RUNDIR"
+
+	rm -f "$TEST_LIBDIR"/* "$TEST_LOGDIR"/* "$TEST_RUNDIR"/*
+
+	if [ "$user" != "root" ]; then
+		id -u "$user" > /dev/null 2> /dev/null || test_skip "missing user $user"
+		chown "$user:$(id -g "$user")" "$TEST_DIR" || test_skip "could not chown $TEST_DIR"
+		su "$user" -s /bin/sh -c "touch $TEST_DIR/test" 2> /dev/null || \
+			test_skip "$user cannot access $TEST_DIR"
+		rm "$TEST_DIR/test"
+	fi
+
+	echo "Testing $*:"
+}
+
+test_pass() {
+	echo "PASS"
+	exit 0
+}
+
+test_fail() {
+	echo "FAIL"
+	exit 1
+}
+
+test_skip() {
+	local msg=$1
+
+	[ -n "$msg" ] && echo "SKIP ($msg)" || echo "SKIP"
+	exit 9
+}
+
+test_ok() {
+	pad_line
+	echo -e "\tOK"
+	return 0
+}
+
+test_bad() {
+	pad_line
+	echo -e "\tBAD"
+	return 1
+}
+
+test_error() {
+	pad_line
+	echo -e "\tERROR"
+	return 1
+}
+
+chronyd=$(command -v chronyd)
+chronyc=$(command -v chronyc)
+
+[ $EUID -eq 0 ] || test_skip "not root"
+
+[ -x "$chronyd" ] || test_skip "chronyd not found"
+[ -x "$chronyc" ] || test_skip "chronyc not found"
+
+netstat -aln > /dev/null 2> /dev/null || test_skip "missing netstat"
+
+# Default test testings
+default_minimal_config=0
+default_extra_chronyd_directives=""
+default_extra_chronyd_options=""
+default_clock_control=0
+default_server=127.0.0.1
+default_user=root
+
+# Initialize test settings from their defaults
+for defoptname in ${!default_*}; do
+	optname=${defoptname#default_}
+	[ -z "${!optname}" ] && declare "$optname"="${!defoptname}"
+done
+
+msg_length=0
+pad_line() {
+	local line_length=56
+	[ $msg_length -lt $line_length ] && \
+		printf "%$((line_length - msg_length))s" ""
+	msg_length=0
+}
+
+# Print aligned message
+test_message() {
+	local level=$1 eol=$2
+	shift 2
+	local msg="$*"
+
+	while [ "$level" -gt 0 ]; do
+		echo -n "  "
+		level=$((level - 1))
+		msg_length=$((msg_length + 2))
+	done
+	echo -n "$msg"
+
+	msg_length=$((msg_length + ${#msg}))
+	if [ "$eol" -ne 0 ]; then
+		echo
+		msg_length=0
+	fi
+}
+
+# Check if chronyd has specified features
+check_chronyd_features() {
+	local feature features
+
+	features=$($chronyd -v | sed 's/.*(\(.*\)).*/\1/')
+
+	for feature; do
+		echo "$features" | grep -q "+$feature" || return 1
+	done
+}
+
+# Print test settings which differ from default value
+print_nondefaults() {
+	local defoptname optname
+
+	test_message 1 1 "non-default settings:"
+	for defoptname in ${!default_*}; do
+		optname=${defoptname#default_}
+		[ "${!defoptname}" = "${!optname}" ] || \
+			test_message 2 1 "$optname"=${!optname}
+	done
+}
+
+get_conffile() {
+	echo "$TEST_DIR/chronyd.conf"
+}
+
+get_pidfile() {
+	echo "$TEST_RUNDIR/chronyd.pid"
+}
+
+get_logfile() {
+	echo "$TEST_LOGDIR/chronyd.log"
+}
+
+get_cmdsocket() {
+	echo "$TEST_RUNDIR/chronyd.sock"
+}
+
+# Find a free port in the 10000-20000 range (their use is racy)
+get_free_port() {
+	local port
+
+	while true; do
+		port=$((RANDOM % 10000 + 10000))
+		netstat -aln | grep '^udp.*:'$port && continue
+		break
+	done
+
+	echo $port
+}
+
+generate_chrony_conf() {
+	local ntpport cmdport
+
+	ntpport=$(get_free_port)
+	cmdport=$(get_free_port)
+
+	echo "0.0 10000" > "$TEST_LIBDIR/driftfile"
+	echo "1 MD5 abcdefghijklmnopq" > "$TEST_DIR/keys"
+	chown "$user:$(id -g "$user")" "$TEST_LIBDIR/driftfile" "$TEST_DIR/keys"
+	echo "0.0" > "$TEST_DIR/tempcomp"
+
+	(
+		echo "pidfile $(get_pidfile)"
+		echo "bindcmdaddress $(get_cmdsocket)"
+		echo "port $ntpport"
+		echo "cmdport $cmdport"
+
+		echo "$extra_chronyd_directives"
+
+		[ "$minimal_config" -ne 0 ] && exit 0
+
+		echo "allow"
+		echo "cmdallow"
+		echo "local"
+
+		echo "server $server port $ntpport minpoll -6 maxpoll -6"
+
+		[ "$server" = "127.0.0.1" ] && echo "bindacqaddress $server"
+		echo "bindaddress 127.0.0.1"
+		echo "bindcmdaddress 127.0.0.1"
+		echo "dumpdir $TEST_RUNDIR"
+		echo "logdir $TEST_LOGDIR"
+		echo "log tempcomp rawmeasurements refclocks statistics tracking rtc"
+		echo "logbanner 0"
+		echo "smoothtime 100.0 0.001"
+
+		echo "include /dev/null"
+		echo "keyfile $TEST_DIR/keys"
+		echo "driftfile $TEST_LIBDIR/driftfile"
+		echo "tempcomp $TEST_DIR/tempcomp 0.1 0 0 0 0"
+
+	) > "$(get_conffile)"
+}
+
+get_chronyd_options() {
+	[ "$clock_control" -eq 0 ] && echo "-x"
+	echo "-l $(get_logfile)"
+	echo "-f $(get_conffile)"
+	echo "-u $user"
+	echo "$extra_chronyd_options"
+}
+
+# Start a chronyd instance
+start_chronyd() {
+	local pid pidfile=$(get_pidfile)
+
+	print_nondefaults
+	test_message 1 0 "starting chronyd"
+
+	generate_chrony_conf
+
+	trap stop_chronyd EXIT
+
+	$CHRONYD_WRAPPER "$chronyd" $(get_chronyd_options) > "$TEST_DIR/chronyd.out" 2>&1
+
+	[ $? -eq 0 ] && [ -f "$pidfile" ] && ps -p "$(cat "$pidfile")" > /dev/null && test_ok || test_error
+}
+
+wait_for_sync() {
+	test_message 1 0 "waiting for synchronization"
+	sleep 1 && test_ok || test_error
+}
+
+# Stop the chronyd instance
+stop_chronyd() {
+	local pid pidfile
+
+	pidfile=$(get_pidfile)
+	[ -f "$pidfile" ] || return 0
+
+	pid=$(cat "$pidfile")
+
+	test_message 1 0 "stopping chronyd"
+
+	if ! kill "$pid" 2> /dev/null; then
+		test_error
+		return
+	fi
+
+	# Wait for the process to terminate (we cannot use "wait")
+	while ps -p "$pid" > /dev/null; do
+		sleep 0.1
+	done
+
+	test_ok
+}
+
+# Check chronyd log for expected and unexpected messages
+check_chronyd_messages() {
+	local logfile=$(get_logfile)
+
+	test_message 1 0 "checking chronyd messages"
+
+	grep -q 'chronyd exiting' "$logfile" && \
+		([ "$clock_control" -eq 0 ] || ! grep -q 'Disabled control of system clock' "$logfile") && \
+		([ "$clock_control" -ne 0 ] || grep -q 'Disabled control of system clock' "$logfile") && \
+		([ "$minimal_config" -ne 0 ] || grep -q 'Frequency .* read from' "$logfile") && \
+		grep -q 'chronyd exiting' "$logfile" && \
+		! grep -q 'Could not' "$logfile" && \
+		! grep -q 'Disabled command socket' "$logfile" && \
+		test_ok || test_bad
+}
+
+# Check the number of messages matching a pattern in a specified file
+check_chronyd_message_count() {
+	local count pattern=$1 min=$2 max=$3 logfile=$(get_logfile)
+
+	test_message 1 0 "checking message \"$pattern\""
+
+	count=$(grep "$pattern" "$(get_logfile)" | wc -l)
+
+	[ "$min" -le "$count" ] && [ "$count" -le "$max" ] && test_ok || test_bad
+}
+
+# Check the logs and dump file for measurements and a clock update
+check_chronyd_files() {
+	test_message 1 0 "checking chronyd files"
+
+	grep -q " $server .* 111 111 1111 " "$TEST_LOGDIR/measurements.log" && \
+		grep -q " $server " "$TEST_LOGDIR/statistics.log" && \
+		grep -q " $server " "$TEST_LOGDIR/tracking.log" && \
+		[ -f "$TEST_LOGDIR/tempcomp.log" ] && [ "$(wc -l < "$TEST_LOGDIR/tempcomp.log")" -ge 2 ] && \
+		[ -f "$TEST_RUNDIR/$server.dat" ] && [ "$(wc -l < "$TEST_RUNDIR/$server.dat")" -ge 5 ] && \
+		test_ok || test_bad
+}
+
+# Run a chronyc command
+run_chronyc() {
+	test_message 1 0 "running chronyc $*"
+
+	$CHRONYC_WRAPPER "$chronyc" -h "$(get_cmdsocket)" -n -m "$@" > "$TEST_DIR/chronyc.out" && \
+		test_ok || test_error
+}
+
+# Compare chronyc output with specified pattern
+check_chronyc_output() {
+	local pattern=$1
+
+	test_message 1 0 "checking chronyc output"
+
+	[[ "$(cat "$TEST_DIR/chronyc.out")" =~ $pattern ]] && test_ok || test_bad
+}

@@ -1,0 +1,100 @@
+#!/bin/sh
+#
+# chronyd      This shell script takes care of starting and stopping
+#              chronyd (NTP daemon).
+#
+# chkconfig: 45 80 20
+# description: chronyd is the NTP daemon.
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+. /etc/sysconfig/network
+
+# Check that networking is up.
+[ ${NETWORKING} = "no" ] && exit 0
+
+PREDIR="/usr/local"
+CHRONYD=$PREDIR"/sbin/chronyd"
+CHRONYC=$PREDIR"/bin/chronyc"
+
+[ -x $CHRONYD -a -x $CHRONYC -a -f /etc/chrony.conf ] || exit 0
+
+dochrony() {
+	if [ -z "$(pidofproc chronyd)" ]; then
+		echo -e "\n\tchronyd not running\n\n"
+		exit 2
+	fi
+	KEY=`awk '$1 == "commandkey" {print $2; exit}' /etc/chrony.conf`
+	PASSWORD=`awk '$1 == '$KEY' {print $2; exit}' /etc/chrony/keys`
+
+	$CHRONYC <<- EOF
+		password $PASSWORD
+		$@
+		quit
+	EOF
+}
+
+# make the first parameter' lower case
+set - `echo $1 | awk '{print tolower($1)}';shift;echo "$@"`
+
+# Expand any shortcuts.
+case "$1" in
+   on|1)
+	set - "online"
+	;;
+   off|0)
+	set - "offline"
+esac
+
+# See how we were called.
+case "$1" in
+   start)
+         # Start daemons.
+         echo -n "Starting chronyd: "
+         daemon $CHRONYD
+	if [ $? -eq 0 ]; then
+		echo $(pidofproc chronyd) > /var/run/chronyd.pid
+		touch /var/lock/subsys/chronyd
+	fi
+         echo
+         ;;
+   stop)
+         # Stop daemons.
+         echo -n "Shutting down chronyd: "
+	killproc chronyd
+         echo
+         rm -f /var/lock/subsys/chronyd
+         ;;
+   status)
+	status chronyd
+	;;
+   restart|reload)
+	$0 stop
+	$0 start
+	;;
+   condrestart)
+	if [ -f /var/lock/subsys/chronyd ]; then
+		$0 stop
+		$0 start
+	fi
+	;;
+   "")
+	echo "Usage: chronyd 
+{start|stop|restart|reload|condrestart|status|[on|off]line etc}"
+	exit 1
+	;;
+ 
+accheck|cmdaccheck|clients|manual|rtcdata|sources|sourcestats|tracking|clients)
+	dochrony "$@"
+	;;
+   *)
+         echo -n "Chrony $1: "
+	dochrony "$@" > /dev/null
+	[ $? -eq 0 ] && echo_success || echo_failure
+	echo
+esac
+
+exit 0
+

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+. ./test.common
+
+export CLKNETSIM_RECV_MULTIPLY=4
+
+test_start "multiple received packets"
+
+limit=50000
+client_server_options="minpoll 6 maxpoll 6"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+
+test_pass

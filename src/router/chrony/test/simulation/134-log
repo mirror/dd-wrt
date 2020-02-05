@@ -1,0 +1,33 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "log directive"
+
+check_config_h 'FEAT_PHC 1' || test_skip
+
+refclock_jitter=$jitter
+client_server_options="maxpoll 6"
+client_conf="refclock PHC /dev/ptp0 dpoll 4 poll 6 noselect
+logbanner 10
+logdir tmp
+log tracking rawmeasurements measurements statistics rtc refclocks tempcomp
+tempcomp tmp/tempcomp 64 0.0 0.0 0.0 0.0"
+
+echo 0.0 > tmp/tempcomp
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+check_file_messages "=============" 31 33 \
+	tracking.log measurements.log tempcomp.log || test_fail
+check_file_messages "20.*192\.168\.123\.1" 150 160 \
+	tracking.log measurements.log statistics.log || test_fail
+check_file_messages "20.*PHC0" 150 160 statistics.log || test_fail
+check_file_messages "20.*PHC0" 750 800 refclocks.log || test_fail
+check_file_messages "20.* 0\.0000" 150 160 tempcomp.log || test_fail
+
+test_pass

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "large jitter"
+
+time_offset=1e0
+jitter=1e-1
+
+time_max_limit=5e-1
+freq_max_limit=2e-1
+time_rms_limit=1e-1
+freq_rms_limit=5e-3
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+test_pass

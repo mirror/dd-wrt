@@ -1,0 +1,855 @@
+New in version 3.5
+==================
+
+Enhancements
+------------
+* Add support for more accurate reading of PHC on Linux 5.0
+* Add support for hardware timestamping on interfaces with read-only
+  timestamping configuration
+* Add support for memory locking and real-time priority on FreeBSD,
+  NetBSD, Solaris
+* Update seccomp filter to work on more architectures
+* Validate refclock driver options
+
+Bug fixes
+---------
+* Fix bindaddress directive on FreeBSD
+* Fix transposition of hardware RX timestamp on Linux 4.13 and later
+* Fix building on non-glibc systems
+
+New in version 3.4
+==================
+
+Enhancements
+------------
+* Add filter option to server/pool/peer directive
+* Add minsamples and maxsamples options to hwtimestamp directive
+* Add support for faster frequency adjustments in Linux 4.19
+* Change default pidfile to /var/run/chrony/chronyd.pid to allow
+  chronyd without root privileges to remove it on exit
+* Disable sub-second polling intervals for distant NTP sources
+* Extend range of supported sub-second polling intervals
+* Get/set IPv4 destination/source address of NTP packets on FreeBSD
+* Make burst options and command useful with short polling intervals
+* Modify auto_offline option to activate when sending request failed
+* Respond from interface that received NTP request if possible
+* Add onoffline command to switch between online and offline state
+  according to current system network configuration
+* Improve example NetworkManager dispatcher script
+
+Bug fixes
+---------
+* Avoid waiting in Linux getrandom system call
+* Fix PPS support on FreeBSD and NetBSD
+
+New in version 3.3
+==================
+
+Enhancements
+------------
+* Add burst option to server/pool directive
+* Add stratum and tai options to refclock directive
+* Add support for Nettle crypto library
+* Add workaround for missing kernel receive timestamps on Linux
+* Wait for late hardware transmit timestamps
+* Improve source selection with unreachable sources
+* Improve protection against replay attacks on symmetric mode
+* Allow PHC refclock to use socket in /var/run/chrony
+* Add shutdown command to stop chronyd
+* Simplify format of response to manual list command
+* Improve handling of unknown responses in chronyc
+
+Bug fixes
+---------
+* Respond to NTPv1 client requests with zero mode
+* Fix -x option to not require CAP_SYS_TIME under non-root user
+* Fix acquisitionport directive to work with privilege separation
+* Fix handling of socket errors on Linux to avoid high CPU usage
+* Fix chronyc to not get stuck in infinite loop after clock step
+
+New in version 3.2
+==================
+
+Enhancements
+------------
+* Improve stability with NTP sources and reference clocks
+* Improve stability with hardware timestamping
+* Improve support for NTP interleaved modes
+* Control frequency of system clock on macOS 10.13 and later
+* Set TAI-UTC offset of system clock with leapsectz directive
+* Minimise data in client requests to improve privacy
+* Allow transmit-only hardware timestamping
+* Add support for new timestamping options introduced in Linux 4.13
+* Add root delay, root dispersion and maximum error to tracking log
+* Add mindelay and asymmetry options to server/peer/pool directive
+* Add extpps option to PHC refclock to timestamp external PPS signal
+* Add pps option to refclock directive to treat any refclock as PPS
+* Add width option to refclock directive to filter wrong pulse edges
+* Add rxfilter option to hwtimestamp directive
+* Add -x option to disable control of system clock
+* Add -l option to log to specified file instead of syslog
+* Allow multiple command-line options to be specified together
+* Allow starting without root privileges with -Q option
+* Update seccomp filter for new glibc versions
+* Dump history on exit by default with dumpdir directive
+* Use hardening compiler options by default
+
+Bug fixes
+---------
+* Don't drop PHC samples with low-resolution system clock
+* Ignore outliers in PHC tracking, RTC tracking, manual input
+* Increase polling interval when peer is not responding
+* Exit with error message when include directive fails
+* Don't allow slash after hostname in allow/deny directive/command
+* Try to connect to all addresses in chronyc before giving up
+
+New in version 3.1
+==================
+
+Enhancements
+------------
+* Add support for precise cross timestamping of PHC on Linux
+* Add minpoll, precision, nocrossts options to hwtimestamp directive
+* Add rawmeasurements option to log directive and modify measurements
+  option to log only valid measurements from synchronised sources
+* Allow sub-second polling interval with NTP sources
+
+Bug fixes
+---------
+* Fix time smoothing in interleaved mode
+
+New in version 3.0
+==================
+
+Enhancements
+------------
+* Add support for software and hardware timestamping on Linux
+* Add support for client/server and symmetric interleaved modes
+* Add support for MS-SNTP authentication in Samba
+* Add support for truncated MACs in NTPv4 packets
+* Estimate and correct for asymmetric network jitter
+* Increase default minsamples and polltarget to improve stability
+  with very low jitter
+* Add maxjitter directive to limit source selection by jitter
+* Add offset option to server/pool/peer directive
+* Add maxlockage option to refclock directive
+* Add -t option to chronyd to exit after specified time
+* Add partial protection against replay attacks on symmetric mode
+* Don't reset polling interval when switching sources to online state
+* Allow rate limiting with very short intervals
+* Improve maximum server throughput on Linux and NetBSD
+* Remove dump files after start
+* Add tab-completion to chronyc with libedit/readline
+* Add ntpdata command to print details about NTP measurements
+* Allow all source options to be set in add server/peer command
+* Indicate truncated addresses/hostnames in chronyc output
+* Print reference IDs as hexadecimal numbers to avoid confusion with
+  IPv4 addresses
+
+Bug fixes
+---------
+* Fix crash with disabled asynchronous name resolving
+
+New in version 2.4.1
+====================
+
+Bug fixes
+---------
+* Fix processing of kernel timestamps on non-Linux systems
+* Fix crash with smoothtime directive
+* Fix validation of refclock sample times
+* Fix parsing of refclock directive
+
+New in version 2.4
+==================
+
+Enhancements
+------------
+* Add orphan option to local directive for orphan mode compatible with ntpd
+* Add distance option to local directive to set activation threshold
+  (1 second by default)
+* Add maxdrift directive to set maximum allowed drift of system clock
+* Try to replace NTP sources exceeding maximum distance
+* Randomise source replacement to avoid getting stuck with bad sources
+* Randomise selection of sources from pools on start
+* Ignore reference timestamp as ntpd doesn't always set it correctly
+* Modify tracking report to use same values as seen by NTP clients
+* Add -c option to chronyc to write reports in CSV format
+* Provide detailed manual pages
+
+Bug fixes
+---------
+* Fix SOCK refclock to work correctly when not specified as last refclock
+* Fix initstepslew and -q/-Q options to accept time from own NTP clients
+* Fix authentication with keys using 512-bit hash functions
+* Fix crash on exit when multiple signals are received
+* Fix conversion of very small floating-point numbers in command packets
+
+Removed features
+----------------
+* Drop documentation in Texinfo format
+
+New in version 2.3
+==================
+
+Enhancements
+------------
+* Add support for NTP and command response rate limiting
+* Add support for dropping root privileges on Mac OS X, FreeBSD, Solaris
+* Add require and trust options for source selection
+* Enable logchange by default (1 second threshold)
+* Set RTC on Mac OS X with rtcsync directive
+* Allow binding to NTP port after dropping root privileges on NetBSD
+* Drop CAP_NET_BIND_SERVICE capability on Linux when NTP port is disabled
+* Resolve names in separate process when seccomp filter is enabled
+* Replace old records in client log when memory limit is reached
+* Don't reveal local time and synchronisation state in client packets
+* Don't keep client sockets open for longer than necessary
+* Ignore poll in KoD RATE packets as ntpd doesn't always set it correctly
+* Warn when using keys shorter than 80 bits
+* Add keygen command to generate random keys easily
+* Add serverstats command to report NTP and command packet statistics
+
+Bug fixes
+---------
+* Fix clock correction after making step on Mac OS X
+* Fix building on Solaris
+
+New in version 2.2.1
+====================
+
+Security fixes
+--------------
+* Restrict authentication of NTP server/peer to specified key (CVE-2016-1567)
+
+New in version 2.2
+==================
+
+Enhancements
+------------
+* Add support for configuration and monitoring over Unix domain socket
+  (accessible by root or chrony user when root privileges are dropped)
+* Add support for system call filtering with seccomp on Linux (experimental)
+* Add support for dropping root privileges on NetBSD
+* Control frequency of system clock on FreeBSD, NetBSD, Solaris
+* Add system leap second handling mode on FreeBSD, NetBSD, Solaris
+* Add dynamic drift removal on Mac OS X
+* Add support for setting real-time priority on Mac OS X
+* Add maxdistance directive to limit source selection by root distance
+  (3 seconds by default)
+* Add refresh command to get new addresses of NTP sources
+* Allow wildcard patterns in include directive
+* Restore time from driftfile with -s option if later than RTC time
+* Add configure option to set default hwclockfile
+* Add -d option to chronyc to enable debug messages
+* Allow multiple addresses to be specified for chronyc with -h option
+  and reconnect when no valid reply is received
+* Make check interval in waitsync command configurable
+
+Bug fixes
+---------
+* Fix building on NetBSD, Solaris
+* Restore time from driftfile with -s option if reading RTC failed
+
+Removed features
+----------------
+* Drop support for authentication with command key (run-time configuration
+  is now allowed only for local users that can access the Unix domain socket)
+
+New in version 2.1.1
+====================
+
+Bug fixes
+---------
+* Fix clock stepping by integer number of seconds on Linux
+
+New in version 2.1
+==================
+
+Enhancements
+------------
+* Add support for Mac OS X
+* Try to replace unreachable and falseticker servers/peers specified
+  by name like pool sources
+* Add leaponly option to smoothtime directive to allow synchronised
+  leap smear between multiple servers
+* Use specific reference ID when smoothing served time
+* Add smoothing command to report time smoothing status
+* Add smoothtime command to activate or reset time smoothing
+
+Bug fixes
+---------
+* Fix crash in source selection with preferred sources
+* Fix resetting of time smoothing
+* Include packet precision in peer dispersion
+* Fix crash in chronyc on invalid command syntax
+
+New in version 2.0
+==================
+
+Enhancements
+------------
+* Update to NTP version 4 (RFC 5905)
+* Add pool directive to specify pool of NTP servers
+* Add leapsecmode directive to select how to correct clock for leap second
+* Add smoothtime directive to smooth served time and enable leap smear
+* Add minsources directive to set required number of selectable sources
+* Add minsamples and maxsamples options for all sources
+* Add tempcomp configuration with list of points
+* Allow unlimited number of NTP sources, refclocks and keys
+* Allow unreachable sources to remain selected
+* Improve source selection
+* Handle offline sources as unreachable
+* Open NTP server port only when necessary (client access is allowed by
+  allow directive/command or peer/broadcast is configured)
+* Change default bindcmdaddress to loopback address
+* Change default maxdelay to 3 seconds
+* Change default stratumweight to 0.001
+* Update adjtimex synchronisation status
+* Use system headers for adjtimex
+* Check for memory allocation errors
+* Reduce memory usage
+* Add configure options to compile without NTP, cmdmon, refclock support
+* Extend makestep command to set automatic clock stepping
+
+Bug fixes
+---------
+* Add sanity checks for time and frequency offset
+* Don't report synchronised status during leap second
+* Don't combine reference clocks with close NTP sources
+* Fix accepting requests from configured sources
+* Fix initial fallback drift setting
+
+New in version 1.31.1
+=====================
+
+Security fixes
+--------------
+* Protect authenticated symmetric NTP associations against DoS attacks
+  (CVE-2015-1853)
+* Fix access configuration with subnet size indivisible by 4 (CVE-2015-1821)
+* Fix initialization of reply slots for authenticated commands (CVE-2015-1822)
+
+New in version 1.31
+===================
+
+Enhancements
+------------
+* Support operation in other NTP eras (next era begins in 2036),
+  NTP time is mapped to [-50, +86] years around build date by default
+* Restore time from driftfile with -s when RTC is missing/unsupported
+* Close connected client sockets when not waiting for reply
+* Use one client socket with random port when acquisitionport is 0
+* Use NTP packets instead of UDP echo for presend
+* Don't adjust polling interval when sending fails
+* Allow binding to addresses that don't exist yet
+* Ignore measurements around leap second
+* Improve detection of unexpected time jumps
+* Include example of logrotate configuration, systemd services and
+  NetworkManager dispatcher script
+
+Bug fixes
+---------
+* Reconnect client sockets for each request to follow changes
+  in network configuration automatically
+* Restart timer when polling interval is changed on reset
+
+New in version 1.30
+===================
+
+Enhancements
+------------
+* Add asynchronous name resolving with POSIX threads
+* Add PTP hardware clock (PHC) refclock driver
+* Add new generic clock driver to slew by adjusting frequency only
+  (without kernel PLL or adjtime) and use it on Linux
+* Add rtcautotrim directive to trim RTC automatically
+* Add hwclockfile directive to share RTC LOCAL/UTC setting with hwclock
+* Add maxslewrate directive to set maximum allowed slew rate
+* Add maxdispersion option for refclocks
+* Add -q/-Q options to set clock/print offset once and exit
+* Allow directives to be specified on chronyd command line
+* Replace frequency scaling in Linux driver with retaining of tick
+* Try to detect unexpected forward time jumps and reset state
+* Exit with non-zero code when maxchange limit is reached
+* Improve makestep to not start and stop slew unnecessarily
+* Change default corrtimeratio to 3.0 to improve frequency accuracy
+* Announce leap second only on last day of June and December
+* Use separate connected client sockets for each NTP server
+* Remove separate NTP implementation used for initstepslew
+* Limit maximum minpoll set by KoD RATE to default maxpoll
+* Don't send NTP requests with unknown key
+* Print warning when source is added with unknown key
+* Take leap second in PPS refclock from locked source
+* Make reading of RTC for initial trim more reliable
+* Don't create cmdmon sockets when cmdport is 0
+* Add configure option to set default user to drop root privileges
+* Add configure option to compile with debug messages
+* Print debug messages when -d is used more than once
+* Change format of messages written to terminal with -d
+* Write fatal messages also to stderr with -n
+* Use IP_RECVERR socket option in chronyc to not wait unnecessarily
+* Shorten default chronyc timeout for localhost
+* Change default hostname in chronyc from localhost to 127.0.0.1
+* Print error message on invalid syntax with all chronyc commands
+* Include simulation test suite using clknetsim
+
+Bug fixes
+---------
+* Fix crash when selecting with multiple preferred sources
+* Fix frequency calculation with large frequency offsets
+* Fix code writing drift and RTC files to compile correctly
+* Fix -4/-6 options in chronyc to not reset hostname set by -h
+* Fix refclock sample validation with sub-second polling interval
+* Set stratum correctly with non-PPS SOCK refclock and local stratum
+* Modify dispersion accounting in refclocks to prevent PPS getting
+  stuck with large dispersion and not accepting new samples
+
+New in version 1.29.1
+=====================
+
+Security fixes
+--------------
+* Modify chronyc protocol to prevent amplification attacks (CVE-2014-0021)
+  (incompatible with previous protocol version, chronyc supports both)
+
+New in version 1.29
+===================
+
+Security fixes
+--------------
+* Fix crash when processing crafted commands (CVE-2012-4502)
+  (possible with IP addresses allowed by cmdallow and localhost)
+* Don't send uninitialized data in SUBNETS_ACCESSED and CLIENT_ACCESSES
+  replies (CVE-2012-4503) (not used by chronyc)
+
+Other changes
+-------------
+* Drop support for SUBNETS_ACCESSED and CLIENT_ACCESSES commands
+
+New in version 1.28
+===================
+
+* Combine sources to improve accuracy
+* Make config and command parser strict
+* Add -a option to chronyc to authenticate automatically
+* Add -R option to ignore initstepslew and makestep directives
+* Add generatecommandkey, minsamples, maxsamples and user directives
+* Improve compatibility with NTPv1 and NTPv2 clients
+* Create sockets only in selected family with -4/-6 option
+* Treat address bind errors as non-fatal
+* Extend tracking log
+* Accept float values as initstepslew threshold
+* Allow hostnames in offline, online and burst commands
+* Fix and improve peer polling
+* Fix crash in config parsing with too many servers
+* Fix crash with duplicated initstepslew address
+* Fix delta calculation with extreme frequency offsets
+* Set local stratum correctly
+* Remove unnecessary adjtimex calls
+* Set paths in documentation by configure
+* Update chrony.spec
+
+New in version 1.27
+===================
+
+* Support for stronger keys via NSS or libtomcrypt library
+* Support reading leap second data from tz database
+* Support for precise clock stepping on Linux
+* Support for nanoseconds in SHM refclock
+* Make offset corrections smoother on Linux
+* Make transmit timestamps random below clock precision
+* Add corrtimeratio and maxchange directives
+* Extend tracking, sources and activity reports
+* Wait in foreground process until daemon is fully initialized
+* Fix crash with slow name resolving
+* Fix iburst with jittery sources
+* Fix offset stored in rtc data right after trimrtc
+* Fix crash and hang with RTC or manual samples
+* Don't use readonly adjtime on Linux kernels before 2.6.28 
+* Changed chronyc protocol, incompatible with older versions
+
+New in version 1.26
+===================
+
+* Add compatibility with Linux 3.0 and later
+* Use proper source address in NTP replies on multihomed IPv6 hosts
+* Accept NTP packets with versions 4, 3 and 2
+* Cope with unexpected backward time jumps
+* Don't reset kernel frequency on start without drift file
+* Retry on permanent DNS error by default
+* Add waitsync command
+
+New in version 1.25
+===================
+
+* Improve accuracy with NTP sources
+* Improve accuracy with reference clocks
+* Improve polling interval adjustment
+* Improve stability with temporary asymmetric delays
+* Improve source selection
+* Improve initial synchronisation
+* Add delayed server name resolving
+* Add temperature compensation
+* Add nanosecond slewing to Linux driver
+* Add fallback drifts
+* Add iburst, minstratum, maxdelaydevratio, polltarget,
+  prefer, noselect options
+* Add rtcsync directive to enable Linux 11-minute mode
+* Add reselectdist, stratumweight, logbanner, maxclockerror,
+  include directives
+* Add -n option to not detach daemon from terminal
+* Fix pidfile directive
+* Fix name resolving with disabled IPv6 support
+* Fix reloading sample histories with reference clocks
+* Fix crash with auto_offline option
+* Fix online command on auto_offline sources
+* Fix file descriptor leaks
+* Increase burst polling interval and stop on KoD RATE
+* Set maxupdateskew to 1000 ppm by default
+* Require password for clients command
+* Update drift file at most once per hour
+* Use system headers for Linux RTC support
+* Reduce default chronyc timeout and make it configurable
+* Avoid large values in chronyc sources and sourcestats output
+* Add reselect command to force reselecting best source
+* Add -m option to allow multiple commands on command line
+
+New in version 1.24
+===================
+
+Security fixes
+--------------
+* Don't reply to invalid cmdmon packets (CVE-2010-0292)
+* Limit client log memory size (CVE-2010-0293)
+* Limit rate of syslog messages (CVE-2010-0294)
+
+Bug fixes/Enhancements
+----------------------
+* Support for reference clocks (SHM, SOCK, PPS drivers)
+* IPv6 support
+* Linux capabilities support (to drop root privileges)
+* Memory locking support on Linux
+* Real-time scheduler support on Linux
+* Leap second support on Linux
+* Support for editline library
+* Support for new Linux readonly adjtime
+* NTP client support for KoD RATE
+* Read kernel timestamps for received NTP packets
+* Reply to NTP requests with correct address on multihomed hosts
+* Retry name resolving after temporary failure
+* Fix makestep command, make it available on all systems
+* Add makestep directive for automatic clock stepping
+* Don't require _bigadj kernel symbol on NetBSD
+* Avoid blocking read in Linux RTC driver
+* Support for Linux on S/390 and PowerPC
+* Fix various bugs on 64-bit systems
+* Fix valgrind errors and compiler warnings
+* Improve configure to support common options and variables
+* Improve status checking and printing in chronyc
+* Return non-zero exit code on errors in chronyc
+* Reduce request timeout in chronyc
+* Print estimated offset in sourcestats
+* Changed chronyc protocol, incompatible with older versions
+
+New in version 1.23
+===================
+
+* Support for MIPS, x86_64, sparc, alpha, arm, FreeBSD
+* Fix serious sign-extension error in handling IP addresses
+* RTC support can be excluded at compile time
+* Make sources gcc-4 compatible
+* Fix various compiler warnings
+* Handle fluctuations in peer distance better.
+* Fixed handling of stratum zero.
+* Fix various problems for 64-bit systems
+* Flush chronyc output streams after each command, to allow it to be driven
+  through pipes
+* Manpage improvements
+
+Version 1.22
+============
+
+This release number was claimed by a release that Mandriva made to patch
+important bugs in 1.21.  The official numbering has jumped to 1.23 as a
+consequence.
+
+New in version 1.21
+===================
+
+* Don't include Linux kernel header files any longer : allows chrony to compile
+  on recent distros.
+* Stop trying to use RTC if continuous streams of error messages would occur
+  (Linux with HPET).
+
+New in version 1.20
+===================
+
+* Many small tidy-ups and security improvements
+* Improve documentation (RTC support in post 2.0 kernels)
+* Remove trailing \n from syslog messages
+* Syslog messages now include IP and port number when packet cannot be sent.
+* Added the "acquisitionport" directive.  (Kalle Olavi Niemitalo)
+* Use uname(2) instead of /proc/version to get kernel version.
+* Merge support for Linux on Alpha
+* Merge support for 64bit architectures
+* Don't link -lm if it's not needed
+* Fix Solaris build (broken by 64bit change)
+* Add detection of Linux 2.5
+* Allow arbitrary value of HZ in Linux kernel
+* Fix for chrony.spec on SuSE (Paul Elliot)
+* Fix handling of initstepslew if no servers are listed (John Hasler)
+* Fix install rule in Makefile if chronyd is in use (Juliusz Chroboczek)
+* Replace sprintf by snprintf to remove risk of buffer overrun (John Hasler)
+* Add --help to configure script
+
+New in version 1.19
+===================
+
+* Auto-detect kernel's timer interrupt rate (so-called 'HZ') when chronyd
+  starts instead of relying on compiled-in value.
+* Fix 2 bugs in function that creates the directory for the log and dump files.
+* Amended webpage URL and contact details.
+* Generate more informative syslog messages before exiting on failed
+  assertions.
+* Fix bugs in clamping code for the tick value used when slewing a large
+  offset.
+* Don't chown files to root during install (should be pointless, and makes RPM
+  building awkward as ordinary user.)
+* Include chrony.spec file for building RPMs
+
+New in version 1.18
+===================
+* Amend homepage and mailing list information to chrony.sunsite.dk
+* Delete pidfile on exit from chronyd.
+* Improvements to readline interface to chronyc
+* Only generate syslog message when synchronisation is initially lost (instead
+  of on every failed synchronisation attempt)
+* Use double fork approach when initialising daemon.
+* More things in contrib directory.
+* New options to help package builders: --infodir/--mandir for configure, and
+  DESTDIR=xxx for make.  (See section 2.2 of chrony.txt for details).
+* Changed the wording of the messages generated by mailonchange and logchange
+  directives.
+
+New in version 1.17
+===================
+* Port to NetBSD
+* Configuration supports Linux on PPC
+* Fix compilation warnings
+* Several documentation improvements
+* Bundled manpages (taken from the 'missing manpages project')
+* Cope with lack of bzero function for Solaris 2.3 systems
+* Store chronyd's pid in a file (default /var/run/chronyd.pid) and check if
+  chronyd may already be running when starting up.  New pidfile directive in
+  configuration file.
+* Any size subnet is now allowed in allow and deny commands.  (Example:
+  6.7.8/20 or 6.7.8.x/20 (any x) mean a 20 bit subnet).
+* The environment variables CC and CFLAGS passed to configure can now be used
+  to select the compiler and optimisation/debug options to use
+* Write syslog messages when chronyd loses synchronisation.
+* Print GPL text when chronyc is run.
+* Add NTP broadcast server capability (new broadcast directive).
+* Add 'auto_offline' option to server/peer (conf file) or add server/peer (via
+  chronyc).
+* Add 'activity' command to chronyc, to report how many servers/peers are
+  currently online/offline.
+* Fix long-standing bug with how the system time quantum was calculated.
+* Include support for systems with HZ!=100 (HZ is the timer interrupt
+  frequency).
+* Include example chrony.conf and chrony.keys files (examples subdirectory).
+* Include support for readline in chronyc.
+
+New in version 1.16.1
+=====================
+* Fix compilation problem on Linux 2.4.13 (spinlock.h / spinlock_t)
+
+New in version 1.16
+===================
+* More informative captions for 'sources' and 'sourcestats' commands in chronyc
+  (use 'sources -v' and 'sourcestats -v' to get them).
+* Correct behaviour for Solaris versions>=2.6 (dosynctodr not required on these
+  versions.)
+* Remove some compiler warnings (Solaris)
+* If last line of keys file doesn't have end-of-line, don't truncate final
+  character of that key.
+* Change timestamp format used in logfiles to make it fully numeric (to aid
+  importing data into spreadsheets etc)
+* Minor documentation updates and improvements.
+
+New in version 1.15
+===================
+* Add contributed change to 'configure' to support Solaris 2.8 on x86
+* Workaround for assertion failure that arises if two received packets occur
+  close together. (Still need to find out why this happens at all.)
+* Hopefully fix problem where fast slewing was incompatible with machines
+  that have a large background drift rate (=> tick value went out of range
+  for adjtimex() on Linux.)
+* Fix rtc_linux.c compile problems with 2.4.x kernel include files.
+* Include support for RTC device not being at /dev/rtc (new rtcdevice directive
+  in configuration file).
+* Include support for restricting network interfaces for commands (new
+  bindcmdaddress directive in configuration file)
+* Fix potential linking fault in pktlength.c (use of CROAK macro replaced by
+  normal assert).
+* Add some material on bug reporting + contributing to the chrony.texi file
+* Made the chrony.texi file "Vim6-friendly" (removed xrefs on @node lines,
+  added folding markers to chapters + sections.)
+* Switched over to GPL for the licence
+
+New in version 1.14
+===================
+* Fix compilation for certain other Linux distributions (including Mandrake
+  7.1)
+
+New in version 1.13
+===================
+* Fixed compilation problems on Redhat/SuSE installations with recent 2.2.x
+  kernels.
+* Minor tidy-ups and documentation enhancements.
+* Add support for Linux 2.4 kernels
+
+New in version 1.12
+===================
+
+* Trial fix for long-standing bug in Linux RTC estimator when system time is
+  slewed.
+* Fix bug in chronyc if -h is specified without a hostname
+* Fixes to logging various error conditions when operating in daemon mode.
+* More stuff under contrib/
+* Changes to README file (e.g. about the new chrony-users mailing list)
+
+New in version 1.11a
+====================
+
+* Minor changes to contact details
+* Minor changes to installation details (chrony subdirectory under doc/)
+
+New in version 1.11
+===================
+
+* Improve robustness of installation procedure
+* Tidy up documenation and contact details
+* Distribute manual as .txt rather than as .ps
+* Add -n option to chronyc to work with numeric IP addresses rather than
+  names.
+* Add material in contrib subdirectory
+* Improve robustness of handling drift file and RTC coefficients file
+* Improve robustness of regression algorithm
+
+New in version 1.1
+==================
+
+Bug fixes
+---------
+
+* Made linear regression more resistant to rounding errors (old one
+  occasionally generated negative variances which made everything go
+  haywire).  Trap infinite or 'not-a-number' values being used to
+  alter system clock to increase robustness further.
+
+Other changes/Enhancements
+--------------------------
+
+* Support for Linux 2.1 and 2.2 kernels
+
+* New command 'makestep' in chronyc to immediately jump the system
+  time to match the NTP estimated time (Linux only) - a response to
+  systems booting an hour wrong after summertime/wintertime changes,
+  due to RTCs running on local time.  Needs extending to Sun driver
+  files too.
+
+* New directives 'logchange' and 'mailonchange' to log to syslog or
+  email to a specific address respectively if chronyd detects a clock
+  offset exceeding a defined threshold.
+
+* Added capability to log all client/peer NTP accesses and command
+  accesses (can be turned off with conf file directive 'noclientlog').
+  Added 'clients' command to chronyc to display this data.
+
+* Improved manual mode to use robust regression rather than 2 point
+  fit.
+
+* Added 'manual list' and 'manual delete' commands to chronyc to
+  allow display of entered timestamps and discretionary deletion of
+  outliers.
+
+* If host goes unsynchronised the dummy IP address 0.0.0.0 is detected
+  to avoid attempting a reverse name lookup (to stop dial on demand IP
+  links from being started)
+
+* Changed chronyc/chronyd protocol so messages are now all variable
+  length.  Saves on network bandwidth particularly for large replies
+  from chronyd to chronyc (to support the clients command).
+
+* Added bindaddress directive to configuration file, to give
+  additional control over limiting which hosts can access the local
+  server.
+
+* Groundwork done for a port to Windows NT to compile with Cygwin
+  toolkit.  chronyc works (to monitor another host).  sys_winnt.c
+  needs finishing to use NT clock control API.  Program structure
+  needs adapting to use Windows NT service functions, so it can be
+  started at boot time.  Hopefully a Windows NT / Cygwin guru with
+  some spare time can take this port over :-)
+
+New in version 1.02
+===================
+
+Bug fixes
+---------
+
+* Fix error messages in chronyc if daemon is not reachable.
+
+* Fix config file problem for 'allow all' and 'deny all' without a
+  trailing machine address.
+
+* Remove fatal failed assertion if command socket cannot be read from
+  in daemon.
+
+* Rewrote timezone handling for Linux real time clock, following
+  various reported problems related to daylight saving.
+
+Other changes/Enhancements
+--------------------------
+
+* Configure script recognizes BSD/386 and uses SunOS 4.1 driver for
+  it.
+
+* Log files now print date as day-month-year rather than as a day
+  number.  Milliseconds removed from timestamps of logged data.
+  Banners included in file to give meanings of columns.
+
+* Only do 1 initial step (followed by a trimming slew) when
+  initialising from RTC on Linux (previously did 2 steps).
+
+New in version 1.01
+===================
+
+Bug fixes
+---------
+
+* Handle timezone of RTC correctly with respect to daylight saving
+  time
+
+* Syntax check the chronyc 'local' command properly
+
+* Fixed assertion failed fault in median finder (used by RTC
+  regression fitting)
+
+Other changes/Enhancements
+--------------------------
+
+* Log selection of new NTP reference source to syslog.
+
+* Don't zero-pad IP address fields
+
+* Add new command to chronyc to allow logfiles to be cycled.
+
+* Extend allow/deny directive syntax in configuration file to so
+  directive can apply to all hosts on the Internet.
+
+* Tidy up printout of timestamps to make it clear they are in UTC
+
+* Make 'configure' check the processor type as well as the operating
+  system.

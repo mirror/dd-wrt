@@ -1,0 +1,19 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "large frequency offset"
+
+max_sync_time=1000
+
+for freq_offset in -5e-2 -5e-3 5e-3 5e-2; do
+	# Adjust offset so it's close to 0 on first clock update
+	time_offset=$(awk "BEGIN {print -($freq_offset * 130)}")
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_source_selection || test_fail
+	check_packet_interval || test_fail
+	check_sync || test_fail
+done
+
+test_pass

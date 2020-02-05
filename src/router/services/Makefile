@@ -1563,6 +1563,11 @@ CFLAGS_EXTRA += -DHAVE_MACTELNET
 OBJS += mactelnet.o
 endif
 
+ifeq ($(CONFIG_CHRONY),y)
+CFLAGS_EXTRA += -DHAVE_CHRONY
+OBJS += chronyd.o
+endif
+
 
 CFLAGS_EXTRA += -DHAVE_AQOS
 ifeq ($(CONFIG_BUFFALO),y)

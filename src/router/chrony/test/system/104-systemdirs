@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+TEST_LIBDIR=${CHRONY_LIBDIR:-/var/lib/chrony}
+TEST_LOGDIR=${CHRONY_LOGDIR:-/var/log/chrony}
+TEST_RUNDIR=${CHRONY_RUNDIR:-/var/run/chrony}
+
+. ./test.common
+
+user=$(ls -ld "$TEST_RUNDIR" 2> /dev/null | awk '{print $3}')
+
+test_start "system directories"
+
+start_chronyd || test_fail
+wait_for_sync || test_fail
+stop_chronyd || test_fail
+check_chronyd_messages || test_fail
+check_chronyd_files || test_fail
+
+test_pass

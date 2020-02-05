@@ -1,0 +1,54 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "NTP peers"
+
+# Allow and drop packets to the server in 1000 second intervals, so only one
+# client has access to it and the other is forced to switch to the peer.
+base_delay=$(cat <<-EOF | tr -d '\n'
+  (+ 1e-4
+     (* -1
+        (equal 0.1 from 2)
+        (equal 0.1 to 1)
+        (equal 0.1 (min (% time 2000) 1000) 1000))
+     (* -1
+        (equal 0.1 from 3)
+        (equal 0.1 to 1)
+	(equal 0.1 (max (% time 2000) 1000) 1000)))
+EOF
+)
+
+clients=2
+peers=2
+max_sync_time=1000
+client_server_options="minpoll 6 maxpoll 6"
+client_peer_options="minpoll 6 maxpoll 6"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+
+base_delay="(+ 1e-4 (* -1 (equal 0.1 from 3) (equal 0.1 to 1)))"
+client_peer_options=""
+
+while read lminpoll lmaxpoll rminpoll rmaxpoll max_sync_time; do
+	client_lpeer_options="minpoll $lminpoll maxpoll $lmaxpoll"
+	client_rpeer_options="minpoll $rminpoll maxpoll $rmaxpoll"
+	limit=$[$max_sync_time * 10]
+
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_sync || test_fail
+done <<-EOF
+	3 6 3 6 400
+	3 3 6 6 450
+	6 6 3 3 450
+	3 6 6 6 450
+	6 6 3 6 450
+	-2 -2 2 2 220
+	2 2 -2 -2 220
+EOF
+
+test_pass

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+. ./test.common
+
+# Test fix in commit 4253075a97141edfa62043ab71bd0673587e6629
+
+test_start "prefer option"
+
+servers=3
+client_server_conf="
+server 192.168.123.1
+server 192.168.123.2
+server 192.168.123.3 prefer"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+test_pass

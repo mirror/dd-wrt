@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+check_chronyd_features REFCLOCK || test_skip "refclock support disabled"
+
+test_start "reference clocks"
+
+extra_chronyd_directives="
+refclock SOCK $TEST_DIR/refclock.sock
+refclock SHM 100"
+
+start_chronyd || test_fail
+wait_for_sync || test_fail
+stop_chronyd || test_fail
+check_chronyd_messages || test_fail
+check_chronyd_files || test_fail
+
+test_pass

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "large network"
+
+time_rms_limit=5e-4
+
+server_strata=3
+servers=4
+clients=5
+
+client_start=2000
+min_sync_time=2100
+max_sync_time=2300
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+test_pass
