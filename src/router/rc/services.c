@@ -109,6 +109,9 @@ static int start_services_main(int argc, char **argv)
 #ifdef HAVE_RAID
 	start_service_f("raid");
 #endif
+#ifdef HAVE_CHRONY
+	start_service_f("chronyd");
+#endif
 #ifdef HAVE_FTP
 	start_service_f("ftpsrv");
 #endif
@@ -312,6 +315,9 @@ static int stop_services_main(int argc, char **argv)
 #endif
 #ifdef HAVE_RSYNC
 	stop_service_f("rsync");
+#endif
+#ifdef HAVE_CHRONY
+	stop_service_f("chronyd");
 #endif
 #ifdef HAVE_RAID
 	stop_service_f("raid");
