@@ -1,0 +1,41 @@
+#!/bin/bash
+
+. ./test.common
+test_start "makestep directive"
+
+client_conf="makestep 0 -1
+corrtimeratio 1e10"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+limit=200
+jitter=1e-5
+client_conf="makestep 2 1"
+
+min_sync_time=130
+max_sync_time=150
+
+for time_offset in -1.0 -0.1 0.1 1.0; do
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_source_selection || test_fail
+	check_packet_interval || test_fail
+	check_sync || test_fail
+done
+
+min_sync_time=120
+max_sync_time=140
+
+for time_offset in -1e8 -1e2 1e2 1e8; do
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_source_selection || test_fail
+	check_packet_interval || test_fail
+	check_sync || test_fail
+done
+
+test_pass

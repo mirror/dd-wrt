@@ -1,0 +1,26 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "-r option"
+
+wander=0.0
+limit=100
+min_sync_time=100
+max_sync_time=104
+client_chronyd_options="-r"
+client_conf="dumpdir tmp
+maxupdateskew 10000"
+
+run_test || test_fail
+
+client_start=$limit
+limit=1000
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+test_pass

@@ -1,0 +1,90 @@
+#!/bin/bash
+
+print_help() {
+	echo "$1 [-a] [-i ITERATIONS] [-m MAXFAILS] [-s SEED] [TEST]..."
+}
+
+run_test() {
+	local result name=$1 seed=$2
+
+	CLKNETSIM_RANDOM_SEED=$seed ./$name
+	result=$?
+
+	if [ $result -ne 0 -a $result -ne 9 ]; then
+		if [ $abort_on_fail -ne 0 ]; then
+			echo 1>&2
+			echo Failed with random seed $seed 1>&2
+			exit 1
+		fi
+		failed_seeds=(${failed_seeds[@]} $seed)
+	fi
+
+	return $result
+}
+
+abort_on_fail=0
+iterations=1
+max_fails=0
+random_seed=${CLKNETSIM_RANDOM_SEED:-$RANDOM}
+
+while getopts ":ai:m:s:" opt; do
+	case $opt in
+		a) abort_on_fail=1;;
+		i) iterations=$OPTARG;;
+		m) max_fails=$OPTARG;;
+		s) random_seed=$OPTARG;;
+		*) print_help "$0"; exit 3;;
+	esac
+done
+
+shift $[$OPTIND - 1]
+
+passed=() failed=() skipped=() failed_seeds=()
+
+[ $# -gt 0 ] && tests=($@) || tests=([0-9]*-*[^_])
+
+for test in "${tests[@]}"; do
+	if [ $iterations -gt 1 ]; then
+		printf "%-30s" "$test"
+		fails=0
+		for i in $(seq 1 $iterations); do
+			run_test $test $[$random_seed + $i - 1] > /dev/null
+			case $? in
+				0) echo -n ".";;
+				9) break;;
+				*) echo -n "x"; fails=$[$fails + 1];;
+			esac
+		done
+		if [ $i -lt $iterations ]; then
+			printf "%${iterations}s" ""
+			echo " SKIP"
+			result=9
+		elif [ $fails -gt $max_fails ]; then
+			echo " FAIL"
+			result=1
+		else
+			echo " PASS"
+			result=0
+		fi
+	else
+		printf "%s   " "$test"
+		run_test $test $random_seed
+		result=$?
+		echo
+	fi
+
+	case $result in
+		0) passed=(${passed[@]} $test);;
+		9) skipped=(${skipped[@]} $test);;
+		*) failed=(${failed[@]} $test);;
+	esac
+done
+
+echo
+echo "SUMMARY:"
+echo "  TOTAL  $[${#passed[@]} + ${#failed[@]} + ${#skipped[@]}]"
+echo "  PASSED ${#passed[@]}"
+echo "  FAILED ${#failed[@]}    (${failed[@]}) (${failed_seeds[@]})"
+echo "  SKIPPED ${#skipped[@]}   (${skipped[@]})"
+
+[ ${#failed[@]} -eq 0 ]

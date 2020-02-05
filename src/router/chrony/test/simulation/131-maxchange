@@ -1,0 +1,20 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "maxchange directive"
+
+time_offset=2
+max_sync_time=5000
+client_conf="maxchange 0.1 1 3"
+client_step="(* $step (equal 0.1 (sum 1.0) 300))"
+
+run_test || test_fail
+check_chronyd_exit && test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync && test_fail
+check_log_messages "seconds exceeds.*ignored" 3 3 || test_fail
+check_log_messages "seconds exceeds.*exiting" 1 1 || test_fail
+
+test_pass

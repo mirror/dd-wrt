@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+check_chronyd_features PRIVDROP || test_skip "PRIVDROP support disabled"
+
+user="nobody"
+
+test_start "dropping of root privileges"
+
+minimal_config=1
+
+start_chronyd || test_fail
+stop_chronyd || test_fail
+check_chronyd_messages || test_fail
+
+test_pass

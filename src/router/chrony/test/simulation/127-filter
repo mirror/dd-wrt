@@ -1,0 +1,19 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "filter option"
+
+client_server_options="minpoll 4 maxpoll 4 filter 15"
+min_sync_time=710
+max_sync_time=720
+client_max_min_out_interval=16.1
+client_min_mean_out_interval=15.9
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+test_pass

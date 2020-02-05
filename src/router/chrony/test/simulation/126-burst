@@ -1,0 +1,45 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "burst option"
+
+# Pass every fourth packet on the 2->1 path
+base_delay=$(cat <<-EOF | tr -d '\n'
+  (+ 1e-4
+     (* -1
+        (equal 0.1 from 2)
+        (equal 0.1 to 1)
+        (equal 0.1 (min (% (sum 1) 4) 1) 1)))
+EOF
+)
+
+client_server_options="burst polltarget 1"
+min_sync_time=700
+max_sync_time=730
+client_max_min_out_interval=2.2
+client_min_mean_out_interval=150.0
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+# Add a significant delay to 70% of packets on the 2->1 path after 6th packet
+base_delay=$(cat <<-EOF | tr -d '\n'
+  (+ 1e-4
+     (* 0.15
+        (equal 0.1 from 2)
+        (equal 0.1 to 1)
+        (equal 0.1 (min (sum 1) 7) 7)
+        (equal 0.7 (uniform) 0.0)))
+EOF
+)
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+
+test_pass

@@ -1,0 +1,45 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "tai option"
+
+check_config_h 'FEAT_REFCLOCK 1' || test_skip
+
+export CLKNETSIM_START_DATE=$(TZ=UTC date -d 'Dec 31 2008 23:50:00' +'%s')
+
+leap=$[10 * 60]
+limit=$[20 * 60]
+min_sync_time=2
+max_sync_time=15
+refclock_jitter=1e-6
+servers=0
+
+refclock_offset="(+ -34 (equal 0.1 (max (sum 1.0) $leap) $leap))"
+client_conf="
+refclock SHM 0 dpoll 0 poll 0 tai
+leapsectz right/UTC
+leapsecmode ignore
+maxchange 1e-3 1 0"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+
+export CLKNETSIM_START_DATE=$(TZ=UTC date -d 'Jan 01 2009 00:10:00' +'%s')
+
+time_offset=-1000
+refclock_offset="(+ -34)"
+client_conf="
+refclock SHM 0 dpoll 0 poll 0 tai
+leapsectz right/UTC
+makestep 1 1
+maxchange 1e-3 1 0"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+
+test_pass

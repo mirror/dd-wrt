@@ -1,0 +1,230 @@
+// This file is part of chrony
+//
+// Copyright (C) Richard P. Curnow  1997-2003
+// Copyright (C) Miroslav Lichvar  2009-2016
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of version 2 of the GNU General Public License as
+// published by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+= Installation
+
+The software is distributed as source code which has to be compiled. The source
+code is supplied in the form of a gzipped tar file, which unpacks to a
+subdirectory identifying the name and version of the program.
+
+The following programs and libraries with their development files are needed to
+build `chrony`:
+
+* C compiler (gcc or clang recommended)
+* GNU Make
+* Nettle, NSS, or LibTomCrypt (optional)
+* Editline (optional)
+* libcap (Linux only, optional)
+* libseccomp (Linux only, optional)
+* timepps.h header (optional)
+* Asciidoctor (for HTML documentation)
+* Bash (for testing)
+
+After unpacking the source code, change directory into it, and type
+
+----
+./configure
+----
+
+This is a shell script that automatically determines the system type. There is
+an optional parameter `--prefix`, which indicates the directory tree where the
+software should be installed. For example,
+
+----
+./configure --prefix=/opt/free
+----
+
+will install the `chronyd` daemon into `/opt/free/sbin` and the `chronyc`
+control program into `/opt/free/bin`. The default value for the prefix is
+`/usr/local`.
+
+The `configure` script assumes you want to use `gcc` as your compiler. If you
+want to use a different compiler, you can configure this way:
+
+----
+CC=cc ./configure --prefix=/opt/free
+----
+
+for Bourne-family shells, or
+
+----
+setenv CC cc
+setenv CFLAGS -O
+./configure --prefix=/opt/free
+----
+
+for C-family shells.
+
+If the software cannot (yet) be built on your system, an error message will be
+shown. Otherwise, `Makefile` will be generated.
+
+On Linux, if development files for the libcap library are available, `chronyd`
+will be built with support for dropping root privileges. On other systems no
+extra library is needed. The default user which `chronyd` should run as can be
+specified with the `--with-user` option of the `configure` script.
+
+If development files for the POSIX threads library are available, `chronyd`
+will be built with support for asynchronous resolving of hostnames specified in
+the `server`, `peer`, and `pool` directives. This allows `chronyd` operating as
+a server to respond to client requests when resolving a hostname. If you don't
+want to enable the support, specify the `--disable-asyncdns` flag to
+`configure`.
+
+If development files for the https://www.lysator.liu.se/~nisse/nettle/[Nettle],
+https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS[NSS], or
+http://www.libtom.net/LibTomCrypt/[libtomcrypt] library are available,
+`chronyd` will be built with support for other cryptographic hash functions
+than MD5, which can be used for NTP authentication with a symmetric key. If you
+don't want to enable the support, specify the `--disable-sechash` flag to
+`configure`.
+
+If development files for the editline or readline library are available,
+`chronyc` will be built with line editing support. If you don't want this,
+specify the `--disable-readline` flag to `configure`.
+
+If a `timepps.h` header is available (e.g. from the
+http://linuxpps.org[LinuxPPS project]), `chronyd` will be built with PPS API
+reference clock driver. If the header is installed in a location that isn't
+normally searched by the compiler, you can add it to the searched locations by
+setting the `CPPFLAGS` variable to `-I/path/to/timepps`.
+
+The `--help` option can be specified to `configure` to print all options
+supported by the script.
+
+Now type
+
+----
+make
+----
+
+to build the programs.
+
+If you want to build the manual in HTML, type
+
+----
+make docs
+----
+
+Once the programs have been successfully compiled, they need to be installed in
+their target locations. This step normally needs to be performed by the
+superuser, and requires the following command to be entered.
+
+----
+make install
+----
+
+This will install the binaries and man pages.
+
+To install the HTML version of the manual, enter the command
+
+----
+make install-docs
+----
+
+Now that the software is successfully installed, the next step is to set up a
+configuration file. The default location of the file is _/etc/chrony.conf_.
+Several examples of configuration with comments are included in the examples
+directory. Suppose you want to use public NTP servers from the pool.ntp.org
+project as your time reference. A minimal useful configuration file could be
+
+----
+pool pool.ntp.org iburst
+makestep 1.0 3
+rtcsync
+----
+
+Then, `chronyd` can be run. For security reasons, it's recommended to create an
+unprivileged user for `chronyd` and specify it with the `-u` command-line
+option or the `user` directive in the configuration file, or set the default
+user with the `--with-user` configure option before building.
+
+== Support for system call filtering
+
+`chronyd` can be built with support for the Linux secure computing (seccomp)
+facility. This requires development files for the
+https://github.com/seccomp/libseccomp[libseccomp] library and the
+`--enable-scfilter` option specified to `configure`. The `-F` option of
+`chronyd` will enable a system call filter, which should significantly reduce
+the kernel attack surface and possibly prevent kernel exploits from `chronyd`
+if it is compromised.
+
+== Support for line editing libraries
+
+`chronyc` can be built with support for line editing, this allows you to use
+the cursor keys to replay and edit old commands. Two libraries are supported
+which provide such functionality, editline and GNU readline.
+
+Please note that readline since version 6.0 is licensed under GPLv3+ which is
+incompatible with chrony's license GPLv2. You should use editline instead if
+you don't want to use older readline versions.
+
+The `configure` script will automatically enable the line editing support if
+one of the supported libraries is available. If they are both available, the
+editline library will be used.
+
+If you don't want to use it (in which case `chronyc` will use a minimal command
+line interface), invoke `configure` like this:
+
+----
+./configure --disable-readline other-options...
+----
+
+If you have editline, readline or ncurses installed in locations that aren't
+normally searched by the compiler and linker, you need to use extra options:
+
+`--with-readline-includes=directory_name`::
+  This defines the name of the directory above the one where `readline.h` is.
+  `readline.h` is assumed to be in `editline` or `readline` subdirectory of the
+  named directory.
+
+`--with-readline-library=directory_name`::
+  This defines the directory containing the `libedit.a` or `libedit.so` file,
+  or `libreadline.a` or `libreadline.so` file.
+
+`--with-ncurses-library=directory_name`::
+  This defines the directory containing the `libncurses.a` or `libncurses.so`
+  file.
+
+== Extra options for package builders
+
+The `configure` and `make` procedures have some extra options that may be
+useful if you are building a distribution package for `chrony`.
+
+The `--mandir=DIR` option to `configure` specifies an installation directory
+for the man pages. This overrides the `man` subdirectory of the argument to the
+`--prefix` option.
+
+----
+./configure --prefix=/usr --mandir=/usr/share/man
+----
+
+to set both options together.
+
+The final option is the `DESTDIR` option to the `make` command. For example,
+you could use the commands
+
+----
+./configure --prefix=/usr --mandir=/usr/share/man
+make all docs
+make install DESTDIR=./tmp
+cd tmp
+tar cvf - . | gzip -9 > chrony.tar.gz
+----
+
+to build a package. When untarred within the root directory, this will install
+the files to the intended final locations.

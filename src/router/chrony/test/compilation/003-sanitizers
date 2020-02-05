@@ -1,0 +1,87 @@
+#!/bin/bash
+# Run the unit and simulation tests with different compiler sanitizers
+# and under valgrind
+
+cd ../..
+
+if [ "$(uname -sm)" != "Linux x86_64" ]; then
+  echo Test supported on Linux x86_64 only
+  exit 1
+fi
+
+[ -f /etc/os-release ] && . /etc/os-release
+
+if [ "$ID" = "fedora" ]; then
+  echo Checking test dependencies:
+  rpm -q {valgrind,gcc,clang}.x86_64 {libgcc,clang-libs}.{x86_64,i686} || exit 1
+  rpm -q {libseccomp,nettle,nss-softokn-freebl,libtomcrypt}-devel.{x86_64,i686} || exit 1
+  echo
+fi
+
+touch Makefile
+
+for CC in gcc clang; do
+  export CC
+
+  for arch_opts in "-m32" ""; do
+    pushd test/simulation/clknetsim || exit 1
+    make clean > /dev/null 2>&1
+    CFLAGS="$arch_opts -DCLKNETSIM_DISABLE_SYSCALL" make "$@" || exit 1
+    echo
+
+    popd
+
+    for extra_config_opts in \
+      "--all-privops" \
+      "--disable-scfilter" \
+      "--without-nettle" \
+      "--without-nettle --without-nss" \
+      "--without-nettle --without-nss --without-tomcrypt"; \
+    do
+      for san_options in "" "-fsanitize=address" "-fsanitize=memory"; do
+        export CFLAGS="-O2 -g -fsanitize=undefined -fsanitize=float-divide-by-zero -fno-sanitize-recover=undefined,float-divide-by-zero $san_options $arch_opts"
+
+        # clang msan doesn't work on i686 and otherwise requires patches
+        echo $CFLAGS | grep -q 'sanitize=memory' && continue
+
+        # build fails with clang ubsan on i686 (Fedora only?)
+        [ "$arch_opts" = "-m32" -a "$CC" = "clang" ] && continue
+
+        [ "$CC" = "gcc" ] && echo $CFLAGS | grep -q 'sanitize=address' && CFLAGS="$CFLAGS -static-libasan"
+
+        config_opts="--with-user=chrony --enable-debug --enable-scfilter --enable-ntp-signd $extra_config_opts"
+
+        echo -----------------------------------------------------------------------------
+        echo CC=\"$CC\" CFLAGS=\"$CFLAGS\" ./configure $config_opts
+
+        make distclean > /dev/null 2>&1
+
+        ./configure $config_opts || exit 1
+
+        if echo "$config_opts" | grep -q all-privops; then
+          for op in ADJUSTTIME ADJUSTTIMEX SETTIME BINDSOCKET; do
+            echo "#define PRIVOPS_$op 1" >> config.h
+          done
+        fi
+
+        make "$@" || exit 1
+
+        [ -n "$BUILD_TEST_ONLY" ] && continue
+
+        echo
+        pushd test/unit || exit 1
+        if [ "$san_options" = "" ]; then
+          make check TEST_WRAPPER="valgrind --error-exitcode=1" || exit 1
+        else
+          make check || exit 1
+        fi
+        popd
+
+        echo
+        pushd test/simulation || exit 1
+        CLKNETSIM_RANDOM_SEED=101 ./run -i 1 || exit 1
+        popd
+      done
+    done
+  done
+done

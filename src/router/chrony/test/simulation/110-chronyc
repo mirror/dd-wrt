@@ -1,0 +1,166 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "chronyc"
+
+check_config_h 'FEAT_REFCLOCK 1' || test_skip
+check_config_h 'FEAT_CMDMON 1' || test_skip
+
+refclock_jitter=$jitter
+client_conf="
+refclock SHM 0 noselect
+smoothtime 400 0.001 leaponly"
+
+chronyc_conf="activity
+tracking
+sources
+sourcestats
+manual list
+smoothing
+waitsync
+rtcdata"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+
+check_chronyc_output "^200 OK
+1 sources online
+0 sources offline
+0 sources doing burst \(return to online\)
+0 sources doing burst \(return to offline\)
+0 sources with unknown address
+Reference ID    : C0A87B01 \(192\.168\.123\.1\)
+Stratum         : 2
+Ref time \(UTC\)  : Fri Jan 01 00:1.:.. 2010
+System time     : 0\.0000..... seconds (slow|fast) of NTP time
+Last offset     : [+-]0\.000...... seconds
+RMS offset      : 0\.000...... seconds
+Frequency       : (99|100)\.... ppm fast
+Residual freq   : [+-][0-9]\.... ppm
+Skew            : [0-9]\.... ppm
+Root delay      : 0\.000...... seconds
+Root dispersion : 0\.000...... seconds
+Update interval : [0-9]+\.. seconds
+Leap status     : Normal
+210 Number of sources = 2
+MS Name/IP address         Stratum Poll Reach LastRx Last sample               
+===============================================================================
+#\? SHM0                          0   4   377    [0-9]+ [0-9 +-]+[un]s\[[0-9 +-]+[un]s\] \+/-[ 0-9]+[un]s
+\^\* 192\.168\.123\.1                 1   [67]   377    [0-9]+ [0-9 +-]+[un]s\[[0-9 +-]+[un]s\] \+/-[ 0-9]+[un]s
+210 Number of sources = 2
+Name/IP Address            NP  NR  Span  Frequency  Freq Skew  Offset  Std Dev
+==============================================================================
+SHM0                       [0-9 ]+ [0-9 ]+ [0-9 ]+ [ +-][01]\.... [0-9 ]+\....  [0-9 +-]+[un]s [0-9 ]+[un]s
+192\.168\.123\.1              [0-9 ]+ [0-9 ]+ [0-9 ]+ [ +-][01]\.... [0-9 ]+\....  [0-9 +-]+[un]s [0-9 ]+[un]s
+210 n_samples = 0
+#    Date     Time\(UTC\)    Slewed   Original   Residual
+=======================================================
+Active         : Yes \(leap second only\)
+Offset         : \+0\.000000000 seconds
+Frequency      : \+0\.000000 ppm
+Wander         : \+0\.000000 ppm per second
+Last update    : [0-9]+\.. seconds ago
+Remaining time : 0\.0 seconds
+try: 1, refid: C0A87B01, correction: 0\.000......, skew: .\....
+513 RTC driver not running$" \
+|| test_fail
+
+server_strata=0
+chronyc_start=0
+client_conf=""
+limit=1
+
+for chronyc_conf in \
+	"accheck 1.2.3.4" \
+	"add peer 10.0.0.0 minpoll 2 maxpoll 6" \
+	"add server 10.0.0.0 minpoll 6 maxpoll 10 iburst burst key 1 maxdelay 1e-3 maxdelayratio 10.0 maxdelaydevratio 10.0 mindelay 1e-4 asymmetry 0.5 offset 1e-5 minsamples 6 maxsamples 6 filter 3 offline auto_offline prefer noselect trust require xleave polltarget 20 port 123 presend 7 minstratum 3 version 4" \
+	"allow 1.2.3.4" \
+	"allow 1.2" \
+	"allow 3.4.5" \
+	"allow 6.7.8/22" \
+	"allow 6.7.8.9/22" \
+	"allow 2001:db8::/32" \
+	"allow 0/0" \
+	"allow ::/0" \
+	"allow" \
+	"allow all 10/24" \
+	"burst 5/10" \
+	"burst 3/5 255.255.255.0/1.2.3.0" \
+	"burst 1/2 1.2.3.0/24" \
+	"clients" \
+	"cmdaccheck 1.2.3.4" \
+	"cmdallow 1.2.3.4" \
+	"cmdallow all 1.2.3.0/24" \
+	"cmddeny 1.2.3.4" \
+	"cmddeny all 1.2.3.0/24" \
+	"cyclelogs" \
+	"delete 10.0.0.0" \
+	"deny 1.2.3.4" \
+	"deny all 1.2.3.0/24" \
+	"dfreq 1.0e-3" \
+	"doffset -1.0" \
+	"dump" \
+	"local stratum 5 distance 1.0 orphan" \
+	"local off" \
+	"makestep 10.0 3" \
+	"makestep" \
+	"manual delete 0" \
+	"manual off" \
+	"manual on" \
+	"manual reset" \
+	"maxdelay 1.2.3.4 1e-2" \
+	"maxdelaydevratio 1.2.3.4 5.0" \
+	"maxdelayratio 1.2.3.4 3.0" \
+	"maxpoll 1.2.3.4 5" \
+	"maxupdateskew 1.2.3.4 10.0" \
+	"minpoll 1.2.3.4 3" \
+	"minstratum 1.2.3.4 1" \
+	"ntpdata 1.2.3.4" \
+	"offline" \
+	"offline 255.255.255.0/1.2.3.0" \
+	"offline 1.2.3.0/24" \
+	"online" \
+	"online 1.2.3.0/24" \
+	"onoffline" \
+	"polltarget 1.2.3.4 10" \
+	"refresh" \
+	"rekey" \
+	"reselect" \
+	"reselectdist 1e-3" \
+	"settime 16:30" \
+	"settime 16:30:05" \
+	"settime Nov 21, 2015 16:30:05" \
+	"serverstats" \
+	"shutdown" \
+	"smoothtime reset" \
+	"smoothtime activate" \
+	"trimrtc" \
+	"writertc"
+do
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_chronyc_output "501 Not authorised" || test_fail
+done
+
+chronyc_conf="dns -n
+dns +n
+dns -4
+dns -6
+dns -46
+timeout 200
+retries 1
+keygen
+keygen 10 MD5 128
+help
+quit
+nosuchcommand"
+
+run_test || test_fail
+
+check_chronyc_output "^1 (MD5|SHA1) HEX:........................................
+10 MD5 HEX:................................
+System clock:.*this help
+ *$" || test_fail
+
+test_pass

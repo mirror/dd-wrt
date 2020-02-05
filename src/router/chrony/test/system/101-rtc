@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+check_chronyd_features RTC || test_skip "RTC support disabled"
+[ -c "/dev/rtc" ] || test_skip "missing /dev/rtc"
+
+test_start "real-time clock"
+
+minimal_config=1
+extra_chronyd_options="-s"
+extra_chronyd_directives="rtcfile $TEST_DIR/rtcfile"
+echo "1 $(date +%s) 0.0 0.0" > "$TEST_DIR/rtcfile"
+
+start_chronyd || test_fail
+stop_chronyd || test_fail
+check_chronyd_message_count "\(clock off from RTC\|RTC time before last\)" 1 1 || test_fail
+
+test_pass

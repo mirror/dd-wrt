@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+
+print_help() {
+	echo "$1 [-a] [-d] [TEST]..."
+}
+
+run_test() {
+	local result name=$1
+
+	if [ $destructive -ne 1 ] && [[ "$name" == 1[0-9][0-9]-* ]]; then
+		echo "SKIP (destructive test)"
+		return 9
+	fi
+
+	./$name
+	result=$?
+
+	if [ $result -ne 0 -a $result -ne 9 ]; then
+		if [ $abort_on_fail -ne 0 ]; then
+			exit 1
+		fi
+	fi
+
+	return $result
+}
+
+passed=() failed=() skipped=()
+
+abort_on_fail=0
+destructive=0
+
+while getopts ":ad" opt; do
+	case $opt in
+		a) abort_on_fail=1;;
+		d) destructive=1;;
+		*) print_help "$0"; exit 3;;
+	esac
+done
+
+shift $[$OPTIND - 1]
+
+[ $# -gt 0 ] && tests=($@) || tests=([0-9]*-*[^_])
+
+for test in "${tests[@]}"; do
+	printf "%s   " "$test"
+	run_test $test
+	result=$?
+	echo
+
+	case $result in
+		0) passed=(${passed[@]} $test);;
+		9) skipped=(${skipped[@]} $test);;
+		*) failed=(${failed[@]} $test);;
+	esac
+done
+
+echo
+echo "SUMMARY:"
+echo "  TOTAL  $[${#passed[@]} + ${#failed[@]} + ${#skipped[@]}]"
+echo "  PASSED ${#passed[@]}"
+echo "  FAILED ${#failed[@]}    (${failed[@]})"
+echo "  SKIPPED ${#skipped[@]}   (${skipped[@]})"
+
+[ ${#failed[@]} -eq 0 ]

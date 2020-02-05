@@ -1,0 +1,37 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "hwtimestamp directive"
+
+check_config_h 'HAVE_LINUX_TIMESTAMPING 1' || test_skip
+
+export CLKNETSIM_TIMESTAMPING=2
+
+refclock_jitter=1e-8
+refclock_offset=10.0
+min_sync_time=4
+max_sync_time=20
+limit=200
+server_conf="hwtimestamp eth0"
+client_server_options="minpoll 0 maxpoll 0 minsamples 32 xleave"
+client_chronyd_options="-d"
+
+for client_conf in "hwtimestamp eth0" "hwtimestamp eth0
+acquisitionport 123"; do
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_source_selection || test_fail
+	check_sync || test_fail
+
+	if check_config_h 'FEAT_DEBUG 1'; then
+		check_log_messages "HW clock samples" 190 200 || test_fail
+		check_log_messages "HW clock reset" 0 0 || test_fail
+		check_log_messages "Received.*tss=1" 1 1 || test_fail
+		check_log_messages "Received.*tss=2" 390 400 || test_fail
+		check_log_messages "update_tx_timestamp.*Updated" 50 140 || test_fail
+		check_log_messages "update_tx_timestamp.*Unacceptable" 50 140 || test_fail
+	fi
+done
+
+test_pass

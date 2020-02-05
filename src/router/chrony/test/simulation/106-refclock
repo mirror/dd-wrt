@@ -1,0 +1,34 @@
+#!/bin/bash
+
+. ./test.common
+test_start "SHM refclock"
+
+check_config_h 'FEAT_REFCLOCK 1' || test_skip
+check_config_h 'FEAT_PHC 1' || test_skip
+check_config_h 'FEAT_CMDMON 1' || test_skip
+
+servers=0
+limit=1000
+refclock_jitter=$jitter
+min_sync_time=45
+max_sync_time=70
+chronyc_start=70
+chronyc_conf="tracking"
+
+for refclock in "SHM 0" "PHC /dev/ptp0"; do
+	client_conf="refclock $refclock stratum 3 delay 1e-3 refid GPS"
+
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_source_selection || test_fail
+	check_sync || test_fail
+	check_chronyc_output "^Reference ID.*47505300 \(GPS\)
+Stratum.*: 4
+.*
+Root delay      : 0.001000000 seconds
+.*
+Update interval : 16\.. seconds
+.*$" || test_fail
+done
+
+test_pass

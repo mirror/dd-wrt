@@ -1,0 +1,16 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "broadcast directive"
+
+server_conf="broadcast 64 192.168.123.255"
+client_server_options="offline"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_packet_interval && test_fail
+
+check_file_messages "	1	2	" 150 160 log.packets || test_fail
+
+test_pass

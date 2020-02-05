@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+test_start "extended configuration"
+
+start_chronyd || test_fail
+wait_for_sync || test_fail
+stop_chronyd || test_fail
+check_chronyd_messages || test_fail
+check_chronyd_files || test_fail
+
+test_pass

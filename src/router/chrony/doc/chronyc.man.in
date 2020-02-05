@@ -1,0 +1,1914 @@
+'\" t
+.\"     Title: chronyc
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: Asciidoctor 1.5.6.1
+.\"      Date: 2019-05-10
+.\"    Manual: User manual
+.\"    Source: chrony @CHRONY_VERSION@
+.\"  Language: English
+.\"
+.TH "CHRONYC" "1" "2019-05-10" "chrony @CHRONY_VERSION@" "User manual"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.LINKSTYLE blue R < >
+.SH "NAME"
+chronyc \- command\-line interface for chrony daemon
+.SH "SYNOPSIS"
+.sp
+\fBchronyc\fP [\fIOPTION\fP]... [\fICOMMAND\fP]...
+.SH "DESCRIPTION"
+.sp
+\fBchronyc\fP is a command\-line interface program which can be used to monitor
+\fBchronyd\fP\(cqs performance and to change various operating parameters whilst it is
+running.
+.sp
+If no commands are specified on the command line, \fBchronyc\fP will expect input
+from the user. The prompt \fIchronyc>\fP will be displayed when it is being run
+from a terminal. If \fBchronyc\fP\(cqs input or output are redirected from or to a file,
+the prompt is not shown.
+.sp
+There are two ways \fBchronyc\fP can access \fBchronyd\fP. One is the Internet
+Protocol (IPv4 or IPv6) and the other is a Unix domain socket, which is
+accessible locally by the root or \fIchrony\fP user. By default, \fBchronyc\fP first
+tries to connect to the Unix domain socket. The compiled\-in default path is
+\fI@CHRONYRUNDIR@/chronyd.sock\fP. If that fails (e.g. because \fBchronyc\fP is
+running under a non\-root user), it will try to connect to 127.0.0.1 and then
+::1.
+.sp
+Only the following monitoring commands, which do not affect the behaviour of
+\fBchronyd\fP, are allowed from the network: \fBactivity\fP, \fBmanual list\fP,
+\fBrtcdata\fP, \fBsmoothing\fP, \fBsources\fP, \fBsourcestats\fP, \fBtracking\fP, \fBwaitsync\fP. The
+set of hosts from which \fBchronyd\fP will accept these commands can be configured
+with the \fBcmdallow\fP directive in the \fBchronyd\fP\(cqs
+configuration file or the \fBcmdallow\fP command in \fBchronyc\fP. By
+default, the commands are accepted only from localhost (127.0.0.1 or ::1).
+.sp
+All other commands are allowed only through the Unix domain socket. When sent
+over the network, \fBchronyd\fP will respond with a \(oqNot authorised\(cq error, even
+if it is from localhost. In chrony versions before 2.2 they were allowed
+from the network if they were authenticated with a password, but that is no
+longer supported.
+.sp
+Having full access to \fBchronyd\fP via \fBchronyc\fP is more or less equivalent to
+being able to modify the \fBchronyd\fP\(cqs configuration file and restart it.
+.SH "OPTIONS"
+.sp
+\fB\-4\fP
+.RS 4
+With this option hostnames will be resolved only to IPv4 addresses.
+.RE
+.sp
+\fB\-6\fP
+.RS 4
+With this option hostnames will be resolved only to IPv6 addresses.
+.RE
+.sp
+\fB\-n\fP
+.RS 4
+This option disables resolving of IP addresses to hostnames, e.g. to avoid slow
+DNS lookups. Long addresses will not be truncated to fit into the column.
+.RE
+.sp
+\fB\-c\fP
+.RS 4
+This option enables printing of reports in a comma\-separated values (CSV)
+format. IP addresses will not be resolved to hostnames, time will be printed as
+number of seconds since the epoch and values in seconds will not be converted
+to other units.
+.RE
+.sp
+\fB\-d\fP
+.RS 4
+This option enables printing of debugging messages if \fBchronyc\fP was compiled
+with debugging support.
+.RE
+.sp
+\fB\-m\fP
+.RS 4
+Normally, all arguments on the command line are interpreted as one command.
+With this option multiple commands can be specified. Each argument will be
+interpreted as a whole command.
+.RE
+.sp
+\fB\-h\fP \fIhost\fP
+.RS 4
+This option allows the user to specify which host (or comma\-separated list of
+addresses) running the \fBchronyd\fP program is to be contacted. This allows for
+remote monitoring, without having to connect over SSH to the other host first.
+.sp
+The default is to contact \fBchronyd\fP running on the same host where
+\fBchronyc\fP is being run.
+.RE
+.sp
+\fB\-p\fP \fIport\fP
+.RS 4
+This option allows the user to specify the UDP port number which the target
+\fBchronyd\fP is using for its monitoring connections. This defaults to 323; there
+would rarely be a need to change this.
+.RE
+.sp
+\fB\-f\fP \fIfile\fP
+.RS 4
+This option is ignored and is provided only for compatibility.
+.RE
+.sp
+\fB\-a\fP
+.RS 4
+This option is ignored and is provided only for compatibility.
+.RE
+.sp
+\fB\-v\fP
+.RS 4
+With this option \fBchronyc\fP displays its version number on the terminal and
+exits.
+.RE
+.SH "COMMANDS"
+.sp
+This section describes each of the commands available within the \fBchronyc\fP
+program.
+.SS "System clock"
+.sp
+\fBtracking\fP
+.RS 4
+The \fBtracking\fP command displays parameters about the system\(cqs clock
+performance. An example of the output is shown below.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Reference ID    : CB00710F (foo.example.net)
+Stratum         : 3
+Ref time (UTC)  : Fri Jan 27 09:49:17 2017
+System time     : 0.000006523 seconds slow of NTP time
+Last offset     : \-0.000006747 seconds
+RMS offset      : 0.000035822 seconds
+Frequency       : 3.225 ppm slow
+Residual freq   : \-0.000 ppm
+Skew            : 0.129 ppm
+Root delay      : 0.013639022 seconds
+Root dispersion : 0.001100737 seconds
+Update interval : 64.2 seconds
+Leap status     : Normal
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The fields are explained as follows:
+.sp
+\fBReference ID\fP
+.RS 4
+This is the reference ID and name (or IP address) of the server to which the
+computer is currently synchronised. For IPv4 addresses, the reference ID is
+equal to the address and for IPv6 addresses it is the first 32 bits of the MD5
+sum of the address.
+.sp
+If the reference ID is \fI7F7F0101\fP and there is no name or IP address, it means
+the computer is not synchronised to any external source and that you have the
+\fIlocal\fP mode operating (via the \fBlocal\fP command in \fBchronyc\fP, or the
+\fBlocal\fP directive in the configuration file).
+.sp
+The reference ID is printed as a hexadecimal number. Note that in older
+versions it used to be printed in quad\-dotted notation and could be confused
+with an IPv4 address.
+.RE
+.sp
+\fBStratum\fP
+.RS 4
+The stratum indicates how many hops away from a computer with an attached
+reference clock we are. Such a computer is a stratum\-1 computer, so the
+computer in the example is two hops away (i.e. \fIfoo.example.net\fP is a
+stratum\-2 and is synchronised from a stratum\-1).
+.RE
+.sp
+\fBRef time\fP
+.RS 4
+This is the time (UTC) at which the last measurement from the reference
+source was processed.
+.RE
+.sp
+\fBSystem time\fP
+.RS 4
+In normal operation, \fBchronyd\fP by default never steps the system clock, because
+any jump in the time can have adverse consequences for certain application
+programs. Instead, any error in the system clock is corrected by slightly
+speeding up or slowing down the system clock until the error has been removed,
+and then returning to the system clock\(cqs normal speed. A consequence of this is
+that there will be a period when the system clock (as read by other programs)
+will be different from \fBchronyd\fP\(cqs estimate of the current true time (which it
+reports to NTP clients when it is operating in server mode). The value reported
+on this line is the difference due to this effect.
+.RE
+.sp
+\fBLast offset\fP
+.RS 4
+This is the estimated local offset on the last clock update.
+.RE
+.sp
+\fBRMS offset\fP
+.RS 4
+This is a long\-term average of the offset value.
+.RE
+.sp
+\fBFrequency\fP
+.RS 4
+The \(oqfrequency\(cq is the rate by which the system\(cqs clock would be wrong if
+\fBchronyd\fP was not correcting it. It is expressed in ppm (parts per million).
+For example, a value of 1 ppm would mean that when the system\(cqs clock thinks it
+has advanced 1 second, it has actually advanced by 1.000001 seconds relative to
+true time.
+.RE
+.sp
+\fBResidual freq\fP
+.RS 4
+This shows the \(oqresidual frequency\(cq for the currently selected reference
+source. This reflects any difference between what the measurements from the
+reference source indicate the frequency should be and the frequency currently
+being used.
+.sp
+The reason this is not always zero is that a smoothing procedure is
+applied to the frequency. Each time a measurement from the reference
+source is obtained and a new residual frequency computed, the estimated
+accuracy of this residual is compared with the estimated accuracy (see
+\(oqskew\(cq next) of the existing frequency value. A weighted average is
+computed for the new frequency, with weights depending on these accuracies.
+If the measurements from the reference source follow a consistent trend, the
+residual will be driven to zero over time.
+.RE
+.sp
+\fBSkew\fP
+.RS 4
+This is the estimated error bound on the frequency.
+.RE
+.sp
+\fBRoot delay\fP
+.RS 4
+This is the total of the network path delays to the stratum\-1 computer from
+which the computer is ultimately synchronised.
+.RE
+.sp
+\fBRoot dispersion\fP
+.RS 4
+This is the total dispersion accumulated through all the computers back to
+the stratum\-1 computer from which the computer is ultimately synchronised.
+Dispersion is due to system clock resolution, statistical measurement
+variations, etc.
+.sp
+An absolute bound on the computer\(cqs clock accuracy (assuming the stratum\-1
+computer is correct) is given by:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+clock_error <= |system_time_offset| + root_dispersion + (0.5 * root_delay)
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+\fBUpdate interval\fP
+.RS 4
+This is the interval between the last two clock updates.
+.RE
+.sp
+\fBLeap status\fP
+.RS 4
+This is the leap status, which can be \fINormal\fP, \fIInsert second\fP, \fIDelete
+second\fP or \fINot synchronised\fP.
+.RE
+.RE
+.sp
+\fBmakestep\fP, \fBmakestep\fP \fIthreshold\fP \fIlimit\fP
+.RS 4
+Normally \fBchronyd\fP will cause the system to gradually correct any time offset,
+by slowing down or speeding up the clock as required. In certain situations,
+the system clock might be so far adrift that this slewing process would take a
+very long time to correct the system clock.
+.sp
+The \fBmakestep\fP command can be used in this situation. There are two forms of
+the command. The first form has no parameters. It tells \fBchronyd\fP to cancel any
+remaining correction that was being slewed and jump the system clock by the
+equivalent amount, making it correct immediately.
+.sp
+The second form configures the automatic stepping, similarly to the
+\fBmakestep\fP directive. It has two parameters,
+stepping threshold (in seconds) and number of future clock updates for which
+the threshold will be active. This can be used with the \fBburst\fP
+command to quickly make a new measurement and correct the clock by stepping if
+needed, without waiting for \fBchronyd\fP to complete the measurement and update
+the clock.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+makestep 0.1 1
+burst 1/2
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+BE WARNED: Certain software will be seriously affected by such jumps in the
+system time. (That is the reason why \fBchronyd\fP uses slewing normally.)
+.RE
+.sp
+\fBmaxupdateskew\fP \fIskew\-in\-ppm\fP
+.RS 4
+This command has the same effect as the
+\fBmaxupdateskew\fP directive in the
+configuration file.
+.RE
+.sp
+\fBwaitsync\fP [\fImax\-tries\fP [\fImax\-correction\fP [\fImax\-skew\fP [\fIinterval\fP]]]]
+.RS 4
+The \fBwaitsync\fP command waits for \fBchronyd\fP to synchronise.
+.sp
+Up to four optional arguments can be specified. The first is the maximum number
+of tries before giving up and returning a non\-zero error code. When 0 is
+specified, or there are no arguments, the number of tries will not be limited.
+.sp
+The second and third arguments are the maximum allowed remaining correction of
+the system clock and the maximum allowed skew (in ppm) as reported by the
+\fBtracking\fP command in the \fBSystem time\fP and \fBSkew\fP fields. If not
+specified or zero, the value will not be checked.
+.sp
+The fourth argument is the interval specified in seconds in which the check is
+repeated. The interval is 10 seconds by default.
+.sp
+An example is:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+waitsync 60 0.01
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+which will wait up to about 10 minutes (60 times 10 seconds) for \fBchronyd\fP to
+synchronise to a source and the remaining correction to be less than 10
+milliseconds.
+.RE
+.SS "Time sources"
+.sp
+\fBsources\fP [\fB\-v\fP]
+.RS 4
+This command displays information about the current time sources that \fBchronyd\fP
+is accessing.
+.sp
+The optional argument \fB\-v\fP can be specified, meaning \fIverbose\fP. In this case,
+extra caption lines are shown as a reminder of the meanings of the columns.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+210 Number of sources = 3
+MS Name/IP address         Stratum Poll Reach LastRx Last sample
+===============================================================================
+#* GPS0                          0   4   377    11   \-479ns[ \-621ns] +/\-  134ns
+^? foo.example.net               2   6   377    23   \-923us[ \-924us] +/\-   43ms
+^+ bar.example.net               1   6   377    21  \-2629us[\-2619us] +/\-   86ms
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The columns are as follows:
+.sp
+\fBM\fP
+.RS 4
+This indicates the mode of the source. \fI^\fP means a server, \fI=\fP means a peer
+and \fI#\fP indicates a locally connected reference clock.
+.RE
+.sp
+\fBS\fP
+.RS 4
+This column indicates the state of the source.
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fI*\fP indicates the source to which \fBchronyd\fP is currently synchronised.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fI+\fP indicates acceptable sources which are combined with the selected
+source.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fI\-\fP indicates acceptable sources which are excluded by the combining
+algorithm.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fI?\fP indicates sources to which connectivity has been lost or whose packets
+do not pass all tests. It is also shown at start\-up, until at least 3 samples
+have been gathered from it.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIx\fP indicates a clock which \fBchronyd\fP thinks is a falseticker (i.e. its
+time is inconsistent with a majority of other sources).
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fI~\fP indicates a source whose time appears to have too much variability.
+.RE
+.RE
+.sp
+\fBName/IP address\fP
+.RS 4
+This shows the name or the IP address of the source, or reference ID for reference
+clocks.
+.RE
+.sp
+\fBStratum\fP
+.RS 4
+This shows the stratum of the source, as reported in its most recently
+received sample. Stratum 1 indicates a computer with a locally attached
+reference clock. A computer that is synchronised to a stratum 1 computer is
+at stratum 2. A computer that is synchronised to a stratum 2 computer is at
+stratum 3, and so on.
+.RE
+.sp
+\fBPoll\fP
+.RS 4
+This shows the rate at which the source is being polled, as a base\-2
+logarithm of the interval in seconds. Thus, a value of 6 would indicate that
+a measurement is being made every 64 seconds. \fBchronyd\fP automatically varies
+the polling rate in response to prevailing conditions.
+.RE
+.sp
+\fBReach\fP
+.RS 4
+This shows the source\(cqs reachability register printed as an octal number. The
+register has 8 bits and is updated on every received or missed packet from
+the source. A value of 377 indicates that a valid reply was received for all
+from the last eight transmissions.
+.RE
+.sp
+\fBLastRx\fP
+.RS 4
+This column shows how long ago the last good sample (which is shown in the next
+column) was received from the source. Measurements that failed some tests are
+ignored. This is normally in seconds. The letters \fIm\fP, \fIh\fP, \fId\fP or \fIy\fP indicate
+minutes, hours, days, or years.
+.RE
+.sp
+\fBLast sample\fP
+.RS 4
+This column shows the offset between the local clock and the source at the
+last measurement. The number in the square brackets shows the actual measured
+offset. This can be suffixed by \fIns\fP (indicating nanoseconds), \fIus\fP
+(indicating microseconds), \fIms\fP (indicating milliseconds), or \fIs\fP (indicating
+seconds). The number to the left of the square brackets shows the original
+measurement, adjusted to allow for any slews applied to the local clock
+since. The number following the \fI+/\-\fP indicator shows the margin of error in
+the measurement. Positive offsets indicate that the local clock is ahead of
+the source.
+.RE
+.RE
+.sp
+\fBsourcestats\fP [\fB\-v\fP]
+.RS 4
+The \fBsourcestats\fP command displays information about the drift rate and offset
+estimation process for each of the sources currently being examined by
+\fBchronyd\fP.
+.sp
+The optional argument \fB\-v\fP can be specified, meaning \fIverbose\fP. In this case,
+extra caption lines are shown as a reminder of the meanings of the columns.
+.sp
+An example report is:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+210 Number of sources = 1
+Name/IP Address            NP  NR  Span  Frequency  Freq Skew  Offset  Std Dev
+===============================================================================
+foo.example.net            11   5   46m     \-0.001      0.045      1us    25us
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The columns are as follows:
+.sp
+\fBName/IP Address\fP
+.RS 4
+This is the name or IP address of the NTP server (or peer) or reference ID of the
+reference clock to which the rest of the line relates.
+.RE
+.sp
+\fBNP\fP
+.RS 4
+This is the number of sample points currently being retained for the server.
+The drift rate and current offset are estimated by performing a linear
+regression through these points.
+.RE
+.sp
+\fBNR\fP
+.RS 4
+This is the number of runs of residuals having the same sign following the
+last regression. If this number starts to become too small relative to the
+number of samples, it indicates that a straight line is no longer a good fit
+to the data. If the number of runs is too low, \fBchronyd\fP discards older
+samples and re\-runs the regression until the number of runs becomes
+acceptable.
+.RE
+.sp
+\fBSpan\fP
+.RS 4
+This is the interval between the oldest and newest samples. If no unit is
+shown the value is in seconds. In the example, the interval is 46 minutes.
+.RE
+.sp
+\fBFrequency\fP
+.RS 4
+This is the estimated residual frequency for the server, in parts per
+million. In this case, the computer\(cqs clock is estimated to be running 1 part
+in 10^9 slow relative to the server.
+.RE
+.sp
+\fBFreq Skew\fP
+.RS 4
+This is the estimated error bounds on \fBFreq\fP (again in parts per million).
+.RE
+.sp
+\fBOffset\fP
+.RS 4
+This is the estimated offset of the source.
+.RE
+.sp
+\fBStd Dev\fP
+.RS 4
+This is the estimated sample standard deviation.
+.RE
+.RE
+.sp
+\fBreselect\fP
+.RS 4
+To avoid excessive switching between sources, \fBchronyd\fP can stay synchronised
+to a source even when it is not currently the best one among the available
+sources.
+.sp
+The \fBreselect\fP command can be used to force \fBchronyd\fP to reselect the best
+synchronisation source.
+.RE
+.sp
+\fBreselectdist\fP \fIdistance\fP
+.RS 4
+The \fBreselectdist\fP command sets the reselection distance. It is equivalent to
+the \fBreselectdist\fP directive in the
+configuration file.
+.RE
+.SS "NTP sources"
+.sp
+\fBactivity\fP
+.RS 4
+This command reports the number of servers and peers that are online and
+offline. If the \fBauto_offline\fP option is used in specifying some of the servers
+or peers, the \fBactivity\fP command can be useful for detecting when all of them
+have entered the offline state after the network link has been disconnected.
+.sp
+The report shows the number of servers and peers in 5 states:
+.sp
+\fBonline\fP
+.RS 4
+the server or peer is currently online (i.e. assumed by \fBchronyd\fP to be reachable)
+.RE
+.sp
+\fBoffline\fP
+.RS 4
+the server or peer is currently offline (i.e. assumed by \fBchronyd\fP to be
+unreachable, and no measurements from it will be attempted.)
+.RE
+.sp
+\fBburst_online\fP
+.RS 4
+a burst command has been initiated for the server or peer and is being
+performed; after the burst is complete, the server or peer will be returned to
+the online state.
+.RE
+.sp
+\fBburst_offline\fP
+.RS 4
+a burst command has been initiated for the server or peer and is being
+performed; after the burst is complete, the server or peer will be returned to
+the offline state.
+.RE
+.sp
+\fBunresolved\fP
+.RS 4
+the name of the server or peer was not resolved to an address yet; this source is
+not visible in the \fBsources\fP and \fBsourcestats\fP reports.
+.RE
+.RE
+.sp
+\fBntpdata\fP [\fIaddress\fP]
+.RS 4
+The \fBntpdata\fP command displays the last valid measurement and other
+NTP\-specific information about the specified NTP source, or all NTP sources if
+no address was specified. An example of the output is shown below.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Remote address  : 203.0.113.15 (CB00710F)
+Remote port     : 123
+Local address   : 203.0.113.74 (CB00714A)
+Leap status     : Normal
+Version         : 4
+Mode            : Server
+Stratum         : 1
+Poll interval   : 10 (1024 seconds)
+Precision       : \-24 (0.000000060 seconds)
+Root delay      : 0.000015 seconds
+Root dispersion : 0.000015 seconds
+Reference ID    : 47505300 (GPS)
+Reference time  : Fri Nov 25 15:22:12 2016
+Offset          : \-0.000060878 seconds
+Peer delay      : 0.000175634 seconds
+Peer dispersion : 0.000000681 seconds
+Response time   : 0.000053050 seconds
+Jitter asymmetry: +0.00
+NTP tests       : 111 111 1111
+Interleaved     : No
+Authenticated   : No
+TX timestamping : Kernel
+RX timestamping : Kernel
+Total TX        : 24
+Total RX        : 24
+Total valid RX  : 24
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The fields are explained as follows:
+.sp
+\fBRemote address\fP
+.RS 4
+The IP address of the NTP server or peer, and the corresponding reference ID.
+.RE
+.sp
+\fBRemote port\fP
+.RS 4
+The UDP port number to which the request was sent. The standard NTP port is
+123.
+.RE
+.sp
+\fBLocal address\fP
+.RS 4
+The local IP address which received the response, and the corresponding
+reference ID.
+.RE
+.sp
+\fBLeap status\fP, \fBVersion\fP, \fBMode\fP, \fBStratum\fP, \fBPoll interval\fP, \fBPrecision\fP, \fBRoot delay\fP, \fBRoot dispersion\fP, \fBReference ID\fP, \fBReference time\fP
+.RS 4
+The NTP values from the last valid response.
+.RE
+.sp
+\fBOffset\fP, \fBPeer delay\fP, \fBPeer dispersion\fP
+.RS 4
+The measured values.
+.RE
+.sp
+\fBResponse time\fP
+.RS 4
+The time the server or peer spent in processing of the request and waiting
+before sending the response.
+.RE
+.sp
+\fBJitter asymmetry\fP
+.RS 4
+The estimated asymmetry of network jitter on the path to the source. The
+asymmetry can be between \-0.5 and 0.5. A negative value means the delay of
+packets sent to the source is more variable than the delay of packets sent
+from the source back.
+.RE
+.sp
+\fBNTP tests\fP
+.RS 4
+Results of RFC 5905 tests 1 through 3, 5 through 7, and tests for maximum
+delay, delay ratio, delay dev ratio, and synchronisation loop.
+.RE
+.sp
+\fBInterleaved\fP
+.RS 4
+This shows if the response was in the interleaved mode.
+.RE
+.sp
+\fBAuthenticated\fP
+.RS 4
+This shows if the response was authenticated.
+.RE
+.sp
+\fBTX timestamping\fP
+.RS 4
+The source of the local transmit timestamp. Valid values are \fIDaemon\fP,
+\fIKernel\fP, and \fIHardware\fP.
+.RE
+.sp
+\fBRX timestamping\fP
+.RS 4
+The source of the local receive timestamp.
+.RE
+.sp
+\fBTotal TX\fP
+.RS 4
+The number of packets sent to the source.
+.RE
+.sp
+\fBTotal RX\fP
+.RS 4
+The number of all packets received from the source.
+.RE
+.sp
+\fBTotal valid RX\fP
+.RS 4
+The number of valid packets received from the source.
+.RE
+.RE
+.sp
+\fBadd peer\fP \fIaddress\fP [\fIoption\fP]...
+.RS 4
+The \fBadd peer\fP command allows a new NTP peer to be added whilst
+\fBchronyd\fP is running.
+.sp
+Following the words \fBadd peer\fP, the syntax of the following
+parameters and options is similar to that for the
+\fBpeer\fP directive in the configuration file.
+The following peer options can be set in the command: \fBport\fP, \fBminpoll\fP,
+\fBmaxpoll\fP, \fBpresend\fP, \fBmaxdelayratio\fP, \fBmaxdelay\fP, \fBkey\fP.
+.sp
+An example of using this command is shown below.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+add peer foo.example.net minpoll 6 maxpoll 10 key 25
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+\fBadd server\fP \fIaddress\fP [\fIoption\fP]...
+.RS 4
+The \fBadd server\fP command allows a new NTP server to be added whilst
+\fBchronyd\fP is running.
+.sp
+Following the words \fBadd server\fP, the syntax of the following parameters and
+options is similar to that for the \fBserver\fP
+directive in the configuration file.
+The following server options can be set in the command: \fBport\fP, \fBminpoll\fP,
+\fBmaxpoll\fP, \fBpresend\fP, \fBmaxdelayratio\fP, \fBmaxdelay\fP, \fBkey\fP.
+.sp
+An example of using this command is shown below:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+add server foo.example.net minpoll 6 maxpoll 10 key 25
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+\fBdelete\fP \fIaddress\fP
+.RS 4
+The \fBdelete\fP command allows an NTP server or peer to be removed
+from the current set of sources.
+.RE
+.sp
+\fBburst\fP \fIgood\fP/\fImax\fP [\fImask\fP/\fImasked\-address\fP], \fBburst\fP \fIgood\fP/\fImax\fP [\fImasked\-address\fP/\fImasked\-bits\fP], \fBburst\fP \fIgood\fP/\fImax\fP [\fIaddress\fP]
+.RS 4
+The \fBburst\fP command tells \fBchronyd\fP to make a set of measurements to each of
+its NTP sources over a short duration (rather than the usual periodic
+measurements that it makes). After such a burst, \fBchronyd\fP will revert to the
+previous state for each source. This might be either online, if the source was
+being periodically measured in the normal way, or offline, if the source had
+been indicated as being offline. (A source can be switched between the online
+and offline states with the \fBonline\fP and \fBoffline\fP
+commands.)
+.sp
+The \fImask\fP and \fImasked\-address\fP arguments are optional, in which case \fBchronyd\fP
+will initiate a burst for all of its currently defined sources.
+.sp
+The arguments have the following meaning and format:
+.sp
+\fIgood\fP
+.RS 4
+This defines the number of good measurements that \fBchronyd\fP will want to
+obtain from each source. A measurement is good if it passes certain tests,
+for example, the round trip time to the source must be acceptable. (This
+allows \fBchronyd\fP to reject measurements that are likely to be bogus.)
+.RE
+.sp
+\fImax\fP
+.RS 4
+This defines the maximum number of measurements that \fBchronyd\fP will attempt
+to make, even if the required number of good measurements has not been
+obtained.
+.RE
+.sp
+\fImask\fP
+.RS 4
+This is an IP address with which the IP address of each of \fBchronyd\fP\(cqs
+sources is to be masked.
+.RE
+.sp
+\fImasked\-address\fP
+.RS 4
+This is an IP address. If the masked IP address of a source matches this
+value then the burst command is applied to that source.
+.RE
+.sp
+\fImasked\-bits\fP
+.RS 4
+This can be used with \fImasked\-address\fP for CIDR notation, which is a shorter
+alternative to the form with mask.
+.RE
+.sp
+\fIaddress\fP
+.RS 4
+This is an IP address or a hostname. The burst command is applied only to
+that source.
+.RE
+.RE
+.sp
+
+.RS 4
+.sp
+If no \fImask\fP or \fImasked\-address\fP arguments are provided, every source will be
+matched.
+.sp
+An example of the two\-argument form of the command is:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+burst 2/10
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This will cause \fBchronyd\fP to attempt to get two good measurements from each
+source, stopping after two have been obtained, but in no event will it try more
+than ten probes to the source.
+.sp
+Examples of the four\-argument form of the command are:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+burst 2/10 255.255.0.0/1.2.0.0
+burst 2/10 2001:db8:789a::/48
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+In the first case, the two out of ten sampling will only be applied to sources
+whose IPv4 addresses are of the form \fI1.2.x.y\fP, where \fIx\fP and \fIy\fP are
+arbitrary. In the second case, the sampling will be applied to sources whose
+IPv6 addresses have first 48 bits equal to \fI2001:db8:789a\fP.
+.sp
+Example of the three\-argument form of the command is:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+burst 2/10 foo.example.net
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+\fBmaxdelay\fP \fIaddress\fP \fIdelay\fP
+.RS 4
+This allows the \fBmaxdelay\fP option for one of the sources to be modified, in the
+same way as specifying the \fBmaxdelay\fP option for the
+\fBserver\fP directive in the configuration file.
+.RE
+.sp
+\fBmaxdelaydevratio\fP \fIaddress\fP \fIratio\fP
+.RS 4
+This allows the \fBmaxdelaydevratio\fP option for one of the sources to be
+modified, in the same way as specifying the \fBmaxdelaydevratio\fP option for the
+\fBserver\fP directive in the configuration file.
+.RE
+.sp
+\fBmaxdelayratio\fP \fIaddress\fP \fIratio\fP
+.RS 4
+This allows the \fBmaxdelayratio\fP option for one of the sources to be modified,
+in the same way as specifying the \fBmaxdelayratio\fP option for the
+\fBserver\fP directive in the configuration file.
+.RE
+.sp
+\fBmaxpoll\fP \fIaddress\fP \fImaxpoll\fP
+.RS 4
+The \fBmaxpoll\fP command is used to modify the maximum polling interval for one of
+the current set of sources. It is equivalent to the \fBmaxpoll\fP option in the
+\fBserver\fP directive in the configuration file.
+.sp
+Note that the new maximum polling interval only takes effect after the next
+measurement has been made.
+.RE
+.sp
+\fBminpoll\fP \fIaddress\fP \fIminpoll\fP
+.RS 4
+The \fBminpoll\fP command is used to modify the minimum polling interval for one of
+the current set of sources. It is equivalent to the \fBminpoll\fP option in the
+\fBserver\fP directive in the configuration file.
+.sp
+Note that the new minimum polling interval only takes effect after the next
+measurement has been made.
+.RE
+.sp
+\fBminstratum\fP \fIaddress\fP \fIminstratum\fP
+.RS 4
+The \fBminstratum\fP command is used to modify the minimum stratum for one of the
+current set of sources. It is equivalent to the \fBminstratum\fP option in the
+\fBserver\fP directive in the configuration file.
+.RE
+.sp
+\fBoffline\fP [\fIaddress\fP], \fBoffline\fP [\fImasked\-address\fP/\fImasked\-bits\fP], \fBoffline\fP [\fImask\fP/\fImasked\-address\fP]
+.RS 4
+The \fBoffline\fP command is used to warn \fBchronyd\fP that the network connection to
+a particular host or hosts is about to be lost, e.g. on computers with
+intermittent connection to their time sources.
+.sp
+Another case where \fBoffline\fP could be used is where a computer serves time to a
+local group of computers, and has a permanent connection to true time servers
+outside the organisation. However, the external connection is heavily loaded at
+certain times of the day and the measurements obtained are less reliable at
+those times. In this case, it is probably most useful to determine the
+gain or loss rate during the quiet periods and let the whole network coast through
+the loaded periods. The \fBoffline\fP and \fBonline\fP commands can be used to achieve
+this.
+.sp
+There are four forms of the \fBoffline\fP command. The first form is a wildcard,
+meaning all sources. The second form allows an IP address mask and a masked
+address to be specified. The third form uses CIDR notation. The fourth form
+uses an IP address or a hostname. These forms are illustrated below.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+offline
+offline 255.255.255.0/1.2.3.0
+offline 2001:db8:789a::/48
+offline foo.example.net
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The second form means that the \fBoffline\fP command is to be applied to any source
+whose IPv4 address is in the \fI1.2.3\fP subnet. (The host\(cqs address is logically
+and\-ed with the mask, and if the result matches the \fImasked\-address\fP the host
+is processed.) The third form means that the command is to be applied to all
+sources whose IPv6 addresses have their first 48 bits equal to \fI2001:db8:789a\fP. The
+fourth form means that the command is to be applied only to that one source.
+.sp
+The wildcard form of the address is equivalent to:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+offline 0.0.0.0/0.0.0.0
+offline ::/0
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+\fBonline\fP [\fIaddress\fP], \fBonline\fP [\fImasked\-address\fP/\fImasked\-bits\fP], \fBonline\fP [\fImask\fP/\fImasked\-address\fP]
+.RS 4
+The \fBonline\fP command is opposite in function to the \fBoffline\fP
+command. It is used to advise \fBchronyd\fP that network connectivity to a
+particular source or sources has been restored.
+.sp
+The syntax is identical to that of the \fBoffline\fP command.
+.RE
+.sp
+\fBonoffline\fP
+.RS 4
+The \fBonoffline\fP command tells \fBchronyd\fP to switch all sources to the online or
+offline status according to the current network configuration. A source is
+considered online if it is possible to send requests to it, i.e. a route to the
+network is present.
+.RE
+.sp
+\fBpolltarget\fP \fIaddress\fP \fIpolltarget\fP
+.RS 4
+The \fBpolltarget\fP command is used to modify the poll target for one of the
+current set of sources. It is equivalent to the \fBpolltarget\fP option in the
+\fBserver\fP directive in the configuration file.
+.RE
+.sp
+\fBrefresh\fP
+.RS 4
+The \fBrefresh\fP command can be used to force \fBchronyd\fP to resolve the names of
+configured sources to IP addresses again, e.g. after suspending and resuming
+the machine in a different network.
+.sp
+Sources that stop responding will be replaced with newly resolved addresses
+automatically after 8 polling intervals, but this command can still be useful
+to replace them immediately and not wait until they are marked as unreachable.
+.RE
+.SS "Manual time input"
+.sp
+\fBmanual\fP \fBon\fP, \fBmanual\fP \fBoff\fP, \fBmanual\fP \fBdelete\fP \fIindex\fP, \fBmanual\fP \fBlist\fP, \fBmanual\fP \fBreset\fP
+.RS 4
+The manual command enables and disables use of the \fBsettime\fP
+command, and is used to modify the behaviour of the manual clock driver.
+.sp
+The \fBon\fP form of the command enables use of the \fBsettime\fP command.
+.sp
+The \fBoff\fP form of the command disables use of the \fBsettime\fP command.
+.sp
+The \fBlist\fP form of the command lists all the samples currently stored in
+\fBchronyd\fP. The output is illustrated below.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+210 n_samples = 1
+#    Date  Time(UTC)    Slewed   Original   Residual
+====================================================
+ 0 27Jan99 22:09:20       0.00       0.97       0.00
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The columns are as as follows:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 1." 4.2
+.\}
+The sample index (used for the \fBmanual delete\fP command).
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 2." 4.2
+.\}
+The date and time of the sample.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 3." 4.2
+.\}
+The system clock error when the timestamp was entered, adjusted to allow
+for changes made to the system clock since.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 4." 4.2
+.\}
+The system clock error when the timestamp was entered, as it originally was
+(without allowing for changes to the system clock since).
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 5." 4.2
+.\}
+The regression residual at this point, in seconds. This allows \(oqoutliers\(cq
+to be easily spotted, so that they can be deleted using the \fBmanual delete\fP
+command.
+.RE
+.RE
+.sp
+
+.RS 4
+.sp
+The \fBdelete\fP form of the command deletes a single sample. The parameter is the
+index of the sample, as shown in the first column of the output from \fBmanual
+list\fP. Following deletion of the data point, the current error and drift rate
+are re\-estimated from the remaining data points and the system clock trimmed if
+necessary. This option is intended to allow \(oqoutliers\(cq to be discarded, i.e.
+samples where the administrator realises they have entered a very poor
+timestamp.
+.sp
+The \fBreset\fP form of the command deletes all samples at once. The system clock
+is left running as it was before the command was entered.
+.RE
+.sp
+\fBsettime\fP \fItime\fP
+.RS 4
+The \fBsettime\fP command allows the current time to be entered manually, if this
+option has been configured into \fBchronyd\fP. (It can be configured either with
+the \fBmanual\fP directive in the configuration file,
+or with the \fBmanual\fP command of \fBchronyc\fP.)
+.sp
+It should be noted that the computer\(cqs sense of time will only be as accurate
+as the reference you use for providing this input (e.g. your watch), as well as
+how well you can time the press of the return key.
+.sp
+Providing your computer\(cqs time zone is set up properly, you will be able to
+enter a local time (rather than UTC).
+.sp
+The response to a successful \fBsettime\fP command indicates the amount that the
+computer\(cqs clock was wrong. It should be apparent from this if you have entered
+the time wrongly, e.g. with the wrong time zone.
+.sp
+The rate of drift of the system clock is estimated by a regression process
+using the entered measurement and all previous measurements entered during the
+present run of \fBchronyd\fP. However, the entered measurement is used for
+adjusting the current clock offset (rather than the estimated intercept from
+the regression, which is ignored). Contrast what happens with the
+\fBmanual delete\fP command, where the intercept is used to set the
+current offset (since there is no measurement that has just been entered in
+that case).
+.sp
+The time is parsed by the public domain \fIgetdate\fP algorithm. Consequently, you
+can only specify time to the nearest second.
+.sp
+Examples of inputs that are valid are shown below:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+settime 16:30
+settime 16:30:05
+settime Nov 21, 2015 16:30:05
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+For a full description of getdate, see the getdate documentation
+(bundled, for example, with the source for GNU tar).
+.RE
+.SS "NTP access"
+.sp
+\fBaccheck\fP \fIaddress\fP
+.RS 4
+This command allows you to check whether client NTP access is allowed from a
+particular host.
+.sp
+Examples of use, showing a named host and a numeric IP address, are as follows:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+accheck foo.example.net
+accheck 1.2.3.4
+accheck 2001:db8::1
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This command can be used to examine the effect of a series of \fBallow\fP, \fBallow
+all\fP, \fBdeny\fP, and \fBdeny all\fP commands specified either via \fBchronyc\fP, or in
+\fBchronyd\fP\(cqs configuration file.
+.RE
+.sp
+\fBclients\fP
+.RS 4
+This command shows a list of clients that have accessed the server, through
+either the NTP or command ports. It does not include accesses over
+the Unix domain command socket. There are no arguments.
+.sp
+An example of the output is:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Hostname                      NTP   Drop Int IntL Last     Cmd   Drop Int  Last
+===============================================================================
+localhost                       2      0   2   \-   133      15      0  \-1     7
+foo.example.net                12      0   6   \-    23       0      0   \-     \-
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Each row shows the data for a single host. Only hosts that have passed the host
+access checks (set with the \fBallow\fP, \fBdeny\fP,
+\fBcmdallow\fP and \fBcmddeny\fP commands or configuration
+file directives) are logged. The intervals are displayed as a power of 2 in
+seconds.
+.sp
+The columns are as follows:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 1." 4.2
+.\}
+The hostname of the client.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 2." 4.2
+.\}
+The number of NTP packets received from the client.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 3." 4.2
+.\}
+The number of NTP packets dropped to limit the response rate.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 4." 4.2
+.\}
+The average interval between NTP packets.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 5." 4.2
+.\}
+The average interval between NTP packets after limiting the response rate.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 6.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 6." 4.2
+.\}
+Time since the last NTP packet was received
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 7.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 7." 4.2
+.\}
+The number of command packets received from the client.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 8.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 8." 4.2
+.\}
+The number of command packets dropped to limit the response rate.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 9.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 9." 4.2
+.\}
+The average interval between command packets.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 10.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 10." 4.2
+.\}
+Time since the last command packet was received.
+.RE
+.RE
+.sp
+\fBserverstats\fP
+.RS 4
+The \fBserverstats\fP command displays how many valid NTP and command requests
+\fBchronyd\fP as a server received from clients, how many of them were dropped to
+limit the response rate as configured by the
+\fBratelimit\fP and
+\fBcmdratelimit\fP directives, and how many
+client log records were dropped due to the memory limit configured by the
+\fBclientloglimit\fP directive. An example of
+the output is shown below.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+NTP packets received       : 1598
+NTP packets dropped        : 8
+Command packets received   : 19
+Command packets dropped    : 0
+Client log records dropped : 0
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+\fBallow\fP [\fBall\fP] [\fIsubnet\fP]
+.RS 4
+The effect of the allow command is identical to the
+\fBallow\fP directive in the configuration file.
+.sp
+The syntax is illustrated in the following examples:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+allow foo.example.net
+allow all 1.2
+allow 3.4.5
+allow 6.7.8/22
+allow 6.7.8.9/22
+allow 2001:db8:789a::/48
+allow 0/0
+allow ::/0
+allow
+allow all
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+\fBdeny\fP [\fBall\fP] [\fIsubnet\fP]
+.RS 4
+The effect of the allow command is identical to the
+\fBdeny\fP directive in the configuration file.
+.sp
+The syntax is illustrated in the following examples:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+deny foo.example.net
+deny all 1.2
+deny 3.4.5
+deny 6.7.8/22
+deny 6.7.8.9/22
+deny 2001:db8:789a::/48
+deny 0/0
+deny ::/0
+deny
+deny all
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+\fBlocal\fP [\fIoption\fP]..., \fBlocal\fP \fBoff\fP
+.RS 4
+The \fBlocal\fP command allows \fBchronyd\fP to be told that it is to appear as a
+reference source, even if it is not itself properly synchronised to an external
+source. (This can be used on isolated networks, to allow one computer to be a
+master time server with the other computers slaving to it.)
+.sp
+The first form enables the local reference mode on the host. The syntax is
+identical to the \fBlocal\fP directive in the
+configuration file.
+.sp
+The second form disables the local reference mode.
+.RE
+.sp
+\fBsmoothing\fP
+.RS 4
+The \fBsmoothing\fP command displays the current state of the NTP server time
+smoothing, which can be enabled with the
+\fBsmoothtime\fP directive. An example of the
+output is shown below.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Active         : Yes
+Offset         : +1.000268817 seconds
+Frequency      : \-0.142859 ppm
+Wander         : \-0.010000 ppm per second
+Last update    : 17.8 seconds ago
+Remaining time : 19988.4 seconds
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The fields are explained as follows:
+.sp
+\fBActive\fP
+.RS 4
+This shows if the server time smoothing is currently active. Possible values
+are \fIYes\fP and \fINo\fP. If the \fBleaponly\fP option is included in the \fBsmoothtime\fP
+directive, \fI(leap second only)\fP will be shown on the line.
+.RE
+.sp
+\fBOffset\fP
+.RS 4
+This is the current offset applied to the time sent to NTP clients. Positive
+value means the clients are getting time that\(cqs ahead of true time.
+.RE
+.sp
+\fBFrequency\fP
+.RS 4
+The current frequency offset of the served time. Negative value means the
+time observed by clients is running slower than true time.
+.RE
+.sp
+\fBWander\fP
+.RS 4
+The current frequency wander of the served time. Negative value means the
+time observed by clients is slowing down.
+.RE
+.sp
+\fBLast update\fP
+.RS 4
+This field shows how long ago the time smoothing process was updated, e.g.
+\fBchronyd\fP accumulated a new measurement.
+.RE
+.sp
+\fBRemaining time\fP
+.RS 4
+The time it would take for the smoothing process to get to zero offset and
+frequency if there were no more updates.
+.RE
+.RE
+.sp
+\fBsmoothtime\fP \fBactivate\fP, \fBsmoothtime\fP \fBreset\fP
+.RS 4
+The \fBsmoothtime\fP command can be used to activate or reset the server time
+smoothing process if it is configured with the
+\fBsmoothtime\fP directive.
+.RE
+.SS "Monitoring access"
+.sp
+\fBcmdaccheck\fP \fIaddress\fP
+.RS 4
+This command is similar to the \fBaccheck\fP command, except that it is
+used to check whether monitoring access is permitted from a named host.
+.sp
+Examples of use are as follows:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+cmdaccheck foo.example.net
+cmdaccheck 1.2.3.4
+cmdaccheck 2001:db8::1
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+\fBcmdallow\fP [\fBall\fP] [\fIsubnet\fP]
+.RS 4
+This is similar to the \fBallow\fP command, except that it is used to
+allow particular hosts or subnets to use \fBchronyc\fP to monitor with \fBchronyd\fP on
+the current host.
+.RE
+.sp
+\fBcmddeny\fP [\fBall\fP] [\fIsubnet\fP]
+.RS 4
+This is similar to the \fBdeny\fP command, except that it is used to allow
+particular hosts or subnets to use \fBchronyc\fP to monitor \fBchronyd\fP on the
+current host.
+.RE
+.SS "Real\-time clock (RTC)"
+.sp
+\fBrtcdata\fP
+.RS 4
+The \fBrtcdata\fP command displays the current RTC parameters.
+.sp
+An example output is shown below.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+RTC ref time (GMT) : Sat May 30 07:25:56 2015
+Number of samples  : 10
+Number of runs     : 5
+Sample span period :  549
+RTC is fast by     :    \-1.632736 seconds
+RTC gains time at  :  \-107.623 ppm
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The fields have the following meaning:
+.sp
+\fBRTC ref time (GMT)\fP
+.RS 4
+This is the RTC reading the last time its error was measured.
+.RE
+.sp
+\fBNumber of samples\fP
+.RS 4
+This is the number of previous measurements being used to determine the RTC
+gain or loss rate.
+.RE
+.sp
+\fBNumber of runs\fP
+.RS 4
+This is the number of runs of residuals of the same sign following the
+regression fit for (RTC error) versus (RTC time). A value which is small
+indicates that the measurements are not well approximated by a linear model,
+and that the algorithm will tend to delete the older measurements to improve
+the fit.
+.RE
+.sp
+\fBSample span period\fP
+.RS 4
+This is the period that the measurements span (from the oldest to the
+newest). Without a unit the value is in seconds; suffixes \fIm\fP for minutes,
+\fIh\fP for hours, \fId\fP for days or \fIy\fP for years can be used.
+.RE
+.sp
+\fBRTC is fast by\fP
+.RS 4
+This is the estimate of how many seconds fast the RTC when it thought
+the time was at the reference time (above). If this value is large, you
+might (or might not) want to use the \fBtrimrtc\fP command to bring the
+RTC into line with the system clock. (Note, a large error will not affect
+\fBchronyd\fP\(cqs operation, unless it becomes so big as to start causing rounding
+errors.)
+.RE
+.sp
+\fBRTC gains time at\fP
+.RS 4
+This is the amount of time gained (positive) or lost (negative) by the real
+time clock for each second that it ticks. It is measured in parts per
+million. So if the value shown was +1, suppose the RTC was exactly right when
+it crosses a particular second boundary. Then it would be 1 microsecond fast
+when it crosses its next second boundary.
+.RE
+.RE
+.sp
+\fBtrimrtc\fP
+.RS 4
+The \fBtrimrtc\fP command is used to correct the system\(cqs real\-time clock (RTC) to
+the main system clock. It has no effect if the error between the two clocks is
+currently estimated at less than a second.
+.sp
+The command takes no arguments. It performs the following steps (if the RTC is
+more than 1 second away from the system clock):
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 1." 4.2
+.\}
+Remember the currently estimated gain or loss rate of the RTC and flush the
+previous measurements.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 2." 4.2
+.\}
+Step the real\-time clock to bring it within a second of the system clock.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 3." 4.2
+.\}
+Make several measurements to accurately determine the new offset between
+the RTC and the system clock (i.e. the remaining fraction of a second
+error).
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP " 4." 4.2
+.\}
+Save the RTC parameters to the RTC file (specified with the
+\fBrtcfile\fP directive in the configuration file).
+.RE
+.RE
+.sp
+
+.RS 4
+.sp
+The last step is done as a precaution against the computer suffering a power
+failure before either the daemon exits or the \fBwritertc\fP command
+is issued.
+.sp
+\fBchronyd\fP will still work perfectly well both whilst operating and across
+machine reboots even if the \fBtrimrtc\fP command is never used (and the RTC is
+allowed to drift away from true time). The \fBtrimrtc\fP command is provided as a
+method by which it can be corrected, in a manner compatible with \fBchronyd\fP
+using it to maintain accurate time across machine reboots.
+.sp
+The \fBtrimrtc\fP command can be executed automatically by \fBchronyd\fP with the
+\fBrtcautotrim\fP directive in the configuration
+file.
+.RE
+.sp
+\fBwritertc\fP
+.RS 4
+The \fBwritertc\fP command writes the currently estimated error and gain or loss rate
+parameters for the RTC to the RTC file (specified with the
+\fBrtcfile\fP directive). This information is also
+written automatically when \fBchronyd\fP is killed (by the SIGHUP, SIGINT, SIGQUIT
+or SIGTERM signals) or when the \fBtrimrtc\fP command is issued.
+.RE
+.SS "Other daemon commands"
+.sp
+\fBcyclelogs\fP
+.RS 4
+The \fBcyclelogs\fP command causes all of \fBchronyd\fP\(cqs open log files to be closed
+and re\-opened. This allows them to be renamed so that they can be periodically
+purged. An example of how to do this is shown below.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# mv /var/log/chrony/measurements.log /var/log/chrony/measurements1.log
+# chronyc cyclelogs
+# ls \-l /var/log/chrony
+\-rw\-r\-\-r\-\-   1 root     root            0 Jun  8 18:17 measurements.log
+\-rw\-r\-\-r\-\-   1 root     root        12345 Jun  8 18:17 measurements1.log
+# rm \-f measurements1.log
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+\fBdump\fP
+.RS 4
+The \fBdump\fP command causes \fBchronyd\fP to write its current history of
+measurements for each of its sources to dump files in the directory specified
+in the configuration file by the \fBdumpdir\fP
+directive. Note that \fBchronyd\fP does this automatically when it exits. This
+command is mainly useful for inspection of the history whilst \fBchronyd\fP is
+running.
+.RE
+.sp
+\fBrekey\fP
+.RS 4
+The \fBrekey\fP command causes \fBchronyd\fP to re\-read the key file specified in the
+configuration file by the \fBkeyfile\fP directive.
+.RE
+.sp
+\fBshutdown\fP
+.RS 4
+The \fBshutdown\fP command causes \fBchronyd\fP to exit. This is equivalent to sending
+the process the SIGTERM signal.
+.RE
+.SS "Client commands"
+.sp
+\fBdns\fP \fIoption\fP
+.RS 4
+The \fBdns\fP command configures how hostnames and IP addresses are resolved in
+\fBchronyc\fP. IP addresses can be resolved to hostnames when printing results of
+\fBsources\fP, \fBsourcestats\fP, \fBtracking\fP
+and \fBclients\fP commands. Hostnames are resolved in commands that
+take an address as argument.
+.sp
+There are five options:
+.sp
+\fBdns \-n\fP
+.RS 4
+Disables resolving IP addresses to hostnames. Raw IP addresses will be
+displayed.
+.RE
+.sp
+\fBdns +n\fP
+.RS 4
+Enables resolving IP addresses to hostnames. This is the default unless
+\fBchronyc\fP was started with \fB\-n\fP option.
+.RE
+.sp
+\fBdns \-4\fP
+.RS 4
+Resolves hostnames only to IPv4 addresses.
+.RE
+.sp
+\fBdns \-6\fP
+.RS 4
+Resolves hostnames only to IPv6 addresses.
+.RE
+.sp
+\fBdns \-46\fP
+.RS 4
+Resolves hostnames to both address families. This is the default behaviour
+unless \fBchronyc\fP was started with the \fB\-4\fP or \fB\-6\fP option.
+.RE
+.RE
+.sp
+\fBtimeout\fP \fItimeout\fP
+.RS 4
+The \fBtimeout\fP command sets the initial timeout for \fBchronyc\fP requests in
+milliseconds. If no response is received from \fBchronyd\fP, the timeout is doubled
+and the request is resent. The maximum number of retries is configured with the
+\fBretries\fP command.
+.sp
+By default, the timeout is 1000 milliseconds.
+.RE
+.sp
+\fBretries\fP \fIretries\fP
+.RS 4
+The \fBretries\fP command sets the maximum number of retries for \fBchronyc\fP requests
+before giving up. The response timeout is controlled by the
+\fBtimeout\fP command.
+.sp
+The default is 2.
+.RE
+.sp
+\fBkeygen\fP [\fIid\fP [\fItype\fP [\fIbits\fP]]]
+.RS 4
+The \fBkeygen\fP command generates a key that can be added to the
+key file (specified with the \fBkeyfile\fP directive)
+to allow NTP authentication between server and client, or peers. The key is
+generated from the \fI/dev/urandom\fP device and it is printed to standard output.
+.sp
+The command has three optional arguments. The first argument is the key number
+(by default 1), which will be specified with the \fBkey\fP option of the \fBserver\fP
+or \fBpeer\fP directives in the configuration file. The second argument is the hash
+function (by default SHA1 or MD5 if SHA1 is not available) and the third
+argument is the number of bits the key should have, between 80 and 4096 bits
+(by default 160 bits).
+.sp
+An example is:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keygen 73 SHA1 256
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+which generates a 256\-bit SHA1 key with number 73. The printed line should
+then be securely transferred and added to the key files on both server and
+client, or peers.
+.RE
+.sp
+\fBexit\fP, \fBquit\fP
+.RS 4
+The \fBexit\fP and \fBquit\fP commands exit from \fBchronyc\fP and return the user to the shell.
+.RE
+.sp
+\fBhelp\fP
+.RS 4
+The \fBhelp\fP command displays a summary of the commands and their arguments.
+.RE
+.SH "SEE ALSO"
+.sp
+\fBchrony.conf(5)\fP, \fBchronyd(8)\fP
+.SH "BUGS"
+.sp
+For instructions on how to report bugs, please visit
+.URL "https://chrony.tuxfamily.org/" "" "."
+.SH "AUTHORS"
+.sp
+chrony was written by Richard Curnow, Miroslav Lichvar, and others.

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "orphan option"
+
+check_config_h 'FEAT_CMDMON 1' || test_skip
+
+server_strata=3
+server_conf="local stratum 5 orphan
+server 192.168.123.1
+server 192.168.123.2
+server 192.168.123.3"
+max_sync_time=500
+client_start=140
+chronyc_start=300
+chronyc_conf="tracking"
+time_rms_limit=5e-4
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+check_chronyc_output "^.*Stratum *: 7.*$" || test_fail
+
+test_pass

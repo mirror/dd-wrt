@@ -1,0 +1,23 @@
+#!/bin/bash
+
+. ./test.common
+test_start "driftfile directive"
+
+servers=0
+time_offset=0.0
+wander=0.0
+limit=10
+freq_max_limit=1e-9
+min_sync_time=1
+max_sync_time=1
+client_conf="driftfile tmp/drift"
+
+for freq_offset in -5e-2 -5e-4 -5e-6 5e-6 5e-4 5e-2; do
+	awk "BEGIN {printf \"%.9e 1\", 1e6 - 1 / (1 + $freq_offset) * 1e6}" > tmp/drift
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_packet_interval || test_fail
+	check_sync || test_fail
+done
+
+test_pass

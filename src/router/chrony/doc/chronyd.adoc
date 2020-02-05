@@ -1,0 +1,186 @@
+// This file is part of chrony
+//
+// Copyright (C) Richard P. Curnow  1997-2003
+// Copyright (C) Miroslav Lichvar  2009-2017
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of version 2 of the GNU General Public License as
+// published by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+= chronyd(8)
+:doctype: manpage
+:man manual: System Administration
+:man source: chrony @CHRONY_VERSION@
+
+== NAME
+
+chronyd - chrony daemon
+
+== SYNOPSIS
+
+*chronyd* [_OPTION_]... [_DIRECTIVE_]...
+
+== DESCRIPTION
+
+*chronyd* is a daemon for synchronisation of the system clock. It can
+synchronise the clock with NTP servers, reference clocks (e.g. a GPS receiver),
+and manual input using wristwatch and keyboard via *chronyc*. It can also
+operate as an NTPv4 (RFC 5905) server and peer to provide a time service to
+other computers in the network.
+
+If no configuration directives are specified on the command line, *chronyd*
+will read them from a configuration file. The compiled-in default location of
+the file is _@SYSCONFDIR@/chrony.conf_.
+
+Information messages and warnings will be logged to syslog.
+
+== OPTIONS
+
+*-4*::
+With this option hostnames will be resolved only to IPv4 addresses and only
+IPv4 sockets will be created.
+
+*-6*::
+With this option hostnames will be resolved only to IPv6 addresses and only
+IPv6 sockets will be created.
+
+*-f* _file_::
+This option can be used to specify an alternate location for the configuration
+file (default _@SYSCONFDIR@/chrony.conf_).
+
+*-n*::
+When run in this mode, the program will not detach itself from the terminal.
+
+*-d*::
+When run in this mode, the program will not detach itself from the terminal,
+and all messages will be written to the terminal instead of syslog. When
+*chronyd* was compiled with debugging support, this option can be used twice to
+print also debugging messages.
+
+*-l* _file_::
+This option specifies a file which should be used for logging instead of syslog
+or terminal.
+
+*-q*::
+When run in this mode, *chronyd* will set the system clock once and exit. It
+will not detach from the terminal.
+
+*-Q*::
+This option is similar to the *-q* option, except it only prints the offset
+without making any corrections of the clock and it allows *chronyd* to be
+started without root privileges.
+
+*-r*::
+This option will try to reload and then delete files containing sample
+histories for each of the servers and reference clocks being used. The
+files are expected to be in the directory specified by the
+<<chrony.conf.adoc#dumpdir,*dumpdir*>>
+directive in the configuration file. This option is useful if you want to stop
+and restart *chronyd* briefly for any reason, e.g. to install a new version.
+However, it should be used only on systems where the kernel can maintain clock
+compensation whilst not under *chronyd*'s control (i.e. Linux, FreeBSD, NetBSD,
+Solaris, and macOS 10.13 or later).
+
+*-R*::
+When this option is used, the <<chrony.conf.adoc#initstepslew,*initstepslew*>>
+directive and the <<chrony.conf.adoc#makestep,*makestep*>> directive used with
+a positive limit will be ignored. This option is useful when restarting
+*chronyd* and can be used in conjunction with the *-r* option.
+
+*-s*::
+This option will set the system clock from the computer's real-time clock (RTC)
+or to the last modification time of the file specified by the
+<<chrony.conf.adoc#driftfile,*driftfile*>> directive. Real-time clocks are
+supported only on Linux.
++
+If used in conjunction with the *-r* flag, *chronyd* will attempt to preserve
+the old samples after setting the system clock from the RTC. This can be used
+to allow *chronyd* to perform long term averaging of the gain or loss rate
+across system reboots, and is useful for systems with intermittent access to
+network that are shut down when not in use. For this to work well, it relies
+on *chronyd* having been able to determine accurate statistics for the
+difference between the RTC and system clock last time the computer was on.
++
+If the last modification time of the drift file is later than both the current
+time and the RTC time, the system time will be set to it to restore the time
+when *chronyd* was previously stopped. This is useful on computers that have no
+RTC or the RTC is broken (e.g. it has no battery).
+
+*-t* _timeout_::
+This option sets a timeout (in seconds) after which *chronyd* will exit. If the
+clock is not synchronised, it will exit with a non-zero status. This is useful
+with the *-q* or *-Q* option to shorten the maximum time waiting for
+measurements, or with the *-r* option to limit the time when *chronyd* is
+running, but still allow it to adjust the frequency of the system clock.
+
+*-u* _user_::
+This option sets the name of the system user to which *chronyd* will switch
+after start in order to drop root privileges. It overrides the
+<<chrony.conf.adoc#user,*user*>> directive (default _@DEFAULT_USER@_).
++
+On Linux, *chronyd* needs to be compiled with support for the *libcap* library.
+On macOS, FreeBSD, NetBSD and Solaris *chronyd* forks into two processes.
+The child process retains root privileges, but can only perform a very limited
+range of privileged system calls on behalf of the parent.
+
+*-F* _level_::
+This option configures a system call filter when *chronyd* is compiled with
+support for the Linux secure computing (seccomp) facility. In level 1 the
+process is killed when a forbidden system call is made, in level -1 the SIGSYS
+signal is thrown instead and in level 0 the filter is disabled (default 0).
++
+It's recommended to enable the filter only when it's known to work on the
+version of the system where *chrony* is installed as the filter needs to allow
+also system calls made from libraries that *chronyd* is using (e.g. libc) and
+different versions or implementations of the libraries may make different
+system calls. If the filter is missing some system call, *chronyd* could be
+killed even in normal operation.
+
+*-P* _priority_::
+On Linux, this option will select the SCHED_FIFO real-time scheduler at the
+specified priority (which must be between 0 and 100). On macOS, this option
+must have either a value of 0 (the default) to disable the thread time
+constraint policy or 1 for the policy to be enabled. Other systems do not
+support this option.
+
+*-m*::
+This option will lock *chronyd* into RAM so that it will never be paged out.
+This mode is only supported on Linux.
+
+*-x*::
+This option disables the control of the system clock. *chronyd* will not try to
+make any adjustments of the clock. It will assume the clock is free running and
+still track its offset and frequency relative to the estimated true time. This
+option allows *chronyd* to run without the capability to adjust or set the
+system clock (e.g. in some containers) in order to operate as an NTP server. It
+is not recommended to run *chronyd* (with or without *-x*) when another process
+is controlling the system clock.
+
+*-v*::
+With this option *chronyd* will print version number to the terminal and exit.
+
+== FILES
+
+_@SYSCONFDIR@/chrony.conf_
+
+== SEE ALSO
+
+<<chronyc.adoc#,*chronyc(1)*>>, <<chrony.conf.adoc#,*chrony.conf(5)*>>
+
+== BUGS
+
+For instructions on how to report bugs, please visit
+https://chrony.tuxfamily.org/.
+
+== AUTHORS
+
+chrony was written by Richard Curnow, Miroslav Lichvar, and others.

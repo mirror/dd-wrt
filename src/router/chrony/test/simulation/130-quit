@@ -1,0 +1,23 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "-q/-Q option"
+
+wander=0.0
+freq_offset=0.0
+min_sync_time=5
+max_sync_time=10
+client_chronyd_options="-q"
+client_server_options="iburst"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+client_chronyd_options="-Q"
+run_test || test_fail
+check_sync && test_fail
+
+test_pass

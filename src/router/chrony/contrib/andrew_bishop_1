@@ -1,0 +1,114 @@
+From amb@gedanken.demon.co.uk Tue Aug 17 22:14:00 1999
+Date: Fri, 6 Aug 1999 19:00:24 +0100
+From: Andrew M. Bishop <amb@gedanken.demon.co.uk>
+To: richard@rrbcurnow.freeserve.co.uk
+Subject: Re: Chrony and laptop configuration
+
+Hi,
+
+Attached is the apmd_proxy script from the apmd-3.0beta9 distribution.
+
+The changes that I would make are the following:
+
+Replace the update_clock function (line 122) with 
+
+update_clock () {
+
+chronyd -f /etc/chrony.conf
+
+}
+
+Around line 171 (in the suspend actions section) I would kill chronyd.
+
+begin 644 apmd_proxy.gz
+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
+>Z]AB9"M2/=L.+(S7D<0S_V\81H;_`M>*^#$A)0``
+`
+end
+
+-- 
+Andrew.
+----------------------------------------------------------------------
+Andrew M. Bishop                             amb@gedanken.demon.co.uk
+                                      http://www.gedanken.demon.co.uk/
+

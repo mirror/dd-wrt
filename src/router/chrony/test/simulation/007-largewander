@@ -1,0 +1,20 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "large wander"
+
+wander=1e-7
+
+time_max_limit=5e-3
+freq_max_limit=5e-3
+time_rms_limit=1e-3
+freq_rms_limit=1e-4
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+test_pass

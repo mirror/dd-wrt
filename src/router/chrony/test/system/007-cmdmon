@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+test_start "chronyc commands"
+
+start_chronyd || test_fail
+
+for command in \
+	"accheck 1.2.3.4" \
+	"delete $server" \
+	"add server $server" \
+	"deny" \
+	"allow" \
+	"burst 1/1" \
+	"clients" \
+	"cmdallow 1.2.3.4" \
+	"cmdaccheck 1.2.3.4" \
+	"cmddeny 1.2.3.4" \
+	"cyclelogs" \
+	"dfreq 1.0e-3" \
+	"doffset -0.1" \
+	"dump" \
+	"local off" \
+	"local" \
+	"manual on" \
+	"settime now" \
+	"manual delete 0" \
+	"settime now" \
+	"manual reset" \
+	"manual off" \
+	"maxdelay $server 1e-2" \
+	"maxdelaydevratio $server 5.0" \
+	"maxdelayratio $server 3.0" \
+	"maxpoll $server 5" \
+	"maxupdateskew $server 10.0" \
+	"minpoll $server 3" \
+	"minstratum $server 1" \
+	"ntpdata $server" \
+	"offline" \
+	"online" \
+	"onoffline" \
+	"polltarget $server 10" \
+	"refresh" \
+	"rekey" \
+	"reselect" \
+	"reselectdist 1e-3" \
+	"serverstats" \
+	"smoothtime reset" \
+	"smoothtime activate" \
+	"shutdown" \
+; do
+	run_chronyc "$command" || test_fail
+done
+
+stop_chronyd || test_fail
+check_chronyd_messages || test_fail
+start_chronyd || test_fail
+
+run_chronyc "makestep" && test_fail
+check_chronyc_output "500 Failure" || test_fail
+run_chronyc "trimrtc" && test_fail
+check_chronyc_output "513 RTC driver not running" || test_fail
+run_chronyc "writertc" && test_fail
+check_chronyc_output "513 RTC driver not running" || test_fail
+
+stop_chronyd || test_fail
+
+test_pass

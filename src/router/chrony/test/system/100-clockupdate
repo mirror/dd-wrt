@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+test_start "update of system clock"
+
+clock_control=1
+minimal_config=1
+
+start_chronyd || test_fail
+run_chronyc "dfreq 1e-3" || test_fail
+check_chronyc_output "200 OK" || test_fail
+
+before=$(date '+%s')
+run_chronyc "doffset -1.0" || test_fail
+check_chronyc_output "200 OK" || test_fail
+run_chronyc "makestep" || test_fail
+check_chronyc_output "200 OK" || test_fail
+after=$(date '+%s')
+
+test_message 1 0 "checking system clock"
+[ "$before" -lt "$after" ] && test_ok || test_bad || test_fail
+
+run_chronyc "doffset 1.0" || test_fail
+run_chronyc "makestep" || test_fail
+stop_chronyd || test_fail
+check_chronyd_messages || test_fail
+check_chronyd_message_count "System clock was stepped by" 2 2 || test_fail
+
+test_pass

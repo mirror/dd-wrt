@@ -1,0 +1,25 @@
+#!/bin/bash
+
+. ./test.common
+test_start "presend option"
+
+min_sync_time=136
+max_sync_time=260
+client_server_options="presend 6 maxdelay 16"
+client_conf="maxdistance 10"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+base_delay=5
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+test_pass

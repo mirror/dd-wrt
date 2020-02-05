@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# Try to compile chrony in various combinations of disabled features
+
+cd ../..
+
+export CFLAGS="-O2 -Werror -Wpointer-arith -Wformat-signedness -Wno-unknown-warning-option -D_FORTIFY_SOURCE=2"
+
+for opts in \
+	"--enable-debug" \
+	"--enable-ntp-signd" \
+	"--enable-scfilter" \
+	"--disable-asyncdns" \
+	"--disable-ipv6" \
+	"--disable-privdrop" \
+	"--disable-readline" \
+	"--disable-rtc" \
+	"--disable-sechash" \
+	"--disable-cmdmon" \
+	"--disable-ntp" \
+	"--disable-refclock" \
+	"--disable-timestamping" \
+	"--disable-timestamping --disable-ntp" \
+	"--disable-cmdmon --disable-ntp" \
+	"--disable-cmdmon --disable-refclock" \
+	"--disable-cmdmon --disable-ntp --disable-refclock"
+do
+	./configure $opts || exit 1
+	make "$@" || exit 1
+done

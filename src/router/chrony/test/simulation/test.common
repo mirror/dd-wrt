@@ -1,0 +1,502 @@
+# Copyright (C) 2013-2014  Miroslav Lichvar <mlichvar@redhat.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+export LC_ALL=C
+export PATH=../../:$PATH
+export CLKNETSIM_PATH=${CLKNETSIM_PATH:-clknetsim}
+
+if [ ! -x $CLKNETSIM_PATH/clknetsim ]; then
+	echo "SKIP (clknetsim not found)"
+	exit 9
+fi
+
+. $CLKNETSIM_PATH/clknetsim.bash
+
+# Default test testings
+
+default_limit=10000
+default_time_offset=1e-1
+default_freq_offset=1e-4
+default_base_delay=1e-4
+default_jitter=1e-4
+default_jitter_asymmetry=0.0
+default_wander=1e-9
+default_refclock_jitter=""
+default_refclock_offset=0.0
+
+default_update_interval=0
+default_shift_pll=2
+
+default_server_strata=1
+default_servers=1
+default_clients=1
+default_peers=0
+default_falsetickers=0
+default_server_start=0.0
+default_client_start=0.0
+default_chronyc_start=1000.0
+default_server_step=""
+default_client_step=""
+
+default_client_server_conf=""
+default_server_server_options=""
+default_client_server_options=""
+default_server_peer_options=""
+default_server_lpeer_options=""
+default_server_rpeer_options=""
+default_client_peer_options=""
+default_client_lpeer_options=""
+default_client_rpeer_options=""
+default_server_conf=""
+default_client_conf=""
+default_chronyc_conf=""
+default_server_chronyd_options=""
+default_client_chronyd_options=""
+
+default_time_max_limit=1e-3
+default_freq_max_limit=5e-4
+default_time_rms_limit=3e-4
+default_freq_rms_limit=1e-5
+default_min_sync_time=120
+default_max_sync_time=210
+
+default_client_min_mean_out_interval=0.0
+default_client_max_min_out_interval=inf
+
+# Initialize test settings from their defaults
+for defoptname in ${!default_*}; do
+	optname=${defoptname#default_}
+	[ -z "${!optname}" ] && declare "$optname"="${!defoptname}"
+done
+
+test_start() {
+	rm -f tmp/*
+	echo "Testing $@:"
+
+	check_config_h 'FEAT_NTP 1' || test_skip
+}
+
+test_pass() {
+	echo "PASS"
+	exit 0
+}
+
+test_fail() {
+	echo "FAIL"
+	exit 1
+}
+
+test_skip() {
+	echo "SKIP"
+	exit 9
+}
+
+test_ok() {
+	pad_line
+	echo -e "\tOK"
+	return 0
+}
+
+test_bad() {
+	pad_line
+	echo -e "\tBAD"
+	return 1
+}
+
+test_error() {
+	pad_line
+	echo -e "\tERROR"
+	return 1
+}
+
+msg_length=0
+pad_line() {
+	local line_length=56
+	[ $msg_length -lt $line_length ] && \
+		printf "%$[$line_length - $msg_length]s" ""
+	msg_length=0
+}
+
+# Print aligned message
+test_message() {
+	local level=$1 eol=$2
+	shift 2
+	local msg="$*"
+
+	while [ $level -gt 0 ]; do
+		echo -n "  "
+		level=$[$level - 1]
+		msg_length=$[$msg_length + 2]
+	done
+	echo -n "$msg"
+
+	msg_length=$[$msg_length + ${#msg}]
+	if [ $eol -ne 0 ]; then
+		echo
+		msg_length=0
+	fi
+}
+
+get_wander_expr() {
+	local scaled_wander
+
+	scaled_wander=$(awk "BEGIN {print $wander / \
+		sqrt($update_interval < 0 ? 2^-($update_interval) : 1)}")
+
+	echo "(+ $freq_offset (sum (* $scaled_wander (normal))))"
+}
+
+
+get_delay_expr() {
+	local direction=$1 asym
+
+	if [ $jitter_asymmetry == "0.0" ]; then
+		asym=""
+	elif [ $direction = "up" ]; then
+		asym=$(awk "BEGIN {print 1 - 2 * $jitter_asymmetry}")
+	elif [ $direction = "down" ]; then
+		asym=$(awk "BEGIN {print 1 + 2 * $jitter_asymmetry}")
+	fi
+	echo "(+ $base_delay (* $asym $jitter (exponential)))"
+}
+
+get_refclock_expr() {
+	echo "(+ $refclock_offset (* $refclock_jitter (normal)))"
+}
+
+get_chronyd_nodes() {
+	echo $[$servers * $server_strata + $clients]
+}
+
+get_chronyd_conf() {
+	local i stratum=$1 peer=$2
+
+	if [ $stratum -eq 1 ]; then
+		echo "local stratum 1"
+		echo "$server_conf"
+	elif [ $stratum -le $server_strata ]; then
+		for i in $(seq 1 $servers); do
+			echo "server 192.168.123.$[$servers * ($stratum - 2) + $i] $server_server_options"
+		done
+		for i in $(seq 1 $peers); do
+			[ $i -eq $peer -o $i -gt $servers ] && continue
+			echo -n "peer 192.168.123.$[$servers * ($stratum - 1) + $i] $server_peer_options "
+			[ $i -lt $peer ] && echo "$server_lpeer_options" || echo "$server_rpeer_options"
+		done
+		echo "$server_conf"
+	else
+		if [ -n "$client_server_conf" ]; then
+			echo "$client_server_conf"
+		else
+			for i in $(seq 1 $servers); do
+				echo "server 192.168.123.$[$servers * ($stratum - 2) + $i] $client_server_options"
+			done
+		fi
+		for i in $(seq 1 $peers); do
+			[ $i -eq $peer -o $i -gt $clients ] && continue
+			echo -n "peer 192.168.123.$[$servers * ($stratum - 1) + $i] $client_peer_options "
+			[ $i -lt $peer ] && echo "$client_lpeer_options" || echo "$client_rpeer_options"
+		done
+		echo "$client_conf"
+	fi
+}
+
+# Check if chrony was built with specified option in config.h
+check_config_h() {
+	local pattern=$1
+	grep -q "^#define $pattern" ../../config.h
+}
+
+# Check if the clock was well synchronized
+check_sync() {
+	local i sync_time max_time_error max_freq_error ret=0
+	local rms_time_error rms_freq_error
+
+	test_message 2 1 "checking clock sync time, max/rms time/freq error:"
+
+	for i in $(seq 1 $(get_chronyd_nodes)); do
+		[ $i -gt $[$servers * $server_strata] ] || continue
+
+		sync_time=$(find_sync tmp/log.offset tmp/log.freq $i \
+			$time_max_limit $freq_max_limit 1.0)
+		max_time_error=$(get_stat 'Maximum absolute offset' $i)
+		max_freq_error=$(get_stat 'Maximum absolute frequency' $i)
+		rms_time_error=$(get_stat 'RMS offset' $i)
+		rms_freq_error=$(get_stat 'RMS frequency' $i)
+
+		test_message 3 0 "node $i: $sync_time $(printf '%.2e %.2e %.2e %.2e' \
+			$max_time_error $max_freq_error $rms_time_error $rms_freq_error)"
+
+		check_stat $sync_time $min_sync_time $max_sync_time && \
+			check_stat $max_time_error 0.0 $time_max_limit && \
+			check_stat $max_freq_error 0.0 $freq_max_limit && \
+			check_stat $rms_time_error 0.0 $time_rms_limit && \
+			check_stat $rms_freq_error 0.0 $freq_rms_limit && \
+			test_ok || test_bad
+
+		[ $? -eq 0 ] || ret=1
+	done
+
+	return $ret
+}
+
+# Check if chronyd exited properly
+check_chronyd_exit() {
+	local i ret=0
+
+	test_message 2 1 "checking chronyd exit:"
+
+	for i in $(seq 1 $(get_chronyd_nodes)); do
+		test_message 3 0 "node $i:"
+
+		grep -q 'chronyd exiting' tmp/log.$i && \
+			! grep -q 'Adjustment.*exceeds.*exiting' tmp/log.$i && \
+			test_ok || test_bad
+		[ $? -eq 0 ] || ret=1
+	done
+
+	return $ret
+}
+
+# Check for problems in source selection
+check_source_selection() {
+	local i ret=0
+
+	test_message 2 1 "checking source selection:"
+
+	for i in $(seq $[$servers * $server_strata + 1] $(get_chronyd_nodes)); do
+		test_message 3 0 "node $i:"
+
+		! grep -q 'no majority\|no selectable sources' tmp/log.$i && \
+			grep -q 'Selected source' tmp/log.$i && \
+			test_ok || test_bad
+		[ $? -eq 0 ] || ret=1
+	done
+
+	return $ret
+}
+
+# Check if incoming and outgoing packet intervals are sane
+check_packet_interval() {
+	local i ret=0 mean_in_interval mean_out_interval min_in_interval min_out_interval
+
+	test_message 2 1 "checking mean/min incoming/outgoing packet interval:"
+
+	for i in $(seq 1 $(get_chronyd_nodes)); do
+		mean_in_interval=$(get_stat 'Mean incoming packet interval' $i)
+		mean_out_interval=$(get_stat 'Mean outgoing packet interval' $i)
+		min_in_interval=$(get_stat 'Minimum incoming packet interval' $i)
+		min_out_interval=$(get_stat 'Minimum outgoing packet interval' $i)
+
+		test_message 3 0 "node $i: $(printf '%.2e %.2e %.2e %.2e' \
+			$mean_in_interval $mean_out_interval $min_in_interval $min_out_interval)"
+
+		# Check that the mean intervals are non-zero and shorter than
+		# limit, incoming is not longer than outgoing for stratum 1
+		# servers, outgoing is not longer than incoming for clients,
+		# and the minimum outgoing interval is not shorter than the NTP
+		# sampling separation or iburst interval for clients
+		nodes=$[$servers * $server_strata + $clients]
+		check_stat $mean_in_interval 0.1 inf && \
+			check_stat $mean_out_interval 0.1 inf && \
+			([ $i -gt $servers ] || \
+				check_stat $mean_in_interval 0.0 $mean_out_interval 10*$jitter) && \
+			([ $i -le $[$servers * $server_strata] ] || \
+				check_stat $mean_out_interval $client_min_mean_out_interval \
+					$mean_in_interval 10*$jitter) && \
+			([ $i -le $[$servers * $server_strata] ] || \
+				check_stat $min_out_interval \
+					$([ $servers -gt 1 ] && echo 0.18 || echo 1.8) \
+					$client_max_min_out_interval) && \
+			test_ok || test_bad
+
+		[ $? -eq 0 ] || ret=1
+	done
+
+	return $ret
+}
+
+# Compare chronyc output with specified pattern
+check_chronyc_output() {
+	local i ret=0 pattern=$1
+
+	test_message 2 1 "checking chronyc output:"
+
+	for i in $(seq $[$(get_chronyd_nodes) + 1] $[$(get_chronyd_nodes) + $clients]); do
+		test_message 3 0 "node $i:"
+
+		[[ "$(cat tmp/log.$i)" =~ $pattern ]] && \
+			test_ok || test_bad
+		[ $? -eq 0 ] || ret=1
+	done
+
+	return $ret
+}
+
+# Check the number of messages matching a pattern in the client logs
+check_log_messages() {
+	local i count ret=0 pattern=$1 min=$2 max=$3
+
+	test_message 2 1 "checking number of messages \"$pattern\":"
+
+	for i in $(seq $[$servers * $server_strata + 1] $(get_chronyd_nodes)); do
+		count=$(grep "$pattern" tmp/log.$i | wc -l)
+		test_message 3 0 "node $i: $count"
+
+		[ "$min" -le "$count" ] && [ "$count" -le "$max" ] && \
+			test_ok || test_bad
+		[ $? -eq 0 ] || ret=1
+	done
+
+	return $ret
+}
+
+# Check the number of messages matching a pattern in a specified file
+check_file_messages() {
+	local i count ret=0 pattern=$1 min=$2 max=$3
+	shift 3
+
+	test_message 2 1 "checking number of messages \"$pattern\":"
+
+	for i; do
+		count=$(grep "$pattern" tmp/$i | wc -l)
+		test_message 3 0 "$i: $count"
+
+		[ "$min" -le "$count" ] && [ "$count" -le "$max" ] && \
+			test_ok || test_bad
+		[ $? -eq 0 ] || ret=1
+	done
+
+	return $ret
+}
+
+# Check if only NTP port (123) was used
+check_packet_port() {
+	local i ret=0 port=123
+
+	test_message 2 1 "checking port numbers in packet log:"
+
+	for i in $(seq 1 $(get_chronyd_nodes)); do
+		test_message 3 0 "node $i:"
+
+		grep -E -q "	$port	[0-9]+\$" tmp/log.packets && \
+			! grep -E "^[0-9e.+-]+	$i	" tmp/log.packets | \
+			grep -E -q -v "	$port	[0-9]+\$" && \
+			test_ok || test_bad
+		[ $? -eq 0 ] || ret=1
+	done
+
+	return $ret
+}
+
+# Print test settings which differ from default value
+print_nondefaults() {
+	local defoptname optname
+
+	test_message 2 1 "non-default settings:"
+	for defoptname in ${!default_*}; do
+		optname=${defoptname#default_}
+		[ "${!defoptname}" = "${!optname}" ] || \
+			test_message 3 1 $optname=${!optname}
+	done
+}
+
+run_simulation() {
+	local nodes=$1
+
+	test_message 2 0 "running simulation:"
+
+	start_server $nodes \
+		-o tmp/log.offset -f tmp/log.freq -p tmp/log.packets \
+		-R $(awk "BEGIN {print $update_interval < 0 ? 2^-($update_interval) : 1}") \
+		-r $(awk "BEGIN {print $max_sync_time * 2^$update_interval}") \
+		-l $(awk "BEGIN {print $limit * 2^$update_interval}") && test_ok || test_error
+}
+
+run_test() {
+	local i j n stratum node nodes step start freq offset conf options
+
+	test_message 1 1 "network with $servers*$server_strata servers and $clients clients:"
+	print_nondefaults
+
+	nodes=$(get_chronyd_nodes)
+	[ -n "$chronyc_conf" ] && nodes=$[$nodes + $clients]
+
+	for i in $(seq 1 $nodes); do
+		echo "node${i}_shift_pll = $shift_pll"
+		for j in $(seq 1 $nodes); do
+			[ $i -eq $j ] && continue
+			echo "node${i}_delay${j} = $(get_delay_expr up)"
+			echo "node${j}_delay${i} = $(get_delay_expr down)"
+		done
+	done > tmp/conf
+
+	node=1
+
+	for stratum in $(seq 1 $[$server_strata + 1]); do
+		[ $stratum -le $server_strata ] && n=$servers || n=$clients
+
+		for i in $(seq 1 $n); do
+			test_message 2 0 "starting node $node:"
+			if [ $stratum -eq 1 ]; then
+				step=$server_step
+				start=$server_start
+				freq=""
+				[ $i -le $falsetickers ] && offset=$i.0 || offset=0.0
+				options=$server_chronyd_options
+			elif [ $stratum -le $server_strata ]; then
+				step=$server_step
+				start=$server_start
+				freq=$(get_wander_expr)
+				offset=0.0
+				options=$server_chronyd_options
+			else
+				step=$client_step
+				start=$client_start
+				freq=$(get_wander_expr)
+				offset=$time_offset
+				options=$client_chronyd_options
+			fi
+
+			conf=$(get_chronyd_conf $stratum $i $n)
+
+			[ -z "$freq" ] || echo "node${node}_freq = $freq" >> tmp/conf
+			[ -z "$step" ] || echo "node${node}_step = $step" >> tmp/conf
+			[ -z "$refclock_jitter" ] || \
+				echo "node${node}_refclock = $(get_refclock_expr)" >> tmp/conf
+			echo "node${node}_offset = $offset" >> tmp/conf
+			echo "node${node}_start = $start" >> tmp/conf
+			start_client $node chronyd "$conf" "" "$options" && \
+				test_ok || test_error
+
+			[ $? -ne 0 ] && return 1
+			node=$[$node + 1]
+		done
+	done
+
+	for i in $(seq 1 $[$nodes - $node + 1]); do
+		test_message 2 0 "starting node $node:"
+
+		echo "node${node}_start = $chronyc_start" >> tmp/conf
+		start_client $node chronyc "$chronyc_conf" "" \
+			"-n -h 192.168.123.$[$node - $clients]" && \
+			test_ok || test_error
+
+		[ $? -ne 0 ] && return 1
+		node=$[$node + 1]
+	done
+
+	run_simulation $nodes
+}

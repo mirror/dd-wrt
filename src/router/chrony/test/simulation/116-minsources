@@ -1,0 +1,24 @@
+#!/bin/bash
+
+. ./test.common
+
+test_start "minsources directive"
+
+client_conf="minsources 3"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_packet_interval || test_fail
+# These check are expected to fail
+check_source_selection && test_fail
+check_sync && test_fail
+
+servers=3
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_packet_interval || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+
+test_pass
