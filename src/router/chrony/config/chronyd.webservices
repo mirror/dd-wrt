@@ -1,0 +1,22 @@
+<% nvram_match("chronyd_web","0","<!--"); %>
+<fieldset>
+	<legend><% tran("service.chronyd_legend"); %></legend>
+	<div class="setting">
+		<div class="label"><% tran("service.chronyd_srv"); %></div>
+		<input class="spaceradio" type="radio" name="chronyd_enable" value="1" <% nvc("chronyd_enable", "1"); %> onclick="show_layer_ext(this, 'idchronyd', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="chronyd_enable" value="0" <% nvc("chronyd_enable", "0"); %> onclick="show_layer_ext(this, 'idchronyd', false)" /><% tran("share.disable"); %>
+	</div>
+	<div id="idchronyd">
+		<div class="setting">
+			<div class="label"><% tran("service.chronyd_conf"); %></div>
+			<textarea id="chronyd_conf" name="chronyd_conf" cols="60" rows="4" wrap="off">&nbsp;</textarea>
+			<script type="text/javascript">
+			//<![CDATA[
+				var var_chronyd_conf = fix_cr( '<% nvg("chronyd_conf"); %>' );
+				document.getElementById("chronyd_conf").value = var_chronyd_conf;
+			//]]>
+			</script>
+		</div>
+	</div>
+</fieldset><br />
+<% nvram_match("chronyd_web","0","-->"); %>
