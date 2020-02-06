@@ -62,7 +62,7 @@ HAVE_MULTILINK=y
 endif
 endif
 
-LDFLAGS = $(LDLTO)
+LDFLAGS = $(COPTS) $(MIPS16_OPT) $(LDLTO)
 
 # Uncomment the next line to enable the TDB database (enabled by default.)
 # If you enable multilink, then TDB is automatically enabled also.
