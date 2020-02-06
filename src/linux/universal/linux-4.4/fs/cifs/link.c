@@ -399,7 +399,7 @@ cifs_create_mf_symlink(unsigned int xid, struct cifs_tcon *tcon,
 	io_parms.offset = 0;
 	io_parms.length = CIFS_MF_SYMLINK_FILE_SIZE;
 
-	rc = CIFSSMBWrite(xid, &io_parms, pbytes_written, pbuf);
+	rc = CIFSSMBWrite(xid, &io_parms, pbytes_written, pbuf, NULL, 0);
 	CIFSSMBClose(xid, tcon, fid.netfid);
 	return rc;
 }
@@ -627,9 +627,9 @@ cifs_hl_exit:
 }
 
 const char *
-cifs_get_link(struct dentry *direntry, struct inode *inode,
-	      struct delayed_call *done)
+cifs_follow_link(struct dentry *direntry, void **cookie)
 {
+	struct inode *inode = d_inode(direntry);
 	int rc = -ENOMEM;
 	unsigned int xid;
 	char *full_path = NULL;
@@ -638,9 +638,6 @@ cifs_get_link(struct dentry *direntry, struct inode *inode,
 	struct tcon_link *tlink = NULL;
 	struct cifs_tcon *tcon;
 	struct TCP_Server_Info *server;
-
-	if (!direntry)
-		return ERR_PTR(-ECHILD);
 
 	xid = get_xid();
 
@@ -681,8 +678,7 @@ cifs_get_link(struct dentry *direntry, struct inode *inode,
 		kfree(target_path);
 		return ERR_PTR(rc);
 	}
-	set_delayed_call(done, kfree_link, target_path);
-	return target_path;
+	return *cookie = target_path;
 }
 
 int
