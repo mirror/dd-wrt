@@ -55,8 +55,6 @@
 #include "tempcomp.h"
 #include "util.h"
 
-#define printf(...) fprintf(stderr, __VA_ARGS__);
-
 /* ================================================== */
 
 /* Set when the initialisation chain has been completed.  Prevents finalisation

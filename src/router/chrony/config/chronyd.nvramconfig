@@ -1,0 +1,2 @@
+"chronyd_enable"  "chronyd Enable"  "CHOICE"  "2"  "0"  "1"  "FALSE"  "0"
+"chronyd_conf" "chronyd Config" "NULL" "FALSE" "0"
