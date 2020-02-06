@@ -34,7 +34,7 @@
 #include <linux/pagevec.h>
 #include <linux/freezer.h>
 #include <linux/namei.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/processor.h>
 #include <linux/inet.h>
 #include <linux/module.h>
@@ -67,6 +67,7 @@ extern mempool_t *cifs_req_poolp;
 #define TLINK_IDLE_EXPIRE	(600 * HZ)
 
 enum {
+
 	/* Mount options that take no arguments */
 	Opt_user_xattr, Opt_nouser_xattr,
 	Opt_forceuid, Opt_noforceuid,
@@ -79,7 +80,7 @@ enum {
 	Opt_noposixpaths, Opt_nounix,
 	Opt_nocase,
 	Opt_brl, Opt_nobrl,
-	Opt_forcemandatorylock, Opt_setuidfromacl, Opt_setuids,
+	Opt_forcemandatorylock, Opt_setuids,
 	Opt_nosetuids, Opt_dynperm, Opt_nodynperm,
 	Opt_nohard, Opt_nosoft,
 	Opt_nointr, Opt_intr,
@@ -98,7 +99,6 @@ enum {
 	Opt_cruid, Opt_gid, Opt_file_mode,
 	Opt_dirmode, Opt_port,
 	Opt_rsize, Opt_wsize, Opt_actimeo,
-	Opt_echo_interval, Opt_max_credits,
 
 	/* Mount options which take string value */
 	Opt_user, Opt_pass, Opt_ip,
@@ -151,7 +151,6 @@ static const match_table_t cifs_mount_option_tokens = {
 	{ Opt_forcemandatorylock, "forcemand" },
 	{ Opt_setuids, "setuids" },
 	{ Opt_nosetuids, "nosetuids" },
-	{ Opt_setuidfromacl, "idsfromsid" },
 	{ Opt_dynperm, "dynperm" },
 	{ Opt_nodynperm, "nodynperm" },
 	{ Opt_nohard, "nohard" },
@@ -193,8 +192,6 @@ static const match_table_t cifs_mount_option_tokens = {
 	{ Opt_rsize, "rsize=%s" },
 	{ Opt_wsize, "wsize=%s" },
 	{ Opt_actimeo, "actimeo=%s" },
-	{ Opt_echo_interval, "echo_interval=%s" },
-	{ Opt_max_credits, "max_credits=%s" },
 
 	{ Opt_blank_user, "user=" },
 	{ Opt_blank_user, "username=" },
@@ -489,7 +486,7 @@ cifs_echo_request(struct work_struct *work)
 	if (server->tcpStatus == CifsNeedNegotiate)
 		echo_interval = 0;
 	else
-		echo_interval = server->echo_interval;
+		echo_interval = SMB_ECHO_INTERVAL;
 
 	/*
 	 * We cannot send an echo if it is disabled.
@@ -509,7 +506,7 @@ cifs_echo_request(struct work_struct *work)
 			 server->hostname);
 
 requeue_echo:
-	queue_delayed_work(cifsiod_wq, &server->echo, server->echo_interval);
+	queue_delayed_work(cifsiod_wq, &server->echo, SMB_ECHO_INTERVAL);
 }
 
 static bool
@@ -560,9 +557,9 @@ server_unresponsive(struct TCP_Server_Info *server)
 	 *     a response in >60s.
 	 */
 	if (server->tcpStatus == CifsGood &&
-	    time_after(jiffies, server->lstrp + 2 * server->echo_interval)) {
-		cifs_dbg(VFS, "Server %s has not responded in %lu seconds. Reconnecting...\n",
-			 server->hostname, (2 * server->echo_interval) / HZ);
+	    time_after(jiffies, server->lstrp + 2 * SMB_ECHO_INTERVAL)) {
+		cifs_dbg(VFS, "Server %s has not responded in %d seconds. Reconnecting...\n",
+			 server->hostname, (2 * SMB_ECHO_INTERVAL) / HZ);
 		cifs_reconnect(server);
 		wake_up(&server->response_q);
 		return true;
@@ -571,34 +568,99 @@ server_unresponsive(struct TCP_Server_Info *server)
 	return false;
 }
 
-static int
-cifs_readv_from_socket(struct TCP_Server_Info *server, struct msghdr *smb_msg)
+/*
+ * kvec_array_init - clone a kvec array, and advance into it
+ * @new:	pointer to memory for cloned array
+ * @iov:	pointer to original array
+ * @nr_segs:	number of members in original array
+ * @bytes:	number of bytes to advance into the cloned array
+ *
+ * This function will copy the array provided in iov to a section of memory
+ * and advance the specified number of bytes into the new array. It returns
+ * the number of segments in the new array. "new" must be at least as big as
+ * the original iov array.
+ */
+static unsigned int
+kvec_array_init(struct kvec *new, struct kvec *iov, unsigned int nr_segs,
+		size_t bytes)
+{
+	size_t base = 0;
+
+	while (bytes || !iov->iov_len) {
+		int copy = min(bytes, iov->iov_len);
+
+		bytes -= copy;
+		base += copy;
+		if (iov->iov_len == base) {
+			iov++;
+			nr_segs--;
+			base = 0;
+		}
+	}
+	memcpy(new, iov, sizeof(*iov) * nr_segs);
+	new->iov_base += base;
+	new->iov_len -= base;
+	return nr_segs;
+}
+
+static struct kvec *
+get_server_iovec(struct TCP_Server_Info *server, unsigned int nr_segs)
+{
+	struct kvec *new_iov;
+
+	if (server->iov && nr_segs <= server->nr_iov)
+		return server->iov;
+
+	/* not big enough -- allocate a new one and release the old */
+	new_iov = kmalloc(sizeof(*new_iov) * nr_segs, GFP_NOFS);
+	if (new_iov) {
+		kfree(server->iov);
+		server->iov = new_iov;
+		server->nr_iov = nr_segs;
+	}
+	return new_iov;
+}
+
+int
+cifs_readv_from_socket(struct TCP_Server_Info *server, struct kvec *iov_orig,
+		       unsigned int nr_segs, unsigned int to_read)
 {
 	int length = 0;
 	int total_read;
+	unsigned int segs;
+	struct msghdr smb_msg;
+	struct kvec *iov;
 
-	smb_msg->msg_control = NULL;
-	smb_msg->msg_controllen = 0;
+	iov = get_server_iovec(server, nr_segs);
+	if (!iov)
+		return -ENOMEM;
 
-	for (total_read = 0; msg_data_left(smb_msg); total_read += length) {
+	smb_msg.msg_control = NULL;
+	smb_msg.msg_controllen = 0;
+
+	for (total_read = 0; to_read; total_read += length, to_read -= length) {
 		try_to_freeze();
 
-		if (server_unresponsive(server))
-			return -ECONNABORTED;
-
-		length = sock_recvmsg(server->ssocket, smb_msg, 0);
-
-		if (server->tcpStatus == CifsExiting)
-			return -ESHUTDOWN;
-
-		if (server->tcpStatus == CifsNeedReconnect) {
-			cifs_reconnect(server);
-			return -ECONNABORTED;
+		if (server_unresponsive(server)) {
+			total_read = -ECONNABORTED;
+			break;
 		}
 
-		if (length == -ERESTARTSYS ||
-		    length == -EAGAIN ||
-		    length == -EINTR) {
+		segs = kvec_array_init(iov, iov_orig, nr_segs, total_read);
+
+		length = kernel_recvmsg(server->ssocket, &smb_msg,
+					iov, segs, to_read, 0);
+
+		if (server->tcpStatus == CifsExiting) {
+			total_read = -ESHUTDOWN;
+			break;
+		} else if (server->tcpStatus == CifsNeedReconnect) {
+			cifs_reconnect(server);
+			total_read = -ECONNABORTED;
+			break;
+		} else if (length == -ERESTARTSYS ||
+			   length == -EAGAIN ||
+			   length == -EINTR) {
 			/*
 			 * Minimum sleep to prevent looping, allowing socket
 			 * to clear and app threads to set tcpStatus
@@ -607,12 +669,12 @@ cifs_readv_from_socket(struct TCP_Server_Info *server, struct msghdr *smb_msg)
 			usleep_range(1000, 2000);
 			length = 0;
 			continue;
-		}
-
-		if (length <= 0) {
-			cifs_dbg(FYI, "Received no data or error: %d\n", length);
+		} else if (length <= 0) {
+			cifs_dbg(FYI, "Received no data or error: expecting %d\n"
+				 "got %d", to_read, length);
 			cifs_reconnect(server);
-			return -ECONNABORTED;
+			total_read = -ECONNABORTED;
+			break;
 		}
 	}
 	return total_read;
@@ -622,21 +684,12 @@ int
 cifs_read_from_socket(struct TCP_Server_Info *server, char *buf,
 		      unsigned int to_read)
 {
-	struct msghdr smb_msg;
-	struct kvec iov = {.iov_base = buf, .iov_len = to_read};
-	iov_iter_kvec(&smb_msg.msg_iter, READ | ITER_KVEC, &iov, 1, to_read);
+	struct kvec iov;
 
-	return cifs_readv_from_socket(server, &smb_msg);
-}
+	iov.iov_base = buf;
+	iov.iov_len = to_read;
 
-int
-cifs_read_page_from_socket(struct TCP_Server_Info *server, struct page *page,
-		      unsigned int to_read)
-{
-	struct msghdr smb_msg;
-	struct bio_vec bv = {.bv_page = page, .bv_len = to_read};
-	iov_iter_bvec(&smb_msg.msg_iter, READ | ITER_BVEC, &bv, 1, to_read);
-	return cifs_readv_from_socket(server, &smb_msg);
+	return cifs_readv_from_socket(server, &iov, 1, to_read);
 }
 
 static bool
@@ -797,6 +850,7 @@ static void clean_demultiplex_info(struct TCP_Server_Info *server)
 	}
 
 	kfree(server->hostname);
+	kfree(server->iov);
 	kfree(server);
 
 	length = atomic_dec_return(&tcpSesAllocCount);
@@ -844,7 +898,7 @@ standard_receive3(struct TCP_Server_Info *server, struct mid_q_entry *mid)
 	 * 48 bytes is enough to display the header and a little bit
 	 * into the payload for debugging purposes.
 	 */
-	length = server->ops->check_message(buf, server->total_read, server);
+	length = server->ops->check_message(buf, server->total_read);
 	if (length != 0)
 		cifs_dump_mem("Bad SMB: ", buf,
 			min_t(unsigned int, server->total_read, 48));
@@ -1231,12 +1285,8 @@ cifs_parse_devname(const char *devname, struct smb_vol *vol)
 
 	convert_delimiter(vol->UNC, '\\');
 
-	/* skip any delimiter */
-	if (*pos == '/' || *pos == '\\')
-		pos++;
-
-	/* If pos is NULL then no prepath */
-	if (!*pos)
+	/* If pos is NULL, or is a bogus trailing delimiter then no prepath */
+	if (!*pos++ || !*pos)
 		return 0;
 
 	vol->prepath = kstrdup(pos, GFP_KERNEL);
@@ -1317,8 +1367,6 @@ cifs_parse_mount_options(const char *mountdata, const char *devname,
 	/* FIXME: add autonegotiation -- for now, SMB1 is default */
 	vol->ops = &smb1_operations;
 	vol->vals = &smb1_values;
-
-	vol->echo_interval = SMB_ECHO_INTERVAL_DEFAULT;
 
 	if (!mountdata)
 		goto cifs_parse_mount_err;
@@ -1465,9 +1513,6 @@ cifs_parse_mount_options(const char *mountdata, const char *devname,
 			break;
 		case Opt_nosetuids:
 			vol->setuids = 0;
-			break;
-		case Opt_setuidfromacl:
-			vol->setuidfromacl = 1;
 			break;
 		case Opt_dynperm:
 			vol->dynperm = true;
@@ -1670,23 +1715,6 @@ cifs_parse_mount_options(const char *mountdata, const char *devname,
 				cifs_dbg(VFS, "attribute cache timeout too large\n");
 				goto cifs_parse_mount_err;
 			}
-			break;
-		case Opt_echo_interval:
-			if (get_option_ul(args, &option)) {
-				cifs_dbg(VFS, "%s: Invalid echo interval value\n",
-					 __func__);
-				goto cifs_parse_mount_err;
-			}
-			vol->echo_interval = option;
-			break;
-		case Opt_max_credits:
-			if (get_option_ul(args, &option) || (option < 20) ||
-			    (option > 60000)) {
-				cifs_dbg(VFS, "%s: Invalid max_credits value\n",
-					 __func__);
-				goto cifs_parse_mount_err;
-			}
-			vol->max_credits = option;
 			break;
 
 		/* String Arguments */
@@ -2153,9 +2181,6 @@ static int match_server(struct TCP_Server_Info *server, struct smb_vol *vol)
 	if (!match_security(server, vol))
 		return 0;
 
-	if (server->echo_interval != vol->echo_interval * HZ)
-		return 0;
-
 	return 1;
 }
 
@@ -2292,12 +2317,6 @@ cifs_get_tcp_session(struct smb_vol *volume_info)
 	tcp_ses->tcpStatus = CifsNew;
 	++tcp_ses->srv_count;
 
-	if (volume_info->echo_interval >= SMB_ECHO_INTERVAL_MIN &&
-		volume_info->echo_interval <= SMB_ECHO_INTERVAL_MAX)
-		tcp_ses->echo_interval = volume_info->echo_interval * HZ;
-	else
-		tcp_ses->echo_interval = SMB_ECHO_INTERVAL_DEFAULT * HZ;
-
 	rc = ip_connect(tcp_ses);
 	if (rc < 0) {
 		cifs_dbg(VFS, "Error connecting to socket. Aborting operation.\n");
@@ -2327,7 +2346,7 @@ cifs_get_tcp_session(struct smb_vol *volume_info)
 	cifs_fscache_get_client_cookie(tcp_ses);
 
 	/* queue echo request delayed work */
-	queue_delayed_work(cifsiod_wq, &tcp_ses->echo, tcp_ses->echo_interval);
+	queue_delayed_work(cifsiod_wq, &tcp_ses->echo, SMB_ECHO_INTERVAL);
 
 	return tcp_ses;
 
@@ -2922,22 +2941,6 @@ compare_mount_options(struct super_block *sb, struct cifs_mnt_data *mnt_data)
 	return 1;
 }
 
-static int
-match_prepath(struct super_block *sb, struct cifs_mnt_data *mnt_data)
-{
-	struct cifs_sb_info *old = CIFS_SB(sb);
-	struct cifs_sb_info *new = mnt_data->cifs_sb;
-	bool old_set = old->mnt_cifs_flags & CIFS_MOUNT_USE_PREFIX_PATH;
-	bool new_set = new->mnt_cifs_flags & CIFS_MOUNT_USE_PREFIX_PATH;
-
-	if (old_set && new_set && !strcmp(new->prepath, old->prepath))
-		return 1;
-	else if (!old_set && !new_set)
-		return 1;
-
-	return 0;
-}
-
 int
 cifs_match_super(struct super_block *sb, void *data)
 {
@@ -2965,8 +2968,7 @@ cifs_match_super(struct super_block *sb, void *data)
 
 	if (!match_server(tcp_srv, volume_info) ||
 	    !match_session(ses, volume_info) ||
-	    !match_tcon(tcon, volume_info->UNC) ||
-	    !match_prepath(sb, mnt_data)) {
+	    !match_tcon(tcon, volume_info->UNC)) {
 		rc = 0;
 		goto out;
 	}
@@ -3027,7 +3029,7 @@ static inline void
 cifs_reclassify_socket4(struct socket *sock)
 {
 	struct sock *sk = sock->sk;
-	BUG_ON(!sock_allow_reclassification(sk));
+	BUG_ON(sock_owned_by_user(sk));
 	sock_lock_init_class_and_name(sk, "slock-AF_INET-CIFS",
 		&cifs_slock_key[0], "sk_lock-AF_INET-CIFS", &cifs_key[0]);
 }
@@ -3036,7 +3038,7 @@ static inline void
 cifs_reclassify_socket6(struct socket *sock)
 {
 	struct sock *sk = sock->sk;
-	BUG_ON(!sock_allow_reclassification(sk));
+	BUG_ON(sock_owned_by_user(sk));
 	sock_lock_init_class_and_name(sk, "slock-AF_INET6-CIFS",
 		&cifs_slock_key[1], "sk_lock-AF_INET6-CIFS", &cifs_key[1]);
 }
@@ -3108,7 +3110,8 @@ ip_rfc1001_connect(struct TCP_Server_Info *server)
 	if (ses_init_buf) {
 		ses_init_buf->trailer.session_req.called_len = 32;
 
-		if (server->server_RFC1001_name[0] != 0)
+		if (server->server_RFC1001_name &&
+		    server->server_RFC1001_name[0] != 0)
 			rfc1002mangle(ses_init_buf->trailer.
 				      session_req.called_name,
 				      server->server_RFC1001_name,
@@ -3380,7 +3383,7 @@ void reset_cifs_unix_caps(unsigned int xid, struct cifs_tcon *tcon,
 	}
 }
 
-int cifs_setup_cifs_sb(struct smb_vol *pvolume_info,
+void cifs_setup_cifs_sb(struct smb_vol *pvolume_info,
 			struct cifs_sb_info *cifs_sb)
 {
 	INIT_DELAYED_WORK(&cifs_sb->prune_tlinks, cifs_prune_tlinks);
@@ -3409,8 +3412,6 @@ int cifs_setup_cifs_sb(struct smb_vol *pvolume_info,
 		cifs_sb->mnt_cifs_flags |= CIFS_MOUNT_NO_PERM;
 	if (pvolume_info->setuids)
 		cifs_sb->mnt_cifs_flags |= CIFS_MOUNT_SET_UID;
-	if (pvolume_info->setuidfromacl)
-		cifs_sb->mnt_cifs_flags |= CIFS_MOUNT_UID_FROM_ACL;
 	if (pvolume_info->server_ino)
 		cifs_sb->mnt_cifs_flags |= CIFS_MOUNT_SERVER_INUM;
 	if (pvolume_info->remap)
@@ -3476,14 +3477,6 @@ int cifs_setup_cifs_sb(struct smb_vol *pvolume_info,
 
 	if ((pvolume_info->cifs_acl) && (pvolume_info->dynperm))
 		cifs_dbg(VFS, "mount option dynperm ignored if cifsacl mount option supported\n");
-
-	if (pvolume_info->prepath) {
-		cifs_sb->prepath = kstrdup(pvolume_info->prepath, GFP_KERNEL);
-		if (cifs_sb->prepath == NULL)
-			return -ENOMEM;
-	}
-
-	return 0;
 }
 
 static void
@@ -3739,11 +3732,7 @@ try_mount_again:
 		bdi_destroy(&cifs_sb->bdi);
 		goto out;
 	}
-	if ((volume_info->max_credits < 20) ||
-	     (volume_info->max_credits > 60000))
-		server->max_credits = SMB2_MAX_CREDITS_AVAILABLE;
-	else
-		server->max_credits = volume_info->max_credits;
+
 	/* get a reference to a SMB session */
 	ses = cifs_get_smb_ses(server, volume_info);
 	if (IS_ERR(ses)) {
@@ -3766,6 +3755,9 @@ try_mount_again:
 	if (IS_ERR(tcon)) {
 		rc = PTR_ERR(tcon);
 		tcon = NULL;
+		if (rc == -EACCES)
+			goto mount_fail_check;
+
 		goto remote_path_check;
 	}
 
@@ -3791,7 +3783,7 @@ try_mount_again:
 	cifs_sb->rsize = server->ops->negotiate_rsize(tcon, volume_info);
 
 	/* tune readahead according to rsize */
-	cifs_sb->bdi.ra_pages = cifs_sb->rsize / PAGE_SIZE;
+	cifs_sb->bdi.ra_pages = cifs_sb->rsize / PAGE_CACHE_SIZE;
 
 remote_path_check:
 #ifdef CONFIG_CIFS_DFS_UPCALL

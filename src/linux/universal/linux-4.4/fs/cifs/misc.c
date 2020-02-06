@@ -305,7 +305,7 @@ check_smb_hdr(struct smb_hdr *smb)
 }
 
 int
-checkSMB(char *buf, unsigned int total_read, struct TCP_Server_Info *server)
+checkSMB(char *buf, unsigned int total_read)
 {
 	struct smb_hdr *smb = (struct smb_hdr *)buf;
 	__u32 rfclen = be32_to_cpu(smb->smb_buf_length);
@@ -494,7 +494,8 @@ is_valid_oplock_break(char *buffer, struct TCP_Server_Info *srv)
 					   CIFS_INODE_DOWNGRADE_OPLOCK_TO_L2,
 					   &pCifsInode->flags);
 
-				cifs_queue_oplock_break(netfile);
+				queue_work(cifsiod_wq,
+					   &netfile->oplock_break);
 				netfile->oplock_break_cancelled = false;
 
 				spin_unlock(&tcon->open_file_lock);
@@ -589,28 +590,6 @@ void cifs_put_writer(struct cifsInodeInfo *cinode)
 		wake_up_bit(&cinode->flags, CIFS_INODE_PENDING_WRITERS);
 	}
 	spin_unlock(&cinode->writers_lock);
-}
-
-/**
- * cifs_queue_oplock_break - queue the oplock break handler for cfile
- *
- * This function is called from the demultiplex thread when it
- * receives an oplock break for @cfile.
- *
- * Assumes the tcon->open_file_lock is held.
- * Assumes cfile->file_info_lock is NOT held.
- */
-void cifs_queue_oplock_break(struct cifsFileInfo *cfile)
-{
-	/*
-	 * Bump the handle refcount now while we hold the
-	 * open_file_lock to enforce the validity of it for the oplock
-	 * break handler. The matching put is done at the end of the
-	 * handler.
-	 */
-	cifsFileInfo_get(cfile);
-
-	queue_work(cifsoplockd_wq, &cfile->oplock_break);
 }
 
 void cifs_done_oplock_break(struct cifsInodeInfo *cinode)
