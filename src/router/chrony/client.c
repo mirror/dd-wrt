@@ -3188,8 +3188,6 @@ print_version(void)
 
 /* ================================================== */
 
-#define printf(...) fprintf(stderr, __VA_ARGS__);
-
 int
 main(int argc, char **argv)
 {
