@@ -735,6 +735,10 @@ static void handle_services(void)
 #ifdef HAVE_ZABBIX
 	restart_f("zabbix");
 #endif
+#ifdef HAVE_CHRONY
+	stop_service("chronyd");
+	start_service_f("chronyd");
+#endif
 //      start_service_f("anchorfreednat");
 
 }
