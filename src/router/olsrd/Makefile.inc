@@ -266,7 +266,7 @@ LDFLAGS +=	-Wl,-rpath,$(LIBDIR)
 endif
 # LDFLAGS for all 
 LDFLAGS +=	-Wl,--warn-common
-LDFLAGS +=	$(LDLTO)
+LDFLAGS +=	$(COPTS) $(MIPS16_OPT) $(LDLTO)
 # See above at "-ffunction-sections" for an explanation (and why it is disabled).
 #LDOPTS +=	-Wl,--gc-sections
 #LDOPTS +=	-Wl,--print-gc-sections
