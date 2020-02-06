@@ -231,7 +231,7 @@ endif
 	rm -f $(LINUXDIR)/vmlinux
 	$(MAKE) -j 4 -C $(LINUXDIR) zImage EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h"  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 
-include common-nolto.mk
+include common.mk
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory
