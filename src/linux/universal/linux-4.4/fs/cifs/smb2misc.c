@@ -38,7 +38,7 @@ check_smb2_hdr(struct smb2_hdr *hdr, __u64 mid)
 	 * Make sure that this really is an SMB, that it is a response,
 	 * and that the message ids match.
 	 */
-	if ((hdr->ProtocolId == SMB2_PROTO_NUMBER) &&
+	if ((*(__le32 *)hdr->ProtocolId == SMB2_PROTO_NUMBER) &&
 	    (mid == wire_mid)) {
 		if (hdr->Flags & SMB2_FLAGS_SERVER_TO_REDIR)
 			return 0;
@@ -50,9 +50,9 @@ check_smb2_hdr(struct smb2_hdr *hdr, __u64 mid)
 				cifs_dbg(VFS, "Received Request not response\n");
 		}
 	} else { /* bad signature or mid */
-		if (hdr->ProtocolId != SMB2_PROTO_NUMBER)
+		if (*(__le32 *)hdr->ProtocolId != SMB2_PROTO_NUMBER)
 			cifs_dbg(VFS, "Bad protocol string signature header %x\n",
-				 le32_to_cpu(hdr->ProtocolId));
+				 *(unsigned int *) hdr->ProtocolId);
 		if (mid != wire_mid)
 			cifs_dbg(VFS, "Mids do not match: %llu and %llu\n",
 				 mid, wire_mid);
@@ -93,11 +93,11 @@ static const __le16 smb2_rsp_struct_sizes[NUMBER_OF_SMB2_COMMANDS] = {
 };
 
 int
-smb2_check_message(char *buf, unsigned int length, struct TCP_Server_Info *srvr)
+smb2_check_message(char *buf, unsigned int length)
 {
 	struct smb2_hdr *hdr = (struct smb2_hdr *)buf;
 	struct smb2_pdu *pdu = (struct smb2_pdu *)hdr;
-	__u64 mid;
+	__u64 mid = le64_to_cpu(hdr->MessageId);
 	__u32 len = get_rfc1002_length(buf);
 	__u32 clc_len;  /* calculated length */
 	int command;
@@ -111,30 +111,6 @@ smb2_check_message(char *buf, unsigned int length, struct TCP_Server_Info *srvr)
 	 * ie Validate the wct via smb2_struct_sizes table above
 	 */
 
-	if (hdr->ProtocolId == SMB2_TRANSFORM_PROTO_NUM) {
-		struct smb2_transform_hdr *thdr =
-			(struct smb2_transform_hdr *)buf;
-		struct cifs_ses *ses = NULL;
-		struct list_head *tmp;
-
-		/* decrypt frame now that it is completely read in */
-		spin_lock(&cifs_tcp_ses_lock);
-		list_for_each(tmp, &srvr->smb_ses_list) {
-			ses = list_entry(tmp, struct cifs_ses, smb_ses_list);
-			if (ses->Suid == thdr->SessionId)
-				break;
-
-			ses = NULL;
-		}
-		spin_unlock(&cifs_tcp_ses_lock);
-		if (ses == NULL) {
-			cifs_dbg(VFS, "no decryption - session id not found\n");
-			return 1;
-		}
-	}
-
-
-	mid = le64_to_cpu(hdr->MessageId);
 	if (length < sizeof(struct smb2_pdu)) {
 		if ((length >= sizeof(struct smb2_hdr)) && (hdr->Status != 0)) {
 			pdu->StructureSize2 = 0;
@@ -353,7 +329,7 @@ smb2_get_data_area_len(int *off, int *len, struct smb2_hdr *hdr)
 
 	/* return pointer to beginning of data area, ie offset from SMB start */
 	if ((*off != 0) && (*len != 0))
-		return (char *)(&hdr->ProtocolId) + *off;
+		return (char *)(&hdr->ProtocolId[0]) + *off;
 	else
 		return NULL;
 }
@@ -474,6 +450,7 @@ smb2_tcon_has_lease(struct cifs_tcon *tcon, struct smb2_lease_break *rsp,
 	__u8 lease_state;
 	struct list_head *tmp;
 	struct cifsFileInfo *cfile;
+	struct TCP_Server_Info *server = tcon->ses->server;
 	struct cifs_pending_open *open;
 	struct cifsInodeInfo *cinode;
 	int ack_req = le32_to_cpu(rsp->Flags &
@@ -493,26 +470,14 @@ smb2_tcon_has_lease(struct cifs_tcon *tcon, struct smb2_lease_break *rsp,
 		cifs_dbg(FYI, "lease key match, lease break 0x%x\n",
 			 le32_to_cpu(rsp->NewLeaseState));
 
+		server->ops->set_oplock_level(cinode, lease_state, 0, NULL);
+
 		if (ack_req)
 			cfile->oplock_break_cancelled = false;
 		else
 			cfile->oplock_break_cancelled = true;
 
-		set_bit(CIFS_INODE_PENDING_OPLOCK_BREAK, &cinode->flags);
-
-		/*
-		 * Set or clear flags depending on the lease state being READ.
-		 * HANDLE caching flag should be added when the client starts
-		 * to defer closing remote file handles with HANDLE leases.
-		 */
-		if (lease_state & SMB2_LEASE_READ_CACHING_HE)
-			set_bit(CIFS_INODE_DOWNGRADE_OPLOCK_TO_L2,
-				&cinode->flags);
-		else
-			clear_bit(CIFS_INODE_DOWNGRADE_OPLOCK_TO_L2,
-				  &cinode->flags);
-
-		cifs_queue_oplock_break(cfile);
+		queue_work(cifsiod_wq, &cfile->oplock_break);
 		kfree(lw);
 		return true;
 	}
@@ -658,8 +623,7 @@ smb2_is_valid_oplock_break(char *buffer, struct TCP_Server_Info *server)
 					   CIFS_INODE_DOWNGRADE_OPLOCK_TO_L2,
 					   &cinode->flags);
 				spin_unlock(&cfile->file_info_lock);
-
-				cifs_queue_oplock_break(cfile);
+				queue_work(cifsiod_wq, &cfile->oplock_break);
 
 				spin_unlock(&tcon->open_file_lock);
 				spin_unlock(&cifs_tcp_ses_lock);

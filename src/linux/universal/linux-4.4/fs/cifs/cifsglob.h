@@ -70,22 +70,8 @@
 #define SERVER_NAME_LENGTH 40
 #define SERVER_NAME_LEN_WITH_NULL     (SERVER_NAME_LENGTH + 1)
 
-/* echo interval in seconds */
-#define SMB_ECHO_INTERVAL_MIN 1
-#define SMB_ECHO_INTERVAL_MAX 600
-#define SMB_ECHO_INTERVAL_DEFAULT 60
-
-/*
- * Default number of credits to keep available for SMB3.
- * This value is chosen somewhat arbitrarily. The Windows client
- * defaults to 128 credits, the Windows server allows clients up to
- * 512 credits (or 8K for later versions), and the NetApp server
- * does not limit clients at all.  Choose a high enough default value
- * such that the client shouldn't limit performance, but allow mount
- * to override (until you approach 64K, where we limit credits to 65000
- * to reduce possibility of seeing more server credit overflow bugs.
- */
-#define SMB2_MAX_CREDITS_AVAILABLE 32000
+/* SMB echo "timeout" -- FIXME: tunable? */
+#define SMB_ECHO_INTERVAL (60 * HZ)
 
 #include "cifspdu.h"
 
@@ -239,7 +225,7 @@ struct smb_version_operations {
 	void (*print_stats)(struct seq_file *m, struct cifs_tcon *);
 	void (*dump_share_caps)(struct seq_file *, struct cifs_tcon *);
 	/* verify the message */
-	int (*check_message)(char *, unsigned int, struct TCP_Server_Info *);
+	int (*check_message)(char *, unsigned int);
 	bool (*is_oplock_break)(char *, struct TCP_Server_Info *);
 	int (*handle_cancelled_mid)(char *, struct TCP_Server_Info *);
 	void (*downgrade_oplock)(struct TCP_Server_Info *,
@@ -391,8 +377,6 @@ struct smb_version_operations {
 	int (*calc_signature)(struct smb_rqst *, struct TCP_Server_Info *);
 	int (*set_integrity)(const unsigned int, struct cifs_tcon *tcon,
 			     struct cifsFileInfo *src_file);
-	int (*enum_snapshots)(const unsigned int xid, struct cifs_tcon *tcon,
-			     struct cifsFileInfo *src_file, void __user *);
 	int (*query_mf_symlink)(unsigned int, struct cifs_tcon *,
 				struct cifs_sb_info *, const unsigned char *,
 				char *, unsigned int *);
@@ -481,7 +465,6 @@ struct smb_vol {
 	bool retry:1;
 	bool intr:1;
 	bool setuids:1;
-	bool setuidfromacl:1;
 	bool override_uid:1;
 	bool override_gid:1;
 	bool dynperm:1;
@@ -527,8 +510,6 @@ struct smb_vol {
 	struct sockaddr_storage dstaddr; /* destination address */
 	struct sockaddr_storage srcaddr; /* allow binding to a local IP */
 	struct nls_table *local_nls;
-	unsigned int echo_interval; /* echo interval in secs */
-	unsigned int max_credits; /* smb3 max_credits 10 < credits < 60000 */
 };
 
 #define CIFS_MOUNT_MASK (CIFS_MOUNT_NO_PERM | CIFS_MOUNT_SET_UID | \
@@ -586,8 +567,7 @@ struct TCP_Server_Info {
 	bool noblocksnd;		/* use blocking sendmsg */
 	bool noautotune;		/* do not autotune send buf sizes */
 	bool tcp_nodelay;
-	unsigned int credits;  /* send no more requests at once */
-	unsigned int max_credits; /* can override large 32000 default at mnt */
+	int credits;  /* send no more requests at once */
 	unsigned int in_flight;  /* number of requests on the wire to server */
 	spinlock_t req_lock;  /* protect the two values above */
 	struct mutex srv_mutex;
@@ -635,6 +615,8 @@ struct TCP_Server_Info {
 	bool	sec_mskerberos;		/* supports legacy MS Kerberos */
 	bool	large_buf;		/* is current buffer large? */
 	struct delayed_work	echo; /* echo ping workqueue job */
+	struct kvec *iov;	/* reusable kvec array for receives */
+	unsigned int nr_iov;	/* number of kvecs in array */
 	char	*smallbuf;	/* pointer to current "small" buffer */
 	char	*bigbuf;	/* pointer to current "big" buffer */
 	unsigned int total_read; /* total amount of data read in this pass */
@@ -648,11 +630,9 @@ struct TCP_Server_Info {
 #ifdef CONFIG_CIFS_SMB2
 	unsigned int	max_read;
 	unsigned int	max_write;
-	__u8		preauth_hash[512];
 	struct delayed_work reconnect; /* reconnect workqueue job */
 	struct mutex reconnect_mutex; /* prevent simultaneous reconnects */
 #endif /* CONFIG_CIFS_SMB2 */
-	unsigned long echo_interval;
 };
 
 static inline unsigned int
@@ -734,7 +714,7 @@ compare_mid(__u16 mid, const struct smb_hdr *smb)
  *
  * Note that this might make for "interesting" allocation problems during
  * writeback however as we have to allocate an array of pointers for the
- * pages. A 16M write means ~32kb page array with PAGE_SIZE == 4096.
+ * pages. A 16M write means ~32kb page array with PAGE_CACHE_SIZE == 4096.
  *
  * For reads, there is a similar problem as we need to allocate an array
  * of kvecs to handle the receive, though that should only need to be done
@@ -753,7 +733,7 @@ compare_mid(__u16 mid, const struct smb_hdr *smb)
 
 /*
  * The default wsize is 1M. find_get_pages seems to return a maximum of 256
- * pages in a single call. With PAGE_SIZE == 4k, this means we can fill
+ * pages in a single call. With PAGE_CACHE_SIZE == 4k, this means we can fill
  * a single wsize request with a single call.
  */
 #define CIFS_DEFAULT_IOSIZE (1024 * 1024)
@@ -834,10 +814,7 @@ struct cifs_ses {
 	bool need_reconnect:1; /* connection reset, uid now invalid */
 #ifdef CONFIG_CIFS_SMB2
 	__u16 session_flags;
-	__u8 smb3signingkey[SMB3_SIGN_KEY_SIZE];
-	__u8 smb3encryptionkey[SMB3_SIGN_KEY_SIZE];
-	__u8 smb3decryptionkey[SMB3_SIGN_KEY_SIZE];
-	__u8 preauth_hash[512];
+	char smb3signingkey[SMB3_SIGN_KEY_SIZE]; /* for signing smb3 packets */
 #endif /* CONFIG_CIFS_SMB2 */
 };
 
@@ -928,7 +905,6 @@ struct cifs_tcon {
 	bool broken_posix_open; /* e.g. Samba server versions < 3.3.2, 3.2.9 */
 	bool broken_sparse_sup; /* if server or share does not support sparse */
 	bool need_reconnect:1; /* connection reset, tid now invalid */
-	bool need_reopen_files:1; /* need to reopen tcon file handles */
 	bool use_resilient:1; /* use resilient instead of durable handles */
 	bool use_persistent:1; /* use persistent instead of durable handles */
 #ifdef CONFIG_CIFS_SMB2
@@ -1072,7 +1048,6 @@ struct cifsFileInfo {
 	kuid_t uid;		/* allows finding which FileInfo structure */
 	__u32 pid;		/* process id who opened file */
 	struct cifs_fid fid;	/* file id from remote */
-	struct list_head rlist; /* reconnect list */
 	/* BB add lock scope info here if needed */ ;
 	/* lock scope id (0 if none) */
 	struct dentry *dentry;
@@ -1157,7 +1132,6 @@ cifsFileInfo_get_locked(struct cifsFileInfo *cifs_file)
 }
 
 struct cifsFileInfo *cifsFileInfo_get(struct cifsFileInfo *cifs_file);
-void _cifsFileInfo_put(struct cifsFileInfo *cifs_file, bool wait_oplock_hdlr);
 void cifsFileInfo_put(struct cifsFileInfo *cifs_file);
 
 #define CIFS_CACHE_READ_FLG	1
@@ -1418,7 +1392,6 @@ struct dfs_info3_param {
 #define CIFS_FATTR_NEED_REVAL		0x4
 #define CIFS_FATTR_INO_COLLISION	0x8
 #define CIFS_FATTR_UNKNOWN_NLINK	0x10
-#define CIFS_FATTR_FAKE_ROOT_INO	0x20
 
 struct cifs_fattr {
 	u32		cf_flags;
@@ -1657,12 +1630,9 @@ GLOBAL_EXTERN spinlock_t gidsidlock;
 #endif /* CONFIG_CIFS_ACL */
 
 void cifs_oplock_break(struct work_struct *work);
-void cifs_queue_oplock_break(struct cifsFileInfo *cfile);
 
 extern const struct slow_work_ops cifs_oplock_break_ops;
 extern struct workqueue_struct *cifsiod_wq;
-extern struct workqueue_struct *cifsoplockd_wq;
-extern __u32 cifs_lock_secret;
 
 extern mempool_t *cifs_mid_poolp;
 

@@ -34,69 +34,18 @@
 #include "cifs_ioctl.h"
 #include <linux/btrfs.h>
 
-static int cifs_file_clone_range(unsigned int xid, struct file *src_file,
-			  struct file *dst_file)
-{
-	struct inode *src_inode = file_inode(src_file);
-	struct inode *target_inode = file_inode(dst_file);
-	struct cifsFileInfo *smb_file_src;
-	struct cifsFileInfo *smb_file_target;
-	struct cifs_tcon *src_tcon;
-	struct cifs_tcon *target_tcon;
-	int rc;
-
-	cifs_dbg(FYI, "ioctl clone range\n");
-
-	if (!src_file->private_data || !dst_file->private_data) {
-		rc = -EBADF;
-		cifs_dbg(VFS, "missing cifsFileInfo on copy range src file\n");
-		goto out;
-	}
-
-	rc = -EXDEV;
-	smb_file_target = dst_file->private_data;
-	smb_file_src = src_file->private_data;
-	src_tcon = tlink_tcon(smb_file_src->tlink);
-	target_tcon = tlink_tcon(smb_file_target->tlink);
-
-	if (src_tcon->ses != target_tcon->ses) {
-		cifs_dbg(VFS, "source and target of copy not on same server\n");
-		goto out;
-	}
-
-	/*
-	 * Note: cifs case is easier than btrfs since server responsible for
-	 * checks for proper open modes and file type and if it wants
-	 * server could even support copy of range where source = target
-	 */
-	lock_two_nondirectories(target_inode, src_inode);
-
-	cifs_dbg(FYI, "about to flush pages\n");
-	/* should we flush first and last page first */
-	truncate_inode_pages(&target_inode->i_data, 0);
-
-	if (target_tcon->ses->server->ops->clone_range)
-		rc = target_tcon->ses->server->ops->clone_range(xid,
-			smb_file_src, smb_file_target, 0, src_inode->i_size, 0);
-	else
-		rc = -EOPNOTSUPP;
-
-	/* force revalidate of size and timestamps of target file now
-	   that target is updated on the server */
-	CIFS_I(target_inode)->time = 0;
-	/* although unlocking in the reverse order from locking is not
-	   strictly necessary here it is a little cleaner to be consistent */
-	unlock_two_nondirectories(src_inode, target_inode);
-out:
-	return rc;
-}
-
 static long cifs_ioctl_clone(unsigned int xid, struct file *dst_file,
-			unsigned long srcfd)
+			unsigned long srcfd, u64 off, u64 len, u64 destoff,
+			bool dup_extents)
 {
 	int rc;
+	struct cifsFileInfo *smb_file_target = dst_file->private_data;
+	struct inode *target_inode = file_inode(dst_file);
+	struct cifs_tcon *target_tcon;
 	struct fd src_file;
+	struct cifsFileInfo *smb_file_src;
 	struct inode *src_inode;
+	struct cifs_tcon *src_tcon;
 
 	cifs_dbg(FYI, "ioctl clone range\n");
 	/* the destination must be opened for writing */
@@ -124,13 +73,69 @@ static long cifs_ioctl_clone(unsigned int xid, struct file *dst_file,
 		goto out_fput;
 	}
 
+	if ((!src_file.file->private_data) || (!dst_file->private_data)) {
+		rc = -EBADF;
+		cifs_dbg(VFS, "missing cifsFileInfo on copy range src file\n");
+		goto out_fput;
+	}
+
+	rc = -EXDEV;
+	smb_file_target = dst_file->private_data;
+	smb_file_src = src_file.file->private_data;
+	src_tcon = tlink_tcon(smb_file_src->tlink);
+	target_tcon = tlink_tcon(smb_file_target->tlink);
+
+	/* check source and target on same server (or volume if dup_extents) */
+	if (dup_extents && (src_tcon != target_tcon)) {
+		cifs_dbg(VFS, "source and target of copy not on same share\n");
+		goto out_fput;
+	}
+
+	if (!dup_extents && (src_tcon->ses != target_tcon->ses)) {
+		cifs_dbg(VFS, "source and target of copy not on same server\n");
+		goto out_fput;
+	}
+
 	src_inode = file_inode(src_file.file);
 	rc = -EINVAL;
 	if (S_ISDIR(src_inode->i_mode))
 		goto out_fput;
 
-	rc = cifs_file_clone_range(xid, src_file.file, dst_file);
+	/*
+	 * Note: cifs case is easier than btrfs since server responsible for
+	 * checks for proper open modes and file type and if it wants
+	 * server could even support copy of range where source = target
+	 */
+	lock_two_nondirectories(target_inode, src_inode);
 
+	/* determine range to clone */
+	rc = -EINVAL;
+	if (off + len > src_inode->i_size || off + len < off)
+		goto out_unlock;
+	if (len == 0)
+		len = src_inode->i_size - off;
+
+	cifs_dbg(FYI, "about to flush pages\n");
+	/* should we flush first and last page first */
+	truncate_inode_pages_range(&target_inode->i_data, destoff,
+				   PAGE_CACHE_ALIGN(destoff + len)-1);
+
+	if (dup_extents && target_tcon->ses->server->ops->duplicate_extents)
+		rc = target_tcon->ses->server->ops->duplicate_extents(xid,
+			smb_file_src, smb_file_target, off, len, destoff);
+	else if (!dup_extents && target_tcon->ses->server->ops->clone_range)
+		rc = target_tcon->ses->server->ops->clone_range(xid,
+			smb_file_src, smb_file_target, off, len, destoff);
+	else
+		rc = -EOPNOTSUPP;
+
+	/* force revalidate of size and timestamps of target file now
+	   that target is updated on the server */
+	CIFS_I(target_inode)->time = 0;
+out_unlock:
+	/* although unlocking in the reverse order from locking is not
+	   strictly necessary here it is a little cleaner to be consistent */
+	unlock_two_nondirectories(src_inode, target_inode);
 out_fput:
 	fdput(src_file);
 out_drop_write:
@@ -189,7 +194,7 @@ long cifs_ioctl(struct file *filep, unsigned int command, unsigned long arg)
 	xid = get_xid();
 
 	cifs_sb = CIFS_SB(inode->i_sb);
-	cifs_dbg(FYI, "cifs ioctl 0x%x\n", command);
+
 	switch (command) {
 		case FS_IOC_GETFLAGS:
 			if (pSMBFile == NULL)
@@ -251,7 +256,10 @@ long cifs_ioctl(struct file *filep, unsigned int command, unsigned long arg)
 			}
 			break;
 		case CIFS_IOC_COPYCHUNK_FILE:
-			rc = cifs_ioctl_clone(xid, filep, arg);
+			rc = cifs_ioctl_clone(xid, filep, arg, 0, 0, 0, false);
+			break;
+		case BTRFS_IOC_CLONE:
+			rc = cifs_ioctl_clone(xid, filep, arg, 0, 0, 0, true);
 			break;
 		case CIFS_IOC_SET_INTEGRITY:
 			if (pSMBFile == NULL)
@@ -269,25 +277,11 @@ long cifs_ioctl(struct file *filep, unsigned int command, unsigned long arg)
 			tcon = tlink_tcon(pSMBFile->tlink);
 			rc = smb_mnt_get_fsinfo(xid, tcon, (void __user *)arg);
 			break;
-		case CIFS_ENUMERATE_SNAPSHOTS:
-			if (pSMBFile == NULL)
-				break;
-			if (arg == 0) {
-				rc = -EINVAL;
-				goto cifs_ioc_exit;
-			}
-			tcon = tlink_tcon(pSMBFile->tlink);
-			if (tcon->ses->server->ops->enum_snapshots)
-				rc = tcon->ses->server->ops->enum_snapshots(xid, tcon,
-						pSMBFile, (void __user *)arg);
-			else
-				rc = -EOPNOTSUPP;
-			break;
 		default:
 			cifs_dbg(FYI, "unsupported ioctl\n");
 			break;
 	}
-cifs_ioc_exit:
+
 	free_xid(xid);
 	return rc;
 }
