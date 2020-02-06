@@ -27,7 +27,7 @@ RP_VERSION=3.8p
 
 CFLAGS=$(COPTS) $(LTO) $(MIPS16_OPT) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include -I../../../include -I../../../ '-DRP_VERSION="$(RP_VERSION)"'
 #CFLAGS=$(COPTS) -I$(LINUXDIR)/include/linux
-LDFLAGS = $(LDLTO) -L$(TOP)/nvram -lnvram
+LDFLAGS =  $(COPTS) $(MIPS16_OPT)$(LDLTO) -L$(TOP)/nvram -lnvram
 
 include $(TOP)/.config
 all: rp-pppoe.so pppoe-discovery

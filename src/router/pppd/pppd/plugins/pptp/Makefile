@@ -21,7 +21,7 @@ all: pptp.so
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 pptp.so: dirutil.o orckit_quirks.o pptp.o pptp_callmgr.o pptp_ctrl.o pptp_quirks.o util.o vector.o
-	$(CC) $(LDLTO) -fPIC -o pptp.so -shared dirutil.o orckit_quirks.o pptp.o pptp_callmgr.o pptp_ctrl.o pptp_quirks.o util.o vector.o
+	$(CC)  $(COPTS) $(MIPS16_OPT) $(LDLTO) -fPIC -o pptp.so -shared dirutil.o orckit_quirks.o pptp.o pptp_callmgr.o pptp_ctrl.o pptp_quirks.o util.o vector.o
 
 install: all
 	$(INSTALL) -d -m 755 $(LIBDIR)
