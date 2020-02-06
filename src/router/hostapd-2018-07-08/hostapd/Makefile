@@ -1,5 +1,5 @@
 CFLAGS+ = -MMD $(MIPS16_OPT) $(COPTS) -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections
-LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS += $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 CFLAGS += $(EXTRA_CFLAGS)
 CFLAGS += -I$(abspath ../src)

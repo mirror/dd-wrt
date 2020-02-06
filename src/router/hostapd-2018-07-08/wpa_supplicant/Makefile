@@ -2,8 +2,8 @@ ifndef CC
 CC=gcc
 endif
 
-CFLAGS+ = -MMD  $(MIPS16_OPT) $(COPTS) -Wall 
-LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS+ = -MMD  $(MIPS16_OPT) $(COPTS) $(LTO) -Wall 
+LDFLAGS +=  $(MIPS16_OPT) $(COPTS) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections
 CFLAGS += -I. -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 ifdef LIBS
