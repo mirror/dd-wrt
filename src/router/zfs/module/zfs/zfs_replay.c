@@ -49,6 +49,16 @@
 #include <sys/zpl.h>
 
 /*
+ * NB: FreeBSD expects to be able to do vnode locking in lookup and
+ * hold the locks across all subsequent VOPs until vput is called.
+ * This means that its zfs vnops routines can't do any internal locking.
+ * In order to have the same contract as the Linux vnops there would
+ * needed to be duplicate locked vnops. If the vnops were used more widely
+ * in common code this would likely be preferable. However, currently
+ * this is the only file where this is the case.
+ */
+
+/*
  * Functions to replay ZFS intent log (ZIL) records
  * The functions are called through a function vector (zfs_replay_vector)
  * which is indexed by the transaction type.
@@ -61,9 +71,12 @@ zfs_init_vattr(vattr_t *vap, uint64_t mask, uint64_t mode,
 	bzero(vap, sizeof (*vap));
 	vap->va_mask = (uint_t)mask;
 	vap->va_mode = mode;
+#ifdef __FreeBSD__
+	vap->va_type = IFTOVT(mode);
+#endif
 	vap->va_uid = (uid_t)(IS_EPHEMERAL(uid)) ? -1 : uid;
 	vap->va_gid = (gid_t)(IS_EPHEMERAL(gid)) ? -1 : gid;
-	vap->va_rdev = rdev;
+	vap->va_rdev = zfs_cmpldev(rdev);
 	vap->va_nodeid = nodeid;
 }
 
@@ -409,9 +422,12 @@ zfs_replay_create_acl(void *arg1, void *arg2, boolean_t byteswap)
 	}
 
 bail:
-	if (error == 0 && zp != NULL)
+	if (error == 0 && zp != NULL) {
+#ifdef __FreeBSD__
+		VOP_UNLOCK1(ZTOV(zp));
+#endif
 		zrele(zp);
-
+	}
 	zrele(dzp);
 
 	if (zfsvfs->z_fuid_replay)
@@ -544,9 +560,12 @@ zfs_replay_create(void *arg1, void *arg2, boolean_t byteswap)
 	}
 
 out:
-	if (error == 0 && zp != NULL)
+	if (error == 0 && zp != NULL) {
+#ifdef __FreeBSD__
+		VOP_UNLOCK1(ZTOV(zp));
+#endif
 		zrele(zp);
-
+	}
 	zrele(dzp);
 
 	if (zfsvfs->z_fuid_replay)
@@ -615,7 +634,6 @@ zfs_replay_link(void *arg1, void *arg2, boolean_t byteswap)
 		vflg |= FIGNORECASE;
 
 	error = zfs_link(dzp, zp, name, kcred, vflg);
-
 	zrele(zp);
 	zrele(dzp);
 
@@ -651,7 +669,6 @@ zfs_replay_rename(void *arg1, void *arg2, boolean_t byteswap)
 
 	zrele(tdzp);
 	zrele(sdzp);
-
 	return (error);
 }
 
@@ -662,7 +679,7 @@ zfs_replay_write(void *arg1, void *arg2, boolean_t byteswap)
 	lr_write_t *lr = arg2;
 	char *data = (char *)(lr + 1);	/* data follows lr_write_t */
 	znode_t	*zp;
-	int error, written;
+	int error;
 	uint64_t eod, offset, length;
 
 	if (byteswap)
@@ -706,14 +723,7 @@ zfs_replay_write(void *arg1, void *arg2, boolean_t byteswap)
 		if (zp->z_size < eod)
 			zfsvfs->z_replay_eof = eod;
 	}
-
-	written = zpl_write_common(ZTOI(zp), data, length, &offset,
-	    UIO_SYSSPACE, 0, kcred);
-	if (written < 0)
-		error = -written;
-	else if (written < length)
-		error = SET_ERROR(EIO); /* short write */
-
+	error = zfs_write_simple(zp, data, length, offset, NULL);
 	zrele(zp);
 	zfsvfs->z_replay_eof = 0;	/* safety */
 

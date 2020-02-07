@@ -1,0 +1,81 @@
+From c317c8c811873c4a0fefd41bd317bf266a29f966 Mon Sep 17 00:00:00 2001
+From: Tom Caputi <tcaputi@datto.com>
+Date: Fri, 13 Dec 2019 14:51:39 -0500
+Subject: [PATCH] Allow empty ds_props_obj to be destroyed
+
+Currently, 'zfs list' and 'zfs get' commands can be slow when
+working with snapshots that have a ds_props_obj. This is
+because the code that discovers all of the properties for these
+snapshots needs to read this object for each snapshot, which
+almost always ends up causing an extra random synchronous read
+for each snapshot. This performance penalty exists even if the
+properties on that snapshot have been unset because the object
+is normally only freed when the snapshot is freed, even though
+it is only created when it is needed.
+
+This patch allows the user to regain 'zfs list' performance on
+these snapshots by destroying the ds_props_obj when it no longer
+has any entries left. In practice on a production machine, this
+optimization seems to make 'zfs list' about 55% faster.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: Paul Zuchowski <pzuchowski@datto.com>
+Signed-off-by: Tom Caputi <tcaputi@datto.com>
+Closes #9704
+---
+ module/zfs/dsl_prop.c | 21 +++++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
+
+diff --git a/module/zfs/dsl_prop.c b/module/zfs/dsl_prop.c
+index ad7b29a211d..4c468de5fab 100644
+--- a/module/zfs/dsl_prop.c
++++ b/module/zfs/dsl_prop.c
+@@ -649,7 +649,7 @@ dsl_prop_set_sync_impl(dsl_dataset_t *ds, const char *propname,
+     dmu_tx_t *tx)
+ {
+ 	objset_t *mos = ds->ds_dir->dd_pool->dp_meta_objset;
+-	uint64_t zapobj, intval, dummy;
++	uint64_t zapobj, intval, dummy, count;
+ 	int isint;
+ 	char valbuf[32];
+ 	const char *valstr = NULL;
+@@ -663,7 +663,8 @@ dsl_prop_set_sync_impl(dsl_dataset_t *ds, const char *propname,
+ 
+ 	if (ds->ds_is_snapshot) {
+ 		ASSERT(version >= SPA_VERSION_SNAP_PROPS);
+-		if (dsl_dataset_phys(ds)->ds_props_obj == 0) {
++		if (dsl_dataset_phys(ds)->ds_props_obj == 0 &&
++		    (source & ZPROP_SRC_NONE) == 0) {
+ 			dmu_buf_will_dirty(ds->ds_dbuf, tx);
+ 			dsl_dataset_phys(ds)->ds_props_obj =
+ 			    zap_create(mos,
+@@ -674,6 +675,10 @@ dsl_prop_set_sync_impl(dsl_dataset_t *ds, const char *propname,
+ 		zapobj = dsl_dir_phys(ds->ds_dir)->dd_props_zapobj;
+ 	}
+ 
++	/* If we are removing objects from a non-existent ZAP just return */
++	if (zapobj == 0)
++		return;
++
+ 	if (version < SPA_VERSION_RECVD_PROPS) {
+ 		if (source & ZPROP_SRC_NONE)
+ 			source = ZPROP_SRC_NONE;
+@@ -755,6 +760,18 @@ dsl_prop_set_sync_impl(dsl_dataset_t *ds, const char *propname,
+ 	kmem_strfree(inheritstr);
+ 	kmem_strfree(recvdstr);
+ 
++	/*
++	 * If we are left with an empty snap zap we can destroy it.
++	 * This will prevent unnecessary calls to zap_lookup() in
++	 * the "zfs list" and "zfs get" code paths.
++	 */
++	if (ds->ds_is_snapshot &&
++	    zap_count(mos, zapobj, &count) == 0 && count == 0) {
++		dmu_buf_will_dirty(ds->ds_dbuf, tx);
++		dsl_dataset_phys(ds)->ds_props_obj = 0;
++		zap_destroy(mos, zapobj, tx);
++	}
++
+ 	if (isint) {
+ 		VERIFY0(dsl_prop_get_int_ds(ds, propname, &intval));
+ 

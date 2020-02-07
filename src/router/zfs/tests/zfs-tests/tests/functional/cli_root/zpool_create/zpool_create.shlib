@@ -74,9 +74,7 @@ function create_blockfile
 		log_must mkdir -p $dir
 	fi
 
-	echo "y" | newfs ${DEV_RDSKDIR}/$disk >/dev/null 2>&1
-	(( $? != 0 )) &&
-		log_fail "Create file system fail."
+	log_must eval "new_fs ${DEV_RDSKDIR}/$disk >/dev/null 2>&1"
 
         log_must mount ${DEV_DSKDIR}/$disk $dir
         log_must truncate -s $size $file
@@ -125,12 +123,12 @@ function find_vfstab_dev
 	typeset vfstabdevs=""
 	typeset line
 
-	if is_linux; then
-		vfstab="/etc/fstab"
-		tmpfile="$TEST_BASE_DIR/fstab.tmp"
-	else
+	if is_illumos; then
 		vfstab="/etc/vfstab"
 		tmpfile="$TEST_BASE_DIR/vfstab.tmp"
+	else
+		vfstab="/etc/fstab"
+		tmpfile="$TEST_BASE_DIR/fstab.tmp"
 	fi
 
 	cat $vfstab | grep "^${DEV_DSKDIR}" >$tmpfile
@@ -150,11 +148,9 @@ function find_vfstab_dev
 #
 function save_dump_dev
 {
-	typeset dumpdev
+	typeset dumpdev=""
 
-	if is_linux; then
-		dumpdev=""
-	else
+	if is_illumos; then
 		typeset fnd="Dump device"
 		dumpdev=`dumpadm | grep "$fnd" | cut -f2 -d : | \
 			awk '{print $1}'`

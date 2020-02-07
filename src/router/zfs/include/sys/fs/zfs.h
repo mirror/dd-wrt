@@ -115,7 +115,7 @@ typedef enum {
 	ZFS_PROP_READONLY,
 	ZFS_PROP_ZONED,
 	ZFS_PROP_SNAPDIR,
-	ZFS_PROP_PRIVATE,		/* not exposed to user, temporary */
+	ZFS_PROP_ACLMODE,
 	ZFS_PROP_ACLINHERIT,
 	ZFS_PROP_CREATETXG,
 	ZFS_PROP_NAME,			/* not exposed to the user */
@@ -988,7 +988,7 @@ typedef enum dsl_scan_state {
 } dsl_scan_state_t;
 
 /*
- * Errata described by http://zfsonlinux.org/msg/ZFS-8000-ER.  The ordering
+ * Errata described by https://zfsonlinux.org/msg/ZFS-8000-ER.  The ordering
  * of this enum must be maintained to ensure the errata identifiers map to
  * the correct documentation.  New errata may only be appended to the list
  * and must contain corresponding documentation at the above link.

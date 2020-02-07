@@ -677,6 +677,9 @@ typedef struct sendflags {
 
 	/* include snapshot holds in send stream */
 	boolean_t holds;
+
+	/* stream represents a partially received dataset */
+	boolean_t saved;
 } sendflags_t;
 
 typedef boolean_t (snapfilter_cb_t)(zfs_handle_t *, void *);
@@ -688,6 +691,7 @@ extern int zfs_send_one(zfs_handle_t *, const char *, int, sendflags_t *,
 extern int zfs_send_progress(zfs_handle_t *, int, uint64_t *, uint64_t *);
 extern int zfs_send_resume(libzfs_handle_t *, sendflags_t *, int outfd,
     const char *);
+extern int zfs_send_saved(zfs_handle_t *, sendflags_t *, int, const char *);
 extern nvlist_t *zfs_send_resume_token_to_nvlist(libzfs_handle_t *hdl,
     const char *token);
 
@@ -784,6 +788,7 @@ extern boolean_t zfs_bookmark_exists(const char *path);
 extern boolean_t is_mounted(libzfs_handle_t *, const char *special, char **);
 extern boolean_t zfs_is_mounted(zfs_handle_t *, char **);
 extern int zfs_mount(zfs_handle_t *, const char *, int);
+extern int zfs_mount_at(zfs_handle_t *, const char *, int, const char *);
 extern int zfs_unmount(zfs_handle_t *, const char *, int);
 extern int zfs_unmountall(zfs_handle_t *, int);
 
@@ -821,15 +826,15 @@ extern int zfs_nicestrtonum(libzfs_handle_t *, const char *, uint64_t *);
 #define	STDERR_VERBOSE	0x02
 #define	NO_DEFAULT_PATH	0x04 /* Don't use $PATH to lookup the command */
 
-int libzfs_run_process(const char *, char **, int flags);
-int libzfs_run_process_get_stdout(const char *path, char *argv[], char *env[],
-    char **lines[], int *lines_cnt);
-int libzfs_run_process_get_stdout_nopath(const char *path, char *argv[],
-    char *env[], char **lines[], int *lines_cnt);
+int libzfs_run_process(const char *, char **, int);
+int libzfs_run_process_get_stdout(const char *, char *[], char *[],
+    char **[], int *);
+int libzfs_run_process_get_stdout_nopath(const char *, char *[], char *[],
+    char **[], int *);
 
-void libzfs_free_str_array(char **strs, int count);
+void libzfs_free_str_array(char **, int);
 
-int libzfs_envvar_is_set(char *envvar);
+int libzfs_envvar_is_set(char *);
 
 /*
  * Utility functions for zfs version

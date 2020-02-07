@@ -50,10 +50,6 @@
 
 verify_runnable "global"
 
-if is_linux; then
-	log_unsupported "Test case isn't applicable to Linux"
-fi
-
 function cleanup
 {
 	poolexists $TESTPOOL1 && destroy_pool $TESTPOOL1
@@ -109,7 +105,7 @@ for num in 0 1 2; do
 done
 
 log_note "Make a ufs filesystem on source $rawdisk1"
-echo "y" | newfs -v $rawdisk1 > /dev/null 2>&1
+new_fs $rawdisk1 > /dev/null 2>&1
 (($? != 0)) && log_untested "Unable to create ufs filesystem on $rawdisk1"
 
 log_must mkdir -p $UFSMP
