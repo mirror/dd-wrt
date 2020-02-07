@@ -195,8 +195,7 @@ void start_l2tp(int status)
 			"nodeflate\n"	// Disables Deflate compression
 			"lcp-echo-failure 12\n"	//
 			"lcp-echo-interval 30\n"	// echo-request frame to the peer       
-			"lcp-echo-adaptive\n"
-			"lock\n"	//
+			"lcp-echo-adaptive\n" "lock\n"	//
 			"noauth\n");
 #ifdef HAVE_IPV6
 		if (nvram_matchi("ipv6_enable", 1)) {
