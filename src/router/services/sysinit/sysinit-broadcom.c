@@ -472,6 +472,16 @@ static void set_regulation(int card, char *code, char *rev)
 	}
 }
 
+static void restore_set(char *prefix, struct nvram_param *set);
+{
+	struct nvram_param *t;
+	for (t = set; t->name; t++) {
+		if (!nvram_exists(t->name))
+			nvram_nset(t->value, "%s/%s", prefix, t->name);
+	}
+
+}
+
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -1368,44 +1378,14 @@ void start_sysinit(void)
 
 		/* Restore defaults */
 		if (isr6300) {
-			struct nvram_param *t;
-			t = r6300_pci_1_1_params;
-			while (t->name) {
-				nvram_nset(t->value, "pci/1/1/%s", t->name);
-				t++;
-			}
-			t = r6300_pci_2_1_params;
-			while (t->name) {
-				nvram_nset(t->value, "pci/2/1/%s", t->name);
-				t++;
-			}
-
+			restore_set("pci/1/1", r6300_pci_1_1_params);
+			restore_set("pci/2/1", r6300_pci_2_1_params);
 		} else if (iswndr4500v2) {
-			struct nvram_param *t;
-			t = wndr4500v2_pci_1_1_params;
-			while (t->name) {
-				nvram_nset(t->value, "pci/1/1/%s", t->name);
-				t++;
-			}
-			t = wndr4500v2_pci_2_1_params;
-			while (t->name) {
-				nvram_nset(t->value, "pci/2/1/%s", t->name);
-				t++;
-			}
-
+			restore_set("pci/1/1", wndr4500v2_pci_1_1_params);
+			restore_set("pci/2/1", wndr4500v2_pci_2_1_params);
 		} else {
-			struct nvram_param *t;
-			t = wndr4500_pci_1_1_params;
-			while (t->name) {
-				nvram_nset(t->value, "pci/1/1/%s", t->name);
-				t++;
-			}
-			t = wndr4500_pci_2_1_params;
-			while (t->name) {
-				nvram_nset(t->value, "pci/2/1/%s", t->name);
-				t++;
-			}
-
+			restore_set("pci/1/1", wndr4500_pci_1_1_params);
+			restore_set("pci/2/1", wndr4500_pci_2_1_params);
 		}
 
 		if (nvram_match("wl0_country_code", "US"))
@@ -1540,14 +1520,7 @@ void start_sysinit(void)
 
 			{ 0, 0 }
 		};
-		/*
-		 * set router's extra parameters 
-		 */
-		extra_params = wndr3400_sb_1_params;
-		while (extra_params->name) {
-			nvram_nset(extra_params->value, "sb/1/%s", extra_params->name);
-			extra_params++;
-		}
+		restore_set("sb/1", wndr3400_sb_1_params);
 
 		struct nvram_param wndr3400_pci_1_1_params[] = {
 
@@ -1637,14 +1610,7 @@ void start_sysinit(void)
 			{ "wdup405ghpo/wdup405glpo/wdup405gpo/wdup402gpo", "0x0" },
 			{ 0, 0 }
 		};
-		/*
-		 * set router's extra parameters 
-		 */
-		extra_params = wndr3400_pci_1_1_params;
-		while (extra_params->name) {
-			nvram_nset(extra_params->value, "pci/1/1/%s", extra_params->name);
-			extra_params++;
-		}
+		restore_set("pci/1/1", wndr3400_pci_1_1_params);
 		break;
 
 	case ROUTER_NETGEAR_WNDR4000:
@@ -1696,14 +1662,8 @@ void start_sysinit(void)
 
 			{ 0, 0 }
 		};
-		/*
-		 * set router's extra parameters 
-		 */
-		extra_params = wndr4000_sb_1_params;
-		while (extra_params->name) {
-			nvram_nset(extra_params->value, "sb/1/%s", extra_params->name);
-			extra_params++;
-		}
+
+		restore_set("sb/1", wndr4000_sb_1_params);
 
 		struct nvram_param wndr4000_pci_1_1_params[] = {
 
@@ -1794,14 +1754,7 @@ void start_sysinit(void)
 
 			{ 0, 0 }
 		};
-		/*
-		 * set router's extra parameters 
-		 */
-		extra_params = wndr4000_pci_1_1_params;
-		while (extra_params->name) {
-			nvram_nset(extra_params->value, "pci/1/1/%s", extra_params->name);
-			extra_params++;
-		}
+		restore_set("pci/1/1", wndr4000_pci_1_1_params);
 		break;
 
 	case ROUTER_NETGEAR_WNR2000V2:
@@ -1834,7 +1787,7 @@ void start_sysinit(void)
 	case ROUTER_ASUS_AC66U:
 		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 		nvram_set("wan_ifname", "vlan2");
-		struct nvram_param bcm4360ac_defaults[] = {
+		struct nvram_param bcm4360ac_defaults_pci2_1[] = {
 			{ "aa2g", "0" },
 			{ "aa5g", "7" },
 			{ "aga0", "0" },
@@ -1918,43 +1871,37 @@ void start_sysinit(void)
 			{ "ledbh2", "4" },
 			{ "ledbh3", "11" },
 			{ "ledbh10", "7" },
+			{ "maxp5ga0", "104,104,104,104" },
+			{ "maxp5ga1", "104,104,104,104" },
+			{ "maxp5ga2", "104,104,104,104" },
+			{ "mcsbw205glpo", "0xBB975311" },
+			{ "mcsbw405glpo", "0xBB975311" },
+			{ "mcsbw805glpo", "0xBB975311" },
+			{ "mcsbw205gmpo", "0xBB975311" },
+			{ "mcsbw405gmpo", "0xBB975311" },
+			{ "mcsbw805gmpo", "0xBB975311" },
+			{ "mcsbw205ghpo", "0xBB975311" },
+			{ "mcsbw405ghpo", "0xBB975311" },
+			{ "mcsbw805ghpo", "0xBB975311" },
 
 			{ 0, 0 }
 		};
+		restore_set("pci/2/1", bcm4360ac_defaults_pci2_1);
 
-		struct nvram_param *t;
-
-		/* Restore defaults */
-		for (t = bcm4360ac_defaults; t->name; t++) {
-			if (!nvram_exists(t->name))
-				nvram_nset(t->value, "pci/2/1/%s", t->name);
-		}
-
-		nvram_set("pci/1/1/maxp2ga0", "0x70");
-		nvram_set("pci/1/1/maxp2ga1", "0x70");
-		nvram_set("pci/1/1/maxp2ga2", "0x70");
-
-		nvram_set("pci/1/1/cckbw202gpo", "0x5555");
-		nvram_set("pci/1/1/cckbw20ul2gpo", "0x5555");
-		nvram_set("pci/1/1/legofdmbw202gpo", "0x97555555");
-		nvram_set("pci/1/1/legofdmbw20ul2gpo", "0x97555555");
-		nvram_set("pci/1/1/mcsbw202gpo", "0xDA755555");
-		nvram_set("pci/1/1/mcsbw20ul2gpo", "0xDA755555");
-		nvram_set("pci/1/1/mcsbw402gpo", "0xFC965555");
-
-		nvram_set("pci/2/1/maxp5ga0", "104,104,104,104");
-		nvram_set("pci/2/1/maxp5ga1", "104,104,104,104");
-		nvram_set("pci/2/1/maxp5ga2", "104,104,104,104");
-
-		nvram_set("pci/2/1/mcsbw205glpo", "0xBB975311");
-		nvram_set("pci/2/1/mcsbw405glpo", "0xBB975311");
-		nvram_set("pci/2/1/mcsbw805glpo", "0xBB975311");
-		nvram_set("pci/2/1/mcsbw205gmpo", "0xBB975311");
-		nvram_set("pci/2/1/mcsbw405gmpo", "0xBB975311");
-		nvram_set("pci/2/1/mcsbw805gmpo", "0xBB975311");
-		nvram_set("pci/2/1/mcsbw205ghpo", "0xBB975311");
-		nvram_set("pci/2/1/mcsbw405ghpo", "0xBB975311");
-		nvram_set("pci/2/1/mcsbw805ghpo", "0xBB975311");
+		struct nvram_param bcm4360ac_defaults_pci1_1[] = {
+			{ "maxp2ga0", "0x70" },
+			{ "maxp2ga1", "0x70" },
+			{ "maxp2ga2", "0x70" },
+			{ "cckbw202gpo", "0x5555" },
+			{ "cckbw20ul2gpo", "0x5555" },
+			{ "legofdmbw202gpo", "0x97555555" },
+			{ "legofdmbw20ul2gpo", "0x97555555" },
+			{ "mcsbw202gpo", "0xDA755555" },
+			{ "mcsbw20ul2gpo", "0xDA755555" },
+			{ "mcsbw402gpo", "0xFC965555" },
+			{ 0, 0 }
+		};
+		restore_set("pci/1/1", bcm4360ac_defaults_pci1_1);
 
 		if (nvram_match("regulation_domain", "US"))
 			set_regulation(0, "US", "0");
@@ -1994,52 +1941,58 @@ void start_sysinit(void)
 			nvram_seti("ledbh11", 136);
 			need_reboot = 1;
 		}
-		nvram_set("pci/2/1/maxp2ga0", "0x70");
-		nvram_set("pci/2/1/maxp2ga1", "0x70");
-		nvram_set("pci/2/1/maxp2ga2", "0x70");
-		nvram_set("pci/2/1/maxp5ga0", "0x6A");
-		nvram_set("pci/2/1/maxp5ga1", "0x6A");
-		nvram_set("pci/2/1/maxp5ga2", "0x6A");
+		struct nvram_param bcm4360ac_defaults_pci2_1[] = {
+			{ "maxp2ga0", "0x70" },
+			{ "maxp2ga1", "0x70" },
+			{ "maxp2ga2", "0x70" },
+			{ "maxp5ga0", "0x6A" },
+			{ "maxp5ga1", "0x6A" },
+			{ "maxp5ga2", "0x6A" },
+			{ "cckbw202gpo", "0x5555" },
+			{ "cckbw20ul2gpo", "0x5555" },
+			{ "legofdmbw202gpo", "0x97555555" },
+			{ "legofdmbw20ul2gpo", "0x97555555" },
+			{ "mcsbw202gpo", "0xDA755555" },
+			{ "mcsbw20ul2gpo", "0xDA755555" },
+			{ "mcsbw402gpo", "0xFC965555" },
+			{ "cckbw205gpo", "0x5555" },
+			{ "cckbw20ul5gpo", "0x5555" },
+			{ "legofdmbw205gpo", "0x97555555" },
+			{ "legofdmbw20ul5gpo", "0x97555555" },
+			{ "legofdmbw205gmpo", "0x77777777" },
+			{ "legofdmbw20ul5gmpo", "0x77777777" },
+			{ "legofdmbw205ghpo", "0x77777777" },
+			{ "legofdmbw20ul5ghpo", "0x77777777" },
+			{ "mcsbw205ghpo", "0x77777777" },
+			{ "mcsbw20ul5ghpo", "0x77777777" },
+			{ "mcsbw205gpo", "0xDA755555" },
+			{ "mcsbw20ul5gpo", "0xDA755555" },
+			{ "mcsbw405gpo", "0xFC965555" },
+			{ "mcsbw405ghpo", "0x77777777" },
+			{ "mcsbw405ghpo", "0x77777777" },
+			{ "mcs32po", "0x7777" },
+			{ "legofdm40duppo", "0x0000" },
+			{ 0, 0 }
+		};
 
-		nvram_set("pci/2/1/cckbw202gpo", "0x5555");
-		nvram_set("pci/2/1/cckbw20ul2gpo", "0x5555");
-		nvram_set("pci/2/1/legofdmbw202gpo", "0x97555555");
-		nvram_set("pci/2/1/legofdmbw20ul2gpo", "0x97555555");
-		nvram_set("pci/2/1/mcsbw202gpo", "0xDA755555");
-		nvram_set("pci/2/1/mcsbw20ul2gpo", "0xDA755555");
-		nvram_set("pci/2/1/mcsbw402gpo", "0xFC965555");
+		restore_set("pci/2/1", bcm4360ac_defaults_pci2_1);
 
-		nvram_set("pci/2/1/cckbw205gpo", "0x5555");
-		nvram_set("pci/2/1/cckbw20ul5gpo", "0x5555");
-		nvram_set("pci/2/1/legofdmbw205gpo", "0x97555555");
-		nvram_set("pci/2/1/legofdmbw20ul5gpo", "0x97555555");
-		nvram_set("pci/2/1/legofdmbw205gmpo", "0x77777777");
-		nvram_set("pci/2/1/legofdmbw20ul5gmpo", "0x77777777");
-		nvram_set("pci/2/1/legofdmbw205ghpo", "0x77777777");
-		nvram_set("pci/2/1/legofdmbw20ul5ghpo", "0x77777777");
-		nvram_set("pci/2/1/mcsbw205ghpo", "0x77777777");
-		nvram_set("pci/2/1/mcsbw20ul5ghpo", "0x77777777");
-		nvram_set("pci/2/1/mcsbw205gpo", "0xDA755555");
-		nvram_set("pci/2/1/mcsbw20ul5gpo", "0xDA755555");
-		nvram_set("pci/2/1/mcsbw405gpo", "0xFC965555");
-		nvram_set("pci/2/1/mcsbw405ghpo", "0x77777777");
-		nvram_set("pci/2/1/mcsbw405ghpo", "0x77777777");
-		nvram_set("pci/2/1/mcs32po", "0x7777");
-		nvram_set("pci/2/1/legofdm40duppo", "0x0000");
-
-		nvram_set("pci/1/1/maxp5ga0", "104,104,104,104");
-		nvram_set("pci/1/1/maxp5ga1", "104,104,104,104");
-		nvram_set("pci/1/1/maxp5ga2", "104,104,104,104");
-
-		nvram_set("pci/1/1/mcsbw205glpo", "0xBB975311");
-		nvram_set("pci/1/1/mcsbw405glpo", "0xBB975311");
-		nvram_set("pci/1/1/mcsbw805glpo", "0xBB975311");
-		nvram_set("pci/1/1/mcsbw205gmpo", "0xBB975311");
-		nvram_set("pci/1/1/mcsbw405gmpo", "0xBB975311");
-		nvram_set("pci/1/1/mcsbw805gmpo", "0xBB975311");
-		nvram_set("pci/1/1/mcsbw205ghpo", "0xBB975311");
-		nvram_set("pci/1/1/mcsbw405ghpo", "0xBB975311");
-		nvram_set("pci/1/1/mcsbw805ghpo", "0xBB975311");
+		struct nvram_param bcm4360ac_defaults_pci1_1[] = {
+			{ "maxp5ga0", "104,104,104,104" },
+			{ "maxp5ga1", "104,104,104,104" },
+			{ "maxp5ga2", "104,104,104,104" },
+			{ "mcsbw205glpo", "0xBB975311" },
+			{ "mcsbw405glpo", "0xBB975311" },
+			{ "mcsbw805glpo", "0xBB975311" },
+			{ "mcsbw205gmpo", "0xBB975311" },
+			{ "mcsbw405gmpo", "0xBB975311" },
+			{ "mcsbw805gmpo", "0xBB975311" },
+			{ "mcsbw205ghpo", "0xBB975311" },
+			{ "mcsbw405ghpo", "0xBB975311" },
+			{ "mcsbw805ghpo", "0xBB975311" },
+			{ 0, 0 }
+		};
+		restore_set("pci/1/1", bcm4360ac_defaults_pci1_1);
 
 		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 		nvram_set("wan_ifname", "vlan2");
@@ -2060,37 +2013,45 @@ void start_sysinit(void)
 		nvram_unset("maxp5gha0");
 		nvram_unset("maxp5gha1");
 		nvram_unset("maxp5gha2");
-		nvram_set("pci/1/1/maxp2ga0", "0x70");
-		nvram_set("pci/1/1/maxp2ga1", "0x70");
-		nvram_set("pci/1/1/maxp2ga2", "0x70");
-		nvram_set("pci/1/1/cckbw202gpo", "0x5555");
-		nvram_set("pci/1/1/cckbw20ul2gpo", "0x5555");
-		nvram_set("pci/1/1/legofdmbw202gpo", "0x97555555");
-		nvram_set("pci/1/1/legofdmbw20ul2gpo", "0x97555555");
-		nvram_set("pci/1/1/mcsbw202gpo", "0xFC955555");
-		nvram_set("pci/1/1/mcsbw20ul2gpo", "0xFC955555");
-		nvram_set("pci/1/1/mcsbw402gpo", "0xFFFF9999");
-		nvram_set("pci/1/1/mcs32po", "0x9999");
-		nvram_set("pci/1/1/legofdm40duppo", "0x4444");
+		struct nvram_param bcm4360ac_defaults_pci1_1[] = {
+			{ "maxp2ga0", "0x70" },
+			{ "maxp2ga1", "0x70" },
+			{ "maxp2ga2", "0x70" },
+			{ "cckbw202gpo", "0x5555" },
+			{ "cckbw20ul2gpo", "0x5555" },
+			{ "legofdmbw202gpo", "0x97555555" },
+			{ "legofdmbw20ul2gpo", "0x97555555" },
+			{ "mcsbw202gpo", "0xFC955555" },
+			{ "mcsbw20ul2gpo", "0xFC955555" },
+			{ "mcsbw402gpo", "0xFFFF9999" },
+			{ "mcs32po", "0x9999" },
+			{ "legofdm40duppo", "0x4444" },
+			{ 0, 0 }
+		};
+		restore_set("pci/1/1", bcm4360ac_defaults_pci1_1);
 
-		nvram_set("pci/2/1/maxp5ga0", "0x6A");
-		nvram_set("pci/2/1/maxp5ga1", "0x6A");
-		nvram_set("pci/2/1/maxp5ga2", "0x6A");
-		nvram_set("pci/2/1/legofdmbw205gmpo", "0x77777777");
-		nvram_set("pci/2/1/legofdmbw20ul5gmpo", "0x77777777");
-		nvram_set("pci/2/1/mcsbw205gmpo", "0x77777777");
-		nvram_set("pci/2/1/mcsbw20ul5gmpo", "0x77777777");
-		nvram_set("pci/2/1/mcsbw405gmpo", "0x77777777");
-		nvram_set("pci/2/1/maxp5gha0", "0x6A");
-		nvram_set("pci/2/1/maxp5gha1", "0x6A");
-		nvram_set("pci/2/1/maxp5gha2", "0x6A");
-		nvram_set("pci/2/1/legofdmbw205ghpo", "0x77777777");
-		nvram_set("pci/2/1/legofdmbw20ul5ghpo", "0x77777777");
-		nvram_set("pci/2/1/mcsbw205ghpo", "0x77777777");
-		nvram_set("pci/2/1/mcsbw20ul5ghpo", "0x77777777");
-		nvram_set("pci/2/1/mcsbw405ghpo", "0x77777777");
-		nvram_set("pci/2/1/mcs32po", "0x7777");
-		nvram_set("pci/2/1/legofdm40duppo", "0x0000");
+		struct nvram_param bcm4360ac_defaults_pci2_1[] = {
+			{ "maxp5ga0", "0x6A" },
+			{ "maxp5ga1", "0x6A" },
+			{ "maxp5ga2", "0x6A" },
+			{ "legofdmbw205gmpo", "0x77777777" },
+			{ "legofdmbw20ul5gmpo", "0x77777777" },
+			{ "mcsbw205gmpo", "0x77777777" },
+			{ "mcsbw20ul5gmpo", "0x77777777" },
+			{ "mcsbw405gmpo", "0x77777777" },
+			{ "maxp5gha0", "0x6A" },
+			{ "maxp5gha1", "0x6A" },
+			{ "maxp5gha2", "0x6A" },
+			{ "legofdmbw205ghpo", "0x77777777" },
+			{ "legofdmbw20ul5ghpo", "0x77777777" },
+			{ "mcsbw205ghpo", "0x77777777" },
+			{ "mcsbw20ul5ghpo", "0x77777777" },
+			{ "mcsbw405ghpo", "0x77777777" },
+			{ "mcs32po", "0x7777" },
+			{ "legofdm40duppo", "0x0000" },
+			{ 0, 0 }
+		};
+		restore_set("pci/2/1", bcm4360ac_defaults_pci2_1);
 
 		if (nvram_match("regulation_domain", "US"))
 			set_regulation(0, "US", "0");
@@ -2219,14 +2180,7 @@ void start_sysinit(void)
 
 			{ 0, 0 }
 		};
-		/*
-		 * set router's extra parameters 
-		 */
-		extra_params = e4200_pci_1_1_params;
-		while (extra_params->name) {
-			nvram_nset(extra_params->value, "pci/1/1/%s", extra_params->name);
-			extra_params++;
-		}
+		restore_set("pci/1/1", e4200_pci_1_1_params);
 		break;
 
 #endif
@@ -2384,14 +2338,7 @@ void start_sysinit(void)
 			{ "txpid5ga1", "39" },
 			{ 0, 0 }
 		};
-		/*
-		 * set router's extra parameters 
-		 */
-		extra_params = wndr3300_pci_1_1_params;
-		while (extra_params->name) {
-			nvram_nset(extra_params->value, "pci/1/1/%s", extra_params->name);
-			extra_params++;
-		}
+		restore_set("pci/1/1", wndr3300_pci_1_1_params);
 
 		struct nvram_param wndr3300_pci_1_3_params[] = {
 			{ "ag0", "0x02" },
@@ -2412,14 +2359,7 @@ void start_sysinit(void)
 			{ "sromrev", "2" },
 			{ 0, 0 }
 		};
-		/*
-		 * set router's extra parameters 
-		 */
-		extra_params = wndr3300_pci_1_3_params;
-		while (extra_params->name) {
-			nvram_nset(extra_params->value, "pci/1/3/%s", extra_params->name);
-			extra_params++;
-		}
+		restore_set("pci/1/3", wndr3300_pci_1_3_params);
 		break;
 
 	case ROUTER_MOTOROLA_WE800G:
