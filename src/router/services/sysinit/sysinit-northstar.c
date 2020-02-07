@@ -5162,7 +5162,7 @@ static void set_regulation(int card, char *code, char rev)
 
 }
 
-static void restore_set(char *prefix, struct nvram_param *set);
+static void restore_set(char *prefix, struct nvram_param *set)
 {
 	struct nvram_param *t;
 	for (t = set; t->name; t++) {
@@ -5281,12 +5281,12 @@ void start_sysinit(void)
 			/*
 			 * set router's extra parameters 
 			 */
-			restore_set("pci/1/1/", ac6250_pci_1_1_params);
+			restore_set("pci/1/1/", r6250_pci_1_1_params);
 
 			/*
 			 * set router's extra parameters 
 			 */
-			restore_set("pci/2/1/", ac6250_pci_2_1_params);
+			restore_set("pci/2/1/", r6250_pci_2_1_params);
 			nvram_seti("pci/1/1/ddwrt", 1);
 			nvram_commit();
 		}
@@ -5318,12 +5318,12 @@ void start_sysinit(void)
 			/*
 			 * set router's extra parameters 
 			 */
-			restore_set("pci/1/1/", ac6300v2_pci_1_1_params);
+			restore_set("pci/1/1/", r6300v2_pci_1_1_params);
 
 			/*
 			 * set router's extra parameters 
 			 */
-			restore_set("pci/2/1/", ac6300v2_pci_2_1_params);
+			restore_set("pci/2/1/", r6300v2_pci_2_1_params);
 			nvram_seti("pci/1/1/ddwrt", 1);
 			setcaldata();
 			nvram_commit();
@@ -6250,9 +6250,9 @@ void start_sysinit(void)
 		break;
 	case ROUTER_LINKSYS_EA9500:
 		if (!nvram_exists("1:aa2g")) {
-			restore_set("1:", ea6500_1_1params);
-			restore_set("2:", ea6500_2_1params);
-			restore_set("3:", ea6500_3_1params);
+			restore_set("1:", ea9500_1_1params);
+			restore_set("2:", ea9500_2_1params);
+			restore_set("3:", ea9500_3_1params);
 			nvram_seti("acs_2g_ch_no_ovlp", 1);
 			nvram_seti("acs_2g_ch_no_restrict", 1);
 			nvram_set("devpath1", "pci/1/4/");
