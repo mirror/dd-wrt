@@ -5114,7 +5114,7 @@ spa_open_common(const char *pool, spa_t **spapp, void *tag, nvlist_t *nvpolicy,
 	}
 
 	if (firstopen)
-		zvol_create_minors(spa, spa_name(spa), B_TRUE);
+		zvol_create_minors_recursive(spa_name(spa));
 
 	*spapp = spa;
 
@@ -5690,7 +5690,7 @@ spa_create(const char *pool, nvlist_t *nvroot, nvlist_t *props,
 			return (error);
 		}
 	}
-	if (!has_allocclass && zfs_special_devs(nvroot)) {
+	if (!has_allocclass && zfs_special_devs(nvroot, NULL)) {
 		spa_deactivate(spa);
 		spa_remove(spa);
 		mutex_exit(&spa_namespace_lock);
@@ -6083,7 +6083,7 @@ spa_import(char *pool, nvlist_t *config, nvlist_t *props, uint64_t flags)
 
 	mutex_exit(&spa_namespace_lock);
 
-	zvol_create_minors(spa, pool, B_TRUE);
+	zvol_create_minors_recursive(pool);
 
 	return (0);
 }
