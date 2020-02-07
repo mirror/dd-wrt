@@ -318,7 +318,8 @@ get_usage(zfs_help_t idx)
 		    "<filesystem|volume|snapshot>\n"
 		    "\tsend [-DnPpvLec] [-i bookmark|snapshot] "
 		    "--redact <bookmark> <snapshot>\n"
-		    "\tsend [-nvPe] -t <receive_resume_token>\n"));
+		    "\tsend [-nvPe] -t <receive_resume_token>\n"
+		    "\tsend [-Pnv] --saved filesystem\n"));
 	case HELP_SET:
 		return (gettext("\tset <property=value> ... "
 		    "<filesystem|volume|snapshot> ...\n"));
@@ -3745,8 +3746,13 @@ zfs_do_redact(int argc, char **argv)
 		    "specified\n"));
 		break;
 	case EINVAL:
-		(void) fprintf(stderr, gettext("redaction snapshot must be "
-		    "descendent of snapshot being redacted\n"));
+		if (strchr(bookname, '#') != NULL)
+			(void) fprintf(stderr, gettext(
+			    "redaction bookmark name must not contain '#'\n"));
+		else
+			(void) fprintf(stderr, gettext(
+			    "redaction snapshot must be descendent of "
+			    "snapshot being redacted\n"));
 		break;
 	case EALREADY:
 		(void) fprintf(stderr, gettext("attempted to redact redacted "
@@ -3755,6 +3761,10 @@ zfs_do_redact(int argc, char **argv)
 	case ENOTSUP:
 		(void) fprintf(stderr, gettext("redaction bookmarks feature "
 		    "not enabled\n"));
+		break;
+	case EXDEV:
+		(void) fprintf(stderr, gettext("potentially invalid redaction "
+		    "snapshot; full dataset names required\n"));
 		break;
 	default:
 		(void) fprintf(stderr, gettext("internal error: %s\n"),
@@ -4207,11 +4217,12 @@ zfs_do_send(int argc, char **argv)
 		{"raw",		no_argument,		NULL, 'w'},
 		{"backup",	no_argument,		NULL, 'b'},
 		{"holds",	no_argument,		NULL, 'h'},
+		{"saved",	no_argument,		NULL, 'S'},
 		{0, 0, 0, 0}
 	};
 
 	/* check options */
-	while ((c = getopt_long(argc, argv, ":i:I:RDpvnPLeht:cwbd:",
+	while ((c = getopt_long(argc, argv, ":i:I:RDpvnPLeht:cwbd:S",
 	    long_options, NULL)) != -1) {
 		switch (c) {
 		case 'i':
@@ -4271,6 +4282,9 @@ zfs_do_send(int argc, char **argv)
 			flags.embed_data = B_TRUE;
 			flags.largeblock = B_TRUE;
 			break;
+		case 'S':
+			flags.saved = B_TRUE;
+			break;
 		case ':':
 			/*
 			 * If a parameter was not passed, optopt contains the
@@ -4321,7 +4335,7 @@ zfs_do_send(int argc, char **argv)
 	if (resume_token != NULL) {
 		if (fromname != NULL || flags.replicate || flags.props ||
 		    flags.backup || flags.dedup || flags.holds ||
-		    redactbook != NULL) {
+		    flags.saved || redactbook != NULL) {
 			(void) fprintf(stderr,
 			    gettext("invalid flags combined with -t\n"));
 			usage(B_FALSE);
@@ -4342,6 +4356,23 @@ zfs_do_send(int argc, char **argv)
 		}
 	}
 
+	if (flags.saved) {
+		if (fromname != NULL || flags.replicate || flags.props ||
+		    flags.doall || flags.backup || flags.dedup ||
+		    flags.holds || flags.largeblock || flags.embed_data ||
+		    flags.compress || flags.raw || redactbook != NULL) {
+			(void) fprintf(stderr, gettext("incompatible flags "
+			    "combined with saved send flag\n"));
+			usage(B_FALSE);
+		}
+		if (strchr(argv[0], '@') != NULL) {
+			(void) fprintf(stderr, gettext("saved send must "
+			    "specify the dataset with partially-received "
+			    "state\n"));
+			usage(B_FALSE);
+		}
+	}
+
 	if (flags.raw && redactbook != NULL) {
 		(void) fprintf(stderr,
 		    gettext("Error: raw sends may not be redacted.\n"));
@@ -4355,7 +4386,16 @@ zfs_do_send(int argc, char **argv)
 		return (1);
 	}
 
-	if (resume_token != NULL) {
+	if (flags.saved) {
+		zhp = zfs_open(g_zfs, argv[0], ZFS_TYPE_DATASET);
+		if (zhp == NULL)
+			return (1);
+
+		err = zfs_send_saved(zhp, &flags, STDOUT_FILENO,
+		    resume_token);
+		zfs_close(zhp);
+		return (err != 0);
+	} else if (resume_token != NULL) {
 		return (zfs_send_resume(g_zfs, &flags, STDOUT_FILENO,
 		    resume_token));
 	}
@@ -4370,6 +4410,12 @@ zfs_do_send(int argc, char **argv)
 			if (strchr(argv[0], '@') == NULL) {
 				(void) fprintf(stderr, gettext("Error: Cannot "
 				    "do a redacted send to a filesystem.\n"));
+				return (1);
+			}
+			if (strchr(redactbook, '#') != NULL) {
+				(void) fprintf(stderr, gettext("Error: "
+				    "redaction bookmark argument must "
+				    "not contain '#'\n"));
 				return (1);
 			}
 		}
@@ -5102,7 +5148,6 @@ parse_fs_perm(fs_perm_t *fsperm, nvlist_t *nvl)
 		zfs_deleg_who_type_t perm_type = name[0];
 		char perm_locality = name[1];
 		const char *perm_name = name + 3;
-		boolean_t is_set = B_TRUE;
 		who_perm_t *who_perm = NULL;
 
 		assert('$' == name[2]);
@@ -5132,57 +5177,56 @@ parse_fs_perm(fs_perm_t *fsperm, nvlist_t *nvl)
 			assert(!"unhandled zfs_deleg_who_type_t");
 		}
 
-		if (is_set) {
-			who_perm_node_t *found_node = NULL;
-			who_perm_node_t *node = safe_malloc(
-			    sizeof (who_perm_node_t));
-			who_perm = &node->who_perm;
-			uu_avl_index_t idx = 0;
+		who_perm_node_t *found_node = NULL;
+		who_perm_node_t *node = safe_malloc(
+		    sizeof (who_perm_node_t));
+		who_perm = &node->who_perm;
+		uu_avl_index_t idx = 0;
 
-			uu_avl_node_init(node, &node->who_avl_node, avl_pool);
-			who_perm_init(who_perm, fsperm, perm_type, perm_name);
+		uu_avl_node_init(node, &node->who_avl_node, avl_pool);
+		who_perm_init(who_perm, fsperm, perm_type, perm_name);
 
-			if ((found_node = uu_avl_find(avl, node, NULL, &idx))
-			    == NULL) {
-				if (avl == fsperm->fsp_uge_avl) {
-					uid_t rid = 0;
-					struct passwd *p = NULL;
-					struct group *g = NULL;
-					const char *nice_name = NULL;
+		if ((found_node = uu_avl_find(avl, node, NULL, &idx))
+		    == NULL) {
+			if (avl == fsperm->fsp_uge_avl) {
+				uid_t rid = 0;
+				struct passwd *p = NULL;
+				struct group *g = NULL;
+				const char *nice_name = NULL;
 
-					switch (perm_type) {
-					case ZFS_DELEG_USER_SETS:
-					case ZFS_DELEG_USER:
-						rid = atoi(perm_name);
-						p = getpwuid(rid);
-						if (p)
-							nice_name = p->pw_name;
-						break;
-					case ZFS_DELEG_GROUP_SETS:
-					case ZFS_DELEG_GROUP:
-						rid = atoi(perm_name);
-						g = getgrgid(rid);
-						if (g)
-							nice_name = g->gr_name;
-						break;
+				switch (perm_type) {
+				case ZFS_DELEG_USER_SETS:
+				case ZFS_DELEG_USER:
+					rid = atoi(perm_name);
+					p = getpwuid(rid);
+					if (p)
+						nice_name = p->pw_name;
+					break;
+				case ZFS_DELEG_GROUP_SETS:
+				case ZFS_DELEG_GROUP:
+					rid = atoi(perm_name);
+					g = getgrgid(rid);
+					if (g)
+						nice_name = g->gr_name;
+					break;
 
-					default:
-						break;
-					}
-
-					if (nice_name != NULL)
-						(void) strlcpy(
-						    node->who_perm.who_ug_name,
-						    nice_name, 256);
+				default:
+					break;
 				}
 
-				uu_avl_insert(avl, node, idx);
-			} else {
-				node = found_node;
-				who_perm = &node->who_perm;
+				if (nice_name != NULL)
+					(void) strlcpy(
+					    node->who_perm.who_ug_name,
+					    nice_name, 256);
 			}
+
+			uu_avl_insert(avl, node, idx);
+		} else {
+			node = found_node;
+			who_perm = &node->who_perm;
 		}
-		VERIFY3P(who_perm, !=, NULL);
+
+		assert(who_perm != NULL);
 		(void) parse_who_perm(who_perm, nvl2, perm_locality);
 	}
 

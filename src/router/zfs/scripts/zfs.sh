@@ -30,6 +30,7 @@ KMOD_ZLUA=${KMOD_ZLUA:-zlua}
 KMOD_ICP=${KMOD_ICP:-icp}
 KMOD_ZFS=${KMOD_ZFS:-zfs}
 KMOD_ZZSTD=${KMOD_ZZSTD:-zzstd}
+KMOD_FREEBSD=${KMOD_FREEBSD:-openzfs}
 
 
 usage() {
@@ -77,7 +78,7 @@ kill_zed() {
 	fi
 }
 
-check_modules() {
+check_modules_linux() {
 	LOADED_MODULES=""
 	MISSING_MODULES=""
 
@@ -109,7 +110,7 @@ check_modules() {
 	return 0
 }
 
-load_module() {
+load_module_linux() {
 	KMOD=$1
 
 	FILE=$(modinfo "$KMOD" | awk '/^filename:/ {print $2}')
@@ -129,7 +130,17 @@ load_module() {
 	return 0
 }
 
-load_modules() {
+load_modules_freebsd() {
+	kldload "$KMOD_FREEBSD" || return 1
+
+	if [ "$VERBOSE" = "yes" ]; then
+		echo "Successfully loaded ZFS module stack"
+	fi
+
+	return 0
+}
+
+load_modules_linux() {
 	mkdir -p /etc/zfs
 
 	if modinfo "$KMOD_ZLIB_DEFLATE" >/dev/null 2>&1; then
@@ -142,7 +153,7 @@ load_modules() {
 
 	for KMOD in $KMOD_SPL $KMOD_ZAVL $KMOD_ZNVPAIR \
 	    $KMOD_ZUNICODE $KMOD_ZCOMMON $KMOD_ZLUA $KMOD_ZZSTD $KMOD_ICP $KMOD_ZFS; do
-		load_module "$KMOD" || return 1
+		load_module_linux "$KMOD" || return 1
 	done
 
 	if [ "$VERBOSE" = "yes" ]; then
@@ -152,7 +163,7 @@ load_modules() {
 	return 0
 }
 
-unload_module() {
+unload_module_linux() {
 	KMOD=$1
 
 	NAME=$(basename "$KMOD" .ko)
@@ -168,7 +179,17 @@ unload_module() {
 	return 0
 }
 
-unload_modules() {
+unload_modules_freebsd() {
+	kldunload "$KMOD_FREEBSD" || echo "Failed to unload $KMOD_FREEBSD"
+
+	if [ "$VERBOSE" = "yes" ]; then
+		echo "Successfully unloaded ZFS module stack"
+	fi
+
+	return 0
+}
+
+unload_modules_linux() {
 	for KMOD in $KMOD_ZFS $KMOD_ICP $KMOD_ZZSTD $KMOD_ZLUA $KMOD_ZCOMMON $KMOD_ZUNICODE \
 	    $KMOD_ZNVPAIR  $KMOD_ZAVL $KMOD_SPL; do
 		NAME=$(basename "$KMOD" .ko)
@@ -194,7 +215,7 @@ unload_modules() {
 	return 0
 }
 
-stack_clear() {
+stack_clear_linux() {
 	STACK_MAX_SIZE=/sys/kernel/debug/tracing/stack_max_size
 	STACK_TRACER_ENABLED=/proc/sys/kernel/stack_tracer_enabled
 
@@ -204,7 +225,7 @@ stack_clear() {
 	fi
 }
 
-stack_check() {
+stack_check_linux() {
 	STACK_MAX_SIZE=/sys/kernel/debug/tracing/stack_max_size
 	STACK_TRACE=/sys/kernel/debug/tracing/stack_trace
 	STACK_LIMIT=15362
@@ -225,17 +246,33 @@ if [ "$(id -u)" != 0 ]; then
 	exit 1
 fi
 
+UNAME=$(uname -s)
+
 if [ "$UNLOAD" = "yes" ]; then
 	kill_zed
 	umount -t zfs -a
-	stack_check
-	unload_modules
+	case $UNAME in
+		FreeBSD)
+	           unload_modules_freebsd
+		   ;;
+		Linux)
+	           stack_check_linux
+	           unload_modules_linux
+		   ;;
+	esac
 else
-	stack_clear
-	check_modules
-	load_modules "$@"
-	udevadm trigger
-	udevadm settle
+	case $UNAME in
+		FreeBSD)
+		   load_modules_freebsd
+		   ;;
+		Linux)
+		   stack_clear_linux
+		   check_modules_linux
+		   load_modules_linux "$@"
+		   udevadm trigger
+		   udevadm settle
+		   ;;
+	esac
 fi
 
 exit 0

@@ -26,7 +26,7 @@
  * Copyright 2016 Nexenta Systems, Inc.
  * Copyright (c) 2017, 2018 Lawrence Livermore National Security, LLC.
  * Copyright (c) 2015, 2017, Intel Corporation.
- * Copyright (c) 2019 Datto Inc.
+ * Copyright (c) 2020 Datto Inc.
  */
 
 #include <stdio.h>
@@ -110,8 +110,38 @@ uint8_t dump_opt[256];
 
 typedef void object_viewer_t(objset_t *, uint64_t, void *data, size_t size);
 
-uint64_t *zopt_object = NULL;
-static unsigned zopt_objects = 0;
+uint64_t *zopt_metaslab = NULL;
+static unsigned zopt_metaslab_args = 0;
+
+typedef struct zopt_object_range {
+	uint64_t zor_obj_start;
+	uint64_t zor_obj_end;
+	uint64_t zor_flags;
+} zopt_object_range_t;
+zopt_object_range_t *zopt_object_ranges = NULL;
+static unsigned zopt_object_args = 0;
+
+static int flagbits[256];
+
+#define	ZOR_FLAG_PLAIN_FILE	0x0001
+#define	ZOR_FLAG_DIRECTORY	0x0002
+#define	ZOR_FLAG_SPACE_MAP	0x0004
+#define	ZOR_FLAG_ZAP		0x0008
+#define	ZOR_FLAG_ALL_TYPES	-1
+#define	ZOR_SUPPORTED_FLAGS	(ZOR_FLAG_PLAIN_FILE	| \
+				ZOR_FLAG_DIRECTORY	| \
+				ZOR_FLAG_SPACE_MAP	| \
+				ZOR_FLAG_ZAP)
+
+#define	ZDB_FLAG_CHECKSUM	0x0001
+#define	ZDB_FLAG_DECOMPRESS	0x0002
+#define	ZDB_FLAG_BSWAP		0x0004
+#define	ZDB_FLAG_GBH		0x0008
+#define	ZDB_FLAG_INDIRECT	0x0010
+#define	ZDB_FLAG_RAW		0x0020
+#define	ZDB_FLAG_PRINT_BLKPTR	0x0040
+#define	ZDB_FLAG_VERBOSE	0x0080
+
 uint64_t max_inflight_bytes = 256 * 1024 * 1024; /* 256MB */
 static int leaked_objects = 0;
 static range_tree_t *mos_refd_objs;
@@ -144,9 +174,9 @@ usage(void)
 	    "Usage:\t%s [-AbcdDFGhikLMPsvX] [-e [-V] [-p <path> ...]] "
 	    "[-I <inflight I/Os>]\n"
 	    "\t\t[-o <var>=<value>]... [-t <txg>] [-U <cache>] [-x <dumpdir>]\n"
-	    "\t\t[<poolname> [<object> ...]]\n"
-	    "\t%s [-AdiPv] [-e [-V] [-p <path> ...]] [-U <cache>] <dataset>\n"
-	    "\t\t[<object> ...]\n"
+	    "\t\t[<poolname>[/<dataset | objset id>] [<object | range> ...]]\n"
+	    "\t%s [-AdiPv] [-e [-V] [-p <path> ...]] [-U <cache>]\n"
+	    "\t\t[<poolname>[/<dataset | objset id>] [<object | range> ...]\n"
 	    "\t%s [-v] <bookmark>\n"
 	    "\t%s -C [-A] [-U <cache>]\n"
 	    "\t%s -l [-Aqu] <device>\n"
@@ -165,8 +195,20 @@ usage(void)
 	    "separator character '/' or '@'\n");
 	(void) fprintf(stderr, "    If dataset name is specified, only that "
 	    "dataset is dumped\n");
-	(void) fprintf(stderr, "    If object numbers are specified, only "
-	    "those objects are dumped\n\n");
+	(void) fprintf(stderr,  "    If object numbers or object number "
+	    "ranges are specified, only those\n"
+	    "    objects or ranges are dumped.\n\n");
+	(void) fprintf(stderr,
+	    "    Object ranges take the form <start>:<end>[:<flags>]\n"
+	    "        start    Starting object number\n"
+	    "        end      Ending object number, or -1 for no upper bound\n"
+	    "        flags    Optional flags to select object types:\n"
+	    "            A     All objects (this is the default)\n"
+	    "            d     ZFS directories\n"
+	    "            f     ZFS files \n"
+	    "            m     SPA space maps\n"
+	    "            z     ZAPs\n"
+	    "            -     Negate effect of next flag\n\n");
 	(void) fprintf(stderr, "    Options to control amount of output:\n");
 	(void) fprintf(stderr, "        -b block statistics\n");
 	(void) fprintf(stderr, "        -c checksum all metadata (twice for "
@@ -1172,24 +1214,24 @@ dump_metaslabs(spa_t *spa)
 
 	(void) printf("\nMetaslabs:\n");
 
-	if (!dump_opt['d'] && zopt_objects > 0) {
-		c = zopt_object[0];
+	if (!dump_opt['d'] && zopt_metaslab_args > 0) {
+		c = zopt_metaslab[0];
 
 		if (c >= children)
 			(void) fatal("bad vdev id: %llu", (u_longlong_t)c);
 
-		if (zopt_objects > 1) {
+		if (zopt_metaslab_args > 1) {
 			vd = rvd->vdev_child[c];
 			print_vdev_metaslab_header(vd);
 
-			for (m = 1; m < zopt_objects; m++) {
-				if (zopt_object[m] < vd->vdev_ms_count)
+			for (m = 1; m < zopt_metaslab_args; m++) {
+				if (zopt_metaslab[m] < vd->vdev_ms_count)
 					dump_metaslab(
-					    vd->vdev_ms[zopt_object[m]]);
+					    vd->vdev_ms[zopt_metaslab[m]]);
 				else
 					(void) fprintf(stderr, "bad metaslab "
 					    "number %llu\n",
-					    (u_longlong_t)zopt_object[m]);
+					    (u_longlong_t)zopt_metaslab[m]);
 			}
 			(void) printf("\n");
 			return;
@@ -1568,6 +1610,12 @@ snprintf_blkptr_compact(char *blkbuf, size_t buflen, const blkptr_t *bp,
 		if (bp_freed)
 			(void) snprintf(blkbuf + strlen(blkbuf),
 			    buflen - strlen(blkbuf), " %s", "FREE");
+		(void) snprintf(blkbuf + strlen(blkbuf),
+		    buflen - strlen(blkbuf), " cksum=%llx:%llx:%llx:%llx",
+		    (u_longlong_t)bp->blk_cksum.zc_word[0],
+		    (u_longlong_t)bp->blk_cksum.zc_word[1],
+		    (u_longlong_t)bp->blk_cksum.zc_word[2],
+		    (u_longlong_t)bp->blk_cksum.zc_word[3]);
 	}
 }
 
@@ -2533,9 +2581,49 @@ static object_viewer_t *object_viewer[DMU_OT_NUMTYPES + 1] = {
 	dump_unknown,		/* Unknown type, must be last	*/
 };
 
+static boolean_t
+match_object_type(dmu_object_type_t obj_type, uint64_t flags)
+{
+	boolean_t match = B_TRUE;
+
+	switch (obj_type) {
+	case DMU_OT_DIRECTORY_CONTENTS:
+		if (!(flags & ZOR_FLAG_DIRECTORY))
+			match = B_FALSE;
+		break;
+	case DMU_OT_PLAIN_FILE_CONTENTS:
+		if (!(flags & ZOR_FLAG_PLAIN_FILE))
+			match = B_FALSE;
+		break;
+	case DMU_OT_SPACE_MAP:
+		if (!(flags & ZOR_FLAG_SPACE_MAP))
+			match = B_FALSE;
+		break;
+	default:
+		if (strcmp(zdb_ot_name(obj_type), "zap") == 0) {
+			if (!(flags & ZOR_FLAG_ZAP))
+				match = B_FALSE;
+			break;
+		}
+
+		/*
+		 * If all bits except some of the supported flags are
+		 * set, the user combined the all-types flag (A) with
+		 * a negated flag to exclude some types (e.g. A-f to
+		 * show all object types except plain files).
+		 */
+		if ((flags | ZOR_SUPPORTED_FLAGS) != ZOR_FLAG_ALL_TYPES)
+			match = B_FALSE;
+
+		break;
+	}
+
+	return (match);
+}
+
 static void
 dump_object(objset_t *os, uint64_t object, int verbosity,
-    boolean_t *print_header, uint64_t *dnode_slots_used)
+    boolean_t *print_header, uint64_t *dnode_slots_used, uint64_t flags)
 {
 	dmu_buf_t *db = NULL;
 	dmu_object_info_t doi;
@@ -2591,6 +2679,13 @@ dump_object(objset_t *os, uint64_t object, int verbosity,
 			dn = DB_DNODE((dmu_buf_impl_t *)db);
 		}
 	}
+
+	/*
+	 * Default to showing all object types if no flags were specified.
+	 */
+	if (flags != 0 && flags != ZOR_FLAG_ALL_TYPES &&
+	    !match_object_type(doi.doi_type, flags))
+		goto out;
 
 	if (dnode_slots_used)
 		*dnode_slots_used = doi.doi_dnodesize / DNODE_MIN_SIZE;
@@ -2695,6 +2790,7 @@ dump_object(objset_t *os, uint64_t object, int verbosity,
 		}
 	}
 
+out:
 	if (db != NULL)
 		dmu_buf_rele(db, FTAG);
 	if (dnode_held)
@@ -2735,6 +2831,110 @@ count_ds_mos_objects(dsl_dataset_t *ds)
 static const char *objset_types[DMU_OST_NUMTYPES] = {
 	"NONE", "META", "ZPL", "ZVOL", "OTHER", "ANY" };
 
+/*
+ * Parse a string denoting a range of object IDs of the form
+ * <start>[:<end>[:flags]], and store the results in zor.
+ * Return 0 on success. On error, return 1 and update the msg
+ * pointer to point to a descriptive error message.
+ */
+static int
+parse_object_range(char *range, zopt_object_range_t *zor, char **msg)
+{
+	uint64_t flags = 0;
+	char *p, *s, *dup, *flagstr;
+	size_t len;
+	int i;
+	int rc = 0;
+
+	if (strchr(range, ':') == NULL) {
+		zor->zor_obj_start = strtoull(range, &p, 0);
+		if (*p != '\0') {
+			*msg = "Invalid characters in object ID";
+			rc = 1;
+		}
+		zor->zor_obj_end = zor->zor_obj_start;
+		return (rc);
+	}
+
+	if (strchr(range, ':') == range) {
+		*msg = "Invalid leading colon";
+		rc = 1;
+		return (rc);
+	}
+
+	len = strlen(range);
+	if (range[len - 1] == ':') {
+		*msg = "Invalid trailing colon";
+		rc = 1;
+		return (rc);
+	}
+
+	dup = strdup(range);
+	s = strtok(dup, ":");
+	zor->zor_obj_start = strtoull(s, &p, 0);
+
+	if (*p != '\0') {
+		*msg = "Invalid characters in start object ID";
+		rc = 1;
+		goto out;
+	}
+
+	s = strtok(NULL, ":");
+	zor->zor_obj_end = strtoull(s, &p, 0);
+
+	if (*p != '\0') {
+		*msg = "Invalid characters in end object ID";
+		rc = 1;
+		goto out;
+	}
+
+	if (zor->zor_obj_start > zor->zor_obj_end) {
+		*msg = "Start object ID may not exceed end object ID";
+		rc = 1;
+		goto out;
+	}
+
+	s = strtok(NULL, ":");
+	if (s == NULL) {
+		zor->zor_flags = ZOR_FLAG_ALL_TYPES;
+		goto out;
+	} else if (strtok(NULL, ":") != NULL) {
+		*msg = "Invalid colon-delimited field after flags";
+		rc = 1;
+		goto out;
+	}
+
+	flagstr = s;
+	for (i = 0; flagstr[i]; i++) {
+		int bit;
+		boolean_t negation = (flagstr[i] == '-');
+
+		if (negation) {
+			i++;
+			if (flagstr[i] == '\0') {
+				*msg = "Invalid trailing negation operator";
+				rc = 1;
+				goto out;
+			}
+		}
+		bit = flagbits[(uchar_t)flagstr[i]];
+		if (bit == 0) {
+			*msg = "Invalid flag";
+			rc = 1;
+			goto out;
+		}
+		if (negation)
+			flags &= ~bit;
+		else
+			flags |= bit;
+	}
+	zor->zor_flags = flags;
+
+out:
+	free(dup);
+	return (rc);
+}
+
 static void
 dump_objset(objset_t *os)
 {
@@ -2752,6 +2952,9 @@ dump_objset(objset_t *os)
 	uint64_t total_slots_used = 0;
 	uint64_t max_slot_used = 0;
 	uint64_t dnode_slots;
+	uint64_t obj_start;
+	uint64_t obj_end;
+	uint64_t flags;
 
 	/* make sure nicenum has enough space */
 	CTASSERT(sizeof (numbuf) >= NN_NUMBUF_SZ);
@@ -2795,11 +2998,26 @@ dump_objset(objset_t *os)
 	    numbuf, (u_longlong_t)usedobjs, blkbuf,
 	    (dds.dds_inconsistent) ? " (inconsistent)" : "");
 
-	if (zopt_objects != 0) {
-		for (i = 0; i < zopt_objects; i++) {
-			dump_object(os, zopt_object[i], verbosity,
-			    &print_header, NULL);
+	for (i = 0; i < zopt_object_args; i++) {
+		obj_start = zopt_object_ranges[i].zor_obj_start;
+		obj_end = zopt_object_ranges[i].zor_obj_end;
+		flags = zopt_object_ranges[i].zor_flags;
+
+		object = obj_start;
+		if (object == 0 || obj_start == obj_end)
+			dump_object(os, object, verbosity, &print_header, NULL,
+			    flags);
+		else
+			object--;
+
+		while ((dmu_object_next(os, &object, B_FALSE, 0) == 0) &&
+		    object <= obj_end) {
+			dump_object(os, object, verbosity, &print_header, NULL,
+			    flags);
 		}
+	}
+
+	if (zopt_object_args > 0) {
 		(void) printf("\n");
 		return;
 	}
@@ -2833,24 +3051,25 @@ dump_objset(objset_t *os)
 	if (BP_IS_HOLE(os->os_rootbp))
 		return;
 
-	dump_object(os, 0, verbosity, &print_header, NULL);
+	dump_object(os, 0, verbosity, &print_header, NULL, 0);
 	object_count = 0;
 	if (DMU_USERUSED_DNODE(os) != NULL &&
 	    DMU_USERUSED_DNODE(os)->dn_type != 0) {
 		dump_object(os, DMU_USERUSED_OBJECT, verbosity, &print_header,
-		    NULL);
+		    NULL, 0);
 		dump_object(os, DMU_GROUPUSED_OBJECT, verbosity, &print_header,
-		    NULL);
+		    NULL, 0);
 	}
 
 	if (DMU_PROJECTUSED_DNODE(os) != NULL &&
 	    DMU_PROJECTUSED_DNODE(os)->dn_type != 0)
 		dump_object(os, DMU_PROJECTUSED_OBJECT, verbosity,
-		    &print_header, NULL);
+		    &print_header, NULL, 0);
 
 	object = 0;
 	while ((error = dmu_object_next(os, &object, B_FALSE, 0)) == 0) {
-		dump_object(os, object, verbosity, &print_header, &dnode_slots);
+		dump_object(os, object, verbosity, &print_header, &dnode_slots,
+		    0);
 		object_count++;
 		total_slots_used += dnode_slots;
 		max_slot_used = object + dnode_slots - 1;
@@ -3354,7 +3573,7 @@ dump_path_impl(objset_t *os, uint64_t obj, char *name)
 			return (dump_path_impl(os, child_obj, s + 1));
 		/*FALLTHROUGH*/
 	case DMU_OT_PLAIN_FILE_CONTENTS:
-		dump_object(os, child_obj, dump_opt['v'], &header, NULL);
+		dump_object(os, child_obj, dump_opt['v'], &header, NULL, 0);
 		return (0);
 	default:
 		(void) fprintf(stderr, "object %llu has non-file/directory "
@@ -6191,17 +6410,6 @@ dump_zpool(spa_t *spa)
 	}
 }
 
-#define	ZDB_FLAG_CHECKSUM	0x0001
-#define	ZDB_FLAG_DECOMPRESS	0x0002
-#define	ZDB_FLAG_BSWAP		0x0004
-#define	ZDB_FLAG_GBH		0x0008
-#define	ZDB_FLAG_INDIRECT	0x0010
-#define	ZDB_FLAG_RAW		0x0020
-#define	ZDB_FLAG_PRINT_BLKPTR	0x0040
-#define	ZDB_FLAG_VERBOSE	0x0080
-
-static int flagbits[256];
-
 static void
 zdb_print_blkptr(blkptr_t *bp, int flags)
 {
@@ -6327,6 +6535,26 @@ name:
 	}
 
 	return (NULL);
+}
+
+static int
+name_from_objset_id(spa_t *spa, uint64_t objset_id, char *outstr)
+{
+	dsl_dataset_t *ds;
+
+	dsl_pool_config_enter(spa->spa_dsl_pool, FTAG);
+	int error = dsl_dataset_hold_obj(spa->spa_dsl_pool, objset_id,
+	    NULL, &ds);
+	if (error != 0) {
+		(void) fprintf(stderr, "failed to hold objset %llu: %s\n",
+		    (u_longlong_t)objset_id, strerror(error));
+		dsl_pool_config_exit(spa->spa_dsl_pool, FTAG);
+		return (error);
+	}
+	dsl_dataset_name(ds, outstr);
+	dsl_dataset_rele(ds, NULL);
+	dsl_pool_config_exit(spa->spa_dsl_pool, FTAG);
+	return (0);
 }
 
 static boolean_t
@@ -6707,13 +6935,14 @@ main(int argc, char **argv)
 	int error = 0;
 	char **searchdirs = NULL;
 	int nsearch = 0;
-	char *target, *target_pool;
+	char *target, *target_pool, dsname[ZFS_MAX_DATASET_NAME_LEN];
 	nvlist_t *policy = NULL;
 	uint64_t max_txg = UINT64_MAX;
+	int64_t objset_id = -1;
 	int flags = ZFS_IMPORT_MISSING_LOG;
 	int rewind = ZPOOL_NEVER_REWIND;
-	char *spa_config_path_env;
-	boolean_t target_is_spa = B_TRUE;
+	char *spa_config_path_env, *objset_str;
+	boolean_t target_is_spa = B_TRUE, dataset_lookup = B_FALSE;
 	nvlist_t *cfg = NULL;
 
 	(void) setrlimit(RLIMIT_NOFILE, &rl);
@@ -6840,6 +7069,31 @@ main(int argc, char **argv)
 		(void) fprintf(stderr, "-p option requires use of -e\n");
 		usage();
 	}
+	if (dump_opt['d']) {
+		/* <pool>[/<dataset | objset id> is accepted */
+		if (argv[2] && (objset_str = strchr(argv[2], '/')) != NULL &&
+		    objset_str++ != NULL) {
+			char *endptr;
+			errno = 0;
+			objset_id = strtoull(objset_str, &endptr, 0);
+			/* dataset 0 is the same as opening the pool */
+			if (errno == 0 && endptr != objset_str &&
+			    objset_id != 0) {
+				target_is_spa = B_FALSE;
+				dataset_lookup = B_TRUE;
+			} else if (objset_id != 0) {
+				printf("failed to open objset %s "
+				    "%llu %s", objset_str,
+				    (u_longlong_t)objset_id,
+				    strerror(errno));
+				exit(1);
+			}
+			/* normal dataset name not an objset ID */
+			if (endptr == objset_str) {
+				objset_id = -1;
+			}
+		}
+	}
 
 #if defined(_LP64)
 	/*
@@ -6884,7 +7138,6 @@ main(int argc, char **argv)
 
 	argc -= optind;
 	argv += optind;
-
 	if (argc < 2 && dump_opt['R'])
 		usage();
 
@@ -7004,7 +7257,7 @@ main(int argc, char **argv)
 				    checkpoint_pool, error);
 			}
 
-		} else if (target_is_spa || dump_opt['R']) {
+		} else if (target_is_spa || dump_opt['R'] || objset_id == 0) {
 			zdb_set_skip_mmp(target);
 			error = spa_open_rewind(target, &spa, FTAG, policy,
 			    NULL);
@@ -7043,7 +7296,22 @@ main(int argc, char **argv)
 			return (error);
 		} else {
 			zdb_set_skip_mmp(target);
-			error = open_objset(target, FTAG, &os);
+			if (dataset_lookup == B_TRUE) {
+				/*
+				 * Use the supplied id to get the name
+				 * for open_objset.
+				 */
+				error = spa_open(target, &spa, FTAG);
+				if (error == 0) {
+					error = name_from_objset_id(spa,
+					    objset_id, dsname);
+					spa_close(spa, FTAG);
+					if (error == 0)
+						target = dsname;
+				}
+			}
+			if (error == 0)
+				error = open_objset(target, FTAG, &os);
 			if (error == 0)
 				spa = dmu_objset_spa(os);
 		}
@@ -7064,20 +7332,41 @@ main(int argc, char **argv)
 	argv++;
 	argc--;
 	if (!dump_opt['R']) {
-		if (argc > 0) {
-			zopt_objects = argc;
-			zopt_object = calloc(zopt_objects, sizeof (uint64_t));
-			for (unsigned i = 0; i < zopt_objects; i++) {
+		flagbits['d'] = ZOR_FLAG_DIRECTORY;
+		flagbits['f'] = ZOR_FLAG_PLAIN_FILE;
+		flagbits['m'] = ZOR_FLAG_SPACE_MAP;
+		flagbits['z'] = ZOR_FLAG_ZAP;
+		flagbits['A'] = ZOR_FLAG_ALL_TYPES;
+
+		if (argc > 0 && dump_opt['d']) {
+			zopt_object_args = argc;
+			zopt_object_ranges = calloc(zopt_object_args,
+			    sizeof (zopt_object_range_t));
+			for (unsigned i = 0; i < zopt_object_args; i++) {
+				int err;
+				char *msg = NULL;
+
+				err = parse_object_range(argv[i],
+				    &zopt_object_ranges[i], &msg);
+				if (err != 0)
+					fatal("Bad object or range: '%s': %s\n",
+					    argv[i], msg ? msg : "");
+			}
+		} else if (argc > 0 && dump_opt['m']) {
+			zopt_metaslab_args = argc;
+			zopt_metaslab = calloc(zopt_metaslab_args,
+			    sizeof (uint64_t));
+			for (unsigned i = 0; i < zopt_metaslab_args; i++) {
 				errno = 0;
-				zopt_object[i] = strtoull(argv[i], NULL, 0);
-				if (zopt_object[i] == 0 && errno != 0)
-					fatal("bad number %s: %s",
-					    argv[i], strerror(errno));
+				zopt_metaslab[i] = strtoull(argv[i], NULL, 0);
+				if (zopt_metaslab[i] == 0 && errno != 0)
+					fatal("bad number %s: %s", argv[i],
+					    strerror(errno));
 			}
 		}
 		if (os != NULL) {
 			dump_objset(os);
-		} else if (zopt_objects > 0 && !dump_opt['m']) {
+		} else if (zopt_object_args > 0 && !dump_opt['m']) {
 			dump_objset(spa->spa_meta_objset);
 		} else {
 			dump_zpool(spa);

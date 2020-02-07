@@ -1279,7 +1279,6 @@ dmu_objset_create_sync(void *arg, dmu_tx_t *tx)
 	}
 
 	spa_history_log_internal_ds(ds, "create", tx, " ");
-	zvol_create_minors(spa, doca->doca_name, B_TRUE);
 
 	dsl_dataset_rele_flags(ds, DS_HOLD_FLAG_DECRYPT, FTAG);
 	dsl_dir_rele(pdd, FTAG);
@@ -1309,9 +1308,13 @@ dmu_objset_create(const char *name, dmu_objset_type_t type, uint64_t flags,
 	 */
 	doca.doca_dcp = (dcp != NULL) ? dcp : &tmp_dcp;
 
-	return (dsl_sync_task(name,
+	int rv = dsl_sync_task(name,
 	    dmu_objset_create_check, dmu_objset_create_sync, &doca,
-	    6, ZFS_SPACE_CHECK_NORMAL));
+	    6, ZFS_SPACE_CHECK_NORMAL);
+
+	if (rv == 0)
+		zvol_create_minor(name);
+	return (rv);
 }
 
 typedef struct dmu_objset_clone_arg {
@@ -1392,7 +1395,6 @@ dmu_objset_clone_sync(void *arg, dmu_tx_t *tx)
 	dsl_dataset_name(origin, namebuf);
 	spa_history_log_internal_ds(ds, "clone", tx,
 	    "origin=%s (%llu)", namebuf, (u_longlong_t)origin->ds_object);
-	zvol_create_minors(dp->dp_spa, doca->doca_clone, B_TRUE);
 	dsl_dataset_rele(ds, FTAG);
 	dsl_dataset_rele(origin, FTAG);
 	dsl_dir_rele(pdd, FTAG);
@@ -1407,9 +1409,14 @@ dmu_objset_clone(const char *clone, const char *origin)
 	doca.doca_origin = origin;
 	doca.doca_cred = CRED();
 
-	return (dsl_sync_task(clone,
+	int rv = dsl_sync_task(clone,
 	    dmu_objset_clone_check, dmu_objset_clone_sync, &doca,
-	    6, ZFS_SPACE_CHECK_NORMAL));
+	    6, ZFS_SPACE_CHECK_NORMAL);
+
+	if (rv == 0)
+		zvol_create_minor(clone);
+
+	return (rv);
 }
 
 int
@@ -2073,15 +2080,13 @@ dmu_objset_do_userquota_updates(objset_t *os, dmu_tx_t *tx)
 static void *
 dmu_objset_userquota_find_data(dmu_buf_impl_t *db, dmu_tx_t *tx)
 {
-	dbuf_dirty_record_t *dr, **drp;
+	dbuf_dirty_record_t *dr;
 	void *data;
 
 	if (db->db_dirtycnt == 0)
 		return (db->db.db_data);  /* Nothing is changing */
 
-	for (drp = &db->db_last_dirty; (dr = *drp) != NULL; drp = &dr->dr_next)
-		if (dr->dr_txg == tx->tx_txg)
-			break;
+	dr = dbuf_find_dirty_eq(db, tx->tx_txg);
 
 	if (dr == NULL) {
 		data = NULL;
