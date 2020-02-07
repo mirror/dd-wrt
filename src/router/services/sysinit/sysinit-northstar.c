@@ -5162,6 +5162,16 @@ static void set_regulation(int card, char *code, char rev)
 
 }
 
+static void restore_set(char *prefix, struct nvram_param *set);
+{
+	struct nvram_param *t;
+	for (t = set; t->name; t++) {
+		if (!nvram_exists(t->name))
+			nvram_nset(t->value, "%s%s", prefix, t->name);
+	}
+
+}
+
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -5235,24 +5245,16 @@ void start_sysinit(void)
 				MAC_ADD(mac);
 				nvram_set("pci/2/1/macaddr", mac);
 			}
+			
+			/*
+			 * set router's extra parameters 
+			 */
+			restore_set("pci/1/1/", ac1450_pci_1_1_params);
 
 			/*
 			 * set router's extra parameters 
 			 */
-			extra_params = ac1450_pci_1_1_params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "pci/1/1/%s", extra_params->name);
-				extra_params++;
-			}
-
-			/*
-			 * set router's extra parameters 
-			 */
-			extra_params = ac1450_pci_2_1_params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "pci/2/1/%s", extra_params->name);
-				extra_params++;
-			}
+			restore_set("pci/2/1/", ac1450_pci_2_1_params);
 			nvram_set("pci/1/1/venid", "0x14E4");
 			setcaldata();
 			nvram_commit();
@@ -5279,20 +5281,12 @@ void start_sysinit(void)
 			/*
 			 * set router's extra parameters 
 			 */
-			extra_params = r6250_pci_1_1_params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "pci/1/1/%s", extra_params->name);
-				extra_params++;
-			}
+			restore_set("pci/1/1/", ac6250_pci_1_1_params);
 
 			/*
 			 * set router's extra parameters 
 			 */
-			extra_params = r6250_pci_2_1_params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "pci/2/1/%s", extra_params->name);
-				extra_params++;
-			}
+			restore_set("pci/2/1/", ac6250_pci_2_1_params);
 			nvram_seti("pci/1/1/ddwrt", 1);
 			nvram_commit();
 		}
@@ -5324,20 +5318,12 @@ void start_sysinit(void)
 			/*
 			 * set router's extra parameters 
 			 */
-			extra_params = r6300v2_pci_1_1_params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "pci/1/1/%s", extra_params->name);
-				extra_params++;
-			}
+			restore_set("pci/1/1/", ac6300v2_pci_1_1_params);
 
 			/*
 			 * set router's extra parameters 
 			 */
-			extra_params = r6300v2_pci_2_1_params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "pci/2/1/%s", extra_params->name);
-				extra_params++;
-			}
+			restore_set("pci/2/1/", ac6300v2_pci_2_1_params);
 			nvram_seti("pci/1/1/ddwrt", 1);
 			setcaldata();
 			nvram_commit();
@@ -5374,10 +5360,8 @@ void start_sysinit(void)
 				extra_params = r6400v2_pci_1_1_params;
 			else
 				extra_params = r6400_pci_1_1_params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "pci/1/1/%s", extra_params->name);
-				extra_params++;
-			}
+			restore_set("pci/1/1/", extra_params);
+
 
 			/*
 			 * set router's extra parameters 
@@ -5386,10 +5370,8 @@ void start_sysinit(void)
 				extra_params = r6400v2_pci_2_1_params;
 			else
 				extra_params = r6400_pci_2_1_params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "pci/2/1/%s", extra_params->name);
-				extra_params++;
-			}
+			restore_set("pci/2/1/", extra_params);
+
 			nvram_seti("wl_pcie_mrrs", 128);
 			nvram_seti("wl0_pcie_mrrs", 128);
 			nvram_seti("wl1_pcie_mrrs", 128);
@@ -5419,20 +5401,12 @@ void start_sysinit(void)
 			/*
 			 * set router's extra parameters 
 			 */
-			extra_params = r7000_pci_1_1_params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "pci/1/1/%s", extra_params->name);
-				extra_params++;
-			}
+			restore_set("pci/1/1/", r7000_pci_1_1_params);
 
 			/*
 			 * set router's extra parameters 
 			 */
-			extra_params = r7000_pci_2_1_params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "pci/2/1/%s", extra_params->name);
-				extra_params++;
-			}
+			restore_set("pci/2/1/", r7000_pci_2_1_params);
 			nvram_seti("wl_pcie_mrrs", 128);
 			nvram_seti("wl0_pcie_mrrs", 128);
 			nvram_seti("wl1_pcie_mrrs", 128);
@@ -5463,17 +5437,8 @@ void start_sysinit(void)
 				nvram_set("1:macaddr", mac);
 			}
 
-			extra_params = ex6200_0params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "0:%s", extra_params->name);
-				extra_params++;
-			}
-			extra_params = ex6200_1params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "1:%s", extra_params->name);
-				extra_params++;
-			}
-
+			restore_set("0:", ex6200_0params);
+			restore_set("1:", ex6200_1params);
 			nvram_set("devpath0", "pci/1/1");
 			nvram_set("devpath1", "pci/2/1");
 			nvram_seti("wl_pcie_mrrs", 128);
@@ -5507,22 +5472,9 @@ void start_sysinit(void)
 			nvram_seti("wl0_channel", 161);
 			nvram_seti("0:ddwrt", 1);
 
-			extra_params = r8000_0params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "0:%s", extra_params->name);
-				extra_params++;
-			}
-			extra_params = r8000_1params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "1:%s", extra_params->name);
-				extra_params++;
-			}
-
-			extra_params = r8000_2params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "2:%s", extra_params->name);
-				extra_params++;
-			}
+			restore_set("0:", r8000_0params);
+			restore_set("1:", r8000_1params);
+			restore_set("2:", r8000_2params);
 			setcaldata();
 			nvram_commit();
 		}
@@ -5549,23 +5501,9 @@ void start_sysinit(void)
 			nvram_seti("wl2_channel", 48);
 			nvram_seti("wl0_channel", 161);
 			nvram_seti("0:ddwrt", 1);
-
-			extra_params = r8500_0params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "0:%s", extra_params->name);
-				extra_params++;
-			}
-			extra_params = r8500_1params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "1:%s", extra_params->name);
-				extra_params++;
-			}
-
-			extra_params = r8500_2params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "2:%s", extra_params->name);
-				extra_params++;
-			}
+			restore_set("0:", r8000_0params);
+			restore_set("1:", r8000_1params);
+			restore_set("2:", r8000_2params);
 
 			nvram_seti("et_txq_thresh", 3300);
 			setcaldata();
@@ -5588,17 +5526,8 @@ void start_sysinit(void)
 			MAC_ADD(mac);
 			nvram_set("1:macaddr", mac);
 
-			extra_params = r7000p_0params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "0:%s", extra_params->name);
-				extra_params++;
-			}
-
-			extra_params = r7000p_1params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "1:%s", extra_params->name);
-				extra_params++;
-			}
+			restore_set("0:", r7000p_0params);
+			restore_set("1:", r7000p_1params);
 			nvram_set("devpath0", "pcie/1/1");
 			nvram_set("devpath1", "pcie/2/1");
 			setcaldata();
@@ -5621,16 +5550,8 @@ void start_sysinit(void)
 
 			nvram_set("devpath0", "pcie/1/1");
 			nvram_set("devpath1", "pcie/2/1");
-			extra_params = ac3100_0_params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "0:%s", extra_params->name);
-				extra_params++;
-			}
-			extra_params = ac3100_1_params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "1:%s", extra_params->name);
-				extra_params++;
-			}
+			restore_set("0:", ac3100_0_params);
+			restore_set("1:", ac3100_1_params);
 			nvram_commit();
 		}
 		if (!strlen(nvram_safe_get("et2macaddr"))) {
@@ -5771,22 +5692,9 @@ void start_sysinit(void)
 			nvram_set("devpath0", "pcie/1/3");
 			nvram_set("devpath1", "pcie/1/4");
 			nvram_set("devpath2", "pcie/2/1");
-			extra_params = ac3200_0_params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "0:%s", extra_params->name);
-				extra_params++;
-			}
-			extra_params = ac3200_1_params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "1:%s", extra_params->name);
-				extra_params++;
-			}
-
-			extra_params = ac3200_2_params;
-			while (extra_params->name) {
-				nvram_nset(extra_params->value, "2:%s", extra_params->name);
-				extra_params++;
-			}
+			restore_set("0:", ac3200_0_params);
+			restore_set("1:", ac3200_1_params);
+			restore_set("2:", ac3200_2_params);
 
 			nvram_seti("0:maxp2ga0", 102);
 			nvram_seti("0:maxp2ga1", 102);
@@ -6279,19 +6187,8 @@ void start_sysinit(void)
 			nvram_set("pci/1/0/macaddr", &buf[10]);
 			nvram_set("pci/1/1/macaddr", &buf[10]);
 
-			struct nvram_param *t;
-			t = dir868_1_1params;
-			while (t->name) {
-//                              fprintf(stderr, "set pci/1/1/%s to %s\n", t->name, t->value);
-				nvram_nset(t->value, "pci/1/1/%s", t->name);
-				t++;
-			}
-			t = dir868_2_1params;
-			while (t->name) {
-//                              fprintf(stderr, "set pci/2/1/%s to %s\n", t->name, t->value);
-				nvram_nset(t->value, "pci/2/1/%s", t->name);
-				t++;
-			}
+			restore_set("pci/1/1/", dir868_1_1params);
+			restore_set("pci/2/1/", dir868_2_1params);
 
 			nvram_set("pci/1/1/venid", "0x14E4");
 			nvram_commit();
@@ -6304,18 +6201,8 @@ void start_sysinit(void)
 		if (!nvram_exists("0:aa2g")) {
 			change = 1;
 
-			struct nvram_param *t;
-			t = ea6700_1_1params;
-			while (t->name) {
-				nvram_nset(t->value, "0:%s", t->name);
-				t++;
-			}
-			t = ea6700_2_1params;
-			while (t->name) {
-				nvram_nset(t->value, "1:%s", t->name);
-				t++;
-			}
-
+			restore_set("0:", ea6700_1_1params);
+			restore_set("1:", ea6700_2_1params);
 			nvram_seti("acs_2g_ch_no_ovlp", 1);
 			nvram_seti("acs_2g_ch_no_restrict", 1);
 			nvram_set("devpath0", "pci/1/1/");
@@ -6331,19 +6218,8 @@ void start_sysinit(void)
 		break;
 	case ROUTER_LINKSYS_EA6500V2:
 		if (!nvram_exists("0:aa2g")) {
-
-			struct nvram_param *t;
-			t = ea6500v2_1_1params;
-			while (t->name) {
-				nvram_nset(t->value, "0:%s", t->name);
-				t++;
-			}
-			t = ea6500v2_2_1params;
-			while (t->name) {
-				nvram_nset(t->value, "1:%s", t->name);
-				t++;
-			}
-
+			restore_set("0:", ea6500v2_1_1params);
+			restore_set("1:", ea6500v2_2_1params);
 			nvram_seti("acs_2g_ch_no_ovlp", 1);
 			nvram_seti("acs_2g_ch_no_restrict", 1);
 			nvram_set("devpath0", "pci/1/1/");
@@ -6358,19 +6234,8 @@ void start_sysinit(void)
 		break;
 	case ROUTER_LINKSYS_EA6900:
 		if (!nvram_exists("0:aa2g")) {
-
-			struct nvram_param *t;
-			t = ea6900_1_1params;
-			while (t->name) {
-				nvram_nset(t->value, "0:%s", t->name);
-				t++;
-			}
-			t = ea6900_2_1params;
-			while (t->name) {
-				nvram_nset(t->value, "1:%s", t->name);
-				t++;
-			}
-
+			restore_set("0:", ea6900_1_1params);
+			restore_set("1:", ea6900_2_1params);
 			nvram_seti("acs_2g_ch_no_ovlp", 1);
 			nvram_seti("acs_2g_ch_no_restrict", 1);
 			nvram_set("devpath0", "pci/1/1/");
@@ -6385,23 +6250,9 @@ void start_sysinit(void)
 		break;
 	case ROUTER_LINKSYS_EA9500:
 		if (!nvram_exists("1:aa2g")) {
-
-			struct nvram_param *t;
-			t = ea9500_1_1params;
-			while (t->name) {
-				nvram_nset(t->value, "1:%s", t->name);
-				t++;
-			}
-			t = ea9500_2_1params;
-			while (t->name) {
-				nvram_nset(t->value, "2:%s", t->name);
-				t++;
-			}
-			t = ea9500_3_1params;
-			while (t->name) {
-				nvram_nset(t->value, "3:%s", t->name);
-				t++;
-			}
+			restore_set("1:", ea6500_1_1params);
+			restore_set("2:", ea6500_2_1params);
+			restore_set("3:", ea6500_3_1params);
 			nvram_seti("acs_2g_ch_no_ovlp", 1);
 			nvram_seti("acs_2g_ch_no_restrict", 1);
 			nvram_set("devpath1", "pci/1/4/");
