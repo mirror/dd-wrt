@@ -139,7 +139,7 @@ void stop_privoxy(void)
 	sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT", ip, mask, ip, webif_port);
 	sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s -d %s --dport %s -j DROP", ip, ip, webif_port);
 	if (*transp)
-	sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT");
+		sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT");
 
 	getIfLists(vifs, 256);
 	char vif_ip[32];

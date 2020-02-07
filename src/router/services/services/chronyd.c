@@ -47,7 +47,7 @@ static int write_default_config(FILE *fp)
 	if (valid == -EINVAL) {
 		fprintf(stderr, "invalid mask\n");
 		return 1;
-	}		
+	}
 	inet_addr_to_cidr(addr, mask, cidr);
 
 	fprintf(fp, "pool pool.ntp.org iburst\n");
@@ -62,7 +62,7 @@ static int write_default_config(FILE *fp)
 
 void start_chronyd(void)
 {
-	int ret=0;
+	int ret = 0;
 	pid_t pid;
 	char *chronyd_argv[] = { "chronyd", NULL };
 

@@ -181,23 +181,23 @@ static void do_pppoeconfig(FILE * fp)
 		fprintf(fp, "require-mppe-128\n");
 	else
 		fprintf(fp, "nomppe\n");
-	fprintf(fp, "auth\n" //
+	fprintf(fp, "auth\n"	//
 //              "endpoint <epdisc>\n" needed 4 ml
 //              "multilink\n"
 		"refuse-eap\n"	// be sure using best auth methode
 		"refuse-pap\n"	//
 		"refuse-chap\n"	//erlauben???
 		"refuse-mschap\n"	//
-		"require-mschap-v2\n" //
+		"require-mschap-v2\n"	//
 		"nopcomp\n"	// no protocol field compression
-		"default-mru\n" //
+		"default-mru\n"	//
 		"mtu %s\n" "mru %s\n" "default-asyncmap\n" "noipdefault\n" "defaultroute\n" "netmask 255.255.255.255\n"	//
 		"ip-up-script /tmp/pppoeserver/ip-up.sh\n"	//
-		"ip-down-script /tmp/pppoeserver/ip-down.sh\n" //
- 		"lcp-echo-adaptive\n" //
-		"lcp-echo-interval %s\n" //
-		"lcp-echo-failure %s\n" //
-		"lcp-echo-adaptive\n" //
+		"ip-down-script /tmp/pppoeserver/ip-down.sh\n"	//
+		"lcp-echo-adaptive\n"	//
+		"lcp-echo-interval %s\n"	//
+		"lcp-echo-failure %s\n"	//
+		"lcp-echo-adaptive\n"	//
 		"idle %s\n", nvram_safe_get("pppoeserver_mtu"), nvram_safe_get("pppoeserver_mru"), nvram_safe_get("pppoeserver_lcpechoint"), nvram_safe_get("pppoeserver_lcpechofail"), nvram_safe_get("pppoeserver_idle"));
 	if (nvram_match("pppoeserver_interface", "br0"))
 		fprintf(fp, "proxyarp\n" "ktune\n");
