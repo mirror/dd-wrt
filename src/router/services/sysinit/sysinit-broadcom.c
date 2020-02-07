@@ -1785,300 +1785,305 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_ASUS_AC66U:
-		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
-		nvram_set("wan_ifname", "vlan2");
-		struct nvram_param bcm4360ac_defaults_pci2_1[] = {
-			{ "aa2g", "0" },
-			{ "aa5g", "7" },
-			{ "aga0", "0" },
-			{ "aga1", "0" },
-			{ "aga2", "0" },
-			{ "agbg0", "133" },
-			{ "agbg1", "133" },
-			{ "agbg2", "133" },
-			{ "antswitch", "0" },
-			{ "cckbw202gpo", "0" },
-			{ "cckbw20ul2gpo", "0" },
-			{ "dot11agofdmhrbw202gpo", "0" },
-			{ "femctrl", "3" },
-			{ "papdcap2g", "0" },
-			{ "tworangetssi2g", "0" },
-			{ "pdgain2g", "4" },
-			{ "epagain2g", "0" },
-			{ "tssiposslope2g", "1" },
-			{ "gainctrlsph", "0" },
-			{ "papdcap5g", "0" },
-			{ "tworangetssi5g", "0" },
-			{ "pdgain5g", "4" },
-			{ "epagain5g", "0" },
-			{ "tssiposslope5g", "1" },
-			{ "maxp2ga0", "76" },
-			{ "maxp2ga1", "76" },
-			{ "maxp2ga2", "76" },
-			{ "mcsbw202gpo", "0" },
-			{ "mcsbw402gpo", "0" },
-			{ "measpower", "0x7f" },
-			{ "measpower1", "0x7f" },
-			{ "measpower2", "0x7f" },
-			{ "noiselvl2ga0", "31" },
-			{ "noiselvl2ga1", "31" },
-			{ "noiselvl2ga2", "31" },
-			{ "noiselvl5gha0", "31" },
-			{ "noiselvl5gha1", "31" },
-			{ "noiselvl5gha2", "31" },
-			{ "noiselvl5gla0", "31" },
-			{ "noiselvl5gla1", "31" },
-			{ "noiselvl5gla2", "31" },
-			{ "noiselvl5gma0", "31" },
-			{ "noiselvl5gma1", "31" },
-			{ "noiselvl5gma2", "31" },
-			{ "noiselvl5gua0", "31" },
-			{ "noiselvl5gua1", "31" },
-			{ "noiselvl5gua2", "31" },
-			{ "ofdmlrbw202gpo", "0" },
-			{ "pa2ga0", "0xfe72,0x14c0,0xfac7" },
-			{ "pa2ga1", "0xfe80,0x1472,0xfabc" },
-			{ "pa2ga2", "0xfe82,0x14bf,0xfad9" },
-			{ "pcieingress_war", "15" },
-			{ "phycal_tempdelta", "255" },
-			{ "rawtempsense", "0x1ff" },
-			{ "rxchain", "7" },
-			{ "rxgainerr2g", "0xffff" },
-			{ "rxgainerr5g", "0xffff,0xffff,0xffff,0xffff" },
-			{ "rxgains2gelnagaina0", "0" },
-			{ "rxgains2gelnagaina1", "0" },
-			{ "rxgains2gelnagaina2", "0" },
-			{ "rxgains2gtrelnabypa0", "0" },
-			{ "rxgains2gtrelnabypa1", "0" },
-			{ "rxgains2gtrelnabypa2", "0" },
-			{ "rxgains2gtrisoa0", "0" },
-			{ "rxgains2gtrisoa1", "0" },
-			{ "rxgains2gtrisoa2", "0" },
-			{ "sar2g", "18" },
-			{ "sar5g", "15" },
-			{ "sromrev", "11" },
-			{ "subband5gver", "0x4" },
-			{ "tempcorrx", "0x3f" },
-			{ "tempoffset", "255" },
-			{ "temps_hysteresis", "15" },
-			{ "temps_period", "15" },
-			{ "tempsense_option", "0x3" },
-			{ "tempsense_slope", "0xff" },
-			{ "tempthresh", "255" },
-			{ "txchain", "7" },
-			{ "ledbh0", "2" },
-			{ "ledbh1", "5" },
-			{ "ledbh2", "4" },
-			{ "ledbh3", "11" },
-			{ "ledbh10", "7" },
-			{ "maxp5ga0", "104,104,104,104" },
-			{ "maxp5ga1", "104,104,104,104" },
-			{ "maxp5ga2", "104,104,104,104" },
-			{ "mcsbw205glpo", "0xBB975311" },
-			{ "mcsbw405glpo", "0xBB975311" },
-			{ "mcsbw805glpo", "0xBB975311" },
-			{ "mcsbw205gmpo", "0xBB975311" },
-			{ "mcsbw405gmpo", "0xBB975311" },
-			{ "mcsbw805gmpo", "0xBB975311" },
-			{ "mcsbw205ghpo", "0xBB975311" },
-			{ "mcsbw405ghpo", "0xBB975311" },
-			{ "mcsbw805ghpo", "0xBB975311" },
+		{
+			nvram_set("lan_ifnames", "vlan1 eth1 eth2");
+			nvram_set("wan_ifname", "vlan2");
+			struct nvram_param bcm4360ac_defaults_pci2_1[] = {
+				{ "aa2g", "0" },
+				{ "aa5g", "7" },
+				{ "aga0", "0" },
+				{ "aga1", "0" },
+				{ "aga2", "0" },
+				{ "agbg0", "133" },
+				{ "agbg1", "133" },
+				{ "agbg2", "133" },
+				{ "antswitch", "0" },
+				{ "cckbw202gpo", "0" },
+				{ "cckbw20ul2gpo", "0" },
+				{ "dot11agofdmhrbw202gpo", "0" },
+				{ "femctrl", "3" },
+				{ "papdcap2g", "0" },
+				{ "tworangetssi2g", "0" },
+				{ "pdgain2g", "4" },
+				{ "epagain2g", "0" },
+				{ "tssiposslope2g", "1" },
+				{ "gainctrlsph", "0" },
+				{ "papdcap5g", "0" },
+				{ "tworangetssi5g", "0" },
+				{ "pdgain5g", "4" },
+				{ "epagain5g", "0" },
+				{ "tssiposslope5g", "1" },
+				{ "maxp2ga0", "76" },
+				{ "maxp2ga1", "76" },
+				{ "maxp2ga2", "76" },
+				{ "mcsbw202gpo", "0" },
+				{ "mcsbw402gpo", "0" },
+				{ "measpower", "0x7f" },
+				{ "measpower1", "0x7f" },
+				{ "measpower2", "0x7f" },
+				{ "noiselvl2ga0", "31" },
+				{ "noiselvl2ga1", "31" },
+				{ "noiselvl2ga2", "31" },
+				{ "noiselvl5gha0", "31" },
+				{ "noiselvl5gha1", "31" },
+				{ "noiselvl5gha2", "31" },
+				{ "noiselvl5gla0", "31" },
+				{ "noiselvl5gla1", "31" },
+				{ "noiselvl5gla2", "31" },
+				{ "noiselvl5gma0", "31" },
+				{ "noiselvl5gma1", "31" },
+				{ "noiselvl5gma2", "31" },
+				{ "noiselvl5gua0", "31" },
+				{ "noiselvl5gua1", "31" },
+				{ "noiselvl5gua2", "31" },
+				{ "ofdmlrbw202gpo", "0" },
+				{ "pa2ga0", "0xfe72,0x14c0,0xfac7" },
+				{ "pa2ga1", "0xfe80,0x1472,0xfabc" },
+				{ "pa2ga2", "0xfe82,0x14bf,0xfad9" },
+				{ "pcieingress_war", "15" },
+				{ "phycal_tempdelta", "255" },
+				{ "rawtempsense", "0x1ff" },
+				{ "rxchain", "7" },
+				{ "rxgainerr2g", "0xffff" },
+				{ "rxgainerr5g", "0xffff,0xffff,0xffff,0xffff" },
+				{ "rxgains2gelnagaina0", "0" },
+				{ "rxgains2gelnagaina1", "0" },
+				{ "rxgains2gelnagaina2", "0" },
+				{ "rxgains2gtrelnabypa0", "0" },
+				{ "rxgains2gtrelnabypa1", "0" },
+				{ "rxgains2gtrelnabypa2", "0" },
+				{ "rxgains2gtrisoa0", "0" },
+				{ "rxgains2gtrisoa1", "0" },
+				{ "rxgains2gtrisoa2", "0" },
+				{ "sar2g", "18" },
+				{ "sar5g", "15" },
+				{ "sromrev", "11" },
+				{ "subband5gver", "0x4" },
+				{ "tempcorrx", "0x3f" },
+				{ "tempoffset", "255" },
+				{ "temps_hysteresis", "15" },
+				{ "temps_period", "15" },
+				{ "tempsense_option", "0x3" },
+				{ "tempsense_slope", "0xff" },
+				{ "tempthresh", "255" },
+				{ "txchain", "7" },
+				{ "ledbh0", "2" },
+				{ "ledbh1", "5" },
+				{ "ledbh2", "4" },
+				{ "ledbh3", "11" },
+				{ "ledbh10", "7" },
+				{ "maxp5ga0", "104,104,104,104" },
+				{ "maxp5ga1", "104,104,104,104" },
+				{ "maxp5ga2", "104,104,104,104" },
+				{ "mcsbw205glpo", "0xBB975311" },
+				{ "mcsbw405glpo", "0xBB975311" },
+				{ "mcsbw805glpo", "0xBB975311" },
+				{ "mcsbw205gmpo", "0xBB975311" },
+				{ "mcsbw405gmpo", "0xBB975311" },
+				{ "mcsbw805gmpo", "0xBB975311" },
+				{ "mcsbw205ghpo", "0xBB975311" },
+				{ "mcsbw405ghpo", "0xBB975311" },
+				{ "mcsbw805ghpo", "0xBB975311" },
 
-			{ 0, 0 }
-		};
-		restore_set("pci/2/1", bcm4360ac_defaults_pci2_1);
+				{ 0, 0 }
+			};
+			restore_set("pci/2/1", bcm4360ac_defaults_pci2_1);
 
-		struct nvram_param bcm4360ac_defaults_pci1_1[] = {
-			{ "maxp2ga0", "0x70" },
-			{ "maxp2ga1", "0x70" },
-			{ "maxp2ga2", "0x70" },
-			{ "cckbw202gpo", "0x5555" },
-			{ "cckbw20ul2gpo", "0x5555" },
-			{ "legofdmbw202gpo", "0x97555555" },
-			{ "legofdmbw20ul2gpo", "0x97555555" },
-			{ "mcsbw202gpo", "0xDA755555" },
-			{ "mcsbw20ul2gpo", "0xDA755555" },
-			{ "mcsbw402gpo", "0xFC965555" },
-			{ 0, 0 }
-		};
-		restore_set("pci/1/1", bcm4360ac_defaults_pci1_1);
+			struct nvram_param bcm4360ac_defaults_pci1_1[] = {
+				{ "maxp2ga0", "0x70" },
+				{ "maxp2ga1", "0x70" },
+				{ "maxp2ga2", "0x70" },
+				{ "cckbw202gpo", "0x5555" },
+				{ "cckbw20ul2gpo", "0x5555" },
+				{ "legofdmbw202gpo", "0x97555555" },
+				{ "legofdmbw20ul2gpo", "0x97555555" },
+				{ "mcsbw202gpo", "0xDA755555" },
+				{ "mcsbw20ul2gpo", "0xDA755555" },
+				{ "mcsbw402gpo", "0xFC965555" },
+				{ 0, 0 }
+			};
+			restore_set("pci/1/1", bcm4360ac_defaults_pci1_1);
 
-		if (nvram_match("regulation_domain", "US"))
-			set_regulation(0, "US", "0");
-		else if (nvram_match("regulation_domain", "Q2"))
-			set_regulation(0, "US", "0");
-		else if (nvram_match("regulation_domain", "EU"))
-			set_regulation(0, "EU", "66");
-		else if (nvram_match("regulation_domain", "TW"))
-			set_regulation(0, "TW", "13");
-		else if (nvram_match("regulation_domain", "CN"))
-			set_regulation(0, "CN", "1");
-		else
-			set_regulation(0, "US", "0");
+			if (nvram_match("regulation_domain", "US"))
+				set_regulation(0, "US", "0");
+			else if (nvram_match("regulation_domain", "Q2"))
+				set_regulation(0, "US", "0");
+			else if (nvram_match("regulation_domain", "EU"))
+				set_regulation(0, "EU", "66");
+			else if (nvram_match("regulation_domain", "TW"))
+				set_regulation(0, "TW", "13");
+			else if (nvram_match("regulation_domain", "CN"))
+				set_regulation(0, "CN", "1");
+			else
+				set_regulation(0, "US", "0");
 
-		if (nvram_match("regulation_domain_5G", "US"))
-			set_regulation(1, "US", "0");
-		else if (nvram_match("regulation_domain_5G", "Q2"))
-			set_regulation(1, "US", "0");
-		else if (nvram_match("regulation_domain_5G", "EU"))
-			set_regulation(1, "EU", "38");
-		else if (nvram_match("regulation_domain_5G", "TW"))
-			set_regulation(1, "TW", "13");
-		else if (nvram_match("regulation_domain_5G", "CN"))
-			set_regulation(1, "CN", "1");
-		else
-			set_regulation(1, "US", "0");
+			if (nvram_match("regulation_domain_5G", "US"))
+				set_regulation(1, "US", "0");
+			else if (nvram_match("regulation_domain_5G", "Q2"))
+				set_regulation(1, "US", "0");
+			else if (nvram_match("regulation_domain_5G", "EU"))
+				set_regulation(1, "EU", "38");
+			else if (nvram_match("regulation_domain_5G", "TW"))
+				set_regulation(1, "TW", "13");
+			else if (nvram_match("regulation_domain_5G", "CN"))
+				set_regulation(1, "CN", "1");
+			else
+				set_regulation(1, "US", "0");
 
-		nvram_seti("pci/2/1/ledbh13", 136);
-		set_gpio(13, 0);
+			nvram_seti("pci/2/1/ledbh13", 136);
+			set_gpio(13, 0);
+		}
 		break;
 
 	case ROUTER_D1800H:
-		if (!nvram_exists("ledbh0") || nvram_matchi("ledbh11", 130)) {
-			nvram_seti("ledbh0", 11);
-			nvram_seti("ledbh1", 11);
-			nvram_seti("ledbh2", 11);
-			nvram_seti("ledbh11", 136);
-			need_reboot = 1;
+		{
+			if (!nvram_exists("ledbh0") || nvram_matchi("ledbh11", 130)) {
+				nvram_seti("ledbh0", 11);
+				nvram_seti("ledbh1", 11);
+				nvram_seti("ledbh2", 11);
+				nvram_seti("ledbh11", 136);
+				need_reboot = 1;
+			}
+			struct nvram_param bcm4360ac_defaults_pci2_1[] = {
+				{ "maxp2ga0", "0x70" },
+				{ "maxp2ga1", "0x70" },
+				{ "maxp2ga2", "0x70" },
+				{ "maxp5ga0", "0x6A" },
+				{ "maxp5ga1", "0x6A" },
+				{ "maxp5ga2", "0x6A" },
+				{ "cckbw202gpo", "0x5555" },
+				{ "cckbw20ul2gpo", "0x5555" },
+				{ "legofdmbw202gpo", "0x97555555" },
+				{ "legofdmbw20ul2gpo", "0x97555555" },
+				{ "mcsbw202gpo", "0xDA755555" },
+				{ "mcsbw20ul2gpo", "0xDA755555" },
+				{ "mcsbw402gpo", "0xFC965555" },
+				{ "cckbw205gpo", "0x5555" },
+				{ "cckbw20ul5gpo", "0x5555" },
+				{ "legofdmbw205gpo", "0x97555555" },
+				{ "legofdmbw20ul5gpo", "0x97555555" },
+				{ "legofdmbw205gmpo", "0x77777777" },
+				{ "legofdmbw20ul5gmpo", "0x77777777" },
+				{ "legofdmbw205ghpo", "0x77777777" },
+				{ "legofdmbw20ul5ghpo", "0x77777777" },
+				{ "mcsbw205ghpo", "0x77777777" },
+				{ "mcsbw20ul5ghpo", "0x77777777" },
+				{ "mcsbw205gpo", "0xDA755555" },
+				{ "mcsbw20ul5gpo", "0xDA755555" },
+				{ "mcsbw405gpo", "0xFC965555" },
+				{ "mcsbw405ghpo", "0x77777777" },
+				{ "mcsbw405ghpo", "0x77777777" },
+				{ "mcs32po", "0x7777" },
+				{ "legofdm40duppo", "0x0000" },
+				{ 0, 0 }
+			};
+
+			restore_set("pci/2/1", bcm4360ac_defaults_pci2_1);
+
+			struct nvram_param bcm4360ac_defaults_pci1_1[] = {
+				{ "maxp5ga0", "104,104,104,104" },
+				{ "maxp5ga1", "104,104,104,104" },
+				{ "maxp5ga2", "104,104,104,104" },
+				{ "mcsbw205glpo", "0xBB975311" },
+				{ "mcsbw405glpo", "0xBB975311" },
+				{ "mcsbw805glpo", "0xBB975311" },
+				{ "mcsbw205gmpo", "0xBB975311" },
+				{ "mcsbw405gmpo", "0xBB975311" },
+				{ "mcsbw805gmpo", "0xBB975311" },
+				{ "mcsbw205ghpo", "0xBB975311" },
+				{ "mcsbw405ghpo", "0xBB975311" },
+				{ "mcsbw805ghpo", "0xBB975311" },
+				{ 0, 0 }
+			};
+			restore_set("pci/1/1", bcm4360ac_defaults_pci1_1);
+
+			nvram_set("lan_ifnames", "vlan1 eth1 eth2");
+			nvram_set("wan_ifname", "vlan2");
 		}
-		struct nvram_param bcm4360ac_defaults_pci2_1[] = {
-			{ "maxp2ga0", "0x70" },
-			{ "maxp2ga1", "0x70" },
-			{ "maxp2ga2", "0x70" },
-			{ "maxp5ga0", "0x6A" },
-			{ "maxp5ga1", "0x6A" },
-			{ "maxp5ga2", "0x6A" },
-			{ "cckbw202gpo", "0x5555" },
-			{ "cckbw20ul2gpo", "0x5555" },
-			{ "legofdmbw202gpo", "0x97555555" },
-			{ "legofdmbw20ul2gpo", "0x97555555" },
-			{ "mcsbw202gpo", "0xDA755555" },
-			{ "mcsbw20ul2gpo", "0xDA755555" },
-			{ "mcsbw402gpo", "0xFC965555" },
-			{ "cckbw205gpo", "0x5555" },
-			{ "cckbw20ul5gpo", "0x5555" },
-			{ "legofdmbw205gpo", "0x97555555" },
-			{ "legofdmbw20ul5gpo", "0x97555555" },
-			{ "legofdmbw205gmpo", "0x77777777" },
-			{ "legofdmbw20ul5gmpo", "0x77777777" },
-			{ "legofdmbw205ghpo", "0x77777777" },
-			{ "legofdmbw20ul5ghpo", "0x77777777" },
-			{ "mcsbw205ghpo", "0x77777777" },
-			{ "mcsbw20ul5ghpo", "0x77777777" },
-			{ "mcsbw205gpo", "0xDA755555" },
-			{ "mcsbw20ul5gpo", "0xDA755555" },
-			{ "mcsbw405gpo", "0xFC965555" },
-			{ "mcsbw405ghpo", "0x77777777" },
-			{ "mcsbw405ghpo", "0x77777777" },
-			{ "mcs32po", "0x7777" },
-			{ "legofdm40duppo", "0x0000" },
-			{ 0, 0 }
-		};
-
-		restore_set("pci/2/1", bcm4360ac_defaults_pci2_1);
-
-		struct nvram_param bcm4360ac_defaults_pci1_1[] = {
-			{ "maxp5ga0", "104,104,104,104" },
-			{ "maxp5ga1", "104,104,104,104" },
-			{ "maxp5ga2", "104,104,104,104" },
-			{ "mcsbw205glpo", "0xBB975311" },
-			{ "mcsbw405glpo", "0xBB975311" },
-			{ "mcsbw805glpo", "0xBB975311" },
-			{ "mcsbw205gmpo", "0xBB975311" },
-			{ "mcsbw405gmpo", "0xBB975311" },
-			{ "mcsbw805gmpo", "0xBB975311" },
-			{ "mcsbw205ghpo", "0xBB975311" },
-			{ "mcsbw405ghpo", "0xBB975311" },
-			{ "mcsbw805ghpo", "0xBB975311" },
-			{ 0, 0 }
-		};
-		restore_set("pci/1/1", bcm4360ac_defaults_pci1_1);
-
-		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
-		nvram_set("wan_ifname", "vlan2");
 		break;
 	case ROUTER_ASUS_RTN66:
-		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
-		nvram_set("wan_ifname", "vlan2");
-		if (nvram_match("vlan2ports", "0 8u")) {
-			nvram_set("vlan2ports", "0 8");
-			need_reboot = 1;
+		{
+			nvram_set("lan_ifnames", "vlan1 eth1 eth2");
+			nvram_set("wan_ifname", "vlan2");
+			if (nvram_match("vlan2ports", "0 8u")) {
+				nvram_set("vlan2ports", "0 8");
+				need_reboot = 1;
+			}
+			nvram_unset("maxp2ga0");
+			nvram_unset("maxp2ga1");
+			nvram_unset("maxp2ga2");
+			nvram_unset("maxp5ga0");
+			nvram_unset("maxp5ga1");
+			nvram_unset("maxp5ga2");
+			nvram_unset("maxp5gha0");
+			nvram_unset("maxp5gha1");
+			nvram_unset("maxp5gha2");
+			struct nvram_param bcm4360ac_defaults_pci1_1[] = {
+				{ "maxp2ga0", "0x70" },
+				{ "maxp2ga1", "0x70" },
+				{ "maxp2ga2", "0x70" },
+				{ "cckbw202gpo", "0x5555" },
+				{ "cckbw20ul2gpo", "0x5555" },
+				{ "legofdmbw202gpo", "0x97555555" },
+				{ "legofdmbw20ul2gpo", "0x97555555" },
+				{ "mcsbw202gpo", "0xFC955555" },
+				{ "mcsbw20ul2gpo", "0xFC955555" },
+				{ "mcsbw402gpo", "0xFFFF9999" },
+				{ "mcs32po", "0x9999" },
+				{ "legofdm40duppo", "0x4444" },
+				{ 0, 0 }
+			};
+			restore_set("pci/1/1", bcm4360ac_defaults_pci1_1);
+
+			struct nvram_param bcm4360ac_defaults_pci2_1[] = {
+				{ "maxp5ga0", "0x6A" },
+				{ "maxp5ga1", "0x6A" },
+				{ "maxp5ga2", "0x6A" },
+				{ "legofdmbw205gmpo", "0x77777777" },
+				{ "legofdmbw20ul5gmpo", "0x77777777" },
+				{ "mcsbw205gmpo", "0x77777777" },
+				{ "mcsbw20ul5gmpo", "0x77777777" },
+				{ "mcsbw405gmpo", "0x77777777" },
+				{ "maxp5gha0", "0x6A" },
+				{ "maxp5gha1", "0x6A" },
+				{ "maxp5gha2", "0x6A" },
+				{ "legofdmbw205ghpo", "0x77777777" },
+				{ "legofdmbw20ul5ghpo", "0x77777777" },
+				{ "mcsbw205ghpo", "0x77777777" },
+				{ "mcsbw20ul5ghpo", "0x77777777" },
+				{ "mcsbw405ghpo", "0x77777777" },
+				{ "mcs32po", "0x7777" },
+				{ "legofdm40duppo", "0x0000" },
+				{ 0, 0 }
+			};
+			restore_set("pci/2/1", bcm4360ac_defaults_pci2_1);
+
+			if (nvram_match("regulation_domain", "US"))
+				set_regulation(0, "US", "0");
+			else if (nvram_match("regulation_domain", "Q2"))
+				set_regulation(0, "US", "0");
+			else if (nvram_match("regulation_domain", "EU"))
+				set_regulation(0, "EU", "66");
+			else if (nvram_match("regulation_domain", "TW"))
+				set_regulation(0, "TW", "13");
+			else if (nvram_match("regulation_domain", "CN"))
+				set_regulation(0, "CN", "1");
+			else
+				set_regulation(0, "US", "0");
+
+			if (nvram_match("regulation_domain_5G", "US"))
+				set_regulation(1, "US", "0");
+			else if (nvram_match("regulation_domain_5G", "Q2"))
+				set_regulation(1, "US", "0");
+			else if (nvram_match("regulation_domain_5G", "EU"))
+				set_regulation(1, "EU", "38");
+			else if (nvram_match("regulation_domain_5G", "TW"))
+				set_regulation(1, "TW", "13");
+			else if (nvram_match("regulation_domain_5G", "CN"))
+				set_regulation(1, "CN", "1");
+			else
+				set_regulation(1, "US", "0");
 		}
-		nvram_unset("maxp2ga0");
-		nvram_unset("maxp2ga1");
-		nvram_unset("maxp2ga2");
-		nvram_unset("maxp5ga0");
-		nvram_unset("maxp5ga1");
-		nvram_unset("maxp5ga2");
-		nvram_unset("maxp5gha0");
-		nvram_unset("maxp5gha1");
-		nvram_unset("maxp5gha2");
-		struct nvram_param bcm4360ac_defaults_pci1_1[] = {
-			{ "maxp2ga0", "0x70" },
-			{ "maxp2ga1", "0x70" },
-			{ "maxp2ga2", "0x70" },
-			{ "cckbw202gpo", "0x5555" },
-			{ "cckbw20ul2gpo", "0x5555" },
-			{ "legofdmbw202gpo", "0x97555555" },
-			{ "legofdmbw20ul2gpo", "0x97555555" },
-			{ "mcsbw202gpo", "0xFC955555" },
-			{ "mcsbw20ul2gpo", "0xFC955555" },
-			{ "mcsbw402gpo", "0xFFFF9999" },
-			{ "mcs32po", "0x9999" },
-			{ "legofdm40duppo", "0x4444" },
-			{ 0, 0 }
-		};
-		restore_set("pci/1/1", bcm4360ac_defaults_pci1_1);
-
-		struct nvram_param bcm4360ac_defaults_pci2_1[] = {
-			{ "maxp5ga0", "0x6A" },
-			{ "maxp5ga1", "0x6A" },
-			{ "maxp5ga2", "0x6A" },
-			{ "legofdmbw205gmpo", "0x77777777" },
-			{ "legofdmbw20ul5gmpo", "0x77777777" },
-			{ "mcsbw205gmpo", "0x77777777" },
-			{ "mcsbw20ul5gmpo", "0x77777777" },
-			{ "mcsbw405gmpo", "0x77777777" },
-			{ "maxp5gha0", "0x6A" },
-			{ "maxp5gha1", "0x6A" },
-			{ "maxp5gha2", "0x6A" },
-			{ "legofdmbw205ghpo", "0x77777777" },
-			{ "legofdmbw20ul5ghpo", "0x77777777" },
-			{ "mcsbw205ghpo", "0x77777777" },
-			{ "mcsbw20ul5ghpo", "0x77777777" },
-			{ "mcsbw405ghpo", "0x77777777" },
-			{ "mcs32po", "0x7777" },
-			{ "legofdm40duppo", "0x0000" },
-			{ 0, 0 }
-		};
-		restore_set("pci/2/1", bcm4360ac_defaults_pci2_1);
-
-		if (nvram_match("regulation_domain", "US"))
-			set_regulation(0, "US", "0");
-		else if (nvram_match("regulation_domain", "Q2"))
-			set_regulation(0, "US", "0");
-		else if (nvram_match("regulation_domain", "EU"))
-			set_regulation(0, "EU", "66");
-		else if (nvram_match("regulation_domain", "TW"))
-			set_regulation(0, "TW", "13");
-		else if (nvram_match("regulation_domain", "CN"))
-			set_regulation(0, "CN", "1");
-		else
-			set_regulation(0, "US", "0");
-
-		if (nvram_match("regulation_domain_5G", "US"))
-			set_regulation(1, "US", "0");
-		else if (nvram_match("regulation_domain_5G", "Q2"))
-			set_regulation(1, "US", "0");
-		else if (nvram_match("regulation_domain_5G", "EU"))
-			set_regulation(1, "EU", "38");
-		else if (nvram_match("regulation_domain_5G", "TW"))
-			set_regulation(1, "TW", "13");
-		else if (nvram_match("regulation_domain_5G", "CN"))
-			set_regulation(1, "CN", "1");
-		else
-			set_regulation(1, "US", "0");
-
 		break;
 
 	case ROUTER_WRT310NV2:
