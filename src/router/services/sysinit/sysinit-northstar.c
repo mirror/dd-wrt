@@ -5245,7 +5245,7 @@ void start_sysinit(void)
 				MAC_ADD(mac);
 				nvram_set("pci/2/1/macaddr", mac);
 			}
-			
+
 			/*
 			 * set router's extra parameters 
 			 */
@@ -5361,7 +5361,6 @@ void start_sysinit(void)
 			else
 				extra_params = r6400_pci_1_1_params;
 			restore_set("pci/1/1/", extra_params);
-
 
 			/*
 			 * set router's extra parameters 
