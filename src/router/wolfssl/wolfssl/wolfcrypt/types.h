@@ -34,6 +34,10 @@
     #endif
 
 
+    #define WOLFSSL_ABI
+            /* Tag for all the APIs that are a part of the fixed ABI. */
+
+
     #if defined(WORDS_BIGENDIAN)
         #define BIG_ENDIAN_ORDER
     #endif
@@ -237,19 +241,29 @@
           defined(HAVE_INTEL_QA_SYNC)
         #ifndef HAVE_INTEL_QA_SYNC
             #include <wolfssl/wolfcrypt/port/intel/quickassist_mem.h>
+            #undef USE_WOLFSSL_MEMORY
+            #ifdef WOLFSSL_DEBUG_MEMORY
+                #define XMALLOC(s, h, t)     IntelQaMalloc((s), (h), (t), __func__, __LINE__)
+                #define XFREE(p, h, t)       IntelQaFree((p), (h), (t), __func__, __LINE__)
+                #define XREALLOC(p, n, h, t) IntelQaRealloc((p), (n), (h), (t), __func__, __LINE__)
+            #else
+                #define XMALLOC(s, h, t)     IntelQaMalloc((s), (h), (t))
+                #define XFREE(p, h, t)       IntelQaFree((p), (h), (t))
+                #define XREALLOC(p, n, h, t) IntelQaRealloc((p), (n), (h), (t))
+            #endif /* WOLFSSL_DEBUG_MEMORY */
         #else
             #include <wolfssl/wolfcrypt/port/intel/quickassist_sync.h>
+            #undef USE_WOLFSSL_MEMORY
+            #ifdef WOLFSSL_DEBUG_MEMORY
+                #define XMALLOC(s, h, t)     wc_CryptoCb_IntelQaMalloc((s), (h), (t), __func__, __LINE__)
+                #define XFREE(p, h, t)       wc_CryptoCb_IntelQaFree((p), (h), (t), __func__, __LINE__)
+                #define XREALLOC(p, n, h, t) wc_CryptoCb_IntelQaRealloc((p), (n), (h), (t), __func__, __LINE__)
+            #else
+                #define XMALLOC(s, h, t)     wc_CryptoCb_IntelQaMalloc((s), (h), (t))
+                #define XFREE(p, h, t)       wc_CryptoCb_IntelQaFree((p), (h), (t))
+                #define XREALLOC(p, n, h, t) wc_CryptoCb_IntelQaRealloc((p), (n), (h), (t))
+            #endif /* WOLFSSL_DEBUG_MEMORY */
         #endif
-        #undef USE_WOLFSSL_MEMORY
-        #ifdef WOLFSSL_DEBUG_MEMORY
-            #define XMALLOC(s, h, t)     IntelQaMalloc((s), (h), (t), __func__, __LINE__)
-            #define XFREE(p, h, t)       IntelQaFree((p), (h), (t), __func__, __LINE__)
-            #define XREALLOC(p, n, h, t) IntelQaRealloc((p), (n), (h), (t), __func__, __LINE__)
-        #else
-            #define XMALLOC(s, h, t)     IntelQaMalloc((s), (h), (t))
-            #define XFREE(p, h, t)       IntelQaFree((p), (h), (t))
-            #define XREALLOC(p, n, h, t) IntelQaRealloc((p), (n), (h), (t))
-        #endif /* WOLFSSL_DEBUG_MEMORY */
     #elif defined(XMALLOC_USER)
         /* prototypes for user heap override functions */
         #include <stddef.h>  /* for size_t */
@@ -479,7 +493,8 @@
             #endif /* _MSC_VER || __CYGWIN__ || __MINGW32__ */
         #endif /* USE_WINDOWS_API */
 
-        #if defined(WOLFSSL_CERT_EXT) || defined(HAVE_ALPN)
+        #if defined(WOLFSSL_CERT_EXT) || defined(OPENSSL_EXTRA) \
+                    || defined(HAVE_ALPN)
             /* use only Thread Safe version of strtok */
             #if defined(USE_WOLF_STRTOK)
                 #define XSTRTOK(s1,d,ptr) wc_strtok((s1),(d),(ptr))
@@ -862,7 +877,8 @@
     #endif
 
 
-    #if defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__)
+    #if (defined(__IAR_SYSTEMS_ICC__) && (__IAR_SYSTEMS_ICC__ > 8)) || \
+         defined(__GNUC__)
         #define WOLFSSL_PACK __attribute__ ((packed))
     #else
         #define WOLFSSL_PACK

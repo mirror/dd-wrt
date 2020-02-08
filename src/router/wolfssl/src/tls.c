@@ -1449,6 +1449,8 @@ static ALPN* TLSX_ALPN_New(char *protocol_name, word16 protocol_nameSz,
     XMEMCPY(alpn->protocol_name, protocol_name, protocol_nameSz);
     alpn->protocol_name[protocol_nameSz] = 0;
 
+    (void)heap;
+
     return alpn;
 }
 
@@ -2420,6 +2422,8 @@ static TCA* TLSX_TCA_New(byte type, const byte* id, word16 idSz, void* heap)
         }
     }
 
+    (void)heap;
+
     return tca;
 }
 
@@ -2613,7 +2617,7 @@ static int TLSX_TCA_Parse(WOLFSSL* ssl, const byte* input, word16 length,
                     return BUFFER_ERROR;
                 ato16(input + offset, &idSz);
                 offset += OPAQUE16_LEN;
-                if (offset + idSz > length)
+                if ((offset > length) || (idSz > length - offset))
                     return BUFFER_ERROR;
                 id = input + offset;
                 offset += idSz;
@@ -4268,6 +4272,10 @@ int TLSX_ValidateSupportedCurves(WOLFSSL* ssl, byte first, byte second) {
          curve = curve->next) {
 
     #ifdef OPENSSL_EXTRA
+        /* skip if name is not in supported ECC range */
+        if (curve->name > WOLFSSL_ECC_X25519)
+            continue;
+        /* skip if curve is disabled by user */
         if (ssl->ctx->disabledCurves & (1 << curve->name))
             continue;
     #endif
@@ -7540,6 +7548,7 @@ static int TLSX_KeyShare_New(KeyShareEntry** list, int group, void *heap,
                              KeyShareEntry** keyShareEntry)
 {
     KeyShareEntry* kse;
+    KeyShareEntry** next;
 
     kse = (KeyShareEntry*)XMALLOC(sizeof(KeyShareEntry), heap,
                                   DYNAMIC_TYPE_TLSX);
@@ -7550,8 +7559,11 @@ static int TLSX_KeyShare_New(KeyShareEntry** list, int group, void *heap,
     kse->group = (word16)group;
 
     /* Add it to the back and maintain the links. */
-    while (*list != NULL)
-        list = &((*list)->next);
+    while (*list != NULL) {
+        /* Assign to temporary to work around compiler bug found by customer. */
+        next = &((*list)->next);
+        list = next;
+    }
     *list = kse;
     *keyShareEntry = kse;
 
@@ -8318,6 +8330,7 @@ static int TLSX_PreSharedKey_New(PreSharedKey** list, byte* identity,
                                  PreSharedKey** preSharedKey)
 {
     PreSharedKey* psk;
+    PreSharedKey** next;
 
     psk = (PreSharedKey*)XMALLOC(sizeof(PreSharedKey), heap, DYNAMIC_TYPE_TLSX);
     if (psk == NULL)
@@ -8334,10 +8347,15 @@ static int TLSX_PreSharedKey_New(PreSharedKey** list, byte* identity,
     psk->identityLen = len;
 
     /* Add it to the end and maintain the links. */
-    while (*list != NULL)
-        list = &((*list)->next);
+    while (*list != NULL) {
+        /* Assign to temporary to work around compiler bug found by customer. */
+        next = &((*list)->next);
+        list = next;
+    }
     *list = psk;
     *preSharedKey = psk;
+
+    (void)heap;
 
     return 0;
 }
@@ -11028,6 +11046,7 @@ int TLSX_Parse(WOLFSSL* ssl, byte* input, word16 length, byte msgType,
 #endif /* !NO_OLD_TLS */
 
 #ifndef WOLFSSL_NO_TLS12
+    WOLFSSL_ABI
     WOLFSSL_METHOD* wolfTLSv1_2_client_method(void)
     {
         return wolfTLSv1_2_client_method_ex(NULL);
@@ -11050,6 +11069,7 @@ int TLSX_Parse(WOLFSSL* ssl, byte* input, word16 length, byte msgType,
      *
      * returns the method data for a TLS v1.3 client.
      */
+    WOLFSSL_ABI
     WOLFSSL_METHOD* wolfTLSv1_3_client_method(void)
     {
         return wolfTLSv1_3_client_method_ex(NULL);

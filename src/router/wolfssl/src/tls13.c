@@ -106,19 +106,6 @@
     #include "libntruencrypt/ntru_crypto.h"
 #endif
 
-#if defined(DEBUG_WOLFSSL) || defined(WOLFSSL_DEBUG) || \
-    defined(CHACHA_AEAD_TEST) || defined(WOLFSSL_SESSION_EXPORT_DEBUG)
-    #if defined(FREESCALE_MQX) || defined(FREESCALE_KSDK_MQX)
-        #if MQX_USE_IO_OLD
-            #include <fio.h>
-        #else
-            #include <nio.h>
-        #endif
-    #else
-        #include <stdio.h>
-    #endif
-#endif
-
 #ifdef __sun
     #include <sys/filio.h>
 #endif
@@ -2357,10 +2344,10 @@ static int FindSuiteSSL(WOLFSSL* ssl, byte* suite)
 static int CreateCookie(WOLFSSL* ssl, byte* hash, byte hashSz)
 {
     int  ret;
-    byte mac[WC_MAX_DIGEST_SIZE];
+    byte mac[WC_MAX_DIGEST_SIZE] = {0};
     Hmac cookieHmac;
-    byte cookieType;
-    byte macSz;
+    byte cookieType = 0;
+    byte macSz = 0;
 
 #if !defined(NO_SHA) && defined(NO_SHA256)
     cookieType = SHA;
@@ -2370,6 +2357,7 @@ static int CreateCookie(WOLFSSL* ssl, byte* hash, byte hashSz)
     cookieType = WC_SHA256;
     macSz = WC_SHA256_DIGEST_SIZE;
 #endif /* NO_SHA256 */
+    XMEMSET(&cookieHmac, 0, sizeof(Hmac));
 
     ret = wc_HmacSetKey(&cookieHmac, cookieType,
                         ssl->buffers.tls13CookieSecret.buffer,
@@ -2395,7 +2383,7 @@ static int RestartHandshakeHash(WOLFSSL* ssl)
 {
     int    ret;
     Hashes hashes;
-    byte   header[HANDSHAKE_HEADER_SZ];
+    byte   header[HANDSHAKE_HEADER_SZ] = {0};
     byte*  hash = NULL;
     byte   hashSz = 0;
 
@@ -3159,6 +3147,19 @@ int DoTls13ServerHello(WOLFSSL* ssl, const byte* input, word32* inOutIdx,
     ret = SetCipherSpecs(ssl);
     if (ret != 0)
         return ret;
+#ifdef HAVE_NULL_CIPHER
+    if (ssl->options.cipherSuite0 == ECC_BYTE &&
+                              (ssl->options.cipherSuite == TLS_SHA256_SHA256 ||
+                               ssl->options.cipherSuite == TLS_SHA384_SHA384)) {
+        ;
+    }
+    else
+#endif
+    /* Check that the negotiated ciphersuite matches protocol version. */
+    if (ssl->options.cipherSuite0 != TLS13_BYTE) {
+        WOLFSSL_MSG("Server sent non-TLS13 cipher suite in TLS 1.3 packet");
+        return INVALID_PARAMETER;
+    }
 
 #if defined(HAVE_SESSION_TICKET) || !defined(NO_PSK)
 #ifndef WOLFSSL_TLS13_DRAFT_18
@@ -3764,10 +3765,10 @@ static int DoPreSharedKeys(WOLFSSL* ssl, const byte* input, word32 helloSz,
 static int CheckCookie(WOLFSSL* ssl, byte* cookie, byte cookieSz)
 {
     int  ret;
-    byte mac[WC_MAX_DIGEST_SIZE];
+    byte mac[WC_MAX_DIGEST_SIZE] = {0};
     Hmac cookieHmac;
-    byte cookieType;
-    byte macSz;
+    byte cookieType = 0;
+    byte macSz = 0;
 
 #if !defined(NO_SHA) && defined(NO_SHA256)
     cookieType = SHA;
@@ -3781,6 +3782,7 @@ static int CheckCookie(WOLFSSL* ssl, byte* cookie, byte cookieSz)
     if (cookieSz < ssl->specs.hash_size + macSz)
         return HRR_COOKIE_ERROR;
     cookieSz -= macSz;
+    XMEMSET(&cookieHmac, 0, sizeof(Hmac));
 
     ret = wc_HmacSetKey(&cookieHmac, cookieType,
                         ssl->buffers.tls13CookieSecret.buffer,
@@ -3831,8 +3833,8 @@ static int CheckCookie(WOLFSSL* ssl, byte* cookie, byte cookieSz)
  */
 static int RestartHandshakeHashWithCookie(WOLFSSL* ssl, Cookie* cookie)
 {
-    byte   header[HANDSHAKE_HEADER_SZ];
-    byte   hrr[MAX_HRR_SZ];
+    byte   header[HANDSHAKE_HEADER_SZ] = {0};
+    byte   hrr[MAX_HRR_SZ] = {0};
     int    hrrIdx;
     word32 idx;
     byte   hashSz;
@@ -4007,7 +4009,7 @@ static int DoTls13SupportedVersions(WOLFSSL* ssl, const byte* input, word32 i,
             return BUFFER_ERROR;
         ato16(&input[i], &totalExtSz);
         i += OPAQUE16_LEN;
-        if (i + totalExtSz != helloSz)
+        if (totalExtSz != helloSz - i)
             return BUFFER_ERROR;
 
         /* Need to negotiate version first. */
@@ -4038,18 +4040,21 @@ int DoTls13ClientHello(WOLFSSL* ssl, const byte* input, word32* inOutIdx,
                        word32 helloSz)
 {
     int             ret = VERSION_ERROR;
-    byte            b;
+    byte            b = 0;
     ProtocolVersion pv;
     Suites          clSuites;
     word32          i = *inOutIdx;
     word32          begin = i;
     word16          totalExtSz = 0;
     int             usingPSK = 0;
-    byte            sessIdSz;
+    byte            sessIdSz = 0;
     int             wantDowngrade = 0;
 
     WOLFSSL_START(WC_FUNC_CLIENT_HELLO_DO);
     WOLFSSL_ENTER("DoTls13ClientHello");
+
+    XMEMSET(&pv, 0, sizeof(ProtocolVersion));
+    XMEMSET(&clSuites, 0, sizeof(Suites));
 
 #ifdef WOLFSSL_CALLBACKS
     if (ssl->hsInfoOn) AddPacketName(ssl, "ClientHello");
@@ -7488,7 +7493,7 @@ int DoTls13HandShakeMsgType(WOLFSSL* ssl, byte* input, word32* inOutIdx,
         SendAlert(ssl, alert_fatal, illegal_parameter);
     }
 
-    if (ssl->options.tls1_3) {
+    if (ret == 0 && ssl->options.tls1_3) {
         /* Need to hash input message before deriving secrets. */
     #ifndef NO_WOLFSSL_CLIENT
         if (ssl->options.side == WOLFSSL_CLIENT_END) {

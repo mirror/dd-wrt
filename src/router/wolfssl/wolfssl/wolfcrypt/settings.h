@@ -79,6 +79,9 @@
 /* Uncomment next line if building wolfSSL for LSR */
 /* #define WOLFSSL_LSR */
 
+/* Uncomment next line if building for Freescale Classic MQX version 5.0 */
+/* #define FREESCALE_MQX_5_0 */
+
 /* Uncomment next line if building for Freescale Classic MQX version 4.0 */
 /* #define FREESCALE_MQX_4_0 */
 
@@ -528,7 +531,8 @@
     #define XSTRNCMP(s1,s2,n)      strncmp((s1),(s2),(n))
     #define XSTRNCAT(s1,s2,n)      strncat((s1),(s2),(n))
     #define XSTRNCASECMP(s1,s2,n)  _strnicmp((s1),(s2),(n))
-    #if defined(WOLFSSL_CERT_EXT) || defined(HAVE_ALPN)
+    #if defined(WOLFSSL_CERT_EXT) || defined(OPENSSL_EXTRA) \
+            || defined(HAVE_ALPN)
         #define XSTRTOK            strtok_r
     #endif
 #endif
@@ -794,7 +798,23 @@ extern void uITRON4_free(void *p) ;
 
     #define XMALLOC(s, h, type) ((void *)rtp_malloc((s), SSL_PRO_MALLOC))
     #define XFREE(p, h, type) (rtp_free(p))
-    #define XREALLOC(p, n, h, t) realloc((p), (n))
+    #define XREALLOC(p, n, h, t) (rtp_realloc((p), (n)))
+
+    #if (WINMSP3)
+        #define XSTRNCASECMP(s1,s2,n)  _strnicmp((s1),(s2),(n))
+    #else
+        #sslpro: settings.h - please implement XSTRNCASECMP - needed for HAVE_ECC
+    #endif
+
+    #define WOLFSSL_HAVE_MAX
+    #define WOLFSSL_HAVE_MIN
+
+    #define USE_FAST_MATH
+    #define TFM_TIMING_RESISTANT
+    #define WC_RSA_BLINDING
+    #define ECC_TIMING_RESISTANT
+
+    #define HAVE_ECC
 
 #endif /* EBSNET */
 
@@ -859,6 +879,11 @@ extern void uITRON4_free(void *p) ;
     #define TFM_TIMING_RESISTANT
 #endif
 
+#ifdef FREESCALE_MQX_5_0
+    /* use normal Freescale MQX port, but with minor changes for 5.0 */
+    #define FREESCALE_MQX
+#endif
+
 #ifdef FREESCALE_MQX_4_0
     /* use normal Freescale MQX port, but with minor changes for 4.0 */
     #define FREESCALE_MQX
@@ -869,7 +894,8 @@ extern void uITRON4_free(void *p) ;
     #include "mqx.h"
     #ifndef NO_FILESYSTEM
         #include "mfs.h"
-        #if MQX_USE_IO_OLD
+        #if (defined(MQX_USE_IO_OLD) && MQX_USE_IO_OLD) || \
+            defined(FREESCALE_MQX_5_0)
             #include "fio.h"
             #define NO_STDIO_FILESYSTEM
         #else
@@ -892,7 +918,8 @@ extern void uITRON4_free(void *p) ;
     #define FREESCALE_COMMON
     #include <mqx.h>
     #ifndef NO_FILESYSTEM
-        #if MQX_USE_IO_OLD
+        #if (defined(MQX_USE_IO_OLD) && MQX_USE_IO_OLD) || \
+            defined(FREESCALE_MQX_5_0)
             #include <fio.h>
         #else
             #include <stdio.h>
@@ -1589,12 +1616,6 @@ extern void uITRON4_free(void *p) ;
     #endif
 #else
     #define XGEN_ALIGN
-#endif
-
-#ifdef HAVE_CRL
-    /* not widely supported yet */
-    #undef NO_SKID
-    #define NO_SKID
 #endif
 
 

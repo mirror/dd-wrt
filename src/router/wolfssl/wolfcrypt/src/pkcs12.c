@@ -767,7 +767,12 @@ int wc_i2d_PKCS12(WC_PKCS12* pkcs12, byte** der, int* derSz)
                 word32 tmpIdx = 0;
                 byte ar[MAX_LENGTH_SZ + 2];
                 tmpSz = SetShortInt(ar, &tmpIdx, mac->itt, MAX_LENGTH_SZ + 2);
-                XMEMCPY(&sdBuf[idx], ar, tmpSz);
+                if (tmpSz < 0) {
+                    ret = tmpSz;
+                }
+                else {
+                    XMEMCPY(&sdBuf[idx], ar, tmpSz);
+                }
             }
 
             totalSz += sdBufSz;
@@ -1070,7 +1075,7 @@ int wc_PKCS12_parse(WC_PKCS12* pkcs12, const char* psw,
                 ERROR_OUT(ASN_PARSE_E, exit_pk12par);
             }
             if ((ret = GetLength(data, &idx, &size, ci->dataSz)) <= 0) {
-                goto exit_pk12par;
+                ERROR_OUT(ASN_PARSE_E, exit_pk12par);
             }
 
             if (GetASNTag(data, &idx, &tag, ci->dataSz) < 0) {
