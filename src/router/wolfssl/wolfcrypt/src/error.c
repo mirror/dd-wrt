@@ -509,6 +509,9 @@ const char* wc_GetErrorString(int error)
     case PKCS7_SIGNEEDS_CHECK:
         return "Signature found but no certificate to verify";
 
+    case PSS_SALTLEN_RECOVER_E:
+        return "PSS - Salt length unable to be recovered";
+
     default:
         return "unknown error number";
 
@@ -518,6 +521,7 @@ const char* wc_GetErrorString(int error)
 void wc_ErrorString(int error, char* buffer)
 {
     XSTRNCPY(buffer, wc_GetErrorString(error), WOLFSSL_MAX_ERROR_SZ);
+    buffer[WOLFSSL_MAX_ERROR_SZ-1] = 0;
 }
 #endif /* !NO_ERROR_STRINGS */
 

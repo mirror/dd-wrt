@@ -105,17 +105,23 @@
     #else
         #define SP_INT_DIGITS        ((256 + SP_WORD_SIZE) / SP_WORD_SIZE)
     #endif
-#elif defined(WOLFSSL_SP_NO_3072)
-    #if defined(WOLFSSL_HAVE_SP_DH) && defined(WOLFSSL_KEY_GEN)
-        #define SP_INT_DIGITS        ((4096 + SP_WORD_SIZE) / SP_WORD_SIZE)
+#elif defined(WOLFSSL_SP_4096)
+    #if defined(WOLFSSL_HAVE_SP_DH)
+        #define SP_INT_DIGITS        ((8192 + SP_WORD_SIZE) / SP_WORD_SIZE)
     #else
-        #define SP_INT_DIGITS        ((2048 + SP_WORD_SIZE) / SP_WORD_SIZE)
+        #define SP_INT_DIGITS        ((4096 + SP_WORD_SIZE) / SP_WORD_SIZE)
     #endif
-#else
-    #if defined(WOLFSSL_HAVE_SP_DH) && defined(WOLFSSL_KEY_GEN)
+#elif !defined(WOLFSSL_SP_NO_3072)
+    #if defined(WOLFSSL_HAVE_SP_DH)
         #define SP_INT_DIGITS        ((6144 + SP_WORD_SIZE) / SP_WORD_SIZE)
     #else
         #define SP_INT_DIGITS        ((3072 + SP_WORD_SIZE) / SP_WORD_SIZE)
+    #endif
+#else
+    #if defined(WOLFSSL_HAVE_SP_DH)
+        #define SP_INT_DIGITS        ((4096 + SP_WORD_SIZE) / SP_WORD_SIZE)
+    #else
+        #define SP_INT_DIGITS        ((2048 + SP_WORD_SIZE) / SP_WORD_SIZE)
     #endif
 #endif
 
@@ -155,7 +161,7 @@ MP_API int sp_init_multi(sp_int* a, sp_int* b, sp_int* c, sp_int* d,
                          sp_int* e, sp_int* f);
 MP_API void sp_clear(sp_int* a);
 MP_API int sp_unsigned_bin_size(sp_int* a);
-MP_API int sp_read_unsigned_bin(sp_int* a, const byte* in, word32 inSz);
+MP_API int sp_read_unsigned_bin(sp_int* a, const byte* in, int inSz);
 MP_API int sp_read_radix(sp_int* a, const char* in, int radix);
 MP_API int sp_cmp(sp_int* a, sp_int* b);
 MP_API int sp_count_bits(sp_int* a);
@@ -180,6 +186,7 @@ MP_API int sp_tohex(sp_int* a, char* str);
 MP_API int sp_2expt(sp_int* a, int e);
 MP_API int sp_rand_prime(sp_int* r, int len, WC_RNG* rng, void* heap);
 MP_API int sp_mul(sp_int* a, sp_int* b, sp_int* r);
+MP_API int sp_mulmod(sp_int* a, sp_int* b, sp_int* m, sp_int* r);
 MP_API int sp_gcd(sp_int* a, sp_int* b, sp_int* r);
 MP_API int sp_invmod(sp_int* a, sp_int* m, sp_int* r);
 MP_API int sp_lcm(sp_int* a, sp_int* b, sp_int* r);
@@ -187,6 +194,10 @@ MP_API int sp_exptmod(sp_int* b, sp_int* e, sp_int* m, sp_int* r);
 MP_API int sp_prime_is_prime(mp_int* a, int t, int* result);
 MP_API int sp_prime_is_prime_ex(mp_int* a, int t, int* result, WC_RNG* rng);
 MP_API int sp_exch(sp_int* a, sp_int* b);
+MP_API int sp_get_digit_count(sp_int *a);
+MP_API int sp_init_copy (sp_int * a, sp_int * b);
+MP_API void sp_rshb(sp_int* a, int n, sp_int* r);
+
 
 #define MP_OKAY    0
 #define MP_NO      0
@@ -242,6 +253,7 @@ MP_API int sp_exch(sp_int* a, sp_int* b);
 #define mp_2expt                    sp_2expt
 #define mp_rand_prime               sp_rand_prime
 #define mp_mul                      sp_mul
+#define mp_mulmod                   sp_mulmod
 #define mp_gcd                      sp_gcd
 #define mp_invmod                   sp_invmod
 #define mp_lcm                      sp_lcm
@@ -249,6 +261,9 @@ MP_API int sp_exch(sp_int* a, sp_int* b);
 #define mp_prime_is_prime           sp_prime_is_prime
 #define mp_prime_is_prime_ex        sp_prime_is_prime_ex
 #define mp_exch                     sp_exch
+#define get_digit_count             sp_get_digit_count
+#define mp_init_copy                sp_init_copy
+#define mp_rshb(A,x)                sp_rshb(A,x,A)
 
 #endif
 

@@ -344,14 +344,6 @@
                     #define BUILD_TLS_RSA_WITH_AES_256_CCM_8
                 #endif
             #endif
-            #if defined(HAVE_BLAKE2) && defined(HAVE_AES_CBC)
-                #ifdef WOLFSSL_AES_128
-                    #define BUILD_TLS_RSA_WITH_AES_128_CBC_B2B256
-                #endif
-                #ifdef WOLFSSL_AES_256
-                    #define BUILD_TLS_RSA_WITH_AES_256_CBC_B2B256
-                #endif
-            #endif
         #endif
     #endif
 
@@ -455,9 +447,6 @@
         #endif
         #if !defined(NO_SHA)
             #define BUILD_TLS_RSA_WITH_HC_128_SHA
-        #endif
-        #if defined(HAVE_BLAKE2)
-            #define BUILD_TLS_RSA_WITH_HC_128_B2B256
         #endif
     #endif
 
@@ -879,8 +868,7 @@
 #endif
 
 #if defined(BUILD_TLS_RSA_WITH_HC_128_SHA) || \
-    defined(BUILD_TLS_RSA_WITH_HC_128_MD5) || \
-    defined(BUILD_TLS_RSA_WITH_HC_128_B2B256)
+    defined(BUILD_TLS_RSA_WITH_HC_128_MD5)
     #define BUILD_HC128
 #endif
 
@@ -990,11 +978,6 @@ enum {
     TLS_RSA_WITH_HC_128_SHA       = 0xFC,
     TLS_RSA_WITH_RABBIT_SHA       = 0xFD,
     WDM_WITH_NULL_SHA256          = 0xFE, /* wolfSSL DTLS Multicast */
-
-    /* wolfSSL extension - Blake2b 256 */
-    TLS_RSA_WITH_AES_128_CBC_B2B256   = 0xF8,
-    TLS_RSA_WITH_AES_256_CBC_B2B256   = 0xF9,
-    TLS_RSA_WITH_HC_128_B2B256        = 0xFA,   /* eSTREAM too */
 
     /* wolfSSL extension - NTRU */
     TLS_NTRU_RSA_WITH_RC4_128_SHA      = 0xe5,
@@ -1431,7 +1414,9 @@ enum Misc {
     MIN_PSK_BINDERS_LEN=  33,  /* min length of binders */
     MAX_TICKET_AGE_SECS=  10,  /* maximum ticket age in seconds */
 
+#ifndef MAX_WOLFSSL_FILE_SIZE
     MAX_WOLFSSL_FILE_SIZE = 1024ul * 1024ul * 4,  /* 4 mb file size alloc limit */
+#endif
 
     MAX_X509_SIZE      = 2048, /* max static x509 buffer size */
     CERT_MIN_SIZE      =  256, /* min PEM cert size with header/footer */
@@ -1666,6 +1651,9 @@ WOLFSSL_LOCAL int  ProcessPeerCerts(WOLFSSL* ssl, byte* input, word32* inOutIdx,
 WOLFSSL_LOCAL int  MatchDomainName(const char* pattern, int len, const char* str);
 #ifndef NO_CERTS
 WOLFSSL_LOCAL int  CheckAltNames(DecodedCert* dCert, char* domain);
+#ifdef OPENSSL_EXTRA
+WOLFSSL_LOCAL int  CheckIPAddr(DecodedCert* dCert, char* ipasc);
+#endif
 #endif
 WOLFSSL_LOCAL int  CreateTicket(WOLFSSL* ssl);
 WOLFSSL_LOCAL int  HashOutputRaw(WOLFSSL* ssl, const byte* output, int sz);
@@ -1882,7 +1870,7 @@ struct CRL_Entry {
     byte*   signature;
     word32  signatureSz;
     word32  signatureOID;
-#if !defined(NO_SKID) && defined(CRL_SKID_READY)
+#if !defined(NO_SKID) && !defined(NO_ASN)
     byte    extAuthKeyIdSet;
     byte    extAuthKeyId[KEYID_SIZE];
 #endif
@@ -2661,6 +2649,10 @@ struct WOLFSSL_CTX {
 #endif
 #endif /* WOLFSSL_DTLS */
     VerifyCallback  verifyCallback;     /* cert verification callback */
+#ifdef OPENSSL_ALL
+    CertVerifyCallback verifyCertCb;
+    void*              verifyCertCbArg;
+#endif /* OPENSSL_ALL */
     word32          timeout;            /* session timeout */
 #if defined(HAVE_ECC) || defined(HAVE_CURVE25519)
     word32          ecdhCurveOID;       /* curve Ecc_Sum */
@@ -3361,6 +3353,8 @@ typedef struct Options {
 #ifdef HAVE_ENCRYPT_THEN_MAC
     word16            disallowEncThenMac:1;   /* Don't do Encrypt-Then-MAC */
     word16            encThenMac:1;           /* Doing Encrypt-Then-MAC */
+    word16            startedETMRead:1;       /* Doing Encrypt-Then-MAC read */
+    word16            startedETMWrite:1;      /* Doing Encrypt-Then-MAC write */
 #endif
 
     /* need full byte values for this section */
@@ -3453,6 +3447,7 @@ typedef struct Arrays {
 #define STACK_TYPE_NULL               8
 #define STACK_TYPE_X509_NAME          9
 #define STACK_TYPE_CONF_VALUE         10
+#define STACK_TYPE_X509_INFO          11
 
 struct WOLFSSL_STACK {
     unsigned long num; /* number of nodes in stack
@@ -3460,6 +3455,7 @@ struct WOLFSSL_STACK {
     #if defined(OPENSSL_ALL)
     wolf_sk_compare_cb comp;
     #endif
+
     union {
         WOLFSSL_X509*          x509;
         WOLFSSL_X509_NAME*     name;
@@ -3472,7 +3468,7 @@ struct WOLFSSL_STACK {
         WOLFSSL_CONF_VALUE*    conf;
         void*                  generic;
         char*                  string;
-        WOLFSSL_GENERAL_NAME* gn;
+        WOLFSSL_GENERAL_NAME*  gn;
     } data;
     void* heap; /* memory heap hint */
     WOLFSSL_STACK* next;
@@ -4078,14 +4074,11 @@ struct WOLFSSL {
 };
 
 
-WOLFSSL_LOCAL
-int  SetSSL_CTX(WOLFSSL*, WOLFSSL_CTX*, int);
-WOLFSSL_LOCAL
-int  InitSSL(WOLFSSL*, WOLFSSL_CTX*, int);
-WOLFSSL_LOCAL
-void FreeSSL(WOLFSSL*, void* heap);
-WOLFSSL_API void SSL_ResourceFree(WOLFSSL*);   /* Micrium uses */
-
+WOLFSSL_LOCAL int  SSL_CTX_RefCount(WOLFSSL_CTX* ctx, int incr);
+WOLFSSL_LOCAL int  SetSSL_CTX(WOLFSSL*, WOLFSSL_CTX*, int);
+WOLFSSL_LOCAL int  InitSSL(WOLFSSL*, WOLFSSL_CTX*, int);
+WOLFSSL_LOCAL void FreeSSL(WOLFSSL*, void* heap);
+WOLFSSL_API   void SSL_ResourceFree(WOLFSSL*);   /* Micrium uses */
 
 
 #ifndef NO_CERTS

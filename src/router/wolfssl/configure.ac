@@ -7,7 +7,7 @@
 #
 AC_COPYRIGHT([Copyright (C) 2006-2019 wolfSSL Inc.])
 AC_PREREQ([2.63])
-AC_INIT([wolfssl],[4.2.0],[https://github.com/wolfssl/wolfssl/issues],[wolfssl],[https://www.wolfssl.com])
+AC_INIT([wolfssl],[4.3.0],[https://github.com/wolfssl/wolfssl/issues],[wolfssl],[https://www.wolfssl.com])
 AC_CONFIG_AUX_DIR([build-aux])
 
 # The following sets CFLAGS and CXXFLAGS to empty if unset on command line.
@@ -34,7 +34,7 @@ LT_PREREQ([2.2])
 LT_INIT([disable-static win32-dll])
 
 #shared library versioning
-WOLFSSL_LIBRARY_VERSION=23:0:0
+WOLFSSL_LIBRARY_VERSION=24:0:0
 #                        | | |
 #                 +------+ | +---+
 #                 |        |     |
@@ -182,6 +182,7 @@ then
     enable_stunnel=yes
     enable_nginx=yes
     enable_asio=yes
+    enable_libwebsockets=yes
     enable_pwdbased=yes
     enable_aeskeywrap=yes
     enable_x963kdf=yes
@@ -433,6 +434,7 @@ AC_ARG_ENABLE([mcast],
 # lighty (--enable-lighty) HAVE_LIGHTY
 # stunnel (--enable-stunnel) HAVE_STUNNEL
 # asio (--enable-asio) WOLFSSL_ASIO
+# libwebsockets (--enable-libwebsockets) WOLFSSL_LIBWEBSOCKETS
 # HAVE_POCO_LIB
 # WOLFSSL_MYSQL_COMPATIBLE
 # web server (--enable-webserver) HAVE_WEBSERVER
@@ -472,6 +474,18 @@ AC_ARG_ENABLE([fortress],
     [ ENABLED_FORTRESS=no ]
     )
 
+# libwebsockets Support
+AC_ARG_ENABLE([libwebsockets],
+    [AS_HELP_STRING([--enable-libwebsockets],[Enable libwebsockets (default: disabled)])],
+    [ ENABLED_LIBWEBSOCKETS=$enableval ],
+    [ ENABLED_LIBWEBSOCKETS=no ]
+    )
+if test "$ENABLED_LIBWEBSOCKETS" = "yes"
+then
+    AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_LIBWEBSOCKETS -DOPENSSL_NO_EC"
+fi
+
+
 if test "$ENABLED_OPENSSH" = "yes"
 then
     ENABLED_FORTRESS="yes"
@@ -498,7 +512,7 @@ AC_ARG_ENABLE([signal],
     [ ENABLED_SIGNAL=no ]
     )
 
-# OpenSSL Coexist 
+# OpenSSL Coexist
 AC_ARG_ENABLE([opensslcoexist],
     [AS_HELP_STRING([--enable-opensslcoexist],[Enable coexistence of wolfssl/openssl (default: disabled)])],
     [ ENABLED_OPENSSLCOEXIST=$enableval ],
@@ -519,10 +533,14 @@ AC_ARG_ENABLE([opensslall],
 [ ENABLED_OPENSSLALL=$enableval ],
 [ ENABLED_OPENSSLALL=no ]
 )
+if test "$ENABLED_LIBWEBSOCKETS" = "yes"
+then
+    ENABLED_OPENSSLALL="yes"
+fi
 
 if test "$ENABLED_OPENSSLALL" = "yes"
 then
-AM_CFLAGS="-DOPENSSL_ALL $AM_CFLAGS"
+AM_CFLAGS="-DOPENSSL_ALL -DWOLFSSL_EITHER_SIDE $AM_CFLAGS"
 fi
 
 # OPENSSL Extra Compatibility
@@ -531,7 +549,7 @@ AC_ARG_ENABLE([opensslextra],
     [ ENABLED_OPENSSLEXTRA=$enableval ],
     [ ENABLED_OPENSSLEXTRA=no ]
     )
-if test "$ENABLED_OPENSSH" = "yes" || test "$ENABLED_NGINX" = "yes" || test "$ENABLED_SIGNAL" = "yes" || test "$ENABLED_WPAS" = "yes" || test "$ENABLED_FORTRESS" = "yes" || test "$ENABLED_BUMP" = "yes" || test "$ENABLED_SNIFFER" = "yes" || test "$ENABLED_OPENSSLALL" = "yes"
+if test "$ENABLED_OPENSSH" = "yes" || test "$ENABLED_NGINX" = "yes" || test "$ENABLED_SIGNAL" = "yes" || test "$ENABLED_WPAS" = "yes" || test "$ENABLED_FORTRESS" = "yes" || test "$ENABLED_BUMP" = "yes" || test "$ENABLED_SNIFFER" = "yes" || test "$ENABLED_OPENSSLALL" = "yes" || test "$ENABLED_LIBWEBSOCKETS" = "yes"
 then
     ENABLED_OPENSSLEXTRA="yes"
 fi
@@ -1050,7 +1068,7 @@ then
 fi
 
 
-# Linux af_alg 
+# Linux af_alg
 AC_ARG_ENABLE([afalg],
     [AS_HELP_STRING([--enable-afalg],[Enable Linux af_alg use for crypto (default: disabled)])],
     [ ENABLED_AFALG=$enableval ],
@@ -1671,6 +1689,19 @@ else
         AM_CFLAGS="$AM_CFLAGS -DNO_ERROR_STRINGS"
         ENABLED_ERROR_STRINGS=no
     fi
+fi
+
+
+# ERROR QUEUE
+AC_ARG_ENABLE([errorqueue],
+    [AS_HELP_STRING([--disable-errorqueue],[Disables adding nodes to error queue when compiled with OPENSSL_EXTRA (default: enabled)])],
+    [ ENABLED_ERROR_QUEUE=$enableval ],
+    [ ENABLED_ERROR_QUEUE=yes ]
+    )
+
+if test "$ENABLED_ERROR_QUEUE" = "no"
+then
+    AM_CFLAGS="$AM_CFLAGS -DNO_ERROR_QUEUE"
 fi
 
 
@@ -3367,7 +3398,6 @@ then
     then
         ENABLED_OCSP="yes"
         AM_CFLAGS="$AM_CFLAGS -DHAVE_OCSP"
-        AM_CONDITIONAL([BUILD_OCSP], [test "x$ENABLED_OCSP" = "xyes"])
     fi
 
     # Requires sessioncerts make sure on
@@ -3389,7 +3419,6 @@ then
     then
         ENABLED_CRL="yes"
         AM_CFLAGS="$AM_CFLAGS -DHAVE_CRL"
-        AM_CONDITIONAL([BUILD_CRL], [test "x$ENABLED_CRL" = "xyes"])
     fi
 
     # Requires Certificate Generation, Request and Extensions
@@ -3517,14 +3546,14 @@ then
             AM_CFLAGS="$AM_CFLAGS -DECC_SHAMIR"
         fi
     fi
-    
+
     # Requires wolfSSL_OBJ_txt2nid
     if test "x$ENABLED_CERTEXT" = "xno"
     then
         ENABLED_CERTEXT="yes"
         AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_CERT_EXT"
     fi
-    
+
     # Requires certgen
     if test "x$ENABLED_CERTGEN" = "xno"
     then
@@ -3807,7 +3836,6 @@ if test "x$ENABLED_PKCS12" = "xno"
 then
     AM_CFLAGS="$AM_CFLAGS -DNO_PKCS12"
 fi
-AM_CONDITIONAL([BUILD_PKCS12], [test "x$ENABLED_PKCS12" = "xyes"])
 
 
 # cavium
@@ -3879,6 +3907,42 @@ AC_ARG_WITH([cavium-v],
         ENABLED_CAVIUM_=no
         ENABLED_CAVIUM_V=no
     ]
+)
+
+
+# Cavium Octeon
+OCTEON_ROOT=""
+: ${OCTEON_OBJ="obj-octeon2"}
+: ${OCTEON_HOST="standalone"}
+
+AC_ARG_WITH([octeon-sync],
+    [AS_HELP_STRING([--with-octeon-sync=PATH],[PATH to Cavium Octeon SDK dir (sync)])],
+    [
+        AC_MSG_CHECKING([for octeon])
+
+        if test "x$withval" = "xyes" ; then
+            AC_MSG_ERROR([need a PATH for --with-octeon])
+        fi
+        if test "x$withval" != "xno" ; then
+            OCTEON_ROOT=$withval
+        fi
+
+        AM_CFLAGS="$AM_CFLAGS -DHAVE_CAVIUM_OCTEON_SYNC"
+        AM_CFLAGS="$AM_CFLAGS -DOCTEON_MODEL=$OCTEON_MODEL"
+        AM_CFLAGS="$AM_CFLAGS -I$OCTEON_ROOT/executive"
+        AS_CASE([$OCTEON_HOST],['linux'],[AM_CFLAGS="$AM_CFLAGS -DCVMX_BUILD_FOR_LINUX_HOST"])
+
+        #-I$OCTEON_ROOT/target/include 
+        AM_LDFLAGS="$AM_LDFLAGS -lrt -Xlinker -T -Xlinker $OCTEON_ROOT/executive/cvmx-shared-linux.ld"
+        AM_LDFLAGS="$AM_LDFLAGS -L$OCTEON_ROOT/executive/$OCTEON_OBJ -lcvmx -lfdt"
+
+        enable_shared=no
+        enable_static=yes
+
+        ENABLED_OCTEON_SYNC=yes
+        AC_MSG_RESULT([yes])
+    ],
+    [ENABLED_OCTEON_SYNC=no]
 )
 
 
@@ -4028,6 +4092,11 @@ do
     ENABLED_SP_RSA=yes
     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_SP_NO_2048"
     AM_CCASFLAGS="$AM_CCASFLAGS -DWOLFSSL_SP_NO_2048"
+    ;;
+
+  +4096)
+    AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_SP_4096"
+    AM_CCASFLAGS="$AM_CCASFLAGS -DWOLFSSL_SP_4096"
     ;;
 
   *)
@@ -4580,9 +4649,10 @@ AS_IF([test "x$ENABLED_OCSP" = "xyes" && \
        test "x$ENABLED_ECC" = "xno"],
       [AC_MSG_ERROR([please enable rsa or ecc if enabling ocsp.])])
 
-# Sync Intel QA requires the crypto callback
-AS_IF([test "x$ENABLED_CRYPTOCB" = "xno" && test "x$ENABLED_INTEL_QA_SYNC" = "xyes"],
-      [AC_MSG_ERROR([please enable the crypto callback support using --enable-cryptocb])])
+# Sync Intel QA and Sync Cavium Octeon require the crypto callback
+AS_IF([test "x$ENABLED_INTEL_QA_SYNC" = "xyes" || test "x$ENABLED_OCTEON_SYNC" = "xyes"],
+        [AS_IF([test "x$ENABLED_CRYPTOCB" = "xno"],
+         [AC_MSG_ERROR([please enable the crypto callback support using --enable-cryptocb])])])
 
 # checks for pkcs7 needed enables
 AS_IF([test "x$ENABLED_PKCS7" = "xyes" && \
@@ -4741,6 +4811,14 @@ AS_IF([test "x$ENABLED_WOLFSSH" = "xyes"],
        AS_IF([test "x$ENABLED_SHA512" = "xno"],[AC_MSG_ERROR([cannot enable wolfSSH with SHA-512/384 disabled])])
       ])
 
+if test "x$ENABLED_OPENSSLCOEXIST" = "xyes"; then
+    if test "x$ENABLED_OPENSSLALL" = "xyes"; then
+        AC_MSG_ERROR([Cannot use --enable-opensslcoexist with --enable-opensslall])
+    fi
+    if test "x$ENABLED_OPENSSLEXTRA" = "xyes"; then
+        AC_MSG_ERROR([Cannot use --enable-opensslcoexist with --enable-opensslextra])
+    fi
+fi
 ################################################################################
 
 # USER SETTINGS
@@ -4898,8 +4976,10 @@ AM_CONDITIONAL([BUILD_THREADED_EXAMPLES],[test "x$ENABLED_SINGLETHREADED" = "xno
 AM_CONDITIONAL([BUILD_WOLFCRYPT_TESTS],[test "x$ENABLED_CRYPT_TESTS" = "xyes"])
 AM_CONDITIONAL([BUILD_LIBZ],[test "x$ENABLED_LIBZ" = "xyes"])
 AM_CONDITIONAL([BUILD_PKCS11],[test "x$ENABLED_PKCS11" = "xyes"])
+AM_CONDITIONAL([BUILD_PKCS12],[test "x$ENABLED_PKCS12" = "xyes"])
 AM_CONDITIONAL([BUILD_CAVIUM],[test "x$ENABLED_CAVIUM" = "xyes"])
 AM_CONDITIONAL([BUILD_CAVIUM_V],[test "x$ENABLED_CAVIUM_V" = "xyes"])
+AM_CONDITIONAL([BUILD_OCTEON_SYNC],[test "x$ENABLED_OCTEON_SYNC" = "xyes"])
 AM_CONDITIONAL([BUILD_INTEL_QA],[test "x$ENABLED_INTEL_QA" = "xyes"])
 AM_CONDITIONAL([BUILD_INTEL_QA_SYNC],[test "x$ENABLED_INTEL_QA_SYNC" = "xyes"])
 AM_CONDITIONAL([BUILD_SP],[test "x$ENABLED_SP" = "xyes"])
@@ -5133,6 +5213,7 @@ echo "   * STUNNEL:                    $ENABLED_STUNNEL"
 echo "   * Apache httpd:               $ENABLED_APACHE_HTTPD"
 echo "   * NGINX:                      $ENABLED_NGINX"
 echo "   * ASIO:                       $ENABLED_ASIO"
+echo "   * LIBWEBSOCKETS:              $ENABLED_LIBWEBSOCKETS"
 echo "   * SIGNAL:                     $ENABLED_SIGNAL"
 echo "   * ERROR_STRINGS:              $ENABLED_ERROR_STRINGS"
 echo "   * DTLS:                       $ENABLED_DTLS"
@@ -5190,16 +5271,17 @@ echo "   * Single Precision:           $ENABLED_SP"
 echo "   * Async Crypto:               $ENABLED_ASYNCCRYPT"
 echo "   * PKCS#11:                    $ENABLED_PKCS11"
 echo "   * PKCS#12:                    $ENABLED_PKCS12"
-echo "   * Cavium:                     $ENABLED_CAVIUM"
+echo "   * Cavium Nitox:               $ENABLED_CAVIUM"
+echo "   * Cavium Octeon (Sync):       $ENABLED_OCTEON_SYNC"
+echo "   * Intel Quick Assist:         $ENABLED_INTEL_QA"
 echo "   * ARM ASM:                    $ENABLED_ARMASM"
 echo "   * AES Key Wrap:               $ENABLED_AESKEYWRAP"
 echo "   * Write duplicate:            $ENABLED_WRITEDUP"
-echo "   * Intel Quick Assist:         $ENABLED_INTEL_QA"
 echo "   * Xilinx Hardware Acc.:       $ENABLED_XILINX"
 echo "   * Inline Code:                $ENABLED_INLINE"
 echo "   * Linux AF_ALG:               $ENABLED_AFALG"
 echo "   * Linux devcrypto:            $ENABLED_DEVCRYPTO"
-echo "   * Crypto callback:            $ENABLED_CRYPTOCB"
+echo "   * Crypto callbacks:           $ENABLED_CRYPTOCB"
 echo ""
 echo "---"
 

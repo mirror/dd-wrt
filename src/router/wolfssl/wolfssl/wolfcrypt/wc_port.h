@@ -42,6 +42,20 @@
     #endif
 #endif
 
+
+/* GENERIC INCLUDE SECTION */
+#if defined(FREESCALE_MQX) || defined(FREESCALE_KSDK_MQX)
+    #include <mqx.h>
+    #if (defined(MQX_USE_IO_OLD) && MQX_USE_IO_OLD) || \
+        defined(FREESCALE_MQX_5_0)
+        #include <fio.h>
+    #else
+        #include <nio.h>
+    #endif
+#endif
+
+
+/* THREADING/MUTEX SECTION */
 #ifdef USE_WINDOWS_API
     #ifdef WOLFSSL_GAME_BUILD
         #include "system/xtl.h"
@@ -229,8 +243,9 @@
     #endif /* USE_WINDOWS_API */
 #endif /* SINGLE_THREADED */
 
-/* Enable crypt HW mutex for Freescale MMCAU or PIC32MZ */
-#if defined(FREESCALE_MMCAU) || defined(WOLFSSL_MICROCHIP_PIC32MZ)
+/* Enable crypt HW mutex for Freescale MMCAU, PIC32MZ or STM32 */
+#if defined(FREESCALE_MMCAU) || defined(WOLFSSL_MICROCHIP_PIC32MZ) || \
+    defined(STM32_CRYPTO)
     #ifndef WOLFSSL_CRYPT_HW_MUTEX
         #define WOLFSSL_CRYPT_HW_MUTEX  1
     #endif
@@ -273,6 +288,8 @@ WOLFSSL_API int wc_SetMutexCb(mutex_cb* cb);
 WOLFSSL_API int wolfCrypt_Init(void);
 WOLFSSL_API int wolfCrypt_Cleanup(void);
 
+
+/* FILESYSTEM SECTION */
 /* filesystem abstraction layer, used by ssl.c */
 #ifndef NO_FILESYSTEM
 
@@ -280,9 +297,12 @@ WOLFSSL_API int wolfCrypt_Cleanup(void);
     #include "vfapi.h"
     #include "vfile.h"
 
+    int ebsnet_fseek(int a, long b, int c); /* Not prototyped in vfile.h per
+                                             * EBSnet feedback */
+
     #define XFILE                    int
     #define XFOPEN(NAME, MODE)       vf_open((const char *)NAME, VO_RDONLY, 0);
-    #define XFSEEK                   vf_lseek
+    #define XFSEEK                   ebsnet_fseek
     #define XFTELL                   vf_tell
     #define XREWIND                  vf_rewind
     #define XFREAD(BUF, SZ, AMT, FD) vf_read(FD, BUF, SZ*AMT)
@@ -464,6 +484,8 @@ WOLFSSL_API int wolfCrypt_Cleanup(void);
 
 #endif /* !NO_FILESYSTEM */
 
+
+/* MIN/MAX MACRO SECTION */
 /* Windows API defines its own min() macro. */
 #if defined(USE_WINDOWS_API)
     #if defined(min) || defined(WOLFSSL_MYSQL_COMPATIBLE)
@@ -474,6 +496,8 @@ WOLFSSL_API int wolfCrypt_Cleanup(void);
     #endif /* max */
 #endif /* USE_WINDOWS_API */
 
+
+/* TIME SECTION */
 /* Time functions */
 #ifndef NO_ASN_TIME
 #if defined(USER_TIME)
@@ -712,6 +736,7 @@ WOLFSSL_API int wolfCrypt_Cleanup(void);
 #endif
 #endif /* NO_ASN_TIME */
 
+
 #ifndef WOLFSSL_LEANPSK
     char* mystrnstr(const char* s1, const char* s2, unsigned int n);
 #endif
@@ -721,7 +746,7 @@ WOLFSSL_API int wolfCrypt_Cleanup(void);
                                     will use dynamic buffer if not big enough */
 #endif
 
-#ifdef HAVE_CAVIUM_OCTEON
+#ifdef HAVE_CAVIUM_OCTEON_SYNC
     /* By default, the OCTEON's global variables are all thread local. This
      * tag allows them to be shared between threads. */
     #include "cvmx-platform.h"
@@ -730,10 +755,8 @@ WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define WOLFSSL_GLOBAL
 #endif
 
-
 #ifdef __cplusplus
     }  /* extern "C" */
 #endif
 
 #endif /* WOLF_CRYPT_PORT_H */
-
