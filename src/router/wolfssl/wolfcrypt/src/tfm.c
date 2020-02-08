@@ -78,6 +78,8 @@ WOLFSSL_LOCAL int sp_ModExp_2048(mp_int* base, mp_int* exp, mp_int* mod,
     mp_int* res);
 WOLFSSL_LOCAL int sp_ModExp_3072(mp_int* base, mp_int* exp, mp_int* mod,
     mp_int* res);
+WOLFSSL_LOCAL int sp_ModExp_4096(mp_int* base, mp_int* exp, mp_int* mod,
+    mp_int* res);
 #ifdef __cplusplus
     } /* extern "C" */
 #endif
@@ -895,6 +897,9 @@ static int fp_invmod_slow (fp_int * a, fp_int * b, fp_int * c)
   if (b->sign == FP_NEG || fp_iszero(b) == FP_YES) {
     return FP_VAL;
   }
+  if (fp_iszero(a) == FP_YES) {
+    return FP_VAL;
+  }
 
 #ifdef WOLFSSL_SMALL_STACK
   x = (fp_int*)XMALLOC(sizeof(fp_int) * 8, NULL, DYNAMIC_TYPE_BIGINT);
@@ -920,7 +925,7 @@ static int fp_invmod_slow (fp_int * a, fp_int * b, fp_int * c)
   fp_copy(b, y);
 
   /* 2. [modified] if x,y are both even then return an error! */
-  if (fp_iseven (x) == FP_YES && fp_iseven (y) == FP_YES) {
+  if (fp_iseven(x) == FP_YES && fp_iseven(y) == FP_YES) {
   #ifdef WOLFSSL_SMALL_STACK
     XFREE(x, NULL, DYNAMIC_TYPE_BIGINT);
   #endif
@@ -1020,9 +1025,19 @@ int fp_invmod(fp_int *a, fp_int *b, fp_int *c)
   fp_int  *x, *y, *u, *v, *B, *D;
 #endif
   int     neg;
+  int     err;
+
+  if (b->sign == FP_NEG || fp_iszero(b) == FP_YES) {
+    return FP_VAL;
+  }
+
+  /* [modified] sanity check on "a" */
+  if (fp_iszero(a) == FP_YES) {
+    return FP_VAL; /* can not divide by 0 here */
+  }
 
   /* 2. [modified] b must be odd   */
-  if (fp_iseven (b) == FP_YES) {
+  if (fp_iseven(b) == FP_YES) {
     return fp_invmod_slow(a,b,c);
   }
 
@@ -1038,6 +1053,24 @@ int fp_invmod(fp_int *a, fp_int *b, fp_int *c)
   fp_init(x);  fp_init(y);
   fp_init(u);  fp_init(v);
   fp_init(B);  fp_init(D);
+
+  if (fp_cmp(a, b) != MP_LT) {
+    err = mp_mod(a, b, y);
+    if (err != FP_OKAY) {
+    #ifdef WOLFSSL_SMALL_STACK
+      XFREE(x, NULL, DYNAMIC_TYPE_BIGINT);
+    #endif
+      return err;
+    }
+    a = y;
+  }
+
+  if (fp_iszero(a) == FP_YES) {
+  #ifdef WOLFSSL_SMALL_STACK
+    XFREE(x, NULL, DYNAMIC_TYPE_BIGINT);
+  #endif
+    return FP_VAL;
+  }
 
   /* x == modulus, y == value to invert */
   fp_copy(b, x);
@@ -2176,9 +2209,21 @@ int fp_exptmod(fp_int * G, fp_int * X, fp_int * P, fp_int * Y)
    int x = fp_count_bits (X);
 #endif
 
-   /* prevent overflows */
-   if (P->used > (FP_SIZE/2)) {
+   /* handle modulus of zero and prevent overflows */
+   if (fp_iszero(P) || (P->used > (FP_SIZE/2))) {
       return FP_VAL;
+   }
+   if (fp_isone(P)) {
+      fp_set(Y, 0);
+      return FP_OKAY;
+   }
+   if (fp_iszero(X)) {
+      fp_set(Y, 1);
+      return FP_OKAY;
+   }
+   if (fp_iszero(G)) {
+      fp_set(Y, 0);
+      return FP_OKAY;
    }
 
 #if defined(WOLFSSL_ESP32WROOM32_CRYPT_RSA_PRI) && \
@@ -2192,25 +2237,28 @@ int fp_exptmod(fp_int * G, fp_int * X, fp_int * P, fp_int * Y)
 #ifndef POSITIVE_EXP_ONLY  /* reduce stack if assume no negatives */
       int    err;
    #ifndef WOLFSSL_SMALL_STACK
-      fp_int tmp[1];
+      fp_int tmp[2];
    #else
       fp_int *tmp;
    #endif
 
    #ifdef WOLFSSL_SMALL_STACK
-      tmp = (fp_int*)XMALLOC(sizeof(fp_int), NULL, DYNAMIC_TYPE_BIGINT);
+      tmp = (fp_int*)XMALLOC(sizeof(fp_int) * 2, NULL, DYNAMIC_TYPE_BIGINT);
       if (tmp == NULL)
           return FP_MEM;
    #endif
 
       /* yes, copy G and invmod it */
-      fp_init_copy(tmp, G);
-      err = fp_invmod(tmp, P, tmp);
+      fp_init_copy(&tmp[0], G);
+      fp_init_copy(&tmp[1], P);
+      tmp[1].sign = FP_ZPOS;
+      err = fp_invmod(&tmp[0], &tmp[1], &tmp[0]);
       if (err == FP_OKAY) {
-         X->sign = FP_ZPOS;
-         err =  _fp_exptmod(tmp, X, X->used, P, Y);
-         if (X != Y) {
-            X->sign = FP_NEG;
+         fp_copy(X, &tmp[1]);
+         tmp[1].sign = FP_ZPOS;
+         err =  _fp_exptmod(&tmp[0], &tmp[1], tmp[1].used, P, Y);
+         if (P->sign == FP_NEG) {
+            fp_add(Y, P, Y);
          }
       }
    #ifdef WOLFSSL_SMALL_STACK
@@ -2238,6 +2286,11 @@ int fp_exptmod_ex(fp_int * G, fp_int * X, int digits, fp_int * P, fp_int * Y)
    int x = fp_count_bits (X);
 #endif
 
+   if (fp_iszero(G)) {
+      fp_set(G, 0);
+      return FP_OKAY;
+   }
+
    /* prevent overflows */
    if (P->used > (FP_SIZE/2)) {
       return FP_VAL;
@@ -2254,25 +2307,30 @@ int fp_exptmod_ex(fp_int * G, fp_int * X, int digits, fp_int * P, fp_int * Y)
 #ifndef POSITIVE_EXP_ONLY  /* reduce stack if assume no negatives */
       int    err;
    #ifndef WOLFSSL_SMALL_STACK
-      fp_int tmp[1];
+      fp_int tmp[2];
    #else
       fp_int *tmp;
    #endif
 
    #ifdef WOLFSSL_SMALL_STACK
-      tmp = (fp_int*)XMALLOC(sizeof(fp_int), NULL, DYNAMIC_TYPE_TMP_BUFFER);
+      tmp = (fp_int*)XMALLOC(sizeof(fp_int) * 2, NULL, DYNAMIC_TYPE_TMP_BUFFER);
       if (tmp == NULL)
           return FP_MEM;
    #endif
 
       /* yes, copy G and invmod it */
-      fp_init_copy(tmp, G);
-      err = fp_invmod(tmp, P, tmp);
+      fp_init_copy(&tmp[0], G);
+      fp_init_copy(&tmp[1], P);
+      tmp[1].sign = FP_ZPOS;
+      err = fp_invmod(&tmp[0], &tmp[1], &tmp[0]);
       if (err == FP_OKAY) {
          X->sign = FP_ZPOS;
-         err =  _fp_exptmod(tmp, X, digits, P, Y);
+         err =  _fp_exptmod(&tmp[0], X, digits, P, Y);
          if (X != Y) {
             X->sign = FP_NEG;
+         }
+         if (P->sign == FP_NEG) {
+            fp_add(Y, P, Y);
          }
       }
    #ifdef WOLFSSL_SMALL_STACK
@@ -2768,7 +2826,7 @@ int fp_montgomery_reduce(fp_int *a, fp_int *m, fp_digit mp)
    fp_digit *c;
 #endif
    fp_digit *_c, *tmpm, mu = 0;
-   int      oldused, x, y, pa, err;
+   int      oldused, x, y, pa, err = 0;
 
    IF_HAVE_INTEL_MULX(err = fp_montgomery_reduce_mulx(a, m, mp), return err) ;
    (void)err;
@@ -3173,6 +3231,8 @@ void fp_rshb(fp_int *c, int x)
     fp_digit *tmpc, mask, shift;
     fp_digit r, rr;
     fp_digit D = x;
+
+    if (fp_iszero(c)) return;
 
     /* mask */
     mask = (((fp_digit)1) << D) - 1;
@@ -3949,6 +4009,11 @@ static int fp_prime_miller_rabin_ex(fp_int * a, fp_int * b, int *result,
       sp_ModExp_3072(b, r, a, y);
   else
 #endif
+#ifdef WOLFSSL_SP_4096
+  if (fp_count_bits(a) == 4096)
+      sp_ModExp_4096(b, r, a, y);
+  else
+#endif
 #endif
       fp_exptmod(b, r, a, y);
 
@@ -4067,6 +4132,11 @@ int fp_isprime_ex(fp_int *a, int t, int* result)
      return FP_VAL;
    }
 
+   if (fp_isone(a)) {
+       *result = FP_NO;
+       return FP_OKAY;
+   }
+
    /* check against primes table */
    for (r = 0; r < FP_PRIME_SIZE; r++) {
        if (fp_cmp_d(a, primes[r]) == FP_EQ) {
@@ -4116,6 +4186,11 @@ int mp_prime_is_prime_ex(mp_int* a, int t, int* result, WC_RNG* rng)
 
     if (a == NULL || result == NULL || rng == NULL)
         return FP_VAL;
+
+    if (fp_isone(a)) {
+        *result = FP_NO;
+        return FP_OKAY;
+    }
 
     if (ret == FP_YES) {
         fp_digit d;
@@ -4419,6 +4494,9 @@ int fp_gcd(fp_int *a, fp_int *b, fp_int *c)
       fp_init_copy(u, b);
       fp_init_copy(v, a);
    }
+
+   u->sign = FP_ZPOS;
+   v->sign = FP_ZPOS;
 
    fp_init(r);
    while (fp_iszero(v) == FP_NO) {
@@ -4748,7 +4826,7 @@ int mp_toradix (mp_int *a, char *str, int radix)
     if (fp_iszero(a) == FP_YES) {
         *str++ = '0';
         *str = '\0';
-        return FP_YES;
+        return FP_OKAY;
     }
 
 #ifdef WOLFSSL_SMALL_STACK
@@ -4779,7 +4857,13 @@ int mp_toradix (mp_int *a, char *str, int radix)
         *str++ = fp_s_rmap[d];
         ++digs;
     }
-
+#ifndef WC_DISABLE_RADIX_ZERO_PAD
+    /* For hexadecimal output, add zero padding when number of digits is odd */
+    if ((digs & 1) && (radix == 16)) {
+        *str++ = fp_s_rmap[0];
+        ++digs;
+    }
+#endif
     /* reverse the digits of the string.  In this case _s points
      * to the first digit [excluding the sign] of the number]
      */

@@ -66,11 +66,13 @@
     extern "C" {
 #endif
 
+#ifndef EXTERNAL_SERIAL_SIZE
+    #define EXTERNAL_SERIAL_SIZE 32
+#endif
+
 enum {
     ISSUER  = 0,
     SUBJECT = 1,
-
-    EXTERNAL_SERIAL_SIZE = 32,
 
     BEFORE  = 0,
     AFTER   = 1
@@ -78,6 +80,7 @@ enum {
 
 /* ASN Tags   */
 enum ASN_Tags {
+    ASN_EOC               = 0x00,
     ASN_BOOLEAN           = 0x01,
     ASN_INTEGER           = 0x02,
     ASN_BIT_STRING        = 0x03,
@@ -112,6 +115,7 @@ enum ASN_Tags {
 #define ASN_GENERALIZED_TIME_MAX 68
 
 enum DN_Tags {
+    ASN_DN_NULL       = 0x00,
     ASN_COMMON_NAME   = 0x03,   /* CN */
     ASN_SUR_NAME      = 0x04,   /* SN */
     ASN_SERIAL_NUMBER = 0x05,   /* serialNumber */
@@ -144,6 +148,9 @@ enum DN_Tags {
 #define WOLFSSL_JOI_ST           "/jurisdictionST="
 #define WOLFSSL_EMAIL_ADDR       "/emailAddress="
 
+#define WOLFSSL_USER_ID          "/UID="
+#define WOLFSSL_DOMAIN_COMPONENT "/DC="
+
 #if defined(WOLFSSL_APACHE_HTTPD)
     /* otherName strings */
     #define WOLFSSL_SN_MS_UPN       "msUPN"
@@ -161,6 +168,7 @@ enum DN_Tags {
 enum
 {
     NID_undef = 0,
+    NID_netscape_cert_type = NID_undef,
     NID_des = 66,
     NID_des3 = 67,
     NID_sha256 = 672,
@@ -231,9 +239,10 @@ enum ECC_TYPES
 #endif /* WOLFSSL_CERT_PIV */
 
 
-#define ASN_JOI_PREFIX "\x2b\x06\x01\x04\x01\x82\x37\x3c\x02\x01"
-#define ASN_JOI_C      0x3
-#define ASN_JOI_ST     0x2
+#define ASN_JOI_PREFIX_SZ       10
+#define ASN_JOI_PREFIX          "\x2b\x06\x01\x04\x01\x82\x37\x3c\x02\x01"
+#define ASN_JOI_C               0x3
+#define ASN_JOI_ST              0x2
 
 #ifndef WC_ASN_NAME_MAX
     #ifdef OPENSSL_EXTRA
@@ -363,6 +372,7 @@ enum Oid_Types {
     oidCompressType     = 16,
     oidCertNameType     = 17,
     oidTlsExtType       = 18,
+    oidCrlExtType       = 19,
     oidIgnoreType
 };
 
@@ -614,7 +624,7 @@ struct DecodedName {
     int     dcLen[DOMAIN_COMPONENT_MAX];
     int     dcNum;
     int     dcMode;
-#ifdef OPENSSL_EXTRA
+#if defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL)
     /* hold the location / order with which each of the DN tags was found
      *
      * example of ASN_DOMAIN_COMPONENT at index 0 if first found and so on.
@@ -818,7 +828,7 @@ struct DecodedCert {
     const byte* issuerRaw;           /* pointer to issuer inside source */
     int     issuerRawLen;
 #endif
-#ifndef IGNORE_NAME_CONSTRAINT
+#if !defined(IGNORE_NAME_CONSTRAINTS) || defined(WOLFSSL_CERT_EXT)
     const byte* subjectRaw;          /* pointer to subject inside source */
     int     subjectRawLen;
 #endif
@@ -880,7 +890,12 @@ struct DecodedCert {
 #ifndef NO_CERTS
     SignatureCtx sigCtx;
 #endif
+#ifdef WOLFSSL_RENESAS_TSIP
     byte*  tsip_encRsaKeyIdx;
+#endif
+
+    int badDate;
+    int criticalExt;
 
     /* Option Bits */
     byte subjectCNStored : 1;      /* have we saved a copy we own */
@@ -1117,7 +1132,7 @@ WOLFSSL_LOCAL word32 SetSet(word32 len, byte* output);
 WOLFSSL_LOCAL word32 SetAlgoID(int algoOID,byte* output,int type,int curveSz);
 WOLFSSL_LOCAL int SetMyVersion(word32 version, byte* output, int header);
 WOLFSSL_LOCAL int SetSerialNumber(const byte* sn, word32 snSz, byte* output,
-    int maxSnSz);
+    word32 outputSz, int maxSnSz);
 WOLFSSL_LOCAL int GetSerialNumber(const byte* input, word32* inOutIdx,
     byte* serial, int* serialSz, word32 maxIdx);
 WOLFSSL_LOCAL int GetNameHash(const byte* source, word32* idx, byte* hash,
@@ -1221,6 +1236,8 @@ struct CertStatus {
     byte thisDateFormat;
     byte nextDateFormat;
 #if defined(OPENSSL_ALL) || defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY)
+    WOLFSSL_ASN1_TIME thisDateParsed;
+    WOLFSSL_ASN1_TIME nextDateParsed;
     byte* thisDateAsn;
     byte* nextDateAsn;
 #endif
@@ -1331,7 +1348,7 @@ struct DecodedCRL {
     word32  sigLength;               /* length of signature              */
     word32  signatureOID;            /* sum of algorithm object id       */
     byte*   signature;               /* pointer into raw source, not owned */
-    byte    issuerHash[SIGNER_DIGEST_SIZE]; /* issuer hash               */
+    byte    issuerHash[SIGNER_DIGEST_SIZE]; /* issuer name hash          */
     byte    crlHash[SIGNER_DIGEST_SIZE]; /* raw crl data hash            */
     byte    lastDate[MAX_DATE_SIZE]; /* last date updated  */
     byte    nextDate[MAX_DATE_SIZE]; /* next update date   */
@@ -1340,6 +1357,10 @@ struct DecodedCRL {
     RevokedCert* certs;              /* revoked cert list  */
     int          totalCerts;         /* number on list     */
     void*   heap;
+#ifndef NO_SKID
+    byte    extAuthKeyIdSet;
+    byte    extAuthKeyId[SIGNER_DIGEST_SIZE]; /* Authority Key ID        */
+#endif
 };
 
 WOLFSSL_LOCAL void InitDecodedCRL(DecodedCRL*, void* heap);

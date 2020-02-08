@@ -29,6 +29,7 @@
 
 #include <wolfssl/wolfcrypt/settings.h>
 #include <wolfssl/version.h>
+#include <wolfssl/wolfcrypt/wc_port.h>
 
 /* Macro to disable benchmark */
 #ifndef NO_CRYPT_BENCHMARK
@@ -48,11 +49,7 @@
 /* printf mappings */
 #ifdef FREESCALE_MQX
     #include <mqx.h>
-    #if MQX_USE_IO_OLD
-        #include <fio.h>
-    #else
-        #include <nio.h>
-    #endif
+    /* see wc_port.h for fio.h and nio.h includes */
 #elif defined(FREESCALE_KSDK_1_3)
     #include "fsl_debug_console.h"
     #include "fsl_os_abstraction.h"
@@ -93,7 +90,6 @@
     #include <stdarg.h>
     #include <stdio.h>
     #include <string.h>
-    #include "wolfssl/wolfcrypt/wc_port.h" /* for m2mb headers */
     #include "m2m_log.h" /* for M2M_LOG_INFO - not standard API */
     /* remap printf */
     #undef printf
@@ -171,6 +167,16 @@
 #include <wolfssl/wolfcrypt/random.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
 #include <wolfssl/wolfcrypt/types.h>
+
+#ifdef WOLF_CRYPTO_CB
+    #include <wolfssl/wolfcrypt/cryptocb.h>
+    #ifdef HAVE_INTEL_QA_SYNC
+        #include <wolfssl/wolfcrypt/port/intel/quickassist_sync.h>
+    #endif
+    #ifdef HAVE_CAVIUM_OCTEON_SYNC
+        #include <wolfssl/wolfcrypt/port/cavium/cavium_octeon_sync.h>
+    #endif
+#endif
 
 #ifdef WOLFSSL_ASYNC_CRYPT
     #include <wolfssl/wolfcrypt/async.h>
@@ -1288,6 +1294,21 @@ static void* benchmarks_do(void* args)
     }
 #endif
 
+#ifdef WOLF_CRYPTO_CB
+#ifdef HAVE_INTEL_QA_SYNC
+    devId = wc_CryptoCb_InitIntelQa();
+    if (devId == INVALID_DEVID) {
+        printf("Couldn't init the Intel QA\n");
+    }
+#endif
+#ifdef HAVE_CAVIUM_OCTEON_SYNC
+    devId = wc_CryptoCb_InitOcteon();
+    if (devId == INVALID_DEVID) {
+        printf("Couldn't get the Octeon device ID\n");
+    }
+#endif
+#endif
+
 #if defined(HAVE_LOCAL_RNG)
     {
         int rngRet;
@@ -1328,7 +1349,7 @@ static void* benchmarks_do(void* args)
     XMEMSET(bench_plain, 0, (size_t)bench_buf_size);
     XMEMSET(bench_cipher, 0, (size_t)bench_buf_size);
 
-#ifdef WOLFSSL_ASYNC_CRYPT
+#if defined(WOLFSSL_ASYNC_CRYPT) || defined(HAVE_INTEL_QA_SYNC)
     bench_key = (byte*)XMALLOC(sizeof(bench_key_buf), HEAP_HINT, DYNAMIC_TYPE_WOLF_BIGINT);
     bench_iv = (byte*)XMALLOC(sizeof(bench_iv_buf), HEAP_HINT, DYNAMIC_TYPE_WOLF_BIGINT);
     if (bench_key == NULL || bench_iv == NULL) {
@@ -1356,7 +1377,8 @@ static void* benchmarks_do(void* args)
     #ifndef NO_SW_BENCH
         bench_aescbc(0);
     #endif
-    #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_AES) && \
+    #if ((defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_3DES)) || \
+         defined(HAVE_INTEL_QA_SYNC) || defined(HAVE_CAVIUM_OCTEON_SYNC)) && \
         !defined(NO_HW_BENCH)
         bench_aescbc(1);
     #endif
@@ -1367,7 +1389,8 @@ static void* benchmarks_do(void* args)
     #ifndef NO_SW_BENCH
         bench_aesgcm(0);
     #endif
-    #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_AES) && \
+    #if ((defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_3DES)) || \
+         defined(HAVE_INTEL_QA_SYNC) || defined(HAVE_CAVIUM_OCTEON_SYNC)) && \
         !defined(NO_HW_BENCH)
         bench_aesgcm(1);
     #endif
@@ -1438,7 +1461,8 @@ static void* benchmarks_do(void* args)
     #ifndef NO_SW_BENCH
         bench_des(0);
     #endif
-    #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_3DES) && \
+    #if ((defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_3DES)) || \
+         defined(HAVE_INTEL_QA_SYNC) || defined(HAVE_CAVIUM_OCTEON_SYNC)) && \
         !defined(NO_HW_BENCH)
         bench_des(1);
     #endif
@@ -1773,6 +1797,15 @@ exit:
 #ifdef WOLFSSL_ASYNC_CRYPT
     XFREE(bench_key, HEAP_HINT, DYNAMIC_TYPE_WOLF_BIGINT);
     XFREE(bench_iv, HEAP_HINT, DYNAMIC_TYPE_WOLF_BIGINT);
+#endif
+
+#ifdef WOLF_CRYPTO_CB
+#ifdef HAVE_INTEL_QA_SYNC
+    wc_CryptoCb_CleanupIntelQa(&devId);
+#endif
+#ifdef HAVE_CAVIUM_OCTEON_SYNC
+    wc_CryptoCb_CleanupOcteon(&devId);
+#endif
 #endif
 
 #ifdef WOLFSSL_ASYNC_CRYPT
@@ -2526,7 +2559,19 @@ void bench_aesccm(void)
         }
         count += i;
     } while (bench_stats_sym_check(start));
-    bench_stats_sym_finish("AES-CCM", 0, count, bench_size, start, ret);
+    bench_stats_sym_finish("AES-CCM-Enc", 0, count, bench_size, start, ret);
+
+    bench_stats_start(&count, &start);
+    do {
+        for (i = 0; i < numBlocks; i++) {
+            wc_AesCcmDecrypt(&enc, bench_plain, bench_cipher, BENCH_SIZE,
+                bench_iv, 12, bench_tag, AES_AUTH_TAG_SZ,
+                bench_additional, aesAuthAddSz);
+        }
+        count += i;
+    } while (bench_stats_sym_check(start));
+    bench_stats_sym_finish("AES-CCM-Dec", 0, count, bench_size, start, ret);
+
 
     FREE_VAR(bench_additional, HEAP_HINT);
     FREE_VAR(bench_tag, HEAP_HINT);

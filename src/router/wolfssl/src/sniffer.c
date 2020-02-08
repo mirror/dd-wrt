@@ -61,6 +61,9 @@
     #ifdef HAVE_INTEL_QA_SYNC
         #include <wolfssl/wolfcrypt/port/intel/quickassist_sync.h>
     #endif
+    #ifdef HAVE_CAVIUM_OCTEON_SYNC
+        #include <wolfssl/wolfcrypt/port/cavium/cavium_octeon_sync.h>
+    #endif
 #endif
 
 
@@ -484,10 +487,7 @@ static void UpdateMissedDataSessions(void)
 
 
 #ifdef WOLF_CRYPTO_CB
-    static int CryptoDeviceId = INVALID_DEVID;
-    #ifdef HAVE_INTEL_QA_SYNC
-        static IntelQaDev CryptoDevice;
-    #endif
+    static WOLFSSL_GLOBAL int CryptoDeviceId = INVALID_DEVID;
 #endif
 
 
@@ -504,21 +504,15 @@ void ssl_InitSniffer(void)
 #endif
 #ifdef WOLF_CRYPTO_CB
     #ifdef HAVE_INTEL_QA_SYNC
-    {
-        int rc;
-        CryptoDeviceId = IntelQaInit(NULL);
-        if (CryptoDeviceId == INVALID_DEVID) {
-            WOLFSSL_MSG("Couldn't init the Intel QA");
-        }
-        rc = IntelQaOpen(&CryptoDevice, CryptoDeviceId);
-        if (rc != 0) {
-            WOLFSSL_MSG("Couldn't open the device");
-        }
-        rc = wc_CryptoCb_RegisterDevice(CryptoDeviceId,
-                IntelQaSymSync_CryptoDevCb, &CryptoDevice);
-        if (rc != 0) {
-            WOLFSSL_MSG("Couldn't register the device");
-        }
+    CryptoDeviceId = wc_CryptoCb_InitIntelQa();
+    if (INVALID_DEVID == CryptoDeviceId) {
+        printf("Couldn't init the Intel QA\n");
+    }
+    #endif
+    #ifdef HAVE_CAVIUM_OCTEON_SYNC
+    CryptoDeviceId = wc_CryptoCb_InitOcteon();
+    if (INVALID_DEVID == CryptoDeviceId) {
+        printf("Couldn't init the Intel QA\n");
     }
     #endif
 #endif
@@ -652,9 +646,10 @@ void ssl_FreeSniffer(void)
 
 #ifdef WOLF_CRYPTO_CB
 #ifdef HAVE_INTEL_QA_SYNC
-    wc_CryptoCb_UnRegisterDevice(CryptoDeviceId);
-    IntelQaClose(&CryptoDevice);
-    IntelQaDeInit(CryptoDeviceId);
+    wc_CryptoCb_CleanupIntelQa(&CryptoDeviceId);
+#endif
+#ifdef HAVE_CAVIUM_OCTEON_SYNC
+    wc_CryptoCb_CleanupOcteon(&CryptoDeviceId);
 #endif
 #endif
 
@@ -1381,6 +1376,10 @@ static int LoadKeyFile(byte** keyBuf, word32* keyBufSz,
         return -1;
     }
     fileSz = XFTELL(file);
+    if (fileSz > MAX_WOLFSSL_FILE_SIZE || fileSz < 0) {
+        XFCLOSE(file);
+        return -1;
+    }
     XREWIND(file);
 
     loadBuf = (byte*)XMALLOC(fileSz, NULL, DYNAMIC_TYPE_FILE);
@@ -1457,7 +1456,8 @@ static int CreateWatchSnifferServer(char* error)
         return -1;
     }
 #ifdef WOLF_CRYPTO_CB
-	wolfSSL_CTX_SetDevId(sniffer->ctx, CryptoDevId);
+    if (CryptoDeviceId != INVALID_DEVID)
+	    wolfSSL_CTX_SetDevId(sniffer->ctx, CryptoDeviceId);
 #endif
     ServerList = sniffer;
 
@@ -3757,7 +3757,7 @@ static int CheckPreRecord(IpInfo* ipInfo, TcpInfo* tcpInfo,
         word32 i, offset, headerSz, qty, remainder;
 
         Trace(CHAIN_INPUT_STR);
-        headerSz = (word64)*sslFrame - (word64)chain[0].iov_base;
+        headerSz = (word32)*sslFrame - (word32)chain[0].iov_base;
         remainder = *sslBytes;
 
         if ( (*sslBytes + length) > ssl->buffers.inputBuffer.bufferSize) {
@@ -4507,6 +4507,14 @@ int ssl_ReadResetStatistics(SSLStats* stats)
 
 
 #ifdef WOLFSSL_SNIFFER_WATCH
+
+int ssl_SetWatchKeyCallback_ex(SSLWatchCb cb, int devId, char* error)
+{
+    (void)devId;
+    WatchCb = cb;
+    return CreateWatchSnifferServer(error);
+}
+
 
 int ssl_SetWatchKeyCallback(SSLWatchCb cb, char* error)
 {

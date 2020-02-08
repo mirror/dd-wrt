@@ -63,13 +63,7 @@
 #endif
 
 #ifdef SHOW_GEN
-    #if defined(FREESCALE_MQX) || defined(FREESCALE_KSDK_MQX)
-        #if MQX_USE_IO_OLD
-            #include <fio.h>
-        #else
-            #include <nio.h>
-        #endif
-    #else
+    #ifndef NO_STDIO_FILESYSTEM
         #include <stdio.h>
     #endif
 #endif
@@ -85,6 +79,8 @@ WOLFSSL_LOCAL int sp_ModExp_1536(mp_int* base, mp_int* exp, mp_int* mod,
 WOLFSSL_LOCAL int sp_ModExp_2048(mp_int* base, mp_int* exp, mp_int* mod,
     mp_int* res);
 WOLFSSL_LOCAL int sp_ModExp_3072(mp_int* base, mp_int* exp, mp_int* mod,
+    mp_int* res);
+WOLFSSL_LOCAL int sp_ModExp_4096(mp_int* base, mp_int* exp, mp_int* mod,
     mp_int* res);
 #ifdef __cplusplus
     } /* extern "C" */
@@ -572,6 +568,8 @@ void mp_rshb (mp_int *c, int x)
     mp_digit r, rr;
     mp_digit D = x;
 
+    if (mp_iszero(c)) return;
+
     /* mask */
     mask = (((mp_digit)1) << D) - 1;
 
@@ -845,8 +843,20 @@ int mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y)
   int dr;
 
   /* modulus P must be positive */
-  if (P->sign == MP_NEG) {
+  if (mp_iszero(P) || P->sign == MP_NEG) {
      return MP_VAL;
+  }
+  if (mp_isone(P)) {
+     mp_set(Y, 0);
+     return MP_OKAY;
+  }
+  if (mp_iszero(X)) {
+     mp_set(Y, 1);
+     return MP_OKAY;
+  }
+  if (mp_iszero(G)) {
+     mp_set(Y, 0);
+     return MP_OKAY;
   }
 
   /* if exponent X is negative we have to recurse */
@@ -968,8 +978,8 @@ int wolfcrypt_mp_invmod(mp_int * a, mp_int * b, mp_int * c)
 int mp_invmod (mp_int * a, mp_int * b, mp_int * c)
 #endif
 {
-  /* b cannot be negative */
-  if (b->sign == MP_NEG || mp_iszero(b) == MP_YES) {
+  /* b cannot be negative or zero, and can not divide by 0 (1/a mod b) */
+  if (b->sign == MP_NEG || mp_iszero(b) == MP_YES || mp_iszero(a) == MP_YES) {
     return MP_VAL;
   }
 
@@ -1147,23 +1157,28 @@ int mp_invmod_slow (mp_int * a, mp_int * b, mp_int * c)
   /* init temps */
   if ((res = mp_init_multi(&x, &y, &u, &v,
                            &A, &B)) != MP_OKAY) {
-     return res;
+    return res;
   }
 
   /* init rest of tmps temps */
   if ((res = mp_init_multi(&C, &D, 0, 0, 0, 0)) != MP_OKAY) {
-     mp_clear(&x);
-     mp_clear(&y);
-     mp_clear(&u);
-     mp_clear(&v);
-     mp_clear(&A);
-     mp_clear(&B);
-     return res;
+    mp_clear(&x);
+    mp_clear(&y);
+    mp_clear(&u);
+    mp_clear(&v);
+    mp_clear(&A);
+    mp_clear(&B);
+    return res;
   }
 
   /* x = a, y = b */
   if ((res = mp_mod(a, b, &x)) != MP_OKAY) {
-      goto LBL_ERR;
+    goto LBL_ERR;
+  }
+  if (mp_isone(&x)) {
+    mp_set(c, 1);
+    res = MP_OKAY;
+    goto LBL_ERR;
   }
   if ((res = mp_copy (b, &y)) != MP_OKAY) {
     goto LBL_ERR;
@@ -1200,10 +1215,10 @@ top:
     if (mp_isodd (&A) == MP_YES || mp_isodd (&B) == MP_YES) {
       /* A = (A+y)/2, B = (B-x)/2 */
       if ((res = mp_add (&A, &y, &A)) != MP_OKAY) {
-         goto LBL_ERR;
+        goto LBL_ERR;
       }
       if ((res = mp_sub (&B, &x, &B)) != MP_OKAY) {
-         goto LBL_ERR;
+        goto LBL_ERR;
       }
     }
     /* A = A/2, B = B/2 */
@@ -1225,10 +1240,10 @@ top:
     if (mp_isodd (&C) == MP_YES || mp_isodd (&D) == MP_YES) {
       /* C = (C+y)/2, D = (D-x)/2 */
       if ((res = mp_add (&C, &y, &C)) != MP_OKAY) {
-         goto LBL_ERR;
+        goto LBL_ERR;
       }
       if ((res = mp_sub (&D, &x, &D)) != MP_OKAY) {
-         goto LBL_ERR;
+        goto LBL_ERR;
       }
     }
     /* C = C/2, D = D/2 */
@@ -4632,6 +4647,11 @@ static int mp_prime_miller_rabin (mp_int * a, mp_int * b, int *result)
       err = sp_ModExp_3072(b, &r, a, &y);
   else
 #endif
+#ifdef WOLFSSL_SP_4096
+  if (mp_count_bits(a) == 4096)
+      err = sp_ModExp_4096(b, &r, a, &y);
+  else
+#endif
 #endif
       err = mp_exptmod (b, &r, a, &y);
   if (err != MP_OKAY)
@@ -4714,10 +4734,15 @@ int mp_prime_is_prime (mp_int * a, int t, int *result)
     return MP_VAL;
   }
 
+  if (mp_isone(a)) {
+      *result = MP_NO;
+      return MP_OKAY;
+  }
+
   /* is the input equal to one of the primes in the table? */
   for (ix = 0; ix < PRIME_SIZE; ix++) {
       if (mp_cmp_d(a, ltm_prime_tab[ix]) == MP_EQ) {
-         *result = 1;
+         *result = MP_YES;
          return MP_OKAY;
       }
   }
@@ -4775,6 +4800,11 @@ int mp_prime_is_prime_ex (mp_int * a, int t, int *result, WC_RNG *rng)
   /* valid value of t? */
   if (t <= 0 || t > PRIME_SIZE) {
     return MP_VAL;
+  }
+
+  if (mp_isone(a)) {
+    *result = MP_NO;
+    return MP_OKAY;
   }
 
   /* is the input equal to one of the primes in the table? */
@@ -5233,7 +5263,13 @@ int mp_toradix (mp_int *a, char *str, int radix)
         *str++ = mp_s_rmap[d];
         ++digs;
     }
-
+#ifndef WC_DISABLE_RADIX_ZERO_PAD
+    /* For hexadecimal output, add zero padding when number of digits is odd */
+    if ((digs & 1) && (radix == 16)) {
+        *str++ = mp_s_rmap[0];
+        ++digs;
+    }
+#endif
     /* reverse the digits of the string.  In this case _s points
      * to the first digit [excluding the sign] of the number]
      */
@@ -5282,4 +5318,3 @@ void mp_dump(const char* desc, mp_int* a, byte verbose)
 #endif /* USE_FAST_MATH */
 
 #endif /* NO_BIG_INT */
-
