@@ -1,5 +1,5 @@
 
-httpd: nvram shared hsiab matrixssl www wireless-tools
+httpd: nvram shared hsiab matrixssl wolfssl www wireless-tools
 #	$(MAKE) -C httpd/axTLS
 #	$(MAKE) www
 	$(MAKE) -C httpd
