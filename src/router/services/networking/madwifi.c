@@ -318,6 +318,8 @@ void addvhtcaps(char *prefix, FILE * fp)
 {
 
 /* must use integer mask */
+#define IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_160MHZ		0x00000004
+#define IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ	0x00000008
 #define IEEE80211_VHT_CAP_SU_BEAMFORMER_CAPABLE			0x00000800
 #define IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE			0x00001000
 #define IEEE80211_VHT_CAP_MU_BEAMFORMER_CAPABLE			0x00080000
@@ -340,6 +342,8 @@ void addvhtcaps(char *prefix, FILE * fp)
 		sprintf(mubf, "%s_mubf", prefix);
 		char subf[32];
 		sprintf(subf, "%s_subf", prefix);
+		char cbw[32];
+		sprintf(cbw, "%s_channelbw", prefix);
 		mask = 0;
 		if (nvram_default_matchi(subf, 0, 0)) {
 			mask |= IEEE80211_VHT_CAP_SU_BEAMFORMER_CAPABLE;
@@ -351,9 +355,21 @@ void addvhtcaps(char *prefix, FILE * fp)
 			mask |= IEEE80211_VHT_CAP_MU_BEAMFORMER_CAPABLE;
 			mask |= IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE;
 		}
+
 		if (nvram_default_matchi(shortgi, 0, 1)) {
 			mask |= IEEE80211_VHT_CAP_SHORT_GI_80;
 			mask |= IEEE80211_VHT_CAP_SHORT_GI_160;
+		}
+		int bw = atoi(nvram_safe_get(cbw));
+		if (bw > 0 && bw != 8080 && bw != 2040) {
+			if (bw < 160) {
+				mask |= IEEE80211_VHT_CAP_SHORT_GI_160;
+				mask |= IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_160MHZ_80PLUS80MHZ;
+				mask |= IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_160MHZ;
+			}
+			if (bw < 80) {
+				mask |= IEEE80211_VHT_CAP_SHORT_GI_80;
+			}
 		}
 		if (mask) {
 			fprintf(fp, "\tvht_capa=0\n");
