@@ -462,17 +462,18 @@ void configure_single_ath9k(int count)
 	char compr[32];
 	if (*vifs) {
 		foreach(var, vifs, next) {
-			if (nvram_nmatch("disabled", "%s_mode", var))
+			if (nvram_nmatch("disabled", "%s_mode", var)) {
+				counter++;
 				continue;
-			fprintf(stderr, "setup vifs %s %d\n", var, counter);
+			}
 			// create the first main hostapd interface when this is repeater mode
 			if (!nvram_nmatch("mesh", "%s_mode", var)) {
 				if (isfirst)
-					sysprintf("iw %s interface add %s.%d type managed", wif, dev, counter);
+					sysprintf("iw %s interface add %s type managed", wif, var);
 				setupHostAP_ath9k(dev, isfirst, counter, 0);
 			} else {
 				char akm[16];
-				sprintf(akm, "%s.%d_akm", dev, counter);
+				sprintf(akm, "%s_akm", var);
 				if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3"))
 					sysprintf("iw %s interface add %s type mp", wif, var);
 				else
@@ -1098,7 +1099,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	char *types;
 	char *debug;
 	char tmp[256];
-	if (isfirst && vapid == 0) {
+	if (isfirst && !vapid) {
 		sprintf(ifname, "%s", maininterface);
 	} else {
 		sprintf(ifname, "%s.%d", maininterface, vapid);
@@ -1133,7 +1134,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "interface=%s\n", ifname);
 	} else {
 		fp = fopen(fstr, "ab");
-		fprintf(stderr, "setup vap %d bss %s\n", vapid, ifname);
 		fprintf(fp, "bss=%s\n", ifname);
 	}
 	char bw[32];
