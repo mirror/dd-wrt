@@ -2541,6 +2541,7 @@ void ej_getwirelessmode(webs_t wp, int argc, char_t ** argv)
 void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
 {
 
+	char netmode[32];
 	char mode[32];
 	char m[32];
 
@@ -2549,37 +2550,39 @@ void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
 		ifname = "ath2";
 	strncpy(m, ifname, 4);
 	m[4] = 0;
-	sprintf(mode, "%s_net_mode", m);
+	sprintf(netmode, "%s_net_mode", m);
 
 	websWrite(wp, "<script type=\"text/javascript\">");
-	if (nvram_match(mode, "disabled"))
+	if (nvram_match(netmode, "disabled") || nvram_match(mode, "disabled"))
 		websWrite(wp, "Capture(share.disabled)");
-	if (nvram_match(mode, "mixed"))
+	else {
+	if (nvram_match(netmode, "mixed"))
 		websWrite(wp, "Capture(wl_basic.mixed)");
-	if (nvram_match(mode, "bg-mixed"))
+	if (nvram_match(netmode, "bg-mixed"))
 		websWrite(wp, "Capture(wl_basic.bg)");
-	if (nvram_match(mode, "g-only"))
+	if (nvram_match(netmode, "g-only"))
 		websWrite(wp, "Capture(wl_basic.g)");
-	if (nvram_match(mode, "b-only"))
+	if (nvram_match(netmode, "b-only"))
 		websWrite(wp, "Capture(wl_basic.b)");
-	if (nvram_match(mode, "n-only"))
+	if (nvram_match(netmode, "n-only"))
 		websWrite(wp, "Capture(wl_basic.n)");
-	if (nvram_match(mode, "a-only"))
+	if (nvram_match(netmode, "a-only"))
 		websWrite(wp, "Capture(wl_basic.a)");
-	if (nvram_match(mode, "na-only"))
+	if (nvram_match(netmode, "na-only"))
 		websWrite(wp, "Capture(wl_basic.na)");
-	if (nvram_match(mode, "ng-only"))
+	if (nvram_match(netmode, "ng-only"))
 		websWrite(wp, "Capture(wl_basic.ng)");
-	if (nvram_match(mode, "n2-only"))
+	if (nvram_match(netmode, "n2-only"))
 		websWrite(wp, "Capture(wl_basic.n2)");
-	if (nvram_match(mode, "n5-only"))
+	if (nvram_match(netmode, "n5-only"))
 		websWrite(wp, "Capture(wl_basic.n5)");
-	if (nvram_match(mode, "ac-only"))
+	if (nvram_match(netmode, "ac-only"))
 		websWrite(wp, "Capture(wl_basic.ac)");
-	if (nvram_match(mode, "ad-only"))
+	if (nvram_match(netmode, "ad-only"))
 		websWrite(wp, "Capture(wl_basic.ad)");
-	if (nvram_match(mode, "acn-mixed"))
+	if (nvram_match(netmode, "acn-mixed"))
 		websWrite(wp, "Capture(wl_basic.acn)");
+	}
 	websWrite(wp, "</script>&nbsp;\n");
 }
 
