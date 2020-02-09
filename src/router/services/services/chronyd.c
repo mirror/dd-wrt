@@ -50,7 +50,7 @@ static int write_default_config(FILE *fp)
 	}
 	inet_addr_to_cidr(addr, mask, cidr);
 
-	fprintf(fp, "pool pool.ntp.org iburst\n");
+	fprintf(fp, "pool pool.ntp.org offline\n");
 	fprintf(fp, "driftfile /var/lib/chrony/drift\n");
 	fprintf(fp, "makestep 1.0 3\n");
 	fprintf(fp, "local stratum 8\n");
