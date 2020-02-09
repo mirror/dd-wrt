@@ -1694,6 +1694,8 @@ int get_radiostate(char *ifname)
 {
 	if (nvram_nmatch("disabled", "%s_net_mode", ifname))
 		return 0;
+	if (nvram_nmatch("disabled", "%s_mode", ifname))
+		return 0;
 	if (!has_ad(ifname)) {
 		if (is_mac80211(ifname)) {
 			int state = getValueFromPath("/sys/kernel/debug/ieee80211/phy%d/ath9k/diag", get_ath9k_phy_ifname(ifname), "0x%x", NULL);
