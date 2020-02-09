@@ -2416,11 +2416,13 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 	char m[32];
 	int txpower;
 	char mode[32];
+	char net_mode[32];
 
 	strncpy(m, nvram_safe_get("wifi_display"), 4);
 	m[4] = 0;
-	sprintf(mode, "%s_net_mode", m);
-	if (nvram_match(mode, "disabled")) {
+	sprintf(net_mode, "%s_net_mode", m);
+	sprintf(mode, "%s_mode", m);
+	if (nvram_match(net_mode, "disabled") || nvram_match(mode, "disabled")) {
 		txpower = 0;
 		websWrite(wp, "%s", live_translate(wp, "wl_basic.radio_off"));
 	} else {
