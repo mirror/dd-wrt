@@ -19,7 +19,11 @@ chrony-clean:
 
 chrony-install:
 	make   -C chrony install DESTDIR=$(INSTALLDIR)/chrony
+	mkdir -p $(INSTALLDIR)/chrony/etc/config/
 	mkdir -p $(INSTALLDIR)/chrony/tmp/var/lib/chrony
+	install -D chrony/config/chronyd.webservices $(INSTALLDIR)/chrony/etc/config/
+	install -D chrony/config/chronyd.nvramconfig $(INSTALLDIR)/chrony/etc/config/	
 	ln -s /tmp/chrony.conf $(INSTALLDIR)/chrony/etc/chrony/chrony.conf
 	rm -rf $(INSTALLDIR)/chrony/usr/share
 	rm -rf $(INSTALLDIR)/chrony/var
+
