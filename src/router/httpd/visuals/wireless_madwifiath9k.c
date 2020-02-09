@@ -208,6 +208,8 @@ void ej_show_busy(webs_t wp, int argc, char_t ** argv)
 	if (is_mac80211(prefix)) {
 		if (nvram_nmatch("disabled", "%s_net_mode", prefix))
 			return;
+		if (nvram_nmatch("disabled", "%s_mode", prefix))
+			return;
 		if (getcurrentsurvey_mac80211(prefix, &info)) {
 			long long active = info.channel_active_time;
 			long long busy = info.channel_busy_time;
