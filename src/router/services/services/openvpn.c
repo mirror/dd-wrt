@@ -532,12 +532,12 @@ void start_openvpn(void)
 		fprintf(fp, "sleep 5\n");
 	}
 	if (nvram_matchi("openvpncl_nat", 1)) {
-		fprintf(fp, "iptables -D POSTROUTING -t nat -o %s -j MASQUERADE\n" //
-			    "iptables -I POSTROUTING -t nat -o %s -j MASQUERADE\n", ovpniface, ovpniface);
+		fprintf(fp, "iptables -D POSTROUTING -t nat -o %s -j MASQUERADE\n"	//
+			"iptables -I POSTROUTING -t nat -o %s -j MASQUERADE\n", ovpniface, ovpniface);
 	}
 	if (nvram_matchi("openvpncl_sec", 0)) {
-		fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n" //
-			    "iptables -I INPUT -i %s -j ACCEPT\n", ovpniface, ovpniface);
+		fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n"	//
+			"iptables -I INPUT -i %s -j ACCEPT\n", ovpniface, ovpniface);
 	} else {
 		if (nvram_match("openvpncl_tuntap", "tun"))	//only needed with tun
 			fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n"	//
@@ -605,17 +605,13 @@ void start_openvpn(void)
 		fprintf(fp, "ifconfig %s down\n", ovpniface);
 
 	if (nvram_matchi("openvpncl_nat", 1)) {
-		fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n"
-			    "iptables -D POSTROUTING -t nat -o %s -j MASQUERADE\n", ovpniface, ovpniface);
+		fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n" "iptables -D POSTROUTING -t nat -o %s -j MASQUERADE\n", ovpniface, ovpniface);
 	}
 	if (nvram_matchi("openvpncl_sec", 0)) {
 		fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n", ovpniface);
 	}
-	if (nvram_match("openvpncl_tuntap", "tun")
-	{
-		fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n"
-			    "iptables -D FORWARD -i %s -j ACCEPT\n"
-			    "iptables -D FORWARD -o %s -j ACCEPT\n", ovpniface, ovpniface, ovpniface);
+	if (nvram_match("openvpncl_tuntap", "tun")) {
+		fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n" "iptables -D FORWARD -i %s -j ACCEPT\n" "iptables -D FORWARD -o %s -j ACCEPT\n", ovpniface, ovpniface, ovpniface);
 	}
 	if (nvram_default_matchi("openvpncl_fw", 1, 0)) {
 		fprintf(fp, "iptables -D INPUT -i %s -m state --state NEW -j DROP\n", ovpniface);
