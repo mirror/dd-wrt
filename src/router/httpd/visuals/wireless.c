@@ -915,6 +915,7 @@ void ej_getchipset(webs_t wp, int argc, char_t ** argv)
 
 void ej_get_status_curchannel(webs_t wp, int argc, char_t ** argv)
 {
+	char buf[128];
 	char *prefix = nvram_safe_get("wifi_display");
 	if (nvram_nmatch("disabled", "%s_net_mode", prefix))
 		return;
