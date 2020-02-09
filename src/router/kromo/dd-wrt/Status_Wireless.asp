@@ -228,10 +228,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("share.ssid"); %></div>
 									<span id="wl_ssid"><% getwirelessssid(); %></span>&nbsp;
 								</div>
-								<div class="setting">
-									<div class="label"><% tran("share.channel"); %></div>
-									<span id="wl_channel"><% get_curchannel(); %></span>&nbsp;
-								</div>
+								<% get_status_curchannel(); %>
 								<% show_busy(); %>
 								<div class="setting">
 									<div class="label"><% tran("wl_basic.TXpower"); %></div>
