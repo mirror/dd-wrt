@@ -364,7 +364,7 @@ void addvhtcaps(char *prefix, FILE * fp)
 		if (bw > 0 && bw != 8080 && bw != 2040) {
 			if (bw < 160) {
 				mask |= IEEE80211_VHT_CAP_SHORT_GI_160;
-				mask |= IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_160MHZ_80PLUS80MHZ;
+				mask |= IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ;
 				mask |= IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_160MHZ;
 			}
 			if (bw < 80) {
