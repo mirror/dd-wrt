@@ -2513,6 +2513,8 @@ void ej_getwirelessmode(webs_t wp, int argc, char_t ** argv)
 	sprintf(mode, "%s_mode", ifname);
 
 	websWrite(wp, "<script type=\"text/javascript\">");
+	if (nvram_match(mode, "disabled"))
+		websWrite(wp, "Capture(share.disabled)");
 	if (nvram_match(mode, "wet"))
 		websWrite(wp, "Capture(wl_basic.clientBridge)");
 	if (nvram_match(mode, "ap"))
@@ -2556,32 +2558,32 @@ void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
 	if (nvram_match(netmode, "disabled") || nvram_match(mode, "disabled"))
 		websWrite(wp, "Capture(share.disabled)");
 	else {
-	if (nvram_match(netmode, "mixed"))
-		websWrite(wp, "Capture(wl_basic.mixed)");
-	if (nvram_match(netmode, "bg-mixed"))
-		websWrite(wp, "Capture(wl_basic.bg)");
-	if (nvram_match(netmode, "g-only"))
-		websWrite(wp, "Capture(wl_basic.g)");
-	if (nvram_match(netmode, "b-only"))
-		websWrite(wp, "Capture(wl_basic.b)");
-	if (nvram_match(netmode, "n-only"))
-		websWrite(wp, "Capture(wl_basic.n)");
-	if (nvram_match(netmode, "a-only"))
-		websWrite(wp, "Capture(wl_basic.a)");
-	if (nvram_match(netmode, "na-only"))
-		websWrite(wp, "Capture(wl_basic.na)");
-	if (nvram_match(netmode, "ng-only"))
-		websWrite(wp, "Capture(wl_basic.ng)");
-	if (nvram_match(netmode, "n2-only"))
-		websWrite(wp, "Capture(wl_basic.n2)");
-	if (nvram_match(netmode, "n5-only"))
-		websWrite(wp, "Capture(wl_basic.n5)");
-	if (nvram_match(netmode, "ac-only"))
-		websWrite(wp, "Capture(wl_basic.ac)");
-	if (nvram_match(netmode, "ad-only"))
-		websWrite(wp, "Capture(wl_basic.ad)");
-	if (nvram_match(netmode, "acn-mixed"))
-		websWrite(wp, "Capture(wl_basic.acn)");
+		if (nvram_match(netmode, "mixed"))
+			websWrite(wp, "Capture(wl_basic.mixed)");
+		if (nvram_match(netmode, "bg-mixed"))
+			websWrite(wp, "Capture(wl_basic.bg)");
+		if (nvram_match(netmode, "g-only"))
+			websWrite(wp, "Capture(wl_basic.g)");
+		if (nvram_match(netmode, "b-only"))
+			websWrite(wp, "Capture(wl_basic.b)");
+		if (nvram_match(netmode, "n-only"))
+			websWrite(wp, "Capture(wl_basic.n)");
+		if (nvram_match(netmode, "a-only"))
+			websWrite(wp, "Capture(wl_basic.a)");
+		if (nvram_match(netmode, "na-only"))
+			websWrite(wp, "Capture(wl_basic.na)");
+		if (nvram_match(netmode, "ng-only"))
+			websWrite(wp, "Capture(wl_basic.ng)");
+		if (nvram_match(netmode, "n2-only"))
+			websWrite(wp, "Capture(wl_basic.n2)");
+		if (nvram_match(netmode, "n5-only"))
+			websWrite(wp, "Capture(wl_basic.n5)");
+		if (nvram_match(netmode, "ac-only"))
+			websWrite(wp, "Capture(wl_basic.ac)");
+		if (nvram_match(netmode, "ad-only"))
+			websWrite(wp, "Capture(wl_basic.ad)");
+		if (nvram_match(netmode, "acn-mixed"))
+			websWrite(wp, "Capture(wl_basic.acn)");
 	}
 	websWrite(wp, "</script>&nbsp;\n");
 }
