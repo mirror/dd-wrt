@@ -105,7 +105,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 0, 1) ? "checked=\"checked\"" : ""));
 					show_caption_simple(wp, "share.disable");
 				}
-
+				websWrite(wp, "</div>\n");
 				snprintf(temp, sizeof(temp), "oet%d_port", tun);
 				websWrite(wp, "<div class=\"setting\">\n");
 				{
