@@ -4,12 +4,10 @@
  */
 
 #ifdef __linux__
-#include <libmnl/libmnl.h>
 #include <linux/if_link.h>
-#include <linux/netlink.h>
 #include <linux/rtnetlink.h>
-#include <linux/genetlink.h>
-#include "mnlg.h"
+#include "../uapi/wireguard.h"
+#include "netlink.h"
 #endif
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -38,7 +36,6 @@
 #include "containers.h"
 #include "encoding.h"
 #include "curve25519.h"
-#include "../uapi/wireguard.h"
 
 #define SOCK_PATH RUNSTATEDIR "/wireguard/"
 #define SOCK_SUFFIX ".sock"
