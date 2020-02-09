@@ -372,6 +372,11 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 
 void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 {
+	char *prefix = nvram_safe_get("wifi_display");
+	if (nvram_nmatch("disabled", "%s_net_mode", prefix))
+		return;
+	if (nvram_nmatch("disabled", "%s_mode", prefix))
+		return;
 	char buf[128];
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, "share.acktiming"));
