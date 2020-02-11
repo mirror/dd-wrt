@@ -786,7 +786,7 @@ static void handle_nassrv(void)
 	start_service_f("transmission");
 #endif
 	restart("firewall");
-	restart_f("whaper");
+	restart_f("wshaper");
 
 }
 
