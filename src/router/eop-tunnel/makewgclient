@@ -5,5 +5,5 @@ $nv set oet$1_peerpk$2=$(wg genkey)
 $nv set oet$1_peerkey$2=$($nv get oet$1_peerpk$2|wg pubkey)
 makewgconfig $1 $2
 # must restart tunnel since keys have been changed, this will also restart the eop-tunnel
-restart_f firewall
+restart firewall
 restart_f wshaper
