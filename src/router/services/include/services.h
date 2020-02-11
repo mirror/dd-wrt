@@ -313,3 +313,6 @@ void start_postnetwork(void);
 
 void runStartup(char *extension);
 
+void create_openvpnserverrules(FILE * fp);
+void create_openvpnrules(FILE * fp);
+
