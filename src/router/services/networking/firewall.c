@@ -3013,7 +3013,7 @@ void start_firewall(void)
 	if (nvram_matchi("openvpn_enable", 1)) {
 		FILE *fp = fopen("/tmp/openvpn_fw.sh", "wb");
 		fprintf(fp, "#!/bin/sh\n");
-		create_openvpnrules(fp);
+		create_openvpnserverrules(fp);
 		fclose(fp);
 		chmod("/tmp/openvpn_fw", 0700);
 		eval("/tmp/openvpn_fw.sh");
