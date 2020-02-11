@@ -2923,17 +2923,17 @@ void start_firewall(void)
 	int runfw = 0;
 #ifdef HAVE_REGISTER
 #ifndef HAVE_ERC
-		if (isregistered_real())
+	if (isregistered_real())
 #endif
 #endif
-		{
-			runStartup(".firewall");
-			create_rc_file(RC_FIREWALL);
-			if (f_exists("/tmp/.rc_firewall")) {
-				setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
-				system("/tmp/.rc_firewall");
-			}
+	{
+		runStartup(".firewall");
+		create_rc_file(RC_FIREWALL);
+		if (f_exists("/tmp/.rc_firewall")) {
+			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
+			system("/tmp/.rc_firewall");
 		}
+	}
 	cprintf("Ready\n");
 	/*
 	 * end Sveasoft add 
@@ -2999,6 +2999,24 @@ void start_firewall(void)
 	    || nvram_matchi("hotss_enable", 1)) {
 		stop_chilli();
 		start_chilli();
+	}
+#endif
+#ifdef HAVE_OPENVPN
+	if (nvram_matchi("openvpncl_enable", 1)) {
+		FILE *fp = fopen("/tmp/openvpncl_fw.sh", "wb");
+		fprintf(fp, "#!/bin/sh\n");
+		create_openvpnrules(fp);
+		fclose(fp);
+		chmod("/tmp/openvpncl_fw", 0700);
+		eval("/tmp/openvpncl_fw.sh");
+	}
+	if (nvram_matchi("openvpn_enable", 1)) {
+		FILE *fp = fopen("/tmp/openvpn_fw.sh", "wb");
+		fprintf(fp, "#!/bin/sh\n");
+		create_openvpnrules(fp);
+		fclose(fp);
+		chmod("/tmp/openvpn_fw", 0700);
+		eval("/tmp/openvpn_fw.sh");
 	}
 #endif
 #ifdef HAVE_PPPOESERVER
