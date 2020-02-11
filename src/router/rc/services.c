@@ -785,7 +785,8 @@ static void handle_nassrv(void)
 #ifdef HAVE_TRANSMISSION
 	start_service_f("transmission");
 #endif
-	restart_f("firewall");
+	restart("firewall");
+	restart_f("whaper");
 
 }
 
@@ -1391,7 +1392,8 @@ static void handle_usbdrivers(void)
 #ifdef HAVE_EOP_TUNNEL
 static void handle_eop(void)
 {
-	restart_f("firewall");
+	restart("firewall");
+	restart_f("wshaper");
 }
 #endif
 static struct SERVICES services_def[] = {
