@@ -1281,16 +1281,16 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 			if (bw == 80) {
 
 				if (chan->ull && !isinlist(list, chan->freq, (chan->freq + 10) - 30, 80)) {
-					chan->ull = 0;
+					chan->luu = 0;
 				}
 				if (chan->luu && !isinlist(list, chan->freq, (chan->freq - 10) - 30, 80)) {
-					chan->luu = 0;
+					chan->ull = 0;
 				}
 
 			}
 			if (bw == 160) {
 				if (chan->ull && !isinlist(list, chan->freq, (chan->freq + 10) - 70, 160)) {
-					chan->ull = 0;
+					chan->luu = 0;
 				}
 				if (chan->ulu && !isinlist(list, chan->freq, (chan->freq + 30) - 70, 160)) {
 					chan->ulu = 0;
@@ -1299,7 +1299,7 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 					chan->uul = 0;
 				}
 				if (chan->luu && !isinlist(list, chan->freq, (chan->freq - 10) - 70, 160)) {
-					chan->luu = 0;
+					chan->ull = 0;
 				}
 				if (chan->lul && !isinlist(list, chan->freq, (chan->freq - 30) - 70, 160)) {
 					chan->lul = 0;
