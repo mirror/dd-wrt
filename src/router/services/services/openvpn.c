@@ -117,7 +117,6 @@ void create_openvpnrules(FILE * fp)
 
 void create_openvpnserverrules(FILE * fp)
 {
-
 	if (nvram_matchi("block_multicast", 0)	//block multicast on bridged vpns
 	    && nvram_match("openvpn_tuntap", "tap"))
 		fprintf(fp, "insmod ebtables\n" "insmod ebtable_filter\n" "insmod ebtable_nat\n" "insmod ebt_pkttype\n"
@@ -136,53 +135,6 @@ void create_openvpnserverrules(FILE * fp)
 	}
 	if (nvram_match("openvpn_mit", "1"))
 		fprintf(fp, "iptables -t raw -I PREROUTING ! -i tun2 -d $(getipmask %s) -j DROP\n", "tun2");
-	/* "stopservice wshaper\n" disable wshaper, causes fw race condition
-	 * "startservice wshaper\n");*/
-	fclose(fp);
-	fp = fopen("/tmp/openvpn/route-down.sh", "wb");
-	if (fp == NULL)
-		return;
-	fprintf(fp, "#!/bin/sh\n");
-#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
-	gpiovpn = nvram_safe_get("gpiovpn");
-	if (*gpiovpn) {
-		if (strncmp(gpiovpn, "-", 1))
-			fprintf(fp, "gpio disable %s\n", gpiovpn);
-		else {
-			gpiovpn++;
-			fprintf(fp, "gpio enable %s\n", gpiovpn);
-		}
-	}
-#endif
-	// remove ebtales rules
-	if (nvram_matchi("block_multicast", 0)
-	    && nvram_match("openvpn_tuntap", "tap"))
-		fprintf(fp, "ebtables -t nat -D POSTROUTING -o tap2 --pkttype-type multicast -j DROP\n");
-	if (nvram_matchi("openvpn_dhcpbl", 1)
-	    && nvram_match("openvpn_tuntap", "tap")
-	    && nvram_matchi("openvpn_proxy", 0))
-		fprintf(fp,
-			"ebtables -t nat -D PREROUTING -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
-			"ebtables -t nat -D POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
-	if (nvram_default_matchi("openvpn_fw", 1, 0)) {
-		fprintf(fp, "iptables -D INPUT -i tap2 -m state --state NEW -j DROP\n");
-		fprintf(fp, "iptables -D FORWARD -i tap2 -m state --state NEW -j DROP\n");
-	}
-	if (nvram_match("openvpn_mit", "1"))
-		fprintf(fp, "iptables -t raw -D PREROUTING ! -i tun2 -d $(getipmask %s) -j DROP\n", "tun2");
-
-/*      if ((nvram_matchi("openvpn_dhcpbl",1)
-                        && nvram_match("openvpn_tuntap", "tap")
-                        && nvram_matchi("openvpn_proxy",0))
-                || (nvram_matchi("block_multicast",0)
-                        && nvram_match("openvpn_tuntap", "tap")))
-                        fprintf(fp, "if [ `ebtables -t nat -L|grep -e '-j' -c` -eq 0 ]\n"
-                                "then rmmod ebtable_nat\n" "\t rmmod ebt_ip\n"
-                                "elseif [ `ebtables -t nat -L|grep -e '-j' -c` -eq 0 ]\n"
-                                "then rmmod ebtable_filter\n" "\t rmmod ebtables\n");   */
-	if (nvram_match("openvpn_tuntap", "tap"))
-		fprintf(fp, "brctl delif br0 tap2\n" "ifconfig tap2 down\n");
-
 }
 
 void start_openvpnserver(void)
@@ -374,6 +326,50 @@ void start_openvpnserver(void)
 		fprintf(fp, "sleep 5\n");
 	}
 	create_openvpnserverrules(fp);
+	fclose(fp);
+	fp = fopen("/tmp/openvpn/route-down.sh", "wb");
+	if (fp == NULL)
+		return;
+	fprintf(fp, "#!/bin/sh\n");
+#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
+	gpiovpn = nvram_safe_get("gpiovpn");
+	if (*gpiovpn) {
+		if (strncmp(gpiovpn, "-", 1))
+			fprintf(fp, "gpio disable %s\n", gpiovpn);
+		else {
+			gpiovpn++;
+			fprintf(fp, "gpio enable %s\n", gpiovpn);
+		}
+	}
+#endif
+	// remove ebtales rules
+	if (nvram_matchi("block_multicast", 0)
+	    && nvram_match("openvpn_tuntap", "tap"))
+		fprintf(fp, "ebtables -t nat -D POSTROUTING -o tap2 --pkttype-type multicast -j DROP\n");
+	if (nvram_matchi("openvpn_dhcpbl", 1)
+	    && nvram_match("openvpn_tuntap", "tap")
+	    && nvram_matchi("openvpn_proxy", 0))
+		fprintf(fp,
+			"ebtables -t nat -D PREROUTING -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
+			"ebtables -t nat -D POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
+	if (nvram_default_matchi("openvpn_fw", 1, 0)) {
+		fprintf(fp, "iptables -D INPUT -i tap2 -m state --state NEW -j DROP\n");
+		fprintf(fp, "iptables -D FORWARD -i tap2 -m state --state NEW -j DROP\n");
+	}
+	if (nvram_match("openvpn_mit", "1"))
+		fprintf(fp, "iptables -t raw -D PREROUTING ! -i tun2 -d $(getipmask %s) -j DROP\n", "tun2");
+
+/*      if ((nvram_matchi("openvpn_dhcpbl",1)
+                        && nvram_match("openvpn_tuntap", "tap")
+                        && nvram_matchi("openvpn_proxy",0))
+                || (nvram_matchi("block_multicast",0)
+                        && nvram_match("openvpn_tuntap", "tap")))
+                        fprintf(fp, "if [ `ebtables -t nat -L|grep -e '-j' -c` -eq 0 ]\n"
+                                "then rmmod ebtable_nat\n" "\t rmmod ebt_ip\n"
+                                "elseif [ `ebtables -t nat -L|grep -e '-j' -c` -eq 0 ]\n"
+                                "then rmmod ebtable_filter\n" "\t rmmod ebtables\n");   */
+	if (nvram_match("openvpn_tuntap", "tap"))
+		fprintf(fp, "brctl delif br0 tap2\n" "ifconfig tap2 down\n");
 	fclose(fp);
 	chmod("/tmp/openvpn/route-up.sh", 0700);
 	chmod("/tmp/openvpn/route-down.sh", 0700);
