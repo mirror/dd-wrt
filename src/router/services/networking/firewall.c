@@ -3007,7 +3007,7 @@ void start_firewall(void)
 		fprintf(fp, "#!/bin/sh\n");
 		create_openvpnrules(fp);
 		fclose(fp);
-		chmod("/tmp/openvpncl_fw", 0700);
+		chmod("/tmp/openvpncl_fw.sh", 0700);
 		eval("/tmp/openvpncl_fw.sh");
 	}
 	if (nvram_matchi("openvpn_enable", 1)) {
@@ -3015,7 +3015,7 @@ void start_firewall(void)
 		fprintf(fp, "#!/bin/sh\n");
 		create_openvpnserverrules(fp);
 		fclose(fp);
-		chmod("/tmp/openvpn_fw", 0700);
+		chmod("/tmp/openvpn_fw.sh", 0700);
 		eval("/tmp/openvpn_fw.sh");
 	}
 #endif
