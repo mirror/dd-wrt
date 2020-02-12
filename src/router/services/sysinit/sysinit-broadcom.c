@@ -476,8 +476,7 @@ static void restore_set(char *prefix, struct nvram_param *set)
 {
 	struct nvram_param *t;
 	for (t = set; t->name; t++) {
-		if (!nvram_exists(t->name))
-			nvram_nset(t->value, "%s/%s", prefix, t->name);
+		nvram_nset(t->value, "%s/%s", prefix, t->name);
 	}
 
 }
