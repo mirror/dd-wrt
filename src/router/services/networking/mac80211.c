@@ -772,7 +772,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					case 80:
 					case 8080:
 						if (chan[i].luu) {
-							ht = "HT40-";
+							ht = "HT40+";
 							channeloffset = 2;
 							iht = -1;
 						} else if (chan[i].ulu) {
@@ -784,7 +784,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 							channeloffset = 6;
 							iht = -1;
 						} else if (chan[i].ull) {
-							ht = "HT40+";
+							ht = "HT40-";
 							iht = 1;
 							channeloffset = 2;
 						}
@@ -803,11 +803,11 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 							iht = 1;
 							channeloffset = 6;
 						} else if (chan[i].ull) {
-							ht = "HT40+";
+							ht = "HT40-";
 							iht = 1;
 							channeloffset = 2;
 						} else if (chan[i].luu) {
-							ht = "HT40-";
+							ht = "HT40+";
 							iht = -1;
 							channeloffset = 2;
 						} else if (chan[i].lul) {
