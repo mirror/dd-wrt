@@ -1222,7 +1222,7 @@ nla_put_failure:
 	return 0;
 }
 
-static int isinlist(struct wifi_channels *list, int base, int freq, int bw)
+static int isinlist(struct wifi_channels *list, int freq, int bw)
 {
 	int i = 0;
 	struct wifi_channels *chan;
@@ -1236,123 +1236,78 @@ static int isinlist(struct wifi_channels *list, int base, int freq, int bw)
 	return 0;
 }
 
+static int check_ranges(struct wifi_channels *list, int freq, int *ranges, int mhz)
+{
+	int i = 0;
+	int range;
+	while ((range = ranges[i++])) {
+		if (!isinlist(list, freq + range, mhz))
+			return 0;
+	}
+	return 1;
+}
+
 static void check_validchannels(struct wifi_channels *list, int bw)
 {
-	int distance = 10;
-	int count = 0;
-	char *debugstr[] = {
-		"20MHz", "40MHz", "80MHz", "160MHz"
-	};
-	switch (bw) {
-	case 20:
-		return;		// all valid
-	case 40:
-		count = 2;
-		break;
-	case 80:
-		count = 3;	// must check 40 mhz space, since vht80 supports ht40 as well
-		break;
-	case 160:
-		count = 4;	// must check 40 mhz and 80 mhz space, since vht80 supports ht40 and vht80 as well
-		break;
-	}
-	int a;
-	for (a = 1; a < count; a++) {
-		int i = 0;
-		while (1) {
-			struct wifi_channels *chan = &list[i++];
-			if (chan->freq == -1)
-				break;
-			if (bw == 40) {
-				if (chan->luu && !isinlist(list, chan->freq, chan->freq - (distance << a), bw)) {
-					//      fprintf(stderr, "freq %d has no %s parent at %d, disable ht40minus / luu / ul\n", chan->freq, debugstr[a], chan->freq - (distance << a));
-					chan->luu = 0;
-					chan->ulu = 0;
-					chan->uul = 0;
-					chan->uuu = 0;
-				}
-				if (chan->ull && !isinlist(list, chan->freq, chan->freq + (distance << a), bw)) {
-					//      fprintf(stderr, "freq %d has no %s parent at %d, disable ht40plus / ull /lu\n", chan->freq, debugstr[a], chan->freq + (distance << a));
-					chan->ull = 0;
-					chan->lul = 0;
-					chan->llu = 0;
-					chan->lll = 0;
-				}
+	int i = 0;
+	while (1) {
+		struct wifi_channels *chan = &list[i++];
+		if (chan->freq == -1)
+			break;
+		if (bw == 40) {
+			int minus[] = { -20, 0 };
+			if (chan->luu && !check_ranges(list, chan->freq, (int[]) { -20, 0 }, 40)) {
+				chan->luu = 0;
+				chan->ulu = 0;
+				chan->uul = 0;
+				chan->uuu = 0;
 			}
-			/* sort out incompatible dfs property channels.settings which starts always bellow control channel */
-			if (bw == 80) {
-				if (chan->ull && !isinlist(list, chan->freq, chan->freq - 20, 80) || !isinlist(list, chan->freq, chan->freq + 40, 80) || !isinlist(list, chan->freq, chan->freq + 20, 80)) {
-					//      fprintf(stderr, "UL: %d check %d and %d not available\n", chan->freq, (chan->freq + 10) - 30, chan->freq + 60);                                 
-					chan->ull = 0;
-				}
-				if (chan->luu && !isinlist(list, chan->freq, chan->freq + 20, 80) || !isinlist(list, chan->freq, chan->freq - 40, 80) || !isinlist(list, chan->freq, chan->freq - 20, 80)) {
-					//      fprintf(stderr, "LU: %d check %d and %d not available\n", chan->freq, (chan->freq - 10) + 30, chan->freq - 60);
-					chan->luu = 0;
-				}
-				if (chan->ulu && !isinlist(list, chan->freq, chan->freq + 60, 80) || !isinlist(list, chan->freq, chan->freq + 20, 80) || !isinlist(list, chan->freq, chan->freq + 40, 80)) {
-					//      fprintf(stderr, "UU: %d check %d and %d not available\n", chan->freq, (chan->freq - 10) + 30, chan->freq + 60);
-					chan->ulu = 0;
-				}
-				if (chan->lul && !isinlist(list, chan->freq, chan->freq - 60, 80) || !isinlist(list, chan->freq, chan->freq - 20, 80) || !isinlist(list, chan->freq, chan->freq - 40, 80)) {
-					//      fprintf(stderr, "LL: %d check %d and %d not available\n", chan->freq, (chan->freq - 10) + 30, chan->freq - 60);
-					chan->lul = 0;
-				}
+			if (chan->ull && !check_ranges(list, chan->freq, (int[]) { 20, 0 }, 40)) {
+				chan->ull = 0;
+				chan->lul = 0;
+				chan->llu = 0;
+				chan->lll = 0;
 			}
-			if (bw == 160) {
-				if (chan->luu && !isinlist(list, chan->freq, (chan->freq + 10) - 70, 160)) {
-					chan->luu = 0;
-				}
-				if (chan->ulu && !isinlist(list, chan->freq, (chan->freq + 30) - 70, 160) || !isinlist(list, chan->freq, chan->freq + 20, 160) || !isinlist(list, chan->freq, chan->freq + 40, 160)
-				    || !isinlist(list, chan->freq, chan->freq + 60, 160) || !isinlist(list, chan->freq, chan->freq + 80, 160) || !isinlist(list, chan->freq, chan->freq + 80, 160)
-				    || !isinlist(list, chan->freq, chan->freq + 100, 160)) {
-					chan->ulu = 0;
-				}
-				if (chan->uul && !isinlist(list, chan->freq, (chan->freq + 50) - 70, 160) || !isinlist(list, chan->freq, chan->freq - 20, 160) || !isinlist(list, chan->freq, chan->freq + 20, 160)
-				    || !isinlist(list, chan->freq, chan->freq + 40, 160) || !isinlist(list, chan->freq, chan->freq + 60, 160) || !isinlist(list, chan->freq, chan->freq + 80, 160)
-				    || !isinlist(list, chan->freq, chan->freq + 100, 160) || !isinlist(list, chan->freq, chan->freq + 120, 160)) {
-					chan->uul = 0;
-				}
-				if (chan->ull && !isinlist(list, chan->freq, (chan->freq - 10) - 70, 160) || !isinlist(list, chan->freq, chan->freq - 20, 160) || !isinlist(list, chan->freq, chan->freq + 20, 160)
-				    || !isinlist(list, chan->freq, chan->freq + 40, 160) || !isinlist(list, chan->freq, chan->freq + 60, 160) || !isinlist(list, chan->freq, chan->freq + 80, 160)) {
-					chan->ull = 0;
-				}
-				if (chan->lul && !isinlist(list, chan->freq, (chan->freq - 30) - 70, 160) || !isinlist(list, chan->freq, chan->freq + 20, 160) || !isinlist(list, chan->freq, chan->freq + 40, 160)) {
-					chan->lul = 0;
-				}
-				if (chan->llu && !isinlist(list, chan->freq, (chan->freq - 50) - 70, 160) || !isinlist(list, chan->freq, chan->freq + 20, 160) || !isinlist(list, chan->freq, chan->freq - 40, 160)) {
-					chan->llu = 0;
-				}
+		}
+		/* sort out incompatible dfs property channels.settings which starts always bellow control channel */
+		if (bw == 80) {
+			if (chan->ull && !check_ranges(list, chan->freq, (int[]) { 10 - 30, 20, 40, 0 }, 80)) {
+				chan->ull = 0;
 			}
-			if (a == 2) {
-				if (chan->lul && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 1))), bw)) {
-					//      fprintf(stderr, "freq %d has no %s parent at %d, disable lul / ll\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1))));
-					chan->lul = 0;
-				}
-				if (chan->ulu && !isinlist(list, chan->freq, chan->freq + ((distance << a) + (distance << (a - 1))), bw)) {
-					//      fprintf(stderr, "freq %d has no %s parent at %d, disable ulu / uu\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1))));
-					chan->ulu = 0;
-				}
+			if (chan->luu && !check_ranges(list, chan->freq, (int[]) { -10 + 30, -40, -20, 0 }, 80)) {
+				chan->luu = 0;
 			}
-			if (a == 3) {
-				if (chan->ull && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 2))), 160)) {
-					//      fprintf(stderr, "freq %d has no %s parent at %d, disable llu\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
-					chan->ull = 0;
-					chan->lll = 0;
-				}
-				if (chan->luu && !isinlist(list, chan->freq, chan->freq + ((distance << a) + (distance << (a - 2))), 160)) {
-					//      fprintf(stderr, "freq %d has no %s parent at %d, disable uul\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
-					chan->luu = 0;
-					chan->uuu = 0;
-				}
-				if (chan->lll && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))), 160)) {
-					//      fprintf(stderr, "freq %d has no %s parent at %d, disable lll\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
-					chan->lll = 0;
-				}
-				if (chan->uuu && !isinlist(list, chan->freq, chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))), 160)) {
-					//      fprintf(stderr, "freq %d has no %s parent at %d, disable uuu\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
-					chan->uuu = 0;
-
-				}
+			if (chan->ulu && !check_ranges(list, chan->freq, (int[]) { /*30 - 30, */ 20, 40, 0 }, 80)) {
+				chan->ulu = 0;
+			}
+			if (chan->lul && !check_ranges(list, chan->freq, (int[]) { -30 - 30, -20, -40, 0 }, 80)) {
+				chan->lul = 0;
+			}
+		}
+		if (bw == 160) {
+			if (chan->luu && !check_ranges(list, chan->freq, (int[]) { 10 - 70, 20, -20, -40, -50, -80, 0 }, 160)) {
+				chan->luu = 1;
+			}
+			if (chan->ull && !check_ranges(list, chan->freq, (int[]) { -10 - 70, -20, 20, 40, 60, 80, 0 }, 160)) {
+				chan->ull = 0;
+			}
+			if (chan->ulu && !check_ranges(list, chan->freq, (int[]) { 30 - 70, 20, 40, 60, 80, 100, 0 }, 160)) {
+				chan->ulu = 0;
+			}
+			if (chan->lul && !check_ranges(list, chan->freq, (int[]) { -30 - 70, -20, -40, -60, -80, -100, 0 }, 160)) {
+				chan->lul = 0;
+			}
+			if (chan->uul && !check_ranges(list, chan->freq, (int[]) { 50 - 70, 20, 40, 60, 80, 100, 120, 0 }, 160)) {
+				chan->uul = 0;
+			}
+			if (chan->llu && !check_ranges(list, chan->freq, (int[]) { -50 - 70, 20, -40, -60, -80, -100, -120, 0 }, 160)) {
+				chan->llu = 0;
+			}
+			if (chan->uuu && !check_ranges(list, chan->freq, (int[]) { /* 0 , */ 20, 40, 60, 80, 100, 120, 140, 0 }, 160)) {
+				chan->uuu = 0;
+			}
+			if (chan->lll && !check_ranges(list, chan->freq, (int[]) { -70 - 70, -20, -40, -60, -80, -120, -140, 0 }, 160)) {
+				chan->lll = 0;
 			}
 		}
 	}
