@@ -259,12 +259,25 @@ static void checkupgrade(void)
 	FILE *in = fopen("/tmp/firmware.bin", "rb");
 
 	if (in != NULL) {
+		fseek(in,0,SEEK_END);
+		size_t len = ftell(in);
 		fclose(in);
 		unlink("rm /tmp/cron.d/check_ps");	// deleting cron file to
 		// prevent double call of
 		// this
 		fprintf(stderr, "found firmware upgrade, flashing now, but we will wait for another 30 seconds\n");
+		again:;
 		sleep(30);
+		in = fopen("/tmp/firmware.bin", "rb");
+		fseek(in,0,SEEK_END);
+		size_t newlen = ftell(in);
+		fclose(in);
+		if (newlen != len) {
+		    len = newlen;
+		    fprintf(stderr, "size has changed, wait 30 seconds and try again\n");
+		    goto again;
+		}
+		
 #if defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_LS5)
 		eval("write", "/tmp/firmware.bin", "rootfs");
 #elif defined(HAVE_VENTANA)
