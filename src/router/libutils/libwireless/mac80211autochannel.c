@@ -399,7 +399,7 @@ int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **chan
 	const char *country = getIsoName(nvram_default_get("ath0_regdomain", "UNITED_STATES"));
 	if (!country)
 		country = "DE";
-	wifi_channels = mac80211_get_channels(&unl, interface, country, bw, 0xff);
+	wifi_channels = mac80211_get_channels(&unl, interface, country, bw, 0xff, 1);
 	if (channels)
 		*channels = wifi_channels;
 	if (scans == 0)
@@ -497,6 +497,8 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 	}
 
 out:
+	if (wifi_channels)
+		free(wifi_channels);
 	return acs;
 }
 
