@@ -988,6 +988,9 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 				i++;
 			}
 		}
+		if (gotchannels)
+			free(chan);
+
 #else
 
 		if (!strcmp(prefix, "wl1"))
