@@ -1287,7 +1287,7 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 		}
 		if (bw == 160) {
 			if (chan->luu && !check_ranges(list, chan->freq, (int[]) { 10 - 70, 20, -20, -40, -50, -80, 0 }, 160)) {
-				chan->luu = 1;
+				chan->luu = 0;
 			}
 			if (chan->ull && !check_ranges(list, chan->freq, (int[]) { -10 - 70, -20, 20, 40, 60, 80, 0 }, 160)) {
 				chan->ull = 0;
@@ -1295,7 +1295,7 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 			if (chan->ulu && !check_ranges(list, chan->freq, (int[]) { 30 - 70, 20, 40, 60, 80, 100, 0 }, 160)) {
 				chan->ulu = 0;
 			}
-			if (chan->lul && !check_ranges(list, chan->freq, (int[]) { -30 - 70, -20, -40, -60, -80, -100, 0 }, 160)) {
+			if (chan->lul && !check_ranges(list, chan->freq, (int[]) { -30 - 70, 20, -40, -60, -80, -100, 0 }, 160)) {
 				chan->lul = 0;
 			}
 			if (chan->uul && !check_ranges(list, chan->freq, (int[]) { 50 - 70, 20, 40, 60, 80, 100, 120, 0 }, 160)) {
