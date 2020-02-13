@@ -1685,6 +1685,8 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			}
 			websWrite(wp, "//]]>\n</script></select></div>\n");
 		}
+		if (gotchannels)
+			free(chan);
 #else
 		int instance = 0;
 

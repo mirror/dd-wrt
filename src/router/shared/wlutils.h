@@ -469,7 +469,7 @@ static inline int has_vht80plus80(const char *prefix)
 
 struct unl;
 extern int mac80211_check_band(const char *interface, int checkband);
-struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband);
+struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband, int nocache);
 struct wifi_channels *mac80211_get_channels_simple(const char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband);
 #define AUTO_FORCEHT40 1
 #define AUTO_FORCEVHT80 2
