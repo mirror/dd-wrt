@@ -101,12 +101,12 @@ const char *get_channeloffset(char *prefix, int *iht, int *channeloffset)
 			*channeloffset = 6;
 		}
 		if (nvram_match(sb, "ull")) {
-			ht = "HT40+";
+			ht = "HT40-";
 			*iht = 1;
 			*channeloffset = 2;
 		}
 		if (nvram_match(sb, "luu")) {
-			ht = "HT40-";
+			ht = "HT40+";
 			*iht = -1;
 			*channeloffset = 2;
 		}
