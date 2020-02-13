@@ -1265,7 +1265,7 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 				break;
 			if (bw == 40) {
 				if (chan->luu && !isinlist(list, chan->freq, chan->freq - (distance << a), bw)) {
-					fprintf(stderr, "freq %d has no %s parent at %d, disable ht40minus / luu / ul\n", chan->freq, debugstr[a], chan->freq - (distance << a));
+					//      fprintf(stderr, "freq %d has no %s parent at %d, disable ht40minus / luu / ul\n", chan->freq, debugstr[a], chan->freq - (distance << a));
 					chan->luu = 0;
 					chan->ulu = 0;
 					chan->uul = 0;
@@ -1281,20 +1281,20 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 			}
 			/* sort out incompatible dfs property channels.settings which starts always bellow control channel */
 			if (bw == 80) {
-				if (chan->ull && !isinlist(list, chan->freq, (chan->freq + 10) - 30, 80) || !isinlist(list, chan->freq, chan->freq + 40, 80) || !isinlist(list, chan->freq, chan->freq + 20, 80)) {
-				//	fprintf(stderr, "UL: %d check %d and %d not available\n", chan->freq, (chan->freq + 10) - 30, chan->freq + 60);					
+				if (chan->ull && !isinlist(list, chan->freq, chan->freq - 20, 80) || !isinlist(list, chan->freq, chan->freq + 40, 80) || !isinlist(list, chan->freq, chan->freq + 20, 80)) {
+					//      fprintf(stderr, "UL: %d check %d and %d not available\n", chan->freq, (chan->freq + 10) - 30, chan->freq + 60);                                 
 					chan->ull = 0;
 				}
-				if (chan->luu && !isinlist(list, chan->freq, (chan->freq - 10) + 30, 80) || !isinlist(list, chan->freq, chan->freq - 40, 80) || !isinlist(list, chan->freq, chan->freq - 20, 80)) {
-				//	fprintf(stderr, "LU: %d check %d and %d not available\n", chan->freq, (chan->freq - 10) + 30, chan->freq - 60);
+				if (chan->luu && !isinlist(list, chan->freq, chan->freq + 20, 80) || !isinlist(list, chan->freq, chan->freq - 40, 80) || !isinlist(list, chan->freq, chan->freq - 20, 80)) {
+					//      fprintf(stderr, "LU: %d check %d and %d not available\n", chan->freq, (chan->freq - 10) + 30, chan->freq - 60);
 					chan->luu = 0;
-				}				
-				if (chan->ulu && !isinlist(list, chan->freq, chan->freq + 60, 80) || !isinlist(list, chan->freq, chan->freq + 20, 80) || !isinlist(list, chan->freq, chan->freq + 40, 80) ) {
-				//	fprintf(stderr, "UU: %d check %d and %d not available\n", chan->freq, (chan->freq - 10) + 30, chan->freq + 60);
+				}
+				if (chan->ulu && !isinlist(list, chan->freq, chan->freq + 60, 80) || !isinlist(list, chan->freq, chan->freq + 20, 80) || !isinlist(list, chan->freq, chan->freq + 40, 80)) {
+					//      fprintf(stderr, "UU: %d check %d and %d not available\n", chan->freq, (chan->freq - 10) + 30, chan->freq + 60);
 					chan->ulu = 0;
 				}
 				if (chan->lul && !isinlist(list, chan->freq, chan->freq - 60, 80) || !isinlist(list, chan->freq, chan->freq - 20, 80) || !isinlist(list, chan->freq, chan->freq - 40, 80)) {
-				//	fprintf(stderr, "LL: %d check %d and %d not available\n", chan->freq, (chan->freq - 10) + 30, chan->freq - 60);
+					//      fprintf(stderr, "LL: %d check %d and %d not available\n", chan->freq, (chan->freq - 10) + 30, chan->freq - 60);
 					chan->lul = 0;
 				}
 			}
@@ -1302,19 +1302,24 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 				if (chan->luu && !isinlist(list, chan->freq, (chan->freq + 10) - 70, 160)) {
 					chan->luu = 0;
 				}
-				if (chan->ulu && !isinlist(list, chan->freq, (chan->freq + 30) - 70, 160)) {
+				if (chan->ulu && !isinlist(list, chan->freq, (chan->freq + 30) - 70, 160) || !isinlist(list, chan->freq, chan->freq + 20, 160) || !isinlist(list, chan->freq, chan->freq + 40, 160)
+				    || !isinlist(list, chan->freq, chan->freq + 60, 160) || !isinlist(list, chan->freq, chan->freq + 80, 160) || !isinlist(list, chan->freq, chan->freq + 80, 160)
+				    || !isinlist(list, chan->freq, chan->freq + 100, 160)) {
 					chan->ulu = 0;
 				}
-				if (chan->uul && !isinlist(list, chan->freq, (chan->freq + 50) - 70, 160)) {
+				if (chan->uul && !isinlist(list, chan->freq, (chan->freq + 50) - 70, 160) || !isinlist(list, chan->freq, chan->freq - 20, 160) || !isinlist(list, chan->freq, chan->freq + 20, 160)
+				    || !isinlist(list, chan->freq, chan->freq + 40, 160) || !isinlist(list, chan->freq, chan->freq + 60, 160) || !isinlist(list, chan->freq, chan->freq + 80, 160)
+				    || !isinlist(list, chan->freq, chan->freq + 100, 160) || !isinlist(list, chan->freq, chan->freq + 120, 160)) {
 					chan->uul = 0;
 				}
-				if (chan->ull && !isinlist(list, chan->freq, (chan->freq - 10) - 70, 160)) {
+				if (chan->ull && !isinlist(list, chan->freq, (chan->freq - 10) - 70, 160) || !isinlist(list, chan->freq, chan->freq - 20, 160) || !isinlist(list, chan->freq, chan->freq + 20, 160)
+				    || !isinlist(list, chan->freq, chan->freq + 40, 160) || !isinlist(list, chan->freq, chan->freq + 60, 160) || !isinlist(list, chan->freq, chan->freq + 80, 160)) {
 					chan->ull = 0;
 				}
-				if (chan->lul && !isinlist(list, chan->freq, (chan->freq - 30) - 70, 160)) {
+				if (chan->lul && !isinlist(list, chan->freq, (chan->freq - 30) - 70, 160) || !isinlist(list, chan->freq, chan->freq + 20, 160) || !isinlist(list, chan->freq, chan->freq + 40, 160)) {
 					chan->lul = 0;
 				}
-				if (chan->llu && !isinlist(list, chan->freq, (chan->freq - 50) - 70, 160)) {
+				if (chan->llu && !isinlist(list, chan->freq, (chan->freq - 50) - 70, 160) || !isinlist(list, chan->freq, chan->freq + 20, 160) || !isinlist(list, chan->freq, chan->freq - 40, 160)) {
 					chan->llu = 0;
 				}
 			}
