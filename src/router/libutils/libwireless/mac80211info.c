@@ -1247,6 +1247,7 @@ static int check_ranges(struct wifi_channels *list, int freq, int *ranges, int m
 	return 1;
 }
 
+/* check all channel combinations and sort out incompatible configurations */
 static void check_validchannels(struct wifi_channels *list, int bw)
 {
 	int i = 0;
@@ -1269,7 +1270,7 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 				chan->lll = 0;
 			}
 		}
-		/* sort out incompatible dfs property channels.settings which starts always bellow control channel */
+		/* first entry in range is the dfs channel which must be considered to ensure its a valid channel */
 		if (bw == 80) {
 			if (chan->ull && !check_ranges(list, chan->freq, (int[]) { 10 - 30, 20, 40, 0 }, 80)) {
 				chan->ull = 0;
