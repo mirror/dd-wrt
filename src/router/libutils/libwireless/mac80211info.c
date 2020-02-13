@@ -1263,33 +1263,48 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 			struct wifi_channels *chan = &list[i++];
 			if (chan->freq == -1)
 				break;
-			if (chan->luu && !isinlist(list, chan->freq, chan->freq - (distance << a), bw)) {
-				//      fprintf(stderr, "freq %d has no %s parent at %d, disable ht40minus / luu / ul\n", chan->freq, debugstr[a], chan->freq - (distance << a));
-				chan->luu = 0;
-				chan->lul = 0;
-				chan->llu = 0;
-				chan->lll = 0;
-			}
-			if (chan->ull && !isinlist(list, chan->freq, chan->freq + (distance << a), bw)) {
-				//      fprintf(stderr, "freq %d has no %s parent at %d, disable ht40plus / ull /lu\n", chan->freq, debugstr[a], chan->freq + (distance << a));
-				chan->ull = 0;
-				chan->ulu = 0;
-				chan->uul = 0;
-				chan->uuu = 0;
+			if (bw > 40) {
+				if (chan->ull && !isinlist(list, chan->freq, chan->freq - (distance << a), bw)) {
+					//      fprintf(stderr, "freq %d has no %s parent at %d, disable ht40minus / luu / ul\n", chan->freq, debugstr[a], chan->freq - (distance << a));
+					chan->ull = 0;
+					chan->lul = 0;
+					chan->llu = 0;
+					chan->lll = 0;
+				}
+				if (chan->luu && !isinlist(list, chan->freq, chan->freq + (distance << a), bw)) {
+					//      fprintf(stderr, "freq %d has no %s parent at %d, disable ht40plus / ull /lu\n", chan->freq, debugstr[a], chan->freq + (distance << a));
+					chan->luu = 0;
+					chan->ulu = 0;
+					chan->uul = 0;
+					chan->uuu = 0;
+				}
+			} else {
+				if (chan->luu && !isinlist(list, chan->freq, chan->freq - (distance << a), bw)) {
+					//      fprintf(stderr, "freq %d has no %s parent at %d, disable ht40minus / luu / ul\n", chan->freq, debugstr[a], chan->freq - (distance << a));
+					chan->luu = 0;
+					chan->lul = 0;
+					chan->llu = 0;
+					chan->lll = 0;
+				}
+				if (chan->ull && !isinlist(list, chan->freq, chan->freq + (distance << a), bw)) {
+					//      fprintf(stderr, "freq %d has no %s parent at %d, disable ht40plus / ull /lu\n", chan->freq, debugstr[a], chan->freq + (distance << a));
+					chan->ull = 0;
+					chan->ulu = 0;
+					chan->uul = 0;
+					chan->uuu = 0;
+				}
 			}
 			/* sort out incompatible dfs property channels.settings which starts always bellow control channel */
 			if (bw == 80) {
-
 				if (chan->ull && !isinlist(list, chan->freq, (chan->freq + 10) - 30, 80)) {
-					chan->luu = 0;
-				}
-				if (chan->luu && !isinlist(list, chan->freq, (chan->freq - 10) - 30, 80)) {
 					chan->ull = 0;
 				}
-
+				if (chan->luu && !isinlist(list, chan->freq, (chan->freq - 10) - 30, 80)) {
+					chan->luu = 0;
+				}
 			}
 			if (bw == 160) {
-				if (chan->ull && !isinlist(list, chan->freq, (chan->freq + 10) - 70, 160)) {
+				if (chan->luu && !isinlist(list, chan->freq, (chan->freq + 10) - 70, 160)) {
 					chan->luu = 0;
 				}
 				if (chan->ulu && !isinlist(list, chan->freq, (chan->freq + 30) - 70, 160)) {
@@ -1298,7 +1313,7 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 				if (chan->uul && !isinlist(list, chan->freq, (chan->freq + 50) - 70, 160)) {
 					chan->uul = 0;
 				}
-				if (chan->luu && !isinlist(list, chan->freq, (chan->freq - 10) - 70, 160)) {
+				if (chan->ull && !isinlist(list, chan->freq, (chan->freq - 10) - 70, 160)) {
 					chan->ull = 0;
 				}
 				if (chan->lul && !isinlist(list, chan->freq, (chan->freq - 30) - 70, 160)) {
@@ -1312,25 +1327,21 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 				if (chan->lul && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 1))), bw)) {
 					//      fprintf(stderr, "freq %d has no %s parent at %d, disable lul / ll\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1))));
 					chan->lul = 0;
-					chan->llu = 0;
-					chan->lll = 0;
 				}
 				if (chan->ulu && !isinlist(list, chan->freq, chan->freq + ((distance << a) + (distance << (a - 1))), bw)) {
 					//      fprintf(stderr, "freq %d has no %s parent at %d, disable ulu / uu\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1))));
 					chan->ulu = 0;
-					chan->uul = 0;
-					chan->uuu = 0;
 				}
 			}
 			if (a == 3) {
-				if (chan->llu && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 2))), 160)) {
+				if (chan->ull && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 2))), 160)) {
 					//      fprintf(stderr, "freq %d has no %s parent at %d, disable llu\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
-					chan->llu = 0;
+					chan->ull = 0;
 					chan->lll = 0;
 				}
-				if (chan->uul && !isinlist(list, chan->freq, chan->freq + ((distance << a) + (distance << (a - 2))), 160)) {
+				if (chan->luu && !isinlist(list, chan->freq, chan->freq + ((distance << a) + (distance << (a - 2))), 160)) {
 					//      fprintf(stderr, "freq %d has no %s parent at %d, disable uul\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
-					chan->uul = 0;
+					chan->luu = 0;
 					chan->uuu = 0;
 				}
 				if (chan->lll && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))), 160)) {
@@ -1355,7 +1366,7 @@ static struct wifi_channels ghz60channels[] = {
 	{.channel = -1,.freq = -1,.max_eirp = -1,.hw_eirp = -1 },
 };
 
-struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband)
+struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband, int nocache)
 {
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct nlattr *tb_band[NL80211_BAND_ATTR_MAX + 1];
@@ -1380,9 +1391,11 @@ struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interfa
 	if (has_ad(interface)) {
 		return ghz60channels;
 	}
-	list = getcache(interface, country);
-	if (list) {
-		return list;
+	if (!nocache) {
+		list = getcache(interface, country);
+		if (list) {
+			return list;
+		}
 	}
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1) {
@@ -1638,7 +1651,8 @@ struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interfa
 		free(rd);
 	nlmsg_free(msg);
 	check_validchannels(list, max_bandwidth_khz);
-	addcache(interface, country, list);
+	if (!nocache)
+		addcache(interface, country, list);
 	return list;
 out:
 nla_put_failure:
@@ -1650,7 +1664,7 @@ struct wifi_channels *mac80211_get_channels_simple(const char *interface, const 
 {
 	struct unl unl;
 	unl_genl_init(&unl, "nl80211");
-	struct wifi_channels *chan = mac80211_get_channels(&unl, interface, country, max_bandwidth_khz, checkband);
+	struct wifi_channels *chan = mac80211_get_channels(&unl, interface, country, max_bandwidth_khz, checkband, 1);
 	unl_free(&unl);
 	return chan;
 }
@@ -1667,7 +1681,7 @@ int has_ht40(const char *interface)
 	sprintf(regdomain, "%s_regdomain", interface);
 	country = nvram_default_get(regdomain, "UNITED_STATES");
 	lock();
-	chan = mac80211_get_channels(&unl, interface, getIsoName(country), 40, 0xff);
+	chan = mac80211_get_channels(&unl, interface, getIsoName(country), 40, 0xff, 0);
 	unlock();
 	if (chan) {
 		while (chan[i].freq != -1) {
@@ -1686,7 +1700,7 @@ int mac80211_check_valid_frequency(const char *interface, char *country, int fre
 	int found = 0;
 	int i = 0;
 	lock();
-	chan = mac80211_get_channels(&unl, interface, country, 40, 0xff);
+	chan = mac80211_get_channels(&unl, interface, country, 40, 0xff, 0);
 	unlock();
 	if (chan) {
 		while (chan[i].freq != -1) {
