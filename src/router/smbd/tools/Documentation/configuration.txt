@@ -91,6 +91,14 @@ Define ksmbd configuration parameters list.
 	- cache trans buffers (default: yes)
 		This parameter allows ksmbd use buffer cache(pool) to avoid huge
 		alloc/dealloc pressure from read and trans response buffer.
+	- share:fake_fscaps (default: 64)
+		This is needed to support some special application that makes
+		QFSINFO calls to check whether we set
+		the SPARSE_FILES bit (0x40). If this bit is not set that
+		particular application refuses to work against Samba.
+		With share:fake_fscaps = 64 the SPARSE_FILES file system
+		capability flag is set. Use other decimal values to specify
+		the bitmask you need to fake.
 
 * Supported [share] level parameters list:
 	- comment (default: none)

@@ -50,6 +50,7 @@ struct usmbd_startup_request {
 	__u32	smb2_max_write;
 	__u32	smb2_max_read;
 	__u32	smb2_max_trans;
+	__u32	share_fake_fscaps;
 	__u32	ifc_list_sz;
 	__s8	____payload[0];
 } ____usmbd_align;
