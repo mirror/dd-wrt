@@ -369,7 +369,8 @@ void fatal_signal(int sig)
 	/* 
 	 * Halt on SIGUSR1 
 	 */
-	reboot(sig == SIGUSR1 ? RB_HALT_SYSTEM : RB_AUTOBOOT);
+	reboot(RB_AUTOBOOT);
+	writeproc("/proc/sysrq-trigger", "b");
 	loop_forever();
 }
 
@@ -479,6 +480,7 @@ int main(int argc, char **argv)
 	/* 
 	 * Setup signal handlers 
 	 */
+	writeproc("/proc/sys/kernel/sysrq", "1");
 	signal_init();
 	signal(SIGHUP, rc_signal);
 	signal(SIGUSR1, rc_signal);	// Start single service from WEB, by
