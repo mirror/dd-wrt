@@ -1565,6 +1565,7 @@ struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interfa
 							list[count].ht40 = true;
 							list[count].vht80 = true;
 							list[count].vht160 = true;
+//                                                      fprintf(stderr, "%d %d %d %d\n", width_40, width_80, width_160, max_bandwidth_khz);
 							if (!width_40 && max_bandwidth_khz == 40) {
 								list[count].luu = 0;
 								list[count].ull = 0;
@@ -1625,7 +1626,7 @@ struct wifi_channels *mac80211_get_channels_simple(const char *interface, const 
 	return chan;
 }
 
-int has_ht40(const char *interface)
+int can_ht40(const char *interface)
 {
 	struct wifi_channels *chan;
 	int found = 0;
@@ -1637,16 +1638,72 @@ int has_ht40(const char *interface)
 	sprintf(regdomain, "%s_regdomain", interface);
 	country = nvram_default_get(regdomain, "UNITED_STATES");
 	lock();
-	chan = mac80211_get_channels(&unl, interface, getIsoName(country), 40, 0xff, 0);
+	chan = mac80211_get_channels(&unl, interface, getIsoName(country), 40, 0xff, 1);
 	unlock();
 	if (chan) {
 		while (chan[i].freq != -1) {
 			if (chan[i].luu || chan[i].ull) {
+				free(chan);
 				return 1;
 			}
 			i++;
 		}
 	}
+	free(chan);
+	return 0;
+}
+
+int can_vht80(const char *interface)
+{
+	struct wifi_channels *chan;
+	int found = 0;
+	int i = 0;
+	char regdomain[32];
+	char *country;
+	if (is_ath5k(interface))
+		return (0);
+	sprintf(regdomain, "%s_regdomain", interface);
+	country = nvram_default_get(regdomain, "UNITED_STATES");
+	lock();
+	chan = mac80211_get_channels(&unl, interface, getIsoName(country), 80, 0xff, 1);
+	unlock();
+	if (chan) {
+		while (chan[i].freq != -1) {
+			if (chan[i].lul || chan[i].ulu) {
+				free(chan);
+				return 1;
+			}
+			i++;
+		}
+	}
+	free(chan);
+	return 0;
+}
+
+int can_vht160(const char *interface)
+{
+	struct wifi_channels *chan;
+	int found = 0;
+	int i = 0;
+	char regdomain[32];
+	char *country;
+	if (is_ath5k(interface))
+		return (0);
+	sprintf(regdomain, "%s_regdomain", interface);
+	country = nvram_default_get(regdomain, "UNITED_STATES");
+	lock();
+	chan = mac80211_get_channels(&unl, interface, getIsoName(country), 160, 0xff, 1);
+	unlock();
+	if (chan) {
+		while (chan[i].freq != -1) {
+			if (chan[i].uuu || chan[i].lll) {
+				free(chan);
+				return 1;
+			}
+			i++;
+		}
+	}
+	free(chan);
 	return 0;
 }
 
