@@ -1278,10 +1278,10 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 			if (chan->luu && !check_ranges(list, chan->freq, (int[]) { -10 + 30, -40, -20, 0 }, 80)) {
 				chan->luu = 0;
 			}
-			if (chan->ulu && !check_ranges(list, chan->freq, (int[]) { /*30 - 30, */ 20, 40, 0 }, 80)) {
+			if (chan->ulu && !check_ranges(list, chan->freq, (int[]) { /*30 - 30, */ 20, 40, 60, 0 }, 80)) {
 				chan->ulu = 0;
 			}
-			if (chan->lul && !check_ranges(list, chan->freq, (int[]) { -30 - 30, -20, -40, 0 }, 80)) {
+			if (chan->lul && !check_ranges(list, chan->freq, (int[]) { -30 - 30, -20, -40, -60, 0 }, 80)) {
 				chan->lul = 0;
 			}
 		}
