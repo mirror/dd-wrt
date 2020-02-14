@@ -1548,7 +1548,11 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			char regdomain[16];
 			char *country;
 			int checkband = 255;
+#ifdef HAVE_ATH9K
+			sprintf(regdomain, "%s_regdomain", "ath0");
+#else
 			sprintf(regdomain, "%s_regdomain", prefix);
+#endif
 			country = nvram_default_get(regdomain, "UNITED_STATES");
 			// temp end
 
@@ -2943,7 +2947,11 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #ifndef HAVE_NOCOUNTRYSEL
 	if (!nvram_matchi("nocountrysel", 1)) {
 		char wl_regdomain[16];
+#ifdef HAVE_ATH9K
+		sprintf(wl_regdomain, "%s_regdomain", "ath0");
+#else
 		sprintf(wl_regdomain, "%s_regdomain", prefix);
+#endif
 		if (is_mac80211(prefix) || nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
 			char *list = getCountryList(COUNTRYLIST);
 			showOptionsLabel(wp, "wl_basic.regdom", wl_regdomain, list, nvram_safe_get(wl_regdomain));
@@ -3192,8 +3200,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #endif
 	websWrite(wp,
-		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" onchange=\"to_submit(this.form);\">\n",
-		  wl_width, prefix);
+		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" onchange=\"to_submit(this.form);\">\n", wl_width, prefix);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
 
@@ -3225,7 +3232,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		if ((is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && has_5ghz(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)) {
 			if (can_vht80(prefix))
-			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
 			if (has_vht160(prefix) && can_vht160(prefix))
 				websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n", nvram_matchi(wl_width, 160) ? "selected=\\\"selected\\\"" : "");
 			if (has_vht80plus80(prefix) && can_vht80(prefix))
@@ -3820,8 +3827,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 	// showOption (wp, "wl_basic.extchannel", wl_xchanmode);
 	websWrite(wp,
-		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" onchange=\"to_submit(this.form);\">\n",
-		  wl_width, prefix);
+		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" onchange=\"to_submit(this.form);\">\n", wl_width, prefix);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
 /* limit channel options by mode */
@@ -3854,7 +3860,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		if ((is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && has_5ghz(prefix)
 		    && (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))) {
 			if (can_vht80(prefix))
-			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
 			if (has_vht160(prefix) && can_vht160(prefix))
 				websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n", nvram_matchi(wl_width, 160) ? "selected=\\\"selected\\\"" : "");
 			if (has_vht80plus80(prefix) && can_vht80(prefix))
@@ -4118,7 +4124,11 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #ifndef HAVE_NOCOUNTRYSEL
 	if (!nvram_matchi("nocountrysel", 1)) {
 		char wl_regdomain[16];
+#ifdef HAVE_ATH9K
+		sprintf(wl_regdomain, "%s_regdomain", "ath0");
+#else
 		sprintf(wl_regdomain, "%s_regdomain", prefix);
+#endif
 		if (1 || nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
 			char *list = getCountryList(COUNTRYLIST);
 			showOptionsLabel(wp, "wl_basic.regdom", wl_regdomain, list, nvram_safe_get(wl_regdomain));
