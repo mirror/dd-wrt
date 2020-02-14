@@ -557,7 +557,7 @@ static void init_share_from_group(struct usmbd_share *share,
 	set_share_flag(share, USMBD_SHARE_FLAG_BROWSEABLE);
 	set_share_flag(share, USMBD_SHARE_FLAG_READONLY);
 	set_share_flag(share, USMBD_SHARE_FLAG_HIDE_DOT_FILES);
-	set_share_flag(share, KSMBD_SHARE_FLAG_OPLOCKS);
+	set_share_flag(share, USMBD_SHARE_FLAG_OPLOCKS);
 
 	if (!cp_key_cmp(share->name, "IPC$"))
 		set_share_flag(share, USMBD_SHARE_FLAG_PIPE);
