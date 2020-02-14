@@ -255,6 +255,8 @@ static void softcontrol_wlan_led(void)	// done in watchdog.c for non-micro build
  */
 static void checkupgrade(void)
 {
+if (nvram_matchi("flash_active","1"))
+    return;	
 #if (!defined(HAVE_X86) && !defined(HAVE_RB600))  || defined(HAVE_WDR4900)
 	if (nvram_matchi("flash_active", 1))
 		return;
@@ -262,6 +264,7 @@ static void checkupgrade(void)
 	FILE *in = fopen("/tmp/firmware.bin", "rb");
 
 	if (in != NULL) {
+		nvram_set("flash_active","1");
 		fseek(in, 0, SEEK_END);
 		size_t len = ftell(in);
 		fclose(in);
@@ -289,6 +292,7 @@ static void checkupgrade(void)
 		eval("write", "/tmp/firmware.bin", "linux");
 #endif
 		dd_loginfo("upgrade", "done. rebooting now\n");
+		sleep(5);
 		killall("init", SIGQUIT);
 	}
 #endif

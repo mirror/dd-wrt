@@ -119,7 +119,10 @@ struct wifi_channels {
 	int noise;
 	int max_eirp;
 	int hw_eirp;
-	unsigned int no_outdoor:1, no_indoor:1, no_ofdm:1, no_cck:1, ptp_only:1, ptmp_only:1, passive_scan:1, no_ibss:1, lll:1, llu:1, lul:1, luu:1, ull:1, ulu:1, uul:1, uuu:1, ht40:1, vht80:1, vht160:1, dfs:1;
+	unsigned int no_outdoor:1, no_indoor:1, no_ofdm:1, no_cck:1, ptp_only:1, ptmp_only:1, passive_scan:1, no_ibss:1, //
+		lll:1, llu:1, lul:1, luu:1, ull:1, ulu:1, uul:1, uuu:1, //
+		ht40:1, vht80:1, vht160:1, //
+		dfs:1;
 };
 
 struct wifi_client_info {
@@ -297,9 +300,13 @@ extern int has_2ghz(const char *prefix);
 extern int is_wrt3200(void);
 extern int has_5ghz(const char *prefix);
 #ifdef HAVE_ATH9K
-extern int has_ht40(const char *prefix);
+extern int can_ht40(const char *prefix);
+extern int can_vht80(const char *prefix);
+extern int can_vht160(const char *prefix);
 #else
-#define has_ht40(prefix) 0
+#define can_ht40(prefix) 0
+#define can_vht80(prefix) 0
+#define can_vht160(prefix) 0
 #endif
 #ifdef HAVE_80211AC
 extern int has_beamforming(const char *prefix);
