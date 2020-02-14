@@ -120,6 +120,7 @@ static int register_wm_size_class(size_t sz)
 	nl->sz = sz;
 	spin_lock_init(&nl->wm_lock);
 	INIT_LIST_HEAD(&nl->idle_wm);
+	INIT_LIST_HEAD(&nl->list);
 	init_waitqueue_head(&nl->wm_wait);
 	nl->avail_wm = 0;
 

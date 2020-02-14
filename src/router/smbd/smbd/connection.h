@@ -47,9 +47,7 @@ struct ksmbd_conn {
 	struct smb_version_ops		*ops;
 	struct smb_version_cmds		*cmds;
 	unsigned int			max_cmds;
-	struct mutex			sock_mutex;
-	struct rw_semaphore		srv_rwsem;
-	bool				srv_wlocked;
+	struct mutex			srv_mutex;
 	int				status;
 	unsigned int			cli_cap;
 	char				*request_buf;

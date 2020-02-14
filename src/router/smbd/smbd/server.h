@@ -28,6 +28,7 @@ struct ksmbd_server_config {
 	unsigned short		ipc_timeout;
 	unsigned long		ipc_last_active;
 	unsigned long		deadtime;
+	unsigned int		share_fake_fscaps;
 
 	char			*conf[SERVER_CONF_WORK_GROUP + 1];
 };
