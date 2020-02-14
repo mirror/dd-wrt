@@ -116,6 +116,7 @@ struct smbconf_global {
 	unsigned int smb2_max_read;
 	unsigned int smb2_max_write;
 	unsigned int smb2_max_trans;
+	unsigned int share_fake_fscaps;
 };
 
 #define USMBD_LOCK_FILE		"/tmp/usmbd.lock"
