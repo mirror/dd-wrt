@@ -599,7 +599,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 		     || nvram_selnmatch(wp, "n5-only", "%s_net_mode", prefix)
 		     || nvram_selnmatch(wp, "na-only", "%s_net_mode", prefix))) {
 #if defined(HAVE_ATH9K)
-			if (!is_mac80211(prefix) || has_ht40(prefix))
+			if (!is_mac80211(prefix) || can_ht40(prefix))
 #endif
 				websWrite(wp, "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n", nvram_selmatch(wp, wl_width, "2040") ? "selected=\\\"selected\\\"" : "");
 		}
@@ -615,7 +615,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 #endif
 	{
 #if defined(HAVE_ATH9K)
-		if (!is_mac80211(prefix) || has_ht40(prefix))
+		if (!is_mac80211(prefix) || can_ht40(prefix))
 #endif
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_selmatch(wp, wl_width, "40") ? "selected=\\\"selected\\\"" : "");
 	}
