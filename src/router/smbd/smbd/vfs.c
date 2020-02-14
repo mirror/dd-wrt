@@ -1487,6 +1487,9 @@ int ksmbd_vfs_zero_data(struct ksmbd_work *work,
 			 loff_t len)
 {
 	smb_break_all_levII_oplock(work, fp, 1);
+	if (fp->f_ci->m_fattr & ATTR_SPARSE_FILE_LE)
+		return vfs_fallocate(fp->filp,
+			FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE, off, len);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
 	return vfs_fallocate(fp->filp, 0, off, len);
 #else

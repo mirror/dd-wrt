@@ -724,6 +724,9 @@ static int smb2_get_dos_mode(struct kstat *stat, int attribute)
 
 	attr = (attribute & 0x00005137) | ATTR_ARCHIVE;
 
+	if (server_conf.share_fake_fscaps & FILE_SUPPORTS_SPARSE_FILES)
+		attr |= ATTR_SPARSE;
+
 	if (S_ISDIR(stat->mode))
 		attr = ATTR_DIRECTORY;
 	else
@@ -4522,7 +4525,14 @@ static int smb2_get_info_filesystem(struct ksmbd_work *work,
 		size_t sz;
 
 		info = (struct filesystem_attribute_info *)rsp->Buffer;
-		info->Attributes = cpu_to_le32(0x0001006f);
+		info->Attributes = cpu_to_le32(FILE_SUPPORTS_OBJECT_IDS |
+					       FILE_PERSISTENT_ACLS |
+					       FILE_UNICODE_ON_DISK |
+					       FILE_CASE_PRESERVED_NAMES |
+					       FILE_CASE_SENSITIVE_SEARCH);
+
+		info->Attributes |= cpu_to_le32(server_conf.share_fake_fscaps);
+
 		info->MaxPathNameComponentLength = cpu_to_le32(stfs.f_namelen);
 		len = smbConvertToUTF16((__le16 *)info->FileSystemName,
 					"NTFS", PATH_MAX, conn->local_nls, 0);

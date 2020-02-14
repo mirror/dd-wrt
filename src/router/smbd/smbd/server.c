@@ -167,47 +167,6 @@ andx_again:
 	return TCP_HANDLER_CONTINUE;
 }
 
-static void ksmbd_conn_lock(struct ksmbd_work *work)
-{
-	struct smb2_hdr *hdr = REQUEST_BUF(work);
-	struct ksmbd_conn *conn = work->conn;
-
-	if (hdr->ProtocolId != SMB2_PROTO_NUMBER) {
-		down_write(&conn->srv_rwsem);
-		conn->srv_wlocked = true;
-		return;
-	}
-
-	if (!hdr->NextCommand &&
-	    (hdr->Command == SMB2_READ_HE ||
-	     hdr->Command == SMB2_QUERY_DIRECTORY_HE ||
-	     hdr->Command == SMB2_QUERY_INFO_HE ||
-	     hdr->Command == SMB2_ECHO_HE))
-		down_read(&conn->srv_rwsem);
-	else {
-		down_write(&conn->srv_rwsem);
-		conn->srv_wlocked = true;
-	}
-}
-
-static void ksmbd_conn_unlock(struct ksmbd_work *work)
-{
-	struct smb2_hdr *hdr = REQUEST_BUF(work);
-	struct ksmbd_conn *conn = work->conn;
-
-	if (hdr->ProtocolId != SMB2_PROTO_NUMBER) {
-		up_write(&conn->srv_rwsem);
-		conn->srv_wlocked = true;
-		return;
-	}
-
-	if (conn->srv_wlocked) {
-		conn->srv_wlocked = false;
-		up_write(&conn->srv_rwsem);
-	} else
-		up_read(&conn->srv_rwsem);
-}
-
 static void __handle_ksmbd_work(struct ksmbd_work *work,
 				struct ksmbd_conn *conn)
 {
@@ -252,13 +211,11 @@ static void __handle_ksmbd_work(struct ksmbd_work *work,
 		}
 	}
 
-	ksmbd_conn_lock(work);
 	do {
 		rc = __process_request(work, conn, &command);
 		if (rc == TCP_HANDLER_ABORT)
 			break;
 	} while (is_chained_smb2_message(work));
-	ksmbd_conn_unlock(work);
 
 send:
 	smb3_preauth_hash_rsp(work);
