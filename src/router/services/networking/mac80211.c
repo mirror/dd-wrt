@@ -761,64 +761,75 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					}
 					switch (usebw) {
 					case 40:
-						if (chan[i].luu) {
+						if (chan[i].luu && acs->luu) {
 							ht = "HT40-";
 							iht = -1;
-						} else if (chan[i].ull) {
+						}
+						if (chan[i].ull && acs->ull) {
 							ht = "HT40+";
 							iht = 1;
 						}
 						break;
 					case 80:
 					case 8080:
-						if (chan[i].luu) {
+						if (chan[i].luu && acs->luu) {
 							ht = "HT40+";
 							channeloffset = 2;
 							iht = -1;
-						} else if (chan[i].ulu) {
+						}
+						if (chan[i].ulu && acs->ulu) {
 							ht = "HT40+";
 							iht = 1;
 							channeloffset = 6;
-						} else if (chan[i].lul) {
+						}
+						if (chan[i].lul && acs->lul) {
 							ht = "HT40-";
 							channeloffset = 6;
 							iht = -1;
-						} else if (chan[i].ull) {
+						}
+						if (chan[i].ull && acs->ull) {
 							ht = "HT40-";
 							iht = 1;
 							channeloffset = 2;
 						}
 						break;
 					case 160:
-						if (chan[i].uuu) {
+						if (chan[i].uuu && acs->uuu) {
 							ht = "HT40+";
 							iht = 1;
 							channeloffset = 14;
-						} else if (chan[i].uul) {
+						}
+						if (chan[i].uul && acs->uul) {
 							ht = "HT40+";
 							iht = 1;
 							channeloffset = 10;
-						} else if (chan[i].ulu) {
+						}
+						if (chan[i].ulu && acs->ulu) {
 							ht = "HT40+";
 							iht = 1;
 							channeloffset = 6;
-						} else if (chan[i].ull) {
+						}
+						if (chan[i].ull && acs->ull) {
 							ht = "HT40-";
 							iht = 1;
 							channeloffset = 2;
-						} else if (chan[i].luu) {
+						}
+						if (chan[i].luu && acs->luu) {
 							ht = "HT40+";
 							iht = -1;
 							channeloffset = 2;
-						} else if (chan[i].lul) {
+						}
+						if (chan[i].lul && acs->lul) {
 							ht = "HT40-";
 							iht = -1;
 							channeloffset = 6;
-						} else if (chan[i].llu) {
+						}
+						if (chan[i].llu && acs->llu) {
 							ht = "HT40-";
 							iht = -1;
 							channeloffset = 10;
-						} else if (chan[i].lll) {
+						}
+						if (chan[i].lll && acs->lll) {
 							ht = "HT40-";
 							iht = -1;
 							channeloffset = 14;
