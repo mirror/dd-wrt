@@ -483,7 +483,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 	dd_list_sort(&sdata, &frequencies, sort_cmp);
 
 	dd_list_for_each_entry(f, &frequencies, list) {
-		fprintf(stderr, "%s: freq:%d qual:%d noise:%d eirp: %d\n", interface, f->freq, f->quality, f->noise, f->eirp);
+		dd_loginfo("autochannel", "%s: freq:%d qual:%d noise:%d eirp: %d\n", interface, f->freq, f->quality, f->noise, f->eirp);
 	}
 
 	dd_list_for_each_entry(f, &frequencies, list) {
@@ -506,6 +506,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 20, &frequencies), &sdata)) / 2;
 				acs->noise = f->noise;
 				acs->luu = 1;
+				dd_loginfo("autochannel","%s: freq: %d HT40 [lower] quality %d\n", interface, f->freq, f->quality);
 			}
 			if (chan->ull) {
 				acs = add_to_mac80211_ac(acs);
@@ -514,6 +515,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 20, &frequencies), &sdata)) / 2;
 				acs->noise = f->noise;
 				acs->ull = 1;
+				dd_loginfo("autochannel","%s: freq: %d HT40 [upper] quality %d\n", interface, f->freq, f->quality);
 			}
 			break;
 		case 80:
@@ -526,6 +528,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 40, &frequencies), &sdata)) / 2;
 				acs->noise = f->noise;
 				acs->ull = 1;
+				dd_loginfo("autochannel","%s: freq: %d VHT80 [UL] quality %d\n", interface, f->freq, f->quality);
 			}
 			if (chan->luu) {
 				acs = add_to_mac80211_ac(acs);
@@ -536,6 +539,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 40, &frequencies), &sdata)) / 2;
 				acs->noise = f->noise;
 				acs->luu = 1;
+				dd_loginfo("autochannel","%s: freq: %d VHT80 [LU] quality %d\n", interface, f->freq, f->quality);
 			}
 			if (chan->ulu) {
 				acs = add_to_mac80211_ac(acs);
@@ -546,6 +550,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 60, &frequencies), &sdata)) / 2;
 				acs->noise = f->noise;
 				acs->ulu = 1;
+				dd_loginfo("autochannel","%s: freq: %d VHT80 [UU] quality %d\n", interface, f->freq, f->quality);
 			}
 			if (chan->lul) {
 				acs = add_to_mac80211_ac(acs);
@@ -556,6 +561,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 60, &frequencies), &sdata)) / 2;
 				acs->noise = f->noise;
 				acs->lul = 1;
+				dd_loginfo("autochannel","%s: freq: %d VHT80 [LL] quality %d\n", interface, f->freq, f->quality);
 			}
 			break;
 		case 160:
@@ -570,6 +576,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 80, &frequencies), &sdata)) / 2;
 				acs->noise = f->noise;
 				acs->luu = 1;
+				dd_loginfo("autochannel","%s: freq: %d VHT160 [LUU] quality %d\n", interface, f->freq, f->quality);
 			}
 			if (chan->ull) {
 				acs = add_to_mac80211_ac(acs);
@@ -583,6 +590,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 80, &frequencies), &sdata)) / 2;
 				acs->noise = f->noise;
 				acs->ull = 1;
+				dd_loginfo("autochannel","%s: freq: %d VHT160 [ULL] quality %d\n", interface, f->freq, f->quality);
 			}
 			if (chan->lll) {
 				acs = add_to_mac80211_ac(acs);
@@ -596,6 +604,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 120, &frequencies), &sdata)) / 2;
 				acs->noise = f->noise;
 				acs->lll = 1;
+				dd_loginfo("autochannel","%s: freq: %d VHT160 [LLL] quality %d\n", interface, f->freq, f->quality);
 			}
 			if (chan->uuu) {
 				acs = add_to_mac80211_ac(acs);
@@ -610,6 +619,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 140, &frequencies), &sdata)) / 2;
 				acs->noise = f->noise;
 				acs->uuu = 1;
+				dd_loginfo("autochannel","%s: freq: %d VHT160 [UUU] quality %d\n", interface, f->freq, f->quality);
 			}
 			if (chan->llu) {
 				acs = add_to_mac80211_ac(acs);
@@ -623,6 +633,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 100, &frequencies), &sdata)) / 2;
 				acs->noise = f->noise;
 				acs->llu = 1;
+				dd_loginfo("autochannel","%s: freq: %d VHT160 [LLU] quality %d\n", interface, f->freq, f->quality);
 			}
 			if (chan->uul) {
 				acs = add_to_mac80211_ac(acs);
@@ -637,6 +648,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 120, &frequencies), &sdata)) / 2;
 				acs->noise = f->noise;
 				acs->uul = 1;
+				dd_loginfo("autochannel","%s: freq: %d VHT160 [UUL] quality %d\n", interface, f->freq, f->quality);
 			}
 			if (chan->lul) {
 				acs = add_to_mac80211_ac(acs);
@@ -650,6 +662,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 100, &frequencies), &sdata)) / 2;
 				acs->noise = f->noise;
 				acs->lul = 1;
+				dd_loginfo("autochannel","%s: freq: %d VHT160 [LUL] quality %d\n", interface, f->freq, f->quality);
 			}
 			if (chan->ulu) {
 				acs = add_to_mac80211_ac(acs);
@@ -663,6 +676,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 100, &frequencies), &sdata)) / 2;
 				acs->noise = f->noise;
 				acs->ulu = 1;
+				dd_loginfo("autochannel","%s: freq: %d VHT160 [ULU] quality %d\n", interface, f->freq, f->quality);
 			}
 
 			break;
