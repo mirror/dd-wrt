@@ -654,25 +654,31 @@ function show_airtime_policy(F, prefix, idname, vifs) {
 	if (elem.value == 0) {
 		show_layer_ext(F, idname + "_idairtimelimit", false);
 		show_layer_ext(F, idname + "_idairtimeweight", false);
-		for (i = 0;i < ifs.length;i++) {
-			show_layer_ext(F, ifs[i] + "_idairtimelimit", false);
-			show_layer_ext(F, ifs[i] + "_idairtimeweight", false);
+		if (vifs != '') {
+			for (i = 0;i < ifs.length;i++) {
+				show_layer_ext(F, ifs[i] + "_idairtimelimit", false);
+				show_layer_ext(F, ifs[i] + "_idairtimeweight", false);
+			}
 		}
 	}
 	if (elem.value == 1) {
 		show_layer_ext(F, idname + "_idairtimelimit", false);
 		show_layer_ext(F, idname + "_idairtimeweight", true);
-		for (i = 0;i < ifs.length;i++) {
-			show_layer_ext(F, ifs[i] + "_idairtimelimit", false);
-			show_layer_ext(F, ifs[i] + "_idairtimeweight", true);
+		if (vifs != '') {
+			for (i = 0;i < ifs.length;i++) {
+				show_layer_ext(F, ifs[i] + "_idairtimelimit", false);
+				show_layer_ext(F, ifs[i] + "_idairtimeweight", true);
+			}
 		}
 	}
 	if (elem.value == 2) {
 		show_layer_ext(F, idname + "_idairtimelimit", true);
 		show_layer_ext(F, idname + "_idairtimeweight", true);
-		for (i = 0;i < ifs.length;i++) {
-			show_layer_ext(F, ifs[i] + "_idairtimelimit", true);
-			show_layer_ext(F, ifs[i] + "_idairtimeweight", true);
+		if (vifs != '') {
+			for (i = 0;i < ifs.length;i++) {
+				show_layer_ext(F, ifs[i] + "_idairtimelimit", true);
+				show_layer_ext(F, ifs[i] + "_idairtimeweight", true);
+			}
 		}
 	}
 }
