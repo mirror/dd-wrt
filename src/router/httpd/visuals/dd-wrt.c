@@ -2948,10 +2948,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	if (!nvram_matchi("nocountrysel", 1)) {
 		char wl_regdomain[16];
 #ifdef HAVE_ATH9K
-		sprintf(wl_regdomain, "%s_regdomain", "ath0");
-#else
-		sprintf(wl_regdomain, "%s_regdomain", prefix);
+		if (!strcmp(prefix, "ath0"))
 #endif
+		sprintf(wl_regdomain, "%s_regdomain", prefix);
+
 		if (is_mac80211(prefix) || nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
 			char *list = getCountryList(COUNTRYLIST);
 			showOptionsLabel(wp, "wl_basic.regdom", wl_regdomain, list, nvram_safe_get(wl_regdomain));
@@ -4125,10 +4125,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	if (!nvram_matchi("nocountrysel", 1)) {
 		char wl_regdomain[16];
 #ifdef HAVE_ATH9K
-		sprintf(wl_regdomain, "%s_regdomain", "ath0");
-#else
-		sprintf(wl_regdomain, "%s_regdomain", prefix);
+		if (!strcmp(prefix, "ath0"))
 #endif
+		sprintf(wl_regdomain, "%s_regdomain", prefix);
 		if (1 || nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
 			char *list = getCountryList(COUNTRYLIST);
 			showOptionsLabel(wp, "wl_basic.regdom", wl_regdomain, list, nvram_safe_get(wl_regdomain));
