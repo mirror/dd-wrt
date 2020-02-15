@@ -595,7 +595,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 80, &frequencies), &sdata)) / 2;
 				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 120, &frequencies), &sdata)) / 2;
 				acs->noise = f->noise;
-				acs->uuu = 1;
+				acs->lll = 1;
 			}
 			if (chan->uuu) {
 				acs = add_to_mac80211_ac(acs);
