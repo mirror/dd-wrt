@@ -319,12 +319,13 @@ static int dfs_get_start_chan_idx(struct hostapd_iface *iface, int *seg1_start)
 	mode = iface->current_mode;
 	for (i = 0; i < mode->num_channels; i++) {
 		chan = &mode->channels[i];
+//		fprintf(stderr, "channel %d\n", chan->chan);
 		if (chan->chan == channel_no) {
 			res = i;
 			break;
 		}
 	}
-	fprintf(stderr, "searching channel no %d, result\n", channel_no, res);
+//	fprintf(stderr, "searching channel no %d, result %d\n", channel_no, res);
 	if (res != -1 && chan_seg1 > -1) {
 		int found = 0;
 
@@ -332,6 +333,7 @@ static int dfs_get_start_chan_idx(struct hostapd_iface *iface, int *seg1_start)
 		mode = iface->current_mode;
 		for (i = 0; i < mode->num_channels; i++) {
 			chan = &mode->channels[i];
+//			fprintf(stderr, "channel %d\n", chan->chan);
 			if (chan->chan == chan_seg1) {
 				*seg1_start = i;
 				found = 1;
@@ -341,7 +343,7 @@ static int dfs_get_start_chan_idx(struct hostapd_iface *iface, int *seg1_start)
 		if (!found)
 			res = -1;
 	}
-	fprintf(stderr, "searching chan_seg1 no %d, result\n", chan_seg1, res);
+//	fprintf(stderr, "searching chan_seg1 no %d, result %d\n", chan_seg1, res);
 
 	if (res == -1) {
 		wpa_printf(MSG_DEBUG,
