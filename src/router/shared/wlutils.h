@@ -500,6 +500,7 @@ struct mac80211_ac {
 	int8_t noise;
 	int quality;
 	int clear;
+	unsigned int lll:1, llu:1, lul:1, luu:1, ull:1, ulu:1, uul:1, uuu:1;
 	struct mac80211_ac *next;
 };
 
