@@ -309,11 +309,26 @@ static int get_eirp(struct wifi_channels *wifi_channels, int freq)
 	return 0;
 }
 
+struct wifi_channels *get_chan(struct wifi_channels *wifi_channels, int freq)
+{
+	struct wifi_channels *chan = NULL;
+	int i = 0;
+	while (1) {
+		chan = &wifi_channels[i++];
+		if (chan->freq == -1)
+			break;
+		if (chan->freq == freq)
+			break;
+	}
+	return chan;
+}
+
 static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int _htflags, struct frequency *f, struct sort_data *s)
 {
 	int c;
 	int idx;
-
+	if (!f)
+		return 0;
 	if (f->active && f->active_count && f->busy_count) {
 
 		c = 100 - (uint32_t) (f->busy * 100 / f->active);
@@ -331,15 +346,7 @@ static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int 
 		c = 100;
 	}
 
-	struct wifi_channels *chan = NULL;
-	int i = 0;
-	while (1) {
-		chan = &wifi_channels[i++];
-		if (chan->freq == -1)
-			break;
-		if (chan->freq == f->freq)
-			break;
-	}
+	struct wifi_channels *chan = get_chan(wifi_channels, f->freq);
 	if (chan->freq == -1 || chan->freq == 2472) {
 		return 0;
 	}
@@ -485,21 +492,201 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 
 		if (count-- == 0)
 			break;
-		acs = add_to_mac80211_ac(acs);
-		acs->freq = f->freq;
-		acs->quality = f->quality;
-		acs->noise = f->noise;
+		if (bw == 40) {
+
+		}
+		struct wifi_channels *chan = get_chan(wifi_channels, f->freq);
+		switch (bw) {
+		case 40:
+			if (chan->luu) {
+				acs = add_to_mac80211_ac(acs);
+				acs->freq = f->freq;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 20, &frequencies), &sdata)) / 2;
+				acs->noise = f->noise;
+				acs->luu = 1;
+			}
+			if (chan->ull) {
+				acs = add_to_mac80211_ac(acs);
+				acs->freq = f->freq;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 20, &frequencies), &sdata)) / 2;
+				acs->noise = f->noise;
+				acs->ull = 1;
+			}
+			break;
+		case 80:
+			if (chan->ull) {
+				acs = add_to_mac80211_ac(acs);
+				acs->freq = f->freq;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 20, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 20, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 40, &frequencies), &sdata)) / 2;
+				acs->noise = f->noise;
+				acs->ull = 1;
+			}
+			if (chan->luu) {
+				acs = add_to_mac80211_ac(acs);
+				acs->freq = f->freq;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 20, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 20, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 40, &frequencies), &sdata)) / 2;
+				acs->noise = f->noise;
+				acs->luu = 1;
+			}
+			if (chan->ulu) {
+				acs = add_to_mac80211_ac(acs);
+				acs->freq = f->freq;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 20, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 40, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 60, &frequencies), &sdata)) / 2;
+				acs->noise = f->noise;
+				acs->ulu = 1;
+			}
+			if (chan->lul) {
+				acs = add_to_mac80211_ac(acs);
+				acs->freq = f->freq;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 20, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 40, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 60, &frequencies), &sdata)) / 2;
+				acs->noise = f->noise;
+				acs->lul = 1;
+			}
+			break;
+		case 160:
+			if (chan->luu) {
+				acs = add_to_mac80211_ac(acs);
+				acs->freq = f->freq;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 20, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 20, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 40, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 60, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 80, &frequencies), &sdata)) / 2;
+				acs->noise = f->noise;
+				acs->luu = 1;
+			}
+			if (chan->ull) {
+				acs = add_to_mac80211_ac(acs);
+				acs->freq = f->freq;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 80, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 20, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 20, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 40, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 60, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 80, &frequencies), &sdata)) / 2;
+				acs->noise = f->noise;
+				acs->ull = 1;
+			}
+			if (chan->lll) {
+				acs = add_to_mac80211_ac(acs);
+				acs->freq = f->freq;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 140, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 20, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 40, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 60, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 80, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 120, &frequencies), &sdata)) / 2;
+				acs->noise = f->noise;
+				acs->uuu = 1;
+			}
+			if (chan->uuu) {
+				acs = add_to_mac80211_ac(acs);
+				acs->freq = f->freq;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 20, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 40, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 60, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 80, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 100, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 120, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 140, &frequencies), &sdata)) / 2;
+				acs->noise = f->noise;
+				acs->uuu = 1;
+			}
+			if (chan->llu) {
+				acs = add_to_mac80211_ac(acs);
+				acs->freq = f->freq;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 120, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 20, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 40, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 60, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 80, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 100, &frequencies), &sdata)) / 2;
+				acs->noise = f->noise;
+				acs->llu = 1;
+			}
+			if (chan->uul) {
+				acs = add_to_mac80211_ac(acs);
+				acs->freq = f->freq;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 20, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 20, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 40, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 60, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 80, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 100, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 120, &frequencies), &sdata)) / 2;
+				acs->noise = f->noise;
+				acs->uul = 1;
+			}
+			if (chan->lul) {
+				acs = add_to_mac80211_ac(acs);
+				acs->freq = f->freq;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 100, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 20, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 40, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 60, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 80, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 100, &frequencies), &sdata)) / 2;
+				acs->noise = f->noise;
+				acs->lul = 1;
+			}
+			if (chan->ulu) {
+				acs = add_to_mac80211_ac(acs);
+				acs->freq = f->freq;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq - 40, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 20, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 40, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 60, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 80, &frequencies), &sdata)) / 2;
+				acs->quality = (f->quality + freq_quality(wifi_channels, _max_eirp, _htflags, get_freq(f->freq + 100, &frequencies), &sdata)) / 2;
+				acs->noise = f->noise;
+				acs->ulu = 1;
+			}
+
+			break;
+		default:
+			acs = add_to_mac80211_ac(acs);
+			acs->freq = f->freq;
+			acs->quality = f->quality;
+			acs->noise = f->noise;
+			break;
+		}
 	}
 
 	dd_list_for_each_entry_safe(f, ftmp, &frequencies, list) {
 		dd_list_del(&f->list);
 		free(f);
 	}
-
+	int lastq = 0;
+	struct mac80211_ac *racs = NULL;
+	struct mac80211_ac *head = acs;
+	while (acs) {
+		struct mac80211_ac *next = acs->next;
+		if (acs->quality > lastq) {
+			racs = acs;
+			lastq = acs->quality;
+		}
+		acs = next;
+	}
+	acs = head;
+	while (acs) {
+		struct mac80211_ac *next = acs->next;
+		if (acs != racs)
+			free(acs);
+		acs = next;
+	}
+	racs->next = NULL;
 out:
 	if (wifi_channels)
 		free(wifi_channels);
-	return acs;
+	return racs;
 }
 
 // thats wrong order

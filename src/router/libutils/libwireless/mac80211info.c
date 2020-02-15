@@ -1281,12 +1281,12 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 			if (chan->ulu && !check_ranges(list, chan, (int[]) { /*30 - 30, */ 20, 40, 60, 0 }, 80)) {
 				chan->ulu = 0;
 			}
-			if (chan->lul && !check_ranges(list, chan, (int[]) { -30 - 30, -20, -40, -60, 0 }, 80)) {
+			if (chan->lul && !check_ranges(list, chan, (int[]) { -30 - 30, -20, -40, 0 }, 80)) {
 				chan->lul = 0;
 			}
 		}
 		if (bw == 160) {
-			if (chan->luu && !check_ranges(list, chan, (int[]) { 10 - 70, 20, -20, -40, -50, -80, 0 }, 160)) {
+			if (chan->luu && !check_ranges(list, chan, (int[]) { 10 - 70, 20, -20, -40, -60, -80, 0 }, 160)) {
 				chan->luu = 0;
 			}
 			if (chan->ull && !check_ranges(list, chan, (int[]) { -10 - 70, -20, 20, 40, 60, 80, 0 }, 160)) {
