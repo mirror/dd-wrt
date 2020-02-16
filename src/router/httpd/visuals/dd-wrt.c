@@ -1618,7 +1618,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 					continue;
 				}
 
-				if (channelbw == 40 && !chan[i].lll && !chan[i].llu && !chan[i].lul && !chan[i].luu && !chan[i].ull && !chan[i].ulu && !chan[i].uul && !chan[i].uuu) {
+				if (channelbw == 40 && !chan[i].luu && !chan[i].ull) {
 					i++;
 					continue;	// do not show channels where bandwidth is not available
 				}
@@ -1628,7 +1628,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 					continue;	// do not show channels where bandwidth is not available
 				}
 
-				if (channelbw == 160 && !chan[i].uuu && !chan[i].lll) {
+				if (channelbw == 160 && !chan[i].lll && !chan[i].llu && !chan[i].lul && !chan[i].luu && !chan[i].ull && !chan[i].ulu && !chan[i].uul && !chan[i].uuu) {
 					i++;
 					continue;	// do not show channels where bandwidth is not available
 				}
