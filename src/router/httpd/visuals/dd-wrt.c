@@ -3584,6 +3584,11 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			  wl_closed, nvram_matchi(wl_closed, 1) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 	}
+	if (has_mac80211(prefix) && has_ac(prefix)) {
+		char wl_overlap[16];
+		sprintf(wl_overlap, "%s_overlap", prefix);
+		showRadio(wp, "wl_basic.overlap", wl_overlap);
+	}
 	if (has_ac(prefix) && has_2ghz(prefix)) {
 		char wl_turboqam[16];
 		sprintf(wl_turboqam, "%s_turbo_qam", prefix);
@@ -4007,6 +4012,11 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 				}
 			}
 		}
+	}
+	if (has_mac80211(prefix) && has_ac(prefix)) {
+		char wl_overlap[16];
+		sprintf(wl_overlap, "%s_overlap", prefix);
+		showRadio(wp, "wl_basic.overlap", wl_overlap);
 	}
 	if (has_ac(prefix) && has_2ghz(prefix)) {
 		char wl_turboqam[16];
