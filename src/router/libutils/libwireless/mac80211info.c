@@ -1252,7 +1252,7 @@ static int check_ranges(char *name, struct wifi_channels *list, struct wifi_chan
 }
 
 /* check all channel combinations and sort out incompatible configurations */
-static void check_validchannels(struct wifi_channels *list, int bw)
+static void check_validchannels(struct wifi_channels *list, int bw, int nooverlap)
 {
 	int i = 0;
 	while (1) {
@@ -1282,33 +1282,68 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 		if (bw == 80) {
 			if (check_ranges("LL", list, chan, (int[]) { -30 - 30, -20, -40, 0 }, 80)) {
 				chan->lul = 1;
-			} else if (check_ranges("UL", list, chan, (int[]) { -10 + 30, -40, -20, 0 }, 80)) {
+				if (nooverlap)
+					goto next;
+			}
+			if (check_ranges("UL", list, chan, (int[]) { -10 + 30, -40, -20, 0 }, 80)) {
 				chan->luu = 1;
-			} else if (check_ranges("LU", list, chan, (int[]) { 10 - 30, 20, 40, 0 }, 80)) {
+				if (nooverlap)
+					goto next;
+			}
+			if (check_ranges("LU", list, chan, (int[]) { 10 - 30, 20, 40, 0 }, 80)) {
 				chan->ull = 1;
-			} else if (check_ranges("UU", list, chan, (int[]) { /*30 - 30, */ 20, 40, 60, 0 }, 80)) {
+				if (nooverlap)
+					goto next;
+			}
+			if (check_ranges("UU", list, chan, (int[]) { /*30 - 30, */ 20, 40, 60, 0 }, 80)) {
 				chan->ulu = 1;
+				if (nooverlap)
+					goto next;
 			}
 		}
 		if (bw == 160) {
 			if (check_ranges("LLL", list, chan, (int[]) { -70 - 70, -20, -40, -60, -80, -120, -140, 0 }, 160)) {
 				chan->lll = 1;
-			} else if (check_ranges("LLU", list, chan, (int[]) { -50 - 70, 20, -40, -60, -80, -100, -120, 0 }, 160)) {
+				if (nooverlap)
+					goto next;
+			}
+			if (check_ranges("LLU", list, chan, (int[]) { -50 - 70, 20, -40, -60, -80, -100, -120, 0 }, 160)) {
 				chan->llu = 1;
-			} else if (check_ranges("LUL", list, chan, (int[]) { -30 - 70, 20, -40, -60, -80, -100, 0 }, 160)) {
+				if (nooverlap)
+					goto next;
+			}
+			if (check_ranges("LUL", list, chan, (int[]) { -30 - 70, 20, -40, -60, -80, -100, 0 }, 160)) {
 				chan->lul = 1;
-			} else if (check_ranges("LUU", list, chan, (int[]) { 10 - 70, 20, -20, -40, -60, -80, 0 }, 160)) {
+				if (nooverlap)
+					goto next;
+			}
+			if (check_ranges("LUU", list, chan, (int[]) { 10 - 70, 20, -20, -40, -60, -80, 0 }, 160)) {
 				chan->luu = 1;
-			} else if (check_ranges("ULL", list, chan, (int[]) { -10 - 70, -20, 20, 40, 60, 80, 0 }, 160)) {
+				if (nooverlap)
+					goto next;
+			}
+			if (check_ranges("ULL", list, chan, (int[]) { -10 - 70, -20, 20, 40, 60, 80, 0 }, 160)) {
 				chan->ull = 1;
-			} else if (check_ranges("ULU", list, chan, (int[]) { 30 - 70, 20, 40, 60, 80, 100, 0 }, 160)) {
+				if (nooverlap)
+					goto next;
+			}
+			if (check_ranges("ULU", list, chan, (int[]) { 30 - 70, 20, 40, 60, 80, 100, 0 }, 160)) {
 				chan->ulu = 1;
-			} else if (check_ranges("UUL", list, chan, (int[]) { 50 - 70, 20, 40, 60, 80, 100, 120, 0 }, 160)) {
+				if (nooverlap)
+					goto next;
+			}
+			if (check_ranges("UUL", list, chan, (int[]) { 50 - 70, 20, 40, 60, 80, 100, 120, 0 }, 160)) {
 				chan->uul = 1;
-			} else if (check_ranges("UUU", list, chan, (int[]) { /* 0 , */ 20, 40, 60, 80, 100, 120, 140, 0 }, 160)) {
+				if (nooverlap)
+					goto next;
+			}
+			if (check_ranges("UUU", list, chan, (int[]) { /* 0 , */ 20, 40, 60, 80, 100, 120, 140, 0 }, 160)) {
 				chan->uuu = 1;
+				if (nooverlap)
+					goto next;
 			}
 		}
+	      next:;
 	}
 }
 
@@ -1341,6 +1376,9 @@ struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interfa
 	bool width_40 = false;
 	bool width_160 = false;
 	bool width_80 = false;
+	int nooverlap = 1;
+	if (nvram_nmatch("1", "%s_overlap", interface))
+		nooverlap = 0;
 
 	if (has_ad(interface)) {
 		return ghz60channels;
@@ -1538,7 +1576,8 @@ struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interfa
 								continue;
 							list[count].channel = ieee80211_mhz2ieee(freq_mhz);
 							list[count].freq = freq_mhz;
-							list[count].band = band;
+							if (nooverlap)
+								list[count].band = band;
 							// todo: wenn wir das ueberhaupt noch verwenden
 							list[count].noise = 0;
 							list[count].max_eirp = regpower.max_eirp / 100;
@@ -1627,7 +1666,7 @@ struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interfa
 	if (rd)
 		free(rd);
 	nlmsg_free(msg);
-	check_validchannels(list, max_bandwidth_khz);
+	check_validchannels(list, max_bandwidth_khz, nooverlap);
 	if (!nocache)
 		addcache(interface, country, list);
 	return list;
