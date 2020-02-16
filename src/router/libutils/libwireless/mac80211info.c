@@ -1233,17 +1233,21 @@ static int isinlist(struct wifi_channels *list, struct wifi_channels *freq, int 
 			return 1;
 		}
 	}
+//      fprintf(stderr, "fails freq->freq + range %d bands %d,%d \n", freq->freq + range, chan->band, freq->band);
 	return 0;
 }
 
-static int check_ranges(struct wifi_channels *list, struct wifi_channels *chan, int *ranges, int mhz)
+static int check_ranges(char *name, struct wifi_channels *list, struct wifi_channels *chan, int *ranges, int mhz)
 {
 	int i = 0;
 	int range;
 	while ((range = ranges[i++])) {
-		if (!isinlist(list, chan, range, mhz))
+		if (!isinlist(list, chan, range, mhz)) {
+//                      fprintf(stderr, "[%s] %d range check failed at %d\n", name, chan->freq, range);
 			return 0;
+		}
 	}
+//      fprintf(stderr, "[%s] %d success\n", name, chan->freq);
 	return 1;
 }
 
@@ -1266,42 +1270,42 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 
 		if (bw == 40) {
 			int minus[] = { -20, 0 };
-			if (!chan->luu && !check_ranges(list, chan, (int[]) { -20, 0 }, 40)) {
+			if (!chan->luu && !check_ranges("LOWER", list, chan, (int[]) { -20, 0 }, 40)) {
 				chan->luu = 1;
 			}
-			if (!chan->ull && !check_ranges(list, chan, (int[]) { 20, 0 }, 40)) {
+			if (!chan->ull && !check_ranges("UPPER", list, chan, (int[]) { 20, 0 }, 40)) {
 				chan->ull = 1;
 			}
 		}
 
 		/* first entry in range is the dfs channel which must be considered to ensure its a valid channel */
 		if (bw == 80) {
-			if (check_ranges(list, chan, (int[]) { -30 - 30, -20, -40, 0 }, 80)) {
+			if (check_ranges("LL", list, chan, (int[]) { -30 - 30, -20, -40, 0 }, 80)) {
 				chan->lul = 1;
-			} else if (check_ranges(list, chan, (int[]) { -10 + 30, -40, -20, 0 }, 80)) {
+			} else if (check_ranges("UL", list, chan, (int[]) { -10 + 30, -40, -20, 0 }, 80)) {
 				chan->luu = 1;
-			} else if (check_ranges(list, chan, (int[]) { 10 - 30, 20, 40, 0 }, 80)) {
+			} else if (check_ranges("LU", list, chan, (int[]) { 10 - 30, 20, 40, 0 }, 80)) {
 				chan->ull = 1;
-			} else if (check_ranges(list, chan, (int[]) { /*30 - 30, */ 20, 40, 60, 0 }, 80)) {
+			} else if (check_ranges("UU", list, chan, (int[]) { /*30 - 30, */ 20, 40, 60, 0 }, 80)) {
 				chan->ulu = 1;
 			}
 		}
 		if (bw == 160) {
-			if (check_ranges(list, chan, (int[]) { -70 - 70, -20, -40, -60, -80, -120, -140, 0 }, 160)) {
+			if (check_ranges("LLL", list, chan, (int[]) { -70 - 70, -20, -40, -60, -80, -120, -140, 0 }, 160)) {
 				chan->lll = 1;
-			} else if (check_ranges(list, chan, (int[]) { -50 - 70, 20, -40, -60, -80, -100, -120, 0 }, 160)) {
+			} else if (check_ranges("LLU", list, chan, (int[]) { -50 - 70, 20, -40, -60, -80, -100, -120, 0 }, 160)) {
 				chan->llu = 1;
-			} else if (check_ranges(list, chan, (int[]) { -30 - 70, 20, -40, -60, -80, -100, 0 }, 160)) {
+			} else if (check_ranges("LUL", list, chan, (int[]) { -30 - 70, 20, -40, -60, -80, -100, 0 }, 160)) {
 				chan->lul = 1;
-			} else if (check_ranges(list, chan, (int[]) { 10 - 70, 20, -20, -40, -60, -80, 0 }, 160)) {
+			} else if (check_ranges("LUU", list, chan, (int[]) { 10 - 70, 20, -20, -40, -60, -80, 0 }, 160)) {
 				chan->luu = 1;
-			} else if (check_ranges(list, chan, (int[]) { -10 - 70, -20, 20, 40, 60, 80, 0 }, 160)) {
+			} else if (check_ranges("ULL", list, chan, (int[]) { -10 - 70, -20, 20, 40, 60, 80, 0 }, 160)) {
 				chan->ull = 1;
-			} else if (check_ranges(list, chan, (int[]) { 30 - 70, 20, 40, 60, 80, 100, 0 }, 160)) {
+			} else if (check_ranges("ULU", list, chan, (int[]) { 30 - 70, 20, 40, 60, 80, 100, 0 }, 160)) {
 				chan->ulu = 1;
-			} else if (check_ranges(list, chan, (int[]) { 50 - 70, 20, 40, 60, 80, 100, 120, 0 }, 160)) {
+			} else if (check_ranges("UUL", list, chan, (int[]) { 50 - 70, 20, 40, 60, 80, 100, 120, 0 }, 160)) {
 				chan->uul = 1;
-			} else if (check_ranges(list, chan, (int[]) { /* 0 , */ 20, 40, 60, 80, 100, 120, 140, 0 }, 160)) {
+			} else if (check_ranges("UUU", list, chan, (int[]) { /* 0 , */ 20, 40, 60, 80, 100, 120, 140, 0 }, 160)) {
 				chan->uuu = 1;
 			}
 		}
@@ -1375,8 +1379,10 @@ struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interfa
 	if (!bands) {
 		goto out;
 	}
+	int lastband = 0;
+	int firstchan = 0;
 	for (run = 0; run < 2; run++) {
-		int bandcounter=0;
+		int bandcounter = 0;
 		if (run == 1) {
 			list = (struct wifi_channels *)calloc(sizeof(struct wifi_channels) * (chancount + 1), 1);
 		}
@@ -1426,7 +1432,7 @@ struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interfa
 					rrdcount = 1;
 				else
 					rrdcount = rd->n_reg_rules;
-				
+
 				//for (rrc = 0; rrc < rrdcount; rrc++)
 				{
 					int cc;
@@ -1475,8 +1481,11 @@ struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interfa
 						regmaxbw = 160;
 						flags = 0;
 					} else {
+						int ccidx = 0;
 						for (cc = 0; cc < rrdcount; cc++) {
 							regfreq = rd->reg_rules[cc].freq_range;
+							if (cc && regfreq.start_freq_khz == rd->reg_rules[cc - 1].freq_range.end_freq_khz)
+								ccidx--;
 							if (!startfreq && regfreq.start_freq_khz > startlowbound && regfreq.start_freq_khz < starthighbound) {
 								startfreq = regfreq.start_freq_khz / 1000;
 							}
@@ -1484,16 +1493,23 @@ struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interfa
 								stopfreq = regfreq.end_freq_khz / 1000;
 							}
 							if (freq_mhz > regfreq.start_freq_khz / 1000 && freq_mhz < regfreq.end_freq_khz / 1000) {
-								band = cc + bandcounter;
+								band = ccidx + bandcounter;
 								flags = rd->reg_rules[cc].flags;
 								regpower = rd->reg_rules[cc].power_rule;
 								regmaxbw = regfreq.max_bandwidth_khz / 1000;
-								int offset = freq_mhz - (regfreq.start_freq_khz / 1000);
-								if ((offset % max_bandwidth_khz) >= (max_bandwidth_khz-10))
-								    bandcounter+=10;
-//								fprintf(stderr, "[%d:%d}: (band %d) %d %d\n", regfreq.start_freq_khz / 1000, freq_mhz, cc, offset%max_bandwidth_khz ,band);
-									
+								if (ccidx != lastband) {
+									firstchan = 0;
+								}
+								if (!firstchan)
+									firstchan = freq_mhz;
+								lastband = ccidx;
+								int offset = freq_mhz - firstchan;
+								if ((offset % max_bandwidth_khz) >= (max_bandwidth_khz - 20))
+									bandcounter += 10;
+//                                                              fprintf(stderr, "[%d:%d}: (band %d) %d %d\n", regfreq.start_freq_khz / 1000, freq_mhz, cc, offset%max_bandwidth_khz ,band);
+
 							}
+							ccidx++;
 						}
 					}
 
@@ -1569,7 +1585,7 @@ struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interfa
 							list[count].ht40 = true;
 							list[count].vht80 = true;
 							list[count].vht160 = true;
-//                                                      fprintf(stderr, "%d %d %d %d\n", width_40, width_80, width_160, max_bandwidth_khz);
+//                                                      fprintf(stderr, "%d %d %d\n", freq_mhz, band, max_bandwidth_khz);
 							if (regmaxbw < 40 && max_bandwidth_khz == 40) {
 								list[count].luu = 0;
 								list[count].ull = 0;
