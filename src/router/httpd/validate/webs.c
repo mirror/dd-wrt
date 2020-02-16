@@ -4264,6 +4264,9 @@ static void save_prefix(webs_t wp, char *prefix)
 	if (has_ac(prefix) && has_2ghz(prefix)) {
 		copytonv_prefix(wp, "turbo_qam", prefix);
 	}
+	if (has_ac(prefix)) {
+		copytonv_prefix(wp, "overlap", prefix);
+	}
 	copytonv_prefix(wp, "atf", prefix);
 	copytonv_prefix(wp, "fc", prefix);
 
