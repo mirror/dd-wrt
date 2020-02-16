@@ -535,44 +535,12 @@ EXPORT_SYMBOL(kfree_skb);
 
 void kfree_skb_list(struct sk_buff *segs)
 {
-	struct sk_buff *next = segs;
-	void *skbs[16];
-	int n_skbs = 0;
+	while (segs) {
+		struct sk_buff *next = segs->next;
 
-	while ((segs = next) != NULL) {
-		next = segs->next;
-
-		if (segs->fclone != SKB_FCLONE_UNAVAILABLE) {
-			kfree_skb(segs);
-			continue;
-		}
-
-		if (!skb_unref(segs))
-			continue;
-
-		trace_kfree_skb(segs, __builtin_return_address(0));
-
-		/* drop skb->head and call any destructors for packet */
-		skb_release_all(segs);
-
-#ifdef CONFIG_SLUB
-		/* SLUB writes into objects when freeing */
-		prefetchw(segs);
-#endif
-
-		skbs[n_skbs++] = segs;
-
-		if (n_skbs < ARRAY_SIZE(skbs))
-			continue;
-
-		kmem_cache_free_bulk(skbuff_head_cache, n_skbs, skbs);
-		n_skbs = 0;
+		kfree_skb(segs);
+		segs = next;
 	}
-
-	if (!n_skbs)
-		return;
-
-	kmem_cache_free_bulk(skbuff_head_cache, n_skbs, skbs);
 }
 EXPORT_SYMBOL(kfree_skb_list);
 
