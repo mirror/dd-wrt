@@ -490,6 +490,8 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 			continue;
 		/* todo, implement algorithm for 80+80 */
 		struct wifi_channels *chan = get_chan(wifi_channels, f->freq);
+		if (chain->freq == -1)
+			continue;
 		switch (bw) {
 		case 40:
 			if (chan->luu) {
