@@ -712,6 +712,9 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 out:
 	if (wifi_channels)
 		free(wifi_channels);
+	if (racs)
+	    	dd_loginfo("autochannel", "%s: selected: %d\n", interface, acs->freq);
+
 	return racs;
 }
 
