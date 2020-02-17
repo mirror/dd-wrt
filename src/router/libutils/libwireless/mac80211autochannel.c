@@ -715,7 +715,7 @@ out:
 	if (wifi_channels)
 		free(wifi_channels);
 	if (racs)
-	    	dd_loginfo("autochannel", "%s: selected: %d\n", interface, acs->freq);
+	    	dd_loginfo("autochannel", "%s: selected: %d\n", interface, racs->freq);
 
 	return racs;
 }
