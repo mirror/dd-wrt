@@ -484,7 +484,7 @@ struct wifi_channels *mac80211_get_channels_simple(const char *interface, const 
 #define AUTO_FORCEVHT160 4
 #define AUTO_ALL 0
 
-extern struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range, int scans, int ammount, int enable_passive, int htflags);
+extern struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range, int scans, int enable_passive, int htflags);
 extern void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant);
 extern int mac80211_get_avail_tx_antenna(int phy);
 extern int mac80211_get_avail_rx_antenna(int phy);
