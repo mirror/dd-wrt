@@ -1317,12 +1317,12 @@ static void check_validchannels(struct wifi_channels *list, int bw, int nooverla
 				if (nooverlap)
 					goto next;
 			}
-			if (check_ranges("LUU", list, chan, (int[]) { 10 - 70, 20, -20, -40, -60, -80, 0 }, 160)) {
+			if (check_ranges("LUU", list, chan, (int[]) { -10 - 70, 20, -20, -40, -60, -80, 0 }, 160)) {
 				chan->luu = 1;
 				if (nooverlap)
 					goto next;
 			}
-			if (check_ranges("ULL", list, chan, (int[]) { -10 - 70, -20, 20, 40, 60, 80, 0 }, 160)) {
+			if (check_ranges("ULL", list, chan, (int[]) { 10 - 70, -20, 20, 40, 60, 80, 0 }, 160)) {
 				chan->ull = 1;
 				if (nooverlap)
 					goto next;
