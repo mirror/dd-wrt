@@ -1936,7 +1936,7 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-static char *wfgets(char *buf, int len, webs_t wp, int *feof)
+static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 {
 	FILE *fp = wp->fp;
 	char *ret = NULL;
@@ -1947,8 +1947,8 @@ static char *wfgets(char *buf, int len, webs_t wp, int *feof)
 		char c;
 		int sr = sslbufferpeek((struct sslbuffer *)fp, buf, len);
 		if (sr <= 0) {
-			if (sr == 0 && feof)
-				*feof = 1;
+			if (sr == 0 && rfeof)
+				*rfeof = 1;
 			goto out;
 		}
 		for (i = 0; i < len; i++) {
@@ -1960,8 +1960,8 @@ static char *wfgets(char *buf, int len, webs_t wp, int *feof)
 		}
 		sr = sslbufferread((struct sslbuffer *)fp, buf, i + 1);
 		if (sr <= 0) {
-			if (sr == 0 && feof)
-				*feof = 1;
+			if (sr == 0 && rfeof)
+				*rfeof = 1;
 			goto out;
 		}
 		if (!eof) {
@@ -1969,8 +1969,8 @@ static char *wfgets(char *buf, int len, webs_t wp, int *feof)
 			ret = buf;
 			goto out;
 		} else {
-			if (feof)
-				*feof = 1;
+			if (rfeof)
+				*rfeof = 1;
 			goto out;
 		}
 
@@ -1983,7 +1983,7 @@ static char *wfgets(char *buf, int len, webs_t wp, int *feof)
 #endif
 	} else {
 		if (feof(fp))
-			*feof = 1;
+			*rfeof = 1;
 		ret = fgets(buf, len, fp);
 	}
       out:;

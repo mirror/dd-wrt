@@ -74,7 +74,7 @@ static void start_gozila(char *name, webs_t wp);
 static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, struct variable *v);
 static int do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary);
 static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
-static char *wfgets(char *buf, int len, webs_t fp);
+static char *wfgets(char *buf, int len, webs_t fp, int *eof);
 static int wfprintf(webs_t fp, char *fmt, ...);
 static size_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
 static size_t wfread(void *buf, size_t size, size_t n, webs_t fp);
@@ -1852,7 +1852,7 @@ do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 				dd_logerror("httpd", "The POST data exceed length limit! (remaining request of length %ld failed)\n", len);
 				return -1;
 			}
-			wfgets(buf, len, stream);
+			wfgets(buf, len, stream, NULL);
 			free(buf);
 		}
 		init_cgi(stream, stream->post_buf);
