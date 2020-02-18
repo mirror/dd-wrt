@@ -207,7 +207,7 @@ struct smb_com_read_rsp {
 	__le16 DataOffset;
 	__le16 DataLengthHigh;
 	__u64 Reserved2;
-	__u16 ByteCount;
+	__le16 ByteCount;
 	/* read response data immediately follows */
 } __packed;
 
@@ -236,8 +236,8 @@ struct smb_com_write_req {
 struct smb_com_write_req_32bit {
 	struct smb_hdr hdr;	/* wct = 5 */
 	__u16 Fid;
-	__u16 Length;
-	__u32 Offset;
+	__le16 Length;
+	__le32 Offset;
 	__u16 Estimate;
 	__le16 ByteCount;	/* must be greater than 2 */
 	__u8 BufferFormat;
@@ -247,7 +247,7 @@ struct smb_com_write_req_32bit {
 
 struct smb_com_write_rsp_32bit {
 	struct smb_hdr hdr;	/* wct = 1 */
-	__u16 Written;
+	__le16 Written;
 	__le16 ByteCount;	/* must be 0 */
 } __packed;
 
@@ -260,7 +260,7 @@ struct smb_com_write_rsp {
 	__le16 Remaining;
 	__le16 CountHigh;
 	__u16  Reserved;
-	__u16 ByteCount;
+	__le16 ByteCount;
 } __packed;
 
 struct smb_com_rename_req {
@@ -275,7 +275,7 @@ struct smb_com_rename_req {
 
 struct smb_com_rename_rsp {
 	struct smb_hdr hdr;     /* wct = 0 */
-	__u16 ByteCount;        /* bct = 0 */
+	__le16 ByteCount;        /* bct = 0 */
 } __packed;
 
 /* SecurityMode bits */
@@ -331,7 +331,7 @@ struct smb_com_session_setup_resp {	/* default (NTLM) response format */
 	__le16 AndXOffset;
 	__le16 Action;	/* see below */
 	__le16 SecurityBlobLength;
-	__u16 ByteCount;
+	__le16 ByteCount;
 	unsigned char SecurityBlob[1];	/* followed by */
 	/*      unsigned char  * NativeOS;      */
 	/*      unsigned char  * NativeLanMan;  */
@@ -344,7 +344,7 @@ struct smb_com_session_setup_old_resp { /* default (NTLM) response format */
 	__u8 AndXReserved;
 	__le16 AndXOffset;
 	__le16 Action;	/* see below */
-	__u16 ByteCount;
+	__le16 ByteCount;
 	unsigned char NativeOS[1];	/* followed by */
 	/*      unsigned char * NativeLanMan; */
 	/*      unsigned char * PrimaryDomain; */
@@ -376,7 +376,7 @@ struct smb_com_tconx_rsp {
 	__u8 AndXReserved;
 	__le16 AndXOffset;
 	__le16 OptionalSupport; /* see below */
-	__u16 ByteCount;
+	__le16 ByteCount;
 	unsigned char Service[1];       /* always ASCII, not Unicode */
 	/* STRING NativeFileSystem */
 } __packed;
@@ -389,7 +389,7 @@ struct smb_com_tconx_rsp_ext {
 	__le16 OptionalSupport; /* see below */
 	__le32 MaximalShareAccessRights;
 	__le32 GuestMaximalShareAccessRights;
-	__u16 ByteCount;
+	__le16 ByteCount;
 	unsigned char Service[1];       /* always ASCII, not Unicode */
 	/* STRING NativeFileSystem */
 } __packed;
@@ -442,7 +442,7 @@ struct smb_com_lock_rsp {
 	__u8 AndXCommand;
 	__u8 AndXReserved;
 	__le16 AndXOffset;
-	__u16 ByteCount;
+	__le16 ByteCount;
 } __packed;
 
 /* tree connect Flags */
@@ -660,7 +660,7 @@ struct smb_com_open_rsp {
 	__le16 FileType;
 	__le16 DeviceState;
 	__u8 DirectoryFlag;
-	__u16 ByteCount;        /* bct = 0 */
+	__le16 ByteCount;        /* bct = 0 */
 } __packed;
 
 struct smb_com_open_ext_rsp {
@@ -682,22 +682,22 @@ struct smb_com_open_ext_rsp {
 	__le16 DeviceState;
 	__u8 DirectoryFlag;
 	__u8 VolId[16];
-	__le64 fid;
+	__u64 fid;
 	__le32 MaxAccess;
 	__le32 GuestAccess;
-	__u16 ByteCount;        /* bct = 0 */
+	__le16 ByteCount;        /* bct = 0 */
 } __packed;
 
 struct smb_com_close_req {
 	struct smb_hdr hdr;     /* wct = 3 */
 	__u16 FileID;
-	__u32 LastWriteTime;    /* should be zero or -1 */
-	__u16 ByteCount;        /* 0 */
+	__le32 LastWriteTime;    /* should be zero or -1 */
+	__le16  ByteCount;        /* 0 */
 } __packed;
 
 struct smb_com_close_rsp {
 	struct smb_hdr hdr;     /* wct = 0 */
-	__u16 ByteCount;        /* bct = 0 */
+	__le16 ByteCount;        /* bct = 0 */
 } __packed;
 
 struct smb_com_echo_req {
@@ -717,12 +717,12 @@ struct smb_com_echo_rsp {
 struct smb_com_flush_req {
 	struct smb_hdr hdr;     /* wct = 1 */
 	__u16 FileID;
-	__u16 ByteCount;        /* 0 */
+	__le16 ByteCount;        /* 0 */
 } __packed;
 
 struct smb_com_flush_rsp {
 	struct smb_hdr hdr;     /* wct = 0 */
-	__u16 ByteCount;        /* bct = 0 */
+	__le16 ByteCount;        /* bct = 0 */
 } __packed;
 
 /* SMB_COM_TRANSACTION */
@@ -743,7 +743,7 @@ struct smb_com_trans_req {
 	__le16 DataOffset;
 	__u8 SetupCount;
 	__u8 Reserved3;
-	__u16 SubCommand;
+	__le16 SubCommand;
 	__u8  Pad;
 	__u8 Data[1];
 } __packed;
@@ -767,7 +767,7 @@ struct smb_com_trans_pipe_req {
 	__u8 Reserved3;
 	__u16 SubCommand;
 	__u16 fid;
-	__u16 ByteCount;
+	__le16 ByteCount;
 	__u8  Pad;
 	__u8 Data[1];
 } __packed;
@@ -785,7 +785,7 @@ struct smb_com_trans_rsp {
 	__le16 DataDisplacement;
 	__u8 SetupCount;
 	__u8 Reserved1;
-	__u16 ByteCount;
+	__le16 ByteCount;
 	__u8 Pad;
 } __packed;
 
@@ -925,7 +925,7 @@ struct smb_com_trans2_fnext_rsp_params {
 struct smb_com_trans2_rsp {
 	struct smb_hdr hdr;     /* wct = 10 + SetupCount */
 	struct trans2_resp t2;
-	__u16 ByteCount;
+	__le16 ByteCount;
 	__u8 Pad;       /* may be three bytes? *//* followed by data area */
 } __packed;
 
@@ -1185,7 +1185,7 @@ struct smb_com_trans2_spi_req {
 struct smb_com_trans2_spi_rsp {
 	struct smb_hdr hdr;     /* wct = 10 + SetupCount */
 	struct trans2_resp t2;
-	__u16 ByteCount;
+	__le16 ByteCount;
 	__u16 Reserved2; /* parameter word is present for infolevels > 100 */
 } __packed;
 
@@ -1315,7 +1315,7 @@ struct smb_com_trans2_setfsi_req {
 struct smb_com_trans2_setfsi_rsp {
 	struct smb_hdr hdr;     /* wct = 10 */
 	struct trans2_resp t2;
-	__u16 ByteCount;
+	__le16 ByteCount;
 } __packed;
 
 struct smb_trans2_qfi_req_params {
@@ -1390,7 +1390,7 @@ struct smb_com_trans2_sfi_req {
 struct smb_com_trans2_sfi_rsp {
 	struct smb_hdr hdr;     /* wct = 10 + SetupCount */
 	struct trans2_resp t2;
-	__u16 ByteCount;
+	__le16 ByteCount;
 	__u16 Reserved2;        /*
 				 * parameter word reserved -
 				 * present for infolevels > 100
@@ -1410,7 +1410,7 @@ struct smb_com_create_directory_req {
 
 struct smb_com_create_directory_rsp {
 	struct smb_hdr hdr;	/* wct = 0 */
-	__u16 ByteCount;	/* bct = 0 */
+	__le16 ByteCount;	/* bct = 0 */
 } __packed;
 
 struct smb_com_check_directory_req {
@@ -1422,12 +1422,12 @@ struct smb_com_check_directory_req {
 
 struct smb_com_check_directory_rsp {
 	struct smb_hdr hdr;	/* wct = 0 */
-	__u16 ByteCount;	/* bct = 0 */
+	__le16 ByteCount;	/* bct = 0 */
 } __packed;
 
 struct smb_com_process_exit_rsp {
 	struct smb_hdr hdr;	/* wct = 0 */
-	__u16 ByteCount;	/* bct = 0 */
+	__le16 ByteCount;	/* bct = 0 */
 } __packed;
 
 struct smb_com_delete_directory_req {
@@ -1439,7 +1439,7 @@ struct smb_com_delete_directory_req {
 
 struct smb_com_delete_directory_rsp {
 	struct smb_hdr hdr;     /* wct = 0 */
-	__u16 ByteCount;        /* bct = 0 */
+	__le16 ByteCount;        /* bct = 0 */
 } __packed;
 
 struct smb_com_delete_file_req {
@@ -1452,7 +1452,7 @@ struct smb_com_delete_file_req {
 
 struct smb_com_delete_file_rsp {
 	struct smb_hdr hdr;     /* wct = 0 */
-	__u16 ByteCount;        /* bct = 0 */
+	__le16 ByteCount;        /* bct = 0 */
 } __packed;
 
 #define CREATE_HARD_LINK         0x103
@@ -1488,7 +1488,7 @@ struct smb_com_query_information_rsp {
 struct smb_com_findclose_req {
 	struct smb_hdr hdr; /* wct = 1 */
 	__u16 FileID;
-	__u16 ByteCount;    /* 0 */
+	__le16 ByteCount;    /* 0 */
 } __packed;
 
 #define SMBOPEN_DISPOSITION_NONE        0
@@ -1553,7 +1553,7 @@ struct smb_com_openx_rsp {
 	__le16 Action;
 	__u32  FileId;
 	__u16  Reserved;
-	__u16  ByteCount;
+	__le16 ByteCount;
 } __packed;
 
 struct filesystem_alloc_info {
@@ -1651,14 +1651,14 @@ struct smb_com_setattr_req {
 	__le16 attr;
 	__le32 LastWriteTime;
 	__le16 reserved[5]; /* must be zero */
-	__u16  ByteCount;
+	__le16 ByteCount;
 	__u8   BufferFormat; /* 4 = ASCII */
 	unsigned char fileName[1];
 } __packed;
 
 struct smb_com_setattr_rsp {
 	struct smb_hdr hdr;     /* wct = 0 */
-	__u16 ByteCount;        /* bct = 0 */
+	__le16 ByteCount;        /* bct = 0 */
 } __packed;
 
 extern int init_smb1_server(struct ksmbd_conn *conn);

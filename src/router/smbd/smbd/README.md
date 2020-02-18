@@ -1,19 +1,19 @@
 
 # Content
 
-- [What is KSMBD?](#what-is-ksmbd)
+- [What is CIFSD?](#what-is-cifsd)
 - [Under PFIF](#under-pfif)
 - [Git](#git)
 - [Maintainers](#maintainers)
 - [Bug reports or contribution](#Bug-reports-or-contribution)
 - [Features](#features)
 - [Supported Linux Kernel Versions](#supported-linux-kernel-versions)
-- [KSMBD architecture](#ksmbd-architecture)
+- [CIFSD architecture](#cifsd-architecture)
 
 
-## What is KSMBD?
+## What is CIFSD?
 
-KSMBD is an opensource In-kernel CIFS/SMB3 server created by Namjae Jeon for Linux Kernel. It's an implementation of SMB/CIFS protocol in kernel space for sharing files and IPC services over network. Initially the target is to provide improved file I/O performances, but the bigger goal is to have some new features which are much easier to develop and maintain inside the kernel and expose the layers fully. Directions can be attributed to sections where SAMBA is moving to few modules inside the kernel to have features like RDMA(Remote direct memory access) to work with actual performance gain.
+CIFSD is an opensource In-kernel CIFS/SMB3 server created by Namjae Jeon for Linux Kernel. It's an implementation of SMB/CIFS protocol in kernel space for sharing files and IPC services over network. Initially the target is to provide improved file I/O performances, but the bigger goal is to have some new features which are much easier to develop and maintain inside the kernel and expose the layers fully. Directions can be attributed to sections where SAMBA is moving to few modules inside the kernel to have features like RDMA(Remote direct memory access) to work with actual performance gain.
 
 
 ## Under PFIF
@@ -29,8 +29,8 @@ for more details.
 ## Git
 
 The development git tree is available at
-* https://github.com/cifsd-team/ksmbd
-* https://github.com/cifsd-team/ksmbd-tools
+* https://github.com/cifsd-team/cifsd
+* https://github.com/cifsd-team/cifsd-tools
 
 
 ## Maintainers
@@ -47,7 +47,7 @@ For reporting bugs and sending patches, please send the patches to the following
 * linkinjeon@gmail.com
 * sergey.senozhatsky@gmail.com
 
-or open issues/send PRs to [KSMBD](https://github.com/cifsd-team/ksmbd).
+or open issues/send PRs to [CIFSD](https://github.com/cifsd-team/cifsd).
 
 
 ## Installing as a stand-alone module
@@ -74,23 +74,23 @@ To load the driver manually, run this as root:
 1. Let's take [linux] as the path to your kernel source dir.
 ```
 	cd [linux]
-	cp -ar ksmbd [linux]/fs/
+	cp -ar cifsd [linux]/fs/
 ```
 
 2. edit [linux]/fs/Kconfig
 ```
 	source "fs/cifs/Kconfig"
-	+source "fs/ksmbd/Kconfig"
+	+source "fs/cifsd/Kconfig"
 	source "fs/coda/Kconfig"
 ```
 
 3. edit [linux]/fs/Makefile
 ```
 	obj-$(CONFIG_CIFS)              += cifs/
-	+obj-$(CONFIG_SMB_SERVER)       += ksmbd/
+	+obj-$(CONFIG_SMB_SERVER)       += cifsd/
 	obj-$(CONFIG_HPFS_FS)           += hpfs/
 ```
-4. make menuconfig and set ksmbd
+4. make menuconfig and set cifsd
 ```
 	[*] Network File Systems  --->
 		<M>   SMB server support
@@ -131,7 +131,7 @@ build your kernel
 * Linux Kernel 4.1 or later
 
 
-## KSMBD architecture
+## CIFSD architecture
 
 ```
                |--- ...
@@ -152,7 +152,7 @@ USER           ||
                || communication using NETLINK
                ||  ______________________________________________
                || |                                              |
-             usmbd   <<= DCE/RPC, WINREG                         |
+        ksmbd.mountd <<= DCE/RPC, WINREG                         |
                ^  |  <<= configure shares setting, user accounts |
                |  |______________________________________________|
                |
@@ -160,6 +160,6 @@ USER           ||
                |
                |------ ksmbdpwd.db(user account/password file)
                             ^
-  smbuseradd ---------------|
+  ksmbd.adduser ---------------|
 
 ```
