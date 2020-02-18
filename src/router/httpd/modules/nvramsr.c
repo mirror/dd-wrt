@@ -22,7 +22,7 @@
 #define cprintf(fmt, args...)
 
 static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
-static char *wfgets(char *buf, int len, webs_t fp);
+static char *wfgets(char *buf, int len, webs_t fp, int *eof);
 static int wfprintf(webs_t fp, char *fmt, ...);
 static size_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
 static size_t wfread(void *buf, size_t size, size_t n, webs_t fp);
@@ -49,7 +49,7 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 	 * Look for our part 
 	 */
 	while (len > 0) {
-		if (!wfgets(buf, MIN(len + 1, sizeof(buf)), wp))
+		if (!wfgets(buf, MIN(len + 1, sizeof(buf)), wp, NULL))
 			return -1;
 		len -= strlen(buf);
 		if (!strncasecmp(buf, "Content-Disposition:", 20)) {
@@ -62,7 +62,7 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 	 * Skip boundary and headers 
 	 */
 	while (len > 0) {
-		if (!wfgets(buf, sizeof(buf), wp))
+		if (!wfgets(buf, sizeof(buf), wp, NULL))
 			return -1;
 		len -= strlen(buf);
 		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
@@ -152,7 +152,7 @@ static int td_file_in(char *url, webs_t wp, size_t len, char *boundary)	//load a
 	 * Look for our part 
 	 */
 	while (len > 0) {
-		if (!wfgets(buf, MIN(len + 1, 2048), wp)) {
+		if (!wfgets(buf, MIN(len + 1, 2048), wp, NULL)) {
 			free(buf);
 			return -1;
 		}
@@ -167,7 +167,7 @@ static int td_file_in(char *url, webs_t wp, size_t len, char *boundary)	//load a
 	 * Skip boundary and headers 
 	 */
 	while (len > 0) {
-		if (!wfgets(buf, 2048, wp)) {
+		if (!wfgets(buf, 2048, wp, NULL)) {
 			free(buf);
 			return -1;
 		}
@@ -176,11 +176,11 @@ static int td_file_in(char *url, webs_t wp, size_t len, char *boundary)	//load a
 			break;
 	}
 
-	if (wfgets(buf, 2048, wp) != NULL) {
+	if (wfgets(buf, 2048, wp, NULL) != NULL) {
 		len -= strlen(buf);
 		if (strncmp(buf, "TRAFF-DATA", 10) == 0)	//sig OK
 		{
-			while (wfgets(buf, 2048, wp) != NULL) {
+			while (wfgets(buf, 2048, wp, NULL) != NULL) {
 				len -= strlen(buf);
 				if (startswith(buf, "traff-")) {
 					name = strtok(buf, "=");
@@ -201,7 +201,7 @@ static int td_file_in(char *url, webs_t wp, size_t len, char *boundary)	//load a
 	/*
 	 * Slurp anything remaining in the request 
 	 */
-	wfgets(buf, len, wp);
+	wfgets(buf, len, wp, NULL);
 	nvram_commit();
 	return 0;
 }

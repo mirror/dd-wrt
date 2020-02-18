@@ -756,7 +756,7 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 	 * Look for our part 
 	 */
 	while (len > 0) {
-		if (!wfgets(buf, MIN(len + 1, 1024), stream)) {
+		if (!wfgets(buf, MIN(len + 1, 1024), stream, NULL)) {
 			free(buf);
 			return -1;
 		}
@@ -766,14 +766,14 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 			if (strstr(buf, "name=\"erase\"")) {
 				while (len > 0 && strcmp(buf, "\n")
 				       && strcmp(buf, "\r\n")) {
-					if (!wfgets(buf, MIN(len + 1, 1024), stream)) {
+					if (!wfgets(buf, MIN(len + 1, 1024), stream, NULL)) {
 						free(buf);
 						return -1;
 					}
 
 					len -= strlen(buf);
 				}
-				if (!wfgets(buf, MIN(len + 1, 1024), stream)) {
+				if (!wfgets(buf, MIN(len + 1, 1024), stream, NULL)) {
 					free(buf);
 					return -1;
 				}
@@ -792,7 +792,7 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 	 * Skip boundary and headers 
 	 */
 	while (len > 0) {
-		if (!wfgets(buf, MIN(len + 1, 1024), stream)) {
+		if (!wfgets(buf, MIN(len + 1, 1024), stream, NULL)) {
 			free(buf);
 			return -1;
 		}
@@ -826,7 +826,7 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 	 * Slurp anything remaining in the request 
 	 */
 
-	wfgets(buf, len, stream);
+	wfgets(buf, len, stream, NULL);
 	free(buf);
 #endif
 	return 0;
