@@ -781,7 +781,7 @@ static void *handle_request(void *arg)
 	char *cp = NULL;
 	char *file = NULL;
 	int len;
-	struct mime_handler *handler = NULL;;
+	struct mime_handler *handler;
 	size_t content_length = 0;
 	int flags;
 	char *line;
@@ -1192,11 +1192,6 @@ static void *handle_request(void *arg)
 	int file_found = 1;
 	for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 		if (match(handler->pattern, file)) {
-
-			if (handler->input) {
-				PTHREAD_MUTEX_LOCK(&input_mutex);
-			}
-
 #ifdef HAVE_REGISTER
 			if (conn_fp->isregistered)
 #endif
@@ -1227,9 +1222,12 @@ static void *handle_request(void *arg)
 			}
 
 			if (handler->input) {
+				PTHREAD_MUTEX_LOCK(&input_mutex);
 				if (handler->input(file, conn_fp, content_length, boundary)) {
+					PTHREAD_MUTEX_UNLOCK(&input_mutex);
 					goto out;
 				}
+				PTHREAD_MUTEX_UNLOCK(&input_mutex);
 			}
 #if defined(linux)
 			if (!DO_SSL(conn_fp) && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
@@ -1293,10 +1291,6 @@ static void *handle_request(void *arg)
 	superchannel = conn_fp->issuperchannel;
 #endif
 	PTHREAD_MUTEX_UNLOCK(&httpd_mutex);
-
-	if (handler && handler->input)
-		PTHREAD_MUTEX_UNLOCK(&input_mutex);	//releases barrier
-
 	bzero(conn_fp, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
 
 	free(conn_fp);
