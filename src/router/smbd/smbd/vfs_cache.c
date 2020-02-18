@@ -411,8 +411,10 @@ static struct ksmbd_file *__ksmbd_lookup_fd(struct ksmbd_file_table *ft,
 	}
 	read_unlock(&ft->lock);
 
-	if (unclaimed)
+	if (fp && unclaimed) {
+		atomic_dec(&fp->refcount);
 		return NULL;
+	}
 	return fp;
 }
 
@@ -481,6 +483,8 @@ struct ksmbd_file *ksmbd_lookup_fd_fast(struct ksmbd_work *work,
 
 	if (__sanity_check(work->tcon, fp))
 		return fp;
+
+	ksmbd_fd_put(work, fp);
 	return NULL;
 }
 
@@ -499,10 +503,14 @@ struct ksmbd_file *ksmbd_lookup_fd_slow(struct ksmbd_work *work,
 		return NULL;
 
 	fp = __ksmbd_lookup_fd(&work->sess->file_table, id);
-	if (!__sanity_check(work->tcon, fp))
+	if (!__sanity_check(work->tcon, fp)) {
+		ksmbd_fd_put(work, fp);
 		return NULL;
-	if (fp->persistent_id != pid)
+	}
+	if (fp->persistent_id != pid) {
+		ksmbd_fd_put(work, fp);
 		return NULL;
+	}
 	return fp;
 }
 

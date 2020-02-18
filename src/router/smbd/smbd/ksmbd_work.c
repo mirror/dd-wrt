@@ -25,6 +25,8 @@ struct ksmbd_work *ksmbd_alloc_work_struct(void)
 	struct ksmbd_work *work = kmem_cache_zalloc(work_cache, GFP_KERNEL);
 
 	if (work) {
+		work->compound_fid = KSMBD_NO_FID;
+		work->compound_pfid = KSMBD_NO_FID;
 		INIT_LIST_HEAD(&work->request_entry);
 		INIT_LIST_HEAD(&work->async_request_entry);
 		INIT_LIST_HEAD(&work->fp_entry);
