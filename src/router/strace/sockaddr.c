@@ -4,7 +4,7 @@
  * Copyright (c) 1993, 1994, 1995, 1996 Rick Sladkey <jrs@world.std.com>
  * Copyright (c) 1996-2000 Wichert Akkerman <wichert@cistron.nl>
  * Copyright (c) 2005-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -41,7 +41,7 @@
 #include "xlat/bluetooth_l2_psm.h"
 #include "xlat/hci_channels.h"
 
-#define SIZEOF_SA_FAMILY sizeof(((struct sockaddr *) 0)->sa_family)
+#define SIZEOF_SA_FAMILY sizeof_field(struct sockaddr, sa_family)
 
 const size_t arp_hardware_types_size = ARRAY_SIZE(arp_hardware_types) - 1;
 const size_t ethernet_protocols_size = ARRAY_SIZE(ethernet_protocols) - 1;

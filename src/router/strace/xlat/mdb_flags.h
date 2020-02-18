@@ -3,6 +3,20 @@
 #include "gcc_compat.h"
 #include "static_assert.h"
 
+#if defined(MDB_FLAGS_OFFLOAD) || (defined(HAVE_DECL_MDB_FLAGS_OFFLOAD) && HAVE_DECL_MDB_FLAGS_OFFLOAD)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((MDB_FLAGS_OFFLOAD) == ((1 << 0)), "MDB_FLAGS_OFFLOAD != (1 << 0)");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define MDB_FLAGS_OFFLOAD (1 << 0)
+#endif
+#if defined(MDB_FLAGS_FAST_LEAVE) || (defined(HAVE_DECL_MDB_FLAGS_FAST_LEAVE) && HAVE_DECL_MDB_FLAGS_FAST_LEAVE)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((MDB_FLAGS_FAST_LEAVE) == ((1 << 1)), "MDB_FLAGS_FAST_LEAVE != (1 << 1)");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define MDB_FLAGS_FAST_LEAVE (1 << 1)
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -13,9 +27,8 @@
 # else
 
 static const struct xlat_data mdb_flags_xdata[] = {
-#if defined(MDB_FLAGS_OFFLOAD) || (defined(HAVE_DECL_MDB_FLAGS_OFFLOAD) && HAVE_DECL_MDB_FLAGS_OFFLOAD)
-  XLAT(MDB_FLAGS_OFFLOAD),
-#endif
+ XLAT(MDB_FLAGS_OFFLOAD),
+ XLAT(MDB_FLAGS_FAST_LEAVE),
 };
 static
 const struct xlat mdb_flags[1] = { {

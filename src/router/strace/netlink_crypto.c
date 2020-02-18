@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -8,15 +8,18 @@
 
 #include "defs.h"
 
-#ifdef HAVE_LINUX_CRYPTOUSER_H
+#include "netlink.h"
+#include "nlattr.h"
+#include "print_fields.h"
 
-# include "netlink.h"
-# include "nlattr.h"
-# include "print_fields.h"
+#include "types/cryptouser.h"
 
-# include <linux/cryptouser.h>
+#include "xlat/crypto_nl_attrs.h"
 
-# include "xlat/crypto_nl_attrs.h"
+#define XLAT_MACROS_ONLY
+# include "xlat/crypto_msgs.h"
+#undef XLAT_MACROS_ONLY
+
 
 static bool
 decode_crypto_report_generic(struct tcb *const tcp,
@@ -37,8 +40,7 @@ decode_crypto_report_hash(struct tcb *const tcp,
 			  const unsigned int len,
 			  const void *const opaque_data)
 {
-# ifdef HAVE_STRUCT_CRYPTO_REPORT_HASH
-	struct crypto_report_hash rhash;
+	struct_crypto_report_hash rhash;
 
 	if (len < sizeof(rhash))
 		printstrn(tcp, addr, len);
@@ -48,9 +50,6 @@ decode_crypto_report_hash(struct tcb *const tcp,
 		PRINT_FIELD_U(", ", rhash, digestsize);
 		tprints("}");
 	}
-# else
-	printstrn(tcp, addr, len);
-# endif
 
 	return true;
 }
@@ -61,8 +60,7 @@ decode_crypto_report_blkcipher(struct tcb *const tcp,
 			       const unsigned int len,
 			       const void *const opaque_data)
 {
-# ifdef HAVE_STRUCT_CRYPTO_REPORT_BLKCIPHER
-	struct crypto_report_blkcipher rblkcipher;
+	struct_crypto_report_blkcipher rblkcipher;
 
 	if (len < sizeof(rblkcipher))
 		printstrn(tcp, addr, len);
@@ -75,9 +73,6 @@ decode_crypto_report_blkcipher(struct tcb *const tcp,
 		PRINT_FIELD_U(", ", rblkcipher, ivsize);
 		tprints("}");
 	}
-# else
-	printstrn(tcp, addr, len);
-# endif
 
 	return true;
 }
@@ -88,8 +83,7 @@ decode_crypto_report_aead(struct tcb *const tcp,
 			  const unsigned int len,
 			  const void *const opaque_data)
 {
-# ifdef HAVE_STRUCT_CRYPTO_REPORT_AEAD
-	struct crypto_report_aead raead;
+	struct_crypto_report_aead raead;
 
 	if (len < sizeof(raead))
 		printstrn(tcp, addr, len);
@@ -101,9 +95,6 @@ decode_crypto_report_aead(struct tcb *const tcp,
 		PRINT_FIELD_U(", ", raead, ivsize);
 		tprints("}");
 	}
-# else
-	printstrn(tcp, addr, len);
-# endif
 
 	return true;
 }
@@ -114,8 +105,7 @@ decode_crypto_report_rng(struct tcb *const tcp,
 			 const unsigned int len,
 			 const void *const opaque_data)
 {
-# ifdef HAVE_STRUCT_CRYPTO_REPORT_RNG
-	struct crypto_report_rng rrng;
+	struct_crypto_report_rng rrng;
 
 	if (len < sizeof(rrng))
 		printstrn(tcp, addr, len);
@@ -124,9 +114,6 @@ decode_crypto_report_rng(struct tcb *const tcp,
 		PRINT_FIELD_U(", ", rrng, seedsize);
 		tprints("}");
 	}
-# else
-	printstrn(tcp, addr, len);
-# endif
 
 	return true;
 }
@@ -137,8 +124,7 @@ decode_crypto_report_cipher(struct tcb *const tcp,
 			    const unsigned int len,
 			    const void *const opaque_data)
 {
-# ifdef HAVE_STRUCT_CRYPTO_REPORT_CIPHER
-	struct crypto_report_cipher rcipher;
+	struct_crypto_report_cipher rcipher;
 
 	if (len < sizeof(rcipher))
 		printstrn(tcp, addr, len);
@@ -149,9 +135,6 @@ decode_crypto_report_cipher(struct tcb *const tcp,
 		PRINT_FIELD_U(", ", rcipher, max_keysize);
 		tprints("}");
 	}
-# else
-	printstrn(tcp, addr, len);
-# endif
 
 	return true;
 }
@@ -175,7 +158,7 @@ decode_crypto_user_alg(struct tcb *const tcp,
 		       const kernel_ulong_t addr,
 		       const unsigned int len)
 {
-	struct crypto_user_alg alg;
+	struct_crypto_user_alg alg;
 
 	if (len < sizeof(alg))
 		printstrn(tcp, addr, len);
@@ -220,5 +203,3 @@ decode_netlink_crypto(struct tcb *const tcp,
 
 	return true;
 }
-
-#endif /* HAVE_LINUX_CRYPTOUSER_H */

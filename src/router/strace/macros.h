@@ -9,6 +9,7 @@
 # define STRACE_MACROS_H
 
 # include <stdbool.h>
+# include <stddef.h>
 # include <sys/types.h>
 
 # include "gcc_compat.h"
@@ -36,9 +37,11 @@
 #  define ROUNDUP(val_, div_) (ROUNDUP_DIV((val_), (div_)) * (div_))
 # endif
 
+# define sizeof_field(type_, member_) (sizeof(((type_ *)0)->member_))
+
 # ifndef offsetofend
 #  define offsetofend(type_, member_)	\
-	(offsetof(type_, member_) + sizeof(((type_ *)0)->member_))
+	(offsetof(type_, member_) + sizeof_field(type_, member_))
 # endif
 
 # ifndef cast_ptr
@@ -72,5 +75,11 @@ is_filled(const char *ptr, char fill, size_t size)
 
 # define IS_ARRAY_ZERO(arr_)	\
 	is_filled((const char *) (arr_), 0, sizeof(arr_) + MUST_BE_ARRAY(arr_))
+
+# ifndef BIT
+#  define BIT(x_) (1U << (x_))
+# endif
+
+# define FLAG(name_) name_ = BIT(name_##_BIT)
 
 #endif /* !STRACE_MACROS_H */

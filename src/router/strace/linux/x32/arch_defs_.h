@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2018-2019 The strace developers.
+ * Copyright (c) 2018-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 #define ARCH_TIMESIZE 8
+#define ARCH_SIZEOF_STRUCT_MSQID64_DS 120
 #define HAVE_ARCH_OLD_MMAP 1
 #define HAVE_ARCH_OLD_SELECT 1
 #define HAVE_ARCH_UID16_SYSCALLS 1

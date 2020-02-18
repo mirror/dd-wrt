@@ -2,7 +2,7 @@
  * Copyright (c) 2013 Ben Noordhuis <info@bnoordhuis.nl>
  * Copyright (c) 2013-2015 Dmitry V. Levin <ldv@altlinux.org>
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2015-2019 The strace developers.
+ * Copyright (c) 2015-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -371,8 +371,16 @@ print_perf_event_attr(struct tcb *const tcp, const kernel_ulong_t addr)
 	_PERF_CHECK_FIELD(sample_max_stack);
 	PRINT_FIELD_U(", ", *attr, sample_max_stack);
 
-	/* _PERF_CHECK_FIELD(__reserved_2);
-	PRINT_FIELD_U(", ", *attr, __reserved2); */
+	_PERF_CHECK_FIELD(__reserved_2);
+	if (attr->__reserved_2)
+		tprintf(" /* bytes 110..111: %#hx */", attr->__reserved_2);
+
+	_PERF_CHECK_FIELD(aux_sample_size);
+	PRINT_FIELD_U(", ", *attr, aux_sample_size);
+
+	/* _PERF_CHECK_FIELD(__reserved_3);
+	if (attr->__reserved_3)
+		PRINT_FIELD_X(", ", *attr, __reserved_3); */
 
 print_perf_event_attr_out:
 	if ((attr->size && (attr->size > size)) ||

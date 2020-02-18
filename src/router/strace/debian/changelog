@@ -1,8 +1,20 @@
-strace (5.3-1) experimental; urgency=low
+strace (5.5-1) experimental; urgency=low
 
-  * strace 5.3 snapshot.
+  * strace 5.5 snapshot.
 
- -- Strace <strace-devel@lists.strace.io>  Wed, 25 Sep 2019 14:05:46 +0000
+ -- Strace <strace-devel@lists.strace.io>  Thu, 06 Feb 2020 16:23:37 +0000
+
+strace (5.4-1) unstable; urgency=medium
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@altlinux.org>  Thu, 28 Nov 2019 20:21:22 +0000
+
+strace (5.3-1) unstable; urgency=medium
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@altlinux.org>  Wed, 25 Sep 2019 01:02:03 +0000
 
 strace (5.2-1) unstable; urgency=medium
 

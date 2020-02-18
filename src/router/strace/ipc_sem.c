@@ -5,7 +5,7 @@
  * Copyright (c) 1996-1999 Wichert Akkerman <wichert@cistron.nl>
  * Copyright (c) 2003-2006 Roland McGrath <roland@redhat.com>
  * Copyright (c) 2006-2015 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2019 The strace developers.
+ * Copyright (c) 2015-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -14,16 +14,11 @@
 #include "defs.h"
 #include "ipc_defs.h"
 
-#ifdef HAVE_SYS_SEM_H
-# include <sys/sem.h>
-#elif defined HAVE_LINUX_SEM_H
-# include <linux/sem.h>
-#endif
+#include SEM_H_PROVIDER
 
 #include "xlat/semctl_flags.h"
 #include "xlat/semop_flags.h"
 
-#if defined HAVE_SYS_SEM_H || defined HAVE_LINUX_SEM_H
 static bool
 print_sembuf(struct tcb *tcp, void *elem_buf, size_t elem_size, void *data)
 {
@@ -35,19 +30,14 @@ print_sembuf(struct tcb *tcp, void *elem_buf, size_t elem_size, void *data)
 
 	return true;
 }
-#endif
 
 static void
 tprint_sembuf_array(struct tcb *const tcp, const kernel_ulong_t addr,
 		    const unsigned int count)
 {
-#if defined HAVE_SYS_SEM_H || defined HAVE_LINUX_SEM_H
 	struct sembuf sb;
 	print_array(tcp, addr, count, &sb, sizeof(sb),
 		    tfetch_mem, print_sembuf, 0);
-#else
-	printaddr(addr);
-#endif
 	tprintf(", %u", count);
 }
 

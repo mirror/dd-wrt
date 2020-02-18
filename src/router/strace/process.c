@@ -8,7 +8,7 @@
  *                    <barrow_dj@mail.yahoo.com,djbarrow@de.ibm.com>
  * Copyright (c) 2000 PocketPenguins Inc.  Linux for Hitachi SuperH
  *                    port by Greg Banks <gbanks@pocketpenguins.com>
- * Copyright (c) 1999-2018 The strace developers.
+ * Copyright (c) 1999-2019 The strace developers.
  *
  * All rights reserved.
  *
@@ -35,7 +35,7 @@
 
 static const struct xlat_data struct_user_offsets_data[] = {
 #include "userent.h"
-	XLAT_END
+	{ 0, 0 }
 };
 
 static const struct xlat struct_user_offsets = {

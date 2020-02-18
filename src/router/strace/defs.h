@@ -2,7 +2,7 @@
  * Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  * Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
  * Copyright (c) 1993, 1994, 1995, 1996 Rick Sladkey <jrs@world.std.com>
- * Copyright (c) 2001-2019 The strace developers.
+ * Copyright (c) 1999-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -251,13 +251,13 @@ struct tcb {
 	int flags;		/* See below for TCB_ values */
 	int pid;		/* If 0, this tcb is free */
 	int qual_flg;		/* qual_flags[scno] or DEFAULT_QUAL_FLAGS + RAW */
+# if SUPPORTED_PERSONALITIES > 1
+	unsigned int currpers;	/* Personality at the time of scno update */
+# endif
 	unsigned long u_error;	/* Error code */
 	kernel_ulong_t scno;	/* System call number */
 	kernel_ulong_t u_arg[MAX_ARGS];	/* System call arguments */
 	kernel_long_t u_rval;	/* Return value */
-# if SUPPORTED_PERSONALITIES > 1
-	unsigned int currpers;	/* Personality at the time of scno update */
-# endif
 	int sys_func_rval;	/* Syscall entry parser's return value */
 	int curcol;		/* Output column for this process */
 	FILE *outf;		/* Output file for this process */
@@ -775,18 +775,14 @@ enum xlat_style_private_flag_bits {
 	PXF_DEFAULT_STR_BIT,
 };
 
-# define FLAG_(name_) name_ = 1 << name_##_BIT
-
 enum xlat_style_private_flags {
 	/* print_array */
-	FLAG_(PAF_PRINT_INDICES),
-	FLAG_(PAF_ARRAY_TRUNCATED),
+	FLAG(PAF_PRINT_INDICES),
+	FLAG(PAF_ARRAY_TRUNCATED),
 
 	/* print_xlat */
-	FLAG_(PXF_DEFAULT_STR),
+	FLAG(PXF_DEFAULT_STR),
 };
-
-# undef FLAG_
 
 /** Print a value in accordance with xlat formatting settings. */
 extern void print_xlat_ex(uint64_t val, const char *str, enum xlat_style style);
@@ -927,19 +923,26 @@ print_array(struct tcb *const tcp,
 
 /** Shorthand for printing local arrays. */
 static inline bool
-print_local_array(struct tcb *tcp,
-		  void *start_addr,
-		  const size_t nmemb,
-		  void *const elem_buf,
-		  const size_t elem_size,
-		  print_fn print_func,
-		  void *const opaque_data,
-		  unsigned int flags)
+print_local_array_ex(struct tcb *tcp,
+		     void *start_addr,
+		     const size_t nmemb,
+		     const size_t elem_size,
+		     print_fn print_func,
+		     void *const opaque_data,
+		     unsigned int flags,
+		     const struct xlat *index_xlat,
+		     const char *index_dflt)
 {
-	return print_array_ex(tcp, (uintptr_t) start_addr , nmemb,
-			      elem_buf, elem_size, NULL, print_func,
-			      opaque_data, flags, NULL, NULL);
+	return print_array_ex(tcp, (uintptr_t) start_addr, nmemb,
+			      NULL, elem_size, NULL, print_func,
+			      opaque_data, flags, index_xlat, index_dflt);
 }
+
+/** Shorthand for a shorthand for printing local arrays. */
+#define print_local_array(tcp_, start_addr_, print_func_)      \
+	print_local_array_ex((tcp_), (start_addr_), ARRAY_SIZE(start_addr_), \
+			     sizeof((start_addr_)[0]), (print_func_),        \
+			     NULL, 0, NULL, NULL)
 
 extern kernel_ulong_t *
 fetch_indirect_syscall_args(struct tcb *, kernel_ulong_t addr, unsigned int n_args);
@@ -1041,6 +1044,17 @@ extern void print_ifindex(unsigned int);
 extern void print_bpf_filter_code(const uint16_t code, bool extended);
 
 extern void qualify(const char *);
+extern void qualify_trace(const char *);
+extern void qualify_abbrev(const char *);
+extern void qualify_verbose(const char *);
+extern void qualify_raw(const char *);
+extern void qualify_signals(const char *);
+extern void qualify_status(const char *);
+extern void qualify_read(const char *);
+extern void qualify_write(const char *);
+extern void qualify_fault(const char *);
+extern void qualify_inject(const char *);
+extern void qualify_kvm(const char *);
 extern unsigned int qual_flags(const unsigned int);
 
 # define DECL_IOCTL(name)						\
@@ -1471,6 +1485,17 @@ extern unsigned nioctlents;
 extern const unsigned int nsyscall_vec[SUPPORTED_PERSONALITIES];
 extern const struct_sysent *const sysent_vec[SUPPORTED_PERSONALITIES];
 extern struct inject_opts *inject_vec[SUPPORTED_PERSONALITIES];
+
+# ifdef ENABLE_COVERAGE_GCOV
+#  ifdef HAVE_GCOV_H
+#   include <gcov.h>
+#  else
+extern void __gcov_dump(void);
+#  endif
+#  define GCOV_DUMP __gcov_dump()
+# else
+#  define GCOV_DUMP
+# endif
 
 # ifdef IN_MPERS_BOOTSTRAP
 /* Transform multi-line MPERS_PRINTER_DECL statements to one-liners.  */

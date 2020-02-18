@@ -3,6 +3,34 @@
 #include "gcc_compat.h"
 #include "static_assert.h"
 
+#if defined(P_ALL) || (defined(HAVE_DECL_P_ALL) && HAVE_DECL_P_ALL)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((P_ALL) == (0), "P_ALL != 0");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define P_ALL 0
+#endif
+#if defined(P_PID) || (defined(HAVE_DECL_P_PID) && HAVE_DECL_P_PID)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((P_PID) == (1), "P_PID != 1");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define P_PID 1
+#endif
+#if defined(P_PGID) || (defined(HAVE_DECL_P_PGID) && HAVE_DECL_P_PGID)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((P_PGID) == (2), "P_PGID != 2");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define P_PGID 2
+#endif
+#if defined(P_PIDFD) || (defined(HAVE_DECL_P_PIDFD) && HAVE_DECL_P_PIDFD)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((P_PIDFD) == (3), "P_PIDFD != 3");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define P_PIDFD 3
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -13,39 +41,16 @@
 # else
 
 static const struct xlat_data waitid_types_xdata[] = {
-#if defined(P_PID) || (defined(HAVE_DECL_P_PID) && HAVE_DECL_P_PID)
-  XLAT(P_PID),
-#endif
-#if defined(P_PPID) || (defined(HAVE_DECL_P_PPID) && HAVE_DECL_P_PPID)
-  XLAT(P_PPID),
-#endif
-#if defined(P_PGID) || (defined(HAVE_DECL_P_PGID) && HAVE_DECL_P_PGID)
-  XLAT(P_PGID),
-#endif
-#if defined(P_SID) || (defined(HAVE_DECL_P_SID) && HAVE_DECL_P_SID)
-  XLAT(P_SID),
-#endif
-#if defined(P_CID) || (defined(HAVE_DECL_P_CID) && HAVE_DECL_P_CID)
-  XLAT(P_CID),
-#endif
-#if defined(P_UID) || (defined(HAVE_DECL_P_UID) && HAVE_DECL_P_UID)
-  XLAT(P_UID),
-#endif
-#if defined(P_GID) || (defined(HAVE_DECL_P_GID) && HAVE_DECL_P_GID)
-  XLAT(P_GID),
-#endif
-#if defined(P_ALL) || (defined(HAVE_DECL_P_ALL) && HAVE_DECL_P_ALL)
-  XLAT(P_ALL),
-#endif
-#if defined(P_LWPID) || (defined(HAVE_DECL_P_LWPID) && HAVE_DECL_P_LWPID)
-  XLAT(P_LWPID),
-#endif
+ [P_ALL] = XLAT(P_ALL),
+ [P_PID] = XLAT(P_PID),
+ [P_PGID] = XLAT(P_PGID),
+ [P_PIDFD] = XLAT(P_PIDFD),
 };
 static
 const struct xlat waitid_types[1] = { {
  .data = waitid_types_xdata,
  .size = ARRAY_SIZE(waitid_types_xdata),
- .type = XT_NORMAL,
+ .type = XT_INDEXED,
 } };
 
 # endif /* !IN_MPERS */

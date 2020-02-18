@@ -133,7 +133,7 @@ print_v4l2_capability(struct tcb *const tcp, const kernel_ulong_t arg)
 		caps.version & 0xFF);
 	printflags(v4l2_device_capabilities_flags, caps.capabilities,
 		   "V4L2_CAP_???");
-#ifdef V4L2_CAP_DEVICE_CAPS
+#ifdef HAVE_STRUCT_V4L2_CAPABILITY_DEVICE_CAPS
 	tprints(", device_caps=");
 	printflags(v4l2_device_capabilities_flags, caps.device_caps,
 		   "V4L2_CAP_???");
@@ -204,7 +204,7 @@ print_v4l2_format_fmt(struct tcb *const tcp, const char *prefix,
 			  "V4L2_COLORSPACE_???");
 		tprints("}");
 		break;
-#if HAVE_DECL_V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
+#if HAVE_STRUCT_V4L2_FORMAT_FMT_PIX_MP
 	case V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE: {
 		unsigned int i, max;
@@ -235,9 +235,7 @@ print_v4l2_format_fmt(struct tcb *const tcp, const char *prefix,
 	}
 #endif
 	/* OUTPUT_OVERLAY since Linux v2.6.22-rc1~1118^2~179 */
-#if HAVE_DECL_V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY:
-#endif
 	case V4L2_BUF_TYPE_VIDEO_OVERLAY: {
 		struct_v4l2_clip clip;
 		tprints(prefix);
@@ -272,7 +270,7 @@ print_v4l2_format_fmt(struct tcb *const tcp, const char *prefix,
 		tprints("}");
 		break;
 	/* both since Linux v2.6.14-rc2~64 */
-#if HAVE_DECL_V4L2_BUF_TYPE_SLICED_VBI_CAPTURE
+#if HAVE_STRUCT_V4L2_FORMAT_FMT_SLICED
 	case V4L2_BUF_TYPE_SLICED_VBI_CAPTURE:
 	case V4L2_BUF_TYPE_SLICED_VBI_OUTPUT: {
 		unsigned int i, j;
@@ -301,12 +299,10 @@ print_v4l2_format_fmt(struct tcb *const tcp, const char *prefix,
 		break;
 	}
 #endif
+#if HAVE_STRUCT_V4L2_FORMAT_FMT_SDR
 	/* since Linux v4.4-rc1~118^2~14 */
-#if HAVE_DECL_V4L2_BUF_TYPE_SDR_OUTPUT
 	case V4L2_BUF_TYPE_SDR_OUTPUT:
-#endif
 	/* since Linux v3.15-rc1~85^2~213 */
-#if HAVE_DECL_V4L2_BUF_TYPE_SDR_CAPTURE
 	case V4L2_BUF_TYPE_SDR_CAPTURE:
 		tprints(prefix);
 		tprints("fmt.sdr={pixelformat=");
@@ -813,7 +809,7 @@ print_v4l2_ext_control(struct tcb *tcp, void *elem_buf, size_t elem_size, void *
 
 	tprints("{id=");
 	printxval(v4l2_control_ids, p->id, "V4L2_CID_???");
-# if HAVE_DECL_V4L2_CTRL_TYPE_STRING
+# if HAVE_STRUCT_V4L2_EXT_CONTROL_STRING
 	tprintf(", size=%u", p->size);
 	if (p->size > 0) {
 		tprints(", string=");

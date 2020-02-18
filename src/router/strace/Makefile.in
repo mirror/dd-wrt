@@ -20,7 +20,7 @@
 # Copyright (c) 2006-2016 Dmitry V. Levin <ldv@altlinux.org>
 # Copyright (c) 2008-2015 Mike Frysinger <vapier@gentoo.org>
 # Copyright (c) 2015 Elvira Khabirova <lineprinter0@gmail.com>
-# Copyright (c) 2002-2019 The strace developers.
+# Copyright (c) 2002-2020 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: LGPL-2.1-or-later
@@ -132,7 +132,15 @@ bin_PROGRAMS = strace$(EXEEXT)
 @HAVE_MX32_MPERS_TRUE@am__append_21 = $(mpers_mx32_targets)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/ax_code_coverage.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/types/check-cryptouser.m4 \
+	$(top_srcdir)/types/check-evdev.m4 \
+	$(top_srcdir)/types/check-io_uring.m4 \
+	$(top_srcdir)/types/check-rtnl_link.m4 \
+	$(top_srcdir)/types/check-rtnl_mdb.m4 \
+	$(top_srcdir)/types/check-rtnl_neightbl.m4 \
+	$(top_srcdir)/types/check-rtnl_route.m4 \
+	$(top_srcdir)/types/st_check_types.m4 \
+	$(top_srcdir)/m4/ax_code_coverage.m4 \
 	$(top_srcdir)/m4/ax_prog_cc_for_build.m4 \
 	$(top_srcdir)/m4/ax_valgrind_check.m4 \
 	$(top_srcdir)/m4/bpf_attr.m4 $(top_srcdir)/m4/mpers.m4 \
@@ -346,12 +354,27 @@ am__strace_SOURCES_DIST = access.c affinity.c aio.c alpha.c \
 	trace_event.h truncate.c ubi.c ucopy.c uid.c uid16.c umask.c \
 	umount.c uname.c userfaultfd.c ustat.c util.c utime.c utimes.c \
 	v4l2.c wait.c wait.h watchdog_ioctl.c xattr.c xfs_quota_stat.h \
-	xlat.c xlat.h xmalloc.c xmalloc.h xstring.h bpf_attr_check.c \
-	unwind.c unwind.h unwind-libdw.c unwind-libunwind.c
-am__objects_3 = strace-bpf_attr_check.$(OBJEXT)
-@ENABLE_STACKTRACE_TRUE@am__objects_4 = strace-unwind.$(OBJEXT)
-@ENABLE_STACKTRACE_TRUE@@USE_LIBDW_TRUE@am__objects_5 = strace-unwind-libdw.$(OBJEXT)
-@ENABLE_STACKTRACE_TRUE@@USE_LIBUNWIND_TRUE@am__objects_6 = strace-unwind-libunwind.$(OBJEXT)
+	xlat.c xlat.h xmalloc.c xmalloc.h xstring.h types/cryptouser.h \
+	types/evdev.h types/io_uring.h types/rtnl_link.h \
+	types/rtnl_mdb.h types/rtnl_neightbl.h types/rtnl_route.h \
+	bpf_attr_check.c types/check-cryptouser.c types/check-evdev.c \
+	types/check-io_uring.c types/check-rtnl_link.c \
+	types/check-rtnl_mdb.c types/check-rtnl_neightbl.c \
+	types/check-rtnl_route.c unwind.c unwind.h unwind-libdw.c \
+	unwind-libunwind.c
+am__objects_3 =
+am__dirstamp = $(am__leading_dot)dirstamp
+am__objects_4 = types/strace-check-cryptouser.$(OBJEXT) \
+	types/strace-check-evdev.$(OBJEXT) \
+	types/strace-check-io_uring.$(OBJEXT) \
+	types/strace-check-rtnl_link.$(OBJEXT) \
+	types/strace-check-rtnl_mdb.$(OBJEXT) \
+	types/strace-check-rtnl_neightbl.$(OBJEXT) \
+	types/strace-check-rtnl_route.$(OBJEXT)
+am__objects_5 = strace-bpf_attr_check.$(OBJEXT) $(am__objects_4)
+@ENABLE_STACKTRACE_TRUE@am__objects_6 = strace-unwind.$(OBJEXT)
+@ENABLE_STACKTRACE_TRUE@@USE_LIBDW_TRUE@am__objects_7 = strace-unwind-libdw.$(OBJEXT)
+@ENABLE_STACKTRACE_TRUE@@USE_LIBUNWIND_TRUE@am__objects_8 = strace-unwind-libunwind.$(OBJEXT)
 am_strace_OBJECTS = strace-access.$(OBJEXT) strace-affinity.$(OBJEXT) \
 	strace-aio.$(OBJEXT) strace-alpha.$(OBJEXT) \
 	strace-basic_filters.$(OBJEXT) strace-bind.$(OBJEXT) \
@@ -482,8 +505,8 @@ am_strace_OBJECTS = strace-access.$(OBJEXT) strace-affinity.$(OBJEXT) \
 	strace-utimes.$(OBJEXT) strace-v4l2.$(OBJEXT) \
 	strace-wait.$(OBJEXT) strace-watchdog_ioctl.$(OBJEXT) \
 	strace-xattr.$(OBJEXT) strace-xlat.$(OBJEXT) \
-	strace-xmalloc.$(OBJEXT) $(am__objects_3) $(am__objects_4) \
-	$(am__objects_5) $(am__objects_6)
+	strace-xmalloc.$(OBJEXT) $(am__objects_3) $(am__objects_5) \
+	$(am__objects_6) $(am__objects_7) $(am__objects_8)
 strace_OBJECTS = $(am_strace_OBJECTS)
 am__DEPENDENCIES_1 =
 @ENABLE_STACKTRACE_TRUE@@USE_LIBDW_TRUE@am__DEPENDENCIES_2 =  \
@@ -790,7 +813,14 @@ am__depfiles_remade = ./$(DEPDIR)/libmpers_m32_a-block.Po \
 	./$(DEPDIR)/strace-v4l2.Po ./$(DEPDIR)/strace-wait.Po \
 	./$(DEPDIR)/strace-watchdog_ioctl.Po \
 	./$(DEPDIR)/strace-xattr.Po ./$(DEPDIR)/strace-xlat.Po \
-	./$(DEPDIR)/strace-xmalloc.Po
+	./$(DEPDIR)/strace-xmalloc.Po \
+	types/$(DEPDIR)/strace-check-cryptouser.Po \
+	types/$(DEPDIR)/strace-check-evdev.Po \
+	types/$(DEPDIR)/strace-check-io_uring.Po \
+	types/$(DEPDIR)/strace-check-rtnl_link.Po \
+	types/$(DEPDIR)/strace-check-rtnl_mdb.Po \
+	types/$(DEPDIR)/strace-check-rtnl_neightbl.Po \
+	types/$(DEPDIR)/strace-check-rtnl_route.Po
 am__mv = mv -f
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -866,10 +896,10 @@ DIST_SUBDIRS = . tests tests-m32 tests-mx32
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in \
 	$(srcdir)/mpers.am $(srcdir)/scno.am \
 	$(srcdir)/strace-log-merge.1.in $(srcdir)/strace.1.in \
-	$(srcdir)/strace.spec.in $(srcdir)/xlat/Makemodule.am \
-	$(top_srcdir)/debian/changelog.in AUTHORS COPYING INSTALL NEWS \
-	README compile config.guess config.sub depcomp install-sh \
-	missing
+	$(srcdir)/strace.spec.in $(srcdir)/types/Makemodule.am \
+	$(srcdir)/xlat/Makemodule.am $(top_srcdir)/debian/changelog.in \
+	AUTHORS COPYING INSTALL NEWS README compile config.guess \
+	config.sub depcomp install-sh missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -924,8 +954,12 @@ BUILD_OBJEXT = @BUILD_OBJEXT@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CC_FOR_BUILD = @CC_FOR_BUILD@
+CC_FOR_M32 = @CC_FOR_M32@
+CC_FOR_MX32 = @CC_FOR_MX32@
 CFLAGS = @CFLAGS@
 CFLAGS_FOR_BUILD = @CFLAGS_FOR_BUILD@
+CFLAGS_FOR_M32 = @CFLAGS_FOR_M32@
+CFLAGS_FOR_MX32 = @CFLAGS_FOR_MX32@
 CODE_COVERAGE_CFLAGS = @CODE_COVERAGE_CFLAGS@
 CODE_COVERAGE_CPPFLAGS = @CODE_COVERAGE_CPPFLAGS@
 CODE_COVERAGE_CXXFLAGS = @CODE_COVERAGE_CXXFLAGS@
@@ -936,7 +970,11 @@ COPYRIGHT_YEAR = @COPYRIGHT_YEAR@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CPPFLAGS_FOR_BUILD = @CPPFLAGS_FOR_BUILD@
+CPPFLAGS_FOR_M32 = @CPPFLAGS_FOR_M32@
+CPPFLAGS_FOR_MX32 = @CPPFLAGS_FOR_MX32@
 CPP_FOR_BUILD = @CPP_FOR_BUILD@
+CPP_FOR_M32 = @CPP_FOR_M32@
+CPP_FOR_MX32 = @CPP_FOR_MX32@
 CYGPATH_W = @CYGPATH_W@
 DEB_CHANGELOGTIME = @DEB_CHANGELOGTIME@
 DEFS = @DEFS@
@@ -1074,7 +1112,7 @@ bin_SCRIPTS = strace-graph strace-log-merge
 OS = linux
 # ARCH is `i386', `m68k', `sparc', etc.
 ARCH = @arch@
-ACLOCAL_AMFLAGS = -I m4
+ACLOCAL_AMFLAGS = -I m4 -I types
 AM_CFLAGS = $(WARN_CFLAGS)
 AM_CPPFLAGS = -I$(builddir)/$(OS)/$(ARCH) \
 	      -I$(srcdir)/$(OS)/$(ARCH) \
@@ -1085,6 +1123,9 @@ AM_CPPFLAGS = -I$(builddir)/$(OS)/$(ARCH) \
 
 AM_CFLAGS_FOR_BUILD = $(WARN_CFLAGS_FOR_BUILD)
 AM_CPPFLAGS_FOR_BUILD = $(AM_CPPFLAGS)
+TYPES_HEADER_FILES = types/cryptouser.h types/evdev.h types/io_uring.h types/rtnl_link.h types/rtnl_mdb.h types/rtnl_neightbl.h types/rtnl_route.h 
+TYPES_CHECK_FILES = types/check-cryptouser.c types/check-evdev.c types/check-io_uring.c types/check-rtnl_link.c types/check-rtnl_mdb.c types/check-rtnl_neightbl.c types/check-rtnl_route.c 
+TYPES_M4_FILES = types/check-cryptouser.m4 types/check-evdev.m4 types/check-io_uring.m4 types/check-rtnl_link.m4 types/check-rtnl_mdb.m4 types/check-rtnl_neightbl.m4 types/check-rtnl_route.m4 
 XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/adjtimex_modes.in xlat/adjtimex_state.in \
 	xlat/adjtimex_status.in xlat/advise.in xlat/af_packet_types.in \
@@ -1099,12 +1140,12 @@ XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/bootflags3.in xlat/bpf_attach_flags.in \
 	xlat/bpf_attach_type.in xlat/bpf_class.in xlat/bpf_commands.in \
 	xlat/bpf_file_mode_flags.in xlat/bpf_map_flags.in \
-	xlat/bpf_map_types.in xlat/bpf_map_update_elem_flags.in \
-	xlat/bpf_miscop.in xlat/bpf_mode.in xlat/bpf_op_alu.in \
-	xlat/bpf_op_jmp.in xlat/bpf_prog_flags.in \
-	xlat/bpf_prog_types.in xlat/bpf_query_flags.in \
-	xlat/bpf_rval.in xlat/bpf_size.in xlat/bpf_src.in \
-	xlat/bpf_task_fd_type.in xlat/bsg_flags.in \
+	xlat/bpf_map_lookup_elem_flags.in xlat/bpf_map_types.in \
+	xlat/bpf_map_update_elem_flags.in xlat/bpf_miscop.in \
+	xlat/bpf_mode.in xlat/bpf_op_alu.in xlat/bpf_op_jmp.in \
+	xlat/bpf_prog_flags.in xlat/bpf_prog_types.in \
+	xlat/bpf_query_flags.in xlat/bpf_rval.in xlat/bpf_size.in \
+	xlat/bpf_src.in xlat/bpf_task_fd_type.in xlat/bsg_flags.in \
 	xlat/bsg_protocol.in xlat/bsg_subprotocol.in \
 	xlat/bt_protocols.in xlat/btrfs_balance_args.in \
 	xlat/btrfs_balance_ctl_cmds.in xlat/btrfs_balance_flags.in \
@@ -1123,10 +1164,11 @@ XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/btrfs_qgroup_status_flags.in xlat/btrfs_scrub_flags.in \
 	xlat/btrfs_send_flags.in xlat/btrfs_snap_flags_v2.in \
 	xlat/btrfs_space_info_flags.in xlat/btrfs_tree_objectids.in \
-	xlat/cacheflush_scope.in xlat/caif_protocols.in \
-	xlat/can_protocols.in xlat/cap.in xlat/cap_mask0.in \
-	xlat/cap_mask1.in xlat/cap_version.in xlat/clockflags.in \
-	xlat/clocknames.in xlat/clone_flags.in xlat/cpuclocknames.in \
+	xlat/cacheflush_flags.in xlat/cacheflush_scope.in \
+	xlat/caif_protocols.in xlat/can_protocols.in xlat/cap.in \
+	xlat/cap_mask0.in xlat/cap_mask1.in xlat/cap_version.in \
+	xlat/clockflags.in xlat/clocknames.in xlat/clone3_flags.in \
+	xlat/clone_flags.in xlat/cpuclocknames.in xlat/crypto_msgs.in \
 	xlat/crypto_nl_attrs.in xlat/dcb_commands.in \
 	xlat/delete_module_flags.in xlat/dirent_types.in \
 	xlat/dm_flags.in xlat/ebpf_class.in xlat/ebpf_mode.in \
@@ -1136,11 +1178,11 @@ XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/ethernet_protocols.in xlat/evdev_abs.in \
 	xlat/evdev_autorepeat.in xlat/evdev_ev.in \
 	xlat/evdev_ff_status.in xlat/evdev_ff_types.in \
-	xlat/evdev_keycode.in xlat/evdev_leds.in xlat/evdev_misc.in \
-	xlat/evdev_mtslots.in xlat/evdev_prop.in \
-	xlat/evdev_relative_axes.in xlat/evdev_snd.in \
-	xlat/evdev_switch.in xlat/f_owner_types.in xlat/f_seals.in \
-	xlat/falloc_flags.in xlat/fan_classes.in \
+	xlat/evdev_ioctl_cmds.in xlat/evdev_keycode.in \
+	xlat/evdev_leds.in xlat/evdev_misc.in xlat/evdev_mtslots.in \
+	xlat/evdev_prop.in xlat/evdev_relative_axes.in \
+	xlat/evdev_snd.in xlat/evdev_switch.in xlat/f_owner_types.in \
+	xlat/f_seals.in xlat/falloc_flags.in xlat/fan_classes.in \
 	xlat/fan_event_flags.in xlat/fan_init_flags.in \
 	xlat/fan_mark_flags.in xlat/fcntlcmds.in xlat/fdflags.in \
 	xlat/fib_rule_actions.in xlat/fib_rule_flags.in \
@@ -1168,7 +1210,9 @@ XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/itimer_which.in xlat/kcm_protocols.in xlat/kcmp_types.in \
 	xlat/kexec_arch_values.in xlat/kexec_file_load_flags.in \
 	xlat/kexec_load_flags.in xlat/key_perms.in xlat/key_reqkeys.in \
-	xlat/key_spec.in xlat/keyctl_commands.in xlat/kvm_cap.in \
+	xlat/key_spec.in xlat/keyctl_caps0.in xlat/keyctl_caps1.in \
+	xlat/keyctl_commands.in xlat/keyctl_move_flags.in \
+	xlat/keyctl_pkey_ops.in xlat/kvm_cap.in \
 	xlat/kvm_cpuid_flags.in xlat/kvm_exit_reason.in \
 	xlat/kvm_mem_flags.in xlat/lockfcmds.in xlat/loop_cmds.in \
 	xlat/loop_crypt_type_options.in xlat/loop_flags_options.in \
@@ -1227,9 +1271,9 @@ XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/pr_spec_cmds.in xlat/pr_spec_get_store_bypass_flags.in \
 	xlat/pr_spec_set_store_bypass_flags.in xlat/pr_sve_vl_flags.in \
 	xlat/pr_tsc.in xlat/pr_unalign_flags.in xlat/prctl_options.in \
-	xlat/priorities.in xlat/ptp_flags_options.in \
-	xlat/ptrace_cmds.in xlat/ptrace_events.in \
-	xlat/ptrace_peeksiginfo_flags.in \
+	xlat/priorities.in xlat/ptp_extts_flags.in \
+	xlat/ptp_perout_flags.in xlat/ptrace_cmds.in \
+	xlat/ptrace_events.in xlat/ptrace_peeksiginfo_flags.in \
 	xlat/ptrace_setoptions_flags.in xlat/ptrace_syscall_info_op.in \
 	xlat/quota_formats.in xlat/quotacmds.in xlat/quotatypes.in \
 	xlat/random_ioctl_cmds.in xlat/rename_flags.in \
@@ -1257,9 +1301,9 @@ XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/rtnl_netconf_attrs.in xlat/rtnl_nsid_attrs.in \
 	xlat/rtnl_route_attrs.in xlat/rtnl_rta_metrics_attrs.in \
 	xlat/rtnl_rule_attrs.in xlat/rtnl_tc_action_attrs.in \
-	xlat/rtnl_tc_attrs.in xlat/rtnl_tca_stab_attrs.in \
-	xlat/rtnl_tca_stats_attrs.in xlat/rwf_flags.in \
-	xlat/s390_guarded_storage_commands.in \
+	xlat/rtnl_tc_attrs.in xlat/rtnl_tca_act_flags.in \
+	xlat/rtnl_tca_stab_attrs.in xlat/rtnl_tca_stats_attrs.in \
+	xlat/rwf_flags.in xlat/s390_guarded_storage_commands.in \
 	xlat/s390_runtime_instr_commands.in \
 	xlat/s390_sthyi_function_codes.in xlat/sa_handler_values.in \
 	xlat/sched_flags.in xlat/schedulers.in xlat/scmvals.in \
@@ -1321,8 +1365,8 @@ XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/umount_flags.in xlat/unix_diag_attrs.in \
 	xlat/unix_diag_show.in xlat/unshare_flags.in \
 	xlat/uring_enter_flags.in xlat/uring_register_opcodes.in \
-	xlat/uring_setup_flags.in xlat/usagewho.in \
-	xlat/v4l2_buf_flags.in xlat/v4l2_buf_types.in \
+	xlat/uring_setup_features.in xlat/uring_setup_flags.in \
+	xlat/usagewho.in xlat/v4l2_buf_flags.in xlat/v4l2_buf_types.in \
 	xlat/v4l2_capture_modes.in xlat/v4l2_colorspaces.in \
 	xlat/v4l2_control_classes.in xlat/v4l2_control_flags.in \
 	xlat/v4l2_control_id_bases.in xlat/v4l2_control_ids.in \
@@ -1353,9 +1397,10 @@ XLAT_HEADER_FILES = xlat/access_flags.h xlat/addrfams.h \
 	xlat/bpf_attach_flags.h xlat/bpf_attach_type.h \
 	xlat/bpf_class.h xlat/bpf_commands.h \
 	xlat/bpf_file_mode_flags.h xlat/bpf_map_flags.h \
-	xlat/bpf_map_types.h xlat/bpf_map_update_elem_flags.h \
-	xlat/bpf_miscop.h xlat/bpf_mode.h xlat/bpf_op_alu.h \
-	xlat/bpf_op_jmp.h xlat/bpf_prog_flags.h xlat/bpf_prog_types.h \
+	xlat/bpf_map_lookup_elem_flags.h xlat/bpf_map_types.h \
+	xlat/bpf_map_update_elem_flags.h xlat/bpf_miscop.h \
+	xlat/bpf_mode.h xlat/bpf_op_alu.h xlat/bpf_op_jmp.h \
+	xlat/bpf_prog_flags.h xlat/bpf_prog_types.h \
 	xlat/bpf_query_flags.h xlat/bpf_rval.h xlat/bpf_size.h \
 	xlat/bpf_src.h xlat/bpf_task_fd_type.h xlat/bsg_flags.h \
 	xlat/bsg_protocol.h xlat/bsg_subprotocol.h xlat/bt_protocols.h \
@@ -1374,10 +1419,11 @@ XLAT_HEADER_FILES = xlat/access_flags.h xlat/addrfams.h \
 	xlat/btrfs_qgroup_status_flags.h xlat/btrfs_scrub_flags.h \
 	xlat/btrfs_send_flags.h xlat/btrfs_snap_flags_v2.h \
 	xlat/btrfs_space_info_flags.h xlat/btrfs_tree_objectids.h \
-	xlat/cacheflush_scope.h xlat/caif_protocols.h \
-	xlat/can_protocols.h xlat/cap.h xlat/cap_mask0.h \
-	xlat/cap_mask1.h xlat/cap_version.h xlat/clockflags.h \
-	xlat/clocknames.h xlat/clone_flags.h xlat/cpuclocknames.h \
+	xlat/cacheflush_flags.h xlat/cacheflush_scope.h \
+	xlat/caif_protocols.h xlat/can_protocols.h xlat/cap.h \
+	xlat/cap_mask0.h xlat/cap_mask1.h xlat/cap_version.h \
+	xlat/clockflags.h xlat/clocknames.h xlat/clone3_flags.h \
+	xlat/clone_flags.h xlat/cpuclocknames.h xlat/crypto_msgs.h \
 	xlat/crypto_nl_attrs.h xlat/dcb_commands.h \
 	xlat/delete_module_flags.h xlat/dirent_types.h xlat/dm_flags.h \
 	xlat/ebpf_class.h xlat/ebpf_mode.h xlat/ebpf_op_alu.h \
@@ -1386,8 +1432,8 @@ XLAT_HEADER_FILES = xlat/access_flags.h xlat/addrfams.h \
 	xlat/epollevents.h xlat/epollflags.h xlat/ethernet_protocols.h \
 	xlat/evdev_abs.h xlat/evdev_autorepeat.h xlat/evdev_ev.h \
 	xlat/evdev_ff_status.h xlat/evdev_ff_types.h \
-	xlat/evdev_keycode.h xlat/evdev_leds.h xlat/evdev_misc.h \
-	xlat/evdev_mtslots.h xlat/evdev_prop.h \
+	xlat/evdev_ioctl_cmds.h xlat/evdev_keycode.h xlat/evdev_leds.h \
+	xlat/evdev_misc.h xlat/evdev_mtslots.h xlat/evdev_prop.h \
 	xlat/evdev_relative_axes.h xlat/evdev_snd.h \
 	xlat/evdev_switch.h xlat/f_owner_types.h xlat/f_seals.h \
 	xlat/falloc_flags.h xlat/fan_classes.h xlat/fan_event_flags.h \
@@ -1417,12 +1463,14 @@ XLAT_HEADER_FILES = xlat/access_flags.h xlat/addrfams.h \
 	xlat/kcmp_types.h xlat/kexec_arch_values.h \
 	xlat/kexec_file_load_flags.h xlat/kexec_load_flags.h \
 	xlat/key_perms.h xlat/key_reqkeys.h xlat/key_spec.h \
-	xlat/keyctl_commands.h xlat/kvm_cap.h xlat/kvm_cpuid_flags.h \
-	xlat/kvm_exit_reason.h xlat/kvm_mem_flags.h xlat/lockfcmds.h \
-	xlat/loop_cmds.h xlat/loop_crypt_type_options.h \
-	xlat/loop_flags_options.h xlat/lwtunnel_encap_types.h \
-	xlat/madvise_cmds.h xlat/mbind_flags.h xlat/mctl_sync.h \
-	xlat/mdb_flags.h xlat/mdb_states.h xlat/membarrier_cmds.h \
+	xlat/keyctl_caps0.h xlat/keyctl_caps1.h xlat/keyctl_commands.h \
+	xlat/keyctl_move_flags.h xlat/keyctl_pkey_ops.h xlat/kvm_cap.h \
+	xlat/kvm_cpuid_flags.h xlat/kvm_exit_reason.h \
+	xlat/kvm_mem_flags.h xlat/lockfcmds.h xlat/loop_cmds.h \
+	xlat/loop_crypt_type_options.h xlat/loop_flags_options.h \
+	xlat/lwtunnel_encap_types.h xlat/madvise_cmds.h \
+	xlat/mbind_flags.h xlat/mctl_sync.h xlat/mdb_flags.h \
+	xlat/mdb_states.h xlat/membarrier_cmds.h \
 	xlat/memfd_create_flags.h xlat/mlock_flags.h \
 	xlat/mlockall_flags.h xlat/mmap_flags.h xlat/mmap_prot.h \
 	xlat/modem_flags.h xlat/modetypes.h xlat/module_init_flags.h \
@@ -1472,7 +1520,8 @@ XLAT_HEADER_FILES = xlat/access_flags.h xlat/addrfams.h \
 	xlat/pr_spec_cmds.h xlat/pr_spec_get_store_bypass_flags.h \
 	xlat/pr_spec_set_store_bypass_flags.h xlat/pr_sve_vl_flags.h \
 	xlat/pr_tsc.h xlat/pr_unalign_flags.h xlat/prctl_options.h \
-	xlat/priorities.h xlat/ptp_flags_options.h xlat/ptrace_cmds.h \
+	xlat/priorities.h xlat/ptp_extts_flags.h \
+	xlat/ptp_perout_flags.h xlat/ptrace_cmds.h \
 	xlat/ptrace_events.h xlat/ptrace_peeksiginfo_flags.h \
 	xlat/ptrace_setoptions_flags.h xlat/ptrace_syscall_info_op.h \
 	xlat/quota_formats.h xlat/quotacmds.h xlat/quotatypes.h \
@@ -1499,9 +1548,9 @@ XLAT_HEADER_FILES = xlat/access_flags.h xlat/addrfams.h \
 	xlat/rtnl_netconf_attrs.h xlat/rtnl_nsid_attrs.h \
 	xlat/rtnl_route_attrs.h xlat/rtnl_rta_metrics_attrs.h \
 	xlat/rtnl_rule_attrs.h xlat/rtnl_tc_action_attrs.h \
-	xlat/rtnl_tc_attrs.h xlat/rtnl_tca_stab_attrs.h \
-	xlat/rtnl_tca_stats_attrs.h xlat/rwf_flags.h \
-	xlat/s390_guarded_storage_commands.h \
+	xlat/rtnl_tc_attrs.h xlat/rtnl_tca_act_flags.h \
+	xlat/rtnl_tca_stab_attrs.h xlat/rtnl_tca_stats_attrs.h \
+	xlat/rwf_flags.h xlat/s390_guarded_storage_commands.h \
 	xlat/s390_runtime_instr_commands.h \
 	xlat/s390_sthyi_function_codes.h xlat/sa_handler_values.h \
 	xlat/sched_flags.h xlat/schedulers.h xlat/scmvals.h \
@@ -1560,11 +1609,12 @@ XLAT_HEADER_FILES = xlat/access_flags.h xlat/addrfams.h \
 	xlat/umount_flags.h xlat/unix_diag_attrs.h \
 	xlat/unix_diag_show.h xlat/unshare_flags.h \
 	xlat/uring_enter_flags.h xlat/uring_register_opcodes.h \
-	xlat/uring_setup_flags.h xlat/usagewho.h xlat/v4l2_buf_flags.h \
-	xlat/v4l2_buf_types.h xlat/v4l2_capture_modes.h \
-	xlat/v4l2_colorspaces.h xlat/v4l2_control_classes.h \
-	xlat/v4l2_control_flags.h xlat/v4l2_control_id_bases.h \
-	xlat/v4l2_control_ids.h xlat/v4l2_control_types.h \
+	xlat/uring_setup_features.h xlat/uring_setup_flags.h \
+	xlat/usagewho.h xlat/v4l2_buf_flags.h xlat/v4l2_buf_types.h \
+	xlat/v4l2_capture_modes.h xlat/v4l2_colorspaces.h \
+	xlat/v4l2_control_classes.h xlat/v4l2_control_flags.h \
+	xlat/v4l2_control_id_bases.h xlat/v4l2_control_ids.h \
+	xlat/v4l2_control_types.h \
 	xlat/v4l2_device_capabilities_flags.h xlat/v4l2_fields.h \
 	xlat/v4l2_format_description_flags.h \
 	xlat/v4l2_frameinterval_types.h xlat/v4l2_framesize_types.h \
@@ -1671,9 +1721,9 @@ strace_SOURCES = access.c affinity.c aio.c alpha.c arch_defs.h \
 	umount.c uname.c userfaultfd.c ustat.c util.c utime.c utimes.c \
 	v4l2.c wait.c wait.h watchdog_ioctl.c xattr.c xfs_quota_stat.h \
 	xlat.c xlat.h xmalloc.c xmalloc.h xstring.h \
-	$(strace_SOURCES_check) $(am__append_1) $(am__append_2) \
-	$(am__append_7)
-strace_SOURCES_check = bpf_attr_check.c
+	$(TYPES_HEADER_FILES) $(strace_SOURCES_check) $(am__append_1) \
+	$(am__append_2) $(am__append_7)
+strace_SOURCES_check = bpf_attr_check.c $(TYPES_CHECK_FILES)
 CODE_COVERAGE_BRANCH_COVERAGE = 1
 CODE_COVERAGE_GENHTML_OPTIONS = $(CODE_COVERAGE_GENHTML_OPTIONS_DEFAULT) \
 	--prefix $(shell cd $(abs_top_srcdir)/.. && pwd || echo .)
@@ -1692,6 +1742,7 @@ EXTRA_DIST = \
 	LGPL-2.1-or-later		\
 	README-configure		\
 	README-linux-ptrace		\
+	copyright-year-gen		\
 	debian/changelog		\
 	debian/compat			\
 	debian/control			\
@@ -1706,8 +1757,10 @@ EXTRA_DIST = \
 	debian/strace64.install		\
 	debian/strace64.manpages	\
 	debian/watch			\
+	file-date-gen			\
 	gen_bpf_attr_check.sh		\
 	generate_sen.sh			\
+	git-version-gen			\
 	ioctl_iocdef.c			\
 	ioctlsort.c			\
 	linux/32/ioctls_inc.h		\
@@ -2017,7 +2070,6 @@ EXTRA_DIST = \
 	linux/powerpc64le/userent.h	\
 	linux/ptrace_pokeuser.c		\
 	linux/raw_syscall.h		\
-	linux/riscv64/arch_get_personality.c \
 	linux/riscv64/arch_regs.c		\
 	linux/riscv64/get_error.c		\
 	linux/riscv64/get_scno.c		\
@@ -2032,6 +2084,7 @@ EXTRA_DIST = \
 	linux/s390/arch_defs_.h		\
 	linux/s390/arch_regs.c		\
 	linux/s390/arch_sigreturn.c	\
+	linux/s390/check_scno.c		\
 	linux/s390/get_error.c		\
 	linux/s390/get_scno.c		\
 	linux/s390/get_syscall_args.c	\
@@ -2049,6 +2102,7 @@ EXTRA_DIST = \
 	linux/s390x/arch_get_personality.c \
 	linux/s390x/arch_regs.c		\
 	linux/s390x/arch_sigreturn.c	\
+	linux/s390x/check_scno.c	\
 	linux/s390x/get_error.c		\
 	linux/s390x/get_scno.c		\
 	linux/s390x/get_syscall_args.c	\
@@ -2236,6 +2290,8 @@ EXTRA_DIST = \
 	strace-graph			\
 	strace-log-merge		\
 	strace.spec			\
+	types/find_last_type_fields.awk	\
+	types/gen.sh			\
 	$(XLAT_INPUT_FILES)		\
 	$(XLAT_HEADER_FILES)		\
 	xlat/gen.sh			\
@@ -2289,8 +2345,8 @@ mpers_NAME =
 mpers_PREFIX = $(mpers_NAME)_
 mpers_DEFS = $(DEFS)
 mpers_INCLUDES = $(DEFAULT_INCLUDES) $(INCLUDES)
-mpers_CPPFLAGS = $(strace_CPPFLAGS) $(CPPFLAGS)
-mpers_sh_opts = $(mpers_DEFS) $(mpers_INCLUDES) $(mpers_CPPFLAGS)
+mpers_CPPFLAGS = $(CPPFLAGS)
+mpers_sh_opts = $(mpers_DEFS) $(mpers_INCLUDES) $(strace_CPPFLAGS) $(mpers_CPPFLAGS)
 libmpers_CPPFLAGS = $(strace_CPPFLAGS) -DIN_MPERS
 libmpers_CFLAGS = $(strace_CFLAGS)
 mpers_printer_decl_pattern = ^MPERS_PRINTER_DECL\(([^,)]+),[[:space:]]*([^,)]+),[[:space:]]*([^)]+)\)$$
@@ -2310,7 +2366,7 @@ all: $(BUILT_SOURCES) config.h
 .SUFFIXES: .c .o .obj
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(srcdir)/xlat/Makemodule.am $(srcdir)/scno.am $(srcdir)/mpers.am $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(srcdir)/types/Makemodule.am $(srcdir)/xlat/Makemodule.am $(srcdir)/scno.am $(srcdir)/mpers.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -2332,7 +2388,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__maybe_remake_depfiles)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__maybe_remake_depfiles);; \
 	esac;
-$(srcdir)/xlat/Makemodule.am $(srcdir)/scno.am $(srcdir)/mpers.am $(am__empty):
+$(srcdir)/types/Makemodule.am $(srcdir)/xlat/Makemodule.am $(srcdir)/scno.am $(srcdir)/mpers.am $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -2425,6 +2481,26 @@ libstrace.a: $(libstrace_a_OBJECTS) $(libstrace_a_DEPENDENCIES) $(EXTRA_libstrac
 	$(AM_V_at)-rm -f libstrace.a
 	$(AM_V_AR)$(libstrace_a_AR) libstrace.a $(libstrace_a_OBJECTS) $(libstrace_a_LIBADD)
 	$(AM_V_at)$(RANLIB) libstrace.a
+types/$(am__dirstamp):
+	@$(MKDIR_P) types
+	@: > types/$(am__dirstamp)
+types/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) types/$(DEPDIR)
+	@: > types/$(DEPDIR)/$(am__dirstamp)
+types/strace-check-cryptouser.$(OBJEXT): types/$(am__dirstamp) \
+	types/$(DEPDIR)/$(am__dirstamp)
+types/strace-check-evdev.$(OBJEXT): types/$(am__dirstamp) \
+	types/$(DEPDIR)/$(am__dirstamp)
+types/strace-check-io_uring.$(OBJEXT): types/$(am__dirstamp) \
+	types/$(DEPDIR)/$(am__dirstamp)
+types/strace-check-rtnl_link.$(OBJEXT): types/$(am__dirstamp) \
+	types/$(DEPDIR)/$(am__dirstamp)
+types/strace-check-rtnl_mdb.$(OBJEXT): types/$(am__dirstamp) \
+	types/$(DEPDIR)/$(am__dirstamp)
+types/strace-check-rtnl_neightbl.$(OBJEXT): types/$(am__dirstamp) \
+	types/$(DEPDIR)/$(am__dirstamp)
+types/strace-check-rtnl_route.$(OBJEXT): types/$(am__dirstamp) \
+	types/$(DEPDIR)/$(am__dirstamp)
 
 strace$(EXEEXT): $(strace_OBJECTS) $(strace_DEPENDENCIES) $(EXTRA_strace_DEPENDENCIES) 
 	@rm -f strace$(EXEEXT)
@@ -2467,6 +2543,7 @@ uninstall-binSCRIPTS:
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f types/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
@@ -2800,6 +2877,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-xattr.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-xlat.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-xmalloc.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@types/$(DEPDIR)/strace-check-cryptouser.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@types/$(DEPDIR)/strace-check-evdev.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@types/$(DEPDIR)/strace-check-io_uring.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@types/$(DEPDIR)/strace-check-rtnl_link.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@types/$(DEPDIR)/strace-check-rtnl_mdb.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@types/$(DEPDIR)/strace-check-rtnl_neightbl.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@types/$(DEPDIR)/strace-check-rtnl_route.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -2808,15 +2892,17 @@ $(am__depfiles_remade):
 am--depfiles: $(am__depfiles_remade)
 
 .c.o:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
@@ -7385,6 +7471,104 @@ strace-bpf_attr_check.obj: bpf_attr_check.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-bpf_attr_check.obj `if test -f 'bpf_attr_check.c'; then $(CYGPATH_W) 'bpf_attr_check.c'; else $(CYGPATH_W) '$(srcdir)/bpf_attr_check.c'; fi`
 
+types/strace-check-cryptouser.o: types/check-cryptouser.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT types/strace-check-cryptouser.o -MD -MP -MF types/$(DEPDIR)/strace-check-cryptouser.Tpo -c -o types/strace-check-cryptouser.o `test -f 'types/check-cryptouser.c' || echo '$(srcdir)/'`types/check-cryptouser.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) types/$(DEPDIR)/strace-check-cryptouser.Tpo types/$(DEPDIR)/strace-check-cryptouser.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='types/check-cryptouser.c' object='types/strace-check-cryptouser.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o types/strace-check-cryptouser.o `test -f 'types/check-cryptouser.c' || echo '$(srcdir)/'`types/check-cryptouser.c
+
+types/strace-check-cryptouser.obj: types/check-cryptouser.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT types/strace-check-cryptouser.obj -MD -MP -MF types/$(DEPDIR)/strace-check-cryptouser.Tpo -c -o types/strace-check-cryptouser.obj `if test -f 'types/check-cryptouser.c'; then $(CYGPATH_W) 'types/check-cryptouser.c'; else $(CYGPATH_W) '$(srcdir)/types/check-cryptouser.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) types/$(DEPDIR)/strace-check-cryptouser.Tpo types/$(DEPDIR)/strace-check-cryptouser.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='types/check-cryptouser.c' object='types/strace-check-cryptouser.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o types/strace-check-cryptouser.obj `if test -f 'types/check-cryptouser.c'; then $(CYGPATH_W) 'types/check-cryptouser.c'; else $(CYGPATH_W) '$(srcdir)/types/check-cryptouser.c'; fi`
+
+types/strace-check-evdev.o: types/check-evdev.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT types/strace-check-evdev.o -MD -MP -MF types/$(DEPDIR)/strace-check-evdev.Tpo -c -o types/strace-check-evdev.o `test -f 'types/check-evdev.c' || echo '$(srcdir)/'`types/check-evdev.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) types/$(DEPDIR)/strace-check-evdev.Tpo types/$(DEPDIR)/strace-check-evdev.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='types/check-evdev.c' object='types/strace-check-evdev.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o types/strace-check-evdev.o `test -f 'types/check-evdev.c' || echo '$(srcdir)/'`types/check-evdev.c
+
+types/strace-check-evdev.obj: types/check-evdev.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT types/strace-check-evdev.obj -MD -MP -MF types/$(DEPDIR)/strace-check-evdev.Tpo -c -o types/strace-check-evdev.obj `if test -f 'types/check-evdev.c'; then $(CYGPATH_W) 'types/check-evdev.c'; else $(CYGPATH_W) '$(srcdir)/types/check-evdev.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) types/$(DEPDIR)/strace-check-evdev.Tpo types/$(DEPDIR)/strace-check-evdev.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='types/check-evdev.c' object='types/strace-check-evdev.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o types/strace-check-evdev.obj `if test -f 'types/check-evdev.c'; then $(CYGPATH_W) 'types/check-evdev.c'; else $(CYGPATH_W) '$(srcdir)/types/check-evdev.c'; fi`
+
+types/strace-check-io_uring.o: types/check-io_uring.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT types/strace-check-io_uring.o -MD -MP -MF types/$(DEPDIR)/strace-check-io_uring.Tpo -c -o types/strace-check-io_uring.o `test -f 'types/check-io_uring.c' || echo '$(srcdir)/'`types/check-io_uring.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) types/$(DEPDIR)/strace-check-io_uring.Tpo types/$(DEPDIR)/strace-check-io_uring.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='types/check-io_uring.c' object='types/strace-check-io_uring.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o types/strace-check-io_uring.o `test -f 'types/check-io_uring.c' || echo '$(srcdir)/'`types/check-io_uring.c
+
+types/strace-check-io_uring.obj: types/check-io_uring.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT types/strace-check-io_uring.obj -MD -MP -MF types/$(DEPDIR)/strace-check-io_uring.Tpo -c -o types/strace-check-io_uring.obj `if test -f 'types/check-io_uring.c'; then $(CYGPATH_W) 'types/check-io_uring.c'; else $(CYGPATH_W) '$(srcdir)/types/check-io_uring.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) types/$(DEPDIR)/strace-check-io_uring.Tpo types/$(DEPDIR)/strace-check-io_uring.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='types/check-io_uring.c' object='types/strace-check-io_uring.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o types/strace-check-io_uring.obj `if test -f 'types/check-io_uring.c'; then $(CYGPATH_W) 'types/check-io_uring.c'; else $(CYGPATH_W) '$(srcdir)/types/check-io_uring.c'; fi`
+
+types/strace-check-rtnl_link.o: types/check-rtnl_link.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT types/strace-check-rtnl_link.o -MD -MP -MF types/$(DEPDIR)/strace-check-rtnl_link.Tpo -c -o types/strace-check-rtnl_link.o `test -f 'types/check-rtnl_link.c' || echo '$(srcdir)/'`types/check-rtnl_link.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) types/$(DEPDIR)/strace-check-rtnl_link.Tpo types/$(DEPDIR)/strace-check-rtnl_link.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='types/check-rtnl_link.c' object='types/strace-check-rtnl_link.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o types/strace-check-rtnl_link.o `test -f 'types/check-rtnl_link.c' || echo '$(srcdir)/'`types/check-rtnl_link.c
+
+types/strace-check-rtnl_link.obj: types/check-rtnl_link.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT types/strace-check-rtnl_link.obj -MD -MP -MF types/$(DEPDIR)/strace-check-rtnl_link.Tpo -c -o types/strace-check-rtnl_link.obj `if test -f 'types/check-rtnl_link.c'; then $(CYGPATH_W) 'types/check-rtnl_link.c'; else $(CYGPATH_W) '$(srcdir)/types/check-rtnl_link.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) types/$(DEPDIR)/strace-check-rtnl_link.Tpo types/$(DEPDIR)/strace-check-rtnl_link.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='types/check-rtnl_link.c' object='types/strace-check-rtnl_link.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o types/strace-check-rtnl_link.obj `if test -f 'types/check-rtnl_link.c'; then $(CYGPATH_W) 'types/check-rtnl_link.c'; else $(CYGPATH_W) '$(srcdir)/types/check-rtnl_link.c'; fi`
+
+types/strace-check-rtnl_mdb.o: types/check-rtnl_mdb.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT types/strace-check-rtnl_mdb.o -MD -MP -MF types/$(DEPDIR)/strace-check-rtnl_mdb.Tpo -c -o types/strace-check-rtnl_mdb.o `test -f 'types/check-rtnl_mdb.c' || echo '$(srcdir)/'`types/check-rtnl_mdb.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) types/$(DEPDIR)/strace-check-rtnl_mdb.Tpo types/$(DEPDIR)/strace-check-rtnl_mdb.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='types/check-rtnl_mdb.c' object='types/strace-check-rtnl_mdb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o types/strace-check-rtnl_mdb.o `test -f 'types/check-rtnl_mdb.c' || echo '$(srcdir)/'`types/check-rtnl_mdb.c
+
+types/strace-check-rtnl_mdb.obj: types/check-rtnl_mdb.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT types/strace-check-rtnl_mdb.obj -MD -MP -MF types/$(DEPDIR)/strace-check-rtnl_mdb.Tpo -c -o types/strace-check-rtnl_mdb.obj `if test -f 'types/check-rtnl_mdb.c'; then $(CYGPATH_W) 'types/check-rtnl_mdb.c'; else $(CYGPATH_W) '$(srcdir)/types/check-rtnl_mdb.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) types/$(DEPDIR)/strace-check-rtnl_mdb.Tpo types/$(DEPDIR)/strace-check-rtnl_mdb.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='types/check-rtnl_mdb.c' object='types/strace-check-rtnl_mdb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o types/strace-check-rtnl_mdb.obj `if test -f 'types/check-rtnl_mdb.c'; then $(CYGPATH_W) 'types/check-rtnl_mdb.c'; else $(CYGPATH_W) '$(srcdir)/types/check-rtnl_mdb.c'; fi`
+
+types/strace-check-rtnl_neightbl.o: types/check-rtnl_neightbl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT types/strace-check-rtnl_neightbl.o -MD -MP -MF types/$(DEPDIR)/strace-check-rtnl_neightbl.Tpo -c -o types/strace-check-rtnl_neightbl.o `test -f 'types/check-rtnl_neightbl.c' || echo '$(srcdir)/'`types/check-rtnl_neightbl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) types/$(DEPDIR)/strace-check-rtnl_neightbl.Tpo types/$(DEPDIR)/strace-check-rtnl_neightbl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='types/check-rtnl_neightbl.c' object='types/strace-check-rtnl_neightbl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o types/strace-check-rtnl_neightbl.o `test -f 'types/check-rtnl_neightbl.c' || echo '$(srcdir)/'`types/check-rtnl_neightbl.c
+
+types/strace-check-rtnl_neightbl.obj: types/check-rtnl_neightbl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT types/strace-check-rtnl_neightbl.obj -MD -MP -MF types/$(DEPDIR)/strace-check-rtnl_neightbl.Tpo -c -o types/strace-check-rtnl_neightbl.obj `if test -f 'types/check-rtnl_neightbl.c'; then $(CYGPATH_W) 'types/check-rtnl_neightbl.c'; else $(CYGPATH_W) '$(srcdir)/types/check-rtnl_neightbl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) types/$(DEPDIR)/strace-check-rtnl_neightbl.Tpo types/$(DEPDIR)/strace-check-rtnl_neightbl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='types/check-rtnl_neightbl.c' object='types/strace-check-rtnl_neightbl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o types/strace-check-rtnl_neightbl.obj `if test -f 'types/check-rtnl_neightbl.c'; then $(CYGPATH_W) 'types/check-rtnl_neightbl.c'; else $(CYGPATH_W) '$(srcdir)/types/check-rtnl_neightbl.c'; fi`
+
+types/strace-check-rtnl_route.o: types/check-rtnl_route.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT types/strace-check-rtnl_route.o -MD -MP -MF types/$(DEPDIR)/strace-check-rtnl_route.Tpo -c -o types/strace-check-rtnl_route.o `test -f 'types/check-rtnl_route.c' || echo '$(srcdir)/'`types/check-rtnl_route.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) types/$(DEPDIR)/strace-check-rtnl_route.Tpo types/$(DEPDIR)/strace-check-rtnl_route.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='types/check-rtnl_route.c' object='types/strace-check-rtnl_route.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o types/strace-check-rtnl_route.o `test -f 'types/check-rtnl_route.c' || echo '$(srcdir)/'`types/check-rtnl_route.c
+
+types/strace-check-rtnl_route.obj: types/check-rtnl_route.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT types/strace-check-rtnl_route.obj -MD -MP -MF types/$(DEPDIR)/strace-check-rtnl_route.Tpo -c -o types/strace-check-rtnl_route.obj `if test -f 'types/check-rtnl_route.c'; then $(CYGPATH_W) 'types/check-rtnl_route.c'; else $(CYGPATH_W) '$(srcdir)/types/check-rtnl_route.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) types/$(DEPDIR)/strace-check-rtnl_route.Tpo types/$(DEPDIR)/strace-check-rtnl_route.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='types/check-rtnl_route.c' object='types/strace-check-rtnl_route.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o types/strace-check-rtnl_route.obj `if test -f 'types/check-rtnl_route.c'; then $(CYGPATH_W) 'types/check-rtnl_route.c'; else $(CYGPATH_W) '$(srcdir)/types/check-rtnl_route.c'; fi`
+
 strace-unwind.o: unwind.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-unwind.o -MD -MP -MF $(DEPDIR)/strace-unwind.Tpo -c -o strace-unwind.o `test -f 'unwind.c' || echo '$(srcdir)/'`unwind.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-unwind.Tpo $(DEPDIR)/strace-unwind.Po
@@ -7811,6 +7995,8 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f types/$(DEPDIR)/$(am__dirstamp)
+	-rm -f types/$(am__dirstamp)
 	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
@@ -8173,6 +8359,13 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/strace-xattr.Po
 	-rm -f ./$(DEPDIR)/strace-xlat.Po
 	-rm -f ./$(DEPDIR)/strace-xmalloc.Po
+	-rm -f types/$(DEPDIR)/strace-check-cryptouser.Po
+	-rm -f types/$(DEPDIR)/strace-check-evdev.Po
+	-rm -f types/$(DEPDIR)/strace-check-io_uring.Po
+	-rm -f types/$(DEPDIR)/strace-check-rtnl_link.Po
+	-rm -f types/$(DEPDIR)/strace-check-rtnl_mdb.Po
+	-rm -f types/$(DEPDIR)/strace-check-rtnl_neightbl.Po
+	-rm -f types/$(DEPDIR)/strace-check-rtnl_route.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-tags
@@ -8549,6 +8742,13 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/strace-xattr.Po
 	-rm -f ./$(DEPDIR)/strace-xlat.Po
 	-rm -f ./$(DEPDIR)/strace-xmalloc.Po
+	-rm -f types/$(DEPDIR)/strace-check-cryptouser.Po
+	-rm -f types/$(DEPDIR)/strace-check-evdev.Po
+	-rm -f types/$(DEPDIR)/strace-check-io_uring.Po
+	-rm -f types/$(DEPDIR)/strace-check-rtnl_link.Po
+	-rm -f types/$(DEPDIR)/strace-check-rtnl_mdb.Po
+	-rm -f types/$(DEPDIR)/strace-check-rtnl_neightbl.Po
+	-rm -f types/$(DEPDIR)/strace-check-rtnl_route.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -8662,6 +8862,8 @@ $(top_srcdir)/xlat/bpf_file_mode_flags.h: $(top_srcdir)/xlat/bpf_file_mode_flags
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/bpf_map_flags.h: $(top_srcdir)/xlat/bpf_map_flags.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/bpf_map_lookup_elem_flags.h: $(top_srcdir)/xlat/bpf_map_lookup_elem_flags.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/bpf_map_types.h: $(top_srcdir)/xlat/bpf_map_types.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/bpf_map_update_elem_flags.h: $(top_srcdir)/xlat/bpf_map_update_elem_flags.in $(top_srcdir)/xlat/gen.sh
@@ -8748,6 +8950,8 @@ $(top_srcdir)/xlat/btrfs_space_info_flags.h: $(top_srcdir)/xlat/btrfs_space_info
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/btrfs_tree_objectids.h: $(top_srcdir)/xlat/btrfs_tree_objectids.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/cacheflush_flags.h: $(top_srcdir)/xlat/cacheflush_flags.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/cacheflush_scope.h: $(top_srcdir)/xlat/cacheflush_scope.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/caif_protocols.h: $(top_srcdir)/xlat/caif_protocols.in $(top_srcdir)/xlat/gen.sh
@@ -8766,9 +8970,13 @@ $(top_srcdir)/xlat/clockflags.h: $(top_srcdir)/xlat/clockflags.in $(top_srcdir)/
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/clocknames.h: $(top_srcdir)/xlat/clocknames.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/clone3_flags.h: $(top_srcdir)/xlat/clone3_flags.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/clone_flags.h: $(top_srcdir)/xlat/clone_flags.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/cpuclocknames.h: $(top_srcdir)/xlat/cpuclocknames.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/crypto_msgs.h: $(top_srcdir)/xlat/crypto_msgs.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/crypto_nl_attrs.h: $(top_srcdir)/xlat/crypto_nl_attrs.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
@@ -8813,6 +9021,8 @@ $(top_srcdir)/xlat/evdev_ev.h: $(top_srcdir)/xlat/evdev_ev.in $(top_srcdir)/xlat
 $(top_srcdir)/xlat/evdev_ff_status.h: $(top_srcdir)/xlat/evdev_ff_status.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/evdev_ff_types.h: $(top_srcdir)/xlat/evdev_ff_types.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/evdev_ioctl_cmds.h: $(top_srcdir)/xlat/evdev_ioctl_cmds.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/evdev_keycode.h: $(top_srcdir)/xlat/evdev_keycode.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
@@ -8964,7 +9174,15 @@ $(top_srcdir)/xlat/key_reqkeys.h: $(top_srcdir)/xlat/key_reqkeys.in $(top_srcdir
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/key_spec.h: $(top_srcdir)/xlat/key_spec.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/keyctl_caps0.h: $(top_srcdir)/xlat/keyctl_caps0.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/keyctl_caps1.h: $(top_srcdir)/xlat/keyctl_caps1.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/keyctl_commands.h: $(top_srcdir)/xlat/keyctl_commands.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/keyctl_move_flags.h: $(top_srcdir)/xlat/keyctl_move_flags.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/keyctl_pkey_ops.h: $(top_srcdir)/xlat/keyctl_pkey_ops.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/kvm_cap.h: $(top_srcdir)/xlat/kvm_cap.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
@@ -9208,7 +9426,9 @@ $(top_srcdir)/xlat/prctl_options.h: $(top_srcdir)/xlat/prctl_options.in $(top_sr
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/priorities.h: $(top_srcdir)/xlat/priorities.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
-$(top_srcdir)/xlat/ptp_flags_options.h: $(top_srcdir)/xlat/ptp_flags_options.in $(top_srcdir)/xlat/gen.sh
+$(top_srcdir)/xlat/ptp_extts_flags.h: $(top_srcdir)/xlat/ptp_extts_flags.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/ptp_perout_flags.h: $(top_srcdir)/xlat/ptp_perout_flags.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/ptrace_cmds.h: $(top_srcdir)/xlat/ptrace_cmds.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
@@ -9309,6 +9529,8 @@ $(top_srcdir)/xlat/rtnl_rule_attrs.h: $(top_srcdir)/xlat/rtnl_rule_attrs.in $(to
 $(top_srcdir)/xlat/rtnl_tc_action_attrs.h: $(top_srcdir)/xlat/rtnl_tc_action_attrs.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/rtnl_tc_attrs.h: $(top_srcdir)/xlat/rtnl_tc_attrs.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/rtnl_tca_act_flags.h: $(top_srcdir)/xlat/rtnl_tca_act_flags.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/rtnl_tca_stab_attrs.h: $(top_srcdir)/xlat/rtnl_tca_stab_attrs.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
@@ -9574,6 +9796,8 @@ $(top_srcdir)/xlat/uring_enter_flags.h: $(top_srcdir)/xlat/uring_enter_flags.in 
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/uring_register_opcodes.h: $(top_srcdir)/xlat/uring_register_opcodes.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/uring_setup_features.h: $(top_srcdir)/xlat/uring_setup_features.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/uring_setup_flags.h: $(top_srcdir)/xlat/uring_setup_flags.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/usagewho.h: $(top_srcdir)/xlat/usagewho.in $(top_srcdir)/xlat/gen.sh
@@ -9731,11 +9955,11 @@ mpers-m%.stamp: $(srcdir_mpers_source_files) | printers.h
 	for f in $^; do \
 		D="$(D)" \
 		READELF="$(READELF)" \
-		CC="$(CC)" \
+		CC="$(mpers_CC)" \
 		CFLAGS="$(mpers_sh_opts) -DMPERS_IS_$(mpers_NAME)" \
 		CPP="$(CPP)" \
 		CPPFLAGS="$(mpers_sh_opts) -DIN_MPERS -DMPERS_IS_$(mpers_NAME)" \
-		$(srcdir)/mpers.sh $(mpers_NAME) $(mpers_CC_FLAGS) $$f || exit; \
+		$(srcdir)/mpers.sh $(mpers_NAME) "$(mpers_CC_FLAGS)" $$f || exit; \
 	done
 	> $@
 
@@ -9792,10 +10016,14 @@ printers.h: $(mpers_preproc_files)
 native_printer_decls.h native_printer_defs.h: mpers_PREFIX =
 
 @HAVE_M32_MPERS_TRUE@$(mpers_m32_targets): mpers_NAME = m32
-@HAVE_M32_MPERS_TRUE@$(mpers_m32_targets): mpers_CC_FLAGS = @cc_flags_m32@
+@HAVE_M32_MPERS_TRUE@$(mpers_m32_targets): mpers_CC_FLAGS = @CFLAGS_FOR_M32@ @cc_flags_m32@
+@HAVE_M32_MPERS_TRUE@$(mpers_m32_targets): mpers_CPPFLAGS = @CPPFLAGS_FOR_M32@
+@HAVE_M32_MPERS_TRUE@$(mpers_m32_targets): mpers_CC = @CC_FOR_M32@
 
 @HAVE_MX32_MPERS_TRUE@$(mpers_mx32_targets): mpers_NAME = mx32
-@HAVE_MX32_MPERS_TRUE@$(mpers_mx32_targets): mpers_CC_FLAGS = @cc_flags_mx32@
+@HAVE_MX32_MPERS_TRUE@$(mpers_mx32_targets): mpers_CC_FLAGS = @CFLAGS_FOR_MX32@ @cc_flags_mx32@
+@HAVE_MX32_MPERS_TRUE@$(mpers_mx32_targets): mpers_CPPFLAGS = @CPPFLAGS_FOR_MX32@
+@HAVE_MX32_MPERS_TRUE@$(mpers_mx32_targets): mpers_CC = @CC_FOR_MX32@
 
 clean-local:
 	-rm -rf mpers-m32 mpers-mx32

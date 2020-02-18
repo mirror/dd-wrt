@@ -2,7 +2,7 @@
  * Check decoding of keyctl syscall.
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -45,7 +45,33 @@ struct keyctl_kdf_params {
 };
 # endif
 
+# ifndef HAVE_STRUCT_KEYCTL_PKEY_QUERY
+struct keyctl_pkey_query {
+	uint32_t supported_ops;
+	uint32_t key_size;
+	uint16_t max_data_size;
+	uint16_t max_sig_size;
+	uint16_t max_enc_size;
+	uint16_t max_dec_size;
+	uint32_t __spare[10];
+};
+# endif
+
+# ifndef HAVE_STRUCT_KEYCTL_PKEY_PARAMS
+struct keyctl_pkey_params {
+	int32_t  key_id;
+	uint32_t in_len;
+	union {
+		uint32_t out_len;
+		uint32_t in2_len;
+	};
+	uint32_t __spare[7];
+};
+# endif
+
 # include "xlat.h"
+# include "xlat/keyctl_caps0.h"
+# include "xlat/keyctl_caps1.h"
 # include "xlat/keyctl_commands.h"
 
 # ifndef KEY_SPEC_REQKEY_AUTH_KEY
@@ -71,10 +97,13 @@ bool buf_in_arg;
 
 # if XLAT_RAW
 #  define XARG_STR(v_) (v_), STRINGIFY(v_)
+#  define XSTR(v_, s_) STRINGIFY(v_)
 # elif XLAT_VERBOSE
 #  define XARG_STR(v_) (v_), STRINGIFY(v_) " /* " #v_ " */"
+#  define XSTR(v_, s_) STRINGIFY(v_) " /* " s_ " */"
 # else
 #  define XARG_STR ARG_STR
+#  define XSTR(v_, s_) s_
 # endif
 
 /*
@@ -123,6 +152,21 @@ print_arg(kernel_ulong_t arg, const char *str, const char *fmt, size_t size,
 			print_quoted_string_limit((void *) (uintptr_t) arg,
 						  size, rc);
 	}
+}
+
+void
+print_flags(const struct xlat *xlat, unsigned long long flags,
+	    const char *const dflt)
+{
+# if XLAT_RAW
+	printf("%#llx", flags);
+# elif XLAT_VERBOSE
+	printf("%#llx /* ", flags);
+	printflags(xlat, flags, dflt);
+	printf(" */");
+# else
+	printflags(xlat, flags, dflt);
+# endif
 }
 
 /*
@@ -268,6 +312,51 @@ kckdfp_to_str(struct keyctl_kdf_params *kdf, bool deref_hash, bool deref_oi,
 	return buf;
 }
 
+const char *
+kcpp_to_str(struct keyctl_pkey_params *params, bool out, const char *key_str,
+	    bool print_spare)
+{
+	static char buf[4096];
+
+	size_t left = sizeof(buf);
+	char *pos = buf;
+
+	append_str(&pos, &left, "{key_id=");
+
+# if XLAT_RAW
+	append_str(&pos, &left, "%d", params->key_id);
+# elif XLAT_VERBOSE
+	if (key_str)
+		append_str(&pos, &left, "%d /* %s */", params->key_id, key_str);
+	else
+		append_str(&pos, &left, "%d", params->key_id);
+# else
+	if (key_str)
+		append_str(&pos, &left, "%s", key_str);
+	else
+		append_str(&pos, &left, "%d", params->key_id);
+# endif
+
+	append_str(&pos, &left, ", in_len=%u, %s=%u",
+		   params->in_len,
+		   out ? "out_len" : "in2_len", params->out_len);
+
+	if (print_spare) {
+		append_str(&pos, &left, ", __spare=[");
+
+		for (size_t i = 0; i < ARRAY_SIZE(params->__spare); i++) {
+			append_str(&pos, &left, "%s%#x",
+				   i ? ", " : "", params->__spare[i]);
+		}
+
+		append_str(&pos, &left, "]");
+	}
+
+	append_str(&pos, &left, "}");
+
+	return buf;
+}
+
 int
 main(void)
 {
@@ -358,8 +447,10 @@ main(void)
 	char *bogus_buf2 = tail_alloc(256);
 	char *key_iov_str1;
 	char *key_iov_str2 = tail_alloc(4096);
+	const char *errstr;
 	ssize_t ret;
 	ssize_t kis_size = 0;
+	long rc;
 	size_t i;
 
 	key_iov[0].iov_base = short_type;
@@ -1091,6 +1182,222 @@ main(void)
 	}
 
 	nul_terminated_buf = true;
+
+	/* KEYCTL_PKEY_QUERY */
+	do_keyctl(ARG_STR(KEYCTL_PKEY_QUERY),
+		  sizeof(int32_t), bogus_key2, NULL, "%d",
+		  sizeof(kernel_ulong_t),
+			(kernel_ulong_t) 0xfeedf157badc0dedLLU, NULL,
+			kulong_fmt,
+		  sizeof(char *), bogus_str, NULL, ptr_fmt,
+		  sizeof(char *), ARG_STR(NULL), ptr_fmt);
+
+	struct keyctl_pkey_query query;
+	do_keyctl(ARG_STR(KEYCTL_PKEY_QUERY),
+		  sizeof(int32_t), XARG_STR(KEY_SPEC_THREAD_KEYRING), "%d",
+		  sizeof(kernel_ulong_t), (kernel_ulong_t) 0, NULL, kulong_fmt,
+		  sizeof(char *), "x\377\0\1", "\"x\\377\"", NULL,
+		  sizeof(&query), &query, NULL, ptr_fmt);
+
+	/*
+	 * KEYCTL_PKEY_ENCRYPT, KEYCTL_PKEY_DECRYPT, KEYCTL_PKEY_SIGN,
+	 * KEYCTL_PKEY_VERIFY
+	 */
+	static const struct {
+		int op;
+		const char *str;
+		bool out;
+	} pkey_ops[] = {
+		{ ARG_STR(KEYCTL_PKEY_ENCRYPT),	true },
+		{ ARG_STR(KEYCTL_PKEY_DECRYPT),	true },
+		{ ARG_STR(KEYCTL_PKEY_SIGN),	true },
+		{ ARG_STR(KEYCTL_PKEY_VERIFY),	false },
+	};
+	static const char pkey_str1[] = STR32 "xxx";
+	static const char pkey_str2[] = "\1\2HAI\255\0\1";
+	static struct {
+		struct keyctl_pkey_params params;
+		const char * key_str;
+		bool print_spare;
+		const char *str1;
+		const char *str2;
+	} pkey_vecs[] = {
+		{ { KEY_SPEC_PROCESS_KEYRING, 0, { .out_len = 0 } },
+		  "KEY_SPEC_PROCESS_KEYRING", false, "\"\"", "\"\"" },
+		{ { 0, 0, { .out_len = 0 }, .__spare = { 1 } },
+		  NULL, true, "\"\"", "\"\"" },
+		{ { 0xdeadc0deU, 10, { .out_len = 10 },
+		    .__spare = { 0, 0xfacefeed } },
+		  NULL, true, "\"AbCdEfGhIj\"", NULL },
+		{ { 0xdeadc0deU, sizeof(pkey_str1),
+		    { .out_len = sizeof(pkey_str2) - 1 },
+		    .__spare = { [6] = 0xdec0ded } },
+		  NULL, true,
+		  "\"AbCdEfGhIj\"...", "\"\\1\\2HAI\\255\\0\\1\"" },
+	};
+
+	char *pkey1 = tail_memdup(pkey_str1, sizeof(pkey_str1) - 1);
+	char *pkey2 = tail_memdup(pkey_str2, sizeof(pkey_str2) - 1);
+	struct keyctl_pkey_params *pkey_params =
+		tail_alloc(sizeof(*pkey_params));
+
+	for (i = 0; i < ARRAY_SIZE(pkey_ops); i++) {
+		do_keyctl(pkey_ops[i].op, pkey_ops[i].str,
+			  sizeof(char *), ARG_STR(NULL), ptr_fmt,
+			  sizeof(char *), ARG_STR(NULL), ptr_fmt,
+			  sizeof(char *), ARG_STR(NULL), ptr_fmt,
+			  sizeof(char *), ARG_STR(NULL), ptr_fmt);
+
+		do_keyctl(pkey_ops[i].op, pkey_ops[i].str,
+			  sizeof(char *), (uint32_t *) pkey_params + 1, NULL,
+				ptr_fmt,
+			  sizeof(char *), "x\377\0\1", "\"x\\377\"", ptr_fmt,
+			  sizeof(char *), pkey1, NULL, ptr_fmt,
+			  sizeof(char *), pkey2, NULL, ptr_fmt);
+
+		for (size_t j = 0; j < ARRAY_SIZE(pkey_vecs); j++) {
+			memcpy(pkey_params, &pkey_vecs[j].params,
+			       sizeof(*pkey_params));
+			do_keyctl(pkey_ops[i].op, pkey_ops[i].str,
+				  sizeof(char *), pkey_params,
+					kcpp_to_str(pkey_params,
+						    pkey_ops[i].out,
+						    pkey_vecs[j].key_str,
+						    pkey_vecs[j].print_spare),
+					ptr_fmt,
+				  sizeof(char *), "", "\"\"", ptr_fmt,
+				  sizeof(char *), pkey1, pkey_vecs[j].str1,
+					ptr_fmt,
+				  sizeof(char *), pkey2,
+					pkey_ops[i].out ? NULL
+							: pkey_vecs[j].str2,
+					ptr_fmt);
+		}
+	}
+
+	/* KEYCTL_MOVE */
+	static const struct {
+		kernel_ulong_t key;
+		const char *str;
+	} move_keys[] = {
+		  { 0xbadc0ded, "-1159983635" },
+		  { XARG_STR(KEY_SPEC_THREAD_KEYRING) },
+	};
+	static const struct {
+		kernel_ulong_t val;
+		const char *str;
+	} move_flags[] = {
+		{ (kernel_ulong_t) 0xbadc0ded00000000ULL, "0" },
+		{ 1, XSTR(0x1, "KEYCTL_MOVE_EXCL") },
+		{ (kernel_ulong_t) 0xbadc0ded00000001ULL,
+		  XSTR(0x1, "KEYCTL_MOVE_EXCL") },
+		{ (kernel_ulong_t) 0xfffffffffffffffeULL,
+# if !XLAT_RAW
+		  "0xfffffffe /* KEYCTL_MOVE_??? */"
+# else
+		  "0xfffffffe"
+# endif
+		 },
+		{ (kernel_ulong_t) 0xffffffffffffffffULL,
+		  XSTR(0xffffffff, "KEYCTL_MOVE_EXCL|0xfffffffe") },
+	};
+
+	for (i = 0; i < ARRAY_SIZE(move_keys) * ARRAY_SIZE(move_flags); i++) {
+		do_keyctl(ARG_STR(KEYCTL_MOVE),
+			  sizeof(kernel_ulong_t),
+				move_keys[i % ARRAY_SIZE(move_keys)].key,
+				move_keys[i % ARRAY_SIZE(move_keys)].str,
+				kulong_fmt,
+			  sizeof(kernel_ulong_t),
+				move_keys[(i + 1) % ARRAY_SIZE(move_keys)].key,
+				move_keys[(i + 1) % ARRAY_SIZE(move_keys)].str,
+				kulong_fmt,
+			  sizeof(kernel_ulong_t),
+				move_keys[(i + 2) % ARRAY_SIZE(move_keys)].key,
+				move_keys[(i + 2) % ARRAY_SIZE(move_keys)].str,
+				kulong_fmt,
+			  sizeof(kernel_ulong_t),
+				move_flags[i % ARRAY_SIZE(move_flags)].val,
+				move_flags[i % ARRAY_SIZE(move_flags)].str,
+				kulong_fmt);
+	}
+
+	/* KEYCTL_CAPABILITIES */
+	unsigned char *caps1 = tail_alloc(1);
+	unsigned char *caps2 = tail_alloc(2);
+	unsigned char *caps4 = tail_alloc(4);
+
+	do_keyctl(ARG_STR(KEYCTL_CAPABILITIES),
+		  sizeof(unsigned char *), ARG_STR(NULL), ptr_fmt,
+		  sizeof(kernel_ulong_t),
+			(kernel_ulong_t) 0xfeedf157badc0dedLLU, NULL,
+			ksize_fmt,
+		  0);
+
+	const kernel_ulong_t bad_len = (kernel_ulong_t) 0xbadc0ded00000001LLU;
+	rc = syscall(__NR_keyctl, KEYCTL_CAPABILITIES, caps1, bad_len);
+	errstr = sprintrc(rc);
+	printf("keyctl(" XSTR(0x1f, "KEYCTL_CAPABILITIES") ", ");
+	if (rc >= 0) {
+		printf("[");
+		if (rc >= 1)
+			print_flags(keyctl_caps0, caps1[0], "KEYCTL_CAPS0_???");
+		printf("]");
+	} else {
+		printf("%p", caps1);
+	}
+	printf(", %llu) = %s\n", (unsigned long long) bad_len, errstr);
+
+	rc = syscall(__NR_keyctl, KEYCTL_CAPABILITIES, caps1, 2);
+	errstr = sprintrc(rc);
+	printf("keyctl(" XSTR(0x1f, "KEYCTL_CAPABILITIES") ", ");
+	if (rc >= 0) {
+		printf("[");
+		if (rc == 1)
+			print_flags(keyctl_caps0, caps1[0], "KEYCTL_CAPS0_???");
+		printf("]");
+	} else {
+		printf("%p", caps1);
+	}
+	printf(", 2) = %s\n", errstr);
+
+	rc = syscall(__NR_keyctl, KEYCTL_CAPABILITIES, caps2, 2);
+	errstr = sprintrc(rc);
+	printf("keyctl(" XSTR(0x1f, "KEYCTL_CAPABILITIES") ", ");
+	if (rc >= 0) {
+		printf("[");
+		if (rc >= 1)
+			print_flags(keyctl_caps0, caps2[0], "KEYCTL_CAPS0_???");
+		if (rc >= 2) {
+			printf(", ");
+			print_flags(keyctl_caps1, caps2[1], "KEYCTL_CAPS1_???");
+		}
+		printf("]");
+	} else {
+		printf("%p", caps2);
+	}
+	printf(", 2) = %s\n", errstr);
+
+	rc = syscall(__NR_keyctl, KEYCTL_CAPABILITIES, caps4, 4);
+	errstr = sprintrc(rc);
+	printf("keyctl(" XSTR(0x1f, "KEYCTL_CAPABILITIES") ", ");
+	if (rc >= 0) {
+		printf("[");
+		if (rc >= 1)
+			print_flags(keyctl_caps0, caps4[0], "KEYCTL_CAPS0_???");
+		if (rc >= 2) {
+			printf(", ");
+			print_flags(keyctl_caps1, caps4[1], "KEYCTL_CAPS1_???");
+		}
+		if (rc >= 3)
+			printf(", %hhx", caps4[2]);
+		if (rc >= 4)
+			printf(", %hhx", caps4[3]);
+		printf("]");
+	} else {
+		printf("%p", caps4);
+	}
+	printf(", 4) = %s\n", errstr);
 
 	puts("+++ exited with 0 +++");
 

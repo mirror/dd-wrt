@@ -4,7 +4,7 @@
  * Copyright (c) 2008 Jan Kratochvil <jan.kratochvil@redhat.com>
  * Copyright (c) 2009-2013 Denys Vlasenko <dvlasenk@redhat.com>
  * Copyright (c) 2006-2015 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2014-2019 The strace developers.
+ * Copyright (c) 2014-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -21,6 +21,7 @@
 #include "print_fields.h"
 
 #include "xlat/clone_flags.h"
+#include "xlat/clone3_flags.h"
 #include "xlat/setns_types.h"
 #include "xlat/unshare_flags.h"
 
@@ -96,10 +97,7 @@ SYS_FUNC(clone)
 				printsignal(sig);
 			}
 		} else {
-			if (sig)
-				printsignal(sig);
-			else
-				tprints("0");
+			printsignal(sig);
 		}
 		/*
 		 * TODO on syscall entry:
@@ -149,6 +147,8 @@ struct strace_clone_args {
 	uint64_t stack;
 	uint64_t stack_size;
 	uint64_t tls;
+	uint64_t set_tid;
+	uint64_t set_tid_size;
 };
 
 /**
@@ -237,8 +237,9 @@ SYS_FUNC(clone3)
 			goto out;
 		}
 
-		PRINT_FIELD_FLAGS("{", arg, flags, clone_flags,
-				  "CLONE_???");
+		tprints("{flags=");
+		printflags_ex(arg.flags, "CLONE_???", XLAT_STYLE_DEFAULT,
+			      clone_flags, clone3_flags, NULL);
 
 		if (arg.flags & CLONE_PIDFD)
 			PRINT_FIELD_ADDR64(", ", arg, pidfd);
@@ -261,6 +262,23 @@ SYS_FUNC(clone3)
 		if (arg.flags & CLONE_SETTLS) {
 			tprints(", tls=");
 			print_tls_arg(tcp, arg.tls);
+		}
+
+		if (arg.set_tid || arg.set_tid_size) {
+			static const unsigned int max_set_tid_size = 32;
+
+			if (!arg.set_tid || !arg.set_tid_size ||
+			    arg.set_tid_size > max_set_tid_size) {
+				PRINT_FIELD_ADDR64(", ", arg, set_tid);
+			} else {
+				int buf;
+
+				tprints(", set_tid=");
+				print_array(tcp, arg.set_tid, arg.set_tid_size,
+					    &buf, sizeof(buf), tfetch_mem,
+					    print_int32_array_member, 0);
+			}
+			PRINT_FIELD_U(", ", arg, set_tid_size);
 		}
 
 		if (size > fetch_size)

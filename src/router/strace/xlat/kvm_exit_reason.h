@@ -199,6 +199,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define KVM_EXIT_HYPERV 27
 #endif
+#if defined(KVM_EXIT_ARM_NISV) || (defined(HAVE_DECL_KVM_EXIT_ARM_NISV) && HAVE_DECL_KVM_EXIT_ARM_NISV)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((KVM_EXIT_ARM_NISV) == (28), "KVM_EXIT_ARM_NISV != 28");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define KVM_EXIT_ARM_NISV 28
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -238,6 +245,7 @@ static const struct xlat_data kvm_exit_reason_xdata[] = {
  [KVM_EXIT_S390_STSI] = XLAT(KVM_EXIT_S390_STSI),
  [KVM_EXIT_IOAPIC_EOI] = XLAT(KVM_EXIT_IOAPIC_EOI),
  [KVM_EXIT_HYPERV] = XLAT(KVM_EXIT_HYPERV),
+ [KVM_EXIT_ARM_NISV] = XLAT(KVM_EXIT_ARM_NISV),
 };
 static
 const struct xlat kvm_exit_reason[1] = { {

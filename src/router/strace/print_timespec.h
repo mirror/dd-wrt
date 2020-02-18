@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -38,6 +38,16 @@ print_timespec_t(const TIMESPEC_T *t)
 	print_sec_nsec(TIMESPEC_TO_SEC_NSEC(t));
 }
 
+#if defined PRINT_TIMESPEC_DATA_SIZE || defined PRINT_TIMESPEC_ARRAY_DATA_SIZE
+static void
+print_unaligned_timespec_t(const void *arg)
+{
+	TIMESPEC_T t;
+	memcpy(&t, arg, sizeof(t));
+	print_timespec_t(&t);
+}
+#endif /* PRINT_TIMESPEC_DATA_SIZE || PRINT_TIMESPEC_ARRAY_DATA_SIZE */
+
 #ifdef PRINT_TIMESPEC_DATA_SIZE
 bool
 PRINT_TIMESPEC_DATA_SIZE(const void *arg, const size_t size)
@@ -47,7 +57,7 @@ PRINT_TIMESPEC_DATA_SIZE(const void *arg, const size_t size)
 		return false;
 	}
 
-	print_timespec_t(arg);
+	print_unaligned_timespec_t(arg);
 	return true;
 }
 #endif /* PRINT_TIMESPEC_DATA_SIZE */
@@ -57,9 +67,6 @@ bool
 PRINT_TIMESPEC_ARRAY_DATA_SIZE(const void *arg, const unsigned int nmemb,
 			       const size_t size)
 {
-	const TIMESPEC_T *ts = arg;
-	unsigned int i;
-
 	if (nmemb > size / sizeof(TIMESPEC_T)) {
 		tprints("?");
 		return false;
@@ -67,10 +74,10 @@ PRINT_TIMESPEC_ARRAY_DATA_SIZE(const void *arg, const unsigned int nmemb,
 
 	tprints("[");
 
-	for (i = 0; i < nmemb; i++) {
+	for (unsigned int i = 0; i < nmemb; i++, arg += sizeof(TIMESPEC_T)) {
 		if (i)
 			tprints(", ");
-		print_timespec_t(&ts[i]);
+		print_unaligned_timespec_t(arg);
 	}
 
 	tprints("]");

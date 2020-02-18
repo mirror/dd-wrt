@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016-2018 Eugene Syromyatnikov <evgsyr@gmail.com>
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -76,6 +77,9 @@ struct perf_event_attr {
 	uint16_t sample_max_stack;
 	uint16_t __reserved_2;
 	/* End of ver 5 - 112 bytes */
+	uint32_t aux_sample_size;
+	uint32_t __reserved_3;
+	/* End of ver 6 - 120 bytes */
 };
 
 struct perf_event_query_bpf {

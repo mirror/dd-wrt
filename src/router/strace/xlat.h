@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -63,6 +63,5 @@ struct xlat {
 # define XLAT_PAIR(val, str)		{ (unsigned)(val), str  }
 # define XLAT_TYPE(type, val)		{     (type)(val), #val }
 # define XLAT_TYPE_PAIR(type, val, str)	{     (type)(val), str  }
-# define XLAT_END			{		0, 0    }
 
 #endif /* !STRACE_XLAT_H */

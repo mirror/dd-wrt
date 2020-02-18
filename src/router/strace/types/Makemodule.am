@@ -1,0 +1,3 @@
+TYPES_HEADER_FILES = types/cryptouser.h types/evdev.h types/io_uring.h types/rtnl_link.h types/rtnl_mdb.h types/rtnl_neightbl.h types/rtnl_route.h 
+TYPES_CHECK_FILES = types/check-cryptouser.c types/check-evdev.c types/check-io_uring.c types/check-rtnl_link.c types/check-rtnl_mdb.c types/check-rtnl_neightbl.c types/check-rtnl_route.c 
+TYPES_M4_FILES = types/check-cryptouser.m4 types/check-evdev.m4 types/check-io_uring.m4 types/check-rtnl_link.m4 types/check-rtnl_mdb.m4 types/check-rtnl_neightbl.m4 types/check-rtnl_route.m4 

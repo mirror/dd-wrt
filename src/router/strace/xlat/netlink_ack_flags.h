@@ -3,6 +3,20 @@
 #include "gcc_compat.h"
 #include "static_assert.h"
 
+#if defined(NLM_F_CAPPED) || (defined(HAVE_DECL_NLM_F_CAPPED) && HAVE_DECL_NLM_F_CAPPED)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((NLM_F_CAPPED) == (0x100), "NLM_F_CAPPED != 0x100");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define NLM_F_CAPPED 0x100
+#endif
+#if defined(NLM_F_ACK_TLVS) || (defined(HAVE_DECL_NLM_F_ACK_TLVS) && HAVE_DECL_NLM_F_ACK_TLVS)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((NLM_F_ACK_TLVS) == (0x200), "NLM_F_ACK_TLVS != 0x200");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define NLM_F_ACK_TLVS 0x200
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -13,12 +27,8 @@
 # else
 
 static const struct xlat_data netlink_ack_flags_xdata[] = {
-#if defined(NLM_F_CAPPED) || (defined(HAVE_DECL_NLM_F_CAPPED) && HAVE_DECL_NLM_F_CAPPED)
-  XLAT(NLM_F_CAPPED),
-#endif
-#if defined(NLM_F_ACK_TLVS) || (defined(HAVE_DECL_NLM_F_ACK_TLVS) && HAVE_DECL_NLM_F_ACK_TLVS)
-  XLAT(NLM_F_ACK_TLVS),
-#endif
+ XLAT(NLM_F_CAPPED),
+ XLAT(NLM_F_ACK_TLVS),
 };
 static
 const struct xlat netlink_ack_flags[1] = { {

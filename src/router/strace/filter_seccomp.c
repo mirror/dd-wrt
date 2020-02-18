@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 Chen Jingpiao <chenjingpiao@gmail.com>
  * Copyright (c) 2019 Paul Chaignon <paul.chaignon@gmail.com>
- * Copyright (c) 2019 The strace developers.
+ * Copyright (c) 2018-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -13,7 +13,6 @@
 #include <signal.h>
 #include <sys/prctl.h>
 #include <sys/wait.h>
-#include <linux/audit.h>
 #include <linux/filter.h>
 
 #include "filter_seccomp.h"
@@ -28,12 +27,22 @@ bool seccomp_before_sysentry;
 
 # include <linux/seccomp.h>
 
+/* PERSONALITY*_AUDIT_ARCH definitions depend on AUDIT_ARCH_* constants.  */
+# ifdef PERSONALITY0_AUDIT_ARCH
+#  include <linux/audit.h>
+#  define XLAT_MACROS_ONLY
+#   include "xlat/elf_em.h"
+#   include "xlat/audit_arch.h"
+#  undef XLAT_MACROS_ONLY
+# endif
+
 # ifndef BPF_MAXINSNS
 #  define BPF_MAXINSNS 4096
 # endif
 
 # define JMP_PLACEHOLDER_NEXT  ((unsigned char) -1)
 # define JMP_PLACEHOLDER_TRACE ((unsigned char) -2)
+# define JMP_PLACEHOLDER_ALLOW ((unsigned char) -3)
 
 # define SET_BPF(filter, code, jt, jf, k) \
 	(*(filter) = (struct sock_filter) { code, jt, jf, k })
@@ -59,9 +68,29 @@ static const struct audit_arch_t audit_arch_vec[SUPPORTED_PERSONALITIES] = {
 # endif
 };
 
-# ifdef ENABLE_COVERAGE_GCOV
-extern void __gcov_flush(void);
-# endif
+typedef unsigned short (*filter_generator_t)(struct sock_filter *,
+					     bool *overflow);
+static unsigned short linear_filter_generator(struct sock_filter *,
+					      bool *overflow);
+static unsigned short binary_match_filter_generator(struct sock_filter *,
+						    bool *overflow);
+static filter_generator_t filter_generators[] = {
+	linear_filter_generator,
+	binary_match_filter_generator,
+};
+
+/*
+ * Keep some margin in seccomp_filter as programs larger than allowed may
+ * be constructed before we discard them.
+ */
+static struct sock_filter
+filters[ARRAY_SIZE(filter_generators)][2 * BPF_MAXINSNS];
+static struct sock_fprog bpf_prog = {
+	.len = USHRT_MAX,
+	.filter = NULL,
+};
+
+# ifdef HAVE_FORK
 
 static void ATTRIBUTE_NORETURN
 check_seccomp_order_do_child(void)
@@ -91,9 +120,7 @@ check_seccomp_order_do_child(void)
 		perror_func_msg_and_die("PTRACE_TRACEME");
 	}
 
-# ifdef ENABLE_COVERAGE_GCOV
-	__gcov_flush();
-# endif
+	GCOV_DUMP;
 
 	kill(pid, SIGSTOP);
 	syscall(__NR_gettid);
@@ -223,12 +250,15 @@ check_seccomp_order_tracer(int pid)
 
 	return pid;
 }
+# endif /* HAVE_FORK */
 
 static void
 check_seccomp_order(void)
 {
 	seccomp_filtering = false;
 
+	/* NOMMU provides no forks necessary for the test.  */
+# ifdef HAVE_FORK
 	int pid = fork();
 	if (pid < 0) {
 		perror_func_msg("fork");
@@ -248,167 +278,22 @@ check_seccomp_order(void)
 			break;
 		}
 	}
+# endif /* HAVE_FORK */
 }
 
 static bool
 traced_by_seccomp(unsigned int scno, unsigned int p)
 {
-	if (is_number_in_set_array(scno, trace_set, p)
-	    || sysent_vec[p][scno].sys_flags
-	    & (TRACE_INDIRECT_SUBCALL | TRACE_SECCOMP_DEFAULT))
-		return true;
-	return false;
-}
-
-static void
-check_bpf_program_size(void)
-{
-	unsigned int nb_insns = SUPPORTED_PERSONALITIES > 1 ? 1 : 0;
-
-	/*
-	 * Implements a simplified form of init_sock_filter()'s bytecode
-	 * generation algorithm, to count the number of instructions that will
-	 * be generated.
-	 */
-	for (int p = SUPPORTED_PERSONALITIES - 1;
-	     p >= 0 && nb_insns < BPF_MAXINSNS; --p) {
-		unsigned int nb_insns_personality = 0;
-		unsigned int lower = UINT_MAX;
-
-		nb_insns_personality++;
-# if SUPPORTED_PERSONALITIES > 1
-		nb_insns_personality++;
-		if (audit_arch_vec[p].flag)
-			nb_insns_personality += 3;
-# endif
-
-		for (unsigned int i = 0; i < nsyscall_vec[p]; ++i) {
-			if (traced_by_seccomp(i, p)) {
-				if (lower == UINT_MAX)
-					lower = i;
-				continue;
-			}
-			if (lower == UINT_MAX)
-				continue;
-			if (lower + 1 == i)
-				nb_insns_personality++;
-			else
-				nb_insns_personality += 2;
-			lower = UINT_MAX;
-		}
-		if (lower != UINT_MAX) {
-			if (lower + 1 == nsyscall_vec[p])
-				nb_insns_personality++;
-			else
-				nb_insns_personality += 2;
-		}
-
-		nb_insns_personality += 3;
-
-		/*
-		 * Within generated BPF programs, the origin and destination of
-		 * jumps are always in the same personality section.  The
-		 * largest jump is therefore the jump from the first
-		 * instruction of the section to the last, to skip the
-		 * personality and try to compare .arch to the next
-		 * personality.
-		 * If we have a personality section with more than 255
-		 * instructions, the jump offset will overflow.  Such program
-		 * is unlikely to happen, so we simply disable seccomp filter
-		 * is such a case.
-		 */
-		if (nb_insns_personality > UCHAR_MAX) {
-			debug_msg("seccomp filter disabled due to "
-				  "possibility of overflow");
-			seccomp_filtering = false;
-			return;
-		}
-		nb_insns += nb_insns_personality;
-	}
-
-# if SUPPORTED_PERSONALITIES > 1
-	nb_insns++;
-# endif
-
-	if (nb_insns > BPF_MAXINSNS) {
-		debug_msg("seccomp filter disabled due to BPF program being "
-			  "oversized (%u > %d)", nb_insns, BPF_MAXINSNS);
-		seccomp_filtering = false;
-	}
-}
-
-static void
-check_seccomp_filter_properties(void)
-{
-	if (NOMMU_SYSTEM) {
-		seccomp_filtering = false;
-		return;
-	}
-
-	int rc = prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, NULL, 0, 0);
-	seccomp_filtering = rc < 0 && errno != EINVAL;
-	if (!seccomp_filtering)
-		debug_func_perror_msg("prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER)");
-
-	if (seccomp_filtering)
-		check_bpf_program_size();
-	if (seccomp_filtering)
-		check_seccomp_order();
-}
-
-static void
-dump_seccomp_bpf(const struct sock_filter *filter, unsigned short len)
-{
-	for (unsigned int i = 0; i < len; ++i) {
-		switch (filter[i].code) {
-		case BPF_LD | BPF_W | BPF_ABS:
-			switch (filter[i].k) {
-			case offsetof(struct seccomp_data, arch):
-				error_msg("STMT(BPF_LDWABS, data->arch)");
-				break;
-			case offsetof(struct seccomp_data, nr):
-				error_msg("STMT(BPF_LDWABS, data->nr)");
-				break;
-			default:
-				error_msg("STMT(BPF_LDWABS, 0x%x)",
-					  filter[i].k);
-			}
-			break;
-		case BPF_RET | BPF_K:
-			switch (filter[i].k) {
-			case SECCOMP_RET_TRACE:
-				error_msg("STMT(BPF_RET, SECCOMP_RET_TRACE)");
-				break;
-			case SECCOMP_RET_ALLOW:
-				error_msg("STMT(BPF_RET, SECCOMP_RET_ALLOW)");
-				break;
-			default:
-				error_msg("STMT(BPF_RET, 0x%x)", filter[i].k);
-			}
-			break;
-		case BPF_JMP | BPF_JEQ | BPF_K:
-			error_msg("JUMP(BPF_JEQ, %u, %u, %u)",
-				  filter[i].jt, filter[i].jf,
-				  filter[i].k);
-			break;
-		case BPF_JMP | BPF_JGE | BPF_K:
-			error_msg("JUMP(BPF_JGE, %u, %u, %u)",
-				  filter[i].jt, filter[i].jf,
-				  filter[i].k);
-			break;
-		case BPF_JMP | BPF_JA:
-			error_msg("JUMP(BPF_JA, %u)", filter[i].k);
-			break;
-		default:
-			error_msg("STMT(0x%x, %u, %u, 0x%x)", filter[i].code,
-				  filter[i].jt, filter[i].jf, filter[i].k);
-		}
-	}
+	unsigned int always_trace_flags =
+		TRACE_INDIRECT_SUBCALL | TRACE_SECCOMP_DEFAULT |
+		(stack_trace_enabled ? MEMORY_MAPPING_CHANGE : 0);
+	return sysent_vec[p][scno].sys_flags & always_trace_flags ||
+		is_number_in_set_array(scno, trace_set, p);
 }
 
 static void
 replace_jmp_placeholders(unsigned char *jmp_offset, unsigned char jmp_next,
-			 unsigned char jmp_trace)
+			 unsigned char jmp_trace, unsigned char jmp_allow)
 {
 	switch (*jmp_offset) {
 	case JMP_PLACEHOLDER_NEXT:
@@ -416,6 +301,9 @@ replace_jmp_placeholders(unsigned char *jmp_offset, unsigned char jmp_next,
 		break;
 	case JMP_PLACEHOLDER_TRACE:
 		*jmp_offset = jmp_trace;
+		break;
+	case JMP_PLACEHOLDER_ALLOW:
+		*jmp_offset = jmp_allow;
 		break;
 	default:
 		break;
@@ -441,7 +329,7 @@ bpf_syscalls_cmp(struct sock_filter *filter,
 }
 
 static unsigned short
-init_sock_filter(struct sock_filter *filter)
+linear_filter_generator(struct sock_filter *filter, bool *overflow)
 {
 	/*
 	 * Generated program looks like:
@@ -530,15 +418,33 @@ init_sock_filter(struct sock_filter *filter)
 		SET_BPF_STMT(&filter[pos++], BPF_RET | BPF_K,
 			     SECCOMP_RET_TRACE);
 
+		/*
+		 * Within generated BPF programs, the origin and destination of
+		 * jumps are always in the same personality section.  The
+		 * largest jump is therefore the jump from the first
+		 * instruction of the section to the last, to skip the
+		 * personality and try to compare .arch to the next
+		 * personality.
+		 * If we have a personality section with more than 255
+		 * instructions, the jump offset will overflow.  Such program
+		 * is unlikely to happen, so we simply disable seccomp-filter
+		 * in such a case.
+		 */
+		if (pos - start > UCHAR_MAX) {
+			*overflow = true;
+			return pos;
+		}
+
 		for (unsigned int i = start; i < end; ++i) {
 			if (BPF_CLASS(filter[i].code) != BPF_JMP)
 				continue;
 			unsigned char jmp_next = pos - i - 1;
 			unsigned char jmp_trace = pos - i - 2;
+			unsigned char jmp_allow = pos - i - 3;
 			replace_jmp_placeholders(&filter[i].jt, jmp_next,
-						 jmp_trace);
+						 jmp_trace, jmp_allow);
 			replace_jmp_placeholders(&filter[i].jf, jmp_next,
-						 jmp_trace);
+						 jmp_trace, jmp_allow);
 			if (BPF_OP(filter[i].code) == BPF_JA)
 				filter[i].k = (unsigned int) jmp_next;
 		}
@@ -549,29 +455,264 @@ init_sock_filter(struct sock_filter *filter)
 	SET_BPF_STMT(&filter[pos++], BPF_RET | BPF_K, SECCOMP_RET_TRACE);
 # endif
 
-	if (debug_flag)
-		dump_seccomp_bpf(filter, pos);
+	return pos;
+}
+
+static unsigned short
+bpf_syscalls_match(struct sock_filter *filter, unsigned int bitarray,
+		   unsigned int bitarray_idx)
+{
+	if (!bitarray) {
+		/* return RET_ALLOW; */
+		SET_BPF_JUMP(filter, BPF_JMP | BPF_JEQ | BPF_K, bitarray_idx,
+			     JMP_PLACEHOLDER_ALLOW, 0);
+		return 1;
+	}
+	if (bitarray == UINT_MAX) {
+		/* return RET_TRACE; */
+		SET_BPF_JUMP(filter, BPF_JMP | BPF_JEQ | BPF_K, bitarray_idx,
+			     JMP_PLACEHOLDER_TRACE, 0);
+		return 1;
+	}
+	/*
+	 * if (A == nr / 32)
+	 *   return (X & bitarray) ? RET_TRACE : RET_ALLOW;
+	 */
+	SET_BPF_JUMP(filter, BPF_JMP | BPF_JEQ | BPF_K, bitarray_idx,
+		     0, 2);
+	SET_BPF_STMT(filter + 1, BPF_MISC | BPF_TXA, 0);
+	SET_BPF_JUMP(filter + 2, BPF_JMP | BPF_JSET | BPF_K, bitarray,
+		     JMP_PLACEHOLDER_TRACE, JMP_PLACEHOLDER_ALLOW);
+	return 3;
+}
+
+static unsigned short
+binary_match_filter_generator(struct sock_filter *filter, bool *overflow)
+{
+	unsigned short pos = 0;
+
+# if SUPPORTED_PERSONALITIES > 1
+	SET_BPF_STMT(&filter[pos++], BPF_LD | BPF_W | BPF_ABS,
+		     offsetof(struct seccomp_data, arch));
+# endif
+
+	/* Personalities are iterated in reverse-order in the BPF program so that
+	 * the x86 case is naturally handled.  In x86, the first and third
+	 * personalities have the same arch identifier.  The third can be
+	 * distinguished based on its associated bit mask, so we check it first.
+	 * The only drawback here is that the first personality is more common,
+	 * which may make the BPF program slower to match syscalls on average. */
+	for (int p = SUPPORTED_PERSONALITIES - 1;
+		 p >= 0 && pos <= BPF_MAXINSNS;
+		 --p) {
+		unsigned short start = pos, end;
+		unsigned int bitarray = 0;
+		unsigned int i;
+
+# if SUPPORTED_PERSONALITIES > 1
+		SET_BPF_JUMP(&filter[pos++], BPF_JMP | BPF_JEQ | BPF_K,
+			     audit_arch_vec[p].arch, 0, JMP_PLACEHOLDER_NEXT);
+# endif
+		SET_BPF_STMT(&filter[pos++], BPF_LD | BPF_W | BPF_ABS,
+			     offsetof(struct seccomp_data, nr));
+
+# if SUPPORTED_PERSONALITIES > 1
+		if (audit_arch_vec[p].flag) {
+			SET_BPF_JUMP(&filter[pos++], BPF_JMP | BPF_JGE | BPF_K,
+				     audit_arch_vec[p].flag, 2, 0);
+			SET_BPF_STMT(&filter[pos++], BPF_LD | BPF_W | BPF_ABS,
+				     offsetof(struct seccomp_data, arch));
+			SET_BPF_JUMP(&filter[pos++], BPF_JMP | BPF_JA,
+				     JMP_PLACEHOLDER_NEXT, 0, 0);
+
+			/* nr = nr & ~mask */
+			SET_BPF_STMT(&filter[pos++], BPF_ALU | BPF_AND | BPF_K,
+				     ~audit_arch_vec[p].flag);
+		}
+# endif
+
+		/* X = 1 << nr % 32 = 1 << nr & 0x1F; */
+		SET_BPF_STMT(&filter[pos++], BPF_ALU | BPF_AND | BPF_K, 0x1F);
+		SET_BPF_STMT(&filter[pos++], BPF_MISC | BPF_TAX, 0);
+		SET_BPF_STMT(&filter[pos++], BPF_LD | BPF_IMM, 1);
+		SET_BPF_STMT(&filter[pos++], BPF_ALU | BPF_LSH | BPF_X, 0);
+		SET_BPF_STMT(&filter[pos++], BPF_MISC | BPF_TAX, 0);
+
+		/* A = nr / 32 = n >> 5; */
+		SET_BPF_STMT(&filter[pos++], BPF_LD | BPF_W | BPF_ABS,
+			     offsetof(struct seccomp_data, nr));
+		if (audit_arch_vec[p].flag) {
+			/* nr = nr & ~mask */
+			SET_BPF_STMT(&filter[pos++], BPF_ALU | BPF_AND | BPF_K,
+				     ~audit_arch_vec[p].flag);
+		}
+		SET_BPF_STMT(&filter[pos++], BPF_ALU | BPF_RSH | BPF_K, 5);
+
+		for (i = 0; i < nsyscall_vec[p] && pos <= BPF_MAXINSNS; ++i) {
+			if (traced_by_seccomp(i, p))
+				bitarray |= (1 << i % 32);
+			if (i % 32 == 31) {
+				pos += bpf_syscalls_match(filter + pos,
+							  bitarray, i / 32);
+				bitarray = 0;
+			}
+		}
+		if (i % 32 != 0)
+			pos += bpf_syscalls_match(filter + pos, bitarray,
+						  i / 32);
+
+		end = pos;
+
+		SET_BPF_STMT(&filter[pos++], BPF_RET | BPF_K,
+			     SECCOMP_RET_ALLOW);
+		SET_BPF_STMT(&filter[pos++], BPF_RET | BPF_K,
+			     SECCOMP_RET_TRACE);
+
+		if (pos - start > UCHAR_MAX) {
+			*overflow = true;
+			return pos;
+		}
+
+		for (unsigned int i = start; i < end; ++i) {
+			if (BPF_CLASS(filter[i].code) != BPF_JMP)
+				continue;
+			unsigned char jmp_next = pos - i - 1;
+			unsigned char jmp_trace = pos - i - 2;
+			unsigned char jmp_allow = pos - i - 3;
+			replace_jmp_placeholders(&filter[i].jt, jmp_next,
+						 jmp_trace, jmp_allow);
+			replace_jmp_placeholders(&filter[i].jf, jmp_next,
+						 jmp_trace, jmp_allow);
+			if (BPF_OP(filter[i].code) == BPF_JA)
+				filter[i].k = (unsigned int)jmp_next;
+		}
+	}
+
+# if SUPPORTED_PERSONALITIES > 1
+	SET_BPF_STMT(&filter[pos++], BPF_RET | BPF_K, SECCOMP_RET_TRACE);
+# endif
 
 	return pos;
+}
+
+static void
+check_seccomp_filter_properties(void)
+{
+	int rc = prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, NULL, 0, 0);
+	seccomp_filtering = rc < 0 && errno != EINVAL;
+	if (!seccomp_filtering) {
+		debug_func_perror_msg("prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER)");
+		return;
+	}
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(filter_generators); ++i) {
+		bool overflow = false;
+		unsigned short len = filter_generators[i](filters[i],
+							  &overflow);
+		if (len < bpf_prog.len && !overflow) {
+			bpf_prog.len = len;
+			bpf_prog.filter = filters[i];
+		}
+	}
+	if (bpf_prog.len == USHRT_MAX) {
+		debug_msg("seccomp filter disabled due to jump offset "
+			  "overflow");
+		seccomp_filtering = false;
+	} else if (bpf_prog.len > BPF_MAXINSNS) {
+		debug_msg("seccomp filter disabled due to BPF program "
+			  "being oversized (%u > %d)", bpf_prog.len,
+			  BPF_MAXINSNS);
+		seccomp_filtering = false;
+	}
+
+	if (seccomp_filtering)
+		check_seccomp_order();
+}
+
+static void
+dump_seccomp_bpf(void)
+{
+	const struct sock_filter *filter = bpf_prog.filter;
+	for (unsigned int i = 0; i < bpf_prog.len; ++i) {
+		switch (filter[i].code) {
+		case BPF_LD | BPF_W | BPF_ABS:
+			switch (filter[i].k) {
+			case offsetof(struct seccomp_data, arch):
+				error_msg("STMT(BPF_LDWABS, data->arch)");
+				break;
+			case offsetof(struct seccomp_data, nr):
+				error_msg("STMT(BPF_LDWABS, data->nr)");
+				break;
+			default:
+				error_msg("STMT(BPF_LDWABS, 0x%x)",
+					  filter[i].k);
+			}
+			break;
+		case BPF_LD + BPF_W + BPF_IMM:
+			error_msg("STMT(BPF_LDWIMM, 0x%x)", filter[i].k);
+			break;
+		case BPF_RET | BPF_K:
+			switch (filter[i].k) {
+			case SECCOMP_RET_TRACE:
+				error_msg("STMT(BPF_RET, SECCOMP_RET_TRACE)");
+				break;
+			case SECCOMP_RET_ALLOW:
+				error_msg("STMT(BPF_RET, SECCOMP_RET_ALLOW)");
+				break;
+			default:
+				error_msg("STMT(BPF_RET, 0x%x)", filter[i].k);
+			}
+			break;
+		case BPF_JMP | BPF_JEQ | BPF_K:
+			error_msg("JUMP(BPF_JEQ, %u, %u, %u)",
+				  filter[i].jt, filter[i].jf,
+				  filter[i].k);
+			break;
+		case BPF_JMP | BPF_JGE | BPF_K:
+			error_msg("JUMP(BPF_JGE, %u, %u, %u)",
+				  filter[i].jt, filter[i].jf,
+				  filter[i].k);
+			break;
+		case BPF_JMP + BPF_JSET + BPF_K:
+			error_msg("JUMP(BPF_JSET, %u, %u, 0x%x)",
+				  filter[i].jt, filter[i].jf,
+				  filter[i].k);
+			break;
+		case BPF_JMP | BPF_JA:
+			error_msg("JUMP(BPF_JA, %u)", filter[i].k);
+			break;
+		case BPF_ALU + BPF_RSH + BPF_K:
+			error_msg("STMT(BPF_RSH, %u)", filter[i].k);
+			break;
+		case BPF_ALU + BPF_LSH + BPF_X:
+			error_msg("STMT(BPF_LSH, X)");
+			break;
+		case BPF_ALU + BPF_AND + BPF_K:
+			error_msg("STMT(BPF_AND, 0x%x)", filter[i].k);
+			break;
+		case BPF_MISC + BPF_TAX:
+			error_msg("STMT(BPF_TAX)");
+			break;
+		case BPF_MISC + BPF_TXA:
+			error_msg("STMT(BPF_TXA)");
+			break;
+		default:
+			error_msg("STMT(0x%x, %u, %u, 0x%x)", filter[i].code,
+				  filter[i].jt, filter[i].jf, filter[i].k);
+		}
+	}
 }
 
 void
 init_seccomp_filter(void)
 {
-	struct sock_filter filter[BPF_MAXINSNS];
-	unsigned short len;
-
-	len = init_sock_filter(filter);
-
-	struct sock_fprog prog = {
-		.len = len,
-		.filter = filter
-	};
-
 	if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0)
 		perror_func_msg_and_die("prctl(PR_SET_NO_NEW_PRIVS)");
 
-	if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &prog) < 0)
+	if (debug_flag)
+		dump_seccomp_bpf();
+
+	if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &bpf_prog) < 0)
 		perror_func_msg_and_die("prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER)");
 }
 

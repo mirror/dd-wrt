@@ -45,6 +45,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define CAN_ISOTP 6
 #endif
+#if defined(CAN_J1939) || (defined(HAVE_DECL_CAN_J1939) && HAVE_DECL_CAN_J1939)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((CAN_J1939) == (7), "CAN_J1939 != 7");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define CAN_J1939 7
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -61,6 +68,7 @@ static const struct xlat_data can_protocols_xdata[] = {
  [CAN_TP20] = XLAT(CAN_TP20),
  [CAN_MCNET] = XLAT(CAN_MCNET),
  [CAN_ISOTP] = XLAT(CAN_ISOTP),
+ [CAN_J1939] = XLAT(CAN_J1939),
 };
 static
 const struct xlat can_protocols[1] = { {
