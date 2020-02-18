@@ -811,12 +811,15 @@ static void *handle_request(void *arg)
 	/* Parse the first line of the request. */
 	int cnt = 0;
 	for (;;) {
+		if (cnt == 5000)
+			break;
 		wfgets(line, LINE_LEN, conn_fp);
 		if (!*(line) && (errno == EINTR || errno == EAGAIN)) {
 			struct timespec tim, tim2;
 			tim.tv_sec = 0;
 			tim.tv_nsec = 1000000L;
 			nanosleep(&tim, &tim2);
+			cnt++;
 			continue;
 		}
 		break;
