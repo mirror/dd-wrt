@@ -230,18 +230,18 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 	 * Look for our part 
 	 */
 	while (len > 0) {
-		if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream))
+		if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream, NULL))
 			return -1;
 		len -= strlen(buf);
 		if (!strncasecmp(buf, "Content-Disposition:", 20)) {
 			if (strstr(buf, "name=\"erase\"")) {
 				while (len > 0 && strcmp(buf, "\n")
 				       && strcmp(buf, "\r\n")) {
-					if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream))
+					if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream, NULL))
 						return -1;
 					len -= strlen(buf);
 				}
-				if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream))
+				if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream, NULL))
 					return -1;
 				len -= strlen(buf);
 				buf[1] = '\0';	// we only want the 1st digit
@@ -259,7 +259,7 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 	 * Skip boundary and headers 
 	 */
 	while (len > 0) {
-		if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream))
+		if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream, NULL))
 			return -1;
 		len -= strlen(buf);
 		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
@@ -277,7 +277,7 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 	/*
 	 * Slurp anything remaining in the request 
 	 */
-	wfgets(buf, len, stream);
+	wfgets(buf, len, stream, NULL);
 	fprintf(stderr, "upgrade done()\n");
 #endif
 	return 0;
