@@ -3,6 +3,13 @@
 #include "gcc_compat.h"
 #include "static_assert.h"
 
+#if defined(V4L2_MODE_HIGHQUALITY) || (defined(HAVE_DECL_V4L2_MODE_HIGHQUALITY) && HAVE_DECL_V4L2_MODE_HIGHQUALITY)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((V4L2_MODE_HIGHQUALITY) == (0x0001), "V4L2_MODE_HIGHQUALITY != 0x0001");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define V4L2_MODE_HIGHQUALITY 0x0001
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -13,9 +20,7 @@ extern const struct xlat v4l2_capture_modes[];
 # else
 
 static const struct xlat_data v4l2_capture_modes_xdata[] = {
-#if defined(V4L2_MODE_HIGHQUALITY) || (defined(HAVE_DECL_V4L2_MODE_HIGHQUALITY) && HAVE_DECL_V4L2_MODE_HIGHQUALITY)
-  XLAT(V4L2_MODE_HIGHQUALITY),
-#endif
+ XLAT(V4L2_MODE_HIGHQUALITY),
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static

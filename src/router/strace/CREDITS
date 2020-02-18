@@ -25,6 +25,7 @@ strace-devel@lists.strace.io mailing list.
 	Andre McCurdy <armccurdy@gmail.com>
 	Andreas Schwab <schwab@linux-m68k.org>
 	Andrew Guertin <lists@dolphinling.net>
+	Andrey Zax <andrey.zax@gmail.com>
 	Angelo Castello <angelo.castello@st.com>
 	Anton Blanchard <anton@samba.org>
 	Arkadiusz Miskiewicz <misiek@pld.org.pl>
@@ -52,6 +53,7 @@ strace-devel@lists.strace.io mailing list.
 	Christian Neukirchen <chneukirchen@gmail.com>
 	Christian Svensson <blue@cmd.nu>
 	Christopher Covington <cov@codeaurora.org>
+	Chunmei Xu <xuchunmei@linux.alibaba.com>
 	D.J. Barrow <djbarrow@de.ibm.com>
 	DJ Delorie <dj@redhat.com>
 	Damien Profeta <damien.profeta@amadeus.com>
@@ -81,6 +83,7 @@ strace-devel@lists.strace.io mailing list.
 	Eugeniy Paltsev <Eugeniy.Paltsev@synopsys.com>
 	Ezequiel Garcia <ezequiel@vanguardiasur.com.ar>
 	Fabien Siron <fabien.siron@epita.fr>
+	Fanda Uchytil <strace.t8xuewpmde@h4x.cz>
 	Fei Jie <feij.fnst@cn.fujitsu.com>
 	Felix Janda <felix.janda@posteo.de>
 	Fernando Luis Vazquez Cao <fernando@oss.ntt.co.jp>
@@ -183,6 +186,7 @@ strace-devel@lists.strace.io mailing list.
 	Paul Chaignon <paul.chaignon@gmail.com>
 	Paul Mundt <lethal@linux-sh.org>
 	Pavel Machek <pavel@ucw.cz>
+	Pavel Zhukov <pzhukov@redhat.com>
 	Peter Jones <pjones@redhat.com>
 	Peter Zotov <whitequark@whitequark.org>
 	Philipp Marek <philipp.marek@emerion.com>
@@ -190,12 +194,13 @@ strace-devel@lists.strace.io mailing list.
 	Philippe Ombredanne <pombredanne@nexb.com>
 	Pierre Marsais <pierre.marsais@lse.epita.fr>
 	Pádraig Brady <P@draigBrady.com>
-	Quentin Monnet <quentin.monnet@6wind.com>
+	Quentin Monnet <quentin.monnet@netronome.com>
 	Rajeev V. Pillai <rajeevvp@gmail.com>
 	Ralf Baechle <ralf@linux-mips.org>
 	Randolph Chung <tausq@debian.org>
 	Rasmus Villemoes <rasmus.villemoes@prevas.dk>
 	Reuben Sumner <rasumner@undergrad.math.uwaterloo.ca>
+	Rich Felker <dalias@aerifal.cx>
 	Richard Braakman <dark@xs4all.nl>
 	Richard Henderson <richard@twiddle.tamu.edu>
 	Richard Hirst <rhirst@linuxcare.com>
@@ -229,6 +234,7 @@ strace-devel@lists.strace.io mailing list.
 	Thiemo Seufer <ths@networkno.de>
 	Thomas Bogendoerfer <tsbogend@bigbug.franken.de>
 	Thomas De Schampheleire <thomas.de.schampheleire@gmail.com>
+	Thomas Deutschmann <whissi@gentoo.org>
 	Tim Yamin <plasmaroo@gentoo.org>
 	Timo Lindfors <timo.lindfors@iki.fi>
 	Tom Dyas <tdyas@eden.rutgers.edu>
@@ -240,6 +246,7 @@ strace-devel@lists.strace.io mailing list.
 	Victor Krapivensky <krapivenskiy.va@phystech.edu>
 	Vineet Gupta <Vineet.Gupta1@synopsys.com>
 	Vitaly Chaykovsky <mgspeker@gmail.com>
+	Vladimir D. Seleznev <vseleznv@altlinux.org>
 	Wang Chao <wang.chao@cn.fujitsu.com>
 	Weichuan Yan <wchyan@marvell.com>
 	Wichert Akkerman <wichert@deephackmode.org>

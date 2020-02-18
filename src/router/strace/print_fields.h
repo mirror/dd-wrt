@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016-2017 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2017-2019 The strace developers.
+ * Copyright (c) 2017-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -144,6 +144,13 @@
 		STRACE_PRINTF("%s%s=", (prefix_), #field_);		\
 		print_quoted_cstring((const char *) (where_).field_,	\
 				     (size_));				\
+	} while (0)
+
+# define PRINT_FIELD_ARRAY(prefix_, where_, field_, tcp_, print_func_)	\
+	do {								\
+		STRACE_PRINTF("%s%s=", (prefix_), #field_);		\
+		print_local_array((tcp_), (where_).field_,		\
+				  (print_func_));			\
 	} while (0)
 
 # define PRINT_FIELD_HEX_ARRAY(prefix_, where_, field_)			\

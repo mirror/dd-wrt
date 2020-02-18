@@ -3,7 +3,7 @@
 # Check strace options syntax.
 #
 # Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
-# Copyright (c) 2016-2019 The strace developers.
+# Copyright (c) 2016-2020 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,42 +11,78 @@
 . "${srcdir=.}/syntax.sh"
 
 check_e "Invalid process id: '0'" -p 0
+check_e "Invalid process id: '0'" --attach=0
 check_e "Invalid process id: '-42'" -p -42
+check_e "Invalid process id: '-42'" --attach=-42
 check_e "Invalid process id: '$$.'" -p $$.
+check_e "Invalid process id: '$$.'" --attach=$$.
 check_e "Invalid process id: 'a'" -p 1,a
+check_e "Invalid process id: 'a'" --attach=1,a
 check_e "Syscall 'chdir' for -b isn't supported" -b chdir
+check_e "Syscall 'chdir' for -b isn't supported" --detach-on=chdir
 check_e "Syscall 'chdir' for -b isn't supported" -b execve -b chdir
+check_e "Syscall 'chdir' for -b isn't supported" --detach-on=execve --detach-on=chdir
 
 check_e_using_grep 'exec: File *name too long' "$(printf '%4096s' ' ')"
 
 ff_name="$(printf '%4084s' ' ')"
 check_e_using_grep "$ff_name: File *name too long" -ff -o "$ff_name" true
+check_e_using_grep "$ff_name: File *name too long" -ff --output="$ff_name" true
 
 check_h 'must have PROG [ARGS] or -p PID'
 check_h 'PROG [ARGS] must be specified with -D' -D -p $$
+check_h 'PROG [ARGS] must be specified with -D' -DD -p $$
+check_h 'PROG [ARGS] must be specified with -D' -DDD -p $$
+check_h 'PROG [ARGS] must be specified with -D' -DDDD -p $$
+check_h 'Too many -D'\''s (4), maximum supported -D count is 3' -DDDD /bin/true
 check_h '-c and -C are mutually exclusive' -c -C true
+check_h '-c and -C are mutually exclusive' --summary-only --summary true
 check_h '-c and -C are mutually exclusive' -C -c true
+check_h '-c and -C are mutually exclusive' --summary --summary-only true
 check_h '(-c or -C) and -ff are mutually exclusive' -c -ff true
+check_h '(-c or -C) and -ff are mutually exclusive' --summary-only -ff true
 check_h '(-c or -C) and -ff are mutually exclusive' -C -ff true
+check_h '(-c or -C) and -ff are mutually exclusive' --summary -ff true
 check_h '-w must be given with (-c or -C)' -w true
+check_h '-w must be given with (-c or -C)' --summary-wall-clock true
 check_h 'piping the output and -ff are mutually exclusive' -o '|' -ff true
+check_h 'piping the output and -ff are mutually exclusive' --output='|' -ff true
 check_h 'piping the output and -ff are mutually exclusive' -o '!' -ff true
+check_h 'piping the output and -ff are mutually exclusive' --output='!' -ff true
 check_h "invalid -a argument: '-42'" -a -42
 check_h "invalid -O argument: '-42'" -O -42
 check_h "invalid -s argument: '-42'" -s -42
+check_h "invalid -s argument: '-42'" --string-limit=-42
 check_h "invalid -s argument: '1073741824'" -s 1073741824
+check_h "invalid -s argument: '1073741824'" --string-limit=1073741824
 check_h "invalid -I argument: '5'" -I 5
 check_h "invalid -X argument: 'test'" -Xtest
+check_h "invalid -X argument: 'test'" --const-print-style=test
 check_h "invalid -X argument: 'a'" -Xa
+check_h "invalid -X argument: 'a'" --const-print-style=a
 check_h "invalid -X argument: 'abbreviated'" -X abbreviated
+check_h "invalid -X argument: 'abbreviated'" --const-print-style=abbreviated
 
 check_h "incorrect personality designator '' in qualification 'getcwd@'" -e trace=getcwd@
 check_h "incorrect personality designator '42' in qualification 'getcwd@42'" -e trace=getcwd@42
 check_h "incorrect personality designator '42' in qualification 'getcwd@42'" -e trace=gettid,getcwd@42
 check_h "incorrect personality designator '42' in qualification '23@42'" -e trace=23@42,123
 
+check_h '--seccomp-bpf implies -f
+-w must be given with (-c or -C)' --seccomp-bpf -w /
+check_h '--seccomp-bpf is not enabled for processes attached with -p
+-w must be given with (-c or -C)' --seccomp-bpf -f -p 1 -w
+
+check_h 'option -F is deprecated, please use -f instead
+-w must be given with (-c or -C)' -F -w /
+check_h 'option -F is deprecated, please use -f instead
+-w must be given with (-c or -C)' -FF -w /
+check_h 'deprecated option -F ignored
+-w must be given with (-c or -C)' -fF -w /
+
 check_e "invalid system call '/getcwd@ohmy'" -e trace=/getcwd@ohmy
 check_e "invalid -e kvm= argument: 'chdir'" -e kvm=chdir
+check_e "invalid -e kvm= argument: 'chdir'" --kvm=chdir
 
 case "$STRACE_NATIVE_ARCH" in
 x86_64)
@@ -59,7 +95,7 @@ x32)
 	check_h "must have PROG [ARGS] or -p PID" -e trace=getcwd@32
 	check_h "must have PROG [ARGS] or -p PID" -e trace=getcwd@x32
 	;;
-aarch64|powerpc64|riscv64|s390x|sparc64|tile)
+aarch64|powerpc64|s390x|sparc64|tile)
 	check_h "must have PROG [ARGS] or -p PID" -e trace=getcwd@64
 	check_h "must have PROG [ARGS] or -p PID" -e trace=getcwd@32
 	check_h "incorrect personality designator 'x32' in qualification 'getcwd@x32'" -e trace=getcwd@x32
@@ -102,12 +138,25 @@ if [ "$uid" -ge 0 ]; then
 		check_e "-$c has no effect with -c
 $STRACE_EXE: $umsg" -u :nosuchuser: -c -$c true
 	done
-		check_e "-i has no effect with -c
+
+	check_e "-i has no effect with -c
 $STRACE_EXE: -r has no effect with -c
 $STRACE_EXE: -t has no effect with -c
 $STRACE_EXE: -T has no effect with -c
 $STRACE_EXE: -y has no effect with -c
-$STRACE_EXE: $umsg" -u :nosuchuser: -cirtTy true
+$STRACE_EXE: Only the last of -z/-Z options will take effect. See status qualifier for more complex filters.
+$STRACE_EXE: $umsg" -u :nosuchuser: -cirtTyzZ true
+
+	check_e "-i has no effect with -c
+$STRACE_EXE: $umsg" --user=:nosuchuser: --instruction-pointer --summary-only true
+fi
+
+check_e_using_grep 'ptrace_setoptions = 0x[[:xdigit:]]+' -d /
+check_e_using_grep 'ptrace_setoptions = 0x[[:xdigit:]]+' --debug /
+
+if [ -z "$(get_config_option ENABLE_STACKTRACE 1)" ]; then
+	check_e "Stack traces (-k/--stack-traces option) are not supported by this build of strace" -k
+	check_e "Stack traces (-k/--stack-traces option) are not supported by this build of strace" --stack-traces
 fi
 
 args='-p 2147483647'

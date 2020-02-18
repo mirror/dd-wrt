@@ -5,7 +5,7 @@
 # Copyright (c) 2006-2016 Dmitry V. Levin <ldv@altlinux.org>
 # Copyright (c) 2008-2015 Mike Frysinger <vapier@gentoo.org>
 # Copyright (c) 2015 Elvira Khabirova <lineprinter0@gmail.com>
-# Copyright (c) 2002-2019 The strace developers.
+# Copyright (c) 2002-2020 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: LGPL-2.1-or-later
@@ -22,7 +22,7 @@ AC_COPYRIGHT([Copyright (c) 1999-]copyright_year[ The strace developers.])
 AC_CONFIG_SRCDIR([strace.c])
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_HEADERS([config.h])
-AM_INIT_AUTOMAKE([foreign nostdinc dist-xz silent-rules parallel-tests 1.13])
+AM_INIT_AUTOMAKE([foreign nostdinc dist-xz silent-rules parallel-tests subdir-objects 1.13])
 AM_MAINTAINER_MODE
 AC_CANONICAL_HOST
 
@@ -59,6 +59,7 @@ case "$host_cpu" in
 aarch64*)
 	arch=aarch64
 	arch_m32=arm
+	cc_flags_m32=
 	AC_DEFINE([AARCH64], 1, [Define for the AArch64 architecture.])
 	;;
 alpha*)
@@ -265,6 +266,7 @@ AC_CHECK_FUNCS(m4_normalize([
 	be64toh
 	fallocate
 	fanotify_mark
+	fcntl64
 	fopen64
 	fork
 	fputs_unlocked
@@ -315,8 +317,11 @@ AC_CHECK_MEMBERS([struct stat.st_mtime_nsec, struct stat64.st_mtime_nsec],,,
 AC_CHECK_TYPES(m4_normalize([
 	struct pt_all_user_regs,
 	struct ia64_fpreg,
-	struct ptrace_peeksiginfo_args
+	struct ptrace_peeksiginfo_args,
+	struct __ptrace_syscall_info
 ]),,, [#include <sys/ptrace.h>])
+
+AC_CHECK_TYPES([struct ptrace_syscall_info],,, [#include <linux/ptrace.h>])
 
 # For kernels that do not have v3.10-rc1~201^2~11
 AC_CHECK_TYPES([s390_compat_regs],,, [#include <asm/ptrace.h>])
@@ -333,22 +338,14 @@ AC_CHECK_TYPES(m4_normalize([
 #include <linux/fcntl.h>])
 
 AC_CHECK_TYPES(m4_normalize([
-	struct crypto_report_aead,
-	struct crypto_report_blkcipher,
-	struct crypto_report_cipher,
-	struct crypto_report_hash,
-	struct crypto_report_rng
-]),,, [#include <linux/cryptouser.h>])
-
-AC_CHECK_TYPES(m4_normalize([
 	struct kcmp_epoll_slot
 ]),,, [#include <linux/kcmp.h>])
 
 AC_CHECK_TYPES(m4_normalize([
-	struct keyctl_kdf_params
+	struct keyctl_kdf_params,
+	struct keyctl_pkey_params,
+	struct keyctl_pkey_query
 ]),,, [#include <linux/keyctl.h>])
-
-AC_CHECK_MEMBERS([struct timex.tai],,, [#include <sys/timex.h>])
 
 AC_CHECK_MEMBERS([struct utsname.domainname],,, [#include <sys/utsname.h>])
 
@@ -380,7 +377,8 @@ AC_CHECK_MEMBERS(m4_normalize([
 	struct perf_event_attr.sample_stack_user,
 	struct perf_event_attr.sample_regs_intr,
 	struct perf_event_attr.aux_watermark,
-	struct perf_event_attr.sample_max_stack
+	struct perf_event_attr.sample_max_stack,
+	struct perf_event_attr.aux_sample_size
 ]),,, [#include <linux/perf_event.h>])
 
 AC_CHECK_HEADERS(m4_normalize([
@@ -388,10 +386,10 @@ AC_CHECK_HEADERS(m4_normalize([
 	asm/guarded_storage.h
 	asm/sysmips.h
 	elf.h
+	gcov.h
 	iconv.h
 	inttypes.h
 	linux/bsg.h
-	linux/cryptouser.h
 	linux/dm-ioctl.h
 	linux/dqblk_xfs.h
 	linux/falloc.h
@@ -400,7 +398,6 @@ AC_CHECK_HEADERS(m4_normalize([
 	linux/hiddev.h
 	linux/if_addr.h
 	linux/if_link.h
-	linux/io_uring.h
 	linux/ip_vs.h
 	linux/ipc.h
 	linux/kcmp.h
@@ -408,7 +405,6 @@ AC_CHECK_HEADERS(m4_normalize([
 	linux/memfd.h
 	linux/mmtimer.h
 	linux/mount.h
-	linux/msg.h
 	linux/neighbour.h
 	linux/netfilter/ipset/ip_set.h
 	linux/netfilter/nf_tables.h
@@ -426,8 +422,6 @@ AC_CHECK_HEADERS(m4_normalize([
 	linux/sched.h
 	linux/seccomp.h
 	linux/securebits.h
-	linux/sem.h
-	linux/shm.h
 	linux/userfaultfd.h
 	linux/utsname.h
 	mqueue.h
@@ -440,10 +434,7 @@ AC_CHECK_HEADERS(m4_normalize([
 	sys/eventfd.h
 	sys/fanotify.h
 	sys/ipc.h
-	sys/msg.h
 	sys/quota.h
-	sys/sem.h
-	sys/shm.h
 	sys/signalfd.h
 	sys/xattr.h
 	ustat.h
@@ -466,10 +457,6 @@ AC_CHECK_HEADERS(m4_normalize([
 ]),,, [#include <netinet/in.h>
 #include <net/if.h>])
 
-AC_CHECK_HEADERS([linux/input.h], [
-	AC_CHECK_MEMBERS([struct input_absinfo.resolution],,, [#include <linux/input.h>])
-])
-
 AC_CHECK_HEADERS([linux/bpf.h], [
 	AC_CHECK_TYPES(m4_normalize([
 		struct bpf_insn,
@@ -477,6 +464,14 @@ AC_CHECK_HEADERS([linux/bpf.h], [
 		struct bpf_prog_info
 	]),,, [#include <linux/bpf.h>])
 	st_BPF_ATTR
+])
+
+AC_CHECK_HEADERS([linux/io_uring.h], [
+	AC_CHECK_MEMBERS(m4_normalize([
+		struct io_uring_params.features,
+		struct io_uring_params.wq_fd,
+		struct io_uring_params.resv
+	]),,, [#include <linux/io_uring.h>])
 ])
 
 AC_CHECK_HEADERS([bluetooth/bluetooth.h], [
@@ -488,10 +483,6 @@ AC_CHECK_HEADERS([bluetooth/bluetooth.h], [
 			 #include <bluetooth/l2cap.h>])
 ])
 
-AC_CHECK_TYPES(m4_normalize([
-	struct br_mdb_entry,
-	struct br_port_msg
-]),,, [#include <linux/if_bridge.h>])
 AC_CHECK_MEMBERS(m4_normalize([
 	struct br_mdb_entry.flags,
 	struct br_mdb_entry.vid
@@ -502,29 +493,16 @@ AC_CHECK_TYPES([struct ifaddrlblmsg],,, [#include <linux/if_addrlabel.h>])
 AC_CHECK_TYPES([struct netconfmsg],,, [#include <linux/netconf.h>])
 
 AC_CHECK_TYPES(m4_normalize([
-	struct rta_mfc_stats,
-	struct rtvia
+	struct ifla_cacheinfo
 ]),,, [#include <sys/socket.h>
 #include <linux/rtnetlink.h>])
 
-AC_CHECK_MEMBERS([struct ndt_stats.ndts_table_fulls],,, [#include <linux/neighbour.h>])
-AC_CHECK_TYPES(m4_normalize([
-	struct ndt_config,
-	struct ndt_stats
-]),,, [#include <linux/neighbour.h>])
-
-AC_CHECK_TYPES(m4_normalize([
-	struct ifla_bridge_id,
-	struct ifla_cacheinfo,
-	struct ifla_port_vsi,
-	struct rtnl_link_stats64
+AC_CHECK_DECLS(m4_normalize([
+	TCA_ACT_PAD,
+	TCA_ACT_COOKIE,
+	TCA_ACT_FLAGS
 ]),,, [#include <sys/socket.h>
-#include <linux/rtnetlink.h>])
-AC_CHECK_MEMBERS(m4_normalize([
-	struct rtnl_link_stats.rx_nohandler,
-	struct rtnl_link_stats64.rx_nohandler
-]),,, [#include <sys/socket.h>
-#include <linux/rtnetlink.h>])
+#include <linux/pkt_cls.h>])
 AC_CHECK_DECLS(m4_normalize([
 	IFLA_PORT_SELF,
 	IFLA_PROTINFO,
@@ -538,6 +516,9 @@ AC_CHECK_TYPES(m4_normalize([
 	struct gnet_stats_queue,
 	struct gnet_stats_rate_est,
 	struct gnet_stats_rate_est64
+]),,, [#include <linux/gen_stats.h>])
+AC_CHECK_DECLS(m4_normalize([
+	TCA_STATS_PKT64
 ]),,, [#include <linux/gen_stats.h>])
 
 AC_CHECK_TYPES([struct tc_sizespec],,, [#include <linux/types.h>
@@ -614,7 +595,7 @@ AC_CHECK_MEMBERS(m4_normalize([
 		struct iocb.aio_rw_flags
 		]),,, [#include <linux/aio_abi.h>])
 
-AC_CHECK_TYPES([struct clone_args],,, [#include <linux/sched.h>])
+AC_CHECK_MEMBERS([struct clone_args.set_tid_size],,, [#include <linux/sched.h>])
 
 CPPFLAGS="$saved_CPPFLAGS"
 
@@ -630,6 +611,8 @@ AC_CHECK_HEADERS([linux/btrfs.h], [
 	AC_CHECK_DECLS(m4_normalize([BTRFS_COMPRESS_NONE, BTRFS_COMPRESS_ZLIB,
 				BTRFS_COMPRESS_LZO]),,,[ #include <stdio.h>
 #include <linux/btrfs.h>])])
+
+st_CHECK_TYPES
 
 AC_CHECK_DECLS([sys_errlist])
 AC_CHECK_DECLS(m4_normalize([
@@ -791,13 +774,22 @@ AC_CHECK_DECLS(m4_normalize([
 	V4L2_CTRL_TYPE_CTRL_CLASS,
 	V4L2_CTRL_TYPE_STRING,
 	V4L2_CTRL_TYPE_BITMASK,
-	V4L2_CTRL_TYPE_INTEGER_MENU
+	V4L2_CTRL_TYPE_INTEGER_MENU,
+	V4L2_CTRL_TYPE_U8,
+	V4L2_CTRL_TYPE_U16,
+	V4L2_CTRL_TYPE_U32,
+	V4L2_CTRL_TYPE_AREA
 ]),,, [#include <sys/time.h>
 #include <linux/ioctl.h>
 #include <linux/types.h>
 #include <linux/videodev2.h>])
 
 AC_CHECK_MEMBERS(m4_normalize([
+	struct v4l2_capability.device_caps,
+	struct v4l2_ext_control.string,
+	struct v4l2_format.fmt.pix_mp,
+	struct v4l2_format.fmt.sdr,
+	struct v4l2_format.fmt.sliced,
 	struct v4l2_window.global_alpha,
 	struct v4l2_sdr_format.buffersize
 ]),,, [#include <sys/time.h>
@@ -814,6 +806,7 @@ AC_CHECK_SIZEOF([kernel_long_t],,[#include "$srcdir/kernel_types.h"])
 SIZEOF_KERNEL_LONG_T="$ac_cv_sizeof_kernel_long_t"
 AC_SUBST(SIZEOF_KERNEL_LONG_T)
 AC_CHECK_SIZEOF([struct i64_i32],,[struct i64_i32 {long long i64; int i32;};])
+AC_CHECK_SIZEOF([struct msqid64_ds],,[#include <linux/msg.h>])
 
 
 AC_CACHE_CHECK([for SIGRTMIN], [st_cv_SIGRTMIN],
@@ -948,6 +941,39 @@ AC_ARG_ENABLE([mpers],
 		;;
 	 esac],
 	[enable_mpers=yes])
+
+AS_IF([test x$arch = xaarch64],
+      [# So far, only aarch64 needs a separate compiler for its compat
+       # personality (which is AArch32, that is more or less ARMv7 EABI)
+       #
+       # Some heuristics regarding possible compiler name:
+       #   Debian:  arm-linux-gnueabi{,hf}-gcc
+       #   SuSE:    arm7{,hl}-linux-gnueabi-gcc
+       #   Red Hat: arm-redhat-linux-gnu-gcc
+       #   Fedora:  arm-linux-gnu-gcc
+       #   ALT:     armh-alt-linux-gnueabi-gcc
+       m4_foreach([triplet1], [arm, arm7, arm7hl, armh], dnl
+		  [m4_foreach([triplet2], [, $host_vendor-], dnl
+			      [m4_foreach([triplet3], [gnu, gnueabi, gnueabihf], dnl
+					  [m4_foreach([triplet_cc], [gcc, cc], dnl
+						      [m4_append([arm_compat_compilers], dnl
+								 triplet1[-]triplet2[linux-]triplet3[-]triplet_cc)])])])])
+       AC_CHECK_PROGS(CC_FOR_M32, arm_compat_compilers)
+       AS_IF([test -n "$CC_FOR_M32"],
+	     [: ${CPP_FOR_M32=$CC_FOR_M32 -E}
+	      : ${CFLAGS_FOR_M32=-std=gnu99}
+	      : ${CPPFLAGS_FOR_M32=}
+	     ])
+      ])
+
+# Set default compiler variables for personalities.
+m4_foreach([pers], [M32, MX32], dnl
+	   [m4_foreach([var], [CC, CPP, CPPFLAGS], dnl
+		       [[: ${]var[_FOR_]pers[=$]var[}]
+		        AC_SUBST(var[_FOR_]pers)]) dnl
+	    m4_foreach([var], [CFLAGS], dnl
+		       [[: ${]var[_FOR_]pers[=][}]
+		        AC_SUBST(var[_FOR_]pers)])])
 
 st_MPERS([m32], [aarch64|powerpc64|s390x|sparc64|tile|x32|x86_64])
 st_MPERS([mx32], [x86_64])

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016 Fabien Siron <fabien.siron@epita.fr>
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -42,8 +42,10 @@ decode_fib_rule_uid_range(struct tcb *const tcp,
 			  const unsigned int len,
 			  const void *const opaque_data)
 {
-#ifdef HAVE_STRUCT_FIB_RULE_UID_RANGE
-	struct fib_rule_uid_range range;
+	struct /* fib_rule_uid_range */ {
+		uint32_t start;
+		uint32_t end;
+	} range;
 
 	if (len < sizeof(range))
 		return false;
@@ -54,9 +56,6 @@ decode_fib_rule_uid_range(struct tcb *const tcp,
 	}
 
 	return true;
-#else
-	return false;
-#endif
 }
 
 static bool

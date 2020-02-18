@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016 Fabien Siron <fabien.siron@epita.fr>
  * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -39,6 +39,10 @@
 #include "xlat/nl_sock_diag_types.h"
 #include "xlat/nl_xfrm_types.h"
 #include "xlat/nlmsgerr_attrs.h"
+
+# define XLAT_MACROS_ONLY
+#  include "xlat/crypto_msgs.h"
+# undef XLAT_MACROS_ONLY
 
 /*
  * Fetch a struct nlmsghdr from the given address.
@@ -533,9 +537,7 @@ decode_nlmsgerr(struct tcb *const tcp,
 }
 
 static const netlink_decoder_t netlink_decoders[] = {
-#ifdef HAVE_LINUX_CRYPTOUSER_H
 	[NETLINK_CRYPTO] = decode_netlink_crypto,
-#endif
 #ifdef HAVE_LINUX_NETFILTER_NFNETLINK_H
 	[NETLINK_NETFILTER] = decode_netlink_netfilter,
 #endif

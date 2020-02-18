@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016 Fabien Siron <fabien.siron@epita.fr>
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -16,10 +16,9 @@
 
 #include <netinet/in.h>
 
-#ifdef HAVE_LINUX_IF_LINK_H
-# include <linux/if_link.h>
-#endif
 #include <linux/rtnetlink.h>
+
+#include "types/rtnl_link.h"
 
 #include "xlat/in6_addr_gen_mode.h"
 #include "xlat/inet_devconf_indices.h"
@@ -48,9 +47,9 @@ decode_rtnl_link_stats(struct tcb *const tcp,
 		       const unsigned int len,
 		       const void *const opaque_data)
 {
-	struct rtnl_link_stats st;
+	struct_rtnl_link_stats st;
 	const unsigned int min_size =
-		offsetofend(struct rtnl_link_stats, tx_compressed);
+		offsetofend(struct_rtnl_link_stats, tx_compressed);
 	const unsigned int def_size = sizeof(st);
 	const unsigned int size =
 		(len >= def_size) ? def_size :
@@ -86,10 +85,9 @@ decode_rtnl_link_stats(struct tcb *const tcp,
 
 		PRINT_FIELD_U(", ", st, rx_compressed);
 		PRINT_FIELD_U(", ", st, tx_compressed);
-#ifdef HAVE_STRUCT_RTNL_LINK_STATS_RX_NOHANDLER
+
 		if (len >= def_size)
 			PRINT_FIELD_U(", ", st, rx_nohandler);
-#endif
 		tprints("}");
 	}
 
@@ -422,10 +420,9 @@ decode_rtnl_link_stats64(struct tcb *const tcp,
 			 const unsigned int len,
 			 const void *const opaque_data)
 {
-#ifdef HAVE_STRUCT_RTNL_LINK_STATS64
-	struct rtnl_link_stats64 st;
+	struct_rtnl_link_stats64 st;
 	const unsigned int min_size =
-		offsetofend(struct rtnl_link_stats64, tx_compressed);
+		offsetofend(struct_rtnl_link_stats64, tx_compressed);
 	const unsigned int def_size = sizeof(st);
 	const unsigned int size =
 		(len >= def_size) ? def_size :
@@ -461,17 +458,13 @@ decode_rtnl_link_stats64(struct tcb *const tcp,
 
 		PRINT_FIELD_U(", ", st, rx_compressed);
 		PRINT_FIELD_U(", ", st, tx_compressed);
-# ifdef HAVE_STRUCT_RTNL_LINK_STATS64_RX_NOHANDLER
+
 		if (len >= def_size)
 			PRINT_FIELD_U(", ", st, rx_nohandler);
-# endif
 		tprints("}");
 	}
 
 	return true;
-#else
-	return false;
-#endif
 }
 
 static bool
@@ -480,23 +473,24 @@ decode_ifla_port_vsi(struct tcb *const tcp,
 		     const unsigned int len,
 		     const void *const opaque_data)
 {
-#ifdef HAVE_STRUCT_IFLA_PORT_VSI
-	struct ifla_port_vsi vsi;
+	struct_ifla_port_vsi vsi;
 
 	if (len < sizeof(vsi))
 		return false;
-	else if (!umove_or_printaddr(tcp, addr, &vsi)) {
-		PRINT_FIELD_U("{", vsi, vsi_mgr_id);
-		PRINT_FIELD_STRING(", ", vsi, vsi_type_id,
-				   sizeof(vsi.vsi_type_id), QUOTE_FORCE_HEX);
-		PRINT_FIELD_U(", ", vsi, vsi_type_version);
-		tprints("}");
-	}
+	if (umove_or_printaddr(tcp, addr, &vsi))
+		return true;
+
+	PRINT_FIELD_U("{", vsi, vsi_mgr_id);
+	PRINT_FIELD_STRING(", ", vsi, vsi_type_id,
+			   sizeof(vsi.vsi_type_id), QUOTE_FORCE_HEX);
+	PRINT_FIELD_U(", ", vsi, vsi_type_version);
+
+	if (!IS_ARRAY_ZERO(vsi.pad))
+		PRINT_FIELD_HEX_ARRAY(", ", vsi, pad);
+
+	tprints("}");
 
 	return true;
-#else
-	return false;
-#endif
 }
 
 static const nla_decoder_t ifla_port_nla_decoders[] = {

@@ -3,6 +3,13 @@
 #include "gcc_compat.h"
 #include "static_assert.h"
 
+#if defined(V4L2_CAP_TIMEPERFRAME) || (defined(HAVE_DECL_V4L2_CAP_TIMEPERFRAME) && HAVE_DECL_V4L2_CAP_TIMEPERFRAME)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((V4L2_CAP_TIMEPERFRAME) == (0x1000), "V4L2_CAP_TIMEPERFRAME != 0x1000");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define V4L2_CAP_TIMEPERFRAME 0x1000
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -13,9 +20,7 @@ extern const struct xlat v4l2_streaming_capabilities[];
 # else
 
 static const struct xlat_data v4l2_streaming_capabilities_xdata[] = {
-#if defined(V4L2_CAP_TIMEPERFRAME) || (defined(HAVE_DECL_V4L2_CAP_TIMEPERFRAME) && HAVE_DECL_V4L2_CAP_TIMEPERFRAME)
-  XLAT(V4L2_CAP_TIMEPERFRAME),
-#endif
+ XLAT(V4L2_CAP_TIMEPERFRAME),
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static

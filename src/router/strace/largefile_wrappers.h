@@ -1,6 +1,6 @@
 /*
  * Wrappers for handling discrepancies in LF64-themed syscalls availability and
- * necessity between verious architectures and kernel veriosns.
+ * necessity between various architectures and kernel versions.
  *
  * Copyright (c) 2012-2019 The strace developers.
  * All rights reserved.
@@ -24,6 +24,11 @@
 #  else
 #   define fopen_stream fopen
 #  endif
+#  ifdef HAVE_FCNTL64
+#   define fcntl_fd fcntl64
+#  else
+#   define fcntl_fd fcntl
+#  endif
 #  define strace_stat_t struct stat64
 #  define stat_file stat64
 #  define struct_dirent struct dirent64
@@ -33,6 +38,7 @@
 # else
 #  define open_file open
 #  define fopen_stream fopen
+#  define fcntl_fd fcntl
 #  define strace_stat_t struct stat
 #  define stat_file stat
 #  define struct_dirent struct dirent

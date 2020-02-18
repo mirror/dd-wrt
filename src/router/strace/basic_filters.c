@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -152,6 +152,7 @@ lookup_class(const char *s)
 		{ "%file",	TRACE_FILE	},
 		{ "%memory",	TRACE_MEMORY	},
 		{ "%process",	TRACE_PROCESS	},
+		{ "%creds",	TRACE_CREDS	},
 		{ "%signal",	TRACE_SIGNAL	},
 		{ "%ipc",	TRACE_IPC	},
 		{ "%net",	TRACE_NETWORK	},

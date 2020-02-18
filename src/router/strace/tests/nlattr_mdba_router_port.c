@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -12,6 +12,8 @@
 
 # include <stdio.h>
 # include "test_nlattr.h"
+/* struct br_mdb_entry needs a definition of struct in6_addr.  */
+# include <netinet/in.h>
 # include <linux/if_bridge.h>
 # include <linux/rtnetlink.h>
 

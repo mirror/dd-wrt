@@ -3,6 +3,34 @@
 #include "gcc_compat.h"
 #include "static_assert.h"
 
+#if defined(IPC_CREAT) || (defined(HAVE_DECL_IPC_CREAT) && HAVE_DECL_IPC_CREAT)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((IPC_CREAT) == (01000), "IPC_CREAT != 01000");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define IPC_CREAT 01000
+#endif
+#if defined(IPC_EXCL) || (defined(HAVE_DECL_IPC_EXCL) && HAVE_DECL_IPC_EXCL)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((IPC_EXCL) == (02000), "IPC_EXCL != 02000");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define IPC_EXCL 02000
+#endif
+#if defined(SHM_HUGETLB) || (defined(HAVE_DECL_SHM_HUGETLB) && HAVE_DECL_SHM_HUGETLB)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SHM_HUGETLB) == (04000), "SHM_HUGETLB != 04000");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SHM_HUGETLB 04000
+#endif
+#if defined(SHM_NORESERVE) || (defined(HAVE_DECL_SHM_NORESERVE) && HAVE_DECL_SHM_NORESERVE)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SHM_NORESERVE) == (010000), "SHM_NORESERVE != 010000");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SHM_NORESERVE 010000
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -13,18 +41,10 @@
 # else
 
 static const struct xlat_data shm_resource_flags_xdata[] = {
-#if defined(IPC_CREAT) || (defined(HAVE_DECL_IPC_CREAT) && HAVE_DECL_IPC_CREAT)
-  XLAT(IPC_CREAT),
-#endif
-#if defined(IPC_EXCL) || (defined(HAVE_DECL_IPC_EXCL) && HAVE_DECL_IPC_EXCL)
-  XLAT(IPC_EXCL),
-#endif
-#if defined(SHM_HUGETLB) || (defined(HAVE_DECL_SHM_HUGETLB) && HAVE_DECL_SHM_HUGETLB)
-  XLAT(SHM_HUGETLB),
-#endif
-#if defined(SHM_NORESERVE) || (defined(HAVE_DECL_SHM_NORESERVE) && HAVE_DECL_SHM_NORESERVE)
-  XLAT(SHM_NORESERVE),
-#endif
+ XLAT(IPC_CREAT),
+ XLAT(IPC_EXCL),
+ XLAT(SHM_HUGETLB),
+ XLAT(SHM_NORESERVE),
 };
 static
 const struct xlat shm_resource_flags[1] = { {

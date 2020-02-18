@@ -143,6 +143,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define PERF_SAMPLE_PHYS_ADDR 1 << 19
 #endif
+#if defined(PERF_SAMPLE_AUX) || (defined(HAVE_DECL_PERF_SAMPLE_AUX) && HAVE_DECL_PERF_SAMPLE_AUX)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((PERF_SAMPLE_AUX) == (1 << 20), "PERF_SAMPLE_AUX != 1 << 20");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define PERF_SAMPLE_AUX 1 << 20
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -173,6 +180,7 @@ static const struct xlat_data perf_event_sample_format_xdata[] = {
  XLAT(PERF_SAMPLE_TRANSACTION),
  XLAT(PERF_SAMPLE_REGS_INTR),
  XLAT(PERF_SAMPLE_PHYS_ADDR),
+ XLAT(PERF_SAMPLE_AUX),
 };
 static
 const struct xlat perf_event_sample_format[1] = { {

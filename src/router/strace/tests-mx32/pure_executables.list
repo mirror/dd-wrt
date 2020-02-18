@@ -16,10 +16,6 @@ aio
 aio_pgetevents
 alarm
 bpf
-bpf-obj_get_info_by_fd
-bpf-obj_get_info_by_fd-prog
-bpf-obj_get_info_by_fd-prog-v
-bpf-obj_get_info_by_fd-v
 bpf-v
 brk
 btrfs
@@ -445,6 +441,8 @@ seccomp-filter
 seccomp_get_action_avail
 select
 semop
+semop-indirect
+semtimedop
 sendfile
 sendfile64
 set_mempolicy

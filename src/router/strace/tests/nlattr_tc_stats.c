@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -15,6 +15,10 @@
 # include "test_nlattr.h"
 # include <linux/gen_stats.h>
 # include <linux/rtnetlink.h>
+
+#if !HAVE_DECL_TCA_STATS_PKT64
+enum { TCA_STATS_PKT64 = 8 };
+#endif
 
 const unsigned int hdrlen = sizeof(struct tcmsg);
 
@@ -119,6 +123,12 @@ main(void)
 				  PRINT_FIELD_U(", ", est64, pps);
 				  printf("}"));
 # endif
+
+	static const uint64_t pkt64 = 0xdeadc0defacefeedULL;
+	TEST_NESTED_NLATTR_OBJECT(fd, nlh0, hdrlen,
+				  init_tcmsg, print_tcmsg,
+				  TCA_STATS_PKT64, pattern, pkt64,
+				  printf("16045693111314087661"));
 
 	puts("+++ exited with 0 +++");
 	return 0;

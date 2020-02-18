@@ -3,6 +3,34 @@
 #include "gcc_compat.h"
 #include "static_assert.h"
 
+#if defined(MSG_NOERROR) || (defined(HAVE_DECL_MSG_NOERROR) && HAVE_DECL_MSG_NOERROR)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((MSG_NOERROR) == (010000), "MSG_NOERROR != 010000");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define MSG_NOERROR 010000
+#endif
+#if defined(MSG_EXCEPT) || (defined(HAVE_DECL_MSG_EXCEPT) && HAVE_DECL_MSG_EXCEPT)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((MSG_EXCEPT) == (020000), "MSG_EXCEPT != 020000");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define MSG_EXCEPT 020000
+#endif
+#if defined(MSG_COPY) || (defined(HAVE_DECL_MSG_COPY) && HAVE_DECL_MSG_COPY)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((MSG_COPY) == (040000), "MSG_COPY != 040000");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define MSG_COPY 040000
+#endif
+#if defined(IPC_NOWAIT) || (defined(HAVE_DECL_IPC_NOWAIT) && HAVE_DECL_IPC_NOWAIT)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((IPC_NOWAIT) == (004000), "IPC_NOWAIT != 004000");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define IPC_NOWAIT 004000
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -13,15 +41,10 @@
 # else
 
 static const struct xlat_data ipc_msg_flags_xdata[] = {
-#if defined(MSG_NOERROR) || (defined(HAVE_DECL_MSG_NOERROR) && HAVE_DECL_MSG_NOERROR)
-  XLAT(MSG_NOERROR),
-#endif
-#if defined(MSG_EXCEPT) || (defined(HAVE_DECL_MSG_EXCEPT) && HAVE_DECL_MSG_EXCEPT)
-  XLAT(MSG_EXCEPT),
-#endif
-#if defined(IPC_NOWAIT) || (defined(HAVE_DECL_IPC_NOWAIT) && HAVE_DECL_IPC_NOWAIT)
-  XLAT(IPC_NOWAIT),
-#endif
+ XLAT(MSG_NOERROR),
+ XLAT(MSG_EXCEPT),
+ XLAT(MSG_COPY),
+ XLAT(IPC_NOWAIT),
 };
 static
 const struct xlat ipc_msg_flags[1] = { {

@@ -59,11 +59,12 @@ struct BPF_MAP_LOOKUP_ELEM_struct {
 	uint32_t map_fd;
 	uint64_t ATTRIBUTE_ALIGNED(8) key;
 	uint64_t ATTRIBUTE_ALIGNED(8) value;
+	uint64_t ATTRIBUTE_ALIGNED(8) flags;
 };
 
 # define BPF_MAP_LOOKUP_ELEM_struct_size \
 	sizeof(struct BPF_MAP_LOOKUP_ELEM_struct)
-# define expected_BPF_MAP_LOOKUP_ELEM_struct_size 24
+# define expected_BPF_MAP_LOOKUP_ELEM_struct_size 32
 
 struct BPF_MAP_UPDATE_ELEM_struct {
 	uint32_t map_fd;
@@ -123,11 +124,13 @@ struct BPF_PROG_LOAD_struct {
 	uint32_t line_info_rec_size;
 	uint64_t ATTRIBUTE_ALIGNED(8) line_info;
 	uint32_t line_info_cnt;
+	uint32_t attach_btf_id;
+	uint32_t attach_prog_fd;
 };
 
 # define BPF_PROG_LOAD_struct_size \
-	offsetofend(struct BPF_PROG_LOAD_struct, line_info_cnt)
-# define expected_BPF_PROG_LOAD_struct_size 108
+	offsetofend(struct BPF_PROG_LOAD_struct, attach_prog_fd)
+# define expected_BPF_PROG_LOAD_struct_size 116
 
 struct BPF_OBJ_PIN_struct {
 	uint64_t ATTRIBUTE_ALIGNED(8) pathname;
@@ -194,6 +197,9 @@ struct BPF_PROG_GET_NEXT_ID_struct {
 
 # define BPF_MAP_GET_NEXT_ID_struct BPF_PROG_GET_NEXT_ID_struct
 # define BPF_MAP_GET_NEXT_ID_struct_size BPF_PROG_GET_NEXT_ID_struct_size
+
+# define BPF_BTF_GET_NEXT_ID_struct BPF_PROG_GET_NEXT_ID_struct
+# define BPF_BTF_GET_NEXT_ID_struct_size BPF_PROG_GET_NEXT_ID_struct_size
 
 struct BPF_PROG_GET_FD_BY_ID_struct {
 	uint32_t prog_id;
