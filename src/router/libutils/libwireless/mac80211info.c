@@ -1270,10 +1270,10 @@ static void check_validchannels(struct wifi_channels *list, int bw, int nooverla
 
 		if (bw == 40) {
 			int minus[] = { -20, 0 };
-			if (!chan->luu && !check_ranges("LOWER", list, chan, (int[]) { -20, 0 }, 40)) {
+			if (check_ranges("LOWER", list, chan, (int[]) { -20, 0 }, 40)) {
 				chan->luu = 1;
 			}
-			if (!chan->ull && !check_ranges("UPPER", list, chan, (int[]) { 20, 0 }, 40)) {
+			if (check_ranges("UPPER", list, chan, (int[]) { 20, 0 }, 40)) {
 				chan->ull = 1;
 			}
 		}
