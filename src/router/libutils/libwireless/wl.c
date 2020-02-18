@@ -2822,7 +2822,7 @@ int is_mt76(const char *prefix)
 #ifdef HAVE_WPA3
 int has_airtime_policy(const char *prefix)
 {
-	if (is_mt7615(prefix) || is_ath10k(prefix) || is_ath9k(prefix))
+	if (is_ath10k(prefix) || is_ath9k(prefix))
 		return 1;
 	return 0;
 }
