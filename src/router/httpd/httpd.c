@@ -203,6 +203,7 @@ static void *handle_request(void *conn_fp);
 #define PTHREAD_MUTEX_INIT pthread_mutex_init
 #define PTHREAD_MUTEX_LOCK pthread_mutex_lock
 #define PTHREAD_MUTEX_UNLOCK pthread_mutex_unlock
+
 #define SEM_WAIT sem_wait
 #define SEM_POST sem_post
 #define SEM_INIT sem_init
@@ -491,8 +492,7 @@ static void send_error(webs_t conn_fp, int status, char *title, char *extra_head
 	va_start(args, (char *)fmt);
 	vasprintf(&text, fmt, args);
 	va_end(args);
-	if (status != 408)
-		dd_logerror("httpd", "Request Error Code %d: %s\n", status, text);
+	dd_logerror("httpd", "Request Error Code %d: %s\n", status, text);
 	// jimmy, https, 8/4/2003, fprintf -> wfprintf, fflush -> wfflush
 	send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL, 1);
 	(void)wfprintf(conn_fp, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
@@ -829,7 +829,6 @@ static void *handle_request(void *arg)
 		}
 		break;
 	}
-
 	if (!*(line)) {
 		send_error(conn_fp, 408, "Request Timeout", NULL, "No request appeared within a reasonable time period.");
 
@@ -1709,7 +1708,7 @@ int main(int argc, char **argv)
 		}
 		bzero(conn_fp, sizeof(webs));
 		SEM_WAIT(&semaphore);
-
+		errno = 0;	// workaround for musl bug
 		FD_ZERO(&lfdset);
 		maxfd = -1;
 		if (no_ssl) {
