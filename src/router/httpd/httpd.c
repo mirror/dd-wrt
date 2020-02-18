@@ -33,7 +33,7 @@
 #include "modules/combine.c"
 
 static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
-static char *wfgets(char *buf, int len, webs_t fp);
+static char *wfgets(char *buf, int len, webs_t fp, int *eof);
 static int wfprintf(webs_t fp, char *fmt, ...);
 static size_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
 static size_t wfread(void *buf, size_t size, size_t n, webs_t fp);
@@ -446,7 +446,7 @@ static int auth_check(webs_t conn_fp)
 	if (!enc1 || strcmp(enc1, conn_fp->auth_userid)) {
 		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
 		add_blocklist("httpd", conn_fp->http_client_ip);
-		while (wfgets(dummy, 64, conn_fp) > 0) {
+		while (wfgets(dummy, 64, conn_fp, NULL) > 0) {
 		}
 		goto out;
 	}
@@ -459,7 +459,7 @@ static int auth_check(webs_t conn_fp)
 	if (!enc2 || strcmp(enc2, conn_fp->auth_passwd)) {
 		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
 		add_blocklist("httpd", conn_fp->http_client_ip);
-		while (wfgets(dummy, 64, conn_fp) > 0) {
+		while (wfgets(dummy, 64, conn_fp, NULL) > 0) {
 		}
 		goto out;
 	}
@@ -810,10 +810,15 @@ static void *handle_request(void *arg)
 
 	/* Parse the first line of the request. */
 	int cnt = 0;
+	int eof = 0;
 	for (;;) {
 		if (cnt == 5000)
 			break;
-		wfgets(line, LINE_LEN, conn_fp);
+		wfgets(line, LINE_LEN, conn_fp, &eof);
+		if (eof) {
+			send_error(conn_fp, 408, "TCP Error", NULL, "Unexpected connection close in intitial request");
+			goto out;
+		}
 		if (!*(line) && (errno == EINTR || errno == EAGAIN)) {
 			struct timespec tim, tim2;
 			tim.tv_sec = 0;
@@ -857,8 +862,12 @@ static void *handle_request(void *arg)
 	cur = protocol + strlen(protocol) + 1;
 	/* Parse the rest of the request headers. */
 
-	while (wfgets(cur, line + LINE_LEN - cur, conn_fp) != 0)	//jimmy,https,8/4/2003
+	while (wfgets(cur, line + LINE_LEN - cur, conn_fp, &eof) != 0)	//jimmy,https,8/4/2003
 	{
+		if (eof) {
+			send_error(conn_fp, 408, "TCP Error", NULL, "Unexpected connection close");
+			goto out;
+		}
 		if (strcmp(cur, "\n") == 0 || strcmp(cur, "\r\n") == 0) {
 			break;
 		} else if (strncasecmp(cur, "Authorization:", 14) == 0) {
@@ -1927,16 +1936,19 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-static char *wfgets(char *buf, int len, webs_t wp)
+static char *wfgets(char *buf, int len, webs_t wp, int *feof)
 {
 	FILE *fp = wp->fp;
 	char *ret = NULL;
 	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
-		int eof = 1;
+		eof = 1;
 		int i;
 		char c;
-		if (sslbufferpeek((struct sslbuffer *)fp, buf, len) <= 0) {
+		int sr = sslbufferpeek((struct sslbuffer *)fp, buf, len);
+		if (sr <= 0) {
+			if (sr == 0 && feof)
+				*feof = 1;
 			goto out;
 		}
 		for (i = 0; i < len; i++) {
@@ -1946,7 +1958,10 @@ static char *wfgets(char *buf, int len, webs_t wp)
 				break;
 			}
 		}
-		if (sslbufferread((struct sslbuffer *)fp, buf, i + 1) <= 0) {
+		sr = sslbufferread((struct sslbuffer *)fp, buf, i + 1);
+		if (sr <= 0) {
+			if (sr == 0 && feof)
+				*feof = 1;
 			goto out;
 		}
 		if (!eof) {
@@ -1954,7 +1969,8 @@ static char *wfgets(char *buf, int len, webs_t wp)
 			ret = buf;
 			goto out;
 		} else {
-
+			if (feof)
+				*feof = 1;
 			goto out;
 		}
 
@@ -1966,6 +1982,8 @@ static char *wfgets(char *buf, int len, webs_t wp)
 		ret = buf;
 #endif
 	} else {
+		if (feof(fp))
+			*feof = 1;
 		ret = fgets(buf, len, fp);
 	}
       out:;
