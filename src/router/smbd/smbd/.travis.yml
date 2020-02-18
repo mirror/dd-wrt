@@ -18,7 +18,7 @@ before_script:
  - sudo apt-get install linux-headers-$(uname -r)
  - sudo apt-get install autoconf libtool pkg-config libnl-3-dev libnl-genl-3-dev
  - sudo apt-get install xfslibs-dev uuid-dev libtool-bin xfsprogs libgdbm-dev gawk fio attr libattr1-dev libacl1-dev libaio-dev
- - git clone --branch=ksmbd-tools-next https://github.com/cifsd-team/ksmbd-tools
+ - git clone --branch=ksmbd-tools-next https://github.com/cifsd-team/cifsd-tools
  - git clone https://github.com/cifsd-team/cifsd-test-result
  - export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
  - export PATH=/usr/local/lib:$PATH
@@ -31,73 +31,73 @@ script:
  # Copy ksmbd source to kernel
  - mv linux-stable ../
  - mv linux ../
- - mkdir ../linux-stable/fs/ksmbd
- - cp -ar * ../linux-stable/fs/ksmbd/
- - mkdir ../linux/fs/ksmbd
- - cp -ar * ../linux/fs/ksmbd/
+ - mkdir ../linux-stable/fs/cifsd
+ - cp -ar * ../linux-stable/fs/cifsd/
+ - mkdir ../linux/fs/cifsd
+ - cp -ar * ../linux/fs/cifsd/
 
  # Compile with 4.1 kernel
  - cd ../linux-stable
  - yes "" | make oldconfig > /dev/null
- - echo 'obj-$(CONFIG_SMB_SERVER) += ksmbd/' >> fs/Makefile
- - echo 'source "fs/ksmbd/Kconfig"' >> fs/Kconfig
+ - echo 'obj-$(CONFIG_SMB_SERVER) += cifsd/' >> fs/Makefile
+ - echo 'source "fs/cifsd/Kconfig"' >> fs/Kconfig
  - echo 'CONFIG_SMB_SERVER=m' >> .config
  - echo 'CONFIG_SMB_INSECURE_SERVER=y' >> .config
  - echo '# CONFIG_SMB_SERVER_SMBDIRECT is not set' >> .config
  - echo '# CONFIG_SMB_SERVER_DEBUGGING is not set' >> .config
- - make -j$((`nproc`+1)) fs/ksmbd/ksmbd.ko
+ - make -j$((`nproc`+1)) fs/cifsd/ksmbd.ko
 
  # Compile with latest Torvalds' kernel
  - cd ../linux
  - yes "" | make oldconfig > /dev/null
- - echo 'obj-$(CONFIG_SMB_SERVER) += ksmbd/' >> fs/Makefile
- - echo 'source "fs/ksmbd/Kconfig"' >> fs/Kconfig
+ - echo 'obj-$(CONFIG_SMB_SERVER) += cifsd/' >> fs/Makefile
+ - echo 'source "fs/cifsd/Kconfig"' >> fs/Kconfig
  - echo 'CONFIG_SMB_SERVER=m' >> .config
  - echo 'CONFIG_SMB_INSECURE_SERVER=y' >> .config
  - echo 'CONFIG_SMB_SERVER_SMBDIRECT=y' >> .config
  - echo '# CONFIG_SMB_SERVER_DEBUGGING is not set' >> .config
- - make -j$((`nproc`+1)) fs/ksmbd/ksmbd.ko
+ - make -j$((`nproc`+1)) fs/cifsd/ksmbd.ko
 
  # Compile secure server build (no smb1.0 & smb2.0) with 4.1 kernel
  - cd ../linux-stable
  - yes "" | make oldconfig > /dev/null
- - echo 'obj-$(CONFIG_SMB_SERVER) += ksmbd/' >> fs/Makefile
- - echo 'source "fs/ksmbd/Kconfig"' >> fs/Kconfig
+ - echo 'obj-$(CONFIG_SMB_SERVER) += cifsd/' >> fs/Makefile
+ - echo 'source "fs/cifsd/Kconfig"' >> fs/Kconfig
  - echo 'CONFIG_SMB_SERVER=m' >> .config
  - echo '# CONFIG_SMB_INSECURE_SERVER is not set' >> .config
  - echo '# CONFIG_SMB_SERVER_SMBDIRECT is not set' >> .config
  - echo '# CONFIG_SMB_SERVER_DEBUGGING is not set' >> .config
- - make -j$((`nproc`+1)) fs/ksmbd/ksmbd.ko
+ - make -j$((`nproc`+1)) fs/cifsd/ksmbd.ko
 
  # Compile secure server build (no smb1/smb2) with latest Torvalds' kernel
  - cd ../linux
  - yes "" | make oldconfig > /dev/null
- - echo 'obj-$(CONFIG_SMB_SERVER) += ksmbd/' >> fs/Makefile
- - echo 'source "fs/ksmbd/Kconfig"' >> fs/Kconfig
+ - echo 'obj-$(CONFIG_SMB_SERVER) += cifsd/' >> fs/Makefile
+ - echo 'source "fs/cifsd/Kconfig"' >> fs/Kconfig
  - echo 'CONFIG_SMB_SERVER=m' >> .config
  - echo '# CONFIG_SMB_INSECURE_SERVER is not set' >> .config
  - echo '# CONFIG_SMB_SERVER_SMBDIRECT is not set' >> .config
  - echo '# CONFIG_SMB_SERVER_DEBUGGING is not set' >> .config
- - make -j$((`nproc`+1)) fs/ksmbd/ksmbd.ko
+ - make -j$((`nproc`+1)) fs/cifsd/ksmbd.ko
 
  # Compile secure server build + SMBD with latest Torvalds' kernel
  - cd ../linux
  - yes "" | make oldconfig > /dev/null
- - echo 'obj-$(CONFIG_SMB_SERVER) += ksmbd/' >> fs/Makefile
- - echo 'source "fs/ksmbd/Kconfig"' >> fs/Kconfig
+ - echo 'obj-$(CONFIG_SMB_SERVER) += cifsd/' >> fs/Makefile
+ - echo 'source "fs/cifsd/Kconfig"' >> fs/Kconfig
  - echo 'CONFIG_SMB_SERVER=m' >> .config
  - echo '# CONFIG_SMB_INSECURE_SERVER is not set' >> .config
  - echo '# CONFIG_SMB_SERVER_DEBUGGING is not set' >> .config
  - echo 'CONFIG_SMB_SERVER_SMBDIRECT=y' >> .config
- - make -j$((`nproc`+1)) fs/ksmbd/ksmbd.ko
+ - make -j$((`nproc`+1)) fs/cifsd/ksmbd.ko
 
  # Run xfstests testsuite
- - cd ../ksmbd
+ - cd ../cifsd
  - make > /dev/null
  - sudo make install > /dev/null
  - sudo modprobe ksmbd
  - sudo modprobe cifs
- - cd ksmbd-tools
+ - cd cifsd-tools
  - ./autogen.sh > /dev/null
  - ./configure > /dev/null
  - make -j$((`nproc`+1)) > /dev/null
@@ -109,9 +109,9 @@ script:
  - sudo mkdir -p /mnt/test1
  - sudo mkdir -p /mnt/test2
  - sudo mkdir -p /mnt/test3
- - smbuseradd -i ./ksmbdpwd.db -a testuser -p 1234
+ - ksmbd.adduser -i ./ksmbdpwd.db -a testuser -p 1234
  - cp cifsd-test-result/testsuites/smb.conf .
- - usmbd -n --c=./smb.conf --u=./ksmbdpwd.db&
+ - ksmbd.mountd -n --c=./smb.conf --u=./ksmbdpwd.db&
  - ps -ax | grep smbd
  - cd cifsd-test-result/testsuites/
  - tar xzvf xfstests-cifsd.tgz > /dev/null
@@ -129,11 +129,11 @@ script:
  - mv tests/generic/011.new tests/generic/011
  - mv tests/generic/011.out.new tests/generic/011.out
  - sudo ./check generic/011
- - sed -e s/count=1000/count=100/ -e s/procs=20/procs=10/ tests/generic/013 > tests/generic/013.new
- - mv tests/generic/013.new tests/generic/013
- - sed -e "s/-p 20/-p 10/" tests/generic/013.out > tests/generic/013.out.new
- - mv tests/generic/013.out.new tests/generic/013.out
- - sudo ./check generic/013
+# - sed -e s/count=1000/count=100/ -e s/procs=20/procs=10/ tests/generic/013 > tests/generic/013.new
+# - mv tests/generic/013.new tests/generic/013
+# - sed -e "s/-p 20/-p 10/" tests/generic/013.out > tests/generic/013.out.new
+# - mv tests/generic/013.out.new tests/generic/013.out
+# - sudo ./check generic/013
  - sudo ./check generic/014
  - sudo ./check generic/023
  - sudo ./check generic/024
@@ -153,9 +153,9 @@ script:
  - sudo ./check generic/074
  - sed -e "s/expr 10/expr 5/" -e "s/numops1=1000/numops1=100/" -e "s/numops2=10000/numops2=1000/" tests/generic/075 > tests/generic/075.new
  - mv tests/generic/075.new tests/generic/075
- - sudo ./check generic/075
+# - sudo ./check generic/075
  - sudo ./check generic/080
-# - sudo ./check generic/084 #fail, It may be cifs client issue on 4.15 kernel
+ - sudo ./check generic/084
 # - sed -e "s/-N 10000/-N 900/" -e "s/-l 500000/-l 5000/" tests/generic/091 > tests/generic/091.new
 # - mv tests/generic/091.new tests/generic/091
 # - sed -e "s/-N 10000/-N 900/" -e "s/-l 500000/-l 5000/" tests/generic/091.out > tests/generic/091.out.new
@@ -169,7 +169,7 @@ script:
  - sudo ./check generic/109
  - sed -e "s/expr 10/expr 5/" -e "s/numops1=1000/numops1=100/" -e "s/numops2=10000/numops2=1000/" tests/generic/112 > tests/generic/112.new
  - mv tests/generic/112.new tests/generic/112
- - sudo ./check generic/112
+# - sudo ./check generic/112
  - sudo ./check generic/113
 # - time_wait sudo ./check generic/117 (timeover > 10m)
  - sudo ./check generic/124
@@ -205,7 +205,7 @@ script:
  - sudo ./check generic/308
  - sudo ./check generic/309
  - sudo ./check generic/315
-# - sudo ./check generic/323 #fail, It may be cifs client issue on 4.15 kernel
+# - sudo ./check generic/323
  - sudo ./check generic/337
  - sudo ./check generic/340
  - sudo ./check generic/345
@@ -226,10 +226,10 @@ script:
  - mv tests/generic/464.new tests/generic/464
  - sudo ./check generic/464
  - sudo ./check generic/465
- - sudo ./check generic/469
+# - sudo ./check generic/469
 # - time_wait sudo ./check generic/476 (timeover > 10m)
 # - sudo ./check generic/490 #fail, It may be cifs client issue on 5.0 kernel 
-# - sudo ./check generic/504 #fail, It may be cifs client issue on 4.15 kernel
+ - sudo ./check generic/504
 #
 #
 #

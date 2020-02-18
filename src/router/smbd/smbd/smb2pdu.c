@@ -724,13 +724,14 @@ static int smb2_get_dos_mode(struct kstat *stat, int attribute)
 
 	attr = (attribute & 0x00005137) | ATTR_ARCHIVE;
 
-	if (server_conf.share_fake_fscaps & FILE_SUPPORTS_SPARSE_FILES)
-		attr |= ATTR_SPARSE;
-
 	if (S_ISDIR(stat->mode))
 		attr = ATTR_DIRECTORY;
-	else
+	else {
 		attr &= ~(ATTR_DIRECTORY);
+		if (S_ISREG(stat->mode) && (server_conf.share_fake_fscaps &
+				FILE_SUPPORTS_SPARSE_FILES))
+			attr |= ATTR_SPARSE;
+	}
 
 	return attr;
 }
@@ -2425,8 +2426,7 @@ int smb2_open(struct ksmbd_work *work)
 		goto err_out1;
 	}
 
-	if (!req->DesiredAccess ||
-			!(req->DesiredAccess & DESIRED_ACCESS_MASK)) {
+	if (!(req->DesiredAccess & DESIRED_ACCESS_MASK)) {
 		ksmbd_err("Invalid disired access : 0x%x\n",
 			le32_to_cpu(req->DesiredAccess));
 		rc = -EACCES;

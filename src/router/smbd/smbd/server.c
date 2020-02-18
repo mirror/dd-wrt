@@ -146,7 +146,7 @@ andx_again:
 		conn->ops->is_sign_req(work, command)) {
 		ret = conn->ops->check_sign_req(work);
 		if (!ret) {
-			conn->ops->set_rsp_status(work, STATUS_DATA_ERROR);
+			conn->ops->set_rsp_status(work, STATUS_ACCESS_DENIED);
 			return TCP_HANDLER_CONTINUE;
 		}
 	}
