@@ -1942,7 +1942,7 @@ static char *wfgets(char *buf, int len, webs_t wp, int *feof)
 	char *ret = NULL;
 	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
-		eof = 1;
+		int eof = 1;
 		int i;
 		char c;
 		int sr = sslbufferpeek((struct sslbuffer *)fp, buf, len);
