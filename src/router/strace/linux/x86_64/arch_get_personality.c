@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2010-2019 The strace developers.
+ * Copyright (c) 2010-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 int
-get_personality_from_syscall_info(const struct ptrace_syscall_info *sci)
+get_personality_from_syscall_info(const struct_ptrace_syscall_info *sci)
 {
 	unsigned int pers = sci->arch == AUDIT_ARCH_I386;
 

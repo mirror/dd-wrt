@@ -52,6 +52,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define TCA_ACT_COOKIE 6
 #endif
+#if defined(TCA_ACT_FLAGS) || (defined(HAVE_DECL_TCA_ACT_FLAGS) && HAVE_DECL_TCA_ACT_FLAGS)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((TCA_ACT_FLAGS) == (7), "TCA_ACT_FLAGS != 7");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define TCA_ACT_FLAGS 7
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -69,6 +76,7 @@ static const struct xlat_data rtnl_tc_action_attrs_xdata[] = {
  [TCA_ACT_STATS] = XLAT(TCA_ACT_STATS),
  [TCA_ACT_PAD] = XLAT(TCA_ACT_PAD),
  [TCA_ACT_COOKIE] = XLAT(TCA_ACT_COOKIE),
+ [TCA_ACT_FLAGS] = XLAT(TCA_ACT_FLAGS),
 };
 static
 const struct xlat rtnl_tc_action_attrs[1] = { {

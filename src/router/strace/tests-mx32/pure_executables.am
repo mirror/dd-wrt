@@ -11,10 +11,6 @@ PURE_EXECUTABLES = \
   aio_pgetevents \
   alarm \
   bpf \
-  bpf-obj_get_info_by_fd \
-  bpf-obj_get_info_by_fd-prog \
-  bpf-obj_get_info_by_fd-prog-v \
-  bpf-obj_get_info_by_fd-v \
   bpf-v \
   brk \
   btrfs \
@@ -440,6 +436,8 @@ PURE_EXECUTABLES = \
   seccomp_get_action_avail \
   select \
   semop \
+  semop-indirect \
+  semtimedop \
   sendfile \
   sendfile64 \
   set_mempolicy \

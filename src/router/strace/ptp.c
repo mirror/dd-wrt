@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2014 Stefan Sørensen <stefan.sorensen@spectralink.com>
  * Copyright (c) 2014-2015 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2014-2018 The strace developers.
+ * Copyright (c) 2014-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -11,11 +11,29 @@
 
 #ifdef HAVE_STRUCT_PTP_SYS_OFFSET
 
+# include "print_fields.h"
+
 # include <linux/ioctl.h>
 # include <linux/ptp_clock.h>
 
-# include "print_fields.h"
-# include "xlat/ptp_flags_options.h"
+# ifndef PTP_CLOCK_GETCAPS2
+#  define PTP_CLOCK_GETCAPS2 _IOR(PTP_CLK_MAGIC, 10, struct ptp_clock_caps)
+# endif
+# ifndef PTP_EXTTS_REQUEST2
+#  define PTP_EXTTS_REQUEST2 _IOW(PTP_CLK_MAGIC, 11, struct ptp_extts_request)
+# endif
+# ifndef PTP_PEROUT_REQUEST2
+#  define PTP_PEROUT_REQUEST2 _IOW(PTP_CLK_MAGIC, 12, struct ptp_perout_request)
+# endif
+# ifndef PTP_ENABLE_PPS2
+#  define PTP_ENABLE_PPS2 _IOW(PTP_CLK_MAGIC, 13, int)
+# endif
+# ifndef PTP_SYS_OFFSET2
+#  define PTP_SYS_OFFSET2 _IOW(PTP_CLK_MAGIC, 14, struct ptp_sys_offset)
+# endif
+
+# include "xlat/ptp_extts_flags.h"
+# include "xlat/ptp_perout_flags.h"
 
 int
 ptp_ioctl(struct tcb *const tcp, const unsigned int code,
@@ -25,7 +43,8 @@ ptp_ioctl(struct tcb *const tcp, const unsigned int code,
 		return RVAL_DECODED;
 
 	switch (code) {
-	case PTP_EXTTS_REQUEST: {
+	case PTP_EXTTS_REQUEST:
+	case PTP_EXTTS_REQUEST2: {
 		struct ptp_extts_request extts;
 
 		tprints(", ");
@@ -33,12 +52,13 @@ ptp_ioctl(struct tcb *const tcp, const unsigned int code,
 			break;
 
 		PRINT_FIELD_D("{", extts, index);
-		PRINT_FIELD_FLAGS(", ", extts, flags, ptp_flags_options, "PTP_???");
+		PRINT_FIELD_FLAGS(", ", extts, flags, ptp_extts_flags, "PTP_???");
 		tprints("}");
 		break;
 	}
 
-	case PTP_PEROUT_REQUEST: {
+	case PTP_PEROUT_REQUEST:
+	case PTP_PEROUT_REQUEST2: {
 		struct ptp_perout_request perout;
 
 		tprints(", ");
@@ -50,16 +70,18 @@ ptp_ioctl(struct tcb *const tcp, const unsigned int code,
 		PRINT_FIELD_D("}, period={", perout.period, sec);
 		PRINT_FIELD_U(", ", perout.period, nsec);
 		PRINT_FIELD_D("}, ", perout, index);
-		PRINT_FIELD_FLAGS(", ", perout, flags, ptp_flags_options, "PTP_???");
+		PRINT_FIELD_FLAGS(", ", perout, flags, ptp_perout_flags, "PTP_???");
 		tprints("}");
 		break;
 	}
 
 	case PTP_ENABLE_PPS:
+	case PTP_ENABLE_PPS2:
 		tprintf(", %" PRI_kld, arg);
 		break;
 
-	case PTP_SYS_OFFSET: {
+	case PTP_SYS_OFFSET:
+	case PTP_SYS_OFFSET2: {
 		struct ptp_sys_offset sysoff;
 
 		if (entering(tcp)) {
@@ -99,7 +121,8 @@ ptp_ioctl(struct tcb *const tcp, const unsigned int code,
 			break;
 		}
 	}
-	case PTP_CLOCK_GETCAPS: {
+	case PTP_CLOCK_GETCAPS:
+	case PTP_CLOCK_GETCAPS2: {
 		struct ptp_clock_caps caps;
 
 		if (entering(tcp))

@@ -59,6 +59,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define TCA_STATS_BASIC_HW 7
 #endif
+#if defined(TCA_STATS_PKT64) || (defined(HAVE_DECL_TCA_STATS_PKT64) && HAVE_DECL_TCA_STATS_PKT64)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((TCA_STATS_PKT64) == (8), "TCA_STATS_PKT64 != 8");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define TCA_STATS_PKT64 8
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -77,6 +84,7 @@ static const struct xlat_data rtnl_tca_stats_attrs_xdata[] = {
  [TCA_STATS_RATE_EST64] = XLAT(TCA_STATS_RATE_EST64),
  [TCA_STATS_PAD] = XLAT(TCA_STATS_PAD),
  [TCA_STATS_BASIC_HW] = XLAT(TCA_STATS_BASIC_HW),
+ [TCA_STATS_PKT64] = XLAT(TCA_STATS_PKT64),
 };
 static
 const struct xlat rtnl_tca_stats_attrs[1] = { {

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016 Fabien Siron <fabien.siron@epita.fr>
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -12,11 +12,7 @@
 #include "nlattr.h"
 #include "print_fields.h"
 
-#include "netlink.h"
-#include <linux/rtnetlink.h>
-#ifdef HAVE_LINUX_NEIGHBOUR_H
-# include <linux/neighbour.h>
-#endif
+#include "types/rtnl_neightbl.h"
 
 #include "xlat/rtnl_neightbl_attrs.h"
 #include "xlat/rtnl_neightbl_parms_attrs.h"
@@ -27,8 +23,7 @@ decode_ndt_config(struct tcb *const tcp,
 		  const unsigned int len,
 		  const void *const opaque_data)
 {
-#ifdef HAVE_STRUCT_NDT_CONFIG
-	struct ndt_config ndtc;
+	struct_ndt_config ndtc;
 
 	if (len < sizeof(ndtc))
 		return false;
@@ -46,9 +41,6 @@ decode_ndt_config(struct tcb *const tcp,
 	}
 
 	return true;
-#else
-	return false;
-#endif
 }
 
 static const nla_decoder_t ndt_parms_nla_decoders[] = {
@@ -91,8 +83,7 @@ decode_ndt_stats(struct tcb *const tcp,
 		 const unsigned int len,
 		 const void *const opaque_data)
 {
-#ifdef HAVE_STRUCT_NDT_STATS
-	struct ndt_stats ndtst;
+	struct_ndt_stats ndtst;
 	const unsigned int min_size =
 		offsetofend(struct ndt_stats, ndts_forced_gc_runs);
 	const unsigned int def_size = sizeof(ndtst);
@@ -114,17 +105,12 @@ decode_ndt_stats(struct tcb *const tcp,
 		PRINT_FIELD_U(", ", ndtst, ndts_rcv_probes_ucast);
 		PRINT_FIELD_U(", ", ndtst, ndts_periodic_gc_runs);
 		PRINT_FIELD_U(", ", ndtst, ndts_forced_gc_runs);
-# ifdef HAVE_STRUCT_NDT_STATS_NDTS_TABLE_FULLS
 		if (len >= def_size)
 			PRINT_FIELD_U(", ", ndtst, ndts_table_fulls);
-# endif
 		tprints("}");
 	}
 
 	return true;
-#else
-	return false;
-#endif
 }
 
 static const nla_decoder_t ndtmsg_nla_decoders[] = {

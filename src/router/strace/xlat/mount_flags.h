@@ -5,213 +5,213 @@
 
 #if defined(MS_RDONLY) || (defined(HAVE_DECL_MS_RDONLY) && HAVE_DECL_MS_RDONLY)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_RDONLY) == (1), "MS_RDONLY != 1");
+static_assert((MS_RDONLY) == ((1U<<0)), "MS_RDONLY != (1U<<0)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_RDONLY 1
+# define MS_RDONLY (1U<<0)
 #endif
 #if defined(MS_NOSUID) || (defined(HAVE_DECL_MS_NOSUID) && HAVE_DECL_MS_NOSUID)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_NOSUID) == (2), "MS_NOSUID != 2");
+static_assert((MS_NOSUID) == ((1U<<1)), "MS_NOSUID != (1U<<1)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_NOSUID 2
+# define MS_NOSUID (1U<<1)
 #endif
 #if defined(MS_NODEV) || (defined(HAVE_DECL_MS_NODEV) && HAVE_DECL_MS_NODEV)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_NODEV) == (4), "MS_NODEV != 4");
+static_assert((MS_NODEV) == ((1U<<2)), "MS_NODEV != (1U<<2)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_NODEV 4
+# define MS_NODEV (1U<<2)
 #endif
 #if defined(MS_NOEXEC) || (defined(HAVE_DECL_MS_NOEXEC) && HAVE_DECL_MS_NOEXEC)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_NOEXEC) == (8), "MS_NOEXEC != 8");
+static_assert((MS_NOEXEC) == ((1U<<3)), "MS_NOEXEC != (1U<<3)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_NOEXEC 8
+# define MS_NOEXEC (1U<<3)
 #endif
 #if defined(MS_SYNCHRONOUS) || (defined(HAVE_DECL_MS_SYNCHRONOUS) && HAVE_DECL_MS_SYNCHRONOUS)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_SYNCHRONOUS) == (16), "MS_SYNCHRONOUS != 16");
+static_assert((MS_SYNCHRONOUS) == ((1U<<4)), "MS_SYNCHRONOUS != (1U<<4)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_SYNCHRONOUS 16
+# define MS_SYNCHRONOUS (1U<<4)
 #endif
 #if defined(MS_REMOUNT) || (defined(HAVE_DECL_MS_REMOUNT) && HAVE_DECL_MS_REMOUNT)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_REMOUNT) == (32), "MS_REMOUNT != 32");
+static_assert((MS_REMOUNT) == ((1U<<5)), "MS_REMOUNT != (1U<<5)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_REMOUNT 32
+# define MS_REMOUNT (1U<<5)
 #endif
 #if defined(MS_MANDLOCK) || (defined(HAVE_DECL_MS_MANDLOCK) && HAVE_DECL_MS_MANDLOCK)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_MANDLOCK) == (64), "MS_MANDLOCK != 64");
+static_assert((MS_MANDLOCK) == ((1U<<6)), "MS_MANDLOCK != (1U<<6)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_MANDLOCK 64
+# define MS_MANDLOCK (1U<<6)
 #endif
 #if defined(MS_DIRSYNC) || (defined(HAVE_DECL_MS_DIRSYNC) && HAVE_DECL_MS_DIRSYNC)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_DIRSYNC) == (128), "MS_DIRSYNC != 128");
+static_assert((MS_DIRSYNC) == ((1U<<7)), "MS_DIRSYNC != (1U<<7)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_DIRSYNC 128
+# define MS_DIRSYNC (1U<<7)
 #endif
 #if defined(MS_NOATIME) || (defined(HAVE_DECL_MS_NOATIME) && HAVE_DECL_MS_NOATIME)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_NOATIME) == (1024), "MS_NOATIME != 1024");
+static_assert((MS_NOATIME) == ((1U<<10)), "MS_NOATIME != (1U<<10)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_NOATIME 1024
+# define MS_NOATIME (1U<<10)
 #endif
 #if defined(MS_NODIRATIME) || (defined(HAVE_DECL_MS_NODIRATIME) && HAVE_DECL_MS_NODIRATIME)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_NODIRATIME) == (2048), "MS_NODIRATIME != 2048");
+static_assert((MS_NODIRATIME) == ((1U<<11)), "MS_NODIRATIME != (1U<<11)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_NODIRATIME 2048
+# define MS_NODIRATIME (1U<<11)
 #endif
 #if defined(MS_BIND) || (defined(HAVE_DECL_MS_BIND) && HAVE_DECL_MS_BIND)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_BIND) == (4096), "MS_BIND != 4096");
+static_assert((MS_BIND) == ((1U<<12)), "MS_BIND != (1U<<12)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_BIND 4096
+# define MS_BIND (1U<<12)
 #endif
 #if defined(MS_MOVE) || (defined(HAVE_DECL_MS_MOVE) && HAVE_DECL_MS_MOVE)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_MOVE) == (8192), "MS_MOVE != 8192");
+static_assert((MS_MOVE) == ((1U<<13)), "MS_MOVE != (1U<<13)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_MOVE 8192
+# define MS_MOVE (1U<<13)
 #endif
 #if defined(MS_REC) || (defined(HAVE_DECL_MS_REC) && HAVE_DECL_MS_REC)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_REC) == (16384), "MS_REC != 16384");
+static_assert((MS_REC) == ((1U<<14)), "MS_REC != (1U<<14)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_REC 16384
+# define MS_REC (1U<<14)
 #endif
 #if defined(MS_SILENT) || (defined(HAVE_DECL_MS_SILENT) && HAVE_DECL_MS_SILENT)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_SILENT) == (32768), "MS_SILENT != 32768");
+static_assert((MS_SILENT) == ((1U<<15)), "MS_SILENT != (1U<<15)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_SILENT 32768
+# define MS_SILENT (1U<<15)
 #endif
 #if defined(MS_POSIXACL) || (defined(HAVE_DECL_MS_POSIXACL) && HAVE_DECL_MS_POSIXACL)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_POSIXACL) == ((1<<16)), "MS_POSIXACL != (1<<16)");
+static_assert((MS_POSIXACL) == ((1U<<16)), "MS_POSIXACL != (1U<<16)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_POSIXACL (1<<16)
+# define MS_POSIXACL (1U<<16)
 #endif
 #if defined(MS_UNBINDABLE) || (defined(HAVE_DECL_MS_UNBINDABLE) && HAVE_DECL_MS_UNBINDABLE)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_UNBINDABLE) == ((1<<17)), "MS_UNBINDABLE != (1<<17)");
+static_assert((MS_UNBINDABLE) == ((1U<<17)), "MS_UNBINDABLE != (1U<<17)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_UNBINDABLE (1<<17)
+# define MS_UNBINDABLE (1U<<17)
 #endif
 #if defined(MS_PRIVATE) || (defined(HAVE_DECL_MS_PRIVATE) && HAVE_DECL_MS_PRIVATE)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_PRIVATE) == ((1<<18)), "MS_PRIVATE != (1<<18)");
+static_assert((MS_PRIVATE) == ((1U<<18)), "MS_PRIVATE != (1U<<18)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_PRIVATE (1<<18)
+# define MS_PRIVATE (1U<<18)
 #endif
 #if defined(MS_SLAVE) || (defined(HAVE_DECL_MS_SLAVE) && HAVE_DECL_MS_SLAVE)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_SLAVE) == ((1<<19)), "MS_SLAVE != (1<<19)");
+static_assert((MS_SLAVE) == ((1U<<19)), "MS_SLAVE != (1U<<19)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_SLAVE (1<<19)
+# define MS_SLAVE (1U<<19)
 #endif
 #if defined(MS_SHARED) || (defined(HAVE_DECL_MS_SHARED) && HAVE_DECL_MS_SHARED)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_SHARED) == ((1<<20)), "MS_SHARED != (1<<20)");
+static_assert((MS_SHARED) == ((1U<<20)), "MS_SHARED != (1U<<20)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_SHARED (1<<20)
+# define MS_SHARED (1U<<20)
 #endif
 #if defined(MS_RELATIME) || (defined(HAVE_DECL_MS_RELATIME) && HAVE_DECL_MS_RELATIME)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_RELATIME) == ((1<<21)), "MS_RELATIME != (1<<21)");
+static_assert((MS_RELATIME) == ((1U<<21)), "MS_RELATIME != (1U<<21)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_RELATIME (1<<21)
+# define MS_RELATIME (1U<<21)
 #endif
 #if defined(MS_KERNMOUNT) || (defined(HAVE_DECL_MS_KERNMOUNT) && HAVE_DECL_MS_KERNMOUNT)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_KERNMOUNT) == ((1<<22)), "MS_KERNMOUNT != (1<<22)");
+static_assert((MS_KERNMOUNT) == ((1U<<22)), "MS_KERNMOUNT != (1U<<22)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_KERNMOUNT (1<<22)
+# define MS_KERNMOUNT (1U<<22)
 #endif
 #if defined(MS_I_VERSION) || (defined(HAVE_DECL_MS_I_VERSION) && HAVE_DECL_MS_I_VERSION)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_I_VERSION) == ((1<<23)), "MS_I_VERSION != (1<<23)");
+static_assert((MS_I_VERSION) == ((1U<<23)), "MS_I_VERSION != (1U<<23)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_I_VERSION (1<<23)
+# define MS_I_VERSION (1U<<23)
 #endif
 #if defined(MS_STRICTATIME) || (defined(HAVE_DECL_MS_STRICTATIME) && HAVE_DECL_MS_STRICTATIME)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_STRICTATIME) == ((1<<24)), "MS_STRICTATIME != (1<<24)");
+static_assert((MS_STRICTATIME) == ((1U<<24)), "MS_STRICTATIME != (1U<<24)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_STRICTATIME (1<<24)
+# define MS_STRICTATIME (1U<<24)
 #endif
 #if defined(MS_LAZYTIME) || (defined(HAVE_DECL_MS_LAZYTIME) && HAVE_DECL_MS_LAZYTIME)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_LAZYTIME) == ((1<<25)), "MS_LAZYTIME != (1<<25)");
+static_assert((MS_LAZYTIME) == ((1U<<25)), "MS_LAZYTIME != (1U<<25)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_LAZYTIME (1<<25)
+# define MS_LAZYTIME (1U<<25)
 #endif
 #if defined(MS_SUBMOUNT) || (defined(HAVE_DECL_MS_SUBMOUNT) && HAVE_DECL_MS_SUBMOUNT)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_SUBMOUNT) == ((1<<26)), "MS_SUBMOUNT != (1<<26)");
+static_assert((MS_SUBMOUNT) == ((1U<<26)), "MS_SUBMOUNT != (1U<<26)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_SUBMOUNT (1<<26)
+# define MS_SUBMOUNT (1U<<26)
 #endif
 #if defined(MS_NOREMOTELOCK) || (defined(HAVE_DECL_MS_NOREMOTELOCK) && HAVE_DECL_MS_NOREMOTELOCK)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_NOREMOTELOCK) == ((1<<27)), "MS_NOREMOTELOCK != (1<<27)");
+static_assert((MS_NOREMOTELOCK) == ((1U<<27)), "MS_NOREMOTELOCK != (1U<<27)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_NOREMOTELOCK (1<<27)
+# define MS_NOREMOTELOCK (1U<<27)
 #endif
 #if defined(MS_NOSEC) || (defined(HAVE_DECL_MS_NOSEC) && HAVE_DECL_MS_NOSEC)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_NOSEC) == ((1<<28)), "MS_NOSEC != (1<<28)");
+static_assert((MS_NOSEC) == ((1U<<28)), "MS_NOSEC != (1U<<28)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_NOSEC (1<<28)
+# define MS_NOSEC (1U<<28)
 #endif
 #if defined(MS_BORN) || (defined(HAVE_DECL_MS_BORN) && HAVE_DECL_MS_BORN)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_BORN) == ((1<<29)), "MS_BORN != (1<<29)");
+static_assert((MS_BORN) == ((1U<<29)), "MS_BORN != (1U<<29)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_BORN (1<<29)
+# define MS_BORN (1U<<29)
 #endif
 #if defined(MS_ACTIVE) || (defined(HAVE_DECL_MS_ACTIVE) && HAVE_DECL_MS_ACTIVE)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_ACTIVE) == ((1<<30)), "MS_ACTIVE != (1<<30)");
+static_assert((MS_ACTIVE) == ((1U<<30)), "MS_ACTIVE != (1U<<30)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_ACTIVE (1<<30)
+# define MS_ACTIVE (1U<<30)
 #endif
 #if defined(MS_NOUSER) || (defined(HAVE_DECL_MS_NOUSER) && HAVE_DECL_MS_NOUSER)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((MS_NOUSER) == ((1<<31)), "MS_NOUSER != (1<<31)");
+static_assert((MS_NOUSER) == ((1U<<31)), "MS_NOUSER != (1U<<31)");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
-# define MS_NOUSER (1<<31)
+# define MS_NOUSER (1U<<31)
 #endif
 
 #ifndef XLAT_MACROS_ONLY

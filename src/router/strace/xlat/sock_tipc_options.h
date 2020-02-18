@@ -80,6 +80,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define TIPC_SOCK_RECVQ_USED 137
 #endif
+#if defined(TIPC_NODELAY) || (defined(HAVE_DECL_TIPC_NODELAY) && HAVE_DECL_TIPC_NODELAY)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((TIPC_NODELAY) == (138), "TIPC_NODELAY != 138");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define TIPC_NODELAY 138
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -101,6 +108,7 @@ static const struct xlat_data sock_tipc_options_xdata[] = {
  XLAT(TIPC_GROUP_JOIN),
  XLAT(TIPC_GROUP_LEAVE),
  XLAT(TIPC_SOCK_RECVQ_USED),
+ XLAT(TIPC_NODELAY),
 };
 static
 const struct xlat sock_tipc_options[1] = { {

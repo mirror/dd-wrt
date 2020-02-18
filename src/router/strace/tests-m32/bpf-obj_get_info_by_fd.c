@@ -205,6 +205,10 @@ print_prog_load(void *attr_void, size_t size, long rc)
 		printf(", line_info=NULL");
 	if (size > offsetof(struct BPF_PROG_LOAD_struct, line_info_cnt))
 		printf(", line_info_cnt=0");
+	if (size > offsetof(struct BPF_PROG_LOAD_struct, attach_btf_id))
+		printf(", attach_btf_id=0");
+	if (size > offsetof(struct BPF_PROG_LOAD_struct, attach_prog_fd))
+		printf(", attach_prog_fd=0</dev/null>");
 	printf("}, %zu) = ", size);
 	if (rc >= 0)
 		printf("%ld<anon_inode:bpf-prog>\n", rc);
@@ -233,7 +237,23 @@ try_bpf(kernel_ulong_t cmd, void (*printer)(void *attr, size_t size, long rc),
 int
 main(int ac, char **av)
 {
+	/*
+	 * There is a delay when the locked memory is being reclaimed
+	 * after a BPF program or map is removed.
+	 *
+	 * Privileged tools like iproute2 and bpftool workaround this
+	 * by raising RLIMIT_MEMLOCK to infinity prior to creating
+	 * BPF objects.
+	 *
+	 * This test is expected to be invoked without extra privileges
+	 * and therefore does not have this option.
+	 *
+	 * The approach taken by this test is serialize all invocations
+	 * and insert a delay long enough to let the locked memory be
+	 * reclaimed.
+	 */
 	lock_file_by_dirname(av[0], "bpf-obj_get_info_by_fd");
+	sleep(1);
 
 	struct BPF_MAP_CREATE_struct bpf_map_create_attr = {
 		.map_type    = BPF_MAP_TYPE_ARRAY,
@@ -261,7 +281,7 @@ main(int ac, char **av)
 		.prog_name    = "test_prog",
 	};
 	size_t bpf_prog_load_attr_sizes[] = {
-		sizeof(bpf_prog_load_attr),
+		BPF_PROG_LOAD_struct_size,
 		offsetofend(struct BPF_PROG_LOAD_struct, prog_name),
 		offsetofend(struct BPF_PROG_LOAD_struct, prog_flags),
 		offsetofend(struct BPF_PROG_LOAD_struct, kern_version),

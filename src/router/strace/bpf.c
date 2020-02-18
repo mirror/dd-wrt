@@ -23,6 +23,7 @@
 #include "xlat/bpf_map_flags.h"
 #include "xlat/bpf_prog_types.h"
 #include "xlat/bpf_prog_flags.h"
+#include "xlat/bpf_map_lookup_elem_flags.h"
 #include "xlat/bpf_map_update_elem_flags.h"
 #include "xlat/bpf_attach_type.h"
 #include "xlat/bpf_attach_flags.h"
@@ -231,6 +232,11 @@ BEGIN_BPF_CMD_DECODER(BPF_MAP_LOOKUP_ELEM)
 	PRINT_FIELD_FD("{", attr, map_fd, tcp);
 	PRINT_FIELD_ADDR64(", ", attr, key);
 	PRINT_FIELD_ADDR64(", ", attr, value);
+	/* flags field was added in Linux commit v5.1-rc1~178^2~375^2~4^2~3.  */
+	if (len <= offsetof(struct BPF_MAP_LOOKUP_ELEM_struct, flags))
+		break;
+	PRINT_FIELD_FLAGS(", ", attr, flags, bpf_map_lookup_elem_flags,
+			  "BPF_???");
 }
 END_BPF_CMD_DECODER(RVAL_DECODED)
 
@@ -337,6 +343,16 @@ BEGIN_BPF_CMD_DECODER(BPF_PROG_LOAD)
 	PRINT_FIELD_U(", ", attr, line_info_rec_size);
 	PRINT_FIELD_ADDR64(", ", attr, line_info);
 	PRINT_FIELD_U(", ", attr, line_info_cnt);
+
+	/* attach_btf_id was added in Linux commit v5.5-rc1~174^2~310^2~19^2~7 */
+	if (len <= offsetof(struct BPF_PROG_LOAD_struct, attach_btf_id))
+		break;
+	PRINT_FIELD_U(", ", attr, attach_btf_id);
+
+	/* attach_prog_fd was added in Linux commit v5.5-rc1~174^2~49^2~12^2~3 */
+	if (len <= offsetof(struct BPF_PROG_LOAD_struct, attach_prog_fd))
+		break;
+	PRINT_FIELD_FD(", ", attr, attach_prog_fd, tcp);
 }
 END_BPF_CMD_DECODER(RVAL_DECODED | RVAL_FD)
 
@@ -413,6 +429,7 @@ BEGIN_BPF_CMD_DECODER(BPF_PROG_GET_NEXT_ID)
 END_BPF_CMD_DECODER(RVAL_DECODED)
 
 #define decode_BPF_MAP_GET_NEXT_ID decode_BPF_PROG_GET_NEXT_ID
+#define decode_BPF_BTF_GET_NEXT_ID decode_BPF_PROG_GET_NEXT_ID
 
 BEGIN_BPF_CMD_DECODER(BPF_PROG_GET_FD_BY_ID)
 {
@@ -942,6 +959,7 @@ SYS_FUNC(bpf)
 		BPF_CMD_ENTRY(BPF_TASK_FD_QUERY),
 		BPF_CMD_ENTRY(BPF_MAP_LOOKUP_AND_DELETE_ELEM),
 		BPF_CMD_ENTRY(BPF_MAP_FREEZE),
+		BPF_CMD_ENTRY(BPF_BTF_GET_NEXT_ID),
 	};
 
 	const unsigned int cmd = tcp->u_arg[0];

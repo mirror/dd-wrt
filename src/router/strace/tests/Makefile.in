@@ -17,7 +17,7 @@
 # Automake input for strace tests.
 #
 # Copyright (c) 2011-2016 Dmitry V. Levin <ldv@altlinux.org>
-# Copyright (c) 2011-2019 The strace developers.
+# Copyright (c) 2011-2020 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -105,7 +105,8 @@ host_triplet = @host@
 check_PROGRAMS = $(am__EXEEXT_1) _newselect-P$(EXEEXT) answer$(EXEEXT) \
 	attach-f-p$(EXEEXT) attach-f-p-cmd$(EXEEXT) \
 	attach-p-cmd-cmd$(EXEEXT) attach-p-cmd-p$(EXEEXT) \
-	block_reset_raise_run$(EXEEXT) bpf-obj_get_info_by_fd$(EXEEXT) \
+	block_reset_raise_run$(EXEEXT) block_reset_run$(EXEEXT) \
+	bpf-obj_get_info_by_fd$(EXEEXT) \
 	bpf-obj_get_info_by_fd-prog$(EXEEXT) \
 	bpf-obj_get_info_by_fd-prog-v$(EXEEXT) \
 	bpf-obj_get_info_by_fd-v$(EXEEXT) bpf-success$(EXEEXT) \
@@ -154,18 +155,26 @@ check_PROGRAMS = $(am__EXEEXT_1) _newselect-P$(EXEEXT) answer$(EXEEXT) \
 	seccomp-strict$(EXEEXT) select-P$(EXEEXT) \
 	set_ptracer_any$(EXEEXT) set_sigblock$(EXEEXT) \
 	set_sigign$(EXEEXT) signal_receive$(EXEEXT) sleep$(EXEEXT) \
-	stack-fcall$(EXEEXT) stack-fcall-mangled$(EXEEXT) \
-	status-none-threads$(EXEEXT) \
+	stack-fcall$(EXEEXT) stack-fcall-attach$(EXEEXT) \
+	stack-fcall-mangled$(EXEEXT) status-none-threads$(EXEEXT) \
 	status-unfinished-threads$(EXEEXT) syslog-success$(EXEEXT) \
-	threads-execve$(EXEEXT) unblock_reset_raise$(EXEEXT) \
-	unix-pair-send-recv$(EXEEXT) \
+	threads-execve$(EXEEXT) tracer_ppid_pgid_sid$(EXEEXT) \
+	unblock_reset_raise$(EXEEXT) unix-pair-send-recv$(EXEEXT) \
 	unix-pair-sendto-recvfrom$(EXEEXT) vfork-f$(EXEEXT) \
 	wait4-v$(EXEEXT) waitid-v$(EXEEXT) zeroargc$(EXEEXT)
 @ENABLE_STACKTRACE_TRUE@@USE_DEMANGLE_TRUE@am__append_1 = strace-k-demangle.test
 TESTS = $(GEN_TESTS) $(DECODER_TESTS) $(MISC_TESTS) $(am__EXEEXT_2)
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/ax_code_coverage.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/types/check-cryptouser.m4 \
+	$(top_srcdir)/types/check-evdev.m4 \
+	$(top_srcdir)/types/check-io_uring.m4 \
+	$(top_srcdir)/types/check-rtnl_link.m4 \
+	$(top_srcdir)/types/check-rtnl_mdb.m4 \
+	$(top_srcdir)/types/check-rtnl_neightbl.m4 \
+	$(top_srcdir)/types/check-rtnl_route.m4 \
+	$(top_srcdir)/types/st_check_types.m4 \
+	$(top_srcdir)/m4/ax_code_coverage.m4 \
 	$(top_srcdir)/m4/ax_prog_cc_for_build.m4 \
 	$(top_srcdir)/m4/ax_valgrind_check.m4 \
 	$(top_srcdir)/m4/bpf_attr.m4 $(top_srcdir)/m4/mpers.m4 \
@@ -186,10 +195,7 @@ CONFIG_CLEAN_VPATH_FILES =
 am__EXEEXT_1 = _newselect$(EXEEXT) accept$(EXEEXT) accept4$(EXEEXT) \
 	access$(EXEEXT) acct$(EXEEXT) add_key$(EXEEXT) \
 	adjtimex$(EXEEXT) aio$(EXEEXT) aio_pgetevents$(EXEEXT) \
-	alarm$(EXEEXT) bpf$(EXEEXT) bpf-obj_get_info_by_fd$(EXEEXT) \
-	bpf-obj_get_info_by_fd-prog$(EXEEXT) \
-	bpf-obj_get_info_by_fd-prog-v$(EXEEXT) \
-	bpf-obj_get_info_by_fd-v$(EXEEXT) bpf-v$(EXEEXT) brk$(EXEEXT) \
+	alarm$(EXEEXT) bpf$(EXEEXT) bpf-v$(EXEEXT) brk$(EXEEXT) \
 	btrfs$(EXEEXT) caps$(EXEEXT) chmod$(EXEEXT) chown$(EXEEXT) \
 	chown32$(EXEEXT) chroot$(EXEEXT) clock_adjtime$(EXEEXT) \
 	clock_nanosleep$(EXEEXT) clock_xettime$(EXEEXT) \
@@ -370,32 +376,32 @@ am__EXEEXT_1 = _newselect$(EXEEXT) accept$(EXEEXT) accept4$(EXEEXT) \
 	sched_xetparam$(EXEEXT) sched_xetscheduler$(EXEEXT) \
 	sched_yield$(EXEEXT) seccomp-filter$(EXEEXT) \
 	seccomp_get_action_avail$(EXEEXT) select$(EXEEXT) \
-	semop$(EXEEXT) sendfile$(EXEEXT) sendfile64$(EXEEXT) \
-	set_mempolicy$(EXEEXT) set_mempolicy-Xabbrev$(EXEEXT) \
-	set_mempolicy-Xraw$(EXEEXT) set_mempolicy-Xverbose$(EXEEXT) \
-	setdomainname$(EXEEXT) setfsgid$(EXEEXT) setfsgid32$(EXEEXT) \
-	setfsuid$(EXEEXT) setfsuid32$(EXEEXT) setgid$(EXEEXT) \
-	setgid32$(EXEEXT) setgroups$(EXEEXT) setgroups32$(EXEEXT) \
-	sethostname$(EXEEXT) setns$(EXEEXT) setregid$(EXEEXT) \
-	setregid32$(EXEEXT) setresgid$(EXEEXT) setresgid32$(EXEEXT) \
-	setresuid$(EXEEXT) setresuid32$(EXEEXT) setreuid$(EXEEXT) \
-	setreuid32$(EXEEXT) setrlimit$(EXEEXT) \
-	setrlimit-Xabbrev$(EXEEXT) setrlimit-Xraw$(EXEEXT) \
-	setrlimit-Xverbose$(EXEEXT) setuid$(EXEEXT) setuid32$(EXEEXT) \
-	shmxt$(EXEEXT) shutdown$(EXEEXT) sigaction$(EXEEXT) \
-	sigaltstack$(EXEEXT) siginfo$(EXEEXT) signal$(EXEEXT) \
-	signalfd4$(EXEEXT) sigpending$(EXEEXT) sigprocmask$(EXEEXT) \
-	sigreturn$(EXEEXT) sigsuspend$(EXEEXT) so_error$(EXEEXT) \
-	so_linger$(EXEEXT) so_peercred$(EXEEXT) \
-	so_peercred-Xabbrev$(EXEEXT) so_peercred-Xraw$(EXEEXT) \
-	so_peercred-Xverbose$(EXEEXT) sock_filter-v$(EXEEXT) \
-	sock_filter-v-Xabbrev$(EXEEXT) sock_filter-v-Xraw$(EXEEXT) \
-	sock_filter-v-Xverbose$(EXEEXT) sockaddr_xlat-Xabbrev$(EXEEXT) \
-	sockaddr_xlat-Xraw$(EXEEXT) sockaddr_xlat-Xverbose$(EXEEXT) \
-	socketcall$(EXEEXT) sockopt-sol_netlink$(EXEEXT) \
-	sockopt-timestamp$(EXEEXT) splice$(EXEEXT) stat$(EXEEXT) \
-	stat64$(EXEEXT) statfs$(EXEEXT) statfs64$(EXEEXT) \
-	status-all$(EXEEXT) status-failed$(EXEEXT) \
+	semop$(EXEEXT) semop-indirect$(EXEEXT) semtimedop$(EXEEXT) \
+	sendfile$(EXEEXT) sendfile64$(EXEEXT) set_mempolicy$(EXEEXT) \
+	set_mempolicy-Xabbrev$(EXEEXT) set_mempolicy-Xraw$(EXEEXT) \
+	set_mempolicy-Xverbose$(EXEEXT) setdomainname$(EXEEXT) \
+	setfsgid$(EXEEXT) setfsgid32$(EXEEXT) setfsuid$(EXEEXT) \
+	setfsuid32$(EXEEXT) setgid$(EXEEXT) setgid32$(EXEEXT) \
+	setgroups$(EXEEXT) setgroups32$(EXEEXT) sethostname$(EXEEXT) \
+	setns$(EXEEXT) setregid$(EXEEXT) setregid32$(EXEEXT) \
+	setresgid$(EXEEXT) setresgid32$(EXEEXT) setresuid$(EXEEXT) \
+	setresuid32$(EXEEXT) setreuid$(EXEEXT) setreuid32$(EXEEXT) \
+	setrlimit$(EXEEXT) setrlimit-Xabbrev$(EXEEXT) \
+	setrlimit-Xraw$(EXEEXT) setrlimit-Xverbose$(EXEEXT) \
+	setuid$(EXEEXT) setuid32$(EXEEXT) shmxt$(EXEEXT) \
+	shutdown$(EXEEXT) sigaction$(EXEEXT) sigaltstack$(EXEEXT) \
+	siginfo$(EXEEXT) signal$(EXEEXT) signalfd4$(EXEEXT) \
+	sigpending$(EXEEXT) sigprocmask$(EXEEXT) sigreturn$(EXEEXT) \
+	sigsuspend$(EXEEXT) so_error$(EXEEXT) so_linger$(EXEEXT) \
+	so_peercred$(EXEEXT) so_peercred-Xabbrev$(EXEEXT) \
+	so_peercred-Xraw$(EXEEXT) so_peercred-Xverbose$(EXEEXT) \
+	sock_filter-v$(EXEEXT) sock_filter-v-Xabbrev$(EXEEXT) \
+	sock_filter-v-Xraw$(EXEEXT) sock_filter-v-Xverbose$(EXEEXT) \
+	sockaddr_xlat-Xabbrev$(EXEEXT) sockaddr_xlat-Xraw$(EXEEXT) \
+	sockaddr_xlat-Xverbose$(EXEEXT) socketcall$(EXEEXT) \
+	sockopt-sol_netlink$(EXEEXT) sockopt-timestamp$(EXEEXT) \
+	splice$(EXEEXT) stat$(EXEEXT) stat64$(EXEEXT) statfs$(EXEEXT) \
+	statfs64$(EXEEXT) status-all$(EXEEXT) status-failed$(EXEEXT) \
 	status-none$(EXEEXT) status-none-f$(EXEEXT) \
 	status-successful$(EXEEXT) status-unfinished$(EXEEXT) \
 	statx$(EXEEXT) swap$(EXEEXT) sxetmask$(EXEEXT) \
@@ -521,6 +527,10 @@ block_reset_raise_run_SOURCES = block_reset_raise_run.c
 block_reset_raise_run_OBJECTS = block_reset_raise_run.$(OBJEXT)
 block_reset_raise_run_LDADD = $(LDADD)
 block_reset_raise_run_DEPENDENCIES = libtests.a
+block_reset_run_SOURCES = block_reset_run.c
+block_reset_run_OBJECTS = block_reset_run.$(OBJEXT)
+block_reset_run_LDADD = $(LDADD)
+block_reset_run_DEPENDENCIES = libtests.a
 bpf_SOURCES = bpf.c
 bpf_OBJECTS = bpf.$(OBJEXT)
 bpf_LDADD = $(LDADD)
@@ -2583,6 +2593,14 @@ semop_SOURCES = semop.c
 semop_OBJECTS = semop.$(OBJEXT)
 semop_LDADD = $(LDADD)
 semop_DEPENDENCIES = libtests.a
+semop_indirect_SOURCES = semop-indirect.c
+semop_indirect_OBJECTS = semop-indirect.$(OBJEXT)
+semop_indirect_LDADD = $(LDADD)
+semop_indirect_DEPENDENCIES = libtests.a
+semtimedop_SOURCES = semtimedop.c
+semtimedop_OBJECTS = semtimedop.$(OBJEXT)
+semtimedop_LDADD = $(LDADD)
+semtimedop_DEPENDENCIES = libtests.a
 sendfile_SOURCES = sendfile.c
 sendfile_OBJECTS = sendfile.$(OBJEXT)
 sendfile_LDADD = $(LDADD)
@@ -2845,6 +2863,12 @@ am_stack_fcall_OBJECTS = stack-fcall.$(OBJEXT) stack-fcall-0.$(OBJEXT) \
 stack_fcall_OBJECTS = $(am_stack_fcall_OBJECTS)
 stack_fcall_LDADD = $(LDADD)
 stack_fcall_DEPENDENCIES = libtests.a
+am_stack_fcall_attach_OBJECTS = stack-fcall-attach.$(OBJEXT) \
+	stack-fcall-0.$(OBJEXT) stack-fcall-1.$(OBJEXT) \
+	stack-fcall-2.$(OBJEXT) stack-fcall-3.$(OBJEXT)
+stack_fcall_attach_OBJECTS = $(am_stack_fcall_attach_OBJECTS)
+stack_fcall_attach_LDADD = $(LDADD)
+stack_fcall_attach_DEPENDENCIES = libtests.a
 am_stack_fcall_mangled_OBJECTS = stack-fcall-mangled.$(OBJEXT) \
 	stack-fcall-mangled-0.$(OBJEXT) \
 	stack-fcall-mangled-1.$(OBJEXT) \
@@ -2974,6 +2998,10 @@ times_fail_SOURCES = times-fail.c
 times_fail_OBJECTS = times-fail.$(OBJEXT)
 times_fail_LDADD = $(LDADD)
 times_fail_DEPENDENCIES = libtests.a
+tracer_ppid_pgid_sid_SOURCES = tracer_ppid_pgid_sid.c
+tracer_ppid_pgid_sid_OBJECTS = tracer_ppid_pgid_sid.$(OBJEXT)
+tracer_ppid_pgid_sid_LDADD = $(LDADD)
+tracer_ppid_pgid_sid_DEPENDENCIES = libtests.a
 truncate_SOURCES = truncate.c
 truncate_OBJECTS = truncate.$(OBJEXT)
 truncate_LDADD = $(LDADD)
@@ -3180,6 +3208,7 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/attach-f-p.Po ./$(DEPDIR)/attach-p-cmd-cmd.Po \
 	./$(DEPDIR)/attach-p-cmd-p.Po \
 	./$(DEPDIR)/block_reset_raise_run.Po \
+	./$(DEPDIR)/block_reset_run.Po \
 	./$(DEPDIR)/bpf-obj_get_info_by_fd-prog-v.Po \
 	./$(DEPDIR)/bpf-obj_get_info_by_fd-prog.Po \
 	./$(DEPDIR)/bpf-obj_get_info_by_fd-v.Po \
@@ -3526,7 +3555,8 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/seccomp-filter.Po ./$(DEPDIR)/seccomp-strict.Po \
 	./$(DEPDIR)/seccomp_get_action_avail.Po \
 	./$(DEPDIR)/select-P.Po ./$(DEPDIR)/select.Po \
-	./$(DEPDIR)/semop.Po ./$(DEPDIR)/sendfile.Po \
+	./$(DEPDIR)/semop-indirect.Po ./$(DEPDIR)/semop.Po \
+	./$(DEPDIR)/semtimedop.Po ./$(DEPDIR)/sendfile.Po \
 	./$(DEPDIR)/sendfile64.Po ./$(DEPDIR)/set_mempolicy-Xabbrev.Po \
 	./$(DEPDIR)/set_mempolicy-Xraw.Po \
 	./$(DEPDIR)/set_mempolicy-Xverbose.Po \
@@ -3566,6 +3596,7 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/sockopt-timestamp.Po ./$(DEPDIR)/splice.Po \
 	./$(DEPDIR)/stack-fcall-0.Po ./$(DEPDIR)/stack-fcall-1.Po \
 	./$(DEPDIR)/stack-fcall-2.Po ./$(DEPDIR)/stack-fcall-3.Po \
+	./$(DEPDIR)/stack-fcall-attach.Po \
 	./$(DEPDIR)/stack-fcall-mangled-0.Po \
 	./$(DEPDIR)/stack-fcall-mangled-1.Po \
 	./$(DEPDIR)/stack-fcall-mangled-2.Po \
@@ -3588,14 +3619,14 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/time.Po ./$(DEPDIR)/timer_create.Po \
 	./$(DEPDIR)/timer_xettime.Po ./$(DEPDIR)/timerfd_xettime.Po \
 	./$(DEPDIR)/times-fail.Po ./$(DEPDIR)/times.Po \
-	./$(DEPDIR)/truncate.Po ./$(DEPDIR)/truncate64-truncate64.Po \
-	./$(DEPDIR)/ugetrlimit.Po ./$(DEPDIR)/uio-uio.Po \
-	./$(DEPDIR)/umask.Po ./$(DEPDIR)/umount.Po \
-	./$(DEPDIR)/umount2.Po ./$(DEPDIR)/umoven-illptr.Po \
-	./$(DEPDIR)/umovestr-illptr.Po ./$(DEPDIR)/umovestr.Po \
-	./$(DEPDIR)/umovestr2.Po ./$(DEPDIR)/umovestr3.Po \
-	./$(DEPDIR)/umovestr_cached.Po ./$(DEPDIR)/uname.Po \
-	./$(DEPDIR)/unblock_reset_raise.Po \
+	./$(DEPDIR)/tracer_ppid_pgid_sid.Po ./$(DEPDIR)/truncate.Po \
+	./$(DEPDIR)/truncate64-truncate64.Po ./$(DEPDIR)/ugetrlimit.Po \
+	./$(DEPDIR)/uio-uio.Po ./$(DEPDIR)/umask.Po \
+	./$(DEPDIR)/umount.Po ./$(DEPDIR)/umount2.Po \
+	./$(DEPDIR)/umoven-illptr.Po ./$(DEPDIR)/umovestr-illptr.Po \
+	./$(DEPDIR)/umovestr.Po ./$(DEPDIR)/umovestr2.Po \
+	./$(DEPDIR)/umovestr3.Po ./$(DEPDIR)/umovestr_cached.Po \
+	./$(DEPDIR)/uname.Po ./$(DEPDIR)/unblock_reset_raise.Po \
 	./$(DEPDIR)/unix-pair-send-recv.Po \
 	./$(DEPDIR)/unix-pair-sendto-recvfrom.Po ./$(DEPDIR)/unlink.Po \
 	./$(DEPDIR)/unlinkat.Po ./$(DEPDIR)/unshare.Po \
@@ -3633,22 +3664,22 @@ SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c accept.c \
 	accept4.c access.c acct.c add_key.c adjtimex.c aio.c \
 	aio_pgetevents.c alarm.c answer.c attach-f-p.c \
 	attach-f-p-cmd.c attach-p-cmd-cmd.c attach-p-cmd-p.c \
-	block_reset_raise_run.c bpf.c bpf-obj_get_info_by_fd.c \
-	bpf-obj_get_info_by_fd-prog.c bpf-obj_get_info_by_fd-prog-v.c \
-	bpf-obj_get_info_by_fd-v.c bpf-success.c bpf-success-v.c \
-	bpf-v.c brk.c btrfs.c caps.c caps-abbrev.c check_sigblock.c \
-	check_sigign.c chmod.c chown.c chown32.c chroot.c \
-	clock_adjtime.c clock_nanosleep.c clock_xettime.c \
-	clone-flags.c clone3.c clone3-Xabbrev.c clone3-Xraw.c \
-	clone3-Xverbose.c clone3-success.c clone3-success-Xabbrev.c \
-	clone3-success-Xraw.c clone3-success-Xverbose.c clone_parent.c \
-	clone_ptrace.c copy_file_range.c count-f.c creat.c delay.c \
-	delete_module.c dev-yy.c dup.c dup2.c dup3.c epoll_create.c \
-	epoll_create1.c epoll_ctl.c epoll_pwait.c epoll_wait.c \
-	erestartsys.c eventfd.c execve.c execve-v.c execveat.c \
-	execveat-v.c faccessat.c fadvise64.c fadvise64_64.c \
-	fallocate.c fanotify_init.c fanotify_mark.c \
-	fanotify_mark-Xabbrev.c fanotify_mark-Xraw.c \
+	block_reset_raise_run.c block_reset_run.c bpf.c \
+	bpf-obj_get_info_by_fd.c bpf-obj_get_info_by_fd-prog.c \
+	bpf-obj_get_info_by_fd-prog-v.c bpf-obj_get_info_by_fd-v.c \
+	bpf-success.c bpf-success-v.c bpf-v.c brk.c btrfs.c caps.c \
+	caps-abbrev.c check_sigblock.c check_sigign.c chmod.c chown.c \
+	chown32.c chroot.c clock_adjtime.c clock_nanosleep.c \
+	clock_xettime.c clone-flags.c clone3.c clone3-Xabbrev.c \
+	clone3-Xraw.c clone3-Xverbose.c clone3-success.c \
+	clone3-success-Xabbrev.c clone3-success-Xraw.c \
+	clone3-success-Xverbose.c clone_parent.c clone_ptrace.c \
+	copy_file_range.c count-f.c creat.c delay.c delete_module.c \
+	dev-yy.c dup.c dup2.c dup3.c epoll_create.c epoll_create1.c \
+	epoll_ctl.c epoll_pwait.c epoll_wait.c erestartsys.c eventfd.c \
+	execve.c execve-v.c execveat.c execveat-v.c faccessat.c \
+	fadvise64.c fadvise64_64.c fallocate.c fanotify_init.c \
+	fanotify_mark.c fanotify_mark-Xabbrev.c fanotify_mark-Xraw.c \
 	fanotify_mark-Xverbose.c fchdir.c fchmod.c fchmodat.c fchown.c \
 	fchown32.c fchownat.c fcntl.c fcntl64.c fdatasync.c fflush.c \
 	file_handle.c file_ioctl.c filter-unavailable.c \
@@ -3778,24 +3809,25 @@ SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c accept.c \
 	sched_xetparam.c sched_xetscheduler.c sched_yield.c \
 	scm_rights.c seccomp-filter.c seccomp-filter-v.c \
 	seccomp-strict.c seccomp_get_action_avail.c select.c \
-	select-P.c semop.c sendfile.c sendfile64.c set_mempolicy.c \
-	set_mempolicy-Xabbrev.c set_mempolicy-Xraw.c \
-	set_mempolicy-Xverbose.c set_ptracer_any.c set_sigblock.c \
-	set_sigign.c setdomainname.c setfsgid.c setfsgid32.c \
-	setfsuid.c setfsuid32.c setgid.c setgid32.c setgroups.c \
-	setgroups32.c sethostname.c setns.c setregid.c setregid32.c \
-	setresgid.c setresgid32.c setresuid.c setresuid32.c setreuid.c \
-	setreuid32.c setrlimit.c setrlimit-Xabbrev.c setrlimit-Xraw.c \
-	setrlimit-Xverbose.c setuid.c setuid32.c shmxt.c shutdown.c \
-	sigaction.c sigaltstack.c siginfo.c signal.c signal_receive.c \
-	signalfd4.c sigpending.c sigprocmask.c sigreturn.c \
-	sigsuspend.c sleep.c so_error.c so_linger.c so_peercred.c \
-	so_peercred-Xabbrev.c so_peercred-Xraw.c \
-	so_peercred-Xverbose.c sock_filter-v.c sock_filter-v-Xabbrev.c \
-	sock_filter-v-Xraw.c sock_filter-v-Xverbose.c \
-	sockaddr_xlat-Xabbrev.c sockaddr_xlat-Xraw.c \
-	sockaddr_xlat-Xverbose.c socketcall.c sockopt-sol_netlink.c \
-	sockopt-timestamp.c splice.c $(stack_fcall_SOURCES) \
+	select-P.c semop.c semop-indirect.c semtimedop.c sendfile.c \
+	sendfile64.c set_mempolicy.c set_mempolicy-Xabbrev.c \
+	set_mempolicy-Xraw.c set_mempolicy-Xverbose.c \
+	set_ptracer_any.c set_sigblock.c set_sigign.c setdomainname.c \
+	setfsgid.c setfsgid32.c setfsuid.c setfsuid32.c setgid.c \
+	setgid32.c setgroups.c setgroups32.c sethostname.c setns.c \
+	setregid.c setregid32.c setresgid.c setresgid32.c setresuid.c \
+	setresuid32.c setreuid.c setreuid32.c setrlimit.c \
+	setrlimit-Xabbrev.c setrlimit-Xraw.c setrlimit-Xverbose.c \
+	setuid.c setuid32.c shmxt.c shutdown.c sigaction.c \
+	sigaltstack.c siginfo.c signal.c signal_receive.c signalfd4.c \
+	sigpending.c sigprocmask.c sigreturn.c sigsuspend.c sleep.c \
+	so_error.c so_linger.c so_peercred.c so_peercred-Xabbrev.c \
+	so_peercred-Xraw.c so_peercred-Xverbose.c sock_filter-v.c \
+	sock_filter-v-Xabbrev.c sock_filter-v-Xraw.c \
+	sock_filter-v-Xverbose.c sockaddr_xlat-Xabbrev.c \
+	sockaddr_xlat-Xraw.c sockaddr_xlat-Xverbose.c socketcall.c \
+	sockopt-sol_netlink.c sockopt-timestamp.c splice.c \
+	$(stack_fcall_SOURCES) $(stack_fcall_attach_SOURCES) \
 	$(stack_fcall_mangled_SOURCES) stat.c stat64.c statfs.c \
 	statfs64.c status-all.c status-failed.c status-none.c \
 	status-none-f.c status-none-threads.c status-successful.c \
@@ -3803,37 +3835,38 @@ SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c accept.c \
 	sxetmask.c symlink.c symlinkat.c sync.c sync_file_range.c \
 	sync_file_range2.c sysinfo.c syslog.c syslog-success.c tee.c \
 	threads-execve.c time.c timer_create.c timer_xettime.c \
-	timerfd_xettime.c times.c times-fail.c truncate.c truncate64.c \
-	ugetrlimit.c uio.c umask.c umount.c umount2.c umoven-illptr.c \
-	umovestr.c umovestr-illptr.c umovestr2.c umovestr3.c \
-	umovestr_cached.c uname.c unblock_reset_raise.c \
-	unix-pair-send-recv.c unix-pair-sendto-recvfrom.c unlink.c \
-	unlinkat.c unshare.c userfaultfd.c ustat.c utime.c utimensat.c \
-	utimensat-Xabbrev.c utimensat-Xraw.c utimensat-Xverbose.c \
-	utimes.c vfork-f.c vhangup.c vmsplice.c wait4.c wait4-v.c \
-	waitid.c waitid-v.c waitpid.c xattr.c xattr-strings.c \
-	xet_robust_list.c xet_thread_area_x86.c xetitimer.c xetpgid.c \
-	xetpriority.c xettimeofday.c zeroargc.c
+	timerfd_xettime.c times.c times-fail.c tracer_ppid_pgid_sid.c \
+	truncate.c truncate64.c ugetrlimit.c uio.c umask.c umount.c \
+	umount2.c umoven-illptr.c umovestr.c umovestr-illptr.c \
+	umovestr2.c umovestr3.c umovestr_cached.c uname.c \
+	unblock_reset_raise.c unix-pair-send-recv.c \
+	unix-pair-sendto-recvfrom.c unlink.c unlinkat.c unshare.c \
+	userfaultfd.c ustat.c utime.c utimensat.c utimensat-Xabbrev.c \
+	utimensat-Xraw.c utimensat-Xverbose.c utimes.c vfork-f.c \
+	vhangup.c vmsplice.c wait4.c wait4-v.c waitid.c waitid-v.c \
+	waitpid.c xattr.c xattr-strings.c xet_robust_list.c \
+	xet_thread_area_x86.c xetitimer.c xetpgid.c xetpriority.c \
+	xettimeofday.c zeroargc.c
 DIST_SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c \
 	accept.c accept4.c access.c acct.c add_key.c adjtimex.c aio.c \
 	aio_pgetevents.c alarm.c answer.c attach-f-p.c \
 	attach-f-p-cmd.c attach-p-cmd-cmd.c attach-p-cmd-p.c \
-	block_reset_raise_run.c bpf.c bpf-obj_get_info_by_fd.c \
-	bpf-obj_get_info_by_fd-prog.c bpf-obj_get_info_by_fd-prog-v.c \
-	bpf-obj_get_info_by_fd-v.c bpf-success.c bpf-success-v.c \
-	bpf-v.c brk.c btrfs.c caps.c caps-abbrev.c check_sigblock.c \
-	check_sigign.c chmod.c chown.c chown32.c chroot.c \
-	clock_adjtime.c clock_nanosleep.c clock_xettime.c \
-	clone-flags.c clone3.c clone3-Xabbrev.c clone3-Xraw.c \
-	clone3-Xverbose.c clone3-success.c clone3-success-Xabbrev.c \
-	clone3-success-Xraw.c clone3-success-Xverbose.c clone_parent.c \
-	clone_ptrace.c copy_file_range.c count-f.c creat.c delay.c \
-	delete_module.c dev-yy.c dup.c dup2.c dup3.c epoll_create.c \
-	epoll_create1.c epoll_ctl.c epoll_pwait.c epoll_wait.c \
-	erestartsys.c eventfd.c execve.c execve-v.c execveat.c \
-	execveat-v.c faccessat.c fadvise64.c fadvise64_64.c \
-	fallocate.c fanotify_init.c fanotify_mark.c \
-	fanotify_mark-Xabbrev.c fanotify_mark-Xraw.c \
+	block_reset_raise_run.c block_reset_run.c bpf.c \
+	bpf-obj_get_info_by_fd.c bpf-obj_get_info_by_fd-prog.c \
+	bpf-obj_get_info_by_fd-prog-v.c bpf-obj_get_info_by_fd-v.c \
+	bpf-success.c bpf-success-v.c bpf-v.c brk.c btrfs.c caps.c \
+	caps-abbrev.c check_sigblock.c check_sigign.c chmod.c chown.c \
+	chown32.c chroot.c clock_adjtime.c clock_nanosleep.c \
+	clock_xettime.c clone-flags.c clone3.c clone3-Xabbrev.c \
+	clone3-Xraw.c clone3-Xverbose.c clone3-success.c \
+	clone3-success-Xabbrev.c clone3-success-Xraw.c \
+	clone3-success-Xverbose.c clone_parent.c clone_ptrace.c \
+	copy_file_range.c count-f.c creat.c delay.c delete_module.c \
+	dev-yy.c dup.c dup2.c dup3.c epoll_create.c epoll_create1.c \
+	epoll_ctl.c epoll_pwait.c epoll_wait.c erestartsys.c eventfd.c \
+	execve.c execve-v.c execveat.c execveat-v.c faccessat.c \
+	fadvise64.c fadvise64_64.c fallocate.c fanotify_init.c \
+	fanotify_mark.c fanotify_mark-Xabbrev.c fanotify_mark-Xraw.c \
 	fanotify_mark-Xverbose.c fchdir.c fchmod.c fchmodat.c fchown.c \
 	fchown32.c fchownat.c fcntl.c fcntl64.c fdatasync.c fflush.c \
 	file_handle.c file_ioctl.c filter-unavailable.c \
@@ -3963,24 +3996,25 @@ DIST_SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c \
 	sched_xetparam.c sched_xetscheduler.c sched_yield.c \
 	scm_rights.c seccomp-filter.c seccomp-filter-v.c \
 	seccomp-strict.c seccomp_get_action_avail.c select.c \
-	select-P.c semop.c sendfile.c sendfile64.c set_mempolicy.c \
-	set_mempolicy-Xabbrev.c set_mempolicy-Xraw.c \
-	set_mempolicy-Xverbose.c set_ptracer_any.c set_sigblock.c \
-	set_sigign.c setdomainname.c setfsgid.c setfsgid32.c \
-	setfsuid.c setfsuid32.c setgid.c setgid32.c setgroups.c \
-	setgroups32.c sethostname.c setns.c setregid.c setregid32.c \
-	setresgid.c setresgid32.c setresuid.c setresuid32.c setreuid.c \
-	setreuid32.c setrlimit.c setrlimit-Xabbrev.c setrlimit-Xraw.c \
-	setrlimit-Xverbose.c setuid.c setuid32.c shmxt.c shutdown.c \
-	sigaction.c sigaltstack.c siginfo.c signal.c signal_receive.c \
-	signalfd4.c sigpending.c sigprocmask.c sigreturn.c \
-	sigsuspend.c sleep.c so_error.c so_linger.c so_peercred.c \
-	so_peercred-Xabbrev.c so_peercred-Xraw.c \
-	so_peercred-Xverbose.c sock_filter-v.c sock_filter-v-Xabbrev.c \
-	sock_filter-v-Xraw.c sock_filter-v-Xverbose.c \
-	sockaddr_xlat-Xabbrev.c sockaddr_xlat-Xraw.c \
-	sockaddr_xlat-Xverbose.c socketcall.c sockopt-sol_netlink.c \
-	sockopt-timestamp.c splice.c $(stack_fcall_SOURCES) \
+	select-P.c semop.c semop-indirect.c semtimedop.c sendfile.c \
+	sendfile64.c set_mempolicy.c set_mempolicy-Xabbrev.c \
+	set_mempolicy-Xraw.c set_mempolicy-Xverbose.c \
+	set_ptracer_any.c set_sigblock.c set_sigign.c setdomainname.c \
+	setfsgid.c setfsgid32.c setfsuid.c setfsuid32.c setgid.c \
+	setgid32.c setgroups.c setgroups32.c sethostname.c setns.c \
+	setregid.c setregid32.c setresgid.c setresgid32.c setresuid.c \
+	setresuid32.c setreuid.c setreuid32.c setrlimit.c \
+	setrlimit-Xabbrev.c setrlimit-Xraw.c setrlimit-Xverbose.c \
+	setuid.c setuid32.c shmxt.c shutdown.c sigaction.c \
+	sigaltstack.c siginfo.c signal.c signal_receive.c signalfd4.c \
+	sigpending.c sigprocmask.c sigreturn.c sigsuspend.c sleep.c \
+	so_error.c so_linger.c so_peercred.c so_peercred-Xabbrev.c \
+	so_peercred-Xraw.c so_peercred-Xverbose.c sock_filter-v.c \
+	sock_filter-v-Xabbrev.c sock_filter-v-Xraw.c \
+	sock_filter-v-Xverbose.c sockaddr_xlat-Xabbrev.c \
+	sockaddr_xlat-Xraw.c sockaddr_xlat-Xverbose.c socketcall.c \
+	sockopt-sol_netlink.c sockopt-timestamp.c splice.c \
+	$(stack_fcall_SOURCES) $(stack_fcall_attach_SOURCES) \
 	$(stack_fcall_mangled_SOURCES) stat.c stat64.c statfs.c \
 	statfs64.c status-all.c status-failed.c status-none.c \
 	status-none-f.c status-none-threads.c status-successful.c \
@@ -3988,17 +4022,18 @@ DIST_SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c \
 	sxetmask.c symlink.c symlinkat.c sync.c sync_file_range.c \
 	sync_file_range2.c sysinfo.c syslog.c syslog-success.c tee.c \
 	threads-execve.c time.c timer_create.c timer_xettime.c \
-	timerfd_xettime.c times.c times-fail.c truncate.c truncate64.c \
-	ugetrlimit.c uio.c umask.c umount.c umount2.c umoven-illptr.c \
-	umovestr.c umovestr-illptr.c umovestr2.c umovestr3.c \
-	umovestr_cached.c uname.c unblock_reset_raise.c \
-	unix-pair-send-recv.c unix-pair-sendto-recvfrom.c unlink.c \
-	unlinkat.c unshare.c userfaultfd.c ustat.c utime.c utimensat.c \
-	utimensat-Xabbrev.c utimensat-Xraw.c utimensat-Xverbose.c \
-	utimes.c vfork-f.c vhangup.c vmsplice.c wait4.c wait4-v.c \
-	waitid.c waitid-v.c waitpid.c xattr.c xattr-strings.c \
-	xet_robust_list.c xet_thread_area_x86.c xetitimer.c xetpgid.c \
-	xetpriority.c xettimeofday.c zeroargc.c
+	timerfd_xettime.c times.c times-fail.c tracer_ppid_pgid_sid.c \
+	truncate.c truncate64.c ugetrlimit.c uio.c umask.c umount.c \
+	umount2.c umoven-illptr.c umovestr.c umovestr-illptr.c \
+	umovestr2.c umovestr3.c umovestr_cached.c uname.c \
+	unblock_reset_raise.c unix-pair-send-recv.c \
+	unix-pair-sendto-recvfrom.c unlink.c unlinkat.c unshare.c \
+	userfaultfd.c ustat.c utime.c utimensat.c utimensat-Xabbrev.c \
+	utimensat-Xraw.c utimensat-Xverbose.c utimes.c vfork-f.c \
+	vhangup.c vmsplice.c wait4.c wait4-v.c waitid.c waitid-v.c \
+	waitpid.c xattr.c xattr-strings.c xet_robust_list.c \
+	xet_thread_area_x86.c xetitimer.c xetpgid.c xetpriority.c \
+	xettimeofday.c zeroargc.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -4211,7 +4246,8 @@ am__set_TESTS_bases = \
   bases=`echo $$bases`
 RECHECK_LOGS = $(TEST_LOGS)
 AM_RECURSIVE_TARGETS = check recheck
-@ENABLE_STACKTRACE_TRUE@am__EXEEXT_2 = strace-k.test $(am__append_1)
+@ENABLE_STACKTRACE_TRUE@am__EXEEXT_2 = strace-k.test strace-k-p.test \
+@ENABLE_STACKTRACE_TRUE@	$(am__append_1)
 TEST_SUITE_LOG = test-suite.log
 TEST_EXTENSIONS = @EXEEXT@ .test
 am__test_logs1 = $(TESTS:=.log)
@@ -4246,8 +4282,12 @@ BUILD_OBJEXT = @BUILD_OBJEXT@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CC_FOR_BUILD = @CC_FOR_BUILD@
+CC_FOR_M32 = @CC_FOR_M32@
+CC_FOR_MX32 = @CC_FOR_MX32@
 CFLAGS = @CFLAGS@
 CFLAGS_FOR_BUILD = @CFLAGS_FOR_BUILD@
+CFLAGS_FOR_M32 = @CFLAGS_FOR_M32@
+CFLAGS_FOR_MX32 = @CFLAGS_FOR_MX32@
 CODE_COVERAGE_CFLAGS = @CODE_COVERAGE_CFLAGS@
 CODE_COVERAGE_CPPFLAGS = @CODE_COVERAGE_CPPFLAGS@
 CODE_COVERAGE_CXXFLAGS = @CODE_COVERAGE_CXXFLAGS@
@@ -4258,7 +4298,11 @@ COPYRIGHT_YEAR = @COPYRIGHT_YEAR@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CPPFLAGS_FOR_BUILD = @CPPFLAGS_FOR_BUILD@
+CPPFLAGS_FOR_M32 = @CPPFLAGS_FOR_M32@
+CPPFLAGS_FOR_MX32 = @CPPFLAGS_FOR_MX32@
 CPP_FOR_BUILD = @CPP_FOR_BUILD@
+CPP_FOR_M32 = @CPP_FOR_M32@
+CPP_FOR_MX32 = @CPP_FOR_MX32@
 CYGPATH_W = @CYGPATH_W@
 DEB_CHANGELOGTIME = @DEB_CHANGELOGTIME@
 DEFS = @DEFS@
@@ -4461,10 +4505,6 @@ PURE_EXECUTABLES = \
   aio_pgetevents \
   alarm \
   bpf \
-  bpf-obj_get_info_by_fd \
-  bpf-obj_get_info_by_fd-prog \
-  bpf-obj_get_info_by_fd-prog-v \
-  bpf-obj_get_info_by_fd-v \
   bpf-v \
   brk \
   btrfs \
@@ -4890,6 +4930,8 @@ PURE_EXECUTABLES = \
   seccomp_get_action_avail \
   select \
   semop \
+  semop-indirect \
+  semtimedop \
   sendfile \
   sendfile64 \
   set_mempolicy \
@@ -5049,6 +5091,9 @@ uio_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 stack_fcall_SOURCES = stack-fcall.c \
 	stack-fcall-0.c stack-fcall-1.c stack-fcall-2.c stack-fcall-3.c
 
+stack_fcall_attach_SOURCES = stack-fcall-attach.c \
+	stack-fcall-0.c stack-fcall-1.c stack-fcall-2.c stack-fcall-3.c
+
 stack_fcall_mangled_SOURCES = stack-fcall-mangled.c \
 	stack-fcall-mangled-0.c stack-fcall-mangled-1.c \
 	stack-fcall-mangled-2.c stack-fcall-mangled-3.c
@@ -5094,14 +5139,18 @@ GEN_TESTS = _newselect.gen.test _newselect-P.gen.test accept.gen.test \
 	ftruncate.gen.test ftruncate64.gen.test futimesat.gen.test \
 	get_mempolicy.gen.test getcpu.gen.test getcwd.gen.test \
 	getdents.gen.test getdents64.gen.test getegid.gen.test \
-	getegid32.gen.test geteuid.gen.test geteuid32.gen.test \
-	getgid.gen.test getgid32.gen.test getgroups.gen.test \
+	getegid-creds.gen.test getegid32.gen.test \
+	getegid32-creds.gen.test geteuid.gen.test \
+	geteuid-creds.gen.test geteuid32.gen.test \
+	geteuid32-creds.gen.test getgid.gen.test getgid-creds.gen.test \
+	getgid32.gen.test getgid32-creds.gen.test getgroups.gen.test \
 	getgroups32.gen.test getpeername.gen.test getpgrp.gen.test \
 	getpid.gen.test getppid.gen.test getrandom.gen.test \
 	getresgid.gen.test getresgid32.gen.test getresuid.gen.test \
 	getresuid32.gen.test getrlimit.gen.test getrusage.gen.test \
 	getsid.gen.test getsockname.gen.test gettid.gen.test \
-	getuid32.gen.test getxxid.gen.test group_req.gen.test \
+	getuid-creds.gen.test getuid32.gen.test \
+	getuid32-creds.gen.test getxxid.gen.test group_req.gen.test \
 	inet-cmsg.gen.test init_module.gen.test inotify.gen.test \
 	inotify_init.gen.test inotify_init1.gen.test \
 	inotify_init1-y.gen.test io_uring_enter.gen.test \
@@ -5251,7 +5300,8 @@ GEN_TESTS = _newselect.gen.test _newselect-P.gen.test accept.gen.test \
 	sched_yield.gen.test seccomp-filter.gen.test \
 	seccomp-filter-v.gen.test seccomp_get_action_avail.gen.test \
 	select.gen.test select-P.gen.test semop.gen.test \
-	sendfile.gen.test sendfile64.gen.test set_mempolicy.gen.test \
+	semop-indirect.gen.test semtimedop.gen.test sendfile.gen.test \
+	sendfile64.gen.test set_mempolicy.gen.test \
 	set_mempolicy-Xabbrev.gen.test set_mempolicy-Xraw.gen.test \
 	set_mempolicy-Xverbose.gen.test setdomainname.gen.test \
 	setfsgid.gen.test setfsgid32.gen.test setfsuid.gen.test \
@@ -5283,7 +5333,7 @@ GEN_TESTS = _newselect.gen.test _newselect-P.gen.test accept.gen.test \
 	sync_file_range2.gen.test sysinfo.gen.test syslog.gen.test \
 	tee.gen.test time.gen.test timer_create.gen.test \
 	timer_xettime.gen.test timerfd_xettime.gen.test times.gen.test \
-	times-fail.gen.test trace_fstat.gen.test \
+	times-fail.gen.test trace_creds.gen.test trace_fstat.gen.test \
 	trace_fstatfs.gen.test trace_lstat.gen.test \
 	trace_personality_32.gen.test trace_personality_64.gen.test \
 	trace_personality_regex_32.gen.test \
@@ -5306,7 +5356,7 @@ GEN_TESTS = _newselect.gen.test _newselect-P.gen.test accept.gen.test \
 	xettimeofday.gen.test
 @ENABLE_STACKTRACE_FALSE@STACKTRACE_TESTS = 
 @ENABLE_STACKTRACE_TRUE@STACKTRACE_TESTS = strace-k.test \
-@ENABLE_STACKTRACE_TRUE@	$(am__append_1)
+@ENABLE_STACKTRACE_TRUE@	strace-k-p.test $(am__append_1)
 DECODER_TESTS = \
 	bpf-success-v.test \
 	bpf-success.test \
@@ -5436,6 +5486,9 @@ MISC_TESTS = \
 	status-none-threads.test \
 	status-unfinished-threads.test \
 	strace-C.test \
+	strace-D.test \
+	strace-DD.test \
+	strace-DDD.test \
 	strace-E.test \
 	strace-S.test \
 	strace-T.test \
@@ -5490,6 +5543,8 @@ EXTRA_DIST = \
 	init_delete_module.h \
 	ioctl_kvm_run_common.c \
 	ipc.sh \
+	kernel_old_timespec.h \
+	kernel_old_timex.h \
 	ksysent.sed \
 	lstatx.c \
 	match.awk \
@@ -5513,6 +5568,7 @@ EXTRA_DIST = \
 	run.sh \
 	sched.in \
 	scno_tampering.sh \
+	semop-common.c \
 	setfsugid.c \
 	setresugid.c \
 	setreugid.c \
@@ -5523,17 +5579,23 @@ EXTRA_DIST = \
 	stack-fcall.h \
 	status-detached.expected \
 	strace-C.expected \
+	strace-D.expected \
+	strace-DD.expected \
+	strace-DDD.expected \
 	strace-E.expected \
 	strace-T.expected \
 	strace-ff.expected \
 	strace-k-demangle.expected \
 	strace-k-demangle.test \
+	strace-k-p.expected \
+	strace-k-p.test \
 	strace-k.expected \
 	strace-k.test \
 	strace-r.expected \
 	strace.supp \
 	sun_path.expected \
 	syntax.sh \
+	trace_creds.in \
 	trace_fstat.in \
 	trace_fstatfs.in \
 	trace_lstat.in \
@@ -5686,6 +5748,10 @@ attach-p-cmd-p$(EXEEXT): $(attach_p_cmd_p_OBJECTS) $(attach_p_cmd_p_DEPENDENCIES
 block_reset_raise_run$(EXEEXT): $(block_reset_raise_run_OBJECTS) $(block_reset_raise_run_DEPENDENCIES) $(EXTRA_block_reset_raise_run_DEPENDENCIES) 
 	@rm -f block_reset_raise_run$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(block_reset_raise_run_OBJECTS) $(block_reset_raise_run_LDADD) $(LIBS)
+
+block_reset_run$(EXEEXT): $(block_reset_run_OBJECTS) $(block_reset_run_DEPENDENCIES) $(EXTRA_block_reset_run_DEPENDENCIES) 
+	@rm -f block_reset_run$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(block_reset_run_OBJECTS) $(block_reset_run_LDADD) $(LIBS)
 
 bpf$(EXEEXT): $(bpf_OBJECTS) $(bpf_DEPENDENCIES) $(EXTRA_bpf_DEPENDENCIES) 
 	@rm -f bpf$(EXEEXT)
@@ -7735,6 +7801,14 @@ semop$(EXEEXT): $(semop_OBJECTS) $(semop_DEPENDENCIES) $(EXTRA_semop_DEPENDENCIE
 	@rm -f semop$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(semop_OBJECTS) $(semop_LDADD) $(LIBS)
 
+semop-indirect$(EXEEXT): $(semop_indirect_OBJECTS) $(semop_indirect_DEPENDENCIES) $(EXTRA_semop_indirect_DEPENDENCIES) 
+	@rm -f semop-indirect$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(semop_indirect_OBJECTS) $(semop_indirect_LDADD) $(LIBS)
+
+semtimedop$(EXEEXT): $(semtimedop_OBJECTS) $(semtimedop_DEPENDENCIES) $(EXTRA_semtimedop_DEPENDENCIES) 
+	@rm -f semtimedop$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(semtimedop_OBJECTS) $(semtimedop_LDADD) $(LIBS)
+
 sendfile$(EXEEXT): $(sendfile_OBJECTS) $(sendfile_DEPENDENCIES) $(EXTRA_sendfile_DEPENDENCIES) 
 	@rm -f sendfile$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(sendfile_OBJECTS) $(sendfile_LDADD) $(LIBS)
@@ -7995,6 +8069,10 @@ stack-fcall$(EXEEXT): $(stack_fcall_OBJECTS) $(stack_fcall_DEPENDENCIES) $(EXTRA
 	@rm -f stack-fcall$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(stack_fcall_OBJECTS) $(stack_fcall_LDADD) $(LIBS)
 
+stack-fcall-attach$(EXEEXT): $(stack_fcall_attach_OBJECTS) $(stack_fcall_attach_DEPENDENCIES) $(EXTRA_stack_fcall_attach_DEPENDENCIES) 
+	@rm -f stack-fcall-attach$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(stack_fcall_attach_OBJECTS) $(stack_fcall_attach_LDADD) $(LIBS)
+
 stack-fcall-mangled$(EXEEXT): $(stack_fcall_mangled_OBJECTS) $(stack_fcall_mangled_DEPENDENCIES) $(EXTRA_stack_fcall_mangled_DEPENDENCIES) 
 	@rm -f stack-fcall-mangled$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(stack_fcall_mangled_OBJECTS) $(stack_fcall_mangled_LDADD) $(LIBS)
@@ -8122,6 +8200,10 @@ times$(EXEEXT): $(times_OBJECTS) $(times_DEPENDENCIES) $(EXTRA_times_DEPENDENCIE
 times-fail$(EXEEXT): $(times_fail_OBJECTS) $(times_fail_DEPENDENCIES) $(EXTRA_times_fail_DEPENDENCIES) 
 	@rm -f times-fail$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(times_fail_OBJECTS) $(times_fail_LDADD) $(LIBS)
+
+tracer_ppid_pgid_sid$(EXEEXT): $(tracer_ppid_pgid_sid_OBJECTS) $(tracer_ppid_pgid_sid_DEPENDENCIES) $(EXTRA_tracer_ppid_pgid_sid_DEPENDENCIES) 
+	@rm -f tracer_ppid_pgid_sid$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(tracer_ppid_pgid_sid_OBJECTS) $(tracer_ppid_pgid_sid_LDADD) $(LIBS)
 
 truncate$(EXEEXT): $(truncate_OBJECTS) $(truncate_DEPENDENCIES) $(EXTRA_truncate_DEPENDENCIES) 
 	@rm -f truncate$(EXEEXT)
@@ -8326,6 +8408,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/attach-p-cmd-cmd.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/attach-p-cmd-p.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/block_reset_raise_run.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/block_reset_run.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bpf-obj_get_info_by_fd-prog-v.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bpf-obj_get_info_by_fd-prog.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bpf-obj_get_info_by_fd-v.Po@am__quote@ # am--include-marker
@@ -8867,7 +8950,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/seccomp_get_action_avail.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/select-P.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/select.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/semop-indirect.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/semop.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/semtimedop.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sendfile.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sendfile64.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set_mempolicy-Xabbrev.Po@am__quote@ # am--include-marker
@@ -8936,6 +9021,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack-fcall-1.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack-fcall-2.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack-fcall-3.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack-fcall-attach.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack-fcall-mangled-0.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack-fcall-mangled-1.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack-fcall-mangled-2.Po@am__quote@ # am--include-marker
@@ -8973,6 +9059,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timerfd_xettime.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/times-fail.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/times.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tracer_ppid_pgid_sid.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/truncate.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/truncate64-truncate64.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ugetrlimit.Po@am__quote@ # am--include-marker
@@ -9026,15 +9113,17 @@ $(am__depfiles_remade):
 am--depfiles: $(am__depfiles_remade)
 
 .c.o:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
@@ -10029,6 +10118,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/attach-p-cmd-cmd.Po
 	-rm -f ./$(DEPDIR)/attach-p-cmd-p.Po
 	-rm -f ./$(DEPDIR)/block_reset_raise_run.Po
+	-rm -f ./$(DEPDIR)/block_reset_run.Po
 	-rm -f ./$(DEPDIR)/bpf-obj_get_info_by_fd-prog-v.Po
 	-rm -f ./$(DEPDIR)/bpf-obj_get_info_by_fd-prog.Po
 	-rm -f ./$(DEPDIR)/bpf-obj_get_info_by_fd-v.Po
@@ -10570,7 +10660,9 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/seccomp_get_action_avail.Po
 	-rm -f ./$(DEPDIR)/select-P.Po
 	-rm -f ./$(DEPDIR)/select.Po
+	-rm -f ./$(DEPDIR)/semop-indirect.Po
 	-rm -f ./$(DEPDIR)/semop.Po
+	-rm -f ./$(DEPDIR)/semtimedop.Po
 	-rm -f ./$(DEPDIR)/sendfile.Po
 	-rm -f ./$(DEPDIR)/sendfile64.Po
 	-rm -f ./$(DEPDIR)/set_mempolicy-Xabbrev.Po
@@ -10639,6 +10731,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/stack-fcall-1.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-2.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-3.Po
+	-rm -f ./$(DEPDIR)/stack-fcall-attach.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-mangled-0.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-mangled-1.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-mangled-2.Po
@@ -10676,6 +10769,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/timerfd_xettime.Po
 	-rm -f ./$(DEPDIR)/times-fail.Po
 	-rm -f ./$(DEPDIR)/times.Po
+	-rm -f ./$(DEPDIR)/tracer_ppid_pgid_sid.Po
 	-rm -f ./$(DEPDIR)/truncate.Po
 	-rm -f ./$(DEPDIR)/truncate64-truncate64.Po
 	-rm -f ./$(DEPDIR)/ugetrlimit.Po
@@ -10783,6 +10877,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/attach-p-cmd-cmd.Po
 	-rm -f ./$(DEPDIR)/attach-p-cmd-p.Po
 	-rm -f ./$(DEPDIR)/block_reset_raise_run.Po
+	-rm -f ./$(DEPDIR)/block_reset_run.Po
 	-rm -f ./$(DEPDIR)/bpf-obj_get_info_by_fd-prog-v.Po
 	-rm -f ./$(DEPDIR)/bpf-obj_get_info_by_fd-prog.Po
 	-rm -f ./$(DEPDIR)/bpf-obj_get_info_by_fd-v.Po
@@ -11324,7 +11419,9 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/seccomp_get_action_avail.Po
 	-rm -f ./$(DEPDIR)/select-P.Po
 	-rm -f ./$(DEPDIR)/select.Po
+	-rm -f ./$(DEPDIR)/semop-indirect.Po
 	-rm -f ./$(DEPDIR)/semop.Po
+	-rm -f ./$(DEPDIR)/semtimedop.Po
 	-rm -f ./$(DEPDIR)/sendfile.Po
 	-rm -f ./$(DEPDIR)/sendfile64.Po
 	-rm -f ./$(DEPDIR)/set_mempolicy-Xabbrev.Po
@@ -11393,6 +11490,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/stack-fcall-1.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-2.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-3.Po
+	-rm -f ./$(DEPDIR)/stack-fcall-attach.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-mangled-0.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-mangled-1.Po
 	-rm -f ./$(DEPDIR)/stack-fcall-mangled-2.Po
@@ -11430,6 +11528,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/timerfd_xettime.Po
 	-rm -f ./$(DEPDIR)/times-fail.Po
 	-rm -f ./$(DEPDIR)/times.Po
+	-rm -f ./$(DEPDIR)/tracer_ppid_pgid_sid.Po
 	-rm -f ./$(DEPDIR)/truncate.Po
 	-rm -f ./$(DEPDIR)/truncate64-truncate64.Po
 	-rm -f ./$(DEPDIR)/ugetrlimit.Po
@@ -11816,19 +11915,37 @@ $(srcdir)/getdents64.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 $(srcdir)/getegid.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
+$(srcdir)/getegid-creds.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
 $(srcdir)/getegid32.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/getegid32-creds.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/geteuid.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
+$(srcdir)/geteuid-creds.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
 $(srcdir)/geteuid32.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/geteuid32-creds.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/getgid.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
+$(srcdir)/getgid-creds.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
 $(srcdir)/getgid32.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/getgid32-creds.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/getgroups.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
@@ -11879,7 +11996,13 @@ $(srcdir)/getsockname.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.i
 $(srcdir)/gettid.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
+$(srcdir)/getuid-creds.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
 $(srcdir)/getuid32.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/getuid32-creds.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/getxxid.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
@@ -12851,6 +12974,12 @@ $(srcdir)/select-P.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 $(srcdir)/semop.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
+$(srcdir)/semop-indirect.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/semtimedop.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
 $(srcdir)/sendfile.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
@@ -13104,6 +13233,9 @@ $(srcdir)/times.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/times-fail.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/trace_creds.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/trace_fstat.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in

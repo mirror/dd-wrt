@@ -66,6 +66,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define BPF_F_WRONLY_PROG (1U << 8)
 #endif
+#if defined(BPF_F_CLONE) || (defined(HAVE_DECL_BPF_F_CLONE) && HAVE_DECL_BPF_F_CLONE)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((BPF_F_CLONE) == ((1U << 9)), "BPF_F_CLONE != (1U << 9)");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define BPF_F_CLONE (1U << 9)
+#endif
+#if defined(BPF_F_MMAPABLE) || (defined(HAVE_DECL_BPF_F_MMAPABLE) && HAVE_DECL_BPF_F_MMAPABLE)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((BPF_F_MMAPABLE) == ((1U << 10)), "BPF_F_MMAPABLE != (1U << 10)");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define BPF_F_MMAPABLE (1U << 10)
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -85,6 +99,8 @@ static const struct xlat_data bpf_map_flags_xdata[] = {
  XLAT(BPF_F_ZERO_SEED),
  XLAT(BPF_F_RDONLY_PROG),
  XLAT(BPF_F_WRONLY_PROG),
+ XLAT(BPF_F_CLONE),
+ XLAT(BPF_F_MMAPABLE),
 };
 static
 const struct xlat bpf_map_flags[1] = { {

@@ -1,5 +1,5 @@
 # ===========================================================================
-#   http://www.gnu.org/software/autoconf-archive/ax_prog_cc_for_build.html
+#   https://www.gnu.org/software/autoconf-archive/ax_prog_cc_for_build.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -26,14 +26,14 @@
 # LICENSE
 #
 #   Copyright (c) 2008 Paolo Bonzini <bonzini@gnu.org>
-#   Copyright (c) 2008-2017 The strace developers.
+#   Copyright (c) 2008-2019 The strace developers.
 #
 #   Copying and distribution of this file, with or without modification, are
 #   permitted in any medium without royalty provided the copyright notice
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 8
+#serial 9
 #modified for strace project
 
 AU_ALIAS([AC_PROG_CC_FOR_BUILD], [AX_PROG_CC_FOR_BUILD])

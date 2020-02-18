@@ -1,3 +1,59 @@
+Noteworthy changes in release 5.5 (2020-02-06)
+==============================================
+
+* Improvements
+  * Added -e trace=%creds option for tracing syscalls related to process
+    credentials.
+  * Enhanced decoding of arch_prctl, keyctl, io_uring_register, io_uring_setup,
+    and perf_event_open syscalls.
+  * Enhanced decoding of BPF_PROG_LOAD bpf syscall command.
+  * Updated decoding of clone3 syscall to match Linux 5.5.
+  * Implemented decoding of TCA_ACT_FLAGS and TCA_STATS_PKT64 netlink
+    attributes.
+  * Updated lists of AUDIT_*, BPF_*, CLONE_*, KEY_*, KVM_*, PPC_PTRACE_*,
+    SCTP_*, STATX_*, TIPC_*, V4L2_*, and *_MAGIC constants.
+  * Updated lists of ioctl commands from Linux 5.5.
+  * Enhanced manual page and "strace --help" output.
+
+* Bug fixes
+  * Fixed stack trace printing for early syscalls when strace is configured
+    to use libdw backend for stack tracing (addresses Fedora bug #1788636).
+  * Fixed stack trace caching when --seccomp-bpf option is specified.
+  * Fixed potentially unaligned access in decoder of SO_TIMESTAMP*_NEW
+    control messages.
+  * Fixed decoding of NDA_LLADDR netlink neighbor table attribute.
+  * Fixed build of mpers support when CFLAGS contains -flto.
+  * Fixed build on no-MMU architectures.
+  * Fixed build with glibc-2.31 and Linux kernel headers < 5.3.
+  * Fixed tests for glibc-2.31.
+
+Noteworthy changes in release 5.4 (2019-11-28)
+==============================================
+
+* Improvements
+  * Implemented -DD and -DDD options that move strace into a separate
+    process group and session, respectively.
+  * Enhanced seccomp-bpf tracee syscall filtering support by implementing
+    new "binary match" BPF program generation strategy and automatically
+    choosing the strategy that generates the shortest BPF program.
+  * Implemented decoding of BPF_BTF_GET_NEXT_ID bpf syscall command.
+  * Enhanced decoding of BPF_MAP_LOOKUP_ELEM bpf syscall command.
+  * Implemented PTP_CLOCK_GETCAPS2, PTP_EXTTS_REQUEST2, PTP_PEROUT_REQUEST2,
+    PTP_ENABLE_PPS2, and PTP_SYS_OFFSET2 ioctl decoding.
+  * Updated lists of BPF_*, CAN_*, KEXEC_*, KVM_*, MADV_*, MSG_*, P_*, PR_*,
+    PTP_*, SCTP_*, and V4L2_* constants.
+  * Implemented ability to build ARM EABI mpers support using a separate
+    compiler on aarch64.
+  * Updated lists of ioctl commands from Linux 5.4.
+  * Enhanced manual page.
+
+* Bug fixes
+  * Fixed -b execve when --seccomp-bpf option is specified.
+  * Fixed decoding of BPF_PROG_LOAD bpf syscall command.
+  * Fixed build on no-MMU architectures.
+  * Fixed build on antique systems that do not provide necessary definitions
+    of AUDIT_ARCH_* constants.
+
 Noteworthy changes in release 5.3 (2019-09-25)
 ==============================================
 

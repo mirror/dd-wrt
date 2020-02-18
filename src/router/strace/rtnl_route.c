@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016 Fabien Siron <fabien.siron@epita.fr>
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -13,8 +13,7 @@
 #include "print_fields.h"
 
 #include <linux/ip.h>
-#include "netlink.h"
-#include <linux/rtnetlink.h>
+#include "types/rtnl_route.h"
 
 #include "xlat/ip_type_of_services.h"
 #include "xlat/lwtunnel_encap_types.h"
@@ -138,8 +137,7 @@ decode_rta_mfc_stats(struct tcb *const tcp,
 		     const unsigned int len,
 		     const void *const opaque_data)
 {
-#ifdef HAVE_STRUCT_RTA_MFC_STATS
-	struct rta_mfc_stats mfcs;
+	struct_rta_mfc_stats mfcs;
 
 	if (len < sizeof(mfcs))
 		return false;
@@ -151,9 +149,6 @@ decode_rta_mfc_stats(struct tcb *const tcp,
 	}
 
 	return true;
-#else
-	return false;
-#endif
 }
 
 static bool
@@ -162,15 +157,14 @@ decode_rtvia(struct tcb *const tcp,
 	     const unsigned int len,
 	     const void *const opaque_data)
 {
-#ifdef HAVE_STRUCT_RTVIA
-	struct rtvia via;
+	struct_rtvia via;
 
 	if (len < sizeof(via))
 		return false;
 	else if (!umove_or_printaddr(tcp, addr, &via)) {
 		PRINT_FIELD_XVAL("{", via, rtvia_family, addrfams, "AF_???");
 
-		const unsigned int offset = offsetof(struct rtvia, rtvia_addr);
+		const unsigned int offset = offsetof(struct_rtvia, rtvia_addr);
 
 		if (len > offset) {
 			tprints(", ");
@@ -181,9 +175,6 @@ decode_rtvia(struct tcb *const tcp,
 	}
 
 	return true;
-#else
-	return false;
-#endif
 }
 
 static bool

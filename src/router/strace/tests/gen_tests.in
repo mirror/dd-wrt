@@ -1,6 +1,6 @@
 # Input for gen_tests.sh
 #
-# Copyright (c) 2017-2019 The strace developers.
+# Copyright (c) 2017-2020 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -9,7 +9,7 @@ _newselect
 _newselect-P	 -e trace=_newselect -P /dev/full 9>>/dev/full
 accept	-a22
 accept4	-a37
-access	-a30 -P access_sample
+access	-a30 --trace-path=access_sample
 acct	-a20
 add_key	-a30 -s12
 adjtimex	-a15
@@ -91,7 +91,7 @@ fstat64	-a17 -v -P stat.sample
 fstat64-Xabbrev -a17 -Xabbrev -v -P stat.sample -e trace=fstat64
 fstat64-Xraw -a17 -Xraw -v -P stat.sample -e trace=fstat64
 fstat64-Xverbose -a17 -Xverbose -v -P stat.sample -e trace=fstat64
-fstatat64	-a32 -v -P stat.sample -P /dev/full
+fstatat64	-a32 --no-abbrev --trace-path=stat.sample --trace-path=/dev/full
 fstatfs	-a18
 fstatfs64	-a24
 fsync	-a10
@@ -105,11 +105,17 @@ getcwd	-a18
 getdents	-a22 -v
 getdents64	-a24 -v
 getegid	+getuid.test
+getegid-creds	+getuid.test
 getegid32	+getuid.test
+getegid32-creds	+getuid.test
 geteuid	+getuid.test
+geteuid-creds	+getuid.test
 geteuid32	+getuid.test
+geteuid32-creds	+getuid.test
 getgid	+getuid.test
+getgid-creds	+getuid.test
 getgid32	+getuid.test
+getgid32-creds	+getuid.test
 getgroups	-a17
 getgroups32	-a19
 getpeername	-a27
@@ -126,7 +132,9 @@ getrusage	-v
 getsid	-a10
 getsockname	-a27
 gettid	-a9
+getuid-creds	+getuid.test
 getuid32	+getuid.test
+getuid32-creds	+getuid.test
 getxxid	-a10 -e trace=getxpid,getxuid,getxgid
 group_req	-e trace=setsockopt
 inet-cmsg	-e trace=recvmsg
@@ -191,7 +199,7 @@ ipc_msg-Xabbrev	+ipc.sh -Xabbrev -a26
 ipc_msg-Xraw	+ipc.sh -Xraw -a16
 ipc_msg-Xverbose	+ipc.sh -Xverbose -a34
 ipc_msgbuf-Xabbrev	+ipc_msgbuf.test -Xabbrev
-ipc_msgbuf-Xraw	+ipc_msgbuf.test -Xraw -a20
+ipc_msgbuf-Xraw	+ipc_msgbuf.test -Xraw -a19
 ipc_msgbuf-Xverbose	+ipc_msgbuf.test -Xverbose
 ipc_sem	+ipc.sh -a29
 ipc_sem-Xabbrev	+ipc.sh -Xabbrev -a29
@@ -221,8 +229,8 @@ lchown32	-a32
 link
 linkat
 lookup_dcookie	-a27
-lstat	-a32 -v -P stat.sample -P /dev/full
-lstat64	-a32 -v -P stat.sample -P /dev/full
+lstat	-a31 --no-abbrev --trace-path=stat.sample --trace-path=/dev/full
+lstat64	-a32 --no-abbrev --trace-path=stat.sample --trace-path=/dev/full
 madvise	-a33
 maybe_switch_current_tcp	-a30 -f -e trace=execveat
 mbind
@@ -292,7 +300,7 @@ netlink_protocol	-e trace=sendto
 netlink_route	+netlink_sock_diag.test
 netlink_selinux	+netlink_sock_diag.test
 netlink_xfrm	+netlink_sock_diag.test
-newfstatat	-a32 -v -P stat.sample -P /dev/full
+newfstatat	-a32 --no-abbrev --trace-path=stat.sample --trace-path=/dev/full
 nfnetlink_acct			+netlink_sock_diag.test
 nfnetlink_cthelper		+netlink_sock_diag.test
 nfnetlink_ctnetlink		+netlink_sock_diag.test
@@ -449,7 +457,9 @@ seccomp-filter-v	-v -e trace=seccomp
 seccomp_get_action_avail	-e trace=seccomp
 select	-a36
 select-P	-a36 -e trace=select -P /dev/full 9>>/dev/full
-semop	-a32 -e trace=semop,semtimedop
+semop	-a32
+semop-indirect	-a32 -e trace=semop
+semtimedop
 sendfile	-a27
 sendfile64	-a29
 set_mempolicy	-a34 -s3
@@ -509,16 +519,16 @@ socketcall	-a20
 sockopt-sol_netlink	-e trace=getsockopt,setsockopt
 sockopt-timestamp	-e trace=recvmsg
 splice
-stat	-a32 -v -P stat.sample -P /dev/full
-stat64	-a32 -v -P stat.sample -P /dev/full
+stat	-a30 --no-abbrev --trace-path=stat.sample --trace-path=/dev/full
+stat64	-a32 --no-abbrev --trace-path=stat.sample --trace-path=/dev/full
 statfs	-a17
 statfs64	-a23
-status-all	-a10 -e trace=chdir -e status=detached,failed,successful,unavailable,unfinished
+status-all	-a10 -e trace=chdir --status=detached,failed,successful,unavailable,unfinished
 status-failed	-a10 -e trace=chdir -Z
-status-none	-e trace=all -e status=none
+status-none	-e trace=all --status=none
 status-successful	-a10 -e trace=chdir -z
-status-unfinished	-a10 -e trace=all -e status=unfinished
-statx	-a32 -v -P stat.sample -P /dev/full
+status-unfinished	-a10 -e trace=all --status=unfinished
+statx	-a32 --no-abbrev --trace-path=stat.sample --trace-path=/dev/full
 swap	-a23 -e trace=swapon,swapoff
 sxetmask	-a11 -e trace=sgetmask,ssetmask
 symlink	-a34
@@ -535,6 +545,7 @@ timer_xettime	-e trace=timer_create,timer_settime,timer_gettime
 timerfd_xettime	-e trace=timerfd_create,timerfd_settime,timerfd_gettime
 times	-esignal=none
 times-fail	-a12 -e trace=times
+trace_creds	test_trace_expr '([gs]et[^p]*([gu]id|groups)|caps|prctl|[fl]?chown|print(path-umovestr|strn-umoven)-undumpable|ptrace|quotactl|rt_sigtimedwait|rt_(tg)?sigqueueinfo).*' -e%creds
 trace_fstat	test_trace_expr '' -e%fstat -v -P stat.sample -P /dev/full
 trace_fstatfs	test_trace_expr '' -e%fstatfs
 trace_lstat	test_trace_expr '' -e%lstat -v -P stat.sample -P /dev/full

@@ -1,18 +1,19 @@
 # Automake input for strace tests.
 #
 # Copyright (c) 2011-2016 Dmitry V. Levin <ldv@altlinux.org>
-# Copyright (c) 2011-2019 The strace developers.
+# Copyright (c) 2011-2020 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 OS = linux
+CC = @CC_FOR_MX32@
 ARCH = @arch_mx32@
 NATIVE_ARCH = @arch_native@
 SIZEOF_KERNEL_LONG_T = @SIZEOF_KERNEL_LONG_T@
 SIZEOF_LONG = 4
 MPERS_NAME = mx32
-MPERS_CC_FLAGS = @cc_flags_mx32@
+MPERS_CC_FLAGS = @CFLAGS_FOR_MX32@ @cc_flags_mx32@
 ARCH_MFLAGS = -DMPERS_IS_$(MPERS_NAME) $(MPERS_CC_FLAGS)
 AM_CFLAGS = $(WARN_CFLAGS)
 AM_CPPFLAGS = $(ARCH_MFLAGS) \
@@ -77,6 +78,7 @@ check_PROGRAMS = $(PURE_EXECUTABLES) \
 	attach-p-cmd-cmd \
 	attach-p-cmd-p \
 	block_reset_raise_run \
+	block_reset_run \
 	bpf-obj_get_info_by_fd \
 	bpf-obj_get_info_by_fd-prog \
 	bpf-obj_get_info_by_fd-prog-v \
@@ -171,11 +173,13 @@ check_PROGRAMS = $(PURE_EXECUTABLES) \
 	signal_receive \
 	sleep \
 	stack-fcall \
+	stack-fcall-attach \
 	stack-fcall-mangled \
 	status-none-threads \
 	status-unfinished-threads \
 	syslog-success \
 	threads-execve \
+	tracer_ppid_pgid_sid \
 	unblock_reset_raise \
 	unix-pair-send-recv \
 	unix-pair-sendto-recvfrom \
@@ -219,6 +223,9 @@ uio_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 stack_fcall_SOURCES = stack-fcall.c \
 	stack-fcall-0.c stack-fcall-1.c stack-fcall-2.c stack-fcall-3.c
 
+stack_fcall_attach_SOURCES = stack-fcall-attach.c \
+	stack-fcall-0.c stack-fcall-1.c stack-fcall-2.c stack-fcall-3.c
+
 stack_fcall_mangled_SOURCES = stack-fcall-mangled.c \
 	stack-fcall-mangled-0.c stack-fcall-mangled-1.c \
 	stack-fcall-mangled-2.c stack-fcall-mangled-3.c
@@ -226,7 +233,7 @@ stack_fcall_mangled_SOURCES = stack-fcall-mangled.c \
 include gen_tests.am
 
 if ENABLE_STACKTRACE
-STACKTRACE_TESTS = strace-k.test
+STACKTRACE_TESTS = strace-k.test strace-k-p.test
 if USE_DEMANGLE
 STACKTRACE_TESTS += strace-k-demangle.test
 endif
@@ -363,6 +370,9 @@ MISC_TESTS = \
 	status-none-threads.test \
 	status-unfinished-threads.test \
 	strace-C.test \
+	strace-D.test \
+	strace-DD.test \
+	strace-DDD.test \
 	strace-E.test \
 	strace-S.test \
 	strace-T.test \
@@ -422,6 +432,8 @@ EXTRA_DIST = \
 	init_delete_module.h \
 	ioctl_kvm_run_common.c \
 	ipc.sh \
+	kernel_old_timespec.h \
+	kernel_old_timex.h \
 	ksysent.sed \
 	lstatx.c \
 	match.awk \
@@ -445,6 +457,7 @@ EXTRA_DIST = \
 	run.sh \
 	sched.in \
 	scno_tampering.sh \
+	semop-common.c \
 	setfsugid.c \
 	setresugid.c \
 	setreugid.c \
@@ -455,17 +468,23 @@ EXTRA_DIST = \
 	stack-fcall.h \
 	status-detached.expected \
 	strace-C.expected \
+	strace-D.expected \
+	strace-DD.expected \
+	strace-DDD.expected \
 	strace-E.expected \
 	strace-T.expected \
 	strace-ff.expected \
 	strace-k-demangle.expected \
 	strace-k-demangle.test \
+	strace-k-p.expected \
+	strace-k-p.test \
 	strace-k.expected \
 	strace-k.test \
 	strace-r.expected \
 	strace.supp \
 	sun_path.expected \
 	syntax.sh \
+	trace_creds.in \
 	trace_fstat.in \
 	trace_fstatfs.in \
 	trace_lstat.in \

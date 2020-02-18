@@ -6,7 +6,7 @@
  * Copyright (c) 1999 IBM Deutschland Entwicklung GmbH, IBM Corporation
  *                     Linux for s390 port by D.J. Barrow
  *                    <barrow_dj@mail.yahoo.com,djbarrow@de.ibm.com>
- * Copyright (c) 1999-2019 The strace developers.
+ * Copyright (c) 1999-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -620,7 +620,7 @@ syscall_entering_trace(struct tcb *tcp, unsigned int *sig)
 	if (hide_log(tcp)) {
 		/*
 		 * Restrain from fault injection
-		 * while the trace executes strace code.
+		 * while the tracee executes strace code.
 		 */
 		tcp->qual_flg &= ~QUAL_INJECT;
 
@@ -655,9 +655,10 @@ syscall_entering_trace(struct tcb *tcp, unsigned int *sig)
 	}
 
 #ifdef ENABLE_STACKTRACE
-	if (stack_trace_enabled) {
-		if (tcp_sysent(tcp)->sys_flags & STACKTRACE_CAPTURE_ON_ENTER)
-			unwind_tcb_capture(tcp);
+	if (stack_trace_enabled &&
+	    !check_exec_syscall(tcp) &&
+	    tcp_sysent(tcp)->sys_flags & STACKTRACE_CAPTURE_ON_ENTER) {
+		unwind_tcb_capture(tcp);
 	}
 #endif
 
@@ -984,7 +985,7 @@ restore_cleared_syserror(struct tcb *tcp)
 	tcp->u_error = saved_u_error;
 }
 
-static struct ptrace_syscall_info ptrace_sci;
+static struct_ptrace_syscall_info ptrace_sci;
 
 static bool
 ptrace_syscall_info_is_valid(void)
@@ -1320,10 +1321,7 @@ get_scno(struct tcb *tcp)
 		return -1;
 
 	if (ptrace_syscall_info_is_valid()) {
-		/*
-		 * So far it's just a workaround for x32,
-		 * but let's pretend it could be used elsewhere.
-		 */
+		/* Apply arch-specific workarounds.  */
 		int rc = arch_check_scno(tcp);
 		if (rc != 1)
 			return rc;

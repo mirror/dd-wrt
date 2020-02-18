@@ -4,7 +4,7 @@
 # Copyright (c) 2006-2016 Dmitry V. Levin <ldv@altlinux.org>
 # Copyright (c) 2008-2015 Mike Frysinger <vapier@gentoo.org>
 # Copyright (c) 2015 Elvira Khabirova <lineprinter0@gmail.com>
-# Copyright (c) 2002-2019 The strace developers.
+# Copyright (c) 2002-2020 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: LGPL-2.1-or-later
@@ -27,7 +27,7 @@ ARCH		= @arch@
 
 READELF		= @READELF@
 
-ACLOCAL_AMFLAGS = -I m4
+ACLOCAL_AMFLAGS = -I m4 -I types
 AM_CFLAGS = $(WARN_CFLAGS)
 AM_CPPFLAGS = -I$(builddir)/$(OS)/$(ARCH) \
 	      -I$(srcdir)/$(OS)/$(ARCH) \
@@ -39,6 +39,7 @@ AM_CPPFLAGS = -I$(builddir)/$(OS)/$(ARCH) \
 AM_CFLAGS_FOR_BUILD = $(WARN_CFLAGS_FOR_BUILD)
 AM_CPPFLAGS_FOR_BUILD = $(AM_CPPFLAGS)
 
+include types/Makemodule.am
 include xlat/Makemodule.am
 
 strace_CPPFLAGS = $(AM_CPPFLAGS)
@@ -367,10 +368,11 @@ strace_SOURCES =	\
 	xmalloc.c	\
 	xmalloc.h	\
 	xstring.h	\
+	$(TYPES_HEADER_FILES) \
 	$(strace_SOURCES_check) \
 	# end of strace_SOURCES
 
-strace_SOURCES_check = bpf_attr_check.c
+strace_SOURCES_check = bpf_attr_check.c $(TYPES_CHECK_FILES)
 
 if ENABLE_STACKTRACE
 strace_SOURCES += unwind.c unwind.h
@@ -416,6 +418,7 @@ EXTRA_DIST =				\
 	LGPL-2.1-or-later		\
 	README-configure		\
 	README-linux-ptrace		\
+	copyright-year-gen		\
 	debian/changelog		\
 	debian/compat			\
 	debian/control			\
@@ -430,8 +433,10 @@ EXTRA_DIST =				\
 	debian/strace64.install		\
 	debian/strace64.manpages	\
 	debian/watch			\
+	file-date-gen			\
 	gen_bpf_attr_check.sh		\
 	generate_sen.sh			\
+	git-version-gen			\
 	ioctl_iocdef.c			\
 	ioctlsort.c			\
 	linux/32/ioctls_inc.h		\
@@ -741,7 +746,6 @@ EXTRA_DIST =				\
 	linux/powerpc64le/userent.h	\
 	linux/ptrace_pokeuser.c		\
 	linux/raw_syscall.h		\
-	linux/riscv64/arch_get_personality.c \
 	linux/riscv64/arch_regs.c		\
 	linux/riscv64/get_error.c		\
 	linux/riscv64/get_scno.c		\
@@ -756,6 +760,7 @@ EXTRA_DIST =				\
 	linux/s390/arch_defs_.h		\
 	linux/s390/arch_regs.c		\
 	linux/s390/arch_sigreturn.c	\
+	linux/s390/check_scno.c		\
 	linux/s390/get_error.c		\
 	linux/s390/get_scno.c		\
 	linux/s390/get_syscall_args.c	\
@@ -773,6 +778,7 @@ EXTRA_DIST =				\
 	linux/s390x/arch_get_personality.c \
 	linux/s390x/arch_regs.c		\
 	linux/s390x/arch_sigreturn.c	\
+	linux/s390x/check_scno.c	\
 	linux/s390x/get_error.c		\
 	linux/s390x/get_scno.c		\
 	linux/s390x/get_syscall_args.c	\
@@ -960,6 +966,8 @@ EXTRA_DIST =				\
 	strace-graph			\
 	strace-log-merge		\
 	strace.spec			\
+	types/find_last_type_fields.awk	\
+	types/gen.sh			\
 	$(XLAT_INPUT_FILES)		\
 	$(XLAT_HEADER_FILES)		\
 	xlat/gen.sh			\
@@ -1080,8 +1088,8 @@ mpers_NAME =
 mpers_PREFIX = $(mpers_NAME)_
 mpers_DEFS = $(DEFS)
 mpers_INCLUDES = $(DEFAULT_INCLUDES) $(INCLUDES)
-mpers_CPPFLAGS = $(strace_CPPFLAGS) $(CPPFLAGS)
-mpers_sh_opts = $(mpers_DEFS) $(mpers_INCLUDES) $(mpers_CPPFLAGS)
+mpers_CPPFLAGS = $(CPPFLAGS)
+mpers_sh_opts = $(mpers_DEFS) $(mpers_INCLUDES) $(strace_CPPFLAGS) $(mpers_CPPFLAGS)
 libmpers_CPPFLAGS = $(strace_CPPFLAGS) -DIN_MPERS
 libmpers_CFLAGS = $(strace_CFLAGS)
 
@@ -1091,11 +1099,11 @@ mpers-m%.stamp: $(srcdir_mpers_source_files) | printers.h
 	for f in $^; do \
 		D="$(D)" \
 		READELF="$(READELF)" \
-		CC="$(CC)" \
+		CC="$(mpers_CC)" \
 		CFLAGS="$(mpers_sh_opts) -DMPERS_IS_$(mpers_NAME)" \
 		CPP="$(CPP)" \
 		CPPFLAGS="$(mpers_sh_opts) -DIN_MPERS -DMPERS_IS_$(mpers_NAME)" \
-		$(srcdir)/mpers.sh $(mpers_NAME) $(mpers_CC_FLAGS) $$f || exit; \
+		$(srcdir)/mpers.sh $(mpers_NAME) "$(mpers_CC_FLAGS)" $$f || exit; \
 	done
 	> $@
 
@@ -1166,7 +1174,9 @@ BUILT_SOURCES += $(mpers_m32_targets)
 CLEANFILES    += $(mpers_m32_targets)
 
 $(mpers_m32_targets): mpers_NAME = m32
-$(mpers_m32_targets): mpers_CC_FLAGS = @cc_flags_m32@
+$(mpers_m32_targets): mpers_CC_FLAGS = @CFLAGS_FOR_M32@ @cc_flags_m32@
+$(mpers_m32_targets): mpers_CPPFLAGS = @CPPFLAGS_FOR_M32@
+$(mpers_m32_targets): mpers_CC = @CC_FOR_M32@
 
 endif # HAVE_M32_MPERS
 
@@ -1183,7 +1193,9 @@ BUILT_SOURCES += $(mpers_mx32_targets)
 CLEANFILES    += $(mpers_mx32_targets)
 
 $(mpers_mx32_targets): mpers_NAME = mx32
-$(mpers_mx32_targets): mpers_CC_FLAGS = @cc_flags_mx32@
+$(mpers_mx32_targets): mpers_CC_FLAGS = @CFLAGS_FOR_MX32@ @cc_flags_mx32@
+$(mpers_mx32_targets): mpers_CPPFLAGS = @CPPFLAGS_FOR_MX32@
+$(mpers_mx32_targets): mpers_CC = @CC_FOR_MX32@
 
 endif # HAVE_MX32_MPERS
 

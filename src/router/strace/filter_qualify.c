@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -59,15 +59,13 @@ sigstr_to_uint(const char *s)
 	return -1;
 }
 
-static const char *statuses[] = {
-	"successful",
-	"failed",
-	"unfinished",
-	"unavailable",
-	"detached",
+static const char *statuses[NUMBER_OF_STATUSES] = {
+	[STATUS_SUCCESSFUL]  = "successful",
+	[STATUS_FAILED]      = "failed",
+	[STATUS_UNFINISHED]  = "unfinished",
+	[STATUS_UNAVAILABLE] = "unavailable",
+	[STATUS_DETACHED]    = "detached",
 };
-static_assert(ARRAY_SIZE(statuses) == NUMBER_OF_STATUSES,
-	      "statuses array and status_t enum mismatch");
 
 static int
 statusstr_to_uint(const char *str)
@@ -276,7 +274,7 @@ parse_inject_expression(char *const str,
 	return name;
 }
 
-static void
+void
 qualify_read(const char *const str)
 {
 	if (!read_set)
@@ -284,7 +282,7 @@ qualify_read(const char *const str)
 	qualify_tokens(str, read_set, string_to_uint, "descriptor");
 }
 
-static void
+void
 qualify_write(const char *const str)
 {
 	if (!write_set)
@@ -292,7 +290,7 @@ qualify_write(const char *const str)
 	qualify_tokens(str, write_set, string_to_uint, "descriptor");
 }
 
-static void
+void
 qualify_signals(const char *const str)
 {
 	if (!signal_set)
@@ -300,7 +298,7 @@ qualify_signals(const char *const str)
 	qualify_tokens(str, signal_set, sigstr_to_uint, "signal");
 }
 
-static void
+void
 qualify_status(const char *const str)
 {
 	if (!status_set)
@@ -308,7 +306,7 @@ qualify_status(const char *const str)
 	qualify_tokens(str, status_set, statusstr_to_uint, "status");
 }
 
-static void
+void
 qualify_trace(const char *const str)
 {
 	if (!trace_set)
@@ -316,7 +314,7 @@ qualify_trace(const char *const str)
 	qualify_syscall_tokens(str, trace_set);
 }
 
-static void
+void
 qualify_abbrev(const char *const str)
 {
 	if (!abbrev_set)
@@ -324,7 +322,7 @@ qualify_abbrev(const char *const str)
 	qualify_syscall_tokens(str, abbrev_set);
 }
 
-static void
+void
 qualify_verbose(const char *const str)
 {
 	if (!verbose_set)
@@ -332,7 +330,7 @@ qualify_verbose(const char *const str)
 	qualify_syscall_tokens(str, verbose_set);
 }
 
-static void
+void
 qualify_raw(const char *const str)
 {
 	if (!raw_set)
@@ -409,19 +407,19 @@ qualify_inject_common(const char *const str,
 	free_number_set_array(tmp_set, SUPPORTED_PERSONALITIES);
 }
 
-static void
+void
 qualify_fault(const char *const str)
 {
 	qualify_inject_common(str, true, "fault argument");
 }
 
-static void
+void
 qualify_inject(const char *const str)
 {
 	qualify_inject_common(str, false, "inject argument");
 }
 
-static void
+void
 qualify_kvm(const char *const str)
 {
 	if (strcmp(str, "vcpu") == 0) {

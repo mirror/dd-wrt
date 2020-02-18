@@ -7,7 +7,7 @@
  * Copyright (c) 2013 Denys Vlasenko <vda.linux@googlemail.com>
  * Copyright (c) 2011-2015 Dmitry V. Levin <ldv@altlinux.org>
  * Copyright (c) 2015 Elvira Khabirova <lineprinter0@gmail.com>
- * Copyright (c) 2015-2018 The strace developers.
+ * Copyright (c) 2015-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -172,7 +172,7 @@ print_si_info(const siginfo_t *sip)
 #ifdef HAVE_SIGINFO_T_SI_SYSCALL
 		case SIGSYS: {
 			/*
-			 * Note that we can safely use the personlity set in
+			 * Note that we can safely use the personality set in
 			 * current_personality  here (and don't have to guess it
 			 * based on X32_SYSCALL_BIT and si_arch, for example):
 			 *  - The signal is delivered as a result of seccomp

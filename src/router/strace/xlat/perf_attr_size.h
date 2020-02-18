@@ -45,6 +45,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define PERF_ATTR_SIZE_VER5 112
 #endif
+#if defined(PERF_ATTR_SIZE_VER6) || (defined(HAVE_DECL_PERF_ATTR_SIZE_VER6) && HAVE_DECL_PERF_ATTR_SIZE_VER6)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((PERF_ATTR_SIZE_VER6) == (120), "PERF_ATTR_SIZE_VER6 != 120");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define PERF_ATTR_SIZE_VER6 120
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -61,6 +68,7 @@ static const struct xlat_data perf_attr_size_xdata[] = {
  XLAT(PERF_ATTR_SIZE_VER3),
  XLAT(PERF_ATTR_SIZE_VER4),
  XLAT(PERF_ATTR_SIZE_VER5),
+ XLAT(PERF_ATTR_SIZE_VER6),
 };
 static
 const struct xlat perf_attr_size[1] = { {
