@@ -519,11 +519,6 @@ void delete_old_routes(void)
 {
 	char word[256], *next;
 	char ipaddr[20], netmask[20], gateway[20], met[20], ifn[20];
-
-	struct timespec tim, tim2;
-	tim.tv_sec = 0;
-	tim.tv_nsec = 1000000000L;
-	nanosleep(&tim, &tim2);
 	foreach(word, nvram_safe_get("action_service_arg1"), next) {
 		strcpy(ipaddr, strtok(word, ":"));
 		strcpy(netmask, strtok(NULL, ":"));
