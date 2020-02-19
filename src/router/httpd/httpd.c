@@ -1241,7 +1241,7 @@ static void *handle_request(void *arg)
 				}
 				PTHREAD_MUTEX_UNLOCK(&input_mutex);
 			}
-#if defined(linux)
+#if 0				// defined(linux)
 			if (!DO_SSL(conn_fp) && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
 				/* Read up to two more characters */
 				if (fgetc(conn_fp->fp) != EOF)
@@ -1476,13 +1476,8 @@ int main(int argc, char **argv)
 		switch (c) {
 #ifdef HAVE_HTTPS
 		case 'S':
-#if defined(HAVE_OPENSSL) || defined(HAVE_MATRIXSSL) || defined(HAVE_POLARSSL)
 			do_ssl = 1;
 			ssl_server_port = DEFAULT_HTTPS_PORT;
-#else
-			fprintf(stderr, "No SSL support available\n");
-			exit(0);
-#endif
 			break;
 #endif
 		case 'n':
@@ -1528,14 +1523,13 @@ int main(int argc, char **argv)
 		dd_loginfo("httpd", "httpd cannot start. ssl and/or http must be selected\n");
 		exit(0);
 	}
-#ifdef HAVE_HTTPS
-	if (no_ssl)
+	if (SSL_ENABLED()) {
+		if (no_ssl)
+			dd_loginfo("httpd", "httpd server started at port %d\n", server_port);
+		if (do_ssl)
+			dd_loginfo("httpd", "httpd SSL server started at port %d\n", ssl_server_port);
+	} else
 		dd_loginfo("httpd", "httpd server started at port %d\n", server_port);
-	if (do_ssl)
-		dd_loginfo("httpd", "httpd SSL server started at port %d\n", ssl_server_port);
-#else
-	dd_loginfo("httpd", "httpd server started at port %d\n", server_port);
-#endif
 	/* Ignore broken pipes */
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGTERM, handle_server_sig_int);	// kill
@@ -1565,8 +1559,7 @@ int main(int argc, char **argv)
 		chdir(server_dir);
 
 	/* Build our SSL context */
-#ifdef HAVE_HTTPS
-	if (do_ssl) {
+	if (SSL_ENABLED() && do_ssl) {
 #ifdef HAVE_OPENSSL
 		SSLeay_add_ssl_algorithms();
 		SSL_load_error_strings();
@@ -1636,15 +1629,14 @@ int main(int argc, char **argv)
 		}
 #endif
 	}
-#endif
 
 	/* Look up hostname. */
 	if (no_ssl)
 		lookup_hostname(&host_addr4, sizeof(host_addr4), &gotv4, &host_addr6, sizeof(host_addr6), &gotv6, server_port);
-#ifdef HAVE_HTTPS
-	if (do_ssl)
+
+	if (SSL_ENABLED() && do_ssl)
 		lookup_hostname(&ssl_host_addr4, sizeof(ssl_host_addr4), &ssl_gotv4, &ssl_host_addr6, sizeof(ssl_host_addr6), &ssl_gotv6, ssl_server_port);
-#endif
+
 	if (!(gotv4 || gotv6 || ssl_gotv4 || ssl_gotv6)) {
 		exit(1);
 	}
@@ -1659,25 +1651,22 @@ int main(int argc, char **argv)
 	} else
 		listen6_fd = -1;
 
-#ifdef HAVE_HTTPS
-	if (do_ssl && ssl_gotv6) {
+	if (SSL_ENABLED() && do_ssl && ssl_gotv6) {
 		ssl_listen6_fd = initialize_listen_socket(&ssl_host_addr6);
 	} else
 		ssl_listen6_fd = -1;
 
-#endif
 #endif
 	if (no_ssl && gotv4) {
 		listen4_fd = initialize_listen_socket(&host_addr4);
 	} else
 		listen4_fd = -1;
 
-#ifdef HAVE_HTTPS
-	if (do_ssl && ssl_gotv4) {
+	if (SSL_ENABLED() && do_ssl && ssl_gotv4) {
 		ssl_listen4_fd = initialize_listen_socket(&ssl_host_addr4);
 	} else
 		ssl_listen4_fd = -1;
-#endif
+
 	/* If we didn't get any valid sockets, fail. */
 	if (listen4_fd == -1 && listen6_fd == -1 && ssl_listen4_fd == -1 && ssl_listen6_fd == -1) {
 		dd_logerror("httpd", "can't bind to any address");
@@ -1726,8 +1715,8 @@ int main(int argc, char **argv)
 			}
 #endif
 		}
-#ifdef HAVE_HTTPS
-		if (do_ssl) {
+
+		if (SSL_ENABLED() && do_ssl) {
 			if (ssl_listen4_fd != -1) {
 				FD_SET(ssl_listen4_fd, &lfdset);
 				if (ssl_listen4_fd > maxfd)
@@ -1750,30 +1739,22 @@ int main(int argc, char **argv)
 			SEM_POST(&semaphore);
 			return errno;
 		}
-#endif
 
 		sz = sizeof(usa);
 #ifdef USE_IPV6
 		if (no_ssl && listen6_fd != -1 && FD_ISSET(listen6_fd, &lfdset)) {
 			conn_fp->conn_fd = accept(listen6_fd, &usa.sa, &sz);
-		}
-#ifdef HAVE_HTTPS
-		else if (do_ssl && ssl_listen6_fd != -1 && FD_ISSET(ssl_listen6_fd, &lfdset)) {
+		} else if (SSL_ENABLED() && do_ssl && ssl_listen6_fd != -1 && FD_ISSET(ssl_listen6_fd, &lfdset)) {
 			conn_fp->conn_fd = accept(ssl_listen6_fd, &usa.sa, &sz);
 			conn_fp->do_ssl = 1;
-		}
-#endif
-		else
+		} else
 #endif
 		if (no_ssl && listen4_fd != -1 && FD_ISSET(listen4_fd, &lfdset)) {
 			conn_fp->conn_fd = accept(listen4_fd, &usa.sa, &sz);
-		}
-#ifdef HAVE_HTTPS
-		else if (do_ssl && ssl_listen4_fd != -1 && FD_ISSET(ssl_listen4_fd, &lfdset)) {
+		} else if (SSL_ENABLED() && do_ssl && ssl_listen4_fd != -1 && FD_ISSET(ssl_listen4_fd, &lfdset)) {
 			conn_fp->conn_fd = accept(ssl_listen4_fd, &usa.sa, &sz);
 			conn_fp->do_ssl = 1;
 		}
-#endif
 		if (conn_fp->conn_fd < 0) {
 			perror("accept");
 			SEM_POST(&semaphore);
@@ -1782,7 +1763,7 @@ int main(int argc, char **argv)
 
 		/* Make sure we don't linger a long time if the other end disappears */
 		settimeouts(conn_fp, timeout);
-		fcntl(conn_fp->conn_fd, F_SETFD, fcntl(conn_fp->conn_fd, F_GETFD) | FD_CLOEXEC);
+//              fcntl(conn_fp->conn_fd, F_SETFD, fcntl(conn_fp->conn_fd, F_GETFD) | FD_CLOEXEC);
 		int action = check_action();
 		if (action == ACT_SW_RESTORE || action == ACT_HW_RESTORE) {
 			fprintf(stderr, "http(s)d: nothing to do...\n");
@@ -1795,8 +1776,8 @@ int main(int argc, char **argv)
 			SEM_POST(&semaphore);
 			continue;
 		}
-#ifdef HAVE_HTTPS
-		if (DO_SSL(conn_fp)) {
+
+		if (SSL_ENABLED() && DO_SSL(conn_fp)) {
 			if (action == ACT_WEB_UPGRADE) {	// We don't want user to use web (https) during web (http) upgrade.
 				fprintf(stderr, "httpsd: nothing to do...\n");
 				SEM_POST(&semaphore);
@@ -1873,16 +1854,12 @@ int main(int argc, char **argv)
 			conn_fp->fp = (webs_t)(&ssl);
 
 #endif
-		} else
-#endif
-		{
-#ifdef HAVE_HTTPS
-			if (action == ACT_WEBS_UPGRADE) {	// We don't want user to use web (http) during web (https) upgrade.
+		} else {
+			if (SSL_ENABLED() && action == ACT_WEBS_UPGRADE) {	// We don't want user to use web (http) during web (https) upgrade.
 				fprintf(stderr, "httpd: nothing to do...\n");
 				SEM_POST(&semaphore);
 				return -1;
 			}
-#endif
 
 			if (!(conn_fp->fp = fdopen(conn_fp->conn_fd, "r+"))) {
 				perror("fdopen");
@@ -1915,23 +1892,19 @@ int main(int argc, char **argv)
 		shutdown(listen4_fd, 2);
 		close(listen4_fd);
 	}
-#ifdef HAVE_HTTPS
-	if (ssl_listen4_fd != -1) {
+	if (SSL_ENABLED() && ssl_listen4_fd != -1) {
 		shutdown(ssl_listen4_fd, 2);
 		close(ssl_listen4_fd);
 	}
-#endif
 #ifdef USE_IPV6
 	if (listen6_fd != -1) {
 		shutdown(listen6_fd, 2);
 		close(listen6_fd);
 	}
-#ifdef HAVE_HTTPS
-	if (ssl_listen6_fd != -1) {
+	if (SSL_ENABLED() && ssl_listen6_fd != -1) {
 		shutdown(ssl_listen6_fd, 2);
 		close(ssl_listen6_fd);
 	}
-#endif
 #endif
 	return 0;
 }

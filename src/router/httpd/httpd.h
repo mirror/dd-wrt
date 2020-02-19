@@ -111,9 +111,13 @@ typedef struct {
 
 #ifdef HAVE_HTTPS
 #define DO_SSL(wp) wp->do_ssl
+#define SSL_ENABLED() 1
 #else
 #define DO_SSL(wp) 0
+#define SSL_ENABLED() 0
 #endif
+
+
 
 typedef webs *webs_t;
 
