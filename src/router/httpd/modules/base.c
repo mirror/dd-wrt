@@ -1007,10 +1007,10 @@ static struct gozila_action gozila_actions[] = {
 	{ "Info", "refresh", "", REFRESH, "save_wifi" },
 	{ "Status_Wireless", "refresh", "", REFRESH, "save_wifi" },
 	// {"Status", "release", "dhcp_release", SYS_RESTART, "dhcp_release"},
-	// {"Status", "renew", "", 3, REFRESH, "dhcp_renew"},
+	// {"Status", "renew", "", REFRESH, "dhcp_renew"},
 	// {"Status", "Connect", "start_pppoe", RESTART, NULL},
 	{ "Status_Internet", "release", "dhcp_release", SERVICE_RESTART, "dhcp_release" },	// for 
-	{ "Status_Internet", "renew", "", 3, REFRESH, "dhcp_renew" },	// for cisco
+	{ "Status_Internet", "renew", "", REFRESH, "dhcp_renew" },	// for cisco
 	{ "Status_Internet", "Disconnect", "stop_pppoe", SERVICE_RESTART, "stop_ppp" },	// for 
 #ifdef HAVE_3G
 	{ "Status_Internet", "Connect_3g", "start_3g", RESTART, NULL },	// for 
