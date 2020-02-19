@@ -1879,7 +1879,6 @@ void addAction(char *action)
 	} else {
 		nvram_set("action_service", action);
 	}
-	nvram_commit();
 
 }
 
