@@ -96,10 +96,6 @@ static int _sys_commit(void)
 {
 	if (nvram_matchi("dhcpnvram", 1)) {
 		killall("dnsmasq", SIGUSR2);	// update lease -- tofu
-		struct timespec tim, tim2;
-		tim.tv_sec = 0;
-		tim.tv_nsec = 1000000000L;
-		nanosleep(&tim, &tim2);
 	}
 	return _nvram_commit();
 }
