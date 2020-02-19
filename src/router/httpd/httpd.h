@@ -65,9 +65,7 @@ typedef struct {
 	int userid;
 	int conn_fd;
 	int post;
-#ifdef HAVE_HTTPS
-	int do_ssl;
-#endif
+	int ssl_enabled;
 #ifdef HAVE_OPENSSL
 	SSL *ssl;
 #endif
@@ -110,7 +108,7 @@ typedef struct {
 } webs;
 
 #ifdef HAVE_HTTPS
-#define DO_SSL(wp) wp->do_ssl
+#define DO_SSL(wp) wp->ssl_enabled
 #define SSL_ENABLED() 1
 #else
 #define DO_SSL(wp) 0

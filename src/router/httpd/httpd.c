@@ -1746,14 +1746,14 @@ int main(int argc, char **argv)
 			conn_fp->conn_fd = accept(listen6_fd, &usa.sa, &sz);
 		} else if (SSL_ENABLED() && do_ssl && ssl_listen6_fd != -1 && FD_ISSET(ssl_listen6_fd, &lfdset)) {
 			conn_fp->conn_fd = accept(ssl_listen6_fd, &usa.sa, &sz);
-			conn_fp->do_ssl = 1;
+			conn_fp->ssl_enabled = 1;
 		} else
 #endif
 		if (no_ssl && listen4_fd != -1 && FD_ISSET(listen4_fd, &lfdset)) {
 			conn_fp->conn_fd = accept(listen4_fd, &usa.sa, &sz);
 		} else if (SSL_ENABLED() && do_ssl && ssl_listen4_fd != -1 && FD_ISSET(ssl_listen4_fd, &lfdset)) {
 			conn_fp->conn_fd = accept(ssl_listen4_fd, &usa.sa, &sz);
-			conn_fp->do_ssl = 1;
+			conn_fp->ssl_enabled = 1;
 		}
 		if (conn_fp->conn_fd < 0) {
 			perror("accept");
@@ -1880,7 +1880,7 @@ int main(int argc, char **argv)
 		}
 		pthread_attr_destroy(&attr);
 
-//              conn_fp->do_ssl = do_ssl;
+//              conn_fp->ssl_enabled = do_ssl;
 //              FORK(handle_request(conn_fp));
 #else
 		handle_request(conn_fp);
