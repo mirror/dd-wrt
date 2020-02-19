@@ -1479,8 +1479,8 @@ static int single_service_helper(void)
 		nvram_seti("service_running", sr);
 		dd_syslog("services", "increase delay to %d seconds\n", sr * 5);
 		return;
-	}
-	nvram_set("service_running", "1");
+	} else 
+		nvram_set("service_running", "1");
 	sleep(5);
 	while ((sr = atoi(nvram_safe_get("service_running"))) > 1) {
 		sr--;
