@@ -1674,19 +1674,32 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				int freq = chan[i].freq + 10;
 				sprintf(cn, "%d", chan[i++].channel + 2);
 				sprintf(fr, "%d", freq);
-				if (base + (channeloffset * iht) + 80 == freq)
-					continue;
-				if (base + (channeloffset * iht) - 80 == freq)
-					continue;
+				if (iht > 0) {
+					int sub = (base + 14 * 5) - freq;
+//					fprintf(stderr, "[%c] freq %d and base %d  sub %d\n", sub > 0 && sub < 70 ? 'x' : 'o', freq, (base + 14 * 5), sub);
+					if (sub > 0 && sub < 70)
+						continue;
+				} else {
+					int sub = freq - (base - 14 * 5);
+//					fprintf(stderr, "[%c] freq %d and base %d  sub %d\n", sub > 0 && sub < 70 ? 'x' : 'o', freq, (base - 14 * 5), sub);
+					if (sub > 0 && sub < 70)
+						continue;
+				}
 				int look = freq - 30;
 				int i2 = 0;
 				while (chan[i2].freq != -1) {
-					if (look == chan[i2].freq)
+					if (look == chan[i2].freq) {
+//                                              fprintf(stderr, "add %d\n", look);
 						goto found;
+					}
 					i2++;
 				}
 				continue;
 			      found:;
+				if (freq + offset >= 5310 && freq + offset < 5500)
+					continue;
+				if (!chan[i].lul && !chan[i].ull && !chan[i].ulu && !chan[i].luu)
+					continue;
 				websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s>%s - %d \"+wl_basic.mhz+\"</option>\");\n", fr, !strcmp(wlc, fr) ? " selected=\\\"selected\\\"" : "", cn, (freq + offset));
 			}
 			websWrite(wp, "//]]>\n</script></select></div>\n");
