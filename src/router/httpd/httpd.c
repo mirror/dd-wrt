@@ -811,6 +811,7 @@ static void *handle_request(void *arg)
 	/* Parse the first line of the request. */
 	int cnt = 0;
 	int eof = 0;
+	errno = 0; //make sure errno was not set by any other instance since we have no return code to check here
 	for (;;) {
 		if (cnt == 5000)
 			break;
