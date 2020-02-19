@@ -86,7 +86,7 @@ int get_smb_cmd_val(struct ksmbd_work *work)
  */
 static inline int is_smbreq_unicode(struct smb_hdr *hdr)
 {
-	return hdr->Flags2 & SMBFLG2_UNICODE;
+	return hdr->Flags2 & SMBFLG2_UNICODE ? 1 : 0;
 }
 
 /**
@@ -3955,7 +3955,7 @@ static int query_path_info(struct ksmbd_work *work)
 		ptr = (char *)&rsp->Pad + 1;
 		memset(ptr, 0, 4);
 		infos = (struct file_info_standard *)(ptr + 4);
-		unix_to_dos_time(ksmbd_NTtimeToUnix(create_time),
+		unix_to_dos_time(ksmbd_NTtimeToUnix(cpu_to_le64(create_time)),
 			&infos->CreationDate, &infos->CreationTime);
 		unix_to_dos_time(from_kern_timespec(st.atime),
 				&infos->LastAccessDate,
@@ -3965,8 +3965,8 @@ static int query_path_info(struct ksmbd_work *work)
 				&infos->LastWriteTime);
 		infos->DataSize = cpu_to_le32(st.size);
 		infos->AllocationSize = cpu_to_le32(st.blocks << 9);
-		infos->Attributes = S_ISDIR(st.mode) ?
-					ATTR_DIRECTORY_LE : ATTR_ARCHIVE_LE;
+		infos->Attributes = cpu_to_le16(S_ISDIR(st.mode) ?
+					ATTR_DIRECTORY : ATTR_ARCHIVE);
 		infos->EASize = 0;
 
 		rsp_hdr->WordCount = 10;
@@ -5013,20 +5013,20 @@ static int smb_set_time_pathinfo(struct ksmbd_work *work)
 
 	attrs.ia_valid = 0;
 	if (le64_to_cpu(info->LastAccessTime)) {
-		attrs.ia_atime = to_kern_timespec(smb_NTtimeToUnix(
-					le64_to_cpu(info->LastAccessTime)));
+		attrs.ia_atime = to_kern_timespec(
+				smb_NTtimeToUnix(info->LastAccessTime));
 		attrs.ia_valid |= (ATTR_ATIME | ATTR_ATIME_SET);
 	}
 
 	if (le64_to_cpu(info->ChangeTime)) {
-		attrs.ia_ctime = to_kern_timespec(smb_NTtimeToUnix(
-					le64_to_cpu(info->ChangeTime)));
+		attrs.ia_ctime =
+			to_kern_timespec(smb_NTtimeToUnix(info->ChangeTime));
 		attrs.ia_valid |= ATTR_CTIME;
 	}
 
 	if (le64_to_cpu(info->LastWriteTime)) {
-		attrs.ia_mtime = to_kern_timespec(smb_NTtimeToUnix(
-					le64_to_cpu(info->LastWriteTime)));
+		attrs.ia_mtime =
+			to_kern_timespec(smb_NTtimeToUnix(info->LastWriteTime));
 		attrs.ia_valid |= (ATTR_MTIME | ATTR_MTIME_SET);
 	}
 	/* TODO: check dos mode and acl bits if req->Attributes nonzero */
@@ -5542,8 +5542,9 @@ static int smb_populate_readdir_entry(struct ksmbd_conn *conn,
 		fsinfo->DataSize = cpu_to_le32(ksmbd_kstat->kstat->size);
 		fsinfo->AllocationSize =
 			cpu_to_le32(ksmbd_kstat->kstat->blocks << 9);
-		fsinfo->Attributes = S_ISDIR(ksmbd_kstat->kstat->mode) ?
-			ATTR_DIRECTORY_LE : ATTR_ARCHIVE_LE;
+		fsinfo->Attributes =
+			cpu_to_le16(S_ISDIR(ksmbd_kstat->kstat->mode) ?
+				ATTR_DIRECTORY : ATTR_ARCHIVE);
 		fsinfo->FileNameLength = cpu_to_le16(conv_len);
 		memcpy(fsinfo->FileName, conv_name, conv_len);
 
@@ -5570,8 +5571,9 @@ static int smb_populate_readdir_entry(struct ksmbd_conn *conn,
 			cpu_to_le32(ksmbd_kstat->kstat->size);
 		fesize->AllocationSize =
 			cpu_to_le32(ksmbd_kstat->kstat->blocks << 9);
-		fesize->Attributes = S_ISDIR(ksmbd_kstat->kstat->mode) ?
-			ATTR_DIRECTORY_LE : ATTR_ARCHIVE_LE;
+		fesize->Attributes =
+			cpu_to_le16(S_ISDIR(ksmbd_kstat->kstat->mode) ?
+				ATTR_DIRECTORY : ATTR_ARCHIVE);
 		fesize->EASize = 0;
 		fesize->FileNameLength = (__u8)(conv_len);
 		memcpy(fesize->FileName, conv_name, conv_len);
@@ -6692,7 +6694,7 @@ static int query_file_info(struct ksmbd_work *work)
 		time = ksmbd_UnixTimeToNT(from_kern_timespec(st.ctime));
 		ainfo->ChangeTime = cpu_to_le64(time);
 		ainfo->Attributes = cpu_to_le32(S_ISDIR(st.mode) ?
-				ATTR_DIRECTORY_LE : ATTR_ARCHIVE_LE);
+				ATTR_DIRECTORY : ATTR_ARCHIVE);
 		ainfo->Pad1 = 0;
 		ainfo->AllocationSize = cpu_to_le64(st.blocks << 9);
 		ainfo->EndOfFile = cpu_to_le64(st.size);
@@ -6874,20 +6876,20 @@ static int smb_set_time_fileinfo(struct ksmbd_work *work)
 
 	attrs.ia_valid = 0;
 	if (le64_to_cpu(info->LastAccessTime)) {
-		attrs.ia_atime = to_kern_timespec(smb_NTtimeToUnix(
-					le64_to_cpu(info->LastAccessTime)));
+		attrs.ia_atime = to_kern_timespec(
+				smb_NTtimeToUnix(info->LastAccessTime));
 		attrs.ia_valid |= (ATTR_ATIME | ATTR_ATIME_SET);
 	}
 
 	if (le64_to_cpu(info->ChangeTime)) {
-		attrs.ia_ctime = to_kern_timespec(smb_NTtimeToUnix(
-					le64_to_cpu(info->ChangeTime)));
+		attrs.ia_ctime =
+			to_kern_timespec(smb_NTtimeToUnix(info->ChangeTime));
 		attrs.ia_valid |= ATTR_CTIME;
 	}
 
 	if (le64_to_cpu(info->LastWriteTime)) {
-		attrs.ia_mtime = to_kern_timespec(smb_NTtimeToUnix(
-					le64_to_cpu(info->LastWriteTime)));
+		attrs.ia_mtime =
+			to_kern_timespec(smb_NTtimeToUnix(info->LastWriteTime));
 		attrs.ia_valid |= (ATTR_MTIME | ATTR_MTIME_SET);
 	}
 	/* TODO: check dos mode and acl bits if req->Attributes nonzero */
@@ -7588,14 +7590,14 @@ int smb_nt_rename(struct ksmbd_work *work)
 	return err;
 }
 
-static int smb_query_info_pipe(struct ksmbd_share_config *share,
+static __le32 smb_query_info_pipe(struct ksmbd_share_config *share,
 			       struct kstat *st)
 {
 	st->mode = S_IFDIR;
 	return 0;
 }
 
-static int smb_query_info_path(struct ksmbd_work *work,
+static __le32 smb_query_info_path(struct ksmbd_work *work,
 			       struct kstat *st)
 {
 	struct smb_com_query_information_req *req = REQUEST_BUF(work);
@@ -7632,7 +7634,8 @@ int smb_query_info(struct ksmbd_work *work)
 	struct ksmbd_share_config *share = work->tcon->share_conf;
 	struct kstat st = {0,};
 	__u16 attr = 0;
-	int err, i;
+	int i;
+	__le32 err;
 
 	if (!test_share_config_flag(work->tcon->share_conf,
 				    KSMBD_SHARE_FLAG_PIPE))
@@ -7663,7 +7666,7 @@ int smb_query_info(struct ksmbd_work *work)
 
 	rsp->ByteCount = 0;
 	inc_rfc1001_len(&rsp->hdr, rsp->hdr.WordCount * 2);
-	return err;
+	return 0;
 }
 
 /**
@@ -7774,7 +7777,7 @@ int smb_open_andx(struct ksmbd_work *work)
 	rsp->hdr.Status.CifsError = STATUS_UNSUCCESSFUL;
 
 	/* check for sharing mode flag */
-	if ((le32_to_cpu(req->Mode) & SMBOPEN_SHARING_MODE) >
+	if ((le16_to_cpu(req->Mode) & SMBOPEN_SHARING_MODE) >
 			SMBOPEN_DENY_NONE) {
 		rsp->hdr.Status.DosError.ErrorClass = ERRDOS;
 		rsp->hdr.Status.DosError.Error = cpu_to_le16(ERRbadaccess);
@@ -8096,7 +8099,7 @@ int smb1_check_sign_req(struct ksmbd_work *work)
 	memcpy(signature_req, rcv_hdr1->Signature.SecuritySignature,
 			CIFS_SMB1_SIGNATURE_SIZE);
 	rcv_hdr1->Signature.Sequence.SequenceNumber =
-		cpu_to_le16(++work->sess->sequence_number);
+		cpu_to_le32(++work->sess->sequence_number);
 	rcv_hdr1->Signature.Sequence.Reserved = 0;
 
 	iov[0].iov_base = rcv_hdr1->Protocol;

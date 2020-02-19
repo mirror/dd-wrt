@@ -587,7 +587,7 @@ static const struct {
 	ERRDOS, ERRinvlevel, 0x007c0001}, };
 
 void
-ntstatus_to_dos(__u32 ntstatus, __u8 *eclass, __u16 *ecode)
+ntstatus_to_dos(__le32 ntstatus, __u8 *eclass, __le16 *ecode)
 {
 	int i;
 
@@ -597,14 +597,14 @@ ntstatus_to_dos(__u32 ntstatus, __u8 *eclass, __u16 *ecode)
 		return;
 	}
 	for (i = 0; ntstatus_to_dos_map[i].ntstatus; i++) {
-		if (ntstatus == ntstatus_to_dos_map[i].ntstatus) {
+		if (le32_to_cpu(ntstatus) == ntstatus_to_dos_map[i].ntstatus) {
 			*eclass = ntstatus_to_dos_map[i].dos_class;
-			*ecode = ntstatus_to_dos_map[i].dos_code;
+			*ecode = cpu_to_le16(ntstatus_to_dos_map[i].dos_code);
 			return;
 		}
 	}
 	*eclass = ERRHRD;
-	*ecode = ERRgeneral;
+	*ecode = cpu_to_le16(ERRgeneral);
 }
 
 /*
