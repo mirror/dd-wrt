@@ -98,7 +98,6 @@ struct lease_t {
 struct apply_action {
 	char *name;
 	char *service;
-	int sleep_time;
 	int action;
 	char *goname;
 };
@@ -107,7 +106,6 @@ struct gozila_action {
 	char *name;
 	char *type;
 	char *service;
-	int sleep_time;
 	int action;
 	char *goname;
 };
