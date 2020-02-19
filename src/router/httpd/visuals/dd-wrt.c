@@ -3205,8 +3205,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" onchange=\"to_submit(this.form);\">\n", wl_width, prefix);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
-
-	if (!is_mac80211(prefix) || can_ht40(prefix))
+	int canht40 = can_ht40(prefix);
+	int canvht80 = can_vht80(prefix);
+	if (!is_mac80211(prefix) || canht40)
 		if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
@@ -3229,15 +3230,15 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		|| nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 		if (!is_mac80211(prefix) || is_ath5k(prefix))
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
-		else if (can_ht40(prefix))
+		else if (canht40)
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
 		if ((is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && has_5ghz(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)) {
-			if (can_vht80(prefix))
+			if (canvht80)
 				websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
 			if (has_vht160(prefix) && can_vht160(prefix))
 				websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n", nvram_matchi(wl_width, 160) ? "selected=\\\"selected\\\"" : "");
-			if (has_vht80plus80(prefix) && can_vht80(prefix))
+			if (has_vht80plus80(prefix) && canvht80)
 				websWrite(wp, "document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus80 + \"</option>\");\n", nvram_match(wl_width, "80+80") ? "selected=\\\"selected\\\"" : "");
 		}
 	}
@@ -3838,7 +3839,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
 /* limit channel options by mode */
-	if (!is_mac80211(prefix) || can_ht40(prefix))
+	int canht40 = can_ht40(prefix);
+	int canvht80 = can_vht80(prefix);
+	if (!is_mac80211(prefix) || canht40)
 		if (is_mac80211(prefix) && !is_ath5k(prefix)) {
 			if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
 			     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
@@ -3862,15 +3865,15 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		    || nvram_nmatch("na-only", "%s_net_mode", prefix)))) {
 		if (!is_mac80211(prefix) || is_ath5k(prefix))
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
-		else if (can_ht40(prefix))
+		else if (canht40)
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
 		if ((is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && has_5ghz(prefix)
 		    && (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))) {
-			if (can_vht80(prefix))
+			if (canvht80)
 				websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
 			if (has_vht160(prefix) && can_vht160(prefix))
 				websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n", nvram_matchi(wl_width, 160) ? "selected=\\\"selected\\\"" : "");
-			if (has_vht80plus80(prefix) && can_vht80(prefix))
+			if (has_vht80plus80(prefix) && canvht80)
 				websWrite(wp, "document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus80 + \"</option>\");\n", nvram_match(wl_width, "80+80") ? "selected=\\\"selected\\\"" : "");
 		}
 	}
