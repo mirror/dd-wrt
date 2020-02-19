@@ -77,7 +77,7 @@ static int hotplug_main(int argc, char **argv)
 		if (!strcmp(argv[1], "regulatory")) {
 			syslog(LOG_DEBUG, "hotplug: old style regulatory called\n");
 			int r = eval("/sbin/crda");
-			unlink("/tmp/.crdalock");
+//			unlink("/tmp/.crdalock");
 			return r;
 		}
 		if (!strcmp(argv[1], "platform")) {

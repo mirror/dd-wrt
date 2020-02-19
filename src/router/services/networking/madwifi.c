@@ -2880,7 +2880,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		if (!iso)
 			iso = "DE";
 		eval("iw", "reg", "set", iso);
-		eval("touch", "/tmp/.crdalock");	// create lock file
+/*		eval("touch", "/tmp/.crdalock");	// create lock file
 		int i = 40;	// max wait 4 sec
 		while (i--) {
 			FILE *fp = fopen("/tmp/.crdalock", "rb");
@@ -2890,6 +2890,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			usleep(100 * 1000);	// wait 100 ms
 		}
 		unlink("/tmp/.crdalock");	// delete lock file, no matter if crda still running. 4 sec is enough
+*/
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
 		if (nvram_geti("ath10k-ct") != nvram_geti("ath10k-ct_bak")) {
 			fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");
@@ -2903,10 +2904,10 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		adjust_regulatory(i);
 	for (i = 0; i < c; i++) {
 		sysprintf("rm -f /tmp/ath%d_configured", i);
-		configure_single(i);
+		FORK(configure_single(i));
 	}
 
-#if 0
+#if 1
 	while (1) {
 		int cnf = 0;
 		for (i = 0; i < c; i++) {
@@ -2918,10 +2919,10 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 				fclose(check);
 			}
 		}
-		fprintf(stderr, "waiting for %d interfaces, %d finished\n", c, cnf);
+//		fprintf(stderr, "waiting for %d interfaces, %d finished\n", c, cnf);
 		if (cnf == c)
 			break;
-		sleep(1);
+		usleep(100 * 1000);	// wait 100 ms
 	}
 #endif
 #ifdef HAVE_NLD
