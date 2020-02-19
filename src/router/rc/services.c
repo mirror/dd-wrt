@@ -1473,11 +1473,20 @@ static struct SERVICES services_def[] = {
 
 static int single_service_helper(void)
 {
-	if (nvram_match("service_running", "1")) {
+	int sr = atoi(nvram_safe_get("service_running"));
+	if (sr) {
+		sr++;
+		nvram_seti("service_running", sr);
+		dd_syslog("services", "increase delay to %d seconds\n", sr * 5);
 		return;
 	}
 	nvram_set("service_running", "1");
 	sleep(5);
+	while ((sr = atoi(nvram_safe_get("service_running"))) > 1) {
+		sr--;
+		nvram_seti("service_running", sr);
+		sleep(5);
+	}
 	start_service_force("overclocking");
 	char *next;
 	char service[80];
@@ -1503,7 +1512,7 @@ static int single_service_helper(void)
 	nvram_unset("nowebaction");
 	nvram_unset("action_service");
 	nvram_unset("action_service_arg1");
-	nvram_set("service_running", "0");
+	nvram_seti("service_running", 0);
 }
 
 static int start_single_service_main(int argc, char **argv)
