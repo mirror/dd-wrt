@@ -1471,11 +1471,12 @@ static struct SERVICES services_def[] = {
 	{ NULL, NULL }
 };
 
-static int running = 0;
-static int single_service_helper(void) {
-	if (running)
-	    return;
-	running=1;
+static int single_service_helper(void)
+{
+	if (nvram_match("service_running", "1")) {
+		return;
+	}
+	nvram_set("service_running", "1");
 	sleep(5);
 	start_service_force("overclocking");
 	char *next;
@@ -1502,7 +1503,7 @@ static int single_service_helper(void) {
 	nvram_unset("nowebaction");
 	nvram_unset("action_service");
 	nvram_unset("action_service_arg1");
-	running=0;
+	nvram_set("service_running", "0");
 }
 
 static int start_single_service_main(int argc, char **argv)

@@ -2968,6 +2968,7 @@ void start_restore_defaults(void)
 		nvram_seti("block_multicast", 1);
 	}
 	nvram_unset("flash_active");
+	nvram_unset("service_running");
 	nvram_seti("ntp_success", 0);
 	nvram_seti("wanup", 0);
 	nvram_unset("rc_opt_run");
