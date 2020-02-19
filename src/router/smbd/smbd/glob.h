@@ -61,5 +61,5 @@ extern int ksmbd_caseless_search;
 /* @FIXME clean up this code */
 
 /* ksmbd misc functions */
-extern void ntstatus_to_dos(__u32 ntstatus, __u8 *eclass, __u16 *ecode);
+extern void ntstatus_to_dos(__le32 ntstatus, __u8 *eclass, __le16 *ecode);
 #endif /* __KSMBD_GLOB_H */

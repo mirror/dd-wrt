@@ -190,7 +190,7 @@ struct smb_negotiate_rsp {
 	__le32 SystemTimeHigh;
 	__le16 ServerTimeZone;
 	__u8 EncryptionKeyLength;
-	__u16 ByteCount;
+	__le16 ByteCount;
 	union {
 		unsigned char EncryptionKey[8]; /* cap extended security off */
 		/* followed by Domain name - if extended security is off */
