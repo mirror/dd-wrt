@@ -91,8 +91,7 @@ int set_channel(char *dev, int channel)
 		else
 			flags = 1;
 		sysprintf("iw dev %s scan freq %d passive", dev, ieee80211_ieee2mhz(channel, flags));
-	} else
-	{
+	} else {
 		memset(&wrq, 0, sizeof(struct iwreq));
 		strncpy(wrq.ifr_name, get_monitor(), IFNAMSIZ);
 		if (channel > 14)
