@@ -135,15 +135,6 @@ typedef enum {
 	ssAssociated
 } sta_state;
 
-typedef enum {
-	aetUnknown,
-	aetUnencrypted,
-	aetEncUnknown,
-	aetEncWEP,
-	aetEncWPA,
-	aetEncWPA2,
-	aetEncWPAmix
-} ap_enc_type;
 
 typedef struct {
 	u_char bssid[6];
@@ -151,7 +142,7 @@ typedef struct {
 	u_char ssidlen;
 	u_char channel;
 	u_short flags;
-	ap_enc_type encryption;
+	int encryption;
 } ap_info;
 
 typedef struct {
