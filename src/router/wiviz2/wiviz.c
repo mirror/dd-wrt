@@ -651,8 +651,16 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		e = (ieee_802_11_tag *) ((int)m + sizeof(ieee_802_11_mgt_frame));
 		int rsn = 0;
 		unsigned int wpaflag = 0;
+		int mesh = 0;
 		while ((u_int) e < (u_int) packet + pktlen) {
 			if (e->tag == tagSSID) {
+				if (!mesh) {
+					ssidlen = e->length;
+					ssid = (char *)(e + 1);
+				}
+			}
+			if (e->tag == tagMESHSSID) {
+				mesh = 1;
 				ssidlen = e->length;
 				ssid = (char *)(e + 1);
 			}
@@ -742,6 +750,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 				emergebss->type = typeAdhocHub;
 				if (ssidlen > 0 && ssidlen <= 32) {
 					memcpy(emergebss->apInfo->ssid, ssid, ssidlen);
+					emergebss->apInfo->ssid[ssidlen] = 0;
 					emergebss->apInfo->ssidlen = ssidlen;
 				}
 				if (channel)

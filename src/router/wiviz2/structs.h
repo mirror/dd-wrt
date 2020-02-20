@@ -59,6 +59,7 @@ typedef enum {
 	tagRates = 1,
 	tagChannel = 3,
 	tagRSN = 48,
+	tagMESHSSID = 114,
 	tagVendorSpecific = 0xDD
 } i81tag;
 
