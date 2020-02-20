@@ -73,9 +73,9 @@ void rc_mdelay(int msecs)
 char *
 rc_mksid (void)
 {
-  static char buf[15];
+  static char buf[32];
   static unsigned short int cnt = 0;
-  sprintf (buf, "%08lX%04X%02hX",
+  slprintf(buf, sizeof(buf), "%08lX%04X%02hX",
 	   (unsigned long int) time (NULL),
 	   (unsigned int) getpid (),
 	   cnt & 0xFF);
