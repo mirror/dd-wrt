@@ -499,12 +499,12 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 	int channel = 0;
 	int adhocbeacon = 0;
 	u_char ssidlen = 0;
-	ap_enc_type encType = aetUnknown;
 	if (!packet)
 		return;
 	src = i_src;
 	dst = i_dst;
 	bss = i_bss;
+	int encType = -1;
 
 	if (is_mac80211(nvram_safe_get("wifi_display"))) {
 		if (packet[0] > 0) {
@@ -645,10 +645,12 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 			adhocbeacon = 1;
 		}
 		if (swap16(m->caps) & MGT_CAPS_WEP)
-			encType = aetEncWEP;
+			encType = 0x400;
 		else
-			encType = aetUnencrypted;
+			encType = 0;
 		e = (ieee_802_11_tag *) ((int)m + sizeof(ieee_802_11_mgt_frame));
+		int rsn = 0;
+		unsigned int wpaflag = 0;
 		while ((u_int) e < (u_int) packet + pktlen) {
 			if (e->tag == tagSSID) {
 				ssidlen = e->length;
@@ -658,31 +660,62 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 				channel = *(char *)(e + 1);
 			}
 			if (e->tag == tagRSN) {
-				if (encType != aetEncWPAmix) {
-					if (encType == aetEncWPA)
-						encType = aetEncWPAmix;
-					else
-						encType = aetEncWPA2;
+				rsn = 1;
+
+				unsigned char *data = e + 1;
+				data += 2;	// version;
+				data += 4;	// group cipher
+				int count = data[0] | (data[1] << 8);
+				data += 2 + (count * 4);	// pairwise cipher
+				count = data[0] | (data[1] << 8);
+				int i;
+				encType &= ~0x400;
+				for (i = 0; i < count; i++) {
+					unsigned char *ofs = data + 2 + (i * 4);
+//                              fprintf(stderr, "rsn %02X:%02X:%02X:%02X\n",ofs[0],ofs[1],ofs[2],ofs[3]); 
+					if (e->length >= 4 && memcmp(ofs, "\x00\x0f\xac", 3) == 0) {
+						switch (ofs[3]) {
+						case 1:
+							encType |= 0x1;	//wpa2
+							break;
+						case 2:
+							encType |= 0x2;	//psk2
+							break;
+						case 3:
+							encType |= 0x4;	//fteap
+							break;
+						case 4:
+							encType |= 0x8;	//ftpsk
+							break;
+						case 5:
+							encType |= 0x10;	//eapsha256
+							break;
+						case 6:
+							encType |= 0x20;	//psksha256
+							break;
+						case 8:
+							encType |= 0x40;	//psk3
+							break;
+						case 9:
+							encType |= 0x80;	//ftpsk3
+							break;
+						case 11:
+						case 12:
+							encType |= 0x800;	//ftpsk3
+							break;
+						}
+					}
 				}
 			}
 			if (e->tag == tagVendorSpecific) {
+				unsigned char *t = e + 1;
+				encType &= ~0x400;
+				// fprintf(stderr, "ieee %02X:%02X:%02X:%02X\n", t[0], t[1], t[2], t[3]);
 				if (e->length >= 4 && memcmp(e + 1, "\x00\x50\xf2\x01", 4) == 0) {
-					//WPA encryption
-					if (encType != aetEncWPAmix) {
-						if (encType == aetEncWPA2)
-							encType = aetEncWPAmix;
-						else
-							encType = aetEncWPA;
-					}
+					encType |= 0x100;	// wpa
 				}
-				if (e->length >= 4 && memcmp(e + 1, "\x00\x0f\xac\x01", 4) == 0) {
-					//WPA2 encryption
-					if (encType != aetEncWPAmix) {
-						if (encType == aetEncWPA)
-							encType = aetEncWPAmix;
-						else
-							encType = aetEncWPA2;
-					}
+				if (e->length >= 4 && memcmp(e + 1, "\x00\x50\xf2\x02", 4) == 0) {
+					encType |= 0x200;	// psk 
 				}
 			}
 			e = (ieee_802_11_tag *) ((int)(e + 1) + e->length);
@@ -715,7 +748,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 					emergebss->apInfo->channel = channel;
 				emergebss->apInfo->flags = hWifi->flags;
 				emergebss->RSSI = host->RSSI;
-				if (encType != aetUnknown)
+				if (encType != -1)
 					emergebss->apInfo->encryption = encType;
 			}
 		}
@@ -744,7 +777,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		if (channel)
 			host->apInfo->channel = channel;
 		host->apInfo->flags = hWifi->flags;
-		if (encType != aetUnknown)
+		if (encType != -1)
 			host->apInfo->encryption = encType;
 	}
 }
@@ -854,54 +887,78 @@ void print_host(FILE * outf, wiviz_host * host)
 		}
 		fprintf(outf, "';\nh.encrypted = ");
 		switch (host->apInfo->encryption) {
-		case aetUnknown:
+		case -1:
 			fprintf(outf, "'unknown';\n");
 			break;
-		case aetUnencrypted:
+		case 0:
 			fprintf(outf, "'no';\n");
 			break;
-		case aetEncUnknown:
-			fprintf(outf, "'yes';\nh.enctype = 'unknown';\n");
-			break;
-		case aetEncWEP:
-			fprintf(outf, "'yes';\nh.enctype = 'wep';\n");
-			break;
-		case aetEncWPA:
-			fprintf(outf, "'yes';\nh.enctype = 'wpa';\n");
-			break;
-		case aetEncWPA2:
-			fprintf(outf, "'yes';\nh.enctype = 'wpa2';\n");
-			break;
-		case aetEncWPAmix:
-			fprintf(outf, "'yes';\nh.enctype = 'wpa wpa2';\n");
-			break;
+		default:
+			fprintf(outf, "'yes';\nh.enctype = '");
+			if (host->apInfo->encryption & 0x1)
+				fprintf(outf, "WPA2 ");
+			if (host->apInfo->encryption & 0x2)
+				fprintf(outf, "PSK2 ");
+			if (host->apInfo->encryption & 0x4)
+				fprintf(outf, "FT/EAP ");
+			if (host->apInfo->encryption & 0x8)
+				fprintf(outf, "FT/PSK ");
+			if (host->apInfo->encryption & 0x10)
+				fprintf(outf, "EAP/SHA256 ");
+			if (host->apInfo->encryption & 0x20)
+				fprintf(outf, "PSK/SHA256 ");
+			if (host->apInfo->encryption & 0x40)
+				fprintf(outf, "SAE/PSK3 ");
+			if (host->apInfo->encryption & 0x80)
+				fprintf(outf, "FT/PSK3 ");
+			if (host->apInfo->encryption & 0x100)
+				fprintf(outf, "WPA ");
+			if (host->apInfo->encryption & 0x200)
+				fprintf(outf, "PSK ");
+			if (host->apInfo->encryption & 0x400)
+				fprintf(outf, "WEP ");
+			if (host->apInfo->encryption & 0x800)
+				fprintf(outf, "WPA3 ");
+			fprintf(outf, "';\n");
 		}
 	}
 	if (host->type == typeWDS) {
 		fprintf(outf, "h.channel = %i;\nh.ssid = '", host->apInfo->channel & 0xFF);
 		fprintf(outf, "';\nh.encrypted = ");
 		switch (host->apInfo->encryption) {
-		case aetUnknown:
+		case -1:
 			fprintf(outf, "'unknown';\n");
 			break;
-		case aetUnencrypted:
+		case 0:
 			fprintf(outf, "'no';\n");
 			break;
-		case aetEncUnknown:
-			fprintf(outf, "'yes';\nh.enctype = 'unknown';\n");
-			break;
-		case aetEncWEP:
-			fprintf(outf, "'yes';\nh.enctype = 'wep';\n");
-			break;
-		case aetEncWPA:
-			fprintf(outf, "'yes';\nh.enctype = 'wpa';\n");
-			break;
-		case aetEncWPA2:
-			fprintf(outf, "'yes';\nh.enctype = 'wpa2';\n");
-			break;
-		case aetEncWPAmix:
-			fprintf(outf, "'yes';\nh.enctype = 'wpa wpa2';\n");
-			break;
+		default:
+			fprintf(outf, "'yes';\nh.enctype = '");
+			if (host->apInfo->encryption & 0x1)
+				fprintf(outf, "WPA2 ");
+			if (host->apInfo->encryption & 0x2)
+				fprintf(outf, "PSK2 ");
+			if (host->apInfo->encryption & 0x4)
+				fprintf(outf, "FT/EAP ");
+			if (host->apInfo->encryption & 0x8)
+				fprintf(outf, "FT/PSK ");
+			if (host->apInfo->encryption & 0x10)
+				fprintf(outf, "EAP/SHA256 ");
+			if (host->apInfo->encryption & 0x20)
+				fprintf(outf, "PSK/SHA256 ");
+			if (host->apInfo->encryption & 0x40)
+				fprintf(outf, "SAE/PSK3 ");
+			if (host->apInfo->encryption & 0x80)
+				fprintf(outf, "FT/PSK3 ");
+			if (host->apInfo->encryption & 0x100)
+				fprintf(outf, "WPA ");
+			if (host->apInfo->encryption & 0x200)
+				fprintf(outf, "PSK ");
+			if (host->apInfo->encryption & 0x400)
+				fprintf(outf, "WEP ");
+			if (host->apInfo->encryption & 0x800)
+				fprintf(outf, "WPA3 ");
+			fprintf(outf, "';\n");
 		}
 	}
 	fprintf(outf, "h.age = %i;\n", time(0) - host->lastSeen);
