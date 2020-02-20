@@ -169,18 +169,15 @@ int main(int argc, char **argv)
 	cfg.channelHopSeqLen = 5;
 	memcpy(cfg.channelHopSeq, defaultHopSeq, sizeof(defaultHopSeq));
 
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	wl_ioctl(wl_dev, WLC_GET_MAGIC, &i, 4);
-	if (i != WLC_IOCTL_MAGIC) {
-		printf("Wireless magic not correct, not querying wl for info %X!=%X\n", i, WLC_IOCTL_MAGIC);
-		cfg.readFromWl = 0;
+#if defined(HAVE_MADWIFI)
+	if (is_mac80211(nvram_safe_get("wifi_display"))) {
+		sysprintf("iw phy phy%d interface add %s type monitor", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")), get_monitor());
+		sysprintf("ifconfig %s up", get_monitor());
 	} else {
-		cfg.readFromWl = 1;
-		wl_ioctl(wl_dev, WLC_GET_MONITOR, &oldMonitor, 4);
-		newMonitor = 1;
-		wl_ioctl(wl_dev, WLC_SET_MONITOR, &newMonitor, 4);
+		sysprintf("wlanconfig %s create wlandev %s wlanmode monitor", get_monitor(), getWifi(nvram_safe_get("wifi_display")));
+		sysprintf("ifconfig %s up", get_monitor());
 	}
-
+	cfg.readFromWl = 1;
 #elif HAVE_RT2880
 	if (nvram_match("wifi_display", "wl0")) {
 		nvram_set("wl0_oldmode", nvram_safe_get("wl0_mode"));
@@ -198,14 +195,16 @@ int main(int argc, char **argv)
 	}
 	cfg.readFromWl = 1;
 #else
-	if (is_mac80211(nvram_safe_get("wifi_display"))) {
-		sysprintf("iw phy phy%d interface add %s type monitor", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")), get_monitor());
-		sysprintf("ifconfig %s up", get_monitor());
+	wl_ioctl(wl_dev, WLC_GET_MAGIC, &i, 4);
+	if (i != WLC_IOCTL_MAGIC) {
+		printf("Wireless magic not correct, not querying wl for info %X!=%X\n", i, WLC_IOCTL_MAGIC);
+		cfg.readFromWl = 0;
 	} else {
-		sysprintf("wlanconfig %s create wlandev %s wlanmode monitor", get_monitor(), getWifi(nvram_safe_get("wifi_display")));
-		sysprintf("ifconfig %s up", get_monitor());
+		cfg.readFromWl = 1;
+		wl_ioctl(wl_dev, WLC_GET_MONITOR, &oldMonitor, 4);
+		newMonitor = 1;
+		wl_ioctl(wl_dev, WLC_SET_MONITOR, &newMonitor, 4);
 	}
-	cfg.readFromWl = 1;
 #endif
 	reloadConfig();
 
@@ -219,7 +218,7 @@ int main(int argc, char **argv)
 		s = openMonitorSocket("prism0");
 #endif
 	if (s == -1)
-		return;
+		return -1;
 	one = 1;
 	ioctl(s, FIONBIO, (char *)&one);
 
@@ -928,7 +927,12 @@ void readWL(wiviz_cfg * cfg)
 #endif
 	if (!nonzeromac(mac))
 		return;
-#ifdef HAVE_RT2880
+#ifdef HAVE_MADWIFI
+	if (nvram_nmatch("ap", "%s_mode", wl_dev))
+		ap = 1;
+	if (nvram_nmatch("wdsap", "%s_mode", wl_dev))
+		ap = 1;
+#else
 	if (nvram_match("wifi_display", "wl0")) {
 		if (nvram_match("ap", "wl0_oldmode"))
 			ap = 1;
@@ -936,19 +940,17 @@ void readWL(wiviz_cfg * cfg)
 		if (nvram_match("ap", "wl1_oldmode"))
 			ap = 1;
 	}
-#else
-	if (nvram_nmatch("ap", "%s_mode", wl_dev))
-		ap = 1;
-	if (nvram_nmatch("wdsap", "%s_mode", wl_dev))
-		ap = 1;
 #endif
 //      wl_ioctl(wl_dev, WLC_GET_AP, &ap, 4);
 	if (ap) {
 		host = gotHost(cfg, mac, typeAP);
 		host->isSelf = 1;
-#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
-#ifdef HAVE_RT2880
-
+#if defined(HAVE_MADWIFI)
+		strcpy(host->apInfo->ssid, nvram_nget("%s_ssid", wl_dev));
+		host->apInfo->ssidlen = strlen(host->apInfo->ssid);
+		ether_atoe(nvram_nget("%s_hwaddr", wl_dev), buf);
+		memcpy(host->apInfo->bssid, buf, 6);
+#elif defined(HAVE_RT2880)
 		if (nvram_match("wifi_display", "wl0")) {
 			strcpy(host->apInfo->ssid, nvram_safe_get("wl0_ssid"));
 			ether_atoe(nvram_safe_get("wl0_hwaddr"), buf);
@@ -958,12 +960,6 @@ void readWL(wiviz_cfg * cfg)
 		}
 		host->apInfo->ssidlen = strlen(host->apInfo->ssid);
 		memcpy(host->apInfo->bssid, buf, 6);
-#else
-		strcpy(host->apInfo->ssid, nvram_nget("%s_ssid", wl_dev));
-		host->apInfo->ssidlen = strlen(host->apInfo->ssid);
-		ether_atoe(nvram_nget("%s_hwaddr", wl_dev), buf);
-		memcpy(host->apInfo->bssid, buf, 6);
-#endif
 #else
 		wl_ioctl(wl_dev, WLC_GET_BSSID, host->apInfo->bssid, 6);
 		wl_ioctl(wl_dev, WLC_GET_SSID, &ssid, sizeof(wlc_ssid_t));
