@@ -261,7 +261,8 @@ typedef struct wlc_tkip_info {
 	uint8 phase2[WLC_TKIP_P2_KEY_SIZE];	/* tkhash phase2 result */
 	uint32 micl;
 	uint32 micr;
-} tkip_info_t;
+}
+tkip_info_t;
 
 typedef struct _wsec_iv {
 	uint32 hi;		/* upper 32 bits of IV */
@@ -511,7 +512,7 @@ typedef struct {
 
 typedef struct wlc_event_cb {
 	uint msg;		/* Event message or 0 for all */
-	void (*fn) (void *, wlc_event_t *);	/* Callback function */
+	void (*fn)(void *, wlc_event_t *);	/* Callback function */
 	void *context;		/* Passed to callback function */
 	struct wlc_event_cb *next;	/* Next in the chain */
 } wlc_event_cb_t;
