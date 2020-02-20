@@ -1329,6 +1329,12 @@ int len;
 #endif /* USE_SRP */
 
 	/*
+	 * Ignore requests if we're not open
+	 */
+	if (esp->es_client.ea_state <= eapClosed)
+		return;
+
+	/*
 	 * Note: we update es_client.ea_id *only if* a Response
 	 * message is being generated.  Otherwise, we leave it the
 	 * same for duplicate detection purposes.
@@ -1420,7 +1426,7 @@ int len;
 		}
 
 		/* Not so likely to happen. */
-		if (vallen >= len + sizeof (rhostname)) {
+		if (len - vallen >= sizeof (rhostname)) {
 			dbglog("EAP: trimming really long peer name down");
 			BCOPY(inp + vallen, rhostname, sizeof (rhostname) - 1);
 			rhostname[sizeof (rhostname) - 1] = '\0';
@@ -1736,6 +1742,12 @@ int len;
 	u_char dig[SHA_DIGESTSIZE];
 #endif /* USE_SRP */
 
+	/*
+	 * Ignore responses if we're not open
+	 */
+	if (esp->es_server.ea_state <= eapClosed)
+		return;
+
 	if (esp->es_server.ea_id != id) {
 		dbglog("EAP: discarding Response %d; expected ID %d", id,
 		    esp->es_server.ea_id);
@@ -1846,7 +1858,7 @@ int len;
 		}
 
 		/* Not so likely to happen. */
-		if (vallen >= len + sizeof (rhostname)) {
+		if (len - vallen >= sizeof (rhostname)) {
 			dbglog("EAP: trimming really long peer name down");
 			BCOPY(inp + vallen, rhostname, sizeof (rhostname) - 1);
 			rhostname[sizeof (rhostname) - 1] = '\0';
@@ -2047,6 +2059,12 @@ u_char *inp;
 int id;
 int len;
 {
+	/*
+	 * Ignore failure messages if we're not open
+	 */
+	if (esp->es_client.ea_state <= eapClosed)
+		return;
+
 	if (!eap_client_active(esp)) {
 		dbglog("EAP unexpected failure message in state %s (%d)",
 		    eap_state_name(esp->es_client.ea_state),
