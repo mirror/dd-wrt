@@ -783,6 +783,7 @@ function updateCenteredInfo() {
 	    if (h.type == 'ssid') sp.innerHTML = "SSID Collection";
 	    if (h.type == 'adhoc') sp.innerHTML = "Ad-hoc entity";
 	    if (h.type == 'sta') sp.innerHTML = "Client";
+	    if (h.type == 'wds') sp.innerHTML = "WDS";
 	}
 	sp = document.getElementById('detail_info');
 	if (sp) {
