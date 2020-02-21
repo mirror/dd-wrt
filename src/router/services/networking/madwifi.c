@@ -2908,7 +2908,8 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	}
 
 #if 1
-	while (1) {
+	int dead=10*30; // after 30 seconds, we can assume that something is hanging
+	while (dead--) {
 		int cnf = 0;
 		for (i = 0; i < c; i++) {
 			char path[42];
