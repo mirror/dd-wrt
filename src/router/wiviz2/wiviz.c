@@ -171,7 +171,8 @@ int main(int argc, char **argv)
 
 #if defined(HAVE_MADWIFI)
 	if (is_mac80211(nvram_safe_get("wifi_display"))) {
-		sysprintf("iw phy phy%d interface add %s type monitor", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")), get_monitor());
+		sysprintf("iw phy phy%d interface add %s type monitor flags fcsfail plcpfail control otherbss", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")), get_monitor());
+//		sysprintf("iw phy phy%d interface add %s type monitor flags none", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")), get_monitor());
 		sysprintf("ifconfig %s up", get_monitor());
 	} else {
 		sysprintf("wlanconfig %s create wlandev %s wlanmode monitor", get_monitor(), getWifi(nvram_safe_get("wifi_display")));
@@ -571,7 +572,6 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 	int fctype = (hWifi->frame_control & 0xC);
 	int fc = (hWifi->frame_control & 0xf0);
 	type = typeUnknown;
-	printf("type %X, fc %X\n", fctype, fc);
 	if (!fctype)		// only accept management frames (type 0)
 	{
 		switch (fc) {
@@ -599,9 +599,10 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		fprintf(stderr, " dst:");
 		fprintf(stderr, "%s", ntoa(dst));
 		fprintf(stderr, " bss:");
-		fprintf(stderr, "%s\n", ntoa(src));
+		fprintf(stderr, "%s\n", ntoa(bss));
 #endif
 	}
+	
 	to_ds = hWifi->flags & IEEE80211_TO_DS;
 	from_ds = hWifi->flags & IEEE80211_FROM_DS;
 	unsigned char subtype = hWifi->frame_control & 0xF0;
@@ -624,6 +625,9 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		if (to_ds && from_ds)
 			bss = hWifi->addr1;	// wds frame
 #ifdef DEBUG
+	    
+//	    if (type == typeSta) {
+		fprintf(stderr, "type: %d flags: %X ", type, hWifi->flags);
 		fprintf(stderr, "addr1:");
 		fprintf(stderr, "%s", ntoa(hWifi->addr1));
 		fprintf(stderr, " addr2:");
@@ -632,17 +636,25 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		fprintf(stderr, "%s", ntoa(hWifi->addr3));
 		fprintf(stderr, " bss:");
 		fprintf(stderr, "%s\n", ntoa(bss));
+//	    }
 #endif
 	}
 	if (type == typeUnknown)
 		return;
-
+	
 	//Parse the 802.11 tags
 	if (!fctype && (fc == mgt_probeResponse || fc == mgt_beacon || fc == mgt_probeRequest)) {
 		m = (ieee_802_11_mgt_frame *) (hWifi + 1);
 		if (swap16(m->caps) & MGT_CAPS_IBSS) {
 			type = typeSta;
 			adhocbeacon = 1;
+/*		fprintf(stderr, "sta src:");
+		fprintf(stderr, "%s", ntoa(src));
+		fprintf(stderr, " dst:");
+		fprintf(stderr, "%s", ntoa(dst));
+		fprintf(stderr, " bss:");
+		fprintf(stderr, "%s\n", ntoa(bss));
+*/
 		}
 		if (swap16(m->caps) & MGT_CAPS_WEP)
 			encType = 0x400;
@@ -652,6 +664,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		int rsn = 0;
 		unsigned int wpaflag = 0;
 		int mesh = 0;
+//		fprintf(stderr, "%d\n", __LINE__);
 		while ((u_int) e < (u_int) packet + pktlen) {
 			if (e->tag == tagSSID) {
 				if (!mesh) {
@@ -674,9 +687,12 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 				data += 2;	// version;
 				data += 4;	// group cipher
 				int count = data[0] | (data[1] << 8);
+				if (2 + 4 + 2 + (count * 4) > e->length)
+				    goto next;
 				data += 2 + (count * 4);	// pairwise cipher
 				count = data[0] | (data[1] << 8);
 				int i;
+				if (count)
 				encType &= ~0x400;
 				for (i = 0; i < count; i++) {
 					unsigned char *ofs = data + 2 + (i * 4);
@@ -726,6 +742,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 					encType |= 0x200;	// psk 
 				}
 			}
+			next:;
 			e = (ieee_802_11_tag *) ((int)(e + 1) + e->length);
 		}
 	}
@@ -739,6 +756,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		host->RSSI = -rssi * 100;
 	}
 	if (type == typeSta) {
+	//	fprintf(stderr, "sta\n");
 		if (nonzeromac(bss)) {
 			memcpy(host->staInfo->connectedBSSID, bss, 6);
 			host->staInfo->state = ssAssociated;
