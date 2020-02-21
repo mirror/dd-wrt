@@ -53,6 +53,7 @@
 #include "wireless.h"
 #include <services.h>
 #include <wlutils.h>
+#include <pthread.h>
 
 #ifdef HAVE_MADWIFI
 #include "net80211/ieee80211.h"
@@ -1931,9 +1932,9 @@ static void setMacFilter(char *iface)
 #endif
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
-static void configure_single(int count)
+static void *configure_single(void *arg)
 {
-
+	size_t count = (size_t)arg;
 	char *next;
 	char var[80];
 	char mode[80];
@@ -2034,34 +2035,34 @@ static void configure_single(int count)
 
 	}
 
-	if (vifs != NULL)
+	if (vifs != NULL) {
 		foreach(var, vifs, next) {
-		sprintf(mode, "%s_mode", var);
-		char *vapm = nvram_default_get(mode, "ap");
-		// create device
-		if (*mode) {
-			if (!strcmp(vapm, "wet") || !strcmp(vapm, "sta")
-			    || !strcmp(vapm, "wdssta") || !strcmp(vapm, "wdssta_mtik"))
-				eval("wlanconfig", var, "create", "wlandev", wif, "wlanmode", "sta", "nosbeacon");
-			else if (!strcmp(vapm, "ap")
-				 || !strcmp(vapm, "wdsap"))
-				eval("wlanconfig", var, "create", "wlandev", wif, "wlanmode", "ap");
-			else
-				eval("wlanconfig", var, "create", "wlandev", wif, "wlanmode", "adhoc", "nosbeacon");
-			vif = 1;
-			if (!*primary)
-				strcpy(primary, var);
-			char vathmac[16];
+			sprintf(mode, "%s_mode", var);
+			char *vapm = nvram_default_get(mode, "ap");
+			// create device
+			if (*mode) {
+				if (!strcmp(vapm, "wet") || !strcmp(vapm, "sta")
+				    || !strcmp(vapm, "wdssta") || !strcmp(vapm, "wdssta_mtik"))
+					eval("wlanconfig", var, "create", "wlandev", wif, "wlanmode", "sta", "nosbeacon");
+				else if (!strcmp(vapm, "ap")
+					 || !strcmp(vapm, "wdsap"))
+					eval("wlanconfig", var, "create", "wlandev", wif, "wlanmode", "ap");
+				else
+					eval("wlanconfig", var, "create", "wlandev", wif, "wlanmode", "adhoc", "nosbeacon");
+				vif = 1;
+				if (!*primary)
+					strcpy(primary, var);
+				char vathmac[16];
 
-			sprintf(vathmac, "%s_hwaddr", var);
-			char vmacaddr[32];
+				sprintf(vathmac, "%s_hwaddr", var);
+				char vmacaddr[32];
 
-			getMacAddr(var, vmacaddr);
-			nvram_set(vathmac, vmacaddr);
+				getMacAddr(var, vmacaddr);
+				nvram_set(vathmac, vmacaddr);
 
+			}
 		}
-		}
-
+	}
 	if (strcmp(apm, "ap") && strcmp(apm, "wdsap")) {
 		if (!strcmp(apm, "wet") || !strcmp(apm, "wdssta") || !strcmp(apm, "wdssta_mtik")
 		    || !strcmp(apm, "sta")) {
@@ -2856,7 +2857,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 #endif
 	deconfigure_wifi();
 	int c = getdevicecount();
-	int i;
+	size_t i;
 	char tmp[256];
 	int changed = 0;
 #ifdef HAVE_ATH9K
@@ -2904,7 +2905,19 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		adjust_regulatory(i);
 	for (i = 0; i < c; i++) {
 		sysprintf("rm -f /tmp/ath%d_configured", i);
-		FORK(configure_single(i));
+#if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
+		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+		pthread_t thread;
+		if (pthread_create(&thread, &attr, configure_single, (void *)i) != 0) {
+			dd_logerror("wifi", "Failed to create thread\n");
+		}
+		pthread_attr_destroy(&attr);
+#else
+		configure_single((void *)i)
+#endif
+		    FORK(configure_single(i));
 	}
 
 #if 1
@@ -2920,7 +2933,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 				fclose(check);
 			}
 		}
-//		fprintf(stderr, "waiting for %d interfaces, %d finished\n", c, cnf);
+//              fprintf(stderr, "waiting for %d interfaces, %d finished\n", c, cnf);
 		if (cnf == c)
 			break;
 		usleep(100 * 1000);	// wait 100 ms
