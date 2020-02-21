@@ -221,6 +221,7 @@ static void survey(struct unl *unl, int wdev, unl_cb cb, struct dd_list_head *fr
 	msg = unl_genl_msg(unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(unl, msg, cb, frequencies);
+	return;
 nla_put_failure:
 	nlmsg_free(msg);
 }
