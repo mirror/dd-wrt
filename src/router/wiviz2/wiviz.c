@@ -670,15 +670,27 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 				if (!mesh) {
 					ssidlen = e->length;
 					ssid = (char *)(e + 1);
-				fprintf(stderr, "ssid %s\n", ssid);
-				}
+					if (ssidlen > 32)
+					    goto next;
+/*				fprintf(stderr, "ssid:");
+				int i;
+				for (i=0;i<ssidlen;i++)
+				fprintf(stderr, "%c", ssid[i]);
+				fprintf(stderr, "\n");
+				}*/
 			}
 			if (e->tag == tagMESHSSID) {
 				type = typeMesh;
 				mesh = 1;
 				ssidlen = e->length;
+					if (ssidlen > 32)
+					    goto next;
 				ssid = (char *)(e + 1);
-				fprintf(stderr, "meshssid %s\n", ssid);
+/*				int i;
+				fprintf(stderr, "mesh:");
+				for (i=0;i<ssidlen;i++)
+				fprintf(stderr, "%c", ssid[i]);
+				fprintf(stderr, "\n");*/
 			}
 			if (e->tag == tagChannel) {
 				channel = *(char *)(e + 1);
