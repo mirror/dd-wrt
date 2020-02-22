@@ -257,9 +257,6 @@ static void checkupgrade(void)
 {
 	if (nvram_matchi("flash_active", "1"))
 		return;
-#if (!defined(HAVE_X86) && !defined(HAVE_RB600))  || defined(HAVE_WDR4900)
-	if (nvram_matchi("flash_active", 1))
-		return;
 
 	FILE *in = fopen("/tmp/firmware.bin", "rb");
 
@@ -287,6 +284,8 @@ static void checkupgrade(void)
 		eval("write", "/tmp/firmware.bin", "rootfs");
 #elif defined(HAVE_VENTANA)
 		eval("update-prepare.sh", "/tmp/firmware.bin", "rootfs", "usefile");
+#elif defined(HAVE_X86) || defined(HAVE_RB600)
+		eval("update-prepare.sh", "/tmp/firmware.bin", getdisc(), "usefile", "reboot", "usedd");
 #else
 		eval("fischecksum");
 		eval("write", "/tmp/firmware.bin", "linux");
@@ -295,7 +294,6 @@ static void checkupgrade(void)
 		sleep(5);
 		killall("init", SIGQUIT);
 	}
-#endif
 }
 
 static int do_mon(void)
