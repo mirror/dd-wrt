@@ -671,7 +671,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 					ssidlen = e->length;
 					ssid = (char *)(e + 1);
 					if (ssidlen > 32)
-					    goto next;
+						goto next;
 /*				fprintf(stderr, "ssid:");
 				int i;
 				for (i=0;i<ssidlen;i++)
@@ -683,8 +683,8 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 				type = typeMesh;
 				mesh = 1;
 				ssidlen = e->length;
-					if (ssidlen > 32)
-					    goto next;
+				if (ssidlen > 32)
+					goto next;
 				ssid = (char *)(e + 1);
 /*				int i;
 				fprintf(stderr, "mesh:");
@@ -709,8 +709,8 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 				int i;
 				if (count)
 					encType &= ~0x400;
-				if (2 + 4 + 2 + (rcount * 4) + 2 + (count * 4)> e->length)
-					goto next;				
+				if (2 + 4 + 2 + (rcount * 4) + 2 + (count * 4) > e->length)
+					goto next;
 				for (i = 0; i < count; i++) {
 					unsigned char *ofs = data + 2 + (i * 4);
 					if (e->length >= 4 && memcmp(ofs, "\x00\x0f\xac", 3) == 0) {
@@ -759,7 +759,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 						encType |= 0x200;	// psk 
 						break;
 					}
-			    	}
+				}
 				if (e->length >= sizeof(struct ieee80211_mtik_ie_data) + 6 && memcmp(ofs, "\x00\x0c\x42", 3) == 0) {
 					struct ieee80211_mtik_ie_data *radio = &ofs[6];
 					memcpy(radioname, radio->radioname, 15);
@@ -813,7 +813,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		if (strlen(radioname))
 			memcpy(host->staInfo->radioname, radioname, 16);
 	}
-	if (type == typeAP || type == typeWDS || type == typeMesh || type == typeAdhocHub ) {
+	if (type == typeAP || type == typeWDS || type == typeMesh || type == typeAdhocHub) {
 		if (nonzeromac(bss)) {
 			memcpy(host->apInfo->bssid, bss, 6);
 		}
@@ -848,21 +848,30 @@ void fprint_mac(FILE * outf, u_char * mac, char *extra)
 #define MAX_PROBES MAX_HOSTS/2
 wiviz_host *gotHost(wiviz_cfg * cfg, u_char * mac, host_type type)
 {
-	int i = (mac[5] + (mac[4] << 8)) % MAX_HOSTS;
-	int c = 0;
-	wiviz_host *h = cfg->hosts + i;
-	while (h->occupied && memcmp(h->mac, mac, 6)) {
+	wiviz_host *h = cfg->hosts;
+	int i = 0;
+	while (h) {
+		if (!memcmp(h->mac, mac, 6))
+			break;
+		if (i >= MAX_HOSTS) {
+			h = NULL;
+			break;
+		}
 		i++;
 		h++;
-		c++;
-		if (i >= MAX_HOSTS) {
-			i = 0;
-			h = cfg->hosts;
-		}
-		if (c > MAX_PROBES)
-			break;
 	}
-#if 0 //def DEBUG
+	if (!h) {
+		i = 0;
+		h = cfg->hosts;
+		while (h->occupied) {
+			if (i >= MAX_HOSTS) {
+				h = cfg->hosts;
+				break;
+			}
+			h++;
+		}
+	}
+#if 0				//def DEBUG
 	if (!h->occupied) {
 		fprintf(stderr, "New host %s\n", ntoa(mac));
 	}
