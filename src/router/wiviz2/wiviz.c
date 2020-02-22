@@ -59,7 +59,7 @@ int getWifiInfo(char *ifname, unsigned char *mac, int field);
 #define getRxRate(ifname, mac) getWifiInfo(ifname, mac, INFO_RXRATE)
 #define getUptime(ifname, mac) getWifiInfo(ifname, mac, INFO_UPTIME)
 
-#define HOST_TIMEOUT 300
+#define HOST_TIMEOUT 3000
 
 #include "wl_access.h"
 #include "structs.h"
