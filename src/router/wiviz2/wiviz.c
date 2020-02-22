@@ -665,7 +665,6 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		int rsn = 0;
 		unsigned int wpaflag = 0;
 		int mesh = 0;
-//              fprintf(stderr, "%d\n", __LINE__);
 		while ((u_int) e < (u_int) packet + pktlen) {
 			if (e->tag == tagSSID) {
 				if (!mesh) {
@@ -688,17 +687,18 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 				unsigned char *data = e + 1;
 				data += 2;	// version;
 				data += 4;	// group cipher
-				int count = data[0] | (data[1] << 8);
-				if (2 + 4 + 2 + (count * 4) > e->length)
+				int rcount = data[0] | (data[1] << 8);
+				if (2 + 4 + 2 + (rcount * 4) > e->length)
 					goto next;
-				data += 2 + (count * 4);	// pairwise cipher
-				count = data[0] | (data[1] << 8);
+				data += 2 + (rcount * 4);	// pairwise cipher
+				int count = data[0] | (data[1] << 8);
 				int i;
 				if (count)
 					encType &= ~0x400;
+				if (2 + 4 + 2 + (rcount * 4) + 2 + (count * 4)> e->length)
+					goto next;				
 				for (i = 0; i < count; i++) {
 					unsigned char *ofs = data + 2 + (i * 4);
-//                              fprintf(stderr, "rsn %02X:%02X:%02X:%02X\n",ofs[0],ofs[1],ofs[2],ofs[3]); 
 					if (e->length >= 4 && memcmp(ofs, "\x00\x0f\xac", 3) == 0) {
 						switch (ofs[3]) {
 						case 1:
@@ -745,7 +745,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 						encType |= 0x200;	// psk 
 						break;
 					}
-				}
+			    	}
 				if (e->length >= sizeof(struct ieee80211_mtik_ie_data) + 6 && memcmp(ofs, "\x00\x0c\x42", 3) == 0) {
 					struct ieee80211_mtik_ie_data *radio = &ofs[6];
 					memcpy(radioname, radio->radioname, 15);
@@ -848,7 +848,7 @@ wiviz_host *gotHost(wiviz_cfg * cfg, u_char * mac, host_type type)
 		if (c > MAX_PROBES)
 			break;
 	}
-#ifdef DEBUG
+#if 0 //def DEBUG
 	if (!h->occupied) {
 		fprintf(stderr, "New host %s\n", ntoa(mac));
 	}
@@ -884,7 +884,6 @@ wiviz_host *gotHost(wiviz_cfg * cfg, u_char * mac, host_type type)
 void print_host(FILE * outf, wiviz_host * host)
 {
 	int i;
-
 	if (!host->occupied)
 		return;
 	fprintf(outf, "h.mac = '");
