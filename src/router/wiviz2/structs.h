@@ -22,6 +22,26 @@ typedef enum {
 	mgt_deauth = 0xc0
 } wifi_frametype;
 
+struct ieee80211_mtik_ie_data {
+	u_char data1[2];          /* unknown yet 0x011e */
+	u_char flags;             /* 4(100) - wds, 1(1) - nstream, 8(1000) - pooling, 0 - none */
+	u_char data2[3];          /* unknown yet fill with zero */
+	u_char version[4];        /* little endian version. Use 0x1f660902 */
+	u_char pad1;              /* a kind of padding, 0xff */
+	u_char namelen;           /* length of radio name. Change with caution. 0x0f is safe value */
+	u_char radioname[15];     /* Radio name */
+	u_char pad2[5];           /* unknown. fill with zero */
+} __packed;
+
+struct ieee80211_mtik_ie {
+	u_char id;                /* IEEE80211_ELEMID_VENDOR */
+	u_char len;               /* length in bytes */
+	u_char oui[3];            /* 0x00, 0x50, 0xf2 */
+	u_char type;              /* OUI type */
+	u_short version;          /* spec revision */
+	struct ieee80211_mtik_ie_data iedata;
+} __packed;
+
 typedef struct ieee802_11_hdr {
 	u_char frame_control;
 	u_char flags;
@@ -127,7 +147,8 @@ typedef enum {
 	typeAP,
 	typeWDS,
 	typeSta,
-	typeAdhocHub
+	typeAdhocHub,
+	typeMesh
 } host_type;
 
 typedef enum {
@@ -144,6 +165,7 @@ typedef struct {
 	u_char channel;
 	u_short flags;
 	int encryption;
+	char radioname[16];
 } ap_info;
 
 typedef struct {
@@ -151,6 +173,7 @@ typedef struct {
 	u_char connectedBSSID[6];
 	char lastssid[33];
 	u_char lastssidlen;
+	char radioname[16];
 } sta_info;
 
 typedef struct {
