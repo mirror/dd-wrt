@@ -170,8 +170,11 @@ int GetPathDisk(const wchar *Path)
 void AddEndSlash(wchar *Path,size_t MaxLength)
 {
   size_t Length=wcslen(Path);
-  if (Length>0 && Path[Length-1]!=CPATHDIVIDER)
-    wcsncatz(Path,SPATHDIVIDER,MaxLength);
+  if (Length>0 && Path[Length-1]!=CPATHDIVIDER && Length+1<MaxLength)
+  {
+    Path[Length]=CPATHDIVIDER;
+    Path[Length+1]=0;
+  }
 }
 
 
