@@ -171,7 +171,7 @@ int main(int argc, char **argv)
 
 #if defined(HAVE_MADWIFI)
 	if (is_mac80211(nvram_safe_get("wifi_display"))) {
-		sysprintf("iw phy phy%d interface add %s type monitor flags fcsfail plcpfail control otherbss", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")), get_monitor());
+		sysprintf("iw phy phy%d interface add %s type monitor flags control otherbss", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")), get_monitor());
 //              sysprintf("iw phy phy%d interface add %s type monitor flags none", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")), get_monitor());
 		sysprintf("ifconfig %s up", get_monitor());
 	} else {
