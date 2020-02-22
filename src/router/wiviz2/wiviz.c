@@ -670,6 +670,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 				if (!mesh) {
 					ssidlen = e->length;
 					ssid = (char *)(e + 1);
+				fprintf(stderr, "ssid %s\n", ssid);
 				}
 			}
 			if (e->tag == tagMESHSSID) {
@@ -677,6 +678,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 				mesh = 1;
 				ssidlen = e->length;
 				ssid = (char *)(e + 1);
+				fprintf(stderr, "meshssid %s\n", ssid);
 			}
 			if (e->tag == tagChannel) {
 				channel = *(char *)(e + 1);
