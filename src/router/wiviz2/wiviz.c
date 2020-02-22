@@ -676,8 +676,8 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 				int i;
 				for (i=0;i<ssidlen;i++)
 				fprintf(stderr, "%c", ssid[i]);
-				fprintf(stderr, "\n");
-				}*/
+				fprintf(stderr, "\n"); */
+				}
 			}
 			if (e->tag == tagMESHSSID) {
 				type = typeMesh;
