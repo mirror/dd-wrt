@@ -784,11 +784,14 @@ function updateCenteredInfo() {
 	    if (h.type == 'adhoc') sp.innerHTML = "Ad-hoc entity";
 	    if (h.type == 'sta') sp.innerHTML = "Client";
 	    if (h.type == 'wds') sp.innerHTML = "WDS";
+	    if (h.type == 'mesh') sp.innerHTML = "Mesh";
 	}
 	sp = document.getElementById('detail_info');
 	if (sp) {
 	    var s = "";
 	    s += "MAC: " + h.mac + "<br>";
+	    if (h.radioname.length)
+	    	s += "Radioname: " + h.radioname + "<br>";
 	    h.realage = Math.floor((h.age + (now - h.agestart) / 1000) );
 	    s += "Signal: " + h.rssi + " dBm<br>";
 	    s += "Seen " + h.realage + " seconds ago<br>";
@@ -819,8 +822,11 @@ function updateCenteredInfo() {
 				s += "Scanning<br>Last asked for: " + h.sta_lastssid + "<br>";
 		    }
 	    }
-	    if (h.type == 'ap' || h.type == 'adhoc') {
+	    if (h.type == 'ap' || h.type == 'adhoc' || h.type == 'wds' || h.type == 'mesh') {
 	        s += "SSID: " + h.ssid + "<br>";
+	        if (h.radioname.length)
+	    	    s += "Radioname: " + h.radioname + "<br>";
+	        
 	        s += "Channel: " + h.channel + "<br>";
 	        s += "Encryption: ";
 			if (h.encrypted == 'yes') {

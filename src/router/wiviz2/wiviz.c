@@ -172,7 +172,7 @@ int main(int argc, char **argv)
 #if defined(HAVE_MADWIFI)
 	if (is_mac80211(nvram_safe_get("wifi_display"))) {
 		sysprintf("iw phy phy%d interface add %s type monitor flags fcsfail plcpfail control otherbss", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")), get_monitor());
-//		sysprintf("iw phy phy%d interface add %s type monitor flags none", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")), get_monitor());
+//              sysprintf("iw phy phy%d interface add %s type monitor flags none", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")), get_monitor());
 		sysprintf("ifconfig %s up", get_monitor());
 	} else {
 		sysprintf("wlanconfig %s create wlandev %s wlanmode monitor", get_monitor(), getWifi(nvram_safe_get("wifi_display")));
@@ -602,7 +602,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		fprintf(stderr, "%s\n", ntoa(bss));
 #endif
 	}
-	
+
 	to_ds = hWifi->flags & IEEE80211_TO_DS;
 	from_ds = hWifi->flags & IEEE80211_FROM_DS;
 	unsigned char subtype = hWifi->frame_control & 0xF0;
@@ -625,8 +625,8 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		if (to_ds && from_ds)
 			bss = hWifi->addr1;	// wds frame
 #ifdef DEBUG
-	    
-//	    if (type == typeSta) {
+
+//          if (type == typeSta) {
 		fprintf(stderr, "type: %d flags: %X ", type, hWifi->flags);
 		fprintf(stderr, "addr1:");
 		fprintf(stderr, "%s", ntoa(hWifi->addr1));
@@ -636,12 +636,13 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		fprintf(stderr, "%s", ntoa(hWifi->addr3));
 		fprintf(stderr, " bss:");
 		fprintf(stderr, "%s\n", ntoa(bss));
-//	    }
+//          }
 #endif
 	}
 	if (type == typeUnknown)
 		return;
-	
+	char radioname[16];
+	memset(radioname, 0, 16);
 	//Parse the 802.11 tags
 	if (!fctype && (fc == mgt_probeResponse || fc == mgt_beacon || fc == mgt_probeRequest)) {
 		m = (ieee_802_11_mgt_frame *) (hWifi + 1);
@@ -664,7 +665,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		int rsn = 0;
 		unsigned int wpaflag = 0;
 		int mesh = 0;
-//		fprintf(stderr, "%d\n", __LINE__);
+//              fprintf(stderr, "%d\n", __LINE__);
 		while ((u_int) e < (u_int) packet + pktlen) {
 			if (e->tag == tagSSID) {
 				if (!mesh) {
@@ -673,6 +674,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 				}
 			}
 			if (e->tag == tagMESHSSID) {
+				type = typeMesh;
 				mesh = 1;
 				ssidlen = e->length;
 				ssid = (char *)(e + 1);
@@ -688,12 +690,12 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 				data += 4;	// group cipher
 				int count = data[0] | (data[1] << 8);
 				if (2 + 4 + 2 + (count * 4) > e->length)
-				    goto next;
+					goto next;
 				data += 2 + (count * 4);	// pairwise cipher
 				count = data[0] | (data[1] << 8);
 				int i;
 				if (count)
-				encType &= ~0x400;
+					encType &= ~0x400;
 				for (i = 0; i < count; i++) {
 					unsigned char *ofs = data + 2 + (i * 4);
 //                              fprintf(stderr, "rsn %02X:%02X:%02X:%02X\n",ofs[0],ofs[1],ofs[2],ofs[3]); 
@@ -732,17 +734,25 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 				}
 			}
 			if (e->tag == tagVendorSpecific) {
-				unsigned char *t = e + 1;
 				encType &= ~0x400;
-				// fprintf(stderr, "ieee %02X:%02X:%02X:%02X\n", t[0], t[1], t[2], t[3]);
-				if (e->length >= 4 && memcmp(e + 1, "\x00\x50\xf2\x01", 4) == 0) {
-					encType |= 0x100;	// wpa
+				unsigned char *ofs = e + 1;
+				if (e->length >= 4 && memcmp(ofs, "\x00\x50\xf2", 3) == 0) {
+					switch (ofs[3]) {
+					case 1:
+						encType |= 0x100;	// wpa
+						break;
+					case 2:
+						encType |= 0x200;	// psk 
+						break;
+					}
 				}
-				if (e->length >= 4 && memcmp(e + 1, "\x00\x50\xf2\x02", 4) == 0) {
-					encType |= 0x200;	// psk 
+				if (e->length >= sizeof(struct ieee80211_mtik_ie_data) + 6 && memcmp(ofs, "\x00\x0c\x42", 3) == 0) {
+					struct ieee80211_mtik_ie_data *radio = &ofs[6];
+					memcpy(radioname, radio->radioname, 15);
+					radioname[15] = 0;
 				}
 			}
-			next:;
+		      next:;
 			e = (ieee_802_11_tag *) ((int)(e + 1) + e->length);
 		}
 	}
@@ -756,7 +766,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		host->RSSI = -rssi * 100;
 	}
 	if (type == typeSta) {
-	//	fprintf(stderr, "sta\n");
+		//      fprintf(stderr, "sta\n");
 		if (nonzeromac(bss)) {
 			memcpy(host->staInfo->connectedBSSID, bss, 6);
 			host->staInfo->state = ssAssociated;
@@ -786,13 +796,10 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 			host->staInfo->lastssid[ssidlen] = 0;
 			host->staInfo->lastssidlen = ssidlen;
 		}
+		if (strlen(radioname))
+			memcpy(host->staInfo->radioname, radioname, 16);
 	}
-	if (type == typeWDS) {
-		if (nonzeromac(bss)) {
-			memcpy(host->apInfo->bssid, bss, 6);
-		}
-	}
-	if (type == typeAP) {
+	if (type == typeAP || type == typeWDS || type == typeMesh || type == typeAdhocHub ) {
 		if (nonzeromac(bss)) {
 			memcpy(host->apInfo->bssid, bss, 6);
 		}
@@ -806,6 +813,8 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		host->apInfo->flags = hWifi->flags;
 		if (encType != -1)
 			host->apInfo->encryption = encType;
+		if (strlen(radioname))
+			memcpy(host->apInfo->radioname, radioname, 16);
 	}
 }
 
@@ -815,7 +824,7 @@ void print_mac(u_char * mac, char *extra)
 	fprint_mac(stdout, mac, extra);
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////// 
 void fprint_mac(FILE * outf, u_char * mac, char *extra)
 {
 	fprintf(outf, "%02X:%02X:%02X:%02X:%02X:%02X%s", mac[0] & 0xFF, mac[1] & 0xFF, mac[2] & 0xFF, mac[3] & 0xFF, mac[4] & 0xFF, mac[5] & 0xFF, extra);
@@ -856,6 +865,14 @@ wiviz_host *gotHost(wiviz_cfg * cfg, u_char * mac, host_type type)
 		h->apInfo = (ap_info *) malloc(sizeof(ap_info));
 		memset(h->apInfo, 0, sizeof(ap_info));
 	}
+	if (h->type == typeMesh && !h->apInfo) {
+		h->apInfo = (ap_info *) malloc(sizeof(ap_info));
+		memset(h->apInfo, 0, sizeof(ap_info));
+	}
+	if (h->type == typeAdhocHub && !h->apInfo) {
+		h->apInfo = (ap_info *) malloc(sizeof(ap_info));
+		memset(h->apInfo, 0, sizeof(ap_info));
+	}
 	if (h->type == typeSta && !h->staInfo) {
 		h->staInfo = (sta_info *) malloc(sizeof(sta_info));
 		memset(h->staInfo, 0, sizeof(sta_info));
@@ -889,6 +906,9 @@ void print_host(FILE * outf, wiviz_host * host)
 	case typeAdhocHub:
 		fprintf(outf, "adhoc");
 		break;
+	case typeMesh:
+		fprintf(outf, "mesh");
+		break;
 	}
 	fprintf(outf, "';\nh.self = ");
 	fprintf(outf, host->isSelf ? "true;\n" : "false;\n");
@@ -906,52 +926,33 @@ void print_host(FILE * outf, wiviz_host * host)
 			fprintf(outf, "&#%04i;", *((char *)host->staInfo->lastssid + i) & 0xFF);
 		}
 		fprintf(outf, "';\n");
-	}
-	if (host->type == typeAP || host->type == typeAdhocHub) {
-		fprintf(outf, "h.channel = %i;\nh.ssid = '", host->apInfo->channel & 0xFF);
-		for (i = 0; i < host->apInfo->ssidlen; i++) {
-			fprintf(outf, "&#%04i;", *((char *)host->apInfo->ssid + i) & 0xFF);
+		int len = strlen(host->staInfo->radioname);
+		fprintf(outf, "h.radioname = '");
+		if (len) {
+			for (i = 0; i < len; i++) {
+				fprintf(outf, "&#%04i;", *((char *)host->staInfo->radioname + i) & 0xFF);
+			}
 		}
-		fprintf(outf, "';\nh.encrypted = ");
-		switch (host->apInfo->encryption) {
-		case -1:
-			fprintf(outf, "'unknown';\n");
-			break;
-		case 0:
-			fprintf(outf, "'no';\n");
-			break;
-		default:
-			fprintf(outf, "'yes';\nh.enctype = '");
-			if (host->apInfo->encryption & 0x1)
-				fprintf(outf, "WPA2 ");
-			if (host->apInfo->encryption & 0x2)
-				fprintf(outf, "PSK2 ");
-			if (host->apInfo->encryption & 0x4)
-				fprintf(outf, "FT/EAP ");
-			if (host->apInfo->encryption & 0x8)
-				fprintf(outf, "FT/PSK ");
-			if (host->apInfo->encryption & 0x10)
-				fprintf(outf, "EAP/SHA256 ");
-			if (host->apInfo->encryption & 0x20)
-				fprintf(outf, "PSK/SHA256 ");
-			if (host->apInfo->encryption & 0x40)
-				fprintf(outf, "SAE/PSK3 ");
-			if (host->apInfo->encryption & 0x80)
-				fprintf(outf, "FT/PSK3 ");
-			if (host->apInfo->encryption & 0x100)
-				fprintf(outf, "WPA ");
-			if (host->apInfo->encryption & 0x200)
-				fprintf(outf, "PSK ");
-			if (host->apInfo->encryption & 0x400)
-				fprintf(outf, "WEP ");
-			if (host->apInfo->encryption & 0x800)
-				fprintf(outf, "WPA3 ");
-			fprintf(outf, "';\n");
-		}
+		fprintf(outf, "';\n");
 	}
-	if (host->type == typeWDS) {
-		fprintf(outf, "h.channel = %i;\nh.ssid = '", host->apInfo->channel & 0xFF);
-		fprintf(outf, "';\nh.encrypted = ");
+	if (host->type == typeAP || host->type == typeAdhocHub || host->type == typeWDS || host->type == typeMesh) {
+		fprintf(outf, "h.channel = %i;\n", host->apInfo->channel & 0xFF);
+		fprintf(outf, "h.ssid = '");
+		if (host->apInfo->ssidlen > 0) {
+			for (i = 0; i < host->apInfo->ssidlen; i++) {
+				fprintf(outf, "&#%04i;", *((char *)host->apInfo->ssid + i) & 0xFF);
+			}
+		}
+		fprintf(outf, "';\n");
+		int len = strlen(host->apInfo->radioname);
+		fprintf(outf, "h.radioname = '");
+		if (len) {
+			for (i = 0; i < len; i++) {
+				fprintf(outf, "&#%04i;", *((char *)host->apInfo->radioname + i) & 0xFF);
+			}
+		}
+		fprintf(outf, "';\n");
+		fprintf(outf, "h.encrypted = ");
 		switch (host->apInfo->encryption) {
 		case -1:
 			fprintf(outf, "'unknown';\n");
