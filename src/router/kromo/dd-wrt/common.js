@@ -620,8 +620,8 @@ function fix_cr(F) {
 	var e = d.replace(re5, '"');
 	var f = e.replace(re6, '>');
 	var g = f.replace(re7, '<');
-	var h = g.replace(re8, '\'');
-	var i = h.replace(re9, '\\');
+	var h = g.replace(re8, '\\');
+	var i = h.replace(re9, '\'');
 	var j = i.replace(re10,'');
 return j;
 }
