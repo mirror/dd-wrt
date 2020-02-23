@@ -859,6 +859,7 @@ static int smb2_oplock_break_noti(struct oplock_info *opinfo, int ack_required)
 			opinfo->op_state = OPLOCK_STATE_NONE;
 		}
 	} else {
+		atomic_inc(&conn->r_count);
 		__smb2_oplock_break_noti(&work->work);
 		if (opinfo->level == SMB2_OPLOCK_LEVEL_II)
 			opinfo->level = SMB2_OPLOCK_LEVEL_NONE;
@@ -1005,6 +1006,7 @@ static int smb2_break_lease_noti(struct oplock_info *opinfo, int ack_required)
 				atomic_set(&opinfo->breaking_cnt, 0);
 		}
 	} else {
+		atomic_inc(&conn->r_count);
 		__smb2_lease_break_noti(&work->work);
 		if (opinfo->o_lease->state == SMB2_LEASE_READ_CACHING_LE) {
 			opinfo->level = SMB2_OPLOCK_LEVEL_NONE;
