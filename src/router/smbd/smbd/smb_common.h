@@ -365,7 +365,7 @@ struct smb_version_values {
 };
 
 struct smb_version_ops {
-	int (*get_cmd_val)(struct ksmbd_work *swork);
+	uint16_t (*get_cmd_val)(struct ksmbd_work *swork);
 	int (*init_rsp_hdr)(struct ksmbd_work *swork);
 	void (*set_rsp_status)(struct ksmbd_work *swork, __le32 err);
 	int (*allocate_rsp_buf)(struct ksmbd_work *work);

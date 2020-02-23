@@ -71,11 +71,11 @@ static struct timespec smb_NTtimeToUnix(__le64 ntutc)
  *
  * Return:      smb command value
  */
-int get_smb_cmd_val(struct ksmbd_work *work)
+uint16_t get_smb_cmd_val(struct ksmbd_work *work)
 {
 	struct smb_hdr *rcv_hdr = (struct smb_hdr *)REQUEST_BUF(work);
 
-	return (int)rcv_hdr->Command;
+	return (uint16_t)rcv_hdr->Command;
 }
 
 /**
