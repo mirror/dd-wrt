@@ -1600,8 +1600,8 @@ int ksmbd_vfs_fiemap(struct ksmbd_file *fp, u64 start, u64 length,
 			}
 		}
 
-		start = cpu_to_le64(range->file_offset) +
-			cpu_to_le64(range->length);
+		start = le64_to_cpu(range->file_offset) +
+			le64_to_cpu(range->length);
 		length = end - start;
 	}
 

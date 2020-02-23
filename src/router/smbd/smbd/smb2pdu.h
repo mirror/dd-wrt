@@ -1498,7 +1498,7 @@ extern void init_smb2_max_trans_size(unsigned int sz);
 extern int is_smb2_neg_cmd(struct ksmbd_work *work);
 extern int is_smb2_rsp(struct ksmbd_work *work);
 
-extern int get_smb2_cmd_val(struct ksmbd_work *work);
+extern uint16_t get_smb2_cmd_val(struct ksmbd_work *work);
 extern void set_smb2_rsp_status(struct ksmbd_work *work, __le32 err);
 extern int init_smb2_rsp_hdr(struct ksmbd_work *work);
 extern int smb2_allocate_rsp_buf(struct ksmbd_work *work);
