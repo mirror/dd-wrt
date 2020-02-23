@@ -54,40 +54,32 @@ static void run_openvpn(char *prg, char *path)
 
 void create_openvpnrules(FILE * fp)
 {
-
-	char ovpniface[10];
-#ifdef HAVE_ERC
-	sprintf(ovpniface, "%s0", nvram_safe_get("openvpncl_tuntap"));
-#else
-	sprintf(ovpniface, "%s1", nvram_safe_get("openvpncl_tuntap"));
-#endif
-
 	if (nvram_matchi("openvpncl_nat", 1)) {
-		fprintf(fp, "iptables -D POSTROUTING -t nat -o %s -j MASQUERADE\n"	//
-			"iptables -I POSTROUTING -t nat -o %s -j MASQUERADE\n", ovpniface, ovpniface);
+		fprintf(fp, "iptables -D POSTROUTING -t nat -o $dev -j MASQUERADE\n"	//
+			"iptables -I POSTROUTING -t nat -o $dev -j MASQUERADE\n");
 	}
 	if (nvram_matchi("openvpncl_sec", 0)) {
-		fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n"	//
-			"iptables -I INPUT -i %s -j ACCEPT\n", ovpniface, ovpniface);
+		fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT\n"	//
+			"iptables -I INPUT -i $dev -j ACCEPT\n");
 	} else {
 		if (nvram_match("openvpncl_tuntap", "tun"))	//only needed with tun
-			fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n"	//
-				"iptables -D FORWARD -i %s -j ACCEPT\n"	//
-				"iptables -D FORWARD -o %s -j ACCEPT\n"	//
-				"iptables -I INPUT -i %s -j ACCEPT\n"	//
-				"iptables -I FORWARD -i %s -j ACCEPT\n"	//
-				"iptables -I FORWARD -o %s -j ACCEPT\n", ovpniface, ovpniface, ovpniface, ovpniface, ovpniface, ovpniface);
+			fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT\n"	//
+				"iptables -D FORWARD -i $dev -j ACCEPT\n"	//
+				"iptables -D FORWARD -o $dev -j ACCEPT\n"	//
+				"iptables -I INPUT -i $dev -j ACCEPT\n"	//
+				"iptables -I FORWARD -i $dev -j ACCEPT\n"	//
+				"iptables -I FORWARD -o $dev -j ACCEPT\n");
 	}
 	if (nvram_match("openvpncl_mit", "1"))
-		fprintf(fp, "iptables -t raw -I PREROUTING ! -i %s -d $(getipmask %s) -j DROP\n", ovpniface, ovpniface);
+		fprintf(fp, "[ \"$(getipmask $dev)\" != \"255.255.255.255/32\" ] && iptables -t raw -I PREROUTING ! -i $dev -d $(getipmask $dev) -j DROP\n");
 	if (nvram_match("openvpncl_tuntap", "tun")) {
 		fprintf(fp, "cat /tmp/resolv.dnsmasq > /tmp/resolv.dnsmasq_isp\n");
 		fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ print \"nameserver \" $3 }' > /tmp/resolv.dnsmasq\n");
 		fprintf(fp, "cat /tmp/resolv.dnsmasq_isp >> /tmp/resolv.dnsmasq\n");
 	}
 	if (nvram_default_matchi("openvpncl_fw", 1, 0)) {
-		fprintf(fp, "iptables -I INPUT -i %s -m state --state NEW -j DROP\n", ovpniface);
-		fprintf(fp, "iptables -I FORWARD -i %s -m state --state NEW -j DROP\n", ovpniface);
+		fprintf(fp, "iptables -I INPUT -i $dev -m state --state NEW -j DROP\n");
+		fprintf(fp, "iptables -I FORWARD -i $dev -m state --state NEW -j DROP\n");
 	}
 	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
@@ -110,7 +102,7 @@ void create_openvpnrules(FILE * fp)
 		fprintf(fp, "insmod ebtables\n" "insmod ebtable_filter\n" "insmod ebtable_nat\n" "insmod ebt_pkttype\n"
 //                      "ebtables -I FORWARD -o tap1 --pkttype-type multicast -j DROP\n"
 //                      "ebtables -I OUTPUT -o tap1 --pkttype-type multicast -j DROP\n"
-			"ebtables -t nat -D POSTROUTING -o %s --pkttype-type multicast -j DROP\n" "ebtables -t nat -I POSTROUTING -o %s --pkttype-type multicast -j DROP\n", ovpniface, ovpniface);
+			"ebtables -t nat -D POSTROUTING -o $dev --pkttype-type multicast -j DROP\n" "ebtables -t nat -I POSTROUTING -o $dev --pkttype-type multicast -j DROP\n");
 	}
 
 }
@@ -120,18 +112,18 @@ void create_openvpnserverrules(FILE * fp)
 	if (nvram_matchi("block_multicast", 0)	//block multicast on bridged vpns
 	    && nvram_match("openvpn_tuntap", "tap"))
 		fprintf(fp, "insmod ebtables\n" "insmod ebtable_filter\n" "insmod ebtable_nat\n" "insmod ebt_pkttype\n"
-			"ebtables -t nat -D POSTROUTING -o tap2 --pkttype-type multicast -j DROP\n" "ebtables -t nat -I POSTROUTING -o tap2 --pkttype-type multicast -j DROP\n");
+			"ebtables -t nat -D POSTROUTING -o $dev --pkttype-type multicast -j DROP\n" "ebtables -t nat -I POSTROUTING -o $dev --pkttype-type multicast -j DROP\n");
 	if (nvram_matchi("openvpn_dhcpbl", 1)	//block dhcp on bridged vpns
 	    && nvram_match("openvpn_tuntap", "tap")
 	    && nvram_matchi("openvpn_proxy", 0))
 		fprintf(fp, "insmod ebtables\n" "insmod ebt_ip\n" "insmod ebtable_filter\n" "insmod ebtable_nat\n"
-			"ebtables -t nat -D PREROUTING -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
-			"ebtables -t nat -D POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
-			"ebtables -t nat -I PREROUTING -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
-			"ebtables -t nat -I POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
+			"ebtables -t nat -D PREROUTING -i $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
+			"ebtables -t nat -D POSTROUTING -o $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
+			"ebtables -t nat -I PREROUTING -i $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
+			"ebtables -t nat -I POSTROUTING -o $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
 	if (nvram_default_matchi("openvpn_fw", 1, 0)) {
-		fprintf(fp, "iptables -I INPUT -i tap2 -m state --state NEW -j DROP\n");
-		fprintf(fp, "iptables -I FORWARD -i tap2 -m state --state NEW -j DROP\n");
+		fprintf(fp, "iptables -I INPUT -i $dev -m state --state NEW -j DROP\n");
+		fprintf(fp, "iptables -I FORWARD -i $dev -m state --state NEW -j DROP\n");
 	}
 	if (nvram_match("openvpn_mit", "1"))
 		fprintf(fp, "iptables -t raw -I PREROUTING ! -i tun2 -d $(getipmask %s) -j DROP\n", "tun2");
@@ -345,16 +337,16 @@ void start_openvpnserver(void)
 	// remove ebtales rules
 	if (nvram_matchi("block_multicast", 0)
 	    && nvram_match("openvpn_tuntap", "tap"))
-		fprintf(fp, "ebtables -t nat -D POSTROUTING -o tap2 --pkttype-type multicast -j DROP\n");
+		fprintf(fp, "ebtables -t nat -D POSTROUTING -o $dev --pkttype-type multicast -j DROP\n");
 	if (nvram_matchi("openvpn_dhcpbl", 1)
 	    && nvram_match("openvpn_tuntap", "tap")
 	    && nvram_matchi("openvpn_proxy", 0))
 		fprintf(fp,
-			"ebtables -t nat -D PREROUTING -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
-			"ebtables -t nat -D POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
+			"ebtables -t nat -D PREROUTING -i $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
+			"ebtables -t nat -D POSTROUTING -o $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
 	if (nvram_default_matchi("openvpn_fw", 1, 0)) {
-		fprintf(fp, "iptables -D INPUT -i tap2 -m state --state NEW -j DROP\n");
-		fprintf(fp, "iptables -D FORWARD -i tap2 -m state --state NEW -j DROP\n");
+		fprintf(fp, "iptables -D INPUT -i $dev -m state --state NEW -j DROP\n");
+		fprintf(fp, "iptables -D FORWARD -i $dev -m state --state NEW -j DROP\n");
 	}
 	if (nvram_match("openvpn_mit", "1"))
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i tun2 -d $(getipmask %s) -j DROP\n", "tun2");
@@ -369,7 +361,7 @@ void start_openvpnserver(void)
                                 "elseif [ `ebtables -t nat -L|grep -e '-j' -c` -eq 0 ]\n"
                                 "then rmmod ebtable_filter\n" "\t rmmod ebtables\n");   */
 	if (nvram_match("openvpn_tuntap", "tap"))
-		fprintf(fp, "brctl delif br0 tap2\n" "ifconfig tap2 down\n");
+		fprintf(fp, "brctl delif br0 $dev\n" "ifconfig $dev down\n");
 	fclose(fp);
 	chmod("/tmp/openvpn/route-up.sh", 0700);
 	chmod("/tmp/openvpn/route-down.sh", 0700);
@@ -614,23 +606,23 @@ void start_openvpn(void)
 	if (nvram_match("openvpncl_tuntap", "tap")
 	    && nvram_matchi("openvpncl_bridge", 1)
 	    && nvram_matchi("openvpncl_nat", 0))
-		fprintf(fp, "brctl delif br0 %s\n" "ifconfig %s down\n", ovpniface, ovpniface);
+		fprintf(fp, "brctl delif br0 %s\n" "ifconfig %s down\n");
 	else if (nvram_match("openvpncl_tuntap", "tap")
 		 && *(nvram_safe_get("openvpncl_ip")))
-		fprintf(fp, "ifconfig %s down\n", ovpniface);
+		fprintf(fp, "ifconfig $dev down\n");
 
 	if (nvram_matchi("openvpncl_nat", 1)) {
-		fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n" "iptables -D POSTROUTING -t nat -o %s -j MASQUERADE\n", ovpniface, ovpniface);
+		fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT\n" "iptables -D POSTROUTING -t nat -o $dev -j MASQUERADE\n");
 	}
 	if (nvram_matchi("openvpncl_sec", 0)) {
-		fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n", ovpniface);
+		fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT\n");
 	}
 	if (nvram_match("openvpncl_tuntap", "tun")) {
-		fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n" "iptables -D FORWARD -i %s -j ACCEPT\n" "iptables -D FORWARD -o %s -j ACCEPT\n", ovpniface, ovpniface, ovpniface);
+		fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT\n" "iptables -D FORWARD -i $dev -j ACCEPT\n" "iptables -D FORWARD -o $dev -j ACCEPT\n");
 	}
 	if (nvram_default_matchi("openvpncl_fw", 1, 0)) {
-		fprintf(fp, "iptables -D INPUT -i %s -m state --state NEW -j DROP\n", ovpniface);
-		fprintf(fp, "iptables -D FORWARD -i %s -m state --state NEW -j DROP\n", ovpniface);
+		fprintf(fp, "iptables -D INPUT -i $dev -m state --state NEW -j DROP\n");
+		fprintf(fp, "iptables -D FORWARD -i $dev -m state --state NEW -j DROP\n");
 	}
 	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
@@ -641,13 +633,13 @@ void start_openvpn(void)
 		fprintf(fp, "[ -f /tmp/resolv.dnsmasq_isp ] && mv -f /tmp/resolv.dnsmasq_isp /tmp/resolv.dnsmasq\n");
 	}
 	if (nvram_match("openvpncl_mit", "1"))
-		fprintf(fp, "iptables -t raw -D PREROUTING ! -i %s -d $(getipmask %s) -j DROP\n", ovpniface, ovpniface);
+		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $(getipmask $dev) -j DROP\n");
 /*      if (nvram_matchi("block_multicast",0) //block multicast on bridged vpns
                 && nvram_match("openvpncl_tuntap", "tap")
                 && nvram_matchi("openvpncl_bridge",1)) {
                 fprintf(fp,
--                       "ebtables -t nat -D POSTROUTING -o %s --pkttype-type multicast -j DROP\n"
--                       "ebtables -t nat -D PREROUTING -i %s --pkttype-type multicast -j DROP\n"
+-                       "ebtables -t nat -D POSTROUTING -o $dev --pkttype-type multicast -j DROP\n"
+-                       "ebtables -t nat -D PREROUTING -i $dev --pkttype-type multicast -j DROP\n"
                         "if [ `ebtables -t nat -L|grep -e '-j' -c` -ne 0 ]\n"
                         "then rmmod ebtable_nat\n" "\t rmmod ebtables\n", ovpniface, ovpniface);
                 } */
