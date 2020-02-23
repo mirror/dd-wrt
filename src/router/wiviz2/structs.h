@@ -31,7 +31,7 @@ struct ieee80211_mtik_ie_data {
 	u_char namelen;           /* length of radio name. Change with caution. 0x0f is safe value */
 	u_char radioname[15];     /* Radio name */
 	u_char pad2[5];           /* unknown. fill with zero */
-} __packed;
+} __attribute__((packed));
 
 struct ieee80211_mtik_ie {
 	u_char id;                /* IEEE80211_ELEMID_VENDOR */
@@ -40,7 +40,7 @@ struct ieee80211_mtik_ie {
 	u_char type;              /* OUI type */
 	u_short version;          /* spec revision */
 	struct ieee80211_mtik_ie_data iedata;
-} __packed;
+} __attribute__((packed));
 
 typedef struct ieee802_11_hdr {
 	u_char frame_control;
