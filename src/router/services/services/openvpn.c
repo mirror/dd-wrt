@@ -126,7 +126,7 @@ void create_openvpnserverrules(FILE * fp)
 		fprintf(fp, "iptables -I FORWARD -i $dev -m state --state NEW -j DROP\n");
 	}
 	if (nvram_match("openvpn_mit", "1"))
-		fprintf(fp, "iptables -t raw -I PREROUTING ! -i tun2 -d $(getipmask %s) -j DROP\n", "tun2");
+		fprintf(fp, "[ \"$(getipmask $dev)\" != \"255.255.255.255/32\" ] && iptables -t raw -I PREROUTING ! -i $dev -d $(getipmask $dev) -j DROP\n");
 }
 
 void start_openvpnserver(void)
