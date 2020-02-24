@@ -755,7 +755,7 @@ static void handle_nassrv(void)
 #ifdef HAVE_RSYNC
 	stop_service_f("rsync");
 #endif
-#ifdef HAVE_RAID
+#ifdef HAVE_FTP
 	stop_service_f("ftpsrv");
 #endif
 #ifdef HAVE_RAID
