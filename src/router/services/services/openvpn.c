@@ -71,7 +71,7 @@ void create_openvpnrules(FILE * fp)
 				"iptables -I FORWARD -o $dev -j ACCEPT\n");
 	}
 	if (nvram_match("openvpncl_mit", "1"))
-		fprintf(fp, "[ \"$(getipmask $dev)\" != \"255.255.255.255/32\" ] && iptables -t raw -I PREROUTING ! -i $dev -d $(getipmask $dev) -j DROP\n");
+		fprintf(fp, "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/32 -j DROP\n");
 	if (nvram_match("openvpncl_tuntap", "tun")) {
 		fprintf(fp, "cat /tmp/resolv.dnsmasq > /tmp/resolv.dnsmasq_isp\n");
 		fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ print \"nameserver \" $3 }' > /tmp/resolv.dnsmasq\n");
@@ -126,7 +126,7 @@ void create_openvpnserverrules(FILE * fp)
 		fprintf(fp, "iptables -I FORWARD -i $dev -m state --state NEW -j DROP\n");
 	}
 	if (nvram_match("openvpn_mit", "1"))
-		fprintf(fp, "[ \"$(getipmask $dev)\" != \"255.255.255.255/32\" ] && iptables -t raw -I PREROUTING ! -i $dev -d $(getipmask $dev) -j DROP\n");
+		fprintf(fp, "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/32 -j DROP\n");
 }
 
 void start_openvpnserver(void)
@@ -349,7 +349,7 @@ void start_openvpnserver(void)
 		fprintf(fp, "iptables -D FORWARD -i $dev -m state --state NEW -j DROP\n");
 	}
 	if (nvram_match("openvpn_mit", "1"))
-		fprintf(fp, "iptables -t raw -D PREROUTING ! -i tun2 -d $(getipmask %s) -j DROP\n", "tun2");
+		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/32 -j DROP\n");
 
 /*      if ((nvram_matchi("openvpn_dhcpbl",1)
                         && nvram_match("openvpn_tuntap", "tap")
@@ -633,7 +633,7 @@ void start_openvpn(void)
 		fprintf(fp, "[ -f /tmp/resolv.dnsmasq_isp ] && mv -f /tmp/resolv.dnsmasq_isp /tmp/resolv.dnsmasq\n");
 	}
 	if (nvram_match("openvpncl_mit", "1"))
-		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $(getipmask $dev) -j DROP\n");
+		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/32 -j DROP\n");
 /*      if (nvram_matchi("block_multicast",0) //block multicast on bridged vpns
                 && nvram_match("openvpncl_tuntap", "tap")
                 && nvram_matchi("openvpncl_bridge",1)) {
