@@ -258,7 +258,12 @@ static void detect_wireless_devices(int mask)
 	if ((mask & RADIO_ATH10K)) {
 		insmod("hwmon");
 		insmod("thermal_sys");
-		insmod("ath10k");
+		if (!nvram_match("noath10k", "1")) {
+			if (nvram_match("ath10k_encap", "1"))
+				eval("insmod", "ath10k", "ethernetmode=1");
+			else
+				insmod("ath10k");
+		}
 	}
 #endif
 #ifdef HAVE_WIL6210
