@@ -2907,10 +2907,10 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		adjust_regulatory(i);
 	for (i = 0; i < c; i++) {
 		sysprintf("rm -f /tmp/ath%d_configured", i);
-		FORK(configure_single(i));
+		configure_single(i);
 	}
 
-#if 1
+#if 0
 	int dead=10*60; // after 30 seconds, we can assume that something is hanging
 	while (dead--) {
 		int cnf = 0;
