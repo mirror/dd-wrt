@@ -1008,7 +1008,7 @@ static void ath6kl_wmi_regdomain_event(struct wmi *wmi, u8 *datap, int len)
 				    reg_code);
 	}
 
-	if (country && wmi->parent_dev->wiphy_registered) {
+/*	if (country && wmi->parent_dev->wiphy_registered) {
 		alpha2[0] = country->isoName[0];
 		alpha2[1] = country->isoName[1];
 
@@ -1016,7 +1016,7 @@ static void ath6kl_wmi_regdomain_event(struct wmi *wmi, u8 *datap, int len)
 
 		ath6kl_dbg(ATH6KL_DBG_WMI, "Country alpha2 being used: %c%c\n",
 			   alpha2[0], alpha2[1]);
-	}
+	}*/
 }
 
 static int ath6kl_wmi_disconnect_event_rx(struct wmi *wmi, u8 *datap, int len,

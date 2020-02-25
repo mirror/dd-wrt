@@ -9,61 +9,100 @@
 #include <linux/etherdevice.h>
 #include "mt76.h"
 
-static int
-mt76_get_of_eeprom(struct mt76_dev *dev, int len)
+static int mt76_get_of_eeprom(struct mt76_dev *dev, int len)
 {
-#if defined(CPTCFG_OF) && defined(CONFIG_MTD)
+#if defined(CONFIG_OF) && defined(CONFIG_MTD)
 	struct device_node *np = dev->dev->of_node;
 	struct mtd_info *mtd;
 	const __be32 *list;
-	const char *part;
+	const char *part, *file;
 	phandle phandle;
 	int offset = 0;
 	int size;
 	size_t retlen;
 	int ret;
+	struct file *srcf;
+	mm_segment_t old_fs;
+	loff_t f_offset;
 
 	if (!np)
 		return -ENOENT;
 
-	list = of_get_property(np, "mediatek,mtd-eeprom", &size);
-	if (!list)
-		return -ENOENT;
+	file = of_get_property(np, "mediatek,file", NULL);
+	if (file) {
+		old_fs = get_fs();
+		set_fs(get_ds());
+		dev_info(dev->dev, "Load Calibration File %s\n", file);
+		srcf = filp_open(file, O_RDONLY, 0);
+		if (IS_ERR(srcf)) {
+			dev_info(dev->dev, "error while loading ERR %d\n", IS_ERR(srcf));
+			set_fs(old_fs);
+			of_node_put(np);
+			return -ENOENT;
+		}
+		if ((srcf->f_op == NULL) || (srcf->f_op->read == NULL && srcf->f_op->read_iter == NULL)) {
+			dev_info(dev->dev, "error while loading, no fops\n");
+			filp_close(srcf, NULL);
+			set_fs(old_fs);
+			of_node_put(np);
+			return -ENOENT;
+		}		/* End of if */
+		f_offset = srcf->f_pos;
+		kernel_read(srcf, dev->eeprom.data, 1024, &f_offset);
+		filp_close(srcf, NULL);
+		set_fs(old_fs);
+		of_node_put(np);
+		return 0;
+	} else {
+		list = of_get_property(np, "mediatek,mtd-eeprom", &size);
+		if (!list)
+			return -ENOENT;
 
-	phandle = be32_to_cpup(list++);
-	if (!phandle)
-		return -ENOENT;
+		phandle = be32_to_cpup(list++);
+		if (!phandle)
+			return -ENOENT;
 
-	np = of_find_node_by_phandle(phandle);
-	if (!np)
-		return -EINVAL;
+		np = of_find_node_by_phandle(phandle);
+		if (!np)
+			return -EINVAL;
 
-	part = of_get_property(np, "label", NULL);
-	if (!part)
-		part = np->name;
+		part = of_get_property(np, "label", NULL);
+		if (!part)
+			part = np->name;
 
-	mtd = get_mtd_device_nm(part);
-	if (IS_ERR(mtd)) {
-		ret =  PTR_ERR(mtd);
-		goto out_put_node;
+		mtd = get_mtd_device_nm(part);
+		if (IS_ERR(mtd)) {
+			ret = PTR_ERR(mtd);
+			goto out_put_node;
+		}
+
+		if (size <= sizeof(*list)) {
+			ret = -EINVAL;
+			goto out_put_node;
+		}
+
+		offset = be32_to_cpup(list);
+		dev_info(dev->dev, "Read calibration data from part %s, offset 0x%08X, len 0x%08X\n", part, offset, len);
+		ret = mtd_read(mtd, offset, len, &retlen, dev->eeprom.data);
+		put_mtd_device(mtd);
+		if (ret)
+			goto out_put_node;
+
+		if (retlen < len) {
+			ret = -EINVAL;
+			goto out_put_node;
+		}
+
+		if (of_property_read_bool(dev->dev->of_node, "big-endian")) {
+			u8 *data = (u8 *)dev->eeprom.data;
+			int i;
+
+			/* convert eeprom data in Little Endian */
+			for (i = 0; i < round_down(len, 2); i += 2)
+				put_unaligned_le16(get_unaligned_be16(&data[i]),
+						   &data[i]);
+		}
 	}
-
-	if (size <= sizeof(*list)) {
-		ret = -EINVAL;
-		goto out_put_node;
-	}
-
-	offset = be32_to_cpup(list);
-	ret = mtd_read(mtd, offset, len, &retlen, dev->eeprom.data);
-	put_mtd_device(mtd);
-	if (ret)
-		goto out_put_node;
-
-	if (retlen < len) {
-		ret = -EINVAL;
-		goto out_put_node;
-	}
-
 out_put_node:
 	of_node_put(np);
 	return ret;
@@ -72,32 +111,30 @@ out_put_node:
 #endif
 }
 
-void
-mt76_eeprom_override(struct mt76_dev *dev)
+void mt76_eeprom_override(struct mt76_dev *dev)
 {
-#ifdef CPTCFG_OF
+#ifdef CONFIG_OF
 	struct device_node *np = dev->dev->of_node;
 	const u8 *mac;
 
 	if (!np)
-		return;
+		goto out;
 
 	mac = of_get_mac_address(np);
 	if (!IS_ERR_OR_NULL(mac))
 		memcpy(dev->macaddr, mac, ETH_ALEN);
 #endif
 
+out:
 	if (!is_valid_ether_addr(dev->macaddr)) {
 		eth_random_addr(dev->macaddr);
-		dev_info(dev->dev,
-			 "Invalid MAC address, using random address %pM\n",
-			 dev->macaddr);
+		dev_info(dev->dev, "Invalid MAC address, using random address %pM\n", dev->macaddr);
 	}
 }
+
 EXPORT_SYMBOL_GPL(mt76_eeprom_override);
 
-int
-mt76_eeprom_init(struct mt76_dev *dev, int len)
+int mt76_eeprom_init(struct mt76_dev *dev, int len)
 {
 	dev->eeprom.size = len;
 	dev->eeprom.data = devm_kzalloc(dev->dev, len, GFP_KERNEL);
@@ -106,4 +143,5 @@ mt76_eeprom_init(struct mt76_dev *dev, int len)
 
 	return !mt76_get_of_eeprom(dev, len);
 }
+
 EXPORT_SYMBOL_GPL(mt76_eeprom_init);

@@ -824,7 +824,8 @@ static int mwl_mac80211_ampdu_action(struct ieee80211_hw *hw,
 		spin_lock_bh(&priv->stream_lock);
 		if (rc)
 			break;
-		return IEEE80211_AMPDU_TX_START_IMMEDIATE;
+		ieee80211_start_tx_ba_cb_irqsafe(vif, addr, tid);
+		break;
 	case IEEE80211_AMPDU_TX_STOP_CONT:
 	case IEEE80211_AMPDU_TX_STOP_FLUSH:
 	case IEEE80211_AMPDU_TX_STOP_FLUSH_CONT:

@@ -62,6 +62,14 @@ static const struct ieee80211_rate mwl_rates_24[] = {
 };
 
 static const struct ieee80211_channel mwl_channels_50[] = {
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 4920, .hw_value = 184, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 4940, .hw_value = 188, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 4960, .hw_value = 192, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 4980, .hw_value = 196, },
+
+
+
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 5170, .hw_value = 34, },
 	{ .band = NL80211_BAND_5GHZ, .center_freq = 5180, .hw_value = 36, },
 	{ .band = NL80211_BAND_5GHZ, .center_freq = 5200, .hw_value = 40, },
 	{ .band = NL80211_BAND_5GHZ, .center_freq = 5220, .hw_value = 44, },
@@ -86,6 +94,9 @@ static const struct ieee80211_channel mwl_channels_50[] = {
 	{ .band = NL80211_BAND_5GHZ, .center_freq = 5765, .hw_value = 153, },
 	{ .band = NL80211_BAND_5GHZ, .center_freq = 5785, .hw_value = 157, },
 	{ .band = NL80211_BAND_5GHZ, .center_freq = 5805, .hw_value = 161, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 5825, .hw_value = 165, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 5845, .hw_value = 169, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 5865, .hw_value = 173, },
 };
 
 static const struct ieee80211_rate mwl_rates_50[] = {
@@ -131,9 +142,12 @@ static const struct region_code_mapping regmap[] = {
 	{"ES", 0x31}, /* Spain  */
 	{"FR", 0x32}, /* France */
 	{"JP", 0x40}, /* Japan  */
+//	{"RW", 0x61}, /* Japan  */
+//	{"ID", 0x52}, /* Japan  */
 	{"TW", 0x80}, /* Taiwan */
 	{"AU", 0x81}, /* Australia */
 	{"CN", 0x90}, /* China (Asia) */
+//	{"WW", 0xfc}, /* China (Asia) */
 };
 
 static int mwl_prepare_cmd_buf(struct mwl_priv *priv)

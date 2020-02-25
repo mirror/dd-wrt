@@ -2022,8 +2022,8 @@ int carl9170_register(struct ar9170 *ar)
 	/* mac80211 interface is now registered */
 	ar->registered = true;
 
-	if (!ath_is_world_regd(regulatory))
-		regulatory_hint(ar->hw->wiphy, regulatory->alpha2);
+//	if (!ath_is_world_regd(regulatory))
+//		regulatory_hint(ar->hw->wiphy, regulatory->alpha2);
 
 #ifdef CPTCFG_CARL9170_DEBUGFS
 	carl9170_debugfs_register(ar);
