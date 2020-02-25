@@ -1280,68 +1280,77 @@ static const struct net_device_ops ieee80211_dataif_8023_ops = {
 #endif
 };
 
-int ieee80211_set_hw_80211_encap(struct ieee80211_vif *vif, bool enable)
+static void __ieee80211_set_hw_80211_encap(struct ieee80211_sub_if_data *sdata,
+					   bool enable)
+{
+	sdata->dev->netdev_ops = enable ? &ieee80211_dataif_8023_ops :
+					  &ieee80211_dataif_ops;
+	printk(KERN_INFO "%s: enable encap %d\n", sdata->dev->name, enable);
+	sdata->hw_80211_encap = enable;
+}
+
+bool ieee80211_set_hw_80211_encap(struct ieee80211_vif *vif, bool enable)
 {
 	struct ieee80211_sub_if_data *sdata = vif_to_sdata(vif);
 	struct ieee80211_local *local = sdata->local;
+	struct ieee80211_sub_if_data *iter;
+	struct ieee80211_key *key;
 
-	if (enable == sdata->hw_80211_encap)
-		return enable;
+	mutex_lock(&local->iflist_mtx);
+	list_for_each_entry(iter, &local->interfaces, list) {
+		struct ieee80211_sub_if_data *disable = NULL;
 
-	if (!sdata->dev)
-		return 0;
-
-	if (!ieee80211_hw_check(&local->hw, SUPPORTS_80211_ENCAP))
-		enable = 0;
+		if (vif->type == NL80211_IFTYPE_MONITOR) {
+			disable = iter;
+			__ieee80211_set_hw_80211_encap(iter, false);
+		} else if (iter->vif.type == NL80211_IFTYPE_MONITOR) {
+			disable = sdata;
+			enable = false;
+		}
+		if (disable)
+			sdata_dbg(disable,
+				  "disable hw 80211 encap due to mon co-exist\n");
+	}
+	mutex_unlock(&local->iflist_mtx);
 
 	switch (vif->type) {
 	case NL80211_IFTYPE_MONITOR:
-		enable = 0;
+		enable = false;
 		break;
 	case NL80211_IFTYPE_STATION:
 		if (sdata->u.mgd.use_4addr)
-			enable = 0;
+			enable = false;
 		break;
 	case NL80211_IFTYPE_AP_VLAN:
-		if (sdata->wdev.use_4addr)
-			enable = 0;
+		if (sdata->wdev.netdev->ieee80211_ptr->use_4addr)
+			enable = false;
 		break;
 	default:
 		break;
 	}
 
+	if (enable == sdata->hw_80211_encap)
+		return enable;
+
+	if (!sdata->dev)
+		return false;
+
 	if (!ieee80211_hw_check(&local->hw, SUPPORTS_TX_FRAG) &&
 	    (local->hw.wiphy->frag_threshold != (u32)-1))
-		enable = 0;
+		enable = false;
 
-	if (enable) {
-		sdata->dev->netdev_ops = &ieee80211_dataif_8023_ops;
-		sdata->hw_80211_encap = true;
-	} else {
-		sdata->dev->netdev_ops = &ieee80211_dataif_ops;
-		sdata->hw_80211_encap = false;
+	mutex_lock(&sdata->local->key_mtx);
+	list_for_each_entry(key, &sdata->key_list, list) {
+		if (key->conf.cipher == WLAN_CIPHER_SUITE_TKIP)
+			enable = false;
 	}
+	mutex_unlock(&sdata->local->key_mtx);
+
+	__ieee80211_set_hw_80211_encap(sdata, enable);
 
 	return enable;
 }
 EXPORT_SYMBOL(ieee80211_set_hw_80211_encap);
-
-bool ieee80211_is_hw_80211_encap(struct ieee80211_local *local)
-{
-	struct ieee80211_sub_if_data *sdata;
-	bool offloaded = false;
-
-	mutex_lock(&local->iflist_mtx);
-	list_for_each_entry(sdata, &local->interfaces, list) {
-		if (sdata->hw_80211_encap) {
-			offloaded = true;
-			break;
-		}
-	}
-	mutex_unlock(&local->iflist_mtx);
-
-	return offloaded;
-}
 
 #if LINUX_VERSION_IS_GEQ(3,14,0) || \
     (LINUX_VERSION_CODE == KERNEL_VERSION(3,13,11) && UTS_UBUNTU_RELEASE_ABI > 30)
@@ -1612,6 +1621,7 @@ static void ieee80211_setup_sdata(struct ieee80211_sub_if_data *sdata,
 	sdata->control_port_no_encrypt = false;
 	sdata->encrypt_headroom = IEEE80211_ENCRYPT_HEADROOM;
 	sdata->vif.bss_conf.idle = true;
+	sdata->vif.bss_conf.txpower = -1; /* unset */
 
 	sdata->noack_map = 0;
 	sdata->hw_80211_encap = false;

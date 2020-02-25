@@ -109,8 +109,11 @@ begin:
 
 static u32 fq_flow_idx(struct fq *fq, struct sk_buff *skb)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
 	u32 hash = skb_get_hash_perturb(skb, fq->perturbation);
-
+#else
+	u32 hash = skb_get_hash_perturb(skb, &fq->perturbation);
+#endif
 	return reciprocal_scale(hash, fq->flows_cnt);
 }
 
@@ -309,14 +312,21 @@ static int fq_init(struct fq *fq, int flows_cnt)
 	INIT_LIST_HEAD(&fq->backlogs);
 	spin_lock_init(&fq->lock);
 	fq->flows_cnt = max_t(u32, flows_cnt, 1);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
 	fq->perturbation = prandom_u32();
+#else
+	get_random_bytes(&fq->perturbation, sizeof(fq->perturbation));
+#endif
+	
 	fq->quantum = 300;
 	fq->limit = 8192;
-#if defined(CONFIG_X86) || defined(CONFIG_ALPINE)
+#if defined(CONFIG_X86) || defined(CONFIG_ALPINE) || defined(CONFIG_ARCH_QCOM) || defined(CONFIG_SOC_IMX6)
 	fq->memory_limit = 32 << 20; /* 32 MBytes */
-#elif defined(CONFIG_ARCH_QCOM) || defined(CONFIG_ARCH_CNS3XXX) || defined(CONFIG_SOC_IMX6)
+#elif defined(CONFIG_ARCH_CNS3XXX)
 	fq->memory_limit = 16 << 20; /* 16 MBytes */
-#elif (defined(CONFIG_MIPS) && !defined(CONFIG_64BIT)) || defined(CONFIG_ARCH_IXP4XX)
+#elif defined(CONFIG_ARCH_IXP4XX)
+	fq->memory_limit = 4 << 20; /* 4 MBytes */
+#elif (defined(CONFIG_MIPS) && !defined(CONFIG_64BIT))
 	fq->memory_limit = 1 << 18; /* 256kb */
 #else
 	fq->memory_limit = 4 << 20; /* 4 MBytes */

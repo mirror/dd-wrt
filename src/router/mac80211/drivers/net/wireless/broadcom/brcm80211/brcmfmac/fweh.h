@@ -89,8 +89,14 @@ struct brcmf_cfg80211_info;
 	BRCMF_ENUM_DEF(DCS_REQUEST, 73) \
 	BRCMF_ENUM_DEF(FIFO_CREDIT_MAP, 74) \
 	BRCMF_ENUM_DEF(ACTION_FRAME_RX, 75) \
+	BRCMF_ENUM_DEF(CSA_COMPLETE_IND, 80) \
 	BRCMF_ENUM_DEF(TDLS_PEER_EVENT, 92) \
+	BRCMF_ENUM_DEF(CSA_START_IND, 121) \
+	BRCMF_ENUM_DEF(CSA_DONE_IND, 122) \
+	BRCMF_ENUM_DEF(CSA_FAILURE_IND, 123) \
+	BRCMF_ENUM_DEF(CCA_CHAN_QUAL, 124) \
 	BRCMF_ENUM_DEF(BCMC_CREDIT_SUPPORT, 127)
+
 
 #define BRCMF_ENUM_DEF(id, val) \
 	BRCMF_E_##id = (val),
@@ -282,6 +288,61 @@ struct brcmf_if_event {
 	u8 bsscfgidx;
 	u8 role;
 };
+
+#define DOT11_CSA_MODE_ADVISORY		0	/* no DOT11_CSA_MODE_NO_TX restriction imposed */
+#define DOT11_CSA_MODE_NO_TX		1	/* no transmission upon receiving CSA frame. */
+
+typedef struct brcmf_chan_switch {
+	u8 mode;		/* value 0 or 1 */
+	u8 count;		/* count # of beacons before switching */
+	u16 chspec;		/* chanspec */
+	u8 reg;		/* regulatory class */
+} brcmf_chan_switch_t;
+
+typedef struct {
+	u32 duration;	/* millisecs spent sampling this channel */
+	u32 congest_ibss;	/* millisecs in our bss (presumably this traffic will */
+				/*  move if cur bss moves channels) */
+	u32 congest_obss;	/* traffic not in our bss */
+	u32 interference;	/* millisecs detecting a non 802.11 interferer. */
+	u32 timestamp;	/* second timestamp */
+	u32 crsglitch;	/* crs glitchs */
+	u32 badplcp;		/* num bad plcp */
+	u32 bphy_crsglitch;	/* bphy  crs glitchs */
+	u32 bphy_badplcp;		/* num bphy bad plcp */
+} wlc_congest_t_v0;
+
+typedef struct {
+	u32 duration;	/* millisecs spent sampling this channel */
+	u32 congest_ibss;	/* millisecs in our bss (presumably this traffic will */
+				/*  move if cur bss moves channels) */
+	u32 congest_obss;	/* traffic not in our bss */
+	u32 interference;	/* millisecs detecting a non 802.11 interferer. */
+	u32 timestamp;	/* second timestamp */
+} cca_congest_t;
+
+typedef struct {
+	u16 chanspec;	/* Which channel? */
+	u16 num_secs;	/* How many secs worth of data */
+	cca_congest_t  secs[1];	/* Data */
+} cca_congest_channel_req_t;
+
+typedef struct {
+	u32 duration;	/* millisecs spent sampling this channel */
+	u32 congest;		/* millisecs detecting busy CCA */
+	u32 timestamp;	/* second timestamp */
+} cca_congest_simple_t;
+
+typedef struct {
+	u16 status;
+	u16 id;
+	u16 chanspec;	/* Which channel? */
+	u16 len;
+	union {
+		cca_congest_simple_t  cca_busy;	/* CCA busy */
+		int noise;			/* noise floor */
+	};
+} cca_chan_qual_event_t;
 
 typedef int (*brcmf_fweh_handler_t)(struct brcmf_if *ifp,
 				    const struct brcmf_event_msg *evtmsg,

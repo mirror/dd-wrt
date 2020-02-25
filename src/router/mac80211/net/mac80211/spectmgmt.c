@@ -151,7 +151,7 @@ int ieee80211_parse_ch_switch_ie(struct ieee80211_sub_if_data *sdata,
 		new_vht_chandef = csa_ie->chandef;
 
 		/* ignore if parsing fails */
-		if (!ieee80211_chandef_vht_oper(&vht_oper, &new_vht_chandef))
+		if (!ieee80211_chandef_vht_oper(&sdata->local->hw, &vht_oper, &new_vht_chandef))
 			new_vht_chandef.chan = NULL;
 
 		if (sta_flags & IEEE80211_STA_DISABLE_80P80MHZ &&
