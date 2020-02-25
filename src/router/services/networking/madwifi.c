@@ -2143,7 +2143,7 @@ static void configure_single(int count)
 
 	cprintf("adjust sensitivity\n");
 
-	int distance = nvram_default_geti(sens, 2000);	// to meter
+	int distance = nvram_default_geti(sens, 500);	// to meter
 	if (nvram_nmatch("1", "%s_pollingmode", var)) {
 		setdistance(wif, 100000, 20);
 	} else {

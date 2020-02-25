@@ -411,7 +411,7 @@ void configure_single_ath9k(int count)
 	getMacAddr(dev, macaddr);
 #endif
 	nvram_set(athmac, macaddr);
-	int distance = nvram_default_geti(sens, 2000);	// to meter
+	int distance = nvram_default_geti(sens, 500);	// to meter
 	char dist[32];
 	if (distance > 0)
 		sprintf(dist, "%d", distance);
