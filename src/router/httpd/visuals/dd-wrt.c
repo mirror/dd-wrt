@@ -3666,8 +3666,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		//websWrite(wp, "<br />\n");
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.label6", NULL);
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%s\" />\n", power, nvram_default_get(power, "2000"));
-		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
+		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%s\" />\n", power, nvram_default_get(power, "500"));
+		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
 		websWrite(wp, "</div>\n");
 	}
 
@@ -4464,8 +4464,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		//websWrite(wp, "<br />\n");
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.label6", NULL);
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%s\" />\n", power, nvram_default_get(power, "2000"));
-		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
+		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%s\" />\n", power, nvram_default_get(power, "500"));
+		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
 		websWrite(wp, "</div>\n");
 	}
 #ifdef HAVE_MADWIFI
