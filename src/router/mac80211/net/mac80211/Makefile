@@ -32,7 +32,8 @@ mac80211-y := \
 	chan.o \
 	trace.o mlme.o \
 	tdls.o \
-	ocb.o
+	ocb.o \
+	airtime.o
 
 mac80211-$(CPTCFG_MAC80211_DEBUGFS) += tdma/debug.o
 mac80211-$(CPTCFG_MAC80211_TDMA) += tdma/tdma_utils.o tdma/tdma_rx.o tdma/tdma_tx.o tdma/mesh_utils.o tdma/tdma_originator.o tdma/tdma.o tdma/tdma_main.o
@@ -95,7 +96,7 @@ $(obj)/regdb.c: $(src)/../wireless/db.txt $(src)/../wireless/genregdb.awk
 
 clean-files := regdb.c
 
-#EXTRA_CFLAGS += -Iinclude/linux -Iinclude/linux/lzma -include types.h
+EXTRA_CFLAGS += -g
 
 
-#ccflags-y += -DDEBUG -O3
+ccflags-y += -g

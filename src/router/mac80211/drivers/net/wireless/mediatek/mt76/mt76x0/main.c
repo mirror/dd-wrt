@@ -1,16 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (C) 2014 Felix Fietkau <nbd@openwrt.org>
  * Copyright (C) 2015 Jakub Kicinski <kubakici@wp.pl>
  * Copyright (C) 2018 Stanislaw Gruszka <stf_xl@wp.pl>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
  */
 
 #include <linux/etherdevice.h>
@@ -21,22 +13,22 @@ mt76x0_set_channel(struct mt76x02_dev *dev, struct cfg80211_chan_def *chandef)
 {
 	cancel_delayed_work_sync(&dev->cal_work);
 	mt76x02_pre_tbtt_enable(dev, false);
-	if (mt76_is_mmio(dev))
+	if (mt76_is_mmio(&dev->mt76))
 		tasklet_disable(&dev->dfs_pd.dfs_tasklet);
 
-	mt76_set_channel(&dev->mt76);
+	mt76_set_channel(&dev->mphy);
 	mt76x0_phy_set_channel(dev, chandef);
 
 	mt76x02_mac_cc_reset(dev);
 	mt76x02_edcca_init(dev);
 
-	if (mt76_is_mmio(dev)) {
+	if (mt76_is_mmio(&dev->mt76)) {
 		mt76x02_dfs_init_params(dev);
 		tasklet_enable(&dev->dfs_pd.dfs_tasklet);
 	}
 	mt76x02_pre_tbtt_enable(dev, true);
 
-	mt76_txq_schedule_all(&dev->mt76);
+	mt76_txq_schedule_all(&dev->mphy);
 }
 
 int mt76x0_config(struct ieee80211_hw *hw, u32 changed)
@@ -52,9 +44,9 @@ int mt76x0_config(struct ieee80211_hw *hw, u32 changed)
 	}
 
 	if (changed & IEEE80211_CONF_CHANGE_POWER) {
-		dev->mt76.txpower_conf = hw->conf.power_level * 2;
+		dev->txpower_conf = hw->conf.power_level * 2;
 
-		if (test_bit(MT76_STATE_RUNNING, &dev->mt76.state))
+		if (test_bit(MT76_STATE_RUNNING, &dev->mphy.state))
 			mt76x0_phy_set_txpower(dev);
 	}
 

@@ -15,7 +15,9 @@ CFLAGS_mt76x02_trace.o := -I$(src)
 
 mt76-y := \
 	mmio.o util.o trace.o dma.o mac80211.o debugfs.o eeprom.o \
-	tx.o agg-rx.o mcu.o airtime.o
+	tx.o agg-rx.o mcu.o
+
+mt76-$(CONFIG_PCI) += pci.o
 
 mt76-usb-y := usb.o usb_trace.o
 

@@ -30,7 +30,9 @@
  * coeff3 = -sqr(a1)
  * coeff1 = 1 - coeff2 - coeff3
  */
-#define MINSTREL_AVG_COEFF1		0x00000495
+#define MINSTREL_AVG_COEFF1		(MINSTREL_FRAC(1, 1) - \
+					 MINSTREL_AVG_COEFF2 - \
+					 MINSTREL_AVG_COEFF3)
 #define MINSTREL_AVG_COEFF2		0x00001499
 #define MINSTREL_AVG_COEFF3		0x0000092e
 
@@ -48,31 +50,24 @@ minstrel_ewma(int old, int new, int weight)
 	return old + incr;
 }
 
-struct minstrel_avg_ctx {
-	u32 in_1;
-	u32 out_1;
-	u32 out_2;
-};
-
-static inline int minstrel_filter_avg_add(struct minstrel_avg_ctx *ctx, u32 in)
+static inline int minstrel_filter_avg_add(u32 *prev_1, u32 *prev_2, u32 in)
 {
-	u32 in_1 = ctx->in_1;
-	u32 out_1 = ctx->out_1;
-	u32 out_2 = ctx->out_2;
+	u32 out_1 = *prev_1;
+	u32 out_2 = *prev_2;
 	u32 val;
 
 	if (!in)
 		in++;
 
-	ctx->in_1 = in;
-	if (!in_1) {
+	if (!out_1) {
 		val = out_1 = in;
 		goto out;
 	}
 
-	val = (MINSTREL_AVG_COEFF1 * (in + in_1) / 2);
-	val += (MINSTREL_AVG_COEFF2 * out_1);
-	val -= (MINSTREL_AVG_COEFF3 * out_2);
+	val = MINSTREL_AVG_COEFF1 * in;
+	val += MINSTREL_AVG_COEFF2 * out_1;
+	val -= MINSTREL_AVG_COEFF3 * out_2;
+
 	if (val & (1 << 31))
 		val = 1;
 	if (val > 1 << (MINSTREL_SCALE << 1))
@@ -81,8 +76,8 @@ static inline int minstrel_filter_avg_add(struct minstrel_avg_ctx *ctx, u32 in)
 	val >>= MINSTREL_SCALE;
 
 out:
-	ctx->out_2 = out_1;
-	ctx->out_1 = val;
+	*prev_2 = out_1;
+	*prev_1 = val;
 
 	return val;
 }
@@ -95,10 +90,9 @@ struct minstrel_rate_stats {
 	/* total attempts/success counters */
 	u32 att_hist, succ_hist;
 
-	struct minstrel_avg_ctx avg;
-
-	/* prob_ewma - exponential weighted moving average of prob */
-	u16 prob_ewma;
+	/* prob_avg - moving average of prob */
+	u32 prob_avg;
+	u32 prob_avg_1;
 
 	/* maximum retry counts */
 	u8 retry_count;

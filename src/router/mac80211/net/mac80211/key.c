@@ -171,9 +171,12 @@ static int ieee80211_key_enable_hw_accel(struct ieee80211_key *key)
 			goto out_unsupported;
 	}
 
-	/* TKIP countermeasures wont work on encap offload mode */
-	if (key->conf.cipher == WLAN_CIPHER_SUITE_TKIP)
-		ieee80211_set_hw_80211_encap(&sdata->vif, 0);
+	/* TKIP countermeasures don't work in encap offload mode */
+	if (key->conf.cipher == WLAN_CIPHER_SUITE_TKIP &&
+	    sdata->hw_80211_encap) {
+		sdata_dbg(sdata, "TKIP is not allowed in hw 80211 encap mode\n");
+		return -EINVAL;
+	}
 
 	ret = drv_set_key(key->local, SET_KEY, sdata,
 			  sta ? &sta->sta : NULL, &key->conf);
@@ -197,8 +200,10 @@ static int ieee80211_key_enable_hw_accel(struct ieee80211_key *key)
 			  key->conf.keyidx,
 			  sta ? sta->sta.addr : bcast_addr, ret);
 
+	/* cannot do software crypto with encapsulation offload */
 	if (sdata->hw_80211_encap)
-		ieee80211_set_hw_80211_encap(&sdata->vif, 0);
+		return -EINVAL;
+
 
  out_unsupported:
 	switch (key->conf.cipher) {

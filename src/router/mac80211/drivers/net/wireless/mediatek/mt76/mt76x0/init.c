@@ -1,17 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * (c) Copyright 2002-2010, Ralink Technology, Inc.
  * Copyright (C) 2014 Felix Fietkau <nbd@openwrt.org>
  * Copyright (C) 2015 Jakub Kicinski <kubakici@wp.pl>
  * Copyright (C) 2018 Stanislaw Gruszka <stf_xl@wp.pl>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
  */
 
 #include "mt76x0.h"
@@ -272,12 +264,12 @@ int mt76x0_register_device(struct mt76x02_dev *dev)
 
 	if (dev->mt76.cap.has_5ghz) {
 		/* overwrite unsupported features */
-		mt76x0_vht_cap_mask(&dev->mt76.sband_5g.sband);
-		mt76x0_init_txpower(dev, &dev->mt76.sband_5g.sband);
+		mt76x0_vht_cap_mask(&dev->mphy.sband_5g.sband);
+		mt76x0_init_txpower(dev, &dev->mphy.sband_5g.sband);
 	}
 
 	if (dev->mt76.cap.has_2ghz)
-		mt76x0_init_txpower(dev, &dev->mt76.sband_2g.sband);
+		mt76x0_init_txpower(dev, &dev->mphy.sband_2g.sband);
 
 	mt76x02_init_debugfs(dev);
 

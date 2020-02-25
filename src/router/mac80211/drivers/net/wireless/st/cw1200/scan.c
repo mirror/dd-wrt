@@ -122,8 +122,7 @@ int cw1200_hw_scan(struct ieee80211_hw *hw,
 
 	mutex_unlock(&priv->conf_mutex);
 
-	if (frame.skb)
-		dev_kfree_skb(frame.skb);
+	dev_kfree_skb(frame.skb);
 	queue_work(priv->workqueue, &priv->scan.work);
 	return 0;
 }

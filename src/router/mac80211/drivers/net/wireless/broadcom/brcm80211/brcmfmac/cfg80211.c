@@ -2753,8 +2753,9 @@ brcmf_cfg80211_dump_survey(struct wiphy *wiphy, struct net_device *ndev,
 	struct brcmf_if *ifp = netdev_priv(ndev);
 	struct brcmu_chan ch;
 	enum nl80211_band band = 0;
+	cca_congest_channel_req_t req;
 	s32 err = 0;
-	int noise;
+	int noise, i;
 	u32 freq;
 	u32 chanspec;
 	memset(survey, 0, sizeof(struct survey_info));
@@ -2763,17 +2764,35 @@ brcmf_cfg80211_dump_survey(struct wiphy *wiphy, struct net_device *ndev,
 		    return -ENOENT;
 		if (cfg->pub->chan_stats[idx].freq == 0)
 		    return -ENOENT;
-		survey->filled = SURVEY_INFO_NOISE_DBM;
+		survey->filled = SURVEY_INFO_NOISE_DBM | SURVEY_INFO_TIME_BUSY | SURVEY_INFO_TIME;
 		survey->channel = ieee80211_get_channel(wiphy, cfg->pub->chan_stats[idx].freq);
 		survey->noise = cfg->pub->chan_stats[idx].noise;
+		survey->time = cfg->pub->chan_stats[idx].time;
+		survey->time_busy = cfg->pub->chan_stats[idx].time_busy;
+		if (!survey->noise)
+		    survey->noise = -95;
 		return 0;
 	}
-
+	
 	err = brcmf_fil_iovar_int_get(ifp, "chanspec", &chanspec);
 	if (err) {
 		brcmf_err("chanspec failed (%d)\n", err);
 		return err;
 	}
+	req.chanspec = cpu_to_le32(chanspec);
+	req.num_secs = 1;
+	err = brcmf_fil_iovar_data_get(ifp, "cca_get_stats", &req, sizeof(req));
+	if (err) {
+		brcmf_err("cca_get_stats failed (%d)\n", err);
+	}
+
+#if 0
+	u32 duration;	/* millisecs spent sampling this channel */
+	u32 congest_ibss;	/* millisecs in our bss (presumably this traffic will */
+				/*  move if cur bss moves channels) */
+	u32 congest_obss;	/* traffic not in our bss */
+	u32 interference;	/* millisecs detecting a non 802.11 interferer. */
+#endif
 
 	ch.chspec = chanspec;
 	cfg->d11inf.decchspec(&ch);
@@ -2796,7 +2815,22 @@ brcmf_cfg80211_dump_survey(struct wiphy *wiphy, struct net_device *ndev,
 		return err;
 	} else {
 		survey->filled = SURVEY_INFO_NOISE_DBM | SURVEY_INFO_IN_USE;
+		for (i = 0;i < cfg->pub->num_chan_stats;i++) {
+			if (freq == cfg->pub->chan_stats[i].freq)
+			    break;
+			if (cfg->pub->chan_stats[i].freq == 0)
+			    break;
+		}	
+		if (i < cfg->pub->num_chan_stats) {
+			survey->filled |= SURVEY_INFO_TIME_BUSY | SURVEY_INFO_TIME;
+			cfg->pub->chan_stats[i].time += req.secs[0].duration;
+			cfg->pub->chan_stats[i].time_busy += req.secs[0].congest_ibss +  req.secs[0].congest_obss +  req.secs[0].interference;
+			survey->time = cfg->pub->chan_stats[i].time;
+			survey->time_busy = cfg->pub->chan_stats[i].time_busy;
+		}
 		survey->noise = le32_to_cpu(noise);
+		if (!survey->noise)
+			survey->noise = -95;
 		brcmf_dbg(CONN, "NOISE %d dBm\n", noise);
 	}
 	return 0;
@@ -5895,6 +5929,59 @@ static void brcmf_init_conf(struct brcmf_cfg80211_conf *conf)
 	conf->retry_long = (u32)-1;
 }
 
+static s32 brcmf_notify_csa_complete(struct brcmf_if *ifp,
+				  const struct brcmf_event_msg *e, void *data)
+{
+/*	struct brcmf_cfg80211_info *cfg = ifp->drvr->config;
+	u32 mode = *((unsigned *)data);
+	struct brcmf_cfg80211_vif_event *event = &cfg->vif_event;
+	struct brcmf_cfg80211_vif *vif;*/
+	return 0;
+}
+
+static s32 brcmf_notify_cca_chan_qual(struct brcmf_if *ifp,
+				  const struct brcmf_event_msg *e, void *data)
+{
+	struct brcmf_cfg80211_info *cfg = ifp->drvr->config;
+	cca_chan_qual_event_t *event = (cca_chan_qual_event_t *)data;
+	u32 freq;
+	enum nl80211_band band = 0;
+	if (!event)
+		return -EINVAL;
+	int channel = le32_to_cpu(event->chanspec) & 0xff;
+	int i;
+
+	if (channel <= CH_MAX_2G_CHANNEL)
+		band = NL80211_BAND_2GHZ;
+	else
+		band = NL80211_BAND_5GHZ;
+
+	freq = ieee80211_channel_to_frequency(channel, band);
+	for (i = 0;i < cfg->pub->num_chan_stats;i++) {
+		if (freq == cfg->pub->chan_stats[i].freq)
+		    break;
+		if (cfg->pub->chan_stats[i].freq == 0)
+		    break;
+	}
+
+	if (event->len == sizeof(event->cca_busy)) {
+		if (i < cfg->pub->num_chan_stats) {
+			cfg->pub->chan_stats[i].time = le32_to_cpu(event->cca_busy.duration);
+			cfg->pub->chan_stats[i].time_busy = le32_to_cpu(event->cca_busy.congest);
+			cfg->pub->chan_stats[i].freq = freq;
+		}
+	}
+
+	if (event->len == sizeof(event->noise)) {
+		if (i < cfg->pub->num_chan_stats) {
+			cfg->pub->chan_stats[i].noise = le32_to_cpu(event->noise);
+			cfg->pub->chan_stats[i].freq = freq;
+		}
+	}
+	
+	return 0;
+}
+
 static void brcmf_register_event_handlers(struct brcmf_cfg80211_info *cfg)
 {
 	brcmf_fweh_register(cfg->pub, BRCMF_E_LINK,
@@ -5931,6 +6018,10 @@ static void brcmf_register_event_handlers(struct brcmf_cfg80211_info *cfg)
 			    brcmf_p2p_notify_action_tx_complete);
 	brcmf_fweh_register(cfg->pub, BRCMF_E_PSK_SUP,
 			    brcmf_notify_connect_status);
+	brcmf_fweh_register(cfg->pub, BRCMF_E_CSA_COMPLETE_IND,
+			    brcmf_notify_csa_complete);
+	brcmf_fweh_register(cfg->pub, BRCMF_E_CCA_CHAN_QUAL,
+			    brcmf_notify_cca_chan_qual);
 }
 
 static void brcmf_deinit_priv_mem(struct brcmf_cfg80211_info *cfg)

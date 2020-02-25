@@ -94,6 +94,8 @@ struct brcmf_rev_info {
 struct brcmf_chan_stats {
     u32 freq;
     int noise;
+    u64 time;
+    u64 time_busy;
 };
 
 /* Common structure for module and instance linkage */

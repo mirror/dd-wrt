@@ -1641,8 +1641,7 @@ ieee80211_rx_h_sta_process(struct ieee80211_rx_data *rx)
 	 * Drop (qos-)data::nullfunc frames silently, since they
 	 * are used only to control station power saving mode.
 	 */
-	if (ieee80211_is_nullfunc(hdr->frame_control) ||
-	    ieee80211_is_qos_nullfunc(hdr->frame_control)) {
+	if (ieee80211_is_nullfunc(hdr->frame_control) || ieee80211_is_qos_nullfunc(hdr->frame_control)) {
 		I802_DEBUG_INC(rx->local->rx_handlers_drop_nullfunc);
 
 		/*
@@ -2132,7 +2131,7 @@ static int ieee80211_drop_unencrypted(struct ieee80211_rx_data *rx, __le16 fc)
 
 	/* Drop unencrypted frames if key is set. */
 	if (unlikely(!ieee80211_has_protected(fc) &&
-		     !ieee80211_is_nullfunc(fc) &&
+		     !ieee80211_is_any_nullfunc(fc) &&
 		     ieee80211_is_data(fc) && rx->key))
 		return -EACCES;
 
@@ -2225,13 +2224,14 @@ __ieee80211_data_to_8023(struct ieee80211_rx_data *rx, bool *port_control)
 	return 0;
 }
 
+static const u8 pae_group_addr[ETH_ALEN] __aligned(2) = {0x01, 0x80, 0xC2, 0x00,
+							 0x00, 0x03};
+
 /*
  * requires that rx->skb is a frame with ethernet header
  */
 static bool ieee80211_frame_allowed(struct ieee80211_rx_data *rx, __le16 fc)
 {
-	static const u8 pae_group_addr[ETH_ALEN] __aligned(2)
-		= { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x03 };
 	struct ethhdr *ehdr = (struct ethhdr *) rx->skb->data;
 
 	/*
@@ -2261,6 +2261,7 @@ ieee80211_deliver_skb(struct ieee80211_rx_data *rx)
 	struct sk_buff *skb, *xmit_skb;
 	struct ethhdr *ehdr = (struct ethhdr *) rx->skb->data;
 	struct sta_info *dsta;
+	struct ieee80211_sta_rx_stats *rx_stats;
 
 	skb = rx->skb;
 	xmit_skb = NULL;
@@ -2273,9 +2274,12 @@ ieee80211_deliver_skb(struct ieee80211_rx_data *rx)
 		 * for non-QoS-data frames. Here we know it's a data
 		 * frame, so count MSDUs.
 		 */
-		u64_stats_update_begin(&rx->sta->rx_stats.syncp);
-		rx->sta->rx_stats.msdu[rx->seqno_idx]++;
-		u64_stats_update_end(&rx->sta->rx_stats.syncp);
+		rx_stats = &rx->sta->rx_stats;
+		if (ieee80211_hw_check(&rx->local->hw, USES_RSS))
+			rx_stats = this_cpu_ptr(rx->sta->pcpu_rx_stats);
+		u64_stats_update_begin(&rx_stats->syncp);
+		rx_stats->msdu[rx->seqno_idx]++;
+		u64_stats_update_end(&rx_stats->syncp);
 	}
 
 	if ((sdata->vif.type == NL80211_IFTYPE_AP ||
@@ -4667,3 +4671,203 @@ void ieee80211_rx_irqsafe(struct ieee80211_hw *hw, struct sk_buff *skb)
 	tasklet_schedule(&local->tasklet);
 }
 EXPORT_SYMBOL(ieee80211_rx_irqsafe);
+
+/* Receive path for decap offloaded data frames */
+
+static void
+ieee80211_rx_handle_decap_offl(struct ieee80211_sub_if_data *sdata,
+			       struct sta_info *sta, struct sk_buff *skb,
+			       struct napi_struct *napi)
+{
+	struct ieee80211_local *local = sdata->local;
+	struct ieee80211_vif *vif = &sdata->vif;
+	struct net_device *dev = sdata->dev;
+	struct ieee80211_rx_status *status;
+	struct ieee80211_key *key = NULL;
+	struct ieee80211_rx_data rx;
+	int i;
+	struct ethhdr *ehdr;
+	struct ieee80211_sta_rx_stats *stats = &sta->rx_stats;
+
+	ehdr = (struct ethhdr *)skb->data;
+	status = IEEE80211_SKB_RXCB(skb);
+
+	if (ieee80211_hw_check(&local->hw, USES_RSS))
+		stats = this_cpu_ptr(sta->pcpu_rx_stats);
+
+	/* TODO: Extend ieee80211_rx_decap_offl() with bssid so that Ethernet
+	 * encap/decap can be supported in Adhoc interface type as well.
+	 * Adhoc interface depends on bssid to update last_rx.
+	 */
+	if (vif->type != NL80211_IFTYPE_STATION &&
+	    vif->type != NL80211_IFTYPE_AP_VLAN &&
+	    vif->type != NL80211_IFTYPE_AP)
+		goto drop;
+
+	if (unlikely(!test_sta_flag(sta, WLAN_STA_AUTHORIZED))) {
+		if (ehdr->h_proto != sdata->control_port_protocol)
+			goto drop;
+		else if (!ether_addr_equal(ehdr->h_dest, vif->addr) &&
+			 !ether_addr_equal(ehdr->h_dest, pae_group_addr))
+			goto drop;
+	}
+
+	if (status->flag & RX_FLAG_80211_MCAST) {
+		for (i = 0; i < NUM_DEFAULT_KEYS; i++) {
+			key = rcu_dereference(sta->gtk[i]);
+			if (key)
+				break;
+		}
+	} else {
+		key = rcu_dereference(sta->ptk[sta->ptk_idx]);
+	}
+
+	if (key && unlikely(key->flags & KEY_FLAG_TAINTED))
+		goto drop;
+
+	if (status->flag & RX_FLAG_MMIC_ERROR) {
+		if (key)
+			key->u.tkip.mic_failures++;
+		goto mic_fail;
+	}
+
+#define ETH_RX_CRYPT_FLAGS	(RX_FLAG_PN_VALIDATED | RX_FLAG_DECRYPTED)
+
+	if (key && (status->flag & ETH_RX_CRYPT_FLAGS) != ETH_RX_CRYPT_FLAGS)
+		goto drop;
+
+	if (!(status->flag & RX_FLAG_DUP_VALIDATED))
+		goto drop;
+
+	I802_DEBUG_INC(local->dot11ReceivedFragmentCount);
+
+	if (!(status->flag & RX_FLAG_80211_MCAST)) {
+		stats->last_rx = jiffies;
+		stats->last_rate = sta_stats_encode_rate(status);
+	}
+
+	if (sdata->vif.type == NL80211_IFTYPE_STATION &&
+	    !(status->flag & RX_FLAG_80211_MCAST))
+		ieee80211_sta_reset_conn_monitor(sdata);
+
+	u64_stats_update_begin(&stats->syncp);
+	stats->fragments++;
+	stats->packets++;
+	stats->bytes += skb->len;
+	u64_stats_update_end(&stats->syncp);
+
+	if (!(status->flag & RX_FLAG_NO_SIGNAL_VAL)) {
+		stats->last_signal = status->signal;
+		if (!ieee80211_hw_check(&local->hw, USES_RSS))
+			ewma_signal_add(&sta->rx_stats_avg.signal,
+					-status->signal);
+	}
+
+	if (status->chains) {
+		stats->chains = status->chains;
+		for (i = 0; i < ARRAY_SIZE(status->chain_signal); i++) {
+			int signal = status->chain_signal[i];
+
+			if (!(status->chains & BIT(i)))
+				continue;
+
+			stats->chain_signal_last[i] = signal;
+			if (!ieee80211_hw_check(&local->hw, USES_RSS))
+				ewma_signal_add(&sta->rx_stats_avg.chain_signal[i],
+						-signal);
+		}
+	}
+
+	if (unlikely(ehdr->h_proto == cpu_to_be16(ETH_P_TDLS))) {
+		struct ieee80211_tdls_data *tf = (void *)skb->data;
+
+		if (pskb_may_pull(skb,
+				  offsetof(struct ieee80211_tdls_data, u)) &&
+		    tf->payload_type == WLAN_TDLS_SNAP_RFTYPE &&
+		    tf->category == WLAN_CATEGORY_TDLS &&
+		    (tf->action_code == WLAN_TDLS_CHANNEL_SWITCH_REQUEST ||
+		     tf->action_code == WLAN_TDLS_CHANNEL_SWITCH_RESPONSE)) {
+			skb_queue_tail(&local->skb_queue_tdls_chsw, skb);
+			schedule_work(&local->tdls_chsw_work);
+			return;
+		}
+	}
+
+	memset(&rx, 0, sizeof(rx));
+	rx.skb = skb;
+	rx.sdata = sdata;
+	rx.local = local;
+	rx.sta = sta;
+	rx.napi = napi;
+
+	if (vif->type == NL80211_IFTYPE_AP_VLAN && sdata->bss &&
+	    unlikely(ehdr->h_proto == sdata->control_port_protocol)) {
+		sdata = container_of(sdata->bss, struct ieee80211_sub_if_data,
+				     u.ap);
+		dev = sdata->dev;
+		rx.sdata = sdata;
+	}
+
+	rx.skb->dev = dev;
+
+	/* FIXME: Since rx.seqno_idx is not available for decap offloaded frames
+	 * rx msdu stats update at the seqno_idx in ieee80211_deliver_skb()
+	 * will always be updated at index 0 and will not be very useful.
+	 * Should we disable these statistics in the case of decap offload?
+	 */
+	ieee80211_deliver_skb(&rx);
+
+	return;
+
+mic_fail:
+
+	cfg80211_michael_mic_failure(sdata->dev, sta->addr,
+				     is_multicast_ether_addr(ehdr->h_dest) ?
+				     NL80211_KEYTYPE_GROUP :
+				     NL80211_KEYTYPE_PAIRWISE,
+				     key ? key->conf.keyidx : -1,
+				     NULL, GFP_ATOMIC);
+
+drop:
+	stats->dropped++;
+	dev_kfree_skb(skb);
+}
+
+/* Receive path handler that a low level driver supporting 802.11 hdr decap
+ * offload can call. The frame is in ethernet format and the assumption is
+ * all necessary operations like decryption, defrag, deaggregation, etc.
+ * requiring 802.11 headers are already performed in the low level driver
+ * or hardware.
+ */
+void ieee80211_rx_decap_offl(struct ieee80211_hw *hw,
+			     struct ieee80211_sta *pubsta, struct sk_buff *skb,
+			     struct napi_struct *napi)
+{
+	struct ieee80211_local *local = hw_to_local(hw);
+	struct sta_info *sta;
+
+	if (unlikely(local->quiescing || local->suspended))
+		goto drop;
+
+	if (unlikely(local->in_reconfig))
+		goto drop;
+
+	if (WARN_ON(!local->started))
+		goto drop;
+
+	if (!pubsta)
+		goto drop;
+
+	sta  = container_of(pubsta, struct sta_info, sta);
+
+	/* TODO: Toggle Rx throughput LED */
+
+	rcu_read_lock();
+	ieee80211_rx_handle_decap_offl(sta->sdata, sta, skb, napi);
+	rcu_read_unlock();
+
+	return;
+drop:
+	kfree_skb(skb);
+}
+EXPORT_SYMBOL(ieee80211_rx_decap_offl);

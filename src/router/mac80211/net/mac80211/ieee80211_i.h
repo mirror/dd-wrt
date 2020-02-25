@@ -1188,8 +1188,8 @@ struct ieee80211_local {
 	u16 airtime_flags;
 	u32 aql_txq_limit_low[IEEE80211_NUM_ACS];
 	u32 aql_txq_limit_high[IEEE80211_NUM_ACS];
-	u32 aql_interface_limit;
-	s32 aql_total_pending_airtime;
+	u32 aql_threshold;
+	atomic_t aql_total_pending_airtime;
 
 	const struct ieee80211_ops *ops;
 
@@ -2178,7 +2178,7 @@ u32 ieee80211_get_ddwrt_ie_len(void);
 /* channel management */
 bool ieee80211_chandef_ht_oper(const struct ieee80211_ht_operation *ht_oper,
 			       struct cfg80211_chan_def *chandef);
-bool ieee80211_chandef_vht_oper(const struct ieee80211_vht_operation *oper,
+bool ieee80211_chandef_vht_oper(struct ieee80211_hw *hw, const struct ieee80211_vht_operation *oper,
 				struct cfg80211_chan_def *chandef);
 u32 ieee80211_chandef_downgrade(struct cfg80211_chan_def *c);
 
@@ -2258,6 +2258,10 @@ void ieee80211_tdls_chsw_work(struct work_struct *wk);
 
 extern const struct ethtool_ops ieee80211_ethtool_ops;
 
+u32 ieee80211_calc_expected_tx_airtime(struct ieee80211_hw *hw,
+				       struct ieee80211_vif *vif,
+				       struct ieee80211_sta *pubsta,
+				       int len);
 #ifdef CPTCFG_MAC80211_NOINLINE
 #define debug_noinline noinline
 #else

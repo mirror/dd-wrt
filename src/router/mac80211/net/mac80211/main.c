@@ -146,6 +146,8 @@ static u32 ieee80211_hw_conf_chan(struct ieee80211_local *local)
 			continue;
 		if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
 			continue;
+		if (sdata->vif.bss_conf.txpower < 0)
+			continue;
 		power = min(power, sdata->vif.bss_conf.txpower);
 	}
 	rcu_read_unlock();
@@ -657,12 +659,13 @@ struct ieee80211_hw *ieee80211_alloc_hw_nm(size_t priv_data_len,
 		INIT_LIST_HEAD(&local->active_txqs[i]);
 		spin_lock_init(&local->active_txq_lock[i]);
 		local->aql_txq_limit_low[i] = IEEE80211_DEFAULT_AQL_TXQ_LIMIT_L;
-		local->aql_txq_limit_high[i] = IEEE80211_DEFAULT_AQL_TXQ_LIMIT_H;
+		local->aql_txq_limit_high[i] =
+			IEEE80211_DEFAULT_AQL_TXQ_LIMIT_H;
 	}
 
-	local->airtime_flags =
-		AIRTIME_USE_TX | AIRTIME_USE_RX | AIRTIME_USE_AQL;
-	local->aql_interface_limit = IEEE80211_DEFAULT_AQL_INTERFACE_LIMIT;
+	local->airtime_flags = AIRTIME_USE_TX | AIRTIME_USE_RX;
+	local->aql_threshold = IEEE80211_AQL_THRESHOLD;
+	atomic_set(&local->aql_total_pending_airtime, 0);
 
 	INIT_LIST_HEAD(&local->chanctx_list);
 	mutex_init(&local->chanctx_mtx);
