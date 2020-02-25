@@ -13,6 +13,47 @@ elif [ "$(nvram get gps_gpsd)" = "1" ]; then
 		GPS_NEED_SETUP=1
 fi
 
+atc(){
+	dev="$1"; shift;
+	cmd="$*";
+	COMGTATC="$cmd" comgt -s /etc/comgt/atcommand.comgt -d "$dev";
+}
+
+sierra_get_vendprod(){
+	cd /sys/bus/usb/devices
+	for i in * ; do 
+		vid="$(cat $i/idVendor)"
+		[ "$vid" != "1199" ] && continue;
+		pid="$(cat $i/idProduct)"
+		echo "$vid:$pid"
+		return
+	done
+}
+
+sierra_enable_gps_antenna_power(){
+	vendprod="$(sierra_get_vendprod)"
+	case $vendprod in
+		1199:9071) #mc7455
+			logger -t "gpsi" "setting AT+WANT=1 on /dev/ttyUSB2"
+			atc '/dev/ttyUSB2' 'AT+WANT=1'
+			;;
+		1199:68c0) #mc7304
+			logger -t "gpsi" "setting AT+WANTGNSSPWR=1 on /dev/ttyUSB2"
+			atc '/dev/ttyUSB2' 'AT+WANTGNSSPWR=1'
+			;;
+	esac
+}
+
+waitto=60
+wait_for_chardev(){
+	to=0
+	while [ ! -c "$*" ] ; do
+		sleep 1
+		to="$((to+1))"
+		[ "$to" -gt "$waitto" ] && return 1
+	done
+}
+
 if [ x$GPS_NEED_SETUP = x1 ]; then
 	BOARD=$(nvram get DD_BOARD2 | cut -c11-17)
 	if test -z $BOARD
@@ -43,10 +84,15 @@ if [ x$GPS_NEED_SETUP = x1 ]; then
 		insmod usb_wwan
 		insmod qcserial.ko
 		insmod option.ko
-		sleep 5
+
 		TTY=$(nvram get gps_tty )
-		stty raw -F ${TTY}
-		echo \$GPS_START >${TTY}
+
+		wait_for_chardev "$TTY" && {
+			sleep 5
+			sierra_enable_gps_antenna_power
+			stty raw -F ${TTY}
+			echo \$GPS_START >${TTY}
+		}
 	else
 		/bin/stty ${BAUD} -echo -echoe -echok -echoctl -echoke -ignbrk -ixon -opost < ${TTY}
 	fi
@@ -66,14 +112,15 @@ if [ "$(nvram get gps_gpsd)" = "1" ]; then
 		GPSDINTERVAL=30
 		nvram set gps_gpsd_interval=30
 	fi
-if [ -f /etc/config/gpsi_startraw ]
-then
-	#/usr/sbin/gpsd -n -i ${GPSDINTERVAL} -R -S ${GPSDPORT} ${TTY}
-	/usr/sbin/gpsd -R -S ${GPSDPORT} ${TTY}
-	#/tmp/gpsd -n -R -S ${GPSDPORT} ${TTY}
-else
-	/usr/sbin/gpsd -S ${GPSDPORT} ${TTY}
-fi
+
+	if [ -f /etc/config/gpsi_startraw ]
+	then
+		#/usr/sbin/gpsd -n -i ${GPSDINTERVAL} -R -S ${GPSDPORT} ${TTY}
+		/usr/sbin/gpsd -R -S ${GPSDPORT} ${TTY}
+		#/tmp/gpsd -n -R -S ${GPSDPORT} ${TTY}
+	else
+		/usr/sbin/gpsd -S ${GPSDPORT} ${TTY}
+	fi
 fi
 
 if [ "$(nvram get gps)" = "1" ]; then
