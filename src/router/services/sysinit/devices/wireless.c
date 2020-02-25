@@ -258,6 +258,7 @@ static void detect_wireless_devices(int mask)
 	if ((mask & RADIO_ATH10K)) {
 		insmod("hwmon");
 		insmod("thermal_sys");
+		nvram_default_get("ath10k_encap", "1");
 		if (!nvram_match("noath10k", "1")) {
 			if (nvram_match("ath10k_encap", "1"))
 				eval("insmod", "ath10k", "ethernetmode=1");
