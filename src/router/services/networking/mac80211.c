@@ -1428,7 +1428,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int *curvapi
 	if (v && *v)
 		fprintf(fp, "%s", v);
 	fprintf(fp, "\n");
-	fclose(fp);
 	if (has_wpa3(ifname) && isowe) {
 		*curvapid++;
 		int brand = getRouterBrand();
@@ -1444,6 +1443,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int *curvapi
 		fprintf(fp, "ssid=%s\n", nvram_nget("%s_owe_ssid", ifname));
 		fprintf(fp, "owe_transition_ifname=%s\n\n", ifname);
 	}
+	fclose(fp);
 
 }
 
