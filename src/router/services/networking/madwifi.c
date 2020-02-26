@@ -1423,9 +1423,9 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 		fprintf(fp, "FT-EAP ");
 #endif
 	fprintf(fp, "\n");
-	if (isowe)
-		fprintf(fp, "owe_transition_ifname=%s_owe", prefix);
-	if (ispsk3)
+	if (has_wpa3(prefix) &&isowe)
+		fprintf(fp, "owe_transition_ifname=%s_owe\n", prefix);
+	if (has_wpa3(prefix) && ispsk3)
 		fprintf(fp, "sae_groups=19 20 21\n");
 #ifdef HAVE_80211R
 	if (nvram_matchi(ft, 1)
