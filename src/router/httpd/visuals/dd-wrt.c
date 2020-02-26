@@ -4831,8 +4831,8 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 		{ "wpa.wpa2_sha256", "wpa2-sha256", aponly_wpa3, is_mac80211, nomesh },
 		{ "wpa.wpa3", "wpa3", aponly_wpa3, is_mac80211, nomesh },
 		{ "wpa.wpa3_128", "wpa3-128", aponly_wpa3_gcmp128, has_gmac_128, nomesh },
-		{ "wpa.wpa3_192", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256, nomesh }
-		{ "wpa.owe", "owe", aponly_wpa3, is_mac80211, nomesh },
+		{ "wpa.wpa3_192", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256, nomesh },
+		{ "wpa.owe", "owe", aponly_wpa3, is_mac80211, nomesh }
 	};
 	struct pair s_authpair_80211x[] = {
 		{ "wpa.wpa", "wpa", alwaystrue, alwaystrue, alwaystrue },
