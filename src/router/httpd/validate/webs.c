@@ -849,14 +849,18 @@ _8021xprv
 #ifdef HAVE_ANTAIRA
 	sprintf(n, "%s_wpa_psk", prefix);
 	char *passphrase = websGetVar(wp, n, "");
-	char *ssid = nvram_nget("%s_ssid", prefix);
-	unsigned char psk[32];
-	pbkdf2_sha1(passphrase, ssid, strlen(ssid), 4096, psk, 32);
-	char wpapsk[70];
-	int i;
-	for (i = 0; i < 32; i++)
-		sprintf(wpapsk, "%s%02x", wpapsk, psk[i]);
-	nvram_nset(wpapsk, "%s_wpa_psk", prefix);
+	if (strlen(passphrase) == 64)
+		nvram_nset(passphrase, "%s_wpa_psk", prefix);
+	else {
+		char *ssid = nvram_nget("%s_ssid", prefix);
+		unsigned char psk[32];
+		pbkdf2_sha1(passphrase, ssid, strlen(ssid), 4096, psk, 32);
+		char wpapsk[70];
+		int i;
+		for (i = 0; i < 32; i++)
+			sprintf(wpapsk, "%s%02x", wpapsk, psk[i]);
+		nvram_nset(wpapsk, "%s_wpa_psk", prefix);
+	}
 #else
 	copytonv_prefix(wp, "wpa_psk", prefix);
 #endif
