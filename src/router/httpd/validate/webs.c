@@ -4730,8 +4730,11 @@ void set_security(webs_t wp)
 		_copytonv_prefix(wp, "psk2", ifname);
 		_copytonv_prefix(wp, "psk2-sha256", ifname);
 		_copytonv_prefix(wp, "psk3", ifname);
+		_copytonv_prefix(wp, "owe", ifname);
 		if (nvram_nmatch("1", "%s_psk", ifname))
 			sprintf(akm, "%s %s", akm, "psk");
+		if (nvram_nmatch("1", "%s_owe", ifname))
+			sprintf(akm, "%s %s", akm, "owe");
 		if (nvram_nmatch("1", "%s_psk2", ifname))
 			sprintf(akm, "%s %s", akm, "psk2");
 		if (nvram_nmatch("1", "%s_psk2-sha256", ifname))
