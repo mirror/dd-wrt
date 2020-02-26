@@ -1429,7 +1429,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int *curvapi
 		fprintf(fp, "%s", v);
 	fprintf(fp, "\n");
 	fclose(fp);
-	if (isowe) {
+	if (has_wpa3(ifname) && isowe) {
 		*curvapid++;
 		int brand = getRouterBrand();
 		if (brand == ROUTER_WRT_3200ACM || brand == ROUTER_WRT_32X) {
