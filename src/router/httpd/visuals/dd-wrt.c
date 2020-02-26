@@ -1676,12 +1676,12 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				sprintf(fr, "%d", freq);
 				if (iht > 0) {
 					int sub = (base + 14 * 5) - freq;
-//					fprintf(stderr, "[%c] freq %d and base %d  sub %d\n", sub > 0 && sub < 70 ? 'x' : 'o', freq, (base + 14 * 5), sub);
+//                                      fprintf(stderr, "[%c] freq %d and base %d  sub %d\n", sub > 0 && sub < 70 ? 'x' : 'o', freq, (base + 14 * 5), sub);
 					if (sub > 0 && sub < 70)
 						continue;
 				} else {
 					int sub = freq - (base - 14 * 5);
-//					fprintf(stderr, "[%c] freq %d and base %d  sub %d\n", sub > 0 && sub < 70 ? 'x' : 'o', freq, (base - 14 * 5), sub);
+//                                      fprintf(stderr, "[%c] freq %d and base %d  sub %d\n", sub > 0 && sub < 70 ? 'x' : 'o', freq, (base - 14 * 5), sub);
 					if (sub > 0 && sub < 70)
 						continue;
 				}
@@ -4959,6 +4959,16 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 }
 
 #endif
+void show_owe(webs_t wp, char *prefix)
+{
+	if (nvram_nmatch("1", "%s_owe", prefix)) {
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wpa.owe_ssid", NULL);
+		websWrite(wp, "<input name=\"%s_owe_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wpa.owe_ssid)\" value=\"", prefix);
+		tf_webWriteESCNV(wp, nvram_nget("%s_owe_ssid"));
+		websWrite(wp, "\" /></div>\n");
+	}
+}
 
 void show_preshared(webs_t wp, char *prefix)
 {
@@ -4987,14 +4997,6 @@ void show_preshared(webs_t wp, char *prefix)
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
 #else
-	if (nvram_nmatch("1", "%s_owe", prefix)) {
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wpa.owe_ssid", NULL);
-		websWrite(wp, "<input name=\"%s_owe_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wpa.owe_ssid)\" value=\"", prefix);
-		tf_webWriteESCNV(wp, nvram_nget("%s_owe_ssid"));
-		websWrite(wp, "\" /></div>\n");
-	}
-
 	if (nvram_nmatch("1", "%s_psk3", prefix) && !nvram_nmatch("1", "%s_psk", prefix) && !nvram_nmatch("1", "%s_psk2", prefix) && !nvram_nmatch("1", "%s_psk2sha256", prefix)) {
 
 		websWrite(wp, "<div class=\"setting\">\n");

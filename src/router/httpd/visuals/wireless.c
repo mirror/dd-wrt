@@ -704,6 +704,11 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 		show = 1;
 		show_preshared(wp, prefix);
 	}
+	if ((strstr(akm, "owe"))
+	    && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X") || strstr(security_mode, "disabled"))) {
+		show = 1;
+		show_owe(wp, prefix);
+	}
 	if ((strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256") || strstr(akm, "wpa3") || strstr(akm, "wpa3-192") || strstr(akm, "wpa3-128"))
 	    && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X") || strstr(security_mode, "disabled") || strstr(security_mode, "owe"))) {
 		show = 1;
