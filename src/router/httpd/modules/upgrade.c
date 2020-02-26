@@ -728,8 +728,12 @@ err:
 		fclose(fifo2);
 	unlink(upload_fifo);
 	if (brand == ROUTER_ASROCK_G10) {
-		fprintf(stderr, "write secondary partition for asrock-g10\n");
-		eval("mtd", "-e", "linux2", "-f", "write", "/tmp/parttemp", "linux2");
+		FILE *check = fopen("/tmp/parttemp", "rb");
+		if (check) {
+			fclose(check);
+			fprintf(stderr, "write secondary partition for asrock-g10\n");
+			eval("mtd", "-e", "linux2", "-f", "write", "/tmp/parttemp", "linux2");
+		}
 	}
 	// diag_led(DIAG, STOP_LED);
 	ACTION("ACT_IDLE");
