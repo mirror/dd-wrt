@@ -1371,19 +1371,19 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 #ifdef HAVE_80211W
 	if ((iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 || isowe) && (!ispsk && !ispsk2 && !iswpa && !iswpa2)) {
 		fprintf(fp, "ieee80211w=2\n");
-		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128)
+		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128 || isowe)
 			fprintf(fp, "sae_require_mfp=1\n");
 	} else if (ispsk3 || ispsk2sha256 || isowe && (!ispsk && !ispsk2 && !iswpa && !iswpa2)) {
 		fprintf(fp, "ieee80211w=1\n");
-		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128)
+		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128 || isowe)
 			fprintf(fp, "sae_require_mfp=1\n");
 	} else if (nvram_default_matchi(mfp, 1, 0)) {
 		fprintf(fp, "ieee80211w=2\n");
-		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128)
+		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128 || isowe)
 			fprintf(fp, "sae_require_mfp=1\n");
 	} else if (nvram_default_matchi(mfp, -1, 0) || ispsk3 || isowe || iswpa3 || iswpa3_192 || iswpa3_128 || ispsk2sha256 || iswpa2sha256) {
 		fprintf(fp, "ieee80211w=1\n");
-		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128)
+		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128 || isowe)
 			fprintf(fp, "sae_require_mfp=1\n");
 	} else if (nvram_default_matchi(mfp, 0, 0))
 		fprintf(fp, "ieee80211w=0\n");
@@ -1534,7 +1534,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 			fprintf(fp, "group_mgmt_cipher=AES-128-CMAC\n");
 #endif
 	}
-	if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128) {
+	if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128 || isowe) {
 		fprintf(fp, "okc=1\n");
 	} else {
 		fprintf(fp, "okc=0\n");
