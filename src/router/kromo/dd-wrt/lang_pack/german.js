@@ -956,7 +956,7 @@ hotspotsys.customsplash="Angepasste Splash Seite (Walled Garden)";
 
 info.titl="Info";
 info.h2="System Information";
-info.wlanmac="Drahtlos MAC";
+info.wlanmac="WLAN MAC";
 info.srv="Services";
 info.ap="Access Point";
 
@@ -2096,8 +2096,8 @@ wpa.peap="EAP-PEAP";
 wpa.leap="EAP-LEAP";
 wpa.tls="EAP-TLS";
 wpa.ttls="EAP-TTLS";
-
-
+wpa.owe="OWE Opportunistische WLAN Verschl&uuml;sselung";
+wpa.owe_ssid="Offene OWE SSID";
 
 aoss.titl="AOSS Sicherheit";
 aoss.aoss="AOSS";

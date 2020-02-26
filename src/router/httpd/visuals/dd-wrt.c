@@ -4832,6 +4832,7 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 		{ "wpa.wpa3", "wpa3", aponly_wpa3, is_mac80211, nomesh },
 		{ "wpa.wpa3_128", "wpa3-128", aponly_wpa3_gcmp128, has_gmac_128, nomesh },
 		{ "wpa.wpa3_192", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256, nomesh }
+		{ "wpa.owe", "owe", aponly_wpa3, is_mac80211, nomesh },
 	};
 	struct pair s_authpair_80211x[] = {
 		{ "wpa.wpa", "wpa", alwaystrue, alwaystrue, alwaystrue },
@@ -4986,6 +4987,14 @@ void show_preshared(webs_t wp, char *prefix)
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
 #else
+	if (nvram_nmatch("1", "%s_owe", prefix)) {
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wpa.owe_ssid", NULL);
+		websWrite(wp, "<input name=\"%s_owe_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wpa.owe_ssid)\" value=\"", prefix);
+		tf_webWriteESCNV(wp, nvram_nget("%s_owe_ssid"));
+		websWrite(wp, "\" /></div>\n");
+	}
+
 	if (nvram_nmatch("1", "%s_psk3", prefix) && !nvram_nmatch("1", "%s_psk", prefix) && !nvram_nmatch("1", "%s_psk2", prefix) && !nvram_nmatch("1", "%s_psk2sha256", prefix)) {
 
 		websWrite(wp, "<div class=\"setting\">\n");
