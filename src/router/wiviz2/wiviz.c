@@ -743,6 +743,9 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 						case 12:
 							encType |= 0x800;	//ftpsk3
 							break;
+						case 18:
+							encType |= 0x1000;	//owe
+							break;
 						}
 					}
 				}
@@ -1008,6 +1011,8 @@ void print_host(FILE * outf, wiviz_host * host)
 				fprintf(outf, "WEP ");
 			if (host->apInfo->encryption & 0x800)
 				fprintf(outf, "WPA3 ");
+			if (host->apInfo->encryption & 0x1000)
+				fprintf(outf, "OWE ");
 			fprintf(outf, "';\n");
 		}
 	}
