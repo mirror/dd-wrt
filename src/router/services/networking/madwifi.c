@@ -1530,7 +1530,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 		else if (iswpa3_128)
 			fprintf(fp, "group_mgmt_cipher=BIP-GMAC-128\n");
 #ifdef HAVE_80211W
-		else if (nvram_default_matchi(mfp, -1, 0) || nvram_default_matchi(mfp, 1, 0) || ispsk3 || iswpa3 || ispsk2sha256 || iswpa2sha256)
+		else if (nvram_default_matchi(mfp, -1, 0) || nvram_default_matchi(mfp, 1, 0) || ispsk3 || isowe || iswpa3 || ispsk2sha256 || iswpa2sha256)
 			fprintf(fp, "group_mgmt_cipher=AES-128-CMAC\n");
 #endif
 	}
