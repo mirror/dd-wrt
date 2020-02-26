@@ -1019,13 +1019,13 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	char airtime[32];
 	sprintf(airtime, "%s_at_policy", prefix);
 	if (nvram_matchi(airtime, 0)) {
-		fprintf(fp,"airtime_mode=0\n");
+		fprintf(fp, "airtime_mode=0\n");
 	}
 	if (nvram_matchi(airtime, 1)) {
-		fprintf(fp,"airtime_mode=1\n");
+		fprintf(fp, "airtime_mode=1\n");
 	}
 	if (nvram_matchi(airtime, 2)) {
-		fprintf(fp,"airtime_mode=2\n");
+		fprintf(fp, "airtime_mode=2\n");
 	}
 #endif
 	fprintf(fp, "\n");
@@ -1254,6 +1254,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	int iswpa = nvhas(akm, "wpa");
 	int iswpa2 = nvhas(akm, "wpa2");
 	int iswpa3 = nvhas(akm, "wpa3");
+	int isowe = nvhas(akm, "owe");
 	int iswpa3_128 = nvhas(akm, "wpa3-128");
 	int iswpa3_192 = nvhas(akm, "wpa3-192");
 	int iswpa2sha256 = nvhas(akm, "wpa2-sha256");
@@ -1339,7 +1340,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 #endif
 		fprintf(fp, "wpa_key_mgmt=OWE\n");
 		fprintf(fp, "rsn_pairwise=CCMP\n");
-	} else if (ispsk || ispsk2 || ispsk3 || iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 || ispsk2sha256) {
+	} else if (ispsk || ispsk2 || ispsk3 || isowe || iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 || ispsk2sha256) {
 		setupHostAPPSK(fp, ifname, isfirst);
 	} else if (nvhas(akm, "radius")) {
 		fprintf(fp, "ieee8021x=1\n");
@@ -1408,12 +1409,12 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	if (nvram_matchi(airtime, 1) || nvram_matchi(airtime, 2)) {
 		char at_weight[32];
 		sprintf(at_weight, "%s_at_weight", ifname);
-		fprintf(fp,"airtime_bss_weight=%d\n", nvram_default_geti(at_weight, 1));
+		fprintf(fp, "airtime_bss_weight=%d\n", nvram_default_geti(at_weight, 1));
 	}
 	if (nvram_matchi(airtime, 2)) {
 		char at_limit[32];
 		sprintf(at_limit, "%s_at_limit", ifname);
-		fprintf(fp,"airtime_bss_limit=%d\n", nvram_default_geti(at_limit, 0));
+		fprintf(fp, "airtime_bss_limit=%d\n", nvram_default_geti(at_limit, 0));
 	}
 #endif
 #ifdef HAVE_HOTSPOT20
@@ -1425,6 +1426,12 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "%s", v);
 	fprintf(fp, "\n");
 	fclose(fp);
+	if (isowe) {
+		fprintf(fp, "\nbss=%s_owe\n", ifname);
+		fprintf(fp, "ssid=%s\n", nvram_nget("%s_owe_ssid", ifname));
+		fprintf(fp, "owe_transition_ifname=%s\n\n", ifname);
+	}
+
 }
 
 void addvhtcaps(char *prefix, FILE * fp);

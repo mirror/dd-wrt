@@ -968,6 +968,8 @@ _8021xprv
 		_copytonv_prefix(wp, "wpa3", prefix);
 		_copytonv_prefix(wp, "wpa3-192", prefix);
 		_copytonv_prefix(wp, "wpa3-128", prefix);
+		_copytonv_prefix(wp, "owe", prefix);
+		_copytonv_prefix(wp, "owe_ssid", prefix);
 		char akm[128] = { 0, 0 };
 		if (nvram_nmatch("1", "%s_psk", prefix))
 			sprintf(akm, "%s %s", akm, "psk");
@@ -985,6 +987,8 @@ _8021xprv
 			sprintf(akm, "%s %s", akm, "wpa2-sha256");
 		if (nvram_nmatch("1", "%s_wpa3", prefix))
 			sprintf(akm, "%s %s", akm, "wpa3");
+		if (nvram_nmatch("1", "%s_owe", prefix))
+			sprintf(akm, "%s %s", akm, "owe");
 		if (nvram_nmatch("1", "%s_wpa3-192", prefix)) {
 			sprintf(akm, "%s %s", akm, "wpa3-192");
 			nvram_nset("1", "%s_gcmp-256", prefix);
@@ -2735,7 +2739,7 @@ static char *vapsettings[] = {
 	"lbr_aggr_len", "lbr_aggr_release_timeout", "leap", "leap8021xaddopt", "leap8021xanon", "leap8021xpasswd", "leap8021xphase2", "leap8021xuser", "leddc", "local_ip", "maclist", "macmode", "macmode1",
 	"max_unauth_users", "maxassoc", "mbss", "mfp", "mode", "mrate", "mtu", "mubf", "multicast", "multicast_to_unicast", "nas", "nat", "nband", "nbw", "nbw_cap", "nctrlsb", "net_mode", "netmask", "nmcsidx",
 	"nmode", "nmode_protection", "nreqd", "obss_coex", "passphrase", "peap", "peap8021xaddopt", "peap8021xanon", "peap8021xca", "peap8021xpasswd", "peap8021xphase2", "peap8021xuser", "phytype", "phytypes",
-	"plcphdr", "poll_time", "preamble", "protmode", "psk2", "psk3", "radauth", "radio", "radius2_ipaddr", "radius2_key", "radius2_port", "radius_ipaddr", "radius_key", "radius_override", "radius_port",
+	"plcphdr", "poll_time", "preamble", "protmode", "psk2", "psk3", "owe", "radauth", "radio", "radius2_ipaddr", "radius2_key", "radius2_port", "radius_ipaddr", "radius_key", "radius_override", "radius_port",
 	"radius_retry", "radmacpassword", "radmactype", "rate", "rateset", "reg_mode", "regdomain", "regulatory", "rifs_advert", "rts", "rts rtsvalue", "rtsvalue", "rx_amsdu_in_ampdu", "rxantenna", "rxchain",
 	"rxchain_pwrsave_enable", "sae_key", "scanlist", "security_mode", "security_mode_akm", "shortgi", "shortslot", "smps", "ssid", "sta_retry_time", "stay", "stbc_rx", "stbc_tx", "strikes", "subf", "tkip", "tls",
 	"tls8021xaddopt", "tls8021xanon", "tls8021xca", "tls8021xkeyxchng", "tls8021xpasswd", "tls8021xpem", "tls8021xphase2", "tls8021xprv", "tls8021xuser", "tpc_db", "ttls", "ttls8021xaddopt", "ttls8021xanon",
