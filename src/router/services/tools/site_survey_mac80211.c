@@ -1014,6 +1014,10 @@ static void print_auth(const uint8_t * data, int type)
 			printf("FT-FILS/SHA384");
 			fillENC("FT-FILS/SHA384");
 			break;
+		case 18:
+			printf("OWE");
+			fillENC("OWE");
+			break;
 		default:
 			printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
 			break;
