@@ -1967,9 +1967,6 @@ static void configure_single(int count)
 	char inact[36];
 	char inact_tick[40];
 	char tmp[256];
-#ifdef HAVE_ATH9K
-	special_mac80211_init();
-#endif
 	if (count == 0)
 		vapcount = 0;
 
