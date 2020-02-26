@@ -1316,33 +1316,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int *curvapi
 		}
 	} else if (nvram_match(akm, "disabled")) {
 		addWPS(fp, ifname, 0);
-	} else if (has_wpa3(ifname) && nvhas(akm, "owe")) {
-		if (nvram_nmatch("1", "%s_bridged", ifname))
-			fprintf(fp, "bridge=%s\n", getBridge(ifname, tmp));
-		fprintf(fp, "logger_syslog=-1\n");
-		debug = nvram_nget("%s_wpa_debug", ifname);
-		if (debug != NULL) {
-			if (!strcmp(debug, "1"))
-				fprintf(fp, "logger_syslog_level=1\n");
-			else if (!strcmp(debug, "2"))
-				fprintf(fp, "logger_syslog_level=2\n");
-			else if (!strcmp(debug, "3"))
-				fprintf(fp, "logger_syslog_level=0\n");
-		} else
-			fprintf(fp, "logger_syslog_level=2\n");
-		fprintf(fp, "logger_stdout=-1\n");
-		fprintf(fp, "logger_stdout_level=2\n");
-		fprintf(fp, "wpa=2\n");
-#ifdef HAVE_80211W
-		if (nvram_default_matchi(mfp, -1, 0))
-			fprintf(fp, "ieee80211w=1\n");
-		if (nvram_default_matchi(mfp, 0, 0))
-			fprintf(fp, "ieee80211w=0\n");
-		if (nvram_default_matchi(mfp, 1, 0))
-			fprintf(fp, "ieee80211w=2\n");
-#endif
-		fprintf(fp, "wpa_key_mgmt=OWE\n");
-		fprintf(fp, "rsn_pairwise=CCMP\n");
 	} else if (ispsk || ispsk2 || ispsk3 || isowe || iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 || ispsk2sha256) {
 		setupHostAPPSK(fp, ifname, isfirst);
 	} else if (nvhas(akm, "radius")) {
