@@ -4811,6 +4811,23 @@ static int no_suiteb_no_wpa3(const char *prefix)
 		!nvram_nmatch("1", "%s_psk3", prefix));
 }
 
+static int check_already_owe(const char *owe, const char *prefix)
+{
+	char *owe_if = nvram_nget("%s_owe_ifname", prefix);
+	if (*owe_if) {
+		char *m = nvram_nget("%s_owe_ifname", owe_if);
+		if (*m) {
+			if (nvram_nmatch("1", "%s_owe", owe_if)) {
+				if (!strcmp(owe_if, owe))
+					return 1;
+				else
+					return 0;
+			}
+		}
+	}
+	return 1;
+}
+
 static int owe_possible(const char *prefix)
 {
 	int possible = 0;
@@ -4820,13 +4837,19 @@ static int owe_possible(const char *prefix)
 	strcpy(master, prefix);
 	rep(master, '.', 0);
 	char *vifs = nvram_nget("%s_vifs", master);
-	if (strcmp(master, prefix) && (nvram_nmatch("disabled", "%s_akm", master) || *nvram_nget("%s_akm", master) == 0))
-		possible = 1;
-	foreach(var, vifs, next) {
-		if (strcmp(var, prefix) && (nvram_nmatch("disabled", "%s_akm", var) || *nvram_nget("%s_akm", var) == 0))
-			possible = 1;
+	if (strcmp(master, prefix) && (nvram_nmatch("disabled", "%s_akm", master) || *nvram_nget("%s_akm", master) == 0)) {
+		possible = check_already_owe(prefix, master);
+		if (possible)
+			return possible && nomesh(prefix);
 	}
-	return (possible && nomesh(prefix));
+	foreach(var, vifs, next) {
+		if (strcmp(var, prefix) && (nvram_nmatch("disabled", "%s_akm", var) || *nvram_nget("%s_akm", var) == 0)) {
+			possible = check_already_owe(prefix, var);
+			if (possible)
+				return possible && nomesh(prefix);
+		}
+	}
+	return 0;
 }
 
 #ifdef HAVE_MADWIFI
