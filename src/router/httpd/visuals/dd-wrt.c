@@ -4811,6 +4811,24 @@ static int no_suiteb_no_wpa3(const char *prefix)
 		!nvram_nmatch("1", "%s_psk3", prefix));
 }
 
+static int owe_possible(const char *prefix)
+{
+	int possible = 0;
+	char var[32];
+	char *next;
+	char *vifs = nvram_nget("%s_vifs", prefix);
+	char master[32];
+	strcpy(master, prefix);
+	rep(master, '.', 0);
+	if (strcmp(master, prefix) && (nvram_nmatch("disabled", "%s_akm", master) || *nvram_nget("%s_akm", master) == 0))
+		possible = 1;
+	foreach(var, vifs, next) {
+		if (strcmp(var, prefix) && (nvram_nmatch("disabled", "%s_akm", var) || *nvram_nget("%s_akm", var) == 0))
+			possible = 1;
+	}
+	return (possible && nomesh(prefix));
+}
+
 #ifdef HAVE_MADWIFI
 void show_authtable(webs_t wp, char *prefix, int show80211x)
 {
@@ -4834,7 +4852,7 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 		{ "wpa.wpa3", "wpa3", aponly_wpa3, is_mac80211, nomesh },
 		{ "wpa.wpa3_128", "wpa3-128", aponly_wpa3_gcmp128, has_gmac_128, nomesh },
 		{ "wpa.wpa3_192", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256, nomesh },
-		{ "wpa.owe", "owe", aponly_wpa3, is_mac80211, nomesh }
+		{ "wpa.owe", "owe", aponly_wpa3, is_mac80211, owe_possible }
 	};
 	struct pair s_authpair_80211x[] = {
 		{ "wpa.wpa", "wpa", alwaystrue, alwaystrue, alwaystrue },
@@ -4976,7 +4994,7 @@ void show_owe(webs_t wp, char *prefix)
 		if (strcmp(master, prefix) && (nvram_nmatch("disabled", "%s_akm", master) || *nvram_nget("%s_akm", master) == 0))
 			websWrite(wp, "<option value=\"%s\" %s >%s - %s</option>\n", master, nvram_nmatch(master, "%s_owe_ifname", prefix) ? "selected=\"selected\"" : "", master, nvram_nget("%s_ssid", master));
 		foreach(var, vifs, next) {
-			if (strcmp(var, prefix) && (nvram_nmatch("disabled", "%s_akm", var)  || *nvram_nget("%s_akm", var) == 0))
+			if (strcmp(var, prefix) && (nvram_nmatch("disabled", "%s_akm", var) || *nvram_nget("%s_akm", var) == 0))
 				websWrite(wp, "<option value=\"%s\" %s >%s - %s</option>\n", var, nvram_nmatch(var, "%s_owe_ifname", prefix) ? "selected=\"selected\"" : "", var, nvram_nget("%s_ssid", var));
 		}
 		websWrite(wp, "</select></div>\n");
