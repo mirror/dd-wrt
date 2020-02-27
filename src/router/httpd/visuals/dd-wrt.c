@@ -4973,10 +4973,10 @@ void show_owe(webs_t wp, char *prefix)
 
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.owe_ifname)</script></div>\n");
 		websWrite(wp, "<select name=\"%s_owe_ifname\">\n");
-		if (strcmp(master, prefix))
+		if (strcmp(master, prefix) && nvram_nmatch("disabled", "%s_akm", master))
 			websWrite(wp, "<option value=\"%s\" %s >%s - %s</option>\n", master, nvram_nmatch(master, "%s_owe_ifname", prefix) ? "selected=\"selected\"" : "", master, nvram_nget("%s_ssid", master));
 		foreach(var, vifs, next) {
-			if (strcmp(var, prefix))
+			if (strcmp(var, prefix) && nvram_nmatch("disabled", "%s_akm", var))
 				websWrite(wp, "<option value=\"%s\" %s >%s - %s</option>\n", var, nvram_nmatch(var, "%s_owe_ifname", prefix) ? "selected=\"selected\"" : "", var, nvram_nget("%s_ssid", var));
 		}
 		websWrite(wp, "</select></div>\n");
