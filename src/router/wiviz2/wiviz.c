@@ -761,6 +761,16 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 					case 2:
 						encType |= 0x200;	// psk 
 						break;
+					case 4:
+						encType |= 0x2000;	// wps 
+						break;
+					}
+				}
+				if (e->length >= 4 && memcmp(ofs, "\x50\x6f\x9a", 3) == 0) {
+					switch (ofs[3]) {
+					case 28:
+						encType |= 0x1000;	//owe
+						break;
 					}
 				}
 				if (e->length >= sizeof(struct ieee80211_mtik_ie_data) + 6 && memcmp(ofs, "\x00\x0c\x42", 3) == 0) {
@@ -1013,6 +1023,8 @@ void print_host(FILE * outf, wiviz_host * host)
 				fprintf(outf, "WPA3 ");
 			if (host->apInfo->encryption & 0x1000)
 				fprintf(outf, "OWE ");
+			if (host->apInfo->encryption & 0x2000)
+				fprintf(outf, "WPS ");
 			fprintf(outf, "';\n");
 		}
 	}
