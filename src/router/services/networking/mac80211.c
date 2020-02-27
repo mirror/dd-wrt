@@ -1401,20 +1401,13 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int *curvapi
 	if (v && *v)
 		fprintf(fp, "%s", v);
 	fprintf(fp, "\n");
-	if (has_wpa3(ifname) && isowe) {
-		*curvapid++;
-		int brand = getRouterBrand();
-		if (brand == ROUTER_WRT_3200ACM || brand == ROUTER_WRT_32X) {
-			hwbuff[0] |= 0x2;
-			hwbuff[5] += *curvapid & 0xf;
-		} else {
-			hwbuff[0] ^= ((*curvapid - 1) << 2) | 0x2;
+	if (has_wpa3(ifname)) {
+		char *owe_ifname = nvram_nget("%s_owe_ifname", prefix);
+		if (*owe_ifname) {
+			if (nvram_nmatch("1", "%s_owe", owe_ifname)) {
+				fprintf(fp, "owe_transition_ifname=%s\n\n", owe_ifname);
+			}
 		}
-		fprintf(fp, "\nbss=%s_owe\n", ifname);
-		sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1], hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
-		fprintf(fp, "bssid=%s\n", macaddr);
-		fprintf(fp, "ssid=%s\n", nvram_nget("%s_owe_ssid", ifname));
-		fprintf(fp, "owe_transition_ifname=%s\n\n", ifname);
 	}
 	fclose(fp);
 

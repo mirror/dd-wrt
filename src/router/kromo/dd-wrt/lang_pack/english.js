@@ -2468,7 +2468,7 @@ wpa.leap="EAP-LEAP";
 wpa.tls="EAP-TLS";
 wpa.ttls="EAP-TTLS";
 wpa.owe="OWE Opportunistic Wireless Encryption";
-wpa.owe_ssid="OWE Open SSID";
+wpa.owe_ifname="OWE Transition Interface";
 
 var aoss=new Object();
 aoss.titl="AOSS Security";

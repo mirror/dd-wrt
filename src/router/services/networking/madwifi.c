@@ -1424,7 +1424,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 #endif
 	fprintf(fp, "\n");
 	if (has_wpa3(prefix) && isowe) {
-		fprintf(fp, "owe_transition_ifname=%s_owe\n", prefix);
+		fprintf(fp, "owe_transition_ifname=%s\n", nvram_nget("%s_owe_ifname", prefix));
 		fprintf(fp, "owe_groups=19 20 21\n");
 	}
 	if (has_wpa3(prefix) && ispsk3)
@@ -2611,13 +2611,6 @@ static void configure_single(int count)
 			eval("ifconfig", dev, "0.0.0.0", "up");
 			br_add_interface(getBridge(dev, tmp), dev);
 			eval("ifconfig", dev, "0.0.0.0", "up");
-			if (nvram_nmatch("1", "%s_owe", dev)) {
-				char owe[64];
-				sprintf(owe, "%s_owe", dev);
-				br_add_interface(getBridge(owe, tmp), owe);
-				eval("ifconfig", owe, "0.0.0.0", "up");
-			}
-
 		} else {
 			eval("ifconfig", dev, "mtu", getMTU(dev));
 			eval("ifconfig", dev, "txqueuelen", getTXQ(dev));
@@ -2666,12 +2659,6 @@ static void configure_single(int count)
 				if (nvram_default_matchi(bridged, 1, 1)) {
 					eval("ifconfig", var, "0.0.0.0", "up");
 					br_add_interface(getBridge(var, tmp), var);
-					if (nvram_nmatch("1", "%s_owe", var)) {
-						char owe[64];
-						sprintf(owe, "%s_owe", var);
-						br_add_interface(getBridge(owe, tmp), var);
-						eval("ifconfig", owe, "0.0.0.0", "up");
-					}
 				} else {
 					char ip[32];
 					char mask[32];

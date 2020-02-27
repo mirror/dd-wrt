@@ -986,7 +986,13 @@ _8021xprv
 		_copytonv_prefix(wp, "wpa3-192", prefix);
 		_copytonv_prefix(wp, "wpa3-128", prefix);
 		_copytonv_prefix(wp, "owe", prefix);
-		_copytonv_prefix(wp, "owe_ssid", prefix);
+		char oname[32];
+		sprintf(oname, "%s_owe_ifname", prefix);
+		char *oif = websGetVar(wp, oname, NULL);
+		if (oif) {
+			nvram_set(oname, oif);
+			nvram_nset(prefix, "%s_owe_ifname", oif);
+		}
 		char akm[128] = { 0, 0 };
 		if (nvram_nmatch("1", "%s_psk", prefix))
 			sprintf(akm, "%s %s", akm, "psk");
