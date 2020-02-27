@@ -4964,11 +4964,22 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 void show_owe(webs_t wp, char *prefix)
 {
 	if (nvram_nmatch("1", "%s_owe", prefix)) {
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wpa.owe_ssid", NULL);
-		websWrite(wp, "<input name=\"%s_owe_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wpa.owe_ssid)\" value=\"", prefix);
-		tf_webWriteESC(wp, nvram_nget("%s_owe_ssid", prefix));
-		websWrite(wp, "\" /></div>\n");
+		char var[32];
+		char *next;
+		char *vifs = = nvram_nget("%s_vifs", prefix);
+		char master[32];
+		strcpy(master, prefix);
+		rep(master, '.', 0);
+
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.owe_ifname)</script></div>\n");
+		websWrite(wp, "<select name=\"%s_owe_ifname\">\n");
+		if (strcmp(master, prefix))
+			websWrite(wp, "<option value=\"%s\" %s >%s - %s</option>\n", master, nvram_nmatch(master, "%s_owe_ifname", prefix) ? "selected=\"selected\"" : "", master, nvram_nget("%s_ssid", master));
+		foreach(var, vifs, next) {
+			if (strcmp(var, prefix))
+				websWrite(wp, "<option value=\"%s\" %s >%s - %s</option>\n", var, nvram_nmatch(var, "%s_owe_ifname", prefix) ? "selected=\"selected\"" : "", var, nvram_nget("%s_ssid", var));
+		}
+		websWrite(wp, "</select></div>\n");
 	}
 }
 

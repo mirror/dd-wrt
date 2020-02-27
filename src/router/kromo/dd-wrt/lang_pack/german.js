@@ -2097,7 +2097,7 @@ wpa.leap="EAP-LEAP";
 wpa.tls="EAP-TLS";
 wpa.ttls="EAP-TTLS";
 wpa.owe="OWE Opportunistische WLAN Verschl&uuml;sselung";
-wpa.owe_ssid="Offene OWE SSID";
+wpa.owe_ifname="OWE &Uumlbergangs Interface";
 
 aoss.titl="AOSS Sicherheit";
 aoss.aoss="AOSS";
