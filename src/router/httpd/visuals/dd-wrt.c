@@ -4967,7 +4967,7 @@ void show_owe(webs_t wp, char *prefix)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wpa.owe_ssid", NULL);
 		websWrite(wp, "<input name=\"%s_owe_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wpa.owe_ssid)\" value=\"", prefix);
-		tf_webWriteESCNV(wp, nvram_nget("%s_owe_ssid", prefix));
+		tf_webWriteESC(wp, nvram_nget("%s_owe_ssid", prefix));
 		websWrite(wp, "\" /></div>\n");
 	}
 }

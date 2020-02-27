@@ -232,6 +232,12 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			if (has_ad(devs)) {
 				global = ej_active_wireless_if_ath9k(wp, argc, argv, "giwifi0", &assoc_count[cnt], global, t, macmask);
 			} else {
+				if (nvram_nmatch("1", "%s_owe", devs)){
+				char owe[64];
+				sprintf(owe,"%s_owe",devs);
+				global = ej_active_wireless_if_ath9k(wp, argc, argv, owe, &assoc_count[cnt], global, t, macmask);
+				
+				}else
 				global = ej_active_wireless_if_ath9k(wp, argc, argv, devs, &assoc_count[cnt], global, t, macmask);
 			}
 			gotassocs = 1;
@@ -250,6 +256,12 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 				if (!is_mac80211(devs)) {
 					global = ej_active_wireless_if(wp, argc, argv, var, &assoc_count[cnt], global, t, macmask);
 				} else {
+				if (nvram_nmatch("1", "%s_owe", var)){
+				char owe[64];
+				sprintf(owe,"%s_owe",var);
+				global = ej_active_wireless_if_ath9k(wp, argc, argv, owe, &assoc_count[cnt], global, t, macmask);
+				
+				}else
 					global = ej_active_wireless_if_ath9k(wp, argc, argv, var, &assoc_count[cnt], global, t, macmask);
 				}
 				cnt++;
