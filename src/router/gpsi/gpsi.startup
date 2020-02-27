@@ -116,10 +116,10 @@ if [ "$(nvram get gps_gpsd)" = "1" ]; then
 	if [ -f /etc/config/gpsi_startraw ]
 	then
 		#/usr/sbin/gpsd -n -i ${GPSDINTERVAL} -R -S ${GPSDPORT} ${TTY}
-		/usr/sbin/gpsd -R -S ${GPSDPORT} ${TTY}
+		/usr/sbin/gpsd -n -R -S ${GPSDPORT} ${TTY}
 		#/tmp/gpsd -n -R -S ${GPSDPORT} ${TTY}
 	else
-		/usr/sbin/gpsd -S ${GPSDPORT} ${TTY}
+		/usr/sbin/gpsd -n -S ${GPSDPORT} ${TTY}
 	fi
 fi
 
@@ -182,10 +182,10 @@ then
 	killall -9 gpspipegpsi
     if [ -f /etc/config/gpsi_startraw ]
     then
-	/usr/sbin/gpsd -R -S ${GPSDPORT} ${TTY}
+	/usr/sbin/gpsd -n -R -S ${GPSDPORT} ${TTY}
 	#/tmp/gpsd -n -R -S ${GPSDPORT} ${TTY}
     else
-	/usr/sbin/gpsd -S ${GPSDPORT} ${TTY}
+	/usr/sbin/gpsd -n -S ${GPSDPORT} ${TTY}
     fi
  fi
 fi
@@ -202,9 +202,9 @@ then
   killall -9 gpsd
   if [ -f /etc/config/gpsi_startraw ]
   then
-	/usr/sbin/gpsd -R -S ${GPSDPORT} ${TTY}
+	/usr/sbin/gpsd -n -R -S ${GPSDPORT} ${TTY}
   else
-	/usr/sbin/gpsd -S ${GPSDPORT} ${TTY}
+	/usr/sbin/gpsd -n -S ${GPSDPORT} ${TTY}
   fi
  fi
 fi
