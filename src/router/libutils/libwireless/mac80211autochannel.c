@@ -394,6 +394,7 @@ int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **chan
 	int wdev, phy;
 	int i, ch;
 	struct wifi_channels *wifi_channels;
+	sysprintf("iw dev %s scan > /dev/null", interface);
 	mac80211_lock();
 	int ret = unl_genl_init(&unl, "nl80211");
 	wdev = if_nametoindex(interface);
@@ -415,18 +416,8 @@ int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **chan
 		goto out;
 	}
 	freq_list(&unl, phy, freq_range, frequencies);
-	for (i = 0; i < scans; i++) {
-		int x = 0;
-		while (x++ < 10) {
-			if (!scan(&unl, wdev, frequencies))
-				break;
-			struct timespec tim, tim2;
-			tim.tv_sec = 0;
-			tim.tv_nsec = 2000000000L;
-			nanosleep(&tim, &tim2);
-		}
-		survey(&unl, wdev, freq_add_stats, frequencies);
-	}
+	scan(&unl, wdev, frequencies);
+	survey(&unl, wdev, freq_add_stats, frequencies);
 
 out:
 	unl_free(&unl);
