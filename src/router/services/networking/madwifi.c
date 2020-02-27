@@ -269,6 +269,8 @@ void eap_sta_key_mgmt(FILE * fp, char *prefix)
 	int iswep = nvhas(akm, "802.1x");
 	int iswpa = nvhas(akm, "wpa");
 	int iswpa2 = nvhas(akm, "wpa2");
+	int ispsk = nvhas(akm, "psk");
+	int ispsk2 = nvhas(akm, "psk2");
 	int iswpa3 = nvhas(akm, "wpa3");
 	int iswpa3_192 = nvhas(akm, "wpa3-192");
 	int iswpa3_128 = nvhas(akm, "wpa3-128");
@@ -303,7 +305,7 @@ void eap_sta_key_mgmt(FILE * fp, char *prefix)
 	fprintf(fp, "\n");
 #ifdef HAVE_80211W
 	if ((iswpa2 || iswpa || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256)) {
-		if (nvram_default_matchi(mfp, 1, 0) || ((iswpa3_128 || iswpa3_192 || iswpa3 || iswpa2sha256) && (!iswpa && !iswpa2)))
+		if (nvram_default_matchi(mfp, 1, 0) || ((iswpa3_128 || iswpa3_192 || iswpa3 || iswpa2sha256) && (!iswpa && !iswpa2 && !ispsk && !ispsk2)))
 			fprintf(fp, "\tieee80211w=2\n");
 		else if (nvram_default_matchi(mfp, -1, 0) || iswpa3_192 || iswpa3_128 || iswpa3 || iswpa2sha256)
 			fprintf(fp, "\tieee80211w=1\n");
@@ -1369,7 +1371,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 	if (iswpa3_192)
 		nvram_nseti(1, "%s_wpa3-192", prefix);
 #ifdef HAVE_80211W
-	if ((iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 || isowe) && (!ispsk && !ispsk2 && !iswpa && !iswpa2)) {
+	if ((iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 || ispsk2sha256 || isowe || ispsk3) && (!ispsk && !ispsk2 && !iswpa && !iswpa2)) {
 		fprintf(fp, "ieee80211w=2\n");
 		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128 || isowe)
 			fprintf(fp, "sae_require_mfp=1\n");
