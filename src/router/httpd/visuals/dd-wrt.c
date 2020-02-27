@@ -4966,7 +4966,7 @@ void show_owe(webs_t wp, char *prefix)
 	if (nvram_nmatch("1", "%s_owe", prefix)) {
 		char var[32];
 		char *next;
-		char *vifs = = nvram_nget("%s_vifs", prefix);
+		char *vifs = nvram_nget("%s_vifs", prefix);
 		char master[32];
 		strcpy(master, prefix);
 		rep(master, '.', 0);
