@@ -422,7 +422,7 @@ int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **chan
 				break;
 			struct timespec tim, tim2;
 			tim.tv_sec = 0;
-			tim.tv_nsec = 500000000L;
+			tim.tv_nsec = 2000000000L;
 			nanosleep(&tim, &tim2);
 		}
 		survey(&unl, wdev, freq_add_stats, frequencies);
