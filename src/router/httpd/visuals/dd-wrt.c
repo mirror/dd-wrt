@@ -4816,10 +4816,10 @@ static int owe_possible(const char *prefix)
 	int possible = 0;
 	char var[32];
 	char *next;
-	char *vifs = nvram_nget("%s_vifs", prefix);
 	char master[32];
 	strcpy(master, prefix);
 	rep(master, '.', 0);
+	char *vifs = nvram_nget("%s_vifs", master);
 	if (strcmp(master, prefix) && (nvram_nmatch("disabled", "%s_akm", master) || *nvram_nget("%s_akm", master) == 0))
 		possible = 1;
 	foreach(var, vifs, next) {
@@ -4984,10 +4984,10 @@ void show_owe(webs_t wp, char *prefix)
 	if (nvram_nmatch("1", "%s_owe", prefix)) {
 		char var[32];
 		char *next;
-		char *vifs = nvram_nget("%s_vifs", prefix);
 		char master[32];
 		strcpy(master, prefix);
 		rep(master, '.', 0);
+		char *vifs = nvram_nget("%s_vifs", master);
 
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.owe_ifname)</script></div>\n");
 		websWrite(wp, "<select name=\"%s_owe_ifname\">\n", prefix);
