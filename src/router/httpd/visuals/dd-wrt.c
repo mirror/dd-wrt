@@ -4972,11 +4972,11 @@ void show_owe(webs_t wp, char *prefix)
 		rep(master, '.', 0);
 
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.owe_ifname)</script></div>\n");
-		websWrite(wp, "<select name=\"%s_owe_ifname\">\n");
-		if (strcmp(master, prefix) && nvram_nmatch("disabled", "%s_akm", master))
+		websWrite(wp, "<select name=\"%s_owe_ifname\">\n", prefix);
+		if (strcmp(master, prefix) && (nvram_nmatch("disabled", "%s_akm", master) || *nvram_nget("%s_akm", master) == 0))
 			websWrite(wp, "<option value=\"%s\" %s >%s - %s</option>\n", master, nvram_nmatch(master, "%s_owe_ifname", prefix) ? "selected=\"selected\"" : "", master, nvram_nget("%s_ssid", master));
 		foreach(var, vifs, next) {
-			if (strcmp(var, prefix) && nvram_nmatch("disabled", "%s_akm", var))
+			if (strcmp(var, prefix) && (nvram_nmatch("disabled", "%s_akm", var)  || *nvram_nget("%s_akm", var) == 0))
 				websWrite(wp, "<option value=\"%s\" %s >%s - %s</option>\n", var, nvram_nmatch(var, "%s_owe_ifname", prefix) ? "selected=\"selected\"" : "", var, nvram_nget("%s_ssid", var));
 		}
 		websWrite(wp, "</select></div>\n");
