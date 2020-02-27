@@ -1396,19 +1396,19 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int *curvapi
 #ifdef HAVE_HOTSPOT20
 	setupHS20(fp, ifname);
 #endif
+	if (has_wpa3(ifname)) {
+		char *owe_ifname = nvram_nget("%s_owe_ifname", ifname);
+		if (*owe_ifname) {
+			if (nvram_nmatch("1", "%s_owe", owe_ifname)) {
+				fprintf(fp, "owe_transition_ifname=%s\n", owe_ifname);
+			}
+		}
+	}
 	char *v = nvram_nget("%s_config", ifname);
 	fprintf(fp, "\n");
 	if (v && *v)
 		fprintf(fp, "%s", v);
 	fprintf(fp, "\n");
-	if (has_wpa3(ifname)) {
-		char *owe_ifname = nvram_nget("%s_owe_ifname", prefix);
-		if (*owe_ifname) {
-			if (nvram_nmatch("1", "%s_owe", owe_ifname)) {
-				fprintf(fp, "owe_transition_ifname=%s\n\n", owe_ifname);
-			}
-		}
-	}
 	fclose(fp);
 
 }
