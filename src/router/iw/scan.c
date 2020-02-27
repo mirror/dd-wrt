@@ -799,6 +799,9 @@ static void print_auth(const uint8_t *data)
 		case 7:
 			printf("TDLS/TPK");
 			break;
+		case 18:
+			printf("OWE");
+			break;
 		default:
 			printf("%.02x-%.02x-%.02x:%d",
 				data[0], data[1] ,data[2], data[3]);
@@ -808,6 +811,9 @@ static void print_auth(const uint8_t *data)
 		switch (data[3]) {
 		case 1:
 			printf("OSEN");
+			break;
+		case 28:
+			printf("OWE");
 			break;
 		default:
 			printf("%.02x-%.02x-%.02x:%d",
@@ -1850,6 +1856,20 @@ static const struct ie_print wifiprinters[] = {
 	[4] = { "WPS", print_wifi_wps, 0, 255, BIT(PRINT_SCAN), },
 };
 
+static inline void print_wifi_owe(const uint8_t type, uint8_t len,
+			     const uint8_t *data,
+			     const struct print_ies_data *ie_buffer)
+{
+	char mac_addr[18];
+	mac_addr_n2a(mac_addr, &data[0]);
+	printf("\t * Transition BSSID: %s\n", mac_addr);
+	printf("\t\t * Transition SSID: ");
+	printf("\"");
+	print_ssid_escaped(data[6],
+			&data[7]);
+	printf("\"\n");
+}
+
 static inline void print_p2p(const uint8_t type, uint8_t len,
 			     const uint8_t *data,
 			     const struct print_ies_data *ie_buffer)
@@ -1948,6 +1968,7 @@ static const struct ie_print wfa_printers[] = {
 	[9] = { "P2P", print_p2p, 2, 255, BIT(PRINT_SCAN), },
 	[16] = { "HotSpot 2.0 Indication", print_hs20_ind, 1, 255, BIT(PRINT_SCAN), },
 	[18] = { "HotSpot 2.0 OSEN", print_wifi_osen, 1, 255, BIT(PRINT_SCAN), },
+	[28] = { "OWE", print_wifi_owe, 1, 255, BIT(PRINT_SCAN), },
 };
 
 static void print_vendor(unsigned char len, unsigned char *data,
@@ -1962,7 +1983,7 @@ static void print_vendor(unsigned char len, unsigned char *data,
 		printf("\n");
 		return;
 	}
-#if 0
+#if 1
 	if (len >= 4 && memcmp(data, ms_oui, 3) == 0) {
 		if (data[3] < ARRAY_SIZE(wifiprinters) &&
 		    wifiprinters[data[3]].name &&
