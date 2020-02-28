@@ -52,5 +52,6 @@ static inline long long ksmbd_systime(void)
 #else
 	return ksmbd_UnixTimeToNT(ts);
 #endif
+#endif
 }
 #endif /* __KSMBD_TIME_WRAPPERS_H */
