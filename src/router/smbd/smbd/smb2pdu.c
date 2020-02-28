@@ -2789,7 +2789,7 @@ int smb2_open(struct ksmbd_work *work)
 				   NULL, 0, 0);
 	}
 
-	fp->create_time = ksmbd_UnixTimeToNT(from_kern_timespec(stat.ctime));
+	fp->create_time = ksmbd_UnixTimeToNT(stat.ctime);
 	if (req->FileAttributes || fp->f_ci->m_fattr == 0)
 		fp->f_ci->m_fattr = cpu_to_le32(smb2_get_dos_mode(&stat,
 			le32_to_cpu(req->FileAttributes)));
@@ -2829,11 +2829,11 @@ reconnected:
 	rsp->Reserved = 0;
 	rsp->CreateAction = cpu_to_le32(file_info);
 	rsp->CreationTime = cpu_to_le64(fp->create_time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(stat.atime));
+	time = ksmbd_UnixTimeToNT(stat.atime);
 	rsp->LastAccessTime = cpu_to_le64(time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(stat.mtime));
+	time = ksmbd_UnixTimeToNT(stat.mtime);
 	rsp->LastWriteTime = cpu_to_le64(time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(stat.ctime));
+	time = ksmbd_UnixTimeToNT(stat.ctime);
 	rsp->ChangeTime = cpu_to_le64(time);
 	rsp->AllocationSize = S_ISDIR(stat.mode) ? 0 :
 		cpu_to_le64(stat.blocks << 9);
@@ -3945,11 +3945,11 @@ static int get_file_basic_info(struct smb2_query_info_rsp *rsp,
 	generic_fillattr(FP_INODE(fp), &stat);
 
 	basic_info->CreationTime = cpu_to_le64(fp->create_time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(stat.atime));
+	time = ksmbd_UnixTimeToNT(stat.atime);
 	basic_info->LastAccessTime = cpu_to_le64(time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(stat.mtime));
+	time = ksmbd_UnixTimeToNT(stat.mtime);
 	basic_info->LastWriteTime = cpu_to_le64(time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(stat.ctime));
+	time = ksmbd_UnixTimeToNT(stat.ctime);
 	basic_info->ChangeTime = cpu_to_le64(time);
 	basic_info->Attributes = fp->f_ci->m_fattr;
 	basic_info->Pad1 = 0;
@@ -4037,11 +4037,11 @@ static int get_file_all_info(struct ksmbd_work *work,
 	file_info = (struct smb2_file_all_info *)rsp->Buffer;
 
 	file_info->CreationTime = cpu_to_le64(fp->create_time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(stat.atime));
+	time = ksmbd_UnixTimeToNT(stat.atime);
 	file_info->LastAccessTime = cpu_to_le64(time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(stat.mtime));
+	time = ksmbd_UnixTimeToNT(stat.mtime);
 	file_info->LastWriteTime = cpu_to_le64(time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(stat.ctime));
+	time = ksmbd_UnixTimeToNT(stat.ctime);
 	file_info->ChangeTime = cpu_to_le64(time);
 	file_info->Attributes = fp->f_ci->m_fattr;
 	file_info->Pad1 = 0;
@@ -4238,11 +4238,11 @@ static int get_file_network_open_info(struct smb2_query_info_rsp *rsp,
 	generic_fillattr(inode, &stat);
 
 	file_info->CreationTime = cpu_to_le64(fp->create_time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(stat.atime));
+	time = ksmbd_UnixTimeToNT(stat.atime);
 	file_info->LastAccessTime = cpu_to_le64(time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(stat.mtime));
+	time = ksmbd_UnixTimeToNT(stat.mtime);
 	file_info->LastWriteTime = cpu_to_le64(time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(stat.ctime));
+	time = ksmbd_UnixTimeToNT(stat.ctime);
 	file_info->ChangeTime = cpu_to_le64(time);
 	file_info->Attributes = fp->f_ci->m_fattr;
 	file_info->AllocationSize = S_ISDIR(stat.mode) ? 0 :
@@ -4692,24 +4692,58 @@ static int smb2_get_info_sec(struct ksmbd_work *work,
 	struct smb2_query_info_req *req, struct smb2_query_info_rsp *rsp,
 	void *rsp_org)
 {
+	struct ksmbd_file *fp;
 	int rc = 0;
-	struct smb_ntsd *pntsd;
-	int out_len;
+	struct smb_ntsd *pntsd = (struct smb_ntsd *)rsp->Buffer;
+	__u32 secdesclen;
+	unsigned int id = KSMBD_NO_FID, pid = KSMBD_NO_FID;
+	int addition_info = le32_to_cpu(req->AdditionalInformation);
 
-	pntsd = (struct smb_ntsd *) rsp->Buffer;
-	out_len = sizeof(struct smb_ntsd);
+	if (addition_info & ~(OWNER_SECINFO | GROUP_SECINFO | DACL_SECINFO)) {
+		ksmbd_debug("Unsupported addition info: 0x%x)\n",
+			addition_info);
 
-	pntsd->revision = cpu_to_le16(1);
-	pntsd->type = cpu_to_le16(0x9000);
-	pntsd->osidoffset = 0;
-	pntsd->gsidoffset = 0;
-	pntsd->sacloffset = 0;
-	pntsd->dacloffset = 0;
+		pntsd->revision = cpu_to_le16(1);
+		pntsd->type = cpu_to_le16(0x9000);
+		pntsd->osidoffset = 0;
+		pntsd->gsidoffset = 0;
+		pntsd->sacloffset = 0;
+		pntsd->dacloffset = 0;
 
-	rsp->OutputBufferLength = cpu_to_le32(out_len);
-	inc_rfc1001_len(rsp_org, out_len);
+		secdesclen = sizeof(struct smb_ntsd);
+		rsp->OutputBufferLength = cpu_to_le32(secdesclen);
+		inc_rfc1001_len(rsp_org, secdesclen);
 
-	return rc;
+		return 0;
+	}
+
+	if (work->next_smb2_rcv_hdr_off) {
+		if (!HAS_FILE_ID(le64_to_cpu(req->VolatileFileId))) {
+			ksmbd_debug("Compound request set FID = %u\n",
+					work->compound_fid);
+			id = work->compound_fid;
+			pid = work->compound_pfid;
+		}
+	}
+
+	if (!HAS_FILE_ID(id)) {
+		id = le64_to_cpu(req->VolatileFileId);
+		pid = le64_to_cpu(req->PersistentFileId);
+	}
+
+	fp = ksmbd_lookup_fd_slow(work, id, pid);
+	if (!fp)
+		return -ENOENT;
+
+	rc = build_sec_desc(pntsd, &secdesclen, FP_INODE(fp)->i_mode);
+	ksmbd_fd_put(work, fp);
+	if (rc)
+		return rc;
+
+	rsp->OutputBufferLength = cpu_to_le32(secdesclen);
+	inc_rfc1001_len(rsp_org, secdesclen);
+
+	return 0;
 }
 
 /**
@@ -4900,14 +4934,6 @@ int smb2_echo(struct ksmbd_work *work)
 	rsp->StructureSize = cpu_to_le16(4);
 	rsp->Reserved = 0;
 	inc_rfc1001_len(rsp, 4);
-	return 0;
-}
-
-static int smb2_set_info_sec(struct ksmbd_file *fp,
-			     int addition_info,
-			     char *buffer,
-			     int buf_len)
-{
 	return 0;
 }
 
@@ -5147,22 +5173,19 @@ static int set_file_basic_info(struct ksmbd_file *fp,
 	}
 
 	if (file_info->LastAccessTime) {
-		attrs.ia_atime = to_kern_timespec(ksmbd_NTtimeToUnix(
-					file_info->LastAccessTime));
+		attrs.ia_atime = ksmbd_NTtimeToUnix(file_info->LastAccessTime);
 		attrs.ia_valid |= (ATTR_ATIME | ATTR_ATIME_SET);
 	}
 
 	if (file_info->ChangeTime) {
-		temp_attrs.ia_ctime = to_kern_timespec(ksmbd_NTtimeToUnix(
-					file_info->ChangeTime));
+		temp_attrs.ia_ctime = ksmbd_NTtimeToUnix(file_info->ChangeTime);
 		attrs.ia_ctime = temp_attrs.ia_ctime;
 		attrs.ia_valid |= ATTR_CTIME;
 	} else
 		temp_attrs.ia_ctime = inode->i_ctime;
 
 	if (file_info->LastWriteTime) {
-		attrs.ia_mtime = to_kern_timespec(ksmbd_NTtimeToUnix(
-					file_info->LastWriteTime));
+		attrs.ia_mtime = ksmbd_NTtimeToUnix(file_info->LastWriteTime);
 		attrs.ia_valid |= (ATTR_MTIME | ATTR_MTIME_SET);
 	}
 
@@ -5475,6 +5498,33 @@ static int smb2_set_info_file(struct ksmbd_work *work,
 
 	ksmbd_err("Unimplemented Fileinfoclass :%d\n", info_class);
 	return -EOPNOTSUPP;
+}
+
+static int smb2_set_info_sec(struct ksmbd_file *fp,
+			     int addition_info,
+			     char *buffer,
+			     int buf_len)
+{
+	struct smb_ntsd *pntsd = (struct smb_ntsd *)buffer;
+	struct inode *inode = FP_INODE(fp);
+	struct smb_fattr fattr;
+	int rc;
+
+	if (addition_info != DACL_SECINFO) {
+		ksmbd_debug("Unsupported addition info: 0x%x)\n",
+			addition_info);
+		return -EOPNOTSUPP;
+	}
+
+	fattr.cf_mode = 0;
+	rc = parse_sec_desc(pntsd, buf_len, &fattr);
+	if (rc)
+		return rc;
+
+	inode->i_mode |= fattr.cf_mode & 07777;
+	mark_inode_dirty(inode);
+
+	return 0;
 }
 
 /**

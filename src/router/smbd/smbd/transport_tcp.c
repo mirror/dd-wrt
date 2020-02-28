@@ -55,7 +55,11 @@ static inline void ksmbd_tcp_reuseaddr(struct socket *sock)
 
 static inline void ksmbd_tcp_rev_timeout(struct socket *sock, unsigned int sec)
 {
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 18, 0)
 	struct timeval tv = { .tv_sec = sec, .tv_usec = 0 };
+#else
+	struct __kernel_old_timeval tv = { .tv_sec = sec, .tv_usec = 0 };
+#endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0)
 	kernel_setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO_OLD, (char *)&tv,
@@ -68,7 +72,11 @@ static inline void ksmbd_tcp_rev_timeout(struct socket *sock, unsigned int sec)
 
 static inline void ksmbd_tcp_snd_timeout(struct socket *sock, unsigned int sec)
 {
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 18, 0)
 	struct timeval tv = { .tv_sec = sec, .tv_usec = 0 };
+#else
+	struct __kernel_old_timeval tv = { .tv_sec = sec, .tv_usec = 0 };
+#endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0)
 	kernel_setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO_OLD, (char *)&tv,

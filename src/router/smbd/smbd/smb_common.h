@@ -137,6 +137,85 @@ extern struct list_head global_lock_list;
 #define FILE_CASE_PRESERVED_NAMES	0x00000002
 #define FILE_CASE_SENSITIVE_SEARCH	0x00000001
 
+#define FILE_READ_DATA        0x00000001  /* Data can be read from the file   */
+#define FILE_WRITE_DATA       0x00000002  /* Data can be written to the file  */
+#define FILE_APPEND_DATA      0x00000004  /* Data can be appended to the file */
+#define FILE_READ_EA          0x00000008  /* Extended attributes associated   */
+/* with the file can be read        */
+#define FILE_WRITE_EA         0x00000010  /* Extended attributes associated   */
+/* with the file can be written     */
+#define FILE_EXECUTE          0x00000020  /*Data can be read into memory from */
+/* the file using system paging I/O */
+#define FILE_DELETE_CHILD     0x00000040
+#define FILE_READ_ATTRIBUTES  0x00000080  /* Attributes associated with the   */
+/* file can be read                 */
+#define FILE_WRITE_ATTRIBUTES 0x00000100  /* Attributes associated with the   */
+/* file can be written              */
+#define DELETE                0x00010000  /* The file can be deleted          */
+#define READ_CONTROL          0x00020000  /* The access control list and      */
+/* ownership associated with the    */
+/* file can be read                 */
+#define WRITE_DAC             0x00040000  /* The access control list and      */
+/* ownership associated with the    */
+/* file can be written.             */
+#define WRITE_OWNER           0x00080000  /* Ownership information associated */
+/* with the file can be written     */
+#define SYNCHRONIZE           0x00100000  /* The file handle can waited on to */
+/* synchronize with the completion  */
+/* of an input/output request       */
+#define GENERIC_ALL           0x10000000
+#define GENERIC_EXECUTE       0x20000000
+#define GENERIC_WRITE         0x40000000
+#define GENERIC_READ          0x80000000
+/* In summary - Relevant file       */
+/* access flags from CIFS are       */
+/* file_read_data, file_write_data  */
+/* file_execute, file_read_attributes*/
+/* write_dac, and delete.           */
+
+#define FILE_READ_RIGHTS (FILE_READ_DATA | FILE_READ_EA | FILE_READ_ATTRIBUTES)
+#define FILE_WRITE_RIGHTS (FILE_WRITE_DATA | FILE_APPEND_DATA \
+		| FILE_WRITE_EA | FILE_WRITE_ATTRIBUTES)
+#define FILE_EXEC_RIGHTS (FILE_EXECUTE)
+
+#define SET_FILE_READ_RIGHTS (FILE_READ_DATA | FILE_READ_EA | FILE_WRITE_EA \
+		| FILE_READ_ATTRIBUTES \
+		| FILE_WRITE_ATTRIBUTES \
+		| DELETE | READ_CONTROL | WRITE_DAC \
+		| WRITE_OWNER | SYNCHRONIZE)
+#define SET_FILE_WRITE_RIGHTS (FILE_WRITE_DATA | FILE_APPEND_DATA \
+		| FILE_READ_EA | FILE_WRITE_EA \
+		| FILE_DELETE_CHILD | FILE_READ_ATTRIBUTES \
+		| FILE_WRITE_ATTRIBUTES \
+		| DELETE | READ_CONTROL | WRITE_DAC \
+		| WRITE_OWNER | SYNCHRONIZE)
+#define SET_FILE_EXEC_RIGHTS (FILE_READ_EA | FILE_WRITE_EA | FILE_EXECUTE \
+		| FILE_READ_ATTRIBUTES \
+		| FILE_WRITE_ATTRIBUTES \
+		| DELETE | READ_CONTROL | WRITE_DAC \
+		| WRITE_OWNER | SYNCHRONIZE)
+
+#define SET_MINIMUM_RIGHTS (FILE_READ_EA | FILE_READ_ATTRIBUTES \
+		| READ_CONTROL | SYNCHRONIZE)
+
+/* generic flags for file open */
+#define GENERIC_READ_FLAGS	(READ_CONTROL | FILE_READ_DATA | \
+		FILE_READ_ATTRIBUTES | \
+		FILE_READ_EA | SYNCHRONIZE)
+
+#define GENERIC_WRITE_FLAGS	(READ_CONTROL | FILE_WRITE_DATA | \
+		FILE_WRITE_ATTRIBUTES | FILE_WRITE_EA | \
+		FILE_APPEND_DATA | SYNCHRONIZE)
+
+#define GENERIC_EXECUTE_FLAGS	(READ_CONTROL | FILE_EXECUTE | SYNCHRONIZE)
+
+#define GENERIC_ALL_FLAGS	(DELETE | READ_CONTROL | WRITE_DAC | \
+		WRITE_OWNER | SYNCHRONIZE | FILE_READ_DATA | \
+		FILE_WRITE_DATA | FILE_APPEND_DATA | \
+		FILE_READ_EA | FILE_WRITE_EA | \
+		FILE_EXECUTE | FILE_DELETE_CHILD | \
+		FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES)
+
 #define SMB1_PROTO_NUMBER		cpu_to_le32(0x424d53ff)
 
 #define SMB1_CLIENT_GUID_SIZE		(16)
