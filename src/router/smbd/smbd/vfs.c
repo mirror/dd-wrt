@@ -614,8 +614,7 @@ static void __file_dentry_ctime(struct ksmbd_work *work,
 	 * if "store dos attributes" conf is not yes,
 	 * create time = change time
 	 */
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(
-			ksmbd_kstat->kstat->ctime));
+	time = ksmbd_UnixTimeToNT(ksmbd_kstat->kstat->ctime);
 	ksmbd_kstat->create_time = time;
 
 	if (test_share_config_flag(work->tcon->share_conf,
@@ -1984,11 +1983,11 @@ void *ksmbd_vfs_init_kstat(char **p, struct ksmbd_kstat *ksmbd_kstat)
 
 	info->FileIndex = 0;
 	info->CreationTime = cpu_to_le64(ksmbd_kstat->create_time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(kstat->atime));
+	time = ksmbd_UnixTimeToNT(kstat->atime);
 	info->LastAccessTime = cpu_to_le64(time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(kstat->mtime));
+	time = ksmbd_UnixTimeToNT(kstat->mtime);
 	info->LastWriteTime = cpu_to_le64(time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(kstat->ctime));
+	time = ksmbd_UnixTimeToNT(kstat->ctime);
 	info->ChangeTime = cpu_to_le64(time);
 
 	if (ksmbd_kstat->file_attributes & ATTR_DIRECTORY_LE) {

@@ -11,13 +11,6 @@
 #define NUM_AUTHS (6)	/* number of authority fields */
 #define SID_MAX_SUB_AUTHORITIES (15) /* max number of sub authority fields */
 
-#define READ_BIT        0x4
-#define WRITE_BIT       0x2
-#define EXEC_BIT        0x1
-
-#define UBITSHIFT	6
-#define GBITSHIFT	3
-
 #define ACCESS_ALLOWED	0
 #define ACCESS_DENIED	1
 
@@ -45,31 +38,27 @@
 #define RM_CONTROL_VALID	0x4000
 #define SELF_RELATIVE		0x8000
 
-/*
- * Security Descriptor length containing DACL with 3 ACEs (one each for
- * owner, group and world).
- */
-#define DEFAULT_SEC_DESC_LEN (sizeof(struct smb_ntsd) + \
-			      sizeof(struct smb_acl) + \
-			      (sizeof(struct smb_ace) * 3))
-
-/*
- * Maximum size of a string representation of a SID:
- *
- * The fields are unsigned values in decimal. So:
- *
- * u8:  max 3 bytes in decimal
- * u32: max 10 bytes in decimal
- *
- * "S-" + 3 bytes for version field + 15 for authority field + NULL terminator
- *
- * For authority field, max is when all 6 values are non-zero and it must be
- * represented in hex. So "-0x" + 12 hex digits.
- *
- * Add 11 bytes for each subauthority field (10 bytes each + 1 for '-')
- */
-#define SID_STRING_BASE_SIZE (2 + 3 + 15 + 1)
-#define SID_STRING_SUBAUTH_SIZE (11) /* size of a single subauth string */
+/* ACE types - see MS-DTYP 2.4.4.1 */
+#define ACCESS_ALLOWED_ACE_TYPE 0x00
+#define ACCESS_DENIED_ACE_TYPE  0x01
+#define SYSTEM_AUDIT_ACE_TYPE   0x02
+#define SYSTEM_ALARM_ACE_TYPE   0x03
+#define ACCESS_ALLOWED_COMPOUND_ACE_TYPE 0x04
+#define ACCESS_ALLOWED_OBJECT_ACE_TYPE  0x05
+#define ACCESS_DENIED_OBJECT_ACE_TYPE   0x06
+#define SYSTEM_AUDIT_OBJECT_ACE_TYPE    0x07
+#define SYSTEM_ALARM_OBJECT_ACE_TYPE    0x08
+#define ACCESS_ALLOWED_CALLBACK_ACE_TYPE 0x09
+#define ACCESS_DENIED_CALLBACK_ACE_TYPE 0x0A
+#define ACCESS_ALLOWED_CALLBACK_OBJECT_ACE_TYPE 0x0B
+#define ACCESS_DENIED_CALLBACK_OBJECT_ACE_TYPE  0x0C
+#define SYSTEM_AUDIT_CALLBACK_ACE_TYPE  0x0D
+#define SYSTEM_ALARM_CALLBACK_ACE_TYPE  0x0E /* Reserved */
+#define SYSTEM_AUDIT_CALLBACK_OBJECT_ACE_TYPE 0x0F
+#define SYSTEM_ALARM_CALLBACK_OBJECT_ACE_TYPE 0x10 /* reserved */
+#define SYSTEM_MANDATORY_LABEL_ACE_TYPE 0x11
+#define SYSTEM_RESOURCE_ATTRIBUTE_ACE_TYPE 0x12
+#define SYSTEM_SCOPED_POLICY_ID_ACE_TYPE 0x13
 
 struct smb_ntsd {
 	__le16 revision; /* revision level */
@@ -87,9 +76,6 @@ struct smb_sid {
 	__le32 sub_auth[SID_MAX_SUB_AUTHORITIES]; /* sub_auth[num_subauth] */
 } __packed;
 
-/* size of a struct smb_sid, sans sub_auth array */
-#define CIFS_SID_BASE_SIZE (1 + 1 + NUM_AUTHS)
-
 struct smb_acl {
 	__le16 revision; /* revision level */
 	__le16 size;
@@ -104,10 +90,14 @@ struct smb_ace {
 	struct smb_sid sid; /* ie UUID of user or group who gets these perms */
 } __packed;
 
-struct ksmbd_fattr {
+struct smb_fattr {
 	kuid_t	cf_uid;
 	kgid_t	cf_gid;
 	umode_t	cf_mode;
 };
+
+int parse_sec_desc(struct smb_ntsd *pntsd, int acl_len,
+		struct smb_fattr *fattr);
+int build_sec_desc(struct smb_ntsd *pntsd, __u32 *secdesclen, umode_t mode);
 
 #endif /* _SMBACL_H */

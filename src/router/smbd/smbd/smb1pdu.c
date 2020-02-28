@@ -30,6 +30,8 @@
 #include "mgmt/tree_connect.h"
 #include "mgmt/user_session.h"
 
+static int smb1_oplock_enable = false;
+
 /* Default: allocation roundup size = 1048576 */
 static unsigned int alloc_roundup_size = 1048576;
 
@@ -50,9 +52,15 @@ struct ksmbd_dirent {
  *
  * Return:      timespec containing unix style time
  */
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 18, 0)
 static struct timespec smb_NTtimeToUnix(__le64 ntutc)
 {
 	struct timespec ts;
+#else
+static struct timespec64 smb_NTtimeToUnix(__le64 ntutc)
+{
+	struct timespec64 ts;
+#endif
 	/* BB what about the timezone? BB */
 
 	/* Subtract the NTFS time offset, then convert to 1s intervals. */
@@ -2437,7 +2445,8 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 	fp->pid = le16_to_cpu(req->hdr.Pid);
 
 	share_ret = ksmbd_smb_check_shared_mode(fp->filp, fp);
-	if (test_share_config_flag(work->tcon->share_conf,
+	if (smb1_oplock_enable &&
+	    test_share_config_flag(work->tcon->share_conf,
 			KSMBD_SHARE_FLAG_OPLOCKS) &&
 		!S_ISDIR(file_inode(fp->filp)->i_mode) && oplock_flags) {
 		/* Client cannot request levelII oplock directly */
@@ -2510,7 +2519,7 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 	else
 		rsp->CreateAction = cpu_to_le32(file_info);
 
-	fp->create_time = ksmbd_UnixTimeToNT(from_kern_timespec(stat.ctime));
+	fp->create_time = ksmbd_UnixTimeToNT(stat.ctime);
 	if (file_present) {
 		if (test_share_config_flag(tcon->share_conf,
 					   KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
@@ -2539,11 +2548,11 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 	}
 
 	rsp->CreationTime = cpu_to_le64(fp->create_time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(stat.atime));
+	time = ksmbd_UnixTimeToNT(stat.atime);
 	rsp->LastAccessTime = cpu_to_le64(time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(stat.mtime));
+	time = ksmbd_UnixTimeToNT(stat.mtime);
 	rsp->LastWriteTime = cpu_to_le64(time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(stat.ctime));
+	time = ksmbd_UnixTimeToNT(stat.ctime);
 	rsp->ChangeTime = cpu_to_le64(time);
 
 	rsp->FileAttributes = cpu_to_le32(smb_get_dos_attr(&stat));
@@ -3210,11 +3219,11 @@ static void init_unix_info(struct file_unix_basic_info *unix_info,
 
 	unix_info->EndOfFile = cpu_to_le64(stat->size);
 	unix_info->NumOfBytes = cpu_to_le64(512 * stat->blocks);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(stat->ctime));
+	time = ksmbd_UnixTimeToNT(stat->ctime);
 	unix_info->LastStatusChange = cpu_to_le64(time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(stat->atime));
+	time = ksmbd_UnixTimeToNT(stat->atime);
 	unix_info->LastAccessTime = cpu_to_le64(time);
-	time = ksmbd_UnixTimeToNT(from_kern_timespec(stat->mtime));
+	time = ksmbd_UnixTimeToNT(stat->mtime);
 	unix_info->LastModificationTime = cpu_to_le64(time);
 	unix_info->Uid = cpu_to_le64(from_kuid(&init_user_ns, stat->uid));
 	unix_info->Gid = cpu_to_le64(from_kgid(&init_user_ns, stat->gid));
@@ -3236,7 +3245,11 @@ static void init_unix_info(struct file_unix_basic_info *unix_info,
 static int unix_info_to_attr(struct file_unix_basic_info *unix_info,
 		struct iattr *attrs)
 {
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 18, 0)
 	struct timespec ts;
+#else
+	struct timespec64 ts;
+#endif
 
 	if (le64_to_cpu(unix_info->EndOfFile) != NO_CHANGE_64) {
 		attrs->ia_size = le64_to_cpu(unix_info->EndOfFile);
@@ -3245,19 +3258,19 @@ static int unix_info_to_attr(struct file_unix_basic_info *unix_info,
 
 	if (le64_to_cpu(unix_info->LastStatusChange) != NO_CHANGE_64) {
 		ts = smb_NTtimeToUnix(unix_info->LastStatusChange);
-		attrs->ia_ctime = to_kern_timespec(ts);
+		attrs->ia_ctime = ts;
 		attrs->ia_valid |= ATTR_CTIME;
 	}
 
 	if (le64_to_cpu(unix_info->LastAccessTime) != NO_CHANGE_64) {
 		ts = smb_NTtimeToUnix(unix_info->LastAccessTime);
-		attrs->ia_atime = to_kern_timespec(ts);
+		attrs->ia_atime = ts;
 		attrs->ia_valid |= ATTR_ATIME;
 	}
 
 	if (le64_to_cpu(unix_info->LastModificationTime) != NO_CHANGE_64) {
 		ts = smb_NTtimeToUnix(unix_info->LastModificationTime);
-		attrs->ia_mtime = to_kern_timespec(ts);
+		attrs->ia_mtime = ts;
 		attrs->ia_valid |= ATTR_MTIME;
 	}
 
@@ -3314,7 +3327,11 @@ static int unix_info_to_attr(struct file_unix_basic_info *unix_info,
  * @time:	store dos style time
  * @date:	store dos style date
  */
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 18, 0)
 static void unix_to_dos_time(struct timespec ts, __le16 *time, __le16 *date)
+#else
+static void unix_to_dos_time(struct timespec64 ts, __le16 *time, __le16 *date)
+#endif
 {
 	struct tm t;
 	__u16 val;
@@ -3957,10 +3974,10 @@ static int query_path_info(struct ksmbd_work *work)
 		infos = (struct file_info_standard *)(ptr + 4);
 		unix_to_dos_time(ksmbd_NTtimeToUnix(cpu_to_le64(create_time)),
 			&infos->CreationDate, &infos->CreationTime);
-		unix_to_dos_time(from_kern_timespec(st.atime),
+		unix_to_dos_time(st.atime,
 				&infos->LastAccessDate,
 				&infos->LastAccessTime);
-		unix_to_dos_time(from_kern_timespec(st.mtime),
+		unix_to_dos_time(st.mtime,
 				&infos->LastWriteDate,
 				&infos->LastWriteTime);
 		infos->DataSize = cpu_to_le32(st.size);
@@ -4056,11 +4073,11 @@ static int query_path_info(struct ksmbd_work *work)
 		memset(ptr, 0, 4);
 		basic_info = (struct file_basic_info *)(ptr + 4);
 		basic_info->CreationTime = cpu_to_le64(create_time);
-		time = ksmbd_UnixTimeToNT(from_kern_timespec(st.atime));
+		time = ksmbd_UnixTimeToNT(st.atime);
 		basic_info->LastAccessTime = cpu_to_le64(time);
-		time = ksmbd_UnixTimeToNT(from_kern_timespec(st.mtime));
+		time = ksmbd_UnixTimeToNT(st.mtime);
 		basic_info->LastWriteTime = cpu_to_le64(time);
-		time = ksmbd_UnixTimeToNT(from_kern_timespec(st.ctime));
+		time = ksmbd_UnixTimeToNT(st.ctime);
 		basic_info->ChangeTime = cpu_to_le64(time);
 		basic_info->Attributes = S_ISDIR(st.mode) ?
 					 ATTR_DIRECTORY_LE : ATTR_ARCHIVE_LE;
@@ -4174,11 +4191,11 @@ static int query_path_info(struct ksmbd_work *work)
 		ainfo = (struct file_all_info *) (ptr + 4);
 
 		ainfo->CreationTime = cpu_to_le64(create_time);
-		time = ksmbd_UnixTimeToNT(from_kern_timespec(st.atime));
+		time = ksmbd_UnixTimeToNT(st.atime);
 		ainfo->LastAccessTime = cpu_to_le64(time);
-		time = ksmbd_UnixTimeToNT(from_kern_timespec(st.mtime));
+		time = ksmbd_UnixTimeToNT(st.mtime);
 		ainfo->LastWriteTime = cpu_to_le64(time);
-		time = ksmbd_UnixTimeToNT(from_kern_timespec(st.ctime));
+		time = ksmbd_UnixTimeToNT(st.ctime);
 		ainfo->ChangeTime = cpu_to_le64(time);
 		ainfo->Attributes = S_ISDIR(st.mode) ?
 					ATTR_DIRECTORY_LE : ATTR_ARCHIVE_LE;
@@ -4815,7 +4832,8 @@ static int smb_posix_open(struct ksmbd_work *work)
 	fp->filename = name;
 	fp->pid = le16_to_cpu(pSMB_req->hdr.Pid);
 
-	if (test_share_config_flag(work->tcon->share_conf,
+	if (smb1_oplock_enable &&
+	    test_share_config_flag(work->tcon->share_conf,
 			KSMBD_SHARE_FLAG_OPLOCKS) &&
 		!S_ISDIR(file_inode(fp->filp)->i_mode)) {
 		/* Client cannot request levelII oplock directly */
@@ -5013,20 +5031,17 @@ static int smb_set_time_pathinfo(struct ksmbd_work *work)
 
 	attrs.ia_valid = 0;
 	if (le64_to_cpu(info->LastAccessTime)) {
-		attrs.ia_atime = to_kern_timespec(
-				smb_NTtimeToUnix(info->LastAccessTime));
+		attrs.ia_atime = smb_NTtimeToUnix(info->LastAccessTime);
 		attrs.ia_valid |= (ATTR_ATIME | ATTR_ATIME_SET);
 	}
 
 	if (le64_to_cpu(info->ChangeTime)) {
-		attrs.ia_ctime =
-			to_kern_timespec(smb_NTtimeToUnix(info->ChangeTime));
+		attrs.ia_ctime = smb_NTtimeToUnix(info->ChangeTime);
 		attrs.ia_valid |= ATTR_CTIME;
 	}
 
 	if (le64_to_cpu(info->LastWriteTime)) {
-		attrs.ia_mtime =
-			to_kern_timespec(smb_NTtimeToUnix(info->LastWriteTime));
+		attrs.ia_mtime = smb_NTtimeToUnix(info->LastWriteTime);
 		attrs.ia_valid |= (ATTR_MTIME | ATTR_MTIME_SET);
 	}
 	/* TODO: check dos mode and acl bits if req->Attributes nonzero */
@@ -5533,10 +5548,10 @@ static int smb_populate_readdir_entry(struct ksmbd_conn *conn,
 				cpu_to_le64(ksmbd_kstat->create_time)),
 			&fsinfo->CreationTime,
 			&fsinfo->CreationDate);
-		unix_to_dos_time(from_kern_timespec(ksmbd_kstat->kstat->atime),
+		unix_to_dos_time(ksmbd_kstat->kstat->atime,
 			&fsinfo->LastAccessTime,
 			&fsinfo->LastAccessDate);
-		unix_to_dos_time(from_kern_timespec(ksmbd_kstat->kstat->mtime),
+		unix_to_dos_time(ksmbd_kstat->kstat->mtime,
 			&fsinfo->LastWriteTime,
 			&fsinfo->LastWriteDate);
 		fsinfo->DataSize = cpu_to_le32(ksmbd_kstat->kstat->size);
@@ -5560,10 +5575,10 @@ static int smb_populate_readdir_entry(struct ksmbd_conn *conn,
 				cpu_to_le64(ksmbd_kstat->create_time)),
 			&fesize->CreationTime,
 			&fesize->CreationDate);
-		unix_to_dos_time(from_kern_timespec(ksmbd_kstat->kstat->atime),
+		unix_to_dos_time(ksmbd_kstat->kstat->atime,
 			&fesize->LastAccessTime,
 			&fesize->LastAccessDate);
-		unix_to_dos_time(from_kern_timespec(ksmbd_kstat->kstat->mtime),
+		unix_to_dos_time(ksmbd_kstat->kstat->mtime,
 			&fesize->LastWriteTime,
 			&fesize->LastWriteDate);
 
@@ -6541,11 +6556,11 @@ static int query_file_info(struct ksmbd_work *work)
 		basic_info = (struct file_basic_info *)(ptr + 4);
 		basic_info->CreationTime =
 			cpu_to_le64(fp->create_time);
-		time = ksmbd_UnixTimeToNT(from_kern_timespec(st.atime));
+		time = ksmbd_UnixTimeToNT(st.atime);
 		basic_info->LastAccessTime = cpu_to_le64(time);
-		time = ksmbd_UnixTimeToNT(from_kern_timespec(st.mtime));
+		time = ksmbd_UnixTimeToNT(st.mtime);
 		basic_info->LastWriteTime = cpu_to_le64(time);
-		time = ksmbd_UnixTimeToNT(from_kern_timespec(st.ctime));
+		time = ksmbd_UnixTimeToNT(st.ctime);
 		basic_info->ChangeTime = cpu_to_le64(time);
 		basic_info->Attributes = S_ISDIR(st.mode) ?
 			ATTR_DIRECTORY_LE : ATTR_ARCHIVE_LE;
@@ -6687,11 +6702,11 @@ static int query_file_info(struct ksmbd_work *work)
 		memset(ptr, 0, 4);
 		ainfo = (struct file_all_info *)(ptr + 4);
 		ainfo->CreationTime = cpu_to_le64(fp->create_time);
-		time = ksmbd_UnixTimeToNT(from_kern_timespec(st.atime));
+		time = ksmbd_UnixTimeToNT(st.atime);
 		ainfo->LastAccessTime = cpu_to_le64(time);
-		time = ksmbd_UnixTimeToNT(from_kern_timespec(st.mtime));
+		time = ksmbd_UnixTimeToNT(st.mtime);
 		ainfo->LastWriteTime = cpu_to_le64(time);
-		time = ksmbd_UnixTimeToNT(from_kern_timespec(st.ctime));
+		time = ksmbd_UnixTimeToNT(st.ctime);
 		ainfo->ChangeTime = cpu_to_le64(time);
 		ainfo->Attributes = cpu_to_le32(S_ISDIR(st.mode) ?
 				ATTR_DIRECTORY : ATTR_ARCHIVE);
@@ -6876,20 +6891,17 @@ static int smb_set_time_fileinfo(struct ksmbd_work *work)
 
 	attrs.ia_valid = 0;
 	if (le64_to_cpu(info->LastAccessTime)) {
-		attrs.ia_atime = to_kern_timespec(
-				smb_NTtimeToUnix(info->LastAccessTime));
+		attrs.ia_atime = smb_NTtimeToUnix(info->LastAccessTime);
 		attrs.ia_valid |= (ATTR_ATIME | ATTR_ATIME_SET);
 	}
 
 	if (le64_to_cpu(info->ChangeTime)) {
-		attrs.ia_ctime =
-			to_kern_timespec(smb_NTtimeToUnix(info->ChangeTime));
+		attrs.ia_ctime = smb_NTtimeToUnix(info->ChangeTime);
 		attrs.ia_valid |= ATTR_CTIME;
 	}
 
 	if (le64_to_cpu(info->LastWriteTime)) {
-		attrs.ia_mtime =
-			to_kern_timespec(smb_NTtimeToUnix(info->LastWriteTime));
+		attrs.ia_mtime = smb_NTtimeToUnix(info->LastWriteTime);
 		attrs.ia_valid |= (ATTR_MTIME | ATTR_MTIME_SET);
 	}
 	/* TODO: check dos mode and acl bits if req->Attributes nonzero */
@@ -7120,8 +7132,7 @@ static int create_dir(struct ksmbd_work *work)
 		err = ksmbd_vfs_kern_path(name, 0, &path, 1);
 		if (!err) {
 			generic_fillattr(d_inode(path.dentry), &stat);
-			ctime = ksmbd_UnixTimeToNT(from_kern_timespec(
-							stat.ctime));
+			ctime = ksmbd_UnixTimeToNT(stat.ctime);
 
 			err = ksmbd_vfs_setxattr(path.dentry,
 						 XATTR_NAME_CREATION_TIME,
@@ -7275,8 +7286,7 @@ int smb_mkdir(struct ksmbd_work *work)
 		err = ksmbd_vfs_kern_path(name, 0, &path, 1);
 		if (!err) {
 			generic_fillattr(d_inode(path.dentry), &stat);
-			ctime = ksmbd_UnixTimeToNT(from_kern_timespec(
-								stat.ctime));
+			ctime = ksmbd_UnixTimeToNT(stat.ctime);
 
 			err = ksmbd_vfs_setxattr(path.dentry,
 						 XATTR_NAME_CREATION_TIME,
@@ -7868,7 +7878,8 @@ int smb_open_andx(struct ksmbd_work *work)
 	fp->pid = le16_to_cpu(req->hdr.Pid);
 
 	share_ret = ksmbd_smb_check_shared_mode(fp->filp, fp);
-	if (test_share_config_flag(work->tcon->share_conf,
+	if (smb1_oplock_enable &&
+	    test_share_config_flag(work->tcon->share_conf,
 			KSMBD_SHARE_FLAG_OPLOCKS) &&
 		!S_ISDIR(file_inode(fp->filp)->i_mode) &&
 		oplock_flags) {
@@ -7903,7 +7914,7 @@ int smb_open_andx(struct ksmbd_work *work)
 	if (oplock_rsp)
 		file_info |= SMBOPEN_LOCK_GRANTED;
 
-	fp->create_time = ksmbd_UnixTimeToNT(from_kern_timespec(stat.ctime));
+	fp->create_time = ksmbd_UnixTimeToNT(stat.ctime);
 	if (file_present) {
 		if (test_share_config_flag(work->tcon->share_conf,
 					   KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {

@@ -79,40 +79,6 @@ static const bool has_smb2_data_area[NUMBER_OF_SMB2_COMMANDS] = {
 	/* SMB2_OPLOCK_BREAK */ false
 };
 
-static int get_neg_context_size(char *buf, int *off, int *len)
-{
-	int i = 0;
-	struct smb2_negotiate_req *req = (struct smb2_negotiate_req *)buf;
-	char *pneg_ctxt;
-	__le16 *ContextType;
-	int neg_ctxt_cnt = le16_to_cpu(req->NegotiateContextCount);
-
-	*off = le32_to_cpu(req->NegotiateContextOffset);
-	if (*off == 0 || neg_ctxt_cnt == 0)
-		return 0;
-
-	pneg_ctxt = buf + le32_to_cpu(req->NegotiateContextOffset) + 4;
-	ContextType = (__le16 *)pneg_ctxt;
-	while (i++ < neg_ctxt_cnt) {
-		if (*ContextType == SMB2_PREAUTH_INTEGRITY_CAPABILITIES) {
-			pneg_ctxt +=
-				sizeof(struct smb2_preauth_neg_context) + 2;
-			*len += sizeof(struct smb2_preauth_neg_context) + 2;
-			ContextType = (__le16 *)pneg_ctxt;
-		} else if (*ContextType == SMB2_ENCRYPTION_CAPABILITIES) {
-			pneg_ctxt +=
-				sizeof(struct smb2_encryption_neg_context) + 2;
-			*len += sizeof(struct smb2_encryption_neg_context) + 2;
-			ContextType = (__le16 *)pneg_ctxt;
-		}
-	}
-	*len -= 2;
-
-	if (*len <= 0)
-		return 0;
-	return 1;
-}
-
 /*
  * Returns the pointer to the beginning of the data area. Length of the data
  * area and the offset to it (from the beginning of the smb are also returned.
@@ -134,13 +100,6 @@ static char *smb2_get_data_area_len(int *off, int *len, struct smb2_hdr *hdr)
 	 * command.
 	 */
 	switch (hdr->Command) {
-	case SMB2_NEGOTIATE:
-		if (!get_neg_context_size((char *)hdr, off, len)) {
-			*off = __SMB2_HEADER_STRUCTURE_SIZE + 36;
-			*len = le16_to_cpu(((struct smb2_negotiate_req *)
-				hdr)->DialectCount) * 2;
-		}
-		break;
 	case SMB2_SESSION_SETUP:
 		*off = le16_to_cpu(
 		     ((struct smb2_sess_setup_req *)hdr)->SecurityBufferOffset);
