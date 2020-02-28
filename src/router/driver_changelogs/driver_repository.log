@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4956 | brainslayer | 2020-02-28 01:53:08 +0400 (Fri, 28 Feb 2020) | 1 line
+
+revert extended channels for WRT1900/3200. it seems to work on 3200 but breaks 1900
+------------------------------------------------------------------------
 r4955 | brainslayer | 2020-02-25 21:08:40 +0400 (Tue, 25 Feb 2020) | 1 line
 
 fix antenna chainmask for 3x3 chipsets on mt7615
