@@ -765,6 +765,24 @@ static const struct ie_print wifiprinters[] = {
 	[4] = { "WPS", print_wifi_wps, 0, 255, BIT(PRINT_SCAN), },
 };
 
+static inline void print_wifi_owe(const uint8_t type, uint8_t len, const uint8_t * data)
+{
+	printf("OWE");
+	fillENC("OWE");
+/*	char mac_addr[18];
+	mac_addr_n2a(mac_addr, &data[0]);
+	printf("\t * Transition BSSID: %s\n", mac_addr);
+	printf("\t\t * Transition SSID: ");
+	printf("\"");
+	print_ssid_escaped(data[6],
+			&data[7]);
+	printf("\"\n");*/
+}
+
+static const struct ie_print wfa_printers[] = {
+	[28] = { "OWE", print_wifi_owe, 1, 255, BIT(PRINT_SCAN), },
+};
+
 static void print_vendor(unsigned char len, unsigned char *data, bool unknown, enum print_ie_type ptype)
 {
 	int i;
@@ -785,6 +803,20 @@ static void print_vendor(unsigned char len, unsigned char *data, bool unknown, e
 		if (!unknown)
 			return;
 		printf("\tWiFi OUI %#.2x, data:", data[3]);
+		for (i = 0; i < len - 4; i++)
+			printf(" %.02x", data[i + 4]);
+		printf("\n");
+		return;
+	}
+
+	if (len >= 4 && memcmp(data, wfa_oui, 3) == 0) {
+		if (data[3] < ARRAY_SIZE(wfa_printers) && wfa_printers[data[3]].name && wfa_printers[data[3]].flags & BIT(ptype)) {
+			print_ie(&wfa_printers[data[3]], data[3], len - 4, data + 4);
+			return;
+		}
+		if (!unknown)
+			return;
+		printf("\tWFA %#.2x, data:", data[3]);
 		for (i = 0; i < len - 4; i++)
 			printf(" %.02x", data[i + 4]);
 		printf("\n");
