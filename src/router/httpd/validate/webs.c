@@ -847,12 +847,15 @@ _8021xprv
 
 #endif
 #ifdef HAVE_ANTAIRA
+	#define u8 unsigned char
+	int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len, int iterations, u8 *buf, size_t buflen);
+
 	sprintf(n, "%s_wpa_psk", prefix);
-	char *passphrase = websGetVar(wp, n, "");
+	const char *passphrase = websGetVar(wp, n, "");
 	if (strlen(passphrase) == 64)
 		nvram_nset(passphrase, "%s_wpa_psk", prefix);
 	else {
-		char *ssid = nvram_nget("%s_ssid", prefix);
+		const char *ssid = nvram_nget("%s_ssid", prefix);
 		unsigned char psk[32];
 		pbkdf2_sha1(passphrase, ssid, strlen(ssid), 4096, psk, 32);
 		char wpapsk[70];
