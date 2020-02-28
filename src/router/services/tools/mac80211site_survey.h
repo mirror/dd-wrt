@@ -76,6 +76,7 @@ struct scan_params {
 	bool show_both_ie_sets;
 };
 
+static unsigned char wfa_oui[3]		= { 0x50, 0x6f, 0x9a };
 static unsigned char wifi_oui[3] = { 0x00, 0x50, 0xf2 };
 static unsigned char ieee80211_oui[3] = { 0x00, 0x0f, 0xac };
 
