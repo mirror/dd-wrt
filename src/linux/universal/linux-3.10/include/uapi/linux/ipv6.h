@@ -98,7 +98,7 @@ struct ipv6_destopt_hao {
 	__u8			type;
 	__u8			length;
 	struct in6_addr		addr;
-} __attribute__((packedm aligned(2)));
+} __attribute__((packed, aligned(2)));
 
 /*
  *	IPv6 fixed header
