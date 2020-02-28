@@ -247,9 +247,51 @@ static void wl_rsn_ie_dump(bcm_tlv_t * ie, char *sum)
 					break;
 				case RSN_AKM_PSK:
 					if (rsn)
-						strcat(sum, "WPA2-PSK ");
+						strcat(sum, "PSK2 ");
 					else
-						strcat(sum, "WPA-PSK ");
+						strcat(sum, "PSK ");
+					break;
+				case 3:
+					strcat(sum, "FT/EAP ");
+					break;
+				case 4:
+					strcat(sum, "FT/PSK ");
+					break;
+				case 5:
+					strcat(sum, "EAP/SHA-256 ");
+					break;
+				case 6:
+					strcat(sum, "PSK/SHA-256 ");
+					break;
+				case 7:
+					strcat(sum, "TDLS/TPK ");
+					break;
+				case 8:
+					strcat(sum, "SAE/PSK3 ");
+					break;
+				case 9:
+					strcat(sum, "FT/SAE ");
+					break;
+				case 11:
+					strcat(sum, "EAP/SUITE-B ");
+					break;
+				case 12:
+					strcat(sum, "EAP/SUITE-B-192 ");
+					break;
+				case 14:
+					strcat(sum, "FILS/SHA256 ");
+					break;
+				case 15:
+					strcat(sum, "FILS/SHA384 ");
+					break;
+				case 16:
+					strcat(sum, "FT-FILS/SHA256 ");
+					break;
+				case 17:
+					strcat(sum, "FT-FILS/SHA384 ");
+					break;
+				case 18:
+					strcat(sum, "OWE ");
 					break;
 				default:
 					sprintf(sum, "Unknown-%s(#%d) ", rsn ? "WPA2" : "WPA", suite->type);
