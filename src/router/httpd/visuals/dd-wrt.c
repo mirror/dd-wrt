@@ -2528,13 +2528,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
-
-		if (has_ac(var) && has_2ghz(var)) {
-			char wl_turboqam[16];
-			sprintf(wl_turboqam, "%s_turbo_qam", var);
-			showRadio(wp, "wl_basic.turboqam", wl_turboqam);
-		}
-
+		
 		show_caption(wp, "label", "wl_basic.label3", NULL);
 
 		websWrite(wp, "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"", var);
