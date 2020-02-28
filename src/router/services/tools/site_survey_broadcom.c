@@ -202,22 +202,46 @@ static void wl_rsn_ie_dump(bcm_tlv_t * ie, char *sum)
 			if (!wlu_bcmp(suite->oui, std_oui, 3)) {
 				switch (suite->type) {
 				case WPA_CIPHER_NONE:
-					strcat(sum, "Pair-NONE ");
+					strcat(sum, "NONE ");
 					break;
 				case WPA_CIPHER_WEP_40:
-					strcat(sum, "Pair-WEP64 ");
+					strcat(sum, "WEP40 ");
 					break;
 				case WPA_CIPHER_WEP_104:
-					strcat(sum, "Pair-WEP128 ");
+					strcat(sum, "WEP104 ");
 					break;
 				case WPA_CIPHER_TKIP:
-					strcat(sum, "Pair-TKIP ");
+					strcat(sum, "TKIP ");
 					break;
 				case WPA_CIPHER_AES_OCB:
-					strcat(sum, "Pair-AES-OCB ");
+					strcat(sum, "OCB ");
 					break;
 				case WPA_CIPHER_AES_CCM:
-					strcat(sum, "Pair-AES-CCMP ");
+					strcat(sum, "CCMP ");
+					break;
+				case 6:
+					strcat(sum, "AES-128-CMAC ");
+					break;
+				case 7:
+					strcat(sum, "NO-GROUP ");
+					break;
+				case 8:
+					strcat(sum, "GCMP-128 ");
+					break;
+				case 9:
+					strcat(sum, "GCMP-256 ");
+					break;
+				case 10:
+					strcat(sum, "CCMP-256 ");
+					break;
+				case 11:
+					strcat(sum, "AES-128-GMAC ");
+					break;
+				case 12:
+					strcat(sum, "AES-256-GMAC ");
+					break;
+				case 13:
+					strcat(sum, "AES-256-CMAC ");
 					break;
 				default:
 					sprintf(sum, "WPA-Unknown-%s(#%d) ", rsn ? "WPA2" : "WPA", suite->type);
