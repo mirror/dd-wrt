@@ -585,7 +585,7 @@ function setChannelProperties(channels) {
 		if( channels[index].value == '0' ) {
 			nctrlsb.options[nctrlsb.length] = new Option( 'Auto', wl_basic.ch_pos_auto );
 		} else {
-			if (F.value == 40) {
+			if (F.value == 40 || F.value == 2040) {
 			// HT40 minus
 			if( properties.luu == 1 ) {
 				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_lwr, 'luu' );
