@@ -32,15 +32,15 @@
  */
 int sock_write_bytes(int sockfd, const unsigned char *buff, int len)
 {
-  int t, n;
+	int t, n;
 
-  for(t = 0 ; len > 0 ; ) {
-    n = send(sockfd, (void *) buff + t, len, MSG_NOSIGNAL);
-    if (n < 0) {
-      return((t == 0) ? n : t);
-    }
-    t += n;
-    len -= n;
-  }
-  return(t);
+	for (t = 0; len > 0;) {
+		n = send(sockfd, (void *)buff + t, len, MSG_NOSIGNAL);
+		if (n < 0) {
+			return ((t == 0) ? n : t);
+		}
+		t += n;
+		len -= n;
+	}
+	return (t);
 }
