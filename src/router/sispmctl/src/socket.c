@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <time.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -39,141 +40,152 @@
 #include "nethelp.h"
 
 #ifndef WEBLESS
-int listenport=LISTENPORT;
+int listenport = LISTENPORT;
 
-void l_listen(int*sock, struct usb_device*dev, int devnum)
+#if defined(TCP_CORK) && !defined(TCP_NOPUSH)
+#define TCP_NOPUSH TCP_CORK
+/* (Linux's TCP_CORK is basically the same as BSD's TCP_NOPUSH.) */
+#endif
+
+static void setnaggle(int sock, int on)
 {
-  int i;
-  int s;
-  int connected=0;
-  int junk = 0;
-  char *oob;
-  char *buffer;
-  struct timespec waittime;
-  waittime.tv_sec = 0;
-  waittime.tv_nsec = 250000000; /* a quarter second */
-
-  oob = (char *)malloc(32);
-  buffer = (char *)malloc(BUFFERSIZE + 4);
-
-  if (debug)
-    fprintf(stderr, "Listening for local provider on port %d...\n", listenport);
-  listen(*sock, 1); /* We only get one connection on this port.
-                       Everything else is refused. */
-  while(1) {
-    while((s = accept(*sock, NULL, NULL)) == -1) {
-      sleep(1);
-      /* retry after error.  Really bad errors shouldn't happen. */
-    }
-    if(debug)
-      fprintf(stderr, "Provider connected.\n");
-
-    connected=1;
-
-    while(connected) {
-      if ((recv(s, oob, 32, MSG_OOB | MSG_DONTWAIT) > 0) &&
-           strncmp(oob, "flush", 5))
-        fprintf(stderr,"OUT-OF-BAND MESSAGE 1");
-
-      memset(buffer, 0, BUFFERSIZE + 4);
-      i = recv(s, buffer, BUFFERSIZE, 0);
-      if (i == -1 || i == 0) {
-        if ((i == -1) && (errno != EAGAIN) && (errno != EINTR)) {
-          if(junk != 0) {
-            fprintf(stderr, "%d bytes\n", junk);
-            junk = 0;
-          }
-          /* wait for a new connection */
-          perror("Lost provider connection");
-          close(s);
-          connected=0;
-        }
-        /* see if provider is still there */
-        i = sock_write_bytes(s, (unsigned char*)"ping", 4);
-        /*
-         * We get tcp acks, so there's no need to send a pong from the provider
-         */
-        if((i == -1) && (errno != EINTR)) {
-          if(junk != 0) {
-            fprintf(stderr, "%d bytes\n", junk);
-            junk = 0;
-          }
-          /* wait for a new connection */
-          perror("Lost provider connection");
-          close(s);
-          connected=0;
-        }
-        nanosleep(&waittime, NULL);
-      } else {
-        process(s,buffer,dev,devnum);
-        close(s);
-        connected=0;
-      }
-    }
-  }
+	int r;
+	/* Set the TCP_NOPUSH socket option, to try and avoid the 0.2 second
+	 ** delay between sending the headers and sending the data.  A better
+	 ** solution is writev() (as used in thttpd), or send the headers with
+	 ** send(MSG_MORE) (only available in Linux so far).
+	 */
+	r = on;
+	(void)setsockopt(sock, IPPROTO_TCP, TCP_NOPUSH, (void *)&r, sizeof(r));
+	if (on) {
+		r = 1;
+		(void)setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void *)&r, sizeof(r));
+	}
 }
 
-int*socket_init(char* bind_arg)
+void l_listen(int *sock, struct usb_device *dev, int devnum)
 {
-  int *s;
-  int on = 1;
-  size_t mtu = ETHERMTU;
-  struct sockaddr_in addr;
-  uint32_t bind_addr=0;
-  int result=0;
+	int i;
+	int s;
+	int connected = 0;
+	int junk = 0;
+	char *oob;
+	char *buffer;
+	struct timespec waittime;
+	waittime.tv_sec = 0;
+	waittime.tv_nsec = 250000000;	/* a quarter second */
 
-  /* bind a socket to listen on */
-  s = (int *) malloc(sizeof(int));
-  if( s == NULL )
-    return(NULL);
+	oob = (char *)malloc(32);
+	buffer = (char *)malloc(BUFFERSIZE + 4);
 
-  /* locate socket */
-  *s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-  if( *s == -1 ) {
-    perror("Socket cannot be opened");
-    free(s);
-    return(NULL);
-  }
+	if (debug)
+		fprintf(stderr, "Listening for local provider on port %d...\n", listenport);
+	listen(*sock, 1);	/* We only get one connection on this port.
+				   Everything else is refused. */
+	while (1) {
+		if ((s = accept(*sock, NULL, NULL)))
+			break;
 
-  /* set socket options */
-  if( setsockopt(*s, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(int)) == -1) {
-    perror("Socket option cannot be set");
-    goto socket_error;
-  }
-  if( setsockopt(*s, SOL_SOCKET, SO_RCVBUF, &mtu, sizeof(size_t)) == -1) {
-    perror("Socket option cannot be set");
-    goto socket_error;
-  }
+		struct timeval tv;
+		tv.tv_sec = 5;
+		tv.tv_usec = 0;
+		if (setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0)
+			perror("setsockopt(SO_SNDTIMEO)");
+		if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
+			perror("setsockopt(SO_RCVTIMEO)");
+		setnaggle(s, 1);
+		if (debug)
+			fprintf(stderr, "Provider connected.\n");
 
-  /* set socket essentials */
-  addr.sin_family = AF_INET;
-  addr.sin_port = htons(listenport);
-  if (bind_arg!=0) {
-    printf("Try to bind to %s\n",bind_arg);
-    result=inet_pton(AF_INET,bind_arg,(void*)&bind_addr);
-    if (result<0) {
-      perror("Inet_pton for given bind address failed");
-      goto socket_error;
-    } else if (result==0) {
-      fprintf(stderr,"Given bind address is not a valid IPv4 address: %s\n",bind_arg);
-      goto socket_error;
-    }
-  } else {
-    bind_addr=INADDR_ANY;
-  }
-  addr.sin_addr.s_addr = (uint32_t) bind_addr;
+		connected = 1;
 
+		while (connected) {
+			if ((recv(s, oob, 32, MSG_OOB | MSG_DONTWAIT) > 0) && strncmp(oob, "flush", 5))
+				fprintf(stderr, "OUT-OF-BAND MESSAGE 1");
 
-  /* bind socket now */
-  if(bind(*s, (struct sockaddr *) &addr, sizeof(struct sockaddr_in)) == -1) {
-    perror("Bind failed");
-    goto socket_error;
-  }
+			memset(buffer, 0, BUFFERSIZE + 4);
+		      again:;
+			i = recv(s, buffer, BUFFERSIZE, 0);
+			if (i == -1 || i == 0) {
+				if (errno == EINTR || errno == EAGAIN) {
+					goto again;
+				}
+				/* wait for a new connection */
+				perror("Lost provider connection");
+				setnaggle(s, 0);
+				close(s);
+				connected = 0;
+				nanosleep(&waittime, NULL);
+			} else {
+				process(s, buffer, dev, devnum);
+				setnaggle(s, 0);
+				close(s);
+				connected = 0;
+			}
+		}
+	}
+}
 
-  return(s);
+int *socket_init(char *bind_arg)
+{
+	int *s;
+	int on = 1;
+	size_t mtu = ETHERMTU;
+	struct sockaddr_in addr;
+	uint32_t bind_addr = 0;
+	int result = 0;
+
+	/* bind a socket to listen on */
+	s = (int *)malloc(sizeof(int));
+	if (s == NULL)
+		return (NULL);
+
+	/* locate socket */
+	*s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (*s == -1) {
+		perror("Socket cannot be opened");
+		free(s);
+		return (NULL);
+	}
+
+	/* set socket options */
+	if (setsockopt(*s, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(int)) == -1) {
+		perror("Socket option cannot be set");
+		goto socket_error;
+	}
+	if (setsockopt(*s, SOL_SOCKET, SO_RCVBUF, &mtu, sizeof(size_t)) == -1) {
+		perror("Socket option cannot be set");
+		goto socket_error;
+	}
+
+	/* set socket essentials */
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(listenport);
+	if (bind_arg != 0) {
+		printf("Try to bind to %s\n", bind_arg);
+		result = inet_pton(AF_INET, bind_arg, (void *)&bind_addr);
+		if (result < 0) {
+			perror("Inet_pton for given bind address failed");
+			goto socket_error;
+		} else if (result == 0) {
+			fprintf(stderr, "Given bind address is not a valid IPv4 address: %s\n", bind_arg);
+			goto socket_error;
+		}
+	} else {
+		bind_addr = INADDR_ANY;
+	}
+	addr.sin_addr.s_addr = (uint32_t) bind_addr;
+
+	/* bind socket now */
+	if (bind(*s, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) == -1) {
+		perror("Bind failed");
+		goto socket_error;
+	}
+
+	return (s);
 
 socket_error:
-  close(*s);
-  return NULL;
+	close(*s);
+	return NULL;
 }
-#endif // !WEBLESS
+#endif				// !WEBLESS

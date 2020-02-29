@@ -42,10 +42,9 @@
 /* Size of socket receive buffer */
 #define BUFFERSIZE                      4096
 
-#define USB_DIR_IN                      0x80            /* to host */
-#define USB_DIR_OUT                     0               /* to device */
+#define USB_DIR_IN                      0x80	/* to host */
+#define USB_DIR_OUT                     0	/* to device */
 #define cpu_to_le16(a)                  (a)
-
 
 #define READNEXTBYTE {nextWord = (ulong)buffer[bufindex]; bufindex ++;}
 #define READWORD(idx) {nextWord = (ulong)buffer[idx] + (buffer[idx+1]<<8);}
@@ -60,7 +59,7 @@
   if (idx > 0x27 - (size - 1) -2) { \
     printf ("Error : too many planification items, or combined with large time intervals\n"); \
     exit(2); \
-  } // avoid writing outside the buffer, or even in the last 2 bytes
+  }				// avoid writing outside the buffer, or even in the last 2 bytes
 
 #define WRITENEXTBYTE { \
     CHECK(bufindex, 1); \
@@ -100,41 +99,38 @@
 typedef unsigned long ulong;
 
 struct plannifAction {
-  // action to do now
-  ulong switchOn;
-  // wait this num of minutes before any next action; 0 means "stop"
-  ulong timeForNext;
+	// action to do now
+	ulong switchOn;
+	// wait this num of minutes before any next action; 0 means "stop"
+	ulong timeForNext;
 };
 
 struct plannif {
-  int socket;
-  ulong timeStamp;
-  struct plannifAction actions[17]; // 16 + the initial one
+	int socket;
+	ulong timeStamp;
+	struct plannifAction actions[17];	// 16 + the initial one
 };
 
-void plannif_reset (struct plannif* plan);
-void usb_command_getplannif(usb_dev_handle *udev, int socket,
-                            struct plannif* plan);
-void usb_command_setplannif(usb_dev_handle *udev, struct plannif* plan);
-void plannif_display(const struct plannif* plan, int verbose,
-                     const char* progname);
-void process(int out,char*v,struct usb_device*dev,int devnum);
+void plannif_reset(struct plannif *plan);
+void usb_command_getplannif(usb_dev_handle * udev, int socket, struct plannif *plan);
+void usb_command_setplannif(usb_dev_handle * udev, struct plannif *plan);
+void plannif_display(const struct plannif *plan, int verbose, const char *progname);
+void process(int out, char *v, struct usb_device *dev, int devnum);
 
-usb_dev_handle*get_handle(struct usb_device*dev);
-int usb_command(usb_dev_handle *udev, int b1, int b2,
-                int return_value_expected);
+usb_dev_handle *get_handle(struct usb_device *dev);
+int usb_command(usb_dev_handle * udev, int b1, int b2, int return_value_expected);
 
 #define sispm_buzzer_on(udev)           usb_command(udev, 0x02, 0x00, 0)
 #define sispm_buzzer_off(udev)          usb_command(udev, 0x02, 0x04, 0)
 
-int get_id( struct usb_device* dev);
-char* get_serial(usb_dev_handle *udev);
-int sispm_switch_on(usb_dev_handle * udev,int id, int outlet);
-int sispm_switch_off(usb_dev_handle * udev,int id, int outlet);
-int sispm_switch_getstatus(usb_dev_handle * udev,int id, int outlet);
-int sispm_get_power_supply_status(usb_dev_handle * udev,int id, int outlet);
+int get_id(struct usb_device *dev);
+char *get_serial(usb_dev_handle * udev);
+int sispm_switch_on(usb_dev_handle * udev, int id, int outlet);
+int sispm_switch_off(usb_dev_handle * udev, int id, int outlet);
+int sispm_switch_getstatus(usb_dev_handle * udev, int id, int outlet);
+int sispm_get_power_supply_status(usb_dev_handle * udev, int id, int outlet);
 int check_outlet_number(int id, int outlet);
-int sispm_switch_toggle(usb_dev_handle * udev,int id, int outlet);
+int sispm_switch_toggle(usb_dev_handle * udev, int id, int outlet);
 
 extern int debug;
 extern int verbose;
