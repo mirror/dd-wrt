@@ -57,6 +57,7 @@ static void send_authenticate(webs_t conn_fp);
 #include <time.h>
 #include <unistd.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -355,12 +356,12 @@ static void setnaggle(webs_t wp, int on)
 		 ** send(MSG_MORE) (only available in Linux so far).
 		 */
 		r = on;
-		(void)setsockopt(sock, IPPROTO_TCP, TCP_NOPUSH, (void *)&r, sizeof(r));
+		(void)setsockopt(wp->conn_fd, IPPROTO_TCP, TCP_NOPUSH, (void *)&r, sizeof(r));
+#endif
 		if (on) {
 			r = 1;
-			(void)setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void *)&r, sizeof(r));
+			(void)setsockopt(wp->conn_fd, IPPROTO_TCP, TCP_NODELAY, (void *)&r, sizeof(r));
 		}
-#endif
 	}
 
 }
@@ -811,7 +812,7 @@ static void *handle_request(void *arg)
 	/* Parse the first line of the request. */
 	int cnt = 0;
 	int eof = 0;
-	errno = 0; //make sure errno was not set by any other instance since we have no return code to check here
+	errno = 0;		//make sure errno was not set by any other instance since we have no return code to check here
 	for (;;) {
 		if (cnt == 5000)
 			break;
