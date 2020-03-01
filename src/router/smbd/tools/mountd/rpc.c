@@ -17,7 +17,6 @@
 #include <ksmbdtools.h>
 
 static struct LIST *pipes_table;
-static pthread_rwlock_t pipes_table_lock;
 
 /*
  * Version 2.0 data representation protocol
@@ -99,9 +98,7 @@ static struct usmbd_rpc_pipe *rpc_pipe_lookup(unsigned int id)
 {
 	struct usmbd_rpc_pipe *pipe;
 
-	pthread_rwlock_rdlock(&pipes_table_lock);
 	pipe = list_get(&pipes_table, id);
-	pthread_rwlock_unlock(&pipes_table_lock);
 
 	return pipe;
 }
@@ -185,9 +182,7 @@ static void __rpc_pipe_free(struct usmbd_rpc_pipe *pipe)
 static void rpc_pipe_free(struct usmbd_rpc_pipe *pipe)
 {
 	if (pipe->id != (unsigned int)-1) {
-		pthread_rwlock_wrlock(&pipes_table_lock);
 		list_remove(&pipes_table, pipe->id);
-		pthread_rwlock_unlock(&pipes_table_lock);
 	}
 
 	__rpc_pipe_free(pipe);
@@ -219,9 +214,7 @@ static struct usmbd_rpc_pipe *rpc_pipe_alloc_bind(unsigned int id)
 		return NULL;
 
 	pipe->id = id;
-	pthread_rwlock_wrlock(&pipes_table_lock);
 	ret = list_add(&pipes_table, pipe, pipe->id);
-	pthread_rwlock_unlock(&pipes_table_lock);
 
 	if (!ret) {
 		pipe->id = (unsigned int)-1;
@@ -239,9 +232,7 @@ static void free_hash_entry(void *s, unsigned long long id, void *user_data)
 
 static void __clear_pipes_table(void)
 {
-	pthread_rwlock_wrlock(&pipes_table_lock);
 	list_foreach(&pipes_table, free_hash_entry, NULL);
-	pthread_rwlock_unlock(&pipes_table_lock);
 }
 
 static void align_offset(struct usmbd_dcerpc *dce, size_t n)
@@ -623,7 +614,6 @@ int rpc_init(void)
 	list_init(&pipes_table);
 	if (!pipes_table)
 		return -ENOMEM;
-	pthread_rwlock_init(&pipes_table_lock, NULL);
 	return 0;
 }
 
@@ -633,7 +623,6 @@ void rpc_destroy(void)
 		__clear_pipes_table();
 		list_clear(&pipes_table);
 	}
-	pthread_rwlock_destroy(&pipes_table_lock);
 }
 
 static int dcerpc_hdr_write(struct usmbd_dcerpc *dce, struct dcerpc_header *hdr)
