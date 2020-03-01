@@ -168,8 +168,8 @@ static int setup_signals(sighandler_t handler)
 {
 	if (setup_signal_handler(SIGHUP, handler) != 0)
 		return -EINVAL;
-	int airbag_init(void);
-	airbag_init();
+	void airbag_init_delegate(sighandler_t handler);
+	airbag_init_delegate(handler);
 
 /*	if (setup_signal_handler(SIGINT, handler) != 0)
 		return -EINVAL;
