@@ -108,7 +108,7 @@ static uint32_t busy, pending;
 static char *s_demangleBuf;
 static size_t s_demangleBufLen;
 #endif
-
+sighandler_t delegate;
 #define ALT_STACK_SIZE (MINSIGSTKSZ + 256 * sizeof(void *))	/* or let it all hang out: SIGSTKSZ */
 static void *s_altStackSpace;
 
@@ -1234,8 +1234,10 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 		} while (__sync_fetch_and_add(&pending, 0) > 0);
 	}
 #endif
-
-	_exit(EXIT_FAILURE);
+	if (delegate)
+		delegate(sigNum);
+	else
+		_exit(EXIT_FAILURE);
 }
 
 static int initCrashHandlers()
@@ -1296,7 +1298,7 @@ static void deinitCrashHandlers()
 	sa.sa_handler = SIG_DFL;
 	sa.sa_mask = mysigset;
 	sa.sa_flags = 0;
-
+	delegate = NULL;
 	sigaction(SIGABRT, &sa, 0);
 	sigaction(SIGBUS, &sa, 0);
 	sigaction(SIGILL, &sa, 0);
@@ -1332,6 +1334,11 @@ AIRBAG_EXPORT int airbag_init(void)
 	return initCrashHandlers();
 }
 
+int airbag_init_delegate(sighandler_t handler)
+{
+	delegate = handler;
+}
+
 AIRBAG_EXPORT int airbag_name_thread(const char *name)
 {
 #if defined(__linux__)
@@ -1353,6 +1360,10 @@ AIRBAG_EXPORT void airbag_deinit()
 }
 #else
 int airbag_init(void)
+{
+}
+
+int airbag_init_delegate(sighandler_t handler)
 {
 }
 
