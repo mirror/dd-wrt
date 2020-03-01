@@ -801,6 +801,12 @@ struct smb_com_trans2_qfsi_req_params {
 	__le16 InformationLevel;
 } __packed;
 
+#define CIFS_SEARCH_CLOSE_ALWAYS	0x0001
+#define CIFS_SEARCH_CLOSE_AT_END	0x0002
+#define CIFS_SEARCH_RETURN_RESUME	0x0004
+#define CIFS_SEARCH_CONTINUE_FROM_LAST	0x0008
+#define CIFS_SEARCH_BACKUP_SEARCH	0x0010
+
 struct smb_com_trans2_ffirst_req_params {
 	__le16 SearchAttributes;
 	__le16 SearchCount;
