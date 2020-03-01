@@ -2335,7 +2335,7 @@ void yyfree (void * ptr , yyscan_t yyscanner)
 #line 87 "lib/command_lex.l"
 
 
-YY_BUFFER_STATE buffer;
+static YY_BUFFER_STATE buffer;
 
 void set_lexer_string (yyscan_t *scn, const char *string)
 {
