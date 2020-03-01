@@ -201,5 +201,8 @@ void start_devinit(void)
 	if (nvram_match("tcp_congestion_control", "bbr")) {
 		writeprocsysnet("core/default_qdisc", "fq_codel");
 	}
+#ifdef HAVE_IRQBALANCE
+	eval("irqbalance", "-t", "10");
+#endif
 	fprintf(stderr, "done\n");
 }
