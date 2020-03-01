@@ -140,7 +140,7 @@ static int freq_list(struct unl *unl, int phy, const char *freq_range, struct dd
 			INIT_DD_LIST_HEAD(&f->list);
 
 			f->freq = freq_mhz;
-			dd_list_add_tail(&f->list, frequencies);
+			dd_list_add(&f->list, frequencies);
 			if (tb[NL80211_FREQUENCY_ATTR_PASSIVE_SCAN])
 				f->passive = true;
 		}
