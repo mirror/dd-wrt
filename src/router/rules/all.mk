@@ -330,6 +330,7 @@ include rules/sispmctl.mk
 include rules/samba4.mk
 include rules/gnutls.mk
 include rules/smbd.mk
+include rules/irqbalance.mk
 
 #
 # Generic rules
