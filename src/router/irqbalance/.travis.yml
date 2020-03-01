@@ -1,0 +1,11 @@
+language: c
+dist: trusty
+
+compiler:
+  - clang
+  - gcc
+
+script: ./autogen.sh && ./configure && make && make check
+
+after_script: cat ./tests/runoneshot.sh.log
+
