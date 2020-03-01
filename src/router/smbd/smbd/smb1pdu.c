@@ -5984,7 +5984,9 @@ static int find_first(struct ksmbd_work *work)
 		ksmbd_debug("end of search\n");
 		params->EndofSearch = cpu_to_le16(1);
 		path_put(&(dir_fp->filp->f_path));
-		ksmbd_close_fd(work, dir_fp->volatile_id);
+		if (le16_to_cpu(req_params->SearchFlags) &
+				CIFS_SEARCH_CLOSE_AT_END)
+			ksmbd_close_fd(work, dir_fp->volatile_id);
 	}
 	params->EAErrorOffset = cpu_to_le16(0);
 
@@ -6202,7 +6204,9 @@ static int find_next(struct ksmbd_work *work)
 		params->EndofSearch = cpu_to_le16(1);
 		params->LastNameOffset = cpu_to_le16(0);
 		path_put(&(dir_fp->filp->f_path));
-		ksmbd_close_fd(work, sid);
+		if (le16_to_cpu(req_params->SearchFlags) &
+				CIFS_SEARCH_CLOSE_AT_END)
+			ksmbd_close_fd(work, sid);
 	}
 	params->EAErrorOffset = cpu_to_le16(0);
 
