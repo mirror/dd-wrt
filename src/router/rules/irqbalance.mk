@@ -1,4 +1,5 @@
 irqbalance-configure:
+	$(MAKE) -C glib20
 	cd irqbalance && ./autogen.sh
 	cd irqbalance && ./configure --disable-numa --prefix=/usr \
 		--with-libcap_ng=no \
@@ -13,6 +14,7 @@ irqbalance-configure:
 		LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 irqbalance: 
+	$(MAKE) -C glib20
 	$(MAKE) -C irqbalance
 
 irqbalance-clean: 
