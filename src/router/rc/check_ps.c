@@ -255,7 +255,7 @@ static void softcontrol_wlan_led(void)	// done in watchdog.c for non-micro build
  */
 static void checkupgrade(void)
 {
-	if (nvram_matchi("flash_active", "1"))
+	if (nvram_matchi("flash_active", 1))
 		return;
 
 	FILE *in = fopen("/tmp/firmware.bin", "rb");
