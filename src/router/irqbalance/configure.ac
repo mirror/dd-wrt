@@ -28,13 +28,13 @@ AC_CHECK_LIB(m, floor)
 
 PKG_CHECK_MODULES([GLIB2], [glib-2.0], [], [AC_MSG_ERROR([glib-2.0 is required])])
 
-PKG_CHECK_MODULES([NCURSESW], [ncursesw], [has_ncursesw=yes], [AC_CHECK_LIB(curses, mvprintw)])
-AS_IF([test "x$has_ncursesw" = "xyes"], [
-  AC_SUBST([NCURSESW_CFLAGS])
-  AC_SUBST([NCURSESW_LIBS])
-  LIBS="$LIBS $NCURSESW_LIBS"
-  AC_SUBST([LIBS])
-])
+#PKG_CHECK_MODULES([NCURSESW], [ncursesw], [has_ncursesw=yes], [AC_CHECK_LIB(curses, mvprintw)])
+#AS_IF([test "x$has_ncursesw" = "xyes"], [
+#  AC_SUBST([NCURSESW_CFLAGS])
+#  AC_SUBST([NCURSESW_LIBS])
+#  LIBS="$LIBS $NCURSESW_LIBS"
+#  AC_SUBST([LIBS])
+#])
 
 AC_C_CONST
 AC_C_INLINE
