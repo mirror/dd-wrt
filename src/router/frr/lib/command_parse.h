@@ -153,7 +153,7 @@ int cmd_yyparse (struct parser_ctx *ctx);
   struct parser_ctx {
     yyscan_t scanner;
 
-    struct cmd_element *el;
+    const struct cmd_element *el;
 
     struct graph *graph;
     struct graph_node *currnode;

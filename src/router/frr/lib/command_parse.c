@@ -222,7 +222,7 @@ int cmd_yyparse (struct parser_ctx *ctx);
   struct parser_ctx {
     yyscan_t scanner;
 
-    struct cmd_element *el;
+    const struct cmd_element *el;
 
     struct graph *graph;
     struct graph_node *currnode;
@@ -1990,7 +1990,7 @@ yyreturn:
 DEFINE_MTYPE(LIB, LEX, "Lexer token (temporary)")
 
 void
-cmd_graph_parse (struct graph *graph, struct cmd_element *cmd)
+cmd_graph_parse (struct graph *graph, const struct cmd_element *cmd)
 {
   struct parser_ctx ctx = { .graph = graph, .el = cmd };
 
@@ -2096,11 +2096,11 @@ terminate_graph (CMD_YYLTYPE *locp, struct parser_ctx *ctx,
 {
   // end of graph should look like this
   // * -> finalnode -> END_TKN -> cmd_element
-  struct cmd_element *element = ctx->el;
+  const struct cmd_element *element = ctx->el;
   struct graph_node *end_token_node =
     new_token_node (ctx, END_TKN, CMD_CR_TEXT, "");
   struct graph_node *end_element_node =
-    graph_new_node (ctx->graph, element, NULL);
+    graph_new_node (ctx->graph, (void *)element, NULL);
 
   if (ctx->docstr && strlen (ctx->docstr) > 1) {
     zlog_debug ("Excessive docstring while parsing '%s'", ctx->el->string);

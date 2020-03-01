@@ -45,6 +45,9 @@
 /* Enable BGP VNC support */
 #undef ENABLE_BGP_VNC
 
+/* Exclude getrusage data gathering */
+#undef EXCLUDE_CPU_TIME
+
 /* found_ssh */
 #undef FOUND_SSH
 
@@ -112,6 +115,10 @@
 /* Define to 1 if you have the declaration of `be32enc', and to 0 if you
    don't. */
 #undef HAVE_DECL_BE32ENC
+
+/* Define to 1 if you have the declaration of `PROTOBUF_C_LABEL_NONE', and to
+   0 if you don't. */
+#undef HAVE_DECL_PROTOBUF_C_LABEL_NONE
 
 /* Define to 1 if you have the declaration of `TCP_MD5SIG', and to 0 if you
    don't. */
@@ -290,6 +297,9 @@
 
 /* protobuf */
 #undef HAVE_PROTOBUF
+
+/* Have Protobuf version 3 */
+#undef HAVE_PROTOBUF_VERSION_3
 
 /* prctl */
 #undef HAVE_PR_SET_KEEPCAPS
