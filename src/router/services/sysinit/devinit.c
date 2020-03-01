@@ -202,6 +202,7 @@ void start_devinit(void)
 		writeprocsysnet("core/default_qdisc", "fq_codel");
 	}
 #ifdef HAVE_IRQBALANCE
+	mkdir("/var/run/irqbalance", 0777);
 	eval("irqbalance", "-t", "10");
 #endif
 	fprintf(stderr, "done\n");
