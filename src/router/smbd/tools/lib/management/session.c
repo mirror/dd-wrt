@@ -17,6 +17,12 @@
 static struct LIST *sessions_table;
 static pthread_rwlock_t sessions_table_lock;
 
+#define pthread_rwlock_unlock(a)
+#define pthread_rwlock_wrlock(a)
+#define pthread_rwlock_rdlock(a)
+#define pthread_rwlock_init(a,b)
+#define pthread_rwlock_destroy(a)
+
 static void __free_func(void *data, unsigned long long id, void *user_data)
 {
 	struct usmbd_tree_conn *tree_conn;

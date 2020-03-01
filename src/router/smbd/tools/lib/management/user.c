@@ -14,8 +14,15 @@
 #include <ksmbdtools.h>
 
 static struct LIST *users_table;
+#if 0
 static pthread_rwlock_t users_table_lock;
-
+#else
+#define pthread_rwlock_unlock(a)
+#define pthread_rwlock_wrlock(a)
+#define pthread_rwlock_rdlock(a)
+#define pthread_rwlock_init(a,b)
+#define pthread_rwlock_destroy(a)
+#endif
 static void kill_usmbd_user(struct usmbd_user *user)
 {
 	pr_debug("Kill user %s\n", user->name);
