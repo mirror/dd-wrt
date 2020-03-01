@@ -4,6 +4,7 @@ obj-$(CONFIG_WIRELESS_TOOLS) += wireless-tools
 obj-$(CONFIG_SHARED) += libutils
 obj-$(CONFIG_SHARED) += shared
 obj-$(CONFIG_LIBNET) += libnet
+obj-$(CONFIG_IRQBALANCE) += irqbalance
 obj-$(CONFIG_OPENSSL) += openssl openssl-shared openssl-apps
 obj-$(CONFIG_MATRIXSSL) += matrixssl
 obj-$(CONFIG_CTORRENT) += ctorrent
