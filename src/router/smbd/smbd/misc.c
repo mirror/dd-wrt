@@ -292,6 +292,5 @@ char *ksmbd_convert_dir_info_name(struct ksmbd_dir_info *d_info,
 	/* We allocate buffer twice bigger than needed. */
 	conv[*conv_len] = 0x00;
 	conv[*conv_len + 1] = 0x00;
-	*conv_len += 2;
 	return conv;
 }
