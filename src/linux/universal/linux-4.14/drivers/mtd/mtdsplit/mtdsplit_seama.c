@@ -39,7 +39,6 @@ static int mtdsplit_parse_seama(struct mtd_info *master,
 	struct mtd_partition *parts;
 	enum mtdsplit_part_type type;
 	int err;
-
 	hdr_len = sizeof(hdr);
 	err = mtd_read(master, 0, hdr_len, &retlen, (void *) &hdr);
 	if (err)
@@ -47,7 +46,6 @@ static int mtdsplit_parse_seama(struct mtd_info *master,
 
 	if (retlen != hdr_len)
 		return -EIO;
-
 	/* sanity checks */
 	if (be32_to_cpu(hdr.magic) != SEAMA_MAGIC)
 		return -EINVAL;
@@ -87,7 +85,7 @@ static int mtdsplit_parse_seama(struct mtd_info *master,
 	else
 		parts[1].name = ROOTFS_PART_NAME;
 	parts[1].offset = rootfs_offset;
-	parts[1].size = master->size - rootfs_offset;
+	parts[1].size = master->size + master->offset - rootfs_offset;
 
 	*pparts = parts;
 	return SEAMA_NR_PARTS;
