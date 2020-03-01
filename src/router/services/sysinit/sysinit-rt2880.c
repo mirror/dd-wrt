@@ -120,6 +120,13 @@ void start_sysinit(void)
 	}
 	//LAN/WAN ports as security mode
 	if (brand == ROUTER_DIR860LB1) {
+		insmod("compat");
+		insmod("mac80211");
+		insmod("mt76");
+		insmod("mt76x02-lib");
+		insmod("mt76x2-common");
+		insmod("mt76x2e");
+//		insmod("mt7615e");
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "1 2 3 4 6t");
