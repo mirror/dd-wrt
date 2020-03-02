@@ -141,7 +141,7 @@ void start_sysinit(void)
 	if (!strcmp(modelname, "Gateworks Laguna GW2380"))
 		eval("gsp_updater", "-f", "/etc/gsc_2380_v50.txt", "-r", "50");
 
-	set_smp_affinity(51, 2);
+//	set_smp_affinity(51, 2);
 	return;
 }
 

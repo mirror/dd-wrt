@@ -150,13 +150,13 @@ void start_sysinit(void)
 		fclose(fp);
 	}
 
-	if (brand == ROUTER_WRT_1900AC) {
+/*	if (brand == ROUTER_WRT_1900AC) {
 		set_smp_affinity(27, 2);
 		set_smp_affinity(42, 2);
 	} else {
 		set_smp_affinity(36, 2);
 		set_smp_affinity(46, 2);
-	}
+	}*/
 	set_gpio(3, 0);		//disable sata led as initial value
 	set_gpio(4, 0);		//disable usb 1 led as initial value
 	set_gpio(5, 0);		//disable usb 2 led as initial value

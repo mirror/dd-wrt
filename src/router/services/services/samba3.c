@@ -71,7 +71,7 @@ void start_samba3(void)
 	int uniqueuserid = 1000;
 	FILE *fp;
 
-#ifdef HAVE_NORTHSTAR
+/*#ifdef HAVE_NORTHSTAR
 	if (!nvram_matchi("samba3_enable", 1)) {	// not set txworkq 
 		set_smp_affinity(163, 2);
 		set_smp_affinity(169, 2);
@@ -79,7 +79,7 @@ void start_samba3(void)
 		set_smp_affinity(163, 1);
 		set_smp_affinity(169, 2);
 	}
-#endif
+#endif*/
 	if (!nvram_matchi("samba3_enable", 1)) {
 		if (nvram_matchi("txworkq", 1)) {
 			nvram_unset("txworkq");
