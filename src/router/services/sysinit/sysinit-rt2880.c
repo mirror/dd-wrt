@@ -132,9 +132,9 @@ void start_sysinit(void)
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "1 2 3 4 6t");
 		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 6t");
 		eval("swconfig", "dev", "eth0", "set", "apply");
-		set_smp_affinity(11, 2);	// eth
-		set_smp_affinity(12, 4);	//wifi1
-		set_smp_affinity(32, 8);	// wifi2
+//		set_smp_affinity(11, 2);	// eth
+//		set_smp_affinity(12, 4);	//wifi1
+//		set_smp_affinity(32, 8);	// wifi2
 		nvram_seti("sw_cpuport", 6);
 		nvram_seti("sw_wan", 0);
 		nvram_seti("sw_lan1", 1);
@@ -151,9 +151,9 @@ void start_sysinit(void)
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 6t");
 		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "4 6t");
 		eval("swconfig", "dev", "eth0", "set", "apply");
-		set_smp_affinity(20, 2);	// eth
-		set_smp_affinity(22, 4);	//wifi1
-		set_smp_affinity(23, 8);	// wifi2
+//		set_smp_affinity(20, 2);	// eth
+//		set_smp_affinity(22, 4);	//wifi1
+//		set_smp_affinity(23, 8);	// wifi2
 		nvram_seti("sw_cpuport", 6);
 		nvram_seti("sw_wan", 4);
 		nvram_seti("sw_lan1", 0);
