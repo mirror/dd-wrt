@@ -71,7 +71,7 @@ void create_openvpnrules(FILE * fp)
 				"iptables -I FORWARD -o $dev -j ACCEPT\n");
 	}
 	if (nvram_match("openvpncl_mit", "1"))
-		fprintf(fp, "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/32 -j DROP\n");
+		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
 	if (nvram_match("openvpncl_tuntap", "tun")) {
 		fprintf(fp, "cat /tmp/resolv.dnsmasq > /tmp/resolv.dnsmasq_isp\n");
 		fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ print \"nameserver \" $3 }' > /tmp/resolv.dnsmasq\n");
@@ -126,7 +126,7 @@ void create_openvpnserverrules(FILE * fp)
 		fprintf(fp, "iptables -I FORWARD -i $dev -m state --state NEW -j DROP\n");
 	}
 	if (nvram_match("openvpn_mit", "1"))
-		fprintf(fp, "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/32 -j DROP\n");
+		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
 }
 
 void start_openvpnserver(void)
