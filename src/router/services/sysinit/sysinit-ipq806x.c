@@ -526,7 +526,7 @@ void start_sysinit(void)
 		nvram_seti("sw_lan2", 3);
 		nvram_seti("sw_lan3", 4);
 		nvram_seti("sw_lan4", 5);*/
-		writeproc("/proc/irq/167/smp_affinity", "2");
+//		writeproc("/proc/irq/167/smp_affinity", "2");
 
 		break;
 	case ROUTER_NETGEAR_R7800:	// why is this extra? looks like the default one
@@ -549,8 +549,8 @@ void start_sysinit(void)
 		nvram_seti("sw_lan4", 4);
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
-		writeproc("/proc/irq/101/smp_affinity", "2");
-		writeproc("/proc/irq/98/smp_affinity", "2");	// move second wifi interface to core 2
+//		writeproc("/proc/irq/101/smp_affinity", "2");
+//		writeproc("/proc/irq/98/smp_affinity", "2");	// move second wifi interface to core 2
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
 		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
 		break;
@@ -574,8 +574,8 @@ void start_sysinit(void)
 		nvram_seti("sw_lan4", 5);
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
-		writeproc("/proc/irq/101/smp_affinity", "2");
-		writeproc("/proc/irq/98/smp_affinity", "2");	// move second wifi interface to core 2
+//		writeproc("/proc/irq/101/smp_affinity", "2");
+//		writeproc("/proc/irq/98/smp_affinity", "2");	// move second wifi interface to core 2
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
 		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
 		break;
@@ -624,8 +624,8 @@ void start_sysinit(void)
 		nvram_seti("sw_lan4", 4);
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
-		writeproc("/proc/irq/101/smp_affinity", "2");
-		writeproc("/proc/irq/98/smp_affinity", "2");	// move second wifi interface to core 2
+//		writeproc("/proc/irq/101/smp_affinity", "2");
+//		writeproc("/proc/irq/98/smp_affinity", "2");	// move second wifi interface to core 2
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
 		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
 		break;
