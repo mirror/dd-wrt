@@ -89,7 +89,7 @@ export BASEOPT:=-Os
 #export ARCH:= mipsel
 
 ifeq ($(ARCH),mipsel)
-export COPTS:=$(BASEOPT) -pipe -mips32r2 -mtune=24kec -fno-caller-saves -mno-branch-likely -fno-plt
+export COPTS:=$(BASEOPT) -pipe -mips32r2 -mtune=1004kc -fno-caller-saves -mno-branch-likely -fno-plt
 endif
 ifeq ($(ARCH),arm)
 export COPTS:=$(BASEOPT) -march=armv4 -pipe -funit-at-a-time -msoft-float
