@@ -3215,7 +3215,7 @@ void start_drivers(int boot)
 
 	}
 #endif
-#ifdef HAVE_R9000
+/*#ifdef HAVE_R9000
 	set_smp_affinity(261, 1);
 #endif
 #ifdef HAVE_NORTHSTAR
@@ -3224,7 +3224,7 @@ void start_drivers(int boot)
 #endif
 #ifdef HAVE_MT7621
 	set_smp_affinity(30, 8);	// usb;
-#endif
+#endif*/
 
 #ifdef HAVE_MVEBU
 	if (nvram_matchi("usb_enable", 1)) {
