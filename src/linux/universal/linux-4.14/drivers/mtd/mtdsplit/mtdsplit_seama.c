@@ -85,7 +85,7 @@ static int mtdsplit_parse_seama(struct mtd_info *master,
 	else
 		parts[1].name = ROOTFS_PART_NAME;
 	parts[1].offset = rootfs_offset;
-	parts[1].size = master->size + master->offset - rootfs_offset;
+	parts[1].size = master->size - rootfs_offset;
 
 	*pparts = parts;
 	return SEAMA_NR_PARTS;
