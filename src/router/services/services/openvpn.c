@@ -349,7 +349,7 @@ void start_openvpnserver(void)
 		fprintf(fp, "iptables -D FORWARD -i $dev -m state --state NEW -j DROP\n");
 	}
 	if (nvram_match("openvpn_mit", "1"))
-		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/32 -j DROP\n");
+		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
 
 /*      if ((nvram_matchi("openvpn_dhcpbl",1)
                         && nvram_match("openvpn_tuntap", "tap")
@@ -633,7 +633,7 @@ void start_openvpn(void)
 		fprintf(fp, "[ -f /tmp/resolv.dnsmasq_isp ] && mv -f /tmp/resolv.dnsmasq_isp /tmp/resolv.dnsmasq\n");
 	}
 	if (nvram_match("openvpncl_mit", "1"))
-		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/32 -j DROP\n");
+		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
 /*      if (nvram_matchi("block_multicast",0) //block multicast on bridged vpns
                 && nvram_match("openvpncl_tuntap", "tap")
                 && nvram_matchi("openvpncl_bridge",1)) {
