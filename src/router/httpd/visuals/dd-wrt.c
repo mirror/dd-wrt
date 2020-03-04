@@ -5515,9 +5515,15 @@ void show_80211X(webs_t wp, char *prefix)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "share.passwd", NULL);
 		websWrite(wp, "<input name=\"%s_peap8021xpasswd\" type=\"password\" autocomplete=\"off\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("peap8021xpasswd", prefix));
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "sec80211x.phase1", NULL);
+		websWrite(wp, "<input name=\"%s_peap8021xphase1\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("peap8021xphase1", prefix));
+
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "sec80211x.phase2", NULL);
 		websWrite(wp, "<input name=\"%s_peap8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("peap8021xphase2", prefix));
+
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "sec80211x.servercertif", NULL);
 		websWrite(wp, "<textarea cols=\"60\" rows=\"6\" id=\"%s_peap8021xca\" name=\"%s_peap8021xca\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
