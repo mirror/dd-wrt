@@ -846,27 +846,28 @@ _8021xprv
 	copytonv_prefix(wp, "leap8021xaddopt", prefix);
 
 #endif
-#ifdef HAVE_ANTAIRA
-	#define u8 unsigned char
-	int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len, int iterations, u8 *buf, size_t buflen);
-
-	sprintf(n, "%s_wpa_psk", prefix);
-	const char *passphrase = websGetVar(wp, n, "");
-	if (strlen(passphrase) == 64)
-		nvram_nset(passphrase, "%s_wpa_psk", prefix);
-	else {
-		const char *ssid = nvram_nget("%s_ssid", prefix);
-		unsigned char psk[32];
-		pbkdf2_sha1(passphrase, ssid, strlen(ssid), 4096, psk, 32);
-		char wpapsk[70];
-		int i;
-		for (i = 0; i < 32; i++)
-			sprintf(wpapsk, "%s%02x", wpapsk, psk[i]);
-		nvram_nset(wpapsk, "%s_wpa_psk", prefix);
-	}
-#else
+//disable due obfuscated nvram backup as for now
+//#ifdef HAVE_ANTAIRA
+//	#define u8 unsigned char
+//	int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len, int iterations, u8 *buf, size_t buflen);
+//
+//	sprintf(n, "%s_wpa_psk", prefix);
+//	const char *passphrase = websGetVar(wp, n, "");
+//	if (strlen(passphrase) == 64)
+//		nvram_nset(passphrase, "%s_wpa_psk", prefix);
+//	else {
+//		const char *ssid = nvram_nget("%s_ssid", prefix);
+//		unsigned char psk[32];
+//		pbkdf2_sha1(passphrase, ssid, strlen(ssid), 4096, psk, 32);
+//		char wpapsk[70];
+//		int i;
+//		for (i = 0; i < 32; i++)
+//			sprintf(wpapsk, "%s%02x", wpapsk, psk[i]);
+//		nvram_nset(wpapsk, "%s_wpa_psk", prefix);
+//	}
+//#else /*HAVE_ANTAIRA*/
 	copytonv_prefix(wp, "wpa_psk", prefix);
-#endif
+//#endif /*HAVE_ANTAIRA*/
 #ifdef HAVE_MADWIFI
 	copytonv_prefix(wp, "sae_key", prefix);
 #endif
