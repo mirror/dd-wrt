@@ -11,7 +11,7 @@ irqbalance-configure:
 		CC="$(CC)" \
 		GLIB2_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -L$(INSTALLDIR)/util-linux/usr/lib" \
 		GLIB2_LIBS="$(TOP)/glib20/libglib/glib/.libs/libglib-2.0.a" \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 irqbalance: 
