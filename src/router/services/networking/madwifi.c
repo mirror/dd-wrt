@@ -458,7 +458,6 @@ void eap_sta_config(FILE * fp, char *prefix, char *ssidoverride, int addvht)
 		fprintf(fp, "\tscan_ssid=1\n");
 		eap_sta_key_mgmt(fp, prefix);
 		fprintf(fp, "\teap=PEAP\n");
-		fprintf(fp, "\tphase1=\"peapver=0\"\n");
 		fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("peap8021xuser", prefix));
 		fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("peap8021xpasswd", prefix));
 		sprintf(psk, "/tmp/%s", prefix);
@@ -469,6 +468,13 @@ void eap_sta_config(FILE * fp, char *prefix, char *ssidoverride, int addvht)
 			write_nvram(psk, ath);
 			fprintf(fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
 		}
+
+		if (*(nvram_nget("%s_peap8021xphase1", prefix))) {
+			fprintf(fp, "\tphase1=\"%s\"\n", nvram_nget("%s_peap8021xphase1", prefix));
+		} else {
+			fprintf(fp, "\tphase1=\"peapver=0\"\n");
+		}
+
 		if (*(nvram_nget("%s_peap8021xphase2", prefix))) {
 			fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_peap8021xphase2", prefix));
 		}
