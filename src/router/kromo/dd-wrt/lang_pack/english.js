@@ -2521,6 +2521,7 @@ sec80211x.xsuptype="XSupplicant Type";
 sec80211x.keyxchng="EAP Key-Management";
 sec80211x.servercertif="Public Server Certificate";
 sec80211x.clientcertif="Client Certificate";
+sec80211x.phase1="Phase1";
 sec80211x.phase2="Phase2";
 sec80211x.anon="Anonymous Identity";
 sec80211x.options="Additional Network Options";
