@@ -182,7 +182,7 @@ static void nv_file_out(unsigned char method, struct mime_handler *handler, char
 	nvram_backup("/tmp/nvrambak.bin");
 
 #ifdef HAVE_ANTAIRA
-	xorFileMove("/tmp/restore.bin", 'K');
+	xorFileMove("/tmp/nvrambak.bin", 'K');
 #endif /*HAVE_ANTAIRA*/
 
 	do_file_attach(handler, "/tmp/nvrambak.bin", wp, fname);
