@@ -35,6 +35,43 @@ static int wfflush(webs_t fp);
  * (0) 
  */
 
+#ifdef HAVE_ANTAIRA
+static inline void xorBuffer(char *buffer, int len, char key) {
+        int i = 0;
+        for(i = 0; i < len ;i++)
+                buffer[i] ^= key;
+}
+
+static int xorFile(const char *src, const char *dst, char key) {
+        FILE *srcfp = fopen(src, "r");
+        if(!srcfp) return -1;
+
+        FILE *dstfp = fopen(dst, "w+");
+        if(!dstfp) return -1;
+
+        int readlen = 32;
+        int didread = 0;
+        char buffer[readlen];
+        while((didread = fread(buffer, 1, readlen, srcfp)) > 0) {
+                xorBuffer(buffer, didread, key);
+                fwrite(buffer,  1, didread,dstfp);
+        }
+
+        fclose(srcfp);
+        fclose(dstfp);
+
+        return 0;
+}
+
+static int xorFileMove(const char *src, char key) {
+        const char *dst = "/tmp/.tmp.xor";
+        int ret = xorFile(src, dst, key);
+        if(ret != 0) return ret;
+
+        return rename(dst, src);
+}
+#endif /*HAVE_ANTAIRA*/
+
 static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 {
 
@@ -85,6 +122,12 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 	wfread(mem, len, 1, wp);
 	fwrite(mem, len, 1, fp);
 	fclose(fp);
+
+#ifdef HAVE_ANTAIRA
+	xorFileMove("/tmp/restore.bin", 'K');
+#endif /*HAVE_ANTAIRA*/
+
+
 	int ret = nvram_restore("/tmp/restore.bin", 0);
 	if (ret < 0)
 		wp->restore_ret = 99;
@@ -137,6 +180,11 @@ static void nv_file_out(unsigned char method, struct mime_handler *handler, char
 	snprintf(fname, sizeof(fname), "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "", nvram_safe_get("DD_BOARD"));
 #endif
 	nvram_backup("/tmp/nvrambak.bin");
+
+#ifdef HAVE_ANTAIRA
+	xorFileMove("/tmp/restore.bin", 'K');
+#endif /*HAVE_ANTAIRA*/
+
 	do_file_attach(handler, "/tmp/nvrambak.bin", wp, fname);
 	unlink("/tmp/nvrambak.bin");
 	return;
