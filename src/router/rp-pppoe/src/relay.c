@@ -54,19 +54,19 @@
 
 
 /* Interfaces (max MAX_INTERFACES) */
-PPPoEInterface Interfaces[MAX_INTERFACES];
-int NumInterfaces;
+static PPPoEInterface Interfaces[MAX_INTERFACES];
+static int NumInterfaces;
 
 /* Relay info */
-int NumSessions;
-int MaxSessions;
-PPPoESession *AllSessions;
-PPPoESession *FreeSessions;
-PPPoESession *ActiveSessions;
+static int NumSessions;
+static int MaxSessions;
+static PPPoESession *AllSessions;
+static PPPoESession *FreeSessions;
+static PPPoESession *ActiveSessions;
 
-SessionHash *AllHashes;
-SessionHash *FreeHashes;
-SessionHash *Buckets[HASHTAB_SIZE];
+static SessionHash *AllHashes;
+static SessionHash *FreeHashes;
+static SessionHash *Buckets[HASHTAB_SIZE];
 
 volatile unsigned int Epoch = 0;
 volatile unsigned int CleanCounter = 0;
