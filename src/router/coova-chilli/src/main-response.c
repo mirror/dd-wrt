@@ -24,7 +24,7 @@
 
 #define MD5LEN 16
 
-struct options_t _options;
+extern struct options_t _options;
 
 static int usage(char *program) {
   fprintf(stderr, "Usage: %s <challenge> <uamsecret> <password>\n", program);

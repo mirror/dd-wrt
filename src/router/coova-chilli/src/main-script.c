@@ -21,7 +21,7 @@
 
 #include "chilli.h"
 
-struct options_t _options;
+extern struct options_t _options;
 
 #ifndef CHILLI_USER
 #define CHILLI_USER "chilli"
