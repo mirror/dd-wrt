@@ -124,7 +124,7 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 	fclose(fp);
 
 #ifdef HAVE_ANTAIRA
-	xorFileMove("/tmp/restore.bin", 'K');
+	if(nvram_matchi("xor_backup", 1)) xorFileMove("/tmp/restore.bin", 'K');
 #endif /*HAVE_ANTAIRA*/
 
 
@@ -182,7 +182,7 @@ static void nv_file_out(unsigned char method, struct mime_handler *handler, char
 	nvram_backup("/tmp/nvrambak.bin");
 
 #ifdef HAVE_ANTAIRA
-	xorFileMove("/tmp/nvrambak.bin", 'K');
+	if(nvram_matchi("xor_backup", 1)) xorFileMove("/tmp/nvrambak.bin", 'K');
 #endif /*HAVE_ANTAIRA*/
 
 	do_file_attach(handler, "/tmp/nvrambak.bin", wp, fname);
