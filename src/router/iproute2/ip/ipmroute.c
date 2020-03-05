@@ -44,7 +44,7 @@ static void usage(void)
 
 char *viftable[32];
 
-struct rtfilter
+static struct rtfilter
 {
 	inet_prefix mdst;
 	inet_prefix msrc;
