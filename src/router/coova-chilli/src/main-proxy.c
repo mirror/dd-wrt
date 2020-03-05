@@ -39,7 +39,7 @@
  *
  */
 
-struct options_t _options;
+extern struct options_t _options;
 
 typedef struct _proxy_request {
   int index;
