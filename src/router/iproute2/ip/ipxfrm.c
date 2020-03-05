@@ -53,7 +53,7 @@
 		} \
 	} while(0);
 
-struct xfrm_filter ipx_filter;
+struct xfrm_filter filter;
 
 #define usage() exit(-1);
 /*
@@ -788,7 +788,7 @@ int xfrm_id_parse(xfrm_address_t *saddr, struct xfrm_id *id, __u16 *family,
 
 			memcpy(saddr, &src.data, sizeof(*saddr));
 
-			ipx_filter.id_src_mask = src.bitlen;
+			filter.id_src_mask = src.bitlen;
 
 		} else if (strcmp(*argv, "dst") == 0) {
 			NEXT_ARG();
@@ -801,7 +801,7 @@ int xfrm_id_parse(xfrm_address_t *saddr, struct xfrm_id *id, __u16 *family,
 
 			memcpy(&id->daddr, &dst.data, sizeof(id->daddr));
 
-			ipx_filter.id_dst_mask = dst.bitlen;
+			filter.id_dst_mask = dst.bitlen;
 
 		} else if (strcmp(*argv, "proto") == 0) {
 			int ret;
@@ -814,7 +814,7 @@ int xfrm_id_parse(xfrm_address_t *saddr, struct xfrm_id *id, __u16 *family,
 
 			id->proto = (__u8)ret;
 
-			ipx_filter.id_proto_mask = XFRM_FILTER_MASK_FULL;
+			filter.id_proto_mask = XFRM_FILTER_MASK_FULL;
 
 		} else if (strcmp(*argv, "spi") == 0) {
 			__u32 spi;
@@ -826,7 +826,7 @@ int xfrm_id_parse(xfrm_address_t *saddr, struct xfrm_id *id, __u16 *family,
 			spi = htonl(spi);
 			id->spi = spi;
 
-			ipx_filter.id_spi_mask = XFRM_FILTER_MASK_FULL;
+			filter.id_spi_mask = XFRM_FILTER_MASK_FULL;
 
 		} else {
 			PREV_ARG(); /* back track */
@@ -933,7 +933,7 @@ static int xfrm_selector_upspec_parse(struct xfrm_selector *sel,
 			}
 			sel->proto = upspec;
 
-			ipx_filter.upspec_proto_mask = XFRM_FILTER_MASK_FULL;
+			filter.upspec_proto_mask = XFRM_FILTER_MASK_FULL;
 
 		} else if (strcmp(*argv, "sport") == 0) {
 			sportp = *argv;
@@ -946,7 +946,7 @@ static int xfrm_selector_upspec_parse(struct xfrm_selector *sel,
 			if (sel->sport)
 				sel->sport_mask = ~((__u16)0);
 
-			ipx_filter.upspec_sport_mask = XFRM_FILTER_MASK_FULL;
+			filter.upspec_sport_mask = XFRM_FILTER_MASK_FULL;
 
 		} else if (strcmp(*argv, "dport") == 0) {
 			dportp = *argv;
@@ -959,7 +959,7 @@ static int xfrm_selector_upspec_parse(struct xfrm_selector *sel,
 			if (sel->dport)
 				sel->dport_mask = ~((__u16)0);
 
-			ipx_filter.upspec_dport_mask = XFRM_FILTER_MASK_FULL;
+			filter.upspec_dport_mask = XFRM_FILTER_MASK_FULL;
 
 		} else if (strcmp(*argv, "type") == 0) {
 			typep = *argv;
@@ -972,7 +972,7 @@ static int xfrm_selector_upspec_parse(struct xfrm_selector *sel,
 			sel->sport = htons(sel->sport);
 			sel->sport_mask = ~((__u16)0);
 
-			ipx_filter.upspec_sport_mask = XFRM_FILTER_MASK_FULL;
+			filter.upspec_sport_mask = XFRM_FILTER_MASK_FULL;
 
 
 		} else if (strcmp(*argv, "code") == 0) {
@@ -986,7 +986,7 @@ static int xfrm_selector_upspec_parse(struct xfrm_selector *sel,
 			sel->dport = htons(sel->dport);
 			sel->dport_mask = ~((__u16)0);
 
-			ipx_filter.upspec_dport_mask = XFRM_FILTER_MASK_FULL;
+			filter.upspec_dport_mask = XFRM_FILTER_MASK_FULL;
 
 		} else {
 			PREV_ARG(); /* back track */
@@ -1049,7 +1049,7 @@ int xfrm_selector_parse(struct xfrm_selector *sel, int *argcp, char ***argvp)
 			memcpy(&sel->saddr, &src.data, sizeof(sel->saddr));
 			sel->prefixlen_s = src.bitlen;
 
-			ipx_filter.sel_src_mask = src.bitlen;
+			filter.sel_src_mask = src.bitlen;
 
 		} else if (strcmp(*argv, "dst") == 0) {
 			NEXT_ARG();
@@ -1062,7 +1062,7 @@ int xfrm_selector_parse(struct xfrm_selector *sel, int *argcp, char ***argvp)
 			memcpy(&sel->daddr, &dst.data, sizeof(sel->daddr));
 			sel->prefixlen_d = dst.bitlen;
 
-			ipx_filter.sel_dst_mask = dst.bitlen;
+			filter.sel_dst_mask = dst.bitlen;
 
 		} else if (strcmp(*argv, "dev") == 0) {
 			int ifindex;
@@ -1078,7 +1078,7 @@ int xfrm_selector_parse(struct xfrm_selector *sel, int *argcp, char ***argvp)
 			}
 			sel->ifindex = ifindex;
 
-			ipx_filter.sel_dev_mask = XFRM_FILTER_MASK_FULL;
+			filter.sel_dev_mask = XFRM_FILTER_MASK_FULL;
 
 		} else {
 			if (upspecp) {
@@ -1166,7 +1166,7 @@ int xfrm_lifetime_cfg_parse(struct xfrm_lifetime_cfg *lft,
 
 int do_xfrm(int argc, char **argv)
 {
-	memset(&ipx_filter, 0, sizeof(ipx_filter));
+	memset(&filter, 0, sizeof(filter));
 
 	if (argc < 1)
 		usage();
