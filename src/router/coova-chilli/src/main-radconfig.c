@@ -25,7 +25,7 @@
 
 #define ADMIN_TIMEOUT 10
 
-struct options_t _options;
+extern struct options_t _options;
 
 static int chilliauth_cb(struct radius_t *radius,
 			 struct radius_packet_t *pack,
