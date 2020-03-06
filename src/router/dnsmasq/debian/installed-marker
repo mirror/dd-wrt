@@ -1,0 +1,2 @@
+# This file indicates dnsmasq (and not just dnsmasq-base) is installed.
+# It is an implementation detail of the dnsmasq init script.
