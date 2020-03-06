@@ -230,6 +230,9 @@ void log_vmsg(int pri, const char* type, const char* format, va_list args);
 #define log_buf(level, msg, buf) do { } while(0)
 #define fatal_exit(format, ...) exit(-1)
 #define log_vmsg(pri, type,format, args) do { } while(0)
+#define log_ident_set_or_default(identity) do { } while(0)
+#define log_ident_set_default(id) do { } while(0)
+#define log_ident_revert_to_default() do { } while(0)
 
 #endif
 /**
