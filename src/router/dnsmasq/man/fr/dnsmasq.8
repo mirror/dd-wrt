@@ -1354,6 +1354,13 @@ Veuillez noter que dans ce mode séquentiel, les clients qui laissent expirer
 leur bail ont beaucoup plus de chance de voir leur adresse IP changer, aussi
 cette option ne devrait pas être utilisée dans un cas général.
 .TP
+.B --dhcp-ignore-clid
+Dnsmasq lit l'option 'client identifier' (RFC 2131) envoyée par les clients
+(si disponible) afin d'identifier les clients. Cela permet de distribuer la
+même adresse IP à un client utilisant plusieurs interfaces. Activer cette option
+désactive la lecture du 'client identifier', afin de toujours identifier un client
+en utilisant l'adresse MAC.
+.TP
 .B --pxe-service=[tag:<label>,]<CSA>,<entrée de menu>[,<nom de fichier>|<type de service de démarrage>][,<adresse de serveur>|<nom de serveur>]
 La plupart des ROMS de démarrage PXE ne permettent au système PXE que la simple
 obtention d'une adresse IP, le téléchargement du fichier spécifié dans
@@ -1774,7 +1781,7 @@ Un intervalle (en secondes) entre les annonces routeur peut être fourni par :
 .B --ra-param=eth0,60.
 La durée de vie de la route peut être changée ou mise à zéro, auquel cas
 le routeur peut annoncer les préfixes mais pas de route :
-.B --ra-parm=eth0,0,0
+.B --ra-param=eth0,0,0
 (une valeur de zéro pour l'intervalle signifie qu'il garde la valeur par défaut).
 Ces quatre paramètres peuvent être configurés en une fois :
 .B --ra-param=eth0,mtu:1280,low,60,1200
