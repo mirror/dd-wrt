@@ -1405,7 +1405,9 @@ config_delete(struct config_file* cfg)
 	free(cfg->tls_ciphers);
 	free(cfg->tls_ciphersuites);
 	if(cfg->log_identity) {
+#ifdef NEED_PRINTF
 		log_ident_revert_to_default();
+#endif
 		free(cfg->log_identity);
 	}
 	config_del_strarray(cfg->ifs, cfg->num_ifs);
