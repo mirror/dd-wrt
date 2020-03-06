@@ -127,7 +127,7 @@ tun_alloc (const char *path)
 	tfd = -1;
 	return errno;
      }
-   strncpy(dev, ifr.ifr_name, IFNAMSIZ+1);
+   strlcpy(dev, ifr.ifr_name, IFNAMSIZ);
 #else
    fstat(tfd, &st);
    strncpy(dev, devname(st.st_rdev, S_IFCHR), IFNAMSIZ+1);
