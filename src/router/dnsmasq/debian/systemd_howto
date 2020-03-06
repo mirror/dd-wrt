@@ -1,0 +1,41 @@
+HOWTO
+=====
+dnsmasq comes with the possibility to run multiple systemd service instances on the same machine.
+There is the main service which is enabled by default via `systemctl enable dnsmasq.service` and uses the configuration from `/etc/default/dnsmasq`.
+
+Additional service instances can be enabled via `systemctl enable dnsmasq@<instance name>.service` that use the configuration from `/etc/default/dnsmasq.<instance name>`.
+It is recommended to use a separate configuration file and directory for each instance.
+Additionally make sure that all instances use either different ports and/or ip addresses to avoid binding collisions.
+
+Example setup for an instance called "alt"
+#1 File `/etc/dnsmasq.alt.conf` copied from `/etc/dnsmasq.conf`
+#2 Directory `/etc/dnsmasq.alt.d`
+#3 File `/etc/default/dnsmasq.alt` copied from `/etc/default/dnsmasq` with following adaptions:
+   * The options DNSMASQ_OPTS and CONFIG_DIR point to the correct configuration file and directory.
+     DNSMASQ_OPTS="... --conf-file=/etc/dnsmasq.alt.conf ..."
+     CONFIG_DIR=/etc/dnsmasq.alt.d,.dpkg-dist,.dpkg-old,.dpkg-new
+   * The option DNSMASQ_EXCEPT must contain "lo" to avoid that an instance becomes the machine's DNS resolver.
+     DNSMASQ_EXCEPT="lo"
+  * If the additional instance should bind to all IP addresses of a specific interface, e.g. "dnsalt01", then the following addition could be used:
+    DNSMASQ_OPTS="... --bind-dynamic --interface=dnsalt01 ..."
+    Additionally the main instance must be stopped from binding to interfaces that are used by other instances:
+    DNSMASQ_OPTS="... --bind-dynamic --except-interface=dnsalt* ..."
+  * If the additional instance should not use the machine's DNS resolver, normally that's the dnsmasq main instance, as upstream server, then the following addition could be used:
+    IGNORE_RESOLVCONF=yes
+#4 Enable additional instance via `systemctl enable dnsmasq@alt.service`
+#5 Start additional instance without reboot via `systemctl start dnsmasq@alt.service`
+
+
+
+TODO
+====
+#1 - Found shortcoming on 2019-03-10
+Only the option DNSMASQ_EXCEPT="lo" avoids that an DNS instance will be set as the machine's DNS resolver.
+This may interfere with the wish to run an additional instance on a different port on the localhost addresses.
+My suggestion in the initial Debian report [1] was to specify an explicit variable for this.
+
+[1] https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=914305#5
+
+
+#2 - Preferred configuration way
+Should the variables DNSMASQ_INTERFACE and DNSMASQ_EXCEPT be used instead of --interface and --except-interface?  (while "lo" still has to be in DNSMASQ_EXCEPT as of now)

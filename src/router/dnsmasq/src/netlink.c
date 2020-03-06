@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2018 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2020 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -51,11 +51,10 @@ void netlink_init(void)
   addr.nl_groups = RTMGRP_IPV4_ROUTE;
   if (option_bool(OPT_CLEVERBIND))
     addr.nl_groups |= RTMGRP_IPV4_IFADDR;  
-#ifdef HAVE_IPV6
   addr.nl_groups |= RTMGRP_IPV6_ROUTE;
   if (option_bool(OPT_CLEVERBIND))
     addr.nl_groups |= RTMGRP_IPV6_IFADDR;
-#endif
+
 #ifdef HAVE_DHCP6
   if (daemon->doing_ra || daemon->doing_dhcp6)
     addr.nl_groups |= RTMGRP_IPV6_IFADDR;
@@ -235,7 +234,6 @@ int iface_enumerate(int family, void *parm, int (*callback)())
 		      if (!((*callback)(addr, ifa->ifa_index, label,  netmask, broadcast, parm)))
 			callback_ok = 0;
 		  }
-#ifdef HAVE_IPV6
 		else if (ifa->ifa_family == AF_INET6)
 		  {
 		    struct in6_addr *addrp = NULL;
@@ -272,7 +270,6 @@ int iface_enumerate(int family, void *parm, int (*callback)())
 					(int) preferred, (int)valid, parm)))
 			callback_ok = 0;
 		  }
-#endif
 	      }
 	  }
 	else if (h->nlmsg_type == RTM_NEWNEIGH && family == AF_UNSPEC)
@@ -365,7 +362,9 @@ static void nl_async(struct nlmsghdr *h)
 	 failing. */ 
       struct rtmsg *rtm = NLMSG_DATA(h);
       
-      if (rtm->rtm_type == RTN_UNICAST && rtm->rtm_scope == RT_SCOPE_LINK)
+      if (rtm->rtm_type == RTN_UNICAST && rtm->rtm_scope == RT_SCOPE_LINK &&
+	  (rtm->rtm_table == RT_TABLE_MAIN ||
+	   rtm->rtm_table == RT_TABLE_LOCAL))
 	queue_event(EVENT_NEWROUTE);
     }
   else if (h->nlmsg_type == RTM_NEWADDR || h->nlmsg_type == RTM_DELADDR) 

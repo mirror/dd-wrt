@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2018 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2020 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ static int dns_dirty, file_dirty, leases_left;
 static int read_leases(time_t now, FILE *leasestream)
 {
   unsigned long ei;
-  struct all_addr addr;
+  union all_addr addr;
   struct dhcp_lease *lease;
   int clid_len, hw_len, hw_type;
   int items;
@@ -62,11 +62,16 @@ static int read_leases(time_t now, FILE *leasestream)
 	
 	if (fscanf(leasestream, " %64s %255s %764s",
 		   daemon->namebuff, daemon->dhcp_buff, daemon->packet) != 3)
-	  return 0;
-	
-	if (inet_pton(AF_INET, daemon->namebuff, &addr.addr.addr4))
 	  {
-	    if ((lease = lease4_allocate(addr.addr.addr4)))
+	    my_syslog(MS_DHCP | LOG_WARNING, _("ignoring invalid line in lease database: %s %s %s %s ..."),
+		      daemon->dhcp_buff3, daemon->dhcp_buff2,
+		      daemon->namebuff, daemon->dhcp_buff);
+	    continue;
+	  }
+		
+	if (inet_pton(AF_INET, daemon->namebuff, &addr.addr4))
+	  {
+	    if ((lease = lease4_allocate(addr.addr4)))
 	      domain = get_domain(lease->addr);
 	    
 	    hw_len = parse_hex(daemon->dhcp_buff2, (unsigned char *)daemon->dhcp_buff2, DHCP_CHADDR_MAX, NULL, &hw_type);
@@ -75,7 +80,7 @@ static int read_leases(time_t now, FILE *leasestream)
 	      hw_type = ARPHRD_ETHER; 
 	  }
 #ifdef HAVE_DHCP6
-	else if (inet_pton(AF_INET6, daemon->namebuff, &addr.addr.addr6))
+	else if (inet_pton(AF_INET6, daemon->namebuff, &addr.addr6))
 	  {
 	    char *s = daemon->dhcp_buff2;
 	    int lease_type = LEASE_NA;
@@ -86,7 +91,7 @@ static int read_leases(time_t now, FILE *leasestream)
 		s++;
 	      }
 	    
-	    if ((lease = lease6_allocate(&addr.addr.addr6, lease_type)))
+	    if ((lease = lease6_allocate(&addr.addr6, lease_type)))
 	      {
 		lease_set_iaid(lease, strtoul(s, NULL, 10));
 		domain = get_domain6(&lease->addr6);
@@ -94,7 +99,12 @@ static int read_leases(time_t now, FILE *leasestream)
 	  }
 #endif
 	else
-	  return 0;
+	  {
+	    my_syslog(MS_DHCP | LOG_WARNING, _("ignoring invalid line in lease database, bad address: %s"),
+		      daemon->namebuff);
+	    continue;
+	  }
+	
 
 	if (!lease)
 	  die (_("too many stored leases"), NULL, EC_MISC);
@@ -174,10 +184,8 @@ void lease_init(time_t now)
   if (leasestream)
     {
       if (!read_leases(now, leasestream))
-	my_syslog(MS_DHCP | LOG_ERR, _("failed to parse lease database, invalid line: %s %s %s %s ..."),
-		  daemon->dhcp_buff3, daemon->dhcp_buff2,
-		  daemon->namebuff, daemon->dhcp_buff);
-
+	my_syslog(MS_DHCP | LOG_ERR, _("failed to parse lease database cleanly"));
+      
       if (ferror(leasestream))
 	die(_("failed to read lease file %s: %s"), daemon->lease_file, EC_FILE);
     }
@@ -224,7 +232,7 @@ void lease_update_from_configs(void)
     if (lease->flags & (LEASE_TA | LEASE_NA))
       continue;
     else if ((config = find_config(daemon->dhcp_conf, NULL, lease->clid, lease->clid_len, 
-				   lease->hwaddr, lease->hwaddr_len, lease->hwaddr_type, NULL)) && 
+				   lease->hwaddr, lease->hwaddr_len, lease->hwaddr_type, NULL, NULL)) && 
 	     (config->flags & CONFIG_NAME) &&
 	     (!(config->flags & CONFIG_ADDR) || config->addr.s_addr == lease->addr.s_addr))
       lease_set_hostname(lease, config->hostname, 1, get_domain(lease->addr), NULL);
@@ -522,28 +530,28 @@ void lease_update_dns(int force)
 		if (slaac->backoff == 0)
 		  {
 		    if (lease->fqdn)
-		      cache_add_dhcp_entry(lease->fqdn, AF_INET6, (struct all_addr *)&slaac->addr, lease->expires);
+		      cache_add_dhcp_entry(lease->fqdn, AF_INET6, (union all_addr *)&slaac->addr, lease->expires);
 		    if (!option_bool(OPT_DHCP_FQDN) && lease->hostname)
-		      cache_add_dhcp_entry(lease->hostname, AF_INET6, (struct all_addr *)&slaac->addr, lease->expires);
+		      cache_add_dhcp_entry(lease->hostname, AF_INET6, (union all_addr *)&slaac->addr, lease->expires);
 		  }
 	    }
 	  
 	  if (lease->fqdn)
 	    cache_add_dhcp_entry(lease->fqdn, prot, 
-				 prot == AF_INET ? (struct all_addr *)&lease->addr : (struct all_addr *)&lease->addr6,
+				 prot == AF_INET ? (union all_addr *)&lease->addr : (union all_addr *)&lease->addr6,
 				 lease->expires);
 	     
 	  if (!option_bool(OPT_DHCP_FQDN) && lease->hostname)
 	    cache_add_dhcp_entry(lease->hostname, prot, 
-				 prot == AF_INET ? (struct all_addr *)&lease->addr : (struct all_addr *)&lease->addr6, 
+				 prot == AF_INET ? (union all_addr *)&lease->addr : (union all_addr *)&lease->addr6, 
 				 lease->expires);
        
 #else
 	  if (lease->fqdn)
-	    cache_add_dhcp_entry(lease->fqdn, prot, (struct all_addr *)&lease->addr, lease->expires);
+	    cache_add_dhcp_entry(lease->fqdn, prot, (union all_addr *)&lease->addr, lease->expires);
 	  
 	  if (!option_bool(OPT_DHCP_FQDN) && lease->hostname)
-	    cache_add_dhcp_entry(lease->hostname, prot, (struct all_addr *)&lease->addr, lease->expires);
+	    cache_add_dhcp_entry(lease->hostname, prot, (union all_addr *)&lease->addr, lease->expires);
 #endif
 	}
       
@@ -558,7 +566,7 @@ void lease_prune(struct dhcp_lease *target, time_t now)
   for (lease = leases, up = &leases; lease; lease = tmp)
     {
       tmp = lease->next;
-      if ((lease->expires != 0 && difftime(now, lease->expires) > 0) || lease == target)
+      if ((lease->expires != 0 && difftime(now, lease->expires) >= 0) || lease == target)
 	{
 	  file_dirty = 1;
 	  if (lease->hostname)
@@ -635,7 +643,8 @@ struct dhcp_lease *lease_find_by_addr(struct in_addr addr)
 #ifdef HAVE_DHCP6
 /* find address for {CLID, IAID, address} */
 struct dhcp_lease *lease6_find(unsigned char *clid, int clid_len, 
-			       int lease_type, int iaid, struct in6_addr *addr)
+			       int lease_type, unsigned int iaid,
+			       struct in6_addr *addr)
 {
   struct dhcp_lease *lease;
   
@@ -667,7 +676,9 @@ void lease6_reset(void)
 }
 
 /* enumerate all leases belonging to {CLID, IAID} */
-struct dhcp_lease *lease6_find_by_client(struct dhcp_lease *first, int lease_type, unsigned char *clid, int clid_len, int iaid)
+struct dhcp_lease *lease6_find_by_client(struct dhcp_lease *first, int lease_type,
+					 unsigned char *clid, int clid_len,
+					 unsigned int iaid)
 {
   struct dhcp_lease *lease;
 
@@ -833,7 +844,7 @@ void lease_set_expires(struct dhcp_lease *lease, unsigned int len, time_t now)
       dns_dirty = 1;
       lease->expires = exp;
 #ifndef HAVE_BROKEN_RTC
-      lease->flags |= LEASE_AUX_CHANGED;
+      lease->flags |= LEASE_AUX_CHANGED | LEASE_EXP_CHANGED;
       file_dirty = 1;
 #endif
     }
@@ -849,7 +860,7 @@ void lease_set_expires(struct dhcp_lease *lease, unsigned int len, time_t now)
 } 
 
 #ifdef HAVE_DHCP6
-void lease_set_iaid(struct dhcp_lease *lease, int iaid)
+void lease_set_iaid(struct dhcp_lease *lease, unsigned int iaid)
 {
   if (lease->iaid != iaid)
     {
@@ -1133,7 +1144,8 @@ int do_script_run(time_t now)
   
   for (lease = leases; lease; lease = lease->next)
     if ((lease->flags & (LEASE_NEW | LEASE_CHANGED)) || 
-	((lease->flags & LEASE_AUX_CHANGED) && option_bool(OPT_LEASE_RO)))
+	((lease->flags & LEASE_AUX_CHANGED) && option_bool(OPT_LEASE_RO)) ||
+	((lease->flags & LEASE_EXP_CHANGED) && option_bool(OPT_LEASE_RENEW)))
       {
 #ifdef HAVE_SCRIPT
 	queue_script((lease->flags & LEASE_NEW) ? ACTION_ADD : ACTION_OLD, lease, 
@@ -1143,7 +1155,7 @@ int do_script_run(time_t now)
 	emit_dbus_signal((lease->flags & LEASE_NEW) ? ACTION_ADD : ACTION_OLD, lease,
 			 lease->fqdn ? lease->fqdn : lease->hostname);
 #endif
-	lease->flags &= ~(LEASE_NEW | LEASE_CHANGED | LEASE_AUX_CHANGED);
+	lease->flags &= ~(LEASE_NEW | LEASE_CHANGED | LEASE_AUX_CHANGED | LEASE_EXP_CHANGED);
 	
 	/* this is used for the "add" call, then junked, since they're not in the database */
 	free(lease->extradata);

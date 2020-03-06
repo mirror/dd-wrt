@@ -1,0 +1,3 @@
+# dnsmasq-base and dnsmasq-base-lua are mutually exclusive and both
+# provide /usr/share/doc/dnsmasq-base
+dnsmasq-base-lua binary: usr-share-doc-symlink-without-dependency dnsmasq-base
