@@ -4,7 +4,7 @@ else
 	SAMBA4_AES_ARGS:= --accel-aes=none
 endif
 
-samba4-configure: gnutls
+samba4-configure: gnutls icu zlib
 	cp $(TOP)/samba4/waf-cross-answers/$(ARCH).txt $(TOP)/samba4/cross-answers.txt
 	echo 'Checking uname machine type: "$(ARCH)"' >> $(TOP)/samba4/cross-answers.txt
 	echo 'Checking uname release type: "$(LINUX_VERSION)"' >> $(TOP)/samba4/cross-answers.txt
@@ -91,8 +91,8 @@ samba4-configure: gnutls
 		--with-lockdir=/tmp/var \
 		--destdir=$(INSTALLDIR)/samba4 \
 		--private-libraries=talloc,tevent,tevent-util,texpect,tdb,ldb,tdr,cmocka,replace \
-		CFLAGS="$(LTOMIN) $(COPTS) $(MIPS16_OPT) -DNODEBUG -DNEED_PRINTF -I$(TOP)/gnutls/lib/includes -ffunction-sections -fdata-sections -fPIC" \
-		LDFLAGS="$(LDLTO) -Wl,--gc-sections -L$(TOP)/gnutls/lib/.libs -lgnutls -L$(TOP)/nettle -lnettle -lhogweed -L$(TOP)/gmp/.libs -lgmp -fPIC"
+		CFLAGS="$(LTOMIN) $(COPTS) $(MIPS16_OPT) -DNODEBUG -DNEED_PRINTF -I$(TOP)/gnutls/lib/includes -I$(TOP)/zlib/include -I$(TOP)/icu/target_staging/include -ffunction-sections -fdata-sections -fPIC" \
+		LDFLAGS="$(LDLTO) -Wl,--gc-sections -L$(TOP)/gnutls/lib/.libs -lgnutls -L$(TOP)/nettle -lnettle -lhogweed -L$(TOP)/gmp/.libs -lgmp -L$(TOP)/icu/target_staging/lib -L$(TOP)/zlib  -fPIC"
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 		-make -C samba4
@@ -101,7 +101,7 @@ samba4-configure: gnutls
 		sed -i 's/\/USR\/BIN\/PYTHON3/PYTHON3/g' $(TOP)/samba4/bin/default/source3/smbd/build_options.c
 
 
-samba4: gnutls
+samba4: gnutls icu zlib
 	-sed -i 's/\/USR\/BIN\/PYTHON3/PYTHON3/g' $(TOP)/samba4/bin/default/source3/smbd/build_options.c
 	make -C samba4
 
