@@ -502,7 +502,7 @@ GetAudioMetadata(const char *path, const char *name)
 }
 
 /* For libjpeg error handling */
-static jmp_buf setjmp_buffer;
+jmp_buf setjmp_buffer;
 static void
 libjpeg_error_handler(j_common_ptr cinfo)
 {

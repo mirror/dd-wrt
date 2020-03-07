@@ -27,8 +27,6 @@
 #include <sqlite3.h>
 #include "tivo_utils.h"
 
-struct sqlite3PrngType sqlite3Prng;
-
 /* This function based on byRequest */
 char *
 decodeString(char *string, int inplace)
