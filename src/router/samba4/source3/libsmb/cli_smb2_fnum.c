@@ -1883,7 +1883,7 @@ static NTSTATUS get_fnum_from_path(struct cli_state *cli,
 			FILE_ATTRIBUTE_DIRECTORY, /* file attributes */
 			FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE, /* share_access */
 			FILE_OPEN,		/* create_disposition */
-			FILE_DIRECTORY_FILE,	/* create_options */
+			create_options,		/* create_options */
 			NULL,
 			pfnum,
 			NULL,

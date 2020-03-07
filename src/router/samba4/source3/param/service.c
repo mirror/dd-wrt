@@ -111,6 +111,8 @@ int add_home_service(const char *service, const char *username, const char *home
 
 int find_service(TALLOC_CTX *ctx, const char *service_in, char **p_service_out)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	int iService;
 
 	if (!service_in) {
@@ -189,7 +191,7 @@ int find_service(TALLOC_CTX *ctx, const char *service_in, char **p_service_out)
 	}
 
 	/* Is it a usershare service ? */
-	if (iService < 0 && *lp_usershare_path(talloc_tos())) {
+	if (iService < 0 && *lp_usershare_path(talloc_tos(), lp_sub)) {
 		/* Ensure the name is canonicalized. */
 		if (!strlower_m(*p_service_out)) {
 			goto fail;
@@ -199,7 +201,7 @@ int find_service(TALLOC_CTX *ctx, const char *service_in, char **p_service_out)
 
 	/* just possibly it's a default service? */
 	if (iService < 0) {
-		char *pdefservice = lp_defaultservice(talloc_tos());
+		char *pdefservice = lp_defaultservice(talloc_tos(), lp_sub);
 		if (pdefservice &&
 				*pdefservice &&
 				!strequal(pdefservice, *p_service_out)

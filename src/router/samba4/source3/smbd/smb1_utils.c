@@ -32,7 +32,6 @@ struct files_struct *fcb_or_dos_open(
 	struct smb_request *req,
 	const struct smb_filename *smb_fname,
 	uint32_t access_mask,
-	uint32_t share_access,
 	uint32_t create_options,
 	uint32_t private_flags)
 {
@@ -99,7 +98,6 @@ struct files_struct *fcb_or_dos_open(
 		req,
 		fsp,
 		access_mask,
-		share_access,
 		create_options,
 		new_fsp);
 

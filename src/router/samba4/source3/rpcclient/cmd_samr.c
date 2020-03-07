@@ -32,7 +32,7 @@
 #include "rpc_client/init_lsa.h"
 #include "../libcli/security/security.h"
 
-extern struct dom_sid domain_sid;
+static struct dom_sid domain_sid;
 
 /****************************************************************************
  display samr_user_info_7 structure
@@ -268,6 +268,95 @@ static void display_sam_info_5(struct samr_DispEntryAscii *r)
 {
 	printf("index: 0x%x ", r->idx);
 	printf("Account: %s\n", r->account_name.string);
+}
+
+static NTSTATUS rpccli_try_samr_connects(
+	struct rpc_pipe_client *cli,
+	TALLOC_CTX *mem_ctx,
+	uint32_t access_mask,
+	struct policy_handle *connect_pol)
+{
+	struct dcerpc_binding_handle *b = cli->binding_handle;
+	NTSTATUS status;
+	NTSTATUS result = NT_STATUS_UNSUCCESSFUL;
+	uint32_t start_idx = 0;
+	uint32_t i, num_entries;
+	struct samr_SamArray *sam = NULL;
+	struct dom_sid *domsid = NULL;
+
+	status = dcerpc_try_samr_connects(
+		b,
+		mem_ctx,
+		cli->srv_name_slash,
+		access_mask,
+		connect_pol,
+		&result);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+	if (!NT_STATUS_IS_OK(result)) {
+		return result;
+	}
+
+	if (!is_null_sid(&domain_sid)) {
+		return NT_STATUS_OK;
+	}
+
+	/*
+	 * Look up the servers domain SID. Just pick the first
+	 * non-builtin domain from samr_EnumDomains.
+	 */
+
+	status = dcerpc_samr_EnumDomains(
+		b,
+		mem_ctx,
+		connect_pol,
+		&start_idx,
+		&sam,
+		0xffff,
+		&num_entries,
+		&result);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto fail;
+	}
+	if (!NT_STATUS_IS_OK(result)) {
+		status = result;
+		goto fail;
+	}
+
+	for (i=0; i<num_entries; i++) {
+		if (!strequal(sam->entries[i].name.string, "builtin")) {
+			break;
+		}
+	}
+	if (i == num_entries) {
+		status = NT_STATUS_NOT_FOUND;
+		goto fail;
+	}
+
+	status = dcerpc_samr_LookupDomain(
+		b,
+		mem_ctx,
+		connect_pol,
+		&sam->entries[i].name,
+		&domsid,
+		&result);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto fail;
+	}
+	if (!NT_STATUS_IS_OK(result)) {
+		status = result;
+		goto fail;
+	}
+
+	sid_copy(&domain_sid, domsid);
+	TALLOC_FREE(domsid);
+
+	return NT_STATUS_OK;
+
+fail:
+	dcerpc_samr_Close(b, mem_ctx, connect_pol, &result);
+	return status;
 }
 
 /****************************************************************************
@@ -1172,7 +1261,7 @@ static NTSTATUS cmd_samr_enum_domains(struct rpc_pipe_client *cli,
 		goto done;
 	}
 
-	/* Enumerate alias groups */
+	/* Enumerate domains */
 
 	start_idx = 0;
 	size = 0xffff;
@@ -3043,12 +3132,16 @@ static NTSTATUS cmd_samr_setuserinfo_int(struct rpc_pipe_client *cli,
 	DATA_BLOB session_key;
 	uint8_t password_expired = 0;
 	struct dcerpc_binding_handle *b = cli->binding_handle;
+	TALLOC_CTX *frame = NULL;
+	int rc;
 
 	if (argc < 4) {
 		printf("Usage: %s username level password [password_expired]\n",
 			argv[0]);
 		return NT_STATUS_INVALID_PARAMETER;
 	}
+
+	frame = talloc_stackframe();
 
 	user = argv[1];
 	level = atoi(argv[2]);
@@ -3058,13 +3151,19 @@ static NTSTATUS cmd_samr_setuserinfo_int(struct rpc_pipe_client *cli,
 		password_expired = atoi(argv[4]);
 	}
 
-	status = cli_get_session_key(mem_ctx, cli, &session_key);
+	status = cli_get_session_key(frame, cli, &session_key);
 	if (!NT_STATUS_IS_OK(status)) {
-		return status;
+		goto done;
 	}
 
-	init_samr_CryptPassword(param, &session_key, &pwd_buf);
-	init_samr_CryptPasswordEx(param, &session_key, &pwd_buf_ex);
+	status = init_samr_CryptPassword(param, &session_key, &pwd_buf);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto done;
+	}
+	status = init_samr_CryptPasswordEx(param, &session_key, &pwd_buf_ex);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto done;
+	}
 	nt_lm_owf_gen(param, nt_hash, lm_hash);
 
 	switch (level) {
@@ -3072,15 +3171,31 @@ static NTSTATUS cmd_samr_setuserinfo_int(struct rpc_pipe_client *cli,
 		{
 			DATA_BLOB in,out;
 			in = data_blob_const(nt_hash, 16);
-			out = data_blob_talloc_zero(mem_ctx, 16);
-			sess_crypt_blob(&out, &in, &session_key, true);
+			out = data_blob_talloc_zero(frame, 16);
+			if (out.data == NULL) {
+				status = NT_STATUS_NO_MEMORY;
+				goto done;
+			}
+			rc = sess_crypt_blob(&out, &in, &session_key, SAMBA_GNUTLS_ENCRYPT);
+			if (rc != 0) {
+				status = gnutls_error_to_ntstatus(rc,
+								  NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+			}
 			memcpy(nt_hash, out.data, out.length);
 		}
 		{
 			DATA_BLOB in,out;
 			in = data_blob_const(lm_hash, 16);
-			out = data_blob_talloc_zero(mem_ctx, 16);
-			sess_crypt_blob(&out, &in, &session_key, true);
+			out = data_blob_talloc_zero(frame, 15);
+			if (out.data == NULL) {
+				status = NT_STATUS_NO_MEMORY;
+				goto done;
+			}
+			rc = sess_crypt_blob(&out, &in, &session_key, SAMBA_GNUTLS_ENCRYPT);
+			if (rc != 0) {
+				status = gnutls_error_to_ntstatus(rc,
+								  NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+			}
 			memcpy(lm_hash, out.data, out.length);
 		}
 
@@ -3112,18 +3227,34 @@ static NTSTATUS cmd_samr_setuserinfo_int(struct rpc_pipe_client *cli,
 		{
 			DATA_BLOB in,out;
 			in = data_blob_const(nt_hash, 16);
-			out = data_blob_talloc_zero(mem_ctx, 16);
-			sess_crypt_blob(&out, &in, &session_key, true);
+			out = data_blob_talloc_zero(frame, 16);
+			if (out.data == NULL) {
+				status = NT_STATUS_NO_MEMORY;
+				goto done;
+			}
+			rc = sess_crypt_blob(&out, &in, &session_key, SAMBA_GNUTLS_ENCRYPT);
+			if (rc != 0) {
+				status = gnutls_error_to_ntstatus(rc,
+								  NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+			}
 			info.info21.nt_owf_password.array =
-				(uint16_t *)talloc_memdup(mem_ctx, out.data, 16);
+				(uint16_t *)talloc_memdup(frame, out.data, 16);
 		}
 		{
 			DATA_BLOB in,out;
 			in = data_blob_const(lm_hash, 16);
-			out = data_blob_talloc_zero(mem_ctx, 16);
-			sess_crypt_blob(&out, &in, &session_key, true);
+			out = data_blob_talloc_zero(frame, 16);
+			rc = sess_crypt_blob(&out, &in, &session_key, SAMBA_GNUTLS_ENCRYPT);
+			if (rc != 0) {
+				status = gnutls_error_to_ntstatus(rc,
+								  NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+			}
 			info.info21.lm_owf_password.array =
-				(uint16_t *)talloc_memdup(mem_ctx, out.data, 16);
+				(uint16_t *)talloc_memdup(frame, out.data, 16);
+			if (out.data == NULL) {
+				status = NT_STATUS_NO_MEMORY;
+				goto done;
+			}
 		}
 
 		break;
@@ -3169,7 +3300,7 @@ static NTSTATUS cmd_samr_setuserinfo_int(struct rpc_pipe_client *cli,
 
 	/* Get sam policy handle */
 
-	status = rpccli_try_samr_connects(cli, mem_ctx,
+	status = rpccli_try_samr_connects(cli, frame,
 					  MAXIMUM_ALLOWED_ACCESS,
 					  &connect_pol);
 	if (!NT_STATUS_IS_OK(status)) {
@@ -3178,7 +3309,7 @@ static NTSTATUS cmd_samr_setuserinfo_int(struct rpc_pipe_client *cli,
 
 	/* Get domain policy handle */
 
-	status = dcerpc_samr_OpenDomain(b, mem_ctx,
+	status = dcerpc_samr_OpenDomain(b, frame,
 					&connect_pol,
 					access_mask,
 					&domain_sid,
@@ -3194,7 +3325,7 @@ static NTSTATUS cmd_samr_setuserinfo_int(struct rpc_pipe_client *cli,
 
 	user_rid = strtol(user, NULL, 0);
 	if (user_rid) {
-		status = dcerpc_samr_OpenUser(b, mem_ctx,
+		status = dcerpc_samr_OpenUser(b, frame,
 					      &domain_pol,
 					      access_mask,
 					      user_rid,
@@ -3216,7 +3347,7 @@ static NTSTATUS cmd_samr_setuserinfo_int(struct rpc_pipe_client *cli,
 
 		init_lsa_String(&lsa_acct_name, user);
 
-		status = dcerpc_samr_LookupNames(b, mem_ctx,
+		status = dcerpc_samr_LookupNames(b, frame,
 						 &domain_pol,
 						 1,
 						 &lsa_acct_name,
@@ -3236,7 +3367,7 @@ static NTSTATUS cmd_samr_setuserinfo_int(struct rpc_pipe_client *cli,
 			return NT_STATUS_INVALID_NETWORK_RESPONSE;
 		}
 
-		status = dcerpc_samr_OpenUser(b, mem_ctx,
+		status = dcerpc_samr_OpenUser(b, frame,
 					      &domain_pol,
 					      access_mask,
 					      rids.ids[0],
@@ -3252,14 +3383,14 @@ static NTSTATUS cmd_samr_setuserinfo_int(struct rpc_pipe_client *cli,
 
 	switch (opcode) {
 	case NDR_SAMR_SETUSERINFO:
-		status = dcerpc_samr_SetUserInfo(b, mem_ctx,
+		status = dcerpc_samr_SetUserInfo(b, frame,
 						 &user_pol,
 						 level,
 						 &info,
 						 &result);
 		break;
 	case NDR_SAMR_SETUSERINFO2:
-		status = dcerpc_samr_SetUserInfo2(b, mem_ctx,
+		status = dcerpc_samr_SetUserInfo2(b, frame,
 						  &user_pol,
 						  level,
 						  &info,
@@ -3277,7 +3408,10 @@ static NTSTATUS cmd_samr_setuserinfo_int(struct rpc_pipe_client *cli,
 		DEBUG(0,("result: %s\n", nt_errstr(status)));
 		goto done;
 	}
+
+	status = NT_STATUS_OK;
  done:
+	TALLOC_FREE(frame);
 	return status;
 }
 

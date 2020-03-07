@@ -18,9 +18,35 @@
 #ifndef _GNUTLS_HELPERS_H
 #define _GNUTLS_HELPERS_H
 
-#include "ntstatus.h"
-#include "werror.h"
+#include <gnutls/gnutls.h>
 
+#include "libcli/util/ntstatus.h"
+#include "libcli/util/werror.h"
+
+/* Those macros are only available in GnuTLS >= 3.6.4 */
+#ifndef GNUTLS_FIPS140_SET_LAX_MODE
+#define GNUTLS_FIPS140_SET_LAX_MODE()
+#endif
+
+#ifndef GNUTLS_FIPS140_SET_STRICT_MODE
+#define GNUTLS_FIPS140_SET_STRICT_MODE()
+#endif
+
+#ifdef DOXYGEN
+/**
+ * @brief Convert a gnutls error code to a corresponding NTSTATUS.
+ *
+ * @param[in]  gnutls_rc      The GnuTLS return code.
+ *
+ * @param[in]  blocked_status The NTSTATUS return code which should be returned
+ *                            in case the e.g. the cipher might be blocked due
+ *                            to FIPS mode.
+ *
+ * @return A corresponding NTSTATUS code.
+ */
+NTSTATUS gnutls_error_to_ntstatus(int gnutls_rc,
+				  NTSTATUS blocked_status);
+#else
 NTSTATUS _gnutls_error_to_ntstatus(int gnutls_rc,
 				   NTSTATUS blocked_status,
 				   const char *function,
@@ -28,7 +54,23 @@ NTSTATUS _gnutls_error_to_ntstatus(int gnutls_rc,
 #define gnutls_error_to_ntstatus(gnutls_rc, blocked_status) \
 	_gnutls_error_to_ntstatus(gnutls_rc, blocked_status, \
 				  __FUNCTION__, __location__)
+#endif
 
+#ifdef DOXYGEN
+/**
+ * @brief Convert a gnutls error code to a corresponding WERROR.
+ *
+ * @param[in]  gnutls_rc      The GnuTLS return code.
+ *
+ * @param[in]  blocked_werr   The WERROR code which should be returned if e.g
+ *                            the cipher we want to used it not allowed to be
+ *                            used because of FIPS mode.
+ *
+ * @return A corresponding WERROR code.
+ */
+WERROR gnutls_error_to_werror(int gnutls_rc,
+			       WERROR blocked_werr);
+#else
 WERROR _gnutls_error_to_werror(int gnutls_rc,
 			       WERROR blocked_werr,
 			       const char *function,
@@ -36,12 +78,31 @@ WERROR _gnutls_error_to_werror(int gnutls_rc,
 #define gnutls_error_to_werror(gnutls_rc, blocked_werr) \
 	_gnutls_error_to_werror(gnutls_rc, blocked_werr, \
 				__FUNCTION__, __location__)
+#endif
 
 enum samba_gnutls_direction {
 	SAMBA_GNUTLS_ENCRYPT,
 	SAMBA_GNUTLS_DECRYPT
 };
 
+/**
+ * @brief Encrypt or decrypt a data blob using RC4 with a key and salt.
+ *
+ * One of the key input should be a session key and the other a confounder
+ * (aka salt). Which one depends on the implementation details of the
+ * protocol.
+ *
+ * @param[in]  key_input1 Either a session_key or a confounder.
+ *
+ * @param[in]  key_input2 Either a session_key or a confounder.
+ *
+ * @param[in]  data       The data blob to either encrypt or decrypt. The data
+ *                        will be encrypted or decrypted in place.
+ *
+ * @param[in]  encrypt    The encryption direction.
+ *
+ * @return A gnutls error code.
+ */
 int samba_gnutls_arcfour_confounded_md5(const DATA_BLOB *key_input1,
 					const DATA_BLOB *key_input2,
 					DATA_BLOB *data,

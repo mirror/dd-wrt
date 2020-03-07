@@ -20,9 +20,9 @@
 
 #include "includes.h"
 #include "libnet/libnet.h"
-#include "../lib/crypto/crypto.h"
 #include "libcli/auth/libcli_auth.h"
 #include "librpc/gen_ndr/ndr_samr_c.h"
+#include "source4/librpc/rpc/dcerpc.h"
 
 #include "lib/crypto/gnutls_helpers.h"
 #include <gnutls/gnutls.h>
@@ -56,6 +56,16 @@ static NTSTATUS libnet_ChangePassword_samr(struct libnet_context *ctx, TALLOC_CT
 	uint8_t old_lm_hash[16], new_lm_hash[16];
 	struct samr_DomInfo1 *dominfo = NULL;
 	struct userPwdChangeFailureInformation *reject = NULL;
+	gnutls_cipher_hd_t cipher_hnd = NULL;
+	gnutls_datum_t nt_session_key = {
+		.data = old_nt_hash,
+		.size = sizeof(old_nt_hash),
+	};
+	gnutls_datum_t lm_session_key = {
+		.data = old_lm_hash,
+		.size = sizeof(old_lm_hash),
+	};
+	int rc;
 
 	ZERO_STRUCT(c);
 
@@ -86,12 +96,56 @@ static NTSTATUS libnet_ChangePassword_samr(struct libnet_context *ctx, TALLOC_CT
 
 	/* prepare samr_ChangePasswordUser3 */
 	encode_pw_buffer(lm_pass.data, r->samr.in.newpassword, STR_UNICODE);
-	arcfour_crypt(lm_pass.data, old_nt_hash, 516);
-	E_old_pw_hash(new_lm_hash, old_lm_hash, lm_verifier.hash);
+
+	rc = gnutls_cipher_init(&cipher_hnd,
+				GNUTLS_CIPHER_ARCFOUR_128,
+				&nt_session_key,
+				NULL);
+	if (rc < 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_CRYPTO_SYSTEM_INVALID);
+		goto disconnect;
+	}
+
+	rc = gnutls_cipher_encrypt(cipher_hnd,
+				   lm_pass.data,
+				   516);
+	gnutls_cipher_deinit(cipher_hnd);
+	if (rc < 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_CRYPTO_SYSTEM_INVALID);
+		goto disconnect;
+	}
+
+	rc = E_old_pw_hash(new_lm_hash, old_lm_hash, lm_verifier.hash);
+	if (rc != 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+		goto disconnect;
+	}
 
 	encode_pw_buffer(nt_pass.data,  r->samr.in.newpassword, STR_UNICODE);
-	arcfour_crypt(nt_pass.data, old_nt_hash, 516);
-	E_old_pw_hash(new_nt_hash, old_nt_hash, nt_verifier.hash);
+
+	rc = gnutls_cipher_init(&cipher_hnd,
+				GNUTLS_CIPHER_ARCFOUR_128,
+				&nt_session_key,
+				NULL);
+	if (rc < 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_CRYPTO_SYSTEM_INVALID);
+		goto disconnect;
+	}
+
+	rc = gnutls_cipher_encrypt(cipher_hnd,
+				   nt_pass.data,
+				   516);
+	gnutls_cipher_deinit(cipher_hnd);
+	if (rc < 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_CRYPTO_SYSTEM_INVALID);
+		goto disconnect;
+	}
+
+	rc = E_old_pw_hash(new_nt_hash, old_nt_hash, nt_verifier.hash);
+	if (rc != 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+		goto disconnect;
+	}
 
 	pw3.in.server = &server;
 	pw3.in.account = &account;
@@ -124,12 +178,55 @@ static NTSTATUS libnet_ChangePassword_samr(struct libnet_context *ctx, TALLOC_CT
 
 	/* prepare samr_ChangePasswordUser2 */
 	encode_pw_buffer(lm_pass.data, r->samr.in.newpassword, STR_ASCII|STR_TERMINATE);
-	arcfour_crypt(lm_pass.data, old_lm_hash, 516);
-	E_old_pw_hash(new_lm_hash, old_lm_hash, lm_verifier.hash);
+
+	rc = gnutls_cipher_init(&cipher_hnd,
+				GNUTLS_CIPHER_ARCFOUR_128,
+				&lm_session_key,
+				NULL);
+	if (rc < 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_CRYPTO_SYSTEM_INVALID);
+		goto disconnect;
+	}
+
+	rc = gnutls_cipher_encrypt(cipher_hnd,
+				   lm_pass.data,
+				   516);
+	gnutls_cipher_deinit(cipher_hnd);
+	if (rc < 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_CRYPTO_SYSTEM_INVALID);
+		goto disconnect;
+	}
+
+	rc = E_old_pw_hash(new_lm_hash, old_lm_hash, lm_verifier.hash);
+	if (rc != 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+		goto disconnect;
+	}
 
 	encode_pw_buffer(nt_pass.data, r->samr.in.newpassword, STR_UNICODE);
-	arcfour_crypt(nt_pass.data, old_nt_hash, 516);
-	E_old_pw_hash(new_nt_hash, old_nt_hash, nt_verifier.hash);
+
+	rc = gnutls_cipher_init(&cipher_hnd,
+				GNUTLS_CIPHER_ARCFOUR_128,
+				&nt_session_key,
+				NULL);
+	if (rc < 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_CRYPTO_SYSTEM_INVALID);
+		goto disconnect;
+	}
+	rc = gnutls_cipher_encrypt(cipher_hnd,
+				   nt_pass.data,
+				   516);
+	gnutls_cipher_deinit(cipher_hnd);
+	if (rc < 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_CRYPTO_SYSTEM_INVALID);
+		goto disconnect;
+	}
+
+	rc = E_old_pw_hash(new_nt_hash, old_nt_hash, nt_verifier.hash);
+	if (rc != 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+		goto disconnect;
+	}
 
 	pw2.in.server = &server;
 	pw2.in.account = &account;
@@ -160,8 +257,30 @@ static NTSTATUS libnet_ChangePassword_samr(struct libnet_context *ctx, TALLOC_CT
 	a_account.string = r->samr.in.account_name;
 
 	encode_pw_buffer(lm_pass.data, r->samr.in.newpassword, STR_ASCII);
-	arcfour_crypt(lm_pass.data, old_lm_hash, 516);
-	E_old_pw_hash(new_lm_hash, old_lm_hash, lm_verifier.hash);
+
+	rc = gnutls_cipher_init(&cipher_hnd,
+				GNUTLS_CIPHER_ARCFOUR_128,
+				&lm_session_key,
+				NULL);
+	if (rc < 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_CRYPTO_SYSTEM_INVALID);
+		goto disconnect;
+	}
+
+	rc = gnutls_cipher_encrypt(cipher_hnd,
+				   lm_pass.data,
+				   516);
+	gnutls_cipher_deinit(cipher_hnd);
+	if (rc < 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_CRYPTO_SYSTEM_INVALID);
+		goto disconnect;
+	}
+
+	rc = E_old_pw_hash(new_lm_hash, old_lm_hash, lm_verifier.hash);
+	if (rc != 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+		goto disconnect;
+	}
 
 	oe2.in.server = &a_server;
 	oe2.in.account = &a_account;
@@ -276,10 +395,6 @@ static NTSTATUS libnet_SetPassword_samr_handle_26(struct libnet_context *ctx, TA
 	struct samr_SetUserInfo2 sui;
 	union samr_UserInfo u_info;
 	DATA_BLOB session_key;
-	DATA_BLOB confounded_session_key = data_blob_talloc(mem_ctx, NULL, 16);
-	uint8_t confounder[16];	
-	gnutls_hash_hd_t hash_hnd = NULL;
-	int rc;
 
 	if (r->samr_handle.in.info21) {
 		return NT_STATUS_INVALID_PARAMETER_MIX;
@@ -287,9 +402,8 @@ static NTSTATUS libnet_SetPassword_samr_handle_26(struct libnet_context *ctx, TA
 
 	/* prepare samr_SetUserInfo2 level 26 */
 	ZERO_STRUCT(u_info);
-	encode_pw_buffer(u_info.info26.password.data, r->samr_handle.in.newpassword, STR_UNICODE);
 	u_info.info26.password_expired = 0;
-	
+
 	status = dcerpc_fetch_session_key(r->samr_handle.in.dcerpc_pipe, &session_key);
 	if (!NT_STATUS_IS_OK(status)) {
 		r->samr_handle.out.error_string = talloc_asprintf(mem_ctx,
@@ -297,37 +411,17 @@ static NTSTATUS libnet_SetPassword_samr_handle_26(struct libnet_context *ctx, TA
 								  nt_errstr(status));
 		return status;
 	}
-	
-	generate_random_buffer((uint8_t *)confounder, 16);
 
-	rc = gnutls_hash_init(&hash_hnd, GNUTLS_DIG_MD5);
-	if (rc < 0) {
-		status = gnutls_error_to_ntstatus(rc, NT_STATUS_HASH_NOT_SUPPORTED);
-		goto out;
+	status = encode_rc4_passwd_buffer(r->samr_handle.in.newpassword,
+					  &session_key,
+					  &u_info.info26.password);
+	if (!NT_STATUS_IS_OK(status)) {
+		r->samr_handle.out.error_string =
+			talloc_asprintf(mem_ctx,
+					"encode_rc4_passwd_buffer failed: %s",
+					nt_errstr(status));
+		return status;
 	}
-
-	rc = gnutls_hash(hash_hnd, confounder, 16);
-	if (rc < 0) {
-		gnutls_hash_deinit(hash_hnd, NULL);
-		status = gnutls_error_to_ntstatus(rc, NT_STATUS_HASH_NOT_SUPPORTED);
-		goto out;
-	}
-	rc = gnutls_hash(hash_hnd, session_key.data, session_key.length);
-	if (rc < 0) {
-		gnutls_hash_deinit(hash_hnd, NULL);
-		status = gnutls_error_to_ntstatus(rc, NT_STATUS_HASH_NOT_SUPPORTED);
-		goto out;
-	}
-
-	gnutls_hash_deinit(hash_hnd, confounded_session_key.data);
-
-	arcfour_crypt_blob(u_info.info26.password.data, 516, &confounded_session_key);
-	ZERO_ARRAY_LEN(confounded_session_key.data,
-		       confounded_session_key.length);
-	data_blob_free(&confounded_session_key);
-
-	memcpy(&u_info.info26.password.data[516], confounder, 16);
-	ZERO_ARRAY(confounder);
 
 	sui.in.user_handle = r->samr_handle.in.user_handle;
 	sui.in.info = &u_info;
@@ -346,7 +440,6 @@ static NTSTATUS libnet_SetPassword_samr_handle_26(struct libnet_context *ctx, TA
 					  r->samr_handle.in.account_name, nt_errstr(status));
 	}
 
-out:
 	return status;
 }
 
@@ -356,10 +449,6 @@ static NTSTATUS libnet_SetPassword_samr_handle_25(struct libnet_context *ctx, TA
 	struct samr_SetUserInfo2 sui;
 	union samr_UserInfo u_info;
 	DATA_BLOB session_key;
-	DATA_BLOB confounded_session_key = data_blob_talloc(mem_ctx, NULL, 16);
-	uint8_t confounder[16];	
-	gnutls_hash_hd_t hash_hnd = NULL;
-	int rc;
 
 	if (!r->samr_handle.in.info21) {
 		return NT_STATUS_INVALID_PARAMETER_MIX;
@@ -369,7 +458,6 @@ static NTSTATUS libnet_SetPassword_samr_handle_25(struct libnet_context *ctx, TA
 	ZERO_STRUCT(u_info);
 	u_info.info25.info = *r->samr_handle.in.info21;
 	u_info.info25.info.fields_present |= SAMR_FIELD_NT_PASSWORD_PRESENT;
-	encode_pw_buffer(u_info.info25.password.data, r->samr_handle.in.newpassword, STR_UNICODE);
 
 	status = dcerpc_fetch_session_key(r->samr_handle.in.dcerpc_pipe, &session_key);
 	if (!NT_STATUS_IS_OK(status)) {
@@ -379,36 +467,17 @@ static NTSTATUS libnet_SetPassword_samr_handle_25(struct libnet_context *ctx, TA
 		return status;
 	}
 
-	generate_random_buffer((uint8_t *)confounder, 16);
-
-	rc = gnutls_hash_init(&hash_hnd, GNUTLS_DIG_MD5);
-	if (rc < 0) {
-		status = gnutls_error_to_ntstatus(rc, NT_STATUS_HASH_NOT_SUPPORTED);
-		goto out;
+	status = encode_rc4_passwd_buffer(r->samr_handle.in.newpassword,
+					  &session_key,
+					  &u_info.info25.password);
+	if (!NT_STATUS_IS_OK(status)) {
+		r->samr_handle.out.error_string =
+			talloc_asprintf(mem_ctx,
+					"encode_rc4_passwd_buffer failed: %s",
+					nt_errstr(status));
+		return status;
 	}
 
-	rc = gnutls_hash(hash_hnd, confounder, 16);
-	if (rc < 0) {
-		gnutls_hash_deinit(hash_hnd, NULL);
-		status = gnutls_error_to_ntstatus(rc, NT_STATUS_HASH_NOT_SUPPORTED);
-		goto out;
-	}
-	rc = gnutls_hash(hash_hnd, session_key.data, session_key.length);
-	if (rc < 0) {
-		gnutls_hash_deinit(hash_hnd, NULL);
-		status = gnutls_error_to_ntstatus(rc, NT_STATUS_HASH_NOT_SUPPORTED);
-		goto out;
-	}
-
-	gnutls_hash_deinit(hash_hnd, confounded_session_key.data);
-
-	arcfour_crypt_blob(u_info.info25.password.data, 516, &confounded_session_key);
-	ZERO_ARRAY_LEN(confounded_session_key.data,
-		       confounded_session_key.length);
-	data_blob_free(&confounded_session_key);
-
-	memcpy(&u_info.info25.password.data[516], confounder, 16);
-	ZERO_ARRAY(confounder);
 
 	sui.in.user_handle = r->samr_handle.in.user_handle;
 	sui.in.info = &u_info;
@@ -426,7 +495,6 @@ static NTSTATUS libnet_SetPassword_samr_handle_25(struct libnet_context *ctx, TA
 					  r->samr_handle.in.account_name, nt_errstr(status));
 	}
 
-out:
 	return status;
 }
 
@@ -436,6 +504,9 @@ static NTSTATUS libnet_SetPassword_samr_handle_24(struct libnet_context *ctx, TA
 	struct samr_SetUserInfo2 sui;
 	union samr_UserInfo u_info;
 	DATA_BLOB session_key;
+	gnutls_cipher_hd_t cipher_hnd = NULL;
+	gnutls_datum_t enc_session_key;
+	int rc;
 
 	if (r->samr_handle.in.info21) {
 		return NT_STATUS_INVALID_PARAMETER_MIX;
@@ -454,7 +525,28 @@ static NTSTATUS libnet_SetPassword_samr_handle_24(struct libnet_context *ctx, TA
 		return status;
 	}
 
-	arcfour_crypt_blob(u_info.info24.password.data, 516, &session_key);
+	enc_session_key = (gnutls_datum_t) {
+		.data = session_key.data,
+		.size = session_key.length,
+	};
+
+	rc = gnutls_cipher_init(&cipher_hnd,
+				GNUTLS_CIPHER_ARCFOUR_128,
+				&enc_session_key,
+				NULL);
+	if (rc < 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_CRYPTO_SYSTEM_INVALID);
+		goto out;
+	}
+
+	rc = gnutls_cipher_encrypt(cipher_hnd,
+				   u_info.info24.password.data,
+				   516);
+	gnutls_cipher_deinit(cipher_hnd);
+	if (rc < 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_CRYPTO_SYSTEM_INVALID);
+		goto out;
+	}
 
 	sui.in.user_handle = r->samr_handle.in.user_handle;
 	sui.in.info = &u_info;
@@ -471,6 +563,9 @@ static NTSTATUS libnet_SetPassword_samr_handle_24(struct libnet_context *ctx, TA
 					  "SetUserInfo2 level 24 for [%s] failed: %s",
 					  r->samr_handle.in.account_name, nt_errstr(status));
 	}
+
+out:
+	data_blob_clear(&session_key);
 	return status;
 }
 
@@ -480,6 +575,9 @@ static NTSTATUS libnet_SetPassword_samr_handle_23(struct libnet_context *ctx, TA
 	struct samr_SetUserInfo2 sui;
 	union samr_UserInfo u_info;
 	DATA_BLOB session_key;
+	gnutls_cipher_hd_t cipher_hnd = NULL;
+	gnutls_datum_t _session_key;
+	int rc;
 
 	if (!r->samr_handle.in.info21) {
 		return NT_STATUS_INVALID_PARAMETER_MIX;
@@ -500,7 +598,29 @@ static NTSTATUS libnet_SetPassword_samr_handle_23(struct libnet_context *ctx, TA
 		return status;
 	}
 
-	arcfour_crypt_blob(u_info.info23.password.data, 516, &session_key);
+	_session_key = (gnutls_datum_t) {
+		.data = session_key.data,
+		.size = session_key.length,
+	};
+
+	rc = gnutls_cipher_init(&cipher_hnd,
+				GNUTLS_CIPHER_ARCFOUR_128,
+				&_session_key,
+				NULL);
+	if (rc < 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_CRYPTO_SYSTEM_INVALID);
+		goto out;
+	}
+
+	rc = gnutls_cipher_encrypt(cipher_hnd,
+				   u_info.info23.password.data,
+				   516);
+	data_blob_clear_free(&session_key);
+	gnutls_cipher_deinit(cipher_hnd);
+	if (rc < 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_CRYPTO_SYSTEM_INVALID);
+		goto out;
+	}
 
 	sui.in.user_handle = r->samr_handle.in.user_handle;
 	sui.in.info = &u_info;
@@ -517,6 +637,8 @@ static NTSTATUS libnet_SetPassword_samr_handle_23(struct libnet_context *ctx, TA
 					  "SetUserInfo2 level 23 for [%s] failed: %s",
 					  r->samr_handle.in.account_name, nt_errstr(status));
 	}
+
+out:
 	return status;
 }
 

@@ -432,7 +432,7 @@ static NTSTATUS smbd_smb2_inbuf_parse_compound(struct smbXsrv_connection *xconn,
 			tf_iov[1].iov_base = (void *)hdr;
 			tf_iov[1].iov_len = enc_len;
 
-			status = smb2_signing_decrypt_pdu(s->global->decryption_key_blob,
+			status = smb2_signing_decrypt_pdu(s->global->decryption_key,
 							  xconn->smb2.server.cipher,
 							  tf_iov, 2);
 			if (!NT_STATUS_IS_OK(status)) {
@@ -1336,10 +1336,14 @@ static NTSTATUS smb2_send_async_interim_response(const struct smbd_smb2_request 
 	 * we need to sign/encrypt here with the last/first key we remembered
 	 */
 	if (firsttf->iov_len == SMB2_TF_HDR_SIZE) {
-		status = smb2_signing_encrypt_pdu(req->first_key,
+		struct smb2_signing_key key = {
+			.blob = req->first_key,
+		};
+		status = smb2_signing_encrypt_pdu(&key,
 					xconn->smb2.server.cipher,
 					firsttf,
 					nreq->out.vector_count - first_idx);
+		smb2_signing_key_destructor(&key);
 		if (!NT_STATUS_IS_OK(status)) {
 			return status;
 		}
@@ -1596,15 +1600,11 @@ static void smbd_smb2_request_pending_timer(struct tevent_context *ev,
 	uint8_t *outhdr = NULL;
 	const uint8_t *inhdr = NULL;
 	uint8_t *tf = NULL;
-	size_t tf_len = 0;
 	uint8_t *hdr = NULL;
 	uint8_t *body = NULL;
 	uint8_t *dyn = NULL;
 	uint32_t flags = 0;
-	uint64_t session_id = 0;
 	uint64_t message_id = 0;
-	uint64_t nonce_high = 0;
-	uint64_t nonce_low = 0;
 	uint64_t async_id = 0;
 	NTSTATUS status;
 	bool ok;
@@ -1616,7 +1616,6 @@ static void smbd_smb2_request_pending_timer(struct tevent_context *ev,
 	outhdr = SMBD_SMB2_OUT_HDR_PTR(req);
 	flags = IVAL(outhdr, SMB2_HDR_FLAGS);
 	message_id = BVAL(outhdr, SMB2_HDR_MESSAGE_ID);
-	session_id = req->session->global->session_wire_id;
 
 	async_id = message_id; /* keep it simple for now... */
 
@@ -1642,13 +1641,16 @@ static void smbd_smb2_request_pending_timer(struct tevent_context *ev,
 	}
 
 	tf = state->buf + NBT_HDR_SIZE;
-	tf_len = SMB2_TF_HDR_SIZE;
 
 	hdr = tf + SMB2_TF_HDR_SIZE;
 	body = hdr + SMB2_HDR_BODY;
 	dyn = body + 8;
 
 	if (req->do_encryption) {
+		uint64_t nonce_high = 0;
+		uint64_t nonce_low = 0;
+		uint64_t session_id = req->session->global->session_wire_id;
+
 		status = smb2_get_new_nonce(req->session,
 					    &nonce_high,
 					    &nonce_low);
@@ -1657,12 +1659,12 @@ static void smbd_smb2_request_pending_timer(struct tevent_context *ev,
 							 nt_errstr(status));
 			return;
 		}
-	}
 
-	SIVAL(tf, SMB2_TF_PROTOCOL_ID, SMB2_TF_MAGIC);
-	SBVAL(tf, SMB2_TF_NONCE+0, nonce_low);
-	SBVAL(tf, SMB2_TF_NONCE+8, nonce_high);
-	SBVAL(tf, SMB2_TF_SESSION_ID, session_id);
+		SIVAL(tf, SMB2_TF_PROTOCOL_ID, SMB2_TF_MAGIC);
+		SBVAL(tf, SMB2_TF_NONCE+0, nonce_low);
+		SBVAL(tf, SMB2_TF_NONCE+8, nonce_high);
+		SBVAL(tf, SMB2_TF_SESSION_ID, session_id);
+	}
 
 	SIVAL(hdr, SMB2_HDR_PROTOCOL_ID, SMB2_MAGIC);
 	SSVAL(hdr, SMB2_HDR_LENGTH, SMB2_HDR_BODY);
@@ -1692,7 +1694,8 @@ static void smbd_smb2_request_pending_timer(struct tevent_context *ev,
 
 	if (req->do_encryption) {
 		state->vector[1+SMBD_SMB2_TF_IOV_OFS].iov_base   = tf;
-		state->vector[1+SMBD_SMB2_TF_IOV_OFS].iov_len    = tf_len;
+		state->vector[1+SMBD_SMB2_TF_IOV_OFS].iov_len    =
+							SMB2_TF_HDR_SIZE;
 	} else {
 		state->vector[1+SMBD_SMB2_TF_IOV_OFS].iov_base   = NULL;
 		state->vector[1+SMBD_SMB2_TF_IOV_OFS].iov_len    = 0;
@@ -1737,7 +1740,7 @@ static void smbd_smb2_request_pending_timer(struct tevent_context *ev,
 
 	if (req->do_encryption) {
 		struct smbXsrv_session *x = req->session;
-		DATA_BLOB encryption_key = x->global->encryption_key_blob;
+		struct smb2_signing_key *encryption_key = x->global->encryption_key;
 
 		status = smb2_signing_encrypt_pdu(encryption_key,
 					xconn->smb2.server.cipher,
@@ -1879,7 +1882,10 @@ static NTSTATUS smbd_smb2_request_check_tcon(struct smbd_smb2_request *req)
 		return status;
 	}
 
-	if (!change_to_user(tcon->compat, req->session->compat->vuid)) {
+	if (!change_to_user_and_service(
+		    tcon->compat,
+		    req->session->global->session_wire_id))
+	{
 		return NT_STATUS_ACCESS_DENIED;
 	}
 
@@ -2852,9 +2858,10 @@ static NTSTATUS smbd_smb2_request_reply(struct smbd_smb2_request *req)
 	    (firsttf->iov_len == 0) &&
 	    (req->first_key.length == 0) &&
 	    (req->session != NULL) &&
-	    (req->session->global->encryption_key_blob.length != 0))
+	    smb2_signing_key_valid(req->session->global->encryption_key))
 	{
-		DATA_BLOB encryption_key = req->session->global->encryption_key_blob;
+		struct smb2_signing_key *encryption_key =
+			req->session->global->encryption_key;
 		uint8_t *tf;
 		uint64_t session_id = req->session->global->session_wire_id;
 		uint64_t nonce_high;
@@ -2878,7 +2885,8 @@ static NTSTATUS smbd_smb2_request_reply(struct smbd_smb2_request *req)
 		 * we are sure that we do not change
 		 * the header again.
 		 */
-		req->first_key = data_blob_dup_talloc(req, encryption_key);
+		req->first_key = data_blob_dup_talloc(req,
+						      encryption_key->blob);
 		if (req->first_key.data == NULL) {
 			return NT_STATUS_NO_MEMORY;
 		}
@@ -2992,10 +3000,14 @@ static NTSTATUS smbd_smb2_request_reply(struct smbd_smb2_request *req)
 	 * now check if we need to sign the current response
 	 */
 	if (firsttf->iov_len == SMB2_TF_HDR_SIZE) {
-		status = smb2_signing_encrypt_pdu(req->first_key,
+		struct smb2_signing_key key = {
+			.blob = req->first_key,
+		};
+		status = smb2_signing_encrypt_pdu(&key,
 					xconn->smb2.server.cipher,
 					firsttf,
 					req->out.vector_count - first_idx);
+		smb2_signing_key_destructor(&key);
 		if (!NT_STATUS_IS_OK(status)) {
 			return status;
 		}
@@ -3138,13 +3150,20 @@ NTSTATUS smbd_smb2_request_done_ex(struct smbd_smb2_request *req,
 	struct iovec *outbody_v;
 	struct iovec *outdyn_v;
 	uint32_t next_command_ofs;
+	uint64_t mid;
 
-	DEBUG(10,("smbd_smb2_request_done_ex: "
-		  "idx[%d] status[%s] body[%u] dyn[%s:%u] at %s\n",
-		  req->current_idx, nt_errstr(status), (unsigned int)body.length,
-		  dyn ? "yes": "no",
+	outhdr = SMBD_SMB2_OUT_HDR_PTR(req);
+	mid = BVAL(outhdr, SMB2_HDR_MESSAGE_ID);
+
+	DBG_DEBUG("mid [%"PRIu64"] idx[%d] status[%s] "
+		  "body[%u] dyn[%s:%u] at %s\n",
+		  mid,
+		  req->current_idx,
+		  nt_errstr(status),
+		  (unsigned int)body.length,
+		  dyn ? "yes" : "no",
 		  (unsigned int)(dyn ? dyn->length : 0),
-		  location));
+		  location);
 
 	if (body.length < 2) {
 		return smbd_smb2_request_error(req, NT_STATUS_INTERNAL_ERROR);
@@ -3154,7 +3173,6 @@ NTSTATUS smbd_smb2_request_done_ex(struct smbd_smb2_request *req,
 		return smbd_smb2_request_error(req, NT_STATUS_INTERNAL_ERROR);
 	}
 
-	outhdr = SMBD_SMB2_OUT_HDR_PTR(req);
 	outbody_v = SMBD_SMB2_OUT_BODY_IOV(req);
 	outdyn_v = SMBD_SMB2_OUT_DYN_IOV(req);
 
@@ -3414,7 +3432,8 @@ static NTSTATUS smbd_smb2_send_break(struct smbXsrv_connection *xconn,
 	}
 
 	if (do_encryption) {
-		DATA_BLOB encryption_key = session->global->encryption_key_blob;
+		struct smb2_signing_key *encryption_key =
+			session->global->encryption_key;
 
 		status = smb2_signing_encrypt_pdu(encryption_key,
 					xconn->smb2.server.cipher,

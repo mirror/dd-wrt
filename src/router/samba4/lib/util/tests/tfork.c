@@ -267,7 +267,7 @@ static bool test_tfork_process_hierarchy(struct torture_context *tctx)
 
 		ret = sscanf(line, "%d", &ppid);
 		torture_assert_goto(tctx, ret == 1, ok, child_fail, "sscanf failed\n");
-		torture_assert_goto(tctx, ppid == pid, ok, child_fail, "process hierachy not rooted at caller\n");
+		torture_assert_goto(tctx, ppid == pid, ok, child_fail, "process hierarchy not rooted at caller\n");
 
 		_exit(0);
 
@@ -656,6 +656,9 @@ static bool test_tfork_event_file_handle(struct torture_context *tctx)
 			    "tfork process 2 event fd not readable\n");
 
 done:
+	free(t1);
+	free(t2);
+
 	return ok;
 }
 
@@ -740,7 +743,7 @@ static bool test_tfork_status_handle(struct torture_context *tctx)
 	status = tfork_status(&t2, false);
 	ok = status == -1;
 	torture_assert_goto(tctx, ok, ok, done,
-			    "tfork status avaiable for non terminated "
+			    "tfork status available for non terminated "
 			    "process 2\n");
 	/* Is the event fd open? */
 	fd = dup(ev2_fd);

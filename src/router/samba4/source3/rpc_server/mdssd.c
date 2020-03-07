@@ -94,8 +94,7 @@ static void mdssd_sig_term_handler(struct tevent_context *ev,
 {
 	shutdown_rpc_module("mdssvc");
 
-	DEBUG(0, ("termination signal\n"));
-	exit(0);
+	exit_server_cleanly("termination signal");
 }
 
 static void mdssd_setup_sig_term_handler(struct tevent_context *ev_ctx)
@@ -108,8 +107,7 @@ static void mdssd_setup_sig_term_handler(struct tevent_context *ev_ctx)
 			       mdssd_sig_term_handler,
 			       NULL);
 	if (!se) {
-		DEBUG(0, ("failed to setup SIGTERM handler\n"));
-		exit(1);
+		exit_server("failed to setup SIGTERM handler");
 	}
 }
 
@@ -224,9 +222,9 @@ static bool mdssd_child_init(struct tevent_context *ev_ctx,
 	messaging_register(msg_ctx, ev_ctx,
 			   MSG_PREFORK_PARENT_EVENT, parent_ping);
 
-	ok = init_rpc_module("mdssvc", NULL);
+	ok = setup_rpc_module(ev_ctx, msg_ctx, "mdssvc");
 	if (!ok) {
-		DBG_ERR("Failed to de-intialize RPC\n");
+		DBG_ERR("Failed to initialize mdssvc module\n");
 		return false;
 	}
 
@@ -238,7 +236,7 @@ struct mdssd_children_data {
 	struct messaging_context *msg_ctx;
 	struct pf_worker_data *pf;
 	int listen_fd_size;
-	int *listen_fds;
+	struct pf_listen_fd *listen_fds;
 };
 
 static void mdssd_next_client(void *pvt);
@@ -248,7 +246,7 @@ static int mdssd_children_main(struct tevent_context *ev_ctx,
 			       struct pf_worker_data *pf,
 			       int child_id,
 			       int listen_fd_size,
-			       int *listen_fds,
+			       struct pf_listen_fd *listen_fds,
 			       void *private_data)
 {
 	struct mdssd_children_data *data;
@@ -286,7 +284,7 @@ static int mdssd_children_main(struct tevent_context *ev_ctx,
 	return ret;
 }
 
-static void mdssd_client_terminated(void *pvt)
+static void mdssd_client_terminated(struct pipes_struct *p, void *pvt)
 {
 	struct mdssd_children_data *data;
 
@@ -360,6 +358,7 @@ static void mdssd_handle_client(struct tevent_req *req)
 	rc = prefork_listen_recv(req,
 				 tmp_ctx,
 				 &sd,
+				 NULL,
 				 &srv_addr,
 				 &cli_addr);
 
@@ -390,7 +389,8 @@ static void mdssd_handle_client(struct tevent_req *req)
 				    cli_addr,
 				    srv_addr,
 				    sd,
-				    NULL);
+				    mdssd_client_terminated,
+				    data);
 	} else if (tsocket_address_is_unix(srv_addr)) {
 		const char *p;
 		const char *b;
@@ -409,12 +409,15 @@ static void mdssd_handle_client(struct tevent_req *req)
 		}
 
 		if (strstr(p, "/np/")) {
-			named_pipe_accept_function(data->ev_ctx,
-						   data->msg_ctx,
-						   b,
-						   sd,
-						   mdssd_client_terminated,
-						   data);
+			dcerpc_ncacn_accept(data->ev_ctx,
+					    data->msg_ctx,
+					    NCACN_NP,
+					    b,
+					    NULL,  /* remote client address */
+					    NULL,  /* local server address */
+					    sd,
+					    mdssd_client_terminated,
+					    data);
 		} else {
 			dcerpc_ncacn_accept(data->ev_ctx,
 					    data->msg_ctx,
@@ -423,7 +426,8 @@ static void mdssd_handle_client(struct tevent_req *req)
 					    cli_addr,
 					    srv_addr,
 					    sd,
-					    NULL);
+					    mdssd_client_terminated,
+					    data);
 		}
 	} else {
 		DEBUG(0, ("ERROR: Unsupported socket!\n"));
@@ -528,7 +532,7 @@ static void mdssd_check_children(struct tevent_context *ev_ctx,
 
 static bool mdssd_create_sockets(struct tevent_context *ev_ctx,
 				 struct messaging_context *msg_ctx,
-				 int *listen_fd,
+				 struct pf_listen_fd *listen_fd,
 				 int *listen_fd_size)
 {
 	struct dcerpc_binding_vector *v, *v_orig;
@@ -549,8 +553,8 @@ static bool mdssd_create_sockets(struct tevent_context *ev_ctx,
 	}
 
 	/* mdssvc */
-	fd = create_named_pipe_socket("mdssvc");
-	if (fd < 0) {
+	status = dcesrv_create_ncacn_np_socket("mdssvc", &fd);
+	if (!NT_STATUS_IS_OK(status)) {
 		goto done;
 	}
 
@@ -558,11 +562,13 @@ static bool mdssd_create_sockets(struct tevent_context *ev_ctx,
 	if (rc == -1) {
 		goto done;
 	}
-	listen_fd[*listen_fd_size] = fd;
+	listen_fd[*listen_fd_size].fd = fd;
+	listen_fd[*listen_fd_size].fd_data = NULL;
 	(*listen_fd_size)++;
+	fd = -1;
 
-	fd = create_dcerpc_ncalrpc_socket("mdssvc");
-	if (fd < 0) {
+	status = dcesrv_create_ncalrpc_socket("mdssvc", &fd);
+	if (!NT_STATUS_IS_OK(status)) {
 		goto done;
 	}
 
@@ -570,7 +576,8 @@ static bool mdssd_create_sockets(struct tevent_context *ev_ctx,
 	if (rc == -1) {
 		goto done;
 	}
-	listen_fd[*listen_fd_size] = fd;
+	listen_fd[*listen_fd_size].fd = fd;
+	listen_fd[*listen_fd_size].fd_data = NULL;
 	(*listen_fd_size)++;
 	fd = -1;
 
@@ -607,7 +614,7 @@ void start_mdssd(struct tevent_context *ev_ctx,
 		 struct messaging_context *msg_ctx)
 {
 	NTSTATUS status;
-	int listen_fd[MDSSD_MAX_SOCKETS];
+	struct pf_listen_fd listen_fd[MDSSD_MAX_SOCKETS];
 	int listen_fd_size = 0;
 	pid_t pid;
 	int rc;
@@ -687,11 +694,6 @@ void start_mdssd(struct tevent_context *ev_ctx,
 			   mdssd_smb_conf_updated);
 	messaging_register(msg_ctx, ev_ctx,
 			   MSG_PREFORK_CHILD_EVENT, child_ping);
-
-	ok = setup_rpc_module(ev_ctx, msg_ctx, "mdssvc");
-	if (!ok) {
-		exit(1);
-	}
 
 	ok = mdssd_setup_children_monitor(ev_ctx, msg_ctx);
 	if (!ok) {

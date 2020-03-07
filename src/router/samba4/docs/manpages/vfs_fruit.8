@@ -2,12 +2,12 @@
 .\"     Title: vfs_fruit
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/14/2020
+.\"      Date: 03/03/2020
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.11.5
+.\"    Source: Samba 4.12.0
 .\"  Language: English
 .\"
-.TH "VFS_FRUIT" "8" "01/14/2020" "Samba 4\&.11\&.5" "System Administration tools"
+.TH "VFS_FRUIT" "8" "03/03/2020" "Samba 4\&.12\&.0" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -223,7 +223,7 @@ stream (experimental)
 \fIWarning: \fR
 this option should not be used with the
 \fIstreams_xattr\fR
-module due to the extended attributes size limitations of most filesytems\&.
+module due to the extended attributes size limitations of most filesystems\&.
 .RE
 .sp
 .RE
@@ -313,7 +313,7 @@ fruit:time machine max size = SIZE [K|M|G|T|P]
 .RS 4
 Useful for Time Machine: limits the reported disksize, thus preventing Time Machine from using the whole real disk space for backup\&. The option takes a number plus an optional unit\&.
 .sp
-\fIIMPORTANT\fR: This is an approximated calculation that only takes into account the contents of Time Machine sparsebundle images\&. Therefor you
+\fIIMPORTANT\fR: This is an approximated calculation that only takes into account the contents of Time Machine sparsebundle images\&. Therefore you
 \fIMUST NOT\fR
 use this volume to store other content when using this option, because it would NOT be accounted\&.
 .sp

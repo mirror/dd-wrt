@@ -8,7 +8,7 @@ from waflib.Configure import conf
 from waflib import ConfigSet
 
 from samba_bundled import BUILTIN_LIBRARY
-from samba_utils import LOCAL_CACHE, TO_LIST, get_tgt_list, unique_list, os_path_relpath
+from samba_utils import LOCAL_CACHE, TO_LIST, get_tgt_list, unique_list
 from samba_autoconf import library_flags
 
 @conf
@@ -172,7 +172,7 @@ def build_includes(self):
 
     mypath = self.path.abspath(bld.env)
     for inc in inc_abs:
-        relpath = os_path_relpath(inc, mypath)
+        relpath = os.path.relpath(inc, mypath)
         includes.append(relpath)
 
     if getattr(self, 'local_include', True) and not getattr(self, 'local_include_first', True):
@@ -188,7 +188,7 @@ def build_includes(self):
             includes_top.append(i)
             continue
         absinc = os.path.join(self.path.abspath(), i)
-        relinc = os_path_relpath(absinc, self.bld.srcnode.abspath())
+        relinc = os.path.relpath(absinc, self.bld.srcnode.abspath())
         includes_top.append('#' + relinc)
 
     self.includes = unique_list(includes_top)
@@ -253,10 +253,8 @@ def add_init_functions(self):
                 cflags.append('-DSTATIC_%s_MODULES_PROTO=%s' % (m, proto))
         else:
             cflags.append('-DSTATIC_%s_MODULES=%s' % (m, ','.join(init_fn_list) + ',' + sentinel))
-            proto=''
-            for f in init_fn_list:
-                proto += '_MODULE_PROTO(%s)' % f
-            proto += "extern void __%s_dummy_module_proto(void)" % (m)
+            proto = "".join('_MODULE_PROTO(%s)' % f for f in init_fn_list) +\
+                    "extern void __%s_dummy_module_proto(void)" % (m)
             cflags.append('-DSTATIC_%s_MODULES_PROTO=%s' % (m, proto))
     self.cflags = cflags
 
@@ -269,7 +267,7 @@ def check_duplicate_sources(bld, tgt_list):
 
     for t in tgt_list:
         source_list = TO_LIST(getattr(t, 'source', ''))
-        tpath = os.path.normpath(os_path_relpath(t.path.abspath(bld.env), t.env.BUILD_DIRECTORY + '/default'))
+        tpath = os.path.normpath(os.path.relpath(t.path.abspath(bld.env), t.env.BUILD_DIRECTORY + '/default'))
         obj_sources = set()
         for s in source_list:
             if not isinstance(s, str):

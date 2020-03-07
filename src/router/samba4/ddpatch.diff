@@ -1,0 +1,1800 @@
+diff -urpN samba-4.11.5/auth/credentials/tests/bind.py ddsamba4/auth/credentials/tests/bind.py
+--- samba-4.11.5/auth/credentials/tests/bind.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/auth/credentials/tests/bind.py	2020-03-07 16:13:50.758339953 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # -*- coding: utf-8 -*-
+ # This is unit with tests for LDAP access checks
+ 
+diff -urpN samba-4.11.5/bootstrap/config.py ddsamba4/bootstrap/config.py
+--- samba-4.11.5/bootstrap/config.py	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/bootstrap/config.py	2020-03-07 16:13:51.128334300 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # Copyright (C) Catalyst.Net Ltd 2019
+ #
+@@ -138,7 +138,7 @@ PKGS = [
+     ('python-dnspython', 'python-dns'),
+     ('python-pexpect', ''),  # for wintest only
+ 
+-    ('python3', 'python3'),
++    ('/usr/bin/python3', 'python3'),
+     ('python3-dev', 'python3-devel'),
+     ('python3-dbg', ''),
+     ('python3-iso8601', ''),
+@@ -434,7 +434,7 @@ RPM_DISTS = {
+         'bootstrap': YUM_BOOTSTRAP,
+         'replace': {
+             'lsb-release': 'redhat-lsb',
+-            'python3': 'python36',
++            '/usr/bin/python3': 'python36',
+             'python3-devel': 'python36-devel',
+             'python2-gpg': 'pygpgme',
+             'python3-gpg': '',  # no python3-gpg yet
+@@ -457,7 +457,7 @@ RPM_DISTS = {
+         'bootstrap': YUM_BOOTSTRAP,
+         'replace': {
+             'lsb-release': 'redhat-lsb',
+-            'python3': 'python36',
++            '/usr/bin/python3': 'python36',
+             'python3-crypto': 'python36-crypto',
+             'python3-devel': 'python36-devel',
+             'python3-dns': 'python36-dns',
+diff -urpN samba-4.11.5/bootstrap/template.py ddsamba4/bootstrap/template.py
+--- samba-4.11.5/bootstrap/template.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/bootstrap/template.py	2020-03-07 16:13:51.148333994 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # Copyright (C) Catalyst.Net Ltd 2019
+ #
+diff -urpN samba-4.11.5/buildtools/bin/waf ddsamba4/buildtools/bin/waf
+--- samba-4.11.5/buildtools/bin/waf	2019-12-16 18:59:07.000000000 +0400
++++ ddsamba4/buildtools/bin/waf	2020-03-07 16:13:50.488344076 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # encoding: latin-1
+ # Thomas Nagy, 2005-2018
+ #
+diff -urpN samba-4.11.5/buildtools/examples/run_on_target.py ddsamba4/buildtools/examples/run_on_target.py
+--- samba-4.11.5/buildtools/examples/run_on_target.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/buildtools/examples/run_on_target.py	2020-03-07 16:13:50.488344076 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ #
+ # Sample run-on-target script
+diff -urpN samba-4.11.5/buildtools/wafsamba/samba_python.py ddsamba4/buildtools/wafsamba/samba_python.py
+--- samba-4.11.5/buildtools/wafsamba/samba_python.py	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/buildtools/wafsamba/samba_python.py	2020-03-07 16:13:50.478344228 +0400
+@@ -17,10 +17,10 @@ def SAMBA_CHECK_PYTHON(conf, version=(3,
+ 
+     interpreters = []
+ 
+-    conf.find_program('python3', var='PYTHON',
++    conf.find_program('/usr/bin/python3', var='PYTHON',
+                       mandatory=not conf.env.disable_python)
+     conf.load('python')
+-    path_python = conf.find_program('python3')
++    path_python = conf.find_program('/usr/bin/python3')
+ 
+     conf.env.PYTHON_SPECIFIED = (conf.env.PYTHON != path_python)
+     conf.check_python_version(version)
+diff -urpN samba-4.11.5/config/samba4.nvramconfig ddsamba4/config/samba4.nvramconfig
+--- samba-4.11.5/config/samba4.nvramconfig	1970-01-01 04:00:00.000000000 +0400
++++ ddsamba4/config/samba4.nvramconfig	2020-03-07 16:13:47.908383491 +0400
+@@ -0,0 +1,15 @@
++ "samba3_enable"  "Samba4 Server"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
++ "samba3_pub"  "Samba4 Public" "CHOICE" "2"  "0"  "1"  "FALSE" "0"
++ "samba3_srvstr"  "Samba4 Server String"  "NULL"  "FALSE" "0"
++ "samba3_workgrp"  "Samba4 Workgroup"  "NULL"  "FALSE" "0"
++ "samba3_dirpath"  "Samba4 Dir Path"  "NULL"  "FALSE" "0"
++ "samba3_usr1"  "Samba4 User1"  "NULL"  "FALSE" "0"
++ "samba3_pass1"  "Samba4 Pass1"  "NULL"  "FALSE" "0"
++ "samba3_usr2"  "Samba4 User2"  "NULL"  "FALSE" "0"
++ "samba3_pass2"  "Samba4 Pass2"  "NULL"  "FALSE" "0"
++ "samba3_pubacl"  "Samba4 Public ACL" "CHOICE" "2"  "0"  "1"  "FALSE" "0"
++ "samba3_advanced"  "Samba4 Advanced" "CHOICE" "2"  "0"  "1"  "FALSE" "0"
++ "samba3_encrypt"  "Samba4 SMB Encryption" "CHOICE" "4"  "off"  "auto" "desired" "required"  "FALSE" "0"
++ "samba3_min_proto"  "Samba4 protocol version"  "CHOICE" "13" "LANMAN1" "LANMAN2" "NT1" "SMB2" "SMB2_02" "SMB2_10" "SMB2_22" "SMB2_24" "SMB3" "SMB3_00" "SMB3_02" "SMB3_10" "SMB3_11" "FALSE" "0"
++ "samba3_max_proto"  "Samba4 protocol version"  "CHOICE" "13" "LANMAN1" "LANMAN2" "NT1" "SMB2" "SMB2_02" "SMB2_10" "SMB2_22" "SMB2_24" "SMB3" "SMB3_00" "SMB3_02" "SMB3_10" "SMB3_11" "FALSE" "0"
++ "samba3_conf"  "Samba4 Config"  "NULL"  "FALSE" "0"
+diff -urpN samba-4.11.5/config/samba4.startup ddsamba4/config/samba4.startup
+--- samba-4.11.5/config/samba4.startup	1970-01-01 04:00:00.000000000 +0400
++++ ddsamba4/config/samba4.startup	2020-03-07 16:13:47.908383491 +0400
+@@ -0,0 +1,83 @@
++#!/bin/sh
++
++
++if [ "$(nvram get samba3_enable)" = "1" ]; then 
++
++grep -q nobody /etc/passwd || echo "nobody:*:65534:65534:nobody:/var:/bin/false" >> /etc/passwd
++
++[ -d /var/samba ] || mkdir /var/samba
++
++touch /var/samba/smbpasswd
++
++USR1="$(nvram get samba3_usr1)"
++PASS1="$(nvram get samba3_pass1)"
++USR2="$(nvram get samba3_usr2)"
++PASS2="$(nvram get samba3_pass2)"
++
++if [ "$(nvram get samba3_usr1)" != "" ]; then
++grep -q $USR1 /etc/passwd || echo $USR1":*:1000:1000:"$USR1":/var:/bin/false" >> /etc/passwd
++smbpasswd $USR1 $PASS1
++fi
++
++if [ "$(nvram get samba3_usr2)" != "" ]; then
++grep -q $USR2 /etc/passwd || echo $USR2":*:1001:1001:"$USR2":/var:/bin/false" >> /etc/passwd
++smbpasswd $USR2 $PASS2
++fi
++
++WORKGROUP="$(nvram get samba3_workgrp)"
++SRVSTRING="$(nvram get samba3_srvstr)"
++DIRPATH="$(nvram get samba3_dirpath)"
++ACL="No"
++
++if [ "$(nvram get samba3_pubacl)" = "1" ]; then
++ACL="Yes"
++fi
++
++SMB_CONF=$( cat <<EOF
++[global]
++server string = $SRVSTRING
++workgroup = $WORKGROUP
++bind interfaces only = Yes
++map to guest = Bad User
++smb passwd file = /var/samba/smbpasswd
++private dir = /var/samba
++passdb backend = smbpasswd
++log file = /var/smbd.log
++max log size = 1000
++socket options = TCP_NODELAY
++printing = none
++load printers = No
++usershare allow guests = Yes
++EOF
++)
++
++PUBLIC=$( cat <<EOF
++
++[Public]
++comment = Public Share
++path = $DIRPATH
++read only = $ACL
++guest ok = Yes
++force user = root
++EOF
++)
++
++SMB_CONF_CUSTOM="$(nvram get samba3_conf)"
++
++if [ "$(nvram get samba3_conf)" != "" ] && [ "$(nvram get samba3_advanced)" = "1" ]; then
++  echo "$SMB_CONF_CUSTOM" > /tmp/smb.conf
++  if [ "$(nvram get samba3_pub)" = "1" ]; then
++    echo "$PUBLIC" >> /tmp/smb.conf
++  fi
++else
++  echo "$SMB_CONF" > /tmp/smb.conf
++  echo "$PUBLIC" >> /tmp/smb.conf
++fi
++chmod 777 /jffs
++
++/usr/sbin/nmbd -D --configfile=/tmp/smb.conf
++/usr/sbin/smbd -D --configfile=/tmp/smb.conf
++
++fi
++
++
+diff -urpN samba-4.11.5/config/samba4.webnas ddsamba4/config/samba4.webnas
+--- samba-4.11.5/config/samba4.webnas	1970-01-01 04:00:00.000000000 +0400
++++ ddsamba4/config/samba4.webnas	2020-03-07 16:13:47.908383491 +0400
+@@ -0,0 +1,65 @@
++<h2><% tran("nas.samba3"); %></h2>
++<fieldset>
++  <legend><% tran("service.samba3_srv"); %></legend>
++	<div class="setting">
++		<div class="label"><% tran("service.samba3_srv"); %></div>
++		<input class="spaceradio" type="radio" name="samba3_enable" value="1" <% nvc("samba3_enable", "1"); %> onclick="show_layer_ext(this, 'samba3config', true)" /><% tran("share.enable"); %>&nbsp;
++		<input class="spaceradio" type="radio" name="samba3_enable" value="0" <% nvc("samba3_enable", "0"); %> onclick="show_layer_ext(this, 'samba3config', false)"/><% tran("share.disable"); %>
++	</div>
++						
++	<div id="samba3config">	
++		<div class="setting">
++			<div class="label"><% tran("service.samba3_srvstr"); %></div>
++			<input maxlength="32" size="16" name="samba3_srvstr" value="<% nvg("samba3_srvstr"); %>" />
++		</div>
++		<div class="setting">
++			<div class="label"><% tran("service.samba3_workgrp"); %></div>
++			<input maxlength="32" size="16" name="samba3_workgrp" value="<% nvg("samba3_workgrp"); %>" />
++		</div>
++		<div class="setting">
++			<div class="label"><% tran("service.samba3_min_proto"); %></div>
++				<select name="samba3_min_proto" >
++					<option value="LANMAN1" <% nvsm("samba3_min_proto", "LANMAN1", "selected"); %> >LANMAN 1.0</option>
++					<option value="LANMAN2" <% nvsm("samba3_min_proto", "LANMAN2", "selected"); %> >LANMAN 2.0</option>
++					<option value="NT1" <% nvsm("samba3_min_proto", "NT1", "selected"); %> >NT 1.0</option>
++					<option value="SMB2" <% nvsm("samba3_min_proto", "SMB2", "selected"); %> >SMB 2</option>
++					<option value="SMB2_02" <% nvsm("samba3_min_proto", "SMB2_02", "selected"); %> >SMB 2.02</option>
++					<option value="SMB2_10" <% nvsm("samba3_min_proto", "SMB2_10", "selected"); %> >SMB 2.10</option>
++					<option value="SMB2_22" <% nvsm("samba3_min_proto", "SMB2_22", "selected"); %> >SMB 2.22</option>
++					<option value="SMB2_24" <% nvsm("samba3_min_proto", "SMB2_24", "selected"); %> >SMB 2.24</option>
++					<option value="SMB3" <% nvsm("samba3_min_proto", "SMB3", "selected"); %> >SMB 3</option>
++					<option value="SMB3_00" <% nvsm("samba3_min_proto", "SMB3_00", "selected"); %> >SMB 3.00</option>
++					<option value="SMB3_02" <% nvsm("samba3_min_proto", "SMB3_02", "selected"); %> >SMB 3.02</option>
++					<option value="SMB3_10" <% nvsm("samba3_min_proto", "SMB3_10", "selected"); %> >SMB 3.10</option>
++					<option value="SMB3_11" <% nvsm("samba3_min_proto", "SMB3_11", "selected"); %> >SMB 3.11</option>
++				</select>
++		</div>
++		<div class="setting">
++			<div class="label"><% tran("service.samba3_max_proto"); %></div>
++				<select name="samba3_max_proto" >
++					<option value="LANMAN1" <% nvsm("samba3_max_proto", "LANMAN1", "selected"); %> >LANMAN 1.0</option>
++					<option value="LANMAN2" <% nvsm("samba3_max_proto", "LANMAN2", "selected"); %> >LANMAN 2.0</option>
++					<option value="NT1" <% nvsm("samba3_max_proto", "NT1", "selected"); %> >NT 1.0</option>
++					<option value="SMB2" <% nvsm("samba3_max_proto", "SMB2", "selected"); %> >SMB 2</option>
++					<option value="SMB2_02" <% nvsm("samba3_max_proto", "SMB2_02", "selected"); %> >SMB 2.02</option>
++					<option value="SMB2_10" <% nvsm("samba3_max_proto", "SMB2_10", "selected"); %> >SMB 2.10</option>
++					<option value="SMB2_22" <% nvsm("samba3_max_proto", "SMB2_22", "selected"); %> >SMB 2.22</option>
++					<option value="SMB2_24" <% nvsm("samba3_max_proto", "SMB2_24", "selected"); %> >SMB 2.24</option>
++					<option value="SMB3" <% nvsm("samba3_max_proto", "SMB3", "selected"); %> >SMB 3</option>
++					<option value="SMB3_00" <% nvsm("samba3_max_proto", "SMB3_00", "selected"); %> >SMB 3.00</option>
++					<option value="SMB3_02" <% nvsm("samba3_max_proto", "SMB3_02", "selected"); %> >SMB 3.02</option>
++					<option value="SMB3_10" <% nvsm("samba3_max_proto", "SMB3_10", "selected"); %> >SMB 3.10</option>
++					<option value="SMB3_11" <% nvsm("samba3_max_proto", "SMB3_11", "selected"); %> >SMB 3.11</option>
++				</select>
++		</div>
++		<div class="setting">
++			<div class="label"><% tran("service.samba3_encryption"); %></div>
++				<select name="samba3_encrypt" >
++					<option value="off" <% nvsm("samba3_encrypt", "off", "selected"); %> ><% tran("share.off"); %></option>
++					<option value="auto" <% nvsm("samba3_encrypt", "auto", "selected"); %> ><% tran("share.auto"); %></option>
++					<option value="desired" <% nvsm("samba3_encrypt", "desired", "selected"); %> ><% tran("share.desired"); %></option>
++					<option value="required" <% nvsm("samba3_encrypt", "required", "selected"); %> ><% tran("share.required"); %></option>
++				</select>
++		</div>
++	</div>
++</fieldset><br />
+diff -urpN samba-4.11.5/examples/logon/ntlogon/ntlogon.py ddsamba4/examples/logon/ntlogon/ntlogon.py
+--- samba-4.11.5/examples/logon/ntlogon/ntlogon.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/examples/logon/ntlogon/ntlogon.py	2020-03-07 16:13:51.378330481 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """
+ ntlogon.py written by Timothy (rhacer) Grant
+ 
+diff -urpN samba-4.11.5/lib/ldb/tests/python/api.py ddsamba4/lib/ldb/tests/python/api.py
+--- samba-4.11.5/lib/ldb/tests/python/api.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/lib/ldb/tests/python/api.py	2020-03-07 16:13:50.798339343 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # Simple tests for the ldb python bindings.
+ # Copyright (C) 2007 Jelmer Vernooij <jelmer@samba.org>
+ 
+diff -urpN samba-4.11.5/lib/ldb/tests/python/index.py ddsamba4/lib/ldb/tests/python/index.py
+--- samba-4.11.5/lib/ldb/tests/python/index.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/lib/ldb/tests/python/index.py	2020-03-07 16:13:50.798339343 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ #
+ # Tests for truncated index keys
+ #
+diff -urpN samba-4.11.5/lib/ldb/wscript ddsamba4/lib/ldb/wscript
+--- samba-4.11.5/lib/ldb/wscript	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/lib/ldb/wscript	2020-03-07 16:13:50.878338118 +0400
+@@ -143,7 +143,7 @@ def configure(conf):
+         conf.DEFINE('EXPECTED_SYSTEM_LDB_VERSION_RELEASE', int(v[2]))
+ 
+     if conf.env.standalone_ldb:
+-        conf.CHECK_XSLTPROC_MANPAGES()
++        #conf.CHECK_XSLTPROC_MANPAGES()
+ 
+         # we need this for the ldap backend
+         if conf.CHECK_FUNCS_IN('ber_flush ldap_open ldap_initialize', 'lber ldap', headers='lber.h ldap.h'):
+diff -urpN samba-4.11.5/lib/ldb-samba/tests/index.py ddsamba4/lib/ldb-samba/tests/index.py
+--- samba-4.11.5/lib/ldb-samba/tests/index.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/lib/ldb-samba/tests/index.py	2020-03-07 16:13:51.118334452 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ #
+ # Tests for comparison expressions on indexed keys
+ #
+diff -urpN samba-4.11.5/lib/ldb-samba/tests/match_rules.py ddsamba4/lib/ldb-samba/tests/match_rules.py
+--- samba-4.11.5/lib/ldb-samba/tests/match_rules.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/lib/ldb-samba/tests/match_rules.py	2020-03-07 16:13:51.118334452 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ import optparse
+ import sys
+diff -urpN samba-4.11.5/lib/replace/wscript ddsamba4/lib/replace/wscript
+--- samba-4.11.5/lib/replace/wscript	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/lib/replace/wscript	2020-03-07 16:13:50.998336287 +0400
+@@ -404,22 +404,13 @@ def configure(conf):
+ 
+     conf.CHECK_FUNCS('prctl dirname basename')
+ 
+-    strlcpy_in_bsd = False
++    # Not checking for libbsd
++    conf.CHECK_FUNCS('strlcpy strlcat')
++    conf.CHECK_FUNCS('getpeereid')
++    conf.CHECK_FUNCS_IN('setproctitle', 'setproctitle', headers='setproctitle.h')
++    conf.CHECK_FUNCS('setproctitle_init')
+ 
+-    # libbsd on some platforms provides strlcpy and strlcat
+-    if not conf.CHECK_FUNCS('strlcpy strlcat'):
+-        if conf.CHECK_FUNCS_IN('strlcpy strlcat', 'bsd', headers='bsd/string.h',
+-                               checklibc=True):
+-            strlcpy_in_bsd = True
+-    if not conf.CHECK_FUNCS('getpeereid'):
+-        conf.CHECK_FUNCS_IN('getpeereid', 'bsd', headers='sys/types.h bsd/unistd.h')
+-    if not conf.CHECK_FUNCS_IN('setproctitle', 'setproctitle', headers='setproctitle.h'):
+-        conf.CHECK_FUNCS_IN('setproctitle', 'bsd', headers='sys/types.h bsd/unistd.h')
+-    if not conf.CHECK_FUNCS('setproctitle_init'):
+-        conf.CHECK_FUNCS_IN('setproctitle_init', 'bsd', headers='sys/types.h bsd/unistd.h')
+-
+-    if not conf.CHECK_FUNCS('closefrom'):
+-        conf.CHECK_FUNCS_IN('closefrom', 'bsd', headers='bsd/unistd.h')
++    conf.CHECK_FUNCS('closefrom')
+ 
+     conf.CHECK_CODE('''
+                 struct ucred cred;
+@@ -796,9 +787,6 @@ def configure(conf):
+ 
+     # look for a method of finding the list of network interfaces
+     for method in ['HAVE_IFACE_GETIFADDRS', 'HAVE_IFACE_AIX', 'HAVE_IFACE_IFCONF', 'HAVE_IFACE_IFREQ']:
+-        bsd_for_strlcpy = ''
+-        if strlcpy_in_bsd:
+-            bsd_for_strlcpy = ' bsd'
+         if conf.CHECK_CODE('''
+                            #define %s 1
+                            #define NO_CONFIG_H 1
+@@ -811,7 +799,7 @@ def configure(conf):
+                            #include "tests/getifaddrs.c"
+                            ''' % method,
+                            method,
+-                           lib='nsl socket' + bsd_for_strlcpy,
++                           lib='nsl socket',
+                            addmain=False,
+                            execute=True):
+             break
+@@ -859,7 +847,6 @@ def build(bld):
+                 break
+ 
+     extra_libs = ''
+-    if bld.CONFIG_SET('HAVE_LIBBSD'): extra_libs += ' bsd'
+     if bld.CONFIG_SET('HAVE_LIBRT'): extra_libs += ' rt'
+     if bld.CONFIG_SET('REPLACE_REQUIRES_LIBSOCKET_LIBNSL'): extra_libs += ' socket nsl'
+ 
+diff -urpN samba-4.11.5/lib/talloc/test_pytalloc.py ddsamba4/lib/talloc/test_pytalloc.py
+--- samba-4.11.5/lib/talloc/test_pytalloc.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/lib/talloc/test_pytalloc.py	2020-03-07 16:13:51.098334757 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # Simple tests for the talloc python bindings.
+ # Copyright (C) 2015 Petr Viktorin <pviktori@redhat.com>
+ 
+diff -urpN samba-4.11.5/lib/talloc/wscript ddsamba4/lib/talloc/wscript
+--- samba-4.11.5/lib/talloc/wscript	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/lib/talloc/wscript	2020-03-07 16:13:51.088334910 +0400
+@@ -48,7 +48,7 @@ def configure(conf):
+         conf.env.PKGCONFIGDIR = '${LIBDIR}/pkgconfig'
+         conf.env.TALLOC_VERSION = VERSION
+ 
+-    conf.CHECK_XSLTPROC_MANPAGES()
++    #conf.CHECK_XSLTPROC_MANPAGES()
+ 
+     conf.CHECK_HEADERS('sys/auxv.h')
+     conf.CHECK_FUNCS('getauxval')
+diff -urpN samba-4.11.5/lib/tdb/python/tdbdump.py ddsamba4/lib/tdb/python/tdbdump.py
+--- samba-4.11.5/lib/tdb/python/tdbdump.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/lib/tdb/python/tdbdump.py	2020-03-07 16:13:50.928337355 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # Trivial reimplementation of tdbdump in Python
+ 
+ from __future__ import print_function
+diff -urpN samba-4.11.5/lib/tdb/python/tests/simple.py ddsamba4/lib/tdb/python/tests/simple.py
+--- samba-4.11.5/lib/tdb/python/tests/simple.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/lib/tdb/python/tests/simple.py	2020-03-07 16:13:50.928337355 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # Some simple tests for the Python bindings for TDB
+ # Note that this tests the interface of the Python bindings
+ # It does not test tdb itself.
+diff -urpN samba-4.11.5/lib/tdb/wscript ddsamba4/lib/tdb/wscript
+--- samba-4.11.5/lib/tdb/wscript	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/lib/tdb/wscript	2020-03-07 16:13:50.948337050 +0400
+@@ -95,7 +95,7 @@ def configure(conf):
+         not conf.env.disable_tdb_mutex_locking):
+         conf.define('USE_TDB_MUTEX_LOCKING', 1)
+ 
+-    conf.CHECK_XSLTPROC_MANPAGES()
++    #conf.CHECK_XSLTPROC_MANPAGES()
+ 
+     conf.SAMBA_CHECK_PYTHON()
+     conf.SAMBA_CHECK_PYTHON_HEADERS()
+diff -urpN samba-4.11.5/lib/tevent/tevent.h ddsamba4/lib/tevent/tevent.h
+--- samba-4.11.5/lib/tevent/tevent.h	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/lib/tevent/tevent.h	2020-03-07 16:13:50.918337507 +0400
+@@ -29,6 +29,7 @@
+ #define __TEVENT_H__
+ 
+ #include <stdint.h>
++#include <signal.h>
+ #include <talloc.h>
+ #include <sys/time.h>
+ #include <stdbool.h>
+diff -urpN samba-4.11.5/lib/util/debug.h ddsamba4/lib/util/debug.h
+--- samba-4.11.5/lib/util/debug.h	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/lib/util/debug.h	2020-03-07 16:13:51.028335830 +0400
+@@ -176,6 +176,35 @@ bool dbgsetclass(int level, int cls);
+ int debuglevel_get_class(size_t idx);
+ void debuglevel_set_class(size_t idx, int level);
+ 
++#ifdef NODEBUG
++
++#define CHECK_DEBUGLVL( level ) 0
++
++#define CHECK_DEBUGLVLC( dbgc_class, level ) 0
++
++#define DEBUGLVL( level ) 0
++
++#define DEBUGLVLC( dbgc_class, level ) 0
++
++#define DEBUG( level, body ) do { } while(0)
++
++#define DEBUGC( dbgc_class, level, body ) do { } while(0)
++
++#define DEBUGADD( level, body ) do { } while(0)
++
++#define DEBUGADDC( dbgc_class, level, body ) do { } while(0)
++
++/* Print a separator to the debug log. */
++#define DEBUGSEP(level) do { } while(0)
++
++/* Prefix messages with the function name */
++#define DBG_PREFIX(level, body ) do { } while(0)
++
++/* Prefix messages with the function name - class specific */
++#define DBGC_PREFIX(dbgc_class, level, body ) do { } while(0)
++
++#else
++
+ #define CHECK_DEBUGLVL( level ) \
+   ( ((level) <= MAX_DEBUG_LEVEL) && \
+     unlikely(debuglevel_get_class(DBGC_CLASS) >= (level)))
+@@ -235,7 +264,7 @@ void debuglevel_set_class(size_t idx, in
+ 		&& (dbghdrclass(level, dbgc_class, __location__, __func__ )) \
+ 		&& (dbgtext("%s: ", __func__))				\
+ 		&& (dbgtext body) )
+-
++#endif
+ /*
+  * Debug levels matching RFC 3164
+  */
+diff -urpN samba-4.11.5/lib/util/util.c ddsamba4/lib/util/util.c
+--- samba-4.11.5/lib/util/util.c	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/lib/util/util.c	2020-03-07 16:13:51.018335982 +0400
+@@ -353,9 +353,9 @@ _PUBLIC_ bool directory_create_or_exist(
+ 	old_umask = umask(0);
+ 	ret = mkdir(dname, dir_perms);
+ 	if (ret == -1 && errno != EEXIST) {
+-		DBG_WARNING("mkdir failed on directory %s: %s\n",
++		    DEBUG(2, ("mkdir failed on directory %s: %s\n",
+ 			    dname,
+-			    strerror(errno));
++			    strerror(errno)));
+ 		umask(old_umask);
+ 		return false;
+ 	}
+@@ -364,12 +364,15 @@ _PUBLIC_ bool directory_create_or_exist(
+ 	if (ret != 0 && errno == EEXIST) {
+ 		struct stat sbuf;
+ 
+-		ret = lstat(dname, &sbuf);
++		bzero(&sbuf, sizeof(struct stat));
++		ret = stat(dname, &sbuf);
+ 		if (ret != 0) {
++			DEBUG(2, ("lstat failed\n"));
+ 			return false;
+ 		}
+ 
+ 		if (!S_ISDIR(sbuf.st_mode)) {
++			DEBUG(2, ("%s is no dir, mode is %d\n",dname, sbuf.st_mode));
+ 			return false;
+ 		}
+ 	}
+diff -urpN samba-4.11.5/nsswitch/wins.c ddsamba4/nsswitch/wins.c
+--- samba-4.11.5/nsswitch/wins.c	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/nsswitch/wins.c	2020-03-07 16:13:53.188302830 +0400
+@@ -39,6 +39,14 @@ static pthread_mutex_t wins_nss_mutex =
+ #define INADDRSZ 4
+ #endif
+ 
++#ifndef NETDB_INTERNAL
++#define NETDB_INTERNAL -1
++#endif
++
++#ifndef NETDB_SUCCESS
++#define NETDB_SUCCESS 0
++#endif
++
+ NSS_STATUS _nss_wins_gethostbyname_r(const char *hostname,
+ 				     struct hostent *he,
+ 				     char *buffer,
+diff -urpN samba-4.11.5/python/examples/dnsserver.py ddsamba4/python/examples/dnsserver.py
+--- samba-4.11.5/python/examples/dnsserver.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/python/examples/dnsserver.py	2020-03-07 16:13:51.438329566 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # script to test the dnsserver RPC protocol
+ 
+diff -urpN samba-4.11.5/python/examples/netbios.py ddsamba4/python/examples/netbios.py
+--- samba-4.11.5/python/examples/netbios.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/python/examples/netbios.py	2020-03-07 16:13:51.438329566 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # Unix SMB/CIFS implementation.
+ # Copyright (C) Jelmer Vernooij <jelmer@samba.org> 2008
+diff -urpN samba-4.11.5/python/examples/samr.py ddsamba4/python/examples/samr.py
+--- samba-4.11.5/python/examples/samr.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/python/examples/samr.py	2020-03-07 16:13:51.438329566 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # -*- coding: utf-8 -*-
+ 
+ # Unix SMB/CIFS implementation.
+diff -urpN samba-4.11.5/python/examples/winreg.py ddsamba4/python/examples/winreg.py
+--- samba-4.11.5/python/examples/winreg.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/python/examples/winreg.py	2020-03-07 16:13:51.438329566 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ #
+ #  tool to manipulate a remote registry
+ #  Copyright Andrew Tridgell 2005
+diff -urpN samba-4.11.5/python/samba/subunit/run.py ddsamba4/python/samba/subunit/run.py
+--- samba-4.11.5/python/samba/subunit/run.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/python/samba/subunit/run.py	2020-03-07 16:13:51.558327731 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ #
+ # Simple subunit testrunner for python
+ # Copyright (C) Jelmer Vernooij <jelmer@samba.org> 2014
+diff -urpN samba-4.11.5/python/samba/tests/dcerpc/raw_protocol.py ddsamba4/python/samba/tests/dcerpc/raw_protocol.py
+--- samba-4.11.5/python/samba/tests/dcerpc/raw_protocol.py	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/python/samba/tests/dcerpc/raw_protocol.py	2020-03-07 16:13:51.518328341 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # Unix SMB/CIFS implementation.
+ # Copyright (C) Stefan Metzmacher 2014,2015
+ #
+diff -urpN samba-4.11.5/python/samba/tests/usage.py ddsamba4/python/samba/tests/usage.py
+--- samba-4.11.5/python/samba/tests/usage.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/python/samba/tests/usage.py	2020-03-07 16:13:51.508328494 +0400
+@@ -234,7 +234,7 @@ class PythonScriptUsageTests(TestCase):
+             def _f(self, filename=filename):
+                 print(filename)
+                 try:
+-                    p = subprocess.Popen(['python3', filename],
++                    p = subprocess.Popen(['/usr/bin/python3', filename],
+                                          stderr=subprocess.PIPE,
+                                          stdout=subprocess.PIPE)
+                     out, err = p.communicate(timeout=5)
+diff -urpN samba-4.11.5/script/attr_count_read ddsamba4/script/attr_count_read
+--- samba-4.11.5/script/attr_count_read	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/script/attr_count_read	2020-03-07 16:13:51.368330634 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ #
+ # Copyright (C) Catalyst IT Ltd. 2019
+ #
+diff -urpN samba-4.11.5/script/autobuild.py ddsamba4/script/autobuild.py
+--- samba-4.11.5/script/autobuild.py	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/script/autobuild.py	2020-03-07 16:13:51.368330634 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # run tests on all Samba subprojects and push to a git tree on success
+ # Copyright Andrew Tridgell 2010
+ # released under GNU GPL v3 or later
+diff -urpN samba-4.11.5/script/bisect-test.py ddsamba4/script/bisect-test.py
+--- samba-4.11.5/script/bisect-test.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/script/bisect-test.py	2020-03-07 16:13:51.368330634 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # use git bisect to work out what commit caused a test failure
+ # Copyright Andrew Tridgell 2010
+ # released under GNU GPL v3 or later
+diff -urpN samba-4.11.5/script/compare_cc_results.py ddsamba4/script/compare_cc_results.py
+--- samba-4.11.5/script/compare_cc_results.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/script/compare_cc_results.py	2020-03-07 16:13:51.368330634 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """Compare the results of native and cross-compiled configure tests
+ 
+ The compared files are called "default.cache.py" and are generated in
+diff -urpN samba-4.11.5/script/traffic_learner ddsamba4/script/traffic_learner
+--- samba-4.11.5/script/traffic_learner	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/script/traffic_learner	2020-03-07 16:13:51.368330634 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # Generate a traffic model from a traffic summary file
+ #
+ # Copyright (C) Catalyst IT Ltd. 2017
+diff -urpN samba-4.11.5/script/traffic_replay ddsamba4/script/traffic_replay
+--- samba-4.11.5/script/traffic_replay	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/script/traffic_replay	2020-03-07 16:13:51.368330634 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # Generates samba network traffic
+ #
+ # Copyright (C) Catalyst IT Ltd. 2017
+diff -urpN samba-4.11.5/source3/lib/messages.c ddsamba4/source3/lib/messages.c
+--- samba-4.11.5/source3/lib/messages.c	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/source3/lib/messages.c	2020-03-07 16:13:51.768324523 +0400
+@@ -495,6 +495,7 @@ static NTSTATUS messaging_init_internal(
+ 
+ 	lck_path = lock_path(talloc_tos(), "msg.lock");
+ 	if (lck_path == NULL) {
++		DEBUG(2, ("no memory %s:%d\n", __func__, __LINE__));
+ 		return NT_STATUS_NO_MEMORY;
+ 	}
+ 
+@@ -504,19 +505,21 @@ static NTSTATUS messaging_init_internal(
+ 	if (!ok) {
+ 		DBG_DEBUG("Could not create lock directory: %s\n",
+ 			  strerror(errno));
++		DEBUG(2, ("acces denied %s:%d %s\n", __func__, __LINE__, lck_path));
+ 		return NT_STATUS_ACCESS_DENIED;
+ 	}
+ 
+-	priv_path = private_path("msg.sock");
++	priv_path = lock_path(talloc_tos(), "msg.sock");
++//	priv_path = private_path("msg.sock");
+ 	if (priv_path == NULL) {
++		DEBUG(2, ("out of memory at %s:%d\n", __func__, __LINE__));
+ 		return NT_STATUS_NO_MEMORY;
+ 	}
+-
+ 	ok = directory_create_or_exist_strict(priv_path, sec_initial_uid(),
+ 					      0700);
+ 	if (!ok) {
+-		DBG_DEBUG("Could not create msg directory: %s\n",
+-			  strerror(errno));
++		DEBUG(2, ("Could not create msg directory: %s (%s)\n",
++			  strerror(errno), priv_path));
+ 		return NT_STATUS_ACCESS_DENIED;
+ 	}
+ 
+@@ -527,6 +530,7 @@ static NTSTATUS messaging_init_internal(
+ 
+ 	ctx = talloc_zero(frame, struct messaging_context);
+ 	if (ctx == NULL) {
++		DEBUG(2, ("out of memory at %s:%d\n", __func__, __LINE__));
+ 		status = NT_STATUS_NO_MEMORY;
+ 		goto done;
+ 	}
+@@ -539,6 +543,7 @@ static NTSTATUS messaging_init_internal(
+ 
+ 	ok = messaging_register_event_context(ctx, ev);
+ 	if (!ok) {
++		DEBUG(2, ("out of memory at %s:%d\n", __func__, __LINE__));
+ 		status = NT_STATUS_NO_MEMORY;
+ 		goto done;
+ 	}
+@@ -604,6 +609,7 @@ static NTSTATUS messaging_init_internal(
+ 	status = NT_STATUS_OK;
+ done:
+ 	TALLOC_FREE(frame);
++	DBG_DEBUG("status: %d\n", status);
+ 
+ 	return status;
+ }
+@@ -651,7 +657,7 @@ NTSTATUS messaging_reinit(struct messagi
+ 
+ 	msg_ctx->msg_dgm_ref = messaging_dgm_ref(
+ 		msg_ctx, msg_ctx->event_ctx, &msg_ctx->id.unique_id,
+-		private_path("msg.sock"), lck_path,
++		lock_path(talloc_tos(), "msg.sock"), lck_path,
+ 		messaging_recv_cb, msg_ctx, &ret);
+ 
+ 	if (msg_ctx->msg_dgm_ref == NULL) {
+diff -urpN samba-4.11.5/source3/lib/messages_dgm.c ddsamba4/source3/lib/messages_dgm.c
+--- samba-4.11.5/source3/lib/messages_dgm.c	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/source3/lib/messages_dgm.c	2020-03-07 16:13:51.728325133 +0400
+@@ -1024,10 +1024,14 @@ int messaging_dgm_init(struct tevent_con
+ 		return ENAMETOOLONG;
+ 	}
+ 
+-	socket_address = (struct sockaddr_un) { .sun_family = AF_UNIX };
++	memset(&socket_address,0,sizeof(socket_address));
++	socket_address.sun_family = AF_UNIX;
++
+ 	len = snprintf(socket_address.sun_path,
+ 		       sizeof(socket_address.sun_path),
+ 		       "%s/%u", socket_dir, (unsigned)ctx->pid);
++
++	DEBUG(2, ("sun path is %s\n", socket_address.sun_path));
+ 	if (len >= sizeof(socket_address.sun_path)) {
+ 		TALLOC_FREE(ctx);
+ 		return ENAMETOOLONG;
+@@ -1041,7 +1045,7 @@ int messaging_dgm_init(struct tevent_con
+ 		TALLOC_FREE(ctx);
+ 		return ret;
+ 	}
+-
++	DEBUG(2, ("delete sun path is %s\n", socket_address.sun_path));
+ 	unlink(socket_address.sun_path);
+ 
+ 	ctx->sock = socket(AF_UNIX, SOCK_DGRAM, 0);
+diff -urpN samba-4.11.5/source3/lib/util_path.c ddsamba4/source3/lib/util_path.c
+--- samba-4.11.5/source3/lib/util_path.c	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/source3/lib/util_path.c	2020-03-07 16:13:51.738324981 +0400
+@@ -21,6 +21,7 @@
+  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  */
+ 
++#include "includes.h"
+ #include "replace.h"
+ #include <talloc.h>
+ #include "lib/util/samba_util.h"
+@@ -43,14 +44,18 @@ static char *xx_path(TALLOC_CTX *mem_ctx
+ 		     const char *rootpath)
+ {
+ 	char *fname = NULL;
+-
++	if (rootpath)
++		DEBUG(2, ("root path %s\n", rootpath));
++	    
+ 	fname = talloc_strdup(mem_ctx, rootpath);
+ 	if (!fname) {
++		DEBUG(2, ("talloc_strdup failed at %s:%d\n", __func__,__LINE__));
+ 		return NULL;
+ 	}
+ 	trim_string(fname,"","/");
+ 
+ 	if (!directory_create_or_exist(fname, 0755)) {
++		DEBUG(2, ("dir create failed for %s\n", fname));
+ 		return NULL;
+ 	}
+ 
+diff -urpN samba-4.11.5/source3/modules/vfs_fruit.c ddsamba4/source3/modules/vfs_fruit.c
+--- samba-4.11.5/source3/modules/vfs_fruit.c	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/source3/modules/vfs_fruit.c	2020-03-07 16:13:51.858323150 +0400
+@@ -6971,12 +6971,12 @@ static bool fruit_tmsize_do_dirent(vfs_h
+ 		return true;
+ 	}
+ 
+-	if (bandsize > SIZE_MAX/nbands) {
+-		DBG_ERR("tmsize overflow: bandsize [%zu] nbands [%zu]\n",
+-			bandsize, nbands);
+-		return false;
+-	}
+-	tm_size = bandsize * nbands;
++	// if (bandsize > SIZE_MAX/nbands) {
++		// DBG_ERR("tmsize overflow: bandsize [%zu] nbands [%zu]\n",
++			// bandsize, nbands);
++		// return false;
++	// }
++	tm_size = (off_t)bandsize * (off_t)nbands;
+ 
+ 	if (state->total_size + tm_size < state->total_size) {
+ 		DBG_ERR("tmsize overflow: bandsize [%zu] nbands [%zu]\n",
+diff -urpN samba-4.11.5/source3/script/tests/getset_quota.py ddsamba4/source3/script/tests/getset_quota.py
+--- samba-4.11.5/source3/script/tests/getset_quota.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/source3/script/tests/getset_quota.py	2020-03-07 16:13:51.688325748 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # Unix SMB/CIFS implementation.
+ # Tests for smbcquotas
+ # Copyright (C) Noel Power 2017
+diff -urpN samba-4.11.5/source3/script/tests/test_smbcquota.py ddsamba4/source3/script/tests/test_smbcquota.py
+--- samba-4.11.5/source3/script/tests/test_smbcquota.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/source3/script/tests/test_smbcquota.py	2020-03-07 16:13:51.698325600 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # Unix SMB/CIFS implementation.
+ # Tests for smbcquotas
+ # Copyright (C) Noel Power 2017
+diff -urpN samba-4.11.5/source3/script/tests/test_wbinfo_sids2xids_int.py ddsamba4/source3/script/tests/test_wbinfo_sids2xids_int.py
+--- samba-4.11.5/source3/script/tests/test_wbinfo_sids2xids_int.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/source3/script/tests/test_wbinfo_sids2xids_int.py	2020-03-07 16:13:51.678325901 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ from __future__ import print_function
+ import sys
+diff -urpN samba-4.11.5/source3/smbd/server.c ddsamba4/source3/smbd/server.c
+--- samba-4.11.5/source3/smbd/server.c	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/source3/smbd/server.c	2020-03-07 16:13:51.948321773 +0400
+@@ -1812,6 +1812,7 @@ extern void build_options(bool screen);
+ 	 */
+ 	ev_ctx = global_event_context();
+ 	if (ev_ctx == NULL) {
++		fprintf(stdout, "unexpected exit %s:%d\n", __func__, __LINE__);
+ 		exit(1);
+ 	}
+ 
+@@ -1821,6 +1822,7 @@ extern void build_options(bool screen);
+ 	 */
+ 	msg_ctx = global_messaging_context();
+ 	if (msg_ctx == NULL) {
++		fprintf(stdout, "unexpected exit %s:%d\n", __func__, __LINE__);
+ 		exit(1);
+ 	}
+ 
+@@ -1829,6 +1831,7 @@ extern void build_options(bool screen);
+ 	 * server info and rpc services set up. It will be called later.
+ 	 */
+ 	if (!reload_services(NULL, NULL, false)) {
++		fprintf(stdout, "unexpected exit %s:%d\n", __func__, __LINE__);
+ 		exit(1);
+ 	}
+ 
+diff -urpN samba-4.11.5/source3/utils/owrt_smbpasswd.c ddsamba4/source3/utils/owrt_smbpasswd.c
+--- samba-4.11.5/source3/utils/owrt_smbpasswd.c	1970-01-01 04:00:00.000000000 +0400
++++ ddsamba4/source3/utils/owrt_smbpasswd.c	2020-03-07 16:13:52.078319790 +0400
+@@ -0,0 +1,252 @@
++/*
++ * Copyright (C) John Crispin <blogic@openwrt.org>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License as published by the
++ * Free Software Foundation; either version 2 of the License, or (at your
++ * option) any later version.
++ * 
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ * 
++ * You should have received a copy of the GNU General Public License along with
++ * this program; if not, write to the Free Software Foundation, Inc., 675
++ * Mass Ave, Cambridge, MA 02139, USA.  */
++
++#include "includes.h"
++#include <endian.h>
++
++void E_md4hash(const char *passwd, uchar p16[16])
++{
++	int len;
++	smb_ucs2_t wpwd[129];
++	int i;
++
++	len = strlen(passwd);
++	for (i = 0; i < len; i++) {
++#if __BYTE_ORDER == __LITTLE_ENDIAN
++		wpwd[i] = (unsigned char)passwd[i];
++#else
++		wpwd[i] = (unsigned char)passwd[i];
++		wpwd[i] <<= 8;
++#endif
++	}
++	wpwd[i] = 0;
++
++	len = len * sizeof(unsigned short);
++	mdfour(p16, (unsigned char *)wpwd, len);
++	ZERO_STRUCT(wpwd);
++}
++
++/**
++ * Creates the DES forward-only Hash of the users password in DOS ASCII charset
++ * @param passwd password in 'unix' charset.
++ * @param p16 return password hashed with DES, caller allocated 16 byte buffer
++ * @return False if password was > 14 characters, and therefore may be incorrect, otherwise True
++ * @note p16 is filled in regardless
++ */
++ 
++bool E_deshash(const char *passwd, uchar p16[16])
++{
++	int ret = 1;
++	char dospwd[256+2];
++	int i;
++	int len;
++	
++	/* Password must be converted to DOS charset - null terminated, uppercase. */
++//	push_ascii(dospwd, passwd, sizeof(dospwd), STR_UPPER|STR_TERMINATE);
++	len = strlen(passwd);
++	for (i = 0; i < len; i++) {
++		char c = passwd[i];
++		if (islower(c)) c = toupper(c);
++		dospwd[i] = c;
++	}
++	dospwd[i] = 0;
++       
++	/* Only the fisrt 14 chars are considered, password need not be null terminated. */
++	E_P16((const unsigned char *)dospwd, p16);
++
++	if (strlen(dospwd) > 14) {
++		ret = 0;
++	}
++
++	memset(dospwd, 0, sizeof(dospwd));
++	// ZERO_STRUCT(dospwd);	
++
++	return ret;
++}
++
++
++
++/* returns -1 if user is not present in /etc/passwd*/
++int find_uid_for_user(char *user)
++{
++	char t[256];
++	FILE *fp = fopen("/etc/passwd", "r");
++	int ret = -1;
++
++	if(!fp)
++	{
++		printf("failed to open /etc/passwd");
++		goto out;
++	}
++
++	while(!feof(fp))
++	{
++		if(fgets(t, 255, fp))
++		{
++			char *p1, *p2;
++			p1 = strchr(t, ':');
++			if(p1 && (p1 - t == strlen(user)) && (strncmp(t, user, strlen(user))) == 0)
++			{
++				p1 = strchr(t, ':');
++				if(!p1)
++					goto out;
++				p2 = strchr(++p1, ':');
++				if(!p2)
++					goto out;
++				p1 = strchr(++p2, ':');
++				if(!p1)
++					goto out;
++				*p1 = '\0';
++				ret = atoi(p2);
++				goto out;
++			}
++		}
++	}
++	printf("No valid user found in /etc/passwd\n");
++
++out:
++	if(fp)
++		fclose(fp);
++	return ret;
++}
++
++void insert_user_in_smbpasswd(char *user, char *line)
++{
++	char t[256];
++	FILE *fp = fopen("/var/samba/smbpasswd", "r+");
++
++	if(!fp)
++	{
++		printf("failed to open /var/samba/smbpasswd");
++		goto out;
++	}
++
++	while(!feof(fp))
++	{
++		if(fgets(t, 255, fp))
++		{
++			char *p;
++			p = strchr(t, ':');
++			if(p && (p - t == strlen(user)) && (strncmp(t, user, strlen(user))) == 0)
++			{
++				fseek(fp, -strlen(line), SEEK_CUR);
++				break;
++			}
++		}
++	}
++
++	fprintf(fp, line);
++
++out:
++	if(fp)
++		fclose(fp);
++}
++
++void delete_user_from_smbpasswd(char *user)
++{
++	char t[256];
++	FILE *fp = fopen("/var/samba/smbpasswd", "r+");
++
++	if(!fp)
++	{
++		printf("failed to open /var/samba/smbpasswd");
++		goto out;
++	}
++
++	while(!feof(fp))
++	{
++		if(fgets(t, 255, fp))
++		{
++			char *p;
++			p = strchr(t, ':');
++			if(p && (p - t == strlen(user)) && (strncmp(t, user, strlen(user))) == 0)
++			{
++				off_t r_pos, w_pos;
++				char t2[256];
++				r_pos = ftell(fp);
++				w_pos = r_pos;
++				w_pos -= strlen(t);
++				while(fgets(t2, 256, fp))
++				{
++					fseek(fp,w_pos,SEEK_SET);
++					fputs(t2, fp);
++					r_pos += strlen(t2);
++					w_pos += strlen(t2);
++					fseek(fp,r_pos,SEEK_SET);
++				}
++				ftruncate(fileno(fp), w_pos);
++				break;
++			}
++		}
++	}
++
++out:
++	if(fp)
++		fclose(fp);
++}
++
++int main(int argc, char **argv)
++{
++	unsigned uid;
++	uchar new_nt_p16[NT_HASH_LEN];
++	uchar new_lanman_p16[LM_HASH_LEN];
++	int g;
++	int smbpasswd_present;
++	char smbpasswd_line[256];
++	char *s;
++
++	if(argc != 3)
++	{
++		printf("usage for openwrt_smbpasswd - \n\t%s USERNAME PASSWD\n\t%s -del USERNAME\n", argv[0], argv[0]);
++		exit(1);
++	}
++	if(strcmp(argv[1], "-del") == 0)
++	{
++		printf("deleting user %s\n", argv[2]);
++		delete_user_from_smbpasswd(argv[2]);
++		return 0;
++	}
++	uid = find_uid_for_user(argv[1]);
++	if(uid == -1)
++		exit(2);
++
++	E_md4hash(argv[2], new_nt_p16);
++
++	if (!E_deshash(argv[2], new_lanman_p16)) {
++		/* E_deshash returns false for 'long' passwords (> 14
++		   DOS chars).  This allows us to match Win2k, which
++		   does not store a LM hash for these passwords (which
++		   would reduce the effective password length to 14 */
++
++		memset(new_lanman_p16, 0, LM_HASH_LEN);
++	}
++
++
++	s = smbpasswd_line;
++	s += snprintf(s, 256 - (s - smbpasswd_line), "%s:%u:", argv[1], uid);
++	for(g = 0; g < 16; g++)
++		s += snprintf(s, 256 - (s - smbpasswd_line), "%02X", new_lanman_p16[g]);
++	s += snprintf(s, 256 - (s - smbpasswd_line), ":");
++	
++	for(g = 0; g < 16; g++)
++		s += snprintf(s, 256 - (s - smbpasswd_line), "%02X", new_nt_p16[g]);
++	snprintf(s, 256 - (s - smbpasswd_line), ":[UX         ]:LCT-00000001:\n");
++
++	insert_user_in_smbpasswd(argv[1], smbpasswd_line);
++
++	return 0;
++}
+diff -urpN samba-4.11.5/source3/utils/wscript_build ddsamba4/source3/utils/wscript_build
+--- samba-4.11.5/source3/utils/wscript_build	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/source3/utils/wscript_build	2020-03-07 16:13:52.088319637 +0400
+@@ -35,14 +35,10 @@ bld.SAMBA3_BINARY('smbtree',
+                  RPC_NDR_SRVSVC''')
+ 
+ bld.SAMBA3_BINARY('smbpasswd',
+-                 source='smbpasswd.c',
++                 source='owrt_smbpasswd.c',
+                  deps='''
+-                 talloc
+-                 smbconf
+-                 pdb
+-                 PASSWD_UTIL
+-                 PASSCHANGE
+-                 cmdline_contexts
++                 LIBCRYPTO
++                 LIBCLI_AUTH
+                  ''')
+ 
+ bld.SAMBA3_BINARY('pdbedit',
+diff -urpN samba-4.11.5/source3/wscript ddsamba4/source3/wscript
+--- samba-4.11.5/source3/wscript	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/source3/wscript	2020-03-07 16:13:52.008320858 +0400
+@@ -839,7 +839,7 @@ msg.msg_accrightslen = sizeof(fd);
+         if conf.env.with_iconv:
+             conf.DEFINE('HAVE_ICONV', 1)
+ 
+-    if Options.options.with_pam:
++    if Options.options.with_pam != False:
+         use_pam=True
+         conf.CHECK_HEADERS('security/pam_appl.h pam/pam_appl.h')
+         if not conf.CONFIG_SET('HAVE_SECURITY_PAM_APPL_H') and not conf.CONFIG_SET('HAVE_PAM_PAM_APPL_H'):
+@@ -916,6 +916,17 @@ int i; i = PAM_RADIO_TYPE;
+                        "or headers not found. Use --without-pam to disable "
+                        "PAM support.");
+ 
++    else:
++        Logs.warn("PAM disabled")
++        use_pam=False
++        conf.undefine('WITH_PAM')
++        conf.undefine('WITH_PAM_MODULES')
++        conf.undefine('HAVE_SECURITY_PAM_APPL_H')
++        conf.undefine('PAM_RHOST')
++        conf.undefine('PAM_TTY')
++        conf.undefine('HAVE_PAM_PAM_APPL_H')
++
++
+     seteuid = False
+ 
+ #
+diff -urpN samba-4.11.5/source4/dns_server/wscript_build ddsamba4/source4/dns_server/wscript_build
+--- samba-4.11.5/source4/dns_server/wscript_build	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/source4/dns_server/wscript_build	2020-03-07 16:13:52.338315814 +0400
+@@ -4,7 +4,7 @@ bld.SAMBA_LIBRARY('dnsserver_common',
+         source='dnsserver_common.c',
+         deps='samba-util samba-errors ldbsamba clidns',
+         private_library=True,
+-        install=bld.AD_DC_BUILD_IS_ENABLED()
++        enabled=bld.AD_DC_BUILD_IS_ENABLED()
+         )
+ 
+ bld.SAMBA_MODULE('service_dns',
+diff -urpN samba-4.11.5/source4/heimdal/lib/wind/UnicodeData.py ddsamba4/source4/heimdal/lib/wind/UnicodeData.py
+--- samba-4.11.5/source4/heimdal/lib/wind/UnicodeData.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/source4/heimdal/lib/wind/UnicodeData.py	2020-03-07 16:13:52.708310166 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/python
++#!/usr/bin/python
+ # -*- coding: iso-8859-1 -*-
+ 
+ # $Id$
+diff -urpN samba-4.11.5/source4/heimdal/lib/wind/gen-bidi.py ddsamba4/source4/heimdal/lib/wind/gen-bidi.py
+--- samba-4.11.5/source4/heimdal/lib/wind/gen-bidi.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/source4/heimdal/lib/wind/gen-bidi.py	2020-03-07 16:13:52.708310166 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/python
++#!/usr/bin/python
+ # -*- coding: iso-8859-1 -*-
+ 
+ # $Id$
+diff -urpN samba-4.11.5/source4/heimdal/lib/wind/gen-combining.py ddsamba4/source4/heimdal/lib/wind/gen-combining.py
+--- samba-4.11.5/source4/heimdal/lib/wind/gen-combining.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/source4/heimdal/lib/wind/gen-combining.py	2020-03-07 16:13:52.718310013 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/python
++#!/usr/bin/python
+ # -*- coding: iso-8859-1 -*-
+ 
+ # $Id$
+diff -urpN samba-4.11.5/source4/heimdal/lib/wind/gen-errorlist.py ddsamba4/source4/heimdal/lib/wind/gen-errorlist.py
+--- samba-4.11.5/source4/heimdal/lib/wind/gen-errorlist.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/source4/heimdal/lib/wind/gen-errorlist.py	2020-03-07 16:13:52.718310013 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/python
++#!/usr/bin/python
+ # -*- coding: iso-8859-1 -*-
+ 
+ # $Id$
+diff -urpN samba-4.11.5/source4/heimdal/lib/wind/gen-map.py ddsamba4/source4/heimdal/lib/wind/gen-map.py
+--- samba-4.11.5/source4/heimdal/lib/wind/gen-map.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/source4/heimdal/lib/wind/gen-map.py	2020-03-07 16:13:52.718310013 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/python
++#!/usr/bin/python
+ # -*- coding: iso-8859-1 -*-
+ 
+ # $Id$
+diff -urpN samba-4.11.5/source4/heimdal/lib/wind/gen-normalize.py ddsamba4/source4/heimdal/lib/wind/gen-normalize.py
+--- samba-4.11.5/source4/heimdal/lib/wind/gen-normalize.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/source4/heimdal/lib/wind/gen-normalize.py	2020-03-07 16:13:52.698310319 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/python
++#!/usr/bin/python
+ # -*- coding: iso-8859-1 -*-
+ 
+ # $Id$
+diff -urpN samba-4.11.5/source4/heimdal/lib/wind/generate.py ddsamba4/source4/heimdal/lib/wind/generate.py
+--- samba-4.11.5/source4/heimdal/lib/wind/generate.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/source4/heimdal/lib/wind/generate.py	2020-03-07 16:13:52.708310166 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/python
++#!/usr/bin/python
+ # -*- coding: iso-8859-1 -*-
+ 
+ # $Id$
+diff -urpN samba-4.11.5/source4/heimdal/lib/wind/rfc3454.py ddsamba4/source4/heimdal/lib/wind/rfc3454.py
+--- samba-4.11.5/source4/heimdal/lib/wind/rfc3454.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/source4/heimdal/lib/wind/rfc3454.py	2020-03-07 16:13:52.718310013 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/python
++#!/usr/bin/python
+ # -*- coding: iso-8859-1 -*-
+ 
+ # $Id$
+diff -urpN samba-4.11.5/source4/heimdal/lib/wind/rfc4518.py ddsamba4/source4/heimdal/lib/wind/rfc4518.py
+--- samba-4.11.5/source4/heimdal/lib/wind/rfc4518.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/source4/heimdal/lib/wind/rfc4518.py	2020-03-07 16:13:52.708310166 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/python
++#!/usr/bin/python
+ # -*- coding: iso-8859-1 -*-
+ 
+ # $Id$
+diff -urpN samba-4.11.5/source4/heimdal/lib/wind/stringprep.py ddsamba4/source4/heimdal/lib/wind/stringprep.py
+--- samba-4.11.5/source4/heimdal/lib/wind/stringprep.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/source4/heimdal/lib/wind/stringprep.py	2020-03-07 16:13:52.708310166 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/python
++#!/usr/bin/python
+ # -*- coding: iso-8859-1 -*-
+ 
+ # $Id$
+diff -urpN samba-4.11.5/source4/heimdal/lib/wind/util.py ddsamba4/source4/heimdal/lib/wind/util.py
+--- samba-4.11.5/source4/heimdal/lib/wind/util.py	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/source4/heimdal/lib/wind/util.py	2020-03-07 16:13:52.698310319 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/python
++#!/usr/bin/python
+ # -*- coding: iso-8859-1 -*-
+ 
+ # $Id$
+diff -urpN samba-4.11.5/source4/heimdal_build/wscript_build ddsamba4/source4/heimdal_build/wscript_build
+--- samba-4.11.5/source4/heimdal_build/wscript_build	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/source4/heimdal_build/wscript_build	2020-03-07 16:13:52.458313984 +0400
+@@ -940,7 +940,7 @@ if not bld.CONFIG_SET('USING_SYSTEM_ASN1
+         deps='ROKEN_HOSTCC LIBREPLACE_HOSTCC HEIMDAL_VERS_HOSTCC',
+         install=False
+     )
+-    bld.env['ASN1_COMPILE'] = os.path.join(bld.bldnode.parent.abspath(), 'asn1_compile')
++    bld.env['ASN1_COMPILE'] = os.path.join(bld.bldnode.parent.abspath(), 'asn1_compile_host')
+ 
+ 
+ if not bld.CONFIG_SET('USING_SYSTEM_COMPILE_ET'):
+@@ -954,7 +954,7 @@ if not bld.CONFIG_SET('USING_SYSTEM_COMP
+         deps='ROKEN_HOSTCC LIBREPLACE_HOSTCC HEIMDAL_VERS_HOSTCC',
+         install=False
+         )
+-    bld.env['COMPILE_ET'] = os.path.join(bld.bldnode.parent.abspath(), 'compile_et')
++    bld.env['COMPILE_ET'] = os.path.join(bld.bldnode.parent.abspath(), 'compile_et_host')
+ 
+ HEIMDAL_BINARY('samba4kinit',
+     'kuser/kinit.c',
+diff -urpN samba-4.11.5/source4/scripting/bin/samba-gpupdate ddsamba4/source4/scripting/bin/samba-gpupdate
+--- samba-4.11.5/source4/scripting/bin/samba-gpupdate	2019-12-06 13:46:56.000000000 +0400
++++ ddsamba4/source4/scripting/bin/samba-gpupdate	2020-03-07 16:13:52.218317650 +0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # Copyright Luke Morrison <luc785@.hotmail.com> July 2013
+ # Co-Edited by Matthieu Pattou July 2013 from original August 2013
+ # Edited by Garming Sam Feb. 2014
+diff -urpN samba-4.11.5/third_party/aesni-intel/wscript ddsamba4/third_party/aesni-intel/wscript
+--- samba-4.11.5/third_party/aesni-intel/wscript	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/third_party/aesni-intel/wscript	2020-03-07 16:13:53.218302373 +0400
+@@ -10,11 +10,8 @@ def configure(conf):
+                 conf.DEFINE('AESNI_INTEL_CFLAGS', f)
+                 break
+         if conf.CONFIG_SET('AESNI_INTEL_CFLAGS'):
+-            if conf.env['SYSTEM_UNAME_MACHINE'] in ('x86_64', 'amd64'):
+-                print("Compiling with Intel AES instructions")
+-                conf.DEFINE('HAVE_AESNI_INTEL', 1)
+-            else:
+-                raise Errors.WafError('--accel-aes=intelaesni selected and non x86_64 CPU')
++            print("Compiling with Intel AES instructions")
++            conf.DEFINE('HAVE_AESNI_INTEL', 1)
+         else:
+             raise Errors.WafError('--aes-accel=intelaesni selected and compiler rejects ' + str(asm_flags))
+         if not conf.CHECK_LDFLAGS('-Wl,-z,noexecstack'):
+diff -urpN samba-4.11.5/third_party/cmocka/cmocka.h ddsamba4/third_party/cmocka/cmocka.h
+--- samba-4.11.5/third_party/cmocka/cmocka.h	2019-12-06 13:46:57.000000000 +0400
++++ ddsamba4/third_party/cmocka/cmocka.h	2020-03-07 16:13:53.238302067 +0400
+@@ -57,7 +57,7 @@ int __stdcall IsDebuggerPresent();
+ 
+ /* If __WORDSIZE is not set, try to figure it out and default to 32 bit. */
+ #ifndef __WORDSIZE
+-# if (defined(__x86_64__) && !defined(__ILP32__)) || defined(__sparc_v9__) || defined(__sparcv9)
++# if ((defined(__x86_64__) || defined(__aarch64__) || (defined(__mips__) && _MIPS_SIM == _ABI64)) && !defined(__ILP32__)) || defined(__sparc_v9__) || defined(__sparcv9)
+ #  define __WORDSIZE 64
+ # else
+ #  define __WORDSIZE 32
+diff -urpN samba-4.11.5/third_party/waf/waflib/Tools/c_config.py ddsamba4/third_party/waf/waflib/Tools/c_config.py
+--- samba-4.11.5/third_party/waf/waflib/Tools/c_config.py	2019-12-16 18:59:07.000000000 +0400
++++ ddsamba4/third_party/waf/waflib/Tools/c_config.py	2020-03-07 16:13:53.268301610 +0400
+@@ -521,7 +521,7 @@ def validate_c(self, kw):
+ 	if not 'execute' in kw:
+ 		kw['execute'] = False
+ 	if kw['execute']:
+-		kw['features'].append('test_exec')
++		#kw['features'].append('test_exec')
+ 		kw['chmod'] = Utils.O755
+ 
+ 	if not 'errmsg' in kw:
+diff -urpN samba-4.11.5/third_party/waf/waflib/extras/run_py_script.py ddsamba4/third_party/waf/waflib/extras/run_py_script.py
+--- samba-4.11.5/third_party/waf/waflib/extras/run_py_script.py	2019-12-06 13:46:57.000000000 +0400
++++ ddsamba4/third_party/waf/waflib/extras/run_py_script.py	2020-03-07 16:13:53.298301152 +0400
+@@ -30,8 +30,8 @@ def configure(conf):
+ 	"""TODO: Might need to be updated for Windows once
+ 	"PEP 397":http://www.python.org/dev/peps/pep-0397/ is settled.
+ 	"""
+-	conf.find_program('python', var='PY2CMD', mandatory=False)
+-	conf.find_program('python3', var='PY3CMD', mandatory=False)
++	conf.find_program('/usr/bin/python', var='PY2CMD', mandatory=False)
++	conf.find_program('/usr/bin/python3', var='PY3CMD', mandatory=False)
+ 	if not conf.env.PY2CMD and not conf.env.PY3CMD:
+ 		conf.fatal("No Python interpreter found!")
+ 
+diff -urpN samba-4.11.5/waf-cross-answers/aarch64.txt ddsamba4/waf-cross-answers/aarch64.txt
+--- samba-4.11.5/waf-cross-answers/aarch64.txt	1970-01-01 04:00:00.000000000 +0400
++++ ddsamba4/waf-cross-answers/aarch64.txt	2020-03-07 16:13:53.198302678 +0400
+@@ -0,0 +1,34 @@
++Checking uname sysname type: "Linux"
++Checking simple C program: "hello world"
++rpath library support: OK
++-Wl,--version-script support: OK
++Checking getconf LFS_CFLAGS: NO
++Checking for large file support without additional flags: OK
++Checking correct behavior of strtoll: OK
++Checking for working strptime: NO
++Checking for C99 vsnprintf: "1"
++Checking for HAVE_SHARED_MMAP: OK
++Checking for HAVE_MREMAP: OK
++Checking for HAVE_INCOHERENT_MMAP: NO
++Checking for HAVE_SECURE_MKSTEMP: OK
++Checking for HAVE_IFACE_GETIFADDRS: OK
++Checking value of NSIG: "65"
++Checking value of _NSIG: "65"
++Checking value of SIGRTMAX: "64"
++Checking value of SIGRTMIN: "35"
++Checking for a 64-bit host to support lmdb: NO
++Checking whether the WRFILE -keytab is supported: OK
++Checking errno of iconv for illegal multibyte sequence: OK
++Checking for kernel change notify support: OK
++Checking for Linux kernel oplocks: OK
++Checking for kernel share modes: OK
++Checking if can we convert from CP850 to UCS-2LE: OK
++Checking if can we convert from UTF-8 to UCS-2LE: OK
++vfs_fileid checking for statfs() and struct statfs.f_fsid: OK
++Checking whether we can use Linux thread-specific credentials: "OK"
++Checking whether fcntl locking is available: OK
++Checking whether fcntl lock supports open file description locks: NO
++Checking for the maximum value of the 'time_t' type: OK
++Checking whether the realpath function allows a NULL argument: OK
++Checking for ftruncate extend: OK
++getcwd takes a NULL argument: OK
+diff -urpN samba-4.11.5/waf-cross-answers/arc.txt ddsamba4/waf-cross-answers/arc.txt
+--- samba-4.11.5/waf-cross-answers/arc.txt	1970-01-01 04:00:00.000000000 +0400
++++ ddsamba4/waf-cross-answers/arc.txt	2020-03-07 16:13:53.198302678 +0400
+@@ -0,0 +1,37 @@
++Checking uname sysname type: "Linux"
++Checking simple C program: "hello world"
++rpath library support: OK
++-Wl,--version-script support: OK
++Checking getconf LFS_CFLAGS: NO
++Checking for large file support without additional flags: OK
++Checking correct behavior of strtoll: OK
++Checking for working strptime: NO
++Checking for C99 vsnprintf: "1"
++Checking for HAVE_SHARED_MMAP: OK
++Checking for HAVE_MREMAP: OK
++Checking for HAVE_INCOHERENT_MMAP: NO
++Checking for HAVE_SECURE_MKSTEMP: OK
++Checking for HAVE_IFACE_GETIFADDRS: OK
++Checking value of NSIG: "65"
++Checking value of _NSIG: "65"
++Checking value of SIGRTMAX: "64"
++Checking value of SIGRTMIN: "35"
++Checking for a 64-bit host to support lmdb: NO
++Checking whether the WRFILE -keytab is supported: OK
++Checking errno of iconv for illegal multibyte sequence: OK
++Checking for kernel change notify support: OK
++Checking for Linux kernel oplocks: OK
++Checking for kernel share modes: OK
++Checking if can we convert from CP850 to UCS-2LE: OK
++Checking if can we convert from UTF-8 to UCS-2LE: OK
++vfs_fileid checking for statfs() and struct statfs.f_fsid: OK
++Checking whether we can use Linux thread-specific credentials: "OK"
++Checking whether fcntl locking is available: OK
++Checking whether fcntl lock supports open file description locks: NO
++Checking for the maximum value of the 'time_t' type: NO
++Checking whether the realpath function allows a NULL argument: OK
++Checking for ftruncate extend: OK
++getcwd takes a NULL argument: OK
++Checking whether setreuid is available: NO
++Checking whether setresuid is available: NO
++Checking whether seteuid is available: NO
+diff -urpN samba-4.11.5/waf-cross-answers/arm.txt ddsamba4/waf-cross-answers/arm.txt
+--- samba-4.11.5/waf-cross-answers/arm.txt	1970-01-01 04:00:00.000000000 +0400
++++ ddsamba4/waf-cross-answers/arm.txt	2020-03-07 16:13:53.198302678 +0400
+@@ -0,0 +1,34 @@
++Checking uname sysname type: "Linux"
++Checking simple C program: "hello world"
++rpath library support: OK
++-Wl,--version-script support: OK
++Checking getconf LFS_CFLAGS: NO
++Checking for large file support without additional flags: OK
++Checking correct behavior of strtoll: OK
++Checking for working strptime: NO
++Checking for C99 vsnprintf: "1"
++Checking for HAVE_SHARED_MMAP: OK
++Checking for HAVE_MREMAP: OK
++Checking for HAVE_INCOHERENT_MMAP: NO
++Checking for HAVE_SECURE_MKSTEMP: OK
++Checking for HAVE_IFACE_GETIFADDRS: OK
++Checking value of NSIG: "65"
++Checking value of _NSIG: "65"
++Checking value of SIGRTMAX: "64"
++Checking value of SIGRTMIN: "35"
++Checking for a 64-bit host to support lmdb: NO
++Checking whether the WRFILE -keytab is supported: OK
++Checking errno of iconv for illegal multibyte sequence: OK
++Checking for kernel change notify support: OK
++Checking for Linux kernel oplocks: OK
++Checking for kernel share modes: OK
++Checking if can we convert from CP850 to UCS-2LE: OK
++Checking if can we convert from UTF-8 to UCS-2LE: OK
++vfs_fileid checking for statfs() and struct statfs.f_fsid: OK
++Checking whether we can use Linux thread-specific credentials with 32-bit system calls: "OK"
++Checking whether fcntl locking is available: OK
++Checking whether fcntl lock supports open file description locks: NO
++Checking for the maximum value of the 'time_t' type: NO
++Checking whether the realpath function allows a NULL argument: OK
++Checking for ftruncate extend: OK
++getcwd takes a NULL argument: OK
+diff -urpN samba-4.11.5/waf-cross-answers/armeb.txt ddsamba4/waf-cross-answers/armeb.txt
+--- samba-4.11.5/waf-cross-answers/armeb.txt	1970-01-01 04:00:00.000000000 +0400
++++ ddsamba4/waf-cross-answers/armeb.txt	2020-03-07 16:13:53.198302678 +0400
+@@ -0,0 +1,34 @@
++Checking uname sysname type: "Linux"
++Checking simple C program: "hello world"
++rpath library support: OK
++-Wl,--version-script support: OK
++Checking getconf LFS_CFLAGS: NO
++Checking for large file support without additional flags: OK
++Checking correct behavior of strtoll: OK
++Checking for working strptime: NO
++Checking for C99 vsnprintf: "1"
++Checking for HAVE_SHARED_MMAP: OK
++Checking for HAVE_MREMAP: OK
++Checking for HAVE_INCOHERENT_MMAP: NO
++Checking for HAVE_SECURE_MKSTEMP: OK
++Checking for HAVE_IFACE_GETIFADDRS: OK
++Checking value of NSIG: "65"
++Checking value of _NSIG: "65"
++Checking value of SIGRTMAX: "64"
++Checking value of SIGRTMIN: "35"
++Checking for a 64-bit host to support lmdb: NO
++Checking whether the WRFILE -keytab is supported: OK
++Checking errno of iconv for illegal multibyte sequence: OK
++Checking for kernel change notify support: OK
++Checking for Linux kernel oplocks: OK
++Checking for kernel share modes: OK
++Checking if can we convert from CP850 to UCS-2LE: OK
++Checking if can we convert from UTF-8 to UCS-2LE: OK
++vfs_fileid checking for statfs() and struct statfs.f_fsid: OK
++Checking whether we can use Linux thread-specific credentials with 32-bit system calls: "OK"
++Checking whether fcntl locking is available: OK
++Checking whether fcntl lock supports open file description locks: NO
++Checking for the maximum value of the 'time_t' type: NO
++Checking whether the realpath function allows a NULL argument: OK
++Checking for ftruncate extend: OK
++getcwd takes a NULL argument: OK
+diff -urpN samba-4.11.5/waf-cross-answers/i386.txt ddsamba4/waf-cross-answers/i386.txt
+--- samba-4.11.5/waf-cross-answers/i386.txt	1970-01-01 04:00:00.000000000 +0400
++++ ddsamba4/waf-cross-answers/i386.txt	2020-03-07 16:13:53.198302678 +0400
+@@ -0,0 +1,34 @@
++Checking uname sysname type: "Linux"
++Checking simple C program: "hello world"
++rpath library support: OK
++-Wl,--version-script support: OK
++Checking getconf LFS_CFLAGS: NO
++Checking for large file support without additional flags: OK
++Checking correct behavior of strtoll: OK
++Checking for working strptime: NO
++Checking for C99 vsnprintf: "1"
++Checking for HAVE_SHARED_MMAP: OK
++Checking for HAVE_MREMAP: OK
++Checking for HAVE_INCOHERENT_MMAP: NO
++Checking for HAVE_SECURE_MKSTEMP: OK
++Checking for HAVE_IFACE_GETIFADDRS: OK
++Checking value of NSIG: "65"
++Checking value of _NSIG: "65"
++Checking value of SIGRTMAX: "64"
++Checking value of SIGRTMIN: "35"
++Checking for a 64-bit host to support lmdb: NO
++Checking whether the WRFILE -keytab is supported: OK
++Checking errno of iconv for illegal multibyte sequence: OK
++Checking for kernel change notify support: OK
++Checking for Linux kernel oplocks: OK
++Checking for kernel share modes: OK
++Checking if can we convert from CP850 to UCS-2LE: OK
++Checking if can we convert from UTF-8 to UCS-2LE: OK
++vfs_fileid checking for statfs() and struct statfs.f_fsid: OK
++Checking whether we can use Linux thread-specific credentials with 32-bit system calls: "OK"
++Checking whether fcntl locking is available: OK
++Checking whether fcntl lock supports open file description locks: NO
++Checking for the maximum value of the 'time_t' type: NO
++Checking whether the realpath function allows a NULL argument: OK
++Checking for ftruncate extend: OK
++getcwd takes a NULL argument: OK
+diff -urpN samba-4.11.5/waf-cross-answers/mips.txt ddsamba4/waf-cross-answers/mips.txt
+--- samba-4.11.5/waf-cross-answers/mips.txt	1970-01-01 04:00:00.000000000 +0400
++++ ddsamba4/waf-cross-answers/mips.txt	2020-03-07 16:13:53.198302678 +0400
+@@ -0,0 +1,34 @@
++Checking uname sysname type: "Linux"
++Checking simple C program: "hello world"
++rpath library support: OK
++-Wl,--version-script support: OK
++Checking getconf LFS_CFLAGS: NO
++Checking for large file support without additional flags: OK
++Checking correct behavior of strtoll: OK
++Checking for working strptime: NO
++Checking for C99 vsnprintf: "1"
++Checking for HAVE_SHARED_MMAP: OK
++Checking for HAVE_MREMAP: OK
++Checking for HAVE_INCOHERENT_MMAP: NO
++Checking for HAVE_SECURE_MKSTEMP: OK
++Checking for HAVE_IFACE_GETIFADDRS: OK
++Checking value of NSIG: "128"
++Checking value of _NSIG: "128"
++Checking value of SIGRTMAX: "127"
++Checking value of SIGRTMIN: "35"
++Checking for a 64-bit host to support lmdb: NO
++Checking whether the WRFILE -keytab is supported: OK
++Checking errno of iconv for illegal multibyte sequence: OK
++Checking for kernel change notify support: OK
++Checking for Linux kernel oplocks: OK
++Checking for kernel share modes: OK
++Checking if can we convert from CP850 to UCS-2LE: OK
++Checking if can we convert from UTF-8 to UCS-2LE: OK
++vfs_fileid checking for statfs() and struct statfs.f_fsid: OK
++Checking whether we can use Linux thread-specific credentials: "OK"
++Checking whether fcntl locking is available: OK
++Checking whether fcntl lock supports open file description locks: NO
++Checking for the maximum value of the 'time_t' type: NO
++Checking whether the realpath function allows a NULL argument: OK
++Checking for ftruncate extend: OK
++getcwd takes a NULL argument: OK
+diff -urpN samba-4.11.5/waf-cross-answers/mips64.txt ddsamba4/waf-cross-answers/mips64.txt
+--- samba-4.11.5/waf-cross-answers/mips64.txt	1970-01-01 04:00:00.000000000 +0400
++++ ddsamba4/waf-cross-answers/mips64.txt	2020-03-07 16:13:53.198302678 +0400
+@@ -0,0 +1,34 @@
++Checking uname sysname type: "Linux"
++Checking simple C program: "hello world"
++rpath library support: OK
++-Wl,--version-script support: OK
++Checking getconf LFS_CFLAGS: NO
++Checking for large file support without additional flags: OK
++Checking correct behavior of strtoll: OK
++Checking for working strptime: NO
++Checking for C99 vsnprintf: "1"
++Checking for HAVE_SHARED_MMAP: OK
++Checking for HAVE_MREMAP: OK
++Checking for HAVE_INCOHERENT_MMAP: NO
++Checking for HAVE_SECURE_MKSTEMP: OK
++Checking for HAVE_IFACE_GETIFADDRS: OK
++Checking value of NSIG: "128"
++Checking value of _NSIG: "128"
++Checking value of SIGRTMAX: "127"
++Checking value of SIGRTMIN: "35"
++Checking for a 64-bit host to support lmdb: NO
++Checking whether the WRFILE -keytab is supported: OK
++Checking errno of iconv for illegal multibyte sequence: OK
++Checking for kernel change notify support: OK
++Checking for Linux kernel oplocks: OK
++Checking for kernel share modes: OK
++Checking if can we convert from CP850 to UCS-2LE: OK
++Checking if can we convert from UTF-8 to UCS-2LE: OK
++vfs_fileid checking for statfs() and struct statfs.f_fsid: OK
++Checking whether we can use Linux thread-specific credentials: "OK"
++Checking whether fcntl locking is available: OK
++Checking whether fcntl lock supports open file description locks: NO
++Checking for the maximum value of the 'time_t' type: OK
++Checking whether the realpath function allows a NULL argument: OK
++Checking for ftruncate extend: OK
++getcwd takes a NULL argument: OK
+diff -urpN samba-4.11.5/waf-cross-answers/mips64el.txt ddsamba4/waf-cross-answers/mips64el.txt
+--- samba-4.11.5/waf-cross-answers/mips64el.txt	1970-01-01 04:00:00.000000000 +0400
++++ ddsamba4/waf-cross-answers/mips64el.txt	2020-03-07 16:13:53.198302678 +0400
+@@ -0,0 +1,34 @@
++Checking uname sysname type: "Linux"
++Checking simple C program: "hello world"
++rpath library support: OK
++-Wl,--version-script support: OK
++Checking getconf LFS_CFLAGS: NO
++Checking for large file support without additional flags: OK
++Checking correct behavior of strtoll: OK
++Checking for working strptime: NO
++Checking for C99 vsnprintf: "1"
++Checking for HAVE_SHARED_MMAP: OK
++Checking for HAVE_MREMAP: OK
++Checking for HAVE_INCOHERENT_MMAP: NO
++Checking for HAVE_SECURE_MKSTEMP: OK
++Checking for HAVE_IFACE_GETIFADDRS: OK
++Checking value of NSIG: "128"
++Checking value of _NSIG: "128"
++Checking value of SIGRTMAX: "127"
++Checking value of SIGRTMIN: "35"
++Checking for a 64-bit host to support lmdb: NO
++Checking whether the WRFILE -keytab is supported: OK
++Checking errno of iconv for illegal multibyte sequence: OK
++Checking for kernel change notify support: OK
++Checking for Linux kernel oplocks: OK
++Checking for kernel share modes: OK
++Checking if can we convert from CP850 to UCS-2LE: OK
++Checking if can we convert from UTF-8 to UCS-2LE: OK
++vfs_fileid checking for statfs() and struct statfs.f_fsid: OK
++Checking whether we can use Linux thread-specific credentials: "OK"
++Checking whether fcntl locking is available: OK
++Checking whether fcntl lock supports open file description locks: NO
++Checking for the maximum value of the 'time_t' type: OK
++Checking whether the realpath function allows a NULL argument: OK
++Checking for ftruncate extend: OK
++getcwd takes a NULL argument: OK
+diff -urpN samba-4.11.5/waf-cross-answers/mipsel.txt ddsamba4/waf-cross-answers/mipsel.txt
+--- samba-4.11.5/waf-cross-answers/mipsel.txt	1970-01-01 04:00:00.000000000 +0400
++++ ddsamba4/waf-cross-answers/mipsel.txt	2020-03-07 16:13:53.198302678 +0400
+@@ -0,0 +1,34 @@
++Checking uname sysname type: "Linux"
++Checking simple C program: "hello world"
++rpath library support: OK
++-Wl,--version-script support: OK
++Checking getconf LFS_CFLAGS: NO
++Checking for large file support without additional flags: OK
++Checking correct behavior of strtoll: OK
++Checking for working strptime: NO
++Checking for C99 vsnprintf: "1"
++Checking for HAVE_SHARED_MMAP: OK
++Checking for HAVE_MREMAP: OK
++Checking for HAVE_INCOHERENT_MMAP: NO
++Checking for HAVE_SECURE_MKSTEMP: OK
++Checking for HAVE_IFACE_GETIFADDRS: OK
++Checking value of NSIG: "128"
++Checking value of _NSIG: "128"
++Checking value of SIGRTMAX: "127"
++Checking value of SIGRTMIN: "35"
++Checking for a 64-bit host to support lmdb: NO
++Checking whether the WRFILE -keytab is supported: OK
++Checking errno of iconv for illegal multibyte sequence: OK
++Checking for kernel change notify support: OK
++Checking for Linux kernel oplocks: OK
++Checking for kernel share modes: OK
++Checking if can we convert from CP850 to UCS-2LE: OK
++Checking if can we convert from UTF-8 to UCS-2LE: OK
++vfs_fileid checking for statfs() and struct statfs.f_fsid: OK
++Checking whether we can use Linux thread-specific credentials: "OK"
++Checking whether fcntl locking is available: OK
++Checking whether fcntl lock supports open file description locks: NO
++Checking for the maximum value of the 'time_t' type: NO
++Checking whether the realpath function allows a NULL argument: OK
++Checking for ftruncate extend: OK
++getcwd takes a NULL argument: OK
+diff -urpN samba-4.11.5/waf-cross-answers/powerpc.txt ddsamba4/waf-cross-answers/powerpc.txt
+--- samba-4.11.5/waf-cross-answers/powerpc.txt	1970-01-01 04:00:00.000000000 +0400
++++ ddsamba4/waf-cross-answers/powerpc.txt	2020-03-07 16:13:53.198302678 +0400
+@@ -0,0 +1,34 @@
++Checking uname sysname type: "Linux"
++Checking simple C program: "hello world"
++rpath library support: OK
++-Wl,--version-script support: OK
++Checking getconf LFS_CFLAGS: NO
++Checking for large file support without additional flags: OK
++Checking correct behavior of strtoll: OK
++Checking for working strptime: NO
++Checking for C99 vsnprintf: "1"
++Checking for HAVE_SHARED_MMAP: OK
++Checking for HAVE_MREMAP: OK
++Checking for HAVE_INCOHERENT_MMAP: NO
++Checking for HAVE_SECURE_MKSTEMP: OK
++Checking for HAVE_IFACE_GETIFADDRS: OK
++Checking value of NSIG: "65"
++Checking value of _NSIG: "65"
++Checking value of SIGRTMAX: "64"
++Checking value of SIGRTMIN: "35"
++Checking for a 64-bit host to support lmdb: NO
++Checking whether the WRFILE -keytab is supported: OK
++Checking errno of iconv for illegal multibyte sequence: OK
++Checking for kernel change notify support: OK
++Checking for Linux kernel oplocks: OK
++Checking for kernel share modes: OK
++Checking if can we convert from CP850 to UCS-2LE: OK
++Checking if can we convert from UTF-8 to UCS-2LE: OK
++vfs_fileid checking for statfs() and struct statfs.f_fsid: OK
++Checking whether we can use Linux thread-specific credentials: "OK"
++Checking whether fcntl locking is available: OK
++Checking whether fcntl lock supports open file description locks: NO
++Checking for the maximum value of the 'time_t' type: NO
++Checking whether the realpath function allows a NULL argument: OK
++Checking for ftruncate extend: OK
++getcwd takes a NULL argument: OK
+diff -urpN samba-4.11.5/waf-cross-answers/x86_64.txt ddsamba4/waf-cross-answers/x86_64.txt
+--- samba-4.11.5/waf-cross-answers/x86_64.txt	1970-01-01 04:00:00.000000000 +0400
++++ ddsamba4/waf-cross-answers/x86_64.txt	2020-03-07 16:13:53.198302678 +0400
+@@ -0,0 +1,34 @@
++Checking uname sysname type: "Linux"
++Checking simple C program: "hello world"
++rpath library support: OK
++-Wl,--version-script support: OK
++Checking getconf LFS_CFLAGS: NO
++Checking for large file support without additional flags: OK
++Checking correct behavior of strtoll: OK
++Checking for working strptime: NO
++Checking for C99 vsnprintf: "1"
++Checking for HAVE_SHARED_MMAP: OK
++Checking for HAVE_MREMAP: OK
++Checking for HAVE_INCOHERENT_MMAP: NO
++Checking for HAVE_SECURE_MKSTEMP: OK
++Checking for HAVE_IFACE_GETIFADDRS: OK
++Checking value of NSIG: "65"
++Checking value of _NSIG: "65"
++Checking value of SIGRTMAX: "64"
++Checking value of SIGRTMIN: "35"
++Checking for a 64-bit host to support lmdb: NO
++Checking whether the WRFILE -keytab is supported: OK
++Checking errno of iconv for illegal multibyte sequence: OK
++Checking for kernel change notify support: OK
++Checking for Linux kernel oplocks: OK
++Checking for kernel share modes: OK
++Checking if can we convert from CP850 to UCS-2LE: OK
++Checking if can we convert from UTF-8 to UCS-2LE: OK
++vfs_fileid checking for statfs() and struct statfs.f_fsid: OK
++Checking whether we can use Linux thread-specific credentials: "OK"
++Checking whether fcntl locking is available: OK
++Checking whether fcntl lock supports open file description locks: NO
++Checking for the maximum value of the 'time_t' type: OK
++Checking whether the realpath function allows a NULL argument: OK
++Checking for ftruncate extend: OK
++getcwd takes a NULL argument: OK
+diff -urpN samba-4.11.5/wscript_configure_system_gnutls ddsamba4/wscript_configure_system_gnutls
+--- samba-4.11.5/wscript_configure_system_gnutls	2020-01-08 14:24:52.000000000 +0400
++++ ddsamba4/wscript_configure_system_gnutls	2020-03-07 16:13:50.748340105 +0400
+@@ -15,7 +15,7 @@ if Options.options.with_system_mitkrb5 a
+ conf.CHECK_CFG(package='gnutls',
+                args=('"gnutls >= %s" --cflags --libs' % gnutls_required_version),
+                      msg='Checking for GnuTLS >= %s' % gnutls_required_version,
+-                     mandatory=True)
++                     mandatory=False)
+ 
+ # Define gnutls as a system library
+ conf.SET_TARGET_TYPE('gnutls', 'SYSLIB')

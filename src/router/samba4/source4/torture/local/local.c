@@ -23,6 +23,9 @@
 #include "torture/ndr/proto.h"
 #include "torture/auth/proto.h"
 #include "../lib/crypto/test_proto.h"
+#ifndef HAVE_GNUTLS_AES_CMAC
+#include "../lib/crypto/aes_cmac_test_proto.h"
+#endif
 #include "lib/registry/tests/proto.h"
 #include "lib/replace/replace-testsuite.h"
 
@@ -77,6 +80,7 @@
 	torture_local_fsrvp,
 	torture_local_util_str_escape,
 	torture_local_tfork,
+	torture_local_mdspkt,
 	NULL
 };
 
@@ -91,12 +95,10 @@ NTSTATUS torture_local_init(TALLOC_CTX *ctx)
 	
 	torture_suite_add_simple_test(suite, 
 				      "crypto.md4", torture_local_crypto_md4);
+#ifndef HAVE_GNUTLS_AES_CMAC
 	torture_suite_add_simple_test(suite, "crypto.aes_cmac_128",
 				      torture_local_crypto_aes_cmac_128);
-	torture_suite_add_simple_test(suite, "crypto.aes_ccm_128",
-				      torture_local_crypto_aes_ccm_128);
-	torture_suite_add_simple_test(suite, "crypto.aes_gcm_128",
-				      torture_local_crypto_aes_gcm_128);
+#endif
 
 	for (i = 0; suite_generators[i]; i++)
 		torture_suite_add_suite(suite,

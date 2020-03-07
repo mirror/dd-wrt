@@ -112,6 +112,8 @@ static char *expand_msdfs_target(TALLOC_CTX *ctx,
 				connection_struct *conn,
 				char *target)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	char *mapfilename = NULL;
 	char *filename_start = strchr_m(target, '@');
 	char *filename_end = NULL;
@@ -155,7 +157,7 @@ static char *expand_msdfs_target(TALLOC_CTX *ctx,
 	}
 
 	targethost = talloc_sub_full(ctx,
-				lp_servicename(talloc_tos(), SNUM(conn)),
+				lp_servicename(talloc_tos(), lp_sub, SNUM(conn)),
 				conn->session_info->unix_info->unix_name,
 				conn->connectpath,
 				conn->session_info->unix_token->gid,
@@ -180,7 +182,8 @@ static char *expand_msdfs_target(TALLOC_CTX *ctx,
 	return new_target;
 }
 
-static int expand_msdfs_readlink(struct vfs_handle_struct *handle,
+static int expand_msdfs_readlinkat(struct vfs_handle_struct *handle,
+				files_struct *dirfsp,
 				const struct smb_filename *smb_fname,
 				char *buf,
 				size_t bufsiz)
@@ -199,8 +202,11 @@ static int expand_msdfs_readlink(struct vfs_handle_struct *handle,
 		return -1;
 	}
 
-	result = SMB_VFS_NEXT_READLINK(handle, smb_fname, target,
-				       PATH_MAX);
+	result = SMB_VFS_NEXT_READLINKAT(handle,
+				dirfsp,
+				smb_fname,
+				target,
+				PATH_MAX);
 
 	if (result <= 0)
 		return result;
@@ -225,7 +231,7 @@ static int expand_msdfs_readlink(struct vfs_handle_struct *handle,
 }
 
 static struct vfs_fn_pointers vfs_expand_msdfs_fns = {
-	.readlink_fn = expand_msdfs_readlink
+	.readlinkat_fn = expand_msdfs_readlinkat
 };
 
 static_decl_vfs;

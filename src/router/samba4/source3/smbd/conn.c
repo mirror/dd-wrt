@@ -59,19 +59,54 @@ bool conn_snum_used(struct smbd_server_connection *sconn,
 
 connection_struct *conn_new(struct smbd_server_connection *sconn)
 {
-	connection_struct *conn;
+	connection_struct *conn = NULL;
 
-	if (!(conn=talloc_zero(NULL, connection_struct)) ||
-	    !(conn->params = talloc(conn, struct share_params)) ||
-	    !(conn->vuid_cache = talloc_zero(conn, struct vuid_cache)) ||
-	    !(conn->connectpath = talloc_strdup(conn, "")) ||
-	    !(conn->origpath = talloc_strdup(conn, ""))) {
-		DEBUG(0,("TALLOC_ZERO() failed!\n"));
+	conn = talloc_zero(NULL, connection_struct);
+	if (conn == NULL) {
+		DBG_ERR("talloc_zero failed\n");
+		return NULL;
+	}
+	conn->params = talloc(conn, struct share_params);
+	if (conn->params == NULL) {
+		DBG_ERR("talloc_zero failed\n");
+		TALLOC_FREE(conn);
+		return NULL;
+	}
+	conn->vuid_cache = talloc_zero(conn, struct vuid_cache);
+	if (conn->vuid_cache == NULL) {
+		DBG_ERR("talloc_zero failed\n");
+		TALLOC_FREE(conn);
+		return NULL;
+	}
+	conn->connectpath = talloc_strdup(conn, "");
+	if (conn->connectpath == NULL) {
+		DBG_ERR("talloc_zero failed\n");
+		TALLOC_FREE(conn);
+		return NULL;
+	}
+	conn->origpath = talloc_strdup(conn, "");
+	if (conn->origpath == NULL) {
+		DBG_ERR("talloc_zero failed\n");
+		TALLOC_FREE(conn);
+		return NULL;
+	}
+	conn->cwd_fsp = talloc_zero(conn, struct files_struct);
+	if (conn->cwd_fsp == NULL) {
+		DBG_ERR("talloc_zero failed\n");
+		TALLOC_FREE(conn);
+		return NULL;
+	}
+	conn->cwd_fsp->fh = talloc_zero(conn->cwd_fsp, struct fd_handle);
+	if (conn->cwd_fsp->fh == NULL) {
+		DBG_ERR("talloc_zero failed\n");
 		TALLOC_FREE(conn);
 		return NULL;
 	}
 	conn->sconn = sconn;
 	conn->force_group_gid = (gid_t)-1;
+	conn->cwd_fsp->fh->fd = -1;
+	conn->cwd_fsp->fnum = FNUM_FIELD_INVALID;
+	conn->cwd_fsp->conn = conn;
 
 	DLIST_ADD(sconn->connections, conn);
 	sconn->num_connections++;

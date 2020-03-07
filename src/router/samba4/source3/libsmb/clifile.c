@@ -344,7 +344,7 @@ static void cli_posix_readlink_done(struct tevent_req *subreq)
 		req, struct cli_posix_readlink_state);
 	NTSTATUS status;
 	uint8_t *data = NULL;
-	uint32_t num_data;
+	uint32_t num_data = 0;
 	charset_t charset;
 	size_t converted_size;
 	bool ok;
@@ -357,7 +357,7 @@ static void cli_posix_readlink_done(struct tevent_req *subreq)
 	/*
 	 * num_data is > 1, we've given 1 as minimum to cli_qpathinfo_send
 	 */
-	if (data[num_data-1] != '\0') {
+	if (data == NULL || data[num_data-1] != '\0') {
 		tevent_req_nterror(req, NT_STATUS_DATA_ERROR);
 		return;
 	}
@@ -777,7 +777,7 @@ static void cli_posix_stat_done(struct tevent_req *subreq)
 	struct stat_state *state = tevent_req_data(req, struct stat_state);
 	SMB_STRUCT_STAT *sbuf = state->sbuf;
 	uint8_t *data;
-	uint32_t num_data;
+	uint32_t num_data = 0;
 	NTSTATUS status;
 
 	status = cli_qpathinfo_recv(subreq, state, &data, &num_data);
@@ -3004,7 +3004,7 @@ NTSTATUS cli_open(struct cli_state *cli, const char *fname, int flags,
 	unsigned int openfn = 0;
 	unsigned int dos_deny = 0;
 	uint32_t access_mask, share_mode, create_disposition, create_options;
-	struct smb_create_returns cr;
+	struct smb_create_returns cr = {0};
 
 	/* Do the initial mapping into OpenX parameters. */
 	if (flags & O_CREAT) {
@@ -4839,7 +4839,7 @@ NTSTATUS cli_disk_size(struct cli_state *cli, const char *path, uint64_t *bsize,
 {
 	uint64_t sectors_per_block;
 	uint64_t bytes_per_sector;
-	int old_bsize, old_total, old_avail;
+	int old_bsize = 0, old_total = 0, old_avail = 0;
 	NTSTATUS status;
 
 	if (smbXcli_conn_protocol(cli->conn) >= PROTOCOL_SMB2_02) {
@@ -5287,7 +5287,6 @@ static bool parse_ea_blob(TALLOC_CTX *ctx, const uint8_t *rdata,
 		return false;
 	}
 
-	ea_size = (size_t)IVAL(rdata,0);
 	p = rdata + 4;
 
 	for (num_eas = 0; num_eas < *pnum_eas; num_eas++ ) {

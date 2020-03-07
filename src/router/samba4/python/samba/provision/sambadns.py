@@ -749,11 +749,6 @@ def create_zone_file(lp, logger, paths, targetdir, dnsdomain,
         hostip_host_line = ""
         gc_msdcs_ip_line = ""
 
-    # we need to freeze the zone while we update the contents
-    if targetdir is None:
-        rndc = ' '.join(lp.get("rndc command"))
-        os.system(rndc + " freeze " + lp.get("realm"))
-
     setup_file(setup_path("provision.zone"), paths.dns, {
             "HOSTNAME": hostname,
             "DNSDOMAIN": dnsdomain,
@@ -779,9 +774,6 @@ def create_zone_file(lp, logger, paths, targetdir, dnsdomain,
             if 'SAMBA_SELFTEST' not in os.environ:
                 logger.error("Failed to chown %s to bind gid %u" % (
                     paths.dns, paths.bind_gid))
-
-    if targetdir is None:
-        os.system(rndc + " unfreeze " + lp.get("realm"))
 
 
 def create_samdb_copy(samdb, logger, paths, names, domainsid, domainguid):
@@ -858,9 +850,19 @@ def create_samdb_copy(samdb, logger, paths, names, domainsid, domainguid):
                 os.path.join(dns_samldb_dir, metadata_file))
         os.link(os.path.join(private_dir, domainzone_file),
                 os.path.join(dns_dir, domainzone_file))
+        if backend_store == "mdb":
+            # If the file is an lmdb data file need to link the
+            # lock file as well
+            os.link(os.path.join(private_dir, domainzone_file + "-lock"),
+                    os.path.join(dns_dir, domainzone_file + "-lock"))
         if forestzone_file:
             os.link(os.path.join(private_dir, forestzone_file),
                     os.path.join(dns_dir, forestzone_file))
+            if backend_store == "mdb":
+                # If the database file is an lmdb data file need to link the
+                # lock file as well
+                os.link(os.path.join(private_dir, forestzone_file + "-lock"),
+                        os.path.join(dns_dir, forestzone_file + "-lock"))
     except OSError:
         logger.error(
             "Failed to setup database for BIND, AD based DNS cannot be used")

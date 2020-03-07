@@ -25,13 +25,10 @@ from samba.ndr import ndr_unpack, ndr_print
 from samba.samdb import SamDB
 from samba.samba3 import param as s3param, passdb, smbd
 from samba import provision
+from samba.auth_util import system_session_unix
 import os
 
-from samba.auth import (
-    system_session,
-    session_info_fill_unix,
-    copy_session_info,
-)
+from samba.auth import system_session
 
 from samba.netcmd import (
     Command,
@@ -39,13 +36,6 @@ from samba.netcmd import (
     SuperCommand,
     Option,
 )
-
-def system_session_unix():
-    session_info = system_session()
-    session_info_unix = copy_session_info(session_info)
-    session_info_fill_unix(session_info_unix, None)
-
-    return session_info_unix
 
 def get_local_domain_sid(lp):
     is_ad_dc = False
@@ -117,11 +107,11 @@ class cmd_ntacl_set(Command):
                  file,
                  acl,
                  str(domain_sid),
+                 system_session_unix(),
                  xattr_backend,
                  eadb_file,
                  use_ntvfs=use_ntvfs,
-                 service=service,
-                 session_info=system_session_unix())
+                 service=service)
 
         if use_ntvfs:
             logger.warning("Please note that POSIX permissions have NOT been changed, only the stored NT ACL")
@@ -185,11 +175,11 @@ class cmd_ntacl_get(Command):
 
         acl = getntacl(lp,
                        file,
+                       system_session_unix(),
                        xattr_backend,
                        eadb_file,
                        direct_db_access=use_ntvfs,
-                       service=service,
-                       session_info=system_session_unix())
+                       service=service)
         if as_sddl:
             self.outf.write(acl.as_sddl(domain_sid) + "\n")
         else:
@@ -291,11 +281,11 @@ class cmd_ntacl_changedomsid(Command):
             try:
                 acl = getntacl(lp,
                                file,
+                               system_session_unix(),
                                xattr_backend,
                                eadb_file,
                                direct_db_access=use_ntvfs,
-                               service=service,
-                               session_info=system_session_unix())
+                               service=service)
             except Exception as e:
                 raise CommandError("Could not get acl for %s: %s" % (file, e))
 
@@ -333,11 +323,11 @@ class cmd_ntacl_changedomsid(Command):
                          file,
                          acl,
                          new_domain_sid,
+                         system_session_unix(),
                          xattr_backend,
                          eadb_file,
                          use_ntvfs=use_ntvfs,
-                         service=service,
-                         session_info=system_session_unix())
+                         service=service)
             except Exception as e:
                 raise CommandError("Could not set acl for %s: %s" % (file, e))
 

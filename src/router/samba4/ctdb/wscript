@@ -254,17 +254,14 @@ def configure(conf):
         Logs.info('Building with etcd support')
     conf.env.etcd_reclock = have_etcd_reclock
 
-    if Options.options.ctdb_ceph_reclock:
-        # Use custom libcephfs library path if provided. XXX The top level build
-        # explicitly sets LIBPATH_CEPH-COMMON when libcephfs_dir isn't provided.
-        if Options.options.libcephfs_dir:
-            conf.env['CPPPATH_RADOS'] = Options.options.libcephfs_dir + '/include'
-            conf.env['LIBPATH_RADOS'] = Options.options.libcephfs_dir + '/lib'
-            conf.env['LIBPATH_CEPH-COMMON'] = conf.env['LIBPATH_RADOS'] + '/ceph'
+    if Options.options.libcephfs_dir:
+        Logs.error('''--with-libcephfs no longer supported, please use compiler
+                   flags instead, e.g. GCC LIBRARY_PATH and C_INCLUDE_PATH''')
+        sys.exit(1)
 
+    if Options.options.ctdb_ceph_reclock:
         if (conf.CHECK_HEADERS('rados/librados.h', False, False, 'rados') and
 					conf.CHECK_LIB('rados', shlib=True)):
-            conf.CHECK_LIB('ceph-common', shlib=True)
             Logs.info('Building with Ceph librados recovery lock support')
             conf.define('HAVE_LIBRADOS', 1)
         else:
@@ -625,7 +622,9 @@ def build(bld):
 
     bld.SAMBA_BINARY('ctdb_mutex_fcntl_helper',
                      source='server/ctdb_mutex_fcntl_helper.c',
-                     deps='sys_rw ctdb-system',
+                     deps='''sys_rw ctdb-system tevent-util
+                             talloc tevent
+                          ''',
                      includes='include',
                      install_path='${CTDB_HELPER_BINDIR}')
 
@@ -680,13 +679,10 @@ def build(bld):
                           destname='README')
 
     if bld.env.HAVE_LIBRADOS:
-        rados_inc = ' include'
-        if bld.CONFIG_GET('CPPPATH_RADOS') is not None:
-            rados_inc = bld.CONFIG_GET('CPPPATH_RADOS') + rados_inc
         bld.SAMBA_BINARY('ctdb_mutex_ceph_rados_helper',
                          source='utils/ceph/ctdb_mutex_ceph_rados_helper.c',
-			 deps='talloc tevent rados ceph-common',
-			 includes=rados_inc,
+			 deps='talloc tevent rados',
+			 includes='include',
 			 install_path='${CTDB_HELPER_BINDIR}')
 
     sed_expr1 = 's|/usr/local/var/lib/ctdb|%s|g'  % (bld.env.CTDB_VARDIR)
@@ -773,7 +769,7 @@ def build(bld):
                 continue
             mode = os.lstat(fl).st_mode & MODE_777
             if arg['trim_path']:
-                fl = samba_utils.os_path_relpath(fl, arg['trim_path'])
+                fl = samba_utils.os.path.relpath(fl, arg['trim_path'])
             arg['file_list'].append([fl, mode])
 
     def SUBDIR_MODE(path, trim_path=None):
@@ -939,6 +935,12 @@ def build(bld):
                      deps='''talloc tevent tdb samba-util sys_rw''',
                      install_path='${CTDB_TEST_LIBEXECDIR}')
 
+    bld.SAMBA_BINARY('ctdb-db-test',
+                     source='tests/src/db_test_tool.c',
+                     cflags='-DCTDB_DB_TEST_TOOL',
+                     deps='''ctdb-client ctdb-protocol
+                             ctdb-util samba-util talloc tevent replace''',
+                     install_path='${CTDB_TEST_LIBEXECDIR}')
 
     bld.SAMBA_SUBSYSTEM('ctdb-protocol-tests-basic',
                         source=bld.SUBDIR('tests/src',
@@ -1032,6 +1034,11 @@ def build(bld):
                              LIBASYNC_REQ popt''',
                      install_path='${CTDB_TEST_LIBEXECDIR}')
 
+    bld.SAMBA_BINARY('cluster_mutex_test',
+                     source='tests/src/cluster_mutex_test.c',
+                     deps='samba-util talloc tevent',
+                     install_path='${CTDB_TEST_LIBEXECDIR}')
+
     if bld.env.HAVE_INFINIBAND:
         bld.SAMBA_BINARY('ibwrapper_test',
                          source='ib/ibwrapper_test.c',
@@ -1047,18 +1054,10 @@ def build(bld):
                          install_path='${CTDB_TEST_LIBEXECDIR}')
 
     test_subdirs = [
-        'complex',
-        'ctdb_eventd',
-        'cunit',
-        'etc-ctdb',
-        'eventd',
-        'eventscripts',
-        'onnode',
-        'shellcheck',
-        'simple',
-        'takeover',
-        'takeover_helper',
-        'tool'
+        'CLUSTER',
+        'INTEGRATION',
+        'UNIT',
+        'etc-ctdb'
     ]
 
     if bld.env.standalone_ctdb:
@@ -1072,10 +1071,13 @@ def build(bld):
             bld.INSTALL_FILES(bld.env.CTDB_TEST_DATADIR, 'tests/%s' % fmode[0],
                               destname=fmode[0], chmod=fmode[1])
 
-    # Install tests/scripts directory without test_wrap
+    # Install tests/scripts directory, excluding files that need munging
     test_scripts = [
+        'cluster.bash',
         'common.sh',
         'integration.bash',
+        'integration_local_daemons.bash',
+        'integration_real_cluster.bash',
         'unit.sh'
     ]
 
@@ -1084,14 +1086,10 @@ def build(bld):
                           os.path.join('tests/scripts', t),
                           destname=os.path.join('scripts', t))
 
-    sed_expr = 's@^TEST_SCRIPTS_DIR=.*@&\\nexport TEST_BIN_DIR=\"%s\"@' % (
-               bld.env.CTDB_TEST_LIBEXECDIR)
-    bld.SAMBA_GENERATOR('ctdb-test-wrap',
-                        source='tests/scripts/test_wrap',
-                        target='test_wrap',
-                        rule='sed -e "%s" ${SRC} > ${TGT}' % sed_expr)
-    bld.INSTALL_FILES(bld.env.CTDB_TEST_DATADIR+"/scripts", 'test_wrap',
-                      destname='test_wrap', chmod=MODE_755)
+    bld.INSTALL_FILES(bld.env.CTDB_TEST_DATADIR,
+                      'tests/scripts/test_wrap',
+                      destname='scripts/test_wrap',
+                      chmod=MODE_755)
 
     bld.SAMBA_GENERATOR('ctdb-test-script-install-paths',
                         source='tests/scripts/script_install_paths.sh',
@@ -1101,9 +1099,9 @@ def build(bld):
                       'script_install_paths.sh',
                       destname='script_install_paths.sh', chmod=MODE_644)
 
-    sed_expr1 = 's@^\(export %s\)=.*@\\1=%s@' % (
+    sed_expr1 = 's@^\\(%s\\)=.*@\\1=%s@' % (
                     'CTDB_TEST_DIR', bld.env.CTDB_TEST_DATADIR)
-    sed_expr2 = 's@^\(export CTDB_TESTS_ARE_INSTALLED\)=false@\\1=true@'
+    sed_expr2 = 's@^\\(CTDB_TESTS_ARE_INSTALLED\\)=false@\\\\1=true@'
     bld.SAMBA_GENERATOR('ctdb-test-runner',
                         source='tests/run_tests.sh',
                         target='ctdb_run_tests.sh',
@@ -1124,7 +1122,7 @@ def build(bld):
 
 
 def testonly(ctx):
-    cmd = 'tests/run_tests.sh -V tests/var'
+    cmd = 'tests/run_tests.sh'
     ret = samba_utils.RUN_COMMAND(cmd)
     if ret != 0:
         print('tests exited with exit status %d' % ret)
@@ -1138,7 +1136,7 @@ def test(ctx):
 
 def autotest(ctx):
     env = samba_utils.LOAD_ENVIRONMENT()
-    cmd = 'tests/run_tests.sh -e -S %s' % env.SOCKET_WRAPPER_SO_PATH
+    cmd = 'tests/run_tests.sh -eL -S %s' % env.SOCKET_WRAPPER_SO_PATH
     ret = samba_utils.RUN_COMMAND(cmd)
     if ret != 0:
         print('autotest exited with exit status %d' % ret)

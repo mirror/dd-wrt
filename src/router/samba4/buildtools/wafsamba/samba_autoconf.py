@@ -23,13 +23,12 @@ def DEFINE(conf, d, v, add_to_cflags=False, quote=False):
 
 def hlist_to_string(conf, headers=None):
     '''convert a headers list to a set of #include lines'''
-    hdrs=''
     hlist = conf.env.hlist
     if headers:
         hlist = hlist[:]
         hlist.extend(TO_LIST(headers))
-    for h in hlist:
-        hdrs += '#include <%s>\n' % h
+    hdrs = "\n".join('#include <%s>' % h for h in hlist)
+
     return hdrs
 
 
@@ -488,7 +487,8 @@ def CHECK_STRUCTURE_MEMBER(conf, structname, member,
 
 
 @conf
-def CHECK_CFLAGS(conf, cflags, fragment='int main(void) { return 0; }\n'):
+def CHECK_CFLAGS(conf, cflags, fragment='int main(void) { return 0; }\n',
+                 mandatory=False):
     '''check if the given cflags are accepted by the compiler
     '''
     check_cflags = TO_LIST(cflags)
@@ -496,19 +496,20 @@ def CHECK_CFLAGS(conf, cflags, fragment='int main(void) { return 0; }\n'):
         check_cflags.extend(conf.env['WERROR_CFLAGS'])
     return conf.check(fragment=fragment,
                       execute=0,
-                      mandatory=False,
+                      mandatory=mandatory,
                       type='nolink',
                       cflags=check_cflags,
                       msg="Checking compiler accepts %s" % cflags)
 
 @conf
-def CHECK_LDFLAGS(conf, ldflags):
+def CHECK_LDFLAGS(conf, ldflags,
+                  mandatory=False):
     '''check if the given ldflags are accepted by the linker
     '''
     return conf.check(fragment='int main(void) { return 0; }\n',
                       execute=0,
                       ldflags=ldflags,
-                      mandatory=False,
+                      mandatory=mandatory,
                       msg="Checking linker accepts %s" % ldflags)
 
 
@@ -724,6 +725,9 @@ def SAMBA_CONFIG_H(conf, path=None):
     if Options.options.debug:
         conf.ADD_CFLAGS('-g', testflags=True)
 
+    if Options.options.pidl_developer:
+        conf.env.PIDL_DEVELOPER_MODE = True
+
     if Options.options.developer:
         conf.env.DEVELOPER_MODE = True
 
@@ -783,9 +787,9 @@ int main(void) {
                 conf.env['EXTRA_CFLAGS'] = []
             conf.env['EXTRA_CFLAGS'].extend(TO_LIST("-Werror=format"))
 
-    if Options.options.picky_developer:
-        conf.ADD_NAMED_CFLAGS('PICKY_CFLAGS', '-Werror -Wno-error=deprecated-declarations', testflags=True)
-        conf.ADD_NAMED_CFLAGS('PICKY_CFLAGS', '-Wno-error=tautological-compare', testflags=True)
+        if not Options.options.disable_warnings_as_errors:
+            conf.ADD_NAMED_CFLAGS('PICKY_CFLAGS', '-Werror -Wno-error=deprecated-declarations', testflags=True)
+            conf.ADD_NAMED_CFLAGS('PICKY_CFLAGS', '-Wno-error=tautological-compare', testflags=True)
 
     if Options.options.fatal_errors:
         conf.ADD_CFLAGS('-Wfatal-errors', testflags=True)
@@ -814,11 +818,19 @@ int main(void) {
     #
     # The CFLAGS and LDFLAGS environment variables are also
     # used for the configure checks which might impact their results.
+    #
+    # If these variables don't pass a smoke test, fail the configure
+
     conf.add_os_flags('ADDITIONAL_CFLAGS')
-    if conf.env.ADDITIONAL_CFLAGS and conf.CHECK_CFLAGS(conf.env['ADDITIONAL_CFLAGS']):
+    if conf.env.ADDITIONAL_CFLAGS:
+        conf.CHECK_CFLAGS(conf.env['ADDITIONAL_CFLAGS'],
+                          mandatory=True)
         conf.env['EXTRA_CFLAGS'].extend(conf.env['ADDITIONAL_CFLAGS'])
+
     conf.add_os_flags('ADDITIONAL_LDFLAGS')
-    if conf.env.ADDITIONAL_LDFLAGS and conf.CHECK_LDFLAGS(conf.env['ADDITIONAL_LDFLAGS']):
+    if conf.env.ADDITIONAL_LDFLAGS:
+        conf.CHECK_LDFLAGS(conf.env['ADDITIONAL_LDFLAGS'],
+                           mandatory=True)
         conf.env['EXTRA_LDFLAGS'].extend(conf.env['ADDITIONAL_LDFLAGS'])
 
     if path is None:
@@ -938,6 +950,11 @@ def SETUP_CONFIGURE_CACHE(conf, enable):
 
 @conf
 def SAMBA_CHECK_UNDEFINED_SYMBOL_FLAGS(conf):
+    if Options.options.address_sanitizer or Options.options.enable_libfuzzer:
+        # Sanitizers can rely on symbols undefined at library link time and the
+        # symbols used for fuzzers are only defined by compiler wrappers.
+        return
+
     if not sys.platform.startswith("openbsd"):
         # we don't want any libraries or modules to rely on runtime
         # resolution of symbols

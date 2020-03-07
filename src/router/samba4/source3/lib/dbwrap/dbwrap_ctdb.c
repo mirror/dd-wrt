@@ -98,7 +98,7 @@ static int ctdb_async_ctx_init_internal(TALLOC_CTX *mem_ctx,
 				    &ctdb_async_ctx.async_conn);
 	unbecome_root();
 
-	if (ctdb_async_ctx.async_conn == NULL) {
+	if (ret != 0 || ctdb_async_ctx.async_conn == NULL) {
 		DBG_ERR("ctdbd_init_connection failed\n");
 		return EIO;
 	}
@@ -527,8 +527,14 @@ static struct db_record *db_ctdb_fetch_locked_transaction(struct db_ctdb_ctx *ct
 	result->storev = db_ctdb_storev_transaction;
 	result->delete_rec = db_ctdb_delete_transaction;
 
+	if (ctx->transaction == NULL) {
+		DEBUG(0, ("no transaction available\n"));
+		TALLOC_FREE(result);
+		return NULL;
+	}
 	if (pull_newest_from_marshall_buffer(ctx->transaction->m_write, key,
 					     NULL, result, &result->value)) {
+		result->value_valid = true;
 		return result;
 	}
 
@@ -536,6 +542,7 @@ static struct db_record *db_ctdb_fetch_locked_transaction(struct db_ctdb_ctx *ct
 	if (ctdb_data.dptr == NULL) {
 		/* create the record */
 		result->value = tdb_null;
+		result->value_valid = true;
 		return result;
 	}
 
@@ -548,7 +555,9 @@ static struct db_record *db_ctdb_fetch_locked_transaction(struct db_ctdb_ctx *ct
 			 result->value.dsize))) {
 		DEBUG(0, ("talloc failed\n"));
 		TALLOC_FREE(result);
+		return NULL;
 	}
+	result->value_valid = true;
 
 	SAFE_FREE(ctdb_data.dptr);
 
@@ -1239,8 +1248,10 @@ again:
 		if (result->value.dptr == NULL) {
 			DBG_ERR("talloc failed\n");
 			TALLOC_FREE(result);
+			return NULL;
 		}
 	}
+	result->value_valid = true;
 
 	SAFE_FREE(ctdb_data.dptr);
 
@@ -1710,6 +1721,7 @@ static void traverse_read_callback(TDB_DATA key, TDB_DATA data, void *private_da
 	rec.storev = db_ctdb_storev_deny;
 	rec.delete_rec = db_ctdb_delete_deny;
 	rec.private_data = NULL;
+	rec.value_valid = true;
 	state->fn(&rec, state->private_data);
 	state->count++;
 }
@@ -1734,6 +1746,7 @@ static int traverse_persistent_callback_read(TDB_CONTEXT *tdb, TDB_DATA kbuf, TD
 	rec.db = state->db;
 	rec.key = kbuf;
 	rec.value = dbuf;
+	rec.value_valid = true;
 	rec.storev = db_ctdb_storev_deny;
 	rec.delete_rec = db_ctdb_delete_deny;
 	rec.private_data = NULL;

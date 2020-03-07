@@ -9,6 +9,8 @@ set -xueo pipefail
 
 yum update -y
 yum install -y epel-release
+yum install -y yum-plugin-copr
+yum copr enable -y sergiomb/SambaAD
 yum update -y
 
 yum install -y \
@@ -20,6 +22,8 @@ yum install -y \
     bind-utils \
     binutils \
     bison \
+    chrpath \
+    compat-gnutls34-devel \
     cups-devel \
     curl \
     dbus-devel \
@@ -32,7 +36,6 @@ yum install -y \
     git \
     glib2-devel \
     glibc-common \
-    gnutls-devel \
     gpgme-devel \
     gzip \
     hostname \
@@ -43,7 +46,6 @@ yum install -y \
     krb5-server \
     lcov \
     libacl-devel \
-    libaio-devel \
     libarchive-devel \
     libattr-devel \
     libblkid-devel \
@@ -64,7 +66,6 @@ yum install -y \
     make \
     mingw64-gcc \
     ncurses-devel \
-    nettle-devel \
     openldap-devel \
     pam-devel \
     patch \
@@ -81,13 +82,7 @@ yum install -y \
     popt-devel \
     procps-ng \
     psmisc \
-    pygpgme \
-    python-crypto \
-    python-devel \
-    python-dns \
-    python-markdown \
     python36 \
-    python36-crypto \
     python36-devel \
     python36-dns \
     python36-markdown \

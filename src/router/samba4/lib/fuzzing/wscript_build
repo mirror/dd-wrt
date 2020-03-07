@@ -1,0 +1,172 @@
+#!/usr/bin/env python
+
+from waflib import Build
+
+bld.SAMBA_SUBSYSTEM('fuzzing',
+                    source='fuzzing.c',
+                    deps='talloc')
+
+bld.SAMBA_SUBSYSTEM('afl-fuzz-main',
+    source='afl-fuzz-main.c',
+    deps='samba-util',
+    enabled=bld.env.enable_afl_fuzzer
+    )
+
+bld.SAMBA_BINARY('fuzz_tiniparser',
+                 source='fuzz_tiniparser.c',
+                 deps='fuzzing tiniparser talloc afl-fuzz-main',
+                 fuzzer=True)
+
+bld.SAMBA_BINARY('fuzz_oLschema2ldif',
+                 source='fuzz_oLschema2ldif.c',
+                 deps='fuzzing oLschema2ldif-lib afl-fuzz-main',
+                 fuzzer=True)
+
+bld.SAMBA_BINARY('fuzz_reg_parse',
+                 source='fuzz_reg_parse.c',
+                 deps='fuzzing samba3-util smbconf REGFIO afl-fuzz-main',
+                 fuzzer=True)
+
+bld.SAMBA_BINARY('fuzz_nmblib_parse_packet',
+                 source='fuzz_nmblib_parse_packet.c',
+                 deps='fuzzing libsmb afl-fuzz-main',
+                 fuzzer=True)
+
+bld.SAMBA_BINARY('fuzz_regfio',
+                 source='fuzz_regfio.c',
+                 deps='fuzzing samba3-util smbconf REGFIO afl-fuzz-main',
+                 fuzzer=True)
+
+bld.SAMBA_BINARY('fuzz_lzxpress',
+                 source='fuzz_lzxpress.c',
+                 deps='fuzzing LZXPRESS afl-fuzz-main',
+                 fuzzer=True)
+
+bld.SAMBA_BINARY('fuzz_ldap_decode',
+                 source='fuzz_ldap_decode.c',
+                 deps='fuzzing cli-ldap afl-fuzz-main',
+                 fuzzer=True)
+
+bld.SAMBA_BINARY('fuzz_ldb_parse_control',
+                 source='fuzz_ldb_parse_control.c',
+                 deps='fuzzing ldb afl-fuzz-main',
+                 fuzzer=True)
+
+bld.SAMBA_BINARY('fuzz_ldb_dn_explode',
+                 source='fuzz_ldb_dn_explode.c',
+                 deps='fuzzing ldb afl-fuzz-main',
+                 fuzzer=True)
+
+bld.SAMBA_BINARY('fuzz_ldb_ldif_read',
+                 source='fuzz_ldb_ldif_read.c',
+                 deps='fuzzing ldb afl-fuzz-main',
+                 fuzzer=True)
+
+bld.SAMBA_BINARY('fuzz_ldb_parse_binary_decode',
+                 source='fuzz_ldb_parse_binary_decode.c',
+                 deps='fuzzing ldb afl-fuzz-main',
+                 fuzzer=True)
+
+bld.SAMBA_BINARY('fuzz_ldb_parse_tree',
+                 source='fuzz_ldb_parse_tree.c',
+                 deps='fuzzing ldb afl-fuzz-main',
+                 fuzzer=True)
+
+# The fuzz_type and fuzz_function parameters make the built
+# fuzzer take the same input as ndrdump and so the same that
+# could be sent to the client or server as the stub data.
+
+def SAMBA_NDR_FUZZ(bld, interface, auto_deps=False,
+                   fuzz_type=None, fuzz_function=None):
+    name = "fuzz_ndr_%s" % (interface.lower())
+    fuzz_dir = os.path.join(bld.env.srcdir, 'lib/fuzzing')
+    fuzz_reldir = os.path.relpath(fuzz_dir, bld.path.abspath())
+    fuzz_src = os.path.join(fuzz_reldir, 'fuzz_ndr_X.c')
+
+    cflags = "-D FUZZ_PIPE_TABLE=ndr_table_%s" % interface
+    if fuzz_type:
+        name += "_%s" % (fuzz_type)
+        cflags += " -D FUZZ_TYPE=%s " % (fuzz_type)
+    if fuzz_type and fuzz_function:
+        name += "_%d" % (fuzz_function)
+        cflags += " -D FUZZ_FUNCTION=%d" % (fuzz_function)
+
+    fuzz_named_src = os.path.join(fuzz_reldir,
+                                  '%s.c' % (name))
+    # Work around an issue that WAF is invoked from up to 3 different
+    # directories so doesn't create a unique name for the multiple .o
+    # files like it would if called from just one place.
+    bld.SAMBA_GENERATOR(fuzz_named_src,
+                        source=fuzz_src,
+                        target=fuzz_named_src,
+                        rule='cp ${SRC} ${TGT}')
+
+    if auto_deps:
+        deps = "afl-fuzz-main talloc ndr NDR_%s" % interface.upper()
+    else:
+        deps = "afl-fuzz-main ndr-table NDR_DCERPC"
+
+    bld.SAMBA_BINARY(name, source=fuzz_named_src,
+                     cflags = cflags,
+                     deps = deps,
+                     fuzzer=True)
+
+Build.BuildContext.SAMBA_NDR_FUZZ = SAMBA_NDR_FUZZ
+
+# fuzz_ndr_X is generated from the list if IDL fed to PIDL
+# however there are exceptions to the normal pattern
+bld.SAMBA_NDR_FUZZ('IOXIDResolver') # oxidresolver.idl
+bld.SAMBA_NDR_FUZZ('IRemoteActivation') # remact.idl
+bld.SAMBA_NDR_FUZZ('iremotewinspool') # winspool.idl
+bld.SAMBA_NDR_FUZZ('FileServerVssAgent') # fsvrp.idl
+bld.SAMBA_NDR_FUZZ('lsarpc') # lsa.idl
+bld.SAMBA_NDR_FUZZ('netdfs') # dfs.idl
+bld.SAMBA_NDR_FUZZ('nfs4acl_interface') # nfs4acl.idl
+bld.SAMBA_NDR_FUZZ('rpcecho') # echo.idl
+
+# quota.idl
+bld.SAMBA_NDR_FUZZ('file_quota')
+bld.SAMBA_NDR_FUZZ('smb2_query_quota')
+bld.SAMBA_NDR_FUZZ('smb1_nt_transact_query_quota')
+
+# ioctl.idl
+bld.SAMBA_NDR_FUZZ('copychunk')
+bld.SAMBA_NDR_FUZZ('compression')
+bld.SAMBA_NDR_FUZZ('netinterface')
+bld.SAMBA_NDR_FUZZ('sparse')
+bld.SAMBA_NDR_FUZZ('resiliency')
+bld.SAMBA_NDR_FUZZ('trim')
+
+# WMI tables
+bld.SAMBA_NDR_FUZZ('IWbemClassObject')
+bld.SAMBA_NDR_FUZZ('IWbemServices')
+bld.SAMBA_NDR_FUZZ('IEnumWbemClassObject')
+bld.SAMBA_NDR_FUZZ('IWbemContext')
+bld.SAMBA_NDR_FUZZ('IWbemLevel1Login')
+bld.SAMBA_NDR_FUZZ('IWbemWCOSmartEnum')
+bld.SAMBA_NDR_FUZZ('IWbemFetchSmartEnum')
+bld.SAMBA_NDR_FUZZ('IWbemCallResult')
+bld.SAMBA_NDR_FUZZ('IWbemObjectSink')
+
+# DCOM tables
+bld.SAMBA_NDR_FUZZ('dcom_Unknown')
+bld.SAMBA_NDR_FUZZ('IUnknown')
+bld.SAMBA_NDR_FUZZ('IClassFactory')
+bld.SAMBA_NDR_FUZZ('IRemUnknown')
+bld.SAMBA_NDR_FUZZ('IClassActivator')
+bld.SAMBA_NDR_FUZZ('ISCMLocalActivator')
+bld.SAMBA_NDR_FUZZ('IMachineLocalActivator')
+bld.SAMBA_NDR_FUZZ('ILocalObjectExporter')
+bld.SAMBA_NDR_FUZZ('ISystemActivator')
+bld.SAMBA_NDR_FUZZ('IRemUnknown2')
+bld.SAMBA_NDR_FUZZ('IDispatch')
+bld.SAMBA_NDR_FUZZ('IMarshal')
+bld.SAMBA_NDR_FUZZ('ICoffeeMachine')
+bld.SAMBA_NDR_FUZZ('IStream')
+
+# Specific struct or function on the interface
+
+bld.SAMBA_NDR_FUZZ('spoolss',
+                   auto_deps=True,
+                   fuzz_type="TYPE_IN",
+                   fuzz_function=65)

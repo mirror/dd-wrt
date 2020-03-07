@@ -24,6 +24,7 @@
 #include "dbwrap/dbwrap.h"
 #include "dbwrap/dbwrap_open.h"
 #include "util_tdb.h"
+#include "libcli/util/ntstatus.h"
 
 /*******************************************************************
  Create the share security tdb.
@@ -136,7 +137,7 @@ static int upgrade_v2_to_v3(struct db_record *rec, void *priv)
 	return 0;
 }
 
-bool share_info_db_init(void)
+NTSTATUS share_info_db_init(void)
 {
 	const char *vstring = "INFO/version";
 	int32_t vers_id = 0;
@@ -145,12 +146,12 @@ bool share_info_db_init(void)
 	char *db_path;
 
 	if (share_db != NULL) {
-		return True;
+		return NT_STATUS_OK;
 	}
 
 	db_path = state_path(talloc_tos(), "share_info.tdb");
 	if (db_path == NULL) {
-		return false;
+		return NT_STATUS_NO_MEMORY;
 	}
 
 	share_db = db_open(NULL, db_path, 0,
@@ -160,7 +161,7 @@ bool share_info_db_init(void)
 		DEBUG(0,("Failed to open share info database %s (%s)\n",
 			 db_path, strerror(errno)));
 		TALLOC_FREE(db_path);
-		return False;
+		return map_nt_error_from_unix_common(errno);
 	}
 	TALLOC_FREE(db_path);
 
@@ -170,13 +171,13 @@ bool share_info_db_init(void)
 	}
 
 	if (vers_id == SHARE_DATABASE_VERSION_V3) {
-		return true;
+		return NT_STATUS_OK;
 	}
 
 	if (dbwrap_transaction_start(share_db) != 0) {
 		DEBUG(0, ("transaction_start failed\n"));
 		TALLOC_FREE(share_db);
-		return false;
+		return NT_STATUS_INTERNAL_DB_ERROR;
 	}
 
 	status = dbwrap_fetch_int32_bystring(share_db, vstring, &vers_id);
@@ -191,7 +192,7 @@ bool share_info_db_init(void)
 		if (dbwrap_transaction_cancel(share_db)) {
 			smb_panic("transaction_cancel failed");
 		}
-		return true;
+		return NT_STATUS_OK;
 	}
 
 	/* Move to at least V2. */
@@ -228,10 +229,16 @@ bool share_info_db_init(void)
 	/* Finally upgrade to version 3, with canonicalized sharenames. */
 
 	status = dbwrap_traverse(share_db, upgrade_v2_to_v3, &upgrade_ok, NULL);
-	if (!NT_STATUS_IS_OK(status) || upgrade_ok == false) {
+	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(0, ("traverse failed\n"));
 		goto cancel;
 	}
+	if (!upgrade_ok) {
+		DBG_ERR("upgrade failed.\n");
+		status = NT_STATUS_INTERNAL_ERROR;
+		goto cancel;
+	}
+
 	status = dbwrap_store_int32_bystring(
 		share_db, vstring, SHARE_DATABASE_VERSION_V3);
 	if (!NT_STATUS_IS_OK(status)) {
@@ -242,17 +249,17 @@ bool share_info_db_init(void)
 
 	if (dbwrap_transaction_commit(share_db) != 0) {
 		DEBUG(0, ("transaction_commit failed\n"));
-		return false;
+		return NT_STATUS_INTERNAL_ERROR;
 	}
 
-	return true;
+	return NT_STATUS_OK;
 
  cancel:
 	if (dbwrap_transaction_cancel(share_db)) {
 		smb_panic("transaction_cancel failed");
 	}
 
-	return false;
+	return status;
 }
 
 /*******************************************************************
@@ -304,7 +311,8 @@ struct security_descriptor *get_share_security( TALLOC_CTX *ctx, const char *ser
 		return NULL;
 	}
 
-	if (!share_info_db_init()) {
+	status = share_info_db_init();
+	if (!NT_STATUS_IS_OK(status)) {
 		TALLOC_FREE(c_servicename);
 		return NULL;
 	}
@@ -349,20 +357,22 @@ struct security_descriptor *get_share_security( TALLOC_CTX *ctx, const char *ser
  Store a security descriptor in the share db.
  ********************************************************************/
 
-bool set_share_security(const char *share_name, struct security_descriptor *psd)
+NTSTATUS set_share_security(const char *share_name,
+			    struct security_descriptor *psd)
 {
 	TALLOC_CTX *frame = talloc_stackframe();
 	char *key;
-	bool ret = False;
 	TDB_DATA blob;
 	NTSTATUS status;
 	char *c_share_name = canonicalize_servicename(frame, share_name);
 
-	if (!c_share_name) {
+	if (c_share_name == NULL) {
+		status = NT_STATUS_INVALID_PARAMETER;
 		goto out;
 	}
 
-	if (!share_info_db_init()) {
+	status = share_info_db_init();
+	if (!NT_STATUS_IS_OK(status)) {
 		goto out;
 	}
 
@@ -376,6 +386,7 @@ bool set_share_security(const char *share_name, struct security_descriptor *psd)
 
 	if (!(key = talloc_asprintf(frame, SHARE_SECURITY_DB_KEY_PREFIX_STR "%s", c_share_name))) {
 		DEBUG(0, ("talloc_asprintf failed\n"));
+		status = NT_STATUS_NO_MEMORY;
 		goto out;
 	}
 
@@ -388,37 +399,38 @@ bool set_share_security(const char *share_name, struct security_descriptor *psd)
 	}
 
 	DEBUG(5,("set_share_security: stored secdesc for %s\n", share_name ));
-	ret = True;
+	status = NT_STATUS_OK;
 
  out:
 	TALLOC_FREE(frame);
-	return ret;
+	return status;
 }
 
 /*******************************************************************
  Delete a security descriptor.
 ********************************************************************/
 
-bool delete_share_security(const char *servicename)
+NTSTATUS delete_share_security(const char *servicename)
 {
 	TDB_DATA kbuf;
 	char *key;
 	NTSTATUS status;
 	char *c_servicename = canonicalize_servicename(talloc_tos(), servicename);
 
-	if (!c_servicename) {
-		return NULL;
+	if (c_servicename == NULL) {
+		return NT_STATUS_INVALID_PARAMETER;
 	}
 
-	if (!share_info_db_init()) {
+	status = share_info_db_init();
+	if (!NT_STATUS_IS_OK(status)) {
 		TALLOC_FREE(c_servicename);
-		return False;
+		return status;
 	}
 
 	if (!(key = talloc_asprintf(talloc_tos(), SHARE_SECURITY_DB_KEY_PREFIX_STR "%s",
 				    c_servicename))) {
 		TALLOC_FREE(c_servicename);
-		return False;
+		return NT_STATUS_NO_MEMORY;
 	}
 	kbuf = string_term_tdb_data(key);
 
@@ -427,11 +439,11 @@ bool delete_share_security(const char *servicename)
 		DEBUG(0, ("delete_share_security: Failed to delete entry for "
 			  "share %s: %s\n", c_servicename, nt_errstr(status)));
 		TALLOC_FREE(c_servicename);
-		return False;
+		return status;
 	}
 
 	TALLOC_FREE(c_servicename);
-	return True;
+	return NT_STATUS_OK;
 }
 
 /*******************************************************************

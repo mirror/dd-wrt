@@ -20,42 +20,45 @@
 */
 
 #include "replace.h"
-#include "system/filesys.h"
 #include "lib/util/genrand.h"
-#include "sys_rw_data.h"
-#include "lib/util/blocking.h"
 
-static int urand_fd = -1;
+#include <gnutls/gnutls.h>
+#include <gnutls/crypto.h>
 
-static void open_urandom(void)
-{
-	if (urand_fd != -1) {
-		return;
-	}
-	urand_fd = open( "/dev/urandom", O_RDONLY,0);
-	if (urand_fd == -1) {
-		abort();
-	}
-	smb_set_close_on_exec(urand_fd);
-}
+/*
+ * Details about the GnuTLS CSPRNG:
+ *
+ * https://nikmav.blogspot.com/2017/03/improving-by-simplifying-gnutls-prng.html
+ */
 
 _PUBLIC_ void generate_random_buffer(uint8_t *out, int len)
 {
-	ssize_t rw_ret;
-
-	open_urandom();
-
-	rw_ret = read_data(urand_fd, out, len);
-	if (rw_ret != len) {
-		abort();
-	}
+	/* Random number generator for temporary keys. */
+	gnutls_rnd(GNUTLS_RND_RANDOM, out, len);
 }
 
-/*
- * Keep generate_secret_buffer in case we ever want to do something
- * different
- */
 _PUBLIC_ void generate_secret_buffer(uint8_t *out, int len)
 {
-	generate_random_buffer(out, len);
+	/*
+	 * Random number generator for long term keys.
+	 *
+	 * The key generator, will re-seed after a fixed amount of bytes is
+	 * generated (typically less than the nonce), and will also re-seed
+	 * based on time, i.e., after few hours of operation without reaching
+	 * the limit for a re-seed. For its re-seed it mixes mixes data obtained
+	 * from the OS random device with the previous key.
+	 */
+	gnutls_rnd(GNUTLS_RND_KEY, out, len);
+}
+
+_PUBLIC_ void generate_nonce_buffer(uint8_t *out, int len)
+{
+	/*
+	 * Random number generator for nonce and initialization vectors.
+	 *
+	 * The nonce generator will reseed after outputting a fixed amount of
+	 * bytes (typically few megabytes), or after few hours of operation
+	 * without reaching the limit has passed.
+	 */
+	gnutls_rnd(GNUTLS_RND_NONCE, out, len);
 }

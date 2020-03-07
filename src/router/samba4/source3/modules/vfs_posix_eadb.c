@@ -290,8 +290,10 @@ static bool posix_eadb_init(int snum, struct tdb_wrap **p_db)
 /*
  * On unlink we need to delete the tdb record
  */
-static int posix_eadb_unlink(vfs_handle_struct *handle,
-			    const struct smb_filename *smb_fname)
+static int posix_eadb_unlink_internal(vfs_handle_struct *handle,
+			struct files_struct *dirfsp,
+			const struct smb_filename *smb_fname,
+			int flags)
 {
 	struct smb_filename *smb_fname_tmp = NULL;
 	int ret = -1;
@@ -333,7 +335,10 @@ static int posix_eadb_unlink(vfs_handle_struct *handle,
 		}
 	}
 
-	ret = SMB_VFS_NEXT_UNLINK(handle, smb_fname_tmp);
+	ret = SMB_VFS_NEXT_UNLINKAT(handle,
+			dirfsp,
+			smb_fname_tmp,
+			flags);
 
 	if (ret == -1) {
 		tdb_transaction_cancel(ea_tdb->tdb);
@@ -353,7 +358,8 @@ out:
 /*
  * On rmdir we need to delete the tdb record
  */
-static int posix_eadb_rmdir(vfs_handle_struct *handle,
+static int posix_eadb_rmdir_internal(vfs_handle_struct *handle,
+			struct files_struct *dirfsp,
 			const struct smb_filename *smb_fname)
 {
 	NTSTATUS status;
@@ -372,7 +378,10 @@ static int posix_eadb_rmdir(vfs_handle_struct *handle,
 		tdb_transaction_cancel(ea_tdb->tdb);
 	}
 
-	ret = SMB_VFS_NEXT_RMDIR(handle, smb_fname);
+	ret = SMB_VFS_NEXT_UNLINKAT(handle,
+				dirfsp,
+				smb_fname,
+				AT_REMOVEDIR);
 
 	if (ret == -1) {
 		tdb_transaction_cancel(ea_tdb->tdb);
@@ -382,6 +391,27 @@ static int posix_eadb_rmdir(vfs_handle_struct *handle,
 		}
 	}
 
+	return ret;
+}
+
+static int posix_eadb_unlinkat(vfs_handle_struct *handle,
+			struct files_struct *dirfsp,
+			const struct smb_filename *smb_fname,
+			int flags)
+{
+	int ret;
+
+	SMB_ASSERT(dirfsp == dirfsp->conn->cwd_fsp);
+	if (flags & AT_REMOVEDIR) {
+		ret = posix_eadb_rmdir_internal(handle,
+					dirfsp,
+					smb_fname);
+	} else {
+		ret = posix_eadb_unlink_internal(handle,
+					dirfsp,
+					smb_fname,
+					flags);
+	}
 	return ret;
 }
 
@@ -440,8 +470,7 @@ static struct vfs_fn_pointers vfs_posix_eadb_fns = {
 	.flistxattr_fn = posix_eadb_flistxattr,
 	.removexattr_fn = posix_eadb_removexattr,
 	.fremovexattr_fn = posix_eadb_fremovexattr,
-	.unlink_fn = posix_eadb_unlink,
-	.rmdir_fn = posix_eadb_rmdir,
+	.unlinkat_fn = posix_eadb_unlinkat,
 	.connect_fn = posix_eadb_connect,
 };
 

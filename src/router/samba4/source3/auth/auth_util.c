@@ -49,10 +49,12 @@
 static int _smb_create_user(const char *domain, const char *unix_username, const char *homedir)
 {
 	TALLOC_CTX *ctx = talloc_tos();
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	char *add_script;
 	int ret;
 
-	add_script = lp_add_user_script(ctx);
+	add_script = lp_add_user_script(ctx, lp_sub);
 	if (!add_script || !*add_script) {
 		return -1;
 	}
@@ -207,6 +209,7 @@ bool make_user_info_netlogon_interactive(TALLOC_CTX *mem_ctx,
 	struct samr_Password nt_pwd;
 	unsigned char local_lm_response[24];
 	unsigned char local_nt_response[24];
+	int rc;
 
 	if (lm_interactive_pwd)
 		memcpy(lm_pwd.hash, lm_interactive_pwd, sizeof(lm_pwd.hash));
@@ -214,13 +217,21 @@ bool make_user_info_netlogon_interactive(TALLOC_CTX *mem_ctx,
 	if (nt_interactive_pwd)
 		memcpy(nt_pwd.hash, nt_interactive_pwd, sizeof(nt_pwd.hash));
 
-	if (lm_interactive_pwd)
-		SMBOWFencrypt(lm_pwd.hash, chal,
-			      local_lm_response);
+	if (lm_interactive_pwd) {
+		rc = SMBOWFencrypt(lm_pwd.hash, chal,
+				   local_lm_response);
+		if (rc != 0) {
+			return false;
+		}
+	}
 
-	if (nt_interactive_pwd)
-		SMBOWFencrypt(nt_pwd.hash, chal,
+	if (nt_interactive_pwd) {
+		rc = SMBOWFencrypt(nt_pwd.hash, chal,
 			      local_nt_response);
+		if (rc != 0) {
+			return false;
+		}
+	}
 
 	{
 		bool ret;
@@ -280,7 +291,7 @@ bool make_user_info_for_reply(TALLOC_CTX *mem_ctx,
 
 	DATA_BLOB local_lm_blob;
 	DATA_BLOB local_nt_blob;
-	NTSTATUS ret = NT_STATUS_UNSUCCESSFUL;
+	NTSTATUS ret;
 	char *plaintext_password_string;
 	/*
 	 * Not encrypted - do so.
@@ -409,13 +420,15 @@ bool make_user_info_guest(TALLOC_CTX *mem_ctx,
 static NTSTATUS log_nt_token(struct security_token *token)
 {
 	TALLOC_CTX *frame = talloc_stackframe();
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	char *command;
 	char *group_sidstr;
 	struct dom_sid_buf buf;
 	size_t i;
 
-	if ((lp_log_nt_token_command(frame) == NULL) ||
-	    (strlen(lp_log_nt_token_command(frame)) == 0)) {
+	if ((lp_log_nt_token_command(frame, lp_sub) == NULL) ||
+	    (strlen(lp_log_nt_token_command(frame, lp_sub)) == 0)) {
 		TALLOC_FREE(frame);
 		return NT_STATUS_OK;
 	}
@@ -428,7 +441,7 @@ static NTSTATUS log_nt_token(struct security_token *token)
 	}
 
 	command = talloc_string_sub(
-		frame, lp_log_nt_token_command(frame),
+		frame, lp_log_nt_token_command(frame, lp_sub),
 		"%s", dom_sid_str_buf(&token->sids[0], &buf));
 	command = talloc_string_sub(frame, command, "%t", group_sidstr);
 
@@ -2002,7 +2015,7 @@ NTSTATUS make_server_info_info3(TALLOC_CTX *mem_ctx,
 				struct auth_serversupplied_info **server_info,
 				const struct netr_SamInfo3 *info3)
 {
-	NTSTATUS nt_status = NT_STATUS_OK;
+	NTSTATUS nt_status;
 	char *found_username = NULL;
 	const char *nt_domain;
 	const char *nt_username;

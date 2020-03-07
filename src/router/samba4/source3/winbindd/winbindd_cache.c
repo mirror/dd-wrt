@@ -37,6 +37,9 @@
 #include "libsmb/samlogon_cache.h"
 #include "lib/namemap_cache.h"
 
+#include "lib/crypto/gnutls_helpers.h"
+#include <gnutls/crypto.h>
+
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_WINBIND
 
@@ -707,6 +710,7 @@ static struct cache_entry *wcache_fetch(struct winbind_cache *cache,
 	va_list ap;
 	char *kstr;
 	struct cache_entry *centry;
+	int ret;
 
 	if (!winbindd_use_cache() ||
 	    is_my_own_sam_domain(domain) ||
@@ -717,8 +721,12 @@ static struct cache_entry *wcache_fetch(struct winbind_cache *cache,
 	refresh_sequence_number(domain);
 
 	va_start(ap, format);
-	smb_xvasprintf(&kstr, format, ap);
+	ret = vasprintf(&kstr, format, ap);
 	va_end(ap);
+
+	if (ret == -1) {
+		return NULL;
+	}
 
 	centry = wcache_fetch_raw(kstr);
 	if (centry == NULL) {
@@ -749,10 +757,15 @@ static void wcache_delete(const char *format, ...)
 	va_list ap;
 	char *kstr;
 	TDB_DATA key;
+	int ret;
 
 	va_start(ap, format);
-	smb_xvasprintf(&kstr, format, ap);
+	ret = vasprintf(&kstr, format, ap);
 	va_end(ap);
+
+	if (ret == -1) {
+		return;
+	}
 
 	key = string_tdb_data(kstr);
 
@@ -924,14 +937,19 @@ static void centry_end(struct cache_entry *centry, const char *format, ...)
 	va_list ap;
 	char *kstr;
 	TDB_DATA key, data;
+	int ret;
 
 	if (!winbindd_use_cache()) {
 		return;
 	}
 
 	va_start(ap, format);
-	smb_xvasprintf(&kstr, format, ap);
+	ret = vasprintf(&kstr, format, ap);
 	va_end(ap);
+
+	if (ret == -1) {
+		return;
+	}
 
 	key = string_tdb_data(kstr);
 	data.dptr = centry->data;
@@ -1364,6 +1382,8 @@ NTSTATUS wcache_save_creds(struct winbindd_domain *domain,
 	uint32_t rid;
 	uint8_t cred_salt[NT_HASH_LEN];
 	uint8_t salted_hash[NT_HASH_LEN];
+	gnutls_hash_hd_t hash_hnd = NULL;
+	int rc;
 
 	if (is_null_sid(sid)) {
 		return NT_STATUS_INVALID_SID;
@@ -1384,7 +1404,26 @@ NTSTATUS wcache_save_creds(struct winbindd_domain *domain,
 
 	/* Create a salt and then salt the hash. */
 	generate_random_buffer(cred_salt, NT_HASH_LEN);
-	E_md5hash(cred_salt, nt_pass, salted_hash);
+
+	rc = gnutls_hash_init(&hash_hnd, GNUTLS_DIG_MD5);
+	if (rc < 0) {
+		centry_free(centry);
+		return gnutls_error_to_ntstatus(rc, NT_STATUS_HASH_NOT_SUPPORTED);
+	}
+
+	rc = gnutls_hash(hash_hnd, cred_salt, 16);
+	if (rc < 0) {
+		gnutls_hash_deinit(hash_hnd, NULL);
+		centry_free(centry);
+		return gnutls_error_to_ntstatus(rc, NT_STATUS_HASH_NOT_SUPPORTED);
+	}
+	rc = gnutls_hash(hash_hnd, nt_pass, 16);
+	if (rc < 0) {
+		gnutls_hash_deinit(hash_hnd, NULL);
+		centry_free(centry);
+		return gnutls_error_to_ntstatus(rc, NT_STATUS_HASH_NOT_SUPPORTED);
+	}
+	gnutls_hash_deinit(hash_hnd, salted_hash);
 
 	centry_put_hash16(centry, salted_hash);
 	centry_put_hash16(centry, cred_salt);

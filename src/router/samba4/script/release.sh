@@ -17,19 +17,26 @@ CONF_UPLOAD_URL="samba-bugs@download-master.samba.org:/home/data/ftp/pub"
 CONF_DOWNLOAD_URL="https://download.samba.org/pub"
 CONF_HISTORY_URL="https://www.samba.org"
 
-test -d ".git" || {
+test -d ".git" -o -r ".git" || {
 	echo "Run this script from the top-level directory in the"
 	echo "repository"
 	exit 1
 }
 
 usage() {
-	echo "Usage: release.sh <PRODUCT> <COMMAND>"
+	echo "Usage: script/release.sh <PRODUCT> <COMMAND>"
 	echo ""
 	echo "PRODUCT: ldb, talloc, tevent, tdb, samba-rc, samba-stable"
 	echo "COMMAND: fullrelease, create, push, upload, announce"
 	echo ""
 	return 0
+}
+
+test -x "script/release.sh" || {
+	usage
+	echo "Run this script from the top-level directory in the"
+	echo "repository: as 'script/release.sh'"
+	exit 1
 }
 
 check_args() {
@@ -185,26 +192,6 @@ verify_samba_stable() {
 	done
 
 	load_samba_stable_versions
-
-	test x"${product}" = x"samba-stable" && {
-		test -f "announce.${tagname}.quotation.txt" || {
-			echo ""
-			echo "announce.${tagname}.quotation.txt missing!"
-			echo ""
-			echo "Please create it and retry"
-			echo ""
-			echo "The content should look like this:"
-			echo "cat announce.${tagname}.quotation.txt"
-			echo '======================================================'
-			echo '                "Some text'
-			echo '                 from someone."'
-			echo ''
-			echo '                 The author'
-			echo '======================================================'
-			echo ""
-			return 1
-		}
-	}
 
 	test -n "${oldtagname}" || {
 		return 0
@@ -786,11 +773,6 @@ announcement_samba_stable() {
 		return 1
 	}
 
-	test -f "announce.${tagname}.quotation.txt" || {
-		echo "announce.${tagname}.quotation.txt missing!"
-		return 1
-	}
-
 	local release_url="${download_url}samba/stable/"
 	local patch_url="${download_url}samba/patches/"
 
@@ -833,7 +815,6 @@ announcement_samba_stable() {
 		local headlimit=$(expr ${top} - 1 )
 		local taillimit=$(expr ${headlimit} - \( ${skip} - 1 \))
 
-		cat "announce.${tagname}.quotation.txt"
 		echo ""
 		echo ""
 		echo "Release Announcements"

@@ -18,99 +18,71 @@
 
 #include "includes.h"
 #include "messages.h"
-#include "lib/util/talloc_report.h"
+#include "lib/util/talloc_report_printf.h"
 #ifdef HAVE_MALLINFO
 #include <malloc.h>
 #endif /* HAVE_MALLINFO */
 
- /**
- * Prepare memory allocation report based on mallinfo()
- **/
-static char *get_mallinfo_report(void *mem_ctx)
+static bool pool_usage_filter(struct messaging_rec *rec, void *private_data)
 {
-	char *report = NULL;
-#ifdef HAVE_MALLINFO
-	struct mallinfo mi;
+	FILE *f = NULL;
+	int fd;
 
-	mi = mallinfo();
-	report = talloc_asprintf(mem_ctx,
-				 "mallinfo:\n"
-				 "    arena: %d\n"
-				 "    ordblks: %d\n"
-				 "    smblks: %d\n"
-				 "    hblks: %d\n"
-				 "    hblkhd: %d\n"
-				 "    usmblks: %d\n"
-				 "    fsmblks: %d\n"
-				 "    uordblks: %d\n"
-				 "    fordblks: %d\n"
-				 "    keepcost: %d\n",
-				 mi.arena,
-				 mi.ordblks,
-				 mi.smblks,
-				 mi.hblks,
-				 mi.hblkhd,
-				 mi.usmblks,
-				 mi.fsmblks,
-				 mi.uordblks,
-				 mi.fordblks,
-				 mi.keepcost);
-#endif /* HAVE_MALLINFO */
-
-	return report;
-}
-/**
- * Respond to a POOL_USAGE message by sending back string form of memory
- * usage stats.
- **/
-static void msg_pool_usage(struct messaging_context *msg_ctx,
-			   void *private_data, 
-			   uint32_t msg_type, 
-			   struct server_id src,
-			   DATA_BLOB *data)
-{
-	char *report = NULL;
-	char *mreport = NULL;
-	int iov_size = 0;
-	struct iovec iov[2];
-
-	SMB_ASSERT(msg_type == MSG_REQ_POOL_USAGE);
-
-	DEBUG(2,("Got POOL_USAGE\n"));
-
-	report = talloc_report_str(msg_ctx, NULL);
-	if (report != NULL) {
-		iov[iov_size].iov_base = report;
-		iov[iov_size].iov_len = talloc_get_size(report) - 1;
-		iov_size++;
+	if (rec->msg_type != MSG_REQ_POOL_USAGE) {
+		return false;
 	}
 
-	mreport = get_mallinfo_report(msg_ctx);
-	if (mreport != NULL) {
-		iov[iov_size].iov_base = mreport;
-		iov[iov_size].iov_len = talloc_get_size(mreport) - 1;
-		iov_size++;
+	DBG_DEBUG("Got MSG_REQ_POOL_USAGE\n");
+
+	if (rec->num_fds != 1) {
+		DBG_DEBUG("Got %"PRIu8" fds, expected one\n", rec->num_fds);
+		return false;
 	}
 
-	if (iov_size) {
-		messaging_send_iov(msg_ctx,
-				   src,
-				   MSG_POOL_USAGE,
-				   iov,
-				   iov_size,
-				   NULL,
-				   0);
+	fd = dup(rec->fds[0]);
+	if (fd == -1) {
+		DBG_DEBUG("dup(%"PRIi64") failed: %s\n",
+			  rec->fds[0],
+			  strerror(errno));
+		return false;
 	}
 
-	TALLOC_FREE(report);
-	TALLOC_FREE(mreport);
+	f = fdopen(fd, "w");
+	if (f == NULL) {
+		DBG_DEBUG("fdopen failed: %s\n", strerror(errno));
+		close(fd);
+		return false;
+	}
+
+	talloc_full_report_printf(NULL, f);
+
+	fclose(f);
+	/*
+	 * Returning false, means messaging_dispatch_waiters()
+	 * won't call messaging_filtered_read_done() and
+	 * our messaging_filtered_read_send() stays alive
+	 * and will get messages.
+	 */
+	return false;
 }
 
 /**
  * Register handler for MSG_REQ_POOL_USAGE
  **/
-void register_msg_pool_usage(struct messaging_context *msg_ctx)
+void register_msg_pool_usage(
+	TALLOC_CTX *mem_ctx, struct messaging_context *msg_ctx)
 {
-	messaging_register(msg_ctx, NULL, MSG_REQ_POOL_USAGE, msg_pool_usage);
+	struct tevent_req *req = NULL;
+
+	req = messaging_filtered_read_send(
+		mem_ctx,
+		messaging_tevent_context(msg_ctx),
+		msg_ctx,
+		pool_usage_filter,
+		NULL);
+	if (req == NULL) {
+		DBG_WARNING("messaging_filtered_read_send failed\n");
+		return;
+	}
 	DEBUG(2, ("Registered MSG_REQ_POOL_USAGE\n"));
-}	
+}

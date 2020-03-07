@@ -88,7 +88,7 @@ static WERROR cmd_witness_GetInterfaceList(struct rpc_pipe_client *cli,
 			d_printf(" V2");
 			break;
 		default:
-			d_printf(" Unsuported Version (0x%08x)", interfaces[n].version);
+			d_printf(" Unsupported Version (0x%08x)", interfaces[n].version);
 		}
 
 		d_printf("\n");
@@ -213,6 +213,7 @@ static WERROR cmd_witness_Register(struct rpc_pipe_client *cli,
 	d_printf("%x:%s\n", hnd.handle_type, GUID_string(frame, &hnd.uuid));
 
 done:
+	poptFreeContext(optCon);
 	talloc_free(frame);
 	return result;
 }

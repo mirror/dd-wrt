@@ -627,7 +627,6 @@ static void cli_session_setup_guest_done(struct tevent_req *subreq)
 		tevent_req_nterror(req, status);
 		return;
 	}
-	p += ret;
 
 	tevent_req_done(req);
 }
@@ -1406,7 +1405,7 @@ static void cli_session_setup_creds_cleanup(struct tevent_req *req,
 	 * We only call data_blob_clear() as
 	 * some of the blobs point to the same memory.
 	 *
-	 * We let the talloc hierachy free the memory.
+	 * We let the talloc hierarchy free the memory.
 	 */
 	data_blob_clear(&state->apassword_blob);
 	data_blob_clear(&state->upassword_blob);
@@ -1855,7 +1854,7 @@ NTSTATUS cli_session_setup_creds(struct cli_state *cli,
 
 NTSTATUS cli_session_setup_anon(struct cli_state *cli)
 {
-	NTSTATUS status = NT_STATUS_NO_MEMORY;
+	NTSTATUS status;
 	struct cli_credentials *creds = NULL;
 
 	creds = cli_credentials_init_anon(cli);

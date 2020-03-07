@@ -5,23 +5,9 @@ export TMPDIR="$SELFTEST_TMPDIR"
 SERVERNAME="$ENVNAME"
 [ -z "$SERVERNAME" ] && SERVERNAME="base"
 basedir=$TMPDIR
-osname=$(uname)
-if [ "$osname" = "Linux" ]; then
-	vars=$(mktemp)
-else
-	vars=$(mktemp -t tmpsmb)
-	function seq() {
-		dpt=$1
-		end=$2
-		while [ $dpt -le $end ]; do
-			echo "$dpt"
-			dpt=$(( $dpt + 1))
-		done
-	}
-fi
 
 [ -r $basedir/$SERVERNAME.pid ] && {
-    for i in $(seq 2 100); do
+    for i in {2..100}; do
 	if [ ! -r "$basedir/${SERVERNAME}-$i.pid" ]; then
 	    SERVERNAME="${SERVERNAME}-$i"
 	    break
@@ -29,7 +15,7 @@ fi
     done
 }
 
-rm -f $basedir/$SERVERNAME.*
+rm -f $basedir/$SERVERNAME.{launch,log,parent.pid,pid,status}
 
 # set most of the environment vars we have in the screen session too
 _ENV=""
@@ -57,6 +43,13 @@ cleanup() {
 	echo "$(date) samba exited with status $status" >> $basedir/$SERVERNAME.log
 	exit $status
     }
+
+    case $ENVNAME in
+	*.nmbd|*.smbd|*.winbindd|*.samba)
+	    kill $(cat $basedir/../"${ENVNAME%\.*}"/pid/"${ENVNAME##*\.}".pid)
+	    ;;
+    esac
+
     read pid < $basedir/$SERVERNAME.pid
     echo "$(date) Killing samba pid $pid from $$" >> $basedir/$SERVERNAME.log
     if [ "$pid" = "$$" ]; then
@@ -66,7 +59,6 @@ cleanup() {
     exit 1
 }
 
-rm -f $basedir/$SERVERNAME.status $basedir/$SERVERNAME.log
 echo $$ > $basedir/$SERVERNAME.parent.pid
 trap cleanup SIGINT SIGTERM SIGPIPE
 
@@ -87,6 +79,13 @@ fi
 echo "$(date) waiting in $$" >> $basedir/$SERVERNAME.log
 read stdin_var
 echo "$(date) EOF on stdin" >> $basedir/$SERVERNAME.log
+
+case $ENVNAME in
+    *.nmbd|*.smbd|*.winbindd|*.samba)
+	kill $(cat $basedir/../"${ENVNAME%\.*}"/pid/"${ENVNAME##*\.}".pid)
+	;;
+esac
+
 read pid < $basedir/$SERVERNAME.pid
 echo "$(date) killing $pid" >> $basedir/$SERVERNAME.log
 kill $pid 2> /dev/null

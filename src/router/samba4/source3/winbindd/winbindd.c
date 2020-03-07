@@ -101,10 +101,12 @@ struct imessaging_context *winbind_imessaging_context(void)
 
 static bool reload_services_file(const char *lfile)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	bool ret;
 
 	if (lp_loaded()) {
-		char *fname = lp_next_configfile(talloc_tos());
+		char *fname = lp_next_configfile(talloc_tos(), lp_sub);
 
 		if (file_exist(fname) && !strcsequal(fname,get_dyn_CONFIGFILE())) {
 			set_dyn_CONFIGFILE(fname);
@@ -764,6 +766,8 @@ static struct tevent_req *process_request_send(
 	ok = false;
 
 	if (i < ARRAY_SIZE(bool_dispatch_table)) {
+		cli_state->cmd_name = bool_dispatch_table[i].cmd_name;
+
 		DBG_DEBUG("process_request: request fn %s\n",
 			  bool_dispatch_table[i].cmd_name);
 		ok = bool_dispatch_table[i].fn(cli_state);
@@ -1648,6 +1652,8 @@ int main(int argc, const char **argv)
 		POPT_COMMON_SAMBA
 		POPT_TABLEEND
 	};
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	poptContext pc;
 	int opt;
 	TALLOC_CTX *frame;
@@ -1677,7 +1683,7 @@ int main(int argc, const char **argv)
  	CatchSignal(SIGUSR2, SIG_IGN);
 
 	fault_setup();
-	dump_core_setup("winbindd", lp_logfile(talloc_tos()));
+	dump_core_setup("winbindd", lp_logfile(talloc_tos(), lp_sub));
 
 	smb_init_locale();
 
@@ -1737,7 +1743,7 @@ int main(int argc, const char **argv)
 	 * is often not related to the path where winbindd is actually run
 	 * in production.
 	 */
-	dump_core_setup("winbindd", lp_logfile(talloc_tos()));
+	dump_core_setup("winbindd", lp_logfile(talloc_tos(), lp_sub));
 	if (is_daemon && interactive) {
 		d_fprintf(stderr,"\nERROR: "
 			  "Option -i|--interactive is not allowed together with -D|--daemon\n\n");
@@ -1781,7 +1787,7 @@ int main(int argc, const char **argv)
 	 * as the log file might have been set in the configuration and cores's
 	 * path is by default basename(lp_logfile()).
 	 */
-	dump_core_setup("winbindd", lp_logfile(talloc_tos()));
+	dump_core_setup("winbindd", lp_logfile(talloc_tos(), lp_sub));
 
 	if (lp_server_role() == ROLE_ACTIVE_DIRECTORY_DC
 	    && !lp_parm_bool(-1, "server role check", "inhibit", false)) {

@@ -198,7 +198,7 @@
       <varlistentry><term>--usage</term>
       <listitem>
 	<para>
-	  Print useage information to the screen.
+	  Print usage information to the screen.
 	</para>
       </listitem>
       </varlistentry>
@@ -235,7 +235,7 @@
       </para>
 
       <para>
-	Note: If the the queried node is INACTIVE then the status
+	Note: If the queried node is INACTIVE then the status
 	might not be current.
       </para>
 
@@ -403,7 +403,7 @@ pnn:1 10.0.0.31        OK
       </para>
 
       <para>
-	Note: If the the queried node is INACTIVE then the status
+	Note: If the queried node is INACTIVE then the status
 	might not be current.
       </para>
     </refsect2>
@@ -809,7 +809,6 @@ RecoveryDropAllIPs      = 120
 VacuumInterval          = 10
 VacuumMaxRunTime        = 120
 RepackLimit             = 10000
-VacuumLimit             = 5000
 VacuumFastPathCount     = 60
 MaxQueueDropMsg         = 1000000
 AllowUnhealthyDBRead    = 0
@@ -1201,7 +1200,7 @@ DB Statistics: locking.tdb
     <refsect2>
       <title>setlmasterrole on|off</title>
       <para>
-	This command is used ot enable/disable the LMASTER capability for a node at runtime. This capability determines whether or not a node can be used as an LMASTER for records in the database. A node that does not have the LMASTER capability will not show up in the vnnmap.
+	This command is used to enable/disable the LMASTER capability for a node at runtime. This capability determines whether or not a node can be used as an LMASTER for records in the database. A node that does not have the LMASTER capability will not show up in the vnnmap.
       </para>
 
       <para>
@@ -1218,7 +1217,7 @@ DB Statistics: locking.tdb
     <refsect2>
       <title>setrecmasterrole on|off</title>
       <para>
-	This command is used ot enable/disable the RECMASTER capability for a node at runtime. This capability determines whether or not a node can be used as an RECMASTER for the cluster. A node that does not have the RECMASTER capability can not win a recmaster election. A node that already is the recmaster for the cluster when the capability is stripped off the node will remain the recmaster until the next cluster election.
+	This command is used to enable/disable the RECMASTER capability for a node at runtime. This capability determines whether or not a node can be used as an RECMASTER for the cluster. A node that does not have the RECMASTER capability can not win a recmaster election. A node that already is the recmaster for the cluster when the capability is stripped off the node will remain the recmaster until the next cluster election.
       </para>
 
       <para>
@@ -1360,7 +1359,7 @@ DB Statistics: locking.tdb
 	If a PERSISTENT database is not in a healthy state the database
 	is flagged as UNHEALTHY. If there's at least one completely
 	healthy node running in the cluster, it's possible that the
-	content is restored by a recovery run automaticly. Otherwise an
+	content is restored by a recovery run automatically. Otherwise an
 	administrator needs to analyze the problem.
       </para>
       <para>

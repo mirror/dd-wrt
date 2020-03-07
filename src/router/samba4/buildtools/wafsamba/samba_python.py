@@ -5,7 +5,7 @@ from waflib import Build, Logs, Utils, Configure, Errors
 from waflib.Configure import conf
 
 @conf
-def SAMBA_CHECK_PYTHON(conf, version=(3,4,0)):
+def SAMBA_CHECK_PYTHON(conf, version=(3,5,0)):
 
     if conf.env.disable_python:
         version=(2,6,0)
@@ -102,6 +102,10 @@ def SAMBA_PYTHON(bld, name,
     # force-disable when we can't build python modules, so
     # every single call doesn't need to pass this in.
     if not bld.PYTHON_BUILD_IS_ENABLED():
+        enabled = False
+
+    # Save time, no need to build python bindings when fuzzing
+    if bld.env.enable_fuzzing:
         enabled = False
 
     # when we support static python modules we'll need to gather

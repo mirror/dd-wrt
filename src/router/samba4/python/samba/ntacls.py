@@ -33,6 +33,9 @@ from samba.dcerpc import security, xattr, idmap
 from samba.ndr import ndr_pack, ndr_unpack
 from samba.samba3 import smbd
 from samba.samba3 import libsmb_samba_internal as libsmb
+from samba.logger import get_samba_logger
+from samba import NTSTATUSError
+from samba.auth_util import system_session_unix
 
 # don't include volumes
 SMB_FILE_ATTRIBUTE_FLAGS = libsmb.FILE_ATTRIBUTE_SYSTEM | \
@@ -96,11 +99,11 @@ def getdosinfo(lp, file):
 
 def getntacl(lp,
              file,
+             session_info,
              backend=None,
              eadbfile=None,
              direct_db_access=True,
-             service=None,
-             session_info=None):
+             service=None):
     if direct_db_access:
         (backend_obj, dbname) = checkset_backend(lp, backend, eadbfile)
         if dbname is not None:
@@ -128,14 +131,14 @@ def getntacl(lp,
     else:
         return smbd.get_nt_acl(file,
                                SECURITY_SECINFO_FLAGS,
-                               service=service,
-                               session_info=session_info)
+                               session_info,
+                               service=service)
 
 
-def setntacl(lp, file, sddl, domsid,
+def setntacl(lp, file, sddl, domsid, session_info,
              backend=None, eadbfile=None,
              use_ntvfs=True, skip_invalid_chown=False,
-             passdb=None, service=None, session_info=None):
+             passdb=None, service=None):
     """
     A wrapper for smbd set_nt_acl api.
 
@@ -188,7 +191,8 @@ def setntacl(lp, file, sddl, domsid,
 
                     smbd.set_nt_acl(
                         file, SECURITY_SECINFO_FLAGS, sd2,
-                        service=service, session_info=session_info)
+                        session_info,
+                        service=service)
 
                     # and then set an NTVFS ACL (which does not set the posix ACL) to pretend the owner really was set
                     use_ntvfs = True
@@ -206,7 +210,9 @@ def setntacl(lp, file, sddl, domsid,
                     security.SECINFO_GROUP |
                     security.SECINFO_DACL |
                     security.SECINFO_SACL,
-                    sd, service=service, session_info=session_info)
+                    sd,
+                    session_info,
+                    service=service)
 
     if use_ntvfs:
         (backend_obj, dbname) = checkset_backend(lp, backend, eadbfile)
@@ -443,20 +449,20 @@ class NtaclsHelper:
 
         self.use_ntvfs = "smb" in self.lp.get("server services")
 
-    def getntacl(self, path, as_sddl=False, direct_db_access=None):
+    def getntacl(self, path, session_info, as_sddl=False, direct_db_access=None):
         if direct_db_access is None:
             direct_db_access = self.use_ntvfs
 
         ntacl_sd = getntacl(
-            self.lp, path,
+            self.lp, path, session_info,
             direct_db_access=direct_db_access,
             service=self.service)
 
         return ntacl_sd.as_sddl(self.dom_sid) if as_sddl else ntacl_sd
 
-    def setntacl(self, path, ntacl_sd):
+    def setntacl(self, path, ntacl_sd, session_info):
         # ntacl_sd can be obj or str
-        return setntacl(self.lp, path, ntacl_sd, self.dom_sid,
+        return setntacl(self.lp, path, ntacl_sd, self.dom_sid, session_info,
                         use_ntvfs=self.use_ntvfs)
 
 
@@ -466,7 +472,12 @@ def _create_ntacl_file(dst, ntacl_sddl_str):
 
 
 def _read_ntacl_file(src):
-    with open(src + '.NTACL', 'r') as f:
+    ntacl_file = src + '.NTACL'
+
+    if not os.path.exists(ntacl_file):
+        return None
+
+    with open(ntacl_file, 'r') as f:
         return f.read()
 
 
@@ -480,6 +491,8 @@ def backup_online(smb_conn, dest_tarfile_path, dom_sid):
     4. Create a tar file from container dir(without top level folder)
     5. Delete contianer dir
     """
+
+    logger = get_samba_logger()
 
     if isinstance(dom_sid, str):
         dom_sid = security.dom_sid(dom_sid)
@@ -511,8 +524,14 @@ def backup_online(smb_conn, dest_tarfile_path, dom_sid):
                     f.write(data)
 
             # get ntacl for this entry and save alongside
-            ntacl_sddl_str = smb_helper.get_acl(r_name, as_sddl=True)
-            _create_ntacl_file(l_name, ntacl_sddl_str)
+            try:
+                ntacl_sddl_str = smb_helper.get_acl(r_name, as_sddl=True)
+                _create_ntacl_file(l_name, ntacl_sddl_str)
+            except NTSTATUSError as e:
+                logger.error('Failed to get the ntacl for %s: %s' % \
+                             (r_name, e.args[1]))
+                logger.warning('The permissions for %s may not be' % r_name +
+                               ' restored correctly')
 
     with tarfile.open(name=dest_tarfile_path, mode='w:gz') as tar:
         for name in os.listdir(localdir):
@@ -528,6 +547,7 @@ def backup_offline(src_service_path, dest_tarfile_path, samdb_conn, smb_conf_pat
     """
     service = src_service_path.rstrip('/').rsplit('/', 1)[-1]
     tempdir = tempfile.mkdtemp()
+    session_info = system_session_unix()
 
     dom_sid_str = samdb_conn.get_domain_sid()
     dom_sid = security.dom_sid(dom_sid_str)
@@ -544,8 +564,8 @@ def backup_offline(src_service_path, dest_tarfile_path, samdb_conn, smb_conf_pat
             src = os.path.join(dirpath, dirname)
             dst = os.path.join(dst_dirpath, dirname)
             # mkdir with metadata
-            smbd.mkdir(dst, service)
-            ntacl_sddl_str = ntacls_helper.getntacl(src, as_sddl=True)
+            smbd.mkdir(dst, session_info, service)
+            ntacl_sddl_str = ntacls_helper.getntacl(src, session_info, as_sddl=True)
             _create_ntacl_file(dst, ntacl_sddl_str)
 
         # create files and NTACL file, then copy data
@@ -553,8 +573,8 @@ def backup_offline(src_service_path, dest_tarfile_path, samdb_conn, smb_conf_pat
             src = os.path.join(dirpath, filename)
             dst = os.path.join(dst_dirpath, filename)
             # create an empty file with metadata
-            smbd.create_file(dst, service)
-            ntacl_sddl_str = ntacls_helper.getntacl(src, as_sddl=True)
+            smbd.create_file(dst, session_info, service)
+            ntacl_sddl_str = ntacls_helper.getntacl(src, session_info, as_sddl=True)
             _create_ntacl_file(dst, ntacl_sddl_str)
 
             # now put data in
@@ -576,6 +596,7 @@ def backup_restore(src_tarfile_path, dst_service_path, samdb_conn, smb_conf_path
     """
     Restore files and ntacls from a tarfile to a service
     """
+    logger = get_samba_logger()
     service = dst_service_path.rstrip('/').rsplit('/', 1)[-1]
     tempdir = tempfile.mkdtemp()  # src files
 
@@ -583,6 +604,7 @@ def backup_restore(src_tarfile_path, dst_service_path, samdb_conn, smb_conf_path
     dom_sid = security.dom_sid(dom_sid_str)
 
     ntacls_helper = NtaclsHelper(service, smb_conf_path, dom_sid)
+    session_info = system_session_unix()
 
     with tarfile.open(src_tarfile_path) as f:
         f.extractall(path=tempdir)
@@ -599,9 +621,15 @@ def backup_restore(src_tarfile_path, dst_service_path, samdb_conn, smb_conf_path
                 dst = os.path.join(dst_dirpath, dirname)
                 if not os.path.isdir(dst):
                     # dst must be absolute path for smbd API
-                    smbd.mkdir(dst, service)
+                    smbd.mkdir(dst, session_info, service)
+
                 ntacl_sddl_str = _read_ntacl_file(src)
-                ntacls_helper.setntacl(dst, ntacl_sddl_str)
+                if ntacl_sddl_str:
+                    ntacls_helper.setntacl(dst, ntacl_sddl_str, session_info)
+                else:
+                    logger.warning(
+                        'Failed to restore ntacl for directory %s.' % dst
+                        + ' Please check the permissions are correct')
 
         for filename in filenames:
             if not filename.endswith('.NTACL'):
@@ -609,9 +637,14 @@ def backup_restore(src_tarfile_path, dst_service_path, samdb_conn, smb_conf_path
                 dst = os.path.join(dst_dirpath, filename)
                 if not os.path.isfile(dst):
                     # dst must be absolute path for smbd API
-                    smbd.create_file(dst, service)
+                    smbd.create_file(dst, session_info, service)
+
                 ntacl_sddl_str = _read_ntacl_file(src)
-                ntacls_helper.setntacl(dst, ntacl_sddl_str)
+                if ntacl_sddl_str:
+                    ntacls_helper.setntacl(dst, ntacl_sddl_str, session_info)
+                else:
+                    logger.warning('Failed to restore ntacl for file %s.' % dst
+                                 + ' Please check the permissions are correct')
 
                 # now put data in
                 with open(src, 'rb') as src_file:

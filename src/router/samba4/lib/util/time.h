@@ -41,6 +41,31 @@
 #define TIME_T_MAX MIN(INT32_MAX,_TYPE_MAXIMUM(time_t))
 #endif
 
+/*
+ * According to Windows API FileTimeToSystemTime() documentation the highest
+ * allowed value " ... must be less than 0x8000000000000000.".
+ */
+#define NTTIME_MAX INT64_MAX
+
+/*
+ * The lowest possible value when NTTIME=0 is used as sentinel value.
+ */
+#define NTTIME_MIN 1
+
+/*
+ * NTTIME_OMIT in a setinfo tells us to not modify the corresponding on-disk
+ * timestamp value.
+ */
+#define NTTIME_OMIT 0
+
+/*
+ * Disable automatic timestamp updates, as described in MS-FSA. Samba doesn't
+ * implement this yet.
+ */
+#define NTTIME_FREEZE UINT64_MAX
+
+#define SAMBA_UTIME_NOW UTIME_NOW
+#define SAMBA_UTIME_OMIT UTIME_OMIT
 
 /* 64 bit time (100 nanosec) 1601 - cifs6.txt, section 3.5, page 30, 4 byte aligned */
 typedef uint64_t NTTIME;
@@ -130,6 +155,11 @@ time_t pull_dos_date3(const uint8_t *date_ptr, int zone_offset);
 **/
 
 char *timeval_string(TALLOC_CTX *ctx, const struct timeval *tp, bool hires);
+
+struct timeval_buf;
+const char *timespec_string_buf(const struct timespec *tp,
+				bool hires,
+				struct timeval_buf *buf);
 
 /**
  Return the current date and time as a string (optionally with microseconds)
@@ -330,5 +360,19 @@ void round_timespec_to_sec(struct timespec *ts);
 void round_timespec_to_usec(struct timespec *ts);
 void round_timespec_to_nttime(struct timespec *ts);
 NTTIME unix_timespec_to_nt_time(struct timespec ts);
+
+/*
+ * Functions supporting the full range of time_t and struct timespec values,
+ * including 0, -1 and all other negative values. These functions don't use 0 or
+ * -1 values as sentinel to denote "unset" variables, but use the POSIX 2008
+ * define UTIME_OMIT from utimensat(2).
+ */
+bool is_omit_timespec(const struct timespec *ts);
+struct timespec make_omit_timespec(void);
+NTTIME full_timespec_to_nt_time(const struct timespec *ts);
+struct timespec nt_time_to_full_timespec(NTTIME nt);
+time_t full_timespec_to_time_t(const struct timespec *ts);
+time_t nt_time_to_full_time_t(NTTIME nt);
+struct timespec time_t_to_full_timespec(time_t t);
 
 #endif /* _SAMBA_TIME_H_ */

@@ -419,7 +419,7 @@ static bool smbd_notifyd_init(struct messaging_context *msg, bool interactive,
 	}
 
 	if (pid != 0) {
-		if (am_parent != 0) {
+		if (am_parent != NULL) {
 			add_child_pid(am_parent, pid);
 		}
 		*ppid = pid_to_procid(pid);
@@ -432,6 +432,8 @@ static bool smbd_notifyd_init(struct messaging_context *msg, bool interactive,
 			  __func__, nt_errstr(status)));
 		exit(1);
 	}
+
+	reopen_logs();
 
 	/* Set up sighup handler for notifyd */
 	se = tevent_add_signal(ev,
@@ -1252,6 +1254,8 @@ static bool open_sockets_smbd(struct smbd_parent_context *parent,
 	messaging_register(msg_ctx, NULL, MSG_DEBUG, smbd_msg_debug);
 	messaging_register(msg_ctx, NULL, MSG_SMB_FORCE_TDIS,
 			   smb_parent_send_to_children);
+	messaging_register(msg_ctx, NULL, MSG_SMB_FORCE_TDIS_DENIED,
+			   smb_parent_send_to_children);
 	messaging_register(msg_ctx, NULL, MSG_SMB_KILL_CLIENT_IP,
 			   smb_parent_send_to_children);
 	messaging_register(msg_ctx, NULL, MSG_SMB_TELL_NUM_CHILDREN,
@@ -1417,8 +1421,9 @@ struct smbd_claim_version_state {
 	char *version;
 };
 
-static void smbd_claim_version_parser(const struct g_lock_rec *locks,
-				      size_t num_locks,
+static void smbd_claim_version_parser(struct server_id exclusive,
+				      size_t num_shared,
+				      struct server_id *shared,
 				      const uint8_t *data,
 				      size_t datalen,
 				      void *private_data)
@@ -1482,7 +1487,7 @@ static NTSTATUS smbd_claim_version(struct messaging_context *msg,
 		return NT_STATUS_OK;
 	}
 
-	status = g_lock_lock(ctx, string_term_tdb_data(name), G_LOCK_WRITE,
+	status = g_lock_lock(ctx, string_term_tdb_data(name), G_LOCK_UPGRADE,
 			     (struct timeval) { .tv_sec = 60 });
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_WARNING("g_lock_lock(G_LOCK_WRITE) failed: %s\n",
@@ -1503,7 +1508,7 @@ static NTSTATUS smbd_claim_version(struct messaging_context *msg,
 		return status;
 	}
 
-	status = g_lock_lock(ctx, string_term_tdb_data(name), G_LOCK_READ,
+	status = g_lock_lock(ctx, string_term_tdb_data(name), G_LOCK_DOWNGRADE,
 			     (struct timeval) { .tv_sec = 60 });
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_WARNING("g_lock_lock(G_LOCK_READ) failed: %s\n",
@@ -1627,6 +1632,8 @@ extern void build_options(bool screen);
 	struct tevent_signal *se;
 	int profiling_level;
 	char *np_dir = NULL;
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	static const struct smbd_shim smbd_shim_fns =
 	{
 		.send_stat_cache_delete_message = smbd_send_stat_cache_delete_message,
@@ -1740,7 +1747,7 @@ extern void build_options(bool screen);
 	gain_root_group_privilege();
 
 	fault_setup();
-	dump_core_setup("smbd", lp_logfile(talloc_tos()));
+	dump_core_setup("smbd", lp_logfile(talloc_tos(), lp_sub));
 
 	/* we are never interested in SIGPIPE */
 	BlockSignals(True,SIGPIPE);
@@ -2022,7 +2029,8 @@ extern void build_options(bool screen);
 	   after the fork on every single connection.  This is a small
 	   performance improvment and reduces the total number of system
 	   fds used. */
-	if (!share_info_db_init()) {
+	status = share_info_db_init();
+	if (!NT_STATUS_IS_OK(status)) {
 		exit_daemon("ERROR: failed to load share info db.", EACCES);
 	}
 
@@ -2083,7 +2091,9 @@ extern void build_options(bool screen);
 		}
 	}
 
-	if (!dcesrv_ep_setup(ev_ctx, msg_ctx)) {
+	status = dcesrv_ep_setup(ev_ctx, msg_ctx);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("Failed to setup RPC server: %s\n", nt_errstr(status));
 		exit_daemon("Samba cannot setup ep pipe", EACCES);
 	}
 

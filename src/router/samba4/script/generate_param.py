@@ -75,6 +75,7 @@ def iterate_all(path):
             continue
 
         constant = parameter.attrib.get("constant")
+        substitution = parameter.attrib.get("substitution")
         parm = parameter.attrib.get("parm")
         if name is None or param_type is None or context is None:
             raise Exception("Error parsing parameter: " + name)
@@ -89,6 +90,7 @@ def iterate_all(path):
                'context': context,
                'function': func,
                'constant': (constant == '1'),
+               'substitution': (substitution == '1'),
                'parm': (parm == '1'),
                'synonym' : synonym,
                'generated' : generated,
@@ -133,8 +135,11 @@ def generate_functions(path_in, path_out):
             if temp is None:
                 raise Exception(parameter['name'] + " has an invalid context " + parameter['context'])
             output_string += temp
-            if parameter['constant']:
-                output_string += "_CONST"
+            if parameter['type'] == "string" or parameter['type'] == "ustring":
+                if parameter['substitution']:
+                    output_string += "_SUBSTITUTED"
+                else:
+                    output_string += "_CONST"
             if parameter['parm']:
                 output_string += "_PARM"
             temp = param_type_dict.get(parameter['type'])
@@ -178,8 +183,6 @@ def make_s3_param_proto(path_in, path_out):
                 continue
 
             output_string = ""
-            if parameter['constant']:
-                output_string += 'const '
             param_type = mapping.get(parameter['type'])
             if param_type is None:
                 raise Exception(parameter['name'] + " has an invalid context " + parameter['context'])
@@ -192,13 +195,21 @@ def make_s3_param_proto(path_in, path_out):
             else:
                 param = "int"
 
-            if parameter['type'] == 'string' and not parameter['constant']:
-                if parameter['context'] == 'G':
-                    output_string += '(TALLOC_CTX *ctx);\n'
-                elif parameter['context'] == 'S':
-                    output_string += '(TALLOC_CTX *ctx, %s);\n' % param
+            if parameter['type'] == 'string' or parameter['type'] == 'ustring':
+                if parameter['substitution']:
+                    if parameter['context'] == 'G':
+                        output_string += '(TALLOC_CTX *ctx, const struct loadparm_substitution *lp_sub);\n'
+                    elif parameter['context'] == 'S':
+                        output_string += '(TALLOC_CTX *ctx, const struct loadparm_substitution *lp_sub, %s);\n' % param
+                    else:
+                        raise Exception(parameter['name'] + " has an invalid param type " + parameter['type'])
                 else:
-                    raise Exception(parameter['name'] + " has an invalid param type " + parameter['type'])
+                    if parameter['context'] == 'G':
+                        output_string = 'const ' + output_string + '(void);\n'
+                    elif parameter['context'] == 'S':
+                        output_string = 'const ' + output_string + '(%s);\n' % param
+                    else:
+                        raise Exception(parameter['name'] + " has an invalid param type " + parameter['type'])
             else:
                 if parameter['context'] == 'G':
                     output_string += '(void);\n'
@@ -228,8 +239,6 @@ def make_lib_proto(path_in, path_out):
                 continue
 
             output_string = ""
-            if parameter['constant']:
-                output_string += 'const '
             param_type = mapping.get(parameter['type'])
             if param_type is None:
                 raise Exception(parameter['name'] + " has an invalid context " + parameter['context'])
@@ -237,13 +246,21 @@ def make_lib_proto(path_in, path_out):
 
             output_string += "lpcfg_%s" % parameter['function']
 
-            if parameter['type'] == 'string' and not parameter['constant']:
-                if parameter['context'] == 'G':
-                    output_string += '(struct loadparm_context *, TALLOC_CTX *ctx);\n'
-                elif parameter['context'] == 'S':
-                    output_string += '(struct loadparm_service *, struct loadparm_service *, TALLOC_CTX *ctx);\n'
+            if parameter['type'] == 'string' or parameter['type'] == 'ustring':
+                if parameter['substitution']:
+                    if parameter['context'] == 'G':
+                        output_string += '(struct loadparm_context *, const struct loadparm_substitution *lp_sub, TALLOC_CTX *ctx);\n'
+                    elif parameter['context'] == 'S':
+                        output_string += '(struct loadparm_service *, struct loadparm_service *, TALLOC_CTX *ctx);\n'
+                    else:
+                        raise Exception(parameter['name'] + " has an invalid context " + parameter['context'])
                 else:
-                    raise Exception(parameter['name'] + " has an invalid param type " + parameter['type'])
+                    if parameter['context'] == 'G':
+                        output_string = 'const ' + output_string + '(struct loadparm_context *);\n'
+                    elif parameter['context'] == 'S':
+                        output_string = 'const ' + output_string + '(struct loadparm_service *, struct loadparm_service *);\n'
+                    else:
+                        raise Exception(parameter['name'] + " has an invalid param type " + parameter['type'])
             else:
                 if parameter['context'] == 'G':
                     output_string += '(struct loadparm_context *);\n'

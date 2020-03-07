@@ -2,17 +2,16 @@
 
 # Common variables and functions for all CTDB tests.
 
+
+# Commands on different platforms may quote or sort things differently
+# without this
+export LANG=C
+
 # Print a message and exit.
 die ()
 {
 	echo "$1" >&2 ; exit "${2:-1}"
 }
-
-# This expands the most probable problem cases like "." and "..".
-TEST_SUBDIR=$(dirname "$0")
-if [ "$(dirname "$TEST_SUBDIR")" = "." ] ; then
-	TEST_SUBDIR=$(cd "$TEST_SUBDIR" && pwd)
-fi
 
 . "${TEST_SCRIPTS_DIR}/script_install_paths.sh"
 
@@ -20,9 +19,33 @@ if [ -d "$CTDB_SCRIPTS_TOOLS_BIN_DIR" ] ; then
 	PATH="${CTDB_SCRIPTS_TOOLS_BIN_DIR}:${PATH}"
 fi
 
-if [ -d "$CTDB_SCRIPTS_TESTS_BINDIR" ] ; then
-	PATH="${CTDB_SCRIPTS_TESTS_BINDIR}:${PATH}"
+if [ -d "$CTDB_SCRIPTS_TESTS_LIBEXEC_DIR" ] ; then
+	PATH="${CTDB_SCRIPTS_TESTS_LIBEXEC_DIR}:${PATH}"
 fi
+
+ctdb_test_error ()
+{
+	if [ $# -gt 0 ] ; then
+		echo "$*"
+	fi
+	exit 99
+}
+
+ctdb_test_fail ()
+{
+	if [ $# -gt 0 ] ; then
+		echo "$*"
+	fi
+	exit 1
+}
+
+ctdb_test_skip ()
+{
+	if [ $# -gt 0 ] ; then
+		echo "$*"
+	fi
+	exit 77
+}
 
 # Wait until either timeout expires or command succeeds.  The command
 # will be tried once per second, unless timeout has format T/I, where
@@ -97,11 +120,11 @@ setup_ctdb_base ()
 
 	mkdir -p "${CTDB_BASE}/events/legacy"
 
-	if [ -z "$TEST_SUBDIR" ] ; then
+	if [ -z "$CTDB_TEST_SUITE_DIR" ] ; then
 		return
 	fi
 
-	for _i in "${TEST_SUBDIR}/etc-ctdb/"* ; do
+	for _i in "${CTDB_TEST_SUITE_DIR}/etc-ctdb/"* ; do
 		# No/empty etc-ctdb directory
 		[ -e "$_i" ] || break
 

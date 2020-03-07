@@ -108,14 +108,16 @@ cups_passwd_cb(const char *prompt)	/* I - Prompt */
 
 static http_t *cups_connect(TALLOC_CTX *frame)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	http_t *http = NULL;
 	char *server = NULL, *p = NULL;
 	int port;
 	int timeout = lp_cups_connection_timeout();
 	size_t size;
 
-	if (lp_cups_server(talloc_tos()) != NULL && strlen(lp_cups_server(talloc_tos())) > 0) {
-		if (!push_utf8_talloc(frame, &server, lp_cups_server(talloc_tos()), &size)) {
+	if (lp_cups_server(talloc_tos(), lp_sub) != NULL && strlen(lp_cups_server(talloc_tos(), lp_sub)) > 0) {
+		if (!push_utf8_talloc(frame, &server, lp_cups_server(talloc_tos(), lp_sub), &size)) {
 			return NULL;
 		}
 	} else {
@@ -143,7 +145,18 @@ static http_t *cups_connect(TALLOC_CTX *frame)
                 alarm(timeout);
         }
 
-#ifdef HAVE_HTTPCONNECTENCRYPT
+#if defined(HAVE_HTTPCONNECT2)
+	http = httpConnect2(server,
+			    port,
+			    NULL,
+			    AF_UNSPEC,
+			    lp_cups_encrypt() ?
+				HTTP_ENCRYPTION_ALWAYS :
+				HTTP_ENCRYPTION_IF_REQUESTED,
+			    1, /* blocking */
+			    30 * 1000, /* timeout */
+			    NULL);
+#elif defined(HAVE_HTTPCONNECTENCRYPT)
 	http = httpConnectEncrypt(server, port, lp_cups_encrypt());
 #else
 	http = httpConnect(server, port);
@@ -514,7 +527,7 @@ static void cups_async_callback(struct tevent_context *event_ctx,
 	struct pcap_data pcap_data;
 	DATA_BLOB pcap_blob;
 	enum ndr_err_code ndr_ret;
-	int i;
+	uint32_t i;
 
 	DEBUG(5,("cups_async_callback: callback received for printer data. "
 		"fd = %d\n", cb_args->pipe_fd));
@@ -560,9 +573,9 @@ static void cups_async_callback(struct tevent_context *event_ctx,
 err_out:
 	pcap_cache_destroy_specific(&tmp_pcap_cache);
 	TALLOC_FREE(frame);
+	TALLOC_FREE(cache_fd_event);
 	close(cb_args->pipe_fd);
 	TALLOC_FREE(cb_args);
-	TALLOC_FREE(cache_fd_event);
 }
 
 bool cups_cache_reload(struct tevent_context *ev,
@@ -942,6 +955,8 @@ static int cups_job_submit(int snum, struct printjob *pjob,
 			   char *lpq_cmd)
 {
 	TALLOC_CTX *frame = talloc_stackframe();
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	int		ret = 1;		/* Return value */
 	http_t		*http = NULL;		/* HTTP connection to server */
 	ipp_t		*request = NULL,	/* IPP Request */
@@ -1001,7 +1016,7 @@ static int cups_job_submit(int snum, struct printjob *pjob,
         	     "attributes-natural-language", NULL, language->language);
 
 	if (!push_utf8_talloc(frame, &printername,
-			      lp_printername(talloc_tos(), snum),
+			      lp_printername(talloc_tos(), lp_sub, snum),
 			      &size)) {
 		goto out;
 	}
@@ -1049,7 +1064,7 @@ static int cups_job_submit(int snum, struct printjob *pjob,
 	 */
 
 	if (!push_utf8_talloc(frame, &cupsoptions,
-			      lp_cups_options(talloc_tos(), snum), &size)) {
+			      lp_cups_options(talloc_tos(), lp_sub, snum), &size)) {
 		goto out;
 	}
 	num_options = 0;
@@ -1082,7 +1097,7 @@ static int cups_job_submit(int snum, struct printjob *pjob,
 	if ((response = cupsDoFileRequest(http, request, uri, pjob->filename)) != NULL) {
 		if (ippGetStatusCode(response) >= IPP_OK_CONFLICT) {
 			DEBUG(0,("Unable to print file to %s - %s\n",
-				 lp_printername(talloc_tos(), snum),
+				 lp_printername(talloc_tos(), lp_sub, snum),
 			         ippErrorString(cupsLastError())));
 		} else {
 			ret = 0;
@@ -1096,7 +1111,7 @@ static int cups_job_submit(int snum, struct printjob *pjob,
 		}
 	} else {
 		DEBUG(0,("Unable to print file to `%s' - %s\n",
-			 lp_printername(talloc_tos(), snum),
+			 lp_printername(talloc_tos(), lp_sub, snum),
 			 ippErrorString(cupsLastError())));
 	}
 
@@ -1484,6 +1499,8 @@ static int cups_queue_get(const char *sharename,
 static int cups_queue_pause(int snum)
 {
 	TALLOC_CTX *frame = talloc_stackframe();
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	int		ret = 1;		/* Return value */
 	http_t		*http = NULL;		/* HTTP connection to server */
 	ipp_t		*request = NULL,	/* IPP Request */
@@ -1535,7 +1552,7 @@ static int cups_queue_pause(int snum)
         	     "attributes-natural-language", NULL, language->language);
 
 	if (!push_utf8_talloc(frame, &printername,
-			      lp_printername(talloc_tos(), snum), &size)) {
+			      lp_printername(talloc_tos(), lp_sub, snum), &size)) {
 		goto out;
 	}
 	ustatus = httpAssembleURIf(HTTP_URI_CODING_ALL,
@@ -1566,14 +1583,14 @@ static int cups_queue_pause(int snum)
 	if ((response = cupsDoRequest(http, request, "/admin/")) != NULL) {
 		if (ippGetStatusCode(response) >= IPP_OK_CONFLICT) {
 			DEBUG(0,("Unable to pause printer %s - %s\n",
-				 lp_printername(talloc_tos(), snum),
+				 lp_printername(talloc_tos(), lp_sub, snum),
 				ippErrorString(cupsLastError())));
 		} else {
 			ret = 0;
 		}
 	} else {
 		DEBUG(0,("Unable to pause printer %s - %s\n",
-			 lp_printername(talloc_tos(), snum),
+			 lp_printername(talloc_tos(), lp_sub, snum),
 			ippErrorString(cupsLastError())));
 	}
 
@@ -1599,6 +1616,8 @@ static int cups_queue_pause(int snum)
 static int cups_queue_resume(int snum)
 {
 	TALLOC_CTX *frame = talloc_stackframe();
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	int		ret = 1;		/* Return value */
 	http_t		*http = NULL;		/* HTTP connection to server */
 	ipp_t		*request = NULL,	/* IPP Request */
@@ -1649,7 +1668,7 @@ static int cups_queue_resume(int snum)
 	ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
         	     "attributes-natural-language", NULL, language->language);
 
-	if (!push_utf8_talloc(frame, &printername, lp_printername(talloc_tos(), snum),
+	if (!push_utf8_talloc(frame, &printername, lp_printername(talloc_tos(), lp_sub, snum),
 			      &size)) {
 		goto out;
 	}
@@ -1681,14 +1700,14 @@ static int cups_queue_resume(int snum)
 	if ((response = cupsDoRequest(http, request, "/admin/")) != NULL) {
 		if (ippGetStatusCode(response) >= IPP_OK_CONFLICT) {
 			DEBUG(0,("Unable to resume printer %s - %s\n",
-				 lp_printername(talloc_tos(), snum),
+				 lp_printername(talloc_tos(), lp_sub, snum),
 				ippErrorString(cupsLastError())));
 		} else {
 			ret = 0;
 		}
 	} else {
 		DEBUG(0,("Unable to resume printer %s - %s\n",
-			 lp_printername(talloc_tos(), snum),
+			 lp_printername(talloc_tos(), lp_sub, snum),
 			ippErrorString(cupsLastError())));
 	}
 

@@ -30,7 +30,7 @@
 #include "libds/common/roles.h"
 
 /* logged when starting the various Samba daemons */
-#define COPYRIGHT_STARTUP_MESSAGE	"Copyright Andrew Tridgell and the Samba Team 1992-2019"
+#define COPYRIGHT_STARTUP_MESSAGE	"Copyright Andrew Tridgell and the Samba Team 1992-2020"
 
 #define SAFETY_MARGIN 1024
 #define LARGE_WRITEX_HDR_SIZE 65
@@ -152,8 +152,6 @@ struct sys_notify_context {
 struct current_user {
 	struct connection_struct *conn;
 	uint64_t vuid; /* SMB2 compat */
-	bool need_chdir;
-	bool done_chdir;
 	struct security_unix_token ut;
 	struct security_token *nt_user_token;
 };
@@ -749,21 +747,6 @@ struct smb_extended_info {
 	uint32_t samba_subversion;	/* Prerelease/RC/Vendor patch */
 	NTTIME samba_gitcommitdate;
 	char   samba_version_string[SAMBA_EXTENDED_INFO_VERSION_STRING_LENGTH];
-};
-
-/*
- * Reasons for cache flush.
- */
-
-enum flush_reason_enum {
-    SAMBA_SEEK_FLUSH,
-    SAMBA_READ_FLUSH,
-    SAMBA_WRITE_FLUSH,
-    SAMBA_READRAW_FLUSH,
-    SAMBA_OPLOCK_RELEASE_FLUSH,
-    SAMBA_CLOSE_FLUSH,
-    SAMBA_SYNC_FLUSH,
-    SAMBA_SIZECHANGE_FLUSH,
 };
 
 #endif /* _SMB_H */

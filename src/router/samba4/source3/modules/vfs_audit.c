@@ -194,30 +194,19 @@ static DIR *audit_opendir(vfs_handle_struct *handle,
 	return result;
 }
 
-static int audit_mkdir(vfs_handle_struct *handle,
+static int audit_mkdirat(vfs_handle_struct *handle,
+		struct files_struct *dirfsp,
 		const struct smb_filename *smb_fname,
 		mode_t mode)
 {
 	int result;
-	
-	result = SMB_VFS_NEXT_MKDIR(handle, smb_fname, mode);
-	
-	syslog(audit_syslog_priority(handle), "mkdir %s %s%s\n", 
-	       smb_fname->base_name,
-	       (result < 0) ? "failed: " : "",
-	       (result < 0) ? strerror(errno) : "");
 
-	return result;
-}
+	result = SMB_VFS_NEXT_MKDIRAT(handle,
+			dirfsp,
+			smb_fname,
+			mode);
 
-static int audit_rmdir(vfs_handle_struct *handle,
-		const struct smb_filename *smb_fname)
-{
-	int result;
-
-	result = SMB_VFS_NEXT_RMDIR(handle, smb_fname);
-
-	syslog(audit_syslog_priority(handle), "rmdir %s %s%s\n", 
+	syslog(audit_syslog_priority(handle), "mkdirat %s %s%s\n",
 	       smb_fname->base_name,
 	       (result < 0) ? "failed: " : "",
 	       (result < 0) ? strerror(errno) : "");
@@ -256,31 +245,42 @@ static int audit_close(vfs_handle_struct *handle, files_struct *fsp)
 	return result;
 }
 
-static int audit_rename(vfs_handle_struct *handle,
+static int audit_renameat(vfs_handle_struct *handle,
+			files_struct *srcfsp,
 			const struct smb_filename *smb_fname_src,
+			files_struct *dstfsp,
 			const struct smb_filename *smb_fname_dst)
 {
 	int result;
 
-	result = SMB_VFS_NEXT_RENAME(handle, smb_fname_src, smb_fname_dst);
+	result = SMB_VFS_NEXT_RENAMEAT(handle,
+			srcfsp,
+			smb_fname_src,
+			dstfsp,
+			smb_fname_dst);
 
-	syslog(audit_syslog_priority(handle), "rename %s -> %s %s%s\n",
+	syslog(audit_syslog_priority(handle), "renameat %s -> %s %s%s\n",
 	       smb_fname_src->base_name,
 	       smb_fname_dst->base_name,
 	       (result < 0) ? "failed: " : "",
 	       (result < 0) ? strerror(errno) : "");
 
-	return result;    
+	return result;
 }
 
-static int audit_unlink(vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname)
+static int audit_unlinkat(vfs_handle_struct *handle,
+			struct files_struct *dirfsp,
+			const struct smb_filename *smb_fname,
+			int flags)
 {
 	int result;
 
-	result = SMB_VFS_NEXT_UNLINK(handle, smb_fname);
+	result = SMB_VFS_NEXT_UNLINKAT(handle,
+			dirfsp,
+			smb_fname,
+			flags);
 
-	syslog(audit_syslog_priority(handle), "unlink %s %s%s\n",
+	syslog(audit_syslog_priority(handle), "unlinkat %s %s%s\n",
 	       smb_fname->base_name,
 	       (result < 0) ? "failed: " : "",
 	       (result < 0) ? strerror(errno) : "");
@@ -322,12 +322,11 @@ static struct vfs_fn_pointers vfs_audit_fns = {
 	.connect_fn = audit_connect,
 	.disconnect_fn = audit_disconnect,
 	.opendir_fn = audit_opendir,
-	.mkdir_fn = audit_mkdir,
-	.rmdir_fn = audit_rmdir,
+	.mkdirat_fn = audit_mkdirat,
 	.open_fn = audit_open,
 	.close_fn = audit_close,
-	.rename_fn = audit_rename,
-	.unlink_fn = audit_unlink,
+	.renameat_fn = audit_renameat,
+	.unlinkat_fn = audit_unlinkat,
 	.chmod_fn = audit_chmod,
 	.fchmod_fn = audit_fchmod,
 };

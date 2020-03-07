@@ -346,7 +346,9 @@ static WERROR delete_printer_hook(TALLOC_CTX *ctx, struct security_token *token,
 				  const char *sharename,
 				  struct messaging_context *msg_ctx)
 {
-	char *cmd = lp_deleteprinter_command(talloc_tos());
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
+	char *cmd = lp_deleteprinter_command(talloc_tos(), lp_sub);
 	char *command = NULL;
 	int ret;
 	bool is_print_op = false;
@@ -2762,7 +2764,10 @@ static void spoolss_notify_share_name(struct messaging_context *msg_ctx,
 				      struct spoolss_PrinterInfo2 *pinfo2,
 				      TALLOC_CTX *mem_ctx)
 {
-	SETUP_SPOOLSS_NOTIFY_DATA_STRING(data, lp_servicename(talloc_tos(), snum));
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
+
+	SETUP_SPOOLSS_NOTIFY_DATA_STRING(data, lp_servicename(talloc_tos(), lp_sub, snum));
 }
 
 /*******************************************************************
@@ -2805,10 +2810,12 @@ static void spoolss_notify_comment(struct messaging_context *msg_ctx,
 				   struct spoolss_PrinterInfo2 *pinfo2,
 				   TALLOC_CTX *mem_ctx)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	const char *p;
 
 	if (*pinfo2->comment == '\0') {
-		p = lp_comment(talloc_tos(), snum);
+		p = lp_comment(talloc_tos(), lp_sub, snum);
 	} else {
 		p = pinfo2->comment;
 	}
@@ -3372,6 +3379,8 @@ static bool construct_notify_printer_info(struct messaging_context *msg_ctx,
 					  uint32_t id,
 					  TALLOC_CTX *mem_ctx)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	int field_num,j;
 	enum spoolss_NotifyType type;
 	uint16_t field;
@@ -3382,7 +3391,7 @@ static bool construct_notify_printer_info(struct messaging_context *msg_ctx,
 
 	DEBUG(4,("construct_notify_printer_info: Notify type: [%s], number of notify info: [%d] on printer: [%s]\n",
 		(type == PRINTER_NOTIFY_TYPE ? "PRINTER_NOTIFY_TYPE" : "JOB_NOTIFY_TYPE"),
-		option_type->count, lp_servicename(talloc_tos(), snum)));
+		option_type->count, lp_servicename(talloc_tos(), lp_sub, snum)));
 
 	for(field_num=0; field_num < option_type->count; field_num++) {
 		field = option_type->fields[field_num].field;
@@ -3506,6 +3515,8 @@ static WERROR printserver_notify_info(struct pipes_struct *p,
 				      struct spoolss_NotifyInfo *info,
 				      TALLOC_CTX *mem_ctx)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	int snum;
 	struct printer_handle *Printer = find_printer_index_by_hnd(p, hnd);
 	int n_services=lp_numservices();
@@ -3549,12 +3560,12 @@ static WERROR printserver_notify_info(struct pipes_struct *p,
 			result = winreg_get_printer_internal(mem_ctx,
 						    get_session_info_system(),
 						    p->msg_ctx,
-						    lp_servicename(talloc_tos(), snum),
+						    lp_servicename(talloc_tos(), lp_sub, snum),
 						    &pinfo2);
 			if (!W_ERROR_IS_OK(result)) {
 				DEBUG(4, ("printserver_notify_info: "
 					  "Failed to get printer [%s]\n",
-					  lp_servicename(talloc_tos(), snum)));
+					  lp_servicename(talloc_tos(), lp_sub, snum)));
 				continue;
 			}
 
@@ -3599,6 +3610,8 @@ static WERROR printer_notify_info(struct pipes_struct *p,
 				  struct spoolss_NotifyInfo *info,
 				  TALLOC_CTX *mem_ctx)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	int snum;
 	struct printer_handle *Printer = find_printer_index_by_hnd(p, hnd);
 	int i;
@@ -3643,7 +3656,7 @@ static WERROR printer_notify_info(struct pipes_struct *p,
 	result = winreg_get_printer_internal(mem_ctx,
 				    get_session_info_system(),
 				    p->msg_ctx,
-				    lp_servicename(talloc_tos(), snum), &pinfo2);
+				    lp_servicename(talloc_tos(), lp_sub, snum), &pinfo2);
 	if (!W_ERROR_IS_OK(result)) {
 		result = WERR_INVALID_HANDLE;
 		goto err_pdb_drop;
@@ -3970,12 +3983,14 @@ static WERROR construct_printer_info1(TALLOC_CTX *mem_ctx,
 				      struct spoolss_PrinterInfo1 *r,
 				      int snum)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	WERROR result;
 
 	r->flags		= flags;
 
 	if (info2->comment == NULL || info2->comment[0] == '\0') {
-		r->comment	= lp_comment(mem_ctx, snum);
+		r->comment	= lp_comment(mem_ctx, lp_sub, snum);
 	} else {
 		r->comment	= talloc_strdup(mem_ctx, info2->comment); /* saved comment */
 	}
@@ -4007,6 +4022,8 @@ static WERROR construct_printer_info2(TALLOC_CTX *mem_ctx,
 				      struct spoolss_PrinterInfo2 *r,
 				      int snum)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	int count;
 	print_status_struct status;
 	WERROR result;
@@ -4025,7 +4042,7 @@ static WERROR construct_printer_info2(TALLOC_CTX *mem_ctx,
 		return result;
 	}
 
-	r->sharename		= lp_servicename(mem_ctx, snum);
+	r->sharename		= lp_servicename(mem_ctx, lp_sub, snum);
 	W_ERROR_HAVE_NO_MEMORY(r->sharename);
 	r->portname		= talloc_strdup(mem_ctx, info2->portname);
 	W_ERROR_HAVE_NO_MEMORY(r->portname);
@@ -4033,7 +4050,7 @@ static WERROR construct_printer_info2(TALLOC_CTX *mem_ctx,
 	W_ERROR_HAVE_NO_MEMORY(r->drivername);
 
 	if (info2->comment[0] == '\0') {
-		r->comment	= lp_comment(mem_ctx, snum);
+		r->comment	= lp_comment(mem_ctx, lp_sub, snum);
 	} else {
 		r->comment	= talloc_strdup(mem_ctx, info2->comment);
 	}
@@ -4233,6 +4250,8 @@ static WERROR construct_printer_info7(TALLOC_CTX *mem_ctx,
 				      struct spoolss_PrinterInfo7 *r,
 				      int snum)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	const struct auth_session_info *session_info;
 	struct spoolss_PrinterInfo2 *pinfo2 = NULL;
 	char *printer;
@@ -4245,7 +4264,7 @@ static WERROR construct_printer_info7(TALLOC_CTX *mem_ctx,
 	session_info = get_session_info_system();
 	SMB_ASSERT(session_info != NULL);
 
-	printer = lp_servicename(tmp_ctx, snum);
+	printer = lp_servicename(tmp_ctx, lp_sub, snum);
 	if (printer == NULL) {
 		DEBUG(0, ("invalid printer snum %d\n", snum));
 		werr = WERR_INVALID_PARAMETER;
@@ -6357,7 +6376,9 @@ static bool check_printer_ok(TALLOC_CTX *mem_ctx,
 
 static WERROR add_port_hook(TALLOC_CTX *ctx, struct security_token *token, const char *portname, const char *uri)
 {
-	char *cmd = lp_addport_command(talloc_tos());
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
+	char *cmd = lp_addport_command(talloc_tos(), lp_sub);
 	char *command = NULL;
 	int ret;
 	bool is_print_op = false;
@@ -6418,7 +6439,9 @@ static bool add_printer_hook(TALLOC_CTX *ctx, struct security_token *token,
 			     const char *remote_machine,
 			     struct messaging_context *msg_ctx)
 {
-	char *cmd = lp_addprinter_command(talloc_tos());
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
+	char *cmd = lp_addprinter_command(talloc_tos(), lp_sub);
 	char **qlines;
 	char *command = NULL;
 	int numlines;
@@ -6923,6 +6946,8 @@ static WERROR update_printer(struct pipes_struct *p,
 	struct spoolss_SetPrinterInfo2 *printer = info_ctr->info.info2;
 	struct spoolss_PrinterInfo2 *old_printer;
 	struct printer_handle *Printer = find_printer_index_by_hnd(p, handle);
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	int snum;
 	WERROR result = WERR_OK;
 	TALLOC_CTX *tmp_ctx;
@@ -6980,7 +7005,7 @@ static WERROR update_printer(struct pipes_struct *p,
 	/* Call addprinter hook */
 	/* Check changes to see if this is really needed */
 
-	if (*lp_addprinter_command(talloc_tos()) &&
+	if (*lp_addprinter_command(talloc_tos(), lp_sub) &&
 			(!strequal(printer->drivername, old_printer->drivername) ||
 			 !strequal(printer->comment, old_printer->comment) ||
 			 !strequal(printer->portname, old_printer->portname) ||
@@ -7038,6 +7063,8 @@ static WERROR publish_or_unpublish_printer(struct pipes_struct *p,
 					   struct spoolss_SetPrinterInfo7 *info7)
 {
 #ifdef HAVE_ADS
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	struct spoolss_PrinterInfo2 *pinfo2 = NULL;
 	WERROR result;
 	int snum;
@@ -7060,7 +7087,7 @@ static WERROR publish_or_unpublish_printer(struct pipes_struct *p,
 	result = winreg_get_printer_internal(p->mem_ctx,
 				    get_session_info_system(),
 				    p->msg_ctx,
-				    lp_servicename(talloc_tos(), snum),
+				    lp_servicename(talloc_tos(), lp_sub, snum),
 				    &pinfo2);
 	if (!W_ERROR_IS_OK(result)) {
 		return WERR_INVALID_HANDLE;
@@ -7314,13 +7341,15 @@ static WERROR fill_job_info1(TALLOC_CTX *mem_ctx,
 			     int position, int snum,
 			     struct spoolss_PrinterInfo2 *pinfo2)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	struct tm *t;
 
 	t = gmtime(&queue->time);
 
 	r->job_id		= jobid;
 
-	r->printer_name		= lp_servicename(mem_ctx, snum);
+	r->printer_name		= lp_servicename(mem_ctx, lp_sub, snum);
 	W_ERROR_HAVE_NO_MEMORY(r->printer_name);
 	r->server_name		= talloc_strdup(mem_ctx, pinfo2->servername);
 	W_ERROR_HAVE_NO_MEMORY(r->server_name);
@@ -7356,13 +7385,15 @@ static WERROR fill_job_info2(TALLOC_CTX *mem_ctx,
 			     struct spoolss_PrinterInfo2 *pinfo2,
 			     struct spoolss_DeviceMode *devmode)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	struct tm *t;
 
 	t = gmtime(&queue->time);
 
 	r->job_id		= jobid;
 
-	r->printer_name		= lp_servicename(mem_ctx, snum);
+	r->printer_name		= lp_servicename(mem_ctx, lp_sub, snum);
 	W_ERROR_HAVE_NO_MEMORY(r->printer_name);
 	r->server_name		= talloc_strdup(mem_ctx, pinfo2->servername);
 	W_ERROR_HAVE_NO_MEMORY(r->server_name);
@@ -8176,7 +8207,9 @@ static WERROR fill_port_2(TALLOC_CTX *mem_ctx,
 
 static WERROR enumports_hook(TALLOC_CTX *ctx, int *count, char ***lines)
 {
-	char *cmd = lp_enumports_command(talloc_tos());
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
+	char *cmd = lp_enumports_command(talloc_tos(), lp_sub);
 	char **qlines = NULL;
 	char *command = NULL;
 	int numlines;
@@ -8395,6 +8428,8 @@ static WERROR spoolss_addprinterex_level_2(struct pipes_struct *p,
 {
 	struct spoolss_SetPrinterInfo2 *info2 = info_ctr->info.info2;
 	uint32_t info2_mask = SPOOLSS_PRINTER_INFO_ALL;
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	int	snum;
 	WERROR err = WERR_OK;
 
@@ -8440,7 +8475,7 @@ static WERROR spoolss_addprinterex_level_2(struct pipes_struct *p,
 	/* FIXME!!!  smbd should check to see if the driver is installed before
 	   trying to add a printer like this  --jerry */
 
-	if (*lp_addprinter_command(talloc_tos()) ) {
+	if (*lp_addprinter_command(talloc_tos(), lp_sub) ) {
 		char *raddr;
 
 		raddr = tsocket_address_inet_addr_string(p->remote_address,
@@ -9980,6 +10015,8 @@ done:
 WERROR _spoolss_SetPrinterDataEx(struct pipes_struct *p,
 				 struct spoolss_SetPrinterDataEx *r)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	struct spoolss_PrinterInfo2 *pinfo2 = NULL;
 	int 			snum = 0;
 	WERROR 			result = WERR_OK;
@@ -10037,7 +10074,7 @@ WERROR _spoolss_SetPrinterDataEx(struct pipes_struct *p,
 	}
 
 	result = winreg_get_printer(tmp_ctx, b,
-				    lp_servicename(talloc_tos(), snum),
+				    lp_servicename(talloc_tos(), lp_sub, snum),
 				    &pinfo2);
 	if (!W_ERROR_IS_OK(result)) {
 		goto done;

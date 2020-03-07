@@ -38,7 +38,7 @@ MonitorInterval=20
 	set this tunable to 1.
       </p><p>
 	For version checking, CTDB uses major and minor version.
-	For example, CTDB 4.6.1 and CTDB CTDB 4.6.2 are matching versions;
+	For example, CTDB 4.6.1 and CTDB 4.6.2 are matching versions;
 	CTDB 4.5.x and CTDB 4.6.y do not match.
       </p><p>
 	CTDB with version check support will lose to CTDB without
@@ -184,7 +184,7 @@ MonitorInterval=20
 	take longer than this value, in milliseconds, to complete.
 	These operations include "process a record request from client",
 	"take a record or database lock", "update a persistent database
-	record" and "vaccum a database".
+	record" and "vacuum a database".
       </p></div><div class="refsect2"><a name="idm137"></a><h3>MaxQueueDropMsg</h3><p>Default: 1000000</p><p>
 	This is the maximum number of messages to be queued up for
 	a client before ctdb will treat the client as hung and will
@@ -241,18 +241,18 @@ MonitorInterval=20
         in various controls.  This limit is used by new controls used
         for recovery and controls used in vacuuming.
       </p></div><div class="refsect2"><a name="idm172"></a><h3>RecdFailCount</h3><p>Default: 10</p><p>
-	If the recovery daemon has failed to ping the main dameon for
+	If the recovery daemon has failed to ping the main daemon for
 	this many consecutive intervals, the main daemon will consider
 	the recovery daemon as hung and will try to restart it to recover.
       </p></div><div class="refsect2"><a name="idm176"></a><h3>RecdPingTimeout</h3><p>Default: 60</p><p>
-	If the main dameon has not heard a "ping" from the recovery dameon
-	for this many seconds, the main dameon will log a message that
+	If the main daemon has not heard a "ping" from the recovery daemon
+	for this many seconds, the main daemon will log a message that
 	the recovery daemon is potentially hung.  This also increments a
 	counter which is checked against <code class="varname">RecdFailCount</code>
 	for detection of hung recovery daemon.
       </p></div><div class="refsect2"><a name="idm181"></a><h3>RecLockLatencyMs</h3><p>Default: 1000</p><p>
 	When using a reclock file for split brain prevention, if set
-	to non-zero this tunable will make the recovery dameon log a
+	to non-zero this tunable will make the recovery daemon log a
 	message if the fcntl() call to lock/testlock the recovery file
 	takes longer than this number of milliseconds.
       </p></div><div class="refsect2"><a name="idm185"></a><h3>RecoverInterval</h3><p>Default: 1</p><p>
@@ -262,7 +262,7 @@ MonitorInterval=20
 	This is the default setting for timeouts for controls when sent
 	from the recovery daemon. We allow longer control timeouts from
 	the recovery daemon than from normal use since the recovery
-	dameon often use controls that can take a lot longer than normal
+	daemon often use controls that can take a lot longer than normal
 	controls.
       </p></div><div class="refsect2"><a name="idm193"></a><h3>RecoveryBanPeriod</h3><p>Default: 300</p><p>
        The duration in seconds for which a node is banned if the node
@@ -285,13 +285,10 @@ MonitorInterval=20
         During vacuuming, if the number of freelist records are more than
         <code class="varname">RepackLimit</code>, then the database is repacked
         to get rid of the freelist records to avoid fragmentation.
-      </p><p>
-        Databases are repacked only if both <code class="varname">RepackLimit</code>
-        and <code class="varname">VacuumLimit</code> are exceeded.
-      </p></div><div class="refsect2"><a name="idm214"></a><h3>RerecoveryTimeout</h3><p>Default: 10</p><p>
+      </p></div><div class="refsect2"><a name="idm211"></a><h3>RerecoveryTimeout</h3><p>Default: 10</p><p>
 	Once a recovery has completed, no additional recoveries are
 	permitted until this timeout in seconds has expired.
-      </p></div><div class="refsect2"><a name="idm218"></a><h3>SeqnumInterval</h3><p>Default: 1000</p><p>
+      </p></div><div class="refsect2"><a name="idm215"></a><h3>SeqnumInterval</h3><p>Default: 1000</p><p>
 	Some databases have seqnum tracking enabled, so that samba will
 	be able to detect asynchronously when there has been updates
 	to the database.  Every time a database is updated its sequence
@@ -300,52 +297,45 @@ MonitorInterval=20
 	This tunable is used to specify in milliseconds how frequently
 	ctdb will send out updates to remote nodes to inform them that
 	the sequence number is increased.
-      </p></div><div class="refsect2"><a name="idm223"></a><h3>StatHistoryInterval</h3><p>Default: 1</p><p>
+      </p></div><div class="refsect2"><a name="idm220"></a><h3>StatHistoryInterval</h3><p>Default: 1</p><p>
 	Granularity of the statistics collected in the statistics
 	history. This is reported by 'ctdb stats' command.
-      </p></div><div class="refsect2"><a name="idm227"></a><h3>StickyDuration</h3><p>Default: 600</p><p>
+      </p></div><div class="refsect2"><a name="idm224"></a><h3>StickyDuration</h3><p>Default: 600</p><p>
 	Once a record has been marked STICKY, this is the duration in
 	seconds, the record will be flagged as a STICKY record.
-      </p></div><div class="refsect2"><a name="idm231"></a><h3>StickyPindown</h3><p>Default: 200</p><p>
+      </p></div><div class="refsect2"><a name="idm228"></a><h3>StickyPindown</h3><p>Default: 200</p><p>
 	Once a STICKY record has been migrated onto a node, it will be
 	pinned down on that node for this number of milliseconds. Any
 	request from other nodes to migrate the record off the node will
 	be deferred.
-      </p></div><div class="refsect2"><a name="idm235"></a><h3>TakeoverTimeout</h3><p>Default: 9</p><p>
+      </p></div><div class="refsect2"><a name="idm232"></a><h3>TakeoverTimeout</h3><p>Default: 9</p><p>
 	This is the duration in seconds in which ctdb tries to complete IP
 	failover.
-      </p></div><div class="refsect2"><a name="idm239"></a><h3>TickleUpdateInterval</h3><p>Default: 20</p><p>
+      </p></div><div class="refsect2"><a name="idm236"></a><h3>TickleUpdateInterval</h3><p>Default: 20</p><p>
 	Every <code class="varname">TickleUpdateInterval</code> seconds, ctdb
 	synchronizes the client connection information across nodes.
-      </p></div><div class="refsect2"><a name="idm244"></a><h3>TraverseTimeout</h3><p>Default: 20</p><p>
+      </p></div><div class="refsect2"><a name="idm241"></a><h3>TraverseTimeout</h3><p>Default: 20</p><p>
 	This is the duration in seconds for which a database traverse
 	is allowed to run.  If the traverse does not complete during
 	this interval, ctdb will abort the traverse.
-      </p></div><div class="refsect2"><a name="idm248"></a><h3>VacuumFastPathCount</h3><p>Default: 60</p><p>
+      </p></div><div class="refsect2"><a name="idm245"></a><h3>VacuumFastPathCount</h3><p>Default: 60</p><p>
        During a vacuuming run, ctdb usually processes only the records
        marked for deletion also called the fast path vacuuming. After
        finishing <code class="varname">VacuumFastPathCount</code> number of fast
        path vacuuming runs, ctdb will trigger a scan of complete database
        for any empty records that need to be deleted.
-      </p></div><div class="refsect2"><a name="idm253"></a><h3>VacuumInterval</h3><p>Default: 10</p><p>
+      </p></div><div class="refsect2"><a name="idm250"></a><h3>VacuumInterval</h3><p>Default: 10</p><p>
         Periodic interval in seconds when vacuuming is triggered for
         volatile databases.
-      </p></div><div class="refsect2"><a name="idm257"></a><h3>VacuumLimit</h3><p>Default: 5000</p><p>
-        During vacuuming, if the number of deleted records are more than
-        <code class="varname">VacuumLimit</code>, then databases are repacked to
-        avoid fragmentation.
-      </p><p>
-        Databases are repacked only if both <code class="varname">RepackLimit</code>
-        and <code class="varname">VacuumLimit</code> are exceeded.
-      </p></div><div class="refsect2"><a name="idm265"></a><h3>VacuumMaxRunTime</h3><p>Default: 120</p><p>
+      </p></div><div class="refsect2"><a name="idm254"></a><h3>VacuumMaxRunTime</h3><p>Default: 120</p><p>
         The maximum time in seconds for which the vacuuming process is
         allowed to run.  If vacuuming process takes longer than this
         value, then the vacuuming process is terminated.
-      </p></div><div class="refsect2"><a name="idm269"></a><h3>VerboseMemoryNames</h3><p>Default: 0</p><p>
+      </p></div><div class="refsect2"><a name="idm258"></a><h3>VerboseMemoryNames</h3><p>Default: 0</p><p>
 	When set to non-zero, ctdb assigns verbose names for some of
 	the talloc allocated memory objects.  These names are visible
 	in the talloc memory report generated by 'ctdb dumpmemory'.
-      </p></div></div><div class="refsect1"><a name="idm273"></a><h2>FILES&gt;</h2><table border="0" summary="Simple list" class="simplelist"><tr><td><code class="filename">/usr/local/etc/ctdb/ctdb.tunables</code></td></tr></table></div><div class="refsect1"><a name="idm278"></a><h2>SEE ALSO</h2><p>
+      </p></div></div><div class="refsect1"><a name="idm262"></a><h2>FILES&gt;</h2><table border="0" summary="Simple list" class="simplelist"><tr><td><code class="filename">/usr/local/etc/ctdb/ctdb.tunables</code></td></tr></table></div><div class="refsect1"><a name="idm267"></a><h2>SEE ALSO</h2><p>
       <span class="citerefentry"><span class="refentrytitle">ctdb</span>(1)</span>,
 
       <span class="citerefentry"><span class="refentrytitle">ctdbd</span>(1)</span>,

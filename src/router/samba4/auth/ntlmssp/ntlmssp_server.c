@@ -335,8 +335,8 @@ struct tevent_req *ntlmssp_server_auth_send(TALLOC_CTX *mem_ctx,
 				      struct gensec_ntlmssp_context);
 	struct auth4_context *auth_context = gensec_security->auth_context;
 	struct tevent_req *req = NULL;
+	struct tevent_req *subreq = NULL;
 	struct ntlmssp_server_auth_state *state = NULL;
-	uint8_t authoritative = 0;
 	NTSTATUS status;
 
 	req = tevent_req_create(mem_ctx, &state,
@@ -355,54 +355,13 @@ struct tevent_req *ntlmssp_server_auth_send(TALLOC_CTX *mem_ctx,
 		return tevent_req_post(req, ev);
 	}
 
-	if (auth_context->check_ntlm_password_send != NULL) {
-		struct tevent_req *subreq = NULL;
-
-		subreq = auth_context->check_ntlm_password_send(state, ev,
-						auth_context,
-						state->user_info);
-		if (tevent_req_nomem(subreq, req)) {
-			return tevent_req_post(req, ev);
-		}
-		tevent_req_set_callback(subreq,
-					ntlmssp_server_auth_done,
-					req);
-		return req;
-	}
-
-	if (auth_context->check_ntlm_password == NULL) {
-		tevent_req_nterror(req, NT_STATUS_INTERNAL_ERROR);
+	subreq = auth_context->check_ntlm_password_send(
+		state, ev, auth_context, state->user_info);
+	if (tevent_req_nomem(subreq, req)) {
 		return tevent_req_post(req, ev);
 	}
-
-	status = auth_context->check_ntlm_password(auth_context,
-						   gensec_ntlmssp,
-						   state->user_info,
-						   &authoritative,
-						   &gensec_ntlmssp->server_returned_info,
-						   &state->user_session_key,
-						   &state->lm_session_key);
-	if (!NT_STATUS_IS_OK(status)) {
-		DBG_INFO("Checking NTLMSSP password for %s\\%s failed: %s\n",
-			 state->user_info->client.domain_name,
-			 state->user_info->client.account_name,
-			 nt_errstr(status));
-	}
-	if (tevent_req_nterror(req, status)) {
-		return tevent_req_post(req, ev);
-	}
-	talloc_steal(state, state->user_session_key.data);
-	talloc_steal(state, state->lm_session_key.data);
-
-	status = ntlmssp_server_postauth(gensec_security,
-					 gensec_ntlmssp,
-					 state, in);
-	if (tevent_req_nterror(req, status)) {
-		return tevent_req_post(req, ev);
-	}
-
-	tevent_req_done(req);
-	return tevent_req_post(req, ev);
+	tevent_req_set_callback(subreq,	ntlmssp_server_auth_done, req);
+	return req;
 }
 
 /**
@@ -970,8 +929,12 @@ static NTSTATUS ntlmssp_server_postauth(struct gensec_security *gensec_security,
 				if (session_key.data == NULL) {
 					return NT_STATUS_NO_MEMORY;
 				}
-				SMBsesskeygen_lm_sess_key(lm_session_key.data, ntlmssp_state->lm_resp.data,
-							  session_key.data);
+				nt_status = SMBsesskeygen_lm_sess_key(lm_session_key.data,
+								      ntlmssp_state->lm_resp.data,
+								      session_key.data);
+				if (!NT_STATUS_IS_OK(nt_status)) {
+					return nt_status;
+				}
 				DEBUG(10,("ntlmssp_server_auth: Created NTLM session key.\n"));
 			} else {
 				static const uint8_t zeros[24] = {0, };
@@ -980,8 +943,11 @@ static NTSTATUS ntlmssp_server_postauth(struct gensec_security *gensec_security,
 				if (session_key.data == NULL) {
 					return NT_STATUS_NO_MEMORY;
 				}
-				SMBsesskeygen_lm_sess_key(zeros, zeros,
-							  session_key.data);
+				nt_status = SMBsesskeygen_lm_sess_key(zeros, zeros,
+								      session_key.data);
+				if (!NT_STATUS_IS_OK(nt_status)) {
+					return nt_status;
+				}
 				DEBUG(10,("ntlmssp_server_auth: Created NTLM session key.\n"));
 			}
 			dump_data_pw("LM session key:\n", session_key.data,

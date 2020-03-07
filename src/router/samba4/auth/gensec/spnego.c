@@ -72,7 +72,7 @@ struct spnego_neg_ops {
 	 * 'in_next'. Note that 'in_mem_ctx' is just passed as a hint, the
 	 * caller should treat 'in_next' as const and don't attempt to free the
 	 * content.  NT_STATUS_OK indicates the finish hook should be invoked
-	 * directly withing the need of gensec_update() on the subcontext.
+	 * directly within the need of gensec_update() on the subcontext.
 	 * Every other error indicates an error that's returned to the caller.
 	 */
 	NTSTATUS (*start_fn)(struct gensec_security *gensec_security,
@@ -90,7 +90,7 @@ struct spnego_neg_ops {
 	 * 'in_next'. Note that 'in_mem_ctx' is just passed as a hint, the
 	 * caller should treat 'in_next' as const and don't attempt to free the
 	 * content.  NT_STATUS_OK indicates the finish hook should be invoked
-	 * directly withing the need of gensec_update() on the subcontext.
+	 * directly within the need of gensec_update() on the subcontext.
 	 * Every other error indicates an error that's returned to the caller.
 	 */
 	NTSTATUS (*step_fn)(struct gensec_security *gensec_security,
@@ -899,8 +899,6 @@ static NTSTATUS gensec_spnego_client_negTokenTarg_finish(
 	DATA_BLOB mech_list_mic = data_blob_null;
 	NTSTATUS status;
 	struct spnego_data spnego_out;
-
-	status = sub_status;
 
 	if (!spnego_state->sub_sec_ready) {
 		/*

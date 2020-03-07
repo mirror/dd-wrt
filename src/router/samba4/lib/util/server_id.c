@@ -30,21 +30,27 @@ bool server_id_same_process(const struct server_id *p1,
 	return ((p1->pid == p2->pid) && (p1->vnn == p2->vnn));
 }
 
+int server_id_cmp(const struct server_id *p1, const struct server_id *p2)
+{
+	if (p1->vnn != p2->vnn) {
+		return (p1->vnn < p2->vnn) ? -1 : 1;
+	}
+	if (p1->pid != p2->pid) {
+		return (p1->pid < p2->pid) ? -1 : 1;
+	}
+	if (p1->task_id != p2->task_id) {
+		return (p1->task_id < p2->task_id) ? -1 : 1;
+	}
+	if (p1->unique_id != p2->unique_id) {
+		return (p1->unique_id < p2->unique_id) ? -1 : 1;
+	}
+	return 0;
+}
+
 bool server_id_equal(const struct server_id *p1, const struct server_id *p2)
 {
-	if (!server_id_same_process(p1, p2)) {
-		return false;
-	}
-
-	if (p1->task_id != p2->task_id) {
-		return false;
-	}
-
-	if (p1->unique_id != p2->unique_id) {
-		return false;
-	}
-
-	return true;
+	int cmp = server_id_cmp(p1, p2);
+	return (cmp == 0);
 }
 
 char *server_id_str_buf(struct server_id id, struct server_id_buf *dst)

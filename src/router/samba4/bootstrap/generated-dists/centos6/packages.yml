@@ -8,6 +8,7 @@ packages:
   - bind-utils
   - binutils
   - bison
+  - chrpath
   - cups-devel
   - curl
   - dbus-devel
@@ -31,7 +32,6 @@ packages:
   - krb5-server
   - lcov
   - libacl-devel
-  - libaio-devel
   - libarchive-devel
   - libattr-devel
   - libblkid-devel
@@ -52,7 +52,6 @@ packages:
   - make
   - mingw64-gcc
   - ncurses-devel
-  - nettle-devel
   - openldap-devel
   - pam-devel
   - patch
@@ -69,12 +68,6 @@ packages:
   - popt-devel
   - procps
   - psmisc
-  - pygpgme
-  - python-crypto
-  - python-devel
-  - python-dns
-  - python-markdown
-  - python3-crypto
   - python3-dns
   - python3-markdown
   - python36

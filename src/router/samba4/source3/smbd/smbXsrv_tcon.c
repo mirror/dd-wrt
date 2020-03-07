@@ -830,11 +830,10 @@ static NTSTATUS smbXsrv_tcon_create(struct smbXsrv_tcon_table *table,
 	}
 
 	if (DEBUGLVL(10)) {
-		struct smbXsrv_tconB tcon_blob;
-
-		ZERO_STRUCT(tcon_blob);
-		tcon_blob.version = SMBXSRV_VERSION_0;
-		tcon_blob.info.info0 = tcon;
+		struct smbXsrv_tconB tcon_blob = {
+			.version = SMBXSRV_VERSION_0,
+			.info.info0 = tcon,
+		};
 
 		DEBUG(10,("smbXsrv_tcon_create: global_id (0x%08x) stored\n",
 			 tcon->global->tcon_global_id));
@@ -875,11 +874,10 @@ NTSTATUS smbXsrv_tcon_update(struct smbXsrv_tcon *tcon)
 	}
 
 	if (DEBUGLVL(10)) {
-		struct smbXsrv_tconB tcon_blob;
-
-		ZERO_STRUCT(tcon_blob);
-		tcon_blob.version = SMBXSRV_VERSION_0;
-		tcon_blob.info.info0 = tcon;
+		struct smbXsrv_tconB tcon_blob = {
+			.version = SMBXSRV_VERSION_0,
+			.info.info0 = tcon,
+		};
 
 		DEBUG(10,("smbXsrv_tcon_update: global_id (0x%08x) stored\n",
 			  tcon->global->tcon_global_id));
@@ -1170,13 +1168,7 @@ NTSTATUS smb2srv_tcon_lookup(struct smbXsrv_session *session,
 
 NTSTATUS smb2srv_tcon_disconnect_all(struct smbXsrv_session *session)
 {
-	uint64_t vuid;
-
-	if (session->compat) {
-		vuid = session->compat->vuid;
-	} else {
-		vuid = 0;
-	}
+	uint64_t vuid = session->global->session_wire_id;
 
 	return smbXsrv_tcon_disconnect_all(session->tcon_table, vuid);
 }

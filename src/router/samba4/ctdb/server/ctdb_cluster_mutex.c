@@ -21,6 +21,7 @@
 
 #include "replace.h"
 #include "system/network.h"
+#include "system/filesys.h"
 
 #include <tevent.h>
 
@@ -32,8 +33,6 @@
 #include "lib/util/blocking.h"
 
 #include "ctdb_private.h"
-#include "common/common.h"
-#include "common/logging.h"
 
 #include "ctdb_cluster_mutex.h"
 
@@ -122,21 +121,56 @@ static bool cluster_mutex_helper_args_file(TALLOC_CTX *mem_ctx,
 					   const char *argstring,
 					   char ***argv)
 {
-	bool ok;
+	struct stat st;
+	size_t size = sizeof(cluster_mutex_helper);
+	const char *t;
 	char **args = NULL;
+	int ret;
 
-	ok = ctdb_set_helper("cluster mutex helper",
-			     cluster_mutex_helper,
-			     sizeof(cluster_mutex_helper),
-			     "CTDB_CLUSTER_MUTEX_HELPER",
-			     CTDB_HELPER_BINDIR,
-			     "ctdb_mutex_fcntl_helper");
-	if (! ok) {
-		DBG_ERR("ctdb exiting with error: "
-			"Unable to set cluster mutex helper\n");
+	if (cluster_mutex_helper[0] != '\0') {
+		goto helper_done;
+	}
+
+	t = getenv("CTDB_CLUSTER_MUTEX_HELPER");
+	if (t != NULL) {
+		size_t len;
+
+		len = strlcpy(cluster_mutex_helper, t, size);
+		if (len >= size) {
+			DBG_ERR("error: CTDB_CLUSTER_MUTEX_HELPER too long\n");
+			exit(1);
+		}
+	} else {
+		ret = snprintf(cluster_mutex_helper,
+			       size,
+			       "%s/%s",
+			       CTDB_HELPER_BINDIR,
+			       "ctdb_mutex_fcntl_helper");
+		if (ret < 0 || (size_t)ret >= size) {
+			D_ERR("Unable to set cluster mutex helper - "
+			      "path too long\n");
+			exit(1);
+		}
+	}
+
+	ret = stat(cluster_mutex_helper, &st);
+	if (ret != 0) {
+		D_ERR("Unable to set cluster mutex helper \"%s\" - %s\n",
+		      cluster_mutex_helper,
+		      strerror(errno));
 		exit(1);
 	}
 
+	if ((st.st_mode & S_IXUSR) == 0) {
+		D_ERR("Unable to set cluster_mutex helper \"%s\" - "
+		      "not executable\n",
+		      cluster_mutex_helper);
+		exit(1);
+	}
+
+	D_NOTICE("Set cluster mutex helper to \"%s\"\n", cluster_mutex_helper);
+
+helper_done:
 
 	/* Array includes default helper, file and NULL */
 	args = talloc_array(mem_ctx, char *, 3);
@@ -234,7 +268,7 @@ ctdb_cluster_mutex(TALLOC_CTX *mem_ctx,
 
 	h = talloc(mem_ctx, struct ctdb_cluster_mutex_handle);
 	if (h == NULL) {
-		DEBUG(DEBUG_ERR, (__location__ " out of memory\n"));
+		DBG_ERR("out of memory\n");
 		return NULL;
 	}
 
@@ -246,7 +280,7 @@ ctdb_cluster_mutex(TALLOC_CTX *mem_ctx,
 	ret = pipe(h->fd);
 	if (ret != 0) {
 		talloc_free(h);
-		DEBUG(DEBUG_ERR, (__location__ " Failed to open pipe\n"));
+		DBG_ERR("Failed to open pipe\n");
 		return NULL;
 	}
 	set_close_on_exec(h->fd[0]);
@@ -302,7 +336,7 @@ ctdb_cluster_mutex(TALLOC_CTX *mem_ctx,
 		execv(args[0], args);
 
 		/* Only happens on error */
-		DEBUG(DEBUG_ERR, (__location__ "execv() failed\n"));
+		DBG_ERR("execv() failed\n");
 		_exit(1);
 	}
 
@@ -313,7 +347,7 @@ ctdb_cluster_mutex(TALLOC_CTX *mem_ctx,
 		DBG_WARNING("Failed to unblock SIGTERM (%d)\n", errno);
 	}
 
-	DEBUG(DEBUG_DEBUG, (__location__ " Created PIPE FD:%d\n", h->fd[0]));
+	DBG_DEBUG("Created PIPE FD:%d\n", h->fd[0]);
 	set_close_on_exec(h->fd[0]);
 
 	close(h->fd[1]);

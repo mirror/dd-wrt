@@ -27,31 +27,16 @@
 #include "lib/dbwrap/dbwrap_rbt.h"
 #include "libcli/security/dom_sid.h"
 #include "mdssvc.h"
-#include "rpc_server/mdssvc/sparql_parser.tab.h"
-#include "lib/tevent_glib_glue.h"
+#include "mdssvc_noindex.h"
+#ifdef HAVE_SPOTLIGHT_BACKEND_TRACKER
+#include "mdssvc_tracker.h"
+#endif
+#ifdef HAVE_SPOTLIGHT_BACKEND_ES
+#include "mdssvc_es.h"
+#endif
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_RPC_SRV
-
-#define SLQ_DEBUG(lvl, _slq, state) do { if (CHECK_DEBUGLVL(lvl)) {	\
-	const struct sl_query *__slq = _slq;				\
-	struct timeval_buf start_buf;					\
-	const char *start;						\
-	struct timeval_buf last_used_buf;				\
-	const char *last_used;						\
-	struct timeval_buf expire_buf;					\
-	const char *expire;						\
-	start = timeval_str_buf(&__slq->start_time, false,		\
-				true, &start_buf);			\
-	last_used = timeval_str_buf(&__slq->last_used, false,		\
-				    true, &last_used_buf);		\
-	expire = timeval_str_buf(&__slq->expire_time, false,		\
-				 true, &expire_buf);			\
-	DEBUG(lvl,("%s slq[0x%jx,0x%jx], start: %s, last_used: %s, "	\
-		   "expires: %s, query: '%s'\n", state,			\
-		   (uintmax_t)__slq->ctx1, (uintmax_t)__slq->ctx2,	\
-		   start, last_used, expire, __slq->query_string));	\
-}} while(0)
 
 struct slrpc_cmd {
 	const char *name;
@@ -94,226 +79,9 @@ static bool slrpc_fetch_attributes(struct mds_ctx *mds_ctx,
 static bool slrpc_close_query(struct mds_ctx *mds_ctx,
 			      const DALLOC_CTX *query, DALLOC_CTX *reply);
 
-static struct tevent_req *slq_destroy_send(TALLOC_CTX *mem_ctx,
-					   struct tevent_context *ev,
-					   struct sl_query **slq)
-{
-	struct tevent_req *req;
-	struct slq_destroy_state *state;
-
-	req = tevent_req_create(mem_ctx, &state,
-				struct slq_destroy_state);
-	if (req == NULL) {
-		return NULL;
-	}
-	state->slq = talloc_move(state, slq);
-	tevent_req_done(req);
-
-	return tevent_req_post(req, ev);
-}
-
-static void slq_destroy_recv(struct tevent_req *req)
-{
-	tevent_req_received(req);
-}
-
 /************************************************
  * Misc utility functions
  ************************************************/
-
-static char *tab_level(TALLOC_CTX *mem_ctx, int level)
-{
-	int i;
-	char *string = talloc_array(mem_ctx, char, level + 1);
-
-	for (i = 0; i < level; i++) {
-		string[i] = '\t';
-	}
-
-	string[i] = '\0';
-	return string;
-}
-
-char *mds_dalloc_dump(DALLOC_CTX *dd, int nestinglevel)
-{
-	const char *type;
-	int n, result;
-	uint64_t i;
-	sl_bool_t bl;
-	sl_time_t t;
-	struct tm *tm;
-	char datestring[256];
-	sl_cnids_t cnids;
-	char *logstring, *nested_logstring;
-	char *tab_string1, *tab_string2;
-	void *p;
-	bool ok;
-	char *utf8string;
-	size_t utf8len;
-
-	tab_string1 = tab_level(dd, nestinglevel);
-	if (tab_string1 == NULL) {
-		return NULL;
-	}
-	tab_string2 = tab_level(dd, nestinglevel + 1);
-	if (tab_string2 == NULL) {
-		return NULL;
-	}
-
-	logstring = talloc_asprintf(dd,
-				    "%s%s(#%lu): {\n",
-				    tab_string1,
-				    talloc_get_name(dd),
-				    dalloc_size(dd));
-	if (logstring == NULL) {
-		return NULL;
-	}
-
-	for (n = 0; n < dalloc_size(dd); n++) {
-		type = dalloc_get_name(dd, n);
-		if (type == NULL) {
-			return NULL;
-		}
-		p = dalloc_get_object(dd, n);
-		if (p == NULL) {
-			return NULL;
-		}
-		if (strcmp(type, "DALLOC_CTX") == 0
-		    || strcmp(type, "sl_array_t") == 0
-		    || strcmp(type, "sl_filemeta_t") == 0
-		    || strcmp(type, "sl_dict_t") == 0) {
-			nested_logstring = mds_dalloc_dump(p, nestinglevel + 1);
-			if (nested_logstring == NULL) {
-				return NULL;
-			}
-			logstring = talloc_strdup_append(logstring,
-							 nested_logstring);
-		} else if (strcmp(type, "uint64_t") == 0) {
-			memcpy(&i, p, sizeof(uint64_t));
-			logstring = talloc_asprintf_append(
-				logstring,
-				"%suint64_t: 0x%04jx\n",
-				tab_string2, (uintmax_t)i);
-		} else if (strcmp(type, "char *") == 0) {
-			logstring = talloc_asprintf_append(
-				logstring,
-				"%sstring: %s\n",
-				tab_string2,
-				(char *)p);
-		} else if (strcmp(type, "smb_ucs2_t *") == 0) {
-			ok = convert_string_talloc(talloc_tos(),
-						   CH_UTF16LE,
-						   CH_UTF8,
-						   p,
-						   talloc_get_size(p),
-						   &utf8string,
-						   &utf8len);
-			if (!ok) {
-				return NULL;
-			}
-			logstring = talloc_asprintf_append(
-				logstring,
-				"%sUTF16-string: %s\n",
-				tab_string2,
-				utf8string);
-			TALLOC_FREE(utf8string);
-		} else if (strcmp(type, "sl_bool_t") == 0) {
-			memcpy(&bl, p, sizeof(sl_bool_t));
-			logstring = talloc_asprintf_append(
-				logstring,
-				"%sbool: %s\n",
-				tab_string2,
-				bl ? "true" : "false");
-		} else if (strcmp(type, "sl_nil_t") == 0) {
-			logstring = talloc_asprintf_append(
-				logstring,
-				"%snil\n",
-				tab_string2);
-		} else if (strcmp(type, "sl_time_t") == 0) {
-			memcpy(&t, p, sizeof(sl_time_t));
-			tm = localtime(&t.tv_sec);
-			if (tm == NULL) {
-				return NULL;
-			}
-			result = strftime(datestring,
-					 sizeof(datestring),
-					 "%Y-%m-%d %H:%M:%S", tm);
-			if (result == 0) {
-				return NULL;
-			}
-			logstring = talloc_asprintf_append(
-				logstring,
-				"%ssl_time_t: %s.%06lu\n",
-				tab_string2,
-				datestring,
-				(unsigned long)t.tv_usec);
-		} else if (strcmp(type, "sl_cnids_t") == 0) {
-			memcpy(&cnids, p, sizeof(sl_cnids_t));
-			logstring = talloc_asprintf_append(
-				logstring,
-				"%sCNIDs: unkn1: 0x%" PRIx16 ", unkn2: 0x%" PRIx32 "\n",
-				tab_string2,
-				cnids.ca_unkn1,
-				cnids.ca_context);
-			if (logstring == NULL) {
-				return NULL;
-			}
-			if (cnids.ca_cnids) {
-				nested_logstring = mds_dalloc_dump(
-					cnids.ca_cnids,
-					nestinglevel + 2);
-				if (!nested_logstring) {
-					return NULL;
-				}
-				logstring = talloc_strdup_append(logstring,
-								 nested_logstring);
-			}
-		} else {
-			logstring = talloc_asprintf_append(
-				logstring,
-				"%stype: %s\n",
-				tab_string2,
-				type);
-		}
-		if (logstring == NULL) {
-			return NULL;
-		}
-	}
-	logstring = talloc_asprintf_append(logstring,
-					   "%s}\n",
-					   tab_string1);
-	if (logstring == NULL) {
-		return NULL;
-	}
-	return logstring;
-}
-
-static char *tracker_to_unix_path(TALLOC_CTX *mem_ctx, const char *uri)
-{
-	GFile *f;
-	char *path;
-	char *talloc_path;
-
-	f = g_file_new_for_uri(uri);
-	if (f == NULL) {
-		return NULL;
-	}
-
-	path = g_file_get_path(f);
-	g_object_unref(f);
-
-	if (path == NULL) {
-		return NULL;
-	}
-
-	talloc_path = talloc_strdup(mem_ctx, path);
-	g_free(path);
-	if (talloc_path == NULL) {
-		return NULL;
-	}
-
-	return talloc_path;
-}
 
 /**
  * Add requested metadata for a query result element
@@ -323,7 +91,8 @@ static char *tracker_to_unix_path(TALLOC_CTX *mem_ctx, const char *uri)
  *
  * If path or sp is NULL, simply add nil values for all attributes.
  **/
-static bool add_filemeta(sl_array_t *reqinfo,
+static bool add_filemeta(struct mds_ctx *mds_ctx,
+			 sl_array_t *reqinfo,
 			 sl_array_t *fm_array,
 			 const char *path,
 			 const struct stat_ex *sp)
@@ -335,6 +104,13 @@ static bool add_filemeta(sl_array_t *reqinfo,
 	sl_time_t sl_time;
 	char *p;
 	const char *attribute;
+	size_t nfc_len;
+	const char *nfc_path = path;
+	size_t nfd_buf_size;
+	char *nfd_path = NULL;
+	char *dest = NULL;
+	size_t dest_remaining;
+	size_t nconv;
 
 	metacount = dalloc_size(reqinfo);
 	if (metacount == 0 || path == NULL || sp == NULL) {
@@ -350,6 +126,28 @@ static bool add_filemeta(sl_array_t *reqinfo,
 		return false;
 	}
 
+	nfc_len = strlen(nfc_path);
+	/*
+	 * Simple heuristic, strlen by two should give enough room for NFC to
+	 * NFD conversion.
+	 */
+	nfd_buf_size = nfc_len * 2;
+	nfd_path = talloc_array(meta, char, nfd_buf_size);
+	if (nfd_path == NULL) {
+		return false;
+	}
+	dest = nfd_path;
+	dest_remaining = talloc_array_length(dest);
+
+	nconv = smb_iconv(mds_ctx->ic_nfc_to_nfd,
+			  &nfc_path,
+			  &nfc_len,
+			  &dest,
+			  &dest_remaining);
+	if (nconv == (size_t)-1) {
+		return false;
+	}
+
 	for (i = 0; i < metacount; i++) {
 		attribute = dalloc_get_object(reqinfo, i);
 		if (attribute == NULL) {
@@ -357,7 +155,7 @@ static bool add_filemeta(sl_array_t *reqinfo,
 		}
 		if (strcmp(attribute, "kMDItemDisplayName") == 0
 		    || strcmp(attribute, "kMDItemFSName") == 0) {
-			p = strrchr(path, '/');
+			p = strrchr(nfd_path, '/');
 			if (p) {
 				result = dalloc_stradd(meta, p + 1);
 				if (result != 0) {
@@ -365,7 +163,7 @@ static bool add_filemeta(sl_array_t *reqinfo,
 				}
 			}
 		} else if (strcmp(attribute, "kMDItemPath") == 0) {
-			result = dalloc_stradd(meta, path);
+			result = dalloc_stradd(meta, nfd_path);
 			if (result != 0) {
 				return false;
 			}
@@ -603,16 +401,7 @@ static int slq_destructor_cb(struct sl_query *slq)
 		slq->mds_ctx = NULL;
 	}
 
-	if (slq->tracker_cursor != NULL) {
-		g_object_unref(slq->tracker_cursor);
-		slq->tracker_cursor = NULL;
-	}
-
-	if (slq->gcancellable != NULL) {
-		g_cancellable_cancel(slq->gcancellable);
-		g_object_unref(slq->gcancellable);
-		slq->gcancellable = NULL;
-	}
+	TALLOC_FREE(slq->backend_private);
 
 	return 0;
 }
@@ -638,7 +427,7 @@ static int ino_path_map_destr_cb(struct sl_inode_path_map *entry)
 		return -1;
 	}
 
-	DEBUG(10,("deleted: %s\n", entry->path));
+	DBG_DEBUG("deleted [0x%"PRIx64"] [%s]\n", entry->ino, entry->path);
 	return 0;
 }
 
@@ -721,98 +510,12 @@ static bool inode_map_add(struct sl_query *slq, uint64_t ino, const char *path)
 	return true;
 }
 
-/************************************************
- * Tracker async callbacks
- ************************************************/
-
-static void tracker_con_cb(GObject *object,
-			   GAsyncResult *res,
-			   gpointer user_data)
+bool mds_add_result(struct sl_query *slq, const char *path)
 {
-	struct mds_ctx *mds_ctx = talloc_get_type_abort(user_data, struct mds_ctx);
-	GError *error = NULL;
-
-	mds_ctx->tracker_con = tracker_sparql_connection_get_finish(res,
-								    &error);
-	if (error) {
-		DEBUG(1, ("Could not connect to Tracker: %s\n",
-			  error->message));
-		g_error_free(error);
-	}
-
-	DEBUG(10, ("connected to Tracker\n"));
-}
-
-static void tracker_cursor_cb_destroy_done(struct tevent_req *subreq);
-
-static void tracker_cursor_cb(GObject *object,
-			      GAsyncResult *res,
-			      gpointer user_data)
-{
-	GError *error = NULL;
-	struct sl_query *slq = talloc_get_type_abort(user_data, struct sl_query);
-	gboolean more_results;
-	const gchar *uri;
-	char *path;
-	int result;
 	struct stat_ex sb;
 	uint64_t ino64;
+	int result;
 	bool ok;
-	struct tevent_req *req;
-
-	SLQ_DEBUG(10, slq, "tracker_cursor_cb");
-
-	more_results = tracker_sparql_cursor_next_finish(slq->tracker_cursor,
-							 res,
-							 &error);
-
-	if (slq->state == SLQ_STATE_DONE) {
-		/*
-		 * The query was closed in slrpc_close_query(), so we
-		 * don't care for results or errors from
-		 * tracker_sparql_cursor_next_finish(), we just go
-		 * ahead and schedule deallocation of the slq handle.
-		 *
-		 * We have to shedule the deallocation via tevent,
-		 * because we have to unref the cursor glib object and
-		 * we can't do it here, because it's still used after
-		 * we return.
-		 */
-		SLQ_DEBUG(10, slq, "closed");
-
-		req = slq_destroy_send(slq, global_event_context(), &slq);
-		if (req == NULL) {
-			slq->state = SLQ_STATE_ERROR;
-			return;
-		}
-		tevent_req_set_callback(req, tracker_cursor_cb_destroy_done, NULL);
-		return;
-	}
-
-	if (error) {
-		DEBUG(1, ("Tracker cursor: %s\n", error->message));
-		g_error_free(error);
-		slq->state = SLQ_STATE_ERROR;
-		return;
-	}
-
-	if (!more_results) {
-		slq->state = SLQ_STATE_DONE;
-		return;
-	}
-
-	uri = tracker_sparql_cursor_get_string(slq->tracker_cursor, 0, NULL);
-	if (uri == NULL) {
-		DEBUG(1, ("error fetching Tracker URI\n"));
-		slq->state = SLQ_STATE_ERROR;
-		return;
-	}
-	path = tracker_to_unix_path(slq->query_results, uri);
-	if (path == NULL) {
-		DEBUG(1, ("error converting Tracker URI to path: %s\n", uri));
-		slq->state = SLQ_STATE_ERROR;
-		return;
-	}
 
 	/*
 	 * We're in a tevent callback which means in the case of
@@ -820,12 +523,13 @@ static void tracker_cursor_cb(GObject *object,
 	 * not as the user.
 	 */
 	if (!become_authenticated_pipe_user(slq->mds_ctx->pipe_session_info)) {
-		DBG_ERR("can't become authenticated user: %d\n", slq->mds_ctx->uid);
+		DBG_ERR("can't become authenticated user: %d\n",
+			slq->mds_ctx->uid);
 		smb_panic("can't become authenticated user");
 	}
 
 	if (geteuid() != slq->mds_ctx->uid) {
-		DEBUG(0, ("uid mismatch: %d/%d\n", geteuid(), slq->mds_ctx->uid));
+		DBG_ERR("uid mismatch: %d/%d\n", geteuid(), slq->mds_ctx->uid);
 		smb_panic("uid mismatch");
 	}
 
@@ -837,12 +541,12 @@ static void tracker_cursor_cb(GObject *object,
 	result = sys_stat(path, &sb, false);
 	if (result != 0) {
 		unbecome_authenticated_pipe_user();
-		goto done;
+		return true;
 	}
 	result = access(path, R_OK);
 	if (result != 0) {
 		unbecome_authenticated_pipe_user();
-		goto done;
+		return true;
 	}
 
 	unbecome_authenticated_pipe_user();
@@ -854,10 +558,13 @@ static void tracker_cursor_cb(GObject *object,
 		 * set of IDs. Note that we're faking CNIDs by using
 		 * filesystem inode numbers here
 		 */
-		ok = bsearch(&ino64, slq->cnids, slq->cnids_num,
-			     sizeof(uint64_t), cnid_comp_fn);
+		ok = bsearch(&ino64,
+			     slq->cnids,
+			     slq->cnids_num,
+			     sizeof(uint64_t),
+			     cnid_comp_fn);
 		if (!ok) {
-			goto done;
+			return false;
 		}
 	}
 
@@ -866,84 +573,33 @@ static void tracker_cursor_cb(GObject *object,
 	 * we return as part of the result set of a query
 	 */
 	result = dalloc_add_copy(slq->query_results->cnids->ca_cnids,
-				 &ino64, uint64_t);
+				 &ino64,
+				 uint64_t);
 	if (result != 0) {
-		DEBUG(1, ("dalloc error\n"));
+		DBG_ERR("dalloc error\n");
 		slq->state = SLQ_STATE_ERROR;
-		return;
+		return false;
 	}
-	ok = add_filemeta(slq->reqinfo, slq->query_results->fm_array,
-			  path, &sb);
+	ok = add_filemeta(slq->mds_ctx,
+			  slq->reqinfo,
+			  slq->query_results->fm_array,
+			  path,
+			  &sb);
 	if (!ok) {
-		DEBUG(1, ("add_filemeta error\n"));
+		DBG_ERR("add_filemeta error\n");
 		slq->state = SLQ_STATE_ERROR;
-		return;
+		return false;
 	}
 
 	ok = inode_map_add(slq, ino64, path);
 	if (!ok) {
 		DEBUG(1, ("inode_map_add error\n"));
 		slq->state = SLQ_STATE_ERROR;
-		return;
+		return false;
 	}
 
 	slq->query_results->num_results++;
-
-done:
-	if (slq->query_results->num_results >= MAX_SL_RESULTS) {
-		slq->state = SLQ_STATE_FULL;
-		SLQ_DEBUG(10, slq, "full");
-		return;
-	}
-
-	slq->state = SLQ_STATE_RESULTS;
-	SLQ_DEBUG(10, slq, "cursor next");
-	tracker_sparql_cursor_next_async(slq->tracker_cursor,
-					 slq->gcancellable,
-					 tracker_cursor_cb,
-					 slq);
-}
-
-static void tracker_cursor_cb_destroy_done(struct tevent_req *req)
-{
-	slq_destroy_recv(req);
-	TALLOC_FREE(req);
-
-	DEBUG(10, ("%s\n", __func__));
-}
-
-static void tracker_query_cb(GObject *object,
-			     GAsyncResult *res,
-			     gpointer user_data)
-{
-	GError *error = NULL;
-	struct sl_query *slq = talloc_get_type_abort(user_data, struct sl_query);
-
-	SLQ_DEBUG(10, slq, "tracker_query_cb");
-
-	slq->tracker_cursor = tracker_sparql_connection_query_finish(
-		TRACKER_SPARQL_CONNECTION(object),
-		res,
-		&error);
-	if (error) {
-		slq->state = SLQ_STATE_ERROR;
-		DEBUG(1, ("Tracker query error: %s\n", error->message));
-		g_error_free(error);
-		return;
-	}
-
-	if (slq->state == SLQ_STATE_DONE) {
-		SLQ_DEBUG(10, slq, "done");
-		talloc_free(slq);
-		return;
-	}
-
-	slq->state = SLQ_STATE_RESULTS;
-
-	tracker_sparql_cursor_next_async(slq->tracker_cursor,
-					 slq->gcancellable,
-					 tracker_cursor_cb,
-					 slq);
+	return true;
 }
 
 /***********************************************************
@@ -1152,18 +808,16 @@ static bool slrpc_open_query(struct mds_ctx *mds_ctx,
 	sl_cnids_t *cnids;
 	struct sl_query *slq = NULL;
 	int result;
-	char *querystring;
+	const char *querystring = NULL;
+	size_t querystring_len;
+	char *dest = NULL;
+	size_t dest_remaining;
+	size_t nconv;
 	char *scope = NULL;
-	char *escaped_scope = NULL;
 
 	array = dalloc_zero(reply, sl_array_t);
 	if (array == NULL) {
 		return false;
-	}
-
-	if (mds_ctx->tracker_con == NULL) {
-		DEBUG(1, ("no connection to Tracker\n"));
-		goto error;
 	}
 
 	/* Allocate and initialize query object */
@@ -1190,12 +844,6 @@ static bool slrpc_open_query(struct mds_ctx *mds_ctx,
 		goto error;
 	}
 
-	slq->gcancellable = g_cancellable_new();
-	if (slq->gcancellable == NULL) {
-		DEBUG(1,("error from g_cancellable_new\n"));
-		goto error;
-	}
-
 	querystring = dalloc_value_for_key(query, "DALLOC_CTX", 0,
 					   "DALLOC_CTX", 1,
 					   "kMDQueryString");
@@ -1203,16 +851,26 @@ static bool slrpc_open_query(struct mds_ctx *mds_ctx,
 		DEBUG(1, ("missing kMDQueryString\n"));
 		goto error;
 	}
-	slq->query_string = talloc_strdup(slq, querystring);
+
+	querystring_len = talloc_array_length(querystring);
+
+	slq->query_string = talloc_array(slq, char, querystring_len);
 	if (slq->query_string == NULL) {
 		DEBUG(1, ("out of memory\n"));
 		goto error;
 	}
+	dest = slq->query_string;
+	dest_remaining = talloc_array_length(dest);
 
-	/*
-	 * FIXME: convert spotlight query charset from decomposed UTF8
-	 * to host charset precomposed UTF8.
-	 */
+	nconv = smb_iconv(mds_ctx->ic_nfd_to_nfc,
+			  &querystring,
+			  &querystring_len,
+			  &dest,
+			  &dest_remaining);
+	if (nconv == (size_t)-1) {
+		DBG_ERR("smb_iconv failed for: %s\n", querystring);
+		return false;
+	}
 
 	uint64p = dalloc_get(query, "DALLOC_CTX", 0, "DALLOC_CTX", 0,
 			     "uint64_t", 1);
@@ -1238,19 +896,10 @@ static bool slrpc_open_query(struct mds_ctx *mds_ctx,
 		goto error;
 	}
 
-	escaped_scope = g_uri_escape_string(scope,
-					    G_URI_RESERVED_CHARS_ALLOWED_IN_PATH,
-					    TRUE);
-	if (escaped_scope == NULL) {
-		goto error;
-	}
-
-	slq->path_scope = talloc_strdup(slq, escaped_scope);
-	g_free(escaped_scope);
+	slq->path_scope = talloc_strdup(slq, scope);
 	if (slq->path_scope == NULL) {
 		goto error;
 	}
-
 
 	reqinfo = dalloc_value_for_key(query, "DALLOC_CTX", 0,
 				       "DALLOC_CTX", 1, "kMDAttributeArray");
@@ -1259,7 +908,7 @@ static bool slrpc_open_query(struct mds_ctx *mds_ctx,
 	}
 
 	slq->reqinfo = talloc_steal(slq, reqinfo);
-	DEBUG(10, ("requested attributes: %s", mds_dalloc_dump(reqinfo, 0)));
+	DEBUG(10, ("requested attributes: %s", dalloc_dump(reqinfo, 0)));
 
 	cnids = dalloc_value_for_key(query, "DALLOC_CTX", 0,
 				     "DALLOC_CTX", 1, "kMDQueryItemArray");
@@ -1281,31 +930,11 @@ static bool slrpc_open_query(struct mds_ctx *mds_ctx,
 
 	DLIST_ADD(mds_ctx->query_list, slq);
 
-	ok = map_spotlight_to_sparql_query(slq);
+	ok = mds_ctx->backend->search_start(slq);
 	if (!ok) {
-		/*
-		 * Two cases:
-		 *
-		 * 1) the query string is "false", the parser returns
-		 * an error for that. We're supposed to return -1
-		 * here.
-		 *
-		 * 2) the parsing really failed, in that case we're
-		 * probably supposed to return -1 too, this needs
-		 * verification though
-		 */
-		SLQ_DEBUG(10, slq, "map failed");
+		DBG_ERR("backend search_start failed\n");
 		goto error;
 	}
-
-	DEBUG(10, ("SPARQL query: \"%s\"\n", slq->sparql_query));
-
-	tracker_sparql_connection_query_async(mds_ctx->tracker_con,
-					      slq->sparql_query,
-					      slq->gcancellable,
-					      tracker_query_cb,
-					      slq);
-	slq->state = SLQ_STATE_RUNNING;
 
 	sl_result = 0;
 	result = dalloc_add_copy(array, &sl_result, uint64_t);
@@ -1397,11 +1026,7 @@ static bool slrpc_fetch_query_results(struct mds_ctx *mds_ctx,
 		}
 		if (slq->state == SLQ_STATE_FULL) {
 			slq->state = SLQ_STATE_RESULTS;
-			tracker_sparql_cursor_next_async(
-				slq->tracker_cursor,
-				slq->gcancellable,
-				tracker_cursor_cb,
-				slq);
+			slq->mds_ctx->backend->search_cont(slq);
 		}
 		break;
 
@@ -1604,6 +1229,7 @@ static bool slrpc_fetch_attributes(struct mds_ctx *mds_ctx,
 	sl_filemeta_t *fm;
 	sl_array_t *fm_array;
 	sl_nil_t nil;
+	char *path = NULL;
 	struct stat_ex sb;
 	struct sl_inode_path_map *elem = NULL;
 	void *p;
@@ -1661,25 +1287,24 @@ static bool slrpc_fetch_attributes(struct mds_ctx *mds_ctx,
 	status = dbwrap_fetch(mds_ctx->ino_path_map, reply,
 			      make_tdb_data((void*)&ino, sizeof(uint64_t)),
 			      &val);
-	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(1, ("Failed to fetch inode: %s\n", nt_errstr(status)));
-		goto error;
-	}
-	if (val.dsize != sizeof(p)) {
-		DEBUG(1, ("invalid record pointer size: %zd\n", val.dsize));
-		TALLOC_FREE(val.dptr);
-		goto error;
+	if (NT_STATUS_IS_OK(status)) {
+		if (val.dsize != sizeof(p)) {
+			DBG_ERR("invalid record pointer size: %zd\n", val.dsize);
+			TALLOC_FREE(val.dptr);
+			goto error;
+		}
+
+		memcpy(&p, val.dptr, sizeof(p));
+		elem = talloc_get_type_abort(p, struct sl_inode_path_map);
+		path = elem->path;
+
+		result = sys_stat(path, &sb, false);
+		if (result != 0) {
+			goto error;
+		}
 	}
 
-	memcpy(&p, val.dptr, sizeof(p));
-	elem = talloc_get_type_abort(p, struct sl_inode_path_map);
-
-	result = sys_stat(elem->path, &sb, false);
-	if (result != 0) {
-		goto error;
-	}
-
-	ok = add_filemeta(reqinfo, fm_array, elem->path, &sb);
+	ok = add_filemeta(mds_ctx, reqinfo, fm_array, path, &sb);
 	if (!ok) {
 		goto error;
 	}
@@ -1762,38 +1387,11 @@ static bool slrpc_close_query(struct mds_ctx *mds_ctx,
 		goto done;
 	}
 
-	switch (slq->state) {
-	case SLQ_STATE_RUNNING:
-	case SLQ_STATE_RESULTS:
-		DEBUG(10, ("close: requesting query close\n"));
-		/*
-		 * Mark the query is done so the cursor callback can
-		 * act accordingly by stopping to request more results
-		 * and sheduling query resource deallocation via
-		 * tevent.
-		 */
-		slq->state = SLQ_STATE_DONE;
-		break;
-
-	case SLQ_STATE_FULL:
-	case SLQ_STATE_DONE:
-		DEBUG(10, ("close: query was done or result queue was full\n"));
-		/*
-		 * We can directly deallocate the query because there
-		 * are no pending Tracker async calls in flight in
-		 * these query states.
-		 */
-		TALLOC_FREE(slq);
-		break;
-
-	default:
-		DEBUG(1, ("close: unexpected state: %d\n", slq->state));
-		break;
-	}
-
+	SLQ_DEBUG(10, slq, "close");
+	TALLOC_FREE(slq);
 
 done:
-	sl_res = 0;
+	sl_res = UINT64_MAX;
 	result = dalloc_add_copy(array, &sl_res, uint64_t);
 	if (result != 0) {
 		return false;
@@ -1807,6 +1405,8 @@ done:
 
 static struct mdssvc_ctx *mdssvc_init(struct tevent_context *ev)
 {
+	bool ok;
+
 	if (mdssvc_ctx != NULL) {
 		return mdssvc_ctx;
 	}
@@ -1818,19 +1418,30 @@ static struct mdssvc_ctx *mdssvc_init(struct tevent_context *ev)
 
 	mdssvc_ctx->ev_ctx = ev;
 
-	mdssvc_ctx->gmain_ctx = g_main_context_default();
-	if (mdssvc_ctx->gmain_ctx == NULL) {
-		DBG_ERR("error from g_main_context_new\n");
+	ok = mdsscv_backend_noindex.init(mdssvc_ctx);
+	if (!ok) {
+		DBG_ERR("backend init failed\n");
+		TALLOC_FREE(mdssvc_ctx);
 		return NULL;
 	}
 
-	mdssvc_ctx->glue = samba_tevent_glib_glue_create(ev,
-							 mdssvc_ctx->ev_ctx,
-							 mdssvc_ctx->gmain_ctx);
-	if (mdssvc_ctx->glue == NULL) {
-		DBG_ERR("samba_tevent_glib_glue_create failed\n");
+#ifdef HAVE_SPOTLIGHT_BACKEND_ES
+	ok = mdsscv_backend_es.init(mdssvc_ctx);
+	if (!ok) {
+		DBG_ERR("backend init failed\n");
+		TALLOC_FREE(mdssvc_ctx);
 		return NULL;
 	}
+#endif
+
+#ifdef HAVE_SPOTLIGHT_BACKEND_TRACKER
+	ok = mdsscv_backend_tracker.init(mdssvc_ctx);
+	if (!ok) {
+		DBG_ERR("backend init failed\n");
+		TALLOC_FREE(mdssvc_ctx);
+		return NULL;
+	}
+#endif
 
 	return mdssvc_ctx;
 }
@@ -1843,24 +1454,40 @@ static struct mdssvc_ctx *mdssvc_init(struct tevent_context *ev)
  **/
 bool mds_init(struct messaging_context *msg_ctx)
 {
-#if (GLIB_MAJOR_VERSION < 3) && (GLIB_MINOR_VERSION < 36)
-	g_type_init();
-#endif
 	return true;
 }
 
 bool mds_shutdown(void)
 {
+	bool ok;
+
 	if (mdssvc_ctx == NULL) {
 		return false;
 	}
 
-	samba_tevent_glib_glue_quit(mdssvc_ctx->glue);
-	TALLOC_FREE(mdssvc_ctx->glue);
+	ok = mdsscv_backend_noindex.shutdown(mdssvc_ctx);
+	if (!ok) {
+		goto fail;
+	}
 
+#ifdef HAVE_SPOTLIGHT_BACKEND_ES
+	ok = mdsscv_backend_es.shutdown(mdssvc_ctx);
+	if (!ok) {
+		goto fail;
+	}
+#endif
+
+#ifdef HAVE_SPOTLIGHT_BACKEND_TRACKER
+	ok = mdsscv_backend_tracker.shutdown(mdssvc_ctx);
+	if (!ok) {
+		goto fail;
+	}
+#endif
+
+	ok = true;
+fail:
 	TALLOC_FREE(mdssvc_ctx);
-
-	return true;
+	return ok;
 }
 
 /**
@@ -1880,14 +1507,6 @@ static int mds_ctx_destructor_cb(struct mds_ctx *mds_ctx)
 	}
 	TALLOC_FREE(mds_ctx->ino_path_map);
 
-	if (mds_ctx->tracker_con != NULL) {
-		g_object_unref(mds_ctx->tracker_con);
-	}
-	if (mds_ctx->gcancellable != NULL) {
-		g_cancellable_cancel(mds_ctx->gcancellable);
-		g_object_unref(mds_ctx->gcancellable);
-	}
-
 	ZERO_STRUCTP(mds_ctx);
 
 	return 0;
@@ -1902,9 +1521,13 @@ static int mds_ctx_destructor_cb(struct mds_ctx *mds_ctx)
 struct mds_ctx *mds_init_ctx(TALLOC_CTX *mem_ctx,
 			     struct tevent_context *ev,
 			     struct auth_session_info *session_info,
+			     int snum,
+			     const char *sharename,
 			     const char *path)
 {
 	struct mds_ctx *mds_ctx;
+	int backend;
+	bool ok;
 
 	mds_ctx = talloc_zero(mem_ctx, struct mds_ctx);
 	if (mds_ctx == NULL) {
@@ -1917,11 +1540,59 @@ struct mds_ctx *mds_init_ctx(TALLOC_CTX *mem_ctx,
 		goto error;
 	}
 
+	backend = lp_spotlight_backend(snum);
+	if (!lp_spotlight(snum)) {
+		backend = SPOTLIGHT_BACKEND_NOINDEX;
+	}
+	switch (backend) {
+	case SPOTLIGHT_BACKEND_NOINDEX:
+		mds_ctx->backend = &mdsscv_backend_noindex;
+		break;
+
+#ifdef HAVE_SPOTLIGHT_BACKEND_ES
+	case SPOTLIGHT_BACKEND_ES:
+		mds_ctx->backend = &mdsscv_backend_es;
+		break;
+#endif
+
+#ifdef HAVE_SPOTLIGHT_BACKEND_TRACKER
+	case SPOTLIGHT_BACKEND_TRACKER:
+		mds_ctx->backend = &mdsscv_backend_tracker;
+		break;
+#endif
+	default:
+		DBG_ERR("Unknown backend %d\n", backend);
+		TALLOC_FREE(mdssvc_ctx);
+		goto error;
+	}
+
+	mds_ctx->ic_nfc_to_nfd = smb_iconv_open_ex(mds_ctx,
+						   "UTF8-NFD",
+						   "UTF8-NFC",
+						   false);
+	if (mds_ctx->ic_nfc_to_nfd == (smb_iconv_t)-1) {
+		goto error;
+	}
+
+	mds_ctx->ic_nfd_to_nfc = smb_iconv_open_ex(mds_ctx,
+						   "UTF8-NFC",
+						   "UTF8-NFD",
+						   false);
+	if (mds_ctx->ic_nfd_to_nfc == (smb_iconv_t)-1) {
+		goto error;
+	}
+
+	mds_ctx->sharename = talloc_strdup(mds_ctx, sharename);
+	if (mds_ctx->sharename == NULL) {
+		goto error;
+	}
+
 	mds_ctx->spath = talloc_strdup(mds_ctx, path);
 	if (mds_ctx->spath == NULL) {
 		goto error;
 	}
 
+	mds_ctx->snum = snum;
 	mds_ctx->pipe_session_info = session_info;
 
 	if (session_info->security_token->num_sids < 1) {
@@ -1936,18 +1607,22 @@ struct mds_ctx *mds_init_ctx(TALLOC_CTX *mem_ctx,
 		goto error;
 	}
 
-	mds_ctx->gcancellable = g_cancellable_new();
-	if (mds_ctx->gcancellable == NULL) {
-		DBG_ERR("error from g_cancellable_new\n");
+	ok = mds_ctx->backend->connect(mds_ctx);
+	if (!ok) {
+		DBG_ERR("backend connect failed\n");
 		goto error;
 	}
-
-	tracker_sparql_connection_get_async(mds_ctx->gcancellable,
-					    tracker_con_cb, mds_ctx);
 
 	return mds_ctx;
 
 error:
+	if (mds_ctx->ic_nfc_to_nfd != NULL) {
+		smb_iconv_close(mds_ctx->ic_nfc_to_nfd);
+	}
+	if (mds_ctx->ic_nfd_to_nfc != NULL) {
+		smb_iconv_close(mds_ctx->ic_nfd_to_nfc);
+	}
+
 	TALLOC_FREE(mds_ctx);
 	return NULL;
 }
@@ -1996,7 +1671,7 @@ bool mds_dispatch(struct mds_ctx *mds_ctx,
 		goto cleanup;
 	}
 
-	DEBUG(5, ("%s", mds_dalloc_dump(query, 0)));
+	DEBUG(5, ("%s", dalloc_dump(query, 0)));
 
 	rpccmd = dalloc_get(query, "DALLOC_CTX", 0, "DALLOC_CTX", 0,
 			    "char *", 0);
@@ -2016,27 +1691,20 @@ bool mds_dispatch(struct mds_ctx *mds_ctx,
 		goto cleanup;
 	}
 
-	/*
-	 * If these functions return an error, they hit something like
-	 * a non recoverable talloc error
-	 */
 	ok = slcmd->function(mds_ctx, query, reply);
-	if (!ok) {
-		DEBUG(1, ("error in Spotlight RPC handler\n"));
-		goto cleanup;
+	if (ok) {
+		DBG_DEBUG("%s", dalloc_dump(reply, 0));
+
+		len = sl_pack(reply,
+			      (char *)response_blob->spotlight_blob,
+			      response_blob->size);
+		if (len == -1) {
+			DBG_ERR("error packing Spotlight RPC reply\n");
+			ok = false;
+			goto cleanup;
+		}
+		response_blob->length = len;
 	}
-
-	DEBUG(5, ("%s", mds_dalloc_dump(reply, 0)));
-
-	len = sl_pack(reply, (char *)response_blob->spotlight_blob,
-		      response_blob->size);
-	if (len == -1) {
-		DEBUG(1, ("error packing Spotlight RPC reply\n"));
-		ok = false;
-		goto cleanup;
-	}
-
-	response_blob->length = len;
 
 cleanup:
 	talloc_free(query);

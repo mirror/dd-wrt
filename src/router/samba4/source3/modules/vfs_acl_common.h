@@ -33,9 +33,12 @@ bool init_acl_common_config(vfs_handle_struct *handle,
 			    const char *module_name);
 
 int rmdir_acl_common(struct vfs_handle_struct *handle,
-		     const struct smb_filename *smb_fname);
+			struct files_struct *dirfsp,
+			const struct smb_filename *smb_fname);
 int unlink_acl_common(struct vfs_handle_struct *handle,
-		      const struct smb_filename *smb_fname);
+			struct files_struct *dirfsp,
+			const struct smb_filename *smb_fname,
+			int flags);
 int chmod_acl_module_common(struct vfs_handle_struct *handle,
 			    const struct smb_filename *smb_fname,
 			    mode_t mode);

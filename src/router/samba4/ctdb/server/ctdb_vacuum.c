@@ -37,27 +37,30 @@
 #include "ctdb_private.h"
 #include "ctdb_client.h"
 
+#include "protocol/protocol_private.h"
+
 #include "common/rb_tree.h"
 #include "common/common.h"
 #include "common/logging.h"
+
+#include "protocol/protocol_api.h"
 
 #define TIMELIMIT() timeval_current_ofs(10, 0)
 
 enum vacuum_child_status { VACUUM_RUNNING, VACUUM_OK, VACUUM_ERROR, VACUUM_TIMEOUT};
 
 struct ctdb_vacuum_child_context {
-	struct ctdb_vacuum_child_context *next, *prev;
 	struct ctdb_vacuum_handle *vacuum_handle;
 	/* fd child writes status to */
 	int fd[2];
 	pid_t child_pid;
 	enum vacuum_child_status status;
 	struct timeval start_time;
+	bool scheduled;
 };
 
 struct ctdb_vacuum_handle {
 	struct ctdb_db_context *ctdb_db;
-	struct ctdb_vacuum_child_context *child_ctx;
 	uint32_t fast_path_count;
 };
 
@@ -115,6 +118,11 @@ struct delete_record_data {
 struct delete_records_list {
 	struct ctdb_marshall_buffer *records;
 	struct vacuum_data *vdata;
+};
+
+struct fetch_record_data {
+	TDB_DATA key;
+	uint8_t keydata[1];
 };
 
 static int insert_record_into_delete_queue(struct ctdb_db_context *ctdb_db,
@@ -308,6 +316,181 @@ static int delete_marshall_traverse(void *param, void *data)
 
 	recs->records = m;
 	return 0;
+}
+
+struct fetch_queue_state {
+	struct ctdb_db_context *ctdb_db;
+	int count;
+};
+
+struct fetch_record_migrate_state {
+	struct fetch_queue_state *fetch_queue;
+	TDB_DATA key;
+};
+
+static void fetch_record_migrate_callback(struct ctdb_client_call_state *state)
+{
+	struct fetch_record_migrate_state *fetch = talloc_get_type_abort(
+		state->async.private_data, struct fetch_record_migrate_state);
+	struct fetch_queue_state *fetch_queue = fetch->fetch_queue;
+	struct ctdb_ltdb_header hdr;
+	struct ctdb_call call = { 0 };
+	int ret;
+
+	ret = ctdb_call_recv(state, &call);
+	fetch_queue->count--;
+	if (ret != 0) {
+		D_ERR("Failed to migrate record for vacuuming\n");
+		goto done;
+	}
+
+	ret = tdb_chainlock_nonblock(fetch_queue->ctdb_db->ltdb->tdb,
+				     fetch->key);
+	if (ret != 0) {
+		goto done;
+	}
+
+	ret = tdb_parse_record(fetch_queue->ctdb_db->ltdb->tdb,
+			       fetch->key,
+			       vacuum_record_parser,
+			       &hdr);
+
+	tdb_chainunlock(fetch_queue->ctdb_db->ltdb->tdb, fetch->key);
+
+	if (ret != 0) {
+		goto done;
+	}
+
+	D_INFO("Vacuum Fetch record, key=%.*s\n",
+	       (int)fetch->key.dsize,
+	       fetch->key.dptr);
+
+	(void) ctdb_local_schedule_for_deletion(fetch_queue->ctdb_db,
+						&hdr,
+						fetch->key);
+
+done:
+	talloc_free(fetch);
+}
+
+static int fetch_record_parser(TDB_DATA key, TDB_DATA data, void *private_data)
+{
+	struct ctdb_ltdb_header *header =
+		(struct ctdb_ltdb_header *)private_data;
+
+	if (data.dsize < sizeof(struct ctdb_ltdb_header)) {
+		return -1;
+	}
+
+	memcpy(header, data.dptr, sizeof(*header));
+	return 0;
+}
+
+/**
+ * traverse function for the traversal of the fetch_queue.
+ *
+ * Send a record migration request.
+ */
+static int fetch_queue_traverse(void *param, void *data)
+{
+	struct fetch_record_data *rd = talloc_get_type_abort(
+		data, struct fetch_record_data);
+	struct fetch_queue_state *fetch_queue =
+		(struct fetch_queue_state *)param;
+	struct ctdb_db_context *ctdb_db = fetch_queue->ctdb_db;
+	struct ctdb_client_call_state *state;
+	struct fetch_record_migrate_state *fetch;
+	struct ctdb_call call = { 0 };
+	struct ctdb_ltdb_header header;
+	int ret;
+
+	ret = tdb_chainlock_nonblock(ctdb_db->ltdb->tdb, rd->key);
+	if (ret != 0) {
+		return 0;
+	}
+
+	ret = tdb_parse_record(ctdb_db->ltdb->tdb,
+			       rd->key,
+			       fetch_record_parser,
+			       &header);
+
+	tdb_chainunlock(ctdb_db->ltdb->tdb, rd->key);
+
+	if (ret != 0) {
+		goto skipped;
+	}
+
+	if (header.dmaster == ctdb_db->ctdb->pnn) {
+		/* If the record is already migrated, skip */
+		goto skipped;
+	}
+
+	fetch = talloc_zero(ctdb_db, struct fetch_record_migrate_state);
+	if (fetch == NULL) {
+		D_ERR("Failed to setup fetch record migrate state\n");
+		return 0;
+	}
+
+	fetch->fetch_queue = fetch_queue;
+
+	fetch->key.dsize = rd->key.dsize;
+	fetch->key.dptr = talloc_memdup(fetch, rd->key.dptr, rd->key.dsize);
+	if (fetch->key.dptr == NULL) {
+		D_ERR("Memory error in fetch_queue_traverse\n");
+		talloc_free(fetch);
+		return 0;
+	}
+
+	call.call_id = CTDB_NULL_FUNC;
+	call.flags = CTDB_IMMEDIATE_MIGRATION |
+		     CTDB_CALL_FLAG_VACUUM_MIGRATION;
+	call.key = fetch->key;
+
+	state = ctdb_call_send(ctdb_db, &call);
+	if (state == NULL) {
+		DEBUG(DEBUG_ERR, ("Failed to setup vacuum fetch call\n"));
+		talloc_free(fetch);
+		return 0;
+	}
+
+	state->async.fn = fetch_record_migrate_callback;
+	state->async.private_data = fetch;
+
+	fetch_queue->count++;
+
+	return 0;
+
+skipped:
+	D_INFO("Skipped Fetch record, key=%.*s\n",
+	       (int)rd->key.dsize,
+	       rd->key.dptr);
+	return 0;
+}
+
+/**
+ * Traverse the fetch.
+ * Records are migrated to the local node and
+ * added to delete queue for further processing.
+ */
+static void ctdb_process_fetch_queue(struct ctdb_db_context *ctdb_db)
+{
+	struct fetch_queue_state state;
+	int ret;
+
+	state.ctdb_db = ctdb_db;
+	state.count = 0;
+
+	ret = trbt_traversearray32(ctdb_db->fetch_queue, 1,
+				   fetch_queue_traverse, &state);
+	if (ret != 0) {
+		DEBUG(DEBUG_ERR, (__location__ " Error traversing "
+		      "the fetch queue.\n"));
+	}
+
+	/* Wait for all migrations to complete */
+	while (state.count > 0) {
+		tevent_loop_once(ctdb_db->ctdb->ev);
+	}
 }
 
 /**
@@ -657,6 +840,7 @@ static void ctdb_process_vacuum_fetch_lists(struct ctdb_db_context *ctdb_db,
 {
 	unsigned int i;
 	struct ctdb_context *ctdb = ctdb_db->ctdb;
+	int ret, res;
 
 	for (i = 0; i < ctdb->num_nodes; i++) {
 		TDB_DATA data;
@@ -675,17 +859,16 @@ static void ctdb_process_vacuum_fetch_lists(struct ctdb_db_context *ctdb_db,
 				   ctdb_db->db_name));
 
 		data = ctdb_marshall_finish(vfl);
-		if (ctdb_client_send_message(ctdb, ctdb->nodes[i]->pnn,
-					     CTDB_SRVID_VACUUM_FETCH,
-					     data) != 0)
-		{
-			DEBUG(DEBUG_ERR, (__location__ " Failed to send vacuum "
-					  "fetch message to %u\n",
+
+		ret = ctdb_control(ctdb, ctdb->nodes[i]->pnn, 0,
+				   CTDB_CONTROL_VACUUM_FETCH, 0,
+				   data, NULL, NULL, &res, NULL, NULL);
+		if (ret != 0 || res != 0) {
+			DEBUG(DEBUG_ERR, ("Failed to send vacuum "
+					  "fetch control to node %u\n",
 					  ctdb->nodes[i]->pnn));
 		}
 	}
-
-	return;
 }
 
 /**
@@ -991,8 +1174,10 @@ fail:
 /**
  * Vacuum a DB:
  *  - Always do the fast vacuuming run, which traverses
- *    the in-memory delete queue: these records have been
- *    scheduled for deletion.
+ *    - the in-memory fetch queue: these records have been
+ *      scheduled for migration
+ *    - the in-memory delete queue: these records have been
+ *      scheduled for deletion.
  *  - Only if explicitly requested, the database is traversed
  *    in order to use the traditional heuristics on empty records
  *    to trigger deletion.
@@ -1013,7 +1198,7 @@ fail:
  * - The vacuum_fetch lists
  *   (one for each other lmaster node):
  *   The records in this list are sent for deletion to
- *   their lmaster in a bulk VACUUM_FETCH message.
+ *   their lmaster in a bulk VACUUM_FETCH control.
  *
  *   The lmaster then migrates all these records to itelf
  *   so that they can be vacuumed there.
@@ -1063,6 +1248,8 @@ static int ctdb_vacuum_db(struct ctdb_db_context *ctdb_db,
 		ctdb_vacuum_traverse_db(ctdb_db, vdata);
 	}
 
+	ctdb_process_fetch_queue(ctdb_db);
+
 	ctdb_process_delete_queue(ctdb_db, vdata);
 
 	ctdb_process_vacuum_fetch_lists(ctdb_db, vdata);
@@ -1070,9 +1257,6 @@ static int ctdb_vacuum_db(struct ctdb_db_context *ctdb_db,
 	ctdb_process_delete_list(ctdb_db, vdata);
 
 	talloc_free(tmp_ctx);
-
-	/* this ensures we run our event queue */
-	ctdb_ctrl_getpnn(ctdb, TIMELIMIT(), CTDB_CURRENT_NODE);
 
 	return 0;
 }
@@ -1107,8 +1291,9 @@ static int ctdb_vacuum_and_repack_db(struct ctdb_db_context *ctdb_db,
 		return 0;
 	}
 
-	DEBUG(DEBUG_INFO, ("Repacking %s with %u freelist entries\n",
-			   name, freelist_size));
+	D_NOTICE("Repacking %s with %u freelist entries\n",
+		 name,
+		 freelist_size);
 
 	ret = tdb_repack(ctdb_db->ltdb->tdb);
 	if (ret != 0) {
@@ -1142,11 +1327,16 @@ static int vacuum_child_destructor(struct ctdb_vacuum_child_context *child_ctx)
 		child_ctx->vacuum_handle->fast_path_count++;
 	}
 
-	DLIST_REMOVE(ctdb->vacuumers, child_ctx);
+	ctdb->vacuumer = NULL;
 
-	tevent_add_timer(ctdb->ev, child_ctx->vacuum_handle,
-			 timeval_current_ofs(get_vacuum_interval(ctdb_db), 0),
-			 ctdb_vacuum_event, child_ctx->vacuum_handle);
+	if (child_ctx->scheduled) {
+		tevent_add_timer(
+			ctdb->ev,
+			child_ctx->vacuum_handle,
+			timeval_current_ofs(get_vacuum_interval(ctdb_db), 0),
+			ctdb_vacuum_event,
+			child_ctx->vacuum_handle);
+	}
 
 	return 0;
 }
@@ -1196,64 +1386,47 @@ static void vacuum_child_handler(struct tevent_context *ev,
 /*
  * this event is called every time we need to start a new vacuum process
  */
-static void ctdb_vacuum_event(struct tevent_context *ev,
-			      struct tevent_timer *te,
-			      struct timeval t, void *private_data)
+static int vacuum_db_child(TALLOC_CTX *mem_ctx,
+			   struct ctdb_db_context *ctdb_db,
+			   bool scheduled,
+			   bool full_vacuum_run,
+			   struct ctdb_vacuum_child_context **out)
 {
-	struct ctdb_vacuum_handle *vacuum_handle = talloc_get_type(private_data, struct ctdb_vacuum_handle);
-	struct ctdb_db_context *ctdb_db = vacuum_handle->ctdb_db;
 	struct ctdb_context *ctdb = ctdb_db->ctdb;
 	struct ctdb_vacuum_child_context *child_ctx;
 	struct tevent_fd *fde;
-	bool full_vacuum_run = false;
 	int ret;
 
 	/* we don't vacuum if we are in recovery mode, or db frozen */
 	if (ctdb->recovery_mode == CTDB_RECOVERY_ACTIVE ||
 	    ctdb_db_frozen(ctdb_db)) {
-		DEBUG(DEBUG_INFO, ("Not vacuuming %s (%s)\n", ctdb_db->db_name,
-				   ctdb->recovery_mode == CTDB_RECOVERY_ACTIVE ?
-					"in recovery" : "frozen"));
-		tevent_add_timer(ctdb->ev, vacuum_handle,
-				 timeval_current_ofs(get_vacuum_interval(ctdb_db), 0),
-				 ctdb_vacuum_event, vacuum_handle);
-		return;
+		D_INFO("Not vacuuming %s (%s)\n", ctdb_db->db_name,
+		       ctdb->recovery_mode == CTDB_RECOVERY_ACTIVE ?
+		       "in recovery" : "frozen");
+		return EAGAIN;
 	}
 
 	/* Do not allow multiple vacuuming child processes to be active at the
 	 * same time.  If there is vacuuming child process active, delay
 	 * new vacuuming event to stagger vacuuming events.
 	 */
-	if (ctdb->vacuumers != NULL) {
-		tevent_add_timer(ctdb->ev, vacuum_handle,
-				 timeval_current_ofs(0, 500*1000),
-				 ctdb_vacuum_event, vacuum_handle);
-		return;
+	if (ctdb->vacuumer != NULL) {
+		return EBUSY;
 	}
 
-	child_ctx = talloc(vacuum_handle, struct ctdb_vacuum_child_context);
+	child_ctx = talloc_zero(mem_ctx, struct ctdb_vacuum_child_context);
 	if (child_ctx == NULL) {
-		DEBUG(DEBUG_CRIT, (__location__ " Failed to allocate child context for vacuuming of %s\n", ctdb_db->db_name));
-		ctdb_fatal(ctdb, "Out of memory when crating vacuum child context. Shutting down\n");
+		DBG_ERR("Failed to allocate child context for vacuuming of %s\n",
+			ctdb_db->db_name);
+		return ENOMEM;
 	}
 
 
 	ret = pipe(child_ctx->fd);
 	if (ret != 0) {
 		talloc_free(child_ctx);
-		DEBUG(DEBUG_ERR, ("Failed to create pipe for vacuum child process.\n"));
-		tevent_add_timer(ctdb->ev, vacuum_handle,
-				 timeval_current_ofs(get_vacuum_interval(ctdb_db), 0),
-				 ctdb_vacuum_event, vacuum_handle);
-		return;
-	}
-
-	if (vacuum_handle->fast_path_count >=
-	    ctdb->tunable.vacuum_fast_path_count) {
-		if (ctdb->tunable.vacuum_fast_path_count > 0) {
-			full_vacuum_run = true;
-		}
-		vacuum_handle->fast_path_count = 0;
+		D_ERR("Failed to create pipe for vacuum child process.\n");
+		return EAGAIN;
 	}
 
 	child_ctx->child_pid = ctdb_fork(ctdb);
@@ -1261,11 +1434,8 @@ static void ctdb_vacuum_event(struct tevent_context *ev,
 		close(child_ctx->fd[0]);
 		close(child_ctx->fd[1]);
 		talloc_free(child_ctx);
-		DEBUG(DEBUG_ERR, ("Failed to fork vacuum child process.\n"));
-		tevent_add_timer(ctdb->ev, vacuum_handle,
-				 timeval_current_ofs(get_vacuum_interval(ctdb_db), 0),
-				 ctdb_vacuum_event, vacuum_handle);
-		return;
+		D_ERR("Failed to fork vacuum child process.\n");
+		return EAGAIN;
 	}
 
 
@@ -1273,11 +1443,15 @@ static void ctdb_vacuum_event(struct tevent_context *ev,
 		char cc = 0;
 		close(child_ctx->fd[0]);
 
-		DEBUG(DEBUG_INFO,("Vacuuming child process %d for db %s started\n", getpid(), ctdb_db->db_name));
+		D_INFO("Vacuuming child process %d for db %s started\n",
+		       getpid(),
+		       ctdb_db->db_name);
 		prctl_set_comment("ctdb_vacuum");
-		if (switch_from_server_to_client(ctdb) != 0) {
-			DEBUG(DEBUG_CRIT, (__location__ "ERROR: failed to switch vacuum daemon into client mode. Shutting down.\n"));
-			_exit(1);
+		ret = switch_from_server_to_client(ctdb);
+		if (ret != 0) {
+			DBG_ERR("ERROR: failed to switch vacuum daemon "
+				"into client mode.\n");
+			return EIO;
 		}
 
 		cc = ctdb_vacuum_and_repack_db(ctdb_db, full_vacuum_run);
@@ -1290,9 +1464,10 @@ static void ctdb_vacuum_event(struct tevent_context *ev,
 	close(child_ctx->fd[1]);
 
 	child_ctx->status = VACUUM_RUNNING;
+	child_ctx->scheduled = scheduled;
 	child_ctx->start_time = timeval_current();
 
-	DLIST_ADD(ctdb->vacuumers, child_ctx);
+	ctdb->vacuumer = child_ctx;
 	talloc_set_destructor(child_ctx, vacuum_child_destructor);
 
 	/*
@@ -1301,34 +1476,182 @@ static void ctdb_vacuum_event(struct tevent_context *ev,
 	talloc_free(ctdb_db->delete_queue);
 	ctdb_db->delete_queue = trbt_create(ctdb_db, 0);
 	if (ctdb_db->delete_queue == NULL) {
-		/* fatal here? ... */
-		ctdb_fatal(ctdb, "Out of memory when re-creating vacuum tree "
-				 "in parent context. Shutting down\n");
+		DBG_ERR("Out of memory when re-creating vacuum tree\n");
+		return ENOMEM;
+	}
+
+	talloc_free(ctdb_db->fetch_queue);
+	ctdb_db->fetch_queue = trbt_create(ctdb_db, 0);
+	if (ctdb_db->fetch_queue == NULL) {
+		ctdb_fatal(ctdb, "Out of memory when re-create fetch queue "
+				 " in parent context. Shutting down\n");
 	}
 
 	tevent_add_timer(ctdb->ev, child_ctx,
-			 timeval_current_ofs(ctdb->tunable.vacuum_max_run_time, 0),
+			 timeval_current_ofs(ctdb->tunable.vacuum_max_run_time,
+					     0),
 			 vacuum_child_timeout, child_ctx);
 
-	DEBUG(DEBUG_DEBUG, (__location__ " Created PIPE FD:%d to child vacuum process\n", child_ctx->fd[0]));
+	DBG_DEBUG(" Created PIPE FD:%d to child vacuum process\n",
+		  child_ctx->fd[0]);
 
 	fde = tevent_add_fd(ctdb->ev, child_ctx, child_ctx->fd[0],
 			    TEVENT_FD_READ, vacuum_child_handler, child_ctx);
 	tevent_fd_set_auto_close(fde);
 
-	vacuum_handle->child_ctx = child_ctx;
-	child_ctx->vacuum_handle = vacuum_handle;
+	child_ctx->vacuum_handle = ctdb_db->vacuum_handle;
+
+	*out = child_ctx;
+	return 0;
+}
+
+static void ctdb_vacuum_event(struct tevent_context *ev,
+			      struct tevent_timer *te,
+			      struct timeval t, void *private_data)
+{
+	struct ctdb_vacuum_handle *vacuum_handle = talloc_get_type(
+		private_data, struct ctdb_vacuum_handle);
+	struct ctdb_db_context *ctdb_db = vacuum_handle->ctdb_db;
+	struct ctdb_context *ctdb = ctdb_db->ctdb;
+	struct ctdb_vacuum_child_context *child_ctx = NULL;
+	uint32_t fast_path_max = ctdb->tunable.vacuum_fast_path_count;
+	bool full_vacuum_run = false;
+	int ret;
+
+	if (vacuum_handle->fast_path_count >= fast_path_max) {
+		if (fast_path_max > 0) {
+			full_vacuum_run = true;
+		}
+		vacuum_handle->fast_path_count = 0;
+	}
+
+	ret = vacuum_db_child(vacuum_handle,
+			      ctdb_db,
+			      true,
+			      full_vacuum_run,
+			      &child_ctx);
+
+	if (ret == 0) {
+		return;
+	}
+
+	switch (ret) {
+	case EBUSY:
+		/* Stagger */
+		tevent_add_timer(ctdb->ev,
+				 vacuum_handle,
+				 timeval_current_ofs(0, 500*1000),
+				 ctdb_vacuum_event,
+				 vacuum_handle);
+		break;
+
+	default:
+		/* Temporary failure, schedule next attempt */
+		tevent_add_timer(ctdb->ev,
+				 vacuum_handle,
+				 timeval_current_ofs(
+					 get_vacuum_interval(ctdb_db), 0),
+				 ctdb_vacuum_event,
+				 vacuum_handle);
+	}
+
+}
+
+struct vacuum_control_state {
+	struct ctdb_vacuum_child_context *child_ctx;
+	struct ctdb_req_control_old *c;
+	struct ctdb_context *ctdb;
+};
+
+static int vacuum_control_state_destructor(struct vacuum_control_state *state)
+{
+	struct ctdb_vacuum_child_context *child_ctx = state->child_ctx;
+	int32_t status;
+
+	status = (child_ctx->status == VACUUM_OK ? 0 : -1);
+	ctdb_request_control_reply(state->ctdb, state->c, NULL, status, NULL);
+
+	return 0;
+}
+
+int32_t ctdb_control_db_vacuum(struct ctdb_context *ctdb,
+			       struct ctdb_req_control_old *c,
+			       TDB_DATA indata,
+			       bool *async_reply)
+{
+	struct ctdb_db_context *ctdb_db;
+	struct ctdb_vacuum_child_context *child_ctx = NULL;
+	struct ctdb_db_vacuum *db_vacuum;
+	struct vacuum_control_state *state;
+	size_t np;
+	int ret;
+
+	ret = ctdb_db_vacuum_pull(indata.dptr,
+				  indata.dsize,
+				  ctdb,
+				  &db_vacuum,
+				  &np);
+	if (ret != 0) {
+		DBG_ERR("Invalid data\n");
+		return -1;
+	}
+
+	ctdb_db = find_ctdb_db(ctdb, db_vacuum->db_id);
+	if (ctdb_db == NULL) {
+		DBG_ERR("Unknown db id 0x%08x\n", db_vacuum->db_id);
+		talloc_free(db_vacuum);
+		return -1;
+	}
+
+	state = talloc(ctdb, struct vacuum_control_state);
+	if (state == NULL) {
+		DBG_ERR("Memory allocation error\n");
+		return -1;
+	}
+
+	ret = vacuum_db_child(ctdb_db,
+			      ctdb_db,
+			      false,
+			      db_vacuum->full_vacuum_run,
+			      &child_ctx);
+
+	talloc_free(db_vacuum);
+
+	if (ret == 0) {
+		(void) talloc_steal(child_ctx, state);
+
+		state->child_ctx = child_ctx;
+		state->c = talloc_steal(state, c);
+		state->ctdb = ctdb;
+
+		talloc_set_destructor(state, vacuum_control_state_destructor);
+
+		*async_reply = true;
+		return 0;
+	}
+
+	talloc_free(state);
+
+	switch (ret) {
+	case EBUSY:
+		DBG_WARNING("Vacuuming collision\n");
+		break;
+
+	default:
+		DBG_ERR("Temporary vacuuming failure, ret=%d\n", ret);
+	}
+
+	return -1;
 }
 
 void ctdb_stop_vacuuming(struct ctdb_context *ctdb)
 {
-	/* Simply free them all. */
-	while (ctdb->vacuumers) {
-		DEBUG(DEBUG_INFO, ("Aborting vacuuming for %s (%i)\n",
-			   ctdb->vacuumers->vacuum_handle->ctdb_db->db_name,
-			   (int)ctdb->vacuumers->child_pid));
+	if (ctdb->vacuumer != NULL) {
+		D_INFO("Aborting vacuuming for %s (%i)\n",
+		       ctdb->vacuumer->vacuum_handle->ctdb_db->db_name,
+		       (int)ctdb->vacuumer->child_pid);
 		/* vacuum_child_destructor kills it, removes from list */
-		talloc_free(ctdb->vacuumers);
+		talloc_free(ctdb->vacuumer);
 	}
 }
 
@@ -1572,4 +1895,63 @@ void ctdb_local_remove_from_delete_queue(struct ctdb_db_context *ctdb_db,
 	remove_record_from_delete_queue(ctdb_db, hdr, key);
 
 	return;
+}
+
+static int vacuum_fetch_parser(uint32_t reqid,
+			       struct ctdb_ltdb_header *header,
+			       TDB_DATA key, TDB_DATA data,
+			       void *private_data)
+{
+	struct ctdb_db_context *ctdb_db = talloc_get_type_abort(
+		private_data, struct ctdb_db_context);
+	struct fetch_record_data *rd;
+	size_t len;
+	uint32_t hash;
+
+	len = offsetof(struct fetch_record_data, keydata) + key.dsize;
+
+	rd = (struct fetch_record_data *)talloc_size(ctdb_db->fetch_queue,
+						     len);
+	if (rd == NULL) {
+		DEBUG(DEBUG_ERR, (__location__ " Memory error\n"));
+		return -1;
+	}
+	talloc_set_name_const(rd, "struct fetch_record_data");
+
+	rd->key.dsize = key.dsize;
+	rd->key.dptr = rd->keydata;
+	memcpy(rd->keydata, key.dptr, key.dsize);
+
+	hash = ctdb_hash(&key);
+
+	trbt_insert32(ctdb_db->fetch_queue, hash, rd);
+
+	return 0;
+}
+
+int32_t ctdb_control_vacuum_fetch(struct ctdb_context *ctdb, TDB_DATA indata)
+{
+	struct ctdb_rec_buffer *recbuf;
+	struct ctdb_db_context *ctdb_db;
+	size_t npull;
+	int ret;
+
+	ret = ctdb_rec_buffer_pull(indata.dptr, indata.dsize, ctdb, &recbuf,
+				   &npull);
+	if (ret != 0) {
+		DEBUG(DEBUG_ERR, ("Invalid data in vacuum_fetch\n"));
+		return -1;
+	}
+
+	ctdb_db = find_ctdb_db(ctdb, recbuf->db_id);
+	if (ctdb_db == NULL) {
+		talloc_free(recbuf);
+		DEBUG(DEBUG_ERR, (__location__ " Unknown db 0x%08x\n",
+				  recbuf->db_id));
+		return -1;
+	}
+
+	ret = ctdb_rec_buffer_traverse(recbuf, vacuum_fetch_parser, ctdb_db);
+	talloc_free(recbuf);
+	return ret;
 }

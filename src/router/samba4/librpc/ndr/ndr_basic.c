@@ -781,9 +781,13 @@ _PUBLIC_ enum ndr_err_code ndr_push_full_ptr(struct ndr_push *ndr, const void *p
 		/* Check if the pointer already exists and has an id */
 		ptr = ndr_token_peek(&ndr->full_ptr_list, p);
 		if (ptr == 0) {
+			enum ndr_err_code ret = NDR_ERR_SUCCESS;
 			ndr->ptr_count++;
 			ptr = ndr->ptr_count;
-			ndr_token_store(ndr, &ndr->full_ptr_list, p, ptr);
+			ret = ndr_token_store(ndr, &ndr->full_ptr_list, p, ptr);
+			if (ret != NDR_ERR_SUCCESS) {
+				return ret;
+			}
 		}
 	}
 	return ndr_push_uint3264(ndr, NDR_SCALARS, ptr);
@@ -1466,8 +1470,9 @@ _PUBLIC_ enum ndr_err_code ndr_pull_timespec(struct ndr_pull *ndr,
 _PUBLIC_ void ndr_print_timespec(struct ndr_print *ndr, const char *name,
 				 const struct timespec *t)
 {
-	ndr->print(ndr, "%-25s: %s.%ld", name, timestring(ndr, t->tv_sec),
-		   (long)t->tv_nsec);
+	char *str = timestring(ndr, t->tv_sec);
+	ndr->print(ndr, "%-25s: %s.%ld", name, str, t->tv_nsec);
+	TALLOC_FREE(str);
 }
 
 _PUBLIC_ enum ndr_err_code ndr_push_timeval(struct ndr_push *ndr,

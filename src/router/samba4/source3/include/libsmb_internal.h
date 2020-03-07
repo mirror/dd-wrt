@@ -76,6 +76,7 @@ typedef struct DOS_ATTR_DESC {
 struct _SMBCSRV {
 	struct cli_state *cli;
 	dev_t dev;
+	bool try_posixinfo;
 	bool no_pathinfo;
 	bool no_pathinfo2;
 	bool no_pathinfo3;
@@ -97,6 +98,7 @@ struct smbc_dir_list {
 struct smbc_dirplus_list {
 	struct smbc_dirplus_list *next;
 	struct libsmb_file_info *smb_finfo;
+	uint64_t ino;
 };
 
 /*
@@ -305,6 +307,11 @@ const struct libsmb_file_info *
 SMBC_readdirplus_ctx(SMBCCTX *context,
                      SMBCFILE *dir);
 
+const struct libsmb_file_info *
+SMBC_readdirplus2_ctx(SMBCCTX *context,
+		SMBCFILE *dir,
+		struct stat *st);
+
 int
 SMBC_getdents_ctx(SMBCCTX *context,
                   SMBCFILE *dir,
@@ -401,13 +408,7 @@ bool
 SMBC_getatr(SMBCCTX * context,
             SMBCSRV *srv,
             const char *path,
-            uint16_t *mode,
-            off_t *size,
-            struct timespec *create_time_ts,
-            struct timespec *access_time_ts,
-            struct timespec *write_time_ts,
-            struct timespec *change_time_ts,
-            SMB_INO_T *ino);
+	    struct stat *sbuf);
 
 bool
 SMBC_setatr(SMBCCTX * context, SMBCSRV *srv, char *path,
@@ -522,6 +523,19 @@ SMBC_attr_server(TALLOC_CTX *ctx,
 
 
 /* Functions in libsmb_stat.c */
+void setup_stat(struct stat *st,
+		const char *fname,
+		off_t size,
+		int mode,
+		ino_t ino,
+		dev_t dev,
+		struct timespec access_time_ts,
+		struct timespec change_time_ts,
+		struct timespec write_time_ts);
+void setup_stat_from_stat_ex(const struct stat_ex *stex,
+			     const char *fname,
+			     struct stat *st);
+
 int
 SMBC_stat_ctx(SMBCCTX *context,
               const char *fname,

@@ -1035,6 +1035,8 @@ static bool test_realloc_on_destructor_parent(void)
 
 
 	printf("success: free_for_exit\n");
+	talloc_free(top); /* make ASAN happy */
+
 	return true;
 }
 
@@ -1264,6 +1266,8 @@ static bool test_talloc_free_in_destructor(void)
 
 	talloc_free(level0);
 
+	talloc_free(level3); /* make ASAN happy */
+
 	printf("success: free_in_destructor\n");
 	return true;
 }
@@ -1464,6 +1468,8 @@ static bool test_pool_nest(void)
 
 	talloc_free(p1);
 
+	talloc_free(e); /* make ASAN happy */
+
 	return true;
 }
 
@@ -1534,7 +1540,7 @@ static bool test_free_ref_null_context(void)
 static bool test_rusty(void)
 {
 	void *root;
-	const char *p1;
+	char *p1;
 
 	talloc_enable_null_tracking();
 	root = talloc_new(NULL);
@@ -1543,6 +1549,8 @@ static bool test_rusty(void)
 	talloc_report_full(root, stdout);
 	talloc_free(root);
 	CHECK_BLOCKS("null_context", NULL, 2);
+	talloc_free(p1); /* make ASAN happy */
+
 	return true;
 }
 
@@ -1991,6 +1999,8 @@ static bool test_magic_protection(void)
 
 	while (wait(&exit_status) != pid);
 
+	talloc_free(pool); /* make ASAN happy */
+
 	if (!WIFEXITED(exit_status)) {
 		printf("Child exited through unexpected abnormal means\n");
 		return false;
@@ -2000,7 +2010,7 @@ static bool test_magic_protection(void)
 		return false;
 	}
 	if (WIFSIGNALED(exit_status)) {
-		printf("Child recieved unexpected signal\n");
+		printf("Child received unexpected signal\n");
 		return false;
 	}
 
@@ -2064,7 +2074,7 @@ static bool test_magic_free_protection(void)
 		return false;
 	}
 	if (WIFSIGNALED(exit_status)) {
-		printf("Child recieved unexpected signal\n");
+		printf("Child received unexpected signal\n");
 		return false;
 	}
 

@@ -313,7 +313,7 @@ NTSTATUS parse_dos_attribute_blob(struct smb_filename *smb_fname,
 		if ((dosattrib.info.info3.valid_flags & XATTR_DOSINFO_CREATE_TIME) &&
 		    !null_nttime(dosattrib.info.info3.create_time)) {
 			struct timespec create_time =
-				nt_time_to_unix_timespec(
+				nt_time_to_full_timespec(
 					dosattrib.info.info3.create_time);
 
 			update_stat_ex_create_time(&smb_fname->st,
@@ -336,7 +336,7 @@ NTSTATUS parse_dos_attribute_blob(struct smb_filename *smb_fname,
 		{
 			struct timespec creat_time;
 
-			creat_time = nt_time_to_unix_timespec(info->create_time);
+			creat_time = nt_time_to_full_timespec(info->create_time);
 			update_stat_ex_create_time(&smb_fname->st, creat_time);
 
 			DBG_DEBUG("file [%s] creation time [%s]\n",
@@ -492,13 +492,13 @@ NTSTATUS set_ea_dos_attribute(connection_struct *conn,
 	dosattrib.info.info4.valid_flags = XATTR_DOSINFO_ATTRIB |
 					XATTR_DOSINFO_CREATE_TIME;
 	dosattrib.info.info4.attrib = dosmode;
-	dosattrib.info.info4.create_time = unix_timespec_to_nt_time(
-				smb_fname->st.st_ex_btime);
+	dosattrib.info.info4.create_time = full_timespec_to_nt_time(
+		&smb_fname->st.st_ex_btime);
 
 	if (!(smb_fname->st.st_ex_iflags & ST_EX_IFLAG_CALCULATED_ITIME)) {
 		dosattrib.info.info4.valid_flags |= XATTR_DOSINFO_ITIME;
-		dosattrib.info.info4.itime = unix_timespec_to_nt_time(
-			smb_fname->st.st_ex_itime);
+		dosattrib.info.info4.itime = full_timespec_to_nt_time(
+			&smb_fname->st.st_ex_itime);
 	}
 
 	DEBUG(10,("set_ea_dos_attributes: set attribute 0x%x, btime = %s on file %s\n",
@@ -736,14 +736,9 @@ static uint32_t dos_mode_post(uint32_t dosmode,
 	 * BUG: https://bugzilla.samba.org/show_bug.cgi?id=13380
 	 */
 
-	if (is_ntfs_stream_smb_fname(smb_fname)) {
+	if (is_named_stream(smb_fname)) {
 		/* is_ntfs_stream_smb_fname() returns false for a POSIX path. */
-		if (!is_ntfs_default_stream_smb_fname(smb_fname)) {
-			/*
-			 * Non-default stream name, not a posix path.
-			 */
-			dosmode &= ~(FILE_ATTRIBUTE_DIRECTORY);
-		}
+		dosmode &= ~(FILE_ATTRIBUTE_DIRECTORY);
 	}
 
 	if (conn->fs_capabilities & FILE_FILE_COMPRESSION) {
@@ -866,7 +861,7 @@ static void dos_mode_at_vfs_get_dosmode_done(struct tevent_req *subreq)
 	/*
 	 * Make sure we run as the user again
 	 */
-	ok = change_to_user_by_fsp(state->dir_fsp);
+	ok = change_to_user_and_service_by_fsp(state->dir_fsp);
 	SMB_ASSERT(ok);
 
 	status = SMB_VFS_GET_DOS_ATTRIBUTES_RECV(subreq,
@@ -922,7 +917,7 @@ static void dos_mode_at_vfs_get_dosmode_done(struct tevent_req *subreq)
 				       NULL,
 				       &state->smb_fname->st,
 				       0);
-	if (tevent_req_nomem(path, req)) {
+	if (tevent_req_nomem(smb_path, req)) {
 		return;
 	}
 
@@ -1127,6 +1122,8 @@ NTSTATUS file_set_sparse(connection_struct *conn,
 			 files_struct *fsp,
 			 bool sparse)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	uint32_t old_dosmode;
 	uint32_t new_dosmode;
 	NTSTATUS status;
@@ -1136,7 +1133,7 @@ NTSTATUS file_set_sparse(connection_struct *conn,
 			"on readonly share[%s]\n",
 			smb_fname_str_dbg(fsp->fsp_name),
 			sparse,
-			lp_servicename(talloc_tos(), SNUM(conn))));
+			lp_servicename(talloc_tos(), lp_sub, SNUM(conn))));
 		return NT_STATUS_MEDIA_WRITE_PROTECTED;
 	}
 
@@ -1273,7 +1270,7 @@ int file_ntimes(connection_struct *conn, const struct smb_filename *smb_fname,
 
 bool set_sticky_write_time_path(struct file_id fileid, struct timespec mtime)
 {
-	if (null_timespec(mtime)) {
+	if (is_omit_timespec(&mtime)) {
 		return true;
 	}
 
@@ -1291,7 +1288,7 @@ bool set_sticky_write_time_path(struct file_id fileid, struct timespec mtime)
 
 bool set_sticky_write_time_fsp(struct files_struct *fsp, struct timespec mtime)
 {
-	if (null_timespec(mtime)) {
+	if (is_omit_timespec(&mtime)) {
 		return true;
 	}
 

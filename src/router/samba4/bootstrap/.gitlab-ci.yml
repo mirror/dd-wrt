@@ -6,6 +6,7 @@ services:
   stage: images
   tags:
     - docker
+    - gce
   variables:
     SAMBA_CI_IS_BROKEN_IMAGE: "no"
   before_script:
@@ -41,7 +42,7 @@ services:
     diff -u bootstrap/sha1sum.txt /tmp/sha1sum-template.txt
     # run smoke test with samba-o3
     docker run --volume $(pwd):${samba_repo_root} --workdir ${samba_repo_root} ${ci_image_name} \
-        /bin/bash -c "sudo chown -R samba:samba ./** && script/autobuild.py samba-o3 --verbose --nocleanup --keeplogs --tail --testbase /tmp/samba-testbase"
+        /bin/bash -c "sudo chown -R samba:samba ./** && export PKG_CONFIG_PATH=/usr/lib64/compat-gnutls34/pkgconfig:/usr/lib64/compat-nettle32/pkgconfig && script/autobuild.py samba-o3 --verbose --nocleanup --keeplogs --tail --testbase /tmp/samba-testbase"
     docker tag ${ci_image_name} ${ci_image_path}:${SAMBA_CI_CONTAINER_TAG}
     docker tag ${ci_image_name} ${ci_image_path}:${timestamp_tag}
     # We build all images, but only upload is it's not marked as broken
@@ -91,6 +92,9 @@ ubuntu1604:
 ubuntu1404:
   extends: .build_image_template_force_broken
 
+debian10:
+  extends: .build_image_template
+
 debian9:
   extends: .build_image_template
 
@@ -100,20 +104,25 @@ debian8:
 debian7:
   extends: .build_image_template_force_broken
 
+fedora31:
+  extends: .build_image_template
+
 fedora30:
   extends: .build_image_template
 
 fedora29:
   extends: .build_image_template
 
-fedora28:
-  extends: .build_image_template_force_broken
+centos8:
+  extends: .build_image_template
 
 centos7:
   extends: .build_image_template
   variables:
     # Shallow copies are not supported by git on CentOS7
     GIT_DEPTH: ""
+    # We install a compat-gnutls34 package for GnuTLS >= 3.4.7
+    PKG_CONFIG_PATH: /usr/lib64/compat-gnutls34/pkgconfig:/usr/lib64/compat-nettle32/pkgconfig
 
 centos6:
   extends: .build_image_template_force_broken

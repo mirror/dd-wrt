@@ -1,38 +1,40 @@
 from waflib import Options
 
-gnutls_min_required_version = "3.2.0"
+def parse_version(v):
+    return tuple(map(int, (v.split("."))))
+
+gnutls_min_required_version = "3.4.7"
 
 gnutls_required_version = gnutls_min_required_version
-
-#
-# If we build with MIT Kerberos we need at least GnuTLS 3.4.7 for the backupkey
-# protocol.
-#
-if Options.options.with_system_mitkrb5 and conf.env.AD_DC_BUILD_IS_ENABLED:
-    gnutls_required_version = "3.4.7"
-    conf.DEFINE('HAVE_GNUTLS_3_4_7', 1)
 
 conf.CHECK_CFG(package='gnutls',
                args=('"gnutls >= %s" --cflags --libs' % gnutls_required_version),
                      msg='Checking for GnuTLS >= %s' % gnutls_required_version,
                      mandatory=False)
 
+gnutls_version = conf.cmd_and_log(conf.env.PKGCONFIG + ['--modversion', 'gnutls']).strip()
+
 # Define gnutls as a system library
 conf.SET_TARGET_TYPE('gnutls', 'SYSLIB')
-
-# Check for gnutls_privkey_export_x509 (>= 3.4.0) required by backupkey
-conf.CHECK_FUNCS_IN('gnutls_privkey_export_x509', 'gnutls')
-
-# Check for gnutls_x509_crt_set_subject_unique_id (>= 3.4.7) required by backupkey
-conf.CHECK_FUNCS_IN('gnutls_x509_crt_set_subject_unique_id', 'gnutls')
 
 # Check for gnutls_pkcs7_get_embedded_data_oid (>= 3.5.5) required by libmscat
 conf.CHECK_FUNCS_IN('gnutls_pkcs7_get_embedded_data_oid', 'gnutls')
 
-# Check for gnutls_aead_cipher_init (>= 3.4.0) used by encrypted_secrets
-if conf.CHECK_FUNCS_IN('gnutls_aead_cipher_init',
-                       'gnutls',
-                       headers='gnutls/gnutls.h'):
-    conf.DEFINE('HAVE_GNUTLS_AEAD', '1')
+# Check for gnutls_aead_cipher_encryptv2
+#
+# This is available since version 3.6.10, but 3.6.10 has a bug which got fixed
+# in 3.6.11, see:
+#
+#     https://gitlab.com/gnutls/gnutls/-/merge_requests/1085
+if (parse_version('3.6.10') != parse_version(gnutls_version)):
+    conf.CHECK_FUNCS_IN('gnutls_aead_cipher_encryptv2', 'gnutls')
+
+if conf.CHECK_VALUEOF('GNUTLS_CIPHER_AES_128_CFB8', headers='gnutls/gnutls.h'):
+    conf.DEFINE('HAVE_GNUTLS_AES_CFB8', 1)
 else:
-    Logs.warn('No gnutls support for AEAD encryption')
+    Logs.warn('No gnutls support for AES CFB8')
+
+if conf.CHECK_VALUEOF('GNUTLS_MAC_AES_CMAC_128', headers='gnutls/gnutls.h'):
+    conf.DEFINE('HAVE_GNUTLS_AES_CMAC', 1)
+else:
+    Logs.warn('No gnutls support for AES CMAC')

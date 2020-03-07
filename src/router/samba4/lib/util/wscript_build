@@ -67,6 +67,13 @@ bld.SAMBA_LIBRARY('talloc_report',
                   private_library=True
                   )
 
+bld.SAMBA_LIBRARY('talloc_report_printf',
+                  source='talloc_report_printf.c',
+                  local_include=False,
+                  public_deps='talloc',
+                  private_library=True
+                  )
+
 bld.SAMBA_SUBSYSTEM('samba-util-core',
                     source='''data_blob.c util_file.c sys_popen.c time.c
                               signal.c util.c idtree.c fault.c
@@ -75,7 +82,7 @@ bld.SAMBA_SUBSYSTEM('samba-util-core',
                               become_daemon.c mkdir_p.c''',
                     deps='''time-basic samba-debug socket-blocking talloc
                             tevent execinfo pthread strv tini''',
-                    public_deps='systemd systemd-daemon sys_rw',
+                    public_deps='systemd systemd-daemon sys_rw LIBUNWIND',
                     local_include=False)
 
 bld.SAMBA_LIBRARY('iov_buf',
@@ -104,7 +111,7 @@ else:
 
     bld.SAMBA_LIBRARY('genrand',
                       source='genrand.c',
-                      deps='replace socket-blocking sys_rw',
+                      deps='replace gnutls',
                       local_include=False,
                       private_library=True)
 
@@ -262,22 +269,22 @@ else:
                      source='tests/rfc1738.c',
                      deps='cmocka replace samba-util',
                      local_include=False,
-                     install=False)
+                     for_selftest=True)
 
     bld.SAMBA_BINARY('test_ms_fnmatch',
                      source='tests/test_ms_fnmatch.c',
                      deps='cmocka replace samba-util',
                      local_include=False,
-                     install=False)
+                     for_selftest=True)
 
     bld.SAMBA_BINARY('test_talloc_keep_secret',
                      source='tests/test_talloc_keep_secret.c',
                      deps='cmocka replace samba-util',
                      local_include=False,
-                     install=False)
+                     for_selftest=True)
 
     bld.SAMBA_BINARY('test_byteorder',
                      source='tests/test_byteorder.c',
                      deps='cmocka replace samba-util',
                      local_include=False,
-                     install=False)
+                     for_selftest=True)

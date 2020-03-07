@@ -19,9 +19,9 @@
 
 #include "includes.h"
 #include "../libcli/auth/libcli_auth.h"
-#include "../lib/crypto/arcfour.h"
 #include "rpc_client/init_samr.h"
 
+#include "lib/crypto/gnutls_helpers.h"
 #include <gnutls/gnutls.h>
 #include <gnutls/crypto.h>
 
@@ -29,64 +29,49 @@
  inits a samr_CryptPasswordEx structure
  *************************************************************************/
 
-void init_samr_CryptPasswordEx(const char *pwd,
-			       DATA_BLOB *session_key,
-			       struct samr_CryptPasswordEx *pwd_buf)
+NTSTATUS init_samr_CryptPasswordEx(const char *pwd,
+				   DATA_BLOB *session_key,
+				   struct samr_CryptPasswordEx *pwd_buf)
 {
-	/* samr_CryptPasswordEx */
-
-	uint8_t pwbuf[532];
-	gnutls_hash_hd_t hash_hnd = NULL;
-	uint8_t confounder[16];
-	DATA_BLOB confounded_session_key = data_blob(NULL, 16);
-	int rc;
-
-	encode_pw_buffer(pwbuf, pwd, STR_UNICODE);
-
-	generate_random_buffer((uint8_t *)confounder, 16);
-
-	rc = gnutls_hash_init(&hash_hnd, GNUTLS_DIG_MD5);
-	if (rc < 0) {
-		goto out;
-	}
-
-	rc = gnutls_hash(hash_hnd, confounder, 16);
-	if (rc < 0) {
-		gnutls_hash_deinit(hash_hnd, NULL);
-		goto out;
-	}
-	rc = gnutls_hash(hash_hnd, session_key->data, session_key->length);
-	if (rc < 0) {
-		gnutls_hash_deinit(hash_hnd, NULL);
-		goto out;
-	}
-
-	gnutls_hash_deinit(hash_hnd, confounded_session_key.data);
-
-	arcfour_crypt_blob(pwbuf, 516, &confounded_session_key);
-	ZERO_ARRAY_LEN(confounded_session_key.data,
-		       confounded_session_key.length);
-	data_blob_free(&confounded_session_key);
-
-	memcpy(&pwbuf[516], confounder, 16);
-	ZERO_ARRAY(confounder);
-
-	memcpy(pwd_buf->data, pwbuf, sizeof(pwbuf));
-	ZERO_ARRAY(pwbuf);
-out:
-	return;
+	return encode_rc4_passwd_buffer(pwd, session_key, pwd_buf);
 }
 
 /*************************************************************************
  inits a samr_CryptPassword structure
  *************************************************************************/
 
-void init_samr_CryptPassword(const char *pwd,
-			     DATA_BLOB *session_key,
-			     struct samr_CryptPassword *pwd_buf)
+NTSTATUS init_samr_CryptPassword(const char *pwd,
+				 DATA_BLOB *session_key,
+				 struct samr_CryptPassword *pwd_buf)
 {
 	/* samr_CryptPassword */
+	gnutls_cipher_hd_t cipher_hnd = NULL;
+	gnutls_datum_t sess_key = {
+		.data = session_key->data,
+		.size = session_key->length,
+	};
+	bool ok;
+	int rc;
 
-	encode_pw_buffer(pwd_buf->data, pwd, STR_UNICODE);
-	arcfour_crypt_blob(pwd_buf->data, 516, session_key);
+	ok = encode_pw_buffer(pwd_buf->data, pwd, STR_UNICODE);
+	if (!ok) {
+		return NT_STATUS_INTERNAL_ERROR;
+	}
+
+	rc = gnutls_cipher_init(&cipher_hnd,
+				GNUTLS_CIPHER_ARCFOUR_128,
+				&sess_key,
+				NULL);
+	if (rc != 0) {
+		return gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+	}
+	rc = gnutls_cipher_encrypt(cipher_hnd,
+				   pwd_buf->data,
+				   516);
+	gnutls_cipher_deinit(cipher_hnd);
+	if (rc != 0) {
+		return gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+	}
+
+	return NT_STATUS_OK;
 }

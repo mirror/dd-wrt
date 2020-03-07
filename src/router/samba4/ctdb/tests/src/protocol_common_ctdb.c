@@ -203,9 +203,6 @@ void fill_ctdb_req_control_data(TALLOC_CTX *mem_ctx,
 		assert(cd->data.db_name != NULL);
 		break;
 
-	case CTDB_CONTROL_SET_CALL:
-		break;
-
 	case CTDB_CONTROL_TRAVERSE_START:
 		cd->data.traverse_start = talloc(mem_ctx, struct ctdb_traverse_start);
 		assert(cd->data.traverse_start != NULL);
@@ -262,9 +259,6 @@ void fill_ctdb_req_control_data(TALLOC_CTX *mem_ctx,
 		break;
 
 	case CTDB_CONTROL_SHUTDOWN:
-		break;
-
-	case CTDB_CONTROL_GET_MONMODE:
 		break;
 
 	case CTDB_CONTROL_TCP_CLIENT:
@@ -364,12 +358,6 @@ void fill_ctdb_req_control_data(TALLOC_CTX *mem_ctx,
 		fill_ctdb_rec_buffer(mem_ctx, cd->data.recbuf);
 		break;
 
-	case CTDB_CONTROL_ENABLE_MONITOR:
-		break;
-
-	case CTDB_CONTROL_DISABLE_MONITOR:
-		break;
-
 	case CTDB_CONTROL_ADD_PUBLIC_IP:
 		cd->data.addr_info = talloc(mem_ctx, struct ctdb_addr_info);
 		assert(cd->data.addr_info != NULL);
@@ -383,12 +371,6 @@ void fill_ctdb_req_control_data(TALLOC_CTX *mem_ctx,
 		break;
 
 	case CTDB_CONTROL_GET_CAPABILITIES:
-		break;
-
-	case CTDB_CONTROL_START_PERSISTENT_UPDATE:
-		break;
-
-	case CTDB_CONTROL_CANCEL_PERSISTENT_UPDATE:
 		break;
 
 	case CTDB_CONTROL_RECD_PING:
@@ -510,9 +492,6 @@ void fill_ctdb_req_control_data(TALLOC_CTX *mem_ctx,
 		cd->data.db_id = rand32();
 		break;
 
-	case CTDB_CONTROL_CHECK_SRVIDS:
-		break;
-
 	case CTDB_CONTROL_TRAVERSE_START_EXT:
 		cd->data.traverse_start_ext = talloc(mem_ctx, struct ctdb_traverse_start_ext);
 		assert(cd->data.traverse_start_ext != NULL);
@@ -609,6 +588,18 @@ void fill_ctdb_req_control_data(TALLOC_CTX *mem_ctx,
 
 	case CTDB_CONTROL_TUNNEL_DEREGISTER:
 		break;
+
+	case CTDB_CONTROL_VACUUM_FETCH:
+		cd->data.recbuf = talloc(mem_ctx, struct ctdb_rec_buffer);
+		assert(cd->data.recbuf != NULL);
+		fill_ctdb_rec_buffer(mem_ctx, cd->data.recbuf);
+		break;
+
+	case CTDB_CONTROL_DB_VACUUM:
+		cd->data.db_vacuum = talloc(mem_ctx, struct ctdb_db_vacuum);
+		assert(cd->data.db_vacuum != NULL);
+		fill_ctdb_db_vacuum(mem_ctx, cd->data.db_vacuum);
+		break;
 	}
 }
 
@@ -671,9 +662,6 @@ void verify_ctdb_req_control_data(struct ctdb_req_control_data *cd,
 		verify_ctdb_string(&cd->data.db_name, &cd2->data.db_name);
 		break;
 
-	case CTDB_CONTROL_SET_CALL:
-		break;
-
 	case CTDB_CONTROL_TRAVERSE_START:
 		verify_ctdb_traverse_start(cd->data.traverse_start,
 					   cd2->data.traverse_start);
@@ -726,9 +714,6 @@ void verify_ctdb_req_control_data(struct ctdb_req_control_data *cd,
 		break;
 
 	case CTDB_CONTROL_SHUTDOWN:
-		break;
-
-	case CTDB_CONTROL_GET_MONMODE:
 		break;
 
 	case CTDB_CONTROL_TCP_CLIENT:
@@ -805,12 +790,6 @@ void verify_ctdb_req_control_data(struct ctdb_req_control_data *cd,
 		verify_ctdb_rec_buffer(cd->data.recbuf, cd2->data.recbuf);
 		break;
 
-	case CTDB_CONTROL_ENABLE_MONITOR:
-		break;
-
-	case CTDB_CONTROL_DISABLE_MONITOR:
-		break;
-
 	case CTDB_CONTROL_ADD_PUBLIC_IP:
 		verify_ctdb_addr_info(cd->data.addr_info, cd2->data.addr_info);
 		break;
@@ -820,12 +799,6 @@ void verify_ctdb_req_control_data(struct ctdb_req_control_data *cd,
 		break;
 
 	case CTDB_CONTROL_GET_CAPABILITIES:
-		break;
-
-	case CTDB_CONTROL_START_PERSISTENT_UPDATE:
-		break;
-
-	case CTDB_CONTROL_CANCEL_PERSISTENT_UPDATE:
 		break;
 
 	case CTDB_CONTROL_RECD_PING:
@@ -928,9 +901,6 @@ void verify_ctdb_req_control_data(struct ctdb_req_control_data *cd,
 		assert(cd->data.db_id == cd2->data.db_id);
 		break;
 
-	case CTDB_CONTROL_CHECK_SRVIDS:
-		break;
-
 	case CTDB_CONTROL_TRAVERSE_START_EXT:
 		verify_ctdb_traverse_start_ext(cd->data.traverse_start_ext,
 					       cd2->data.traverse_start_ext);
@@ -1015,6 +985,14 @@ void verify_ctdb_req_control_data(struct ctdb_req_control_data *cd,
 		break;
 
 	case CTDB_CONTROL_TUNNEL_DEREGISTER:
+		break;
+
+	case CTDB_CONTROL_VACUUM_FETCH:
+		verify_ctdb_rec_buffer(cd->data.recbuf, cd2->data.recbuf);
+		break;
+
+	case CTDB_CONTROL_DB_VACUUM:
+		verify_ctdb_db_vacuum(cd->data.db_vacuum, cd2->data.db_vacuum);
 		break;
 	}
 }
@@ -1111,9 +1089,6 @@ void fill_ctdb_reply_control_data(TALLOC_CTX *mem_ctx,
 		cd->data.db_id = rand32();
 		break;
 
-	case CTDB_CONTROL_SET_CALL:
-		break;
-
 	case CTDB_CONTROL_TRAVERSE_START:
 		break;
 
@@ -1161,9 +1136,6 @@ void fill_ctdb_reply_control_data(TALLOC_CTX *mem_ctx,
 		break;
 
 	case CTDB_CONTROL_SHUTDOWN:
-		break;
-
-	case CTDB_CONTROL_GET_MONMODE:
 		break;
 
 	case CTDB_CONTROL_TCP_CLIENT:
@@ -1243,12 +1215,6 @@ void fill_ctdb_reply_control_data(TALLOC_CTX *mem_ctx,
 		fill_ctdb_rec_buffer(mem_ctx, cd->data.recbuf);
 		break;
 
-	case CTDB_CONTROL_ENABLE_MONITOR:
-		break;
-
-	case CTDB_CONTROL_DISABLE_MONITOR:
-		break;
-
 	case CTDB_CONTROL_ADD_PUBLIC_IP:
 		break;
 
@@ -1257,12 +1223,6 @@ void fill_ctdb_reply_control_data(TALLOC_CTX *mem_ctx,
 
 	case CTDB_CONTROL_GET_CAPABILITIES:
 		cd->data.caps = rand32();
-		break;
-
-	case CTDB_CONTROL_START_PERSISTENT_UPDATE:
-		break;
-
-	case CTDB_CONTROL_CANCEL_PERSISTENT_UPDATE:
 		break;
 
 	case CTDB_CONTROL_RECD_PING:
@@ -1369,9 +1329,6 @@ void fill_ctdb_reply_control_data(TALLOC_CTX *mem_ctx,
 	case CTDB_CONTROL_SET_DB_READONLY:
 		break;
 
-	case CTDB_CONTROL_CHECK_SRVIDS:
-		break;
-
 	case CTDB_CONTROL_TRAVERSE_START_EXT:
 		break;
 
@@ -1431,6 +1388,11 @@ void fill_ctdb_reply_control_data(TALLOC_CTX *mem_ctx,
 	case CTDB_CONTROL_TUNNEL_DEREGISTER:
 		break;
 
+	case CTDB_CONTROL_VACUUM_FETCH:
+		break;
+
+	case CTDB_CONTROL_DB_VACUUM:
+		break;
 	}
 }
 
@@ -1492,9 +1454,6 @@ void verify_ctdb_reply_control_data(struct ctdb_reply_control_data *cd,
 		assert(cd->data.db_id == cd2->data.db_id);
 		break;
 
-	case CTDB_CONTROL_SET_CALL:
-		break;
-
 	case CTDB_CONTROL_TRAVERSE_START:
 		break;
 
@@ -1540,9 +1499,6 @@ void verify_ctdb_reply_control_data(struct ctdb_reply_control_data *cd,
 		break;
 
 	case CTDB_CONTROL_SHUTDOWN:
-		break;
-
-	case CTDB_CONTROL_GET_MONMODE:
 		break;
 
 	case CTDB_CONTROL_TCP_CLIENT:
@@ -1611,12 +1567,6 @@ void verify_ctdb_reply_control_data(struct ctdb_reply_control_data *cd,
 
 	case CTDB_CONTROL_TRY_DELETE_RECORDS:
 		verify_ctdb_rec_buffer(cd->data.recbuf, cd2->data.recbuf);
-		break;
-
-	case CTDB_CONTROL_ENABLE_MONITOR:
-		break;
-
-	case CTDB_CONTROL_DISABLE_MONITOR:
 		break;
 
 	case CTDB_CONTROL_ADD_PUBLIC_IP:
@@ -1723,9 +1673,6 @@ void verify_ctdb_reply_control_data(struct ctdb_reply_control_data *cd,
 	case CTDB_CONTROL_SET_DB_READONLY:
 		break;
 
-	case CTDB_CONTROL_CHECK_SRVIDS:
-		break;
-
 	case CTDB_CONTROL_TRAVERSE_START_EXT:
 		break;
 
@@ -1781,6 +1728,11 @@ void verify_ctdb_reply_control_data(struct ctdb_reply_control_data *cd,
 	case CTDB_CONTROL_TUNNEL_DEREGISTER:
 		break;
 
+	case CTDB_CONTROL_VACUUM_FETCH:
+		break;
+
+	case CTDB_CONTROL_DB_VACUUM:
+		break;
 	}
 }
 

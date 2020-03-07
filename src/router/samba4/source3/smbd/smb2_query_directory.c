@@ -263,6 +263,8 @@ static struct tevent_req *smbd_smb2_query_directory_send(TALLOC_CTX *mem_ctx,
 	struct tevent_req *req;
 	struct smbd_smb2_query_directory_state *state;
 	connection_struct *conn = smb2req->tcon->compat;
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	NTSTATUS status;
 	bool wcard_has_wild = false;
 	struct tm tm;
@@ -441,7 +443,6 @@ static struct tevent_req *smbd_smb2_query_directory_send(TALLOC_CTX *mem_ctx,
 		status = dptr_create(conn,
 				     NULL, /* req */
 				     fsp,
-				     fsp->fsp_name,
 				     false, /* old_handle */
 				     false, /* expect_close */
 				     0, /* spid */
@@ -488,9 +489,9 @@ static struct tevent_req *smbd_smb2_query_directory_send(TALLOC_CTX *mem_ctx,
 
 	DEBUG(8,("smbd_smb2_query_directory_send: dirpath=<%s> dontdescend=<%s>, "
 		"in_output_buffer_length = %u\n",
-		fsp->fsp_name->base_name, lp_dont_descend(talloc_tos(), SNUM(conn)),
+		 fsp->fsp_name->base_name, lp_dont_descend(talloc_tos(), lp_sub, SNUM(conn)),
 		(unsigned int)in_output_buffer_length ));
-	if (in_list(fsp->fsp_name->base_name,lp_dont_descend(talloc_tos(), SNUM(conn)),
+	if (in_list(fsp->fsp_name->base_name,lp_dont_descend(talloc_tos(), lp_sub, SNUM(conn)),
 			conn->case_sensitive)) {
 		state->dont_descend = true;
 	}
@@ -619,7 +620,9 @@ static bool smb2_query_directory_next_entry(struct tevent_req *req)
 		}
 	}
 
-	if (state->async_ask_sharemode) {
+	if (state->async_ask_sharemode &&
+	    !S_ISDIR(smb_fname->st.st_ex_mode))
+	{
 		struct tevent_req *subreq = NULL;
 		char *buf = state->base_data + state->last_entry_off;
 
@@ -735,7 +738,7 @@ static void smb2_query_directory_fetch_write_time_done(struct tevent_req *subreq
 	/*
 	 * Make sure we run as the user again
 	 */
-	ok = change_to_user_by_fsp(state->fsp);
+	ok = change_to_user_and_service_by_fsp(state->fsp);
 	SMB_ASSERT(ok);
 
 	state->async_sharemode_count--;
@@ -764,7 +767,7 @@ static void smb2_query_directory_dos_mode_done(struct tevent_req *subreq)
 	/*
 	 * Make sure we run as the user again
 	 */
-	ok = change_to_user_by_fsp(state->fsp);
+	ok = change_to_user_and_service_by_fsp(state->fsp);
 	SMB_ASSERT(ok);
 
 	status = fetch_dos_mode_recv(subreq);
@@ -927,7 +930,7 @@ static void fetch_write_time_done(struct tevent_req *subreq)
 	write_time = get_share_mode_write_time(lck);
 	TALLOC_FREE(lck);
 
-	if (null_timespec(write_time)) {
+	if (is_omit_timespec(&write_time)) {
 		tevent_req_done(req);
 		return;
 	}
@@ -947,9 +950,9 @@ static void fetch_write_time_done(struct tevent_req *subreq)
 		return;
 	}
 
-	put_long_date_timespec(state->conn->ts_res,
+	put_long_date_full_timespec(state->conn->ts_res,
 			       state->entry_marshall_buf + off,
-			       write_time);
+			       &write_time);
 
 	tevent_req_done(req);
 	return;
@@ -1073,9 +1076,9 @@ static void fetch_dos_mode_done(struct tevent_req *subreq)
 		dos_filetime_timespec(&btime_ts);
 	}
 
-	put_long_date_timespec(state->dir_fsp->conn->ts_res,
+	put_long_date_full_timespec(state->dir_fsp->conn->ts_res,
 			       (char *)state->entry_marshall_buf + btime_off,
-			       btime_ts);
+			       &btime_ts);
 
 	switch (state->info_level) {
 	case SMB_FIND_ID_BOTH_DIRECTORY_INFO:

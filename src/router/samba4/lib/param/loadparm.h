@@ -248,6 +248,13 @@ enum inheritowner_options {
 /* mangled names options */
 enum mangled_names_options {MANGLED_NAMES_NO, MANGLED_NAMES_YES, MANGLED_NAMES_ILLEGAL};
 
+/* Spotlight backend options */
+enum spotlight_backend_options {
+	SPOTLIGHT_BACKEND_NOINDEX,
+	SPOTLIGHT_BACKEND_TRACKER,
+	SPOTLIGHT_BACKEND_ES,
+};
+
 /*
  * Default passwd chat script.
  */
@@ -294,7 +301,6 @@ bool lp_is_security_and_server_role_valid(int server_role, int security);
 
 struct loadparm_global * get_globals(void);
 unsigned int * get_flags(void);
-char * lp_string(TALLOC_CTX *, const char *);
 int getservicebyname(const char *, struct loadparm_service *);
 bool lp_include(struct loadparm_context *, struct loadparm_service *,
 	       	const char *, char **);
@@ -302,5 +308,22 @@ bool lp_do_section(const char *pszSectionName, void *userdata);
 bool store_lp_set_cmdline(const char *pszParmName, const char *pszParmValue);
 
 int num_parameters(void);
+
+struct loadparm_substitution;
+#ifdef LOADPARM_SUBSTITUTION_INTERNALS
+struct loadparm_substitution {
+	char *(*substituted_string_fn)(
+			TALLOC_CTX *mem_ctx,
+			const struct loadparm_substitution *lp_sub,
+			const char *raw_value,
+			void *private_data);
+	void *private_data;
+};
+#endif /* LOADPARM_SUBSTITUTION_INTERNALS */
+
+const struct loadparm_substitution *lpcfg_noop_substitution(void);
+char *lpcfg_substituted_string(TALLOC_CTX *mem_ctx,
+			       const struct loadparm_substitution *lp_sub,
+			       const char *raw_value);
 
 #endif /* _LOADPARM_H */

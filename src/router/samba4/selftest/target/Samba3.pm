@@ -961,6 +961,11 @@ sub setup_fileserver
 
 	my $fileserver_options = "
 	kernel change notify = yes
+	rpc_server:mdssvc = embedded
+	spotlight backend = elasticsearch
+	elasticsearch:address = 127.0.0.35
+	elasticsearch:port = 8080
+	elasticsearch:mappings = $srcdir_abs/source3/rpc_server/mdssvc/elasticsearch_mappings.json
 
 	usershare path = $usershare_dir
 	usershare max shares = 10
@@ -969,6 +974,14 @@ sub setup_fileserver
 
 	get quota command = $prefix_abs/getset_quota.py
 	set quota command = $prefix_abs/getset_quota.py
+[spotlight]
+	path = $share_dir
+	spotlight = yes
+	read only = no
+[no_spotlight]
+	path = $share_dir
+	spotlight = no
+	read only = no
 [lowercase]
 	path = $lower_case_share_dir
 	comment = smb username is [%U]
@@ -1423,6 +1436,9 @@ sub provision($$$$$$$$$)
 	my $privatedir="$prefix_abs/private";
 	push(@dirs,$privatedir);
 
+	my $cachedir = "$prefix_abs/cachedir";
+	push(@dirs, $cachedir);
+
 	my $binddnsdir = "$prefix_abs/bind-dns";
 	push(@dirs, $binddnsdir);
 
@@ -1689,6 +1705,7 @@ sub provision($$$$$$$$$)
 
 	print CONF "
 [global]
+        dcesrv:fuzz directory = $cachedir/fuzz
 	netbios name = $server
 	interfaces = $interfaces
 	bind interfaces only = yes

@@ -250,6 +250,8 @@ static bool smbd_scavenger_start(struct smbd_scavenger_state *state)
 			return false;
 		}
 
+		reopen_logs();
+
 		state->am_scavenger = true;
 		*state->scavenger_id = messaging_server_id(state->msg);
 
@@ -410,6 +412,7 @@ void scavenger_schedule_disconnected(struct files_struct *fsp)
 	struct scavenger_message msg;
 	DATA_BLOB msg_blob;
 	struct server_id_buf tmp;
+	struct file_id_buf idbuf;
 
 	if (fsp->op == NULL) {
 		return;
@@ -428,7 +431,7 @@ void scavenger_schedule_disconnected(struct files_struct *fsp)
 	DEBUG(10, ("smbd: %s mark file %s as disconnected at %s with timeout "
 		   "at %s in %fs\n",
 		   server_id_str_buf(self, &tmp),
-		   file_id_string_tos(&fsp->file_id),
+		   file_id_str_buf(fsp->file_id, &idbuf),
 		   timeval_string(talloc_tos(), &disconnect_time, true),
 		   timeval_string(talloc_tos(), &until, true),
 		   fsp->op->global->durable_timeout_msec/1000.0));
@@ -466,28 +469,30 @@ static void scavenger_timer(struct tevent_context *ev,
 {
 	struct scavenger_timer_context *ctx =
 		talloc_get_type_abort(data, struct scavenger_timer_context);
+	struct file_id_buf idbuf;
 	NTSTATUS status;
 	bool ok;
 
-	DEBUG(10, ("scavenger: do cleanup for file %s at %s\n",
-		  file_id_string_tos(&ctx->msg.file_id),
-		  timeval_string(talloc_tos(), &t, true)));
+	DBG_DEBUG("do cleanup for file %s at %s\n",
+		  file_id_str_buf(ctx->msg.file_id, &idbuf),
+		  timeval_string(talloc_tos(), &t, true));
 
 	ok = share_mode_cleanup_disconnected(ctx->msg.file_id,
 					     ctx->msg.open_persistent_id);
 	if (!ok) {
-		DEBUG(2, ("Failed to cleanup share modes and byte range locks "
-			  "for file %s open %llu\n",
-			  file_id_string_tos(&ctx->msg.file_id),
-			  (unsigned long long)ctx->msg.open_persistent_id));
+		DBG_WARNING("Failed to cleanup share modes and byte range "
+			    "locks for file %s open %"PRIu64"\n",
+			    file_id_str_buf(ctx->msg.file_id, &idbuf),
+			    ctx->msg.open_persistent_id);
 	}
 
 	status = smbXsrv_open_cleanup(ctx->msg.open_persistent_id);
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(2, ("Failed to cleanup open global for file %s open %llu:"
-			  " %s\n", file_id_string_tos(&ctx->msg.file_id),
-			  (unsigned long long)ctx->msg.open_persistent_id,
-			  nt_errstr(status)));
+		DBG_WARNING("Failed to cleanup open global for file %s open "
+			    "%"PRIu64": %s\n",
+			    file_id_str_buf(ctx->msg.file_id, &idbuf),
+			    ctx->msg.open_persistent_id,
+			    nt_errstr(status));
 	}
 }
 
@@ -497,12 +502,13 @@ static void scavenger_add_timer(struct smbd_scavenger_state *state,
 	struct tevent_timer *te;
 	struct scavenger_timer_context *ctx;
 	struct timeval until;
+	struct file_id_buf idbuf;
 
 	nttime_to_timeval(&until, msg->until);
 
-	DEBUG(10, ("scavenger: schedule file %s for cleanup at %s\n",
-		   file_id_string_tos(&msg->file_id),
-		   timeval_string(talloc_tos(), &until, true)));
+	DBG_DEBUG("schedule file %s for cleanup at %s\n",
+		  file_id_str_buf(msg->file_id, &idbuf),
+		  timeval_string(talloc_tos(), &until, true));
 
 	ctx = talloc_zero(state, struct scavenger_timer_context);
 	if (ctx == NULL) {

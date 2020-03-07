@@ -163,6 +163,7 @@ static int change_share_sec(TALLOC_CTX *mem_ctx, const char *sharename, char *th
 	struct security_descriptor *old = NULL;
 	size_t sd_size = 0;
 	uint32_t i, j;
+	NTSTATUS status;
 
 	if (mode != SMB_ACL_SET && mode != SMB_SD_DELETE) {
 	    if (!(old = get_share_security( mem_ctx, sharename, &sd_size )) ) {
@@ -245,7 +246,8 @@ static int change_share_sec(TALLOC_CTX *mem_ctx, const char *sharename, char *th
 	    old = sd;
 	    break;
 	case SMB_SD_DELETE:
-	    if (!delete_share_security(sharename)) {
+	    status = delete_share_security(sharename);
+	    if (!NT_STATUS_IS_OK(status)) {
 		fprintf( stderr, "Failed to delete security descriptor for "
 			 "share [%s]\n", sharename );
 		return -1;
@@ -259,7 +261,8 @@ static int change_share_sec(TALLOC_CTX *mem_ctx, const char *sharename, char *th
 	/* Denied ACE entries must come before allowed ones */
 	sort_acl(old->dacl);
 
-	if ( !set_share_security( sharename, old ) ) {
+	status = set_share_security(sharename, old);
+	if (!NT_STATUS_IS_OK(status)) {
 	    fprintf( stderr, "Failed to store acl for share [%s]\n", sharename );
 	    return 2;
 	}
@@ -269,7 +272,7 @@ static int change_share_sec(TALLOC_CTX *mem_ctx, const char *sharename, char *th
 static int set_sharesec_sddl(const char *sharename, const char *sddl)
 {
 	struct security_descriptor *sd;
-	bool ret;
+	NTSTATUS status;
 
 	sd = sddl_decode(talloc_tos(), sddl, get_global_sam_sid());
 	if (sd == NULL) {
@@ -277,9 +280,9 @@ static int set_sharesec_sddl(const char *sharename, const char *sddl)
 		return -1;
 	}
 
-	ret = set_share_security(sharename, sd);
+	status = set_share_security(sharename, sd);
 	TALLOC_FREE(sd);
-	if (!ret) {
+	if (!NT_STATUS_IS_OK(status)) {
 		fprintf(stderr, "Failed to store acl for share [%s]\n",
 			sharename);
 		return -1;
@@ -511,16 +514,19 @@ int main(int argc, const char *argv[])
 
 		if ( !sid ) {
 			fprintf( stderr, "Failed to retrieve Machine SID!\n");
-			return 3;
+			retval = 3;
+			goto done;
 		}
 
 		printf ("%s\n", dom_sid_str_buf(sid, &buf) );
-		return 0;
+		retval = 0;
+		goto done;
 	}
 
 	if ( mode == SMB_ACL_VIEW && force_acl ) {
 		fprintf( stderr, "Invalid combination of -F and -v\n");
-		return -1;
+		retval = -1;
+		goto done;
 	}
 
 	if (mode == SMB_ACL_VIEW_ALL) {
@@ -528,7 +534,9 @@ int main(int argc, const char *argv[])
 
 		for (i=0; i<lp_numservices(); i++) {
 			TALLOC_CTX *frame = talloc_stackframe();
-			const char *service = lp_servicename(frame, i);
+			const struct loadparm_substitution *lp_sub =
+				loadparm_s3_global_substitution();
+			const char *service = lp_servicename(frame, lp_sub, i);
 
 			if (service == NULL) {
 				continue;
@@ -546,7 +554,8 @@ int main(int argc, const char *argv[])
 
 	if(!poptPeekArg(pc)) {
 		poptPrintUsage(pc, stderr, 0);
-		return -1;
+		retval = -1;
+		goto done;
 	}
 
 	fstrcpy(sharename, poptGetArg(pc));
@@ -555,7 +564,8 @@ int main(int argc, const char *argv[])
 
 	if ( snum == -1 && !force_acl ) {
 		fprintf( stderr, "Invalid sharename: %s\n", sharename);
-		return -1;
+		retval = -1;
+		goto done;
 	}
 
 	switch (mode) {
@@ -571,6 +581,7 @@ int main(int argc, const char *argv[])
 	}
 
 done:
+	poptFreeContext(pc);
 	talloc_destroy(ctx);
 
 	return retval;

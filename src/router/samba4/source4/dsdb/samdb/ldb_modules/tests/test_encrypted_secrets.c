@@ -336,7 +336,67 @@ static void test_key_file_long_key(void **state)
 	assert_int_equal(0, data_blob_cmp(&key, &data->keys[0]));
 }
 
-#ifdef HAVE_GNUTLS_AEAD
+/*
+ *  Test gnutls_encryption and decryption.
+ */
+static void test_gnutls_value_decryption(void **state)
+{
+	struct ldbtest_ctx *test_ctx =
+		talloc_get_type_abort(*state, struct ldbtest_ctx);
+	const struct ldb_val plain_text =
+		data_blob_string_const("A text value");
+	unsigned char iv_data[] = {
+		0xe7, 0xa3, 0x85, 0x17, 0x45, 0x73, 0xf4, 0x25,
+		0xa5, 0x56, 0xde, 0x4c,
+	};
+	unsigned char encrypted_data[] = {
+		0xac, 0x13, 0x86, 0x94, 0x3b, 0xed, 0xf2, 0x51,
+		0xec, 0x85, 0x4d, 0x00, 0x37, 0x81, 0x46, 0x15,
+		0x42, 0x13, 0xb1, 0x69, 0x49, 0x10, 0xe7, 0x9e,
+		0x15, 0xbd, 0x95, 0x75, 0x6b, 0x0c, 0xc0, 0xa4,
+	};
+	struct EncryptedSecret es = {
+		.iv = {
+			.data = iv_data,
+			.length = sizeof(iv_data),
+		},
+		.header = {
+			.magic = ENCRYPTED_SECRET_MAGIC_VALUE,
+			.version = SECRET_ATTRIBUTE_VERSION,
+			.algorithm = ENC_SECRET_AES_128_AEAD,
+		},
+		.encrypted = {
+			.data = encrypted_data,
+			.length = sizeof(encrypted_data),
+		}
+	};
+	unsigned char es_keys_blob[] = {
+		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+		0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+	};
+	struct es_data data = {
+		.encrypt_secrets = true,
+		.keys[0] = {
+			.data = es_keys_blob,
+			.length = sizeof(es_keys_blob),
+		},
+		.encryption_algorithm = GNUTLS_CIPHER_AES_128_GCM,
+	};
+	struct PlaintextSecret *decrypted =
+		talloc_zero(test_ctx, struct PlaintextSecret);
+	int err = LDB_SUCCESS;
+
+	gnutls_decrypt_aead(&err,
+			    test_ctx,
+			    test_ctx->ldb,
+			    &es,
+			    decrypted,
+			    &data);
+	assert_int_equal(LDB_SUCCESS, err);
+	assert_int_equal(plain_text.length, decrypted->cleartext.length);
+	assert_int_equal(0, data_blob_cmp(&decrypted->cleartext, &plain_text));
+}
+
 /*
  *  Test gnutls_encryption and decryption.
  */
@@ -390,30 +450,8 @@ static void test_gnutls_value_encryption(void **state)
 				&decrypted->cleartext,
 				&plain_text));
 	}
-
-	{
-		struct PlaintextSecret *decrypted =
-			talloc_zero(test_ctx, struct PlaintextSecret);
-		samba_decrypt_aead(
-			&err,
-			test_ctx,
-			test_ctx->ldb,
-			&es,
-			decrypted,
-			data);
-		assert_int_equal(LDB_SUCCESS, err);
-		assert_int_equal(
-			plain_text.length,
-			decrypted->cleartext.length);
-		assert_int_equal(0,
-			data_blob_cmp(
-				&decrypted->cleartext,
-				&plain_text));
-	}
 }
-#endif /* HAVE_GNUTLS_AEAD */
 
-#ifdef HAVE_GNUTLS_AEAD
 static void test_gnutls_altered_header(void **state)
 {
 	struct ldbtest_ctx *test_ctx =
@@ -478,9 +516,7 @@ static void test_gnutls_altered_header(void **state)
 		assert_int_equal(LDB_ERR_OPERATIONS_ERROR, err);
 	}
 }
-#endif /* HAVE_GNUTLS_AEAD */
 
-#ifdef HAVE_GNUTLS_AEAD
 static void test_gnutls_altered_data(void **state)
 {
 	struct ldbtest_ctx *test_ctx =
@@ -545,9 +581,7 @@ static void test_gnutls_altered_data(void **state)
 		assert_int_equal(LDB_ERR_OPERATIONS_ERROR, err);
 	}
 }
-#endif /* HAVE_GNUTLS_AEAD */
 
-#ifdef HAVE_GNUTLS_AEAD
 static void test_gnutls_altered_iv(void **state)
 {
 	struct ldbtest_ctx *test_ctx =
@@ -612,280 +646,10 @@ static void test_gnutls_altered_iv(void **state)
 		assert_int_equal(LDB_ERR_OPERATIONS_ERROR, err);
 	}
 }
-#endif /* HAVE_GNUTLS_AEAD */
+
 /*
  *  Test samba encryption and decryption and decryption.
  */
-static void test_samba_value_encryption(void **state)
-{
-	struct ldbtest_ctx *test_ctx =
-		talloc_get_type_abort(*state, struct ldbtest_ctx);
-	struct ldb_val plain_text = data_blob_null;
-	struct ldb_val cipher_text = data_blob_null;
-	struct EncryptedSecret es;
-
-	struct es_data *data = talloc_get_type(
-		ldb_module_get_private(test_ctx->module),
-		struct es_data);
-	int err = LDB_SUCCESS;
-	int rc;
-
-	plain_text = data_blob_string_const("A text value");
-	cipher_text = samba_encrypt_aead(
-			&err,
-			test_ctx,
-			test_ctx->ldb,
-			plain_text,
-			data);
-	assert_int_equal(LDB_SUCCESS, err);
-
-	rc = ndr_pull_struct_blob(
-		&cipher_text,
-		test_ctx,
-		&es,
-		(ndr_pull_flags_fn_t) ndr_pull_EncryptedSecret);
-	assert_true(NDR_ERR_CODE_IS_SUCCESS(rc));
-	assert_true(check_header(&es));
-
-#ifdef HAVE_GNUTLS_AEAD
-	{
-		struct PlaintextSecret *decrypted =
-			talloc_zero(test_ctx, struct PlaintextSecret);
-		gnutls_decrypt_aead(
-			&err,
-			test_ctx,
-			test_ctx->ldb,
-			&es,
-			decrypted,
-			data);
-		assert_int_equal(LDB_SUCCESS, err);
-		assert_int_equal(
-			plain_text.length,
-			decrypted->cleartext.length);
-		assert_int_equal(0,
-			data_blob_cmp(
-				&decrypted->cleartext,
-				&plain_text));
-	}
-#endif /* HAVE_GNUTLS_AEAD */
-
-
-	{
-		struct PlaintextSecret *decrypted =
-			talloc_zero(test_ctx, struct PlaintextSecret);
-		samba_decrypt_aead(
-			&err,
-			test_ctx,
-			test_ctx->ldb,
-			&es,
-			decrypted,
-			data);
-		assert_int_equal(LDB_SUCCESS, err);
-		assert_int_equal(
-			plain_text.length,
-			decrypted->cleartext.length);
-		assert_int_equal(0,
-			data_blob_cmp(
-				&decrypted->cleartext,
-				&plain_text));
-	}
-
-}
-
-static void test_samba_altered_header(void **state)
-{
-	struct ldbtest_ctx *test_ctx =
-		talloc_get_type_abort(*state, struct ldbtest_ctx);
-	struct ldb_val plain_text = data_blob_null;
-	struct ldb_val cipher_text = data_blob_null;
-	struct EncryptedSecret es;
-
-	struct es_data *data = talloc_get_type(
-		ldb_module_get_private(test_ctx->module),
-		struct es_data);
-	int err = LDB_SUCCESS;
-	int rc;
-
-	plain_text = data_blob_string_const("A text value");
-	cipher_text = samba_encrypt_aead(
-			&err,
-			test_ctx,
-			test_ctx->ldb,
-			plain_text,
-			data);
-	assert_int_equal(LDB_SUCCESS, err);
-
-	rc = ndr_pull_struct_blob(
-		&cipher_text,
-		test_ctx,
-		&es,
-		(ndr_pull_flags_fn_t) ndr_pull_EncryptedSecret);
-	assert_true(NDR_ERR_CODE_IS_SUCCESS(rc));
-	assert_true(check_header(&es));
-
-	{
-		struct PlaintextSecret *decrypted =
-			talloc_zero(test_ctx, struct PlaintextSecret);
-		samba_decrypt_aead(
-			&err,
-			test_ctx,
-			test_ctx->ldb,
-			&es,
-			decrypted,
-			data);
-		assert_int_equal(LDB_SUCCESS, err);
-		assert_int_equal(
-			plain_text.length,
-			decrypted->cleartext.length);
-		assert_int_equal(0,
-			data_blob_cmp(
-				&decrypted->cleartext,
-				&plain_text));
-	}
-	es.header.flags = es.header.flags ^ 0xffffffff;
-	{
-		struct PlaintextSecret *decrypted =
-			talloc_zero(test_ctx, struct PlaintextSecret);
-		samba_decrypt_aead(
-			&err,
-			test_ctx,
-			test_ctx->ldb,
-			&es,
-			decrypted,
-			data);
-		assert_int_equal(LDB_ERR_OPERATIONS_ERROR, err);
-	}
-}
-
-static void test_samba_altered_data(void **state)
-{
-	struct ldbtest_ctx *test_ctx =
-		talloc_get_type_abort(*state, struct ldbtest_ctx);
-	struct ldb_val plain_text = data_blob_null;
-	struct ldb_val cipher_text = data_blob_null;
-	struct EncryptedSecret es;
-
-	struct es_data *data = talloc_get_type(
-		ldb_module_get_private(test_ctx->module),
-		struct es_data);
-	int err = LDB_SUCCESS;
-	int rc;
-
-	plain_text = data_blob_string_const("A text value");
-	cipher_text = samba_encrypt_aead(
-			&err,
-			test_ctx,
-			test_ctx->ldb,
-			plain_text,
-			data);
-	assert_int_equal(LDB_SUCCESS, err);
-
-	rc = ndr_pull_struct_blob(
-		&cipher_text,
-		test_ctx,
-		&es,
-		(ndr_pull_flags_fn_t) ndr_pull_EncryptedSecret);
-	assert_true(NDR_ERR_CODE_IS_SUCCESS(rc));
-	assert_true(check_header(&es));
-
-	{
-		struct PlaintextSecret *decrypted =
-			talloc_zero(test_ctx, struct PlaintextSecret);
-		samba_decrypt_aead(
-			&err,
-			test_ctx,
-			test_ctx->ldb,
-			&es,
-			decrypted,
-			data);
-		assert_int_equal(LDB_SUCCESS, err);
-		assert_int_equal(
-			plain_text.length,
-			decrypted->cleartext.length);
-		assert_int_equal(0,
-			data_blob_cmp(
-				&decrypted->cleartext,
-				&plain_text));
-	}
-	es.encrypted.data[0] = es.encrypted.data[0] ^ 0xff;
-	{
-		struct PlaintextSecret *decrypted =
-			talloc_zero(test_ctx, struct PlaintextSecret);
-		samba_decrypt_aead(
-			&err,
-			test_ctx,
-			test_ctx->ldb,
-			&es,
-			decrypted,
-			data);
-		assert_int_equal(LDB_ERR_OPERATIONS_ERROR, err);
-	}
-}
-
-static void test_samba_altered_iv(void **state)
-{
-	struct ldbtest_ctx *test_ctx =
-		talloc_get_type_abort(*state, struct ldbtest_ctx);
-	struct ldb_val plain_text = data_blob_null;
-	struct ldb_val cipher_text = data_blob_null;
-	struct EncryptedSecret es;
-
-	struct es_data *data = talloc_get_type(
-		ldb_module_get_private(test_ctx->module),
-		struct es_data);
-	int err = LDB_SUCCESS;
-	int rc;
-
-	plain_text = data_blob_string_const("A text value");
-	cipher_text = samba_encrypt_aead(
-			&err,
-			test_ctx,
-			test_ctx->ldb,
-			plain_text,
-			data);
-	assert_int_equal(LDB_SUCCESS, err);
-
-	rc = ndr_pull_struct_blob(
-		&cipher_text,
-		test_ctx,
-		&es,
-		(ndr_pull_flags_fn_t) ndr_pull_EncryptedSecret);
-	assert_true(NDR_ERR_CODE_IS_SUCCESS(rc));
-	assert_true(check_header(&es));
-
-	{
-		struct PlaintextSecret *decrypted =
-			talloc_zero(test_ctx, struct PlaintextSecret);
-		samba_decrypt_aead(
-			&err,
-			test_ctx,
-			test_ctx->ldb,
-			&es,
-			decrypted,
-			data);
-		assert_int_equal(LDB_SUCCESS, err);
-		assert_int_equal(
-			plain_text.length,
-			decrypted->cleartext.length);
-		assert_int_equal(0,
-			data_blob_cmp(
-				&decrypted->cleartext,
-				&plain_text));
-	}
-	es.iv.data[0] = es.iv.data[0] ^ 0xff;
-	{
-		struct PlaintextSecret *decrypted =
-			talloc_zero(test_ctx, struct PlaintextSecret);
-		samba_decrypt_aead(
-			&err,
-			test_ctx,
-			test_ctx->ldb,
-			&es,
-			decrypted,
-			data);
-		assert_int_equal(LDB_ERR_OPERATIONS_ERROR, err);
-	}
-}
 
 /*
  *  Test message encryption.
@@ -908,7 +672,8 @@ static void test_message_encryption_decryption(void **state)
 		struct es_data);
 	struct ldb_message_element *el = NULL;
 	int ret = LDB_SUCCESS;
-	int i, j;
+	size_t i;
+	unsigned int j;
 
 	msg->dn = ldb_dn_new(msg, ldb, "dc=test");
 	ldb_msg_add_string(msg, "cmocka_test_name01", "value01");
@@ -1101,6 +866,51 @@ static void test_unencrypted_secret(void **state)
 	assert_int_equal(LDB_ERR_OPERATIONS_ERROR, ret);
 }
 
+/*
+ *  Test full decryption of a static value with static key
+ */
+static void test_record_decryption(void **state)
+{
+	struct ldbtest_ctx *test_ctx =
+		talloc_get_type_abort(*state, struct ldbtest_ctx);
+	unsigned char plain_data[] = {
+		0xe6, 0xa6, 0xb8, 0xff, 0xdf, 0x06, 0x6c, 0xe3,
+		0xea, 0xd0, 0x94, 0xbb, 0x79, 0xbd, 0x0a, 0x24
+	};
+	unsigned char encrypted_data[] = {
+		0x0c, 0x00, 0x00, 0x00, 0x33, 0x91, 0x74, 0x25,
+		0x26, 0xcc, 0x0b, 0x8c, 0x21, 0xc1, 0x13, 0xe2,
+		0xed, 0xad, 0x5c, 0xca, 0x01, 0x00, 0x00, 0x00,
+		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x1a, 0xdc, 0xc9, 0x11, 0x08, 0xca, 0x2c, 0xfb,
+		0xc8, 0x32, 0x6b, 0x1b, 0x25, 0x7f, 0x52, 0xbb,
+		0xae, 0x9b, 0x88, 0x52, 0xb0, 0x18, 0x6d, 0x9d,
+		0x9b, 0xdd, 0xcd, 0x1b, 0x5f, 0x4a, 0x5c, 0x29,
+		0xca, 0x0b, 0x36, 0xaa
+	};
+	struct ldb_val cipher_text
+		= data_blob_const(encrypted_data,
+				  sizeof(encrypted_data));
+	unsigned char es_keys_blob[] = {
+		0x1d, 0xae, 0xf5, 0xaa, 0xa3, 0x85, 0x0d, 0x0a,
+		0x8c, 0x24, 0x5c, 0x4c, 0xa7, 0x0f, 0x81, 0x79
+	};
+	struct es_data data = {
+		.encrypt_secrets = true,
+		.keys[0] = {
+			.data = es_keys_blob,
+			.length = sizeof(es_keys_blob),
+		},
+		.encryption_algorithm = GNUTLS_CIPHER_AES_128_GCM,
+	};
+	int err = LDB_SUCCESS;
+	struct ldb_val dec = decrypt_value(&err, test_ctx, test_ctx->ldb, cipher_text,
+					   &data);
+	assert_int_equal(LDB_SUCCESS, err);
+	assert_int_equal(sizeof(plain_data), dec.length);
+	assert_memory_equal(dec.data, plain_data, sizeof(plain_data));
+}
+
 
 int main(void) {
 	const struct CMUnitTest tests[] = {
@@ -1124,7 +934,10 @@ int main(void) {
 			test_check_header,
 			setup,
 			teardown),
-#ifdef HAVE_GNUTLS_AEAD
+		cmocka_unit_test_setup_teardown(
+			test_gnutls_value_decryption,
+			setup_with_key,
+			teardown),
 		cmocka_unit_test_setup_teardown(
 			test_gnutls_value_encryption,
 			setup_with_key,
@@ -1141,29 +954,16 @@ int main(void) {
 			test_gnutls_altered_iv,
 			setup_with_key,
 			teardown),
-#endif /* HAVE_GNUTLS_AEAD */
-		cmocka_unit_test_setup_teardown(
-			test_samba_value_encryption,
-			setup_with_key,
-			teardown),
-		cmocka_unit_test_setup_teardown(
-			test_samba_altered_header,
-			setup_with_key,
-			teardown),
-		cmocka_unit_test_setup_teardown(
-			test_samba_altered_data,
-			setup_with_key,
-			teardown),
-		cmocka_unit_test_setup_teardown(
-			test_samba_altered_iv,
-			setup_with_key,
-			teardown),
 		cmocka_unit_test_setup_teardown(
 			test_message_encryption_decryption,
 			setup_with_key,
 			teardown),
 		cmocka_unit_test_setup_teardown(
 			test_unencrypted_secret,
+			setup_with_key,
+			teardown),
+		cmocka_unit_test_setup_teardown(
+			test_record_decryption,
 			setup_with_key,
 			teardown),
 	};

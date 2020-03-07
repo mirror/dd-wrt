@@ -23,6 +23,11 @@ PATH="${TEST_SCRIPTS_DIR}:${PATH}"
 
 ######################################################################
 
+ctdb_test_on_cluster ()
+{
+	[ -z "$CTDB_TEST_LOCAL_DAEMONS" ]
+}
+
 ctdb_test_exit ()
 {
     local status=$?
@@ -55,6 +60,34 @@ ctdb_test_exit_hook_add ()
     ctdb_test_exit_hook="${ctdb_test_exit_hook}${ctdb_test_exit_hook:+ ; }$*"
 }
 
+# Setting cleanup_pid to <pid>@<node> will cause <pid> to be killed on
+# <node> when the test completes.  To cancel, just unset cleanup_pid.
+ctdb_test_cleanup_pid=""
+ctdb_test_cleanup_pid_exit_hook ()
+{
+	if [ -n "$ctdb_test_cleanup_pid" ] ; then
+		local pid="${ctdb_test_cleanup_pid%@*}"
+		local node="${ctdb_test_cleanup_pid#*@}"
+
+		try_command_on_node "$node" "kill ${pid}"
+	fi
+}
+
+ctdb_test_exit_hook_add ctdb_test_cleanup_pid_exit_hook
+
+ctdb_test_cleanup_pid_set ()
+{
+	local node="$1"
+	local pid="$2"
+
+	ctdb_test_cleanup_pid="${pid}@${node}"
+}
+
+ctdb_test_cleanup_pid_clear ()
+{
+	ctdb_test_cleanup_pid=""
+}
+
 ctdb_test_init ()
 {
 	trap "ctdb_test_exit" 0
@@ -70,6 +103,14 @@ ctdb_test_init ()
 	echo  "*** SETUP COMPLETE AT $(date '+%F %T'), RUNNING TEST..."
 }
 
+ctdb_test_skip_on_cluster ()
+{
+	if ctdb_test_on_cluster ; then
+		ctdb_test_skip \
+			"SKIPPING this test - only runs against local daemons"
+	fi
+}
+
 ########################################
 
 # Sets: $out, $outfile
@@ -77,7 +118,7 @@ ctdb_test_init ()
 # * Tests should use $outfile for handling large output
 # * $outfile is removed after each test
 out=""
-outfile="${TEST_VAR_DIR}/try_command_on_node.out"
+outfile="${CTDB_TEST_TMP_DIR}/try_command_on_node.out"
 
 outfile_cleanup ()
 {
@@ -111,13 +152,53 @@ try_command_on_node ()
     if [ $status -ne 0 ] ; then
 	echo "Failed to execute \"$cmd\" on node(s) \"$nodespec\""
 	cat "$outfile"
-	return 1
+	return $status
     fi
 
     if $verbose ; then
 	echo "Output of \"$cmd\":"
 	cat "$outfile"
     fi
+}
+
+_run_onnode ()
+{
+	local thing="$1"
+	shift
+
+	local options nodespec
+
+	while : ; do
+		case "$1" in
+		-*)
+			options="${options}${options:+ }${1}"
+			shift
+			;;
+		*)
+			nodespec="$1"
+			shift
+			break
+		esac
+	done
+
+	# shellcheck disable=SC2086
+	# $options can be multi-word
+	try_command_on_node $options "$nodespec" "${thing} $*"
+}
+
+ctdb_onnode ()
+{
+	_run_onnode "$CTDB" "$@"
+}
+
+testprog_onnode ()
+{
+	_run_onnode "${CTDB_TEST_WRAPPER} ${VALGRIND}" "$@"
+}
+
+function_onnode ()
+{
+	_run_onnode "${CTDB_TEST_WRAPPER}" "$@"
 }
 
 sanity_check_output ()
@@ -148,6 +229,14 @@ sanity_check_output ()
     fi
 
     return $ret
+}
+
+select_test_node ()
+{
+	try_command_on_node any ctdb pnn || return 1
+
+	test_node="$out"
+	echo "Selected node ${test_node}"
 }
 
 # This returns a list of "ip node" lines in $outfile
@@ -209,7 +298,7 @@ get_test_ip_mask_and_iface ()
     try_command_on_node $test_node "$CTDB ip -v -X | awk -F'|' -v ip=$test_ip '\$2 == ip { print \$4 }'"
     iface="$out"
 
-    if [ -z "$TEST_LOCAL_DAEMONS" ] ; then
+    if ctdb_test_on_cluster ; then
 	# Find the netmask
 	try_command_on_node $test_node ip addr show to $test_ip
 	mask="${out##*/}"
@@ -477,102 +566,37 @@ wait_until_node_has_no_ips ()
 
 #######################################
 
-_service_ctdb ()
-{
-    cmd="$1"
-
-    if [ -e /etc/redhat-release ] ; then
-	service ctdb "$cmd"
-    else
-	/etc/init.d/ctdb "$cmd"
-    fi
-}
-
-# Stop/start CTDB on all nodes.  Override for local daemons.
-ctdb_stop_all ()
-{
-	onnode -p all $CTDB_TEST_WRAPPER _service_ctdb stop
-}
-ctdb_start_all ()
-{
-	onnode -p all $CTDB_TEST_WRAPPER _service_ctdb start
-}
-
-setup_ctdb ()
-{
-	ctdb_enable_cluster_test_event_scripts
-}
-
-start_ctdb_1 ()
-{
-    onnode "$1" $CTDB_TEST_WRAPPER _service_ctdb start
-}
-
-stop_ctdb_1 ()
-{
-    onnode "$1" $CTDB_TEST_WRAPPER _service_ctdb stop
-}
-
-restart_ctdb_1 ()
-{
-    onnode "$1" $CTDB_TEST_WRAPPER _service_ctdb restart
-}
-
 ctdb_init ()
 {
-    local i
-    for i in $(seq 1 5) ; do
 	ctdb_stop_all >/dev/null 2>&1 || :
-	ctdb_start_all || {
-	    echo "Start failed.  Trying again in a few seconds..."
-	    sleep_for 5
-	    continue
-	}
 
-	wait_until_ready || {
-	    echo "Cluster didn't become ready.  Restarting..."
-	    continue
-	}
+	ctdb_start_all || ctdb_test_error "Cluster start failed"
+
+	wait_until_ready || ctdb_test_error "Cluster didn't become ready"
 
 	echo "Setting RerecoveryTimeout to 1"
 	onnode -pq all "$CTDB setvar RerecoveryTimeout 1"
 
-	# In recent versions of CTDB, forcing a recovery like this
-	# blocks until the recovery is complete.  Hopefully this will
-	# help the cluster to stabilise before a subsequent test.
 	echo "Forcing a recovery..."
-	onnode -q 0 $CTDB recover
+	onnode -q 0 "$CTDB recover"
 	sleep_for 2
 
-	if ! onnode -q any $CTDB_TEST_WRAPPER _cluster_is_recovered ; then
-	    echo "Cluster has gone into recovery again, waiting..."
-	    wait_until 30/2 onnode -q any $CTDB_TEST_WRAPPER _cluster_is_recovered
+	if ! onnode -q all "$CTDB_TEST_WRAPPER _cluster_is_recovered" ; then
+		echo "Cluster has gone into recovery again, waiting..."
+		wait_until 30/2 onnode -q all \
+			   "$CTDB_TEST_WRAPPER _cluster_is_recovered" || \
+			ctdb_test_error "Cluster did not come out of recovery"
 	fi
 
-
-	# Cluster is still healthy.  Good, we're done!
-	if ! onnode 0 $CTDB_TEST_WRAPPER _cluster_is_healthy ; then
-	    echo "Cluster became UNHEALTHY again [$(date)]"
-	    onnode -p all ctdb status -X 2>&1
-	    onnode -p all ctdb scriptstatus 2>&1
-	    echo "Restarting..."
-	    continue
+	if ! onnode 0 "$CTDB_TEST_WRAPPER _cluster_is_healthy" ; then
+		ctdb_test_error "Cluster became UNHEALTHY again [$(date)]"
 	fi
 
 	echo "Doing a sync..."
-	onnode -q 0 $CTDB sync
+	onnode -q 0 "$CTDB sync"
 
 	echo "ctdb is ready"
 	return 0
-    done
-
-    echo "Cluster UNHEALTHY...  too many attempts..."
-    onnode -p all ctdb status -X 2>&1
-    onnode -p all ctdb scriptstatus 2>&1
-
-    # Try to make the calling test fail
-    status=1
-    return 1
 }
 
 ctdb_base_show ()
@@ -607,38 +631,6 @@ _ctdb_scriptstatus_changed ()
     }
 
     ! diff "$outfile" "${outfile}.orig" >/dev/null
-}
-
-#######################################
-
-nfs_test_setup ()
-{
-    select_test_node_and_ips
-
-    nfs_first_export=$(showmount -e $test_ip | sed -n -e '2s/ .*//p')
-
-    echo "Creating test subdirectory..."
-    try_command_on_node $test_node "TMPDIR=$nfs_first_export mktemp -d"
-    nfs_test_dir="$out"
-    try_command_on_node $test_node "chmod 777 $nfs_test_dir"
-
-    nfs_mnt_d=$(mktemp -d)
-    nfs_local_file="${nfs_mnt_d}/${nfs_test_dir##*/}/TEST_FILE"
-    nfs_remote_file="${nfs_test_dir}/TEST_FILE"
-
-    ctdb_test_exit_hook_add nfs_test_cleanup
-
-    echo "Mounting ${test_ip}:${nfs_first_export} on ${nfs_mnt_d} ..."
-    mount -o timeo=1,hard,intr,vers=3 \
-	"[${test_ip}]:${nfs_first_export}" ${nfs_mnt_d}
-}
-
-nfs_test_cleanup ()
-{
-    rm -f "$nfs_local_file"
-    umount -f "$nfs_mnt_d"
-    rmdir "$nfs_mnt_d"
-    onnode -q $test_node rmdir "$nfs_test_dir"
 }
 
 #######################################
@@ -722,32 +714,19 @@ db_ctdb_tstore_dbseqnum ()
     db_ctdb_tstore $1 "$2" "$_key" "$_value"
 }
 
-#######################################
-
-# Enables all of the event scripts used in cluster tests, except for
-# the mandatory scripts
-ctdb_enable_cluster_test_event_scripts ()
-{
-	local scripts="
-		       06.nfs
-		       10.interface
-		       49.winbind
-		       50.samba
-		       60.nfs
-		      "
-
-	local s
-	for s in $scripts ; do
-		try_command_on_node all ctdb event script enable legacy "$s"
-	done
-}
-
 ########################################
 
 # Make sure that $CTDB is set.
 : ${CTDB:=ctdb}
 
-local="${TEST_SUBDIR}/scripts/local.bash"
+if ctdb_test_on_cluster ; then
+	. "${TEST_SCRIPTS_DIR}/integration_real_cluster.bash"
+else
+	. "${TEST_SCRIPTS_DIR}/integration_local_daemons.bash"
+fi
+
+
+local="${CTDB_TEST_SUITE_DIR}/scripts/local.bash"
 if [ -r "$local" ] ; then
     . "$local"
 fi

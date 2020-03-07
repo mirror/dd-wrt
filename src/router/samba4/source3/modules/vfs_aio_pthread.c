@@ -105,7 +105,7 @@ static void aio_open_handle_completion(struct tevent_req *subreq)
 		/*
 		 * Make sure we run as the user again
 		 */
-		ok = change_to_user(opd->conn, opd->conn->vuid);
+		ok = change_to_user_and_service(opd->conn, opd->conn->vuid);
 		if (!ok) {
 			smb_panic("Can't change to user");
 			return;
@@ -318,7 +318,7 @@ static int open_async(const files_struct *fsp,
 		opd->fname));
 
 	/* Cause the calling code to reschedule us. */
-	errno = EINTR; /* Maps to NT_STATUS_RETRY. */
+	errno = EINPROGRESS; /* Maps to NT_STATUS_MORE_PROCESSING_REQUIRED. */
 	return -1;
 }
 

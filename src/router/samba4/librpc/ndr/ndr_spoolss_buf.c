@@ -36,13 +36,17 @@
 			"SPOOLSS Buffer: r->in.offered[%u] doesn't match length of r->in.buffer[%u]",\
 			(unsigned)r->in.offered, (unsigned)r->in.buffer->length);\
 	}\
-	_r.in.level	= r->in.level;\
 	_r.in.buffer	= r->in.buffer;\
 	_r.in.offered	= r->in.offered;\
 	NDR_CHECK(ndr_push__##fn(ndr, flags, &_r));\
 } while(0)
 
-#define NDR_SPOOLSS_PUSH_ENUM_OUT(fn) do { \
+#define NDR_SPOOLSS_PUSH_ENUM_IN_LEVEL(fn) do { \
+	_r.in.level     = r->in.level;\
+	NDR_SPOOLSS_PUSH_ENUM_IN(fn);\
+} while(0)
+
+#define NDR_SPOOLSS_PUSH_ENUM_OUT_LEVEL(fn) do { \
 	DATA_BLOB _data_blob_info = data_blob_null;\
 	struct ndr_push *_ndr_info = NULL;\
 	_r.in.level	= r->in.level;\
@@ -84,6 +88,58 @@
 	NDR_CHECK(ndr_push__##fn(ndr, flags, &_r));\
 } while(0)
 
+#define NDR_SPOOLSS_PUSH_ENUM_OUT(fn) do { \
+	DATA_BLOB _data_blob_info = data_blob_null;\
+	struct ndr_push *_ndr_info = NULL;\
+	_r.in.buffer	= r->in.buffer;\
+	_r.in.offered	= r->in.offered;\
+	_r.out.info	= NULL;\
+	_r.out.needed	= r->out.needed;\
+	_r.out.count	= r->out.count;\
+	_r.out.result	= r->out.result;\
+	if (r->out.info && *r->out.info && !r->in.buffer) {\
+		return ndr_push_error(ndr, NDR_ERR_BUFSIZE,\
+			"SPOOLSS Buffer: *r->out.info but there's no r->in.buffer");\
+	}\
+	if (r->in.buffer) {\
+		_ndr_info = ndr_push_init_ctx(ndr);\
+		NDR_ERR_HAVE_NO_MEMORY(_ndr_info);\
+		_ndr_info->flags= ndr->flags;\
+		if (r->out.info) {\
+			struct ndr_push *_subndr_info;\
+			struct __##fn __r;\
+			__r.in.count	= *r->out.count;\
+			__r.out.info	= *r->out.info;\
+			NDR_CHECK(ndr_push_subcontext_start(_ndr_info, &_subndr_info, 0, r->in.offered));\
+			NDR_CHECK(ndr_push___##fn(_subndr_info, flags, &__r)); \
+			NDR_CHECK(ndr_push_subcontext_end(_ndr_info, _subndr_info, 0, r->in.offered));\
+		}\
+		if (r->in.offered > _ndr_info->offset) {\
+			uint32_t _padding_len = r->in.offered - _ndr_info->offset;\
+			NDR_CHECK(ndr_push_zero(_ndr_info, _padding_len));\
+		} else if (r->in.offered < _ndr_info->offset) {\
+			return ndr_push_error(ndr, NDR_ERR_BUFSIZE,\
+				"SPOOLSS Buffer: r->in.offered[%u] doesn't match length of out buffer[%u]!",\
+				(unsigned)r->in.offered, (unsigned)_ndr_info->offset);\
+		}\
+		_data_blob_info = ndr_push_blob(_ndr_info);\
+		_r.out.info	= &_data_blob_info;\
+	}\
+	NDR_CHECK(ndr_push__##fn(ndr, flags, &_r));\
+} while(0)
+
+#define NDR_SPOOLSS_PUSH_ENUM_LEVEL(fn,in,out) do { \
+	struct _##fn _r;\
+	if (flags & NDR_IN) {\
+		in;\
+		NDR_SPOOLSS_PUSH_ENUM_IN_LEVEL(fn);\
+	}\
+	if (flags & NDR_OUT) {\
+		out;\
+		NDR_SPOOLSS_PUSH_ENUM_OUT_LEVEL(fn);\
+	}\
+} while(0)
+
 #define NDR_SPOOLSS_PUSH_ENUM(fn,in,out) do { \
 	struct _##fn _r;\
 	if (flags & NDR_IN) {\
@@ -96,10 +152,8 @@
 	}\
 } while(0)
 
-#define NDR_SPOOLSS_PULL_ENUM_IN(fn) do { \
+#define NDR_SPOOLSS_PULL_ENUM_IN_COMMON(fn) do { \
 	ZERO_STRUCT(r->out);\
-	NDR_CHECK(ndr_pull__##fn(ndr, flags, &_r));\
-	r->in.level	= _r.in.level;\
 	r->in.buffer	= _r.in.buffer;\
 	r->in.offered	= _r.in.offered;\
 	r->out.needed	= _r.out.needed;\
@@ -117,7 +171,18 @@
 	ZERO_STRUCTP(r->out.info);\
 } while(0)
 
-#define NDR_SPOOLSS_PULL_ENUM_OUT(fn) do { \
+#define NDR_SPOOLSS_PULL_ENUM_IN(fn) do { \
+	NDR_CHECK(ndr_pull__##fn(ndr, flags, &_r));\
+	NDR_SPOOLSS_PULL_ENUM_IN_COMMON(fn); \
+} while(0)
+
+#define NDR_SPOOLSS_PULL_ENUM_IN_LEVEL(fn) do { \
+	NDR_CHECK(ndr_pull__##fn(ndr, flags, &_r));\
+	r->in.level	= _r.in.level;\
+	NDR_SPOOLSS_PULL_ENUM_IN_COMMON(fn); \
+} while(0)
+
+#define NDR_SPOOLSS_PULL_ENUM_OUT_LEVEL(fn) do { \
 	_r.in.level	= r->in.level;\
 	_r.in.buffer	= r->in.buffer;\
 	_r.in.offered	= r->in.offered;\
@@ -150,6 +215,53 @@
 			NDR_CHECK(ndr_pull___##fn(_ndr_info, flags, &__r));\
 			*r->out.info	= __r.out.info;\
 		}\
+	}\
+} while(0)
+
+#define NDR_SPOOLSS_PULL_ENUM_OUT(fn) do { \
+	_r.in.buffer	= r->in.buffer;\
+	_r.in.offered	= r->in.offered;\
+	_r.out.needed	= r->out.needed;\
+	_r.out.count	= r->out.count;\
+	NDR_CHECK(ndr_pull__##fn(ndr, flags, &_r));\
+	if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {\
+		NDR_PULL_ALLOC(ndr, r->out.info);\
+	}\
+	*r->out.info = NULL;\
+	r->out.needed	= _r.out.needed;\
+	r->out.count	= _r.out.count;\
+	r->out.result	= _r.out.result;\
+	if (_r.out.info) {\
+		struct ndr_pull *_ndr_info;\
+		NDR_PULL_ALLOC(ndr, *r->out.info);\
+		_ndr_info = ndr_pull_init_blob(_r.out.info, *r->out.info);\
+		NDR_ERR_HAVE_NO_MEMORY(_ndr_info);\
+		_ndr_info->flags= ndr->flags;\
+		if (r->in.offered != _ndr_info->data_size) {\
+			return ndr_pull_error(ndr, NDR_ERR_BUFSIZE,\
+				"SPOOLSS Buffer: offered[%u] doesn't match length of buffer[%u]",\
+				(unsigned)r->in.offered, (unsigned)_ndr_info->data_size);\
+		}\
+		if (*r->out.needed <= _ndr_info->data_size) {\
+			struct __##fn __r;\
+			__r.in.count	= *r->out.count;\
+			__r.out.info	= NULL;\
+			NDR_CHECK(ndr_pull___##fn(_ndr_info, flags, &__r));\
+			*r->out.info	= __r.out.info;\
+		}\
+	}\
+} while(0)
+
+#define NDR_SPOOLSS_PULL_ENUM_LEVEL(fn,in,out) do { \
+	struct _##fn _r;\
+	if (flags & NDR_IN) {\
+		out;\
+		NDR_SPOOLSS_PULL_ENUM_IN_LEVEL(fn);\
+		in;\
+	}\
+	if (flags & NDR_OUT) {\
+		out;\
+		NDR_SPOOLSS_PULL_ENUM_OUT_LEVEL(fn);\
 	}\
 } while(0)
 
@@ -209,7 +321,7 @@
 */
 enum ndr_err_code ndr_push_spoolss_EnumPrinters(struct ndr_push *ndr, int flags, const struct spoolss_EnumPrinters *r)
 {
-	NDR_SPOOLSS_PUSH_ENUM(spoolss_EnumPrinters,{
+	NDR_SPOOLSS_PUSH_ENUM_LEVEL(spoolss_EnumPrinters,{
 		_r.in.flags	= r->in.flags;
 		_r.in.server	= r->in.server;
 	},{
@@ -221,7 +333,7 @@ enum ndr_err_code ndr_push_spoolss_EnumPrinters(struct ndr_push *ndr, int flags,
 
 enum ndr_err_code ndr_pull_spoolss_EnumPrinters(struct ndr_pull *ndr, int flags, struct spoolss_EnumPrinters *r)
 {
-	NDR_SPOOLSS_PULL_ENUM(spoolss_EnumPrinters,{
+	NDR_SPOOLSS_PULL_ENUM_LEVEL(spoolss_EnumPrinters,{
 		r->in.flags	= _r.in.flags;
 		r->in.server	= _r.in.server;
 	},{
@@ -241,7 +353,7 @@ uint32_t ndr_size_spoolss_EnumPrinters_info(TALLOC_CTX *mem_ctx, uint32_t level,
 */
 enum ndr_err_code ndr_push_spoolss_EnumJobs(struct ndr_push *ndr, int flags, const struct spoolss_EnumJobs *r)
 {
-	NDR_SPOOLSS_PUSH_ENUM(spoolss_EnumJobs,{
+	NDR_SPOOLSS_PUSH_ENUM_LEVEL(spoolss_EnumJobs,{
 		_r.in.handle	= r->in.handle;
 		_r.in.firstjob	= r->in.firstjob;
 		_r.in.numjobs	= r->in.numjobs;
@@ -255,7 +367,7 @@ enum ndr_err_code ndr_push_spoolss_EnumJobs(struct ndr_push *ndr, int flags, con
 
 enum ndr_err_code ndr_pull_spoolss_EnumJobs(struct ndr_pull *ndr, int flags, struct spoolss_EnumJobs *r)
 {
-	NDR_SPOOLSS_PULL_ENUM(spoolss_EnumJobs,{
+	NDR_SPOOLSS_PULL_ENUM_LEVEL(spoolss_EnumJobs,{
 		r->in.handle	= _r.in.handle;
 		r->in.firstjob	= _r.in.firstjob;
 		r->in.numjobs	= _r.in.numjobs;
@@ -277,7 +389,7 @@ uint32_t ndr_size_spoolss_EnumJobs_info(TALLOC_CTX *mem_ctx, uint32_t level, uin
 */
 enum ndr_err_code ndr_push_spoolss_EnumPrinterDrivers(struct ndr_push *ndr, int flags, const struct spoolss_EnumPrinterDrivers *r)
 {
-	NDR_SPOOLSS_PUSH_ENUM(spoolss_EnumPrinterDrivers,{
+	NDR_SPOOLSS_PUSH_ENUM_LEVEL(spoolss_EnumPrinterDrivers,{
 		_r.in.server		= r->in.server;
 		_r.in.environment	= r->in.environment;
 	},{
@@ -289,7 +401,7 @@ enum ndr_err_code ndr_push_spoolss_EnumPrinterDrivers(struct ndr_push *ndr, int 
 
 enum ndr_err_code ndr_pull_spoolss_EnumPrinterDrivers(struct ndr_pull *ndr, int flags, struct spoolss_EnumPrinterDrivers *r)
 {
-	NDR_SPOOLSS_PULL_ENUM(spoolss_EnumPrinterDrivers,{
+	NDR_SPOOLSS_PULL_ENUM_LEVEL(spoolss_EnumPrinterDrivers,{
 		r->in.server		= _r.in.server;
 		r->in.environment	= _r.in.environment;
 	},{
@@ -309,7 +421,7 @@ uint32_t ndr_size_spoolss_EnumPrinterDrivers_info(TALLOC_CTX *mem_ctx, uint32_t 
 */
 enum ndr_err_code ndr_push_spoolss_EnumForms(struct ndr_push *ndr, int flags, const struct spoolss_EnumForms *r)
 {
-	NDR_SPOOLSS_PUSH_ENUM(spoolss_EnumForms,{
+	NDR_SPOOLSS_PUSH_ENUM_LEVEL(spoolss_EnumForms,{
 		_r.in.handle	= r->in.handle;
 	},{
 		_r.in.handle	= r->in.handle;
@@ -319,7 +431,7 @@ enum ndr_err_code ndr_push_spoolss_EnumForms(struct ndr_push *ndr, int flags, co
 
 enum ndr_err_code ndr_pull_spoolss_EnumForms(struct ndr_pull *ndr, int flags, struct spoolss_EnumForms *r)
 {
-	NDR_SPOOLSS_PULL_ENUM(spoolss_EnumForms,{
+	NDR_SPOOLSS_PULL_ENUM_LEVEL(spoolss_EnumForms,{
 		r->in.handle	= _r.in.handle;
 	},{
 		_r.in.handle	= r->in.handle;
@@ -337,7 +449,7 @@ uint32_t ndr_size_spoolss_EnumForms_info(TALLOC_CTX *mem_ctx, uint32_t level, ui
 */
 enum ndr_err_code ndr_push_spoolss_EnumPorts(struct ndr_push *ndr, int flags, const struct spoolss_EnumPorts *r)
 {
-	NDR_SPOOLSS_PUSH_ENUM(spoolss_EnumPorts,{
+	NDR_SPOOLSS_PUSH_ENUM_LEVEL(spoolss_EnumPorts,{
 		_r.in.servername= r->in.servername;
 	},{
 		_r.in.servername= r->in.servername;
@@ -347,7 +459,7 @@ enum ndr_err_code ndr_push_spoolss_EnumPorts(struct ndr_push *ndr, int flags, co
 
 enum ndr_err_code ndr_pull_spoolss_EnumPorts(struct ndr_pull *ndr, int flags, struct spoolss_EnumPorts *r)
 {
-	NDR_SPOOLSS_PULL_ENUM(spoolss_EnumPorts,{
+	NDR_SPOOLSS_PULL_ENUM_LEVEL(spoolss_EnumPorts,{
 		r->in.servername= _r.in.servername;
 	},{
 		_r.in.servername= r->in.servername;
@@ -365,7 +477,7 @@ uint32_t ndr_size_spoolss_EnumPorts_info(TALLOC_CTX *mem_ctx, uint32_t level, ui
 */
 enum ndr_err_code ndr_push_spoolss_EnumMonitors(struct ndr_push *ndr, int flags, const struct spoolss_EnumMonitors *r)
 {
-	NDR_SPOOLSS_PUSH_ENUM(spoolss_EnumMonitors,{
+	NDR_SPOOLSS_PUSH_ENUM_LEVEL(spoolss_EnumMonitors,{
 		_r.in.servername= r->in.servername;
 	},{
 		_r.in.servername= r->in.servername;
@@ -375,7 +487,7 @@ enum ndr_err_code ndr_push_spoolss_EnumMonitors(struct ndr_push *ndr, int flags,
 
 enum ndr_err_code ndr_pull_spoolss_EnumMonitors(struct ndr_pull *ndr, int flags, struct spoolss_EnumMonitors *r)
 {
-	NDR_SPOOLSS_PULL_ENUM(spoolss_EnumMonitors,{
+	NDR_SPOOLSS_PULL_ENUM_LEVEL(spoolss_EnumMonitors,{
 		r->in.servername= _r.in.servername;
 	},{
 		_r.in.servername= r->in.servername;
@@ -393,7 +505,7 @@ uint32_t ndr_size_spoolss_EnumMonitors_info(TALLOC_CTX *mem_ctx, uint32_t level,
 */
 enum ndr_err_code ndr_push_spoolss_EnumPrintProcessors(struct ndr_push *ndr, int flags, const struct spoolss_EnumPrintProcessors *r)
 {
-	NDR_SPOOLSS_PUSH_ENUM(spoolss_EnumPrintProcessors,{
+	NDR_SPOOLSS_PUSH_ENUM_LEVEL(spoolss_EnumPrintProcessors,{
 		_r.in.servername	= r->in.servername;
 		_r.in.environment	= r->in.environment;
 	},{
@@ -405,7 +517,7 @@ enum ndr_err_code ndr_push_spoolss_EnumPrintProcessors(struct ndr_push *ndr, int
 
 enum ndr_err_code ndr_pull_spoolss_EnumPrintProcessors(struct ndr_pull *ndr, int flags, struct spoolss_EnumPrintProcessors *r)
 {
-	NDR_SPOOLSS_PULL_ENUM(spoolss_EnumPrintProcessors,{
+	NDR_SPOOLSS_PULL_ENUM_LEVEL(spoolss_EnumPrintProcessors,{
 		r->in.servername	= _r.in.servername;
 		r->in.environment	= _r.in.environment;
 	},{
@@ -426,7 +538,7 @@ uint32_t ndr_size_spoolss_EnumPrintProcessors_info(TALLOC_CTX *mem_ctx,
 */
 enum ndr_err_code ndr_push_spoolss_EnumPrintProcessorDataTypes(struct ndr_push *ndr, int flags, const struct spoolss_EnumPrintProcessorDataTypes *r)
 {
-	NDR_SPOOLSS_PUSH_ENUM(spoolss_EnumPrintProcessorDataTypes,{
+	NDR_SPOOLSS_PUSH_ENUM_LEVEL(spoolss_EnumPrintProcessorDataTypes,{
 		_r.in.servername		= r->in.servername;
 		_r.in.print_processor_name	= r->in.print_processor_name;
 	},{
@@ -438,7 +550,7 @@ enum ndr_err_code ndr_push_spoolss_EnumPrintProcessorDataTypes(struct ndr_push *
 
 enum ndr_err_code ndr_pull_spoolss_EnumPrintProcessorDataTypes(struct ndr_pull *ndr, int flags, struct spoolss_EnumPrintProcessorDataTypes *r)
 {
-	NDR_SPOOLSS_PULL_ENUM(spoolss_EnumPrintProcessorDataTypes,{
+	NDR_SPOOLSS_PULL_ENUM_LEVEL(spoolss_EnumPrintProcessorDataTypes,{
 		r->in.servername		= _r.in.servername;
 		r->in.print_processor_name	= _r.in.print_processor_name;
 	},{
@@ -452,6 +564,34 @@ uint32_t ndr_size_spoolss_EnumPrintProcessorDataTypes_info(TALLOC_CTX *mem_ctx,
 						      uint32_t level, uint32_t count, union spoolss_PrintProcDataTypesInfo *info)
 {
 	NDR_SPOOLSS_SIZE_ENUM_LEVEL(spoolss_EnumPrintProcessorDataTypes);
+}
+
+/*
+  spoolss_EnumPerMachineConnections
+*/
+enum ndr_err_code ndr_push_spoolss_EnumPerMachineConnections(struct ndr_push *ndr, int flags, const struct spoolss_EnumPerMachineConnections *r)
+{
+	NDR_SPOOLSS_PUSH_ENUM(spoolss_EnumPerMachineConnections,{
+		_r.in.server	= r->in.server;
+	},{
+		_r.in.server	= r->in.server;
+	});
+	return NDR_ERR_SUCCESS;
+}
+
+enum ndr_err_code ndr_pull_spoolss_EnumPerMachineConnections(struct ndr_pull *ndr, int flags, struct spoolss_EnumPerMachineConnections *r)
+{
+	NDR_SPOOLSS_PULL_ENUM(spoolss_EnumPerMachineConnections,{
+		r->in.server	= _r.in.server;
+	},{
+		_r.in.server	= r->in.server;
+	});
+	return NDR_ERR_SUCCESS;
+}
+
+uint32_t ndr_size_spoolss_EnumPerMachineConnections_info(TALLOC_CTX *mem_ctx, uint32_t count, struct spoolss_PrinterInfo4 *info)
+{
+	NDR_SPOOLSS_SIZE_ENUM(spoolss_EnumPerMachineConnections);
 }
 
 /*
@@ -1096,7 +1236,7 @@ _PUBLIC_ enum ndr_err_code ndr_pull_spoolss_DriverInfo101(struct ndr_pull *ndr, 
 void ndr_print_spoolss_Field(struct ndr_print *ndr, const char *name, const union spoolss_Field *r)
 {
 	int level;
-	level = ndr_print_get_switch_value(ndr, r);
+	level = ndr_print_steal_switch_value(ndr, r);
 	ndr_print_union(ndr, name, level, "spoolss_Field");
 	switch (level) {
 		case PRINTER_NOTIFY_TYPE:

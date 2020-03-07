@@ -32,6 +32,8 @@
 #include "librpc/rpc/dcerpc_roh.h"
 #include "librpc/rpc/dcerpc_proto.h"
 #include "lib/param/param.h"
+#include "libcli/http/http.h"
+#include "lib/util/util_net.h"
 
 static ssize_t tstream_roh_pending_bytes(struct tstream_context *stream);
 static struct tevent_req * tstream_roh_readv_send(
@@ -118,8 +120,108 @@ NTSTATUS dcerpc_pipe_open_roh_recv(struct tevent_req *req,
 	ZERO_STRUCTP(roh_stream_ctx);
 
 	roh_stream_ctx->roh_conn = talloc_move(mem_ctx, &state->roh);
-	*queue = roh_stream_ctx->roh_conn->default_channel_in->send_queue;
+	*queue = http_conn_send_queue(
+			roh_stream_ctx->roh_conn->default_channel_in->http_conn);
 
+	tevent_req_received(req);
+
+	return NT_STATUS_OK;
+}
+
+struct roh_connect_channel_state {
+	struct roh_channel *channel;
+};
+
+static void roh_connect_channel_done(struct tevent_req *subreq);
+static struct tevent_req *roh_connect_channel_send(TALLOC_CTX *mem_ctx,
+					struct tevent_context *ev,
+					const char *rpcproxy_ip_address,
+					unsigned int rpcproxy_port,
+					struct cli_credentials *credentials,
+					bool tls,
+					struct tstream_tls_params *tls_params)
+{
+	struct tevent_req *req = NULL;
+	struct tevent_req *subreq = NULL;
+	struct roh_connect_channel_state *state = NULL;
+
+	DBG_DEBUG("Connecting ROH channel socket, RPC proxy is "
+		  "%s:%d (TLS: %s)\n", rpcproxy_ip_address, rpcproxy_port,
+		  (tls ? "true" : "false"));
+
+	req = tevent_req_create(mem_ctx, &state,
+				struct roh_connect_channel_state);
+	if (req == NULL) {
+		return NULL;
+	}
+
+	if (!is_ipaddress(rpcproxy_ip_address)) {
+		DBG_ERR("Invalid host (%s), needs to be an IP address\n",
+			rpcproxy_ip_address);
+		tevent_req_nterror(req, NT_STATUS_INVALID_PARAMETER);
+		return tevent_req_post(req, ev);
+	}
+
+	/* Initialize channel structure */
+	state->channel = talloc_zero(state, struct roh_channel);
+	if (tevent_req_nomem(state->channel, req)) {
+		return tevent_req_post(req, ev);
+	}
+
+	state->channel->channel_cookie = GUID_random();
+
+	subreq = http_connect_send(state,
+				   ev,
+				   rpcproxy_ip_address,
+				   rpcproxy_port,
+				   credentials,
+				   tls ? tls_params : NULL);
+	if (tevent_req_nomem(subreq, req)) {
+		return tevent_req_post(req, ev);
+	}
+	tevent_req_set_callback(subreq, roh_connect_channel_done, req);
+
+	return req;
+}
+
+static void roh_connect_channel_done(struct tevent_req *subreq)
+{
+	struct tevent_req *req = NULL;
+	struct roh_connect_channel_state *state = NULL;
+	NTSTATUS status;
+	int ret;
+
+	req = tevent_req_callback_data(subreq, struct tevent_req);
+	state = tevent_req_data(req, struct roh_connect_channel_state);
+
+	ret = http_connect_recv(subreq,
+				state->channel,
+				&state->channel->http_conn);
+	TALLOC_FREE(subreq);
+	if (ret != 0) {
+		status = map_nt_error_from_unix_common(ret);
+		tevent_req_nterror(req, status);
+		return;
+	}
+
+	DBG_DEBUG("HTTP connected\n");
+	tevent_req_done(req);
+}
+
+static NTSTATUS roh_connect_channel_recv(struct tevent_req *req,
+					 TALLOC_CTX *mem_ctx,
+					 struct roh_channel **channel)
+{
+	struct roh_connect_channel_state *state = tevent_req_data(
+		req, struct roh_connect_channel_state);
+	NTSTATUS status;
+
+	if (tevent_req_is_nterror(req, &status)) {
+		tevent_req_received(req);
+		return status;
+	}
+
+	*channel = talloc_move(mem_ctx, &state->channel);
 	tevent_req_received(req);
 
 	return NT_STATUS_OK;
@@ -247,13 +349,13 @@ static void roh_continue_resolve_name(struct composite_context *ctx)
 	 * always use local proxy. Otherwise, run the proxy use discovery
 	 */
 	state->roh->connection_state = ROH_STATE_OPEN_START;
-	subreq = roh_connect_channel_in_send(state,
-					     state->event_ctx,
-					     state->rpcproxy_addresses[state->rpcproxy_address_index],
-					     state->rpc_proxy_port,
-					     state->credentials,
-					     state->roh, state->tls,
-					     state->tls_params);
+	subreq = roh_connect_channel_send(state,
+					  state->event_ctx,
+					  state->rpcproxy_addresses[state->rpcproxy_address_index],
+					  state->rpc_proxy_port,
+					  state->credentials,
+					  state->tls,
+					  state->tls_params);
 	if (tevent_req_nomem(subreq, state->req)) {
 		return;
 	}
@@ -270,20 +372,20 @@ static void roh_connect_channel_in_done(struct tevent_req *subreq)
 	req = tevent_req_callback_data(subreq, struct tevent_req);
 	state = tevent_req_data(req, struct roh_open_connection_state);
 
-	status = roh_connect_channel_in_recv(subreq);
+	status = roh_connect_channel_recv(subreq, state->roh,
+					  &state->roh->default_channel_in);
 	TALLOC_FREE(subreq);
 	if (tevent_req_nterror(req, status)) {
 		return;
 	}
 
-	subreq = roh_connect_channel_out_send(state,
-					      state->event_ctx,
-					      state->rpcproxy_addresses[state->rpcproxy_address_index],
-					      state->rpc_proxy_port,
-					      state->credentials,
-					      state->roh,
-					      state->tls,
-					      state->tls_params);
+	subreq = roh_connect_channel_send(state,
+					  state->event_ctx,
+					  state->rpcproxy_addresses[state->rpcproxy_address_index],
+					  state->rpc_proxy_port,
+					  state->credentials,
+					  state->tls,
+					  state->tls_params);
 	if (tevent_req_nomem(subreq, req)) {
 		return;
 	}
@@ -300,7 +402,8 @@ static void roh_connect_channel_out_done(struct tevent_req *subreq)
 	req = tevent_req_callback_data(subreq, struct tevent_req);
 	state = tevent_req_data(req, struct roh_open_connection_state);
 
-	status = roh_connect_channel_out_recv(subreq);
+	status = roh_connect_channel_recv(subreq, state->roh,
+					  &state->roh->default_channel_out);
 	TALLOC_FREE(subreq);
 	if (tevent_req_nterror(req, status)) {
 		return;
@@ -496,6 +599,7 @@ static void roh_recv_CONN_C2_done(struct tevent_req *subreq)
 static ssize_t tstream_roh_pending_bytes(struct tstream_context *stream)
 {
 	struct tstream_roh_context *ctx = NULL;
+	struct tstream_context *tstream = NULL;
 
 	ctx = tstream_context_data(stream, struct tstream_roh_context);
 	if (!ctx->roh_conn) {
@@ -503,7 +607,13 @@ static ssize_t tstream_roh_pending_bytes(struct tstream_context *stream)
 		return -1;
 	}
 
-	return tstream_pending_bytes(ctx->roh_conn->default_channel_out->streams.active);
+	tstream = http_conn_tstream(
+		ctx->roh_conn->default_channel_out->http_conn);
+	if (tstream == NULL) {
+		errno = ENOTCONN;
+		return -1;
+	}
+	return tstream_pending_bytes(tstream);
 }
 
 struct tstream_roh_readv_state {
@@ -521,6 +631,7 @@ static struct tevent_req * tstream_roh_readv_send(TALLOC_CTX *mem_ctx,
 	struct tstream_roh_context *ctx = NULL;
 	struct tstream_roh_readv_state *state;
 	struct tevent_req *req, *subreq;
+	struct tstream_context *channel_stream = NULL;
 
 	req = tevent_req_create(mem_ctx, &state, struct tstream_roh_readv_state);
 	if (!req) {
@@ -536,7 +647,9 @@ static struct tevent_req * tstream_roh_readv_send(TALLOC_CTX *mem_ctx,
 		tevent_req_error(req, ENOTCONN);
 		goto post;
 	}
-	if (!ctx->roh_conn->default_channel_out->streams.active) {
+	channel_stream = http_conn_tstream(
+		ctx->roh_conn->default_channel_out->http_conn);
+	if (channel_stream == NULL) {
 		tevent_req_error(req, ENOTCONN);
 		goto post;
 	}
@@ -544,7 +657,7 @@ static struct tevent_req * tstream_roh_readv_send(TALLOC_CTX *mem_ctx,
 	state->roh_conn = ctx->roh_conn;
 
 	subreq = tstream_readv_send(state, ev,
-				    ctx->roh_conn->default_channel_out->streams.active,
+				    channel_stream,
 				    vector, count);
 	if (tevent_req_nomem(subreq, req)) {
 		goto post;
@@ -609,6 +722,7 @@ static struct tevent_req * tstream_roh_writev_send(TALLOC_CTX *mem_ctx,
 	struct tstream_roh_writev_state *state = NULL;
 	struct tevent_req *req = NULL;
 	struct tevent_req *subreq = NULL;
+	struct tstream_context *channel_stream = NULL;
 
 	req = tevent_req_create(mem_ctx, &state,
 			struct tstream_roh_writev_state);
@@ -625,7 +739,9 @@ static struct tevent_req * tstream_roh_writev_send(TALLOC_CTX *mem_ctx,
 		tevent_req_error(req, ENOTCONN);
 		goto post;
 	}
-	if (!ctx->roh_conn->default_channel_in->streams.active) {
+	channel_stream = http_conn_tstream(
+		ctx->roh_conn->default_channel_in->http_conn);
+	if (channel_stream == NULL) {
 		tevent_req_error(req, ENOTCONN);
 		goto post;
 	}
@@ -633,7 +749,7 @@ static struct tevent_req * tstream_roh_writev_send(TALLOC_CTX *mem_ctx,
 	state->roh_conn = ctx->roh_conn;
 
 	subreq = tstream_writev_send(state, ev,
-				     ctx->roh_conn->default_channel_in->streams.active,
+				     channel_stream,
 				     vector, count);
 	if (tevent_req_nomem(subreq, req)) {
 		goto post;
@@ -712,12 +828,11 @@ static struct tevent_req * tstream_roh_disconnect_send(TALLOC_CTX *mem_ctx,
 		tevent_req_error(req, ENOTCONN);
 		goto post;
 	}
-	if (!ctx->roh_conn->default_channel_in->streams.active) {
-		tevent_req_error(req, ENOTCONN);
-		goto post;
-	}
 
-	subreq = tstream_disconnect_send(state, ev, ctx->roh_conn->default_channel_in->streams.active);
+	subreq = http_disconnect_send(
+			state,
+			ev,
+			ctx->roh_conn->default_channel_in->http_conn);
 	if (tevent_req_nomem(subreq, req)) {
 		goto post;
 	}
@@ -738,24 +853,24 @@ static void tstream_roh_disconnect_channel_in_handler(struct tevent_req *subreq)
 	struct tstream_context *stream;
 	struct tstream_roh_context *roh_stream;
 	int ret;
-	int sys_errno;
 
 	req = tevent_req_callback_data(subreq, struct tevent_req);
 	state = tevent_req_data(req, struct tstream_roh_disconnect_state);
 	stream = state->stream;
 	roh_stream = tstream_context_data(stream, struct tstream_roh_context);
 
-	ret = tstream_disconnect_recv(subreq, &sys_errno);
+	ret = http_disconnect_recv(subreq);
 	TALLOC_FREE(subreq);
-	if (ret == -1) {
-		tevent_req_error(req, sys_errno);
+	if (ret != 0) {
+		tevent_req_error(req, ret);
 		return;
 	}
 	TALLOC_FREE(roh_stream->roh_conn->default_channel_in);
 
-	subreq = tstream_disconnect_send(state,
-					 state->ev,
-					 roh_stream->roh_conn->default_channel_out->streams.raw);
+	subreq = http_disconnect_send(
+			state,
+			state->ev,
+			roh_stream->roh_conn->default_channel_out->http_conn);
 	if (tevent_req_nomem(subreq, req)) {
 		return;
 	}
@@ -771,17 +886,16 @@ static void tstream_roh_disconnect_channel_out_handler(struct tevent_req *subreq
 	struct tstream_context *stream;
 	struct tstream_roh_context *roh_stream;
 	int ret;
-	int sys_errno;
 
 	req = tevent_req_callback_data(subreq, struct tevent_req);
 	state = tevent_req_data(req, struct tstream_roh_disconnect_state);
 	stream =  state->stream;
 	roh_stream = tstream_context_data(stream, struct tstream_roh_context);
 
-	ret = tstream_disconnect_recv(subreq, &sys_errno);
+	ret = http_disconnect_recv(subreq);
 	TALLOC_FREE(subreq);
-	if (ret == -1) {
-		tevent_req_error(req, sys_errno);
+	if (ret != 0) {
+		tevent_req_error(req, ret);
 		return;
 	}
 	TALLOC_FREE(roh_stream->roh_conn->default_channel_out);
