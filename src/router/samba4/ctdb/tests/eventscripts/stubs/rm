@@ -1,6 +1,0 @@
-#!/bin/sh
-# Make statd-callout happy
-case "$*" in
-    */var/lib/nfs/statd/sm*) : ;;
-    *) exec /bin/rm "$@" ;;
-esac

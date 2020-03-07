@@ -1,9 +1,0 @@
-#!/bin/sh
-
-# Only supports reading from stdin
-
-iface="$1"  # ignored
-
-while read src dst ; do
-	sed -i -e "/^${dst} ${src}\$/d" "$FAKE_NETSTAT_TCP_ESTABLISHED_FILE"
-done
