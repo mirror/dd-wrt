@@ -65,7 +65,7 @@ struct ctdb_sticky_record {
 }
 
 /*
-  a varient of input packet that can be used in lock requeue
+  a variant of input packet that can be used in lock requeue
 */
 static void ctdb_call_input_pkt(void *p, struct ctdb_req_header *hdr)
 {
@@ -484,7 +484,7 @@ static void *insert_ddq_callback(void *parm, void *data)
 }
 
 /**
- * This function is used to reigster a key in database that needs to be updated.
+ * This function is used to register a key in database that needs to be updated.
  * Any requests for that key should get deferred till this is completed.
  */
 static int dmaster_defer_setup(struct ctdb_db_context *ctdb_db,
@@ -508,7 +508,7 @@ static int dmaster_defer_setup(struct ctdb_db_context *ctdb_db,
 			return 0;
 		}
 
-		/* Recovery ocurred - get rid of old queue. All the deferred
+		/* Recovery occurred - get rid of old queue. All the deferred
 		 * requests will be resent anyway from ctdb_call_resend_db.
 		 */
 		talloc_free(ddq);
@@ -822,7 +822,7 @@ ctdb_defer_pinned_down_request(struct ctdb_context *ctdb, struct ctdb_db_context
 
 static void
 ctdb_update_db_stat_hot_keys(struct ctdb_db_context *ctdb_db, TDB_DATA key,
-			     int count)
+			     unsigned int count)
 {
 	int i, id;
 	char *keystr;
@@ -1044,7 +1044,7 @@ void ctdb_request_call(struct ctdb_context *ctdb, struct ctdb_req_header *hdr)
 		}
 	}
 	if ((c->flags & CTDB_WANT_READONLY) 
-	&&  (call->call_id == CTDB_FETCH_WITH_HEADER_FUNC)) {
+	&&  ((unsigned int)call->call_id == CTDB_FETCH_WITH_HEADER_FUNC)) {
 		TDB_DATA tdata;
 
 		tdata = tdb_fetch(ctdb_db->rottdb, call->key);
@@ -1983,7 +1983,7 @@ static void ctdb_migration_count_handler(TDB_DATA key, uint64_t counter,
 {
 	struct ctdb_db_context *ctdb_db = talloc_get_type_abort(
 		private_data, struct ctdb_db_context);
-	int value;
+	unsigned int value;
 
 	value = (counter < INT_MAX ? counter : INT_MAX);
 	ctdb_update_db_stat_hot_keys(ctdb_db, key, value);

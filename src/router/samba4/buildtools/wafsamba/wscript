@@ -5,7 +5,7 @@
 import os, sys
 from waflib import Configure, Logs, Options, Utils, Context, Errors
 import wafsamba
-from samba_utils import os_path_relpath
+from samba_utils import symlink
 from optparse import SUPPRESS_HELP
 
 # this forces configure to be re-run if any of the configure
@@ -91,7 +91,7 @@ def options(opt):
     gr = opt.option_group('developer options')
 
     gr.add_option('-C',
-                   help='enable configure cacheing',
+                   help='enable configure caching',
                    action='store_true', dest='enable_configure_cache')
     gr.add_option('--enable-auto-reconfigure',
                    help='enable automatic reconfigure on build',
@@ -102,17 +102,16 @@ def options(opt):
     gr.add_option('--enable-developer',
                    help=("Turn on developer warnings and debugging"),
                    action="store_true", dest='developer', default=False)
+    gr.add_option('--pidl-developer',
+                   help=("annotate PIDL-generated code for developers"),
+                   action="store_true", dest='pidl_developer', default=False)
+    gr.add_option('--disable-warnings-as-errors',
+                   help=("Do not treat all warnings as errors (disable -Werror)"),
+                   action="store_true", dest='disable_warnings_as_errors', default=False)
     opt.add_option('--enable-coverage',
                    help=("enable options necessary for code coverage "
                          "reporting on selftest (default=no)"),
                    action="store_true", dest='enable_coverage', default=False)
-    def picky_developer_callback(option, opt_str, value, parser):
-        parser.values.developer = True
-        parser.values.picky_developer = True
-    gr.add_option('--picky-developer',
-                   help=("Treat all warnings as errors (enable -Werror)"),
-                   action="callback", callback=picky_developer_callback,
-                   dest='picky_developer', default=False)
     gr.add_option('--fatal-errors',
                    help=("Stop compilation on first error (enable -Wfatal-errors)"),
                    action="store_true", dest='fatal_errors', default=False)
@@ -133,6 +132,19 @@ def options(opt):
         action="store_true",
         dest='undefined_sanitizer',
         default=False)
+    gr.add_option('--enable-libfuzzer',
+                  help=("Build fuzzing binaries (use ADDITIONAL_CFLAGS to specify compiler options for libFuzzer or use CC=honggfuzz/hfuzz-cc)"),
+                  action="store_true", dest='enable_libfuzzer', default=False)
+    gr.add_option('--enable-afl-fuzzer',
+                  help=("Build fuzzing binaries AFL-style (typically use with CC=afl-gcc)"),
+                  action="store_true", dest='enable_afl_fuzzer', default=False)
+
+    # Fuzz targets may need additional LDFLAGS that we can't use on
+    # internal binaries like asn1_compile
+
+    gr.add_option('--fuzz-target-ldflags',
+                  help=("Linker flags to be used when building fuzz targets"),
+                  action="store", dest='FUZZ_TARGET_LDFLAGS', default='')
 
     gr.add_option('--abi-check',
 		   help=("Check ABI signatures for libraries"),
@@ -594,6 +606,22 @@ struct foo bar = { .y = 'X', .x = 1 };
                     eprintf("bla", "bar")
                     ''', define='HAVE__VA_ARGS__MACRO')
 
+    conf.env.enable_fuzzing = False
+
+    conf.env.enable_libfuzzer = Options.options.enable_libfuzzer
+    conf.env.enable_afl_fuzzer = Options.options.enable_afl_fuzzer
+    if conf.env.enable_libfuzzer or conf.env.enable_afl_fuzzer:
+        conf.env.enable_fuzzing = True
+        conf.DEFINE('FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION', 1)
+        conf.env.FUZZ_TARGET_LDFLAGS = Options.options.FUZZ_TARGET_LDFLAGS
+
+    conf.load('clang_compilation_database')
+
+    # Create a symlink of the compile db for clangd
+    symlink(os.path.join(conf.bldnode.abspath(), 'default/compile_commands.json'),
+            os.path.join(conf.srcnode.abspath(), 'compile_commands.json'),
+            force=True)
+
     conf.SAMBA_BUILD_ENV()
 
 
@@ -601,7 +629,7 @@ def build(bld):
     # give a more useful message if the source directory has moved
     curdir = bld.path.abspath()
     srcdir = bld.srcnode.abspath()
-    relpath = os_path_relpath(curdir, srcdir)
+    relpath = os.path.relpath(curdir, srcdir)
     if relpath.find('../') != -1:
         Logs.error('bld.path %s is not a child of %s' % (curdir, srcdir))
         raise Errors.WafError('''The top source directory has moved. Please run distclean and reconfigure''')

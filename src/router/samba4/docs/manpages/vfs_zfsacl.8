@@ -2,12 +2,12 @@
 .\"     Title: vfs_zfsacl
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/14/2020
+.\"      Date: 03/03/2020
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.11.5
+.\"    Source: Samba 4.12.0
 .\"  Language: English
 .\"
-.TH "VFS_ZFSACL" "8" "01/14/2020" "Samba 4\&.11\&.5" "System Administration tools"
+.TH "VFS_ZFSACL" "8" "03/03/2020" "Samba 4\&.12\&.0" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -130,7 +130,7 @@ dontcare (default)
 .sp -1
 .IP \(bu 2.3
 .\}
-reject
+reject (deprecated)
 \- stop operation and exit with error on ACL set op
 .RE
 .sp
@@ -142,7 +142,7 @@ reject
 .sp -1
 .IP \(bu 2.3
 .\}
-ignore
+ignore (deprecated)
 \- don\*(Aqt include the second matching ACE
 .RE
 .sp
@@ -196,6 +196,69 @@ no (default)
 .sp
 .RE
 .RE
+.PP
+zfsacl:denymissingspecial = [yes|no]
+.RS 4
+Prevent users from setting an ACL that lacks NFSv4 special entries (owner@, group@, everyone@)\&. ZFS will automatically generate these these entries when calculating the inherited ACL of new files if the ACL of the parent directory lacks an inheriting special entry\&. This may result in user confusion and unexpected change in permissions of files and directories as the inherited ACL is generated\&.
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+yes
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+no (default)
+.RE
+.sp
+.RE
+.RE
+.PP
+zfsacl:map_dacl_protected = [yes|no]
+.RS 4
+If enabled and the ZFS ACL on the underlying filesystem does not contain any inherited access control entires, then set the SEC_DESC_DACL_PROTECTED flag on the Security Descriptor returned to SMB clients\&. This ensures correct Windows client behavior when disabling inheritance on directories\&.
+.sp
+Following is the behaviour of Samba for different values :
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+yes
+\- Enable mapping to SEC_DESC_DACL_PROTECTED
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+no (default)
+.RE
+.sp
+.RE
+.RE
 .SH "EXAMPLES"
 .PP
 A ZFS mount can be exported via Samba as follows :
@@ -207,7 +270,7 @@ A ZFS mount can be exported via Samba as follows :
         \fI[samba_zfs_share]\fR
 	\m[blue]\fBvfs objects = zfsacl\fR\m[]
 	\m[blue]\fBpath = /test/zfs_mount\fR\m[]
-	\m[blue]\fBnfs4: mode = special\fR\m[]
+	\m[blue]\fBnfs4: mode = simple\fR\m[]
 	\m[blue]\fBnfs4: acedup = merge\fR\m[]
 .fi
 .if n \{\
@@ -215,7 +278,7 @@ A ZFS mount can be exported via Samba as follows :
 .\}
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.11\&.5 of the Samba suite\&.
+This man page is part of version 4\&.12\&.0 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

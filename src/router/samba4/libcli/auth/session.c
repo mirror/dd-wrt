@@ -29,28 +29,35 @@
   before calling, the out blob must be initialised to be the same size
   as the in blob
 */
-void sess_crypt_blob(DATA_BLOB *out, const DATA_BLOB *in, const DATA_BLOB *session_key,
-		     bool forward)
+int sess_crypt_blob(DATA_BLOB *out, const DATA_BLOB *in, const DATA_BLOB *session_key,
+		    enum samba_gnutls_direction encrypt)
 {
-	int i, k;
+	int i, k, rc;
+
+	if (in->length % 8 != 0) {
+		return GNUTLS_E_INVALID_REQUEST;
+	}
 
 	for (i=0,k=0;
 	     i<in->length;
 	     i += 8, k += 7) {
 		uint8_t bin[8], bout[8], key[7];
 
-		memset(bin, 0, 8);
-		memcpy(bin,  &in->data[i], MIN(8, in->length-i));
+		memcpy(bin,  &in->data[i], 8);
 
 		if (k + 7 > session_key->length) {
 			k = (session_key->length - k);
 		}
 		memcpy(key, &session_key->data[k], 7);
 
-		des_crypt56(bout, bin, key, forward?1:0);
+		rc = des_crypt56_gnutls(bout, bin, key, encrypt);
+		if (rc != 0) {
+			return rc;
+		}
 
-		memcpy(&out->data[i], bout, MIN(8, in->length-i));
+		memcpy(&out->data[i], bout, 8);
 	}
+	return 0;
 }
 
 
@@ -67,6 +74,7 @@ DATA_BLOB sess_encrypt_string(const char *str, const DATA_BLOB *session_key)
 	DATA_BLOB ret, src;
 	int slen = strlen(str);
 	int dlen = (slen+7) & ~7;
+	int rc;
 
 	src = data_blob(NULL, 8+dlen);
 	if (!src.data) {
@@ -84,9 +92,13 @@ DATA_BLOB sess_encrypt_string(const char *str, const DATA_BLOB *session_key)
 	memset(src.data+8, 0,   dlen);
 	memcpy(src.data+8, str, slen);
 
-	sess_crypt_blob(&ret, &src, session_key, true);
+	rc = sess_crypt_blob(&ret, &src, session_key, SAMBA_GNUTLS_ENCRYPT);
 	
 	data_blob_free(&src);
+	if (rc != 0) {
+		data_blob_free(&ret);
+		return data_blob(NULL, 0);
+	}
 
 	return ret;
 }
@@ -100,7 +112,7 @@ char *sess_decrypt_string(TALLOC_CTX *mem_ctx,
 			  DATA_BLOB *blob, const DATA_BLOB *session_key)
 {
 	DATA_BLOB out;
-	int slen;
+	int rc, slen;
 	char *ret;
 
 	if (blob->length < 8) {
@@ -112,7 +124,11 @@ char *sess_decrypt_string(TALLOC_CTX *mem_ctx,
 		return NULL;
 	}
 
-	sess_crypt_blob(&out, blob, session_key, false);
+	rc = sess_crypt_blob(&out, blob, session_key, SAMBA_GNUTLS_DECRYPT);
+	if (rc != 0) {
+		data_blob_free(&out);
+		return NULL;
+	}
 
 	if (IVAL(out.data, 4) != 1) {
 		DEBUG(0,("Unexpected revision number %d in session crypted string\n",
@@ -149,6 +165,7 @@ DATA_BLOB sess_encrypt_blob(TALLOC_CTX *mem_ctx, DATA_BLOB *blob_in, const DATA_
 {
 	DATA_BLOB ret, src;
 	int dlen = (blob_in->length+7) & ~7;
+	int rc;
 
 	src = data_blob_talloc(mem_ctx, NULL, 8+dlen);
 	if (!src.data) {
@@ -166,9 +183,13 @@ DATA_BLOB sess_encrypt_blob(TALLOC_CTX *mem_ctx, DATA_BLOB *blob_in, const DATA_
 	memset(src.data+8, 0, dlen);
 	memcpy(src.data+8, blob_in->data, blob_in->length);
 
-	sess_crypt_blob(&ret, &src, session_key, true);
+	rc = sess_crypt_blob(&ret, &src, session_key, SAMBA_GNUTLS_ENCRYPT);
 	
 	data_blob_free(&src);
+	if (rc != 0) {
+		data_blob_free(&ret);
+		return data_blob(NULL, 0);
+	}
 
 	return ret;
 }
@@ -180,7 +201,7 @@ NTSTATUS sess_decrypt_blob(TALLOC_CTX *mem_ctx, const DATA_BLOB *blob, const DAT
 			   DATA_BLOB *ret)
 {
 	DATA_BLOB out;
-	int slen;
+	int rc, slen;
 
 	if (blob->length < 8) {
 		DEBUG(0, ("Unexpected length %d in session crypted secret (BLOB)\n",
@@ -193,7 +214,11 @@ NTSTATUS sess_decrypt_blob(TALLOC_CTX *mem_ctx, const DATA_BLOB *blob, const DAT
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	sess_crypt_blob(&out, blob, session_key, false);
+	rc = sess_crypt_blob(&out, blob, session_key, SAMBA_GNUTLS_DECRYPT);
+	if (rc != 0) {
+		data_blob_free(&out);
+		return gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+	}
 
 	if (IVAL(out.data, 4) != 1) {
 		DEBUG(2,("Unexpected revision number %d in session crypted secret (BLOB)\n",

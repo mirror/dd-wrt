@@ -197,7 +197,8 @@ static struct auth4_context *make_auth4_context_s3(TALLOC_CTX *mem_ctx, struct a
 	auth4_context->generate_session_info = auth3_generate_session_info;
 	auth4_context->get_ntlm_challenge = auth3_get_challenge;
 	auth4_context->set_ntlm_challenge = auth3_set_challenge;
-	auth4_context->check_ntlm_password = auth3_check_password;
+	auth4_context->check_ntlm_password_send = auth3_check_password_send;
+	auth4_context->check_ntlm_password_recv = auth3_check_password_recv;
 	auth4_context->private_data = talloc_steal(auth4_context, auth_context);
 	return auth4_context;
 }
@@ -414,48 +415,35 @@ NTSTATUS auth_check_password_session_info(struct auth4_context *auth_context,
 	NTSTATUS nt_status;
 	void *server_info;
 	uint8_t authoritative = 0;
+	struct tevent_context *ev = NULL;
+	struct tevent_req *subreq = NULL;
+	bool ok;
 
-	if (auth_context->check_ntlm_password_send != NULL) {
-		struct tevent_context *ev = NULL;
-		struct tevent_req *subreq = NULL;
-		bool ok;
+	ev = samba_tevent_context_init(talloc_tos());
+	if (ev == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
 
-		ev = samba_tevent_context_init(talloc_tos());
-		if (ev == NULL) {
-			return NT_STATUS_NO_MEMORY;
-		}
-
-		subreq = auth_context->check_ntlm_password_send(ev, ev,
-								auth_context,
-								user_info);
-		if (subreq == NULL) {
-			TALLOC_FREE(ev);
-			return NT_STATUS_NO_MEMORY;
-		}
-		ok = tevent_req_poll_ntstatus(subreq, ev, &nt_status);
-		if (!ok) {
-			TALLOC_FREE(ev);
-			return nt_status;
-		}
-		nt_status = auth_context->check_ntlm_password_recv(subreq,
-								   talloc_tos(),
-								   &authoritative,
-								   &server_info,
-								   NULL, NULL);
+	subreq = auth_context->check_ntlm_password_send(ev, ev,
+							auth_context,
+							user_info);
+	if (subreq == NULL) {
 		TALLOC_FREE(ev);
-		if (!NT_STATUS_IS_OK(nt_status)) {
-			return nt_status;
-		}
-	} else {
-		nt_status = auth_context->check_ntlm_password(auth_context,
-							      talloc_tos(),
-							      user_info,
-							      &authoritative,
-							      &server_info,
-							      NULL, NULL);
-		if (!NT_STATUS_IS_OK(nt_status)) {
-			return nt_status;
-		}
+		return NT_STATUS_NO_MEMORY;
+	}
+	ok = tevent_req_poll_ntstatus(subreq, ev, &nt_status);
+	if (!ok) {
+		TALLOC_FREE(ev);
+		return nt_status;
+	}
+	nt_status = auth_context->check_ntlm_password_recv(subreq,
+							   talloc_tos(),
+							   &authoritative,
+							   &server_info,
+							   NULL, NULL);
+	TALLOC_FREE(ev);
+	if (!NT_STATUS_IS_OK(nt_status)) {
+		return nt_status;
 	}
 
 	nt_status = auth_context->generate_session_info(auth_context,

@@ -51,7 +51,9 @@ static int net_tdb_locking_fetch(TALLOC_CTX *mem_ctx, const char *hexkey,
 
 	blob = strhex_to_data_blob(mem_ctx, hexkey);
 	if (blob.length != sizeof(struct file_id)) {
-		d_printf("Invalid length of key\n");
+		d_printf("Invalid length %zu of key, expected %zu\n",
+			 blob.length,
+			 sizeof(struct file_id));
 		return -1;
 	}
 
@@ -93,10 +95,20 @@ static int net_tdb_locking(struct net_context *c, int argc, const char **argv)
 	if (argc == 2 && strequal(argv[1], "dump")) {
 		ret = net_tdb_locking_dump(mem_ctx, lock->data);
 	} else {
+		NTSTATUS status;
+		size_t num_share_modes = 0;
+
+		status = share_mode_count_entries(
+			lock->data->id, &num_share_modes);
+		if (!NT_STATUS_IS_OK(status)) {
+			d_fprintf(stderr,
+				  "Could not count share entries: %s\n",
+				  nt_errstr(status));
+		}
+
 		d_printf("Share path:            %s\n", lock->data->servicepath);
 		d_printf("Name:                  %s\n", lock->data->base_name);
-		d_printf("Number of share modes: %" PRIu32 "\n",
-			 lock->data->num_share_modes);
+		d_printf("Number of share modes: %zu\n", num_share_modes);
 	}
 
 out:

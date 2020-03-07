@@ -354,17 +354,35 @@ def SAMBA_BINARY(bld, binname, source,
                  local_include=True,
                  global_include=True,
                  subsystem_name=None,
+                 allow_warnings=False,
                  pyembed=False,
                  vars=None,
                  subdir=None,
                  install=True,
                  install_path=None,
-                 enabled=True):
+                 enabled=True,
+                 fuzzer=False,
+                 for_selftest=False):
     '''define a Samba binary'''
+
+    if for_selftest and not bld.CONFIG_GET('ENABLE_SELFTEST'):
+        enabled=False
 
     if not enabled:
         SET_TARGET_TYPE(bld, binname, 'DISABLED')
         return
+
+    # Fuzzing builds do not build normal binaries
+    # however we must build asn1compile etc
+
+    if not use_hostcc and bld.env.enable_fuzzing != fuzzer:
+        SET_TARGET_TYPE(bld, binname, 'DISABLED')
+        return
+
+    if fuzzer:
+        install = False
+        if ldflags is None:
+            ldflags = bld.env['FUZZ_TARGET_LDFLAGS']
 
     if not SET_TARGET_TYPE(bld, binname, 'BINARY'):
         return
@@ -382,6 +400,8 @@ def SAMBA_BINARY(bld, binname, source,
 
     if group == 'binaries':
         subsystem_group = 'main'
+    elif group == 'build_compilers':
+        subsystem_group = 'compiler_libraries'
     else:
         subsystem_group = group
 
@@ -410,6 +430,7 @@ def SAMBA_BINARY(bld, binname, source,
                         global_include = global_include,
                         use_hostcc     = use_hostcc,
                         pyext          = pyembed,
+                        allow_warnings = allow_warnings,
                         use_global_deps= use_global_deps)
 
     bld.SET_BUILD_GROUP(group)
@@ -858,7 +879,7 @@ def INSTALL_WILDCARD(bld, destdir, pattern, chmod=MODE_644, flat=False,
     if trim_path:
         files2 = []
         for f in files:
-            files2.append(os_path_relpath(f, trim_path))
+            files2.append(os.path.relpath(f, trim_path))
         files = files2
 
     if exclude:

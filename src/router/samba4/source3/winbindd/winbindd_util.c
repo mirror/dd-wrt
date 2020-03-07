@@ -849,9 +849,16 @@ static void wb_imsg_new_trusted_domain(struct imessaging_context *msg,
 				       void *private_data,
 				       uint32_t msg_type,
 				       struct server_id server_id,
+				       size_t num_fds,
+				       int *fds,
 				       DATA_BLOB *data)
 {
 	bool ok;
+
+	if (num_fds != 0) {
+		DBG_WARNING("Received %zu fds, ignoring message\n", num_fds);
+		return;
+	}
 
 	DBG_NOTICE("Rescanning trusted domains\n");
 
@@ -940,7 +947,7 @@ static bool add_trusted_domains_dc(void)
 
 			/* Even in the parent winbindd we'll need to
 			   talk to the DC, so try and see if we can
-			   contact it. Theoretically this isn't neccessary
+			   contact it. Theoretically this isn't necessary
 			   as the init_dc_connection() in init_child_recv()
 			   will do this, but we can start detecting the DC
 			   early here. */
@@ -1014,7 +1021,7 @@ static bool add_trusted_domains_dc(void)
 		if (sec_chan_type != SEC_CHAN_NULL) {
 			/* Even in the parent winbindd we'll need to
 			   talk to the DC, so try and see if we can
-			   contact it. Theoretically this isn't neccessary
+			   contact it. Theoretically this isn't necessary
 			   as the init_dc_connection() in init_child_recv()
 			   will do this, but we can start detecting the DC
 			   early here. */
@@ -1306,7 +1313,7 @@ bool init_domain_list(void)
 		}
 		/* Even in the parent winbindd we'll need to
 		   talk to the DC, so try and see if we can
-		   contact it. Theoretically this isn't neccessary
+		   contact it. Theoretically this isn't necessary
 		   as the init_dc_connection() in init_child_recv()
 		   will do this, but we can start detecting the DC
 		   early here. */

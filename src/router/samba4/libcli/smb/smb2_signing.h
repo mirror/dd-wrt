@@ -21,14 +21,22 @@
 #ifndef _LIBCLI_SMB_SMB2_SIGNING_H_
 #define _LIBCLI_SMB_SMB2_SIGNING_H_
 
-#include <gnutls/gnutls.h>
-#include <gnutls/crypto.h>
-
 struct iovec;
 
 struct smb2_signing_key {
-	gnutls_hmac_hd_t hmac_hnd;
 	DATA_BLOB blob;
+	union {
+#ifdef SMB2_SIGNING_KEY_GNUTLS_TYPES
+		gnutls_hmac_hd_t hmac_hnd;
+#endif
+		void *__hmac_hnd;
+	};
+	union {
+#ifdef SMB2_SIGNING_KEY_GNUTLS_TYPES
+		gnutls_aead_cipher_hd_t cipher_hnd;
+#endif
+		void *__cipher_hnd;
+	};
 };
 
 int smb2_signing_key_destructor(struct smb2_signing_key *key);
@@ -50,11 +58,11 @@ NTSTATUS smb2_key_derivation(const uint8_t *KI, size_t KI_len,
 			     const uint8_t *Context, size_t Context_len,
 			     uint8_t KO[16]);
 
-NTSTATUS smb2_signing_encrypt_pdu(DATA_BLOB encryption_key,
+NTSTATUS smb2_signing_encrypt_pdu(struct smb2_signing_key *encryption_key,
 				  uint16_t cipher_id,
 				  struct iovec *vector,
 				  int count);
-NTSTATUS smb2_signing_decrypt_pdu(DATA_BLOB decryption_key,
+NTSTATUS smb2_signing_decrypt_pdu(struct smb2_signing_key *decryption_key,
 				  uint16_t cipher_id,
 				  struct iovec *vector,
 				  int count);

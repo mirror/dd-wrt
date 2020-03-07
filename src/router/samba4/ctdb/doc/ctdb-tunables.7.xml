@@ -81,7 +81,7 @@ MonitorInterval=20
       </para>
       <para>
 	For version checking, CTDB uses major and minor version.
-	For example, CTDB 4.6.1 and CTDB CTDB 4.6.2 are matching versions;
+	For example, CTDB 4.6.1 and CTDB 4.6.2 are matching versions;
 	CTDB 4.5.x and CTDB 4.6.y do not match.
       </para>
       <para>
@@ -366,7 +366,7 @@ MonitorInterval=20
 	take longer than this value, in milliseconds, to complete.
 	These operations include "process a record request from client",
 	"take a record or database lock", "update a persistent database
-	record" and "vaccum a database".
+	record" and "vacuum a database".
       </para>
     </refsect2>
 
@@ -480,7 +480,7 @@ MonitorInterval=20
       <title>RecdFailCount</title>
       <para>Default: 10</para>
       <para>
-	If the recovery daemon has failed to ping the main dameon for
+	If the recovery daemon has failed to ping the main daemon for
 	this many consecutive intervals, the main daemon will consider
 	the recovery daemon as hung and will try to restart it to recover.
       </para>
@@ -490,8 +490,8 @@ MonitorInterval=20
       <title>RecdPingTimeout</title>
       <para>Default: 60</para>
       <para>
-	If the main dameon has not heard a "ping" from the recovery dameon
-	for this many seconds, the main dameon will log a message that
+	If the main daemon has not heard a "ping" from the recovery daemon
+	for this many seconds, the main daemon will log a message that
 	the recovery daemon is potentially hung.  This also increments a
 	counter which is checked against <varname>RecdFailCount</varname>
 	for detection of hung recovery daemon.
@@ -503,7 +503,7 @@ MonitorInterval=20
       <para>Default: 1000</para>
       <para>
 	When using a reclock file for split brain prevention, if set
-	to non-zero this tunable will make the recovery dameon log a
+	to non-zero this tunable will make the recovery daemon log a
 	message if the fcntl() call to lock/testlock the recovery file
 	takes longer than this number of milliseconds.
       </para>
@@ -525,7 +525,7 @@ MonitorInterval=20
 	This is the default setting for timeouts for controls when sent
 	from the recovery daemon. We allow longer control timeouts from
 	the recovery daemon than from normal use since the recovery
-	dameon often use controls that can take a lot longer than normal
+	daemon often use controls that can take a lot longer than normal
 	controls.
       </para>
     </refsect2>
@@ -573,10 +573,6 @@ MonitorInterval=20
         During vacuuming, if the number of freelist records are more than
         <varname>RepackLimit</varname>, then the database is repacked
         to get rid of the freelist records to avoid fragmentation.
-      </para>
-      <para>
-        Databases are repacked only if both <varname>RepackLimit</varname>
-        and <varname>VacuumLimit</varname> are exceeded.
       </para>
     </refsect2>
 
@@ -680,20 +676,6 @@ MonitorInterval=20
       <para>
         Periodic interval in seconds when vacuuming is triggered for
         volatile databases.
-      </para>
-    </refsect2>
-
-    <refsect2>
-      <title>VacuumLimit</title>
-      <para>Default: 5000</para>
-      <para>
-        During vacuuming, if the number of deleted records are more than
-        <varname>VacuumLimit</varname>, then databases are repacked to
-        avoid fragmentation.
-      </para>
-      <para>
-        Databases are repacked only if both <varname>RepackLimit</varname>
-        and <varname>VacuumLimit</varname> are exceeded.
       </para>
     </refsect2>
 

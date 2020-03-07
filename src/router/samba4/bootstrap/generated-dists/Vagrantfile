@@ -24,6 +24,20 @@ Vagrant.configure("2") do |config|
         v.vm.provision :shell, path: "centos7/locale.sh"
     end
 
+    config.vm.define "centos8" do |v|
+        v.vm.box = "centos/8"
+        v.vm.hostname = "centos8"
+        v.vm.provision :shell, path: "centos8/bootstrap.sh"
+        v.vm.provision :shell, path: "centos8/locale.sh"
+    end
+
+    config.vm.define "debian10" do |v|
+        v.vm.box = "debian/buster64"
+        v.vm.hostname = "debian10"
+        v.vm.provision :shell, path: "debian10/bootstrap.sh"
+        v.vm.provision :shell, path: "debian10/locale.sh"
+    end
+
     config.vm.define "debian7" do |v|
         v.vm.box = "debian/wheezy64"
         v.vm.hostname = "debian7"
@@ -45,13 +59,6 @@ Vagrant.configure("2") do |config|
         v.vm.provision :shell, path: "debian9/locale.sh"
     end
 
-    config.vm.define "fedora28" do |v|
-        v.vm.box = "fedora/28-cloud-base"
-        v.vm.hostname = "fedora28"
-        v.vm.provision :shell, path: "fedora28/bootstrap.sh"
-        v.vm.provision :shell, path: "fedora28/locale.sh"
-    end
-
     config.vm.define "fedora29" do |v|
         v.vm.box = "fedora/29-cloud-base"
         v.vm.hostname = "fedora29"
@@ -64,6 +71,13 @@ Vagrant.configure("2") do |config|
         v.vm.hostname = "fedora30"
         v.vm.provision :shell, path: "fedora30/bootstrap.sh"
         v.vm.provision :shell, path: "fedora30/locale.sh"
+    end
+
+    config.vm.define "fedora31" do |v|
+        v.vm.box = "fedora/31-cloud-base"
+        v.vm.hostname = "fedora31"
+        v.vm.provision :shell, path: "fedora31/bootstrap.sh"
+        v.vm.provision :shell, path: "fedora31/locale.sh"
     end
 
     config.vm.define "opensuse150" do |v|

@@ -1474,7 +1474,7 @@ int net_ads_testjoin(struct net_context *c, int argc, const char **argv)
 }
 
 /*******************************************************************
-  Simple configu checks before beginning the join
+  Simple config checks before beginning the join
  ********************************************************************/
 
 static WERROR check_ads_config( void )
@@ -2197,8 +2197,8 @@ static int net_ads_dns_gethostbyname(struct net_context *c, int argc, const char
 			 _("Usage:"),
 			 _("net ads dns gethostbyname <server> <name>\n"),
 			 _("  Look up hostname from the AD\n"
-			   "    server\tName server to use\n"
-			   "    name\tName to look up\n"));
+			   "    nameserver\tName server to use\n"
+			   "    hostname\tName to look up\n"));
 		return -1;
 	}
 
@@ -3088,7 +3088,7 @@ int net_ads_keytab(struct net_context *c, int argc, const char **argv)
 			NET_TRANSPORT_ADS,
 			N_("Create a fresh keytab"),
 			N_("net ads keytab create\n"
-			   "    Create a fresh keytab or update exising one.")
+			   "    Create a fresh keytab or update existing one.")
 		},
 		{
 			"flush",

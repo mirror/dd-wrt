@@ -29,6 +29,9 @@
 #include "rpc_common.h"
 #include "lib/util/bitmap.h"
 #include "auth/gensec/gensec.h"
+#include "lib/util/mkdir_p.h"
+#include "lib/crypto/gnutls_helpers.h"
+#include <gnutls/crypto.h>
 
 /* we need to be able to get/set the fragment length without doing a full
    decode */
@@ -1340,3 +1343,236 @@ struct ndr_syntax_id dcerpc_construct_bind_time_features(uint64_t features)
 
 	return s;
 }
+
+NTSTATUS dcerpc_generic_session_key(DATA_BLOB *session_key)
+{
+	*session_key = data_blob_null;
+
+	/* this took quite a few CPU cycles to find ... */
+	session_key->data = discard_const_p(unsigned char, "SystemLibraryDTC");
+	session_key->length = 16;
+	return NT_STATUS_OK;
+}
+
+/*
+   push a ncacn_packet into a blob, potentially with auth info
+*/
+NTSTATUS dcerpc_ncacn_push_auth(DATA_BLOB *blob,
+				TALLOC_CTX *mem_ctx,
+				struct ncacn_packet *pkt,
+				struct dcerpc_auth *auth_info)
+{
+	struct ndr_push *ndr;
+	enum ndr_err_code ndr_err;
+
+	ndr = ndr_push_init_ctx(mem_ctx);
+	if (!ndr) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	if (auth_info) {
+		pkt->auth_length = auth_info->credentials.length;
+	} else {
+		pkt->auth_length = 0;
+	}
+
+	ndr_err = ndr_push_ncacn_packet(ndr, NDR_SCALARS|NDR_BUFFERS, pkt);
+	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
+		return ndr_map_error2ntstatus(ndr_err);
+	}
+
+	if (auth_info) {
+#if 0
+		/* the s3 rpc server doesn't handle auth padding in
+		   bind requests. Use zero auth padding to keep us
+		   working with old servers */
+		uint32_t offset = ndr->offset;
+		ndr_err = ndr_push_align(ndr, 16);
+		if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
+			return ndr_map_error2ntstatus(ndr_err);
+		}
+		auth_info->auth_pad_length = ndr->offset - offset;
+#else
+		auth_info->auth_pad_length = 0;
+#endif
+		ndr_err = ndr_push_dcerpc_auth(ndr, NDR_SCALARS|NDR_BUFFERS, auth_info);
+		if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
+			return ndr_map_error2ntstatus(ndr_err);
+		}
+	}
+
+	*blob = ndr_push_blob(ndr);
+
+	/* fill in the frag length */
+	dcerpc_set_frag_length(blob, blob->length);
+
+	return NT_STATUS_OK;
+}
+
+/*
+  log a rpc packet in a format suitable for ndrdump. This is especially useful
+  for sealed packets, where ethereal cannot easily see the contents
+
+  this triggers if "dcesrv:stubs directory" is set and present
+  for all packets that fail to parse
+*/
+void dcerpc_log_packet(const char *packet_log_dir,
+		       const char *interface_name,
+		       uint32_t opnum, uint32_t flags,
+		       const DATA_BLOB *pkt,
+		       const char *why)
+{
+	const int num_examples = 20;
+	int i;
+
+	if (packet_log_dir == NULL) {
+		return;
+	}
+
+	for (i=0;i<num_examples;i++) {
+		char *name=NULL;
+		int ret;
+		bool saved;
+		ret = asprintf(&name, "%s/%s-%u.%d.%s.%s",
+			       packet_log_dir, interface_name, opnum, i,
+			       (flags&NDR_IN)?"in":"out",
+			       why);
+		if (ret == -1) {
+			return;
+		}
+
+		saved = file_save(name, pkt->data, pkt->length);
+		if (saved) {
+			DBG_DEBUG("Logged rpc packet to %s\n", name);
+			free(name);
+			break;
+		}
+		free(name);
+	}
+}
+
+
+#ifdef DEVELOPER
+
+/*
+ * Save valid, well-formed DCE/RPC stubs to use as a seed for
+ * ndr_fuzz_X
+ */
+void dcerpc_save_ndr_fuzz_seed(TALLOC_CTX *mem_ctx,
+			       DATA_BLOB raw_blob,
+			       const char *dump_dir,
+			       const char *iface_name,
+			       int flags,
+			       int opnum,
+			       bool ndr64)
+{
+	char *fname = NULL;
+	const char *sub_dir = NULL;
+	TALLOC_CTX *temp_ctx = talloc_new(mem_ctx);
+	DATA_BLOB blob;
+	int ret, rc;
+	uint8_t digest[20];
+	DATA_BLOB digest_blob;
+	char *digest_hex;
+	uint16_t fuzz_flags = 0;
+
+	/*
+	 * We want to save the 'stub' in a per-pipe subdirectory, with
+	 * the ndr_fuzz_X header 4 byte header. For the sake of
+	 * convenience (this is a developer only function), we mkdir
+	 * -p the sub-directories when they are needed.
+	 */
+
+	if (dump_dir == NULL) {
+		return;
+	}
+
+	temp_ctx = talloc_stackframe();
+
+	sub_dir = talloc_asprintf(temp_ctx, "%s/%s",
+				  dump_dir,
+				  iface_name);
+	if (sub_dir == NULL) {
+		talloc_free(temp_ctx);
+		return;
+	}
+	ret = mkdir_p(sub_dir, 0755);
+	if (ret && errno != EEXIST) {
+		DBG_ERR("could not create %s\n", sub_dir);
+		talloc_free(temp_ctx);
+		return;
+	}
+
+	blob.length = raw_blob.length + 4;
+	blob.data = talloc_array(sub_dir,
+				 uint8_t,
+				 blob.length);
+	if (blob.data == NULL) {
+		DBG_ERR("could not allocate for fuzz seeds! (%s)\n",
+			iface_name);
+		talloc_free(temp_ctx);
+		return;
+	}
+
+	if (ndr64) {
+		fuzz_flags = 4;
+	}
+	if (flags & NDR_IN) {
+		fuzz_flags |= 1;
+	} else if (flags & NDR_OUT) {
+		fuzz_flags |= 2;
+	}
+
+	SSVAL(blob.data, 0, fuzz_flags);
+	SSVAL(blob.data, 2, opnum);
+
+	memcpy(&blob.data[4],
+	       raw_blob.data,
+	       raw_blob.length);
+
+	/*
+	 * This matches how oss-fuzz names the corpus input files, due
+	 * to a preference from libFuzzer
+	 */
+	rc = gnutls_hash_fast(GNUTLS_DIG_SHA1,
+			      blob.data,
+			      blob.length,
+			      digest);
+	if (rc < 0) {
+		/*
+		 * This prints a better error message, eg if SHA1 is
+		 * disabled
+		 */
+		NTSTATUS status = gnutls_error_to_ntstatus(rc,
+						  NT_STATUS_HASH_NOT_SUPPORTED);
+		DBG_ERR("Failed to generate SHA1 to save fuzz seed: %s",
+			nt_errstr(status));
+		talloc_free(temp_ctx);
+		return;
+	}
+
+	digest_blob.data = digest;
+	digest_blob.length = sizeof(digest);
+	digest_hex = data_blob_hex_string_lower(temp_ctx, &digest_blob);
+
+	fname = talloc_asprintf(temp_ctx, "%s/%s",
+				sub_dir,
+				digest_hex);
+	if (fname == NULL) {
+		talloc_free(temp_ctx);
+		return;
+	}
+
+	/*
+	 * If this fails, it is most likely because that file already
+	 * exists.  This is fine, it means we already have this
+	 * sample
+	 */
+	file_save(fname,
+		  blob.data,
+		  blob.length);
+
+	talloc_free(temp_ctx);
+}
+
+#endif /*if DEVELOPER, enveloping _dcesrv_save_ndr_fuzz_seed() */

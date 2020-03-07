@@ -26,12 +26,19 @@
 #include "librpc/gen_ndr/ndr_spoolss.h"
 #include "torture/rpc/torture_rpc.h"
 #include "rpc_server/dcerpc_server.h"
+#include "rpc_server/dcerpc_server_proto.h"
 #include "rpc_server/service_rpc.h"
 #include "smbd/process_model.h"
 #include "smb_server/smb_server.h"
 #include "lib/socket/netif.h"
 #include "ntvfs/ntvfs.h"
 #include "param/param.h"
+
+struct dcesrv_context_callbacks srv_cb = {
+	.log.successful_authz = log_successful_dcesrv_authz_event,
+	.auth.gensec_prepare = dcesrv_gensec_prepare,
+	.assoc_group.find = dcesrv_assoc_group_find,
+};
 
 static NTSTATUS spoolss__op_bind(struct dcesrv_connection_context *context,
 				 const struct dcesrv_interface *iface)
@@ -61,9 +68,6 @@ static NTSTATUS spoolss__op_ndr_pull(struct dcesrv_call_state *dce_call, TALLOC_
         /* unravel the NDR for the packet */
 	ndr_err = ndr_table_spoolss.calls[opnum].ndr_pull(pull, NDR_IN, *r);
 	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
-		dcerpc_log_packet(dce_call->conn->packet_log_dir,
-						  &ndr_table_spoolss, opnum, NDR_IN,
-				  &dce_call->pkt.u.request.stub_and_verifier);
 		dce_call->fault_code = DCERPC_FAULT_NDR;
 		return NT_STATUS_NET_WRITE_FAULT;
 	}
@@ -178,9 +182,6 @@ static NTSTATUS spoolss__op_dispatch(struct dcesrv_call_state *dce_call, TALLOC_
 	}
 
 	if (dce_call->fault_code != 0) {
-		dcerpc_log_packet(dce_call->conn->packet_log_dir,
-						  &ndr_table_spoolss, opnum, NDR_IN,
-				  &dce_call->pkt.u.request.stub_and_verifier);
 		return NT_STATUS_NET_WRITE_FAULT;
 	}
 	return NT_STATUS_OK;
@@ -258,6 +259,12 @@ static NTSTATUS spoolss__op_init_server(struct dcesrv_context *dce_ctx, const st
 		}
 	}
 
+	return NT_STATUS_OK;
+}
+
+static NTSTATUS spoolss__op_shutdown_server(struct dcesrv_context *dce_ctx,
+				const struct dcesrv_endpoint_server *ep_server)
+{
 	return NT_STATUS_OK;
 }
 
@@ -457,8 +464,11 @@ static bool test_start_dcerpc_server(struct torture_context *tctx,
 	/* fill in our name */
 	ep_server.name = "spoolss";
 
+	ep_server.initialized = false;
+
 	/* fill in all the operations */
 	ep_server.init_server = spoolss__op_init_server;
+	ep_server.shutdown_server = spoolss__op_shutdown_server;
 
 	ep_server.interface_by_uuid = spoolss__op_interface_by_uuid;
 	ep_server.interface_by_name = spoolss__op_interface_by_name;
@@ -482,9 +492,14 @@ static bool test_start_dcerpc_server(struct torture_context *tctx,
 				   address, NULL);
 	torture_assert_ntstatus_ok(tctx, status, "starting smb server");
 
-	status = dcesrv_init_context(tctx, tctx->lp_ctx, endpoints, &dce_ctx);
+	status = dcesrv_init_context(tctx, tctx->lp_ctx, &srv_cb, &dce_ctx);
 	torture_assert_ntstatus_ok(tctx, status,
 				   "unable to initialize DCE/RPC server");
+
+	status = dcesrv_init_ep_servers(dce_ctx, endpoints);
+	torture_assert_ntstatus_ok(tctx,
+				   status,
+				   "unable to initialize DCE/RPC ep servers");
 
 	for (e=dce_ctx->endpoint_list;e;e=e->next) {
 		status = dcesrv_add_ep(dce_ctx, tctx->lp_ctx,

@@ -51,6 +51,7 @@
 #include "cmdline_contexts.h"
 #include "lib/gencache.h"
 #include "auth/credentials/credentials.h"
+#include "source3/utils/passwd_proto.h"
 
 #ifdef WITH_FAKE_KASERVER
 #include "utils/net_afs.h"
@@ -892,6 +893,14 @@ static struct functable net_func[] = {
 		   "'net tdb' commands.")
 	},
 
+	{	"vfs",
+		net_vfs,
+		NET_TRANSPORT_LOCAL,
+		N_("Filesystem operation through the VFS stack"),
+		N_("  Use 'net help vfs' to get more information about "
+		   "'net vfs' commands.")
+	},
+
 #ifdef WITH_FAKE_KASERVER
 	{	"afs",
 		net_afs,
@@ -1256,6 +1265,25 @@ static void get_credentials_file(struct net_context *c,
 			.shortName  = 0,
 			.argInfo    = POPT_ARG_NONE,
 			.arg        = &c->opt_json,
+		},
+		/* Options for 'net vfs' */
+		{
+			.longName   = "continue",
+			.argInfo    = POPT_ARG_NONE,
+			.arg        = &c->opt_continue_on_error,
+			.descrip    = "Continue on errors",
+		},
+		{
+			.longName   = "recursive",
+			.argInfo    = POPT_ARG_NONE,
+			.arg        = &c->opt_recursive,
+			.descrip    = "Traverse directory hierarchy",
+		},
+		{
+			.longName   = "follow-symlinks",
+			.argInfo    = POPT_ARG_NONE,
+			.arg        = &c->opt_follow_symlink,
+			.descrip    = "follow symlinks",
 		},
 		POPT_COMMON_SAMBA
 		POPT_TABLEEND

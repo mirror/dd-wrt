@@ -35,7 +35,7 @@
 #include "auth/credentials/credentials.h"
 #include "param/param.h"
 #include "libcli/resolve/resolve.h"
-#include "lib/http/http.h"
+#include "libcli/http/http.h"
 #include "lib/util/util_net.h"
 
 struct dcerpc_pipe_connect {
@@ -226,7 +226,7 @@ static struct composite_context *dcerpc_pipe_connect_ncacn_np_smb_send(TALLOC_CT
 		target_hostname = conn->in.dest_host;
 	}
 
-	if (is_ipaddress(conn->in.dest_host)) {
+	if (conn->in.dest_host != NULL && is_ipaddress(conn->in.dest_host)) {
 		dest_address = conn->in.dest_host;
 	}
 
@@ -1069,6 +1069,11 @@ _PUBLIC_ struct composite_context* dcerpc_pipe_connect_b_send(TALLOC_CTX *parent
 		epm_creds = credentials;
 		break;
 	default:
+		DBG_INFO("Unknown transport; continuing with anon, no endpoint.\n");
+		epm_creds = cli_credentials_init_anon(s);
+		if (composite_nomem(epm_creds, c)){
+			return c;
+		}
 		break;
 	}
 

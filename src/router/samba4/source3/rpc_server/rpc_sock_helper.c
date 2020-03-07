@@ -26,12 +26,17 @@
 #include "librpc/rpc/dcerpc_ep.h"
 #include "rpc_server/rpc_server.h"
 #include "rpc_server/rpc_sock_helper.h"
+#include "lib/server_prefork.h"
 
-NTSTATUS rpc_create_tcpip_sockets(const struct ndr_interface_table *iface,
-				  struct dcerpc_binding_vector *bvec,
-				  uint16_t port,
-				  int *listen_fd,
-				  int *listen_fd_size)
+#undef DBGC_CLASS
+#define DBGC_CLASS DBGC_RPC_SRV
+
+NTSTATUS dcesrv_create_ncacn_ip_tcp_sockets(
+				const struct ndr_interface_table *iface,
+				struct dcerpc_binding_vector *bvec,
+				uint16_t port,
+				struct pf_listen_fd *listen_fd,
+				int *listen_fd_size)
 {
 	uint32_t num_ifs = iface_count();
 	uint32_t i;
@@ -60,15 +65,14 @@ NTSTATUS rpc_create_tcpip_sockets(const struct ndr_interface_table *iface,
 			const char *addr;
 			int fd;
 
-			fd = create_tcpip_socket(ifss, &p);
-			if (fd < 0 || p == 0) {
-				status = NT_STATUS_UNSUCCESSFUL;
-				if (fd != -1) {
-					close(fd);
-				}
+			status = dcesrv_create_ncacn_ip_tcp_socket(ifss,
+								   &p,
+								   &fd);
+			if (!NT_STATUS_IS_OK(status)) {
 				goto done;
 			}
-			listen_fd[*listen_fd_size] = fd;
+			listen_fd[*listen_fd_size].fd = fd;
+			listen_fd[*listen_fd_size].fd_data = NULL;
 			(*listen_fd_size)++;
 
 			if (bvec != NULL) {
@@ -124,15 +128,14 @@ NTSTATUS rpc_create_tcpip_sockets(const struct ndr_interface_table *iface,
 				continue;
 			}
 
-			fd = create_tcpip_socket(&ss, &p);
-			if (fd < 0 || p == 0) {
-				status = NT_STATUS_UNSUCCESSFUL;
-				if (fd != -1) {
-					close(fd);
-				}
+			status = dcesrv_create_ncacn_ip_tcp_socket(&ss,
+								   &p,
+								   &fd);
+			if (!NT_STATUS_IS_OK(status)) {
 				goto done;
 			}
-			listen_fd[*listen_fd_size] = fd;
+			listen_fd[*listen_fd_size].fd = fd;
+			listen_fd[*listen_fd_size].fd_data = NULL;
 			(*listen_fd_size)++;
 
 			if (bvec != NULL) {
@@ -154,15 +157,15 @@ done:
 	return status;
 }
 
-NTSTATUS rpc_setup_tcpip_sockets(struct tevent_context *ev_ctx,
-				 struct messaging_context *msg_ctx,
-				 const struct ndr_interface_table *iface,
-				 struct dcerpc_binding_vector *bvec,
-				 uint16_t port)
+NTSTATUS dcesrv_setup_ncacn_ip_tcp_sockets(struct tevent_context *ev_ctx,
+				struct messaging_context *msg_ctx,
+				const struct ndr_interface_table *iface,
+				struct dcerpc_binding_vector *bvec,
+				uint16_t port)
 {
 	uint32_t num_ifs = iface_count();
 	uint32_t i;
-	uint16_t p = 0;
+	uint16_t p = port;
 	TALLOC_CTX *tmp_ctx;
 	NTSTATUS status = NT_STATUS_UNSUCCESSFUL;
 	int rc;
@@ -186,12 +189,11 @@ NTSTATUS rpc_setup_tcpip_sockets(struct tevent_context *ev_ctx,
 			struct tsocket_address *bind_addr;
 			const char *addr;
 
-			p = setup_dcerpc_ncacn_tcpip_socket(ev_ctx,
-							    msg_ctx,
-							    ifss,
-							    port);
-			if (p == 0) {
-				status = NT_STATUS_UNSUCCESSFUL;
+			status = dcesrv_setup_ncacn_ip_tcp_socket(ev_ctx,
+								  msg_ctx,
+								  ifss,
+								  &p);
+			if (!NT_STATUS_IS_OK(status)) {
 				goto done;
 			}
 
@@ -244,12 +246,11 @@ NTSTATUS rpc_setup_tcpip_sockets(struct tevent_context *ev_ctx,
 				continue;
 			}
 
-			p = setup_dcerpc_ncacn_tcpip_socket(ev_ctx,
-							    msg_ctx,
-							    &ss,
-							    port);
-			if (p == 0) {
-				status = NT_STATUS_UNSUCCESSFUL;
+			status = dcesrv_setup_ncacn_ip_tcp_socket(ev_ctx,
+								  msg_ctx,
+								  &ss,
+								  &p);
+			if (!NT_STATUS_IS_OK(status)) {
 				goto done;
 			}
 

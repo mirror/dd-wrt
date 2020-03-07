@@ -33,6 +33,8 @@
 #include "ctdb_private.h"
 #include "ctdb_client.h"
 
+#include "protocol/protocol_private.h"
+
 #include "common/reqid.h"
 #include "common/common.h"
 #include "common/logging.h"
@@ -728,6 +730,16 @@ static int32_t ctdb_control_dispatch(struct ctdb_context *ctdb,
 
 	case CTDB_CONTROL_TUNNEL_DEREGISTER:
 		return ctdb_control_tunnel_deregister(ctdb, client_id, srvid);
+
+	case CTDB_CONTROL_VACUUM_FETCH:
+		return ctdb_control_vacuum_fetch(ctdb, indata);
+
+	case CTDB_CONTROL_DB_VACUUM: {
+		struct ctdb_db_vacuum db_vacuum;
+
+		CHECK_CONTROL_DATA_SIZE(ctdb_db_vacuum_len(&db_vacuum));
+		return ctdb_control_db_vacuum(ctdb, c, indata, async_reply);
+	}
 
 	default:
 		DEBUG(DEBUG_CRIT,(__location__ " Unknown CTDB control opcode %u\n", opcode));

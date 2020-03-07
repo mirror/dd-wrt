@@ -104,7 +104,10 @@ static NTSTATUS cmd_show_data(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int ar
 
 static NTSTATUS cmd_connect(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc, const char **argv)
 {
-	SMB_VFS_CONNECT(vfs->conn, lp_servicename(talloc_tos(), SNUM(vfs->conn)), "vfstest");
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
+
+	SMB_VFS_CONNECT(vfs->conn, lp_servicename(talloc_tos(), lp_sub, SNUM(vfs->conn)), "vfstest");
 	return NT_STATUS_OK;
 }
 
@@ -229,6 +232,7 @@ static NTSTATUS cmd_readdir(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc
 static NTSTATUS cmd_mkdir(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc, const char **argv)
 {
 	struct smb_filename *smb_fname = NULL;
+	int ret;
 
 	if (argc != 2) {
 		printf("Usage: mkdir <path>\n");
@@ -245,7 +249,11 @@ static NTSTATUS cmd_mkdir(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc, 
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	if (SMB_VFS_MKDIR(vfs->conn, smb_fname, 00755) == -1) {
+	ret = SMB_VFS_MKDIRAT(vfs->conn,
+				vfs->conn->cwd_fsp,
+				smb_fname,
+				00755);
+	if (ret == -1) {
 		printf("mkdir error=%d (%s)\n", errno, strerror(errno));
 		return NT_STATUS_UNSUCCESSFUL;
 	}
@@ -449,7 +457,10 @@ static NTSTATUS cmd_pathfunc(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int arg
 	}
 
 	if (strcmp("rmdir", argv[0]) == 0 ) {
-		ret = SMB_VFS_RMDIR(vfs->conn, smb_fname);
+		ret = SMB_VFS_UNLINKAT(vfs->conn,
+				vfs->conn->cwd_fsp,
+				smb_fname,
+				AT_REMOVEDIR);
 		TALLOC_FREE(smb_fname);
 	} else if (strcmp("unlink", argv[0]) == 0 ) {
 		TALLOC_FREE(smb_fname);
@@ -460,7 +471,10 @@ static NTSTATUS cmd_pathfunc(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int arg
 		if (smb_fname == NULL) {
 			return NT_STATUS_NO_MEMORY;
 		}
-		ret = SMB_VFS_UNLINK(vfs->conn, smb_fname);
+		ret = SMB_VFS_UNLINKAT(vfs->conn,
+				vfs->conn->cwd_fsp,
+				smb_fname,
+				0);
 		TALLOC_FREE(smb_fname);
 	} else if (strcmp("chdir", argv[0]) == 0 ) {
 		ret = SMB_VFS_CHDIR(vfs->conn, smb_fname);
@@ -628,7 +642,12 @@ static NTSTATUS cmd_rename(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc,
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	ret = SMB_VFS_RENAME(vfs->conn, smb_fname_src, smb_fname_dst);
+	ret = SMB_VFS_RENAMEAT(vfs->conn,
+			vfs->conn->cwd_fsp,
+			smb_fname_src,
+			vfs->conn->cwd_fsp,
+			smb_fname_dst);
+
 	TALLOC_FREE(smb_fname_src);
 	TALLOC_FREE(smb_fname_dst);
 	if (ret == -1) {
@@ -930,38 +949,6 @@ static NTSTATUS cmd_fchmod(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc,
 	return NT_STATUS_OK;
 }
 
-static NTSTATUS cmd_chown(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc, const char **argv)
-{
-	struct smb_filename *smb_fname = NULL;
-	uid_t uid;
-	gid_t gid;
-	if (argc != 4) {
-		printf("Usage: chown <path> <uid> <gid>\n");
-		return NT_STATUS_OK;
-	}
-
-	uid = atoi(argv[2]);
-	gid = atoi(argv[3]);
-
-	smb_fname = synthetic_smb_fname(talloc_tos(),
-					argv[1],
-					NULL,
-					NULL,
-					ssf_flags());
-	if (smb_fname == NULL) {
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	if (SMB_VFS_CHOWN(vfs->conn, smb_fname, uid, gid) == -1) {
-		printf("chown: error=%d (%s)\n", errno, strerror(errno));
-		return NT_STATUS_UNSUCCESSFUL;
-	}
-
-	printf("chown: ok\n");
-	return NT_STATUS_OK;
-}
-
-
 static NTSTATUS cmd_fchown(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc, const char **argv)
 {
 	uid_t uid;
@@ -1016,10 +1003,10 @@ static NTSTATUS cmd_utime(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc, 
 		return NT_STATUS_OK;
 	}
 
-	ZERO_STRUCT(ft);
+	init_smb_file_time(&ft);
 
-	ft.atime = convert_time_t_to_timespec(atoi(argv[2]));
-	ft.mtime = convert_time_t_to_timespec(atoi(argv[3]));
+	ft.atime = time_t_to_full_timespec(atoi(argv[2]));
+	ft.mtime = time_t_to_full_timespec(atoi(argv[3]));
 
 	smb_fname = synthetic_smb_fname_split(mem_ctx,
 					argv[1],
@@ -1152,6 +1139,7 @@ static NTSTATUS cmd_lock(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc, c
 
 static NTSTATUS cmd_symlink(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc, const char **argv)
 {
+	int ret;
 	struct smb_filename *new_smb_fname = NULL;
 
 	if (argc != 3) {
@@ -1165,7 +1153,11 @@ static NTSTATUS cmd_symlink(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc
 	if (new_smb_fname == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
-	if (SMB_VFS_SYMLINK(vfs->conn, argv[1], new_smb_fname) == -1) {
+	ret = SMB_VFS_SYMLINKAT(vfs->conn,
+			argv[1],
+			vfs->conn->cwd_fsp,
+			new_smb_fname);
+	if (ret == -1) {
 		printf("symlink: error=%d (%s)\n", errno, strerror(errno));
 		return NT_STATUS_UNSUCCESSFUL;
 	}
@@ -1192,8 +1184,13 @@ static NTSTATUS cmd_readlink(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int arg
 	if (smb_fname == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
-	if ((size = SMB_VFS_READLINK(vfs->conn, smb_fname,
-				buffer, PATH_MAX)) == -1) {
+	size = SMB_VFS_READLINKAT(vfs->conn,
+			vfs->conn->cwd_fsp,
+			smb_fname,
+			buffer,
+			PATH_MAX);
+
+	if (size == -1) {
 		printf("readlink: error=%d (%s)\n", errno, strerror(errno));
 		return NT_STATUS_UNSUCCESSFUL;
 	}
@@ -1208,6 +1205,7 @@ static NTSTATUS cmd_link(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc, c
 {
 	struct smb_filename *old_smb_fname = NULL;
 	struct smb_filename *new_smb_fname = NULL;
+	int ret;
 
 	if (argc != 3) {
 		printf("Usage: link <path> <link>\n");
@@ -1227,7 +1225,13 @@ static NTSTATUS cmd_link(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc, c
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	if (SMB_VFS_LINK(vfs->conn, old_smb_fname, new_smb_fname) == -1) {
+	ret = SMB_VFS_LINKAT(vfs->conn,
+			vfs->conn->cwd_fsp,
+			old_smb_fname,
+			vfs->conn->cwd_fsp,
+			new_smb_fname,
+			0);
+	if (ret == -1) {
 		printf("link: error=%d (%s)\n", errno, strerror(errno));
 		return NT_STATUS_UNSUCCESSFUL;
 	}
@@ -1242,6 +1246,7 @@ static NTSTATUS cmd_mknod(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc, 
 	unsigned int dev_val;
 	SMB_DEV_T dev;
 	struct smb_filename *smb_fname = NULL;
+	int ret;
 
 	if (argc != 4) {
 		printf("Usage: mknod <path> <mode> <dev>\n");
@@ -1267,7 +1272,14 @@ static NTSTATUS cmd_mknod(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc, 
 	if (smb_fname == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
-	if (SMB_VFS_MKNOD(vfs->conn, smb_fname, mode, dev) == -1) {
+
+	ret = SMB_VFS_MKNODAT(vfs->conn,
+			vfs->conn->cwd_fsp,
+			smb_fname,
+			mode,
+			dev);
+
+	if (ret == -1) {
 		printf("mknod: error=%d (%s)\n", errno, strerror(errno));
 		return NT_STATUS_UNSUCCESSFUL;
 	}
@@ -1965,7 +1977,6 @@ struct cmd_set vfs_commands[] = {
 	{ "unlink",   cmd_pathfunc,   "VFS unlink()",    "unlink <fname>" },
 	{ "chmod",   cmd_chmod,   "VFS chmod()",    "chmod <path> <mode>" },
 	{ "fchmod",   cmd_fchmod,   "VFS fchmod()",    "fchmod <fd> <mode>" },
-	{ "chown",   cmd_chown,   "VFS chown()",    "chown <path> <uid> <gid>" },
 	{ "fchown",   cmd_fchown,   "VFS fchown()",    "fchown <fd> <uid> <gid>" },
 	{ "chdir",   cmd_pathfunc,   "VFS chdir()",    "chdir <path>" },
 	{ "getwd",   cmd_getwd,   "VFS getwd()",    "getwd" },

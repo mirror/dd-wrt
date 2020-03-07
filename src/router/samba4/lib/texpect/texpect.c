@@ -34,6 +34,7 @@
 #include "replace.h"
 #include "system/filesys.h"
 #include "system/wait.h"
+#include "lib/util/sys_rw.h"
 
 #ifdef HAVE_PTY_H
 #include <pty.h>
@@ -176,24 +177,6 @@ static char *iscmd(const char *buf, const char *s)
 	return strdup(buf + len);
 }
 
-/*******************************************************************
-A write wrapper that will deal with EINTR.
-********************************************************************/
-
-static ssize_t sys_write(int fd, const void *buf, size_t count)
-{
-	ssize_t ret;
-
-	do {
-		ret = write(fd, buf, count);
-#if defined(EWOULDBLOCK)
-	} while (ret == -1 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK));
-#else
-	} while (ret == -1 && (errno == EINTR || errno == EAGAIN));
-#endif
-	return ret;
-}
-
 static void parse_configuration(const char *fn)
 {
 	struct command *c;
@@ -234,23 +217,6 @@ static void parse_configuration(const char *fn)
 
 	fclose(cmd);
 }
-
-/* A wrapper to close als file descriptors above the given fd */
-static int sys_closefrom(int fd)
-{
-	int num = getdtablesize();
-
-	if (num < 0) {
-		num = 1024;
-	}
-
-	for (; fd <= num; fd++) {
-		close(fd);
-	}
-
-	return 0;
-}
-
 
 /*
  *
@@ -401,7 +367,7 @@ int main(int argc, const char **argv)
 {
 	int optidx = 0;
 	pid_t pid;
-	poptContext pc;
+	poptContext pc = NULL;
 	const char *instruction_file;
 	const char **args;
 	const char *program;
@@ -415,7 +381,7 @@ int main(int argc, const char **argv)
 
 	if (argc == 1) {
 		poptPrintHelp(pc, stderr, 0);
-		return 1;
+		goto out;
 	}
 
 	while ((optidx = poptGetNextOpt(pc)) != -1) {
@@ -426,7 +392,7 @@ int main(int argc, const char **argv)
 	args = poptGetArgs(pc);
 	if (args == NULL) {
 		poptPrintHelp(pc, stderr, 0);
-		return 1;
+		goto out;
 	}
 
 	program_args = (char * const *)discard_const_p(char *, args);
@@ -453,7 +419,7 @@ int main(int argc, const char **argv)
 			err(1, "Failed to fork");
 
 			/* Never reached */
-			return 1;
+			goto out;
 		case 0:
 
 			if(setsid()<0)
@@ -463,14 +429,14 @@ int main(int argc, const char **argv)
 			dup2(slave, STDOUT_FILENO);
 			dup2(slave, STDERR_FILENO);
 
-			sys_closefrom(STDERR_FILENO + 1);
+			closefrom(STDERR_FILENO + 1);
 
 			/* texpect <expect_instructions> <progname> [<args>] */
 			execvp(program, program_args);
 			err(1, "Failed to exec: %s", program);
 
 			/* Never reached */
-			return 1;
+			goto out;
 		default:
 			close(slave);
 			{
@@ -483,9 +449,13 @@ int main(int argc, const char **argv)
 				sigaction(SIGALRM, &sa, NULL);
 			}
 
+			poptFreeContext(pc);
 			return eval_parent(pid);
 	}
 
 	/* Never reached */
+
+out:
+	poptFreeContext(pc);
 	return 1;
 }

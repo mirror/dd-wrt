@@ -41,14 +41,14 @@
 		PyErr_SetString(PyExc_TypeError, "Ldb connection object required"); \
 		return NULL; \
 	} \
-	ldb = pyldb_Ldb_AsLdbContext(py_ldb);
+	ldb = pyldb_Ldb_AS_LDBCONTEXT(py_ldb);
 
 #define PyErr_LDB_DN_OR_RAISE(py_ldb_dn, dn) \
 	if (!py_check_dcerpc_type(py_ldb_dn, "ldb", "Dn")) { \
 		PyErr_SetString(PyExc_TypeError, "ldb Dn object required"); \
 		return NULL; \
 	} \
-	dn = pyldb_Dn_AsDn(py_ldb_dn);
+	dn = pyldb_Dn_AS_DN(py_ldb_dn);
 
 static PyObject *py_ldb_get_exception(void)
 {
@@ -129,18 +129,25 @@ static PyObject *py_dsdb_convert_schema_to_openldap(PyObject *self,
 }
 
 static PyObject *py_samdb_set_domain_sid(PyLdbObject *self, PyObject *args)
-{ 
+{
 	PyObject *py_ldb, *py_sid;
 	struct ldb_context *ldb;
 	struct dom_sid *sid;
 	bool ret;
+	const char *sid_str = NULL;
 
 	if (!PyArg_ParseTuple(args, "OO", &py_ldb, &py_sid))
 		return NULL;
-	
+
 	PyErr_LDB_OR_RAISE(py_ldb, ldb);
 
-	sid = dom_sid_parse_talloc(NULL, PyUnicode_AsUTF8(py_sid));
+	sid_str = PyUnicode_AsUTF8(py_sid);
+	if (sid_str == NULL) {
+		PyErr_NoMemory();
+		return NULL;
+	}
+
+	sid = dom_sid_parse_talloc(NULL, sid_str);
 	if (sid == NULL) {
 		PyErr_NoMemory();
 		return NULL;

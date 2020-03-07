@@ -29,10 +29,16 @@
 
 #define CMDLINE_MAX_LEN		80
 
+struct cmdline_section {
+	const char *name;
+	struct cmdline_command *commands;
+};
+
 struct cmdline_context {
 	const char *prog;
 	struct poptOption *options;
-	struct cmdline_command *commands;
+	struct cmdline_section *section;
+	int num_sections;
 	int max_len;
 	poptContext pc;
 	int argc, arg0;
@@ -206,15 +212,51 @@ static bool cmdline_commands_check(struct cmdline_command *commands,
 
 static int cmdline_context_destructor(struct cmdline_context *cmdline);
 
+static int cmdline_section_add(struct cmdline_context *cmdline,
+			       const char *name,
+			       struct cmdline_command *commands)
+{
+	struct cmdline_section *section;
+	size_t max_len = 0;
+	bool ok;
+
+	ok = cmdline_commands_check(commands, &max_len);
+	if (!ok) {
+		return EINVAL;
+	}
+
+	section = talloc_realloc(cmdline,
+				 cmdline->section,
+				 struct cmdline_section,
+				 cmdline->num_sections + 1);
+	if (section == NULL) {
+		return ENOMEM;
+	}
+
+	section[cmdline->num_sections] = (struct cmdline_section) {
+		.name = name,
+		.commands = commands,
+	};
+
+	if (max_len > cmdline->max_len) {
+		cmdline->max_len = max_len;
+	}
+
+	cmdline->section = section;
+	cmdline->num_sections += 1;
+
+	return 0;
+}
+
 int cmdline_init(TALLOC_CTX *mem_ctx,
 		 const char *prog,
 		 struct poptOption *options,
+		 const char *name,
 		 struct cmdline_command *commands,
 		 struct cmdline_context **result)
 {
 	struct cmdline_context *cmdline;
 	int ret;
-	size_t max_len = 0;
 	bool ok;
 
 	if (prog == NULL) {
@@ -222,11 +264,6 @@ int cmdline_init(TALLOC_CTX *mem_ctx,
 	}
 
 	ok = cmdline_options_check(options);
-	if (!ok) {
-		return EINVAL;
-	}
-
-	ok = cmdline_commands_check(commands, &max_len);
 	if (!ok) {
 		return EINVAL;
 	}
@@ -247,8 +284,12 @@ int cmdline_init(TALLOC_CTX *mem_ctx,
 		talloc_free(cmdline);
 		return ret;
 	}
-	cmdline->commands = commands;
-	cmdline->max_len = max_len;
+
+	ret = cmdline_section_add(cmdline, name, commands);
+	if (ret != 0) {
+		talloc_free(cmdline);
+		return ret;
+	}
 
 	cmdline->argc = 1;
 	cmdline->argv = talloc_array(cmdline, const char *, 2);
@@ -283,6 +324,13 @@ static int cmdline_context_destructor(struct cmdline_context *cmdline)
 	}
 
 	return 0;
+}
+
+int cmdline_add(struct cmdline_context *cmdline,
+		const char *name,
+		struct cmdline_command *commands)
+{
+	return cmdline_section_add(cmdline, name, commands);
 }
 
 static int cmdline_parse_options(struct cmdline_context *cmdline,
@@ -323,16 +371,12 @@ static int cmdline_parse_options(struct cmdline_context *cmdline,
 	return 0;
 }
 
-static int cmdline_match(struct cmdline_context *cmdline)
+static int cmdline_match_section(struct cmdline_context *cmdline,
+				 struct cmdline_section *section)
 {
 	int i;
 
-	if (cmdline->argc == 0 || cmdline->argv == NULL) {
-		cmdline->match_cmd = NULL;
-		return EINVAL;
-	}
-
-	for (i=0; cmdline->commands[i].name != NULL; i++) {
+	for (i=0; section->commands[i].name != NULL; i++) {
 		struct cmdline_command *cmd;
 		char name[CMDLINE_MAX_LEN+1];
 		size_t len;
@@ -340,7 +384,7 @@ static int cmdline_match(struct cmdline_context *cmdline)
 		int n = 0;
 		bool match = false;
 
-		cmd = &cmdline->commands[i];
+		cmd = &section->commands[i];
 		len = strlcpy(name, cmd->name, sizeof(name));
 		if (len >= sizeof(name)) {
 			D_ERR("Skipping long command '%s'\n", cmd->name);
@@ -379,6 +423,25 @@ static int cmdline_match(struct cmdline_context *cmdline)
 	return ENOENT;
 }
 
+static int cmdline_match(struct cmdline_context *cmdline)
+{
+	int i, ret = ENOENT;
+
+	if (cmdline->argc == 0 || cmdline->argv == NULL) {
+		cmdline->match_cmd = NULL;
+		return EINVAL;
+	}
+
+	for (i=0; i<cmdline->num_sections; i++) {
+		ret = cmdline_match_section(cmdline, &cmdline->section[i]);
+		if (ret == 0) {
+			break;
+		}
+	}
+
+	return ret;
+}
+
 int cmdline_parse(struct cmdline_context *cmdline,
 		  int argc,
 		  const char **argv,
@@ -387,6 +450,7 @@ int cmdline_parse(struct cmdline_context *cmdline,
 	int ret;
 
 	if (argc < 2) {
+		cmdline_usage(cmdline, NULL);
 		return EINVAL;
 	}
 
@@ -395,6 +459,7 @@ int cmdline_parse(struct cmdline_context *cmdline,
 	if (parse_options) {
 		ret = cmdline_parse_options(cmdline, argc, argv);
 		if (ret != 0) {
+			cmdline_usage(cmdline, NULL);
 			return ret;
 		}
 	} else {
@@ -403,11 +468,22 @@ int cmdline_parse(struct cmdline_context *cmdline,
 	}
 
 	ret = cmdline_match(cmdline);
-	if (!cmdline_show_help && ret != 0) {
-		return ret;
+
+	if (ret != 0 || cmdline_show_help) {
+		const char *name = NULL;
+
+		if (cmdline->match_cmd != NULL) {
+			name = cmdline->match_cmd->name;
+		}
+
+		cmdline_usage(cmdline, name);
+
+		if (cmdline_show_help) {
+			ret = EAGAIN;
+		}
 	}
 
-	return 0;
+	return ret;
 }
 
 static void cmdline_usage_command(struct cmdline_context *cmdline,
@@ -429,6 +505,23 @@ static void cmdline_usage_command(struct cmdline_context *cmdline,
 	printf("     %s\n", cmd->msg_help);
 }
 
+static void cmdline_usage_section(struct cmdline_context *cmdline,
+				  struct cmdline_section *section)
+{
+	int i;
+
+	printf("\n");
+
+	if (section->name != NULL) {
+		printf("%s ", section->name);
+	}
+	printf("Commands:\n");
+	for (i=0; section->commands[i].name != NULL; i++) {
+		cmdline_usage_command(cmdline, &section->commands[i], true);
+
+	}
+}
+
 static void cmdline_usage_full(struct cmdline_context *cmdline)
 {
 	int i;
@@ -436,27 +529,29 @@ static void cmdline_usage_full(struct cmdline_context *cmdline)
 	poptSetOtherOptionHelp(cmdline->pc, "[<options>] <command> [<args>]");
 	poptPrintHelp(cmdline->pc, stdout, 0);
 
-	printf("\nCommands:\n");
-	for (i=0; cmdline->commands[i].name != NULL; i++) {
-		cmdline_usage_command(cmdline, &cmdline->commands[i], true);
-
+	for (i=0; i<cmdline->num_sections; i++) {
+		cmdline_usage_section(cmdline, &cmdline->section[i]);
 	}
 }
 
 void cmdline_usage(struct cmdline_context *cmdline, const char *cmd_name)
 {
 	struct cmdline_command *cmd = NULL;
-	int i;
+	int i, j;
 
 	if (cmd_name == NULL) {
 		cmdline_usage_full(cmdline);
 		return;
 	}
 
-	for (i=0; cmdline->commands[i].name != NULL; i++) {
-		if (strcmp(cmdline->commands[i].name, cmd_name) == 0) {
-			cmd = &cmdline->commands[i];
-			break;
+	for (j=0; j<cmdline->num_sections; j++) {
+		struct cmdline_section *section = &cmdline->section[j];
+
+		for (i=0; section->commands[i].name != NULL; i++) {
+			if (strcmp(section->commands[i].name, cmd_name) == 0) {
+				cmd = &section->commands[i];
+				break;
+			}
 		}
 	}
 
@@ -479,21 +574,6 @@ int cmdline_run(struct cmdline_context *cmdline,
 	struct cmdline_command *cmd = cmdline->match_cmd;
 	TALLOC_CTX *tmp_ctx;
 	int ret;
-
-	if (cmdline_show_help) {
-		const char *name = NULL;
-
-		if (cmd != NULL) {
-			name = cmdline->match_cmd->name;
-		}
-
-		cmdline_usage(cmdline, name);
-
-		if (result != NULL) {
-			*result = 0;
-		}
-		return EAGAIN;
-	}
 
 	if (cmd == NULL) {
 		return ENOENT;

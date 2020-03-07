@@ -2,6 +2,7 @@
  * NFS4 ACL handling
  *
  * Copyright (C) Jim McDonough, 2006
+ * Copyright (C) Christof Schmitt 2019
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -72,7 +73,7 @@ int smbacl4_get_vfs_params(struct connection_struct *conn,
 	};
 	int enumval;
 
-	ZERO_STRUCTP(params);
+	*params = (struct smbacl4_vfs_params) { 0 };
 
 	enumval = lp_parm_enum(SNUM(conn), SMBACL4_PARAM_TYPE_NAME, "mode",
 			       enum_smbacl4_modes, e_simple);
@@ -82,18 +83,27 @@ int smbacl4_get_vfs_params(struct connection_struct *conn,
 		return -1;
 	}
 	params->mode = (enum smbacl4_mode_enum)enumval;
+	if (params->mode == e_special) {
+		DBG_WARNING("nfs4:mode special is deprecated.\n");
+	}
 
 	params->do_chown = lp_parm_bool(SNUM(conn), SMBACL4_PARAM_TYPE_NAME,
 		"chown", true);
 
 	enumval = lp_parm_enum(SNUM(conn), SMBACL4_PARAM_TYPE_NAME, "acedup",
-			       enum_smbacl4_acedups, e_dontcare);
+			       enum_smbacl4_acedups, e_merge);
 	if (enumval == -1) {
 		DEBUG(10, ("value for %s:acedup unknown\n",
 			   SMBACL4_PARAM_TYPE_NAME));
 		return -1;
 	}
 	params->acedup = (enum smbacl4_acedup_enum)enumval;
+	if (params->acedup == e_ignore) {
+		DBG_WARNING("nfs4:acedup ignore is deprecated.\n");
+	}
+	if (params->acedup == e_reject) {
+		DBG_WARNING("nfs4:acedup ignore is deprecated.\n");
+	}
 
 	params->map_full_control = lp_acl_map_full_control(SNUM(conn));
 
@@ -272,24 +282,6 @@ static int smbacl4_GetFileOwner(struct connection_struct *conn,
 	if (vfs_stat_smb_basename(conn, smb_fname, psbuf) != 0)
 	{
 		DEBUG(8, ("vfs_stat_smb_basename failed with error %s\n",
-			strerror(errno)));
-		return -1;
-	}
-
-	return 0;
-}
-
-static int smbacl4_fGetFileOwner(files_struct *fsp, SMB_STRUCT_STAT *psbuf)
-{
-	ZERO_STRUCTP(psbuf);
-
-	if (fsp->fh->fd == -1) {
-		return smbacl4_GetFileOwner(fsp->conn,
-					    fsp->fsp_name, psbuf);
-	}
-	if (SMB_VFS_FSTAT(fsp, psbuf) != 0)
-	{
-		DEBUG(8, ("SMB_VFS_FSTAT failed with error %s\n",
 			strerror(errno)));
 		return -1;
 	}
@@ -555,21 +547,17 @@ NTSTATUS smb_fget_nt_acl_nfs4(files_struct *fsp,
 			      struct security_descriptor **ppdesc,
 			      struct SMB4ACL_T *theacl)
 {
-	SMB_STRUCT_STAT sbuf;
 	struct smbacl4_vfs_params params;
-	SMB_STRUCT_STAT *psbuf = NULL;
 
 	DEBUG(10, ("smb_fget_nt_acl_nfs4 invoked for %s\n", fsp_str_dbg(fsp)));
 
-	if (VALID_STAT(fsp->fsp_name->st)) {
-		psbuf = &fsp->fsp_name->st;
-	}
+	if (!VALID_STAT(fsp->fsp_name->st)) {
+		NTSTATUS status;
 
-	if (psbuf == NULL) {
-		if (smbacl4_fGetFileOwner(fsp, &sbuf)) {
-			return map_nt_error_from_unix(errno);
+		status = vfs_stat_fsp(fsp);
+		if (!NT_STATUS_IS_OK(status)) {
+			return status;
 		}
-		psbuf = &sbuf;
 	}
 
 	if (pparams == NULL) {
@@ -580,7 +568,8 @@ NTSTATUS smb_fget_nt_acl_nfs4(files_struct *fsp,
 		pparams = &params;
 	}
 
-	return smb_get_nt_acl_nfs4_common(psbuf, pparams, security_info,
+	return smb_get_nt_acl_nfs4_common(&fsp->fsp_name->st, pparams,
+					  security_info,
 					  mem_ctx, ppdesc, theacl);
 }
 
@@ -872,11 +861,9 @@ static int nfs4_acl_add_sec_ace(bool is_directory,
 	return nfs4_acl_add_ace(params->acedup, nfs4_acl, &nfs4_ace_2);
 }
 
-static int smbacl4_substitute_special(
-	struct SMB4ACL_T *acl,
-	uid_t ownerUID,
-	gid_t ownerGID
-)
+static void smbacl4_substitute_special(struct SMB4ACL_T *acl,
+				       uid_t ownerUID,
+				       gid_t ownerGID)
 {
 	struct SMB4ACE_T *aceint;
 
@@ -904,14 +891,11 @@ static int smbacl4_substitute_special(
 			DEBUG(10,("replaced with special group ace\n"));
 		}
 	}
-	return true; /* OK */
 }
 
-static int smbacl4_substitute_simple(
-	struct SMB4ACL_T *acl,
-	uid_t ownerUID,
-	gid_t ownerGID
-)
+static void smbacl4_substitute_simple(struct SMB4ACL_T *acl,
+				      uid_t ownerUID,
+				      gid_t ownerGID)
 {
 	struct SMB4ACE_T *aceint;
 
@@ -941,7 +925,6 @@ static int smbacl4_substitute_simple(
 			DEBUG(10,("replaced with special group ace\n"));
 		}
 	}
-	return true; /* OK */
 }
 
 static struct SMB4ACL_T *smbacl4_win2nfs4(

@@ -80,6 +80,9 @@ static bool print_driver_directories_init(void)
 	char *driver_path;
 	bool ok;
 	TALLOC_CTX *mem_ctx = talloc_stackframe();
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
+
 	const char *dir_list[] = {
 		"W32X86/PCC",
 		"x64/PCC",
@@ -94,7 +97,7 @@ static bool print_driver_directories_init(void)
 		return true;
 	}
 
-	driver_path = lp_path(mem_ctx, service);
+	driver_path = lp_path(mem_ctx, lp_sub, service);
 	if (driver_path == NULL) {
 		talloc_free(mem_ctx);
 		return false;
@@ -987,6 +990,8 @@ static uint32_t get_correct_cversion(const struct auth_session_info *session_inf
 				   WERROR *perr)
 {
 	TALLOC_CTX *frame = talloc_stackframe();
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	int cversion = -1;
 	NTSTATUS          nt_status;
 	struct smb_filename *smb_fname = NULL;
@@ -1028,7 +1033,7 @@ static uint32_t get_correct_cversion(const struct auth_session_info *session_inf
 		return -1;
 	}
 
-	printdollar_path = lp_path(frame, printdollar_snum);
+	printdollar_path = lp_path(frame, lp_sub, printdollar_snum);
 	if (printdollar_path == NULL) {
 		*perr = WERR_NOT_ENOUGH_MEMORY;
 		TALLOC_FREE(frame);
@@ -1071,7 +1076,7 @@ static uint32_t get_correct_cversion(const struct auth_session_info *session_inf
 		goto error_free_conn;
 	}
 
-	if (!become_user_by_session(conn, session_info)) {
+	if (!become_user_without_service_by_session(conn, session_info)) {
 		DEBUG(0, ("failed to become user\n"));
 		*perr = WERR_ACCESS_DENIED;
 		goto error_free_conn;
@@ -1167,7 +1172,7 @@ static uint32_t get_correct_cversion(const struct auth_session_info *session_inf
 	*perr = WERR_OK;
 
  error_exit:
-	unbecome_user();
+	unbecome_user_without_service();
  error_free_conn:
 	if (fsp != NULL) {
 		close_file(NULL, fsp, NORMAL_CLOSE);
@@ -1477,6 +1482,8 @@ WERROR move_driver_to_download_area(const struct auth_session_info *session_info
 				    const char *driver_directory)
 {
 	TALLOC_CTX *frame = talloc_stackframe();
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	struct spoolss_AddDriverInfo3 *driver;
 	struct spoolss_AddDriverInfo3 converted_driver;
 	const char *short_architecture;
@@ -1527,7 +1534,7 @@ WERROR move_driver_to_download_area(const struct auth_session_info *session_info
 
 	nt_status = create_conn_struct_tos_cwd(global_messaging_context(),
 					       printdollar_snum,
-					       lp_path(frame, printdollar_snum),
+					       lp_path(frame, lp_sub, printdollar_snum),
 					       session_info,
 					       &c);
 	if (!NT_STATUS_IS_OK(nt_status)) {
@@ -1546,7 +1553,7 @@ WERROR move_driver_to_download_area(const struct auth_session_info *session_info
 		goto err_free_conn;
 	}
 
-	if (!become_user_by_session(conn, session_info)) {
+	if (!become_user_without_service_by_session(conn, session_info)) {
 		DEBUG(0, ("failed to become user\n"));
 		err = WERR_ACCESS_DENIED;
 		goto err_free_conn;
@@ -1691,7 +1698,7 @@ WERROR move_driver_to_download_area(const struct auth_session_info *session_info
 
 	err = WERR_OK;
  err_exit:
-	unbecome_user();
+	unbecome_user_without_service();
  err_free_conn:
 	TALLOC_FREE(frame);
 	return err;
@@ -1706,6 +1713,8 @@ bool printer_driver_in_use(TALLOC_CTX *mem_ctx,
 			   struct dcerpc_binding_handle *b,
 			   const struct spoolss_DriverInfo8 *r)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	int snum;
 	int n_services = lp_numservices();
 	bool in_use = false;
@@ -1726,7 +1735,7 @@ bool printer_driver_in_use(TALLOC_CTX *mem_ctx,
 		}
 
 		result = winreg_get_printer(mem_ctx, b,
-					    lp_servicename(talloc_tos(), snum),
+					    lp_servicename(talloc_tos(), lp_sub, snum),
 					    &pinfo2);
 		if (!W_ERROR_IS_OK(result)) {
 			continue; /* skip */
@@ -2041,6 +2050,8 @@ bool delete_driver_files(const struct auth_session_info *session_info,
 			 const struct spoolss_DriverInfo8 *r)
 {
 	TALLOC_CTX *frame = talloc_stackframe();
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	const char *short_arch;
 	struct conn_struct_tos *c = NULL;
 	connection_struct *conn = NULL;
@@ -2069,7 +2080,7 @@ bool delete_driver_files(const struct auth_session_info *session_info,
 
 	nt_status = create_conn_struct_tos_cwd(global_messaging_context(),
 					       printdollar_snum,
-					       lp_path(frame, printdollar_snum),
+					       lp_path(frame, lp_sub, printdollar_snum),
 					       session_info,
 					       &c);
 	if (!NT_STATUS_IS_OK(nt_status)) {
@@ -2087,7 +2098,7 @@ bool delete_driver_files(const struct auth_session_info *session_info,
 		goto err_free_conn;
 	}
 
-	if (!become_user_by_session(conn, session_info)) {
+	if (!become_user_without_service_by_session(conn, session_info)) {
 		DEBUG(0, ("failed to become user\n"));
 		ret = false;
 		goto err_free_conn;
@@ -2139,7 +2150,7 @@ bool delete_driver_files(const struct auth_session_info *session_info,
 
 	ret = true;
  err_out:
-	unbecome_user();
+	unbecome_user_without_service();
  err_free_conn:
 	TALLOC_FREE(frame);
 	return ret;
@@ -2234,6 +2245,8 @@ WERROR print_access_check(const struct auth_session_info *session_info,
 			  int access_type)
 {
 	struct spoolss_security_descriptor *secdesc = NULL;
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	uint32_t access_granted;
 	size_t sd_size;
 	NTSTATUS status;
@@ -2253,7 +2266,7 @@ WERROR print_access_check(const struct auth_session_info *session_info,
 
 	/* Get printer name */
 
-	pname = lp_printername(talloc_tos(), snum);
+	pname = lp_printername(talloc_tos(), lp_sub, snum);
 
 	if (!pname || !*pname) {
 		return WERR_ACCESS_DENIED;

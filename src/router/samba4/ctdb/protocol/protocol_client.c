@@ -424,8 +424,6 @@ int ctdb_reply_control_db_attach(struct ctdb_reply_control *reply,
 	return reply->status;
 }
 
-/* CTDB_CONTROL_SET_CALL */
-
 /* CTDB_CONTROL_TRAVERSE_START */
 
 void ctdb_req_control_traverse_start(struct ctdb_req_control *request,
@@ -717,8 +715,6 @@ int ctdb_reply_control_shutdown(struct ctdb_reply_control *reply)
 {
 	return ctdb_reply_control_generic(reply, CTDB_CONTROL_SHUTDOWN);
 }
-
-/* CTDB_CONTROL_GET_MONMODE */
 
 /* CTDB_CONTROL_TCP_CLIENT */
 
@@ -1169,9 +1165,6 @@ int ctdb_reply_control_try_delete_records(struct ctdb_reply_control *reply,
 	}
 	return reply->status;
 }
-
-/* CTDB_CONTROL_ENABLE_MONITOR */
-/* CTDB_CONTROL_DISABLE_MONITOR */
 
 /* CTDB_CONTROL_ADD_PUBLIC_IP */
 
@@ -1855,8 +1848,6 @@ int ctdb_reply_control_set_db_readonly(struct ctdb_reply_control *reply)
 	return ctdb_reply_control_generic(reply, CTDB_CONTROL_SET_DB_READONLY);
 }
 
-/* CTDB_CONTROL_CHECK_SRVIDS */
-
 /* CTDB_CONTROL_TRAVERSE_START_EXT */
 
 void ctdb_req_control_traverse_start_ext(struct ctdb_req_control *request,
@@ -2311,6 +2302,8 @@ void ctdb_req_control_tunnel_register(struct ctdb_req_control *request,
 	request->srvid = tunnel_id;
 	request->client_id = 0;
 	request->flags = 0;
+
+	request->rdata.opcode = CTDB_CONTROL_TUNNEL_REGISTER;
 }
 
 int ctdb_reply_control_tunnel_register(struct ctdb_reply_control *reply)
@@ -2332,11 +2325,61 @@ void ctdb_req_control_tunnel_deregister(struct ctdb_req_control *request,
 	request->srvid = tunnel_id;
 	request->client_id = 0;
 	request->flags = 0;
+
+	request->rdata.opcode = CTDB_CONTROL_TUNNEL_DEREGISTER;
 }
 
 int ctdb_reply_control_tunnel_deregister(struct ctdb_reply_control *reply)
 {
 	if (reply->rdata.opcode != CTDB_CONTROL_TUNNEL_DEREGISTER) {
+		return EPROTO;
+	}
+
+	return reply->status;
+}
+
+/* CTDB_CONTROL_VACUUM_FETCH */
+
+void ctdb_req_control_vacuum_fetch(struct ctdb_req_control *request,
+				   struct ctdb_rec_buffer *recbuf)
+{
+	request->opcode = CTDB_CONTROL_VACUUM_FETCH;
+	request->pad = 0;
+	request->srvid = 0;
+	request->client_id = 0;
+	request->flags = 0;
+
+	request->rdata.opcode = CTDB_CONTROL_VACUUM_FETCH;
+	request->rdata.data.recbuf = recbuf;
+}
+
+int ctdb_reply_control_vacuum_fetch(struct ctdb_reply_control *reply)
+{
+	if (reply->rdata.opcode != CTDB_CONTROL_VACUUM_FETCH) {
+		return EPROTO;
+	}
+
+	return reply->status;
+}
+
+/* CTDB_CONTROL_DB_VACUUM */
+
+void ctdb_req_control_db_vacuum(struct ctdb_req_control *request,
+				struct ctdb_db_vacuum *db_vacuum)
+{
+	request->opcode = CTDB_CONTROL_DB_VACUUM;
+	request->pad = 0;
+	request->srvid = 0;
+	request->client_id = 0;
+	request->flags = 0;
+
+	request->rdata.opcode = CTDB_CONTROL_DB_VACUUM;
+	request->rdata.data.db_vacuum = db_vacuum;
+}
+
+int ctdb_reply_control_db_vacuum(struct ctdb_reply_control *reply)
+{
+	if (reply->rdata.opcode != CTDB_CONTROL_DB_VACUUM) {
 		return EPROTO;
 	}
 

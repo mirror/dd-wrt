@@ -22,7 +22,8 @@
 #include "system/filesys.h"
 #include "smbd/smbd.h"
 
-static int linux_xfs_sgid_mkdir(vfs_handle_struct *handle,
+static int linux_xfs_sgid_mkdirat(vfs_handle_struct *handle,
+		struct files_struct *dirfsp,
 		const struct smb_filename *smb_fname,
 		mode_t mode)
 {
@@ -30,11 +31,15 @@ static int linux_xfs_sgid_mkdir(vfs_handle_struct *handle,
 	int mkdir_res;
 	int res;
 
-	DEBUG(10, ("Calling linux_xfs_sgid_mkdir(%s)\n", smb_fname->base_name));
+	DEBUG(10, ("Calling linux_xfs_sgid_mkdirat(%s)\n",
+		smb_fname->base_name));
 
-	mkdir_res = SMB_VFS_NEXT_MKDIR(handle, smb_fname, mode);
+	mkdir_res = SMB_VFS_NEXT_MKDIRAT(handle,
+			dirfsp,
+			smb_fname,
+			mode);
 	if (mkdir_res == -1) {
-		DEBUG(10, ("SMB_VFS_NEXT_MKDIR returned error: %s\n",
+		DEBUG(10, ("SMB_VFS_NEXT_MKDIRAT returned error: %s\n",
 			   strerror(errno)));
 		return mkdir_res;
 	}
@@ -96,7 +101,7 @@ static int linux_xfs_sgid_mkdir(vfs_handle_struct *handle,
 }
 
 static struct vfs_fn_pointers linux_xfs_sgid_fns = {
-	.mkdir_fn = linux_xfs_sgid_mkdir,
+	.mkdirat_fn = linux_xfs_sgid_mkdirat,
 };
 
 static_decl_vfs;

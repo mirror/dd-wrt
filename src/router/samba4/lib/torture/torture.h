@@ -249,18 +249,20 @@ void torture_warning(struct torture_context *test, const char *comment, ...) PRI
 void torture_result(struct torture_context *test,
 			enum torture_result, const char *reason, ...) PRINTF_ATTRIBUTE(3,4);
 
-#define torture_assert(torture_ctx,expr,cmt) \
+#define torture_assert(torture_ctx,expr,cmt) do { \
 	if (!(expr)) { \
 		torture_result(torture_ctx, TORTURE_FAIL, __location__": Expression `%s' failed: %s", __STRING(expr), cmt); \
 		return false; \
-	}
+	} \
+} while(0)
 
-#define torture_assert_goto(torture_ctx,expr,ret,label,cmt) \
+#define torture_assert_goto(torture_ctx,expr,ret,label,cmt) do { \
 	if (!(expr)) { \
 		torture_result(torture_ctx, TORTURE_FAIL, __location__": Expression `%s' failed: %s", __STRING(expr), cmt); \
 		ret = false; \
 		goto label; \
-	}
+	} \
+} while(0)
 
 #define torture_assert_werr_equal(torture_ctx, got, expected, cmt) \
 	do { WERROR __got = got, __expected = expected; \
@@ -520,6 +522,54 @@ static inline void torture_dump_data_str_cb(const char *buf, void *private_data)
 	} \
 	} while(0)
 
+#define torture_assert_u32_equal(torture_ctx,got,expected,cmt)\
+	do { uint32_t __got = (got), __expected = (expected); \
+	if (__got != __expected) { \
+		torture_result(torture_ctx, TORTURE_FAIL, \
+			__location__": "#got" was %ju (0x%jX), expected %ju (0x%jX): %s", \
+			(uintmax_t)__got, (uintmax_t)__got, \
+			(uintmax_t)__expected, (uintmax_t)__expected, \
+			cmt); \
+		return false; \
+	} \
+	} while(0)
+
+#define torture_assert_u32_equal_goto(torture_ctx,got,expected,ret,label,cmt)\
+	do { uint32_t __got = (got), __expected = (expected); \
+	if (__got != __expected) { \
+		torture_result(torture_ctx, TORTURE_FAIL, \
+			__location__": "#got" was %ju (0x%jX), expected %ju (0x%jX): %s", \
+			(uintmax_t)__got, (uintmax_t)__got, \
+			(uintmax_t)__expected, (uintmax_t)__expected, \
+			cmt); \
+		ret = false; \
+		goto label; \
+	} \
+	} while(0)
+
+#define torture_assert_u32_not_equal(torture_ctx,got,not_expected,cmt)\
+	do { uint32_t __got = (got), __not_expected = (not_expected); \
+	if (__got == __not_expected) { \
+		torture_result(torture_ctx, TORTURE_FAIL, \
+			__location__": "#got" was %ju (0x%jX), expected a different number: %s", \
+			(uintmax_t)__got, (uintmax_t)__got, \
+			cmt); \
+		return false; \
+	} \
+	} while(0)
+
+#define torture_assert_u32_not_equal_goto(torture_ctx,got,not_expected,ret,label,cmt)\
+	do { uint32_t __got = (got), __not_expected = (not_expected); \
+	if (__got == __not_expected) { \
+		torture_result(torture_ctx, TORTURE_FAIL, \
+			__location__": "#got" was %ju (0x%jX), expected a different number: %s", \
+			(uintmax_t)__got, (uintmax_t)__got, \
+			cmt); \
+		ret = false; \
+		goto label; \
+	} \
+	} while(0)
+
 #define torture_assert_u64_equal(torture_ctx,got,expected,cmt)\
 	do { uint64_t __got = (got), __expected = (expected); \
 	if (__got != __expected) { \
@@ -576,6 +626,18 @@ static inline void torture_dump_data_str_cb(const char *buf, void *private_data)
 					   errno, strerror(errno), __expected, \
 					   strerror(__expected), cmt); \
 		return false; \
+	} \
+	} while(0)
+
+#define torture_assert_errno_equal_goto(torture_ctx,expected,ret,label,cmt)\
+	do { int __expected = (expected); \
+	if (errno != __expected) { \
+		torture_result(torture_ctx, TORTURE_FAIL, \
+			__location__": errno was %d (%s), expected %d: %s: %s", \
+					   errno, strerror(errno), __expected, \
+					   strerror(__expected), cmt); \
+		ret = false; \
+		goto label; \
 	} \
 	} while(0)
 

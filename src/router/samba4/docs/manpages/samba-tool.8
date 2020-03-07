@@ -2,12 +2,12 @@
 .\"     Title: samba-tool
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/14/2020
+.\"      Date: 03/03/2020
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.11.5
+.\"    Source: Samba 4.12.0
 .\"  Language: English
 .\"
-.TH "SAMBA\-TOOL" "8" "01/14/2020" "Samba 4\&.11\&.5" "System Administration tools"
+.TH "SAMBA\-TOOL" "8" "03/03/2020" "Samba 4\&.12\&.0" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -602,7 +602,7 @@ Compare two LDAP databases\&.
 Manage NT ACLs\&.
 .SS "ntacl changedomsid original-domain-SID new-domain-SID file [options]"
 .PP
-Change the domain SID for ACLs\&. Can be used to change all entries in acl_xattr when the machine\*(Aqs SID has accidentially changed or the data set has been copied to another machine either via backup/restore or rsync\&.
+Change the domain SID for ACLs\&. Can be used to change all entries in acl_xattr when the machine\*(Aqs SID has accidentally changed or the data set has been copied to another machine either via backup/restore or rsync\&.
 .PP
 \-\-use\-ntvfs
 .RS 4
@@ -790,6 +790,12 @@ Enable a user account\&.
 .SS "user list"
 .PP
 List all users\&.
+.SS "user setprimarygroup username primarygroupname"
+.PP
+Set the primary group a user account\&.
+.SS "user getgroups username"
+.PP
+Get the direct group memberships of a user account\&.
 .SS "user show username [options]"
 .PP
 Display a user AD object\&.
@@ -887,7 +893,7 @@ because the repsFrom/To objects are not replicated, and it can reveal replicatio
 Gives usage information\&.
 .SH "VERSION"
 .PP
-This man page is complete for version 4\&.11\&.5 of the Samba suite\&.
+This man page is complete for version 4\&.12\&.0 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

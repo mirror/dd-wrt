@@ -695,6 +695,7 @@ int dsdb_reference_schema(struct ldb_context *ldb, struct dsdb_schema *schema,
 			  enum schema_set_enum write_indices_and_attributes)
 {
 	int ret;
+	void *ptr;
 	struct dsdb_schema *old_schema;
 	old_schema = ldb_get_opaque(ldb, "dsdb_schema");
 	ret = ldb_set_opaque(ldb, "dsdb_schema", schema);
@@ -706,8 +707,13 @@ int dsdb_reference_schema(struct ldb_context *ldb, struct dsdb_schema *schema,
 	 * none, NULL is harmless here */
 	talloc_unlink(ldb, old_schema);
 
-	if (talloc_reference(ldb, schema) == NULL) {
-		return ldb_oom(ldb);
+	/* Reference schema on ldb if it wasn't done already */
+	ret = talloc_is_parent(ldb, schema);
+	if (ret == 0) {
+		ptr = talloc_reference(ldb, schema);
+		if (ptr == NULL) {
+			return ldb_oom(ldb);
+		}
 	}
 
 	/* Make this ldb use local schema preferably */
@@ -741,6 +747,7 @@ int dsdb_set_global_schema(struct ldb_context *ldb)
 {
 	int ret;
 	void *use_global_schema = (void *)1;
+	void *ptr;
 	struct dsdb_schema *old_schema = ldb_get_opaque(ldb, "dsdb_schema");
 
 	ret = ldb_set_opaque(ldb, "dsdb_use_global_schema", use_global_schema);
@@ -766,9 +773,15 @@ int dsdb_set_global_schema(struct ldb_context *ldb)
 	/* Don't write indices and attributes, it's expensive */
 	ret = dsdb_schema_set_indices_and_attributes(ldb, global_schema, SCHEMA_MEMORY_ONLY);
 	if (ret == LDB_SUCCESS) {
-		/* Keep a reference to this schema, just in case the original copy is replaced */
-		if (talloc_reference(ldb, global_schema) == NULL) {
-			return ldb_oom(ldb);
+		/* If ldb doesn't have a reference to the schema, make one,
+		 * just in case the original copy is replaced */
+		ret = talloc_is_parent(ldb, global_schema);
+		if (ret == 0) {
+			ptr = talloc_reference(ldb, global_schema);
+			if (ptr == NULL) {
+				return ldb_oom(ldb);
+			}
+			ret = ldb_set_opaque(ldb, "dsdb_schema", global_schema);
 		}
 	}
 
@@ -794,6 +807,7 @@ struct dsdb_schema *dsdb_get_schema(struct ldb_context *ldb, TALLOC_CTX *referen
 	dsdb_schema_refresh_fn refresh_fn;
 	struct ldb_module *loaded_from_module;
 	bool use_global_schema;
+	int ret;
 	TALLOC_CTX *tmp_ctx = talloc_new(reference_ctx);
 	if (tmp_ctx == NULL) {
 		return NULL;
@@ -843,7 +857,11 @@ struct dsdb_schema *dsdb_get_schema(struct ldb_context *ldb, TALLOC_CTX *referen
 
 	/* This removes the extra reference above */
 	talloc_free(tmp_ctx);
-	if (!reference_ctx) {
+
+	/* If ref ctx exists and doesn't already reference schema, then add
+	 * a reference.  Otherwise, just return schema.*/
+	ret = talloc_is_parent(reference_ctx, schema_out);
+	if ((ret == 1) || (!reference_ctx)) {
 		return schema_out;
 	} else {
 		return talloc_reference(reference_ctx, schema_out);
@@ -886,6 +904,7 @@ int dsdb_schema_fill_extended_dn(struct ldb_context *ldb, struct dsdb_schema *sc
 		const struct ldb_val *rdn;
 		struct ldb_val guid;
 		NTSTATUS status;
+		int ret;
 		struct ldb_dn *dn = ldb_dn_new(NULL, ldb, cur->defaultObjectCategory);
 
 		if (!dn) {
@@ -907,7 +926,12 @@ int dsdb_schema_fill_extended_dn(struct ldb_context *ldb, struct dsdb_schema *sc
 			talloc_free(dn);
 			return ldb_operr(ldb);
 		}
-		ldb_dn_set_extended_component(dn, "GUID", &guid);
+		ret = ldb_dn_set_extended_component(dn, "GUID", &guid);
+		if (ret != LDB_SUCCESS) {
+			ret = ldb_error(ldb, ret, "Could not set GUID");
+			talloc_free(dn);
+			return ret;
+		}
 
 		cur->defaultObjectCategory = ldb_dn_get_extended_linearized(cur, dn, 1);
 		talloc_free(dn);

@@ -51,7 +51,7 @@
 	</p></dd><dt><span class="term">-? --help</span></dt><dd><p>
 	  Print some help text to the screen.
 	</p></dd><dt><span class="term">--usage</span></dt><dd><p>
-	  Print useage information to the screen.
+	  Print usage information to the screen.
 	</p></dd><dt><span class="term">-d --debug=<em class="parameter"><code>DEBUGLEVEL</code></em></span></dt><dd><p>
 	  Change the debug level for the command. Default is NOTICE.
 	</p></dd></dl></div></div><div class="refsect1"><a name="idm101"></a><h2>ADMINISTRATIVE COMMANDS</h2><p>
@@ -62,7 +62,7 @@
 	This command shows the current status of all CTDB nodes based
 	on information from the queried node.
       </p><p>
-	Note: If the the queried node is INACTIVE then the status
+	Note: If the queried node is INACTIVE then the status
 	might not be current.
       </p><div class="refsect3"><a name="idm111"></a><h4>Node status</h4><p>
 	  This includes the number of physical nodes and the status of
@@ -164,7 +164,7 @@ pnn:1 10.0.0.31        OK
 	</pre></div></div><div class="refsect2"><a name="idm158"></a><h3>recmaster</h3><p>
 	This command shows the pnn of the node which is currently the recmaster.
       </p><p>
-	Note: If the the queried node is INACTIVE then the status
+	Note: If the queried node is INACTIVE then the status
 	might not be current.
       </p></div><div class="refsect2"><a name="idm162"></a><h3>uptime</h3><p>
 	This command shows the uptime for the ctdb daemon. When the last recovery or ip-failover completed and how long it took. If the "duration" is shown as a negative number, this indicates that there is a recovery/failover in progress and it started that many seconds ago.
@@ -412,7 +412,6 @@ RecoveryDropAllIPs      = 120
 VacuumInterval          = 10
 VacuumMaxRunTime        = 120
 RepackLimit             = 10000
-VacuumLimit             = 5000
 VacuumFastPathCount     = 60
 MaxQueueDropMsg         = 1000000
 AllowUnhealthyDBRead    = 0
@@ -635,7 +634,7 @@ DB Statistics: locking.tdb
       </p></div><div class="refsect2"><a name="idm411"></a><h3>shutdown</h3><p>
 	This command will shutdown a specific CTDB daemon.
       </p></div><div class="refsect2"><a name="idm414"></a><h3>setlmasterrole on|off</h3><p>
-	This command is used ot enable/disable the LMASTER capability for a node at runtime. This capability determines whether or not a node can be used as an LMASTER for records in the database. A node that does not have the LMASTER capability will not show up in the vnnmap.
+	This command is used to enable/disable the LMASTER capability for a node at runtime. This capability determines whether or not a node can be used as an LMASTER for records in the database. A node that does not have the LMASTER capability will not show up in the vnnmap.
       </p><p>
 	Nodes will by default have this capability, but it can be stripped off nodes by the setting in the sysconfig file or by using this command.
       </p><p>
@@ -643,7 +642,7 @@ DB Statistics: locking.tdb
       </p><p>
 	See also "ctdb getcapabilities"
       </p></div><div class="refsect2"><a name="idm420"></a><h3>setrecmasterrole on|off</h3><p>
-	This command is used ot enable/disable the RECMASTER capability for a node at runtime. This capability determines whether or not a node can be used as an RECMASTER for the cluster. A node that does not have the RECMASTER capability can not win a recmaster election. A node that already is the recmaster for the cluster when the capability is stripped off the node will remain the recmaster until the next cluster election.
+	This command is used to enable/disable the RECMASTER capability for a node at runtime. This capability determines whether or not a node can be used as an RECMASTER for the cluster. A node that does not have the RECMASTER capability can not win a recmaster election. A node that already is the recmaster for the cluster when the capability is stripped off the node will remain the recmaster until the next cluster election.
       </p><p>
 	Nodes will by default have this capability, but it can be stripped off nodes by the setting in the sysconfig file or by using this command.
       </p><p>
@@ -724,7 +723,7 @@ DB Statistics: locking.tdb
 	If a PERSISTENT database is not in a healthy state the database
 	is flagged as UNHEALTHY. If there's at least one completely
 	healthy node running in the cluster, it's possible that the
-	content is restored by a recovery run automaticly. Otherwise an
+	content is restored by a recovery run automatically. Otherwise an
 	administrator needs to analyze the problem.
       </p><p>
 	See also "ctdb getdbstatus", "ctdb backupdb", "ctdb restoredb",

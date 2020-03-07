@@ -1,0 +1,30 @@
+<samba:parameter name="spotlight backend"
+		 context="S"
+		 type="enum"
+                 enumlist="enum_spotlight_backend"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	  Spotlight search backend. Available backends:
+
+	<itemizedlist>
+	<listitem><para><constant>noindex</constant> -
+	a backend that returns no results.
+	</para></listitem>
+
+	</itemizedlist>
+
+	<itemizedlist>
+	<listitem><para><constant>tracker</constant> -
+	Gnome Tracker.
+	</para></listitem>
+
+	<listitem><para><constant>elasticsearch</constant> -
+	a backend that uses JSON and REST over HTTP(s) to query an
+	Elasticsearch server.
+	</para></listitem>
+	</itemizedlist>
+	</para>
+</description>
+<value type="default">noindex</value>
+</samba:parameter>

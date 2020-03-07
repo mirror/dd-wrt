@@ -33,6 +33,7 @@
 #include "auth/auth_sam_reply.h"
 #include "auth/gensec/gensec.h"
 #include "param/param.h"
+#include "zlib.h"
 
 #define TEST_CANONICALIZE     0x0000001
 #define TEST_ENTERPRISE       0x0000002
@@ -214,6 +215,17 @@ static bool test_accept_ticket(struct torture_context *tctx,
 	return true;
 }
 
+static void
+zCRC32_checksum(const void *data,
+		size_t len,
+		Checksum *C)
+{
+	uint32_t *crc = C->checksum.data;
+	*crc = ~(crc32(0xffffffff, data, len));
+	C->checksum.length = 4;
+	C->cksumtype = 1;
+}
+
 krb5_error_code
 _krb5_s4u2self_to_checksumdata(krb5_context context,
 			       const PA_S4U2Self *self,
@@ -252,11 +264,7 @@ static bool change_for_user_principal(struct torture_krb5_context *test_context,
 	torture_assert_int_equal(test_context->tctx,
 				 _krb5_s4u2self_to_checksumdata(k5_ctx, &mod_self, &cksum_data),
 				 0, "_krb5_s4u2self_to_checksumdata() failed");
-	torture_assert_int_equal(test_context->tctx,
-				 krb5_create_checksum(k5_ctx, NULL, KRB5_KU_OTHER_CKSUM,
-						      CKSUMTYPE_CRC32, cksum_data.data,
-						      cksum_data.length, &mod_self.cksum),
-				 0, "krb5_create_checksum() failed");
+	zCRC32_checksum(cksum_data.data, cksum_data.length, &mod_self.cksum);
 
 	ASN1_MALLOC_ENCODE(PA_S4U2Self, for_user->padata_value.data, for_user->padata_value.length,
 			   &mod_self, &used, ret);
@@ -270,7 +278,6 @@ static bool change_for_user_principal(struct torture_krb5_context *test_context,
 
 	free_PA_S4U2Self(&self);
 	krb5_data_free(&cksum_data);
-	free_Checksum(&mod_self.cksum);
 
 	return true;
 }
@@ -730,13 +737,12 @@ static bool torture_krb5_post_recv_tgs_req_canon_test(struct torture_krb5_contex
 					 error.pvno, 5,
 					 "Got wrong error.pvno");
 		expected_error = KRB5KDC_ERR_S_PRINCIPAL_UNKNOWN - KRB5KDC_ERR_NONE;
-		if (error.error_code != expected_error && test_context->test_data->mitm_s4u2self) {
-			expected_error = KRB5KRB_AP_ERR_INAPP_CKSUM - KRB5KDC_ERR_NONE;
+		if (!test_context->test_data->mitm_s4u2self) {
+			torture_assert_int_equal(test_context->tctx,
+						 error.error_code,
+						 expected_error,
+						 "Got wrong error.error_code");
 		}
-		torture_assert_int_equal(test_context->tctx,
-					 error.error_code,
-					 expected_error,
-					 "Got wrong error.error_code");
 	} else {
 		torture_assert_int_equal(test_context->tctx,
 					 decode_TGS_REP(recv_buf->data, recv_buf->length,
@@ -1617,7 +1623,7 @@ static bool torture_krb5_as_req_canon(struct torture_context *tctx, const void *
 	 * then skip the SPN tests.
 	 */
 	if (test_data->as_req_spn && test_data->krb5_hostname[0] == '\0') {
-		torture_skip(tctx, "This test needs a hostname specified as --option=torture:krb5-hostname=hostname.example.com and optinally --option=torture:krb5-service=service (defaults to host) to run");
+		torture_skip(tctx, "This test needs a hostname specified as --option=torture:krb5-hostname=hostname.example.com and optionally --option=torture:krb5-service=service (defaults to host) to run");
 	}
 
 	if (test_data->removedollar &&
@@ -2083,8 +2089,7 @@ static bool torture_krb5_as_req_canon(struct torture_context *tctx, const void *
 			|| test_data->upn == false)) {
 
 			if (test_data->mitm_s4u2self) {
-				torture_assert_int_equal(tctx, k5ret, KRB5KRB_AP_ERR_INAPP_CKSUM,
-							 assertion_message);
+				torture_assert_int_not_equal(tctx, k5ret, 0, assertion_message);
 				/* Done testing mitm-s4u2self */
 				return true;
 			}

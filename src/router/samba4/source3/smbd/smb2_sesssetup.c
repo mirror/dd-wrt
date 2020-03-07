@@ -28,9 +28,6 @@
 #include "../lib/tsocket/tsocket.h"
 #include "../libcli/security/security.h"
 #include "../lib/util/tevent_ntstatus.h"
-#include "lib/crypto/aes.h"
-#include "lib/crypto/aes_ccm_128.h"
-#include "lib/crypto/aes_gcm_128.h"
 
 #include "lib/crypto/gnutls_helpers.h"
 #include <gnutls/gnutls.h>
@@ -373,18 +370,28 @@ static NTSTATUS smbd_smb2_auth_generic_return(struct smbXsrv_session *session,
 	if (xconn->protocol >= PROTOCOL_SMB2_24) {
 		struct _derivation *d = &derivation.decryption;
 
-		x->global->decryption_key_blob = data_blob_talloc(x->global,
-							     session_key,
-							     sizeof(session_key));
-		if (x->global->decryption_key_blob.data == NULL) {
+		x->global->decryption_key =
+			talloc_zero(x->global, struct smb2_signing_key);
+		if (x->global->decryption_key == NULL) {
 			ZERO_STRUCT(session_key);
 			return NT_STATUS_NO_MEMORY;
 		}
 
+		x->global->decryption_key->blob =
+			x->global->decryption_key_blob =
+				data_blob_talloc(x->global->decryption_key,
+						 session_key,
+						 sizeof(session_key));
+		if (!smb2_signing_key_valid(x->global->decryption_key)) {
+			ZERO_STRUCT(session_key);
+			return NT_STATUS_NO_MEMORY;
+		}
+		talloc_keep_secret(x->global->decryption_key->blob.data);
+
 		status = smb2_key_derivation(session_key, sizeof(session_key),
 					     d->label.data, d->label.length,
 					     d->context.data, d->context.length,
-					     x->global->decryption_key_blob.data);
+					     x->global->decryption_key->blob.data);
 		if (!NT_STATUS_IS_OK(status)) {
 			return status;
 		}
@@ -394,18 +401,28 @@ static NTSTATUS smbd_smb2_auth_generic_return(struct smbXsrv_session *session,
 		struct _derivation *d = &derivation.encryption;
 		size_t nonce_size;
 
-		x->global->encryption_key_blob = data_blob_talloc(x->global,
-							     session_key,
-							     sizeof(session_key));
-		if (x->global->encryption_key_blob.data == NULL) {
+		x->global->encryption_key =
+			talloc_zero(x->global, struct smb2_signing_key);
+		if (x->global->encryption_key == NULL) {
 			ZERO_STRUCT(session_key);
 			return NT_STATUS_NO_MEMORY;
 		}
 
+		x->global->encryption_key->blob =
+			x->global->encryption_key_blob =
+				data_blob_talloc(x->global->encryption_key,
+						 session_key,
+						 sizeof(session_key));
+		if (!smb2_signing_key_valid(x->global->encryption_key)) {
+			ZERO_STRUCT(session_key);
+			return NT_STATUS_NO_MEMORY;
+		}
+		talloc_keep_secret(x->global->encryption_key->blob.data);
+
 		status = smb2_key_derivation(session_key, sizeof(session_key),
 					     d->label.data, d->label.length,
 					     d->context.data, d->context.length,
-					     x->global->encryption_key_blob.data);
+					     x->global->encryption_key->blob.data);
 		if (!NT_STATUS_IS_OK(status)) {
 			return status;
 		}
@@ -419,14 +436,14 @@ static NTSTATUS smbd_smb2_auth_generic_return(struct smbXsrv_session *session,
 		 *
 		 * NOTE: We assume nonces greater than 8 bytes.
 		 */
-		generate_random_buffer((uint8_t *)&x->nonce_high_random,
-				       sizeof(x->nonce_high_random));
+		generate_nonce_buffer((uint8_t *)&x->nonce_high_random,
+				      sizeof(x->nonce_high_random));
 		switch (xconn->smb2.server.cipher) {
 		case SMB2_ENCRYPTION_AES128_CCM:
-			nonce_size = AES_CCM_128_NONCE_SIZE;
+			nonce_size = SMB2_AES_128_CCM_NONCE_SIZE;
 			break;
 		case SMB2_ENCRYPTION_AES128_GCM:
-			nonce_size = AES_GCM_128_IV_SIZE;
+			nonce_size = gnutls_cipher_get_iv_size(GNUTLS_CIPHER_AES_128_GCM);
 			break;
 		default:
 			nonce_size = 0;
@@ -474,11 +491,11 @@ static NTSTATUS smbd_smb2_auth_generic_return(struct smbXsrv_session *session,
 		/* In server code, ServerIn is the decryption key */
 
 		DEBUGADD(0, ("ServerIn Key  "));
-		dump_data(0, x->global->decryption_key_blob.data,
-			  x->global->decryption_key_blob.length);
+		dump_data(0, x->global->decryption_key->blob.data,
+			  x->global->decryption_key->blob.length);
 		DEBUGADD(0, ("ServerOut Key "));
-		dump_data(0, x->global->encryption_key_blob.data,
-			  x->global->encryption_key_blob.length);
+		dump_data(0, x->global->encryption_key->blob.data,
+			  x->global->encryption_key->blob.length);
 	}
 
 	ZERO_STRUCT(session_key);
@@ -508,20 +525,10 @@ static NTSTATUS smbd_smb2_auth_generic_return(struct smbXsrv_session *session,
 	}
 	talloc_keep_secret(session_info->session_key.data);
 
-	session->compat = talloc_zero(session, struct user_struct);
-	if (session->compat == NULL) {
-		return NT_STATUS_NO_MEMORY;
-	}
-	session->compat->session = session;
-	session->compat->homes_snum = -1;
-	session->compat->session_info = session_info;
-	session->compat->session_keystr = NULL;
-	session->compat->vuid = session->global->session_wire_id;
-	DLIST_ADD(smb2req->sconn->users, session->compat);
 	smb2req->sconn->num_users++;
 
 	if (security_session_user_level(session_info, NULL) >= SECURITY_USER) {
-		session->compat->homes_snum =
+		session->homes_snum =
 			register_homes_share(session_info->unix_info->unix_name);
 	}
 
@@ -548,7 +555,7 @@ static NTSTATUS smbd_smb2_auth_generic_return(struct smbXsrv_session *session,
 	if (!session_claim(session)) {
 		DEBUG(1, ("smb2: Failed to claim session "
 			"for vuid=%llu\n",
-			(unsigned long long)session->compat->vuid));
+			(unsigned long long)session->global->session_wire_id));
 		return NT_STATUS_LOGON_FAILURE;
 	}
 
@@ -556,7 +563,7 @@ static NTSTATUS smbd_smb2_auth_generic_return(struct smbXsrv_session *session,
 	status = smbXsrv_session_update(session);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(0, ("smb2: Failed to update session for vuid=%llu - %s\n",
-			  (unsigned long long)session->compat->vuid,
+			  (unsigned long long)session->global->session_wire_id,
 			  nt_errstr(status)));
 		return NT_STATUS_LOGON_FAILURE;
 	}
@@ -600,10 +607,7 @@ static NTSTATUS smbd_smb2_reauth_generic_return(struct smbXsrv_session *session,
 	}
 	talloc_keep_secret(session_info->session_key.data);
 
-	session->compat->session_info = session_info;
-	session->compat->vuid = session->global->session_wire_id;
-
-	session->compat->homes_snum =
+	session->homes_snum =
 			register_homes_share(session_info->unix_info->unix_name);
 
 	set_current_user_info(session_info->unix_info->sanitized_username,
@@ -635,12 +639,13 @@ static NTSTATUS smbd_smb2_reauth_generic_return(struct smbXsrv_session *session,
 	status = smbXsrv_session_update(session);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(0, ("smb2: Failed to update session for vuid=%llu - %s\n",
-			  (unsigned long long)session->compat->vuid,
+			  (unsigned long long)session->global->session_wire_id,
 			  nt_errstr(status)));
 		return NT_STATUS_LOGON_FAILURE;
 	}
 
-	conn_clear_vuid_caches(xconn->client->sconn, session->compat->vuid);
+	conn_clear_vuid_caches(xconn->client->sconn,
+			       session->global->session_wire_id);
 
 	*out_session_id = session->global->session_wire_id;
 
@@ -775,7 +780,7 @@ static NTSTATUS smbd_smb2_bind_auth_return(struct smbXsrv_session *session,
 	status = smbXsrv_session_update(session);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(0, ("smb2: Failed to update session for vuid=%llu - %s\n",
-			  (unsigned long long)session->compat->vuid,
+			  (unsigned long long)session->global->session_wire_id,
 			  nt_errstr(status)));
 		return NT_STATUS_LOGON_FAILURE;
 	}

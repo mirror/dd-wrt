@@ -35,6 +35,7 @@
 
 #include <gnutls/gnutls.h>
 #include <gnutls/crypto.h>
+#include "lib/crypto/gnutls_helpers.h"
 
 struct profile_stats *profile_p;
 struct smbprofile_global_state smbprofile_state;
@@ -124,7 +125,7 @@ static void reqprofile_message(struct messaging_context *msg_ctx,
   ******************************************************************/
 bool profile_setup(struct messaging_context *msg_ctx, bool rdonly)
 {
-	unsigned char tmp[16] = {};
+	uint8_t digest[gnutls_hash_get_len(GNUTLS_DIG_SHA1)];
 	gnutls_hash_hd_t hash_hnd = NULL;
 	char *db_name;
 	bool ok = false;
@@ -154,7 +155,9 @@ bool profile_setup(struct messaging_context *msg_ctx, bool rdonly)
 				   reqprofile_message);
 	}
 
-	rc = gnutls_hash_init(&hash_hnd, GNUTLS_DIG_MD5);
+	GNUTLS_FIPS140_SET_LAX_MODE();
+
+	rc = gnutls_hash_init(&hash_hnd, GNUTLS_DIG_SHA1);
 	if (rc < 0) {
 		goto out;
 	}
@@ -210,18 +213,21 @@ bool profile_setup(struct messaging_context *msg_ctx, bool rdonly)
 		goto out;
 	}
 
-	gnutls_hash_deinit(hash_hnd, tmp);
+	gnutls_hash_deinit(hash_hnd, digest);
+
+	GNUTLS_FIPS140_SET_STRICT_MODE();
 
 	profile_p = &smbprofile_state.stats.global;
 
-	profile_p->magic = BVAL(tmp, 0);
+	profile_p->magic = BVAL(digest, 0);
 	if (profile_p->magic == 0) {
-		profile_p->magic = BVAL(tmp, 8);
+		profile_p->magic = BVAL(digest, 8);
 	}
-	ZERO_ARRAY(tmp);
 
 	ok = true;
 out:
+	GNUTLS_FIPS140_SET_STRICT_MODE();
+
 	return ok;
 }
 

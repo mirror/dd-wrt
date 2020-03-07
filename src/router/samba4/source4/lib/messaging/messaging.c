@@ -35,7 +35,7 @@
 #include "../lib/util/tevent_ntstatus.h"
 #include "lib/param/param.h"
 #include "lib/util/server_id_db.h"
-#include "lib/util/talloc_report.h"
+#include "lib/util/talloc_report_printf.h"
 #include "../source3/lib/messages_dgm.h"
 #include "../source3/lib/messages_dgm_ref.h"
 #include "../source3/lib/messages_util.h"
@@ -67,48 +67,80 @@ struct dispatch_fn {
 
 /* an individual message */
 
-static void irpc_handler(struct imessaging_context *, void *,
-			 uint32_t, struct server_id, DATA_BLOB *);
+static void irpc_handler(struct imessaging_context *,
+			 void *,
+			 uint32_t,
+			 struct server_id,
+			 size_t,
+			 int *,
+			 DATA_BLOB *);
 
 
 /*
  A useful function for testing the message system.
 */
-static void ping_message(struct imessaging_context *msg, void *private_data,
-			 uint32_t msg_type, struct server_id src, DATA_BLOB *data)
+static void ping_message(struct imessaging_context *msg,
+			 void *private_data,
+			 uint32_t msg_type,
+			 struct server_id src,
+			 size_t num_fds,
+			 int *fds,
+			 DATA_BLOB *data)
 {
 	struct server_id_buf idbuf;
+
+	if (num_fds != 0) {
+		DBG_WARNING("Received %zu fds, ignoring message\n", num_fds);
+		return;
+	}
+
 	DEBUG(1,("INFO: Received PING message from server %s [%.*s]\n",
 		 server_id_str_buf(src, &idbuf), (int)data->length,
 		 data->data?(const char *)data->data:""));
 	imessaging_send(msg, src, MSG_PONG, data);
 }
 
-static void pool_message(struct imessaging_context *msg, void *private_data,
-			 uint32_t msg_type, struct server_id src,
+static void pool_message(struct imessaging_context *msg,
+			 void *private_data,
+			 uint32_t msg_type,
+			 struct server_id src,
+			 size_t num_fds,
+			 int *fds,
 			 DATA_BLOB *data)
 {
-	char *report;
+	FILE *f = NULL;
 
-	report = talloc_report_str(msg, NULL);
-
-	if (report != NULL) {
-		DATA_BLOB blob = { .data = (uint8_t *)report,
-				   .length = talloc_get_size(report) - 1};
-		imessaging_send(msg, src, MSG_POOL_USAGE, &blob);
+	if (num_fds != 1) {
+		DBG_WARNING("Received %zu fds, ignoring message\n", num_fds);
+		return;
 	}
-	talloc_free(report);
+
+	f = fdopen(fds[0], "w");
+	if (f == NULL) {
+		DBG_DEBUG("fopen failed: %s\n", strerror(errno));
+		return;
+	}
+
+	talloc_full_report_printf(NULL, f);
+	fclose(f);
 }
 
 static void ringbuf_log_msg(struct imessaging_context *msg,
 			    void *private_data,
 			    uint32_t msg_type,
 			    struct server_id src,
+			    size_t num_fds,
+			    int *fds,
 			    DATA_BLOB *data)
 {
 	char *log = debug_get_ringbuf();
 	size_t logsize = debug_get_ringbuf_size();
 	DATA_BLOB blob;
+
+	if (num_fds != 0) {
+		DBG_WARNING("Received %zu fds, ignoring message\n", num_fds);
+		return;
+	}
 
 	if (log == NULL) {
 		log = discard_const_p(char, "*disabled*\n");
@@ -129,12 +161,19 @@ static void debug_imessage(struct imessaging_context *msg_ctx,
 			   void *private_data,
 			   uint32_t msg_type,
 			   struct server_id src,
+			   size_t num_fds,
+			   int *fds,
 			   DATA_BLOB *data)
 {
 	const char *params_str = (const char *)data->data;
 	struct server_id_buf src_buf;
 	struct server_id dst = imessaging_get_server_id(msg_ctx);
 	struct server_id_buf dst_buf;
+
+	if (num_fds != 0) {
+		DBG_WARNING("Received %zu fds, ignoring message\n", num_fds);
+		return;
+	}
 
 	/* Check, it's a proper string! */
 	if (params_str[(data->length)-1] != '\0') {
@@ -160,6 +199,8 @@ static void debuglevel_imessage(struct imessaging_context *msg_ctx,
 				void *private_data,
 				uint32_t msg_type,
 				struct server_id src,
+				size_t num_fds,
+				int *fds,
 				DATA_BLOB *data)
 {
 	char *message = debug_list_class_names_and_levels();
@@ -167,6 +208,11 @@ static void debuglevel_imessage(struct imessaging_context *msg_ctx,
 	struct server_id_buf src_buf;
 	struct server_id dst = imessaging_get_server_id(msg_ctx);
 	struct server_id_buf dst_buf;
+
+	if (num_fds != 0) {
+		DBG_WARNING("Received %zu fds, ignoring message\n", num_fds);
+		return;
+	}
 
 	DBG_DEBUG("Received REQ_DEBUGLEVEL message (pid %s from pid %s)\n",
 		  server_id_str_buf(dst, &dst_buf),
@@ -318,8 +364,8 @@ NTSTATUS imessaging_process_cleanup(
 	pid_t pid)
 {
 	struct irpc_name_records *names = NULL;
-	int i = 0;
-	int j = 0;
+	uint32_t i = 0;
+	uint32_t j = 0;
 	TALLOC_CTX *mem_ctx = talloc_new(NULL);
 
 	if (mem_ctx == NULL) {
@@ -651,13 +697,6 @@ static void imessaging_dgm_recv(struct tevent_context *ev,
 		return;
 	}
 
-	if (num_fds != 0) {
-		/*
-		 * Source4 based messaging does not expect fd's yet
-		 */
-		return;
-	}
-
 	if (ev != msg->ev) {
 		int ret;
 		ret = imessaging_post_self(msg, buf, buf_len);
@@ -687,7 +726,13 @@ static void imessaging_dgm_recv(struct tevent_context *ev,
 
 		for (; d; d = next) {
 			next = d->next;
-			d->fn(msg, d->private_data, d->msg_type, src, &data);
+			d->fn(msg,
+			      d->private_data,
+			      d->msg_type,
+			      src,
+			      num_fds,
+			      fds,
+			      &data);
 		}
 	} else {
 		DEBUG(10, ("%s: Ignoring type=0x%x dst %s, I am %s, \n",
@@ -882,11 +927,21 @@ failed:
 /*
   handle an incoming irpc message
 */
-static void irpc_handler(struct imessaging_context *msg_ctx, void *private_data,
-			 uint32_t msg_type, struct server_id src, DATA_BLOB *packet)
+static void irpc_handler(struct imessaging_context *msg_ctx,
+			 void *private_data,
+			 uint32_t msg_type,
+			 struct server_id src,
+			 size_t num_fds,
+			 int *fds,
+			 DATA_BLOB *packet)
 {
 	struct irpc_message *m;
 	enum ndr_err_code ndr_err;
+
+	if (num_fds != 0) {
+		DBG_WARNING("Received %zu fds, ignoring message\n", num_fds);
+		return;
+	}
 
 	m = talloc(msg_ctx, struct irpc_message);
 	if (m == NULL) goto failed;

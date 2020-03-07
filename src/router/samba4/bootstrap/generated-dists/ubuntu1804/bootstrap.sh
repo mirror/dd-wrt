@@ -19,6 +19,7 @@ apt-get -y install \
     binutils \
     bison \
     build-essential \
+    chrpath \
     curl \
     debhelper \
     dnsutils \
@@ -39,7 +40,6 @@ apt-get -y install \
     language-pack-en \
     lcov \
     libacl1-dev \
-    libaio-dev \
     libarchive-dev \
     libattr1-dev \
     libavahi-common-dev \
@@ -75,23 +75,13 @@ apt-get -y install \
     make \
     mawk \
     mingw-w64 \
-    nettle-dev \
     patch \
     perl \
     perl-modules \
     pkg-config \
     procps \
     psmisc \
-    python-crypto \
-    python-dbg \
-    python-dev \
-    python-dnspython \
-    python-gpg \
-    python-iso8601 \
-    python-markdown \
-    python-pexpect \
     python3 \
-    python3-crypto \
     python3-dbg \
     python3-dev \
     python3-dnspython \

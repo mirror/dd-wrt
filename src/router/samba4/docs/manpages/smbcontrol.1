@@ -2,12 +2,12 @@
 .\"     Title: smbcontrol
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/14/2020
+.\"      Date: 03/03/2020
 .\"    Manual: User Commands
-.\"    Source: Samba 4.11.5
+.\"    Source: Samba 4.12.0
 .\"  Language: English
 .\"
-.TH "SMBCONTROL" "1" "01/14/2020" "Samba 4\&.11\&.5" "User Commands"
+.TH "SMBCONTROL" "1" "03/03/2020" "Samba 4\&.12\&.0" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -156,6 +156,13 @@ Available message types are:
 close\-share
 .RS 4
 Order smbd to close the client connections to the named share\&. Note that this doesn\*(Aqt affect client connections to any other shares\&. This message\-type takes an argument of the share name for which client connections will be closed, or the "*" character which will close all currently open shares\&. This may be useful if you made changes to the access controls on the share\&. This message can only be sent to
+\fBsmbd\fR\&.
+.RE
+.PP
+close\-denied\-share
+.RS 4
+Behave like
+\fBclose\-share\fR, but don\*(Aqt disconnect users that are still allowed to access the share\&. It can safely be sent to all smbds after changing share access controls\&. It will only affect users who have been denied access since having connected initially\&. This message can only be sent to
 \fBsmbd\fR\&.
 .RE
 .PP
@@ -309,7 +316,7 @@ Query the number of smbd child processes\&. This message can only be sent to
 .RE
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.11\&.5 of the Samba suite\&.
+This man page is part of version 4\&.12\&.0 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 \fBnmbd\fR(8)

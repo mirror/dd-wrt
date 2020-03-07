@@ -25,14 +25,16 @@ import sys
 from samba.net import Net, LIBNET_JOIN_AUTOMATIC
 from samba.credentials import DONT_USE_KERBEROS
 from samba import NTSTATUSError, ntstatus
-from samba.dcerpc import misc, drsuapi
+from samba.dcerpc import misc, drsuapi, samr, unixinfo, dnsserver
 from samba import auth, gensec
 from samba.samdb import SamDB
 from samba import netbios
 from samba import registry
 from samba import ldb
+from samba import messaging
 
 import traceback
+
 
 def segfault_detector(f):
     def wrapper(*args, **kwargs):
@@ -126,6 +128,14 @@ class SegfaultTests(samba.tests.TestCase):
             print("failed with %s" % e)
 
     @segfault_detector
+    def test_hive_open_hive(self):
+        # we don't need to provide a valid path because we segfault first
+        try:
+            registry.open_hive('s', 's', 's', 's')
+        except ldb.LdbError as e:
+            print("failed with %s" % e)
+
+    @segfault_detector
     def test_ldb_add_nameless_element(self):
         m = ldb.Message()
         e = ldb.MessageElement('q')
@@ -134,3 +144,33 @@ class SegfaultTests(samba.tests.TestCase):
         except ldb.LdbError:
             pass
         str(m)
+
+    @segfault_detector
+    def test_ldb_register_module(self):
+        ldb.register_module('')
+
+    @segfault_detector
+    def test_messaging_deregister(self):
+        messaging.deregister('s', 's', 's', False)
+
+    @segfault_detector
+    def test_rpcecho(self):
+        from dcerpc import echo
+        echo.rpcecho("")
+
+    @segfault_detector
+    def test_dcerpc_idl_ref_elements(self):
+        """There are many pidl generated functions that crashed on this
+        pattern, where a NULL pointer was created rather than an empty
+        structure."""
+        samr.Connect5().out_info_out = 1
+
+    @segfault_detector
+    def test_dcerpc_idl_unixinfo_elements(self):
+        """Dereferencing is sufficient to crash"""
+        unixinfo.GetPWUid().out_infos
+
+    @segfault_detector
+    def test_dcerpc_idl_inline_arrays(self):
+        """Inline arrays were incorrectly handled."""
+        dnsserver.DNS_RPC_SERVER_INFO_DOTNET().pExtensions

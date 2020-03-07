@@ -2,12 +2,12 @@
 .\"     Title: vfs_glusterfs_fuse
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/14/2020
+.\"      Date: 03/03/2020
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.11.5
+.\"    Source: Samba 4.12.0
 .\"  Language: English
 .\"
-.TH "VFS_GLUSTERFS_FUSE" "8" "01/14/2020" "Samba 4\&.11\&.5" "System Administration tools"
+.TH "VFS_GLUSTERFS_FUSE" "8" "03/03/2020" "Samba 4\&.12\&.0" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -44,7 +44,7 @@ The
 vfs_glusterfs_fuse
 VFS module provides an enhanced way to access a Gluster filesystem using a Gluster FUSE mount\&. It provides support for the
 get_real_filename
-VFS call which enhances file access performance by avoiding multiple expensive case folding lookup calls to detect the appropriate case of an exisiting filename\&.
+VFS call which enhances file access performance by avoiding multiple expensive case folding lookup calls to detect the appropriate case of an existing filename\&.
 .PP
 Furthermore, this module implements a substitute file\-id mechanism\&. The default file\-id mechanism is not working correctly for gluster fuse mount re\-exports, so in order to avoid data loss, users exporting gluster fuse mounts with Samba should enable this module\&.
 .PP
@@ -78,7 +78,7 @@ module\&.
 This module does currently have no further options\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.11\&.5 of the Samba suite\&.
+This man page is part of version 4\&.12\&.0 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

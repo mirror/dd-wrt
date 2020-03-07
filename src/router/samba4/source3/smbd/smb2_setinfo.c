@@ -180,6 +180,47 @@ static int defer_rename_state_destructor(struct defer_rename_state *rename_state
 
 static void defer_rename_done(struct tevent_req *subreq);
 
+struct delay_rename_lease_break_state {
+	struct files_struct *fsp;
+	bool delay;
+};
+
+static bool delay_rename_lease_break_fn(
+	struct share_mode_entry *e,
+	void *private_data)
+{
+	struct delay_rename_lease_break_state *state = private_data;
+	struct files_struct *fsp = state->fsp;
+	uint32_t e_lease_type, break_to;
+	bool ours, stale;
+
+	ours = smb2_lease_equal(fsp_client_guid(fsp),
+				&fsp->lease->lease.lease_key,
+				&e->client_guid,
+				&e->lease_key);
+	if (ours) {
+		return false;
+	}
+
+	e_lease_type = get_lease_type(e, fsp->file_id);
+
+	if ((e_lease_type & SMB2_LEASE_HANDLE) == 0) {
+		return false;
+	}
+
+	stale = share_entry_stale_pid(e);
+	if (stale) {
+		return false;
+	}
+
+	break_to = (e_lease_type & ~SMB2_LEASE_HANDLE);
+
+	send_break_message(
+		fsp->conn->sconn->msg_ctx, &fsp->file_id, e, break_to);
+
+	return false;
+}
+
 static struct tevent_req *delay_rename_for_lease_break(struct tevent_req *req,
 				struct smbd_smb2_request *smb2req,
 				struct tevent_context *ev,
@@ -190,50 +231,22 @@ static struct tevent_req *delay_rename_for_lease_break(struct tevent_req *req,
 
 {
 	struct tevent_req *subreq;
-	uint32_t i;
-	struct share_mode_data *d = lck->data;
 	struct defer_rename_state *rename_state;
-	bool delay = false;
+	struct delay_rename_lease_break_state state = { .fsp = fsp };
 	struct timeval timeout;
+	bool ok;
 
 	if (fsp->oplock_type != LEASE_OPLOCK) {
 		return NULL;
 	}
 
-	for (i=0; i<d->num_share_modes; i++) {
-		struct share_mode_entry *e = &d->share_modes[i];
-		uint32_t e_lease_type;
-		uint32_t break_to;
-
-		if (e->op_type != LEASE_OPLOCK) {
-			continue;
-		}
-
-		e_lease_type = get_lease_type(d, e);
-
-		if (!(e_lease_type & SMB2_LEASE_HANDLE)) {
-			continue;
-		}
-
-		if (smb2_lease_equal(fsp_client_guid(fsp),
-				&fsp->lease->lease.lease_key,
-				&e->client_guid,
-				&e->lease_key)) {
-			continue;
-		}
-
-		if (share_mode_stale_pid(d, i)) {
-			continue;
-		}
-
-		delay = true;
-		break_to = (e_lease_type & ~SMB2_LEASE_HANDLE);
-
-		send_break_message(fsp->conn->sconn->msg_ctx, &fsp->file_id,
-				   e, break_to);
+	ok = share_mode_forall_leases(
+		lck, delay_rename_lease_break_fn, &state);
+	if (!ok) {
+		return NULL;
 	}
 
-	if (!delay) {
+	if (!state.delay) {
 		return NULL;
 	}
 
@@ -252,10 +265,10 @@ static struct tevent_req *delay_rename_for_lease_break(struct tevent_req *req,
 
 	talloc_set_destructor(rename_state, defer_rename_state_destructor);
 
-	subreq = dbwrap_watched_watch_send(
+	subreq = share_mode_watch_send(
 				rename_state,
 				ev,
-				lck->data->record,
+				lck->data->id,
 				(struct server_id){0});
 
 	if (subreq == NULL) {
@@ -283,7 +296,7 @@ static void defer_rename_done(struct tevent_req *subreq)
 	int ret_size = 0;
 	bool ok;
 
-	status = dbwrap_watched_watch_recv(subreq, NULL, NULL);
+	status = share_mode_watch_recv(subreq, NULL, NULL);
 	TALLOC_FREE(subreq);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(5, ("dbwrap_record_watch_recv returned %s\n",
@@ -295,8 +308,9 @@ static void defer_rename_done(struct tevent_req *subreq)
 	/*
 	 * Make sure we run as the user again
 	 */
-	ok = change_to_user(state->smb2req->tcon->compat,
-			    state->smb2req->session->compat->vuid);
+	ok = change_to_user_and_service(
+		state->smb2req->tcon->compat,
+		state->smb2req->session->global->session_wire_id);
 	if (!ok) {
 		tevent_req_nterror(state->req, NT_STATUS_ACCESS_DENIED);
 		return;

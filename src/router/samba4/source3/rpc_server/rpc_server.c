@@ -33,6 +33,10 @@
 #include "rpc_server/rpc_ncacn_np.h"
 #include "rpc_server/srv_pipe_hnd.h"
 #include "rpc_server/srv_pipe.h"
+#include "librpc/gen_ndr/ndr_dcerpc.h"
+
+#undef DBGC_CLASS
+#define DBGC_CLASS DBGC_RPC_SRV
 
 /* Creates a pipes_struct and initializes it with the information
  * sent from the client */
@@ -88,18 +92,20 @@ struct dcerpc_ncacn_listen_state {
 
 	struct tevent_context *ev_ctx;
 	struct messaging_context *msg_ctx;
-	dcerpc_ncacn_disconnect_fn disconnect_fn;
+	dcerpc_ncacn_termination_fn termination_fn;
+	void *termination_data;
 };
 
-static void named_pipe_listener(struct tevent_context *ev,
-				struct tevent_fd *fde,
-				uint16_t flags,
-				void *private_data);
+static void dcesrv_ncacn_np_listener(struct tevent_context *ev,
+				     struct tevent_fd *fde,
+				     uint16_t flags,
+				     void *private_data);
 
-int create_named_pipe_socket(const char *pipe_name)
+NTSTATUS dcesrv_create_ncacn_np_socket(const char *pipe_name, int *out_fd)
 {
 	char *np_dir = NULL;
 	int fd = -1;
+	NTSTATUS status;
 
 	/*
 	 * As lp_ncalrpc_dir() should have 0755, but
@@ -107,110 +113,126 @@ int create_named_pipe_socket(const char *pipe_name)
 	 * create lp_ncalrpc_dir() first.
 	 */
 	if (!directory_create_or_exist(lp_ncalrpc_dir(), 0755)) {
-		DEBUG(0, ("Failed to create pipe directory %s - %s\n",
-			  lp_ncalrpc_dir(), strerror(errno)));
+		status = map_nt_error_from_unix_common(errno);
+		DBG_ERR("Failed to create pipe directory %s - %s\n",
+			lp_ncalrpc_dir(), strerror(errno));
 		goto out;
 	}
 
 	np_dir = talloc_asprintf(talloc_tos(), "%s/np", lp_ncalrpc_dir());
 	if (!np_dir) {
-		DEBUG(0, ("Out of memory\n"));
+		status = NT_STATUS_NO_MEMORY;
+		DBG_ERR("Out of memory\n");
 		goto out;
 	}
 
 	if (!directory_create_or_exist_strict(np_dir, geteuid(), 0700)) {
-		DEBUG(0, ("Failed to create pipe directory %s - %s\n",
-			  np_dir, strerror(errno)));
+		status = map_nt_error_from_unix_common(errno);
+		DBG_ERR("Failed to create pipe directory %s - %s\n",
+			np_dir, strerror(errno));
 		goto out;
 	}
 
 	fd = create_pipe_sock(np_dir, pipe_name, 0700);
 	if (fd == -1) {
-		DEBUG(0, ("Failed to create pipe socket! [%s/%s]\n",
-			  np_dir, pipe_name));
+		status = map_nt_error_from_unix_common(errno);
+		DBG_ERR("Failed to create ncacn_np socket! '%s/%s': %s\n",
+			np_dir, pipe_name, strerror(errno));
 		goto out;
 	}
 
-	DEBUG(10, ("Opened pipe socket fd %d for %s\n", fd, pipe_name));
+	DBG_DEBUG("Opened pipe socket fd %d for %s\n", fd, pipe_name);
+
+	*out_fd = fd;
+
+	status = NT_STATUS_OK;
 
 out:
 	talloc_free(np_dir);
-	return fd;
+	return status;
 }
 
-bool setup_named_pipe_socket(const char *pipe_name,
-			     struct tevent_context *ev_ctx,
-			     struct messaging_context *msg_ctx)
+NTSTATUS dcesrv_setup_ncacn_np_socket(const char *pipe_name,
+				      struct tevent_context *ev_ctx,
+				      struct messaging_context *msg_ctx)
 {
 	struct dcerpc_ncacn_listen_state *state;
 	struct tevent_fd *fde;
 	int rc;
+	NTSTATUS status;
 
-	state = talloc(ev_ctx, struct dcerpc_ncacn_listen_state);
-	if (!state) {
-		DEBUG(0, ("Out of memory\n"));
-		return false;
+	state = talloc_zero(ev_ctx, struct dcerpc_ncacn_listen_state);
+	if (state == NULL) {
+		DBG_ERR("Out of memory\n");
+		return NT_STATUS_NO_MEMORY;
 	}
+	state->fd = -1;
 	state->ep.name = talloc_strdup(state, pipe_name);
 	if (state->ep.name == NULL) {
-		DEBUG(0, ("Out of memory\n"));
+		DBG_ERR("Out of memory\n");
+		status = NT_STATUS_NO_MEMORY;
 		goto out;
 	}
-	state->fd = create_named_pipe_socket(pipe_name);
-	if (state->fd == -1) {
+	status = dcesrv_create_ncacn_np_socket(pipe_name, &state->fd);
+	if (!NT_STATUS_IS_OK(status)) {
 		goto out;
 	}
 
 	rc = listen(state->fd, 5);
 	if (rc < 0) {
-		DEBUG(0, ("Failed to listen on pipe socket %s: %s\n",
-			  pipe_name, strerror(errno)));
+		status = map_nt_error_from_unix_common(errno);
+		DBG_ERR("Failed to listen on ncacn_np socket %s: %s\n",
+			pipe_name, strerror(errno));
 		goto out;
 	}
 
 	state->ev_ctx = ev_ctx;
 	state->msg_ctx = msg_ctx;
 
-	DEBUG(10, ("Opened pipe socket fd %d for %s\n",
-		   state->fd, pipe_name));
+	DBG_DEBUG("Opened pipe socket fd %d for %s\n",
+		  state->fd, pipe_name);
 
+	errno = 0;
 	fde = tevent_add_fd(ev_ctx,
 			    state, state->fd, TEVENT_FD_READ,
-			    named_pipe_listener, state);
-	if (!fde) {
-		DEBUG(0, ("Failed to add event handler!\n"));
+			    dcesrv_ncacn_np_listener, state);
+	if (fde == NULL) {
+		if (errno == 0) {
+			errno = ENOMEM;
+		}
+		status = map_nt_error_from_unix_common(errno);
+		DBG_ERR("Failed to add event handler for ncacn_np: %s\n",
+			strerror(errno));
 		goto out;
 	}
 
 	tevent_fd_set_auto_close(fde);
-	return true;
+	return NT_STATUS_OK;
 
 out:
 	if (state->fd != -1) {
 		close(state->fd);
 	}
 	TALLOC_FREE(state);
-	return false;
+	return status;
 }
 
-static void named_pipe_listener(struct tevent_context *ev,
-				struct tevent_fd *fde,
-				uint16_t flags,
-				void *private_data)
+static void dcesrv_ncacn_np_listener(struct tevent_context *ev,
+				     struct tevent_fd *fde,
+				     uint16_t flags,
+				     void *private_data)
 {
 	struct dcerpc_ncacn_listen_state *state =
 			talloc_get_type_abort(private_data,
 					      struct dcerpc_ncacn_listen_state);
-	struct sockaddr_un sunaddr;
-	socklen_t len;
+	struct samba_sockaddr addr = {
+		.sa_socklen = sizeof(struct sockaddr_un),
+	};
 	int sd = -1;
 
 	/* TODO: should we have a limit to the number of clients ? */
 
-	len = sizeof(sunaddr);
-
-	sd = accept(state->fd,
-		    (struct sockaddr *)(void *)&sunaddr, &len);
+	sd = accept(state->fd, &addr.u.sa, &addr.sa_socklen);
 
 	if (sd == -1) {
 		if (errno != EINTR) {
@@ -221,380 +243,32 @@ static void named_pipe_listener(struct tevent_context *ev,
 	}
 	smb_set_close_on_exec(sd);
 
-	DEBUG(6, ("Accepted socket %d\n", sd));
+	DBG_DEBUG("Accepted ncacn_np socket %s (fd: %d)\n",
+		   addr.u.un.sun_path, sd);
 
-	named_pipe_accept_function(state->ev_ctx,
-				   state->msg_ctx,
-				   state->ep.name,
-				   sd, NULL, 0);
-}
-
-
-/* This is the core of the rpc server.
- * Accepts connections from clients and process requests using the appropriate
- * dispatcher table. */
-
-static int named_pipe_destructor(struct named_pipe_client *npc)
-{
-	if (npc->term_fn) {
-		npc->term_fn(npc->private_data);
-	}
-	return 0;
-}
-
-struct named_pipe_client *named_pipe_client_init(TALLOC_CTX *mem_ctx,
-						 struct tevent_context *ev_ctx,
-						 struct messaging_context *msg_ctx,
-						 const char *pipe_name,
-						 named_pipe_termination_fn *term_fn,
-						 uint16_t file_type,
-						 uint16_t device_state,
-						 uint64_t allocation_size,
-						 void *private_data)
-{
-	struct named_pipe_client *npc;
-
-	npc = talloc_zero(mem_ctx, struct named_pipe_client);
-	if (npc == NULL) {
-		DEBUG(0, ("Out of memory!\n"));
-		return NULL;
-	}
-	talloc_set_destructor(npc, named_pipe_destructor);
-
-	npc->pipe_name = talloc_strdup(npc, pipe_name);
-	if (npc->pipe_name == NULL) {
-		DEBUG(0, ("Out of memory!\n"));
-		talloc_free(npc);
-		return NULL;
-	}
-
-	npc->ev = ev_ctx;
-	npc->msg_ctx = msg_ctx;
-	npc->term_fn = term_fn;
-	npc->private_data = private_data;
-
-	npc->file_type = file_type;
-	npc->device_state = device_state;
-	npc->allocation_size = allocation_size;
-
-	return npc;
-}
-
-static void named_pipe_accept_done(struct tevent_req *subreq);
-
-void named_pipe_accept_function(struct tevent_context *ev_ctx,
-			        struct messaging_context *msg_ctx,
-				const char *pipe_name, int fd,
-				named_pipe_termination_fn *term_fn,
-				void *private_data)
-{
-	struct named_pipe_client *npc;
-	struct tstream_context *plain;
-	struct tevent_req *subreq;
-	int ret;
-
-	npc = named_pipe_client_init(
-		ev_ctx,
-		ev_ctx,
-		msg_ctx,
-		pipe_name,
-		term_fn,
-		FILE_TYPE_MESSAGE_MODE_PIPE, /* file_type */
-		0xff | 0x0400 | 0x0100,	     /* device_state */
-		4096,			     /* allocation_size */
-		private_data);
-	if (npc == NULL) {
-		DEBUG(0, ("Out of memory!\n"));
-		close(fd);
-		return;
-	}
-
-	/* make sure socket is in NON blocking state */
-	ret = set_blocking(fd, false);
-	if (ret != 0) {
-		DEBUG(2, ("Failed to make socket non-blocking\n"));
-		TALLOC_FREE(npc);
-		close(fd);
-		return;
-	}
-
-	ret = tstream_bsd_existing_socket(npc, fd, &plain);
-	if (ret != 0) {
-		DEBUG(2, ("Failed to create tstream socket\n"));
-		TALLOC_FREE(npc);
-		close(fd);
-		return;
-	}
-
-	subreq = tstream_npa_accept_existing_send(npc, npc->ev, plain,
-						  npc->file_type,
-						  npc->device_state,
-						  npc->allocation_size);
-	if (!subreq) {
-		DEBUG(2, ("Failed to start async accept procedure\n"));
-		TALLOC_FREE(npc);
-		close(fd);
-		return;
-	}
-	tevent_req_set_callback(subreq, named_pipe_accept_done, npc);
-}
-
-static void named_pipe_packet_done(struct tevent_req *subreq);
-
-static void named_pipe_accept_done(struct tevent_req *subreq)
-{
-	struct auth_session_info_transport *session_info_transport;
-	struct named_pipe_client *npc =
-		tevent_req_callback_data(subreq, struct named_pipe_client);
-	int error;
-	int ret;
-
-	ret = tstream_npa_accept_existing_recv(subreq, &error, npc,
-						&npc->tstream,
-						&npc->remote_client_addr,
-						&npc->remote_client_name,
-						&npc->local_server_addr,
-						&npc->local_server_name,
-						&session_info_transport);
-
-	TALLOC_FREE(subreq);
-	if (ret != 0) {
-		DEBUG(2, ("Failed to accept named pipe connection! (%s)\n",
-			  strerror(error)));
-		TALLOC_FREE(npc);
-		return;
-	}
-
-	npc->session_info = talloc_move(
-		npc, &session_info_transport->session_info);
-
-	ret = make_server_pipes_struct(npc,
-				       npc->msg_ctx,
-				       npc->pipe_name, NCACN_NP,
-				       npc->remote_client_addr,
-				       npc->local_server_addr,
-				       &npc->session_info,
-				       &npc->p, &error);
-	if (ret != 0) {
-		DEBUG(2, ("Failed to create pipes_struct! (%s)\n",
-			  strerror(error)));
-		goto fail;
-	}
-
-	npc->write_queue = tevent_queue_create(npc, "np_server_write_queue");
-	if (!npc->write_queue) {
-		DEBUG(2, ("Failed to set up write queue!\n"));
-		goto fail;
-	}
-
-	/* And now start receiving and processing packets */
-	subreq = dcerpc_read_ncacn_packet_send(npc, npc->ev, npc->tstream);
-	if (!subreq) {
-		DEBUG(2, ("Failed to start receiving packets\n"));
-		goto fail;
-	}
-	tevent_req_set_callback(subreq, named_pipe_packet_process, npc);
-	return;
-
-fail:
-	DEBUG(2, ("Fatal error. Terminating client(%s) connection!\n",
-		  npc->remote_client_name));
-	/* terminate client connection */
-	talloc_free(npc);
-	return;
-}
-
-void named_pipe_packet_process(struct tevent_req *subreq)
-{
-	struct named_pipe_client *npc =
-		tevent_req_callback_data(subreq, struct named_pipe_client);
-	struct _output_data *out = &npc->p->out_data;
-	DATA_BLOB recv_buffer = data_blob_null;
-	struct ncacn_packet *pkt;
-	NTSTATUS status;
-	uint32_t to_send;
-	size_t i;
-	bool ok;
-
-	status = dcerpc_read_ncacn_packet_recv(subreq, npc, &pkt, &recv_buffer);
-	TALLOC_FREE(subreq);
-	if (!NT_STATUS_IS_OK(status)) {
-		goto fail;
-	}
-
-	/* dcerpc_read_ncacn_packet_recv() returns a full PDU */
-	npc->p->in_data.pdu_needed_len = 0;
-	npc->p->in_data.pdu = recv_buffer;
-	if (dcerpc_get_endian_flag(&recv_buffer) & DCERPC_DREP_LE) {
-		npc->p->endian = RPC_LITTLE_ENDIAN;
-	} else {
-		npc->p->endian = RPC_BIG_ENDIAN;
-	}
-	DEBUG(10, ("PDU is in %s Endian format!\n",
-		   npc->p->endian ? "Big" : "Little"));
-	process_complete_pdu(npc->p, pkt);
-
-	/* reset pipe state and free PDU */
-	npc->p->in_data.pdu.length = 0;
-	talloc_free(recv_buffer.data);
-	talloc_free(pkt);
-
-	/* this is needed because of the way DCERPC Binds work in
-	 * the RPC marshalling code */
-	to_send = out->frag.length - out->current_pdu_sent;
-	if (to_send > 0) {
-
-		npc->iov = talloc_zero(npc, struct iovec);
-		if (!npc->iov) {
-			status = NT_STATUS_NO_MEMORY;
-			goto fail;
-		}
-		npc->count = 1;
-
-		npc->iov[0].iov_base = out->frag.data
-					+ out->current_pdu_sent;
-		npc->iov[0].iov_len = to_send;
-
-		out->current_pdu_sent += to_send;
-	}
-
-	/* this condition is false for bind packets, or when we haven't
-	 * yet got a full request, and need to wait for more data from
-	 * the client */
-	while (out->data_sent_length < out->rdata.length) {
-
-		ok = create_next_pdu(npc->p);
-		if (!ok) {
-			DEBUG(3, ("Failed to create next PDU!\n"));
-			status = NT_STATUS_UNEXPECTED_IO_ERROR;
-			goto fail;
-		}
-
-		npc->iov = talloc_realloc(npc, npc->iov,
-					    struct iovec, npc->count + 1);
-		if (!npc->iov) {
-			status = NT_STATUS_NO_MEMORY;
-			goto fail;
-		}
-
-		npc->iov[npc->count].iov_base = out->frag.data;
-		npc->iov[npc->count].iov_len = out->frag.length;
-
-		npc->count++;
-	}
-
-	/* we still don't have a complete request, go back and wait for more
-	 * data */
-	if (npc->count == 0) {
-		/* Wait for the next packet */
-		subreq = dcerpc_read_ncacn_packet_send(npc, npc->ev, npc->tstream);
-		if (!subreq) {
-			DEBUG(2, ("Failed to start receiving packets\n"));
-			status = NT_STATUS_NO_MEMORY;
-			goto fail;
-		}
-		tevent_req_set_callback(subreq, named_pipe_packet_process, npc);
-		return;
-	}
-
-	DBG_DEBUG("Sending %zu fragments in a total of %"PRIu32" bytes\n",
-		  npc->count,
-		  npc->p->out_data.data_sent_length);
-
-	for (i = 0; i < npc->count; i++) {
-		DBG_DEBUG("Sending PDU number: %zu, PDU Length: %zu\n",
-			  i,
-			  npc->iov[i].iov_len);
-		dump_data(11, (const uint8_t *)npc->iov[i].iov_base,
-				npc->iov[i].iov_len);
-
-		subreq = tstream_writev_queue_send(npc,
-						   npc->ev,
-						   npc->tstream,
-						   npc->write_queue,
-						   (npc->iov + i),
-						   1);
-		if (!subreq) {
-			DEBUG(2, ("Failed to send packet\n"));
-			status = NT_STATUS_NO_MEMORY;
-			goto fail;
-		}
-		tevent_req_set_callback(subreq, named_pipe_packet_done, npc);
-	}
-
-	return;
-
-fail:
-	DEBUG(2, ("Fatal error(%s). "
-		  "Terminating client(%s) connection!\n",
-		  nt_errstr(status), npc->remote_client_name));
-	/* terminate client connection */
-	talloc_free(npc);
-	return;
-}
-
-static void named_pipe_packet_done(struct tevent_req *subreq)
-{
-	struct named_pipe_client *npc =
-		tevent_req_callback_data(subreq, struct named_pipe_client);
-	int sys_errno;
-	int ret;
-
-	ret = tstream_writev_queue_recv(subreq, &sys_errno);
-	TALLOC_FREE(subreq);
-	if (ret == -1) {
-		DEBUG(2, ("Writev failed!\n"));
-		goto fail;
-	}
-
-	if (tevent_queue_length(npc->write_queue) > 0) {
-		return;
-	}
-
-	if (npc->p->fault_state != 0) {
-		DEBUG(2, ("Disconnect after fault\n"));
-		sys_errno = EINVAL;
-		goto fail;
-	}
-
-	/* clear out any data that may have been left around */
-	npc->count = 0;
-	TALLOC_FREE(npc->iov);
-	data_blob_free(&npc->p->in_data.data);
-	data_blob_free(&npc->p->out_data.frag);
-	data_blob_free(&npc->p->out_data.rdata);
-
-	talloc_free_children(npc->p->mem_ctx);
-
-	/* Wait for the next packet */
-	subreq = dcerpc_read_ncacn_packet_send(npc, npc->ev, npc->tstream);
-	if (!subreq) {
-		DEBUG(2, ("Failed to start receiving packets\n"));
-		sys_errno = ENOMEM;
-		goto fail;
-	}
-	tevent_req_set_callback(subreq, named_pipe_packet_process, npc);
-	return;
-
-fail:
-	DEBUG(2, ("Fatal error(%s). "
-		  "Terminating client(%s) connection!\n",
-		  strerror(sys_errno), npc->remote_client_name));
-	/* terminate client connection */
-	talloc_free(npc);
-	return;
+	dcerpc_ncacn_accept(state->ev_ctx,
+			    state->msg_ctx,
+			    NCACN_NP,
+			    state->ep.name,
+			    NULL, /* remote client address */
+			    NULL, /* local server address */
+			    sd,
+			    state->termination_fn,
+			    state->termination_data);
 }
 
 /********************************************************************
  * Start listening on the tcp/ip socket
  ********************************************************************/
 
-static void dcerpc_ncacn_tcpip_listener(struct tevent_context *ev,
-					struct tevent_fd *fde,
-					uint16_t flags,
-					void *private_data);
+static void dcesrv_ncacn_ip_tcp_listener(struct tevent_context *ev,
+					 struct tevent_fd *fde,
+					 uint16_t flags,
+					 void *private_data);
 
-int create_tcpip_socket(const struct sockaddr_storage *ifss, uint16_t *port)
+NTSTATUS dcesrv_create_ncacn_ip_tcp_socket(const struct sockaddr_storage *ifss,
+					   uint16_t *port,
+					   int *out_fd)
 {
 	int fd = -1;
 
@@ -620,36 +294,39 @@ int create_tcpip_socket(const struct sockaddr_storage *ifss, uint16_t *port)
 				    true);
 	}
 	if (fd == -1) {
-		DEBUG(0, ("Failed to create socket on port %u!\n", *port));
-		return -1;
+		DBG_ERR("Failed to create socket on port %u!\n", *port);
+		return NT_STATUS_UNSUCCESSFUL;
 	}
 
-	DEBUG(10, ("Opened tcpip socket fd %d for port %u\n", fd, *port));
+	DBG_DEBUG("Opened ncacn_ip_tcp socket fd %d for port %u\n", fd, *port);
 
-	return fd;
+	*out_fd = fd;
+
+	return NT_STATUS_OK;
 }
 
-uint16_t setup_dcerpc_ncacn_tcpip_socket(struct tevent_context *ev_ctx,
-					 struct messaging_context *msg_ctx,
-					 const struct sockaddr_storage *ifss,
-					 uint16_t port)
+NTSTATUS dcesrv_setup_ncacn_ip_tcp_socket(struct tevent_context *ev_ctx,
+					  struct messaging_context *msg_ctx,
+					  const struct sockaddr_storage *ifss,
+					  uint16_t *port)
 {
 	struct dcerpc_ncacn_listen_state *state;
 	struct tevent_fd *fde;
 	int rc;
+	NTSTATUS status;
 
-	state = talloc(ev_ctx, struct dcerpc_ncacn_listen_state);
+	state = talloc_zero(ev_ctx, struct dcerpc_ncacn_listen_state);
 	if (state == NULL) {
-		DEBUG(0, ("setup_dcerpc_ncacn_tcpip_socket: Out of memory\n"));
-		return 0;
+		DBG_ERR("Out of memory\n");
+		return NT_STATUS_NO_MEMORY;
 	}
 
 	state->fd = -1;
-	state->ep.port = port;
-	state->disconnect_fn = NULL;
+	state->ep.port = *port;
 
-	state->fd = create_tcpip_socket(ifss, &state->ep.port);
-	if (state->fd == -1) {
+	status = dcesrv_create_ncacn_ip_tcp_socket(ifss, &state->ep.port,
+						   &state->fd);
+	if (!NT_STATUS_IS_OK(status)) {
 		goto out;
 	}
 
@@ -665,149 +342,167 @@ uint16_t setup_dcerpc_ncacn_tcpip_socket(struct tevent_context *ev_ctx,
 
 	rc = listen(state->fd, SMBD_LISTEN_BACKLOG);
 	if (rc == -1) {
-		DEBUG(0,("setup_tcpip_socket: listen - %s\n", strerror(errno)));
+		status = map_nt_error_from_unix_common(errno);
+		DBG_ERR("Failed to listen on ncacn_ip_tcp socket: %s\n",
+			strerror(errno));
 		goto out;
 	}
 
-	DEBUG(10, ("setup_tcpip_socket: opened socket fd %d for port %u\n",
-		   state->fd, state->ep.port));
+	DBG_DEBUG("Opened socket fd %d for port %u\n",
+		  state->fd, state->ep.port);
 
+	errno = 0;
 	fde = tevent_add_fd(state->ev_ctx,
 			    state,
 			    state->fd,
 			    TEVENT_FD_READ,
-			    dcerpc_ncacn_tcpip_listener,
+			    dcesrv_ncacn_ip_tcp_listener,
 			    state);
 	if (fde == NULL) {
-		DEBUG(0, ("setup_tcpip_socket: Failed to add event handler!\n"));
+		if (errno == 0) {
+			errno = ENOMEM;
+		}
+		status = map_nt_error_from_unix_common(errno);
+		DBG_ERR("Failed to add event handler for ncacn_ip_tcp: %s\n",
+			strerror(errno));
 		goto out;
 	}
 
 	tevent_fd_set_auto_close(fde);
 
-	return state->ep.port;
+	*port = state->ep.port;
+
+	return NT_STATUS_OK;
+
 out:
 	if (state->fd != -1) {
 		close(state->fd);
 	}
 	TALLOC_FREE(state);
 
-	return 0;
+	return status;
 }
 
-static void dcerpc_ncacn_tcpip_listener(struct tevent_context *ev,
-					struct tevent_fd *fde,
-					uint16_t flags,
-					void *private_data)
+static void dcesrv_ncacn_ip_tcp_listener(struct tevent_context *ev,
+					 struct tevent_fd *fde,
+					 uint16_t flags,
+					 void *private_data)
 {
 	struct dcerpc_ncacn_listen_state *state =
-			talloc_get_type_abort(private_data,
-					      struct dcerpc_ncacn_listen_state);
+		talloc_get_type_abort(private_data,
+				      struct dcerpc_ncacn_listen_state);
 	struct tsocket_address *cli_addr = NULL;
 	struct tsocket_address *srv_addr = NULL;
-	struct sockaddr_storage addr;
-	socklen_t in_addrlen = sizeof(addr);
+	struct samba_sockaddr addr = {
+		.sa_socklen = sizeof(struct sockaddr_storage),
+	};
 	int s = -1;
 	int rc;
 
-	s = accept(state->fd, (struct sockaddr *)(void *) &addr, &in_addrlen);
+	s = accept(state->fd, &addr.u.sa, &addr.sa_socklen);
 	if (s == -1) {
 		if (errno != EINTR) {
-			DEBUG(0,("tcpip_listener accept: %s\n",
-				 strerror(errno)));
+			DBG_ERR("Failed to accept: %s\n", strerror(errno));
 		}
 		return;
 	}
 	smb_set_close_on_exec(s);
 
-	rc = tsocket_address_bsd_from_sockaddr(state,
-					       (struct sockaddr *)(void *) &addr,
-					       in_addrlen,
-					       &cli_addr);
+	rc = tsocket_address_bsd_from_samba_sockaddr(state, &addr, &cli_addr);
 	if (rc < 0) {
 		close(s);
 		return;
 	}
 
-	rc = getsockname(s, (struct sockaddr *)(void *) &addr, &in_addrlen);
+	rc = getsockname(s, &addr.u.sa, &addr.sa_socklen);
 	if (rc < 0) {
 		close(s);
 		return;
 	}
 
-	rc = tsocket_address_bsd_from_sockaddr(state,
-					       (struct sockaddr *)(void *) &addr,
-					       in_addrlen,
-					       &srv_addr);
+	rc = tsocket_address_bsd_from_samba_sockaddr(state, &addr, &srv_addr);
 	if (rc < 0) {
 		close(s);
 		return;
 	}
 
-	DEBUG(6, ("tcpip_listener: Accepted socket %d\n", s));
+	DBG_DEBUG("Accepted ncacn_ip_tcp socket %d\n", s);
 
 	dcerpc_ncacn_accept(state->ev_ctx,
 			    state->msg_ctx,
 			    NCACN_IP_TCP,
-			    NULL,
+			    "IP",
 			    cli_addr,
 			    srv_addr,
 			    s,
-			    NULL);
+			    state->termination_fn,
+			    state->termination_data);
 }
 
 /********************************************************************
  * Start listening on the ncalrpc socket
  ********************************************************************/
 
-static void dcerpc_ncalrpc_listener(struct tevent_context *ev,
+static void dcesrv_ncalrpc_listener(struct tevent_context *ev,
 				    struct tevent_fd *fde,
 				    uint16_t flags,
 				    void *private_data);
 
-int create_dcerpc_ncalrpc_socket(const char *name)
+NTSTATUS dcesrv_create_ncalrpc_socket(const char *name, int *out_fd)
 {
 	int fd = -1;
+	NTSTATUS status;
 
 	if (name == NULL) {
 		name = "DEFAULT";
 	}
 
 	if (!directory_create_or_exist(lp_ncalrpc_dir(), 0755)) {
-		DEBUG(0, ("Failed to create ncalrpc directory %s - %s\n",
-			  lp_ncalrpc_dir(), strerror(errno)));
-		return -1;
+		status = map_nt_error_from_unix_common(errno);
+		DBG_ERR("Failed to create ncalrpc directory '%s': %s\n",
+			lp_ncalrpc_dir(), strerror(errno));
+		goto out;
 	}
 
 	fd = create_pipe_sock(lp_ncalrpc_dir(), name, 0755);
 	if (fd == -1) {
-		DEBUG(0, ("Failed to create ncalrpc socket! [%s/%s]\n",
-			  lp_ncalrpc_dir(), name));
-		return -1;
+		status = map_nt_error_from_unix_common(errno);
+		DBG_ERR("Failed to create ncalrpc socket '%s/%s': %s\n",
+			lp_ncalrpc_dir(), name, strerror(errno));
+		goto out;
 	}
 
-	DEBUG(10, ("Opened ncalrpc socket fd %d for %s\n", fd, name));
+	DBG_DEBUG("Opened ncalrpc socket fd '%d' for '%s/%s'\n",
+		  fd, lp_ncalrpc_dir(), name);
 
-	return fd;
+	*out_fd = fd;
+
+	return NT_STATUS_OK;
+
+out:
+	return status;
 }
 
-bool setup_dcerpc_ncalrpc_socket(struct tevent_context *ev_ctx,
-				 struct messaging_context *msg_ctx,
-				 const char *name,
-				 dcerpc_ncacn_disconnect_fn fn)
+NTSTATUS dcesrv_setup_ncalrpc_socket(struct tevent_context *ev_ctx,
+				     struct messaging_context *msg_ctx,
+				     const char *name,
+				     dcerpc_ncacn_termination_fn term_fn,
+				     void *termination_data)
 {
 	struct dcerpc_ncacn_listen_state *state;
 	struct tevent_fd *fde;
 	int rc;
+	NTSTATUS status;
 
-	state = talloc(ev_ctx, struct dcerpc_ncacn_listen_state);
+	state = talloc_zero(ev_ctx, struct dcerpc_ncacn_listen_state);
 	if (state == NULL) {
-		DEBUG(0, ("Out of memory\n"));
-		return false;
+		DBG_ERR("Out of memory\n");
+		return NT_STATUS_NO_MEMORY;
 	}
 
 	state->fd = -1;
-	state->disconnect_fn = fn;
+	state->termination_fn = term_fn;
+	state->termination_data = termination_data;
 
 	if (name == NULL) {
 		name = "DEFAULT";
@@ -815,20 +510,23 @@ bool setup_dcerpc_ncalrpc_socket(struct tevent_context *ev_ctx,
 
 	state->ep.name = talloc_strdup(state, name);
 	if (state->ep.name == NULL) {
-		DEBUG(0, ("Out of memory\n"));
+		DBG_ERR("Out of memory\n");
 		talloc_free(state);
-		return false;
+		return NT_STATUS_NO_MEMORY;
 	}
 
-	state->fd = create_dcerpc_ncalrpc_socket(name);
-	if (state->fd == -1) {
+	status = dcesrv_create_ncalrpc_socket(name, &state->fd);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("Failed to create ncalrpc socket: %s\n",
+			nt_errstr(status));
 		goto out;
 	}
 
 	rc = listen(state->fd, 5);
 	if (rc < 0) {
-		DEBUG(0, ("Failed to listen on ncalrpc socket %s: %s\n",
-			  name, strerror(errno)));
+		status = map_nt_error_from_unix_common(errno);
+		DBG_ERR("Failed to listen on ncalrpc socket %s: %s\n",
+			name, strerror(errno));
 		goto out;
 	}
 
@@ -838,119 +536,143 @@ bool setup_dcerpc_ncalrpc_socket(struct tevent_context *ev_ctx,
 	/* Set server socket to non-blocking for the accept. */
 	set_blocking(state->fd, false);
 
+	errno = 0;
 	fde = tevent_add_fd(state->ev_ctx,
 			    state,
 			    state->fd,
 			    TEVENT_FD_READ,
-			    dcerpc_ncalrpc_listener,
+			    dcesrv_ncalrpc_listener,
 			    state);
 	if (fde == NULL) {
-		DEBUG(0, ("Failed to add event handler for ncalrpc!\n"));
+		if (errno == 0) {
+			errno = ENOMEM;
+		}
+		status = map_nt_error_from_unix_common(errno);
+		DBG_ERR("Failed to add event handler for ncalrpc: %s\n",
+			strerror(errno));
 		goto out;
 	}
 
 	tevent_fd_set_auto_close(fde);
 
-	return true;
+	return NT_STATUS_OK;
 out:
 	if (state->fd != -1) {
 		close(state->fd);
 	}
 	TALLOC_FREE(state);
 
-	return 0;
+	return status;
 }
 
-static void dcerpc_ncalrpc_listener(struct tevent_context *ev,
+static void dcesrv_ncalrpc_listener(struct tevent_context *ev,
 					struct tevent_fd *fde,
 					uint16_t flags,
 					void *private_data)
 {
 	struct dcerpc_ncacn_listen_state *state =
-			talloc_get_type_abort(private_data,
-					      struct dcerpc_ncacn_listen_state);
+		talloc_get_type_abort(private_data,
+				      struct dcerpc_ncacn_listen_state);
 	struct tsocket_address *cli_addr = NULL, *srv_addr = NULL;
-	struct sockaddr_un sunaddr;
-	struct sockaddr *addr = (struct sockaddr *)(void *)&sunaddr;
-	socklen_t len = sizeof(sunaddr);
-	struct sockaddr_un sunaddr_server;
-	struct sockaddr *addr_server = (struct sockaddr *)(void *)&sunaddr_server;
-	socklen_t len_server = sizeof(sunaddr_server);
+	struct samba_sockaddr addr = {
+		.sa_socklen = sizeof(struct sockaddr_un),
+	};
+	struct samba_sockaddr addr_server = {
+		.sa_socklen = sizeof(struct sockaddr_un),
+	};
 	int sd = -1;
 	int rc;
 
-	ZERO_STRUCT(sunaddr);
-	ZERO_STRUCT(sunaddr_server);
-
-	sd = accept(state->fd, addr, &len);
+	sd = accept(state->fd, &addr.u.sa, &addr.sa_socklen);
 	if (sd == -1) {
 		if (errno != EINTR) {
-			DEBUG(0, ("ncalrpc accept() failed: %s\n", strerror(errno)));
+			DBG_ERR("Failed to accept: %s\n", strerror(errno));
 		}
 		return;
 	}
 	smb_set_close_on_exec(sd);
 
-	rc = tsocket_address_bsd_from_sockaddr(state,
-					       addr, len,
-					       &cli_addr);
+	rc = tsocket_address_bsd_from_samba_sockaddr(state, &addr, &cli_addr);
 	if (rc < 0) {
 		close(sd);
 		return;
 	}
 
-	rc = getsockname(sd, addr_server, &len_server);
+	rc = getsockname(sd, &addr_server.u.sa, &addr_server.sa_socklen);
 	if (rc < 0) {
 		close(sd);
 		return;
 	}
 
-	rc = tsocket_address_bsd_from_sockaddr(state,
-					       addr_server,
-					       len_server,
-					       &srv_addr);
+	rc = tsocket_address_bsd_from_samba_sockaddr(state,
+						     &addr_server,
+						     &srv_addr);
 	if (rc < 0) {
 		close(sd);
 		return;
 	}
 
-	DEBUG(10, ("Accepted ncalrpc socket %s (fd: %d)\n",
-		   sunaddr.sun_path, sd));
+	DBG_DEBUG("Accepted ncalrpc socket %s (fd: %d)\n",
+		   addr.u.un.sun_path, sd);
 
 	dcerpc_ncacn_accept(state->ev_ctx,
 			    state->msg_ctx,
 			    NCALRPC,
 			    state->ep.name,
 			    cli_addr, srv_addr, sd,
-			    state->disconnect_fn);
+			    state->termination_fn,
+			    state->termination_data);
 }
 
-struct dcerpc_ncacn_conn {
-	enum dcerpc_transport_t transport;
+static int dcerpc_ncacn_conn_destructor(struct dcerpc_ncacn_conn *ncacn_conn)
+{
+	if (ncacn_conn->termination_fn != NULL) {
+		ncacn_conn->termination_fn(ncacn_conn->p,
+					   ncacn_conn->termination_data);
+	}
 
-	int sock;
+	return 0;
+}
 
-	struct pipes_struct *p;
-	dcerpc_ncacn_disconnect_fn disconnect_fn;
+NTSTATUS dcerpc_ncacn_conn_init(TALLOC_CTX *mem_ctx,
+				struct tevent_context *ev_ctx,
+				struct messaging_context *msg_ctx,
+				enum dcerpc_transport_t transport,
+				const char *name,
+				dcerpc_ncacn_termination_fn term_fn,
+				void *termination_data,
+				struct dcerpc_ncacn_conn **out)
+{
+	struct dcerpc_ncacn_conn *ncacn_conn = NULL;
 
-	struct tevent_context *ev_ctx;
-	struct messaging_context *msg_ctx;
+	ncacn_conn = talloc_zero(mem_ctx, struct dcerpc_ncacn_conn);
+	if (ncacn_conn == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+	talloc_set_destructor(ncacn_conn, dcerpc_ncacn_conn_destructor);
 
-	struct tstream_context *tstream;
-	struct tevent_queue *send_queue;
+	ncacn_conn->transport = transport;
+	ncacn_conn->ev_ctx = ev_ctx;
+	ncacn_conn->msg_ctx = msg_ctx;
+	ncacn_conn->sock = -1;
+	ncacn_conn->termination_fn = term_fn;
+	ncacn_conn->termination_data = termination_data;
+	if (name != NULL) {
+		ncacn_conn->name = talloc_strdup(ncacn_conn, name);
+		if (ncacn_conn->name == NULL) {
+			talloc_free(ncacn_conn);
+			return NT_STATUS_NO_MEMORY;;
+		}
+	}
 
-	struct tsocket_address *remote_client_addr;
-	char *remote_client_name;
-	struct tsocket_address *local_server_addr;
-	char *local_server_name;
-	struct auth_session_info *session_info;
+	*out = ncacn_conn;
 
-	struct iovec *iov;
-	size_t count;
-};
+	return NT_STATUS_OK;
+}
 
-static void dcerpc_ncacn_packet_process(struct tevent_req *subreq);
 static void dcerpc_ncacn_packet_done(struct tevent_req *subreq);
+static void dcesrv_ncacn_np_accept_done(struct tevent_req *subreq);
+static void dcesrv_ncacn_accept_step2(struct dcerpc_ncacn_conn *ncacn_conn);
 
 void dcerpc_ncacn_accept(struct tevent_context *ev_ctx,
 			 struct messaging_context *msg_ctx,
@@ -959,46 +681,51 @@ void dcerpc_ncacn_accept(struct tevent_context *ev_ctx,
 			 struct tsocket_address *cli_addr,
 			 struct tsocket_address *srv_addr,
 			 int s,
-			 dcerpc_ncacn_disconnect_fn fn) {
+			 dcerpc_ncacn_termination_fn termination_fn,
+			 void *termination_data)
+{
 	struct dcerpc_ncacn_conn *ncacn_conn;
-	struct tevent_req *subreq;
-	char *pipe_name;
 	NTSTATUS status;
-	int sys_errno;
-	uid_t uid;
-	gid_t gid;
 	int rc;
 
 	DEBUG(10, ("dcerpc_ncacn_accept\n"));
 
-	ncacn_conn = talloc_zero(ev_ctx, struct dcerpc_ncacn_conn);
-	if (ncacn_conn == NULL) {
-		DEBUG(0, ("Out of memory!\n"));
+	status = dcerpc_ncacn_conn_init(ev_ctx,
+					ev_ctx,
+					msg_ctx,
+					transport,
+					name,
+					termination_fn,
+					termination_data,
+					&ncacn_conn);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("Failed to initialize dcerpc_ncacn_connection: %s\n",
+			nt_errstr(status));
 		close(s);
 		return;
 	}
 
-	ncacn_conn->transport = transport;
-	ncacn_conn->ev_ctx = ev_ctx;
-	ncacn_conn->msg_ctx = msg_ctx;
 	ncacn_conn->sock = s;
-	ncacn_conn->disconnect_fn = fn;
 
-	ncacn_conn->remote_client_addr = talloc_move(ncacn_conn, &cli_addr);
-	if (tsocket_address_is_inet(ncacn_conn->remote_client_addr, "ip")) {
-		ncacn_conn->remote_client_name =
-			tsocket_address_inet_addr_string(ncacn_conn->remote_client_addr,
-							 ncacn_conn);
-	} else {
-		ncacn_conn->remote_client_name =
-			tsocket_address_unix_path(ncacn_conn->remote_client_addr,
-						  ncacn_conn);
-	}
-	if (ncacn_conn->remote_client_name == NULL) {
-		DEBUG(0, ("Out of memory obtaining remote socket address as a string!\n"));
-		talloc_free(ncacn_conn);
-		close(s);
-		return;
+	if (cli_addr != NULL) {
+		ncacn_conn->remote_client_addr = talloc_move(ncacn_conn, &cli_addr);
+
+		if (tsocket_address_is_inet(ncacn_conn->remote_client_addr, "ip")) {
+			ncacn_conn->remote_client_name =
+				tsocket_address_inet_addr_string(ncacn_conn->remote_client_addr,
+								 ncacn_conn);
+		} else {
+			ncacn_conn->remote_client_name =
+				tsocket_address_unix_path(ncacn_conn->remote_client_addr,
+							  ncacn_conn);
+		}
+
+		if (ncacn_conn->remote_client_name == NULL) {
+			DBG_ERR("Out of memory obtaining remote socket address as a string!\n");
+			talloc_free(ncacn_conn);
+			close(s);
+			return;
+		}
 	}
 
 	if (srv_addr != NULL) {
@@ -1021,19 +748,103 @@ void dcerpc_ncacn_accept(struct tevent_context *ev_ctx,
 		}
 	}
 
-	switch (transport) {
+	rc = set_blocking(s, false);
+	if (rc < 0) {
+		DBG_WARNING("Failed to set dcerpc socket to non-blocking\n");
+		talloc_free(ncacn_conn);
+		close(s);
+		return;
+	}
+
+	/*
+	 * As soon as we have tstream_bsd_existing_socket set up it will
+	 * take care of closing the socket.
+	 */
+	rc = tstream_bsd_existing_socket(ncacn_conn, s, &ncacn_conn->tstream);
+	if (rc < 0) {
+		DBG_WARNING("Failed to create tstream socket for dcerpc\n");
+		talloc_free(ncacn_conn);
+		close(s);
+		return;
+	}
+
+	if (transport == NCACN_NP) {
+		struct tevent_req *subreq = NULL;
+		uint64_t allocation_size = 4096;
+		uint16_t device_state = 0xff | 0x0400 | 0x0100;
+		uint16_t file_type = FILE_TYPE_MESSAGE_MODE_PIPE;
+
+		subreq = tstream_npa_accept_existing_send(ncacn_conn,
+							  ncacn_conn->ev_ctx,
+							  ncacn_conn->tstream,
+							  file_type,
+							  device_state,
+							  allocation_size);
+		if (subreq == NULL) {
+			DBG_ERR("Failed to start async accept procedure\n");
+			talloc_free(ncacn_conn);
+			return;
+		}
+		tevent_req_set_callback(subreq, dcesrv_ncacn_np_accept_done,
+					ncacn_conn);
+		return;
+	}
+
+	dcesrv_ncacn_accept_step2(ncacn_conn);
+}
+
+static void dcesrv_ncacn_np_accept_done(struct tevent_req *subreq)
+{
+	struct auth_session_info_transport *session_info_transport = NULL;
+	struct dcerpc_ncacn_conn *ncacn_conn = NULL;
+	int error;
+	int ret;
+
+	ncacn_conn = tevent_req_callback_data(subreq,
+					      struct dcerpc_ncacn_conn);
+
+	ret = tstream_npa_accept_existing_recv(subreq, &error, ncacn_conn,
+					       &ncacn_conn->tstream,
+					       &ncacn_conn->remote_client_addr,
+					       &ncacn_conn->remote_client_name,
+					       &ncacn_conn->local_server_addr,
+					       &ncacn_conn->local_server_name,
+					       &session_info_transport);
+	ncacn_conn->session_info = talloc_move(ncacn_conn,
+			&session_info_transport->session_info);
+
+	TALLOC_FREE(subreq);
+	if (ret != 0) {
+		DBG_ERR("Failed to accept named pipe connection: %s\n",
+			strerror(error));
+		talloc_free(ncacn_conn);
+		return;
+	}
+
+	dcesrv_ncacn_accept_step2(ncacn_conn);
+}
+
+static void dcesrv_ncacn_accept_step2(struct dcerpc_ncacn_conn *ncacn_conn)
+{
+	struct tevent_req *subreq = NULL;
+	char *pipe_name = NULL;
+	uid_t uid;
+	gid_t gid;
+	int rc;
+	int sys_errno;
+
+	switch (ncacn_conn->transport) {
 		case NCACN_IP_TCP:
 			pipe_name = tsocket_address_string(ncacn_conn->remote_client_addr,
 							   ncacn_conn);
 			if (pipe_name == NULL) {
-				close(s);
 				talloc_free(ncacn_conn);
 				return;
 			}
 
 			break;
 		case NCALRPC:
-			rc = getpeereid(s, &uid, &gid);
+			rc = getpeereid(ncacn_conn->sock, &uid, &gid);
 			if (rc < 0) {
 				DEBUG(2, ("Failed to get ncalrpc connecting "
 					  "uid - %s!\n", strerror(errno)));
@@ -1047,7 +858,6 @@ void dcerpc_ncacn_accept(struct tevent_context *ev_ctx,
 					if (rc < 0) {
 						DEBUG(0, ("Out of memory building magic ncalrpc_as_system path!\n"));
 						talloc_free(ncacn_conn);
-						close(s);
 						return;
 					}
 
@@ -1058,7 +868,6 @@ void dcerpc_ncacn_accept(struct tevent_context *ev_ctx,
 					if (ncacn_conn->remote_client_name == NULL) {
 						DEBUG(0, ("Out of memory getting magic ncalrpc_as_system string!\n"));
 						talloc_free(ncacn_conn);
-						close(s);
 						return;
 					}
 				}
@@ -1067,42 +876,22 @@ void dcerpc_ncacn_accept(struct tevent_context *ev_ctx,
 			FALL_THROUGH;
 		case NCACN_NP:
 			pipe_name = talloc_strdup(ncacn_conn,
-						  name);
+						  ncacn_conn->name);
 			if (pipe_name == NULL) {
-				close(s);
 				talloc_free(ncacn_conn);
 				return;
 			}
 			break;
 		default:
 			DEBUG(0, ("unknown dcerpc transport: %u!\n",
-				  transport));
+				  ncacn_conn->transport));
 			talloc_free(ncacn_conn);
-			close(s);
 			return;
 	}
 
-	rc = set_blocking(s, false);
-	if (rc < 0) {
-		DEBUG(2, ("Failed to set dcerpc socket to non-blocking\n"));
-		talloc_free(ncacn_conn);
-		close(s);
-		return;
-	}
-
-	/*
-	 * As soon as we have tstream_bsd_existing_socket set up it will
-	 * take care of closing the socket.
-	 */
-	rc = tstream_bsd_existing_socket(ncacn_conn, s, &ncacn_conn->tstream);
-	if (rc < 0) {
-		DEBUG(2, ("Failed to create tstream socket for dcerpc\n"));
-		talloc_free(ncacn_conn);
-		close(s);
-		return;
-	}
-
 	if (ncacn_conn->session_info == NULL) {
+		NTSTATUS status;
+
 		status = make_session_info_anonymous(ncacn_conn,
 						     &ncacn_conn->session_info);
 		if (!NT_STATUS_IS_OK(status)) {
@@ -1154,7 +943,7 @@ void dcerpc_ncacn_accept(struct tevent_context *ev_ctx,
 	return;
 }
 
-static void dcerpc_ncacn_packet_process(struct tevent_req *subreq)
+void dcerpc_ncacn_packet_process(struct tevent_req *subreq)
 {
 	struct dcerpc_ncacn_conn *ncacn_conn =
 		tevent_req_callback_data(subreq, struct dcerpc_ncacn_conn);
@@ -1163,18 +952,13 @@ static void dcerpc_ncacn_packet_process(struct tevent_req *subreq)
 	DATA_BLOB recv_buffer = data_blob_null;
 	struct ncacn_packet *pkt;
 	uint32_t to_send;
+	size_t i;
 	NTSTATUS status;
 	bool ok;
 
 	status = dcerpc_read_ncacn_packet_recv(subreq, ncacn_conn, &pkt, &recv_buffer);
 	TALLOC_FREE(subreq);
 	if (!NT_STATUS_IS_OK(status)) {
-		if (ncacn_conn->disconnect_fn != NULL) {
-			ok = ncacn_conn->disconnect_fn(ncacn_conn->p);
-			if (!ok) {
-				DEBUG(3, ("Failed to call disconnect function\n"));
-			}
-		}
 		goto fail;
 	}
 
@@ -1188,6 +972,9 @@ static void dcerpc_ncacn_packet_process(struct tevent_req *subreq)
 	}
 	DEBUG(10, ("PDU is in %s Endian format!\n",
 		   ncacn_conn->p->endian ? "Big" : "Little"));
+	if (DEBUGLEVEL >= 10) {
+		NDR_PRINT_DEBUG(ncacn_packet, pkt);
+	}
 	process_complete_pdu(ncacn_conn->p, pkt);
 
 	/* reset pipe state and free PDU */
@@ -1275,22 +1062,59 @@ static void dcerpc_ncacn_packet_process(struct tevent_req *subreq)
 		return;
 	}
 
-	DEBUG(10, ("Sending a total of %u bytes\n",
-		   (unsigned int)ncacn_conn->p->out_data.data_sent_length));
+	switch (ncacn_conn->transport) {
+	case NCACN_NP:
+		/* If sending packets over named pipe proxy we need to send
+		 * each fragment on its own to be a message
+		 */
+		DBG_DEBUG("Sending %u fragments in a total of %u bytes\n",
+			  (unsigned int)ncacn_conn->count,
+			  (unsigned int)ncacn_conn->p->out_data.data_sent_length);
+		for (i = 0; i < ncacn_conn->count; i++) {
+			DBG_DEBUG("Sending PDU number: %d, PDU Length: %u\n",
+				  (unsigned int)i,
+				  (unsigned int)ncacn_conn->iov[i].iov_len);
+			dump_data(11, (const uint8_t *)ncacn_conn->iov[i].iov_base,
+				  ncacn_conn->iov[i].iov_len);
 
-	subreq = tstream_writev_queue_send(ncacn_conn,
-					   ncacn_conn->ev_ctx,
-					   ncacn_conn->tstream,
-					   ncacn_conn->send_queue,
-					   ncacn_conn->iov,
-					   ncacn_conn->count);
-	if (subreq == NULL) {
-		DEBUG(2, ("Failed to send packet\n"));
-		status = NT_STATUS_NO_MEMORY;
-		goto fail;
+			subreq = tstream_writev_queue_send(ncacn_conn,
+					ncacn_conn->ev_ctx,
+					ncacn_conn->tstream,
+					ncacn_conn->send_queue,
+					(ncacn_conn->iov + i),
+					1);
+			if (subreq == NULL) {
+				DBG_ERR("Failed to send packet\n");
+				status = NT_STATUS_NO_MEMORY;
+				goto fail;
+			}
+			tevent_req_set_callback(subreq,
+						dcerpc_ncacn_packet_done,
+						ncacn_conn);
+		}
+		break;
+	default:
+		DBG_DEBUG("Sending a total of %u bytes\n",
+			  (unsigned int)ncacn_conn->p->out_data.data_sent_length);
+
+		subreq = tstream_writev_queue_send(ncacn_conn,
+				ncacn_conn->ev_ctx,
+				ncacn_conn->tstream,
+				ncacn_conn->send_queue,
+				ncacn_conn->iov,
+				ncacn_conn->count);
+		if (subreq == NULL) {
+			DBG_ERR("Failed to send packet\n");
+			status = NT_STATUS_NO_MEMORY;
+			goto fail;
+		}
+
+		tevent_req_set_callback(subreq,
+					dcerpc_ncacn_packet_done,
+					ncacn_conn);
+		break;
 	}
 
-	tevent_req_set_callback(subreq, dcerpc_ncacn_packet_done, ncacn_conn);
 	return;
 
 fail:
@@ -1316,6 +1140,12 @@ static void dcerpc_ncacn_packet_done(struct tevent_req *subreq)
 		DEBUG(2, ("Writev failed!\n"));
 		status = map_nt_error_from_unix(sys_errno);
 		goto fail;
+	}
+
+	if (ncacn_conn->transport == NCACN_NP &&
+	    tevent_queue_length(ncacn_conn->send_queue) > 0) {
+		/* More fragments to send before reading a new packet */
+		return;
 	}
 
 	if (ncacn_conn->p->fault_state != 0) {

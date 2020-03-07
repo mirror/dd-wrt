@@ -22,7 +22,6 @@
 #include <talloc.h>
 #include "serverid.h"
 #include "server_id_watch.h"
-#include "messages.h"
 #include "lib/util/tevent_unix.h"
 
 struct server_id_watch_state {
@@ -34,7 +33,6 @@ static void server_id_watch_waited(struct tevent_req *subreq);
 
 struct tevent_req *server_id_watch_send(TALLOC_CTX *mem_ctx,
 					struct tevent_context *ev,
-					struct messaging_context *msg,
 					struct server_id pid)
 {
 	struct tevent_req *req, *subreq;
@@ -52,7 +50,8 @@ struct tevent_req *server_id_watch_send(TALLOC_CTX *mem_ctx,
 		return tevent_req_post(req, ev);
 	}
 
-	subreq = tevent_wakeup_send(state, ev, timeval_current_ofs(0, 500000));
+	subreq = tevent_wakeup_send(
+		state, ev, tevent_timeval_current_ofs(0, 500000));
 	if (tevent_req_nomem(subreq, req)) {
 		return tevent_req_post(req, ev);
 	}
@@ -81,8 +80,8 @@ static void server_id_watch_waited(struct tevent_req *subreq)
 		return;
 	}
 
-	subreq = tevent_wakeup_send(state, state->ev,
-				    timeval_current_ofs(0, 500000));
+	subreq = tevent_wakeup_send(
+		state, state->ev, tevent_timeval_current_ofs(0, 500000));
 	if (tevent_req_nomem(subreq, req)) {
 		return;
 	}

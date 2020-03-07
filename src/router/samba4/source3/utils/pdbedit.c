@@ -26,6 +26,7 @@
 #include "../libcli/security/security.h"
 #include "passdb.h"
 #include "cmdline_contexts.h"
+#include "passwd_proto.h"
 
 #define BIT_BACKEND	0x00000004
 #define BIT_VERBOSE	0x00000008
@@ -1184,6 +1185,7 @@ int main(int argc, const char **argv)
 	checkparms = setparms & ~MASK_ALWAYS_GOOD;
 
 	if (checkparms & BIT_FIX_INIT) {
+		poptFreeContext(pc);
 		return fix_users_list();
 	}
 
@@ -1239,6 +1241,8 @@ int main(int argc, const char **argv)
 	if (((checkparms & BIT_IMPORT) ||
 	     (checkparms & BIT_EXPORT)) &&
 	    !(checkparms & ~(BIT_IMPORT +BIT_EXPORT +BIT_USER))) {
+
+		poptFreeContext(pc);
 
 		if (backend_in) {
 			status = make_pdb_method_name(&bin, backend_in);
@@ -1297,9 +1301,11 @@ int main(int argc, const char **argv)
 	/* list users operations */
 	if (checkparms & BIT_LIST) {
 		if (!(checkparms & ~BIT_LIST)) {
+			poptFreeContext(pc);
 			return print_users_list(verbose, spstyle);
 		}
 		if (!(checkparms & ~(BIT_USER + BIT_LIST))) {
+			poptFreeContext(pc);
 			return print_user_info(user_name, verbose, spstyle);
 		}
 	}
@@ -1324,12 +1330,14 @@ int main(int argc, const char **argv)
 		/* check use of -u option */
 		if (!(checkparms & BIT_USER)) {
 			fprintf (stderr, "Username not specified! (use -u option)\n");
+			poptFreeContext(pc);
 			return -1;
 		}
 
 		/* account creation operations */
 		if (!(checkparms & ~(BIT_CREATE + BIT_USER + BIT_MACHINE))) {
-		       	if (checkparms & BIT_MACHINE) {
+			poptFreeContext(pc);
+			if (checkparms & BIT_MACHINE) {
 				return new_machine(user_name, machine_sid);
 			} else {
 				return new_user(user_name, full_name,
@@ -1341,7 +1349,8 @@ int main(int argc, const char **argv)
 
 		/* account deletion operations */
 		if (!(checkparms & ~(BIT_DELETE + BIT_USER + BIT_MACHINE))) {
-		       	if (checkparms & BIT_MACHINE) {
+			poptFreeContext(pc);
+			if (checkparms & BIT_MACHINE) {
 				return delete_machine_entry(user_name);
 			} else {
 				return delete_user_entry(user_name);
@@ -1350,6 +1359,7 @@ int main(int argc, const char **argv)
 
 		/* account modification operations */
 		if (!(checkparms & ~(BIT_MODIFY + BIT_USER + BIT_MACHINE))) {
+			poptFreeContext(pc);
 			if (checkparms & BIT_MACHINE) {
 				return set_machine_info(user_name,
 							account_control,
@@ -1371,6 +1381,7 @@ int main(int argc, const char **argv)
 	}
 	poptPrintHelp(pc, stderr, 0);
 
+	poptFreeContext(pc);
 	TALLOC_FREE(frame);
 	return 1;
 }

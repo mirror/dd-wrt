@@ -2,12 +2,12 @@
 .\"     Title: net
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/14/2020
+.\"      Date: 03/03/2020
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.11.5
+.\"    Source: Samba 4.12.0
 .\"  Language: English
 .\"
-.TH "NET" "8" "01/14/2020" "Samba 4\&.11\&.5" "System Administration tools"
+.TH "NET" "8" "03/03/2020" "Samba 4\&.12\&.0" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -284,6 +284,21 @@ Prevent the machine account removal as part of "net ads leave"\&.
 \-\-json
 .RS 4
 Report results in JSON format for "net ads info" and "net ads lookup"\&.
+.RE
+.PP
+\-\-recursive
+.RS 4
+Traverse a directory hierarchy\&.
+.RE
+.PP
+\-\-continue
+.RS 4
+Continue traversing a directory hierarchy in case conversion of one file fails\&.
+.RE
+.PP
+\-\-follow\-symlinks
+.RS 4
+Follow symlinks encountered while traversing a directory\&.
 .RE
 .PP
 \-e|\-\-encrypt
@@ -964,6 +979,46 @@ Dump remote SAM database to local LDIF file or standard output\&.
 .PP
 Fetch domain SID and store it in the local
 secrets\&.tdb\&.
+.SS "ADS GPO"
+.SS "ADS GPO APPLY <USERNAME|MACHINENAME> "
+.PP
+Apply GPOs for a username or machine name\&. Either username or machine name should be provided to the command, not both\&.
+.SS "ADS GPO GETGPO [GPO]"
+.PP
+List specified GPO\&.
+.SS "ADS GPO LINKADD [LINKDN] [GPODN]"
+.PP
+Link a container to a GPO\&.
+\fILINKDN\fR
+Container to link to a GPO\&.
+\fIGPODN\fR
+GPO to link container to\&. DNs must be provided properly escaped\&. See RFC 4514 for details\&.
+.SS "ADS GPO LINKGET [CONTAINER]"
+.PP
+Lists gPLink of a containter\&.
+.SS "ADS GPO LIST <USERNAME|MACHINENAME> "
+.PP
+Lists all GPOs for a username or machine name\&. Either username or machine name should be provided to the command, not both\&.
+.SS "ADS GPO LISTALL"
+.PP
+Lists all GPOs on a DC\&.
+.SS "ADS GPO REFRESH [USERNAME] [MACHINENAME]"
+.PP
+Lists all GPOs assigned to an account and download them\&.
+\fIUSERNAME\fR
+User to refresh GPOs for\&.
+\fIMACHINENAME\fR
+Machine to refresh GPOs for\&.
+.SS "ADS DNS"
+.SS "ADS DNS REGISTER [HOSTNAME [IP [IP.....]]]"
+.PP
+Add host dns entry to Active Directory\&.
+.SS "ADS DNS UNREGISTER <HOSTNAME>"
+.PP
+Remove host dns entry from Active Directory\&.
+.SS "ADS DNS GETHOSTBYNAME <NAMESERVER|HOSTNAME>"
+.PP
+Look up the hostname from Active Directory\&. You can either provide nameserver ie IPv4|IPv6 address or the hostname\&. Only one should be provided at a time\&.
 .SS "ADS LEAVE [\-\-keep\-account]"
 .PP
 Make the remote host leave the domain it is part of\&.
@@ -1670,7 +1725,7 @@ Lock the database while doing the check\&.
 .PP
 \-\-reg\-version={1,2,3}
 .RS 4
-Specify the format of the registry database\&. If not given it defaults to the value of the binary or, if an registry\&.tdb is explizitly stated at the commandline, to the value found in the INFO/version record\&.
+Specify the format of the registry database\&. If not given it defaults to the value of the binary or, if an registry\&.tdb is explicitly stated at the commandline, to the value found in the INFO/version record\&.
 .RE
 .PP
 [\-\-db] <DB>
@@ -2012,6 +2067,95 @@ List sharename, filename and number of share modes for a record from locking\&.t
 .\}
 \fIKEY\fR
 Key of the tdb record as hex string\&.
+.RE
+.SS "vfs"
+.PP
+Access shared filesystem through the VFS\&.
+.SS "vfs stream2abouble [--recursive] [--verbose] [--continue] [--follow-symlinks] share path"
+.PP
+Convert file streams to AppleDouble files\&.
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIshare\fR
+A Samba share\&.
+.RE
+.sp
+.RE
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIpath\fR
+A relative path of something in the Samba share\&. "\&." can be used for the root directory of the share\&.
+.RE
+.sp
+.RE
+.PP
+Options:
+.PP
+\-\-recursive
+.RS 4
+Traverse a directory hierarchy\&.
+.RE
+.PP
+\-\-verbose
+.RS 4
+Verbose output\&.
+.RE
+.PP
+\-\-continue
+.RS 4
+Continue traversing a directory hierarchy if a single conversion fails\&.
+.RE
+.PP
+\-\-follow\-symlinks
+.RS 4
+Follow symlinks encountered while traversing a directory\&.
+.RE
+.SS "vfs getntacl share path"
+.PP
+Display the security descriptor of a file or directory\&.
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIshare\fR
+A Samba share\&.
+.RE
+.sp
+.RE
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIpath\fR
+A relative path of something in the Samba share\&. "\&." can be used for the root directory of the share\&.
 .RE
 .SS "HELP [COMMAND]"
 .PP

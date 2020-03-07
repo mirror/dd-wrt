@@ -1,0 +1,84 @@
+'\" t
+.\"     Title: vfs_io_uring
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 03/03/2020
+.\"    Manual: System Administration tools
+.\"    Source: Samba 4.12.0
+.\"  Language: English
+.\"
+.TH "VFS_IO_URING" "8" "03/03/2020" "Samba 4\&.12\&.0" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+vfs_io_uring \- Implement async io in Samba vfs using io_uring of Linux (>= 5\&.1)\&.
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+vfs objects = io_uring
+.SH "DESCRIPTION"
+.PP
+This VFS module is part of the
+\fBsamba\fR(7)
+suite\&.
+.PP
+The
+io_uring
+VFS module enables asynchronous pread, pwrite and fsync using the io_uring infrastructure of Linux (>= 5\&.1)\&. This provides much less overhead compared to the usage of the pthreadpool for async io\&.
+.PP
+This module SHOULD be listed last in any module stack as it requires real kernel file descriptors\&.
+.SH "EXAMPLES"
+.PP
+Straight forward use:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        \fI[cooldata]\fR
+	\m[blue]\fBpath = /data/ice\fR\m[]
+	\m[blue]\fBvfs objects = io_uring\fR\m[]
+.fi
+.if n \{\
+.RE
+.\}
+.SH "OPTIONS"
+.PP
+io_uring:num_entries = NUMBER_OF_QUEUE_ENTRIES
+.RS 4
+The number of entries in the submission queue\&. The maximum allowed value depends on the kernel version and the kernel will roundup the value to a power of 2\&.
+.sp
+The default is \*(Aq128\*(Aq\&.
+.RE
+.PP
+io_uring:sqpoll = BOOL
+.RS 4
+Use the IORING_SETUP_SQPOLL feature\&.
+.sp
+The default is \*(Aqno\*(Aq\&.
+.RE
+.SH "SEE ALSO"
+.PP
+\fBio_uring_setup\fR(2)\&.
+.SH "VERSION"
+.PP
+This man page is part of version 4\&.12\&.0 of the Samba suite\&.
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

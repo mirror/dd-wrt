@@ -79,8 +79,10 @@ static EVENTLOG_INFO *find_eventlog_info_by_hnd( struct pipes_struct * p,
 /********************************************************************
 ********************************************************************/
 
-static bool elog_check_access( EVENTLOG_INFO *info, const struct security_token *token )
+static bool elog_check_access(EVENTLOG_INFO *info,
+			      struct auth_session_info *session_info)
 {
+	const struct security_token *token = session_info->security_token;
 	char *tdbname = elog_tdbname(talloc_tos(), info->logname );
 	struct security_descriptor *sec_desc;
 	struct security_ace *ace;
@@ -92,6 +94,7 @@ static bool elog_check_access( EVENTLOG_INFO *info, const struct security_token 
 	/* get the security descriptor for the file */
 
 	status = get_nt_acl_no_snum( info,
+			session_info,
 			tdbname,
 			SECINFO_OWNER | SECINFO_GROUP | SECINFO_DACL,
 			&sec_desc);
@@ -242,7 +245,7 @@ static NTSTATUS elog_open( struct pipes_struct * p, const char *logname, struct 
 			elog->logname = talloc_strdup( elog, ELOG_APPL );
 
 			/* do the access check */
-			if ( !elog_check_access( elog, p->session_info->security_token ) ) {
+			if ( !elog_check_access( elog, p->session_info) ) {
 				TALLOC_FREE( elog );
 				return NT_STATUS_ACCESS_DENIED;
 			}
@@ -260,7 +263,7 @@ static NTSTATUS elog_open( struct pipes_struct * p, const char *logname, struct 
 
 	/* now do the access check.  Close the tdb if we fail here */
 
-	if ( !elog_check_access( elog, p->session_info->security_token ) ) {
+	if ( !elog_check_access( elog, p->session_info) ) {
 		TALLOC_FREE( elog );
 		return NT_STATUS_ACCESS_DENIED;
 	}

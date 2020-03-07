@@ -36,14 +36,13 @@
 #include "../libcli/smb/smbXcli_base.h"
 #include "messages.h"
 #include "cmdline_contexts.h"
+#include "../librpc/gen_ndr/ndr_samr.h"
 
 enum pipe_auth_type_spnego {
 	PIPE_AUTH_TYPE_SPNEGO_NONE = 0,
 	PIPE_AUTH_TYPE_SPNEGO_NTLMSSP,
 	PIPE_AUTH_TYPE_SPNEGO_KRB5
 };
-
-struct dom_sid domain_sid;
 
 static enum dcerpc_AuthType pipe_default_auth_type = DCERPC_AUTH_TYPE_NONE;
 static enum pipe_auth_type_spnego pipe_default_auth_spnego_type = 0;
@@ -52,7 +51,6 @@ static unsigned int timeout = 0;
 static enum dcerpc_transport_t default_transport = NCACN_NP;
 
 struct messaging_context *rpcclient_msg_ctx;
-struct cli_state *rpcclient_cli_state;
 struct netlogon_creds_cli_context *rpcclient_netlogon_creds;
 static const char *rpcclient_netlogon_domain;
 
@@ -152,78 +150,6 @@ static char *next_command (char **cmdstr)
 		*cmdstr = NULL;
 
 	return command;
-}
-
-/* Fetch the SID for this computer */
-
-static void fetch_machine_sid(struct cli_state *cli)
-{
-	struct policy_handle pol;
-	NTSTATUS result = NT_STATUS_OK, status;
-	static bool got_domain_sid;
-	TALLOC_CTX *mem_ctx;
-	struct rpc_pipe_client *lsapipe = NULL;
-	union lsa_PolicyInformation *info = NULL;
-	struct dcerpc_binding_handle *b;
-
-	if (got_domain_sid) return;
-
-	if (!(mem_ctx=talloc_init("fetch_machine_sid"))) {
-		DEBUG(0,("fetch_machine_sid: talloc_init returned NULL!\n"));
-		goto error;
-	}
-
-	result = cli_rpc_pipe_open_noauth(cli, &ndr_table_lsarpc,
-					  &lsapipe);
-	if (!NT_STATUS_IS_OK(result)) {
-		fprintf(stderr, "could not initialise lsa pipe. Error was %s\n", nt_errstr(result) );
-		goto error;
-	}
-
-	b = lsapipe->binding_handle;
-
-	result = rpccli_lsa_open_policy(lsapipe, mem_ctx, True, 
-				     SEC_FLAG_MAXIMUM_ALLOWED,
-				     &pol);
-	if (!NT_STATUS_IS_OK(result)) {
-		goto error;
-	}
-
-	status = dcerpc_lsa_QueryInfoPolicy(b, mem_ctx,
-					    &pol,
-					    LSA_POLICY_INFO_ACCOUNT_DOMAIN,
-					    &info,
-					    &result);
-	if (!NT_STATUS_IS_OK(status)) {
-		result = status;
-		goto error;
-	}
-	if (!NT_STATUS_IS_OK(result)) {
-		goto error;
-	}
-
-	got_domain_sid = True;
-	sid_copy(&domain_sid, info->account_domain.sid);
-
-	dcerpc_lsa_Close(b, mem_ctx, &pol, &result);
-	TALLOC_FREE(lsapipe);
-	talloc_destroy(mem_ctx);
-
-	return;
-
- error:
-
-	if (lsapipe) {
-		TALLOC_FREE(lsapipe);
-	}
-
-	fprintf(stderr, "could not obtain sid from server\n");
-
-	if (!NT_STATUS_IS_OK(result)) {
-		fprintf(stderr, "error: %s\n", nt_errstr(result));
-	}
-
-	exit(1);
 }
 
 /* List the available commands on a given pipe */
@@ -792,7 +718,6 @@ extern struct cmd_set ds_commands[];
 extern struct cmd_set echo_commands[];
 extern struct cmd_set epmapper_commands[];
 extern struct cmd_set shutdown_commands[];
-extern struct cmd_set test_commands[];
 extern struct cmd_set wkssvc_commands[];
 extern struct cmd_set ntsvcs_commands[];
 extern struct cmd_set drsuapi_commands[];
@@ -801,6 +726,7 @@ extern struct cmd_set winreg_commands[];
 extern struct cmd_set fss_commands[];
 extern struct cmd_set witness_commands[];
 extern struct cmd_set clusapi_commands[];
+extern struct cmd_set spotlight_commands[];
 
 static struct cmd_set *rpcclient_command_list[] = {
 	rpcclient_commands,
@@ -815,7 +741,6 @@ static struct cmd_set *rpcclient_command_list[] = {
 	echo_commands,
 	epmapper_commands,
 	shutdown_commands,
- 	test_commands,
 	wkssvc_commands,
 	ntsvcs_commands,
 	drsuapi_commands,
@@ -824,6 +749,7 @@ static struct cmd_set *rpcclient_command_list[] = {
 	fss_commands,
 	witness_commands,
 	clusapi_commands,
+	spotlight_commands,
 	NULL
 };
 
@@ -1320,7 +1246,6 @@ out_free:
 #endif
 
 	/* Load command lists */
-	rpcclient_cli_state = cli;
 
 	timeout = 10000;
 	cli_set_timeout(cli, timeout);
@@ -1334,8 +1259,6 @@ out_free:
 	}
 
 	default_transport = dcerpc_binding_get_transport(binding);
-
-	fetch_machine_sid(cli);
 
        /* Do anything specified with -c */
         if (cmdstr && cmdstr[0]) {
@@ -1374,7 +1297,6 @@ out_free:
 	}
 
 done:
-	rpcclient_cli_state = NULL;
 	if (cli != NULL) {
 		cli_shutdown(cli);
 	}

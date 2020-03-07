@@ -2,12 +2,12 @@
 .\"     Title: smb.conf
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/14/2020
+.\"      Date: 03/03/2020
 .\"    Manual: File Formats and Conventions
-.\"    Source: Samba 4.11.5
+.\"    Source: Samba 4.12.0
 .\"  Language: English
 .\"
-.TH "SMB\&.CONF" "5" "01/14/2020" "Samba 4\&.11\&.5" "File Formats and Conventions"
+.TH "SMB\&.CONF" "5" "03/03/2020" "Samba 4\&.12\&.0" "File Formats and Conventions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -3542,10 +3542,82 @@ Default:
 \fI\fIea support\fR\fR\fI = \fR\fIyes\fR\fI \fR
 .RE
 
+elasticsearch:address (S)
+.PP
+.RS 4
+Specifies the name of the Elasticsearch server to use for Spotlight queries when using the Elasticsearch backend\&.
+.sp
+Default:
+\fI\fIelasticsearch:address\fR\fR\fI = \fR\fIlocalhost\fR\fI \fR
+.sp
+Example:
+\fI\fIelasticsearch:address\fR\fR\fI = \fR\fIneedle\&.haystack\&.samba\&.org\fR\fI \fR
+.RE
+
+elasticsearch:index (S)
+.PP
+.RS 4
+Specifies the name of the Elasticsearch index to use for Spotlight queries when using the Elasticsearch backend\&. The default value of "_all" is a special Elasticsearch value that performs the search operation on all indices\&.
+.sp
+Default:
+\fI\fIelasticsearch:index\fR\fR\fI = \fR\fI_all\fR\fI \fR
+.sp
+Example:
+\fI\fIelasticsearch:index\fR\fR\fI = \fR\fIspotlight\fR\fI \fR
+.RE
+
+elasticsearch:mappings (G)
+.PP
+.RS 4
+Path to a file specifying metadata attribute mappings in JSON format\&. Use by the Elasticsearch backend of the Spotlight RPC service\&.
+.sp
+Default:
+\fI\fIelasticsearch:mappings\fR\fR\fI = \fR\fI${prefix}/var/samba/elasticsearch_mappings\&.json\fR\fI \fR
+.sp
+Example:
+\fI\fIelasticsearch:mappings\fR\fR\fI = \fR\fI/usr/share/foo/mymappings\&.json\fR\fI \fR
+.RE
+
+elasticsearch:max results (S)
+.PP
+.RS 4
+Path to a file specifying metadata attribute mappings in JSON format\&. Used by the Elasticsearch backend of the Spotlight RPC service\&. A value of 0 means no limit\&.
+.sp
+Default:
+\fI\fIelasticsearch:max results\fR\fR\fI = \fR\fI100\fR\fI \fR
+.sp
+Example:
+\fI\fIelasticsearch:max results\fR\fR\fI = \fR\fI10\fR\fI \fR
+.RE
+
+elasticsearch:port (S)
+.PP
+.RS 4
+Specifies the TCP port of the Elasticsearch server to use for Spotlight queries when using the Elasticsearch backend\&.
+.sp
+Default:
+\fI\fIelasticsearch:port\fR\fR\fI = \fR\fI9200\fR\fI \fR
+.sp
+Example:
+\fI\fIelasticsearch:port\fR\fR\fI = \fR\fI9201\fR\fI \fR
+.RE
+
+elasticsearch:use tls (S)
+.PP
+.RS 4
+Specifies whether to use HTTPS when talking to the Elasticsearch server used for Spotlight queries when using the Elasticsearch backend\&.
+.sp
+Default:
+\fI\fIelasticsearch:use tls\fR\fR\fI = \fR\fIno\fR\fI \fR
+.sp
+Example:
+\fI\fIelasticsearch:use tls\fR\fR\fI = \fR\fIyes\fR\fI \fR
+.RE
+
 enable asu support (G)
 .PP
 .RS 4
-Hosts running the "Advanced Server for Unix (ASU)" product require some special accomodations such as creating a builtin [ADMIN$] share that only supports IPC connections\&. The has been the default behavior in smbd for many years\&. However, certain Microsoft applications such as the Print Migrator tool require that the remote server support an [ADMIN$] file share\&. Disabling this parameter allows for creating an [ADMIN$] file share in smb\&.conf\&.
+Hosts running the "Advanced Server for Unix (ASU)" product require some special accommodations such as creating a builtin [ADMIN$] share that only supports IPC connections\&. The has been the default behavior in smbd for many years\&. However, certain Microsoft applications such as the Print Migrator tool require that the remote server support an [ADMIN$] file share\&. Disabling this parameter allows for creating an [ADMIN$] file share in smb\&.conf\&.
 .sp
 Default:
 \fI\fIenable asu support\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -5078,11 +5150,11 @@ option, this parameter cannot alter client behaviour, and the LANMAN response wi
 client lanman auth
 to disable this for Samba\*(Aqs clients (such as smbclient)
 .sp
-This parameter is overriden by
+This parameter is overridden by
 \fIntlm auth\fR, so unless that it is also set to
 \fBntlmv1\-permitted\fR
 or
-\fByes\fR, then only NTLMv2 logins will be permited and no LM hash will be stored\&. All modern clients support NTLMv2, and but some older clients require special configuration to use it\&.
+\fByes\fR, then only NTLMv2 logins will be permitted and no LM hash will be stored\&. All modern clients support NTLMv2, and but some older clients require special configuration to use it\&.
 .sp
 Default:
 \fI\fIlanman auth\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -5104,7 +5176,7 @@ ldap admin dn (G)
 .RS 4
 The
 \m[blue]\fBldap admin dn\fR\m[]
-defines the Distinguished Name (DN) name used by Samba to contact the ldap server when retreiving user account information\&. The
+defines the Distinguished Name (DN) name used by Samba to contact the ldap server when retrieving user account information\&. The
 \m[blue]\fBldap admin dn\fR\m[]
 is used in conjunction with the admin dn password stored in the
 private/secrets\&.tdb
@@ -6856,7 +6928,7 @@ Possible option settings are
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIyes (default)\fR
+\fIyes\fR
 \- enables name mangling for all not DOS 8\&.3 conforming names\&.
 .RE
 .sp
@@ -6880,7 +6952,7 @@ Possible option settings are
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIillegal\fR
+\fIillegal (default)\fR
 \- does mangling for names with illegal NTFS characters\&. This is the most sensible setting for modern clients that don\*(Aqt use the shortname anymore\&.
 .RE
 .sp
@@ -7677,7 +7749,7 @@ When Samba is functioning in ADS security mode (security = ads) it is advised to
 .sp
 name resolve order = wins bcast
 .sp
-DC lookups will still be done via DNS, but fallbacks to netbios names will not inundate your DNS servers with needless querys for DOMAIN<0x1c> lookups\&.
+DC lookups will still be done via DNS, but fallbacks to netbios names will not inundate your DNS servers with needless queries for DOMAIN<0x1c> lookups\&.
 .sp
 Default:
 \fI\fIname resolve order\fR\fR\fI = \fR\fIlmhosts wins host bcast\fR\fI \fR
@@ -7884,7 +7956,7 @@ By default with
 ntlm auth
 set to
 \fBntlmv2\-only\fR
-only NTLMv2 logins will be permited\&. All modern clients support NTLMv2 by default, but some older clients will require special configuration to use it\&.
+only NTLMv2 logins will be permitted\&. All modern clients support NTLMv2 by default, but some older clients will require special configuration to use it\&.
 .sp
 The primary user of NTLMv1 is MSCHAPv2 for VPNs and 802\&.1x\&.
 .sp
@@ -8218,7 +8290,7 @@ Default:
 \fI\fIpanic action\fR\fR\fI = \fR\fI\fR\fI \fR
 .sp
 Example:
-\fI\fIpanic action\fR\fR\fI = \fR\fI"/bin/sleep 90000"\fR\fI \fR
+\fI\fIpanic action\fR\fR\fI = \fR\fI/bin/sleep 90000\fR\fI \fR
 .RE
 
 passdb backend (G)
@@ -9434,26 +9506,6 @@ Default:
 \fI\fIrestrict anonymous\fR\fR\fI = \fR\fI0\fR\fI \fR
 .RE
 
-rndc command (G)
-.PP
-.RS 4
-This option is deprecated with Samba 4\&.11 and will be removed in future\&.
-.sp
-This option specifies the path to the name server control utility\&.
-.sp
-This option is only useful when Samba as an AD DC is configured with BIND9_FLATFILE for DNS\&.
-.sp
-The
-rndc
-utility should be a part of the bind installation\&.
-.sp
-Default:
-\fI\fIrndc command\fR\fR\fI = \fR\fI/usr/sbin/rndc\fR\fI \fR
-.sp
-Example:
-\fI\fIrndc command\fR\fR\fI = \fR\fI/usr/local/bind9/sbin/rndc\fR\fI \fR
-.RE
-
 root
 .PP
 .RS 4
@@ -9867,7 +9919,7 @@ Default:
 rpc server dynamic port range (G)
 .PP
 .RS 4
-This parameter tells the RPC server which port range it is allowed to use to create a listening socket for LSA, SAM, Netlogon and others without wellknown tcp ports\&. The first value is the lowest number of the port range and the second the hightest\&.
+This parameter tells the RPC server which port range it is allowed to use to create a listening socket for LSA, SAM, Netlogon and others without wellknown tcp ports\&. The first value is the lowest number of the port range and the second the highest\&.
 .sp
 This applies to RPC servers in all server roles\&.
 .sp
@@ -11606,7 +11658,7 @@ RPC service must be enabled, see below\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-Tracker intergration must be setup and the share must be indexed by Tracker\&.
+Tracker integration must be setup and the share must be indexed by Tracker\&.
 .RE
 .sp
 .RE
@@ -11642,6 +11694,57 @@ Or it can be run in a separate RPC service daemon:
 .sp
 Default:
 \fI\fIspotlight\fR\fR\fI = \fR\fIno\fR\fI \fR
+.RE
+
+spotlight backend (S)
+.PP
+.RS 4
+Spotlight search backend\&. Available backends:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnoindex\fR
+\- a backend that returns no results\&.
+.RE
+.sp
+.RE
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBtracker\fR
+\- Gnome Tracker\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBelasticsearch\fR
+\- a backend that uses JSON and REST over HTTP(s) to query an Elasticsearch server\&.
+.RE
+.sp
+.RE
+.sp
+Default:
+\fI\fIspotlight backend\fR\fR\fI = \fR\fInoindex\fR\fI \fR
 .RE
 
 stat cache (G)
@@ -12570,7 +12673,7 @@ vfs objects\&.
 vfs objects (S)
 .PP
 .RS 4
-This parameter specifies the backend names which are used for Samba VFS I/O operations\&. By default, normal disk I/O operations are used but these can be overloaded with one or more VFS objects\&.
+This parameter specifies the backend names which are used for Samba VFS I/O operations\&. By default, normal disk I/O operations are used but these can be overloaded with one or more VFS objects\&. Be aware that the definition of this parameter will overwrite a possible previous definition of the vfs objects parameter\&.
 .sp
 Default:
 \fI\fIvfs objects\fR\fR\fI = \fR\fI\fR\fI \fR
@@ -12625,7 +12728,7 @@ winbindd socket directory (G)
 .RS 4
 This setting controls the location of the winbind daemon\*(Aqs socket\&.
 .sp
-Except within automated test scripts, this should not be altered, as the client tools (nss_winbind etc) do not honour this parameter\&. Client tools must then be advised of the altered path with the WINBINDD_SOCKET_DIR environment varaible\&.
+Except within automated test scripts, this should not be altered, as the client tools (nss_winbind etc) do not honour this parameter\&. Client tools must then be advised of the altered path with the WINBINDD_SOCKET_DIR environment variable\&.
 .sp
 Default:
 \fI\fIwinbindd socket directory\fR\fR\fI = \fR\fI${prefix}/var/run/winbindd\fR\fI \fR
@@ -12815,9 +12918,11 @@ and
 .IP \(bu 2.3
 .\}
 \fI<sfu | sfu20 | rfc2307 >\fR
-\- When Samba is running in security = ads and your Active Directory Domain Controller does support the Microsoft "Services for Unix" (SFU) LDAP schema, winbind can retrieve the login shell and the home directory attributes directly from your Directory Server\&. For SFU 3\&.0 or 3\&.5 simply choose "sfu", if you use SFU 2\&.0 please choose "sfu20"\&. Note that retrieving UID and GID from your ADS\-Server requires to use
-\fIidmap config DOMAIN:backend\fR
-= ad as well\&. The primary group membership is currently always calculated via the "primaryGroupID" LDAP attribute\&.
+\- When Samba is running in security = ads and your Active Directory Domain Controller does support the Microsoft "Services for Unix" (SFU) LDAP schema, winbind can retrieve the login shell and the home directory attributes directly from your Directory Server\&. For SFU 3\&.0 or 3\&.5 simply choose "sfu", if you use SFU 2\&.0 please choose "sfu20"\&.
+.sp
+Note that for the idmap backend
+idmap_ad
+you need to configure those settings in the idmap configuration section\&. Make sure to consult the documentation of the idmap backend that you are using\&.
 .RE
 .sp
 .RE
@@ -13243,26 +13348,6 @@ Default:
 \fI\fIwriteable\fR\fR\fI = \fR\fIno\fR\fI \fR
 .RE
 
-write cache size (S)
-.PP
-.RS 4
-If this integer parameter is set to non\-zero value, Samba will create an in\-memory cache for each oplocked file (it does
-\fInot\fR
-do this for non\-oplocked files)\&. All writes that the client does not request to be flushed directly to disk will be stored in this cache if possible\&. The cache is flushed onto disk when a write comes in whose offset would not fit into the cache or when the file is closed by the client\&. Reads for the file are also served from this cache if the data is stored within it\&.
-.sp
-This cache allows Samba to batch client writes into a more efficient write size for RAID disks (i\&.e\&. writes may be tuned to be the RAID stripe size) and can improve performance on systems where the disk subsystem is a bottleneck but there is free memory for userspace programs\&.
-.sp
-The integer parameter specifies the size of this cache (per oplocked file) in bytes\&.
-.sp
-Note that the write cache won\*(Aqt be used for file handles with a smb2 write lease\&.
-.sp
-Default:
-\fI\fIwrite cache size\fR\fR\fI = \fR\fI0\fR\fI \fR
-.sp
-Example:
-\fI\fIwrite cache size\fR\fR\fI = \fR\fI262144 # for a 256k cache size per file\fR\fI \fR
-.RE
-
 write list (S)
 .PP
 .RS 4
@@ -13327,7 +13412,7 @@ and
 special sections make life for an administrator easy, but the various combinations of default attributes can be tricky\&. Take extreme care when designing these sections\&. In particular, ensure that the permissions on spool directories are correct\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.11\&.5 of the Samba suite\&.
+This man page is part of version 4\&.12\&.0 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 \fBsamba\fR(7),

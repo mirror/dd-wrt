@@ -5,7 +5,7 @@ import os
 import optparse
 import textwrap
 from waflib import Logs, Errors, Options, Build, Context
-from samba_utils import EXPAND_VARIABLES, os_path_relpath
+from samba_utils import EXPAND_VARIABLES
 
 class SambaIndentedHelpFormatter (optparse.IndentedHelpFormatter):
     """Format help with indented section bodies.
@@ -66,12 +66,12 @@ class SambaIndentedHelpFormatter (optparse.IndentedHelpFormatter):
 # 'OPTION'    - the configure option to overwrite the default (optional)
 # 'HELPTEXT'  - the help text of the configure option (optional)
 #
-# 'OVERWRITE' - The option referrs to itself and was already from
+# 'OVERWRITE' - The option refers to itself and was already from
 #               the basic GNU options from the gnu_dirs tool.
 #               We may overwrite the related path. (Default: False)
 #
-# 'DELAY'     - The option referrs to other options in the dynconfig list.
-#               We delay the intialization into a later stage. This
+# 'DELAY'     - The option refers to other options in the dynconfig list.
+#               We delay the initalization into a later stage. This
 #               makes sure the recursion works. (Default: False)
 #
 dynconfig = {
@@ -98,6 +98,11 @@ dynconfig = {
     'DATADIR' : {
          'STD-PATH':  '${DATADIR}',
          'FHS-PATH':  '${DATADIR}',
+         'OVERWRITE': True,
+    },
+    'SAMBA_DATADIR' : {
+         'STD-PATH':  '${DATADIR}/samba',
+         'FHS-PATH':  '${DATADIR}/samba',
          'OVERWRITE': True,
     },
     'LOCALEDIR' : {
@@ -336,7 +341,7 @@ def configure(conf):
     # defaults stage 1 after the explicit block
     for varname in dynconfig.keys():
         if 'DELAY' in dynconfig[varname] and dynconfig[varname]['DELAY']:
-            # this option referrs to other options,
+            # this option refers to other options,
             # so it needs to wait for stage 2.
             continue
         value = EXPAND_VARIABLES(conf, dyn_vars[varname])
@@ -356,7 +361,7 @@ def configure(conf):
             # only overwrite if not specified explicitly on the command line
             conf.env[varname] = value
 
-    # display the expanded pathes for the user
+    # display the expanded paths for the user
     for varname in dynconfig.keys():
         value = conf.env[varname]
         conf.start_msg("Dynconfig[%s]: " % (varname))
@@ -420,7 +425,7 @@ def build(bld):
     bld.SAMBA_SUBSYSTEM('DYNCONFIG',
                         'dynconfig.c',
                         deps='replace',
-                        public_headers=os_path_relpath(os.path.join(Context.launch_dir, version_header), bld.path.abspath()),
+                        public_headers=os.path.relpath(os.path.join(Context.launch_dir, version_header), bld.path.abspath()),
                         header_path='samba',
                         cflags=cflags)
 

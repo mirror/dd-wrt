@@ -191,14 +191,18 @@ static NTSTATUS smbd_smb2_tree_connect(struct smbd_smb2_request *req,
 				       uint32_t *out_tree_id,
 				       bool *disconnect)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	struct smbXsrv_connection *conn = req->xconn;
+	struct smbXsrv_session *session = req->session;
+	struct auth_session_info *session_info =
+		session->global->auth_session_info;
 	const char *share = in_path;
 	char *service = NULL;
 	int snum = -1;
 	struct smbXsrv_tcon *tcon;
 	NTTIME now = timeval_to_nttime(&req->request_time);
 	connection_struct *compat_conn = NULL;
-	struct user_struct *compat_vuser = req->session->compat;
 	NTSTATUS status;
 	bool encryption_desired = req->session->global->encryption_flags & SMBXSRV_ENCRYPTION_DESIRED;
 	bool encryption_required = req->session->global->encryption_flags & SMBXSRV_ENCRYPTION_REQUIRED;
@@ -217,7 +221,7 @@ static NTSTATUS smbd_smb2_tree_connect(struct smbd_smb2_request *req,
 	DEBUG(10,("smbd_smb2_tree_connect: path[%s] share[%s]\n",
 		  in_path, share));
 
-	if (security_session_user_level(compat_vuser->session_info, NULL) < SECURITY_USER) {
+	if (security_session_user_level(session_info, NULL) < SECURITY_USER) {
 		guest_session = true;
 	}
 
@@ -248,19 +252,19 @@ static NTSTATUS smbd_smb2_tree_connect(struct smbd_smb2_request *req,
 
 	/* TODO: do more things... */
 	if (strequal(service,HOMES_NAME)) {
-		if (compat_vuser->homes_snum == -1) {
+		if (session->homes_snum == -1) {
 			DEBUG(2, ("[homes] share not available for "
 				"user %s because it was not found "
 				"or created at session setup "
 				"time\n",
-				compat_vuser->session_info->unix_info->unix_name));
+				session_info->unix_info->unix_name));
 			return NT_STATUS_BAD_NETWORK_NAME;
 		}
-		snum = compat_vuser->homes_snum;
-	} else if ((compat_vuser->homes_snum != -1)
+		snum = session->homes_snum;
+	} else if ((session->homes_snum != -1)
                    && strequal(service,
-			lp_servicename(talloc_tos(), compat_vuser->homes_snum))) {
-		snum = compat_vuser->homes_snum;
+			lp_servicename(talloc_tos(), lp_sub, session->homes_snum))) {
+		snum = session->homes_snum;
 	} else {
 		snum = find_service(talloc_tos(), service, &service);
 		if (!service) {
@@ -276,7 +280,7 @@ static NTSTATUS smbd_smb2_tree_connect(struct smbd_smb2_request *req,
 
 	/* Handle non-DFS clients attempting connections to msdfs proxy */
 	if (lp_host_msdfs()) {
-		char *proxy = lp_msdfs_proxy(talloc_tos(), snum);
+		char *proxy = lp_msdfs_proxy(talloc_tos(), lp_sub, snum);
 
 		if ((proxy != NULL) && (*proxy != '\0')) {
 			DBG_NOTICE("refusing connection to dfs proxy share "
@@ -330,7 +334,6 @@ static NTSTATUS smbd_smb2_tree_connect(struct smbd_smb2_request *req,
 
 	compat_conn = make_connection_smb2(req,
 					tcon, snum,
-					req->session->compat,
 					"???",
 					&status);
 	if (compat_conn == NULL) {
@@ -339,6 +342,7 @@ static NTSTATUS smbd_smb2_tree_connect(struct smbd_smb2_request *req,
 	}
 
 	tcon->global->share_name = lp_servicename(tcon->global,
+						  lp_sub,
 						  SNUM(compat_conn));
 	if (tcon->global->share_name == NULL) {
 		conn_free(compat_conn);

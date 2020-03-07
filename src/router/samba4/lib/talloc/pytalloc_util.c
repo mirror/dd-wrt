@@ -32,10 +32,6 @@ _PUBLIC_ PyTypeObject *pytalloc_GetObjectType(void)
 	static PyTypeObject *type = NULL;
 	PyObject *mod;
 
-	if (type != NULL) {
-		return type;
-	}
-
 	mod = PyImport_ImportModule("talloc");
 	if (mod == NULL) {
 		return NULL;
@@ -52,10 +48,6 @@ _PUBLIC_ PyTypeObject *pytalloc_GetBaseObjectType(void)
 	static PyTypeObject *type = NULL;
 	PyObject *mod;
 
-	if (type != NULL) {
-		return type;
-	}
-
 	mod = PyImport_ImportModule("talloc");
 	if (mod == NULL) {
 		return NULL;
@@ -71,10 +63,6 @@ static PyTypeObject *pytalloc_GetGenericObjectType(void)
 {
 	static PyTypeObject *type = NULL;
 	PyObject *mod;
-
-	if (type != NULL) {
-		return type;
-	}
 
 	mod = PyImport_ImportModule("talloc");
 	if (mod == NULL) {
@@ -242,12 +230,12 @@ static void *_pytalloc_get_checked_type(PyObject *py_obj, const char *type_name,
 {
 	TALLOC_CTX *mem_ctx;
 	void *ptr = NULL;
-	void *type_obj = talloc_check_name(ptr, type_name);
+	void *type_obj;
 
 	mem_ctx = _pytalloc_get_mem_ctx(py_obj);
 	ptr = _pytalloc_get_ptr(py_obj);
 
-	if (mem_ctx != ptr) {
+	if (mem_ctx != ptr || ptr == NULL) {
 		if (check_only) {
 			return NULL;
 		}
@@ -330,4 +318,13 @@ _PUBLIC_ int pytalloc_BaseObject_PyType_Ready(PyTypeObject *type)
 	type->tp_basicsize = pytalloc_BaseObject_size();
 
 	return PyType_Ready(type);
+}
+
+_PUBLIC_ const char *_pytalloc_get_name(PyObject *obj)
+{
+	void *ptr = pytalloc_get_ptr(obj);
+	if (ptr == NULL) {
+		return "non-talloc object";
+	}
+	return talloc_get_name(ptr);
 }

@@ -26,8 +26,8 @@
 #include "../libcli/auth/libcli_auth.h"
 #include "../librpc/gen_ndr/ndr_samr_c.h"
 #include "rpc_client/cli_samr.h"
-#include "../lib/crypto/arcfour.h"
 #include "rpc_client/init_lsa.h"
+#include "rpc_client/init_samr.h"
 
 /* User change password */
 
@@ -39,6 +39,7 @@ NTSTATUS dcerpc_samr_chgpasswd_user(struct dcerpc_binding_handle *h,
 				    NTSTATUS *presult)
 {
 	NTSTATUS status;
+	int rc;
 	struct samr_Password hash1, hash2, hash3, hash4, hash5, hash6;
 
 	uint8_t old_nt_hash[16] = {0};
@@ -54,12 +55,36 @@ NTSTATUS dcerpc_samr_chgpasswd_user(struct dcerpc_binding_handle *h,
 	E_deshash(oldpassword, old_lm_hash);
 	E_deshash(newpassword, new_lm_hash);
 
-	E_old_pw_hash(new_lm_hash, old_lm_hash, hash1.hash);
-	E_old_pw_hash(old_lm_hash, new_lm_hash, hash2.hash);
-	E_old_pw_hash(new_nt_hash, old_nt_hash, hash3.hash);
-	E_old_pw_hash(old_nt_hash, new_nt_hash, hash4.hash);
-	E_old_pw_hash(old_lm_hash, new_nt_hash, hash5.hash);
-	E_old_pw_hash(old_nt_hash, new_lm_hash, hash6.hash);
+	rc = E_old_pw_hash(new_lm_hash, old_lm_hash, hash1.hash);
+	if (rc != 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+		goto done;
+	}
+	rc = E_old_pw_hash(old_lm_hash, new_lm_hash, hash2.hash);
+	if (rc != 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+		goto done;
+	}
+	rc = E_old_pw_hash(new_nt_hash, old_nt_hash, hash3.hash);
+	if (rc != 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+		goto done;
+	}
+	rc = E_old_pw_hash(old_nt_hash, new_nt_hash, hash4.hash);
+	if (rc != 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+		goto done;
+	}
+	rc = E_old_pw_hash(old_lm_hash, new_nt_hash, hash5.hash);
+	if (rc != 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+		goto done;
+	}
+	rc = E_old_pw_hash(old_nt_hash, new_lm_hash, hash6.hash);
+	if (rc != 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+		goto done;
+	}
 
 	status = dcerpc_samr_ChangePasswordUser(h,
 						mem_ctx,
@@ -76,6 +101,7 @@ NTSTATUS dcerpc_samr_chgpasswd_user(struct dcerpc_binding_handle *h,
 						&hash6,
 						presult);
 
+done:
 	ZERO_ARRAY(old_nt_hash);
 	ZERO_ARRAY(old_lm_hash);
 	ZERO_ARRAY(new_nt_hash);
@@ -117,6 +143,7 @@ NTSTATUS dcerpc_samr_chgpasswd_user2(struct dcerpc_binding_handle *h,
 				     NTSTATUS *presult)
 {
 	NTSTATUS status;
+	int rc;
 	struct samr_CryptPassword new_nt_password;
 	struct samr_CryptPassword new_lm_password;
 	struct samr_Password old_nt_hash_enc;
@@ -127,6 +154,8 @@ NTSTATUS dcerpc_samr_chgpasswd_user2(struct dcerpc_binding_handle *h,
 	uint8_t new_nt_hash[16];
 	uint8_t new_lanman_hash[16];
 	struct lsa_String server, account;
+
+	DATA_BLOB session_key = data_blob_const(old_nt_hash, 16);
 
 	DEBUG(10,("rpccli_samr_chgpasswd_user2\n"));
 
@@ -144,20 +173,34 @@ NTSTATUS dcerpc_samr_chgpasswd_user2(struct dcerpc_binding_handle *h,
 		   DOS chars).  This allows us to match Win2k, which
 		   does not store a LM hash for these passwords (which
 		   would reduce the effective password length to 14) */
+		status = init_samr_CryptPassword(newpassword,
+						 &session_key,
+						 &new_lm_password);
+		if (!NT_STATUS_IS_OK(status)) {
+			return status;
+		}
 
-		encode_pw_buffer(new_lm_password.data, newpassword, STR_UNICODE);
-
-		arcfour_crypt(new_lm_password.data, old_nt_hash, 516);
-		E_old_pw_hash(new_nt_hash, old_lanman_hash, old_lanman_hash_enc.hash);
+		rc = E_old_pw_hash(new_nt_hash, old_lanman_hash, old_lanman_hash_enc.hash);
+		if (rc != 0) {
+			status = gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+			goto done;
+		}
 	} else {
 		ZERO_STRUCT(new_lm_password);
 		ZERO_STRUCT(old_lanman_hash_enc);
 	}
 
-	encode_pw_buffer(new_nt_password.data, newpassword, STR_UNICODE);
-
-	arcfour_crypt(new_nt_password.data, old_nt_hash, 516);
-	E_old_pw_hash(new_nt_hash, old_nt_hash, old_nt_hash_enc.hash);
+	status = init_samr_CryptPassword(newpassword,
+					 &session_key,
+					 &new_nt_password);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+	rc = E_old_pw_hash(new_nt_hash, old_nt_hash, old_nt_hash_enc.hash);
+	if (rc != 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+		goto done;
+	}
 
 	status = dcerpc_samr_ChangePasswordUser2(h,
 						 mem_ctx,
@@ -169,6 +212,16 @@ NTSTATUS dcerpc_samr_chgpasswd_user2(struct dcerpc_binding_handle *h,
 						 &new_lm_password,
 						 &old_lanman_hash_enc,
 						 presult);
+
+done:
+	ZERO_STRUCT(new_nt_password);
+	ZERO_STRUCT(new_lm_password);
+	ZERO_STRUCT(old_nt_hash_enc);
+	ZERO_STRUCT(old_lanman_hash_enc);
+	ZERO_ARRAY(new_nt_hash);
+	ZERO_ARRAY(new_lanman_hash);
+	ZERO_ARRAY(old_nt_hash);
+	ZERO_ARRAY(old_lanman_hash);
 
 	return status;
 }
@@ -295,6 +348,7 @@ NTSTATUS dcerpc_samr_chgpasswd_user3(struct dcerpc_binding_handle *h,
 				     NTSTATUS *presult)
 {
 	NTSTATUS status;
+	int rc;
 
 	struct samr_CryptPassword new_nt_password;
 	struct samr_CryptPassword new_lm_password;
@@ -307,6 +361,8 @@ NTSTATUS dcerpc_samr_chgpasswd_user3(struct dcerpc_binding_handle *h,
 	uint8_t new_lanman_hash[16];
 
 	struct lsa_String server, account;
+
+	DATA_BLOB session_key = data_blob_const(old_nt_hash, 16);
 
 	DEBUG(10,("rpccli_samr_chgpasswd_user3\n"));
 
@@ -324,20 +380,35 @@ NTSTATUS dcerpc_samr_chgpasswd_user3(struct dcerpc_binding_handle *h,
 		   DOS chars).  This allows us to match Win2k, which
 		   does not store a LM hash for these passwords (which
 		   would reduce the effective password length to 14) */
+		status = init_samr_CryptPassword(newpassword,
+						 &session_key,
+						 &new_lm_password);
+		if (!NT_STATUS_IS_OK(status)) {
+			return status;
+		}
 
-		encode_pw_buffer(new_lm_password.data, newpassword, STR_UNICODE);
-
-		arcfour_crypt(new_lm_password.data, old_nt_hash, 516);
-		E_old_pw_hash(new_nt_hash, old_lanman_hash, old_lanman_hash_enc.hash);
+		rc = E_old_pw_hash(new_nt_hash, old_lanman_hash, old_lanman_hash_enc.hash);
+		if (rc != 0) {
+			status = gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+			goto done;
+		}
 	} else {
 		ZERO_STRUCT(new_lm_password);
 		ZERO_STRUCT(old_lanman_hash_enc);
 	}
 
-	encode_pw_buffer(new_nt_password.data, newpassword, STR_UNICODE);
+	status = init_samr_CryptPassword(newpassword,
+					 &session_key,
+					 &new_nt_password);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
 
-	arcfour_crypt(new_nt_password.data, old_nt_hash, 516);
-	E_old_pw_hash(new_nt_hash, old_nt_hash, old_nt_hash_enc.hash);
+	rc = E_old_pw_hash(new_nt_hash, old_nt_hash, old_nt_hash_enc.hash);
+	if (rc != 0) {
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+		goto done;
+	}
 
 	status = dcerpc_samr_ChangePasswordUser3(h,
 						 mem_ctx,
@@ -352,6 +423,16 @@ NTSTATUS dcerpc_samr_chgpasswd_user3(struct dcerpc_binding_handle *h,
 						 dominfo1,
 						 reject,
 						 presult);
+
+done:
+	ZERO_STRUCT(new_nt_password);
+	ZERO_STRUCT(new_lm_password);
+	ZERO_STRUCT(old_nt_hash_enc);
+	ZERO_STRUCT(old_lanman_hash_enc);
+	ZERO_ARRAY(new_nt_hash);
+	ZERO_ARRAY(new_lanman_hash);
+	ZERO_ARRAY(old_nt_hash);
+	ZERO_ARRAY(old_lanman_hash);
 
 	return status;
 }
@@ -466,27 +547,6 @@ NTSTATUS dcerpc_try_samr_connects(struct dcerpc_binding_handle *h,
 				      presult);
 
 	return status;
-}
-
-NTSTATUS rpccli_try_samr_connects(struct rpc_pipe_client *cli,
-				  TALLOC_CTX *mem_ctx,
-				  uint32_t access_mask,
-				  struct policy_handle *connect_pol)
-{
-	NTSTATUS status;
-	NTSTATUS result = NT_STATUS_UNSUCCESSFUL;
-
-	status = dcerpc_try_samr_connects(cli->binding_handle,
-					  mem_ctx,
-					  cli->srv_name_slash,
-					  access_mask,
-					  connect_pol,
-					  &result);
-	if (!NT_STATUS_IS_OK(status)) {
-		return status;
-	}
-
-	return result;
 }
 
 /* vim: set ts=8 sw=8 noet cindent: */

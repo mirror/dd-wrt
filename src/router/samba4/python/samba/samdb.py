@@ -251,8 +251,63 @@ pwdLastSet: 0
         else:
             self.transaction_commit()
 
+    def group_member_filter(self, member, member_types):
+        filter = ""
+
+        all_member_types = [ 'user',
+                             'group',
+                             'computer',
+                             'serviceaccount',
+                             'contact',
+                           ]
+
+        if 'all' in member_types:
+            member_types = all_member_types
+
+        for member_type in member_types:
+            if member_type not in all_member_types:
+                raise Exception('Invalid group member type "%s". '
+                                'Valid types are %s and all.' %
+                                (member_type, ", ".join(all_member_types)))
+
+        if 'user' in member_types:
+            filter += ('(&(sAMAccountName=%s)(samAccountType=%d))' %
+                       (ldb.binary_encode(member), dsdb.ATYPE_NORMAL_ACCOUNT))
+        if 'group' in member_types:
+            filter += ('(&(sAMAccountName=%s)'
+                       '(objectClass=group)'
+                       '(!(groupType:1.2.840.113556.1.4.803:=1)))' %
+                       ldb.binary_encode(member))
+        if 'computer' in member_types:
+            samaccountname = member
+            if member[-1] != '$':
+                samaccountname = "%s$" % member
+            filter += ('(&(samAccountType=%d)'
+                       '(!(objectCategory=msDS-ManagedServiceAccount))'
+                       '(sAMAccountName=%s))' %
+                       (dsdb.ATYPE_WORKSTATION_TRUST,
+                        ldb.binary_encode(samaccountname)))
+        if 'serviceaccount' in member_types:
+            samaccountname = member
+            if member[-1] != '$':
+                samaccountname = "%s$" % member
+            filter += ('(&(samAccountType=%d)'
+                       '(objectCategory=msDS-ManagedServiceAccount)'
+                       '(sAMAccountName=%s))' %
+                       (dsdb.ATYPE_WORKSTATION_TRUST,
+                        ldb.binary_encode(samaccountname)))
+        if 'contact' in member_types:
+            filter += ('(&(objectCategory=Person)(!(objectSid=*))(name=%s))' %
+                       ldb.binary_encode(member))
+
+        filter = "(|%s)" % filter
+
+        return filter
+
     def add_remove_group_members(self, groupname, members,
-                                 add_members_operation=True):
+                                 add_members_operation=True,
+                                 member_types=[ 'user', 'group', 'computer' ],
+                                 member_base_dn=None):
         """Adds or removes group members
 
         :param groupname: Name of the target group
@@ -280,30 +335,44 @@ changetype: modify
 """ % (str(targetgroup[0].dn))
 
             for member in members:
-                filter = ('(&(sAMAccountName=%s)(|(objectclass=user)'
-                          '(objectclass=group)))' % ldb.binary_encode(member))
-                foreign_msg = None
+                targetmember_dn = None
+                if member_base_dn is None:
+                    member_base_dn = self.domain_dn()
+
                 try:
                     membersid = security.dom_sid(member)
+                    targetmember_dn = "<SID=%s>" % str(membersid)
                 except TypeError as e:
-                    membersid = None
+                    pass
 
-                if membersid is not None:
-                    filter = '(objectSid=%s)' % str(membersid)
-                    dn_str = "<SID=%s>" % str(membersid)
-                    foreign_msg = ldb.Message()
-                    foreign_msg.dn = ldb.Dn(self, dn_str)
+                if targetmember_dn is None:
+                    try:
+                        member_dn = ldb.Dn(self, member)
+                        if member_dn.get_linearized() == member_dn.extended_str(1):
+                            full_member_dn = self.normalize_dn_in_domain(member_dn)
+                        else:
+                            full_member_dn = member_dn
+                        targetmember_dn = full_member_dn.extended_str(1)
+                    except ValueError as e:
+                        pass
 
-                targetmember = self.search(base=self.domain_dn(),
-                                           scope=ldb.SCOPE_SUBTREE,
-                                           expression="%s" % filter,
-                                           attrs=[])
+                if targetmember_dn is None:
+                    filter = self.group_member_filter(member, member_types)
+                    targetmember = self.search(base=member_base_dn,
+                                               scope=ldb.SCOPE_SUBTREE,
+                                               expression=filter,
+                                               attrs=[])
 
-                if len(targetmember) == 0 and foreign_msg is not None:
-                    targetmember = [foreign_msg]
-                if len(targetmember) != 1:
-                    raise Exception('Unable to find "%s". Operation cancelled.' % member)
-                targetmember_dn = targetmember[0].dn.extended_str(1)
+                    if len(targetmember) > 1:
+                        targetmemberlist_str = ""
+                        for msg in targetmember:
+                            targetmemberlist_str += "%s\n" % msg.get("dn")
+                        raise Exception('Found multiple results for "%s":\n%s' %
+                                        (member, targetmemberlist_str))
+                    if len(targetmember) != 1:
+                        raise Exception('Unable to find "%s". Operation cancelled.' % member)
+                    targetmember_dn = targetmember[0].dn.extended_str(1)
+
                 if add_members_operation is True and (targetgroup[0].get('member') is None or get_bytes(targetmember_dn) not in [str(x) for x in targetgroup[0]['member']]):
                     modified = True
                     addtargettogroup += """add: member

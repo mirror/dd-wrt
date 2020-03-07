@@ -26,14 +26,23 @@
 #include "librpc/gen_ndr/ndr_dcerpc.h"
 #include "lib/cmdline/popt_common.h"
 #include "param/param.h"
+#include "lib/util/base64.h"
 
 static const struct ndr_interface_call *find_function(
 	const struct ndr_interface_table *p,
 	const char *function)
 {
-	int i;
+	unsigned int i;
 	if (isdigit(function[0])) {
-		i = strtol(function, NULL, 0);
+		char *eptr = NULL;
+		i = strtoul(function, &eptr, 0);
+		if (i >= p->num_calls
+		    || eptr == NULL
+		    || eptr[0] != '\0') {
+			printf("Function number '%s' not found\n",
+			       function);
+			exit(1);
+		}
 		return &p->calls[i];
 	}
 	for (i=0;i<p->num_calls;i++) {
@@ -57,22 +66,37 @@ static const struct ndr_interface_call *find_struct(
 	const char *struct_name,
 	struct ndr_interface_call *out_buffer)
 {
-	int i;
-	for (i=0;i<p->num_public_structs;i++) {
-		if (strcmp(p->public_structs[i].name, struct_name) == 0) {
-			break;
+	unsigned int i;
+	const struct ndr_interface_public_struct *public_struct = NULL;
+	if (isdigit(struct_name[0])) {
+		char *eptr = NULL;
+		i = strtoul(struct_name, &eptr, 0);
+		if (i >= p->num_public_structs
+		    || eptr == NULL
+		    || eptr[0] != '\0') {
+			printf("Public structure number '%s' not found\n",
+			       struct_name);
+			exit(1);
 		}
-	}
-	if (i == p->num_public_structs) {
-		printf("Public structure '%s' not found\n", struct_name);
-		exit(1);
+		public_struct = &p->public_structs[i];
+	} else {
+		for (i=0;i<p->num_public_structs;i++) {
+			if (strcmp(p->public_structs[i].name, struct_name) == 0) {
+				break;
+			}
+		}
+		if (i == p->num_public_structs) {
+			printf("Public structure '%s' not found\n", struct_name);
+			exit(1);
+		}
+		public_struct = &p->public_structs[i];
 	}
 	*out_buffer = (struct ndr_interface_call) {
-		.name = p->public_structs[i].name,
-		.struct_size = p->public_structs[i].struct_size,
-		.ndr_pull = p->public_structs[i].ndr_pull,
-		.ndr_push = p->public_structs[i].ndr_push,
-		.ndr_print = p->public_structs[i].ndr_print
+		.name = public_struct->name,
+		.struct_size = public_struct->struct_size,
+		.ndr_pull = public_struct->ndr_pull,
+		.ndr_push = public_struct->ndr_push,
+		.ndr_print = public_struct->ndr_print
 	};
 	return out_buffer;
 }
@@ -170,7 +194,6 @@ static NTSTATUS ndrdump_pull_and_print_pipes(const char *function,
 				struct ndr_print *ndr_print,
 				const struct ndr_interface_call_pipes *pipes)
 {
-	NTSTATUS status;
 	enum ndr_err_code ndr_err;
 	uint32_t i;
 
@@ -198,18 +221,19 @@ static NTSTATUS ndrdump_pull_and_print_pipes(const char *function,
 			ndr_pull->current_mem_ctx = c;
 			ndr_err = pipes->pipes[i].ndr_pull(ndr_pull, NDR_SCALARS, c);
 			ndr_pull->current_mem_ctx = saved_mem_ctx;
-			status = ndr_map_error2ntstatus(ndr_err);
 
-			printf("pull returned %s\n", nt_errstr(status));
-			if (!NT_STATUS_IS_OK(status)) {
+			printf("pull returned %s\n",
+			       ndr_map_error2string(ndr_err));
+			if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
 				talloc_free(c);
-				return status;
+				return ndr_map_error2ntstatus(ndr_err);
 			}
 			pipes->pipes[i].ndr_print(ndr_print, n, c);
-			talloc_free(c);
 			if (*count == 0) {
+				talloc_free(c);
 				break;
 			}
+			talloc_free(c);
 			idx++;
 		}
 	}
@@ -242,7 +266,8 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 	 * name of a public structure
 	 */
 	const char *format = NULL;
-	uint8_t *data;
+	const char *cmdline_input = NULL;
+	const uint8_t *data;
 	size_t size;
 	DATA_BLOB blob;
 	struct ndr_pull *ndr_pull;
@@ -261,8 +286,21 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 	bool assume_ndr64 = false;
 	bool quiet = false;
 	bool hex_input = false;
+	bool base64_input = false;
+	bool print_after_parse_failure = false;
 	int opt;
-	enum {OPT_CONTEXT_FILE=1000, OPT_VALIDATE, OPT_DUMP_DATA, OPT_LOAD_DSO, OPT_NDR64, OPT_QUIET, OPT_HEX_INPUT};
+	enum {
+		OPT_CONTEXT_FILE=1000,
+		OPT_VALIDATE,
+		OPT_DUMP_DATA,
+		OPT_LOAD_DSO,
+		OPT_NDR64,
+		OPT_QUIET,
+		OPT_BASE64_INPUT,
+		OPT_HEX_INPUT,
+		OPT_CMDLINE_INPUT,
+		OPT_PRINT_AFTER_PARSE_FAILURE,
+	};
 	struct poptOption long_options[] = {
 		POPT_AUTOHELP
 		{"context-file", 'c', POPT_ARG_STRING, NULL, OPT_CONTEXT_FILE, "In-filename to parse first", "CTX-FILE" },
@@ -271,7 +309,11 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 		{"load-dso", 'l', POPT_ARG_STRING, NULL, OPT_LOAD_DSO, "load from shared object file", NULL },
 		{"ndr64", 0, POPT_ARG_NONE, NULL, OPT_NDR64, "Assume NDR64 data", NULL },
 		{"quiet", 0, POPT_ARG_NONE, NULL, OPT_QUIET, "Don't actually dump anything", NULL },
+		{"base64-input", 0, POPT_ARG_NONE, NULL, OPT_BASE64_INPUT, "Read the input file in as a base64 string", NULL },
 		{"hex-input", 0, POPT_ARG_NONE, NULL, OPT_HEX_INPUT, "Read the input file in as a hex dump", NULL },
+		{"input", 0, POPT_ARG_STRING, NULL, OPT_CMDLINE_INPUT, "Provide the input on the command line (use with --base64-input)", "INPUT" },
+		{"print-after-parse-failure", 0, POPT_ARG_NONE, NULL, OPT_PRINT_AFTER_PARSE_FAILURE,
+		 "Try to print structures that fail to parse (used to develop parsers, segfaults are likely).", NULL },
 		POPT_COMMON_SAMBA
 		POPT_COMMON_VERSION
 		{ NULL }
@@ -313,8 +355,17 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 		case OPT_QUIET:
 			quiet = true;
 			break;
+		case OPT_BASE64_INPUT:
+			base64_input = true;
+			break;
 		case OPT_HEX_INPUT:
 			hex_input = true;
+			break;
+		case OPT_CMDLINE_INPUT:
+			cmdline_input = poptGetOptArg(pc);
+			break;
+		case OPT_PRINT_AFTER_PARSE_FAILURE:
+			print_after_parse_failure = true;
 			break;
 		}
 	}
@@ -360,7 +411,7 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 	}
 
 	if (strcmp(type, "struct") == 0) {
-		flags = 0; /* neither NDR_IN nor NDR_OUT */
+		flags = NDR_SCALARS|NDR_BUFFERS; /* neither NDR_IN nor NDR_OUT */
 		f = find_struct(p, format, &f_buffer);
 	} else {
 		f = find_function(p, format);
@@ -381,34 +432,43 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 
 	st = talloc_zero_size(mem_ctx, f->struct_size);
 	if (!st) {
-		printf("Unable to allocate %d bytes\n", (int)f->struct_size);
+		printf("Unable to allocate %d bytes for %s structure\n",
+		       (int)f->struct_size,
+		       f->name);
+		TALLOC_FREE(mem_ctx);
 		exit(1);
 	}
 
 	v_st = talloc_zero_size(mem_ctx, f->struct_size);
 	if (!v_st) {
-		printf("Unable to allocate %d bytes\n", (int)f->struct_size);
+		printf("Unable to allocate %d bytes for %s validation "
+		       "structure\n",
+		       (int)f->struct_size,
+		       f->name);
+		TALLOC_FREE(mem_ctx);
 		exit(1);
 	}
 
 	if (ctx_filename) {
 		if (flags & NDR_IN) {
 			printf("Context file can only be used for \"out\" packages\n");
+			TALLOC_FREE(mem_ctx);
 			exit(1);
 		}
 			
 		data = (uint8_t *)file_load(ctx_filename, &size, 0, mem_ctx);
 		if (!data) {
 			perror(ctx_filename);
+			TALLOC_FREE(mem_ctx);
 			exit(1);
 		}
 
-		blob.data = data;
-		blob.length = size;
+		blob = data_blob_const(data, size);
 
 		ndr_pull = ndr_pull_init_blob(&blob, mem_ctx);
 		if (ndr_pull == NULL) {
 			perror("ndr_pull_init_blob");
+			TALLOC_FREE(mem_ctx);
 			exit(1);
 		}
 		ndr_pull->flags |= LIBNDR_FLAG_REF_ALLOC;
@@ -429,17 +489,26 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 		}
 
 		if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
-			status = ndr_map_error2ntstatus(ndr_err);
-			printf("pull for context file returned %s\n", nt_errstr(status));
-			exit(1);
+			printf("pull for context file returned %s\n",
+			       ndr_map_error2string(ndr_err));
+			TALLOC_FREE(mem_ctx);
+			exit(2);
 		}
 		memcpy(v_st, st, f->struct_size);
 	}
 
-	if (filename)
+	if (filename && cmdline_input) {
+		printf("cannot combine --input with a filename\n");
+		TALLOC_FREE(mem_ctx);
+		exit(1);
+	} else if (cmdline_input) {
+		data = (const uint8_t *)cmdline_input;
+		size = strlen(cmdline_input);
+	} else if (filename) {
 		data = (uint8_t *)file_load(filename, &size, 0, mem_ctx);
-	else
+	} else {
 		data = (uint8_t *)stdin_load(mem_ctx, &size);
+	}
 
 	if (!data) {
 		if (filename)
@@ -449,16 +518,33 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 		exit(1);
 	}
 	
-	if (hex_input) {
-		blob = hexdump_to_data_blob(mem_ctx, (char *)data, size);
+	if (hex_input && base64_input) {
+		printf("cannot combine --hex-input with --base64-input\n");
+		TALLOC_FREE(mem_ctx);
+		exit(1);
+
+	} else if (hex_input) {
+		blob = hexdump_to_data_blob(mem_ctx, (const char *)data, size);
+	} else if (base64_input) {
+		/* Use talloc_strndup() to ensure null termination */
+		blob = base64_decode_data_blob(talloc_strndup(mem_ctx,
+							      (const char *)data, size));
+		/* base64_decode_data_blob() allocates on NULL */
+		talloc_steal(mem_ctx, blob.data);
 	} else {
-		blob.data = data;
-		blob.length = size;
+		blob = data_blob_const(data, size);
+	}
+
+	if (data != NULL && blob.data == NULL) {
+		printf("failed to decode input data\n");
+		TALLOC_FREE(mem_ctx);
+		exit(1);
 	}
 
 	ndr_pull = ndr_pull_init_blob(&blob, mem_ctx);
 	if (ndr_pull == NULL) {
 		perror("ndr_pull_init_blob");
+		TALLOC_FREE(mem_ctx);
 		exit(1);
 	}
 	ndr_pull->flags |= LIBNDR_FLAG_REF_ALLOC;
@@ -475,10 +561,9 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 	ndr_print->depth = 1;
 
 	ndr_err = ndr_pop_dcerpc_sec_verification_trailer(ndr_pull, mem_ctx, &sec_vt);
-	status = ndr_map_error2ntstatus(ndr_err);
-	if (!NT_STATUS_IS_OK(status)) {
+	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
 		printf("ndr_pop_dcerpc_sec_verification_trailer returned %s\n",
-		       nt_errstr(status));
+		       ndr_map_error2string(ndr_err));
 	}
 
 	if (sec_vt != NULL && sec_vt->count.count > 0) {
@@ -499,20 +584,31 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 						      ndr_print,
 						      &f->out_pipes);
 		if (!NT_STATUS_IS_OK(status)) {
-			printf("dump FAILED\n");
-			exit(1);
+			printf("pull and dump of OUT pipes FAILED: %s\n",
+			       nt_errstr(status));
+			TALLOC_FREE(mem_ctx);
+			exit(2);
 		}
 	}
 
 	ndr_err = f->ndr_pull(ndr_pull, flags, st);
-	status = ndr_map_error2ntstatus(ndr_err);
-
-	printf("pull returned %s\n", nt_errstr(status));
+	printf("pull returned %s\n",
+	       ndr_map_error2string(ndr_err));
 
 	if (ndr_pull->offset > ndr_pull->relative_highest_offset) {
 		highest_ofs = ndr_pull->offset;
 	} else {
 		highest_ofs = ndr_pull->relative_highest_offset;
+	}
+
+	if (dumpdata) {
+		printf("%d bytes consumed\n", highest_ofs);
+		ndrdump_data(blob.data, blob.length, dumpdata);
+	}
+
+	if (!print_after_parse_failure && !NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
+		TALLOC_FREE(mem_ctx);
+		exit(2);
 	}
 
 	if (highest_ofs != ndr_pull->data_size) {
@@ -522,17 +618,13 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 			     dumpdata);
 	}
 
-	if (dumpdata) {
-		printf("%d bytes consumed\n", highest_ofs);
-		ndrdump_data(blob.data, blob.length, dumpdata);
+	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
+		printf("WARNING: pull of %s was incomplete, "
+		       "therefore the parse below may SEGFAULT\n",
+			f->name);
 	}
 
-	f->ndr_print(ndr_print, format, flags, st);
-
-	if (!NT_STATUS_IS_OK(status)) {
-		printf("dump FAILED\n");
-		exit(1);
-	}
+	f->ndr_print(ndr_print, f->name, flags, st);
 
 	if (flags & NDR_IN) {
 		status = ndrdump_pull_and_print_pipes(format,
@@ -540,9 +632,18 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 						      ndr_print,
 						      &f->in_pipes);
 		if (!NT_STATUS_IS_OK(status)) {
-			printf("dump FAILED\n");
+			printf("pull and dump of IN pipes FAILED: %s\n",
+			       nt_errstr(status));
 			exit(1);
 		}
+	}
+
+	/* Do not proceed to validate if we got an error */
+	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
+		printf("dump of failed-to-parse %s complete\n",
+		       f->name);
+		TALLOC_FREE(mem_ctx);
+		exit(2);
 	}
 
 	if (validate) {
@@ -566,10 +667,11 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 		}
 
 		ndr_err = f->ndr_push(ndr_v_push, flags, st);
-		status = ndr_map_error2ntstatus(ndr_err);
-		printf("push returned %s\n", nt_errstr(status));
+		printf("push returned %s\n",
+		       ndr_map_error2string(ndr_err));
 		if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
 			printf("validate push FAILED\n");
+			TALLOC_FREE(mem_ctx);
 			exit(1);
 		}
 
@@ -583,15 +685,17 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 		ndr_v_pull = ndr_pull_init_blob(&v_blob, mem_ctx);
 		if (ndr_v_pull == NULL) {
 			perror("ndr_pull_init_blob");
+			TALLOC_FREE(mem_ctx);
 			exit(1);
 		}
 		ndr_v_pull->flags |= LIBNDR_FLAG_REF_ALLOC;
 
 		ndr_err = f->ndr_pull(ndr_v_pull, flags, v_st);
-		status = ndr_map_error2ntstatus(ndr_err);
-		printf("pull returned %s\n", nt_errstr(status));
+		printf("pull returned %s\n",
+		       ndr_map_error2string(ndr_err));
 		if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
 			printf("validate pull FAILED\n");
+			TALLOC_FREE(mem_ctx);
 			exit(1);
 		}
 
@@ -653,7 +757,7 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 	}
 
 	printf("dump OK\n");
-	talloc_free(mem_ctx);
+	TALLOC_FREE(mem_ctx);
 
 	poptFreeContext(pc);
 	

@@ -591,6 +591,12 @@ void reply_ntcreate_and_X(struct smb_request *req)
 			/* We have re-scheduled this call, no error. */
 			goto out;
 		}
+		if (NT_STATUS_EQUAL(status, NT_STATUS_SHARING_VIOLATION)) {
+			bool ok = defer_smb1_sharing_violation(req);
+			if (ok) {
+				goto out;
+			}
+		}
 		reply_openerror(req, status);
 		goto out;
 	}
@@ -674,13 +680,13 @@ void reply_ntcreate_and_X(struct smb_request *req)
 		dos_filetime_timespec(&c_timespec);
 	}
 
-	put_long_date_timespec(conn->ts_res, p, create_timespec); /* create time. */
+	put_long_date_full_timespec(conn->ts_res, p, &create_timespec); /* create time. */
 	p += 8;
-	put_long_date_timespec(conn->ts_res, p, a_timespec); /* access time */
+	put_long_date_full_timespec(conn->ts_res, p, &a_timespec); /* access time */
 	p += 8;
-	put_long_date_timespec(conn->ts_res, p, m_timespec); /* write time */
+	put_long_date_full_timespec(conn->ts_res, p, &m_timespec); /* write time */
 	p += 8;
-	put_long_date_timespec(conn->ts_res, p, c_timespec); /* change time */
+	put_long_date_full_timespec(conn->ts_res, p, &c_timespec); /* change time */
 	p += 8;
 	SIVAL(p,0,fattr); /* File Attributes. */
 	p += 4;
@@ -1243,6 +1249,12 @@ static void call_nt_transact_create(connection_struct *conn,
 			/* We have re-scheduled this call, no error. */
 			return;
 		}
+		if (NT_STATUS_EQUAL(status, NT_STATUS_SHARING_VIOLATION)) {
+			bool ok = defer_smb1_sharing_violation(req);
+			if (ok) {
+				return;
+			}
+		}
 		reply_openerror(req, status);
 		goto out;
 	}
@@ -1323,13 +1335,13 @@ static void call_nt_transact_create(connection_struct *conn,
 		dos_filetime_timespec(&c_timespec);
 	}
 
-	put_long_date_timespec(conn->ts_res, p, create_timespec); /* create time. */
+	put_long_date_full_timespec(conn->ts_res, p, &create_timespec); /* create time. */
 	p += 8;
-	put_long_date_timespec(conn->ts_res, p, a_timespec); /* access time */
+	put_long_date_full_timespec(conn->ts_res, p, &a_timespec); /* access time */
 	p += 8;
-	put_long_date_timespec(conn->ts_res, p, m_timespec); /* write time */
+	put_long_date_full_timespec(conn->ts_res, p, &m_timespec); /* write time */
 	p += 8;
-	put_long_date_timespec(conn->ts_res, p, c_timespec); /* change time */
+	put_long_date_full_timespec(conn->ts_res, p, &c_timespec); /* change time */
 	p += 8;
 	SIVAL(p,0,fattr); /* File Attributes. */
 	p += 4;
@@ -1731,6 +1743,12 @@ void reply_ntrename(struct smb_request *req)
 		if (open_was_deferred(req->xconn, req->mid)) {
 			/* We have re-scheduled this call. */
 			goto out;
+		}
+		if (NT_STATUS_EQUAL(status, NT_STATUS_SHARING_VIOLATION)) {
+			bool ok = defer_smb1_sharing_violation(req);
+			if (ok) {
+				goto out;
+			}
 		}
 
 		reply_nterror(req, status);
@@ -2585,6 +2603,8 @@ static void call_nt_transact_get_user_quota(connection_struct *conn,
 					    uint32_t data_count,
 					    uint32_t max_data_count)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	NTSTATUS nt_status = NT_STATUS_OK;
 	char *params = *ppparams;
 	char *pdata = *ppdata;
@@ -2607,7 +2627,7 @@ static void call_nt_transact_get_user_quota(connection_struct *conn,
 	/* access check */
 	if (get_current_uid(conn) != sec_initial_uid()) {
 		DEBUG(1,("get_user_quota: access_denied service [%s] user "
-			 "[%s]\n", lp_servicename(talloc_tos(), SNUM(conn)),
+			 "[%s]\n", lp_servicename(talloc_tos(), lp_sub, SNUM(conn)),
 			 conn->session_info->unix_info->unix_name));
 		nt_status = NT_STATUS_ACCESS_DENIED;
 		goto error;
@@ -2715,6 +2735,8 @@ static void call_nt_transact_set_user_quota(connection_struct *conn,
 					    uint32_t data_count,
 					    uint32_t max_data_count)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	char *params = *ppparams;
 	char *pdata = *ppdata;
 	int data_len=0,param_len=0;
@@ -2731,7 +2753,7 @@ static void call_nt_transact_set_user_quota(connection_struct *conn,
 	/* access check */
 	if (get_current_uid(conn) != sec_initial_uid()) {
 		DEBUG(1,("set_user_quota: access_denied service [%s] user "
-			 "[%s]\n", lp_servicename(talloc_tos(), SNUM(conn)),
+			 "[%s]\n", lp_servicename(talloc_tos(), lp_sub, SNUM(conn)),
 			 conn->session_info->unix_info->unix_name));
 		status = NT_STATUS_ACCESS_DENIED;
 		goto error;

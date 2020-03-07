@@ -98,7 +98,7 @@
 		skew), winbindd will fallback to samlogon authentication over
 		MSRPC. When this parameter is used in conjunction with
 		<parameter>winbind refresh tickets</parameter>, winbind will
-		keep your Ticket Granting Ticket (TGT) uptodate by refreshing
+		keep your Ticket Granting Ticket (TGT) up-to-date by refreshing
 		it whenever necessary. Defaults to "no".
 
 		</para></listitem>
@@ -121,22 +121,26 @@
 		library). In case of FILE a credential cache in the form of
 		/tmp/krb5cc_UID will be created -  in case of DIR you NEED
 		to specify a directory. UID is replaced with the numeric
-		user id.</para>
+		user id. The UID directory is being created. The path up to
+		the directory should already exist. Check the details of the
+		Kerberos implmentation.</para>
 
 		<para>When using the KEYRING type, the supported mechanism is
 		<quote>KEYRING:persistent:UID</quote>, which uses the Linux
-		kernel keyring to store credentials on a per-UID basis.</para>
+		kernel keyring to store credentials on a per-UID basis.
+		The KEYRING has its limitations. As it is secure kernel memory,
+		for example bulk sorage of credentils is for not possible.</para>
 
 		<para>When using th KCM type, the supported mechanism is
 		<quote>KCM:UID</quote>, which uses a Kerberos credential
-		manaager to store credentials on a per-UID basis simliar to
+		manaager to store credentials on a per-UID basis similar to
 		KEYRING. This is the recommended choice on latest Linux
 		distributions, offering a Kerberos Credential Manager. If not
 		we suggest to use KEYRING as those are the most secure and
 		predictable method.</para>
 
 		<para>It is also possible to define custom filepaths and use the "%u"
-		pattern in order to substitue the numeric user id.
+		pattern in order to substitute the numeric user id.
 		Examples:</para>
 
 		<variablelist>

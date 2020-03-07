@@ -39,27 +39,8 @@
 #include "dsdb/samdb/samdb.h"
 #include "dsdb/samdb/ldb_modules/util.h"
 
-#ifdef TEST_ENCRYPTED_SECRETS
-	#define BUILD_WITH_SAMBA_AES_GCM
-	#ifdef HAVE_GNUTLS_AEAD
-		#define BUILD_WITH_GNUTLS_AEAD
-	#endif
-#else
-	#ifdef HAVE_GNUTLS_AEAD
-		#define BUILD_WITH_GNUTLS_AEAD
-	#else
-		#define BUILD_WITH_SAMBA_AES_GCM
-	#endif
-#endif
-
-#ifdef BUILD_WITH_GNUTLS_AEAD
-	#include <gnutls/gnutls.h>
-	#include <gnutls/crypto.h>
-#endif /* BUILD_WITH_GNUTLS_AEAD */
-
-#ifdef BUILD_WITH_SAMBA_AES_GCM
-	#include "lib/crypto/crypto.h"
-#endif /* BUILD_WITH_SAMBA_AES_GCM */
+#include <gnutls/gnutls.h>
+#include <gnutls/crypto.h>
 
 static const char * const secret_attributes[] = {DSDB_SECRET_ATTRIBUTES};
 static const size_t num_secret_attributes = ARRAY_SIZE(secret_attributes);
@@ -79,12 +60,10 @@ struct es_data {
 	 * Encryption keys for secret attributes
 	 */
 	DATA_BLOB keys[NUMBER_OF_KEYS];
-#ifdef BUILD_WITH_GNUTLS_AEAD
 	/*
 	 * The gnutls algorithm used to encrypt attributes
 	 */
 	int encryption_algorithm;
-#endif /* BUILD_WITH_GNUTLS_AEAD */
 };
 
 /*
@@ -267,9 +246,7 @@ static int load_keys(struct ldb_module *module, struct es_data *data)
 
 	data->keys[0] = key;
 	data->encrypt_secrets = true;
-#ifdef BUILD_WITH_GNUTLS_AEAD
 	data->encryption_algorithm = GNUTLS_CIPHER_AES_128_GCM;
-#endif
 	TALLOC_FREE(frame);
 
 	return LDB_SUCCESS;
@@ -286,7 +263,7 @@ static int load_keys(struct ldb_module *module, struct es_data *data)
  */
 static bool should_encrypt(const struct ldb_message_element *el)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < ARRAY_SIZE(secret_attributes); i++) {
 		if (strcasecmp(secret_attributes[i], el->name) == 0) {
@@ -304,7 +281,6 @@ static bool should_encrypt(const struct ldb_message_element *el)
  *
  * @return Size rounded up to the nearest multiple of block_size
  */
-#ifdef BUILD_WITH_GNUTLS_AEAD
 static size_t round_to_block_size(size_t block_size, size_t size)
 {
 	if ((size % block_size) == 0) {
@@ -313,7 +289,6 @@ static size_t round_to_block_size(size_t block_size, size_t size)
 		return ((int)(size/block_size) + 1) * block_size;
 	}
 }
-#endif /* BUILD_WITH_GNUTLS_AEAD */
 
 /*
  * @brief Create an new EncryptedSecret owned by the supplied talloc context.
@@ -380,239 +355,6 @@ static DATA_BLOB makePlainText(TALLOC_CTX *ctx,
 	return pt;
 }
 
-#ifdef BUILD_WITH_SAMBA_AES_GCM
-/*
- * @brief Encrypt an ldb value using an aead algorithm.
- *
- * This function uses the samba internal implementation to perform the encryption. However
- * the encrypted data and tag are stored in a manner compatible with gnutls,
- * so the gnutls aead functions can be used to decrypt and verify the data.
- *
- * @param err  Pointer to an error code, set to:
- *             LDB_SUCESS               If the value was successfully encrypted
- *             LDB_ERR_OPERATIONS_ERROR If there was an error.
- *
- * @param ctx  Talloc memory context the will own the memory allocated
- * @param ldb  ldb context, to allow logging.
- * @param val  The ldb value to encrypt, not altered or freed
- * @param data The context data for this module.
- *
- * @return The encrypted ldb_val, or data_blob_null if there was an error.
- */
-static struct ldb_val samba_encrypt_aead(int *err,
-					 TALLOC_CTX *ctx,
-					 struct ldb_context *ldb,
-					 const struct ldb_val val,
-					 const struct es_data *data)
-{
-	struct aes_gcm_128_context cctx;
-	struct EncryptedSecret *es = NULL;
-	DATA_BLOB pt = data_blob_null;
-	struct ldb_val enc = data_blob_null;
-	DATA_BLOB key_blob = data_blob_null;
-	int rc;
-	TALLOC_CTX *frame = talloc_stackframe();
-
-	es = makeEncryptedSecret(ldb, frame);
-	if (es == NULL) {
-		goto error_exit;
-	}
-
-	pt = makePlainText(frame, ldb, val);
-	if (pt.length == 0) {
-		goto error_exit;
-	}
-
-	/*
-	 * Set the encryption key
-	 */
-	key_blob = get_key(data);
-	if (key_blob.length != AES_BLOCK_SIZE) {
-		ldb_asprintf_errstring(ldb,
-				       "Invalid EncryptedSecrets key size, "
-				       "expected %u bytes and is %zu bytes\n",
-				       AES_BLOCK_SIZE,
-				       key_blob.length);
-		goto error_exit;
-	}
-
-	/*
-	 * Set the initialisation vector
-	 */
-	{
-		uint8_t *iv = talloc_zero_size(frame, AES_GCM_128_IV_SIZE);
-		if (iv == NULL) {
-			ldb_set_errstring(ldb,
-					  "Out of memory allocating iv\n");
-			goto error_exit;
-		}
-
-		generate_random_buffer(iv, AES_GCM_128_IV_SIZE);
-
-		es->iv.length = AES_GCM_128_IV_SIZE;
-		es->iv.data   = iv;
-	}
-
-	/*
-	 * Encrypt the value, and append the GCM digest to the encrypted
-	 * data so that it can be decrypted and validated by the
-	 * gnutls aead decryption routines.
-	 */
-	{
-		uint8_t *ct = talloc_zero_size(frame, pt.length + AES_BLOCK_SIZE);
-		if (ct == NULL) {
-			ldb_oom(ldb);
-			goto error_exit;
-		}
-
-		memcpy(ct, pt.data, pt.length);
-		es->encrypted.length = pt.length + AES_BLOCK_SIZE;
-		es->encrypted.data   = ct;
-	}
-
-	aes_gcm_128_init(&cctx, key_blob.data, es->iv.data);
-	aes_gcm_128_updateA(&cctx,
-		    (uint8_t *)&es->header,
-		    sizeof(struct EncryptedSecretHeader));
-	aes_gcm_128_crypt(&cctx, es->encrypted.data, pt.length);
-	aes_gcm_128_updateC(&cctx, es->encrypted.data, pt.length);
-	aes_gcm_128_digest(&cctx, &es->encrypted.data[pt.length]);
-
-	rc = ndr_push_struct_blob(&enc,
-				  ctx,
-				  es,
-				  (ndr_push_flags_fn_t)
-					ndr_push_EncryptedSecret);
-	if (!NDR_ERR_CODE_IS_SUCCESS(rc)) {
-		ldb_set_errstring(ldb,
-				  "Unable to ndr push EncryptedSecret\n");
-		goto error_exit;
-	}
-	TALLOC_FREE(frame);
-	return enc;
-
-error_exit:
-	*err = LDB_ERR_OPERATIONS_ERROR;
-	TALLOC_FREE(frame);
-	return data_blob_null;
-}
-
-/*
- * @brief Decrypt data encrypted using an aead algorithm.
- *
- * Decrypt the data in ed and insert it into ev. The data was encrypted
- * with the samba aes gcm implementation.
- *
- * @param err  Pointer to an error code, set to:
- *             LDB_SUCESS               If the value was successfully decrypted
- *             LDB_ERR_OPERATIONS_ERROR If there was an error.
- *
- * @param ctx  Talloc memory context that will own the memory allocated
- * @param ldb  ldb context, to allow logging.
- * @param ev   The value to be updated with the decrypted data.
- * @param ed   The data to decrypt.
- * @param data The context data for this module.
- *
- * @return ev is updated with the unencrypted data.
- */
-static void samba_decrypt_aead(int *err,
-			       TALLOC_CTX *ctx,
-			       struct ldb_context *ldb,
-			       struct EncryptedSecret *es,
-			       struct PlaintextSecret *ps,
-			       const struct es_data *data)
-{
-	struct aes_gcm_128_context cctx;
-	DATA_BLOB pt = data_blob_null;
-	DATA_BLOB key_blob = data_blob_null;
-	uint8_t sig[AES_BLOCK_SIZE] = {0, };
-	int rc;
-	int cmp;
-	TALLOC_CTX *frame = talloc_stackframe();
-
-	/*
-	 * Set the encryption key
-	 */
-	key_blob = get_key(data);
-	if (key_blob.length != AES_BLOCK_SIZE) {
-		ldb_asprintf_errstring(ldb,
-				       "Invalid EncryptedSecrets key size, "
-				       "expected %u bytes and is %zu bytes\n",
-				       AES_BLOCK_SIZE,
-				       key_blob.length);
-		goto error_exit;
-	}
-
-	if (es->iv.length < AES_GCM_128_IV_SIZE) {
-		ldb_asprintf_errstring(ldb,
-				       "Invalid EncryptedSecrets iv size, "
-				       "expected %u bytes and is %zu bytes\n",
-				       AES_GCM_128_IV_SIZE,
-				       es->iv.length);
-		goto error_exit;
-	}
-
-	if (es->encrypted.length < AES_BLOCK_SIZE) {
-		ldb_asprintf_errstring(ldb,
-				       "Invalid EncryptedData size, "
-				       "expected %u bytes and is %zu bytes\n",
-				       AES_BLOCK_SIZE,
-				       es->encrypted.length);
-		goto error_exit;
-	}
-
-	pt.length = es->encrypted.length - AES_BLOCK_SIZE;
-	pt.data   = talloc_zero_size(ctx, pt.length);
-	if (pt.data == NULL) {
-		ldb_set_errstring(ldb,
-			          "Out of memory allocating space for "
-				  "plain text\n");
-		goto error_exit;
-	}
-	memcpy(pt.data, es->encrypted.data, pt.length);
-
-	aes_gcm_128_init(&cctx, key_blob.data, es->iv.data);
-	aes_gcm_128_updateA(&cctx,
-		    (uint8_t *)&es->header,
-		    sizeof(struct EncryptedSecretHeader));
-	aes_gcm_128_updateC(&cctx, pt.data, pt.length);
-	aes_gcm_128_crypt(&cctx, pt.data, pt.length);
-	aes_gcm_128_digest(&cctx, sig);
-
-	/*
-	 * Check the authentication tag
-	 */
-	cmp = memcmp(&es->encrypted.data[pt.length], sig, AES_BLOCK_SIZE);
-	if (cmp != 0) {
-		ldb_set_errstring(ldb,
-				  "Tag does not match, "
-				  "data corrupted or altered\n");
-		goto error_exit;
-	}
-
-	rc = ndr_pull_struct_blob(&pt,
-				  ctx,
-				  ps,
-				  (ndr_pull_flags_fn_t)
-					ndr_pull_PlaintextSecret);
-	if(!NDR_ERR_CODE_IS_SUCCESS(rc)) {
-		ldb_asprintf_errstring(ldb,
-				       "Error(%d)  unpacking decrypted data, "
-				       "data possibly corrupted or altered\n",
-				       rc);
-		goto error_exit;
-	}
-	TALLOC_FREE(frame);
-	return;
-
-error_exit:
-	*err = LDB_ERR_OPERATIONS_ERROR;
-	TALLOC_FREE(frame);
-	return;
-}
-#endif /* BUILD_WITH_SAMBA_AES_GCM */
-
-#ifdef BUILD_WITH_GNUTLS_AEAD
 
 /*
  * Helper function converts a data blob to a gnutls_datum_t.
@@ -951,7 +693,6 @@ error_exit:
 	*err = LDB_ERR_OPERATIONS_ERROR;
 	return;
 }
-#endif /* BUILD_WITH_GNUTLS_AEAD */
 
 /*
  * @brief Encrypt an attribute value using the default encryption algorithm.
@@ -977,11 +718,7 @@ static struct ldb_val encrypt_value(int *err,
 				    const struct ldb_val val,
 				    const struct es_data *data)
 {
-#ifdef BUILD_WITH_GNUTLS_AEAD
 	return gnutls_encrypt_aead(err, ctx, ldb, val, data);
-#elif defined BUILD_WITH_SAMBA_AES_GCM
-	return samba_encrypt_aead(err, ctx, ldb, val, data);
-#endif
 }
 
 /*
@@ -1011,7 +748,7 @@ static struct ldb_message_element *encrypt_element(
 	const struct es_data *data)
 {
 	struct ldb_message_element* enc;
-	int i;
+	unsigned int i;
 
 	enc = talloc_zero(ctx, struct ldb_message_element);
 	if (enc == NULL) {
@@ -1081,10 +818,9 @@ static const struct ldb_message *encrypt_secret_attributes(
 	const struct ldb_message *msg,
 	const struct es_data *data)
 {
-
 	struct ldb_message *encrypted_msg = NULL;
 
-	int i;
+	unsigned int i;
 
 	if (ldb_dn_is_special(msg->dn)) {
 		return NULL;
@@ -1097,6 +833,14 @@ static const struct ldb_message *encrypt_secret_attributes(
 			struct ldb_message_element* enc = NULL;
 			if (encrypted_msg == NULL) {
 				encrypted_msg = ldb_msg_copy_shallow(ctx, msg);
+				if (encrypted_msg == NULL) {
+					ldb_set_errstring(
+						ldb,
+						"Out of memory, allocating "
+						"ldb_message_element\n");
+					*err = LDB_ERR_OPERATIONS_ERROR;
+					return NULL;
+				}
 				encrypted_msg->dn = msg->dn;
 			}
 			enc = encrypt_element(err,
@@ -1211,11 +955,7 @@ static struct ldb_val decrypt_value(int *err,
 		*err = LDB_ERR_OPERATIONS_ERROR;
 		return data_blob_null;
 	}
-#ifdef BUILD_WITH_GNUTLS_AEAD
 	gnutls_decrypt_aead(err, frame, ldb, &es, &ps, data);
-#elif defined BUILD_WITH_SAMBA_AES_GCM
-	samba_decrypt_aead(err, frame, ldb, &es, &ps, data);
-#endif
 
 	if (*err != LDB_SUCCESS) {
 		TALLOC_FREE(frame);
@@ -1262,7 +1002,7 @@ static struct ldb_message_element *decrypt_element(
 	struct ldb_message_element* el,
 	struct es_data *data)
 {
-	int i;
+	unsigned int i;
 	struct ldb_message_element* dec =
 		talloc_zero(ctx, struct ldb_message_element);
 
@@ -1328,8 +1068,8 @@ static int decrypt_secret_attributes(struct ldb_context *ldb,
 				      struct ldb_message *msg,
 				      struct es_data *data)
 {
-
-	int i, ret;
+	size_t i;
+	int ret;
 
 	if (ldb_dn_is_special(msg->dn)) {
 		return LDB_SUCCESS;

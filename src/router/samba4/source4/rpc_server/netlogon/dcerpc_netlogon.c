@@ -523,6 +523,8 @@ static NTSTATUS dcesrv_netr_ServerAuthenticate3(
 	struct dom_sid *sid = NULL;
 	const char *trust_account_for_search = NULL;
 	const char *trust_account_in_db = NULL;
+	struct imessaging_context *imsg_ctx =
+		dcesrv_imessaging_context(dce_call->conn);
 	struct auth_usersupplied_info ui = {
 		.local_host = dce_call->conn->local_address,
 		.remote_host = dce_call->conn->remote_address,
@@ -549,7 +551,7 @@ static NTSTATUS dcesrv_netr_ServerAuthenticate3(
 	ui.netlogon_trust_account.account_name = trust_account_in_db;
 	ui.mapped.account_name = trust_account_for_search;
 	log_authentication_event(
-		dce_call->conn->msg_ctx,
+		imsg_ctx,
 		dce_call->conn->dce_ctx->lp_ctx,
 		NULL,
 		&ui,
@@ -678,7 +680,8 @@ static NTSTATUS dcesrv_netr_ServerPasswordSet(struct dcesrv_call_state *dce_call
 		return NT_STATUS_INVALID_SYSTEM_SERVICE;
 	}
 
-	netlogon_creds_des_decrypt(creds, r->in.new_password);
+	nt_status = netlogon_creds_des_decrypt(creds, r->in.new_password);
+	NT_STATUS_NOT_OK_RETURN(nt_status);
 
 	/* fetch the old password hashes (the NT hash has to exist) */
 
@@ -747,14 +750,17 @@ static NTSTATUS dcesrv_netr_ServerPasswordSet2(struct dcesrv_call_state *dce_cal
 	SIVAL(password_buf.data, 512, r->in.new_password->length);
 
 	if (creds->negotiate_flags & NETLOGON_NEG_SUPPORTS_AES) {
-		netlogon_creds_aes_decrypt(creds, password_buf.data, 516);
+		nt_status = netlogon_creds_aes_decrypt(creds,
+						       password_buf.data,
+						       516);
 	} else {
 		nt_status = netlogon_creds_arcfour_crypt(creds,
 							 password_buf.data,
 							 516);
-		if (!NT_STATUS_IS_OK(nt_status)) {
-			return nt_status;
-		}
+	}
+
+	if (!NT_STATUS_IS_OK(nt_status)) {
+		return nt_status;
 	}
 
 	switch (creds->secure_channel_type) {
@@ -944,6 +950,8 @@ static void dcesrv_netr_LogonSamLogon_base_reply(
 static NTSTATUS dcesrv_netr_LogonSamLogon_base_call(struct dcesrv_netr_LogonSamLogon_base_state *state)
 {
 	struct dcesrv_call_state *dce_call = state->dce_call;
+	struct imessaging_context *imsg_ctx =
+		dcesrv_imessaging_context(dce_call->conn);
 	TALLOC_CTX *mem_ctx = state->mem_ctx;
 	struct netr_LogonSamLogonEx *r = &state->r;
 	struct netlogon_creds_CredentialState *creds = state->creds;
@@ -989,7 +997,8 @@ static NTSTATUS dcesrv_netr_LogonSamLogon_base_call(struct dcesrv_netr_LogonSamL
 	case NetlogonNetworkTransitiveInformation:
 
 		nt_status = auth_context_create_for_netlogon(mem_ctx,
-					dce_call->event_ctx, dce_call->msg_ctx,
+					dce_call->event_ctx,
+					imsg_ctx,
 					dce_call->conn->dce_ctx->lp_ctx,
 					&auth_context);
 		NT_STATUS_NOT_OK_RETURN(nt_status);
@@ -1108,7 +1117,7 @@ static NTSTATUS dcesrv_netr_LogonSamLogon_base_call(struct dcesrv_netr_LogonSamL
 			    = r->in.logon->generic->identity_info.logon_id;
 
 			irpc_handle = irpc_binding_handle_by_name(mem_ctx,
-								  dce_call->msg_ctx,
+								  imsg_ctx,
 								  "kdc_server",
 								  &ndr_table_irpc);
 			if (irpc_handle == NULL) {
@@ -1645,6 +1654,8 @@ static WERROR dcesrv_netr_LogonControl_base_call(struct dcesrv_netr_LogonControl
 	struct loadparm_context *lp_ctx = state->dce_call->conn->dce_ctx->lp_ctx;
 	struct auth_session_info *session_info =
 		dcesrv_call_session_info(state->dce_call);
+	struct imessaging_context *imsg_ctx =
+		dcesrv_imessaging_context(state->dce_call->conn);
 	enum security_user_level security_level;
 	struct dcerpc_binding_handle *irpc_handle;
 	struct tevent_req *subreq;
@@ -1824,7 +1835,7 @@ static WERROR dcesrv_netr_LogonControl_base_call(struct dcesrv_netr_LogonControl
 	}
 
 	irpc_handle = irpc_binding_handle_by_name(state,
-						  state->dce_call->msg_ctx,
+						  imsg_ctx,
 						  "winbind_server",
 						  &ndr_table_winbind);
 	if (irpc_handle == NULL) {
@@ -2200,13 +2211,15 @@ static NTSTATUS fill_our_one_domain_info(TALLOC_CTX *mem_ctx,
 	ZERO_STRUCTP(info);
 
 	if (is_trust_list) {
-		struct netr_trust_extension *tei = NULL;
+		struct netr_trust_extension *te = NULL;
+		struct netr_trust_extension_info *tei = NULL;
 
 		/* w2k8 only fills this on trusted domains */
-		tei = talloc_zero(mem_ctx, struct netr_trust_extension);
-		if (tei == NULL) {
+		te = talloc_zero(mem_ctx, struct netr_trust_extension);
+		if (te == NULL) {
 			return NT_STATUS_NO_MEMORY;
 		}
+		tei = &te->info;
 		tei->flags |= NETR_TRUST_FLAG_PRIMARY;
 
 		/*
@@ -2227,8 +2240,7 @@ static NTSTATUS fill_our_one_domain_info(TALLOC_CTX *mem_ctx,
 		 */
 		tei->trust_attributes = 0;
 
-		info->trust_extension.info = tei;
-		info->trust_extension.length = 16;
+		info->trust_extension.info = te;
 	}
 
 	if (is_trust_list) {
@@ -2261,15 +2273,17 @@ static NTSTATUS fill_trust_one_domain_info(TALLOC_CTX *mem_ctx,
 				const struct lsa_TrustDomainInfoInfoEx *tdo,
 				struct netr_OneDomainInfo *info)
 {
-	struct netr_trust_extension *tei = NULL;
+	struct netr_trust_extension *te = NULL;
+	struct netr_trust_extension_info *tei = NULL;
 
 	ZERO_STRUCTP(info);
 
 	/* w2k8 only fills this on trusted domains */
-	tei = talloc_zero(mem_ctx, struct netr_trust_extension);
-	if (tei == NULL) {
+	te = talloc_zero(mem_ctx, struct netr_trust_extension);
+	if (te == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
+	tei = &te->info;
 
 	if (tdo->trust_direction & LSA_TRUST_DIRECTION_INBOUND) {
 		tei->flags |= NETR_TRUST_FLAG_INBOUND;
@@ -2291,8 +2305,7 @@ static NTSTATUS fill_trust_one_domain_info(TALLOC_CTX *mem_ctx,
 	tei->trust_type = tdo->trust_type;
 	tei->trust_attributes = tdo->trust_attributes;
 
-	info->trust_extension.info = tei;
-	info->trust_extension.length = 16;
+	info->trust_extension.info = te;
 
 	info->domainname.string = tdo->netbios_name.string;
 	if (tdo->trust_type != LSA_TRUST_TYPE_DOWNLEVEL) {
@@ -2803,14 +2816,16 @@ static NTSTATUS dcesrv_netr_NetrLogonSendToSam(struct dcesrv_call_state *dce_cal
 
 	/* Buffer is meant to be 16-bit aligned */
 	if (creds->negotiate_flags & NETLOGON_NEG_SUPPORTS_AES) {
-		netlogon_creds_aes_decrypt(creds, r->in.opaque_buffer, r->in.buffer_len);
+		nt_status = netlogon_creds_aes_decrypt(creds,
+						       r->in.opaque_buffer,
+						       r->in.buffer_len);
 	} else {
 		nt_status = netlogon_creds_arcfour_crypt(creds,
 							 r->in.opaque_buffer,
 							 r->in.buffer_len);
-		if (!NT_STATUS_IS_OK(nt_status)) {
-			return nt_status;
-		}
+	}
+	if (!NT_STATUS_IS_OK(nt_status)) {
+		return nt_status;
 	}
 
 	decrypted_blob.data = r->in.opaque_buffer;
@@ -2907,6 +2922,8 @@ static WERROR dcesrv_netr_DsRGetDCName_base_call(struct dcesrv_netr_DsRGetDCName
 	struct dcesrv_call_state *dce_call = state->dce_call;
 	struct auth_session_info *session_info =
 		dcesrv_call_session_info(dce_call);
+	struct imessaging_context *imsg_ctx =
+		dcesrv_imessaging_context(dce_call->conn);
 	TALLOC_CTX *mem_ctx = state->mem_ctx;
 	struct netr_DsRGetDCNameEx2 *r = &state->r;
 	struct ldb_context *sam_ctx;
@@ -3051,7 +3068,7 @@ static WERROR dcesrv_netr_DsRGetDCName_base_call(struct dcesrv_netr_DsRGetDCName
 							    false);
 
 		irpc_handle = irpc_binding_handle_by_name(state,
-							  dce_call->msg_ctx,
+							  imsg_ctx,
 							  "winbind_server",
 							  &ndr_table_winbind);
 		if (irpc_handle == NULL) {
@@ -3819,6 +3836,8 @@ static WERROR dcesrv_netr_DsRGetForestTrustInformation(struct dcesrv_call_state 
 	struct loadparm_context *lp_ctx = dce_call->conn->dce_ctx->lp_ctx;
 	struct auth_session_info *session_info =
 		dcesrv_call_session_info(dce_call);
+	struct imessaging_context *imsg_ctx =
+		dcesrv_imessaging_context(dce_call->conn);
 	enum security_user_level security_level;
 	struct ldb_context *sam_ctx = NULL;
 	struct dcesrv_netr_DsRGetForestTrustInformation_state *state = NULL;
@@ -3907,7 +3926,7 @@ static WERROR dcesrv_netr_DsRGetForestTrustInformation(struct dcesrv_call_state 
 	state->r = r;
 
 	irpc_handle = irpc_binding_handle_by_name(state,
-						  state->dce_call->msg_ctx,
+						  imsg_ctx,
 						  "winbind_server",
 						  &ndr_table_winbind);
 	if (irpc_handle == NULL) {
@@ -4188,11 +4207,17 @@ static NTSTATUS dcesrv_netr_ServerGetTrustInfo(struct dcesrv_call_state *dce_cal
 
 	if (curNtHash != NULL) {
 		*r->out.new_owf_password = *curNtHash;
-		netlogon_creds_des_encrypt(creds, r->out.new_owf_password);
+		nt_status = netlogon_creds_des_encrypt(creds, r->out.new_owf_password);
+		if (!NT_STATUS_IS_OK(nt_status)) {
+			return nt_status;
+		}
 	}
 	if (prevNtHash != NULL) {
 		*r->out.old_owf_password = *prevNtHash;
-		netlogon_creds_des_encrypt(creds, r->out.old_owf_password);
+		nt_status = netlogon_creds_des_encrypt(creds, r->out.old_owf_password);
+		if (!NT_STATUS_IS_OK(nt_status)) {
+			return nt_status;
+		}
 	}
 
 	if (trust_info != NULL) {
@@ -4255,6 +4280,8 @@ static NTSTATUS dcesrv_netr_DsrUpdateReadOnlyServerDnsRecords(struct dcesrv_call
 	struct dcerpc_binding_handle *binding_handle;
 	struct netr_dnsupdate_RODC_state *st;
 	struct tevent_req *subreq;
+	struct imessaging_context *imsg_ctx =
+		dcesrv_imessaging_context(dce_call->conn);
 
 	nt_status = dcesrv_netr_creds_server_step_check(dce_call,
 							mem_ctx,
@@ -4282,8 +4309,10 @@ static NTSTATUS dcesrv_netr_DsrUpdateReadOnlyServerDnsRecords(struct dcesrv_call
 	st->r2->in.dns_names = r->in.dns_names;
 	st->r2->out.dns_names = r->out.dns_names;
 
-	binding_handle = irpc_binding_handle_by_name(st, dce_call->msg_ctx,
-						     "dnsupdate", &ndr_table_irpc);
+	binding_handle = irpc_binding_handle_by_name(st,
+						     imsg_ctx,
+						     "dnsupdate",
+						     &ndr_table_irpc);
 	if (binding_handle == NULL) {
 		DEBUG(0,("Failed to get binding_handle for dnsupdate task\n"));
 		dce_call->fault_code = DCERPC_FAULT_CANT_PERFORM;

@@ -61,6 +61,17 @@ static const struct enum_list enum_protocol[] = {
 	{-1, NULL}
 };
 
+const char* lpcfg_get_smb_protocol(int type)
+{
+	int i;
+	for (i = 1; enum_protocol[i].value != -1; i++) {
+		if (enum_protocol[i].value == type) {
+			return enum_protocol[i].name;
+		}
+	}
+	return NULL;
+}
+
 static const struct enum_list enum_security[] = {
 	{SEC_AUTO, "AUTO"},
 	{SEC_USER, "USER"},
@@ -348,6 +359,13 @@ static const struct enum_list enum_ntlm_auth[] = {
 	{NTLM_AUTH_ON, "true"},
 	{NTLM_AUTH_ON, "1"},
 	{NTLM_AUTH_MSCHAPv2_NTLMV2_ONLY, "mschapv2-and-ntlmv2-only"},
+	{-1, NULL}
+};
+
+static const struct enum_list enum_spotlight_backend[] = {
+	{SPOTLIGHT_BACKEND_NOINDEX, "noindex"},
+	{SPOTLIGHT_BACKEND_TRACKER, "tracker"},
+	{SPOTLIGHT_BACKEND_ES, "elasticsearch"},
 	{-1, NULL}
 };
 

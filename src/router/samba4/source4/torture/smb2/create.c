@@ -123,7 +123,7 @@
 	if (!NT_STATUS_IS_OK(status)) { \
 		torture_comment(tctx, \
 		    "(%s) Failed to set attrib 0x%x on %s\n", \
-		       __location__, sattrib, fname); \
+		       __location__, (unsigned int)(sattrib), fname); \
 	}} while (0)
 
 /*
@@ -1135,10 +1135,18 @@ static bool test_smb2_open_for_delete(struct torture_context *tctx,
 	io.smb2.in.create_disposition = NTCREATEX_DISP_OPEN;
 	status = smb2_create(tree, tctx, &(io.smb2));
 	CHECK_STATUS(status, NT_STATUS_OK);
+	smb2_util_close(tree, io.smb2.out.file.handle);
 
-	smb2_util_unlink(tree, fname);
-
+	/* Clear readonly flag to allow file deletion */
+	io.smb2.in.desired_access = SEC_FILE_READ_ATTRIBUTE |
+				SEC_FILE_WRITE_ATTRIBUTE;
+	status = smb2_create(tree, tctx, &(io.smb2));
+	CHECK_STATUS(status, NT_STATUS_OK);
+	h1 = io.smb2.out.file.handle;
+	SET_ATTRIB(FILE_ATTRIBUTE_ARCHIVE);
 	smb2_util_close(tree, h1);
+
+	smb2_util_close(tree, h);
 	smb2_util_unlink(tree, fname);
 	smb2_deltree(tree, DNAME);
 
@@ -1703,7 +1711,7 @@ static bool test_dir_alloc_size(struct torture_context *tctx,
 	 * smb_roundup(..., stat.st_size) which would be 1 MB by
 	 * default.
 	 *
-	 * Windows returns 0 for emtpy directories, once directories
+	 * Windows returns 0 for empty directories, once directories
 	 * have a few entries it starts replying with values > 0.
 	 */
 	c.in.alloc_size = 1024*1024*1024;

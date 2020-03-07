@@ -32,14 +32,15 @@
 #include <gnutls/gnutls.h>
 #include <gnutls/crypto.h>
 
-void SMBencrypt_hash(const uint8_t lm_hash[16], const uint8_t *c8, uint8_t p24[24])
+int SMBencrypt_hash(const uint8_t lm_hash[16], const uint8_t *c8, uint8_t p24[24])
 {
 	uint8_t p21[21];
+	int rc;
 
 	memset(p21,'\0',21);
 	memcpy(p21, lm_hash, 16);
 
-	SMBOWFencrypt(p21, c8, p24);
+	rc = SMBOWFencrypt(p21, c8, p24);
 
 #ifdef DEBUG_PASSWORD
 	DEBUG(100,("SMBencrypt_hash: lm#, challenge, response\n"));
@@ -47,6 +48,8 @@ void SMBencrypt_hash(const uint8_t lm_hash[16], const uint8_t *c8, uint8_t p24[2
 	dump_data(100, c8, 8);
 	dump_data(100, p24, 24);
 #endif
+
+	return rc;
 }
 
 /*
@@ -61,9 +64,13 @@ bool SMBencrypt(const char *passwd, const uint8_t *c8, uint8_t p24[24])
 {
 	bool ret;
 	uint8_t lm_hash[16];
+	int rc;
 
 	ret = E_deshash(passwd, lm_hash);
-	SMBencrypt_hash(lm_hash, c8, p24);
+	rc = SMBencrypt_hash(lm_hash, c8, p24);
+	if (rc != 0) {
+		ret = false;
+	}
 	return ret;
 }
 
@@ -95,39 +102,6 @@ bool E_md4hash(const char *passwd, uint8_t p16[16])
 }
 
 /**
- * Creates the MD5 Hash of a combination of 16 byte salt and 16 byte NT hash.
- * @param 16 byte salt.
- * @param 16 byte NT hash.
- * @param 16 byte return hashed with md5, caller allocated 16 byte buffer
- */
-
-void E_md5hash(const uint8_t salt[16], const uint8_t nthash[16], uint8_t hash_out[16])
-{
-	gnutls_hash_hd_t hash_hnd = NULL;
-	int rc;
-
-	rc = gnutls_hash_init(&hash_hnd, GNUTLS_DIG_MD5);
-	if (rc < 0) {
-		goto out;
-	}
-
-	rc = gnutls_hash(hash_hnd, salt, 16);
-	if (rc < 0) {
-		gnutls_hash_deinit(hash_hnd, NULL);
-		goto out;
-	}
-	rc = gnutls_hash(hash_hnd, nthash, 16);
-	if (rc < 0) {
-		gnutls_hash_deinit(hash_hnd, NULL);
-		goto out;
-	}
-	gnutls_hash_deinit(hash_hnd, hash_out);
-
-out:
-	return;
-}
-
-/**
  * Creates the DES forward-only Hash of the users password in DOS ASCII charset
  * @param passwd password in 'unix' charset.
  * @param p16 return password hashed with DES, caller allocated 16 byte buffer
@@ -138,6 +112,7 @@ out:
 bool E_deshash(const char *passwd, uint8_t p16[16])
 {
 	bool ret;
+	int rc;
 	uint8_t dospwd[14];
 	TALLOC_CTX *frame = talloc_stackframe();
 
@@ -166,7 +141,10 @@ bool E_deshash(const char *passwd, uint8_t p16[16])
 	 * case to avoid returning a fixed 'password' buffer, but
 	 * callers should not use it when E_deshash returns false */
 
-	E_P16((const uint8_t *)dospwd, p16);
+	rc = E_P16((const uint8_t *)dospwd, p16);
+	if (rc != 0) {
+		ret = false;
+	}
 
 	ZERO_STRUCT(dospwd);
 
@@ -295,25 +273,26 @@ out:
 }
 
 /* Does the des encryption from the NT or LM MD4 hash. */
-void SMBOWFencrypt(const uint8_t passwd[16], const uint8_t *c8, uint8_t p24[24])
+int SMBOWFencrypt(const uint8_t passwd[16], const uint8_t *c8, uint8_t p24[24])
 {
 	uint8_t p21[21];
 
 	ZERO_STRUCT(p21);
 
 	memcpy(p21, passwd, 16);
-	E_P24(p21, c8, p24);
+	return E_P24(p21, c8, p24);
 }
 
 /* Does the des encryption. */
 
-void SMBNTencrypt_hash(const uint8_t nt_hash[16], const uint8_t *c8, uint8_t *p24)
+int SMBNTencrypt_hash(const uint8_t nt_hash[16], const uint8_t *c8, uint8_t *p24)
 {
 	uint8_t p21[21];
+	int rc;
 
 	memset(p21,'\0',21);
 	memcpy(p21, nt_hash, 16);
-	SMBOWFencrypt(p21, c8, p24);
+	rc = SMBOWFencrypt(p21, c8, p24);
 
 #ifdef DEBUG_PASSWORD
 	DEBUG(100,("SMBNTencrypt: nt#, challenge, response\n"));
@@ -321,25 +300,28 @@ void SMBNTencrypt_hash(const uint8_t nt_hash[16], const uint8_t *c8, uint8_t *p2
 	dump_data(100, c8, 8);
 	dump_data(100, p24, 24);
 #endif
+
+	return rc;
 }
 
 /* Does the NT MD4 hash then des encryption. Plaintext version of the above. */
 
-void SMBNTencrypt(const char *passwd, const uint8_t *c8, uint8_t *p24)
+int SMBNTencrypt(const char *passwd, const uint8_t *c8, uint8_t *p24)
 {
 	uint8_t nt_hash[16];
 	E_md4hash(passwd, nt_hash);
-	SMBNTencrypt_hash(nt_hash, c8, p24);
+	return SMBNTencrypt_hash(nt_hash, c8, p24);
 }
 
 
 /* Does the md5 encryption from the Key Response for NTLMv2. */
-void SMBOWFencrypt_ntv2(const uint8_t kr[16],
-			const DATA_BLOB *srv_chal,
-			const DATA_BLOB *smbcli_chal,
-			uint8_t resp_buf[16])
+NTSTATUS SMBOWFencrypt_ntv2(const uint8_t kr[16],
+			    const DATA_BLOB *srv_chal,
+			    const DATA_BLOB *smbcli_chal,
+			    uint8_t resp_buf[16])
 {
 	gnutls_hmac_hd_t hmac_hnd = NULL;
+	NTSTATUS status;
 	int rc;
 
 	rc = gnutls_hmac_init(&hmac_hnd,
@@ -347,20 +329,19 @@ void SMBOWFencrypt_ntv2(const uint8_t kr[16],
 			      kr,
 			      16);
 	if (rc < 0) {
-		return;
+		return gnutls_error_to_ntstatus(rc, NT_STATUS_HMAC_NOT_SUPPORTED);
 	}
 
 	rc = gnutls_hmac(hmac_hnd, srv_chal->data, srv_chal->length);
 	if (rc < 0) {
-		return;
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_HMAC_NOT_SUPPORTED);
+		goto out;
 	}
 	rc = gnutls_hmac(hmac_hnd, smbcli_chal->data, smbcli_chal->length);
 	if (rc < 0) {
-		gnutls_hmac_deinit(hmac_hnd, NULL);
-		return;
+		status = gnutls_error_to_ntstatus(rc, NT_STATUS_HMAC_NOT_SUPPORTED);
+		goto out;
 	}
-
-	gnutls_hmac_deinit(hmac_hnd, resp_buf);
 
 #ifdef DEBUG_PASSWORD
 	DEBUG(100, ("SMBOWFencrypt_ntv2: srv_chal, smbcli_chal, resp_buf\n"));
@@ -368,23 +349,36 @@ void SMBOWFencrypt_ntv2(const uint8_t kr[16],
 	dump_data(100, smbcli_chal->data, smbcli_chal->length);
 	dump_data(100, resp_buf, 16);
 #endif
+
+	status = NT_STATUS_OK;
+out:
+	gnutls_hmac_deinit(hmac_hnd, resp_buf);
+	return status;
 }
 
-void SMBsesskeygen_ntv2(const uint8_t kr[16],
-			const uint8_t * nt_resp, uint8_t sess_key[16])
+NTSTATUS SMBsesskeygen_ntv2(const uint8_t kr[16],
+			    const uint8_t *nt_resp,
+			    uint8_t sess_key[16])
 {
+	int rc;
+
 	/* a very nice, 128 bit, variable session key */
-	gnutls_hmac_fast(GNUTLS_MAC_MD5,
-			 kr,
-			 16,
-			 nt_resp,
-			 16,
-			 sess_key);
+	rc = gnutls_hmac_fast(GNUTLS_MAC_MD5,
+			      kr,
+			      16,
+			      nt_resp,
+			      16,
+			      sess_key);
+	if (rc != 0) {
+		return gnutls_error_to_ntstatus(rc, NT_STATUS_HASH_NOT_SUPPORTED);
+	}
 
 #ifdef DEBUG_PASSWORD
 	DEBUG(100, ("SMBsesskeygen_ntv2:\n"));
 	dump_data(100, sess_key, 16);
 #endif
+
+	return NT_STATUS_OK;
 }
 
 void SMBsesskeygen_ntv1(const uint8_t kr[16], uint8_t sess_key[16])
@@ -400,7 +394,7 @@ void SMBsesskeygen_ntv1(const uint8_t kr[16], uint8_t sess_key[16])
 #endif
 }
 
-void SMBsesskeygen_lm_sess_key(const uint8_t lm_hash[16],
+NTSTATUS SMBsesskeygen_lm_sess_key(const uint8_t lm_hash[16],
 			       const uint8_t lm_resp[24], /* only uses 8 */
 			       uint8_t sess_key[16])
 {
@@ -408,12 +402,19 @@ void SMBsesskeygen_lm_sess_key(const uint8_t lm_hash[16],
 	   but changes with each session) */
 	uint8_t p24[24];
 	uint8_t partial_lm_hash[14];
+	int rc;
 
 	memcpy(partial_lm_hash, lm_hash, 8);
 	memset(partial_lm_hash + 8, 0xbd, 6);
 
-	des_crypt56(p24,   lm_resp, partial_lm_hash,     1);
-	des_crypt56(p24+8, lm_resp, partial_lm_hash + 7, 1);
+	rc = des_crypt56_gnutls(p24, lm_resp, partial_lm_hash, SAMBA_GNUTLS_ENCRYPT);
+	if (rc < 0) {
+		return gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+	}
+	rc = des_crypt56_gnutls(p24+8, lm_resp, partial_lm_hash + 7, SAMBA_GNUTLS_ENCRYPT);
+	if (rc < 0) {
+		return gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+	}
 
 	memcpy(sess_key, p24, 16);
 
@@ -421,6 +422,8 @@ void SMBsesskeygen_lm_sess_key(const uint8_t lm_hash[16],
 	DEBUG(100, ("SMBsesskeygen_lm_sess_key: \n"));
 	dump_data(100, sess_key, 16);
 #endif
+
+	return NT_STATUS_OK;
 }
 
 DATA_BLOB NTLMv2_generate_names_blob(TALLOC_CTX *mem_ctx,
@@ -480,6 +483,7 @@ static DATA_BLOB NTLMv2_generate_response(TALLOC_CTX *out_mem_ctx,
 	uint8_t ntlmv2_response[16];
 	DATA_BLOB ntlmv2_client_data;
 	DATA_BLOB final_response;
+	NTSTATUS status;
 
 	TALLOC_CTX *mem_ctx = talloc_named(out_mem_ctx, 0,
 					   "NTLMv2_generate_response internal context");
@@ -494,7 +498,14 @@ static DATA_BLOB NTLMv2_generate_response(TALLOC_CTX *out_mem_ctx,
 	ntlmv2_client_data = NTLMv2_generate_client_data(mem_ctx, nttime, names_blob);
 
 	/* Given that data, and the challenge from the server, generate a response */
-	SMBOWFencrypt_ntv2(ntlm_v2_hash, server_chal, &ntlmv2_client_data, ntlmv2_response);
+	status = SMBOWFencrypt_ntv2(ntlm_v2_hash,
+				    server_chal,
+				    &ntlmv2_client_data,
+				    ntlmv2_response);
+	if (!NT_STATUS_IS_OK(status)) {
+		talloc_free(mem_ctx);
+		return data_blob(NULL, 0);
+	}
 
 	final_response = data_blob_talloc(out_mem_ctx, NULL, sizeof(ntlmv2_response) + ntlmv2_client_data.length);
 
@@ -515,13 +526,21 @@ static DATA_BLOB LMv2_generate_response(TALLOC_CTX *mem_ctx,
 	uint8_t lmv2_response[16];
 	DATA_BLOB lmv2_client_data = data_blob_talloc(mem_ctx, NULL, 8);
 	DATA_BLOB final_response = data_blob_talloc(mem_ctx, NULL,24);
+	NTSTATUS status;
 
 	/* LMv2 */
 	/* client-supplied random data */
 	generate_random_buffer(lmv2_client_data.data, lmv2_client_data.length);
 
 	/* Given that data, and the challenge from the server, generate a response */
-	SMBOWFencrypt_ntv2(ntlm_v2_hash, server_chal, &lmv2_client_data, lmv2_response);
+	status = SMBOWFencrypt_ntv2(ntlm_v2_hash,
+				    server_chal,
+				    &lmv2_client_data,
+				    lmv2_response);
+	if (!NT_STATUS_IS_OK(status)) {
+		data_blob_free(&lmv2_client_data);
+		return data_blob(NULL, 0);
+	}
 	memcpy(final_response.data, lmv2_response, sizeof(lmv2_response));
 
 	/* after the first 16 bytes is the random data we generated above,
@@ -543,6 +562,7 @@ bool SMBNTLMv2encrypt_hash(TALLOC_CTX *mem_ctx,
 			   DATA_BLOB *lm_session_key, DATA_BLOB *user_session_key)
 {
 	uint8_t ntlm_v2_hash[16];
+	NTSTATUS status;
 
 	/* We don't use the NT# directly.  Instead we use it mashed up with
 	   the username and domain.
@@ -572,7 +592,12 @@ bool SMBNTLMv2encrypt_hash(TALLOC_CTX *mem_ctx,
 
 			/* The NTLMv2 calculations also provide a session key, for signing etc later */
 			/* use only the first 16 bytes of nt_response for session key */
-			SMBsesskeygen_ntv2(ntlm_v2_hash, nt_response->data, user_session_key->data);
+			status = SMBsesskeygen_ntv2(ntlm_v2_hash,
+						    nt_response->data,
+						    user_session_key->data);
+			if (!NT_STATUS_IS_OK(status)) {
+				return false;
+			}
 		}
 	}
 
@@ -591,7 +616,12 @@ bool SMBNTLMv2encrypt_hash(TALLOC_CTX *mem_ctx,
 
 			/* The NTLMv2 calculations also provide a session key, for signing etc later */
 			/* use only the first 16 bytes of lm_response for session key */
-			SMBsesskeygen_ntv2(ntlm_v2_hash, lm_response->data, lm_session_key->data);
+			status = SMBsesskeygen_ntv2(ntlm_v2_hash,
+						    lm_response->data,
+						    lm_session_key->data);
+			if (!NT_STATUS_IS_OK(status)) {
+				return false;
+			}
 		}
 	}
 
@@ -840,41 +870,68 @@ bool decode_pw_buffer(TALLOC_CTX *ctx,
 }
 
 /***********************************************************
+ Encode an arc4 password change buffer.
+************************************************************/
+NTSTATUS encode_rc4_passwd_buffer(const char *passwd,
+				  const DATA_BLOB *session_key,
+				  struct samr_CryptPasswordEx *out_crypt_pwd)
+{
+	uint8_t _confounder[16] = {0};
+	DATA_BLOB confounder = data_blob_const(_confounder, 16);
+	DATA_BLOB pw_data = data_blob_const(out_crypt_pwd->data, 516);
+	bool ok;
+	int rc;
+
+	ok = encode_pw_buffer(pw_data.data, passwd, STR_UNICODE);
+	if (!ok) {
+		return NT_STATUS_INVALID_PARAMETER;
+	}
+
+	generate_random_buffer(confounder.data, confounder.length);
+
+	rc = samba_gnutls_arcfour_confounded_md5(&confounder,
+						 session_key,
+						 &pw_data,
+						 SAMBA_GNUTLS_ENCRYPT);
+	if (rc < 0) {
+		ZERO_ARRAY(_confounder);
+		data_blob_clear(&pw_data);
+		return gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
+	}
+
+	/*
+	 * The packet format is the 516 byte RC4 encrypted
+	 * pasword followed by the 16 byte counfounder
+	 * The confounder is a salt to prevent pre-computed hash attacks on the
+	 * database.
+	 */
+	memcpy(&out_crypt_pwd->data[516], confounder.data, confounder.length);
+	ZERO_ARRAY(_confounder);
+
+	return NT_STATUS_OK;
+}
+
+/***********************************************************
  Decode an arc4 encrypted password change buffer.
 ************************************************************/
 
-void encode_or_decode_arc4_passwd_buffer(unsigned char pw_buf[532], const DATA_BLOB *psession_key)
+NTSTATUS decode_rc4_passwd_buffer(const DATA_BLOB *psession_key,
+				  struct samr_CryptPasswordEx *inout_crypt_pwd)
 {
-	gnutls_hash_hd_t hash_hnd = NULL;
-	unsigned char key_out[16];
+	/* Confounder is last 16 bytes. */
+	DATA_BLOB confounder = data_blob_const(&inout_crypt_pwd->data[516], 16);
+	DATA_BLOB pw_data = data_blob_const(&inout_crypt_pwd->data, 516);
 	int rc;
 
-	/* Confounder is last 16 bytes. */
-
-	rc = gnutls_hash_init(&hash_hnd, GNUTLS_DIG_MD5);
+	rc = samba_gnutls_arcfour_confounded_md5(&confounder,
+						 psession_key,
+						 &pw_data,
+						 SAMBA_GNUTLS_DECRYPT);
 	if (rc < 0) {
-		goto out;
+		return gnutls_error_to_ntstatus(rc, NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER);
 	}
 
-	rc = gnutls_hash(hash_hnd, &pw_buf[516], 16);
-	if (rc < 0) {
-		gnutls_hash_deinit(hash_hnd, NULL);
-		goto out;
-	}
-	rc = gnutls_hash(hash_hnd, psession_key->data, psession_key->length);
-	if (rc < 0) {
-		gnutls_hash_deinit(hash_hnd, NULL);
-		goto out;
-	}
-	gnutls_hash_deinit(hash_hnd, key_out);
-
-	/* arc4 with key_out. */
-	arcfour_crypt(pw_buf, key_out, 516);
-
-	ZERO_ARRAY(key_out);
-
-out:
-	return;
+	return NT_STATUS_OK;
 }
 
 /***********************************************************
@@ -938,60 +995,45 @@ bool extract_pw_from_buffer(TALLOC_CTX *mem_ctx,
  * buffer), calling MD5Update() first with session_key and then with confounder
  * (vice versa in samr) - Guenther */
 
-void encode_wkssvc_join_password_buffer(TALLOC_CTX *mem_ctx,
-					const char *pwd,
-					DATA_BLOB *session_key,
-					struct wkssvc_PasswordBuffer **pwd_buf)
+WERROR encode_wkssvc_join_password_buffer(TALLOC_CTX *mem_ctx,
+					  const char *pwd,
+					  DATA_BLOB *session_key,
+					  struct wkssvc_PasswordBuffer **out_pwd_buf)
 {
-	uint8_t buffer[516];
-	gnutls_hash_hd_t hash_hnd = NULL;
-	struct wkssvc_PasswordBuffer *my_pwd_buf = NULL;
-	DATA_BLOB confounded_session_key;
-	int confounder_len = 8;
-	uint8_t confounder[8];
+	struct wkssvc_PasswordBuffer *pwd_buf = NULL;
+	uint8_t _confounder[8] = {0};
+	DATA_BLOB confounder = data_blob_const(_confounder, 8);
+	uint8_t pwbuf[516] = {0};
+	DATA_BLOB encrypt_pwbuf = data_blob_const(pwbuf, 516);
 	int rc;
 
-	my_pwd_buf = talloc_zero(mem_ctx, struct wkssvc_PasswordBuffer);
-	if (!my_pwd_buf) {
-		return;
+	pwd_buf = talloc_zero(mem_ctx, struct wkssvc_PasswordBuffer);
+	if (pwd_buf == NULL) {
+		return WERR_NOT_ENOUGH_MEMORY;
 	}
 
-	confounded_session_key = data_blob_talloc(mem_ctx, NULL, 16);
+	encode_pw_buffer(pwbuf, pwd, STR_UNICODE);
 
-	encode_pw_buffer(buffer, pwd, STR_UNICODE);
+	generate_random_buffer(_confounder, sizeof(_confounder));
 
-	generate_random_buffer((uint8_t *)confounder, confounder_len);
-
-	rc = gnutls_hash_init(&hash_hnd, GNUTLS_DIG_MD5);
+	rc = samba_gnutls_arcfour_confounded_md5(session_key,
+						 &confounder,
+						 &encrypt_pwbuf,
+						 SAMBA_GNUTLS_ENCRYPT);
 	if (rc < 0) {
-		goto out;
+		ZERO_ARRAY(_confounder);
+		TALLOC_FREE(pwd_buf);
+		return gnutls_error_to_werror(rc, WERR_CONTENT_BLOCKED);
 	}
 
-	rc = gnutls_hash(hash_hnd, session_key->data, session_key->length);
-	if (rc < 0) {
-		gnutls_hash_deinit(hash_hnd, NULL);
-		goto out;
-	}
-	rc = gnutls_hash(hash_hnd, confounder, confounder_len);
-	if (rc < 0) {
-		gnutls_hash_deinit(hash_hnd, NULL);
-		goto out;
-	}
-	gnutls_hash_deinit(hash_hnd, confounded_session_key.data);
+	memcpy(&pwd_buf->data[0], confounder.data, confounder.length);
+	ZERO_ARRAY(_confounder);
+	memcpy(&pwd_buf->data[8], encrypt_pwbuf.data, encrypt_pwbuf.length);
+	ZERO_ARRAY(pwbuf);
 
-	arcfour_crypt_blob(buffer, 516, &confounded_session_key);
+	*out_pwd_buf = pwd_buf;
 
-	memcpy(&my_pwd_buf->data[0], confounder, confounder_len);
-	ZERO_ARRAY(confounder);
-	memcpy(&my_pwd_buf->data[8], buffer, 516);
-	ZERO_ARRAY(buffer);
-
-	data_blob_clear_free(&confounded_session_key);
-
-	*pwd_buf = my_pwd_buf;
-
-out:
-	return;
+	return WERR_OK;
 }
 
 WERROR decode_wkssvc_join_password_buffer(TALLOC_CTX *mem_ctx,
@@ -999,70 +1041,47 @@ WERROR decode_wkssvc_join_password_buffer(TALLOC_CTX *mem_ctx,
 					  DATA_BLOB *session_key,
 					  char **pwd)
 {
-	gnutls_hash_hd_t hash_hnd = NULL;
-	uint8_t buffer[516];
-	size_t pwd_len;
-	WERROR result;
+	uint8_t _confounder[8];
+	DATA_BLOB confounder = data_blob_const(_confounder, 8);
+	uint8_t pwbuf[516] = {0};
+	DATA_BLOB decrypt_pwbuf = data_blob_const(pwbuf, 516);
 	bool ok;
 	int rc;
 
-	DATA_BLOB confounded_session_key;
-
-	int confounder_len = 8;
-	uint8_t confounder[8];
-
-	*pwd = NULL;
-
-	if (!pwd_buf) {
+	if (pwd_buf == NULL) {
 		return WERR_INVALID_PASSWORD;
 	}
+
+	*pwd = NULL;
 
 	if (session_key->length != 16) {
 		DEBUG(10,("invalid session key\n"));
 		return WERR_INVALID_PASSWORD;
 	}
 
-	confounded_session_key = data_blob_talloc(mem_ctx, NULL, 16);
+	confounder = data_blob_const(&pwd_buf->data[0], 8);
+	memcpy(&pwbuf, &pwd_buf->data[8], 516);
 
-	memcpy(&confounder, &pwd_buf->data[0], confounder_len);
-	memcpy(&buffer, &pwd_buf->data[8], 516);
-
-	rc = gnutls_hash_init(&hash_hnd, GNUTLS_DIG_MD5);
+	rc = samba_gnutls_arcfour_confounded_md5(session_key,
+						 &confounder,
+						 &decrypt_pwbuf,
+						 SAMBA_GNUTLS_ENCRYPT);
 	if (rc < 0) {
-		result = gnutls_error_to_werror(rc, WERR_CONTENT_BLOCKED);
-		goto out;
+		ZERO_ARRAY(_confounder);
+		TALLOC_FREE(pwd_buf);
+		return gnutls_error_to_werror(rc, WERR_CONTENT_BLOCKED);
 	}
 
-	rc = gnutls_hash(hash_hnd, session_key->data, session_key->length);
-	if (rc < 0) {
-		gnutls_hash_deinit(hash_hnd, NULL);
-		result = gnutls_error_to_werror(rc, WERR_CONTENT_BLOCKED);
-		goto out;
-	}
-	rc = gnutls_hash(hash_hnd, confounder, confounder_len);
-	if (rc < 0) {
-		gnutls_hash_deinit(hash_hnd, NULL);
-		result = gnutls_error_to_werror(rc, WERR_CONTENT_BLOCKED);
-		goto out;
-	}
-	gnutls_hash_deinit(hash_hnd, confounded_session_key.data);
-
-	arcfour_crypt_blob(buffer, 516, &confounded_session_key);
-
-	ok = decode_pw_buffer(mem_ctx, buffer, pwd, &pwd_len, CH_UTF16);
-
-	ZERO_ARRAY(confounder);
-	ZERO_ARRAY(buffer);
-
-	data_blob_clear_free(&confounded_session_key);
+	ok = decode_pw_buffer(mem_ctx,
+			      decrypt_pwbuf.data,
+			      pwd,
+			      &decrypt_pwbuf.length,
+			      CH_UTF16);
+	ZERO_ARRAY(pwbuf);
 
 	if (!ok) {
-		result = WERR_INVALID_PASSWORD;
-		goto out;
+		return WERR_INVALID_PASSWORD;
 	}
 
-	result = WERR_OK;
-out:
-	return result;
+	return WERR_OK;
 }
-

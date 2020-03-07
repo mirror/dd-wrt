@@ -29,6 +29,7 @@
 #include "libcli/security/dom_sid.h"
 #include "gen_ndr/auth.h"
 #include "mdssvc.h"
+#include "smbd/globals.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_RPC_SRV
@@ -63,6 +64,13 @@ static bool rpc_setup_mdssvc(struct tevent_context *ev_ctx,
 	NTSTATUS status;
 	enum rpc_service_mode_e service_mode = rpc_service_mode(t->name);
 	enum rpc_daemon_type_e mdssvc_type = rpc_mdssd_daemon();
+	bool external = service_mode != RPC_SERVICE_MODE_EMBEDDED ||
+			mdssvc_type != RPC_DAEMON_EMBEDDED;
+	bool in_mdssd = external && am_parent == NULL;
+
+	if (external && !in_mdssd) {
+		return true;
+	}
 
 	mdssvc_cb.init         = mdssvc_init_cb;
 	mdssvc_cb.shutdown     = mdssvc_shutdown_cb;
@@ -73,12 +81,16 @@ static bool rpc_setup_mdssvc(struct tevent_context *ev_ctx,
 		return false;
 	}
 
-	if (service_mode != RPC_SERVICE_MODE_EMBEDDED
-	    || mdssvc_type != RPC_DAEMON_EMBEDDED) {
+	if (external) {
 		return true;
 	}
 
-	return rpc_setup_embedded(ev_ctx, msg_ctx, t, pipe_name);
+	status = rpc_setup_embedded(ev_ctx, msg_ctx, t, pipe_name);
+	if (!NT_STATUS_IS_OK(status)) {
+		return false;
+	}
+
+	return true;
 }
 
 static struct rpc_module_fns rpc_module_mdssvc_fns = {
@@ -108,6 +120,8 @@ bool shutdown_service_mdssvc(void)
 
 static NTSTATUS create_mdssvc_policy_handle(TALLOC_CTX *mem_ctx,
 					    struct pipes_struct *p,
+					    int snum,
+					    const char *sharename,
 					    const char *path,
 					    struct policy_handle *handle)
 {
@@ -118,6 +132,8 @@ static NTSTATUS create_mdssvc_policy_handle(TALLOC_CTX *mem_ctx,
 	mds_ctx = mds_init_ctx(mem_ctx,
 			       messaging_tevent_context(p->msg_ctx),
 			       p->session_info,
+			       snum,
+			       sharename,
 			       path);
 	if (mds_ctx == NULL) {
 		DEBUG(1, ("error in mds_init_ctx for: %s\n", path));
@@ -135,56 +151,77 @@ static NTSTATUS create_mdssvc_policy_handle(TALLOC_CTX *mem_ctx,
 
 void _mdssvc_open(struct pipes_struct *p, struct mdssvc_open *r)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	int snum;
+	char *outpath = discard_const_p(char, r->out.share_path);
 	char *path;
 	NTSTATUS status;
 
-	DEBUG(10, ("%s: [%s]\n", __func__, r->in.share_name));
+	DBG_DEBUG("[%s]\n", r->in.share_name);
+
+	*r->out.device_id = *r->in.device_id;
+	*r->out.unkn2 = *r->in.unkn2;
+	*r->out.unkn3 = *r->in.unkn3;
+	outpath[0] = '\0';
 
 	snum = lp_servicenumber(r->in.share_name);
 	if (!VALID_SNUM(snum)) {
+		return;
+	}
+
+	path = lp_path(talloc_tos(), lp_sub, snum);
+	if (path == NULL) {
+		DBG_ERR("Couldn't create policy handle for %s\n",
+			r->in.share_name);
 		p->fault_state = DCERPC_FAULT_CANT_PERFORM;
 		return;
 	}
 
-	if (lp_spotlight(snum)) {
-		DEBUG(10, ("Spotlight enabled: %s\n", r->in.share_name));
-
-		path = lp_path(talloc_tos(), snum);
-		if (path == NULL) {
-			DEBUG(1, ("Couldn't create policy handle for %s\n",
-				  r->in.share_name));
-			p->fault_state = DCERPC_FAULT_CANT_PERFORM;
-			return;
-		}
-
-		status = create_mdssvc_policy_handle(p->mem_ctx, p, path,
-						     r->out.handle);
-		if (!NT_STATUS_IS_OK(status)) {
-			DEBUG(1, ("Couldn't create policy handle for %s\n",
-				  r->in.share_name));
-			talloc_free(path);
-			p->fault_state = DCERPC_FAULT_CANT_PERFORM;
-			return;
-		}
-
-		strlcpy(discard_const_p(char, r->out.share_path), path, 1024);
+	status = create_mdssvc_policy_handle(p->mem_ctx, p,
+					     snum,
+					     r->in.share_name,
+					     path,
+					     r->out.handle);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("Couldn't create policy handle for %s\n",
+			r->in.share_name);
 		talloc_free(path);
-		*r->out.device_id = *r->in.device_id;
+		p->fault_state = DCERPC_FAULT_CANT_PERFORM;
+		return;
 	}
 
-	*r->out.unkn2 = 0x17;
-	*r->out.unkn3 = 0;
-
+	strlcpy(outpath, path, 1024);
+	talloc_free(path);
 	return;
+}
+
+static bool is_zero_policy_handle(const struct policy_handle *h)
+{
+	struct GUID zero_uuid = {0};
+
+	if (h->handle_type != 0) {
+		return false;
+	}
+	if (!GUID_equal(&h->uuid, &zero_uuid)) {
+		return false;
+	}
+	return true;
 }
 
 void _mdssvc_unknown1(struct pipes_struct *p, struct mdssvc_unknown1 *r)
 {
 	struct mds_ctx *mds_ctx;
 
-	if (!find_policy_by_hnd(p, &r->in.handle, (void **)(void *)&mds_ctx)) {
-		DEBUG(1, ("%s: invalid handle\n", __func__));
+	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&mds_ctx)) {
+		if (is_zero_policy_handle(r->in.handle)) {
+			p->fault_state = 0;
+		} else {
+			p->fault_state = DCERPC_NCA_S_PROTO_ERROR;
+		}
+		*r->out.status = 0;
+		*r->out.flags = 0;
+		*r->out.unkn7 = 0;
 		return;
 	}
 
@@ -203,8 +240,15 @@ void _mdssvc_cmd(struct pipes_struct *p, struct mdssvc_cmd *r)
 	char *rbuf;
 	struct mds_ctx *mds_ctx;
 
-	if (!find_policy_by_hnd(p, &r->in.handle, (void **)(void *)&mds_ctx)) {
-		DEBUG(1, ("%s: invalid handle\n", __func__));
+	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&mds_ctx)) {
+		if (is_zero_policy_handle(r->in.handle)) {
+			p->fault_state = 0;
+		} else {
+			p->fault_state = DCERPC_NCA_S_PROTO_ERROR;
+		}
+		r->out.response_blob->size = 0;
+		*r->out.fragment = 0;
+		*r->out.unkn9 = 0;
 		return;
 	}
 
@@ -252,13 +296,14 @@ void _mdssvc_cmd(struct pipes_struct *p, struct mdssvc_cmd *r)
 	r->out.response_blob->spotlight_blob = (uint8_t *)rbuf;
 	r->out.response_blob->size = r->in.max_fragment_size1;
 
+	/* We currently don't use fragmentation at the mdssvc RPC layer */
+	*r->out.fragment = 0;
+
 	ok = mds_dispatch(mds_ctx, &r->in.request_blob, r->out.response_blob);
 	if (ok) {
-		*r->out.status = 0;
 		*r->out.unkn9 = 0;
 	} else {
 		/* FIXME: just interpolating from AFP, needs verification */
-		*r->out.status = UINT32_MAX;
 		*r->out.unkn9 = UINT32_MAX;
 	}
 
@@ -268,17 +313,25 @@ void _mdssvc_cmd(struct pipes_struct *p, struct mdssvc_cmd *r)
 void _mdssvc_close(struct pipes_struct *p, struct mdssvc_close *r)
 {
 	struct mds_ctx *mds_ctx;
+	bool ok;
 
-	if (!find_policy_by_hnd(p, &r->in.in_handle, (void **)(void *)&mds_ctx)) {
-		DEBUG(1, ("%s: invalid handle\n", __func__));
+	ok = find_policy_by_hnd(p, r->in.in_handle, (void **)(void *)&mds_ctx);
+	if (!ok) {
+		DBG_WARNING("invalid handle\n");
+		if (is_zero_policy_handle(r->in.in_handle)) {
+			p->fault_state = 0;
+		} else {
+			p->fault_state = DCERPC_NCA_S_PROTO_ERROR;
+		}
 		return;
 	}
 
-	DEBUG(10, ("%s: path: %s\n", __func__, mds_ctx->spath));
+	DBG_DEBUG("Close mdssvc handle for path: %s\n", mds_ctx->spath);
+	TALLOC_FREE(mds_ctx);
 
-	close_policy_hnd(p, &r->in.in_handle);
+	*r->out.out_handle = *r->in.in_handle;
+	close_policy_hnd(p, r->in.in_handle);
 
-	ZERO_STRUCTP(r->out.out_handle);
 	*r->out.status = 0;
 
 	return;

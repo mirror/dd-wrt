@@ -1681,6 +1681,9 @@ class TestDCERPC_BIND(RawDCERPCTest):
     def test_auth_none_call_request(self):
         return self._test_auth_none_level_request(dcerpc.DCERPC_AUTH_LEVEL_CALL)
 
+    def test_auth_none_packet_request(self):
+        return self._test_auth_none_level_request(dcerpc.DCERPC_AUTH_LEVEL_PACKET)
+
     def _test_neg_xmit_check_values(self,
                                     req_xmit=None,
                                     req_recv=None,
@@ -2611,7 +2614,7 @@ class TestDCERPC_BIND(RawDCERPCTest):
         self.assertIsNone(rep)
         self.assertNotConnected()
 
-    def test_spnego_connect_request(self):
+    def _test_spnego_connect_upgrade_request(self, upgrade_auth_level):
         ndr32 = base.transfer_syntax_ndr()
 
         tsf1_list = [ndr32]
@@ -2730,9 +2733,9 @@ class TestDCERPC_BIND(RawDCERPCTest):
         self.assertEquals(rep.u.cancel_count, 0)
         self.assertGreaterEqual(len(rep.u.stub_and_verifier), rep.u.alloc_hint)
 
-        # Now a request with auth_info DCERPC_AUTH_LEVEL_INTEGRITY
+        # Now a request with auth_info upgrade_auth_level
         auth_info = self.generate_auth(auth_type=auth_type,
-                                       auth_level=dcerpc.DCERPC_AUTH_LEVEL_INTEGRITY,
+                                       auth_level=upgrade_auth_level,
                                        auth_context_id=auth_context_id,
                                        auth_blob=b"\x01" + b"\x00" * 15)
         req = self.generate_request(call_id=4,
@@ -2758,7 +2761,15 @@ class TestDCERPC_BIND(RawDCERPCTest):
         self.assertIsNone(rep)
         self.assertNotConnected()
 
-    def test_spnego_integrity_request(self):
+    def test_spnego_connect_packet_upgrade(self):
+        return self._test_spnego_connect_upgrade_request(
+                                        dcerpc.DCERPC_AUTH_LEVEL_PACKET)
+
+    def test_spnego_connect_integrity_upgrade(self):
+        return self._test_spnego_connect_upgrade_request(
+                                        dcerpc.DCERPC_AUTH_LEVEL_INTEGRITY)
+
+    def _test_spnego_connect_downgrade_request(self, initial_auth_level):
         ndr32 = base.transfer_syntax_ndr()
 
         tsf1_list = [ndr32]
@@ -2774,7 +2785,7 @@ class TestDCERPC_BIND(RawDCERPCTest):
         g.set_credentials(c)
         g.want_feature(gensec.FEATURE_DCE_STYLE)
         auth_type = dcerpc.DCERPC_AUTH_TYPE_SPNEGO
-        auth_level = dcerpc.DCERPC_AUTH_LEVEL_INTEGRITY
+        auth_level = initial_auth_level
         auth_context_id = 2
         g.start_mech_by_authtype(auth_type, auth_level)
         from_server = b""
@@ -2870,6 +2881,14 @@ class TestDCERPC_BIND(RawDCERPCTest):
         rep = self.recv_pdu()
         self.assertIsNone(rep)
         self.assertNotConnected()
+
+    def test_spnego_packet_downgrade_connect(self):
+        return self._test_spnego_connect_downgrade_request(
+                                        dcerpc.DCERPC_AUTH_LEVEL_PACKET)
+
+    def test_spnego_integrity_downgrade_connect(self):
+        return self._test_spnego_connect_upgrade_request(
+                                        dcerpc.DCERPC_AUTH_LEVEL_INTEGRITY)
 
     def test_spnego_unfinished_request(self):
         ndr32 = base.transfer_syntax_ndr()

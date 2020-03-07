@@ -39,8 +39,8 @@ void tls_cert_generate(TALLOC_CTX *mem_ctx,
 		       const char *keyfile, const char *certfile,
 		       const char *cafile)
 {
-	gnutls_x509_crt cacrt, crt;
-	gnutls_x509_privkey key, cakey;
+	gnutls_x509_crt_t cacrt, crt;
+	gnutls_x509_privkey_t key, cakey;
 	uint32_t serial = (uint32_t)time(NULL);
 	unsigned char keyid[100];
 	char buf[4096];
@@ -61,8 +61,6 @@ void tls_cert_generate(TALLOC_CTX *mem_ctx,
 		goto failed; \
 	} \
 } while (0)
-
-	TLSCHECK(gnutls_global_init());
 
 	DEBUG(0,("Attempting to autogenerate TLS self-signed keys for https for hostname '%s'\n", 
 		 hostname));
@@ -150,7 +148,6 @@ void tls_cert_generate(TALLOC_CTX *mem_ctx,
 	gnutls_x509_privkey_deinit(cakey);
 	gnutls_x509_crt_deinit(cacrt);
 	gnutls_x509_crt_deinit(crt);
-	gnutls_global_deinit();
 
 	DEBUG(0,("TLS self-signed keys generated OK\n"));
 	return;

@@ -33,8 +33,11 @@
 #include "librpc/gen_ndr/dcerpc.h"
 #include "param/param.h"
 #include "auth/gensec/gensec_toplevel_proto.h"
-#include "lib/crypto/aes.h"
 #include "libds/common/roles.h"
+
+#ifndef HAVE_GNUTLS_AES_CFB8
+#include "lib/crypto/aes.h"
+#endif
 
 #include "lib/crypto/gnutls_helpers.h"
 #include <gnutls/gnutls.h>
@@ -147,6 +150,43 @@ static NTSTATUS netsec_do_seq_num(struct schannel_state *state,
 				  uint8_t seq_num[8])
 {
 	if (state->creds->negotiate_flags & NETLOGON_NEG_SUPPORTS_AES) {
+#ifdef HAVE_GNUTLS_AES_CFB8
+		gnutls_cipher_hd_t cipher_hnd = NULL;
+		gnutls_datum_t key = {
+			.data = state->creds->session_key,
+			.size = sizeof(state->creds->session_key),
+		};
+		uint32_t iv_size =
+			gnutls_cipher_get_iv_size(GNUTLS_CIPHER_AES_128_CFB8);
+		uint8_t _iv[iv_size];
+		gnutls_datum_t iv = {
+			.data = _iv,
+			.size = iv_size,
+		};
+		int rc;
+
+		ZERO_ARRAY(_iv);
+
+		memcpy(iv.data + 0, checksum, 8);
+		memcpy(iv.data + 8, checksum, 8);
+
+		rc = gnutls_cipher_init(&cipher_hnd,
+					GNUTLS_CIPHER_AES_128_CFB8,
+					&key,
+					&iv);
+		if (rc < 0) {
+			return gnutls_error_to_ntstatus(rc,
+							NT_STATUS_CRYPTO_SYSTEM_INVALID);
+		}
+
+		rc = gnutls_cipher_encrypt(cipher_hnd, seq_num, 8);
+		gnutls_cipher_deinit(cipher_hnd);
+		if (rc < 0) {
+			return gnutls_error_to_ntstatus(rc,
+							NT_STATUS_CRYPTO_SYSTEM_INVALID);
+		}
+
+#else /* NOT HAVE_GNUTLS_AES_CFB8 */
 		AES_KEY key;
 		uint8_t iv[AES_BLOCK_SIZE];
 
@@ -156,6 +196,7 @@ static NTSTATUS netsec_do_seq_num(struct schannel_state *state,
 		memcpy(iv+8, checksum, 8);
 
 		aes_cfb8_encrypt(seq_num, seq_num, 8, &key, iv, AES_ENCRYPT);
+#endif /* HAVE_GNUTLS_AES_CFB8 */
 	} else {
 		static const uint8_t zeros[4];
 		uint8_t _sequence_key[16];
@@ -220,6 +261,100 @@ static NTSTATUS netsec_do_seal(struct schannel_state *state,
 			       bool forward)
 {
 	if (state->creds->negotiate_flags & NETLOGON_NEG_SUPPORTS_AES) {
+#ifdef HAVE_GNUTLS_AES_CFB8
+		gnutls_cipher_hd_t cipher_hnd = NULL;
+		uint8_t sess_kf0[16] = {0};
+		gnutls_datum_t key = {
+			.data = sess_kf0,
+			.size = sizeof(sess_kf0),
+		};
+		uint32_t iv_size =
+			gnutls_cipher_get_iv_size(GNUTLS_CIPHER_AES_128_CFB8);
+		uint8_t _iv[iv_size];
+		gnutls_datum_t iv = {
+			.data = _iv,
+			.size = iv_size,
+		};
+		uint32_t i;
+		int rc;
+
+		for (i = 0; i < key.size; i++) {
+			key.data[i] = state->creds->session_key[i] ^ 0xf0;
+		}
+
+		ZERO_ARRAY(_iv);
+
+		memcpy(iv.data + 0, seq_num, 8);
+		memcpy(iv.data + 8, seq_num, 8);
+
+		rc = gnutls_cipher_init(&cipher_hnd,
+					GNUTLS_CIPHER_AES_128_CFB8,
+					&key,
+					&iv);
+		if (rc < 0) {
+			DBG_ERR("ERROR: gnutls_cipher_init: %s\n",
+				gnutls_strerror(rc));
+			return NT_STATUS_NO_MEMORY;
+		}
+
+		if (forward) {
+			rc = gnutls_cipher_encrypt(cipher_hnd,
+						   confounder,
+						   8);
+			if (rc < 0) {
+				gnutls_cipher_deinit(cipher_hnd);
+				return gnutls_error_to_ntstatus(rc, NT_STATUS_CRYPTO_SYSTEM_INVALID);
+			}
+
+			rc = gnutls_cipher_encrypt(cipher_hnd,
+						   data,
+						   length);
+			if (rc < 0) {
+				gnutls_cipher_deinit(cipher_hnd);
+				return gnutls_error_to_ntstatus(rc, NT_STATUS_CRYPTO_SYSTEM_INVALID);
+			}
+		} else {
+
+			/*
+			 * Workaround bug present in gnutls 3.6.8:
+			 *
+			 * gnutls_cipher_decrypt() uses an optimization
+			 * internally that breaks decryption when processing
+			 * buffers with their length not being a multiple
+			 * of the blocksize.
+			 */
+
+			uint8_t tmp[16] = { 0, };
+			uint32_t tmp_dlength = MIN(length, sizeof(tmp) - 8);
+
+			memcpy(tmp, confounder, 8);
+			memcpy(tmp + 8, data, tmp_dlength);
+
+			rc = gnutls_cipher_decrypt(cipher_hnd,
+						   tmp,
+						   8 + tmp_dlength);
+			if (rc < 0) {
+				ZERO_STRUCT(tmp);
+				gnutls_cipher_deinit(cipher_hnd);
+				return gnutls_error_to_ntstatus(rc, NT_STATUS_CRYPTO_SYSTEM_INVALID);
+			}
+
+			memcpy(confounder, tmp, 8);
+			memcpy(data, tmp + 8, tmp_dlength);
+			ZERO_STRUCT(tmp);
+
+			if (length > tmp_dlength) {
+				rc = gnutls_cipher_decrypt(cipher_hnd,
+							   data + tmp_dlength,
+							   length - tmp_dlength);
+				if (rc < 0) {
+					gnutls_cipher_deinit(cipher_hnd);
+					return gnutls_error_to_ntstatus(rc, NT_STATUS_CRYPTO_SYSTEM_INVALID);
+				}
+			}
+		}
+		gnutls_cipher_deinit(cipher_hnd);
+#else /* NOT HAVE_GNUTLS_AES_CFB8 */
 		AES_KEY key;
 		uint8_t iv[AES_BLOCK_SIZE];
 		uint8_t sess_kf0[16];
@@ -241,6 +376,7 @@ static NTSTATUS netsec_do_seal(struct schannel_state *state,
 			aes_cfb8_encrypt(confounder, confounder, 8, &key, iv, AES_DECRYPT);
 			aes_cfb8_encrypt(data, data, length, &key, iv, AES_DECRYPT);
 		}
+#endif /* HAVE_GNUTLS_AES_CFB8 */
 	} else {
 		gnutls_cipher_hd_t cipher_hnd;
 		uint8_t _sealing_key[16];
@@ -266,7 +402,7 @@ static NTSTATUS netsec_do_seal(struct schannel_state *state,
 				      digest2);
 		if (rc < 0) {
 			ZERO_ARRAY(digest2);
-			return NT_STATUS_INTERNAL_ERROR;
+			return gnutls_error_to_ntstatus(rc, NT_STATUS_HMAC_NOT_SUPPORTED);
 		}
 
 		rc = gnutls_hmac_fast(GNUTLS_MAC_MD5,
@@ -278,7 +414,7 @@ static NTSTATUS netsec_do_seal(struct schannel_state *state,
 
 		ZERO_ARRAY(digest2);
 		if (rc < 0) {
-			return NT_STATUS_INTERNAL_ERROR;
+			return gnutls_error_to_ntstatus(rc, NT_STATUS_HMAC_NOT_SUPPORTED);
 		}
 
 		rc = gnutls_cipher_init(&cipher_hnd,
@@ -337,7 +473,7 @@ static NTSTATUS netsec_do_sign(struct schannel_state *state,
 				      state->creds->session_key,
 				      sizeof(state->creds->session_key));
 		if (rc < 0) {
-			return NT_STATUS_NO_MEMORY;
+			return gnutls_error_to_ntstatus(rc, NT_STATUS_HMAC_NOT_SUPPORTED);
 		}
 
 		if (confounder) {

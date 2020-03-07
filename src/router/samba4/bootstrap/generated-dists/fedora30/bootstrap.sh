@@ -19,6 +19,7 @@ dnf install -y \
     bind-utils \
     binutils \
     bison \
+    chrpath \
     cups-devel \
     curl \
     dbus-devel \
@@ -45,7 +46,6 @@ dnf install -y \
     krb5-server \
     lcov \
     libacl-devel \
-    libaio-devel \
     libarchive-devel \
     libattr-devel \
     libblkid-devel \
@@ -67,7 +67,6 @@ dnf install -y \
     make \
     mingw64-gcc \
     ncurses-devel \
-    nettle-devel \
     openldap-devel \
     pam-devel \
     patch \
@@ -84,13 +83,7 @@ dnf install -y \
     popt-devel \
     procps-ng \
     psmisc \
-    python-crypto \
-    python-devel \
-    python-dns \
-    python-markdown \
-    python2-gpg \
     python3 \
-    python3-crypto \
     python3-devel \
     python3-dns \
     python3-gpg \

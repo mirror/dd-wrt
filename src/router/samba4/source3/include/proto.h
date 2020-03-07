@@ -138,12 +138,13 @@ struct named_mutex *grab_named_mutex(TALLOC_CTX *mem_ctx, const char *name,
 
 /* The following definitions come from lib/sharesec.c  */
 
-bool share_info_db_init(void);
+NTSTATUS share_info_db_init(void);
 struct security_descriptor *get_share_security_default( TALLOC_CTX *ctx, size_t *psize, uint32_t def_access);
 struct security_descriptor *get_share_security( TALLOC_CTX *ctx, const char *servicename,
 			      size_t *psize);
-bool set_share_security(const char *share_name, struct security_descriptor *psd);
-bool delete_share_security(const char *servicename);
+NTSTATUS set_share_security(const char *share_name,
+			    struct security_descriptor *psd);
+NTSTATUS delete_share_security(const char *servicename);
 bool share_access_check(const struct security_token *token,
 			const char *sharename,
 			uint32_t desired_access,
@@ -219,6 +220,7 @@ ssize_t sys_send(int s, const void *msg, size_t len, int flags);
 ssize_t sys_recvfrom(int s, void *buf, size_t len, int flags, struct sockaddr *from, socklen_t *fromlen);
 int sys_fcntl_ptr(int fd, int cmd, void *arg);
 int sys_fcntl_long(int fd, int cmd, long arg);
+int sys_fcntl_int(int fd, int cmd, int arg);
 void update_stat_ex_mtime(struct stat_ex *dst, struct timespec write_ts);
 void update_stat_ex_itime(struct stat_ex *dst, struct timespec itime);
 void update_stat_ex_create_time(struct stat_ex *dst, struct timespec create_time);
@@ -233,9 +235,10 @@ int sys_lstat(const char *fname,SMB_STRUCT_STAT *sbuf,
 	      bool fake_dir_create_times);
 int sys_posix_fallocate(int fd, off_t offset, off_t len);
 int sys_fallocate(int fd, uint32_t mode, off_t offset, off_t len);
-void kernel_flock(int fd, uint32_t share_mode, uint32_t access_mask);
+void kernel_flock(int fd, uint32_t share_access, uint32_t access_mask);
 DIR *sys_fdopendir(int fd);
 int sys_mknod(const char *path, mode_t mode, SMB_DEV_T dev);
+int sys_mknodat(int dirfd, const char *path, mode_t mode, SMB_DEV_T dev);
 char *sys_getwd(void);
 void set_effective_capability(enum smbd_capability capability);
 void drop_effective_capability(enum smbd_capability capability);
@@ -264,7 +267,8 @@ bool getgroups_unix_user(TALLOC_CTX *mem_ctx, const char *user,
 
 /* The following definitions come from lib/tallocmsg.c  */
 
-void register_msg_pool_usage(struct messaging_context *msg_ctx);
+void register_msg_pool_usage(TALLOC_CTX *mem_ctx,
+			     struct messaging_context *msg_ctx);
 
 /* The following definitions come from lib/time.c  */
 
@@ -284,6 +288,10 @@ void srv_put_dos_date2(char *buf,int offset, time_t unixdate);
 void srv_put_dos_date3(char *buf,int offset,time_t unixdate);
 void round_timespec(enum timestamp_set_resolution res, struct timespec *ts);
 void put_long_date_timespec(enum timestamp_set_resolution res, char *p, struct timespec ts);
+void put_long_date_full_timespec(enum timestamp_set_resolution res,
+				 char *p,
+				 const struct timespec *ts);
+struct timespec pull_long_date_full_timespec(const char *p);
 void put_long_date(char *p, time_t t);
 void dos_filetime_timespec(struct timespec *tsp);
 time_t make_unix_date(const void *date_ptr, int zone_offset);
@@ -297,7 +305,6 @@ void TimeInit(void);
 void get_process_uptime(struct timeval *ret_time);
 void get_startup_time(struct timeval *ret_time);
 time_t nt_time_to_unix_abs(const NTTIME *nt);
-time_t uint64s_nt_time_to_unix_abs(const uint64_t *src);
 void unix_to_nt_time_abs(NTTIME *nt, time_t t);
 const char *time_to_asc(const time_t t);
 const char *display_time(NTTIME nttime);
@@ -336,7 +343,6 @@ ssize_t message_push_blob(uint8_t **outbuf, DATA_BLOB blob);
 char *unix_clean_name(TALLOC_CTX *ctx, const char *s);
 char *clean_name(TALLOC_CTX *ctx, const char *s);
 ssize_t write_data_at_offset(int fd, const char *buffer, size_t N, off_t pos);
-int set_blocking(int fd, bool set);
 NTSTATUS init_before_fork(void);
 NTSTATUS reinit_after_fork(struct messaging_context *msg_ctx,
 			   struct tevent_context *ev_ctx,
@@ -398,7 +404,6 @@ uint32_t map_share_mode_to_deny_mode(uint32_t share_access, uint32_t private_opt
 
 #include "lib/util_procid.h"
 
-#define serverid_equal(p1, p2) server_id_equal(p1,p2)
 struct server_id interpret_pid(const char *pid_string);
 bool is_offset_safe(const char *buf_base, size_t buf_len, char *ptr, size_t off);
 char *get_safe_ptr(const char *buf_base, size_t buf_len, char *ptr, size_t off);
@@ -423,6 +428,7 @@ bool map_open_params_to_ntcreate(const char *smb_base_fname,
 				 uint32_t *pprivate_flags);
 struct security_unix_token *copy_unix_token(TALLOC_CTX *ctx, const struct security_unix_token *tok);
 struct security_unix_token *root_unix_token(TALLOC_CTX *mem_ctx);
+char *utok_string(TALLOC_CTX *mem_ctx, const struct security_unix_token *tok);
 bool dir_check_ftype(uint32_t mode, uint32_t dirtype);
 
 /* The following definitions come from lib/util_builtin.c  */
@@ -564,7 +570,6 @@ int get_remote_hostname(const struct tsocket_address *remote_address,
 int create_pipe_sock(const char *socket_dir,
 		     const char *socket_name,
 		     mode_t dir_perms);
-int create_tcpip_socket(const struct sockaddr_storage *ifss, uint16_t *port);
 const char *get_mydnsfullname(void);
 bool is_myname_or_ipaddr(const char *s);
 int poll_one_fd(int fd, int events, int timeout, int *revents);
@@ -619,9 +624,6 @@ size_t strlen_m(const char *s);
 size_t strlen_m_term(const char *s);
 size_t strlen_m_term_null(const char *s);
 int fstr_sprintf(fstring s, const char *fmt, ...);
-bool str_list_sub_basic( char **list, const char *smb_name,
-			 const char *domain_name );
-bool str_list_substitute(char **list, const char *pattern, const char *insert);
 
 char *ipstr_list_make(char **ipstr_list,
 			const struct ip_service *ip_list,
@@ -733,9 +735,18 @@ NTSTATUS trust_pw_change(struct netlogon_creds_cli_context *context,
 
 /* The following definitions come from param/loadparm.c  */
 
+const struct loadparm_substitution *loadparm_s3_global_substitution(void);
+
+char *lp_parm_substituted_string(TALLOC_CTX *mem_ctx,
+				 const struct loadparm_substitution *lp_sub,
+				 int snum,
+				 const char *type,
+				 const char *option,
+				 const char *def);
+
 #include "source3/param/param_proto.h"
 
-char *lp_servicename(TALLOC_CTX *ctx, int);
+char *lp_servicename(TALLOC_CTX *ctx, const struct loadparm_substitution *, int);
 const char *lp_const_servicename(int);
 bool lp_autoloaded(int);
 const char *lp_dnsdomain(void);
@@ -762,7 +773,6 @@ int lp_wi_scan_global_parametrics(
 		   void *private_data),
 	void *private_data);
 
-char *lp_parm_talloc_string(TALLOC_CTX *ctx, int snum, const char *type, const char *option, const char *def);
 const char *lp_parm_const_string(int snum, const char *type, const char *option, const char *def);
 struct loadparm_service;
 const char *lp_parm_const_string_service(struct loadparm_service *service, const char *type,
@@ -854,7 +864,9 @@ bool lp_preferred_master(void);
 void lp_remove_service(int snum);
 void lp_copy_service(int snum, const char *new_name);
 int lp_default_server_announce(void);
-const char *lp_printername(TALLOC_CTX *ctx, int snum);
+const char *lp_printername(TALLOC_CTX *ctx,
+			   const struct loadparm_substitution *lp_sub,
+			   int snum);
 void lp_set_logfile(const char *name);
 int lp_maxprintjobs(int snum);
 const char *lp_printcapname(void);
@@ -862,7 +874,6 @@ bool lp_disable_spoolss( void );
 void lp_set_spoolss_state( uint32_t state );
 uint32_t lp_get_spoolss_state( void );
 struct smb_signing_state;
-bool lp_use_sendfile(int snum, struct smb_signing_state *signing_state);
 void set_use_sendfile(int snum, bool val);
 void lp_set_mangling_method(const char *new_method);
 bool lp_posix_pathnames(void);
@@ -870,7 +881,6 @@ void lp_set_posix_pathnames(void);
 enum brl_flavour lp_posix_cifsu_locktype(files_struct *fsp);
 void lp_set_posix_default_cifsx_readwrite_locktype(enum brl_flavour val);
 int lp_min_receive_file_size(void);
-char* lp_perfcount_module(TALLOC_CTX *ctx);
 void widelinks_warning(int snum);
 const char *lp_ncalrpc_dir(void);
 void _lp_set_server_role(int server_role);
@@ -901,11 +911,6 @@ NTSTATUS sessionid_traverse_read(int (*fn)(const char *key,
 					   struct sessionid *session,
 					   void *private_data),
 				 void *private_data);
-
-/* The following definitions come from utils/passwd_util.c  */
-
-char *stdin_new_passwd( void);
-char *get_pass( const char *prompt, bool stdin_get);
 
 /* The following definitions come from lib/avahi.c */
 

@@ -25,6 +25,7 @@
 #include "rpc_server/dcerpc_server.h"
 #include "auth/auth.h"
 #include "auth/credentials/credentials.h"
+#include "librpc/rpc/dcerpc.h"
 #include "librpc/ndr/ndr_table.h"
 #include "param/param.h"
 
@@ -276,9 +277,6 @@ static NTSTATUS remote_op_ndr_pull(struct dcesrv_call_state *dce_call, TALLOC_CT
         /* unravel the NDR for the packet */
 	ndr_err = table->calls[opnum].ndr_pull(pull, NDR_IN, *r);
 	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
-		dcerpc_log_packet(dce_call->conn->packet_log_dir,
-						  table, opnum, NDR_IN,
-				  &dce_call->pkt.u.request.stub_and_verifier);
 		dce_call->fault_code = DCERPC_FAULT_NDR;
 		return NT_STATUS_NET_WRITE_FAULT;
 	}
@@ -448,6 +446,12 @@ static NTSTATUS remote_op_init_server(struct dcesrv_context *dce_ctx, const stru
 	return NT_STATUS_OK;
 }
 
+static NTSTATUS remote_op_shutdown_server(struct dcesrv_context *dce_ctx,
+				const struct dcesrv_endpoint_server *ep_server)
+{
+	return NT_STATUS_OK;
+}
+
 static bool remote_fill_interface(struct dcesrv_interface *iface, const struct ndr_interface_table *if_tabl)
 {
 	iface->name = if_tabl->name;
@@ -498,8 +502,11 @@ NTSTATUS dcerpc_server_remote_init(TALLOC_CTX *ctx)
 		/* fill in our name */
 		.name = "remote",
 
+		.initialized = false,
+
 		/* fill in all the operations */
 		.init_server = remote_op_init_server,
+		.shutdown_server = remote_op_shutdown_server,
 
 		.interface_by_uuid = remote_op_interface_by_uuid,
 		.interface_by_name = remote_op_interface_by_name

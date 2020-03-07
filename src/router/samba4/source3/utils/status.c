@@ -93,7 +93,7 @@ static unsigned int Ucrit_checkPid(struct server_id pid)
 		return 1;
 
 	for (i=0;i<Ucrit_MaxPid;i++) {
-		if (serverid_equal(&pid, &Ucrit_pid[i])) {
+		if (server_id_equal(&pid, &Ucrit_pid[i])) {
 			return 1;
 		}
 	}
@@ -156,8 +156,8 @@ static int print_share_mode(struct file_id fid,
 			case DENY_ALL:  d_printf("DENY_ALL   "); break;
 			case DENY_DOS:  d_printf("DENY_DOS   "); break;
 			case DENY_READ: d_printf("DENY_READ  "); break;
-			case DENY_WRITE:printf("DENY_WRITE "); break;
-			case DENY_FCB:  d_printf("DENY_FCB "); break;
+			case DENY_WRITE:d_printf("DENY_WRITE "); break;
+			case DENY_FCB:  d_printf("DENY_FCB   "); break;
 			default: {
 				d_printf("unknown-please report ! "
 					 "e->share_access = 0x%x, "
@@ -248,6 +248,7 @@ static void print_brl(struct file_id id,
 	char *fname = NULL;
 	struct share_mode_lock *share_mode;
 	struct server_id_buf tmp;
+	struct file_id_buf ftmp;
 
 	if (count==0) {
 		d_printf("Byte range locks:\n");
@@ -280,7 +281,8 @@ static void print_brl(struct file_id id,
 	}
 
 	d_printf("%-10s %-15s %-4s %-9jd %-9jd %-24s %-24s\n",
-		 server_id_str_buf(pid, &tmp), file_id_string_tos(&id),
+		 server_id_str_buf(pid, &tmp),
+		 file_id_str_buf(id, &ftmp),
 		 desc,
 		 (intmax_t)start, (intmax_t)size,
 		 sharepath, fname);
@@ -533,7 +535,7 @@ int main(int argc, const char *argv[])
 	bool show_processes, show_locks, show_shares;
 	bool show_notify = false;
 	bool resolve_uids = false;
-	poptContext pc;
+	poptContext pc = NULL;
 	struct poptOption long_options[] = {
 		POPT_AUTOHELP
 		{
@@ -744,11 +746,13 @@ int main(int argc, const char *argv[])
 		case 'P':
 			/* Dump profile data */
 			ok = status_profile_dump(verbose);
-			return ok ? 0 : 1;
+			ret = ok ? 0 : 1;
+			goto done;
 		case 'R':
 			/* Continuously display rate-converted data */
 			ok = status_profile_rates(verbose);
-			return ok ? 0 : 1;
+			ret = ok ? 0 : 1;
+			goto done;
 		default:
 			break;
 	}
@@ -844,6 +848,7 @@ int main(int argc, const char *argv[])
 	}
 
 done:
+	poptFreeContext(pc);
 	TALLOC_FREE(frame);
 	return ret;
 }

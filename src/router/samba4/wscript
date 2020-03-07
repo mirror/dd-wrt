@@ -167,13 +167,14 @@ def configure(conf):
     conf.RECURSE('dynconfig')
     conf.RECURSE('selftest')
 
+    conf.CHECK_CFG(package='zlib', minversion='1.2.3',
+                   args='--cflags --libs',
+                   mandatory=True)
+    conf.CHECK_FUNCS_IN('inflateInit2', 'z')
+
     if conf.CHECK_FOR_THIRD_PARTY():
         conf.RECURSE('third_party')
     else:
-        if not conf.CHECK_ZLIB():
-            raise Errors.WafError('zlib development packages have not been found.\nIf third_party is installed, check that it is in the proper place.')
-        else:
-            conf.define('USING_SYSTEM_ZLIB',1)
 
         if not conf.CHECK_POPT():
             raise Errors.WafError('popt development packages have not been found.\nIf third_party is installed, check that it is in the proper place.')
@@ -320,7 +321,7 @@ def configure(conf):
     # allows us to find problems on our development hosts faster.
     # It also results in faster load time.
 
-    conf.env.asneeded_ldflags = conf.ADD_LDFLAGS('-Wl,--as-needed', testflags=True)
+    conf.add_as_needed()
 
     if not conf.CHECK_NEED_LC("-lc not needed"):
         conf.ADD_LDFLAGS('-lc', testflags=False)
@@ -418,10 +419,9 @@ def wafdocs(ctx):
     os.system('pwd')
     list = recursive_dirlist('../buildtools/wafsamba', '.', pattern='*.py')
 
-    cmd='PYTHONPATH=bin/python pydoctor --project-name=wafsamba --project-url=http://www.samba.org --make-html --docformat=restructuredtext'
     print(list)
-    for f in list:
-        cmd += ' --add-module %s' % f
+    cmd='PYTHONPATH=bin/python pydoctor --project-name=wafsamba --project-url=http://www.samba.org --make-html --docformat=restructuredtext' +\
+        "".join(' --add-module %s' % f for f in list)
     print("Running: %s" % cmd)
     status = os.system(cmd)
     if os.WEXITSTATUS(status):

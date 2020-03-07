@@ -49,61 +49,6 @@ const struct ndr_interface_call *dcerpc_iface_find_call(const struct ndr_interfa
 	return NULL;
 }
 
-/* 
-   push a ncacn_packet into a blob, potentially with auth info
-*/
-NTSTATUS ncacn_push_auth(DATA_BLOB *blob, TALLOC_CTX *mem_ctx, 
-			 struct ncacn_packet *pkt,
-			 struct dcerpc_auth *auth_info)
-{
-	struct ndr_push *ndr;
-	enum ndr_err_code ndr_err;
-
-	ndr = ndr_push_init_ctx(mem_ctx);
-	if (!ndr) {
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	if (auth_info) {
-		pkt->auth_length = auth_info->credentials.length;
-	} else {
-		pkt->auth_length = 0;
-	}
-
-	ndr_err = ndr_push_ncacn_packet(ndr, NDR_SCALARS|NDR_BUFFERS, pkt);
-	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
-		return ndr_map_error2ntstatus(ndr_err);
-	}
-
-	if (auth_info) {
-#if 0
-		/* the s3 rpc server doesn't handle auth padding in
-		   bind requests. Use zero auth padding to keep us
-		   working with old servers */
-		uint32_t offset = ndr->offset;
-		ndr_err = ndr_push_align(ndr, 16);
-		if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
-			return ndr_map_error2ntstatus(ndr_err);
-		}
-		auth_info->auth_pad_length = ndr->offset - offset;
-#else
-		auth_info->auth_pad_length = 0;
-#endif
-		ndr_err = ndr_push_dcerpc_auth(ndr, NDR_SCALARS|NDR_BUFFERS, auth_info);
-		if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
-			return ndr_map_error2ntstatus(ndr_err);
-		}
-	}
-
-	*blob = ndr_push_blob(ndr);
-
-	/* fill in the frag length */
-	dcerpc_set_frag_length(blob, blob->length);
-
-	return NT_STATUS_OK;
-}
-
-
 struct epm_map_binding_state {
 	struct dcerpc_binding *binding;
 	const struct ndr_interface_table *table;
@@ -765,11 +710,9 @@ _PUBLIC_ NTSTATUS dcerpc_pipe_auth(TALLOC_CTX *mem_ctx,
 }
 
 
-NTSTATUS dcerpc_generic_session_key(struct dcecli_connection *c,
+NTSTATUS dcecli_generic_session_key(struct dcecli_connection *c,
 				    DATA_BLOB *session_key)
 {
-	*session_key = data_blob_null;
-
 	if (c != NULL) {
 		if (c->transport.transport != NCALRPC &&
 		    c->transport.transport != NCACN_UNIX_STREAM)
@@ -778,10 +721,7 @@ NTSTATUS dcerpc_generic_session_key(struct dcecli_connection *c,
 		}
 	}
 
-	/* this took quite a few CPU cycles to find ... */
-	session_key->data = discard_const_p(unsigned char, "SystemLibraryDTC");
-	session_key->length = 16;
-	return NT_STATUS_OK;
+	return dcerpc_generic_session_key(session_key);
 }
 
 /*
@@ -802,45 +742,6 @@ _PUBLIC_ NTSTATUS dcerpc_fetch_session_key(struct dcerpc_pipe *p,
 
 	return NT_STATUS_OK;
 }
-
-
-/*
-  log a rpc packet in a format suitable for ndrdump. This is especially useful
-  for sealed packets, where ethereal cannot easily see the contents
-
-  this triggers on a debug level of >= 10
-*/
-_PUBLIC_ void dcerpc_log_packet(const char *lockdir,
-				const struct ndr_interface_table *ndr,
-				uint32_t opnum, uint32_t flags,
-				const DATA_BLOB *pkt)
-{
-	const int num_examples = 20;
-	int i;
-
-	if (lockdir == NULL) return;
-
-	for (i=0;i<num_examples;i++) {
-		char *name=NULL;
-		int ret;
-		ret = asprintf(&name, "%s/rpclog/%s-%u.%d.%s",
-			       lockdir, ndr->name, opnum, i,
-			       (flags&NDR_IN)?"in":"out");
-		if (ret == -1) {
-			return;
-		}
-		if (!file_exist(name)) {
-			if (file_save(name, pkt->data, pkt->length)) {
-				DEBUG(10,("Logged rpc packet to %s\n", name));
-			}
-			free(name);
-			break;
-		}
-		free(name);
-	}
-}
-
-
 
 /*
   create a secondary context from a primary connection

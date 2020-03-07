@@ -34,7 +34,13 @@ typedef struct {
 	struct ldb_context *ldb_ctx;
 } PyLdbObject;
 
-#define pyldb_Ldb_AsLdbContext(pyobj) ((PyLdbObject *)pyobj)->ldb_ctx
+/* pyldb_Ldb_AS_LDBCONTEXT() does not check argument validity,
+   pyldb_Ldb_AsLdbContext() does */
+#define pyldb_Ldb_AS_LDBCONTEXT(pyobj) ((PyLdbObject *)pyobj)->ldb_ctx
+
+#define pyldb_Ldb_AsLdbContext(pyobj)		\
+	(pyldb_check_type(pyobj, "Ldb") ?	\
+	 pyldb_Ldb_AS_LDBCONTEXT(pyobj) : NULL)
 
 typedef struct {
 	PyObject_HEAD
@@ -44,7 +50,9 @@ typedef struct {
 
 PyObject *pyldb_Dn_FromDn(struct ldb_dn *);
 bool pyldb_Object_AsDn(TALLOC_CTX *mem_ctx, PyObject *object, struct ldb_context *ldb_ctx, struct ldb_dn **dn);
-#define pyldb_Dn_AsDn(pyobj) ((PyLdbDnObject *)pyobj)->dn
+#define pyldb_Dn_AS_DN(pyobj) ((PyLdbDnObject *)pyobj)->dn
+
+bool pyldb_check_type(PyObject *obj, const char *type_name);
 
 typedef struct {
 	PyObject_HEAD

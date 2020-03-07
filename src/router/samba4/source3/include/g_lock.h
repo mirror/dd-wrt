@@ -26,15 +26,16 @@ struct g_lock_ctx;
 struct messaging_context;
 
 enum g_lock_type {
-	G_LOCK_READ = 0,
-	G_LOCK_WRITE = 1,
+	G_LOCK_READ,
+	G_LOCK_WRITE,
+	G_LOCK_UPGRADE,
+	G_LOCK_DOWNGRADE,
 };
 
-struct g_lock_rec {
-	enum g_lock_type lock_type;
-	struct server_id pid;
-};
-
+struct g_lock_ctx *g_lock_ctx_init_backend(
+	TALLOC_CTX *mem_ctx,
+	struct messaging_context *msg,
+	struct db_context **backend);
 struct g_lock_ctx *g_lock_ctx_init(TALLOC_CTX *mem_ctx,
 				   struct messaging_context *msg);
 
@@ -51,16 +52,14 @@ NTSTATUS g_lock_unlock(struct g_lock_ctx *ctx, TDB_DATA key);
 NTSTATUS g_lock_write_data(struct g_lock_ctx *ctx, TDB_DATA key,
 			   const uint8_t *buf, size_t buflen);
 
-NTSTATUS g_lock_do(TDB_DATA key, enum g_lock_type lock_type,
-		   struct timeval timeout,
-		   void (*fn)(void *private_data), void *private_data);
-
 int g_lock_locks(struct g_lock_ctx *ctx,
 		 int (*fn)(TDB_DATA key, void *private_data),
 		 void *private_data);
-NTSTATUS g_lock_dump(struct g_lock_ctx *ctx, TDB_DATA key,
-		     void (*fn)(const struct g_lock_rec *locks,
-				size_t num_locks,
+NTSTATUS g_lock_dump(struct g_lock_ctx *ctx,
+		     TDB_DATA key,
+		     void (*fn)(struct server_id exclusive,
+				size_t num_shared,
+				struct server_id *shared,
 				const uint8_t *data,
 				size_t datalen,
 				void *private_data),

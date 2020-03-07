@@ -1630,7 +1630,10 @@ static WERROR cmd_spoolss_getdriverpackagepath(struct rpc_pipe_client *cli,
 	}
 
 	offered = 1;
-	cab = talloc_array(mem_ctx, char, offered);
+	cab = talloc_zero_array(mem_ctx, char, offered);
+	if (cab == NULL) {
+		return WERR_NOT_ENOUGH_MEMORY;
+	}
 	status = dcerpc_spoolss_GetPrinterDriverPackagePath(b, mem_ctx,
 							    cli->srv_name_slash,
 							    env,
@@ -1647,7 +1650,9 @@ static WERROR cmd_spoolss_getdriverpackagepath(struct rpc_pipe_client *cli,
 	if (W_ERROR_EQUAL(W_ERROR(WIN32_FROM_HRESULT(hresult)), WERR_INSUFFICIENT_BUFFER)) {
 		offered = needed;
 		cab = talloc_zero_array(mem_ctx, char, offered);
-
+		if (cab == NULL) {
+			return WERR_NOT_ENOUGH_MEMORY;
+		}
 		status = dcerpc_spoolss_GetPrinterDriverPackagePath(b, mem_ctx,
 								    cli->srv_name_slash,
 								    env,
@@ -3926,6 +3931,209 @@ static WERROR cmd_spoolss_play_gdi_script_on_printer_ic(struct rpc_pipe_client *
 	return result;
 }
 
+static WERROR cmd_spoolss_get_core_printer_drivers(struct rpc_pipe_client *cli,
+						   TALLOC_CTX *mem_ctx, int argc,
+						   const char **argv)
+{
+	NTSTATUS status;
+	HRESULT result;
+	struct dcerpc_binding_handle *b = cli->binding_handle;
+	const char *architecture = SPOOLSS_ARCHITECTURE_x64;
+	struct spoolss_CorePrinterDriver core_printer_drivers;
+	DATA_BLOB blob;
+	bool ok;
+	int i;
+	uint32_t count;
+	const char **array;
+
+	if (argc == 1) {
+		count = 1;
+		array = talloc_zero_array(mem_ctx, const char *, count + 1);
+		if (array == NULL) {
+			return WERR_NOT_ENOUGH_MEMORY;
+		}
+		array[0] = talloc_strdup(array, SPOOLSS_CORE_PRINT_PACKAGE_FILES_XPSDRV);
+		if (array[0] == NULL) {
+			return WERR_NOT_ENOUGH_MEMORY;
+		}
+	} else {
+		count = argc -1;
+		array = talloc_zero_array(mem_ctx, const char *, count + 1);
+		if (array == NULL) {
+			return WERR_NOT_ENOUGH_MEMORY;
+		}
+		for (i = 0; i < argc - 1; i++) {
+			array[i] = talloc_strdup(array, argv[i + 1]);
+			if (array[i] == NULL) {
+				return WERR_NOT_ENOUGH_MEMORY;
+			}
+		}
+	}
+
+	ok = push_reg_multi_sz(mem_ctx, &blob, array);
+	if (!ok) {
+		return WERR_NOT_ENOUGH_MEMORY;
+	}
+
+	status = dcerpc_spoolss_GetCorePrinterDrivers(b, mem_ctx,
+						      cli->srv_name_slash,
+						      architecture,
+						      blob.length/2,
+						      (uint16_t *)blob.data,
+						      count,
+						      &core_printer_drivers,
+						      &result);
+	if (!NT_STATUS_IS_OK(status)) {
+		return ntstatus_to_werror(status);
+	}
+
+	if (!HRES_IS_OK(result)) {
+		return W_ERROR(WIN32_FROM_HRESULT(result));
+	}
+
+	return WERR_OK;
+}
+
+static WERROR cmd_spoolss_enum_permachineconnections(struct rpc_pipe_client *cli,
+						     TALLOC_CTX *mem_ctx, int argc,
+						     const char **argv)
+{
+	NTSTATUS status;
+	WERROR result;
+	struct dcerpc_binding_handle *b = cli->binding_handle;
+	const char *servername = cli->srv_name_slash;
+	DATA_BLOB in = data_blob_null;
+	struct spoolss_PrinterInfo4 *info;
+	uint32_t needed, count;
+
+	if (argc > 2) {
+		printf("usage: %s [servername]\n", argv[0]);
+		return WERR_OK;
+	}
+
+	if (argc > 1) {
+		servername = argv[1];
+	}
+
+	status = dcerpc_spoolss_EnumPerMachineConnections(b, mem_ctx,
+							  servername,
+							  &in,
+							  in.length,
+							  &count,
+							  &info,
+							  &needed,
+							  &result);
+	if (!NT_STATUS_IS_OK(status)) {
+		return ntstatus_to_werror(status);
+	}
+
+	if (W_ERROR_EQUAL(result, WERR_INSUFFICIENT_BUFFER)) {
+		in = data_blob_talloc_zero(mem_ctx, needed);
+		status = dcerpc_spoolss_EnumPerMachineConnections(b, mem_ctx,
+								  servername,
+								  &in,
+								  in.length,
+								  &count,
+								  &info,
+								  &needed,
+								  &result);
+		if (!NT_STATUS_IS_OK(status)) {
+			return ntstatus_to_werror(status);
+		}
+	}
+
+	return result;
+}
+
+static WERROR cmd_spoolss_add_permachineconnection(struct rpc_pipe_client *cli,
+						   TALLOC_CTX *mem_ctx, int argc,
+						   const char **argv)
+{
+	NTSTATUS status;
+	WERROR result;
+	struct dcerpc_binding_handle *b = cli->binding_handle;
+	const char *servername = cli->srv_name_slash;
+	const char *printername = "Microsoft Print to PDF";
+	const char *printserver = "samba.org";
+	const char *provider = ""; /* refers to Win32spl.dll then */
+	const char *composed_printername;
+
+	if (argc > 5) {
+		printf("usage: %s [servername] [printername] [printserver] [provider]\n", argv[0]);
+		return WERR_OK;
+	}
+
+	if (argc > 1) {
+		servername = argv[1];
+	}
+	if (argc > 2) {
+		printername = argv[2];
+	}
+	if (argc > 3) {
+		printserver = argv[3];
+	}
+	if (argc > 4) {
+		provider = argv[4];
+	}
+
+	composed_printername = talloc_asprintf(mem_ctx, "%s\\%s", servername,
+			printername);
+	if (composed_printername == NULL) {
+		return WERR_NOT_ENOUGH_MEMORY;
+	}
+	status = dcerpc_spoolss_AddPerMachineConnection(b, mem_ctx,
+							servername,
+							composed_printername,
+							printserver,
+							provider,
+							&result);
+	if (!NT_STATUS_IS_OK(status)) {
+		return ntstatus_to_werror(status);
+	}
+
+	return result;
+}
+
+static WERROR cmd_spoolss_del_permachineconnection(struct rpc_pipe_client *cli,
+						   TALLOC_CTX *mem_ctx, int argc,
+						   const char **argv)
+{
+	NTSTATUS status;
+	WERROR result;
+	struct dcerpc_binding_handle *b = cli->binding_handle;
+	const char *servername = cli->srv_name_slash;
+	const char *printername = "Microsoft Print to PDF";
+	const char *composed_printername;
+
+	if (argc > 3) {
+		printf("usage: %s [servername] [printername]\n", argv[0]);
+		return WERR_OK;
+	}
+
+	if (argc > 1) {
+		servername = argv[1];
+	}
+	if (argc > 2) {
+		printername = argv[2];
+	}
+
+	composed_printername = talloc_asprintf(mem_ctx, "%s\\%s", servername,
+			printername);
+	if (composed_printername == NULL) {
+		return WERR_NOT_ENOUGH_MEMORY;
+	}
+
+	status = dcerpc_spoolss_DeletePerMachineConnection(b, mem_ctx,
+							   servername,
+							   composed_printername,
+							   &result);
+	if (!NT_STATUS_IS_OK(status)) {
+		return ntstatus_to_werror(status);
+	}
+
+	return result;
+}
+
 /* List of commands exported by this module */
 struct cmd_set spoolss_commands[] = {
 
@@ -4314,7 +4522,46 @@ struct cmd_set spoolss_commands[] = {
 		.description        = "Create Printer IC",
 		.usage              = "",
 	},
-
+	{
+		.name               = "getcoreprinterdrivers",
+		.returntype         = RPC_RTYPE_WERROR,
+		.ntfn               = NULL,
+		.wfn                = cmd_spoolss_get_core_printer_drivers,
+		.table              = &ndr_table_spoolss,
+		.rpc_pipe           = NULL,
+		.description        = "Get CorePrinterDriver",
+		.usage              = "",
+	},
+	{
+		.name               = "enumpermachineconnections",
+		.returntype         = RPC_RTYPE_WERROR,
+		.ntfn               = NULL,
+		.wfn                = cmd_spoolss_enum_permachineconnections,
+		.table              = &ndr_table_spoolss,
+		.rpc_pipe           = NULL,
+		.description        = "Enumerate Per Machine Connections",
+		.usage              = "",
+	},
+	{
+		.name               = "addpermachineconnection",
+		.returntype         = RPC_RTYPE_WERROR,
+		.ntfn               = NULL,
+		.wfn                = cmd_spoolss_add_permachineconnection,
+		.table              = &ndr_table_spoolss,
+		.rpc_pipe           = NULL,
+		.description        = "Add Per Machine Connection",
+		.usage              = "",
+	},
+	{
+		.name               = "delpermachineconnection",
+		.returntype         = RPC_RTYPE_WERROR,
+		.ntfn               = NULL,
+		.wfn                = cmd_spoolss_del_permachineconnection,
+		.table              = &ndr_table_spoolss,
+		.rpc_pipe           = NULL,
+		.description        = "Delete Per Machine Connection",
+		.usage              = "",
+	},
 	{
 		.name = NULL,
 	},

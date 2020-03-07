@@ -29,6 +29,7 @@ struct tevent_req;
 struct db_record {
 	struct db_context *db;
 	TDB_DATA key, value;
+	bool value_valid;
 	NTSTATUS (*storev)(struct db_record *rec, const TDB_DATA *dbufs,
 			   int num_dbufs, int flag);
 	NTSTATUS (*delete_rec)(struct db_record *rec);
@@ -70,6 +71,7 @@ struct db_context {
 	NTSTATUS (*parse_record_recv)(struct tevent_req *req);
 	NTSTATUS (*do_locked)(struct db_context *db, TDB_DATA key,
 			      void (*fn)(struct db_record *rec,
+					 TDB_DATA value,
 					 void *private_data),
 			      void *private_data);
 	int (*exists)(struct db_context *db,TDB_DATA key);
@@ -84,7 +86,7 @@ struct db_context {
 };
 
 #define DBWRAP_LOCK_ORDER_MIN DBWRAP_LOCK_ORDER_1
-#define DBWRAP_LOCK_ORDER_MAX DBWRAP_LOCK_ORDER_3
+#define DBWRAP_LOCK_ORDER_MAX DBWRAP_LOCK_ORDER_4
 
 #define DBWRAP_LOCK_ORDER_VALID(order) \
 	(((order) >= DBWRAP_LOCK_ORDER_MIN) && \

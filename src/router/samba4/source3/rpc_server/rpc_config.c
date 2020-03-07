@@ -21,6 +21,9 @@
 #include "includes.h"
 #include "rpc_server/rpc_config.h"
 
+#undef DBGC_CLASS
+#define DBGC_CLASS DBGC_RPC_SRV
+
 /* the default is "embedded" so this table
  * lists only services that are not using
  * the default in order to keep enumerating it
@@ -31,7 +34,7 @@ struct rpc_service_defaults {
 	const char *def_mode;
 } rpc_service_defaults[] = {
 	{ "epmapper", "disabled" },
-	{ "mdssvc", "disabled" },
+	/* { "mdssvc", "embedded" }, */
 	/* { "spoolss", "embedded" }, */
 	/* { "lsarpc", "embedded" }, */
 	/* { "samr", "embedded" }, */

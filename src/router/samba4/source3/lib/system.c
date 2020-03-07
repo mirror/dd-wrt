@@ -108,6 +108,20 @@ int sys_fcntl_long(int fd, int cmd, long arg)
 	return ret;
 }
 
+/*******************************************************************
+A fcntl wrapper that will deal with EINTR.
+********************************************************************/
+
+int sys_fcntl_int(int fd, int cmd, int arg)
+{
+	int ret;
+
+	do {
+		ret = fcntl(fd, cmd, arg);
+	} while (ret == -1 && errno == EINTR);
+	return ret;
+}
+
 /****************************************************************************
  Get/Set all the possible time fields from a stat struct as a timespec.
 ****************************************************************************/
@@ -561,15 +575,15 @@ int sys_fallocate(int fd, uint32_t mode, off_t offset, off_t len)
  A flock() wrapper that will perform the kernel flock.
 ********************************************************************/
 
-void kernel_flock(int fd, uint32_t share_mode, uint32_t access_mask)
+void kernel_flock(int fd, uint32_t share_access, uint32_t access_mask)
 {
 #ifdef HAVE_KERNEL_SHARE_MODES
 	int kernel_mode = 0;
-	if (share_mode == FILE_SHARE_WRITE) {
+	if (share_access == FILE_SHARE_WRITE) {
 		kernel_mode = LOCK_MAND|LOCK_WRITE;
-	} else if (share_mode == FILE_SHARE_READ) {
+	} else if (share_access == FILE_SHARE_READ) {
 		kernel_mode = LOCK_MAND|LOCK_READ;
-	} else if (share_mode == FILE_SHARE_NONE) {
+	} else if (share_access == FILE_SHARE_NONE) {
 		kernel_mode = LOCK_MAND;
 	}
 	if (kernel_mode) {
@@ -603,6 +617,21 @@ int sys_mknod(const char *path, mode_t mode, SMB_DEV_T dev)
 {
 #if defined(HAVE_MKNOD)
 	return mknod(path, mode, dev);
+#else
+	/* No mknod system call. */
+	errno = ENOSYS;
+	return -1;
+#endif
+}
+
+/*******************************************************************
+ A mknodat() wrapper.
+********************************************************************/
+
+int sys_mknodat(int dirfd, const char *path, mode_t mode, SMB_DEV_T dev)
+{
+#if defined(HAVE_MKNODAT)
+	return mknodat(dirfd, path, mode, dev);
 #else
 	/* No mknod system call. */
 	errno = ENOSYS;

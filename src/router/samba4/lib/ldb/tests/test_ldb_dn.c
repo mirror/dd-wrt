@@ -19,6 +19,7 @@
 
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <setjmp.h>
 #include <cmocka.h>
 
@@ -210,7 +211,7 @@ static void test_ldb_dn_explode(void **state)
 		result = ldb_dn_validate(dn);
 		fprintf(stderr, "res %i lin «%s» ext «%s»\n",
 			result, linear, ext_linear);
-
+		
 		assert_true(result == tests[i].explode_result);
 		assert_int_equal(ldb_dn_get_comp_num(dn),
 				 tests[i].comp_num);

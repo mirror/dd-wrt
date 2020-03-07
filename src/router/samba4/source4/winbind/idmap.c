@@ -211,7 +211,7 @@ static NTSTATUS idmap_xid_to_sid(struct idmap_context *idmap_ctx,
 				 struct dom_sid **sid)
 {
 	int ret;
-	NTSTATUS status = NT_STATUS_NONE_MAPPED;
+	NTSTATUS status;
 	struct ldb_context *ldb = idmap_ctx->ldb_ctx;
 	struct ldb_result *res = NULL;
 	struct ldb_message *msg;
@@ -394,7 +394,7 @@ static NTSTATUS idmap_sid_to_xid(struct idmap_context *idmap_ctx,
 				 struct unixid *unixid)
 {
 	int ret;
-	NTSTATUS status = NT_STATUS_NONE_MAPPED;
+	NTSTATUS status;
 	struct ldb_context *ldb = idmap_ctx->ldb_ctx;
 	struct ldb_dn *dn;
 	struct ldb_message *hwm_msg, *map_msg, *sam_msg;
@@ -551,7 +551,7 @@ static NTSTATUS idmap_sid_to_xid(struct idmap_context *idmap_ctx,
 		goto failed;
 	}
 
-	/* Redo the search to make sure noone changed the mapping while we
+	/* Redo the search to make sure no one changed the mapping while we
 	 * weren't looking */
 	ret = ldb_search(ldb, tmp_ctx, &res, NULL, LDB_SCOPE_SUBTREE,
 				 NULL, "(&(objectClass=sidMap)(objectSid=%s))",

@@ -68,6 +68,44 @@ static uint8_t map_samba_oplock_levels_to_smb2(int oplock_type)
 	}
 }
 
+/*
+ MS-FSA 2.1.5.1 Server Requests an Open of a File
+ Trailing '/' or '\\' checker.
+ Must be done before the filename parser removes any
+ trailing characters. If we decide to add this to SMB1
+ NTCreate processing we can make this public.
+
+ Note this is Windows pathname processing only. When
+ POSIX pathnames are added to SMB2 this will not apply.
+*/
+
+static NTSTATUS windows_name_trailing_check(const char *name,
+			uint32_t create_options)
+{
+	size_t name_len = strlen(name);
+	char trail_c;
+
+	if (name_len <= 1) {
+		return NT_STATUS_OK;
+	}
+
+	trail_c = name[name_len-1];
+
+	/*
+	 * Trailing '/' is always invalid.
+	 */
+	if (trail_c == '/') {
+		return NT_STATUS_OBJECT_NAME_INVALID;
+	}
+
+	if (create_options & FILE_NON_DIRECTORY_FILE) {
+		if (trail_c == '\\') {
+			return NT_STATUS_OBJECT_NAME_INVALID;
+		}
+	}
+	return NT_STATUS_OK;
+}
+
 static struct tevent_req *smbd_smb2_create_send(TALLOC_CTX *mem_ctx,
 			struct tevent_context *ev,
 			struct smbd_smb2_request *smb2req,
@@ -334,18 +372,18 @@ static void smbd_smb2_request_create_done(struct tevent_req *tsubreq)
 	SCVAL(outbody.data, 0x03, 0);		/* reserved */
 	SIVAL(outbody.data, 0x04,
 	      out_create_action);		/* create action */
-	put_long_date_timespec(conn->ts_res,
+	put_long_date_full_timespec(conn->ts_res,
 	      (char *)outbody.data + 0x08,
-	      out_creation_ts);			/* creation time */
-	put_long_date_timespec(conn->ts_res,
+	      &out_creation_ts);		/* creation time */
+	put_long_date_full_timespec(conn->ts_res,
 	      (char *)outbody.data + 0x10,
-	      out_last_access_ts);		/* last access time */
-	put_long_date_timespec(conn->ts_res,
+	      &out_last_access_ts);		/* last access time */
+	put_long_date_full_timespec(conn->ts_res,
 	      (char *)outbody.data + 0x18,
-	      out_last_write_ts);		/* last write time */
-	put_long_date_timespec(conn->ts_res,
+	      &out_last_write_ts);		/* last write time */
+	put_long_date_full_timespec(conn->ts_res,
 	      (char *)outbody.data + 0x20,
-	      out_change_ts);			/* change time */
+	      &out_change_ts);			/* change time */
 	SBVAL(outbody.data, 0x28,
 	      out_allocation_size);		/* allocation size */
 	SBVAL(outbody.data, 0x30,
@@ -756,6 +794,13 @@ static struct tevent_req *smbd_smb2_create_send(TALLOC_CTX *mem_ctx,
 
 		smbd_smb2_create_finish(req);
 		return req;
+	}
+
+	/* Check for trailing slash specific directory handling. */
+	status = windows_name_trailing_check(state->fname, in_create_options);
+	if (!NT_STATUS_IS_OK(status)) {
+		tevent_req_nterror(req, status);
+		return tevent_req_post(req, state->ev);
 	}
 
 	smbd_smb2_create_before_exec(req);
@@ -1280,8 +1325,8 @@ static void smbd_smb2_create_after_exec(struct tevent_req *req)
 	if (state->mxac != NULL) {
 		NTTIME last_write_time;
 
-		last_write_time = unix_timespec_to_nt_time(
-			state->result->fsp_name->st.st_ex_mtime);
+		last_write_time = full_timespec_to_nt_time(
+			&state->result->fsp_name->st.st_ex_mtime);
 		if (last_write_time != state->max_access_time) {
 			uint8_t p[8];
 			uint32_t max_access_granted;
