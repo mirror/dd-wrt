@@ -22,7 +22,7 @@
 
 #include "chilli.h"
 
-extern struct options_t _options;
+struct options_t _options;
 
 extern int chilli_main(int argc, char **argv);
 
