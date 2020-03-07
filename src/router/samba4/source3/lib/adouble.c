@@ -1762,7 +1762,7 @@ static bool ad_collect_one_stream(struct vfs_handle_struct *handle,
 	}
 
 	e->adx_name = mapped_name;
-	e->adx_namelen = strlen(e->adx_name) + 1,
+	e->adx_namelen = strlen(e->adx_name) + 1;
 
 	DBG_DEBUG("%u: name (%s) size (%zu)\n",
 		  ad->adx_header.adx_num_attrs,
