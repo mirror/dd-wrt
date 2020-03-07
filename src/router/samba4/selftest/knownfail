@@ -9,6 +9,7 @@
  ^samba3.smbtorture_s3.crypt_server\(nt4_dc\).SMB2-SESSION-REAUTH # expected to give ACCESS_DENIED SMB2.1 doesn't have encryption
 ^samba3.smbtorture_s3.crypt_server\(nt4_dc\).SMB2-SESSION-RECONNECT # expected to give CONNECTION_DISCONNECTED, we need to fix the test
 ^samba3.smbtorture_s3.plain.*SMB2-DIR-FSYNC.*\(ad_dc_ntvfs\)
+^samba3.smbtorture_s3.plain.*SMB2-PATH-SLASH.*\(ad_dc_ntvfs\)
 ^samba3.smbtorture_s3.plain.LOCK11.*\(ad_dc_ntvfs\)
 ^samba3.smb2.session enc.reconnect # expected to give CONNECTION_DISCONNECTED, we need to fix the test
 ^samba3.raw.session enc # expected to give ACCESS_DENIED as SMB1 encryption isn't used
@@ -22,7 +23,7 @@
 # see bug 8412
 ^samba3.smb2.rename.*.simple_nodelete
 ^samba3.smb2.rename.*.no_share_delete_no_delete_access
-^samba3.blackbox.smbclient_machine_auth.plain \(nt4_dc:local\)# the NT4 DC does not currently set up a self-join
+^samba3.blackbox.smbclient_machine_auth.plain.*nt4_dc:local # the NT4 DC does not currently set up a self-join
 ^samba3.raw.samba3hide.samba3hide\(ad_dc\) # This test fails against the ad_dc environment.
 ^samba3.raw.samba3closeerr.samba3closeerr\(nt4_dc\) # This test fails against an smbd environment with NT ACLs enabled
 ^samba3.raw.acls nfs4acl_xattr-simple-40.INHERITFLAGS\(nt4_dc\) # This (and the follow nfs4acl_xattr tests fail because our NFSv4 backend isn't a complete mapping yet.
@@ -98,8 +99,8 @@
 ^samba4.rpc.netlogon.*.GetPassword
 ^samba4.rpc.netlogon.*.DatabaseRedo
 ^samba4.rpc.netlogon.*.netlogon.lsa_over_netlogon\(ad_dc\) #Broken by split of \\pipe\lsass from \\pipe\netlogon in the IDL
-^samba4.rpc.netlogon.*.netlogon.SetupCredentialsDowngrade\(ad_dc_default\) # Broken by allowing NT4 crypto on this environment
-^samba4.rpc.netlogon.*.netlogon.SetupCredentialsDowngrade\(ad_dc_default:local\) # Broken by allowing NT4 crypto on this environment
+^samba4.rpc.netlogon.*.netlogon.SetupCredentialsDowngrade\(ad_dc_ntvfs\) # Broken by allowing NT4 crypto on this environment
+^samba4.rpc.netlogon.*.netlogon.SetupCredentialsDowngrade\(ad_dc_ntvfs:local\) # Broken by allowing NT4 crypto on this environment
 ^samba4.rpc.drsuapi.*ncacn_ip_tcp.*validate # should only work with seal
 ^samba4.rpc.drsuapi.*ncacn_ip_tcp.*bigendian # should only work with seal
 ^samba4.rpc.samr.passwords.validate.*ncacn_ip_tcp.*with.validate # should only work with seal
@@ -136,8 +137,8 @@
 ^samba4.smb2.acls.*.inheritflags
 ^samba4.smb2.acls.*.owner
 ^samba4.smb2.acls.*.ACCESSBASED
-^samba4.ldap.dirsync.python.ad_dc_default..__main__.ExtendedDirsyncTests.test_dirsync_deleted_items
-#^samba4.ldap.dirsync.python.ad_dc_default..__main__.ExtendedDirsyncTests.*
+^samba4.ldap.dirsync.python.ad_dc_ntvfs..__main__.ExtendedDirsyncTests.test_dirsync_deleted_items
+#^samba4.ldap.dirsync.python.ad_dc_ntvfs..__main__.ExtendedDirsyncTests.*
 ^samba4.libsmbclient.opendir.(NT1|SMB3).opendir # This requires netbios browsing
 ^samba4.rpc.drsuapi.*.drsuapi.DsGetDomainControllerInfo\(.*\)$
 ^samba4.smb2.oplock.exclusive2\(.*\)$ # samba 4 oplocks are a mess
@@ -215,6 +216,7 @@
 ^samba3.rpc.spoolss.printer.addprinterex.driver_info_winreg # knownfail or flapping?
 ^samba3.rpc.spoolss.printer.*.publish_toggle\(.*\)$ # needs spoolss AD member env
 ^samba3.rpc.spoolss.printer.*.log_jobinfo\(.*\)$ # not implemented yet
+^samba3.rpc.spoolss.printserver.*.addpermachineconnection\(.*\)$ # not implemented yet
 ^samba3.rpc.spoolss.printserver.*.add_processor\(.*\)$
 ^samba3.rpc.spoolss.printserver.*.get_core_printer_drivers\(.*\)$
 ^samba3.rpc.spoolss.printserver.*.get_printer_driver_package_path\(.*\)$
@@ -319,8 +321,8 @@
 # fl2000dc doesn't support AES
 ^samba4.krb5.kdc.*as-req-aes.*fl2000dc
 # nt4_member and ad_member don't support ntlmv1 (not even over SMB1)
-^samba3.blackbox.smbclient_auth.plain.*_member.*option=clientntlmv2auth=no.member.creds.*as.user
-^samba3.blackbox.smbclient_auth.plain.*_member.*option=clientntlmv2auth=no.*mNT1.member.creds.*as.user
+^samba3.blackbox.smbclient_auth.plain.*option=clientntlmv2auth=no.member.creds.*as.user.*_member
+^samba3.blackbox.smbclient_auth.plain.*option=clientntlmv2auth=no.*mNT1.member.creds.*as.user.*_member
 #nt-vfs server blocks read with execute access
 ^samba4.smb2.read.access
 #ntvfs server blocks copychunk with execute access on read handle

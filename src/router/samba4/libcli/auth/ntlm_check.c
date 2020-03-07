@@ -36,6 +36,8 @@ static bool smb_pwd_check_ntlmv1(TALLOC_CTX *mem_ctx,
 {
 	/* Finish the encryption of part_passwd. */
 	uint8_t p24[24];
+	int rc;
+	bool ok;
 
 	if (part_passwd == NULL) {
 		DEBUG(10,("No password set - DISALLOWING access\n"));
@@ -44,18 +46,20 @@ static bool smb_pwd_check_ntlmv1(TALLOC_CTX *mem_ctx,
 	}
 
 	if (sec_blob->length != 8) {
-		DEBUG(0, ("smb_pwd_check_ntlmv1: incorrect challenge size (%lu)\n", 
-			  (unsigned long)sec_blob->length));
+		DBG_ERR("incorrect challenge size (%zu)\n", sec_blob->length);
 		return false;
 	}
 
 	if (nt_response->length != 24) {
-		DEBUG(0, ("smb_pwd_check_ntlmv1: incorrect password length (%lu)\n", 
-			  (unsigned long)nt_response->length));
+		DBG_ERR("incorrect password length (%zu)\n",
+			nt_response->length);
 		return false;
 	}
 
-	SMBOWFencrypt(part_passwd, sec_blob->data, p24);
+	rc = SMBOWFencrypt(part_passwd, sec_blob->data, p24);
+	if (rc != 0) {
+		return false;
+	}
 
 #if DEBUG_PASSWORD
 	DEBUG(100,("Part password (P16) was |\n"));
@@ -67,14 +71,19 @@ static bool smb_pwd_check_ntlmv1(TALLOC_CTX *mem_ctx,
 	DEBUGADD(100,("Value from encryption was |\n"));
 	dump_data(100, p24, 24);
 #endif
-	if (memcmp(p24, nt_response->data, 24) == 0) {
-		if (user_sess_key != NULL) {
-			*user_sess_key = data_blob_talloc(mem_ctx, NULL, 16);
-			SMBsesskeygen_ntv1(part_passwd, user_sess_key->data);
+	ok = (memcmp(p24, nt_response->data, 24) == 0);
+	if (!ok) {
+		return false;
+	}
+	if (user_sess_key != NULL) {
+		*user_sess_key = data_blob_talloc(mem_ctx, NULL, 16);
+		if (user_sess_key->data == NULL) {
+			DBG_ERR("data_blob_talloc failed\n");
+			return false;
 		}
-		return true;
-	} 
-	return false;
+		SMBsesskeygen_ntv1(part_passwd, user_sess_key->data);
+	}
+	return true;
 }
 
 /****************************************************************************
@@ -93,6 +102,8 @@ static bool smb_pwd_check_ntlmv2(TALLOC_CTX *mem_ctx,
 	uint8_t kr[16];
 	uint8_t value_from_encryption[16];
 	DATA_BLOB client_key_data;
+	NTSTATUS status;
+	bool ok;
 
 	if (part_passwd == NULL) {
 		DEBUG(10,("No password set - DISALLOWING access\n"));
@@ -101,8 +112,7 @@ static bool smb_pwd_check_ntlmv2(TALLOC_CTX *mem_ctx,
 	}
 
 	if (sec_blob->length != 8) {
-		DEBUG(0, ("smb_pwd_check_ntlmv2: incorrect challenge size (%lu)\n", 
-			  (unsigned long)sec_blob->length));
+		DBG_ERR("incorrect challenge size (%zu)\n", sec_blob->length);
 		return false;
 	}
 
@@ -110,8 +120,8 @@ static bool smb_pwd_check_ntlmv2(TALLOC_CTX *mem_ctx,
 		/* We MUST have more than 16 bytes, or the stuff below will go
 		   crazy.  No known implementation sends less than the 24 bytes
 		   for LMv2, let alone NTLMv2. */
-		DEBUG(0, ("smb_pwd_check_ntlmv2: incorrect password length (%lu)\n", 
-			  (unsigned long)ntv2_response->length));
+		DBG_ERR("incorrect password length (%zu)\n",
+			ntv2_response->length);
 		return false;
 	}
 
@@ -125,7 +135,13 @@ static bool smb_pwd_check_ntlmv2(TALLOC_CTX *mem_ctx,
 		return false;
 	}
 
-	SMBOWFencrypt_ntv2(kr, sec_blob, &client_key_data, value_from_encryption);
+	status = SMBOWFencrypt_ntv2(kr,
+				    sec_blob,
+				    &client_key_data,
+				    value_from_encryption);
+	if (!NT_STATUS_IS_OK(status)) {
+		return false;
+	}
 
 #if DEBUG_PASSWORD
 	DEBUG(100,("Part password (P16) was |\n"));
@@ -140,14 +156,25 @@ static bool smb_pwd_check_ntlmv2(TALLOC_CTX *mem_ctx,
 	dump_data(100, value_from_encryption, 16);
 #endif
 	data_blob_clear_free(&client_key_data);
-	if (memcmp(value_from_encryption, ntv2_response->data, 16) == 0) { 
-		if (user_sess_key != NULL) {
-			*user_sess_key = data_blob_talloc(mem_ctx, NULL, 16);
-			SMBsesskeygen_ntv2(kr, value_from_encryption, user_sess_key->data);
-		}
-		return true;
+
+	ok = (memcmp(value_from_encryption, ntv2_response->data, 16) == 0);
+	if (!ok) {
+		return false;
 	}
-	return false;
+	if (user_sess_key != NULL) {
+		*user_sess_key = data_blob_talloc(mem_ctx, NULL, 16);
+		if (user_sess_key->data == NULL) {
+			DBG_ERR("data_blob_talloc failed\n");
+			return false;
+		}
+
+		status = SMBsesskeygen_ntv2(
+			kr, value_from_encryption, user_sess_key->data);
+		if (!NT_STATUS_IS_OK(status)) {
+			return false;
+		}
+	}
+	return true;
 }
 
 /****************************************************************************
@@ -166,6 +193,7 @@ static bool smb_sess_key_ntlmv2(TALLOC_CTX *mem_ctx,
 	uint8_t kr[16];
 	uint8_t value_from_encryption[16];
 	DATA_BLOB client_key_data;
+	NTSTATUS status;
 
 	if (part_passwd == NULL) {
 		DEBUG(10,("No password set - DISALLOWING access\n"));
@@ -174,8 +202,7 @@ static bool smb_sess_key_ntlmv2(TALLOC_CTX *mem_ctx,
 	}
 
 	if (sec_blob->length != 8) {
-		DEBUG(0, ("smb_sess_key_ntlmv2: incorrect challenge size (%lu)\n", 
-			  (unsigned long)sec_blob->length));
+		DBG_ERR("incorrect challenge size (%zu)\n", sec_blob->length);
 		return false;
 	}
 
@@ -183,8 +210,8 @@ static bool smb_sess_key_ntlmv2(TALLOC_CTX *mem_ctx,
 		/* We MUST have more than 16 bytes, or the stuff below will go
 		   crazy.  No known implementation sends less than the 24 bytes
 		   for LMv2, let alone NTLMv2. */
-		DEBUG(0, ("smb_sess_key_ntlmv2: incorrect password length (%lu)\n", 
-			  (unsigned long)ntv2_response->length));
+		DBG_ERR("incorrect password length (%zu)\n",
+			ntv2_response->length);
 		return false;
 	}
 
@@ -194,9 +221,24 @@ static bool smb_sess_key_ntlmv2(TALLOC_CTX *mem_ctx,
 		return false;
 	}
 
-	SMBOWFencrypt_ntv2(kr, sec_blob, &client_key_data, value_from_encryption);
+	status = SMBOWFencrypt_ntv2(kr,
+				    sec_blob,
+				    &client_key_data,
+				    value_from_encryption);
+	if (!NT_STATUS_IS_OK(status)) {
+		return false;
+	}
 	*user_sess_key = data_blob_talloc(mem_ctx, NULL, 16);
-	SMBsesskeygen_ntv2(kr, value_from_encryption, user_sess_key->data);
+	if (user_sess_key->data == NULL) {
+		DBG_ERR("data_blob_talloc failed\n");
+		return false;
+	}
+	status = SMBsesskeygen_ntv2(kr,
+				    value_from_encryption,
+				    user_sess_key->data);
+	if (!NT_STATUS_IS_OK(status)) {
+		return false;
+	}
 	return true;
 }
 
@@ -352,8 +394,9 @@ NTSTATUS ntlm_password_check(TALLOC_CTX *mem_ctx,
 	}
 
 	if (nt_response->length != 0 && nt_response->length < 24) {
-		DEBUG(2,("ntlm_password_check: invalid NT password length (%lu) for user %s\n", 
-			 (unsigned long)nt_response->length, username));		
+		DBG_NOTICE("invalid NT password length (%zu) for user %s\n",
+			   nt_response->length,
+			   username);
 	}
 
 	if (nt_response->length > 24 && stored_nt) {
@@ -439,8 +482,9 @@ NTSTATUS ntlm_password_check(TALLOC_CTX *mem_ctx,
 	}
 
 	if (lm_response->length < 24) {
-		DEBUG(2,("ntlm_password_check: invalid LanMan password length (%lu) for user %s\n", 
-			 (unsigned long)nt_response->length, username));		
+		DBG_NOTICE("invalid LanMan password length (%zu) for "
+			   "user %s\n",
+			   nt_response->length, username);
 		return NT_STATUS_WRONG_PASSWORD;
 	}
 

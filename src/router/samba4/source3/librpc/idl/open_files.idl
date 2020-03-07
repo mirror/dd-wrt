@@ -40,8 +40,16 @@ interface open_files
 		security_unix_token *delete_token;
 	} delete_token;
 
-	typedef [public,bitmap8bit] bitmap {
-		SHARE_MODE_HAS_READ_LEASE	= 0x01
+	typedef [public,bitmap16bit] bitmap {
+		SHARE_MODE_SHARE_DELETE		= 0x100,
+		SHARE_MODE_SHARE_WRITE		= 0x080,
+		SHARE_MODE_SHARE_READ		= 0x040,
+		SHARE_MODE_ACCESS_DELETE	= 0x020,
+		SHARE_MODE_ACCESS_WRITE		= 0x010,
+		SHARE_MODE_ACCESS_READ		= 0x008,
+		SHARE_MODE_LEASE_HANDLE		= 0x004,
+		SHARE_MODE_LEASE_WRITE		= 0x002,
+		SHARE_MODE_LEASE_READ		= 0x001
 	} share_mode_flags;
 
 	typedef [public] struct {
@@ -50,15 +58,13 @@ interface open_files
 		[string,charset(UTF8)] char *servicepath;
 		[string,charset(UTF8)] char *base_name;
 		[string,charset(UTF8)] char *stream_name;
-		uint32 num_share_modes;
-		[size_is(num_share_modes)] share_mode_entry share_modes[];
 		uint32 num_delete_tokens;
 		[size_is(num_delete_tokens)] delete_token delete_tokens[];
-		timespec old_write_time;
-		timespec changed_write_time;
+		NTTIME old_write_time;
+		NTTIME changed_write_time;
 		[skip] boolean8 fresh;
 		[skip] boolean8 modified;
-		[ignore] db_record *record;
+		[skip] boolean8 have_share_modes;
 		[ignore] file_id id; /* In memory key used to lookup cache. */
 	} share_mode_data;
 
@@ -99,7 +105,7 @@ interface open_files
 		boolean8 update_write_time_triggered;
 		boolean8 update_write_time_on_close;
 		boolean8 write_time_forced;
-		timespec close_write_time;
+		NTTIME close_write_time;
 		vfs_default_durable_stat stat_info;
 	} vfs_default_durable_cookie;
 

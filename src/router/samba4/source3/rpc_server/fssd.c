@@ -32,6 +32,9 @@
 #include "rpc_server/fss/srv_fss_agent.h"
 #include "rpc_server/fssd.h"
 
+#undef DBGC_CLASS
+#define DBGC_CLASS DBGC_RPC_SRV
+
 #define DAEMON_NAME "fssd"
 
 void start_fssd(struct tevent_context *ev_ctx,
@@ -39,7 +42,9 @@ void start_fssd(struct tevent_context *ev_ctx,
 
 static void fssd_reopen_logs(void)
 {
-	char *lfile = lp_logfile(NULL);
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
+	char *lfile = lp_logfile(NULL, lp_sub);
 	int rc;
 
 	if (lfile == NULL || lfile[0] == '\0') {
@@ -50,7 +55,7 @@ static void fssd_reopen_logs(void)
 		}
 	} else {
 		if (strstr(lfile, DAEMON_NAME) == NULL) {
-			rc = asprintf(&lfile, "%s.%s", lp_logfile(NULL), DAEMON_NAME);
+			rc = asprintf(&lfile, "%s.%s", lp_logfile(NULL, lp_sub), DAEMON_NAME);
 			if (rc > 0) {
 				lp_set_logfile(lfile);
 				SAFE_FREE(lfile);
@@ -79,8 +84,6 @@ static void fssd_sig_term_handler(struct tevent_context *ev,
 				  void *siginfo,
 				  void *private_data)
 {
-	rpc_FileServerVssAgent_shutdown();
-
 	exit_server_cleanly("termination signal");
 }
 
@@ -148,7 +151,6 @@ void start_fssd(struct tevent_context *ev_ctx,
 	struct rpc_srv_callbacks fss_cb;
 	NTSTATUS status;
 	pid_t pid;
-	bool ok;
 	int rc;
 
 	fss_cb.init = fss_init_cb;
@@ -195,8 +197,8 @@ void start_fssd(struct tevent_context *ev_ctx,
 	}
 
 	/* case is normalized by smbd on connection */
-	ok = setup_named_pipe_socket("fssagentrpc", ev_ctx, msg_ctx);
-	if (!ok) {
+	status = dcesrv_setup_ncacn_np_socket("fssagentrpc", ev_ctx, msg_ctx);
+	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(0, ("Failed to open fssd named pipe!\n"));
 		exit(1);
 	}

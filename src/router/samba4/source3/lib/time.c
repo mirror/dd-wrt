@@ -141,6 +141,10 @@ void srv_put_dos_date3(char *buf,int offset,time_t unixdate)
 
 void round_timespec(enum timestamp_set_resolution res, struct timespec *ts)
 {
+	if (is_omit_timespec(ts)) {
+		return;
+	}
+
 	switch (res) {
 		case TIMESTAMP_SET_SECONDS:
 			round_timespec_to_sec(ts);
@@ -165,6 +169,25 @@ void put_long_date_timespec(enum timestamp_set_resolution res, char *p, struct t
 	round_timespec(res, &ts);
 	nt = unix_timespec_to_nt_time(ts);
 	SBVAL(p, 0, nt);
+}
+
+void put_long_date_full_timespec(enum timestamp_set_resolution res,
+				 char *p,
+				 const struct timespec *_ts)
+{
+	struct timespec ts = *_ts;
+	NTTIME nt;
+
+	round_timespec(res, &ts);
+	nt = full_timespec_to_nt_time(&ts);
+	SBVAL(p, 0, nt);
+}
+
+struct timespec pull_long_date_full_timespec(const char *p)
+{
+	NTTIME nt = BVAL(p, 0);
+
+	return nt_time_to_full_timespec(nt);
 }
 
 void put_long_date(char *p, time_t t)
@@ -241,7 +264,7 @@ struct timespec interpret_long_date(const char *p)
 		ret.tv_nsec = 0;
 		return ret;
 	}
-	return nt_time_to_unix_timespec(nt);
+	return nt_time_to_full_timespec(nt);
 }
 
 /*******************************************************************
@@ -332,13 +355,6 @@ time_t nt_time_to_unix_abs(const NTTIME *nt)
 	}
 
 	return (time_t)d;
-}
-
-time_t uint64s_nt_time_to_unix_abs(const uint64_t *src)
-{
-	NTTIME nttime;
-	nttime = *src;
-	return nt_time_to_unix_abs(&nttime);
 }
 
 /****************************************************************************

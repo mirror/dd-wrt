@@ -1,6 +1,3 @@
-#ifndef PRINTING_H_
-#define PRINTING_H_
-
 /* 
    Unix SMB/CIFS implementation.
    printing definitions
@@ -24,6 +21,9 @@
    This file defines the low-level printing system interfaces used by the
    SAMBA printing subsystem.
 */
+#ifndef PRINTING_H_
+#define PRINTING_H_
+
 #include <tdb.h>
 #include "lib/param/loadparm.h"
 
@@ -90,22 +90,22 @@ struct printjob {
 /* Information for print interfaces */
 struct printif
 {
-  /* value of the 'printing' option for this service */
-  enum printing_types type;
+	/* value of the 'printing' option for this service */
+	enum printing_types type;
 
-  int (*queue_get)(const char *printer_name,
-                   enum printing_types printing_type,
-                   char *lpq_command,
-                   print_queue_struct **q,
-                   print_status_struct *status);
-  int (*queue_pause)(int snum);
-  int (*queue_resume)(int snum);
-  int (*job_delete)(const char *sharename, const char *lprm_command, struct printjob *pjob);
-  int (*job_pause)(int snum, struct printjob *pjob);
-  int (*job_resume)(int snum, struct printjob *pjob);
-  int (*job_submit)(int snum, struct printjob *pjob,
-		    enum printing_types printing_type,
-		    char *lpq_command);
+	int (*queue_get)(const char *printer_name,
+			 enum printing_types printing_type,
+			 char *lpq_command,
+			 print_queue_struct **q,
+			 print_status_struct *status);
+	int (*queue_pause)(int snum);
+	int (*queue_resume)(int snum);
+	int (*job_delete)(const char *sharename, const char *lprm_command, struct printjob *pjob);
+	int (*job_pause)(int snum, struct printjob *pjob);
+	int (*job_resume)(int snum, struct printjob *pjob);
+	int (*job_submit)(int snum, struct printjob *pjob,
+			  enum printing_types printing_type,
+			  char *lpq_command);
 };
 
 extern struct printif	generic_printif;
@@ -258,8 +258,8 @@ void close_all_print_db(void);
 TDB_DATA get_printer_notify_pid_list(struct tdb_context *tdb, const char *printer_name, bool cleanlist);
 
 void print_queue_receive(struct messaging_context *msg,
-				void *private_data,
-				uint32_t msg_type,
-				struct server_id server_id,
-				DATA_BLOB *data);
+			 void *private_data,
+			 uint32_t msg_type,
+			 struct server_id server_id,
+			 DATA_BLOB *data);
 #endif /* PRINTING_H_ */

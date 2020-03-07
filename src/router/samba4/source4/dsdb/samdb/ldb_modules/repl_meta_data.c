@@ -892,8 +892,7 @@ static int add_uint64_element(struct ldb_context *ldb, struct ldb_message *msg,
 }
 
 static int replmd_replPropertyMetaData1_attid_sort(const struct replPropertyMetaData1 *m1,
-						   const struct replPropertyMetaData1 *m2,
-						   const uint32_t *rdn_attid)
+						   const struct replPropertyMetaData1 *m2)
 {
 	/*
 	 * This assignment seems inoccous, but it is critical for the
@@ -943,8 +942,8 @@ static int replmd_replPropertyMetaDataCtr1_sort_and_verify(struct ldb_context *l
 							   struct ldb_dn *dn)
 {
 	/* Note this is O(n^2) for the almost-sorted case, which this is */
-	LDB_TYPESAFE_QSORT(ctr1->array, ctr1->count, NULL,
-			   replmd_replPropertyMetaData1_attid_sort);
+	TYPESAFE_QSORT(ctr1->array, ctr1->count,
+		       replmd_replPropertyMetaData1_attid_sort);
 	return replmd_replPropertyMetaDataCtr1_verify(ldb, ctr1, dn);
 }
 
@@ -1676,7 +1675,7 @@ static int replmd_update_rpmd_element(struct ldb_context *ldb,
 	md1->local_usn                 = *seq_num;
 
 	if (is_forced_rodc) {
-		/* Force version to 0 to be overriden later via replication */
+		/* Force version to 0 to be overridden later via replication */
 		md1->version = 0;
 	}
 
@@ -5192,6 +5191,130 @@ static int replmd_op_name_modify_callback(struct ldb_request *req, struct ldb_re
 	return replmd_op_callback(req, ares);
 }
 
+
+
+/*
+ * A helper for replmd_op_possible_conflict_callback() and
+ * replmd_replicated_handle_rename()
+ */
+static int incoming_dn_should_be_renamed(TALLOC_CTX *mem_ctx,
+					 struct replmd_replicated_request *ar,
+					 struct ldb_dn *conflict_dn,
+					 struct ldb_result **res,
+					 bool *rename_incoming_record)
+{
+	int ret;
+	bool rodc;
+	enum ndr_err_code ndr_err;
+	const struct ldb_val *omd_value = NULL;
+	struct replPropertyMetaDataBlob omd, *rmd = NULL;
+	struct ldb_context *ldb = ldb_module_get_ctx(ar->module);
+	const char *attrs[] = { "replPropertyMetaData", "objectGUID", NULL };
+	struct replPropertyMetaData1 *omd_name = NULL;
+	struct replPropertyMetaData1 *rmd_name = NULL;
+	struct ldb_message *msg = NULL;
+
+	ret = samdb_rodc(ldb, &rodc);
+	if (ret != LDB_SUCCESS) {
+		ldb_asprintf_errstring(
+			ldb,
+			"Failed to determine if we are an RODC when attempting "
+			"to form conflict DN: %s",
+			ldb_errstring(ldb));
+		return LDB_ERR_OPERATIONS_ERROR;
+	}
+
+	if (rodc) {
+		/*
+		 * We are on an RODC, or were a GC for this
+		 * partition, so we have to fail this until
+		 * someone who owns the partition sorts it
+		 * out
+		 */
+		ldb_asprintf_errstring(
+			ldb,
+			"Conflict adding object '%s' from incoming replication "
+			"but we are read only for the partition.  \n"
+			" - We must fail the operation until a master for this "
+			"partition resolves the conflict",
+			ldb_dn_get_linearized(conflict_dn));
+		 return LDB_ERR_OPERATIONS_ERROR;
+	}
+
+	/*
+	 * first we need the replPropertyMetaData attribute from the
+	 * old record
+	 */
+	ret = dsdb_module_search_dn(ar->module, mem_ctx, res, conflict_dn,
+				    attrs,
+				    DSDB_FLAG_NEXT_MODULE |
+				    DSDB_SEARCH_SHOW_DELETED |
+				    DSDB_SEARCH_SHOW_RECYCLED, ar->req);
+	if (ret != LDB_SUCCESS) {
+		DBG_ERR(__location__
+			": Unable to find object for conflicting record '%s'\n",
+			ldb_dn_get_linearized(conflict_dn));
+		 return LDB_ERR_OPERATIONS_ERROR;
+	}
+
+	msg = (*res)->msgs[0];
+	omd_value = ldb_msg_find_ldb_val(msg, "replPropertyMetaData");
+	if (omd_value == NULL) {
+		DBG_ERR(__location__
+			": Unable to find replPropertyMetaData for conflicting "
+			"record '%s'\n",
+			ldb_dn_get_linearized(conflict_dn));
+		 return LDB_ERR_OPERATIONS_ERROR;
+	}
+
+	ndr_err = ndr_pull_struct_blob(
+		omd_value, msg, &omd,
+		(ndr_pull_flags_fn_t)ndr_pull_replPropertyMetaDataBlob);
+	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
+		DBG_ERR(__location__
+			": Failed to parse old replPropertyMetaData for %s\n",
+			ldb_dn_get_linearized(conflict_dn));
+		 return LDB_ERR_OPERATIONS_ERROR;
+	}
+
+	rmd = ar->objs->objects[ar->index_current].meta_data;
+
+	/*
+	 * we decide which is newer based on the RPMD on the name
+	 * attribute.  See [MS-DRSR] ResolveNameConflict.
+	 *
+	 * We expect omd_name to be present, as this is from a local
+	 * search, but while rmd_name should have been given to us by
+	 * the remote server, if it is missing we just prefer the
+	 * local name in
+	 * replmd_replPropertyMetaData1_new_should_be_taken()
+	 */
+	rmd_name = replmd_replPropertyMetaData1_find_attid(rmd,
+							   DRSUAPI_ATTID_name);
+	omd_name = replmd_replPropertyMetaData1_find_attid(&omd,
+							   DRSUAPI_ATTID_name);
+	if (!omd_name) {
+		DBG_ERR(__location__
+			": Failed to find name attribute in "
+			"local LDB replPropertyMetaData for %s\n",
+			 ldb_dn_get_linearized(conflict_dn));
+		 return LDB_ERR_OPERATIONS_ERROR;
+	}
+
+	/*
+	 * Should we preserve the current record, and so rename the
+	 * incoming record to be a conflict?
+	 */
+	*rename_incoming_record =
+		!replmd_replPropertyMetaData1_new_should_be_taken(
+			(ar->objs->dsdb_repl_flags &
+			 DSDB_REPL_FLAG_PRIORITISE_INCOMING),
+			omd_name, rmd_name);
+
+	return LDB_SUCCESS;
+}
+
+
 /*
   callback for replmd_replicated_apply_add()
   This copes with the creation of conflict records in the case where
@@ -5203,13 +5326,8 @@ static int replmd_op_possible_conflict_callback(struct ldb_request *req, struct 
 	struct replmd_replicated_request *ar =
 		talloc_get_type_abort(req->context, struct replmd_replicated_request);
 	struct ldb_result *res;
-	const char *attrs[] = { "replPropertyMetaData", "objectGUID", NULL };
 	int ret;
-	const struct ldb_val *omd_value;
-	struct replPropertyMetaDataBlob omd, *rmd;
-	enum ndr_err_code ndr_err;
-	bool rename_incoming_record, rodc;
-	struct replPropertyMetaData1 *rmd_name, *omd_name;
+	bool rename_incoming_record;
 	struct ldb_message *msg;
 	struct ldb_request *down_req = NULL;
 
@@ -5236,86 +5354,12 @@ static int replmd_op_possible_conflict_callback(struct ldb_request *req, struct 
 				       LDB_ERR_OPERATIONS_ERROR);
 	}
 
-	ret = samdb_rodc(ldb_module_get_ctx(ar->module), &rodc);
+
+	ret = incoming_dn_should_be_renamed(req, ar, conflict_dn, &res,
+					    &rename_incoming_record);
 	if (ret != LDB_SUCCESS) {
-		ldb_asprintf_errstring(ldb_module_get_ctx(ar->module), "Failed to determine if we are an RODC when attempting to form conflict DN: %s", ldb_errstring(ldb_module_get_ctx(ar->module)));
-		return ldb_module_done(ar->req, NULL, NULL,
-				       LDB_ERR_OPERATIONS_ERROR);
-
-	}
-
-	if (rodc) {
-		/*
-		 * We are on an RODC, or were a GC for this
-		 * partition, so we have to fail this until
-		 * someone who owns the partition sorts it
-		 * out
-		 */
-		ldb_asprintf_errstring(ldb_module_get_ctx(ar->module),
-				       "Conflict adding object '%s' from incoming replication as we are read only for the partition.  \n"
-				       " - We must fail the operation until a master for this partition resolves the conflict",
-				       ldb_dn_get_linearized(conflict_dn));
-		ret = LDB_ERR_OPERATIONS_ERROR;
 		goto failed;
 	}
-
-	/*
-	 * first we need the replPropertyMetaData attribute from the
-	 * local, conflicting record
-	 */
-	ret = dsdb_module_search_dn(ar->module, req, &res, conflict_dn,
-				    attrs,
-				    DSDB_FLAG_NEXT_MODULE |
-				    DSDB_SEARCH_SHOW_DELETED |
-				    DSDB_SEARCH_SHOW_RECYCLED, req);
-	if (ret != LDB_SUCCESS) {
-		DEBUG(0,(__location__ ": Unable to find object for conflicting record '%s'\n",
-			 ldb_dn_get_linearized(conflict_dn)));
-		goto failed;
-	}
-
-	omd_value = ldb_msg_find_ldb_val(res->msgs[0], "replPropertyMetaData");
-	if (omd_value == NULL) {
-		DEBUG(0,(__location__ ": Unable to find replPropertyMetaData for conflicting record '%s'\n",
-			 ldb_dn_get_linearized(conflict_dn)));
-		goto failed;
-	}
-
-	ndr_err = ndr_pull_struct_blob(omd_value, res->msgs[0], &omd,
-				       (ndr_pull_flags_fn_t)ndr_pull_replPropertyMetaDataBlob);
-	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
-		DEBUG(0,(__location__ ": Failed to parse old replPropertyMetaData for %s\n",
-			 ldb_dn_get_linearized(conflict_dn)));
-		goto failed;
-	}
-
-	rmd = ar->objs->objects[ar->index_current].meta_data;
-
-	/*
-	 * we decide which is newer based on the RPMD on the name
-	 * attribute.  See [MS-DRSR] ResolveNameConflict.
-	 *
-	 * We expect omd_name to be present, as this is from a local
-	 * search, but while rmd_name should have been given to us by
-	 * the remote server, if it is missing we just prefer the
-	 * local name in
-	 * replmd_replPropertyMetaData1_new_should_be_taken()
-	 */
-	rmd_name = replmd_replPropertyMetaData1_find_attid(rmd, DRSUAPI_ATTID_name);
-	omd_name = replmd_replPropertyMetaData1_find_attid(&omd, DRSUAPI_ATTID_name);
-	if (!omd_name) {
-		DEBUG(0,(__location__ ": Failed to find name attribute in local LDB replPropertyMetaData for %s\n",
-			 ldb_dn_get_linearized(conflict_dn)));
-		goto failed;
-	}
-
-	/*
-	 * Should we preserve the current record, and so rename the
-	 * incoming record to be a conflict?
-	 */
-	rename_incoming_record
-		= !replmd_replPropertyMetaData1_new_should_be_taken(ar->objs->dsdb_repl_flags & DSDB_REPL_FLAG_PRIORITISE_INCOMING,
-								    omd_name, rmd_name);
 
 	if (rename_incoming_record) {
 		struct GUID guid;
@@ -5844,18 +5888,13 @@ static int replmd_replicated_apply_search_for_parent(struct replmd_replicated_re
 static int replmd_replicated_handle_rename(struct replmd_replicated_request *ar,
 					   struct ldb_message *msg,
 					   struct ldb_request *parent,
-					   bool *renamed)
+					   bool *renamed_to_conflict)
 {
 	int ret;
 	TALLOC_CTX *tmp_ctx = talloc_new(msg);
 	struct ldb_result *res;
 	struct ldb_dn *conflict_dn;
-	const char *attrs[] = { "replPropertyMetaData", "objectGUID", NULL };
-	const struct ldb_val *omd_value;
-	struct replPropertyMetaDataBlob omd, *rmd;
-	enum ndr_err_code ndr_err;
-	bool rename_incoming_record, rodc;
-	struct replPropertyMetaData1 *rmd_name, *omd_name;
+	bool rename_incoming_record;
 	struct ldb_dn *new_dn;
 	struct GUID guid;
 
@@ -5868,7 +5907,6 @@ static int replmd_replicated_handle_rename(struct replmd_replicated_request *ar,
 				 DSDB_FLAG_NEXT_MODULE, ar->req);
 	if (ret == LDB_SUCCESS) {
 		talloc_free(tmp_ctx);
-		*renamed = true;
 		return ret;
 	}
 
@@ -5881,93 +5919,14 @@ static int replmd_replicated_handle_rename(struct replmd_replicated_request *ar,
 		return ret;
 	}
 
-	ret = samdb_rodc(ldb_module_get_ctx(ar->module), &rodc);
-	if (ret != LDB_SUCCESS) {
-		ldb_asprintf_errstring(ldb_module_get_ctx(ar->module),
-				       "Failed to determine if we are an RODC when attempting to form conflict DN: %s",
-				       ldb_errstring(ldb_module_get_ctx(ar->module)));
-		return LDB_ERR_OPERATIONS_ERROR;
-	}
-	/*
-	 * we have a conflict, and need to decide if we will keep the
-	 * new record or the old record
-	 */
-
 	conflict_dn = msg->dn;
 
-	if (rodc) {
-		/*
-		 * We are on an RODC, or were a GC for this
-		 * partition, so we have to fail this until
-		 * someone who owns the partition sorts it
-		 * out
-		 */
-		ldb_asprintf_errstring(ldb_module_get_ctx(ar->module),
-				       "Conflict adding object '%s' from incoming replication but we are read only for the partition.  \n"
-				       " - We must fail the operation until a master for this partition resolves the conflict",
-				       ldb_dn_get_linearized(conflict_dn));
-		ret = LDB_ERR_OPERATIONS_ERROR;
-		goto failed;
-	}
 
-	/*
-	 * first we need the replPropertyMetaData attribute from the
-	 * old record
-	 */
-	ret = dsdb_module_search_dn(ar->module, tmp_ctx, &res, conflict_dn,
-				    attrs,
-				    DSDB_FLAG_NEXT_MODULE |
-				    DSDB_SEARCH_SHOW_DELETED |
-				    DSDB_SEARCH_SHOW_RECYCLED, ar->req);
+	ret = incoming_dn_should_be_renamed(tmp_ctx, ar, conflict_dn, &res,
+					    &rename_incoming_record);
 	if (ret != LDB_SUCCESS) {
-		DEBUG(0,(__location__ ": Unable to find object for conflicting record '%s'\n",
-			 ldb_dn_get_linearized(conflict_dn)));
 		goto failed;
 	}
-
-	omd_value = ldb_msg_find_ldb_val(res->msgs[0], "replPropertyMetaData");
-	if (omd_value == NULL) {
-		DEBUG(0,(__location__ ": Unable to find replPropertyMetaData for conflicting record '%s'\n",
-			 ldb_dn_get_linearized(conflict_dn)));
-		goto failed;
-	}
-
-	ndr_err = ndr_pull_struct_blob(omd_value, res->msgs[0], &omd,
-				       (ndr_pull_flags_fn_t)ndr_pull_replPropertyMetaDataBlob);
-	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
-		DEBUG(0,(__location__ ": Failed to parse old replPropertyMetaData for %s\n",
-			 ldb_dn_get_linearized(conflict_dn)));
-		goto failed;
-	}
-
-	rmd = ar->objs->objects[ar->index_current].meta_data;
-
-	/*
-	 * we decide which is newer based on the RPMD on the name
-	 * attribute.  See [MS-DRSR] ResolveNameConflict.
-	 *
-	 * We expect omd_name to be present, as this is from a local
-	 * search, but while rmd_name should have been given to us by
-	 * the remote server, if it is missing we just prefer the
-	 * local name in
-	 * replmd_replPropertyMetaData1_new_should_be_taken()
-	 */
-	rmd_name = replmd_replPropertyMetaData1_find_attid(rmd, DRSUAPI_ATTID_name);
-	omd_name = replmd_replPropertyMetaData1_find_attid(&omd, DRSUAPI_ATTID_name);
-	if (!omd_name) {
-		DEBUG(0,(__location__ ": Failed to find name attribute in local LDB replPropertyMetaData for %s\n",
-			 ldb_dn_get_linearized(conflict_dn)));
-		goto failed;
-	}
-
-	/*
-	 * Should we preserve the current record, and so rename the
-	 * incoming record to be a conflict?
-	 */
-	rename_incoming_record =
-		!replmd_replPropertyMetaData1_new_should_be_taken(
-			ar->objs->dsdb_repl_flags & DSDB_REPL_FLAG_PRIORITISE_INCOMING,
-			omd_name, rmd_name);
 
 	if (rename_incoming_record) {
 
@@ -5980,6 +5939,7 @@ static int replmd_replicated_handle_rename(struct replmd_replicated_request *ar,
 								  "Failed to form conflict DN for %s\n",
 								  ldb_dn_get_linearized(msg->dn));
 
+			talloc_free(tmp_ctx);
 			return replmd_replicated_request_werror(ar, WERR_NOT_ENOUGH_MEMORY);
 		}
 
@@ -5992,11 +5952,13 @@ static int replmd_replicated_handle_rename(struct replmd_replicated_request *ar,
 					       ldb_dn_get_linearized(ar->search_msg->dn),
 					       ldb_dn_get_linearized(new_dn),
 					       ldb_errstring(ldb_module_get_ctx(ar->module)));
+			talloc_free(tmp_ctx);
 			return replmd_replicated_request_werror(ar, WERR_DS_DRA_DB_ERROR);
 		}
 
 		msg->dn = new_dn;
-		*renamed = true;
+		*renamed_to_conflict = true;
+		talloc_free(tmp_ctx);
 		return LDB_SUCCESS;
 	}
 
@@ -6044,7 +6006,10 @@ static int replmd_replicated_handle_rename(struct replmd_replicated_request *ar,
 		 ldb_dn_get_linearized(ar->search_msg->dn),
 		 ldb_dn_get_linearized(msg->dn)));
 
-
+	/*
+	 * With the other record out of the way, do the rename we had
+	 * at the top again
+	 */
 	ret = dsdb_module_rename(ar->module, ar->search_msg->dn, msg->dn,
 				 DSDB_FLAG_NEXT_MODULE, ar->req);
 	if (ret != LDB_SUCCESS) {
@@ -6097,6 +6062,7 @@ static int replmd_replicated_apply_merge(struct replmd_replicated_request *ar)
 	bool take_remote_isDeleted = false;
 	bool sd_updated = false;
 	bool renamed = false;
+	bool renamed_to_conflict = false;
 	bool is_schema_nc = false;
 	NTSTATUS nt_status;
 	const struct ldb_val *old_rdn, *new_rdn;
@@ -6197,7 +6163,7 @@ static int replmd_replicated_apply_merge(struct replmd_replicated_request *ar)
 		 * the peer has an older name to what we have (see
 		 * replmd_replicated_apply_search_callback())
 		 */
-		ret = replmd_replicated_handle_rename(ar, msg, ar->req, &renamed);
+		ret = replmd_replicated_handle_rename(ar, msg, ar->req, &renamed_to_conflict);
 
 		/*
 		 * This looks strange, but we must set this after any
@@ -6205,10 +6171,8 @@ static int replmd_replicated_apply_merge(struct replmd_replicated_request *ar)
 		 * happen (which might matter if we have a new parent)
 		 *
 		 * The additional case of calling
-		 * replmd_op_name_modify_callback (below) is:
-		 *  - a no-op if there was no name change
-		 * and
-		 *  - called in the default case regardless.
+		 * replmd_op_name_modify_callback (below) is
+		 * controlled by renamed_to_conflict.
 		 */
 		renamed = true;
 	}
@@ -6222,7 +6186,7 @@ static int replmd_replicated_apply_merge(struct replmd_replicated_request *ar)
 		return replmd_replicated_request_werror(ar, WERR_DS_DRA_DB_ERROR);
 	}
 
-	if (renamed == true) {
+	if (renamed_to_conflict == true) {
 		/*
 		 * Set the callback to one that will fix up the name
 		 * metadata on the new conflict DN

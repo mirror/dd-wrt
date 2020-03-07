@@ -75,7 +75,9 @@ WERROR _dfs_Add(struct pipes_struct *p, struct dfs_Add *r)
 	}
 
 	/* The following call can change the cwd. */
-	status = get_referred_path(ctx, r->in.path,
+	status = get_referred_path(ctx,
+				   p->session_info,
+				   r->in.path,
 				   p->remote_address,
 				   p->local_address,
 				   true, /*allow_broken_path */
@@ -106,7 +108,7 @@ WERROR _dfs_Add(struct pipes_struct *p, struct dfs_Add *r)
 	jn->referral_list[jn->referral_count-1].ttl = REFERRAL_TTL;
 	jn->referral_list[jn->referral_count-1].alternate_path = altpath;
 
-	if(!create_msdfs_link(jn)) {
+	if(!create_msdfs_link(jn, p->session_info)) {
 		return WERR_NERR_DFSCANTCREATEJUNCTIONPOINT;
 	}
 
@@ -147,7 +149,9 @@ WERROR _dfs_Remove(struct pipes_struct *p, struct dfs_Remove *r)
 			r->in.dfs_entry_path, r->in.servername, r->in.sharename));
 	}
 
-	status = get_referred_path(ctx, r->in.dfs_entry_path,
+	status = get_referred_path(ctx,
+				   p->session_info,
+				   r->in.dfs_entry_path,
 				   p->remote_address,
 				   p->local_address,
 				   true, /*allow_broken_path */
@@ -158,13 +162,15 @@ WERROR _dfs_Remove(struct pipes_struct *p, struct dfs_Remove *r)
 
 	/* if no server-share pair given, remove the msdfs link completely */
 	if(!r->in.servername && !r->in.sharename) {
-		if(!remove_msdfs_link(jn)) {
+		if(!remove_msdfs_link(jn, p->session_info)) {
 			return WERR_NERR_DFSNOSUCHVOLUME;
 		}
 	} else {
-		int i=0;
+		size_t i = 0;
 		/* compare each referral in the list with the one to remove */
-		DEBUG(10,("altpath: .%s. refcnt: %d\n", altpath, jn->referral_count));
+		DBG_DEBUG("altpath: .%s. refcnt: %zu\n",
+				altpath,
+				jn->referral_count);
 		for(i=0;i<jn->referral_count;i++) {
 			char *refpath = talloc_strdup(ctx,
 					jn->referral_list[i].alternate_path);
@@ -187,11 +193,11 @@ WERROR _dfs_Remove(struct pipes_struct *p, struct dfs_Remove *r)
 
 		/* Only one referral, remove it */
 		if(jn->referral_count == 1) {
-			if(!remove_msdfs_link(jn)) {
+			if(!remove_msdfs_link(jn, p->session_info)) {
 				return WERR_NERR_DFSNOSUCHVOLUME;
 			}
 		} else {
-			if(!create_msdfs_link(jn)) {
+			if(!create_msdfs_link(jn, p->session_info)) {
 				return WERR_NERR_DFSCANTCREATEJUNCTIONPOINT;
 			}
 		}
@@ -226,7 +232,7 @@ static bool init_reply_dfs_info_2(TALLOC_CTX *mem_ctx, struct junction_map* j, s
 
 static bool init_reply_dfs_info_3(TALLOC_CTX *mem_ctx, struct junction_map* j, struct dfs_Info3* dfs3)
 {
-	int ii;
+	size_t ii;
 	if (j->volume_name[0] == '\0')
 		dfs3->path = talloc_asprintf(mem_ctx, "\\\\%s\\%s",
 			lp_netbios_name(), j->service_name);
@@ -268,7 +274,7 @@ static bool init_reply_dfs_info_3(TALLOC_CTX *mem_ctx, struct junction_map* j, s
 			continue;
 		}
 		*p = '\0';
-		DEBUG(5,("storage %d: %s.%s\n",ii,path,p+1));
+		DBG_INFO("storage %zu: %s.%s\n",ii,path,p+1);
 		stor->state = 2; /* set all stores as ONLINE */
 		stor->server = talloc_strdup(mem_ctx, path);
 		stor->share = talloc_strdup(mem_ctx, p+1);
@@ -289,7 +295,7 @@ WERROR _dfs_Enum(struct pipes_struct *p, struct dfs_Enum *r)
 	size_t i;
 	TALLOC_CTX *ctx = talloc_tos();
 
-	jn = enum_msdfs_links(ctx, &num_jn);
+	jn = enum_msdfs_links(ctx, p->session_info, &num_jn);
 	if (!jn || num_jn == 0) {
 		num_jn = 0;
 		jn = NULL;
@@ -377,7 +383,9 @@ WERROR _dfs_GetInfo(struct pipes_struct *p, struct dfs_GetInfo *r)
 	}
 
 	/* The following call can change the cwd. */
-	status = get_referred_path(ctx, r->in.dfs_entry_path,
+	status = get_referred_path(ctx,
+				   p->session_info,
+				   r->in.dfs_entry_path,
 				   p->remote_address,
 				   p->local_address,
 				   true, /*allow_broken_path */

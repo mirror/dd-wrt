@@ -519,6 +519,8 @@ WERROR _winreg_InitiateSystemShutdown(struct pipes_struct *p,
 WERROR _winreg_InitiateSystemShutdownEx(struct pipes_struct *p,
 					struct winreg_InitiateSystemShutdownEx *r)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	char *shutdown_script = NULL;
 	char *msg = NULL;
 	char *chkmsg = NULL;
@@ -529,7 +531,7 @@ WERROR _winreg_InitiateSystemShutdownEx(struct pipes_struct *p,
 	int ret = -1;
 	bool can_shutdown = false;
 
-	shutdown_script = lp_shutdown_script(p->mem_ctx);
+	shutdown_script = lp_shutdown_script(p->mem_ctx, lp_sub);
 	if (!shutdown_script) {
 		return WERR_NOT_ENOUGH_MEMORY;
 	}
@@ -611,10 +613,13 @@ WERROR _winreg_InitiateSystemShutdownEx(struct pipes_struct *p,
 WERROR _winreg_AbortSystemShutdown(struct pipes_struct *p,
 				   struct winreg_AbortSystemShutdown *r)
 {
-	const char *abort_shutdown_script = lp_abort_shutdown_script(talloc_tos());
+	const char *abort_shutdown_script = NULL;
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	int ret = -1;
 	bool can_shutdown = false;
 
+	abort_shutdown_script = lp_abort_shutdown_script(talloc_tos(), lp_sub);
 	if (!*abort_shutdown_script)
 		return WERR_ACCESS_DENIED;
 

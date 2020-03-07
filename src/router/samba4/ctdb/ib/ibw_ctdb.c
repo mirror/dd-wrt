@@ -44,7 +44,7 @@ int ctdb_ibw_get_address(struct ctdb_context *ctdb,
 	if (inet_pton(AF_INET, address, addr) <= 0) {
 		struct hostent *he = gethostbyname(address);
 		if (he == NULL || he->h_length > sizeof(*addr)) {
-			ctdb_set_error(ctdb, "invalid nework address '%s'\n", 
+			ctdb_set_error(ctdb, "invalid network address '%s'\n", 
 				       address);
 			return -1;
 		}
@@ -55,7 +55,8 @@ int ctdb_ibw_get_address(struct ctdb_context *ctdb,
 
 int ctdb_ibw_node_connect(struct ctdb_node *node)
 {
-	struct ctdb_ibw_node *cn = talloc_get_type(node->private_data, struct ctdb_ibw_node);
+	struct ctdb_ibw_node *cn = talloc_get_type(node->transport_data,
+						   struct ctdb_ibw_node);
 	int	rc;
 
 	assert(cn!=NULL);
@@ -118,7 +119,9 @@ int ctdb_ibw_connstate_handler(struct ibw_ctx *ctx, struct ibw_conn *conn)
 		case IBWC_CONNECTED: { /* after ibw_accept or ibw_connect */
 			struct ctdb_node *node = talloc_get_type(conn->conn_userdata, struct ctdb_node);
 			if (node!=NULL) { /* after ibw_connect */
-				struct ctdb_ibw_node *cn = talloc_get_type(node->private_data, struct ctdb_ibw_node);
+				struct ctdb_ibw_node *cn = talloc_get_type(
+					node->transport_data,
+					struct ctdb_ibw_node);
 
 				node->ctdb->upcalls->node_connected(node);
 				ctdb_flush_cn_queue(cn);
@@ -136,7 +139,9 @@ int ctdb_ibw_connstate_handler(struct ibw_ctx *ctx, struct ibw_conn *conn)
 		case IBWC_ERROR: {
 			struct ctdb_node *node = talloc_get_type(conn->conn_userdata, struct ctdb_node);
 			if (node!=NULL) {
-				struct ctdb_ibw_node *cn = talloc_get_type(node->private_data, struct ctdb_ibw_node);
+				struct ctdb_ibw_node *cn = talloc_get_type(
+					node->transport_data,
+					struct ctdb_ibw_node);
 				struct ibw_ctx *ictx = cn->conn->ctx;
 
 				DEBUG(DEBUG_DEBUG, ("IBWC_ERROR, reconnecting...\n"));

@@ -66,6 +66,7 @@ from samba.samba3 import param as s3param
 from samba.upgrade import upgrade_from_samba3
 from samba.drs_utils import drsuapi_connect
 from samba import remove_dc, arcfour_encrypt, string_to_byte_array
+from samba.auth_util import system_session_unix
 
 from samba.dsdb import (
     DS_DOMAIN_FUNCTION_2000,
@@ -289,24 +290,6 @@ class cmd_domain_provision(Command):
         Option("--use-rfc2307", action="store_true", help="Use AD to store posix attributes (default = no)"),
     ]
 
-    openldap_options = [
-        Option("--ldapadminpass", type="string", metavar="PASSWORD",
-               help="choose password to set between Samba and its LDAP backend (otherwise random)"),
-        Option("--ldap-backend-type", type="choice", metavar="LDAP-BACKEND-TYPE",
-               help="Test initialisation support for unsupported LDAP backend type (fedora-ds or openldap) DO NOT USE",
-               choices=["fedora-ds", "openldap"]),
-        Option("--ol-mmr-urls", type="string", metavar="LDAPSERVER",
-               help="List of LDAP-URLS [ ldap://<FQHN>:<PORT>/  (where <PORT> has to be different than 389!) ] separated with comma (\",\") for use with OpenLDAP-MMR (Multi-Master-Replication), e.g.: \"ldap://s4dc1:9000,ldap://s4dc2:9000\""),
-        Option("--ldap-dryrun-mode", help="Configure LDAP backend, but do not run any binaries and exit early.  Used only for the test environment.  DO NOT USE",
-               action="store_true"),
-        Option("--slapd-path", type="string", metavar="SLAPD-PATH",
-               help="Path to slapd for LDAP backend [e.g.:'/usr/local/libexec/slapd']. Required for Setup with LDAP-Backend. OpenLDAP Version >= 2.4.17 should be used."),
-        Option("--ldap-backend-extra-port", type="int", metavar="LDAP-BACKEND-EXTRA-PORT", help="Additional TCP port for LDAP backend server (to use for replication)"),
-        Option("--ldap-backend-forced-uri", type="string", metavar="LDAP-BACKEND-FORCED-URI",
-               help="Force the LDAP backend connection to be to a particular URI.  Use this ONLY for 'existing' backends, or when debugging the interaction with the LDAP backend and you need to intercept the LDA"),
-        Option("--ldap-backend-nosync", help="Configure LDAP backend not to call fsync() (for performance in test environments)", action="store_true"),
-    ]
-
     ntvfs_options = [
         Option("--use-xattrs", type="choice", choices=["yes", "no", "auto"],
                metavar="[yes|no|auto]",
@@ -317,9 +300,6 @@ class cmd_domain_provision(Command):
     ]
 
     takes_options.extend(common_provision_join_options)
-
-    if os.getenv('TEST_LDAP', "no") == "yes":
-        takes_options.extend(openldap_options)
 
     if samba.is_ntvfs_fileserver_built():
         takes_options.extend(common_ntvfs_options)
@@ -350,21 +330,14 @@ class cmd_domain_provision(Command):
             users=None,
             quiet=None,
             blank=None,
-            ldap_backend_type=None,
             server_role=None,
             function_level=None,
             next_rid=None,
             partitions_only=None,
             targetdir=None,
-            ol_mmr_urls=None,
             use_xattrs="auto",
-            slapd_path=None,
             use_ntvfs=False,
             use_rfc2307=None,
-            ldap_backend_nosync=None,
-            ldap_backend_extra_port=None,
-            ldap_backend_forced_uri=None,
-            ldap_dryrun_mode=None,
             base_schema=None,
             plaintext_secrets=False,
             backend_store=None,
@@ -491,7 +464,10 @@ class cmd_domain_provision(Command):
             try:
                 try:
                     samba.ntacls.setntacl(lp, file.name,
-                                          "O:S-1-5-32G:S-1-5-32", "S-1-5-32", "native")
+                                          "O:S-1-5-32G:S-1-5-32",
+                                          "S-1-5-32",
+                                          system_session_unix(),
+                                          "native")
                     eadb = False
                 except Exception:
                     self.logger.info("You are not root or your system does not support xattr, using tdb backend for attributes. ")
@@ -500,14 +476,6 @@ class cmd_domain_provision(Command):
 
         if eadb:
             self.logger.info("not using extended attributes to store ACLs and other metadata. If you intend to use this provision in production, rerun the script as root on a system supporting xattrs.")
-        if ldap_backend_type == "existing":
-            if ldap_backend_forced_uri is not None:
-                self.logger.warn("You have specified to use an existing LDAP server as the backend, please make sure an LDAP server is running at %s" % ldap_backend_forced_uri)
-            else:
-                self.logger.info("You have specified to use an existing LDAP server as the backend, please make sure an LDAP server is running at the default location")
-        else:
-            if ldap_backend_forced_uri is not None:
-                self.logger.warn("You have specified to use an fixed URI %s for connecting to your LDAP server backend.  This is NOT RECOMMENDED, as our default communiation over ldapi:// is more secure and much less")
 
         if domain_sid is not None:
             domain_sid = security.dom_sid(domain_sid)
@@ -529,13 +497,8 @@ class cmd_domain_provision(Command):
                                dnspass=dnspass, root=root, nobody=nobody,
                                users=users,
                                serverrole=server_role, dom_for_fun_level=dom_for_fun_level,
-                               backend_type=ldap_backend_type,
-                               ldapadminpass=ldapadminpass, ol_mmr_urls=ol_mmr_urls, slapd_path=slapd_path,
                                useeadb=eadb, next_rid=next_rid, lp=lp, use_ntvfs=use_ntvfs,
                                use_rfc2307=use_rfc2307, skip_sysvolacl=False,
-                               ldap_backend_extra_port=ldap_backend_extra_port,
-                               ldap_backend_forced_uri=ldap_backend_forced_uri,
-                               nosync=ldap_backend_nosync, ldap_dryrun_mode=ldap_dryrun_mode,
                                base_schema=base_schema,
                                plaintext_secrets=plaintext_secrets,
                                backend_store=backend_store,
@@ -1648,7 +1611,10 @@ class cmd_domain_classicupgrade(Command):
             try:
                 try:
                     samba.ntacls.setntacl(lp, tmpfile.name,
-                                          "O:S-1-5-32G:S-1-5-32", "S-1-5-32", "native")
+                                          "O:S-1-5-32G:S-1-5-32",
+                                          "S-1-5-32",
+                                          system_session_unix(),
+                                          "native")
                     eadb = False
                 except Exception:
                     # FIXME: Don't catch all exceptions here
@@ -4151,10 +4117,14 @@ class cmd_domain_schema_upgrade(Command):
         return count
 
     def run(self, **kwargs):
-        from samba.ms_schema_markdown import read_ms_markdown
+        try:
+            from samba.ms_schema_markdown import read_ms_markdown
+        except ImportError as e:
+            self.outf.write("Exception in importing markdown: %s" % e)
+            raise CommandError('Failed to import module markdown')
         from samba.schema import Schema
 
-        updates_allowed_overriden = False
+        updates_allowed_overridden = False
         sambaopts = kwargs.get("sambaopts")
         credopts = kwargs.get("credopts")
         lp = sambaopts.get_loadparm()
@@ -4172,7 +4142,7 @@ class cmd_domain_schema_upgrade(Command):
         if lp.get("dsdb:schema update allowed") is None:
             lp.set("dsdb:schema update allowed", "yes")
             print("Temporarily overriding 'dsdb:schema update allowed' setting")
-            updates_allowed_overriden = True
+            updates_allowed_overridden = True
 
         own_dn = ldb.Dn(samdb, samdb.get_dsServiceName())
         master = get_fsmo_roleowner(samdb, str(samdb.get_schema_basedn()),
@@ -4261,7 +4231,7 @@ class cmd_domain_schema_upgrade(Command):
             samdb.transaction_cancel()
             error_encountered = True
 
-        if updates_allowed_overriden:
+        if updates_allowed_overridden:
             lp.set("dsdb:schema update allowed", "no")
 
         if temp_folder:
@@ -4298,7 +4268,7 @@ class cmd_domain_functional_prep(Command):
     ]
 
     def run(self, **kwargs):
-        updates_allowed_overriden = False
+        updates_allowed_overridden = False
         sambaopts = kwargs.get("sambaopts")
         credopts = kwargs.get("credopts")
         lp = sambaopts.get_loadparm()
@@ -4314,7 +4284,7 @@ class cmd_domain_functional_prep(Command):
         if lp.get("dsdb:schema update allowed") is None:
             lp.set("dsdb:schema update allowed", "yes")
             print("Temporarily overriding 'dsdb:schema update allowed' setting")
-            updates_allowed_overriden = True
+            updates_allowed_overridden = True
 
         if forest_prep is None and domain_prep is None:
             forest_prep = True
@@ -4370,7 +4340,7 @@ class cmd_domain_functional_prep(Command):
                 samdb.transaction_cancel()
                 error_encountered = True
 
-        if updates_allowed_overriden:
+        if updates_allowed_overridden:
             lp.set("dsdb:schema update allowed", "no")
 
         if error_encountered:

@@ -110,9 +110,7 @@ def parse_gplink(gplink):
 
 def encode_gplink(gplist):
     '''Encode an array of dn and options into gPLink string'''
-    ret = ''
-    for g in gplist:
-        ret += "[LDAP://%s;%d]" % (g['dn'], g['options'])
+    ret = "".join("[LDAP://%s;%d]" % (g['dn'], g['options']) for g in gplist)
     return ret
 
 
@@ -237,15 +235,16 @@ def del_gpo_link(samdb, container_dn, gpo):
 
 def parse_unc(unc):
     '''Parse UNC string into a hostname, a service, and a filepath'''
-    if unc.startswith('\\\\') and unc.startswith('//'):
-        raise ValueError("UNC doesn't start with \\\\ or //")
-    tmp = unc[2:].split('/', 2)
-    if len(tmp) == 3:
-        return tmp
-    tmp = unc[2:].split('\\', 2)
-    if len(tmp) == 3:
-        return tmp
-    raise ValueError("Invalid UNC string: %s" % unc)
+    tmp = []
+    if unc.startswith('\\\\'):
+        tmp = unc[2:].split('\\', 2)
+    elif unc.startswith('//'):
+        tmp = unc[2:].split('/', 2)
+
+    if len(tmp) != 3:
+        raise ValueError("Invalid UNC string: %s" % unc)
+
+    return tmp
 
 
 def find_parser(name, flags=re.IGNORECASE):
@@ -480,9 +479,9 @@ class cmd_listall(GPOCommand):
 class cmd_list(GPOCommand):
     """List GPOs for an account."""
 
-    synopsis = "%prog <username> [options]"
+    synopsis = "%prog <username|machinename> [options]"
 
-    takes_args = ['username']
+    takes_args = ['accountname']
     takes_optiongroups = {
         "sambaopts": options.SambaOptions,
         "versionopts": options.VersionOptions,
@@ -494,7 +493,7 @@ class cmd_list(GPOCommand):
                type=str, metavar="URL", dest="H")
     ]
 
-    def run(self, username, H=None, sambaopts=None, credopts=None, versionopts=None):
+    def run(self, accountname, H=None, sambaopts=None, credopts=None, versionopts=None):
 
         self.lp = sambaopts.get_loadparm()
         self.creds = credopts.get_credentials(self.lp, fallback_machine=True)
@@ -505,17 +504,17 @@ class cmd_list(GPOCommand):
 
         try:
             msg = self.samdb.search(expression='(&(|(samAccountName=%s)(samAccountName=%s$))(objectClass=User))' %
-                                    (ldb.binary_encode(username), ldb.binary_encode(username)))
+                                    (ldb.binary_encode(accountname), ldb.binary_encode(accountname)))
             user_dn = msg[0].dn
         except Exception:
-            raise CommandError("Failed to find account %s" % username)
+            raise CommandError("Failed to find account %s" % accountname)
 
         # check if its a computer account
         try:
             msg = self.samdb.search(base=user_dn, scope=ldb.SCOPE_BASE, attrs=['objectClass'])[0]
             is_computer = 'computer' in msg['objectClass']
         except Exception:
-            raise CommandError("Failed to find objectClass for user %s" % username)
+            raise CommandError("Failed to find objectClass for %s" % accountname)
 
         session_info_flags = (AUTH_SESSION_INFO_DEFAULT_GROUPS |
                               AUTH_SESSION_INFO_AUTHENTICATED)
@@ -589,7 +588,7 @@ class cmd_list(GPOCommand):
         else:
             msg_str = 'user'
 
-        self.outf.write("GPOs for %s %s\n" % (msg_str, username))
+        self.outf.write("GPOs for %s %s\n" % (msg_str, accountname))
         for g in gpos:
             self.outf.write("    %s %s\n" % (g[0], g[1]))
 
@@ -1002,6 +1001,7 @@ class cmd_fetch(GPOCommand):
 
         # Copy GPT
         tmpdir, gpodir = self.construct_tmpdir(tmpdir, gpo)
+
         try:
             copy_directory_remote_to_local(conn, sharepath, gpodir)
         except Exception as e:
@@ -1079,9 +1079,8 @@ class cmd_backup(GPOCommand):
             entities = cmd_backup.generalize_xml_entities(self.outf, gpodir,
                                                           gpodir)
             import operator
-            ents = ''
-            for ent in sorted(entities.items(), key=operator.itemgetter(1)):
-                ents += '<!ENTITY {} "{}">\n'.format(ent[1].strip('&;'), ent[0])
+            ents = "".join('<!ENTITY {} "{}\n">'.format(ent[1].strip('&;'), ent[0]) \
+                             for ent in sorted(entities.items(), key=operator.itemgetter(1)))
 
             if ent_file:
                 with open(ent_file, 'w') as f:

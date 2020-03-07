@@ -297,6 +297,10 @@ static NTSTATUS smb_raw_info_backend(struct smbcli_session *session,
 		return NT_STATUS_INVALID_LEVEL;
 
 	case RAW_FILEINFO_STANDARD:
+		if (session == NULL) {
+			return NT_STATUS_INVALID_PARAMETER;
+		}
+
 		FINFO_CHECK_SIZE(22);
 		parms->standard.out.create_time = raw_pull_dos_date2(session->transport,
 								     blob->data +  0);
@@ -310,6 +314,10 @@ static NTSTATUS smb_raw_info_backend(struct smbcli_session *session,
 		return NT_STATUS_OK;
 
 	case RAW_FILEINFO_EA_SIZE:
+		if (session == NULL) {
+			return NT_STATUS_INVALID_PARAMETER;
+		}
+
 		FINFO_CHECK_SIZE(26);
 		parms->ea_size.out.create_time = raw_pull_dos_date2(session->transport,
 								    blob->data +  0);
@@ -589,6 +597,10 @@ static struct smbcli_request *smb_raw_getattr_send(struct smbcli_tree *tree,
 static NTSTATUS smb_raw_getattr_recv(struct smbcli_request *req,
 				     union smb_fileinfo *parms)
 {
+	if (req == NULL) {
+		goto failed;
+	}
+
 	if (!smbcli_request_receive(req) ||
 	    smbcli_request_is_error(req)) {
 		return smbcli_request_destroy(req);
@@ -631,11 +643,15 @@ static struct smbcli_request *smb_raw_getattrE_send(struct smbcli_tree *tree,
 static NTSTATUS smb_raw_getattrE_recv(struct smbcli_request *req,
 				      union smb_fileinfo *parms)
 {
+	if (req == NULL) {
+		goto failed;
+	}
+
 	if (!smbcli_request_receive(req) ||
 	    smbcli_request_is_error(req)) {
 		return smbcli_request_destroy(req);
 	}
-	
+
 	SMBCLI_CHECK_WCT(req, 11);
 	parms->getattre.out.create_time =   raw_pull_dos_date2(req->transport,
 							       req->in.vwv + VWV(0));

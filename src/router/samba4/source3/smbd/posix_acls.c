@@ -3578,15 +3578,16 @@ NTSTATUS posix_get_nt_acl(struct connection_struct *conn,
 NTSTATUS try_chown(files_struct *fsp, uid_t uid, gid_t gid)
 {
 	NTSTATUS status;
+	int ret;
 
 	if(!CAN_WRITE(fsp->conn)) {
 		return NT_STATUS_MEDIA_WRITE_PROTECTED;
 	}
 
 	/* Case (1). */
-	status = vfs_chown_fsp(fsp, uid, gid);
-	if (NT_STATUS_IS_OK(status)) {
-		return status;
+	ret = SMB_VFS_FCHOWN(fsp, uid, gid);
+	if (ret == 0) {
+		return NT_STATUS_OK;
 	}
 
 	/* Case (2) / (3) */
@@ -3610,8 +3611,12 @@ NTSTATUS try_chown(files_struct *fsp, uid_t uid, gid_t gid)
 		}
 
 		if (has_take_ownership_priv || has_restore_priv) {
+			status = NT_STATUS_OK;
 			become_root();
-			status = vfs_chown_fsp(fsp, uid, gid);
+			ret = SMB_VFS_FCHOWN(fsp, uid, gid);
+			if (ret != 0) {
+				status = map_nt_error_from_unix(errno);
+			}
 			unbecome_root();
 			return status;
 		}
@@ -3630,9 +3635,13 @@ NTSTATUS try_chown(files_struct *fsp, uid_t uid, gid_t gid)
 		return NT_STATUS_INVALID_OWNER;
 	}
 
+	status = NT_STATUS_OK;
 	become_root();
 	/* Keep the current file gid the same. */
-	status = vfs_chown_fsp(fsp, uid, (gid_t)-1);
+	ret = SMB_VFS_FCHOWN(fsp, uid, (gid_t)-1);
+	if (ret != 0) {
+		status = map_nt_error_from_unix(errno);
+	}
 	unbecome_root();
 
 	return status;
@@ -4630,7 +4639,9 @@ NTSTATUS set_unix_posix_acl(connection_struct *conn,
 
 ********************************************************************/
 
-NTSTATUS get_nt_acl_no_snum(TALLOC_CTX *ctx, const char *fname,
+NTSTATUS get_nt_acl_no_snum(TALLOC_CTX *ctx,
+			    struct auth_session_info *session_info,
+			    const char *fname,
 				uint32_t security_info_wanted,
 				struct security_descriptor **sd)
 {
@@ -4656,7 +4667,7 @@ NTSTATUS get_nt_acl_no_snum(TALLOC_CTX *ctx, const char *fname,
 	status = create_conn_struct_tos(global_messaging_context(),
 					-1,
 					"/",
-					NULL,
+					session_info,
 					&c);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(0,("create_conn_struct returned %s.\n",

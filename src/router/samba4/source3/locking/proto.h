@@ -23,6 +23,8 @@
 #ifndef _LOCKING_PROTO_H_
 #define _LOCKING_PROTO_H_
 
+#include <tdb.h>
+
 /* The following definitions come from locking/brlock.c  */
 
 void brl_init(bool read_only);
@@ -142,11 +144,20 @@ bool file_has_read_lease(struct files_struct *fsp);
 struct db_record;
 NTSTATUS share_mode_do_locked(
 	struct file_id id,
-	void (*fn)(struct db_record *rec,
+	void (*fn)(TDB_DATA value,
 		   bool *modified_dependent,
 		   void *private_data),
 	void *private_data);
 NTSTATUS share_mode_wakeup_waiters(struct file_id id);
+bool share_mode_have_entries(struct share_mode_lock *lck);
+
+struct tevent_req *share_mode_watch_send(
+	TALLOC_CTX *mem_ctx,
+	struct tevent_context *ev,
+	struct file_id id,
+	struct server_id blocker);
+NTSTATUS share_mode_watch_recv(
+	struct tevent_req *req, bool *blockerdead, struct server_id *blocker);
 
 struct share_mode_lock *fetch_share_mode_unlocked(TALLOC_CTX *mem_ctx,
 						  struct file_id id);
@@ -169,15 +180,24 @@ void get_file_infos(struct file_id id,
 		    bool *delete_on_close,
 		    struct timespec *write_time);
 bool is_valid_share_mode_entry(const struct share_mode_entry *e);
-bool share_mode_stale_pid(struct share_mode_data *d, uint32_t idx);
+bool share_entry_stale_pid(struct share_mode_entry *e);
 bool set_share_mode(struct share_mode_lock *lck,
 		    struct files_struct *fsp,
 		    uid_t uid,
 		    uint64_t mid,
 		    uint16_t op_type,
-		    const struct GUID *client_guid,
-		    const struct smb2_lease_key *lease_key);
-void remove_stale_share_mode_entries(struct share_mode_data *d);
+		    uint32_t share_access,
+		    uint32_t access_mask);
+bool reset_share_mode_entry(
+	struct share_mode_lock *lck,
+	struct server_id old_pid,
+	uint64_t old_share_file_id,
+	struct server_id new_pid,
+	uint64_t new_mid,
+	uint64_t new_share_file_id);
+NTSTATUS remove_lease_if_stale(struct share_mode_lock *lck,
+			       const struct GUID *client_guid,
+			       const struct smb2_lease_key *lease_key);
 bool del_share_mode(struct share_mode_lock *lck, files_struct *fsp);
 bool mark_share_mode_disconnected(struct share_mode_lock *lck,
 				  struct files_struct *fsp);
@@ -214,11 +234,18 @@ bool share_mode_cleanup_disconnected(struct file_id id,
 				     uint64_t open_persistent_id);
 bool share_mode_forall_leases(
 	struct share_mode_lock *lck,
-	bool (*fn)(struct share_mode_lock *lck,
-		   struct share_mode_entry *e,
+	bool (*fn)(struct share_mode_entry *e,
 		   void *private_data),
 	void *private_data);
 
+bool share_mode_forall_entries(
+	struct share_mode_lock *lck,
+	bool (*fn)(struct share_mode_entry *e,
+		   bool *modified,
+		   void *private_data),
+	void *private_data);
+
+NTSTATUS share_mode_count_entries(struct file_id fid, size_t *num_share_modes);
 
 /* The following definitions come from locking/posix.c  */
 
@@ -260,8 +287,8 @@ bool release_posix_lock_posix_flavour(files_struct *fsp,
 
 /* The following definitions come from locking/leases_util.c */
 uint32_t map_oplock_to_lease_type(uint16_t op_type);
-uint32_t fsp_lease_type(const struct files_struct *fsp);
-uint32_t lease_type_is_exclusive(uint32_t lease_type);
-bool fsp_lease_type_is_exclusive(const struct files_struct *fsp);
+uint32_t fsp_lease_type(struct files_struct *fsp);
+bool fsp_lease_type_is_exclusive(struct files_struct *fsp);
+const struct GUID *fsp_client_guid(const files_struct *fsp);
 
 #endif /* _LOCKING_PROTO_H_ */

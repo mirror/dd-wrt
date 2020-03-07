@@ -585,8 +585,8 @@ static void smbd_smb1_do_locks_try(struct tevent_req *req)
 	}
 
 setup_retry:
-	subreq = dbwrap_watched_watch_send(
-		state, state->ev, lck->data->record, blocking_pid);
+	subreq = share_mode_watch_send(
+		state, state->ev, lck->data->id, blocking_pid);
 	if (tevent_req_nomem(subreq, req)) {
 		goto done;
 	}
@@ -620,16 +620,16 @@ static void smbd_smb1_do_locks_retry(struct tevent_req *subreq)
 	/*
 	 * Make sure we run as the user again
 	 */
-	ok = change_to_user_by_fsp(state->fsp);
+	ok = change_to_user_and_service_by_fsp(state->fsp);
 	if (!ok) {
 		tevent_req_nterror(req, NT_STATUS_ACCESS_DENIED);
 		return;
 	}
 
-	status = dbwrap_watched_watch_recv(subreq, NULL, NULL);
+	status = share_mode_watch_recv(subreq, NULL, NULL);
 	TALLOC_FREE(subreq);
 
-	DBG_DEBUG("dbwrap_watched_watch_recv returned %s\n",
+	DBG_DEBUG("share_mode_watch_recv returned %s\n",
 		  nt_errstr(status));
 
 	/*

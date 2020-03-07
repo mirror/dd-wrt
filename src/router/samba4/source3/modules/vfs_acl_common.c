@@ -1155,9 +1155,15 @@ static int acl_common_remove_object(vfs_handle_struct *handle,
 
 	become_root();
 	if (is_directory) {
-		ret = SMB_VFS_NEXT_RMDIR(handle, &local_fname);
+		ret = SMB_VFS_NEXT_UNLINKAT(handle,
+				conn->cwd_fsp,
+				&local_fname,
+				AT_REMOVEDIR);
 	} else {
-		ret = SMB_VFS_NEXT_UNLINK(handle, &local_fname);
+		ret = SMB_VFS_NEXT_UNLINKAT(handle,
+				conn->cwd_fsp,
+				&local_fname,
+				0);
 	}
 	unbecome_root();
 
@@ -1180,12 +1186,16 @@ static int acl_common_remove_object(vfs_handle_struct *handle,
 }
 
 int rmdir_acl_common(struct vfs_handle_struct *handle,
-		     const struct smb_filename *smb_fname)
+		struct files_struct *dirfsp,
+		const struct smb_filename *smb_fname)
 {
 	int ret;
 
 	/* Try the normal rmdir first. */
-	ret = SMB_VFS_NEXT_RMDIR(handle, smb_fname);
+	ret = SMB_VFS_NEXT_UNLINKAT(handle,
+			dirfsp,
+			smb_fname,
+			AT_REMOVEDIR);
 	if (ret == 0) {
 		return 0;
 	}
@@ -1204,12 +1214,17 @@ int rmdir_acl_common(struct vfs_handle_struct *handle,
 }
 
 int unlink_acl_common(struct vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname)
+			struct files_struct *dirfsp,
+			const struct smb_filename *smb_fname,
+			int flags)
 {
 	int ret;
 
 	/* Try the normal unlink first. */
-	ret = SMB_VFS_NEXT_UNLINK(handle, smb_fname);
+	ret = SMB_VFS_NEXT_UNLINKAT(handle,
+				dirfsp,
+				smb_fname,
+				flags);
 	if (ret == 0) {
 		return 0;
 	}

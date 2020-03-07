@@ -339,8 +339,6 @@ typedef char fstring[FSTRING_LEN];
 
 
 /* add varargs prototypes with printf checking */
-/*PRINTFLIKE2 */
-int fdprintf(int , const char *, ...) PRINTF_ATTRIBUTE(2,3);
 /*PRINTFLIKE1 */
 int d_printf(const char *, ...) PRINTF_ATTRIBUTE(1,2);
 /*PRINTFLIKE2 */
@@ -348,8 +346,6 @@ int d_fprintf(FILE *f, const char *, ...) PRINTF_ATTRIBUTE(2,3);
 
 /* PRINTFLIKE2 */
 int fstr_sprintf(fstring s, const char *fmt, ...) PRINTF_ATTRIBUTE(2,3);
-
-int smb_xvasprintf(char **ptr, const char *format, va_list ap) PRINTF_ATTRIBUTE(2,0);
 
 int asprintf_strupper_m(char **strp, const char *fmt, ...) PRINTF_ATTRIBUTE(2,3);
 char *talloc_asprintf_strupper_m(TALLOC_CTX *t, const char *fmt, ...) PRINTF_ATTRIBUTE(2,3);

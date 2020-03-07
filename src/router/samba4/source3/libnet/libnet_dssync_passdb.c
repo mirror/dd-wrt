@@ -663,6 +663,8 @@ static NTSTATUS smb_create_user(TALLOC_CTX *mem_ctx,
 				const char *account,
 				struct passwd **passwd_p)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	struct passwd *passwd;
 	char *add_script = NULL;
 
@@ -674,11 +676,11 @@ static NTSTATUS smb_create_user(TALLOC_CTX *mem_ctx,
 
 	/* Create appropriate user */
 	if (acct_flags & ACB_NORMAL) {
-		add_script = lp_add_user_script(mem_ctx);
+		add_script = lp_add_user_script(mem_ctx, lp_sub);
 	} else if ( (acct_flags & ACB_WSTRUST) ||
 		    (acct_flags & ACB_SVRTRUST) ||
 		    (acct_flags & ACB_DOMTRUST) ) {
-		add_script = lp_add_machine_script(mem_ctx);
+		add_script = lp_add_machine_script(mem_ctx, lp_sub);
 	} else {
 		DEBUG(1, ("Unknown user type: %s\n",
 			  pdb_encode_acct_ctrl(acct_flags, NEW_PW_FORMAT_SPACE_PADDED_LEN)));

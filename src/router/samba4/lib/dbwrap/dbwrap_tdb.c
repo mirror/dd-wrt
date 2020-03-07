@@ -17,12 +17,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "includes.h"
+#include "replace.h"
 #include "dbwrap/dbwrap.h"
 #include "dbwrap/dbwrap_private.h"
 #include "dbwrap/dbwrap_tdb.h"
 #include "lib/tdb_wrap/tdb_wrap.h"
 #include "lib/util/util_tdb.h"
+#include "lib/util/debug.h"
+#include "lib/util/samba_util.h"
 #include "system/filesys.h"
 #include "lib/param/param.h"
 #include "libcli/util/error.h"
@@ -42,24 +44,24 @@ static NTSTATUS db_tdb_delete(struct db_record *rec);
 
 static void db_tdb_log_key(const char *prefix, TDB_DATA key)
 {
-	size_t len;
-	char *keystr;
-	TALLOC_CTX *frame;
 	if (DEBUGLEVEL < 10) {
 		return;
 	}
-	frame = talloc_stackframe();
-	len = key.dsize;
 	if (DEBUGLEVEL == 10) {
 		/*
 		 * Only fully spam at debuglevel > 10
 		 */
-		len = MIN(10, key.dsize);
+		key.dsize = MIN(10, key.dsize);
 	}
-	keystr = hex_encode_talloc(frame, (unsigned char *)(key.dptr),
-				   len);
-	DBG_DEBUG("%s key %s\n", prefix, keystr);
-	TALLOC_FREE(frame);
+
+	if (key.dsize < 1024) {
+		char keystr[key.dsize*2+1];
+		hex_encode_buf(keystr, key.dptr, key.dsize);
+		DBG_DEBUG("%s key %s\n", prefix, keystr);
+		return;
+	}
+
+	dump_data(DEBUGLEVEL, key.dptr, key.dsize);
 }
 
 static int db_tdb_record_destr(struct db_record* data)
@@ -106,6 +108,7 @@ static int db_tdb_fetchlock_parse(TDB_DATA key, TDB_DATA data,
 	else {
 		result->value.dptr = NULL;
 	}
+	result->value_valid = true;
 
 	return 0;
 }
@@ -182,6 +185,7 @@ static struct db_record *db_tdb_try_fetch_locked(
 
 static NTSTATUS db_tdb_do_locked(struct db_context *db, TDB_DATA key,
 				 void (*fn)(struct db_record *rec,
+					    TDB_DATA value,
 					    void *private_data),
 				 void *private_data)
 {
@@ -210,17 +214,18 @@ static NTSTATUS db_tdb_do_locked(struct db_context *db, TDB_DATA key,
 
 	rec = (struct db_record) {
 		.db = db, .key = key,
-		.value = (struct TDB_DATA) { .dptr = buf,
-					     .dsize = talloc_get_size(buf) },
+		.value_valid = false,
 		.storev = db_tdb_storev, .delete_rec = db_tdb_delete,
 		.private_data = ctx
 	};
 
-	fn(&rec, private_data);
-
-	talloc_free(buf);
+	fn(&rec,
+	   (TDB_DATA) { .dptr = buf, .dsize = talloc_get_size(buf) },
+	   private_data);
 
 	tdb_chainunlock(ctx->wtdb->tdb, key);
+
+	talloc_free(buf);
 
 	return NT_STATUS_OK;
 }
@@ -292,6 +297,8 @@ static NTSTATUS db_tdb_storev(struct db_record *rec,
 {
 	struct db_tdb_ctx *ctx = talloc_get_type_abort(rec->private_data,
 						       struct db_tdb_ctx);
+	struct tdb_context *tdb = ctx->wtdb->tdb;
+	NTSTATUS status = NT_STATUS_OK;
 	int ret;
 
 	/*
@@ -300,8 +307,12 @@ static NTSTATUS db_tdb_storev(struct db_record *rec,
 	 * anymore after it was stored.
 	 */
 
-	ret = tdb_storev(ctx->wtdb->tdb, rec->key, dbufs, num_dbufs, flag);
-	return (ret == 0) ? NT_STATUS_OK : NT_STATUS_UNSUCCESSFUL;
+	ret = tdb_storev(tdb, rec->key, dbufs, num_dbufs, flag);
+	if (ret == -1) {
+		enum TDB_ERROR err = tdb_error(tdb);
+		status = map_nt_error_from_tdb(err);
+	}
+	return status;
 }
 
 static NTSTATUS db_tdb_delete(struct db_record *rec)
@@ -335,6 +346,7 @@ static int db_tdb_traverse_func(TDB_CONTEXT *tdb, TDB_DATA kbuf, TDB_DATA dbuf,
 
 	rec.key = kbuf;
 	rec.value = dbuf;
+	rec.value_valid = true;
 	rec.storev = db_tdb_storev;
 	rec.delete_rec = db_tdb_delete;
 	rec.private_data = ctx->db->private_data;
@@ -378,6 +390,7 @@ static int db_tdb_traverse_read_func(TDB_CONTEXT *tdb, TDB_DATA kbuf, TDB_DATA d
 
 	rec.key = kbuf;
 	rec.value = dbuf;
+	rec.value_valid = true;
 	rec.storev = db_tdb_storev_deny;
 	rec.delete_rec = db_tdb_delete_deny;
 	rec.private_data = ctx->db->private_data;

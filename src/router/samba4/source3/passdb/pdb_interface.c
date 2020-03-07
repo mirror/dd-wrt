@@ -62,7 +62,7 @@ static bool lookup_global_sam_rid(TALLOC_CTX *mem_ctx, uint32_t rid,
 
 NTSTATUS smb_register_passdb(int version, const char *name, pdb_init_function init) 
 {
-	struct pdb_init_function_entry *entry = backends;
+	struct pdb_init_function_entry *entry = NULL;
 
 	if(version != PASSDB_INTERFACE_VERSION) {
 		DEBUG(0,("Can't register passdb backend!\n"
@@ -137,7 +137,7 @@ NTSTATUS make_pdb_method_name(struct pdb_methods **methods, const char *selected
 	char *module_name = smb_xstrdup(selected);
 	char *module_location = NULL, *p;
 	struct pdb_init_function_entry *entry;
-	NTSTATUS nt_status = NT_STATUS_UNSUCCESSFUL;
+	NTSTATUS nt_status;
 
 	lazy_initialize_passdb();
 
@@ -447,6 +447,8 @@ static NTSTATUS pdb_default_create_user(struct pdb_methods *methods,
 					TALLOC_CTX *tmp_ctx, const char *name,
 					uint32_t acb_info, uint32_t *rid)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	struct samu *sam_pass;
 	NTSTATUS status;
 	struct passwd *pwd;
@@ -461,9 +463,9 @@ static NTSTATUS pdb_default_create_user(struct pdb_methods *methods,
 		fstring name2;
 
 		if ((acb_info & ACB_NORMAL) && name[strlen(name)-1] != '$') {
-			add_script = lp_add_user_script(tmp_ctx);
+			add_script = lp_add_user_script(tmp_ctx, lp_sub);
 		} else {
-			add_script = lp_add_machine_script(tmp_ctx);
+			add_script = lp_add_machine_script(tmp_ctx, lp_sub);
 		}
 
 		if (!add_script || add_script[0] == '\0') {
@@ -549,6 +551,8 @@ NTSTATUS pdb_create_user(TALLOC_CTX *mem_ctx, const char *name, uint32_t flags,
 
 static int smb_delete_user(const char *unix_user)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	char *del_script = NULL;
 	int ret;
 
@@ -559,7 +563,7 @@ static int smb_delete_user(const char *unix_user)
 		return -1;
 	}
 
-	del_script = lp_delete_user_script(talloc_tos());
+	del_script = lp_delete_user_script(talloc_tos(), lp_sub);
 	if (!del_script || !*del_script) {
 		return -1;
 	}

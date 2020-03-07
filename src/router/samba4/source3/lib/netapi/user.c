@@ -290,7 +290,7 @@ static NTSTATUS construct_USER_INFO_X(uint32_t level,
 /****************************************************************
 ****************************************************************/
 
-static NTSTATUS set_user_info_USER_INFO_X(TALLOC_CTX *ctx,
+static NTSTATUS set_user_info_USER_INFO_X(TALLOC_CTX *mem_ctx,
 					  struct rpc_pipe_client *pipe_cli,
 					  DATA_BLOB *session_key,
 					  struct policy_handle *user_handle,
@@ -313,11 +313,14 @@ static NTSTATUS set_user_info_USER_INFO_X(TALLOC_CTX *ctx,
 
 		user_info.info25.info = info21;
 
-		init_samr_CryptPasswordEx(uX->usriX_password,
-					  session_key,
-					  &user_info.info25.password);
+		status = init_samr_CryptPasswordEx(uX->usriX_password,
+						   session_key,
+						   &user_info.info25.password);
+		if (!NT_STATUS_IS_OK(status)) {
+			return status;
+		}
 
-		status = dcerpc_samr_SetUserInfo2(b, talloc_tos(),
+		status = dcerpc_samr_SetUserInfo2(b, mem_ctx,
 						  user_handle,
 						  25,
 						  &user_info,
@@ -326,11 +329,14 @@ static NTSTATUS set_user_info_USER_INFO_X(TALLOC_CTX *ctx,
 
 			user_info.info23.info = info21;
 
-			init_samr_CryptPassword(uX->usriX_password,
-						session_key,
-						&user_info.info23.password);
+			status = init_samr_CryptPassword(uX->usriX_password,
+							 session_key,
+							 &user_info.info23.password);
+			if (!NT_STATUS_IS_OK(status)) {
+				return status;
+			}
 
-			status = dcerpc_samr_SetUserInfo2(b, talloc_tos(),
+			status = dcerpc_samr_SetUserInfo2(b, mem_ctx,
 							  user_handle,
 							  23,
 							  &user_info,
@@ -347,7 +353,7 @@ static NTSTATUS set_user_info_USER_INFO_X(TALLOC_CTX *ctx,
 
 		user_info.info21 = info21;
 
-		status = dcerpc_samr_SetUserInfo(b, talloc_tos(),
+		status = dcerpc_samr_SetUserInfo(b, mem_ctx,
 						 user_handle,
 						 21,
 						 &user_info,
@@ -1287,7 +1293,7 @@ WERROR NetUserEnum_r(struct libnetapi_ctx *ctx,
 	int i;
 	uint32_t entries_read = 0;
 
-	NTSTATUS status = NT_STATUS_OK;
+	NTSTATUS status;
 	NTSTATUS result = NT_STATUS_OK;
 	WERROR werr;
 	struct dcerpc_binding_handle *b = NULL;
@@ -1607,7 +1613,7 @@ WERROR NetQueryDisplayInformation_r(struct libnetapi_ctx *ctx,
 	uint32_t total_size = 0;
 	uint32_t returned_size = 0;
 
-	NTSTATUS status = NT_STATUS_OK;
+	NTSTATUS status;
 	NTSTATUS result = NT_STATUS_OK;
 	WERROR werr;
 	WERROR werr_tmp;
@@ -2987,7 +2993,7 @@ WERROR NetUserGetGroups_r(struct libnetapi_ctx *ctx,
 	int i;
 	uint32_t entries_read = 0;
 
-	NTSTATUS status = NT_STATUS_OK;
+	NTSTATUS status;
 	NTSTATUS result = NT_STATUS_OK;
 	WERROR werr;
 	struct dcerpc_binding_handle *b = NULL;
@@ -3181,7 +3187,7 @@ WERROR NetUserSetGroups_r(struct libnetapi_ctx *ctx,
 
 	int i, k;
 
-	NTSTATUS status = NT_STATUS_OK;
+	NTSTATUS status;
 	NTSTATUS result = NT_STATUS_OK;
 	WERROR werr;
 	struct dcerpc_binding_handle *b = NULL;
@@ -3519,7 +3525,7 @@ WERROR NetUserGetLocalGroups_r(struct libnetapi_ctx *ctx,
 	int i;
 	uint32_t entries_read = 0;
 
-	NTSTATUS status = NT_STATUS_OK;
+	NTSTATUS status;
 	NTSTATUS result = NT_STATUS_OK;
 	WERROR werr;
 	struct dcerpc_binding_handle *b = NULL;

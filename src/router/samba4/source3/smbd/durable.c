@@ -104,7 +104,8 @@ NTSTATUS vfs_default_durable_cookie(struct files_struct *fsp,
 	cookie.update_write_time_triggered = fsp->update_write_time_triggered;
 	cookie.update_write_time_on_close = fsp->update_write_time_on_close;
 	cookie.write_time_forced = fsp->write_time_forced;
-	cookie.close_write_time = fsp->close_write_time;
+	cookie.close_write_time = full_timespec_to_nt_time(
+		&fsp->close_write_time);
 
 	cookie.stat_info.st_ex_dev = fsp->fsp_name->st.st_ex_dev;
 	cookie.stat_info.st_ex_ino = fsp->fsp_name->st.st_ex_ino;
@@ -205,19 +206,20 @@ NTSTATUS vfs_default_durable_disconnect(struct files_struct *fsp,
 	if (lck != NULL) {
 		struct smb_file_time ft;
 
-		ZERO_STRUCT(ft);
+		init_smb_file_time(&ft);
 
 		if (fsp->write_time_forced) {
-			ft.mtime = lck->data->changed_write_time;
+			ft.mtime = nt_time_to_full_timespec(
+				lck->data->changed_write_time);
 		} else if (fsp->update_write_time_on_close) {
-			if (null_timespec(fsp->close_write_time)) {
+			if (is_omit_timespec(&fsp->close_write_time)) {
 				ft.mtime = timespec_current();
 			} else {
 				ft.mtime = fsp->close_write_time;
 			}
 		}
 
-		if (!null_timespec(ft.mtime)) {
+		if (!is_omit_timespec(&ft.mtime)) {
 			round_timespec(conn->ts_res, &ft.mtime);
 			file_ntimes(conn, fsp->fsp_name, &ft);
 		}
@@ -253,7 +255,8 @@ NTSTATUS vfs_default_durable_disconnect(struct files_struct *fsp,
 	cookie.update_write_time_triggered = fsp->update_write_time_triggered;
 	cookie.update_write_time_on_close = fsp->update_write_time_on_close;
 	cookie.write_time_forced = fsp->write_time_forced;
-	cookie.close_write_time = fsp->close_write_time;
+	cookie.close_write_time = full_timespec_to_nt_time(
+		&fsp->close_write_time);
 
 	cookie.stat_info.st_ex_dev = fsp->fsp_name->st.st_ex_dev;
 	cookie.stat_info.st_ex_ino = fsp->fsp_name->st.st_ex_ino;
@@ -496,6 +499,22 @@ static bool vfs_default_durable_reconnect_check_stat(
 	return true;
 }
 
+static bool durable_reconnect_fn(
+	struct share_mode_entry *e,
+	bool *modified,
+	void *private_data)
+{
+	struct share_mode_entry *dst_e = private_data;
+
+	if (dst_e->pid.pid != 0) {
+		DBG_INFO("Found more than one entry, invalidating previous\n");
+		dst_e->pid.pid = 0;
+		return true;	/* end the loop through share mode entries */
+	}
+	*dst_e = *e;
+	return false;		/* Look at potential other entries */
+}
+
 NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 				       struct smb_request *smb1req,
 				       struct smbXsrv_open *op,
@@ -504,8 +523,10 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 				       files_struct **result,
 				       DATA_BLOB *new_cookie)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	struct share_mode_lock *lck;
-	struct share_mode_entry *e;
+	struct share_mode_entry e;
 	struct files_struct *fsp = NULL;
 	NTSTATUS status;
 	bool ok;
@@ -596,27 +617,22 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 		return NT_STATUS_OBJECT_NAME_NOT_FOUND;
 	}
 
-	if (lck->data->num_share_modes == 0) {
-		DEBUG(1, ("vfs_default_durable_reconnect: Error: no share-mode "
-			  "entry in existing share mode lock\n"));
+	e = (struct share_mode_entry) { .pid.pid = 0 };
+
+	ok = share_mode_forall_entries(lck, durable_reconnect_fn, &e);
+	if (!ok) {
+		DBG_WARNING("share_mode_forall_entries failed\n");
 		TALLOC_FREE(lck);
 		return NT_STATUS_INTERNAL_DB_ERROR;
 	}
 
-	if (lck->data->num_share_modes > 1) {
-		/*
-		 * It can't be durable if there is more than one handle
-		 * on the file.
-		 */
-		DEBUG(5, ("vfs_default_durable_reconnect: more than one "
-			  "share-mode entry - can not be durable\n"));
+	if (e.pid.pid == 0) {
+		DBG_WARNING("Did not find a unique valid share mode entry\n");
 		TALLOC_FREE(lck);
 		return NT_STATUS_OBJECT_NAME_NOT_FOUND;
 	}
 
-	e = &lck->data->share_modes[0];
-
-	if (!server_id_is_disconnected(&e->pid)) {
+	if (!server_id_is_disconnected(&e.pid)) {
 		DEBUG(5, ("vfs_default_durable_reconnect: denying durable "
 			  "reconnect for handle that was not marked "
 			  "disconnected (e.g. smbd or cluster node died)\n"));
@@ -624,22 +640,22 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 		return NT_STATUS_OBJECT_NAME_NOT_FOUND;
 	}
 
-	if (e->share_file_id != op->global->open_persistent_id) {
-		DEBUG(5, ("vfs_default_durable_reconnect: denying durable "
-			  "share_file_id changed %llu != %llu"
-			  "(e.g. another client had opened the file)\n",
-			  (unsigned long long)e->share_file_id,
-			  (unsigned long long)op->global->open_persistent_id));
+	if (e.share_file_id != op->global->open_persistent_id) {
+		DBG_INFO("denying durable "
+			 "share_file_id changed %"PRIu64" != %"PRIu64" "
+			 "(e.g. another client had opened the file)\n",
+			 e.share_file_id,
+			 op->global->open_persistent_id);
 		TALLOC_FREE(lck);
 		return NT_STATUS_OBJECT_NAME_NOT_FOUND;
 	}
 
-	if ((e->access_mask & (FILE_WRITE_DATA|FILE_APPEND_DATA)) &&
+	if ((e.access_mask & (FILE_WRITE_DATA|FILE_APPEND_DATA)) &&
 	    !CAN_WRITE(conn))
 	{
 		DEBUG(5, ("vfs_default_durable_reconnect: denying durable "
 			  "share[%s] is not writeable anymore\n",
-			  lp_servicename(talloc_tos(), SNUM(conn))));
+			  lp_servicename(talloc_tos(), lp_sub, SNUM(conn))));
 		TALLOC_FREE(lck);
 		return NT_STATUS_OBJECT_NAME_NOT_FOUND;
 	}
@@ -656,17 +672,16 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 		return status;
 	}
 
-	fsp->fh->private_options = e->private_options;
-	fsp->fh->gen_id = smbXsrv_open_hash(op);
+	fsp->fh->private_options = e.private_options;
 	fsp->file_id = file_id;
 	fsp->file_pid = smb1req->smbpid;
 	fsp->vuid = smb1req->vuid;
-	fsp->open_time = e->time;
-	fsp->access_mask = e->access_mask;
-	fsp->share_access = e->share_access;
+	fsp->open_time = e.time;
+	fsp->access_mask = e.access_mask;
 	fsp->can_read = ((fsp->access_mask & (FILE_READ_DATA)) != 0);
 	fsp->can_write = ((fsp->access_mask & (FILE_WRITE_DATA|FILE_APPEND_DATA)) != 0);
 	fsp->fnum = op->local_id;
+	fsp_set_gen_id(fsp);
 
 	/*
 	 * TODO:
@@ -685,7 +700,7 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 	 * We do not support aio write behind for smb2
 	 */
 	fsp->aio_write_behind = false;
-	fsp->oplock_type = e->op_type;
+	fsp->oplock_type = e.op_type;
 
 	if (fsp->oplock_type == LEASE_OPLOCK) {
 		uint32_t current_state;
@@ -696,15 +711,15 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 		 * stored one in the share_mode_entry.
 		 */
 		if (!GUID_equal(fsp_client_guid(fsp),
-				&e->client_guid)) {
+				&e.client_guid)) {
 			TALLOC_FREE(lck);
 			fsp_free(fsp);
 			return NT_STATUS_OBJECT_NAME_NOT_FOUND;
 		}
 
 		status = leases_db_get(
-			&e->client_guid,
-			&e->lease_key,
+			&e.client_guid,
+			&e.lease_key,
 			&file_id,
 			&current_state, /* current_state */
 			NULL, /* breaking */
@@ -720,7 +735,7 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 
 		fsp->lease = find_fsp_lease(
 			fsp,
-			&e->lease_key,
+			&e.lease_key,
 			current_state,
 			lease_version,
 			epoch);
@@ -736,7 +751,8 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 	fsp->update_write_time_triggered = cookie.update_write_time_triggered;
 	fsp->update_write_time_on_close = cookie.update_write_time_on_close;
 	fsp->write_time_forced = cookie.write_time_forced;
-	fsp->close_write_time = cookie.close_write_time;
+	fsp->close_write_time = nt_time_to_full_timespec(
+		cookie.close_write_time);
 
 	status = fsp_set_smb_fname(fsp, smb_fname);
 	if (!NT_STATUS_IS_OK(status)) {
@@ -751,9 +767,20 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 	op->compat = fsp;
 	fsp->op = op;
 
-	e->pid = messaging_server_id(conn->sconn->msg_ctx);
-	e->op_mid = smb1req->mid;
-	e->share_file_id = fsp->fh->gen_id;
+	ok = reset_share_mode_entry(
+		lck,
+		e.pid,
+		e.share_file_id,
+		messaging_server_id(conn->sconn->msg_ctx),
+		smb1req->mid,
+		fsp->fh->gen_id);
+	if (!ok) {
+		DBG_DEBUG("Could not set new share_mode_entry values\n");
+		TALLOC_FREE(lck);
+		op->compat = NULL;
+		fsp_free(fsp);
+		return NT_STATUS_INTERNAL_ERROR;
+	}
 
 	ok = brl_reconnect_disconnected(fsp);
 	if (!ok) {

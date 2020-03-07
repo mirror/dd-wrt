@@ -7,6 +7,7 @@
 package Parse::Pidl::Samba4::NDR::Server;
 
 use strict;
+use warnings;
 use Parse::Pidl::Util;
 
 use vars qw($VERSION);
@@ -120,9 +121,6 @@ static NTSTATUS $name\__op_ndr_pull(struct dcesrv_call_state *dce_call, TALLOC_C
         /* unravel the NDR for the packet */
 	ndr_err = ndr_table_$name.calls[opnum].ndr_pull(pull, NDR_IN, *r);
 	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
-		dcerpc_log_packet(dce_call->conn->packet_log_dir, 
-				  &ndr_table_$name, opnum, NDR_IN,
-				  &dce_call->pkt.u.request.stub_and_verifier);
 		dce_call->fault_code = DCERPC_FAULT_NDR;
 		return NT_STATUS_NET_WRITE_FAULT;
 	}
@@ -145,9 +143,6 @@ pidl "
 	}
 
 	if (dce_call->fault_code != 0) {
-		dcerpc_log_packet(dce_call->conn->packet_log_dir, 
-		          &ndr_table_$name, opnum, NDR_IN,
-				  &dce_call->pkt.u.request.stub_and_verifier);
 		return NT_STATUS_NET_WRITE_FAULT;
 	}
 
@@ -169,9 +164,6 @@ pidl "
 	}
 
 	if (dce_call->fault_code != 0) {
-		dcerpc_log_packet(dce_call->conn->packet_log_dir,
-		          &ndr_table_$name, opnum, NDR_IN,
-				  &dce_call->pkt.u.request.stub_and_verifier);
 		return NT_STATUS_NET_WRITE_FAULT;
 	}
 
@@ -248,6 +240,11 @@ static NTSTATUS $name\__op_init_server(struct dcesrv_context *dce_ctx, const str
 	return NT_STATUS_OK;
 }
 
+static NTSTATUS $name\__op_shutdown_server(struct dcesrv_context *dce_ctx, const struct dcesrv_endpoint_server *ep_server)
+{
+	return NT_STATUS_OK;
+}
+
 static bool $name\__op_interface_by_uuid(struct dcesrv_interface *iface, const struct GUID *uuid, uint32_t if_version)
 {
 	if (dcesrv_$name\_interface.syntax_id.if_version == if_version &&
@@ -276,11 +273,19 @@ NTSTATUS dcerpc_server_$name\_init(TALLOC_CTX *ctx)
 	    /* fill in our name */
 	    .name = \"$name\",
 
+	    /* Initialization flag */
+	    .initialized = false,
+
 	    /* fill in all the operations */
 #ifdef DCESRV_INTERFACE_$uname\_INIT_SERVER
 	    .init_server = DCESRV_INTERFACE_$uname\_INIT_SERVER,
 #else
 	    .init_server = $name\__op_init_server,
+#endif
+#ifdef DCESRV_INTERFACE_$uname\_SHUTDOWN_SERVER
+	    .shutdown_server = DCESRV_INTERFACE_$uname\_SHUTDOWN_SERVER,
+#else
+	    .shutdown_server = $name\__op_shutdown_server,
 #endif
 	    .interface_by_uuid = $name\__op_interface_by_uuid,
 	    .interface_by_name = $name\__op_interface_by_name

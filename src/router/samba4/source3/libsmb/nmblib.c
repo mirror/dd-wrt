@@ -192,10 +192,14 @@ static int parse_nmb_name(char *inbuf,int ofs,int length, struct nmb_name *name)
 
 	m = ubuf[offset];
 
-	if (!m)
-		return(0);
-	if ((m & 0xC0) || offset+m+2 > length)
-		return(0);
+	/* m must be 32 to exactly fill in the 16 bytes of the netbios name */
+	if (m != 32) {
+		return 0;
+	}
+	/* Cannot go past length. */
+	if (offset+m+2 > length) {
+		return 0;
+	}
 
 	memset((char *)name,'\0',sizeof(*name));
 
@@ -462,13 +466,12 @@ static int put_compressed_name_ptr(unsigned char *buf,
 				struct res_rec *rec,
 				int ptr_offset)
 {
-	int ret=0;
+	int ret=offset;
 	if (buf) {
 		buf[offset] = (0xC0 | ((ptr_offset >> 8) & 0xFF));
 		buf[offset+1] = (ptr_offset & 0xFF);
 	}
 	offset += 2;
-	ret += 2;
 	if (buf) {
 		RSSVAL(buf,offset,rec->rr_type);
 		RSSVAL(buf,offset+2,rec->rr_class);
@@ -477,7 +480,7 @@ static int put_compressed_name_ptr(unsigned char *buf,
 		memcpy(buf+offset+10,rec->rdata,rec->rdlength);
 	}
 	offset += 10+rec->rdlength;
-	ret += 10+rec->rdlength;
+	ret = (offset - ret);
 
 	return ret;
 }

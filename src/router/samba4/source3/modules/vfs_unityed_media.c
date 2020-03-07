@@ -786,9 +786,10 @@ static void um_rewinddir(vfs_handle_struct *handle,
 			       ((um_dirinfo_struct*)dirp)->dirstream);
 }
 
-static int um_mkdir(vfs_handle_struct *handle,
-		    const struct smb_filename *smb_fname,
-		    mode_t mode)
+static int um_mkdirat(vfs_handle_struct *handle,
+			struct files_struct *dirfsp,
+			const struct smb_filename *smb_fname,
+			mode_t mode)
 {
 	int status;
 	const char *path = smb_fname->base_name;
@@ -797,7 +798,10 @@ static int um_mkdir(vfs_handle_struct *handle,
 	DEBUG(10, ("Entering with path '%s'\n", path));
 
 	if (!is_in_media_files(path) || !is_in_media_dir(path)) {
-		return SMB_VFS_NEXT_MKDIR(handle, smb_fname, mode);
+		return SMB_VFS_NEXT_MKDIRAT(handle,
+				dirfsp,
+				smb_fname,
+				mode);
 	}
 
 	status = alloc_get_client_smb_fname(handle,
@@ -808,35 +812,10 @@ static int um_mkdir(vfs_handle_struct *handle,
 		goto err;
 	}
 
-	status = SMB_VFS_NEXT_MKDIR(handle, client_fname, mode);
-err:
-	TALLOC_FREE(client_fname);
-	DEBUG(10, ("Leaving with path '%s'\n", path));
-	return status;
-}
-
-static int um_rmdir(vfs_handle_struct *handle,
-		    const struct smb_filename *smb_fname)
-{
-	int status;
-	const char *path = smb_fname->base_name;
-	struct smb_filename *client_fname = NULL;
-
-	DEBUG(10, ("Entering with path '%s'\n", path));
-
-	if (!is_in_media_files(path)) {
-		return SMB_VFS_NEXT_RMDIR(handle, smb_fname);
-	}
-
-	status = alloc_get_client_smb_fname(handle,
-				talloc_tos(),
-				smb_fname,
-				&client_fname);
-	if (status != 0) {
-		goto err;
-	}
-
-	status = SMB_VFS_NEXT_RMDIR(handle, client_fname);
+	status = SMB_VFS_NEXT_MKDIRAT(handle,
+				dirfsp,
+				client_fname,
+				mode);
 err:
 	TALLOC_FREE(client_fname);
 	DEBUG(10, ("Leaving with path '%s'\n", path));
@@ -907,7 +886,7 @@ static NTSTATUS um_create_file(vfs_handle_struct *handle,
 			       uint32_t create_options,
 			       uint32_t file_attributes,
 			       uint32_t oplock_request,
-			       struct smb2_lease *lease,
+			       const struct smb2_lease *lease,
 			       uint64_t allocation_size,
 			       uint32_t private_flags,
 			       struct security_descriptor *sd,
@@ -992,9 +971,11 @@ err:
 	return status;
 }
 
-static int um_rename(vfs_handle_struct *handle,
-		     const struct smb_filename *smb_fname_src,
-		     const struct smb_filename *smb_fname_dst)
+static int um_renameat(vfs_handle_struct *handle,
+		files_struct *srcfsp,
+		const struct smb_filename *smb_fname_src,
+		files_struct *dstfsp,
+		const struct smb_filename *smb_fname_dst)
 {
 	int status;
 	struct smb_filename *src_client_fname = NULL;
@@ -1009,8 +990,11 @@ static int um_rename(vfs_handle_struct *handle,
 	if (!is_in_media_files(smb_fname_src->base_name)
 	    &&
 	    !is_in_media_files(smb_fname_dst->base_name)) {
-		return SMB_VFS_NEXT_RENAME(handle, smb_fname_src,
-					   smb_fname_dst);
+		return SMB_VFS_NEXT_RENAMEAT(handle,
+					srcfsp,
+					smb_fname_src,
+					dstfsp,
+					smb_fname_dst);
 	}
 
 	status = alloc_get_client_smb_fname(handle, talloc_tos(),
@@ -1028,8 +1012,12 @@ static int um_rename(vfs_handle_struct *handle,
 		goto err;
 	}
 
-	status = SMB_VFS_NEXT_RENAME(handle, src_client_fname,
-				     dst_client_fname);
+	status = SMB_VFS_NEXT_RENAMEAT(handle,
+				srcfsp,
+				src_client_fname,
+				dstfsp,
+				dst_client_fname);
+
 err:
 	TALLOC_FREE(dst_client_fname);
 	TALLOC_FREE(src_client_fname);
@@ -1039,6 +1027,7 @@ err:
 		   smb_fname_dst->base_name));
 	return status;
 }
+
 
 /*
  * Success: return 0
@@ -1153,30 +1142,38 @@ out:
 	return status;
 }
 
-static int um_unlink(vfs_handle_struct *handle,
-		     const struct smb_filename *smb_fname)
+static int um_unlinkat(vfs_handle_struct *handle,
+			struct files_struct *dirfsp,
+			const struct smb_filename *smb_fname,
+			int flags)
 {
-	int status;
+	int ret;
 	struct smb_filename *client_fname = NULL;
 
-	DEBUG(10, ("Entering um_unlink\n"));
+	DEBUG(10, ("Entering um_unlinkat\n"));
 
 	if (!is_in_media_files(smb_fname->base_name)) {
-		return SMB_VFS_NEXT_UNLINK(handle, smb_fname);
+		return SMB_VFS_NEXT_UNLINKAT(handle,
+				dirfsp,
+				smb_fname,
+				flags);
 	}
 
-	status = alloc_get_client_smb_fname(handle, talloc_tos(),
+	ret = alloc_get_client_smb_fname(handle, talloc_tos(),
 					    smb_fname,
 					    &client_fname);
-	if (status != 0) {
+	if (ret != 0) {
 		goto err;
 	}
 
-	status = SMB_VFS_NEXT_UNLINK(handle, client_fname);
+	ret = SMB_VFS_NEXT_UNLINKAT(handle,
+				dirfsp,
+				client_fname,
+				flags);
 
 err:
 	TALLOC_FREE(client_fname);
-	return status;
+	return ret;
 }
 
 static int um_chmod(vfs_handle_struct *handle,
@@ -1201,35 +1198,6 @@ static int um_chmod(vfs_handle_struct *handle,
 	}
 
 	status = SMB_VFS_NEXT_CHMOD(handle, client_fname, mode);
-
-err:
-	TALLOC_FREE(client_fname);
-	return status;
-}
-
-static int um_chown(vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
-			uid_t uid,
-			gid_t gid)
-{
-	int status;
-	struct smb_filename *client_fname = NULL;
-
-	DEBUG(10, ("Entering um_chown\n"));
-
-	if (!is_in_media_files(smb_fname->base_name)) {
-		return SMB_VFS_NEXT_CHOWN(handle, smb_fname, uid, gid);
-	}
-
-	status = alloc_get_client_smb_fname(handle,
-				talloc_tos(),
-				smb_fname,
-				&client_fname);
-	if (status != 0) {
-		goto err;
-	}
-
-	status = SMB_VFS_NEXT_CHOWN(handle, client_fname, uid, gid);
 
 err:
 	TALLOC_FREE(client_fname);
@@ -1317,20 +1285,22 @@ err:
 	return status;
 }
 
-static int um_symlink(vfs_handle_struct *handle,
+static int um_symlinkat(vfs_handle_struct *handle,
 			const char *link_contents,
+			struct files_struct *dirfsp,
 			const struct smb_filename *new_smb_fname)
 {
 	int status;
 	char *client_link_contents = NULL;
 	struct smb_filename *new_client_fname = NULL;
 
-	DEBUG(10, ("Entering um_symlink\n"));
+	DEBUG(10, ("Entering um_symlinkat\n"));
 
 	if (!is_in_media_files(link_contents) &&
 			!is_in_media_files(new_smb_fname->base_name)) {
-		return SMB_VFS_NEXT_SYMLINK(handle,
+		return SMB_VFS_NEXT_SYMLINKAT(handle,
 				link_contents,
+				dirfsp,
 				new_smb_fname);
 	}
 
@@ -1345,8 +1315,9 @@ static int um_symlink(vfs_handle_struct *handle,
 		goto err;
 	}
 
-	status = SMB_VFS_NEXT_SYMLINK(handle,
+	status = SMB_VFS_NEXT_SYMLINKAT(handle,
 					client_link_contents,
+					dirfsp,
 					new_client_fname);
 
 err:
@@ -1355,7 +1326,8 @@ err:
 	return status;
 }
 
-static int um_readlink(vfs_handle_struct *handle,
+static int um_readlinkat(vfs_handle_struct *handle,
+			files_struct *dirfsp,
 			const struct smb_filename *smb_fname,
 			char *buf,
 			size_t bufsiz)
@@ -1363,11 +1335,14 @@ static int um_readlink(vfs_handle_struct *handle,
 	int status;
 	struct smb_filename *client_fname = NULL;
 
-	DEBUG(10, ("Entering um_readlink\n"));
+	DEBUG(10, ("Entering um_readlinkat\n"));
 
 	if (!is_in_media_files(smb_fname->base_name)) {
-		return SMB_VFS_NEXT_READLINK(handle, smb_fname,
-				buf, bufsiz);
+		return SMB_VFS_NEXT_READLINKAT(handle,
+				dirfsp,
+				smb_fname,
+				buf,
+				bufsiz);
 	}
 
 	status = alloc_get_client_smb_fname(handle, talloc_tos(),
@@ -1376,25 +1351,37 @@ static int um_readlink(vfs_handle_struct *handle,
 		goto err;
 	}
 
-	status = SMB_VFS_NEXT_READLINK(handle, client_fname, buf, bufsiz);
+	status = SMB_VFS_NEXT_READLINKAT(handle,
+				dirfsp,
+				client_fname,
+				buf,
+				bufsiz);
 
 err:
 	TALLOC_FREE(client_fname);
 	return status;
 }
 
-static int um_link(vfs_handle_struct *handle,
-		    const struct smb_filename *old_smb_fname,
-		    const struct smb_filename *new_smb_fname)
+static int um_linkat(vfs_handle_struct *handle,
+			files_struct *srcfsp,
+			const struct smb_filename *old_smb_fname,
+			files_struct *dstfsp,
+			const struct smb_filename *new_smb_fname,
+			int flags)
 {
 	int status;
 	struct smb_filename *old_client_fname = NULL;
 	struct smb_filename *new_client_fname = NULL;
 
-	DEBUG(10, ("Entering um_link\n"));
+	DEBUG(10, ("Entering um_linkat\n"));
 	if (!is_in_media_files(old_smb_fname->base_name) &&
 				!is_in_media_files(new_smb_fname->base_name)) {
-		return SMB_VFS_NEXT_LINK(handle, old_smb_fname, new_smb_fname);
+		return SMB_VFS_NEXT_LINKAT(handle,
+				srcfsp,
+				old_smb_fname,
+				dstfsp,
+				new_smb_fname,
+				flags);
 	}
 
 	status = alloc_get_client_smb_fname(handle, talloc_tos(),
@@ -1408,7 +1395,12 @@ static int um_link(vfs_handle_struct *handle,
 		goto err;
 	}
 
-	status = SMB_VFS_NEXT_LINK(handle, old_client_fname, new_client_fname);
+	status = SMB_VFS_NEXT_LINKAT(handle,
+				srcfsp,
+				old_client_fname,
+				dstfsp,
+				new_client_fname,
+				flags);
 
 err:
 	TALLOC_FREE(old_client_fname);
@@ -1416,17 +1408,22 @@ err:
 	return status;
 }
 
-static int um_mknod(vfs_handle_struct *handle,
-		    const struct smb_filename *smb_fname,
-		    mode_t mode,
-		    SMB_DEV_T dev)
+static int um_mknodat(vfs_handle_struct *handle,
+		files_struct *dirfsp,
+		const struct smb_filename *smb_fname,
+		mode_t mode,
+		SMB_DEV_T dev)
 {
 	int status;
 	struct smb_filename *client_fname = NULL;
 
-	DEBUG(10, ("Entering um_mknod\n"));
+	DEBUG(10, ("Entering um_mknodat\n"));
 	if (!is_in_media_files(smb_fname->base_name)) {
-		return SMB_VFS_NEXT_MKNOD(handle, smb_fname, mode, dev);
+		return SMB_VFS_NEXT_MKNODAT(handle,
+				dirfsp,
+				smb_fname,
+				mode,
+				dev);
 	}
 
 	status = alloc_get_client_smb_fname(handle, talloc_tos(),
@@ -1435,7 +1432,11 @@ static int um_mknod(vfs_handle_struct *handle,
 		goto err;
 	}
 
-	status = SMB_VFS_NEXT_MKNOD(handle, client_fname, mode, dev);
+	status = SMB_VFS_NEXT_MKNODAT(handle,
+			dirfsp,
+			client_fname,
+			mode,
+			dev);
 
 err:
 	TALLOC_FREE(client_fname);
@@ -1873,28 +1874,26 @@ static struct vfs_fn_pointers vfs_um_fns = {
 	.seekdir_fn = um_seekdir,
 	.telldir_fn = um_telldir,
 	.rewind_dir_fn = um_rewinddir,
-	.mkdir_fn = um_mkdir,
-	.rmdir_fn = um_rmdir,
+	.mkdirat_fn = um_mkdirat,
 	.closedir_fn = um_closedir,
 
 	/* File operations */
 
 	.open_fn = um_open,
 	.create_file_fn = um_create_file,
-	.rename_fn = um_rename,
+	.renameat_fn = um_renameat,
 	.stat_fn = um_stat,
 	.lstat_fn = um_lstat,
 	.fstat_fn = um_fstat,
-	.unlink_fn = um_unlink,
+	.unlinkat_fn = um_unlinkat,
 	.chmod_fn = um_chmod,
-	.chown_fn = um_chown,
 	.lchown_fn = um_lchown,
 	.chdir_fn = um_chdir,
 	.ntimes_fn = um_ntimes,
-	.symlink_fn = um_symlink,
-	.readlink_fn = um_readlink,
-	.link_fn = um_link,
-	.mknod_fn = um_mknod,
+	.symlinkat_fn = um_symlinkat,
+	.readlinkat_fn = um_readlinkat,
+	.linkat_fn = um_linkat,
+	.mknodat_fn = um_mknodat,
 	.realpath_fn = um_realpath,
 	.chflags_fn = um_chflags,
 	.streaminfo_fn = um_streaminfo,

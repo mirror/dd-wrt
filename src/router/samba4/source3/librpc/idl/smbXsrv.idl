@@ -18,7 +18,7 @@ interface smbXsrv
 	 * rolling code upgrades in future (within a cluster).
 	 *
 	 * This just adds the infrastructure,
-	 * but we does not implement it yet!
+	 * but it does not implement it yet!
 	 *
 	 * Currently it only prevents that
 	 * nodes with a different version numbers
@@ -229,7 +229,9 @@ interface smbXsrv
 		[noprint] DATA_BLOB			signing_key_blob;
 		[ignore] smb2_signing_key		*signing_key;
 		[noprint] DATA_BLOB			encryption_key_blob;
+		[ignore] smb2_signing_key		*encryption_key;
 		[noprint] DATA_BLOB			decryption_key_blob;
+		[ignore] smb2_signing_key		*decryption_key;
 		[noprint] DATA_BLOB			application_key;
 		[range(1, 1024)] uint32			num_channels;
 		smbXsrv_channel_global0			channels[num_channels];
@@ -288,8 +290,8 @@ interface smbXsrv
 		hyper					nonce_high_max;
 		hyper					nonce_high;
 		hyper					nonce_low;
-		[ignore] user_struct			*compat;
 		[ignore] smbXsrv_tcon_table		*tcon_table;
+		[ignore] uint32				homes_snum;
 		smbXsrv_session_auth0			*pending_auth;
 	} smbXsrv_session;
 

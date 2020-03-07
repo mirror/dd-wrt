@@ -2896,7 +2896,7 @@ static bool test_Forms_args(struct torture_context *tctx,
 			"failed to set form");
 		torture_assert(tctx,
 			test_GetForm_args(tctx, b, handle, form_name, 1, &info),
-			"failed to get setted form");
+			"failed to get set form");
 
 		torture_assert_int_equal(tctx, info.info1.size.width, add_info.info1->size.width, "width mismatch");
 	}
@@ -6127,6 +6127,206 @@ static bool test_add_print_processor(struct torture_context *tctx,
 	return true;
 }
 
+static bool test_AddPerMachineConnection(struct torture_context *tctx,
+					 struct dcerpc_binding_handle *b,
+					 const char *servername,
+					 const char *printername,
+					 const char *printserver,
+					 const char *provider,
+					 WERROR expected_error)
+{
+	struct spoolss_AddPerMachineConnection r;
+	const char *composed_printername = printername;
+
+	if (servername != NULL) {
+		composed_printername = talloc_asprintf(tctx, "%s\\%s",
+						servername,
+						printername);
+	}
+	r.in.server = servername;
+	r.in.printername = composed_printername;
+	r.in.printserver = printserver;
+	r.in.provider = provider;
+
+	torture_comment(tctx, "Testing AddPerMachineConnection(%s|%s|%s)\n",
+		printername, printserver, provider);
+
+	torture_assert_ntstatus_ok(tctx,
+		dcerpc_spoolss_AddPerMachineConnection_r(b, tctx, &r),
+		"spoolss_AddPerMachineConnection failed");
+	torture_assert_werr_equal(tctx, r.out.result, expected_error,
+		"spoolss_AddPerMachineConnection failed");
+
+	return true;
+}
+
+static bool test_DeletePerMachineConnection(struct torture_context *tctx,
+					    struct dcerpc_binding_handle *b,
+					    const char *servername,
+					    const char *printername,
+					    WERROR expected_error)
+{
+	struct spoolss_DeletePerMachineConnection r;
+	const char *composed_printername = printername;
+
+	if (servername != NULL) {
+		composed_printername = talloc_asprintf(tctx, "%s\\%s",
+						servername,
+						printername);
+	}
+
+	r.in.server = servername;
+	r.in.printername = composed_printername;
+
+	torture_comment(tctx, "Testing DeletePerMachineConnection(%s)\n",
+		printername);
+
+	torture_assert_ntstatus_ok(tctx,
+		dcerpc_spoolss_DeletePerMachineConnection_r(b, tctx, &r),
+		"spoolss_DeletePerMachineConnection failed");
+	torture_assert_werr_equal(tctx, r.out.result, expected_error,
+		"spoolss_DeletePerMachineConnection failed");
+
+	return true;
+}
+
+static bool test_EnumPerMachineConnections(struct torture_context *tctx,
+					   struct dcerpc_binding_handle *b,
+					   const char *servername)
+{
+	struct spoolss_EnumPerMachineConnections r;
+	DATA_BLOB blob = data_blob_null;
+	struct spoolss_PrinterInfo4 *info;
+	uint32_t needed;
+	uint32_t count;
+
+	r.in.server = servername;
+	r.in.buffer = &blob;
+	r.in.offered = 0;
+
+	r.out.info = &info;
+	r.out.needed = &needed;
+	r.out.count = &count;
+
+	torture_comment(tctx, "Testing EnumPerMachineConnections(%s)\n",
+		servername);
+
+	torture_assert_ntstatus_ok(tctx,
+		dcerpc_spoolss_EnumPerMachineConnections_r(b, tctx, &r),
+		"spoolss_EnumPerMachineConnections failed");
+	if (W_ERROR_EQUAL(r.out.result, WERR_INSUFFICIENT_BUFFER)) {
+		blob = data_blob_talloc_zero(tctx, needed);
+		r.in.buffer = &blob;
+		r.in.offered = needed;
+
+		torture_assert_ntstatus_ok(tctx,
+			dcerpc_spoolss_EnumPerMachineConnections_r(b, tctx, &r),
+			"spoolss_EnumPerMachineConnections failed");
+	}
+	torture_assert_werr_ok(tctx, r.out.result,
+		"spoolss_EnumPerMachineConnections failed");
+
+	return true;
+}
+
+static bool test_addpermachineconnection(struct torture_context *tctx,
+					 void *private_data)
+{
+	struct test_spoolss_context *ctx =
+		talloc_get_type_abort(private_data, struct test_spoolss_context);
+	struct dcerpc_pipe *p = ctx->spoolss_pipe;
+	struct dcerpc_binding_handle *b = p->binding_handle;
+	const char *server_name_slash = talloc_asprintf(tctx, "\\\\%s", dcerpc_server_name(p));
+	int i;
+
+	struct {
+		const char *servername;
+		const char *printername;
+		const char *printserver;
+		const char *provider;
+		WERROR expected_add_result;
+		WERROR expected_del_result;
+	} tests[] = {
+		{
+			.servername		= NULL,
+			.printername		= "foo",
+			.printserver		= "",
+			.provider		= "unknown",
+			.expected_add_result	= WERR_INVALID_PRINTER_NAME,
+			.expected_del_result	= WERR_INVALID_PRINTER_NAME
+		},{
+			.servername		= NULL,
+			.printername		= "Microsoft Print to PDF",
+			.printserver		= "samba.org",
+			.provider		= "unknown",
+			.expected_add_result	= WERR_INVALID_PRINTER_NAME,
+			.expected_del_result	= WERR_INVALID_PRINTER_NAME
+		},{
+			.servername		= NULL,
+			.printername		= "Microsoft Print to PDF",
+			.printserver		= "samba.org",
+			.provider		= "",
+			.expected_add_result	= WERR_INVALID_PRINTER_NAME,
+			.expected_del_result	= WERR_INVALID_PRINTER_NAME
+		},{
+			.servername		= server_name_slash,
+			.printername		= "foo",
+			.printserver		= "",
+			.provider		= "unknown",
+			.expected_add_result	= WERR_FILE_NOT_FOUND,
+			.expected_del_result	= WERR_INVALID_PRINTER_NAME
+		},{
+			.servername		= server_name_slash,
+			.printername		= "foo",
+			.printserver		= "",
+			.provider		= "",
+			.expected_add_result	= WERR_OK,
+			.expected_del_result	= WERR_OK
+		},{
+			.servername		= server_name_slash,
+			.printername		= "Microsoft Print to PDF",
+			.printserver		= "samba.org",
+			.provider		= "unknown",
+			.expected_add_result	= WERR_FILE_NOT_FOUND,
+			.expected_del_result	= WERR_INVALID_PRINTER_NAME
+		},{
+			.servername		= server_name_slash,
+			.printername		= "Microsoft Print to PDF",
+			.printserver		= "samba.org",
+			.provider		= "",
+			.expected_add_result	= WERR_OK,
+			.expected_del_result	= WERR_OK
+		}
+	};
+
+	for (i=0; i < ARRAY_SIZE(tests); i++) {
+		torture_assert(tctx,
+			test_AddPerMachineConnection(tctx, b,
+						     tests[i].servername,
+						     tests[i].printername,
+						     tests[i].printserver,
+						     tests[i].provider,
+						     tests[i].expected_add_result),
+			"add per machine connection failed");
+		torture_assert(tctx,
+			test_EnumPerMachineConnections(tctx, b,
+						       tests[i].servername),
+			"enum per machine connections failed");
+		torture_assert(tctx,
+			test_DeletePerMachineConnection(tctx, b,
+							tests[i].servername,
+							tests[i].printername,
+							tests[i].expected_del_result),
+			"delete per machine connection failed");
+		torture_assert(tctx,
+			test_EnumPerMachineConnections(tctx, b,
+						       tests[i].servername),
+			"enum per machine connections failed");
+	}
+
+	return true;
+}
+
 static bool test_GetChangeID_PrinterData(struct torture_context *tctx,
 					 struct dcerpc_binding_handle *b,
 					 struct policy_handle *handle,
@@ -7968,7 +8168,7 @@ static bool test_get_core_printer_drivers_arch_guid(struct torture_context *tctx
 {
 	struct spoolss_GetCorePrinterDrivers r;
 	struct spoolss_CorePrinterDriver core_printer_drivers;
-	DATA_BLOB blob;
+	DATA_BLOB blob = data_blob_talloc_zero(tctx, 2);
 	const char **s;
 	struct dcerpc_binding_handle *b = p->binding_handle;
 	struct GUID guid;
@@ -7978,7 +8178,7 @@ static bool test_get_core_printer_drivers_arch_guid(struct torture_context *tctx
 	r.in.servername	= talloc_asprintf(tctx, "\\\\%s", dcerpc_server_name(p));
 	r.in.architecture = "foobar";
 	r.in.core_driver_size = 0;
-	r.in.core_driver_dependencies = "";
+	r.in.core_driver_dependencies = (uint16_t *)blob.data;
 	r.in.core_printer_driver_count = 0;
 	r.out.core_printer_drivers = &core_printer_drivers;
 
@@ -7995,8 +8195,8 @@ static bool test_get_core_printer_drivers_arch_guid(struct torture_context *tctx
 		push_reg_multi_sz(tctx, &blob, s),
 		"push_reg_multi_sz failed");
 
-	r.in.core_driver_size = blob.length;
-	r.in.core_driver_dependencies = s[0];
+	r.in.core_driver_size = blob.length/2;
+	r.in.core_driver_dependencies = (uint16_t *)blob.data;
 	r.in.core_printer_driver_count = 1;
 	r.out.core_printer_drivers = talloc_zero_array(tctx, struct spoolss_CorePrinterDriver, r.in.core_printer_driver_count);
 
@@ -8022,8 +8222,8 @@ static bool test_get_core_printer_drivers_arch_guid(struct torture_context *tctx
 		push_reg_multi_sz(tctx, &blob, s),
 		"push_reg_multi_sz failed");
 
-	r.in.core_driver_size = blob.length;
-	r.in.core_driver_dependencies = s[0];
+	r.in.core_driver_size = blob.length/2;
+	r.in.core_driver_dependencies = (uint16_t *)blob.data;
 	r.in.core_printer_driver_count = 1;
 	r.out.core_printer_drivers = talloc_zero_array(tctx, struct spoolss_CorePrinterDriver, r.in.core_printer_driver_count);
 
@@ -9654,6 +9854,7 @@ struct torture_suite *torture_rpc_spoolss(TALLOC_CTX *mem_ctx)
 	torture_tcase_add_simple_test(tcase, "get_printer", test_get_printer_printserverhandle);
 	torture_tcase_add_simple_test(tcase, "set_printer", test_set_printer_printserverhandle);
 	torture_tcase_add_simple_test(tcase, "printserver_info_winreg", test_printserver_info_winreg);
+	torture_tcase_add_simple_test(tcase, "addpermachineconnection", test_addpermachineconnection);
 
 	torture_suite_add_suite(suite, torture_rpc_spoolss_printer(suite));
 

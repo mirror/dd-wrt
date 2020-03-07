@@ -120,7 +120,7 @@ subsystem. Each operation could perform in a following ways:
   this mode;</para></listitem>
   <listitem><para><emphasis>splitter</emphasis>, a way when some file system
   activity is done in addition to the transparently calling previous
-  implentation. This usually involves mangling the result of that call
+  implementation. This usually involves mangling the result of that call
   before returning it back to the caller. This mode is selected by
   <literal>SMB_VFS_LAYER_SPLITTER</literal> constant;</para></listitem>
   <listitem><para><emphasis>logger</emphasis> does not change anything or
@@ -235,14 +235,14 @@ DO NOT ACCESS conn-&gt;vfs.ops.* directly !!!
 #define SMB_VFS_CLOSE(fsp, fd) \
 	((fsp)-&gt;conn-&gt;vfs.ops.close(\
 	(fsp)-&gt;conn-&gt;vfs.handles.close, (fsp), (fd)))
-#define SMB_VFS_READ(fsp, fd, data, n) \
+#define SMB_VFS_PREAD(fsp, fd, data, n, off) \
 	((fsp)-&gt;conn-&gt;vfs.ops.read(\
 	(fsp)-&gt;conn-&gt;vfs.handles.read,\
-	 (fsp), (fd), (data), (n)))
-#define SMB_VFS_WRITE(fsp, fd, data, n) \
+	 (fsp), (fd), (data), (n), (off)))
+#define SMB_VFS_PWRITE(fsp, fd, data, n, off) \
 	((fsp)-&gt;conn-&gt;vfs.ops.write(\
 	(fsp)-&gt;conn-&gt;vfs.handles.write,\
-	 (fsp), (fd), (data), (n)))
+	 (fsp), (fd), (data), (n), (off)))
 #define SMB_VFS_LSEEK(fsp, fd, offset, whence) \
 	((fsp)-&gt;conn-&gt;vfs.ops.lseek(\
 	(fsp)-&gt;conn-&gt;vfs.handles.lseek,\
@@ -311,7 +311,7 @@ typedef enum _vfs_op_layer {
 
 <para>
 As each Samba module a VFS module should have a
-<programlisting>NTSTATUS vfs_example_init(void);</programlisting> function if it's staticly linked to samba or
+<programlisting>NTSTATUS vfs_example_init(void);</programlisting> function if it's statically linked to samba or
 <programlisting>NTSTATUS init_module(void);</programlisting> function if it's a shared module.
 </para>
 
@@ -371,7 +371,7 @@ typedef struct _vfs_op_tuple {
 </varlistentry>
 
 <varlistentry><term>layer</term>
-<listitem><para>the vfs_op_layer in whitch the function operates.</para></listitem>
+<listitem><para>the vfs_op_layer in which the function operates.</para></listitem>
 </varlistentry>
 
 </variablelist>

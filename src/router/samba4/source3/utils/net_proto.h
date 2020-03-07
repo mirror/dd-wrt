@@ -439,11 +439,6 @@ NTSTATUS net_lookup_name_from_sid(struct net_context *c,
 NTSTATUS net_lookup_sid_from_name(struct net_context *c, TALLOC_CTX *ctx,
 				  const char *full_name, struct dom_sid *pret_sid);
 
-/* The following definitions come from utils/passwd_util.c  */
-
-char *stdin_new_passwd( void);
-char *get_pass( const char *prompt, bool stdin_get);
-
 /* The following definitions come from utils/net_g_lock.c  */
 int net_g_lock(struct net_context *c, int argc, const char **argv);
 
@@ -456,5 +451,7 @@ int net_rpc_conf(struct net_context *c, int argc, const char **argv);
 int net_notify(struct net_context *c, int argc, const char **argv);
 
 int net_tdb(struct net_context *c, int argc, const char **argv);
+
+int net_vfs(struct net_context *c, int argc, const char **argv);
 
 #endif /*  _NET_PROTO_H_  */

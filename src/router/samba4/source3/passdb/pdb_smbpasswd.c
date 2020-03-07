@@ -367,7 +367,6 @@ static struct smb_passwd *getsmbfilepwent(struct smbpasswd_privates *smbpasswd_s
 	unsigned char *smbpwd = smbpasswd_state->smbpwd;
 	unsigned char *smbntpwd = smbpasswd_state->smbntpwd;
 	char linebuf[256];
-	int c;
 	unsigned char *p;
 	long uidval;
 	size_t linebuf_len;
@@ -402,8 +401,8 @@ static struct smb_passwd *getsmbfilepwent(struct smbpasswd_privates *smbpasswd_s
 		}
 
 		if (linebuf[linebuf_len - 1] != '\n') {
-			c = '\0';
 			while (!ferror(fp) && !feof(fp)) {
+				int c;
 				c = fgetc(fp);
 				if (c == '\n') {
 					break;
@@ -740,7 +739,6 @@ static bool mod_smbfilepwd_entry(struct smbpasswd_privates *smbpasswd_state, con
 #define LINEBUF_SIZE 255
 	char linebuf[LINEBUF_SIZE + 1];
 	char readbuf[1024];
-	int c;
 	char ascii_p16[FSTRING_LEN + 20];
 	fstring encode_bits;
 	unsigned char *p = NULL;
@@ -806,8 +804,8 @@ static bool mod_smbfilepwd_entry(struct smbpasswd_privates *smbpasswd_state, con
 		 */
 		linebuf_len = strlen(linebuf);
 		if (linebuf[linebuf_len - 1] != '\n') {
-			c = '\0';
 			while (!ferror(fp) && !feof(fp)) {
+				int c;
 				c = fgetc(fp);
 				if (c == '\n') {
 					break;
@@ -1446,13 +1444,15 @@ static NTSTATUS smbpasswd_rename_sam_account (struct pdb_methods *my_methods,
 					      struct samu *old_acct,
 					      const char *newname)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	char *rename_script = NULL;
 	struct samu *new_acct = NULL;
 	bool interim_account = False;
 	TALLOC_CTX *ctx = talloc_tos();
 	NTSTATUS ret = NT_STATUS_UNSUCCESSFUL;
 
-	if (!*(lp_rename_user_script(talloc_tos())))
+	if (!*(lp_rename_user_script(talloc_tos(), lp_sub)))
 		goto done;
 
 	if ( !(new_acct = samu_new( NULL )) ) {
@@ -1472,7 +1472,7 @@ static NTSTATUS smbpasswd_rename_sam_account (struct pdb_methods *my_methods,
 	interim_account = True;
 
 	/* rename the posix user */
-	rename_script = lp_rename_user_script(ctx);
+	rename_script = lp_rename_user_script(ctx, lp_sub);
 	if (!rename_script) {
 		ret = NT_STATUS_NO_MEMORY;
 		goto done;

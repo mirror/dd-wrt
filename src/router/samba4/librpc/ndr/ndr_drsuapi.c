@@ -94,8 +94,14 @@ static void _print_drsuapi_DsAttributeValue_attid(struct ndr_print *ndr, const c
 
 	ndr_print_struct(ndr, name, "drsuapi_DsAttributeValue");
 	ndr->depth++;
-	v = IVAL(r->blob->data, 0);
-	ndr_print_uint32(ndr, "attid", v);
+	if (r->blob == NULL || r->blob->data == NULL) {
+		ndr_print_string(ndr, "attid", "NULL");
+	} else if (r->blob->length < 4) {
+		ndr_print_DATA_BLOB(ndr, "attid", *r->blob);
+	} else {
+		v = IVAL(r->blob->data, 0);
+		ndr_print_uint32(ndr, "attid", v);
+	}
 	ndr->depth--;
 }
 
@@ -107,12 +113,15 @@ static void _print_drsuapi_DsAttributeValue_str(struct ndr_print *ndr, const cha
 
 	ndr_print_struct(ndr, name, "drsuapi_DsAttributeValue");
 	ndr->depth++;
-	if (!convert_string_talloc(ndr,
-	                           CH_UTF16, CH_UNIX,
-	                           r->blob->data,
-	                           r->blob->length,
-	                           &p, &converted_size)) {
-		ndr_print_string(ndr, "string", "INVALID CONVERSION");
+	if (r->blob == NULL || r->blob->data == NULL) {
+		ndr_print_string(ndr, "string", "NULL");
+	} else if (!convert_string_talloc(ndr,
+					  CH_UTF16, CH_UNIX,
+					  r->blob->data,
+					  r->blob->length,
+					  &p, &converted_size)) {
+		ndr_print_DATA_BLOB(ndr, "string (INVALID CONVERSION)",
+				    *r->blob);
 	} else {
 		char *str = (char *)p;
 		ndr_print_string(ndr, "string", str);
@@ -414,7 +423,8 @@ enum ndr_err_code ndr_push_drsuapi_DsBindInfo(struct ndr_push *ndr, int ndr_flag
 	ndr->flags = ndr->flags & ~LIBNDR_FLAG_NDR64;
 	NDR_PUSH_CHECK_FLAGS(ndr, ndr_flags);
 	if (ndr_flags & NDR_SCALARS) {
-		uint32_t level = ndr_push_get_switch_value(ndr, r);
+		uint32_t level;
+		NDR_CHECK(ndr_push_steal_switch_value(ndr, r, &level));
 		NDR_CHECK(ndr_push_union_align(ndr, 4));
 		switch (level) {
 			case 24: {
@@ -464,38 +474,18 @@ enum ndr_err_code ndr_push_drsuapi_DsBindInfo(struct ndr_push *ndr, int ndr_flag
 
 		}
 	}
-	if (ndr_flags & NDR_BUFFERS) {
-		uint32_t level = ndr_push_get_switch_value(ndr, r);
-		switch (level) {
-			case 24:
-			break;
-
-			case 28:
-			break;
-
-			case 48:
-			break;
-
-			case 52:
-			break;
-
-			default:
-			break;
-
-		}
-	}
 	ndr->flags = _flags_save;
 	return NDR_ERR_SUCCESS;
 }
 
 enum ndr_err_code ndr_pull_drsuapi_DsBindInfo(struct ndr_pull *ndr, int ndr_flags, union drsuapi_DsBindInfo *r)
 {
-	uint32_t level;
 	uint32_t _flags_save = ndr->flags;
 	ndr->flags = ndr->flags & ~LIBNDR_FLAG_NDR64;
-	level = ndr_pull_get_switch_value(ndr, r);
 	NDR_PULL_CHECK_FLAGS(ndr, ndr_flags);
 	if (ndr_flags & NDR_SCALARS) {
+		uint32_t level;
+		NDR_CHECK(ndr_pull_steal_switch_value(ndr, r, &level));
 		NDR_CHECK(ndr_pull_union_align(ndr, 4));
 		switch (level) {
 			case 24: {
@@ -545,25 +535,6 @@ enum ndr_err_code ndr_pull_drsuapi_DsBindInfo(struct ndr_pull *ndr, int ndr_flag
 
 		}
 	}
-	if (ndr_flags & NDR_BUFFERS) {
-		switch (level) {
-			case 24:
-			break;
-
-			case 28:
-			break;
-
-			case 48:
-			break;
-
-			case 52:
-			break;
-
-			default:
-			break;
-
-		}
-	}
 	ndr->flags = _flags_save;
 	return NDR_ERR_SUCCESS;
 }
@@ -571,7 +542,7 @@ enum ndr_err_code ndr_pull_drsuapi_DsBindInfo(struct ndr_pull *ndr, int ndr_flag
 _PUBLIC_ void ndr_print_drsuapi_DsBindInfo(struct ndr_print *ndr, const char *name, const union drsuapi_DsBindInfo *r)
 {
 	uint32_t level;
-	level = ndr_print_get_switch_value(ndr, r);
+	level = ndr_print_steal_switch_value(ndr, r);
 	ndr_print_union(ndr, name, level, "drsuapi_DsBindInfo");
 	switch (level) {
 		case 24:

@@ -23,7 +23,6 @@ import pwd
 import os
 import io
 import re
-import tempfile
 import difflib
 import fcntl
 import signal
@@ -57,7 +56,7 @@ from samba.netcmd import (
 from samba.compat import text_type
 from samba.compat import get_bytes
 from samba.compat import get_string
-
+from . import common
 
 # python[3]-gpgme is abandoned since ubuntu 1804 and debian 9
 # have to use python[3]-gpg instead
@@ -124,33 +123,6 @@ virtual_attributes = {
     },
 }
 
-get_random_bytes_fn = None
-if get_random_bytes_fn is None:
-    try:
-        import Crypto.Random
-        get_random_bytes_fn = Crypto.Random.get_random_bytes
-    except ImportError as e:
-        pass
-if get_random_bytes_fn is None:
-    try:
-        import M2Crypto.Rand
-        get_random_bytes_fn = M2Crypto.Rand.rand_bytes
-    except ImportError as e:
-        pass
-
-
-def check_random():
-    if get_random_bytes_fn is not None:
-        return None
-    return "Crypto.Random or M2Crypto.Rand required"
-
-
-def get_random_bytes(num):
-    random_reason = check_random()
-    if random_reason is not None:
-        raise ImportError(random_reason)
-    return get_random_bytes_fn(num)
-
 
 def get_crypt_value(alg, utf8pw, rounds=0):
     algs = {
@@ -158,7 +130,7 @@ def get_crypt_value(alg, utf8pw, rounds=0):
         "6": {"length": 86},
     }
     assert alg in algs
-    salt = get_random_bytes(16)
+    salt = os.urandom(16)
     # The salt needs to be in [A-Za-z0-9./]
     # base64 is close enough and as we had 16
     # random bytes but only need 16 characters
@@ -203,9 +175,6 @@ def get_rounds(options):
 
 
 try:
-    random_reason = check_random()
-    if random_reason is not None:
-        raise ImportError(random_reason)
     import hashlib
     h = hashlib.sha1()
     h = None
@@ -213,8 +182,6 @@ try:
     }
 except ImportError as e:
     reason = "hashlib.sha1()"
-    if random_reason:
-        reason += " and " + random_reason
     reason += " required"
     disabled_virtual_attributes["virtualSSHA"] = {
         "reason": reason,
@@ -222,9 +189,6 @@ except ImportError as e:
 
 for (alg, attr) in [("5", "virtualCryptSHA256"), ("6", "virtualCryptSHA512")]:
     try:
-        random_reason = check_random()
-        if random_reason is not None:
-            raise ImportError(random_reason)
         import crypt
         v = get_crypt_value(alg, "")
         v = None
@@ -232,8 +196,6 @@ for (alg, attr) in [("5", "virtualCryptSHA256"), ("6", "virtualCryptSHA512")]:
         }
     except ImportError as e:
         reason = "crypt"
-        if random_reason:
-            reason += " and " + random_reason
         reason += " required"
         disabled_virtual_attributes[attr] = {
             "reason": reason,
@@ -519,6 +481,13 @@ class cmd_user_list(Command):
     takes_options = [
         Option("-H", "--URL", help="LDB URL for database or target server", type=str,
                metavar="URL", dest="H"),
+        Option("-b", "--base-dn",
+               help="Specify base DN to use",
+               type=str),
+        Option("--full-dn", dest="full_dn",
+               default=False,
+               action='store_true',
+               help="Display DN instead of the sAMAccountName.")
     ]
 
     takes_optiongroups = {
@@ -527,15 +496,25 @@ class cmd_user_list(Command):
         "versionopts": options.VersionOptions,
     }
 
-    def run(self, sambaopts=None, credopts=None, versionopts=None, H=None):
+    def run(self,
+            sambaopts=None,
+            credopts=None,
+            versionopts=None,
+            H=None,
+            base_dn=None,
+            full_dn=False):
         lp = sambaopts.get_loadparm()
         creds = credopts.get_credentials(lp, fallback_machine=True)
 
         samdb = SamDB(url=H, session_info=system_session(),
                       credentials=creds, lp=lp)
 
-        domain_dn = samdb.domain_dn()
-        res = samdb.search(domain_dn, scope=ldb.SCOPE_SUBTREE,
+        search_dn = samdb.domain_dn()
+        if base_dn:
+            search_dn = samdb.normalize_dn_in_domain(base_dn)
+
+        res = samdb.search(search_dn,
+                           scope=ldb.SCOPE_SUBTREE,
                            expression=("(&(objectClass=user)(userAccountControl:%s:=%u))"
                                        % (ldb.OID_COMPARATOR_AND, dsdb.UF_NORMAL_ACCOUNT)),
                            attrs=["samaccountname"])
@@ -543,6 +522,10 @@ class cmd_user_list(Command):
             return
 
         for msg in res:
+            if full_dn:
+                self.outf.write("%s\n" % msg.get("dn"))
+                continue
+
             self.outf.write("%s\n" % msg.get("samaccountname", idx=0))
 
 
@@ -772,6 +755,208 @@ class cmd_user_password(Command):
             # FIXME: catch more specific exception
             raise CommandError("Failed to change password : %s" % msg)
         self.outf.write("Changed password OK\n")
+
+
+class cmd_user_getgroups(Command):
+    """Get the direct group memberships of a user account.
+
+The username specified on the command is the sAMAccountName."""
+    synopsis = "%prog <username> [options]"
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+        "credopts": options.CredentialsOptions,
+    }
+
+    takes_options = [
+        Option("-H", "--URL", help="LDB URL for database or target server",
+               type=str, metavar="URL", dest="H"),
+        Option("--full-dn", dest="full_dn",
+               default=False,
+               action='store_true',
+               help="Display DN instead of the sAMAccountName."),
+        ]
+
+    takes_args = ["username"]
+
+    def run(self,
+            username,
+            credopts=None,
+            sambaopts=None,
+            versionopts=None,
+            H=None,
+            full_dn=False):
+
+        lp = sambaopts.get_loadparm()
+        creds = credopts.get_credentials(lp)
+
+        samdb = SamDB(url=H, session_info=system_session(),
+                      credentials=creds, lp=lp)
+
+        filter = ("(&(sAMAccountName=%s)(objectClass=user))" %
+                  ldb.binary_encode(username))
+        try:
+            res = samdb.search(base=samdb.domain_dn(),
+                               expression=filter,
+                               scope=ldb.SCOPE_SUBTREE,
+                               attrs=["objectSid",
+                                      "memberOf",
+                                      "primaryGroupID"])
+            user_sid_binary = res[0].get('objectSid', idx=0)
+            user_sid = ndr_unpack(security.dom_sid, user_sid_binary)
+            (user_dom_sid, user_rid) = user_sid.split()
+            user_sid_dn = "<SID=%s>" % user_sid
+            user_pgid = int(res[0].get('primaryGroupID', idx=0))
+            user_groups = res[0].get('memberOf')
+            if user_groups is None:
+                user_groups = []
+        except IndexError:
+            raise CommandError("Unable to find user '%s'" % (username))
+
+        primarygroup_sid_dn = "<SID=%s-%u>" % (user_dom_sid, user_pgid)
+
+        filter = "(objectClass=group)"
+        try:
+            res = samdb.search(base=primarygroup_sid_dn,
+                               expression=filter,
+                               scope=ldb.SCOPE_BASE,
+                               attrs=['sAMAccountName'])
+            primary_group_dn = str(res[0].dn)
+            primary_group_name = res[0].get('sAMAccountName')
+        except IndexError:
+            raise CommandError("Unable to find primary group '%s'" % (primarygroup_sid_dn))
+
+        if full_dn:
+            self.outf.write("%s\n" % primary_group_dn)
+            for group_dn in user_groups:
+                self.outf.write("%s\n" % group_dn)
+            return
+
+        group_names = []
+        for gdn in user_groups:
+            try:
+                res = samdb.search(base=gdn,
+                                   expression=filter,
+                                   scope=ldb.SCOPE_BASE,
+                                   attrs=['sAMAccountName'])
+                group_names.extend(res[0].get('sAMAccountName'))
+            except IndexError:
+                raise CommandError("Unable to find group '%s'" % (gdn))
+
+        self.outf.write("%s\n" % primary_group_name)
+        for group_name in group_names:
+            self.outf.write("%s\n" % group_name)
+
+
+class cmd_user_setprimarygroup(Command):
+    """Set the primary group a user account.
+
+This command sets the primary group a user account. The username specified on
+the command is the sAMAccountName. The primarygroupname is the sAMAccountName
+of the new primary group. The user must be a member of the group.
+
+The command may be run from the root userid or another authorized userid. The
+-H or --URL= option can be used to execute the command against a remote server.
+
+Example1:
+samba-tool user setprimarygroup TestUser1 newPrimaryGroup --URL=ldap://samba.samdom.example.com -Uadministrator%passw1rd
+
+Example1 shows how to set the primary group for TestUser1 on a remote LDAP
+server. The --URL parameter is used to specify the remote target server.  The
+-U option is used to pass the username and password of a user that exists on
+the remote server and is authorized to update the server.
+"""
+    synopsis = "%prog <username> <primarygroupname> [options]"
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+        "credopts": options.CredentialsOptions,
+    }
+
+    takes_options = [
+        Option("-H", "--URL", help="LDB URL for database or target server", type=str,
+               metavar="URL", dest="H"),
+        ]
+
+    takes_args = ["username", "primarygroupname"]
+
+    def run(self, username, primarygroupname, credopts=None, sambaopts=None,
+            versionopts=None, H=None):
+
+        lp = sambaopts.get_loadparm()
+        creds = credopts.get_credentials(lp)
+
+        samdb = SamDB(url=H, session_info=system_session(),
+                      credentials=creds, lp=lp)
+
+        filter = ("(&(sAMAccountName=%s)(objectClass=user))" %
+                  ldb.binary_encode(username))
+        try:
+            res = samdb.search(base=samdb.domain_dn(),
+                               expression=filter,
+                               scope=ldb.SCOPE_SUBTREE,
+                               controls=["extended_dn:1:1"],
+                               attrs=["objectSid",
+                                      "memberOf",
+                                      "primaryGroupID"])
+            user_sid_binary = res[0].get('objectSid', idx=0)
+            user_sid = ndr_unpack(security.dom_sid, user_sid_binary)
+            (user_dom_sid, user_rid) = user_sid.split()
+            user_sid_dn = "<SID=%s>" % user_sid
+            user_pgid = int(res[0].get('primaryGroupID', idx=0))
+            user_groups = res[0].get('memberOf')
+            if user_groups is None:
+                user_groups = []
+        except IndexError:
+            raise CommandError("Unable to find user '%s'" % (username))
+
+        user_group_sids = []
+        for user_group in user_groups:
+            user_group_dn = ldb.Dn(samdb, str(user_group))
+            user_group_binary_sid = user_group_dn.get_extended_component("SID")
+            user_group_sid = ndr_unpack(security.dom_sid, user_group_binary_sid)
+            user_group_sids.append(user_group_sid)
+
+        filter = ("(&(sAMAccountName=%s)(objectClass=group))" %
+                  ldb.binary_encode(primarygroupname))
+        try:
+            res = samdb.search(base=samdb.domain_dn(),
+                               expression=filter,
+                               scope=ldb.SCOPE_SUBTREE,
+                               attrs=["objectSid"])
+            group_sid_binary = res[0].get('objectSid', idx=0)
+        except IndexError:
+            raise CommandError("Unable to find group '%s'" % (primarygroupname))
+
+        primarygroup_sid = ndr_unpack(security.dom_sid, group_sid_binary)
+        (primarygroup_dom_sid, primarygroup_rid) = primarygroup_sid.split()
+
+        if user_dom_sid != primarygroup_dom_sid:
+            raise CommandError("Group '%s' does not belong to the user's "
+                               "domain" % primarygroupname)
+
+        if primarygroup_rid != user_pgid and primarygroup_sid not in user_group_sids:
+            raise CommandError("User '%s' is not member of group '%s'" %
+                               (username, primarygroupname))
+
+        setprimarygroup_ldif = """
+dn: %s
+changetype: modify
+delete: primaryGroupID
+primaryGroupID: %u
+add: primaryGroupID
+primaryGroupID: %u
+""" % (user_sid_dn, user_pgid, primarygroup_rid)
+
+        try:
+            samdb.modify_ldif(setprimarygroup_ldif)
+        except Exception as msg:
+            raise CommandError("Failed to set primary group '%s' "
+                               "for user '%s': %s" %
+                               (primarygroupname, username, msg))
+        self.outf.write("Changed primary group to '%s'\n" % primarygroupname)
 
 
 class cmd_user_setpassword(Command):
@@ -1307,7 +1492,7 @@ class GetPasswordCommand(Command):
                 u8 = get_utf8(a, b, username or account_name)
                 if u8 is None:
                     continue
-                salt = get_random_bytes(4)
+                salt = os.urandom(4)
                 h = hashlib.sha1()
                 h.update(u8)
                 h.update(salt)
@@ -1937,15 +2122,13 @@ samba-tool user syncpasswords --terminate \\
                 self.password_attrs = password_attrs
                 self.decrypt_samba_gpg = decrypt_samba_gpg
                 self.sync_command = sync_command
-                add_ldif  = "dn: %s\n" % self.cache_dn
-                add_ldif += "objectClass: userSyncPasswords\n"
-                add_ldif += "samdbUrl:: %s\n" % base64.b64encode(get_bytes(self.samdb_url)).decode('utf8')
-                add_ldif += "dirsyncFilter:: %s\n" % base64.b64encode(get_bytes(self.dirsync_filter)).decode('utf8')
-                for a in self.dirsync_attrs:
-                    add_ldif += "dirsyncAttribute:: %s\n" % base64.b64encode(get_bytes(a)).decode('utf8')
-                add_ldif += "dirsyncControl: %s\n" % self.dirsync_controls[0]
-                for a in self.password_attrs:
-                    add_ldif += "passwordAttribute:: %s\n" % base64.b64encode(get_bytes(a)).decode('utf8')
+                add_ldif = "dn: %s\n" % self.cache_dn +\
+                           "objectClass: userSyncPasswords\n" +\
+                           "samdbUrl:: %s\n" % base64.b64encode(get_bytes(self.samdb_url)).decode('utf8') +\
+                           "dirsyncFilter:: %s\n" % base64.b64encode(get_bytes(self.dirsync_filter)).decode('utf8') +\
+                           "".join("dirsyncAttribute:: %s\n" % base64.b64encode(get_bytes(a)).decode('utf8') for a in self.dirsync_attrs) +\
+                           "dirsyncControl: %s\n" % self.dirsync_controls[0] +\
+                           "".join("passwordAttribute:: %s\n" % base64.b64encode(get_bytes(a)).decode('utf8') for a in self.password_attrs)
                 if self.decrypt_samba_gpg:
                     add_ldif += "decryptSambaGPG: TRUE\n"
                 else:
@@ -1998,7 +2181,8 @@ samba-tool user syncpasswords --terminate \\
             assert res is None
 
             input = "%s" % (ldif)
-            reply = sync_command_p.communicate(input)[0]
+            reply = sync_command_p.communicate(
+                input.encode('utf-8'))[0].decode('utf-8')
             log_msg("%s\n" % (reply))
             res = sync_command_p.poll()
             if res is None:
@@ -2142,13 +2326,13 @@ samba-tool user syncpasswords --terminate \\
             if self.current_pid is not None:
                 log_msg("currentPid: %d\n" % self.current_pid)
 
-            modify_ldif = "dn: %s\n" % (self.cache_dn)
-            modify_ldif += "changetype: modify\n"
-            modify_ldif += "replace: currentPid\n"
+            modify_ldif = "dn: %s\n" % (self.cache_dn) +\
+                          "changetype: modify\n" +\
+                          "replace: currentPid\n"
             if self.current_pid is not None:
                 modify_ldif += "currentPid: %d\n" % (self.current_pid)
-            modify_ldif += "replace: currentTime\n"
-            modify_ldif += "currentTime: %s\n" % ldb.timestring(int(time.time()))
+            modify_ldif += "replace: currentTime\n" +\
+                           "currentTime: %s\n" % ldb.timestring(int(time.time()))
             self.cache.modify_ldif(modify_ldif)
             return
 
@@ -2160,12 +2344,12 @@ samba-tool user syncpasswords --terminate \\
             # This cookie can be extremely long
             # log_msg("dirsyncControls: %r\n" % self.dirsync_controls)
 
-            modify_ldif = "dn: %s\n" % (self.cache_dn)
-            modify_ldif += "changetype: modify\n"
-            modify_ldif += "replace: dirsyncControl\n"
-            modify_ldif += "dirsyncControl: %s\n" % (self.dirsync_controls[0])
-            modify_ldif += "replace: currentTime\n"
-            modify_ldif += "currentTime: %s\n" % ldb.timestring(int(time.time()))
+            modify_ldif = "dn: %s\n" % (self.cache_dn) +\
+                          "changetype: modify\n" +\
+                          "replace: dirsyncControl\n" +\
+                          "dirsyncControl: %s\n" % (self.dirsync_controls[0]) +\
+                          "replace: currentTime\n" +\
+                          "currentTime: %s\n" % ldb.timestring(int(time.time()))
             self.cache.modify_ldif(modify_ldif)
             return
 
@@ -2201,18 +2385,18 @@ samba-tool user syncpasswords --terminate \\
                                         expression="(objectClass=*)",
                                         attrs=["lastCookie"])
                 if len(res) == 0:
-                    add_ldif  = "dn: %s\n" % (dn)
-                    add_ldif += "objectClass: userCookie\n"
-                    add_ldif += "lastCookie: %s\n" % (lastCookie)
-                    add_ldif += "currentTime: %s\n" % ldb.timestring(int(time.time()))
+                    add_ldif  = "dn: %s\n" % (dn) +\
+                                "objectClass: userCookie\n" +\
+                                "lastCookie: %s\n" % (lastCookie) +\
+                                "currentTime: %s\n" % ldb.timestring(int(time.time()))
                     self.cache.add_ldif(add_ldif)
                 else:
-                    modify_ldif = "dn: %s\n" % (dn)
-                    modify_ldif += "changetype: modify\n"
-                    modify_ldif += "replace: lastCookie\n"
-                    modify_ldif += "lastCookie: %s\n" % (lastCookie)
-                    modify_ldif += "replace: currentTime\n"
-                    modify_ldif += "currentTime: %s\n" % ldb.timestring(int(time.time()))
+                    modify_ldif = "dn: %s\n" % (dn) +\
+                                  "changetype: modify\n" +\
+                                  "replace: lastCookie\n" +\
+                                  "lastCookie: %s\n" % (lastCookie) +\
+                                  "replace: currentTime\n" +\
+                                  "currentTime: %s\n" % ldb.timestring(int(time.time()))
                     self.cache.modify_ldif(modify_ldif)
                 self.cache.transaction_commit()
             except Exception as e:
@@ -2428,8 +2612,6 @@ LDAP server using the 'nano' editor.
 
     def run(self, username, credopts=None, sambaopts=None, versionopts=None,
             H=None, editor=None):
-        from . import common
-
         lp = sambaopts.get_loadparm()
         creds = credopts.get_credentials(lp, fallback_machine=True)
         samdb = SamDB(url=H, session_info=system_session(),
@@ -2448,6 +2630,7 @@ LDAP server using the 'nano' editor.
         except IndexError:
             raise CommandError('Unable to find user "%s"' % (username))
 
+        import tempfile
         for msg in res:
             result_ldif = common.get_ldif_for_editor(samdb, msg)
 
@@ -2558,7 +2741,7 @@ Example3 shows how to display a users objectSid and memberOf attributes.
             raise CommandError('Unable to find user "%s"' % (username))
 
         for msg in res:
-            user_ldif = samdb.write_ldif(msg, ldb.CHANGETYPE_NONE)
+            user_ldif = common.get_ldif_for_editor(samdb, msg)
             self.outf.write(user_ldif)
 
 
@@ -2642,6 +2825,229 @@ class cmd_user_move(Command):
                         (username, full_new_parent_dn))
 
 
+class cmd_user_add_unix_attrs(Command):
+    """Add RFC2307 attributes to a user.
+
+This command adds Unix attributes to a user account in the Active
+Directory domain.
+
+The username specified on the command is the sAMaccountName.
+
+You must supply a unique uidNumber.
+
+Unix (RFC2307) attributes will be added to the user account.
+
+If you supply a gidNumber with '--gid-number', this will be used for the
+users Unix 'gidNumber' attribute.
+
+If '--gid-number' is not supplied, the users Unix gidNumber will be set to the
+one found in 'Domain Users', this means Domain Users must have a gidNumber
+attribute.
+
+if '--unix-home' is not supplied, the users Unix home directory will be
+set to /home/DOMAIN/username
+
+if '--login-shell' is not supplied, the users Unix login shell will be
+set to '/bin/sh'
+
+if ---gecos' is not supplied, the users Unix gecos field will be set to the
+users 'CN'
+
+Add 'idmap_ldb:use rfc2307 = Yes' to the smb.conf on DCs, to use these
+attributes for UID/GID mapping.
+
+The command may be run from the root userid or another authorised userid.
+The -H or --URL= option can be used to execute the command against a
+remote server.
+
+Example1:
+samba-tool user addunixattrs User1 10001
+
+Example1 shows how to add RFC2307 attributes to a domain enabled user
+account, Domain Users will be set as the users gidNumber.
+
+The users Unix ID will be set to '10001', provided this ID isn't already
+in use.
+
+Example2:
+samba-tool user addunixattrs User2 10002 --gid-number=10001 \
+--unix-home=/home/User2
+
+Example2 shows how to add RFC2307 attributes to a domain enabled user
+account.
+
+The users Unix ID will be set to '10002', provided this ID isn't already
+in use.
+
+The users gidNumber attribute will be set to '10001'
+
+The users Unix home directory will be set to '/home/user2'
+
+Example3:
+samba-tool user addunixattrs User3 10003 --gid-number=10001 \
+--login-shell=/bin/false --gecos='User3 test'
+
+Example3 shows how to add RFC2307 attributes to a domain enabled user
+account.
+
+The users Unix ID will be set to '10003', provided this ID isn't already
+in use.
+
+The users gidNumber attribute will be set to '10001'
+
+The users Unix login shell will be set to '/bin/false'
+
+The users gecos field will be set to 'User3 test'
+
+Example4:
+samba-tool user addunixattrs User4 10004 --gid-number=10001 \
+--unix-home=/home/User4 --login-shell=/bin/bash --gecos='User4 test'
+
+Example4 shows how to add RFC2307 attributes to a domain enabled user
+account.
+
+The users Unix ID will be set to '10004', provided this ID isn't already
+in use.
+
+The users gidNumber attribute will be set to '10001'
+
+The users Unix home directory will be set to '/home/User4'
+
+The users Unix login shell will be set to '/bin/bash'
+
+The users gecos field will be set to 'User4 test'
+
+"""
+
+    synopsis = "%prog <username> <uid-number> [options]"
+
+    takes_options = [
+        Option("-H", "--URL", help="LDB URL for database or target server",
+               type=str, metavar="URL", dest="H"),
+        Option("--gid-number", help="User's Unix/RFC2307 GID", type=str),
+        Option("--unix-home", help="User's Unix/RFC2307 home directory",
+               type=str),
+        Option("--login-shell", help="User's Unix/RFC2307 login shell",
+               type=str),
+        Option("--gecos", help="User's Unix/RFC2307 GECOS field", type=str),
+        Option("--uid", help="User's Unix/RFC2307 username", type=str),
+    ]
+
+    takes_args = ["username", "uid-number"]
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "credopts": options.CredentialsOptions,
+        "versionopts": options.VersionOptions,
+        }
+
+    def run(self, username, uid_number, credopts=None, sambaopts=None,
+            versionopts=None, H=None, gid_number=None, unix_home=None,
+            login_shell=None, gecos=None, uid=None):
+
+        lp = sambaopts.get_loadparm()
+        creds = credopts.get_credentials(lp)
+
+        samdb = SamDB(url=H, session_info=system_session(),
+                      credentials=creds, lp=lp)
+
+        domaindn = samdb.domain_dn()
+
+        # Check that uidNumber supplied isn't already in use
+        filter = ("(&(objectClass=person)(uidNumber={}))"
+                  .format(uid_number))
+        res = samdb.search(domaindn,
+                           scope=ldb.SCOPE_SUBTREE,
+                           expression=filter)
+        if (len(res) != 0):
+            raise CommandError("uidNumber {} is already being used."
+                               .format(uid_number))
+
+        # Check user exists and doesn't have a uidNumber
+        filter = "(samaccountname={})".format(ldb.binary_encode(username))
+        res = samdb.search(domaindn,
+                           scope=ldb.SCOPE_SUBTREE,
+                           expression=filter)
+        if (len(res) == 0):
+            raise CommandError("Unable to find user '{}'".format(username))
+
+        user_dn = res[0].dn
+
+        if "uidNumber" in res[0]:
+            raise CommandError("User {} is already a Unix user."
+                               .format(username))
+
+        if gecos is None:
+            gecos = res[0]["cn"][0]
+
+        if uid is None:
+            uid = res[0]["cn"][0]
+
+        if gid_number is None:
+            search_filter = ("(samaccountname={})"
+                              .format(ldb.binary_encode('Domain Users')))
+            try:
+                res = samdb.search(domaindn,
+                                   scope=ldb.SCOPE_SUBTREE,
+                                   expression=search_filter)
+                for msg in res:
+                    gid_number=msg.get('gidNumber')
+            except IndexError:
+                raise CommandError('Domain Users does not have a'
+                                   ' gidNumber attribute')
+
+        if login_shell is None:
+            login_shell = "/bin/sh"
+
+        if unix_home is None:
+            # obtain nETBIOS Domain Name
+            filter = "(&(objectClass=crossRef)(nETBIOSName=*))"
+            searchdn = ("CN=Partitions,CN=Configuration," + domaindn)
+            try:
+                res = samdb.search(searchdn,
+                                   scope=ldb.SCOPE_SUBTREE,
+                                   expression=filter)
+                unix_domain = res[0]["nETBIOSName"][0]
+            except IndexError:
+                raise CommandError('Unable to find Unix domain')
+
+            unix_home = "/home/{0}/{1}".format(unix_domain, username)
+
+        if not lp.get("idmap_ldb:use rfc2307"):
+            self.outf.write("You are setting a Unix/RFC2307 UID & GID. "
+                            "You may want to set 'idmap_ldb:use rfc2307 = Yes'"
+                            " in smb.conf to use the attributes for "
+                            "XID/SID-mapping.\n")
+
+        user_mod = """
+dn: {0}
+changetype: modify
+add: uidNumber
+uidNumber: {1}
+add: gidnumber
+gidNumber: {2}
+add: gecos
+gecos: {3}
+add: uid
+uid: {4}
+add: loginshell
+loginShell: {5}
+add: unixHomeDirectory
+unixHomeDirectory: {6}
+""".format(user_dn, uid_number, gid_number, gecos, uid, login_shell, unix_home)
+
+        samdb.transaction_start()
+        try:
+            samdb.modify_ldif(user_mod)
+        except ldb.LdbError as e:
+            raise CommandError("Failed to modify user '{0}': {1}"
+                               .format(username, e))
+        else:
+            samdb.transaction_commit()
+            self.outf.write("Modified User '{}' successfully\n"
+                            .format(username))
+
+
 class cmd_user_sensitive(Command):
     """Set/unset or show UF_NOT_DELEGATED for an account."""
 
@@ -2711,10 +3117,13 @@ class cmd_user(SuperCommand):
     subcommands["list"] = cmd_user_list()
     subcommands["setexpiry"] = cmd_user_setexpiry()
     subcommands["password"] = cmd_user_password()
+    subcommands["getgroups"] = cmd_user_getgroups()
+    subcommands["setprimarygroup"] = cmd_user_setprimarygroup()
     subcommands["setpassword"] = cmd_user_setpassword()
     subcommands["getpassword"] = cmd_user_getpassword()
     subcommands["syncpasswords"] = cmd_user_syncpasswords()
     subcommands["edit"] = cmd_user_edit()
     subcommands["show"] = cmd_user_show()
     subcommands["move"] = cmd_user_move()
+    subcommands["addunixattrs"] = cmd_user_add_unix_attrs()
     subcommands["sensitive"] = cmd_user_sensitive()

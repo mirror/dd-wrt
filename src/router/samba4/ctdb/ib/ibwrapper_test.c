@@ -467,7 +467,7 @@ static int ibwtest_get_address(const char *address, struct in_addr *addr)
 	if (inet_pton(AF_INET, address, addr) <= 0) {
 		struct hostent *he = gethostbyname(address);
 		if (he == NULL || he->h_length > sizeof(*addr)) {
-			DEBUG(DEBUG_ERR, ("invalid nework address '%s'\n", address));
+			DEBUG(DEBUG_ERR, ("invalid network address '%s'\n", address));
 			return -1;
 		}
 		memcpy(addr, he->h_addr, he->h_length);
@@ -551,7 +551,7 @@ int main(int argc, char *argv[])
 	memset(tcx, 0, sizeof(struct ibwtest_ctx));
 	tcx->nsec = 0;
 	tcx->nmsg = 1000;
-	DEBUGLEVEL = 0;
+	debuglevel_set(0);
 
 	/* here is the only case we can't avoid using global... */
 	testctx = tcx;
@@ -590,7 +590,7 @@ int main(int argc, char *argv[])
 			tcx->maxsize = (unsigned int)atoi(optarg);
 			break;
 		case 'd':
-			DEBUGLEVEL = atoi(optarg);
+			debuglevel_set(atoi(optarg));
 			break;
 		default:
 			fprintf(stderr, "ERROR: unknown option -%c\n", (char)op);

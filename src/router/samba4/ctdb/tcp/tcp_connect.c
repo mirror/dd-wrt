@@ -43,7 +43,7 @@
 void ctdb_tcp_stop_connection(struct ctdb_node *node)
 {
 	struct ctdb_tcp_node *tnode = talloc_get_type(
-		node->private_data, struct ctdb_tcp_node);
+		node->transport_data, struct ctdb_tcp_node);
 
 	TALLOC_FREE(tnode->out_queue);
 	TALLOC_FREE(tnode->connect_te);
@@ -63,7 +63,7 @@ void ctdb_tcp_tnode_cb(uint8_t *data, size_t cnt, void *private_data)
 {
 	struct ctdb_node *node = talloc_get_type(private_data, struct ctdb_node);
 	struct ctdb_tcp_node *tnode = talloc_get_type(
-		node->private_data, struct ctdb_tcp_node);
+		node->transport_data, struct ctdb_tcp_node);
 
 	if (data == NULL) {
 		node->ctdb->upcalls->node_dead(node);
@@ -85,7 +85,7 @@ static void ctdb_node_connect_write(struct tevent_context *ev,
 {
 	struct ctdb_node *node = talloc_get_type(private_data,
 						 struct ctdb_node);
-	struct ctdb_tcp_node *tnode = talloc_get_type(node->private_data,
+	struct ctdb_tcp_node *tnode = talloc_get_type(node->transport_data,
 						      struct ctdb_tcp_node);
 	struct ctdb_context *ctdb = node->ctdb;
 	int error = 0;
@@ -93,8 +93,7 @@ static void ctdb_node_connect_write(struct tevent_context *ev,
 	int one = 1;
 	int ret;
 
-	talloc_free(tnode->connect_te);
-	tnode->connect_te = NULL;
+	TALLOC_FREE(tnode->connect_te);
 
 	ret = getsockopt(tnode->out_fd, SOL_SOCKET, SO_ERROR, &error, &len);
 	if (ret != 0 || error != 0) {
@@ -105,8 +104,7 @@ static void ctdb_node_connect_write(struct tevent_context *ev,
 		return;
 	}
 
-	talloc_free(tnode->connect_fde);
-	tnode->connect_fde = NULL;
+	TALLOC_FREE(tnode->connect_fde);
 
 	ret = setsockopt(tnode->out_fd,
 			 IPPROTO_TCP,
@@ -167,7 +165,7 @@ void ctdb_tcp_node_connect(struct tevent_context *ev, struct tevent_timer *te,
 {
 	struct ctdb_node *node = talloc_get_type(private_data,
 						 struct ctdb_node);
-	struct ctdb_tcp_node *tnode = talloc_get_type(node->private_data, 
+	struct ctdb_tcp_node *tnode = talloc_get_type(node->transport_data,
 						      struct ctdb_tcp_node);
 	struct ctdb_context *ctdb = node->ctdb;
         ctdb_sock_addr sock_in;
@@ -183,16 +181,14 @@ void ctdb_tcp_node_connect(struct tevent_context *ev, struct tevent_timer *te,
 	tnode->out_fd = socket(sock_out.sa.sa_family, SOCK_STREAM, IPPROTO_TCP);
 	if (tnode->out_fd == -1) {
 		DBG_ERR("Failed to create socket\n");
-		return;
+		goto failed;
 	}
 
 	ret = set_blocking(tnode->out_fd, false);
 	if (ret != 0) {
 		DBG_ERR("Failed to set socket non-blocking (%s)\n",
 			strerror(errno));
-		close(tnode->out_fd);
-		tnode->out_fd = -1;
-		return;
+		goto failed;
 	}
 
 	set_close_on_exec(tnode->out_fd);
@@ -224,32 +220,22 @@ void ctdb_tcp_node_connect(struct tevent_context *ev, struct tevent_timer *te,
 		sockout_size = sizeof(sock_out.ip6);
 		break;
 	default:
-		DEBUG(DEBUG_ERR, (__location__ " unknown family %u\n",
-			sock_in.sa.sa_family));
-		close(tnode->out_fd);
-		tnode->out_fd = -1;
-		return;
+		DBG_ERR("Unknown address family %u\n", sock_in.sa.sa_family);
+		/* Can't happen to due to address parsing restrictions */
+		goto failed;
 	}
 
 	ret = bind(tnode->out_fd, (struct sockaddr *)&sock_in, sockin_size);
 	if (ret == -1) {
 		DBG_ERR("Failed to bind socket (%s)\n", strerror(errno));
-		close(tnode->out_fd);
-		tnode->out_fd = -1;
-		return;
+		goto failed;
 	}
 
 	ret = connect(tnode->out_fd,
 		      (struct sockaddr *)&sock_out,
 		      sockout_size);
 	if (ret != 0 && errno != EINPROGRESS) {
-		ctdb_tcp_stop_connection(node);
-		tnode->connect_te = tevent_add_timer(ctdb->ev,
-						     tnode,
-						     timeval_current_ofs(1, 0),
-						     ctdb_tcp_node_connect,
-						     node);
-		return;
+		goto failed;
 	}
 
 	/* non-blocking connect - wait for write event */
@@ -268,6 +254,16 @@ void ctdb_tcp_node_connect(struct tevent_context *ev, struct tevent_timer *te,
 					     timeval_current_ofs(1, 0),
 					     ctdb_tcp_node_connect,
 					     node);
+
+	return;
+
+failed:
+	ctdb_tcp_stop_connection(node);
+	tnode->connect_te = tevent_add_timer(ctdb->ev,
+					     tnode,
+					     timeval_current_ofs(1, 0),
+					     ctdb_tcp_node_connect,
+					     node);
 }
 
 /*
@@ -279,7 +275,8 @@ static void ctdb_listen_event(struct tevent_context *ev, struct tevent_fd *fde,
 			      uint16_t flags, void *private_data)
 {
 	struct ctdb_context *ctdb = talloc_get_type(private_data, struct ctdb_context);
-	struct ctdb_tcp *ctcp = talloc_get_type(ctdb->private_data, struct ctdb_tcp);
+	struct ctdb_tcp *ctcp = talloc_get_type(ctdb->transport_data,
+						struct ctdb_tcp);
 	ctdb_sock_addr addr;
 	socklen_t len;
 	int fd;
@@ -302,7 +299,7 @@ static void ctdb_listen_event(struct tevent_context *ev, struct tevent_fd *fde,
 		return;
 	}
 
-	tnode = talloc_get_type_abort(node->private_data,
+	tnode = talloc_get_type_abort(node->transport_data,
 				      struct ctdb_tcp_node);
 	if (tnode == NULL) {
 		/* This can't happen - see ctdb_tcp_initialise() */
@@ -370,7 +367,7 @@ static void ctdb_listen_event(struct tevent_context *ev, struct tevent_fd *fde,
 */
 static int ctdb_tcp_listen_automatic(struct ctdb_context *ctdb)
 {
-	struct ctdb_tcp *ctcp = talloc_get_type(ctdb->private_data,
+	struct ctdb_tcp *ctcp = talloc_get_type(ctdb->transport_data,
 						struct ctdb_tcp);
         ctdb_sock_addr sock;
 	int lock_fd;
@@ -511,7 +508,7 @@ failed:
 */
 int ctdb_tcp_listen(struct ctdb_context *ctdb)
 {
-	struct ctdb_tcp *ctcp = talloc_get_type(ctdb->private_data,
+	struct ctdb_tcp *ctcp = talloc_get_type(ctdb->transport_data,
 						struct ctdb_tcp);
         ctdb_sock_addr sock;
 	int sock_size;

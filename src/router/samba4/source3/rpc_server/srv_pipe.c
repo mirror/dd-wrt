@@ -475,44 +475,43 @@ static bool check_bind_req(struct pipes_struct *p,
 /**
  * Is a named pipe known?
  * @param[in] pipename		Just the filename
- * @result			Do we want to serve this?
+ * @result			NT error code
  */
-bool is_known_pipename(const char *pipename, struct ndr_syntax_id *syntax)
+NTSTATUS is_known_pipename(const char *pipename, struct ndr_syntax_id *syntax)
 {
 	NTSTATUS status;
 
 	if (strchr(pipename, '/')) {
-		DEBUG(1, ("Refusing open on pipe %s\n", pipename));
-		return false;
+		DBG_WARNING("Refusing open on pipe %s\n", pipename);
+		return NT_STATUS_OBJECT_NAME_NOT_FOUND;
 	}
 
 	if (lp_disable_spoolss() && strequal(pipename, "spoolss")) {
-		DEBUG(10, ("refusing spoolss access\n"));
-		return false;
+		DBG_DEBUG("refusing spoolss access\n");
+		return NT_STATUS_OBJECT_NAME_NOT_FOUND;
 	}
 
 	if (rpc_srv_get_pipe_interface_by_cli_name(pipename, syntax)) {
-		return true;
+		return NT_STATUS_OK;
 	}
 
 	status = smb_probe_module("rpc", pipename);
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(10, ("is_known_pipename: %s unknown\n", pipename));
-		return false;
+		DBG_DEBUG("Unknown pipe '%s'\n", pipename);
+		return NT_STATUS_OBJECT_NAME_NOT_FOUND;
 	}
-	DEBUG(10, ("is_known_pipename: %s loaded dynamically\n", pipename));
+	DBG_DEBUG("'%s' loaded dynamically\n", pipename);
 
 	/*
 	 * Scan the list again for the interface id
 	 */
 	if (rpc_srv_get_pipe_interface_by_cli_name(pipename, syntax)) {
-		return true;
+		return NT_STATUS_OK;
 	}
 
-	DEBUG(10, ("is_known_pipename: pipe %s did not register itself!\n",
-		   pipename));
+	DBG_DEBUG("pipe %s did not register itself!\n", pipename);
 
-	return false;
+	return NT_STATUS_OBJECT_NAME_NOT_FOUND;
 }
 
 /*******************************************************************
@@ -612,7 +611,7 @@ static bool pipe_auth_generic_verify_final(TALLOC_CTX *mem_ctx,
 					    (auth_level ==
 						DCERPC_AUTH_LEVEL_PRIVACY));
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0, (__location__ ": Client failed to negotatie proper "
+		DEBUG(0, (__location__ ": Client failed to negotiate proper "
 			  "security for rpc connection\n"));
 		return false;
 	}
@@ -1402,6 +1401,7 @@ static bool api_pipe_request(struct pipes_struct *p,
 	bool ret = False;
 	struct pipe_rpc_fns *pipe_fns;
 	const char *interface_name = NULL;
+	const char *dump_dir = NULL;
 
 	if (!p->pipe_bound) {
 		DEBUG(1, ("Pipe not bound!\n"));
@@ -1466,6 +1466,16 @@ static bool api_pipe_request(struct pipes_struct *p,
 		break;
 	}
 
+	dump_dir = lp_parm_const_string(0, "dcesrv", "fuzz directory", NULL);
+
+	dcerpc_save_ndr_fuzz_seed(p,
+				  p->in_data.data,
+				  dump_dir,
+				  interface_name,
+				  NDR_IN,
+				  pkt->u.request.opnum,
+				  false);
+
 	if (!srv_pipe_check_verification_trailer(p, pkt, pipe_fns)) {
 		DEBUG(1, ("srv_pipe_check_verification_trailer: failed\n"));
 		set_incoming_fault(p);
@@ -1487,6 +1497,14 @@ static bool api_pipe_request(struct pipes_struct *p,
 	ret = api_rpcTNP(p, pkt, pipe_fns->cmds, pipe_fns->n_cmds,
 			 &pipe_fns->syntax);
 	unbecome_authenticated_pipe_user();
+
+	dcerpc_save_ndr_fuzz_seed(p,
+				  p->out_data.rdata,
+				  dump_dir,
+				  interface_name,
+				  NDR_OUT,
+				  pkt->u.request.opnum,
+				  false);
 
 	TALLOC_FREE(frame);
 	return ret;

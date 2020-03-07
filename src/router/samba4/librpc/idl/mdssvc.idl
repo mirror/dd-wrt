@@ -18,7 +18,7 @@ interface mdssvc
 	);
 
 	void mdssvc_unknown1(
-		[in]        policy_handle   handle,
+		[in]        policy_handle   *handle,
 		[in]        uint32          unkn1, /* always 0, some status ? */
 		[in]        uint32          device_id,
 		[in]        uint32          unkn3, /* = mdssvc_open.unkn2 ? */
@@ -37,7 +37,7 @@ interface mdssvc
 	} mdssvc_blob;
 
 	void mdssvc_cmd(
-		[in]        policy_handle   handle,
+		[in]        policy_handle   *handle,
 		[in]        uint32          unkn1, /* always 0, status ? */
 		[in]        uint32          device_id,
 		[in]        uint32          unkn3, /* = mdssvc_open.unkn2 ? */
@@ -51,13 +51,13 @@ interface mdssvc
 		[in]        uint32          max_fragment_size2,
 		[in]        uint32          unkn7, /* always 0 ? */
 		[in]        uint32          unkn8, /* always 0 ? */
-		[out,ref]   uint32         *status,
+		[out,ref]   uint32         *fragment,
 		[out,ref]   mdssvc_blob    *response_blob,
 		[out,ref]   uint32         *unkn9  /* always 0 ? */
 	);
 
 	void mdssvc_close(
-		[in]        policy_handle   in_handle,
+		[in]        policy_handle   *in_handle,
 		[in]        uint32          unkn1, /* always 0, some status ? */
 		[in]        uint32          device_id,
 		[in]        uint32          unkn2, /* = mdssvc_open.unkn2 ? */

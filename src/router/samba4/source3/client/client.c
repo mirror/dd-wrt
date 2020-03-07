@@ -39,6 +39,7 @@
 #include "libsmb/nmblib.h"
 #include "include/ntioctl.h"
 #include "../libcli/smb/smbXcli_base.h"
+#include "lib/util/time_basic.h"
 
 #ifndef REGISTER
 #define REGISTER 0
@@ -1812,16 +1813,16 @@ static int do_allinfo(const char *name)
 		return false;
 	}
 
-	tmp = unix_timespec_to_nt_time(b_time);
+	tmp = full_timespec_to_nt_time(&b_time);
 	d_printf("create_time:    %s\n", nt_time_string(talloc_tos(), tmp));
 
-	tmp = unix_timespec_to_nt_time(a_time);
+	tmp = full_timespec_to_nt_time(&a_time);
 	d_printf("access_time:    %s\n", nt_time_string(talloc_tos(), tmp));
 
-	tmp = unix_timespec_to_nt_time(m_time);
+	tmp = full_timespec_to_nt_time(&m_time);
 	d_printf("write_time:     %s\n", nt_time_string(talloc_tos(), tmp));
 
-	tmp = unix_timespec_to_nt_time(c_time);
+	tmp = full_timespec_to_nt_time(&c_time);
 	d_printf("change_time:    %s\n", nt_time_string(talloc_tos(), tmp));
 
 	d_printf("attributes: %s (%x)\n", attr_str(talloc_tos(), mode), mode);
@@ -5189,16 +5190,22 @@ static int cmd_show_connect( void )
  *
  * Update the file times with the ones provided.
  */
-static int set_remote_times(const char *filename, time_t create_time,
-			time_t access_time, time_t write_time,
-			time_t change_time)
+static int set_remote_times(const char *filename,
+			    struct timespec *create_time,
+			    struct timespec *access_time,
+			    struct timespec *write_time,
+			    struct timespec *change_time)
 {
 	extern struct cli_state *cli;
 	NTSTATUS status;
 
-	status = cli_setpathinfo_basic(cli, filename, create_time,
-					access_time, write_time,
-					change_time, -1);
+	status = cli_setpathinfo_ext(cli,
+				filename,
+				create_time,
+				access_time,
+				write_time,
+				change_time,
+				-1);
 	if (!NT_STATUS_IS_OK(status)) {
 		d_printf("cli_setpathinfo_basic failed: %s\n",
 			 nt_errstr(status));
@@ -5219,7 +5226,8 @@ static int cmd_utimes(void)
 	const extern char *cmd_ptr;
 	char *buf;
 	char *fname = NULL;
-	time_t times[4] = {0, 0, 0, 0};
+	struct timespec times[4] = {{0}};
+	struct timeval_buf tbuf[4];
 	int time_count = 0;
 	int err = 0;
 	bool ok;
@@ -5256,10 +5264,11 @@ static int cmd_utimes(void)
 		time_count < 4) {
 		const char *s = buf;
 		struct tm tm = {0,};
+		time_t t;
 		char *ret;
 
 		if (strlen(s) == 2 && strcmp(s, "-1") == 0) {
-			times[time_count] = 0;
+			times[time_count] = make_omit_timespec();
 			time_count++;
 			continue;
 		} else {
@@ -5278,7 +5287,8 @@ static int cmd_utimes(void)
 		}
 
 		/* Convert tm to a time_t */
-		times[time_count] = mktime(&tm);
+		t = mktime(&tm);
+		times[time_count] = (struct timespec){.tv_sec = t};
 		time_count++;
 	}
 
@@ -5293,12 +5303,12 @@ static int cmd_utimes(void)
 	}
 
 	DEBUG(10, ("times\nCreate: %sAccess: %s Write: %sChange: %s\n",
-		talloc_strdup(ctx, ctime(&times[0])),
-		talloc_strdup(ctx, ctime(&times[1])),
-		talloc_strdup(ctx, ctime(&times[2])),
-		talloc_strdup(ctx, ctime(&times[3]))));
+		   timespec_string_buf(&times[0], false, &tbuf[0]),
+		   timespec_string_buf(&times[1], false, &tbuf[1]),
+		   timespec_string_buf(&times[2], false, &tbuf[2]),
+		   timespec_string_buf(&times[3], false, &tbuf[3])));
 
-	set_remote_times(fname, times[0], times[1], times[2], times[3]);
+	set_remote_times(fname, &times[0], &times[1], &times[2], &times[3]);
 out:
 	talloc_free(ctx);
 	return err;
@@ -5609,7 +5619,7 @@ static struct {
   {"scopy",cmd_scopy,"<src> <dest> server-side copy file",{COMPL_REMOTE,COMPL_REMOTE}},
   {"stat",cmd_stat,"<file name> Do a UNIX extensions stat call on a file",{COMPL_REMOTE,COMPL_NONE}},
   {"symlink",cmd_symlink,"<oldname> <newname> create a UNIX symlink",{COMPL_REMOTE,COMPL_REMOTE}},
-  {"tar",cmd_tar,"tar <c|x>[IXFqbgNan] current directory to/from <file name>",{COMPL_NONE,COMPL_NONE}},
+  {"tar",cmd_tar,"tar <c|x>[IXFvbgNan] current directory to/from <file name>",{COMPL_NONE,COMPL_NONE}},
   {"tarmode",cmd_tarmode,"<full|inc|reset|noreset> tar's behaviour towards archive bits",{COMPL_NONE,COMPL_NONE}},
   {"timeout",cmd_timeout,"timeout <number> - set the per-operation timeout in seconds (default 20)",{COMPL_NONE,COMPL_NONE}},
   {"translate",cmd_translate,"toggle text translation for printing",{COMPL_NONE,COMPL_NONE}},
@@ -6406,7 +6416,7 @@ int main(int argc,char *argv[])
 			.arg        = NULL,
 			.val        = 'T',
 			.descrip    = "Command line tar",
-			.argDescrip = "<c|x>IXFqgbNan",
+			.argDescrip = "<c|x>IXFvgbNan",
 		},
 		{
 			.longName   = "directory",

@@ -326,6 +326,11 @@ _PUBLIC_ time_t pull_dos_date2(const uint8_t *date_ptr, int zone_offset)
 _PUBLIC_ time_t pull_dos_date3(const uint8_t *date_ptr, int zone_offset)
 {
 	time_t t = (time_t)IVAL(date_ptr,0);
+
+	if (t == (time_t)0xFFFFFFFF) {
+		t = (time_t)-1;
+	}
+
 	if (!null_time(t)) {
 		t += zone_offset;
 	}
@@ -357,6 +362,62 @@ char *timeval_string(TALLOC_CTX *ctx, const struct timeval *tp, bool hires)
 	 */
 	talloc_set_name_const(result, result);
 	return result;
+}
+
+/****************************************************************************
+ Return the date and time as a string
+****************************************************************************/
+
+const char *timespec_string_buf(const struct timespec *tp,
+				bool hires,
+				struct timeval_buf *buf)
+{
+	time_t t;
+	struct tm *tm = NULL;
+	size_t len;
+
+	if (is_omit_timespec(tp)) {
+		strlcpy(buf->buf, "SAMBA_UTIME_OMIT", sizeof(buf->buf));
+		return buf->buf;
+	}
+
+	t = (time_t)tp->tv_sec;
+	tm = localtime(&t);
+
+	if (tm == NULL) {
+		if (hires) {
+			len = snprintf(buf->buf, sizeof(buf->buf),
+				       "%ld.%09ld seconds since the Epoch",
+				       (long)tp->tv_sec, (long)tp->tv_nsec);
+		} else {
+			len = snprintf(buf->buf, sizeof(buf->buf),
+				       "%ld seconds since the Epoch", (long)t);
+		}
+	} else if (!hires) {
+		len = snprintf(buf->buf, sizeof(buf->buf),
+			       "%04d/%02d/%02d %02d:%02d:%02d",
+			       1900 + tm->tm_year,
+			       tm->tm_mon + 1,
+			       tm->tm_mday,
+			       tm->tm_hour,
+			       tm->tm_min,
+			       tm->tm_sec);
+	} else {
+		len = snprintf(buf->buf, sizeof(buf->buf),
+			       "%04d/%02d/%02d %02d:%02d:%02d.%09ld",
+			       1900 + tm->tm_year,
+			       tm->tm_mon + 1,
+			       tm->tm_mday,
+			       tm->tm_hour,
+			       tm->tm_min,
+			       tm->tm_sec,
+			       (long)tp->tv_nsec);
+	}
+	if (len == -1) {
+		return "";
+	}
+
+	return buf->buf;
 }
 
 char *current_timestring(TALLOC_CTX *ctx, bool hires)
@@ -496,7 +557,7 @@ _PUBLIC_ const char *nt_time_string(TALLOC_CTX *mem_ctx, NTTIME nt)
 	if (nt == 0) {
 		return "NTTIME(0)";
 	}
-	t = nt_time_to_unix(nt);
+	t = nt_time_to_full_time_t(nt);
 	return timestring(mem_ctx, t);
 }
 
@@ -990,4 +1051,184 @@ _PUBLIC_ NTTIME unix_timespec_to_nt_time(struct timespec ts)
 	d += (ts.tv_nsec / 100);
 
 	return d;
+}
+
+/*
+ * Functions supporting the full range of time_t and struct timespec values,
+ * including 0, -1 and all other negative values. These functions don't use 0 or
+ * -1 values as sentinel to denote "unset" variables, but use the POSIX 2008
+ * define UTIME_OMIT from utimensat(2).
+ */
+
+/**
+ * Check if it's a to be omitted timespec.
+ **/
+bool is_omit_timespec(const struct timespec *ts)
+{
+	return ts->tv_nsec == SAMBA_UTIME_OMIT;
+}
+
+/**
+ * Return a to be omitted timespec.
+ **/
+struct timespec make_omit_timespec(void)
+{
+	return (struct timespec){.tv_nsec = SAMBA_UTIME_OMIT};
+}
+
+/**
+ * Like unix_timespec_to_nt_time() but without the special casing of tv_sec=0
+ * and -1. Also dealing with SAMBA_UTIME_OMIT.
+ **/
+NTTIME full_timespec_to_nt_time(const struct timespec *_ts)
+{
+	struct timespec ts = *_ts;
+	uint64_t d;
+
+	if (is_omit_timespec(_ts)) {
+		return NTTIME_OMIT;
+	}
+
+	/* Ensure tv_nsec is less than 1 sec. */
+	while (ts.tv_nsec > 1000000000) {
+		if (ts.tv_sec > TIME_T_MAX) {
+			return NTTIME_MAX;
+		}
+		ts.tv_sec += 1;
+		ts.tv_nsec -= 1000000000;
+	}
+
+	if (ts.tv_sec >= TIME_T_MAX) {
+		return NTTIME_MAX;
+	}
+	if ((ts.tv_sec + TIME_FIXUP_CONSTANT_INT) <= 0) {
+		return NTTIME_MIN;
+	}
+
+	d = TIME_FIXUP_CONSTANT_INT;
+	d += ts.tv_sec;
+
+	d *= 1000*1000*10;
+	/* d is now in 100ns units. */
+	d += (ts.tv_nsec / 100);
+
+	return d;
+}
+
+/**
+ * Like nt_time_to_unix_timespec() but allowing negative tv_sec values and
+ * returning NTTIME=0 and -1 as struct timespec {.tv_nsec = SAMBA_UTIME_OMIT}.
+ *
+ * See also: is_omit_timespec().
+ **/
+struct timespec nt_time_to_full_timespec(NTTIME nt)
+{
+	int64_t d;
+	struct timespec ret;
+
+	if (nt == NTTIME_OMIT) {
+		return make_omit_timespec();
+	}
+	if (nt == NTTIME_FREEZE) {
+		/*
+		 * This should be returned as SAMBA_UTIME_FREEZE in the
+		 * future.
+		 */
+		return make_omit_timespec();
+	}
+	if (nt > NTTIME_MAX) {
+		nt = NTTIME_MAX;
+	}
+
+	d = (int64_t)nt;
+	/* d is now in 100ns units, since jan 1st 1601".
+	   Save off the ns fraction. */
+
+	/*
+	 * Take the last seven decimal digits and multiply by 100.
+	 * to convert from 100ns units to 1ns units.
+	 */
+        ret.tv_nsec = (long) ((d % (1000 * 1000 * 10)) * 100);
+
+	/* Convert to seconds */
+	d /= 1000*1000*10;
+
+	/* Now adjust by 369 years to make the secs since 1970 */
+	d -= TIME_FIXUP_CONSTANT_INT;
+
+	if (d >= (int64_t)TIME_T_MAX) {
+		ret.tv_sec = TIME_T_MAX;
+		ret.tv_nsec = 0;
+		return ret;
+	}
+
+	ret.tv_sec = (time_t)d;
+	return ret;
+}
+
+/**
+ * Note: this function uses the full time_t range as valid date values including
+ * (time_t)0 and -1. That means that struct timespec sentinel values (cf
+ * is_omit_timespec()) can't be converted to sentinel values in a time_t
+ * representation. Callers should therefor check the NTTIME value with
+ * null_nttime() before calling this function.
+ **/
+time_t full_timespec_to_time_t(const struct timespec *_ts)
+{
+	struct timespec ts = *_ts;
+
+	if (is_omit_timespec(_ts)) {
+		/*
+		 * Unfortunately there's no sensible sentinel value in the
+		 * time_t range that is not conflicting with a valid time value
+		 * ((time_t)0 and -1 are valid time values). Bite the bullit and
+		 * return 0.
+		 */
+		return 0;
+	}
+
+	/* Ensure tv_nsec is less than 1sec. */
+	while (ts.tv_nsec > 1000000000) {
+		ts.tv_sec += 1;
+		ts.tv_nsec -= 1000000000;
+	}
+
+	/* 1 ns == 1,000,000,000 - one thousand millionths of a second.
+	   increment if it's greater than 500 millionth of a second. */
+
+	if (ts.tv_nsec > 500000000) {
+		return ts.tv_sec + 1;
+	}
+	return ts.tv_sec;
+}
+
+/**
+ * Like nt_time_to_unix() but supports negative time_t values.
+ *
+ * Note: this function uses the full time_t range as valid date values including
+ * (time_t)0 and -1. That means that NTTIME sentinel values of 0 and -1 which
+ * represent a "not-set" value, can't be converted to sentinel values in a
+ * time_t representation. Callers should therefor check the NTTIME value with
+ * null_nttime() before calling this function.
+ **/
+time_t nt_time_to_full_time_t(NTTIME nt)
+{
+	struct timespec ts;
+
+	ts = nt_time_to_full_timespec(nt);
+	return full_timespec_to_time_t(&ts);
+}
+
+/**
+ * Like time_t_to_unix_timespec() but supports negative time_t values.
+ *
+ * This version converts (time_t)0 and -1 to an is_omit_timespec(), so 0 and -1
+ * can't be used as valid date values. The function supports values < -1 though.
+ **/
+struct timespec time_t_to_full_timespec(time_t t)
+{
+	if (null_time(t)) {
+		return (struct timespec){.tv_nsec = SAMBA_UTIME_OMIT};
+	}
+	return (struct timespec){.tv_sec = t};
 }

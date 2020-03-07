@@ -1553,9 +1553,12 @@ static NTSTATUS libnet_join_joindomain_rpc(TALLOC_CTX *mem_ctx,
 	 */
 	old_timeout = rpccli_set_timeout(pipe_hnd, 600000);
 
-	init_samr_CryptPasswordEx(r->in.machine_password,
-				  &session_key,
-				  &crypt_pwd_ex);
+	status = init_samr_CryptPasswordEx(r->in.machine_password,
+					   &session_key,
+					   &crypt_pwd_ex);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto error;
+	}
 
 	user_info.info26.password = crypt_pwd_ex;
 	user_info.info26.password_expired = PASS_DONT_CHANGE_AT_NEXT_LOGON;
@@ -1570,9 +1573,12 @@ static NTSTATUS libnet_join_joindomain_rpc(TALLOC_CTX *mem_ctx,
 
 		/* retry with level 24 */
 
-		init_samr_CryptPassword(r->in.machine_password,
-					&session_key,
-					&crypt_pwd);
+		status = init_samr_CryptPassword(r->in.machine_password,
+						 &session_key,
+						 &crypt_pwd);
+		if (!NT_STATUS_IS_OK(status)) {
+			goto error;
+		}
 
 		user_info.info24.password = crypt_pwd;
 		user_info.info24.password_expired = PASS_DONT_CHANGE_AT_NEXT_LOGON;
@@ -1584,6 +1590,7 @@ static NTSTATUS libnet_join_joindomain_rpc(TALLOC_CTX *mem_ctx,
 						  &result);
 	}
 
+error:
 	old_timeout = rpccli_set_timeout(pipe_hnd, old_timeout);
 
 	if (!NT_STATUS_IS_OK(status)) {

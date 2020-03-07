@@ -580,7 +580,7 @@ static void cli_pull_chunk_done(struct tevent_req *subreq)
 		struct cli_pull_state);
 	NTSTATUS status;
 	size_t expected = chunk->total_size - chunk->tmp_size;
-	ssize_t received;
+	ssize_t received = 0;
 	uint8_t *buf = NULL;
 
 	chunk->subreq = NULL;
@@ -781,7 +781,7 @@ static void cli_read_done(struct tevent_req *subreq)
 		req, struct cli_read_state);
 	NTSTATUS status;
 	ssize_t received;
-	uint8_t *buf;
+	uint8_t *buf = NULL;
 
 	if (smbXcli_conn_protocol(state->cli->conn) >= PROTOCOL_SMB2_02) {
 		status = cli_smb2_read_recv(subreq, &received, &buf);
@@ -796,7 +796,7 @@ static void cli_read_done(struct tevent_req *subreq)
 	if (tevent_req_nterror(req, status)) {
 		return;
 	}
-	if ((received < 0) || (received > state->buflen)) {
+	if ((buf == NULL) || (received < 0) || (received > state->buflen)) {
 		state->received = 0;
 		tevent_req_nterror(req, NT_STATUS_UNEXPECTED_IO_ERROR);
 		return;
@@ -839,7 +839,7 @@ NTSTATUS cli_read(struct cli_state *cli, uint16_t fnum,
 		 size_t *nread)
 {
 	NTSTATUS status;
-	off_t ret;
+	off_t ret = 0;
 
 	status = cli_pull(cli, fnum, offset, size, size,
 			  cli_read_sink, &buf, &ret);
@@ -1248,7 +1248,7 @@ static void cli_smb1_writeall_written(struct tevent_req *subreq)
 	struct cli_smb1_writeall_state *state = tevent_req_data(
 		req, struct cli_smb1_writeall_state);
 	NTSTATUS status;
-	size_t written, to_write;
+	size_t written = 0, to_write;
 
 	status = cli_write_andx_recv(subreq, &written);
 	TALLOC_FREE(subreq);

@@ -60,69 +60,75 @@ fail:
 	return false;
 }
 
-struct net_g_lock_do_state {
-	const char *cmd;
-	int result;
-};
-
-static void net_g_lock_do_fn(void *private_data)
-{
-	struct net_g_lock_do_state *state =
-		(struct net_g_lock_do_state *)private_data;
-	state->result = system(state->cmd);
-}
-
 static int net_g_lock_do(struct net_context *c, int argc, const char **argv)
 {
-	struct net_g_lock_do_state state;
-	const char *name, *cmd;
+	struct g_lock_ctx *ctx = NULL;
+	TDB_DATA key = {0};
+	const char *cmd = NULL;
 	int timeout;
 	NTSTATUS status;
+	int result = -1;
 
 	if (argc != 3) {
 		d_printf("Usage: net g_lock do <lockname> <timeout> "
 			 "<command>\n");
 		return -1;
 	}
-	name = argv[0];
+	key = string_term_tdb_data(argv[0]);
 	timeout = atoi(argv[1]);
 	cmd = argv[2];
 
-	state.cmd = cmd;
-	state.result = -1;
-
-	status = g_lock_do(string_term_tdb_data(name), G_LOCK_WRITE,
-			   timeval_set(timeout / 1000, timeout % 1000),
-			   net_g_lock_do_fn, &state);
+	ctx = g_lock_ctx_init(c, c->msg_ctx);
+	if (ctx == NULL) {
+		d_fprintf(stderr, _("g_lock_ctx_init failed\n"));
+		return -1;
+	}
+	status = g_lock_lock(
+		ctx,
+		key,
+		G_LOCK_WRITE,
+		timeval_set(timeout / 1000, timeout % 1000));
 	if (!NT_STATUS_IS_OK(status)) {
-		d_fprintf(stderr, "ERROR: g_lock_do failed: %s\n",
+		d_fprintf(stderr,
+			  _("g_lock_lock failed: %s\n"),
 			  nt_errstr(status));
 		goto done;
 	}
-	if (state.result == -1) {
+
+	result = system(cmd);
+
+	g_lock_unlock(ctx, key);
+
+	if (result == -1) {
 		d_fprintf(stderr, "ERROR: system() returned %s\n",
 			  strerror(errno));
 		goto done;
 	}
-	d_fprintf(stderr, "command returned %d\n", state.result);
+	d_fprintf(stderr, "command returned %d\n", result);
 
 done:
-	return state.result;
+	TALLOC_FREE(ctx);
+	return result;
 }
 
-static void net_g_lock_dump_fn(const struct g_lock_rec *locks,
-			       size_t num_locks,
-			       const uint8_t *data,
-			       size_t datalen,
-			       void *private_data)
+static void net_g_lock_dump_fn(struct server_id exclusive,
+				size_t num_shared,
+				struct server_id *shared,
+				const uint8_t *data,
+				size_t datalen,
+				void *private_data)
 {
-	size_t i;
+	struct server_id_buf idbuf;
 
-	for (i=0; i<num_locks; i++) {
-		const struct g_lock_rec *l = &locks[i];
-		struct server_id_buf idbuf;
-		d_printf("%s: %s\n", server_id_str_buf(l->pid, &idbuf),
-			 (l->lock_type & 1) ? "WRITE" : "READ");
+	if (exclusive.pid != 0) {
+		d_printf("%s: WRITE\n",
+			 server_id_str_buf(exclusive, &idbuf));
+	} else {
+		size_t i;
+		for (i=0; i<num_shared; i++) {
+			d_printf("%s: READ\n",
+				 server_id_str_buf(shared[i], &idbuf));
+		}
 	}
 	dump_data_file(data, datalen, true, stdout);
 }

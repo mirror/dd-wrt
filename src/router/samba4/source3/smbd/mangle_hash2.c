@@ -89,11 +89,6 @@
 #define FLAG_POSSIBLE3 64
 #define FLAG_POSSIBLE4 128
 
-/* by default have a max of 4096 entries in the cache. */
-#ifndef MANGLE_CACHE_SIZE
-#define MANGLE_CACHE_SIZE 4096
-#endif
-
 #define FNV1_PRIME 0x01000193
 /*the following number is a fnv1 of the string: idra@samba.org 2002 */
 #define FNV1_INIT  0xa6b93095
@@ -190,7 +185,7 @@ static void init_tables(void)
 #endif
 }
 
-#else
+#else /* DYNAMIC_MANGLE_TABLES */
 
 /*
  * These tables were initialized by a single run of the above
@@ -200,7 +195,7 @@ static void init_tables(void)
  * initializers, but I'll leave it in: less surprise.
  */
 
-static uint8_t char_flags[256] = {
+static const uint8_t char_flags[256] = {
 	0x80, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
 	0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
 	0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
@@ -235,7 +230,7 @@ static uint8_t char_flags[256] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-static uint8_t base_reverse[256] = {
+static const uint8_t base_reverse[256] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -270,7 +265,7 @@ static uint8_t base_reverse[256] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-#endif
+#endif /* DYNAMIC_MANGLE_TABLES */
 
 /* 
    hash a string of the specified length. The string does not need to be
@@ -438,7 +433,7 @@ static bool is_mangled(const char *name, const struct share_params *parm)
    get larger when converted from UNIX to DOS formats)
 */
 
-static char force_shortname_chars[] = " +,[];=";
+static const char force_shortname_chars[] = " +,[];=";
 
 static bool is_8_3(const char *name, bool check_case, bool allow_wildcards, const struct share_params *p)
 {

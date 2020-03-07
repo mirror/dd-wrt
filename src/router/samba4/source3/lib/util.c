@@ -630,9 +630,11 @@ static char *strip_mount_options(TALLOC_CTX *ctx, const char *str)
 #ifdef WITH_NISPLUS_HOME
 char *automount_lookup(TALLOC_CTX *ctx, const char *user_name)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	char *value = NULL;
 
-	char *nis_map = (char *)lp_homedir_map();
+	char *nis_map = (char *)lp_homedir_map(talloc_tos(), lp_sub);
 
 	char buffer[NIS_MAXATTRVAL + 1];
 	nis_result *result;
@@ -678,13 +680,15 @@ char *automount_lookup(TALLOC_CTX *ctx, const char *user_name)
 
 char *automount_lookup(TALLOC_CTX *ctx, const char *user_name)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	char *value = NULL;
 
 	int nis_error;        /* returned by yp all functions */
 	char *nis_result;     /* yp_match inits this */
 	int nis_result_len;  /* and set this */
 	char *nis_domain;     /* yp_get_default_domain inits this */
-	char *nis_map = lp_homedir_map(talloc_tos());
+	char *nis_map = lp_homedir_map(talloc_tos(), lp_sub);
 
 	if ((nis_error = yp_get_default_domain(&nis_domain)) != 0) {
 		DEBUG(3, ("YP Error: %s\n", yperr_string(nis_error)));
@@ -817,6 +821,8 @@ gid_t nametogid(const char *name)
 
 void smb_panic_s3(const char *why)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	char *cmd;
 	int result;
 
@@ -831,7 +837,7 @@ void smb_panic_s3(const char *why)
 	prctl(PR_SET_PTRACER, getpid(), 0, 0, 0);
 #endif
 
-	cmd = lp_panic_action(talloc_tos());
+	cmd = lp_panic_action(talloc_tos(), lp_sub);
 	if (cmd && *cmd) {
 		DEBUG(0, ("smb_panic(): calling panic action [%s]\n", cmd));
 		result = system(cmd);
@@ -1510,25 +1516,6 @@ void *smb_xmalloc_array(size_t size, unsigned int count)
 	return p;
 }
 
-/*
-  vasprintf that aborts on malloc fail
-*/
-
- int smb_xvasprintf(char **ptr, const char *format, va_list ap)
-{
-	int n;
-	va_list ap2;
-
-	va_copy(ap2, ap);
-
-	n = vasprintf(ptr, format, ap2);
-	va_end(ap2);
-	if (n == -1 || ! *ptr) {
-		smb_panic("smb_xvasprintf: out of memory");
-	}
-	return n;
-}
-
 /*****************************************************************
  Get local hostname and cache result.
 *****************************************************************/
@@ -2171,6 +2158,35 @@ struct security_unix_token *root_unix_token(TALLOC_CTX *mem_ctx)
 	};
 
 	return t;
+}
+
+char *utok_string(TALLOC_CTX *mem_ctx, const struct security_unix_token *tok)
+{
+	char *str;
+	uint32_t i;
+
+	str = talloc_asprintf(
+		mem_ctx,
+		"uid=%ju, gid=%ju, %"PRIu32" groups:",
+		(uintmax_t)(tok->uid),
+		(uintmax_t)(tok->gid),
+		tok->ngroups);
+	if (str == NULL) {
+		return NULL;
+	}
+
+	for (i=0; i<tok->ngroups; i++) {
+		char *tmp;
+		tmp = talloc_asprintf_append_buffer(
+			str, " %ju", (uintmax_t)tok->groups[i]);
+		if (tmp == NULL) {
+			TALLOC_FREE(str);
+			return NULL;
+		}
+		str = tmp;
+	}
+
+	return str;
 }
 
 /****************************************************************************

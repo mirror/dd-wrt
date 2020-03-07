@@ -189,7 +189,7 @@ static PyObject *py_gensec_start_server(PyTypeObject *type, PyObject *args, PyOb
 		if (!auth_context) {
 			PyErr_Format(PyExc_TypeError,
 				     "Expected auth.AuthContext for auth_context argument, got %s",
-				     talloc_get_name(pytalloc_get_ptr(py_auth_context)));
+				     pytalloc_get_name(py_auth_context));
 			return NULL;
 		}
 	}
@@ -281,9 +281,10 @@ static PyObject *py_gensec_set_credentials(PyObject *self, PyObject *args)
 
 	creds = PyCredentials_AsCliCredentials(py_creds);
 	if (!creds) {
-		PyErr_Format(PyExc_TypeError,
-			     "Expected samba.credentaials for credentials argument got  %s",
-			     talloc_get_name(pytalloc_get_ptr(py_creds)));
+		PyErr_Format(
+			PyExc_TypeError,
+			"Expected samba.credentials for credentials argument, "
+			"got %s", pytalloc_get_name(py_creds));
 		return NULL;
 	}
 
@@ -678,7 +679,7 @@ static PyMethodDef py_gensec_security_methods[] = {
 		"S.have_feature()\n Return True if GENSEC negotiated a particular feature." },
 	{ "set_max_update_size",  (PyCFunction)py_gensec_set_max_update_size, METH_VARARGS,
 		"S.set_max_update_size(max_size) \n Some mechs can fragment update packets, needs to be use before the mech is started." },
-	{ "max_update_size",  (PyCFunction)py_gensec_max_update_size, 0,
+	{ "max_update_size",  (PyCFunction)py_gensec_max_update_size, METH_NOARGS,
 		"S.max_update_size() \n Return the current max_update_size." },
 	{ "update",  (PyCFunction)py_gensec_update, METH_VARARGS,
 		"S.update(blob_in) -> (finished, blob_out)\nPerform one step in a GENSEC dance.  Repeat with new packets until finished is true or exception." },

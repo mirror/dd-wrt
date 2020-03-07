@@ -112,7 +112,7 @@ const struct GUID *brl_req_guid(const struct byte_range_lock *brl)
 static bool brl_same_context(const struct lock_context *ctx1,
 			     const struct lock_context *ctx2)
 {
-	return (serverid_equal(&ctx1->pid, &ctx2->pid) &&
+	return (server_id_equal(&ctx1->pid, &ctx2->pid) &&
 		(ctx1->smblctx == ctx2->smblctx) &&
 		(ctx1->tid == ctx2->tid));
 }
@@ -1466,7 +1466,8 @@ void brl_close_fnum(struct byte_range_lock *br_lck)
 	for (i=0; i < num_locks_copy; i++) {
 		struct lock_struct *lock = &locks_copy[i];
 
-		if (lock->context.tid == tid && serverid_equal(&lock->context.pid, &pid) &&
+		if (lock->context.tid == tid &&
+		    server_id_equal(&lock->context.pid, &pid) &&
 				(lock->fnum == fnum)) {
 			brl_unlock(
 				br_lck,
@@ -1525,7 +1526,7 @@ bool brl_mark_disconnected(struct files_struct *fsp)
 			return false;
 		}
 
-		if (!serverid_equal(&lock->context.pid, &self)) {
+		if (!server_id_equal(&lock->context.pid, &self)) {
 			TALLOC_FREE(br_lck);
 			return false;
 		}
@@ -1832,10 +1833,11 @@ struct byte_range_lock *brl_get_locks(TALLOC_CTX *mem_ctx, files_struct *fsp)
 
 	if (DEBUGLEVEL >= 10) {
 		unsigned int i;
+		struct file_id_buf buf;
 		struct lock_struct *locks = br_lck->lock_data;
-		DEBUG(10,("brl_get_locks_internal: %u current locks on file_id %s\n",
-			br_lck->num_locks,
-			  file_id_string_tos(&fsp->file_id)));
+		DBG_DEBUG("%u current locks on file_id %s\n",
+			  br_lck->num_locks,
+			  file_id_str_buf(fsp->file_id, &buf));
 		for( i = 0; i < br_lck->num_locks; i++) {
 			print_lock_struct(i, &locks[i]);
 		}
@@ -1961,14 +1963,15 @@ bool brl_cleanup_disconnected(struct file_id fid, uint64_t open_persistent_id)
 	struct db_record *rec;
 	struct lock_struct *lock;
 	unsigned n, num;
+	struct file_id_buf buf;
 	NTSTATUS status;
 
 	key = make_tdb_data((void*)&fid, sizeof(fid));
 
 	rec = dbwrap_fetch_locked(brlock_db, frame, key);
 	if (rec == NULL) {
-		DEBUG(5, ("brl_cleanup_disconnected: failed to fetch record "
-			  "for file %s\n", file_id_string(frame, &fid)));
+		DBG_INFO("failed to fetch record for file %s\n",
+			 file_id_str_buf(fid, &buf));
 		goto done;
 	}
 
@@ -1976,8 +1979,8 @@ bool brl_cleanup_disconnected(struct file_id fid, uint64_t open_persistent_id)
 	lock = (struct lock_struct*)val.dptr;
 	num = val.dsize / sizeof(struct lock_struct);
 	if (lock == NULL) {
-		DEBUG(10, ("brl_cleanup_disconnected: no byte range locks for "
-			   "file %s\n", file_id_string(frame, &fid)));
+		DBG_DEBUG("no byte range locks for file %s\n",
+			  file_id_str_buf(fid, &buf));
 		ret = true;
 		goto done;
 	}
@@ -1987,38 +1990,38 @@ bool brl_cleanup_disconnected(struct file_id fid, uint64_t open_persistent_id)
 
 		if (!server_id_is_disconnected(&ctx->pid)) {
 			struct server_id_buf tmp;
-			DEBUG(5, ("brl_cleanup_disconnected: byte range lock "
-				  "%s used by server %s, do not cleanup\n",
-				  file_id_string(frame, &fid),
-				  server_id_str_buf(ctx->pid, &tmp)));
+			DBG_INFO("byte range lock "
+				 "%s used by server %s, do not cleanup\n",
+				 file_id_str_buf(fid, &buf),
+				 server_id_str_buf(ctx->pid, &tmp));
 			goto done;
 		}
 
 		if (ctx->smblctx != open_persistent_id)	{
-			DEBUG(5, ("brl_cleanup_disconnected: byte range lock "
-				  "%s expected smblctx %llu but found %llu"
-				  ", do not cleanup\n",
-				  file_id_string(frame, &fid),
-				  (unsigned long long)open_persistent_id,
-				  (unsigned long long)ctx->smblctx));
+			DBG_INFO("byte range lock %s expected smblctx %"PRIu64" "
+				 "but found %"PRIu64", do not cleanup\n",
+				 file_id_str_buf(fid, &buf),
+				 open_persistent_id,
+				 ctx->smblctx);
 			goto done;
 		}
 	}
 
 	status = dbwrap_record_delete(rec);
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(5, ("brl_cleanup_disconnected: failed to delete record "
-			  "for file %s from %s, open %llu: %s\n",
-			  file_id_string(frame, &fid), dbwrap_name(brlock_db),
-			  (unsigned long long)open_persistent_id,
-			  nt_errstr(status)));
+		DBG_INFO("failed to delete record "
+			 "for file %s from %s, open %"PRIu64": %s\n",
+			 file_id_str_buf(fid, &buf),
+			 dbwrap_name(brlock_db),
+			 open_persistent_id,
+			 nt_errstr(status));
 		goto done;
 	}
 
-	DEBUG(10, ("brl_cleanup_disconnected: "
-		   "file %s cleaned up %u entries from open %llu\n",
-		   file_id_string(frame, &fid), num,
-		   (unsigned long long)open_persistent_id));
+	DBG_DEBUG("file %s cleaned up %u entries from open %"PRIu64"\n",
+		  file_id_str_buf(fid, &buf),
+		  num,
+		  open_persistent_id);
 
 	ret = true;
 done:

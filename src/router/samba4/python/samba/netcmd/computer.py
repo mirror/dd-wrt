@@ -36,6 +36,7 @@ from samba.auth import system_session
 from samba.samdb import SamDB
 from samba.compat import get_bytes
 from subprocess import check_call, CalledProcessError
+from . import common
 
 from samba import (
     credentials,
@@ -457,8 +458,6 @@ class cmd_computer_edit(Command):
 
     def run(self, computername, credopts=None, sambaopts=None, versionopts=None,
             H=None, editor=None):
-        from . import common
-
         lp = sambaopts.get_loadparm()
         creds = credopts.get_credentials(lp, fallback_machine=True)
         samdb = SamDB(url=H, session_info=system_session(),
@@ -528,6 +527,13 @@ class cmd_computer_list(Command):
     takes_options = [
         Option("-H", "--URL", help="LDB URL for database or target server",
                type=str, metavar="URL", dest="H"),
+        Option("-b", "--base-dn",
+               help="Specify base DN to use",
+               type=str),
+        Option("--full-dn", dest="full_dn",
+               default=False,
+               action="store_true",
+               help="Display DN instead of the sAMAccountName.")
     ]
 
     takes_optiongroups = {
@@ -536,7 +542,13 @@ class cmd_computer_list(Command):
         "versionopts": options.VersionOptions,
     }
 
-    def run(self, sambaopts=None, credopts=None, versionopts=None, H=None):
+    def run(self,
+            sambaopts=None,
+            credopts=None,
+            versionopts=None,
+            H=None,
+            base_dn=None,
+            full_dn=False):
         lp = sambaopts.get_loadparm()
         creds = credopts.get_credentials(lp, fallback_machine=True)
 
@@ -545,14 +557,22 @@ class cmd_computer_list(Command):
 
         filter = "(sAMAccountType=%u)" % (dsdb.ATYPE_WORKSTATION_TRUST)
 
-        domain_dn = samdb.domain_dn()
-        res = samdb.search(domain_dn, scope=ldb.SCOPE_SUBTREE,
+        search_dn = samdb.domain_dn()
+        if base_dn:
+            search_dn = samdb.normalize_dn_in_domain(base_dn)
+
+        res = samdb.search(search_dn,
+                           scope=ldb.SCOPE_SUBTREE,
                            expression=filter,
                            attrs=["samaccountname"])
         if (len(res) == 0):
             return
 
         for msg in res:
+            if full_dn:
+                self.outf.write("%s\n" % msg.get("dn"))
+                continue
+
             self.outf.write("%s\n" % msg.get("samaccountname", idx=0))
 
 
@@ -639,7 +659,7 @@ attribute.
                                samaccountname)
 
         for msg in res:
-            computer_ldif = samdb.write_ldif(msg, ldb.CHANGETYPE_NONE)
+            computer_ldif = common.get_ldif_for_editor(samdb, msg)
             self.outf.write(computer_ldif)
 
 

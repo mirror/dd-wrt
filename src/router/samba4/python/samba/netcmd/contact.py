@@ -37,6 +37,7 @@ from samba.netcmd import (
     Option,
 )
 from samba.compat import get_bytes
+from . import common
 
 
 class cmd_create(Command):
@@ -253,6 +254,9 @@ class cmd_list(Command):
                type=str,
                metavar="URL",
                dest="H"),
+        Option("-b", "--base-dn",
+               help="Specify base DN to use.",
+               type=str),
         Option("--full-dn",
                dest="full_dn",
                default=False,
@@ -271,6 +275,7 @@ class cmd_list(Command):
             credopts=None,
             versionopts=None,
             H=None,
+            base_dn=None,
             full_dn=False):
         lp = sambaopts.get_loadparm()
         creds = credopts.get_credentials(lp, fallback_machine=True)
@@ -280,8 +285,11 @@ class cmd_list(Command):
                       credentials=creds,
                       lp=lp)
 
-        domain_dn = samdb.domain_dn()
-        res = samdb.search(domain_dn,
+        search_dn = samdb.domain_dn()
+        if base_dn:
+            search_dn = samdb.normalize_dn_in_domain(base_dn)
+
+        res = samdb.search(search_dn,
                            scope=ldb.SCOPE_SUBTREE,
                            expression="(objectClass=contact)",
                            attrs=["name"])
@@ -365,8 +373,6 @@ class cmd_edit(Command):
             versionopts=None,
             H=None,
             editor=None):
-        from . import common
-
         lp = sambaopts.get_loadparm()
         creds = credopts.get_credentials(lp, fallback_machine=True)
         samdb = SamDB(url=H, session_info=system_session(),
@@ -548,7 +554,7 @@ class cmd_show(Command):
                                contactname)
 
         for msg in res:
-            contact_ldif = samdb.write_ldif(msg, ldb.CHANGETYPE_NONE)
+            contact_ldif = common.get_ldif_for_editor(samdb, msg)
             self.outf.write(contact_ldif)
 
 

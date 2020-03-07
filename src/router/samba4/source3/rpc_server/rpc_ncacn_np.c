@@ -43,6 +43,29 @@
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_RPC_SRV
 
+static NTSTATUS make_internal_rpc_pipe_p(TALLOC_CTX *mem_ctx,
+				const struct ndr_syntax_id *syntax,
+				const struct tsocket_address *remote_address,
+				const struct tsocket_address *local_address,
+				const struct auth_session_info *session_info,
+				struct messaging_context *msg_ctx,
+				struct pipes_struct **p);
+
+struct np_proxy_state {
+	uint16_t file_type;
+	uint16_t device_state;
+	uint64_t allocation_size;
+	struct tstream_context *npipe;
+	struct tevent_queue *read_queue;
+	struct tevent_queue *write_queue;
+};
+
+static struct np_proxy_state *make_external_rpc_pipe_p(TALLOC_CTX *mem_ctx,
+				const char *pipe_name,
+				const struct tsocket_address *remote_address,
+				const struct tsocket_address *local_address,
+				const struct auth_session_info *session_info);
+
 static struct npa_state *npa_state_init(TALLOC_CTX *mem_ctx)
 {
 	struct npa_state *npa;
@@ -82,7 +105,7 @@ NTSTATUS make_internal_rpc_pipe_socketpair(
 	struct npa_state **pnpa)
 {
 	TALLOC_CTX *tmp_ctx = talloc_stackframe();
-	struct named_pipe_client *npc;
+	struct dcerpc_ncacn_conn *ncacn_conn = NULL;
 	struct tevent_req *subreq;
 	struct npa_state *npa;
 	NTSTATUS status;
@@ -101,90 +124,93 @@ NTSTATUS make_internal_rpc_pipe_socketpair(
 	npa->device_state = 0xff | 0x0400 | 0x0100;
 	npa->allocation_size = 4096;
 
-	npc = named_pipe_client_init(npa,
-				     ev_ctx,
-				     msg_ctx,
-				     pipe_name,
-				     NULL, /* term_fn */
-				     npa->file_type,
-				     npa->device_state,
-				     npa->allocation_size,
-				     NULL); /* private_data */
-	if (npc == NULL) {
-		status = NT_STATUS_NO_MEMORY;
+	status = dcerpc_ncacn_conn_init(npa,
+					ev_ctx,
+					msg_ctx,
+					NCACN_NP,
+					pipe_name,
+					NULL, /* termination fn */
+					NULL, /* termination data */
+					&ncacn_conn);
+	if (!NT_STATUS_IS_OK(status)) {
 		goto out;
 	}
-	npa->private_data = (void*) npc;
+
+	npa->private_data = (void*)ncacn_conn;
 
 	rc = tstream_npa_socketpair(npa->file_type,
 				    npa,
 				    &npa->stream,
-				    npc,
-				    &npc->tstream);
+				    ncacn_conn,
+				    &ncacn_conn->tstream);
 	if (rc == -1) {
 		status = map_nt_error_from_unix(errno);
 		goto out;
 	}
 
-	npc->remote_client_addr = tsocket_address_copy(remote_address, npc);
-	if (npc->remote_client_addr == NULL) {
+	ncacn_conn->remote_client_addr = tsocket_address_copy(remote_address,
+			ncacn_conn);
+	if (ncacn_conn->remote_client_addr == NULL) {
 		status = NT_STATUS_NO_MEMORY;
 		goto out;
 	}
 
-	npc->remote_client_name = tsocket_address_inet_addr_string(npc->remote_client_addr,
-								   npc);
-	if (npc->remote_client_name == NULL) {
+	ncacn_conn->remote_client_name = tsocket_address_inet_addr_string(
+			ncacn_conn->remote_client_addr, ncacn_conn);
+	if (ncacn_conn->remote_client_name == NULL) {
 		status = NT_STATUS_NO_MEMORY;
 		goto out;
 	}
 
-	npc->local_server_addr = tsocket_address_copy(local_address, npc);
-	if (npc->local_server_addr == NULL) {
+	ncacn_conn->local_server_addr = tsocket_address_copy(local_address,
+			ncacn_conn);
+	if (ncacn_conn->local_server_addr == NULL) {
 		status = NT_STATUS_NO_MEMORY;
 		goto out;
 	}
 
-	npc->local_server_name = tsocket_address_inet_addr_string(
-		npc->local_server_addr, npc);
-	if (npc->local_server_name == NULL) {
+	ncacn_conn->local_server_name = tsocket_address_inet_addr_string(
+		ncacn_conn->local_server_addr, ncacn_conn);
+	if (ncacn_conn->local_server_name == NULL) {
 		status = NT_STATUS_NO_MEMORY;
 		goto out;
 	}
 
-	npc->session_info = copy_session_info(npc, session_info);
-	if (npc->session_info == NULL) {
+	ncacn_conn->session_info = copy_session_info(ncacn_conn, session_info);
+	if (ncacn_conn->session_info == NULL) {
 		status = NT_STATUS_NO_MEMORY;
 		goto out;
 	}
 
-	rc = make_server_pipes_struct(npc,
-				      npc->msg_ctx,
-				      npc->pipe_name,
-				      NCACN_NP,
-				      npc->remote_client_addr,
-				      npc->local_server_addr,
-				      &npc->session_info,
-				      &npc->p,
+	rc = make_server_pipes_struct(ncacn_conn,
+				      ncacn_conn->msg_ctx,
+				      ncacn_conn->name,
+				      ncacn_conn->transport,
+				      ncacn_conn->remote_client_addr,
+				      ncacn_conn->local_server_addr,
+				      &ncacn_conn->session_info,
+				      &ncacn_conn->p,
 				      &error);
 	if (rc == -1) {
 		status = map_nt_error_from_unix(error);
 		goto out;
 	}
 
-	npc->write_queue = tevent_queue_create(npc, "npa_server_write_queue");
-	if (npc->write_queue == NULL) {
+	ncacn_conn->send_queue = tevent_queue_create(ncacn_conn, "npa_server_write_queue");
+	if (ncacn_conn->send_queue == NULL) {
 		status = NT_STATUS_NO_MEMORY;
 		goto out;
 	}
 
-	subreq = dcerpc_read_ncacn_packet_send(npc, npc->ev, npc->tstream);
+	subreq = dcerpc_read_ncacn_packet_send(ncacn_conn, ncacn_conn->ev_ctx,
+					       ncacn_conn->tstream);
 	if (subreq == NULL) {
 		DEBUG(2, ("Failed to start receiving packets\n"));
 		status = NT_STATUS_PIPE_BROKEN;
 		goto out;
 	}
-	tevent_req_set_callback(subreq, named_pipe_packet_process, npc);
+	tevent_req_set_callback(subreq, dcerpc_ncacn_packet_process,
+				ncacn_conn);
 
 	*pnpa = talloc_move(mem_ctx, &npa);
 	status = NT_STATUS_OK;
@@ -197,14 +223,15 @@ out:
  Make an internal namedpipes structure
 ****************************************************************************/
 
-struct pipes_struct *make_internal_rpc_pipe_p(TALLOC_CTX *mem_ctx,
-					      const struct ndr_syntax_id *syntax,
-					      const struct tsocket_address *remote_address,
-					      const struct tsocket_address *local_address,
-					      const struct auth_session_info *session_info,
-					      struct messaging_context *msg_ctx)
+static NTSTATUS make_internal_rpc_pipe_p(TALLOC_CTX *mem_ctx,
+				const struct ndr_syntax_id *syntax,
+				const struct tsocket_address *remote_address,
+				const struct tsocket_address *local_address,
+				const struct auth_session_info *session_info,
+				struct messaging_context *msg_ctx,
+				struct pipes_struct **p)
 {
-	struct pipes_struct *p;
+	struct pipes_struct *out;
 	struct pipe_rpc_fns *context_fns;
 	const char *pipe_name;
 	int ret;
@@ -212,41 +239,41 @@ struct pipes_struct *make_internal_rpc_pipe_p(TALLOC_CTX *mem_ctx,
 
 	table = ndr_table_by_uuid(&syntax->uuid);
 	if (table == NULL) {
-		DEBUG(0,("unknown interface\n"));
-		return NULL;
+		DBG_ERR("Unknown interface\n");
+		return NT_STATUS_RPC_INTERFACE_NOT_FOUND;
 	}
 
 	pipe_name = dcerpc_default_transport_endpoint(mem_ctx, NCACN_NP, table);
 
-	DEBUG(4,("Create pipe requested %s\n", pipe_name));
+	DBG_INFO("Create pipe requested %s\n", pipe_name);
 
 	ret = make_base_pipes_struct(mem_ctx, msg_ctx, pipe_name,
 				     NCALRPC, RPC_LITTLE_ENDIAN,
-				     remote_address, local_address, &p);
+				     remote_address, local_address, &out);
 	if (ret) {
-		DEBUG(0,("ERROR! no memory for pipes_struct!\n"));
-		return NULL;
+		DBG_ERR("No memory for pipes_struct!\n");
+		return NT_STATUS_NO_MEMORY;
 	}
 
-	if (!init_pipe_handles(p, syntax)) {
-		DEBUG(0,("open_rpc_pipe_p: init_pipe_handles failed.\n"));
-		TALLOC_FREE(p);
-		return NULL;
+	if (!init_pipe_handles(out, syntax)) {
+		DBG_ERR("init_pipe_handles failed.\n");
+		TALLOC_FREE(out);
+		return NT_STATUS_UNSUCCESSFUL;
 	}
 
-	p->session_info = copy_session_info(p, session_info);
-	if (p->session_info == NULL) {
-		DEBUG(0, ("open_rpc_pipe_p: copy_serverinfo failed\n"));
-		close_policy_by_pipe(p);
-		TALLOC_FREE(p);
-		return NULL;
+	out->session_info = copy_session_info(out, session_info);
+	if (out->session_info == NULL) {
+		DBG_ERR("copy_serverinfo failed\n");
+		close_policy_by_pipe(out);
+		TALLOC_FREE(out);
+		return NT_STATUS_UNSUCCESSFUL;
 	}
 
-	context_fns = talloc_zero(p, struct pipe_rpc_fns);
+	context_fns = talloc_zero(out, struct pipe_rpc_fns);
 	if (context_fns == NULL) {
-		DEBUG(0,("talloc() failed!\n"));
-		TALLOC_FREE(p);
-		return NULL;
+		DBG_ERR("No memory");
+		TALLOC_FREE(out);
+		return NT_STATUS_NO_MEMORY;
 	}
 
 	context_fns->next = context_fns->prev = NULL;
@@ -256,11 +283,13 @@ struct pipes_struct *make_internal_rpc_pipe_p(TALLOC_CTX *mem_ctx,
 	context_fns->syntax = *syntax;
 
 	/* add to the list of open contexts */
-	DLIST_ADD(p->contexts, context_fns);
+	DLIST_ADD(out->contexts, context_fns);
 
 	DEBUG(4,("Created internal pipe %s\n", pipe_name));
 
-	return p;
+	*p = out;
+
+	return NT_STATUS_OK;
 }
 
 static NTSTATUS rpcint_dispatch(struct pipes_struct *p,
@@ -517,6 +546,7 @@ static NTSTATUS rpcint_binding_handle_ex(TALLOC_CTX *mem_ctx,
 {
 	struct dcerpc_binding_handle *h;
 	struct rpcint_bh_state *hs;
+	NTSTATUS status;
 
 	if (ndr_table) {
 		abstract_syntax = &ndr_table->syntax_id;
@@ -532,15 +562,17 @@ static NTSTATUS rpcint_binding_handle_ex(TALLOC_CTX *mem_ctx,
 	if (h == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
-	hs->p = make_internal_rpc_pipe_p(hs,
-					 abstract_syntax,
-					 remote_address,
-					 local_address,
-					 session_info,
-					 msg_ctx);
-	if (hs->p == NULL) {
+
+	status = make_internal_rpc_pipe_p(hs,
+					  abstract_syntax,
+					  remote_address,
+					  local_address,
+					  session_info,
+					  msg_ctx,
+					  &hs->p);
+	if (!NT_STATUS_IS_OK(status)) {
 		TALLOC_FREE(h);
-		return NT_STATUS_NO_MEMORY;
+		return status;
 	}
 
 	*binding_handle = h;
@@ -804,10 +836,10 @@ out:
 	return status;
 }
 
-struct np_proxy_state *make_external_rpc_pipe_p(TALLOC_CTX *mem_ctx,
+static struct np_proxy_state *make_external_rpc_pipe_p(TALLOC_CTX *mem_ctx,
 				const char *pipe_name,
-				const struct tsocket_address *remote_client_address,
-				const struct tsocket_address *local_server_address,
+				const struct tsocket_address *remote_address,
+				const struct tsocket_address *local_address,
 				const struct auth_session_info *session_info)
 {
 	struct np_proxy_state *result;
@@ -874,9 +906,9 @@ struct np_proxy_state *make_external_rpc_pipe_p(TALLOC_CTX *mem_ctx,
 	subreq = tstream_npa_connect_send(talloc_tos(), ev,
 					  socket_np_dir,
 					  pipe_name,
-					  remote_client_address,
+					  remote_address,
 					  NULL, /* client_name */
-					  local_server_address,
+					  local_address,
 					  NULL, /* server_name */
 					  session_info_t);
 	if (subreq == NULL) {

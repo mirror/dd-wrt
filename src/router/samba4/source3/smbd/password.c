@@ -26,89 +26,34 @@
 #include "auth.h"
 #include "../libcli/security/security.h"
 
-enum server_allocated_state { SERVER_ALLOCATED_REQUIRED_YES,
-				SERVER_ALLOCATED_REQUIRED_NO,
-				SERVER_ALLOCATED_REQUIRED_ANY};
-
-static struct user_struct *get_valid_user_struct_internal(
-			struct smbd_server_connection *sconn,
-			uint64_t vuid,
-			enum server_allocated_state server_allocated)
-{
-	struct user_struct *usp;
-	int count=0;
-
-	if (vuid == UID_FIELD_INVALID)
-		return NULL;
-
-	usp=sconn->users;
-	for (;usp;usp=usp->next,count++) {
-		if (vuid == usp->vuid) {
-			switch (server_allocated) {
-				case SERVER_ALLOCATED_REQUIRED_YES:
-					if (usp->session_info == NULL) {
-						continue;
-					}
-					break;
-				case SERVER_ALLOCATED_REQUIRED_NO:
-					if (usp->session_info != NULL) {
-						continue;
-					}
-				case SERVER_ALLOCATED_REQUIRED_ANY:
-					break;
-			}
-			if (count > 10) {
-				DLIST_PROMOTE(sconn->users, usp);
-			}
-			return usp;
-		}
-	}
-
-	return NULL;
-}
-
-/****************************************************************************
- Check if a uid has been validated, and return an pointer to the user_struct
- if it has. NULL if not. vuid is biased by an offset. This allows us to
- tell random client vuid's (normally zero) from valid vuids.
-****************************************************************************/
-
-struct user_struct *get_valid_user_struct(struct smbd_server_connection *sconn,
-					  uint64_t vuid)
-{
-	return get_valid_user_struct_internal(sconn, vuid,
-			SERVER_ALLOCATED_REQUIRED_YES);
-}
-
 /****************************************************************************
  Invalidate a uid.
 ****************************************************************************/
 
 void invalidate_vuid(struct smbd_server_connection *sconn, uint64_t vuid)
 {
-	struct user_struct *vuser = NULL;
+	struct smbXsrv_session *session = NULL;
+	NTSTATUS status;
 
-	vuser = get_valid_user_struct_internal(sconn, vuid,
-			SERVER_ALLOCATED_REQUIRED_ANY);
-	if (vuser == NULL) {
+	status = get_valid_smbXsrv_session(sconn->client, vuid, &session);
+	if (!NT_STATUS_IS_OK(status)) {
 		return;
 	}
 
-	session_yield(vuser->session);
+	session_yield(session);
 
-	DLIST_REMOVE(sconn->users, vuser);
 	SMB_ASSERT(sconn->num_users > 0);
 	sconn->num_users--;
 
 	/* clear the vuid from the 'cache' on each connection, and
 	   from the vuid 'owner' of connections */
 	conn_clear_vuid_caches(sconn, vuid);
-
-	TALLOC_FREE(vuser);
 }
 
 int register_homes_share(const char *username)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	int result;
 	struct passwd *pwd;
 
@@ -116,7 +61,7 @@ int register_homes_share(const char *username)
 	if (result != -1) {
 		DEBUG(3, ("Using static (or previously created) service for "
 			  "user '%s'; path = '%s'\n", username,
-			  lp_path(talloc_tos(), result)));
+			  lp_path(talloc_tos(), lp_sub, result)));
 		return result;
 	}
 

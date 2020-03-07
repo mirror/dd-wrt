@@ -565,6 +565,7 @@ int main(int argc, const char **argv)
 	}
 
 done:
+	poptFreeContext(pc);
 	TALLOC_FREE(mem_ctx);
 	return ret;
 }

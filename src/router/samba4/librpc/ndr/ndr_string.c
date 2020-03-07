@@ -118,9 +118,16 @@ _PUBLIC_ enum ndr_err_code ndr_pull_string(struct ndr_pull *ndr, int ndr_flags, 
 		break;
 
 	case LIBNDR_FLAG_STR_NULLTERM:
+		/*
+		 * We ensure that conv_str_len cannot return 0 by
+		 * requring that there be enough bytes for at least
+		 * the NULL terminator
+		 */
 		if (byte_mul == 1) {
+			NDR_PULL_NEED_BYTES(ndr, 1);
 			conv_src_len = ascii_len_n((const char *)(ndr->data+ndr->offset), ndr->data_size - ndr->offset);
 		} else {
+			NDR_PULL_NEED_BYTES(ndr, 2);
 			conv_src_len = utf16_len_n(ndr->data+ndr->offset, ndr->data_size - ndr->offset);
 		}
 		byte_mul = 1; /* the length is now absolute */
@@ -553,6 +560,47 @@ _PUBLIC_ uint32_t ndr_string_length(const void *_var, uint32_t element_size)
 	return i+1;
 }
 
+/**
+ * @brief Get the string length including the null terminator if available.
+ *
+ * This checks the string length based on the elements. The returned number
+ * includes the terminating null byte(s) if found.
+ *
+ * @param[in]  _var    The string the calculate the length for.
+ *
+ * @param[in]  length  The length of the buffer passed by _var.
+ *
+ * @param[in]  element_size The element_size of a string char in bytes.
+ *
+ * @return The length of the strings or 0.
+ */
+static uint32_t ndr_string_n_length(const void *_var,
+				    size_t length,
+				    uint32_t element_size)
+{
+	size_t i = 0;
+	uint8_t zero[4] = {0,0,0,0};
+	const char *var = (const char *)_var;
+	int cmp;
+
+	if (element_size > 4) {
+		return 0;
+	}
+
+	for (i = 0; i < length; i++, var += element_size) {
+		cmp = memcmp(var, zero, element_size);
+		if (cmp == 0) {
+			break;
+		}
+	}
+
+	if (i == length) {
+		return length;
+	}
+
+	return i + 1;
+}
+
 _PUBLIC_ enum ndr_err_code ndr_check_string_terminator(struct ndr_pull *ndr, uint32_t count, uint32_t element_size)
 {
 	uint32_t i;
@@ -622,8 +670,12 @@ _PUBLIC_ enum ndr_err_code ndr_pull_charset_to_null(struct ndr_pull *ndr, int nd
 
 	NDR_PULL_NEED_BYTES(ndr, length*byte_mul);
 
-	str_len = ndr_string_length(ndr->data+ndr->offset, byte_mul);
-	str_len = MIN(str_len, length);	/* overrun protection */
+	str_len = ndr_string_n_length(ndr->data+ndr->offset, length, byte_mul);
+	if (str_len == 0) {
+		return ndr_pull_error(ndr, NDR_ERR_LENGTH,
+				      "Invalid length");
+	}
+
 	if (!convert_string_talloc(ndr->current_mem_ctx, chset, CH_UNIX,
 				   ndr->data+ndr->offset, str_len*byte_mul,
 				   discard_const_p(void *, var),

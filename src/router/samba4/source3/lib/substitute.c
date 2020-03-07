@@ -513,7 +513,7 @@ char *talloc_sub_basic(TALLOC_CTX *mem_ctx,
 
 	tmp_ctx = talloc_stackframe();
 
-	for (b = s = a_string; (p = strchr_m(s, '%')); s = a_string + (p - b)) {
+	for (s = a_string; (p = strchr_m(s, '%')); s = a_string + (p - b)) {
 
 		r = NULL;
 		b = a_string;
@@ -706,7 +706,7 @@ char *talloc_sub_specified(TALLOC_CTX *mem_ctx,
 		goto done;
 	}
 
-	for (b = s = a_string; (p = strchr_m(s, '%')); s = a_string + (p - b)) {
+	for (s = a_string; (p = strchr_m(s, '%')); s = a_string + (p - b)) {
 
 		b = a_string;
 
@@ -806,7 +806,7 @@ char *talloc_sub_advanced(TALLOC_CTX *ctx,
 		return NULL;
 	}
 
-	for (b = s = a_string; (p = strchr_m(s, '%')); s = a_string + (p - b)) {
+	for (s = a_string; (p = strchr_m(s, '%')); s = a_string + (p - b)) {
 
 		b = a_string;
 
@@ -879,33 +879,4 @@ char *talloc_sub_full(TALLOC_CTX *ctx,
 	ret_string = talloc_sub_basic(ctx, smb_name, domain_name, a_string);
 	TALLOC_FREE(a_string);
 	return ret_string;
-}
-
-/******************************************************************************
- version of standard_sub_basic() for string lists; uses talloc_sub_basic()
- for the work
- *****************************************************************************/
-
-bool str_list_sub_basic( char **list, const char *smb_name,
-			 const char *domain_name )
-{
-	TALLOC_CTX *ctx = list;
-	char *s, *tmpstr;
-
-	while ( *list ) {
-		s = *list;
-		tmpstr = talloc_sub_basic(ctx, smb_name, domain_name, s);
-		if ( !tmpstr ) {
-			DEBUG(0,("str_list_sub_basic: "
-				"talloc_sub_basic() return NULL!\n"));
-			return false;
-		}
-
-		TALLOC_FREE(*list);
-		*list = tmpstr;
-
-		list++;
-	}
-
-	return true;
 }

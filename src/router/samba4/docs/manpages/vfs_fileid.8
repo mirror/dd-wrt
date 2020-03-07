@@ -2,12 +2,12 @@
 .\"     Title: vfs_fileid
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/14/2020
+.\"      Date: 03/03/2020
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.11.5
+.\"    Source: Samba 4.12.0
 .\"  Language: English
 .\"
-.TH "VFS_FILEID" "8" "01/14/2020" "Samba 4\&.11\&.5" "System Administration tools"
+.TH "VFS_FILEID" "8" "03/03/2020" "Samba 4\&.12\&.0" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -84,6 +84,10 @@ algorithm generates device id by hashing the hostname\&. This can be used to del
 The
 fsname_norootdir
 algorithm generates device ids by hashing the kernel device name, except for the root directory of shares where it will use the hostname algorithm\&. This can be used to deliberately break lock coherency in a cluster for the root directory of a share\&.
+.sp
+The
+fsname_norootdir_ext
+algorithm generates device ids by hashing the kernel device name, except for the root directory of shares where it will use the hostname algorithm\&. Additionally it generates an extid based on the process pid\&. This can be used to deliberately break lock coherency between all smbd processes in the whole cluster for the root directory of a share\&.
 .RE
 .PP
 fileid:mapping = ALGORITHM
@@ -138,7 +142,7 @@ algorithm:
 .\}
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.11\&.5 of the Samba suite\&.
+This man page is part of version 4\&.12\&.0 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

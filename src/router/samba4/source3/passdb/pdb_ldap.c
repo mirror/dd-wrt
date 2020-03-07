@@ -193,9 +193,9 @@ static NTSTATUS ldapsam_get_seq_num(struct pdb_methods *my_methods, time_t *seq_
 
 	if (!smbldap_has_naming_context(
 		    smbldap_get_ldap(ldap_state->smbldap_state),
-		    lp_ldap_suffix(talloc_tos()))) {
+		    lp_ldap_suffix())) {
 		DEBUG(3,("ldapsam_get_seq_num: DIT not configured to hold %s "
-			 "as top-level namingContext\n", lp_ldap_suffix(talloc_tos())));
+			 "as top-level namingContext\n", lp_ldap_suffix()));
 		return ntstatus;
 	}
 
@@ -218,7 +218,7 @@ static NTSTATUS ldapsam_get_seq_num(struct pdb_methods *my_methods, time_t *seq_
 		attrs[0] = talloc_strdup(mem_ctx, "syncreplCookie");
 		attrs[1] = NULL;
 		suffix = talloc_asprintf(mem_ctx,
-				"cn=syncrepl%d,%s", rid, lp_ldap_suffix(talloc_tos()));
+				"cn=syncrepl%d,%s", rid, lp_ldap_suffix());
 		if (!suffix) {
 			ntstatus = NT_STATUS_NO_MEMORY;
 			goto done;
@@ -230,7 +230,7 @@ static NTSTATUS ldapsam_get_seq_num(struct pdb_methods *my_methods, time_t *seq_
 		attrs[0] = talloc_strdup(mem_ctx, "contextCSN");
 		attrs[1] = NULL;
 		suffix = talloc_asprintf(mem_ctx,
-				"cn=ldapsync,%s", lp_ldap_suffix(talloc_tos()));
+				"cn=ldapsync,%s", lp_ldap_suffix());
 
 		if (!suffix) {
 			ntstatus = NT_STATUS_NO_MEMORY;
@@ -491,7 +491,6 @@ static bool init_sam_from_ldap(struct ldapsam_privates *ldap_state,
 	uint8_t 	smblmpwd[LM_HASH_LEN],
 			smbntpwd[NT_HASH_LEN];
 	bool 		use_samba_attrs = True;
-	uint32_t 		acct_ctrl = 0;
 	uint16_t		logon_divs;
 	uint16_t 		bad_password_count = 0,
 			logon_count = 0;
@@ -911,6 +910,7 @@ static bool init_sam_from_ldap(struct ldapsam_privates *ldap_state,
 				LDAP_ATTR_ACB_INFO),
 			ctx);
 	if (temp) {
+		uint32_t acct_ctrl = 0;
 		acct_ctrl = pdb_decode_acct_ctrl(temp);
 
 		if (acct_ctrl == 0) {
@@ -918,8 +918,6 @@ static bool init_sam_from_ldap(struct ldapsam_privates *ldap_state,
 		}
 
 		pdb_set_acct_ctrl(sampass, acct_ctrl, PDB_SET);
-	} else {
-		acct_ctrl |= ACB_NORMAL;
 	}
 
 	pdb_set_hours_len(sampass, hours_len, PDB_SET);
@@ -1932,7 +1930,7 @@ static NTSTATUS ldapsam_delete_sam_account(struct pdb_methods *my_methods,
 
 static NTSTATUS ldapsam_update_sam_account(struct pdb_methods *my_methods, struct samu * newpwd)
 {
-	NTSTATUS ret = NT_STATUS_UNSUCCESSFUL;
+	NTSTATUS ret;
 	struct ldapsam_privates *ldap_state = (struct ldapsam_privates *)my_methods->private_data;
 	int rc = 0;
 	char *dn;
@@ -2042,6 +2040,8 @@ static NTSTATUS ldapsam_rename_sam_account(struct pdb_methods *my_methods,
 					   struct samu *old_acct,
 					   const char *newname)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	const char *oldname;
 	int rc;
 	char *rename_script = NULL;
@@ -2059,7 +2059,7 @@ static NTSTATUS ldapsam_rename_sam_account(struct pdb_methods *my_methods,
 	oldname = pdb_get_username(old_acct);
 
 	/* rename the posix user */
-	rename_script = lp_rename_user_script(talloc_tos());
+	rename_script = lp_rename_user_script(talloc_tos(), lp_sub);
 	if (rename_script == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
@@ -2121,7 +2121,6 @@ static NTSTATUS ldapsam_rename_sam_account(struct pdb_methods *my_methods,
 
 static NTSTATUS ldapsam_add_sam_account(struct pdb_methods *my_methods, struct samu * newpwd)
 {
-	NTSTATUS ret = NT_STATUS_UNSUCCESSFUL;
 	struct ldapsam_privates *ldap_state = (struct ldapsam_privates *)my_methods->private_data;
 	int rc;
 	LDAPMessage 	*result = NULL;
@@ -2340,8 +2339,8 @@ static NTSTATUS ldapsam_add_sam_account(struct pdb_methods *my_methods, struct s
 			break;
 	}
 
-	ret = ldapsam_modify_entry(my_methods,newpwd,dn,mods,ldap_op, pdb_element_is_set_or_changed);
-	if (!NT_STATUS_IS_OK(ret)) {
+	status = ldapsam_modify_entry(my_methods,newpwd,dn,mods,ldap_op, pdb_element_is_set_or_changed);
+	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(0,("ldapsam_add_sam_account: failed to modify/add user with uid = %s (dn = %s)\n",
 			 pdb_get_username(newpwd),dn));
 		ldap_mods_free(mods, true);
@@ -2375,7 +2374,7 @@ static int ldapsam_search_one_group (struct ldapsam_privates *ldap_state,
 
 	attr_list = get_attr_list(NULL, groupmap_attr_list);
 	rc = smbldap_search(ldap_state->smbldap_state,
-			    lp_ldap_suffix (talloc_tos()), scope,
+			    lp_ldap_suffix(), scope,
 			    filter, attr_list, 0, result);
 	TALLOC_FREE(attr_list);
 
@@ -2710,7 +2709,7 @@ static NTSTATUS ldapsam_enum_group_members(struct pdb_methods *methods,
 		goto done;
 	}
 
-	rc = smbldap_search(conn, lp_ldap_suffix(talloc_tos()),
+	rc = smbldap_search(conn, lp_ldap_suffix(),
 			    LDAP_SCOPE_SUBTREE, filter, id_attrs, 0,
 			    &result);
 
@@ -2778,7 +2777,7 @@ static NTSTATUS ldapsam_enum_group_members(struct pdb_methods *methods,
 			goto done;
 		}
 
-		rc = smbldap_search(conn, lp_ldap_suffix(talloc_tos()),
+		rc = smbldap_search(conn, lp_ldap_suffix(),
 				    LDAP_SCOPE_SUBTREE, filter, sid_attrs, 0,
 				    &result);
 
@@ -2834,7 +2833,7 @@ static NTSTATUS ldapsam_enum_group_members(struct pdb_methods *methods,
 				 LDAP_OBJ_SAMBASAMACCOUNT,
 				 gidstr);
 
-	rc = smbldap_search(conn, lp_ldap_suffix(talloc_tos()),
+	rc = smbldap_search(conn, lp_ldap_suffix(),
 			    LDAP_SCOPE_SUBTREE, filter, sid_attrs, 0,
 			    &result);
 
@@ -2922,7 +2921,7 @@ static NTSTATUS ldapsam_enum_group_memberships(struct pdb_methods *methods,
 			goto done;
 		}
 
-		rc = smbldap_search(conn, lp_ldap_suffix(talloc_tos()),
+		rc = smbldap_search(conn, lp_ldap_suffix(),
 				    LDAP_SCOPE_SUBTREE, filter, attrs, 0, &result);
 
 		if (rc != LDAP_SUCCESS)
@@ -2971,7 +2970,7 @@ static NTSTATUS ldapsam_enum_group_memberships(struct pdb_methods *methods,
 		goto done;
 	}
 
-	rc = smbldap_search(conn, lp_ldap_suffix(talloc_tos()),
+	rc = smbldap_search(conn, lp_ldap_suffix(),
 			    LDAP_SCOPE_SUBTREE, filter, attrs, 0, &result);
 
 	if (rc != LDAP_SUCCESS)
@@ -3160,7 +3159,7 @@ static NTSTATUS ldapsam_add_group_mapping_entry(struct pdb_methods *methods,
 		goto done;
 	}
 
-	rc = smbldap_search(ldap_state->smbldap_state, lp_ldap_suffix(talloc_tos()),
+	rc = smbldap_search(ldap_state->smbldap_state, lp_ldap_suffix(),
 			    LDAP_SCOPE_SUBTREE, filter, attrs, True, &msg);
 	smbldap_talloc_autofree_ldapmsg(mem_ctx, msg);
 
@@ -3461,7 +3460,7 @@ static NTSTATUS ldapsam_setsamgrent(struct pdb_methods *my_methods,
 		return NT_STATUS_NO_MEMORY;
 	}
 	attr_list = get_attr_list( NULL, groupmap_attr_list );
-	rc = smbldap_search(ldap_state->smbldap_state, lp_ldap_suffix(talloc_tos()),
+	rc = smbldap_search(ldap_state->smbldap_state, lp_ldap_suffix(),
 			    LDAP_SCOPE_SUBTREE, filter,
 			    attr_list, 0, &ldap_state->result);
 	TALLOC_FREE(attr_list);
@@ -3470,7 +3469,7 @@ static NTSTATUS ldapsam_setsamgrent(struct pdb_methods *my_methods,
 		DEBUG(0, ("ldapsam_setsamgrent: LDAP search failed: %s\n",
 			  ldap_err2string(rc)));
 		DEBUG(3, ("ldapsam_setsamgrent: Query was: %s, %s\n",
-			  lp_ldap_suffix(talloc_tos()), filter));
+			  lp_ldap_suffix(), filter));
 		ldap_msgfree(ldap_state->result);
 		ldap_state->result = NULL;
 		TALLOC_FREE(filter);
@@ -3899,7 +3898,7 @@ static NTSTATUS ldapsam_alias_memberships(struct pdb_methods *methods,
 		result = ldap_state->search_cache.result;
 		ldap_state->search_cache.result = NULL;
 	} else {
-		rc = smbldap_search(ldap_state->smbldap_state, lp_ldap_suffix(talloc_tos()),
+		rc = smbldap_search(ldap_state->smbldap_state, lp_ldap_suffix(),
 				    LDAP_SCOPE_SUBTREE, filter, attrs, 0, &result);
 		if (rc != LDAP_SUCCESS) {
 			return NT_STATUS_UNSUCCESSFUL;
@@ -4094,7 +4093,7 @@ static NTSTATUS ldapsam_get_account_policy(struct pdb_methods *methods,
 					   enum pdb_policy_type type,
 					   uint32_t *value)
 {
-	NTSTATUS ntstatus = NT_STATUS_UNSUCCESSFUL;
+	NTSTATUS ntstatus;
 
 	if (cache_account_policy_get(type, value)) {
 		DEBUG(11,("ldapsam_get_account_policy: got valid value from "
@@ -4282,7 +4281,7 @@ static NTSTATUS ldapsam_lookup_rids(struct pdb_methods *methods,
 		}
 
 		rc = smbldap_search(ldap_state->smbldap_state,
-				    lp_ldap_suffix(talloc_tos()),
+				    lp_ldap_suffix(),
 				    LDAP_SCOPE_SUBTREE, filter, ldap_attrs, 0,
 				    &msg);
 		smbldap_talloc_autofree_ldapmsg(mem_ctx, msg);
@@ -4721,7 +4720,7 @@ static bool ldapsam_search_users(struct pdb_methods *methods,
 		 ((acct_flags & (ACB_WSTRUST|ACB_SVRTRUST|ACB_DOMTRUST)) != 0))
 		state->base = lp_ldap_machine_suffix(talloc_tos());
 	else
-		state->base = lp_ldap_suffix(talloc_tos());
+		state->base = lp_ldap_suffix();
 
 	state->acct_flags = acct_flags;
 	state->base = talloc_strdup(search, state->base);
@@ -4890,7 +4889,7 @@ static bool ldapsam_search_grouptype(struct pdb_methods *methods,
 
 	state->connection = ldap_state->smbldap_state;
 
-	state->base = lp_ldap_suffix(search);
+	state->base = lp_ldap_suffix();
 	state->connection = ldap_state->smbldap_state;
 	state->scope = LDAP_SCOPE_SUBTREE;
 	state->filter =	talloc_asprintf(search, "(&(objectclass=%s)"

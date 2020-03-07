@@ -337,7 +337,7 @@ cli_set_user_quota(struct cli_state *cli, int quota_fnum, SMB_NTQUOTA_LIST *qtl)
 	uint16_t setup[1];
 	uint8_t params[2];
 	DATA_BLOB data = data_blob_null;
-	NTSTATUS status = NT_STATUS_UNSUCCESSFUL;
+	NTSTATUS status;
 
 	if (!cli || !qtl) {
 		smb_panic("cli_set_user_quota() called with NULL Pointer!");
@@ -353,9 +353,7 @@ cli_set_user_quota(struct cli_state *cli, int quota_fnum, SMB_NTQUOTA_LIST *qtl)
 		 * smb1 doesn't send NT_STATUS_NO_MORE_ENTRIES so swallow
 		 * this status.
 		 */
-		if (NT_STATUS_EQUAL(status, NT_STATUS_NO_MORE_ENTRIES)) {
-			status = NT_STATUS_OK;
-		} else {
+		if (!NT_STATUS_EQUAL(status, NT_STATUS_NO_MORE_ENTRIES)) {
 			goto cleanup;
 		}
 	}

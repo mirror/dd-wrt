@@ -33,12 +33,12 @@ static PyObject *py_se_access_check(PyObject *module, PyObject *args, PyObject *
 	PyObject *py_security_token = Py_None;
 	struct security_descriptor *security_descriptor;
 	struct security_token *security_token;
-	int access_desired; /* This is an int, because that's what
-			     * we need for the python
-			     * PyArg_ParseTupleAndKeywords */
+	unsigned int access_desired; /* This is an unsigned int, not uint32_t,
+				      * because that's what we need for the
+				      * python PyArg_ParseTupleAndKeywords */
 	uint32_t access_granted;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OOi",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OOI",
 					 discard_const_p(char *, kwnames),
 					 &py_sec_desc, &py_security_token, &access_desired)) {
 		return NULL;
@@ -48,7 +48,7 @@ static PyObject *py_se_access_check(PyObject *module, PyObject *args, PyObject *
 	if (!security_descriptor) {
 		PyErr_Format(PyExc_TypeError,
 			     "Expected dcerpc.security.descriptor for security_descriptor argument got  %s",
-			     talloc_get_name(pytalloc_get_ptr(py_sec_desc)));
+			     pytalloc_get_name(py_sec_desc));
 		return NULL;
 	}
 
@@ -56,7 +56,7 @@ static PyObject *py_se_access_check(PyObject *module, PyObject *args, PyObject *
 	if (!security_token) {
 		PyErr_Format(PyExc_TypeError,
 			     "Expected dcerpc.security.token for token argument, got %s",
-			     talloc_get_name(pytalloc_get_ptr(py_security_token)));
+			     pytalloc_get_name(py_sec_desc));
 		return NULL;
 	}
 

@@ -1,6 +1,7 @@
 <samba:parameter name="panic action"
                  context="G"
                  type="string"
+                 substitution="1"
                  xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
 <description>
 	<para>This is a Samba developer option that allows a 
@@ -12,5 +13,5 @@
 </description>
 
 <value type="default"></value>
-<value type="example">&quot;/bin/sleep 90000&quot;</value>
+<value type="example">/bin/sleep 90000</value>
 </samba:parameter>

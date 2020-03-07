@@ -59,7 +59,7 @@ from samba.ndr import ndr_pack
 # work out a SID (based on a free RID) to use when the domain gets restored.
 # This ensures that the restored DC's SID won't clash with any other RIDs
 # already in use in the domain
-def get_sid_for_restore(samdb):
+def get_sid_for_restore(samdb, logger):
     # Find the DN of the RID set of the server
     res = samdb.search(base=ldb.Dn(samdb, samdb.get_serverName()),
                        scope=ldb.SCOPE_BASE, attrs=["serverReference"])
@@ -78,7 +78,15 @@ def get_sid_for_restore(samdb):
                               'rIDNextRID'])
 
     # Decode the bounds of the RID allocation pools
-    rid = int(res[0].get('rIDNextRID')[0])
+    try:
+        rid = int(res[0].get('rIDNextRID')[0])
+    except IndexError:
+        logger.info("The RID pool for this DC is not initalized "
+                    "(e.g. it may be a fairly new DC).")
+        logger.info("To initialize it, create a temporary user on this DC "
+                    "(you can delete it later).")
+        raise CommandError("Cannot create backup - "
+                           "please initialize this DC's RID pool first.")
 
     def split_val(num):
         high = (0xFFFFFFFF00000000 & int(num)) >> 32
@@ -243,47 +251,49 @@ class cmd_domain_backup_online(samba.netcmd.Command):
 
         # Run a clone join on the remote
         include_secrets = not no_secrets
-        ctx = join_clone(logger=logger, creds=creds, lp=lp,
-                         include_secrets=include_secrets, server=server,
-                         dns_backend='SAMBA_INTERNAL', targetdir=tmpdir,
-                         backend_store=backend_store)
+        try:
+            ctx = join_clone(logger=logger, creds=creds, lp=lp,
+                             include_secrets=include_secrets, server=server,
+                             dns_backend='SAMBA_INTERNAL', targetdir=tmpdir,
+                             backend_store=backend_store)
 
-        # get the paths used for the clone, then drop the old samdb connection
-        paths = ctx.paths
-        del ctx
+            # get the paths used for the clone, then drop the old samdb connection
+            paths = ctx.paths
+            del ctx
 
-        # Get a free RID to use as the new DC's SID (when it gets restored)
-        remote_sam = SamDB(url='ldap://' + server, credentials=creds,
-                           session_info=system_session(), lp=lp)
-        new_sid = get_sid_for_restore(remote_sam)
-        realm = remote_sam.domain_dns_name()
+            # Get a free RID to use as the new DC's SID (when it gets restored)
+            remote_sam = SamDB(url='ldap://' + server, credentials=creds,
+                               session_info=system_session(), lp=lp)
+            new_sid = get_sid_for_restore(remote_sam, logger)
+            realm = remote_sam.domain_dns_name()
 
-        # Grab the remote DC's sysvol files and bundle them into a tar file
-        sysvol_tar = os.path.join(tmpdir, 'sysvol.tar.gz')
-        smb_conn = smb_sysvol_conn(server, lp, creds)
-        backup_online(smb_conn, sysvol_tar, remote_sam.get_domain_sid())
+            # Grab the remote DC's sysvol files and bundle them into a tar file
+            logger.info("Backing up sysvol files (via SMB)...")
+            sysvol_tar = os.path.join(tmpdir, 'sysvol.tar.gz')
+            smb_conn = smb_sysvol_conn(server, lp, creds)
+            backup_online(smb_conn, sysvol_tar, remote_sam.get_domain_sid())
 
-        # remove the default sysvol files created by the clone (we want to
-        # make sure we restore the sysvol.tar.gz files instead)
-        shutil.rmtree(paths.sysvol)
+            # remove the default sysvol files created by the clone (we want to
+            # make sure we restore the sysvol.tar.gz files instead)
+            shutil.rmtree(paths.sysvol)
 
-        # Edit the downloaded sam.ldb to mark it as a backup
-        samdb = SamDB(url=paths.samdb, session_info=system_session(), lp=lp)
-        time_str = get_timestamp()
-        add_backup_marker(samdb, "backupDate", time_str)
-        add_backup_marker(samdb, "sidForRestore", new_sid)
-        add_backup_marker(samdb, "backupType", "online")
+            # Edit the downloaded sam.ldb to mark it as a backup
+            samdb = SamDB(url=paths.samdb, session_info=system_session(), lp=lp)
+            time_str = get_timestamp()
+            add_backup_marker(samdb, "backupDate", time_str)
+            add_backup_marker(samdb, "sidForRestore", new_sid)
+            add_backup_marker(samdb, "backupType", "online")
 
-        # ensure the admin user always has a password set (same as provision)
-        if no_secrets:
-            set_admin_password(logger, samdb)
+            # ensure the admin user always has a password set (same as provision)
+            if no_secrets:
+                set_admin_password(logger, samdb)
 
-        # Add everything in the tmpdir to the backup tar file
-        backup_file = backup_filepath(targetdir, realm, time_str)
-        create_log_file(tmpdir, lp, "online", server, include_secrets)
-        create_backup_tar(logger, tmpdir, backup_file)
-
-        shutil.rmtree(tmpdir)
+            # Add everything in the tmpdir to the backup tar file
+            backup_file = backup_filepath(targetdir, realm, time_str)
+            create_log_file(tmpdir, lp, "online", server, include_secrets)
+            create_backup_tar(logger, tmpdir, backup_file)
+        finally:
+            shutil.rmtree(tmpdir)
 
 
 class cmd_domain_backup_restore(cmd_fsmo_seize):
@@ -838,7 +848,7 @@ class cmd_domain_backup_rename(samba.netcmd.Command):
         # get a free RID to use as the new DC's SID (when it gets restored)
         remote_sam = SamDB(url='ldap://' + server, credentials=creds,
                            session_info=system_session(), lp=lp)
-        new_sid = get_sid_for_restore(remote_sam)
+        new_sid = get_sid_for_restore(remote_sam, logger)
 
         # Grab the remote DC's sysvol files and bundle them into a tar file.
         # Note we end up with 2 sysvol dirs - the original domain's files (that
@@ -1016,7 +1026,7 @@ class cmd_domain_backup_offline(samba.netcmd.Command):
         check_targetdir(logger, targetdir)
 
         samdb = SamDB(url=paths.samdb, session_info=system_session(), lp=lp)
-        sid = get_sid_for_restore(samdb)
+        sid = get_sid_for_restore(samdb, logger)
 
         backup_dirs = [paths.private_dir, paths.state_dir,
                        os.path.dirname(paths.smbconf)]  # etc dir

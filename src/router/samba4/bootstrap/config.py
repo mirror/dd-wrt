@@ -37,6 +37,7 @@ COMMON = [
     'binutils',
     'bison',
     'curl',
+    'chrpath',
     'flex',
     'gcc',
     'gdb',
@@ -66,10 +67,9 @@ PKGS = [
     # NAME1-dev, NAME2-devel
     ('lmdb-utils', 'lmdb'),
     ('mingw-w64', 'mingw64-gcc'),
-    ('nettle-dev', 'nettle-devel'),
     ('zlib1g-dev', 'zlib-devel'),
     ('libbsd-dev', 'libbsd-devel'),
-    ('libaio-dev', 'libaio-devel'),
+    ('liburing-dev', 'liburing-devel'),
     ('libarchive-dev', 'libarchive-devel'),
     ('libblkid-dev', 'libblkid-devel'),
     ('libcap-dev', 'libcap-devel'),
@@ -128,22 +128,11 @@ PKGS = [
     ('', 'rpcsvc-proto-devel'), # for <rpcsvc/rquota.h> header
     ('mawk', 'gawk'),
 
-    # python
-    ('python-dev', 'python-devel'),
-    ('python-dbg', ''),
-    ('python-iso8601', ''),
-    ('python-gpg', 'python2-gpg'),  # defaults to ubuntu/fedora latest
-    ('python-crypto', 'python-crypto'),
-    ('python-markdown', 'python-markdown'),
-    ('python-dnspython', 'python-dns'),
-    ('python-pexpect', ''),  # for wintest only
-
     ('/usr/bin/python3', 'python3'),
     ('python3-dev', 'python3-devel'),
     ('python3-dbg', ''),
     ('python3-iso8601', ''),
     ('python3-gpg', 'python3-gpg'),  # defaults to ubuntu/fedora latest
-    ('python3-crypto', 'python3-crypto'),
     ('python3-markdown', 'python3-markdown'),
     ('python3-matplotlib', ''),
     ('python3-dnspython', 'python3-dns'),
@@ -215,6 +204,8 @@ set -xueo pipefail
 
 yum update -y
 yum install -y epel-release
+yum install -y yum-plugin-copr
+yum copr enable -y sergiomb/SambaAD
 yum update -y
 
 yum install -y \
@@ -227,6 +218,23 @@ if [ ! -f /usr/bin/python3 ]; then
 fi
 """
 
+CENTOS8_YUM_BOOTSTRAP = r"""
+#!/bin/bash
+{GENERATED_MARKER}
+set -xueo pipefail
+
+yum update -y
+yum install -y dnf-plugins-core
+yum install -y epel-release
+yum config-manager --set-enabled PowerTools -y
+yum update -y
+
+yum install -y \
+    --setopt=install_weak_deps=False \
+    {pkgs}
+
+yum clean all
+"""
 
 DNF_BOOTSTRAP = r"""
 #!/bin/bash
@@ -377,6 +385,7 @@ DEB_DISTS = {
             'python-gpg': 'python-gpgme',
             'python3-gpg': '',  # no python3 gpg pkg available, remove
             'language-pack-en': '',   # included in locales
+            'liburing-dev': '',   # not available
         }
     },
     'debian8': {
@@ -386,6 +395,7 @@ DEB_DISTS = {
             'python-gpg': 'python-gpgme',
             'python3-gpg': 'python3-gpgme',
             'language-pack-en': '',   # included in locales
+            'liburing-dev': '',   # not available
         }
     },
     'debian9': {
@@ -393,6 +403,15 @@ DEB_DISTS = {
         'vagrant_box': 'debian/stretch64',
         'replace': {
             'language-pack-en': '',   # included in locales
+            'liburing-dev': '',   # not available
+        }
+    },
+    'debian10': {
+        'docker_image': 'debian:10',
+        'vagrant_box': 'debian/buster64',
+        'replace': {
+            'language-pack-en': '',   # included in locales
+            'liburing-dev': '',   # not available
         }
     },
     'ubuntu1404': {
@@ -408,6 +427,7 @@ DEB_DISTS = {
             'libunwind-dev': 'libunwind8-dev',
             'glusterfs-common': '',
             'libcephfs-dev': '',
+            'liburing-dev': '',   # not available
         }
     },
     'ubuntu1604': {
@@ -418,11 +438,15 @@ DEB_DISTS = {
             'python3-gpg': 'python3-gpgme',
             'glusterfs-common': '',
             'libcephfs-dev': '',
+            'liburing-dev': '',   # not available
         }
     },
     'ubuntu1804': {
         'docker_image': 'ubuntu:18.04',
         'vagrant_box': 'ubuntu/bionic64',
+        'replace': {
+            'liburing-dev': '',   # not available
+        }
     },
 }
 
@@ -449,6 +473,7 @@ RPM_DISTS = {
             'glusterfs-api-devel': '',
             'glusterfs-devel': '',
             'libcephfs-devel': '',
+            'liburing-devel': '',   # not available
         }
     },
     'centos7': {
@@ -479,14 +504,25 @@ RPM_DISTS = {
             'glusterfs-api-devel': '',
             'glusterfs-devel': '',
             'libcephfs-devel': '',
+            'gnutls-devel': 'compat-gnutls34-devel',
+            'liburing-devel': '',   # not available
         }
     },
-    'fedora28': {
-        'docker_image': 'fedora:28',
-        'vagrant_box': 'fedora/28-cloud-base',
-        'bootstrap': DNF_BOOTSTRAP,
+    'centos8': {
+        'docker_image': 'centos:8',
+        'vagrant_box': 'centos/8',
+        'bootstrap': CENTOS8_YUM_BOOTSTRAP,
         'replace': {
             'lsb-release': 'redhat-lsb',
+            '@development-tools': '"@Development Tools"',  # add quotes
+            'libsemanage-python': 'python3-libsemanage',
+            'lcov': '', # does not exist
+            'perl-JSON-Parse': '', # does not exist?
+            'perl-Test-Base': 'perl-Test-Simple',
+            'policycoreutils-python': 'python3-policycoreutils',
+            'python3-crypto': '',
+            'quota-devel': '', # FIXME: Add me back, once available!
+            'liburing-devel': '', # not available yet, Add me back, once available!
         }
     },
     'fedora29': {
@@ -495,6 +531,7 @@ RPM_DISTS = {
         'bootstrap': DNF_BOOTSTRAP,
         'replace': {
             'lsb-release': 'redhat-lsb',
+            'liburing-devel': '',   # not available
         }
     },
     'fedora30': {
@@ -503,6 +540,17 @@ RPM_DISTS = {
         'bootstrap': DNF_BOOTSTRAP,
         'replace': {
             'lsb-release': 'redhat-lsb',
+            'liburing-devel': '',   # not available
+        }
+    },
+    'fedora31': {
+        'docker_image': 'fedora:31',
+        'vagrant_box': 'fedora/31-cloud-base',
+        'bootstrap': DNF_BOOTSTRAP,
+        'replace': {
+            'lsb-release': 'redhat-lsb',
+            'libsemanage-python': 'python3-libsemanage',
+            'policycoreutils-python': 'python3-policycoreutils',
         }
     },
     'opensuse150': {
@@ -521,7 +569,6 @@ RPM_DISTS = {
             'krb5-workstation': 'krb5-client',
             'libnsl2-devel': 'libnsl-devel',
             'libsemanage-python': 'python2-semanage',
-            'nettle-devel': 'libnettle-devel',
             'openldap-devel': 'openldap2-devel',
             'perl-Archive-Tar': 'perl-Archive-Tar-Wrapper',
             'perl-JSON-Parse': 'perl-JSON-XS',
@@ -536,6 +583,7 @@ RPM_DISTS = {
             'glusterfs-api-devel': '',
             'libtasn1-tools': '', # asn1Parser is part of libtasn1
             'mingw64-gcc': '', # doesn't exist
+            'liburing-devel': '',   # not available
         }
     },
     'opensuse151': {
@@ -554,7 +602,6 @@ RPM_DISTS = {
             'krb5-workstation': 'krb5-client',
             'libnsl2-devel': 'libnsl-devel',
             'libsemanage-python': 'python2-semanage',
-            'nettle-devel': 'libnettle-devel',
             'openldap-devel': 'openldap2-devel',
             'perl-Archive-Tar': 'perl-Archive-Tar-Wrapper',
             'perl-JSON-Parse': 'perl-JSON-XS',
@@ -569,6 +616,7 @@ RPM_DISTS = {
             'glusterfs-api-devel': '',
             'libtasn1-tools': '', # asn1Parser is part of libtasn1
             'mingw64-gcc': '', # doesn't exist
+            'liburing-devel': '',   # not available, will be added in 15.2
         }
     }
 }

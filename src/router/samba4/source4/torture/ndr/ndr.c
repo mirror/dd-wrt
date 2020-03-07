@@ -31,8 +31,11 @@ struct ndr_pull_test_data {
 	size_t struct_size;
 	ndr_pull_flags_fn_t pull_fn;
 	ndr_push_flags_fn_t push_fn;
+	ndr_print_fn_t print_fn;
+	ndr_print_function_t print_function;
 	int ndr_flags;
 	int flags;
+	enum ndr_err_code ndr_err;
 };
 
 static enum ndr_err_code torture_ndr_push_struct_blob_flags(DATA_BLOB *blob, TALLOC_CTX *mem_ctx, uint32_t flags, uint32_t ndr_flags, const void *p, ndr_push_flags_fn_t fn)
@@ -52,6 +55,46 @@ static enum ndr_err_code torture_ndr_push_struct_blob_flags(DATA_BLOB *blob, TAL
 	return NDR_ERR_SUCCESS;
 }
 
+static bool torture_ndrdump(struct torture_context *tctx,
+			    struct ndr_pull *ndr,
+			    const struct ndr_pull_test_data *data,
+			    uint32_t flags,
+			    void *ds,
+			    const char *name)
+{
+	struct ndr_print *ndr_print;
+	const char *name_raw;
+	uint32_t ndr_flags = data->ndr_flags | flags;
+
+	ndr_print = talloc_zero(tctx, struct ndr_print);
+	torture_assert(tctx, ndr_print, "out of memory");
+
+	if (DEBUGLEVEL >= 10) {
+		ndr_print->print = ndr_print_debug_helper;
+	} else {
+		ndr_print->print = ndr_print_string_helper;
+	}
+
+	ndr_print->depth = 1;
+
+	torture_assert(tctx, ndr_flags, "no flags have been set");
+
+	if (ndr_flags & (NDR_BUFFERS|NDR_SCALARS)) {
+		data->print_fn(ndr_print, name, ds);
+	} else {
+		data->print_function(ndr_print, name, ndr_flags, ds);
+	}
+
+	name_raw = talloc_asprintf(tctx, "%s (RAW DATA)", name);
+	torture_assert(tctx, name_raw, "out of memory");
+
+	ndr_print_DATA_BLOB(ndr_print, name_raw, data->data);
+
+	talloc_free(ndr_print);
+
+	return true;
+}
+
 static bool wrap_ndr_pullpush_test(struct torture_context *tctx,
 				   struct torture_tcase *tcase,
 				   struct torture_test *test)
@@ -60,8 +103,12 @@ static bool wrap_ndr_pullpush_test(struct torture_context *tctx,
 	const struct ndr_pull_test_data *data = (const struct ndr_pull_test_data *)test->data;
 	struct ndr_pull *ndr = ndr_pull_init_blob(&(data->data), tctx);
 	void *ds = talloc_zero_size(ndr, data->struct_size);
-	bool ret;
+	bool ret = true;
 	uint32_t highest_ofs;
+
+	torture_assert(tctx, data, "out of memory");
+	torture_assert(tctx, ndr, "out of memory");
+	torture_assert(tctx, ds, "out of memory");
 
 	ndr->flags |= data->flags;
 
@@ -86,6 +133,8 @@ static bool wrap_ndr_pullpush_test(struct torture_context *tctx,
 		ret = true;
 	}
 
+	torture_ndrdump(tctx, ndr, data, data->ndr_flags, ds, "ds");
+
 	if (data->push_fn != NULL) {
 		DATA_BLOB outblob;
 		torture_assert_ndr_success(tctx, torture_ndr_push_struct_blob_flags(&outblob, ndr, data->ndr_flags, ndr->flags, ds, data->push_fn), "pushing");
@@ -101,6 +150,8 @@ _PUBLIC_ struct torture_test *_torture_suite_add_ndr_pullpush_test(
 	const char *name,
 	ndr_pull_flags_fn_t pull_fn,
 	ndr_push_flags_fn_t push_fn,
+	ndr_print_fn_t print_fn,
+	ndr_print_function_t print_function,
 	DATA_BLOB db,
 	size_t struct_size,
 	int ndr_flags,
@@ -119,13 +170,15 @@ _PUBLIC_ struct torture_test *_torture_suite_add_ndr_pullpush_test(
 	test->description = NULL;
 	test->run = wrap_ndr_pullpush_test;
 
-	data = talloc(test, struct ndr_pull_test_data);
+	data = talloc_zero(test, struct ndr_pull_test_data);
 	data->data = db;
 	data->ndr_flags = ndr_flags;
 	data->flags = flags;
 	data->struct_size = struct_size;
 	data->pull_fn = pull_fn;
 	data->push_fn = push_fn;
+	data->print_fn = print_fn;
+	data->print_function = print_function;
 
 	test->data = data;
 	test->fn = check_fn;
@@ -146,12 +199,17 @@ static bool wrap_ndr_inout_pull_test(struct torture_context *tctx,
 	void *ds = talloc_zero_size(tctx, data->struct_size);
 	struct ndr_pull *ndr;
 	uint32_t highest_ofs;
+	bool ret = false;
+
+	torture_assert(tctx, data, "out of memory");
+	torture_assert(tctx, ds, "out of memory");
 
 	/* handle NDR_IN context */
 
 	ndr = ndr_pull_init_blob(&(data->data_context), tctx);
 	torture_assert(tctx, ndr, "ndr init failed");
 
+	ndr->flags |= data->flags;
 	ndr->flags |= LIBNDR_FLAG_REF_ALLOC;
 
 	torture_assert_ndr_success(tctx,
@@ -167,6 +225,8 @@ static bool wrap_ndr_inout_pull_test(struct torture_context *tctx,
 	torture_assert(tctx, highest_ofs == ndr->data_size,
 		talloc_asprintf(tctx, "%d unread bytes", ndr->data_size - highest_ofs));
 
+	torture_ndrdump(tctx, ndr, data, NDR_IN, ds, "ds");
+
 	talloc_free(ndr);
 
 	/* handle NDR_OUT */
@@ -174,6 +234,7 @@ static bool wrap_ndr_inout_pull_test(struct torture_context *tctx,
 	ndr = ndr_pull_init_blob(&(data->data), tctx);
 	torture_assert(tctx, ndr, "ndr init failed");
 
+	ndr->flags |= data->flags;
 	ndr->flags |= LIBNDR_FLAG_REF_ALLOC;
 
 	torture_assert_ndr_success(tctx,
@@ -189,21 +250,28 @@ static bool wrap_ndr_inout_pull_test(struct torture_context *tctx,
 	torture_assert(tctx, highest_ofs == ndr->data_size,
 		talloc_asprintf(tctx, "%d unread bytes", ndr->data_size - highest_ofs));
 
+	if (check_fn) {
+		ret = check_fn(tctx, ds);
+	} else {
+		ret = true;
+	}
+
+	torture_ndrdump(tctx, ndr, data, NDR_OUT, ds, "ds");
+
 	talloc_free(ndr);
 
-	if (check_fn) {
-		return check_fn(tctx, ds);
-	} else {
-		return true;
-	}
+	return ret;
 }
 
 _PUBLIC_ struct torture_test *_torture_suite_add_ndr_pull_inout_test(
 					struct torture_suite *suite,
-					const char *name, ndr_pull_flags_fn_t pull_fn,
+					const char *name,
+					ndr_pull_flags_fn_t pull_fn,
+					ndr_print_function_t print_function,
 					DATA_BLOB db_in,
 					DATA_BLOB db_out,
 					size_t struct_size,
+					int flags,
 					bool (*check_fn) (struct torture_context *ctx, void *data))
 {
 	struct torture_test *test;
@@ -217,14 +285,82 @@ _PUBLIC_ struct torture_test *_torture_suite_add_ndr_pull_inout_test(
 	test->name = talloc_strdup(test, name);
 	test->description = NULL;
 	test->run = wrap_ndr_inout_pull_test;
-	data = talloc(test, struct ndr_pull_test_data);
+	data = talloc_zero(test, struct ndr_pull_test_data);
 	data->data = db_out;
 	data->data_context = db_in;
 	data->ndr_flags = 0;
+	data->flags = flags;
 	data->struct_size = struct_size;
 	data->pull_fn = pull_fn;
+	data->print_function = print_function;
 	test->data = data;
 	test->fn = check_fn;
+	test->dangerous = false;
+
+	DLIST_ADD_END(tcase->tests, test);
+
+	return test;
+}
+
+static bool wrap_ndr_pull_invalid_data_test(struct torture_context *tctx,
+					    struct torture_tcase *tcase,
+					    struct torture_test *test)
+{
+	const struct ndr_pull_test_data *data = (const struct ndr_pull_test_data *)test->data;
+	struct ndr_pull *ndr = ndr_pull_init_blob(&(data->data), tctx);
+	void *ds = talloc_zero_size(ndr, data->struct_size);
+	bool ret = true;
+
+	torture_assert(tctx, data, "out of memory");
+	torture_assert(tctx, ndr, "out of memory");
+	torture_assert(tctx, ds, "out of memory");
+
+	ndr->flags |= data->flags;
+
+	ndr->flags |= LIBNDR_FLAG_REF_ALLOC;
+
+	torture_assert_ndr_err_equal(
+		tctx,
+		data->pull_fn(ndr, data->ndr_flags, ds),
+		NDR_ERR_BUFSIZE,
+		"pulling invalid data");
+
+	talloc_free(ndr);
+	return ret;
+}
+
+_PUBLIC_ struct torture_test *_torture_suite_add_ndr_pull_invalid_data_test(
+	struct torture_suite *suite,
+	const char *name,
+	ndr_pull_flags_fn_t pull_fn,
+	DATA_BLOB db,
+	size_t struct_size,
+	int ndr_flags,
+	int flags,
+	enum ndr_err_code ndr_err)
+{
+	struct torture_test *test;
+	struct torture_tcase *tcase;
+	struct ndr_pull_test_data *data;
+
+	tcase = torture_suite_add_tcase(suite, name);
+
+	test = talloc(tcase, struct torture_test);
+
+	test->name = talloc_strdup(test, name);
+	test->description = NULL;
+	test->run = wrap_ndr_pull_invalid_data_test;
+
+	data = talloc_zero(test, struct ndr_pull_test_data);
+	data->data = db;
+	data->ndr_flags = ndr_flags;
+	data->flags = flags;
+	data->struct_size = struct_size;
+	data->pull_fn = pull_fn;
+	data->ndr_err = ndr_err;
+
+	test->data = data;
+	test->fn = NULL;
 	test->dangerous = false;
 
 	DLIST_ADD_END(tcase->tests, test);

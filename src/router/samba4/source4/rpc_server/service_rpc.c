@@ -27,6 +27,7 @@
 #include "../lib/util/dlinklist.h"
 #include "rpc_server/dcerpc_server.h"
 #include "rpc_server/dcerpc_server_proto.h"
+#include "librpc/rpc/dcerpc.h"
 #include "system/filesys.h"
 #include "lib/messaging/irpc.h"
 #include "system/network.h"
@@ -38,6 +39,12 @@
 #include "libcli/raw/smb.h"
 #include "../libcli/named_pipe_auth/npa_tstream.h"
 #include "smbd/process_model.h"
+
+struct dcesrv_context_callbacks srv_callbacks = {
+	.log.successful_authz = log_successful_dcesrv_authz_event,
+	.auth.gensec_prepare = dcesrv_gensec_prepare,
+	.assoc_group.find = dcesrv_assoc_group_find,
+};
 
 /*
  * Need to run the majority of the RPC endpoints in a single process to allow
@@ -111,6 +118,7 @@ static NTSTATUS dcesrv_init_endpoints(struct task_server *task,
 	}
 	return NT_STATUS_OK;
 }
+
 /*
  * Initialise the RPC service.
  * And those end points that can be serviced by multiple processes.
@@ -121,6 +129,7 @@ static NTSTATUS dcesrv_task_init(struct task_server *task)
 {
 	NTSTATUS status = NT_STATUS_UNSUCCESSFUL;
 	struct dcesrv_context *dce_ctx;
+	const char **ep_servers = NULL;
 
 	dcerpc_server_init(task->lp_ctx);
 
@@ -128,8 +137,14 @@ static NTSTATUS dcesrv_task_init(struct task_server *task)
 
 	status = dcesrv_init_context(task->event_ctx,
 				     task->lp_ctx,
-				     lpcfg_dcerpc_endpoint_servers(task->lp_ctx),
+				     &srv_callbacks,
 				     &dce_ctx);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	ep_servers = lpcfg_dcerpc_endpoint_servers(task->lp_ctx);
+	status = dcesrv_init_ep_servers(dce_ctx, ep_servers);
 	if (!NT_STATUS_IS_OK(status)) {
 		return status;
 	}

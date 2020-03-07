@@ -7,10 +7,11 @@ bld.SAMBA3_SUBSYSTEM('NFS4_ACLS',
 bld.SAMBA3_BINARY('test_nfs4_acls',
                   source='test_nfs4_acls.c',
                   deps='smbd_base cmocka',
-                  install=False)
+                  for_selftest=True)
 
 bld.SAMBA3_SUBSYSTEM('vfs_acl_common',
-                     source='vfs_acl_common.c')
+                     source='vfs_acl_common.c',
+                     deps='gnutls')
 
 bld.SAMBA3_SUBSYSTEM('POSIXACL_XATTR',
                  source='posixacl_xattr.c',
@@ -37,9 +38,6 @@ bld.SAMBA3_SUBSYSTEM('vfs',
 bld.SAMBA3_SUBSYSTEM('OFFLOAD_TOKEN',
                     source='offload_token.c',
                     deps='samba-util')
-
-bld.SAMBA3_SUBSYSTEM('STRING_REPLACE',
-                    source='string_replace.c')
 
 bld.SAMBA3_SUBSYSTEM('HASH_INODE',
                     source='hash_inode.c',
@@ -117,18 +115,10 @@ bld.SAMBA3_MODULE('vfs_recycle',
                  internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_recycle'),
                  enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_recycle'))
 
-bld.SAMBA3_MODULE('vfs_netatalk',
-                 subsystem='vfs',
-                 source='vfs_netatalk.c',
-                 deps='samba-util',
-                 init_function='',
-                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_netatalk'),
-                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_netatalk'))
-
 bld.SAMBA3_MODULE('vfs_fruit',
                  subsystem='vfs',
                  source='vfs_fruit.c',
-                 deps='samba-util OFFLOAD_TOKEN STRING_REPLACE HASH_INODE',
+                 deps='samba-util OFFLOAD_TOKEN STRING_REPLACE HASH_INODE ADOUBLE',
                  init_function='',
                  internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_fruit'),
                  enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_fruit'))
@@ -405,6 +395,14 @@ bld.SAMBA3_MODULE('vfs_aio_pthread',
                  init_function='',
                  internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_aio_pthread'),
                  enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_aio_pthread'))
+
+bld.SAMBA3_MODULE('vfs_io_uring',
+                 subsystem='vfs',
+                 source='vfs_io_uring.c',
+                 deps='samba-util tevent uring',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_io_uring'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_io_uring'))
 
 bld.SAMBA3_MODULE('vfs_preopen',
                  subsystem='vfs',

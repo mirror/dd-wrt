@@ -19,11 +19,10 @@ use Archive::Tar;
 use File::Path 'make_path';
 
 sub new($$$$$) {
-	my ($classname, $bindir, $ldap, $srcdir, $server_maxtime) = @_;
+	my ($classname, $bindir, $srcdir, $server_maxtime) = @_;
 
 	my $self = {
 		vars => {},
-		ldap => $ldap,
 		bindir => $bindir,
 		srcdir => $srcdir,
 		server_maxtime => $server_maxtime,
@@ -36,57 +35,6 @@ sub new($$$$$) {
 sub scriptdir_path($$) {
 	my ($self, $path) = @_;
 	return "$self->{srcdir}/source4/scripting/$path";
-}
-
-sub openldap_start($$$) {
-}
-
-sub slapd_start($$)
-{
-	my $count = 0;
-	my ($self, $env_vars, $STDIN_READER) = @_;
-	my $ldbsearch = Samba::bindir_path($self, "ldbsearch");
-
-	my $uri = $env_vars->{LDAP_URI};
-
-	if (system("$ldbsearch -H $uri -s base -b \"\" supportedLDAPVersion > /dev/null") == 0) {
-	    print "A SLAPD is still listening to $uri before we started the LDAP backend.  Aborting!";
-	    return 1;
-	}
-	# running slapd in the background means it stays in the same process group, so it can be
-	# killed by timelimit
-	my $pid = fork();
-	if ($pid == 0) {
-		open STDOUT, ">$env_vars->{LDAPDIR}/logs";
-		open STDERR, '>&STDOUT';
-		close($env_vars->{STDIN_PIPE});
-		open STDIN, ">&", $STDIN_READER or die "can't dup STDIN_READER to STDIN: $!";
-
-		if ($self->{ldap} eq "fedora-ds") {
-			exec("$ENV{FEDORA_DS_ROOT}/sbin/ns-slapd", "-D", $env_vars->{FEDORA_DS_DIR}, "-d0", "-i", $env_vars->{FEDORA_DS_PIDFILE});
-		} elsif ($self->{ldap} eq "openldap") {
-			exec($ENV{OPENLDAP_SLAPD}, "-dnone", "-F", $env_vars->{SLAPD_CONF_D}, "-h", $uri);
-		}
-		die("Unable to start slapd: $!");
-	}
-	$env_vars->{SLAPD_PID} = $pid;
-	sleep(1);
-	while (system("$ldbsearch -H $uri -s base -b \"\" supportedLDAPVersion > /dev/null") != 0) {
-		$count++;
-		if ($count > 40) {
-			$self->slapd_stop($env_vars);
-			return 0;
-		}
-		sleep(1);
-	}
-	return 1;
-}
-
-sub slapd_stop($$)
-{
-	my ($self, $envvars) = @_;
-	kill 9, $envvars->{SLAPD_PID};
-	return 1;
 }
 
 sub check_or_start($$$)
@@ -106,14 +54,6 @@ sub check_or_start($$$)
 	# those processes to monitor the pipe for EOF to ensure they
 	# exit when the test script exits
 	pipe($STDIN_READER, $env_vars->{STDIN_PIPE});
-
-	# Start slapd before samba, but with the fifo on stdin
-	if (defined($self->{ldap})) {
-		unless($self->slapd_start($env_vars, $STDIN_READER)) {
-			warn("couldn't start slapd (main run)");
-			return undef;
-		}
-	}
 
 	# build up the command to run samba
 	my @preargs = ();
@@ -327,28 +267,6 @@ pullInterval: 0
 pushChangeCount: 0
 type: 0x3
 ");
-}
-
-sub mk_fedora_ds($$)
-{
-	my ($self, $ctx) = @_;
-
-	#Make the subdirectory be as fedora DS would expect
-	my $fedora_ds_dir = "$ctx->{ldapdir}/slapd-$ctx->{ldap_instance}";
-
-	my $pidfile = "$fedora_ds_dir/logs/slapd-$ctx->{ldap_instance}.pid";
-
-	return ($fedora_ds_dir, $pidfile);
-}
-
-sub mk_openldap($$)
-{
-	my ($self, $ctx) = @_;
-
-	my $slapd_conf_d = "$ctx->{ldapdir}/slapd.d";
-	my $pidfile = "$ctx->{ldapdir}/slapd.pid";
-
-	return ($slapd_conf_d, $pidfile);
 }
 
 sub setup_dns_hub_internal($$$)
@@ -795,7 +713,6 @@ sub provision_raw_step1($$)
 	log level = $ctx->{server_loglevel}
 	lanman auth = Yes
 	ntlm auth = Yes
-	rndc command = true
 	client min protocol = CORE
 	server min protocol = LANMAN1
 	mangled names = yes
@@ -1226,37 +1143,9 @@ sub provision($$$$$$$$$$)
 $extra_smbconf_shares
 ";
 
-	if (defined($self->{ldap})) {
-		$ctx->{ldapdir} = "$ctx->{privatedir}/ldap";
-		push(@{$ctx->{directories}}, "$ctx->{ldapdir}");
-
-		my $ldap_uri= "$ctx->{ldapdir}/ldapi";
-		$ldap_uri =~ s|/|%2F|g;
-		$ldap_uri = "ldapi://$ldap_uri";
-		$ctx->{ldap_uri} = $ldap_uri;
-
-		$ctx->{ldap_instance} = lc($ctx->{netbiosname});
-	}
-
 	my $ret = $self->provision_raw_step1($ctx);
 	unless (defined $ret) {
 		return undef;
-	}
-
-	if (defined($self->{ldap})) {
-		$ret->{LDAP_URI} = $ctx->{ldap_uri};
-		push (@{$ctx->{provision_options}}, "--ldap-backend-type=" . $self->{ldap});
-		push (@{$ctx->{provision_options}}, "--ldap-backend-nosync");
-		if ($self->{ldap} eq "openldap") {
-			push (@{$ctx->{provision_options}}, "--slapd-path=" . $ENV{OPENLDAP_SLAPD});
-			($ret->{SLAPD_CONF_D}, $ret->{OPENLDAP_PIDFILE}) = $self->mk_openldap($ctx) or die("Unable to create openldap directories");
-
-                } elsif ($self->{ldap} eq "fedora-ds") {
- 		        push (@{$ctx->{provision_options}}, "--slapd-path=" . "$ENV{FEDORA_DS_ROOT}/sbin/ns-slapd");
- 		        push (@{$ctx->{provision_options}}, "--setup-ds-path=" . "$ENV{FEDORA_DS_ROOT}/sbin/setup-ds.pl");
-			($ret->{FEDORA_DS_DIR}, $ret->{FEDORA_DS_PIDFILE}) = $self->mk_fedora_ds($ctx) or die("Unable to create fedora ds directories");
-		}
-
 	}
 
 	return $self->provision_raw_step2($ctx, $ret);
@@ -1443,8 +1332,6 @@ sub provision_promoted_dc($$$)
 					       $dcvars->{SERVER_IP},
 					       $dcvars->{SERVER_IPV6});
 
-	push (@{$ctx->{provision_options}}, "--use-ntvfs");
-
 	$ctx->{smb_conf_extra_options} = "
 	max xmit = 32K
 	server max protocol = SMB2
@@ -1481,7 +1368,7 @@ sub provision_promoted_dc($$$)
 	my $cmd = $self->get_cmd_env_vars($ret);
 	$cmd .= "$samba_tool domain dcpromo $ret->{CONFIGURATION} $dcvars->{REALM} DC --realm=$dcvars->{REALM}";
 	$cmd .= " -U$dcvars->{DC_USERNAME}\%$dcvars->{DC_PASSWORD}";
-	$cmd .= " --machinepass=machine$ret->{PASSWORD} --use-ntvfs --dns-backend=BIND9_DLZ";
+	$cmd .= " --machinepass=machine$ret->{PASSWORD} --dns-backend=BIND9_DLZ";
 
 	unless (system($cmd) == 0) {
 		warn("Join failed\n$cmd");
@@ -1518,8 +1405,6 @@ sub provision_vampire_dc($$$)
 					       $dcvars->{SERVER_IP},
 					       $dcvars->{SERVER_IPV6});
 
-	push (@{$ctx->{provision_options}}, "--use-ntvfs");
-
 	$ctx->{smb_conf_extra_options} = "
 	max xmit = 32K
 	server max protocol = SMB2
@@ -1546,7 +1431,7 @@ sub provision_vampire_dc($$$)
 	my $cmd = $self->get_cmd_env_vars($ret);
 	$cmd .= "$samba_tool domain join $ret->{CONFIGURATION} $dcvars->{REALM} DC --realm=$dcvars->{REALM}";
 	$cmd .= " -U$dcvars->{DC_USERNAME}\%$dcvars->{DC_PASSWORD} --domain-critical-only";
-	$cmd .= " --machinepass=machine$ret->{PASSWORD} --use-ntvfs";
+	$cmd .= " --machinepass=machine$ret->{PASSWORD}";
 	$cmd .= " --backend-store=mdb";
 
 	unless (system($cmd) == 0) {
@@ -1618,7 +1503,7 @@ sub provision_fl2000dc($$)
 	spnego:simulate_w2k=yes
 	ntlmssp_server:force_old_spnego=yes
 ";
-	my $extra_provision_options = ["--use-ntvfs", "--base-schema=2008_R2"];
+	my $extra_provision_options = ["--base-schema=2008_R2"];
 	# This environment uses plain text secrets
 	# i.e. secret attributes are not encrypted on disk.
 	# This allows testing of the --plaintext-secrets option for
@@ -1660,7 +1545,7 @@ sub provision_fl2003dc($$$)
 	dcesrv:header signing = no
 	dcesrv:max auth states = 0
 	dns forwarder = $ip_addr1 $ip_addr2";
-	my $extra_provision_options = ["--use-ntvfs", "--base-schema=2008_R2"];
+	my $extra_provision_options = ["--base-schema=2008_R2"];
 	my $ret = $self->provision($prefix,
 				   "domain controller",
 				   "dc6",
@@ -1710,7 +1595,7 @@ sub provision_fl2008r2dc($$$)
 
 	print "PROVISIONING DC WITH FOREST LEVEL 2008r2...\n";
         my $extra_conf_options = "ldap server require strong auth = no";
-	my $extra_provision_options = ["--use-ntvfs", "--base-schema=2008_R2"];
+	my $extra_provision_options = ["--base-schema=2008_R2"];
 	my $ret = $self->provision($prefix,
 				   "domain controller",
 				   "dc7",
@@ -1756,8 +1641,6 @@ sub provision_rodc($$$)
 		return undef;
 	}
 
-	push (@{$ctx->{provision_options}}, "--use-ntvfs");
-
 	$ctx->{share} = "$ctx->{prefix_abs}/share";
 	push(@{$ctx->{directories}}, "$ctx->{share}");
 
@@ -1792,7 +1675,7 @@ sub provision_rodc($$$)
 	my $cmd = $self->get_cmd_env_vars($ret);
 	$cmd .= "$samba_tool domain join $ret->{CONFIGURATION} $dcvars->{REALM} RODC";
 	$cmd .= " -U$dcvars->{DC_USERNAME}\%$dcvars->{DC_PASSWORD}";
-	$cmd .= " --server=$dcvars->{DC_SERVER} --use-ntvfs";
+	$cmd .= " --server=$dcvars->{DC_SERVER}";
 
 	unless (system($cmd) == 0) {
 		warn("RODC join failed\n$cmd");
@@ -1956,6 +1839,9 @@ sub provision_ad_dc($$$$$$)
 	copy = print1
 [print3]
 	copy = print1
+[print4]
+	copy = print1
+	guest ok = yes
 [lp]
 	copy = print1
 ";
@@ -1999,8 +1885,7 @@ sub provision_chgdcpass($$)
 	allow dcerpc auth level connect:lsarpc = yes
 	dcesrv:max auth states = 8
 ";
-	my $extra_provision_options = ["--use-ntvfs"];
-	push (@{$extra_provision_options}, "--dns-backend=BIND9_DLZ");
+	my $extra_provision_options = ["--dns-backend=BIND9_DLZ"];
 	my $ret = $self->provision($prefix,
 				   "domain controller",
 				   "chgdcpass",
@@ -2102,8 +1987,6 @@ sub teardown_env($$)
 	my ($self, $envvars) = @_;
 	teardown_env_terminate($self, $envvars);
 
-	$self->slapd_stop($envvars) if ($self->{ldap});
-
 	print $self->getlog_env($envvars);
 
 	return;
@@ -2191,9 +2074,9 @@ sub check_env($$)
 	labdc                => ["backupfromdc"],
 
 	# aliases in order to split autbuild tasks
-	fl2008dc             => ["ad_dc_ntvfs"],
-	ad_dc_default        => ["ad_dc_ntvfs"],
-	ad_dc_slowtests      => ["ad_dc_ntvfs"],
+	fl2008dc             => ["ad_dc"],
+	ad_dc_default        => ["ad_dc"],
+	ad_dc_slowtests      => ["ad_dc"],
 	ad_dc_backup         => ["ad_dc"],
 
 	schema_dc      => ["dns_hub"],

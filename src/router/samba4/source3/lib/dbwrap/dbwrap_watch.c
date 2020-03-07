@@ -28,164 +28,109 @@
 #include "server_id_watch.h"
 #include "lib/dbwrap/dbwrap_private.h"
 
-static ssize_t dbwrap_record_watchers_key(struct db_context *db,
-					  struct db_record *rec,
-					  uint8_t *wkey, size_t wkey_len)
-{
-	size_t db_id_len = dbwrap_db_id(db, NULL, 0);
-	uint8_t db_id[db_id_len];
-	size_t needed;
-	TDB_DATA key;
+struct dbwrap_watcher {
+	/*
+	 * Process watching this record
+	 */
+	struct server_id pid;
+	/*
+	 * Individual instance inside the waiter, incremented each
+	 * time a watcher is created
+	 */
+	uint64_t instance;
+};
 
-	dbwrap_db_id(db, db_id, db_id_len);
-
-	key = dbwrap_record_get_key(rec);
-
-	needed = sizeof(uint32_t) + db_id_len;
-	if (needed < sizeof(uint32_t)) {
-		return -1;
-	}
-
-	needed += key.dsize;
-	if (needed < key.dsize) {
-		return -1;
-	}
-
-	if (wkey_len >= needed) {
-		SIVAL(wkey, 0, db_id_len);
-		memcpy(wkey + sizeof(uint32_t), db_id, db_id_len);
-		memcpy(wkey + sizeof(uint32_t) + db_id_len,
-		       key.dptr, key.dsize);
-	}
-
-	return needed;
-}
-
-static bool dbwrap_record_watchers_key_parse(
-	TDB_DATA wkey, uint8_t **p_db_id, size_t *p_db_id_len, TDB_DATA *key)
-{
-	size_t db_id_len;
-
-	if (wkey.dsize < sizeof(uint32_t)) {
-		DBG_WARNING("Invalid watchers key, dsize=%zu\n", wkey.dsize);
-		return false;
-	}
-	db_id_len = IVAL(wkey.dptr, 0);
-	if (db_id_len > (wkey.dsize - sizeof(uint32_t))) {
-		DBG_WARNING("Invalid watchers key, wkey.dsize=%zu, "
-			    "db_id_len=%zu\n", wkey.dsize, db_id_len);
-		return false;
-	}
-	if (p_db_id != NULL) {
-		*p_db_id = wkey.dptr + sizeof(uint32_t);
-	}
-	if (p_db_id_len != NULL) {
-		*p_db_id_len = db_id_len;
-	}
-	if (key != NULL) {
-		key->dptr = wkey.dptr + sizeof(uint32_t) + db_id_len;
-		key->dsize = wkey.dsize - sizeof(uint32_t) - db_id_len;
-	}
-	return true;
-}
+#define DBWRAP_WATCHER_BUF_LENGTH (SERVER_ID_BUF_LENGTH + sizeof(uint64_t))
 
 /*
  * Watched records contain a header of:
  *
  * [uint32] num_records | deleted bit
- * 0 [SERVER_ID_BUF_LENGTH]                   \
- * 1 [SERVER_ID_BUF_LENGTH]                   |
+ * 0 [DBWRAP_WATCHER_BUF_LENGTH]              \
+ * 1 [DBWRAP_WATCHER_BUF_LENGTH]              |
  * ..                                         |- Array of watchers
- * (num_records-1)[SERVER_ID_BUF_LENGTH]      /
+ * (num_records-1)[DBWRAP_WATCHER_BUF_LENGTH] /
  *
  * [Remainder of record....]
  *
  * If this header is absent then this is a
  * fresh record of length zero (no watchers).
- *
- * Note that a record can be deleted with
- * watchers present. If so the deleted bit
- * is set and the watcher server_id's are
- * woken to allow them to remove themselves
- * from the watcher array. The record is left
- * present marked with the deleted bit until all
- * watchers are removed, then the record itself
- * is deleted.
  */
 
-#define NUM_WATCHERS_DELETED_BIT (1UL<<31)
-#define NUM_WATCHERS_MASK (NUM_WATCHERS_DELETED_BIT-1)
-
-struct dbwrap_watch_rec {
-	uint8_t *watchers;
-	size_t num_watchers;
-	bool deleted;
-	TDB_DATA data;
-};
-
-static bool dbwrap_watch_rec_parse(TDB_DATA data,
-				   struct dbwrap_watch_rec *wrec)
+static bool dbwrap_watch_rec_parse(
+	TDB_DATA data,
+	uint8_t **pwatchers,
+	size_t *pnum_watchers,
+	TDB_DATA *pdata)
 {
 	size_t num_watchers;
-	bool deleted;
-	TDB_DATA userdata = { 0 };
+
+	if (data.dsize == 0) {
+		/* Fresh record */
+		if (pwatchers != NULL) {
+			*pwatchers = NULL;
+		}
+		if (pnum_watchers != NULL) {
+			*pnum_watchers = 0;
+		}
+		if (pdata != NULL) {
+			*pdata = (TDB_DATA) { .dptr = NULL };
+		}
+		return true;
+	}
 
 	if (data.dsize < sizeof(uint32_t)) {
-		/* Fresh or invalid record */
+		/* Invalid record */
 		return false;
 	}
 
 	num_watchers = IVAL(data.dptr, 0);
 
-	deleted = num_watchers & NUM_WATCHERS_DELETED_BIT;
-	num_watchers &= NUM_WATCHERS_MASK;
-
 	data.dptr += sizeof(uint32_t);
 	data.dsize -= sizeof(uint32_t);
 
-	if (num_watchers > data.dsize/SERVER_ID_BUF_LENGTH) {
+	if (num_watchers > data.dsize/DBWRAP_WATCHER_BUF_LENGTH) {
 		/* Invalid record */
 		return false;
 	}
 
-	if (!deleted) {
-		size_t watchers_len = num_watchers * SERVER_ID_BUF_LENGTH;
-		userdata = (TDB_DATA) {
+	if (pwatchers != NULL) {
+		*pwatchers = data.dptr;
+	}
+	if (pnum_watchers != NULL) {
+		*pnum_watchers = num_watchers;
+	}
+	if (pdata != NULL) {
+		size_t watchers_len = num_watchers * DBWRAP_WATCHER_BUF_LENGTH;
+		*pdata = (TDB_DATA) {
 			.dptr = data.dptr + watchers_len,
 			.dsize = data.dsize - watchers_len
 		};
 	}
 
-	*wrec = (struct dbwrap_watch_rec) {
-		.watchers = data.dptr, .num_watchers = num_watchers,
-		.deleted = deleted, .data = userdata
-	};
-
 	return true;
 }
 
-static void dbwrap_watch_rec_get_watcher(
-	struct dbwrap_watch_rec *wrec, size_t i, struct server_id *watcher)
+static void dbwrap_watcher_get(struct dbwrap_watcher *w,
+			       const uint8_t buf[DBWRAP_WATCHER_BUF_LENGTH])
 {
-	if (i >= wrec->num_watchers) {
-		abort();
-	}
-	server_id_get(watcher, wrec->watchers + i * SERVER_ID_BUF_LENGTH);
+	server_id_get(&w->pid, buf);
+	w->instance = BVAL(buf, SERVER_ID_BUF_LENGTH);
 }
 
-static void dbwrap_watch_rec_del_watcher(struct dbwrap_watch_rec *wrec,
-					 size_t i)
+static void dbwrap_watcher_put(uint8_t buf[DBWRAP_WATCHER_BUF_LENGTH],
+			       const struct dbwrap_watcher *w)
 {
-	if (i >= wrec->num_watchers) {
-		abort();
-	}
-	wrec->num_watchers -= 1;
-	if (i < wrec->num_watchers) {
-		uint8_t *wptr = wrec->watchers + i*SERVER_ID_BUF_LENGTH;
-		memcpy(wptr,
-		       wrec->watchers+wrec->num_watchers*SERVER_ID_BUF_LENGTH,
-		       SERVER_ID_BUF_LENGTH);
-	}
+	server_id_put(buf, w->pid);
+	SBVAL(buf, SERVER_ID_BUF_LENGTH, w->instance);
+}
+
+static void dbwrap_watch_log_invalid_record(
+	struct db_context *db, TDB_DATA key, TDB_DATA value)
+{
+	DBG_ERR("Found invalid record in %s\n", dbwrap_name(db));
+	dump_data(1, key.dptr, key.dsize);
+	dump_data(1, value.dptr, value.dsize);
 }
 
 struct db_watched_ctx {
@@ -195,7 +140,7 @@ struct db_watched_ctx {
 
 struct db_watched_subrec {
 	struct db_record *subrec;
-	struct dbwrap_watch_rec wrec;
+	struct dbwrap_watcher added;
 };
 
 static NTSTATUS dbwrap_watched_subrec_storev(
@@ -209,12 +154,7 @@ static NTSTATUS dbwrap_watched_storev(struct db_record *rec,
 static NTSTATUS dbwrap_watched_delete(struct db_record *rec);
 static void dbwrap_watched_subrec_wakeup(
 	struct db_record *rec, struct db_watched_subrec *subrec);
-static NTSTATUS dbwrap_watched_save(struct db_record *rec,
-				    struct dbwrap_watch_rec *wrec,
-				    struct server_id *addwatch,
-				    const TDB_DATA *databufs,
-				    size_t num_databufs,
-				    int flags);
+static int db_watched_subrec_destructor(struct db_watched_subrec *s);
 
 static struct db_record *dbwrap_watched_fetch_locked(
 	struct db_context *db, TALLOC_CTX *mem_ctx, TDB_DATA key)
@@ -235,6 +175,7 @@ static struct db_record *dbwrap_watched_fetch_locked(
 		TALLOC_FREE(rec);
 		return NULL;
 	}
+	talloc_set_destructor(subrec, db_watched_subrec_destructor);
 	rec->private_data = subrec;
 
 	subrec->subrec = dbwrap_fetch_locked(ctx->backend, subrec, key);
@@ -250,18 +191,107 @@ static struct db_record *dbwrap_watched_fetch_locked(
 
 	subrec_value = dbwrap_record_get_value(subrec->subrec);
 
-	ok = dbwrap_watch_rec_parse(subrec_value, &subrec->wrec);
-	if (ok) {
-		rec->value = subrec->wrec.data;
+	ok = dbwrap_watch_rec_parse(subrec_value, NULL, NULL, &rec->value);
+	if (!ok) {
+		dbwrap_watch_log_invalid_record(db, rec->key, subrec_value);
+		/* wipe invalid data */
+		rec->value = (TDB_DATA) { .dptr = NULL, .dsize = 0 };
 	}
+	rec->value_valid = true;
 
 	return rec;
 }
 
+struct dbwrap_watched_add_watcher_state {
+	struct dbwrap_watcher w;
+	NTSTATUS status;
+};
+
+static void dbwrap_watched_add_watcher(
+	struct db_record *rec,
+	TDB_DATA value,
+	void *private_data)
+{
+	struct dbwrap_watched_add_watcher_state *state = private_data;
+	size_t num_watchers = 0;
+	bool ok;
+
+	uint8_t num_watchers_buf[4];
+	uint8_t add_buf[DBWRAP_WATCHER_BUF_LENGTH];
+
+	TDB_DATA dbufs[4] = {
+		{
+			.dptr = num_watchers_buf,
+			.dsize = sizeof(num_watchers_buf),
+		},
+		{ 0 },		/* filled in with existing watchers */
+		{
+			.dptr = add_buf,
+			.dsize = sizeof(add_buf),
+		},
+		{ 0 },		/* filled in with existing data */
+	};
+
+	dbwrap_watcher_put(add_buf, &state->w);
+
+	ok = dbwrap_watch_rec_parse(
+		value, &dbufs[1].dptr, &num_watchers, &dbufs[3]);
+	if (!ok) {
+		struct db_context *db = dbwrap_record_get_db(rec);
+		TDB_DATA key = dbwrap_record_get_key(rec);
+
+		dbwrap_watch_log_invalid_record(db, key, value);
+
+		/* wipe invalid data */
+		num_watchers = 0;
+		dbufs[3] = (TDB_DATA) { .dptr = NULL, .dsize = 0 };
+	}
+
+	dbufs[1].dsize = num_watchers * DBWRAP_WATCHER_BUF_LENGTH;
+
+	if (num_watchers >= UINT32_MAX) {
+		DBG_DEBUG("Can't handle %zu watchers\n",
+			  num_watchers+1);
+		state->status = NT_STATUS_INSUFFICIENT_RESOURCES;
+		return;
+	}
+
+	num_watchers += 1;
+	SIVAL(num_watchers_buf, 0, num_watchers);
+
+	state->status = dbwrap_record_storev(rec, dbufs, ARRAY_SIZE(dbufs), 0);
+}
+
+static int db_watched_subrec_destructor(struct db_watched_subrec *s)
+{
+	struct dbwrap_watched_add_watcher_state state = { .w = s->added };
+	struct db_context *backend = dbwrap_record_get_db(s->subrec);
+	NTSTATUS status;
+
+	if (s->added.pid.pid == 0) {
+		return 0;
+	}
+
+	status = dbwrap_do_locked(
+		backend, s->subrec->key, dbwrap_watched_add_watcher, &state);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_WARNING("dbwrap_do_locked failed: %s\n",
+			    nt_errstr(status));
+		return 0;
+	}
+	if (!NT_STATUS_IS_OK(state.status)) {
+		DBG_WARNING("dbwrap_watched_add_watcher failed: %s\n",
+			    nt_errstr(state.status));
+		return 0;
+	}
+	return 0;
+}
+
 struct dbwrap_watched_do_locked_state {
-	TALLOC_CTX *mem_ctx;
 	struct db_context *db;
-	void (*fn)(struct db_record *rec, void *private_data);
+	void (*fn)(struct db_record *rec,
+		   TDB_DATA value,
+		   void *private_data);
 	void *private_data;
 
 	struct db_watched_subrec subrec;
@@ -292,50 +322,54 @@ static NTSTATUS dbwrap_watched_do_locked_delete(struct db_record *rec)
 	return status;
 }
 
-static void dbwrap_watched_do_locked_fn(struct db_record *subrec,
-					void *private_data)
+static void dbwrap_watched_do_locked_fn(
+	struct db_record *subrec,
+	TDB_DATA subrec_value,
+	void *private_data)
 {
 	struct dbwrap_watched_do_locked_state *state =
 		(struct dbwrap_watched_do_locked_state *)private_data;
-	TDB_DATA subrec_value = dbwrap_record_get_value(subrec);
-	struct db_record rec;
-	bool ok;
-
-	rec = (struct db_record) {
-		.db = state->db, .key = dbwrap_record_get_key(subrec),
+	TDB_DATA value = {0};
+	struct db_record rec = {
+		.db = state->db,
+		.key = dbwrap_record_get_key(subrec),
 		.storev = dbwrap_watched_do_locked_storev,
 		.delete_rec = dbwrap_watched_do_locked_delete,
 		.private_data = state
 	};
+	bool ok;
 
 	state->subrec = (struct db_watched_subrec) {
 		.subrec = subrec
 	};
 
-	ok = dbwrap_watch_rec_parse(subrec_value, &state->subrec.wrec);
-	if (ok) {
-		rec.value = state->subrec.wrec.data;
+	ok = dbwrap_watch_rec_parse(subrec_value, NULL, NULL, &value);
+	if (!ok) {
+		dbwrap_watch_log_invalid_record(rec.db, rec.key, subrec_value);
+		/* wipe invalid data */
+		value = (TDB_DATA) { .dptr = NULL, .dsize = 0 };
 	}
 
-	state->fn(&rec, state->private_data);
+	state->fn(&rec, value, state->private_data);
+
+	db_watched_subrec_destructor(&state->subrec);
 }
 
 static NTSTATUS dbwrap_watched_do_locked(struct db_context *db, TDB_DATA key,
 					 void (*fn)(struct db_record *rec,
+						    TDB_DATA value,
 						    void *private_data),
 					 void *private_data)
 {
 	struct db_watched_ctx *ctx = talloc_get_type_abort(
 		db->private_data, struct db_watched_ctx);
 	struct dbwrap_watched_do_locked_state state = {
-		.mem_ctx = talloc_stackframe(),
 		.db = db, .fn = fn, .private_data = private_data
 	};
 	NTSTATUS status;
 
 	status = dbwrap_do_locked(
 		ctx->backend, key, dbwrap_watched_do_locked_fn, &state);
-	TALLOC_FREE(state.mem_ctx);
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_DEBUG("dbwrap_do_locked returned %s\n", nt_errstr(status));
 		return status;
@@ -347,117 +381,108 @@ static NTSTATUS dbwrap_watched_do_locked(struct db_context *db, TDB_DATA key,
 	return state.status;
 }
 
-static void dbwrap_watched_subrec_wakeup(
-	struct db_record *rec, struct db_watched_subrec *subrec)
+struct dbwrap_watched_subrec_wakeup_state {
+	struct messaging_context *msg_ctx;
+};
+
+static void dbwrap_watched_subrec_wakeup_fn(
+	struct db_record *rec,
+	TDB_DATA value,
+	void *private_data)
 {
-	struct dbwrap_watch_rec *wrec = &subrec->wrec;
-	struct db_context *db = rec->db;
-	struct db_watched_ctx *ctx = talloc_get_type_abort(
-		db->private_data, struct db_watched_ctx);
+	struct dbwrap_watched_subrec_wakeup_state *state = private_data;
+	uint8_t *watchers;
+	size_t num_watchers = 0;
 	size_t i;
-	size_t db_id_len = dbwrap_db_id(db, NULL, 0);
-	uint8_t db_id[db_id_len];
-	uint8_t len_buf[4];
-	struct iovec iov[3];
+	bool ok;
 
-	SIVAL(len_buf, 0, db_id_len);
+	ok = dbwrap_watch_rec_parse(value, &watchers, &num_watchers, NULL);
+	if (!ok) {
+		struct db_context *db = dbwrap_record_get_db(rec);
+		TDB_DATA key = dbwrap_record_get_key(rec);
+		dbwrap_watch_log_invalid_record(db, key, value);
+		return;
+	}
 
-	iov[0] = (struct iovec) { .iov_base = len_buf,
-				  .iov_len = sizeof(len_buf) };
-	iov[1] = (struct iovec) { .iov_base = db_id, .iov_len = db_id_len };
-	iov[2] = (struct iovec) { .iov_base = rec->key.dptr,
-				  .iov_len = rec->key.dsize };
+	if (num_watchers == 0) {
+		DBG_DEBUG("No watchers\n");
+		return;
+	}
 
-	dbwrap_db_id(db, db_id, db_id_len);
-
-	i = 0;
-
-	while (i < wrec->num_watchers) {
-		struct server_id watcher;
-		NTSTATUS status;
+	for (i=0; i<num_watchers; i++) {
+		struct dbwrap_watcher watcher;
 		struct server_id_buf tmp;
+		uint8_t instance_buf[8];
+		NTSTATUS status;
 
-		dbwrap_watch_rec_get_watcher(wrec, i, &watcher);
+		dbwrap_watcher_get(
+			&watcher, watchers + i*DBWRAP_WATCHER_BUF_LENGTH);
 
-		DBG_DEBUG("Alerting %s\n", server_id_str_buf(watcher, &tmp));
+		DBG_DEBUG("Alerting %s:%"PRIu64"\n",
+			  server_id_str_buf(watcher.pid, &tmp),
+			  watcher.instance);
 
-		status = messaging_send_iov(ctx->msg, watcher,
-					    MSG_DBWRAP_MODIFIED,
-					    iov, ARRAY_SIZE(iov), NULL, 0);
+		SBVAL(instance_buf, 0, watcher.instance);
+
+		status = messaging_send_buf(
+			state->msg_ctx,
+			watcher.pid,
+			MSG_DBWRAP_MODIFIED,
+			instance_buf,
+			sizeof(instance_buf));
 		if (!NT_STATUS_IS_OK(status)) {
-			DBG_DEBUG("messaging_send_iov to %s failed: %s\n",
-				  server_id_str_buf(watcher, &tmp),
+			DBG_DEBUG("messaging_send_buf to %s failed: %s\n",
+				  server_id_str_buf(watcher.pid, &tmp),
 				  nt_errstr(status));
 		}
-		if (NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_NOT_FOUND)) {
-			dbwrap_watch_rec_del_watcher(wrec, i);
-			continue;
-		}
-
-		i += 1;
 	}
 }
 
-static NTSTATUS dbwrap_watched_save(struct db_record *rec,
-				    struct dbwrap_watch_rec *wrec,
-				    struct server_id *addwatch,
-				    const TDB_DATA *databufs,
-				    size_t num_databufs,
-				    int flags)
+static void dbwrap_watched_subrec_wakeup(
+	struct db_record *rec, struct db_watched_subrec *subrec)
 {
-	uint32_t num_watchers_buf;
-	uint8_t sizebuf[4];
-	uint8_t addbuf[SERVER_ID_BUF_LENGTH];
+	struct db_context *backend = dbwrap_record_get_db(subrec->subrec);
+	struct db_context *db = dbwrap_record_get_db(rec);
+	struct db_watched_ctx *ctx = talloc_get_type_abort(
+		db->private_data, struct db_watched_ctx);
+	struct dbwrap_watched_subrec_wakeup_state state = {
+		.msg_ctx = ctx->msg,
+	};
 	NTSTATUS status;
-	struct TDB_DATA dbufs[num_databufs+3];
 
-	dbufs[0] = (TDB_DATA) {
-		.dptr = sizebuf, .dsize = sizeof(sizebuf)
-	};
-
-	dbufs[1] = (TDB_DATA) {
-		.dptr = wrec->watchers,
-		.dsize = wrec->num_watchers * SERVER_ID_BUF_LENGTH
-	};
-
-	if (addwatch != NULL) {
-		server_id_put(addbuf, *addwatch);
-
-		dbufs[2] = (TDB_DATA) {
-			.dptr = addbuf, .dsize = SERVER_ID_BUF_LENGTH
-		};
-		wrec->num_watchers += 1;
-	} else {
-		dbufs[2] = (TDB_DATA) { 0 };
+	status = dbwrap_do_locked(
+		backend,
+		subrec->subrec->key,
+		dbwrap_watched_subrec_wakeup_fn,
+		&state);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("dbwrap_record_modify failed: %s\n",
+			  nt_errstr(status));
 	}
-
-	if (num_databufs != 0) {
-		memcpy(&dbufs[3], databufs, sizeof(TDB_DATA) * num_databufs);
-	}
-
-	num_watchers_buf = wrec->num_watchers;
-	if (wrec->deleted) {
-		num_watchers_buf |= NUM_WATCHERS_DELETED_BIT;
-	}
-
-	SIVAL(sizebuf, 0, num_watchers_buf);
-
-	status = dbwrap_record_storev(rec, dbufs, ARRAY_SIZE(dbufs), flags);
-	return status;
 }
 
 static NTSTATUS dbwrap_watched_subrec_storev(
 	struct db_record *rec, struct db_watched_subrec *subrec,
 	const TDB_DATA *dbufs, int num_dbufs, int flags)
 {
+	uint8_t num_watchers_buf[4] = { 0 };
+	TDB_DATA my_dbufs[num_dbufs+1];
 	NTSTATUS status;
 
 	dbwrap_watched_subrec_wakeup(rec, subrec);
 
-	subrec->wrec.deleted = false;
+	/*
+	 * Watchers only informed once, set num_watchers to 0
+	 */
+	my_dbufs[0] = (TDB_DATA) {
+		.dptr = num_watchers_buf, .dsize = sizeof(num_watchers_buf),
+	};
+	if (num_dbufs != 0) {
+		memcpy(my_dbufs+1, dbufs, num_dbufs * sizeof(*dbufs));
+	}
 
-	status = dbwrap_watched_save(subrec->subrec, &subrec->wrec, NULL,
-				     dbufs, num_dbufs, flags);
+	status = dbwrap_record_storev(
+		subrec->subrec, my_dbufs, ARRAY_SIZE(my_dbufs), flags);
 	return status;
 }
 
@@ -481,14 +506,10 @@ static NTSTATUS dbwrap_watched_subrec_delete(
 
 	dbwrap_watched_subrec_wakeup(rec, subrec);
 
-	if (subrec->wrec.num_watchers == 0) {
-		return dbwrap_record_delete(subrec->subrec);
-	}
-
-	subrec->wrec.deleted = true;
-
-	status = dbwrap_watched_save(subrec->subrec, &subrec->wrec,
-				     NULL, NULL, 0, 0);
+	/*
+	 * Watchers were informed, we can throw away the record now
+	 */
+	status = dbwrap_record_delete(subrec->subrec);
 	return status;
 }
 
@@ -512,15 +533,13 @@ static int dbwrap_watched_traverse_fn(struct db_record *rec,
 {
 	struct dbwrap_watched_traverse_state *state = private_data;
 	struct db_record prec = *rec;
-	struct dbwrap_watch_rec wrec;
 	bool ok;
 
-	ok = dbwrap_watch_rec_parse(rec->value, &wrec);
-	if (!ok || wrec.deleted) {
+	ok = dbwrap_watch_rec_parse(rec->value, NULL, NULL, &prec.value);
+	if (!ok) {
 		return 0;
 	}
-
-	prec.value = wrec.data;
+	prec.value_valid = true;
 
 	return state->fn(&prec, state->private_data);
 }
@@ -594,25 +613,25 @@ static int dbwrap_watched_transaction_cancel(struct db_context *db)
 }
 
 struct dbwrap_watched_parse_record_state {
+	struct db_context *db;
 	void (*parser)(TDB_DATA key, TDB_DATA data, void *private_data);
 	void *private_data;
-	bool deleted;
+	bool ok;
 };
 
 static void dbwrap_watched_parse_record_parser(TDB_DATA key, TDB_DATA data,
 					       void *private_data)
 {
 	struct dbwrap_watched_parse_record_state *state = private_data;
-	struct dbwrap_watch_rec wrec;
-	bool ok;
+	TDB_DATA userdata;
 
-	ok = dbwrap_watch_rec_parse(data, &wrec);
-	if ((!ok) || (wrec.deleted)) {
-		state->deleted = true;
+	state->ok = dbwrap_watch_rec_parse(data, NULL, NULL, &userdata);
+	if (!state->ok) {
+		dbwrap_watch_log_invalid_record(state->db, key, data);
 		return;
 	}
 
-	state->parser(key, wrec.data, state->private_data);
+	state->parser(key, userdata, state->private_data);
 }
 
 static NTSTATUS dbwrap_watched_parse_record(
@@ -623,9 +642,9 @@ static NTSTATUS dbwrap_watched_parse_record(
 	struct db_watched_ctx *ctx = talloc_get_type_abort(
 		db->private_data, struct db_watched_ctx);
 	struct dbwrap_watched_parse_record_state state = {
+		.db = db,
 		.parser = parser,
 		.private_data = private_data,
-		.deleted = false
 	};
 	NTSTATUS status;
 
@@ -634,7 +653,7 @@ static NTSTATUS dbwrap_watched_parse_record(
 	if (!NT_STATUS_IS_OK(status)) {
 		return status;
 	}
-	if (state.deleted) {
+	if (!state.ok) {
 		return NT_STATUS_NOT_FOUND;
 	}
 	return NT_STATUS_OK;
@@ -667,7 +686,7 @@ static struct tevent_req *dbwrap_watched_parse_record_send(
 	*state = (struct dbwrap_watched_parse_record_state) {
 		.parser = parser,
 		.private_data = private_data,
-		.deleted = false,
+		.ok = true,
 	};
 
 	subreq = dbwrap_parse_record_send(state,
@@ -700,7 +719,7 @@ static void dbwrap_watched_parse_record_done(struct tevent_req *subreq)
 		return;
 	}
 
-	if (state->deleted) {
+	if (!state->ok) {
 		tevent_req_nterror(req, NT_STATUS_NOT_FOUND);
 		return;
 	}
@@ -739,20 +758,58 @@ static size_t dbwrap_watched_id(struct db_context *db, uint8_t *id,
 	return dbwrap_db_id(ctx->backend, id, idlen);
 }
 
-void dbwrap_watched_wakeup(struct db_record *rec)
+static void dbwrap_watched_wakeup_fn(
+	struct db_record *rec,
+	TDB_DATA value,
+	void *private_data)
 {
-	struct db_watched_subrec *subrec = NULL;
+	uint8_t num_watchers_buf[4] = { 0 };
+	TDB_DATA dbufs[2] = {
+		{
+			.dptr = num_watchers_buf,
+			.dsize = sizeof(num_watchers_buf),
+		},
+		{ 0 },		/* filled in with existing data */
+	};
+	NTSTATUS status;
+	bool ok;
 
-	if (rec->storev == dbwrap_watched_do_locked_storev) {
-		struct dbwrap_watched_do_locked_state *state =
-			rec->private_data;
-		subrec = &state->subrec;
-	} else {
-		subrec = talloc_get_type_abort(
-			rec->private_data, struct db_watched_subrec);
+	dbwrap_watched_subrec_wakeup_fn(rec, value, private_data);
+
+	/*
+	 * Watchers are informed only once: Store the existing data
+	 * without any watchers
+	 */
+
+	ok = dbwrap_watch_rec_parse(value, NULL, NULL, &dbufs[1]);
+	if (!ok) {
+		DBG_DEBUG("dbwrap_watch_rec_parse failed\n");
+		return;
 	}
 
-	dbwrap_watched_subrec_wakeup(rec, subrec);
+	status = dbwrap_record_storev(rec, dbufs, ARRAY_SIZE(dbufs), 0);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("dbwrap_record_storev() failed: %s\n",
+			  nt_errstr(status));
+	}
+}
+
+void dbwrap_watched_wakeup(struct db_record *rec)
+{
+	struct db_context *db = dbwrap_record_get_db(rec);
+	struct db_watched_ctx *ctx = talloc_get_type_abort(
+		db->private_data, struct db_watched_ctx);
+	struct dbwrap_watched_subrec_wakeup_state state = {
+		.msg_ctx = ctx->msg,
+	};
+	NTSTATUS status;
+
+	status = dbwrap_do_locked(
+		ctx->backend, rec->key, dbwrap_watched_wakeup_fn, &state);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("dbwrap_do_locked failed: %s\n",
+			  nt_errstr(status));
+	}
 }
 
 struct db_context *db_open_watched(TALLOC_CTX *mem_ctx,
@@ -799,8 +856,8 @@ struct db_context *db_open_watched(TALLOC_CTX *mem_ctx,
 
 struct dbwrap_watched_watch_state {
 	struct db_context *db;
-	struct server_id me;
-	TDB_DATA w_key;
+	TDB_DATA key;
+	struct dbwrap_watcher watcher;
 	struct server_id blocker;
 	bool blockerdead;
 };
@@ -823,8 +880,8 @@ struct tevent_req *dbwrap_watched_watch_send(TALLOC_CTX *mem_ctx,
 	struct db_watched_subrec *subrec = NULL;
 	struct tevent_req *req, *subreq;
 	struct dbwrap_watched_watch_state *state;
-	ssize_t needed;
-	NTSTATUS status;
+
+	static uint64_t instance = 1;
 
 	req = tevent_req_create(mem_ctx, &state,
 				struct dbwrap_watched_watch_state);
@@ -858,22 +915,21 @@ struct tevent_req *dbwrap_watched_watch_send(TALLOC_CTX *mem_ctx,
 		tevent_req_nterror(req, NT_STATUS_INVALID_PARAMETER);
 		return tevent_req_post(req, ev);
 	}
-
-	state->me = messaging_server_id(ctx->msg);
-
-	needed = dbwrap_record_watchers_key(db, rec, NULL, 0);
-	if (needed == -1) {
-		tevent_req_nterror(req, NT_STATUS_INSUFFICIENT_RESOURCES);
+	if (subrec->added.pid.pid != 0) {
+		tevent_req_nterror(req, NT_STATUS_REQUEST_NOT_ACCEPTED);
 		return tevent_req_post(req, ev);
 	}
-	state->w_key.dsize = needed;
 
-	state->w_key.dptr = talloc_array(state, uint8_t, state->w_key.dsize);
-	if (tevent_req_nomem(state->w_key.dptr, req)) {
+	state->watcher = (struct dbwrap_watcher) {
+		.pid = messaging_server_id(ctx->msg),
+		.instance = instance++,
+	};
+	subrec->added = state->watcher;
+
+	state->key = tdb_data_talloc_copy(state, rec->key);
+	if (tevent_req_nomem(state->key.dptr, req)) {
 		return tevent_req_post(req, ev);
 	}
-	dbwrap_record_watchers_key(db, rec, state->w_key.dptr,
-				   state->w_key.dsize);
 
 	subreq = messaging_filtered_read_send(
 		state, ev, ctx->msg, dbwrap_watched_msg_filter, state);
@@ -882,16 +938,10 @@ struct tevent_req *dbwrap_watched_watch_send(TALLOC_CTX *mem_ctx,
 	}
 	tevent_req_set_callback(subreq, dbwrap_watched_watch_done, req);
 
-	status = dbwrap_watched_save(subrec->subrec, &subrec->wrec, &state->me,
-				     &subrec->wrec.data, 1, 0);
-	if (tevent_req_nterror(req, status)) {
-		return tevent_req_post(req, ev);
-	}
-
 	talloc_set_destructor(state, dbwrap_watched_watch_state_destructor);
 
 	if (blocker.pid != 0) {
-		subreq = server_id_watch_send(state, ev, ctx->msg, blocker);
+		subreq = server_id_watch_send(state, ev, blocker);
 		if (tevent_req_nomem(subreq, req)) {
 			return tevent_req_post(req, ev);
 		}
@@ -920,65 +970,114 @@ static void dbwrap_watched_watch_blocker_died(struct tevent_req *subreq)
 	tevent_req_done(req);
 }
 
-static bool dbwrap_watched_remove_waiter(struct dbwrap_watch_rec *wrec,
-					 struct server_id id)
+static void dbwrap_watched_watch_state_destructor_fn(
+	struct db_record *rec,
+	TDB_DATA value,
+	void *private_data)
 {
+	struct dbwrap_watched_watch_state *state = talloc_get_type_abort(
+		private_data, struct dbwrap_watched_watch_state);
+	uint8_t *watchers;
+	size_t num_watchers = 0;
 	size_t i;
+	bool ok;
+	NTSTATUS status;
 
-	for (i=0; i<wrec->num_watchers; i++) {
-		struct server_id watcher;
-		dbwrap_watch_rec_get_watcher(wrec, i, &watcher);
-		if (server_id_equal(&id, &watcher)) {
+	uint8_t num_watchers_buf[4];
+
+	TDB_DATA dbufs[4] = {
+		{
+			.dptr = num_watchers_buf,
+			.dsize = sizeof(num_watchers_buf),
+		},
+		{ 0 },		/* watchers "before" state->w */
+		{ 0 },		/* watchers "behind" state->w */
+		{ 0 },		/* filled in with data */
+	};
+
+	ok = dbwrap_watch_rec_parse(
+		value, &watchers, &num_watchers, &dbufs[3]);
+	if (!ok) {
+		status = dbwrap_record_delete(rec);
+		if (!NT_STATUS_IS_OK(status)) {
+			DBG_DEBUG("dbwrap_record_delete failed: %s\n",
+				  nt_errstr(status));
+		}
+		return;
+	}
+
+	for (i=0; i<num_watchers; i++) {
+		struct dbwrap_watcher watcher;
+
+		dbwrap_watcher_get(
+			&watcher, watchers + i*DBWRAP_WATCHER_BUF_LENGTH);
+
+		if ((state->watcher.instance == watcher.instance) &&
+		    server_id_equal(&state->watcher.pid, &watcher.pid)) {
 			break;
 		}
 	}
 
-	if (i == wrec->num_watchers) {
+	if (i == num_watchers) {
 		struct server_id_buf buf;
-		DBG_WARNING("Did not find %s in state->watchers\n",
-			    server_id_str_buf(id, &buf));
-		return false;
+		DBG_DEBUG("Watcher %s:%"PRIu64" not found\n",
+			  server_id_str_buf(state->watcher.pid, &buf),
+			  state->watcher.instance);
+		return;
 	}
 
-	dbwrap_watch_rec_del_watcher(wrec, i);
-	return true;
+	if (i > 0) {
+		dbufs[1] = (TDB_DATA) {
+			.dptr = watchers,
+			.dsize = i * DBWRAP_WATCHER_BUF_LENGTH,
+		};
+	}
+
+	if (i < (num_watchers - 1)) {
+		size_t behind = (num_watchers - 1 - i);
+
+		dbufs[2] = (TDB_DATA) {
+			.dptr = watchers + (i+1) * DBWRAP_WATCHER_BUF_LENGTH,
+			.dsize = behind * DBWRAP_WATCHER_BUF_LENGTH,
+		};
+	}
+
+	num_watchers -= 1;
+
+	if ((num_watchers == 0) && (dbufs[3].dsize == 0)) {
+		status = dbwrap_record_delete(rec);
+		if (!NT_STATUS_IS_OK(status)) {
+			DBG_DEBUG("dbwrap_record_delete() failed: %s\n",
+				  nt_errstr(status));
+		}
+		return;
+	}
+
+	SIVAL(num_watchers_buf, 0, num_watchers);
+
+	status = dbwrap_record_storev(rec, dbufs, ARRAY_SIZE(dbufs), 0);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("dbwrap_record_storev() failed: %s\n",
+			  nt_errstr(status));
+	}
 }
 
 static int dbwrap_watched_watch_state_destructor(
 	struct dbwrap_watched_watch_state *state)
 {
-	struct db_record *rec;
-	struct db_watched_subrec *subrec;
-	TDB_DATA key;
-	bool ok;
+	struct db_watched_ctx *ctx = talloc_get_type_abort(
+		state->db->private_data, struct db_watched_ctx);
+	NTSTATUS status;
 
-	ok = dbwrap_record_watchers_key_parse(state->w_key, NULL, NULL, &key);
-	if (!ok) {
-		DBG_WARNING("dbwrap_record_watchers_key_parse failed\n");
-		return 0;
+	status = dbwrap_do_locked(
+		ctx->backend,
+		state->key,
+		dbwrap_watched_watch_state_destructor_fn,
+		state);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("dbwrap_do_locked failed: %s\n",
+			  nt_errstr(status));
 	}
-
-	rec = dbwrap_fetch_locked(state->db, state, key);
-	if (rec == NULL) {
-		DBG_WARNING("dbwrap_fetch_locked failed\n");
-		return 0;
-	}
-
-	subrec = talloc_get_type_abort(
-		rec->private_data, struct db_watched_subrec);
-
-	ok = dbwrap_watched_remove_waiter(&subrec->wrec, state->me);
-	if (ok) {
-		NTSTATUS status;
-		status = dbwrap_watched_save(subrec->subrec, &subrec->wrec,
-					     NULL, &subrec->wrec.data, 1, 0);
-		if (!NT_STATUS_IS_OK(status)) {
-			DBG_WARNING("dbwrap_watched_save failed: %s\n",
-				    nt_errstr(status));
-		}
-	}
-
-	TALLOC_FREE(rec);
 	return 0;
 }
 
@@ -987,7 +1086,7 @@ static bool dbwrap_watched_msg_filter(struct messaging_rec *rec,
 {
 	struct dbwrap_watched_watch_state *state = talloc_get_type_abort(
 		private_data, struct dbwrap_watched_watch_state);
-	int cmp;
+	uint64_t instance;
 
 	if (rec->msg_type != MSG_DBWRAP_MODIFIED) {
 		return false;
@@ -995,19 +1094,32 @@ static bool dbwrap_watched_msg_filter(struct messaging_rec *rec,
 	if (rec->num_fds != 0) {
 		return false;
 	}
-	if (rec->buf.length != state->w_key.dsize) {
+
+	if (rec->buf.length != sizeof(instance)) {
+		DBG_DEBUG("Got size %zu, expected %zu\n",
+			  rec->buf.length,
+			  sizeof(instance));
 		return false;
 	}
 
-	cmp = memcmp(rec->buf.data, state->w_key.dptr, rec->buf.length);
+	instance = BVAL(rec->buf.data, 0);
 
-	return (cmp == 0);
+	if (instance != state->watcher.instance) {
+		DBG_DEBUG("Got instance %"PRIu64", expected %"PRIu64"\n",
+			  instance,
+			  state->watcher.instance);
+		return false;
+	}
+
+	return true;
 }
 
 static void dbwrap_watched_watch_done(struct tevent_req *subreq)
 {
 	struct tevent_req *req = tevent_req_callback_data(
 		subreq, struct tevent_req);
+	struct dbwrap_watched_watch_state *state = tevent_req_data(
+		req, struct dbwrap_watched_watch_state);
 	struct messaging_rec *rec;
 	int ret;
 
@@ -1017,6 +1129,11 @@ static void dbwrap_watched_watch_done(struct tevent_req *subreq)
 		tevent_req_nterror(req, map_nt_error_from_unix(ret));
 		return;
 	}
+	/*
+	 * No need to remove ourselves anymore, we've been removed by
+	 * dbwrap_watched_subrec_wakeup().
+	 */
+	talloc_set_destructor(state, NULL);
 	tevent_req_done(req);
 }
 

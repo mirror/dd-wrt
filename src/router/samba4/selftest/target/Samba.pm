@@ -12,11 +12,11 @@ use POSIX;
 use Cwd qw(abs_path);
 
 sub new($$$$$) {
-	my ($classname, $bindir, $ldap, $srcdir, $server_maxtime) = @_;
+	my ($classname, $bindir, $srcdir, $server_maxtime) = @_;
 
 	my $self = {
 	    samba3 => new Samba3($bindir, $srcdir, $server_maxtime),
-	    samba4 => new Samba4($bindir, $ldap, $srcdir, $server_maxtime),
+	    samba4 => new Samba4($bindir, $srcdir, $server_maxtime),
 	};
 	bless $self;
 	return $self;
@@ -252,7 +252,6 @@ sub mk_krb5_conf($$)
 						 $ctx->{dnsname},
 						 $ctx->{domain},
 						 $ctx->{kdc_ipv4});
-	my $lc_domain = lc($ctx->{domain});
 	print KRB5CONF "
 #Generated krb5.conf for $ctx->{realm}
 
@@ -262,12 +261,6 @@ sub mk_krb5_conf($$)
  dns_lookup_kdc = true
  ticket_lifetime = 24h
  forwardable = yes
- allow_weak_crypto = yes
-
- name_canon_rules=as-is:realm=$ctx->{realm}
- name_canon_rules=as-is:realm=$ctx->{dnsname}
- name_canon_rules=as-is:realm=$ctx->{domain}
- name_canon_rules=as-is:realm=$lc_domain
 
  # We are running on the same machine, do not correct
  # system clock differences

@@ -2,12 +2,12 @@
 .\"     Title: pam_winbind
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/14/2020
+.\"      Date: 03/03/2020
 .\"    Manual: 8
-.\"    Source: Samba 4.11.5
+.\"    Source: Samba 4.12.0
 .\"  Language: English
 .\"
-.TH "PAM_WINBIND" "8" "01/14/2020" "Samba 4\&.11\&.5" "8"
+.TH "PAM_WINBIND" "8" "03/03/2020" "Samba 4\&.12\&.0" "8"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -114,15 +114,42 @@ Same as the use_authtok option (previous item), except that if the new password 
 krb5_auth
 .RS 4
 pam_winbind can authenticate using Kerberos when winbindd is talking to an Active Directory domain controller\&. Kerberos authentication must be enabled with this parameter\&. When Kerberos authentication can not succeed (e\&.g\&. due to clock skew), winbindd will fallback to samlogon authentication over MSRPC\&. When this parameter is used in conjunction with
-\fIwinbind refresh tickets\fR, winbind will keep your Ticket Granting Ticket (TGT) uptodate by refreshing it whenever necessary\&.
+\fIwinbind refresh tickets\fR, winbind will keep your Ticket Granting Ticket (TGT) up\-to\-date by refreshing it whenever necessary\&.
 .RE
 .PP
 krb5_ccache_type=[type]
 .RS 4
 When pam_winbind is configured to try kerberos authentication by enabling the
 \fIkrb5_auth\fR
-option, it can store the retrieved Ticket Granting Ticket (TGT) in a credential cache\&. The type of credential cache can be set with this option\&. Currently the only supported value is:
-\fIFILE\fR\&. In that case a credential cache in the form of /tmp/krb5cc_UID will be created, where UID is replaced with the numeric user id\&. Leave empty to just do kerberos authentication without having a ticket cache after the logon has succeeded\&.
+option, it can store the retrieved Ticket Granting Ticket (TGT) in a credential cache\&. The type of credential cache can be controlled with this option\&. The supported values are:
+\fIKCM\fR
+or
+\fIKEYRING\fR
+(when supported by the system\*(Aqs Kerberos library and operating system),
+\fIFILE\fR
+and
+\fIDIR\fR
+(when the DIR type is supported by the system\*(Aqs Kerberos library)\&. In case of FILE a credential cache in the form of /tmp/krb5cc_UID will be created \- in case of DIR you NEED to specify a directory\&. UID is replaced with the numeric user id\&. The UID directory is being created\&. The path up to the directory should already exist\&. Check the details of the Kerberos implmentation\&.
+.sp
+When using the KEYRING type, the supported mechanism is
+\(lqKEYRING:persistent:UID\(rq, which uses the Linux kernel keyring to store credentials on a per\-UID basis\&. The KEYRING has its limitations\&. As it is secure kernel memory, for example bulk sorage of credentils is for not possible\&.
+.sp
+When using th KCM type, the supported mechanism is
+\(lqKCM:UID\(rq, which uses a Kerberos credential manaager to store credentials on a per\-UID basis similar to KEYRING\&. This is the recommended choice on latest Linux distributions, offering a Kerberos Credential Manager\&. If not we suggest to use KEYRING as those are the most secure and predictable method\&.
+.sp
+It is also possible to define custom filepaths and use the "%u" pattern in order to substitute the numeric user id\&. Examples:
+.PP
+krb5_ccache_type = DIR:/run/user/%u/krb5cc
+.RS 4
+This will create a credential cache file in the specified directory\&.
+.RE
+.PP
+krb5_ccache_type = FILE:/tmp/krb5cc_%u
+.RS 4
+This will create a credential cache file\&.
+.RE
+.sp
+Leave empty to just do kerberos authentication without having a ticket cache after the logon has succeeded\&. This setting is empty by default\&.
 .RE
 .PP
 cached_login
@@ -177,7 +204,7 @@ This is the profile path set in the profile tab in the user settings\&. Normally
 \fBsmb.conf\fR(5)
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.11\&.5 of Samba\&.
+This man page is part of version 4\&.12\&.0 of Samba\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

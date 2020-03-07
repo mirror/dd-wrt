@@ -18,6 +18,9 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef _SOURCE3_SMBD_GLOBALS_H_
+#define _SOURCE3_SMBD_GLOBALS_H_
+
 #include "system/select.h"
 #include "librpc/gen_ndr/smbXsrv.h"
 #include "smbprofile.h"
@@ -26,9 +29,6 @@
 struct smbd_dmapi_context;
 extern struct smbd_dmapi_context *dmapi_ctx;
 #endif
-
-/* how many write cache buffers have been allocated */
-extern unsigned int allocated_write_caches;
 
 /* A singleton cache to speed up searching by dev/inode. */
 struct fsp_singleton_cache {
@@ -89,8 +89,6 @@ extern uint16_t fnf_handle;
 struct conn_ctx {
 	connection_struct *conn;
 	uint64_t vuid;
-	bool need_chdir;
-	bool done_chdir;
 	userdom_struct user_info;
 };
 /* A stack of current_user connection contexts. */
@@ -575,6 +573,9 @@ NTSTATUS smb1srv_session_table_init(struct smbXsrv_connection *conn);
 NTSTATUS smb1srv_session_lookup(struct smbXsrv_connection *conn,
 				uint16_t vuid, NTTIME now,
 				struct smbXsrv_session **session);
+NTSTATUS smbXsrv_session_info_lookup(struct smbXsrv_client *client,
+				     uint64_t session_wire_id,
+				     struct auth_session_info **si);
 NTSTATUS smb2srv_session_table_init(struct smbXsrv_connection *conn);
 NTSTATUS smb2srv_session_lookup_conn(struct smbXsrv_connection *conn,
 				     uint64_t session_id, NTTIME now,
@@ -582,6 +583,14 @@ NTSTATUS smb2srv_session_lookup_conn(struct smbXsrv_connection *conn,
 NTSTATUS smb2srv_session_lookup_client(struct smbXsrv_client *client,
 				       uint64_t session_id, NTTIME now,
 				       struct smbXsrv_session **session);
+NTSTATUS get_valid_smbXsrv_session(struct smbXsrv_client *client,
+				   uint64_t session_wire_id,
+				   struct smbXsrv_session **session);
+NTSTATUS smbXsrv_session_local_traverse(
+	struct smbXsrv_client *client,
+	int (*caller_cb)(struct smbXsrv_session *session,
+			      void *caller_data),
+	void *caller_data);
 struct smbXsrv_session_global0;
 NTSTATUS smbXsrv_session_global_traverse(
 			int (*fn)(struct smbXsrv_session_global0 *, void *),
@@ -623,7 +632,6 @@ NTSTATUS smbXsrv_open_create(struct smbXsrv_connection *conn,
 			     struct auth_session_info *session_info,
 			     NTTIME now,
 			     struct smbXsrv_open **_open);
-uint32_t smbXsrv_open_hash(struct smbXsrv_open *_open);
 NTSTATUS smbXsrv_open_update(struct smbXsrv_open *_open);
 NTSTATUS smbXsrv_open_close(struct smbXsrv_open *op, NTTIME now);
 NTSTATUS smb1srv_open_table_init(struct smbXsrv_connection *conn);
@@ -832,23 +840,9 @@ struct smbd_smb2_request {
 };
 
 struct smbd_server_connection;
-struct user_struct;
 
 struct pending_message_list;
 struct pending_auth_data;
-
-struct user_struct {
-	struct user_struct *next, *prev;
-	uint64_t vuid; /* Tag for this entry. */
-
-	char *session_keystr; /* used by utmp and pam session code.
-				 TDB key string */
-	int homes_snum;
-
-	struct auth_session_info *session_info;
-
-	struct smbXsrv_session *session;
-};
 
 struct pthreadpool_tevent;
 
@@ -863,7 +857,6 @@ struct smbd_server_connection {
 	int trans_num;
 
 	size_t num_users;
-	struct user_struct *users;
 
 	size_t num_connections;
 	struct connection_struct *connections;
@@ -881,7 +874,6 @@ struct smbd_server_connection {
 	struct {
 		struct bitmap *dptr_bmap;
 		struct dptr_struct *dirptrs;
-		int dirhandles_open;
 	} searches;
 
 	uint64_t num_requests;
@@ -905,3 +897,5 @@ struct smbd_server_connection {
 extern struct smbXsrv_client *global_smbXsrv_client;
 
 void smbd_init_globals(void);
+
+#endif /* _SOURCE3_SMBD_GLOBALS_H_ */

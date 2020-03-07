@@ -31,7 +31,6 @@
 #include "libcli/security/security.h"
 #include "libcli/security/session.h"
 #include "rpc_server/drsuapi/dcesrv_drsuapi.h"
-#include "rpc_server/dcerpc_server_proto.h"
 #include "rpc_server/common/sid_helper.h"
 #include "../libcli/drsuapi/drsuapi.h"
 #include "lib/util/binsearch.h"
@@ -179,7 +178,7 @@ static int uint32_t_cmp(uint32_t a1, uint32_t a2)
 	return a1 > a2 ? 1 : -1;
 }
 
-static int uint32_t_ptr_cmp(uint32_t *a1, uint32_t *a2, void *unused)
+static int uint32_t_ptr_cmp(uint32_t *a1, uint32_t *a2)
 {
 	if (*a1 == *a2) return 0;
 	return *a1 > *a2 ? 1 : -1;
@@ -992,8 +991,7 @@ static WERROR get_nc_changes_udv(struct ldb_context *sam_ctx,
 /* comparison function for linked attributes - see CompareLinks() in
  * MS-DRSR section 4.1.10.5.17 */
 static int linked_attribute_compare(const struct la_for_sorting *la1,
-				    const struct la_for_sorting *la2,
-				    void *opaque)
+				    const struct la_for_sorting *la2)
 {
 	int c;
 	c = memcmp(la1->source_guid,
@@ -2086,7 +2084,7 @@ static WERROR getncchanges_get_sorted_array(const struct drsuapi_DsReplicaLinked
 		TALLOC_FREE(frame);
 	}
 
-	LDB_TYPESAFE_QSORT(guid_array, link_count, NULL, linked_attribute_compare);
+	TYPESAFE_QSORT(guid_array, link_count, linked_attribute_compare);
 
 	*ret_array = guid_array;
 
@@ -2677,6 +2675,8 @@ WERROR dcesrv_drsuapi_DsGetNCChanges(struct dcesrv_call_state *dce_call, TALLOC_
 {
 	struct auth_session_info *session_info =
 		dcesrv_call_session_info(dce_call);
+	struct imessaging_context *imsg_ctx =
+		dcesrv_imessaging_context(dce_call->conn);
 	struct drsuapi_DsReplicaObjectIdentifier *ncRoot;
 	int ret;
 	uint32_t i, k;
@@ -3244,10 +3244,9 @@ allowed:
 							   NULL);
 		}
 
-		LDB_TYPESAFE_QSORT(local_pas,
-				   req10->partial_attribute_set->num_attids,
-				   NULL,
-				   uint32_t_ptr_cmp);
+		TYPESAFE_QSORT(local_pas,
+			       req10->partial_attribute_set->num_attids,
+			       uint32_t_ptr_cmp);
 	}
 
 	/*
@@ -3453,9 +3452,11 @@ allowed:
 		   to send notifies using the GC SPN */
 		ureq.options |= (req10->replica_flags & DRSUAPI_DRS_REF_GCSPN);
 
-		werr = drsuapi_UpdateRefs(dce_call->msg_ctx,
-					  dce_call->event_ctx, b_state,
-					  mem_ctx, &ureq);
+		werr = drsuapi_UpdateRefs(imsg_ctx,
+					  dce_call->event_ctx,
+					  b_state,
+					  mem_ctx,
+					  &ureq);
 		if (!W_ERROR_IS_OK(werr)) {
 			DEBUG(0,(__location__ ": Failed UpdateRefs on %s for %s in DsGetNCChanges - %s\n",
 				 drs_ObjectIdentifier_to_string(mem_ctx, ncRoot), ureq.dest_dsa_dns_name,

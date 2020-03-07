@@ -1711,6 +1711,8 @@ static void print_queue_update(struct messaging_context *msg_ctx,
 	int type;
 	struct printif *current_printif;
 	TALLOC_CTX *ctx = talloc_tos();
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 
 	fstrcpy( sharename, lp_const_servicename(snum));
 
@@ -1719,13 +1721,13 @@ static void print_queue_update(struct messaging_context *msg_ctx,
 	lpqcommand = talloc_string_sub2(ctx,
 			lp_lpq_command(snum),
 			"%p",
-			lp_printername(talloc_tos(), snum),
+			lp_printername(talloc_tos(), lp_sub, snum),
 			false, false, false);
 	if (!lpqcommand) {
 		return;
 	}
 	lpqcommand = talloc_sub_full(ctx,
-			lp_servicename(talloc_tos(), snum),
+			lp_servicename(talloc_tos(), lp_sub, snum),
 			current_user_info.unix_name,
 			"",
 			get_current_gid(NULL),
@@ -1739,13 +1741,13 @@ static void print_queue_update(struct messaging_context *msg_ctx,
 	lprmcommand = talloc_string_sub2(ctx,
 			lp_lprm_command(snum),
 			"%p",
-			lp_printername(talloc_tos(), snum),
+			lp_printername(talloc_tos(), lp_sub, snum),
 			false, false, false);
 	if (!lprmcommand) {
 		return;
 	}
 	lprmcommand = talloc_sub_full(ctx,
-			lp_servicename(talloc_tos(), snum),
+			lp_servicename(talloc_tos(), lp_sub, snum),
 			current_user_info.unix_name,
 			"",
 			get_current_gid(NULL),
@@ -2157,6 +2159,8 @@ static bool print_job_delete1(struct tevent_context *ev,
 			      int snum, uint32_t jobid)
 {
 	const char* sharename = lp_const_servicename(snum);
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	struct printjob *pjob;
 	int result = 0;
 	struct printif *current_printif = get_printer_fns( snum );
@@ -2198,7 +2202,7 @@ static bool print_job_delete1(struct tevent_context *ev,
 	if (pjob->spooled && pjob->sysjob != -1)
 	{
 		result = (*(current_printif->job_delete))(
-			lp_printername(talloc_tos(), snum),
+			lp_printername(talloc_tos(), lp_sub, snum),
 			lp_lprm_command(snum),
 			pjob);
 
@@ -2264,6 +2268,8 @@ WERROR print_job_delete(const struct auth_session_info *server_info,
 			int snum, uint32_t jobid)
 {
 	const char* sharename = lp_const_servicename(snum);
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	struct printjob *pjob;
 	bool 	owner;
 	WERROR werr;
@@ -2283,7 +2289,7 @@ WERROR print_job_delete(const struct auth_session_info *server_info,
 		DEBUG(0, ("print job delete denied."
 			  "User name: %s, Printer name: %s.",
 			  uidtoname(server_info->unix_token->uid),
-			  lp_printername(tmp_ctx, snum)));
+			  lp_printername(tmp_ctx, lp_sub, snum)));
 
 		werr = WERR_ACCESS_DENIED;
 		goto err_out;
@@ -2338,6 +2344,8 @@ WERROR print_job_pause(const struct auth_session_info *server_info,
 		     int snum, uint32_t jobid)
 {
 	const char* sharename = lp_const_servicename(snum);
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	struct printjob *pjob;
 	int ret = -1;
 	struct printif *current_printif = get_printer_fns( snum );
@@ -2368,7 +2376,7 @@ WERROR print_job_pause(const struct auth_session_info *server_info,
 		DEBUG(0, ("print job pause denied."
 			  "User name: %s, Printer name: %s.",
 			  uidtoname(server_info->unix_token->uid),
-			  lp_printername(tmp_ctx, snum)));
+			  lp_printername(tmp_ctx, lp_sub, snum)));
 
 		werr = WERR_ACCESS_DENIED;
 		goto err_out;
@@ -2406,6 +2414,8 @@ WERROR print_job_resume(const struct auth_session_info *server_info,
 		      int snum, uint32_t jobid)
 {
 	const char *sharename = lp_const_servicename(snum);
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	struct printjob *pjob;
 	int ret;
 	struct printif *current_printif = get_printer_fns( snum );
@@ -2435,7 +2445,7 @@ WERROR print_job_resume(const struct auth_session_info *server_info,
 		DEBUG(0, ("print job resume denied."
 			  "User name: %s, Printer name: %s.",
 			  uidtoname(server_info->unix_token->uid),
-			  lp_printername(tmp_ctx, snum)));
+			  lp_printername(tmp_ctx, lp_sub, snum)));
 
 		werr = WERR_ACCESS_DENIED;
 		goto err_out;
@@ -2688,6 +2698,8 @@ static WERROR print_job_checks(const struct auth_session_info *server_info,
 			       int snum, int *njobs)
 {
 	const char *sharename = lp_const_servicename(snum);
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	uint64_t dspace, dsize;
 	uint64_t minspace;
 	int ret;
@@ -2708,7 +2720,7 @@ static WERROR print_job_checks(const struct auth_session_info *server_info,
 	/* see if we have sufficient disk space */
 	if (lp_min_print_space(snum)) {
 		minspace = lp_min_print_space(snum);
-		ret = sys_fsusage(lp_path(talloc_tos(), snum), &dspace, &dsize);
+		ret = sys_fsusage(lp_path(talloc_tos(), lp_sub, snum), &dspace, &dsize);
 		if (ret == 0 && dspace < 2*minspace) {
 			DEBUG(3, ("print_job_checks: "
 				  "disk space check failed.\n"));
@@ -2743,6 +2755,8 @@ static WERROR print_job_spool_file(int snum, uint32_t jobid,
 				   const char *output_file,
 				   struct printjob *pjob)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	WERROR werr;
 	SMB_STRUCT_STAT st;
 	const char *path;
@@ -2754,7 +2768,7 @@ static WERROR print_job_spool_file(int snum, uint32_t jobid,
 	 * Verify that the file name is ok, within path, and it is
 	 * already already there */
 	if (output_file) {
-		path = lp_path(talloc_tos(), snum);
+		path = lp_path(talloc_tos(), lp_sub, snum);
 		len = strlen(path);
 		if (strncmp(output_file, path, len) == 0 &&
 		    (output_file[len - 1] == '/' || output_file[len] == '/')) {
@@ -2783,7 +2797,7 @@ static WERROR print_job_spool_file(int snum, uint32_t jobid,
 	}
 
 	slprintf(pjob->filename, sizeof(pjob->filename)-1,
-		 "%s/%sXXXXXX", lp_path(talloc_tos(), snum),
+		 "%s/%sXXXXXX", lp_path(talloc_tos(), lp_sub, snum),
 		 PRINT_SPOOL_PREFIX);
 	mask = umask(S_IRWXO | S_IRWXG);
 	pjob->fd = mkstemp(pjob->filename);
@@ -2823,6 +2837,8 @@ WERROR print_job_start(const struct auth_session_info *server_info,
 	struct printjob pjob;
 	const char *sharename = lp_const_servicename(snum);
 	struct tdb_print_db *pdb = get_print_db_byname(sharename);
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	int njobs;
 	WERROR werr;
 
@@ -2830,7 +2846,7 @@ WERROR print_job_start(const struct auth_session_info *server_info,
 		return WERR_INTERNAL_DB_CORRUPTION;
 	}
 
-	path = lp_path(talloc_tos(), snum);
+	path = lp_path(talloc_tos(), lp_sub, snum);
 
 	werr = print_job_checks(server_info, msg_ctx, snum, &njobs);
 	if (!W_ERROR_IS_OK(werr)) {
@@ -2952,6 +2968,8 @@ NTSTATUS print_job_end(struct messaging_context *msg_ctx, int snum,
 		       uint32_t jobid, enum file_close_type close_type)
 {
 	const char* sharename = lp_const_servicename(snum);
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	struct printjob *pjob;
 	int ret;
 	SMB_STRUCT_STAT sbuf;
@@ -3029,14 +3047,14 @@ NTSTATUS print_job_end(struct messaging_context *msg_ctx, int snum,
 	lpq_cmd = talloc_string_sub2(tmp_ctx,
 				     lp_lpq_command(snum),
 				     "%p",
-				     lp_printername(talloc_tos(), snum),
+				     lp_printername(talloc_tos(), lp_sub, snum),
 				     false, false, false);
 	if (lpq_cmd == NULL) {
 		status = NT_STATUS_PRINT_CANCELLED;
 		goto fail;
 	}
 	lpq_cmd = talloc_sub_full(tmp_ctx,
-				      lp_servicename(talloc_tos(), snum),
+				      lp_servicename(talloc_tos(), lp_sub, snum),
 				      current_user_info.unix_name,
 				      "",
 				      get_current_gid(NULL),
@@ -3087,6 +3105,8 @@ static bool get_stored_queue_info(struct messaging_context *msg_ctx,
 				  struct tdb_print_db *pdb, int snum,
 				  int *pcount, print_queue_struct **ppqueue)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
 	TDB_DATA data, cgdata, jcdata;
 	print_queue_struct *queue = NULL;
 	uint32_t qcount = 0;
@@ -3097,7 +3117,7 @@ static bool get_stored_queue_info(struct messaging_context *msg_ctx,
 	uint32_t i;
 	int max_reported_jobs = lp_max_reported_print_jobs(snum);
 	bool ret = false;
-	const char* sharename = lp_servicename(talloc_tos(), snum);
+	const char* sharename = lp_servicename(talloc_tos(), lp_sub, snum);
 	TALLOC_CTX *tmp_ctx = talloc_new(msg_ctx);
 	if (tmp_ctx == NULL) {
 		return false;

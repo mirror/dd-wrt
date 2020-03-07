@@ -31,11 +31,16 @@
 #include "rpc_server/epmapper/srv_epmapper.h"
 #include "rpc_server/epmd.h"
 
+#undef DBGC_CLASS
+#define DBGC_CLASS DBGC_RPC_SRV
+
 #define DAEMON_NAME "epmd"
 
 static void epmd_reopen_logs(void)
 {
-	char *lfile = lp_logfile(talloc_tos());
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
+	char *lfile = lp_logfile(talloc_tos(), lp_sub);
 	int rc;
 
 	if (lfile == NULL || lfile[0] == '\0') {
@@ -47,7 +52,7 @@ static void epmd_reopen_logs(void)
 	} else {
 		if (strstr(lfile, DAEMON_NAME) == NULL) {
 			rc = asprintf(&lfile, "%s.%s",
-				      lp_logfile(talloc_tos()), DAEMON_NAME);
+				      lp_logfile(talloc_tos(), lp_sub), DAEMON_NAME);
 			if (rc > 0) {
 				lp_set_logfile(lfile);
 				SAFE_FREE(lfile);
@@ -76,8 +81,6 @@ static void epmd_sig_term_handler(struct tevent_context *ev,
 				  void *siginfo,
 				  void *private_data)
 {
-	rpc_epmapper_shutdown();
-
 	exit_server_cleanly("termination signal");
 }
 
@@ -135,7 +138,6 @@ void start_epmd(struct tevent_context *ev_ctx,
 	struct rpc_srv_callbacks epmapper_cb;
 	NTSTATUS status;
 	pid_t pid;
-	bool ok;
 	int rc;
 
 	epmapper_cb.init = NULL;
@@ -180,27 +182,28 @@ void start_epmd(struct tevent_context *ev_ctx,
 		exit(1);
 	}
 
-	status = rpc_setup_tcpip_sockets(ev_ctx,
-					 msg_ctx,
-					 &ndr_table_epmapper,
-					 NULL,
-					 135);
+	status = dcesrv_setup_ncacn_ip_tcp_sockets(ev_ctx,
+						   msg_ctx,
+						   &ndr_table_epmapper,
+						   NULL,
+						   135);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(0, ("Failed to open epmd tcpip sockets!\n"));
 		exit(1);
 	}
 
-	ok = setup_dcerpc_ncalrpc_socket(ev_ctx,
-					 msg_ctx,
-					 "EPMAPPER",
-					 srv_epmapper_delete_endpoints);
-	if (!ok) {
+	status = dcesrv_setup_ncalrpc_socket(ev_ctx,
+					     msg_ctx,
+					     "EPMAPPER",
+					     srv_epmapper_delete_endpoints,
+					     NULL);
+	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(0, ("Failed to open epmd ncalrpc pipe!\n"));
 		exit(1);
 	}
 
-	ok = setup_named_pipe_socket("epmapper", ev_ctx, msg_ctx);
-	if (!ok) {
+	status = dcesrv_setup_ncacn_np_socket("epmapper", ev_ctx, msg_ctx);
+	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(0, ("Failed to open epmd named pipe!\n"));
 		exit(1);
 	}

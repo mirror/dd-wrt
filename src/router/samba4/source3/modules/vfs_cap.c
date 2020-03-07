@@ -139,7 +139,8 @@ static struct dirent *cap_readdir(vfs_handle_struct *handle,
 	return newdirent;
 }
 
-static int cap_mkdir(vfs_handle_struct *handle,
+static int cap_mkdirat(vfs_handle_struct *handle,
+		struct files_struct *dirfsp,
 		const struct smb_filename *smb_fname,
 		mode_t mode)
 {
@@ -162,32 +163,10 @@ static int cap_mkdir(vfs_handle_struct *handle,
 		return -1;
 	}
 
-	return SMB_VFS_NEXT_MKDIR(handle, cap_smb_fname, mode);
-}
-
-static int cap_rmdir(vfs_handle_struct *handle,
-		const struct smb_filename *smb_fname)
-{
-	char *cappath = capencode(talloc_tos(), smb_fname->base_name);
-	struct smb_filename *cap_smb_fname = NULL;
-
-	if (!cappath) {
-		errno = ENOMEM;
-		return -1;
-	}
-
-	cap_smb_fname = synthetic_smb_fname(talloc_tos(),
-					cappath,
-					NULL,
-					NULL,
-					smb_fname->flags);
-	if (cap_smb_fname == NULL) {
-		TALLOC_FREE(cappath);
-		errno = ENOMEM;
-		return -1;
-	}
-
-	return SMB_VFS_NEXT_RMDIR(handle, cap_smb_fname);
+	return SMB_VFS_NEXT_MKDIRAT(handle,
+			dirfsp,
+			cap_smb_fname,
+			mode);
 }
 
 static int cap_open(vfs_handle_struct *handle, struct smb_filename *smb_fname,
@@ -216,9 +195,11 @@ static int cap_open(vfs_handle_struct *handle, struct smb_filename *smb_fname,
 	return ret;
 }
 
-static int cap_rename(vfs_handle_struct *handle,
-		      const struct smb_filename *smb_fname_src,
-		      const struct smb_filename *smb_fname_dst)
+static int cap_renameat(vfs_handle_struct *handle,
+			files_struct *srcfsp,
+			const struct smb_filename *smb_fname_src,
+			files_struct *dstfsp,
+			const struct smb_filename *smb_fname_dst)
 {
 	char *capold = NULL;
 	char *capnew = NULL;
@@ -248,8 +229,12 @@ static int cap_rename(vfs_handle_struct *handle,
 	smb_fname_src_tmp->base_name = capold;
 	smb_fname_dst_tmp->base_name = capnew;
 
-	ret = SMB_VFS_NEXT_RENAME(handle, smb_fname_src_tmp,
-				  smb_fname_dst_tmp);
+	ret = SMB_VFS_NEXT_RENAMEAT(handle,
+				srcfsp,
+				smb_fname_src_tmp,
+				dstfsp,
+				smb_fname_dst_tmp);
+
  out:
 	TALLOC_FREE(capold);
 	TALLOC_FREE(capnew);
@@ -307,8 +292,10 @@ static int cap_lstat(vfs_handle_struct *handle, struct smb_filename *smb_fname)
 	return ret;
 }
 
-static int cap_unlink(vfs_handle_struct *handle,
-		      const struct smb_filename *smb_fname)
+static int cap_unlinkat(vfs_handle_struct *handle,
+			struct files_struct *dirfsp,
+			const struct smb_filename *smb_fname,
+			int flags)
 {
 	struct smb_filename *smb_fname_tmp = NULL;
 	char *cappath = NULL;
@@ -329,7 +316,10 @@ static int cap_unlink(vfs_handle_struct *handle,
 
 	smb_fname_tmp->base_name = cappath;
 
-	ret = SMB_VFS_NEXT_UNLINK(handle, smb_fname_tmp);
+	ret = SMB_VFS_NEXT_UNLINKAT(handle,
+			dirfsp,
+			smb_fname_tmp,
+			flags);
 
 	TALLOC_FREE(smb_fname_tmp);
 	return ret;
@@ -361,40 +351,6 @@ static int cap_chmod(vfs_handle_struct *handle,
 	}
 
 	ret = SMB_VFS_NEXT_CHMOD(handle, cap_smb_fname, mode);
-	saved_errno = errno;
-	TALLOC_FREE(cappath);
-	TALLOC_FREE(cap_smb_fname);
-	errno = saved_errno;
-	return ret;
-}
-
-static int cap_chown(vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
-			uid_t uid,
-			gid_t gid)
-{
-	struct smb_filename *cap_smb_fname = NULL;
-	char *cappath = capencode(talloc_tos(), smb_fname->base_name);
-	int ret;
-	int saved_errno;
-
-	if (!cappath) {
-		errno = ENOMEM;
-		return -1;
-	}
-
-	cap_smb_fname = synthetic_smb_fname(talloc_tos(),
-					cappath,
-					NULL,
-					NULL,
-					smb_fname->flags);
-	if (cap_smb_fname == NULL) {
-		TALLOC_FREE(cappath);
-		errno = ENOMEM;
-		return -1;
-	}
-
-	ret = SMB_VFS_NEXT_CHOWN(handle, cap_smb_fname, uid, gid);
 	saved_errno = errno;
 	TALLOC_FREE(cappath);
 	TALLOC_FREE(cap_smb_fname);
@@ -502,9 +458,9 @@ static int cap_ntimes(vfs_handle_struct *handle,
 	return ret;
 }
 
-
-static int cap_symlink(vfs_handle_struct *handle,
+static int cap_symlinkat(vfs_handle_struct *handle,
 			const char *link_contents,
+			struct files_struct *dirfsp,
 			const struct smb_filename *new_smb_fname)
 {
 	char *capold = capencode(talloc_tos(), link_contents);
@@ -528,8 +484,9 @@ static int cap_symlink(vfs_handle_struct *handle,
 		errno = ENOMEM;
 		return -1;
 	}
-	ret = SMB_VFS_NEXT_SYMLINK(handle,
+	ret = SMB_VFS_NEXT_SYMLINKAT(handle,
 			capold,
+			dirfsp,
 			new_cap_smb_fname);
 	if (ret == -1) {
 		saved_errno = errno;
@@ -543,7 +500,8 @@ static int cap_symlink(vfs_handle_struct *handle,
 	return ret;
 }
 
-static int cap_readlink(vfs_handle_struct *handle,
+static int cap_readlinkat(vfs_handle_struct *handle,
+			files_struct *dirfsp,
 			const struct smb_filename *smb_fname,
 			char *buf,
 			size_t bufsiz)
@@ -567,7 +525,11 @@ static int cap_readlink(vfs_handle_struct *handle,
 		errno = ENOMEM;
 		return -1;
 	}
-	ret = SMB_VFS_NEXT_READLINK(handle, cap_smb_fname, buf, bufsiz);
+	ret = SMB_VFS_NEXT_READLINKAT(handle,
+			dirfsp,
+			cap_smb_fname,
+			buf,
+			bufsiz);
 	if (ret == -1) {
 		saved_errno = errno;
 	}
@@ -579,9 +541,12 @@ static int cap_readlink(vfs_handle_struct *handle,
 	return ret;
 }
 
-static int cap_link(vfs_handle_struct *handle,
-			const struct smb_filename *old_smb_fname,
-			const struct smb_filename *new_smb_fname)
+static int cap_linkat(vfs_handle_struct *handle,
+		files_struct *srcfsp,
+		const struct smb_filename *old_smb_fname,
+		files_struct *dstfsp,
+		const struct smb_filename *new_smb_fname,
+		int flags)
 {
 	char *capold = capencode(talloc_tos(), old_smb_fname->base_name);
 	char *capnew = capencode(talloc_tos(), new_smb_fname->base_name);
@@ -617,7 +582,12 @@ static int cap_link(vfs_handle_struct *handle,
 		errno = ENOMEM;
 		return -1;
 	}
-	ret = SMB_VFS_NEXT_LINK(handle, old_cap_smb_fname, new_cap_smb_fname);
+	ret = SMB_VFS_NEXT_LINKAT(handle,
+			srcfsp,
+			old_cap_smb_fname,
+			dstfsp,
+			new_cap_smb_fname,
+			flags);
 	if (ret == -1) {
 		saved_errno = errno;
 	}
@@ -631,7 +601,8 @@ static int cap_link(vfs_handle_struct *handle,
 	return ret;
 }
 
-static int cap_mknod(vfs_handle_struct *handle,
+static int cap_mknodat(vfs_handle_struct *handle,
+		files_struct *dirfsp,
 		const struct smb_filename *smb_fname,
 		mode_t mode,
 		SMB_DEV_T dev)
@@ -655,7 +626,11 @@ static int cap_mknod(vfs_handle_struct *handle,
 		errno = ENOMEM;
 		return -1;
 	}
-	ret = SMB_VFS_NEXT_MKNOD(handle, cap_smb_fname, mode, dev);
+	ret = SMB_VFS_NEXT_MKNODAT(handle,
+			dirfsp,
+			cap_smb_fname,
+			mode,
+			dev);
 	if (ret == -1) {
 		saved_errno = errno;
 	}
@@ -1001,27 +976,92 @@ static int cap_fsetxattr(vfs_handle_struct *handle, struct files_struct *fsp, co
         return SMB_VFS_NEXT_FSETXATTR(handle, fsp, cappath, value, size, flags);
 }
 
+static NTSTATUS cap_create_dfs_pathat(vfs_handle_struct *handle,
+			files_struct *dirfsp,
+			const struct smb_filename *smb_fname,
+			const struct referral *reflist,
+			size_t referral_count)
+{
+	char *cappath = capencode(talloc_tos(), smb_fname->base_name);
+	struct smb_filename *cap_smb_fname = NULL;
+	NTSTATUS status;
+
+	if (cappath == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+	cap_smb_fname = synthetic_smb_fname(talloc_tos(),
+					cappath,
+					NULL,
+					NULL,
+					smb_fname->flags);
+	if (cap_smb_fname == NULL) {
+		TALLOC_FREE(cappath);
+		return NT_STATUS_NO_MEMORY;
+	}
+	status = SMB_VFS_NEXT_CREATE_DFS_PATHAT(handle,
+			dirfsp,
+			cap_smb_fname,
+			reflist,
+			referral_count);
+	TALLOC_FREE(cappath);
+	TALLOC_FREE(cap_smb_fname);
+	return status;
+}
+
+static NTSTATUS cap_read_dfs_pathat(struct vfs_handle_struct *handle,
+			TALLOC_CTX *mem_ctx,
+			struct files_struct *dirfsp,
+			const struct smb_filename *smb_fname,
+			struct referral **ppreflist,
+			size_t *preferral_count)
+{
+	char *cappath = capencode(talloc_tos(), smb_fname->base_name);
+	struct smb_filename *cap_smb_fname = NULL;
+	NTSTATUS status;
+
+	if (cappath == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+	cap_smb_fname = synthetic_smb_fname(talloc_tos(),
+				cappath,
+				NULL,
+				NULL,
+				smb_fname->flags);
+	if (cap_smb_fname == NULL) {
+		TALLOC_FREE(cappath);
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	status = SMB_VFS_NEXT_READ_DFS_PATHAT(handle,
+			mem_ctx,
+			dirfsp,
+			cap_smb_fname,
+			ppreflist,
+			preferral_count);
+	TALLOC_FREE(cappath);
+	TALLOC_FREE(cap_smb_fname);
+	return status;
+}
+
 static struct vfs_fn_pointers vfs_cap_fns = {
 	.disk_free_fn = cap_disk_free,
 	.get_quota_fn = cap_get_quota,
 	.opendir_fn = cap_opendir,
 	.readdir_fn = cap_readdir,
-	.mkdir_fn = cap_mkdir,
-	.rmdir_fn = cap_rmdir,
+	.mkdirat_fn = cap_mkdirat,
 	.open_fn = cap_open,
-	.rename_fn = cap_rename,
+	.renameat_fn = cap_renameat,
 	.stat_fn = cap_stat,
 	.lstat_fn = cap_lstat,
-	.unlink_fn = cap_unlink,
+	.unlinkat_fn = cap_unlinkat,
 	.chmod_fn = cap_chmod,
-	.chown_fn = cap_chown,
 	.lchown_fn = cap_lchown,
 	.chdir_fn = cap_chdir,
 	.ntimes_fn = cap_ntimes,
-	.symlink_fn = cap_symlink,
-	.readlink_fn = cap_readlink,
-	.link_fn = cap_link,
-	.mknod_fn = cap_mknod,
+	.symlinkat_fn = cap_symlinkat,
+	.readlinkat_fn = cap_readlinkat,
+	.linkat_fn = cap_linkat,
+	.mknodat_fn = cap_mknodat,
 	.realpath_fn = cap_realpath,
 	.sys_acl_get_file_fn = cap_sys_acl_get_file,
 	.sys_acl_set_file_fn = cap_sys_acl_set_file,
@@ -1034,7 +1074,9 @@ static struct vfs_fn_pointers vfs_cap_fns = {
 	.removexattr_fn = cap_removexattr,
 	.fremovexattr_fn = cap_fremovexattr,
 	.setxattr_fn = cap_setxattr,
-	.fsetxattr_fn = cap_fsetxattr
+	.fsetxattr_fn = cap_fsetxattr,
+	.create_dfs_pathat_fn = cap_create_dfs_pathat,
+	.read_dfs_pathat_fn = cap_read_dfs_pathat
 };
 
 static_decl_vfs;
