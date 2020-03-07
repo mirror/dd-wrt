@@ -34,7 +34,7 @@
 #include "chilli.h"
 #include "rtmon.h"
 
-extern struct options_t _options;
+struct options_t _options;
 
 static int debug = 1;
 static int chilli_pid = 0;

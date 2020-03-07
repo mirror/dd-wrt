@@ -22,7 +22,7 @@
 
 #include "chilli.h"
 
-extern struct options_t _options;
+struct options_t _options;
 
 static struct {
 
