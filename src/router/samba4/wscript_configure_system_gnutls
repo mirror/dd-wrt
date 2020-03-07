@@ -12,7 +12,8 @@ conf.CHECK_CFG(package='gnutls',
                      msg='Checking for GnuTLS >= %s' % gnutls_required_version,
                      mandatory=False)
 
-gnutls_version = conf.cmd_and_log(conf.env.PKGCONFIG + ['--modversion', 'gnutls']).strip()
+gnutls_version = "3.6.10" 
+#conf.cmd_and_log(conf.env.PKGCONFIG + ['--modversion', 'gnutls']).strip()
 
 # Define gnutls as a system library
 conf.SET_TARGET_TYPE('gnutls', 'SYSLIB')
