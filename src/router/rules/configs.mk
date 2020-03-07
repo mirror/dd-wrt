@@ -126,7 +126,7 @@ endif
 endif
 obj-$(CONFIG_SMBD) += libnl smbd jansson wsdd2
 ifneq ($(CONFIG_SMBD),y)
-obj-$(CONFIG_SAMBA4) += gmp nettle gnutls samba4
+obj-$(CONFIG_SAMBA4) += icu zlib gmp nettle gnutls samba4
 obj-$(CONFIG_SAMBA3) += jansson
 obj-$(CONFIG_SAMBA4) += jansson
 endif
