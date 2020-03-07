@@ -27,7 +27,7 @@
 
 #define QUERY_TIMEOUT 10
 
-extern struct options_t _options;
+struct options_t _options;
 
 typedef struct _cmd_info {
   int type;
