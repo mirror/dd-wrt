@@ -37,6 +37,7 @@
  * Copyright 2017 RackTop Systems.
  * Copyright (c) 2017 Open-E, Inc. All Rights Reserved.
  * Copyright (c) 2019 Datto Inc.
+ * Copyright (c) 2019, 2020 by Christian Schwarz. All rights reserved.
  */
 
 /*
@@ -2341,7 +2342,7 @@ zfs_ioc_snapshot_list_next(zfs_cmd_t *zc)
 
 	error = dmu_objset_hold(zc->zc_name, FTAG, &os);
 	if (error != 0) {
-		return (error == ENOENT ? ESRCH : error);
+		return (error == ENOENT ? SET_ERROR(ESRCH) : error);
 	}
 
 	/*
@@ -3690,11 +3691,13 @@ zfs_ioc_destroy_snaps(const char *poolname, nvlist_t *innvl, nvlist_t *outnvl)
 }
 
 /*
- * Create bookmarks.  Bookmark names are of the form <fs>#<bmark>.
- * All bookmarks must be in the same pool.
+ * Create bookmarks. The bookmark names are of the form <fs>#<bmark>.
+ * All bookmarks and snapshots must be in the same pool.
+ * dsl_bookmark_create_nvl_validate describes the nvlist schema in more detail.
  *
  * innvl: {
- *     bookmark1 -> snapshot1, bookmark2 -> snapshot2
+ *     new_bookmark1 -> existing_snapshot,
+ *     new_bookmark2 -> existing_bookmark,
  * }
  *
  * outnvl: bookmark -> error code (int32)
@@ -3708,25 +3711,6 @@ static const zfs_ioc_key_t zfs_keys_bookmark[] = {
 static int
 zfs_ioc_bookmark(const char *poolname, nvlist_t *innvl, nvlist_t *outnvl)
 {
-	for (nvpair_t *pair = nvlist_next_nvpair(innvl, NULL);
-	    pair != NULL; pair = nvlist_next_nvpair(innvl, pair)) {
-		char *snap_name;
-
-		/*
-		 * Verify the snapshot argument.
-		 */
-		if (nvpair_value_string(pair, &snap_name) != 0)
-			return (SET_ERROR(EINVAL));
-
-
-		/* Verify that the keys (bookmarks) are unique */
-		for (nvpair_t *pair2 = nvlist_next_nvpair(innvl, pair);
-		    pair2 != NULL; pair2 = nvlist_next_nvpair(innvl, pair2)) {
-			if (strcmp(nvpair_name(pair), nvpair_name(pair2)) == 0)
-				return (SET_ERROR(EINVAL));
-		}
-	}
-
 	return (dsl_bookmark_create(innvl, outnvl));
 }
 
@@ -4240,7 +4224,7 @@ recursive_unmount(const char *fsname, void *arg)
  * snapname is the snapshot to redact.
  * innvl: {
  *     "bookname" -> (string)
- *         name of the redaction bookmark to generate
+ *         shortname of the redaction bookmark to generate
  *     "snapnv" -> (nvlist, values ignored)
  *         snapshots to redact snapname with respect to
  * }
@@ -5636,9 +5620,10 @@ zfs_ioc_clear(zfs_cmd_t *zc)
 	} else {
 		vd = spa_lookup_by_guid(spa, zc->zc_guid, B_TRUE);
 		if (vd == NULL) {
-			(void) spa_vdev_state_exit(spa, NULL, ENODEV);
+			error = SET_ERROR(ENODEV);
+			(void) spa_vdev_state_exit(spa, NULL, error);
 			spa_close(spa, FTAG);
-			return (SET_ERROR(ENODEV));
+			return (error);
 		}
 	}
 
@@ -7257,6 +7242,41 @@ pool_status_check(const char *name, zfs_ioc_namecheck_t type,
 		spa_close(spa, FTAG);
 	}
 	return (error);
+}
+
+int
+zfsdev_getminor(int fd, minor_t *minorp)
+{
+	zfsdev_state_t *zs, *fpd;
+	zfs_file_t *fp;
+	int rc;
+
+	ASSERT(!MUTEX_HELD(&zfsdev_state_lock));
+
+	if ((rc = zfs_file_get(fd, &fp)))
+		return (rc);
+
+	fpd = zfs_file_private(fp);
+	if (fpd == NULL)
+		return (SET_ERROR(EBADF));
+
+	mutex_enter(&zfsdev_state_lock);
+
+	for (zs = zfsdev_state_list; zs != NULL; zs = zs->zs_next) {
+
+		if (zs->zs_minor == -1)
+			continue;
+
+		if (fpd == zs) {
+			*minorp = fpd->zs_minor;
+			mutex_exit(&zfsdev_state_lock);
+			return (0);
+		}
+	}
+
+	mutex_exit(&zfsdev_state_lock);
+
+	return (SET_ERROR(EBADF));
 }
 
 static void *

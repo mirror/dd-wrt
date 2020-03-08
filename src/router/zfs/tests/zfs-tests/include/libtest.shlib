@@ -119,6 +119,21 @@ function is_freebsd
 	fi
 }
 
+# Determine if this is a DilOS test system
+#
+# Return 0 if platform DilOS, 1 if otherwise
+
+function is_dilos
+{
+	typeset ID=""
+	[[ -f /etc/os-release ]] && . /etc/os-release
+	if [[ $ID == "dilos" ]]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
 # Determine if this is a 32-bit system
 #
 # Return 0 if platform is 32-bit, 1 if otherwise
@@ -597,8 +612,8 @@ function default_cleanup_noexit
 				then
 					destroy_pool $pool
 				fi
-				ALL_POOLS=$(get_all_pools)
 			done
+			ALL_POOLS=$(get_all_pools)
 		done
 
 		zfs mount -a
@@ -1309,19 +1324,17 @@ function datasetnonexists
 	return 0
 }
 
-function is_shared_impl
+function is_shared_freebsd
+{
+	typeset fs=$1
+
+	pgrep -q mountd && showmount -E | grep -qx $fs
+}
+
+function is_shared_illumos
 {
 	typeset fs=$1
 	typeset mtpt
-
-	if is_linux; then
-		for mtpt in `share | awk '{print $1}'` ; do
-			if [[ $mtpt == $fs ]] ; then
-				return 0
-			fi
-		done
-		return 1
-	fi
 
 	for mtpt in `share | awk '{print $2}'` ; do
 		if [[ $mtpt == $fs ]] ; then
@@ -1334,6 +1347,19 @@ function is_shared_impl
 		log_note "Current nfs/server status: $stat"
 	fi
 
+	return 1
+}
+
+function is_shared_linux
+{
+	typeset fs=$1
+	typeset mtpt
+
+	for mtpt in `share | awk '{print $1}'` ; do
+		if [[ $mtpt == $fs ]] ; then
+			return 0
+		fi
+	done
 	return 1
 }
 
@@ -1361,7 +1387,11 @@ function is_shared
 		fi
 	fi
 
-	is_shared_impl "$fs"
+	case $(uname) in
+	FreeBSD)	is_shared_freebsd "$fs"	;;
+	Linux)		is_shared_linux "$fs"	;;
+	*)		is_shared_illumos "$fs"	;;
+	esac
 }
 
 #
@@ -3285,13 +3315,7 @@ function user_run
 	shift
 
 	log_note "user:$user $@"
-	if is_freebsd; then
-		eval "su \$user -c \"$@\"" > $TEST_BASE_DIR/out 2>$TEST_BASE_DIR/err
-		return $?
-	else
-		eval su - \$user -c \"$@\" > $TEST_BASE_DIR/out 2>$TEST_BASE_DIR/err
-		return $?
-	fi
+	eval su - \$user -c \"$@\" > $TEST_BASE_DIR/out 2>$TEST_BASE_DIR/err
 }
 
 #
@@ -3591,15 +3615,15 @@ function zed_start
 	# Verify the ZED is not already running.
 	pgrep -x zed > /dev/null
 	if (($? == 0)); then
-		log_fail "ZED already running"
+		log_note "ZED already running"
+	else
+		log_note "Starting ZED"
+		# run ZED in the background and redirect foreground logging
+		# output to $ZED_LOG.
+		log_must truncate -s 0 $ZED_DEBUG_LOG
+		log_must eval "zed -vF -d $ZEDLET_DIR -p $ZEDLET_DIR/zed.pid -P $PATH" \
+		    "-s $ZEDLET_DIR/state 2>$ZED_LOG &"
 	fi
-
-	log_note "Starting ZED"
-	# run ZED in the background and redirect foreground logging
-	# output to $ZED_LOG.
-	log_must truncate -s 0 $ZED_DEBUG_LOG
-	log_must eval "zed -vF -d $ZEDLET_DIR -p $ZEDLET_DIR/zed.pid -P $PATH" \
-	    "-s $ZEDLET_DIR/state 2>$ZED_LOG &"
 
 	return 0
 }
@@ -3955,7 +3979,7 @@ function stat_size #<path>
 function faketty
 {
     if is_freebsd; then
-        script -q /dev/null "$@"
+        script -q /dev/null env "$@"
     else
         script --return --quiet -c "$*" /dev/null
     fi
