@@ -592,8 +592,8 @@ typedef struct zpool_load_policy {
 
 /*
  * The following are configuration names used in the nvlist describing a pool's
- * configuration.  New on-disk names should be prefixed with "<reverse-DNS>:"
- * (e.g. "org.open-zfs:") to avoid conflicting names being developed
+ * configuration.  New on-disk names should be prefixed with "<reversed-DNS>:"
+ * (e.g. "org.openzfs:") to avoid conflicting names being developed
  * independently.
  */
 #define	ZPOOL_CONFIG_VERSION		"version"
@@ -1311,6 +1311,8 @@ typedef enum zfs_ioc {
  * not described precisely by generic errno codes.
  *
  * These numbers should not change over time. New entries should be appended.
+ *
+ * (Keep in sync with contrib/pyzfs/libzfs_core/_constants.py)
  */
 typedef enum {
 	ZFS_ERR_CHECKPOINT_EXISTS = 1024,
@@ -1328,6 +1330,7 @@ typedef enum {
 	ZFS_ERR_SPILL_BLOCK_FLAG_MISSING,
 	ZFS_ERR_UNKNOWN_SEND_STREAM_FEATURE,
 	ZFS_ERR_EXPORT_IN_PROGRESS,
+	ZFS_ERR_BOOKMARK_SOURCE_NOT_ANCESTOR,
 } zfs_errno_t;
 
 /*
@@ -1351,6 +1354,7 @@ typedef enum {
 	ZPOOL_WAIT_REMOVE,
 	ZPOOL_WAIT_RESILVER,
 	ZPOOL_WAIT_SCRUB,
+	ZPOOL_WAIT_TRIM,
 	ZPOOL_WAIT_NUM_ACTIVITIES
 } zpool_wait_activity_t;
 
