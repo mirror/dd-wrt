@@ -29,8 +29,7 @@ tests = ['alloc_class_001_pos', 'alloc_class_002_neg', 'alloc_class_003_pos',
 tags = ['functional', 'alloc_class']
 
 [tests/functional/atime]
-tests = ['atime_001_pos', 'atime_002_neg', 'atime_003_pos', 'root_atime_off',
-    'root_atime_on']
+tests = ['atime_001_pos', 'atime_002_neg', 'root_atime_off', 'root_atime_on']
 tags = ['functional', 'atime']
 
 [tests/functional/bootfs]
@@ -85,8 +84,11 @@ tests = ['tst.destroy_fs', 'tst.destroy_snap', 'tst.get_count_and_limit',
     'tst.list_snapshots', 'tst.list_system_props',
     'tst.list_user_props', 'tst.parse_args_neg','tst.promote_conflict',
     'tst.promote_multiple', 'tst.promote_simple', 'tst.rollback_mult',
-    'tst.rollback_one', 'tst.snapshot_destroy', 'tst.snapshot_neg',
-    'tst.snapshot_recursive', 'tst.snapshot_simple', 'tst.terminate_by_signal']
+    'tst.rollback_one', 'tst.set_props', 'tst.snapshot_destroy', 'tst.snapshot_neg',
+    'tst.snapshot_recursive', 'tst.snapshot_simple',
+    'tst.bookmark.create', 'tst.bookmark.copy',
+    'tst.terminate_by_signal'
+    ]
 tags = ['functional', 'channel_program', 'synctask_core']
 
 [tests/functional/checksum]
@@ -101,7 +103,8 @@ tags = ['functional', 'clean_mirror']
 [tests/functional/cli_root/zdb]
 tests = ['zdb_001_neg', 'zdb_002_pos', 'zdb_003_pos', 'zdb_004_pos',
     'zdb_005_pos', 'zdb_006_pos', 'zdb_checksum', 'zdb_decompress',
-    'zdb_object_range_neg', 'zdb_object_range_pos', 'zdb_objset_id']
+    'zdb_object_range_neg', 'zdb_object_range_pos', 'zdb_display_block',
+    'zdb_objset_id']
 pre =
 post =
 tags = ['functional', 'cli_root', 'zdb']
@@ -178,7 +181,7 @@ tags = ['functional', 'cli_root', 'zfs_load-key']
 tests = ['zfs_mount_001_pos', 'zfs_mount_002_pos', 'zfs_mount_003_pos',
     'zfs_mount_004_pos', 'zfs_mount_005_pos', 'zfs_mount_007_pos',
     'zfs_mount_009_neg', 'zfs_mount_010_neg', 'zfs_mount_011_neg',
-    'zfs_mount_012_neg', 'zfs_mount_all_001_pos', 'zfs_mount_encrypted',
+    'zfs_mount_012_pos', 'zfs_mount_all_001_pos', 'zfs_mount_encrypted',
     'zfs_mount_remount', 'zfs_mount_all_fail', 'zfs_mount_all_mountpoints',
     'zfs_mount_test_race']
 tags = ['functional', 'cli_root', 'zfs_mount']
@@ -329,6 +332,11 @@ tags = ['functional', 'cli_root', 'zpool_destroy']
 tests = ['zpool_detach_001_neg']
 tags = ['functional', 'cli_root', 'zpool_detach']
 
+[tests/functional/cli_root/zpool_events]
+tests = ['zpool_events_clear', 'zpool_events_cliargs', 'zpool_events_follow',
+    'zpool_events_poolname', 'zpool_events_errors']
+tags = ['functional', 'cli_root', 'zpool_events']
+
 [tests/functional/cli_root/zpool_export]
 tests = ['zpool_export_001_pos', 'zpool_export_002_pos',
     'zpool_export_003_neg', 'zpool_export_004_pos']
@@ -427,7 +435,7 @@ tags = ['functional', 'cli_root', 'zpool_set']
 [tests/functional/cli_root/zpool_split]
 tests = ['zpool_split_cliargs', 'zpool_split_devices',
     'zpool_split_encryption', 'zpool_split_props', 'zpool_split_vdevs',
-    'zpool_split_resilver', 'zpool_split_wholedisk']
+    'zpool_split_resilver']
 tags = ['functional', 'cli_root', 'zpool_split']
 
 [tests/functional/cli_root/zpool_status]
@@ -462,6 +470,7 @@ tests = ['zpool_wait_discard', 'zpool_wait_freeing',
     'zpool_wait_initialize_basic', 'zpool_wait_initialize_cancel',
     'zpool_wait_initialize_flag', 'zpool_wait_multiple',
     'zpool_wait_no_activity', 'zpool_wait_remove', 'zpool_wait_remove_cancel',
+    'zpool_wait_trim_basic', 'zpool_wait_trim_cancel', 'zpool_wait_trim_flag',
     'zpool_wait_usage']
 tags = ['functional', 'cli_root', 'zpool_wait']
 
@@ -659,10 +668,6 @@ tags = ['functional', 'pool_names']
 tests = ['poolversion_001_pos', 'poolversion_002_pos']
 tags = ['functional', 'poolversion']
 
-[tests/functional/privilege]
-tests = ['privilege_001_pos', 'privilege_002_pos']
-tags = ['functional', 'privilege']
-
 [tests/functional/pyzfs]
 tests = ['pyzfs_unittest']
 pre =
@@ -751,7 +756,7 @@ tags = ['functional', 'rootpool']
 tests = ['rsend_001_pos', 'rsend_002_pos', 'rsend_003_pos', 'rsend_004_pos',
     'rsend_005_pos', 'rsend_006_pos', 'rsend_007_pos', 'rsend_008_pos',
     'rsend_009_pos', 'rsend_010_pos', 'rsend_011_pos', 'rsend_012_pos',
-    'rsend_013_pos', 'rsend_014_pos',
+    'rsend_013_pos', 'rsend_014_pos', 'rsend_016_neg',
     'rsend_019_pos', 'rsend_020_pos',
     'rsend_021_pos', 'rsend_022_pos', 'rsend_024_pos',
     'send-c_verify_ratio', 'send-c_verify_contents', 'send-c_props',
@@ -820,10 +825,6 @@ tags = ['functional', 'truncate']
 [tests/functional/upgrade]
 tests = ['upgrade_userobj_001_pos', 'upgrade_readonly_pool']
 tags = ['functional', 'upgrade']
-
-[tests/functional/user_namespace]
-tests = ['user_namespace_001']
-tags = ['functional', 'user_namespace']
 
 [tests/functional/userquota]
 tests = [

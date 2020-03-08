@@ -119,7 +119,7 @@ enum zio_encrypt {
 	ZIO_CRYPT_FUNCTIONS
 };
 
-#define	ZIO_CRYPT_ON_VALUE	ZIO_CRYPT_AES_256_CCM
+#define	ZIO_CRYPT_ON_VALUE	ZIO_CRYPT_AES_256_GCM
 #define	ZIO_CRYPT_DEFAULT	ZIO_CRYPT_OFF
 
 /* macros defining encryption lengths */
@@ -518,6 +518,12 @@ struct zio {
 	taskq_ent_t	io_tqent;
 };
 
+enum blk_verify_flag {
+	BLK_VERIFY_ONLY,
+	BLK_VERIFY_LOG,
+	BLK_VERIFY_HALT
+};
+
 extern int zio_bookmark_compare(const void *, const void *);
 
 extern zio_t *zio_null(zio_t *pio, spa_t *spa, vdev_t *vd,
@@ -629,6 +635,9 @@ extern uint8_t zio_complevel_select(spa_t *spa, enum zio_compress compress,
 extern void zio_suspend(spa_t *spa, zio_t *zio, zio_suspend_reason_t);
 extern int zio_resume(spa_t *spa);
 extern void zio_resume_wait(spa_t *spa);
+
+extern boolean_t zfs_blkptr_verify(spa_t *spa, const blkptr_t *bp,
+    boolean_t config_held, enum blk_verify_flag blk_verify);
 
 /*
  * Initial setup and teardown.
