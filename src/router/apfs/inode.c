@@ -266,7 +266,9 @@ int apfs_getattr(struct vfsmount *mnt, struct dentry *dentry,
 //	stat->attributes_mask |= STATX_ATTR_COMPRESSED;
 
 	generic_fillattr(inode, stat);
+#if BITS_PER_LONG == 32
 	stat->ino = apfs_ino(inode);
+#endif
 	return 0;
 }
 
