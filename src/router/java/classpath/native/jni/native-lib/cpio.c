@@ -578,7 +578,7 @@ int cpio_readDir (void *handle, char *filename)
       return errno;
     }
 
-  strncpy (filename, dBuf->d_name, FILENAME_MAX - 1);
+  strlcpy (filename, dBuf->d_name, FILENAME_MAX);
   return 0;
 }
 
