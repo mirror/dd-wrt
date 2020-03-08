@@ -14,7 +14,7 @@
 #GCC	= gcc
 #CCS	= /usr/ccs/bin/cc
 #NACC	= /opt/ansic/bin/cc
-CFLAGS	= -DNEED_PRINTF
+CFLAGS	= -DNEED_PRINTF -fcommon
 #S10GCCFLAGS    = -m64
 #S10CCFLAGS     = -m64
 #FLAG64BIT      = -m64
