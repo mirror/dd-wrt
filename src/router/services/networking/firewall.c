@@ -3003,11 +3003,6 @@ void start_firewall(void)
 #endif
 #ifdef HAVE_OPENVPN
 	if (nvram_matchi("openvpncl_enable", 1)) {
-		FILE *fp = fopen("/tmp/openvpncl_fw.sh", "wb");
-		fprintf(fp, "#!/bin/sh\n");
-		create_openvpnrules(fp);
-		fclose(fp);
-		chmod("/tmp/openvpncl_fw.sh", 0700);
 		eval("/tmp/openvpncl_fw.sh");
 	}
 	if (nvram_matchi("openvpn_enable", 1)) {
