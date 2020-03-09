@@ -3006,12 +3006,7 @@ void start_firewall(void)
 		eval("/tmp/openvpncl_fw.sh");
 	}
 	if (nvram_matchi("openvpn_enable", 1)) {
-		FILE *fp = fopen("/tmp/openvpn_fw.sh", "wb");
-		fprintf(fp, "#!/bin/sh\n");
-		create_openvpnserverrules(fp);
-		fclose(fp);
-		chmod("/tmp/openvpn_fw.sh", 0700);
-		eval("/tmp/openvpn_fw.sh");
+		eval("/tmp/openvpnsrv_fw.sh");
 	}
 #endif
 #ifdef HAVE_PPPOESERVER

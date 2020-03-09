@@ -113,6 +113,7 @@ void create_openvpnrules(FILE * fp)
 
 void create_openvpnserverrules(FILE * fp)
 {
+	fprint(fp, "cat << EOF > /tmp/openvpnsrv_fw.sh\n" "#!/bin/sh\n"); // write firewall rules on route up to separate script to expand env. parameters
 	if (nvram_matchi("block_multicast", 0)	//block multicast on bridged vpns
 	    && nvram_match("openvpn_tuntap", "tap"))
 		fprintf(fp, "insmod ebtables\n" "insmod ebtable_filter\n" "insmod ebtable_nat\n" "insmod ebt_pkttype\n"
@@ -131,6 +132,9 @@ void create_openvpnserverrules(FILE * fp)
 	}
 	if (nvram_match("openvpn_mit", "1"))
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
+	fprintf(fp, "EOF\n" "chmod +x /tmp/openvpnsrv_fw.sh\n");
+
+	fprintf(fp, "/tmp/openvpnsrv_fw.sh");
 }
 
 void start_openvpnserver(void)
