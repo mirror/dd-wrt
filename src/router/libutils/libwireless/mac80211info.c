@@ -124,7 +124,7 @@ static void __attribute__((constructor)) mac80211_init(void)
 void special_mac80211_init(void)
 {
 	if (bunl)
-	    unl_free(&unl);
+		unl_free(&unl);
 	unl_genl_init(&unl, "nl80211");
 }
 
