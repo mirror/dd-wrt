@@ -54,6 +54,7 @@ static void run_openvpn(char *prg, char *path)
 
 void create_openvpnrules(FILE * fp)
 {
+	fprint(fp, "cat << EOF > /tmp/openvpncl_fw.sh\n" "#!/bin/sh\n"); // write firewall rules on route up to separate script to expand env. parameters
 	if (nvram_matchi("openvpncl_nat", 1)) {
 		fprintf(fp, "iptables -D POSTROUTING -t nat -o $dev -j MASQUERADE\n"	//
 			"iptables -I POSTROUTING -t nat -o $dev -j MASQUERADE\n");
@@ -72,14 +73,26 @@ void create_openvpnrules(FILE * fp)
 	}
 	if (nvram_match("openvpncl_mit", "1"))
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
-	if (nvram_match("openvpncl_tuntap", "tun")) {
-		fprintf(fp, "cat /tmp/resolv.dnsmasq > /tmp/resolv.dnsmasq_isp\n");
-		fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ print \"nameserver \" $3 }' > /tmp/resolv.dnsmasq\n");
-		fprintf(fp, "cat /tmp/resolv.dnsmasq_isp >> /tmp/resolv.dnsmasq\n");
+
+	if (nvram_matchi("block_multicast", 0)	//block multicast on bridged vpns, when wan multicast is enabled
+	    && nvram_match("openvpncl_tuntap", "tap")
+	    && nvram_matchi("openvpncl_bridge", 1)) {
+		fprintf(fp, "insmod ebtables\n" "insmod ebtable_filter\n" "insmod ebtable_nat\n" "insmod ebt_pkttype\n"
+//                      "ebtables -I FORWARD -o tap1 --pkttype-type multicast -j DROP\n"
+//                      "ebtables -I OUTPUT -o tap1 --pkttype-type multicast -j DROP\n"
+			"ebtables -t nat -D POSTROUTING -o $dev --pkttype-type multicast -j DROP\n" "ebtables -t nat -I POSTROUTING -o $dev --pkttype-type multicast -j DROP\n");
 	}
 	if (nvram_default_matchi("openvpncl_fw", 1, 0)) {
 		fprintf(fp, "iptables -I INPUT -i $dev -m state --state NEW -j DROP\n");
 		fprintf(fp, "iptables -I FORWARD -i $dev -m state --state NEW -j DROP\n");
+	}
+	fprintf(fp, "EOF\n" "chmod +x /tmp/openvpncl_fw.sh\n");
+
+
+	if (nvram_match("openvpncl_tuntap", "tun")) {
+		fprintf(fp, "cat /tmp/resolv.dnsmasq > /tmp/resolv.dnsmasq_isp\n");
+		fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ print \"nameserver \" $3 }' > /tmp/resolv.dnsmasq\n");
+		fprintf(fp, "cat /tmp/resolv.dnsmasq_isp >> /tmp/resolv.dnsmasq\n");
 	}
 	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
@@ -96,15 +109,6 @@ void create_openvpnrules(FILE * fp)
 		}
 		fprintf(fp, "ip route flush cache\n" "echo $ifconfig_remote >>/tmp/gateway.txt\n" "echo $route_vpn_gateway >>/tmp/gateway.txt\n" "echo $ifconfig_local >>/tmp/gateway.txt\n");
 	}
-	if (nvram_matchi("block_multicast", 0)	//block multicast on bridged vpns, when wan multicast is enabled
-	    && nvram_match("openvpncl_tuntap", "tap")
-	    && nvram_matchi("openvpncl_bridge", 1)) {
-		fprintf(fp, "insmod ebtables\n" "insmod ebtable_filter\n" "insmod ebtable_nat\n" "insmod ebt_pkttype\n"
-//                      "ebtables -I FORWARD -o tap1 --pkttype-type multicast -j DROP\n"
-//                      "ebtables -I OUTPUT -o tap1 --pkttype-type multicast -j DROP\n"
-			"ebtables -t nat -D POSTROUTING -o $dev --pkttype-type multicast -j DROP\n" "ebtables -t nat -I POSTROUTING -o $dev --pkttype-type multicast -j DROP\n");
-	}
-
 }
 
 void create_openvpnserverrules(FILE * fp)
@@ -590,6 +594,7 @@ void start_openvpn(void)
 	}
 	create_openvpnrules(fp);
 	fclose(fp);
+	eval("/tmp/openvpncl_fw.sh"); 	//run the created firewall rules also used from firewall.c
 	fp = fopen("/tmp/openvpncl/route-down.sh", "wb");
 	if (fp == NULL)
 		return;
@@ -668,6 +673,7 @@ void stop_openvpn(void)
 		unlink("/tmp/openvpncl/openvpn.conf");
 		unlink("/tmp/openvpncl/route-up.sh");
 		unlink("/tmp/openvpncl/route-down.sh");
+		unlink("/tmp/openvpncl_fw.sh"); //remove created firewall rules to prevent used by Firewall if VPN is down
 	}
 }
 
