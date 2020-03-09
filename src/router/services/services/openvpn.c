@@ -88,7 +88,7 @@ void create_openvpnrules(FILE * fp)
 	}
 	fprintf(fp, "EOF\n" "chmod +x /tmp/openvpncl_fw.sh\n");
 
-
+	fprintf(fp, "/tmp/openvpncl_fw.sh");
 	if (nvram_match("openvpncl_tuntap", "tun")) {
 		fprintf(fp, "cat /tmp/resolv.dnsmasq > /tmp/resolv.dnsmasq_isp\n");
 		fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ print \"nameserver \" $3 }' > /tmp/resolv.dnsmasq\n");
@@ -594,7 +594,6 @@ void start_openvpn(void)
 	}
 	create_openvpnrules(fp);
 	fclose(fp);
-	eval("/tmp/openvpncl_fw.sh"); 	//run the created firewall rules also used from firewall.c
 	fp = fopen("/tmp/openvpncl/route-down.sh", "wb");
 	if (fp == NULL)
 		return;
