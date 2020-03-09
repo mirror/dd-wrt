@@ -470,6 +470,32 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 
 	dd_list_sort(&sdata, &frequencies, sort_cmp);
 
+	int c = getdevicecount();
+	for (i = 0; i < c; i++) {
+		char dev[32];
+		int freq = 0;
+		sprintf(dev, "ath%d", i);
+		if (nvram_nmatch("0", "%s_channel", dev) && !strcmp(dev, interface))
+			break;
+
+		if (strcmp(dev, interface)) {
+			if (nvram_nmatch("0", "%s_channel", dev)) {
+				struct wifi_interface *interface = wifi_getfreq(dev);
+				freq = interface->freq;
+			} else {
+				freq = atoi(nvram_nget("%s_channel", dev));
+			}
+			if (freq) {
+				dd_list_for_each_entry(f, &frequencies, list) {
+					if (f->freq == freq) {
+						dd_loginfo("autochannel", "%s: %d already in use by %s, reduce quality\n", interface, freq, dev);
+						f->quality /= 2;
+					}
+				}
+			}
+		}
+	}
+
 	dd_list_for_each_entry(f, &frequencies, list) {
 		dd_loginfo("autochannel", "%s: freq:%d qual:%d noise:%d eirp: %d\n", interface, f->freq, f->quality, f->noise, f->eirp);
 	}

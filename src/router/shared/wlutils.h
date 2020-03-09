@@ -547,7 +547,7 @@ const char *getCountryByIso(char *iso);
 
 #endif
 int ieee80211_mhz2ieee(int freq);
-#if defined(HAVE_RT2880) || defined(HAVE_RT61) || defined(HAVE_MADWIFI)
+#if defined(HAVE_RT2880) || defined(HAVE_RT61) || defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 int wifi_getchannel(char *ifname);
 struct wifi_interface *wifi_getfreq(char *ifname);
 int get_radiostate(char *ifname);
