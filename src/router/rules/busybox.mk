@@ -615,6 +615,13 @@ ifeq ($(CONFIG_OPENSSL),y)
 	echo "# CONFIG_FEATURE_TLS_SHA1 is not set" >> busybox/.config
 endif
 
+ifeq ($(CONFIG_I2CTOOLS),y)
+	sed -i 's/\# CONFIG_I2CGET is not set/CONFIG_I2CGET=y/g' busybox/.config
+	sed -i 's/\# CONFIG_I2CSET is not set/CONFIG_I2CSET=y/g' busybox/.config
+	sed -i 's/\# CONFIG_I2CDUMP is not set/CONFIG_I2CDUMP=y/g' busybox/.config
+	sed -i 's/\# CONFIG_I2CDETECT is not set/CONFIG_I2CDETECT=y/g' busybox/.config
+	sed -i 's/\# CONFIG_I2CTRANSFER is not set/CONFIG_I2CTRANSFER=y/g' busybox/.config
+endif
 	cd busybox && make oldconfig
 	
 #	-$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
