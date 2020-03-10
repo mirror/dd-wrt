@@ -215,6 +215,21 @@ static void __handle_ksmbd_work(struct ksmbd_work *work,
 		rc = __process_request(work, conn, &command);
 		if (rc == TCP_HANDLER_ABORT)
 			break;
+
+		/*
+		 * Call smb2_set_rsp_credits() function to set number of credits
+		 * granted in hdr of smb2 response.
+		 */
+		if (conn->ops->set_rsp_credits) {
+			spin_lock(&conn->credits_lock);
+			rc = conn->ops->set_rsp_credits(work);
+			spin_unlock(&conn->credits_lock);
+			if (rc < 0) {
+				conn->ops->set_rsp_status(work,
+					STATUS_INVALID_PARAMETER);
+				goto send;
+			}
+		}
 	} while (is_chained_smb2_message(work));
 
 send:
