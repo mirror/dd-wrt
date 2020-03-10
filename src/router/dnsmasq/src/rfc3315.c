@@ -1311,23 +1311,39 @@ static struct dhcp_netid *add_options(struct state *state, int do_refresh)
 	      	  
 	      for (a = (struct in6_addr *)opt_cfg->val, j = 0; j < opt_cfg->len; j+=IN6ADDRSZ, a++)
 		{
+		  struct in6_addr *p = NULL;
+
 		  if (IN6_IS_ADDR_UNSPECIFIED(a))
 		    {
 		      if (!add_local_addrs(state->context))
-			put_opt6(state->fallback, IN6ADDRSZ);
+			p = state->fallback;
 		    }
 		  else if (IN6_IS_ADDR_ULA_ZERO(a))
 		    {
 		      if (!IN6_IS_ADDR_UNSPECIFIED(state->ula_addr))
-			put_opt6(state->ula_addr, IN6ADDRSZ);
+			p = state->ula_addr;
 		    }
 		  else if (IN6_IS_ADDR_LINK_LOCAL_ZERO(a))
 		    {
 		      if (!IN6_IS_ADDR_UNSPECIFIED(state->ll_addr))
-			put_opt6(state->ll_addr, IN6ADDRSZ);
+			p = state->ll_addr;
 		    }
 		  else
-		    put_opt6(a, IN6ADDRSZ);
+		    p = a;
+
+		  if (!p)
+		    continue;
+		  else if (opt_cfg->opt == OPTION6_NTP_SERVER)
+		    {
+		      if (IN6_IS_ADDR_MULTICAST(p))
+			o1 = new_opt6(NTP_SUBOPTION_MC_ADDR);
+		      else
+			o1 = new_opt6(NTP_SUBOPTION_SRV_ADDR);
+		      put_opt6(p, IN6ADDRSZ);
+		      end_opt6(o1);
+		    }
+		  else
+		    put_opt6(p, IN6ADDRSZ);
 		}
 
 	      end_opt6(o);
@@ -1708,14 +1724,14 @@ static int config_valid(struct dhcp_config *config, struct dhcp_context *context
     return 0;
 
   for (addr_list = config->addr6; addr_list; addr_list = addr_list->next)
-    if (!(addr_list->flags && ADDRLIST_DECLINED) ||
+    if (!(addr_list->flags & ADDRLIST_DECLINED) ||
 	difftime(now, addr_list->decline_time) >= (float)DECLINE_BACKOFF)
       {
 	addrpart = addr6part(&addr_list->addr.addr6);
 	addresses = 1;
 	
 	if (addr_list->flags & ADDRLIST_PREFIX)
-	  addresses = 1<<(128-addr_list->prefixlen);
+	  addresses = (u64)1<<(128-addr_list->prefixlen);
 	
 	if ((addr_list->flags & ADDRLIST_WILDCARD))
 	  {
