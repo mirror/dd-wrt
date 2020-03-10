@@ -681,13 +681,20 @@ ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= $(call cc-option,-Oz,-Os)
 KBUILD_CFLAGS	+= -fno-caller-saves  $(call cc-disable-warning,maybe-uninitialized,) $(EXTRA_OPTIMIZATION)
 else
+ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3
+ifdef CONFIG_PROFILE_ALL_BRANCHES
+KBUILD_CFLAGS	+= -O3 -fno-reorder-blocks -fno-tree-ch -fno-caller-saves  $(call cc-disable-warning,maybe-uninitialized,) $(EXTRA_OPTIMIZATION)
+else
+KBUILD_CFLAGS   += -O3 -fno-reorder-blocks -fno-tree-ch -fno-caller-saves  $(EXTRA_OPTIMIZATION)
+endif
+else
 ifdef CONFIG_PROFILE_ALL_BRANCHES
 KBUILD_CFLAGS	+= -O2 -fno-reorder-blocks -fno-tree-ch -fno-caller-saves  $(call cc-disable-warning,maybe-uninitialized,) $(EXTRA_OPTIMIZATION)
 else
 KBUILD_CFLAGS   += -O2 -fno-reorder-blocks -fno-tree-ch -fno-caller-saves  $(EXTRA_OPTIMIZATION)
 endif
 endif
-
+endif
 KBUILD_CFLAGS += $(call cc-ifversion, -lt, 0409, \
 			$(call cc-disable-warning,maybe-uninitialized,))
 
