@@ -479,11 +479,13 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 			break;
 
 		if (strcmp(dev, interface)) {
-			if (nvram_nmatch("0", "%s_channel", dev) || nvram_nmatch("sta", "%s_mode",dev) || nvram_nmatch("wdssta", "%s_mode",dev)) {
-				struct wifi_interface *interface = wifi_getfreq(dev);
-				freq = interface->freq;
-			} else {
-				freq = atoi(nvram_nget("%s_channel", dev));
+			if (!nvram_nmatch("sta", "%s_mode", dev) && !nvram_nmatch("wdssta", "%s_mode", dev)) {
+				if (nvram_nmatch("0", "%s_channel", dev)) {
+					struct wifi_interface *interface = wifi_getfreq(dev);
+					freq = interface->freq;
+				} else {
+					freq = atoi(nvram_nget("%s_channel", dev));
+				}
 			}
 			if (freq) {
 				dd_list_for_each_entry(f, &frequencies, list) {
