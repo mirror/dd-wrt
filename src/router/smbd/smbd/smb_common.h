@@ -448,6 +448,7 @@ struct smb_version_ops {
 	int (*init_rsp_hdr)(struct ksmbd_work *swork);
 	void (*set_rsp_status)(struct ksmbd_work *swork, __le32 err);
 	int (*allocate_rsp_buf)(struct ksmbd_work *work);
+	int (*set_rsp_credits)(struct ksmbd_work *work);
 	int (*check_user_session)(struct ksmbd_work *work);
 	int (*get_ksmbd_tcon)(struct ksmbd_work *work);
 	int (*is_sign_req)(struct ksmbd_work *work, unsigned int command);
