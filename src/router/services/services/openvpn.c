@@ -54,7 +54,7 @@ static void run_openvpn(char *prg, char *path)
 
 void create_openvpnrules(FILE * fp)
 {
-	fprint(fp, "cat << EOF > /tmp/openvpncl_fw.sh\n" "#!/bin/sh\n"); // write firewall rules on route up to separate script to expand env. parameters
+	fprintf(fp, "cat << EOF > /tmp/openvpncl_fw.sh\n" "#!/bin/sh\n"); // write firewall rules on route up to separate script to expand env. parameters
 	if (nvram_matchi("openvpncl_nat", 1)) {
 		fprintf(fp, "iptables -D POSTROUTING -t nat -o $dev -j MASQUERADE\n"	//
 			"iptables -I POSTROUTING -t nat -o $dev -j MASQUERADE\n");
@@ -113,7 +113,7 @@ void create_openvpnrules(FILE * fp)
 
 void create_openvpnserverrules(FILE * fp)
 {
-	fprint(fp, "cat << EOF > /tmp/openvpnsrv_fw.sh\n" "#!/bin/sh\n"); // write firewall rules on route up to separate script to expand env. parameters
+	fprintf(fp, "cat << EOF > /tmp/openvpnsrv_fw.sh\n" "#!/bin/sh\n"); // write firewall rules on route up to separate script to expand env. parameters
 	if (nvram_matchi("block_multicast", 0)	//block multicast on bridged vpns
 	    && nvram_match("openvpn_tuntap", "tap"))
 		fprintf(fp, "insmod ebtables\n" "insmod ebtable_filter\n" "insmod ebtable_nat\n" "insmod ebt_pkttype\n"
