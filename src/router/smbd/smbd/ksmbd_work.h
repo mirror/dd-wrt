@@ -47,6 +47,9 @@ struct ksmbd_work {
 	unsigned int                    compound_pfid;
 	unsigned int                    compound_sid;
 
+	/* Number of granted credits */
+	unsigned int			credits_granted;
+
 	/* response smb header size */
 	unsigned int                    resp_hdr_sz;
 	unsigned int                    response_sz;
