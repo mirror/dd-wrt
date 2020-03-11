@@ -72,7 +72,7 @@ void create_openvpnrules(FILE * fp)
 				"iptables -I FORWARD -o $dev -j ACCEPT\n");
 	}
 	if (nvram_match("openvpncl_mit", "1"))
-		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
+		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$route_netmask_1 -j DROP\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/$route_netmask_1 -j DROP\n");
 
 	if (nvram_matchi("block_multicast", 0)	//block multicast on bridged vpns, when wan multicast is enabled
 	    && nvram_match("openvpncl_tuntap", "tap")
@@ -87,8 +87,7 @@ void create_openvpnrules(FILE * fp)
 		fprintf(fp, "iptables -I FORWARD -i $dev -m state --state NEW -j DROP\n");
 	}
 	fprintf(fp, "EOF\n" "chmod +x /tmp/openvpncl_fw.sh\n");
-
-	fprintf(fp, "/tmp/openvpncl_fw.sh");
+	fprintf(fp, "/tmp/openvpncl_fw.sh\n");
 	if (nvram_match("openvpncl_tuntap", "tun")) {
 		fprintf(fp, "cat /tmp/resolv.dnsmasq > /tmp/resolv.dnsmasq_isp\n");
 		fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ print \"nameserver \" $3 }' > /tmp/resolv.dnsmasq\n");
@@ -134,7 +133,7 @@ void create_openvpnserverrules(FILE * fp)
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
 	fprintf(fp, "EOF\n" "chmod +x /tmp/openvpnsrv_fw.sh\n");
 
-	fprintf(fp, "/tmp/openvpnsrv_fw.sh");
+	fprintf(fp, "/tmp/openvpnsrv_fw.sh\n");
 }
 
 void start_openvpnserver(void)
@@ -641,7 +640,7 @@ void start_openvpn(void)
 		fprintf(fp, "[ -f /tmp/resolv.dnsmasq_isp ] && mv -f /tmp/resolv.dnsmasq_isp /tmp/resolv.dnsmasq\n");
 	}
 	if (nvram_match("openvpncl_mit", "1"))
-		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
+		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$route_netmask_1 -j DROP\n");
 /*      if (nvram_matchi("block_multicast",0) //block multicast on bridged vpns
                 && nvram_match("openvpncl_tuntap", "tap")
                 && nvram_matchi("openvpncl_bridge",1)) {
