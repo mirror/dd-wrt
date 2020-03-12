@@ -5881,7 +5881,7 @@ static int find_first(struct ksmbd_work *work)
 
 	/* reserve dot and dotdot entries in head of buffer in first response */
 	if (!*srch_ptr || is_asterisk(srch_ptr)) {
-		rc = ksmbd_populate_dot_dotdot_entries(conn,
+		rc = ksmbd_populate_dot_dotdot_entries(work,
 				le16_to_cpu(req_params->InformationLevel),
 				dir_fp,
 				&d_info,

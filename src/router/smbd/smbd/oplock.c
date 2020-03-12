@@ -681,6 +681,7 @@ static void __smb1_oplock_break_noti(struct work_struct *wk)
 
 	ksmbd_conn_write(work);
 	ksmbd_free_work_struct(work);
+	atomic_dec(&conn->r_count);
 }
 
 /**
@@ -694,7 +695,6 @@ static void __smb1_oplock_break_noti(struct work_struct *wk)
 static int smb1_oplock_break_noti(struct oplock_info *opinfo, int ack_required)
 {
 	struct ksmbd_conn *conn = opinfo->conn;
-	int ret = 0;
 	struct ksmbd_work *work = ksmbd_alloc_work_struct();
 
 	if (!work)
@@ -706,6 +706,7 @@ static int smb1_oplock_break_noti(struct oplock_info *opinfo, int ack_required)
 	if (ack_required) {
 		int rc;
 
+		atomic_inc(&conn->r_count);
 		INIT_WORK(&work->work, __smb1_oplock_break_noti);
 		ksmbd_queue_work(work);
 
@@ -726,11 +727,12 @@ static int smb1_oplock_break_noti(struct oplock_info *opinfo, int ack_required)
 			opinfo->op_state = OPLOCK_STATE_NONE;
 		}
 	} else {
+		atomic_inc(&conn->r_count);
 		__smb1_oplock_break_noti(&work->work);
 		if (opinfo->level == OPLOCK_READ)
 			opinfo->level = OPLOCK_NONE;
 	}
-	return ret;
+	return 0;
 }
 #endif
 
@@ -790,9 +792,9 @@ static void __smb2_oplock_break_noti(struct work_struct *wk)
 	if (!br_info->open_trunc &&
 			(br_info->level == SMB2_OPLOCK_LEVEL_BATCH ||
 			br_info->level == SMB2_OPLOCK_LEVEL_EXCLUSIVE))
-		rsp->OplockLevel = 1;
+		rsp->OplockLevel = SMB2_OPLOCK_LEVEL_II;
 	else
-		rsp->OplockLevel = 0;
+		rsp->OplockLevel = SMB2_OPLOCK_LEVEL_NONE;
 	rsp->Reserved = 0;
 	rsp->Reserved2 = 0;
 	rsp->PersistentFid = cpu_to_le64(fp->persistent_id);
