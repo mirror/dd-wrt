@@ -1,4 +1,6 @@
 irqbalance-configure:
+	$(MAKE) -C zlib
+	$(MAKE) -C libffi
 	$(MAKE) -C glib20/gettext all
 	$(MAKE) -C glib20/libglib all
 	cd irqbalance && ./autogen.sh
@@ -14,7 +16,7 @@ irqbalance-configure:
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
-irqbalance: 
+irqbalance: zlib libffi
 	$(MAKE) -C glib20/gettext all
 	$(MAKE) -C glib20/libglib all
 	$(MAKE) -C irqbalance
