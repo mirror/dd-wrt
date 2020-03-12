@@ -315,7 +315,7 @@ bool ksmbd_pdu_size_has_room(unsigned int pdu)
 	return (pdu >= KSMBD_MIN_SUPPORTED_HEADER_SIZE - 4);
 }
 
-int ksmbd_populate_dot_dotdot_entries(struct ksmbd_conn *conn,
+int ksmbd_populate_dot_dotdot_entries(struct ksmbd_work *work,
 				      int info_level,
 				      struct ksmbd_file *dir,
 				      struct ksmbd_dir_info *d_info,
@@ -326,6 +326,7 @@ int ksmbd_populate_dot_dotdot_entries(struct ksmbd_conn *conn,
 						struct ksmbd_kstat *))
 {
 	int i, rc = 0;
+	struct ksmbd_conn *conn = work->conn;
 
 	for (i = 0; i < 2; i++) {
 		struct kstat kstat;
@@ -345,9 +346,10 @@ int ksmbd_populate_dot_dotdot_entries(struct ksmbd_conn *conn,
 				continue;
 			}
 
-			generic_fillattr(PARENT_INODE(dir), &kstat);
-			ksmbd_kstat.file_attributes = ATTR_DIRECTORY_LE;
 			ksmbd_kstat.kstat = &kstat;
+			ksmbd_vfs_fill_dentry_attrs(work,
+				dir->filp->f_path.dentry->d_parent,
+				&ksmbd_kstat);
 			rc = fn(conn, info_level, d_info, &ksmbd_kstat);
 			if (rc)
 				break;
