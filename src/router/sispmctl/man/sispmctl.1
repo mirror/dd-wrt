@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH sispmctl 1 "Nov 2018" Linux "User Manuals"
+.TH sispmctl 1 "Feb 2020" Linux "User Manuals"
 
 .SH NAME
 sispmctl \- Gembird Silver Shield PM ConTroL program
@@ -41,7 +41,9 @@ print usage information
 .IP \-s
 scan for supported GEMBIRD devices
 .IP \-l
-daemonize and start to listening as a simple http webserver (default port: 2638)
+daemonize and start listening as a simple http webserver (default port: 2638)
+.IP \-L
+start listening as a simple http webserver without daemonizing
 .IP \-p
 IP network port (default: 2638) for listener. There is no authentication
 implemented yet.
