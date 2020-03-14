@@ -205,7 +205,7 @@ bind:
 	if (sm_handle_tree_connect(req->session_id, user, conn)) {
 		pr_err("ERROR: we were unable to bind tree connection\n");
 		tcm_tree_conn_free(conn);
-		put_ksmbd_user(user);
+		put_usmbd_user(user);
 	}
 	return 0;
 

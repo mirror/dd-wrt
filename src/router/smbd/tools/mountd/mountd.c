@@ -34,8 +34,6 @@ static int no_detach;
 int usmbd_health_status;
 static pid_t worker_pid;
 static int lock_fd = -1;
-static char *pwddb = PATH_PWDDB;
-static char *smbconf = PATH_SMBCONF;
 
 typedef int (*worker_fn)(void);
 
@@ -276,25 +274,6 @@ static void manager_sig_handler(int signo)
 	kill(0, SIGINT);
 }
 
-static int parse_reload_configs(const char *pwddb, const char *smbconf)
-{
-	int ret;
-
-	ret = cp_parse_pwddb(pwddb);
-	if (ret == -ENOENT) {
-		pr_err("User database file does not exist. %s\n",
-			"Only guest sessions (if permitted) will work.");
-	} else if (ret) {
-		pr_err("Unable to parse user database\n");
-		return ret;
-	}
-
-	ret = cp_parse_reload_smbconf(smbconf);
-	if (ret)
-		pr_err("Unable to parse smb.conf\n");
-	return ret;
-}
-
 static int worker_process_init(void)
 {
 	int ret;
@@ -317,7 +296,7 @@ static int worker_process_init(void)
 		goto out;
 	}
 
-	ret = parse_configs(pwddb, smbconf);
+	ret = parse_configs(global_conf.pwddb, global_conf.smbconf);
 	if (ret) {
 		pr_err("Failed to parse configuration files\n");
 		goto out;
@@ -342,14 +321,6 @@ static int worker_process_init(void)
 	}
 
 	while (usmbd_health_status & USMBD_HEALTH_RUNNING) {
-		if (usmbd_health_status & USMBD_SHOULD_RELOAD_CONFIG) {
-			ret = parse_reload_configs(pwddb, smbconf);
-			if (ret)
-				pr_err("Failed to reload configs. "
-					"Continue with the old one.\n");
-			usmbd_health_status &= ~USMBD_SHOULD_RELOAD_CONFIG;
-		}
-
 		ret = ipc_process_event();
 		if (ret == -USMBD_STATUS_IPC_FATAL_ERROR) {
 			ret = USMBD_STATUS_IPC_FATAL_ERROR;
@@ -483,6 +454,8 @@ int main(int argc, char *argv[])
 	airbag_init();
 	set_logger_app_name("usmbd-manager");
 	memset(&global_conf, 0x00, sizeof(struct smbconf_global));
+	global_conf.pwddb = PATH_PWDDB;
+	global_conf.smbconf = PATH_SMBCONF;
 	pr_logger_init(PR_LOGGER_STDIO);
 
 	opterr = 0;
@@ -502,10 +475,10 @@ int main(int argc, char *argv[])
 			pr_debug("TCP port option override\n");
 			break;
 		case 'c':
-			smbconf = strdup(optarg);
+			global_conf.smbconf = strdup(optarg);
 			break;
 		case 'u':
-			pwddb = strdup(optarg);
+			global_conf.pwddb = strdup(optarg);
 			break;
 		case 'n':
 			if (!optarg)
@@ -530,7 +503,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (!smbconf || !pwddb) {
+	if (!global_conf.smbconf || !global_conf.pwddb) {
 		pr_err("Out of memory\n");
 		exit(EXIT_FAILURE);
 	}
