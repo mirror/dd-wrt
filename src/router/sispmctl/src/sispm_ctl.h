@@ -3,7 +3,7 @@
 
   Controls the GEMBIRD Silver Shield PM USB outlet device
 
-  (C) 2015-2018, Heinrich Schuchardt <xypron.glpk@gmx.de>
+  (C) 2015-2020, Heinrich Schuchardt <xypron.glpk@gmx.de>
   (C) 2004,2005,2006 Mondrian Nuessle, Computer Architecture Group, University
   of Mannheim, Germany
   (C) 2005, Andreas Neuper, Germany
@@ -135,5 +135,7 @@ int sispm_switch_toggle(usb_dev_handle * udev, int id, int outlet);
 extern int debug;
 extern int verbose;
 extern char *homedir;
+/* Base64 encoded user:password */
+extern char *secret;
 
 #endif

@@ -1,7 +1,7 @@
 /*
   process.c - process web requests
 
-  (C) 2015-2018, Heinrich Schuchardt <xypron.glpk@gmx.de>
+  (C) 2015-2020, Heinrich Schuchardt <xypron.glpk@gmx.de>
   (C) 2011-2016, Pete Hildebrandt <send2ph@gmail.com>
   (C) 2010, Olivier Matheret, France, for the scheduling part
   (C) 2004-2011, Mondrian Nuessle, Computer Architecture Group,
@@ -24,6 +24,7 @@
 */
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -42,6 +43,8 @@ char *homedir = 0;
 #endif
 
 #ifndef WEBLESS
+char *secret;
+
 static void service_not_available(int out)
 {
 	char xbuffer[BSIZE + 2];
@@ -55,6 +58,18 @@ static void service_not_available(int out)
 	send(out, xbuffer, strlen(xbuffer), 0);
 }
 
+static void unauthorized(int out)
+{
+	char xbuffer[BSIZE + 2];
+
+	sprintf(xbuffer,
+		"HTTP/1.1 401 Unauthorized\nServer: SisPM\n"
+		"WWW-Authenticate: Basic realm=\"SisPM\n\""
+		"Content-Type: text/html\n\n"
+		"<!DOCTYPE HTML>\n" "<html><head>\n<title>401 Unauthorized</title>\n" "<meta http-equiv=\"refresh\" content=\"10;url=/\">\n" "</head><body>\n" "<h1>401 Unauthorized</h1></body></html>\n\n");
+	send(out, xbuffer, strlen(xbuffer), 0);
+}
+
 static void bad_request(int out)
 {
 	char xbuffer[BSIZE + 2];
@@ -65,6 +80,27 @@ static void bad_request(int out)
 		"\"http://www.w3.org/TR/html4/loose.dtd\">\n"
 		"<html><head>\n<title>404 Not found</title>\n" "<meta http-equiv=\"refresh\" content=\"2;url=/\">\n" "</head><body>\n" "<h1>404 Not found</h1></body></html>\n\n");
 	send(out, xbuffer, strlen(xbuffer), 0);
+}
+
+char *next_word(char *ptr)
+{
+	bool flag = false;
+
+	if (!ptr) {
+		return ptr;
+	}
+	for (;; ++ptr) {
+		char c = *ptr;
+
+		if (c < ' ') {
+			return NULL;
+		}
+		if (c == ' ') {
+			flag = true;
+		} else if (flag) {
+			return ptr;
+		}
+	}
 }
 
 void process(int out, char *request, struct usb_device *dev, int devnum)
@@ -96,6 +132,31 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 		ptr = strchr(filename, ' ');
 		if (ptr)
 			*ptr = 0;
+	}
+
+	/* Look for authentication */
+	if (secret) {
+		char *password = NULL;
+
+		for (; eol;) {
+			ptr = eol + 1;
+			if (strncmp(ptr, "Authorization: ", 15)) {
+				eol = strchr(ptr, '\n');
+				continue;
+			}
+			ptr = next_word(ptr);
+			password = next_word(ptr);
+			if (!password) {
+				break;
+			}
+			for (ptr = password; *ptr > ' '; ++ptr) ;
+			*ptr = '\0';
+			break;
+		}
+		if (!password || strcmp(secret, password)) {
+			unauthorized(out);
+			return;
+		}
 	}
 	// avoid to read other directories, %-codes are not evaluated
 	ptr = strrchr(filename, '/');
@@ -140,21 +201,23 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 	id = get_id(dev);
 
 	lastpos = ftell(in);
-	retvalue = fgets(xbuffer, BSIZE - 1, in);
-	remlen = length = ftell(in) - lastpos;
-	lastpos = ftell(in);
 
 	while (!feof(in)) {
+		memset(xbuffer, 0, BSIZE);
+		retvalue = fgets(xbuffer, BSIZE - 1, in);
+		remlen = length = ftell(in) - lastpos;
+		lastpos = ftell(in);
 		if (retvalue == NULL) {
-			bad_request(out);
 			break;
 		}
 
 		char *mrk = xbuffer;
 		char *ptr = xbuffer;
 		/* search for:
-		 *  $$exec(0)?.1.:.2.$$     to execute command(#)
-		 *  $$stat(2)?.1.:.2.$$     to evaluate status(#)
+		 *  $$off(#)?.1.:.2.$$      to switch off(#)
+		 *  $$on(#)?.1.:.2.$$       to switch on(#)
+		 *  $$toggle(#)?.1.:.2.$$   to toggle(#)
+		 *  $$status(#)?.1.:.2.$$   to evaluate status(#)
 		 *  $$version()$$           to evaluate version
 		 */
 		for (mrk = ptr = xbuffer; (ptr - xbuffer) < length; ++ptr) {
@@ -265,10 +328,6 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 			}
 		}
 		send(out, mrk, remlen, 0);
-		memset(xbuffer, 0, BSIZE);
-		retvalue = fgets(xbuffer, BSIZE - 1, in);
-		remlen = length = ftell(in) - lastpos;
-		lastpos = ftell(in);
 	}
 
 	if (udev != NULL) {
