@@ -325,14 +325,14 @@ int cp_get_group_kv_bool(char *v)
 int cp_get_group_kv_config_opt(char *v)
 {
 	if (!strncasecmp(v, "disabled", 8))
-		return USMBD_CONFIG_OPT_DISABLED;
+		return KSMBD_CONFIG_OPT_DISABLED;
 	if (!strncasecmp(v, "enabled", 7))
-		return USMBD_CONFIG_OPT_ENABLED;
+		return KSMBD_CONFIG_OPT_ENABLED;
 	if (!strncasecmp(v, "auto", 4))
-		return USMBD_CONFIG_OPT_AUTO;
+		return KSMBD_CONFIG_OPT_AUTO;
 	if (!strncasecmp(v, "mandatory", 9))
-		return USMBD_CONFIG_OPT_MANDATORY;
-	return USMBD_CONFIG_OPT_DISABLED;
+		return KSMBD_CONFIG_OPT_MANDATORY;
+	return KSMBD_CONFIG_OPT_DISABLED;
 }
 
 unsigned long cp_get_group_kv_long_base(char *v, int base)
@@ -446,7 +446,7 @@ void cp_group_kv_list_free(char **list)
 
 static int cp_add_global_guest_account(void *_v)
 {
-	struct usmbd_user *user;
+	struct ksmbd_user *user;
 
 	if (usm_add_new_user(cp_get_group_kv_string(_v), strdup("NULL"))) {
 		pr_err("Unable to add guest account\n");
@@ -460,8 +460,8 @@ static int cp_add_global_guest_account(void *_v)
 		return -EINVAL;
 	}
 
-	set_user_flag(user, USMBD_USER_FLAG_GUEST_ACCOUNT);
-	put_usmbd_user(user);
+	set_user_flag(user, KSMBD_USER_FLAG_GUEST_ACCOUNT);
+	put_ksmbd_user(user);
 	global_conf.guest_account = cp_get_group_kv_string(_v);
 	return 0;
 }
@@ -528,7 +528,7 @@ static void global_group_kv(void *_v, unsigned long long id, void *user_data)
 
 	if (!cp_key_cmp(_k, "restrict anonymous")) {
 		global_conf.restrict_anon = cp_get_group_kv_long(_v);
-		if (global_conf.restrict_anon > USMBD_RESTRICT_ANON_TYPE_2 ||
+		if (global_conf.restrict_anon > KSMBD_RESTRICT_ANON_TYPE_2 ||
 		    global_conf.restrict_anon < 0) {
 			global_conf.restrict_anon = 0;
 			pr_err("Invalid restrict anonymous value\n");
@@ -538,16 +538,16 @@ static void global_group_kv(void *_v, unsigned long long id, void *user_data)
 	}
 
 	if (!cp_key_cmp(_k, "map to guest")) {
-		global_conf.map_to_guest = USMBD_CONF_MAP_TO_GUEST_NEVER;
+		global_conf.map_to_guest = KSMBD_CONF_MAP_TO_GUEST_NEVER;
 		if (!cp_key_cmp(_v, "bad user"))
 			global_conf.map_to_guest =
-			    USMBD_CONF_MAP_TO_GUEST_BAD_USER;
+			    KSMBD_CONF_MAP_TO_GUEST_BAD_USER;
 		if (!cp_key_cmp(_v, "bad password"))
 			global_conf.map_to_guest =
-			    USMBD_CONF_MAP_TO_GUEST_BAD_PASSWORD;
+			    KSMBD_CONF_MAP_TO_GUEST_BAD_PASSWORD;
 		if (!cp_key_cmp(_v, "bad uid"))
 			global_conf.map_to_guest =
-			    USMBD_CONF_MAP_TO_GUEST_BAD_UID;
+			    KSMBD_CONF_MAP_TO_GUEST_BAD_UID;
 		return;
 	}
 
@@ -568,9 +568,9 @@ static void global_group_kv(void *_v, unsigned long long id, void *user_data)
 
 	if (!cp_key_cmp(_k, "smb2 leases")) {
 		if (cp_get_group_kv_bool(_v))
-			global_conf.flags |= USMBD_GLOBAL_FLAG_SMB2_LEASES;
+			global_conf.flags |= KSMBD_GLOBAL_FLAG_SMB2_LEASES;
 		else
-			global_conf.flags &= ~USMBD_GLOBAL_FLAG_SMB2_LEASES;
+			global_conf.flags &= ~KSMBD_GLOBAL_FLAG_SMB2_LEASES;
 
 		return;
 	}
@@ -597,34 +597,34 @@ static void global_group_kv(void *_v, unsigned long long id, void *user_data)
 
 	if (!cp_key_cmp(_k, "cache trans buffers")) {
 		if (cp_get_group_kv_bool(_v))
-			global_conf.flags |= USMBD_GLOBAL_FLAG_CACHE_TBUF;
+			global_conf.flags |= KSMBD_GLOBAL_FLAG_CACHE_TBUF;
 		else
-			global_conf.flags &= ~USMBD_GLOBAL_FLAG_CACHE_TBUF;
+			global_conf.flags &= ~KSMBD_GLOBAL_FLAG_CACHE_TBUF;
 		return;
 	}
 
 	if (!cp_key_cmp(_k, "cache read buffers")) {
 		if (cp_get_group_kv_bool(_v))
-			global_conf.flags |= USMBD_GLOBAL_FLAG_CACHE_RBUF;
+			global_conf.flags |= KSMBD_GLOBAL_FLAG_CACHE_RBUF;
 		else
-			global_conf.flags &= ~USMBD_GLOBAL_FLAG_CACHE_RBUF;
+			global_conf.flags &= ~KSMBD_GLOBAL_FLAG_CACHE_RBUF;
 		return;
 	}
 
 	if (!cp_key_cmp(_k, "smb3 encryption")) {
 		if (cp_get_group_kv_bool(_v))
-			global_conf.flags |= USMBD_GLOBAL_FLAG_SMB3_ENCRYPTION;
+			global_conf.flags |= KSMBD_GLOBAL_FLAG_SMB3_ENCRYPTION;
 		else
-			global_conf.flags &= ~USMBD_GLOBAL_FLAG_SMB3_ENCRYPTION;
+			global_conf.flags &= ~KSMBD_GLOBAL_FLAG_SMB3_ENCRYPTION;
 
 		return;
 	}
 
 	if (!cp_key_cmp(_k, "durable handle")) {
 		if (cp_get_group_kv_bool(_v))
-			global_conf.flags |= USMBD_GLOBAL_FLAG_DURABLE_HANDLE;
+			global_conf.flags |= KSMBD_GLOBAL_FLAG_DURABLE_HANDLE;
 		else
-			global_conf.flags &= ~USMBD_GLOBAL_FLAG_DURABLE_HANDLE;
+			global_conf.flags &= ~KSMBD_GLOBAL_FLAG_DURABLE_HANDLE;
 
 		return;
 	}
@@ -644,29 +644,29 @@ static void fixup_missing_global_group(void)
 	 * in smb.conf
 	 */
 	if (!global_conf.file_max)
-		global_conf.file_max = USMBD_CONF_FILE_MAX;
+		global_conf.file_max = KSMBD_CONF_FILE_MAX;
 	if (!global_conf.server_string)
 		global_conf.server_string =
-		    cp_get_group_kv_string(USMBD_CONF_DEFAULT_SERVER_STRING);
+		    cp_get_group_kv_string(KSMBD_CONF_DEFAULT_SERVER_STRING);
 	if (!global_conf.netbios_name)
 		global_conf.netbios_name =
-		    cp_get_group_kv_string(USMBD_CONF_DEFAULT_NETBIOS_NAME);
+		    cp_get_group_kv_string(KSMBD_CONF_DEFAULT_NETBIOS_NAME);
 	if (!global_conf.work_group)
 		global_conf.work_group =
-		    cp_get_group_kv_string(USMBD_CONF_DEFAULT_WORK_GROUP);
+		    cp_get_group_kv_string(KSMBD_CONF_DEFAULT_WORK_GROUP);
 	if (!global_conf.tcp_port)
-		global_conf.tcp_port = USMBD_CONF_DEFAULT_TPC_PORT;
+		global_conf.tcp_port = KSMBD_CONF_DEFAULT_TPC_PORT;
 
 	if (global_conf.sessions_cap <= 0)
-		global_conf.sessions_cap = USMBD_CONF_DEFAULT_SESS_CAP;
+		global_conf.sessions_cap = KSMBD_CONF_DEFAULT_SESS_CAP;
 
 	if (global_conf.guest_account)
 		return;
 
-	ret = cp_add_global_guest_account(USMBD_CONF_DEFAULT_GUEST_ACCOUNT);
+	ret = cp_add_global_guest_account(KSMBD_CONF_DEFAULT_GUEST_ACCOUNT);
 	if (!ret)
 		return;
-	ret = cp_add_global_guest_account(USMBD_CONF_FALLBACK_GUEST_ACCOUNT);
+	ret = cp_add_global_guest_account(KSMBD_CONF_FALLBACK_GUEST_ACCOUNT);
 	if (ret)
 		pr_err("Fatal error: Cannot set a global guest account %d\n",
 		       ret);
@@ -674,8 +674,8 @@ static void fixup_missing_global_group(void)
 
 static void default_global_group(void)
 {
-	global_conf.flags |= USMBD_GLOBAL_FLAG_CACHE_TBUF;
-	global_conf.flags |= USMBD_GLOBAL_FLAG_CACHE_RBUF;
+	global_conf.flags |= KSMBD_GLOBAL_FLAG_CACHE_TBUF;
+	global_conf.flags |= KSMBD_GLOBAL_FLAG_CACHE_RBUF;
 	/* The SPARSE_FILES file system capability flag is set by default */
 	global_conf.share_fake_fscaps = 64;
 }
@@ -786,8 +786,8 @@ int cp_parse_external_smbconf_group(char *name, char *opts)
 
 	len = strlen(opts);
 	/* fake smb.conf input */
-	for (i = 0; i < USMBD_SHARE_CONF_MAX; i++) {
-		pos = strstr(opts, USMBD_SHARE_CONF[i]);
+	for (i = 0; i < KSMBD_SHARE_CONF_MAX; i++) {
+		pos = strstr(opts, KSMBD_SHARE_CONF[i]);
 		if (!pos)
 			continue;
 		if (pos != opts)

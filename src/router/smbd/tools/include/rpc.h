@@ -5,21 +5,21 @@
  *   linux-cifsd-devel@lists.sourceforge.net
  */
 
-#ifndef __USMBD_RPC_H__
-#define __USMBD_RPC_H__
+#ifndef __KSMBD_RPC_H__
+#define __KSMBD_RPC_H__
 
 #include <linux/types.h>
 
-#define USMBD_DCERPC_LITTLE_ENDIAN	(1 << 0)
-#define USMBD_DCERPC_ALIGN2		(1 << 1)
-#define USMBD_DCERPC_ALIGN4		(1 << 2)
-#define USMBD_DCERPC_ALIGN8		(1 << 3)
-#define USMBD_DCERPC_ASCII_STRING	(1 << 4)
-#define USMBD_DCERPC_FIXED_PAYLOAD_SZ	(1 << 5)
-#define USMBD_DCERPC_EXTERNAL_PAYLOAD	(1 << 6)
-#define USMBD_DCERPC_RETURN_READY	(1 << 7)
+#define KSMBD_DCERPC_LITTLE_ENDIAN	(1 << 0)
+#define KSMBD_DCERPC_ALIGN2		(1 << 1)
+#define KSMBD_DCERPC_ALIGN4		(1 << 2)
+#define KSMBD_DCERPC_ALIGN8		(1 << 3)
+#define KSMBD_DCERPC_ASCII_STRING	(1 << 4)
+#define KSMBD_DCERPC_FIXED_PAYLOAD_SZ	(1 << 5)
+#define KSMBD_DCERPC_EXTERNAL_PAYLOAD	(1 << 6)
+#define KSMBD_DCERPC_RETURN_READY	(1 << 7)
 
-#define USMBD_DCERPC_MAX_PREFERRED_SIZE -1
+#define KSMBD_DCERPC_MAX_PREFERRED_SIZE -1
 
 #define DCERPC_PTYPE_RPC_REQUEST	0x00
 #define DCERPC_PTYPE_RPC_PING		0x01
@@ -214,15 +214,15 @@ enum DCERPC_BIND_TIME_OPTIONS {
 /*
  * So how this is expected to work. First, you need to obtain a snapshot
  * of the data that you want to push to the wire. The data snapshot goes
- * to usmbd_rpc_pipe. Then you perform a protocol specific transformation
+ * to ksmbd_rpc_pipe. Then you perform a protocol specific transformation
  * of the data snapshot. The transformed data goes to a specific protocol
- * dependent structure, e.g. usmbd_dcerpc for DCERPC (ndr/ndr64). Then you
+ * dependent structure, e.g. ksmbd_dcerpc for DCERPC (ndr/ndr64). Then you
  * write the transformed data snapshot to the wire.
  */
 
-struct usmbd_rpc_command;
+struct ksmbd_rpc_command;
 
-struct usmbd_dcerpc {
+struct ksmbd_dcerpc {
 	unsigned int		flags;
 	size_t			offset;
 	size_t			payload_sz;
@@ -242,96 +242,96 @@ struct usmbd_dcerpc {
 		struct wkssvc_netwksta_info_request	wi_req;
 	};
 
-	struct usmbd_rpc_command	*rpc_req;
-	struct usmbd_rpc_command	*rpc_resp;
+	struct ksmbd_rpc_command	*rpc_req;
+	struct ksmbd_rpc_command	*rpc_resp;
 
 	/*
 	 * Find out the estimated entry size under the given container level
 	 * restriction
 	 */
-	int			(*entry_size)(struct usmbd_dcerpc *dce,
+	int			(*entry_size)(struct ksmbd_dcerpc *dce,
 					      void *entry);
 	/*
 	 * Entry representation under the given container level
 	 * restriction for array representation
 	 */
-	int			(*entry_rep)(struct usmbd_dcerpc *dce,
+	int			(*entry_rep)(struct ksmbd_dcerpc *dce,
 					      void *entry);
 	/*
 	 * Entry data under the given container level restriction
 	 * for array representation
 	 */
-	int			(*entry_data)(struct usmbd_dcerpc *dce,
+	int			(*entry_data)(struct ksmbd_dcerpc *dce,
 					      void *entry);
 };
 
-struct usmbd_rpc_pipe {
+struct ksmbd_rpc_pipe {
 	unsigned int	id;
 
 	int			num_entries;
 	int			num_processed;
 	struct LIST		*entries;
 
-	struct usmbd_dcerpc	*dce;
+	struct ksmbd_dcerpc	*dce;
 
 	/*
 	 * Tell pipe that we processed the entry and won't need it
 	 * anymore so it can remove/drop it.
 	 */
-	int			(*entry_processed)(struct usmbd_rpc_pipe *pipe,
+	int			(*entry_processed)(struct ksmbd_rpc_pipe *pipe,
 						   int i);
 };
 
-__u8 ndr_read_int8(struct usmbd_dcerpc *dce);
-__u16 ndr_read_int16(struct usmbd_dcerpc *dce);
-__u32 ndr_read_int32(struct usmbd_dcerpc *dce);
-__u64 ndr_read_int64(struct usmbd_dcerpc *dce);
+__u8 ndr_read_int8(struct ksmbd_dcerpc *dce);
+__u16 ndr_read_int16(struct ksmbd_dcerpc *dce);
+__u32 ndr_read_int32(struct ksmbd_dcerpc *dce);
+__u64 ndr_read_int64(struct ksmbd_dcerpc *dce);
 
-int ndr_write_int8(struct usmbd_dcerpc *dce, __u8 value);
-int ndr_write_int16(struct usmbd_dcerpc *dce, __u16 value);
-int ndr_write_int32(struct usmbd_dcerpc *dce, __u32 value);
-int ndr_write_int64(struct usmbd_dcerpc *dce, __u64 value);
+int ndr_write_int8(struct ksmbd_dcerpc *dce, __u8 value);
+int ndr_write_int16(struct ksmbd_dcerpc *dce, __u16 value);
+int ndr_write_int32(struct ksmbd_dcerpc *dce, __u32 value);
+int ndr_write_int64(struct ksmbd_dcerpc *dce, __u64 value);
 
-int ndr_write_union_int16(struct usmbd_dcerpc *dce, __u16 value);
-int ndr_write_union_int32(struct usmbd_dcerpc *dce, __u32 value);
-__u32 ndr_read_union_int32(struct usmbd_dcerpc *dce);
+int ndr_write_union_int16(struct ksmbd_dcerpc *dce, __u16 value);
+int ndr_write_union_int32(struct ksmbd_dcerpc *dce, __u32 value);
+__u32 ndr_read_union_int32(struct ksmbd_dcerpc *dce);
 
-int ndr_write_bytes(struct usmbd_dcerpc *dce, void *value, size_t sz);
-int ndr_read_bytes(struct usmbd_dcerpc *dce, void *value, size_t sz);
-int ndr_write_vstring(struct usmbd_dcerpc *dce, char *value);
-char *ndr_read_vstring(struct usmbd_dcerpc *dce);
-void ndr_read_vstring_ptr(struct usmbd_dcerpc *dce, struct ndr_char_ptr *ctr);
-void ndr_read_uniq_vsting_ptr(struct usmbd_dcerpc *dce,
+int ndr_write_bytes(struct ksmbd_dcerpc *dce, void *value, size_t sz);
+int ndr_read_bytes(struct ksmbd_dcerpc *dce, void *value, size_t sz);
+int ndr_write_vstring(struct ksmbd_dcerpc *dce, char *value);
+char *ndr_read_vstring(struct ksmbd_dcerpc *dce);
+void ndr_read_vstring_ptr(struct ksmbd_dcerpc *dce, struct ndr_char_ptr *ctr);
+void ndr_read_uniq_vsting_ptr(struct ksmbd_dcerpc *dce,
 			      struct ndr_uniq_char_ptr *ctr);
 void ndr_free_vstring_ptr(struct ndr_char_ptr *ctr);
 void ndr_free_uniq_vsting_ptr(struct ndr_uniq_char_ptr *ctr);
-void ndr_read_ptr(struct usmbd_dcerpc *dce, struct ndr_ptr *ctr);
-void ndr_read_uniq_ptr(struct usmbd_dcerpc *dce, struct ndr_uniq_ptr *ctr);
-int __ndr_write_array_of_structs(struct usmbd_rpc_pipe *pipe, int max_entry_nr);
-int ndr_write_array_of_structs(struct usmbd_rpc_pipe *pipe);
+void ndr_read_ptr(struct ksmbd_dcerpc *dce, struct ndr_ptr *ctr);
+void ndr_read_uniq_ptr(struct ksmbd_dcerpc *dce, struct ndr_uniq_ptr *ctr);
+int __ndr_write_array_of_structs(struct ksmbd_rpc_pipe *pipe, int max_entry_nr);
+int ndr_write_array_of_structs(struct ksmbd_rpc_pipe *pipe);
 
-int dcerpc_write_headers(struct usmbd_dcerpc *dce, int method_status);
+int dcerpc_write_headers(struct ksmbd_dcerpc *dce, int method_status);
 
-void dcerpc_set_ext_payload(struct usmbd_dcerpc *dce,
+void dcerpc_set_ext_payload(struct ksmbd_dcerpc *dce,
 			    void *payload,
 			    size_t sz);
-void rpc_pipe_reset(struct usmbd_rpc_pipe *pipe);
+void rpc_pipe_reset(struct ksmbd_rpc_pipe *pipe);
 
 int rpc_init(void);
 void rpc_destroy(void);
 
-int rpc_restricted_context(struct usmbd_rpc_command *req);
+int rpc_restricted_context(struct ksmbd_rpc_command *req);
 
-int rpc_ioctl_request(struct usmbd_rpc_command *req,
-		      struct usmbd_rpc_command *resp,
+int rpc_ioctl_request(struct ksmbd_rpc_command *req,
+		      struct ksmbd_rpc_command *resp,
 		      int max_resp_sz);
-int rpc_read_request(struct usmbd_rpc_command *req,
-		     struct usmbd_rpc_command *resp,
+int rpc_read_request(struct ksmbd_rpc_command *req,
+		     struct ksmbd_rpc_command *resp,
 		     int max_resp_sz);
-int rpc_write_request(struct usmbd_rpc_command *req,
-		      struct usmbd_rpc_command *resp);
-int rpc_open_request(struct usmbd_rpc_command *req,
-		     struct usmbd_rpc_command *resp);
-int rpc_close_request(struct usmbd_rpc_command *req,
-		      struct usmbd_rpc_command *resp);
-#endif /* __USMBD_RPC_H__ */
+int rpc_write_request(struct ksmbd_rpc_command *req,
+		      struct ksmbd_rpc_command *resp);
+int rpc_open_request(struct ksmbd_rpc_command *req,
+		     struct ksmbd_rpc_command *resp);
+int rpc_close_request(struct ksmbd_rpc_command *req,
+		      struct ksmbd_rpc_command *resp);
+#endif /* __KSMBD_RPC_H__ */

@@ -47,8 +47,8 @@ static void usage(void)
 	fprintf(stderr, "\t-v | --verbose\n");
 
 	fprintf(stderr, "Supported share options:\n");
-	for (i = 0; i < USMBD_SHARE_CONF_MAX; i++)
-		fprintf(stderr, "\t%s\n", USMBD_SHARE_CONF[i]);
+	for (i = 0; i < KSMBD_SHARE_CONF_MAX; i++)
+		fprintf(stderr, "\t%s\n", KSMBD_SHARE_CONF[i]);
 	exit(EXIT_FAILURE);
 }
 
@@ -82,7 +82,7 @@ static int sanity_check_share_name_simple(char *name)
 	sz = strlen(name);
 	if (sz < 1)
 		return -EINVAL;
-	if (sz >= USMBD_REQ_MAX_SHARE_NAME)
+	if (sz >= KSMBD_REQ_MAX_SHARE_NAME)
 		return -EINVAL;
 
 	if (!cp_key_cmp(name, "global"))
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 	 * We support only ADD_SHARE command for the time being
 	 */
 	if (ret == 0 && cmd == COMMAND_ADD_SHARE)
-		notify_usmbd_daemon();
+		notify_ksmbd_daemon();
 out:
 	cp_smbconfig_destroy();
 	return ret;

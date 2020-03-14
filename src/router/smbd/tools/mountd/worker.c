@@ -32,24 +32,24 @@ static sem_t semaphore;
 		ret;						\
 	})
 
-static int login_request(struct usmbd_ipc_msg *msg)
+static int login_request(struct ksmbd_ipc_msg *msg)
 {
-	struct usmbd_login_request *req;
-	struct usmbd_login_response *resp;
-	struct usmbd_ipc_msg *resp_msg;
+	struct ksmbd_login_request *req;
+	struct ksmbd_login_response *resp;
+	struct ksmbd_ipc_msg *resp_msg;
 
 	resp_msg = ipc_msg_alloc(sizeof(*resp));
 	if (!resp_msg)
 		goto out;
 
-	req = USMBD_IPC_MSG_PAYLOAD(msg);
-	resp = USMBD_IPC_MSG_PAYLOAD(resp_msg);
+	req = KSMBD_IPC_MSG_PAYLOAD(msg);
+	resp = KSMBD_IPC_MSG_PAYLOAD(resp_msg);
 
-	resp->status = USMBD_USER_FLAG_INVALID;
-	if (VALID_IPC_MSG(msg, struct usmbd_login_request))
+	resp->status = KSMBD_USER_FLAG_INVALID;
+	if (VALID_IPC_MSG(msg, struct ksmbd_login_request))
 		usm_handle_login_request(req, resp);
 
-	resp_msg->type = USMBD_EVENT_LOGIN_RESPONSE;
+	resp_msg->type = KSMBD_EVENT_LOGIN_RESPONSE;
 	resp->handle = req->handle;
 
 	ipc_msg_send(resp_msg);
@@ -58,26 +58,26 @@ out:
 	return 0;
 }
 
-static int tree_connect_request(struct usmbd_ipc_msg *msg)
+static int tree_connect_request(struct ksmbd_ipc_msg *msg)
 {
-	struct usmbd_tree_connect_request *req;
-	struct usmbd_tree_connect_response *resp;
-	struct usmbd_ipc_msg *resp_msg;
+	struct ksmbd_tree_connect_request *req;
+	struct ksmbd_tree_connect_response *resp;
+	struct ksmbd_ipc_msg *resp_msg;
 
 	resp_msg = ipc_msg_alloc(sizeof(*resp));
 	if (!resp_msg)
 		goto out;
 
-	req = USMBD_IPC_MSG_PAYLOAD(msg);
-	resp = USMBD_IPC_MSG_PAYLOAD(resp_msg);
+	req = KSMBD_IPC_MSG_PAYLOAD(msg);
+	resp = KSMBD_IPC_MSG_PAYLOAD(resp_msg);
 
-	resp->status = USMBD_TREE_CONN_STATUS_ERROR;
+	resp->status = KSMBD_TREE_CONN_STATUS_ERROR;
 	resp->connection_flags = 0;
 
-	if (VALID_IPC_MSG(msg, struct usmbd_tree_connect_request))
+	if (VALID_IPC_MSG(msg, struct ksmbd_tree_connect_request))
 		tcm_handle_tree_connect(req, resp);
 
-	resp_msg->type = USMBD_EVENT_TREE_CONNECT_RESPONSE;
+	resp_msg->type = KSMBD_EVENT_TREE_CONNECT_RESPONSE;
 	resp->handle = req->handle;
 
 	ipc_msg_send(resp_msg);
@@ -86,16 +86,16 @@ out:
 	return 0;
 }
 
-static int share_config_request(struct usmbd_ipc_msg *msg)
+static int share_config_request(struct ksmbd_ipc_msg *msg)
 {
-	struct usmbd_share_config_request *req;
-	struct usmbd_share_config_response *resp;
-	struct usmbd_share *share = NULL;
-	struct usmbd_ipc_msg *resp_msg;
+	struct ksmbd_share_config_request *req;
+	struct ksmbd_share_config_response *resp;
+	struct ksmbd_share *share = NULL;
+	struct ksmbd_ipc_msg *resp_msg;
 	int payload_sz = 0;
 
-	req = USMBD_IPC_MSG_PAYLOAD(msg);
-	if (VALID_IPC_MSG(msg, struct usmbd_share_config_request)) {
+	req = KSMBD_IPC_MSG_PAYLOAD(msg);
+	if (VALID_IPC_MSG(msg, struct ksmbd_share_config_request)) {
 		share = shm_lookup_share(req->share_name);
 		if (share)
 			payload_sz = shm_share_config_payload_size(share);
@@ -105,88 +105,88 @@ static int share_config_request(struct usmbd_ipc_msg *msg)
 	if (!resp_msg)
 		goto out;
 
-	resp = USMBD_IPC_MSG_PAYLOAD(resp_msg);
+	resp = KSMBD_IPC_MSG_PAYLOAD(resp_msg);
 	shm_handle_share_config_request(share, resp);
-	resp_msg->type = USMBD_EVENT_SHARE_CONFIG_RESPONSE;
+	resp_msg->type = KSMBD_EVENT_SHARE_CONFIG_RESPONSE;
 	resp->handle = req->handle;
 
 	ipc_msg_send(resp_msg);
 out:
-	put_usmbd_share(share);
+	put_ksmbd_share(share);
 	ipc_msg_free(resp_msg);
 	return 0;
 }
 
-static int tree_disconnect_request(struct usmbd_ipc_msg *msg)
+static int tree_disconnect_request(struct ksmbd_ipc_msg *msg)
 {
-	struct usmbd_tree_disconnect_request *req;
+	struct ksmbd_tree_disconnect_request *req;
 
-	if (!VALID_IPC_MSG(msg, struct usmbd_tree_disconnect_request))
+	if (!VALID_IPC_MSG(msg, struct ksmbd_tree_disconnect_request))
 		return -EINVAL;
 
-	req = USMBD_IPC_MSG_PAYLOAD(msg);
+	req = KSMBD_IPC_MSG_PAYLOAD(msg);
 	tcm_handle_tree_disconnect(req->session_id, req->connect_id);
 
 	return 0;
 }
 
-static int logout_request(struct usmbd_ipc_msg *msg)
+static int logout_request(struct ksmbd_ipc_msg *msg)
 {
-	if (!VALID_IPC_MSG(msg, struct usmbd_logout_request))
+	if (!VALID_IPC_MSG(msg, struct ksmbd_logout_request))
 		return -EINVAL;
 
 	return 0;
 }
 
-static int heartbeat_request(struct usmbd_ipc_msg *msg)
+static int heartbeat_request(struct ksmbd_ipc_msg *msg)
 {
-	if (!VALID_IPC_MSG(msg, struct usmbd_heartbeat))
+	if (!VALID_IPC_MSG(msg, struct ksmbd_heartbeat))
 		return -EINVAL;
 
 	pr_debug("HEARTBEAT frame from the server\n");
 	return 0;
 }
 
-static int rpc_request(struct usmbd_ipc_msg *msg)
+static int rpc_request(struct ksmbd_ipc_msg *msg)
 {
-	struct usmbd_rpc_command *req;
-	struct usmbd_rpc_command *resp;
-	struct usmbd_ipc_msg *resp_msg;
+	struct ksmbd_rpc_command *req;
+	struct ksmbd_rpc_command *resp;
+	struct ksmbd_ipc_msg *resp_msg;
 	int ret = -ENOTSUP;
 
-	req = USMBD_IPC_MSG_PAYLOAD(msg);
-	if (req->flags & USMBD_RPC_METHOD_RETURN)
-		resp_msg = ipc_msg_alloc(USMBD_IPC_MAX_MESSAGE_SIZE -
-					 sizeof(struct usmbd_rpc_command));
+	req = KSMBD_IPC_MSG_PAYLOAD(msg);
+	if (req->flags & KSMBD_RPC_METHOD_RETURN)
+		resp_msg = ipc_msg_alloc(KSMBD_IPC_MAX_MESSAGE_SIZE -
+					 sizeof(struct ksmbd_rpc_command));
 	else
-		resp_msg = ipc_msg_alloc(sizeof(struct usmbd_rpc_command));
+		resp_msg = ipc_msg_alloc(sizeof(struct ksmbd_rpc_command));
 	if (!resp_msg)
 		goto out;
 
-	resp = USMBD_IPC_MSG_PAYLOAD(resp_msg);
+	resp = KSMBD_IPC_MSG_PAYLOAD(resp_msg);
 
-	if ((req->flags & USMBD_RPC_RAP_METHOD) == USMBD_RPC_RAP_METHOD) {
+	if ((req->flags & KSMBD_RPC_RAP_METHOD) == KSMBD_RPC_RAP_METHOD) {
 		pr_err("RAP command is not supported yet %x\n", req->flags);
-		ret = USMBD_RPC_ENOTIMPLEMENTED;
-	} else if (req->flags & USMBD_RPC_OPEN_METHOD) {
+		ret = KSMBD_RPC_ENOTIMPLEMENTED;
+	} else if (req->flags & KSMBD_RPC_OPEN_METHOD) {
 		ret = rpc_open_request(req, resp);
-	} else if (req->flags & USMBD_RPC_CLOSE_METHOD) {
+	} else if (req->flags & KSMBD_RPC_CLOSE_METHOD) {
 		ret = rpc_close_request(req, resp);
-	} else if (req->flags & USMBD_RPC_IOCTL_METHOD) {
+	} else if (req->flags & KSMBD_RPC_IOCTL_METHOD) {
 		ret = rpc_ioctl_request(req, resp, resp_msg->sz);
-	} else if (req->flags & USMBD_RPC_WRITE_METHOD) {
+	} else if (req->flags & KSMBD_RPC_WRITE_METHOD) {
 		ret = rpc_write_request(req, resp);
-	} else if (req->flags & USMBD_RPC_READ_METHOD) {
+	} else if (req->flags & KSMBD_RPC_READ_METHOD) {
 		ret = rpc_read_request(req, resp, resp_msg->sz);
 	} else {
 		pr_err("Unknown RPC method: %x\n", req->flags);
-		ret = USMBD_RPC_ENOTIMPLEMENTED;
+		ret = KSMBD_RPC_ENOTIMPLEMENTED;
 	}
 
-	resp_msg->type = USMBD_EVENT_RPC_RESPONSE;
+	resp_msg->type = KSMBD_EVENT_RPC_RESPONSE;
 	resp->handle = req->handle;
 	resp->flags = ret;
-	resp_msg->sz = sizeof(struct usmbd_rpc_command) + resp->payload_sz;
+	resp_msg->sz = sizeof(struct ksmbd_rpc_command) + resp->payload_sz;
 
 	ipc_msg_send(resp_msg);
 out:
@@ -196,34 +196,34 @@ out:
 
 static void *worker_pool_fn(void *event)
 {
-	struct usmbd_ipc_msg *msg = (struct usmbd_ipc_msg *)event;
+	struct ksmbd_ipc_msg *msg = (struct ksmbd_ipc_msg *)event;
 
 	switch (msg->type) {
-	case USMBD_EVENT_LOGIN_REQUEST:
+	case KSMBD_EVENT_LOGIN_REQUEST:
 		login_request(msg);
 		break;
 
-	case USMBD_EVENT_TREE_CONNECT_REQUEST:
+	case KSMBD_EVENT_TREE_CONNECT_REQUEST:
 		tree_connect_request(msg);
 		break;
 
-	case USMBD_EVENT_TREE_DISCONNECT_REQUEST:
+	case KSMBD_EVENT_TREE_DISCONNECT_REQUEST:
 		tree_disconnect_request(msg);
 		break;
 
-	case USMBD_EVENT_LOGOUT_REQUEST:
+	case KSMBD_EVENT_LOGOUT_REQUEST:
 		logout_request(msg);
 		break;
 
-	case USMBD_EVENT_SHARE_CONFIG_REQUEST:
+	case KSMBD_EVENT_SHARE_CONFIG_REQUEST:
 		share_config_request(msg);
 		break;
 
-	case USMBD_EVENT_RPC_REQUEST:
+	case KSMBD_EVENT_RPC_REQUEST:
 		rpc_request(msg);
 		break;
 
-	case USMBD_EVENT_HEARTBEAT_REQUEST:
+	case KSMBD_EVENT_HEARTBEAT_REQUEST:
 		heartbeat_request(msg);
 		break;
 
@@ -237,7 +237,7 @@ static void *worker_pool_fn(void *event)
 	return NULL;
 }
 
-int wp_ipc_msg_push(struct usmbd_ipc_msg *msg)
+int wp_ipc_msg_push(struct ksmbd_ipc_msg *msg)
 {
 	pthread_attr_t attr;
 	pthread_t thread;

@@ -80,7 +80,7 @@ static int sanity_check_user_name_simple(char *uname)
 	sz = strlen(uname);
 	if (sz < 1)
 		return -EINVAL;
-	if (sz >= USMBD_REQ_MAX_ACCOUNT_NAME_SZ)
+	if (sz >= KSMBD_REQ_MAX_ACCOUNT_NAME_SZ)
 		return -EINVAL;
 
 	/* 1'; Drop table users -- */
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
 	 * We support only ADD_USER command at this moment
 	 */
 	if (ret == 0 && cmd == COMMAND_ADD_USER)
-		notify_usmbd_daemon();
+		notify_ksmbd_daemon();
 out:
 	shm_destroy();
 	usm_destroy();

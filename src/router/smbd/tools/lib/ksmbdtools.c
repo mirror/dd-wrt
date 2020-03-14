@@ -18,7 +18,7 @@
 #include <ksmbdtools.h>
 
 /*
- * special simple linked list implementation, just made for the need of usmbd.
+ * special simple linked list implementation, just made for the need of ksmbd.
  * not yet optimized
  */
 
@@ -227,7 +227,7 @@ static int log_open;
 
 typedef void (*logger)(int level, const char *fmt, va_list list);
 
-char *usmbd_conv_charsets[USMBD_CHARSET_MAX + 1] = {
+char *ksmbd_conv_charsets[KSMBD_CHARSET_MAX + 1] = {
 	"UTF-8",
 	"UTF-16LE",
 	"UCS-2LE",
@@ -298,7 +298,7 @@ void pr_logger_init(int flag)
 			closelog();
 			log_open = 0;
 		}
-		openlog("usmbd", LOG_NDELAY, LOG_LOCAL5);
+		openlog("ksmbd", LOG_NDELAY, LOG_LOCAL5);
 		__logger = __pr_log_syslog;
 		log_open = 1;
 	}
@@ -556,13 +556,13 @@ unsigned char *base64_decode(char const *src, size_t *dstlen)
 
 static int codeset_has_altname(int codeset)
 {
-	if (codeset == USMBD_CHARSET_UTF16LE ||
-	    codeset == USMBD_CHARSET_UTF16BE)
+	if (codeset == KSMBD_CHARSET_UTF16LE ||
+	    codeset == KSMBD_CHARSET_UTF16BE)
 		return 1;
 	return 0;
 }
 
-char *usmbd_gconvert(const char *str, size_t str_len, int to_codeset,
+char *ksmbd_gconvert(const char *str, size_t str_len, int to_codeset,
 		     int from_codeset, size_t *bytes_read,
 		     size_t *bytes_written)
 {
@@ -571,19 +571,19 @@ char *usmbd_gconvert(const char *str, size_t str_len, int to_codeset,
 
 retry:
 	err = 0;
-	if (from_codeset >= USMBD_CHARSET_MAX) {
+	if (from_codeset >= KSMBD_CHARSET_MAX) {
 		pr_err("Unknown source codeset: %d\n", from_codeset);
 		return NULL;
 	}
 
-	if (to_codeset >= USMBD_CHARSET_MAX) {
+	if (to_codeset >= KSMBD_CHARSET_MAX) {
 		pr_err("Unknown target codeset: %d\n", to_codeset);
 		return NULL;
 	}
 	buf = converted = malloc((str_len * 2) + 1);
 	memset(converted, 0, (str_len * 2) + 1);
-	iconv_t conv = iconv_open(usmbd_conv_charsets[to_codeset],
-				  usmbd_conv_charsets[from_codeset]);
+	iconv_t conv = iconv_open(ksmbd_conv_charsets[to_codeset],
+				  ksmbd_conv_charsets[from_codeset]);
 	*bytes_read = str_len;
 	*bytes_written = str_len * 2;
 	err = iconv(conv, (char **)&str, bytes_read, &converted, bytes_written);
@@ -607,8 +607,8 @@ retry:
 
 		if (has_altname) {
 			pr_info("Will try '%s' and '%s'\n",
-				usmbd_conv_charsets[to_codeset],
-				usmbd_conv_charsets[from_codeset]);
+				ksmbd_conv_charsets[to_codeset],
+				ksmbd_conv_charsets[from_codeset]);
 			goto retry;
 		}
 
@@ -669,13 +669,13 @@ char *ascii_strdown(char *str, size_t len)
 	return result;
 }
 
-void notify_usmbd_daemon(void)
+void notify_ksmbd_daemon(void)
 {
 	char manager_pid[10] = { 0, };
 	int pid = 0;
 	int lock_fd;
 
-	lock_fd = open(USMBD_LOCK_FILE, O_RDONLY);
+	lock_fd = open(KSMBD_LOCK_FILE, O_RDONLY);
 	if (lock_fd < 0)
 		return;
 

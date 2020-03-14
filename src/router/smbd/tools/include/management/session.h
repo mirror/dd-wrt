@@ -10,25 +10,25 @@
 
 #include <ksmbdtools.h>
 
-struct usmbd_user;
+struct ksmbd_user;
 
-struct usmbd_session {
+struct ksmbd_session {
 	unsigned long long	id;
 
-	struct usmbd_user	*user;
+	struct ksmbd_user	*user;
 
 	pthread_rwlock_t	update_lock;
 	struct LIST		*tree_conns;
 	int			ref_counter;
 };
 
-struct usmbd_tree_conn;
+struct ksmbd_tree_conn;
 
 int sm_check_sessions_capacity(unsigned long long id);
 
 int sm_handle_tree_connect(unsigned long long id,
-			   struct usmbd_user *user,
-			   struct usmbd_tree_conn *tree_conn);
+			   struct ksmbd_user *user,
+			   struct ksmbd_tree_conn *tree_conn);
 int sm_handle_tree_disconnect(unsigned long long sess_id,
 			      unsigned long long tree_conn_id);
 

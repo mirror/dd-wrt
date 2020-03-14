@@ -35,25 +35,25 @@
 #define SRVSVC_OPNUM_SHARE_ENUM_ALL	15
 #define SRVSVC_OPNUM_GET_SHARE_INFO	16
 
-static int __share_type(struct usmbd_share *share)
+static int __share_type(struct ksmbd_share *share)
 {
-	if (test_share_flag(share, USMBD_SHARE_FLAG_PIPE))
+	if (test_share_flag(share, KSMBD_SHARE_FLAG_PIPE))
 		return SHARE_TYPE_IPC;
 	if (!strncasecmp(share->name, "IPC", strlen("IPC")))
 		return SHARE_TYPE_IPC;
 	return SHARE_TYPE_DISKTREE;
 }
 
-static int __share_entry_size_ctr0(struct usmbd_dcerpc *dce, void *entry)
+static int __share_entry_size_ctr0(struct ksmbd_dcerpc *dce, void *entry)
 {
-	struct usmbd_share *share = entry;
+	struct ksmbd_share *share = entry;
 
 	return strlen(share->name) * 2 + 4 * sizeof(__u32);
 }
 
-static int __share_entry_size_ctr1(struct usmbd_dcerpc *dce, void *entry)
+static int __share_entry_size_ctr1(struct ksmbd_dcerpc *dce, void *entry)
 {
-	struct usmbd_share *share = entry;
+	struct ksmbd_share *share = entry;
 	int sz = 0;
 
 	sz = strlen(share->name) * 2;
@@ -70,15 +70,15 @@ static int __share_entry_size_ctr1(struct usmbd_dcerpc *dce, void *entry)
  * An embedded reference pointer is represented in two parts, a 4 octet
  * value in place and a possibly deferred representation of the referent.
  */
-static int __share_entry_rep_ctr0(struct usmbd_dcerpc *dce, void *entry)
+static int __share_entry_rep_ctr0(struct ksmbd_dcerpc *dce, void *entry)
 {
 	dce->num_pointers++;
 	return ndr_write_int32(dce, dce->num_pointers);	/* ref pointer */
 }
 
-static int __share_entry_rep_ctr1(struct usmbd_dcerpc *dce, void *entry)
+static int __share_entry_rep_ctr1(struct ksmbd_dcerpc *dce, void *entry)
 {
-	struct usmbd_share *share = entry;
+	struct ksmbd_share *share = entry;
 	int ret;
 
 	dce->num_pointers++;
@@ -89,16 +89,16 @@ static int __share_entry_rep_ctr1(struct usmbd_dcerpc *dce, void *entry)
 	return ret;
 }
 
-static int __share_entry_data_ctr0(struct usmbd_dcerpc *dce, void *entry)
+static int __share_entry_data_ctr0(struct ksmbd_dcerpc *dce, void *entry)
 {
-	struct usmbd_share *share = entry;
+	struct ksmbd_share *share = entry;
 
 	return ndr_write_vstring(dce, share->name);
 }
 
-static int __share_entry_data_ctr1(struct usmbd_dcerpc *dce, void *entry)
+static int __share_entry_data_ctr1(struct ksmbd_dcerpc *dce, void *entry)
 {
-	struct usmbd_share *share = entry;
+	struct ksmbd_share *share = entry;
 	int ret;
 
 	ret = ndr_write_vstring(dce, share->name);
@@ -106,12 +106,12 @@ static int __share_entry_data_ctr1(struct usmbd_dcerpc *dce, void *entry)
 	return ret;
 }
 
-static int __share_entry_null_rep_ctr0(struct usmbd_dcerpc *dce, void *entry)
+static int __share_entry_null_rep_ctr0(struct ksmbd_dcerpc *dce, void *entry)
 {
 	return ndr_write_int32(dce, 0);	/* ref pointer */
 }
 
-static int __share_entry_null_rep_ctr1(struct usmbd_dcerpc *dce, void *entry)
+static int __share_entry_null_rep_ctr1(struct ksmbd_dcerpc *dce, void *entry)
 {
 	int ret;
 
@@ -121,16 +121,16 @@ static int __share_entry_null_rep_ctr1(struct usmbd_dcerpc *dce, void *entry)
 	return ret;
 }
 
-static int __share_entry_processed(struct usmbd_rpc_pipe *pipe, int i)
+static int __share_entry_processed(struct ksmbd_rpc_pipe *pipe, int i)
 {
-	struct usmbd_share *share;
+	struct ksmbd_share *share;
 
 	share = list_get(&pipe->entries, i);
 
 	list_remove_dec(&pipe->entries, i);
 	pipe->num_entries--;
 	pipe->num_processed++;
-	put_usmbd_share(share);
+	put_ksmbd_share(share);
 
 	return 0;
 }
@@ -138,61 +138,61 @@ static int __share_entry_processed(struct usmbd_rpc_pipe *pipe, int i)
 static void __enum_all_shares(void *value, unsigned long long id,
 			      void *user_data)
 {
-	struct usmbd_rpc_pipe *pipe = (struct usmbd_rpc_pipe *)user_data;
-	struct usmbd_share *share = (struct usmbd_share *)value;
+	struct ksmbd_rpc_pipe *pipe = (struct ksmbd_rpc_pipe *)user_data;
+	struct ksmbd_share *share = (struct ksmbd_share *)value;
 
-	if (!get_usmbd_share(share))
+	if (!get_ksmbd_share(share))
 		return;
 
-	if (!test_share_flag(share, USMBD_SHARE_FLAG_BROWSEABLE)) {
-		put_usmbd_share(share);
+	if (!test_share_flag(share, KSMBD_SHARE_FLAG_BROWSEABLE)) {
+		put_ksmbd_share(share);
 		return;
 	}
 
-	if (!test_share_flag(share, USMBD_SHARE_FLAG_AVAILABLE)) {
-		put_usmbd_share(share);
+	if (!test_share_flag(share, KSMBD_SHARE_FLAG_AVAILABLE)) {
+		put_ksmbd_share(share);
 		return;
 	}
 	list_append(&pipe->entries, share);
 	pipe->num_entries++;
 }
 
-static int srvsvc_share_enum_all_invoke(struct usmbd_rpc_pipe *pipe)
+static int srvsvc_share_enum_all_invoke(struct ksmbd_rpc_pipe *pipe)
 {
-	foreach_usmbd_share(__enum_all_shares, pipe);
+	foreach_ksmbd_share(__enum_all_shares, pipe);
 	pipe->entry_processed = __share_entry_processed;
 	return 0;
 }
 
-static int srvsvc_share_get_info_invoke(struct usmbd_rpc_pipe *pipe,
+static int srvsvc_share_get_info_invoke(struct ksmbd_rpc_pipe *pipe,
 					struct srvsvc_share_info_request *hdr)
 {
-	struct usmbd_share *share;
+	struct ksmbd_share *share;
 	int ret;
 
 	share = shm_lookup_share(STR_VAL(hdr->share_name));
 	if (!share)
 		return 0;
 
-	if (!test_share_flag(share, USMBD_SHARE_FLAG_AVAILABLE)) {
-		put_usmbd_share(share);
+	if (!test_share_flag(share, KSMBD_SHARE_FLAG_AVAILABLE)) {
+		put_ksmbd_share(share);
 		return 0;
 	}
 
 	ret = shm_lookup_hosts_map(share,
-				   USMBD_SHARE_HOSTS_ALLOW_MAP,
+				   KSMBD_SHARE_HOSTS_ALLOW_MAP,
 				   STR_VAL(hdr->server_name));
 	if (ret == -ENOENT) {
-		put_usmbd_share(share);
+		put_ksmbd_share(share);
 		return 0;
 	}
 
 	if (ret != 0) {
 		ret = shm_lookup_hosts_map(share,
-					   USMBD_SHARE_HOSTS_DENY_MAP,
+					   KSMBD_SHARE_HOSTS_DENY_MAP,
 					   STR_VAL(hdr->server_name));
 		if (ret == 0) {
-			put_usmbd_share(share);
+			put_ksmbd_share(share);
 			return 0;
 		}
 	}
@@ -203,10 +203,10 @@ static int srvsvc_share_get_info_invoke(struct usmbd_rpc_pipe *pipe,
 	return 0;
 }
 
-static int srvsvc_share_enum_all_return(struct usmbd_rpc_pipe *pipe)
+static int srvsvc_share_enum_all_return(struct ksmbd_rpc_pipe *pipe)
 {
-	struct usmbd_dcerpc *dce = pipe->dce;
-	int status = USMBD_RPC_OK;
+	struct ksmbd_dcerpc *dce = pipe->dce;
+	int status = KSMBD_RPC_OK;
 
 	ndr_write_union_int32(dce, dce->si_req.level);
 
@@ -217,12 +217,12 @@ static int srvsvc_share_enum_all_return(struct usmbd_rpc_pipe *pipe)
 	 */
 	ndr_write_int32(dce, pipe->num_processed);
 
-	if (status == USMBD_RPC_EMORE_DATA) {
+	if (status == KSMBD_RPC_EMORE_DATA) {
 		dce->num_pointers++;
 		ndr_write_int32(dce, dce->num_pointers);
 		ndr_write_int32(dce, 0x01);
 		/* Have pending data, set RETURN_READY again */
-		dce->flags |= USMBD_DCERPC_RETURN_READY;
+		dce->flags |= KSMBD_DCERPC_RETURN_READY;
 	} else {
 		dce->num_pointers++;
 		ndr_write_int32(dce, dce->num_pointers);
@@ -231,9 +231,9 @@ static int srvsvc_share_enum_all_return(struct usmbd_rpc_pipe *pipe)
 	return status;
 }
 
-static int srvsvc_share_get_info_return(struct usmbd_rpc_pipe *pipe)
+static int srvsvc_share_get_info_return(struct ksmbd_rpc_pipe *pipe)
 {
-	struct usmbd_dcerpc *dce = pipe->dce;
+	struct ksmbd_dcerpc *dce = pipe->dce;
 
 	ndr_write_union_int32(dce, dce->si_req.level);
 	if (pipe->num_entries)
@@ -253,17 +253,17 @@ static int srvsvc_share_get_info_return(struct usmbd_rpc_pipe *pipe)
 		pr_err("Unsupported share info level (read): %d\n",
 		       dce->si_req.level);
 		dce->entry_rep = NULL;
-		return USMBD_RPC_EINVALID_LEVEL;
+		return KSMBD_RPC_EINVALID_LEVEL;
 	}
 
 	dce->entry_rep(dce, NULL);
 
 	if (!rpc_restricted_context(dce->rpc_req))
-		return USMBD_RPC_EINVALID_PARAMETER;
-	return USMBD_RPC_EACCESS_DENIED;
+		return KSMBD_RPC_EINVALID_PARAMETER;
+	return KSMBD_RPC_EACCESS_DENIED;
 }
 
-static int srvsvc_parse_share_info_req(struct usmbd_dcerpc *dce,
+static int srvsvc_parse_share_info_req(struct ksmbd_dcerpc *dce,
 				       struct srvsvc_share_info_request *hdr)
 {
 	ndr_read_uniq_vsting_ptr(dce, &hdr->server_name);
@@ -297,13 +297,13 @@ static int srvsvc_parse_share_info_req(struct usmbd_dcerpc *dce,
 	return -ENOTSUP;
 }
 
-static int srvsvc_share_info_invoke(struct usmbd_rpc_pipe *pipe)
+static int srvsvc_share_info_invoke(struct ksmbd_rpc_pipe *pipe)
 {
-	struct usmbd_dcerpc *dce = pipe->dce;
-	int ret = USMBD_RPC_ENOTIMPLEMENTED;
+	struct ksmbd_dcerpc *dce = pipe->dce;
+	int ret = KSMBD_RPC_ENOTIMPLEMENTED;
 
 	if (srvsvc_parse_share_info_req(dce, &dce->si_req))
-		return USMBD_RPC_EBAD_DATA;
+		return KSMBD_RPC_EBAD_DATA;
 
 	pipe->entry_processed = __share_entry_processed;
 
@@ -317,9 +317,9 @@ static int srvsvc_share_info_invoke(struct usmbd_rpc_pipe *pipe)
 	return ret;
 }
 
-static int srvsvc_clear_headers(struct usmbd_rpc_pipe *pipe, int status)
+static int srvsvc_clear_headers(struct ksmbd_rpc_pipe *pipe, int status)
 {
-	if (status == USMBD_RPC_EMORE_DATA)
+	if (status == KSMBD_RPC_EMORE_DATA)
 		return 0;
 
 	ndr_free_uniq_vsting_ptr(&pipe->dce->si_req.server_name);
@@ -329,10 +329,10 @@ static int srvsvc_clear_headers(struct usmbd_rpc_pipe *pipe, int status)
 	return 0;
 }
 
-static int srvsvc_share_info_return(struct usmbd_rpc_pipe *pipe)
+static int srvsvc_share_info_return(struct ksmbd_rpc_pipe *pipe)
 {
-	struct usmbd_dcerpc *dce = pipe->dce;
-	int ret = USMBD_RPC_OK, status;
+	struct ksmbd_dcerpc *dce = pipe->dce;
+	int ret = KSMBD_RPC_OK, status;
 
 	/*
 	 * Reserve space for response NDR header. We don't know yet if
@@ -365,14 +365,14 @@ static int srvsvc_share_info_return(struct usmbd_rpc_pipe *pipe)
 		status = srvsvc_share_enum_all_return(pipe);
 
 	if (rpc_restricted_context(dce->rpc_req))
-		status = USMBD_RPC_EACCESS_DENIED;
+		status = KSMBD_RPC_EACCESS_DENIED;
 
 	srvsvc_clear_headers(pipe, status);
 
 	/*
 	 * [out] DWORD Return value/code
 	 */
-	if (ret != USMBD_RPC_OK)
+	if (ret != KSMBD_RPC_OK)
 		status = ret;
 
 	ndr_write_int32(dce, status);
@@ -382,9 +382,9 @@ static int srvsvc_share_info_return(struct usmbd_rpc_pipe *pipe)
 	return ret;
 }
 
-static int srvsvc_invoke(struct usmbd_rpc_pipe *pipe)
+static int srvsvc_invoke(struct ksmbd_rpc_pipe *pipe)
 {
-	int ret = USMBD_RPC_ENOTIMPLEMENTED;
+	int ret = KSMBD_RPC_ENOTIMPLEMENTED;
 
 	switch (pipe->dce->req_hdr.opnum) {
 	case SRVSVC_OPNUM_SHARE_ENUM_ALL:
@@ -402,10 +402,10 @@ static int srvsvc_invoke(struct usmbd_rpc_pipe *pipe)
 	return ret;
 }
 
-static int srvsvc_return(struct usmbd_rpc_pipe *pipe,
-			 struct usmbd_rpc_command *resp, int max_resp_sz)
+static int srvsvc_return(struct ksmbd_rpc_pipe *pipe,
+			 struct ksmbd_rpc_command *resp, int max_resp_sz)
 {
-	struct usmbd_dcerpc *dce = pipe->dce;
+	struct ksmbd_dcerpc *dce = pipe->dce;
 	int ret;
 
 	switch (dce->req_hdr.opnum) {
@@ -421,19 +421,19 @@ static int srvsvc_return(struct usmbd_rpc_pipe *pipe,
 	default:
 		pr_err("SRVSVC: unsupported RETURN method %d\n",
 		       dce->req_hdr.opnum);
-		ret = USMBD_RPC_EBAD_FUNC;
+		ret = KSMBD_RPC_EBAD_FUNC;
 		break;
 	}
 	return ret;
 }
 
-int rpc_srvsvc_read_request(struct usmbd_rpc_pipe *pipe,
-			    struct usmbd_rpc_command *resp, int max_resp_sz)
+int rpc_srvsvc_read_request(struct ksmbd_rpc_pipe *pipe,
+			    struct ksmbd_rpc_command *resp, int max_resp_sz)
 {
 	return srvsvc_return(pipe, resp, max_resp_sz);
 }
 
-int rpc_srvsvc_write_request(struct usmbd_rpc_pipe *pipe)
+int rpc_srvsvc_write_request(struct ksmbd_rpc_pipe *pipe)
 {
 	return srvsvc_invoke(pipe);
 }
