@@ -5,8 +5,8 @@
  *   linux-cifsd-devel@lists.sourceforge.net
  */
 
-#ifndef __USMBDTOOLS_H__
-#define __USMBDTOOLS_H__
+#ifndef __KSMBDTOOLS_H__
+#define __KSMBDTOOLS_H__
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE 1
@@ -121,38 +121,38 @@ struct smbconf_global {
 	char			*smbconf;
 };
 
-#define USMBD_LOCK_FILE		"/tmp/usmbd.lock"
+#define KSMBD_LOCK_FILE		"/tmp/ksmbd.lock"
 
-#define USMBD_RESTRICT_ANON_TYPE_1	1
-#define USMBD_RESTRICT_ANON_TYPE_2	2
+#define KSMBD_RESTRICT_ANON_TYPE_1	1
+#define KSMBD_RESTRICT_ANON_TYPE_2	2
 
 extern struct smbconf_global global_conf;
 
-#define USMBD_CONF_MAP_TO_GUEST_NEVER		(0)
-#define USMBD_CONF_MAP_TO_GUEST_BAD_USER	(1 << 0)
-#define USMBD_CONF_MAP_TO_GUEST_BAD_PASSWORD	(1 << 1)
-#define USMBD_CONF_MAP_TO_GUEST_BAD_UID		(1 << 2)
+#define KSMBD_CONF_MAP_TO_GUEST_NEVER		(0)
+#define KSMBD_CONF_MAP_TO_GUEST_BAD_USER	(1 << 0)
+#define KSMBD_CONF_MAP_TO_GUEST_BAD_PASSWORD	(1 << 1)
+#define KSMBD_CONF_MAP_TO_GUEST_BAD_UID		(1 << 2)
 
-#define USMBD_CONF_DEFAULT_NETBIOS_NAME	"USMBD SERVER"
-#define USMBD_CONF_DEFAULT_SERVER_STRING	"SMB SERVER"
-#define USMBD_CONF_DEFAULT_WORK_GROUP		"WORKGROUP"
+#define KSMBD_CONF_DEFAULT_NETBIOS_NAME	"KSMBD SERVER"
+#define KSMBD_CONF_DEFAULT_SERVER_STRING	"SMB SERVER"
+#define KSMBD_CONF_DEFAULT_WORK_GROUP		"WORKGROUP"
 
-#define USMBD_CONF_DEFAULT_GUEST_ACCOUNT	"nobody"
-#define USMBD_CONF_FALLBACK_GUEST_ACCOUNT	"ftp"
+#define KSMBD_CONF_DEFAULT_GUEST_ACCOUNT	"nobody"
+#define KSMBD_CONF_FALLBACK_GUEST_ACCOUNT	"ftp"
 
-#define USMBD_CONF_DEFAULT_SESS_CAP	1024
-#define USMBD_CONF_DEFAULT_TPC_PORT	445
+#define KSMBD_CONF_DEFAULT_SESS_CAP	1024
+#define KSMBD_CONF_DEFAULT_TPC_PORT	445
 
-#define USMBD_CONF_FILE_MAX		10000
+#define KSMBD_CONF_FILE_MAX		10000
 
 #define PATH_PWDDB	"/etc/ksmbd/ksmbdpwd.db"
 #define PATH_SMBCONF	"/etc/ksmbd/smb.conf"
 
-#define USMBD_HEALTH_START		(0)
-#define USMBD_HEALTH_RUNNING		(1 << 0)
-#define USMBD_SHOULD_RELOAD_CONFIG	(1 << 1)
+#define KSMBD_HEALTH_START		(0)
+#define KSMBD_HEALTH_RUNNING		(1 << 0)
+#define KSMBD_SHOULD_RELOAD_CONFIG	(1 << 1)
 
-extern int usmbd_health_status;
+extern int ksmbd_health_status;
 
 #define TRACING_DUMP_NL_MSG	0
 
@@ -211,26 +211,26 @@ void pr_hex_dump(const void *mem, size_t sz);
 char *base64_encode(unsigned char *src, size_t srclen);
 unsigned char *base64_decode(char const *src, size_t *dstlen);
 
-char *usmbd_gconvert(const char *str,
+char *ksmbd_gconvert(const char *str,
 		     size_t str_len,
 		     int to_codeset,
 		     int from_codeset,
 		     size_t *bytes_read, size_t *bytes_written);
 
 enum charset_idx {
-	USMBD_CHARSET_UTF8 = 0,
-	USMBD_CHARSET_UTF16LE,
-	USMBD_CHARSET_UCS2LE,
-	USMBD_CHARSET_UTF16BE,
-	USMBD_CHARSET_UCS2BE,
-	USMBD_CHARSET_MAX = 5,
+	KSMBD_CHARSET_UTF8 = 0,
+	KSMBD_CHARSET_UTF16LE,
+	KSMBD_CHARSET_UCS2LE,
+	KSMBD_CHARSET_UTF16BE,
+	KSMBD_CHARSET_UCS2BE,
+	KSMBD_CHARSET_MAX = 5,
 };
 
-#define USMBD_CHARSET_DEFAULT		USMBD_CHARSET_UTF8
+#define KSMBD_CHARSET_DEFAULT		KSMBD_CHARSET_UTF8
 
-extern char *usmbd_conv_charsets[USMBD_CHARSET_MAX + 1];
+extern char *ksmbd_conv_charsets[KSMBD_CHARSET_MAX + 1];
 
-void notify_usmbd_daemon(void);
+void notify_ksmbd_daemon(void);
 int test_file_access(char *conf);
 
-#endif /* __USMBDTOOLS_H__ */
+#endif /* __KSMBDTOOLS_H__ */

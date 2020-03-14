@@ -25,13 +25,13 @@ static pthread_rwlock_t sessions_table_lock;
 
 static void __free_func(void *data, unsigned long long id, void *user_data)
 {
-	struct usmbd_tree_conn *tree_conn;
+	struct ksmbd_tree_conn *tree_conn;
 
-	tree_conn = (struct usmbd_tree_conn *)data;
+	tree_conn = (struct ksmbd_tree_conn *)data;
 	tcm_tree_conn_free(tree_conn);
 }
 
-static void kill_usmbd_session(struct usmbd_session *sess)
+static void kill_ksmbd_session(struct ksmbd_session *sess)
 {
 	list_foreach(&sess->tree_conns, __free_func, NULL);
 	list_clear(&sess->tree_conns);
@@ -39,12 +39,12 @@ static void kill_usmbd_session(struct usmbd_session *sess)
 	free(sess);
 }
 
-static struct usmbd_session *new_usmbd_session(unsigned long long id,
-					       struct usmbd_user *user)
+static struct ksmbd_session *new_ksmbd_session(unsigned long long id,
+					       struct ksmbd_user *user)
 {
-	struct usmbd_session *sess;
+	struct ksmbd_session *sess;
 
-	sess = calloc(1, sizeof(struct usmbd_session));
+	sess = calloc(1, sizeof(struct ksmbd_session));
 	if (!sess)
 		return NULL;
 
@@ -57,7 +57,7 @@ static struct usmbd_session *new_usmbd_session(unsigned long long id,
 
 static void free_hash_entry(void *s, unsigned long long id, void *user_data)
 {
-	kill_usmbd_session(s);
+	kill_ksmbd_session(s);
 }
 
 static void sm_clear_sessions(void)
@@ -65,7 +65,7 @@ static void sm_clear_sessions(void)
 	list_foreach(&sessions_table, free_hash_entry, NULL);
 }
 
-static int __sm_remove_session(struct usmbd_session *sess)
+static int __sm_remove_session(struct ksmbd_session *sess)
 {
 	int ret = -EINVAL;
 
@@ -75,13 +75,13 @@ static int __sm_remove_session(struct usmbd_session *sess)
 	pthread_rwlock_unlock(&sessions_table_lock);
 
 	if (!ret)
-		kill_usmbd_session(sess);
+		kill_ksmbd_session(sess);
 	return ret;
 }
 
-static struct usmbd_session *__get_session(struct usmbd_session *sess)
+static struct ksmbd_session *__get_session(struct ksmbd_session *sess)
 {
-	struct usmbd_session *ret = NULL;
+	struct ksmbd_session *ret = NULL;
 
 	pthread_rwlock_wrlock(&sess->update_lock);
 	if (sess->ref_counter != 0) {
@@ -94,7 +94,7 @@ static struct usmbd_session *__get_session(struct usmbd_session *sess)
 	return ret;
 }
 
-static void __put_session(struct usmbd_session *sess)
+static void __put_session(struct ksmbd_session *sess)
 {
 	int drop = 0;
 
@@ -107,14 +107,14 @@ static void __put_session(struct usmbd_session *sess)
 		__sm_remove_session(sess);
 }
 
-static struct usmbd_session *__sm_lookup_session(unsigned long long id)
+static struct ksmbd_session *__sm_lookup_session(unsigned long long id)
 {
 	return list_get(&sessions_table, id);
 }
 
-static struct usmbd_session *sm_lookup_session(unsigned long long id)
+static struct ksmbd_session *sm_lookup_session(unsigned long long id)
 {
-	struct usmbd_session *sess;
+	struct ksmbd_session *sess;
 
 	pthread_rwlock_rdlock(&sessions_table_lock);
 	sess = __sm_lookup_session(id);
@@ -125,15 +125,15 @@ static struct usmbd_session *sm_lookup_session(unsigned long long id)
 }
 
 int sm_handle_tree_connect(unsigned long long id,
-			   struct usmbd_user *user,
-			   struct usmbd_tree_conn *tree_conn)
+			   struct ksmbd_user *user,
+			   struct ksmbd_tree_conn *tree_conn)
 {
-	struct usmbd_session *sess, *lookup;
+	struct ksmbd_session *sess, *lookup;
 
 retry:
 	sess = sm_lookup_session(id);
 	if (!sess) {
-		sess = new_usmbd_session(id, user);
+		sess = new_ksmbd_session(id, user);
 		if (!sess)
 			return -EINVAL;
 
@@ -142,11 +142,11 @@ retry:
 		if (lookup)
 			lookup = __get_session(lookup);
 		if (lookup) {
-			kill_usmbd_session(sess);
+			kill_ksmbd_session(sess);
 			sess = lookup;
 		}
 		if (!list_add(&sessions_table, sess, sess->id)) {
-			kill_usmbd_session(sess);
+			kill_ksmbd_session(sess);
 			sess = NULL;
 		}
 		pthread_rwlock_unlock(&sessions_table_lock);
@@ -177,8 +177,8 @@ int sm_check_sessions_capacity(unsigned long long id)
 
 static int lookup_tree_conn(const void *data, const void *user_data)
 {
-	struct usmbd_tree_conn *tree_conn = (struct usmbd_tree_conn *)data;
-	struct usmbd_tree_conn *dummy = (struct usmbd_tree_conn *)user_data;
+	struct ksmbd_tree_conn *tree_conn = (struct ksmbd_tree_conn *)data;
+	struct ksmbd_tree_conn *dummy = (struct ksmbd_tree_conn *)user_data;
 
 	if (tree_conn->id == dummy->id)
 		return 0;
@@ -188,8 +188,8 @@ static int lookup_tree_conn(const void *data, const void *user_data)
 int sm_handle_tree_disconnect(unsigned long long sess_id,
 			      unsigned long long tree_conn_id)
 {
-	struct usmbd_session *sess;
-	struct usmbd_tree_conn *tree_conn;
+	struct ksmbd_session *sess;
+	struct ksmbd_tree_conn *tree_conn;
 
 	sess = sm_lookup_session(sess_id);
 	if (!sess)
@@ -205,7 +205,7 @@ int sm_handle_tree_disconnect(unsigned long long sess_id,
 	}
 	pthread_rwlock_unlock(&sess->update_lock);
 
-	put_usmbd_user(sess->user);
+	put_ksmbd_user(sess->user);
 	__put_session(sess);
 	return 0;
 }

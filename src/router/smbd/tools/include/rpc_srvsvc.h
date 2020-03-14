@@ -5,16 +5,16 @@
  *   linux-cifsd-devel@lists.sourceforge.net
  */
 
-#ifndef __USMBD_RPC_SRVSVC_H__
-#define __USMBD_RPC_SRVSVC_H__
+#ifndef __KSMBD_RPC_SRVSVC_H__
+#define __KSMBD_RPC_SRVSVC_H__
 
-struct usmbd_rpc_command;
-struct usmbd_rpc_pipe;
+struct ksmbd_rpc_command;
+struct ksmbd_rpc_pipe;
 
-int rpc_srvsvc_read_request(struct usmbd_rpc_pipe *pipe,
-			    struct usmbd_rpc_command *resp,
+int rpc_srvsvc_read_request(struct ksmbd_rpc_pipe *pipe,
+			    struct ksmbd_rpc_command *resp,
 			    int max_resp_sz);
 
-int rpc_srvsvc_write_request(struct usmbd_rpc_pipe *pipe);
+int rpc_srvsvc_write_request(struct ksmbd_rpc_pipe *pipe);
 
-#endif /* __USMBD_RPC_SRVSVC_H__ */
+#endif /* __KSMBD_RPC_SRVSVC_H__ */

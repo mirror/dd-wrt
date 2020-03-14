@@ -5,8 +5,8 @@
  *   linux-cifsd-devel@lists.sourceforge.net
  */
 
-#ifndef __USMBD_CONFIG_H__
-#define __USMBD_CONFIG_H__
+#ifndef __KSMBD_CONFIG_H__
+#define __KSMBD_CONFIG_H__
 
 #include <ksmbdtools.h>
 
@@ -40,4 +40,4 @@ int cp_get_group_kv_config_opt(char *v);
 char **cp_get_group_kv_list(char *v);
 void cp_group_kv_list_free(char **list);
 
-#endif /* __USMBD_CONFIG_H__ */
+#endif /* __KSMBD_CONFIG_H__ */
