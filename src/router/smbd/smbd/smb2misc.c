@@ -429,6 +429,10 @@ int ksmbd_smb2_check_message(struct ksmbd_work *work)
 					le64_to_cpu(hdr->MessageId));
 			return 0;
 		}
+
+		if (command == SMB2_LOCK_HE && len == 88)
+			return 0;
+
 		ksmbd_debug(
 			"cli req too short, len %d not %d. cmd:%d mid:%llu\n",
 				len, clc_len, command,

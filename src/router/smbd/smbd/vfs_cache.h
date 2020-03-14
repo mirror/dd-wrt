@@ -42,7 +42,7 @@ struct ksmbd_lock {
 	struct list_head glist;
 	struct list_head llist;
 	unsigned int flags;
-	unsigned int cmd;
+	int cmd;
 	int zero_len;
 	unsigned long long start;
 	unsigned long long end;
