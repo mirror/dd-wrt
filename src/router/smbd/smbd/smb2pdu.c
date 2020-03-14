@@ -6238,7 +6238,7 @@ out:
 
 static int smb2_set_flock_flags(struct file_lock *flock, int flags)
 {
-	int cmd = 0;
+	int cmd = -EINVAL;
 
 	/* Checking for wrong flag combination during lock request*/
 	switch (flags) {
@@ -6327,7 +6327,7 @@ int smb2_lock(struct ksmbd_work *work)
 	struct file *filp = NULL;
 	int lock_count;
 	int flags = 0;
-	unsigned int cmd = 0;
+	int cmd = 0;
 	int err = 0, i;
 	uint64_t lock_length;
 	struct ksmbd_lock *smb_lock = NULL, *cmp_lock, *tmp;
@@ -6381,6 +6381,8 @@ int smb2_lock(struct ksmbd_work *work)
 					OFFSET_MAX - flock->fl_start) {
 				ksmbd_debug("Invalid lock range requested\n");
 				lock_length = OFFSET_MAX - flock->fl_start;
+				rsp->hdr.Status = STATUS_INVALID_LOCK_RANGE;
+				goto out;
 			}
 		} else
 			lock_length = 0;
@@ -6416,6 +6418,11 @@ int smb2_lock(struct ksmbd_work *work)
 	}
 
 	list_for_each_entry_safe(smb_lock, tmp, &lock_list, llist) {
+		if (smb_lock->cmd < 0) {
+			rsp->hdr.Status = STATUS_INVALID_PARAMETER;
+			goto out;
+		}
+
 		if (!(smb_lock->flags & SMB2_LOCKFLAG_MASK)) {
 			rsp->hdr.Status = STATUS_INVALID_PARAMETER;
 			goto out;

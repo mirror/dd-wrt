@@ -121,10 +121,8 @@ static int __process_request(struct ksmbd_work *work,
 	if (check_conn_state(work))
 		return TCP_HANDLER_CONTINUE;
 
-	if (ksmbd_verify_smb_message(work)) {
-		work->send_no_response = 1;
+	if (ksmbd_verify_smb_message(work))
 		return TCP_HANDLER_ABORT;
-	}
 
 	command = conn->ops->get_cmd_val(work);
 	*cmd = command;
@@ -231,6 +229,9 @@ static void __handle_ksmbd_work(struct ksmbd_work *work,
 			}
 		}
 	} while (is_chained_smb2_message(work));
+
+	if (work->send_no_response)
+		return;
 
 send:
 	smb3_preauth_hash_rsp(work);
