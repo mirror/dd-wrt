@@ -359,7 +359,6 @@ static void __ksmbd_close_fd(struct ksmbd_file_table *ft,
 			     struct ksmbd_file *fp)
 {
 	struct file *filp;
-	struct ksmbd_work *cancel_work, *ctmp;
 
 	fd_limit_close();
 	__ksmbd_remove_durable_fd(fp);
@@ -367,15 +366,6 @@ static void __ksmbd_close_fd(struct ksmbd_file_table *ft,
 
 	close_id_del_oplock(fp);
 	filp = fp->filp;
-
-	spin_lock(&fp->f_lock);
-	list_for_each_entry_safe(cancel_work, ctmp, &fp->blocked_works,
-		fp_entry) {
-		list_del(&cancel_work->fp_entry);
-		cancel_work->state = KSMBD_WORK_CLOSED;
-		cancel_work->cancel_fn(cancel_work->cancel_argv);
-	}
-	spin_unlock(&fp->f_lock);
 
 	__ksmbd_inode_close(fp);
 	if (!IS_ERR_OR_NULL(filp))
@@ -425,6 +415,20 @@ static void __put_fd_final(struct ksmbd_work *work,
 	atomic_dec(&work->conn->stats.open_files_count);
 }
 
+static void set_close_state_blocked_works(struct ksmbd_file *fp)
+{
+	struct ksmbd_work *cancel_work, *ctmp;
+
+	spin_lock(&fp->f_lock);
+	list_for_each_entry_safe(cancel_work, ctmp, &fp->blocked_works,
+			fp_entry) {
+		list_del(&cancel_work->fp_entry);
+		cancel_work->state = KSMBD_WORK_CLOSED;
+		cancel_work->cancel_fn(cancel_work->cancel_argv);
+	}
+	spin_unlock(&fp->f_lock);
+}
+
 int ksmbd_close_fd(struct ksmbd_work *work, unsigned int id)
 {
 	struct ksmbd_file	*fp;
@@ -437,6 +441,8 @@ int ksmbd_close_fd(struct ksmbd_work *work, unsigned int id)
 	read_lock(&ft->lock);
 	fp = idr_find(ft->idr, id);
 	if (fp) {
+		set_close_state_blocked_works(fp);
+
 		if (!atomic_dec_and_test(&fp->refcount))
 			fp = NULL;
 	}
@@ -737,6 +743,10 @@ __close_file_table_ids(struct ksmbd_file_table *ft,
 		if (skip(tcon, fp))
 			continue;
 
+		set_close_state_blocked_works(fp);
+
+		if (!atomic_dec_and_test(&fp->refcount))
+			continue;
 		__ksmbd_close_fd(ft, fp);
 		num++;
 	}
