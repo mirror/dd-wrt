@@ -227,7 +227,7 @@ static struct nla_policy usmbd_nl_policy[USMBD_EVENT_MAX] = {
 	},
 
 	[USMBD_EVENT_SHUTTING_DOWN] = {
-		.minlen = sizeof(struct usmbd_startup_request),
+		.minlen = sizeof(struct usmbd_shutdown_request),
 	},
 
 	[USMBD_EVENT_LOGIN_REQUEST] = {
