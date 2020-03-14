@@ -1,3 +1,12 @@
+11 Mar 2020 - 4.5
+	Provide basic authentication.
+	Provide new skin 3.
+10 Mar 2020 - 4.4
+	Provide new skin 2.
+09 Mar 2020 - 4.3
+	Fix files truncated by webserver.
+	Provide larget on and off buttons.
+	Wait for udev service before starting sispmctl service.
 22 May 2019 - 4.2
 	Fix a buffer overrun in the webserver.
 18 Nov 2018 - 4.1

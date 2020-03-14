@@ -8,8 +8,8 @@ body {
 	font-family:Verdana,Helvetica,sans-serif;
 	font-size:3em;
 	font-style:normal;
-	color:#f70;
-	background-color:#000;
+	color:#333;
+	background-color:#fff;
 	margin:0px;
 	padding:0px;
 }
@@ -35,6 +35,7 @@ div {
 }
 
 .title {
+	font-weight:bold;
 	border:0;
 }
 
@@ -47,15 +48,15 @@ div {
 }
 
 .on {
-	background-color:#fff;
+	background-color:#06c;
 }
 
 .off {
-	background-color:#000;
+	background-color:#fff;
 }
 
 a.on:visited, a.on:link, a.on:active {
-	color:#000;
+	color:#fff;
 }
 
 .on:hover {
@@ -63,7 +64,7 @@ a.on:visited, a.on:link, a.on:active {
 }
 
 a.off:visited, a.off:link, a.off:active {
-	color:#fff;
+	color:#333;
 }
 
 .off:hover {

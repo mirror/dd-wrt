@@ -3,7 +3,7 @@
 
   Controls the GEMBIRD Silver Shield PM USB outlet device
 
-  (C) 2015-2018, Heinrich Schuchardt <xypron.glpk@gmx.de>
+  (C) 2015-2020, Heinrich Schuchardt <xypron.glpk@gmx.de>
   (C) 2011-2016, Pete Hildebrandt <send2ph@gmail.com>
   (C) 2010, Olivier Matheret, France, for the scheduling part
   (C) 2004-2011, Mondrian Nuessle, Computer Architecture Group,
@@ -47,6 +47,41 @@
 #endif
 
 #ifndef WEBLESS
+
+#define BUFSIZE 256
+
+static void read_password(void)
+{
+	FILE *file;
+	const char filename[] = "/etc/sispmctl/password";
+	char buf[BUFSIZE];
+	char *pos;
+
+	file = fopen(filename, "r");
+	if (!file) {
+		if (errno != ENOENT) {
+			perror(filename);
+			exit(EXIT_FAILURE);
+		}
+		/* It is ok if there is no password file */
+		return;
+	}
+	memset(buf, 0, BUFSIZE);
+	fread(buf, 1, BUFSIZE - 1, file);
+	pos = strchr(buf, '\n');
+	if (pos) {
+		*pos = '\0';
+	}
+	secret = strdup(buf);
+	if (secret) {
+		memset(buf, 0, 256);
+	} else {
+		fprintf(stderr, "Out of memory\n");
+		exit(EXIT_FAILURE);
+	}
+	fclose(file);
+}
+
 static void daemonize()
 {
 	/* Our process ID and Session ID */
@@ -82,7 +117,7 @@ static void daemonize()
 static void print_disclaimer(void)
 {
 	fprintf(stderr, "\nSiS PM Control for Linux " PACKAGE_VERSION "\n\n"
-		"(C) 2015-2018, Heinrich Schuchardt <xypron.glpk@gmx.de>\n"
+		"(C) 2015-2020, Heinrich Schuchardt <xypron.glpk@gmx.de>\n"
 		"(C) 2011-2016, Pete Hildebrandt <send2ph@gmail.com>\n"
 		"(C) 2004-2011, Mondrian Nuessle\n"
 		"(C) 2005-2006, Andreas Neuper\n"
@@ -459,6 +494,8 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 			case 'l':
 			case 'L':{
 					int *s;
+
+    					read_password();
 					if (verbose)
 						printf("Server goes to listen mode now.\n");
 					if ((s = socket_init(bindaddr)) != NULL) {
