@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -55,6 +55,7 @@ $readonly = ($data['limited'] || $discovered_trigger);
 
 if ($readonly) {
 	$triggersForm
+		->addVar('opdata', $data['opdata'])
 		->addVar('recovery_mode', $data['recovery_mode'])
 		->addVar('type', $data['type'])
 		->addVar('correlation_mode', $data['correlation_mode'])
@@ -69,17 +70,25 @@ if (!empty($data['templates'])) {
 
 if ($discovered_trigger) {
 	$triggersFormList->addRow(_('Discovered by'), new CLink($data['discoveryRule']['name'],
-		'trigger_prototypes.php?parent_discoveryid='.$data['discoveryRule']['itemid']
+		(new CUrl('trigger_prototypes.php'))
+			->setArgument('form', 'update')
+			->setArgument('parent_discoveryid', $data['discoveryRule']['itemid'])
+			->setArgument('triggerid', $data['triggerDiscovery']['parent_triggerid'])
 	));
 }
 
-$triggersFormList->addRow(
-	(new CLabel(_('Name'), 'description'))->setAsteriskMark(),
-	(new CTextBox('description', $data['description'], $readonly))
-		->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
-		->setAriaRequired()
-		->setAttribute('autofocus', 'autofocus')
-);
+$triggersFormList
+	->addRow(
+		(new CLabel(_('Name'), 'description'))->setAsteriskMark(),
+		(new CTextBox('description', $data['description'], $readonly))
+			->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+			->setAriaRequired()
+			->setAttribute('autofocus', 'autofocus')
+	)
+	->addRow(
+		new CLabel(_('Operational data'), 'opdata'),
+		(new CTextBox('opdata', $data['opdata'], $readonly))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+	);
 
 if ($discovered_trigger) {
 	$triggersFormList->addVar('priority', (int) $data['priority']);
@@ -118,6 +127,7 @@ $expression_row = [
 		$data['expression_field_value'],
 		['readonly' => $data['expression_field_readonly']]
 	))
+		->addClass(ZBX_STYLE_MONOSPACE_FONT)
 		->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 		->setAriaRequired(),
 	(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
@@ -318,6 +328,7 @@ $recovery_expression_row = [
 		$data['recovery_expression_field_value'],
 		['readonly' => $data['recovery_expression_field_readonly']]
 	))
+		->addClass(ZBX_STYLE_MONOSPACE_FONT)
 		->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 		->setAriaRequired(),
 	(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
@@ -532,6 +543,7 @@ $triggersFormList
 	->addRow(_('Description'),
 		(new CTextArea('comments', $data['comments']))
 			->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+			->setMaxlength(DB::getFieldLength('triggers', 'comments'))
 			->setReadonly($discovered_trigger)
 	)
 	->addRow(_('Enabled'), (new CCheckBox('status'))->setChecked($status));

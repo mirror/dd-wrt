@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ $fields = $data['dialogue']['fields'];
 $form = CWidgetHelper::createForm();
 
 $form_list = CWidgetHelper::createFormList($data['dialogue']['name'], $data['dialogue']['type'],
-	$data['known_widget_types'], $fields['rf_rate']
+	$data['dialogue']['view_mode'], $data['known_widget_types'], $fields['rf_rate']
 );
 
 $scripts = [];
@@ -40,17 +40,11 @@ $form_list->addRow(
 
 // Graph.
 if (array_key_exists('graphid', $fields)) {
-	$field = $fields['graphid'];
-
-	// Needed for popup script.
-	$form->addVar($field->getName(), $field->getValue());
-
-	$field_graphid = CWidgetHelper::getSelectResource(
-		$field,
-		($field->getValue() != 0) ? $data['captions']['simple'][$field->getResourceType()][$field->getValue()] : '',
+	$field_graphid = CWidgetHelper::getGraph($fields['graphid'], $data['captions']['ms']['graphs']['graphid'],
 		$form->getName()
 	);
-	$form_list->addRow(CWidgetHelper::getLabel($fields['graphid']), $field_graphid);
+	$form_list->addRow(CWidgetHelper::getMultiselectLabel($fields['graphid']), $field_graphid);
+	$scripts[] = $field_graphid->getPostJS();
 }
 
 // Item.

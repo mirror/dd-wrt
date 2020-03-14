@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -583,10 +583,12 @@ class CGraph extends CGraphGeneral {
 		if ($options['selectDiscoveryRule'] !== null) {
 			$dbRules = DBselect(
 				'SELECT id.parent_itemid,gd.graphid'.
-					' FROM graph_discovery gd,item_discovery id,graphs_items gi'.
+					' FROM graph_discovery gd,item_discovery id,graphs_items gi,items i'.
 					' WHERE '.dbConditionInt('gd.graphid', $graphids).
 					' AND gd.parent_graphid=gi.graphid'.
-					' AND gi.itemid=id.itemid'
+						' AND gi.itemid=id.itemid'.
+						' AND id.parent_itemid=i.itemid'.
+						' AND i.flags='.ZBX_FLAG_DISCOVERY_RULE
 			);
 			$relationMap = new CRelationMap();
 			while ($relation = DBfetch($dbRules)) {

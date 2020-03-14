@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -184,8 +184,9 @@ class CNewValidator {
 				 */
 				case 'array_db':
 					if (array_key_exists($field, $this->input)) {
-						if (!$this->is_array_db($this->input[$field], $params['table'], $params['field'], $flags)
-								|| !is_array($this->input[$field])) {
+						if (!is_array($this->input[$field])
+								|| !$this->is_array_db($this->input[$field], $params['table'], $params['field'], $flags)
+						) {
 							$this->addError($fatal,
 								is_scalar($this->input[$field])
 									? _s('Incorrect value "%1$s" for "%2$s" field.', $this->input[$field], $field)
@@ -303,7 +304,7 @@ class CNewValidator {
 		}
 
 		// between 0 and _I64_MAX
-		return (bccomp($value, '0') >= 0 && bccomp($value, '9223372036854775807') <= 0);
+		return (bccomp($value, '0') >= 0 && bccomp($value, ZBX_DB_MAX_ID) <= 0);
 	}
 
 	public static function is_int32($value) {

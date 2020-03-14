@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include "dbcache.h"
 
 #include "operations.h"
+#include "zbxserver.h"
 
 typedef enum
 {
@@ -51,44 +52,48 @@ static zbx_uint64_t	select_discovered_host(const DB_EVENT *event)
 {
 	DB_RESULT	result;
 	DB_ROW		row;
-	zbx_uint64_t	hostid = 0;
-	char		*sql = NULL;
+	zbx_uint64_t	hostid = 0, proxy_hostid;
+	char		*sql = NULL, *ip_esc;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() eventid:" ZBX_FS_UI64, __func__, event->eventid);
 
 	switch (event->object)
 	{
 		case EVENT_OBJECT_DHOST:
-			sql = zbx_dsprintf(sql,
-				"select h.hostid,h.status"
-				" from hosts h,interface i,dservices ds,dchecks dc,drules dr"
-				" where h.hostid=i.hostid"
-					" and i.ip=ds.ip"
-					" and ds.dcheckid=dc.dcheckid"
-					" and dc.druleid=dr.druleid"
-					" and h.status in (%d,%d)"
-					" and " ZBX_SQL_NULLCMP("dr.proxy_hostid", "h.proxy_hostid")
-					" and i.useip=1"
-					" and ds.dhostid=" ZBX_FS_UI64
-				" order by i.hostid",
-				HOST_STATUS_MONITORED, HOST_STATUS_NOT_MONITORED,
-				event->objectid);
-			break;
 		case EVENT_OBJECT_DSERVICE:
+			result = DBselect(
+					"select dr.proxy_hostid,ds.ip"
+					" from drules dr,dchecks dc,dservices ds"
+					" where dc.druleid=dr.druleid"
+						" and ds.dcheckid=dc.dcheckid"
+						" and ds.%s=" ZBX_FS_UI64,
+					EVENT_OBJECT_DSERVICE == event->object ? "dserviceid" : "dhostid",
+					event->objectid);
+
+			if (NULL == (row = DBfetch(result)))
+			{
+				DBfree_result(result);
+				goto exit;
+			}
+
+			ZBX_DBROW2UINT64(proxy_hostid, row[0]);
+			ip_esc = DBdyn_escape_string(row[1]);
+			DBfree_result(result);
+
 			sql = zbx_dsprintf(sql,
-				"select h.hostid,h.status"
-				" from hosts h,interface i,dservices ds,dchecks dc,drules dr"
-				" where h.hostid=i.hostid"
-					" and i.ip=ds.ip"
-					" and ds.dcheckid=dc.dcheckid"
-					" and dc.druleid=dr.druleid"
-					" and h.status in (%d,%d)"
-					" and " ZBX_SQL_NULLCMP("dr.proxy_hostid", "h.proxy_hostid")
-					" and i.useip=1"
-					" and ds.dserviceid=" ZBX_FS_UI64
-				" order by i.hostid",
-				HOST_STATUS_MONITORED, HOST_STATUS_NOT_MONITORED,
-				event->objectid);
+					"select h.hostid"
+					" from hosts h,interface i"
+					" where h.hostid=i.hostid"
+						" and i.ip='%s'"
+						" and i.useip=1"
+						" and h.status in (%d,%d)"
+						" and h.proxy_hostid%s"
+					" order by i.hostid",
+					ip_esc,
+					HOST_STATUS_MONITORED, HOST_STATUS_NOT_MONITORED,
+					DBsql_id_cmp(proxy_hostid));
+
+			zbx_free(ip_esc);
 			break;
 		case EVENT_OBJECT_ZABBIX_ACTIVE:
 			sql = zbx_dsprintf(sql,
@@ -97,7 +102,7 @@ static zbx_uint64_t	select_discovered_host(const DB_EVENT *event)
 					" where h.host=a.host"
 						" and a.autoreg_hostid=" ZBX_FS_UI64
 						" and h.status in (%d,%d)",
-						event->objectid,
+					event->objectid,
 					HOST_STATUS_MONITORED, HOST_STATUS_NOT_MONITORED);
 			break;
 		default:
@@ -194,7 +199,7 @@ static void	add_discovered_host_groups(zbx_uint64_t hostid, zbx_vector_uint64_t 
  *                                                                            *
  * Purpose: add discovered host if it was not added already                   *
  *                                                                            *
- * Parameters: dhostid - discovered host id                                   *
+ * Parameters:                                                                *
  *                                                                            *
  * Return value: hostid - new/existing hostid                                 *
  *                                                                            *
@@ -423,7 +428,7 @@ static zbx_uint64_t	add_discovered_host(const DB_EVENT *event)
 				if (HOST_INVENTORY_DISABLED != cfg.default_inventory_mode)
 					DBadd_host_inventory(hostid, cfg.default_inventory_mode);
 
-				DBadd_interface(hostid, interface_type, 1, row[2], row[3], port);
+				DBadd_interface(hostid, interface_type, 1, row[2], row[3], port, ZBX_CONN_DEFAULT);
 
 				zbx_free(host_unique);
 				zbx_free(host_visible_unique);
@@ -431,26 +436,49 @@ static zbx_uint64_t	add_discovered_host(const DB_EVENT *event)
 				add_discovered_host_groups(hostid, &groupids);
 			}
 			else
-				DBadd_interface(hostid, interface_type, 1, row[2], row[3], port);
+				DBadd_interface(hostid, interface_type, 1, row[2], row[3], port, ZBX_CONN_DEFAULT);
 		}
 		DBfree_result(result);
 	}
 	else if (EVENT_OBJECT_ZABBIX_ACTIVE == event->object)
 	{
 		result = DBselect(
-				"select proxy_hostid,host,listen_ip,listen_dns,listen_port"
+				"select proxy_hostid,host,listen_ip,listen_dns,listen_port,flags,tls_accepted"
 				" from autoreg_host"
 				" where autoreg_hostid=" ZBX_FS_UI64,
 				event->objectid);
 
 		if (NULL != (row = DBfetch(result)))
 		{
-			char		*sql = NULL;
-			zbx_uint64_t	host_proxy_hostid;
+			char			*sql = NULL;
+			zbx_uint64_t		host_proxy_hostid;
+			zbx_conn_flags_t	flags;
+			int			flags_int;
+			unsigned char		useip = 1;
+			int			tls_accepted;
 
 			ZBX_DBROW2UINT64(proxy_hostid, row[0]);
 			host_esc = DBdyn_escape_field("hosts", "host", row[1]);
 			port = (unsigned short)atoi(row[4]);
+			flags_int = atoi(row[5]);
+
+			switch (flags_int)
+			{
+				case ZBX_CONN_DEFAULT:
+				case ZBX_CONN_IP:
+				case ZBX_CONN_DNS:
+					flags = (zbx_conn_flags_t)flags_int;
+					break;
+				default:
+					flags = ZBX_CONN_DEFAULT;
+					zabbix_log(LOG_LEVEL_WARNING, "wrong flags value: %d for host \"%s\":",
+							flags_int, row[1]);
+			}
+
+			if (ZBX_CONN_DNS == flags)
+				useip = 0;
+
+			tls_accepted = atoi(row[6]);
 
 			result2 = DBselect(
 					"select null"
@@ -486,16 +514,34 @@ static zbx_uint64_t	add_discovered_host(const DB_EVENT *event)
 			{
 				hostid = DBget_maxid("hosts");
 
-				zbx_db_insert_prepare(&db_insert, "hosts", "hostid", "proxy_hostid", "host", "name",
-						NULL);
-				zbx_db_insert_add_values(&db_insert, hostid, proxy_hostid, row[1], row[1]);
+				if (ZBX_TCP_SEC_TLS_PSK == tls_accepted)
+				{
+					char	psk_identity[HOST_TLS_PSK_IDENTITY_LEN_MAX];
+					char	psk[HOST_TLS_PSK_LEN_MAX];
+
+					DCget_autoregistration_psk(psk_identity, sizeof(psk_identity),
+							(unsigned char *)psk, sizeof(psk));
+
+					zbx_db_insert_prepare(&db_insert, "hosts", "hostid", "proxy_hostid",
+							"host", "name", "tls_connect", "tls_accept",
+							"tls_psk_identity", "tls_psk", NULL);
+					zbx_db_insert_add_values(&db_insert, hostid, proxy_hostid, row[1], row[1],
+						tls_accepted, tls_accepted, psk_identity, psk);
+				}
+				else
+				{
+					zbx_db_insert_prepare(&db_insert, "hosts", "hostid", "proxy_hostid", "host",
+							"name", NULL);
+					zbx_db_insert_add_values(&db_insert, hostid, proxy_hostid, row[1], row[1]);
+				}
+
 				zbx_db_insert_execute(&db_insert);
 				zbx_db_insert_clean(&db_insert);
 
 				if (HOST_INVENTORY_DISABLED != cfg.default_inventory_mode)
 					DBadd_host_inventory(hostid, cfg.default_inventory_mode);
 
-				DBadd_interface(hostid, INTERFACE_TYPE_AGENT, 1, row[2], row[3], port);
+				DBadd_interface(hostid, INTERFACE_TYPE_AGENT, useip, row[2], row[3], port, flags);
 
 				add_discovered_host_groups(hostid, &groupids);
 			}
@@ -512,7 +558,7 @@ static zbx_uint64_t	add_discovered_host(const DB_EVENT *event)
 							DBsql_id_ins(proxy_hostid), hostid);
 				}
 
-				DBadd_interface(hostid, INTERFACE_TYPE_AGENT, 1, row[2], row[3], port);
+				DBadd_interface(hostid, INTERFACE_TYPE_AGENT, useip, row[2], row[3], port, flags);
 			}
 			DBfree_result(result2);
 out:

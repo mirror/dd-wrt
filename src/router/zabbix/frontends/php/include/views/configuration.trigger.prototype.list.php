@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -49,6 +49,7 @@ $triggersTable = (new CTableInfo())
 		))->addClass(ZBX_STYLE_CELL_WIDTH),
 		make_sorting_header(_('Severity'), 'priority', $data['sort'], $data['sortorder'], $url),
 		make_sorting_header(_('Name'), 'description', $data['sort'], $data['sortorder'], $url),
+		_('Operational data'),
 		_('Expression'),
 		make_sorting_header(_('Create enabled'), 'status', $data['sort'], $data['sortorder'], $url),
 		_('Tags')
@@ -141,6 +142,7 @@ foreach ($this->data['triggers'] as $trigger) {
 		$checkBox,
 		getSeverityCell($trigger['priority'], $this->data['config']),
 		$description,
+		$trigger['opdata'],
 		$expression,
 		$status,
 		$data['tags'][$triggerid]

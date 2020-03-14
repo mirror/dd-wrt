@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -31,16 +31,11 @@ class CControllerWidgetNavTreeItemUpdate extends CController {
 			'depth' => 'ge 0|le '.WIDGET_NAVIGATION_TREE_MAX_DEPTH,
 			'map_mapid' => 'db sysmaps.sysmapid',
 			'add_submaps' => 'in 0,1',
-			'map_name' => 'required|string',
+			'map_name' => 'required|not_empty|string',
 			'mapid' => 'int32'
 		];
 
 		$ret = $this->validateInput($fields);
-
-		if ($ret && trim(getRequest('map_name', '')) === '') {
-			error(_('Please specify element name.'));
-			$ret = false;
-		}
 
 		if (!$ret) {
 			$output = [];
@@ -79,7 +74,7 @@ class CControllerWidgetNavTreeItemUpdate extends CController {
 
 		$maps_relations = [];
 
-		if ($map_mapid && $add_submaps == 1) {
+		if ($map_mapid != 0 && $add_submaps == 1) {
 			// Recursively select submaps.
 			$maps_found = [$map_mapid];
 			$maps_resolved = [];

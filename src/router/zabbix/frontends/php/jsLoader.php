@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 require_once dirname(__FILE__).'/include/gettextwrapper.inc.php';
 require_once dirname(__FILE__).'/include/js.inc.php';
 require_once dirname(__FILE__).'/include/locales.inc.php';
+require_once dirname(__FILE__).'/include/translateDefines.inc.php';
 
 // if we must provide language constants on language different from English
 if (isset($_GET['lang'])) {
@@ -45,8 +46,6 @@ if (isset($_GET['lang'])) {
 	setlocale(LC_NUMERIC, ['C', 'POSIX', 'en', 'en_US', 'en_US.UTF-8', 'English_United States.1252', 'en_GB', 'en_GB.UTF-8']);
 }
 
-require_once dirname(__FILE__).'/include/translateDefines.inc.php';
-
 // available scripts 'scriptFileName' => 'path relative to js/'
 $availableJScripts = [
 	'common.js' => '',
@@ -64,6 +63,7 @@ $availableJScripts = [
 	'chkbxrange.js' => '',
 	'csvggraphwidget.js' => '',
 	'layout.mode.js' => '',
+	'textareaflexible.js' => '',
 	// vendors
 	'prototype.js' => 'vendors/',
 	'jquery.js' => 'vendors/',
@@ -75,7 +75,13 @@ $availableJScripts = [
 	'class.cdate.js' => '',
 	'class.cdebug.js' => '',
 	'class.cmap.js' => '',
-	'class.cmessages.js' => '',
+	'class.promise.js' => '',
+	'class.localstorage.js' => '',
+	'class.notifications.js' => '',
+	'class.notification.js' => '',
+	'class.notification.collection.js' => '',
+	'class.notifications.audio.js' => '',
+	'class.browsertab.js' => '',
 	'class.cnavtree.js' => '',
 	'class.cookie.js' => '',
 	'class.coverride.js' => '',
@@ -85,8 +91,9 @@ $availableJScripts = [
 	'class.csvggraph.js' => '',
 	'class.ctree.js' => '',
 	'class.curl.js' => '',
+	'class.overlaycollection.js' => '',
 	'class.cverticalaccordion.js' => '',
-	'class.mapWidget.js' => '',
+	'class.mapwidget.js' => '',
 	'class.svg.canvas.js' => 'vector/',
 	'class.svg.map.js' => 'vector/',
 	'class.cviewswitcher.js' => '',
@@ -114,10 +121,17 @@ $tranStrings = [
 		'You have unsaved changes.' => _('You have unsaved changes.'),
 		'Are you sure, you want to leave this page?' => _('Are you sure, you want to leave this page?'),
 		'Cannot add widgets in kiosk mode' => _('Cannot add widgets in kiosk mode'),
+		'You do not have permissions to edit dashboard' => _('You do not have permissions to edit dashboard'),
 		'Add a new widget' => _('Add a new widget'),
 		'Release to create a new widget.' => _('Release to create a new widget.'),
 		'Click and drag to desired size.' => _('Click and drag to desired size.'),
-		'Adjust widget refresh interval' => _('Adjust widget refresh interval')
+		'Adjust widget refresh interval' => _('Adjust widget refresh interval'),
+		'Previous page' => _('Previous page'),
+		'Next page' => _('Next page'),
+		'Widget is too small for the specified number of columns and rows.' =>
+			_('Widget is too small for the specified number of columns and rows.'),
+		'Cannot add widget: not enough free space on the dashboard.' =>
+			_('Cannot add widget: not enough free space on the dashboard.')
 	],
 	'functions.js' => [
 		'Cancel' => _('Cancel'),
@@ -129,7 +143,10 @@ $tranStrings = [
 		'S_DAY_SHORT' => _x('d', 'day short'),
 		'S_HOUR_SHORT' => _x('h', 'hour short'),
 		'S_MINUTE_SHORT' => _x('m', 'minute short'),
-		'Do you wish to replace the conditional expression?' => _('Do you wish to replace the conditional expression?')
+		'Do you wish to replace the conditional expression?' => _('Do you wish to replace the conditional expression?'),
+		'Success message' => _('Success message'),
+		'Error message' => _('Error message'),
+		'Warning message' => _('Warning message')
 	],
 	'class.calendar.js' => [
 		'S_CALENDAR' => _('Calendar'),
@@ -191,8 +208,11 @@ $tranStrings = [
 		'S_NO_IMAGES' => 'You need to have at least one image uploaded to create map element. Images can be uploaded in Administration->General->Images section.',
 		'S_COLOR_IS_NOT_CORRECT' => _('Colour "%1$s" is not correct: expecting hexadecimal colour code (6 symbols).')
 	],
-	'class.cmessages.js' => [
+	'class.notifications.js' => [
+		'S_PROBLEM_ON' => _('Problem on'),
+		'S_RESOLVED' => _('Resolved'),
 		'S_MUTE' => _('Mute'),
+		'S_CANNOT_SUPPORT_NOTIFICATION_AUDIO' => _('Cannot support notification audio for this device.'),
 		'S_UNMUTE' => _('Unmute'),
 		'S_CLEAR' => _('Clear'),
 		'S_SNOOZE' => _('Snooze')
@@ -246,7 +266,6 @@ $tranStrings = [
 		'Create dependent discovery rule' => _('Create dependent discovery rule'),
 		'Delete' => _('Delete'),
 		'Delete dashboard?' => _('Delete dashboard?'),
-		'Description' => _('Description'),
 		'Do you wish to replace the conditional expression?' => _('Do you wish to replace the conditional expression?'),
 		'Edit trigger' => _('Edit trigger'),
 		'Insert expression' => _('Insert expression'),
@@ -304,16 +323,19 @@ $tranStrings = [
 	],
 	'common.js' => [
 		'Cancel' => _('Cancel')
-	],
+	]
 ];
 
+$js = '';
 if (empty($_GET['files'])) {
+
 	$files = [
 		'prototype.js',
 		'jquery.js',
 		'jquery-ui.js',
 		'common.js',
 		'class.cdebug.js',
+		'class.overlaycollection.js',
 		'class.cdate.js',
 		'class.cookie.js',
 		'class.curl.js',
@@ -329,18 +351,30 @@ if (empty($_GET['files'])) {
 
 	// load frontend messaging only for some pages
 	if (isset($_GET['showGuiMessaging']) && $_GET['showGuiMessaging']) {
-		$files[] = 'class.cmessages.js';
+		require_once dirname(__FILE__).'/include/defines.inc.php';
+
+		if (array_key_exists(ZBX_SESSION_NAME, $_COOKIE)) {
+			$js .= 'window.ZBX_SESSION_NAME = "'.crc32($_COOKIE[ZBX_SESSION_NAME]).'";';
+		}
+
+		$files[] = 'class.promise.js';
+		$files[] = 'class.localstorage.js';
+		$files[] = 'class.browsertab.js';
+		$files[] = 'class.notification.collection.js';
+		$files[] = 'class.notifications.audio.js';
+		$files[] = 'class.notification.js';
+		$files[] = 'class.notifications.js';
 	}
 }
 else {
 	$files = $_GET['files'];
 }
 
-$js = 'if (typeof(locale) == "undefined") { var locale = {}; }'."\n";
+$js .= 'if (typeof(locale) === "undefined") { var locale = {}; }'."\n";
 foreach ($files as $file) {
 	if (isset($tranStrings[$file])) {
 		foreach ($tranStrings[$file] as $origStr => $str) {
-			$js .= "locale['".$origStr."'] = ".zbx_jsvalue($str).";";
+			$js .= 'locale[\'' . $origStr . '\'] = ' . zbx_jsvalue($str) . ';';
 		}
 	}
 }
@@ -349,6 +383,20 @@ foreach ($files as $file) {
 	if (isset($availableJScripts[$file])) {
 		$js .= file_get_contents('js/'.$availableJScripts[$file].$file)."\n";
 	}
+}
+
+if (in_array('prototype.js', $files)) {
+	// This takes care of the Array toJSON incompatibility with JSON.stringify.
+	$js .=
+		'var _json_stringify = JSON.stringify;'.
+		'JSON.stringify = function(value) {'.
+			'var _array_tojson = Array.prototype.toJSON,'.
+				'ret;'.
+			'delete Array.prototype.toJSON;'.
+			'ret = _json_stringify(value);'.
+			'Array.prototype.toJSON = _array_tojson;'.
+			'return ret;'.
+		'};';
 }
 
 $etag = md5($js);
@@ -364,20 +412,6 @@ if (array_key_exists('HTTP_IF_NONE_MATCH', $_SERVER) && strpos($_SERVER['HTTP_IF
 	header('HTTP/1.1 304 Not Modified');
 	header('ETag: "'.$etag.'"');
 	exit;
-}
-
-if (in_array('prototype.js', $files)) {
-	// This takes care of the Array toJSON incompatibility with JSON.stringify.
-	$js .=
-		'var _json_stringify = JSON.stringify;'.
-		'JSON.stringify = function(value) {'.
-			'var _array_tojson = Array.prototype.toJSON,'.
-				'ret;'.
-			'delete Array.prototype.toJSON;'.
-			'ret = _json_stringify(value);'.
-			'Array.prototype.toJSON = _array_tojson;'.
-			'return ret;'.
-		'};';
 }
 
 header('Content-Type: application/javascript; charset=UTF-8');

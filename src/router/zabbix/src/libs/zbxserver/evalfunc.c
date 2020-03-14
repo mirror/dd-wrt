@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -3123,8 +3123,8 @@ static int	replace_value_by_map(char *value, size_t max_len, zbx_uint64_t valuem
 			"select newvalue"
 			" from mappings"
 			" where valuemapid=" ZBX_FS_UI64
-				" and value='%s'",
-			valuemapid, value_esc);
+				" and value" ZBX_SQL_STRCMP,
+			valuemapid, ZBX_SQL_STRVAL_EQ(value_esc));
 	zbx_free(value_esc);
 
 	if (NULL != (row = DBfetch(result)) && FAIL == DBis_null(row[0]))

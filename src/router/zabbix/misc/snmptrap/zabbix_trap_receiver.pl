@@ -2,7 +2,7 @@
 
 #
 # Zabbix
-# Copyright (C) 2001-2019 Zabbix SIA
+# Copyright (C) 2001-2020 Zabbix SIA
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -78,7 +78,7 @@ sub zabbix_receiver
 	}
 
 	# print trap header
-	#       timestamp must be placed at the beggining of the first line (can be omitted)
+	#       timestamp must be placed at the beginning of the first line (can be omitted)
 	#       the first line must include the header "ZBXTRAP [IP/DNS address] "
 	#              * IP/DNS address is the used to find the corresponding SNMP trap items
 	#              * this header will be cut during processing (will not appear in the item value)

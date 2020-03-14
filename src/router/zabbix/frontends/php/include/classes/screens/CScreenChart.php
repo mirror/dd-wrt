@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -54,19 +54,23 @@ class CScreenChart extends CScreenBase {
 		$graphDims = getGraphDims($this->graphid);
 		if ($graphDims['graphtype'] == GRAPH_TYPE_PIE || $graphDims['graphtype'] == GRAPH_TYPE_EXPLODED) {
 			$loadSBox = 0;
-			$src = 'chart6.php';
+			$src = new CUrl('chart6.php');
 		}
 		else {
 			$loadSBox = 1;
-			$src = 'chart2.php';
+			$src = new CUrl('chart2.php');
 		}
-		$src .= '?graphid='.$this->graphid.'&from='.$this->timeline['from'].'&to='.$this->timeline['to'].
-			$this->getProfileUrlParams();
+		$src
+			->setArgument('graphid', $this->graphid)
+			->setArgument('from', $this->timeline['from'])
+			->setArgument('to', $this->timeline['to'])
+			->setArgument('profileIdx', $this->profileIdx)
+			->setArgument('profileIdx2', $this->profileIdx2);
 
 		$timeControlData = [
 			'id' => $this->getDataId(),
 			'containerid' => $containerId,
-			'src' => $src,
+			'src' => $src->getUrl(),
 			'objDims' => $graphDims,
 			'loadSBox' => $loadSBox,
 			'loadImage' => 1,

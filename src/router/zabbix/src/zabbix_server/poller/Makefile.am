@@ -24,6 +24,6 @@ libzbxpoller_server_a_SOURCES = \
 libzbxpoller_proxy_a_SOURCES = \
 	checks_internal_proxy.c checks_internal.h
 
-libzbxpoller_a_CFLAGS = -I@top_srcdir@/src/libs/zbxsysinfo/simple -I@top_srcdir@/src/libs/zbxdbcache @SNMP_CFLAGS@ @SSH2_CFLAGS@
+libzbxpoller_a_CFLAGS = -I@top_srcdir@/src/libs/zbxsysinfo/simple -I@top_srcdir@/src/libs/zbxdbcache @SNMP_CFLAGS@ @SSH2_CFLAGS@ @SSH_CFLAGS@
 
 libzbxpoller_server_a_CFLAGS = -I@top_srcdir@/src/libs/zbxdbcache

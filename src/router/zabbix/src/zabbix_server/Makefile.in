@@ -98,10 +98,10 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lib_ibm_db2.m4 \
 	$(top_srcdir)/m4/ax_lib_oracle_oci.m4 \
 	$(top_srcdir)/m4/ax_lib_postgresql.m4 \
 	$(top_srcdir)/m4/ax_lib_sqlite3.m4 $(top_srcdir)/m4/iconv.m4 \
-	$(top_srcdir)/m4/jabber.m4 $(top_srcdir)/m4/ldap.m4 \
-	$(top_srcdir)/m4/libcurl.m4 $(top_srcdir)/m4/libevent.m4 \
-	$(top_srcdir)/m4/libgnutls.m4 $(top_srcdir)/m4/libmbedtls.m4 \
-	$(top_srcdir)/m4/libopenssl.m4 $(top_srcdir)/m4/libssh2.m4 \
+	$(top_srcdir)/m4/ldap.m4 $(top_srcdir)/m4/libcurl.m4 \
+	$(top_srcdir)/m4/libevent.m4 $(top_srcdir)/m4/libgnutls.m4 \
+	$(top_srcdir)/m4/libmbedtls.m4 $(top_srcdir)/m4/libopenssl.m4 \
+	$(top_srcdir)/m4/libssh.m4 $(top_srcdir)/m4/libssh2.m4 \
 	$(top_srcdir)/m4/libunixodbc.m4 $(top_srcdir)/m4/libxml2.m4 \
 	$(top_srcdir)/m4/netsnmp.m4 $(top_srcdir)/m4/openipmi.m4 \
 	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/pthread.m4 \
@@ -131,10 +131,7 @@ libzbxserver_a_OBJECTS = $(am_libzbxserver_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(sbindir)"
 PROGRAMS = $(sbin_PROGRAMS)
 am_zabbix_server_OBJECTS = zabbix_server-server.$(OBJEXT)
-am__dirstamp = $(am__leading_dot)dirstamp
-@ZBXCUNIT_TRUE@nodist_zabbix_server_OBJECTS = ../libs/zbxcunit/zabbix_server-zbxcunit.$(OBJEXT)
-zabbix_server_OBJECTS = $(am_zabbix_server_OBJECTS) \
-	$(nodist_zabbix_server_OBJECTS)
+zabbix_server_OBJECTS = $(am_zabbix_server_OBJECTS)
 zabbix_server_DEPENDENCIES = alerter/libzbxalerter.a \
 	dbsyncer/libzbxdbsyncer.a dbconfig/libzbxdbconfig.a \
 	discoverer/libzbxdiscoverer.a pinger/libzbxpinger.a \
@@ -214,8 +211,7 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libzbxserver_a_SOURCES) $(zabbix_server_SOURCES) \
-	$(nodist_zabbix_server_SOURCES)
+SOURCES = $(libzbxserver_a_SOURCES) $(zabbix_server_SOURCES)
 DIST_SOURCES = $(libzbxserver_a_SOURCES) $(zabbix_server_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
@@ -286,6 +282,7 @@ am__relativize = \
   done; \
   reldir="$$dir2"
 ACLOCAL = @ACLOCAL@
+AGENT2_CONFIG_FILE = @AGENT2_CONFIG_FILE@
 AGENT_CONFIG_FILE = @AGENT_CONFIG_FILE@
 AGENT_LDFLAGS = @AGENT_LDFLAGS@
 AGENT_LIBS = @AGENT_LIBS@
@@ -300,6 +297,8 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CGO_CFLAGS = @CGO_CFLAGS@
+CGO_LDFLAGS = @CGO_LDFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CURL_SSL_CERT_LOCATION = @CURL_SSL_CERT_LOCATION@
@@ -319,19 +318,18 @@ EXTERNAL_SCRIPTS_PATH = @EXTERNAL_SCRIPTS_PATH@
 GNUTLS_CFLAGS = @GNUTLS_CFLAGS@
 GNUTLS_LDFLAGS = @GNUTLS_LDFLAGS@
 GNUTLS_LIBS = @GNUTLS_LIBS@
+GO = @GO@
+GOBIN = @GOBIN@
+GOCMD = @GOCMD@
+GOWORKDIR = @GOWORKDIR@
 GREP = @GREP@
 ICONV_CFLAGS = @ICONV_CFLAGS@
 ICONV_LDFLAGS = @ICONV_LDFLAGS@
-IKSEMEL_CFLAGS = @IKSEMEL_CFLAGS@
-IKSEMEL_LIBS = @IKSEMEL_LIBS@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-JABBER_CPPFLAGS = @JABBER_CPPFLAGS@
-JABBER_LDFLAGS = @JABBER_LDFLAGS@
-JABBER_LIBS = @JABBER_LIBS@
 JAR = @JAR@
 JAVAC = @JAVAC@
 LDAP_CPPFLAGS = @LDAP_CPPFLAGS@
@@ -353,7 +351,6 @@ LIBPTHREAD_LDFLAGS = @LIBPTHREAD_LDFLAGS@
 LIBPTHREAD_LIBS = @LIBPTHREAD_LIBS@
 LIBS = @LIBS@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
-LIBXML2_CONFIG = @LIBXML2_CONFIG@
 LIBXML2_LDFLAGS = @LIBXML2_LDFLAGS@
 LIBXML2_LIBS = @LIBXML2_LIBS@
 LIBXML2_VERSION = @LIBXML2_VERSION@
@@ -419,6 +416,9 @@ SQLITE3_VERSION = @SQLITE3_VERSION@
 SSH2_CFLAGS = @SSH2_CFLAGS@
 SSH2_LDFLAGS = @SSH2_LDFLAGS@
 SSH2_LIBS = @SSH2_LIBS@
+SSH_CFLAGS = @SSH_CFLAGS@
+SSH_LDFLAGS = @SSH_LDFLAGS@
+SSH_LIBS = @SSH_LIBS@
 STRIP = @STRIP@
 TLS_CFLAGS = @TLS_CFLAGS@
 UNIXODBC_CFLAGS = @UNIXODBC_CFLAGS@
@@ -427,6 +427,8 @@ UNIXODBC_LIBS = @UNIXODBC_LIBS@
 VERSION = @VERSION@
 ZBXGET_LDFLAGS = @ZBXGET_LDFLAGS@
 ZBXGET_LIBS = @ZBXGET_LIBS@
+ZBXJS_LDFLAGS = @ZBXJS_LDFLAGS@
+ZBXJS_LIBS = @ZBXJS_LIBS@
 ZLIB_CFLAGS = @ZLIB_CFLAGS@
 ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
 ZLIB_LIBS = @ZLIB_LIBS@
@@ -518,7 +520,6 @@ libzbxserver_a_CFLAGS = \
 	-I@top_srcdir@/src/libs/zbxdbcache
 
 zabbix_server_SOURCES = server.c
-@ZBXCUNIT_TRUE@nodist_zabbix_server_SOURCES = ../libs/zbxcunit/zbxcunit.c ../libs/zbxcunit/zbxcunit.h
 zabbix_server_LDADD = alerter/libzbxalerter.a \
 	dbsyncer/libzbxdbsyncer.a dbconfig/libzbxdbconfig.a \
 	discoverer/libzbxdiscoverer.a pinger/libzbxpinger.a \
@@ -563,7 +564,7 @@ zabbix_server_LDADD = alerter/libzbxalerter.a \
 	$(top_srcdir)/src/libs/zbxtasks/libzbxtasks.a \
 	$(top_srcdir)/src/libs/zbxcompress/libzbxcompress.a \
 	$(top_srcdir)/src/libs/zbxserver/libzbxserver_server.a \
-	$(am__append_1) @SERVER_LIBS@ $(CUNIT_LDADD)
+	$(am__append_1) @SERVER_LIBS@
 zabbix_server_LDFLAGS = @SERVER_LDFLAGS@
 zabbix_server_CFLAGS = \
 	-DDEFAULT_SSL_CERT_LOCATION="\"@CURL_SSL_CERT_LOCATION@\"" \
@@ -656,15 +657,6 @@ uninstall-sbinPROGRAMS:
 
 clean-sbinPROGRAMS:
 	-test -z "$(sbin_PROGRAMS)" || rm -f $(sbin_PROGRAMS)
-../libs/zbxcunit/$(am__dirstamp):
-	@$(MKDIR_P) ../libs/zbxcunit
-	@: > ../libs/zbxcunit/$(am__dirstamp)
-../libs/zbxcunit/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) ../libs/zbxcunit/$(DEPDIR)
-	@: > ../libs/zbxcunit/$(DEPDIR)/$(am__dirstamp)
-../libs/zbxcunit/zabbix_server-zbxcunit.$(OBJEXT):  \
-	../libs/zbxcunit/$(am__dirstamp) \
-	../libs/zbxcunit/$(DEPDIR)/$(am__dirstamp)
 
 zabbix_server$(EXEEXT): $(zabbix_server_OBJECTS) $(zabbix_server_DEPENDENCIES) $(EXTRA_zabbix_server_DEPENDENCIES) 
 	@rm -f zabbix_server$(EXEEXT)
@@ -672,12 +664,10 @@ zabbix_server$(EXEEXT): $(zabbix_server_OBJECTS) $(zabbix_server_DEPENDENCIES) $
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
-	-rm -f ../libs/zbxcunit/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@../libs/zbxcunit/$(DEPDIR)/zabbix_server-zbxcunit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxserver_a-actions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxserver_a-events.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxserver_a-operations.Po@am__quote@
@@ -769,20 +759,6 @@ zabbix_server-server.obj: server.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='server.c' object='zabbix_server-server.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_server_CFLAGS) $(CFLAGS) -c -o zabbix_server-server.obj `if test -f 'server.c'; then $(CYGPATH_W) 'server.c'; else $(CYGPATH_W) '$(srcdir)/server.c'; fi`
-
-../libs/zbxcunit/zabbix_server-zbxcunit.o: ../libs/zbxcunit/zbxcunit.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_server_CFLAGS) $(CFLAGS) -MT ../libs/zbxcunit/zabbix_server-zbxcunit.o -MD -MP -MF ../libs/zbxcunit/$(DEPDIR)/zabbix_server-zbxcunit.Tpo -c -o ../libs/zbxcunit/zabbix_server-zbxcunit.o `test -f '../libs/zbxcunit/zbxcunit.c' || echo '$(srcdir)/'`../libs/zbxcunit/zbxcunit.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ../libs/zbxcunit/$(DEPDIR)/zabbix_server-zbxcunit.Tpo ../libs/zbxcunit/$(DEPDIR)/zabbix_server-zbxcunit.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../libs/zbxcunit/zbxcunit.c' object='../libs/zbxcunit/zabbix_server-zbxcunit.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_server_CFLAGS) $(CFLAGS) -c -o ../libs/zbxcunit/zabbix_server-zbxcunit.o `test -f '../libs/zbxcunit/zbxcunit.c' || echo '$(srcdir)/'`../libs/zbxcunit/zbxcunit.c
-
-../libs/zbxcunit/zabbix_server-zbxcunit.obj: ../libs/zbxcunit/zbxcunit.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_server_CFLAGS) $(CFLAGS) -MT ../libs/zbxcunit/zabbix_server-zbxcunit.obj -MD -MP -MF ../libs/zbxcunit/$(DEPDIR)/zabbix_server-zbxcunit.Tpo -c -o ../libs/zbxcunit/zabbix_server-zbxcunit.obj `if test -f '../libs/zbxcunit/zbxcunit.c'; then $(CYGPATH_W) '../libs/zbxcunit/zbxcunit.c'; else $(CYGPATH_W) '$(srcdir)/../libs/zbxcunit/zbxcunit.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ../libs/zbxcunit/$(DEPDIR)/zabbix_server-zbxcunit.Tpo ../libs/zbxcunit/$(DEPDIR)/zabbix_server-zbxcunit.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../libs/zbxcunit/zbxcunit.c' object='../libs/zbxcunit/zabbix_server-zbxcunit.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_server_CFLAGS) $(CFLAGS) -c -o ../libs/zbxcunit/zabbix_server-zbxcunit.obj `if test -f '../libs/zbxcunit/zbxcunit.c'; then $(CYGPATH_W) '../libs/zbxcunit/zbxcunit.c'; else $(CYGPATH_W) '$(srcdir)/../libs/zbxcunit/zbxcunit.c'; fi`
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run 'make' without going through this Makefile.
@@ -972,8 +948,6 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
-	-rm -f ../libs/zbxcunit/$(DEPDIR)/$(am__dirstamp)
-	-rm -f ../libs/zbxcunit/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -984,7 +958,7 @@ clean-am: clean-generic clean-noinstLIBRARIES clean-sbinPROGRAMS \
 	mostlyclean-am
 
 distclean: distclean-recursive
-	-rm -rf ../libs/zbxcunit/$(DEPDIR) ./$(DEPDIR)
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -1031,7 +1005,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-recursive
-	-rm -rf ../libs/zbxcunit/$(DEPDIR) ./$(DEPDIR)
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

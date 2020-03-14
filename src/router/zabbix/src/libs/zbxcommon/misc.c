@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -74,6 +74,14 @@ struct zbx_custom_interval
 {
 	zbx_flexible_interval_t		*flexible;
 	zbx_scheduler_interval_t	*scheduling;
+};
+
+const int	INTERFACE_TYPE_PRIORITY[INTERFACE_TYPE_COUNT] =
+{
+	INTERFACE_TYPE_AGENT,
+	INTERFACE_TYPE_SNMP,
+	INTERFACE_TYPE_JMX,
+	INTERFACE_TYPE_IPMI
 };
 
 static ZBX_THREAD_LOCAL volatile sig_atomic_t	zbx_timed_out;	/* 0 - no timeout occurred, 1 - SIGALRM took place */
@@ -154,10 +162,10 @@ const char	*get_program_name(const char *path)
  ******************************************************************************/
 void	zbx_timespec(zbx_timespec_t *ts)
 {
-	ZBX_THREAD_LOCAL static zbx_timespec_t	last_ts = {0, 0};
-	ZBX_THREAD_LOCAL static int		corr = 0;
-#ifdef _WINDOWS
-	ZBX_THREAD_LOCAL static LARGE_INTEGER	tickPerSecond = {0};
+	static ZBX_THREAD_LOCAL zbx_timespec_t	last_ts = {0, 0};
+	static ZBX_THREAD_LOCAL int		corr = 0;
+#if defined(_WINDOWS) || defined(__MINGW32__)
+	static ZBX_THREAD_LOCAL LARGE_INTEGER	tickPerSecond = {0};
 	struct _timeb				tb;
 #else
 	struct timeval	tv;
@@ -166,7 +174,7 @@ void	zbx_timespec(zbx_timespec_t *ts)
 	struct timespec	tp;
 #	endif
 #endif
-#ifdef _WINDOWS
+#if defined(_WINDOWS) || defined(__MINGW32__)
 
 	if (0 == tickPerSecond.QuadPart)
 		QueryPerformanceFrequency(&tickPerSecond);
@@ -182,7 +190,7 @@ void	zbx_timespec(zbx_timespec_t *ts)
 
 		if (TRUE == QueryPerformanceCounter(&tick))
 		{
-			ZBX_THREAD_LOCAL static LARGE_INTEGER	last_tick = {0};
+			static ZBX_THREAD_LOCAL LARGE_INTEGER	last_tick = {0};
 
 			if (0 < last_tick.QuadPart)
 			{
@@ -338,7 +346,7 @@ static int	is_leap_year(int year)
  ******************************************************************************/
 void	zbx_get_time(struct tm *tm, long *milliseconds, zbx_timezone_t *tz)
 {
-#ifdef _WINDOWS
+#if defined(_WINDOWS) || defined(__MINGW32__)
 	struct _timeb	current_time;
 
 	_ftime(&current_time);
@@ -359,7 +367,7 @@ void	zbx_get_time(struct tm *tm, long *milliseconds, zbx_timezone_t *tz)
 #	define ZBX_UTC_OFF	offset
 		long		offset;
 		struct tm	tm_utc;
-#ifdef _WINDOWS
+#if defined(_WINDOWS) || defined(__MINGW32__)
 		tm_utc = *gmtime(&current_time.time);	/* gmtime() cannot return NULL if called with valid parameter */
 #else
 		gmtime_r(&current_time.tv_sec, &tm_utc);
@@ -1055,7 +1063,7 @@ static void	scheduler_interval_free(zbx_scheduler_interval_t *interval)
  *             var_len - [IN] the maximum number of characters for a filter   *
  *                       variable (<from>, <to>, <step>)                      *
  *                                                                            *
- * Return value: SUCCEED - the fitler was successfully parsed                 *
+ * Return value: SUCCEED - the filter was successfully parsed                 *
  *               FAIL    - otherwise                                          *
  *                                                                            *
  * Comments: This function recursively calls itself for each filter fragment. *
@@ -1179,7 +1187,7 @@ static int	scheduler_parse_filter_r(zbx_scheduler_filter_t **filter, const char 
  *             var_len - [IN] the maximum number of characters for a filter   *
  *                       variable (<from>, <to>, <step>)                      *
  *                                                                            *
- * Return value: SUCCEED - the fitler was successfully parsed                 *
+ * Return value: SUCCEED - the filter was successfully parsed                 *
  *               FAIL    - otherwise                                          *
  *                                                                            *
  * Comments: This function will fail if a filter already exists. This         *
@@ -2211,7 +2219,58 @@ int	calculate_item_nextcheck(zbx_uint64_t seed, int item_type, int simple_interv
 
 	return nextcheck;
 }
+/******************************************************************************
+ *                                                                            *
+ * Function: calculate_item_nextcheck_unreachable                             *
+ *                                                                            *
+ * Purpose: calculate nextcheck timestamp for item on unreachable host        *
+ *                                                                            *
+ * Parameters: simple_interval  - [IN] default delay value, can be overridden *
+ *             custom_intervals - [IN] preprocessed custom intervals          *
+ *             disable_until    - [IN] timestamp for next check               *
+ *                                                                            *
+ * Return value: nextcheck value                                              *
+ *                                                                            *
+ ******************************************************************************/
+int	calculate_item_nextcheck_unreachable(int simple_interval, const zbx_custom_interval_t *custom_intervals,
+		time_t disable_until)
+{
+	int	nextcheck = 0;
+	time_t	next_interval, tmax, scheduled_check = 0;
 
+	/* first try to parse out and calculate scheduled intervals */
+	if (NULL != custom_intervals)
+		scheduled_check = scheduler_get_nextcheck(custom_intervals->scheduling, disable_until);
+
+	/* Try to find the nearest 'nextcheck' value with condition */
+	/* 'now' < 'nextcheck' < 'now' + SEC_PER_YEAR. If it is not */
+	/* possible to check the item within a year, fail. */
+
+	nextcheck = disable_until;
+	tmax = disable_until + SEC_PER_YEAR;
+
+	if (NULL != custom_intervals)
+	{
+		while (nextcheck < tmax)
+		{
+			if (0 != get_current_delay(simple_interval, custom_intervals->flexible, nextcheck))
+				break;
+
+			/* find the flexible interval change */
+			if (FAIL == get_next_delay_interval(custom_intervals->flexible, nextcheck, &next_interval))
+			{
+				nextcheck = ZBX_JAN_2038;
+				break;
+			}
+			nextcheck = next_interval;
+		}
+	}
+
+	if (0 != scheduled_check && scheduled_check < nextcheck)
+		nextcheck = (int)scheduled_check;
+
+	return nextcheck;
+}
 /******************************************************************************
  *                                                                            *
  * Function: calculate_proxy_nextcheck                                        *
@@ -2610,23 +2669,12 @@ int	is_double_suffix(const char *str, unsigned char flags)
 	return '\0' == *str ? SUCCEED : FAIL;
 }
 
-/******************************************************************************
- *                                                                            *
- * Function: is_double                                                        *
- *                                                                            *
- * Purpose: check if the string is double                                     *
- *                                                                            *
- * Parameters: str - string to check                                          *
- *                                                                            *
- * Return value:  SUCCEED - the string is double                              *
- *                FAIL - otherwise                                            *
- *                                                                            *
- * Author: Alexei Vladishev, Aleksandrs Saveljevs                             *
- *                                                                            *
- ******************************************************************************/
-int	is_double(const char *str)
+static int	is_double_valid_syntax(const char *str)
 {
 	int	len;
+
+	/* Valid syntax is a decimal number optionally followed by a decimal exponent. */
+	/* Leading and trailing white space, NAN, INF and hexadecimal notation are not allowed. */
 
 	if ('-' == *str || '+' == *str)		/* check leading sign */
 		str++;
@@ -2651,6 +2699,48 @@ int	is_double(const char *str)
 	}
 
 	return '\0' == *str ? SUCCEED : FAIL;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: is_double                                                        *
+ *                                                                            *
+ * Purpose: validate and optionally convert a string to a number of type      *
+ *         'double'                                                           *
+ *                                                                            *
+ * Parameters: str   - [IN] string to check                                   *
+ *             value - [OUT] output buffer where to write the converted value *
+ *                     (optional, can be NULL)                                *
+ *                                                                            *
+ * Return value:  SUCCEED - the string can be converted to 'double' and       *
+ *                          was converted if 'value' is not NULL              *
+ *                FAIL - the string does not represent a valid 'double' or    *
+ *                       its value is outside of valid range                  *
+ *                                                                            *
+ * Author: Alexei Vladishev, Aleksandrs Saveljevs                             *
+ *                                                                            *
+ ******************************************************************************/
+int	is_double(const char *str, double *value)
+{
+	double	tmp;
+	char	*endptr;
+
+	/* Not all strings accepted by strtod() can be accepted in Zabbix. */
+	/* Therefore additional, more strict syntax check is used before strtod(). */
+
+	if (SUCCEED != is_double_valid_syntax(str))
+		return FAIL;
+
+	errno = 0;
+	tmp = strtod(str, &endptr);
+
+	if ('\0' != *endptr || HUGE_VAL == tmp || -HUGE_VAL == tmp || EDOM == errno)
+		return FAIL;
+
+	if (NULL != value)
+		*value = tmp;
+
+	return SUCCEED;
 }
 
 /******************************************************************************
@@ -2733,30 +2823,7 @@ int	is_time_suffix(const char *str, int *value, int length)
 	return SUCCEED;
 }
 
-/******************************************************************************
- *                                                                            *
- * Function: zbx_time2bool                                                    *
- *                                                                            *
- * Purpose: check if the string is a zero with or without time suffix         *
- *                                                                            *
- * Parameters: value_raw - [IN] string to check                               *
- *                                                                            *
- * Return value: 0 - the string is equivalent to zero                         *
- *               1 - the string is not equivalent to zero or not a number     *
- *                     with time unit suffix at all                           *
- *                                                                            *
- ******************************************************************************/
-unsigned char	zbx_time2bool(const char *value_raw)
-{
-	int	value;
-
-	if (SUCCEED != is_time_suffix(value_raw, &value, ZBX_LENGTH_UNLIMITED))
-		return 1;
-
-	return 0 != value;
-}
-
-#ifdef _WINDOWS
+#if defined(_WINDOWS) || defined(__MINGW32__)
 int	_wis_uint(const wchar_t *wide_string)
 {
 	const wchar_t	*wide_char = wide_string;
@@ -2777,36 +2844,6 @@ int	_wis_uint(const wchar_t *wide_string)
 	return SUCCEED;
 }
 #endif
-
-/******************************************************************************
- *                                                                            *
- * Function: is_int_prefix                                                    *
- *                                                                            *
- * Purpose: check if the beginning of string is a signed integer              *
- *                                                                            *
- * Parameters: str - string to check                                          *
- *                                                                            *
- * Return value:  SUCCEED - the beginning of string is a signed integer       *
- *                FAIL - otherwise                                            *
- *                                                                            *
- * Author: Aleksandrs Saveljevs                                               *
- *                                                                            *
- ******************************************************************************/
-int	is_int_prefix(const char *str)
-{
-	size_t	i = 0;
-
-	while (' ' == str[i])	/* trim left spaces */
-		i++;
-
-	if ('-' == str[i] || '+' == str[i])
-		i++;
-
-	if (0 == isdigit(str[i]))
-		return FAIL;
-
-	return SUCCEED;
-}
 
 /******************************************************************************
  *                                                                            *
@@ -2947,15 +2984,14 @@ int	is_hex_n_range(const char *str, size_t n, void *value, size_t size, zbx_uint
  *                                                                            *
  * Author: Aleksandrs Saveljevs                                               *
  *                                                                            *
- * Comments:                                                                  *
- *                                                                            *
  ******************************************************************************/
 int	is_boolean(const char *str, zbx_uint64_t *value)
 {
+	double	dbl_tmp;
 	int	res;
 
-	if (SUCCEED == (res = is_double(str)))
-		*value = (0 != atof(str));
+	if (SUCCEED == (res = is_double(str, &dbl_tmp)))
+		*value = (0 != dbl_tmp);
 	else
 	{
 		char	tmp[16];
@@ -3645,7 +3681,7 @@ void	zbx_alarm_flag_clear(void)
 	zbx_timed_out = 0;
 }
 
-#if !defined(_WINDOWS)
+#if !defined(_WINDOWS) && !defined(__MINGW32__)
 unsigned int	zbx_alarm_on(unsigned int seconds)
 {
 	zbx_alarm_flag_clear();
@@ -3735,3 +3771,36 @@ void	zbx_update_env(double time_now)
 #endif
 	}
 }
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_dc_get_agent_item_nextcheck                                  *
+ *                                                                            *
+ * Purpose: calculate item nextcheck for zabix agent type items               *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_get_agent_item_nextcheck(zbx_uint64_t itemid, const char *delay, unsigned char state, int now,
+		int refresh_unsupported, int *nextcheck, char **error)
+{
+	if (ITEM_STATE_NORMAL == state)
+	{
+		int			simple_interval;
+		zbx_custom_interval_t	*custom_intervals;
+
+		if (SUCCEED != zbx_interval_preproc(delay, &simple_interval, &custom_intervals, error))
+		{
+			*nextcheck = ZBX_JAN_2038;
+			return FAIL;
+		}
+
+		*nextcheck = calculate_item_nextcheck(itemid, ITEM_TYPE_ZABBIX, simple_interval, custom_intervals, now);
+		zbx_custom_interval_free(custom_intervals);
+	}
+	else	/* for items notsupported for other reasons use refresh_unsupported interval */
+	{
+		*nextcheck = calculate_item_nextcheck(itemid, ITEM_TYPE_ZABBIX, refresh_unsupported, NULL, now);
+	}
+
+	return SUCCEED;
+}
+

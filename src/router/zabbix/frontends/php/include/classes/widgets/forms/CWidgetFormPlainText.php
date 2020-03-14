@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ class CWidgetFormPlainText extends CWidgetForm {
 		parent::__construct($data, WIDGET_PLAIN_TEXT);
 
 		// Items selector.
-		$field_items = (new CWidgetFieldItem('itemids', _('Items')))
+		$field_items = (new CWidgetFieldMsItem('itemids', _('Items')))
 			->setFlags(CWidgetField::FLAG_NOT_EMPTY | CWidgetField::FLAG_LABEL_ASTERISK);
 
 		if (array_key_exists('itemids', $this->data)) {

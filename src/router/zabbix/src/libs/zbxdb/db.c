@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -91,7 +91,7 @@ zbx_ibm_db2_handle_t;
 
 static zbx_ibm_db2_handle_t	ibm_db2;
 
-static int	IBM_DB2server_status();
+static int	IBM_DB2server_status(void);
 static int	zbx_ibm_db2_success(SQLRETURN ret);
 static int	zbx_ibm_db2_success_ext(SQLRETURN ret);
 static void	zbx_ibm_db2_log_errors(SQLSMALLINT htype, SQLHANDLE hndl, zbx_err_codes_t err, const char *context);
@@ -113,7 +113,7 @@ zbx_oracle_db_handle_t;
 
 static zbx_oracle_db_handle_t	oracle;
 
-static ub4	OCI_DBserver_status();
+static ub4	OCI_DBserver_status(void);
 
 #elif defined(HAVE_POSTGRESQL)
 static PGconn			*conn = NULL;
@@ -340,9 +340,9 @@ static int	is_recoverable_mysql_error(void)
 	return FAIL;
 }
 #elif defined(HAVE_POSTGRESQL)
-static int	is_recoverable_postgresql_error(const PGconn *conn, const PGresult *pg_result)
+static int	is_recoverable_postgresql_error(const PGconn *pg_conn, const PGresult *pg_result)
 {
-	if (CONNECTION_OK != PQstatus(conn))
+	if (CONNECTION_OK != PQstatus(pg_conn))
 		return SUCCEED;
 
 	if (0 == zbx_strcmp_null(PQresultErrorField(pg_result, PG_DIAG_SQLSTATE), "40P01"))
@@ -1989,6 +1989,9 @@ DB_ROW	zbx_db_fetch(DB_RESULT result)
 
 	if (OCI_SUCCESS != rc)
 	{
+		ub4	rows_fetched;
+		ub4	sizep = sizeof(ub4);
+
 		if (OCI_SUCCESS != (rc = OCIErrorGet((dvoid *)oracle.errhp, (ub4)1, (text *)NULL,
 				&errcode, (text *)errbuf, (ub4)sizeof(errbuf), OCI_HTYPE_ERROR)))
 		{
@@ -2004,6 +2007,15 @@ DB_ROW	zbx_db_fetch(DB_RESULT result)
 			case 3114:	/* ORA-03114: not connected to ORACLE */
 				zbx_db_errlog(ERR_Z3006, errcode, errbuf, NULL);
 				return NULL;
+			default:
+				rc = OCIAttrGet((void *)result->stmthp, (ub4)OCI_HTYPE_STMT, (void *)&rows_fetched,
+						(ub4 *)&sizep, (ub4)OCI_ATTR_ROWS_FETCHED, (OCIError *)oracle.errhp);
+
+				if (OCI_SUCCESS != rc || 1 != rows_fetched)
+				{
+					zbx_db_errlog(ERR_Z3006, errcode, errbuf, NULL);
+					return NULL;
+				}
 		}
 	}
 
@@ -2227,7 +2239,7 @@ void	DBfree_result(DB_RESULT result)
 
 #ifdef HAVE_IBM_DB2
 /* server status: SQL_CD_TRUE or SQL_CD_FALSE */
-static int	IBM_DB2server_status()
+static int	IBM_DB2server_status(void)
 {
 	int	server_status = SQL_CD_TRUE;
 
@@ -2275,7 +2287,7 @@ static void	zbx_ibm_db2_log_errors(SQLSMALLINT htype, SQLHANDLE hndl, zbx_err_co
 
 #ifdef HAVE_ORACLE
 /* server status: OCI_SERVER_NORMAL or OCI_SERVER_NOT_CONNECTED */
-static ub4	OCI_DBserver_status()
+static ub4	OCI_DBserver_status(void)
 {
 	sword	err;
 	ub4	server_status = OCI_SERVER_NOT_CONNECTED;

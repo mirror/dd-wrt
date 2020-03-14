@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 
 /**
- * Convert net.tcp.service to net.udp.service
+ * Convert net.tcp.service to net.udp.service.
  */
 class C20ItemKeyConverter extends CConverter {
 
@@ -36,19 +36,19 @@ class C20ItemKeyConverter extends CConverter {
 	}
 
 	/**
-	 * Convert item key
+	 * Convert item key.
 	 *
-	 * @param string	$value	item key
+	 * @param string $value  Item key.
 	 *
-	 * @return string			converted item key
+	 * @return string  Converted item key.
 	 */
 	public function convert($value) {
 		if ($this->item_key_parser->parse($value) != CParser::PARSE_SUCCESS) {
 			return $value;
 		}
 
-		if ($this->item_key_parser->getKey() !== 'net.tcp.service'
-				&& $this->item_key_parser->getKey() !== 'net.tcp.service.perf') {
+		$item_key = $this->item_key_parser->getKey();
+		if ($item_key !== 'net.tcp.service' && $item_key !== 'net.tcp.service.perf') {
 			return $value;
 		}
 
@@ -58,5 +58,4 @@ class C20ItemKeyConverter extends CConverter {
 
 		return substr_replace($value, 'udp', 4, 3);
 	}
-
 }

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -729,7 +729,7 @@ class CEvent extends CApiService {
 		$data['eventids'] = zbx_toArray($data['eventids']);
 		$data['eventids'] = array_keys(array_flip($data['eventids']));
 
-		// Chack that at least one valid flag is set.
+		// Check that at least one valid flag is set.
 		$action_mask = ZBX_PROBLEM_UPDATE_CLOSE | ZBX_PROBLEM_UPDATE_ACKNOWLEDGE | ZBX_PROBLEM_UPDATE_MESSAGE
 				| ZBX_PROBLEM_UPDATE_SEVERITY;
 
@@ -908,6 +908,23 @@ class CEvent extends CApiService {
 		$result = parent::addRelatedObjects($options, $result);
 
 		$eventids = array_keys($result);
+
+		// Adding operational data.
+		if ($this->outputIsRequested('opdata', $options['output'])) {
+			$events = DBFetchArrayAssoc(DBselect(
+				'SELECT e.eventid,e.clock,e.ns,t.triggerid,t.expression,t.opdata'.
+				' FROM events e'.
+				' JOIN triggers t ON t.triggerid=e.objectid'.
+				' WHERE '.dbConditionInt('e.eventid', $eventids)
+			), 'eventid');
+
+			foreach ($result as $eventid => $event) {
+				$result[$eventid]['opdata'] =
+					(array_key_exists($eventid, $events) && $events[$eventid]['opdata'] !== '')
+						? CMacrosResolverHelper::resolveTriggerOpdata($events[$eventid], ['events' => true])
+						: '';
+			}
+		}
 
 		// adding hosts
 		if ($options['selectHosts'] !== null && $options['selectHosts'] != API_OUTPUT_COUNT) {
@@ -1109,6 +1126,43 @@ class CEvent extends CApiService {
 				$row['suppression_data'] = $this->unsetExtraFields($row['suppression_data'], ['maintenanceid'], []);
 			}
 			unset($row);
+		}
+
+		// Resolve webhook urls.
+		if ($this->outputIsRequested('urls', $options['output'])) {
+			$tags_options = [
+				'output' => ['eventid', 'tag', 'value'],
+				'filter' => ['eventid' => $eventids]
+			];
+			$tags = DBselect(DB::makeSql('event_tag', $tags_options));
+
+			$events = [];
+
+			foreach ($result as $event) {
+				$events[$event['eventid']]['tags'] = [];
+			}
+
+			while ($tag = DBfetch($tags)) {
+				$events[$tag['eventid']]['tags'][] = [
+					'tag' => $tag['tag'],
+					'value' => $tag['value']
+				];
+			}
+
+			$urls = DB::select('media_type', [
+				'output' => ['event_menu_url', 'event_menu_name'],
+				'filter' => [
+					'type' => MEDIA_TYPE_WEBHOOK,
+					'status' => MEDIA_TYPE_STATUS_ACTIVE,
+					'show_event_menu' => ZBX_EVENT_MENU_SHOW
+				]
+			]);
+
+			$events = CMacrosResolverHelper::resolveMediaTypeUrls($events, $urls);
+
+			foreach ($events as $eventid => $event) {
+				$result[$eventid]['urls'] = $event['urls'];
+			}
 		}
 
 		// Adding event tags.

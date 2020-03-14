@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -99,7 +99,7 @@ if (!CWebUser::$data) {
 
 // page title
 (new CPageHeader(_('Installation')))
-	->addCssFile('styles/'.CHtml::encode($theme).'.css')
+	->addCssFile('assets/styles/'.CHtml::encode($theme).'.css')
 	->addJsFile((new CUrl('js/browsers.js'))->getUrl())
 	->addJsFile((new CUrl('jsLoader.php'))
 		->setArgument('ver', ZABBIX_VERSION)
@@ -111,7 +111,7 @@ if (!CWebUser::$data) {
 /*
  * Displaying
  */
-$link = (new CLink('GPL v2', 'http://www.zabbix.com/license.php'))
+$link = (new CLink('GPL v2', 'https://www.zabbix.com/license'))
 	->setTarget('_blank')
 	->addClass(ZBX_STYLE_GREY)
 	->addClass(ZBX_STYLE_LINK_ALT);

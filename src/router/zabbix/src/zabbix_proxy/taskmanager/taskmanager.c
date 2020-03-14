@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -24,9 +24,10 @@
 #include "log.h"
 #include "db.h"
 #include "dbcache.h"
-#include "../../libs/zbxcrypto/tls.h"
+#include "zbxcrypto.h"
 
 #include "../../zabbix_server/scripts/scripts.h"
+#include "taskmanager.h"
 
 #define ZBX_TM_PROCESS_PERIOD		5
 #define ZBX_TM_CLEANUP_PERIOD		SEC_PER_HOUR
@@ -53,7 +54,7 @@ static int	tm_execute_remote_command(zbx_uint64_t taskid, int clock, int ttl, in
 {
 	DB_ROW		row;
 	DB_RESULT	result;
-	zbx_uint64_t	parent_taskid, hostid;
+	zbx_uint64_t	parent_taskid, hostid, alertid;
 	zbx_tm_task_t	*task = NULL;
 	int		ret = FAIL;
 	zbx_script_t	script;
@@ -61,7 +62,7 @@ static int	tm_execute_remote_command(zbx_uint64_t taskid, int clock, int ttl, in
 	DC_HOST		host;
 
 	result = DBselect("select command_type,execute_on,port,authtype,username,password,publickey,privatekey,"
-					"command,parent_taskid,hostid"
+					"command,parent_taskid,hostid,alertid"
 				" from task_remote_command"
 				" where taskid=" ZBX_FS_UI64,
 				taskid);
@@ -99,22 +100,34 @@ static int	tm_execute_remote_command(zbx_uint64_t taskid, int clock, int ttl, in
 	script.privatekey = row[7];
 	script.command = row[8];
 
-	if (ZBX_SCRIPT_TYPE_CUSTOM_SCRIPT == script.type && ZBX_SCRIPT_EXECUTE_ON_PROXY == script.execute_on)
+	if (ZBX_SCRIPT_EXECUTE_ON_PROXY == script.execute_on)
 	{
-		if (0 == CONFIG_ENABLE_REMOTE_COMMANDS)
-		{
-			task->data = zbx_tm_remote_command_result_create(parent_taskid, FAIL,
-					"Remote commands are not enabled");
-			goto finish;
-		}
+		/* always wait for execution result when executing on Zabbix proxy */
+		alertid = 0;
 
-		if (1 == CONFIG_LOG_REMOTE_COMMANDS)
-			zabbix_log(LOG_LEVEL_WARNING, "Executing command '%s'", script.command);
-		else
-			zabbix_log(LOG_LEVEL_DEBUG, "Executing command '%s'", script.command);
+		if (ZBX_SCRIPT_TYPE_CUSTOM_SCRIPT == script.type)
+		{
+			if (0 == CONFIG_ENABLE_REMOTE_COMMANDS)
+			{
+				task->data = zbx_tm_remote_command_result_create(parent_taskid, FAIL,
+						"Remote commands are not enabled");
+				goto finish;
+			}
+
+			if (1 == CONFIG_LOG_REMOTE_COMMANDS)
+				zabbix_log(LOG_LEVEL_WARNING, "Executing command '%s'", script.command);
+			else
+				zabbix_log(LOG_LEVEL_DEBUG, "Executing command '%s'", script.command);
+		}
+	}
+	else
+	{
+		/* only wait for execution result when executed on Zabbix agent if it's not automatic alert but */
+		/* manually initiated command through frontend                                                  */
+		ZBX_DBROW2UINT64(alertid, row[11]);
 	}
 
-	if (SUCCEED != (ret = zbx_script_execute(&script, &host, &info, error, sizeof(error))))
+	if (SUCCEED != (ret = zbx_script_execute(&script, &host, 0 == alertid ? &info : NULL, error, sizeof(error))))
 		task->data = zbx_tm_remote_command_result_create(parent_taskid, ret, error);
 	else
 		task->data = zbx_tm_remote_command_result_create(parent_taskid, ret, info);
@@ -292,7 +305,7 @@ ZBX_THREAD_ENTRY(taskmanager_thread, args)
 
 	zbx_setproctitle("%s [started, idle %d sec]", get_process_type_string(process_type), sleeptime);
 
-	for (;;)
+	while (ZBX_IS_RUNNING())
 	{
 		zbx_sleep_loop(sleeptime);
 
@@ -318,4 +331,9 @@ ZBX_THREAD_ENTRY(taskmanager_thread, args)
 		zbx_setproctitle("%s [processed %d task(s) in " ZBX_FS_DBL " sec, idle %d sec]",
 				get_process_type_string(process_type), tasks_num, sec2 - sec1, sleeptime);
 	}
+
+	zbx_setproctitle("%s #%d [terminated]", get_process_type_string(process_type), process_num);
+
+	while (1)
+		zbx_sleep(SEC_PER_MIN);
 }

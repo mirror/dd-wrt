@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ static int 	httpmacro_cmp_func(const void *d1, const void *d2)
  *             data     - [IN] the data for regexp matching (optional)        *
  *             err_str  - [OUT] the error message (optional)                  *
  *                                                                            *
- * Return value: SUCCEDED - the key/value pair was added successfully         *
+ * Return value:  SUCCEED - the key/value pair was added successfully         *
  *                   FAIL - key/value pair adding to cache failed.            *
  *                          The failure reason can be either empty key/value, *
  *                          wrong key format or failed regular expression     *

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,6 +26,9 @@
  */
 
 #ifndef HAVE_SQLITE3
+
+int	DBpatch_3040006(void);
+int	DBpatch_3040007(void);
 
 static int	DBpatch_3040000(void)
 {

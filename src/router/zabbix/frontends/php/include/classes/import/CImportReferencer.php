@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -613,16 +613,6 @@ class CImportReferencer {
 	}
 
 	/**
-	 * Add screen name association with screen id.
-	 *
-	 * @param string $name
-	 * @param string $screenId
-	 */
-	public function addScreenRef($name, $screenId) {
-		$this->screensRefs[$name] = $screenId;
-	}
-
-	/**
 	 * Add template screen name association with template screen ID.
 	 *
 	 * @param string $screenName
@@ -872,7 +862,7 @@ class CImportReferencer {
 			$this->valueMapsRefs = [];
 
 			$valuemaps = API::ValueMap()->get([
-				'output' => ['valeumapid', 'name'],
+				'output' => ['valuemapid', 'name'],
 				'filter' => ['name' => $this->valueMaps]
 			]);
 

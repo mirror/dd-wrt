@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -232,14 +232,14 @@ if (isset($_REQUEST['form'])) {
 	else {
 		$data['name'] = getRequest('name', '');
 		$data['test_string'] = getRequest('test_string', '');
-		$data['expressions'] = getRequest('expressions', [
+		$data['expressions'] = array_values(getRequest('expressions', [
 			[
 				'expression' => '',
 				'expression_type' => EXPRESSION_TYPE_INCLUDED,
 				'exp_delimiter' => ',',
 				'case_sensitive' => 0
 			]
-		]);
+		]));
 
 		foreach ($data['expressions'] as &$expression) {
 			if (!array_key_exists('case_sensitive', $expression)) {

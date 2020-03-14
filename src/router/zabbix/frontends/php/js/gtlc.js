@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -123,20 +123,16 @@ jQuery(function ($){
 			element.label.text(data.label);
 		}
 
-		$([element.from[0], element.to[0], element.apply[0]]).attr('disabled', false);
+		$([element.from[0], element.to[0], element.apply[0]]).prop('disabled', false);
 
 		$.each({
 			decrement: data.can_decrement,
 			increment: data.can_increment,
 			zoomout: data.can_zoomout
 		}, function (elm, state) {
-			if (state === true) {
-				element[elm].removeAttr('disabled');
+			if (typeof state !== 'undefined') {
+				element[elm].prop('disabled', !state);
 			}
-			else if (state === false) {
-				element[elm].attr('disabled', true);
-			}
-
 			element[elm].removeClass('disabled');
 		});
 
@@ -156,7 +152,7 @@ jQuery(function ($){
 		}
 
 		element.apply.closest('.ui-tabs-panel').addClass('in-progress');
-		$([element.from[0], element.to[0], element.apply[0]]).attr('disabled', true);
+		$([element.from[0], element.to[0], element.apply[0]]).prop('disabled', true);
 		$([element.decrement[0], element.zoomout[0], element.increment[0]]).addClass('disabled');
 
 		ui_disabled = true;
@@ -467,31 +463,42 @@ var timeControl = {
 
 	// options
 	refreshPage: true,
-	timeRefreshInterval: 0,
-	timeRefreshTimeoutHandler: null,
 
 	addObject: function(id, time, objData) {
-		if (typeof this.objectList[id] === 'undefined'
-				|| (typeof(objData['reloadOnAdd']) !== 'undefined' && objData['reloadOnAdd'] === 1)) {
-			this.objectList[id] = jQuery.extend({
-				id: id,
-				containerid: null,
-				refresh: false,
-				processed: 0,
-				timeline: time,
-				objDims: {},
-				src: location.href,
-				dynamic: 1,
-				loadSBox: 0,
-				loadImage: 0,
-				mainObject: 0, // object on changing will reflect on all others
-				onDashboard: 0 // object is on dashboard
-			}, objData);
+		if (typeof this.objectList[id] !== 'undefined' && objData['reloadOnAdd'] !== 1) {
+			// Do not reload object twice if not asked to.
+			return;
+		}
 
-			var objectUpdate = this.objectUpdate.bind(this.objectList[id]);
-			jQuery.subscribe('timeselector.rangeupdate', function(e, data) {
-				objectUpdate(data);
-			});
+		this.removeObject(id);
+
+		this.objectList[id] = jQuery.extend({
+			id: id,
+			containerid: null,
+			refresh: false,
+			processed: 0,
+			timeline: time,
+			objDims: {},
+			src: location.href,
+			dynamic: 1,
+			loadSBox: 0,
+			loadImage: 0,
+			mainObject: 0, // object on changing will reflect on all others
+			onDashboard: 0 // object is on dashboard
+		}, objData);
+
+		var _this = this;
+		this.objectList[id].objectUpdate = function(e, data) {
+			_this.objectUpdate.call(_this.objectList[id], data);
+		};
+		jQuery.subscribe('timeselector.rangeupdate', this.objectList[id].objectUpdate);
+	},
+
+	removeObject: function(id) {
+		if (typeof this.objectList[id] !== 'undefined') {
+			jQuery.unsubscribe('timeselector.rangeupdate', this.objectList[id].objectUpdate);
+
+			delete this.objectList[id];
 		}
 	},
 
@@ -518,9 +525,12 @@ var timeControl = {
 				}
 
 				// url
-				if (isset('graphtype', obj.objDims) && obj.objDims.graphtype < 2) {
+				if (isset('graphtype', obj.objDims)) {
+					// graph size might have changed regardless of graph's type
+
 					var graphUrl = new Curl(obj.src, false);
 					graphUrl.setArgument('width', Math.floor(obj.objDims.width));
+					graphUrl.setArgument('height', Math.floor(obj.objDims.graphHeight));
 
 					obj.src = graphUrl.getUrl();
 				}
@@ -640,23 +650,6 @@ var timeControl = {
 		this.objectList[id].processed = 0;
 		this.objectList[id].refresh = true;
 		this.processObjects();
-
-		if (this.timeRefreshInterval > 0) {
-			this.refreshTime();
-		}
-	},
-
-	useTimeRefresh: function(timeRefreshInterval) {
-		if (!empty(timeRefreshInterval) && timeRefreshInterval > 0) {
-			this.timeRefreshInterval = timeRefreshInterval * 1000;
-		}
-	},
-
-	refreshTime: function() {
-		if (this.timeRefreshInterval > 0) {
-			// plan next time update
-			this.timeRefreshTimeoutHandler = window.setTimeout(function() { timeControl.refreshTime(); }, this.timeRefreshInterval);
-		}
 	},
 
 	disableAllSBox: function() {

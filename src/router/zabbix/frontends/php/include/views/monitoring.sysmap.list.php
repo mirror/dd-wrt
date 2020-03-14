@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -88,7 +88,14 @@ $sysmapForm->addItem([
 	$sysmapTable,
 	$this->data['paging'],
 	new CActionButtonList('action', 'maps', [
-		'map.export' => ['name' => _('Export')],
+		'map.export' => ['name' => _('Export'), 'redirect' =>
+			(new CUrl('zabbix.php'))
+				->setArgument('action', 'export.sysmaps.xml')
+				->setArgument('backurl', (new CUrl('sysmaps.php'))
+					->setArgument('page', getPageNumber())
+					->getUrl())
+				->getUrl()
+		],
 		'map.massdelete' => ['name' => _('Delete'), 'confirm' => _('Delete selected maps?')]
 	])
 ]);

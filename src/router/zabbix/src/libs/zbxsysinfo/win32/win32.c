@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ ZBX_METRIC	parameters_specific[] =
 {
 	{"vfs.fs.size",		CF_HAVEPARAMS,	VFS_FS_SIZE,		"c:,free"},
 	{"vfs.fs.discovery",	0,		VFS_FS_DISCOVERY,	NULL},
+	{"vfs.fs.get",		0,		VFS_FS_GET,		NULL},
 
 	{"net.tcp.listen",	CF_HAVEPARAMS,	NET_TCP_LISTEN,		"80"},
 
@@ -59,11 +60,13 @@ ZBX_METRIC	parameters_specific[] =
 	{"service_state",	CF_HAVEPARAMS,	SERVICE_STATE,		ZABBIX_SERVICE_NAME},
 	{"services",		CF_HAVEPARAMS,	SERVICES,		NULL},
 	{"perf_counter",	CF_HAVEPARAMS,	PERF_COUNTER,		"\\System\\Processes"},
+	{"perf_counter_en",	CF_HAVEPARAMS,	PERF_COUNTER_EN,	"\\System\\Processes"},
 	{"proc_info",		CF_HAVEPARAMS,	PROC_INFO,		"svchost.exe"},
 
 	{"__UserPerfCounter",	CF_HAVEPARAMS,	USER_PERF_COUNTER,	""},
 
 	{"wmi.get",		CF_HAVEPARAMS,	WMI_GET,		"root\\cimv2,select Caption from Win32_OperatingSystem"},
+	{"wmi.getall",		CF_HAVEPARAMS,	WMI_GETALL,		"root\\cimv2,select * from Win32_OperatingSystem"},
 
 	{NULL}
 };

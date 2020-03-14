@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ class CItemPrototype extends CItemGeneral {
 		ZBX_PREPROC_VALIDATE_RANGE, ZBX_PREPROC_VALIDATE_REGEX, ZBX_PREPROC_VALIDATE_NOT_REGEX,
 		ZBX_PREPROC_ERROR_FIELD_JSON, ZBX_PREPROC_ERROR_FIELD_XML, ZBX_PREPROC_ERROR_FIELD_REGEX,
 		ZBX_PREPROC_THROTTLE_VALUE, ZBX_PREPROC_THROTTLE_TIMED_VALUE, ZBX_PREPROC_SCRIPT,
-		ZBX_PREPROC_PROMETHEUS_PATTERN, ZBX_PREPROC_PROMETHEUS_TO_JSON
+		ZBX_PREPROC_PROMETHEUS_PATTERN, ZBX_PREPROC_PROMETHEUS_TO_JSON, ZBX_PREPROC_CSV_TO_JSON
 	];
 
 	public function __construct() {
@@ -126,7 +126,7 @@ class CItemPrototype extends CItemGeneral {
 					')';
 		}
 
-// templateids
+		// templateids
 		if (!is_null($options['templateids'])) {
 			zbx_value2array($options['templateids']);
 
@@ -139,7 +139,7 @@ class CItemPrototype extends CItemGeneral {
 			}
 		}
 
-// hostids
+		// hostids
 		if (!is_null($options['hostids'])) {
 			zbx_value2array($options['hostids']);
 
@@ -150,14 +150,14 @@ class CItemPrototype extends CItemGeneral {
 			}
 		}
 
-// itemids
+		// itemids
 		if (!is_null($options['itemids'])) {
 			zbx_value2array($options['itemids']);
 
 			$sqlParts['where']['itemid'] = dbConditionInt('i.itemid', $options['itemids']);
 		}
 
-// discoveryids
+		// discoveryids
 		if (!is_null($options['discoveryids'])) {
 			zbx_value2array($options['discoveryids']);
 
@@ -188,7 +188,7 @@ class CItemPrototype extends CItemGeneral {
 			$sqlParts['where']['igi'] = 'i.itemid=gi.itemid';
 		}
 
-// inherited
+		// inherited
 		if (!is_null($options['inherited'])) {
 			if ($options['inherited'])
 				$sqlParts['where'][] = 'i.templateid IS NOT NULL';
@@ -196,7 +196,7 @@ class CItemPrototype extends CItemGeneral {
 				$sqlParts['where'][] = 'i.templateid IS NULL';
 		}
 
-// templated
+		// templated
 		if (!is_null($options['templated'])) {
 			$sqlParts['from']['hosts'] = 'hosts h';
 			$sqlParts['where']['hi'] = 'h.hostid=i.hostid';
@@ -207,7 +207,7 @@ class CItemPrototype extends CItemGeneral {
 				$sqlParts['where'][] = 'h.status<>'.HOST_STATUS_TEMPLATE;
 		}
 
-// monitored
+		// monitored
 		if (!is_null($options['monitored'])) {
 			$sqlParts['from']['hosts'] = 'hosts h';
 			$sqlParts['where']['hi'] = 'h.hostid=i.hostid';
@@ -221,12 +221,12 @@ class CItemPrototype extends CItemGeneral {
 			}
 		}
 
-// search
+		// search
 		if (is_array($options['search'])) {
 			zbx_db_search('items i', $options, $sqlParts);
 		}
 
-// --- FILTER ---
+		// --- FILTER ---
 		if (is_array($options['filter'])) {
 			if (array_key_exists('delay', $options['filter']) && $options['filter']['delay'] !== null) {
 				$sqlParts['where'][] = makeUpdateIntervalFilter('i.delay', $options['filter']['delay']);
@@ -252,11 +252,11 @@ class CItemPrototype extends CItemGeneral {
 			}
 		}
 
-// limit
+		// limit
 		if (zbx_ctype_digit($options['limit']) && $options['limit']) {
 			$sqlParts['limit'] = $options['limit'];
 		}
-//----------
+		//----------
 
 		$sqlParts = $this->applyQueryOutputOptions($this->tableName(), $this->tableAlias(), $options, $sqlParts);
 		$sqlParts = $this->applyQuerySortOptions($this->tableName(), $this->tableAlias(), $options, $sqlParts);
@@ -747,7 +747,9 @@ class CItemPrototype extends CItemGeneral {
 			'preservekeys' => true
 		]);
 
-		$items = $this->extendFromObjects(zbx_toHash($items, 'itemid'), $db_items, ['type', 'master_itemid']);
+		$items = $this->extendFromObjects(zbx_toHash($items, 'itemid'), $db_items, ['type', 'authtype',
+			'master_itemid'
+		]);
 
 		$this->validateDependentItems($items);
 
@@ -757,7 +759,7 @@ class CItemPrototype extends CItemGeneral {
 				'url' => '',
 				'query_fields' => '',
 				'timeout' => $defaults['timeout'],
-				'status_codes' => '',
+				'status_codes' => $defaults['status_codes'],
 				'follow_redirects' => $defaults['follow_redirects'],
 				'request_method' => $defaults['request_method'],
 				'allow_traps' => $defaults['allow_traps'],
@@ -771,9 +773,6 @@ class CItemPrototype extends CItemGeneral {
 				'verify_host' => $defaults['verify_host'],
 				'ssl_cert_file' => '',
 				'ssl_key_file' => '',
-				'authtype' => $defaults['authtype'],
-				'username' => '',
-				'password' => '',
 				'posts' => ''
 			]
 		];
@@ -802,9 +801,8 @@ class CItemPrototype extends CItemGeneral {
 			}
 
 			if ($item['type'] == ITEM_TYPE_HTTPAGENT) {
-				// Clean username and password on authtype change to HTTPTEST_AUTH_NONE.
-				if (array_key_exists('authtype', $item) && $item['authtype'] == HTTPTEST_AUTH_NONE
-						&& $item['authtype'] != $db_items[$item['itemid']]['authtype']) {
+				// Clean username and password when authtype is set to HTTPTEST_AUTH_NONE.
+				if ($item['authtype'] == HTTPTEST_AUTH_NONE) {
 					$item['username'] = '';
 					$item['password'] = '';
 				}

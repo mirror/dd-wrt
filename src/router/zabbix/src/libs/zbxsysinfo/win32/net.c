@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -24,12 +24,12 @@
 
 /* __stdcall calling convention is used for GetIfEntry2(). In order to declare a */
 /* pointer to GetIfEntry2() we have to expand NETIOPAPI_API macro manually since */
-/* part of it must be toghether with the pointer name in the parentheses.        */
+/* part of it must be together with the pointer name in the parentheses.         */
 typedef NETIO_STATUS (NETIOAPI_API_ *pGetIfEntry2_t)(PMIB_IF_ROW2 Row);
 
 /* GetIfEntry2() is available since Windows Vista and Windows Server 2008. In    */
 /* earlier Windows releases this pointer remains set to NULL and GetIfEntry() is */
-/* used dirrectly instead.                                                       */
+/* used directly instead.                                                        */
 static pGetIfEntry2_t	pGetIfEntry2 = NULL;
 
 /* GetIfEntry2() and GetIfEntry() work with different MIB interface structures.  */

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include "log.h"
+#include "zbxhttp.h"
 
 #ifdef HAVE_LIBCURL
 
@@ -148,6 +149,13 @@ int	zbx_http_prepare_auth(CURL *easyhandle, unsigned char authtype, const char *
 				break;
 			case HTTPTEST_AUTH_NTLM:
 				curlauth = CURLAUTH_NTLM;
+				break;
+			case HTTPTEST_AUTH_NEGOTIATE:
+#if LIBCURL_VERSION_NUM >= 0x072600
+				curlauth = CURLAUTH_NEGOTIATE;
+#else
+				curlauth = CURLAUTH_GSSNEGOTIATE;
+#endif
 				break;
 			default:
 				THIS_SHOULD_NEVER_HAPPEN;

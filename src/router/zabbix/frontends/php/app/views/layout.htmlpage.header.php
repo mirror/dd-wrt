@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 ** along with this program; if not, write to the Free Software
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
+
 
 global $DB, $ZBX_SERVER, $ZBX_SERVER_NAME, $ZBX_SERVER_PORT;
 
@@ -45,10 +46,12 @@ if (!empty($DB['DB'])) {
 
 // Show GUI messages in pages with menus and in fullscreen and kiosk mode.
 $show_gui_messaging = (!defined('ZBX_PAGE_NO_MENU')
-	|| in_array($data['web_layout_mode'], [ZBX_LAYOUT_FULLSCREEN, ZBX_LAYOUT_KIOSKMODE])) ? 1 : null;
+	|| in_array($data['web_layout_mode'], [ZBX_LAYOUT_FULLSCREEN, ZBX_LAYOUT_KIOSKMODE]))
+		? intval(!CWebUser::isGuest())
+		: null;
 
 $pageHeader
-	->addCssFile('styles/'.CHtml::encode($theme).'.css')
+	->addCssFile('assets/styles/'.CHtml::encode($theme).'.css')
 	->addJsBeforeScripts(
 		'var PHP_TZ_OFFSET = '.date('Z').','.
 			'PHP_ZBX_FULL_DATE_TIME = "'.ZBX_FULL_DATE_TIME.'";'
@@ -72,4 +75,4 @@ if ($scripts) {
 $pageHeader->display();
 
 echo '<body lang="'.CWebUser::getLang().'">';
-echo '<output class="'.ZBX_STYLE_MSG_BAD_GLOBAL.'" id="msg-bad-global"></output>';
+echo '<output class="'.ZBX_STYLE_MSG_GLOBAL_FOOTER.' '.ZBX_STYLE_MSG_WARNING.'" id="msg-global-footer"></output>';

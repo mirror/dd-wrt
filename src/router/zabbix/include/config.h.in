@@ -75,9 +75,6 @@
 /* Define to 1 if 'KERN_MAXPROC' exists. */
 #undef HAVE_FUNCTION_SYSCTL_KERN_MAXPROC
 
-/* Define to 1 if you have the `getaddrinfo' function. */
-#undef HAVE_GETADDRINFO
-
 /* Define to 1 if you have the `getenv' function. */
 #undef HAVE_GETENV
 
@@ -99,9 +96,6 @@
 /* Define to 1 if you have the 'libiconv' library (-liconv) */
 #undef HAVE_ICONV
 
-/* Define to 1 if Iksemel library should be enabled. */
-#undef HAVE_IKSEMEL
-
 /* Define to 1 if you have NETLINK INET_DIAG support. */
 #undef HAVE_INET_DIAG
 
@@ -113,9 +107,6 @@
 
 /* Define to 1 if IPv6 should be enabled. */
 #undef HAVE_IPV6
-
-/* Define to 1 if Jabber should be enabled. */
-#undef HAVE_JABBER
 
 /* Define to 1 if you have the <knlist.h> header file. */
 #undef HAVE_KNLIST_H
@@ -320,6 +311,9 @@
 /* Define to 1 if '_res._u._ext.ext' exists. /BSD/ */
 #undef HAVE_RES_U_EXT_EXT
 
+/* Define to 1 if you have the `round' function. */
+#undef HAVE_ROUND
+
 /* Define to 1 if union 'semun' exists. */
 #undef HAVE_SEMUN
 
@@ -338,11 +332,17 @@
 /* Define to 1 if SQLite libraries are available */
 #undef HAVE_SQLITE3
 
+/* Define to 1 if you have the 'libssh' library (-lssh) */
+#undef HAVE_SSH
+
 /* Define to 1 if you have the 'libssh2' library (-lssh2) */
 #undef HAVE_SSH2
 
 /* Define to 1 if you have the <stdarg.h> header file. */
 #undef HAVE_STDARG_H
+
+/* Define to 1 if you have the <stddef.h> header file. */
+#undef HAVE_STDDEF_H
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -509,6 +509,9 @@
 /* Define to 1 if you have the <sys/wait.h> header file. */
 #undef HAVE_SYS_WAIT_H
 
+/* Define to 1 if compiler keyword '__thread' supported. */
+#undef HAVE_THREAD_LOCAL
+
 /* Define to 1 if function 'clock_gettime' exists. */
 #undef HAVE_TIME_CLOCK_GETTIME
 
@@ -566,7 +569,7 @@
 /* Define to 1 if you are using Linux 2.6.x */
 #undef KERNEL_2_6
 
-/* Define to 1 if LDAP depricated functions is used. */
+/* Define to 1 if LDAP deprecated functions is used. */
 #undef LDAP_DEPRECATED
 
 /* Defined if libcurl supports AsynchDNS */
@@ -623,7 +626,7 @@
 /* Define to 1 if you are using Mac OS X. */
 #undef MAC_OS_X
 
-/* Define to 1 if OPENIPMI depricated functions is used. */
+/* Define to 1 if OPENIPMI deprecated functions is used. */
 #undef OPENIPMI_DEPRECATED
 
 /* Name of package */

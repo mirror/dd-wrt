@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ function DBconnect(&$error) {
 	$result = true;
 
 	$DB['DB'] = null; // global db handler
-	$DB['TRANSACTIONS'] = 0; // level of a nested transation
+	$DB['TRANSACTIONS'] = 0; // level of a nested transaction
 	$DB['TRANSACTION_NO_FAILED_SQLS'] = true; // true - if no statements failed in transaction, false - there are failed statements
 	$DB['SELECT_COUNT'] = 0; // stats
 	$DB['EXECUTE_COUNT'] = 0;
@@ -427,7 +427,7 @@ function DBselect($query, $limit = null, $offset = 0) {
  * SELECT a FROM tbl LIMIT 10 OFFSET 5
  *
  * Oracle, DB2:
- * SELECT a FROM tbe WHERE rownum < 15 // ONLY < 15
+ * SELECT a FROM tbl WHERE rownum < 15 // ONLY < 15
  * SELECT * FROM (SELECT * FROM tbl) WHERE rownum BETWEEN 6 AND 15
  *
  * @param $query
@@ -777,18 +777,18 @@ function check_db_fields($dbFields, &$args) {
  * In some frontend places we can get array with bool as input values parameter. This is fail!
  * Therefore we need check it and return 1=0 as temporary solution to not break the frontend.
  *
- * @param string $fieldName		field name to be used in SQL WHERE condition
- * @param array  $values		array of numerical values sorted in ascending order to be included in WHERE
- * @param bool   $notIn			builds inverted condition
- * @param bool   $sort			values mandatory must be sorted
- * @param bool   $quote
- * @param bool   $zero_to_null
+ * @param string $field_name    Field name to be used in SQL WHERE condition
+ * @param array  $values        Array of numerical values sorted in ascending order to be included in WHERE
+ * @param bool   $not_in        Builds inverted condition
+ * @param bool   $zero_to_null  Cast zero to null
  *
  * @return string
  */
-function dbConditionInt($fieldName, array $values, $notIn = false, $sort = true, $quote = true, $zero_to_null = false) {
-	$MAX_EXPRESSIONS = 950; // maximum  number of values for using "IN (id1>,<id2>,...,<idN>)"
-	$MIN_NUM_BETWEEN = 4; // minimum number of consecutive values for using "BETWEEN <id1> AND <idN>"
+function dbConditionInt($field_name, array $values, $not_in = false, $zero_to_null = false) {
+	global $DB;
+
+	$MIN_NUM_BETWEEN = 4; // Minimum number of consecutive values for using "BETWEEN <id1> AND <idN>".
+	$MAX_NUM_IN = 950; // Maximum number of values for using "IN (<id1>,<id2>,...,<idN>)".
 
 	if (is_bool(reset($values))) {
 		return '1=0';
@@ -804,84 +804,85 @@ function dbConditionInt($fieldName, array $values, $notIn = false, $sort = true,
 	}
 
 	$values = array_keys($values);
+	natsort($values);
+	$values = array_values($values);
 
-	if ($sort) {
-		natsort($values);
+	$intervals = [];
+	$singles = [];
 
-		$values = array_values($values);
-	}
+	if ($DB['TYPE'] == ZBX_DB_ORACLE) {
+		// For better performance, use "BETWEEN" constructs for sequential integer values, for Oracle database.
 
-	$betweens = [];
-	$data = [];
+		for ($i = 0, $size = count($values); $i < $size; $i++) {
+			if ($i + $MIN_NUM_BETWEEN < $size && bcsub($values[$i + $MIN_NUM_BETWEEN], $values[$i]) == $MIN_NUM_BETWEEN) {
+				$interval_first = $values[$i];
 
-	for ($i = 0, $size = count($values); $i < $size; $i++) {
-		// analyze by chunk
-		if ($i + $MIN_NUM_BETWEEN < $size && bcsub($values[$i + $MIN_NUM_BETWEEN], $values[$i]) == $MIN_NUM_BETWEEN) {
-			$between = array_slice($values, $i, $MIN_NUM_BETWEEN);
+				// Search for the last sequential integer value.
+				for ($i += $MIN_NUM_BETWEEN; $i < $size && bcsub($values[$i], $values[$i - 1]) == 1; $i++);
+				$i--;
 
-			// analyze by one
-			for ($i += $MIN_NUM_BETWEEN; $i < $size && bcsub($values[$i], $values[$i - 1]) == 1; $i++) {
-				$between[] = $values[$i];
+				$interval_last = $values[$i];
+
+				// Save the first and last values of the sequential interval.
+				$intervals[] = [dbQuoteInt($interval_first), dbQuoteInt($interval_last)];
 			}
-
-			$betweens[] = $between;
-			$i--;
-		}
-		else {
-			$data[] = $values[$i];
+			else {
+				$singles[] = dbQuoteInt($values[$i]);
+			}
 		}
 	}
+	else {
+		// For better performance, use only "IN" constructs all other databases, except Oracle.
 
-	// concatenate conditions
-	$dataSize = count($data);
+		$singles = array_map(function($value) {
+			return dbQuoteInt($value);
+		}, $values);
+	}
 
 	$condition = '';
-	$operatorAnd = $notIn ? ' AND ' : ' OR ';
 
-	if ($betweens) {
-		$operatorNot = $notIn ? 'NOT ' : '';
+	// Process intervals.
 
-		foreach ($betweens as $between) {
-			$between = $quote
-				? $operatorNot.$fieldName.' BETWEEN '.zbx_dbstr($between[0]).' AND '.zbx_dbstr(end($between))
-				: $operatorNot.$fieldName.' BETWEEN '.$between[0].' AND '.end($between);
-
-			$condition .= ($condition !== '') ? $operatorAnd.$between : $between;
+	foreach ($intervals as $interval) {
+		if ($condition !== '') {
+			$condition .= $not_in ? ' AND ' : ' OR ';
 		}
+
+		$condition .= ($not_in ? 'NOT ' : '').$field_name.' BETWEEN '.$interval[0].' AND '.$interval[1];
 	}
 
-	$operatorNot = $notIn ? ' NOT' : '';
-	$chunks = array_chunk($data, $MAX_EXPRESSIONS);
-	$chunk_count = (int) $has_zero + count($betweens) + count($chunks);
+	// Process individual values.
 
-	foreach ($chunks as $chunk) {
+	$single_chunks = array_chunk($singles, $MAX_NUM_IN);
+
+	foreach ($single_chunks as $chunk) {
+		if ($condition !== '') {
+			$condition .= $not_in ? ' AND ' : ' OR ';
+		}
+
 		if (count($chunk) == 1) {
-			$operator = $notIn ? '!=' : '=';
-
-			$condition .= $quote
-				? ($condition !== '' ? $operatorAnd : '').$fieldName.$operator.zbx_dbstr($chunk[0])
-				: ($condition !== '' ? $operatorAnd : '').$fieldName.$operator.$chunk[0];
+			$condition .= $field_name.($not_in ? '!=' : '=').$chunk[0];
 		}
 		else {
-			$chunkIns = '';
-
-			foreach ($chunk as $value) {
-				$chunkIns .= $quote ? ','.zbx_dbstr($value) : ','.$value;
-			}
-
-			$chunkIns = $fieldName.$operatorNot.' IN ('.substr($chunkIns, 1).')';
-
-			$condition .= ($condition !== '') ? $operatorAnd.$chunkIns : $chunkIns;
+			$condition .= $field_name.($not_in ? ' NOT' : '').' IN ('.implode(',', $chunk).')';
 		}
 	}
 
 	if ($has_zero) {
-		$condition .= ($condition !== '') ? $operatorAnd : '';
-		$condition .= $fieldName;
-		$condition .= $notIn ? ' IS NOT NULL' : ' IS NULL';
+		if ($condition !== '') {
+			$condition .= $not_in ? ' AND ' : ' OR ';
+		}
+
+		$condition .= $field_name.($not_in ? ' IS NOT NULL' : ' IS NULL');
 	}
 
-	return (!$notIn && $chunk_count > 1) ? '('.$condition.')' : $condition;
+	if (!$not_in) {
+		if ((int) $has_zero + count($intervals) + count($single_chunks) > 1) {
+			$condition = '('.$condition.')';
+		}
+	}
+
+	return $condition;
 }
 
 /**
@@ -890,13 +891,11 @@ function dbConditionInt($fieldName, array $values, $notIn = false, $sort = true,
  * @param string $fieldName		field name to be used in SQL WHERE condition
  * @param array  $values		array of numerical values sorted in ascending order to be included in WHERE
  * @param bool   $notIn			builds inverted condition
- * @param bool   $sort			values mandatory must be sorted
- * @param bool   $quote
  *
  * @return string
  */
-function dbConditionId($fieldName, array $values, $notIn = false, $sort = true, $quote = true) {
-	return dbConditionInt($fieldName, $values, $notIn, $sort, $quote, true);
+function dbConditionId($fieldName, array $values, $notIn = false) {
+	return dbConditionInt($fieldName, $values, $notIn, true);
 }
 
 /**
@@ -929,6 +928,44 @@ function dbConditionString($fieldName, array $values, $notIn = false) {
 	}
 
 	return '('.$fieldName.$in.'('.$condition.'))';
+}
+
+/**
+ * Quote a value if not an integer or out of BC Math bounds.
+ *
+ * @param mixed $value  Either the original or quoted value.
+ */
+function dbQuoteInt($value) {
+	if (!ctype_digit((string) $value) || bccomp($value, ZBX_MAX_UINT64) > 0) {
+		$value = zbx_dbstr($value);
+	}
+
+	return $value;
+}
+
+/**
+ * Return SQL for COALESCE like select. For fields with type NCHAR, NVARCHAR or NTEXT in Oracle NVL should be used
+ * instead of COALESCE because it will not check that all arguments have same type.
+ *
+ * @param string     $field_name       Field name to be used in returned query part.
+ * @param int|string $default_value    Default value to be returned.
+ * @param string     $alias            Alias to be used in 'AS' query part.
+ * @return string
+ */
+function dbConditionCoalesce($field_name, $default_value, $alias = '') {
+	global $DB;
+
+	if (is_string($default_value)) {
+		$default_value = ($default_value == '') ? '\'\'' : zbx_dbstr($default_value);
+	}
+
+	$query = (($DB['TYPE'] == ZBX_DB_ORACLE) ? 'NVL(' : 'COALESCE(').$field_name.','.$default_value.')';
+
+	if ($alias) {
+		$query .= ' AS '.$alias;
+	}
+
+	return $query;
 }
 
 /**

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ zbx_odbc_query_result_t	*zbx_odbc_select(const zbx_odbc_data_source_t *data_sour
 
 int	zbx_odbc_query_result_to_string(zbx_odbc_query_result_t *query_result, char **string, char **error);
 int	zbx_odbc_query_result_to_lld_json(zbx_odbc_query_result_t *query_result, char **lld_json, char **error);
+int	zbx_odbc_query_result_to_json(zbx_odbc_query_result_t *query_result, char **out_json, char **error);
 
 void	zbx_odbc_query_result_free(zbx_odbc_query_result_t *query_result);
 void	zbx_odbc_data_source_free(zbx_odbc_data_source_t *data_source);

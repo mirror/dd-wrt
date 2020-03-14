@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ else {
 	$this->addJsFile('csvggraphwidget.js');
 	$this->addJsFile('class.cclock.js');
 	$this->addJsFile('class.cnavtree.js');
-	$this->addJsFile('class.mapWidget.js');
+	$this->addJsFile('class.mapwidget.js');
 	$this->addJsFile('class.svg.canvas.js');
 	$this->addJsFile('class.svg.map.js');
 
@@ -148,9 +148,11 @@ else {
 	$dashboard_options = [
 		'max-rows' => DASHBOARD_MAX_ROWS,
 		'max-columns' => DASHBOARD_MAX_COLUMNS,
+		'widget-min-rows' => DASHBOARD_WIDGET_MIN_ROWS,
 		'widget-max-rows' => DASHBOARD_WIDGET_MAX_ROWS,
 		'editable' => $data['dashboard']['editable'],
-		'edit_mode' => $data['dashboard_edit_mode']
+		'edit_mode' => $data['dashboard_edit_mode'],
+		'kioskmode' => ($web_layout_mode === ZBX_LAYOUT_KIOSKMODE)
 	];
 	if ($data['dashboard']['dashboardid'] != 0) {
 		$dashboard_data['id'] = $data['dashboard']['dashboardid'];
@@ -162,16 +164,11 @@ else {
 	// must be done before adding widgets, because it causes dashboard to resize.
 	if ($data['show_timeselector']) {
 		$this->addPostJS(
-			'timeControl.useTimeRefresh('.CWebUser::getRefresh().');'.
 			'timeControl.addObject("scrollbar", '.CJs::encodeJson($data['timeline']).', '.
 				CJs::encodeJson($data['timeControlData']).
 			');'.
 			'timeControl.processObjects();'
 		);
-	}
-
-	if ($web_layout_mode === ZBX_LAYOUT_KIOSKMODE) {
-		$dashboard_options['kioskmode'] = true;
 	}
 
 	// Initialize dashboard grid.

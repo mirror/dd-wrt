@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -612,13 +612,14 @@ class CProxy extends CApiService {
 		$names = [];
 
 		$ip_range_parser = new CIPRangeParser(['v6' => ZBX_HAVE_IPV6, 'ranges' => false]);
+		$host_name_parser = new CHostNameParser();
 
 		foreach ($proxies as $proxy) {
 			if (!check_db_fields($proxy_db_fields, $proxy)) {
 				self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect input parameters.'));
 			}
 
-			if (!preg_match('/^'.ZBX_PREG_HOST_FORMAT.'$/', $proxy['host'])) {
+			if ($host_name_parser->parse($proxy['host']) != CParser::PARSE_SUCCESS) {
 				self::exception(ZBX_API_ERROR_PARAMETERS,
 					_s('Incorrect characters used for proxy name "%1$s".', $proxy['host'])
 				);
@@ -677,7 +678,7 @@ class CProxy extends CApiService {
 				$hostids = array_merge($hostids, zbx_objectValues($proxy['hosts'], 'hostid'));
 			}
 
-			// Propery 'auto_compress' is read-only.
+			// Property 'auto_compress' is read-only.
 			if (array_key_exists('auto_compress', $proxy)) {
 				self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect input parameters.'));
 			}
@@ -719,6 +720,7 @@ class CProxy extends CApiService {
 		$names = [];
 
 		$ip_range_parser = new CIPRangeParser(['v6' => ZBX_HAVE_IPV6, 'ranges' => false]);
+		$host_name_parser = new CHostNameParser();
 
 		foreach ($proxies as $proxy) {
 			if (!check_db_fields($proxy_db_fields, $proxy)) {
@@ -731,7 +733,7 @@ class CProxy extends CApiService {
 
 			// host
 			if (array_key_exists('host', $proxy)) {
-				if (!preg_match('/^'.ZBX_PREG_HOST_FORMAT.'$/', $proxy['host'])) {
+				if ($host_name_parser->parse($proxy['host']) != CParser::PARSE_SUCCESS) {
 					self::exception(ZBX_API_ERROR_PARAMETERS,
 						_s('Incorrect characters used for proxy name "%1$s".', $proxy['host'])
 					);
@@ -742,7 +744,7 @@ class CProxy extends CApiService {
 				}
 			}
 
-			// Propery 'auto_compress' is read-only.
+			// Property 'auto_compress' is read-only.
 			if (array_key_exists('auto_compress', $proxy)) {
 				self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect input parameters.'));
 			}

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -156,15 +156,16 @@ function getSeverityColor($severity, $value = TRIGGER_VALUE_TRUE) {
 /**
  * Returns HTML representation of trigger severity cell containing severity name and color.
  *
- * @param int         $severity     Trigger, Event or Problem severity.
- * @param array|null  $config       Array of configuration parameters to get trigger severity name; can be omitted
- *                                  if $text is not null.
- * @param string|null $text         Trigger severity name.
- * @param bool        $force_normal True to return 'normal' class, false to return corresponding severity class.
+ * @param int         $severity       Trigger, Event or Problem severity.
+ * @param array|null  $config         Array of configuration parameters to get trigger severity name; can be omitted
+ *                                    if $text is not null.
+ * @param string|null $text           Trigger severity name.
+ * @param bool        $force_normal   True to return 'normal' class, false to return corresponding severity class.
+ * @param bool        $return_as_div  True to return severity cell as DIV element.
  *
- * @return CCol
+ * @return CDiv|CCol
  */
-function getSeverityCell($severity, array $config = null, $text = null, $force_normal = false) {
+function getSeverityCell($severity, array $config = null, $text = null, $force_normal = false, $return_as_div = false) {
 	if ($text === null) {
 		$text = CHtml::encode(getSeverityName($severity, $config));
 	}
@@ -173,7 +174,8 @@ function getSeverityCell($severity, array $config = null, $text = null, $force_n
 		return new CCol($text);
 	}
 
-	return (new CCol($text))->addClass(getSeverityStyle($severity));
+	$return = $return_as_div ? new CDiv($text) : new CCol($text);
+	return $return->addClass(getSeverityStyle($severity));
 }
 
 /**
@@ -330,7 +332,7 @@ function utf8RawUrlDecode($source) {
 function copyTriggersToHosts($src_triggerids, $dst_hostids, $src_hostid = null) {
 	$options = [
 		'output' => ['triggerid', 'expression', 'description', 'url', 'status', 'priority', 'comments', 'type',
-			'recovery_mode', 'recovery_expression', 'correlation_mode', 'correlation_tag', 'manual_close'
+			'recovery_mode', 'recovery_expression', 'correlation_mode', 'correlation_tag', 'manual_close', 'opdata'
 		],
 		'selectDependencies' => ['triggerid'],
 		'selectTags' => ['tag', 'value'],
@@ -406,6 +408,7 @@ function copyTriggersToHosts($src_triggerids, $dst_hostids, $src_hostid = null) 
 			// The dependencies must be added after all triggers are created.
 			$result = API::Trigger()->create([[
 				'description' => $srcTrigger['description'],
+				'opdata' => $srcTrigger['opdata'],
 				'expression' => $srcTrigger['expression'],
 				'url' => $srcTrigger['url'],
 				'status' => $srcTrigger['status'],
@@ -659,7 +662,6 @@ function replace_template_dependencies($deps, $hostid) {
  *
  * @param array  $groupids
  * @param string $application
- * @param int    $style                               Table display style: either hosts on top or on the left.
  * @param array  $host_options
  * @param array  $trigger_options
  * @param array  $problem_options
@@ -669,8 +671,8 @@ function replace_template_dependencies($deps, $hostid) {
  *
  * @return array
  */
-function getTriggersOverviewData(array $groupids, $application, $style, array $host_options = [],
-		array $trigger_options = [], array $problem_options = []) {
+function getTriggersOverviewData(array $groupids, $application, array $host_options = [], array $trigger_options = [],
+		array $problem_options = []) {
 	$problem_options += [
 		'min_severity' => TRIGGER_SEVERITY_NOT_CLASSIFIED,
 		'show_suppressed' => ZBX_PROBLEM_SUPPRESSED_FALSE,
@@ -691,7 +693,6 @@ function getTriggersOverviewData(array $groupids, $application, $style, array $h
 		'selectHosts' => ['hostid', 'name'],
 		'hostids' => $hostids,
 		'monitored' => true,
-		'skipDependent' => true,
 		'sortfield' => 'description',
 		'selectDependencies' => ['triggerid'],
 		'preservekeys' => true
@@ -702,7 +703,7 @@ function getTriggersOverviewData(array $groupids, $application, $style, array $h
 		$applications = API::Application()->get([
 			'output' => [],
 			'hostids' => $hostids,
-			'filter' => ['name' => $application],
+			'search' => ['name' => $application],
 			'preservekeys' => true
 		]);
 		$trigger_options['applicationids'] = array_keys($applications);
@@ -722,54 +723,117 @@ function getTriggersOverviewData(array $groupids, $application, $style, array $h
  * @param int   $problem_options['show_suppressed']  Whether to show triggers with suppressed problems.
  * @param int   $problem_options['min_severity']     (optional) Minimal problem severity.
  * @param int   $problem_options['time_from']        (optional) The time starting from which the problems were created.
+ * @param bool  $problem_options['acknowledged']     (optional) Whether to show triggers with acknowledged problems.
  *
  * @return array
  */
 function getTriggersWithActualSeverity(array $trigger_options, array $problem_options) {
 	$problem_options += [
 		'min_severity' => TRIGGER_SEVERITY_NOT_CLASSIFIED,
-		'time_from' => null
+		'show_suppressed' => null,
+		'show_recent' => null,
+		'time_from' => null,
+		'acknowledged' => null
 	];
 
-	$triggers = API::Trigger()->get($trigger_options);
+	$triggers = API::Trigger()->get(['preservekeys' => true] + $trigger_options);
 
-	$problem_triggerids = [];
+	$nondependent_trigger_options = [
+		'output' => [],
+		'triggerids' => array_keys($triggers),
+		'skipDependent' => true,
+		'preservekeys' => true
+	];
 
-	foreach ($triggers as $triggerid => &$trigger) {
-		if ($trigger['value'] == TRIGGER_VALUE_TRUE) {
-			$problem_triggerids[] = $triggerid;
+	$nondependent_triggers = API::Trigger()->get($nondependent_trigger_options);
+
+	CArrayHelper::sort($triggers, ['description']);
+
+	if ($triggers) {
+		$problem_stats = [];
+
+		foreach ($triggers as $triggerid => &$trigger) {
 			$trigger['priority'] = TRIGGER_SEVERITY_NOT_CLASSIFIED;
-		}
-	}
-	unset($trigger);
+			$trigger['resolved'] = true;
 
-	if ($problem_triggerids) {
+			$problem_stats[$triggerid] = [
+				'has_resolved' => false,
+				'has_unresolved' => false,
+				'has_resolved_unacknowledged' => false,
+				'has_unresolved_unacknowledged' => false
+			];
+
+			if ($trigger['value'] == TRIGGER_VALUE_TRUE && !array_key_exists($triggerid, $nondependent_triggers)) {
+				$trigger['value'] = TRIGGER_VALUE_FALSE;
+			}
+		}
+		unset($trigger);
+
 		$problems = API::Problem()->get([
-			'output' => ['eventid', 'acknowledged', 'objectid', 'severity'],
-			'objectids' => $problem_triggerids,
+			'output' => ['eventid', 'acknowledged', 'objectid', 'severity', 'r_eventid'],
+			'objectids' => array_keys($triggers),
 			'suppressed' => ($problem_options['show_suppressed'] == ZBX_PROBLEM_SUPPRESSED_FALSE) ? false : null,
+			'recent' => $problem_options['show_recent'],
+			'acknowledged' => $problem_options['acknowledged'],
 			'time_from' => $problem_options['time_from']
 		]);
 
-		$objectids = [];
-
 		foreach ($problems as $problem) {
-			if ($triggers[$problem['objectid']]['priority'] < $problem['severity']) {
-				$triggers[$problem['objectid']]['priority'] = $problem['severity'];
-				$triggers[$problem['objectid']]['problem']['eventid'] = $problem['eventid'];
-				$triggers[$problem['objectid']]['problem']['acknowledged'] = $problem['acknowledged'];
+			$triggerid = $problem['objectid'];
+
+			if ($problem['r_eventid'] == 0 && array_key_exists($triggerid, $nondependent_triggers)) {
+				$triggers[$triggerid]['resolved'] = false;
 			}
-			$objectids[$problem['objectid']] = true;
+
+			$triggers[$triggerid]['problem']['eventid'] = $problem['eventid'];
+
+			if ($triggers[$triggerid]['priority'] < $problem['severity']) {
+				$triggers[$triggerid]['priority'] = $problem['severity'];
+			}
+
+			if ($problem['r_eventid'] == 0) {
+				$problem_stats[$triggerid]['has_unresolved'] = true;
+				if ($problem['acknowledged'] == 0 && $problem['severity'] >= $problem_options['min_severity']) {
+					$problem_stats[$triggerid]['has_unresolved_unacknowledged'] = true;
+				}
+			}
+			else {
+				$problem_stats[$triggerid]['has_resolved'] = true;
+				if ($problem['acknowledged'] == 0 && $problem['severity'] >= $problem_options['min_severity']) {
+					$problem_stats[$triggerid]['has_resolved_unacknowledged'] = true;
+				}
+			}
 		}
 
-		foreach ($triggers as $triggerid => $trigger) {
-			if (!array_key_exists($triggerid, $objectids)) {
-				$triggers[$triggerid]['value'] = TRIGGER_VALUE_FALSE;
+		foreach ($triggers as $triggerid => &$trigger) {
+			$stats = $problem_stats[$triggerid];
+
+			$trigger['problem']['acknowledged'] = (
+				// Trigger has only resolved problems, all acknowledged.
+				($stats['has_resolved'] && !$stats['has_resolved_unacknowledged'] && !$stats['has_unresolved'])
+					// Trigger has unresolved problems, all acknowledged.
+					|| ($stats['has_unresolved'] && !$stats['has_unresolved_unacknowledged'])
+			) ? 1 : 0;
+
+			$trigger['value'] = ($triggers[$triggerid]['resolved'] === true)
+				? TRIGGER_VALUE_FALSE
+				: TRIGGER_VALUE_TRUE;
+
+			if (($stats['has_resolved'] || $stats['has_unresolved'])
+					&& $trigger['priority'] >= $problem_options['min_severity']) {
+				continue;
 			}
-			elseif ($trigger['priority'] < $problem_options['min_severity']) {
+
+			if (!array_key_exists('only_true', $trigger_options)
+					|| ($trigger_options['only_true'] === null && $trigger_options['filter']['value'] === null)) {
+				// Overview type = 'Data', Maps, Dasboard or Overview 'show any' mode.
+				$trigger['value'] = TRIGGER_VALUE_FALSE;
+			}
+			else {
 				unset($triggers[$triggerid]);
 			}
 		}
+		unset($trigger);
 	}
 
 	return $triggers;
@@ -836,11 +900,9 @@ function getTriggersOverview(array $hosts, array $triggers, $pageFile, $viewMode
 				'triggerid' => $trigger['triggerid'],
 				'value' => $trigger['value'],
 				'lastchange' => $trigger['lastchange'],
-				'priority' => $trigger['priority']
+				'priority' => $trigger['priority'],
+				'problem' => $trigger['problem']
 			];
-			if (array_key_exists('problem', $trigger)) {
-				$trigger_data['problem'] = $trigger['problem'];
-			}
 
 			$data[$trigger_name][$trcounter[$host['name']][$trigger_name]][$host['name']] = $trigger_data;
 			$trcounter[$host['name']][$trigger_name]++;
@@ -942,16 +1004,12 @@ function getTriggerOverviewCells($trigger, $dependencies, $pageFile, $screenid =
 
 		// problem trigger
 		if ($trigger['value'] == TRIGGER_VALUE_TRUE) {
-			$ack = null;
+			$eventid = $trigger['problem']['eventid'];
+			$acknowledge = ['backurl' => ($screenid !== null) ? $pageFile.'?screenid='.$screenid : $pageFile];
+		}
 
-			if (array_key_exists('problem', $trigger)) {
-				$eventid = $trigger['problem']['eventid'];
-				$acknowledge = ['backurl' => ($screenid !== null) ? $pageFile.'?screenid='.$screenid : $pageFile];
-
-				if ($trigger['problem']['acknowledged'] == 1) {
-					$ack = (new CSpan())->addClass(ZBX_STYLE_ICON_ACKN);
-				}
-			}
+		if ($trigger['problem']['acknowledged'] == 1) {
+			$ack = (new CSpan())->addClass(ZBX_STYLE_ICON_ACKN);
 		}
 
 		$desc = array_key_exists($trigger['triggerid'], $dependencies)
@@ -1161,10 +1219,11 @@ function get_triggers_unacknowledged($db_element, $count_problems = null, $ack =
  * Make trigger info block.
  *
  * @param array $trigger  Trigger described in info block.
+ * @param array $eventid  Associated eventid.
  *
  * @return object
  */
-function make_trigger_details($trigger) {
+function make_trigger_details($trigger, $eventid) {
 	$hostNames = [];
 
 	$config = select_config();
@@ -1194,7 +1253,7 @@ function make_trigger_details($trigger) {
 		->addRow([
 			new CCol(_('Trigger')),
 			new CCol((new CLinkAction(CMacrosResolverHelper::resolveTriggerName($trigger)))
-				->setMenuPopup(CMenuPopupHelper::getTrigger($trigger['triggerid']))
+				->setMenuPopup(CMenuPopupHelper::getTrigger($trigger['triggerid'], $eventid))
 			)
 		])
 		->addRow([
@@ -1242,26 +1301,28 @@ function make_trigger_details($trigger) {
  * Analyze an expression and returns expression html tree.
  *
  * @param string $expression  Trigger expression or recovery expression string.
- * @param int $type           Type can be either TRIGGER_EXPRESSION or TRIGGER_RECOVERY_EXPRESSION.
+ * @param int    $type        Type can be either TRIGGER_EXPRESSION or TRIGGER_RECOVERY_EXPRESSION.
  *
- * @return array
+ * @return array|bool
  */
 function analyzeExpression($expression, $type) {
-	if (empty($expression)) {
+	if ($expression === '') {
 		return ['', null];
 	}
 
-	$expressionData = new CTriggerExpression();
-	if (!$expressionData->parse($expression)) {
-		error($expressionData->error);
+	$expression_data = new CTriggerExpression();
+	if (!$expression_data->parse($expression)) {
+		error($expression_data->error);
+
 		return false;
 	}
 
-	$expressionTree[] = getExpressionTree($expressionData, 0, strlen($expressionData->expression) - 1);
+	$expression_tree[] = getExpressionTree($expression_data, 0, strlen($expression_data->expression) - 1);
 
 	$next = [];
-	$letterNum = 0;
-	return buildExpressionHtmlTree($expressionTree, $next, $letterNum, 0, null, $type);
+	$letter_num = 0;
+
+	return buildExpressionHtmlTree($expression_tree, $next, $letter_num, 0, null, $type);
 }
 
 /**
@@ -1425,12 +1486,13 @@ function expressionLevelDraw(array $next, $level) {
 	$expr = [];
 	for ($i = 1; $i <= $level; $i++) {
 		if ($i == $level) {
-			$image = $next[$i] ? 'top_right_bottom' : 'top_right';
+			$class_name = $next[$i] ? 'icon-tree-top-bottom-right' : 'icon-tree-top-right';
 		}
 		else {
-			$image = $next[$i] ? 'top_bottom' : 'space';
+			$class_name = $next[$i] ? 'icon-tree-top-bottom' : 'icon-tree-empty';
 		}
-		$expr[] = new CImg('images/general/tr_'.$image.'.gif', 'tr', 12, 12);
+
+		$expr[] = (new CSpan(''))->addClass($class_name);
 	}
 	return $expr;
 }
@@ -1503,9 +1565,10 @@ function getExpressionTree(CTriggerExpression $expressionData, $start, $end) {
 					}
 					break;
 				case '{':
-					foreach ($expressionData->expressions as $exprPart) {
-						if ($exprPart['pos'] == $i) {
-							$i += strlen($exprPart['expression']) - 1;
+					// Skip any previously found tokens starting with brace.
+					foreach ($expressionData->result->getTokens() as $expression_token) {
+						if ($expression_token['pos'] == $i) {
+							$i += $expression_token['length'] - 1;
 							break;
 						}
 					}
@@ -1600,39 +1663,42 @@ function getExpressionTree(CTriggerExpression $expressionData, $start, $end) {
  * Recreate an expression depending on action.
  *
  * Supported action values:
- * - and	- add an expression using "and";
- * - or		- add an expression using "or";
- * - r 		- replace;
- * - R		- remove.
+ * - and - add an expression using "and";
+ * - or  - add an expression using "or";
+ * - r   - replace;
+ * - R   - remove.
  *
  * @param string $expression
- * @param string $expressionId  element identifier like "0_55"
- * @param string $action        action to perform
- * @param string $newExpression expression for AND, OR or replace actions
+ * @param string $expression_id   Element identifier like "0_55".
+ * @param string $action          Action to perform.
+ * @param string $new_expression  Expression for AND, OR or replace actions.
  *
- * @return bool                 returns new expression or false if expression is incorrect
+ * @return bool|string  Returns new expression or false if expression is incorrect.
  */
-function remakeExpression($expression, $expressionId, $action, $newExpression) {
-	if (empty($expression)) {
+function remakeExpression($expression, $expression_id, $action, $new_expression) {
+	if ($expression === '') {
 		return false;
 	}
 
-	$expressionData = new CTriggerExpression();
-	if ($action != 'R' && !$expressionData->parse($newExpression)) {
-		error($expressionData->error);
+	$expression_data = new CTriggerExpression();
+	if ($action !== 'R' && !$expression_data->parse($new_expression)) {
+		error($expression_data->error);
+
 		return false;
 	}
 
-	if (!$expressionData->parse($expression)) {
-		error($expressionData->error);
+	if (!$expression_data->parse($expression)) {
+		error($expression_data->error);
+
 		return false;
 	}
 
-	$expressionTree[] = getExpressionTree($expressionData, 0, strlen($expressionData->expression) - 1);
+	$expression_tree[] = getExpressionTree($expression_data, 0, strlen($expression_data->expression) - 1);
 
-	if (rebuildExpressionTree($expressionTree, $expressionId, $action, $newExpression)) {
-		$expression = makeExpression($expressionTree);
+	if (rebuildExpressionTree($expression_tree, $expression_id, $action, $new_expression)) {
+		$expression = makeExpression($expression_tree);
 	}
+
 	return $expression;
 }
 
@@ -1920,7 +1986,7 @@ function get_item_function_info($expr) {
 	}
 
 	switch (true) {
-		case ($expression->hasTokenOfType(CTriggerExpressionParserResult::TOKEN_TYPE_MACRO)):
+		case ($expression->hasTokenOfType(CTriggerExprParserResult::TOKEN_TYPE_MACRO)):
 			$result = [
 				'type' => T_ZBX_STR,
 				'value_type' => $rule_0or1[0],
@@ -1928,8 +1994,8 @@ function get_item_function_info($expr) {
 			];
 			break;
 
-		case ($expression->hasTokenOfType(CTriggerExpressionParserResult::TOKEN_TYPE_USER_MACRO)):
-		case ($expression->hasTokenOfType(CTriggerExpressionParserResult::TOKEN_TYPE_LLD_MACRO)):
+		case ($expression->hasTokenOfType(CTriggerExprParserResult::TOKEN_TYPE_USER_MACRO)):
+		case ($expression->hasTokenOfType(CTriggerExprParserResult::TOKEN_TYPE_LLD_MACRO)):
 			$result = [
 				'type' => T_ZBX_STR,
 				'value_type' => $rule_float[0],
@@ -1937,7 +2003,7 @@ function get_item_function_info($expr) {
 			];
 			break;
 
-		case ($expression->hasTokenOfType(CTriggerExpressionParserResult::TOKEN_TYPE_FUNCTION_MACRO)):
+		case ($expression->hasTokenOfType(CTriggerExprParserResult::TOKEN_TYPE_FUNCTION_MACRO)):
 			$expr_part = reset($expr_data->expressions);
 
 			if (!array_key_exists($expr_part['functionName'], $functions)) {
@@ -2046,14 +2112,14 @@ function evalExpressionData($expression, $replaceFunctionMacros) {
 		$value = $token['value'];
 
 		switch ($token['type']) {
-			case CTriggerExpressionParserResult::TOKEN_TYPE_OPERATOR:
+			case CTriggerExprParserResult::TOKEN_TYPE_OPERATOR:
 				// replace specific operators with their PHP analogues
 				if (isset($replaceOperators[$token['value']])) {
 					$value = $replaceOperators[$token['value']];
 				}
 
 				break;
-			case CTriggerExpressionParserResult::TOKEN_TYPE_NUMBER:
+			case CTriggerExprParserResult::TOKEN_TYPE_NUMBER:
 				// convert numeric values with suffixes
 				if ($token['data']['suffix'] !== null) {
 					$value = convert($value);
@@ -2312,7 +2378,7 @@ function makeTriggersHostsList(array $triggers_hosts) {
 			}
 
 			if ($trigger_hosts) {
-				$trigger_hosts[] = ', ';
+				$trigger_hosts[] = (new CSpan(','))->addClass('separator');
 			}
 			$trigger_hosts[] = $host_name;
 		}
@@ -2589,35 +2655,6 @@ function isReadableTriggers(array $triggerids) {
 		'triggerids' => $triggerids,
 		'countOutput' => true
 	]);
-}
-
-/**
- * Get last problems by given trigger IDs.
- *
- * @param array $triggerids
- * @param array $output         List of output fields.
- *
- * @return array
- */
-function getTriggerLastProblems(array $triggerids, array $output) {
-	$problems = DBfetchArray(DBselect(
-		'SELECT '.implode(',e.', $output).
-		' FROM events e'.
-		' JOIN ('.
-			'SELECT e2.source,e2.object,e2.objectid,MAX(clock) AS clock'.
-			' FROM events e2'.
-			' WHERE e2.source='.EVENT_SOURCE_TRIGGERS.
-				' AND e2.object='.EVENT_OBJECT_TRIGGER.
-				' AND e2.value='.TRIGGER_VALUE_TRUE.
-				' AND '.dbConditionInt('e2.objectid', $triggerids).
-			' GROUP BY e2.source,e2.object,e2.objectid'.
-		') e3 ON e3.source=e.source'.
-			' AND e3.object=e.object'.
-			' AND e3.objectid=e.objectid'.
-			' AND e3.clock=e.clock'
-	));
-
-	return $problems;
 }
 
 /**

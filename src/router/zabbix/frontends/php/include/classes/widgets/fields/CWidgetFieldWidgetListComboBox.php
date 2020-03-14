@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -38,6 +38,28 @@ class CWidgetFieldWidgetListComboBox extends CWidgetField {
 		$this->setSaveType(ZBX_WIDGET_FIELD_TYPE_STR);
 		$this->search_by_key = $search_by_key;
 		$this->search_by_value = $search_by_value;
+	}
+
+	/**
+	 * Set additional flags, which can be used in configuration form.
+	 *
+	 * @param int $flags
+	 *
+	 * @return $this
+	 */
+	public function setFlags($flags) {
+		parent::setFlags($flags);
+
+		if ($flags & self::FLAG_NOT_EMPTY) {
+			$strict_validation_rules = $this->getValidationRules();
+			self::setValidationRuleFlag($strict_validation_rules, API_NOT_EMPTY);
+			$this->setStrictValidationRules($strict_validation_rules);
+		}
+		else {
+			$this->setStrictValidationRules(null);
+		}
+
+		return $this;
 	}
 
 	/**

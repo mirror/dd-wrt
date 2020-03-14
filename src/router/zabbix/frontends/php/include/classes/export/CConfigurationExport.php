@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -58,6 +58,7 @@ class CConfigurationExport {
 			'screens' => [],
 			'images' => [],
 			'maps' => [],
+			'mediaTypes' => [],
 			'valueMaps' => []
 		];
 
@@ -74,6 +75,7 @@ class CConfigurationExport {
 			'screens' => [],
 			'images' => [],
 			'maps' => [],
+			'mediaTypes' => [],
 			'valueMaps' => []
 		];
 
@@ -134,48 +136,66 @@ class CConfigurationExport {
 	 * The resulting export format depends on the export writer that was set,
 	 * the export structure depends on the builder that was set.
 	 *
-	 * @return string
+	 * @return string result or false on insufficient user permissions.
 	 */
 	public function export() {
-		$this->gatherData();
+		try {
+			$this->gatherData();
 
-		if ($this->data['groups']) {
-			$this->builder->buildGroups($this->data['groups']);
+			$schema = (new CImportValidatorFactory('xml'))
+				->getObject(ZABBIX_EXPORT_VERSION)
+				->getSchema();
+
+			$simple_triggers = [];
+			if ($this->data['triggers']) {
+				$simple_triggers = $this->builder->extractSimpleTriggers($this->data['triggers']);
+			}
+
+			if ($this->data['groups']) {
+				$this->builder->buildGroups($schema['rules']['groups'], $this->data['groups']);
+			}
+
+			if ($this->data['templates']) {
+				$this->builder->buildTemplates($schema['rules']['templates'], $this->data['templates'], $simple_triggers);
+			}
+
+			if ($this->data['hosts']) {
+				$this->builder->buildHosts($schema['rules']['hosts'], $this->data['hosts'], $simple_triggers);
+			}
+
+			if ($this->data['triggers']) {
+				$this->builder->buildTriggers($schema['rules']['triggers'], $this->data['triggers']);
+			}
+
+			if ($this->data['graphs']) {
+				$this->builder->buildGraphs($schema['rules']['graphs'], $this->data['graphs']);
+			}
+
+			if ($this->data['screens']) {
+				$this->builder->buildScreens($this->data['screens']);
+			}
+
+			if ($this->data['images']) {
+				$this->builder->buildImages($this->data['images']);
+			}
+
+			if ($this->data['maps']) {
+				$this->builder->buildMaps($this->data['maps']);
+			}
+
+			if ($this->data['mediaTypes']) {
+				$this->builder->buildMediaTypes($schema['rules']['media_types'], $this->data['mediaTypes']);
+			}
+
+			if ($this->data['valueMaps']) {
+				$this->builder->buildValueMaps($schema['rules']['value_maps'], $this->data['valueMaps']);
+			}
+
+			return $this->writer->write($this->builder->getExport());
 		}
-
-		if ($this->data['templates']) {
-			$this->builder->buildTemplates($this->data['templates']);
+		catch (CConfigurationExportException $e) {
+			return false;
 		}
-
-		if ($this->data['hosts']) {
-			$this->builder->buildHosts($this->data['hosts']);
-		}
-
-		if ($this->data['triggers']) {
-			$this->builder->buildTriggers($this->data['triggers']);
-		}
-
-		if ($this->data['graphs']) {
-			$this->builder->buildGraphs($this->data['graphs']);
-		}
-
-		if ($this->data['screens']) {
-			$this->builder->buildScreens($this->data['screens']);
-		}
-
-		if ($this->data['images']) {
-			$this->builder->buildImages($this->data['images']);
-		}
-
-		if ($this->data['maps']) {
-			$this->builder->buildMaps($this->data['maps']);
-		}
-
-		if ($this->data['valueMaps']) {
-			$this->builder->buildValueMaps($this->data['valueMaps']);
-		}
-
-		return $this->writer->write($this->builder->getExport());
 	}
 
 	/**
@@ -212,6 +232,10 @@ class CConfigurationExport {
 
 		if ($options['maps']) {
 			$this->gatherMaps($options['maps']);
+		}
+
+		if ($options['mediaTypes']) {
+			$this->gatherMediaTypes($options['mediaTypes']);
 		}
 	}
 
@@ -299,10 +323,10 @@ class CConfigurationExport {
 			'output' => [
 				'proxy_hostid', 'host', 'status', 'ipmi_authtype', 'ipmi_privilege', 'ipmi_username', 'ipmi_password',
 				'name', 'description', 'tls_connect', 'tls_accept', 'tls_issuer', 'tls_subject', 'tls_psk_identity',
-				'tls_psk'
+				'tls_psk', 'inventory_mode'
 			],
 			'selectInterfaces' => ['interfaceid', 'main', 'type', 'useip', 'ip', 'dns', 'port', 'bulk'],
-			'selectInventory' => true,
+			'selectInventory' => API_OUTPUT_EXTEND,
 			'selectMacros' => API_OUTPUT_EXTEND,
 			'selectGroups' => ['groupid', 'name'],
 			'selectParentTemplates' => API_OUTPUT_EXTEND,
@@ -458,6 +482,7 @@ class CConfigurationExport {
 		$items = $this->prepareItems($items);
 
 		foreach ($items as $item) {
+			$item['host'] = $hosts[$item['hostid']]['host'];
 			$hosts[$item['hostid']]['items'][] = $item;
 		}
 
@@ -542,7 +567,7 @@ class CConfigurationExport {
 		]);
 
 		$itemids = [];
-		foreach ($hosts as $hostid => $host_data) {
+		foreach ($hosts as $host_data) {
 			foreach ($host_data['items'] as $item) {
 				$itemids[$item['itemid']] = $item['key_'];
 			}
@@ -558,6 +583,10 @@ class CConfigurationExport {
 				}
 
 				$discovery_rule['master_item'] = ['key_' => $itemids[$discovery_rule['master_itemid']]];
+			}
+
+			foreach ($discovery_rule['itemPrototypes'] as $itemid => $item_prototype) {
+				$discovery_rule['itemPrototypes'][$itemid]['host'] = $hosts[$discovery_rule['hostid']]['host'];
 			}
 
 			$hosts[$discovery_rule['hostid']]['discoveryRules'][] = $discovery_rule;
@@ -693,7 +722,7 @@ class CConfigurationExport {
 		// gather trigger prototypes
 		$triggers = API::TriggerPrototype()->get([
 			'output' => ['expression', 'description', 'url', 'status', 'priority', 'comments', 'type', 'recovery_mode',
-				'recovery_expression', 'correlation_mode', 'correlation_tag', 'manual_close'
+				'recovery_expression', 'correlation_mode', 'correlation_tag', 'manual_close', 'opdata'
 			],
 			'selectDiscoveryRule' => API_OUTPUT_EXTEND,
 			'selectDependencies' => ['expression', 'description', 'recovery_expression'],
@@ -807,7 +836,7 @@ class CConfigurationExport {
 			$httptest['application'] =
 				($httptest['applicationid'] != 0 && array_key_exists($httptest['applicationid'], $db_applications))
 					? ['name' => $db_applications[$httptest['applicationid']]['name']]
-					: null;
+					: [];
 			unset($httptest['applicationid']);
 		}
 		unset($httptest);
@@ -958,10 +987,10 @@ class CConfigurationExport {
 
 		$triggers = API::Trigger()->get([
 			'output' => ['expression', 'description', 'url', 'status', 'priority', 'comments', 'type', 'recovery_mode',
-				'recovery_expression', 'correlation_mode', 'correlation_tag', 'manual_close'
+				'recovery_expression', 'correlation_mode', 'correlation_tag', 'manual_close', 'opdata'
 			],
 			'selectDependencies' => ['expression', 'description', 'recovery_expression'],
-			'selectItems' => ['itemid', 'flags', 'type'],
+			'selectItems' => ['itemid', 'flags', 'type', 'templateid'],
 			'selectTags' => ['tag', 'value'],
 			'hostids' => $hostIds,
 			'filter' => ['flags' => ZBX_FLAG_DISCOVERY_NORMAL],
@@ -1073,6 +1102,33 @@ class CConfigurationExport {
 	}
 
 	/**
+	 * Get media types for export builder from database.
+	 *
+	 * @param array $mediatypeids
+	 *
+	 * return array
+	 */
+	protected function gatherMediaTypes(array $mediatypeids) {
+		$this->data['mediaTypes'] = API::MediaType()->get([
+			'output' => ['name', 'type', 'smtp_server', 'smtp_port', 'smtp_helo', 'smtp_email', 'smtp_security',
+				'smtp_verify_peer', 'smtp_verify_host', 'smtp_authentication', 'username', 'passwd', 'content_type',
+				'exec_path', 'exec_params', 'gsm_modem', 'status', 'maxsessions', 'maxattempts', 'attempt_interval',
+				'script', 'timeout', 'process_tags', 'show_event_menu', 'event_menu_url', 'event_menu_name',
+				'description', 'parameters'
+			],
+			'mediatypeids' => $mediatypeids,
+			'preservekeys' => true
+		]);
+
+		foreach ($this->data['mediaTypes'] as &$media_type) {
+			if ($media_type['type'] == MEDIA_TYPE_WEBHOOK) {
+				CArrayHelper::sort($media_type['parameters'], ['name']);
+			}
+		}
+		unset($media_type);
+	}
+
+	/**
 	 * Get screens for export from database.
 	 *
 	 * @param array $screenIds
@@ -1110,7 +1166,6 @@ class CConfigurationExport {
 	 * @param array $exportScreens
 	 */
 	protected function prepareScreenExport(array &$exportScreens) {
-		$screenIds = [];
 		$sysmapIds = [];
 		$groupIds = [];
 		$hostIds = [];
@@ -1149,10 +1204,6 @@ class CConfigurationExport {
 							$sysmapIds[$screenItem['resourceid']] = $screenItem['resourceid'];
 							break;
 
-						case SCREEN_RESOURCE_SCREEN:
-							$screenIds[$screenItem['resourceid']] = $screenItem['resourceid'];
-							break;
-
 						case SCREEN_RESOURCE_CLOCK:
 							if ($screenItem['style'] == TIME_TYPE_HOST) {
 								$itemIds[$screenItem['resourceid']] = $screenItem['resourceid'];
@@ -1163,7 +1214,6 @@ class CConfigurationExport {
 			}
 		}
 
-		$screens = $this->getScreensReferences($screenIds);
 		$sysmaps = $this->getMapsReferences($sysmapIds);
 		$groups = $this->getGroupsReferences($groupIds);
 		$hosts = $this->getHostsReferences($hostIds);
@@ -1201,10 +1251,6 @@ class CConfigurationExport {
 
 						case SCREEN_RESOURCE_MAP:
 							$screenItem['resourceid'] = $sysmaps[$screenItem['resourceid']];
-							break;
-
-						case SCREEN_RESOURCE_SCREEN:
-							$screenItem['resourceid'] = $screens[$screenItem['resourceid']];
 							break;
 
 						case SCREEN_RESOURCE_CLOCK:
@@ -1344,6 +1390,11 @@ class CConfigurationExport {
 			'preservekeys' => true
 		]);
 
+		// Access denied for some objects?
+		if (count($groups) != count($groupIds)) {
+			throw new CConfigurationExportException();
+		}
+
 		foreach ($groups as &$group) {
 			$group = ['name' => $group['name']];
 		}
@@ -1368,31 +1419,13 @@ class CConfigurationExport {
 			'preservekeys' => true
 		]);
 
-		foreach ($hosts as $id => $host) {
-			$ids[$id] = ['host' => $host['host']];
+		// Access denied for some objects?
+		if (count($hosts) != count($hostIds)) {
+			throw new CConfigurationExportException();
 		}
 
-		return $ids;
-	}
-
-	/**
-	 * Get screens references by screen ids.
-	 *
-	 * @param array $screenIds
-	 *
-	 * @return array
-	 */
-	protected function getScreensReferences(array $screenIds) {
-		$ids = [];
-
-		$screens = API::Screen()->get([
-			'screenids' => $screenIds,
-			'output' => API_OUTPUT_EXTEND,
-			'preservekeys' => true
-		]);
-
-		foreach ($screens as $id => $screen) {
-			$ids[$id] = ['name' => $screen['name']];
+		foreach ($hosts as $id => $host) {
+			$ids[$id] = ['host' => $host['host']];
 		}
 
 		return $ids;
@@ -1413,6 +1446,11 @@ class CConfigurationExport {
 			'output' => ['name'],
 			'preservekeys' => true
 		]);
+
+		// Access denied for some objects?
+		if (count($maps) != count($mapIds)) {
+			throw new CConfigurationExportException();
+		}
 
 		foreach ($maps as $id => $map) {
 			$ids[$id] = ['name' => $map['name']];
@@ -1438,6 +1476,11 @@ class CConfigurationExport {
 			'preservekeys' => true,
 			'filter' => ['flags' => null]
 		]);
+
+		// Access denied for some objects?
+		if (count($graphs) != count($graphIds)) {
+			throw new CConfigurationExportException();
+		}
 
 		foreach ($graphs as $id => $graph) {
 			$host = reset($graph['hosts']);
@@ -1470,6 +1513,11 @@ class CConfigurationExport {
 			'filter' => ['flags' => null]
 		]);
 
+		// Access denied for some objects?
+		if (count($items) != count($itemIds)) {
+			throw new CConfigurationExportException();
+		}
+
 		foreach ($items as $id => $item) {
 			$host = reset($item['hosts']);
 
@@ -1497,6 +1545,11 @@ class CConfigurationExport {
 			'triggerids' => $triggerIds,
 			'preservekeys' => true
 		]);
+
+		// Access denied for some objects?
+		if (count($triggers) != count($triggerIds)) {
+			throw new CConfigurationExportException();
+		}
 
 		$triggers = CMacrosResolverHelper::resolveTriggerExpressions($triggers,
 			['sources' => ['expression', 'recovery_expression']]
@@ -1528,6 +1581,11 @@ class CConfigurationExport {
 			'imageids' => $imageIds,
 			'preservekeys' => true
 		]);
+
+		// Access denied for some objects?
+		if (count($images) != count($imageIds)) {
+			throw new CConfigurationExportException();
+		}
 
 		foreach ($images as $id => $image) {
 			$ids[$id] = ['name' => $image['name']];

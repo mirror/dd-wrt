@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -547,11 +547,10 @@ class CService extends CApiService {
 
 			$problemServiceIds = [];
 			foreach ($services as &$service) {
-				$service['alarms'] = [];
-
 				// don't calculate SLA for services with disabled status calculation
 				if ($this->isStatusEnabled($service)) {
 					$usedSeviceIds[$service['serviceid']] = $service['serviceid'];
+					$service['alarms'] = [];
 
 					if ($service['status'] > 0) {
 						$problemServiceIds[] = $service['serviceid'];
@@ -755,7 +754,7 @@ class CService extends CApiService {
 					' FROM service_alarms sa2'.
 					' WHERE sa2.clock<'.zbx_dbstr($beforeTime).
 						' AND '.dbConditionInt('sa2.serviceid', $serviceIds).
-					'GROUP BY sa2.serviceid) ss2 '.
+					' GROUP BY sa2.serviceid) ss2'.
 			' JOIN service_alarms sa ON sa.servicealarmid = ss2.servicealarmid'
 		);
 		$rs = [];
@@ -1209,7 +1208,7 @@ class CService extends CApiService {
 	protected function applyQueryFilterOptions($tableName, $tableAlias, array $options, array $sqlParts) {
 		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN) {
 			// if services with specific trigger IDs were requested, return only the ones accessible to the current user.
-			if ($options['filter']['triggerid']) {
+			if (is_array($options['filter']) && array_key_exists('triggerid', $options['filter'])) {
 				$accessibleTriggers = API::Trigger()->get([
 					'output' => ['triggerid'],
 					'triggerids' => $options['filter']['triggerid']

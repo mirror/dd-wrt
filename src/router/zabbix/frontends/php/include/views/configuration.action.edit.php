@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -362,7 +362,7 @@ switch ($data['new_condition']['conditiontype']) {
 
 	case CONDITION_TYPE_EVENT_TAG_VALUE:
 		$condition = (new CTextBox('new_condition[value]', ''))
-			->setWidth(ZBX_TEXTAREA_TAG_WIDTH)
+			->setWidth(ZBX_TEXTAREA_TAG_VALUE_WIDTH)
 			->setAttribute('placeholder', _('value'));
 
 		$condition2 = (new CTextBox('new_condition[value2]', ''))
@@ -766,12 +766,14 @@ if (!empty($data['new_operation'])) {
 			$mediaTypeComboBox = (new CComboBox('new_operation[opmessage][mediatypeid]', $data['new_operation']['opmessage']['mediatypeid']))
 				->addItem(0, '- '._('All').' -');
 
-			$dbMediaTypes = DBfetchArray(DBselect('SELECT mt.mediatypeid,mt.description FROM media_type mt'));
+			$db_mediatypes = API::MediaType()->get([
+				'output' => ['name'],
+				'preservekeys' => true
+			]);
+			order_result($db_mediatypes, 'name');
 
-			order_result($dbMediaTypes, 'description');
-
-			foreach ($dbMediaTypes as $dbMediaType) {
-				$mediaTypeComboBox->addItem($dbMediaType['mediatypeid'], $dbMediaType['description']);
+			foreach ($db_mediatypes as $mediatypeid => $db_mediatype) {
+				$mediaTypeComboBox->addItem($mediatypeid, $db_mediatype['name']);
 			}
 
 			$new_operation_formlist
@@ -819,11 +821,11 @@ if (!empty($data['new_operation'])) {
 			$data['new_operation']['opcommand']['script'] = '';
 			if (!zbx_empty($data['new_operation']['opcommand']['scriptid'])) {
 				$userScripts = API::Script()->get([
-					'scriptids' => $data['new_operation']['opcommand']['scriptid'],
-					'output' => API_OUTPUT_EXTEND
+					'output' => ['name'],
+					'scriptids' => $data['new_operation']['opcommand']['scriptid']
 				]);
-				if ($userScript = reset($userScripts)) {
-					$data['new_operation']['opcommand']['script'] = $userScript['name'];
+				if ($userScripts) {
+					$data['new_operation']['opcommand']['script'] = $userScripts[0]['name'];
 				}
 			}
 
@@ -996,12 +998,14 @@ if (!empty($data['new_operation'])) {
 				->addRow(
 					(new CLabel(_('Commands'), 'new_operation[opcommand][command]'))->setAsteriskMark(),
 					(new CTextArea('new_operation[opcommand][command]', $data['new_operation']['opcommand']['command']))
+						->addClass(ZBX_STYLE_MONOSPACE_FONT)
 						->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 						->setAriaRequired()
 				)
 				->addRow(
 					(new CLabel(_('Commands'), 'new_operation[opcommand][command]'))->setAsteriskMark(),
 					(new CTextBox('new_operation[opcommand][command]', $data['new_operation']['opcommand']['command']))
+						->addClass(ZBX_STYLE_MONOSPACE_FONT)
 						->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 						->setId('new_operation_opcommand_command_ipmi')
 						->setAriaRequired()
@@ -1096,11 +1100,6 @@ if (!empty($data['new_operation'])) {
 			->setHeader([_('Label'), _('Name'), _('Action')]);
 
 		$i = 0;
-
-		$operationConditionStringValues = actionOperationConditionValueToString(
-			$data['new_operation']['opconditions']
-		);
-
 		foreach ($data['new_operation']['opconditions'] as $cIdx => $opcondition) {
 			if (!isset($opcondition['conditiontype'])) {
 				$opcondition['conditiontype'] = 0;
@@ -1116,15 +1115,14 @@ if (!empty($data['new_operation'])) {
 			}
 
 			$label = num2letter($i);
+			$cond_value = $opcondition['value'] ? _('Ack') : _('Not Ack');
 			$labelCol = (new CCol($label))
 				->addClass('label')
 				->setAttribute('data-conditiontype', $opcondition['conditiontype'])
 				->setAttribute('data-formulaid', $label);
 			$operationConditionsTable->addRow([
 					$labelCol,
-					getConditionDescription($opcondition['conditiontype'], $opcondition['operator'],
-						$operationConditionStringValues[$cIdx], ''
-					),
+					getConditionDescription($opcondition['conditiontype'], $opcondition['operator'], $cond_value, ''),
 					(new CCol([
 						(new CButton('remove', _('Remove')))
 							->onClick('javascript: removeOperationCondition('.$i.');')
@@ -1518,12 +1516,14 @@ if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS || $data['eventsource'] == EVE
 					$data['new_recovery_operation']['opmessage']['mediatypeid'])
 				)->addItem(0, '- '._('All').' -');
 
-				$dbMediaTypes = DBfetchArray(DBselect('SELECT mt.mediatypeid,mt.description FROM media_type mt'));
+				$db_mediatypes = API::MediaType()->get([
+					'output' => ['name'],
+					'preservekeys' => true
+				]);
+				order_result($db_mediatypes, 'name');
 
-				order_result($dbMediaTypes, 'description');
-
-				foreach ($dbMediaTypes as $dbMediaType) {
-					$mediaTypeComboBox->addItem($dbMediaType['mediatypeid'], $dbMediaType['description']);
+				foreach ($db_mediatypes as $mediatypeid => $db_mediatype) {
+					$mediaTypeComboBox->addItem($mediatypeid, $db_mediatype['name']);
 				}
 
 				$new_operation_formlist
@@ -1583,11 +1583,11 @@ if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS || $data['eventsource'] == EVE
 				$data['new_recovery_operation']['opcommand']['script'] = '';
 				if (!zbx_empty($data['new_recovery_operation']['opcommand']['scriptid'])) {
 					$userScripts = API::Script()->get([
-						'scriptids' => $data['new_recovery_operation']['opcommand']['scriptid'],
-						'output' => API_OUTPUT_EXTEND
+						'output' => ['name'],
+						'scriptids' => $data['new_recovery_operation']['opcommand']['scriptid']
 					]);
-					if ($userScript = reset($userScripts)) {
-						$data['new_recovery_operation']['opcommand']['script'] = $userScript['name'];
+					if ($userScripts) {
+						$data['new_recovery_operation']['opcommand']['script'] = $userScripts[0]['name'];
 					}
 				}
 
@@ -1782,6 +1782,7 @@ if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS || $data['eventsource'] == EVE
 					(new CTextArea('new_recovery_operation[opcommand][command]',
 						$data['new_recovery_operation']['opcommand']['command']
 					))
+						->addClass(ZBX_STYLE_MONOSPACE_FONT)
 						->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 						->setAriaRequired()
 				);
@@ -1790,6 +1791,7 @@ if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS || $data['eventsource'] == EVE
 					(new CTextBox('new_recovery_operation[opcommand][command]',
 						$data['new_recovery_operation']['opcommand']['command']
 					))
+						->addClass(ZBX_STYLE_MONOSPACE_FONT)
 						->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 						->setId('new_recovery_operation_opcommand_command_ipmi')
 						->setAriaRequired()
@@ -2072,8 +2074,7 @@ if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS) {
 				]);
 
 				if ($user_scripts) {
-					$user_script = reset($user_scripts);
-					$script_name = $user_script['name'];
+					$script_name = $user_scripts[0]['name'];
 				}
 			}
 			$data['new_ack_operation']['opcommand']['script'] = $script_name;
@@ -2239,6 +2240,7 @@ if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS) {
 					(new CTextArea('new_ack_operation[opcommand][command]',
 						$data['new_ack_operation']['opcommand']['command']
 					))
+						->addClass(ZBX_STYLE_MONOSPACE_FONT)
 						->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 						->setAriaRequired()
 				)
@@ -2247,6 +2249,7 @@ if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS) {
 					(new CTextBox('new_ack_operation[opcommand][command]',
 						$data['new_ack_operation']['opcommand']['command']
 					))
+						->addClass(ZBX_STYLE_MONOSPACE_FONT)
 						->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 						->setId('new_ack_operation_opcommand_command_ipmi')
 						->setAriaRequired()
@@ -2283,7 +2286,7 @@ if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS) {
 			)->addItem(0, '- '._('All').' -');
 
 			foreach ($data['available_mediatypes'] as $mediatype) {
-				$mediatype_cbox->addItem($mediatype['mediatypeid'], $mediatype['description']);
+				$mediatype_cbox->addItem($mediatype['mediatypeid'], $mediatype['name']);
 			}
 			$is_default_msg = (array_key_exists('default_msg', $data['new_ack_operation']['opmessage'])
 				&& $data['new_ack_operation']['opmessage']['default_msg'] == 1);

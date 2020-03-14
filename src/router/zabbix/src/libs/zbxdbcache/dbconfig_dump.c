@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -36,9 +36,10 @@ static void	DCdump_config(void)
 
 	zabbix_log(LOG_LEVEL_TRACE, "refresh_unsupported:%d", config->config->refresh_unsupported);
 	zabbix_log(LOG_LEVEL_TRACE, "discovery_groupid:" ZBX_FS_UI64, config->config->discovery_groupid);
-	zabbix_log(LOG_LEVEL_TRACE, "snmptrap_logging:%u", config->config->snmptrap_logging);
+	zabbix_log(LOG_LEVEL_TRACE, "snmptrap_logging:%hhu", config->config->snmptrap_logging);
 	zabbix_log(LOG_LEVEL_TRACE, "default_inventory_mode:%d", config->config->default_inventory_mode);
 	zabbix_log(LOG_LEVEL_TRACE, "db_extension: %s", config->config->db_extension);
+	zabbix_log(LOG_LEVEL_TRACE, "autoreg_tls_accept:%hhu", config->config->autoreg_tls_accept);
 
 	zabbix_log(LOG_LEVEL_TRACE, "severity names:");
 	for (i = 0; TRIGGER_SEVERITY_COUNT > i; i++)
@@ -202,7 +203,7 @@ static void	DCdump_proxies(void)
 		proxy = (ZBX_DC_PROXY *)index.values[i];
 		zabbix_log(LOG_LEVEL_TRACE, "hostid:" ZBX_FS_UI64 " location:%u", proxy->hostid, proxy->location);
 		zabbix_log(LOG_LEVEL_TRACE, "  proxy_address:'%s'", proxy->proxy_address);
-		zabbix_log(LOG_LEVEL_TRACE, "  compres:%d", proxy->auto_compress);
+		zabbix_log(LOG_LEVEL_TRACE, "  compress:%d", proxy->auto_compress);
 
 	}
 
@@ -579,7 +580,7 @@ static void	DCdump_items(void)
 		zabbix_log(LOG_LEVEL_TRACE, "  delay:'%s' nextcheck:%d lastclock:%d", item->delay, item->nextcheck,
 				item->lastclock);
 		zabbix_log(LOG_LEVEL_TRACE, "  data_expected_from:%d", item->data_expected_from);
-		zabbix_log(LOG_LEVEL_TRACE, "  history:%d", item->history);
+		zabbix_log(LOG_LEVEL_TRACE, "  history:%d history_sec:%d", item->history, item->history_sec);
 		zabbix_log(LOG_LEVEL_TRACE, "  poller_type:%u location:%u", item->poller_type, item->location);
 		zabbix_log(LOG_LEVEL_TRACE, "  inventory_link:%u", item->inventory_link);
 		zabbix_log(LOG_LEVEL_TRACE, "  priority:%u schedulable:%u", item->queue_priority, item->schedulable);
@@ -816,6 +817,7 @@ static void	DCdump_triggers(void)
 				trigger->correlation_tag, trigger->recovery_mode, trigger->correlation_mode);
 		zabbix_log(LOG_LEVEL_TRACE, "  topoindex:%u functional:%u locked:%u", trigger->topoindex,
 				trigger->functional, trigger->locked);
+		zabbix_log(LOG_LEVEL_TRACE, "  opdata:'%s'", trigger->opdata);
 
 		if (0 != trigger->tags.values_num)
 			DCdump_trigger_tags(trigger);
@@ -1247,7 +1249,7 @@ static void	DCdump_maintenances(void)
 	zabbix_log(LOG_LEVEL_TRACE, "End of %s()", __func__);
 }
 
-void	DCdump_configuration()
+void	DCdump_configuration(void)
 {
 	DCdump_config();
 	DCdump_hosts();

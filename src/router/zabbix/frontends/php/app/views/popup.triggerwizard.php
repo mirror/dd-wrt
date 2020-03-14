@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -29,91 +29,47 @@ $output = [
 $form = (new CForm('post', 'zabbix.php'))
 	->cleanItems()
 	->setName('sform')
-	->addVar('sform', '1')
 	->addVar('action', 'popup.triggerwizard')
-	->addVar('itemid', $options['itemid'])
 	->addItem((new CInput('submit', 'submit'))->addStyle('display: none;'));
 
 if (array_key_exists('triggerid', $options)) {
 	$form->addVar('triggerid', $options['triggerid']);
 }
 
-$key_table = (new CTable())
-	->setId('key_list')
-	->setAttribute('style', 'width: 100%;')
-	->setHeader([
-		_('Keyword'),
-		_('Type'),
-		_('Action')
-	]);
-
-$max_id = 0;
-foreach ($data['keys'] as $id => $val) {
-	$key_table->addRow(
-		(new CRow([
-			htmlspecialchars($val['value']),
-			$val['type'],
-			(new CCol(
-				(new CButton(null, _('Remove')))
-					->addClass(ZBX_STYLE_BTN_LINK)
-					->onClick('remove_keyword("keytr'.$id.'");')
-			))->addClass(ZBX_STYLE_NOWRAP)
-		]))->setId('keytr'.$id)
-	);
-
-	$form
-		->addVar('keys['.$id.'][value]', $val['value'])
-		->addVar('keys['.$id.'][type]', $val['type']);
-
-	$max_id = max($max_id, $id);
-}
-
-$output['script_inline'] .= 'key_count='.($max_id + 1).';'."\n";
-
 $expression_table = (new CTable())
-	->setId('exp_list')
+	->addClass('ui-sortable')
+	->setId('expressions_list')
 	->setAttribute('style', 'width: 100%;')
-	->setHeader([
-		_('Expression'),
-		_('Type'),
-		_('Position'),
-		_('Action')
-	]);
+	->setHeader(['', _('Expression'), _('Type'), _('Action')]);
 
-$max_id = 0;
-foreach ($data['expressions'] as $id => $expr) {
-	$imgup = (new CImg('images/general/arrow_up.png', 'up', 12, 14))
-		->onClick('element_up("logtr'.$id.'");')
-		->onMouseover('this.style.cursor = "pointer";')
-		->addClass('updown');
+$expressions = [];
 
-	$imgdn = (new CImg('images/general/arrow_down.png', 'down', 12, 14))
-		->onClick('element_down("logtr'.$id.'");')
-		->onMouseover('this.style.cursor = "pointer";')
-		->addClass('updown');
-
-	$expression_table->addRow(
-		(new CRow([
-			htmlspecialchars($expr['value']),
-			($expr['type'] == CTextTriggerConstructor::EXPRESSION_TYPE_MATCH) ? _('Include') : _('Exclude'),
-			[$imgup, ' ', $imgdn],
-			(new CCol(
-				(new CButton(null, _('Remove')))
-					->addClass(ZBX_STYLE_BTN_LINK)
-					->onClick('remove_expression("logtr'.$id.'");')
-			))->addClass(ZBX_STYLE_NOWRAP)
-		]))->setId('logtr'.$id)
-	);
-
-	$form
-		->addVar('expressions['.$id.'][value]', $expr['value'])
-		->addVar('expressions['.$id.'][type]', $expr['type']);
-
-	$max_id = max($max_id, $id);
+foreach ($data['expressions'] as $expr) {
+	$expressions[] = [
+		'expression' => $expr['value'],
+		'type_label' => $expr['type'] == CTextTriggerConstructor::EXPRESSION_TYPE_MATCH ? _('Include') : _('Exclude'),
+		'type' => $expr['type']
+	];
 }
 
-$output['script_inline'] .= 'logexpr_count='.($max_id + 1).';'."\n";
-$output['script_inline'] .= 'jQuery(document).ready(function(){processExpressionList();});'."\n";
+$output['script_inline'] = 'jQuery("#'.$expression_table->getId().'").data("rows", '.CJs::encodeJson($expressions).');'
+	.$output['script_inline'];
+
+$ms_itemid = (new CMultiSelect([
+	'name' => 'itemid',
+	'object_name' => 'items',
+	'multiple' => false,
+	'data' => [['id' => $options['itemid'], 'name' => $options['item_name']]],
+	'popup' => [
+		'parameters' => [
+			'srctbl' => 'items',
+			'srcfld1' => 'itemid',
+			'dstfrm' => $form->getName(),
+			'dstfld1' => 'itemid',
+			'value_types' => [ITEM_VALUE_TYPE_STR, ITEM_VALUE_TYPE_LOG, ITEM_VALUE_TYPE_TEXT]
+		]
+	]
+]))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH);
 
 $form->addItem(
 	(new CFormList())
@@ -123,29 +79,12 @@ $form->addItem(
 				->setAriaRequired()
 				->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 		)
-		->addRow(_('Item'), [
-			(new CTextBox('item', $options['item_name']))
-				->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
-				->setAttribute('disabled', 'disabled'),
-			(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
-			(new CButton(null, _('Select')))
-				->addClass(ZBX_STYLE_BTN_GREY)
-				->onClick('return PopUp("popup.generic",'.
-					CJs::encodeJson([
-						'srctbl' => 'items',
-						'srcfld1' => 'itemid',
-						'srcfld2' => 'name',
-						'dstfrm' => $form->getName(),
-						'dstfld1' => 'itemid',
-						'dstfld2' => 'item'
-					]).', null, this);'
-				)
-		])
+		->addRow((new CLabel(_('Item'), 'itemid'))->setAsteriskMark(), $ms_itemid)
 		->addRow(_('Severity'), new CSeverity([
 			'name' => 'priority',
 			'value' => (int) $options['priority']
 		]))
-		->addRow((new CLabel(_('Expression'), $expression_table->getId()))->setAsteriskMark(),
+		->addRow((new CLabel(_('Expression'), 'logexpr'))->setAsteriskMark(),
 			(new CTextBox('expression'))
 				->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 				->setId('logexpr')
@@ -153,25 +92,27 @@ $form->addItem(
 		->addRow(null, [
 			(new CCheckBox('iregexp'))->setLabel('iregexp'),
 			(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
-			(new CButton('add_key_and', _('AND')))
-				->addClass(ZBX_STYLE_BTN_GREY)
-				->onClick('add_keyword_and();'),
+			(new CButton('add_key_and', _('AND')))->addClass(ZBX_STYLE_BTN_GREY),
 			(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
-			(new CButton('add_key_or', _('OR')))
-				->addClass(ZBX_STYLE_BTN_GREY)
-				->onClick('add_keyword_or();'),
+			(new CButton('add_key_or', _('OR')))->addClass(ZBX_STYLE_BTN_GREY),
 			(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
 			(new CComboBox('expr_type', null, null, [
 				CTextTriggerConstructor::EXPRESSION_TYPE_MATCH => _('Include'),
 				CTextTriggerConstructor::EXPRESSION_TYPE_NO_MATCH => _('Exclude')
 			]))->setId('expr_type'),
 			(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
-			(new CButton('add_exp', _('Add')))
-				->addClass(ZBX_STYLE_BTN_GREY)
-				->onClick('add_logexpr();')
+			(new CButton('add_exp', _('Add')))->addClass(ZBX_STYLE_BTN_GREY)
 		])
 		->addRow(null,
-			(new CDiv($key_table))
+			(new CDiv((new CTable())
+				->setId('key_list')
+				->setAttribute('style', 'width: 100%;')
+				->setHeader([
+					_('Keyword'),
+					_('Type'),
+					_('Action')
+				])
+			))
 				->addClass(ZBX_STYLE_TABLE_FORMS_SEPARATOR)
 				->setAttribute('style', 'min-width: '.ZBX_TEXTAREA_BIG_WIDTH.'px;')
 		)
@@ -188,6 +129,8 @@ $form->addItem(
 			(new CCheckBox('status'))->setChecked($options['status'] == TRIGGER_STATUS_ENABLED)
 		)
 );
+
+$output['script_inline'] .= $ms_itemid->getPostJS();
 
 $output['body'] = $form->toString();
 

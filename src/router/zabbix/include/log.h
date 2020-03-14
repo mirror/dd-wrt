@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@
 
 #ifndef ZABBIX_LOG_H
 #define ZABBIX_LOG_H
+
+#include "common.h"
 
 #define LOG_LEVEL_EMPTY		0	/* printing nothing (if not LOG_LEVEL_INFORMATION set) */
 #define LOG_LEVEL_CRIT		1
@@ -88,7 +90,7 @@ char		*strerror_from_system(unsigned long error);
 char		*strerror_from_module(unsigned long error, const wchar_t *module);
 #endif
 
-void		zbx_redirect_stdio(const char *filename);
+int		zbx_redirect_stdio(const char *filename);
 
 void		zbx_handle_log(void);
 

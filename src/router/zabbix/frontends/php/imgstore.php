@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -48,10 +48,7 @@ if (isset($_REQUEST['width']) || isset($_REQUEST['height'])) {
 }
 
 if (isset($_REQUEST['css'])) {
-	$css = 'div.sysmap_iconid_0 {'.
-			' height: 50px;'.
-			' width: 50px;'.
-			' background-image: url("images/general/no_icon.png"); }'."\n";
+	$css = '';
 
 	$images = API::Image()->get([
 		'output' => ['imageid'],

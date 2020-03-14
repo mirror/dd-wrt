@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ class CControllerPopupMediatypeTestEdit extends CController {
 
 	protected function doAction() {
 		$mediatype = API::MediaType()->get([
-			'output' => ['type', 'status'],
+			'output' => ['type', 'status', 'parameters'],
 			'mediatypeids' => $this->getInput('mediatypeid'),
 		]);
 
@@ -78,6 +78,7 @@ class CControllerPopupMediatypeTestEdit extends CController {
 			'sendto' => '',
 			'subject' => _('Test subject'),
 			'message' => _('This is the test message from Zabbix'),
+			'parameters' => $mediatype[0]['parameters'],
 			'type' => $mediatype[0]['type'],
 			'enabled' => ($mediatype[0]['status'] == MEDIA_STATUS_ACTIVE),
 			'user' => ['debug_mode' => $this->getDebugMode()]

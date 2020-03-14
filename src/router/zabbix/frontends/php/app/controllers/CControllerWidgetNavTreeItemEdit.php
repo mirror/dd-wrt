@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -61,10 +61,11 @@ class CControllerWidgetNavTreeItemEdit extends CController {
 
 		$formList = new CFormList();
 		$formList->addRow(
-			_('Name'),
+			(new CLabel(_('Name'), 'map.name.'.$map_id))->setAsteriskMark(),
 			(new CTextBox('map.name.'.$map_id, $map_item_name))
 				->setWidth(ZBX_TEXTAREA_MEDIUM_WIDTH)
 				->setAttribute('autofocus', 'autofocus')
+				->setAriaRequired()
 		);
 
 		$sysmap_id = 0;
@@ -128,7 +129,7 @@ class CControllerWidgetNavTreeItemEdit extends CController {
 			$output['messages'] = $messages->toString();
 		}
 
-		if ($data['user']['debug_mode'] == GROUP_DEBUG_MODE_ENABLED) {
+		if (CWebUser::getDebugMode() == GROUP_DEBUG_MODE_ENABLED) {
 			CProfiler::getInstance()->stop();
 			$output['debug'] = CProfiler::getInstance()->make()->toString();
 		}

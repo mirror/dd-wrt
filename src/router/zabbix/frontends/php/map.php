@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -34,18 +34,11 @@ if (!zbx_ctype_digit($severity_min)) {
 }
 $map_data = CMapHelper::get(getRequest('sysmapid'), ['severity_min' => $severity_min]);
 
-if (getRequest('used_in_widget', 0) && hasRequest('uniqueid')) {
-	$uniqueid = getRequest('uniqueid');
-
+if (hasRequest('uniqueid')) {
 	// Rewrite actions to force Submaps be opened in same widget, instead of separate window.
 	foreach ($map_data['elements'] as &$element) {
 		$actions = CJs::decodeJson($element['actions']);
-		if ($actions && array_key_exists('gotos', $actions) && array_key_exists('submap', $actions['gotos'])) {
-			$actions['navigatetos']['submap'] = $actions['gotos']['submap'];
-			$actions['navigatetos']['submap']['widget_uniqueid'] = $uniqueid;
-			unset($actions['gotos']['submap']);
-		}
-
+		$actions['data']['widget_uniqueid'] = getRequest('uniqueid');
 		$element['actions'] = CJs::encodeJson($actions);
 	}
 	unset($element);

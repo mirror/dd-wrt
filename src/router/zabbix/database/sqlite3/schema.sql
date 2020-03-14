@@ -275,7 +275,7 @@ CREATE TABLE interface (
 	interfaceid              bigint                                    NOT NULL,
 	hostid                   bigint                                    NOT NULL REFERENCES hosts (hostid) ON DELETE CASCADE,
 	main                     integer         DEFAULT '0'               NOT NULL,
-	type                     integer         DEFAULT '0'               NOT NULL,
+	type                     integer         DEFAULT '1'               NOT NULL,
 	useip                    integer         DEFAULT '1'               NOT NULL,
 	ip                       varchar(64)     DEFAULT '127.0.0.1'       NOT NULL,
 	dns                      varchar(255)    DEFAULT ''                NOT NULL,
@@ -311,8 +311,6 @@ CREATE TABLE items (
 	snmpv3_authpassphrase    varchar(64)     DEFAULT ''                NOT NULL,
 	snmpv3_privpassphrase    varchar(64)     DEFAULT ''                NOT NULL,
 	formula                  varchar(255)    DEFAULT ''                NOT NULL,
-	error                    varchar(2048)   DEFAULT ''                NOT NULL,
-	lastlogsize              bigint          DEFAULT '0'               NOT NULL,
 	logtimefmt               varchar(64)     DEFAULT ''                NOT NULL,
 	templateid               bigint                                    NULL REFERENCES items (itemid) ON DELETE CASCADE,
 	valuemapid               bigint                                    NULL REFERENCES valuemaps (valuemapid),
@@ -323,7 +321,6 @@ CREATE TABLE items (
 	password                 varchar(64)     DEFAULT ''                NOT NULL,
 	publickey                varchar(64)     DEFAULT ''                NOT NULL,
 	privatekey               varchar(64)     DEFAULT ''                NOT NULL,
-	mtime                    integer         DEFAULT '0'               NOT NULL,
 	flags                    integer         DEFAULT '0'               NOT NULL,
 	interfaceid              bigint                                    NULL REFERENCES interface (interfaceid),
 	port                     varchar(64)     DEFAULT ''                NOT NULL,
@@ -332,7 +329,6 @@ CREATE TABLE items (
 	lifetime                 varchar(255)    DEFAULT '30d'             NOT NULL,
 	snmpv3_authprotocol      integer         DEFAULT '0'               NOT NULL,
 	snmpv3_privprotocol      integer         DEFAULT '0'               NOT NULL,
-	state                    integer         DEFAULT '0'               NOT NULL,
 	snmpv3_contextname       varchar(255)    DEFAULT ''                NOT NULL,
 	evaltype                 integer         DEFAULT '0'               NOT NULL,
 	jmx_endpoint             varchar(255)    DEFAULT ''                NOT NULL,
@@ -384,7 +380,7 @@ CREATE INDEX httptestitem_2 ON httptestitem (itemid);
 CREATE TABLE media_type (
 	mediatypeid              bigint                                    NOT NULL,
 	type                     integer         DEFAULT '0'               NOT NULL,
-	description              varchar(100)    DEFAULT ''                NOT NULL,
+	name                     varchar(100)    DEFAULT ''                NOT NULL,
 	smtp_server              varchar(255)    DEFAULT ''                NOT NULL,
 	smtp_helo                varchar(255)    DEFAULT ''                NOT NULL,
 	smtp_email               varchar(255)    DEFAULT ''                NOT NULL,
@@ -403,9 +399,24 @@ CREATE TABLE media_type (
 	maxattempts              integer         DEFAULT '3'               NOT NULL,
 	attempt_interval         varchar(32)     DEFAULT '10s'             NOT NULL,
 	content_type             integer         DEFAULT '1'               NOT NULL,
+	script                   text            DEFAULT ''                NOT NULL,
+	timeout                  varchar(32)     DEFAULT '30s'             NOT NULL,
+	process_tags             integer         DEFAULT '0'               NOT NULL,
+	show_event_menu          integer         DEFAULT '0'               NOT NULL,
+	event_menu_url           varchar(2048)   DEFAULT ''                NOT NULL,
+	event_menu_name          varchar(255)    DEFAULT ''                NOT NULL,
+	description              text            DEFAULT ''                NOT NULL,
 	PRIMARY KEY (mediatypeid)
 );
-CREATE UNIQUE INDEX media_type_1 ON media_type (description);
+CREATE UNIQUE INDEX media_type_1 ON media_type (name);
+CREATE TABLE media_type_param (
+	mediatype_paramid        bigint                                    NOT NULL,
+	mediatypeid              bigint                                    NOT NULL REFERENCES media_type (mediatypeid) ON DELETE CASCADE,
+	name                     varchar(255)    DEFAULT ''                NOT NULL,
+	value                    varchar(2048)   DEFAULT ''                NOT NULL,
+	PRIMARY KEY (mediatype_paramid)
+);
+CREATE INDEX media_type_param_1 ON media_type_param (mediatypeid);
 CREATE TABLE usrgrp (
 	usrgrpid                 bigint                                    NOT NULL,
 	name                     varchar(64)     DEFAULT ''                NOT NULL,
@@ -629,6 +640,7 @@ CREATE TABLE config (
 	ldap_configured          integer         DEFAULT '0'               NOT NULL,
 	ldap_case_sensitive      integer         DEFAULT '1'               NOT NULL,
 	db_extension             varchar(32)     DEFAULT ''                NOT NULL,
+	autoreg_tls_accept       integer         DEFAULT '1'               NOT NULL,
 	PRIMARY KEY (configid)
 );
 CREATE INDEX config_1 ON config (alert_usrgrpid);
@@ -653,7 +665,7 @@ CREATE TABLE triggers (
 	correlation_mode         integer         DEFAULT '0'               NOT NULL,
 	correlation_tag          varchar(255)    DEFAULT ''                NOT NULL,
 	manual_close             integer         DEFAULT '0'               NOT NULL,
-	details                  varchar(255)    DEFAULT ''                NOT NULL,
+	opdata                   varchar(255)    DEFAULT ''                NOT NULL,
 	PRIMARY KEY (triggerid)
 );
 CREATE INDEX triggers_1 ON triggers (status);
@@ -738,6 +750,7 @@ CREATE TABLE globalmacro (
 	globalmacroid            bigint                                    NOT NULL,
 	macro                    varchar(255)    DEFAULT ''                NOT NULL,
 	value                    varchar(255)    DEFAULT ''                NOT NULL,
+	description              text            DEFAULT ''                NOT NULL,
 	PRIMARY KEY (globalmacroid)
 );
 CREATE UNIQUE INDEX globalmacro_1 ON globalmacro (macro);
@@ -746,6 +759,7 @@ CREATE TABLE hostmacro (
 	hostid                   bigint                                    NOT NULL REFERENCES hosts (hostid) ON DELETE CASCADE,
 	macro                    varchar(255)    DEFAULT ''                NOT NULL,
 	value                    varchar(255)    DEFAULT ''                NOT NULL,
+	description              text            DEFAULT ''                NOT NULL,
 	PRIMARY KEY (hostmacroid)
 );
 CREATE UNIQUE INDEX hostmacro_1 ON hostmacro (hostid,macro);
@@ -1048,6 +1062,7 @@ CREATE TABLE alerts (
 	alerttype                integer         DEFAULT '0'               NOT NULL,
 	p_eventid                bigint                                    NULL REFERENCES events (eventid) ON DELETE CASCADE,
 	acknowledgeid            bigint                                    NULL REFERENCES acknowledges (acknowledgeid) ON DELETE CASCADE,
+	parameters               text            DEFAULT '{}'              NOT NULL,
 	PRIMARY KEY (alertid)
 );
 CREATE INDEX alerts_1 ON alerts (actionid);
@@ -1208,11 +1223,13 @@ CREATE INDEX service_alarms_2 ON service_alarms (clock);
 CREATE TABLE autoreg_host (
 	autoreg_hostid           bigint                                    NOT NULL,
 	proxy_hostid             bigint                                    NULL REFERENCES hosts (hostid) ON DELETE CASCADE,
-	host                     varchar(64)     DEFAULT ''                NOT NULL,
+	host                     varchar(128)    DEFAULT ''                NOT NULL,
 	listen_ip                varchar(39)     DEFAULT ''                NOT NULL,
 	listen_port              integer         DEFAULT '0'               NOT NULL,
 	listen_dns               varchar(255)    DEFAULT ''                NOT NULL,
 	host_metadata            varchar(255)    DEFAULT ''                NOT NULL,
+	flags                    integer         DEFAULT '0'               NOT NULL,
+	tls_accepted             integer         DEFAULT '1'               NOT NULL,
 	PRIMARY KEY (autoreg_hostid)
 );
 CREATE INDEX autoreg_host_1 ON autoreg_host (host);
@@ -1220,11 +1237,13 @@ CREATE INDEX autoreg_host_2 ON autoreg_host (proxy_hostid);
 CREATE TABLE proxy_autoreg_host (
 	id                       integer                                   NOT NULL PRIMARY KEY AUTOINCREMENT,
 	clock                    integer         DEFAULT '0'               NOT NULL,
-	host                     varchar(64)     DEFAULT ''                NOT NULL,
+	host                     varchar(128)    DEFAULT ''                NOT NULL,
 	listen_ip                varchar(39)     DEFAULT ''                NOT NULL,
 	listen_port              integer         DEFAULT '0'               NOT NULL,
 	listen_dns               varchar(255)    DEFAULT ''                NOT NULL,
-	host_metadata            varchar(255)    DEFAULT ''                NOT NULL
+	host_metadata            varchar(255)    DEFAULT ''                NOT NULL,
+	flags                    integer         DEFAULT '0'               NOT NULL,
+	tls_accepted             integer         DEFAULT '1'               NOT NULL
 );
 CREATE INDEX proxy_autoreg_host_1 ON proxy_autoreg_host (clock);
 CREATE TABLE dhosts (
@@ -1283,11 +1302,11 @@ CREATE TABLE host_inventory (
 	inventory_mode           integer         DEFAULT '0'               NOT NULL,
 	type                     varchar(64)     DEFAULT ''                NOT NULL,
 	type_full                varchar(64)     DEFAULT ''                NOT NULL,
-	name                     varchar(64)     DEFAULT ''                NOT NULL,
-	alias                    varchar(64)     DEFAULT ''                NOT NULL,
-	os                       varchar(64)     DEFAULT ''                NOT NULL,
+	name                     varchar(128)    DEFAULT ''                NOT NULL,
+	alias                    varchar(128)    DEFAULT ''                NOT NULL,
+	os                       varchar(128)    DEFAULT ''                NOT NULL,
 	os_full                  varchar(255)    DEFAULT ''                NOT NULL,
-	os_short                 varchar(64)     DEFAULT ''                NOT NULL,
+	os_short                 varchar(128)    DEFAULT ''                NOT NULL,
 	serialno_a               varchar(64)     DEFAULT ''                NOT NULL,
 	serialno_b               varchar(64)     DEFAULT ''                NOT NULL,
 	tag                      varchar(64)     DEFAULT ''                NOT NULL,
@@ -1383,7 +1402,7 @@ CREATE TABLE host_discovery (
 	hostid                   bigint                                    NOT NULL REFERENCES hosts (hostid) ON DELETE CASCADE,
 	parent_hostid            bigint                                    NULL REFERENCES hosts (hostid),
 	parent_itemid            bigint                                    NULL REFERENCES items (itemid),
-	host                     varchar(64)     DEFAULT ''                NOT NULL,
+	host                     varchar(128)    DEFAULT ''                NOT NULL,
 	lastcheck                integer         DEFAULT '0'               NOT NULL,
 	ts_delete                integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (hostid)
@@ -1438,6 +1457,14 @@ CREATE TABLE item_condition (
 	PRIMARY KEY (item_conditionid)
 );
 CREATE INDEX item_condition_1 ON item_condition (itemid);
+CREATE TABLE item_rtdata (
+	itemid                   bigint                                    NOT NULL REFERENCES items (itemid) ON DELETE CASCADE,
+	lastlogsize              bigint          DEFAULT '0'               NOT NULL,
+	state                    integer         DEFAULT '0'               NOT NULL,
+	mtime                    integer         DEFAULT '0'               NOT NULL,
+	error                    varchar(2048)   DEFAULT ''                NOT NULL,
+	PRIMARY KEY (itemid)
+);
 CREATE TABLE application_prototype (
 	application_prototypeid  bigint                                    NOT NULL,
 	itemid                   bigint                                    NOT NULL REFERENCES items (itemid) ON DELETE CASCADE,
@@ -1716,6 +1743,7 @@ CREATE TABLE widget (
 	y                        integer         DEFAULT '0'               NOT NULL,
 	width                    integer         DEFAULT '1'               NOT NULL,
 	height                   integer         DEFAULT '2'               NOT NULL,
+	view_mode                integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (widgetid)
 );
 CREATE INDEX widget_1 ON widget (dashboardid);
@@ -1779,8 +1807,15 @@ CREATE TABLE host_tag (
 	PRIMARY KEY (hosttagid)
 );
 CREATE INDEX host_tag_1 ON host_tag (hostid);
+CREATE TABLE config_autoreg_tls (
+	autoreg_tlsid            bigint                                    NOT NULL,
+	tls_psk_identity         varchar(128)    DEFAULT ''                NOT NULL,
+	tls_psk                  varchar(512)    DEFAULT ''                NOT NULL,
+	PRIMARY KEY (autoreg_tlsid)
+);
+CREATE UNIQUE INDEX config_autoreg_tls_1 ON config_autoreg_tls (tls_psk_identity);
 CREATE TABLE dbversion (
 	mandatory                integer         DEFAULT '0'               NOT NULL,
 	optional                 integer         DEFAULT '0'               NOT NULL
 );
-INSERT INTO dbversion VALUES ('4020000','4020000');
+INSERT INTO dbversion VALUES ('4040000','4040001');

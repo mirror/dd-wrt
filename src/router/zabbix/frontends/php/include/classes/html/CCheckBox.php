@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -39,6 +39,27 @@ class CCheckBox extends CInput {
 	private $label = '';
 
 	/**
+	 * Checkbox name.
+	 *
+	 * @var string
+	 */
+	private $name = '';
+
+	/**
+	 * Checkbox value.
+	 *
+	 * @var string
+	 */
+	private $value = '';
+
+	/**
+	 * Checked or unchecked state of checkbox.
+	 *
+	 * @var bool
+	 */
+	private $checked = false;
+
+	/**
 	 * Checkbox label position (LABEL_POSITION_LEFT or LABEL_POSITION_RIGHT).
 	 *
 	 * @var int
@@ -46,7 +67,11 @@ class CCheckBox extends CInput {
 	private $label_position = self::LABEL_POSITION_RIGHT;
 
 	public function __construct($name = 'checkbox', $value = '1') {
-		parent::__construct('checkbox', $name, $value);
+		$this->name = $name;
+		$this->value = $value;
+
+		parent::__construct('checkbox', $this->name, $this->value);
+
 		$this->setChecked(false);
 		$this->addClass(ZBX_STYLE_CHECKBOX_RADIO);
 	}
@@ -59,7 +84,9 @@ class CCheckBox extends CInput {
 	 * @return CCheckBox
 	 */
 	public function setChecked($checked) {
-		if ($checked) {
+		$this->checked = $checked;
+
+		if ($this->checked) {
 			$this->attributes['checked'] = 'checked';
 		}
 		else {
@@ -131,6 +158,6 @@ class CCheckBox extends CInput {
 		$label = (new CLabel($elements, $this->getId()))
 			->addClass($this->label_position === self::LABEL_POSITION_LEFT ? 'label-pos-left' : null);
 
-		return parent::toString($destroy).($label->toString(true));
+		return parent::toString($destroy).$label->toString();
 	}
 }

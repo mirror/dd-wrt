@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -42,13 +42,24 @@ class CWidgetFieldTags extends CWidgetField {
 	public function setValue($value) {
 		$this->value = (array) $value;
 
-		foreach ($this->value as $index => $val) {
-			if (!array_key_exists('tag', $val) || ($val['tag'] === '' && $val['value'] === '')) {
-				unset($this->value[$index]);
+		return $this;
+	}
+
+	/**
+	 * Get field value. If no value is set, will return default value.
+	 *
+	 * @return mixed
+	 */
+	public function getValue() {
+		$value = parent::getValue();
+
+		foreach ($value as $index => $val) {
+			if ($val['tag'] === '' && $val['value'] === '') {
+				unset($value[$index]);
 			}
 		}
 
-		return $this;
+		return $value;
 	}
 
 	/**
