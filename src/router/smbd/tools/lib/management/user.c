@@ -13,6 +13,8 @@
 #include <management/user.h>
 #include <ksmbdtools.h>
 
+#define KSMBD_USER_STATE_FREEING	1
+
 static struct LIST *users_table;
 #if 0
 static pthread_rwlock_t users_table_lock;
@@ -36,13 +38,14 @@ static void kill_usmbd_user(struct usmbd_user *user)
 
 static int __usm_remove_user(struct usmbd_user *user)
 {
-	int ret = -EINVAL;
+	int ret = 0;
 
-	pthread_rwlock_wrlock(&users_table_lock);
-	if (list_remove(&users_table, list_tokey(user->name)))
-		ret = 0;
-	pthread_rwlock_unlock(&users_table_lock);
-
+	if (user->state != KSMBD_USER_STATE_FREEING) {
+		pthread_rwlock_wrlock(&users_table_lock);
+		if (!list_remove(&users_table, list_tokey(user->name)))
+			ret = -EINVAL;
+		pthread_rwlock_unlock(&users_table_lock);
+	}
 	if (!ret)
 		kill_usmbd_user(user);
 	return ret;
@@ -75,6 +78,21 @@ void put_usmbd_user(struct usmbd_user *user)
 		return;
 
 	__usm_remove_user(user);
+}
+
+static void put_user_callback(void *u, unsigned long long id, void *user_data)
+{
+	struct usmbd_user *user = (struct usmbd_user *)u;
+
+	user->state = KSMBD_USER_STATE_FREEING;
+	put_usmbd_user(user);
+}
+
+void usm_remove_all_users(void)
+{
+	pthread_rwlock_wrlock(&users_table_lock);
+	list_foreach(&users_table, put_user_callback, NULL);
+	pthread_rwlock_unlock(&users_table_lock);
 }
 
 static struct usmbd_user *new_usmbd_user(char *name, char *pwd)
