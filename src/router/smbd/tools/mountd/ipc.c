@@ -25,12 +25,12 @@
 
 static struct nl_sock *sk;
 
-struct usmbd_ipc_msg *ipc_msg_alloc(size_t sz)
+struct ksmbd_ipc_msg *ipc_msg_alloc(size_t sz)
 {
-	struct usmbd_ipc_msg *msg;
-	size_t msg_sz = sz + sizeof(struct usmbd_ipc_msg) + 1;
+	struct ksmbd_ipc_msg *msg;
+	size_t msg_sz = sz + sizeof(struct ksmbd_ipc_msg) + 1;
 
-	if (msg_sz > USMBD_IPC_MAX_MESSAGE_SIZE)
+	if (msg_sz > KSMBD_IPC_MAX_MESSAGE_SIZE)
 		pr_err("IPC message is too large: %zu\n", msg_sz);
 
 	msg = calloc(1, msg_sz);
@@ -39,14 +39,14 @@ struct usmbd_ipc_msg *ipc_msg_alloc(size_t sz)
 	return msg;
 }
 
-void ipc_msg_free(struct usmbd_ipc_msg *msg)
+void ipc_msg_free(struct ksmbd_ipc_msg *msg)
 {
 	free(msg);
 }
 
 static int generic_event(int type, void *payload, size_t sz)
 {
-	struct usmbd_ipc_msg *event;
+	struct ksmbd_ipc_msg *event;
 
 	event = ipc_msg_alloc(sz);
 	if (!event)
@@ -55,7 +55,7 @@ static int generic_event(int type, void *payload, size_t sz)
 	event->type = type;
 	event->sz = sz;
 
-	memcpy(USMBD_IPC_MSG_PAYLOAD(event),
+	memcpy(KSMBD_IPC_MSG_PAYLOAD(event),
 	       payload,
 	       sz);
 	wp_ipc_msg_push(event);
@@ -106,7 +106,7 @@ static int nlink_msg_cb(struct nl_msg *msg, void *arg)
 {
 	struct genlmsghdr *gnlh = genlmsg_hdr(nlmsg_hdr(msg));
 
-	if (gnlh->version != USMBD_GENL_VERSION) {
+	if (gnlh->version != KSMBD_GENL_VERSION) {
 		pr_err("IPC message version mistamtch: %d\n", gnlh->version);
 		return NL_SKIP;
 	}
@@ -144,10 +144,10 @@ static int ifc_list_size(void)
 	return len;
 }
 
-static int ipc_usmbd_starting_up(void)
+static int ipc_ksmbd_starting_up(void)
 {
-	struct usmbd_startup_request *ev;
-	struct usmbd_ipc_msg *msg;
+	struct ksmbd_startup_request *ev;
+	struct ksmbd_ipc_msg *msg;
 	int ifc_list_sz = 0;
 	int ret;
 
@@ -158,8 +158,8 @@ static int ipc_usmbd_starting_up(void)
 	if (!msg)
 		return -ENOMEM;
 
-	ev = USMBD_IPC_MSG_PAYLOAD(msg);
-	msg->type = USMBD_EVENT_STARTING_UP;
+	ev = KSMBD_IPC_MSG_PAYLOAD(msg);
+	msg->type = KSMBD_EVENT_STARTING_UP;
 
 	ev->flags = global_conf.flags;
 	ev->signing = global_conf.server_signing;
@@ -201,7 +201,7 @@ static int ipc_usmbd_starting_up(void)
 	if (ifc_list_sz) {
 		int i;
 		int sz = 0;
-		char *config_payload = USMBD_STARTUP_CONFIG_INTERFACES(ev);
+		char *config_payload = KSMBD_STARTUP_CONFIG_INTERFACES(ev);
 
 		ev->ifc_list_sz = ifc_list_sz;
 
@@ -225,7 +225,7 @@ static int ipc_usmbd_starting_up(void)
 	return ret;
 }
 
-static int ipc_usmbd_shutting_down(void)
+static int ipc_ksmbd_shutting_down(void)
 {
 	return 0;
 }
@@ -237,163 +237,163 @@ int ipc_process_event(void)
 	ret = nl_recvmsgs_default(sk);
 	if (ret < 0) {
 		pr_err("Recv() error %s [%d]\n", nl_geterror(ret), ret);
-		return -USMBD_STATUS_IPC_FATAL_ERROR;
+		return -KSMBD_STATUS_IPC_FATAL_ERROR;
 	}
 	return ret;
 }
 
-static struct nla_policy usmbd_nl_policy[USMBD_EVENT_MAX] = {
-	[USMBD_EVENT_UNSPEC] = {
+static struct nla_policy ksmbd_nl_policy[KSMBD_EVENT_MAX] = {
+	[KSMBD_EVENT_UNSPEC] = {
 		.minlen = 0,
 	},
 
-	[USMBD_EVENT_HEARTBEAT_REQUEST] = {
-		.minlen = sizeof(struct usmbd_heartbeat),
+	[KSMBD_EVENT_HEARTBEAT_REQUEST] = {
+		.minlen = sizeof(struct ksmbd_heartbeat),
 	},
 
-	[USMBD_EVENT_STARTING_UP] = {
-		.minlen = sizeof(struct usmbd_startup_request),
+	[KSMBD_EVENT_STARTING_UP] = {
+		.minlen = sizeof(struct ksmbd_startup_request),
 	},
 
-	[USMBD_EVENT_SHUTTING_DOWN] = {
-		.minlen = sizeof(struct usmbd_shutdown_request),
+	[KSMBD_EVENT_SHUTTING_DOWN] = {
+		.minlen = sizeof(struct ksmbd_shutdown_request),
 	},
 
-	[USMBD_EVENT_LOGIN_REQUEST] = {
-		.minlen = sizeof(struct usmbd_login_request),
+	[KSMBD_EVENT_LOGIN_REQUEST] = {
+		.minlen = sizeof(struct ksmbd_login_request),
 	},
 
-	[USMBD_EVENT_LOGIN_RESPONSE] = {
-		.minlen = sizeof(struct usmbd_login_response),
+	[KSMBD_EVENT_LOGIN_RESPONSE] = {
+		.minlen = sizeof(struct ksmbd_login_response),
 	},
 
-	[USMBD_EVENT_SHARE_CONFIG_REQUEST] = {
-		.minlen = sizeof(struct usmbd_share_config_request),
+	[KSMBD_EVENT_SHARE_CONFIG_REQUEST] = {
+		.minlen = sizeof(struct ksmbd_share_config_request),
 	},
 
-	[USMBD_EVENT_SHARE_CONFIG_RESPONSE] = {
-		.minlen = sizeof(struct usmbd_share_config_response),
+	[KSMBD_EVENT_SHARE_CONFIG_RESPONSE] = {
+		.minlen = sizeof(struct ksmbd_share_config_response),
 	},
 
-	[USMBD_EVENT_TREE_CONNECT_REQUEST] = {
-		.minlen = sizeof(struct usmbd_tree_connect_request),
+	[KSMBD_EVENT_TREE_CONNECT_REQUEST] = {
+		.minlen = sizeof(struct ksmbd_tree_connect_request),
 	},
 
-	[USMBD_EVENT_TREE_CONNECT_RESPONSE] = {
-		.minlen = sizeof(struct usmbd_tree_connect_response),
+	[KSMBD_EVENT_TREE_CONNECT_RESPONSE] = {
+		.minlen = sizeof(struct ksmbd_tree_connect_response),
 	},
 
-	[USMBD_EVENT_TREE_DISCONNECT_REQUEST] = {
-		.minlen = sizeof(struct usmbd_tree_disconnect_request),
+	[KSMBD_EVENT_TREE_DISCONNECT_REQUEST] = {
+		.minlen = sizeof(struct ksmbd_tree_disconnect_request),
 	},
 
-	[USMBD_EVENT_LOGOUT_REQUEST] = {
-		.minlen = sizeof(struct usmbd_logout_request),
+	[KSMBD_EVENT_LOGOUT_REQUEST] = {
+		.minlen = sizeof(struct ksmbd_logout_request),
 	},
 
-	[USMBD_EVENT_RPC_REQUEST] = {
-		.minlen = sizeof(struct usmbd_rpc_command),
+	[KSMBD_EVENT_RPC_REQUEST] = {
+		.minlen = sizeof(struct ksmbd_rpc_command),
 	},
 
-	[USMBD_EVENT_RPC_RESPONSE] = {
-		.minlen = sizeof(struct usmbd_rpc_command),
+	[KSMBD_EVENT_RPC_RESPONSE] = {
+		.minlen = sizeof(struct ksmbd_rpc_command),
 	},
 };
 
-static struct genl_cmd usmbd_genl_cmds[] = {
+static struct genl_cmd ksmbd_genl_cmds[] = {
 	{
-		.c_id		= USMBD_EVENT_UNSPEC,
-		.c_attr_policy	= usmbd_nl_policy,
+		.c_id		= KSMBD_EVENT_UNSPEC,
+		.c_attr_policy	= ksmbd_nl_policy,
 		.c_msg_parser	= &handle_unsupported_event,
-		.c_maxattr	= USMBD_EVENT_MAX,
+		.c_maxattr	= KSMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= USMBD_EVENT_HEARTBEAT_REQUEST,
-		.c_attr_policy	= usmbd_nl_policy,
+		.c_id		= KSMBD_EVENT_HEARTBEAT_REQUEST,
+		.c_attr_policy	= ksmbd_nl_policy,
 		.c_msg_parser	= &handle_generic_event,
-		.c_maxattr	= USMBD_EVENT_MAX,
+		.c_maxattr	= KSMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= USMBD_EVENT_STARTING_UP,
-		.c_attr_policy	= usmbd_nl_policy,
+		.c_id		= KSMBD_EVENT_STARTING_UP,
+		.c_attr_policy	= ksmbd_nl_policy,
 		.c_msg_parser	= &handle_unsupported_event,
-		.c_maxattr	= USMBD_EVENT_MAX,
+		.c_maxattr	= KSMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= USMBD_EVENT_SHUTTING_DOWN,
-		.c_attr_policy	= usmbd_nl_policy,
+		.c_id		= KSMBD_EVENT_SHUTTING_DOWN,
+		.c_attr_policy	= ksmbd_nl_policy,
 		.c_msg_parser	= &handle_unsupported_event,
-		.c_maxattr	= USMBD_EVENT_MAX,
+		.c_maxattr	= KSMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= USMBD_EVENT_LOGIN_REQUEST,
-		.c_attr_policy	= usmbd_nl_policy,
+		.c_id		= KSMBD_EVENT_LOGIN_REQUEST,
+		.c_attr_policy	= ksmbd_nl_policy,
 		.c_msg_parser	= &handle_generic_event,
-		.c_maxattr	= USMBD_EVENT_MAX,
+		.c_maxattr	= KSMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= USMBD_EVENT_LOGIN_RESPONSE,
-		.c_attr_policy	= usmbd_nl_policy,
+		.c_id		= KSMBD_EVENT_LOGIN_RESPONSE,
+		.c_attr_policy	= ksmbd_nl_policy,
 		.c_msg_parser	= &handle_unsupported_event,
-		.c_maxattr	= USMBD_EVENT_MAX,
+		.c_maxattr	= KSMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= USMBD_EVENT_SHARE_CONFIG_REQUEST,
-		.c_attr_policy	= usmbd_nl_policy,
+		.c_id		= KSMBD_EVENT_SHARE_CONFIG_REQUEST,
+		.c_attr_policy	= ksmbd_nl_policy,
 		.c_msg_parser	= &handle_generic_event,
-		.c_maxattr	= USMBD_EVENT_MAX,
+		.c_maxattr	= KSMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= USMBD_EVENT_SHARE_CONFIG_RESPONSE,
-		.c_attr_policy	= usmbd_nl_policy,
+		.c_id		= KSMBD_EVENT_SHARE_CONFIG_RESPONSE,
+		.c_attr_policy	= ksmbd_nl_policy,
 		.c_msg_parser	= &handle_unsupported_event,
-		.c_maxattr	= USMBD_EVENT_MAX,
+		.c_maxattr	= KSMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= USMBD_EVENT_TREE_CONNECT_REQUEST,
-		.c_attr_policy	= usmbd_nl_policy,
+		.c_id		= KSMBD_EVENT_TREE_CONNECT_REQUEST,
+		.c_attr_policy	= ksmbd_nl_policy,
 		.c_msg_parser	= &handle_generic_event,
-		.c_maxattr	= USMBD_EVENT_MAX,
+		.c_maxattr	= KSMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= USMBD_EVENT_TREE_CONNECT_RESPONSE,
-		.c_attr_policy	= usmbd_nl_policy,
+		.c_id		= KSMBD_EVENT_TREE_CONNECT_RESPONSE,
+		.c_attr_policy	= ksmbd_nl_policy,
 		.c_msg_parser	= &handle_unsupported_event,
-		.c_maxattr	= USMBD_EVENT_MAX,
+		.c_maxattr	= KSMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= USMBD_EVENT_TREE_DISCONNECT_REQUEST,
-		.c_attr_policy	= usmbd_nl_policy,
+		.c_id		= KSMBD_EVENT_TREE_DISCONNECT_REQUEST,
+		.c_attr_policy	= ksmbd_nl_policy,
 		.c_msg_parser	= &handle_generic_event,
-		.c_maxattr	= USMBD_EVENT_MAX,
+		.c_maxattr	= KSMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= USMBD_EVENT_LOGOUT_REQUEST,
-		.c_attr_policy	= usmbd_nl_policy,
+		.c_id		= KSMBD_EVENT_LOGOUT_REQUEST,
+		.c_attr_policy	= ksmbd_nl_policy,
 		.c_msg_parser	= &handle_generic_event,
-		.c_maxattr	= USMBD_EVENT_MAX,
+		.c_maxattr	= KSMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= USMBD_EVENT_RPC_REQUEST,
-		.c_attr_policy	= usmbd_nl_policy,
+		.c_id		= KSMBD_EVENT_RPC_REQUEST,
+		.c_attr_policy	= ksmbd_nl_policy,
 		.c_msg_parser	= &handle_generic_event,
-		.c_maxattr	= USMBD_EVENT_MAX,
+		.c_maxattr	= KSMBD_EVENT_MAX,
 	},
 	{
-		.c_id		= USMBD_EVENT_RPC_RESPONSE,
-		.c_attr_policy	= usmbd_nl_policy,
+		.c_id		= KSMBD_EVENT_RPC_RESPONSE,
+		.c_attr_policy	= ksmbd_nl_policy,
 		.c_msg_parser	= &handle_unsupported_event,
-		.c_maxattr	= USMBD_EVENT_MAX,
+		.c_maxattr	= KSMBD_EVENT_MAX,
 	},
 };
 
-static struct genl_ops usmbd_family_ops = {
-	.o_name = USMBD_GENL_NAME,
-	.o_cmds = usmbd_genl_cmds,
-	.o_ncmds = ARRAY_SIZE(usmbd_genl_cmds),
+static struct genl_ops ksmbd_family_ops = {
+	.o_name = KSMBD_GENL_NAME,
+	.o_cmds = ksmbd_genl_cmds,
+	.o_ncmds = ARRAY_SIZE(ksmbd_genl_cmds),
 };
 
-int ipc_msg_send(struct usmbd_ipc_msg *msg)
+int ipc_msg_send(struct ksmbd_ipc_msg *msg)
 {
 	struct nl_msg *nlmsg;
 	struct nlmsghdr *hdr;
@@ -406,15 +406,15 @@ int ipc_msg_send(struct usmbd_ipc_msg *msg)
 	}
 
 	nlmsg_set_proto(nlmsg, NETLINK_GENERIC);
-	hdr = genlmsg_put(nlmsg, getpid(), 0, usmbd_family_ops.o_id,
-			  0, 0, msg->type, USMBD_GENL_VERSION);
+	hdr = genlmsg_put(nlmsg, getpid(), 0, ksmbd_family_ops.o_id,
+			  0, 0, msg->type, KSMBD_GENL_VERSION);
 	if (!hdr) {
 		pr_err("genlmsg_put() has failed, aborting IPC send()\n");
 		goto out_error;
 	}
 
 	/* Use msg->type as attribute TYPE */
-	ret = nla_put(nlmsg, msg->type, msg->sz, USMBD_IPC_MSG_PAYLOAD(msg));
+	ret = nla_put(nlmsg, msg->type, msg->sz, KSMBD_IPC_MSG_PAYLOAD(msg));
 	if (ret) {
 		pr_err("nla_put() has failed, aborting IPC send()\n");
 		goto out_error;
@@ -439,9 +439,9 @@ out_error:
 
 void ipc_destroy(void)
 {
-	if (usmbd_health_status & USMBD_HEALTH_RUNNING) {
-		ipc_usmbd_shutting_down();
-		genl_unregister_family(&usmbd_family_ops);
+	if (ksmbd_health_status & KSMBD_HEALTH_RUNNING) {
+		ipc_ksmbd_shutting_down();
+		genl_unregister_family(&ksmbd_family_ops);
 	}
 
 	nl_socket_free(sk);
@@ -468,30 +468,30 @@ int ipc_init(void)
 		goto out_error;
 	}
 
-	if (genl_register_family(&usmbd_family_ops)) {
+	if (genl_register_family(&ksmbd_family_ops)) {
 		pr_err("Cannot register netlink family\n");
 		goto out_error;
 	}
 
 	do {
 		/*
-		 * Chances are we can start before usmbd kernel module is up
-		 * and running. So just wait for the kusmbd to register the
+		 * Chances are we can start before ksmbd kernel module is up
+		 * and running. So just wait for the kksmbd to register the
 		 * netlink family and accept our connection.
 		 */
-		ret = genl_ops_resolve(sk, &usmbd_family_ops);
+		ret = genl_ops_resolve(sk, &ksmbd_family_ops);
 		if (ret) {
 			pr_err("Cannot resolve netlink family\n");
 			sleep(5);
 		}
 	} while (ret);
 
-	if (ipc_usmbd_starting_up()) {
+	if (ipc_ksmbd_starting_up()) {
 		pr_err("Unable to send startup event\n");
 		return -EINVAL;
 	}
 
-	usmbd_health_status = USMBD_HEALTH_RUNNING;
+	ksmbd_health_status = KSMBD_HEALTH_RUNNING;
 	return 0;
 
 out_error:

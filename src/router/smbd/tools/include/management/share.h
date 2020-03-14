@@ -13,31 +13,31 @@
 
 enum share_users {
 	/* Admin users */
-	USMBD_SHARE_ADMIN_USERS_MAP = 0,
+	KSMBD_SHARE_ADMIN_USERS_MAP = 0,
 	/* Valid users */
-	USMBD_SHARE_VALID_USERS_MAP,
+	KSMBD_SHARE_VALID_USERS_MAP,
 	/* Invalid users */
-	USMBD_SHARE_INVALID_USERS_MAP,
+	KSMBD_SHARE_INVALID_USERS_MAP,
 	/* Read-only users */
-	USMBD_SHARE_READ_LIST_MAP,
+	KSMBD_SHARE_READ_LIST_MAP,
 	/* Read/Write access to a read-only share */
-	USMBD_SHARE_WRITE_LIST_MAP,
-	USMBD_SHARE_USERS_MAX,
+	KSMBD_SHARE_WRITE_LIST_MAP,
+	KSMBD_SHARE_USERS_MAX,
 };
 
 enum share_hosts {
-	USMBD_SHARE_HOSTS_ALLOW_MAP = 0,
-	USMBD_SHARE_HOSTS_DENY_MAP,
-	USMBD_SHARE_HOSTS_MAX,
+	KSMBD_SHARE_HOSTS_ALLOW_MAP = 0,
+	KSMBD_SHARE_HOSTS_DENY_MAP,
+	KSMBD_SHARE_HOSTS_MAX,
 };
 
-#define USMBD_SHARE_DEFAULT_CREATE_MASK	0744
-#define USMBD_SHARE_DEFAULT_DIRECTORY_MASK	0755
+#define KSMBD_SHARE_DEFAULT_CREATE_MASK	0744
+#define KSMBD_SHARE_DEFAULT_DIRECTORY_MASK	0755
 
-#define USMBD_SHARE_DEFAULT_UID		0
-#define USMBD_SHARE_DEFAULT_GID		0
+#define KSMBD_SHARE_DEFAULT_UID		0
+#define KSMBD_SHARE_DEFAULT_GID		0
 
-struct usmbd_share {
+struct ksmbd_share {
 	char		*name;
 	char		*path;
 
@@ -62,7 +62,7 @@ struct usmbd_share {
 
 	char		*guest_account;
 
-	struct LIST	*maps[USMBD_SHARE_USERS_MAX];
+	struct LIST	*maps[KSMBD_SHARE_USERS_MAX];
 	/*
 	 * FIXME
 	 * We need to support IP ranges, netmasks, etc.
@@ -83,64 +83,64 @@ struct usmbd_share {
  * WARNING:
  *
  * Add new entries only before to the bottom, right before
- * USMBD_SHARE_CONF_MAX. See SHARE_CONF comment.
+ * KSMBD_SHARE_CONF_MAX. See SHARE_CONF comment.
  *
  */
-enum USMBD_SHARE_CONF {
-	USMBD_SHARE_CONF_COMMENT			= 0,
-	USMBD_SHARE_CONF_PATH,
-	USMBD_SHARE_CONF_GUEST_OK,
-	USMBD_SHARE_CONF_GUEST_ACCOUNT,
-	USMBD_SHARE_CONF_READ_ONLY,
-	USMBD_SHARE_CONF_BROWSEABLE			= 5,
-	USMBD_SHARE_CONF_WRITE_OK,
-	USMBD_SHARE_CONF_WRITEABLE,
-	USMBD_SHARE_CONF_STORE_DOS_ATTRIBUTES,
-	USMBD_SHARE_CONF_OPLOCKS,
-	USMBD_SHARE_CONF_CREATE_MASK			= 10,
-	USMBD_SHARE_CONF_DIRECTORY_MASK,
-	USMBD_SHARE_CONF_FORCE_CREATE_MODE,
-	USMBD_SHARE_CONF_FORCE_DIRECTORY_MODE,
-	USMBD_SHARE_CONF_FORCE_GROUP,
-	USMBD_SHARE_CONF_FORCE_USER			= 15,
-	USMBD_SHARE_CONF_HIDE_DOT_FILES,
-	USMBD_SHARE_CONF_VALID_USERS,
-	USMBD_SHARE_CONF_INVALID_USERS,
-	USMBD_SHARE_CONF_READ_LIST,
-	USMBD_SHARE_CONF_WRITE_LIST			= 20,
-	USMBD_SHARE_CONF_ADMIN_USERS,
-	USMBD_SHARE_CONF_HOSTS_ALLOW,
-	USMBD_SHARE_CONF_HOSTS_DENY,
-	USMBD_SHARE_CONF_MAX_CONNECTIONS,
-	USMBD_SHARE_CONF_VETO_FILES			= 25,
-	USMBD_SHARE_CONF_INHERIT_SMACK,
-	USMBD_SHARE_CONF_INHERIT_OWNER,
-	USMBD_SHARE_CONF_STREAMS,
-	USMBD_SHARE_CONF_MAX
+enum KSMBD_SHARE_CONF {
+	KSMBD_SHARE_CONF_COMMENT			= 0,
+	KSMBD_SHARE_CONF_PATH,
+	KSMBD_SHARE_CONF_GUEST_OK,
+	KSMBD_SHARE_CONF_GUEST_ACCOUNT,
+	KSMBD_SHARE_CONF_READ_ONLY,
+	KSMBD_SHARE_CONF_BROWSEABLE			= 5,
+	KSMBD_SHARE_CONF_WRITE_OK,
+	KSMBD_SHARE_CONF_WRITEABLE,
+	KSMBD_SHARE_CONF_STORE_DOS_ATTRIBUTES,
+	KSMBD_SHARE_CONF_OPLOCKS,
+	KSMBD_SHARE_CONF_CREATE_MASK			= 10,
+	KSMBD_SHARE_CONF_DIRECTORY_MASK,
+	KSMBD_SHARE_CONF_FORCE_CREATE_MODE,
+	KSMBD_SHARE_CONF_FORCE_DIRECTORY_MODE,
+	KSMBD_SHARE_CONF_FORCE_GROUP,
+	KSMBD_SHARE_CONF_FORCE_USER			= 15,
+	KSMBD_SHARE_CONF_HIDE_DOT_FILES,
+	KSMBD_SHARE_CONF_VALID_USERS,
+	KSMBD_SHARE_CONF_INVALID_USERS,
+	KSMBD_SHARE_CONF_READ_LIST,
+	KSMBD_SHARE_CONF_WRITE_LIST			= 20,
+	KSMBD_SHARE_CONF_ADMIN_USERS,
+	KSMBD_SHARE_CONF_HOSTS_ALLOW,
+	KSMBD_SHARE_CONF_HOSTS_DENY,
+	KSMBD_SHARE_CONF_MAX_CONNECTIONS,
+	KSMBD_SHARE_CONF_VETO_FILES			= 25,
+	KSMBD_SHARE_CONF_INHERIT_SMACK,
+	KSMBD_SHARE_CONF_INHERIT_OWNER,
+	KSMBD_SHARE_CONF_STREAMS,
+	KSMBD_SHARE_CONF_MAX
 };
 
-extern char *USMBD_SHARE_CONF[USMBD_SHARE_CONF_MAX];
+extern char *KSMBD_SHARE_CONF[KSMBD_SHARE_CONF_MAX];
 
-int shm_share_config(char *k, enum USMBD_SHARE_CONF c);
+int shm_share_config(char *k, enum KSMBD_SHARE_CONF c);
 
-static inline void set_share_flag(struct usmbd_share *share, int flag)
+static inline void set_share_flag(struct ksmbd_share *share, int flag)
 {
 	share->flags |= flag;
 }
 
-static inline void clear_share_flag(struct usmbd_share *share, int flag)
+static inline void clear_share_flag(struct ksmbd_share *share, int flag)
 {
 	share->flags &= ~flag;
 }
 
-static inline int test_share_flag(struct usmbd_share *share, int flag)
+static inline int test_share_flag(struct ksmbd_share *share, int flag)
 {
 	return share->flags & flag;
 }
 
-struct usmbd_share *get_usmbd_share(struct usmbd_share *share);
-void put_usmbd_share(struct usmbd_share *share);
-struct usmbd_share *shm_lookup_share(char *name);
+struct ksmbd_share *get_ksmbd_share(struct ksmbd_share *share);
+void put_ksmbd_share(struct ksmbd_share *share);
+struct ksmbd_share *shm_lookup_share(char *name);
 
 struct smbconf_group;
 int shm_add_new_share(struct smbconf_group *group);
@@ -150,24 +150,24 @@ void shm_remove_all_shares(void);
 void shm_destroy(void);
 int shm_init(void);
 
-int shm_lookup_users_map(struct usmbd_share *share,
+int shm_lookup_users_map(struct ksmbd_share *share,
 			  enum share_users map,
 			  char *name);
 
-int shm_lookup_hosts_map(struct usmbd_share *share,
+int shm_lookup_hosts_map(struct ksmbd_share *share,
 			  enum share_hosts map,
 			  char *host);
 
-int shm_open_connection(struct usmbd_share *share);
-int shm_close_connection(struct usmbd_share *share);
+int shm_open_connection(struct ksmbd_share *share);
+int shm_close_connection(struct ksmbd_share *share);
 
 typedef void (*walk_shares)(void *item, unsigned long long id, void *user_data);
-void foreach_usmbd_share(walk_shares cb, void *user_data);
+void foreach_ksmbd_share(walk_shares cb, void *user_data);
 
-struct usmbd_share_config_response;
+struct ksmbd_share_config_response;
 
-int shm_share_config_payload_size(struct usmbd_share *share);
-int shm_handle_share_config_request(struct usmbd_share *share,
-				    struct usmbd_share_config_response *resp);
+int shm_share_config_payload_size(struct ksmbd_share *share);
+int shm_handle_share_config_request(struct ksmbd_share *share,
+				    struct ksmbd_share_config_response *resp);
 
 #endif /* __MANAGEMENT_SHARE_H__ */

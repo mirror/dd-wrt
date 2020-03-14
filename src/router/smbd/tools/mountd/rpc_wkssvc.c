@@ -28,14 +28,14 @@
 #define WKSSVC_VERSION_MAJOR		0x2
 #define WKSSVC_VERSION_MINOR		0x1
 
-static int wkssvc_clear_headers(struct usmbd_rpc_pipe *pipe,
+static int wkssvc_clear_headers(struct ksmbd_rpc_pipe *pipe,
 				int status)
 {
 	ndr_free_uniq_vsting_ptr(&pipe->dce->wi_req.server_name);
 	return 0;
 }
 
-static int __netwksta_entry_rep_ctr100(struct usmbd_dcerpc *dce,
+static int __netwksta_entry_rep_ctr100(struct ksmbd_dcerpc *dce,
 				       void *entry)
 {
 	int ret = 0;
@@ -57,7 +57,7 @@ static int __netwksta_entry_rep_ctr100(struct usmbd_dcerpc *dce,
 	return ret;
 }
 
-static int __netwksta_entry_data_ctr100(struct usmbd_dcerpc *dce,
+static int __netwksta_entry_data_ctr100(struct ksmbd_dcerpc *dce,
 					void *entry)
 {
 	int ret = 0;
@@ -70,9 +70,9 @@ static int __netwksta_entry_data_ctr100(struct usmbd_dcerpc *dce,
 	return ret;
 }
 
-static int wkssvc_netwksta_get_info_return(struct usmbd_rpc_pipe *pipe)
+static int wkssvc_netwksta_get_info_return(struct ksmbd_rpc_pipe *pipe)
 {
-	struct usmbd_dcerpc *dce = pipe->dce;
+	struct ksmbd_dcerpc *dce = pipe->dce;
 
 	ndr_write_union_int32(dce, dce->wi_req.level);
 
@@ -80,18 +80,18 @@ static int wkssvc_netwksta_get_info_return(struct usmbd_rpc_pipe *pipe)
 		pr_err("Unsupported wksta info level (read): %d\n",
 			dce->wi_req.level);
 		dce->entry_rep = NULL;
-		return USMBD_RPC_EINVALID_LEVEL;
+		return KSMBD_RPC_EINVALID_LEVEL;
 	}
 
 	dce->entry_rep(dce, NULL);
 	dce->entry_data(dce, NULL);
-	return USMBD_RPC_OK;
+	return KSMBD_RPC_OK;
 }
 
-static int wkssvc_netwksta_info_return(struct usmbd_rpc_pipe *pipe)
+static int wkssvc_netwksta_info_return(struct ksmbd_rpc_pipe *pipe)
 {
-	struct usmbd_dcerpc *dce = pipe->dce;
-	int ret = USMBD_RPC_OK, status = USMBD_RPC_ENOTIMPLEMENTED;
+	struct ksmbd_dcerpc *dce = pipe->dce;
+	int ret = KSMBD_RPC_OK, status = KSMBD_RPC_ENOTIMPLEMENTED;
 
 	/*
 	 * Reserve space for response NDR header. We don't know yet if
@@ -116,14 +116,14 @@ static int wkssvc_netwksta_info_return(struct usmbd_rpc_pipe *pipe)
 		status = wkssvc_netwksta_get_info_return(pipe);
 
 	if (rpc_restricted_context(dce->rpc_req))
-		status = USMBD_RPC_EACCESS_DENIED;
+		status = KSMBD_RPC_EACCESS_DENIED;
 
 	wkssvc_clear_headers(pipe, status);
 
 	/*
 	 * [out] DWORD Return value/code
 	 */
-	if (ret != USMBD_RPC_OK)
+	if (ret != KSMBD_RPC_OK)
 		status = ret;
 
 	ndr_write_int32(dce, status);
@@ -134,14 +134,14 @@ static int wkssvc_netwksta_info_return(struct usmbd_rpc_pipe *pipe)
 }
 
 static int
-wkssvc_netwksta_get_info_invoke(struct usmbd_rpc_pipe *pipe,
+wkssvc_netwksta_get_info_invoke(struct ksmbd_rpc_pipe *pipe,
 				struct wkssvc_netwksta_info_request *hdr)
 {
-	return USMBD_RPC_OK;
+	return KSMBD_RPC_OK;
 }
 
 static int
-wkssvc_parse_netwksta_info_req(struct usmbd_dcerpc *dce,
+wkssvc_parse_netwksta_info_req(struct ksmbd_dcerpc *dce,
 			       struct wkssvc_netwksta_info_request *hdr)
 {
 	ndr_read_uniq_vsting_ptr(dce, &hdr->server_name);
@@ -149,25 +149,25 @@ wkssvc_parse_netwksta_info_req(struct usmbd_dcerpc *dce,
 	return 0;
 }
 
-static int wkssvc_netwksta_info_invoke(struct usmbd_rpc_pipe *pipe)
+static int wkssvc_netwksta_info_invoke(struct ksmbd_rpc_pipe *pipe)
 {
-	struct usmbd_dcerpc *dce = pipe->dce;
-	int ret = USMBD_RPC_ENOTIMPLEMENTED;
+	struct ksmbd_dcerpc *dce = pipe->dce;
+	int ret = KSMBD_RPC_ENOTIMPLEMENTED;
 
 	if (wkssvc_parse_netwksta_info_req(dce, &dce->wi_req))
-		return USMBD_RPC_EBAD_DATA;
+		return KSMBD_RPC_EBAD_DATA;
 
 	if (rpc_restricted_context(dce->rpc_req))
-		return USMBD_RPC_OK;
+		return KSMBD_RPC_OK;
 
 	if (dce->req_hdr.opnum == WKSSVC_NETWKSTA_GET_INFO)
 		ret = wkssvc_netwksta_get_info_invoke(pipe, &dce->wi_req);
 	return ret;
 }
 
-static int wkssvc_invoke(struct usmbd_rpc_pipe *pipe)
+static int wkssvc_invoke(struct ksmbd_rpc_pipe *pipe)
 {
-	int ret = USMBD_RPC_ENOTIMPLEMENTED;
+	int ret = KSMBD_RPC_ENOTIMPLEMENTED;
 
 	switch (pipe->dce->req_hdr.opnum) {
 	case WKSSVC_NETWKSTA_GET_INFO:
@@ -184,11 +184,11 @@ static int wkssvc_invoke(struct usmbd_rpc_pipe *pipe)
 	return ret;
 }
 
-static int wkssvc_return(struct usmbd_rpc_pipe *pipe,
-			 struct usmbd_rpc_command *resp,
+static int wkssvc_return(struct ksmbd_rpc_pipe *pipe,
+			 struct ksmbd_rpc_command *resp,
 			 int max_resp_sz)
 {
-	struct usmbd_dcerpc *dce = pipe->dce;
+	struct ksmbd_dcerpc *dce = pipe->dce;
 	int ret;
 
 	switch (dce->req_hdr.opnum) {
@@ -200,20 +200,20 @@ static int wkssvc_return(struct usmbd_rpc_pipe *pipe,
 	default:
 		pr_err("WKSSVC: unsupported RETURN method %d\n",
 			dce->req_hdr.opnum);
-		ret = USMBD_RPC_EBAD_FUNC;
+		ret = KSMBD_RPC_EBAD_FUNC;
 		break;
 	}
 	return ret;
 }
 
-int rpc_wkssvc_read_request(struct usmbd_rpc_pipe *pipe,
-			    struct usmbd_rpc_command *resp,
+int rpc_wkssvc_read_request(struct ksmbd_rpc_pipe *pipe,
+			    struct ksmbd_rpc_command *resp,
 			    int max_resp_sz)
 {
 	return wkssvc_return(pipe, resp, max_resp_sz);
 }
 
-int rpc_wkssvc_write_request(struct usmbd_rpc_pipe *pipe)
+int rpc_wkssvc_write_request(struct ksmbd_rpc_pipe *pipe)
 {
 	return wkssvc_invoke(pipe);
 }
