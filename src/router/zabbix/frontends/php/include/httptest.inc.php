@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,7 +26,8 @@ function httptest_authentications($type = null) {
 	$authentication_types = [
 		HTTPTEST_AUTH_NONE => _('None'),
 		HTTPTEST_AUTH_BASIC => _('Basic'),
-		HTTPTEST_AUTH_NTLM => _('NTLM')
+		HTTPTEST_AUTH_NTLM => _('NTLM'),
+		HTTPTEST_AUTH_KERBEROS => _('Kerberos')
 	];
 
 	if (is_null($type)) {

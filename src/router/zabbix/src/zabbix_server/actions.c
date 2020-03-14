@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -1476,6 +1476,7 @@ static void	execute_operations(const DB_EVENT *event, zbx_uint64_t actionid)
 	zbx_uint64_t		groupid, templateid;
 	zbx_vector_uint64_t	lnk_templateids, del_templateids,
 				new_groupids, del_groupids;
+	int			i;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() actionid:" ZBX_FS_UI64, __func__, actionid);
 
@@ -1490,7 +1491,8 @@ static void	execute_operations(const DB_EVENT *event, zbx_uint64_t actionid)
 				" left join opgroup g on g.operationid=o.operationid"
 				" left join optemplate t on t.operationid=o.operationid"
 				" left join opinventory oi on oi.operationid=o.operationid"
-			" where o.actionid=" ZBX_FS_UI64,
+			" where o.actionid=" ZBX_FS_UI64
+			" order by o.operationid",
 			actionid);
 
 	while (NULL != (row = DBfetch(result)))
@@ -1527,11 +1529,27 @@ static void	execute_operations(const DB_EVENT *event, zbx_uint64_t actionid)
 				break;
 			case OPERATION_TYPE_TEMPLATE_ADD:
 				if (0 != templateid)
+				{
+					if (FAIL != (i = zbx_vector_uint64_search(&del_templateids, templateid,
+							ZBX_DEFAULT_UINT64_COMPARE_FUNC)))
+					{
+						zbx_vector_uint64_remove(&del_templateids, i);
+					}
+
 					zbx_vector_uint64_append(&lnk_templateids, templateid);
+				}
 				break;
 			case OPERATION_TYPE_TEMPLATE_REMOVE:
 				if (0 != templateid)
+				{
+					if (FAIL != (i = zbx_vector_uint64_search(&lnk_templateids, templateid,
+							ZBX_DEFAULT_UINT64_COMPARE_FUNC)))
+					{
+						zbx_vector_uint64_remove(&lnk_templateids, i);
+					}
+
 					zbx_vector_uint64_append(&del_templateids, templateid);
+				}
 				break;
 			case OPERATION_TYPE_HOST_INVENTORY:
 				op_host_inventory_mode(event, inventory_mode);
@@ -1542,18 +1560,18 @@ static void	execute_operations(const DB_EVENT *event, zbx_uint64_t actionid)
 	}
 	DBfree_result(result);
 
-	if (0 != lnk_templateids.values_num)
-	{
-		zbx_vector_uint64_sort(&lnk_templateids, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
-		zbx_vector_uint64_uniq(&lnk_templateids, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
-		op_template_add(event, &lnk_templateids);
-	}
-
 	if (0 != del_templateids.values_num)
 	{
 		zbx_vector_uint64_sort(&del_templateids, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
 		zbx_vector_uint64_uniq(&del_templateids, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
 		op_template_del(event, &del_templateids);
+	}
+
+	if (0 != lnk_templateids.values_num)
+	{
+		zbx_vector_uint64_sort(&lnk_templateids, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
+		zbx_vector_uint64_uniq(&lnk_templateids, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
+		op_template_add(event, &lnk_templateids);
 	}
 
 	if (0 != new_groupids.values_num)
@@ -1719,20 +1737,19 @@ static int	check_event_conditions(const DB_EVENT *event, zbx_hashset_t *uniq_con
  * Purpose: process all actions of each event in a list                       *
  *                                                                            *
  * Parameters: events        - [IN] events to apply actions for               *
- *             events_num    - [IN] number of events                          *
  *             closed_events - [IN] a vector of closed event data -           *
  *                                  (PROBLEM eventid, OK eventid) pairs.      *
  *                                                                            *
  ******************************************************************************/
-void	process_actions(const DB_EVENT *events, size_t events_num, zbx_vector_uint64_pair_t *closed_events)
+void	process_actions(const zbx_vector_ptr_t *events, const zbx_vector_uint64_pair_t *closed_events)
 {
-	size_t				i;
+	int				i;
 	zbx_vector_ptr_t		actions;
 	zbx_vector_ptr_t 		new_escalations;
 	zbx_vector_uint64_pair_t	rec_escalations;
 	zbx_hashset_t			uniq_conditions[EVENT_SOURCE_COUNT];
 
-	zabbix_log(LOG_LEVEL_DEBUG, "In %s() events_num:" ZBX_FS_SIZE_T, __func__, (zbx_fs_size_t)events_num);
+	zabbix_log(LOG_LEVEL_DEBUG, "In %s() events_num:" ZBX_FS_SIZE_T, __func__, (zbx_fs_size_t)events->values_num);
 
 	zbx_vector_ptr_create(&new_escalations);
 	zbx_vector_uint64_pair_create(&rec_escalations);
@@ -1746,12 +1763,12 @@ void	process_actions(const DB_EVENT *events, size_t events_num, zbx_vector_uint6
 	/* 1. All event sources: match PROBLEM events to action conditions, add them to 'new_escalations' list.      */
 	/* 2. EVENT_SOURCE_DISCOVERY, EVENT_SOURCE_AUTO_REGISTRATION: execute operations (except command and message */
 	/*    operations) for events that match action conditions.                                                   */
-	for (i = 0; i < events_num; i++)
+	for (i = 0; i < events->values_num; i++)
 	{
 		int		j;
-		const DB_EVENT 	*event;
+		const DB_EVENT	*event;
 
-		event = &events[i];
+		event = (const DB_EVENT *)events->values[i];
 
 		/* OK events can't start escalations - skip them */
 		if (SUCCEED == is_recovery_event(event))

@@ -107,10 +107,10 @@
 			$('#multiselect_userid_wrapper').show();
 
 			// Set current user as owner.
-			$('#userid').multiSelect('addData', {
+			$('#userid').multiSelect('addData', [{
 				'id': $('#current_user_userid').val(),
 				'name': $('#current_user_fullname').val()
-			});
+			}]);
 
 			$('#name').focus();
 		});
@@ -271,7 +271,8 @@
 			disabled: (slideTable.find('tr.sortable').length < 2),
 			items: 'tbody tr.sortable',
 			axis: 'y',
-			cursor: 'move',
+			containment: 'parent',
+			cursor: IE ? 'move' : 'grabbing',
 			handle: 'div.<?= ZBX_STYLE_DRAG_ICON ?>',
 			tolerance: 'pointer',
 			opacity: 0.6,

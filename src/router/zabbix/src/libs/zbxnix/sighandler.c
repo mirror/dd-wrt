@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -23,10 +23,10 @@
 #include "log.h"
 #include "fatal.h"
 #include "sigcommon.h"
-#include "../../libs/zbxcrypto/tls.h"
+#include "zbxcrypto.h"
 
-int	sig_parent_pid = -1;
-int	sig_exiting = 0;
+int			sig_parent_pid = -1;
+volatile sig_atomic_t	sig_exiting;
 
 static void	log_fatal_signal(int sig, siginfo_t *siginfo, void *context)
 {
@@ -43,7 +43,7 @@ static void	exit_with_failure(void)
 #if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 	zbx_tls_free_on_signal();
 #endif
-	exit(EXIT_FAILURE);
+	_exit(EXIT_FAILURE);
 }
 
 /******************************************************************************
@@ -95,39 +95,35 @@ static void	alarm_signal_handler(int sig, siginfo_t *siginfo, void *context)
  *                                                                            *
  * Function: terminate_signal_handler                                         *
  *                                                                            *
- * Purpose: handle terminate signals: SIGQUIT, SIGINT, SIGTERM                *
+ * Purpose: handle terminate signals: SIGHUP, SIGINT, SIGTERM, SIGUSR2        *
  *                                                                            *
  ******************************************************************************/
 static void	terminate_signal_handler(int sig, siginfo_t *siginfo, void *context)
 {
-	SIG_CHECK_PARAMS(sig, siginfo, context);
+	int zbx_log_level_temp;
 
 	if (!SIG_PARENT_PROCESS)
 	{
-		zabbix_log(sig_parent_pid == SIG_CHECKED_FIELD(siginfo, si_pid) || SIGINT == sig ?
-				LOG_LEVEL_DEBUG : LOG_LEVEL_WARNING,
-				"Got signal [signal:%d(%s),sender_pid:%d,sender_uid:%d,"
-				"reason:%d]. %s ...",
-				sig, get_signal_name(sig),
-				SIG_CHECKED_FIELD(siginfo, si_pid),
-				SIG_CHECKED_FIELD(siginfo, si_uid),
-				SIG_CHECKED_FIELD(siginfo, si_code),
-				SIGINT == sig ? "Ignoring" : "Exiting");
+		/* the parent process can either politely ask a child process to finish it's work and perform cleanup */
+		/* by sending SIGUSR2 or terminate child process immediately without cleanup by sending SIGHUP        */
+		if (SIGHUP == sig)
+			exit_with_failure();
 
-		/* ignore interrupt signal in children - the parent */
-		/* process will send terminate signals instead      */
-		if (SIGINT == sig)
-			return;
-
-		exit_with_failure();
+		if (SIGUSR2 == sig)
+			sig_exiting = 1;
 	}
 	else
 	{
+		SIG_CHECK_PARAMS(sig, siginfo, context);
+
 		if (0 == sig_exiting)
 		{
 			sig_exiting = 1;
-			zabbix_log(sig_parent_pid == SIG_CHECKED_FIELD(siginfo, si_pid) ?
-					LOG_LEVEL_DEBUG : LOG_LEVEL_WARNING,
+
+			/* temporary variable is used to avoid compiler warning */
+			zbx_log_level_temp = sig_parent_pid == SIG_CHECKED_FIELD(siginfo, si_pid) ?
+					LOG_LEVEL_DEBUG : LOG_LEVEL_WARNING;
+			zabbix_log(zbx_log_level_temp,
 					"Got signal [signal:%d(%s),sender_pid:%d,sender_uid:%d,"
 					"reason:%d]. Exiting ...",
 					sig, get_signal_name(sig),
@@ -138,7 +134,7 @@ static void	terminate_signal_handler(int sig, siginfo_t *siginfo, void *context)
 #if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 			zbx_tls_free_on_signal();
 #endif
-			zbx_on_exit();
+			zbx_on_exit(SUCCEED);
 		}
 	}
 }
@@ -166,7 +162,7 @@ static void	child_signal_handler(int sig, siginfo_t *siginfo, void *context)
 #if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 		zbx_tls_free_on_signal();
 #endif
-		zbx_on_exit();
+		zbx_on_exit(FAIL);
 	}
 }
 
@@ -189,7 +185,9 @@ void	zbx_set_common_signal_handlers(void)
 	phan.sa_sigaction = terminate_signal_handler;
 	sigaction(SIGINT, &phan, NULL);
 	sigaction(SIGQUIT, &phan, NULL);
+	sigaction(SIGHUP, &phan, NULL);
 	sigaction(SIGTERM, &phan, NULL);
+	sigaction(SIGUSR2, &phan, NULL);
 
 	phan.sa_sigaction = fatal_signal_handler;
 	sigaction(SIGILL, &phan, NULL);

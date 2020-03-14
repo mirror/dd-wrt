@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -47,10 +47,11 @@ class CMapHelper {
 			],
 			'selectSelements' => ['selementid', 'elements', 'elementtype', 'iconid_off', 'iconid_on', 'label',
 				'label_location', 'x', 'y', 'iconid_disabled', 'iconid_maintenance', 'elementsubtype', 'areatype',
-				'width', 'height', 'viewtype', 'use_iconmap', 'application', 'permission'
+				'width', 'height', 'viewtype', 'use_iconmap', 'application', 'urls', 'permission'
 			],
 			'selectLinks' => ['linkid', 'selementid1', 'selementid2', 'drawtype', 'color', 'label', 'linktriggers',
-				'permission'],
+				'permission'
+			],
 			'sysmapids' => $sysmapids,
 			'preservekeys' => true
 		]);
@@ -65,6 +66,7 @@ class CMapHelper {
 				'height' => 150,
 				'backgroundid' => null,
 				'severity_min' => 0,
+				'show_unack' => EXTACK_OPTION_ALL,
 				'label_location' => MAP_LABEL_LOC_BOTTOM,
 				'selements' => [],
 				'links' => [],
@@ -167,7 +169,7 @@ class CMapHelper {
 			]
 		];
 
-		// Apply properties to each sysmap elemenet.
+		// Apply properties to each sysmap element.
 		foreach ($sysmap['selements'] as &$selement) {
 			$prop = $label_properties[$selement['elementtype']];
 			$elmnt_label_type = ($sysmap['label_format'] == SYSMAP_LABEL_ADVANCED_ON)
@@ -200,17 +202,13 @@ class CMapHelper {
 	 * Resolve map element (selements and links) state.
 	 *
 	 * @param array $sysmap                   Map data.
-	 * @param array $areas                    Areas representing array containing host group element IDs and dimention
+	 * @param array $areas                    Areas representing array containing host group element IDs and dimension
 	 *                                        properties of area.
 	 * @param array $options                  Options used to retrieve actions.
 	 * @param int   $options['severity_min']  Minimum severity.
 	 */
 	protected static function resolveMapState(array &$sysmap, array $areas, array $options) {
-		$map_info_options = [
-			'severity_min' => array_key_exists('severity_min', $options) ? $options['severity_min'] : null
-		];
-
-		$map_info = getSelementsInfo($sysmap, $map_info_options);
+		$map_info = getSelementsInfo($sysmap, ['severity_min' => $options['severity_min']]);
 		processAreasCoordinates($sysmap, $areas, $map_info);
 
 		// Adding element names and removing inaccessible triggers from readable elements.
@@ -255,7 +253,7 @@ class CMapHelper {
 		$labels = getMapLabels($sysmap, $map_info);
 		$highlights = getMapHighligts($sysmap, $map_info);
 		$actions = getActionsBySysmap($sysmap, $options);
-		$linktrigger_info = getMapLinktriggerInfo($sysmap, $options);
+		$linktrigger_info = getMapLinkTriggerInfo($sysmap, $options);
 
 		$problems_total = 0;
 		$status_problems = [];
@@ -343,8 +341,7 @@ class CMapHelper {
 				$color = $link['color'];
 				$linktriggers = $link['linktriggers'];
 				order_result($linktriggers, 'triggerid');
-				$max_severity = 0;
-				$triggers = [];
+				$max_severity = $options['severity_min'];
 
 				foreach ($linktriggers as $link_trigger) {
 					if ($link_trigger['triggerid'] == 0
@@ -352,16 +349,14 @@ class CMapHelper {
 						continue;
 					}
 
-					$id = $link_trigger['linktriggerid'];
+					$trigger = zbx_array_merge($link_trigger, $linktrigger_info[$link_trigger['triggerid']]);
 
-					$triggers[$id] = zbx_array_merge($link_trigger, $linktrigger_info[$link_trigger['triggerid']]);
-
-					if ($triggers[$id]['status'] == TRIGGER_STATUS_ENABLED
-							&& $triggers[$id]['value'] == TRIGGER_VALUE_TRUE
-							&& $triggers[$id]['priority'] >= $max_severity) {
-						$drawtype = $triggers[$id]['drawtype'];
-						$color = $triggers[$id]['color'];
-						$max_severity = $triggers[$id]['priority'];
+					if ($trigger['status'] == TRIGGER_STATUS_ENABLED
+							&& $trigger['value'] == TRIGGER_VALUE_TRUE
+							&& $trigger['priority'] >= $max_severity) {
+						$drawtype = $trigger['drawtype'];
+						$color = $trigger['color'];
+						$max_severity = $trigger['priority'];
 					}
 				}
 

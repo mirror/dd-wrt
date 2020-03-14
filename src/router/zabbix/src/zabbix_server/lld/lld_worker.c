@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 **/
 
 #include "common.h"
+#include "daemon.h"
 #include "db.h"
 #include "log.h"
 #include "zbxipcservice.h"
@@ -100,7 +101,8 @@ static void	lld_process_task(zbx_ipc_message_t *message)
 						item.host.host, item.key_orig);
 
 				zbx_add_event(EVENT_SOURCE_INTERNAL, EVENT_OBJECT_LLDRULE, itemid, &ts,
-						ITEM_STATE_NORMAL, NULL, NULL, NULL, 0, 0, NULL, 0, NULL, 0, NULL);
+						ITEM_STATE_NORMAL, NULL, NULL, NULL, 0, 0, NULL, 0, NULL, 0, NULL,
+						NULL);
 			}
 			else
 			{
@@ -109,7 +111,7 @@ static void	lld_process_task(zbx_ipc_message_t *message)
 
 				zbx_add_event(EVENT_SOURCE_INTERNAL, EVENT_OBJECT_LLDRULE, itemid, &ts,
 						ITEM_STATE_NOTSUPPORTED, NULL, NULL, NULL, 0, 0, NULL, 0, NULL, 0,
-						error);
+						NULL, error);
 			}
 
 			zbx_process_events(NULL, NULL);
@@ -151,7 +153,8 @@ static void	lld_process_task(zbx_ipc_message_t *message)
 		DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
 		zbx_db_save_item_changes(&sql, &sql_alloc, &sql_offset, &diffs);
 		DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
-		DBexecute("%s", sql);
+		if (16 < sql_offset)
+			DBexecute("%s", sql);
 
 		DCconfig_items_apply_changes(&diffs);
 
@@ -208,7 +211,7 @@ ZBX_THREAD_ENTRY(lld_worker_thread, args)
 
 	update_selfmon_counter(ZBX_PROCESS_STATE_BUSY);
 
-	for (;;)
+	while (ZBX_IS_RUNNING())
 	{
 		time_now = zbx_time();
 
@@ -246,6 +249,11 @@ ZBX_THREAD_ENTRY(lld_worker_thread, args)
 
 		zbx_ipc_message_clean(&message);
 	}
+
+	zbx_setproctitle("%s #%d [terminated]", get_process_type_string(process_type), process_num);
+
+	while (1)
+		zbx_sleep(SEC_PER_MIN);
 
 	DBclose();
 

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -30,8 +30,6 @@ jQuery(document).ready(function($) {
 		.on('change', function() {
 			var mediatypes_by_type = <?= (new CJson())->encode($data['mediatypes']) ?>,
 				mediatypeid = $(this).val();
-
-			$('#type').val(mediatypes_by_type[mediatypeid]);
 
 			if (mediatypes_by_type[mediatypeid] == <?= MEDIA_TYPE_EMAIL ?>) {
 				$('#mediatype_send_to').hide();

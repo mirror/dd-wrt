@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -208,6 +208,7 @@ function getMenuPopupHost(options, trigger_elmnt) {
  *
  * @param {array}  options['sysmapid']
  * @param {int}    options['severity_min']     (optional)
+ * @param {int}    options['widget_uniqueid']  (optional)
  * @param {array}  options['urls']             (optional)
  * @param {string} options['url'][]['label']
  * @param {string} options['url'][]['url']
@@ -216,12 +217,19 @@ function getMenuPopupHost(options, trigger_elmnt) {
  */
 function getMenuPopupMapElementSubmap(options) {
 	var sections = [],
-		submap_url = new Curl('zabbix.php', false);
+		submap_url;
 
-	submap_url.setArgument('action', 'map.view');
-	submap_url.setArgument('sysmapid', options.sysmapid);
-	if (typeof options.severity_min !== 'undefined') {
-		submap_url.setArgument('severity_min', options.severity_min);
+	if (typeof options.widget_uniqueid !== 'undefined') {
+		submap_url = new Curl('javascript: navigateToSubmap(' + options.sysmapid +
+			', "' + options.widget_uniqueid + '");', false);
+	}
+	else {
+		submap_url = new Curl('zabbix.php', false);
+		submap_url.setArgument('action', 'map.view');
+		submap_url.setArgument('sysmapid', options.sysmapid);
+		if (typeof options.severity_min !== 'undefined') {
+			submap_url.setArgument('severity_min', options.severity_min);
+		}
 	}
 
 	sections.push({
@@ -401,8 +409,8 @@ function getMenuPopupRefresh(options, trigger_elmnt) {
 				value: value
 			},
 			clickCallback: function() {
-				var obj = jQuery(this),
-					currentRate = obj.data('value');
+				var $obj = jQuery(this),
+					currentRate = $obj.data('value');
 
 				// it is a quick solution for slide refresh multiplier, should be replaced with slide.refresh or similar
 				if (options.multiplier) {
@@ -412,10 +420,13 @@ function getMenuPopupRefresh(options, trigger_elmnt) {
 							widgetRefreshRate: currentRate
 						}),
 						dataType: 'script',
-						success: function(js) { js }
+						success: function() {
+							// Set new refresh rate as current in slideshow controls.
+							trigger_elmnt.data('menu-popup').data.currentRate = currentRate;
+						}
 					});
 
-					jQuery('a', obj.closest('.action-menu')).each(function() {
+					jQuery('a', $obj.closest('.menu-popup')).each(function() {
 						var link = jQuery(this);
 
 						if (link.data('value') == currentRate) {
@@ -430,7 +441,7 @@ function getMenuPopupRefresh(options, trigger_elmnt) {
 						}
 					});
 
-					obj.closest('.action-menu').menuPopup('close', trigger_elmnt);
+					$obj.closest('.menu-popup').menuPopup('close', trigger_elmnt);
 				}
 				else {
 					var url = new Curl('zabbix.php');
@@ -444,8 +455,8 @@ function getMenuPopupRefresh(options, trigger_elmnt) {
 							'widgetid': options.widgetName,
 							'rf_rate': currentRate
 						},
-						success: function(resp) {
-							jQuery('a', obj.closest('.action-menu')).each(function() {
+						success: function() {
+							jQuery('a', $obj.closest('.menu-popup')).each(function() {
 								var link = jQuery(this);
 
 								if (link.data('value') == currentRate) {
@@ -460,13 +471,16 @@ function getMenuPopupRefresh(options, trigger_elmnt) {
 								}
 							});
 
-							obj.closest('.action-menu').menuPopup('close', trigger_elmnt);
+							// Set new refresh rate as current in widget controls.
+							trigger_elmnt.data('menu-popup').data.currentRate = currentRate;
+
+							$obj.closest('.menu-popup').menuPopup('close', trigger_elmnt);
 
 							jQuery('.dashbrd-grid-container')
 								.dashboardGrid('setWidgetRefreshRate', options.widgetName, parseInt(currentRate));
 						},
 						error: function() {
-							obj.closest('.action-menu').menuPopup('close', trigger_elmnt);
+							$obj.closest('.menu-popup').menuPopup('close', trigger_elmnt);
 							// TODO: gentle message about failed saving of widget refresh rate
 						}
 					});
@@ -519,7 +533,7 @@ function getMenuPopupDashboard(options, trigger_elmnt) {
 					var popup_options = {'dashboardid': options.dashboardid};
 					PopUp('dashboard.share.edit', popup_options, 'dashboard_share', trigger_elmnt);
 
-					jQuery(this).closest('.action-menu').menuPopup('close', null);
+					jQuery(this).closest('.menu-popup').menuPopup('close', null);
 				},
 				disabled: !options.editable
 			},
@@ -538,7 +552,7 @@ function getMenuPopupDashboard(options, trigger_elmnt) {
 					var	obj = jQuery(this);
 
 					// hide menu
-					obj.closest('.action-menu').hide();
+					obj.closest('.menu-popup').hide();
 
 					if (!confirm(t('Delete dashboard?'))) {
 						return false;
@@ -556,7 +570,7 @@ function getMenuPopupDashboard(options, trigger_elmnt) {
  * Get menu popup trigger section data.
  *
  * @param {string} options['triggerid']               Trigger ID.
- * @param {string} options['eventid']                 (optional) Required for Acknowledge and Description sections.
+ * @param {string} options['eventid']                 (optional) Required for Acknowledge section.
  * @param {object} options['items']                   Link to trigger item history page (optional).
  * @param {string} options['items'][]['name']         Item name.
  * @param {object} options['items'][]['params']       Item URL parameters ("name" => "value").
@@ -564,8 +578,6 @@ function getMenuPopupDashboard(options, trigger_elmnt) {
  * @param {string} options['acknowledge']['backurl']  Return URL.
  * @param {object} options['configuration']           Link to trigger configuration page (optional).
  * @param {bool}   options['showEvents']              Show Problems item enabled. Default: false.
- * @param {bool}   options['show_description']        Show Description item in context menu. Default: true.
- * @param {bool}   options['description_enabled']     Show Description item enabled. Default: true.
  * @param {string} options['url']                     Trigger URL link (optional).
  * @param {object} trigger_elmnt                      UI element which triggered opening of overlay dialogue.
  *
@@ -608,31 +620,6 @@ function getMenuPopupTrigger(options, trigger_elmnt) {
 		};
 	}
 
-	// description
-	if (typeof options.show_description === 'undefined' || options.show_description !== false) {
-		var trigger_descr = {
-			label: t('Description')
-		};
-
-		if (typeof options.description_enabled === 'undefined' || options.description_enabled !== false) {
-			trigger_descr.clickCallback = function() {
-				var	popup_options = {triggerid: options.triggerid};
-
-				if (typeof options.eventid !== 'undefined') {
-					popup_options.eventid = options.eventid;
-				}
-
-				jQuery(this).closest('.action-menu').menuPopup('close', null);
-
-				return PopUp('popup.trigdesc.view', popup_options, null, trigger_elmnt);
-			}
-		}
-		else {
-			trigger_descr.disabled = true;
-		}
-		items[items.length] = trigger_descr;
-	}
-
 	// configuration
 	if (typeof options.configuration !== 'undefined' && options.configuration) {
 		var url = new Curl('triggers.php', false);
@@ -646,18 +633,18 @@ function getMenuPopupTrigger(options, trigger_elmnt) {
 		};
 	}
 
-	// url
-	if (typeof options.url !== 'undefined' && options.url.length > 0) {
-		items[items.length] = {
-			label: t('URL'),
-			url: options.url
-		};
-	}
-
 	sections[sections.length] = {
 		label: t('S_TRIGGER'),
 		items: items
 	};
+
+	// urls
+	if ('urls' in options) {
+		sections[sections.length] = {
+			label: t('Links'),
+			items: options.urls
+		};
+	}
 
 	// items
 	if (typeof options.items !== 'undefined' && objectSize(options.items) > 0) {
@@ -705,7 +692,7 @@ function getMenuPopupItem(options, trigger_elmnt) {
 		items.push({
 			label: t('Create trigger'),
 			clickCallback: function() {
-				jQuery(this).closest('.action-menu').menuPopup('close', null);
+				jQuery(this).closest('.menu-popup').menuPopup('close', null);
 
 				return PopUp('popup.triggerwizard', {
 					itemid: options.itemid
@@ -725,7 +712,7 @@ function getMenuPopupItem(options, trigger_elmnt) {
 				triggers.push({
 					label: trigger.name,
 					clickCallback: function() {
-						jQuery(this).closest('.action-menu-top').menuPopup('close', null);
+						jQuery(this).closest('.menu-popup-top').menuPopup('close', null);
 
 						return PopUp('popup.triggerwizard', {
 							itemid: options.itemid,
@@ -831,7 +818,7 @@ function getMenuPopupTriggerMacro(options) {
 
 				expressionInput.val(expression.string);
 
-				jQuery(this).closest('.action-menu').menuPopup('close', null);
+				jQuery(this).closest('.menu-popup').menuPopup('close', null);
 			}
 		};
 	});
@@ -902,7 +889,7 @@ function getMenuPopupScriptData(scripts, hostId, trigger_elmnt) {
 
 				if (typeof data.params !== 'undefined' && typeof data.params.scriptId !== 'undefined') {
 					item.clickCallback = function(e) {
-						jQuery(this).closest('.action-menu-top').menuPopup('close', trigger_elm, false);
+						jQuery(this).closest('.menu-popup-top').menuPopup('close', trigger_elm, false);
 						executeScript(data.params.hostId, data.params.scriptId, data.params.confirmation, trigger_elm);
 						cancelEvent(e);
 					};
@@ -945,23 +932,23 @@ jQuery(function($) {
 				id = opener.data('menu-popup-id'),
 				menuPopup = $('#' + id),
 				mapContainer = null,
-				target = event.target;
+				position_target = event.target;
 
 			if (event.type === 'contextmenu' || (IE && opener.closest('svg').length > 0)
 					|| event.originalEvent.detail !== 0) {
-				target = event;
+				position_target = event;
 			}
 
 			opener.attr('data-expanded', 'true');
 
-			// Close other action menus.
-			$('.action-menu-top').not('#' + id).menuPopup('close');
+			// Close other action menus and prevent focus jumping before opening a new popup.
+			$('.menu-popup-top').not('#' + id).menuPopup('close', null, false);
 
 			if (menuPopup.length > 0) {
 				var display = menuPopup.css('display');
 
 				// Hide current action menu sub-levels.
-				$('.action-menu', menuPopup).css('display', 'none');
+				$('.menu-popup', menuPopup).css('display', 'none');
 
 				if (display === 'block') {
 					menuPopup.fadeOut(0);
@@ -972,7 +959,7 @@ jQuery(function($) {
 				}
 
 				menuPopup.position({
-					of: target,
+					of: position_target,
 					my: 'left top',
 					at: 'left bottom'
 				});
@@ -983,7 +970,7 @@ jQuery(function($) {
 				menuPopup = $('<ul>', {
 					'id': id,
 					'role': 'menu',
-					'class': 'action-menu action-menu-top',
+					'class': 'menu-popup menu-popup-top',
 					'tabindex': 0
 				});
 
@@ -1044,7 +1031,7 @@ jQuery(function($) {
 				}
 
 				// Hide current action menu sub-levels.
-				$('.action-menu', menuPopup).css('display', 'none');
+				$('.menu-popup', menuPopup).css('display', 'none');
 
 				// display
 				menuPopup
@@ -1059,13 +1046,13 @@ jQuery(function($) {
 						e.stopPropagation();
 					})
 					.position({
-						of: (opener.prop('tagName') === 'AREA') ? mapContainer : target,
+						of: (opener.prop('tagName') === 'AREA') ? mapContainer : position_target,
 						my: 'left top',
 						at: 'left bottom'
 					});
 			}
 
-			addToOverlaysStack('contextmenu', event.target, 'contextmenu');
+			addToOverlaysStack('menu-popup', event.target, 'menu-popup');
 
 			$(document)
 				.on('click', {menu: menuPopup, opener: opener}, menuPopupDocumentCloseHandler)
@@ -1075,8 +1062,10 @@ jQuery(function($) {
 		},
 		close: function(trigger_elmnt, return_focus) {
 			var menuPopup = $(this);
+
 			if (!menuPopup.is(trigger_elmnt) && menuPopup.has(trigger_elmnt).length === 0) {
 				menuPopup.data('is-active', false);
+
 				$(trigger_elmnt).removeAttr('data-expanded');
 				menuPopup.fadeOut(0);
 
@@ -1087,7 +1076,14 @@ jQuery(function($) {
 					.off('click', menuPopupDocumentCloseHandler)
 					.off('keydown', menuPopupKeyDownHandler);
 
-				removeFromOverlaysStack('contextmenu', return_focus);
+				var overlay = removeFromOverlaysStack('menu-popup', return_focus);
+
+				if (overlay && typeof overlay['element'] !== undefined) {
+					// Remove expanded attribute of the original opener.
+					$(overlay['element']).removeAttr('data-expanded');
+				}
+
+				menuPopup.remove();
 			}
 		}
 	};
@@ -1098,7 +1094,7 @@ jQuery(function($) {
 	$.fn.actionMenuItemExpand = function() {
 		var li = $(this),
 			pos = li.position(),
-			menu = li.closest('.action-menu');
+			menu = li.closest('.menu-popup');
 
 		for (var item = $('li:first-child', menu); item.length > 0; item = item.next()) {
 			if (item[0] == li[0]) {
@@ -1138,13 +1134,13 @@ jQuery(function($) {
 	 */
 	$.fn.actionMenuItemCollapse = function() {
 		// Remove style and close sub-menus in deeper levels.
-		var parent_menu = $(this).closest('.action-menu');
+		var parent_menu = $(this).closest('.menu-popup');
 		$('.highlighted', parent_menu).removeClass('highlighted');
 		$('[aria-expanded]', parent_menu).attr({'aria-expanded': 'false'});
-		$('.action-menu', parent_menu).css({'display': 'none'});
+		$('.menu-popup', parent_menu).css({'display': 'none'});
 
 		// Close actual menu level.
-		parent_menu.not('.action-menu-top').css({'display': 'none'});
+		parent_menu.not('.menu-popup-top').css({'display': 'none'});
 		parent_menu.prev('[role="menuitem"]').attr({'aria-expanded': 'false'});
 
 		return this;
@@ -1155,7 +1151,7 @@ jQuery(function($) {
 	}
 
 	function menuPopupKeyDownHandler(event) {
-		var link_selector = '.action-menu-item',
+		var link_selector = '.menu-popup-item',
 			menu_popup = $(event.data.menu[0]),
 			level = menu_popup,
 			selected,
@@ -1168,14 +1164,14 @@ jQuery(function($) {
 
 		// Find active menu items.
 		items = $('>li', level).filter(function() {
-			return $(this).has('.action-menu-item').length;
+			return $(this).has('.menu-popup-item').length;
 		});
 
 		// Find an element that was selected when key was pressed.
-		if ($('.action-menu-item.highlighted', level).length) {
+		if ($('.menu-popup-item.highlighted', level).length) {
 			selected = $(link_selector + '.highlighted', level).closest('li');
 		}
-		else if ($('.action-menu-item', level).filter(function() {
+		else if ($('.menu-popup-item', level).filter(function() {
 			return this == document.activeElement;
 		}).length) {
 			selected = $(document.activeElement).closest('li');
@@ -1184,12 +1180,12 @@ jQuery(function($) {
 		// Perform action based on keydown event.
 		switch (event.which) {
 			case 37: // arrow left
-				if (typeof selected !== 'undefined' && selected.has('.action-menu')) {
+				if (typeof selected !== 'undefined' && selected.has('.menu-popup')) {
 					if (level != menu_popup) {
 						selected.actionMenuItemCollapse();
 
 						// Must focus previous element, otherwise screen reader will exit menu.
-						selected.closest('.action-menu').prev('[role="menuitem"]').addClass('highlighted').focus();
+						selected.closest('.menu-popup').prev('[role="menuitem"]').addClass('highlighted').focus();
 					}
 				}
 				break;
@@ -1213,7 +1209,7 @@ jQuery(function($) {
 				break;
 
 			case 39: // arrow right
-				if (typeof selected !== 'undefined' && selected.has('.action-menu')) {
+				if (typeof selected !== 'undefined' && selected.has('.menu-popup')) {
 					selected.actionMenuItemExpand();
 					$('ul > li ' + link_selector + ':first', selected).addClass('highlighted').focus();
 				}
@@ -1298,13 +1294,17 @@ jQuery(function($) {
 		}
 
 		if (options.disabled) {
-			link.addClass('action-menu-item-disabled');
+			link.addClass('menu-popup-item-disabled');
 		}
 		else {
-			link.addClass('action-menu-item');
+			link.addClass('menu-popup-item');
 
 			if (typeof options.url !== 'undefined') {
 				link.attr('href', options.url);
+
+				if ('target' in options) {
+					link.attr('target', options.target);
+				}
 			}
 
 			if (typeof options.clickCallback !== 'undefined') {
@@ -1328,7 +1328,7 @@ jQuery(function($) {
 
 		if (typeof options.items !== 'undefined' && options.items.length > 0) {
 			var menu = $('<ul>', {
-					class : 'action-menu',
+					class : 'menu-popup',
 					role: 'menu'
 				})
 				.on('mouseenter', function(e) {

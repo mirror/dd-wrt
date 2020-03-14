@@ -275,7 +275,7 @@ CREATE TABLE interface (
 	interfaceid              number(20)                                NOT NULL,
 	hostid                   number(20)                                NOT NULL,
 	main                     number(10)      DEFAULT '0'               NOT NULL,
-	type                     number(10)      DEFAULT '0'               NOT NULL,
+	type                     number(10)      DEFAULT '1'               NOT NULL,
 	useip                    number(10)      DEFAULT '1'               NOT NULL,
 	ip                       nvarchar2(64)   DEFAULT '127.0.0.1'       ,
 	dns                      nvarchar2(255)  DEFAULT ''                ,
@@ -311,8 +311,6 @@ CREATE TABLE items (
 	snmpv3_authpassphrase    nvarchar2(64)   DEFAULT ''                ,
 	snmpv3_privpassphrase    nvarchar2(64)   DEFAULT ''                ,
 	formula                  nvarchar2(255)  DEFAULT ''                ,
-	error                    nvarchar2(2048) DEFAULT ''                ,
-	lastlogsize              number(20)      DEFAULT '0'               NOT NULL,
 	logtimefmt               nvarchar2(64)   DEFAULT ''                ,
 	templateid               number(20)                                NULL,
 	valuemapid               number(20)                                NULL,
@@ -323,7 +321,6 @@ CREATE TABLE items (
 	password                 nvarchar2(64)   DEFAULT ''                ,
 	publickey                nvarchar2(64)   DEFAULT ''                ,
 	privatekey               nvarchar2(64)   DEFAULT ''                ,
-	mtime                    number(10)      DEFAULT '0'               NOT NULL,
 	flags                    number(10)      DEFAULT '0'               NOT NULL,
 	interfaceid              number(20)                                NULL,
 	port                     nvarchar2(64)   DEFAULT ''                ,
@@ -332,7 +329,6 @@ CREATE TABLE items (
 	lifetime                 nvarchar2(255)  DEFAULT '30d'             ,
 	snmpv3_authprotocol      number(10)      DEFAULT '0'               NOT NULL,
 	snmpv3_privprotocol      number(10)      DEFAULT '0'               NOT NULL,
-	state                    number(10)      DEFAULT '0'               NOT NULL,
 	snmpv3_contextname       nvarchar2(255)  DEFAULT ''                ,
 	evaltype                 number(10)      DEFAULT '0'               NOT NULL,
 	jmx_endpoint             nvarchar2(255)  DEFAULT ''                ,
@@ -384,7 +380,7 @@ CREATE INDEX httptestitem_2 ON httptestitem (itemid);
 CREATE TABLE media_type (
 	mediatypeid              number(20)                                NOT NULL,
 	type                     number(10)      DEFAULT '0'               NOT NULL,
-	description              nvarchar2(100)  DEFAULT ''                ,
+	name                     nvarchar2(100)  DEFAULT ''                ,
 	smtp_server              nvarchar2(255)  DEFAULT ''                ,
 	smtp_helo                nvarchar2(255)  DEFAULT ''                ,
 	smtp_email               nvarchar2(255)  DEFAULT ''                ,
@@ -403,9 +399,24 @@ CREATE TABLE media_type (
 	maxattempts              number(10)      DEFAULT '3'               NOT NULL,
 	attempt_interval         nvarchar2(32)   DEFAULT '10s'             ,
 	content_type             number(10)      DEFAULT '1'               NOT NULL,
+	script                   nvarchar2(2048) DEFAULT ''                ,
+	timeout                  nvarchar2(32)   DEFAULT '30s'             ,
+	process_tags             number(10)      DEFAULT '0'               NOT NULL,
+	show_event_menu          number(10)      DEFAULT '0'               NOT NULL,
+	event_menu_url           nvarchar2(2048) DEFAULT ''                ,
+	event_menu_name          nvarchar2(255)  DEFAULT ''                ,
+	description              nvarchar2(2048) DEFAULT ''                ,
 	PRIMARY KEY (mediatypeid)
 );
-CREATE UNIQUE INDEX media_type_1 ON media_type (description);
+CREATE UNIQUE INDEX media_type_1 ON media_type (name);
+CREATE TABLE media_type_param (
+	mediatype_paramid        number(20)                                NOT NULL,
+	mediatypeid              number(20)                                NOT NULL,
+	name                     nvarchar2(255)  DEFAULT ''                ,
+	value                    nvarchar2(2048) DEFAULT ''                ,
+	PRIMARY KEY (mediatype_paramid)
+);
+CREATE INDEX media_type_param_1 ON media_type_param (mediatypeid);
 CREATE TABLE usrgrp (
 	usrgrpid                 number(20)                                NOT NULL,
 	name                     nvarchar2(64)   DEFAULT ''                ,
@@ -629,6 +640,7 @@ CREATE TABLE config (
 	ldap_configured          number(10)      DEFAULT '0'               NOT NULL,
 	ldap_case_sensitive      number(10)      DEFAULT '1'               NOT NULL,
 	db_extension             nvarchar2(32)   DEFAULT ''                ,
+	autoreg_tls_accept       number(10)      DEFAULT '1'               NOT NULL,
 	PRIMARY KEY (configid)
 );
 CREATE INDEX config_1 ON config (alert_usrgrpid);
@@ -653,7 +665,7 @@ CREATE TABLE triggers (
 	correlation_mode         number(10)      DEFAULT '0'               NOT NULL,
 	correlation_tag          nvarchar2(255)  DEFAULT ''                ,
 	manual_close             number(10)      DEFAULT '0'               NOT NULL,
-	details                  nvarchar2(255)  DEFAULT ''                ,
+	opdata                   nvarchar2(255)  DEFAULT ''                ,
 	PRIMARY KEY (triggerid)
 );
 CREATE INDEX triggers_1 ON triggers (status);
@@ -738,6 +750,7 @@ CREATE TABLE globalmacro (
 	globalmacroid            number(20)                                NOT NULL,
 	macro                    nvarchar2(255)  DEFAULT ''                ,
 	value                    nvarchar2(255)  DEFAULT ''                ,
+	description              nvarchar2(2048) DEFAULT ''                ,
 	PRIMARY KEY (globalmacroid)
 );
 CREATE UNIQUE INDEX globalmacro_1 ON globalmacro (macro);
@@ -746,6 +759,7 @@ CREATE TABLE hostmacro (
 	hostid                   number(20)                                NOT NULL,
 	macro                    nvarchar2(255)  DEFAULT ''                ,
 	value                    nvarchar2(255)  DEFAULT ''                ,
+	description              nvarchar2(2048) DEFAULT ''                ,
 	PRIMARY KEY (hostmacroid)
 );
 CREATE UNIQUE INDEX hostmacro_1 ON hostmacro (hostid,macro);
@@ -1048,6 +1062,7 @@ CREATE TABLE alerts (
 	alerttype                number(10)      DEFAULT '0'               NOT NULL,
 	p_eventid                number(20)                                NULL,
 	acknowledgeid            number(20)                                NULL,
+	parameters               nvarchar2(2048) DEFAULT '{}'              ,
 	PRIMARY KEY (alertid)
 );
 CREATE INDEX alerts_1 ON alerts (actionid);
@@ -1210,11 +1225,13 @@ CREATE INDEX service_alarms_2 ON service_alarms (clock);
 CREATE TABLE autoreg_host (
 	autoreg_hostid           number(20)                                NOT NULL,
 	proxy_hostid             number(20)                                NULL,
-	host                     nvarchar2(64)   DEFAULT ''                ,
+	host                     nvarchar2(128)  DEFAULT ''                ,
 	listen_ip                nvarchar2(39)   DEFAULT ''                ,
 	listen_port              number(10)      DEFAULT '0'               NOT NULL,
 	listen_dns               nvarchar2(255)  DEFAULT ''                ,
 	host_metadata            nvarchar2(255)  DEFAULT ''                ,
+	flags                    number(10)      DEFAULT '0'               NOT NULL,
+	tls_accepted             number(10)      DEFAULT '1'               NOT NULL,
 	PRIMARY KEY (autoreg_hostid)
 );
 CREATE INDEX autoreg_host_1 ON autoreg_host (host);
@@ -1222,11 +1239,13 @@ CREATE INDEX autoreg_host_2 ON autoreg_host (proxy_hostid);
 CREATE TABLE proxy_autoreg_host (
 	id                       number(20)                                NOT NULL,
 	clock                    number(10)      DEFAULT '0'               NOT NULL,
-	host                     nvarchar2(64)   DEFAULT ''                ,
+	host                     nvarchar2(128)  DEFAULT ''                ,
 	listen_ip                nvarchar2(39)   DEFAULT ''                ,
 	listen_port              number(10)      DEFAULT '0'               NOT NULL,
 	listen_dns               nvarchar2(255)  DEFAULT ''                ,
 	host_metadata            nvarchar2(255)  DEFAULT ''                ,
+	flags                    number(10)      DEFAULT '0'               NOT NULL,
+	tls_accepted             number(10)      DEFAULT '1'               NOT NULL,
 	PRIMARY KEY (id)
 );
 CREATE INDEX proxy_autoreg_host_1 ON proxy_autoreg_host (clock);
@@ -1286,11 +1305,11 @@ CREATE TABLE host_inventory (
 	inventory_mode           number(10)      DEFAULT '0'               NOT NULL,
 	type                     nvarchar2(64)   DEFAULT ''                ,
 	type_full                nvarchar2(64)   DEFAULT ''                ,
-	name                     nvarchar2(64)   DEFAULT ''                ,
-	alias                    nvarchar2(64)   DEFAULT ''                ,
-	os                       nvarchar2(64)   DEFAULT ''                ,
+	name                     nvarchar2(128)  DEFAULT ''                ,
+	alias                    nvarchar2(128)  DEFAULT ''                ,
+	os                       nvarchar2(128)  DEFAULT ''                ,
 	os_full                  nvarchar2(255)  DEFAULT ''                ,
-	os_short                 nvarchar2(64)   DEFAULT ''                ,
+	os_short                 nvarchar2(128)  DEFAULT ''                ,
 	serialno_a               nvarchar2(64)   DEFAULT ''                ,
 	serialno_b               nvarchar2(64)   DEFAULT ''                ,
 	tag                      nvarchar2(64)   DEFAULT ''                ,
@@ -1386,7 +1405,7 @@ CREATE TABLE host_discovery (
 	hostid                   number(20)                                NOT NULL,
 	parent_hostid            number(20)                                NULL,
 	parent_itemid            number(20)                                NULL,
-	host                     nvarchar2(64)   DEFAULT ''                ,
+	host                     nvarchar2(128)  DEFAULT ''                ,
 	lastcheck                number(10)      DEFAULT '0'               NOT NULL,
 	ts_delete                number(10)      DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (hostid)
@@ -1441,6 +1460,14 @@ CREATE TABLE item_condition (
 	PRIMARY KEY (item_conditionid)
 );
 CREATE INDEX item_condition_1 ON item_condition (itemid);
+CREATE TABLE item_rtdata (
+	itemid                   number(20)                                NOT NULL,
+	lastlogsize              number(20)      DEFAULT '0'               NOT NULL,
+	state                    number(10)      DEFAULT '0'               NOT NULL,
+	mtime                    number(10)      DEFAULT '0'               NOT NULL,
+	error                    nvarchar2(2048) DEFAULT ''                ,
+	PRIMARY KEY (itemid)
+);
 CREATE TABLE application_prototype (
 	application_prototypeid  number(20)                                NOT NULL,
 	itemid                   number(20)                                NOT NULL,
@@ -1719,6 +1746,7 @@ CREATE TABLE widget (
 	y                        number(10)      DEFAULT '0'               NOT NULL,
 	width                    number(10)      DEFAULT '1'               NOT NULL,
 	height                   number(10)      DEFAULT '2'               NOT NULL,
+	view_mode                number(10)      DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (widgetid)
 );
 CREATE INDEX widget_1 ON widget (dashboardid);
@@ -1782,11 +1810,18 @@ CREATE TABLE host_tag (
 	PRIMARY KEY (hosttagid)
 );
 CREATE INDEX host_tag_1 ON host_tag (hostid);
+CREATE TABLE config_autoreg_tls (
+	autoreg_tlsid            number(20)                                NOT NULL,
+	tls_psk_identity         nvarchar2(128)  DEFAULT ''                ,
+	tls_psk                  nvarchar2(512)  DEFAULT ''                ,
+	PRIMARY KEY (autoreg_tlsid)
+);
+CREATE UNIQUE INDEX config_autoreg_tls_1 ON config_autoreg_tls (tls_psk_identity);
 CREATE TABLE dbversion (
 	mandatory                number(10)      DEFAULT '0'               NOT NULL,
 	optional                 number(10)      DEFAULT '0'               NOT NULL
 );
-INSERT INTO dbversion VALUES ('4020000','4020000');
+INSERT INTO dbversion VALUES ('4040000','4040001');
 CREATE SEQUENCE proxy_history_seq
 START WITH 1
 INCREMENT BY 1
@@ -1862,6 +1897,7 @@ ALTER TABLE httpstepitem ADD CONSTRAINT c_httpstepitem_1 FOREIGN KEY (httpstepid
 ALTER TABLE httpstepitem ADD CONSTRAINT c_httpstepitem_2 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
 ALTER TABLE httptestitem ADD CONSTRAINT c_httptestitem_1 FOREIGN KEY (httptestid) REFERENCES httptest (httptestid) ON DELETE CASCADE;
 ALTER TABLE httptestitem ADD CONSTRAINT c_httptestitem_2 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
+ALTER TABLE media_type_param ADD CONSTRAINT c_media_type_param_1 FOREIGN KEY (mediatypeid) REFERENCES media_type (mediatypeid) ON DELETE CASCADE;
 ALTER TABLE users_groups ADD CONSTRAINT c_users_groups_1 FOREIGN KEY (usrgrpid) REFERENCES usrgrp (usrgrpid) ON DELETE CASCADE;
 ALTER TABLE users_groups ADD CONSTRAINT c_users_groups_2 FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE;
 ALTER TABLE scripts ADD CONSTRAINT c_scripts_1 FOREIGN KEY (usrgrpid) REFERENCES usrgrp (usrgrpid);
@@ -1974,6 +2010,7 @@ ALTER TABLE trigger_discovery ADD CONSTRAINT c_trigger_discovery_2 FOREIGN KEY (
 ALTER TABLE application_template ADD CONSTRAINT c_application_template_1 FOREIGN KEY (applicationid) REFERENCES applications (applicationid) ON DELETE CASCADE;
 ALTER TABLE application_template ADD CONSTRAINT c_application_template_2 FOREIGN KEY (templateid) REFERENCES applications (applicationid) ON DELETE CASCADE;
 ALTER TABLE item_condition ADD CONSTRAINT c_item_condition_1 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
+ALTER TABLE item_rtdata ADD CONSTRAINT c_item_rtdata_1 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
 ALTER TABLE application_prototype ADD CONSTRAINT c_application_prototype_1 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
 ALTER TABLE application_prototype ADD CONSTRAINT c_application_prototype_2 FOREIGN KEY (templateid) REFERENCES application_prototype (application_prototypeid) ON DELETE CASCADE;
 ALTER TABLE item_application_prototype ADD CONSTRAINT c_item_application_prototype_1 FOREIGN KEY (application_prototypeid) REFERENCES application_prototype (application_prototypeid) ON DELETE CASCADE;

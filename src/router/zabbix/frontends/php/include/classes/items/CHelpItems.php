@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -317,6 +317,10 @@ class CHelpItems {
 					'description' => _('Disk space in bytes or in percentage from total. Returns integer for bytes; float for percentage')
 				],
 				[
+					'key' => 'vfs.fs.get',
+					'description' => _('File systems and their spaces in bytes and percentage from total. Returns JSON')
+				],
+				[
 					'key' => 'vm.memory.size[<mode>]',
 					'description' => _('Memory size in bytes or in percentage from total. Returns integer for bytes; float for percentage')
 				],
@@ -339,6 +343,10 @@ class CHelpItems {
 				[
 					'key' => 'wmi.get[<namespace>,<query>]',
 					'description' => _('Execute WMI query and return the first selected object. Returns integer, float, string or text (depending on the request)')
+				],
+				[
+					'key' => 'wmi.getall[<namespace>,<query>]',
+					'description' => _('Execute WMI query and return the JSON document with all selected objects')
 				],
 				[
 					'key' => 'zabbix.stats[<ip>,<port>]',
@@ -623,6 +631,10 @@ class CHelpItems {
 					'description' => _('Number or percentage of inodes. Returns integer for number; float for percentage')
 				],
 				[
+					'key' => 'vfs.fs.get',
+					'description' => _('File systems and their spaces in bytes and percentage from total. Returns JSON')
+				],
+				[
 					'key' => 'vfs.fs.size[fs,<mode>]',
 					'description' => _('Disk space in bytes or in percentage from total. Returns integer for bytes; float for percentage')
 				],
@@ -707,6 +719,22 @@ class CHelpItems {
 					'description' => _('VMware service full name, <url> - VMware service URL')
 				],
 				[
+					'key' => 'vmware.datastore.read[<url>,<datastore>,<mode>]',
+					'description' => _('VMware datastore read statistics, <url> - VMware service URL, <datastore> - datastore name, <mode> - latency/maxlatency - average or maximum')
+				],
+				[
+					'key' => 'vmware.datastore.size[<url>,<datastore>,<mode>]',
+					'description' => _('VMware datastore capacity statistics in bytes or in percentage from total. Returns integer for bytes; float for percentage')
+				],
+				[
+					'key' => 'vmware.datastore.write[<url>,<datastore>,<mode>]',
+					'description' => _('VMware datastore write statistics, <url> - VMware service URL, <datastore> - datastore name, <mode> - latency/maxlatency - average or maximum')
+				],
+				[
+					'key' => 'vmware.datastore.hv.list[<url>,<datastore>]',
+					'description' => _('VMware datastore hypervisors list, <url> - VMware service URL, <datastore> - datastore name')
+				],
+				[
 					'key' => 'vmware.hv.cluster.name[<url>,<uuid>]',
 					'description' => _('VMware hypervisor cluster name, <url> - VMware service URL, <uuid> - VMware hypervisor host name')
 				],
@@ -725,6 +753,10 @@ class CHelpItems {
 				[
 					'key' => 'vmware.hv.datastore.write[<url>,<uuid>,<datastore>,<mode>]',
 					'description' => _('VMware hypervisor datastore write statistics, <url> - VMware service URL, <uuid> - VMware hypervisor host name, <datastore> - datastore name, <mode> - latency')
+				],
+				[
+					'key' => 'vmware.hv.datastore.list[<url>,<uuid>]',
+					'description' => _('VMware hypervisor datastores list, <url> - VMware service URL, <uuid> - VMware hypervisor host name')
 				],
 				[
 					'key' => 'vmware.hv.full.name[<url>,<uuid>]',
@@ -948,7 +980,7 @@ class CHelpItems {
 				],
 				[
 					'key' => 'zabbix[host,discovery,interfaces]',
-					'description' => _('Returns a JSON object describing the host network interfaces configured in Zabbix. Can be used for LLD.')
+					'description' => _('Returns a JSON array describing the host network interfaces configured in Zabbix. Can be used for LLD.')
 				],
 				[
 					'key' => 'zabbix[host,<type>,available]',
@@ -1042,7 +1074,11 @@ class CHelpItems {
 				],
 				[
 					'key' => 'db.odbc.discovery[<unique short description>,dsn]',
-					'description' => _('Transform SQL query result into a JSON object for low-level discovery.')
+					'description' => _('Transform SQL query result into a JSON array for low-level discovery.')
+				],
+				[
+					'key' => 'db.odbc.get[<unique short description>,dsn]',
+					'description' => _('Transform SQL query result into a JSON array.')
 				]
 			],
 			ITEM_TYPE_JMX => [
@@ -1052,7 +1088,11 @@ class CHelpItems {
 				],
 				[
 					'key' => 'jmx.discovery[<discovery mode>,<object name>]',
-					'description' => _('Return a JSON object describing the MBean objects or their attributes. Can be used for LLD.')
+					'description' => _('Return a JSON array with LLD macros describing the MBean objects or their attributes. Can be used for LLD.')
+				],
+				[
+					'key' => 'jmx.get[<discovery mode>,<object name>]',
+					'description' => _('Return a JSON array with MBean objects or their attributes. Compared to jmx.discovery it does not define LLD macros. Can be used for LLD.')
 				]
 			]
 		];

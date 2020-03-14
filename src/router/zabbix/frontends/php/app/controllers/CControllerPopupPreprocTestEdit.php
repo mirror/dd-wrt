@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -32,7 +32,8 @@ class CControllerPopupPreprocTestEdit extends CControllerPopupPreprocTest {
 			'steps' => 'required|array',
 			'delay' => 'string',
 			'data' => 'array',
-			'step_obj' => 'required|int32'
+			'step_obj' => 'required|int32',
+			'show_final_result' => 'in 0,1'
 		];
 
 		$ret = $this->validateInput($fields);
@@ -109,6 +110,7 @@ class CControllerPopupPreprocTestEdit extends CControllerPopupPreprocTest {
 			'title' => _('Test item preprocessing'),
 			'steps' => $preprocessing_steps,
 			'value' => array_key_exists('value', $data) ? $data['value'] : '',
+			'eol' => array_key_exists('eol', $data) ? (int) $data['eol'] : ZBX_EOL_LF,
 			'prev_value' => ($show_prev && array_key_exists('prev_value', $data)) ? $data['prev_value'] : '',
 			'macros' => $usermacros['macros'],
 			'show_prev' => $show_prev,
@@ -117,6 +119,7 @@ class CControllerPopupPreprocTestEdit extends CControllerPopupPreprocTest {
 			'value_type' => $this->getInput('value_type'),
 			'test_type' => $this->getInput('test_type'),
 			'step_obj' => $this->getInput('step_obj'),
+			'show_final_result' => $this->getInput('show_final_result'),
 			'user' => [
 				'debug_mode' => $this->getDebugMode()
 			]

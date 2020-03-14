@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,14 +20,13 @@
 
 
 require_once dirname(__FILE__).'/include/config.inc.php';
-require_once dirname(__FILE__).'/include/hostgroups.inc.php';
 require_once dirname(__FILE__).'/include/hosts.inc.php';
 require_once dirname(__FILE__).'/include/triggers.inc.php';
 require_once dirname(__FILE__).'/include/forms.inc.php';
 
 $page['title'] = _('Configuration of triggers');
 $page['file'] = 'triggers.php';
-$page['scripts'] = ['multiselect.js'];
+$page['scripts'] = ['multiselect.js', 'textareaflexible.js'];
 
 require_once dirname(__FILE__).'/include/page_header.php';
 
@@ -44,6 +43,7 @@ $fields = [
 	'copy_mode' =>								[T_ZBX_INT, O_OPT, P_SYS,	IN('0'),		null],
 	'type' =>									[T_ZBX_INT, O_OPT, null,	IN('0,1'),		null],
 	'description' =>							[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,		'isset({add}) || isset({update})', _('Name')],
+	'opdata' =>									[T_ZBX_STR, O_OPT, null,	null,			'isset({add}) || isset({update})'],
 	'expression' =>								[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,		'isset({add}) || isset({update})', _('Expression')],
 	'recovery_expression' =>					[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,		'(isset({add}) || isset({update})) && isset({recovery_mode}) && {recovery_mode} == '.ZBX_RECOVERY_MODE_RECOVERY_EXPRESSION.'', _('Recovery expression')],
 	'recovery_mode' =>							[T_ZBX_INT, O_OPT, null,	IN(ZBX_RECOVERY_MODE_EXPRESSION.','.ZBX_RECOVERY_MODE_RECOVERY_EXPRESSION.','.ZBX_RECOVERY_MODE_NONE),	null],
@@ -139,6 +139,7 @@ $fields = [
 	'cancel' =>									[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
 	'form' =>									[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
 	'form_refresh' =>							[T_ZBX_INT, O_OPT, null,	null,		null],
+	'checkbox_hash' =>							[T_ZBX_STR, O_OPT, null,	null,		null],
 	// Sort and sortorder.
 	'sort' =>									[T_ZBX_STR, O_OPT, P_SYS, IN('"description","priority","status"'),		null],
 	'sortorder' =>								[T_ZBX_STR, O_OPT, P_SYS, IN('"'.ZBX_SORT_DOWN.'","'.ZBX_SORT_UP.'"'),	null]
@@ -177,7 +178,7 @@ if ($triggerIds) {
 	]);
 
 	if (count($triggers) != count($triggerIds)) {
-		uncheckTableRows(getRequest('hostid'), zbx_objectValues($triggers, 'triggerid'));
+		uncheckTableRows(getRequest('checkbox_hash'), zbx_objectValues($triggers, 'triggerid'));
 	}
 }
 
@@ -250,6 +251,7 @@ if (hasRequest('clone') && hasRequest('triggerid')) {
 elseif (hasRequest('add') || hasRequest('update')) {
 	$dependencies = zbx_toObject(getRequest('dependencies', []), 'triggerid');
 	$description = getRequest('description', '');
+	$opdata = getRequest('opdata', '');
 	$expression = getRequest('expression', '');
 	$recovery_mode = getRequest('recovery_mode', ZBX_RECOVERY_MODE_EXPRESSION);
 	$recovery_expression = getRequest('recovery_expression', '');
@@ -265,6 +267,7 @@ elseif (hasRequest('add') || hasRequest('update')) {
 	if (hasRequest('add')) {
 		$trigger = [
 			'description' => $description,
+			'opdata' => $opdata,
 			'expression' => $expression,
 			'recovery_mode' => $recovery_mode,
 			'type' => $type,
@@ -298,7 +301,8 @@ elseif (hasRequest('add') || hasRequest('update')) {
 	else {
 		$db_triggers = API::Trigger()->get([
 			'output' => ['expression', 'description', 'url', 'status', 'priority', 'comments', 'templateid', 'type',
-				'flags', 'recovery_mode', 'recovery_expression', 'correlation_mode', 'correlation_tag', 'manual_close'
+				'flags', 'recovery_mode', 'recovery_expression', 'correlation_mode', 'correlation_tag', 'manual_close',
+				'opdata'
 			],
 			'selectDependencies' => ['triggerid'],
 			'selectTags' => ['tag', 'value'],
@@ -317,6 +321,9 @@ elseif (hasRequest('add') || hasRequest('update')) {
 			if ($db_trigger['templateid'] == 0) {
 				if ($db_trigger['description'] !== $description) {
 					$trigger['description'] = $description;
+				}
+				if ($db_trigger['opdata'] !== $opdata) {
+					$trigger['opdata'] = $opdata;
 				}
 				if ($db_trigger['expression'] !== $expression) {
 					$trigger['expression'] = $expression;
@@ -396,7 +403,7 @@ elseif (hasRequest('add') || hasRequest('update')) {
 
 	if ($result) {
 		unset($_REQUEST['form']);
-		uncheckTableRows(getRequest('hostid'));
+		uncheckTableRows(getRequest('checkbox_hash'));
 	}
 }
 elseif (isset($_REQUEST['delete']) && isset($_REQUEST['triggerid'])) {
@@ -404,7 +411,7 @@ elseif (isset($_REQUEST['delete']) && isset($_REQUEST['triggerid'])) {
 
 	if ($result) {
 		unset($_REQUEST['form'], $_REQUEST['triggerid']);
-		uncheckTableRows(getRequest('hostid'));
+		uncheckTableRows(getRequest('checkbox_hash'));
 	}
 	show_messages($result, _('Trigger deleted'), _('Cannot delete trigger'));
 }
@@ -507,7 +514,7 @@ elseif (hasRequest('action') && getRequest('action') === 'trigger.massupdate'
 
 	if ($result) {
 		unset($_REQUEST['form'], $_REQUEST['g_triggerid']);
-		uncheckTableRows(getRequest('hostid'));
+		uncheckTableRows(getRequest('checkbox_hash'));
 	}
 	show_messages($result, _('Trigger updated'), _('Cannot update trigger'));
 }
@@ -546,7 +553,7 @@ elseif (hasRequest('action') && str_in_array(getRequest('action'), ['trigger.mas
 		: _n('Cannot disable trigger', 'Cannot disable triggers', $updated);
 
 	if ($result) {
-		uncheckTableRows(getRequest('hostid'));
+		uncheckTableRows(getRequest('checkbox_hash'));
 		unset($_REQUEST['g_triggerid']);
 	}
 
@@ -585,7 +592,7 @@ elseif (hasRequest('action') && getRequest('action') === 'trigger.masscopyto' &&
 		$triggers_count = count(getRequest('g_triggerid'));
 
 		if ($result) {
-			uncheckTableRows(getRequest('hostid'));
+			uncheckTableRows(getRequest('checkbox_hash'));
 			unset($_REQUEST['g_triggerid']);
 		}
 
@@ -602,7 +609,7 @@ elseif (hasRequest('action') && getRequest('action') === 'trigger.massdelete' &&
 	$result = API::Trigger()->delete(getRequest('g_triggerid'));
 
 	if ($result) {
-		uncheckTableRows(getRequest('hostid'));
+		uncheckTableRows(getRequest('checkbox_hash'));
 	}
 
 	show_messages($result, _('Triggers deleted'), _('Cannot delete triggers'));
@@ -635,6 +642,7 @@ elseif (isset($_REQUEST['form'])) {
 		'recovery_expr_temp' => getRequest('recovery_expr_temp', ''),
 		'recovery_mode' => getRequest('recovery_mode', 0),
 		'description' => getRequest('description', ''),
+		'opdata' => getRequest('opdata', ''),
 		'type' => getRequest('type', 0),
 		'priority' => getRequest('priority', TRIGGER_SEVERITY_NOT_CLASSIFIED),
 		'status' => getRequest('status', TRIGGER_STATUS_ENABLED),
@@ -648,7 +656,7 @@ elseif (isset($_REQUEST['form'])) {
 		'hostid' => getRequest('hostid', 0),
 		'expression_action' => $expression_action,
 		'recovery_expression_action' => $recovery_expression_action,
-		'tags' => $tags,
+		'tags' => array_values($tags),
 		'show_inherited_tags' => getRequest('show_inherited_tags', 0),
 		'correlation_mode' => getRequest('correlation_mode', ZBX_TRIGGER_CORRELATION_NONE),
 		'correlation_tag' => getRequest('correlation_tag', ''),
@@ -835,7 +843,7 @@ else {
 	if ($prefetched_triggers) {
 		$triggers = API::Trigger()->get([
 			'output' => ['triggerid', 'expression', 'description', 'status', 'priority', 'error', 'templateid', 'state',
-				'recovery_mode', 'recovery_expression', 'value', $sort
+				'recovery_mode', 'recovery_expression', 'value', 'opdata', $sort
 			],
 			'selectHosts' => ['hostid', 'host', 'name', 'status'],
 			'selectDependencies' => ['triggerid', 'description'],
@@ -965,6 +973,9 @@ else {
 		$single_selected_hostid = reset($filter_hostids);
 	}
 
+	sort($filter_hostids);
+	$checkbox_hash = crc32(implode('', $filter_hostids));
+
 	$data = [
 		'config' => $config,
 		'config_priorities' => $config_priorities,
@@ -985,6 +996,7 @@ else {
 		'filter_inherited' => $filter_inherited,
 		'filter_discovered' => $filter_discovered,
 		'filter_dependent' => $filter_dependent,
+		'checkbox_hash' => $checkbox_hash,
 		'show_info_column' => $show_info_column,
 		'show_value_column' => $show_value_column,
 		'single_selected_hostid' => $single_selected_hostid,

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -145,6 +145,14 @@ class CControllerDashboardUpdate extends CController {
 					$ret = false;
 				}
 
+				if (!array_key_exists('view_mode', $widget)) {
+					error(_s('Invalid parameter "%1$s": %2$s.', 'widgets['.$index.']',
+						_s('the parameter "%1$s" is missing', 'view_mode')
+					));
+					$ret = false;
+					break;
+				}
+
 				$widget['fields'] = array_key_exists('fields', $widget) ? $widget['fields'] : '{}';
 				$widget['form'] = CWidgetConfig::getForm($widget['type'], $widget['fields']);
 				unset($widget['fields']);
@@ -221,6 +229,7 @@ class CControllerDashboardUpdate extends CController {
 				'height' => $widget['pos']['height'],
 				'type' => $widget['type'],
 				'name' => $widget['name'],
+				'view_mode' => $widget['view_mode'],
 				'fields' => $widget['form']->fieldsToApi(),
 			];
 

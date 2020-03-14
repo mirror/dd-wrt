@@ -1,7 +1,7 @@
 <?php
 /*
  ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -27,6 +27,25 @@ class CArrayHelper {
 	protected static $fields;
 
 	private function __construct() {}
+
+	/**
+	 * Copies keys according to given map for given array of the objects.
+	 *
+	 * @param array $array
+	 * @param array $field_map
+	 *
+	 * @return array
+	 */
+	public static function copyObjectsKeys(array $array, array $field_map) {
+		foreach ($array as &$object) {
+			foreach ($field_map as $old_key => $new_key) {
+				$object[$new_key] = $object[$old_key];
+			}
+		}
+		unset($object);
+
+		return $array;
+	}
 
 	/**
 	 * Get from array only values with given keys.

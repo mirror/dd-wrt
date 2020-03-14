@@ -51,24 +51,6 @@
  * Visibility
  */
 $this->data['typeVisibility'] = [];
-$i = 0;
-
-foreach ($this->data['delay_flex'] as $delayFlex) {
-	if (!isset($delayFlex['delay']) && !isset($delayFlex['period'])) {
-		continue;
-	}
-
-	foreach ($this->data['types'] as $type => $label) {
-		if ($type == ITEM_TYPE_TRAPPER || $type == ITEM_TYPE_ZABBIX_ACTIVE || $type == ITEM_TYPE_SNMPTRAP
-				|| $type == ITEM_TYPE_DEPENDENT) {
-			continue;
-		}
-		zbx_subarray_push($this->data['typeVisibility'], $type, 'delay_flex['.$i.'][delay]');
-		zbx_subarray_push($this->data['typeVisibility'], $type, 'delay_flex['.$i.'][period]');
-	}
-
-	$i++;
-}
 
 if (!empty($this->data['interfaces'])) {
 	zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_ZABBIX, 'interface_row');
@@ -196,15 +178,11 @@ foreach ($this->data['types'] as $type => $label) {
 	}
 }
 foreach ($this->data['types'] as $type => $label) {
-	if ($type == ITEM_TYPE_TRAPPER || $type == ITEM_TYPE_ZABBIX_ACTIVE || $type == ITEM_TYPE_SNMPTRAP
-			|| $type == ITEM_TYPE_DEPENDENT) {
+	if ($type == ITEM_TYPE_TRAPPER || $type == ITEM_TYPE_SNMPTRAP || $type == ITEM_TYPE_DEPENDENT) {
 		continue;
 	}
+
 	zbx_subarray_push($this->data['typeVisibility'], $type, 'row_flex_intervals');
-	zbx_subarray_push($this->data['typeVisibility'], $type, 'row_new_delay_flex');
-	zbx_subarray_push($this->data['typeVisibility'], $type, 'new_delay_flex[delay]');
-	zbx_subarray_push($this->data['typeVisibility'], $type, 'new_delay_flex[period]');
-	zbx_subarray_push($this->data['typeVisibility'], $type, 'add_delay_flex');
 }
 foreach ($this->data['types'] as $type => $label) {
 	if ($type == ITEM_TYPE_TRAPPER || $type == ITEM_TYPE_SNMPTRAP || $type == ITEM_TYPE_DEPENDENT) {
@@ -266,7 +244,8 @@ zbx_subarray_push($this->data['authTypeVisibility'], ITEM_AUTHTYPE_PUBLICKEY, 'r
 		if ($('#http_authtype').length) {
 			new CViewSwitcher('http_authtype', 'change', <?= zbx_jsvalue([
 				HTTPTEST_AUTH_BASIC => ['http_username_row', 'http_password_row'],
-				HTTPTEST_AUTH_NTLM => ['http_username_row', 'http_password_row']
+				HTTPTEST_AUTH_NTLM => ['http_username_row', 'http_password_row'],
+				HTTPTEST_AUTH_KERBEROS => ['http_username_row', 'http_password_row']
 			], true) ?>);
 		}
 		<?php
@@ -339,10 +318,10 @@ zbx_subarray_push($this->data['authTypeVisibility'], ITEM_AUTHTYPE_PUBLICKEY, 'r
 				$(':radio', '#retrieve_mode')
 					.filter('[value=<?= HTTPTEST_STEP_RETRIEVE_MODE_HEADERS ?>]').click()
 					.end()
-					.attr('disabled', 'disabled');
+					.prop('disabled', true);
 			}
 			else {
-				$(':radio', '#retrieve_mode').removeAttr('disabled');
+				$(':radio', '#retrieve_mode').prop('disabled', false);
 			}
 		});
 	});

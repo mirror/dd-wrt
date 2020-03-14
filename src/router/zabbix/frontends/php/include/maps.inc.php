@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ function getActionsBySysmap(array $sysmap, array $options = []) {
 			? $elem['elements'][0]['hostid']
 			: 0;
 
-		$map = CMenuPopupHelper::getMapElement($sysmap['sysmapid'], $elem['selementid_orig'], $severity_min, $hostid);
+		$map = CMenuPopupHelper::getMapElement($sysmap['sysmapid'], $elem, $severity_min, $hostid);
 
 		$actions[$selementid] = CJs::encodeJson($map);
 	}
@@ -735,8 +735,8 @@ function getSelementsInfo(array $sysmap, array $options = []) {
 
 	// get host inventories
 	if ($sysmap['iconmapid']) {
-		$hostInventories = API::Host()->get([
-			'output' => ['hostid'],
+		$host_inventories = API::Host()->get([
+			'output' => ['hostid', 'inventory_mode'],
 			'selectInventory' => API_OUTPUT_EXTEND,
 			'hostids' => $hostsToGetInventories,
 			'preservekeys' => true
@@ -1078,9 +1078,8 @@ function getSelementsInfo(array $sysmap, array $options = []) {
 
 				$info[$selementId] = getHostsInfo($selement, $i, $sysmap['show_unack']);
 				if ($sysmap['iconmapid'] && $selement['use_iconmap']) {
-					$info[$selementId]['iconid'] = getIconByMapping($iconMap,
-						$hostInventories[$selement['elements'][0]['hostid']]
-					);
+					$host_inventory = $host_inventories[$selement['elements'][0]['hostid']];
+					$info[$selementId]['iconid'] = getIconByMapping($iconMap, $host_inventory);
 				}
 				break;
 
@@ -1573,29 +1572,33 @@ function calculateMapAreaLinkCoord($ax, $ay, $aWidth, $aHeight, $x2, $y2) {
 /**
  * Get icon id by mapping.
  *
- * @param array $iconMap
- * @param array $inventory
+ * @param array $icon_map
+ * @param array $host
+ * @param int   $host['inventory_mode']
+ * @param array $host['inventory']
  *
  * @return int
  */
-function getIconByMapping($iconMap, $inventory) {
-	if ($inventory['inventory']['inventory_mode'] != HOST_INVENTORY_DISABLED) {
-		$inventories = getHostInventories();
+function getIconByMapping(array $icon_map, array $host) {
+	if ($host['inventory_mode'] == HOST_INVENTORY_DISABLED) {
+		return $iconMap['default_iconid'];
+	}
 
-		foreach ($iconMap['mappings'] as $mapping) {
-			try {
-				$expr = new CGlobalRegexp($mapping['expression']);
-				if ($expr->match($inventory['inventory'][$inventories[$mapping['inventory_link']]['db_field']])) {
-					return $mapping['iconid'];
-				}
+	$inventories = getHostInventories();
+
+	foreach ($icon_map['mappings'] as $mapping) {
+		try {
+			$expr = new CGlobalRegexp($mapping['expression']);
+			if ($expr->match($host['inventory'][$inventories[$mapping['inventory_link']]['db_field']])) {
+				return $mapping['iconid'];
 			}
-			catch(Exception $e) {
-				continue;
-			}
+		}
+		catch(Exception $e) {
+			continue;
 		}
 	}
 
-	return $iconMap['default_iconid'];
+	return $icon_map['default_iconid'];
 }
 
 /**
@@ -1761,12 +1764,14 @@ function getMapHighligts(array $map, array $map_info) {
  *
  * @param array $sysmap
  * @param array $sysmap['show_suppressed']  Whether to show suppressed problems.
+ * @param array $sysmap['show_unack']       Property specified in sysmap's 'Problem display' field. Used to determine
+ *                                          whether to show unacknowledged problems only.
  * @param array $options                    Options used to retrieve actions.
  * @param int   $options['severity_min']    Minimal severity used.
  *
  * @return array
  */
-function getMapLinktriggerInfo($sysmap, $options) {
+function getMapLinkTriggerInfo($sysmap, $options) {
 	if (!array_key_exists('severity_min', $options)) {
 		$options['severity_min'] = TRIGGER_SEVERITY_NOT_CLASSIFIED;
 	}
@@ -1775,18 +1780,23 @@ function getMapLinktriggerInfo($sysmap, $options) {
 
 	foreach ($sysmap['links'] as $link) {
 		foreach ($link['linktriggers'] as $linktrigger) {
-			$triggerids[$linktrigger['triggerid']] = $linktrigger['triggerid'];
+			$triggerids[$linktrigger['triggerid']] = true;
 		}
 	}
 
 	$trigger_options = [
 		'output' => ['status', 'value', 'priority'],
-		'triggerids' => $triggerids,
+		'triggerids' => array_keys($triggerids),
 		'monitored' => true,
 		'preservekeys' => true
 	];
 
-	return getTriggersWithActualSeverity($trigger_options, ['show_suppressed' => $sysmap['show_suppressed']]);
+	$problem_options = [
+		'show_suppressed' => $sysmap['show_suppressed'],
+		'acknowledged' => ($sysmap['show_unack'] == EXTACK_OPTION_UNACK) ? false : null
+	];
+
+	return getTriggersWithActualSeverity($trigger_options, $problem_options);
 }
 
 /**

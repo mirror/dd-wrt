@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -39,18 +39,21 @@ class CXmlValidator {
 			'3.2' => 'C32XmlValidator',
 			'3.4' => 'C34XmlValidator',
 			'4.0' => 'C40XmlValidator',
-			'4.2' => 'C42XmlValidator'
+			'4.2' => 'C42XmlValidator',
+			'4.4' => 'C44XmlValidator'
 		];
 	}
 
 	/**
 	 * Base validation function.
 	 *
-	 * @param array  $data    import data
-	 * @param string $format  format of import source
+	 * @param array  $data    Import data.
+	 * @param string $format  Format of import source.
 	 *
-	 * @return array		Validator does some manipulation for the incoming data. For example, converts empty tags to
-	 *						an array, if desired. Converted array is returned.
+	 * @throws Exception if $data does not correspond to validation rules.
+	 *
+	 * @return array  Validator does some manipulations for the incoming data. For example, converts empty tags to an
+	 *                array, if desired. Converted array is returned.
 	 */
 	public function validate(array $data, $format) {
 		$rules = ['type' => XML_ARRAY, 'rules' => [

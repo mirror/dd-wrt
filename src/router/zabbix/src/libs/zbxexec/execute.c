@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -176,8 +176,18 @@ static int	zbx_popen(pid_t *pid, const char *command)
 
 	/* preserve stdout and stderr to restore them in case execl() fails */
 
-	stdout_orig = dup(STDOUT_FILENO);
-	stderr_orig = dup(STDERR_FILENO);
+	if (-1 == (stdout_orig = dup(STDOUT_FILENO)))
+	{
+		zabbix_log(LOG_LEVEL_ERR, "%s(): failed to duplicate stdout: %s",
+				__func__, zbx_strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+	if (-1 == (stderr_orig = dup(STDERR_FILENO)))
+	{
+		zabbix_log(LOG_LEVEL_ERR, "%s(): failed to duplicate stderr: %s",
+				__func__, zbx_strerror(errno));
+		exit(EXIT_FAILURE);
+	}
 	fcntl(stdout_orig, F_SETFD, FD_CLOEXEC);
 	fcntl(stderr_orig, F_SETFD, FD_CLOEXEC);
 
@@ -501,7 +511,8 @@ close:
 
 	if (TIMEOUT_ERROR == ret)
 		zbx_strlcpy(error, "Timeout while executing a shell script.", max_error_len);
-	else if ('\0' != *error)
+
+	if ('\0' != *error)
 		zabbix_log(LOG_LEVEL_WARNING, "Failed to execute command \"%s\": %s", command, error);
 
 	if (SUCCEED != ret || NULL == output)

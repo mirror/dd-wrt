@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 #include "zbxregexp.h"
 #include "log.h"
 #include "zbxjson.h"
+#include "zbxprometheus.h"
 
 /* Defines maximum row length to be written in error message in the case of parsing failure */
 #define ZBX_PROMEHTEUS_ERROR_MAX_ROW_LENGTH	50
@@ -755,7 +756,7 @@ static int	prometheus_filter_parse_labels(zbx_prometheus_filter_t *filter, const
  *                                                                            *
  * Function: prometheus_filter_init                                           *
  *                                                                            *
- * Purpose: intializes prometheus pattern filter from the specified data      *
+ * Purpose: initializes prometheus pattern filter from the specified data     *
  *                                                                            *
  * Parameters: filter - [IN/OUT] the filter                                   *
  *             data   - [IN] the filter data                                  *
@@ -914,19 +915,19 @@ static int	condition_match_key_value(const zbx_prometheus_condition_t *condition
  *                                                                            *
  * Purpose: matches metric value against filter condition                     *
  *                                                                            *
- * Parameters: condition - [IN] the condition                                 *
- *             key       - [IN] the key (optional, can be NULL)               *
+ * Parameters: pattern   - [IN] the condition                                 *
  *             value     - [IN] the value                                     *
  *                                                                            *
- * Return value: SUCCEED - the key,value pair matches condition               *
+ * Return value: SUCCEED - the 'value' matches 'condition'                    *
  *               FAIL    - otherwise                                          *
  *                                                                            *
  ******************************************************************************/
 static int	condition_match_metric_value(const char *pattern, const char *value)
 {
+	double	pattern_dbl, value_dbl;
 	char	buffer[5];
 
-	if (SUCCEED != is_double(pattern))
+	if (SUCCEED != is_double(pattern, &pattern_dbl))
 	{
 		if ('+' == *pattern)
 			pattern++;
@@ -939,10 +940,10 @@ static int	condition_match_metric_value(const char *pattern, const char *value)
 		return (0 == strcmp(pattern, buffer) ? SUCCEED : FAIL);
 	}
 
-	if (SUCCEED != is_double(value))
+	if (SUCCEED != is_double(value, &value_dbl))
 		return FAIL;
 
-	if (ZBX_DOUBLE_EPSILON <= fabs(atof(pattern) - atof(value)))
+	if (ZBX_DOUBLE_EPSILON <= fabs(pattern_dbl - value_dbl))
 		return FAIL;
 
 	return SUCCEED;
@@ -1515,15 +1516,17 @@ static int	prometheus_extract_value(zbx_vector_ptr_t *rows, const char *output, 
 
 	if ('\0' != *output)
 	{
-		int			i;
-		zbx_prometheus_label_t	*label;
+		int	i;
 
 		for (i = 0; i < row->labels.values_num; i++)
 		{
-			label = (zbx_prometheus_label_t *)row->labels.values[i];
+			const zbx_prometheus_label_t	*label = (const zbx_prometheus_label_t *)row->labels.values[i];
 
 			if (0 == strcmp(label->name, output))
+			{
+				*value = zbx_strdup(NULL, label->value);
 				break;
+			}
 		}
 
 		if (i == row->labels.values_num)
@@ -1531,7 +1534,6 @@ static int	prometheus_extract_value(zbx_vector_ptr_t *rows, const char *output, 
 			*error = zbx_strdup(*error, "no label matches the specified output");
 			return FAIL;
 		}
-		*value = zbx_strdup(NULL, label->value);
 	}
 	else
 		*value = zbx_strdup(NULL, row->value);

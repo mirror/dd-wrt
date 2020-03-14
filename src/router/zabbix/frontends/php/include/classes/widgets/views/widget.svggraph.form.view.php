@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ $fields = $data['dialogue']['fields'];
 $form = CWidgetHelper::createForm();
 
 $form_list = CWidgetHelper::createFormList($data['dialogue']['name'], $data['dialogue']['type'],
-	$data['known_widget_types'], $fields['rf_rate']
+	$data['dialogue']['view_mode'], $data['known_widget_types'], $fields['rf_rate']
 );
 
 $form->addItem($form_list);
@@ -89,8 +89,8 @@ $scripts[] =
 			'data = {'.
 				'uniqueid: 0,'.
 				'preview: 1,'.
-				'content_width: $preview.width(),'.
-				'content_height: $preview.height() - 10'.
+				'content_width: Math.floor($preview.width()),'.
+				'content_height: Math.floor($preview.height()) - 10'.
 			'};'.
 		'url.setArgument("action", "widget.svggraph.view");'.
 
@@ -116,7 +116,18 @@ $scripts[] =
 			'onRightYChange();'.
 		'}'.
 
-		'data.fields = JSON.stringify($form.serializeJSON());'.
+		'var form_fields = $form.serializeJSON();'.
+		'if ("ds" in form_fields) {'.
+			'for (var i in form_fields.ds) {'.
+				'form_fields.ds[i] = jQuery.extend({"hosts":[], "items":[]}, form_fields.ds[i]);'.
+			'}'.
+		'}'.
+		'if ("or" in form_fields) {'.
+			'for (var i in form_fields.or) {'.
+				'form_fields.or[i] = jQuery.extend({"hosts":[], "items":[]}, form_fields.or[i]);'.
+			'}'.
+		'}'.
+		'data.fields = JSON.stringify(form_fields);'.
 
 		'jQuery.ajax({'.
 			'url: url.getUrl(),'.
@@ -133,8 +144,7 @@ $scripts[] =
 				'}'.
 			'}'.
 		'});'.
-	'}'.
-	'onGraphConfigChange();';
+	'}';
 
 $scripts[] =
 	/**
@@ -147,11 +157,20 @@ $scripts[] =
 	'function updateVariableOrder(obj, row_selector, var_prefix) {'.
 		'jQuery.each([10000, 0], function(index, value) {'.
 			'jQuery(row_selector, obj).each(function(i) {'.
+				'jQuery(".multiselect[data-params]", this).each(function() {'.
+					'var name = jQuery(this).multiSelect("getOption", "name");'.
+					'if (name !== null) {'.
+						'jQuery(this).multiSelect("modify", {'.
+							'name: name.replace(/([a-z]+\[)\d+(\]\[[a-z_]+\])/, "$1" + (value + i) + "$2")'.
+						'});'.
+					'}'.
+				'});'.
+
 				'jQuery(\'[name^="\' + var_prefix + \'["]\', this).filter(function() {'.
-					'return jQuery(this).attr("name").match(/[a-z]+\[\d+\]\[[a-z]+\]/);'.
+					'return jQuery(this).attr("name").match(/[a-z]+\[\d+\]\[[a-z_]+\]/);'.
 				'}).each(function() {'.
 					'jQuery(this).attr("name", '.
-						'jQuery(this).attr("name").replace(/([a-z]+\[)\d+(\]\[[a-z]+\])/, "$1" + (value + i) + "$2")'.
+						'jQuery(this).attr("name").replace(/([a-z]+\[)\d+(\]\[[a-z_]+\])/, "$1" + (value + i) + "$2")'.
 					');'.
 				'});'.
 			'});'.
@@ -224,7 +243,7 @@ $tab_problems = (new CFormList())
 		CWidgetHelper::getCheckBox($fields['graph_item_problems'])
 	)
 	->addRow(CWidgetHelper::getLabel($fields['problemhosts']),
-		CWidgetHelper::getHostsPatternTextBox($fields['problemhosts'], $form_name)
+		CWidgetHelper::getHostPatternSelect($fields['problemhosts'], $form_name)
 	)
 	->addRow(CWidgetHelper::getLabel($fields['severities']),
 		CWidgetHelper::getSeverities($fields['severities'], $data['config'])
@@ -233,7 +252,7 @@ $tab_problems = (new CFormList())
 	->addRow(CWidgetHelper::getLabel($fields['evaltype']), CWidgetHelper::getRadioButtonList($fields['evaltype']))
 	->addRow(CWidgetHelper::getLabel($fields['tags']), CWidgetHelper::getTags($fields['tags']));
 
-$scripts[] = 'jQuery("#problemhosts").autoGrowTextarea({maxHeight: 100});';
+$scripts[] = $fields['problemhosts']->getJavascript();
 $scripts[] = $fields['tags']->getJavascript();
 $jq_templates['tag-row-tmpl'] = CWidgetHelper::getTagsTemplate($fields['tags']);
 
@@ -241,7 +260,7 @@ $jq_templates['tag-row-tmpl'] = CWidgetHelper::getTagsTemplate($fields['tags']);
 $tab_overrides = (new CFormList())
 	->addRow(CWidgetHelper::getLabel($fields['or']), CWidgetHelper::getGraphOverride($fields['or'], $form_name));
 
-$scripts[] = CWidgetHelper::getGraphOverrideJavascript($fields['or'], $form_name);
+$scripts[] = CWidgetHelper::getGraphOverrideJavascript($fields['or']);
 $jq_templates['overrides-row'] = CWidgetHelper::getGraphOverrideTemplate($fields['or'], $form_name);
 
 // Create CTabView.
@@ -254,14 +273,15 @@ $form_tabs = (new CTabView())
 	->addTab('problems',  _('Problems'), $tab_problems)
 	->addTab('overrides',  _('Overrides'), $tab_overrides)
 	->addClass('graph-widget-config-tabs') // Add special style used for graph widget tabs only.
-	->onTabChange('jQuery.colorpicker("hide");')
+	->onTabChange('jQuery.colorpicker("hide");jQuery(window).trigger("resize");')
 	->setSelected(0);
 
 // Add CTabView to form.
 $form->addItem($form_tabs);
 $scripts[] = $form_tabs->makeJavascript();
 
-$scripts[] = 'jQuery("#'.$form_tabs->getId().'").on("change", "input, textarea, select", onGraphConfigChange);';
+$scripts[] = 'jQuery("#'.$form_tabs->getId().'").on("change", "input, select, .multiselect", onGraphConfigChange);';
+$scripts[] = 'onGraphConfigChange();';
 
 return [
 	'form' => $form,

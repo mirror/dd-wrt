@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@
 
 #include "alerter/alerter.h"
 #include "alerter/alert_manager.h"
+#include "alerter/alert_syncer.h"
 #include "dbsyncer/dbsyncer.h"
 #include "dbconfig/dbconfig.h"
 #include "discoverer/discoverer.h"
@@ -65,15 +66,11 @@
 #include "events.h"
 #include "../libs/zbxdbcache/valuecache.h"
 #include "setproctitle.h"
-#include "../libs/zbxcrypto/tls.h"
+#include "zbxcrypto.h"
 #include "zbxipcservice.h"
 #include "zbxhistory.h"
 #include "postinit.h"
 #include "export.h"
-
-#ifdef ZBX_CUNIT
-#include "../libs/zbxcunit/zbxcunit.h"
-#endif
 
 #ifdef HAVE_OPENIPMI
 #include "ipmi/ipmi_manager.h"
@@ -155,8 +152,9 @@ static char	shortopts[] = "c:hVR:f";
 
 /* end of COMMAND LINE OPTIONS */
 
-int	threads_num = 0;
-pid_t	*threads = NULL;
+int		threads_num = 0;
+pid_t		*threads = NULL;
+static int	*threads_flags;
 
 unsigned char	program_type		= ZBX_PROGRAM_TYPE_SERVER;
 unsigned char	process_type		= ZBX_PROCESS_TYPE_UNKNOWN;
@@ -189,6 +187,7 @@ int	CONFIG_PREPROCMAN_FORKS		= 1;
 int	CONFIG_PREPROCESSOR_FORKS	= 3;
 int	CONFIG_LLDMANAGER_FORKS		= 1;
 int	CONFIG_LLDWORKER_FORKS		= 2;
+int	CONFIG_ALERTDB_FORKS		= 1;
 
 int	CONFIG_LISTEN_PORT		= ZBX_DEFAULT_SERVER_PORT;
 char	*CONFIG_LISTEN_IP		= NULL;
@@ -304,6 +303,7 @@ int	get_process_info_by_thread(int local_server_num, unsigned char *local_proces
 	}
 	else if (local_server_num <= (server_count += CONFIG_CONFSYNCER_FORKS))
 	{
+		/* make initial configuration sync before worker processes are forked */
 		*local_process_type = ZBX_PROCESS_TYPE_CONFSYNCER;
 		*local_process_num = local_server_num - server_count + CONFIG_CONFSYNCER_FORKS;
 	}
@@ -426,6 +426,11 @@ int	get_process_info_by_thread(int local_server_num, unsigned char *local_proces
 	{
 		*local_process_type = ZBX_PROCESS_TYPE_LLDWORKER;
 		*local_process_num = local_server_num - server_count + CONFIG_LLDWORKER_FORKS;
+	}
+	else if (local_server_num <= (server_count += CONFIG_ALERTDB_FORKS))
+	{
+		*local_process_type = ZBX_PROCESS_TYPE_ALERTSYNCER;
+		*local_process_num = local_server_num - server_count + CONFIG_ALERTDB_FORKS;
 	}
 	else
 		return FAIL;
@@ -807,12 +812,7 @@ int	main(int argc, char **argv)
 #if defined(PS_OVERWRITE_ARGV) || defined(PS_PSTAT_ARGV)
 	argv = setproctitle_save_env(argc, argv);
 #endif
-
 	progname = get_program_name(argv[0]);
-
-#ifdef ZBX_CUNIT
-	zbx_cu_run(argc, argv);
-#endif
 
 	/* parse the command-line */
 	while ((char)EOF != (ch = (char)zbx_getopt_long(argc, argv, shortopts, longopts, NULL)))
@@ -946,20 +946,15 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 #else
 #	define SMTP_AUTH_FEATURE_STATUS	" NO"
 #endif
-#ifdef HAVE_JABBER
-#	define JABBER_FEATURE_STATUS	"YES"
-#else
-#	define JABBER_FEATURE_STATUS	" NO"
-#endif
 #ifdef HAVE_UNIXODBC
 #	define ODBC_FEATURE_STATUS	"YES"
 #else
 #	define ODBC_FEATURE_STATUS	" NO"
 #endif
-#ifdef HAVE_SSH2
-#	define SSH2_FEATURE_STATUS	"YES"
+#if defined(HAVE_SSH2) || defined(HAVE_SSH)
+#	define SSH_FEATURE_STATUS	"YES"
 #else
-#	define SSH2_FEATURE_STATUS	" NO"
+#	define SSH_FEATURE_STATUS	" NO"
 #endif
 #ifdef HAVE_IPV6
 #	define IPV6_FEATURE_STATUS	"YES"
@@ -981,10 +976,8 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 	zabbix_log(LOG_LEVEL_INFORMATION, "Web monitoring:            " LIBCURL_FEATURE_STATUS);
 	zabbix_log(LOG_LEVEL_INFORMATION, "VMware monitoring:         " VMWARE_FEATURE_STATUS);
 	zabbix_log(LOG_LEVEL_INFORMATION, "SMTP authentication:       " SMTP_AUTH_FEATURE_STATUS);
-	zabbix_log(LOG_LEVEL_INFORMATION, "Jabber notifications:      " JABBER_FEATURE_STATUS);
-	zabbix_log(LOG_LEVEL_INFORMATION, "Ez Texting notifications:  " LIBCURL_FEATURE_STATUS);
 	zabbix_log(LOG_LEVEL_INFORMATION, "ODBC:                      " ODBC_FEATURE_STATUS);
-	zabbix_log(LOG_LEVEL_INFORMATION, "SSH2 support:              " SSH2_FEATURE_STATUS);
+	zabbix_log(LOG_LEVEL_INFORMATION, "SSH support:               " SSH_FEATURE_STATUS);
 	zabbix_log(LOG_LEVEL_INFORMATION, "IPv6 support:              " IPV6_FEATURE_STATUS);
 	zabbix_log(LOG_LEVEL_INFORMATION, "TLS support:               " TLS_FEATURE_STATUS);
 	zabbix_log(LOG_LEVEL_INFORMATION, "******************************");
@@ -1077,25 +1070,7 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 
 	if (SUCCEED != DBcheck_version())
 		exit(EXIT_FAILURE);
-
-	DBconnect(ZBX_DB_CONNECT_NORMAL);
-
-	/* make initial configuration sync before worker processes are forked */
-	DCsync_configuration(ZBX_DBSYNC_INIT);
-
-	if (SUCCEED != zbx_check_postinit_tasks(&error))
-	{
-		zabbix_log(LOG_LEVEL_CRIT, "cannot complete post initialization tasks: %s", error);
-		zbx_free(error);
-		exit(EXIT_FAILURE);
-	}
-
-	/* update maintenance states */
-	zbx_dc_update_maintenances();
-
-	DBclose();
-
-	zbx_vc_enable();
+	DBcheck_character_set();
 
 	threads_num = CONFIG_CONFSYNCER_FORKS + CONFIG_POLLER_FORKS
 			+ CONFIG_UNREACHABLE_POLLER_FORKS + CONFIG_TRAPPER_FORKS + CONFIG_PINGER_FORKS
@@ -1105,8 +1080,9 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 			+ CONFIG_SNMPTRAPPER_FORKS + CONFIG_PROXYPOLLER_FORKS + CONFIG_SELFMON_FORKS
 			+ CONFIG_VMWARE_FORKS + CONFIG_TASKMANAGER_FORKS + CONFIG_IPMIMANAGER_FORKS
 			+ CONFIG_ALERTMANAGER_FORKS + CONFIG_PREPROCMAN_FORKS + CONFIG_PREPROCESSOR_FORKS
-			+ CONFIG_LLDMANAGER_FORKS + CONFIG_LLDWORKER_FORKS;
+			+ CONFIG_LLDMANAGER_FORKS + CONFIG_LLDWORKER_FORKS + CONFIG_ALERTDB_FORKS;
 	threads = (pid_t *)zbx_calloc(threads, threads_num, sizeof(pid_t));
+	threads_flags = (int *)zbx_calloc(threads_flags, threads_num, sizeof(int));
 
 	if (0 != CONFIG_TRAPPER_FORKS)
 	{
@@ -1140,6 +1116,24 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 		{
 			case ZBX_PROCESS_TYPE_CONFSYNCER:
 				zbx_thread_start(dbconfig_thread, &thread_args, &threads[i]);
+				DCconfig_wait_sync();
+
+				DBconnect(ZBX_DB_CONNECT_NORMAL);
+
+				if (SUCCEED != zbx_check_postinit_tasks(&error))
+				{
+					zabbix_log(LOG_LEVEL_CRIT, "cannot complete post initialization tasks: %s",
+							error);
+					zbx_free(error);
+					exit(EXIT_FAILURE);
+				}
+
+				/* update maintenance states */
+				zbx_dc_update_maintenances();
+
+				DBclose();
+
+				zbx_vc_enable();
 				break;
 			case ZBX_PROCESS_TYPE_POLLER:
 				poller_type = ZBX_POLLER_TYPE_NORMAL;
@@ -1174,6 +1168,7 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 				zbx_thread_start(discoverer_thread, &thread_args, &threads[i]);
 				break;
 			case ZBX_PROCESS_TYPE_HISTSYNCER:
+				threads_flags[i] = ZBX_THREAD_WAIT_EXIT;
 				zbx_thread_start(dbsyncer_thread, &thread_args, &threads[i]);
 				break;
 			case ZBX_PROCESS_TYPE_ESCALATOR:
@@ -1222,6 +1217,9 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 			case ZBX_PROCESS_TYPE_LLDWORKER:
 				zbx_thread_start(lld_worker_thread, &thread_args, &threads[i]);
 				break;
+			case ZBX_PROCESS_TYPE_ALERTSYNCER:
+				zbx_thread_start(alert_syncer_thread, &thread_args, &threads[i]);
+				break;
 		}
 	}
 
@@ -1243,12 +1241,12 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 	/* all exiting child processes should be caught by signal handlers */
 	THIS_SHOULD_NEVER_HAPPEN;
 
-	zbx_on_exit();
+	zbx_on_exit(FAIL);
 
 	return SUCCEED;
 }
 
-void	zbx_on_exit(void)
+void	zbx_on_exit(int ret)
 {
 	zabbix_log(LOG_LEVEL_DEBUG, "zbx_on_exit() called");
 
@@ -1257,8 +1255,9 @@ void	zbx_on_exit(void)
 
 	if (NULL != threads)
 	{
-		zbx_threads_wait(threads, threads_num);	/* wait for all child processes to exit */
+		zbx_threads_wait(threads, threads_flags, threads_num, ret);	/* wait for all child processes to exit */
 		zbx_free(threads);
+		zbx_free(threads_flags);
 	}
 #ifdef HAVE_PTHREAD_PROCESS_SHARED
 	zbx_locks_disable();

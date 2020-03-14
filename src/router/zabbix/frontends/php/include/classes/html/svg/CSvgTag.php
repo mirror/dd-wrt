@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ class CSvgTag extends CTag {
 	const ZBX_STYLE_GRAPH_GRID = 'svg-graph-grid';
 	const ZBX_STYLE_GRAPH_LINE = 'svg-graph-line';
 	const ZBX_STYLE_GRAPH_POINTS = 'svg-graph-points';
+	const ZBX_STYLE_GRAPH_BAR = 'svg-graph-bar';
 
 	const ZBX_STYLE_GRAPH_LEGEND = 'svg-graph-legend';
 	const ZBX_STYLE_GRAPH_LEGEND_SINGLE_ITEM = 'svg-single-item-graph-legend';
@@ -97,7 +98,7 @@ class CSvgTag extends CTag {
 	 * Set axis container position.
 	 *
 	 * @param int $x        Horizontal position of container element.
-	 * @param int $y        Veritical position of container element.
+	 * @param int $y        Vertical position of container element.
 	 *
 	 * @return CSvgTag
 	 */

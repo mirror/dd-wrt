@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -25,20 +25,10 @@ require_once dirname(__FILE__).'/include/ident.inc.php';
 require_once dirname(__FILE__).'/include/forms.inc.php';
 require_once dirname(__FILE__).'/include/maps.inc.php';
 
-if (hasRequest('action') && getRequest('action') == 'screen.export' && hasRequest('screens')) {
-	$isExportData = true;
-
-	$page['type'] = detect_page_type(PAGE_TYPE_XML);
-	$page['file'] = 'zbx_export_screens.xml';
-}
-else {
-	$isExportData = false;
-
-	$page['type'] = detect_page_type(PAGE_TYPE_HTML);
-	$page['title'] = _('Configuration of screens');
-	$page['file'] = 'screenconf.php';
-	$page['scripts'] = ['multiselect.js'];
-}
+$page['type'] = detect_page_type(PAGE_TYPE_HTML);
+$page['title'] = _('Configuration of screens');
+$page['file'] = 'screenconf.php';
+$page['scripts'] = ['multiselect.js'];
 
 require_once dirname(__FILE__).'/include/page_header.php';
 
@@ -78,8 +68,6 @@ $fields = [
 ];
 check_fields($fields);
 
-CProfile::update('web.screenconf.config', getRequest('config', 0), PROFILE_TYPE_INT);
-
 /*
  * Permissions
  */
@@ -93,7 +81,7 @@ if (hasRequest('screenid')) {
 	}
 	else {
 		$screens = API::Screen()->get([
-			'output' => ['screenid', 'name', 'hsize', 'vsize', 'templateid', 'userid', 'private'],
+			'output' => ['screenid', 'name', 'hsize', 'vsize', 'userid', 'private'],
 			'selectUsers' => ['userid', 'permission'],
 			'selectUserGroups' => ['usrgrpid', 'permission'],
 			'screenids' => getRequest('screenid'),
@@ -109,27 +97,6 @@ if (hasRequest('screenid')) {
 }
 else {
 	$screen = [];
-}
-
-/*
- * Export
- */
-if ($isExportData) {
-	$screens = getRequest('screens', []);
-
-	$export = new CConfigurationExport(['screens' => $screens]);
-	$export->setBuilder(new CConfigurationExportBuilder());
-	$export->setWriter(CExportWriterFactory::getWriter(CExportWriterFactory::XML));
-	$exportData = $export->export();
-
-	if (hasErrorMesssages()) {
-		show_messages();
-	}
-	else {
-		print($exportData);
-	}
-
-	exit;
 }
 
 /*
@@ -324,7 +291,7 @@ if (hasRequest('form')) {
 	$userids[$current_userid] = true;
 	$user_groupids = [];
 
-	if (!hasRequest('templateid') && (!array_key_exists('templateid', $screen) || !$screen['templateid'])) {
+	if (!hasRequest('templateid') && !array_key_exists('templateid', $screen)) {
 		if (!hasRequest('screenid') || hasRequest('form_refresh')) {
 			// Screen owner.
 			$screen_owner = getRequest('userid', $current_userid);
@@ -380,7 +347,6 @@ if (hasRequest('form')) {
 			$data['screen']['private'] = getRequest('private', PRIVATE_SHARING);
 			$data['screen']['users'] = getRequest('users', []);
 			$data['screen']['userGroups'] = getRequest('userGroups', []);
-			$data['screen']['templateid'] = null;
 		}
 	}
 	else {

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
 #define ZABBIX_ZBXMEDIA_H
 
 #include "sysinc.h" /* using "config.h" would be better, but it causes warnings when compiled with Net-SNMP */
-#include "zbxalgo.h"
 
 #define ZBX_MEDIA_CONTENT_TYPE_TEXT	0
 #define ZBX_MEDIA_CONTENT_TYPE_HTML	1
@@ -40,12 +39,6 @@ int	send_email(const char *smtp_server, unsigned short smtp_port, const char *sm
 		unsigned char smtp_security, unsigned char smtp_verify_peer, unsigned char smtp_verify_host,
 		unsigned char smtp_authentication, const char *username, const char *password,
 		unsigned char content_type, int timeout, char *error, size_t max_error_len);
-int	send_ez_texting(const char *username, const char *password, const char *sendto,
-		const char *message, const char *limit, char *error, int max_error_len);
-#ifdef HAVE_JABBER
-int	send_jabber(const char *username, const char *password, const char *sendto,
-		const char *subject, const char *message, char *error, int max_error_len);
-#endif
 int	send_sms(const char *device, const char *number, const char *message, char *error, int max_error_len);
 
 #endif

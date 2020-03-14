@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -117,6 +117,7 @@ extern int	CONFIG_PREPROCMAN_FORKS;
 extern int	CONFIG_PREPROCESSOR_FORKS;
 extern int	CONFIG_LLDMANAGER_FORKS;
 extern int	CONFIG_LLDWORKER_FORKS;
+extern int	CONFIG_ALERTDB_FORKS;
 
 extern unsigned char	process_type;
 extern int		process_num;
@@ -198,6 +199,8 @@ int	get_process_type_forks(unsigned char proc_type)
 			return CONFIG_LLDMANAGER_FORKS;
 		case ZBX_PROCESS_TYPE_LLDWORKER:
 			return CONFIG_LLDWORKER_FORKS;
+		case ZBX_PROCESS_TYPE_ALERTSYNCER:
+			return CONFIG_ALERTDB_FORKS;
 	}
 
 	THIS_SHOULD_NEVER_HAPPEN;
@@ -258,7 +261,12 @@ int	init_selfmon_collector(char **error)
 	collector = (zbx_selfmon_collector_t *)p; p += sz;
 	collector->process = (zbx_stat_process_t **)p; p += sz_array;
 	collector->ticks_per_sec = sysconf(_SC_CLK_TCK);
-	collector->ticks_sync = times(&buf);
+
+	if (-1 == (collector->ticks_sync = times(&buf)))
+	{
+		*error = zbx_dsprintf(*error, "cannot get process times: %s", zbx_strerror(errno));
+		exit(EXIT_FAILURE);
+	}
 
 	for (proc_type = 0; ZBX_PROCESS_TYPE_COUNT > proc_type; proc_type++)
 	{
@@ -334,7 +342,13 @@ void	update_selfmon_counter(unsigned char state)
 		return;
 
 	process = &collector->process[process_type][process_num - 1];
-	ticks = times(&buf);
+
+	if (-1 == (ticks = times(&buf)))
+	{
+		zabbix_log(LOG_LEVEL_WARNING, "cannot get process times: %s", zbx_strerror(errno));
+		process->cache.state = state;
+		return;
+	}
 
 	/* update process statistics in local cache */
 	process->cache.counter[process->cache.state] += ticks - process->cache.ticks;
@@ -401,7 +415,12 @@ void	collect_selfmon_stats(void)
 
 	LOCK_SM;
 
-	ticks = times(&buf);
+	if (-1 == (ticks = times(&buf)))
+	{
+		zabbix_log(LOG_LEVEL_WARNING, "cannot get process times: %s", zbx_strerror(errno));
+		goto unlock;
+	}
+
 	ticks_done = ticks - collector->ticks_sync;
 
 	for (proc_type = 0; proc_type < ZBX_PROCESS_TYPE_COUNT; proc_type++)
@@ -435,7 +454,7 @@ void	collect_selfmon_stats(void)
 	}
 
 	collector->ticks_sync = ticks;
-
+unlock:
 	UNLOCK_SM;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __func__);

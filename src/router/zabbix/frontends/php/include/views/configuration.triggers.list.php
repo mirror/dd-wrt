@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -62,6 +62,7 @@ $filter_column1 = (new CFormList())
 		(new CCheckBoxList('filter_priority'))
 			->setOptions($data['config_priorities'])
 			->setChecked($data['filter_priority'])
+			->addClass(ZBX_STYLE_COLUMNS)
 			->addClass(ZBX_STYLE_COLUMNS_3)
 	)
 	->addRow(_('State'),
@@ -181,6 +182,7 @@ $widget->addItem($filter);
 
 // create form
 $triggers_form = (new CForm())
+	->addVar('checkbox_hash', $data['checkbox_hash'])
 	->setName('triggersForm');
 
 $url = (new CUrl('triggers.php'))->getUrl();
@@ -195,6 +197,7 @@ $triggers_table = (new CTableInfo())->setHeader([
 	$data['show_value_column'] ? _('Value') : null,
 	$data['single_selected_hostid'] == 0 ? _('Host') : null,
 	make_sorting_header(_('Name'), 'description', $data['sort'], $data['sortorder'], $url),
+	_('Operational data'),
 	_('Expression'),
 	make_sorting_header(_('Status'), 'status', $data['sort'], $data['sortorder'], $url),
 	$data['show_info_column'] ? _('Info') : null,
@@ -220,7 +223,8 @@ foreach ($data['triggers'] as $tnum => $trigger) {
 	if ($trigger['discoveryRule']) {
 		$description[] = (new CLink(
 			CHtml::encode($trigger['discoveryRule']['name']),
-			'trigger_prototypes.php?parent_discoveryid='.$trigger['discoveryRule']['itemid']))
+			(new CUrl('trigger_prototypes.php'))->setArgument('parent_discoveryid', $trigger['discoveryRule']['itemid'])
+		))
 			->addClass(ZBX_STYLE_LINK_ALT)
 			->addClass(ZBX_STYLE_ORANGE);
 		$description[] = NAME_DELIMITER;
@@ -312,6 +316,7 @@ foreach ($data['triggers'] as $tnum => $trigger) {
 		$data['show_value_column'] ? $trigger_value : null,
 		$hosts,
 		$description,
+		$trigger['opdata'],
 		$expression,
 		$status,
 		$data['show_info_column'] ? makeInformationList($info_icons) : null,
@@ -331,7 +336,7 @@ $triggers_form->addItem([
 			'trigger.massupdateform' => ['name' => _('Mass update')],
 			'trigger.massdelete' => ['name' => _('Delete'), 'confirm' => _('Delete selected triggers?')]
 		],
-		$data['single_selected_hostid']
+		$data['checkbox_hash']
 	)
 ]);
 

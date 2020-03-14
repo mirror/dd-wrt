@@ -66,6 +66,21 @@
 	<?= (new CMultilineInput('preprocessing[#{rowNum}][params][0]', '', ['add_post_js' => false])) ?>
 </script>
 
+<script type="text/x-jquery-tmpl" id="preprocessing-steps-parameters-custom-width-chkbox-tmpl">
+	<?= (new CTextBox('preprocessing[#{rowNum}][params][0]', ''))
+			->setAttribute('placeholder', '#{placeholder_0}')
+			->setWidth('#{width_0}')
+			->setAttribute('maxlength', 1).
+		(new CTextBox('preprocessing[#{rowNum}][params][1]', ''))
+			->setAttribute('placeholder', '#{placeholder_1}')
+			->setWidth('#{width_1}')
+			->setAttribute('maxlength', 1).
+		(new CCheckBox('preprocessing[#{rowNum}][params][2]', '#{chkbox_value}'))
+			->setLabel('#{chkbox_label}')
+			->setChecked('#{chkbox_default}')
+	?>
+</script>
+
 <script type="text/javascript">
 	jQuery(function($) {
 		/**
@@ -99,6 +114,20 @@
 				if ($('[name="preprocessing[' + num + '][params][1]"]', $preprocessing).length) {
 					params.push($('[name="preprocessing[' + num + '][params][1]"]', $preprocessing).val());
 				}
+				if ($('[name="preprocessing[' + num + '][params][2]"]', $preprocessing).length) {
+					// ZBX-16642
+					if (type == <?= ZBX_PREPROC_CSV_TO_JSON ?>) {
+						if ($('[name="preprocessing[' + num + '][params][2]"]', $preprocessing).is(':checked')) {
+							params.push($('[name="preprocessing[' + num + '][params][2]"]', $preprocessing).val());
+						}
+						else {
+							params.push(0);
+						}
+					}
+					else {
+						params.push($('[name="preprocessing[' + num + '][params][2]"]', $preprocessing).val());
+					}
+				}
 
 				steps.push($.extend({
 					type: type,
@@ -112,10 +141,11 @@
 		/**
 		 * Creates preprocessing test modal window.
 		 *
-		 * @param {array}  step_nums     List of step numbers to collect.
-		 * @param {object} trigger_elmnt UI element triggered function.
+		 * @param {array}  step_nums          List of step numbers to collect.
+		 * @param {bool}   show_final_result  Either the final result should be displayed.
+		 * @param {object} trigger_elmnt      UI element triggered function.
 		 */
-		function openPreprocessingTestDialog(step_nums, trigger_elmnt) {
+		function openPreprocessingTestDialog(step_nums, show_final_result, trigger_elmnt) {
 			var $step_obj = $(trigger_elmnt).closest('.preprocessing-list-item, .preprocessing-list-foot');
 
 			PopUp('popup.preproctest.edit', $.extend({
@@ -124,13 +154,16 @@
 				steps: getPreprocessingSteps(step_nums),
 				hostid: <?= $data['hostid'] ?>,
 				test_type: <?= $data['preprocessing_test_type'] ?>,
-				step_obj: $step_obj.attr('data-step') || -1
+				step_obj: $step_obj.attr('data-step') || -1,
+				show_final_result: show_final_result ? 1 : 0
 			}, {'data': $step_obj.data('test-data') || []}), 'preprocessing-test', trigger_elmnt);
 		}
 
 		function makeParameterInput(index, type) {
 			var preproc_param_single_tmpl = new Template($('#preprocessing-steps-parameters-single-tmpl').html()),
 				preproc_param_double_tmpl = new Template($('#preprocessing-steps-parameters-double-tmpl').html()),
+				preproc_param_custom_width_chkbox_tmpl =
+					new Template($('#preprocessing-steps-parameters-custom-width-chkbox-tmpl').html()),
 				preproc_param_multiline_tmpl = new Template($('#preprocessing-steps-parameters-multiline-tmpl').html());
 
 			switch (type) {
@@ -219,6 +252,18 @@
 						) ?>
 					}));
 
+				case '<?= ZBX_PREPROC_CSV_TO_JSON ?>':
+					return $(preproc_param_custom_width_chkbox_tmpl.evaluate({
+						rowNum: index,
+						width_0: <?= ZBX_TEXTAREA_NUMERIC_STANDARD_WIDTH ?>,
+						width_1: <?= ZBX_TEXTAREA_NUMERIC_STANDARD_WIDTH ?>,
+						placeholder_0: ',',
+						placeholder_1: '"',
+						chkbox_label: <?= CJs::encodeJson(_('With header row')) ?>,
+						chkbox_value: <?= ZBX_PREPROC_CSV_HEADER ?>,
+						chkbox_default: true
+					}));
+
 				default:
 					return '';
 			}
@@ -231,8 +276,8 @@
 			disabled: $preprocessing.find('div.<?= ZBX_STYLE_DRAG_ICON ?>').hasClass('<?= ZBX_STYLE_DISABLED ?>'),
 			items: 'li.sortable',
 			axis: 'y',
-			cursor: 'move',
 			containment: 'parent',
+			cursor: IE ? 'move' : 'grabbing',
 			handle: 'div.<?= ZBX_STYLE_DRAG_ICON ?>',
 			tolerance: 'pointer',
 			opacity: 0.6
@@ -252,8 +297,10 @@
 				var sortable_count = $preprocessing.find('li.sortable').length;
 
 				if (sortable_count == 1) {
-					$preprocessing.find('div.<?= ZBX_STYLE_DRAG_ICON ?>').addClass('<?= ZBX_STYLE_DISABLED ?>');
-					$('#preproc_test_all').prop('disabled', false);
+					$('#preproc_test_all').show();
+					$preprocessing
+						.sortable('disable')
+						.find('div.<?= ZBX_STYLE_DRAG_ICON ?>').addClass('<?= ZBX_STYLE_DISABLED ?>');
 				}
 				else if (sortable_count > 1) {
 					$preprocessing
@@ -270,13 +317,13 @@
 					step_nums.push(str.substr(14, str.length - 21));
 				});
 
-				openPreprocessingTestDialog(step_nums, this);
+				openPreprocessingTestDialog(step_nums, true, this);
 			})
 			.on('click', '.preprocessing-step-test', function() {
 				var str = $(this).attr('name'),
 					num = str.substr(14, str.length - 21);
 
-				openPreprocessingTestDialog([num], this);
+				openPreprocessingTestDialog([num], false, this);
 			})
 			.on('click', '.element-table-remove', function() {
 				$(this).closest('li.sortable').remove();
@@ -284,8 +331,8 @@
 				var sortable_count = $preprocessing.find('li.sortable').length;
 
 				if (sortable_count == 0) {
+					$('#preproc_test_all').hide();
 					$('.preprocessing-list-head').hide();
-					$('#preproc_test_all').prop('disabled', true);
 				}
 				else if (sortable_count == 1) {
 					$preprocessing
@@ -305,9 +352,6 @@
 					case '<?= ZBX_PREPROC_RTRIM ?>':
 					case '<?= ZBX_PREPROC_LTRIM ?>':
 					case '<?= ZBX_PREPROC_TRIM ?>':
-					case '<?= ZBX_PREPROC_ERROR_FIELD_JSON ?>':
-					case '<?= ZBX_PREPROC_ERROR_FIELD_XML ?>':
-					case '<?= ZBX_PREPROC_ERROR_FIELD_REGEX ?>':
 					case '<?= ZBX_PREPROC_THROTTLE_VALUE ?>':
 					case '<?= ZBX_PREPROC_THROTTLE_TIMED_VALUE ?>':
 					case '<?= ZBX_PREPROC_SCRIPT ?>':
@@ -322,7 +366,7 @@
 						break;
 				}
 			})
-			.on('change', 'input[name*="params"]', function() {
+			.on('change', 'input[type="text"][name*="params"]', function() {
 				$(this).attr('title', $(this).val());
 			})
 			.on('change', 'input[name*="on_fail"]', function() {

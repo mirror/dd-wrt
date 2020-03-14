@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -113,18 +113,17 @@ class CScreenLldSimpleGraph extends CScreenLldGraphBase {
 	 * @return CTag
 	 */
 	protected function getPreviewOutput() {
-		$itemPrototype = $this->getItemPrototype();
+		$item_prototype = $this->getItemPrototype();
 
-		$queryParams = [
-			'items' => [$itemPrototype],
-			'period' => 3600,
-			'legend' => 1,
-			'width' => $this->screenitem['width'],
-			'height' => $this->screenitem['height'],
-			'name' => $itemPrototype['hosts'][0]['name'].NAME_DELIMITER.$itemPrototype['name']
-		];
+		$src = (new CUrl('chart3.php'))
+			->setArgument('items', [$item_prototype])
+			->setArgument('period', 3600)
+			->setArgument('legend', 1)
+			->setArgument('width', $this->screenitem['width'])
+			->setArgument('height', $this->screenitem['height'])
+			->setArgument('name', $item_prototype['hosts'][0]['name'].NAME_DELIMITER.$item_prototype['name']);
 
-		return new CSpan(new CImg('chart3.php?'.http_build_query($queryParams)));
+		return new CSpan(new CImg($src->getUrl()));
 	}
 
 	/**

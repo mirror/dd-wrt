@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -413,7 +413,7 @@ class CSetupWizard extends CForm {
 
 		$error = '';
 
-		// during setup set debug to false to avoid displaying unwanted PHP errors in messages
+		// During setup set debug to false to avoid displaying unwanted PHP errors in messages.
 		if (!$result = DBconnect($error)) {
 			error($error);
 		}
@@ -432,6 +432,13 @@ class CSetupWizard extends CForm {
 			if ($result) {
 				$result = DBexecute('CREATE TABLE zabbix_installation_test (test_row INTEGER)');
 				$result &= DBexecute('DROP TABLE zabbix_installation_test');
+			}
+
+			$db = DB::getDbBackend();
+
+			if (!$db->checkEncoding()) {
+				error($db->getWarning());
+				return false;
 			}
 		}
 

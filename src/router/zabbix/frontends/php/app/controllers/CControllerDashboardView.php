@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -175,7 +175,7 @@ class CControllerDashboardView extends CControllerDashboardAbstract {
 			// Clone dashboard and show as new.
 			$dashboards = API::Dashboard()->get([
 				'output' => ['name', 'private'],
-				'selectWidgets' => ['widgetid', 'type', 'name', 'x', 'y', 'width', 'height', 'fields'],
+				'selectWidgets' => ['widgetid', 'type', 'name', 'view_mode', 'x', 'y', 'width', 'height', 'fields'],
 				'selectUsers' => ['userid', 'permission'],
 				'selectUserGroups' => ['usrgrpid', 'permission'],
 				'dashboardids' => $this->getInput('source_dashboardid')
@@ -215,7 +215,7 @@ class CControllerDashboardView extends CControllerDashboardAbstract {
 			if ($dashboardid != 0) {
 				$dashboards = API::Dashboard()->get([
 					'output' => ['dashboardid', 'name', 'userid'],
-					'selectWidgets' => ['widgetid', 'type', 'name', 'x', 'y', 'width', 'height', 'fields'],
+					'selectWidgets' => ['widgetid', 'type', 'name', 'view_mode', 'x', 'y', 'width', 'height', 'fields'],
 					'dashboardids' => $dashboardid,
 					'preservekeys' => true
 				]);
@@ -438,14 +438,15 @@ class CControllerDashboardView extends CControllerDashboardAbstract {
 					: CWidgetConfig::getDefaultRfRate($widget['type']);
 
 				$widget_form = CWidgetConfig::getForm($widget['type'], CJs::encodeJson($fields));
-				if ($widget_form->validate()) {
-					$fields = $widget_form->getFieldsData();
-				}
+				// Transforms corrupted data to default values.
+				$widget_form->validate();
+				$fields = $widget_form->getFieldsData();
 
 				$grid_widgets[] = [
 					'widgetid' => $widgetid,
 					'type' => $widget['type'],
 					'header' => $widget['name'],
+					'view_mode' => $widget['view_mode'],
 					'pos' => [
 						'x' => (int) $widget['x'],
 						'y' => (int) $widget['y'],
@@ -453,7 +454,8 @@ class CControllerDashboardView extends CControllerDashboardAbstract {
 						'height' => (int) $widget['height']
 					],
 					'rf_rate' => (int) CProfile::get('web.dashbrd.widget.rf_rate', $rf_rate, $widgetid),
-					'fields' => $fields
+					'fields' => $fields,
+					'configuration' => CWidgetConfig::getConfiguration($widget['type'], $fields, $widget['view_mode']),
 				];
 			}
 		}

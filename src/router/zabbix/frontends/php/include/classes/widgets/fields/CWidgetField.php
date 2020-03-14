@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ class CWidgetField {
 	const FLAG_DISABLED = 0x08;
 
 	protected	$name;
+	protected	$full_name;
 	protected	$label;
 	protected	$value;
 	protected	$default;
@@ -85,14 +86,16 @@ class CWidgetField {
 				$this->validation_rules = ['type' => API_STRING_UTF8, 'length' => 255];
 				break;
 
-			case ZBX_WIDGET_FIELD_TYPE_ITEM:
 			case ZBX_WIDGET_FIELD_TYPE_GROUP:
 			case ZBX_WIDGET_FIELD_TYPE_HOST:
+			case ZBX_WIDGET_FIELD_TYPE_ITEM:
+			case ZBX_WIDGET_FIELD_TYPE_ITEM_PROTOTYPE:
+			case ZBX_WIDGET_FIELD_TYPE_GRAPH:
+			case ZBX_WIDGET_FIELD_TYPE_GRAPH_PROTOTYPE:
 				$this->validation_rules = ['type' => API_IDS];
 				break;
 
 			case ZBX_WIDGET_FIELD_TYPE_MAP:
-			case ZBX_WIDGET_FIELD_TYPE_GRAPH:
 				$this->validation_rules = ['type' => API_ID];
 				break;
 
@@ -141,6 +144,20 @@ class CWidgetField {
 
 	public function getName() {
 		return $this->name;
+	}
+
+	/**
+	 * Set field full name which will appear in case of error messages. For example:
+	 * Invalid parameter "<FULL NAME>": too many decimal places.
+	 *
+	 * @param string $name
+	 *
+	 * @return CWidgetField
+	 */
+	public function setFullName($name) {
+		$this->full_name = $name;
+
+		return $this;
 	}
 
 	public function getAction() {
@@ -203,10 +220,11 @@ class CWidgetField {
 			? $this->strict_validation_rules
 			: $this->validation_rules;
 		$validation_rules += $this->ex_validation_rules;
-		$value = $this->getValue();
+		$value = ($this->value === null) ? $this->default : $this->value;
 		$label = ($this->label === null) ? $this->name : $this->label;
+		$name = ($this->full_name === null) ? $label : $this->full_name;
 
-		if (!CApiInputValidator::validate($validation_rules, $value, $label, $error)) {
+		if (!CApiInputValidator::validate($validation_rules, $value, $name, $error)) {
 			$this->setValue($this->default);
 			$errors[] = $error;
 		}

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -126,6 +126,7 @@ int	add_metric(ZBX_METRIC *metric, char *error, size_t max_error_len)
 	return SUCCEED;
 }
 
+#if !defined(__MINGW32__)
 int	add_user_parameter(const char *itemkey, char *command, char *error, size_t max_error_len)
 {
 	int		ret;
@@ -159,6 +160,7 @@ int	add_user_parameter(const char *itemkey, char *command, char *error, size_t m
 
 	return ret;
 }
+#endif
 
 void	init_metrics(void)
 {
@@ -351,6 +353,8 @@ static void	add_request_param(AGENT_REQUEST *request, char *pvalue)
  * Parameters: itemkey - complete item key                                    *
  *                                                                            *
  * Return value: request - structure filled with data from item key           *
+ *                                                                            *
+ * Comments: thread-safe                                                      *
  *                                                                            *
  ******************************************************************************/
 int	parse_item_key(const char *itemkey, AGENT_REQUEST *request)
@@ -666,6 +670,8 @@ int	set_result_type(AGENT_RESULT *result, int value_type, char *c)
 
 	switch (value_type)
 	{
+		double	dbl_tmp;
+
 		case ITEM_VALUE_TYPE_UINT64:
 			zbx_trim_integer(c);
 			del_zeros(c);
@@ -679,9 +685,9 @@ int	set_result_type(AGENT_RESULT *result, int value_type, char *c)
 		case ITEM_VALUE_TYPE_FLOAT:
 			zbx_trim_float(c);
 
-			if (SUCCEED == is_double(c))
+			if (SUCCEED == is_double(c, &dbl_tmp))
 			{
-				SET_DBL_RESULT(result, atof(c));
+				SET_DBL_RESULT(result, dbl_tmp);
 				ret = SUCCEED;
 			}
 			break;
@@ -772,10 +778,8 @@ static double	*get_result_dbl_value(AGENT_RESULT *result)
 	{
 		zbx_trim_float(result->str);
 
-		if (SUCCEED != is_double(result->str))
+		if (SUCCEED != is_double(result->str, &value))
 			return NULL;
-
-		value = atof(result->str);
 
 		SET_DBL_RESULT(result, value);
 	}
@@ -783,10 +787,8 @@ static double	*get_result_dbl_value(AGENT_RESULT *result)
 	{
 		zbx_trim_float(result->text);
 
-		if (SUCCEED != is_double(result->text))
+		if (SUCCEED != is_double(result->text, &value))
 			return NULL;
-
-		value = atof(result->text);
 
 		SET_DBL_RESULT(result, value);
 	}
@@ -1041,7 +1043,7 @@ zbx_uint64_t	get_kstat_numeric_value(const kstat_named_t *kn)
 }
 #endif
 
-#ifndef _WINDOWS
+#if !defined(_WINDOWS) && !defined(__MINGW32__)
 /******************************************************************************
  *                                                                            *
  * Function: serialize_agent_result                                           *
@@ -1351,7 +1353,7 @@ out:
 }
 #else
 
-ZBX_THREAD_LOCAL static zbx_uint32_t	mutex_flag = ZBX_MUTEX_ALL_ALLOW;
+static ZBX_THREAD_LOCAL zbx_uint32_t	mutex_flag = ZBX_MUTEX_ALL_ALLOW;
 
 zbx_uint32_t get_thread_global_mutex_flag()
 {
@@ -1495,3 +1497,19 @@ int	zbx_execute_threaded_metric(zbx_metric_func_t metric_func, AGENT_REQUEST *re
 	return WAIT_OBJECT_0 == rc ? metric_args.agent_ret : SYSINFO_RET_FAIL;
 }
 #endif
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_mpoints_free                                                 *
+ *                                                                            *
+ * Purpose: frees previously allocated mount-point structure                  *
+ *                                                                            *
+ * Parameters: mpoint - [IN] pointer to structure from vector                 *
+ *                                                                            *
+ * Return value:                                                              *
+ *                                                                            *
+ ******************************************************************************/
+void	zbx_mpoints_free(zbx_mpoint_t *mpoint)
+{
+	zbx_free(mpoint);
+}

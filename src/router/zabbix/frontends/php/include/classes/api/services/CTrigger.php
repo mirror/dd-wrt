@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -479,7 +479,7 @@ class CTrigger extends CTriggerGeneral {
 
 		// expandComment
 		if ($options['expandComment'] !== null && $result && array_key_exists('comments', reset($result))) {
-			$result = CMacrosResolverHelper::resolveTriggerDescriptions($result);
+			$result = CMacrosResolverHelper::resolveTriggerDescriptions($result, ['sources' => ['comments']]);
 		}
 
 		// expand expressions
@@ -1009,7 +1009,7 @@ class CTrigger extends CTriggerGeneral {
 			$depTemplateIds = zbx_toHash(zbx_objectValues($triggerDependencyTemplates, 'templateid'));
 
 			// run the check only if a templated trigger has dependencies on other templates
-			$triggerTemplateIds = zbx_toHash(zbx_objectValues($triggerTemplates, 'hostid'));
+			$triggerTemplateIds = zbx_toHash(zbx_objectValues($triggerTemplates, 'templateid'));
 			$tdiff = array_diff($depTemplateIds, $triggerTemplateIds);
 			if (!empty($triggerTemplateIds) && !empty($depTemplateIds) && !empty($tdiff)) {
 				$affectedTemplateIds = zbx_array_merge($triggerTemplateIds, $depTemplateIds);
@@ -1242,7 +1242,7 @@ class CTrigger extends CTriggerGeneral {
 				$outputFields = 'e.*';
 			}
 
-			// due to performance issues, avoid using 'ORDER BY' for outter SELECT
+			// Due to performance issues, avoid using 'ORDER BY' for outer SELECT.
 			$dbEvents = DBselect(
 				'SELECT '.$outputFields.
 				' FROM events e'.

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -29,156 +29,186 @@ class CScript extends CApiService {
 	protected $sortColumns = ['scriptid', 'name'];
 
 	/**
-	 * Get scripts data.
+	 * This property, if filled out, will contain all hostrgroup ids
+	 * that requested scripts did inherit from.
+	 * Keyed by scriptid.
 	 *
-	 * @param array  $options
-	 * @param array  $options['itemids']
-	 * @param array  $options['hostids']	deprecated (very slow)
-	 * @param array  $options['groupids']
-	 * @param array  $options['triggerids']
-	 * @param array  $options['scriptids']
-	 * @param bool   $options['status']
-	 * @param bool   $options['editable']
-	 * @param bool   $options['count']
-	 * @param string $options['pattern']
-	 * @param int    $options['limit']
-	 * @param string $options['order']
+	 * @var array|HostGroup[]
+	 */
+	protected $parent_host_groups = [];
+
+	/**
+	 * @param array $options
 	 *
-	 * @return array
+	 * @throws APIException if the input is invalid.
+	 *
+	 * @return array|int
 	 */
 	public function get(array $options) {
-		$result = [];
-
-		$sqlParts = [
-			'select'	=> ['scripts' => 's.scriptid'],
-			'from'		=> ['scripts s'],
-			'where'		=> [],
-			'order'		=> [],
-			'limit'		=> null
+		$script_fields = ['scriptid', 'name', 'command', 'host_access', 'usrgrpid', 'groupid', 'description',
+			'confirmation', 'type', 'execute_on'
+		];
+		$group_fields = ['groupid', 'name', 'flags', 'internal'];
+		$host_fields = ['hostid', 'host', 'name', 'description', 'status', 'proxy_hostid', 'inventory_mode', 'flags',
+			'available', 'snmp_available', 'jmx_available', 'ipmi_available', 'error', 'snmp_error', 'jmx_error',
+			'ipmi_error', 'errors_from', 'snmp_errors_from', 'jmx_errors_from', 'ipmi_errors_from', 'disable_until',
+			'snmp_disable_until', 'jmx_disable_until', 'ipmi_disable_until', 'ipmi_authtype', 'ipmi_privilege',
+			'ipmi_username', 'ipmi_password', 'maintenanceid', 'maintenance_status', 'maintenance_type',
+			'maintenance_from', 'tls_connect', 'tls_accept', 'tls_issuer', 'tls_subject', 'tls_psk_identity', 'tls_psk'
 		];
 
-		$defOptions = [
-			'groupids'				=> null,
-			'hostids'				=> null,
-			'scriptids'				=> null,
-			'usrgrpids'				=> null,
-			'editable'				=> false,
-			'nopermissions'			=> null,
+		$api_input_rules = ['type' => API_OBJECT, 'fields' => [
 			// filter
-			'filter'				=> null,
-			'search'				=> null,
-			'searchByAny'			=> null,
-			'startSearch'			=> false,
-			'excludeSearch'			=> false,
-			'searchWildcardsEnabled'=> null,
+			'scriptids' =>				['type' => API_IDS, 'flags' => API_ALLOW_NULL | API_NORMALIZE, 'default' => null],
+			'hostids' =>				['type' => API_IDS, 'flags' => API_ALLOW_NULL | API_NORMALIZE, 'default' => null],
+			'groupids' =>				['type' => API_IDS, 'flags' => API_ALLOW_NULL | API_NORMALIZE, 'default' => null],
+			'usrgrpids' =>				['type' => API_IDS, 'flags' => API_ALLOW_NULL | API_NORMALIZE, 'default' => null],
+			'filter' =>					['type' => API_OBJECT, 'flags' => API_ALLOW_NULL, 'default' => null, 'fields' => [
+				'scriptid' =>				['type' => API_IDS, 'flags' => API_ALLOW_NULL | API_NORMALIZE],
+				'name' =>					['type' => API_STRINGS_UTF8, 'flags' => API_ALLOW_NULL | API_NORMALIZE],
+				'command' =>				['type' => API_STRINGS_UTF8, 'flags' => API_ALLOW_NULL | API_NORMALIZE],
+				'host_access' =>			['type' => API_INTS32, 'flags' => API_ALLOW_NULL | API_NORMALIZE, 'in' => implode(',', [PERM_READ, PERM_READ_WRITE])],
+				'usrgrpid' =>				['type' => API_IDS, 'flags' => API_ALLOW_NULL | API_NORMALIZE],
+				'groupid' =>				['type' => API_IDS, 'flags' => API_ALLOW_NULL | API_NORMALIZE],
+				'confirmation' =>			['type' => API_STRINGS_UTF8, 'flags' => API_ALLOW_NULL | API_NORMALIZE],
+				'type' =>					['type' => API_INTS32, 'flags' => API_ALLOW_NULL | API_NORMALIZE, 'in' => implode(',', [ZBX_SCRIPT_TYPE_CUSTOM_SCRIPT, ZBX_SCRIPT_TYPE_IPMI])],
+				'execute_on' =>				['type' => API_INTS32, 'flags' => API_ALLOW_NULL | API_NORMALIZE, 'in' => implode(',', [ZBX_SCRIPT_EXECUTE_ON_AGENT, ZBX_SCRIPT_EXECUTE_ON_SERVER, ZBX_SCRIPT_EXECUTE_ON_PROXY])]
+			]],
+			'search' =>					['type' => API_OBJECT, 'flags' => API_ALLOW_NULL, 'default' => null, 'fields' => [
+				'name' =>					['type' => API_STRINGS_UTF8, 'flags' => API_ALLOW_NULL | API_NORMALIZE],
+				'command' =>				['type' => API_STRINGS_UTF8, 'flags' => API_ALLOW_NULL | API_NORMALIZE],
+				'description' =>			['type' => API_STRINGS_UTF8, 'flags' => API_ALLOW_NULL | API_NORMALIZE],
+				'confirmation' =>			['type' => API_STRINGS_UTF8, 'flags' => API_ALLOW_NULL | API_NORMALIZE]
+			]],
+			'searchByAny' =>			['type' => API_BOOLEAN, 'default' => false],
+			'startSearch' =>			['type' => API_FLAG, 'default' => false],
+			'excludeSearch' =>			['type' => API_FLAG, 'default' => false],
+			'searchWildcardsEnabled' =>	['type' => API_BOOLEAN, 'default' => false],
 			// output
-			'output'				=> API_OUTPUT_EXTEND,
-			'selectGroups'			=> null,
-			'selectHosts'			=> null,
-			'countOutput'			=> false,
-			'preservekeys'			=> false,
-			'sortfield'				=> '',
-			'sortorder'				=> '',
-			'limit'					=> null
+			'output' =>					['type' => API_OUTPUT, 'in' => implode(',', $script_fields), 'default' => API_OUTPUT_EXTEND],
+			'selectGroups' =>			['type' => API_OUTPUT, 'flags' => API_ALLOW_NULL, 'in' => implode(',', $group_fields), 'default' => null],
+			'selectHosts' =>			['type' => API_OUTPUT, 'flags' => API_ALLOW_NULL, 'in' => implode(',', $host_fields), 'default' => null],
+			'countOutput' =>			['type' => API_FLAG, 'default' => false],
+			// sort and limit
+			'sortfield' =>				['type' => API_STRINGS_UTF8, 'flags' => API_NORMALIZE, 'in' => implode(',', $this->sortColumns), 'uniq' => true, 'default' => []],
+			'sortorder' =>				['type' => API_STRINGS_UTF8, 'flags' => API_NORMALIZE, 'in' => implode(',', [ZBX_SORT_UP, ZBX_SORT_DOWN]), 'default' => []],
+			'limit' =>					['type' => API_INT32, 'flags' => API_ALLOW_NULL, 'in' => '1:'.ZBX_MAX_INT32, 'default' => null],
+			// flags
+			'editable' =>				['type' => API_BOOLEAN, 'default' => false],
+			'preservekeys' =>			['type' => API_BOOLEAN, 'default' => false]
+		]];
+		if (!CApiInputValidator::validate($api_input_rules, $options, '/', $error)) {
+			self::exception(ZBX_API_ERROR_PARAMETERS, $error);
+		}
+
+		$sql_parts = [
+			'select'	=> ['scripts' => 's.scriptid'],
+			'from'		=> ['scripts' => 'scripts s'],
+			'where'		=> [],
+			'order'		=> []
 		];
-		$options = zbx_array_merge($defOptions, $options);
 
 		// editable + permission check
 		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN) {
 			if ($options['editable']) {
-				return $result;
+				return $options['countOutput'] ? 0 : [];
 			}
 
-			$userGroups = getUserGroupsByUserId(self::$userData['userid']);
+			$user_groups = getUserGroupsByUserId(self::$userData['userid']);
 
-			$sqlParts['where'][] = '(s.usrgrpid IS NULL OR '.dbConditionInt('s.usrgrpid', $userGroups).')';
-			$sqlParts['where'][] = '(s.groupid IS NULL OR EXISTS ('.
-					'SELECT NULL'.
-					' FROM rights r'.
-					' WHERE s.groupid=r.id'.
-						' AND '.dbConditionInt('r.groupid', $userGroups).
-					' GROUP BY r.id'.
-					' HAVING MIN(r.permission)>'.PERM_DENY.
-					'))';
+			$sql_parts['where'][] = '(s.usrgrpid IS NULL OR '.dbConditionInt('s.usrgrpid', $user_groups).')';
+			$sql_parts['where'][] = '(s.groupid IS NULL OR EXISTS ('.
+				'SELECT NULL'.
+				' FROM rights r'.
+				' WHERE s.groupid=r.id'.
+					' AND '.dbConditionInt('r.groupid', $user_groups).
+				' GROUP BY r.id'.
+				' HAVING MIN(r.permission)>'.PERM_DENY.
+			'))';
 		}
 
-		// groupids
-		if (!is_null($options['groupids'])) {
-			zbx_value2array($options['groupids']);
+		$host_groups = null;
+		$host_groups_by_hostids = null;
+		$host_groups_by_groupids = null;
 
-			$sqlParts['where'][] = '(s.groupid IS NULL OR '.dbConditionInt('s.groupid', $options['groupids']).')';
+		// Hostids and groupids selection API calls must be made separately because we must intersect enriched groupids.
+		if ($options['hostids'] !== null) {
+			$host_groups_by_hostids = enrichParentGroups(API::HostGroup()->get([
+				'output' => ['groupid', 'name'],
+				'hostids' => $options['hostids'],
+				'preservekeys' => true
+			]));
+		}
+		if ($options['groupids'] !== null) {
+			$host_groups_by_groupids = enrichParentGroups(API::HostGroup()->get([
+				'output' => ['groupid', 'name'],
+				'groupids' => $options['groupids'],
+				'preservekeys' => true
+			]));
 		}
 
-		// hostids
-		if (!is_null($options['hostids'])) {
-			zbx_value2array($options['hostids']);
+		if ($host_groups_by_groupids !== null && $host_groups_by_hostids !== null) {
+			$host_groups = array_intersect_key($host_groups_by_hostids, $host_groups_by_groupids);
+		}
+		elseif ($host_groups_by_hostids !== null) {
+			$host_groups = $host_groups_by_hostids;
+		}
+		elseif ($host_groups_by_groupids !== null) {
+			$host_groups = $host_groups_by_groupids;
+		}
 
-			// return scripts that are assigned to the hosts' groups or to no group
-			$hostGroups = API::HostGroup()->get([
-				'output' => ['groupid'],
-				'hostids' => $options['hostids']
-			]);
-			$hostGroupIds = zbx_objectValues($hostGroups, 'groupid');
-
-			$sqlParts['where'][] = '('.dbConditionInt('s.groupid', $hostGroupIds).' OR s.groupid IS NULL)';
+		if ($host_groups !== null) {
+			$sql_parts['where'][] = '('.dbConditionInt('s.groupid', array_keys($host_groups)).' OR s.groupid IS NULL)';
+			$this->parent_host_groups = $host_groups;
 		}
 
 		// usrgrpids
-		if (!is_null($options['usrgrpids'])) {
-			zbx_value2array($options['usrgrpids']);
-
-			$sqlParts['where'][] = '(s.usrgrpid IS NULL OR '.dbConditionInt('s.usrgrpid', $options['usrgrpids']).')';
+		if ($options['usrgrpids'] !== null) {
+			$sql_parts['where'][] = '(s.usrgrpid IS NULL OR '.dbConditionInt('s.usrgrpid', $options['usrgrpids']).')';
 		}
 
 		// scriptids
-		if (!is_null($options['scriptids'])) {
-			zbx_value2array($options['scriptids']);
-
-			$sqlParts['where'][] = dbConditionInt('s.scriptid', $options['scriptids']);
+		if ($options['scriptids'] !== null) {
+			$sql_parts['where'][] = dbConditionInt('s.scriptid', $options['scriptids']);
 		}
 
 		// search
-		if (is_array($options['search'])) {
-			zbx_db_search('scripts s', $options, $sqlParts);
+		if ($options['search'] !== null) {
+			zbx_db_search('scripts s', $options, $sql_parts);
 		}
 
 		// filter
-		if (is_array($options['filter'])) {
-			$this->dbFilter('scripts s', $options, $sqlParts);
+		if ($options['filter'] !== null) {
+			$this->dbFilter('scripts s', $options, $sql_parts);
 		}
 
-		// limit
-		if (zbx_ctype_digit($options['limit']) && $options['limit']) {
-			$sqlParts['limit'] = $options['limit'];
-		}
+		$db_scripts = [];
 
-		$sqlParts = $this->applyQueryOutputOptions($this->tableName(), $this->tableAlias(), $options, $sqlParts);
-		$sqlParts = $this->applyQuerySortOptions($this->tableName(), $this->tableAlias(), $options, $sqlParts);
-		$res = DBselect($this->createSelectQueryFromParts($sqlParts), $sqlParts['limit']);
-		while ($script = DBfetch($res)) {
+		$sql_parts = $this->applyQueryOutputOptions($this->tableName(), $this->tableAlias(), $options, $sql_parts);
+		$sql_parts = $this->applyQuerySortOptions($this->tableName(), $this->tableAlias(), $options, $sql_parts);
+
+		$result = DBselect($this->createSelectQueryFromParts($sql_parts), $options['limit']);
+
+		while ($db_script = DBfetch($result)) {
 			if ($options['countOutput']) {
-				$result = $script['rowscount'];
+				return $db_script['rowscount'];
 			}
-			else {
-				$result[$script['scriptid']] = $script;
+
+			$db_scripts[$db_script['scriptid']] = $db_script;
+		}
+
+		if ($db_scripts) {
+			$db_scripts = $this->addRelatedObjects($options, $db_scripts);
+			$db_scripts = $this->unsetExtraFields($db_scripts, ['scriptid', 'groupid', 'host_access'],
+				$options['output']
+			);
+
+			if (!$options['preservekeys']) {
+				$db_scripts = array_values($db_scripts);
 			}
 		}
 
-		if ($options['countOutput']) {
-			return $result;
-		}
-
-		if ($result) {
-			$result = $this->addRelatedObjects($options, $result);
-			$result = $this->unsetExtraFields($result, ['groupid', 'host_access'], $options['output']);
-		}
-
-		// removing keys (hash -> array)
-		if (!$options['preservekeys']) {
-			$result = zbx_cleanHashes($result);
-		}
-
-		return $result;
+		return $db_scripts;
 	}
 
 	/**
@@ -620,120 +650,245 @@ class CScript extends CApiService {
 	/**
 	 * Returns all the scripts that are available on each given host.
 	 *
-	 * @param $hostIds
+	 * @param $hostids
 	 *
 	 * @return array
 	 */
-	public function getScriptsByHosts($hostIds) {
-		zbx_value2array($hostIds);
+	public function getScriptsByHosts($hostids) {
+		zbx_value2array($hostids);
 
-		$scriptsByHost = [];
+		$scripts_by_host = [];
 
-		if (!$hostIds) {
-			return $scriptsByHost;
+		if (!$hostids) {
+			return $scripts_by_host;
 		}
 
-		foreach ($hostIds as $hostId) {
-			$scriptsByHost[$hostId] = [];
+		foreach ($hostids as $hostid) {
+			$scripts_by_host[$hostid] = [];
 		}
 
 		$scripts = $this->get([
 			'output' => API_OUTPUT_EXTEND,
-			'selectHosts' => ['hostid'],
-			'hostids' => $hostIds,
+			'hostids' => $hostids,
 			'sortfield' => 'name',
 			'preservekeys' => true
 		]);
 
+		$scripts = $this->addRelatedGroupsAndHosts([
+			'selectGroups' => null,
+			'selectHosts' => ['hostid']
+		], $scripts, $hostids);
+
 		if ($scripts) {
 			// resolve macros
-			$macrosData = [];
-			foreach ($scripts as $scriptId => $script) {
+			$macros_data = [];
+			foreach ($scripts as $scriptid => $script) {
 				if (!empty($script['confirmation'])) {
 					foreach ($script['hosts'] as $host) {
-						if (isset($scriptsByHost[$host['hostid']])) {
-							$macrosData[$host['hostid']][$scriptId] = $script['confirmation'];
+						if (isset($scripts_by_host[$host['hostid']])) {
+							$macros_data[$host['hostid']][$scriptid] = $script['confirmation'];
 						}
 					}
 				}
 			}
-			if ($macrosData) {
-				$macrosData = CMacrosResolverHelper::resolve([
+			if ($macros_data) {
+				$macros_data = CMacrosResolverHelper::resolve([
 					'config' => 'scriptConfirmation',
-					'data' => $macrosData
+					'data' => $macros_data
 				]);
 			}
 
-			foreach ($scripts as $scriptId => $script) {
+			foreach ($scripts as $scriptid => $script) {
 				$hosts = $script['hosts'];
 				unset($script['hosts']);
 				// set script to host
 				foreach ($hosts as $host) {
-					$hostId = $host['hostid'];
+					$hostid = $host['hostid'];
 
-					if (isset($scriptsByHost[$hostId])) {
-						$size = count($scriptsByHost[$hostId]);
-						$scriptsByHost[$hostId][$size] = $script;
+					if (isset($scripts_by_host[$hostid])) {
+						$size = count($scripts_by_host[$hostid]);
+						$scripts_by_host[$hostid][$size] = $script;
 
 						// set confirmation text with resolved macros
-						if (isset($macrosData[$hostId][$scriptId]) && $script['confirmation']) {
-							$scriptsByHost[$hostId][$size]['confirmation'] = $macrosData[$hostId][$scriptId];
+						if (isset($macros_data[$hostid][$scriptid]) && $script['confirmation']) {
+							$scripts_by_host[$hostid][$size]['confirmation'] = $macros_data[$hostid][$scriptid];
 						}
 					}
 				}
 			}
 		}
 
-		return $scriptsByHost;
+		return $scripts_by_host;
 	}
 
 	protected function applyQueryOutputOptions($tableName, $tableAlias, array $options, array $sqlParts) {
 		$sqlParts = parent::applyQueryOutputOptions($tableName, $tableAlias, $options, $sqlParts);
 
-		if ($options['output'] != API_OUTPUT_COUNT) {
-			if ($options['selectGroups'] !== null || $options['selectHosts'] !== null) {
-				$sqlParts = $this->addQuerySelect($this->fieldId('groupid'), $sqlParts);
-				$sqlParts = $this->addQuerySelect($this->fieldId('host_access'), $sqlParts);
-			}
+		if ($options['selectGroups'] !== null || $options['selectHosts'] !== null) {
+			$sqlParts = $this->addQuerySelect($this->fieldId('groupid'), $sqlParts);
+			$sqlParts = $this->addQuerySelect($this->fieldId('host_access'), $sqlParts);
 		}
 
 		return $sqlParts;
 	}
 
+	/**
+	 * Applies relational subselect onto already fetched result.
+	 *
+	 * @param  array $options
+	 * @param  array $result
+	 *
+	 * @return array $result
+	 */
 	protected function addRelatedObjects(array $options, array $result) {
 		$result = parent::addRelatedObjects($options, $result);
 
-		// adding groups
-		if ($options['selectGroups'] !== null && $options['selectGroups'] != API_OUTPUT_COUNT) {
-			foreach ($result as $scriptId => $script) {
-				$result[$scriptId]['groups'] = API::HostGroup()->get([
-					'output' => $options['selectGroups'],
-					'groupids' => $script['groupid'] ? $script['groupid'] : null,
-					'editable' => ($script['host_access'] == PERM_READ_WRITE)
-				]);
+		return $this->addRelatedGroupsAndHosts($options, $result);
+	}
+
+	/**
+	 * Applies relational subselect onto already fetched result.
+	 *
+	 * @param  array $options
+	 * @param  mixed $options['selectGroups']
+	 * @param  mixed $options['selectHosts']
+	 * @param  array $result
+	 * @param  array $hostids                  An additional filter by hostids, which will be added to "hosts" key.
+	 *
+	 * @return array $result
+	 */
+	private function addRelatedGroupsAndHosts(array $options, array $result, array $hostids = null) {
+		$is_groups_select = $options['selectGroups'] !== null && $options['selectGroups'];
+		$is_hosts_select = $options['selectHosts'] !== null && $options['selectHosts'];
+
+		if (!$is_groups_select && !$is_hosts_select) {
+			return $result;
+		}
+
+		$host_groups_with_write_access = [];
+		$has_write_access_level = false;
+
+		$group_search_names = [];
+		foreach ($result as $script) {
+			$has_write_access_level |= ($script['host_access'] == PERM_READ_WRITE);
+
+			// If any script belongs to all host groups.
+			if ($script['groupid'] == 0) {
+				$group_search_names = null;
+			}
+
+			if ($group_search_names !== null) {
+				/*
+				 * If scripts were requested by host or group filters, then we have already requested group names
+				 * for all groups linked to scripts. And then we can request less groups by adding them as search
+				 * condition in hostgroup.get. Otherwise we will need to request all groups, user has access to.
+				 */
+				if (array_key_exists($script['groupid'], $this->parent_host_groups)) {
+					$group_search_names[] = $this->parent_host_groups[$script['groupid']]['name'];
+				}
 			}
 		}
 
-		// adding hosts
-		if ($options['selectHosts'] !== null && $options['selectHosts'] != API_OUTPUT_COUNT) {
-			$processedGroups = [];
+		$select_groups = ['name', 'groupid'];
+		$select_groups = $this->outputExtend($options['selectGroups'], $select_groups);
 
-			foreach ($result as $scriptId => $script) {
-				if (isset($processedGroups[$script['groupid'].'_'.$script['host_access']])) {
-					$result[$scriptId]['hosts'] = $result[$processedGroups[$script['groupid'].'_'.$script['host_access']]]['hosts'];
-				}
-				else {
-					$result[$scriptId]['hosts'] = API::Host()->get([
-						'output' => $options['selectHosts'],
-						'groupids' => $script['groupid'] ? $script['groupid'] : null,
-						'hostids' => $options['hostids'] ? $options['hostids'] : null,
-						'editable' => ($script['host_access'] == PERM_READ_WRITE)
-					]);
+		$host_groups = API::HostGroup()->get([
+			'output' => $select_groups,
+			'search' => $group_search_names ? ['name' => $group_search_names] : null,
+			'searchByAny' => true,
+			'startSearch' => true,
+			'preservekeys' => true
+		]);
 
-					$processedGroups[$script['groupid'].'_'.$script['host_access']] = $scriptId;
-				}
+		if ($has_write_access_level && $host_groups) {
+			$host_groups_with_write_access = API::HostGroup()->get([
+				'output' => $select_groups,
+				'groupid' => array_keys($host_groups),
+				'preservekeys' => true,
+				'editable' => true
+			]);
+		}
+		else {
+			$host_groups_with_write_access = $host_groups;
+		}
+
+		$nested = [];
+		foreach ($host_groups as $groupid => $group) {
+			$name = $group['name'];
+
+			while (($pos = strrpos($name, '/')) !== false) {
+				$name = substr($name, 0, $pos);
+				$nested[$name][$groupid] = true;
 			}
 		}
+
+		$hstgrp_branch = [];
+		foreach ($host_groups as $groupid => $group) {
+			$hstgrp_branch[$groupid] = [$groupid => true];
+			if (array_key_exists($group['name'], $nested)) {
+				$hstgrp_branch[$groupid] += $nested[$group['name']];
+			}
+		}
+
+		if ($is_hosts_select) {
+			$sql = 'SELECT hostid,groupid FROM hosts_groups'.
+				' WHERE '.dbConditionInt('groupid', array_keys($host_groups));
+			if ($hostids !== null) {
+				$sql .= ' AND '.dbConditionInt('hostid', $hostids);
+			}
+
+			$db_group_hosts = DBSelect($sql);
+
+			$all_hostids = [];
+			$group_to_hosts = [];
+			while ($row = DBFetch($db_group_hosts)) {
+				if (!array_key_exists($row['groupid'], $group_to_hosts)) {
+					$group_to_hosts[$row['groupid']] = [];
+				}
+
+				$group_to_hosts[$row['groupid']][$row['hostid']] = true;
+				$all_hostids[] = $row['hostid'];
+			}
+
+			$used_hosts = API::Host()->get([
+				'output' => $options['selectHosts'],
+				'hostids' => $all_hostids,
+				'preservekeys' => true
+			]);
+		}
+
+		$host_groups = $this->unsetExtraFields($host_groups, ['name', 'groupid'], $options['selectGroups']);
+		$host_groups_with_write_access = $this->unsetExtraFields(
+			$host_groups_with_write_access, ['name', 'groupid'], $options['selectGroups']
+		);
+
+		foreach ($result as &$script) {
+			if ($script['groupid'] == 0) {
+				$script_groups = ($script['host_access'] == PERM_READ_WRITE)
+					? $host_groups_with_write_access
+					: $host_groups;
+			}
+			else {
+				$script_groups = ($script['host_access'] == PERM_READ_WRITE)
+					? array_intersect_key($host_groups_with_write_access, $hstgrp_branch[$script['groupid']])
+					: array_intersect_key($host_groups, $hstgrp_branch[$script['groupid']]);
+			}
+
+			if ($is_groups_select) {
+				$script['groups'] = array_values($script_groups);
+			}
+
+			if ($is_hosts_select) {
+				$script['hosts'] = [];
+				foreach (array_keys($script_groups) as $script_groupid) {
+					if (array_key_exists($script_groupid, $group_to_hosts)) {
+						$script['hosts'] += array_intersect_key($used_hosts, $group_to_hosts[$script_groupid]);
+					}
+				}
+				$script['hosts'] = array_values($script['hosts']);
+			}
+		}
+		unset($script);
 
 		return $result;
 	}

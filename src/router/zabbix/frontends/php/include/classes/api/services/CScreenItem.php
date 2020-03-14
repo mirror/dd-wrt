@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -41,7 +41,6 @@ class CScreenItem extends CApiService {
 		SCREEN_RESOURCE_TRIGGER_INFO,
 		SCREEN_RESOURCE_SERVER_INFO,
 		SCREEN_RESOURCE_CLOCK,
-		SCREEN_RESOURCE_SCREEN,
 		SCREEN_RESOURCE_TRIGGER_OVERVIEW,
 		SCREEN_RESOURCE_DATA_OVERVIEW,
 		SCREEN_RESOURCE_URL,
@@ -536,14 +535,6 @@ class CScreenItem extends CApiService {
 					}
 
 					$mapIds[$screenItem['resourceid']] = $screenItem['resourceid'];
-					break;
-
-				case SCREEN_RESOURCE_SCREEN:
-					if (!$screenItem['resourceid']) {
-						self::exception(ZBX_API_ERROR_PARAMETERS, _('No screen ID provided for screen element.'));
-					}
-
-					$screenIds[$screenItem['resourceid']] = $screenItem['resourceid'];
 					break;
 
 				case SCREEN_RESOURCE_ACTIONS:

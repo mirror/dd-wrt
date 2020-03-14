@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -183,6 +183,66 @@ void	zbx_gethost_by_ip(const char *ip, char *host, size_t hostlen)
 	zbx_strlcpy(host, hst->h_name, hostlen);
 }
 #endif	/* HAVE_IPV6 */
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_getip_by_host                                                *
+ *                                                                            *
+ * Purpose: retrieve IP address by host name                                  *
+ *                                                                            *
+ ******************************************************************************/
+#ifdef HAVE_IPV6
+void	zbx_getip_by_host(const char *host, char *ip, size_t iplen)
+{
+	struct addrinfo	hints, *ai = NULL;
+
+	assert(ip);
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = PF_UNSPEC;
+
+	if (0 != getaddrinfo(host, NULL, &hints, &ai))
+	{
+		ip[0] = '\0';
+		goto out;
+	}
+
+	switch(ai->ai_addr->sa_family) {
+		case AF_INET:
+			inet_ntop(AF_INET, &(((struct sockaddr_in *)ai->ai_addr)->sin_addr), ip, iplen);
+			break;
+		case AF_INET6:
+			inet_ntop(AF_INET6, &(((struct sockaddr_in *)ai->ai_addr)->sin_addr), ip, iplen);
+			break;
+		default:
+			ip[0] = '\0';
+			goto out;
+	}
+out:
+	if (NULL != ai)
+		freeaddrinfo(ai);
+}
+#else
+void	zbx_getip_by_host(const char *host, char *ip, size_t iplen)
+{
+	struct in_addr	*addr;
+	struct hostent  *hst;
+
+	assert(host);
+
+	if (NULL == (hst = gethostbyname(host)))
+	{
+		ip[0] = '\0';
+		return;
+	}
+
+	addr = (struct in_addr *)hst->h_addr_list[0];
+
+	zbx_strlcpy(ip , inet_ntoa(*addr),iplen);
+}
+#endif	/* HAVE_IPV6 */
+
+
 #endif	/* _WINDOWS */
 
 #ifdef _WINDOWS
@@ -1567,7 +1627,8 @@ const char	*zbx_tcp_recv_line(zbx_socket_t *s)
 		}
 		else
 		{
-			if (0 != (left = MIN(ZBX_TCP_LINE_LEN - s->read_bytes, (size_t)(ptr - buffer))))
+			if (0 != (left = (NULL == ptr ? ZBX_TCP_LINE_LEN - s->read_bytes :
+					MIN(ZBX_TCP_LINE_LEN - s->read_bytes, (size_t)(ptr - buffer)))))
 			{
 				/* fill the string to the defined limit */
 				zbx_strncpy_alloc(&s->buffer, &alloc, &offset, buffer, left);

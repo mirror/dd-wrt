@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -105,7 +105,7 @@ if (!$data['alias'] || $data['users']) {
 			'output' => ['alertid', 'actionid', 'userid', 'clock', 'sendto', 'subject', 'message', 'status',
 				'retries', 'error', 'alerttype'
 			],
-			'selectMediatypes' => ['mediatypeid', 'description', 'maxattempts'],
+			'selectMediatypes' => ['mediatypeid', 'name', 'maxattempts'],
 			'userids' => $userid,
 			// API::Alert operates with 'open' time interval therefore before call have to alter 'from' and 'to' values.
 			'time_from' => $data['timeline']['from_ts'] - 1,

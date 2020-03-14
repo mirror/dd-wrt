@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -69,6 +69,7 @@ struct	_DC_TRIGGER;
 #define ZBX_DB_SERVER	1
 #define ZBX_DB_PROXY	2
 
+#define TRIGGER_OPDATA_LEN		255
 #define TRIGGER_URL_LEN			255
 #define TRIGGER_DESCRIPTION_LEN		255
 #define TRIGGER_EXPRESSION_LEN		2048
@@ -237,8 +238,11 @@ struct	_DC_TRIGGER;
 #	define	DBend_multiple_update(sql, sql_alloc, sql_offset)	do {} while (0)
 
 #	define	ZBX_SQL_EXEC_FROM	0
-
-#	define	ZBX_SQL_STRCMP		"%s'%s'"
+#	ifdef HAVE_MYSQL
+#		define	ZBX_SQL_STRCMP		"%s binary '%s'"
+#	else
+#		define	ZBX_SQL_STRCMP		"%s'%s'"
+#	endif
 #	define	ZBX_SQL_STRVAL_EQ(str)	"=", str
 #	define	ZBX_SQL_STRVAL_NE(str)	"<>", str
 #endif
@@ -306,6 +310,7 @@ typedef struct
 	char		*url;
 	char		*comments;
 	char		*correlation_tag;
+	char		*opdata;
 	unsigned char	value;
 	unsigned char	priority;
 	unsigned char	type;
@@ -334,6 +339,7 @@ typedef struct
 #define ZBX_FLAGS_DB_EVENT_UNSET		0x0000
 #define ZBX_FLAGS_DB_EVENT_CREATE		0x0001
 #define ZBX_FLAGS_DB_EVENT_NO_ACTION		0x0002
+#define ZBX_FLAGS_DB_EVENT_RECOVER		0x0004
 	zbx_uint64_t		flags;
 }
 DB_EVENT;
@@ -599,22 +605,32 @@ const char	*zbx_host_key_string(zbx_uint64_t itemid);
 const char	*zbx_user_string(zbx_uint64_t userid);
 
 void	DBregister_host(zbx_uint64_t proxy_hostid, const char *host, const char *ip, const char *dns,
-		unsigned short port, const char *host_metadata, int now);
+		unsigned short port, unsigned int connection_type, const char *host_metadata, unsigned short flag,
+		int now);
 void	DBregister_host_prepare(zbx_vector_ptr_t *autoreg_hosts, const char *host, const char *ip, const char *dns,
-		unsigned short port, const char *host_metadata, int now);
+		unsigned short port, unsigned int connection_type, const char *host_metadata, unsigned short flag,
+		int now);
 void	DBregister_host_flush(zbx_vector_ptr_t *autoreg_hosts, zbx_uint64_t proxy_hostid);
 void	DBregister_host_clean(zbx_vector_ptr_t *autoreg_hosts);
 
 void	DBproxy_register_host(const char *host, const char *ip, const char *dns, unsigned short port,
-		const char *host_metadata);
+		unsigned int connection_type, const char *host_metadata, unsigned short flag);
 int	DBexecute_overflowed_sql(char **sql, size_t *sql_alloc, size_t *sql_offset);
 char	*DBget_unique_hostname_by_sample(const char *host_name_sample, const char *field_name);
 
 const char	*DBsql_id_ins(zbx_uint64_t id);
 const char	*DBsql_id_cmp(zbx_uint64_t id);
 
-zbx_uint64_t	DBadd_interface(zbx_uint64_t hostid, unsigned char type,
-		unsigned char useip, const char *ip, const char *dns, unsigned short port);
+typedef enum
+{
+	ZBX_CONN_DEFAULT = 0,
+	ZBX_CONN_IP,
+	ZBX_CONN_DNS,
+}
+zbx_conn_flags_t;
+
+zbx_uint64_t	DBadd_interface(zbx_uint64_t hostid, unsigned char type, unsigned char useip, const char *ip,
+		const char *dns, unsigned short port, zbx_conn_flags_t flags);
 
 const char	*DBget_inventory_field(unsigned char inventory_link);
 
@@ -638,11 +654,17 @@ int	DBlock_ids(const char *table_name, const char *field_name, zbx_vector_uint64
 #define DBlock_hostid(id)			DBlock_record("hosts", id, NULL, 0)
 #define DBlock_druleid(id)			DBlock_record("drules", id, NULL, 0)
 #define DBlock_dcheckid(dcheckid, druleid)	DBlock_record("dchecks", dcheckid, "druleid", druleid)
+#define DBlock_graphid(id)			DBlock_record("graphs", id, NULL, 0)
 #define DBlock_hostids(ids)			DBlock_records("hosts", ids)
+#define DBlock_triggerids(ids)			DBlock_records("triggers", ids)
+#define DBlock_itemids(ids)			DBlock_records("items", ids)
+#define DBlock_group_prototypeids(ids)		DBlock_records("group_prototype", ids)
 
 void	DBdelete_groups(zbx_vector_uint64_t *groupids);
 
 void	DBselect_uint64(const char *sql, zbx_vector_uint64_t *ids);
+
+void	DBcheck_character_set(void);
 
 /* bulk insert support */
 
@@ -753,11 +775,13 @@ typedef struct
 	unsigned char	compress;
 	int		version;
 	int		lastaccess;
+	int		last_version_error_time;
 
 #define ZBX_FLAGS_PROXY_DIFF_UNSET				__UINT64_C(0x0000)
 #define ZBX_FLAGS_PROXY_DIFF_UPDATE_COMPRESS			__UINT64_C(0x0001)
 #define ZBX_FLAGS_PROXY_DIFF_UPDATE_VERSION			__UINT64_C(0x0002)
 #define ZBX_FLAGS_PROXY_DIFF_UPDATE_LASTACCESS			__UINT64_C(0x0004)
+#define ZBX_FLAGS_PROXY_DIFF_UPDATE_LASTERROR			__UINT64_C(0x0008)
 #define ZBX_FLAGS_PROXY_DIFF_UPDATE (			\
 		ZBX_FLAGS_PROXY_DIFF_UPDATE_COMPRESS |	\
 		ZBX_FLAGS_PROXY_DIFF_UPDATE_VERSION | 	\

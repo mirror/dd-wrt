@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -25,20 +25,28 @@ $form = (new CForm())
 	->addVar('hostid', $data['hostid'])
 	->addVar('value_type', $data['value_type'])
 	->addVar('test_type', $data['test_type'])
+	->addVar('show_final_result', $data['show_final_result'])
 	->setId('preprocessing-test-form');
 
 // Create macros table.
-$macros_table = $data['macros'] ? new CTable() : null;
+$macros_table = $data['macros'] ? (new CTable())->addClass(ZBX_STYLE_TEXTAREA_FLEXIBLE_CONTAINER) : null;
+
+$i = 0;
 foreach ($data['macros'] as $macro_name => $macro_value) {
 	$macros_table->addRow([
-		(new CTextBox(null, $macro_name, true))
-			->setWidth(ZBX_TEXTAREA_MACRO_WIDTH)
-			->removeId(),
-		'&rArr;',
-		(new CTextBox('macros['.$macro_name.']', $macro_value))
-			->setWidth(ZBX_TEXTAREA_MACRO_VALUE_WIDTH)
-			->setAttribute('placeholder', _('value'))
-			->removeId()
+		(new CCol(
+			(new CTextAreaFlexible('macro_rows['.$i++.']', $macro_name, ['readonly' => true]))
+				->setWidth(ZBX_TEXTAREA_MACRO_WIDTH)
+				->removeAttribute('name')
+				->removeId()
+		))->addClass(ZBX_STYLE_TEXTAREA_FLEXIBLE_PARENT),
+		(new CCol('&rArr;'))->addStyle('vertical-align: top;'),
+		(new CCol(
+			(new CTextAreaFlexible('macros['.$macro_name.']', $macro_value))
+				->setWidth(ZBX_TEXTAREA_MACRO_VALUE_WIDTH)
+				->setAttribute('placeholder', _('value'))
+				->removeId()
+		))->addClass(ZBX_STYLE_TEXTAREA_FLEXIBLE_PARENT)
 	]);
 }
 
@@ -56,9 +64,16 @@ $result_table = (new CTable())
 foreach ($data['steps'] as $i => $step) {
 	$form
 		->addVar('steps['.$i.'][type]', $step['type'])
-		->addVar('steps['.$i.'][params]', $step['params'])
 		->addVar('steps['.$i.'][error_handler]', $step['error_handler'])
 		->addVar('steps['.$i.'][error_handler_params]', $step['error_handler_params']);
+
+	// Temporary solution to fix "\n\n1" conversion to "\n1" in the hidden textarea field after jQuery.append().
+	if ($step['type'] == ZBX_PREPROC_CSV_TO_JSON) {
+		$form->addItem(new CInput('hidden', 'steps['.$i.'][params]', $step['params']));
+	}
+	else {
+		$form->addVar('steps['.$i.'][params]', $step['params']);
+	}
 
 	$result_table->addRow([
 		$step['num'].':',
@@ -94,6 +109,13 @@ $form_list = (new CFormList())
 				->setEnabled($data['show_prev'])
 				->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)
 		]))->addClass('preproc-test-popup-value-row')
+	)
+	->addRow(
+		new CLabel(_('End of line sequence'), 'eol'),
+		(new CRadioButtonList('eol', $data['eol']))
+			->addValue(_('LF'), ZBX_EOL_LF)
+			->addValue(_('CRLF'), ZBX_EOL_CRLF)
+			->setModern(true)
 	);
 
 if ($macros_table) {
@@ -109,6 +131,14 @@ $form_list->addRow(
 		->addClass(ZBX_STYLE_TABLE_FORMS_SEPARATOR)
 		->addStyle('width: 100%;')
 );
+
+if ($data['show_final_result']) {
+	$form_list->addRow(
+		_('Result'),
+		new CDiv(),
+		'final-result'
+	);
+}
 
 $form
 	->addItem($form_list)

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -83,6 +83,27 @@ function graph_item_calc_fnc2str($calc_fnc) {
 		case CALC_FNC_AVG:
 		default:
 			return _('avg');
+	}
+}
+
+function graph_item_aggr_fnc2str($calc_fnc) {
+	switch ($calc_fnc) {
+		case GRAPH_AGGREGATE_NONE:
+			return _('none');
+		case GRAPH_AGGREGATE_MIN:
+			return _('min');
+		case GRAPH_AGGREGATE_MAX:
+			return _('max');
+		case GRAPH_AGGREGATE_AVG:
+			return _('avg');
+		case GRAPH_AGGREGATE_COUNT:
+			return _('count');
+		case GRAPH_AGGREGATE_SUM:
+			return _('sum');
+		case GRAPH_AGGREGATE_FIRST:
+			return _('first');
+		case GRAPH_AGGREGATE_LAST:
+			return _('last');
 	}
 }
 

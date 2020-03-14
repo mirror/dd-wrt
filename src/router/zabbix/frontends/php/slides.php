@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 
 require_once dirname(__FILE__).'/include/config.inc.php';
-require_once dirname(__FILE__).'/include/hostgroups.inc.php';
 require_once dirname(__FILE__).'/include/graphs.inc.php';
 require_once dirname(__FILE__).'/include/screens.inc.php';
 require_once dirname(__FILE__).'/include/blocks.inc.php';
@@ -143,13 +142,18 @@ if (hasRequest('widgetRefresh') || hasRequest('widgetRefreshRate')) {
 
 		$delay = timeUnitToSeconds(($screen['delay'] === '0') ? $data['screen']['delay'] : $screen['delay']);
 
-		insert_js(
-			'PMasters["slideshows"].dolls["'.WIDGET_SLIDESHOW.'"].frequency('.
+		$js = 'PMasters["slideshows"].dolls["'.WIDGET_SLIDESHOW.'"].frequency('.
 				CJs::encodeJson($delay * $widgetRefreshRate).
 			');'.
 			"\n".
-			'PMasters["slideshows"].dolls["'.WIDGET_SLIDESHOW.'"].restartDoll();'
-		);
+			'PMasters["slideshows"].dolls["'.WIDGET_SLIDESHOW.'"].restartDoll();';
+
+		if ($page['type'] == PAGE_TYPE_JS) {
+			echo $js;
+		}
+		elseif ($page['type'] == PAGE_TYPE_HTML_BLOCK) {
+			insert_js($js);
+		}
 	}
 }
 

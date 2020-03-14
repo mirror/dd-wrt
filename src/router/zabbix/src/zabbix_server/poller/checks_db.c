@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -66,6 +66,10 @@ int	get_value_db(DC_ITEM *item, AGENT_RESULT *result)
 	else if (0 == strcmp(request.key, "db.odbc.discovery"))
 	{
 		query_result_to_text = zbx_odbc_query_result_to_lld_json;
+	}
+	else if (0 == strcmp(request.key, "db.odbc.get"))
+	{
+		query_result_to_text = zbx_odbc_query_result_to_json;
 	}
 	else
 	{

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -775,6 +775,8 @@ extern zbx_dbpatch_t	DBPATCH_VERSION(3050)[];
 extern zbx_dbpatch_t	DBPATCH_VERSION(4000)[];
 extern zbx_dbpatch_t	DBPATCH_VERSION(4010)[];
 extern zbx_dbpatch_t	DBPATCH_VERSION(4020)[];
+extern zbx_dbpatch_t	DBPATCH_VERSION(4030)[];
+extern zbx_dbpatch_t	DBPATCH_VERSION(4040)[];
 
 static zbx_db_version_t dbversions[] = {
 	{DBPATCH_VERSION(2010), "2.2 development"},
@@ -791,6 +793,8 @@ static zbx_db_version_t dbversions[] = {
 	{DBPATCH_VERSION(4000), "4.0 maintenance"},
 	{DBPATCH_VERSION(4010), "4.2 development"},
 	{DBPATCH_VERSION(4020), "4.2 maintenance"},
+	{DBPATCH_VERSION(4030), "4.4 development"},
+	{DBPATCH_VERSION(4040), "4.4 maintenance"},
 	{NULL}
 };
 
@@ -931,10 +935,11 @@ int	DBcheck_version(void)
 			if (db_optional >= patches[i].version)
 				continue;
 
-			/* block SIGTERM, SIGINT to prevent interruption of statements that cause an implicit commit */
+			/* block signals to prevent interruption of statements that cause an implicit commit */
 			sigemptyset(&mask);
 			sigaddset(&mask, SIGTERM);
 			sigaddset(&mask, SIGINT);
+			sigaddset(&mask, SIGQUIT);
 
 			if (0 > sigprocmask(SIG_BLOCK, &mask, &orig_mask))
 				zabbix_log(LOG_LEVEL_WARNING, "cannot set sigprocmask to block the user signal");

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,13 +20,7 @@
 #ifndef ZABBIX_COMMS_H
 #define ZABBIX_COMMS_H
 
-#ifdef _WINDOWS
-#	if defined(__INT_MAX__) && __INT_MAX__ == 2147483647
-typedef int	ssize_t;
-#	else
-typedef long	ssize_t;
-#	endif
-#endif
+#include "zbxtypes.h"
 
 #ifdef _WINDOWS
 #	define ZBX_TCP_WRITE(s, b, bl)		((ssize_t)send((s), (b), (int)(bl), 0))
@@ -111,6 +105,7 @@ const char	*zbx_socket_strerror(void);
 
 #ifndef _WINDOWS
 void	zbx_gethost_by_ip(const char *ip, char *host, size_t hostlen);
+void	zbx_getip_by_host(const char *host, char *ip, size_t iplen);
 #endif
 
 int	zbx_tcp_connect(zbx_socket_t *s, const char *source_ip, const char *ip, unsigned short port, int timeout,
@@ -188,6 +183,9 @@ int	zbx_send_response_ext(zbx_socket_t *sock, int result, const char *info, cons
 
 #define zbx_send_response(sock, result, info, timeout) \
 		zbx_send_response_ext(sock, result, info, NULL, ZBX_TCP_PROTOCOL, timeout)
+
+#define zbx_send_response_same(sock, result, info, timeout) \
+		zbx_send_response_ext(sock, result, info, NULL, sock->protocol, timeout)
 
 #define zbx_send_proxy_response(sock, result, info, timeout) \
 		zbx_send_response_ext(sock, result, info, ZABBIX_VERSION, ZBX_TCP_PROTOCOL | ZBX_TCP_COMPRESS, timeout)

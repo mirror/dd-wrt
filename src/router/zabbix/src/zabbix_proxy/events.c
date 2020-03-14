@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@
 
 #include "common.h"
 #include "zbxalgo.h"
+#include "db.h"
+#include "../zabbix_server/events.h"
 
 void	zbx_initialize_events(void)
 {
@@ -30,12 +32,12 @@ void	zbx_uninitialize_events(void)
 	THIS_SHOULD_NEVER_HAPPEN;
 }
 
-int	zbx_add_event(unsigned char source, unsigned char object, zbx_uint64_t objectid,
+DB_EVENT	*zbx_add_event(unsigned char source, unsigned char object, zbx_uint64_t objectid,
 		const zbx_timespec_t *timespec, int value, const char *trigger_description,
 		const char *trigger_expression, const char *trigger_recovery_expression, unsigned char trigger_priority,
 		unsigned char trigger_type, const zbx_vector_ptr_t *trigger_tags,
 		unsigned char trigger_correlation_mode, const char *trigger_correlation_tag,
-		unsigned char trigger_value, const char *error)
+		unsigned char trigger_value, const char *trigger_opdata, const char *error)
 {
 	ZBX_UNUSED(source);
 	ZBX_UNUSED(object);
@@ -51,10 +53,12 @@ int	zbx_add_event(unsigned char source, unsigned char object, zbx_uint64_t objec
 	ZBX_UNUSED(trigger_correlation_mode);
 	ZBX_UNUSED(trigger_correlation_tag);
 	ZBX_UNUSED(trigger_value);
+	ZBX_UNUSED(trigger_opdata);
 	ZBX_UNUSED(error);
 
 	THIS_SHOULD_NEVER_HAPPEN;
-	return FAIL;
+
+	return NULL;
 }
 
 int	zbx_close_problem(zbx_uint64_t triggerid, zbx_uint64_t eventid, zbx_uint64_t userid)

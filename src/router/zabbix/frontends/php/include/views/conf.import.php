@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ $user_type = CWebUser::getType();
 
 if ($user_type == USER_TYPE_SUPER_ADMIN) {
 	$titles['images'] = _('Images');
+	$titles['mediaTypes'] = _('Media types');
 	$titles['valueMaps'] = _('Value mappings');
 }
 
@@ -90,6 +91,12 @@ foreach ($titles as $key => $title) {
 		if ($key !== 'maps' && $key !== 'screens' && $user_type != USER_TYPE_SUPER_ADMIN
 				&& $user_type != USER_TYPE_ZABBIX_ADMIN) {
 			$cbDeleted->setAttribute('disabled', 'disabled');
+		}
+
+		if ($key === 'templateLinkage') {
+			$cbDeleted->onClick('updateWarning(this, '.CJs::encodeJson(
+				_('Template and host properties that are inherited through template linkage will be unlinked and cleared.')
+			).')');
 		}
 	}
 

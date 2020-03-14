@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ $fields = $data['dialogue']['fields'];
 $form = CWidgetHelper::createForm();
 
 $form_list = CWidgetHelper::createFormList($data['dialogue']['name'], $data['dialogue']['type'],
-	$data['known_widget_types'], $fields['rf_rate']
+	$data['dialogue']['view_mode'], $data['known_widget_types'], $fields['rf_rate']
 );
 
 $scripts = [];
@@ -65,6 +65,15 @@ $form_list->addRow(
 	CWidgetHelper::getSeverities($fields['severities'], $data['config'])
 );
 
+// Show type.
+$form_list->addRow(CWidgetHelper::getLabel($fields['show_type']), CWidgetHelper::getRadioButtonList($fields['show_type']));
+
+// Layout.
+$form_list->addRow(CWidgetHelper::getLabel($fields['layout']), CWidgetHelper::getRadioButtonList($fields['layout']));
+
+// Show operational data.
+$form_list->addRow(CWidgetHelper::getLabel($fields['show_opdata']), CWidgetHelper::getRadioButtonList($fields['show_opdata']));
+
 // Show suppressed problems.
 $form_list->addRow(CWidgetHelper::getLabel($fields['show_suppressed']),
 	CWidgetHelper::getCheckBox($fields['show_suppressed'])
@@ -74,11 +83,6 @@ $form_list->addRow(CWidgetHelper::getLabel($fields['show_suppressed']),
 $form_list->addRow(
 	CWidgetHelper::getLabel($fields['hide_empty_groups']),
 	CWidgetHelper::getCheckBox($fields['hide_empty_groups'])
-);
-
-// Show latest values.
-$form_list->addRow(CWidgetHelper::getLabel($fields['show_latest_values']),
-	CWidgetHelper::getCheckBox($fields['show_latest_values'])
 );
 
 // Problem display.

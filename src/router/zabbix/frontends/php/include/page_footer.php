@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ if (!defined('PAGE_HEADER_LOADED')) {
 }
 
 // last page
-if (!defined('ZBX_PAGE_NO_MENU') && $page['file'] != 'profile.php') {
+if (!defined('ZBX_PAGE_NO_MENU')) {
 	CProfile::update('web.paging.lastpage', $page['file'], PROFILE_TYPE_STR);
 }
 

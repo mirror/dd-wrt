@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #include "cfg.h"
 #include "log.h"
 #include "zbxgetopt.h"
-#include "../libs/zbxcrypto/tls.h"
+#include "zbxcrypto.h"
 
 #ifndef _WINDOWS
 #	include "zbxnix.h"
@@ -455,9 +455,10 @@ int	main(int argc, char **argv)
 #endif
 	}
 #if !defined(_WINDOWS)
-	signal(SIGINT,  get_signal_handler);
-	signal(SIGTERM, get_signal_handler);
+	signal(SIGINT, get_signal_handler);
 	signal(SIGQUIT, get_signal_handler);
+	signal(SIGTERM, get_signal_handler);
+	signal(SIGHUP, get_signal_handler);
 	signal(SIGALRM, get_signal_handler);
 	signal(SIGPIPE, get_signal_handler);
 #endif

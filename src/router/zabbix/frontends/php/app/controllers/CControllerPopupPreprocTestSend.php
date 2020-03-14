@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -27,6 +27,11 @@ class CControllerPopupPreprocTestSend extends CControllerPopupPreprocTest {
 	/**
 	 * @var bool
 	 */
+	protected $show_final_result;
+
+	/**
+	 * @var bool
+	 */
 	protected $use_prev_value;
 
 	/**
@@ -41,11 +46,13 @@ class CControllerPopupPreprocTestSend extends CControllerPopupPreprocTest {
 			'hostid' => 'db hosts.hostid',
 			'value_type' => 'in '.implode(',', [ITEM_VALUE_TYPE_UINT64, ITEM_VALUE_TYPE_FLOAT, ITEM_VALUE_TYPE_STR, ITEM_VALUE_TYPE_LOG, ITEM_VALUE_TYPE_TEXT]),
 			'test_type' => 'in '.implode(',', [self::ZBX_TEST_TYPE_ITEM, self::ZBX_TEST_TYPE_ITEM_PROTOTYPE, self::ZBX_TEST_TYPE_LLD]),
+			'eol' => 'in '.implode(',', [ZBX_EOL_LF, ZBX_EOL_CRLF]),
 			'steps' => 'required|array',
 			'macros' => 'array',
 			'value' => 'string',
 			'prev_value' => 'string',
-			'prev_time' => 'string'
+			'prev_time' => 'string',
+			'show_final_result' => 'in 0,1'
 		];
 
 		$ret = $this->validateInput($fields);
@@ -55,6 +62,7 @@ class CControllerPopupPreprocTestSend extends CControllerPopupPreprocTest {
 			$prepr_types = zbx_objectValues($steps, 'type');
 			$this->preproc_item = self::getPreprocessingItemType($this->getInput('test_type'));
 			$this->use_prev_value = (count(array_intersect($prepr_types, self::$preproc_steps_using_prev_value)) > 0);
+			$this->show_final_result = ($this->getInput('show_final_result') == 1);
 
 			// Check preprocessing steps.
 			if (($error = $this->preproc_item->validateItemPreprocessingSteps($steps)) !== true) {
@@ -122,7 +130,8 @@ class CControllerPopupPreprocTestSend extends CControllerPopupPreprocTest {
 		$data = [
 			'value' => $this->getInput('value', ''),
 			'value_type' => $this->getInput('value_type', ITEM_VALUE_TYPE_STR),
-			'steps' => $this->getInput('steps')
+			'steps' => $this->getInput('steps'),
+			'single' => !$this->show_final_result
 		];
 
 		// Resolve macros used in parameter fields.
@@ -146,6 +155,16 @@ class CControllerPopupPreprocTestSend extends CControllerPopupPreprocTest {
 					$macro_value = array_key_exists($macro, $macros_posted)
 						? $macros_posted[$macro]
 						: '';
+
+					/*
+					 * Additional escaping of preprocessing params is required for JSONPath and Prometheus preprocessing
+					 * steps. Quote and backslash characters should be escaped when LLD macros are used in params field.
+					 */
+					if ($field === 'params' && ($macro[1] === '#' || ($macro[1] === '{' && $macro[2] === '#'))
+							&& ($step['type'] == ZBX_PREPROC_JSONPATH || $step['type'] == ZBX_PREPROC_PROMETHEUS_TO_JSON
+							|| $step['type'] == ZBX_PREPROC_PROMETHEUS_PATTERN)) {
+						$macro_value = str_replace(['\\', '"'], ['\\\\', '\"'], $macro_value);
+					}
 
 					$step[$field] = substr_replace($step[$field], $macro_value, $pos, strlen($macro));
 				}
@@ -177,14 +196,15 @@ class CControllerPopupPreprocTestSend extends CControllerPopupPreprocTest {
 		}
 		elseif (is_array($result)) {
 			$test_failed = false;
+			$test_outcome = null;
 			foreach ($data['steps'] as $i => &$step) {
 				if ($test_failed) {
 					// If test is failed, proceesing steps are skipped from results.
 					unset($data['steps'][$i]);
 					continue;
 				}
-				elseif (array_key_exists($i, $result)) {
-					$step += $result[$i];
+				elseif (array_key_exists($i, $result['steps'])) {
+					$step += $result['steps'][$i];
 
 					if (array_key_exists('error', $step)) {
 						// If error happened and no value is set, frontend shows label 'No value'.
@@ -199,8 +219,37 @@ class CControllerPopupPreprocTestSend extends CControllerPopupPreprocTest {
 				unset($step['params']);
 				unset($step['error_handler']);
 				unset($step['error_handler_params']);
+
+				// Latest executed step due to the error or end of preprocessing.
+				$test_outcome = $step + ['action' => ZBX_PREPROC_FAIL_DEFAULT];
 			}
 			unset($step);
+
+			if (array_key_exists('previous', $result) && $result['previous'] === true) {
+				error(_s('Incorrect value for "%1$s" field.', _('Previous value')));
+			}
+			elseif ($this->show_final_result) {
+				if (array_key_exists('result', $result)) {
+					$output['final'] = [
+						'action' => _s('Result converted to %1$s', itemValueTypeString($data['value_type'])),
+						'result' => $result['result']
+					];
+				}
+				elseif (array_key_exists('error', $result)) {
+					$output['final'] = [
+						'action' => ($test_outcome['action'] == ZBX_PREPROC_FAIL_SET_ERROR)
+							? _('Set error to')
+							: '',
+						'error' => $result['error']
+					];
+				}
+
+				if ($output['final']['action'] !== '') {
+					$output['final']['action'] = (new CSpan($output['final']['action']))
+						->addClass(ZBX_STYLE_GREY)
+						->toString();
+				}
+			}
 
 			$output['steps'] = $data['steps'];
 		}
@@ -210,5 +259,18 @@ class CControllerPopupPreprocTestSend extends CControllerPopupPreprocTest {
 		}
 
 		$this->setResponse((new CControllerResponseData(['main_block' => CJs::encodeJson($output)]))->disableView());
+	}
+
+	public function getInput($var, $default = null) {
+		$value = parent::getInput($var, $default);
+		if ($var === 'value' || $var === 'prev_value') {
+			$value = str_replace("\r\n", "\n", $value);
+
+			if (parent::getInput('eol', ZBX_EOL_LF) == ZBX_EOL_CRLF) {
+				$value = str_replace("\n", "\r\n", $value);
+			}
+		}
+
+		return $value;
 	}
 }

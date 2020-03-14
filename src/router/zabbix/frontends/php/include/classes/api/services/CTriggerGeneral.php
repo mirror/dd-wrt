@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -145,7 +145,7 @@ abstract class CTriggerGeneral extends CApiService {
 		$options = [
 			'output' => ['triggerid', 'description', 'expression', 'recovery_mode', 'recovery_expression', 'url',
 				'status', 'priority', 'comments', 'type', 'templateid', 'correlation_mode', 'correlation_tag',
-				'manual_close'
+				'manual_close', 'opdata'
 			],
 			'hostids' => $host['hostid'],
 			'filter' => ['templateid' => $trigger['templateid']],
@@ -495,17 +495,24 @@ abstract class CTriggerGeneral extends CApiService {
 
 		switch (get_class($this)) {
 			case 'CTrigger':
+				$error_duplicate = _('Duplicate trigger with name "%1$s".');
 				$error_wrong_fields = _('Wrong fields for trigger.');
 				$error_cannot_set = _('Cannot set "%1$s" for trigger "%2$s".');
 				break;
 
 			case 'CTriggerPrototype':
+				$error_duplicate = _('Duplicate trigger prototype with name "%1$s".');
 				$error_wrong_fields = _('Wrong fields for trigger prototype.');
 				$error_cannot_set = _('Cannot set "%1$s" for trigger prototype "%2$s".');
 				break;
 
 			default:
 				self::exception(ZBX_API_ERROR_INTERNAL, _('Internal error.'));
+		}
+
+		$duplicate = CArrayHelper::findDuplicate($triggers, 'description', 'expression');
+		if ($duplicate) {
+			self::exception(ZBX_API_ERROR_PARAMETERS, _s($error_duplicate, $duplicate['description']));
 		}
 
 		$triggerDbFields = [
@@ -680,7 +687,7 @@ abstract class CTriggerGeneral extends CApiService {
 		$options = [
 			'output' => ['triggerid', 'description', 'expression', 'url', 'status', 'priority', 'comments', 'type',
 				'templateid', 'recovery_mode', 'recovery_expression', 'correlation_mode', 'correlation_tag',
-				'manual_close'
+				'manual_close', 'opdata'
 			],
 			'selectDependencies' => ['triggerid'],
 			'triggerids' => zbx_objectValues($triggers, 'triggerid'),
@@ -1035,6 +1042,9 @@ abstract class CTriggerGeneral extends CApiService {
 			if ($trigger['description'] !== $db_trigger['description']) {
 				$upd_trigger['values']['description'] = $trigger['description'];
 			}
+			if (array_key_exists('opdata', $trigger) && $trigger['opdata'] !== $db_trigger['opdata']) {
+				$upd_trigger['values']['opdata'] = $trigger['opdata'];
+			}
 			if ($trigger['recovery_mode'] != $db_trigger['recovery_mode']) {
 				$upd_trigger['values']['recovery_mode'] = $trigger['recovery_mode'];
 			}
@@ -1138,7 +1148,7 @@ abstract class CTriggerGeneral extends CApiService {
 	 * For example: {localhost:system.cpu.load.last(0)}>10 will be translated to {12}>10 and
 	 *              created database representation.
 	 *
-	 * Note: All expresions must be already validated and exploded.
+	 * Note: All expressions must be already validated and exploded.
 	 *
 	 * @param array      $triggers                                   [IN]
 	 * @param string     $triggers[<tnum>]['description']            [IN]
@@ -1617,7 +1627,7 @@ abstract class CTriggerGeneral extends CApiService {
 	}
 
 	/**
-	 * Adds triggers and trigger prorotypes from template to hosts.
+	 * Adds triggers and trigger prototypes from template to hosts.
 	 *
 	 * @param array $data
 	 */
@@ -1628,7 +1638,7 @@ abstract class CTriggerGeneral extends CApiService {
 		$triggers = $this->get([
 			'output' => [
 				'triggerid', 'description', 'expression', 'recovery_mode', 'recovery_expression', 'url', 'status',
-				'priority', 'comments', 'type', 'correlation_mode', 'correlation_tag', 'manual_close'
+				'priority', 'comments', 'type', 'correlation_mode', 'correlation_tag', 'manual_close', 'opdata'
 			],
 			'selectTags' => ['tag', 'value'],
 			'hostids' => $data['templateids'],

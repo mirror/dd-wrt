@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -100,11 +100,10 @@ int	zabbix_decrease_log_level(void)
 }
 #endif
 
-void	zbx_redirect_stdio(const char *filename)
+int	zbx_redirect_stdio(const char *filename)
 {
-	int		fd;
 	const char	default_file[] = ZBX_DEV_NULL;
-	int		open_flags = O_WRONLY;
+	int		open_flags = O_WRONLY, fd;
 
 	if (NULL != filename && '\0' != *filename)
 		open_flags |= O_CREAT | O_APPEND;
@@ -114,7 +113,7 @@ void	zbx_redirect_stdio(const char *filename)
 	if (-1 == (fd = open(filename, open_flags, 0666)))
 	{
 		zbx_error("cannot open \"%s\": %s", filename, zbx_strerror(errno));
-		exit(EXIT_FAILURE);
+		return FAIL;
 	}
 
 	fflush(stdout);
@@ -130,46 +129,41 @@ void	zbx_redirect_stdio(const char *filename)
 	if (-1 == (fd = open(default_file, O_RDONLY)))
 	{
 		zbx_error("cannot open \"%s\": %s", default_file, zbx_strerror(errno));
-		exit(EXIT_FAILURE);
+		return FAIL;
 	}
 
 	if (-1 == dup2(fd, STDIN_FILENO))
 		zbx_error("cannot redirect stdin to \"%s\": %s", default_file, zbx_strerror(errno));
 
 	close(fd);
+
+	return SUCCEED;
 }
 
 static void	rotate_log(const char *filename)
 {
 	zbx_stat_t		buf;
 	zbx_uint64_t		new_size;
-	static zbx_uint64_t	old_size = ZBX_MAX_UINT64;
+	static zbx_uint64_t	old_size = ZBX_MAX_UINT64; /* redirect stdout and stderr */
 
-	if (0 == CONFIG_LOG_FILE_SIZE || NULL == filename || '\0' == *filename)
+	if (0 != zbx_stat(filename, &buf))
 	{
-		/* redirect only once if log file wasn't specified or there is no log file size limit */
-		if (ZBX_MAX_UINT64 == old_size)
-		{
-			old_size = 0;
-			zbx_redirect_stdio(filename);
-		}
-
+		zbx_redirect_stdio(filename);
 		return;
 	}
 
-	if (0 != zbx_stat(filename, &buf))
-		return;
-
 	new_size = buf.st_size;
 
-	if ((zbx_uint64_t)CONFIG_LOG_FILE_SIZE * ZBX_MEBIBYTE < new_size)
+	if (0 != CONFIG_LOG_FILE_SIZE && (zbx_uint64_t)CONFIG_LOG_FILE_SIZE * ZBX_MEBIBYTE < new_size)
 	{
 		char	filename_old[MAX_STRING_LEN];
 
 		strscpy(filename_old, filename);
 		zbx_strlcat(filename_old, ".old", MAX_STRING_LEN);
 		remove(filename_old);
-
+#ifdef _WINDOWS
+		zbx_redirect_stdio(NULL);
+#endif
 		if (0 != rename(filename, filename_old))
 		{
 			FILE	*log_file = NULL;
@@ -232,10 +226,14 @@ static void	lock_log(void)
 {
 	sigset_t	mask;
 
+	/* block signals to prevent deadlock on log file mutex when signal handler attempts to lock log */
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGUSR1);
-	sigaddset(&mask, SIGTERM);	/* block SIGTERM, SIGINT to prevent deadlock on log file mutex */
+	sigaddset(&mask, SIGUSR2);
+	sigaddset(&mask, SIGTERM);
 	sigaddset(&mask, SIGINT);
+	sigaddset(&mask, SIGQUIT);
+	sigaddset(&mask, SIGHUP);
 
 	if (0 > sigprocmask(SIG_BLOCK, &mask, &orig_mask))
 		zbx_error("cannot set sigprocmask to block the user signal");
@@ -351,7 +349,7 @@ void	zabbix_close_log(void)
 		closelog();
 #endif
 	}
-	else if (LOG_TYPE_FILE == log_type || LOG_TYPE_CONSOLE == log_type)
+	else if (LOG_TYPE_FILE == log_type || LOG_TYPE_CONSOLE == log_type || LOG_TYPE_UNDEFINED == log_type)
 	{
 		zbx_mutex_destroy(&log_access);
 	}
@@ -376,7 +374,8 @@ void	__zbx_zabbix_log(int level, const char *fmt, ...)
 
 		LOCK_LOG;
 
-		rotate_log(log_filename);
+		if (0 != CONFIG_LOG_FILE_SIZE)
+			rotate_log(log_filename);
 
 		if (NULL != (log_file = fopen(log_filename, "a+")))
 		{

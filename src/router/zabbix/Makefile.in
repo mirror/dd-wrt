@@ -94,10 +94,10 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lib_ibm_db2.m4 \
 	$(top_srcdir)/m4/ax_lib_oracle_oci.m4 \
 	$(top_srcdir)/m4/ax_lib_postgresql.m4 \
 	$(top_srcdir)/m4/ax_lib_sqlite3.m4 $(top_srcdir)/m4/iconv.m4 \
-	$(top_srcdir)/m4/jabber.m4 $(top_srcdir)/m4/ldap.m4 \
-	$(top_srcdir)/m4/libcurl.m4 $(top_srcdir)/m4/libevent.m4 \
-	$(top_srcdir)/m4/libgnutls.m4 $(top_srcdir)/m4/libmbedtls.m4 \
-	$(top_srcdir)/m4/libopenssl.m4 $(top_srcdir)/m4/libssh2.m4 \
+	$(top_srcdir)/m4/ldap.m4 $(top_srcdir)/m4/libcurl.m4 \
+	$(top_srcdir)/m4/libevent.m4 $(top_srcdir)/m4/libgnutls.m4 \
+	$(top_srcdir)/m4/libmbedtls.m4 $(top_srcdir)/m4/libopenssl.m4 \
+	$(top_srcdir)/m4/libssh.m4 $(top_srcdir)/m4/libssh2.m4 \
 	$(top_srcdir)/m4/libunixodbc.m4 $(top_srcdir)/m4/libxml2.m4 \
 	$(top_srcdir)/m4/netsnmp.m4 $(top_srcdir)/m4/openipmi.m4 \
 	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/pthread.m4 \
@@ -216,6 +216,7 @@ am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
   | sed 's|^\./|$(prefix)/|' | grep -v '$(infodir)/dir$$'
 distcleancheck_listfiles = find . -type f -print
 ACLOCAL = @ACLOCAL@
+AGENT2_CONFIG_FILE = @AGENT2_CONFIG_FILE@
 AGENT_CONFIG_FILE = @AGENT_CONFIG_FILE@
 AGENT_LDFLAGS = @AGENT_LDFLAGS@
 AGENT_LIBS = @AGENT_LIBS@
@@ -230,6 +231,8 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CGO_CFLAGS = @CGO_CFLAGS@
+CGO_LDFLAGS = @CGO_LDFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CURL_SSL_CERT_LOCATION = @CURL_SSL_CERT_LOCATION@
@@ -249,19 +252,18 @@ EXTERNAL_SCRIPTS_PATH = @EXTERNAL_SCRIPTS_PATH@
 GNUTLS_CFLAGS = @GNUTLS_CFLAGS@
 GNUTLS_LDFLAGS = @GNUTLS_LDFLAGS@
 GNUTLS_LIBS = @GNUTLS_LIBS@
+GO = @GO@
+GOBIN = @GOBIN@
+GOCMD = @GOCMD@
+GOWORKDIR = @GOWORKDIR@
 GREP = @GREP@
 ICONV_CFLAGS = @ICONV_CFLAGS@
 ICONV_LDFLAGS = @ICONV_LDFLAGS@
-IKSEMEL_CFLAGS = @IKSEMEL_CFLAGS@
-IKSEMEL_LIBS = @IKSEMEL_LIBS@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-JABBER_CPPFLAGS = @JABBER_CPPFLAGS@
-JABBER_LDFLAGS = @JABBER_LDFLAGS@
-JABBER_LIBS = @JABBER_LIBS@
 JAR = @JAR@
 JAVAC = @JAVAC@
 LDAP_CPPFLAGS = @LDAP_CPPFLAGS@
@@ -283,7 +285,6 @@ LIBPTHREAD_LDFLAGS = @LIBPTHREAD_LDFLAGS@
 LIBPTHREAD_LIBS = @LIBPTHREAD_LIBS@
 LIBS = @LIBS@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
-LIBXML2_CONFIG = @LIBXML2_CONFIG@
 LIBXML2_LDFLAGS = @LIBXML2_LDFLAGS@
 LIBXML2_LIBS = @LIBXML2_LIBS@
 LIBXML2_VERSION = @LIBXML2_VERSION@
@@ -349,6 +350,9 @@ SQLITE3_VERSION = @SQLITE3_VERSION@
 SSH2_CFLAGS = @SSH2_CFLAGS@
 SSH2_LDFLAGS = @SSH2_LDFLAGS@
 SSH2_LIBS = @SSH2_LIBS@
+SSH_CFLAGS = @SSH_CFLAGS@
+SSH_LDFLAGS = @SSH_LDFLAGS@
+SSH_LIBS = @SSH_LIBS@
 STRIP = @STRIP@
 TLS_CFLAGS = @TLS_CFLAGS@
 UNIXODBC_CFLAGS = @UNIXODBC_CFLAGS@
@@ -357,6 +361,8 @@ UNIXODBC_LIBS = @UNIXODBC_LIBS@
 VERSION = @VERSION@
 ZBXGET_LDFLAGS = @ZBXGET_LDFLAGS@
 ZBXGET_LIBS = @ZBXGET_LIBS@
+ZBXJS_LDFLAGS = @ZBXJS_LDFLAGS@
+ZBXJS_LIBS = @ZBXJS_LIBS@
 ZLIB_CFLAGS = @ZLIB_CFLAGS@
 ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
 ZLIB_LIBS = @ZLIB_LIBS@
@@ -428,7 +434,6 @@ EXTRA_DIST = \
 	conf \
 	sass
 
-TESTDIR = src
 @ZBXCMOCKA_TRUE@WRAP_DB_FUNCS = \
 @ZBXCMOCKA_TRUE@	-Wl,--wrap=zbx_db_vselect \
 @ZBXCMOCKA_TRUE@	-Wl,--wrap=zbx_db_select_n \
@@ -442,13 +447,15 @@ TESTDIR = src
 @ZBXCMOCKA_TRUE@WRAP_IO_FUNCS = \
 @ZBXCMOCKA_TRUE@	-Wl,--wrap=fopen \
 @ZBXCMOCKA_TRUE@	-Wl,--wrap=fclose \
-@ZBXCMOCKA_TRUE@	-Wl,--wrap=fgets
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=fgets \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=open
 
 @ZBXCMOCKA_TRUE@WRAP_FS_FUNCS = \
 @ZBXCMOCKA_TRUE@	-Wl,--wrap=opendir \
 @ZBXCMOCKA_TRUE@	-Wl,--wrap=readdir \
 @ZBXCMOCKA_TRUE@	-Wl,--wrap=stat \
-@ZBXCMOCKA_TRUE@	-Wl,--wrap=__xstat
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=__xstat \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=__fxstat
 
 @ZBXCMOCKA_TRUE@WRAP_EXIT = \
 @ZBXCMOCKA_TRUE@	-Wl,--wrap=exit
@@ -693,6 +700,11 @@ distdir: $(DISTFILES)
 	  ! -type d ! -perm -400 -exec chmod a+r {} \; -o \
 	  ! -type d ! -perm -444 -exec $(install_sh) -c -m a+r {} {} \; \
 	|| chmod -R a+r "$(distdir)"
+	@if test -z "$(am__skip_length_check)" && find "$(distdir)" -type f -print | \
+	  grep '^...................................................................................................' 1>&2; then \
+	  echo 'error: the above filenames are too long' 1>&2; \
+	  exit 1; \
+	else :; fi
 dist-gzip: distdir
 	tardir=$(distdir) && $(am__tar) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
 	$(am__post_remove_distdir)
@@ -943,20 +955,44 @@ uninstall-am:
 
 
 dist-hook:
-	@zabbix_revision=`svn info $(top_srcdir)|sed -n -e "/Last Changed Rev:/s/.*: \([[0-9]]*\)/\1/p"`; \
-	cat $(top_distdir)/include/version.h|sed "s/{ZABBIX_REVISION}/$$zabbix_revision/g" > $(top_distdir)/include/version.h.new; \
+# File revision number must be numeric (Git commit hash cannot be used).
+# Therefore to make it numeric and meaningful it is artificially composed from:
+#    - branch (development or release),
+#    - type (alpha, beta, rc or release),
+#    - number of alpha, beta or rc.
+# 'branch' expression tries to find out is it a development branch or release branch.
+#      Result is encoded as: 1 - dev branch, release branch or error occurred, 2 - tag.
+# 'type_name' expression tries to find out what type of release it is.
+#      Expected result is: "alpha", "beta", "rc" or "" (empty string).
+# 'type_num' expression encodes 'type_name' as numeric value:
+#      1 - alpha, 2 - beta, 3 - rc, 4 - release, 0 - unknown.
+# 'type_count' expression tries to find out number of "alpha", "beta" or "rc" (e.g. 1 from "rc1").
+	@branch=`(git symbolic-ref -q HEAD > /dev/null && echo 1) || (git tag -l --points-at HEAD| grep "."| grep -q -v "-" && echo 2) || echo 1`; \
+	type_name=`cat $(top_distdir)/include/version.h| sed -n -e '/ZABBIX_VERSION_RC/s/.*"\([a-z]*\)[0-9]*"/\1/p'`; \
+	type_num=`(test "x$$type_name" = "xalpha" && echo "1") || echo ""`; \
+	type_num=`(test -z $$type_num && test "x$$type_name" = "xbeta" && echo "2") || echo "$$type_num"`; \
+	type_num=`(test -z $$type_num && test "x$$type_name" = "xrc" && echo "3") || echo "$$type_num"`; \
+	type_num=`(test -z $$type_num && test -z $$type_name && echo "4") || echo "$$type_num"`; \
+	type_num=`(test -z $$type_num && echo "0") || echo "$$type_num"`; \
+	type_count=`cat $(top_distdir)/include/version.h|sed -n -e '/ZABBIX_VERSION_RC/s/.*"[a-z]*\([0-9]*\)"/\1/p'`; \
+	type_count=`printf '%02d' $$type_count`; \
+	zabbix_revision=`git rev-parse --short HEAD`; \
+	cat $(top_distdir)/include/version.h|sed "s/{ZABBIX_RC_NUM}/$$branch$$type_num$$type_count/g"| \
+	sed "s/{ZABBIX_REVISION}/$$zabbix_revision/g" > $(top_distdir)/include/version.h.new; \
 	mv $(top_distdir)/include/version.h.new $(top_distdir)/include/version.h; \
 	cat $(top_distdir)/src/zabbix_java/src/com/zabbix/gateway/GeneralInformation.java|sed "s/{ZABBIX_REVISION}/$$zabbix_revision/g" > \
 		$(top_distdir)/src/zabbix_java/src/com/zabbix/gateway/GeneralInformation.java.new; \
 	mv $(top_distdir)/src/zabbix_java/src/com/zabbix/gateway/GeneralInformation.java.new \
 		$(top_distdir)/src/zabbix_java/src/com/zabbix/gateway/GeneralInformation.java; \
-	rm -f $(top_distdir)/conf_tests.m4
+	cat $(top_distdir)/src/go/pkg/version/version.go|sed "s/{ZABBIX_RC_NUM}/$$branch$$type_num$$type_count/g"| \
+	sed "s/{ZABBIX_REVISION}/$$zabbix_revision/g" > $(top_distdir)/src/go/pkg/version/version.go.new; \
+	mv $(top_distdir)/src/go/pkg/version/version.go.new $(top_distdir)/src/go/pkg/version/version.go
 
-	rm -rf `find $(top_distdir) -name ".svn"`
+	rm -rf `find $(top_distdir) -name ".gitignore" -o -name ".gitattributes"`
 	rm -f $(top_distdir)/include/config.h
+	rm -f $(top_distdir)/include/config.h.in~
 	rm -f $(top_distdir)/frontends/php/conf/zabbix.conf.php
 	rm -rf $(top_distdir)/frontends/php/tests
-	rm -f $(top_distdir)/sass/*.html
 	rm -rf $(top_distdir)/sass/img_source
 
 @DBSCHEMA_TRUE@dbschema_ibm_db2:
@@ -995,36 +1031,33 @@ gettext:
 	frontends/php/locale/make_mo.sh
 
 css_theme_blue:
-	sass --no-cache --sourcemap=none sass/stylesheets/sass/screen.scss frontends/php/styles/blue-theme.css
-	cp frontends/php/styles/blue-theme.css sass/stylesheets/screen.css
+	sass --no-cache --sourcemap=none sass/stylesheets/sass/screen.scss frontends/php/assets/styles/blue-theme.css
+	cp frontends/php/assets/styles/blue-theme.css sass/stylesheets/screen.css
 
 css_theme_dark:
-	sass --no-cache --sourcemap=none sass/stylesheets/sass/dark-theme.scss frontends/php/styles/dark-theme.css
-	cp frontends/php/styles/dark-theme.css sass/stylesheets/dark-theme.css
+	sass --no-cache --sourcemap=none sass/stylesheets/sass/dark-theme.scss frontends/php/assets/styles/dark-theme.css
+	cp frontends/php/assets/styles/dark-theme.css sass/stylesheets/dark-theme.css
 
 css_hc_light:
-	sass --no-cache --sourcemap=none sass/stylesheets/sass/hc-light.scss frontends/php/styles/hc-light.css
-	cp frontends/php/styles/hc-light.css sass/stylesheets/hc-light.css
+	sass --no-cache --sourcemap=none sass/stylesheets/sass/hc-light.scss frontends/php/assets/styles/hc-light.css
+	cp frontends/php/assets/styles/hc-light.css sass/stylesheets/hc-light.css
 
 css_hc_dark:
-	sass --no-cache --sourcemap=none sass/stylesheets/sass/hc-dark.scss frontends/php/styles/hc-dark.css
-	cp frontends/php/styles/hc-dark.css sass/stylesheets/hc-dark.css
+	sass --no-cache --sourcemap=none sass/stylesheets/sass/hc-dark.scss frontends/php/assets/styles/hc-dark.css
+	cp frontends/php/assets/styles/hc-dark.css sass/stylesheets/hc-dark.css
 
 css_icons:
-	cp sass/img/icon-sprite.svg frontends/php/img/
-	cp sass/img/browser-sprite.png frontends/php/img/
-	cp sass/apple-touch-icon-120x120-precomposed.png frontends/php/img/
-	cp sass/apple-touch-icon-152x152-precomposed.png frontends/php/img/
-	cp sass/apple-touch-icon-180x180-precomposed.png frontends/php/img/
-	cp sass/apple-touch-icon-76x76-precomposed.png frontends/php/img/
-	cp sass/ms-tile-144x144.png frontends/php/img/
-	cp sass/touch-icon-192x192.png frontends/php/img/
+	cp sass/img/icon-sprite.svg frontends/php/assets/img/
+	cp sass/img/browser-sprite.png frontends/php/assets/img/
+	cp sass/apple-touch-icon-120x120-precomposed.png frontends/php/assets/img/
+	cp sass/apple-touch-icon-152x152-precomposed.png frontends/php/assets/img/
+	cp sass/apple-touch-icon-180x180-precomposed.png frontends/php/assets/img/
+	cp sass/apple-touch-icon-76x76-precomposed.png frontends/php/assets/img/
+	cp sass/ms-tile-144x144.png frontends/php/assets/img/
+	cp sass/touch-icon-192x192.png frontends/php/assets/img/
 	cp sass/favicon.ico frontends/php/
 
 css: css_theme_blue css_theme_dark css_hc_light css_hc_dark css_icons
-
-test:
-	cd $(TESTDIR) && $(MAKE) $(AM_MAKEFLAGS) test
 
 @ZBXCMOCKA_TRUE@tests_build:
 @ZBXCMOCKA_TRUE@	$(MAKE) $(AM_MAKEFLAGS) && \

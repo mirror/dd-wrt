@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -232,7 +232,7 @@ class CSvgGraph extends CSvg {
 			$min_value = null;
 			$max_value = null;
 
-			if ($metric['points']) {
+			if (array_key_exists('points', $metric)) {
 				$metrics_for_each_axes[$metric['options']['axisy']]++;
 
 				foreach ($metric['points'] as $point) {
@@ -265,7 +265,7 @@ class CSvgGraph extends CSvg {
 			}
 
 			$this->metrics[$i] = [
-				'name' => $metric['hosts'][0]['name'].NAME_DELIMITER.$metric['name'],
+				'name' => $metric['name'],
 				'itemid' => $metric['itemid'],
 				'units' => $metric['units'],
 				'host' => $metric['hosts'][0],
@@ -371,6 +371,18 @@ class CSvgGraph extends CSvg {
 	public function getTimeGridWithPosition() {
 		$period = $this->time_till - $this->time_from;
 		$step = round(bcmul(bcdiv($period, $this->canvas_width), 100)); // Grid cell (100px) in seconds.
+
+		/*
+		 * In case if requested time period is so small that it is rounded to zero, we are displaying only two
+		 * milestones on X axis - the start and the end of period.
+		 */
+		if ($step == 0) {
+			return [
+				0 => date('H:i:s', $this->time_from),
+				$this->canvas_width => date('H:i:s', $this->time_till)
+			];
+		}
+
 		$start = $this->time_from + $step - $this->time_from % $step;
 		$time_formats = ['Y-n-d', 'n-d', 'n-d H:i','H:i', 'H:i:s'];
 
@@ -444,6 +456,7 @@ class CSvgGraph extends CSvg {
 
 		$this->drawMetricsLine();
 		$this->drawMetricsPoint();
+		$this->drawMetricsBar();
 
 		$this->drawProblems();
 
@@ -611,7 +624,7 @@ class CSvgGraph extends CSvg {
 		$grid_values = [];
 
 		foreach ($grid as $value) {
-			$relative_pos = $this->canvas_height - $this->canvas_height * ($max_value - $value) / $delta;
+			$relative_pos = $this->canvas_height - intval($this->canvas_height * ($max_value - $value) / $delta);
 
 			if ($relative_pos >= 0 && $relative_pos <= $this->canvas_height) {
 				$grid_values[$relative_pos] = convert_units([
@@ -619,31 +632,6 @@ class CSvgGraph extends CSvg {
 					'units' => $units,
 					'convert' => ITEM_CONVERT_NO_UNITS
 				]);
-			}
-		}
-
-		/*
-		 * This will fix a rare corner case when values on Y axes are aligned in such a way that calculated Y=0 (based
-		 * on steps calculated by self::getValueGrid) is out of the allowed area (typically by less then 1px) and are
-		 * not drawn on Y axis. Fix will calculate the real value on Y=0. The interval will always be smaller than
-		 * interval between any other 2 grid values.
-		 *
-		 * This is done on left side Y axis only, because on right side Y axis we will not draw label on Y=0 to not
-		 * overlap the arrow on X axis.
-		 *
-		 * This is also done only if distance between Y=0 and next lowest Y value is larger than 25px, to avoid label
-		 * overlapping.
-		 */
-		if ($side == GRAPH_YAXIS_SIDE_LEFT) {
-			$lowest = key($grid_values);
-
-			if (!array_key_exists(0, $grid_values) && $lowest > 25) {
-				$grid_values[0] = convert_units([
-					'value' => $grid_values[$lowest] - ($lowest * ($max_value - $min_value) / $this->canvas_height),
-					'units' => $units,
-					'convert' => ITEM_CONVERT_NO_UNITS
-				]);
-				ksort($grid_values);
 			}
 		}
 
@@ -794,7 +782,7 @@ class CSvgGraph extends CSvg {
 
 			$path_num = 0;
 			foreach ($this->points[$index] as $clock => $point) {
-				// If missing data function is SVG_GRAPH_MISSING_DATA_NONE, path should be splitted in multiple svg shapes.
+				// If missing data function is SVG_GRAPH_MISSING_DATA_NONE, path should be split in multiple svg shapes.
 				if ($point === null) {
 					$path_num++;
 					continue;
@@ -834,12 +822,12 @@ class CSvgGraph extends CSvg {
 		foreach ($this->metrics as $index => $metric) {
 			/**
 			 * - Missing data points are calculated only between existing data points;
-			 * - Missing data points are not calculated for SVG_GRAPH_TYPE_POINTS metrics;
+			 * - Missing data points are not calculated for SVG_GRAPH_TYPE_POINTS && SVG_GRAPH_TYPE_BAR metrics;
 			 * - SVG_GRAPH_MISSING_DATA_CONNECTED is default behavior of SVG graphs, so no need to calculate anything
 			 *   here.
 			 */
 			if (array_key_exists($index, $this->points)
-					&& $metric['options']['type'] != SVG_GRAPH_TYPE_POINTS
+					&& !in_array($metric['options']['type'], [SVG_GRAPH_TYPE_POINTS, SVG_GRAPH_TYPE_BAR])
 					&& $metric['options']['missingdatafunc'] != SVG_GRAPH_MISSING_DATA_CONNECTED) {
 				$points = &$this->points[$index];
 				$missing_data_points = $this->getMissingData($points, $metric['options']['missingdatafunc']);
@@ -955,6 +943,78 @@ class CSvgGraph extends CSvg {
 	}
 
 	/**
+	 * Add metric of type bar to graph.
+	 */
+	protected function drawMetricsBar() {
+		$bar_min_width = [
+			GRAPH_YAXIS_SIDE_LEFT => $this->canvas_width * .25,
+			GRAPH_YAXIS_SIDE_RIGHT => $this->canvas_width * .25
+		];
+		$bar_groups_indexes = [];
+		$bar_groups_position = [];
+
+		foreach ($this->paths as $index => $path) {
+			if ($this->metrics[$index]['options']['type'] == SVG_GRAPH_TYPE_BAR) {
+				// If one second in displayed over multiple pixels, this shows number of px in second.
+				$sec_per_px = ceil(($this->time_till - $this->time_from) / $this->canvas_width);
+				$px_per_sec = ceil($this->canvas_width / ($this->time_till - $this->time_from));
+
+				$y_axis_side = $this->metrics[$index]['options']['axisy'];
+				$time_points = array_keys($this->points[$index]);
+				$last_point = 0;
+				$path = reset($path);
+
+				foreach ($path as $point_index => $point) {
+					$time_point = ($sec_per_px > $px_per_sec)
+						? floor($time_points[$point_index] / $sec_per_px) * $sec_per_px
+						: $time_points[$point_index];
+					$bar_groups_indexes[$y_axis_side][$time_point][$index] = $point_index;
+					$bar_groups_position[$y_axis_side][$time_point][$point_index] = $point[0];
+
+					if ($last_point > 0) {
+						$bar_min_width[$y_axis_side] = min($point[0] - $last_point, $bar_min_width[$y_axis_side]);
+					}
+					$last_point = $point[0];
+				}
+			}
+		}
+
+		foreach ($bar_groups_indexes as $y_axis => $points) {
+			foreach ($points as $time_point => $paths) {
+				$group_count = count($paths);
+				$group_width = $bar_min_width[$y_axis];
+				$bar_width = ceil($group_width / $group_count * .75);
+				$group_index = 0;
+				foreach ($paths as $path_index => $point_index) {
+					$group_x = $bar_groups_position[$y_axis][$time_point][$point_index];
+					if ($group_count > 1) {
+						$this->paths[$path_index][0][$point_index][0] = $group_x
+							// Calculate the leftmost X-coordinate including gap size.
+							- $group_width * .375
+							// Calculate the X-offset for the each bar in the group.
+							+ ceil($bar_width * ($group_index + .5));
+						$group_index++;
+					}
+					$this->paths[$path_index][0][$point_index][3] = max(1, $bar_width);
+					// X position for bars group.
+					$this->paths[$path_index][0][$point_index][4] = $group_x - $group_width * .375;
+				}
+			}
+		}
+
+		foreach ($this->metrics as $index => $metric) {
+			if ($metric['options']['type'] == SVG_GRAPH_TYPE_BAR && array_key_exists($index, $this->paths)) {
+				$metric['options']['y_zero'] = ($metric['options']['axisy'] == GRAPH_YAXIS_SIDE_RIGHT)
+					? $this->right_y_zero
+					: $this->left_y_zero;
+				$metric['options']['bar_width'] = $bar_min_width[$metric['options']['axisy']];
+
+				$this->addItem(new CSvgGraphBar(reset($this->paths[$index]), $metric));
+			}
+		}
+	}
+
+	/**
 	 * Add problems tooltip data to graph.
 	 */
 	protected function drawProblems() {
@@ -1017,7 +1077,7 @@ class CSvgGraph extends CSvg {
 			// At least 3 pixels expected to be occupied to show the range. Show simple anotation otherwise.
 			$draw_type = ($x2 - $x1) > 2 ? CSvgGraphAnnotation::TYPE_RANGE : CSvgGraphAnnotation::TYPE_SIMPLE;
 
-			// Draw border lines. Make them dashed if beginning or ending of highligted zone is visible in graph.
+			// Draw border lines. Make them dashed if beginning or ending of highlighted zone is visible in graph.
 			if ($problem['clock'] > $this->time_from) {
 				$draw_type |= CSvgGraphAnnotation::DASH_LINE_START;
 			}

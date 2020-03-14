@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ class CMacroFunctionParser extends CParser {
 	private $function_parser;
 
 	/**
-	 * @param array $macros  the list of macros, for example ['{ITEM.VALUE}', '{ITEM.LASTVALUE}']
+	 * @param array $macros   The list of macros, for example ['{ITEM.VALUE}', '{ITEM.LASTVALUE}'].
 	 * @param array $options
 	 */
 	public function __construct(array $macros, array $options = []) {

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -123,7 +123,9 @@ class CControllerAuthenticationUpdate extends CController {
 
 		foreach($ldap_fields as $field) {
 			if (trim($config[$field]) === '') {
-				$this->response->setMessageError(_s('Incorrect value for field "%1$s": cannot be empty.', $field));
+				$this->response->setMessageError(
+					_s('Incorrect value for field "%1$s": %2$s.', $field, _('cannot be empty'))
+				);
 				$is_valid = false;
 				break;
 			}

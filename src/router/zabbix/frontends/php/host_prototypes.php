@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ require_once dirname(__FILE__).'/include/forms.inc.php';
 
 $page['title'] = _('Configuration of host prototypes');
 $page['file'] = 'host_prototypes.php';
-$page['scripts'] = ['effects.js', 'class.cviewswitcher.js', 'multiselect.js'];
+$page['scripts'] = ['effects.js', 'class.cviewswitcher.js', 'multiselect.js', 'textareaflexible.js'];
 
 require_once dirname(__FILE__).'/include/page_header.php';
 
@@ -39,7 +39,6 @@ $fields = [
 	'status' =>		        	[T_ZBX_INT, O_OPT, null,		IN([HOST_STATUS_NOT_MONITORED, HOST_STATUS_MONITORED]), null],
 	'inventory_mode' =>			[T_ZBX_INT, O_OPT, null, IN([HOST_INVENTORY_DISABLED, HOST_INVENTORY_MANUAL, HOST_INVENTORY_AUTOMATIC]), null],
 	'templates' =>		    	[T_ZBX_STR, O_OPT, null, NOT_EMPTY,	null],
-	'add_template' =>			[T_ZBX_STR, O_OPT, null,		null,	null],
 	'add_templates' =>		    [T_ZBX_STR, O_OPT, null, NOT_EMPTY,	null],
 	'group_links' =>			[T_ZBX_STR, O_OPT, null, NOT_EMPTY,	null],
 	'group_prototypes' =>		[T_ZBX_STR, O_OPT, null, NOT_EMPTY,	null],
@@ -87,7 +86,6 @@ if (getRequest('parent_discoveryid')) {
 			'selectGroupPrototypes' => API_OUTPUT_EXTEND,
 			'selectTemplates' => ['templateid', 'name'],
 			'selectParentHost' => ['hostid'],
-			'selectInventory' => ['inventory_mode'],
 			'editable' => true
 		]);
 		$hostPrototype = reset($hostPrototype);
@@ -103,14 +101,7 @@ else {
 /*
  * Actions
  */
-// add templates to the list
-if (getRequest('add_template')) {
-	foreach (getRequest('add_templates', []) as $templateId) {
-		$_REQUEST['templates'][$templateId] = $templateId;
-	}
-}
-// unlink templates
-elseif (getRequest('unlink')) {
+if (getRequest('unlink')) {
 	foreach (getRequest('unlink') as $templateId => $value) {
 		unset($_REQUEST['templates'][$templateId]);
 	}
@@ -146,12 +137,11 @@ elseif (hasRequest('add') || hasRequest('update')) {
 		'status' => getRequest('status', HOST_STATUS_NOT_MONITORED),
 		'groupLinks' => [],
 		'groupPrototypes' => [],
-		'templates' => getRequest('templates', [])
+		'templates' => array_merge(getRequest('templates', []), getRequest('add_templates', []))
 	];
 
-	// If 'inventory' is present, API requires 'inventory_mode' to have a value, but templated prototypes don't have it.
 	if (hasRequest('inventory_mode')) {
-		$newHostPrototype['inventory']['inventory_mode'] = getRequest('inventory_mode');
+		$newHostPrototype['inventory_mode'] = getRequest('inventory_mode');
 	}
 
 	// API requires 'templateid' property.
@@ -283,28 +273,46 @@ if (hasRequest('form')) {
 			'name' => getRequest('name'),
 			'status' => getRequest('status', HOST_STATUS_NOT_MONITORED),
 			'templates' => [],
-			'inventory' => [
-				'inventory_mode' => getRequest('inventory_mode', $config['default_inventory_mode'])
-			],
+			'add_templates' => [],
+			'inventory_mode' => getRequest('inventory_mode', $config['default_inventory_mode']),
 			'groupPrototypes' => getRequest('group_prototypes', [])
 		],
-		'groups' => [],
 		'show_inherited_macros' => getRequest('show_inherited_macros', 0),
+		'readonly' => true,
+		'groups' => [],
+		// Parent discovery rules.
 		'templates' => []
 	];
 
-	// add already linked and new templates
-	$data['host_prototype']['templates'] = API::Template()->get([
-		'output' => ['templateid', 'name'],
-		'templateids' => getRequest('templates', [])
-	]);
+	// Add already linked and new templates.
+	$templates = [];
+	$request_templates = getRequest('templates', []);
+	$request_add_templates = getRequest('add_templates', []);
+
+	if ($request_templates || $request_add_templates) {
+		$templates = API::Template()->get([
+			'output' => ['templateid', 'name'],
+			'templateids' => array_merge($request_templates, $request_add_templates),
+			'preservekeys' => true
+		]);
+
+		$data['host_prototype']['templates'] = array_intersect_key($templates, array_flip($request_templates));
+		CArrayHelper::sort($data['host_prototype']['templates'], ['name']);
+
+		$data['host_prototype']['add_templates'] = array_intersect_key($templates, array_flip($request_add_templates));
+
+		foreach ($data['host_prototype']['add_templates'] as &$template) {
+			$template = CArrayHelper::renameKeys($template, ['templateid' => 'id']);
+		}
+		unset($template);
+	}
 
 	// add parent host
 	$parentHost = API::Host()->get([
 		'output' => API_OUTPUT_EXTEND,
 		'selectGroups' => ['groupid', 'name'],
 		'selectInterfaces' => API_OUTPUT_EXTEND,
-		'selectMacros' => ['macro', 'value'],
+		'selectMacros' => ['macro', 'value', 'description'],
 		'hostids' => $discoveryRule['hostid'],
 		'templated_hosts' => true
 	]);
@@ -331,19 +339,28 @@ if (hasRequest('form')) {
 
 	if (!hasRequest('form_refresh')) {
 		if ($data['host_prototype']['hostid'] != 0) {
+
 			// When opening existing host prototype, display all values from database.
 			$data['host_prototype'] = array_merge($data['host_prototype'], $hostPrototype);
 
-			if (!array_key_exists('inventory_mode', $data['host_prototype']['inventory'])) {
-				$data['host_prototype']['inventory']['inventory_mode'] = HOST_INVENTORY_DISABLED;
-			}
-
+			$groupids = zbx_objectValues($data['host_prototype']['groupLinks'], 'groupid');
 			$data['groups'] = API::HostGroup()->get([
 				'output' => ['groupid', 'name'],
-				'groupids' => zbx_objectValues($data['host_prototype']['groupLinks'], 'groupid'),
-				'editable' => true,
+				'groupids' => $groupids,
 				'preservekeys' => true
 			]);
+
+			$n = 0;
+			foreach ($groupids as $groupid) {
+				if (!array_key_exists($groupid, $data['groups'])) {
+					$postfix = (++$n > 1) ? ' ('.$n.')' : '';
+					$data['groups'][$groupid] = [
+						'groupid' => $groupid,
+						'name' => _('Inaccessible group').$postfix,
+						'inaccessible' => true
+					];
+				}
+			}
 		}
 		else {
 			// Set default values for new host prototype.
@@ -368,8 +385,20 @@ if (hasRequest('form')) {
 		]);
 	}
 
-	// order linked templates
-	CArrayHelper::sort($data['host_prototype']['templates'], ['name']);
+	// Add inherited macros to host macros.
+	$data['macros'] = $data['parent_host']['macros'];
+	if ($data['show_inherited_macros']) {
+		$data['macros'] = mergeInheritedMacros($data['macros'], getInheritedMacros(array_keys($templates)));
+	}
+
+	// Sort only after inherited macros are added. Otherwise the list will look chaotic.
+	$data['macros'] = array_values(order_macros($data['macros'], 'macro'));
+
+	// This data is used in common.template.edit.js.php.
+	$data['macros_tab'] = [
+		'linked_templates' => array_map('strval', $templateids),
+		'add_templates' => array_map('strval', array_keys($data['host_prototype']['add_templates']))
+	];
 
 	// render view
 	$itemView = new CView('configuration.host.prototype.edit', $data);

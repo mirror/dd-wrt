@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -180,7 +180,7 @@ class CScreen extends CApiService {
 						SCREEN_RESOURCE_HOST_INFO, SCREEN_RESOURCE_TRIGGER_INFO, SCREEN_RESOURCE_TRIGGER_OVERVIEW,
 						SCREEN_RESOURCE_DATA_OVERVIEW, SCREEN_RESOURCE_HOSTGROUP_TRIGGERS,
 						SCREEN_RESOURCE_HOST_TRIGGERS, SCREEN_RESOURCE_GRAPH, SCREEN_RESOURCE_SIMPLE_GRAPH,
-						SCREEN_RESOURCE_PLAIN_TEXT, SCREEN_RESOURCE_CLOCK, SCREEN_RESOURCE_MAP, SCREEN_RESOURCE_SCREEN
+						SCREEN_RESOURCE_PLAIN_TEXT, SCREEN_RESOURCE_CLOCK, SCREEN_RESOURCE_MAP
 					]).
 					' AND si.resourceid<>0'
 			);
@@ -190,7 +190,7 @@ class CScreen extends CApiService {
 			while ($db_screen_item = DBfetch($db_screen_items)) {
 				if (!array_key_exists($db_screen_item['screenid'], $screens)) {
 					$screens[$db_screen_item['screenid']] = [
-						'groups' => [], 'hosts' => [], 'graphs' => [], 'items' => [], 'maps' => [], 'screens' => []
+						'groups' => [], 'hosts' => [], 'graphs' => [], 'items' => [], 'maps' => []
 					];
 				}
 
@@ -224,10 +224,6 @@ class CScreen extends CApiService {
 
 					case SCREEN_RESOURCE_MAP:
 						$screens[$db_screen_item['screenid']]['maps'][$db_screen_item['resourceid']] = true;
-						break;
-
-					case SCREEN_RESOURCE_SCREEN:
-						$screens[$db_screen_item['screenid']]['screens'][$db_screen_item['resourceid']] = true;
 						break;
 				}
 			}
@@ -357,31 +353,6 @@ class CScreen extends CApiService {
 					}
 				}
 			}
-
-			// screens
-			$_screens = [];
-
-			foreach ($screens as $screenid => $resources) {
-				foreach ($resources['screens'] as $_screenid => $foo) {
-					$_screens[$_screenid][$screenid] = true;
-				}
-			}
-
-			if ($_screens) {
-				$db_screens = API::Screen()->get([
-					'output' => [],
-					'screenids' => array_keys($_screens),
-					'preservekeys' => true
-				]);
-
-				foreach ($_screens as $_screenid => $resources) {
-					if (!array_key_exists($_screenid, $db_screens)) {
-						foreach ($resources as $screenid => $foo) {
-							unset($screens[$screenid], $result[$screenid]);
-						}
-					}
-				}
-			}
 		}
 
 		if ($count_output) {
@@ -393,6 +364,7 @@ class CScreen extends CApiService {
 		}
 
 		if ($result) {
+			$result = $this->unsetExtraFields($result, ['templateid'], []);
 			$result = $this->addRelatedObjects($options, $result);
 		}
 
@@ -1252,7 +1224,6 @@ class CScreen extends CApiService {
 		$this->validateDelete($screenids);
 
 		DB::delete('screens_items', ['screenid' => $screenids]);
-		DB::delete('screens_items', ['resourceid' => $screenids, 'resourcetype' => SCREEN_RESOURCE_SCREEN]);
 		DB::delete('slides', ['screenid' => $screenids]);
 		DB::delete('screens', ['screenid' => $screenids]);
 		DB::delete('profiles', [
