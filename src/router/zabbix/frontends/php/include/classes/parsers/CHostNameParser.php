@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -75,6 +75,10 @@ class CHostNameParser extends CParser {
 
 		$p = $pos;
 
+		if (isset($source[$p]) && $source[$p] === ' ') {
+			return self::PARSE_FAIL;
+		}
+
 		while (isset($source[$p])) {
 			if (self::parseCharacters($source, $p)) {
 				continue;
@@ -89,6 +93,10 @@ class CHostNameParser extends CParser {
 
 		if ($pos == $p) {
 			return self::PARSE_FAIL;
+		}
+
+		while ($source[$p - 1] === ' ') {
+			$p--;
 		}
 
 		$this->length = $p - $pos;

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,8 +19,6 @@
 **/
 
 
-require_once dirname(__FILE__).'/../../include/hostgroups.inc.php';
-
 class CControllerProblemView extends CController {
 
 	protected function init() {
@@ -34,37 +32,37 @@ class CControllerProblemView extends CController {
 		}
 
 		$fields = [
-			'action' =>						'string',
-			'sort' =>						'in clock,host,severity,name',
-			'sortorder' =>					'in '.ZBX_SORT_DOWN.','.ZBX_SORT_UP,
-			'uncheck' =>					'in 1',
-			'page' =>						'ge 1',
-			'filter_set' =>					'in 1',
-			'filter_rst' =>					'in 1',
-			'filter_show' =>				'in '.TRIGGERS_OPTION_RECENT_PROBLEM.','.TRIGGERS_OPTION_IN_PROBLEM.','.TRIGGERS_OPTION_ALL,
-			'filter_groupids' =>			'array_id',
-			'filter_hostids' =>				'array_id',
-			'filter_application' =>			'string',
-			'filter_triggerids' =>			'array_id',
-			'filter_name' =>				'string',
-			'filter_severity' =>			'in '.implode(',', $severities),
-			'filter_age_state' =>			'in 1',
-			'filter_age' =>					'int32',
-			'filter_inventory' =>			'array',
-			'filter_evaltype' =>			'in '.TAG_EVAL_TYPE_AND_OR.','.TAG_EVAL_TYPE_OR,
-			'filter_tags' =>				'array',
-			'filter_show_tags' =>			'in '.PROBLEMS_SHOW_TAGS_NONE.','.PROBLEMS_SHOW_TAGS_1.','.PROBLEMS_SHOW_TAGS_2.','.PROBLEMS_SHOW_TAGS_3,
-			'filter_show_suppressed' =>		'in 1',
-			'filter_unacknowledged' =>		'in 1',
-			'filter_compact_view' =>		'in 1',
-			'filter_show_timeline' =>		'in 1',
-			'filter_details' =>				'in 1',
-			'filter_highlight_row' =>		'in 1',
-			'filter_show_latest_values' =>	'in 1',
-			'filter_tag_name_format' =>		'in '.PROBLEMS_TAG_NAME_FULL.','.PROBLEMS_TAG_NAME_SHORTENED.','.PROBLEMS_TAG_NAME_NONE,
-			'filter_tag_priority' =>		'string',
-			'from' =>						'range_time',
-			'to' =>							'range_time'
+			'action' =>					'string',
+			'sort' =>					'in clock,host,severity,name',
+			'sortorder' =>				'in '.ZBX_SORT_DOWN.','.ZBX_SORT_UP,
+			'uncheck' =>				'in 1',
+			'page' =>					'ge 1',
+			'filter_set' =>				'in 1',
+			'filter_rst' =>				'in 1',
+			'filter_show' =>			'in '.TRIGGERS_OPTION_RECENT_PROBLEM.','.TRIGGERS_OPTION_IN_PROBLEM.','.TRIGGERS_OPTION_ALL,
+			'filter_groupids' =>		'array_id',
+			'filter_hostids' =>			'array_id',
+			'filter_application' =>		'string',
+			'filter_triggerids' =>		'array_id',
+			'filter_name' =>			'string',
+			'filter_severity' =>		'in '.implode(',', $severities),
+			'filter_age_state' =>		'in 1',
+			'filter_age' =>				'int32',
+			'filter_inventory' =>		'array',
+			'filter_evaltype' =>		'in '.TAG_EVAL_TYPE_AND_OR.','.TAG_EVAL_TYPE_OR,
+			'filter_tags' =>			'array',
+			'filter_show_tags' =>		'in '.PROBLEMS_SHOW_TAGS_NONE.','.PROBLEMS_SHOW_TAGS_1.','.PROBLEMS_SHOW_TAGS_2.','.PROBLEMS_SHOW_TAGS_3,
+			'filter_show_suppressed' =>	'in 1',
+			'filter_unacknowledged' =>	'in 1',
+			'filter_compact_view' =>	'in 1',
+			'filter_show_timeline' =>	'in 1',
+			'filter_details' =>			'in 1',
+			'filter_highlight_row' =>	'in 1',
+			'filter_show_opdata' =>		'in '.OPERATIONAL_DATA_SHOW_NONE.','.OPERATIONAL_DATA_SHOW_SEPARATELY.','.OPERATIONAL_DATA_SHOW_WITH_PROBLEM,
+			'filter_tag_name_format' =>	'in '.PROBLEMS_TAG_NAME_FULL.','.PROBLEMS_TAG_NAME_SHORTENED.','.PROBLEMS_TAG_NAME_NONE,
+			'filter_tag_priority' =>	'string',
+			'from' =>					'range_time',
+			'to' =>						'range_time'
 		];
 
 		$ret = $this->validateInput($fields) && $this->validateTimeSelectorPeriod();
@@ -112,7 +110,7 @@ class CControllerProblemView extends CController {
 		CProfile::update('web.problem.sortorder', $sortOrder, PROFILE_TYPE_STR);
 
 		// filter
-		if (hasRequest('filter_set')) {
+		if ($this->hasInput('filter_set')) {
 			$show_db_type = CProfile::get('web.problem.filter.show', TRIGGERS_OPTION_RECENT_PROBLEM);
 			$show_type = $this->getInput('filter_show', TRIGGERS_OPTION_RECENT_PROBLEM);
 
@@ -197,11 +195,11 @@ class CControllerProblemView extends CController {
 			CProfile::update('web.problem.filter.highlight_row', $this->getInput('filter_highlight_row', 0),
 				PROFILE_TYPE_INT
 			);
-			CProfile::update('web.problem.filter.show_latest_values', $this->getInput('filter_show_latest_values', 0),
+			CProfile::update('web.problem.filter.show_opdata', $this->getInput('filter_show_opdata', 0),
 				PROFILE_TYPE_INT
 			);
 		}
-		elseif (hasRequest('filter_rst')) {
+		elseif ($this->hasInput('filter_rst')) {
 			CProfile::delete('web.problem.filter.show');
 			CProfile::deleteIdx('web.problem.filter.groupids');
 			CProfile::deleteIdx('web.problem.filter.hostids');
@@ -226,7 +224,7 @@ class CControllerProblemView extends CController {
 			CProfile::delete('web.problem.filter.show_timeline');
 			CProfile::delete('web.problem.filter.details');
 			CProfile::delete('web.problem.filter.highlight_row');
-			CProfile::delete('web.problem.filter.show_latest_values');
+			CProfile::delete('web.problem.filter.show_opdata');
 		}
 
 		$filter_groupids = CProfile::getArray('web.problem.filter.groupids', []);
@@ -328,7 +326,7 @@ class CControllerProblemView extends CController {
 				'show_timeline' => CProfile::get('web.problem.filter.show_timeline', 1),
 				'details' => CProfile::get('web.problem.filter.details', 0),
 				'highlight_row' => CProfile::get('web.problem.filter.highlight_row', 0),
-				'show_latest_values' => CProfile::get('web.problem.filter.show_latest_values', 0)
+				'show_opdata' => CProfile::get('web.problem.filter.show_opdata', 0)
 			],
 			'active_tab' => $active_tab
 		];

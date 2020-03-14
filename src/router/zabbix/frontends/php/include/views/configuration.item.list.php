@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ $widget->addItem($data['main_filter']);
 
 // create form
 $itemForm = (new CForm())->setName('items');
+$itemForm->addVar('checkbox_hash', $data['checkbox_hash']);
 if (!empty($data['hostid'])) {
 	$itemForm->addVar('hostid', $data['hostid']);
 }
@@ -86,7 +87,7 @@ foreach ($data['items'] as $item) {
 
 	if (!empty($item['discoveryRule'])) {
 		$description[] = (new CLink(CHtml::encode($item['discoveryRule']['name']),
-			'disc_prototypes.php?parent_discoveryid='.$item['discoveryRule']['itemid']
+			(new CUrl('disc_prototypes.php'))->setArgument('parent_discoveryid', $item['discoveryRule']['itemid'])
 		))
 			->addClass(ZBX_STYLE_LINK_ALT)
 			->addClass(ZBX_STYLE_ORANGE);
@@ -248,7 +249,7 @@ $itemForm->addItem([
 			'item.massupdateform' => ['name' => _('Mass update')],
 			'item.massdelete' => ['name' => _('Delete'), 'confirm' => _('Delete selected items?')]
 		],
-		$data['hostid']
+		$data['checkbox_hash']
 	)
 ]);
 

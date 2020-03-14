@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ class CItem extends CItemGeneral {
 		ZBX_PREPROC_VALIDATE_RANGE, ZBX_PREPROC_VALIDATE_REGEX, ZBX_PREPROC_VALIDATE_NOT_REGEX,
 		ZBX_PREPROC_ERROR_FIELD_JSON, ZBX_PREPROC_ERROR_FIELD_XML, ZBX_PREPROC_ERROR_FIELD_REGEX,
 		ZBX_PREPROC_THROTTLE_VALUE, ZBX_PREPROC_THROTTLE_TIMED_VALUE, ZBX_PREPROC_SCRIPT,
-		ZBX_PREPROC_PROMETHEUS_PATTERN, ZBX_PREPROC_PROMETHEUS_TO_JSON
+		ZBX_PREPROC_PROMETHEUS_PATTERN, ZBX_PREPROC_PROMETHEUS_TO_JSON, ZBX_PREPROC_CSV_TO_JSON
 	];
 
 	public function __construct() {
@@ -289,6 +289,12 @@ class CItem extends CItemGeneral {
 
 		// search
 		if (is_array($options['search'])) {
+			if (array_key_exists('error', $options['search']) && $options['search']['error'] !== null) {
+				zbx_db_search('item_rtdata ir', ['search' => ['error' => $options['search']['error']]] + $options,
+					$sqlParts
+				);
+			}
+
 			zbx_db_search('items i', $options, $sqlParts);
 		}
 
@@ -307,6 +313,12 @@ class CItem extends CItemGeneral {
 				$options['filter']['trends'] = getTimeUnitFilters($options['filter']['trends']);
 			}
 
+			if (array_key_exists('state', $options['filter']) && $options['filter']['state'] !== null) {
+				$this->dbFilter('item_rtdata ir', ['filter' => ['state' => $options['filter']['state']]] + $options,
+					$sqlParts
+				);
+			}
+
 			$this->dbFilter('items i', $options, $sqlParts);
 
 			if (isset($options['filter']['host'])) {
@@ -317,8 +329,8 @@ class CItem extends CItemGeneral {
 				$sqlParts['where']['h'] = dbConditionString('h.host', $options['filter']['host'], false, true);
 			}
 
-			if (array_key_exists('flags', $options['filter']) &&
-					(is_null($options['filter']['flags']) || !zbx_empty($options['filter']['flags']))) {
+			if (array_key_exists('flags', $options['filter'])
+					&& (is_null($options['filter']['flags']) || !zbx_empty($options['filter']['flags']))) {
 				unset($sqlParts['where']['flags']);
 			}
 		}
@@ -379,16 +391,16 @@ class CItem extends CItemGeneral {
 		$sqlParts = $this->applyQuerySortOptions($this->tableName(), $this->tableAlias(), $options, $sqlParts);
 		$res = DBselect($this->createSelectQueryFromParts($sqlParts), $sqlParts['limit']);
 		while ($item = DBfetch($res)) {
-			if ($options['countOutput']) {
-				if ($options['groupCount']) {
-					$result[] = $item;
-				}
-				else {
-					$result = $item['rowscount'];
-				}
+			if (!$options['countOutput']) {
+				$result[$item['itemid']] = $item;
+				continue;
+			}
+
+			if ($options['groupCount']) {
+				$result[] = $item;
 			}
 			else {
-				$result[$item['itemid']] = $item;
+				$result = $item['rowscount'];
 			}
 		}
 
@@ -469,6 +481,19 @@ class CItem extends CItemGeneral {
 		}
 		unset($item);
 
+		// Get only hosts not templates from items
+		$hosts = API::Host()->get([
+			'output' => [],
+			'hostids' => zbx_objectValues($items, 'hostid'),
+			'preservekeys' => true
+		]);
+		foreach ($items as &$item) {
+			if (array_key_exists($item['hostid'], $hosts)) {
+				$item['rtdata'] = true;
+			}
+		}
+		unset($item);
+
 		$this->createReal($items);
 		$this->inherit($items);
 
@@ -481,16 +506,30 @@ class CItem extends CItemGeneral {
 	 * @param array $items
 	 */
 	protected function createReal(array &$items) {
-		foreach ($items as &$item) {
+		$items_rtdata = [];
+
+		foreach ($items as $key => &$item) {
 			if ($item['type'] != ITEM_TYPE_DEPENDENT) {
 				$item['master_itemid'] = null;
+			}
+
+			if (array_key_exists('rtdata', $item)) {
+				$items_rtdata[$key] = [];
+				unset($item['rtdata']);
 			}
 		}
 		unset($item);
 
 		$itemids = DB::insert('items', $items);
 
-		$itemApplications = [];
+		foreach ($items_rtdata as $key => &$value) {
+			$value['itemid'] = $itemids[$key];
+		}
+		unset($value);
+
+		DB::insert('item_rtdata', $items_rtdata, false);
+
+		$item_applications = [];
 		foreach ($items as $key => $item) {
 			$items[$key]['itemid'] = $itemids[$key];
 
@@ -503,15 +542,15 @@ class CItem extends CItemGeneral {
 					continue;
 				}
 
-				$itemApplications[] = [
+				$item_applications[] = [
 					'applicationid' => $appid,
 					'itemid' => $items[$key]['itemid']
 				];
 			}
 		}
 
-		if ($itemApplications) {
-			DB::insertBatch('items_applications', $itemApplications);
+		if ($item_applications) {
+			DB::insertBatch('items_applications', $item_applications);
 		}
 
 		$this->createItemPreprocessing($items);
@@ -576,7 +615,9 @@ class CItem extends CItemGeneral {
 			'preservekeys' => true
 		]);
 
-		$items = $this->extendFromObjects(zbx_toHash($items, 'itemid'), $db_items, ['flags', 'type', 'master_itemid']);
+		$items = $this->extendFromObjects(zbx_toHash($items, 'itemid'), $db_items, ['flags', 'type', 'authtype',
+			'master_itemid'
+		]);
 
 		$this->validateDependentItems($items);
 
@@ -628,9 +669,8 @@ class CItem extends CItemGeneral {
 			}
 
 			if ($item['type'] == ITEM_TYPE_HTTPAGENT) {
-				// Clean username and password on authtype change to HTTPTEST_AUTH_NONE.
-				if (array_key_exists('authtype', $item) && $item['authtype'] == HTTPTEST_AUTH_NONE
-						&& $item['authtype'] != $db_items[$item['itemid']]['authtype']) {
+				// Clean username and password when authtype is set to HTTPTEST_AUTH_NONE.
+				if ($item['authtype'] == HTTPTEST_AUTH_NONE) {
 					$item['username'] = '';
 					$item['password'] = '';
 				}
@@ -1160,7 +1200,26 @@ class CItem extends CItemGeneral {
 	protected function applyQueryOutputOptions($tableName, $tableAlias, array $options, array $sqlParts) {
 		$sqlParts = parent::applyQueryOutputOptions($tableName, $tableAlias, $options, $sqlParts);
 
+		if ($this->outputIsRequested('state', $options['output'])
+				|| $this->outputIsRequested('error', $options['output'])
+				|| (is_array($options['search']) && array_key_exists('error', $options['search']))
+				|| (is_array($options['filter']) && array_key_exists('state', $options['filter']))) {
+			$sqlParts['left_join']['item_rtdata'] = ['from' => 'item_rtdata ir', 'on' => 'ir.itemid=i.itemid'];
+			$sqlParts['left_table'] = $tableName;
+		}
+
 		if (!$options['countOutput']) {
+			if ($this->outputIsRequested('state', $options['output'])) {
+				$sqlParts = $this->addQuerySelect('ir.state', $sqlParts);
+			}
+			if ($this->outputIsRequested('error', $options['output'])) {
+				/*
+				 * SQL func COALESCE use for template items because they don't have record
+				 * in item_rtdata table and DBFetch convert null to '0'
+				 */
+				$sqlParts = $this->addQuerySelect(dbConditionCoalesce('ir.error', '', 'error'), $sqlParts);
+			}
+
 			if ($options['selectHosts'] !== null) {
 				$sqlParts = $this->addQuerySelect('i.hostid', $sqlParts);
 			}

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ class CWidgetFieldGraphOverride extends CWidgetField {
 			'hosts'				=> ['type' => API_STRINGS_UTF8, 'flags' => API_REQUIRED],
 			'items'				=> ['type' => API_STRINGS_UTF8, 'flags' => API_REQUIRED],
 			'color'				=> ['type' => API_COLOR],
-			'type'				=> ['type' => API_INT32, 'in' => implode(',', [SVG_GRAPH_TYPE_LINE, SVG_GRAPH_TYPE_POINTS, SVG_GRAPH_TYPE_STAIRCASE])],
+			'type'				=> ['type' => API_INT32, 'in' => implode(',', [SVG_GRAPH_TYPE_LINE, SVG_GRAPH_TYPE_POINTS, SVG_GRAPH_TYPE_STAIRCASE, SVG_GRAPH_TYPE_BAR])],
 			'width'				=> ['type' => API_INT32, 'in' => implode(',', range(0, 10))],
 			'pointsize'			=> ['type' => API_INT32, 'in' => implode(',', range(1, 10))],
 			'transparency'		=> ['type' => API_INT32, 'in' => implode(',', range(0, 10))],
@@ -48,6 +48,21 @@ class CWidgetFieldGraphOverride extends CWidgetField {
 			'timeshift'			=> ['type' => API_TIME_UNIT, 'in' => implode(':', [ZBX_MIN_TIMESHIFT, ZBX_MAX_TIMESHIFT])]
 		]]);
 		$this->setDefault([]);
+	}
+
+	/**
+	 * Set field values for the overrides.
+	 *
+	 * @return $this
+	 */
+	public function setValue($value) {
+		$overrides = [];
+
+		foreach ((array) $value as $override) {
+			$overrides[] = $override + self::getDefaults();
+		}
+
+		return parent::setValue($overrides);
 	}
 
 	/**
@@ -71,24 +86,6 @@ class CWidgetFieldGraphOverride extends CWidgetField {
 		else {
 			$this->setStrictValidationRules(null);
 		}
-
-		return $this;
-	}
-
-	public function setValue($value) {
-		foreach ($value as &$val) {
-			// Values received from frontend are strings. Values received from database comes as arrays.
-			// TODO: remove hack with modifying of unvalidated data.
-			if (array_key_exists('hosts', $val)) {
-				$val['hosts'] = CWidgetHelper::splitPatternIntoParts($val['hosts']);
-			}
-			if (array_key_exists('items', $val)) {
-				$val['items'] = CWidgetHelper::splitPatternIntoParts($val['items']);
-			}
-		}
-		unset($val);
-
-		$this->value = $value;
 
 		return $this;
 	}

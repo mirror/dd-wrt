@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -91,6 +91,18 @@ class CApiInputValidator {
 			case API_INTS32:
 				return self::validateInts32($rule, $data, $path, $error);
 
+			case API_UINT64:
+				return self::validateUInt64($rule, $data, $path, $error);
+
+			case API_UINTS64:
+				return self::validateUInts64($rule, $data, $path, $error);
+
+			case API_FLOAT:
+				return self::validateFloat($rule, $data, $path, $error);
+
+			case API_FLOATS:
+				return self::validateFloats($rule, $data, $path, $error);
+
 			case API_ID:
 				return self::validateId($rule, $data, $path, $error);
 
@@ -105,6 +117,9 @@ class CApiInputValidator {
 
 			case API_OUTPUT:
 				return self::validateOutput($rule, $data, $path, $error);
+
+			case API_PSK:
+				return self::validatePSK($rule, $data, $path, $error);
 
 			case API_IDS:
 				return self::validateIds($rule, $data, $path, $error);
@@ -174,10 +189,15 @@ class CApiInputValidator {
 			case API_MULTIPLE:
 			case API_STRING_UTF8:
 			case API_INT32:
+			case API_UINT64:
+			case API_UINTS64:
+			case API_FLOAT:
+			case API_FLOATS:
 			case API_ID:
 			case API_BOOLEAN:
 			case API_FLAG:
 			case API_OUTPUT:
+			case API_PSK:
 			case API_HG_NAME:
 			case API_H_NAME:
 			case API_NUMERIC:
@@ -417,8 +437,8 @@ class CApiInputValidator {
 			return true;
 		}
 
-		if ((!is_int($data) && !is_string($data)) || 1 != preg_match('/^\-?[0-9]+$/', strval($data))) {
-			$error = _s('Invalid parameter "%1$s": %2$s.', $path, _('a number is expected'));
+		if ((!is_int($data) && !is_string($data)) || preg_match('/^\-?[0-9]+$/', strval($data)) !== 1) {
+			$error = _s('Invalid parameter "%1$s": %2$s.', $path, _('an integer is expected'));
 			return false;
 		}
 
@@ -434,6 +454,170 @@ class CApiInputValidator {
 		if (is_string($data)) {
 			$data = (int) $data;
 		}
+
+		return true;
+	}
+
+	/**
+	 * Unsigned integers validator.
+	 *
+	 * @param array  $rule
+	 * @param int    $rule['flags']   (optional) API_ALLOW_NULL
+	 * @param mixed  $data
+	 * @param string $path
+	 * @param string $error
+	 *
+	 * @return bool
+	 */
+	private static function validateUInt64($rule, &$data, $path, &$error) {
+		$flags = array_key_exists('flags', $rule) ? $rule['flags'] : 0x00;
+
+		if (($flags & API_ALLOW_NULL) && $data === null) {
+			return true;
+		}
+
+		if (!is_scalar($data) || is_bool($data) || is_double($data) || !ctype_digit(strval($data))) {
+			$error = _s('Invalid parameter "%1$s": %2$s.', $path, _('an unsigned integer is expected'));
+			return false;
+		}
+
+		if (bccomp($data, ZBX_MAX_UINT64) > 0) {
+			$error = _s('Invalid parameter "%1$s": %2$s.', $path, _('a number is too large'));
+			return false;
+		}
+
+		$data = (string) $data;
+
+		if ($data[0] === '0') {
+			$data = ltrim($data, '0');
+
+			if ($data === '') {
+				$data = '0';
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Array of unsigned integers validator.
+	 *
+	 * @param array  $rule
+	 * @param int    $rule['flags']   (optional) API_NOT_EMPTY, API_ALLOW_NULL, API_NORMALIZE
+	 * @param mixed  $data
+	 * @param string $path
+	 * @param string $error
+	 *
+	 * @return bool
+	 */
+	private static function validateUInts64($rule, &$data, $path, &$error) {
+		$flags = array_key_exists('flags', $rule) ? $rule['flags'] : 0x00;
+
+		if (($flags & API_ALLOW_NULL) && $data === null) {
+			return true;
+		}
+
+		if (($flags & API_NORMALIZE) && self::validateUInt64([], $data, '', $e)) {
+			$data = [$data];
+		}
+		unset($e);
+
+		if (!is_array($data)) {
+			$error = _s('Invalid parameter "%1$s": %2$s.', $path, _('an array is expected'));
+			return false;
+		}
+
+		if (($flags & API_NOT_EMPTY) && !$data) {
+			$error = _s('Invalid parameter "%1$s": %2$s.', $path, _('cannot be empty'));
+			return false;
+		}
+
+		$data = array_values($data);
+		$rules = ['type' => API_UINT64];
+
+		foreach ($data as $index => &$value) {
+			$subpath = ($path === '/' ? $path : $path.'/').($index + 1);
+			if (!self::validateData($rules, $value, $subpath, $error)) {
+				return false;
+			}
+		}
+		unset($value);
+
+		return true;
+	}
+
+	/**
+	 * Floating point number validator.
+	 *
+	 * @param array  $rule
+	 * @param int    $rule['flags']   (optional) API_ALLOW_NULL
+	 * @param mixed  $data
+	 * @param string $path
+	 * @param string $error
+	 *
+	 * @return bool
+	 */
+	private static function validateFloat($rule, &$data, $path, &$error) {
+		$flags = array_key_exists('flags', $rule) ? $rule['flags'] : 0x00;
+
+		if (($flags & API_ALLOW_NULL) && $data === null) {
+			return true;
+		}
+
+		if (is_int($data) || (is_string($data) && preg_match('/^-?[0-9]*\.?[0-9]+([eE][+-]?[0-9]+)?$/', $data) === 1)) {
+			$data = (float) $data;
+		}
+		elseif (!is_float($data)) {
+			$error = _s('Invalid parameter "%1$s": %2$s.', $path, _('a floating point value is expected'));
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Array of floating point numbers validator.
+	 *
+	 * @param array  $rule
+	 * @param int    $rule['flags']   (optional) API_NOT_EMPTY, API_ALLOW_NULL, API_NORMALIZE
+	 * @param mixed  $data
+	 * @param string $path
+	 * @param string $error
+	 *
+	 * @return bool
+	 */
+	private static function validateFloats($rule, &$data, $path, &$error) {
+		$flags = array_key_exists('flags', $rule) ? $rule['flags'] : 0x00;
+
+		if (($flags & API_ALLOW_NULL) && $data === null) {
+			return true;
+		}
+
+		if (($flags & API_NORMALIZE) && self::validateFloat([], $data, '', $e)) {
+			$data = [$data];
+		}
+		unset($e);
+
+		if (!is_array($data)) {
+			$error = _s('Invalid parameter "%1$s": %2$s.', $path, _('an array is expected'));
+			return false;
+		}
+
+		if (($flags & API_NOT_EMPTY) && !$data) {
+			$error = _s('Invalid parameter "%1$s": %2$s.', $path, _('cannot be empty'));
+			return false;
+		}
+
+		$data = array_values($data);
+		$rules = ['type' => API_FLOAT];
+
+		foreach ($data as $index => &$value) {
+			$subpath = ($path === '/' ? $path : $path.'/').($index + 1);
+			if (!self::validateData($rules, $value, $subpath, $error)) {
+				return false;
+			}
+		}
+		unset($value);
 
 		return true;
 	}
@@ -489,7 +673,7 @@ class CApiInputValidator {
 	 *
 	 * @param array  $rule
 	 * @param int    $rule['flags']   (optional) API_NOT_EMPTY, API_ALLOW_NULL, API_NORMALIZE
-	 * @param string $rule['in']      (optional) a comma-delimited character string, for example: 'xml,json'
+	 * @param string $rule['in']      (optional) a comma-delimited character string, for example: '0,60:900'
 	 * @param mixed  $data
 	 * @param string $path
 	 * @param string $error
@@ -564,7 +748,7 @@ class CApiInputValidator {
 			return false;
 		}
 
-		if (bccomp($data, '9223372036854775807') > 0) {
+		if (bccomp($data, ZBX_DB_MAX_ID) > 0) {
 			$error = _s('Invalid parameter "%1$s": %2$s.', $path, _('a number is too large'));
 			return false;
 		}
@@ -731,6 +915,47 @@ class CApiInputValidator {
 		$error = _s('Invalid parameter "%1$s": %2$s.', $path, _('an array or a character string is expected'));
 
 		return false;
+	}
+
+	/**
+	 * PSK key validator.
+	 *
+	 * @param array  $rule
+	 * @param int    $rule['flags']   (optional) API_NOT_EMPTY
+	 * @param int    $rule['length']  (optional)
+	 * @param mixed  $data
+	 * @param string $path
+	 * @param string $error
+	 *
+	 * @return bool
+	 */
+	private static function validatePSK($rule, &$data, $path, &$error) {
+		$flags = array_key_exists('flags', $rule) ? $rule['flags'] : 0x00;
+
+		if (self::checkStringUtf8($flags & API_NOT_EMPTY, $data, $path, $error) === false) {
+			return false;
+		}
+
+		$mb_len = mb_strlen($data);
+
+		if ($mb_len != 0 && $mb_len < PSK_MIN_LEN) {
+			$error = _s('Invalid parameter "%1$s": %2$s.', $path, _s('minimum length is %1$s characters', PSK_MIN_LEN));
+			return false;
+		}
+
+		if (preg_match('/^([0-9a-f]{2})*$/i', $data) !== 1) {
+			$error = _s('Invalid parameter "%1$s": %2$s.', $path,
+				_('an even number of hexadecimal characters is expected')
+			);
+			return false;
+		}
+
+		if (array_key_exists('length', $rule) && $mb_len > $rule['length']) {
+			$error = _s('Invalid parameter "%1$s": %2$s.', $path, _('value is too long'));
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
@@ -952,7 +1177,7 @@ class CApiInputValidator {
 
 		$pattern = '/^(-?)0*(0|[1-9][0-9]*)(\.?[0-9]+)?(['.ZBX_BYTE_SUFFIXES.ZBX_TIME_SUFFIXES.'])?$/';
 
-		if (1 != preg_match($pattern, strval($data))) {
+		if (preg_match($pattern, strval($data)) !== 1) {
 			$error = _s('Invalid parameter "%1$s": %2$s.', $path, _('a number is expected'));
 			return false;
 		}
@@ -1170,8 +1395,9 @@ class CApiInputValidator {
 	 * Time unit validator like "10", "20s", "30m", "4h", "{$TIME}" etc.
 	 *
 	 * @param array  $rule
-	 * @param int    $rule['flags']   (optional) API_NOT_EMPTY, API_ALLOW_USER_MACRO, API_ALLOW_LLD_MACRO
-	 * @param int    $rule['in']      (optional)
+	 * @param int    $rule['flags']  (optional) API_NOT_EMPTY, API_ALLOW_USER_MACRO, API_ALLOW_LLD_MACRO,
+	 *                                          API_TIME_UNIT_WITH_YEAR
+	 * @param int    $rule['in']     (optional)
 	 * @param mixed  $data
 	 * @param string $path
 	 * @param string $error
@@ -1200,7 +1426,8 @@ class CApiInputValidator {
 		$simple_interval_parser = new CSimpleIntervalParser([
 			'usermacros' => ($flags & API_ALLOW_USER_MACRO),
 			'lldmacros' => ($flags & API_ALLOW_LLD_MACRO),
-			'negative' => true
+			'negative' => true,
+			'with_year' => ($flags & API_TIME_UNIT_WITH_YEAR)
 		]);
 
 		if ($simple_interval_parser->parse($data) != CParser::PARSE_SUCCESS) {
@@ -1407,7 +1634,7 @@ class CApiInputValidator {
 	 *
 	 * @param array  $rule
 	 * @param int    $rule['length']  (optional)
-	 * @param int    $rule['flags']   (optional) API_ALLOW_USER_MACRO, API_NOT_EMPTY
+	 * @param int    $rule['flags']   (optional) API_ALLOW_USER_MACRO, API_ALLOW_EVENT_TAGS_MACRO, API_NOT_EMPTY
 	 * @param mixed  $data
 	 * @param string $path
 	 * @param string $error
@@ -1426,10 +1653,13 @@ class CApiInputValidator {
 			return false;
 		}
 
-		$options = ['allow_user_macro' => (bool) ($flags & API_ALLOW_USER_MACRO)];
+		$options = [
+			'allow_user_macro' => (bool) ($flags & API_ALLOW_USER_MACRO),
+			'allow_event_tags_macro' => (bool) ($flags & API_ALLOW_EVENT_TAGS_MACRO)
+		];
 
 		if ($data !== '' && CHtmlUrlValidator::validate($data, $options) === false) {
-			$error = _s('Invalid parameter "%1$s": %2$s.', $path, _('unacceptible URL'));
+			$error = _s('Invalid parameter "%1$s": %2$s.', $path, _('unacceptable URL'));
 			return false;
 		}
 

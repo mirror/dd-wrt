@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,10 +20,10 @@
 #include "common.h"
 #include "zbxalgo.h"
 
-zbx_variant_data_bin_t	*zbx_variant_data_bin_copy(const zbx_variant_data_bin_t *bin)
+void	*zbx_variant_data_bin_copy(const void *bin)
 {
 	zbx_uint32_t		size;
-	zbx_variant_data_bin_t	*value_bin;
+	void	*value_bin;
 
 	memcpy(&size, bin, sizeof(size));
 	value_bin = zbx_malloc(NULL, size + sizeof(size));
@@ -32,9 +32,9 @@ zbx_variant_data_bin_t	*zbx_variant_data_bin_copy(const zbx_variant_data_bin_t *
 	return value_bin;
 }
 
-zbx_variant_data_bin_t	*zbx_variant_data_bin_create(const void *data, zbx_uint32_t size)
+void	*zbx_variant_data_bin_create(const void *data, zbx_uint32_t size)
 {
-	zbx_variant_data_bin_t	*value_bin;
+	void	*value_bin;
 
 	value_bin = zbx_malloc(NULL, size + sizeof(size));
 	memcpy(value_bin, &size, sizeof(size));
@@ -43,13 +43,13 @@ zbx_variant_data_bin_t	*zbx_variant_data_bin_create(const void *data, zbx_uint32
 	return value_bin;
 }
 
-zbx_uint32_t	zbx_variant_data_bin_get(const zbx_variant_data_bin_t *bin, void **data)
+zbx_uint32_t	zbx_variant_data_bin_get(const void *bin, void **data)
 {
 	zbx_uint32_t	size;
 
 	memcpy(&size, bin, sizeof(zbx_uint32_t));
 	if (NULL != data)
-		*data = ((char *)bin) + sizeof(size);
+		*data = ((unsigned char *)bin) + sizeof(size);
 	return size;
 }
 
@@ -67,6 +67,18 @@ void	zbx_variant_clear(zbx_variant_t *value)
 
 	value->type = ZBX_VARIANT_NONE;
 }
+
+/******************************************************************************
+ *                                                                            *
+ * Setter functions assign passed data and set corresponding variant          *
+ * type. Note that for complex data it means the pointer is simply copied     *
+ * instead of making a copy of the specified data.                            *
+ *                                                                            *
+ * The contents of the destination value are not freed. When setting already  *
+ * initialized variant it's safer to clear it beforehand, even if the variant *
+ * contains primitive value (numeric).                                        *
+ *                                                                            *
+ ******************************************************************************/
 
 void	zbx_variant_set_str(zbx_variant_t *value, char *text)
 {
@@ -91,13 +103,26 @@ void	zbx_variant_set_none(zbx_variant_t *value)
 	value->type = ZBX_VARIANT_NONE;
 }
 
-void	zbx_variant_set_bin(zbx_variant_t *value, zbx_variant_data_bin_t *value_bin)
+void	zbx_variant_set_bin(zbx_variant_t *value, void *value_bin)
 {
 	value->data.bin = value_bin;
 	value->type = ZBX_VARIANT_BIN;
 }
 
-void	zbx_variant_set_variant(zbx_variant_t *value, const zbx_variant_t *source)
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_variant_copy                                                 *
+ *                                                                            *
+ * Purpose: copy variant contents from source to value                        *
+ *                                                                            *
+ * Comments: String and binary data are cloned, which is different from       *
+ *           setters where only the pointers are copied.                      *
+ *           The contents of the destination value are not freed. If copied   *
+ *           over already initialized variant it's safer to clear it          *
+ *           beforehand.                                                      *
+ *                                                                            *
+ ******************************************************************************/
+void	zbx_variant_copy(zbx_variant_t *value, const zbx_variant_t *source)
 {
 	switch (source->type)
 	{
@@ -141,10 +166,8 @@ static int	variant_to_dbl(zbx_variant_t *value)
 	zbx_rtrim(buffer, "\n\r"); /* trim newline for historical reasons / backwards compatibility */
 	zbx_trim_float(buffer);
 
-	if (SUCCEED != is_double(buffer))
+	if (SUCCEED != is_double(buffer, &value_dbl))
 		return FAIL;
-
-	value_dbl = atof(buffer);
 
 	zbx_variant_clear(value);
 	zbx_variant_set_dbl(value, value_dbl);
@@ -233,6 +256,7 @@ int	zbx_variant_convert(zbx_variant_t *value, int type)
 int	zbx_variant_set_numeric(zbx_variant_t *value, const char *text)
 {
 	zbx_uint64_t	value_ui64;
+	double		dbl_tmp;
 	char		buffer[MAX_STRING_LEN];
 
 	zbx_strlcpy(buffer, text, sizeof(buffer));
@@ -253,9 +277,9 @@ int	zbx_variant_set_numeric(zbx_variant_t *value, const char *text)
 		return SUCCEED;
 	}
 
-	if (SUCCEED == is_double(buffer))
+	if (SUCCEED == is_double(buffer, &dbl_tmp))
 	{
-		zbx_variant_set_dbl(value, atof(buffer));
+		zbx_variant_set_dbl(value, dbl_tmp);
 		return SUCCEED;
 	}
 
@@ -264,9 +288,8 @@ int	zbx_variant_set_numeric(zbx_variant_t *value, const char *text)
 
 const char	*zbx_variant_value_desc(const zbx_variant_t *value)
 {
-	static char	buffer[ZBX_MAX_UINT64_LEN + 1];
-	int		i, len;
-	zbx_uint32_t	size;
+	static ZBX_THREAD_LOCAL char	buffer[ZBX_MAX_UINT64_LEN + 1];
+	zbx_uint32_t			size, i, len;
 
 	switch (value->type)
 	{
@@ -342,7 +365,8 @@ int	zbx_validate_value_dbl(double value)
  *                                                                            *
  * Function: variant_compare_empty                                            *
  *                                                                            *
- * Purpose: compares two variant values when at least one is empty            *
+ * Purpose: compares two variant values when at least one is empty (having    *
+ *          type of ZBX_VARIANT_NONE)                                         *
  *                                                                            *
  ******************************************************************************/
 static int	variant_compare_empty(const zbx_variant_t *value1, const zbx_variant_t *value2)
@@ -362,7 +386,7 @@ static int	variant_compare_empty(const zbx_variant_t *value1, const zbx_variant_
  *                                                                            *
  * Function: variant_compare_bin                                              *
  *                                                                            *
- * Purpose: compares two variant values when at least one contains binary data*
+ * Purpose: compare two variant values when at least one contains binary data *
  *                                                                            *
  ******************************************************************************/
 static int	variant_compare_bin(const zbx_variant_t *value1, const zbx_variant_t *value2)
@@ -387,7 +411,7 @@ static int	variant_compare_bin(const zbx_variant_t *value1, const zbx_variant_t 
  *                                                                            *
  * Function: variant_compare_str                                              *
  *                                                                            *
- * Purpose: compares two variant values when at least one is string           *
+ * Purpose: compare two variant values when at least one is string            *
  *                                                                            *
  ******************************************************************************/
 static int	variant_compare_str(const zbx_variant_t *value1, const zbx_variant_t *value2)
@@ -402,8 +426,9 @@ static int	variant_compare_str(const zbx_variant_t *value1, const zbx_variant_t 
  *                                                                            *
  * Function: variant_compare_dbl                                              *
  *                                                                            *
- * Purpose: compares two variant values when at least one is double and the   *
- *          other is double or uint64                                         *
+ * Purpose: compare two variant values when at least one is double and the    *
+ *          other is double, uint64 or a string representing a valid double   *
+ *          value                                                             *
  *                                                                            *
  ******************************************************************************/
 static int	variant_compare_dbl(const zbx_variant_t *value1, const zbx_variant_t *value2)
@@ -418,6 +443,9 @@ static int	variant_compare_dbl(const zbx_variant_t *value1, const zbx_variant_t 
 		case ZBX_VARIANT_UI64:
 			value1_dbl = value1->data.ui64;
 			break;
+		case ZBX_VARIANT_STR:
+			value1_dbl = atof(value1->data.str);
+			break;
 		default:
 			THIS_SHOULD_NEVER_HAPPEN;
 			exit(EXIT_FAILURE);
@@ -431,6 +459,9 @@ static int	variant_compare_dbl(const zbx_variant_t *value1, const zbx_variant_t 
 		case ZBX_VARIANT_UI64:
 			value2_dbl = value2->data.ui64;
 			break;
+		case ZBX_VARIANT_STR:
+			value2_dbl = atof(value2->data.str);
+			break;
 		default:
 			THIS_SHOULD_NEVER_HAPPEN;
 			exit(EXIT_FAILURE);
@@ -440,6 +471,7 @@ static int	variant_compare_dbl(const zbx_variant_t *value1, const zbx_variant_t 
 		return 0;
 
 	ZBX_RETURN_IF_NOT_EQUAL(value1_dbl, value2_dbl);
+
 	THIS_SHOULD_NEVER_HAPPEN;
 	exit(EXIT_FAILURE);
 }
@@ -448,7 +480,7 @@ static int	variant_compare_dbl(const zbx_variant_t *value1, const zbx_variant_t 
  *                                                                            *
  * Function: variant_compare_ui64                                             *
  *                                                                            *
- * Purpose: compares two variant values when both are uint64                  *
+ * Purpose: compare two variant values when both are uint64                   *
  *                                                                            *
  ******************************************************************************/
 static int	variant_compare_ui64(const zbx_variant_t *value1, const zbx_variant_t *value2)
@@ -461,25 +493,25 @@ static int	variant_compare_ui64(const zbx_variant_t *value1, const zbx_variant_t
  *                                                                            *
  * Function: zbx_variant_compare                                              *
  *                                                                            *
- * Purpose: compares two variant values                                       *
+ * Purpose: compare two variant values                                        *
  *                                                                            *
  * Parameters: value1 - [IN] the first value                                  *
  *             value2 - [IN] the second value                                 *
  *                                                                            *
- * Return value: <0 - the first value is less than second                     *
- *               >0 - the first value is greater than second                  *
+ * Return value: <0 - the first value is less than the second                 *
+ *               >0 - the first value is greater than the second              *
  *               0  - the values are equal                                    *
  *                                                                            *
- * Comments: The following priority is applied:                               *
- *           1) value of none type is always less than other types, two       *
- *              none types are equal                                          *
- *           1) value of binary type is always greater than other types, two  *
+ * Comments: The following comparison logic is applied:                       *
+ *           1) value of 'none' type is always less than other types, two     *
+ *              'none' types are equal                                        *
+ *           2) value of binary type is always greater than other types, two  *
  *              binary types are compared by length and then by contents      *
- *           2) if any of value is of string type, the other is converted to  *
+ *           3) if both values have uint64 types, they are compared as is     *
+ *           4) if both values can be converted to floating point values the  *
+ *              conversion is done and the result is compared                 *
+ *           5) if any of value is of string type, the other is converted to  *
  *              string and both are compared                                  *
- *           3) if any of value is of floating type, the other is converted   *
- *              to floating value and both are compared                       *
- *           4) only uin64 types are left, compare as uin64                   *
  *                                                                            *
  ******************************************************************************/
 int	zbx_variant_compare(const zbx_variant_t *value1, const zbx_variant_t *value2)
@@ -490,17 +522,15 @@ int	zbx_variant_compare(const zbx_variant_t *value1, const zbx_variant_t *value2
 	if (ZBX_VARIANT_BIN == value1->type || ZBX_VARIANT_BIN == value2->type)
 		return variant_compare_bin(value1, value2);
 
-	if (ZBX_VARIANT_STR == value1->type || ZBX_VARIANT_STR == value2->type)
-		return variant_compare_str(value1, value2);
-
-	if (ZBX_VARIANT_DBL == value1->type || ZBX_VARIANT_DBL == value2->type)
-		return variant_compare_dbl(value1, value2);
-
 	if (ZBX_VARIANT_UI64 == value1->type && ZBX_VARIANT_UI64 == value2->type)
-		return variant_compare_ui64(value1, value2);
+		return  variant_compare_ui64(value1, value2);
 
-	THIS_SHOULD_NEVER_HAPPEN;
-	exit(EXIT_FAILURE);
+	if ((ZBX_VARIANT_STR != value1->type || SUCCEED == is_double(value1->data.str, NULL)) &&
+			(ZBX_VARIANT_STR != value2->type || SUCCEED == is_double(value2->data.str, NULL)))
+	{
+		return variant_compare_dbl(value1, value2);
+	}
+
+	/* at this point at least one of the values is string data, other can be uint64, floating or string */
+	return variant_compare_str(value1, value2);
 }
-
-

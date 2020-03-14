@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -515,7 +515,7 @@ static void	add_pinger_host(ZBX_FPING_HOST **hosts, int *hosts_alloc, int *hosts
 static void	process_pinger_hosts(icmpitem_t *items, int items_count)
 {
 	int			i, first_index = 0, ping_result;
-	char			error[ITEM_ERROR_LEN_MAX];
+	char			error[ITEM_ERROR_LEN_MAX] = "";
 	static ZBX_FPING_HOST	*hosts = NULL;
 	static int		hosts_alloc = 4;
 	int			hosts_count = 0;
@@ -526,7 +526,7 @@ static void	process_pinger_hosts(icmpitem_t *items, int items_count)
 	if (NULL == hosts)
 		hosts = (ZBX_FPING_HOST *)zbx_malloc(hosts, sizeof(ZBX_FPING_HOST) * hosts_alloc);
 
-	for (i = 0; i < items_count; i++)
+	for (i = 0; i < items_count && ZBX_IS_RUNNING(); i++)
 	{
 		add_pinger_host(&hosts, &hosts_alloc, &hosts_count, items[i].addr);
 
@@ -583,7 +583,7 @@ ZBX_THREAD_ENTRY(pinger_thread, args)
 	if (NULL == items)
 		items = (icmpitem_t *)zbx_malloc(items, sizeof(icmpitem_t) * items_alloc);
 
-	for (;;)
+	while (ZBX_IS_RUNNING())
 	{
 		sec = zbx_time();
 		zbx_update_env(sec);
@@ -605,4 +605,9 @@ ZBX_THREAD_ENTRY(pinger_thread, args)
 
 		zbx_sleep_loop(sleeptime);
 	}
+
+	zbx_setproctitle("%s #%d [terminated]", get_process_type_string(process_type), process_num);
+
+	while (1)
+		zbx_sleep(SEC_PER_MIN);
 }

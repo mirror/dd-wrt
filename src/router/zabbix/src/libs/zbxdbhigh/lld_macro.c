@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -54,27 +54,29 @@ int	zbx_lld_macro_paths_get(zbx_uint64_t lld_ruleid, zbx_vector_ptr_t *lld_macro
 	DB_ROW			row;
 	zbx_lld_macro_path_t	*lld_macro_path;
 	int			ret = SUCCEED;
-	char			err[MAX_STRING_LEN];
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
 
 	result = DBselect(
 			"select lld_macro,path"
 			" from lld_macro_path"
-			" where itemid=" ZBX_FS_UI64
-			" order by lld_macro",
+			" where itemid=" ZBX_FS_UI64,
 			lld_ruleid);
 
 	while (NULL != (row = DBfetch(result)))
 	{
-		if (SUCCEED != (ret = zbx_json_path_check(row[1], err, sizeof(err))))
+		zbx_jsonpath_t	path;
+
+		if (SUCCEED != (ret = zbx_jsonpath_compile(row[1], &path)))
 		{
-			*error = zbx_dsprintf(*error, "Cannot process LLD macro \"%s\": %s.\n", row[0], err);
+			*error = zbx_dsprintf(*error, "Cannot process LLD macro \"%s\": %s.\n", row[0],
+					zbx_json_strerror());
 			break;
 		}
 
-		lld_macro_path = (zbx_lld_macro_path_t *)zbx_malloc(NULL, sizeof(zbx_lld_macro_path_t));
+		zbx_jsonpath_clear(&path);
 
+		lld_macro_path = (zbx_lld_macro_path_t *)zbx_malloc(NULL, sizeof(zbx_lld_macro_path_t));
 		lld_macro_path->lld_macro = zbx_strdup(NULL, row[0]);
 		lld_macro_path->path = zbx_strdup(NULL, row[1]);
 
@@ -82,7 +84,9 @@ int	zbx_lld_macro_paths_get(zbx_uint64_t lld_ruleid, zbx_vector_ptr_t *lld_macro
 	}
 	DBfree_result(result);
 
-	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __func__);
+	zbx_vector_ptr_sort(lld_macro_paths, zbx_lld_macro_paths_compare);
+
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __func__, zbx_result_string(ret));
 
 	return ret;
 }
@@ -114,16 +118,15 @@ void	zbx_lld_macro_path_free(zbx_lld_macro_path_t *lld_macro_path)
  *             lld_macro_paths - [IN] use json path to extract from jp_row    *
  *             macro           - [IN] LLD macro                               *
  *             value           - [OUT] value extracted from jp_row            *
- *             value_alloc     - [OUT] allocated memory size for value        *
  *                                                                            *
  ******************************************************************************/
 int	zbx_lld_macro_value_by_name(const struct zbx_json_parse *jp_row, const zbx_vector_ptr_t *lld_macro_paths,
-		const char *macro, char **value, size_t *value_alloc)
+		const char *macro, char **value)
 {
 	zbx_lld_macro_path_t	lld_macro_path_local, *lld_macro_path;
 	int			index;
-	struct zbx_json_parse	jp_out;
-	int			ret;
+	size_t			value_alloc = 0;
+	zbx_json_type_t		type;
 
 	lld_macro_path_local.lld_macro = (char *)macro;
 
@@ -132,12 +135,16 @@ int	zbx_lld_macro_value_by_name(const struct zbx_json_parse *jp_row, const zbx_v
 	{
 		lld_macro_path = (zbx_lld_macro_path_t *)lld_macro_paths->values[index];
 
-		if (FAIL != (ret = zbx_json_path_open(jp_row, lld_macro_path->path, &jp_out)))
-			zbx_json_value_dyn(&jp_out, value, value_alloc);
-	}
-	else
-		ret = zbx_json_value_by_name_dyn(jp_row, macro, value, value_alloc);
+		if (SUCCEED == zbx_jsonpath_query(jp_row, lld_macro_path->path, value) && NULL != *value)
+			return SUCCEED;
 
-	return ret;
+		return FAIL;
+	}
+
+	if (FAIL != (zbx_json_value_by_name_dyn(jp_row, macro, value, &value_alloc, &type)) &&
+			ZBX_JSON_TYPE_NULL != type)
+		return SUCCEED;
+
+	return FAIL;
 }
 

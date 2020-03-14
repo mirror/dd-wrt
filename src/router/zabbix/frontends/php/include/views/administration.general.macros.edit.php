@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -35,11 +35,12 @@ $widget = (new CWidget())
 
 $table = (new CTable())
 	->setId('tbl_macros')
-	->setHeader([_('Macro'), '', _('Value'), '']);
+	->addClass(ZBX_STYLE_TEXTAREA_FLEXIBLE_CONTAINER)
+	->setHeader([_('Macro'), '', _('Value'), _('Description'), '']);
 
 // fields
 foreach ($data['macros'] as $i => $macro) {
-	$macro_input = (new CTextBox('macros['.$i.'][macro]', $macro['macro'], false, 255))
+	$macro_input = (new CTextAreaFlexible('macros['.$i.'][macro]', $macro['macro']))
 		->addClass('macro')
 		->setWidth(ZBX_TEXTAREA_MACRO_WIDTH)
 		->setAttribute('placeholder', '{$MACRO}');
@@ -48,9 +49,14 @@ foreach ($data['macros'] as $i => $macro) {
 		$macro_input->setAttribute('autofocus', 'autofocus');
 	}
 
-	$value_input = (new CTextBox('macros['.$i.'][value]', $macro['value'], false, 255))
+	$value_input = (new CTextAreaFlexible('macros['.$i.'][value]', $macro['value']))
 		->setWidth(ZBX_TEXTAREA_MACRO_VALUE_WIDTH)
 		->setAttribute('placeholder', _('value'));
+
+	$description_input = (new CTextAreaFlexible('macros['.$i.'][description]', $macro['description']))
+		->setWidth(ZBX_TEXTAREA_MACRO_VALUE_WIDTH)
+		->setMaxlength(DB::getFieldLength('globalmacro', 'description'))
+		->setAttribute('placeholder', _('description'));
 
 	$button_cell = [
 		(new CButton('macros['.$i.'][remove]', _('Remove')))
@@ -62,7 +68,11 @@ foreach ($data['macros'] as $i => $macro) {
 	}
 
 	$table->addRow([
-		$macro_input, '&rArr;', $value_input, (new CCol($button_cell))->addClass(ZBX_STYLE_NOWRAP)
+		(new CCol($macro_input))->addClass(ZBX_STYLE_TEXTAREA_FLEXIBLE_PARENT),
+		'&rArr;',
+		(new CCol($value_input))->addClass(ZBX_STYLE_TEXTAREA_FLEXIBLE_PARENT),
+		(new CCol($description_input))->addClass(ZBX_STYLE_TEXTAREA_FLEXIBLE_PARENT),
+		(new CCol($button_cell))->addClass(ZBX_STYLE_NOWRAP)
 	], 'form_row');
 }
 
@@ -74,8 +84,7 @@ $table->setFooter(new CCol(
 ));
 
 // form list
-$macros_form_list = (new CFormList('macrosFormList'))
-	->addRow($table);
+$macros_form_list = (new CFormList('macrosFormList'))->addRow($table);
 
 $tab_view = (new CTabView())->addTab('macros', _('Macros'), $macros_form_list);
 

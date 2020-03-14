@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@
 #include "checks_java.h"
 #include "checks_calculated.h"
 #include "checks_http.h"
-#include "../../libs/zbxcrypto/tls.h"
+#include "zbxcrypto.h"
 #include "zbxjson.h"
 #include "zbxhttp.h"
 
@@ -375,7 +375,7 @@ static int	get_value(DC_ITEM *item, AGENT_RESULT *result, zbx_vector_ptr_t *add_
 			res = get_value_external(item, result);
 			break;
 		case ITEM_TYPE_SSH:
-#ifdef HAVE_SSH2
+#if defined(HAVE_SSH2) || defined(HAVE_SSH)
 			zbx_alarm_on(CONFIG_TIMEOUT);
 			res = get_value_ssh(item, result);
 			zbx_alarm_off();
@@ -905,7 +905,7 @@ ZBX_THREAD_ENTRY(poller_thread, args)
 
 	DBconnect(ZBX_DB_CONNECT_NORMAL);
 
-	for (;;)
+	while (ZBX_IS_RUNNING())
 	{
 		sec = zbx_time();
 		zbx_update_env(sec);
@@ -945,5 +945,9 @@ ZBX_THREAD_ENTRY(poller_thread, args)
 		zbx_sleep_loop(sleeptime);
 	}
 
+	zbx_setproctitle("%s #%d [terminated]", get_process_type_string(process_type), process_num);
+
+	while (1)
+		zbx_sleep(SEC_PER_MIN);
 #undef STAT_INTERVAL
 }

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -367,7 +367,11 @@ static int	db_read_values_by_time(zbx_uint64_t itemid, int value_type, zbx_vecto
 			" where itemid=" ZBX_FS_UI64,
 			table->fields, table->name, itemid);
 
-	if (1 == seconds)
+	if (ZBX_JAN_2038 == end_timestamp)
+	{
+		zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset, " and clock>%d", end_timestamp - seconds);
+	}
+	else if (1 == seconds)
 	{
 		zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset, " and clock=%d", end_timestamp);
 	}

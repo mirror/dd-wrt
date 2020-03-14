@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -323,7 +323,7 @@ class CScreenBase {
 		// Get page file.
 		if ($this->required_parameters['pageFile'] && $this->pageFile === null) {
 			global $page;
-			$this->pageFile = $page['file'];
+			$this->pageFile = ($page === null) ? null : $page['file'];
 		}
 
 		// Calculate timeline.
@@ -370,15 +370,6 @@ class CScreenBase {
 	 */
 	public function getScreenId() {
 		return 'flickerfreescreen_'.$this->getDataId();
-	}
-
-	/**
-	 * Get profile url params.
-	 *
-	 * @return string
-	 */
-	public function getProfileUrlParams() {
-		return '&profileIdx='.$this->profileIdx.'&profileIdx2='.$this->profileIdx2;
 	}
 
 	/**

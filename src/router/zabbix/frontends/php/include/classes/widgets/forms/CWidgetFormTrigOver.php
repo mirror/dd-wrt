@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ class CWidgetFormTrigOver extends CWidgetForm {
 		$this->fields[$field_show->getName()] = $field_show;
 
 		// Host groups.
-		$field_groups = new CWidgetFieldGroup('groupids', _('Host groups'));
+		$field_groups = new CWidgetFieldMsGroup('groupids', _('Host groups'));
 
 		if (array_key_exists('groupids', $this->data)) {
 			$field_groups->setValue($this->data['groupids']);

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -174,7 +174,7 @@ class CScreenHostTriggers extends CScreenBase {
 			'show' => TRIGGERS_OPTION_IN_PROBLEM,
 			'show_timeline' => 0,
 			'details' => 1,
-			'show_latest_values' => 0,
+			'show_opdata' => 0,
 			'sort_field' => '',
 			'sort_order' => ZBX_SORT_DOWN
 		];
@@ -246,7 +246,7 @@ class CScreenHostTriggers extends CScreenBase {
 					$info_icons[] = makeInformationIcon(
 						array_key_exists($problem['userid'], $data['users'])
 							? _s('Resolved by user "%1$s".', getUserFullname($data['users'][$problem['userid']]))
-							: _('Resolved by user.')
+							: _('Resolved by inaccessible user.')
 					);
 				}
 			}
@@ -263,8 +263,8 @@ class CScreenHostTriggers extends CScreenBase {
 				$host_name,
 				(new CCol([
 					(new CLinkAction($problem['name']))
-						->setHint(make_popup_eventlist(['comments' => $problem['comments']] + $trigger,
-							$problem['eventid'], $back_url
+						->setHint(make_popup_eventlist(['comments' => $problem['comments'], 'url' => $problem['url'],
+							'triggerid' => $trigger['triggerid']], $problem['eventid'], $back_url
 						))
 				]))->addClass(getSeverityStyle($problem['severity'])),
 				$clock,

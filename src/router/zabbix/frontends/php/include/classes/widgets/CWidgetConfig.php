@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -37,6 +37,9 @@ class CWidgetConfig {
 			WIDGET_FAV_GRAPHS			=> _('Favourite graphs'),
 			WIDGET_FAV_MAPS				=> _('Favourite maps'),
 			WIDGET_FAV_SCREENS			=> _('Favourite screens'),
+			WIDGET_GRAPH				=> _('Graph (classic)'),
+			WIDGET_GRAPH_PROTOTYPE		=> _('Graph prototype'),
+			WIDGET_HOST_AVAIL			=> _('Host availability'),
 			WIDGET_MAP					=> _('Map'),
 			WIDGET_NAV_TREE				=> _('Map navigation tree'),
 			WIDGET_PLAIN_TEXT			=> _('Plain text'),
@@ -44,7 +47,6 @@ class CWidgetConfig {
 			WIDGET_PROBLEMS				=> _('Problems'),
 			WIDGET_PROBLEMS_BY_SV		=> _('Problems by severity'),
 			WIDGET_SVG_GRAPH			=> _('Graph'),
-			WIDGET_GRAPH				=> _('Graph (classic)'),
 			WIDGET_SYSTEM_INFO			=> _('System information'),
 			WIDGET_TRIG_OVER			=> _('Trigger overview'),
 			WIDGET_URL					=> _('URL'),
@@ -61,30 +63,32 @@ class CWidgetConfig {
 	 */
 	private static function getDefaultDimensions() {
 		return [
-			WIDGET_ACTION_LOG			=> ['width' => 6, 'height' => 5],
-			WIDGET_CLOCK				=> ['width' => 2, 'height' => 3],
-			WIDGET_DATA_OVER			=> ['width' => 6, 'height' => 5],
-			WIDGET_DISCOVERY			=> ['width' => 3, 'height' => 3],
-			WIDGET_FAV_GRAPHS			=> ['width' => 2, 'height' => 3],
-			WIDGET_FAV_MAPS				=> ['width' => 2, 'height' => 3],
-			WIDGET_FAV_SCREENS			=> ['width' => 2, 'height' => 3],
-			WIDGET_GRAPH				=> ['width' => 6, 'height' => 5],
-			WIDGET_MAP					=> ['width' => 9, 'height' => 5],
-			WIDGET_NAV_TREE				=> ['width' => 3, 'height' => 5],
-			WIDGET_PLAIN_TEXT			=> ['width' => 3, 'height' => 3],
-			WIDGET_PROBLEM_HOSTS		=> ['width' => 6, 'height' => 5],
-			WIDGET_PROBLEMS				=> ['width' => 6, 'height' => 5],
-			WIDGET_PROBLEMS_BY_SV		=> ['width' => 6, 'height' => 5],
-			WIDGET_SVG_GRAPH			=> ['width' => 6, 'height' => 5],
-			WIDGET_SYSTEM_INFO			=> ['width' => 6, 'height' => 5],
-			WIDGET_TRIG_OVER			=> ['width' => 6, 'height' => 5],
-			WIDGET_URL					=> ['width' => 6, 'height' => 5],
-			WIDGET_WEB					=> ['width' => 3, 'height' => 3]
+			WIDGET_ACTION_LOG			=> ['width' => 12,	'height' => 5],
+			WIDGET_CLOCK				=> ['width' => 4,	'height' => 3],
+			WIDGET_DATA_OVER			=> ['width' => 12,	'height' => 5],
+			WIDGET_DISCOVERY			=> ['width' => 6,	'height' => 3],
+			WIDGET_FAV_GRAPHS			=> ['width' => 4,	'height' => 3],
+			WIDGET_FAV_MAPS				=> ['width' => 4,	'height' => 3],
+			WIDGET_FAV_SCREENS			=> ['width' => 4,	'height' => 3],
+			WIDGET_GRAPH				=> ['width' => 12,	'height' => 5],
+			WIDGET_GRAPH_PROTOTYPE		=> ['width' => 16,	'height' => 5],
+			WIDGET_HOST_AVAIL			=> ['width' => 6,	'height' => 3],
+			WIDGET_MAP					=> ['width' => 18,	'height' => 5],
+			WIDGET_NAV_TREE				=> ['width' => 6,	'height' => 5],
+			WIDGET_PLAIN_TEXT			=> ['width' => 6,	'height' => 3],
+			WIDGET_PROBLEM_HOSTS		=> ['width' => 12,	'height' => 5],
+			WIDGET_PROBLEMS				=> ['width' => 12,	'height' => 5],
+			WIDGET_PROBLEMS_BY_SV		=> ['width' => 12,	'height' => 5],
+			WIDGET_SVG_GRAPH			=> ['width' => 12,	'height' => 5],
+			WIDGET_SYSTEM_INFO			=> ['width' => 12,	'height' => 5],
+			WIDGET_TRIG_OVER			=> ['width' => 12,	'height' => 5],
+			WIDGET_URL					=> ['width' => 12,	'height' => 5],
+			WIDGET_WEB					=> ['width' => 6,	'height' => 3]
 		];
 	}
 
 	/**
-	 * Return default values for new widgets.
+	 * Return default values for widgets.
 	 *
 	 * @static
 	 *
@@ -97,7 +101,8 @@ class CWidgetConfig {
 		foreach (self::getKnownWidgetTypes() as $type => $name) {
 			$ret[$type] = [
 				'header' => $name,
-				'size' => $dimensions[$type]
+				'size' => $dimensions[$type],
+				'iterator' => self::isIterator($type)
 			];
 		}
 
@@ -119,6 +124,7 @@ class CWidgetConfig {
 			case WIDGET_DATA_OVER:
 			case WIDGET_DISCOVERY:
 			case WIDGET_GRAPH:
+			case WIDGET_GRAPH_PROTOTYPE:
 			case WIDGET_PLAIN_TEXT:
 			case WIDGET_PROBLEM_HOSTS:
 			case WIDGET_PROBLEMS:
@@ -132,6 +138,7 @@ class CWidgetConfig {
 			case WIDGET_FAV_GRAPHS:
 			case WIDGET_FAV_MAPS:
 			case WIDGET_FAV_SCREENS:
+			case WIDGET_HOST_AVAIL:
 			case WIDGET_MAP:
 			case WIDGET_NAV_TREE:
 			case WIDGET_SYSTEM_INFO:
@@ -162,6 +169,8 @@ class CWidgetConfig {
 	/**
 	 * Detect if widget uses time selector.
 	 *
+	 * @static
+	 *
 	 * @param array $widget
 	 * @param array $widget[type]
 	 * @param array $widget[fields]
@@ -171,6 +180,7 @@ class CWidgetConfig {
 	public static function usesTimeSelector(array $widget) {
 		switch ($widget['type']) {
 			case WIDGET_GRAPH:
+			case WIDGET_GRAPH_PROTOTYPE:
 				return true;
 
 			case WIDGET_SVG_GRAPH:
@@ -179,6 +189,90 @@ class CWidgetConfig {
 			default:
 				return false;
 		}
+	}
+
+	public static function isIterator($type) {
+		switch ($type) {
+			case WIDGET_GRAPH_PROTOTYPE:
+				return true;
+
+			default:
+				return false;
+		}
+	}
+
+	/**
+	 * Detect if widget dialogue should be sticked to top instead of being centered vertically.
+	 *
+	 * @param string $type  Widget type
+	 *
+	 * @return bool
+	 */
+	public static function getDialogueStickToTop($type) {
+		switch ($type) {
+			case WIDGET_SVG_GRAPH:
+				return true;
+
+			default:
+				return false;
+		}
+	}
+
+	/**
+	 * Detect if widget has padding or not
+	 *
+	 * @static
+	 *
+	 * @param string $type       Widget type
+	 * @param array  $fields     Widget form fields
+	 * @param int    $view_mode  Widget view mode. ZBX_WIDGET_VIEW_MODE_NORMAL by default
+	 *
+	 * @return bool
+	 */
+	private static function hasPadding($type, $fields, $view_mode) {
+		if ($view_mode == ZBX_WIDGET_VIEW_MODE_HIDDEN_HEADER) {
+			switch ($type) {
+				case WIDGET_CLOCK:
+				case WIDGET_GRAPH:
+				case WIDGET_MAP:
+				case WIDGET_SVG_GRAPH:
+					return true;
+
+				default:
+					return false;
+			}
+		}
+		else {
+			switch ($type) {
+				case WIDGET_HOST_AVAIL:
+					return (count($fields['interface_type']) != 1);
+
+				case WIDGET_PROBLEMS_BY_SV:
+					return $fields['show_type'] != WIDGET_PROBLEMS_BY_SV_SHOW_TOTALS;
+
+				case WIDGET_GRAPH_PROTOTYPE:
+				case WIDGET_URL:
+					return false;
+
+				default:
+					return true;
+			}
+		}
+	}
+
+	/**
+	 * Get widget configuration based on widget type, fields and current view mode.
+	 *
+	 * @param string $type       Widget type
+	 * @param array  $fields     Widget form fields
+	 * @param int    $view_mode  Widget view mode
+	 *
+	 * @return array
+	 */
+	public static function getConfiguration($type, $fields, $view_mode) {
+		return [
+			'padding' => self::hasPadding($type, $fields, $view_mode)
+		];
 	}
 
 	/**
@@ -204,6 +298,12 @@ class CWidgetConfig {
 
 			case WIDGET_GRAPH:
 				return new CWidgetFormGraph($data);
+
+			case WIDGET_GRAPH_PROTOTYPE:
+				return new CWidgetFormGraphPrototype($data);
+
+			case WIDGET_HOST_AVAIL:
+				return new CWidgetFormHostAvail($data);
 
 			case WIDGET_MAP:
 				return new CWidgetFormMap($data);

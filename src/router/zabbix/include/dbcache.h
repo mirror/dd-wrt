@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -243,6 +243,7 @@ typedef struct _DC_TRIGGER
 	char			*error;
 	char			*new_error;
 	char			*correlation_tag;
+	char			*opdata;
 	zbx_timespec_t		timespec;
 	int			lastchange;
 	unsigned char		topoindex;
@@ -296,6 +297,7 @@ typedef struct
 	char		tls_psk[HOST_TLS_PSK_LEN_MAX];
 #endif
 	char		proxy_address[HOST_PROXY_ADDRESS_LEN_MAX];
+	int		last_version_error_time;
 }
 DC_PROXY;
 
@@ -357,6 +359,7 @@ typedef struct
 	int		default_inventory_mode;
 	int		refresh_unsupported;
 	unsigned char	snmptrap_logging;
+	unsigned char	autoreg_tls_accept;
 	char		*db_extension;
 
 	/* housekeeping related configuration data */
@@ -364,13 +367,14 @@ typedef struct
 }
 zbx_config_t;
 
-#define ZBX_CONFIG_FLAGS_SEVERITY_NAME			0x00000001
-#define ZBX_CONFIG_FLAGS_DISCOVERY_GROUPID		0x00000002
-#define ZBX_CONFIG_FLAGS_DEFAULT_INVENTORY_MODE		0x00000004
-#define ZBX_CONFIG_FLAGS_REFRESH_UNSUPPORTED		0x00000008
-#define ZBX_CONFIG_FLAGS_SNMPTRAP_LOGGING		0x00000010
-#define ZBX_CONFIG_FLAGS_HOUSEKEEPER			0x00000020
-#define ZBX_CONFIG_FLAGS_DB_EXTENSION			0x00000040
+#define ZBX_CONFIG_FLAGS_SEVERITY_NAME			__UINT64_C(0x0000000000000001)
+#define ZBX_CONFIG_FLAGS_DISCOVERY_GROUPID		__UINT64_C(0x0000000000000002)
+#define ZBX_CONFIG_FLAGS_DEFAULT_INVENTORY_MODE		__UINT64_C(0x0000000000000004)
+#define ZBX_CONFIG_FLAGS_REFRESH_UNSUPPORTED		__UINT64_C(0x0000000000000008)
+#define ZBX_CONFIG_FLAGS_SNMPTRAP_LOGGING		__UINT64_C(0x0000000000000010)
+#define ZBX_CONFIG_FLAGS_HOUSEKEEPER			__UINT64_C(0x0000000000000020)
+#define ZBX_CONFIG_FLAGS_DB_EXTENSION			__UINT64_C(0x0000000000000040)
+#define ZBX_CONFIG_FLAGS_AUTOREG_TLS_ACCEPT		__UINT64_C(0x0000000000000080)
 
 /* possible values for database extensions (if flag ZBX_CONFIG_FLAGS_DB_EXTENSION set) */
 #define ZBX_CONFIG_DB_EXTENSION_TIMESCALE		"timescaledb"
@@ -452,9 +456,9 @@ typedef struct
 	zbx_vector_ptr_t	correlations;
 	zbx_hashset_t		conditions;
 
-	/* Configuration synchonization timestamp of the rules. */
-	/* Update the cache if this timesamp is less than the   */
-	/* current configuration synchonization timestamp.      */
+	/* Configuration synchronization timestamp of the rules. */
+	/* Update the cache if this timesamp is less than the    */
+	/* current configuration synchronization timestamp.      */
 	int			sync_ts;
 }
 zbx_correlation_rules_t;
@@ -592,12 +596,14 @@ typedef struct
 zbx_wcache_info_t;
 
 int	is_item_processed_by_server(unsigned char type, const char *key);
+int	zbx_is_counted_in_item_queue(unsigned char type, const char *key);
 int	in_maintenance_without_data_collection(unsigned char maintenance_status, unsigned char maintenance_type,
 		unsigned char type);
 void	dc_add_history(zbx_uint64_t itemid, unsigned char item_value_type, unsigned char item_flags,
 		AGENT_RESULT *result, const zbx_timespec_t *ts, unsigned char state, const char *error);
 void	dc_flush_history(void);
 void	zbx_sync_history_cache(int *values_num, int *triggers_num, int *more);
+void	zbx_log_sync_history_cache_progress(void);
 int	init_database_cache(char **error);
 void	free_database_cache(void);
 
@@ -641,6 +647,7 @@ void	DCconfig_get_triggers_by_triggerids(DC_TRIGGER *triggers, const zbx_uint64_
 		size_t num);
 void	DCconfig_clean_items(DC_ITEM *items, int *errcodes, size_t num);
 int	DCget_host_by_hostid(DC_HOST *host, zbx_uint64_t hostid);
+int	DCconfig_get_hostid_by_name(const char *host, zbx_uint64_t *hostid);
 void	DCconfig_get_hosts_by_itemids(DC_HOST *hosts, const zbx_uint64_t *itemids, int *errcodes, size_t num);
 void	DCconfig_get_items_by_keys(DC_ITEM *items, zbx_host_key_t *keys, int *errcodes, size_t num);
 void	DCconfig_get_items_by_itemids(DC_ITEM *items, const zbx_uint64_t *itemids, int *errcodes, size_t num);
@@ -703,6 +710,7 @@ int	DCget_host_inventory_value_by_hostid(zbx_uint64_t hostid, char **replace_to,
 void	*DCconfig_get_stats(int request);
 
 int	DCconfig_get_last_sync_time(void);
+void	DCconfig_wait_sync(void);
 int	DCconfig_get_proxypoller_hosts(DC_PROXY *proxies, int max_hosts);
 int	DCconfig_get_proxypoller_nextcheck(void);
 
@@ -713,8 +721,10 @@ void	DCrequeue_proxy(zbx_uint64_t hostid, unsigned char update_nextcheck, int pr
 int	DCcheck_proxy_permissions(const char *host, const zbx_socket_t *sock, zbx_uint64_t *hostid, char **error);
 
 #if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
-size_t	DCget_psk_by_identity(const unsigned char *psk_identity, unsigned char *psk_buf, size_t psk_buf_len);
+size_t	DCget_psk_by_identity(const unsigned char *psk_identity, unsigned char *psk_buf, unsigned int *psk_usage);
 #endif
+void	DCget_autoregistration_psk(char *psk_identity_buf, size_t psk_identity_buf_len,
+		unsigned char *psk_buf, size_t psk_buf_len);
 
 void	DCget_user_macro(const zbx_uint64_t *hostids, int host_num, const char *macro, char **replace_to);
 char	*DCexpression_expand_user_macros(const char *expression);
@@ -750,6 +760,8 @@ int	DCget_data_expected_from(zbx_uint64_t itemid, int *seconds);
 
 void	DCget_hostids_by_functionids(zbx_vector_uint64_t *functionids, zbx_vector_uint64_t *hostids);
 void	DCget_hosts_by_functionids(const zbx_vector_uint64_t *functionids, zbx_hashset_t *hosts);
+
+unsigned int	DCget_internal_action_count(void);
 
 /* global configuration support */
 #define ZBX_DISCOVERY_GROUPID_UNDEFINED	0
@@ -935,7 +947,7 @@ zbx_lld_macro_path_t;
 int	zbx_lld_macro_paths_get(zbx_uint64_t lld_ruleid, zbx_vector_ptr_t *lld_macro_paths, char **error);
 void	zbx_lld_macro_path_free(zbx_lld_macro_path_t *lld_macro_path);
 int	zbx_lld_macro_value_by_name(const struct zbx_json_parse *jp_row, const zbx_vector_ptr_t *lld_macro_paths,
-		const char *macro, char **value, size_t *value_alloc);
+		const char *macro, char **value);
 int	zbx_lld_macro_paths_compare(const void *d1, const void *d2);
 
 void	zbx_dc_get_item_tags_by_functionids(const zbx_uint64_t *functionids, size_t functionids_num, zbx_vector_ptr_t *host_tags);

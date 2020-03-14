@@ -7,6 +7,7 @@ libzbxcrypto_a_SOURCES = \
 	base64.c \
 	tls.c \
 	tls.h \
+	tls_version.c \
 	tls_tcp.h \
 	tls_tcp_active.h
 

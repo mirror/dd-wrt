@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 
 require_once dirname(__FILE__).'/include/config.inc.php';
-require_once dirname(__FILE__).'/include/hostgroups.inc.php';
 require_once dirname(__FILE__).'/include/hosts.inc.php';
 require_once dirname(__FILE__).'/include/forms.inc.php';
 
@@ -200,9 +199,9 @@ else {
 			$options = [
 				'output' => ['hostid', 'name', 'status'],
 				'selectInventory' => $requiredInventoryFields,
-				'withInventory' => true,
 				'selectGroups' => API_OUTPUT_EXTEND,
-				'groupids' => $data['pageFilter']->groupids
+				'groupids' => $data['pageFilter']->groupids,
+				'filter' => ['inventory_mode' => [HOST_INVENTORY_MANUAL, HOST_INVENTORY_AUTOMATIC]]
 			];
 
 			if ($data['filterField'] !== '' && $data['filterFieldValue'] !== '') {

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include "log.h"
 #include "comms.h"
 #include "base64.h"
+#include "zbxalgo.h"
 
 #include "zbxmedia.h"
 
@@ -130,7 +131,7 @@ static int	smtp_readln(zbx_socket_t *s, const char **buf)
  * Parameters: mailbox       - [IN] a null-terminated UTF-8 string              *
  *             error         - [IN] pointer to string for reporting errors      *
  *             max_error_len - [IN] size of 'error' string                      *
- *             mailaddrs     - [OUT] array of mail adresses                     *
+ *             mailaddrs     - [OUT] array of mail addresses                    *
  *                                                                              *
  * Comments:   The function is very much simplified in comparison with full     *
  *             RFC 5322-compliant parser. It does not recognize:                *

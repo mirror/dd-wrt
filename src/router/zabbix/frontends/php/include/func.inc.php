@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -101,7 +101,7 @@ function get_cookie($name, $default_value = null) {
 }
 
 function zbx_setcookie($name, $value, $time = null) {
-	setcookie($name, $value, isset($time) ? $time : 0, null, null, HTTPS, true);
+	setcookie($name, $value, isset($time) ? $time : 0, CSession::getDefaultCookiePath(), null, HTTPS, true);
 	$_COOKIE[$name] = $value;
 }
 
@@ -294,7 +294,7 @@ function zbx_date2str($format, $value = null) {
 }
 
 /**
- * Calculates and converts timestamp to string represenation.
+ * Calculates and converts timestamp to string representation.
  *
  * @param int|string $start_date  Start date timestamp.
  * @param int|string $end_date    End date timestamp.
@@ -445,20 +445,22 @@ function zbx_num2bitstr($num, $rev = false) {
  *
  * @param string $val
  *
- * @return string
+ * @return int
  */
 function str2mem($val) {
-	$unit = strtolower(substr($val, -1));
+	$val = trim($val);
+	$last = strtolower(substr($val, -1));
+	$val = (int) $val;
 
-	switch ($unit) {
+	switch ($last) {
 		case 'g':
-			$val = bcmul(substr($val, 0, -1), ZBX_GIBIBYTE, 0);
+			$val *= ZBX_GIBIBYTE;
 			break;
 		case 'm':
-			$val = bcmul(substr($val, 0, -1), ZBX_MEBIBYTE, 0);
+			$val *= ZBX_MEBIBYTE;
 			break;
 		case 'k':
-			$val = bcmul(substr($val, 0, -1), ZBX_KIBIBYTE, 0);
+			$val *= ZBX_KIBIBYTE;
 			break;
 	}
 
@@ -474,21 +476,16 @@ function str2mem($val) {
  */
 function mem2str($size) {
 	$prefix = 'B';
-	if (bccomp($size, ZBX_MEBIBYTE) == 1) {
-		$size = bcdiv($size, ZBX_MEBIBYTE, ZBX_UNITS_ROUNDOFF_LOWER_LIMIT);
+	if ($size > ZBX_MEBIBYTE) {
+		$size = $size / ZBX_MEBIBYTE;
 		$prefix = 'M';
 	}
-	elseif (bccomp($size, ZBX_KIBIBYTE) == 1) {
-		$size = bcdiv($size, ZBX_KIBIBYTE, ZBX_UNITS_ROUNDOFF_LOWER_LIMIT);
+	elseif ($size > ZBX_KIBIBYTE) {
+		$size = $size / ZBX_KIBIBYTE;
 		$prefix = 'K';
 	}
 
-	if (strpos($size, '.') !== false) {
-		$size = rtrim($size, '0');
-		$size = rtrim($size, '.');
-	}
-
-	return $size.$prefix;
+	return round($size, ZBX_UNITS_ROUNDOFF_LOWER_LIMIT).$prefix;
 }
 
 function convertUnitsUptime($value) {
@@ -694,7 +691,7 @@ function convert_units($options = []) {
 			&& ($options['convert'] == ITEM_CONVERT_WITH_UNITS))) {
 		if (preg_match('/\.\d+$/', $options['value'])) {
 			$format = (abs($options['value']) >= ZBX_UNITS_ROUNDOFF_THRESHOLD)
-				? '%.'.ZBX_UNITS_ROUNDOFF_UPPER_LIMIT.'f'
+				? '%.'.ZBX_UNITS_ROUNDOFF_MIDDLE_LIMIT.'f'
 				: '%.'.ZBX_UNITS_ROUNDOFF_LOWER_LIMIT.'f';
 			$options['value'] = sprintf($format, $options['value']);
 		}
@@ -816,16 +813,21 @@ function convert_units($options = []) {
 /**
  * Convert time format with suffixes to seconds.
  * Examples:
- *		10m = 600
- *		3d = 10800
- *		-10m = -600
+ *        10m = 600
+ *        3d = 259200
+ *        -10m = -600
  *
  * @param string $time
+ * @param bool $with_year
  *
  * @return null|string
  */
-function timeUnitToSeconds($time) {
-	preg_match('/^(?<sign>[\-+])?(?<number>(\d)+)(?<suffix>['.ZBX_TIME_SUFFIXES.'])?$/', $time, $matches);
+function timeUnitToSeconds($time, $with_year = false) {
+	preg_match(
+		'/^(?<sign>[\-+])?(?<number>(\d)+)(?<suffix>['.
+		($with_year ? ZBX_TIME_SUFFIXES_WITH_YEAR : ZBX_TIME_SUFFIXES).'])?$/',
+		$time, $matches
+	);
 
 	$is_negative = (array_key_exists('sign', $matches) && $matches['sign'] === '-');
 
@@ -851,6 +853,12 @@ function timeUnitToSeconds($time) {
 				break;
 			case 'w':
 				$sec = bcmul($time, SEC_PER_WEEK);
+				break;
+			case 'M':
+				$sec = bcmul($time, SEC_PER_MONTH);
+				break;
+			case 'y':
+				$sec = bcmul($time, SEC_PER_YEAR);
 				break;
 		}
 	}
@@ -990,7 +998,7 @@ function zbx_is_int($var) {
 
 /**
  * Look for two arrays field value and create 3 array lists, one with arrays where field value exists only in first array
- * second with arrays where field values are only in second array and both where fiel values are in both arrays.
+ * second with arrays where field values are only in second array and both where field values are in both arrays.
  *
  * @param array  $primary
  * @param array  $secondary
@@ -1340,7 +1348,7 @@ function zbx_toObject($value, $field, $preserve_keys = false) {
  * Converts the given value to a numeric array:
  * - a scalar value will be converted to an array and added as the only element;
  * - an array with first element key containing only numeric characters will be converted to plain zero-based numeric array.
- * This is used for reseting nonsequential numeric arrays;
+ * This is used for resetting nonsequential numeric arrays;
  * - an associative array will be returned in an array as the only element, except if first element key contains only numeric characters.
  *
  * @param mixed $value
@@ -1432,26 +1440,6 @@ function zbx_toCSV($values) {
 	}
 
 	return $csv;
-}
-
-function zbx_array_mintersect($keys, $array) {
-	$result = [];
-
-	foreach ($keys as $field) {
-		if (is_array($field)) {
-			foreach ($field as $sub_field) {
-				if (isset($array[$sub_field])) {
-					$result[$sub_field] = $array[$sub_field];
-					break;
-				}
-			}
-		}
-		elseif (isset($array[$field])) {
-			$result[$field] = $array[$field];
-		}
-	}
-
-	return $result;
 }
 
 function zbx_str2links($text) {
@@ -1821,7 +1809,12 @@ function access_deny($mode = ACCESS_DENY_OBJECT) {
 
 		$data['theme'] = getUserTheme(CWebUser::$data);
 
-		(new CView('general.warning', $data))->render();
+		if (detect_page_type() == PAGE_TYPE_JS) {
+			(new CView('layout.json', ['main_block' => json_encode(['error' => $data['header']])]))->render();
+		}
+		else {
+			(new CView('general.warning', $data))->render();
+		}
 		exit;
 	}
 }
@@ -1998,15 +1991,6 @@ function show_messages($good = false, $okmsg = null, $errmsg = null) {
 						? ['R' => 255, 'G' => 55, 'B' => 55]
 						: ['R' => 155, 'G' => 155, 'B' => 55]
 				];
-			}
-			break;
-		case PAGE_TYPE_XML:
-			if ($title !== null) {
-				echo htmlspecialchars($title)."\n";
-			}
-
-			foreach ($messages as $message) {
-				echo '['.$message['type'].'] '.$message['message']."\n";
 			}
 			break;
 		case PAGE_TYPE_HTML:

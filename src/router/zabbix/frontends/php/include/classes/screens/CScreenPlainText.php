@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@ class CScreenPlainText extends CScreenBase {
 			'itemids' => $this->screenitem['resourceid'],
 			'output' => API_OUTPUT_EXTEND,
 			'sortorder' => ZBX_SORT_DOWN,
-			'sortfield' => ['itemid', 'clock'],
+			'sortfield' => 'clock',
 			'limit' => $this->screenitem['elements'],
 			'time_from' => $this->timeline['from_ts'],
 			'time_till' => $this->timeline['to_ts']

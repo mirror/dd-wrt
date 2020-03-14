@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ class CAlert extends CApiService {
 
 	protected $tableName = 'alerts';
 	protected $tableAlias = 'a';
-	protected $sortColumns = ['alertid', 'clock', 'eventid', 'status'];
+	protected $sortColumns = ['alertid', 'clock', 'eventid', 'status', 'sendto', 'mediatypeid'];
 
 	/**
 	 * Get alerts data.
@@ -293,7 +293,16 @@ class CAlert extends CApiService {
 
 		// search
 		if (is_array($options['search'])) {
+			unset($options['search']['parameters']);
 			zbx_db_search('alerts a', $options, $sqlParts);
+		}
+
+		if (!$options['countOutput'] && $this->outputIsRequested('parameters', $options['output'])) {
+			$fields = ($options['output'] === API_OUTPUT_EXTEND)
+				? $this->getTableSchema()['fields']
+				: array_flip($options['output']);
+			unset($fields['parameters']);
+			$options['output'] = array_keys($fields);
 		}
 
 		// time_from

@@ -95,10 +95,10 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lib_ibm_db2.m4 \
 	$(top_srcdir)/m4/ax_lib_oracle_oci.m4 \
 	$(top_srcdir)/m4/ax_lib_postgresql.m4 \
 	$(top_srcdir)/m4/ax_lib_sqlite3.m4 $(top_srcdir)/m4/iconv.m4 \
-	$(top_srcdir)/m4/jabber.m4 $(top_srcdir)/m4/ldap.m4 \
-	$(top_srcdir)/m4/libcurl.m4 $(top_srcdir)/m4/libevent.m4 \
-	$(top_srcdir)/m4/libgnutls.m4 $(top_srcdir)/m4/libmbedtls.m4 \
-	$(top_srcdir)/m4/libopenssl.m4 $(top_srcdir)/m4/libssh2.m4 \
+	$(top_srcdir)/m4/ldap.m4 $(top_srcdir)/m4/libcurl.m4 \
+	$(top_srcdir)/m4/libevent.m4 $(top_srcdir)/m4/libgnutls.m4 \
+	$(top_srcdir)/m4/libmbedtls.m4 $(top_srcdir)/m4/libopenssl.m4 \
+	$(top_srcdir)/m4/libssh.m4 $(top_srcdir)/m4/libssh2.m4 \
 	$(top_srcdir)/m4/libunixodbc.m4 $(top_srcdir)/m4/libxml2.m4 \
 	$(top_srcdir)/m4/netsnmp.m4 $(top_srcdir)/m4/openipmi.m4 \
 	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/pthread.m4 \
@@ -127,7 +127,8 @@ am_libzbxcommon_a_OBJECTS = libzbxcommon_a-misc.$(OBJEXT) \
 	libzbxcommon_a-alias.$(OBJEXT) libzbxcommon_a-file.$(OBJEXT) \
 	libzbxcommon_a-setproctitle.$(OBJEXT) \
 	libzbxcommon_a-iprange.$(OBJEXT) \
-	libzbxcommon_a-variant.$(OBJEXT)
+	libzbxcommon_a-variant.$(OBJEXT) \
+	libzbxcommon_a-variant_misc.$(OBJEXT)
 libzbxcommon_a_OBJECTS = $(am_libzbxcommon_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -190,6 +191,7 @@ CTAGS = ctags
 am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+AGENT2_CONFIG_FILE = @AGENT2_CONFIG_FILE@
 AGENT_CONFIG_FILE = @AGENT_CONFIG_FILE@
 AGENT_LDFLAGS = @AGENT_LDFLAGS@
 AGENT_LIBS = @AGENT_LIBS@
@@ -204,6 +206,8 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CGO_CFLAGS = @CGO_CFLAGS@
+CGO_LDFLAGS = @CGO_LDFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CURL_SSL_CERT_LOCATION = @CURL_SSL_CERT_LOCATION@
@@ -223,19 +227,18 @@ EXTERNAL_SCRIPTS_PATH = @EXTERNAL_SCRIPTS_PATH@
 GNUTLS_CFLAGS = @GNUTLS_CFLAGS@
 GNUTLS_LDFLAGS = @GNUTLS_LDFLAGS@
 GNUTLS_LIBS = @GNUTLS_LIBS@
+GO = @GO@
+GOBIN = @GOBIN@
+GOCMD = @GOCMD@
+GOWORKDIR = @GOWORKDIR@
 GREP = @GREP@
 ICONV_CFLAGS = @ICONV_CFLAGS@
 ICONV_LDFLAGS = @ICONV_LDFLAGS@
-IKSEMEL_CFLAGS = @IKSEMEL_CFLAGS@
-IKSEMEL_LIBS = @IKSEMEL_LIBS@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-JABBER_CPPFLAGS = @JABBER_CPPFLAGS@
-JABBER_LDFLAGS = @JABBER_LDFLAGS@
-JABBER_LIBS = @JABBER_LIBS@
 JAR = @JAR@
 JAVAC = @JAVAC@
 LDAP_CPPFLAGS = @LDAP_CPPFLAGS@
@@ -257,7 +260,6 @@ LIBPTHREAD_LDFLAGS = @LIBPTHREAD_LDFLAGS@
 LIBPTHREAD_LIBS = @LIBPTHREAD_LIBS@
 LIBS = @LIBS@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
-LIBXML2_CONFIG = @LIBXML2_CONFIG@
 LIBXML2_LDFLAGS = @LIBXML2_LDFLAGS@
 LIBXML2_LIBS = @LIBXML2_LIBS@
 LIBXML2_VERSION = @LIBXML2_VERSION@
@@ -323,6 +325,9 @@ SQLITE3_VERSION = @SQLITE3_VERSION@
 SSH2_CFLAGS = @SSH2_CFLAGS@
 SSH2_LDFLAGS = @SSH2_LDFLAGS@
 SSH2_LIBS = @SSH2_LIBS@
+SSH_CFLAGS = @SSH_CFLAGS@
+SSH_LDFLAGS = @SSH_LDFLAGS@
+SSH_LIBS = @SSH_LIBS@
 STRIP = @STRIP@
 TLS_CFLAGS = @TLS_CFLAGS@
 UNIXODBC_CFLAGS = @UNIXODBC_CFLAGS@
@@ -331,6 +336,8 @@ UNIXODBC_LIBS = @UNIXODBC_LIBS@
 VERSION = @VERSION@
 ZBXGET_LDFLAGS = @ZBXGET_LDFLAGS@
 ZBXGET_LIBS = @ZBXGET_LIBS@
+ZBXJS_LDFLAGS = @ZBXJS_LDFLAGS@
+ZBXJS_LIBS = @ZBXJS_LIBS@
 ZLIB_CFLAGS = @ZLIB_CFLAGS@
 ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
 ZLIB_LIBS = @ZLIB_LIBS@
@@ -398,7 +405,8 @@ libzbxcommon_a_SOURCES = \
 	file.c \
 	setproctitle.c \
 	iprange.c \
-	variant.c
+	variant.c \
+	variant_misc.c
 
 libzbxcommon_a_CFLAGS = @ICONV_CFLAGS@
 all: all-am
@@ -457,6 +465,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxcommon_a-setproctitle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxcommon_a-str.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxcommon_a-variant.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxcommon_a-variant_misc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxcommon_a-xml.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxcommon_a-zbxgetopt.Po@am__quote@
 
@@ -615,6 +624,20 @@ libzbxcommon_a-variant.obj: variant.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='variant.c' object='libzbxcommon_a-variant.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxcommon_a_CFLAGS) $(CFLAGS) -c -o libzbxcommon_a-variant.obj `if test -f 'variant.c'; then $(CYGPATH_W) 'variant.c'; else $(CYGPATH_W) '$(srcdir)/variant.c'; fi`
+
+libzbxcommon_a-variant_misc.o: variant_misc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxcommon_a_CFLAGS) $(CFLAGS) -MT libzbxcommon_a-variant_misc.o -MD -MP -MF $(DEPDIR)/libzbxcommon_a-variant_misc.Tpo -c -o libzbxcommon_a-variant_misc.o `test -f 'variant_misc.c' || echo '$(srcdir)/'`variant_misc.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxcommon_a-variant_misc.Tpo $(DEPDIR)/libzbxcommon_a-variant_misc.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='variant_misc.c' object='libzbxcommon_a-variant_misc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxcommon_a_CFLAGS) $(CFLAGS) -c -o libzbxcommon_a-variant_misc.o `test -f 'variant_misc.c' || echo '$(srcdir)/'`variant_misc.c
+
+libzbxcommon_a-variant_misc.obj: variant_misc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxcommon_a_CFLAGS) $(CFLAGS) -MT libzbxcommon_a-variant_misc.obj -MD -MP -MF $(DEPDIR)/libzbxcommon_a-variant_misc.Tpo -c -o libzbxcommon_a-variant_misc.obj `if test -f 'variant_misc.c'; then $(CYGPATH_W) 'variant_misc.c'; else $(CYGPATH_W) '$(srcdir)/variant_misc.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxcommon_a-variant_misc.Tpo $(DEPDIR)/libzbxcommon_a-variant_misc.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='variant_misc.c' object='libzbxcommon_a-variant_misc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxcommon_a_CFLAGS) $(CFLAGS) -c -o libzbxcommon_a-variant_misc.obj `if test -f 'variant_misc.c'; then $(CYGPATH_W) 'variant_misc.c'; else $(CYGPATH_W) '$(srcdir)/variant_misc.c'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique

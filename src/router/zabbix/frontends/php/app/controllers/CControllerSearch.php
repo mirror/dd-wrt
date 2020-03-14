@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -45,12 +45,10 @@ class CControllerSearch extends CController {
 	protected function init() {
 		$this->disableSIDValidation();
 
-		$this->admin = in_array(CWebUser::$data['type'], [
+		$this->admin = in_array($this->getUserType(), [
 			USER_TYPE_ZABBIX_ADMIN,
 			USER_TYPE_SUPER_ADMIN
 		]);
-
-		$this->limit = CWebUser::$data['rows_per_page'];
 	}
 
 	protected function checkInput() {
@@ -69,6 +67,7 @@ class CControllerSearch extends CController {
 
 	protected function doAction() {
 		$this->search = trim($this->getInput('search', ''));
+		$this->limit = CWebUser::$data['rows_per_page'];
 
 		$data = [
 			'search' => _('Search pattern is empty'),

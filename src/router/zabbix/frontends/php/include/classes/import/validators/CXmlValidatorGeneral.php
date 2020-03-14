@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -53,12 +53,10 @@ class CXmlValidatorGeneral {
 	 * @param array|string $data  Import data.
 	 * @param string       $path  XML path (for error reporting).
 	 *
-	 * @return array              Validator does some manipulations for the incoming data. For example, converts empty
-	 *                            tags to an array, if desired. Converted array is returned.
-	 *
 	 * @throws Exception if $data does not correspond to validation rules.
 	 *
-	 * @return array|string
+	 * @return array  Validator does some manipulations for the incoming data. For example, converts empty tags to an
+	 *                array, if desired. Converted array is returned.
 	 */
 	public function validate($data, $path) {
 		$this->validateData($this->rules, $data, null, $path);
@@ -83,6 +81,8 @@ class CXmlValidatorGeneral {
 
 		if ($rules['type'] & XML_STRING) {
 			$this->validateString($data, $path);
+
+			$this->validateConstant($data, $rules, $path);
 		}
 		elseif ($rules['type'] & XML_ARRAY) {
 			if ($data === '') {
@@ -100,10 +100,15 @@ class CXmlValidatorGeneral {
 						));
 					}
 				}
+				unset($value);
 			}
 
 			// validation of the values type
 			foreach ($rules['rules'] as $tag => $rule) {
+				if (array_key_exists('import', $rule)) {
+					$data[$tag] = call_user_func($rule['import'], $data);
+				}
+
 				if (array_key_exists($tag, $data)) {
 					$subpath = ($path === '/' ? $path : $path.'/').$tag;
 					$this->validateData($rule, $data[$tag], $data, $subpath);
@@ -144,7 +149,7 @@ class CXmlValidatorGeneral {
 
 				switch ($this->format) {
 					case 'xml':
-						$is_valid_tag = ($tag === $prefix.($index == 0 ? '' : $index));
+						$is_valid_tag = ($tag === $prefix.($index == 0 ? '' : $index) || $tag === $index);
 						break;
 
 					case 'json':
@@ -165,8 +170,6 @@ class CXmlValidatorGeneral {
 			}
 			unset($value);
 
-			// indexing the array numerically
-
 			$extra = null;
 
 			if (array_key_exists('extra', $rules)) {
@@ -175,8 +178,6 @@ class CXmlValidatorGeneral {
 					unset($data[$rules['extra']]);
 				}
 			}
-
-			$data = array_values($data);
 
 			if ($extra !== null) {
 				$data[$rules['extra']] = $extra;
@@ -213,6 +214,21 @@ class CXmlValidatorGeneral {
 	private function validateArray($value, $path) {
 		if (!is_array($value)) {
 			throw new Exception(_s('Invalid tag "%1$s": %2$s.', $path, _('an array is expected')));
+		}
+	}
+
+	/**
+	 * Constant validator.
+	 *
+	 * @param mixed  $value  Value for validation.
+	 * @param array  $rules  XML rules.
+	 * @param string $path   XML path (for error reporting).
+	 *
+	 * @throws Exception if this $value is an invalid constant.
+	 */
+	private function validateConstant($value, $rules, $path) {
+		if (array_key_exists('in', $rules) && !in_array($value, array_values($rules['in']))) {
+			throw new Exception(_s('Invalid tag "%1$s": %2$s.', $path, _s('unexpected constant "%1$s"', $value)));
 		}
 	}
 }

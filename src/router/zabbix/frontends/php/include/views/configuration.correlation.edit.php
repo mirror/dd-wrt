@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -139,16 +139,16 @@ switch ($data['new_condition']['type']) {
 	case ZBX_CORR_CONDITION_EVENT_TAG_PAIR:
 		$condition = (new CTextBox('new_condition[newtag]', $data['new_condition']['newtag']))
 			->setWidth(ZBX_TEXTAREA_TAG_WIDTH)
-			->setAttribute('placeholder', _('new event tag'));
+			->setAttribute('placeholder', _('new event tag name'));
 		$condition2 = (new CTextBox('new_condition[oldtag]', $data['new_condition']['oldtag']))
 			->setWidth(ZBX_TEXTAREA_TAG_WIDTH)
-			->setAttribute('placeholder', _('old event tag'));
+			->setAttribute('placeholder', _('old event tag name'));
 		break;
 
 	case ZBX_CORR_CONDITION_OLD_EVENT_TAG_VALUE:
 	case ZBX_CORR_CONDITION_NEW_EVENT_TAG_VALUE:
 		$condition = (new CTextBox('new_condition[value]', $data['new_condition']['value']))
-			->setWidth(ZBX_TEXTAREA_TAG_WIDTH)
+			->setWidth(ZBX_TEXTAREA_TAG_VALUE_WIDTH)
 			->setAttribute('placeholder', _('value'));
 		$condition2 = (new CTextBox('new_condition[tag]'))
 			->setWidth(ZBX_TEXTAREA_TAG_WIDTH)

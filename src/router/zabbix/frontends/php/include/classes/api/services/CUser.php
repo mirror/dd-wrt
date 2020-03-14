@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -260,7 +260,8 @@ class CUser extends CApiService {
 			self::exception(ZBX_API_ERROR_PARAMETERS, _('You do not have permissions to create users.'));
 		}
 
-		$valid_themes = THEME_DEFAULT.','.implode(',', array_keys(Z::getThemes()));
+		$locales = array_keys(getLocales());
+		$themes = THEME_DEFAULT.','.implode(',', array_keys(Z::getThemes()));
 
 		$api_input_rules = ['type' => API_OBJECTS, 'flags' => API_NOT_EMPTY | API_NORMALIZE, 'uniq' => [['alias']], 'fields' => [
 			'alias' =>			['type' => API_STRING_UTF8, 'flags' => API_REQUIRED | API_NOT_EMPTY, 'length' => DB::getFieldLength('users', 'alias')],
@@ -270,8 +271,8 @@ class CUser extends CApiService {
 			'url' =>			['type' => API_URL, 'length' => DB::getFieldLength('users', 'url')],
 			'autologin' =>		['type' => API_INT32, 'in' => '0,1'],
 			'autologout' =>		['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY, 'in' => '0,90:'.SEC_PER_DAY],
-			'lang' =>			['type' => API_STRING_UTF8, 'flags' => API_NOT_EMPTY, 'length' => DB::getFieldLength('users', 'lang')],
-			'theme' =>			['type' => API_STRING_UTF8, 'in' => $valid_themes, 'length' => DB::getFieldLength('users', 'theme')],
+			'lang' =>			['type' => API_STRING_UTF8, 'flags' => API_NOT_EMPTY, 'in' => implode(',', $locales)],
+			'theme' =>			['type' => API_STRING_UTF8, 'in' => $themes, 'length' => DB::getFieldLength('users', 'theme')],
 			'type' =>			['type' => API_INT32, 'in' => implode(',', [USER_TYPE_ZABBIX_USER, USER_TYPE_ZABBIX_ADMIN, USER_TYPE_SUPER_ADMIN])],
 			'refresh' =>		['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY, 'in' => '0:'.SEC_PER_HOUR],
 			'rows_per_page' =>	['type' => API_INT32, 'in' => '1:999999'],
@@ -302,6 +303,7 @@ class CUser extends CApiService {
 		unset($user);
 
 		$this->checkDuplicates(zbx_objectValues($users, 'alias'));
+		$this->checkLanguages(zbx_objectValues($users, 'lang'));
 		$this->checkUserGroups($users, []);
 		$db_mediatypes = $this->checkMediaTypes($users);
 		$this->validateMediaRecipients($users, $db_mediatypes);
@@ -364,7 +366,8 @@ class CUser extends CApiService {
 	 * @throws APIException if the input is invalid.
 	 */
 	private function validateUpdate(array &$users, array &$db_users = null) {
-		$valid_themes = THEME_DEFAULT.','.implode(',', array_keys(Z::getThemes()));
+		$locales = array_keys(getLocales());
+		$themes = THEME_DEFAULT.','.implode(',', array_keys(Z::getThemes()));
 
 		$api_input_rules = ['type' => API_OBJECTS, 'flags' => API_NOT_EMPTY | API_NORMALIZE, 'uniq' => [['userid'], ['alias']], 'fields' => [
 			'userid' =>			['type' => API_ID, 'flags' => API_REQUIRED],
@@ -375,8 +378,8 @@ class CUser extends CApiService {
 			'url' =>			['type' => API_URL, 'length' => DB::getFieldLength('users', 'url')],
 			'autologin' =>		['type' => API_INT32, 'in' => '0,1'],
 			'autologout' =>		['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY, 'in' => '0,90:'.SEC_PER_DAY],
-			'lang' =>			['type' => API_STRING_UTF8, 'flags' => API_NOT_EMPTY, 'length' => DB::getFieldLength('users', 'lang')],
-			'theme' =>			['type' => API_STRING_UTF8, 'in' => $valid_themes, 'length' => DB::getFieldLength('users', 'theme')],
+			'lang' =>			['type' => API_STRING_UTF8, 'flags' => API_NOT_EMPTY, 'in' => implode(',', $locales)],
+			'theme' =>			['type' => API_STRING_UTF8, 'in' => $themes, 'length' => DB::getFieldLength('users', 'theme')],
 			'type' =>			['type' => API_INT32, 'in' => implode(',', [USER_TYPE_ZABBIX_USER, USER_TYPE_ZABBIX_ADMIN, USER_TYPE_SUPER_ADMIN])],
 			'refresh' =>		['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY, 'in' => '0:'.SEC_PER_HOUR],
 			'rows_per_page' =>	['type' => API_INT32, 'in' => '1:999999'],
@@ -445,6 +448,7 @@ class CUser extends CApiService {
 		if ($aliases) {
 			$this->checkDuplicates($aliases);
 		}
+		$this->checkLanguages(zbx_objectValues($users, 'lang'));
 		$this->checkUserGroups($users, $db_users);
 		$db_mediatypes = $this->checkMediaTypes($users);
 		$this->validateMediaRecipients($users, $db_mediatypes);
@@ -523,48 +527,56 @@ class CUser extends CApiService {
 				$passwd = '';
 			}
 
-			if ($passwd === '') {
-				$gui_access = self::getGroupGuiAccess($user, $db_usrgrps);
-
-				// Do not allow empty password for users with GROUP_GUI_ACCESS_INTERNAL.
-				if (in_array(GROUP_GUI_ACCESS_INTERNAL, $gui_access)) {
-					self::exception(ZBX_API_ERROR_PARAMETERS,
-						_s('Incorrect value for field "%1$s": %2$s.', 'passwd', _('cannot be empty'))
-					);
-				}
+			// Do not allow empty password for users with GROUP_GUI_ACCESS_INTERNAL.
+			if ($passwd === '' && self::hasInternalAuth($user, $db_usrgrps)) {
+				self::exception(ZBX_API_ERROR_PARAMETERS,
+					_s('Incorrect value for field "%1$s": %2$s.', 'passwd', _('cannot be empty'))
+				);
 			}
 		}
 	}
 
 	/**
-	 * Get list of all current authentication options available to user.
+	 * Check if specified language has dependent locale installed.
+	 *
+	 * @param array $languages
+	 *
+	 * @throws APIException if language locale is not installed.
+	 */
+	private function checkLanguages(array $languages) {
+		foreach ($languages as $lang) {
+			if ($lang !== 'en_GB' && !setlocale(LC_MONETARY, zbx_locale_variants($lang))) {
+				self::exception(ZBX_API_ERROR_PARAMETERS, _s('Language "%1$s" is not supported.', $lang));
+			}
+		}
+	}
+
+	/**
+	 * Returns true if user has internal authentication type.
 	 *
 	 * @param array  $user
 	 * @param string $user['usrgrps'][]['usrgrpid']
 	 * @param array  $db_usrgrps
 	 * @param int    $db_usrgrps[usrgrpid]['gui_access']
 	 *
-	 * @return array
+	 * @return bool
 	 */
-	private static function getGroupGuiAccess($user, $db_usrgrps) {
-		$gui_access_arr = [];
-		$usrgrps = zbx_objectValues($user['usrgrps'], 'usrgrpid');
-
+	private static function hasInternalAuth($user, $db_usrgrps) {
 		$config = select_config();
-		$system_gui_access = array_search($config['authentication_type'], [
-			GROUP_GUI_ACCESS_INTERNAL => ZBX_AUTH_INTERNAL,
-			GROUP_GUI_ACCESS_LDAP => ZBX_AUTH_LDAP
-		]);
+		$system_gui_access = ($config['authentication_type'] == ZBX_AUTH_INTERNAL)
+			? GROUP_GUI_ACCESS_INTERNAL
+			: GROUP_GUI_ACCESS_LDAP;
 
-		foreach($usrgrps as $usergrp) {
-			if (array_key_exists($usergrp, $db_usrgrps)) {
-				$gui_access = (int) $db_usrgrps[$usergrp]['gui_access'];
-				$index = ($gui_access == GROUP_GUI_ACCESS_SYSTEM) ? $system_gui_access : $gui_access;
-				$gui_access_arr[$index] = '';
+		foreach($user['usrgrps'] as $usrgrp) {
+			$gui_access = (int) $db_usrgrps[$usrgrp['usrgrpid']]['gui_access'];
+			$gui_access = ($gui_access == GROUP_GUI_ACCESS_SYSTEM) ? $system_gui_access : $gui_access;
+
+			if ($gui_access == GROUP_GUI_ACCESS_INTERNAL) {
+				return true;
 			}
 		}
 
-		return array_keys($gui_access_arr);
+		return false;
 	}
 
 	/**
@@ -620,7 +632,7 @@ class CUser extends CApiService {
 	 * @param array|string  $users[]['user_medias'][]['sendto']       Address where to send the alert.
 	 * @param array         $db_mediatypes                            List of available media types.
 	 *
-	 * @throws APIException if e-mail is not valid or exeeds maximum DB field length.
+	 * @throws APIException if e-mail is not valid or exceeds maximum DB field length.
 	 */
 	private function validateMediaRecipients(array $users, array $db_mediatypes) {
 		if ($db_mediatypes) {
@@ -664,7 +676,7 @@ class CUser extends CApiService {
 
 						/*
 						 * If media type is email, validate each given string against email pattern.
-						 * Additionally, total lenght of emails must be checked, because all media type emails are
+						 * Additionally, total length of emails must be checked, because all media type emails are
 						 * separated by newline and stored as a string in single database field. Newline characters
 						 * consumes extra space, so additional validation must be made.
 						 */

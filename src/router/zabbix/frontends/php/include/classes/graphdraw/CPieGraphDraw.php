@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,6 +22,9 @@
 class CPieGraphDraw extends CGraphDraw {
 
 	const DEFAULT_HEADER_PADDING_TOP = 30;
+
+	const GRAPH_WIDTH_MIN = 20;
+	const GRAPH_HEIGHT_MIN = 20;
 
 	public function __construct($type = GRAPH_TYPE_PIE) {
 		parent::__construct($type);
@@ -139,7 +142,7 @@ class CPieGraphDraw extends CGraphDraw {
 
 	protected function selectData() {
 		$this->data = [];
-		$now = time(null);
+		$now = time();
 
 		if (isset($this->stime)) {
 			$this->from_time = $this->stime;
@@ -228,7 +231,7 @@ class CPieGraphDraw extends CGraphDraw {
 			$items[] = $item;
 		}
 
-		$results = Manager::History()->getGraphAggregation($items, $from_time, $to_time);
+		$results = Manager::History()->getGraphAggregationByWidth($items, $from_time, $to_time);
 		$i = 0;
 
 		foreach ($items as $item) {

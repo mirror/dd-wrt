@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -52,6 +52,13 @@ int	zbx_procstat_collector_started(void);
 int	zbx_procstat_get_util(const char *procname, const char *username, const char *cmdline, zbx_uint64_t flags,
 		int period, int type, double *value, char **errmsg);
 void	zbx_procstat_collect(void);
+
+/* external functions used by procstat collector */
+int	zbx_proc_get_processes(zbx_vector_ptr_t *processes, unsigned int flags);
+void	zbx_proc_get_matching_pids(const zbx_vector_ptr_t *processes, const char *procname, const char *username,
+		const char *cmdline, zbx_uint64_t flags, zbx_vector_uint64_t *pids);
+void	zbx_proc_get_process_stats(zbx_procstat_util_t *procs, int procs_num);
+void	zbx_proc_free_processes(zbx_vector_ptr_t *processes);
 
 #endif	/* ZBX_PROCSTAT_COLLECTOR */
 

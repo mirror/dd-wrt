@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -37,7 +37,8 @@ class CDiscoveryRule extends CItemGeneral {
 	 */
 	public static $supported_preprocessing_types = [ZBX_PREPROC_REGSUB, ZBX_PREPROC_JSONPATH,
 		ZBX_PREPROC_VALIDATE_NOT_REGEX, ZBX_PREPROC_ERROR_FIELD_JSON, ZBX_PREPROC_THROTTLE_TIMED_VALUE,
-		ZBX_PREPROC_SCRIPT, ZBX_PREPROC_PROMETHEUS_TO_JSON
+		ZBX_PREPROC_SCRIPT, ZBX_PREPROC_PROMETHEUS_TO_JSON, ZBX_PREPROC_XPATH, ZBX_PREPROC_ERROR_FIELD_XML,
+		ZBX_PREPROC_CSV_TO_JSON
 	];
 
 	public function __construct() {
@@ -203,6 +204,12 @@ class CDiscoveryRule extends CItemGeneral {
 
 		// search
 		if (is_array($options['search'])) {
+			if (array_key_exists('error', $options['search']) && $options['search']['error'] !== null) {
+				zbx_db_search('item_rtdata ir', ['search' => ['error' => $options['search']['error']]] + $options,
+					$sqlParts
+				);
+			}
+
 			zbx_db_search('items i', $options, $sqlParts);
 		}
 
@@ -215,6 +222,12 @@ class CDiscoveryRule extends CItemGeneral {
 
 			if (array_key_exists('lifetime', $options['filter']) && $options['filter']['lifetime'] !== null) {
 				$options['filter']['lifetime'] = getTimeUnitFilters($options['filter']['lifetime']);
+			}
+
+			if (array_key_exists('state', $options['filter']) && $options['filter']['state'] !== null) {
+				$this->dbFilter('item_rtdata ir', ['filter' => ['state' => $options['filter']['state']]] + $options,
+					$sqlParts
+				);
 			}
 
 			$this->dbFilter('items i', $options, $sqlParts);
@@ -237,16 +250,16 @@ class CDiscoveryRule extends CItemGeneral {
 		$sqlParts = $this->applyQuerySortOptions($this->tableName(), $this->tableAlias(), $options, $sqlParts);
 		$res = DBselect($this->createSelectQueryFromParts($sqlParts), $sqlParts['limit']);
 		while ($item = DBfetch($res)) {
-			if ($options['countOutput']) {
-				if ($options['groupCount']) {
-					$result[] = $item;
-				}
-				else {
-					$result = $item['rowscount'];
-				}
+			if (!$options['countOutput']) {
+				$result[$item['itemid']] = $item;
+				continue;
+			}
+
+			if ($options['groupCount']) {
+				$result[] = $item;
 			}
 			else {
-				$result[$item['itemid']] = $item;
+				$result = $item['rowscount'];
 			}
 		}
 
@@ -342,6 +355,19 @@ class CDiscoveryRule extends CItemGeneral {
 		}
 		unset($item);
 
+		// Get only hosts not templates from items
+		$hosts = API::Host()->get([
+			'output' => [],
+			'hostids' => zbx_objectValues($items, 'hostid'),
+			'preservekeys' => true
+		]);
+		foreach ($items as &$item) {
+			if (array_key_exists($item['hostid'], $hosts)) {
+				$item['rtdata'] = true;
+			}
+		}
+		unset($item);
+
 		$this->validateCreateLLDMacroPaths($items);
 		$this->validateDependentItems($items);
 		$this->createReal($items);
@@ -370,7 +396,9 @@ class CDiscoveryRule extends CItemGeneral {
 		$this->checkInput($items, true, $db_items);
 		$this->validateUpdateLLDMacroPaths($items);
 
-		$items = $this->extendFromObjects(zbx_toHash($items, 'itemid'), $db_items, ['flags', 'type', 'master_itemid']);
+		$items = $this->extendFromObjects(zbx_toHash($items, 'itemid'), $db_items, ['flags', 'type', 'authtype',
+			'master_itemid'
+		]);
 		$this->validateDependentItems($items);
 
 		$defaults = DB::getDefaults('items');
@@ -426,10 +454,9 @@ class CDiscoveryRule extends CItemGeneral {
 				}
 			}
 
-			if ($db_items[$item['itemid']]['type'] == ITEM_TYPE_HTTPAGENT) {
-				// Clean username and password on authtype change to HTTPTEST_AUTH_NONE.
-				if (array_key_exists('authtype', $item) && $item['authtype'] == HTTPTEST_AUTH_NONE
-						&& $item['authtype'] != $db_items[$item['itemid']]['authtype']) {
+			if ($item['type'] == ITEM_TYPE_HTTPAGENT) {
+				// Clean username and password when authtype is set to HTTPTEST_AUTH_NONE.
+				if ($item['authtype'] == HTTPTEST_AUTH_NONE) {
 					$item['username'] = '';
 					$item['password'] = '';
 				}
@@ -707,7 +734,8 @@ class CDiscoveryRule extends CItemGeneral {
 		$srcTriggers = API::TriggerPrototype()->get([
 			'discoveryids' => $srcDiscovery['itemid'],
 			'output' => ['triggerid', 'expression', 'description', 'url', 'status', 'priority', 'comments',
-				'templateid', 'type', 'recovery_mode', 'recovery_expression', 'correlation_mode', 'correlation_tag'
+				'templateid', 'type', 'recovery_mode', 'recovery_expression', 'correlation_mode', 'correlation_tag',
+				'opdata'
 			],
 			'selectHosts' => API_OUTPUT_EXTEND,
 			'selectItems' => ['itemid', 'type'],
@@ -887,22 +915,36 @@ class CDiscoveryRule extends CItemGeneral {
 		return $result;
 	}
 
-	protected function createReal(&$items) {
+	protected function createReal(array &$items) {
+		$items_rtdata = [];
+		$create_items = [];
+
 		// create items without formulas, they will be updated when items and conditions are saved
-		$createItems = [];
-		foreach ($items as $item) {
-			if (isset($item['filter'])) {
+		foreach ($items as $key => $item) {
+			if (array_key_exists('filter', $item)) {
 				$item['evaltype'] = $item['filter']['evaltype'];
 				unset($item['filter']);
 			}
 
-			$createItems[] = $item;
+			if (array_key_exists('rtdata', $item)) {
+				$items_rtdata[$key] = [];
+				unset($item['rtdata']);
+			}
+
+			$create_items[] = $item;
 		}
-		$createItems = DB::save('items', $createItems);
+		$create_items = DB::save('items', $create_items);
+
+		foreach ($items_rtdata as $key => &$value) {
+			$value['itemid'] = $create_items[$key]['itemid'];
+		}
+		unset($value);
+
+		DB::insert('item_rtdata', $items_rtdata, false);
 
 		$conditions = [];
 		foreach ($items as $key => &$item) {
-			$item['itemid'] = $createItems[$key]['itemid'];
+			$item['itemid'] = $create_items[$key]['itemid'];
 
 			// conditions
 			if (isset($item['filter'])) {
@@ -1927,10 +1969,9 @@ class CDiscoveryRule extends CItemGeneral {
 	protected function copyHostPrototypes($srcid, array $dstDiscovery) {
 		$prototypes = API::HostPrototype()->get([
 			'discoveryids' => $srcid,
-			'output' => ['host', 'name', 'status'],
+			'output' => ['host', 'name', 'status', 'inventory_mode'],
 			'selectGroupLinks' => ['groupid'],
 			'selectGroupPrototypes' => ['name'],
-			'selectInventory' => ['inventory_mode'],
 			'selectTemplates' => ['templateid'],
 			'preservekeys' => true
 		]);
@@ -1964,7 +2005,26 @@ class CDiscoveryRule extends CItemGeneral {
 	protected function applyQueryOutputOptions($tableName, $tableAlias, array $options, array $sqlParts) {
 		$sqlParts = parent::applyQueryOutputOptions($tableName, $tableAlias, $options, $sqlParts);
 
+		if ($this->outputIsRequested('state', $options['output'])
+				|| $this->outputIsRequested('error', $options['output'])
+				|| (is_array($options['search']) && array_key_exists('error', $options['search']))
+				|| (is_array($options['filter']) && array_key_exists('state', $options['filter']))) {
+			$sqlParts['left_join']['item_rtdata'] = ['from' => 'item_rtdata ir', 'on' => 'ir.itemid=i.itemid'];
+			$sqlParts['left_table'] = $tableName;
+		}
+
 		if (!$options['countOutput']) {
+			if ($this->outputIsRequested('state', $options['output'])) {
+				$sqlParts = $this->addQuerySelect('ir.state', $sqlParts);
+			}
+			if ($this->outputIsRequested('error', $options['output'])) {
+				/*
+				 * SQL func COALESCE use for template items because they don't have record
+				 * in item_rtdata table and DBFetch convert null to '0'
+				 */
+				$sqlParts = $this->addQuerySelect(dbConditionCoalesce('ir.error', '', 'error'), $sqlParts);
+			}
+
 			// add filter fields
 			if ($this->outputIsRequested('formula', $options['selectFilter'])
 					|| $this->outputIsRequested('eval_formula', $options['selectFilter'])

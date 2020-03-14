@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -139,13 +139,16 @@ function get_events_unacknowledged($db_element, $value_trigger = null, $value_ev
 
 /**
  *
- * @param array  $event								An array of event data.
- * @param string $event['eventid']					Event ID.
- * @param string $event['correlationid']			OK Event correlation ID.
- * @param string $event['userid]					User ID who generated the OK event.
- * @param string $event['name']						Event name.
- * @param string $event['acknowledged']				State of acknowledgement.
- * @param string $backurl							A link back after acknowledgement has been clicked.
+ * @param array  $event                   An array of event data.
+ * @param string $event['eventid']        Event ID.
+ * @param string $event['objectid']       Object ID.
+ * @param string $event['correlationid']  OK Event correlation ID.
+ * @param string $event['userid']         User ID who generated the OK event.
+ * @param string $event['name']           Event name.
+ * @param string $event['acknowledged']   State of acknowledgement.
+ * @param CCOl   $event['opdata']         Operational data with expanded macros.
+ * @param string $event['comments']       Trigger description with expanded macros.
+ * @param string $backurl                 A link back after acknowledgement has been clicked.
  *
  * @return CTableInfo
  */
@@ -162,6 +165,10 @@ function make_event_details($event, $backurl) {
 		->addRow([
 			_('Event'),
 			$event['name']
+		])
+		->addRow([
+			_('Operational data'),
+			$event['opdata']
 		])
 		->addRow([
 			_('Severity'),
@@ -221,7 +228,7 @@ function make_event_details($event, $backurl) {
 					$table->addRow([_('Resolved by'), getUserFullname($user[0])]);
 				}
 				else {
-					$table->addRow([_('Resolved by'), _('User')]);
+					$table->addRow([_('Resolved by'), _('Inaccessible user')]);
 				}
 			}
 		}
@@ -232,7 +239,9 @@ function make_event_details($event, $backurl) {
 
 	$tags = makeTags([$event]);
 
-	$table->addRow([_('Tags'), $tags[$event['eventid']]]);
+	$table
+		->addRow([_('Tags'), $tags[$event['eventid']]])
+		->addRow([_('Description'), (new CDiv(zbx_str2links($event['comments'])))]);
 
 	return $table;
 }
@@ -316,7 +325,7 @@ function make_small_eventlist($startEvent, $backurl) {
 		'preservekeys' => true
 	]);
 	$mediatypes = API::Mediatype()->get([
-		'output' => ['description', 'maxattempts'],
+		'output' => ['name', 'maxattempts'],
 		'mediatypeids' => array_keys($actions['mediatypeids']),
 		'preservekeys' => true
 	]);
@@ -388,7 +397,7 @@ function make_small_eventlist($startEvent, $backurl) {
  *
  * @param array  $trigger                    An array of trigger data.
  * @param string $trigger['triggerid']       Trigger ID to select events.
- * @param string $trigger['description']     Trigger description.
+ * @param string $trigger['comments']        Trigger description.
  * @param string $trigger['url']             Trigger URL.
  * @param string $eventid_till
  * @param string $backurl                    URL to return to.
@@ -426,7 +435,7 @@ function make_popup_eventlist($trigger, $eventid_till, $backurl, $show_timeline 
 	}
 
 	if ($trigger['url'] !== '') {
-		$trigger_url = CHtmlUrlValidator::validate($trigger['url'])
+		$trigger_url = CHtmlUrlValidator::validate($trigger['url'], ['allow_user_macro' => false])
 			? $trigger['url']
 			: 'javascript: alert(\''._s('Provided URL "%1$s" is invalid.', zbx_jsvalue($trigger['url'], false, false)).
 				'\');';
@@ -816,75 +825,4 @@ function getTagString(array $tag, $tag_name_format = PROBLEMS_TAG_NAME_FULL) {
 		default:
 			return $tag['tag'].(($tag['value'] === '') ? '' : ': '.$tag['value']);
 	}
-}
-
-function getLastEvents($options) {
-	if (!isset($options['limit'])) {
-		$options['limit'] = 15;
-	}
-
-	$triggerOptions = [
-		'output' => ['triggerid', 'priority'],
-		'filter' => [],
-		'skipDependent' => 1,
-		'selectHosts' => ['hostid', 'name'],
-		'sortfield' => 'lastchange',
-		'sortorder' => ZBX_SORT_DOWN,
-		'limit' => $options['triggerLimit']
-	];
-
-	$eventOptions = [
-		'source' => EVENT_SOURCE_TRIGGERS,
-		'object' => EVENT_OBJECT_TRIGGER,
-		'output' => API_OUTPUT_EXTEND,
-		'sortfield' => ['clock', 'eventid'],
-		'sortorder' => ZBX_SORT_DOWN
-	];
-
-	if (isset($options['eventLimit'])) {
-		$eventOptions['limit'] = $options['eventLimit'];
-	}
-
-	if (isset($options['priority'])) {
-		$triggerOptions['filter']['priority'] = $options['priority'];
-	}
-	if (isset($options['monitored'])) {
-		$triggerOptions['monitored'] = $options['monitored'];
-	}
-	if (isset($options['lastChangeSince'])) {
-		$triggerOptions['lastChangeSince'] = $options['lastChangeSince'];
-		$eventOptions['time_from'] = $options['lastChangeSince'];
-	}
-	if (isset($options['value'])) {
-		$triggerOptions['filter']['value'] = $options['value'];
-		$eventOptions['value'] = $options['value'];
-	}
-	if (array_key_exists('suppressed', $options)) {
-		$eventOptions['suppressed'] = $options['suppressed'];
-	}
-
-	// triggers
-	$triggers = API::Trigger()->get($triggerOptions);
-	$triggers = zbx_toHash($triggers, 'triggerid');
-
-	// events
-	$eventOptions['objectids'] = zbx_objectValues($triggers, 'triggerid');
-	$events = API::Event()->get($eventOptions);
-
-	$sortClock = [];
-	$sortEvent = [];
-	foreach ($events as $enum => $event) {
-		if (!isset($triggers[$event['objectid']])) {
-			continue;
-		}
-
-		$events[$enum]['trigger'] = $triggers[$event['objectid']];
-		$events[$enum]['host'] = reset($events[$enum]['trigger']['hosts']);
-		$sortClock[$enum] = $event['clock'];
-		$sortEvent[$enum] = $event['eventid'];
-		$events[$enum]['trigger']['description'] = $event['name'];
-	}
-	array_multisort($sortClock, SORT_DESC, $sortEvent, SORT_DESC, $events);
-
-	return $events;
 }

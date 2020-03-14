@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -58,10 +58,12 @@ const char	*get_signal_name(int sig)
 		case SIGSEGV:	return "SIGSEGV";
 		case SIGBUS:	return "SIGBUS";
 		case SIGQUIT:	return "SIGQUIT";
+		case SIGHUP:	return "SIGHUP";
 		case SIGINT:	return "SIGINT";
 		case SIGTERM:	return "SIGTERM";
 		case SIGPIPE:	return "SIGPIPE";
 		case SIGUSR1:	return "SIGUSR1";
+		case SIGUSR2:	return "SIGUSR2";
 		default:	return "unknown";
 	}
 }

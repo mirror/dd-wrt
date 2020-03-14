@@ -94,10 +94,10 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lib_ibm_db2.m4 \
 	$(top_srcdir)/m4/ax_lib_oracle_oci.m4 \
 	$(top_srcdir)/m4/ax_lib_postgresql.m4 \
 	$(top_srcdir)/m4/ax_lib_sqlite3.m4 $(top_srcdir)/m4/iconv.m4 \
-	$(top_srcdir)/m4/jabber.m4 $(top_srcdir)/m4/ldap.m4 \
-	$(top_srcdir)/m4/libcurl.m4 $(top_srcdir)/m4/libevent.m4 \
-	$(top_srcdir)/m4/libgnutls.m4 $(top_srcdir)/m4/libmbedtls.m4 \
-	$(top_srcdir)/m4/libopenssl.m4 $(top_srcdir)/m4/libssh2.m4 \
+	$(top_srcdir)/m4/ldap.m4 $(top_srcdir)/m4/libcurl.m4 \
+	$(top_srcdir)/m4/libevent.m4 $(top_srcdir)/m4/libgnutls.m4 \
+	$(top_srcdir)/m4/libmbedtls.m4 $(top_srcdir)/m4/libopenssl.m4 \
+	$(top_srcdir)/m4/libssh.m4 $(top_srcdir)/m4/libssh2.m4 \
 	$(top_srcdir)/m4/libunixodbc.m4 $(top_srcdir)/m4/libxml2.m4 \
 	$(top_srcdir)/m4/netsnmp.m4 $(top_srcdir)/m4/openipmi.m4 \
 	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/pthread.m4 \
@@ -192,6 +192,7 @@ am__relativize = \
   done; \
   reldir="$$dir2"
 ACLOCAL = @ACLOCAL@
+AGENT2_CONFIG_FILE = @AGENT2_CONFIG_FILE@
 AGENT_CONFIG_FILE = @AGENT_CONFIG_FILE@
 AGENT_LDFLAGS = @AGENT_LDFLAGS@
 AGENT_LIBS = @AGENT_LIBS@
@@ -206,6 +207,8 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CGO_CFLAGS = @CGO_CFLAGS@
+CGO_LDFLAGS = @CGO_LDFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CURL_SSL_CERT_LOCATION = @CURL_SSL_CERT_LOCATION@
@@ -225,19 +228,18 @@ EXTERNAL_SCRIPTS_PATH = @EXTERNAL_SCRIPTS_PATH@
 GNUTLS_CFLAGS = @GNUTLS_CFLAGS@
 GNUTLS_LDFLAGS = @GNUTLS_LDFLAGS@
 GNUTLS_LIBS = @GNUTLS_LIBS@
+GO = @GO@
+GOBIN = @GOBIN@
+GOCMD = @GOCMD@
+GOWORKDIR = @GOWORKDIR@
 GREP = @GREP@
 ICONV_CFLAGS = @ICONV_CFLAGS@
 ICONV_LDFLAGS = @ICONV_LDFLAGS@
-IKSEMEL_CFLAGS = @IKSEMEL_CFLAGS@
-IKSEMEL_LIBS = @IKSEMEL_LIBS@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-JABBER_CPPFLAGS = @JABBER_CPPFLAGS@
-JABBER_LDFLAGS = @JABBER_LDFLAGS@
-JABBER_LIBS = @JABBER_LIBS@
 JAR = @JAR@
 JAVAC = @JAVAC@
 LDAP_CPPFLAGS = @LDAP_CPPFLAGS@
@@ -259,7 +261,6 @@ LIBPTHREAD_LDFLAGS = @LIBPTHREAD_LDFLAGS@
 LIBPTHREAD_LIBS = @LIBPTHREAD_LIBS@
 LIBS = @LIBS@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
-LIBXML2_CONFIG = @LIBXML2_CONFIG@
 LIBXML2_LDFLAGS = @LIBXML2_LDFLAGS@
 LIBXML2_LIBS = @LIBXML2_LIBS@
 LIBXML2_VERSION = @LIBXML2_VERSION@
@@ -325,6 +326,9 @@ SQLITE3_VERSION = @SQLITE3_VERSION@
 SSH2_CFLAGS = @SSH2_CFLAGS@
 SSH2_LDFLAGS = @SSH2_LDFLAGS@
 SSH2_LIBS = @SSH2_LIBS@
+SSH_CFLAGS = @SSH_CFLAGS@
+SSH_LDFLAGS = @SSH_LDFLAGS@
+SSH_LIBS = @SSH_LIBS@
 STRIP = @STRIP@
 TLS_CFLAGS = @TLS_CFLAGS@
 UNIXODBC_CFLAGS = @UNIXODBC_CFLAGS@
@@ -333,6 +337,8 @@ UNIXODBC_LIBS = @UNIXODBC_LIBS@
 VERSION = @VERSION@
 ZBXGET_LDFLAGS = @ZBXGET_LDFLAGS@
 ZBXGET_LIBS = @ZBXGET_LIBS@
+ZBXJS_LDFLAGS = @ZBXJS_LDFLAGS@
+ZBXJS_LIBS = @ZBXJS_LIBS@
 ZLIB_CFLAGS = @ZLIB_CFLAGS@
 ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
 ZLIB_LIBS = @ZLIB_LIBS@
@@ -390,24 +396,32 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 DIST_SUBDIRS = \
+	go \
 	libs \
 	zabbix_agent \
 	zabbix_get \
 	zabbix_sender \
 	zabbix_proxy \
 	zabbix_server \
-	zabbix_java
+	zabbix_java \
+	zabbix_js
 
+@AGENT2_TRUE@@AGENT_FALSE@@PROXY_FALSE@@SERVER_FALSE@COMMON_SUBDIRS = libs
 @AGENT_FALSE@@PROXY_TRUE@@SERVER_FALSE@COMMON_SUBDIRS = libs
 @AGENT_FALSE@@SERVER_TRUE@COMMON_SUBDIRS = libs
 @AGENT_TRUE@COMMON_SUBDIRS = libs
+@AGENT2_TRUE@@AGENT_FALSE@AGENT_SUBDIRS = zabbix_agent
 @AGENT_TRUE@AGENT_SUBDIRS = \
 @AGENT_TRUE@	zabbix_agent \
 @AGENT_TRUE@	zabbix_get \
 @AGENT_TRUE@	zabbix_sender
 
+@AGENT2_TRUE@AGENT2_SUBDIRS = \
+@AGENT2_TRUE@	go
+
 @SERVER_TRUE@SERVER_SUBDIRS = \
-@SERVER_TRUE@	zabbix_server
+@SERVER_TRUE@	zabbix_server \
+@SERVER_TRUE@	zabbix_js
 
 @PROXY_TRUE@@SERVER_FALSE@PROXY_SUBDIRS = \
 @PROXY_TRUE@@SERVER_FALSE@	zabbix_server/dbsyncer \
@@ -424,7 +438,8 @@ DIST_SUBDIRS = \
 @PROXY_TRUE@@SERVER_FALSE@	zabbix_server/odbc \
 @PROXY_TRUE@@SERVER_FALSE@	zabbix_server/scripts \
 @PROXY_TRUE@@SERVER_FALSE@	zabbix_server/preprocessor \
-@PROXY_TRUE@@SERVER_FALSE@	zabbix_proxy
+@PROXY_TRUE@@SERVER_FALSE@	zabbix_proxy \
+@PROXY_TRUE@@SERVER_FALSE@	zabbix_js
 
 @PROXY_TRUE@@SERVER_TRUE@PROXY_SUBDIRS = \
 @PROXY_TRUE@@SERVER_TRUE@	zabbix_proxy
@@ -435,16 +450,11 @@ DIST_SUBDIRS = \
 SUBDIRS = \
 	$(COMMON_SUBDIRS) \
 	$(AGENT_SUBDIRS) \
+	$(AGENT2_SUBDIRS) \
 	$(SERVER_SUBDIRS) \
 	$(PROXY_SUBDIRS) \
 	$(JAVA_SUBDIRS)
 
-TEST_COMMENT = "embedded unit tests - remove before commit"
-TEST_LIBDIR = libs/zbxcunit
-TEST_SUITESFILE = $(TEST_LIBDIR)/cu_modules.h
-TEST_SRCFILES = `find . -name "*.c" | while read fn; do if grep -q $(TEST_COMMENT) $${fn}; then echo $${fn}; fi; done`
-TEST_TESTFILES = `find . -name "*_test.c"`
-TEST_DECLARE = "ZBX_CU_DECLARE" 
 all: all-recursive
 
 .SUFFIXES:
@@ -672,7 +682,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-generic clean-local mostlyclean-am
+clean-am: clean-generic mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -f Makefile
@@ -739,17 +749,17 @@ uninstall-am:
 .MAKE: $(am__recursive_targets) install-am install-strip
 
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am check \
-	check-am clean clean-generic clean-local cscopelist-am ctags \
-	ctags-am dist-hook distclean distclean-generic distclean-tags \
-	distdir dvi dvi-am html html-am info info-am install \
-	install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am tags \
-	tags-am uninstall uninstall-am
+	check-am clean clean-generic cscopelist-am ctags ctags-am \
+	dist-hook distclean distclean-generic distclean-tags distdir \
+	dvi dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs installdirs-am \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
+	uninstall-am
 
 .PRECIOUS: Makefile
 
@@ -760,33 +770,6 @@ dist-hook:
 	cp $(srcdir)/modules/dummy/*.c $(distdir)/modules/dummy/
 	cp $(srcdir)/modules/dummy/Makefile $(distdir)/modules/dummy/
 	cp $(srcdir)/modules/dummy/README $(distdir)/modules/dummy/
-
-$(TEST_SUITESFILE):
-	echo 'const char *cu_modules[]={' > $(TEST_SUITESFILE)
-	for file in $(TEST_TESTFILES); do								\
-		if [ -f "$${file%_test.c}.c" ]; then							\
-			echo "#include \"$${file##*/}\" //$(TEST_COMMENT)" >> "$${file%_test.c}.c"	;\
-			grep $(TEST_DECLARE) $${file} | while read line; do				\
-				funcname=$${line##*(}							;\
-				echo "\"$${funcname%%)*}\"," >> $(TEST_SUITESFILE)			;\
-			done										;\
-		fi											;\
-	done
-	echo 'NULL};' >> $(TEST_SUITESFILE)
-
-test: $(TEST_SUITESFILE) 
-	$(MAKE) $(AM_MAKEFLAGS) CFLAGS="$(CFLAGS) -rdynamic -DZBX_CUNIT" CUNIT_LDADD="-lcunit"
-
-clean-test:
-	rm -rf $(TEST_SUITESFILE)
-	for file in $(TEST_SRCFILES); do				\
-		cat $$file | sed /$(TEST_COMMENT)/d > $$file.new;	\
-		mv $$file.new $$file;					\
-	done
-
-clean-local: clean-test
-
-.PHONY: test clean-test
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

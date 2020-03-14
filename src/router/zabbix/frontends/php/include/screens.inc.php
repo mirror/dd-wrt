@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -33,7 +33,6 @@ function screen_resources($resource = null) {
 		SCREEN_RESOURCE_HOST_INFO => _('Host info'),
 		SCREEN_RESOURCE_MAP => _('Map'),
 		SCREEN_RESOURCE_PLAIN_TEXT => _('Plain text'),
-		SCREEN_RESOURCE_SCREEN => _('Screen'),
 		SCREEN_RESOURCE_SERVER_INFO => _('System information'),
 		SCREEN_RESOURCE_SIMPLE_GRAPH => _('Simple graph'),
 		SCREEN_RESOURCE_HOSTGROUP_TRIGGERS => _('Host group issues'),
@@ -58,26 +57,6 @@ function screen_resources($resource = null) {
 	}
 }
 
-function check_screen_recursion($mother_screenid, $child_screenid) {
-	if (bccomp($mother_screenid , $child_screenid) == 0) {
-		return true;
-	}
-
-	$db_scr_items = DBselect(
-		'SELECT si.resourceid'.
-		' FROM screens_items si'.
-		' WHERE si.screenid='.zbx_dbstr($child_screenid).
-		' AND si.resourcetype='.SCREEN_RESOURCE_SCREEN
-	);
-	while ($scr_item = DBfetch($db_scr_items)) {
-		if (check_screen_recursion($mother_screenid, $scr_item['resourceid'])) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
 /**
  * Add screen row.
  *
@@ -99,7 +78,7 @@ function addScreenRow(array $screen, $row_num) {
 		'screenitems' => $screen['screenitems']
 	];
 
-	$result = ($screen['templateid'] != 0)
+	$result = array_key_exists('templateid', $screen)
 		? API::TemplateScreen()->update($options)
 		: API::Screen()->update($options);
 
@@ -132,7 +111,7 @@ function addScreenColumn(array $screen, $col_num) {
 		'screenitems' => $screen['screenitems']
 	];
 
-	$result = ($screen['templateid'] != 0)
+	$result = array_key_exists('templateid', $screen)
 		? API::TemplateScreen()->update($options)
 		: API::Screen()->update($options);
 
@@ -168,7 +147,7 @@ function delScreenRow(array $screen, $row_num) {
 		'screenitems' => $screen['screenitems']
 	];
 
-	$result = ($screen['templateid'] != 0)
+	$result = array_key_exists('templateid', $screen)
 		? API::TemplateScreen()->update($options)
 		: API::Screen()->update($options);
 
@@ -204,7 +183,7 @@ function delScreenColumn(array $screen, $col_num) {
 		'screenitems' => $screen['screenitems']
 	];
 
-	$result = ($screen['templateid'] != 0)
+	$result = array_key_exists('templateid', $screen)
 		? API::TemplateScreen()->update($options)
 		: API::Screen()->update($options);
 

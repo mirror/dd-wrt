@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -315,7 +315,7 @@ class CControllerMenuPopup extends CController {
 			if ($url['name'] === '' || $url['url'] === '') {
 				unset($selement['urls'][$url_nr]);
 			}
-			elseif (CHtmlUrlValidator::validate($url['url']) === false) {
+			elseif (CHtmlUrlValidator::validate($url['url'], ['allow_user_macro' => false]) === false) {
 				$selement['urls'][$url_nr]['url'] = 'javascript: alert(\''._s('Provided URL "%1$s" is invalid.',
 					zbx_jsvalue($url['url'], false, false)).'\');';
 			}
@@ -334,9 +334,10 @@ class CControllerMenuPopup extends CController {
 	 * @param array  $data
 	 * @param string $data['sysmapid']
 	 * @param string $data['selementid']
-	 * @param array  $data['options']       (optional)
-	 * @param int    $data['severity_min']  (optional)
-	 * @param string $data['hostid']        (optional)
+	 * @param array  $data['options']        (optional)
+	 * @param int    $data['severity_min']   (optional)
+	 * @param string $data['widget_uniqueid] (optional)
+	 * @param string $data['hostid']         (optional)
 	 *
 	 * @return mixed
 	 */
@@ -378,6 +379,9 @@ class CControllerMenuPopup extends CController {
 						];
 						if (array_key_exists('severity_min', $data)) {
 							$menu_data['severity_min'] = $data['severity_min'];
+						}
+						if (array_key_exists('widget_uniqueid', $data)) {
+							$menu_data['widget_uniqueid'] = $data['widget_uniqueid'];
 						}
 						if ($selement['urls']) {
 							$menu_data['urls'] = $selement['urls'];
@@ -485,7 +489,7 @@ class CControllerMenuPopup extends CController {
 	 *
 	 * @param array  $data
 	 * @param string $data['triggerid']
-	 * @param string $data['eventid']                 (optional) Mandatory for Acknowledge and Description menus.
+	 * @param string $data['eventid']                 (optional) Mandatory for Acknowledge menu.
 	 * @param array  $data['acknowledge']             (optional) Acknowledge link parameters.
 	 * @param string $data['acknowledge']['backurl']
 	 * @param int    $data['severity_min']            (optional)
@@ -493,7 +497,6 @@ class CControllerMenuPopup extends CController {
 	 * @param array  $data['urls']                    (optional)
 	 * @param string $data['urls']['name']
 	 * @param string $data['urls']['url']
-	 * @param bool   $data['show_description']        (optional) default: true
 	 *
 	 * @return mixed
 	 */
@@ -507,10 +510,14 @@ class CControllerMenuPopup extends CController {
 		]);
 
 		if ($db_triggers) {
-			$db_triggers = CMacrosResolverHelper::resolveTriggerUrls($db_triggers);
-
 			$db_trigger = reset($db_triggers);
 			$db_trigger['items'] = CMacrosResolverHelper::resolveItemNames($db_trigger['items']);
+
+			if (array_key_exists('eventid', $data)) {
+				$db_trigger['eventid'] = $data['eventid'];
+			}
+
+			$db_trigger['url'] = CMacrosResolverHelper::resolveTriggerUrl($db_trigger, $url) ? $url : '';
 
 			$hosts = [];
 			$show_events = true;
@@ -548,50 +555,54 @@ class CControllerMenuPopup extends CController {
 				];
 			}
 
-			$options = [
-				'show_description' => !array_key_exists('show_description', $data) || $data['show_description']
-			];
-
-			if ($options['show_description']) {
-				$rw_triggers = API::Trigger()->get([
-					'output' => ['flags'],
-					'triggerids' => $data['triggerid'],
-					'editable' => true
-				]);
-
-				$options['description_enabled'] = ($db_trigger['comments'] !== ''
-					|| ($rw_triggers && $rw_triggers[0]['flags'] == ZBX_FLAG_DISCOVERY_NORMAL));
-			}
-
 			$menu_data = [
 				'type' => 'trigger',
 				'triggerid' => $data['triggerid'],
 				'items' => $items,
 				'showEvents' => $show_events,
-				'configuration' =>
-					in_array(CWebUser::$data['type'], [USER_TYPE_ZABBIX_ADMIN, USER_TYPE_SUPER_ADMIN])
+				'configuration' => in_array(CWebUser::$data['type'], [USER_TYPE_ZABBIX_ADMIN, USER_TYPE_SUPER_ADMIN])
 			];
 
-			if (!$options['show_description']) {
-				$menu_data['show_description'] = false;
-			}
-			else if (!$options['description_enabled']) {
-				$menu_data['description_enabled'] = false;
+			if ($db_trigger['url'] !== '') {
+				$menu_data['urls'][] = [
+					'label' => _('Trigger URL'),
+					'url' => $db_trigger['url']
+				];
 			}
 
 			if (array_key_exists('eventid', $data)) {
 				$menu_data['eventid'] = $data['eventid'];
+
+				$events = API::Event()->get([
+					'output' => ['urls'],
+					'eventids' => $data['eventid']
+				]);
+
+				if ($events) {
+					foreach ($events[0]['urls'] as $url) {
+						$menu_data['urls'][] = [
+							'label' => $url['name'],
+							'url' => $url['url'],
+							'target' => '_blank'
+						];
+					}
+				}
+			}
+
+			if (array_key_exists('urls', $menu_data)) {
+				foreach ($menu_data['urls'] as &$url) {
+					if (!CHtmlUrlValidator::validate($url['url'], ['allow_user_macro' => false])) {
+						$url['url'] = 'javascript: alert(\''.
+							_s('Provided URL "%1$s" is invalid.', zbx_jsvalue($url['url'], false, false)).
+						'\');';
+						unset($url['target']);
+					}
+				}
+				unset($url);
 			}
 
 			if (array_key_exists('acknowledge', $data)) {
 				$menu_data['acknowledge'] = $data['acknowledge'];
-			}
-
-			if ($db_trigger['url'] !== '') {
-				$menu_data['url'] = CHtmlUrlValidator::validate($db_trigger['url'])
-					? $db_trigger['url']
-					: 'javascript: alert(\''._s('Provided URL "%1$s" is invalid.', zbx_jsvalue($db_trigger['url'],
-							false, false)).'\');';
 			}
 
 			return $menu_data;

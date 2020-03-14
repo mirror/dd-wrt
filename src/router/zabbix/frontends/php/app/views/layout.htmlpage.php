@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -57,6 +57,7 @@ function local_generateHeader($data) {
 	// construct menu
 	$main_menu = [];
 	$sub_menus = [];
+	$page = (array) $page;
 
 	zbx_construct_menu($main_menu, $sub_menus, $page, $data['controller']['action']);
 
@@ -96,10 +97,7 @@ function local_generateHeader($data) {
 		echo $pageMenu->getOutput();
 	}
 
-	echo '<main>';
-
-	// should be replaced with addPostJS() at some point
-	zbx_add_post_js('initMessages();');
+	echo '<main'.(CView::getLayoutMode() === ZBX_LAYOUT_KIOSKMODE ? ' class="'.ZBX_STYLE_LAYOUT_KIOSKMODE.'"' : '').'>';
 
 	// if a user logs in after several unsuccessful attempts, display a warning
 	if ($failedAttempts = CProfile::get('web.login.attempt.failed', 0)) {

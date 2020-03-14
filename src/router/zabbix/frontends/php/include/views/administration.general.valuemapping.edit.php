@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -105,10 +105,7 @@ if ($data['valuemapid'] != 0) {
 		new CSubmit('update', _('Update')),
 		[
 			new CButton('clone', _('Clone')),
-			(new CRedirectButton(_('Delete'),
-				'adm.valuemapping.php?action=valuemap.delete&valuemapids[]='.$data['valuemapid'].'&sid='.$data['sid'],
-				$confirm_message
-			))->setId('delete'),
+			new CButtonDelete($confirm_message, '&action=valuemap.delete&valuemapids[]='.$data['valuemapid']),
 			new CButtonCancel()
 		]
 	));

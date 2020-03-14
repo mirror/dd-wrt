@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -69,7 +69,10 @@ if ($is_templated || $discovered_graph) {
 
 if ($discovered_graph) {
 	$graphFormList->addRow(_('Discovered by'), new CLink($data['discoveryRule']['name'],
-		'graphs.php?parent_discoveryid='.$data['discoveryRule']['itemid']
+		(new CUrl('graphs.php'))
+			->setArgument('form', 'update')
+			->setArgument('parent_discoveryid', $data['discoveryRule']['itemid'])
+			->setArgument('graphid', $data['graphDiscovery']['parent_graphid'])
 	));
 }
 
@@ -299,7 +302,7 @@ if ($this->data['graphtype'] == GRAPH_TYPE_NORMAL || $this->data['graphtype'] ==
 						'numeric' => '1'
 					]).', null, this);'
 				)
-				->setEnabled(!$readonly);;
+				->setEnabled(!$readonly);
 		}
 	}
 	else {

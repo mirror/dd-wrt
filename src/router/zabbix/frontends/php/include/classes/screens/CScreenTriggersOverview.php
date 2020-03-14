@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ class CScreenTriggersOverview extends CScreenBase {
 		]))->addClass(ZBX_STYLE_DASHBRD_WIDGET_HEAD);
 
 		list($hosts, $triggers) = getTriggersOverviewData((array) $this->screenitem['resourceid'],
-			$this->screenitem['application'], $this->screenitem['style']
+			$this->screenitem['application']
 		);
 
 		$table = getTriggersOverview($hosts, $triggers, $this->pageFile, $this->screenitem['style'], $this->screenid);

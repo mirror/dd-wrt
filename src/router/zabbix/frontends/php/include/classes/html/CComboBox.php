@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -101,9 +101,11 @@ class CComboBox extends CTag {
 	public function setReadonly($value) {
 		if ($value) {
 			$this->setAttribute('readonly', 'readonly');
+			$this->setAttribute('tabindex', '-1');
 		}
 		else {
 			$this->removeAttribute('readonly');
+			$this->removeAttribute('tabindex');
 		}
 
 		return $this;

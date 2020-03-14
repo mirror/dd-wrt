@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -105,14 +105,6 @@ abstract class CAbstractScreenImporter extends CImporter {
 						$screenItem['resourceid'] = $this->referencer->resolveMap($resource['name']);
 						if (!$screenItem['resourceid']) {
 							throw new Exception(_s('Cannot find map "%1$s" used in screen "%2$s".',
-								$resource['name'], $screen['name']));
-						}
-						break;
-
-					case SCREEN_RESOURCE_SCREEN:
-						$screenItem['resourceid'] = $this->referencer->resolveScreen($resource['name']);
-						if (!$screenItem['resourceid']) {
-							throw new Exception(_s('Cannot find screen "%1$s" used in screen "%2$s".',
 								$resource['name'], $screen['name']));
 						}
 						break;

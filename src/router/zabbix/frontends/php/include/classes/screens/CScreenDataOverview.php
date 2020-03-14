@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -40,7 +40,9 @@ class CScreenDataOverview extends CScreenBase {
 				->addItem([_('Group'), ':', SPACE, $groups[0]['name']])
 		]))->addClass(ZBX_STYLE_DASHBRD_WIDGET_HEAD);
 
-		$table = getItemsDataOverview((array) $groupid, $this->screenitem['application'], $this->screenitem['style']);
+		$table = getItemsDataOverview((array) $groupid, $this->screenitem['application'], $this->screenitem['style'],
+			ZBX_PROBLEM_SUPPRESSED_FALSE
+		);
 
 		$footer = (new CList())
 			->addItem(_s('Updated: %s', zbx_date2str(TIME_FORMAT_SECONDS)))

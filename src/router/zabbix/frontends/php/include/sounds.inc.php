@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,16 +20,20 @@
 
 
 function getSounds() {
-	$fileList = [];
+	$file_list = [];
 	$dir = scandir('./audio');
+
 	foreach ($dir as $file) {
-		if (!preg_match('/^([\w\d_]+)\.(wav|ogg)$/i', $file)) {
+		$pos = strrpos($file, '.');
+		if ($pos === false || mb_strtolower(substr($file, $pos + 1)) !== 'mp3') {
 			continue;
 		}
-		list($filename, $type) = explode('.', $file);
-		$fileList[$filename] = $file;
+
+		$filename = substr($file, 0, $pos);
+		$file_list[$filename] = $file;
 	}
-	return $fileList;
+
+	return $file_list;
 }
 
 function getMessageSettings() {
@@ -50,13 +54,13 @@ function getMessageSettings() {
 		'triggers.severities' => null,
 		'sounds.mute' => 0,
 		'sounds.repeat' => 1,
-		'sounds.recovery' => 'alarm_ok.wav',
-		'sounds.'.TRIGGER_SEVERITY_NOT_CLASSIFIED => 'no_sound.wav',
-		'sounds.'.TRIGGER_SEVERITY_INFORMATION => 'alarm_information.wav',
-		'sounds.'.TRIGGER_SEVERITY_WARNING => 'alarm_warning.wav',
-		'sounds.'.TRIGGER_SEVERITY_AVERAGE => 'alarm_average.wav',
-		'sounds.'.TRIGGER_SEVERITY_HIGH => 'alarm_high.wav',
-		'sounds.'.TRIGGER_SEVERITY_DISASTER => 'alarm_disaster.wav',
+		'sounds.recovery' => 'alarm_ok.mp3',
+		'sounds.'.TRIGGER_SEVERITY_NOT_CLASSIFIED => 'no_sound.mp3',
+		'sounds.'.TRIGGER_SEVERITY_INFORMATION => 'alarm_information.mp3',
+		'sounds.'.TRIGGER_SEVERITY_WARNING => 'alarm_warning.mp3',
+		'sounds.'.TRIGGER_SEVERITY_AVERAGE => 'alarm_average.mp3',
+		'sounds.'.TRIGGER_SEVERITY_HIGH => 'alarm_high.mp3',
+		'sounds.'.TRIGGER_SEVERITY_DISASTER => 'alarm_disaster.mp3',
 		'show_suppressed' => 0
 	];
 
@@ -70,12 +74,13 @@ function getMessageSettings() {
 		$messages[$profile['source']] = $profile['value_str'];
 	}
 
-	if (is_null($messages['triggers.severities'])) {
+	if ($messages['triggers.severities'] === null) {
 		$messages['triggers.severities'] = $defSeverities;
 	}
 	else {
 		$messages['triggers.severities'] = unserialize($messages['triggers.severities']);
 	}
+
 	return $messages;
 }
 

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ class CConfiguration extends CApiService {
 				'hosts' =>		['type' => API_IDS],
 				'images' =>		['type' => API_IDS],
 				'maps' =>		['type' => API_IDS],
+				'mediaTypes' =>	['type' => API_IDS],
 				'screens' =>	['type' => API_IDS],
 				'templates' =>	['type' => API_IDS],
 				'valueMaps' =>	['type' => API_IDS]
@@ -52,7 +53,13 @@ class CConfiguration extends CApiService {
 		$writer->formatOutput(false);
 		$export->setWriter($writer);
 
-		return $export->export();
+		$export_data = $export->export();
+
+		if ($export_data === false) {
+			self::exception(ZBX_API_ERROR_PERMISSIONS, _('No permissions to referred object or it does not exist!'));
+		}
+
+		return $export_data;
 	}
 
 	/**
@@ -104,12 +111,17 @@ class CConfiguration extends CApiService {
 					'createMissing' =>		['type' => API_BOOLEAN, 'default' => false],
 					'updateExisting' =>		['type' => API_BOOLEAN, 'default' => false]
 				]],
+				'mediaTypes' =>			['type' => API_OBJECT, 'fields' => [
+					'createMissing' =>		['type' => API_BOOLEAN, 'default' => false],
+					'updateExisting' =>		['type' => API_BOOLEAN, 'default' => false]
+				]],
 				'screens' =>			['type' => API_OBJECT, 'fields' => [
 					'createMissing' =>		['type' => API_BOOLEAN, 'default' => false],
 					'updateExisting' =>		['type' => API_BOOLEAN, 'default' => false]
 				]],
 				'templateLinkage' =>	['type' => API_OBJECT, 'fields' => [
-					'createMissing' =>		['type' => API_BOOLEAN, 'default' => false]
+					'createMissing' =>		['type' => API_BOOLEAN, 'default' => false],
+					'deleteMissing' =>		['type' => API_BOOLEAN, 'default' => false]
 				]],
 				'templates' =>			['type' => API_OBJECT, 'fields' => [
 					'createMissing' =>		['type' => API_BOOLEAN, 'default' => false],
@@ -138,19 +150,40 @@ class CConfiguration extends CApiService {
 		$importReader = CImportReaderFactory::getReader($params['format']);
 		$data = $importReader->read($params['source']);
 
-		$data = (new CXmlValidator())->validate($data, $params['format']);
-
+		$importValidatorFactory = new CImportValidatorFactory($params['format']);
 		$importConverterFactory = new CImportConverterFactory();
 
-		$converterChain = new CConverterChain();
-		$converterChain->addConverter('1.0', $importConverterFactory->getObject('1.0'));
-		$converterChain->addConverter('2.0', $importConverterFactory->getObject('2.0'));
-		$converterChain->addConverter('3.0', $importConverterFactory->getObject('3.0'));
-		$converterChain->addConverter('3.2', $importConverterFactory->getObject('3.2'));
-		$converterChain->addConverter('3.4', $importConverterFactory->getObject('3.4'));
-		$converterChain->addConverter('4.0', $importConverterFactory->getObject('4.0'));
+		$data = (new CXmlValidator)->validate($data, $params['format']);
 
-		$adapter = new CImportDataAdapter(ZABBIX_EXPORT_VERSION, $converterChain);
+		foreach (['1.0', '2.0', '3.0', '3.2', '3.4', '4.0', '4.2'] as $version) {
+			if ($data['zabbix_export']['version'] !== $version) {
+				continue;
+			}
+
+			$data = $importConverterFactory
+				->getObject($version)
+				->convert($data);
+			$data = (new CXmlValidator)->validate($data, $params['format']);
+		}
+
+		// Get schema for converters.
+		$schema = $importValidatorFactory
+			->getObject(ZABBIX_EXPORT_VERSION)
+			->getSchema();
+
+		// Convert human readable import constants to values Zabbix API can work with.
+		$data = (new CConstantImportConverter($schema))->convert($data);
+
+		// Add default values in place of missed tags.
+		$data = (new CDefaultImportConverter($schema))->convert($data);
+
+		// Normalize array keys.
+		$data = (new CArrayKeysImportConverter($schema))->convert($data);
+
+		// Transform converter.
+		$data = (new CTransformImportConverter($schema))->convert($data);
+
+		$adapter = new CImportDataAdapter();
 		$adapter->load($data);
 
 		$configurationImport = new CConfigurationImport(

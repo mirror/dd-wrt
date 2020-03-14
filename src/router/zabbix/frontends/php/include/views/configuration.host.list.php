@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -177,6 +177,8 @@ $table = (new CTableInfo())
 		_('Discovery'),
 		_('Web'),
 		_('Interface'),
+		($data['filter']['monitored_by'] == ZBX_MONITORED_BY_PROXY
+				|| $data['filter']['monitored_by'] == ZBX_MONITORED_BY_ANY) ? _('Proxy') : null,
 		_('Templates'),
 		make_sorting_header(_('Status'), 'status', $data['sortField'], $data['sortOrder'], 'hosts.php'),
 		_('Availability'),
@@ -202,10 +204,6 @@ foreach ($data['hosts'] as $host) {
 
 	$description = [];
 
-	if ($host['proxy_hostid'] != 0) {
-		$description[] = $data['proxies'][$host['proxy_hostid']]['host'];
-		$description[] = NAME_DELIMITER;
-	}
 	if ($host['discoveryRule']) {
 		$description[] = (new CLink(CHtml::encode($host['discoveryRule']['name']),
 			(new CUrl('host_prototypes.php'))->setArgument('parent_discoveryid', $host['discoveryRule']['itemid'])
@@ -214,24 +212,35 @@ foreach ($data['hosts'] as $host) {
 			->addClass(ZBX_STYLE_ORANGE);
 		$description[] = NAME_DELIMITER;
 	}
+	elseif ($host['flags'] == ZBX_FLAG_DISCOVERY_CREATED) {
+		// Discovered host which does not contain info about parent discovery rule is inaccessible for current user.
+		$description[] = (new CSpan(_('Inaccessible discovery rule')))->addClass(ZBX_STYLE_ORANGE);
+		$description[] = NAME_DELIMITER;
+	}
 
 	$description[] = new CLink(CHtml::encode($host['name']),
 		'hosts.php?form=update&hostid='.$host['hostid'].url_param('groupid')
 	);
 
+	$maintenance_icon = false;
 	$hostInterface = ($interface['useip'] == INTERFACE_USE_IP) ? $interface['ip'] : $interface['dns'];
 	$hostInterface .= empty($interface['port']) ? '' : NAME_DELIMITER.$interface['port'];
 
 	if ($host['status'] == HOST_STATUS_MONITORED) {
 		if ($host['maintenance_status'] == HOST_MAINTENANCE_STATUS_ON) {
-			$statusCaption = _('In maintenance');
-			$statusClass = ZBX_STYLE_ORANGE;
-		}
-		else {
-			$statusCaption = _('Enabled');
-			$statusClass = ZBX_STYLE_GREEN;
+			if (array_key_exists($host['maintenanceid'], $data['maintenances'])) {
+				$maintenance = $data['maintenances'][$host['maintenanceid']];
+				$maintenance_icon = makeMaintenanceIcon($host['maintenance_type'], $maintenance['name'],
+					$maintenance['description']
+				);
+			}
+			else {
+				$maintenance_icon = makeMaintenanceIcon($host['maintenance_type'], _('Inaccessible maintenance'), '');
+			}
 		}
 
+		$statusCaption = _('Enabled');
+		$statusClass = ZBX_STYLE_GREEN;
 		$confirm_message = _('Disable host?');
 		$statusUrl = 'hosts.php?hosts[]='.$host['hostid'].'&action=host.massdisable'.url_param('groupid');
 	}
@@ -247,6 +256,13 @@ foreach ($data['hosts'] as $host) {
 		->addClass($statusClass)
 		->addConfirmation($confirm_message)
 		->addSID();
+
+	if ($maintenance_icon) {
+		$status = [$maintenance_icon, $status];
+	}
+	elseif (count($data['maintenances'])) {
+		$status->addClass(ZBX_STYLE_ICON_NONE);
+	}
 
 	order_result($host['parentTemplates'], 'name');
 
@@ -398,6 +414,12 @@ foreach ($data['hosts'] as $host) {
 			CViewHelper::showNum($host['httpTests'])
 		],
 		$hostInterface,
+		($data['filter']['monitored_by'] == ZBX_MONITORED_BY_PROXY
+				|| $data['filter']['monitored_by'] == ZBX_MONITORED_BY_ANY)
+			? ($host['proxy_hostid'] != 0)
+				? $data['proxies'][$host['proxy_hostid']]['host']
+				: ''
+			: null,
 		$hostTemplates,
 		$status,
 		getHostAvailabilityTable($host),
@@ -414,7 +436,15 @@ $form->addItem([
 		[
 			'host.massenable' => ['name' => _('Enable'), 'confirm' => _('Enable selected hosts?')],
 			'host.massdisable' => ['name' => _('Disable'), 'confirm' => _('Disable selected hosts?')],
-			'host.export' => ['name' => _('Export')],
+			'host.export' => ['name' => _('Export'), 'redirect' =>
+				(new CUrl('zabbix.php'))
+					->setArgument('action', 'export.hosts.xml')
+					->setArgument('backurl', (new CUrl('hosts.php'))
+						->setArgument('groupid', $data['pageFilter']->groupid)
+						->setArgument('page', getPageNumber())
+						->getUrl())
+					->getUrl()
+			],
 			'host.massupdateform' => ['name' => _('Mass update')],
 			'host.massdelete' => ['name' => _('Delete'), 'confirm' => _('Delete selected hosts?')]
 		]

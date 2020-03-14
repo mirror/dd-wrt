@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 
 require_once dirname(__FILE__).'/include/config.inc.php';
-require_once dirname(__FILE__).'/include/hostgroups.inc.php';
 require_once dirname(__FILE__).'/include/graphs.inc.php';
 require_once dirname(__FILE__).'/include/screens.inc.php';
 require_once dirname(__FILE__).'/include/blocks.inc.php';
@@ -96,7 +95,7 @@ $options = [
 
 if (getRequest('elementid')) {
 	$options['screenids'] = getRequest('elementid');
-	CProfile::update('web.screens.elementid', getRequest('elementid') , PROFILE_TYPE_ID);
+	CProfile::update('web.screens.elementid', getRequest('elementid'), PROFILE_TYPE_ID);
 }
 elseif (hasRequest('screenname')) {
 	$options['filter']['name'] = getRequest('screenname');

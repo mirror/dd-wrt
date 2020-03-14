@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -295,7 +295,7 @@ abstract class CGraphGeneral extends CApiService {
 		if ($graph['graphtype'] == GRAPH_TYPE_PIE || $graph['graphtype'] == GRAPH_TYPE_EXPLODED) {
 			$sumItems = 0;
 			foreach ($graph['gitems'] as $gitem) {
-				if ($gitem['type'] == GRAPH_ITEM_SUM) {
+				if (array_key_exists('type', $gitem) && $gitem['type'] == GRAPH_ITEM_SUM) {
 					$sumItems++;
 				}
 			}

@@ -1,5 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 
+SUBDIRS = \
+	logfiles
+	
 EXTRA_DIST = \
 	eventlog.c eventlog.h \
 	perfstat.c perfstat.h
@@ -14,10 +17,10 @@ libzbxagent_a_SOURCES = \
 	cpustat.c cpustat.h \
 	diskdevices.c diskdevices.h \
 	vmstats.c vmstats.h \
-	logfiles.c logfiles.h \
 	zbxconf.c zbxconf.h \
 	listener.c listener.h \
-	procstat.c procstat.h
+	procstat.c procstat.h \
+	metrics.h
 
 libzbxagent_a_CFLAGS = \
 	-DZABBIX_DAEMON
@@ -26,6 +29,7 @@ zabbix_agentd_SOURCES = zabbix_agentd.c
 
 zabbix_agentd_LDADD = \
 	libzbxagent.a \
+	logfiles/libzbxlogfiles.a \
 	$(top_srcdir)/src/libs/zbxsysinfo/libzbxagentsysinfo.a \
 	$(top_srcdir)/src/libs/zbxsysinfo/$(ARCH)/libspecsysinfo.a \
 	$(top_srcdir)/src/libs/zbxsysinfo/$(ARCH)/libspechostnamesysinfo.a \
@@ -39,12 +43,13 @@ zabbix_agentd_LDADD = \
 	$(top_srcdir)/src/libs/zbxnix/libzbxnix.a \
 	$(top_srcdir)/src/libs/zbxcomms/libzbxcomms.a \
 	$(top_srcdir)/src/libs/zbxconf/libzbxconf.a \
+	$(top_srcdir)/src/libs/zbxjson/libzbxjson.a \
 	$(top_srcdir)/src/libs/zbxcommon/libzbxcommon.a \
 	$(top_srcdir)/src/libs/zbxcrypto/libzbxcrypto.a \
-	$(top_srcdir)/src/libs/zbxjson/libzbxjson.a \
 	$(top_srcdir)/src/libs/zbxexec/libzbxexec.a \
 	$(top_srcdir)/src/libs/zbxcompress/libzbxcompress.a \
-	$(top_srcdir)/src/libs/zbxmodules/libzbxmodules.a
+	$(top_srcdir)/src/libs/zbxmodules/libzbxmodules.a \
+	$(top_srcdir)/src/libs/zbxhttp/libzbxhttp.a
 
 zabbix_agentd_LDADD += @AGENT_LIBS@
 

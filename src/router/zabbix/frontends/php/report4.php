@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -56,10 +56,14 @@ $currentYear = date('Y');
 
 // fetch media types
 $media_types = [];
-$db_media_types = DBselect('SELECT mt.* FROM media_type mt ORDER BY mt.description');
+$db_media_types = API::MediaType()->get([
+	'output' => ['name'],
+	'preservekeys' => true
+]);
 
-while ($media_type_data = DBfetch($db_media_types)) {
-	$media_types[$media_type_data['mediatypeid']] = $media_type_data['description'];
+CArrayHelper::sort($db_media_types, ['name']);
+foreach ($db_media_types as $mediatypeid => $db_media_type) {
+	$media_types[$mediatypeid] = $db_media_type['name'];
 }
 
 $widget = (new CWidget())->setTitle(_('Notifications'));
@@ -86,8 +90,8 @@ else {
 	$cmbMedia = new CComboBox('media_type', $media_type, 'submit()');
 	$cmbMedia->addItem(0, _('all'));
 
-	foreach ($media_types as $media_type_id => $media_type_description) {
-		$cmbMedia->addItem($media_type_id, $media_type_description);
+	foreach ($media_types as $media_type_id => $name) {
+		$cmbMedia->addItem($media_type_id, $name);
 
 		// we won't need other media types in the future, if only one was selected
 		if ($media_type > 0 && $media_type != $media_type_id) {
@@ -278,10 +282,10 @@ else {
 		echo BR();
 
 		$links = [];
-		foreach ($media_types as $id => $description) {
+		foreach ($media_types as $id => $name) {
 			$links[] = (CWebUser::getType() < USER_TYPE_SUPER_ADMIN)
-				? $description
-				: new CLink($description, 'zabbix.php?action=mediatype.edit&mediatypeid='.$id);
+				? $name
+				: new CLink($name, 'zabbix.php?action=mediatype.edit&mediatypeid='.$id);
 			$links[] = SPACE.'/'.SPACE;
 		}
 		array_pop($links);

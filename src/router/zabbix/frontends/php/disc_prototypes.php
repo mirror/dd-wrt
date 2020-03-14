@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,7 +26,9 @@ require_once dirname(__FILE__).'/include/forms.inc.php';
 
 $page['title'] = _('Configuration of item prototypes');
 $page['file'] = 'disc_prototypes.php';
-$page['scripts'] = ['effects.js', 'class.cviewswitcher.js', 'multilineinput.js', 'multiselect.js', 'items.js'];
+$page['scripts'] = ['effects.js', 'class.cviewswitcher.js', 'multilineinput.js', 'multiselect.js', 'items.js',
+	'textareaflexible.js'
+];
 
 require_once dirname(__FILE__).'/include/page_header.php';
 
@@ -189,11 +191,17 @@ $fields = [
 										IN([ZBX_ACTION_ADD, ZBX_ACTION_REPLACE, ZBX_ACTION_REMOVE]),
 										null
 									],
-	'history' =>					[T_ZBX_STR, O_OPT, null,	null, 'isset({add}) || isset({update})',
+	'history_mode' =>				[T_ZBX_INT, O_OPT, null,	IN([ITEM_STORAGE_OFF, ITEM_STORAGE_CUSTOM]), null],
+	'history' =>					[T_ZBX_STR, O_OPT, null,	null,
+										'(isset({add}) || isset({update}))'.
+											' && isset({history_mode}) && {history_mode}=='.ITEM_STORAGE_CUSTOM,
 										_('History storage period')
 									],
+	'trends_mode' =>				[T_ZBX_INT, O_OPT, null,	IN([ITEM_STORAGE_OFF, ITEM_STORAGE_CUSTOM]), null],
 	'trends' =>						[T_ZBX_STR, O_OPT, null,	null,
-										'(isset({add}) || isset({update})) && isset({value_type})'.
+										'(isset({add}) || isset({update}))'.
+											' && isset({trends_mode}) && {trends_mode}=='.ITEM_STORAGE_CUSTOM.
+											' && isset({value_type})'.
 											' && '.IN(ITEM_VALUE_TYPE_FLOAT.','.ITEM_VALUE_TYPE_UINT64, 'value_type'),
 										_('Trend storage period')
 									],
@@ -248,13 +256,16 @@ $fields = [
 										null
 									],
 	'http_authtype' =>				[T_ZBX_INT, O_OPT, null,
-										IN([HTTPTEST_AUTH_NONE, HTTPTEST_AUTH_BASIC, HTTPTEST_AUTH_NTLM]),
+										IN([HTTPTEST_AUTH_NONE, HTTPTEST_AUTH_BASIC, HTTPTEST_AUTH_NTLM,
+											HTTPTEST_AUTH_KERBEROS
+										]),
 										null
 									],
 	'http_username' =>				[T_ZBX_STR, O_OPT, null,	null,
 										'(isset({add}) || isset({update})) && isset({http_authtype})'.
 											' && ({http_authtype} == '.HTTPTEST_AUTH_BASIC.
 												' || {http_authtype} == '.HTTPTEST_AUTH_NTLM.
+												' || {http_authtype} == '.HTTPTEST_AUTH_KERBEROS.
 											')',
 										_('Username')
 									],
@@ -262,6 +273,7 @@ $fields = [
 										'(isset({add}) || isset({update})) && isset({http_authtype})'.
 											' && ({http_authtype} == '.HTTPTEST_AUTH_BASIC.
 												' || {http_authtype} == '.HTTPTEST_AUTH_NTLM.
+												' || {http_authtype} == '.HTTPTEST_AUTH_KERBEROS.
 											')',
 										_('Password')
 									],
@@ -378,7 +390,7 @@ elseif (hasRequest('add') || hasRequest('update')) {
 	 * "delay_flex" is a temporary field that collects flexible and scheduling intervals separated by a semicolon.
 	 * In the end, custom intervals together with "delay" are stored in the "delay" variable.
 	 */
-	if (!in_array($type, [ITEM_TYPE_ZABBIX_ACTIVE, ITEM_TYPE_TRAPPER, ITEM_TYPE_SNMPTRAP]) && hasRequest('delay_flex')) {
+	if ($type != ITEM_TYPE_TRAPPER && $type != ITEM_TYPE_SNMPTRAP && hasRequest('delay_flex')) {
 		$intervals = [];
 		$simple_interval_parser = new CSimpleIntervalParser([
 			'usermacros' => true,
@@ -490,6 +502,14 @@ elseif (hasRequest('add') || hasRequest('update')) {
 					$step['params'] = implode("\n", $step['params']);
 					break;
 
+				// ZBX-16642
+				case ZBX_PREPROC_CSV_TO_JSON:
+					if (!array_key_exists(2, $step['params'])) {
+						$step['params'][2] = ZBX_PREPROC_CSV_NO_HEADER;
+					}
+					$step['params'] = implode("\n", $step['params']);
+					break;
+
 				default:
 					$step['params'] = '';
 			}
@@ -515,7 +535,9 @@ elseif (hasRequest('add') || hasRequest('update')) {
 			'value_type'	=> getRequest('value_type'),
 			'trapper_hosts'	=> getRequest('trapper_hosts'),
 			'port'			=> getRequest('port'),
-			'history'		=> getRequest('history'),
+			'history'		=> (getRequest('history_mode', ITEM_STORAGE_CUSTOM) == ITEM_STORAGE_OFF)
+				? ITEM_NO_STORAGE_VALUE
+				: getRequest('history'),
 			'units'			=> getRequest('units'),
 			'snmpv3_contextname' => getRequest('snmpv3_contextname'),
 			'snmpv3_securityname' => getRequest('snmpv3_securityname'),
@@ -541,7 +563,9 @@ elseif (hasRequest('add') || hasRequest('update')) {
 		}
 
 		if ($item['value_type'] == ITEM_VALUE_TYPE_FLOAT || $item['value_type'] == ITEM_VALUE_TYPE_UINT64) {
-			$item['trends'] = getRequest('trends');
+			$item['trends'] = (getRequest('trends_mode', ITEM_STORAGE_CUSTOM) == ITEM_STORAGE_OFF)
+				? ITEM_NO_STORAGE_VALUE
+				: getRequest('trends');
 		}
 
 		if ($item['type'] == ITEM_TYPE_DEPENDENT) {
@@ -866,7 +890,9 @@ elseif ($valid_input && hasRequest('massupdate') && hasRequest('group_itemid')) 
 					'interfaceid' => getRequest('interfaceid'),
 					'description' => getRequest('description'),
 					'delay' => $delay,
-					'history' => getRequest('history'),
+					'history' => (getRequest('history_mode', ITEM_STORAGE_CUSTOM) == ITEM_STORAGE_OFF)
+						? ITEM_NO_STORAGE_VALUE
+						: getRequest('history'),
 					'type' => getRequest('type'),
 					'snmp_community' => getRequest('snmp_community'),
 					'snmp_oid' => getRequest('snmp_oid'),
@@ -881,7 +907,9 @@ elseif ($valid_input && hasRequest('massupdate') && hasRequest('group_itemid')) 
 					'snmpv3_authpassphrase' => getRequest('snmpv3_authpassphrase'),
 					'snmpv3_privprotocol' => getRequest('snmpv3_privprotocol'),
 					'snmpv3_privpassphrase' => getRequest('snmpv3_privpassphrase'),
-					'trends' => getRequest('trends'),
+					'trends' => (getRequest('trends_mode', ITEM_STORAGE_CUSTOM) == ITEM_STORAGE_OFF)
+						? ITEM_NO_STORAGE_VALUE
+						: getRequest('trends'),
 					'logtimefmt' => getRequest('logtimefmt'),
 					'valuemapid' => getRequest('valuemapid'),
 					'authtype' => getRequest('authtype'),
@@ -958,6 +986,14 @@ elseif ($valid_input && hasRequest('massupdate') && hasRequest('group_itemid')) 
 								$step['params'] = implode("\n", $step['params']);
 								break;
 
+							// ZBX-16642
+							case ZBX_PREPROC_CSV_TO_JSON:
+								if (!array_key_exists(2, $step['params'])) {
+									$step['params'][2] = ZBX_PREPROC_CSV_NO_HEADER;
+								}
+								$step['params'] = implode("\n", $step['params']);
+								break;
+
 							default:
 								$step['params'] = '';
 						}
@@ -1002,7 +1038,7 @@ elseif ($valid_input && hasRequest('massupdate') && hasRequest('group_itemid')) 
 									}
 
 									/*
-									 * $upd_applicationids now contains new and existing application IDs depeding on
+									 * $upd_applicationids now contains new and existing application IDs depending on
 									 * operation we want to perform.
 									 */
 									$item_prototype['applications'] = array_keys(array_flip($upd_applicationids));
@@ -1241,9 +1277,27 @@ if (isset($_REQUEST['form'])) {
 
 	$data = getItemFormData($itemPrototype);
 	$data['config'] = select_config();
-	$data['trends_default'] = DB::getDefault('items', 'trends');
 	$data['preprocessing_test_type'] = CControllerPopupPreprocTestEdit::ZBX_TEST_TYPE_ITEM_PROTOTYPE;
 	$data['preprocessing_types'] = CItemPrototype::$supported_preprocessing_types;
+	$data['trends_default'] = DB::getDefault('items', 'trends');
+
+	$history_in_seconds = timeUnitToSeconds($data['history']);
+	if (!getRequest('form_refresh') && $history_in_seconds !== null && $history_in_seconds == ITEM_NO_STORAGE_VALUE) {
+		$data['history_mode'] = getRequest('history_mode', ITEM_STORAGE_OFF);
+		$data['history'] = DB::getDefault('items', 'history');
+	}
+	else {
+		$data['history_mode'] = getRequest('history_mode', ITEM_STORAGE_CUSTOM);
+	}
+
+	$trends_in_seconds = timeUnitToSeconds($data['trends']);
+	if (!getRequest('form_refresh') && $trends_in_seconds !== null && $trends_in_seconds == ITEM_NO_STORAGE_VALUE) {
+		$data['trends_mode'] = getRequest('trends_mode', ITEM_STORAGE_OFF);
+		$data['trends'] = $data['trends_default'];
+	}
+	else {
+		$data['trends_mode'] = getRequest('trends_mode', ITEM_STORAGE_CUSTOM);
+	}
 
 	// Sort interfaces to be listed starting with one selected as 'main'.
 	CArrayHelper::sort($data['interfaces'], [
@@ -1480,6 +1534,24 @@ elseif (((hasRequest('action') && getRequest('action') === 'itemprototype.massup
 	}
 
 	$data['jmx_endpoint'] = ZBX_DEFAULT_JMX_ENDPOINT;
+
+	$history_in_seconds = timeUnitToSeconds($data['history']);
+	if (!getRequest('form_refresh') && $history_in_seconds !== null && $history_in_seconds == ITEM_NO_STORAGE_VALUE) {
+		$data['history_mode'] = getRequest('history_mode', ITEM_STORAGE_OFF);
+		$data['history'] = DB::getDefault('items', 'history');
+	}
+	else {
+		$data['history_mode'] = getRequest('history_mode', ITEM_STORAGE_CUSTOM);
+	}
+
+	$trends_in_seconds = timeUnitToSeconds($data['trends']);
+	if (!getRequest('form_refresh') && $trends_in_seconds !== null && $trends_in_seconds == ITEM_NO_STORAGE_VALUE) {
+		$data['trends_mode'] = getRequest('trends_mode', ITEM_STORAGE_OFF);
+		$data['trends'] = DB::getDefault('items', 'trends');
+	}
+	else {
+		$data['trends_mode'] = getRequest('trends_mode', ITEM_STORAGE_CUSTOM);
+	}
 
 	$view = (new CView('configuration.item.prototype.massupdate', $data))
 		->render()

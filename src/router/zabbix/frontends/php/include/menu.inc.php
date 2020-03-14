@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@
  *	'label' =  submenu title, if missing, menu skipped, but remembered as last visited page.
  *	'sub_pages' = collection of pages for displaying but not remembered as last visited.
  */
-function zbx_construct_menu(&$main_menu, &$sub_menus, &$page, $action = null) {
+function zbx_construct_menu(&$main_menu, &$sub_menus, array &$page, $action = null) {
 	$zbx_menu = [
 		'view' => [
 			'label' => _('Monitoring'),
@@ -250,7 +250,8 @@ function zbx_construct_menu(&$main_menu, &$sub_menus, &$page, $action = null) {
 						'adm.triggerseverities.php',
 						'adm.triggerdisplayoptions.php',
 						'adm.other.php'
-					]
+					],
+					'active_if' => ['autoreg.edit']
 				],
 				[
 					'url' => 'zabbix.php',
@@ -269,7 +270,9 @@ function zbx_construct_menu(&$main_menu, &$sub_menus, &$page, $action = null) {
 					'label' => _('User groups')
 				],
 				[
-					'url' => 'users.php',
+					'url' => 'zabbix.php',
+					'action' => 'user.list',
+					'active_if' => ['user.edit', 'user.list'],
 					'label' => _('Users')
 				],
 				[
@@ -297,7 +300,7 @@ function zbx_construct_menu(&$main_menu, &$sub_menus, &$page, $action = null) {
 			'pages' => [
 				[
 					'url' => 'index.php',
-					'sub_pages' => ['profile.php']
+					'sub_pages' => ['zabbix.php']
 				]
 			]
 		]
@@ -306,6 +309,7 @@ function zbx_construct_menu(&$main_menu, &$sub_menus, &$page, $action = null) {
 	$denied_page_requested = false;
 	$page_exists = false;
 	$deny = true;
+	$page['menu'] = null;
 
 	foreach ($zbx_menu as $label => $menu) {
 		$show_menu = true;
@@ -414,7 +418,7 @@ function zbx_construct_menu(&$main_menu, &$sub_menus, &$page, $action = null) {
 		array_push($main_menu, $mmenu_entry);
 	}
 
-	if (!$page_exists && $page['type'] != PAGE_TYPE_XML && $page['type'] != PAGE_TYPE_CSV && $page['type'] != PAGE_TYPE_TEXT_FILE) {
+	if (!$page_exists) {
 		$denied_page_requested = true;
 	}
 

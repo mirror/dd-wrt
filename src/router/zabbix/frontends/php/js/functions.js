@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,17 +17,6 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-
-function getIdFromNodeId(id) {
-	if (typeof(id) == 'string') {
-		var reg = /logtr([0-9])/i;
-		id = parseInt(id.replace(reg, '$1'));
-	}
-	if (typeof(id) == 'number') {
-		return id;
-	}
-	return null;
-}
 
 function check_target(e, type) {
 	// If type is expression.
@@ -187,45 +176,6 @@ function validateNumericBox(obj, allowempty, allownegative) {
 }
 
 /**
- * Validates and formats input element containing a part of date.
- *
- * @param object {obj}       Input element value of which is being validated.
- * @param int {min}          Minimal allowed value (inclusive).
- * @param int {max}          Maximum allowed value (inclusive).
- * @param int {paddingSize}  Number of zeros used for padding.
- */
-function validateDatePartBox(obj, min, max, paddingSize) {
-	if (obj != null) {
-		min = min ? min : 0;
-		max = max ? max : 59;
-		paddingSize = paddingSize ? paddingSize : 2;
-
-		var paddingZeros = [];
-		for (var i = 0; i != paddingSize; i++) {
-			paddingZeros.push('0');
-		}
-		paddingZeros = paddingZeros.join('');
-
-		var currentValue = obj.value.toString();
-
-		if (/^[0-9]+$/.match(currentValue)) {
-			var intValue = parseInt(currentValue, 10);
-
-			if (intValue < min || intValue > max) {
-				obj.value = paddingZeros;
-			}
-			else if (currentValue.length < paddingSize) {
-				var paddedValue = paddingZeros + obj.value;
-				obj.value = paddedValue.substring(paddedValue.length - paddingSize);
-			}
-		}
-		else {
-			obj.value = paddingZeros;
-		}
-	}
-}
-
-/**
  * Translates the given string.
  *
  * @param {String} str
@@ -249,7 +199,7 @@ function getUniqueId() {
 }
 
 /**
- * Color palette object used for geting different colors from color palette.
+ * Color palette object used for getting different colors from color palette.
  */
 var colorPalette = (function() {
 	'use strict';
@@ -472,26 +422,52 @@ function stripslashes(str) {
 }
 
 /**
+ * Function to remove preloader and moves focus to IU element that was clicked to open it.
+ *
+ * @param string   id			Preloader identifier.
+ */
+function overlayPreloaderDestroy(id) {
+	if (typeof id !== 'undefined') {
+
+		var overlay = overlays_stack.getById(id)
+		if (!overlay) {
+			return;
+		}
+		if (typeof overlay.xhr !== 'undefined') {
+			overlay.xhr.abort();
+			delete overlay.xhr;
+		}
+
+		jQuery('#' + id).remove();
+		removeFromOverlaysStack(id);
+	}
+}
+
+/**
  * Function to close overlay dialogue and moves focus to IU element that was clicked to open it.
  *
  * @param string   dialogueid	Dialogue identifier to identify dialogue.
- * @param {object} xhr			(optional) XHR request that must be aborted.
  */
-function overlayDialogueDestroy(dialogueid, xhr) {
+function overlayDialogueDestroy(dialogueid) {
 	if (typeof dialogueid !== 'undefined') {
-		if (typeof xhr !== 'undefined') {
-			xhr.abort();
+		var overlay = overlays_stack.getById(dialogueid)
+		if (!overlay) {
+			return;
+		}
+		if (typeof overlay.xhr !== 'undefined') {
+			overlay.xhr.abort();
+			delete overlay.xhr;
 		}
 
 		jQuery('[data-dialogueid='+dialogueid+']').remove();
 
-		if (!jQuery('[data-dialogueid]').length) {
-			jQuery('body').css({'overflow': ''});
-			jQuery('body[style=""]').removeAttr('style');
-		}
-
 		removeFromOverlaysStack(dialogueid);
 		jQuery.publish('overlay.close', {dialogueid: dialogueid});
+
+		if (!jQuery('[data-dialogueid]').length) {
+			jQuery('body').css('overflow', jQuery('body').data('overflow'));
+			jQuery('body').removeData('overflow');
+		}
 	}
 }
 
@@ -536,6 +512,11 @@ function getOverlayDialogueId() {
  * @return {bool}
  */
 function overlayDialogue(params, trigger_elmnt, xhr) {
+	if (!jQuery('[data-dialogueid]').length) {
+		jQuery('body').data('overflow', jQuery('body').css('overflow'));
+		jQuery('body').css('overflow', 'hidden');
+	}
+
 	var button_focused = null,
 		cancel_action = null,
 		submit_btn = null,
@@ -586,6 +567,18 @@ function overlayDialogue(params, trigger_elmnt, xhr) {
 	}
 
 	var center_overlay_dialog = function() {
+			var body = jQuery('.overlay-dialogue-body', overlay_dialogue),
+				body_scroll_height = body[0].scrollHeight,
+				body_height = body.height();
+
+			if (body_height != Math.floor(body_height)) {
+				// The body height is often about a half pixel less than the height.
+				body_height = Math.floor(body_height) + 1;
+			}
+
+			// A fix for IE and Edge to stop popup width flickering when having vertical scrollbar.
+			body.css('overflow-y', body_scroll_height > body_height ? 'scroll' : 'hidden');
+
 			overlay_dialogue.css({
 				'left': Math.round((jQuery(window).width() - jQuery(overlay_dialogue).outerWidth()) / 2) + 'px',
 				'top': overlay_dialogue.hasClass('sticked-to-top')
@@ -631,7 +624,7 @@ function overlayDialogue(params, trigger_elmnt, xhr) {
 		}
 
 		if ('enabled' in obj && obj.enabled === false) {
-			button.attr('disabled', 'disabled');
+			button.prop('disabled', true);
 		}
 
 		if ('focused' in obj && obj.focused === true) {
@@ -685,7 +678,7 @@ function overlayDialogue(params, trigger_elmnt, xhr) {
 
 		setTimeout(function() {
 			jQuery(overlay_bg).off('remove'); // Remove to avoid repeated execution.
-			overlayDialogueDestroy(params.dialogueid, xhr);
+			overlayDialogueDestroy(params.dialogueid);
 		});
 
 		return false;
@@ -713,8 +706,6 @@ function overlayDialogue(params, trigger_elmnt, xhr) {
 			center_overlay_dialog();
 		}
 	});
-
-	jQuery('body').css({'overflow': 'hidden'});
 
 	if (button_focused !== null) {
 		button_focused.focus();
@@ -857,7 +848,15 @@ function executeScript(hostid, scriptid, confirmation, trigger_elmnt) {
 						l = n['name'].indexOf('[', r + 1);
 						r = n['name'].indexOf(']', r + 1);
 
-						if (l == -1 || r == -1 || r <= l) {
+						if (l + 1 == r) {
+							if (typeof curr_json[key] === 'undefined') {
+								curr_json[key] = [];
+							}
+
+							curr_json[key].push(n['value']);
+							break;
+						}
+						else if (l == -1 || r == -1 || r <= l) {
 							curr_json[key] = n['value']
 							break;
 						}
@@ -931,4 +930,109 @@ function parseUrlString(url) {
 		'url': url,
 		'pairs': pairs
 	};
+}
+
+/**
+ * Message formatting function.
+ *
+ * @param {string}       type            Message type. ('good'|'bad'|'warning')
+ * @param {string|array} messages        Array with details messages or message string with normal font.
+ * @param {string}       title           Larger font title.
+ * @param {bool}         show_close_box  Show close button.
+ * @param {bool}         show_details    Show details on opening.
+ *
+ * @return {jQuery}
+ */
+function makeMessageBox(type, messages, title, show_close_box, show_details) {
+	var classes = {good: 'msg-good', bad: 'msg-bad', warning: 'msg-warning'},
+		msg_class = classes[type];
+
+	if (typeof msg_class === 'undefined') {
+		return jQuery('<output>').text(Array.isArray(messages) ? messages.join(' ') : messages);
+	}
+
+	if (typeof title === 'undefined') {
+		title = null;
+	}
+	if (typeof show_close_box === 'undefined') {
+		show_close_box = true;
+	}
+	if (typeof show_details === 'undefined') {
+		show_details = false;
+	}
+
+	var	$list = jQuery('<ul>'),
+		$msg_details = jQuery('<div>')
+			.addClass('msg-details')
+			.append($list),
+		aria_labels = {good: t('Success message'), bad: t('Error message'), warning: t('Warning message')},
+		$msg_box = jQuery('<output>')
+			.addClass(msg_class).attr('role', 'contentinfo')
+			.attr('aria-label', aria_labels[type]),
+		$details_arrow = jQuery('<span>')
+			.attr('id', 'details-arrow')
+			.addClass(show_details ? 'arrow-up' : 'arrow-down'),
+		$link_details = jQuery('<a>')
+			.text(t('Details') + ' ')
+			.addClass('link-action')
+			.attr('href', 'javascript:void(0)')
+			.attr('role', 'button')
+			.append($details_arrow)
+			.attr('aria-expanded', show_details ? 'true' : 'false');
+
+		$link_details.click(function() {
+			showHide(jQuery(this)
+				.siblings('.msg-details')
+				.find('.msg-details-border')
+			);
+			jQuery('#details-arrow', jQuery(this)).toggleClass('arrow-up arrow-down');
+			jQuery(this).attr('aria-expanded', jQuery(this)
+				.find('.arrow-down')
+				.length == 0
+			);
+		});
+
+	if (title !== null) {
+		$msg_box.prepend($link_details);
+		jQuery('<span>')
+			.text(title)
+			.appendTo($msg_box);
+
+		$list.addClass('msg-details-border');
+
+		if (!show_details) {
+			$list.hide();
+		}
+	}
+
+	if (Array.isArray(messages) && messages.length > 0) {
+		jQuery.map(messages, function(message) {
+			jQuery('<li>')
+				.text(message)
+				.appendTo($list);
+			return null;
+		});
+
+		$msg_box.append($msg_details);
+	}
+	else {
+		jQuery('<li>')
+			.text(messages ? messages : ' ')
+			.appendTo($list);
+		$msg_box.append($msg_details);
+	}
+
+	if (show_close_box) {
+		var $button = jQuery('<button>')
+				.addClass('overlay-close-btn')
+				.attr('title', t('Close'))
+				.click(function() {
+					jQuery(this)
+						.closest('.' + classes[index])
+						.remove();
+				});
+		$msg_box.append($button);
+	}
+
+	return $msg_box;
 }

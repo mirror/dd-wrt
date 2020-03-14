@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -30,13 +30,6 @@ class CImportDataAdapter {
 	protected $data;
 
 	/**
-	 * Object used for converting older import versions.
-	 *
-	 * @var CConverterChain
-	 */
-	protected $converterChain;
-
-	/**
 	 * Current import version.
 	 *
 	 * @var string
@@ -44,26 +37,11 @@ class CImportDataAdapter {
 	protected $currentVersion;
 
 	/**
-	 * @param string            $currentVersion     current import version
-	 * @param CConverterChain   $converterChain     object used for converting older import versions
-	 */
-	public function __construct($currentVersion, CConverterChain $converterChain) {
-		$this->currentVersion = $currentVersion;
-		$this->converterChain = $converterChain;
-	}
-
-	/**
 	 * Set the data and initialize the adapter.
 	 *
 	 * @param array $data   import data
 	 */
 	public function load(array $data) {
-		$version = $data['zabbix_export']['version'];
-
-		if ($this->currentVersion != $version) {
-			$data = $this->converterChain->convert($data, $version);
-		}
-
 		$this->data = $data['zabbix_export'];
 	}
 
@@ -116,16 +94,6 @@ class CImportDataAdapter {
 						}
 
 						$host['interfaces'][$inum] = CArrayHelper::renameKeys($interface, ['default' => 'main']);
-					}
-				}
-
-				if (array_key_exists('inventory', $host)) {
-					if (array_key_exists('inventory_mode', $host['inventory'])) {
-						$host['inventory_mode'] = $host['inventory']['inventory_mode'];
-						unset($host['inventory']['inventory_mode']);
-					}
-					else {
-						$host['inventory_mode'] = HOST_INVENTORY_DISABLED;
 					}
 				}
 
@@ -225,7 +193,7 @@ class CImportDataAdapter {
 				if (array_key_exists('discovery_rules', $host)) {
 					foreach ($host['discovery_rules'] as $discovery_rule) {
 						$discovery_rules[$host['host']][$discovery_rule['key']] =
-							$this->formatDiscoveryRule($discovery_rule);
+							$this->formatDiscoveryRule($discovery_rule, $host['host']);
 					}
 				}
 			}
@@ -236,7 +204,7 @@ class CImportDataAdapter {
 				if (array_key_exists('discovery_rules', $template)) {
 					foreach ($template['discovery_rules'] as $discovery_rule) {
 						$discovery_rules[$template['template']][$discovery_rule['key']] =
-							$this->formatDiscoveryRule($discovery_rule);
+							$this->formatDiscoveryRule($discovery_rule, $template['template']);
 					}
 				}
 			}
@@ -329,6 +297,54 @@ class CImportDataAdapter {
 	}
 
 	/**
+	 * Get simple triggers from the imported data.
+	 *
+	 * @return array
+	 */
+	protected function getSimpleTriggers() {
+		$simple_triggers = [];
+		$expression_options = ['lldmacros' => false, 'allow_func_only' => true];
+
+		if (array_key_exists('hosts', $this->data)) {
+			foreach ($this->data['hosts'] as $host) {
+				if (array_key_exists('items', $host)) {
+					foreach ($host['items'] as $item) {
+						if (array_key_exists('triggers', $item)) {
+							foreach ($item['triggers'] as $simple_trigger) {
+								$simple_trigger = $this->enrichSimpleTriggerExpression($host['host'], $item['key'],
+									$simple_trigger, $expression_options
+								);
+								$simple_triggers[] = $this->renameTriggerFields($simple_trigger);
+							}
+							unset($item['triggers']);
+						}
+					}
+				}
+			}
+		}
+
+		if (array_key_exists('templates', $this->data)) {
+			foreach ($this->data['templates'] as $template) {
+				if (array_key_exists('items', $template)) {
+					foreach ($template['items'] as $item) {
+						if (array_key_exists('triggers', $item)) {
+							foreach ($item['triggers'] as $simple_trigger) {
+								$simple_trigger = $this->enrichSimpleTriggerExpression($template['template'],
+									$item['key'], $simple_trigger, $expression_options
+								);
+								$simple_triggers[] = $this->renameTriggerFields($simple_trigger);
+							}
+							unset($item['triggers']);
+						}
+					}
+				}
+			}
+		}
+
+		return $simple_triggers;
+	}
+
+	/**
 	 * Get triggers from the imported data.
 	 *
 	 * @return array
@@ -342,7 +358,7 @@ class CImportDataAdapter {
 			}
 		}
 
-		return $triggers;
+		return array_merge($triggers, $this->getSimpleTriggers());
 	}
 
 	/**
@@ -411,16 +427,95 @@ class CImportDataAdapter {
 	}
 
 	/**
-	 * Format discovery rule.
-	 *
-	 * @param array $discovery_rule
+	 * Get media types from the imported data.
 	 *
 	 * @return array
 	 */
-	protected function formatDiscoveryRule(array $discovery_rule) {
+	public function getMediaTypes() {
+		$media_types = [];
+
+		if (array_key_exists('media_types', $this->data)) {
+			$keys = [
+				'password' => 'passwd',
+				'script_name' => 'exec_path',
+				'max_sessions' => 'maxsessions',
+				'attempts' => 'maxattempts'
+			];
+
+			foreach ($this->data['media_types'] as $media_type) {
+				$media_types[] = CArrayHelper::renameKeys($media_type,
+					$keys + (($media_type['type'] == MEDIA_TYPE_EXEC) ? ['parameters' => 'exec_params'] : [])
+				);
+			}
+		}
+
+		return $media_types;
+	}
+
+	/**
+	 * Enriches trigger expression and trigger recovery expression with host:item pair.
+	 *
+	 * @param string $host
+	 * @param string $item_key
+	 * @param array  $simple_trigger
+	 * @param string $simple_trigger['expression]
+	 * @param int    $simple_trigger['recovery_mode]
+	 * @param string $simple_trigger['recovery_expression]
+	 * @param array  $options
+	 * @param bool   $options['lldmacros']                  (optional)
+	 * @param bool   $options['allow_func_only']            (optional)
+	 *
+	 * @return array
+	 */
+	protected function enrichSimpleTriggerExpression($host, $item_key, array $simple_trigger, array $options) {
+		$expression_data = new CTriggerExpression($options);
+		$prefix = $host.':'.$item_key.'.';
+
+		if ($expression_data->parse($simple_trigger['expression'])) {
+			foreach (array_reverse($expression_data->expressions) as $expression) {
+				if ($expression['host'] === '' && $expression['item'] === '') {
+					$simple_trigger['expression'] = substr_replace($simple_trigger['expression'], $prefix,
+						$expression['pos'] + 1, 0
+					);
+				}
+			}
+		}
+
+		if ($simple_trigger['recovery_mode'] == ZBX_RECOVERY_MODE_RECOVERY_EXPRESSION
+				&& $expression_data->parse($simple_trigger['recovery_expression'])) {
+			foreach (array_reverse($expression_data->expressions) as $expression) {
+				if ($expression['host'] === '' && $expression['item'] === '') {
+					$simple_trigger['recovery_expression'] = substr_replace($simple_trigger['recovery_expression'],
+						$prefix, $expression['pos'] + 1, 0
+					);
+				}
+			}
+		}
+
+		return $simple_trigger;
+	}
+
+	/**
+	 * Format discovery rule.
+	 *
+	 * @param array  $discovery_rule
+	 * @param string $host
+	 *
+	 * @return array
+	 */
+	protected function formatDiscoveryRule(array $discovery_rule, $host) {
 		$discovery_rule = $this->renameItemFields($discovery_rule);
 
 		foreach ($discovery_rule['item_prototypes'] as &$item_prototype) {
+			if (array_key_exists('trigger_prototypes', $item_prototype)) {
+				foreach ($item_prototype['trigger_prototypes'] as $trigger_prototype) {
+					$discovery_rule['trigger_prototypes'][] =  $this->enrichSimpleTriggerExpression($host,
+						$item_prototype['key'], $trigger_prototype, ['allow_func_only' => true]
+					);
+				}
+				unset($item_prototype['trigger_prototypes']);
+			}
+
 			$item_prototype = $this->renameItemFields($item_prototype);
 		}
 		unset($item_prototype);

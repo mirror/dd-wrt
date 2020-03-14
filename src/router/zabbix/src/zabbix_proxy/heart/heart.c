@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 
 #include "heart.h"
 #include "../servercomms.h"
-#include "../../libs/zbxcrypto/tls.h"
+#include "zbxcrypto.h"
 
 extern unsigned char	process_type, program_type;
 extern int		server_num, process_num;
@@ -95,7 +95,7 @@ ZBX_THREAD_ENTRY(heart_thread, args)
 
 	zbx_setproctitle("%s [sending heartbeat message]", get_process_type_string(process_type));
 
-	for (;;)
+	while (ZBX_IS_RUNNING())
 	{
 		sec = zbx_time();
 		zbx_update_env(sec);
@@ -140,5 +140,9 @@ ZBX_THREAD_ENTRY(heart_thread, args)
 		zbx_sleep_loop(sleeptime);
 	}
 
+	zbx_setproctitle("%s #%d [terminated]", get_process_type_string(process_type), process_num);
+
+	while (1)
+		zbx_sleep(SEC_PER_MIN);
 #undef STAT_INTERVAL
 }

@@ -1,6 +1,6 @@
 /*
  ** Zabbix
- ** Copyright (C) 2001-2019 Zabbix SIA
+ ** Copyright (C) 2001-2020 Zabbix SIA
  **
  ** This program is free software; you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License as published by
@@ -74,6 +74,16 @@
 			}
 		},
 
+		remove: function(screen) {
+			if (typeof screen.id !== 'undefined' && typeof this.screens[screen.id] !== 'undefined') {
+				if (typeof this.screens[screen.id].timeoutHandler !== 'undefined') {
+					window.clearTimeout(this.screens[screen.id].timeoutHandler);
+				}
+
+				delete this.screens[screen.id];
+			}
+		},
+
 		refresh: function(id) {
 			var screen = this.screens[id];
 
@@ -129,7 +139,7 @@
 					self.refreshImg(id, function() {
 						$('a', '#flickerfreescreen_' + id).each(function() {
 								var obj = $(this),
-								url = new Curl(obj.attr('href'));
+								url = new Curl(obj.attr('href'), false);
 
 								url.setArgument('from', screen.timeline.from);
 								url.setArgument('to', screen.timeline.to);
@@ -192,10 +202,8 @@
 					self.refreshImg(id);
 					break;
 
-				// SCREEN_RESOURCE_SCREEN
 				// SCREEN_RESOURCE_LLD_SIMPLE_GRAPH
 				// SCREEN_RESOURCE_LLD_GRAPH
-				case 8:
 				case 20:
 				case 19:
 					self.refreshProfile(id, ajax_url);
@@ -216,10 +224,6 @@
 					},
 					screen.interval
 				);
-
-				// refresh time control actual time
-				clearTimeout(timeControl.timeRefreshTimeoutHandler);
-				timeControl.refreshTime();
 			}
 		},
 
@@ -310,10 +314,10 @@
 				var url = new Curl(screen.data.options.refresh);
 				url.setArgument('curtime', new CDate().getTime());
 
-				jQuery.ajax( {
+				jQuery.ajax({
 					'url': url.getUrl()
 				})
-				.error(function() {
+				.fail(function() {
 					screen.error++;
 					window.flickerfreeScreen.calculateReRefresh(id);
 				})
@@ -368,7 +372,7 @@
 							usemap: domImg.attr('usemap'),
 							alt: domImg.attr('alt')
 						})
-						.error(function() {
+						.on('error', function() {
 							screen.error++;
 							window.flickerfreeScreen.calculateReRefresh(id);
 						})
@@ -421,7 +425,7 @@
 		},
 
 		/**
-		 * Getting shadow box height of graph image, asynchronious. Only for line graphs on dashboard.
+		 * Getting shadow box height of graph image, asynchronous. Only for line graphs on dashboard.
 		 * Will return xhr request for line graphs.
 		 *
 		 * @param {Curl}     url  Curl object for image request.
@@ -437,7 +441,7 @@
 				url.setArgument('_', (new Date).getTime().toString(34));
 
 				return $.get(url.getUrl(), {'onlyHeight': 1}, 'json')
-					.success(function(response, status, xhr) {
+					.done(function(response, status, xhr) {
 						cb(xhr.getResponseHeader('X-ZBX-SBOX-HEIGHT'))
 					});
 			}

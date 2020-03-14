@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2019 Zabbix SIA
+** Copyright (C) 2001-2020 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -54,12 +54,14 @@ $scriptFormList = (new CFormList())
 	)
 	->addRow((new CLabel(_('Commands'), 'command'))->setAsteriskMark(),
 		(new CTextArea('command', $data['command']))
+			->addClass(ZBX_STYLE_MONOSPACE_FONT)
 			->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 			->setMaxLength(255)
 			->setAriaRequired()
 	)
 	->addRow((new CLabel(_('Command'), 'commandipmi'))->setAsteriskMark(),
 		(new CTextBox('commandipmi', $data['commandipmi']))
+			->addClass(ZBX_STYLE_MONOSPACE_FONT)
 			->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 			->setAriaRequired()
 	)
