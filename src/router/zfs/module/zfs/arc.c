@@ -549,7 +549,8 @@ arc_stats_t arc_stats = {
 	{ "demand_hit_prescient_prefetch", KSTAT_DATA_UINT64 },
 	{ "arc_need_free",		KSTAT_DATA_UINT64 },
 	{ "arc_sys_free",		KSTAT_DATA_UINT64 },
-	{ "arc_raw_size",		KSTAT_DATA_UINT64 }
+	{ "arc_raw_size",		KSTAT_DATA_UINT64 },
+	{ "cached_only_in_progress",	KSTAT_DATA_UINT64 },
 };
 
 #define	ARCSTAT_MAX(stat, val) {					\
@@ -5551,6 +5552,17 @@ arc_read(zio_t *pio, spa_t *spa, const blkptr_t *bp,
 	ASSERT(!BP_IS_HOLE(bp));
 	ASSERT(!BP_IS_REDACTED(bp));
 
+	/*
+	 * Normally SPL_FSTRANS will already be set since kernel threads which
+	 * expect to call the DMU interfaces will set it when created.  System
+	 * calls are similarly handled by setting/cleaning the bit in the
+	 * registered callback (module/os/.../zfs/zpl_*).
+	 *
+	 * External consumers such as Lustre which call the exported DMU
+	 * interfaces may not have set SPL_FSTRANS.  To avoid a deadlock
+	 * on the hash_lock always set and clear the bit.
+	 */
+	fstrans_cookie_t cookie = spl_fstrans_mark();
 top:
 	if (!embedded_bp) {
 		/*
@@ -5574,6 +5586,13 @@ top:
 
 		if (HDR_IO_IN_PROGRESS(hdr)) {
 			zio_t *head_zio = hdr->b_l1hdr.b_acb->acb_zio_head;
+
+			if (*arc_flags & ARC_FLAG_CACHED_ONLY) {
+				mutex_exit(hash_lock);
+				ARCSTAT_BUMP(arcstat_cached_only_in_progress);
+				rc = SET_ERROR(ENOENT);
+				goto out;
+			}
 
 			ASSERT3P(head_zio, !=, NULL);
 			if ((hdr->b_flags & ARC_FLAG_PRIO_ASYNC_READ) &&
@@ -5710,12 +5729,21 @@ top:
 		uint64_t size;
 		abd_t *hdr_abd;
 
+		if (*arc_flags & ARC_FLAG_CACHED_ONLY) {
+			rc = SET_ERROR(ENOENT);
+			if (hash_lock != NULL)
+				mutex_exit(hash_lock);
+			goto out;
+		}
+
 		/*
 		 * Gracefully handle a damaged logical block size as a
 		 * checksum error.
 		 */
 		if (lsize > spa_maxblocksize(spa)) {
 			rc = SET_ERROR(ECKSUM);
+			if (hash_lock != NULL)
+				mutex_exit(hash_lock);
 			goto out;
 		}
 
@@ -6009,6 +6037,7 @@ out:
 	/* embedded bps don't actually go to disk */
 	if (!embedded_bp)
 		spa_read_history_add(spa, zb, *arc_flags);
+	spl_fstrans_unmark(cookie);
 	return (rc);
 }
 
