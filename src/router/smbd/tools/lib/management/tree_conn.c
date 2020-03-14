@@ -202,8 +202,11 @@ bind:
 	resp->status = USMBD_TREE_CONN_STATUS_OK;
 	resp->connection_flags = conn->flags;
 
-	if (sm_handle_tree_connect(req->session_id, user, conn))
+	if (sm_handle_tree_connect(req->session_id, user, conn)) {
 		pr_err("ERROR: we were unable to bind tree connection\n");
+		tcm_tree_conn_free(conn);
+		put_ksmbd_user(user);
+	}
 	return 0;
 
 out_error:
