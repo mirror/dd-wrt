@@ -20,6 +20,8 @@
 #include <ipc.h>
 #include <worker.h>
 #include <config_parser.h>
+#include <management/user.h>
+#include <management/share.h>
 
 static struct nl_sock *sk;
 
@@ -60,11 +62,38 @@ static int generic_event(int type, void *payload, size_t sz)
 	return 0;
 }
 
+static int parse_reload_configs(const char *pwddb, const char *smbconf)
+{
+	int ret;
+
+	pr_debug("Reload config\n");
+	usm_remove_all_users();
+	ret = cp_parse_pwddb(pwddb);
+	if (ret == -ENOENT) {
+		pr_err("User database file does not exist. %s\n",
+		       "Only guest sessions (if permitted) will work.");
+	} else if (ret) {
+		pr_err("Unable to parse user database\n");
+		return ret;
+	}
+
+	shm_remove_all_shares();
+	ret = cp_parse_reload_smbconf(smbconf);
+	if (ret)
+		pr_err("Unable to parse smb configuration file\n");
+	return ret;
+}
+
 static int handle_generic_event(struct nl_cache_ops *unused,
 				struct genl_cmd *cmd,
 				struct genl_info *info,
 				void *arg)
 {
+	if (ksmbd_health_status & KSMBD_SHOULD_RELOAD_CONFIG) {
+		parse_reload_configs(global_conf.pwddb, global_conf.smbconf);
+		ksmbd_health_status &= ~KSMBD_SHOULD_RELOAD_CONFIG;
+	}
+
 	if (!info->attrs[cmd->c_id])
 		return NL_SKIP;
 

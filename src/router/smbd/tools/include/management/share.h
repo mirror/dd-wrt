@@ -55,6 +55,7 @@ struct usmbd_share {
 	unsigned short	force_gid;
 
 	int		flags;
+	int		state;
 
 	char		*veto_list;
 	int		veto_list_sz;
@@ -143,6 +144,8 @@ struct usmbd_share *shm_lookup_share(char *name);
 
 struct smbconf_group;
 int shm_add_new_share(struct smbconf_group *group);
+
+void shm_remove_all_shares(void);
 
 void shm_destroy(void);
 int shm_init(void);

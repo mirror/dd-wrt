@@ -23,6 +23,8 @@
 #define pthread_rwlock_init(a,b)
 #define pthread_rwlock_destroy(a)
 
+#define KSMBD_SHARE_STATE_FREEING	1
+
 /*
  * WARNING:
  *
@@ -126,12 +128,14 @@ static void kill_usmbd_share(struct usmbd_share *share)
 
 static int __shm_remove_share(struct usmbd_share *share)
 {
-	int ret = -EINVAL;
+	int ret = 0;
 
-	pthread_rwlock_wrlock(&shares_table_lock);
-	if (list_remove(&shares_table, list_tokey(share->name)))
-		ret = 0;
-	pthread_rwlock_unlock(&shares_table_lock);
+	if (share->state != KSMBD_SHARE_STATE_FREEING) {
+		pthread_rwlock_wrlock(&shares_table_lock);
+		if (!list_remove(&shares_table, list_tokey(share->name)))
+			ret = -EINVAL;
+		pthread_rwlock_unlock(&shares_table_lock);
+	}
 
 	if (!ret)
 		kill_usmbd_share(share);
@@ -166,6 +170,21 @@ void put_usmbd_share(struct usmbd_share *share)
 		return;
 
 	__shm_remove_share(share);
+}
+
+static void put_share_callback(void *item, unsigned long long id, void *user_data)
+{
+	struct usmbd_share *share = (struct usmbd_share *)item;
+
+	share->state = KSMBD_SHARE_STATE_FREEING;
+	put_usmbd_share(share);
+}
+
+void shm_remove_all_shares(void)
+{
+	pthread_rwlock_wrlock(&shares_table_lock);
+	list_foreach(&shares_table, put_share_callback, NULL);
+	pthread_rwlock_unlock(&shares_table_lock);
 }
 
 static struct usmbd_share *new_usmbd_share(void)

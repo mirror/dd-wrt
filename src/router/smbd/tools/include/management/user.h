@@ -23,6 +23,7 @@ struct usmbd_user {
 
 	int		ref_count;
 	int		flags;
+	int		state;
 	pthread_rwlock_t	update_lock;
 };
 
@@ -45,6 +46,8 @@ int usm_update_user_password(struct usmbd_user *user, char *pass);
 
 int usm_add_new_user(char *name, char *pwd);
 int usm_add_update_user_from_pwdentry(char *data);
+
+void usm_remove_all_users(void);
 
 void usm_destroy(void);
 int usm_init(void);
