@@ -41,7 +41,8 @@ clean:
 install:
 	install -d $(BINDIR)
 	install -t $(BINDIR) apfsck
-	ln -fs -T $(BINDIR)/apfsck $(BINDIR)/fsck.apfs
+	cd $(BINDIR) && ln -fs -T apfsck fsck.apfs
+#	ln -fs -T $(BINDIR)/apfsck $(BINDIR)/fsck.apfs
 #	install -d $(MANDIR)
 #	install -m 644 -t $(MANDIR) apfsck.8
 #	ln -fs -T $(MANDIR)/apfsck.8 $(MANDIR)/fsck.apfs.8
