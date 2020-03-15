@@ -270,7 +270,12 @@ void start_samba3(void)
 		sprintf(parm, "vendor:dd-wrt,model:%s,sku:%s", nvram_safe_get("DD_BOARD"), nvram_safe_get("os_version"));
 		eval("wsdd2", "-d", "-N", nbname, "-G", wgname, "-b", parm);
 	}
-	eval("ksmbd.mountd", "-c", "/tmp/smb.conf", "-u", "/tmp/smb.db");
+	fp = fopen("/jffs/etc/smb.conf", "r");	//test if custom config is available
+	if (fp != NULL) {
+		fclose(fp);
+		eval("ksmbd.mountd", "-c", "/jffs/etc/smb.conf", "-u", "/jffs/etc/smb.db");
+	} else
+		eval("ksmbd.mountd", "-c", "/tmp/smb.conf", "-u", "/tmp/smb.db");
 #endif
 
 	dd_loginfo("smbd", "samba started\n");
