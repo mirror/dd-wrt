@@ -4968,7 +4968,6 @@ void start_wan_done(char *wan_ifname)
 	start_duallink();
 #endif
 #endif
-	start_wan_service();
 	/*
 	 * Start firewall 
 	 */
@@ -4993,6 +4992,7 @@ void start_wan_done(char *wan_ifname)
 		}
 #endif
 	}
+	start_wan_service();
 }
 
 void stop_wan(void)
