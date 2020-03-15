@@ -212,6 +212,10 @@ static char *getfsname(char *drive)
 		retvalue = "HPFS";
 		goto ret;
 	}
+	if (detect_apfs(&section, -1)) {
+		retvalue = "APFS";
+		goto ret;
+	}
 	if (detect_xfs(&section, -1)) {
 		retvalue = "XFS";
 		goto ret;
@@ -273,6 +277,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 	int ext2 = checkfs("ext2");
 	int ext3 = checkfs("ext3");
 	int ext4 = checkfs("ext4");
+	int apfs = checkfs("apfs");
 	int btrfs = checkfs("btrfs");
 	int exfat = checkfs("exfat");
 	int ntfs = checkfs("ntfs");
@@ -367,6 +372,8 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "document.write(\"<option value=\\\"ntfs\\\" %s >NTFS</option>\");\n", !strcmp(raidfs, "ntfs") ? "selected=\\\"selected\\\"" : "");
 			if (zfs)
 				websWrite(wp, "document.write(\"<option value=\\\"zfs\\\" %s >ZFS</option>\");\n", !strcmp(raidfs, "zfs") ? "selected=\\\"selected\\\"" : "");
+			if (apfs)
+				websWrite(wp, "document.write(\"<option value=\\\"apfs\\\" %s >APFS</option>\");\n", !strcmp(raidfs, "apfs") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script></select>\n");
 			websWrite(wp, "</td>\n");
 		}
@@ -560,6 +567,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "document.write(\"<option value=\\\"ntfs\\\" %s >NTFS</option>\");\n", !strcmp(fs, "NTFS") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"fat32\\\" %s >FAT32</option>\");\n", !strcmp(fs, "FAT32") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"zfs\\\" %s >ZFS</option>\");\n", !strcmp(fs, "ZFS") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"apfs\\\" %s >APFS</option>\");\n", !strcmp(fs, "APFS") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script></select>\n");
 			websWrite(wp, "</td>\n");
 			websWrite(wp, "<td>\n");
@@ -571,6 +579,8 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			else if (!strcmp(fs, "EXT3") && ext3)
 				dis = 0;
 			else if (!strcmp(fs, "EXT4") && ext4)
+				dis = 0;
+			else if (!strcmp(fs, "APFS") && apfs)
 				dis = 0;
 			else if (!strcmp(fs, "BTRFS") && btrfs)
 				dis = 0;
