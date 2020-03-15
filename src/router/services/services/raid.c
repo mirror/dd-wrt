@@ -45,6 +45,7 @@ void start_raid(void)
 	int xfs = 0;
 	int ext2 = 0;
 	int ext4 = 0;
+	int apfs = 0;
 	int exfat = 0;
 	int fat32 = 0;
 	int ntfs = 0;
@@ -64,6 +65,8 @@ void start_raid(void)
 				fat32 = 1;
 			if (!strcmp(fs, "xfs"))
 				xfs = 1;
+			if (!strcmp(fs, "apfs"))
+				apfs = 1;
 			if (!strcmp(fs, "ntfs"))
 				ntfs = 1;
 			if (!strcmp(fs, "zfs"))
@@ -155,6 +158,10 @@ void start_raid(void)
 		insmod("xfs");
 		dd_loginfo("raid", "XFS modules successfully loaded\n");
 	}
+	if (apfs) {
+		insmod("apfs");
+		dd_loginfo("raid", "APFS modules successfully loaded\n");
+	}
 	if (ext4 || ext2) {
 		insmod("crc16 mbcache ext2 jbd jbd2 ext3 ext4");
 		dd_loginfo("raid", "EXT4 modules successfully loaded\n");
@@ -215,6 +222,9 @@ void start_raid(void)
 				}
 				if (nvram_nmatch("xfs", "raidfs%d", i)) {
 					sysprintf("mkfs.xfs -f -L \"%s\" /dev/md%d", poolname, i);
+				}
+				if (nvram_nmatch("apfs", "raidfs%d", i)) {
+					sysprintf("mkfs.apfs -s -L \"%s\" /dev/md%d", poolname, i);
 				}
 				if (nvram_nmatch("btrfs", "raidfs%d", i)) {
 					sysprintf("mkfs.btrfs -f -L \"%s\" /dev/md%d", poolname, i);
@@ -315,6 +325,9 @@ void start_raid(void)
 			}
 			if (nvram_nmatch("exfat", "raidfs%d", i)) {
 				sysprintf("mount -t exfat -o iocharset=utf8 /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
+			}
+			if (nvram_nmatch("apfs", "raidfs%d", i)) {
+				sysprintf("mount -t apfs /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 			}
 			if (nvram_nmatch("fat32", "raidfs%d", i)) {
 				sysprintf("mount -t vfat -o iocharset=utf8 /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
