@@ -212,7 +212,7 @@ static char *getfsname(char *drive)
 		retvalue = "HPFS";
 		goto ret;
 	}
-	if (detect_apfs(&section, -1)) {
+	if (detect_apfs_volume(&section, -1)) {
 		retvalue = "APFS";
 		goto ret;
 	}
