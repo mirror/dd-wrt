@@ -38,7 +38,7 @@ clean:
 install:
 	install -d $(BINDIR)
 	install -t $(BINDIR) mkapfs
-	cd $(BINDIR) && ln -fs -T mkapfs mkapfs.apfs
+	cd $(BINDIR) && ln -fs -T mkapfs mkfs.apfs
 #	ln -fs -T $(BINDIR)/mkapfs $(BINDIR)/mkfs.apfs
 #	install -d $(MANDIR)
 #	install -m 644 -t $(MANDIR) mkapfs.8
