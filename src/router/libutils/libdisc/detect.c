@@ -50,7 +50,7 @@ int detect_fat(SECTION * section, int level);
 int detect_exfat(SECTION * section, int level);
 int detect_ntfs(SECTION * section, int level);
 int detect_hpfs(SECTION * section, int level);
-int detect_apfs(SECTION * section, int level);
+int detect_apfs_volume(SECTION * section, int level);
 int detect_dos_loader(SECTION * section, int level);
 
 /* in cdrom.c */
@@ -139,7 +139,7 @@ DETECTOR detectors[] = {
 	detect_exfat,
 	detect_ntfs,
 	detect_hpfs,
-	detect_apfs,
+	detect_apfs_volume,
 	detect_udf,
 	detect_cdrom_misc,
 	detect_iso,
