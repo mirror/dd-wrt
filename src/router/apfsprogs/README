@@ -1,0 +1,33 @@
+
+Apfsprogs is a suite of userland software to work with the Apple File System
+on Linux. For now only mkfs and fsck tools are available, both functional but
+lacking in features. Compatibility with the Apple implementations has barely
+been tested; please exercise caution, and report any issues that you find to
+<linux-apfs@googlegroups.com>.
+
+A Linux kernel module for mounting the filesystem can be retrieved from
+<git://github.com/eafer/linux-apfs-oot.git>. The main purpose of apfsprogs
+is to assist in testing the upcoming write support.
+
+Usage
+=====
+
+To build either the mkapfs or apfsck tool, just cd to its directory and run
+
+  make
+
+The resulting executable will have the name of the tool, and a man page is
+available under the same directory. If you run
+
+  make install
+
+the files will be copied to the typical locations in the user home folder: the
+binary is placed in ~/bin, and the man page in ~/share/man/man8. You can
+override those paths by setting the BINDIR and MANDIR variables, for example:
+
+  make install BINDIR=/sbin MANDIR=/usr/share/man/man8/
+
+Credits
+=======
+
+Written by Ernesto A. Fernández <ernesto.mnd.fernandez@gmail.com>.

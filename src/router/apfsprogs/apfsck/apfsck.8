@@ -1,0 +1,40 @@
+.\" apfsck.8 - manpage for apfsck
+.\"
+.\" Copyright (C) 2019 Ernesto A. Fernández <ernesto.mnd.fernandez@gmail.com>
+.\"
+.TH apfsck 8 "March 2019" "apfsprogs 0.1"
+.SH NAME
+apfsck \- check an APFS filesystem
+.SH SYNOPSIS
+.B apfsck
+[\-cuvw]
+.I device
+.SH DESCRIPTION
+.B apfsck
+is an experimental tool that checks an APFS filesystem for corruption.  When an
+issue is found it is reported, but no repair is attempted.  For that purpose,
+you should use the official tools provided by Apple.
+.SH OPTIONS
+.TP
+.B \-c
+Report if the filesystem shows signs of a recent crash.
+.TP
+.B \-u
+Report the presence of unknown/unsupported features.
+.TP
+.B \-v
+Print the version number of
+.B apfsck
+and exit.
+.TP
+.B \-w
+Report unexplained inconsistencies that may or may not be corruption.
+.SH EXIT STATUS
+The exit status is 0 if there was nothing to report, 1 otherwise.
+.SH REPORTING BUGS
+Please submit any issues that you find to the project's mailing list at
+<linux-apfs@googlegroups.com>.
+.SH AUTHOR
+Written by Ernesto A. Fernández <ernesto.mnd.fernandez@gmail.com>.
+.SH SEE ALSO
+.BR mkapfs (8)
