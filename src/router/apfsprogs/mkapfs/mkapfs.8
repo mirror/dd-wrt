@@ -1,0 +1,53 @@
+.\" mkapfs.8 - manpage for mkapfs
+.\"
+.\" Copyright (C) 2019 Ernesto A. Fernández <ernesto.mnd.fernandez@gmail.com>
+.\"
+.TH mkapfs 8 "May 2019" "apfsprogs 0.1"
+.SH NAME
+mkapfs \- create an APFS filesystem
+.SH SYNOPSIS
+.B mkapfs
+[\-sv]
+[\-L
+.IR label ]
+[\-U
+.IR UUID ]
+[\-u
+.IR UUID ]
+.I device
+.RI [ blocks ]
+.SH DESCRIPTION
+.B mkapfs
+is an experimental tool to create an APFS filesystem with a single volume on
+the given
+.IR device .
+The number of blocks in the container can be specified in
+.IR blocks ,
+otherwise the whole disk is used.
+.SH OPTIONS
+.TP
+.B \-s
+Enable case sensitivity for the volume.
+.TP
+.BI \-L " label"
+Set a label for the volume, with a maximum length of 255 bytes.
+.TP
+.BI \-U " UUID"
+Specify a UUID for the container, in the standard format. By default the value
+is chosen by /proc/sys/kernel/random/uuid.
+.TP
+.BI \-u " UUID"
+Specify a UUID for the volume, in the standard format. By default the value
+is chosen by /proc/sys/kernel/random/uuid.
+.TP
+.B \-v
+Print the version number of
+.B mkapfs
+and exit.
+.SH REPORTING BUGS
+Please submit any issues that you find to the project's mailing list at
+<linux-apfs@googlegroups.com>.
+.SH AUTHOR
+Written by Ernesto A. Fernández <ernesto.mnd.fernandez@gmail.com>.
+.SH SEE ALSO
+.BR apfsck (8)
