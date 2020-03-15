@@ -1056,7 +1056,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Pacific/Fakaofo", "<+13>-13" }
 	,
-	{ "Pacific/Fiji", "<+12>-12<+13>,M11.1.0,M1.2.2/123" }
+	{ "Pacific/Fiji", "<+12>-12<+13>,M11.2.0,M1.2.3/99" }
 	,
 	{ "Pacific/Funafuti", "<+12>-12" }
 	,
@@ -1088,7 +1088,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Pacific/Niue", "<-11>11" }
 	,
-	{ "Pacific/Norfolk", "<+11>-11" }
+	{ "Pacific/Norfolk", "<+11>-11<+12>,M10.1.0,M4.1.0/3" }
 	,
 	{ "Pacific/Noumea", "<+11>-11" }
 	,
