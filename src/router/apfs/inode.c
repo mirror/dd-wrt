@@ -98,10 +98,10 @@ static int apfs_inode_from_query(struct apfs_query *query, struct inode *inode)
 		ai->i_nchildren = le32_to_cpu(inode_val->nchildren);
 	}
 
-	inode->i_atime = ns_to_timespec64(le64_to_cpu(inode_val->access_time));
-	inode->i_ctime = ns_to_timespec64(le64_to_cpu(inode_val->change_time));
-	inode->i_mtime = ns_to_timespec64(le64_to_cpu(inode_val->mod_time));
-	ai->i_crtime = ns_to_timespec64(le64_to_cpu(inode_val->create_time));
+	inode->i_atime = ns_to_timespec(le64_to_cpu(inode_val->access_time));
+	inode->i_ctime = ns_to_timespec(le64_to_cpu(inode_val->change_time));
+	inode->i_mtime = ns_to_timespec(le64_to_cpu(inode_val->mod_time));
+	ai->i_crtime = ns_to_timespec(le64_to_cpu(inode_val->create_time));
 
 	inode->i_size = inode->i_blocks = 0; /* TODO: compressed inodes */
 	xlen = apfs_find_xfield(inode_val->xfields,
@@ -302,7 +302,7 @@ static int apfs_build_inode_val(struct inode *inode, struct qstr *qname,
 	val->parent_id = cpu_to_le64(APFS_I(inode)->i_parent_id);
 	val->private_id = cpu_to_le64(apfs_ino(inode));
 
-	val->mod_time = cpu_to_le64(timespec64_to_ns(&inode->i_mtime));
+	val->mod_time = cpu_to_le64(timespec_to_ns(&inode->i_mtime));
 	val->create_time = val->change_time = val->access_time = val->mod_time;
 
 	if (S_ISDIR(inode->i_mode))
@@ -429,10 +429,10 @@ int apfs_update_inode(struct inode *inode, char *new_name)
 	if (gid_valid(sbi->s_gid))
 		inode_raw->group = cpu_to_le32(ai->i_saved_gid);
 
-	inode_raw->access_time = cpu_to_le64(timespec64_to_ns(&inode->i_atime));
-	inode_raw->change_time = cpu_to_le64(timespec64_to_ns(&inode->i_ctime));
-	inode_raw->mod_time = cpu_to_le64(timespec64_to_ns(&inode->i_mtime));
-	inode_raw->create_time = cpu_to_le64(timespec64_to_ns(&ai->i_crtime));
+	inode_raw->access_time = cpu_to_le64(timespec_to_ns(&inode->i_atime));
+	inode_raw->change_time = cpu_to_le64(timespec_to_ns(&inode->i_ctime));
+	inode_raw->mod_time = cpu_to_le64(timespec_to_ns(&inode->i_mtime));
+	inode_raw->create_time = cpu_to_le64(timespec_to_ns(&ai->i_crtime));
 
 	if (S_ISDIR(inode->i_mode)) {
 		inode_raw->nchildren = cpu_to_le32(ai->i_nchildren);
@@ -544,7 +544,7 @@ struct inode *apfs_new_inode(struct inode *dir, umode_t mode, dev_t rdev)
 	struct inode *inode;
 	struct apfs_inode_info *ai;
 	u64 cnid;
-	struct timespec64 now;
+	struct timespec now;
 
 	/* Updating on-disk structures here is odd, but it works for now */
 	ASSERT(sbi->s_xid == le64_to_cpu(vsb_raw->apfs_o.o_xid));
@@ -566,7 +566,7 @@ struct inode *apfs_new_inode(struct inode *dir, umode_t mode, dev_t rdev)
 
 	now = current_time(inode);
 	inode->i_atime = inode->i_mtime = inode->i_ctime = ai->i_crtime = now;
-	vsb_raw->apfs_last_mod_time = cpu_to_le64(timespec64_to_ns(&now));
+	vsb_raw->apfs_last_mod_time = cpu_to_le64(timespec_to_ns(&now));
 
 	/* Symlinks are not yet supported */
 	ASSERT(!S_ISLNK(mode));
