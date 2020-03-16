@@ -248,7 +248,7 @@ addEvent(window, "unload", function() {
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_radkey"); %></div>
-				<input size="20" maxlength="63" type="password" autocomplete="off" name="pppoeserver_sharedkey" value="d6nw5v1x2pc7st9m" />
+				<input size="20" maxlength="63" type="password" autocomplete="new-password" name="pppoeserver_sharedkey" value="d6nw5v1x2pc7st9m" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("radius.label23"); %></div>
@@ -274,7 +274,7 @@ addEvent(window, "unload", function() {
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("radius.label27"); %></div>
-				<input size="20" maxlength="63" type="password" autocomplete="off" name="pppoeserver_sharedkey_backup" value="<% nvg("pppoeserver_sharedkey_backup"); %>" />
+				<input size="20" maxlength="63" type="password" autocomplete="new-password" name="pppoeserver_sharedkey_backup" value="<% nvg("pppoeserver_sharedkey_backup"); %>" />
 			</div>
 	</fieldset>
 </div>

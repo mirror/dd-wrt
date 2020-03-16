@@ -175,7 +175,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 		  							<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="off" id="ddns_passwd" name="ddns_passwd" size="35" maxlength="64" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd" name="ddns_passwd" size="35" maxlength="64" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>			
 								<div class="setting">
@@ -231,7 +231,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="off" id="ddns_passwd_2" name="ddns_passwd_2" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_2"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_2" name="ddns_passwd_2" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_2"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_2', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
@@ -271,7 +271,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="off" id="ddns_passwd_3" name="ddns_passwd_3" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_3"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_3" name="ddns_passwd_3" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_3"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_3', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
@@ -311,7 +311,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="off" id="ddns_passwd_4" name="ddns_passwd_4" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_4"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_4" name="ddns_passwd_4" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_4"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_4', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
@@ -351,7 +351,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="off" id="ddns_passwd_6" name="ddns_passwd_6" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_6"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_6" name="ddns_passwd_6" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_6"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_6', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
@@ -405,7 +405,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="off" id="ddns_passwd_7" name="ddns_passwd_7" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_7"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_7" name="ddns_passwd_7" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_7"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_7', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
@@ -449,7 +449,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="off" id="ddns_passwd_8" name="ddns_passwd_8" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_8"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_8" name="ddns_passwd_8" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_8"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_8', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
@@ -488,7 +488,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="off" id="ddns_passwd_9" name="ddns_passwd_9" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_9"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_9" name="ddns_passwd_9" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_9"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_9', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
@@ -527,7 +527,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="off" id="ddns_passwd_10" name="ddns_passwd_10" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_10"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_10" name="ddns_passwd_10" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_10"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_10', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
@@ -563,7 +563,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="off" id="ddns_passwd_11" name="ddns_passwd_11" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_11"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_11" name="ddns_passwd_11" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_11"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_11', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
@@ -607,7 +607,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="off" id="ddns_passwd_5" name="ddns_passwd_5" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_5"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_5" name="ddns_passwd_5" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_5"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_5', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
