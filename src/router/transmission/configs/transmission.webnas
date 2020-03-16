@@ -32,11 +32,11 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.usrname"); %></div>
-			<input size="20" maxlength="63" class="text" name="transmission_username" value="<% nvg("transmission_username"); %>" />
+			<input size="20" maxlength="63" class="text" name="transmission_username" autocomplete="new-password" value="<% nvg("transmission_username"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.passwd"); %></div>
-			<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" autocomplete="off" name="transmission_password" />
+			<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" autocomplete="new-password" name="transmission_password" />
 		</div>
 	</div>
 </fieldset><br/>
