@@ -1,6 +1,6 @@
 <div class="setting">
 	<div class="label"><% tran("share.usrname"); %></div>
-	<input name="ppp_username" size="30" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvg("ppp_username"); %>" />
+	<input name="ppp_username" size="30" maxlength="63" autocomplete="new-password" onblur="valid_name(this,share.usrname)" value="<% nvg("ppp_username"); %>" />
 </div>
 <div class="setting">
 	<div class="label"><% tran("share.passwd"); %></div>
