@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #define __USE_XOPEN
 #include <signal.h>
+#include <syslog.h>
 #include <time.h>
 #include <usb.h>
 #include <sys/stat.h>
@@ -56,6 +57,7 @@ static void read_password(void)
 	const char filename[] = "/etc/sispmctl/password";
 	char buf[BUFSIZE];
 	char *pos;
+	size_t len;
 
 	file = fopen(filename, "r");
 	if (!file) {
@@ -67,7 +69,11 @@ static void read_password(void)
 		return;
 	}
 	memset(buf, 0, BUFSIZE);
-	fread(buf, 1, BUFSIZE - 1, file);
+	len = fread(buf, 1, BUFSIZE - 1, file);
+	if (!len) {
+		fprintf(stderr, "Failed to read password\n");
+		exit(EXIT_FAILURE);
+	}
 	pos = strchr(buf, '\n');
 	if (pos) {
 		*pos = '\0';
@@ -495,7 +501,8 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 			case 'L':{
 					int *s;
 
-    					read_password();
+					openlog("sispmctl", LOG_PID, LOG_INFO);
+					read_password();
 					if (verbose)
 						printf("Server goes to listen mode now.\n");
 					if ((s = socket_init(bindaddr)) != NULL) {
