@@ -17,7 +17,7 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.passwd"); %></div>
-			<input type="password" autocomplete="off" id="samba_password" maxlength="100" size="25" name="samba_password" value="<% nvg("samba_password"); %>" />&nbsp;&nbsp;&nbsp;
+			<input type="password" autocomplete="new-password" id="samba_password" maxlength="100" size="25" name="samba_password" value="<% nvg("samba_password"); %>" />&nbsp;&nbsp;&nbsp;
 			<input type="checkbox" name="_samba_password_unmask" value="0" onclick="setElementMask('samba_password', this.checked)" />&nbsp;<% tran("share.unmask"); %>
 		</div>
 		<div class="setting">
