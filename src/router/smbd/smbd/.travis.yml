@@ -8,7 +8,7 @@ notifications:
 before_script:
  # Download the kernel
  - sudo apt-get install libelf-dev wget tar gzip python
- - wget https://mirrors.edge.kernel.org/pub/linux/kernel/v4.x/linux-4.1.36.tar.gz
+ - wget --no-check-certificate https://mirrors.edge.kernel.org/pub/linux/kernel/v4.x/linux-4.1.36.tar.gz
  - tar xf linux-4.1.36.tar.gz
  - mv linux-4.1.36 linux-stable
  - ./.travis_get_mainline_kernel
