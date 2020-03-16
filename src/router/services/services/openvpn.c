@@ -651,7 +651,6 @@ void start_openvpn(void)
                         "then rmmod ebtable_nat\n" "\t rmmod ebtables\n", ovpniface, ovpniface);
                 } */
 	fclose(fp);
-	save2file_A_input("-p %s --dport %s -j %s", nvram_match("openvpn_proto", "udp") ? "udp" : "tcp", nvram_safe_get("openvpn_port"), log_accept);
 
 	eval("iptables", "-I", "INPUT", "-p", nvram_match("openvpn_proto", "udp") ? "udp" : "tcp", "--dport", nvram_safe_get("openvpn_port"), "-j", "ACCEPT");
 
