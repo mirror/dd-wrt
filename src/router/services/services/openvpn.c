@@ -54,7 +54,7 @@ static void run_openvpn(char *prg, char *path)
 
 void create_openvpnrules(FILE * fp)
 {
-	fprintf(fp, "cat << EOF > /tmp/openvpncl_fw.sh\n" "#!/bin/sh\n"); // write firewall rules on route up to separate script to expand env. parameters
+	fprintf(fp, "cat << EOF > /tmp/openvpncl_fw.sh\n" "#!/bin/sh\n");	// write firewall rules on route up to separate script to expand env. parameters
 	if (nvram_matchi("openvpncl_nat", 1)) {
 		fprintf(fp, "iptables -D POSTROUTING -t nat -o $dev -j MASQUERADE\n"	//
 			"iptables -I POSTROUTING -t nat -o $dev -j MASQUERADE\n");
@@ -112,7 +112,7 @@ void create_openvpnrules(FILE * fp)
 
 void create_openvpnserverrules(FILE * fp)
 {
-	fprintf(fp, "cat << EOF > /tmp/openvpnsrv_fw.sh\n" "#!/bin/sh\n"); // write firewall rules on route up to separate script to expand env. parameters
+	fprintf(fp, "cat << EOF > /tmp/openvpnsrv_fw.sh\n" "#!/bin/sh\n");	// write firewall rules on route up to separate script to expand env. parameters
 	if (nvram_matchi("block_multicast", 0)	//block multicast on bridged vpns
 	    && nvram_match("openvpn_tuntap", "tap"))
 		fprintf(fp, "insmod ebtables\n" "insmod ebtable_filter\n" "insmod ebtable_nat\n" "insmod ebt_pkttype\n"
@@ -651,6 +651,10 @@ void start_openvpn(void)
                         "then rmmod ebtable_nat\n" "\t rmmod ebtables\n", ovpniface, ovpniface);
                 } */
 	fclose(fp);
+	save2file_A_input("-p %s --dport %s -j %s", nvram_match("openvpn_proto", "udp") ? "udp" : "tcp", nvram_safe_get("openvpn_port"), log_accept);
+
+	eval("iptables", "-I", "INPUT", "-p", nvram_match("openvpn_proto", "udp") ? "udp" : "tcp", "--dport", nvram_safe_get("openvpn_port"), "-j", "ACCEPT");
+
 	chmod("/tmp/openvpncl/route-up.sh", 0700);
 	chmod("/tmp/openvpncl/route-down.sh", 0700);
 	run_openvpn("openvpn", "openvpncl");
@@ -675,7 +679,7 @@ void stop_openvpn(void)
 		unlink("/tmp/openvpncl/openvpn.conf");
 		unlink("/tmp/openvpncl/route-up.sh");
 		unlink("/tmp/openvpncl/route-down.sh");
-		unlink("/tmp/openvpncl_fw.sh"); //remove created firewall rules to prevent used by Firewall if VPN is down
+		unlink("/tmp/openvpncl_fw.sh");	//remove created firewall rules to prevent used by Firewall if VPN is down
 	}
 }
 
