@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <syslog.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -175,6 +176,7 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 	}
 
 	if (chdir(homedir) != 0) {
+		syslog(LOG_ERR, "Cannot access directory %s\n", homedir);
 		bad_request(out);
 		return;
 	}
@@ -185,6 +187,7 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 	in = fopen(ptr, "r");
 
 	if (in == NULL) {
+		syslog(LOG_ERR, "Cannot open %s\n", ptr);
 		bad_request(out);
 		return;
 	}
@@ -193,6 +196,7 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 	udev = get_handle(dev);
 	if (udev == NULL) {
 		fprintf(stderr, "No access to Gembird #%d USB device %s\n", devnum, dev->filename);
+		syslog(LOG_ERR, "No access to Gembird #%d USB device %s\n", devnum, dev->filename);
 		service_not_available(out);
 		fclose(in);
 		return;
@@ -239,7 +243,8 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 
 				if (trm != NULL) {
 					if (num == NULL) {
-						fprintf(stderr, "Command-Format: $$exec(#)?positive:negative$$  " "ERROR at #");
+						fprintf(stderr, "Command-Format: $$exec(#)?positive:negative$$ - " "ERROR at #\n");
+						syslog(LOG_ERR, "Command-Format: $$exec(#)?positive:negative$$ - " "ERROR at #\n");
 						service_not_available(out);
 						fclose(in);
 						return;
@@ -256,7 +261,8 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 
 					if (strncasecmp(cmd, "on(", 3) == 0) {
 						if (trm[1] != '$' || !pos || !neg) {
-							fprintf(stderr, "Command-Format: $$on(#)?positive:negative$$");
+							fprintf(stderr, "Command-Format: $$on(#)?positive:negative$$\n");
+							syslog(LOG_ERR, "Command-Format: $$on(#)?positive:negative$$\n");
 							service_not_available(out);
 							fclose(in);
 							return;
@@ -269,7 +275,8 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 							send(out, neg, trm - neg, 0);
 					} else if (strncasecmp(cmd, "off(", 4) == 0) {
 						if (trm[1] != '$' || !pos || !neg) {
-							fprintf(stderr, "Command-Format: $$off(#)?positive:negative$$");
+							fprintf(stderr, "Command-Format: $$off(#)?positive:negative$$\n");
+							syslog(LOG_ERR, "Command-Format: $$off(#)?positive:negative$$\n");
 							service_not_available(out);
 							fclose(in);
 							return;
@@ -282,7 +289,8 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 							send(out, neg, trm - neg, 0);
 					} else if (strncasecmp(cmd, "toggle(", 7) == 0) {
 						if (trm[1] != '$' || !pos || !neg) {
-							fprintf(stderr, "Command-Format: $$toggle(#)?positive:negative$$");
+							fprintf(stderr, "Command-Format: $$toggle(#)?positive:negative$$\n");
+							syslog(LOG_ERR, "Command-Format: $$toggle(#)?positive:negative$$\n");
 							service_not_available(out);
 							fclose(in);
 							return;
@@ -298,7 +306,8 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 						}
 					} else if (strncasecmp(cmd, "status(", 7) == 0) {
 						if (trm[1] != '$' || !pos || !neg) {
-							fprintf(stderr, "Command-Format: $$status(#)?positive:negative$$");
+							fprintf(stderr, "Command-Format: $$status(#)?positive:negative$$\n");
+							syslog(LOG_ERR, "Command-Format: $$status(#)?positive:negative$$\n");
 							service_not_available(out);
 							fclose(in);
 							return;
@@ -311,7 +320,8 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 							send(out, neg, trm - neg, 0);
 					} else if (strncasecmp(cmd, "version(", 8) == 0) {
 						if (trm[1] != '$') {
-							fprintf(stderr, "Command-Format: $$version()$$");
+							fprintf(stderr, "Command-Format: $$version()$$\n");
+							syslog(LOG_ERR, "Command-Format: $$version()$$\n");
 							service_not_available(out);
 							fclose(in);
 							return;
