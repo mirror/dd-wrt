@@ -68,7 +68,7 @@
 						</div>
 						<div class="setting">
 							<div class="label"><% tran("service.pppoesrv_radkey"); %></div>
-							<input size="20" maxlength="63" type="password" autocomplete="off" name="proftpd_sharedkey" value="d6ew5v1x2pc7st9m" />
+							<input size="20" maxlength="63" type="password" autocomplete="new-password" name="proftpd_sharedkey" value="d6ew5v1x2pc7st9m" />
 						</div>
 				</fieldset><br />
 			</div>
