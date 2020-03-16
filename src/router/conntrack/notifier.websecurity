@@ -24,11 +24,11 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.warn_user"); %></div>
-			<input size="25" name="warn_user" value="<% nvram_get("warn_user"); %>" />
+			<input size="25" name="warn_user" autocomplete="new-password" value="<% nvram_get("warn_user"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.warn_pass"); %></div>
-			<input size="25" type="password" name="warn_pass" value="d6nw5v1x2pc7st9m" />
+			<input size="25" type="password" autocomplete="new-password" name="warn_pass" value="d6nw5v1x2pc7st9m" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.warn_from"); %></div>
