@@ -163,7 +163,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="setup" action="applyuser.cgi" method="post" autocomplete="off">
+						<form name="setup" action="applyuser.cgi" method="post" autocomplete="new-password">
 							<input type="hidden" name="submit_button" value="Services" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />

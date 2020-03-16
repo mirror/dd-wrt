@@ -77,7 +77,7 @@ function to_apply(F) {
 					    </div>
 					    <div class="setting">
 						<div class="label"><% tran("service.milkfish_dspassword"); %></div>
-					        <input type="password" autocomplete="off" size="27" name="milkfish_dspassword" value="<% nvg("milkfish_dspassword"); %>" />
+					        <input type="password" autocomplete="new-password" size="27" name="milkfish_dspassword" value="<% nvg("milkfish_dspassword"); %>" />
 					    </div>
 					
 					<br />
