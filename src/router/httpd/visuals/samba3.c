@@ -226,11 +226,11 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "		<tr %s>\n", buffer);
 
 		websWrite(wp, "			<td id=\"n_smbuser_user\" valign=\"top\" width=\"1%%\" align=\"center\">\n");
-		websWrite(wp, "				<input type=\"text\" name=\"smbuser_username%s\" value=\"%s\" size=\"20\">\n", number, cu->username);
+		websWrite(wp, "				<input type=\"text\" name=\"smbuser_username%s\" autocomplete=\"new-password\" value=\"%s\" size=\"20\">\n", number, cu->username);
 		websWrite(wp, "			</td>\n");
 
 		websWrite(wp, "			<td id=\"n_smbuser_pass\" valign=\"top\" align=\"left\">\n");
-		websWrite(wp, "				<input type=\"password\" autocomplete=\"off\" name=\"smbuser_password%s\" id=\"smbuser_password%s\" value=\"%s\" size=\"12\">&nbsp;\n", number, number,
+		websWrite(wp, "				<input type=\"password\" autocomplete=\"new-password\" name=\"smbuser_password%s\" id=\"smbuser_password%s\" value=\"%s\" size=\"12\">&nbsp;\n", number, number,
 			  cu->password);
 		//websWrite(wp, "                               <div style=\"float: left;padding-top: 2px;\">\n");
 		websWrite(wp,
