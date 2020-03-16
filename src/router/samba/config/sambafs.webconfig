@@ -13,7 +13,7 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.usrname"); %></div>
-			<input maxlength="100" size="25" name="samba_user" value="<% nvg("samba_user"); %>" />
+			<input maxlength="100" autocomplete="new-password" size="25" name="samba_user" value="<% nvg("samba_user"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.passwd"); %></div>
