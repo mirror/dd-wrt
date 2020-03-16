@@ -195,7 +195,7 @@ struct apfs_wrapped_meta_crypto_state {
  * Structure containing information about a program that modified the volume
  */
 struct apfs_modified_by {
-	u8 id[APFS_MODIFIED_NAMELEN];
+	char id[APFS_MODIFIED_NAMELEN];
 	unsigned long long timestamp;
 	unsigned long long last_xid;
 } __packed;
@@ -252,7 +252,7 @@ struct apfs_superblock {
 /*110*/ struct apfs_modified_by apfs_formatted_by;
 /*140*/ struct apfs_modified_by apfs_modified_by[APFS_MAX_HIST];
 
-/*2C0*/ u8 apfs_volname[APFS_VOLNAME_LEN];
+/*2C0*/ char apfs_volname[APFS_VOLNAME_LEN];
 /*3C0*/ unsigned int apfs_next_doc_id;
 
 	unsigned short apfs_role;
@@ -262,7 +262,7 @@ struct apfs_superblock {
 	unsigned long long apfs_er_state_oid;
 } __packed;
 
-#define FIRST_VOL_BNO 0x20002
+#define FIRST_VOL_BNO 20002
 #define APPLE_NX_DEFAULT_BLOCKSIZE 4096
 #define APFS_NX_MAGIC				0x4253584E
 
@@ -281,10 +281,9 @@ int detect_apfs_volume(SECTION * section, int level)
 		print_line(level + 1, "UUID %s", s);
 		if (get_buffer(section, FIRST_VOL_BNO * le32toh(nxsb->nx_block_size), sizeof(*sb), (void **)&sb) < sizeof(*sb))
 			return 0;
-
 		if (le32toh(sb->apfs_magic) == 0x42535041) {
 			print_line(level, "APFS Volume");
-			get_pstring(sb->apfs_volname, s);
+			strcpy(s, sb->apfs_volname);
 			format_ascii(s, t);
 			print_line(level + 1, "Volume name \"%s\"", t);
 
