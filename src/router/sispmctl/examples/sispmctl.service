@@ -26,5 +26,5 @@ Type=forking
 WorkingDirectory=/
 ExecStart=/usr/local/bin/sispmctl -p 2638 -l
 SyslogIdentifier=sispmctl
-Restart=on-failure
+Restart=always
 RestartSec=5

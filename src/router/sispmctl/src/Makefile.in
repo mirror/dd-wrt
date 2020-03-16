@@ -133,7 +133,8 @@ am__uninstall_files_from_dir = { \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" \
-	"$(DESTDIR)$(pkgdata1dir)" "$(DESTDIR)$(pkgdata2dir)"
+	"$(DESTDIR)$(pkgdata1dir)" "$(DESTDIR)$(pkgdata2dir)" \
+	"$(DESTDIR)$(pkgdata3dir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libsispmctl_la_LIBADD =
 am_libsispmctl_la_OBJECTS = process.lo sispm_ctl.lo nethelp.lo \
@@ -192,7 +193,7 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
-DATA = $(pkgdata1_DATA) $(pkgdata2_DATA)
+DATA = $(pkgdata1_DATA) $(pkgdata2_DATA) $(pkgdata3_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -347,18 +348,21 @@ libsispmctl_la_LDFLAGS = \
 lib_LTLIBRARIES = libsispmctl.la
 sispmctl_LDADD = libsispmctl.la
 EXTRA_DIST = \
-	web1/index.html web1/off1.html web1/off3.html web1/on1.html \
-	web1/on3.html web1/status0.png web1/style.css web1/logo.png \
-	web1/off2.html web1/off4.html web1/on2.html web1/on4.html \
-	web1/status1.png web2/index.html web2/off1.html web2/off3.html \
-	web2/on1.html web2/on3.html web2/style.css web2/logo.png \
-	web2/off2.html web2/off4.html web2/on2.html web2/on4.html \
-	web2/off.gif web2/on.gif web2/onoff.gif 
+	web1/index.html web1/logo.png web1/off1.html web1/off2.html \
+	web1/off3.html web1/off4.html web1/on1.html web1/on2.html \
+	web1/on3.html web1/on4.html web1/status0.png web1/status1.png \
+	web1/style.css web2/index.html web2/logo.svg web2/off1.html \
+	web2/off2.html web2/off3.html web2/off4.html web2/on1.html \
+	web2/on2.html web2/on3.html web2/on4.html web2/style.css \
+	web3/index.html web3/logo.svg web3/off1.html web3/off2.html \
+	web3/off3.html web3/off4.html web3/on1.html web3/on2.html \
+	web3/on3.html web3/on4.html web3/style.css
 
 @WEBLESSCOND_FALSE@AM_CFLAGS = -Wall -DBINDADDR="\"@BINDADDR@\"" -DDATADIR="\"@WEBDIR@\""
 @WEBLESSCOND_TRUE@AM_CFLAGS = -Wall -DWEBLESS=@WEBLESS@
 @WEBLESSCOND_FALSE@pkgdata1dir = "$(docdir)/httpd/skin1"
 @WEBLESSCOND_FALSE@pkgdata2dir = "$(docdir)/httpd/skin2"
+@WEBLESSCOND_FALSE@pkgdata3dir = "$(docdir)/httpd/skin3"
 @WEBLESSCOND_FALSE@pkgdata1_DATA = \
 @WEBLESSCOND_FALSE@	web1/index.html web1/logo.png web1/off1.html web1/off2.html \
 @WEBLESSCOND_FALSE@	web1/off3.html web1/off4.html web1/on1.html web1/on2.html \
@@ -366,10 +370,14 @@ EXTRA_DIST = \
 @WEBLESSCOND_FALSE@	web1/style.css
 
 @WEBLESSCOND_FALSE@pkgdata2_DATA = \
-@WEBLESSCOND_FALSE@	web2/index.html web2/logo.png web2/off1.html web2/off2.html \
-@WEBLESSCOND_FALSE@	web2/off3.html web2/off4.html web2/off.gif web2/on1.html \
-@WEBLESSCOND_FALSE@	web2/on2.html web2/on3.html web2/on4.html web2/on.gif web2/onoff.gif \
-@WEBLESSCOND_FALSE@	web2/style.css 
+@WEBLESSCOND_FALSE@	web2/index.html web2/logo.svg web2/off1.html web2/off2.html \
+@WEBLESSCOND_FALSE@	web2/off3.html web2/off4.html web2/on1.html web2/on2.html \
+@WEBLESSCOND_FALSE@	web2/on3.html web2/on4.html web2/style.css
+
+@WEBLESSCOND_FALSE@pkgdata3_DATA = \
+@WEBLESSCOND_FALSE@	web3/index.html web3/logo.svg web3/off1.html web3/off2.html \
+@WEBLESSCOND_FALSE@	web3/off3.html web3/off4.html web3/on1.html web3/on2.html \
+@WEBLESSCOND_FALSE@	web3/on3.html web3/on4.html web3/style.css
 
 libsispmctl_la_SOURCES = \
 	process.c sispm_ctl.c nethelp.c socket.c sispm_ctl.h nethelp.h socket.h
@@ -582,6 +590,27 @@ uninstall-pkgdata2DATA:
 	@list='$(pkgdata2_DATA)'; test -n "$(pkgdata2dir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(pkgdata2dir)'; $(am__uninstall_files_from_dir)
+install-pkgdata3DATA: $(pkgdata3_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(pkgdata3_DATA)'; test -n "$(pkgdata3dir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(pkgdata3dir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(pkgdata3dir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(pkgdata3dir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(pkgdata3dir)" || exit $$?; \
+	done
+
+uninstall-pkgdata3DATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(pkgdata3_DATA)'; test -n "$(pkgdata3dir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(pkgdata3dir)'; $(am__uninstall_files_from_dir)
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -671,7 +700,7 @@ all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) $(DATA)
 install-binPROGRAMS: install-libLTLIBRARIES
 
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(pkgdata1dir)" "$(DESTDIR)$(pkgdata2dir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(pkgdata1dir)" "$(DESTDIR)$(pkgdata2dir)" "$(DESTDIR)$(pkgdata3dir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -728,7 +757,7 @@ info: info-am
 info-am:
 
 install-data-am: install-data-local install-pkgdata1DATA \
-	install-pkgdata2DATA
+	install-pkgdata2DATA install-pkgdata3DATA
 
 install-dvi: install-dvi-am
 
@@ -775,7 +804,8 @@ ps: ps-am
 ps-am:
 
 uninstall-am: uninstall-binPROGRAMS uninstall-libLTLIBRARIES \
-	uninstall-local uninstall-pkgdata1DATA uninstall-pkgdata2DATA
+	uninstall-local uninstall-pkgdata1DATA uninstall-pkgdata2DATA \
+	uninstall-pkgdata3DATA
 
 .MAKE: install-am install-strip
 
@@ -789,20 +819,21 @@ uninstall-am: uninstall-binPROGRAMS uninstall-libLTLIBRARIES \
 	install-exec install-exec-am install-html install-html-am \
 	install-info install-info-am install-libLTLIBRARIES \
 	install-man install-pdf install-pdf-am install-pkgdata1DATA \
-	install-pkgdata2DATA install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am uninstall-binPROGRAMS \
-	uninstall-libLTLIBRARIES uninstall-local \
-	uninstall-pkgdata1DATA uninstall-pkgdata2DATA
+	install-pkgdata2DATA install-pkgdata3DATA install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
+	uninstall-am uninstall-binPROGRAMS uninstall-libLTLIBRARIES \
+	uninstall-local uninstall-pkgdata1DATA uninstall-pkgdata2DATA \
+	uninstall-pkgdata3DATA
 
 .PRECIOUS: Makefile
 
 
 install-data-local:
 @WEBLESSCOND_FALSE@	mkdir -p "$(DESTDIR)$(docdir)/httpd/skin1"
-@WEBLESSCOND_FALSE@	cd "$(DESTDIR)$(docdir)" && ln -sf httpd/skin1 skin
+@WEBLESSCOND_FALSE@	cd "$(DESTDIR)$(docdir)" && ln -sf httpd/skin2 skin
 
 uninstall-local:
 	rm -rf $(DESTDIR)$(datadir)/$(PACKAGE)/httpd

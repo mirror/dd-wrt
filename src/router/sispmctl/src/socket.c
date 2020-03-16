@@ -23,7 +23,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
-#include <netinet/tcp.h>
 #include <time.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -41,27 +40,6 @@
 
 #ifndef WEBLESS
 int listenport = LISTENPORT;
-
-#if defined(TCP_CORK) && !defined(TCP_NOPUSH)
-#define TCP_NOPUSH TCP_CORK
-/* (Linux's TCP_CORK is basically the same as BSD's TCP_NOPUSH.) */
-#endif
-
-static void setnaggle(int sock, int on)
-{
-	int r;
-	/* Set the TCP_NOPUSH socket option, to try and avoid the 0.2 second
-	 ** delay between sending the headers and sending the data.  A better
-	 ** solution is writev() (as used in thttpd), or send the headers with
-	 ** send(MSG_MORE) (only available in Linux so far).
-	 */
-	r = on;
-	(void)setsockopt(sock, IPPROTO_TCP, TCP_NOPUSH, (void *)&r, sizeof(r));
-	if (on) {
-		r = 1;
-		(void)setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void *)&r, sizeof(r));
-	}
-}
 
 void l_listen(int *sock, struct usb_device *dev, int devnum)
 {
@@ -83,17 +61,10 @@ void l_listen(int *sock, struct usb_device *dev, int devnum)
 	listen(*sock, 1);	/* We only get one connection on this port.
 				   Everything else is refused. */
 	while (1) {
-		if ((s = accept(*sock, NULL, NULL)))
-			break;
-
-		struct timeval tv;
-		tv.tv_sec = 5;
-		tv.tv_usec = 0;
-		if (setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0)
-			perror("setsockopt(SO_SNDTIMEO)");
-		if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
-			perror("setsockopt(SO_RCVTIMEO)");
-		setnaggle(s, 1);
+		while ((s = accept(*sock, NULL, NULL)) == -1) {
+			sleep(1);
+			/* retry after error.  Really bad errors shouldn't happen. */
+		}
 		if (debug)
 			fprintf(stderr, "Provider connected.\n");
 
@@ -104,21 +75,36 @@ void l_listen(int *sock, struct usb_device *dev, int devnum)
 				fprintf(stderr, "OUT-OF-BAND MESSAGE 1");
 
 			memset(buffer, 0, BUFFERSIZE + 4);
-		      again:;
 			i = recv(s, buffer, BUFFERSIZE, 0);
 			if (i == -1 || i == 0) {
-				if (errno == EINTR || errno == EAGAIN) {
-					goto again;
+				if ((i == -1) && (errno != EAGAIN) && (errno != EINTR)) {
+					if (junk != 0) {
+						fprintf(stderr, "%d bytes\n", junk);
+						junk = 0;
+					}
+					/* wait for a new connection */
+					perror("Lost provider connection");
+					close(s);
+					connected = 0;
 				}
-				/* wait for a new connection */
-				perror("Lost provider connection");
-				setnaggle(s, 0);
-				close(s);
-				connected = 0;
+				/* see if provider is still there */
+				i = sock_write_bytes(s, (unsigned char *)"ping", 4);
+				/*
+				 * We get tcp acks, so there's no need to send a pong from the provider
+				 */
+				if ((i == -1) && (errno != EINTR)) {
+					if (junk != 0) {
+						fprintf(stderr, "%d bytes\n", junk);
+						junk = 0;
+					}
+					/* wait for a new connection */
+					perror("Lost provider connection");
+					close(s);
+					connected = 0;
+				}
 				nanosleep(&waittime, NULL);
 			} else {
 				process(s, buffer, dev, devnum);
-				setnaggle(s, 0);
 				close(s);
 				connected = 0;
 			}
