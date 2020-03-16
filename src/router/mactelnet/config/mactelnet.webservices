@@ -8,6 +8,6 @@
 	</div>
 	<div class="setting" id="idmactelnetd">
 		<div class="label"><% tran("share.passwd"); %></div>
-		<input maxlength="64" size="25" name="mactelnetd_passwd" type="password" autocomplete="off" value="d6nw5v1x2pc7st9m" />
+		<input maxlength="64" size="25" name="mactelnetd_passwd" type="password" autocomplete="new-password" value="d6nw5v1x2pc7st9m" />
 	</div>
 </fieldset><br />
