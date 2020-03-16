@@ -118,9 +118,9 @@
 					<div class="label"><% tran("hotspot.wifidog_realm"); %></div>
 					<input name="wd_realm" size="40" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvg("wd_realm"); %>" />
 					<div class="label"><% tran("hotspot.wifidog_username"); %></div>
-					<input name="wd_username" size="40" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvg("wd_username"); %>" />
+					<input name="wd_username" size="40" maxlength="63" onblur="valid_name(this,share.usrname)" autocomplete="new-password" value="<% nvg("wd_username"); %>" />
 					<div class="label"><% tran("hotspot.wifidog_password"); %></div>
-					<input name="wd_password" size="40" maxlength="63" onblur="valid_name(this,share.passwd)" type="password" autocomplete="off" value="<% nvg("wd_password"); %>" />
+					<input name="wd_password" size="40" maxlength="63" onblur="valid_name(this,share.passwd)" type="password" autocomplete="new-password" value="<% nvg("wd_password"); %>" />
 				</div>
 			</div>
 		</div>
