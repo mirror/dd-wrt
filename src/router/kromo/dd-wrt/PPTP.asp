@@ -232,7 +232,7 @@ addEvent(window, "unload", function() {
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.pppoesrv_radkey"); %></div>
-			<input size="20" maxlength="63" type="password" autocomplete="off" name="pptpd_radpass" value="d6nw5v1x2pc7st9m" />
+			<input size="20" maxlength="63" type="password" autocomplete="new-password" name="pptpd_radpass" value="d6nw5v1x2pc7st9m" />
 		</div>
 <% ifndef("RADIUSPLUGIN", "-->"); %>
 	</fieldset>
@@ -297,7 +297,7 @@ addEvent(window, "unload", function() {
 		</div>		
 		<div class="setting">
 			<div class="label"><% tran("share.passwd"); %></div>
-			<input size="27" id="pptpd_client_srvpass" name="pptpd_client_srvpass" type="password" autocomplete="off" value="<% nvg("pptpd_client_srvpass"); %>" />
+			<input size="27" id="pptpd_client_srvpass" name="pptpd_client_srvpass" type="password" autocomplete="new-password" value="<% nvg("pptpd_client_srvpass"); %>" />
 			<input type="checkbox" name="_wl_unmask" value="0" onclick="setElementMask('pptpd_client_srvpass', this.checked)" />&nbsp;<% tran("share.unmask"); %>
 		</div>
 		<div class="setting">		

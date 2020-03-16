@@ -119,7 +119,7 @@ addEvent(window, "unload", function() {
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.milkfish_password"); %></div>
-			<input type="password" autocomplete="off" size="27" name="milkfish_password" value="<% nvg("milkfish_password"); %>" />
+			<input type="password" autocomplete="new-password" size="27" name="milkfish_password" value="<% nvg("milkfish_password"); %>" />
 		</div>
 <!--		<div class="setting">
 			<div class="label"><% tran("service.milkfish_audit"); %></div>
