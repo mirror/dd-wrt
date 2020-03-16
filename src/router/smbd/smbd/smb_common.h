@@ -497,7 +497,6 @@ int ksmbd_extract_shortname(struct ksmbd_conn *conn,
 			    const char *longname,
 			    char *shortname);
 
-void ksmbd_init_smb2_server_common(struct ksmbd_conn *conn);
 int ksmbd_smb_negotiate_common(struct ksmbd_work *work, unsigned int command);
 
 int ksmbd_smb_check_shared_mode(struct file *filp, struct ksmbd_file *curr_fp);
