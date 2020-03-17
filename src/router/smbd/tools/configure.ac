@@ -2,7 +2,7 @@ AC_PREREQ([2.68])
 
 m4_define([ksmbd_tools_major_ver], [3])
 m4_define([ksmbd_tools_minor_ver], [2])
-m4_define([ksmbd_tools_micro_ver], [2])
+m4_define([ksmbd_tools_micro_ver], [3])
 
 m4_define([ksmbd_tools_version],
 	[ksmbd_tools_major_ver.ksmbd_tools_minor_ver.ksmbd_tools_micro_ver])

@@ -334,7 +334,7 @@ int ndr_write_union_##name(struct ksmbd_dcerpc *dce, type value)	\
 									\
 	ret = ndr_write_##name(dce, value);				\
 	ret |= ndr_write_##name(dce, value);				\
-	ret;								\
+	return ret;							\
 }
 
 NDR_WRITE_UNION(int16, __u16);
