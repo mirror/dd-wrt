@@ -103,7 +103,7 @@ int detect_apple_partmap(SECTION * section, int level)
 struct apfs_prange {
 	unsigned long long pr_start_paddr;
 	unsigned long long pr_block_count;
-} __packed;
+}  __attribute__((packed));
 
 struct apfs_obj_phys {
 						/*00*/ unsigned long long o_cksum;
@@ -113,7 +113,7 @@ struct apfs_obj_phys {
 						/* Transaction ID */
 	unsigned int o_type;	/* Object type */
 	unsigned int o_subtype;	/* Object subtype */
-} __packed;
+}  __attribute__((packed));
 
 /* Indexes into a container superblock's array of counters */
 enum {
@@ -177,7 +177,7 @@ struct apfs_nx_superblock {
 	unsigned long long nx_fusion_mt_oid;
 /*550*/ unsigned long long nx_fusion_wbc_oid;
 	struct apfs_prange nx_fusion_wbc;
-} __packed;
+}  __attribute__((packed));
 
 struct apfs_wrapped_meta_crypto_state {
 	unsigned short major_version;
@@ -187,7 +187,7 @@ struct apfs_wrapped_meta_crypto_state {
 	unsigned int key_os_version;
 	unsigned short key_revision;
 	unsigned short unused;
-} __packed;
+}  __attribute__((packed));
 
 #define APFS_MODIFIED_NAMELEN	      32
 
@@ -198,7 +198,7 @@ struct apfs_modified_by {
 	char id[APFS_MODIFIED_NAMELEN];
 	unsigned long long timestamp;
 	unsigned long long last_xid;
-} __packed;
+}  __attribute__((packed));
 
 #define APFS_MAX_HIST				8
 #define APFS_VOLNAME_LEN			256
@@ -260,7 +260,7 @@ struct apfs_superblock {
 
 /*3C8*/ unsigned long long apfs_root_to_xid;
 	unsigned long long apfs_er_state_oid;
-} __packed;
+}  __attribute__((packed));
 
 #define FIRST_VOL_BNO 20002
 #define APPLE_NX_DEFAULT_BLOCKSIZE 4096
