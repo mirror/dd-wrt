@@ -3,6 +3,8 @@ EXPORTS
     dd_json_true
     dd_json_false
     dd_json_null
+    dd_json_sprintf
+    dd_json_vsprintf
     dd_json_string
     dd_json_stringn
     dd_json_string_nocheck
