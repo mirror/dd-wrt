@@ -30,8 +30,6 @@
  ***/
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <ctype.h>
 
 #include "asterisk/paths.h" /* use ast_config_AST_SPOOL_DIR */
@@ -49,9 +47,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		</synopsis>
 		<syntax>
 			<parameter name="vm-context">
-				<para>This is the context within voicemail.conf to use for the Directory. If not 
-				specified and <literal>searchcontexts=no</literal> in 
-				<filename>voicemail.conf</filename>, then <literal>default</literal> 
+				<para>This is the context within voicemail.conf to use for the Directory. If not
+				specified and <literal>searchcontexts=no</literal> in
+				<filename>voicemail.conf</filename>, then <literal>default</literal>
 				will be assumed.</para>
 			</parameter>
 			<parameter name="dial-context" required="false">
@@ -107,7 +105,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 					</option>
 				</optionlist>
 				<note><para>Only one of the <replaceable>f</replaceable>, <replaceable>l</replaceable>, or <replaceable>b</replaceable>
-				options may be specified. <emphasis>If more than one is specified</emphasis>, then Directory will act as 
+				options may be specified. <emphasis>If more than one is specified</emphasis>, then Directory will act as
 				if <replaceable>b</replaceable> was specified.  The number
 				of characters for the user to type defaults to <literal>3</literal>.</para></note>
 
@@ -366,7 +364,7 @@ static int select_item_seq(struct ast_channel *chan, struct directory_item **ite
 			if (!res)
 				res = ast_waitfordigit(chan, 3000);
 			ast_stopstream(chan);
-	
+
 			if (res == '0') { /* operator selected */
 				goto_exten(chan, dialcontext, "o");
 				pbx_builtin_setvar_helper(chan, "DIRECTORY_RESULT", "OPERATOR");
@@ -511,6 +509,11 @@ static struct ast_config *realtime_directory(char *context)
 		const char *mailbox = ast_variable_retrieve(rtdata, category, "mailbox");
 		const char *ctx = ast_variable_retrieve(rtdata, category, "context");
 
+		if (ast_strlen_zero(mailbox)) {
+			ast_debug(3, "Skipping result with missing or empty mailbox\n");
+			continue;
+		}
+
 		fullname = ast_variable_retrieve(rtdata, category, "fullname");
 		hidefromdir = ast_variable_retrieve(rtdata, category, "hidefromdir");
 		if (ast_true(hidefromdir)) {
@@ -531,7 +534,7 @@ static struct ast_config *realtime_directory(char *context)
 
 		/* Does the context exist within the config file? If not, make one */
 		if (!(cat = ast_category_get(cfg, ctx, NULL))) {
-			if (!(cat = ast_category_new(ctx, "", 99999))) {
+			if (!(cat = ast_category_new_dynamic(ctx))) {
 				ast_log(LOG_WARNING, "Out of memory\n");
 				ast_config_destroy(cfg);
 				if (rtdata) {
@@ -812,10 +815,10 @@ static int do_directory(struct ast_channel *chan, struct ast_config *vmcfg, stru
 	/* Sort items */
 	sort_items(sorted, count);
 
-	if (option_debug) {
-		ast_debug(2, "Listing matching entries:\n");
+	if (DEBUG_ATLEAST(2)) {
+		ast_log(LOG_DEBUG, "Listing matching entries:\n");
 		for (ptr = sorted, i = 0; i < count; i++, ptr++) {
-			ast_debug(2, "%s: %s\n", ptr[0]->exten, ptr[0]->name);
+			ast_log(LOG_DEBUG, "%s: %s\n", ptr[0]->exten, ptr[0]->name);
 		}
 	}
 
@@ -929,7 +932,7 @@ static int directory_exec(struct ast_channel *chan, const char *data)
 				res = ast_stream_and_wait(chan, digits, AST_DIGIT_ANY);
 			}
 			if (!res) {
-				res = ast_stream_and_wait(chan, 
+				res = ast_stream_and_wait(chan,
 					which == FIRST ? "dir-first" :
 					which == LAST ? "dir-last" :
 					"dir-firstlast", AST_DIGIT_ANY);

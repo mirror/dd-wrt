@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Performance Tuning</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Performance Tuning
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Richard Mudgett</span>, last modified by <span class='editor'> George Joseph</span> on Feb 10, 2017
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p> </p><p>These are some areas to consider when trying to performance tune your Asterisk installation.</p><h2 id="PerformanceTuning-Threadpools">Threadpools</h2><p>There are two threadpools of interest:  pjsip and stasis.</p>    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>Any changes to threadpool settings require a full Asterisk restart. A reload is insufficient.</p>
+                    </div>
+    </div>
+<p> </p><h3 id="PerformanceTuning-PJSIPThreadpool:">PJSIP Threadpool:</h3><p>The <code>system</code> section of pjsip.conf (or the ps_systems table in the database) contains 2 settings that control the threadpool used for the stack:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: false" style="font-size:12px;">[system]
+type=system
+;
+;  &lt;other settings&gt;
+;
+ 
+; Sets the threadpool size at startup.
+; Setting this higher can help Asterisk get through high startup loads
+; such as when large numbers of phones are attempting to re-register or
+; re-subscribe.
+threadpool_initial_size=20
+ 
+; When more threads are needed, how many should be created?
+; Adding 5 at a time is probably safe.
+threadpool_auto_increment=5
+ 
+; Destroy idle threads after this timeout.
+; Idle threads do have a memory overhead but it&#39;s slight as is the overhead of starting a new thread.
+; However, starting and stopping threads frequently can cause memory fragmentation.  If the call volume
+; is fairly consistent, this parameter is less important since threads will tend to get continuous
+; activity.  In &quot;spikey&quot; situations, setting the timeout higher will decrease the probability
+; of fragmentation.  Don&#39;t obsess over this setting.  Setting it to 2 minutes is probably safe
+; for all PBX usage patterns.
+threadpool_idle_timeout=120
+ 
+; Set the maximum size of the pool.
+; This is the most important settings.  Setting it too low will slow the transaction rate possibly
+; causing timeouts on clients.  Setting it too high will use more memory, increase the chances of
+; deadlocks and possibly cause other resources such as CPU and I/O to become exhausted.
+; For a busy 8 core PBX, 100 is probably safe.  Setting this to 0 will allow the pool to grow
+; as high as the system will allow.  This is probably not what you want. :)  Setting it to 500
+; is also probably not what you want.  With that many threads, Asterisk will be thrashing and
+; attempting to use more memory than can be allocated to a 32-bit process.  If memory starts
+; increasing, lowering this value might actually help.
+threadpool_max_size=100
+
+</pre>
+</div></div><h3 id="PerformanceTuning-StasisThreadpool"><br />Stasis Threadpool</h3><p>Although the stasis message bus is not used much for simple call processing, it <em>is</em> used heavily for ARI and AGI processing, transfers, conference bridges, AMI, CDR and CEL processing, etc.  <span class="inline-comment-marker" data-ref="c7e1a25c-975a-4b2e-a265-8e51439e7fa4">The threadpool is configured in stasis.conf</span>:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: false" style="font-size:12px;">[threadpool]
+;
+; For a busy 8 core PBX, these settings are probably safe.
+;
+initial_size = 10
+idle_timeout_sec = 120
+;
+; The notes about the pjsip max size apply here as well.  Increasing to 100 threads is probably
+; safe, but anything more will probably cause the same thrashing and memory over-utilization,
+max_size = 60
+
+</pre>
+</div></div><p>If you don't need AMI, CDR, or CEL then disabling those modules will reduce resource usage.  The CDR module uses a lot of processing to create the CDR records and can easily get backed up on a busy system.</p><h2 id="PerformanceTuning-PJSIPProtocolTuning">PJSIP Protocol Tuning</h2><h3 id="PerformanceTuning-Timers">Timers</h3><p>The <code>timer_t1</code> and <code>timer_b</code> settings are in the <code>system</code> section of pjsip.conf (or the ps_systems table in the database)</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: false" style="font-size:12px;">[system]
+type=system
+; Timer t1 sets the timeout after which pjsip gives up on waiting for a response from
+; the remote party.  The general rule is to set this to slightly higher than the round-trip
+; time to the furthest remote party.  Although the default of 500ms is safe, this timer
+; controls other timing aspects of the of the stack so reducing it is in your best interest.
+; Unless you have a provider or remote phones with more than a 100ms RTT, setting this to
+; 100ms (the minimum) is probably safe.  If you have outlier phones such as cell phones
+; with VoIP clients, setting it to 250ms is probably safe.
+timer_t1=100
+ 
+; Timer B is technically the INVITE transaction timeout but it also controls other aspects
+; of stack timing.  It&#39;s default is 32 seconds but its minimum is (64 * timer_t1) which
+; would also be 32 seconds if timer_t1 were left at its default of 500ms.  Unfortunately,
+; this timer has the side effect of controlling how long completed transactions are kept in
+; memory so on a busy PBX, a setting of 32 seconds will probably result in higher than
+; necessary memory utilization.  For most installations, 6400ms is fine.
+timer_b=6400
+
+</pre>
+</div></div><h3 id="PerformanceTuning-IdentificationPriority">Identification Priority</h3><p>The order in which endpoint identification methods are tried when an incoming request is received directly affects transaction rate.  The default order is set in the <code>global</code> of pjsip.conf (or the ps_globals table in the database).</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: false" style="font-size:12px;">[global]
+type=global
+; The default identifier order is ip,username,anonymous but for a PBX environment
+; with lots of phones that register, identifying by ip address first is a waste of time.
+; The order should be from the most likely to be used, to the least likely to be used
+; which in this case would put username first for the phones, and ip second for providers.
+endpoint_identifier_order=username,ip,anonymous
+ </pre>
+</div></div><p> </p><h2 id="PerformanceTuning-Sorcery/Database">Sorcery/Database</h2><p>While storing pjsip objects in the pjsip.conf results in the fastest access time during call processing, a config change requires the entire file to be re-written and the res_pjsip module to be reloaded.  Using backend database for storage is most convenient for configuration but will be slowest for access time during call processing.  The solution is to use the database for storage and use sorcery to cache the objects.  This will result in the same access times as using pjsip.conf.  </p><h3 id="PerformanceTuning-Settingupcaching">Setting up caching</h3><p>The sorcery caches are defined in sorcery.conf.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: false" style="font-size:12px;">[res_pjsip]
+ 
+; maximum_objects:  How many object to allow in the cache at 1 time.
+; expire_on_reload:  If res_pjsip is reloaded, should the cache be flushed?
+; object_lifetime_maximum; How long should an object remain in the cache before it&#39;s flushed.
+ 
+; There is only ever 1 row in the ps_globals table but it&#39;s referenced heavily and rarely
+; changes.  You may choose to leave this in pjsip.conf and comment out these 2 lines.
+; On recent versions of Asterisk, the global section is only read on a pjsip reload which
+; effectively caches the settings without an expiration time.
+;global/cache=memory_cache,maximum_objects=2,expire_on_reload=yes,object_lifetime_maximum=3600
+;global=realtime,ps_globals
+
+; There is only ever 1 row in the ps_systems table and it&#39;s not referenced after startup.
+; You may chose to leave this in pjsip.conf and comment out these 2 lines.
+system/cache=memory_cache,maximum_objects=2,expire_on_reload=yes,object_lifetime_maximum=3600
+system=realtime,ps_systems
+
+; endpoints, aors, and auths are heavily read objects but are only written to when their
+; configuration is changed.  Set the maximum_objects to the number of extensions, plus the
+; number of peered PBXes, plus the number of hosts defined for all providers (a provider
+; with 10 hosts defined will use 10 endpoints, 10 aors and 1 auth).  Add a few to spare.
+; When a configuration change is made to an object, the specific object is flushed from the
+; cache so the object_lifetime_maximum of 15 minutes is just a fail-safe.
+endpoint/cache=memory_cache,maximum_objects=3000,expire_on_reload=yes,object_lifetime_maximum=900
+endpoint=realtime,ps_endpoints
+
+aor/cache=memory_cache,maximum_objects=3000,expire_on_reload=yes,object_lifetime_maximum=900
+aor=realtime,ps_aors
+
+auth/cache=memory_cache,maximum_objects=3000,expire_on_reload=yes,object_lifetime_maximum=900
+auth=realtime,ps_auths
+
+; contacts are both read from and written to regularly by Asterisk.
+contact/cache=memory_cache,maximum_objects=3000,expire_on_reload=yes,object_lifetime_maximum=900
+contact=realtime,ps_contacts
+
+
+[res_pjsip_endpoint_identifier_ip]
+; There will be 1 ip identifier for each host across all providers plus 1 for each peered PBX.
+identify/cache=memory_cache,maximum_objects=150,expire_on_reload=yes,object_lifetime_maximum=900
+identify=realtime,ps_endpoint_id_ips
+ 
+
+;[res_pjsip_outbound_registration]
+; There could be 1 outbound registration for each host across all providers depending on whether
+; the provider requires them.
+registration/cache=memory_cache,maximum_objects=150,expire_on_reload=yes,object_lifetime_maximum=900
+registration=realtime,ps_registrations
+
+</pre>
+</div></div><h3 id="PerformanceTuning-Flushingthecaches:">Flushing the caches:</h3><p><span class="inline-comment-marker" data-ref="8407d6dc-ee8e-403e-8324-0762ac7bbccf">The </span><code><span class="inline-comment-marker" data-ref="8407d6dc-ee8e-403e-8324-0762ac7bbccf">sorcery memory cache</span></code><span class="inline-comment-marker" data-ref="8407d6dc-ee8e-403e-8324-0762ac7bbccf"> Asterisk CLI commands will allow flushing caches and individual objects from a specific cache.  There are also equivalent AMI commands (</span><span style="color: rgb(0,0,0);"><span class="inline-comment-marker" data-ref="8407d6dc-ee8e-403e-8324-0762ac7bbccf">SorcerymemoryCache*) that do the same.  After you make all pjsip configuration changes,</span><span class="inline-comment-marker" data-ref="8407d6dc-ee8e-403e-8324-0762ac7bbccf"> call the appropriate AMI commands to flush objects and caches where appropriate.  This is necessary for Asterisk to see the changes made in the database immediately.</span></span></p><p><span style="color: rgb(0,0,0);"><span class="inline-comment-marker" data-ref="8407d6dc-ee8e-403e-8324-0762ac7bbccf"><br /></span></span></p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

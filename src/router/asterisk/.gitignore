@@ -19,6 +19,7 @@
 *.makeopts
 *.makedeps
 .lastclean
+/.pc
 aclocal.m4
 autom4te.cache
 config.log
@@ -34,4 +35,6 @@ menuselect-tree
 latex
 doxygen.log
 out/
+*.orig
+tests/CI/output
 

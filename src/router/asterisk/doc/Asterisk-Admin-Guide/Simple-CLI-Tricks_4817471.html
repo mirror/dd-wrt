@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Simple CLI Tricks</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Operation_27200183.html">Operation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Command-Line-Interface_4259982.html">Asterisk Command Line Interface</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Simple CLI Tricks
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Rusty Newton</span> on May 01, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h2 id="SimpleCLITricks-QuitTypingtheWholeCommand">Quit Typing the Whole Command</h2><p>There are a couple of tricks that will help you on the Asterisk command-line interface. The most popular is tab completion. If you type the beginning of a command and press the Tab key, Asterisk will attempt to complete the name of the command for you, or show you the possible commands that start with the letters you have typed. For example, type co and then press the Tab key on your keyboard.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>server*CLI&gt; co[Tab]
+config core
+server*CLI&gt; co
+</pre>
+</div></div><p>Now press the <strong>r</strong> key, and press tab again. This time Asterisk completes the word for you, as <strong>core</strong> is the only command that begins with <strong>cor</strong>. This trick also works with sub-commands. For example, type <strong>core show</strong> and press tab. (You may have to press tab twice, if you didn't put a space after the word <strong>show</strong>.) Asterisk will show you all the sub-commands that start with <strong>core show</strong>.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>server*CLI&gt; core show [Tab]
+application     applications    calls           channel
+channels        channeltype     channeltypes    codec
+codecs          config          file            function
+functions       help            hint            hints
+image           license         profile         settings
+switches        sysinfo         taskprocessors  threads
+translation     uptime          version         warranty
+server*CLI&gt; core show
+</pre>
+</div></div><h2 id="SimpleCLITricks-RepeatPreviousCommands">Repeat Previous Commands</h2><p>Another trick you can use on the CLI is to cycle through your previous commands. Asterisk stores a history of the commands you type and you can press the <strong>up</strong> <strong>arrow</strong> key to cycle through the history.</p><h2 id="SimpleCLITricks-RunLinuxShellCommandsfromTheAsteriskCLI">Run Linux Shell Commands from The Asterisk CLI</h2><p>If you type an exclamation mark at the Asterisk CLI, you will get a Linux shell. When you exit the Linux shell (by typing <strong>exit</strong> or pressing <strong>Ctrl+D</strong>), you return to the Asterisk CLI. You can also type an exclamation mark and a Linux command, and the output of that command will be shown to you, and then you'll be returned to the Asterisk CLI.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>server*CLI&gt; !whoami
+root
+server*CLI&gt;
+</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

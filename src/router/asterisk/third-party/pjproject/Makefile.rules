@@ -1,4 +1,13 @@
-PJPROJECT_URL ?= https://raw.githubusercontent.com/asterisk/third-party/master/pjproject/$(PJPROJECT_VERSION)
+# We switched download locations so Asterisk users don't bombard the Teluu
+# site with download requests.
+#
+# For future reference when upgrading bundled PJPROJECT the next time
+# PJPROJECT is released.
+# Teluu's download URL.
+# PACKAGE_URL ?= http://www.pjsip.org/release/$(PJPROJECT_VERSION)
+
+PACKAGE_URL ?= https://raw.githubusercontent.com/asterisk/third-party/master/pjproject/$(PJPROJECT_VERSION)
+TARBALL_FILE = pjproject-$(PJPROJECT_VERSION).tar.bz2
 
 # PJPROJECT_CONFIGURE_OPTS could come from the command line or could be
 # set/modified by configure.m4 if the build or host tuples aren't the same
@@ -8,7 +17,7 @@ PJPROJECT_URL ?= https://raw.githubusercontent.com/asterisk/third-party/master/p
 PJPROJECT_CONFIG_OPTS = $(PJPROJECT_CONFIGURE_OPTS) --prefix=/opt/pjproject \
 	--disable-speex-codec \
 	--disable-speex-aec \
-	--disable-speex-aec \
+	--disable-bcg729 \
 	--disable-gsm-codec \
 	--disable-ilbc-codec \
 	--disable-l16-codec \
@@ -21,7 +30,6 @@ PJPROJECT_CONFIG_OPTS = $(PJPROJECT_CONFIGURE_OPTS) --prefix=/opt/pjproject \
 	--disable-v4l2 \
 	--disable-sound \
 	--disable-ext-sound \
-	--disable-oss \
 	--disable-sdl \
 	--disable-libyuv \
 	--disable-ffmpeg \
@@ -29,10 +37,9 @@ PJPROJECT_CONFIG_OPTS = $(PJPROJECT_CONFIGURE_OPTS) --prefix=/opt/pjproject \
 	--disable-ipp \
 	--disable-libwebrtc \
 	--without-external-pa \
-	--without-external-srtp \
-	--without-external-webrtc
+	--without-external-srtp
 
-ifeq ($(findstring TEST_FRAMEWORK,$(MENUSELECT_CFLAGS)),)
+ifneq ($(AST_DEVMODE),yes)
     PJPROJECT_CONFIG_OPTS += --disable-resample --disable-g711-codec
 endif
 

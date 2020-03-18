@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Case Sensitivity</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Variables_4817407.html">Variables</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Variables_4620340.html">Channel Variables</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Case Sensitivity
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Mark Michelson</span>, last modified on Oct 29, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Case sensitivity of channel variables in Asterisk is dependent on the version of Asterisk in use.</p>
+
+<h1 id="CaseSensitivity-VersionspriortoAsterisk12">Versions prior to Asterisk 12</h1>
+
+<p>This includes versions</p>
+
+<ul>
+	<li>Asterisk 1.0.X</li>
+	<li>Asterisk 1.2.X</li>
+	<li>Asterisk 1.4.X</li>
+	<li>Asterisk 1.6.0.X</li>
+	<li>Asterisk 1.6.1.X</li>
+	<li>Asterisk 1.6.2.X</li>
+	<li>Asterisk 1.8.X</li>
+	<li>Asterisk 10.X</li>
+	<li>Asterisk 11.X</li>
+</ul>
+
+
+<p>These versions of Asterisk follow these three rules:</p>
+
+<ul>
+	<li>Variables evaluated in the dialplan are <strong>case-insensitive</strong></li>
+	<li>Variables evaluated within Asterisk's internals are <strong>case-sensitive</strong></li>
+	<li>Built-in variables are <strong>case-sensitive</strong></li>
+</ul>
+
+
+<p>This is best illustrated through the following examples</p>
+
+<h3 id="CaseSensitivity-Example1:Auser-setvariable">Example 1: A user-set variable</h3>
+
+<p>In this example, the user retrieves a value from the AstDB and then uses it as the destination for a <code>Dial</code> command.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[default]
+exten =&gt; 1000,1,Set(DEST=${DB(egg/salad)})
+    same =&gt; n,Dial(${DEST},15)
+</pre>
+</div></div>
+
+<p>Since the <code>DEST</code> variable is set and evaluated in the dialplan, its evaluation is case-insensitive. Thus the following would be equivalent:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; 1000,1,Set(DEST=${DB(egg/salad)})
+    same =&gt; n,Dial(${dest},15)
+</pre>
+</div></div>
+
+<p>As would this:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; 1000,1,Set(DeSt=${DB(egg/salad)})
+    same =&gt; n,Dial(${dEsT},15)
+</pre>
+</div></div>
+
+<h3 id="CaseSensitivity-Example2:Usingabuilt-invariable">Example 2: Using a built-in variable</h3>
+
+<p>In this example, the user wishes to use a built-in variable in order to determine the destination for a call.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; _X.,1,Dial(SIP/${EXTEN})
+</pre>
+</div></div>
+
+<p>Since the variable <code>EXTEN</code> is a built-in variable, the following would <strong>not</strong> be equivalent:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; _X.,1,Dial(SIP/${exten})
+</pre>
+</div></div>
+
+<p>The lowercase <code>exten</code> variable would evaluate to an empty string since no previous value was set for <code>exten</code>.</p>
+
+<h3 id="CaseSensitivity-Example3:AvariableusedinternallybyAsterisk">Example 3: A variable used internally by Asterisk</h3>
+
+<p>In this example, the user wishes to suggest to the SIP channel driver what codec to use on the call.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; 1000,Set(SIP_CODEC=g729)
+same =&gt; n,Dial(SIP/1000,15)
+</pre>
+</div></div>
+
+<p><code>SIP_CODEC</code> is set in the dialplan, but it gets evaluated inside of Asterisk, so the evaluation is case-sensitive. Thus the following dialplan would not be equivalent:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; 1000,Set(sip_codec=g729)
+    same =&gt; n,Dial(SIP/1000,15)
+</pre>
+</div></div>
+
+<p>This can lead to some rather confusing situations. Consider that a user wrote the following dialplan. He intended to set the variable <code>SIP_CODEC</code> but instead made a typo:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; 1000,Set(SIP_CODEc=g729)
+    same =&gt; n,Dial(SIP/1000,15)
+</pre>
+</div></div>
+
+<p>As has already been discussed, this is not equivalent to using <code>SIP_CODEC</code>. The user looks over his dialplan and does not notice the typo. As a way of debugging, he decides to place a <code>NoOp</code> in the dialplan:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; 1000,Set(SIP_CODEc=g729)
+    same =&gt; n,NoOp(${SIP_CODEC})
+    same =&gt; n,Dial(SIP/1000,15)
+</pre>
+</div></div>
+
+<p>When the user checks the verbose logs, he sees that the second priority has evaluated <code>SIP_CODEC</code> to be &quot;g729&quot;. This is because the evaluation in the dialplan was done case-insensitively.</p>
+
+<h1 id="CaseSensitivity-Asterisk12andabove">Asterisk 12 and above</h1>
+
+<p>Due to potential confusion stemming from the policy, for Asterisk 12, it was proposed that variables should be evaluated consistently. E-mails were sent to the <a href="http://lists.digium.com/pipermail/asterisk-dev/2012-October/057056.html" class="external-link" rel="nofollow">Asterisk-developers</a> and <a href="http://lists.digium.com/pipermail/asterisk-users/2012-October/275033.html" class="external-link" rel="nofollow">Asterisk-users</a> lists about whether variables should be evaluated case-sensitively or case-insensitively. The majority opinion swayed towards case-sensitive evaluation. Thus in Asterisk 12, all variable evaluation, whether done in the dialplan or internally, will be case-sensitive.</p>
+
+<p>For those who are upgrading to Asterisk 12 from a previous version, be absolutely sure that your variables are used consistently throughout your dialplan.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

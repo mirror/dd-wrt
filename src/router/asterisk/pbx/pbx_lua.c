@@ -16,7 +16,7 @@
  * at the top of the source tree.
  */
 
-/*! 
+/*!
  * \file
  *
  * \author Matthew Nicholson <mnicholson@digium.com>
@@ -30,8 +30,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/logger.h"
 #include "asterisk/channel.h"
@@ -62,7 +60,7 @@ static char *registrar = "pbx_lua";
  * applications might return */
 #define LUA_GOTO_DETECTED 5
 
-static char *lua_read_extensions_file(lua_State *L, long *size);
+static char *lua_read_extensions_file(lua_State *L, long *size, int *file_not_openable);
 static int lua_load_extensions(lua_State *L, struct ast_channel *chan);
 static int lua_reload_extensions(lua_State *L);
 static void lua_free_extensions(void);
@@ -157,7 +155,7 @@ static void lua_datastore_fixup(void *data, struct ast_channel *old_chan, struct
 static int lua_pbx_findapp(lua_State *L)
 {
 	const char *app_name = luaL_checkstring(L, 2);
-	
+
 	lua_newtable(L);
 
 	lua_pushstring(L, "name");
@@ -198,7 +196,7 @@ static int lua_pbx_exec(lua_State *L)
 	lua_getfield(L, 1, "name");
 	app_name = ast_strdupa(lua_tostring(L, -1));
 	lua_pop(L, 1);
-	
+
 	if (!(app = pbx_findapp(app_name))) {
 		lua_pushstring(L, "application '");
 		lua_pushstring(L, app_name);
@@ -206,16 +204,16 @@ static int lua_pbx_exec(lua_State *L)
 		lua_concat(L, 3);
 		return lua_error(L);
 	}
-	
+
 
 	lua_getfield(L, LUA_REGISTRYINDEX, "channel");
 	chan = lua_touserdata(L, -1);
 	lua_pop(L, 1);
-	
+
 	context = ast_strdupa(ast_channel_context(chan));
 	exten = ast_strdupa(ast_channel_exten(chan));
 	priority = ast_channel_priority(chan);
-	
+
 	lua_concat_args(L, 2, nargs);
 	data = lua_tostring(L, -1);
 
@@ -268,20 +266,20 @@ static int lua_pbx_exec(lua_State *L)
 
 	/* goto detected - construct error message */
 	lua_insert(L, -3);
-													
-	lua_pushliteral(L, " changed from ");							    
-	lua_insert(L, -3);									       
-													 
-	lua_pushliteral(L, " to ");								      
-	lua_insert(L, -2);									       
-													 
-	lua_concat(L, 5);										
-													 
-	ast_debug(2, "Goto detected: %s\n", lua_tostring(L, -1));					
-	lua_pop(L, 1);										   
-													 
-	/* let the lua engine know it needs to return control to the pbx */			      
-	lua_pushinteger(L, LUA_GOTO_DETECTED);							   
+
+	lua_pushliteral(L, " changed from ");
+	lua_insert(L, -3);
+
+	lua_pushliteral(L, " to ");
+	lua_insert(L, -2);
+
+	lua_concat(L, 5);
+
+	ast_debug(2, "Goto detected: %s\n", lua_tostring(L, -1));
+	lua_pop(L, 1);
+
+	/* let the lua engine know it needs to return control to the pbx */
+	lua_pushinteger(L, LUA_GOTO_DETECTED);
 	lua_error(L);
 
 	return 0;
@@ -312,7 +310,7 @@ static int lua_get_variable_value(lua_State *L)
 		lua_pushstring(L, "User probably used '.' instead of ':' for retrieving a channel variable value");
 		return lua_error(L);
 	}
-	
+
 	lua_getfield(L, LUA_REGISTRYINDEX, "channel");
 	chan = lua_touserdata(L, -1);
 	lua_pop(L, 1);
@@ -320,14 +318,14 @@ static int lua_get_variable_value(lua_State *L)
 	lua_getfield(L, 1, "name");
 	name = ast_strdupa(lua_tostring(L, -1));
 	lua_pop(L, 1);
-	
+
 	lua_getfield(L, LUA_REGISTRYINDEX, "autoservice");
 	autoservice = lua_toboolean(L, -1);
 	lua_pop(L, 1);
 
 	if (autoservice)
 		ast_autoservice_stop(chan);
-	
+
 	/* if this is a dialplan function then use ast_func_read(), otherwise
 	 * use pbx_retrieve_variable() */
 	if (!ast_strlen_zero(name) && name[strlen(name) - 1] == ')') {
@@ -335,7 +333,7 @@ static int lua_get_variable_value(lua_State *L)
 	} else {
 		pbx_retrieve_variable(chan, name, &value, workspace, LUA_BUF_SIZE, ast_channel_varshead(chan));
 	}
-	
+
 	if (autoservice)
 		ast_autoservice_start(chan);
 
@@ -351,7 +349,7 @@ static int lua_get_variable_value(lua_State *L)
 /*!
  * \brief [lua_CFunction] Used to set the value of a variable or dialplan
  * function (for access from lua, don't call directly)
- * 
+ *
  * This function is the 'set()' function in the following example as would be
  * seen in extensions.lua.
  *
@@ -375,7 +373,7 @@ static int lua_set_variable_value(lua_State *L)
 	lua_pop(L, 1);
 
 	value = luaL_checkstring(L, 2);
-	
+
 	lua_getfield(L, LUA_REGISTRYINDEX, "channel");
 	chan = lua_touserdata(L, -1);
 	lua_pop(L, 1);
@@ -388,7 +386,7 @@ static int lua_set_variable_value(lua_State *L)
 		ast_autoservice_stop(chan);
 
 	pbx_builtin_setvar_helper(chan, name, value);
-	
+
 	if (autoservice)
 		ast_autoservice_start(chan);
 
@@ -431,10 +429,10 @@ static void lua_push_variable_table(lua_State *L)
 
 	lua_insert(L, -2); /* move the table after the name */
 	lua_setfield(L, -2, "name");
-	
+
 	lua_pushcfunction(L, &lua_get_variable_value);
 	lua_setfield(L, -2, "get");
-	
+
 	lua_pushcfunction(L, &lua_set_variable_value);
 	lua_setfield(L, -2, "set");
 }
@@ -497,7 +495,7 @@ static void lua_create_variable_metatable(lua_State *L)
 
 /*!
  * \brief Create the 'application' metatable, used to execute asterisk
- * applications from lua 
+ * applications from lua
  *
  * \param L the lua_State to use
  */
@@ -521,7 +519,7 @@ static void lua_create_autoservice_functions(lua_State *L)
 {
 	lua_pushcfunction(L, &lua_autoservice_start);
 	lua_setglobal(L, "autoservice_start");
-	
+
 	lua_pushcfunction(L, &lua_autoservice_stop);
 	lua_setglobal(L, "autoservice_stop");
 
@@ -546,7 +544,7 @@ static void lua_create_hangup_function(lua_State *L)
 /*!
  * \brief [lua_CFunction] Return a lua 'variable' object (for access from lua, don't call
  * directly)
- * 
+ *
  * This function is called to lookup a variable construct a 'variable' object.
  * It would be called in the following example as would be seen in
  * extensions.lua.
@@ -562,14 +560,14 @@ static int lua_get_variable(lua_State *L)
 	char *value = NULL;
 	char *workspace = ast_alloca(LUA_BUF_SIZE);
 	workspace[0] = '\0';
-	
+
 	lua_getfield(L, LUA_REGISTRYINDEX, "channel");
 	chan = lua_touserdata(L, -1);
 	lua_pop(L, 1);
 
 	lua_pushvalue(L, 2);
 	lua_push_variable_table(L);
-	
+
 	/* if this is not a request for a dialplan funciton attempt to retrieve
 	 * the value of the variable */
 	if (!ast_strlen_zero(name) && name[strlen(name) - 1] != ')') {
@@ -581,13 +579,13 @@ static int lua_get_variable(lua_State *L)
 		lua_setfield(L, -2, "value");
 	}
 
-	return 1;	
+	return 1;
 }
 
 /*!
  * \brief [lua_CFunction] Set the value of a channel variable or dialplan
  * function (for access from lua, don't call directly)
- * 
+ *
  * This function is called to set a variable or dialplan function.  It would be
  * called in the following example as would be seen in extensions.lua.
  *
@@ -614,7 +612,7 @@ static int lua_set_variable(lua_State *L)
 		ast_autoservice_stop(chan);
 
 	pbx_builtin_setvar_helper(chan, name, value);
-	
+
 	if (autoservice)
 		ast_autoservice_start(chan);
 
@@ -656,7 +654,7 @@ static void lua_concat_args(lua_State *L, int start, int nargs) {
 /*!
  * \brief [lua_CFunction] Create a 'variable' object for accessing a dialplan
  * function (for access from lua, don't call directly)
- * 
+ *
  * This function is called to create a 'variable' object to access a dialplan
  * function.  It would be called in the following example as would be seen in
  * extensions.lua.
@@ -807,7 +805,19 @@ static int lua_error_function(lua_State *L)
 	lua_pushliteral(L, "\n");
 
 	lua_getglobal(L, "debug");
+	if (!lua_istable(L, -1)) {
+		/* Have no 'debug' table for whatever reason */
+		lua_pop(L, 2);
+		/*  Original err message is on stack top now */
+		return 1;
+	}
 	lua_getfield(L, -1, "traceback");
+	if (!lua_isfunction(L, -1)) {
+		/* Same here for traceback function */
+		lua_pop(L, 3);
+		/*  Original err message is on stack top now */
+		return 1;
+	}
 	lua_remove(L, -2); /* remove the 'debug' table */
 
 	lua_pushvalue(L, message_index);
@@ -825,7 +835,7 @@ static int lua_error_function(lua_State *L)
 
 /*!
  * \brief Store the sort order of each context
- 
+
  * In the event of an error, an error string will be pushed onto the lua stack.
  *
  * \retval 0 success
@@ -902,7 +912,7 @@ static int lua_sort_extensions(lua_State *L)
 			return 1;
 		}
 	}
-	
+
 	/* remove the extensions table and the extensions_order table */
 	lua_pop(L, 2);
 	return 0;
@@ -960,7 +970,7 @@ static int lua_register_switches(lua_State *L)
 			return 1;
 		}
 	}
-	
+
 	/* remove the extensions table */
 	lua_pop(L, 1);
 	return 0;
@@ -1028,7 +1038,7 @@ static int lua_register_hints(lua_State *L)
 				continue;
 			}
 
-			if (ast_add_extension2(con, 0, hint_name, PRIORITY_HINT, NULL, NULL, hint_value, NULL, NULL, registrar)) {
+			if (ast_add_extension2(con, 0, hint_name, PRIORITY_HINT, NULL, NULL, hint_value, NULL, NULL, registrar, NULL, 0)) {
 				/* remove hints table, hint name, hint value,
 				 * key copy, context name, and contex table */
 				lua_pop(L, 6);
@@ -1072,12 +1082,13 @@ static int lua_extension_cmp(lua_State *L)
  *
  * \param L the lua_State to use
  * \param size a pointer to store the size of the buffer
+ * \param file_not_openable a pointer to store if config file could be opened
  *
  * \note The caller is expected to free the buffer at some point.
  *
  * \return a pointer to the buffer
  */
-static char *lua_read_extensions_file(lua_State *L, long *size)
+static char *lua_read_extensions_file(lua_State *L, long *size, int *file_not_openable)
 {
 	FILE *f;
 	int error_func;
@@ -1091,6 +1102,8 @@ static char *lua_read_extensions_file(lua_State *L, long *size)
 		lua_pushstring(L, "' for reading: ");
 		lua_pushstring(L, strerror(errno));
 		lua_concat(L, 4);
+
+		*file_not_openable = 1;
 
 		return NULL;
 	}
@@ -1156,11 +1169,11 @@ static char *lua_read_extensions_file(lua_State *L, long *size)
  */
 static int lua_load_extensions(lua_State *L, struct ast_channel *chan)
 {
-	
+
 	/* store a pointer to this channel */
 	lua_pushlightuserdata(L, chan);
 	lua_setfield(L, LUA_REGISTRYINDEX, "channel");
-	
+
 	luaL_openlibs(L);
 
 	/* load and sort extensions */
@@ -1201,10 +1214,14 @@ static int lua_reload_extensions(lua_State *L)
 {
 	long size = 0;
 	char *data = NULL;
+	int file_not_openable = 0;
 
 	luaL_openlibs(L);
 
-	if (!(data = lua_read_extensions_file(L, &size))) {
+	if (!(data = lua_read_extensions_file(L, &size, &file_not_openable))) {
+		if (file_not_openable) {
+			return -1;
+		}
 		return 1;
 	}
 
@@ -1215,10 +1232,10 @@ static int lua_reload_extensions(lua_State *L)
 
 	config_file_data = data;
 	config_file_size = size;
-	
+
 	/* merge our new contexts */
 	ast_merge_contexts_and_delete(&local_contexts, local_table, registrar);
-	/* merge_contexts_and_delete will actually, at the correct moment, 
+	/* merge_contexts_and_delete will actually, at the correct moment,
 	   set the global dialplan pointers to your local_contexts and local_table.
 	   It then will free up the old tables itself. Just be sure not to
 	   hang onto the pointers. */
@@ -1376,7 +1393,7 @@ static int matchmore(struct ast_channel *chan, const char *context, const char *
 		ast_module_user_remove(u);
 		return 0;
 	}
-	
+
 	res = lua_find_extension(L, context, exten, priority, &matchmore, 0);
 
 	if (!chan) lua_close(L);
@@ -1394,7 +1411,7 @@ static int exec(struct ast_channel *chan, const char *context, const char *exten
 		ast_log(LOG_ERROR, "Error adjusting use count, probably could not allocate memory\n");
 		return -1;
 	}
-	
+
 	L = lua_get_state(chan);
 	if (!L) {
 		ast_module_user_remove(u);
@@ -1420,10 +1437,10 @@ static int exec(struct ast_channel *chan, const char *context, const char *exten
 	lua_pop(L, 1);
 
 	lua_update_registry(L, context, exten, priority);
-	
+
 	lua_pushstring(L, context);
 	lua_pushstring(L, exten);
-	
+
 	res = lua_pcall(L, 2, 0, error_func);
 	if (res) {
 		if (res == LUA_ERRRUN) {
@@ -1623,22 +1640,26 @@ static struct ast_switch lua_switch = {
 static int load_or_reload_lua_stuff(void)
 {
 	int res = AST_MODULE_LOAD_SUCCESS;
+	int loaded = 0;
 
 	lua_State *L = luaL_newstate();
 	if (!L) {
 		ast_log(LOG_ERROR, "Error allocating lua_State, no memory\n");
-		return AST_MODULE_LOAD_DECLINE;
+		return AST_MODULE_LOAD_FAILURE;
 	}
 
-	if (lua_reload_extensions(L)) {
+	loaded = lua_reload_extensions(L);
+	if (loaded) {
 		const char *error = lua_tostring(L, -1);
 		ast_log(LOG_ERROR, "Error loading extensions.lua: %s\n", error);
-		res = AST_MODULE_LOAD_DECLINE;
+
+		if (loaded < 0) {
+			res = AST_MODULE_LOAD_DECLINE;
+		} else {
+			res = AST_MODULE_LOAD_FAILURE;
+		}
 	}
 
-	if (!res) {
-		ast_log(LOG_NOTICE, "Lua PBX Switch loaded.\n");
-	}
 	lua_close(L);
 	return res;
 }
@@ -1648,7 +1669,6 @@ static int unload_module(void)
 	ast_context_destroy(NULL, registrar);
 	ast_unregister_switch(&lua_switch);
 	lua_free_extensions();
-	ast_log(LOG_NOTICE, "Lua PBX Switch unloaded.\n");
 	return 0;
 }
 
@@ -1666,16 +1686,15 @@ static int load_module(void)
 
 	if (ast_register_switch(&lua_switch)) {
 		ast_log(LOG_ERROR, "Unable to register LUA PBX switch\n");
-		return AST_MODULE_LOAD_DECLINE;
+		return AST_MODULE_LOAD_FAILURE;
 	}
 
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS, "Lua PBX Switch",
-		.support_level = AST_MODULE_SUPPORT_EXTENDED,
-		.load = load_module,
-		.unload = unload_module,
-		.reload = reload,
-	       );
-
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
+	.load = load_module,
+	.unload = unload_module,
+	.reload = reload,
+);

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Calendaring Dialplan Examples</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Calendaring_5243066.html">Asterisk Calendaring</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Calendaring Dialplan Examples
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Rusty Newton</span> on Nov 25, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="CalendaringDialplanExamples-Officehours">Office hours</h1><p>A common business PBX scenario is would be executing <a href="Dialplan_4817412.html">dialplan </a>logic based on when the business is open and the phones staffed. If the business is closed for holidays, it is sometimes desirable to play a message to the caller stating why the business is closed.</p><p>The standard way to do this in asterisk has been doing a series of GotoIfTime statements or time-based include statements. Either way can be tedious and requires someone with access to edit asterisk config files.</p><p>With calendaring, the administrator only needs to set up a calendar that contains the various holidays or even recurring events specifying the office hours. A custom greeting filename could even be contained in the description field for playback. For example:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[incoming] 
+exten =&gt; 5555551212,1,Answer 
+ same =&gt; n,GotoIf(${CALENDAR_BUSY(officehours)}?closed:attendant,s,1) 
+ same =&gt; n(closed),Set(id=${CALENDAR_QUERY(office,${EPOCH},${EPOCH})}) 
+ same =&gt; n,Set(soundfile=${CALENDAR_QUERY_RESULT(${id},description)})
+ same =&gt; n,Playback($[${ISNULL(soundfile)} ? generic-closed :: ${soundfile}]) 
+ same =&gt; n,Hangup
+</pre>
+</div></div><h1 id="CalendaringDialplanExamples-Meetingreminders">Meeting reminders</h1><p>One useful application of Asterisk Calendaring is the ability to execute dialplan logic based on an event notification. Most calendaring technologies allow a user to set an alarm for an event. If these alarms are set on a calendar that Asterisk is monitoring and the calendar is set up for event notification via calendar.conf, then Asterisk will execute notify the specified channel at the time of the alarm. If an overrode notification time is set with the autoreminder setting, then the notification would happen at that time instead.</p><p>The following example demonstrates the set up for a simple event notification that plays back a generic message followed by the time of the upcoming meeting. calendar.conf.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[calendar_joe] 
+type = ical 
+url = https://example.com/home/jdoe/Calendar 
+user = jdoe 
+secret = mysecret 
+refresh = 15 
+timeframe = 600 
+autoreminder = 10 
+channel = SIP/joe 
+context = calendar_event_notify 
+extension = s 
+waittime = 30
+</pre>
+</div></div><p>extensions.conf :</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[calendar_event_notify]
+exten =&gt; s,1,Answer 
+ same =&gt; n,Playback(you-have-a-meeting-at) 
+ same =&gt; n,SayUnixTime(${CALENDAR_EVENT(start)}) 
+ same =&gt; n,Hangup
+</pre>
+</div></div><h1 id="CalendaringDialplanExamples-Writinganevent">Writing an event</h1><p>Both CalDAV and Exchange calendar servers support creating new events. The following example demonstrates writing a log of a call to a calendar.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[incoming] 
+exten =&gt; 6000,1,Set(start=${EPOCH}) 
+exten =&gt; 6000,n,Dial(SIP/joe) 
+exten =&gt; h,1,Set(end=${EPOCH}) 
+exten =&gt; h,n,Set(CALENDAR_WRITE(calendar_joe,summary,start,end)=Call from ${CALLERID(all)},${start},${end})
+</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

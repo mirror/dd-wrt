@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : RADIUS CEL Backend</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Reporting_27200283.html">Reporting</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="5242932.html">Channel Event Logging (CEL)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="CEL-Configuration-Examples_5242950.html">CEL Configuration Examples</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : RADIUS CEL Backend
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h3 id="RADIUSCELBackend-Whatisneeded">What is needed</h3>
+<ul>
+	<li>FreeRADIUS server</li>
+	<li>Radiusclient-ng library</li>
+	<li>Asterisk PBX</li>
+</ul>
+
+
+
+<h3 id="RADIUSCELBackend-InstallationoftheRadiusclientlibrary">Installation of the Radiusclient library</h3>
+
+<h5 id="RADIUSCELBackend-Downloadthesources">Download the sources</h5>
+<p>From <a class="external-link" href="http://developer.berlios.de/projects/radiusclient-ng/" rel="nofollow">http://developer.berlios.de/projects/radiusclient-ng/</a> </p>
+
+<h5 id="RADIUSCELBackend-Untarthesourcetarball:">Untar the source tarball: </h5>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>root@localhost:/usr/local/src# tar xvfz radiusclient-ng-0.5.2.tar.gz 
+</pre>
+</div></div>
+
+<h5 id="RADIUSCELBackend-Compileandinstallthelibrary:">Compile and install the library: </h5>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>root@localhost:/usr/local/src# cd radiusclient-ng-0.5.2
+root@localhost:/usr/local/src/radiusclient-ng-0.5.2#./configure 
+root@localhost:/usr/local/src/radiusclient-ng-0.5.2# make 
+root@localhost:/usr/local/src/radiusclient-ng-0.5.2# make install
+</pre>
+</div></div>
+
+<h5 id="RADIUSCELBackend-ConfigurationoftheRadiusclientlibrary">Configuration of the Radiusclient library</h5>
+
+<p>By default all the configuration files of the radiusclient library will be in /usr/local/etc/radiusclient-ng directory. </p>
+
+<p>File &quot;radiusclient.conf&quot; Open the file and find lines containing the following: </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>authserver localhost 
+</pre>
+</div></div>
+
+<p>This is the hostname or IP address of the RADIUS server used for authentication. You will have to change this unless the server is running on the same host as your Asterisk PBX. </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>acctserver localhost 
+</pre>
+</div></div>
+
+<p>This is the hostname or IP address of the RADIUS server used for accounting. You will have to change this unless the server is running on the same host as your Asterisk PBX. </p>
+
+<h5 id="RADIUSCELBackend-File&quot;servers&quot;">File &quot;servers&quot; </h5>
+
+<p>RADIUS protocol uses simple access control mechanism based on shared secrets that allows RADIUS servers to limit access from RADIUS clients. </p>
+
+<p>A RADIUS server is configured with a secret string and only RADIUS clients that have the same secret will be accepted. </p>
+
+<p>You need to configure a shared secret for each server you have configured in radiusclient.conf file in the previous step. The shared secrets are stored in /usr/local/etc/radiusclient-ng/servers file. </p>
+
+<p>Each line contains hostname of a RADIUS server and shared secret used in communication with that server. The two values are separated by white spaces. Configure shared secrets for every RADIUS server you are going to use. </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>File &quot;dictionary&quot; 
+</pre>
+</div></div>
+
+<p>Asterisk uses some attributes that are not included in the dictionary of radiusclient library, therefore it is necessary to add them. A file called dictionary.digium (kept in the contrib dir) was created to list all new attributes used by Asterisk. Add to the end of the main dictionary </p>
+
+<p>file /usr/local/etc/radiusclient-ng/dictionary the line: </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>$INCLUDE /path/to/dictionary.digium
+</pre>
+</div></div>
+
+<h3 id="RADIUSCELBackend-InstallFreeRADIUSServer(Version1.1.1)">Install FreeRADIUS Server (Version 1.1.1)</h3>
+
+<h5 id="RADIUSCELBackend-Downloadsourcestarballfrom:">Download sources tarball from: </h5>
+
+<p><a class="external-link" href="http://freeradius.org/" rel="nofollow">http://freeradius.org/</a> </p>
+
+<h5 id="RADIUSCELBackend-Untar,configure,build,andinstalltheserver:">Untar, configure, build, and install the server: </h5>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>root@localhost:/usr/local/src# tar xvfz freeradius-1.1.1.tar.gz 
+root@localhost:/usr/local/src# cd freeradius-1.1.1 
+root@localhost&quot;/usr/local/src/freeradius-1.1.1# ./configure 
+root@localhost&quot;/usr/local/src/freeradius-1.1.1# make 
+root@localhost&quot;/usr/local/src/freeradius-1.1.1# make install 
+</pre>
+</div></div>
+
+<p>All the configuration files of FreeRADIUS server will be in /usr/local/etc/raddb directory.</p>
+
+<h5 id="RADIUSCELBackend-ConfigurationoftheFreeRADIUSServer">Configuration of the FreeRADIUS Server</h5>
+
+<p>There are several files that have to be modified to configure the RADIUS server. These are presented next. </p>
+
+<h5 id="RADIUSCELBackend-File&quot;clients.conf&quot;">File &quot;clients.conf&quot; </h5>
+
+<p>File /usr/local/etc/raddb/clients.conf contains description of RADIUS clients that are allowed to use the server. For each of the clients you need to specify its hostname or IP address and also a shared secret. The shared secret must be the same string you configured in radiusclient library. </p>
+
+<p>Example: </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>client myhost { secret = mysecret shortname = foo } 
+</pre>
+</div></div>
+
+<p>This fragment allows access from RADIUS clients on &quot;myhost&quot; if they use &quot;mysecret&quot; as the shared secret. The file already contains an entry for localhost (127.0.0.1), so if you are running the RADIUS server on the same host as your Asterisk server, then modify the existing entry instead, replacing the default password. </p>
+
+<h5 id="RADIUSCELBackend-File&quot;dictionary&quot;">File &quot;dictionary&quot; </h5>
+
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            
+<p>As of version 1.1.2, the dictionary.digium file ships with FreeRADIUS.</p>
+                    </div>
+    </div>
+
+
+<p>The following procedure brings the dictionary.digium file to previous versions of FreeRADIUS. </p>
+
+<p>File /usr/local/etc/raddb/dictionary contains the dictionary of FreeRADIUS server. You have to add the same dictionary file (dictionary.digium), which you added to the dictionary of radiusclient-ng library. You can include it into the main file, adding the following line at the end of file /usr/local/etc/raddb/dictionary: </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>$INCLUDE /path/to/dictionary.digium 
+</pre>
+</div></div>
+
+<p>That will include the same new attribute definitions that are used in radiusclient-ng library so the client and server will understand each other.</p>
+
+<h3 id="RADIUSCELBackend-AsteriskAccountingConfiguration">Asterisk Accounting Configuration</h3>
+
+<h5 id="RADIUSCELBackend-Compilationandinstallation:">Compilation and installation: </h5>
+
+<p>The module will be compiled as long as the radiusclient-ng library has been detected on your system. </p>
+
+<p>By default FreeRADIUS server will log all accounting requests into /usr/local/var/log/radius/radacct directory in form of plain text files. The server will create one file for each hostname in the directory. The following example shows how the log files look like. </p>
+
+<p>Asterisk now generates Call Detail Records. See /include/asterisk/cel.h for all the fields which are recorded. By default, records in comma separated values will be created in /var/log/asterisk/cel-csv. </p>
+
+<p>The configuration file for cel_radius.so module is : <br />
+/etc/asterisk/cel.conf This is where you can set CEL related parameters as well as the path to the radiusclient-ng library configuration file.</p>
+
+<p>This is where you can set CDR related parameters as well as the path to the radiusclient-ng library configuration file.</p>
+
+<h5 id="RADIUSCELBackend-LoggedValues">Logged Values</h5>
+<ul>
+	<li>&quot;Asterisk-Acc-Code&quot;, The account name of detail records</li>
+	<li>&quot;Asterisk-CidName&quot;,</li>
+	<li>&quot;Asterisk-CidNum&quot;,</li>
+	<li>&quot;Asterisk-Cidani&quot;,</li>
+	<li>&quot;Asterisk-Cidrdnis&quot;,</li>
+	<li>&quot;Asterisk-Ciddnid&quot;,</li>
+	<li>&quot;Asterisk-Exten&quot;,</li>
+	<li>&quot;Asterisk-Context&quot;, The destination context</li>
+	<li>&quot;Asterisk-Channame&quot;, The channel name</li>
+	<li>&quot;Asterisk-Appname&quot;, Last application run on the channel</li>
+	<li>&quot;Asterisk-App-Data&quot;, Argument to the last channel</li>
+	<li>&quot;Asterisk-Event-Time&quot;,</li>
+	<li>&quot;Asterisk-Event-Type&quot;,</li>
+	<li>&quot;Asterisk-AMA-Flags&quot;, DOCUMENTATION, BILL, IGNORE etc, specified on a per channel basis like accountcode.</li>
+	<li>&quot;Asterisk-Unique-ID&quot;, Unique call identifier</li>
+	<li>&quot;Asterisk-User-Field&quot; User field set via SetCELUserField</li>
+	<li>&quot;Asterisk-Peer&quot; Name of the Peer for 2-channel events (like bridge)</li>
+</ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -32,8 +32,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "../sig_analog.h"
 #if defined(HAVE_PRI)
 #include "../sig_pri.h"
@@ -903,11 +901,11 @@ void dahdi_native_unload(void)
  * \retval 0 on success.
  * \retval -1 on error.
  */
-int dahdi_native_load(struct ast_module *mod, const struct ast_channel_tech *tech)
+int dahdi_native_load(const struct ast_channel_tech *tech)
 {
 	dahdi_tech = tech;
 
-	if (__ast_bridge_technology_register(&native_bridge, mod)) {
+	if (ast_bridge_technology_register(&native_bridge)) {
 		dahdi_native_unload();
 		return -1;
 	}

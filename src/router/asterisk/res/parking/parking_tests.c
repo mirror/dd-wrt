@@ -25,8 +25,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "res_parking.h"
 #include "asterisk/utils.h"
 #include "asterisk/module.h"

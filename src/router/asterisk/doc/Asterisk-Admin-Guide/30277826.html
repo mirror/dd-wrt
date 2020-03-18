@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : ARI and Media: Part 1 - Recording</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="29395573.html">Asterisk REST Interface (ARI)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Introduction-to-ARI-and-Media-Manipulation_29396202.html">Introduction to ARI and Media Manipulation</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : ARI and Media: Part 1 - Recording
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Mark Michelson</span>, last modified by <span class='editor'> Matt Jordan</span> on Oct 16, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="ARIandMedia:Part1-Recording-TheRecordingAPI">The Recording API</h1><p><span class="confluence-link">Recordings</span> in ARI are divided into two main categories: live and stored. Live recordings are those that are currently being recorded on a channel or bridge, and stored recordings are recordings that have been completed and saved to the file system. The API for the <code>/recordings</code> resource can be found <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Recordings+REST+API">here</a>.</p><p>Live recordings can be manipulated as they are being made, with options to manipulate the flow of audio such as muting, pausing, stopping, or canceling the recording. Stored recordings are simply files on the file system on which Asterisk is installed. The location of stored recordings is in the <code>/recording</code> subdirectory of the configured <code>astspooldir</code> in <code>asterisk.conf</code>. By default, this places recordings in <code>/var/spool/asterisk/recording</code>.</p><p>Channels can have their audio recorded using the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Channels+REST+API#Asterisk13ChannelsRESTAPI-record" rel="nofollow"><code>/channels/{channelId}/record</code></a> resource, and Bridges can have their audio recorded using the <code><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Bridges+REST+API#Asterisk13BridgesRESTAPI-record" rel="nofollow">/bridges/{bridgeId}/record</a></code> resource.</p><h1 id="ARIandMedia:Part1-Recording-VoiceMailApplicationSkeleton">Voice Mail Application Skeleton</h1><p>Our application to record voice mails will be based on the following skeleton. As we add new features, we will create new states for our state machine, and add a few extra lines to our application skeleton in order to link the states together appropriately.</p></div><div class="columnMacro" style="width:40%;min-width:40%;max-width:40%;"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303081896 {padding: 0px;}
+div.rbtoc1582303081896 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303081896 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303081896'>
+<ul class='toc-indentation'>
+<li><a href='#ARIandMedia:Part1-Recording-TheRecordingAPI'>The Recording API</a></li>
+<li><a href='#ARIandMedia:Part1-Recording-VoiceMailApplicationSkeleton'>Voice Mail Application Skeleton</a></li>
+<li><a href='#ARIandMedia:Part1-Recording-BasicVoiceMailRecording'>Basic Voice Mail Recording</a></li>
+<li><a href='#ARIandMedia:Part1-Recording-CancellingaRecording'>Cancelling a Recording</a></li>
+<li><a href='#ARIandMedia:Part1-Recording-OperatingonStoredRecordings'>Operating on Stored Recordings</a></li>
+<li><a href='#ARIandMedia:Part1-Recording-RecordingBridges'>Recording Bridges</a></li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">vm-record.py</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: py; collapse: true; gutter: false" style="font-size:12px;">#!/usr/bin/env python
+
+import ari
+import logging
+import time
+import os
+import sys
+
+from event import Event
+from state_machine import StateMachine
+# As we add more states to our state machine, we'll import the necessary
+# states here.
+
+logging.basicConfig(level=logging.ERROR)
+LOGGER = logging.getLogger(__name__)
+
+client = ari.connect('http://localhost:8088', 'asterisk', 'asterisk')
+
+
+class VoiceMailCall(object):
+    def __init__(self, ari_client, channel, mailbox):
+        self.client = ari_client
+        self.channel = channel
+        self.vm_path = os.path.join('voicemail', mailbox, str(time.time()))
+        self.setup_state_machine()
+
+    def setup_state_machine(self):
+        # This is where we will initialize states, create a state machine, add
+        # state transitions to the state machine, and start the state machine.
+
+
+def stasis_start_cb(channel_obj, event):
+    channel = channel_obj['channel']
+    channel_name = channel.json.get('name')
+    mailbox = event.get('args')[0]
+
+    print(&quot;Channel {0} recording voicemail for {1}&quot;.format(
+        channel_name, mailbox))
+
+    channel.answer()
+    VoiceMailCall(client, channel, mailbox)
+
+
+client.on_channel_event('StasisStart', stasis_start_cb)
+client.run(apps=sys.argv[1])</pre> 
+ </div>
+</div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">vm-record.js</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: js; collapse: true; gutter: false" style="font-size:12px;">/*jshint node:true*/
+'use strict';
+ 
+var ari = require('ari-client');
+var util = require('util');
+var path = require('path');
+
+var Event = require('./event');
+var StateMachine = require('./state_machine');
+// As we add new states to our state machine, this is where we will
+// add the new required states. 
+ 
+ari.connect('http://localhost:8088', 'asterisk', 'asterisk', clientLoaded);
+
+var VoiceMailCall = function(ari_client, channel, mailbox) {
+    this.client = ari_client;
+    this.channel = channel;
+    this.vm_path = path.join('voicemail', mailbox, Date.now().toString());
+
+	this.setup_state_machine = function() {
+    // This is where we will initialize states, create a state machine, add
+    // state transitions to the state machine, and start the state machine.
+    }
+
+    this.setup_state_machine();
+}
+
+
+function clientLoaded(err, client) {
+    if (err) {
+        throw err;
+    }
+
+    client.on('StasisStart', stasisStart);
+
+    function stasisStart(event, channel) {
+        var mailbox = event.args[0]
+        channel.answer(function(err) {
+            if (err) {
+                throw err;
+            }
+            new VoiceMailCall(client, channel, mailbox);
+        });
+    }
+
+    client.start(process.argv[2]);
+}
+
+</pre> 
+ </div>
+</div><p>With a few modifications, this same application skeleton can be adapted for use with non-voice mail applications. The biggest voice mail-specific thing being done here is the calculation of the path for voice mail recordings based on the application argument. The intended use of this application is something like the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[default]
+exten =&gt; _3XX,1,NoOp()
+      same =&gt; n,Stasis(vm-record, ${EXTEN})
+      same =&gt; n,Hangup()</pre>
+</div></div><p>This way, when calling any three-digit extension that begins with the number '3', the user will call into the application with the mailbox dialled (e.g. dialling &quot;305&quot; will allow the user to leave a message for mailbox &quot;305&quot;).</p><h1 id="ARIandMedia:Part1-Recording-BasicVoiceMailRecording">Basic Voice Mail Recording</h1><p>We've seen a lot of the underlying concepts for our application, so let's actually make something useful now. We'll start with a very simple application that allows callers to record a message upon entering the application. When the caller has completed recording the message, the caller may press the '#' key or may hang up to accept the recording. Here is a state machine diagram for the application:</p><p style="text-align: center;">
+
+<map id="gliffy-map-30474296-9100" name="gliffy-map-30474296-9100"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 520px;" usemap="#gliffy-map-30474296-9100" src="attachments/30277826/30474297.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p><p>Notice that even though DTMF '#' and a caller hangup result in the same end result that there are two separate states that are transitioned into. This is because our code needs to behave differently at the end of a voice mail call based on whether the channel has been hung up or not. In short, the &quot;Ending&quot; state in the diagram will forcibly hang up the channel, whereas the &quot;Hung up&quot; state does not need to do so.</p><p>For this, we will be defining three states: recording, hungup, and ending. The following is the code for the three states:</p><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">recording_state.py</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: py; collapse: true; gutter: false" style="font-size:12px;">from event import Event
+
+class RecordingState(object):
+    state_name = &quot;recording&quot;
+
+    def __init__(self, call):
+        self.call = call
+        self.hangup_event = None
+        self.dtmf_event = None
+        self.recording = None
+
+    def enter(self):
+        print &quot;Entering recording state&quot;
+        self.hangup_event = self.call.channel.on_event('ChannelHangupRequest',
+                self.on_hangup)
+        self.dtmf_event = self.call.channel.on_event('ChannelDtmfReceived',
+                                                     self.on_dtmf)
+        self.recording = self.call.channel.record(name=self.call.vm_path,
+                                                  format='wav',
+                                                  beep=True,
+                                                  ifExists='overwrite')
+        print &quot;Recording voicemail at {0}&quot;.format(self.call.vm_path)
+
+    def cleanup(self):
+        print &quot;Cleaning up event handlers&quot;
+        self.dtmf_event.close()
+        self.hangup_event.close()
+
+    def on_hangup(self, channel, event):
+        print &quot;Accepted recording {0} on hangup&quot;.format(self.call.vm_path)
+        self.cleanup()
+        self.call.state_machine.change_state(Event.HANGUP)
+
+    def on_dtmf(self, channel, event):
+        digit = event.get('digit')
+        if digit == '#':
+            rec_name = self.recording.json.get('name')
+            print &quot;Accepted recording {0} on DTMF #&quot;.format(rec_name)
+            self.cleanup()
+            self.recording.stop()
+            self.call.state_machine.change_state(Event.DTMF_OCTOTHORPE)</pre> 
+ </div>
+</div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">recording_state.js</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: js; collapse: true; gutter: false" style="font-size:12px;">var Event = require('./event')
+
+function RecordingState(call) {
+    this.state_name = &quot;recording&quot;;
+
+    this.enter = function() {
+        var recording = call.client.LiveRecording(call.client, {name: call.vm_path});
+        console.log(&quot;Entering recording state&quot;);
+        call.channel.on(&quot;ChannelHangupRequest&quot;, on_hangup);
+        call.channel.on(&quot;ChannelDtmfReceived&quot;, on_dtmf);
+        call.channel.record({name: recording.name, format: 'wav', beep: true, ifExists: 'overwrite'}, recording);
+
+        function cleanup() {
+            call.channel.removeListener('ChannelHangupRequest', on_hangup);
+            call.channel.removeListener('ChannelDtmfReceived', on_dtmf);
+        }
+
+        function on_hangup(event, channel) {
+            console.log(&quot;Accepted recording %s on hangup&quot;, recording.name);
+            cleanup();
+            call.state_machine.change_state(Event.HANGUP);
+        }
+
+        function on_dtmf(event, channel) {
+            switch (event.digit) {
+            case '#':
+                console.log(&quot;Accepted recording&quot;, call.vm_path);
+                cleanup();
+                recording.stop(function(err) {
+                    call.state_machine.change_state(Event.DTMF_OCTOTHORPE);
+                });
+                break;
+            }
+        }
+    }
+}
+
+module.exports = RecordingState;</pre> 
+ </div>
+</div><p>When entered, the state sets up listeners for hangup and DTMF events on the channel, since those are the events that will cause the state to change. In all cases, before a state change occurs, the <code>cleanup()</code> function is invoked to remove event listeners. This way, the event listeners set by the recording state will not accidentally still be set up when the next state is entered. This same <code>cleanup()</code> method will be used for all states we create that set up ARI event listeners.</p><p>The <code>stop</code> method causes a live recording to finish and be saved to the file system. Notice that the <code>on_hangup()</code> method does not attempt to stop the live recording. This is because when a channel hangs up, any live recordings on that channel are automatically stopped and stored.</p><p>The other two states in the state machine are much simpler, since they are terminal states and do not need to watch for any events.</p><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">ending_state.py</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: py; collapse: true; gutter: false" style="font-size:12px;">class EndingState(object):
+    state_name = &quot;ending&quot;
+
+    def __init__(self, call):
+        self.call = call
+
+    def enter(self):
+        channel_name = self.call.channel.json.get('name')
+        print &quot;Ending voice mail call from {0}&quot;.format(channel_name)
+        self.call.channel.hangup()</pre> 
+ </div>
+</div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">ending_state.js</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: js; collapse: true; gutter: false" style="font-size:12px;">function EndingState(call) {
+    this.state_name = &quot;ending&quot;;
+
+    this.enter = function() {
+        channel_name = call.channel.name;
+        console.log(&quot;Ending voice mail call from&quot;, channel_name);
+        call.channel.hangup();
+    }
+}
+
+module.exports = EndingState;</pre> 
+ </div>
+</div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">hangup_state.py</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: py; collapse: true; gutter: false" style="font-size:12px;">class HungUpState(object):
+    state_name = &quot;hungup&quot;
+
+    def __init__(self, call):
+        self.call = call
+
+    def enter(self):
+        channel_name = self.call.channel.json.get('name')
+        print &quot;Channel {0} hung up&quot;.format(channel_name)</pre> 
+ </div>
+</div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">hungup_state.js</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: js; collapse: true; gutter: false" style="font-size:12px;">function HungUpState(call) {
+    this.state_name = &quot;hungup&quot;;
+
+    this.enter = function() {
+        channel_name = call.channel.name;
+        console.log(&quot;Channel %s hung up&quot;, channel_name);
+    }
+}
+
+module.exports = HungUpState;</pre> 
+ </div>
+</div><p>These two states are two sides to the same coin. The <code>EndingState</code> is used to end the call by hanging up the channel, and the <code>HungUpState</code> is used to terminate the state machine when the caller has hung up. You may find yourself wondering why a <code>HungUpState</code> is needed at all. For our application, it does not do much, but it's a great place to perform post-call logic if your application demands it. See the second reader exercise on this page to see an example of that.</p><p>Using the application skeleton we set up earlier, we can make the following modifications to accommodate our state machine:</p><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">vm-call.py</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: py; collapse: true; gutter: false" style="font-size:12px;"># At the top of the file
+from recording_state import RecordingState
+from ending_state import EndingState
+from hungup_state import HungUpState
+
+# Inside our VoiceMailCall class
+    def setup_state_machine(self):
+        hungup_state = HungUpState(self)
+        recording_state = RecordingState(self)
+        ending_state = EndingState(self)
+
+        self.state_machine = StateMachine()
+        self.state_machine.add_transition(recording_state, Event.DTMF_OCTOTHORPE,
+                                          ending_state)
+        self.state_machine.add_transition(recording_state, Event.HANGUP,
+                                          hungup_state)
+        self.state_machine.start(recording_state)</pre> 
+ </div>
+</div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">vm-call.js</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: js; collapse: true; gutter: false" style="font-size:12px;">// At the top of the file
+var RecordingState = require('./recording_state');
+var EndingState = require('./ending_state');
+var HungUpState = require('./hungup_state');
+
+
+	// Inside our VoiceMailCall function
+	this.setup_state_machine = function() {
+        var hungup_state = new HungUpState(self)
+        var recording_state = new RecordingState(self)
+        var ending_state = new EndingState(self)
+
+        this.state_machine = new StateMachine()
+        this.state_machine.add_transition(recording_state, Event.DTMF_OCTOTHORPE, ending_state)
+        this.state_machine.add_transition(recording_state, Event.HANGUP, hungup_state)
+        this.state_machine.start(recording_state)
+	}</pre> 
+ </div>
+</div><p>The following is a sample output of a user calling the application and pressing the '#' key when finished recording</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Channel PJSIP/200-00000003 recording voicemail for 305
+Entering recording state
+Recording voicemail at voicemail/305/1411497846.53
+Accepted recording voicemail/305/1411497846.53
+Cleaning up event handlers
+Ending voice mail call from PJSIP/200-00000003</pre>
+</div></div><div class="panel" style="background-color: silver;border-style: solid;border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;border-bottom-style: solid;background-color: seagreen;color: black;"><b>Reader Exercise 1</b></div><div class="panelContent" style="background-color: silver;">
+Currently, the voicemails being recorded are all kept in a single &quot;folder&quot; for a specific mailbox. See if you can change the code to record messages in an &quot;INBOX&quot; folder on the mailbox instead.
+</div></div><div class="panel" style="background-color: silver;border-style: solid;border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;border-bottom-style: solid;background-color: seagreen;color: black;"><b>Reader Exercise 2</b></div><div class="panelContent" style="background-color: silver;">
+<p><code>EndingState</code> and <code>HungUpState</code> don't do much of anything at the moment. States like these can be great in voice mail applications for updating the message-waiting state of mailboxes on a system. If you're feeling industrious, read the API for the <code>/mailboxes</code> resource in ARI. Try to change <code>HungUpState</code> and <code>EndingState</code> to update the message-waiting status of a mailbox when a new message is left. To keep the exercise simple, for now you can assume the following:</p><ul><li>The number of &quot;old&quot; messages in a mailbox is always 0</li><li>Since you are more concerned with alerting the mailbox owner that there exist new messages, do not try to count the messages in the mailbox. Instead, just state that there is 1 new message.</li></ul>
+</div></div><h1 id="ARIandMedia:Part1-Recording-CancellingaRecording">Cancelling a Recording</h1><p>Now we have a simple application set up to record a message, but it's pretty bare at the moment. Let's start expanding some. One feature we can add is the ability to press a DTMF key while recording a voice mail to cancel the current recording and re-start the recording process. We'll use the DTMF '*' key to accomplish this. The updated state machine diagram looks like the following:</p><p style="text-align: center;">
+
+<map id="gliffy-map-30474298-1029" name="gliffy-map-30474298-1029"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 580px;" usemap="#gliffy-map-30474298-1029" src="attachments/30277826/30474299.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p><p>All that has changed is that there is a new transition, which means a minimal change to our current code to facilitate the change. In our <code>recording_state</code> file, we will rewrite the <code>on_dtmf</code> method as follows:</p><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">recording_state.py</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: py; collapse: true; gutter: false" style="font-size:12px;">    def on_dtmf(self, channel, event):
+        digit = event.get('digit')
+        if digit == '#':
+            rec_name = self.recording.json.get('name')
+            print &quot;Accepted recording {0} on DTMF #&quot;.format(rec_name)
+            self.cleanup()
+            self.recording.stop()
+            self.call.state_machine.change_state(Event.DTMF_OCTOTHORPE)
+        # NEW CONTENT
+        elif digit == '*':
+            rec_name = self.recording.json.get('name')
+            print &quot;Canceling recording {0} on DTMF *&quot;.format(rec_name)
+            self.cleanup()
+            self.recording.cancel()
+            self.call.state_machine.change_state(Event.DTMF_STAR)</pre> 
+ </div>
+</div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">recording_state.js</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: js; collapse: true; gutter: false" style="font-size:12px;">    function on_dtmf(event, channel) {
+        switch (event.digit) {
+        case '#':
+            console.log(&quot;Accepted recording&quot;, call.vm_path);
+            cleanup();
+            recording.stop(function(err) {
+                call.state_machine.change_state(Event.DTMF_OCTOTHORPE);
+            });
+            break;
+        // NEW CONTENT
+        case '*':
+            console.log(&quot;Canceling recording&quot;, call.vm_path);
+            cleanup();
+            recording.cancel(function(err) {
+                call.state_machine.change_state(Event.DTMF_STAR);
+            });
+            break;
+        }
+    }</pre> 
+ </div>
+</div><p>The first part of the method is the same as it was before, but we have added extra handling for when the user presses the '*' key. The <code>cancel()</code> method for live recordings causes the live recording to be stopped and for it not to be stored on the file system.</p><p>We also need to add our new transition while setting up our state machine. Our <code>VoiceMailCall::setup_state_machine()</code> method now looks like:</p><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">vm-call.py</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: py; collapse: true; gutter: false" style="font-size:12px;">    def setup_state_machine(self):
+        hungup_state = HungUpState(self)
+        recording_state = RecordingState(self)
+        ending_state = EndingState(self)
+        self.state_machine = StateMachine()
+        self.state_machine.add_transition(recording_state, Event.DTMF_OCTOTHORPE,
+                                          ending_state)
+        self.state_machine.add_transition(recording_state, Event.HANGUP,
+                                          hungup_state)
+        self.state_machine.add_transition(recording_state, Event.DTMF_STAR,
+                                          recording_state)
+        self.state_machine.start(recording_state)</pre> 
+ </div>
+</div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">vm-call.js</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: js; collapse: true; gutter: false" style="font-size:12px;">this.setup_state_machine = function() {
+    var hungup_state = new HungUpState(this);
+    var recording_state = new RecordingState(this);
+    var ending_state = new EndingState(this);
+
+	this.state_machine = new StateMachine();
+    this.state_machine.add_transition(recording_state, Event.DTMF_OCTOTHORPE, ending_state);
+    this.state_machine.add_transition(recording_state, Event.HANGUP, hungup_state);
+    this.state_machine.add_transition(recording_state, Event.DTMF_STAR, recording_state);
+    this.state_machine.start(recording_state);
+}</pre> 
+ </div>
+</div><p>This is exactly the same as it was, except for the penultimate line adding the <code><code>Event.DTMF_STAR</code></code> transition. Here is sample output for when a user calls in, presses '*' twice, and then presses '#' to complete the call</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Channel PJSIP/200-00000007 recording voicemail for 305
+Entering recording state
+Recording voicemail at voicemail/305/1411498790.65
+Canceling recording voicemail/305/1411498790.65 on DTMF *
+Cleaning up event handlers
+Entering recording state
+Recording voicemail at voicemail/305/1411498790.65
+Canceling recording voicemail/305/1411498790.65 on DTMF *
+Cleaning up event handlers
+Entering recording state
+Recording voicemail at voicemail/305/1411498790.65
+Accepted recording voicemail/305/1411498790.65 on DTMF #
+Cleaning up event handlers
+Ending voice mail call from PJSIP/200-00000007</pre>
+</div></div><div class="panel" style="background-color: silver;border-style: solid;border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;border-bottom-style: solid;background-color: seagreen;color: black;"><b>Reader Exercise 3</b></div><div class="panelContent" style="background-color: silver;">
+<p>We have covered the <code>stop()</code> and <code>cancel()</code> methods, but live recordings provide other methods as well. In particular, there are <code>pause()</code>, which causes the live recording to temporarily stop recording audio, and <code>unpause()</code>, which causes the live recording to resume recording audio.</p><p>Modify the <code>RecordingState</code> to allow a DTMF digit of your choice to toggle pausing and unpausing the live recording.</p>
+</div></div><div class="panel" style="background-color: silver;border-style: solid;border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;border-bottom-style: solid;background-color: seagreen;color: black;"><b>Reader Exercise 4</b></div><div class="panelContent" style="background-color: silver;">
+<p>Our application provides the ability to cancel recordings and re-record them, but it gives no ability to cancel the recording and end the call.</p><p>Modify the <code>RecordingState</code> to allow for a DTMF digit of your choice to cancel the recording and end the call.</p>
+</div></div><h1 id="ARIandMedia:Part1-Recording-OperatingonStoredRecordings">Operating on Stored Recordings</h1><p>So far, we've recorded a channel, stopped a live recording, and cancelled a live recording. Now let's turn our attention to operations that can be performed on stored recordings. An obvious operation to start with is to play back the stored recording. We're going to make another modification to our voice mail recording application that adds a &quot;reviewing&quot; state after a voicemail is recorded. In this state, a user that has recorded a voice mail will hear the recorded message played back to him/her. The user may press the '#' key or hang up in order to accept the recorded message, or the user may press '*' to erase the stored recording and record a new message in its place. Below is the updated state diagram with the new &quot;reviewing&quot; state added.</p><p style="text-align: center;">
+
+<map id="gliffy-map-30474300-469" name="gliffy-map-30474300-469"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 830px;" usemap="#gliffy-map-30474300-469" src="attachments/30277826/30474301.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p><p>To realize this, here is the code for our new &quot;reviewing&quot; state:</p><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">reviewing_state.py</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: py; collapse: true; gutter: false" style="font-size:12px;">import uuid
+
+class ReviewingState(object):
+    state_name = &quot;reviewing&quot;
+
+    def __init__(self, call):
+        self.call = call
+        self.playback_id = None
+        self.hangup_event = None
+        self.playback_finished = None
+        self.dtmf_event = None
+        self.playback = None
+
+    def enter(self):
+        self.playback_id = str(uuid.uuid4())
+        print &quot;Entering reviewing state&quot;
+        self.hangup_event = self.call.channel.on_event(&quot;ChannelHangupRequest&quot;,
+                self.on_hangup)
+        self.playback_finished = self.call.client.on_event(
+                'PlaybackFinished', self.on_playback_finished)
+        self.dtmf_event = self.call.channel.on_event('ChannelDtmfReceived',
+                                                     self.on_dtmf)
+        self.playback = self.call.channel.playWithId(
+                playbackId=self.playback_id, media=&quot;recording:{0}&quot;.format(
+                    self.call.vm_path))
+
+    def cleanup(self):
+        self.playback_finished.close()
+        if self.playback:
+            self.playback.stop()
+        self.dtmf_event.close()
+        self.hangup_event.close()
+
+    def on_hangup(self, channel, event):
+        print &quot;Accepted recording {0} on hangup&quot;.format(self.call.vm_path)
+        self.cleanup()
+        self.call.state_machine.change_state(Event.HANGUP)
+
+    def on_playback_finished(self, event):
+        if self.playback_id == event.get('playback').get('id'):
+            self.playback = None
+
+    def on_dtmf(self, channel, event):
+        digit = event.get('digit')
+        if digit == '#':
+            print &quot;Accepted recording {0} on DTMF #&quot;.format(self.call.vm_path)
+            self.cleanup()
+            self.call.state_machine.change_state(Event.DTMF_OCTOTHORPE)
+        elif digit == '*':
+            print &quot;Discarding stored recording {0} on DTMF *&quot;.format(self.call.vm_path)
+            self.cleanup()
+            self.call.client.recordings.deleteStored(
+                    recordingName=self.call.vm_path)
+            self.call.state_machine.change_state(Event.DTMF_STAR)</pre> 
+ </div>
+</div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">reviewing_state.js</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: js; collapse: true; gutter: false" style="font-size:12px;">var Event = require('./event');
+
+function ReviewingState(call) {
+    this.state_name = &quot;reviewing&quot;;
+
+    this.enter = function() {
+        var playback = call.client.Playback();
+        var url = &quot;recording:&quot; + call.vm_path;
+        console.log(&quot;Entering reviewing state&quot;);
+        call.channel.on(&quot;ChannelHangupRequest&quot;, on_hangup);
+        call.channel.on(&quot;ChannelDtmfReceived&quot;, on_dtmf);
+        call.client.on(&quot;PlaybackFinished&quot;, on_playback_finished);
+        call.channel.play({media: url}, playback);
+
+        function cleanup() {
+            call.channel.removeListener('ChannelHangupRequest', on_hangup);
+            call.channel.removeListener('ChannelDtmfReceived', on_dtmf);
+            call.client.removeListener('PlaybackFinished', on_playback_finished);
+            if (playback) {
+                playback.stop();
+            }
+        }
+
+        function on_hangup(event, channel) {
+            console.log(&quot;Accepted recording %s on hangup&quot;, call.vm_path);
+            playback = null;
+            cleanup();
+            call.state_machine.change_state(Event.HANGUP);
+        }
+
+        function on_playback_finished(event) {
+            if (playback &amp;&amp; (playback.id === event.playback.id)) {
+                playback = null;
+            }
+        }
+
+        function on_dtmf(event, channel) {
+            switch (event.digit) {
+            case '#':
+                console.log(&quot;Accepted recording&quot;, call.vm_path);
+                cleanup();
+                call.state_machine.change_state(Event.DTMF_OCTOTHORPE);
+                break;
+            case '*':
+                console.log(&quot;Canceling recording&quot;, call.vm_path);
+                cleanup();
+                call.client.recordings.deleteStored({recordingName: call.vm_path});
+                call.state_machine.change_state(Event.DTMF_STAR);
+                break;
+            }
+        }
+    }
+}
+
+module.exports = ReviewingState;</pre> 
+ </div>
+</div><p>The code for this state is similar to the code from <code>RecordingState</code>. The big difference is that instead of recording a message, it is playing back a stored recording. Stored recordings can be played using the channel's <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Channels+REST+API#Asterisk13ChannelsRESTAPI-play" rel="nofollow"><code>play()</code></a> method (or as we have used in the python code, <code>playWithId()</code>). If the URI of the media to be played is prefixed with the &quot;recording:&quot; scheme, then Asterisk knows to search for the specified file where recordings are stored. More information on playing back files on channels, as well as a detailed list of media URI schemes can be found <a href="29395606.html">here</a>. Note the method that is called when a DTMF '*' is received. The <code>deleteStored()</code> method can be used on the <code>/recordings</code> resource of the ARI client to delete a stored recording from the file system on which Asterisk is running.</p><p>One more thing to point out is the code that runs in <code>on_playback_finished()</code>. When reviewing a voicemail recording, the message may finish playing back before the user decides what to do with it. If this happens, we detect that the playback has finished so that we do not attempt to stop an already-finished playback once the user decides how to proceed.</p><p>We need to get this new state added into our state machine, so we make the following modifications to our code to allow for the new state to be added:</p><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">vm-call.py</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: py; collapse: true; gutter: false" style="font-size:12px;">#At the top of the file
+from reviewing_state import ReviewingState
+
+#In VoiceMailCall::setup_state_machine
+    def setup_state_machine(self):
+        hungup_state = HungUpState(self)
+        recording_state = RecordingState(self)
+        ending_state = EndingState(self)
+        reviewing_state = ReviewingState(self)
+        self.state_machine = StateMachine()
+        self.state_machine.add_transition(recording_state, Event.DTMF_OCTOTHORPE,
+                                          reviewing_state) 
+        self.state_machine.add_transition(recording_state, Event.HANGUP,
+                                          hungup_state)
+        self.state_machine.add_transition(recording_state, Event.DTMF_STAR,
+                                          recording_state) 
+        self.state_machine.add_transition(reviewing_state, Event.HANGUP,
+                                          hungup_state)
+        self.state_machine.add_transition(reviewing_state, Event.DTMF_OCTOTHORPE,
+                                          ending_state)
+        self.state_machine.add_transition(reviewing_state, Event.DTMF_STAR,
+                                          recording_state)
+        self.state_machine.start(recording_state)</pre> 
+ </div>
+</div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">vm-call.js</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: js; collapse: true; gutter: false" style="font-size:12px;">// At the top of the file
+var ReviewingState = require('./reviewing_state');
+
+// In VoicemailCall::setup_state_machine
+this.setup_state_machine = function() {
+    var hungup_state = new HungUpState(this);
+    var recording_state = new RecordingState(this);
+    var ending_state = new EndingState(this);
+    var reviewing_state = new ReviewingState(this);
+
+	this.state_machine = new StateMachine();
+    this.state_machine.add_transition(recording_state, Event.DTMF_OCTOTHORPE, reviewing_state);
+    this.state_machine.add_transition(recording_state, Event.HANGUP, hungup_state);
+    this.state_machine.add_transition(recording_state, Event.DTMF_STAR, recording_state);
+    this.state_machine.add_transition(reviewing_state, Event.DTMF_OCTOTHORPE, ending_state);
+    this.state_machine.add_transition(reviewing_state, Event.HANGUP, hungup_state);
+    this.state_machine.add_transition(reviewing_state, Event.DTMF_STAR, recording_state);
+    this.state_machine.start(recording_state);
+}</pre> 
+ </div>
+</div><p>The following is the output from a sample call. The user records audio, then presses '#'. Upon hearing the recording, the user decides to record again, so the user presses '*'. After re-recording, the user presses '#'. The user hears the new version of the recording played back and is satisfied with it, so the user presses '#' to accept the recording.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Channel PJSIP/200-00000009 recording voicemail for 305
+Entering recording state
+Recording voicemail at voicemail/305/1411501058.42
+Accepted recording voicemail/305/1411501058.42 on DTMF #
+Cleaning up event handlers
+Entering reviewing state
+Discarding stored recording voicemail/305/1411501058.42 on DTMF *
+Entering recording state
+Recording voicemail at voicemail/305/1411501058.42
+Accepted recording voicemail/305/1411501058.42 on DTMF #
+Cleaning up event handlers
+Entering reviewing state
+Accepted recording voicemail/305/1411501058.42 on DTMF #
+Ending voice mail call from PJSIP/200-00000009</pre>
+</div></div><div class="panel" style="background-color: silver;border-style: solid;border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;border-bottom-style: solid;background-color: seagreen;color: black;"><b>Reader Exercise 5</b></div><div class="panelContent" style="background-color: silver;">
+<p>In the previous section we introduced the ability to delete a stored recording. Stored recordings have a second operation available to them: <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Recordings+REST+API#Asterisk13RecordingsRESTAPI-copyStored" rel="nofollow">copying</a>. The <code>copy()</code> method of a stored recording can be used to copy the stored recording from one location to another.</p><p>For this exercise modify <code>ReviewingState</code> to let a DTMF key of your choice copy the message to a different mailbox on the system. When a user presses this DTMF key, the state machine should transition into a new state called &quot;copying.&quot; The &quot;copying&quot; state should gather DTMF from the user to determine which mailbox the message should be copied to. If '#' is entered, then the message is sent to the mailbox the user has typed in. If '*' is entered, then the copying operation is cancelled. Both a '#' and a '*' should cause the state machine to transition back into <code>ReviewingState</code>.</p><p>As an example, let's say that you have set DTMF '0' to be the key that the user presses in <code>ReviewingState</code> to copy the message. The user presses '0'. The user then presses '3' '2' '0' '#'. The message should be copied to mailbox &quot;320&quot;, and the user should start hearing the message played back again. Now let's say the user presses '0' to copy the message again. The user then presses '3' '2' '1' '0' '*'. The message should not be copied to any mailbox, and the user should start hearing the message played back again.</p>
+</div></div><h1 id="ARIandMedia:Part1-Recording-RecordingBridges">Recording Bridges</h1><p>This discussion of recordings has focused on recording channel audio. It's important to note that bridges also have an option to be recorded. What's the difference? Recording a channel's audio records only the audio coming <strong>from</strong> a channel. Recording a bridge records the mixed audio coming from all channels into the bridge. This means that if you are attempting to do something like record a conversation between participants in a phone call, you would want to record the audio in the bridge rather than on either of the channels involved.</p><p>Once recording is started on a bridge, the operations available for the live recording and the resulting stored recording are exactly the same as for live recordings and stored recordings on a channel. Since the API for recording a bridge and recording a channel are so similar, this page will not provide any examples of recording bridge audio.</p>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/30277826/30474296">record</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/30277826/30474297.png">record.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/30277826/30474298">record-with-retry</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/30277826/30474299.png">record-with-retry.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/30277826/30474300">record-with-review</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/30277826/30474301.png">record-with-review.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

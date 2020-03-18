@@ -17,7 +17,7 @@
 /*! \file
  *
  * SYSINFO function to return various system data.
- * 
+ *
  * \note Inspiration and Guidance from Russell
  *
  * \author Jeff Peeler
@@ -30,8 +30,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #if defined(HAVE_SYSINFO)
 #include <sys/sysinfo.h>
@@ -132,7 +130,7 @@ static int sysinfo_helper(struct ast_channel *chan, const char *cmd, char *data,
 		ast_log(LOG_ERROR, "Unknown sysinfo parameter type '%s'.\n", data);
 		return -1;
 	}
-		
+
 	return 0;
 }
 
@@ -153,4 +151,3 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "System information related functions");
-

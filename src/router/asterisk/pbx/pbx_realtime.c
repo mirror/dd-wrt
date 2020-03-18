@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <signal.h>
 
 #include "asterisk/file.h"
@@ -155,11 +153,11 @@ static int extension_length_comparator(struct ast_category *p, struct ast_catego
 
 	[context@][realtimetable][/options]
 
-	If the realtimetable is omitted it is assumed to be "extensions".  If no context is 
+	If the realtimetable is omitted it is assumed to be "extensions".  If no context is
 	specified the context is assumed to be whatever is the container.
 
 	The realtime table should have entries for context,exten,priority,app,args
-	
+
 	The realtime table currently does not support callerid fields.
 
 */
@@ -196,7 +194,7 @@ static struct ast_variable *realtime_switch_common(const char *table, const char
 	}
 	var = ast_load_realtime(table, ematch, rexten, "context", context, "priority", pri, SENTINEL);
 	if (!var && !ast_test_flag(&flags, OPTION_PATTERNS_DISABLED)) {
-		cfg = ast_load_realtime_multientry(table, "exten LIKE", "\\_%", "context", context, "priority", pri, SENTINEL);	
+		cfg = ast_load_realtime_multientry(table, "exten LIKE", "\\_%", "context", context, "priority", pri, SENTINEL);
 		if (cfg) {
 			char *cat = NULL;
 
@@ -346,6 +344,11 @@ static int realtime_exec(struct ast_channel *chan, const char *context, const ch
 						 term_color(tmp3, S_OR(appdata, ""), COLOR_BRMAGENTA, 0, sizeof(tmp3)));
 				if (ast_channel_snapshot_type()) {
 					ast_channel_lock(chan);
+					/* Force a new dialplan segment that will be unique to use so we can update it with the
+					 * information we want. In the future when a channel snapshot is published this will
+					 * occur again and unset this flag.
+					 */
+					ast_channel_snapshot_invalidate_segment(chan, AST_CHANNEL_SNAPSHOT_INVALIDATE_DIALPLAN);
 					snapshot = ast_channel_snapshot_create(chan);
 					ast_channel_unlock(chan);
 				}
@@ -353,8 +356,8 @@ static int realtime_exec(struct ast_channel *chan, const char *context, const ch
 					/* pbx_exec sets application name and data, but we don't want to log
 					 * every exec. Just update the snapshot here instead.
 					 */
-					ast_string_field_set(snapshot, appl, app);
-					ast_string_field_set(snapshot, data, !ast_strlen_zero(appdata) ? appdata : "(NULL)");
+					ast_string_field_set(snapshot->dialplan, appl, app);
+					ast_string_field_set(snapshot->dialplan, data, !ast_strlen_zero(appdata) ? appdata : "(NULL)");
 					msg = stasis_message_create(ast_channel_snapshot_type(), snapshot);
 					if (msg) {
 						stasis_publish(ast_channel_topic(chan), msg);
@@ -403,7 +406,9 @@ static int unload_module(void)
 
 static int load_module(void)
 {
-	if (!(cache = ao2_container_alloc(573, cache_hash, cache_cmp))) {
+	cache = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0, 573,
+		cache_hash, NULL, cache_cmp);
+	if (!cache) {
 		return AST_MODULE_LOAD_FAILURE;
 	}
 
@@ -417,4 +422,3 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO_STANDARD_EXTENDED(ASTERISK_GPL_KEY, "Realtime Switch");
-

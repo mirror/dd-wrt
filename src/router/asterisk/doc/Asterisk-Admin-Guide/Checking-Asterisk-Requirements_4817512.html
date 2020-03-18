@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Checking Asterisk Requirements</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Getting-Started_5243710.html">Getting Started</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Installing-Asterisk_4817553.html">Installing Asterisk</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Installing-Asterisk-From-Source_4817561.html">Installing Asterisk From Source</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Checking Asterisk Requirements
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Kevin Harwell</span> on Jan 19, 2017
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="CheckingAsteriskRequirements-ConfiguringAsterisk">Configuring Asterisk</h1><p>Now it's time to compile and install Asterisk. Let's change to the directory which contains the Asterisk source code.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server]# cd /usr/local/src/asterisk-14.X.Y
+</pre>
+</div></div><p>Next, we'll run a command called <strong>./configure</strong>, which will perform a number of checks on the operating system, and get the Asterisk code ready to compile on this particular server.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# ./configure
+</pre>
+</div></div><p>This will run for a couple of minutes, and warn you of any missing system libraries or other dependencies. Unless you've installed all of the <a href="System-Requirements_4817508.html">System Requirements</a> for your version of Asterisk, the <strong>configure</strong> script is likely to fail. If that happens, resolve the missing dependency manually, or use the <a href="#CheckingAsteriskRequirements-install_prereq">install_prereq</a> script to resolve all of the dependencies on your system.</p><p>Once a dependency is resolved, run <strong>configure</strong> again to make sure the missing dependency is fixed.</p>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>If you have many missing dependencies, you may find yourself running <strong>configure</strong> a lot. If that is the case, you'll do yourself a favour by checking the <a href="System-Requirements_4817508.html">System Requirements</a> or installing all dependencies via the <code>install_prereq</code> script.</p>
+                    </div>
+    </div>
+</div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302876262 {padding: 0px;}
+div.rbtoc1582302876262 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302876262 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302876262'>
+<ul class='toc-indentation'>
+<li><a href='#CheckingAsteriskRequirements-ConfiguringAsterisk'>Configuring Asterisk</a></li>
+<li><a href='#CheckingAsteriskRequirements-Usinginstall_prereq'>Using install_prereq</a></li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><p>Upon successful completion of <strong>./configure</strong>, you should see a message that looks similar to the one shown below. (Obviously, your host CPU type may be different than the below.)</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>                .$$$$$$$$$$$$$$$=..      
+              .$7$7..        .7$$7:.    
+            .$7$7..           .7$$7:.
+          .$$:.                 ,$7.7
+        .$7.     7$$$$           .$$77
+     ..$$.       $$$$$            .$$$7
+    ..7$   .?.   $$$$$   .?.       7$$$.
+   $.$.   .$$$7. $$$$7 .7$$$.      .$$$.
+ .777.   .$$$$$$77$$$77$$$$$7.      $$$,
+ $$$~      .7$$$$$$$$$$$$$7.       .$$$.
+.$$7          .7$$$$$$$7:          ?$$$.
+$$$          ?7$$$$$$$$$$I        .$$$7
+$$$       .7$$$$$$$$$$$$$$$$      :$$$.
+$$$       $$$$$$7$$$$$$$$$$$$    .$$$.
+$$$        $$$   7$$$7  .$$$    .$$$.
+$$$$             $$$$7         .$$$.
+7$$$7            7$$$$        7$$$
+ $$$$$                        $$$
+  $$$$7.                       $$  (TM)
+   $$$$$$$.           .7$$$$$$  $$
+     $$$$$$$$$$$$7$$$$$$$$$.$$$$$$
+       $$$$$$$$$$$$$$$$.
+
+configure: Package configured for:&amp;nbsp;
+configure: OS type &amp;nbsp;: linux-gnu
+configure: Host CPU : x86_64
+configure: build-cpu:vendor:os: x86_64 : unknown : linux-gnu :
+configure: host-cpu:vendor:os: x86_64 : unknown : linux-gnu :
+</pre>
+</div></div>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Cached Data</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>The <strong>./configure</strong> command caches certain data to speed things up if it's invoked multiple times. To clear all the cached data, you can use the following command to completely clear out any cached data from the Asterisk build system.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# make distclean
+</pre>
+</div></div><p>You can then re-run <strong>./configure</strong>.</p>
+                    </div>
+    </div>
+<p><span class="confluence-anchor-link" id="CheckingAsteriskRequirements-install_prereq"></span></p><h1 id="CheckingAsteriskRequirements-Usinginstall_prereq">Using install_prereq</h1><p>The <strong>install_prereq</strong> script is included with every release of Asterisk in the <code>contrib/scripts</code> subdirectory. The script has the following options:</p><ul><li><strong>test</strong> - print only the libraries to be installed.</li><li><strong>install</strong> - install package dependencies only. Depending on your distribution of Linux, version of Asterisk, and capabilities you wish to use, this may be sufficient.</li><li><strong>install-unpacakged</strong> - install dependencies that don't have packages but only have tarballs. You may need these dependencies for certain capabilities in Asterisk.</li></ul>    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>You should always use your operating system's package management tools to ensure that your system is running the latest software <strong>before</strong> running <code>install_prereq</code>. Ubuntu 14's libsnmp-dev package, for instance, has an issue where it will attempt to remove critical system packages if the system isn't updated before an attempt is made to install that package.</p>
+                    </div>
+    </div>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# cd contrib/scripts
+
+[root@server asterisk-14.X.Y/contrib/scripts]# ./install_prereq install
+
+[root@server asterisk-14.X.Y/contrib/scripts]# ./install_prereq install-unpackaged</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -54,7 +54,7 @@
 - \ref manager.c Main manager code file
  */
 
-#define AMI_VERSION                     "2.10.0"
+#define AMI_VERSION                     "6.0.0"
 #define DEFAULT_MANAGER_PORT 5038	/* Default port for Asterisk management via TCP */
 #define DEFAULT_MANAGER_TLS_PORT 5039	/* Default port for Asterisk management via TCP */
 
@@ -120,7 +120,7 @@ int check_manager_enabled(void);
 /*! \brief Check if AMI/HTTP is enabled */
 int check_webmanager_enabled(void);
 
-/*! Add a custom hook to be called when an event is fired 
+/*! Add a custom hook to be called when an event is fired
  \param hook struct manager_custom_hook object to add
 */
 void ast_manager_register_hook(struct manager_custom_hook *hook);
@@ -178,12 +178,12 @@ struct manager_action {
 	unsigned int registered:1;
 };
 
-/*! \brief External routines may register/unregister manager callbacks this way 
+/*! \brief External routines may register/unregister manager callbacks this way
  * \note  Use ast_manager_register2() to register with help text for new manager commands */
-#define ast_manager_register(action, authority, func, synopsis) ast_manager_register2(action, authority, func, ast_module_info->self, synopsis, NULL)
+#define ast_manager_register(action, authority, func, synopsis) ast_manager_register2(action, authority, func, AST_MODULE_SELF, synopsis, NULL)
 
 /*! \brief Register a manager callback using XML documentation to describe the manager. */
-#define ast_manager_register_xml(action, authority, func) ast_manager_register2(action, authority, func, ast_module_info->self, NULL, NULL)
+#define ast_manager_register_xml(action, authority, func) ast_manager_register2(action, authority, func, AST_MODULE_SELF, NULL, NULL)
 
 /*!
  * \brief Register a manager callback using XML documentation to describe the manager.
@@ -219,8 +219,8 @@ int ast_manager_register2(
  */
 int ast_manager_unregister(const char *action);
 
-/*! 
- * \brief Verify a session's read permissions against a permission mask.  
+/*!
+ * \brief Verify a session's read permissions against a permission mask.
  * \param ident session identity
  * \param perm permission mask to verify
  * \retval 1 if the session has the permission mask capabilities
@@ -229,7 +229,7 @@ int ast_manager_unregister(const char *action);
 int astman_verify_session_readpermissions(uint32_t ident, int perm);
 
 /*!
- * \brief Verify a session's write permissions against a permission mask.  
+ * \brief Verify a session's write permissions against a permission mask.
  * \param ident session identity
  * \param perm permission mask to verify
  * \retval 1 if the session has the permission mask capabilities, otherwise 0
@@ -237,7 +237,7 @@ int astman_verify_session_readpermissions(uint32_t ident, int perm);
  */
 int astman_verify_session_writepermissions(uint32_t ident, int perm);
 
-/*! \brief External routines may send asterisk manager events this way 
+/*! \brief External routines may send asterisk manager events this way
  *  	\param category	Event category, matches manager authorization
 	\param event	Event name
 	\param contents	Contents of event
@@ -356,13 +356,7 @@ void __attribute__((format(printf, 2, 3))) astman_append(struct mansession *s, c
 /*! \brief Determinie if a manager session ident is authenticated */
 int astman_is_authed(uint32_t ident);
 
-/*! \brief Called by Asterisk initialization */
-int init_manager(void);
-
-/*! \brief Called by Asterisk module functions and the CLI command */
-int reload_manager(void);
-
-/*! 
+/*!
  * \brief Add a datastore to a session
  *
  * \retval 0 success
@@ -372,7 +366,7 @@ int reload_manager(void);
 
 int astman_datastore_add(struct mansession *s, struct ast_datastore *datastore);
 
-/*! 
+/*!
  * \brief Remove a datastore from a session
  *
  * \retval 0 success
@@ -381,7 +375,7 @@ int astman_datastore_add(struct mansession *s, struct ast_datastore *datastore);
  */
 int astman_datastore_remove(struct mansession *s, struct ast_datastore *datastore);
 
-/*! 
+/*!
  * \brief Find a datastore on a session
  *
  * \retval pointer to the datastore if found

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Call Pickup</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Features_4260053.html">Features</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Call Pickup
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Richard Mudgett</span>, last modified by <span class='editor'> Rusty Newton</span> on Jun 11, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                        <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <p>Call pickup support added in Asterisk 11</p>
+                    </div>
+    </div>
+<h1 id="CallPickup-Overview">Overview</h1><p>Call pickup allows you to answer a call while it is ringing another phone or group of phones(other than the phone you are sitting at).</p><p>Requesting to pickup a call is done by two basic methods.</p><ol><li>by <a href="Dialplan_4817412.html">dialplan</a> using the Pickup or PickupChan applications.</li><li>by dialing the extension defined for pickupexten configured in features.conf.</li></ol><p>Which calls can be picked up is determined by configuration and dialplan.</p><h1 id="CallPickup-DialplanApplicationsandFunctions">Dialplan Applications and Functions</h1><h2 id="CallPickup-PickupApplication">Pickup Application</h2><p>The <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_Pickup">Pickup application</a> has three ways to select calls for pickup.</p><h2 id="CallPickup-PickupChanApplication">PickupChan Application</h2><p>The <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_PickupChan">PickupChan application</a> tries to pickup the specified channels given to it.</p><h2 id="CallPickup-CHANNELFunction">CHANNEL Function</h2><p>The <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Function_CHANNEL">CHANNEL function</a> allows the pickup groups set on a channel to be changed from the defaults set by the channel driver when the channel was created.</p><h3 id="CallPickup-callgroup/namedcallgroup">callgroup/namedcallgroup</h3><p>The CHANNEL(callgroup) option specifies which numeric pickup groups that this channel is a member.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">same =&gt; n,Set(CHANNEL(callgroup)=1,5-7)</pre>
+</div></div><p>The CHANNEL(namedcallgroup) option specifies which named pickup groups that this channel is a member.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">same =&gt; n,Set(CHANNEL(namedcallgroup)=engineering,sales)</pre>
+</div></div>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>For this option to be effective, you must set it on the outgoing channel. There are a couple of ways:</p><ul><li>You can use the setvar option available with several channel driver configuration files to set the pickup groups.</li><li>You can use a pre-dial handler.</li></ul>
+                    </div>
+    </div>
+<h3 id="CallPickup-pickupgroup/namedpickupgroup">pickupgroup/namedpickupgroup</h3><p>The CHANNEL(pickupgroup) option specifies which numeric pickup groups this channel can pickup.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">same =&gt; n,Set(CHANNEL(pickupgroup)=1,6-8)</pre>
+</div></div><p>The CHANNEL(namedpickupgroup) option specifies which named pickup groups this channel can pickup.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">same =&gt; n,Set(CHANNEL(namedpickupgroup)=engineering,sales)</pre>
+</div></div>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>For this option to be effective, you must set it on the channel before executing the Pickup application or calling the pickupexten.</p><ul><li>You can use the setvar option available with several channel driver configuration files to set the pickup groups.</li></ul>
+                    </div>
+    </div>
+<h2 id="CallPickup-ConfigurationOptions">Configuration Options</h2><p>The pickupexten request method selects calls using the numeric and named call groups. The ringing channels have the callgroup assigned when the channel is created by the channel driver or set by the CHANNEL(callgroup) or CHANNEL(namedcallgroup) dialplan function.</p><p>Calls picked up using pickupexten can hear an optional sound file for success and failure.</p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>The current channel drivers that support calling the pickupexten to pickup a call are: chan_dahdi/analog, chan_mgcp, chan_misdn, chan_sip, chan_unistim and chan_pjsip.</p>
+                    </div>
+    </div>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>features.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">pickupexten = *8               ; Configure the pickup extension. (default is *8)
+pickupsound = beep             ; to indicate a successful pickup (default: no sound)
+pickupfailsound = beeperr      ; to indicate that the pickup failed (default: no sound)</pre>
+</div></div><h3 id="CallPickup-Numericcallpickupgroups">Numeric call pickup groups</h3><p>A numeric callgroup and pickupgroup can be set to a comma separated list of ranges (e.g., 1-4) or numbers that can have a value of 0 to 63. There can be a maximum of 64 numeric groups.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>SYNTAX</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">callgroup=[number[-number][,number[-number][,...]]]
+pickupgroup=[number[-number][,number[-number][,...]]]</pre>
+</div></div><ul><li>callgroup - specifies which numeric pickup groups that this channel is a member.</li><li>pickupgroup - specifies which numeric pickup groups this channel can pickup.</li></ul><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Configuration example</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">callgroup=1,5-7
+pickupgroup=1</pre>
+</div></div><p>Configuration should be supported in several channel drivers, including:</p><ul><li>chan_dahdi.conf</li><li>misdn.conf</li><li>mgcp.conf</li><li>sip.conf</li><li>unistim.conf</li><li>pjsip.conf</li></ul><p>pjsip.conf uses snake case:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Configuration in pjsip.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">call_group=1,5-7
+pickup_group=1</pre>
+</div></div><h3 id="CallPickup-Namedcallpickupgroups">Named call pickup groups</h3><p>A named callgroup and pickupgroup can be set to a comma separated list of case sensitive name strings. The number of named groups is unlimited. The number of named groups you can specify at once is limited by the line length supported.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>SYNTAX</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">namedcallgroup=[name[,name[,...]]]
+namedpickupgroup=[name[,name[,...]]]</pre>
+</div></div><ul><li>namedcallgroup - specifies which named pickup groups that this channel is a member.</li><li>namedpickupgroup - specifies which named pickup groups this channel can pickup.</li></ul><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Configuration Example</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">namedcallgroup=engineering,sales,netgroup,protgroup
+namedpickupgroup=sales</pre>
+</div></div><p>Configuration should be supported in several channel drivers, including:</p><ul><li>chan_dahdi.conf</li><li>misdn.conf</li><li>sip.conf</li><li>pjsip.conf</li></ul><p>pjsip.conf uses snake case:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">named_call_group=engineering,sales,netgroup,protgroup
+named_pickup_group=sales</pre>
+</div></div>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>You can use named pickup groups in parallel with numeric pickup groups. For example, the named pickup group '4' is not the same as the numeric pickup group '4'.</p><p>Named pickup groups are new with Asterisk 11.</p>
+                    </div>
+    </div>
+<p> </p><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

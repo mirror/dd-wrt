@@ -39,12 +39,11 @@
 
 /*** MODULEINFO
 	<depend>res_odbc</depend>
+	<depend>generic_odbc</depend>
 	<support_level>extended</support_level>
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/config.h"
 #include "asterisk/channel.h"
@@ -90,7 +89,7 @@ static SQLHSTMT execute_cb(struct odbc_obj *obj, void *data)
 		snprintf(sqlcmd,sizeof(sqlcmd),"INSERT INTO %s "
 		"(calldate,clid,src,dst,dcontext,channel,dstchannel,lastapp,"
 		"lastdata,duration,billsec,disposition,amaflags,accountcode,uniqueid,userfield%s) "
-		"VALUES ({ts '%s'},?,?,?,?,?,?,?,?,?,?,?,?,?,?,? %s)", table, new_columns, timestr, new_values);
+		"VALUES ({ts '%s'},?,?,?,?,?,?,?,?,?,?,?,?,?,?,?%s)", table, new_columns, timestr, new_values);
 	} else {
 		snprintf(sqlcmd,sizeof(sqlcmd),"INSERT INTO %s "
 		"(calldate,clid,src,dst,dcontext,channel,dstchannel,lastapp,lastdata,"
@@ -154,7 +153,7 @@ static SQLHSTMT execute_cb(struct odbc_obj *obj, void *data)
 		SQLBindParameter(stmt, i + 2, SQL_PARAM_INPUT, SQL_C_SLONG, SQL_INTEGER, 0, 0, &cdr->sequence, 0, NULL);
 	}
 
-	ODBC_res = SQLExecDirect(stmt, (unsigned char *)sqlcmd, SQL_NTS);
+	ODBC_res = ast_odbc_execute_sql(obj, stmt, sqlcmd);
 
 	if ((ODBC_res != SQL_SUCCESS) && (ODBC_res != SQL_SUCCESS_WITH_INFO)) {
 		ast_log(LOG_WARNING, "cdr_odbc: Error in ExecDirect: %d, query is: %s\n", ODBC_res, sqlcmd);
@@ -277,10 +276,10 @@ static int odbc_load_module(int reload)
 		}
 		if (((tmp = ast_variable_retrieve(cfg, "global", "newcdrcolumns"))) && ast_true(tmp)) {
 			ast_set_flag(&config, CONFIG_NEWCDRCOLUMNS);
-			ast_debug(1, "cdr_odbc: Add new cdr fields\n");
+			ast_debug(1, "cdr_odbc: Add new cdr columns\n");
 		} else {
 			ast_clear_flag(&config, CONFIG_NEWCDRCOLUMNS);
-			ast_debug(1, "cdr_odbc: Not add new cdr fields\n");
+			ast_debug(1, "cdr_odbc: Not add new cdr columns\n");
 		}
 	} while (0);
 
@@ -324,9 +323,10 @@ static int reload(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "ODBC CDR Backend",
-		.support_level = AST_MODULE_SUPPORT_EXTENDED,
-		.load = load_module,
-		.unload = unload_module,
-		.reload = reload,
-		.load_pri = AST_MODPRI_CDR_DRIVER,
-	       );
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
+	.load = load_module,
+	.unload = unload_module,
+	.reload = reload,
+	.load_pri = AST_MODPRI_CDR_DRIVER,
+	.requires = "cdr",
+);

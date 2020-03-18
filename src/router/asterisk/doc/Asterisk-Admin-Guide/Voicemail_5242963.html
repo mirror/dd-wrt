@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Voicemail</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Voicemail
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Rusty Newton</span> on Apr 09, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>The Asterisk voicemail module provides two key applications for dealing with voice mail.</p><p> </p><div class="wiki-content"><p>The <strong><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_VoiceMail">VoiceMail()</a></strong> application takes two parameters:</p><ol><li><strong>Mailbox</strong><ul><li>This parameter specifies the mailbox in which the voice mail message should be left. It should be a mailbox number and a voice mail context concatenated with an at-sign (<strong>@</strong>), like <strong>6001@default</strong>. (Voice mail boxes are divided out into various voice mail context, similar to the way that extensions are broken up into dialplan contexts.) If the voice mail context is omitted, it will default to the <strong>default</strong> voice mail context.</li></ul></li><li><strong>Options</strong><ul><li>One or more options for controlling the mailbox greetings. The most popular options include the u option to play the unavailable message, the <strong>b</strong> option to play the busy message, and the <strong>s</strong> option to skip the system-generated instructions.</li></ul></li></ol><p> </p><div class="wiki-content"><p>The <strong><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_VoiceMailMain">VoiceMailMain()</a></strong> application allows the owner of a voice mail box to retrieve their messages, as well as set mailbox options such as greetings and their PIN number. The <strong>VoiceMailMain()</strong> application takes two parameters:</p><ol><li><strong>Mailbox</strong> - This parameter specifies the mailbox to log into. It should be a mailbox number and a voice mail context, concatenated with an at-sign (@), like 6001@default. If the voice mail context is omitted, it will default to the default voice mail context. If the mailbox number is omitted, the system will prompt the caller for the mailbox number.</li><li><strong>Options</strong> - One or more options for controlling the voicemail system. The most popular option is the s option, which skips asking for the PIN number</li></ol><div class="aui-message problem shadowed information-macro"><p> </p>    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">Direct Access to Voicemail</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>Please exercise extreme caution when using the s option! With this option set, anyone which has access to this extension can retrieve voicemail messages without entering the mailbox passcode.</p>
+                    </div>
+    </div>
+</div></div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

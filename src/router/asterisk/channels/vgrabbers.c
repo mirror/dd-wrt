@@ -1,7 +1,7 @@
 /*
  * Asterisk -- An open source telephony toolkit.
  *
- * Copyright 2007, Luigi Rizzo 
+ * Copyright 2007, Luigi Rizzo
  *
  * See http://www.asterisk.org for more information about
  * the Asterisk project. Please do not directly contact
@@ -49,7 +49,6 @@
  ***/
 
 #include "asterisk.h"
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include <sys/ioctl.h>
 #include "asterisk/file.h"
 #include "asterisk/utils.h"	/* ast_calloc */
@@ -209,7 +208,7 @@ static void *grab_v4l1_open(const char *dev, struct fbuf_t *geom, int fps)
 	struct fbuf_t *b;
 
 	/* name should be something under /dev/ */
-	if (strncmp(dev, "/dev/", 5)) 
+	if (strncmp(dev, "/dev/", 5))
 		return NULL;
 	fd = open(dev, O_RDONLY | O_NONBLOCK);
 	if (fd < 0) {
@@ -227,12 +226,8 @@ static void *grab_v4l1_open(const char *dev, struct fbuf_t *geom, int fps)
 	v->b = *geom;
 	b = &v->b;	/* shorthand */
 
-	i = fcntl(fd, F_GETFL);
-	if (-1 == fcntl(fd, F_SETFL, i | O_NONBLOCK)) {
-		/* non fatal, just emit a warning */
-		ast_log(LOG_WARNING, "error F_SETFL for %s [%s]\n",
-			dev, strerror(errno));
-	}
+	ast_fd_set_flags(fd, O_NONBLOCK);
+
 	/* set format for the camera.
 	 * In principle we could retry with a different format if the
 	 * one we are asking for is not supported.

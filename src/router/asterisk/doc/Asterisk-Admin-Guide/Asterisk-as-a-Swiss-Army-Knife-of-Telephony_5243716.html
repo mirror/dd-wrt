@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk as a Swiss Army Knife of Telephony</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="About-the-Project_27200176.html">About the Project</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk as a Swiss Army Knife of Telephony
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Sean Bright</span> on May 08, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p><strong>What Is Asterisk?</strong></p>
+
+<p>People often tend to think of Asterisk as an &quot;open source PBX&quot; because that was the focus of the original development effort.  But calling Asterisk a PBX is both selling it short (it is much more) and overstating it (it can be much less).  It is true that Asterisk started out as a phone system for a small business (see the &quot;Brief History&quot; section for the juicy details) but in the decade since it was originally released it has grown into a universal tool for building communications applications.  Today Asterisk powers not only IP PBX systems but also VoIP gateways, call center systems, conference bridges, voicemail servers and all kinds of other applications that involve real-time communications.</p>
+
+<p>Asterisk is not a PBX but is the engine that powers PBXs.  Asterisk is not an IVR but is the engine that powers IVRs.  Asterisk is not a call center ACD but is the engine that powers ACD/queueing systems.</p>
+
+<p>Asterisk is to communications applications what the Apache web server is to web applications.  Apache is a web server.  Asterisk is a communication server.  Apache handles all the low-level details of sending and receiving data using the HTTP protocol.  Asterisk handles all the low level details of sending and receiving data using lots of different communication protocols.  When you install Apache, you have a web server but its up to you to create the web applications.  When you install Asterisk, you have a communications server but its up to you to create the communications applications.</p>
+
+<p>Web applications are built out of HTML pages, CSS style sheets, server-side processing scripts, images, databases, web services, etc.  Asterisk communications applications are built out Dialplan scripts, configuration files, audio recordings, databases, web services, etc.  For a web application to work, you need the web server connected to the Internet.  For a communications application to work, you need the communications server connected to communication services (VoIP or PSTN).  For people to be able to access your web site you need to register a domain name and set up DNS entries that point &quot;www.yourdomain.com&quot; to your server.  For people to access your communications system you need phone numbers or VoIP URIs that send calls to your server.</p>
+
+<p>In both cases the server is the plumbing that makes your application work.  The server handles the low-level complexities and allows you, the application developer, to concentrate on the application logic and presentation.  You don't have to be an expert on HTTP to create powerful web applications, and you don't have to be an expert on SIP or Q.931 to create powerful communications applications.</p>
+
+<p>Here's a simple example.  The following HTML script, installed on a working web server, prints &quot;Hello World&quot; in large type:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: html; gutter: false" style="font-size:12px;">
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;Hello World Demo&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;h1&gt;Hello World!&lt;/h1&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</pre>
+</div></div>
+<p>The following Dialplan script answers the phone, waits for one second, plays back &quot;hello world&quot; then hangs up.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: plain; gutter: false" style="font-size:12px;">
+exten =&gt; 100,1,Answer()
+exten =&gt; 100,n,Wait(1)
+exten =&gt; 100,n,Playback(hello-world)
+exten =&gt; 100,n,Hangup()
+</pre>
+</div></div>
+<p>In both cases the server components are handling all of the low level details of the underlying protocols.  Your application doesn't have to worry about the byte alignment, the packet size, the codec or any of the thousands of other critical details that make the application work.  This is the power of an engine.</p>
+
+<p><strong>Who Uses Asterisk?</strong></p>
+
+<p>Asterisk is created by communication system developers, for communication system developers.  As an open source project, Asterisk is a collaboration between many different individuals and companies, all of which need a flexible communications engine to power their applications.  </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

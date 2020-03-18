@@ -34,8 +34,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <sys/time.h>
 #include <signal.h>
 #include <fcntl.h>
@@ -96,7 +94,7 @@ struct multicast_rtp {
 	unsigned int ssrc;
 	/*! Sequence number, used when creating/sending the RTP packet */
 	uint16_t seqno;
-	unsigned int lastts;	
+	unsigned int lastts;
 	struct timeval txcore;
 	struct ast_smoother *smoother;
 };
@@ -481,7 +479,9 @@ static int multicast_rtp_write(struct ast_rtp_instance *instance, struct ast_fra
 	}
 
 	/* Grab the actual payload number for when we create the RTP packet */
-	if ((codec = ast_rtp_codecs_payload_code(ast_rtp_instance_get_codecs(instance), 1, frame->subclass.format, 0)) < 0) {
+	codec = ast_rtp_codecs_payload_code_tx(ast_rtp_instance_get_codecs(instance),
+		1, frame->subclass.format, 0);
+	if (codec < 0) {
 		return -1;
 	}
 

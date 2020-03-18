@@ -102,6 +102,42 @@ int ast_ari_channels_originate_parse_body(
  * \param[out] response HTTP response
  */
 void ast_ari_channels_originate(struct ast_variable *headers, struct ast_ari_channels_originate_args *args, struct ast_ari_response *response);
+/*! Argument struct for ast_ari_channels_create() */
+struct ast_ari_channels_create_args {
+	/*! Endpoint for channel communication */
+	const char *endpoint;
+	/*! Stasis Application to place channel into */
+	const char *app;
+	/*! The application arguments to pass to the Stasis application provided by 'app'. Mutually exclusive with 'context', 'extension', 'priority', and 'label'. */
+	const char *app_args;
+	/*! The unique id to assign the channel on creation. */
+	const char *channel_id;
+	/*! The unique id to assign the second channel when using local channels. */
+	const char *other_channel_id;
+	/*! Unique ID of the calling channel */
+	const char *originator;
+	/*! The format name capability list to use if originator is not specified. Ex. "ulaw,slin16".  Format names can be found with "core show codecs". */
+	const char *formats;
+};
+/*!
+ * \brief Body parsing function for /channels/create.
+ * \param body The JSON body from which to parse parameters.
+ * \param[out] args The args structure to parse into.
+ * \retval zero on success
+ * \retval non-zero on failure
+ */
+int ast_ari_channels_create_parse_body(
+	struct ast_json *body,
+	struct ast_ari_channels_create_args *args);
+
+/*!
+ * \brief Create channel.
+ *
+ * \param headers HTTP headers
+ * \param args Swagger parameters
+ * \param[out] response HTTP response
+ */
+void ast_ari_channels_create(struct ast_variable *headers, struct ast_ari_channels_create_args *args, struct ast_ari_response *response);
 /*! Argument struct for ast_ari_channels_get() */
 struct ast_ari_channels_get_args {
 	/*! Channel's id */
@@ -171,7 +207,9 @@ void ast_ari_channels_originate_with_id(struct ast_variable *headers, struct ast
 struct ast_ari_channels_hangup_args {
 	/*! Channel's id */
 	const char *channel_id;
-	/*! Reason for hanging up the channel */
+	/*! The reason code for hanging up the channel for detail use. Mutually exclusive with 'reason'. See detail hangup codes at here. https://wiki.asterisk.org/wiki/display/AST/Hangup+Cause+Mappings */
+	const char *reason_code;
+	/*! Reason for hanging up the channel for simple use. Mutually exclusive with 'reason_code'. */
 	const char *reason;
 };
 /*!
@@ -225,6 +263,34 @@ int ast_ari_channels_continue_in_dialplan_parse_body(
  * \param[out] response HTTP response
  */
 void ast_ari_channels_continue_in_dialplan(struct ast_variable *headers, struct ast_ari_channels_continue_in_dialplan_args *args, struct ast_ari_response *response);
+/*! Argument struct for ast_ari_channels_move() */
+struct ast_ari_channels_move_args {
+	/*! Channel's id */
+	const char *channel_id;
+	/*! The channel will be passed to this Stasis application. */
+	const char *app;
+	/*! The application arguments to pass to the Stasis application provided by 'app'. */
+	const char *app_args;
+};
+/*!
+ * \brief Body parsing function for /channels/{channelId}/move.
+ * \param body The JSON body from which to parse parameters.
+ * \param[out] args The args structure to parse into.
+ * \retval zero on success
+ * \retval non-zero on failure
+ */
+int ast_ari_channels_move_parse_body(
+	struct ast_json *body,
+	struct ast_ari_channels_move_args *args);
+
+/*!
+ * \brief Move the channel from one Stasis application to another.
+ *
+ * \param headers HTTP headers
+ * \param args Swagger parameters
+ * \param[out] response HTTP response
+ */
+void ast_ari_channels_move(struct ast_variable *headers, struct ast_ari_channels_move_args *args, struct ast_ari_response *response);
 /*! Argument struct for ast_ari_channels_redirect() */
 struct ast_ari_channels_redirect_args {
 	/*! Channel's id */
@@ -475,11 +541,15 @@ void ast_ari_channels_stop_silence(struct ast_variable *headers, struct ast_ari_
 struct ast_ari_channels_play_args {
 	/*! Channel's id */
 	const char *channel_id;
-	/*! Media's URI to play. */
-	const char *media;
+	/*! Array of Media URIs to play. */
+	const char **media;
+	/*! Length of media array. */
+	size_t media_count;
+	/*! Parsing context for media. */
+	char *media_parse;
 	/*! For sounds, selects language for sound. */
 	const char *lang;
-	/*! Number of media to skip before playing. */
+	/*! Number of milliseconds to skip before playing. Only applies to the first URI if multiple media URIs are specified. */
 	int offsetms;
 	/*! Number of milliseconds to skip for forward/reverse operations. */
 	int skipms;
@@ -513,11 +583,15 @@ struct ast_ari_channels_play_with_id_args {
 	const char *channel_id;
 	/*! Playback ID. */
 	const char *playback_id;
-	/*! Media's URI to play. */
-	const char *media;
+	/*! Array of Media URIs to play. */
+	const char **media;
+	/*! Length of media array. */
+	size_t media_count;
+	/*! Parsing context for media. */
+	char *media_parse;
 	/*! For sounds, selects language for sound. */
 	const char *lang;
-	/*! Number of media to skip before playing. */
+	/*! Number of milliseconds to skip before playing. Only applies to the first URI if multiple media URIs are specified. */
 	int offsetms;
 	/*! Number of milliseconds to skip for forward/reverse operations. */
 	int skipms;
@@ -709,5 +783,88 @@ int ast_ari_channels_snoop_channel_with_id_parse_body(
  * \param[out] response HTTP response
  */
 void ast_ari_channels_snoop_channel_with_id(struct ast_variable *headers, struct ast_ari_channels_snoop_channel_with_id_args *args, struct ast_ari_response *response);
+/*! Argument struct for ast_ari_channels_dial() */
+struct ast_ari_channels_dial_args {
+	/*! Channel's id */
+	const char *channel_id;
+	/*! Channel ID of caller */
+	const char *caller;
+	/*! Dial timeout */
+	int timeout;
+};
+/*!
+ * \brief Body parsing function for /channels/{channelId}/dial.
+ * \param body The JSON body from which to parse parameters.
+ * \param[out] args The args structure to parse into.
+ * \retval zero on success
+ * \retval non-zero on failure
+ */
+int ast_ari_channels_dial_parse_body(
+	struct ast_json *body,
+	struct ast_ari_channels_dial_args *args);
+
+/*!
+ * \brief Dial a created channel.
+ *
+ * \param headers HTTP headers
+ * \param args Swagger parameters
+ * \param[out] response HTTP response
+ */
+void ast_ari_channels_dial(struct ast_variable *headers, struct ast_ari_channels_dial_args *args, struct ast_ari_response *response);
+/*! Argument struct for ast_ari_channels_rtpstatistics() */
+struct ast_ari_channels_rtpstatistics_args {
+	/*! Channel's id */
+	const char *channel_id;
+};
+/*!
+ * \brief RTP stats on a channel.
+ *
+ * \param headers HTTP headers
+ * \param args Swagger parameters
+ * \param[out] response HTTP response
+ */
+void ast_ari_channels_rtpstatistics(struct ast_variable *headers, struct ast_ari_channels_rtpstatistics_args *args, struct ast_ari_response *response);
+/*! Argument struct for ast_ari_channels_external_media() */
+struct ast_ari_channels_external_media_args {
+	/*! The unique id to assign the channel on creation. */
+	const char *channel_id;
+	/*! Stasis Application to place channel into */
+	const char *app;
+	/*! The "variables" key in the body object holds variable key/value pairs to set on the channel on creation. Other keys in the body object are interpreted as query parameters. Ex. { "endpoint": "SIP/Alice", "variables": { "CALLERID(name)": "Alice" } } */
+	struct ast_json *variables;
+	/*! Hostname/ip:port of external host */
+	const char *external_host;
+	/*! Payload encapsulation protocol */
+	const char *encapsulation;
+	/*! Transport protocol */
+	const char *transport;
+	/*! Connection type (client/server) */
+	const char *connection_type;
+	/*! Format to encode audio in */
+	const char *format;
+	/*! External media direction */
+	const char *direction;
+};
+/*!
+ * \brief Body parsing function for /channels/externalMedia.
+ * \param body The JSON body from which to parse parameters.
+ * \param[out] args The args structure to parse into.
+ * \retval zero on success
+ * \retval non-zero on failure
+ */
+int ast_ari_channels_external_media_parse_body(
+	struct ast_json *body,
+	struct ast_ari_channels_external_media_args *args);
+
+/*!
+ * \brief Start an External Media session.
+ *
+ * Create a channel to an External Media source/sink.
+ *
+ * \param headers HTTP headers
+ * \param args Swagger parameters
+ * \param[out] response HTTP response
+ */
+void ast_ari_channels_external_media(struct ast_variable *headers, struct ast_ari_channels_external_media_args *args, struct ast_ari_response *response);
 
 #endif /* _ASTERISK_RESOURCE_CHANNELS_H */

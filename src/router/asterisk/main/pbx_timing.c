@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/localtime.h"
 #include "asterisk/logger.h"
 #include "asterisk/pbx.h"

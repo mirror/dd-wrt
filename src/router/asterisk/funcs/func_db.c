@@ -1,9 +1,9 @@
 /*
  * Asterisk -- An open source telephony toolkit.
  *
- * Copyright (C) 2005-2006, Russell Bryant <russelb@clemson.edu> 
+ * Copyright (C) 2005-2006, Russell Bryant <russelb@clemson.edu>
  *
- * func_db.c adapted from the old app_db.c, copyright by the following people 
+ * func_db.c adapted from the old app_db.c, copyright by the following people
  * Copyright (C) 2005, Mark Spencer <markster@digium.com>
  * Copyright (C) 2003, Jefferson Noxon <jeff@debian.org>
  *
@@ -32,8 +32,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <regex.h>
 

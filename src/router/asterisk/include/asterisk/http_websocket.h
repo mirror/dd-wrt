@@ -77,13 +77,14 @@ struct ast_websocket;
  * \param ser The TCP/TLS session
  * \param parameters Parameters extracted from the request URI
  * \param headers Headers included in the request
+ * \param session_id The id of the current session.
  *
  * \retval 0 The session should be accepted
  * \retval -1 The session should be rejected. Note that the caller must send an error
  * response using \ref ast_http_error.
  * \since 13.5.0
  */
-typedef int (*ast_websocket_pre_callback)(struct ast_tcptls_session_instance *ser, struct ast_variable *parameters, struct ast_variable *headers);
+typedef int (*ast_websocket_pre_callback)(struct ast_tcptls_session_instance *ser, struct ast_variable *parameters, struct ast_variable *headers, const char *session_id);
 
 /*!
  * \brief Callback for when a new connection for a sub-protocol is established
@@ -337,11 +338,34 @@ AST_OPTIONAL_API(void, ast_websocket_unref, (struct ast_websocket *session), {re
 AST_OPTIONAL_API(int, ast_websocket_fd, (struct ast_websocket *session), { errno = ENOSYS; return -1;});
 
 /*!
+ * \brief Wait for the WebSocket session to be ready to be read.
+ * \since 16.8.0
+ * \since 17.2.0
+ *
+ * \param session Pointer to the WebSocket session
+ * \param timeout the number of milliseconds to wait
+ *
+ * \retval -1 if error occurred
+ * \retval 0 if the timeout expired
+ * \retval 1 if the WebSocket session is ready for reading
+ */
+AST_OPTIONAL_API(int, ast_websocket_wait_for_input, (struct ast_websocket *session, int timeout), { errno = ENOSYS; return -1; });
+
+/*!
  * \brief Get the remote address for a WebSocket connected session.
  *
  * \retval ast_sockaddr Remote address
  */
 AST_OPTIONAL_API(struct ast_sockaddr *, ast_websocket_remote_address, (struct ast_websocket *session), {return NULL;});
+
+/*!
+ * \brief Get the local address for a WebSocket connection session.
+ *
+ * \retval ast_sockaddr Local address
+ *
+ * \since 13.19.0
+ */
+AST_OPTIONAL_API(struct ast_sockaddr *, ast_websocket_local_address, (struct ast_websocket *session), {return NULL;});
 
 /*!
  * \brief Get whether the WebSocket session is using a secure transport or not.
@@ -358,6 +382,13 @@ AST_OPTIONAL_API(int, ast_websocket_is_secure, (struct ast_websocket *session), 
  * \retval -1 on failure
  */
 AST_OPTIONAL_API(int, ast_websocket_set_nonblock, (struct ast_websocket *session), { errno = ENOSYS; return -1;});
+
+/*!
+ * \brief Get the session ID for a WebSocket session.
+ *
+ * \retval session id
+ */
+AST_OPTIONAL_API(const char *, ast_websocket_session_id, (struct ast_websocket *session), { errno = ENOSYS; return NULL;});
 
 /*!
  * \brief Result code for a websocket client.

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 ManagerEvent_EndpointDetail</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-AMI-Events_42010707.html">Asterisk 17 AMI Events</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 ManagerEvent_EndpointDetail
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17ManagerEvent_EndpointDetail-EndpointDetail">EndpointDetail</h1>
+
+<h3 id="Asterisk17ManagerEvent_EndpointDetail-Synopsis">Synopsis</h3>
+
+<p>Provide details about an endpoint section.</p>
+
+<h3 id="Asterisk17ManagerEvent_EndpointDetail-Description">Description</h3>
+
+<h3 id="Asterisk17ManagerEvent_EndpointDetail-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Event: EndpointDetail
+ObjectType: &lt;value&gt;
+ObjectName: &lt;value&gt;
+Context: &lt;value&gt;
+Disallow: &lt;value&gt;
+Allow: &lt;value&gt;
+DtmfMode: &lt;value&gt;
+RtpIpv6: &lt;value&gt;
+RtpSymmetric: &lt;value&gt;
+IceSupport: &lt;value&gt;
+UsePtime: &lt;value&gt;
+ForceRport: &lt;value&gt;
+RewriteContact: &lt;value&gt;
+Transport: &lt;value&gt;
+OutboundProxy: &lt;value&gt;
+MohSuggest: &lt;value&gt;
+100rel: &lt;value&gt;
+Timers: &lt;value&gt;
+TimersMinSe: &lt;value&gt;
+TimersSessExpires: &lt;value&gt;
+Auth: &lt;value&gt;
+OutboundAuth: &lt;value&gt;
+Aors: &lt;value&gt;
+MediaAddress: &lt;value&gt;
+IdentifyBy: &lt;value&gt;
+DirectMedia: &lt;value&gt;
+DirectMediaMethod: &lt;value&gt;
+TrustConnectedLine: &lt;value&gt;
+SendConnectedLine: &lt;value&gt;
+ConnectedLineMethod: &lt;value&gt;
+DirectMediaGlareMitigation: &lt;value&gt;
+DisableDirectMediaOnNat: &lt;value&gt;
+Callerid: &lt;value&gt;
+CalleridPrivacy: &lt;value&gt;
+CalleridTag: &lt;value&gt;
+TrustIdInbound: &lt;value&gt;
+TrustIdOutbound: &lt;value&gt;
+SendPai: &lt;value&gt;
+SendRpid: &lt;value&gt;
+SendDiversion: &lt;value&gt;
+Mailboxes: &lt;value&gt;
+AggregateMwi: &lt;value&gt;
+MediaEncryption: &lt;value&gt;
+MediaEncryptionOptimistic: &lt;value&gt;
+UseAvpf: &lt;value&gt;
+ForceAvp: &lt;value&gt;
+MediaUseReceivedTransport: &lt;value&gt;
+OneTouchRecording: &lt;value&gt;
+InbandProgress: &lt;value&gt;
+CallGroup: &lt;value&gt;
+PickupGroup: &lt;value&gt;
+NamedCallGroup: &lt;value&gt;
+NamedPickupGroup: &lt;value&gt;
+DeviceStateBusyAt: &lt;value&gt;
+T38Udptl: &lt;value&gt;
+T38UdptlEc: &lt;value&gt;
+T38UdptlMaxdatagram: &lt;value&gt;
+FaxDetect: &lt;value&gt;
+T38UdptlNat: &lt;value&gt;
+T38UdptlIpv6: &lt;value&gt;
+ToneZone: &lt;value&gt;
+Language: &lt;value&gt;
+RecordOnFeature: &lt;value&gt;
+RecordOffFeature: &lt;value&gt;
+AllowTransfer: &lt;value&gt;
+UserEqPhone: &lt;value&gt;
+MohPassthrough: &lt;value&gt;
+SdpOwner: &lt;value&gt;
+SdpSession: &lt;value&gt;
+TosAudio: &lt;value&gt;
+TosVideo: &lt;value&gt;
+CosAudio: &lt;value&gt;
+CosVideo: &lt;value&gt;
+AllowSubscribe: &lt;value&gt;
+SubMinExpiry: &lt;value&gt;
+FromUser: &lt;value&gt;
+FromDomain: &lt;value&gt;
+MwiFromUser: &lt;value&gt;
+RtpEngine: &lt;value&gt;
+DtlsVerify: &lt;value&gt;
+DtlsRekey: &lt;value&gt;
+DtlsCertFile: &lt;value&gt;
+DtlsPrivateKey: &lt;value&gt;
+DtlsCipher: &lt;value&gt;
+DtlsCaFile: &lt;value&gt;
+DtlsCaPath: &lt;value&gt;
+DtlsSetup: &lt;value&gt;
+SrtpTag32: &lt;value&gt;
+RedirectMethod: &lt;value&gt;
+SetVar: &lt;value&gt;
+MessageContext: &lt;value&gt;
+Accountcode: &lt;value&gt;
+PreferredCodecOnly: &lt;value&gt;
+DeviceState: &lt;value&gt;
+ActiveChannels: &lt;value&gt;
+SubscribeContext: &lt;value&gt;
+Allowoverlap: &lt;value&gt;
+</pre>
+</div></div>
+
+<h5 id="Asterisk17ManagerEvent_EndpointDetail-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>ObjectType</code> - The object's type. This will always be 'endpoint'.</li>
+	<li><code>ObjectName</code> - The name of this object.</li>
+	<li><code>Context</code> - Dialplan context for inbound sessions</li>
+	<li><code>Disallow</code> - Media Codec(s) to disallow</li>
+	<li><code>Allow</code> - Media Codec(s) to allow</li>
+	<li><code>DtmfMode</code> - DTMF mode</li>
+	<li><code>RtpIpv6</code> - Allow use of IPv6 for RTP traffic</li>
+	<li><code>RtpSymmetric</code> - Enforce that RTP must be symmetric</li>
+	<li><code>IceSupport</code> - Enable the ICE mechanism to help traverse NAT</li>
+	<li><code>UsePtime</code> - Use Endpoint's requested packetization interval</li>
+	<li><code>ForceRport</code> - Force use of return port</li>
+	<li><code>RewriteContact</code> - Allow Contact header to be rewritten with the source IP address-port</li>
+	<li><code>Transport</code> - Explicit transport configuration to use</li>
+	<li><code>OutboundProxy</code> - Full SIP URI of the outbound proxy used to send requests</li>
+	<li><code>MohSuggest</code> - Default Music On Hold class</li>
+	<li><code>100rel</code> - Allow support for RFC3262 provisional ACK tags</li>
+	<li><code>Timers</code> - Session timers for SIP packets</li>
+	<li><code>TimersMinSe</code> - Minimum session timers expiration period</li>
+	<li><code>TimersSessExpires</code> - Maximum session timer expiration period</li>
+	<li><code>Auth</code> - Authentication Object(s) associated with the endpoint</li>
+	<li><code>OutboundAuth</code> - Authentication object(s) used for outbound requests</li>
+	<li><code>Aors</code> - AoR(s) to be used with the endpoint</li>
+	<li><code>MediaAddress</code> - IP address used in SDP for media handling</li>
+	<li><code>IdentifyBy</code> - Way(s) for the endpoint to be identified</li>
+	<li><code>DirectMedia</code> - Determines whether media may flow directly between endpoints.</li>
+	<li><code>DirectMediaMethod</code> - Direct Media method type</li>
+	<li><code>TrustConnectedLine</code> - Accept Connected Line updates from this endpoint</li>
+	<li><code>SendConnectedLine</code> - Send Connected Line updates to this endpoint</li>
+	<li><code>ConnectedLineMethod</code> - Connected line method type</li>
+	<li><code>DirectMediaGlareMitigation</code> - Mitigation of direct media (re)INVITE glare</li>
+	<li><code>DisableDirectMediaOnNat</code> - Disable direct media session refreshes when NAT obstructs the media session</li>
+	<li><code>Callerid</code> - CallerID information for the endpoint</li>
+	<li><code>CalleridPrivacy</code> - Default privacy level</li>
+	<li><code>CalleridTag</code> - Internal id_tag for the endpoint</li>
+	<li><code>TrustIdInbound</code> - Accept identification information received from this endpoint</li>
+	<li><code>TrustIdOutbound</code> - Send private identification details to the endpoint.</li>
+	<li><code>SendPai</code> - Send the P-Asserted-Identity header</li>
+	<li><code>SendRpid</code> - Send the Remote-Party-ID header</li>
+	<li><code>SendDiversion</code> - Send the Diversion header, conveying the diversion information to the called user agent</li>
+	<li><code>Mailboxes</code> - NOTIFY the endpoint when state changes for any of the specified mailboxes</li>
+	<li><code>AggregateMwi</code> - Condense MWI notifications into a single NOTIFY.</li>
+	<li><code>MediaEncryption</code> - Determines whether res_pjsip will use and enforce usage of media encryption for this endpoint.</li>
+	<li><code>MediaEncryptionOptimistic</code> - Determines whether encryption should be used if possible but does not terminate the session if not achieved.</li>
+	<li><code>UseAvpf</code> - Determines whether res_pjsip will use and enforce usage of AVPF for this endpoint.</li>
+	<li><code>ForceAvp</code> - Determines whether res_pjsip will use and enforce usage of AVP, regardless of the RTP profile in use for this endpoint.</li>
+	<li><code>MediaUseReceivedTransport</code> - Determines whether res_pjsip will use the media transport received in the offer SDP in the corresponding answer SDP.</li>
+	<li><code>OneTouchRecording</code> - Determines whether one-touch recording is allowed for this endpoint.</li>
+	<li><code>InbandProgress</code> - Determines whether chan_pjsip will indicate ringing using inband progress.</li>
+	<li><code>CallGroup</code> - The numeric pickup groups for a channel.</li>
+	<li><code>PickupGroup</code> - The numeric pickup groups that a channel can pickup.</li>
+	<li><code>NamedCallGroup</code> - The named pickup groups for a channel.</li>
+	<li><code>NamedPickupGroup</code> - The named pickup groups that a channel can pickup.</li>
+	<li><code>DeviceStateBusyAt</code> - The number of in-use channels which will cause busy to be returned as device state</li>
+	<li><code>T38Udptl</code> - Whether T.38 UDPTL support is enabled or not</li>
+	<li><code>T38UdptlEc</code> - T.38 UDPTL error correction method</li>
+	<li><code>T38UdptlMaxdatagram</code> - T.38 UDPTL maximum datagram size</li>
+	<li><code>FaxDetect</code> - Whether CNG tone detection is enabled</li>
+	<li><code>T38UdptlNat</code> - Whether NAT support is enabled on UDPTL sessions</li>
+	<li><code>T38UdptlIpv6</code> - Whether IPv6 is used for UDPTL Sessions</li>
+	<li><code>ToneZone</code> - Set which country's indications to use for channels created for this endpoint.</li>
+	<li><code>Language</code> - Set the default language to use for channels created for this endpoint.</li>
+	<li><code>RecordOnFeature</code> - The feature to enact when one-touch recording is turned on.</li>
+	<li><code>RecordOffFeature</code> - The feature to enact when one-touch recording is turned off.</li>
+	<li><code>AllowTransfer</code> - Determines whether SIP REFER transfers are allowed for this endpoint</li>
+	<li><code>UserEqPhone</code> - Determines whether a user=phone parameter is placed into the request URI if the user is determined to be a phone number</li>
+	<li><code>MohPassthrough</code> - Determines whether hold and unhold will be passed through using re-INVITEs with recvonly and sendrecv to the remote side</li>
+	<li><code>SdpOwner</code> - String placed as the username portion of an SDP origin (o=) line.</li>
+	<li><code>SdpSession</code> - String used for the SDP session (s=) line.</li>
+	<li><code>TosAudio</code> - DSCP TOS bits for audio streams</li>
+	<li><code>TosVideo</code> - DSCP TOS bits for video streams</li>
+	<li><code>CosAudio</code> - Priority for audio streams</li>
+	<li><code>CosVideo</code> - Priority for video streams</li>
+	<li><code>AllowSubscribe</code> - Determines if endpoint is allowed to initiate subscriptions with Asterisk.</li>
+	<li><code>SubMinExpiry</code> - The minimum allowed expiry time for subscriptions initiated by the endpoint.</li>
+	<li><code>FromUser</code> - Username to use in From header for requests to this endpoint.</li>
+	<li><code>FromDomain</code> - Domain to user in From header for requests to this endpoint.</li>
+	<li><code>MwiFromUser</code> - Username to use in From header for unsolicited MWI NOTIFYs to this endpoint.</li>
+	<li><code>RtpEngine</code> - Name of the RTP engine to use for channels created for this endpoint</li>
+	<li><code>DtlsVerify</code> - Verify that the provided peer certificate is valid</li>
+	<li><code>DtlsRekey</code> - Interval at which to renegotiate the TLS session and rekey the SRTP session</li>
+	<li><code>DtlsCertFile</code> - Path to certificate file to present to peer</li>
+	<li><code>DtlsPrivateKey</code> - Path to private key for certificate file</li>
+	<li><code>DtlsCipher</code> - Cipher to use for DTLS negotiation</li>
+	<li><code>DtlsCaFile</code> - Path to certificate authority certificate</li>
+	<li><code>DtlsCaPath</code> - Path to a directory containing certificate authority certificates</li>
+	<li><code>DtlsSetup</code> - Whether we are willing to accept connections, connect to the other party, or both.</li>
+	<li><code>SrtpTag32</code> - Determines whether 32 byte tags should be used instead of 80 byte tags.</li>
+	<li><code>RedirectMethod</code> - How redirects received from an endpoint are handled</li>
+	<li><code>SetVar</code> - Variable set on a channel involving the endpoint.</li>
+	<li><code>MessageContext</code> - Context to route incoming MESSAGE requests to.</li>
+	<li><code>Accountcode</code> - An accountcode to set automatically on any channels created for this endpoint.</li>
+	<li><code>PreferredCodecOnly</code> - Respond to a SIP invite with the single most preferred codec rather than advertising all joint codec capabilities. This limits the other side's codec choice to exactly what we prefer.</li>
+	<li><code>DeviceState</code> - The aggregate device state for this endpoint.</li>
+	<li><code>ActiveChannels</code> - The number of active channels associated with this endpoint.</li>
+	<li><code>SubscribeContext</code> - Context for incoming MESSAGE requests.</li>
+	<li><code>Allowoverlap</code> - Enable RFC3578 overlap dialing support.</li>
+</ul>
+
+
+<h3 id="Asterisk17ManagerEvent_EndpointDetail-Class">Class</h3>
+
+<p>COMMAND</p>
+<h3 id="Asterisk17ManagerEvent_EndpointDetail-SeeAlso">See Also</h3>
+
+<h3 id="Asterisk17ManagerEvent_EndpointDetail-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

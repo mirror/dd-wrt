@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <sys/time.h>
 #include <signal.h>
 
@@ -57,7 +55,7 @@ struct ast_dial {
 	void *user_data;                                   /*!< Attached user data */
 	AST_LIST_HEAD(, ast_dial_channel) channels; /*!< Channels being dialed */
 	pthread_t thread;                                  /*!< Thread (if running in async) */
-	struct ast_callid *callid;                         /*!< callid pointer (if running in async) */
+	ast_callid callid;                                 /*!< callid (if running in async) */
 	ast_mutex_t lock;                                  /*! Lock to protect the thread information above */
 };
 
@@ -248,22 +246,9 @@ struct ast_dial *ast_dial_create(void)
 	return dial;
 }
 
-/*! \brief Append a channel
- * \note Appends a channel to a dialing structure
- * \return Returns channel reference number on success, -1 on failure
- */
-int ast_dial_append(struct ast_dial *dial, const char *tech, const char *device, const struct ast_assigned_ids *assignedids)
+static int dial_append_common(struct ast_dial *dial, struct ast_dial_channel *channel,
+		const char *tech, const char *device, const struct ast_assigned_ids *assignedids)
 {
-	struct ast_dial_channel *channel = NULL;
-
-	/* Make sure we have required arguments */
-	if (!dial || !tech || !device)
-		return -1;
-
-	/* Allocate new memory for dialed channel structure */
-	if (!(channel = ast_calloc(1, sizeof(*channel))))
-		return -1;
-
 	/* Record technology and device for when we actually dial */
 	channel->tech = ast_strdup(tech);
 	channel->device = ast_strdup(device);
@@ -287,6 +272,60 @@ int ast_dial_append(struct ast_dial *dial, const char *tech, const char *device,
 	AST_LIST_INSERT_TAIL(&dial->channels, channel, list);
 
 	return channel->num;
+
+}
+
+/*! \brief Append a channel
+ * \note Appends a channel to a dialing structure
+ * \return Returns channel reference number on success, -1 on failure
+ */
+int ast_dial_append(struct ast_dial *dial, const char *tech, const char *device, const struct ast_assigned_ids *assignedids)
+{
+	struct ast_dial_channel *channel = NULL;
+
+	/* Make sure we have required arguments */
+	if (!dial || !tech || !device)
+		return -1;
+
+	/* Allocate new memory for dialed channel structure */
+	if (!(channel = ast_calloc(1, sizeof(*channel))))
+		return -1;
+
+	return dial_append_common(dial, channel, tech, device, assignedids);
+}
+
+int ast_dial_append_channel(struct ast_dial *dial, struct ast_channel *chan)
+{
+	struct ast_dial_channel *channel;
+	char *tech;
+	char *device;
+	char *dash;
+
+	if (!dial || !chan) {
+		return -1;
+	}
+
+	channel = ast_calloc(1, sizeof(*channel));
+	if (!channel) {
+		return -1;
+	}
+	channel->owner = chan;
+
+	tech = ast_strdupa(ast_channel_name(chan));
+
+	device = strchr(tech, '/');
+	if (!device) {
+		ast_free(channel);
+		return -1;
+	}
+	*device++ = '\0';
+
+	dash = strrchr(device, '-');
+	if (dash) {
+		*dash = '\0';
+	}
+
+	return dial_append_common(dial, channel, tech, device, NULL);
 }
 
 /*! \brief Helper function that requests all channels */
@@ -315,27 +354,29 @@ static int begin_dial_prerun(struct ast_dial_channel *channel, struct ast_channe
 		}
 	}
 
-	/* Copy device string over */
-	ast_copy_string(numsubst, channel->device, sizeof(numsubst));
+	if (!channel->owner) {
+		/* Copy device string over */
+		ast_copy_string(numsubst, channel->device, sizeof(numsubst));
 
-	if (cap && ast_format_cap_count(cap)) {
-		cap_request = cap;
-	} else if (requester_cap) {
-		cap_request = requester_cap;
-	} else {
-		cap_all_audio = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
-		ast_format_cap_append_by_type(cap_all_audio, AST_MEDIA_TYPE_AUDIO);
-		cap_request = cap_all_audio;
-	}
+		if (cap && ast_format_cap_count(cap)) {
+			cap_request = cap;
+		} else if (requester_cap) {
+			cap_request = requester_cap;
+		} else {
+			cap_all_audio = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+			ast_format_cap_append_by_type(cap_all_audio, AST_MEDIA_TYPE_AUDIO);
+			cap_request = cap_all_audio;
+		}
 
-	/* If we fail to create our owner channel bail out */
-	if (!(channel->owner = ast_request(channel->tech, cap_request, &assignedids, chan, numsubst, &channel->cause))) {
+		/* If we fail to create our owner channel bail out */
+		if (!(channel->owner = ast_request(channel->tech, cap_request, &assignedids, chan, numsubst, &channel->cause))) {
+			ao2_cleanup(cap_all_audio);
+			return -1;
+		}
+		cap_request = NULL;
+		ao2_cleanup(requester_cap);
 		ao2_cleanup(cap_all_audio);
-		return -1;
 	}
-	cap_request = NULL;
-	ao2_cleanup(requester_cap);
-	ao2_cleanup(cap_all_audio);
 
 	if (chan) {
 		ast_channel_lock_both(chan, channel->owner);
@@ -438,9 +479,6 @@ static int begin_dial_channel(struct ast_dial_channel *channel, struct ast_chann
 		ast_hangup(channel->owner);
 		channel->owner = NULL;
 	} else {
-		if (chan) {
-			ast_poll_channel_add(chan, channel->owner);
-		}
 		ast_channel_publish_dial(async ? NULL : chan, channel->owner, channel->device, NULL);
 		res = 1;
 		ast_verb(3, "Called %s\n", numsubst);
@@ -548,13 +586,17 @@ static void set_state(struct ast_dial *dial, enum ast_dial_result state)
 		dial->state_callback(dial);
 }
 
-/*! \brief Helper function that handles control frames WITH owner */
+/*! \brief Helper function that handles frames */
 static void handle_frame(struct ast_dial *dial, struct ast_dial_channel *channel, struct ast_frame *fr, struct ast_channel *chan)
 {
 	if (fr->frametype == AST_FRAME_CONTROL) {
 		switch (fr->subclass.integer) {
 		case AST_CONTROL_ANSWER:
-			ast_verb(3, "%s answered %s\n", ast_channel_name(channel->owner), ast_channel_name(chan));
+			if (chan) {
+				ast_verb(3, "%s answered %s\n", ast_channel_name(channel->owner), ast_channel_name(chan));
+			} else {
+				ast_verb(3, "%s answered\n", ast_channel_name(channel->owner));
+			}
 			AST_LIST_LOCK(&dial->channels);
 			AST_LIST_REMOVE(&dial->channels, channel, list);
 			AST_LIST_INSERT_HEAD(&dial->channels, channel, list);
@@ -578,28 +620,49 @@ static void handle_frame(struct ast_dial *dial, struct ast_dial_channel *channel
 			break;
 		case AST_CONTROL_INCOMPLETE:
 			ast_verb(3, "%s dialed Incomplete extension %s\n", ast_channel_name(channel->owner), ast_channel_exten(channel->owner));
-			ast_indicate(chan, AST_CONTROL_INCOMPLETE);
+			if (chan) {
+				ast_indicate(chan, AST_CONTROL_INCOMPLETE);
+			} else {
+				ast_hangup(channel->owner);
+				channel->cause = AST_CAUSE_UNALLOCATED;
+				channel->owner = NULL;
+			}
 			break;
 		case AST_CONTROL_RINGING:
 			ast_verb(3, "%s is ringing\n", ast_channel_name(channel->owner));
-			if (!dial->options[AST_DIAL_OPTION_MUSIC])
+			ast_channel_publish_dial(chan, channel->owner, channel->device, "RINGING");
+			if (chan && !dial->options[AST_DIAL_OPTION_MUSIC])
 				ast_indicate(chan, AST_CONTROL_RINGING);
 			set_state(dial, AST_DIAL_RESULT_RINGING);
 			break;
 		case AST_CONTROL_PROGRESS:
-			ast_verb(3, "%s is making progress, passing it to %s\n", ast_channel_name(channel->owner), ast_channel_name(chan));
-			ast_indicate(chan, AST_CONTROL_PROGRESS);
+			ast_channel_publish_dial(chan, channel->owner, channel->device, "PROGRESS");
+			if (chan) {
+				ast_verb(3, "%s is making progress, passing it to %s\n", ast_channel_name(channel->owner), ast_channel_name(chan));
+				ast_indicate(chan, AST_CONTROL_PROGRESS);
+			} else {
+				ast_verb(3, "%s is making progress\n", ast_channel_name(channel->owner));
+			}
 			set_state(dial, AST_DIAL_RESULT_PROGRESS);
 			break;
 		case AST_CONTROL_VIDUPDATE:
+			if (!chan) {
+				break;
+			}
 			ast_verb(3, "%s requested a video update, passing it to %s\n", ast_channel_name(channel->owner), ast_channel_name(chan));
 			ast_indicate(chan, AST_CONTROL_VIDUPDATE);
 			break;
 		case AST_CONTROL_SRCUPDATE:
+			if (!chan) {
+				break;
+			}
 			ast_verb(3, "%s requested a source update, passing it to %s\n", ast_channel_name(channel->owner), ast_channel_name(chan));
 			ast_indicate(chan, AST_CONTROL_SRCUPDATE);
 			break;
 		case AST_CONTROL_CONNECTED_LINE:
+			if (!chan) {
+				break;
+			}
 			ast_verb(3, "%s connected line has changed, passing it to %s\n", ast_channel_name(channel->owner), ast_channel_name(chan));
 			if (ast_channel_connected_line_sub(channel->owner, chan, fr, 1) &&
 				ast_channel_connected_line_macro(channel->owner, chan, fr, 1, 1)) {
@@ -607,6 +670,9 @@ static void handle_frame(struct ast_dial *dial, struct ast_dial_channel *channel
 			}
 			break;
 		case AST_CONTROL_REDIRECTING:
+			if (!chan) {
+				break;
+			}
 			ast_verb(3, "%s redirecting info has changed, passing it to %s\n", ast_channel_name(channel->owner), ast_channel_name(chan));
 			if (ast_channel_redirecting_sub(channel->owner, chan, fr, 1) &&
 				ast_channel_redirecting_macro(channel->owner, chan, fr, 1, 1)) {
@@ -614,15 +680,26 @@ static void handle_frame(struct ast_dial *dial, struct ast_dial_channel *channel
 			}
 			break;
 		case AST_CONTROL_PROCEEDING:
-			ast_verb(3, "%s is proceeding, passing it to %s\n", ast_channel_name(channel->owner), ast_channel_name(chan));
-			ast_indicate(chan, AST_CONTROL_PROCEEDING);
+			ast_channel_publish_dial(chan, channel->owner, channel->device, "PROCEEDING");
+			if (chan) {
+				ast_verb(3, "%s is proceeding, passing it to %s\n", ast_channel_name(channel->owner), ast_channel_name(chan));
+				ast_indicate(chan, AST_CONTROL_PROCEEDING);
+			} else {
+				ast_verb(3, "%s is proceeding\n", ast_channel_name(channel->owner));
+			}
 			set_state(dial, AST_DIAL_RESULT_PROCEEDING);
 			break;
 		case AST_CONTROL_HOLD:
+			if (!chan) {
+				break;
+			}
 			ast_verb(3, "Call on %s placed on hold\n", ast_channel_name(chan));
 			ast_indicate_data(chan, AST_CONTROL_HOLD, fr->data.ptr, fr->datalen);
 			break;
 		case AST_CONTROL_UNHOLD:
+			if (!chan) {
+				break;
+			}
 			ast_verb(3, "Call on %s left from hold\n", ast_channel_name(chan));
 			ast_indicate(chan, AST_CONTROL_UNHOLD);
 			break;
@@ -630,74 +707,19 @@ static void handle_frame(struct ast_dial *dial, struct ast_dial_channel *channel
 		case AST_CONTROL_FLASH:
 			break;
 		case AST_CONTROL_PVT_CAUSE_CODE:
-			ast_indicate_data(chan, AST_CONTROL_PVT_CAUSE_CODE, fr->data.ptr, fr->datalen);
+			if (chan) {
+				ast_indicate_data(chan, AST_CONTROL_PVT_CAUSE_CODE, fr->data.ptr, fr->datalen);
+			}
 			break;
 		case -1:
-			/* Prod the channel */
-			ast_indicate(chan, -1);
+			if (chan) {
+				/* Prod the channel */
+				ast_indicate(chan, -1);
+			}
 			break;
 		default:
 			break;
 		}
-	}
-}
-
-/*! \brief Helper function that handles control frames WITHOUT owner */
-static void handle_frame_ownerless(struct ast_dial *dial, struct ast_dial_channel *channel, struct ast_frame *fr)
-{
-	/* If we have no owner we can only update the state of the dial structure, so only look at control frames */
-	if (fr->frametype != AST_FRAME_CONTROL)
-		return;
-
-	switch (fr->subclass.integer) {
-	case AST_CONTROL_ANSWER:
-		ast_verb(3, "%s answered\n", ast_channel_name(channel->owner));
-		AST_LIST_LOCK(&dial->channels);
-		AST_LIST_REMOVE(&dial->channels, channel, list);
-		AST_LIST_INSERT_HEAD(&dial->channels, channel, list);
-		AST_LIST_UNLOCK(&dial->channels);
-		ast_channel_publish_dial(NULL, channel->owner, channel->device, "ANSWER");
-		set_state(dial, AST_DIAL_RESULT_ANSWERED);
-		break;
-	case AST_CONTROL_BUSY:
-		ast_verb(3, "%s is busy\n", ast_channel_name(channel->owner));
-		ast_channel_publish_dial(NULL, channel->owner, channel->device, "BUSY");
-		ast_hangup(channel->owner);
-		channel->cause = AST_CAUSE_USER_BUSY;
-		channel->owner = NULL;
-		break;
-	case AST_CONTROL_CONGESTION:
-		ast_verb(3, "%s is circuit-busy\n", ast_channel_name(channel->owner));
-		ast_channel_publish_dial(NULL, channel->owner, channel->device, "CONGESTION");
-		ast_hangup(channel->owner);
-		channel->cause = AST_CAUSE_NORMAL_CIRCUIT_CONGESTION;
-		channel->owner = NULL;
-		break;
-	case AST_CONTROL_INCOMPLETE:
-		/*
-		 * Nothing to do but abort the call since we have no
-		 * controlling channel to ask for more digits.
-		 */
-		ast_verb(3, "%s dialed Incomplete extension %s\n",
-			ast_channel_name(channel->owner), ast_channel_exten(channel->owner));
-		ast_hangup(channel->owner);
-		channel->cause = AST_CAUSE_UNALLOCATED;
-		channel->owner = NULL;
-		break;
-	case AST_CONTROL_RINGING:
-		ast_verb(3, "%s is ringing\n", ast_channel_name(channel->owner));
-		set_state(dial, AST_DIAL_RESULT_RINGING);
-		break;
-	case AST_CONTROL_PROGRESS:
-		ast_verb(3, "%s is making progress\n", ast_channel_name(channel->owner));
-		set_state(dial, AST_DIAL_RESULT_PROGRESS);
-		break;
-	case AST_CONTROL_PROCEEDING:
-		ast_verb(3, "%s is proceeding\n", ast_channel_name(channel->owner));
-		set_state(dial, AST_DIAL_RESULT_PROCEEDING);
-		break;
-	default:
-		break;
 	}
 }
 
@@ -843,8 +865,6 @@ static enum ast_dial_result monitor_dial(struct ast_dial *dial, struct ast_chann
 				set_state(dial, AST_DIAL_RESULT_HANGUP);
 				break;
 			}
-			if (chan)
-				ast_poll_channel_del(chan, channel->owner);
 			ast_channel_publish_dial(chan, who, channel->device, ast_hangup_cause_to_dial_status(ast_channel_hangupcause(who)));
 			ast_hangup(who);
 			channel->owner = NULL;
@@ -852,10 +872,7 @@ static enum ast_dial_result monitor_dial(struct ast_dial *dial, struct ast_chann
 		}
 
 		/* Process the frame */
-		if (chan)
-			handle_frame(dial, channel, fr, chan);
-		else
-			handle_frame_ownerless(dial, channel, fr);
+		handle_frame(dial, channel, fr, chan);
 
 		/* Free the received frame and start all over */
 		ast_frfree(fr);
@@ -868,8 +885,6 @@ static enum ast_dial_result monitor_dial(struct ast_dial *dial, struct ast_chann
 		AST_LIST_TRAVERSE(&dial->channels, channel, list) {
 			if (!channel->owner || channel->owner == who)
 				continue;
-			if (chan)
-				ast_poll_channel_del(chan, channel->owner);
 			ast_channel_publish_dial(chan, channel->owner, channel->device, "CANCEL");
 			ast_hangup(channel->owner);
 			channel->cause = AST_CAUSE_ANSWERED_ELSEWHERE;
@@ -893,8 +908,6 @@ static enum ast_dial_result monitor_dial(struct ast_dial *dial, struct ast_chann
 		AST_LIST_TRAVERSE(&dial->channels, channel, list) {
 			if (!channel->owner)
 				continue;
-			if (chan)
-				ast_poll_channel_del(chan, channel->owner);
 			ast_channel_publish_dial(chan, channel->owner, channel->device, "CANCEL");
 			ast_hangup(channel->owner);
 			channel->cause = AST_CAUSE_NORMAL_CLEARING;
@@ -1130,11 +1143,6 @@ int ast_dial_destroy(struct ast_dial *dial)
 
 	/* Lock be gone! */
 	ast_mutex_destroy(&dial->lock);
-
-	/* Get rid of the reference to the ast_callid */
-	if (dial->callid) {
-		ast_callid_unref(dial->callid);
-	}
 
 	/* Free structure */
 	ast_free(dial);

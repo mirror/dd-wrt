@@ -73,6 +73,7 @@
 
 /*** MODULEINFO
 	<depend type="module">res_http_websocket</depend>
+	<depend type="module">res_stasis</depend>
 	<support_level>core</support_level>
  ***/
 
@@ -112,6 +113,9 @@
 				<configOption name="allowed_origins">
 					<synopsis>Comma separated list of allowed origins, for Cross-Origin Resource Sharing. May be set to * to allow all origins.</synopsis>
 				</configOption>
+				<configOption name="channelvars">
+					<synopsis>Comma separated list of channel variables to display in channel json.</synopsis>
+				</configOption>
 			</configObject>
 
 			<configObject name="user">
@@ -139,8 +143,6 @@
 ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "ari/internal.h"
 #include "asterisk/ari.h"
@@ -194,7 +196,6 @@ int ast_ari_add_handler(struct stasis_rest_handlers *handler)
 	ao2_cleanup(root_handler);
 	ao2_ref(new_handler, +1);
 	root_handler = new_handler;
-	ast_module_ref(ast_module_info->self);
 	return 0;
 }
 
@@ -220,7 +221,6 @@ int ast_ari_remove_handler(struct stasis_rest_handlers *handler)
 	memcpy(new_handler, root_handler, sizeof(*new_handler));
 	for (i = 0, j = 0; i < root_handler->num_children; ++i) {
 		if (root_handler->children[i] == handler) {
-			ast_module_unref(ast_module_info->self);
 			continue;
 		}
 		new_handler->children[j++] = root_handler->children[i];
@@ -495,6 +495,7 @@ void ast_ari_invoke(struct ast_tcptls_session_instance *ser,
 {
 	RAII_VAR(struct stasis_rest_handlers *, root, NULL, ao2_cleanup);
 	struct stasis_rest_handlers *handler;
+	struct stasis_rest_handlers *wildcard_handler = NULL;
 	RAII_VAR(struct ast_variable *, path_vars, NULL, ast_variables_destroy);
 	char *path = ast_strdupa(uri);
 	char *path_segment;
@@ -503,37 +504,49 @@ void ast_ari_invoke(struct ast_tcptls_session_instance *ser,
 	root = handler = get_root_handler();
 	ast_assert(root != NULL);
 
+	ast_debug(3, "Finding handler for %s\n", path);
+
 	while ((path_segment = strsep(&path, "/")) && (strlen(path_segment) > 0)) {
 		struct stasis_rest_handlers *found_handler = NULL;
 		int i;
 
 		ast_uri_decode(path_segment, ast_uri_http_legacy);
-		ast_debug(3, "Finding handler for %s\n", path_segment);
+		ast_debug(3, "  Finding handler for %s\n", path_segment);
 
 		for (i = 0; found_handler == NULL && i < handler->num_children; ++i) {
 			struct stasis_rest_handlers *child = handler->children[i];
 
-			ast_debug(3, "  Checking %s\n", child->path_segment);
 			if (child->is_wildcard) {
 				/* Record the path variable */
 				struct ast_variable *path_var = ast_variable_new(child->path_segment, path_segment, __FILE__);
 				path_var->next = path_vars;
 				path_vars = path_var;
-				found_handler = child;
+				wildcard_handler = child;
+				ast_debug(3, "        Checking %s %s:  Matched wildcard.\n", handler->path_segment, child->path_segment);
+
 			} else if (strcmp(child->path_segment, path_segment) == 0) {
 				found_handler = child;
+				ast_debug(3, "        Checking %s %s:  Explicit match with %s\n", handler->path_segment, child->path_segment, path_segment);
+			} else {
+				ast_debug(3, "        Checking %s %s:  Didn't match %s\n", handler->path_segment, child->path_segment, path_segment);
 			}
+		}
+
+		if (!found_handler && wildcard_handler) {
+			ast_debug(3, "  No explicit handler found for %s.  Using wildcard %s.\n",
+				path_segment, wildcard_handler->path_segment);
+			found_handler = wildcard_handler;
+			wildcard_handler = NULL;
 		}
 
 		if (found_handler == NULL) {
 			/* resource not found */
-			ast_debug(3, "  Handler not found\n");
+			ast_debug(3, "  Handler not found for %s\n", path_segment);
 			ast_ari_response_error(
 				response, 404, "Not Found",
 				"Resource not found");
 			return;
 		} else {
-			ast_debug(3, "  Got it!\n");
 			handler = found_handler;
 		}
 	}
@@ -879,11 +892,11 @@ static int ast_ari_callback(struct ast_tcptls_session_instance *ser,
 	RAII_VAR(struct ast_ari_conf *, conf, NULL, ao2_cleanup);
 	RAII_VAR(struct ast_str *, response_body, ast_str_create(256), ast_free);
 	RAII_VAR(struct ast_ari_conf_user *, user, NULL, ao2_cleanup);
-	struct ast_ari_response response = {};
+	struct ast_ari_response response = { .fd = -1, 0 };
 	RAII_VAR(struct ast_variable *, post_vars, NULL, ast_variables_destroy);
 	struct ast_variable *var;
 	const char *app_name = NULL;
-	RAII_VAR(struct ast_json *, body, ast_json_null(), ast_json_free);
+	RAII_VAR(struct ast_json *, body, ast_json_null(), ast_json_unref);
 	int debug_app = 0;
 
 	if (!response_body) {
@@ -983,9 +996,11 @@ static int ast_ari_callback(struct ast_tcptls_session_instance *ser,
 		struct ast_str *buf = ast_str_create(512);
 		char *str = ast_json_dump_string_format(body, ast_ari_json_format());
 
-		if (!buf) {
+		if (!buf || (body && !str)) {
 			ast_http_request_close_on_completion(ser);
-			ast_http_error(ser, 500, "Server Error", "Out of memory");
+			ast_ari_response_error(&response, 500, "Server Error", "Out of memory");
+			ast_json_free(str);
+			ast_free(buf);
 			goto request_failed;
 		}
 
@@ -997,7 +1012,7 @@ static int ast_ari_callback(struct ast_tcptls_session_instance *ser,
 		for (var = get_params; var; var = var->next) {
 			ast_str_append(&buf, 0, "%s: %s\n", var->name, var->value);
 		}
-		ast_verbose("%sbody:\n%s\n\n", ast_str_buffer(buf), str);
+		ast_verbose("%sbody:\n%s\n\n", ast_str_buffer(buf), S_OR(str, ""));
 		ast_json_free(str);
 		ast_free(buf);
 	}
@@ -1084,11 +1099,14 @@ request_failed:
 
 	ast_http_send(ser, method, response.response_code,
 		      response.response_text, response.headers, response_body,
-		      0, 0);
+		      response.fd != -1 ? response.fd : 0, 0);
 	/* ast_http_send takes ownership, so we don't have to free them */
 	response_body = NULL;
 
 	ast_json_unref(response.message);
+	if (response.fd >= 0) {
+		close(response.fd);
+	}
 	return 0;
 }
 
@@ -1096,7 +1114,6 @@ static struct ast_http_uri http_uri = {
 	.callback = ast_ari_callback,
 	.description = "Asterisk RESTful API",
 	.uri = "ari",
-
 	.has_subtree = 1,
 	.data = NULL,
 	.key = __FILE__,
@@ -1191,6 +1208,7 @@ AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_
 	.load = load_module,
 	.unload = unload_module,
 	.reload = reload_module,
-	.nonoptreq = "res_http_websocket",
+	.optional_modules = "res_http_websocket",
+	.requires = "http,res_stasis",
 	.load_pri = AST_MODPRI_APP_DEPEND,
-	);
+);

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_ConfBridge</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_ConfBridge
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_ConfBridge-ConfBridge()">ConfBridge()</h1>
+
+<h3 id="Asterisk17Application_ConfBridge-Synopsis">Synopsis</h3>
+
+<p>Conference bridge application.</p>
+
+<h3 id="Asterisk17Application_ConfBridge-Description">Description</h3>
+
+<p>Enters the user into a specified conference bridge. The user can exit the conference by hangup or DTMF menu option.</p>
+
+<p>This application sets the following channel variable upon completion:</p>
+
+<ul>
+	<li><code>CONFBRIDGE_RESULT</code>
+	<ul>
+		<li>FAILED - The channel encountered an error and could not enter the conference.</li>
+		<li>HANGUP - The channel exited the conference by hanging up.</li>
+		<li>KICKED - The channel was kicked from the conference.</li>
+		<li>ENDMARKED - The channel left the conference as a result of the last marked user leaving.</li>
+		<li>DTMF - The channel pressed a DTMF sequence to exit the conference.</li>
+		<li>TIMEOUT - The channel reached its configured timeout.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_ConfBridge-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>ConfBridge(conference,[bridge_profile,[user_profile,[menu]]])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_ConfBridge-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>conference</code> - Name of the conference bridge. You are not limited to just numbers.</li>
+	<li><code>bridge_profile</code> - The bridge profile name from confbridge.conf. When left blank, a dynamically built bridge profile created by the CONFBRIDGE dialplan function is searched for on the channel and used. If no dynamic profile is present, the 'default_bridge' profile found in confbridge.conf is used.<br />
+It is important to note that while user profiles may be unique for each participant, mixing bridge profiles on a single conference is _NOT_ recommended and will produce undefined results.</li>
+	<li><code>user_profile</code> - The user profile name from confbridge.conf. When left blank, a dynamically built user profile created by the CONFBRIDGE dialplan function is searched for on the channel and used. If no dynamic profile is present, the 'default_user' profile found in confbridge.conf is used.</li>
+	<li><code>menu</code> - The name of the DTMF menu in confbridge.conf to be applied to this channel. When left blank, a dynamically built menu profile created by the CONFBRIDGE dialplan function is searched for on the channel and used. If no dynamic profile is present, the 'default_menu' profile found in confbridge.conf is used.</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_ConfBridge-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Application_ConfBridge_42010989.html">Asterisk 17 Application_ConfBridge</a></li>
+	<li><a href="Asterisk-17-Function_CONFBRIDGE_42010990.html">Asterisk 17 Function_CONFBRIDGE</a></li>
+	<li><a href="Asterisk-17-Function_CONFBRIDGE_INFO_42010991.html">Asterisk 17 Function_CONFBRIDGE_INFO</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Application_ConfBridge-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : ARI and Media: Part 2 - Playbacks</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="29395573.html">Asterisk REST Interface (ARI)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Introduction-to-ARI-and-Media-Manipulation_29396202.html">Introduction to ARI and Media Manipulation</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : ARI and Media: Part 2 - Playbacks
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Mark Michelson</span>, last modified by <span class='editor'> Matt Jordan</span> on Oct 16, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="ARIandMedia:Part2-Playbacks-Queryingforsounds">Querying for sounds</h1><p>In our voice mail application we have been creating, we have learned the ins and outs of creating and manipulating live and stored recordings. Let's make the voice mail application more user-friendly now by adding some playbacks of installed sounds. The voice mail application has some nice capabilities, but it is not very user-friendly yet. Let's modify the current application to play a greeting to the user when they call into the application. This is the updated state machine:</p><p style="text-align: center;">
+
+<map id="gliffy-map-30474302-7255" name="gliffy-map-30474302-7255"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 900px;" usemap="#gliffy-map-30474302-7255" src="attachments/30277828/30474303.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p></div><div class="columnMacro" style="width:40%;min-width:40%;max-width:40%;"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303087963 {padding: 0px;}
+div.rbtoc1582303087963 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303087963 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303087963'>
+<ul class='toc-indentation'>
+<li><a href='#ARIandMedia:Part2-Playbacks-Queryingforsounds'>Querying for sounds</a></li>
+<li><a href='#ARIandMedia:Part2-Playbacks-Controllingplaybacks'>Controlling playbacks</a></li>
+<li><a href='#ARIandMedia:Part2-Playbacks-Playbacksonbridges'>Playbacks on bridges</a></li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><p>To make the new &quot;greeting&quot; state more interesting, we are going to add some safety to this state by ensuring that the sound we want to play is installed on the system. The <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Sounds+REST+API"><code>/sounds</code></a> resource in ARI provides methods to list the sounds installed on the system, as well as the ability to get specific sound files.</p><p>Asterisk searches for sounds in the <code>/sounds/</code> subdirectory of the configured <code>astdatadir</code> option in <code>asterisk.conf</code>. By default, Asterisk will search for sounds in <code>/var/lib/asterisk/sounds</code>. When Asterisk starts up, it indexes the installed sounds and keeps an in-data representation of those sound files. When an ARI application asks Asterisk for details about a specific sound or for a list of sounds on the system, Asterisk consults its in-memory index instead of searching the file system directly. This has some trade-offs. When querying for sound information, this in-memory indexing makes the operations much faster. On the other hand, it also means that Asterisk has to be &quot;poked&quot; to re-index the sounds if new sounds are added to the file system after Asterisk is running.  The Asterisk CLI command &quot;module reload sounds&quot; provides a means of having Asterisk re-index the sounds on the system so that they are available to ARI.</p><p>For our greeting, we will play the built-in sound &quot;vm-intro&quot;. Here is the code for our new state:</p><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">greeting_state.py</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: py; collapse: true; gutter: false" style="font-size:12px;">from event import Event
+
+def sounds_installed(client):
+    try:
+        client.sounds.get(soundId='vm-intro')
+    except:
+        print &quot;Required sound 'vm-intro' not installed. Aborting&quot;
+        raise
+
+
+class GreetingState(object):
+    state_name = &quot;greeting&quot;
+
+    def __init__(self, call):
+        self.call = call
+        self.hangup_event = None
+        self.playback_finished = None
+        self.dtmf_event = None
+        self.playback = None
+        sounds_installed(call.client)
+
+    def enter(self):
+        print &quot;Entering greeting state&quot;
+        self.hangup_event = self.call.channel.on_event('ChannelHangupRequest',
+                self.on_hangup)
+        self.playback_finished = self.call.client.on_event(
+                'PlaybackFinished', self.on_playback_finished)
+        self.dtmf_event = self.call.channel.on_event('ChannelDtmfReceived',
+                                                self.on_dtmf)
+        self.playback = self.call.channel.play(media=&quot;sound:vm-intro&quot;)
+
+    def cleanup(self):
+        self.playback_finished.close()
+        self.dtmf_event.close()
+        self.hangup_event.close()
+
+    def on_hangup(self, channel, event):
+        print &quot;Abandoning voicemail recording on hangup&quot;
+        self.cleanup()
+        self.call.state_machine.change_state(Event.HANGUP)
+
+    def on_playback_finished(self, playback):
+        self.cleanup()
+        self.call.state_machine.change_state(Event.PLAYBACK_COMPLETE)
+
+    def on_dtmf(self, channel, event):
+        digit = event.get('digit')
+        if digit == '#':
+            print &quot;Cutting off greeting on DTMF #&quot;
+            # Let on_playback_finished take care of state change
+            self.playback.stop()</pre> 
+ </div>
+</div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">greeting_state.js</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: js; collapse: true; gutter: false" style="font-size:12px;">var Event = require('./event');
+
+function sounds_installed(client) {
+    client.sounds.get({soundId: 'vm-intro'}, function(err) {
+        if (err) {
+            console.log(&quot;Required sound 'vm-intro' not installed. Aborting&quot;);
+            throw err;
+        }
+    });
+}
+
+function GreetingState(call) {
+    this.state_name = &quot;greeting&quot;;
+    sounds_installed(call.client);
+
+    this.enter = function() {
+        var playback = call.client.Playback();
+        console.log(&quot;Entering greeting state&quot;);
+        call.channel.on(&quot;ChannelHangupRequest&quot;, on_hangup);
+        call.channel.on(&quot;ChannelDtmfReceived&quot;, on_dtmf);
+        call.client.on(&quot;PlaybackFinished&quot;, on_playback_finished);
+        call.channel.play({media: 'sound:vm-intro'}, playback);
+
+        function cleanup() {
+            call.channel.removeListener('ChannelHangupRequest', on_hangup);
+            call.channel.removeListener('ChannelDtmfReceived', on_dtmf);
+            call.client.removeListener('PlaybackFinished', on_playback_finished);
+            if (playback) {
+                playback.stop();
+            }
+        }
+
+        function on_hangup(event, channel) {
+            console.log(&quot;Abandoning voicemail recording on hangup&quot;);
+            cleanup();
+            call.state_machine.change_state(Event.HANGUP);
+        }
+
+        function on_playback_finished(event) {
+            if (playback &amp;&amp; playback.id === event.playback.id) {
+                cleanup();
+                call.state_machine.change_state(Event.PLAYBACK_COMPLETE);
+            }
+        }
+
+        function on_dtmf(event, channel) {
+            switch (event.digit) {
+            case '#':
+                console.log(&quot;Skipping greeting&quot;);
+                cleanup();
+                call.state_machine.change_state(Event.DTMF_OCTOTHORPE);
+            }
+        }
+    }
+}
+&nbsp;module.exports = GreetingState;</pre> 
+ </div>
+</div><p>The <code>sounds.get()</code> method employed here allows for a single sound to be retrieved based on input parameters. Here, we simply specify the name of the recording we want to ensure that it exists in some form on the system. By checking for the sound's existence in the initialization of <code>GreetingState</code>, we can abort the call early if the sound is not installed.</p><p>And here is our updated state machine:</p><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">vm-call.py</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: py; collapse: true; gutter: false" style="font-size:12px;">#At the top of the file
+from greeting_state import GreetingState
+
+#In VoiceMailCall::setup_state_machine()
+    def setup_state_machine(self):
+        hungup_state = HungUpState(self)
+        recording_state = RecordingState(self)
+        ending_state = EndingState(self)
+        reviewing_state = ReviewingState(self)
+        greeting_state = GreetingState(self)
+        self.state_machine = StateMachine()
+        self.state_machine.add_transition(recording_state, Event.DTMF_OCTOTHORPE,
+                                          reviewing_state)
+        self.state_machine.add_transition(recording_state, Event.HANGUP,
+                                          hungup_state)
+        self.state_machine.add_transition(recording_state, Event.DTMF_STAR,
+                                          recording_state)
+        self.state_machine.add_transition(reviewing_state, Event.HANGUP,
+                                          hungup_state)
+        self.state_machine.add_transition(reviewing_state, Event.DTMF_OCTOTHORPE,
+                                          ending_state)
+        self.state_machine.add_transition(reviewing_state, Event.DTMF_STAR,
+                                          recording_state)
+        self.state_machine.add_transition(greeting_state, Event.HANGUP,
+                                          hungup_state)
+        self.state_machine.add_transition(greeting_state,
+                                          Event.PLAYBACK_COMPLETE,
+                                          recording_state)
+        self.state_machine.start(greeting_state)</pre> 
+ </div>
+</div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">vm-call.js</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: js; collapse: true; gutter: false" style="font-size:12px;">//At the top of the file
+var GreetingState = require('./greeting_state');
+
+//In VoicemailCall::setup_state_machine()
+this.setup_state_machine = function() {
+    var hungup_state = new HungUpState(this);
+    var recording_state = new RecordingState(this);
+    var ending_state = new EndingState(this);
+    var reviewing_state = new ReviewingState(this);
+    var greeting_state = new GreetingState(this);
+    this.state_machine = new StateMachine();
+    this.state_machine.add_transition(recording_state, Event.DTMF_OCTOTHORPE, reviewing_state);
+    this.state_machine.add_transition(recording_state, Event.HANGUP, hungup_state);
+    this.state_machine.add_transition(recording_state, Event.DTMF_STAR, recording_state);
+    this.state_machine.add_transition(reviewing_state, Event.DTMF_OCTOTHORPE, ending_state);
+    this.state_machine.add_transition(reviewing_state, Event.HANGUP, hungup_state);
+    this.state_machine.add_transition(reviewing_state, Event.DTMF_STAR, recording_state);
+    this.state_machine.add_transition(greeting_state, Event.HANGUP, hungup_state);
+    this.state_machine.add_transition(greeting_state, Event.PLAYBACK_COMPLETE, recording_state);
+    this.state_machine.start(greeting_state);
+}</pre> 
+ </div>
+</div><p>Here is a sample run where the user cuts off the greeting by pressing the '#' key, records a greeting and presses the '#' key, and after listening to the recording presses the '#' key once more.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Channel PJSIP/200-0000000b recording voicemail for 305
+Entering greeting state
+Cutting off greeting on DTMF #
+Entering recording state
+Recording voicemail at voicemail/305/1411503204.75
+Accepted recording voicemail/305/1411503204.75 on DTMF #
+Cleaning up event handlers
+Entering reviewing state
+Accepted recording voicemail/305/1411503204.75 on DTMF #
+Ending voice mail call from PJSIP/200-0000000b</pre>
+</div></div><div class="panel" style="background-color: silver;border-style: solid;border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;border-bottom-style: solid;background-color: seagreen;color: black;"><b>Reader Exercise 1</b></div><div class="panelContent" style="background-color: silver;">
+<p>Our current implementation of <code>GreetingState</code> does not take language into consideration. The <code>sounds_installed</code> method checks for the existence of the sound file, but it does not ensure that we have the sound file in the language of the channel that is in our application.</p><p>For this exercise, modify <code>sounds_installed()</code> to also check if the retrieved sound exists in the language of the calling channel. The channel's language can be retrieved using the <code>getChannelVar()</code> method on a channel to retrieve the value of variable &quot;CHANNEL(language)&quot;. The sound returned by <code>sounds.get()</code> contains an array of <code>FormatLang</code> objects that are a pair of format and language strings. If the sound exists, but not in the channel's language, then throw an exception.</p>
+</div></div><h1 id="ARIandMedia:Part2-Playbacks-Controllingplaybacks">Controlling playbacks</h1><p>So far in our voice mail application, we have stopped playbacks, but there are a lot more interesting operations that can be done on them, such as reversing and fast-forwarding them. Within the context of recording a voicemail, these operations are pretty useless, so we will shift our focus now to the other side of voicemail: listening to recorded voicemails.</p><p>For this, we will write a new application. This new application will allow a caller to listen to the voicemails that are stored in a specific mailbox. When the caller enters the application, a prompt is played to the caller saying which message number the caller is hearing. When the message number finishes playing (or if the caller interrupts the playback with '#'), then the caller hears the specified message in the voicemail box. While listening to the voicemail, the caller can do several things:</p><ul><li>Press the '1' key to go back 3 seconds in the current message playback.</li><li>Press the '2' key to pause or unpause the current message playback.</li><li>Press the '3' key to go forward 3 seconds in the current message playback.</li><li>Press the '4' key to play to the previous message.</li><li>Press the '5' key to restart the current message playback.</li><li>Press the '6' key to play to the next message.</li><li>Press the '*' key to delete the current message and play the next message.</li><li>Press the '#' key to end the call.</li></ul><p>If all messages in a mailbox are deleted or if the mailbox contained no messages to begin with, then &quot;no more messages&quot; is played back to the user, and the call is completed.</p><p>This means defining a brand new state machine. To start with, we'll define three new states. The &quot;preamble&quot; state is the initial state of the state machine, where the current message number is played back to the listener. The &quot;listening&quot; state is where the voice mail message is played back to the listener. The &quot;empty&quot; state is where no more messages remain in the mailbox. Here is the state machine we will be using:</p><p style="text-align: center;">
+
+<map id="gliffy-map-30474304-2457" name="gliffy-map-30474304-2457"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 1020px;" usemap="#gliffy-map-30474304-2457" src="attachments/30277828/30474305.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p><p>Notice that while in the listening state, DMTF '4', '6', and '*' all change the state to the preamble state. This is so that the new message number can be played back to the caller before the next message is heard. Also notice that the preamble state is responsible for determining if the state should change to empty. This keeps the logic in the listening state more straight-forward since it is already having to deal with a lot of DTMF events. It also gracefully handles the case where a caller calls into the application when the caller has no voicemail messages.</p><p>Here is the implementation of the application.</p><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">vm-playback.py</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: py; collapse: true; gutter: false" style="font-size:12px;">#!/usr/bin/env python
+
+import ari
+import logging
+import sys
+
+from state_machine import StateMachine
+from ending_state import EndingState
+from hungup_state import HungUpState
+from listening_state import ListeningState
+from preamble_state import PreambleState
+from empty_state import EmptyState
+from event import Event
+
+logging.basicConfig(level=logging.ERROR)
+LOGGER = logging.getLogger(__name__)
+
+client = ari.connect('http://localhost:8088', 'asterisk', 'asterisk')
+
+
+class VoiceMailCall(object):
+    def __init__(self, ari_client, channel, mailbox):
+        self.client = ari_client
+        self.channel = channel
+
+        self.voicemails = []
+        recordings = ari_client.recordings.listStored()
+        vm_number = 1
+        for rec in recordings:
+            if rec.json['name'].startswith('voicemail/{0}'.format(mailbox)):
+                self.voicemails.append((vm_number, rec.json['name']))
+                vm_number += 1
+
+        self.current_voicemail = 0
+        self.setup_state_machine()
+
+    def setup_state_machine(self):
+        hungup_state = HungUpState(self)
+        ending_state = EndingState(self)
+        listening_state = ListeningState(self)
+        preamble_state = PreambleState(self)
+        empty_state = EmptyState(self)
+        self.state_machine = StateMachine()
+        self.state_machine.add_transition(listening_state, Event.DTMF_4,
+                                          preamble_state)
+        self.state_machine.add_transition(listening_state, Event.DTMF_6,
+                                          preamble_state)
+        self.state_machine.add_transition(listening_state, Event.HANGUP,
+                                          hungup_state)
+        self.state_machine.add_transition(listening_state, Event.DTMF_OCTOTHORPE,
+                                          ending_state)
+        self.state_machine.add_transition(listening_state, Event.DTMF_STAR,
+                                          preamble_state)
+        self.state_machine.add_transition(preamble_state, Event.DTMF_OCTOTHORPE,
+                                          listening_state)
+        self.state_machine.add_transition(preamble_state,
+                                          Event.PLAYBACK_COMPLETE,
+                                          listening_state)
+        self.state_machine.add_transition(preamble_state, Event.MAILBOX_EMPTY,
+                                          empty_state)
+        self.state_machine.add_transition(preamble_state, Event.HANGUP,
+                                          hungup_state)
+        self.state_machine.add_transition(empty_state, Event.HANGUP,
+                                          hungup_state)
+        self.state_machine.add_transition(empty_state,
+                                          Event.PLAYBACK_COMPLETE,
+                                          ending_state)
+        self.state_machine.start(preamble_state)
+
+    def next_message(self):
+        self.current_voicemail += 1
+        if self.current_voicemail == len(self.voicemails):
+            self.current_voicemail = 0
+
+    def previous_message(self):
+        self.current_voicemail -= 1
+        if self.current_voicemail &lt; 0:
+            self.current_voicemail = len(self.voicemails) - 1
+
+    def delete_message(self):
+        del self.voicemails[self.current_voicemail]
+        if self.current_voicemail == len(self.voicemails):
+            self.current_voicemail = 0
+
+    def get_current_voicemail_number(self):
+        return self.voicemails[self.current_voicemail][0]
+
+    def get_current_voicemail_file(self):
+        return self.voicemails[self.current_voicemail][1]
+
+    def mailbox_empty(self):
+        return len(self.voicemails) == 0
+
+
+def stasis_start_cb(channel_obj, event):
+    channel = channel_obj['channel']
+    channel_name = channel.json.get('name')
+    mailbox = event.get('args')[0]
+    print(&quot;Channel {0} recording voicemail for {1}&quot;.format(
+        channel_name, mailbox))
+    channel.answer()
+    VoiceMailCall(client, channel, mailbox)
+
+
+client.on_channel_event('StasisStart', stasis_start_cb)
+client.run(apps=sys.argv[1])</pre> 
+ </div>
+</div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">vm-playback.js</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: js; collapse: true; gutter: false" style="font-size:12px;">/*jshint node:true*/
+'use strict';
+ 
+var ari = require('ari-client');
+var util = require('util');
+var path = require('path');
+
+var Event = require('./event');
+var StateMachine = require('./state_machine');
+var EndingState = require('./ending_state');
+var HungUpState = require('./hungup_state');
+var PreambleState = require('./preamble_state');
+var EmptyState = require('./empty_state');
+var ListeningState = require('./listening_state');
+
+ari.connect('http://localhost:8088', 'asterisk', 'asterisk', clientLoaded);
+
+var VoiceMailCall = function(ari_client, channel, mailbox) {
+    this.client = ari_client;
+    this.channel = channel;
+    var current_voicemail = 0;
+    var voicemails = [];
+
+    this.setup_state_machine = function() {
+        var hungup_state = new HungUpState(this);
+        var ending_state = new EndingState(this);
+        var listening_state = new ListeningState(this);
+        var preamble_state = new PreambleState(this);
+        var empty_state = new EmptyState(this);
+        this.state_machine = new StateMachine(this);
+        this.state_machine.add_transition(listening_state, Event.DTMF_4, preamble_state);
+        this.state_machine.add_transition(listening_state, Event.DTMF_6, preamble_state);
+        this.state_machine.add_transition(listening_state, Event.HANGUP, hungup_state);
+        this.state_machine.add_transition(listening_state, Event.DTMF_OCTOTHORPE, ending_state);
+        this.state_machine.add_transition(listening_state, Event.DTMF_STAR, preamble_state);
+        this.state_machine.add_transition(preamble_state, Event.DTMF_OCTOTHORPE, listening_state);
+        this.state_machine.add_transition(preamble_state, Event.PLAYBACK_COMPLETE, listening_state);
+        this.state_machine.add_transition(preamble_state, Event.MAILBOX_EMPTY, empty_state);
+        this.state_machine.add_transition(preamble_state, Event.HANGUP, hungup_state);
+        this.state_machine.add_transition(empty_state, Event.HANGUP, hungup_state);
+        this.state_machine.add_transition(empty_state, Event.PLAYBACK_COMPLETE, ending_state);
+        this.state_machine.start(preamble_state);
+    }
+
+    this.next_message = function() {
+        current_voicemail++;
+        if (current_voicemail === voicemails.length) {
+            current_voicemail = 0;
+        }
+    }
+
+    this.previous_message = function() {
+        current_voicemail--;
+        if (current_voicemail &lt; 0) {
+            current_voicemail = voicemails.length - 1;
+        }
+    }
+
+    this.delete_message = function() {
+        voicemails.splice(current_voicemail, 1);
+        if (current_voicemail === voicemails.length) {
+            current_voicemail = 0;
+        }
+    }
+
+    this.get_current_voicemail_file = function() {
+        return voicemails[current_voicemail]['file'];
+    }
+
+    this.mailbox_empty = function() {
+        return voicemails.length === 0;
+    }
+
+    var self = this;
+    ari_client.recordings.listStored(function (err, recordings) {
+        var vm_number = 1;
+        var regex = new RegExp('^voicemail/' + mailbox);
+        for (var i = 0; i &lt; recordings.length; i++) {
+            var rec_name = recordings[i].name;
+            if (rec_name.search(regex) != -1) {
+                console.log(&quot;Found voicemail&quot;, rec_name);
+                voicemails.push({'number': vm_number, 'file': rec_name});
+                vm_number++;
+            }
+        }
+        self.setup_state_machine();
+    });
+}
+
+function clientLoaded(err, client) {
+    if (err) {
+        throw err;
+    }
+    client.on('StasisStart', stasisStart);
+    function stasisStart(event, channel) {
+        var mailbox = event.args[0]
+        channel.answer(function(err) {
+            if (err) {
+                throw err;
+            }
+            new VoiceMailCall(client, channel, mailbox);
+        });
+    }
+    client.start(process.argv[2]);
+}</pre> 
+ </div>
+</div><p>Quite a bit of this is similar to what we were using for our voice mail recording application. The biggest difference here is that the call has many more methods defined since playing back voice mails is more complicated than recording a single one.</p><p>Now that we have the state machine defined and the application written, let's actually write the required new states. First of the new states is the &quot;preamble&quot; state.</p><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">preamble_state.py</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: py; collapse: true; gutter: false" style="font-size:12px;">from event import Event
+import uuid
+
+def sounds_installed(client):
+    try:
+        client.sounds.get(soundId='vm-message')
+    except:
+        print &quot;Required sound 'vm-message' not installed. Aborting&quot;
+        raise                    
+
+
+class PreambleState(object):
+    state_name = &quot;preamble&quot;
+
+    def __init__(self, call):
+        self.call = call
+        self.hangup_event = None
+        self.playback_finished = None
+        self.dtmf_event = None
+        self.playback = None
+        sounds_installed(call.client)
+
+    def enter(self):
+        print &quot;Entering preamble state&quot;
+        if self.call.mailbox_empty():
+            self.call.state_machine.change_state(Event.MAILBOX_EMPTY)
+            return
+        self.hangup_event = self.call.channel.on_event(&quot;ChannelHangupRequest&quot;,
+                                                       self.on_hangup)
+        self.playback_finished = self.call.client.on_event(
+                'PlaybackFinished', self.on_playback_finished)
+        self.dtmf_event = self.call.channel.on_event('ChannelDtmfReceived',
+                                                     self.on_dtmf)
+        self.initialize_playbacks()
+
+    def initialize_playbacks(self):
+        self.current_playback = 0
+        current_voicemail = self.call.get_current_voicemail_number()
+        self.sounds_to_play = [
+            {
+                'id': str(uuid.uuid4()),
+                'media': 'sound:vm-message'
+            },
+            {
+                'id': str(uuid.uuid4()),
+                'media': 'number:{0}'.format(current_voicemail)
+            }
+        ]
+        self.start_playback()
+
+    def start_playback(self):
+        current_sound = self.sounds_to_play[self.current_playback]
+        self.playback = self.call.channel.playWithId(
+                playbackId=current_sound['id'],
+                media=current_sound['media']
+        )
+
+    def cleanup(self):
+        self.playback_finished.close()
+        if self.playback:
+            self.playback.stop()
+        self.dtmf_event.close()
+        self.hangup_event.close()
+
+    def on_hangup(self, channel, event):
+        self.playback = None
+        self.cleanup()
+        self.call.state_machine.change_state(Event.HANGUP)
+
+    def on_playback_finished(self, event):
+        current_sound = self.sounds_to_play[self.current_playback]
+        if current_sound['id'] == event.get('playback').get('id'):
+            self.playback = None
+            self.current_playback += 1
+            if self.current_playback == len(self.sounds_to_play):
+                self.cleanup()
+                self.call.state_machine.change_state(Event.PLAYBACK_COMPLETE)
+            else:
+                self.start_playback()
+
+    def on_dtmf(self, channel, event):
+        digit = event.get('digit')
+        if digit == '#':
+            self.cleanup()
+            self.call.state_machine.change_state(Event.DTMF_OCTOTHORPE)</pre> 
+ </div>
+</div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">preamble_state.js</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: js; collapse: true; gutter: false" style="font-size:12px;">var Event = require('./event');
+
+function sounds_installed(client) {
+    client.sounds.get({soundId: 'vm-message'}, function(err) {
+        if (err) {
+            console.log(&quot;Required sound 'vm-message' not installed. Aborting&quot;);
+            throw err;
+        }
+    });
+}
+
+function PreambleState(call) {
+    this.state_name = &quot;preamble&quot;;
+    this.enter = function() {
+        var current_playback;
+        var sounds_to_play;
+        var playback;
+        console.log(&quot;Entering preamble state&quot;);
+        if (call.mailbox_empty()) {
+            call.state_machine.change_state(Event.MAILBOX_EMPTY);
+            return;
+        }
+        call.channel.on(&quot;ChannelHangupRequest&quot;, on_hangup);
+        call.client.on(&quot;PlaybackFinished&quot;, on_playback_finished);
+        call.channel.on(&quot;ChannelDtmfReceived&quot;, on_dtmf);
+        initialize_playbacks();
+
+        function initialize_playbacks() {
+            current_playback = 0;
+            sounds_to_play = [
+                {
+                    'playback': call.client.Playback(),
+                    'media': 'sound:vm-message'
+                },
+                {
+                    'playback': call.client.Playback(),
+                    'media': 'number:' + call.get_current_voicemail_number()
+                }
+            ];
+            start_playback();
+        }
+
+        function start_playback() {
+            current_sound = sounds_to_play[current_playback];
+            playback = current_sound['playback'];
+            call.channel.play({media: current_sound['media']}, playback);
+        }
+
+        function cleanup() {
+            call.channel.removeListener('ChannelHangupRequest', on_hangup);
+            call.channel.removeListener('ChannelDtmfReceived', on_dtmf);
+            call.client.removeListener('PlaybackFinished', on_playback_finished);
+            if (playback) {
+                playback.stop();
+            }
+        }
+
+        function on_hangup(event, channel) {
+            playback = null;
+            cleanup();
+            call.state_machine.change_state(Event.HANGUP);
+        }
+
+        function on_playback_finished(event) {
+            var current_sound = sounds_to_play[current_playback];
+            if (playback &amp;&amp; (playback.id === event.playback.id)) {
+                playback = null;
+                current_playback++;
+                if (current_playback === sounds_to_play.length) {
+                    cleanup();
+                    call.state_machine.change_state(Event.PLAYBACK_COMPLETE);
+                } else {
+                    start_playback();
+                }
+            }
+        }
+
+        function on_dtmf(event, channel) {
+            switch(event.digit) {
+            case '#':
+                cleanup();
+                call.state_machine.change_state(Event.DTMF_OCTOTHORPE);
+            }
+        }
+    }
+}
+
+
+
+module.exports = PreambleState;</pre> 
+ </div>
+</div><p><code>PreambleState</code> should look similar to the <code>GreetingState</code> introduced previously on this page. The biggest difference is that the code is structured to play multiple sound files instead of just a single one. Note that it is acceptable to call <code>channel.play()</code> while a playback is playing on a channel in order to queue a second playback. For our application though, we have elected to play the second sound only after the first has completed. The reason for this is that if there is only a single active playback at any given time, then it becomes easier to clean up the current state when an event occurs that causes a state change.</p><p>Next, here is the &quot;empty&quot; state code:</p><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">empty_state.py</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: py; collapse: true; gutter: false" style="font-size:12px;">from event import Event
+import uuid
+
+def sounds_installed(client):
+    try:
+        client.sounds.get(soundId='vm-nomore')
+    except:
+        print &quot;Required sound 'vm-nomore' not installed. Aborting&quot;
+        raise
+
+
+class EmptyState(object):
+    state_name = &quot;empty&quot;
+
+    def __init__(self, call):
+        self.call = call
+        self.playback_id = None
+        self.hangup_event = None
+        self.playback_finished = None
+        self.playback = None
+        sounds_installed(call.client)
+
+    def enter(self):
+        self.playback_id = str(uuid.uuid4())
+        print &quot;Entering empty state&quot;
+        self.hangup_event = self.call.channel.on_event(&quot;ChannelHangupRequest&quot;,
+                self.on_hangup)
+        self.playback_finished = self.call.client.on_event(
+                'PlaybackFinished', self.on_playback_finished)
+        self.playback = self.call.channel.playWithId(
+                playbackId=self.playback_id, media=&quot;sound:vm-nomore&quot;)
+
+    def cleanup(self):
+        self.playback_finished.close()
+        if self.playback:
+            self.playback.stop()
+        self.hangup_event.close()
+
+    def on_hangup(self, channel, event):
+        # Setting playback to None stops cleanup() from trying to stop the
+        # playback.
+        self.playback = None
+        self.cleanup()
+        self.call.state_machine.change_state(Event.HANGUP)
+
+    def on_playback_finished(self, event):
+        if self.playback_id == event.get('playback').get('id'):
+            self.playback = None
+            self.cleanup()
+            self.call.state_machine.change_state(Event.PLAYBACK_COMPLETE)</pre> 
+ </div>
+</div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">empty_state.js</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: js; collapse: true; gutter: false" style="font-size:12px;">var Event = require('./event');
+
+function sounds_installed(client) {
+    client.sounds.get({soundId: 'vm-nomore'}, function(err) {
+        if (err) {
+            console.log(&quot;Required sound 'vm-nomore' not installed. Aborting&quot;);
+            throw err;
+        }
+    });
+}
+
+function EmptyState(call) {
+    this.state_name = &quot;empty&quot;;
+
+    this.enter = function() {
+        console.log(&quot;Entering empty state&quot;);
+        playback = call.client.Playback();
+        call.channel.on(&quot;ChannelHangup&quot;, on_hangup);
+        call.client.on(&quot;PlaybackFinished&quot;, on_playback_finished);
+        call.channel.play({media: 'sound:vm-nomore'}, playback);
+
+        function cleanup() {
+            call.channel.removeListener('ChannelHangupRequest', on_hangup);
+            call.channel.removeListener('PlaybackFinished', on_playback_finished);
+            if (playback) {
+                playback.stop();
+            }
+        }
+
+        function on_hangup(event, channel) {
+            playback = null;
+            cleanup();
+            call.state_machine.change_state(Event.HANGUP);
+        }
+
+        function on_playback_finished(event) {
+            if (playback &amp;&amp; playback.id === event.playback.id) {
+                playback = null;
+                cleanup();
+                call.state_machine.change_state(Event.PLAYBACK_COMPLETE);
+            }
+        }
+    }
+}
+
+module.exports = EmptyState;</pre> 
+ </div>
+</div><p>This state does not introduce anything we haven't seen already, so let's move on to the &quot;listening&quot; state code:</p><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">listening_state.py</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: py; collapse: true; gutter: false" style="font-size:12px;">from event import Event
+import uuid
+
+class ListeningState(object):
+    state_name = &quot;listening&quot;
+
+    def __init__(self, call):
+        self.call = call
+        self.playback_id = None
+        self.hangup_event = None
+        self.playback_finished = None
+        self.dtmf_event = None
+        self.playback = None
+
+    def enter(self):
+        self.paused = False
+        self.playback_id = str(uuid.uuid4())
+        print &quot;Entering listening state&quot;
+        self.hangup_event = self.call.channel.on_event(&quot;ChannelHangupRequest&quot;,
+                self.on_hangup)
+        self.playback_finished = self.call.client.on_event(
+                'PlaybackFinished', self.on_playback_finished)
+        self.dtmf_event = self.call.channel.on_event('ChannelDtmfReceived',
+                                                     self.on_dtmf)
+        self.playback = self.call.channel.playWithId(
+                playbackId=self.playback_id, media=&quot;recording:{0}&quot;.format(
+                    self.call.get_current_voicemail_file()))
+
+    def cleanup(self):
+        self.playback_finished.close()
+        if self.playback:
+            self.playback.stop()
+        self.dtmf_event.close()
+        self.hangup_event.close()
+
+    def on_hangup(self, channel, event):
+        self.cleanup()
+        self.call.state_machine.change_state(Event.HANGUP)
+
+    def on_playback_finished(self, event):
+        if self.playback_id == event.get('playback').get('id'):
+            self.playback = None
+
+    def on_dtmf(self, channel, event):
+        digit = event.get('digit')
+        if digit == '1':
+            if self.playback:
+                self.playback.control(operation='reverse')
+        elif digit == '2':
+            if not self.playback:
+                return
+            if self.paused:
+                self.playback.control(operation='unpause')
+                self.paused = False
+            else:
+                self.playback.control(operation='pause')
+                self.paused = True
+        elif digit == '3':
+            if self.playback:
+                self.playback.control(operation='forward')
+        elif digit == '4':
+            self.cleanup()
+            self.call.previous_message()
+            self.call.state_machine.change_state(Event.DTMF_4)
+        elif digit == '5':
+            if self.playback:
+                self.playback.control(operation='restart')
+        elif digit == '6':
+            self.cleanup()
+            self.call.next_message()
+            self.call.state_machine.change_state(Event.DTMF_6)
+        elif digit == '#':
+            self.cleanup()
+            self.call.state_machine.change_state(Event.DTMF_OCTOTHORPE)
+        elif digit == '*':
+            print (&quot;Deleting stored recording {0}&quot;.format(
+                self.call.get_current_voicemail_file()))
+            self.cleanup()
+            self.call.client.recordings.deleteStored(
+                    recordingName=self.call.get_current_voicemail_file())
+            self.call.delete_message()
+            self.call.state_machine.change_state(Event.DTMF_STAR)</pre> 
+ </div>
+</div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">listening_state.js</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: js; collapse: true; gutter: false" style="font-size:12px;">var Event = require('./event');
+
+var ListeningState = function(call) {
+   this.state_name = &quot;listening&quot;;
+   this.call = call;
+}
+
+function ListeningState(call) {
+    this.state_name = &quot;listening&quot;;
+    this.enter = function() {
+        var playback = call.client.Playback();
+        var url = &quot;recording:&quot; + call.get_current_voicemail_file();
+
+        console.log(&quot;Entering Listening state&quot;);
+        call.channel.on(&quot;ChannelHangupRequest&quot;, on_hangup);
+        call.channel.on(&quot;ChannelDtmfReceived&quot;, on_dtmf);
+        call.client.on(&quot;PlaybackFinished&quot;, on_playback_finished);
+        console.log(&quot;Playing file %s&quot;, url);
+        call.channel.play({media: url}, playback, function(err) {
+            if (err) {
+                console.error(err);
+            }
+        });
+
+        function cleanup() {
+            call.channel.removeListener('ChannelHangupRequest', on_hangup);
+            call.channel.removeListener('ChannelDtmfReceived', on_dtmf);
+            call.client.removeListener('PlaybackFinished', on_playback_finished);
+            if (playback) {
+                playback.stop();
+            }
+        }
+
+        function on_hangup(event, channel) {
+            playback = null;
+            cleanup();
+            call.state_machine.change_state(Event.HANGUP);
+        }
+
+        function on_playback_finished(event) {
+            if (playback &amp;&amp; (playback.id === event.playback.id)) {
+                playback = null;
+            }
+        }
+
+        function on_dtmf(event, channel) {
+            switch (event.digit) {
+            case '1':
+                if (playback) {
+                    playback.control({operation: 'reverse'});
+                }
+                break;
+            case '2':
+                if (!playback) {
+                    break;
+                }
+                if (paused) {
+                    playback.control({operation: 'unpause'});
+                    paused = false;
+                } else {
+                    playback.control({operation: 'pause'});
+                    paused = true;
+                }
+                break;
+            case '3':
+                if (playback) {
+                    playback.control({operation: 'forward'});
+                }
+                break;
+            case '4':
+                cleanup();
+                call.previous_message();
+                call.state_machine.change_state(Event.DTMF_4);
+                break;
+            case '5':
+                if (playback) {
+                    playback.control({operation: 'restart'});
+                }
+                break;
+            case '6':
+                cleanup();
+                call.next_message();
+                call.state_machine.change_state(Event.DTMF_6);
+                break;
+            case '#':
+                cleanup();
+                call.state_machine.change_state(Event.DTMF_OCTOTHORPE);
+                break;
+            case '*':
+                console.log(&quot;Deleting stored recording&quot;, call.get_current_voicemail_file());
+                cleanup();
+                call.client.recordings.deleteStored({recordingName:call.get_current_voicemail_file()});
+                call.delete_message();
+                call.state_machine.change_state(Event.DTMF_STAR);
+            }
+        }
+    }
+}
+
+module.exports = ListeningState;</pre> 
+ </div>
+</div><p><code>ListeningState</code> is where we introduce new playback control concepts. Playbacks have their controlling operations wrapped in a single method, <code>control()</code>, rather than having lots of separate operations. All control operations (reverse, pause, unpause, forward, and restart) are demonstrated by this state.</p><div class="panel" style="background-color: silver;border-style: solid;border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;border-bottom-style: solid;background-color: seagreen;color: black;"><b>Reader Exercise 2</b></div><div class="panelContent" style="background-color: silver;">
+<p>You may have noticed while exploring the playbacks API that the <code>control()</code> method takes no parameters other than the operation. This means that certain properties of operations are determined when the playback is started on the channel.</p><p>For this exercise, modify the <code>ListeningState</code> so that DTMF '1' and '3' reverse or forward the playback by 5000 milliseconds instead of the default 3000 milliseconds.</p>
+</div></div><h1 id="ARIandMedia:Part2-Playbacks-Playbacksonbridges">Playbacks on bridges</h1><p>Just as channels allow for playbacks to be performed on them, bridges also have the capacity to have sounds, recordings, tones, numbers, etc. played back on them. The difference is is that all participants in the bridge will hear the playback instead of just a single channel. In bridging situations, it can be useful to play certain sounds to an entire bridge (e.g. Telling participants the call is being recorded), but it can also be useful to play sounds to specific participants (e.g. Telling a caller he has joined a conference bridge). A playback on a bridge can be stopped or controlled exactly the same as a playback on a channel.</p><div class="panel" style="background-color: silver;border-style: solid;border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;border-bottom-style: solid;background-color: seagreen;color: black;"><b>Reader Exercise 3</b></div><div class="panelContent" style="background-color: silver;">
+<p>If you've read through the Recording and Playbacks pages, then you should have a good grasp on the operations available, as well as a decent state machine implementation. For our final exercise, instead of adding onto the existing voice mail applications, create a new application that uses some of the recording and playback operations that you have learned about.</p><p>You will be creating a rudimentary call queue application. The queue application will have two types of participants: agents and callers. Agents and callers call into the same Stasis application and are distinguished based on arguments to the Stasis application (e.g. A caller might call Stasis(queue,caller) and an agent might call Stasis(queue,agent) from the dialplan).</p><ul><li>When an agent calls into the Stasis application, the agent is placed into an agent queue.<ul><li>While in the agent queue, the agent should hear music on hold. Information about how to play music on hold to a channel can be found here.</li></ul></li><li>When a caller calls into the Stasis application, the caller is placed into a caller queue.<ul><li>While in the caller queue, the caller should hear music on hold.</li><li>Every 30 seconds, the caller should hear an announcement. If the caller is at the front of the queue, the &quot;queue-youarenext&quot; sound should play. If the caller is not at the front of the queue, then the caller should hear the &quot;queue-thereare&quot; sound, then the number of callers ahead in the queue, then the &quot;queue-callswaiting&quot; sound.</li></ul></li><li>If there is a caller in the caller queue and an agent in the agent queue, then the caller and agent at the front of their respective queues are removed and placed into a bridge with each other. For more information on bridging channels, see <a href="29396220.html">this page</a>. If this happens while a caller has a sound file playing, then this should cause the sound file to immediately stop playing in order to bridge the call.</li><li>Once bridged, the agent can perform the following:<ul><li>Pressing '0' should start recording the bridge. Upon recording the bridge, the caller should hear a beep sound.</li><li>Pressing '5' while the call is being recorded should pause the recording. Pressing '5' a second time should unpause the recording.</li><li>Pressing '7' while the call is being recorded should stop the recording.</li><li>Pressing '9' while the call is being recorded should discard the recording.</li><li>Pressing '#' at any time (whether the call is being recorded or not) should end the call, causing the agent to be placed into the back of the agent queue and the caller to be hung up.</li><li>If the agent hangs up, then the caller should also be hung up.</li></ul></li><li>Once bridged, if the caller hangs up, then the agent should be placed into the back of the agent queue.</li></ul><p>Best of luck!</p>
+</div></div>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/30277828/30474306">vm-full</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/30277828/30474307.png">vm-full.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/30277828/30474304">vm-listen</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/30277828/30474305.png">vm-listen.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/30277828/30474302">vm-full</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/30277828/30474303.png">vm-full.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

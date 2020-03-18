@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/logger.h"
 #include "asterisk/format.h"
 #include "asterisk/format_cap.h"
@@ -116,28 +114,13 @@ static inline int format_cap_init(struct ast_format_cap *cap, enum ast_format_ca
 	return 0;
 }
 
-struct ast_format_cap *__ast_format_cap_alloc(enum ast_format_cap_flags flags)
+struct ast_format_cap *__ast_format_cap_alloc(enum ast_format_cap_flags flags,
+	const char *tag, const char *file, int line, const char *func)
 {
 	struct ast_format_cap *cap;
 
-	cap = ao2_alloc_options(sizeof(*cap), format_cap_destroy, AO2_ALLOC_OPT_LOCK_NOLOCK);
-	if (!cap) {
-		return NULL;
-	}
-
-	if (format_cap_init(cap, flags)) {
-		ao2_ref(cap, -1);
-		return NULL;
-	}
-
-	return cap;
-}
-
-struct ast_format_cap *__ast_format_cap_alloc_debug(enum ast_format_cap_flags flags, const char *tag, const char *file, int line, const char *func)
-{
-	struct ast_format_cap *cap;
-
-	cap = __ao2_alloc_debug(sizeof(*cap), format_cap_destroy, AO2_ALLOC_OPT_LOCK_NOLOCK, S_OR(tag, "ast_format_cap_alloc"), file, line, func, 1);
+	cap = __ao2_alloc(sizeof(*cap), format_cap_destroy, AO2_ALLOC_OPT_LOCK_NOLOCK,
+		tag, file, line, func);
 	if (!cap) {
 		return NULL;
 	}
@@ -177,12 +160,15 @@ static inline int format_cap_framed_init(struct format_cap_framed *framed, struc
 	}
 	list = AST_VECTOR_GET_ADDR(&cap->formats, ast_format_get_codec_id(format));
 
+	/* This takes the allocation reference */
+	if (AST_VECTOR_APPEND(&cap->preference_order, framed)) {
+		ao2_ref(framed, -1);
+		return -1;
+	}
+
 	/* Order doesn't matter for formats, so insert at the head for performance reasons */
 	ao2_ref(framed, +1);
 	AST_LIST_INSERT_HEAD(list, framed, entry);
-
-	/* This takes the allocation reference */
-	AST_VECTOR_APPEND(&cap->preference_order, framed);
 
 	cap->framing = MIN(cap->framing, framing ? framing : ast_format_get_default_ms(format));
 
@@ -206,26 +192,7 @@ static int format_in_format_cap(struct ast_format_cap *cap, struct ast_format *f
 	return 0;
 }
 
-int __ast_format_cap_append(struct ast_format_cap *cap, struct ast_format *format, unsigned int framing)
-{
-	struct format_cap_framed *framed;
-
-	ast_assert(format != NULL);
-
-	if (format_in_format_cap(cap, format)) {
-		return 0;
-	}
-
-	framed = ao2_alloc_options(sizeof(*framed), format_cap_framed_destroy, AO2_ALLOC_OPT_LOCK_NOLOCK);
-	if (!framed) {
-		return -1;
-	}
-	framed->format = ao2_bump(format);
-
-	return format_cap_framed_init(framed, cap, format, framing);
-}
-
-int __ast_format_cap_append_debug(struct ast_format_cap *cap, struct ast_format *format, unsigned int framing, const char *tag, const char *file, int line, const char *func)
+int __ast_format_cap_append(struct ast_format_cap *cap, struct ast_format *format, unsigned int framing, const char *tag, const char *file, int line, const char *func)
 {
 	struct format_cap_framed *framed;
 
@@ -240,7 +207,7 @@ int __ast_format_cap_append_debug(struct ast_format_cap *cap, struct ast_format 
 		return -1;
 	}
 
-	__ao2_ref_debug(format, +1, S_OR(tag, "ast_format_cap_append"), file, line, func);
+	__ao2_ref(format, +1, tag, file, line, func);
 	framed->format = format;
 
 	return format_cap_framed_init(framed, cap, format, framing);
@@ -304,6 +271,7 @@ int ast_format_cap_append_from_cap(struct ast_format_cap *dst, const struct ast_
 {
 	int idx, res = 0;
 
+	/* NOTE:  The streams API is dependent on the formats being in "preference" order */
 	for (idx = 0; (idx < AST_VECTOR_SIZE(&src->preference_order)) && !res; ++idx) {
 		struct format_cap_framed *framed = AST_VECTOR_GET(&src->preference_order, idx);
 
@@ -731,7 +699,7 @@ int ast_format_cap_identical(const struct ast_format_cap *cap1, const struct ast
 	return internal_format_cap_identical(cap2, cap1);
 }
 
-const char *ast_format_cap_get_names(struct ast_format_cap *cap, struct ast_str **buf)
+const char *ast_format_cap_get_names(const struct ast_format_cap *cap, struct ast_str **buf)
 {
 	int i;
 
@@ -757,7 +725,7 @@ const char *ast_format_cap_get_names(struct ast_format_cap *cap, struct ast_str 
 	return ast_str_buffer(*buf);
 }
 
-int ast_format_cap_empty(struct ast_format_cap *cap)
+int ast_format_cap_empty(const struct ast_format_cap *cap)
 {
 	int count = ast_format_cap_count(cap);
 

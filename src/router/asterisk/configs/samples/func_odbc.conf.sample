@@ -11,8 +11,8 @@
 ; in a second func_odbc call.
 ; Note that you'll need additional dialplan locks for this behaviour to work.
 ; There are better ways: using stored procedures/functions instead.
-; This option is enabled by default.
-;single_db_connection=yes
+; This option is disabled by default.
+;single_db_connection=no
 ;
 ;
 ; Each context is a separately defined function.  By convention, all
@@ -91,20 +91,19 @@
 dsn=mysql1
 readsql=${ARG1}
 
-; ODBC_ANTIGF - A blacklist.
-[ANTIGF]
+; ODBC_ANTISOLICIT - A blacklist for known solicitors.
+[ANTISOLICIT]
 dsn=mysql1,mysql2   ; Use mysql1 as the primary handle, but fall back to mysql2
                     ; if mysql1 is down.  Supports up to 5 comma-separated
                     ; DSNs.  "dsn" may also be specified as "readhandle" and
                     ; "writehandle", if it is important to separate reads and
                     ; writes to different databases.
-readsql=SELECT COUNT(*) FROM exgirlfriends WHERE callerid='${SQL_ESC(${ARG1})}'
+readsql=SELECT COUNT(*) FROM known_solicitors WHERE callerid='${SQL_ESC(${ARG1})}'
 syntax=<callerid>
-synopsis=Check if a specified callerid is contained in the ex-gf database
+synopsis=Check if a specified callerid is contained in the known solicitors database
 
 ; ODBC_PRESENCE - Retrieve and update presence
 [PRESENCE]
 dsn=mysql1
 readsql=SELECT location FROM presence WHERE id='${SQL_ESC(${ARG1})}'
 writesql=UPDATE presence SET location='${SQL_ESC(${VAL1})}' WHERE id='${SQL_ESC(${ARG1})}'
-

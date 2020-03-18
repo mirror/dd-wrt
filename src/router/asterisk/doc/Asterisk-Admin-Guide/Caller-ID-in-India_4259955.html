@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Caller ID in India</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="PSTN-Connectivity_4260105.html">PSTN Connectivity</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Caller ID in India
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 27, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>India finds itself in a unique situation (hopefully). It has several telephone line providers, and they are not all using the same CID signaling; and the CID signalling is not like other countries.</p>
+
+<p>In order to help those in India quickly find to the CID signaling system that their carrier uses (or range of them), and get the configs right with a minimal amount of experimentation, this file is provided. Not all carriers are covered, and not all mentioned below are complete. Those with updates to this table should post the new information on bug <a href="https://issues.asterisk.org/view.php?id=6683" class="external-link" rel="nofollow">6683</a> of the asterisk bug tracker.</p>
+
+<hr />
+<p><strong>Provider:</strong> Bharti (is this BSNL?)<br />
+<strong>Config:</strong></p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+cidstart=polarity_in
+cidsignalling=dtmf
+</pre>
+</div></div>
+
+<p><strong>Results:</strong> ? (this should work), but needs to be tested?</p>
+
+<p><strong>Tested by:</strong> ?</p>
+
+<hr />
+<p><strong>Provider:</strong> VSNL<br />
+<strong>Config:</strong></p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+null
+</pre>
+</div></div>
+
+<p><strong>Results:</strong> ?</p>
+
+<p><strong>Tested by:</strong> ?</p>
+
+<hr />
+<p><strong>Provider:</strong> BSNL<br />
+<strong>Config:</strong></p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+cid_start=ring
+cid_signalling=dtmf
+</pre>
+</div></div>
+
+<p><strong>Results:</strong> ?</p>
+
+<p><strong>Tested by:</strong> (abhi)</p>
+
+<hr />
+
+<p><strong>Provider:</strong> MTNL, old BSNL<br />
+<strong>Config:</strong></p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+cidsignalling = v23
+cidstart=ring
+</pre>
+</div></div>
+
+<p><strong>Results:</strong> works</p>
+
+<p><strong>Tested by:</strong> (enterux)</p>
+
+<hr />
+
+<p><strong>Provider:</strong> MTNL (Delhi)<br />
+<strong>Config:</strong></p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+cidsignalling = v23
+cidstart = ring
+</pre>
+</div></div>
+
+<p>or:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+cidsignalling = dtmf
+cidstart = polarity_IN
+</pre>
+</div></div>
+
+<p>or:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+cidsignalling = dtmf
+cidstart = polarity
+</pre>
+</div></div>
+
+<p><strong>Results:</strong> fails</p>
+
+<p><strong>Tested by:</strong> brealer</p>
+
+<hr />
+
+<p><strong>Provider:</strong> TATA</p>
+
+<p><strong>Config:</strong></p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+cidsignalling = dtmf
+cidstart=polarity_IN
+</pre>
+</div></div>
+
+<p><strong>Results:</strong> works</p>
+
+<p><strong>Tested by:</strong> brealer</p>
+
+<hr />
+
+<p>Asterisk still doesn't work with some of the CID scenarios in India.  If you are in India, and not able to make CID work with any of the permutations of cidsignalling and cidstart, it could be that this particular situation is not covered by Asterisk. A good course of action would be to get in touch with the provider, and find out from them exactly how their CID signalling works. Describe this to us, and perhaps someone will be able to extend the code to cover their signaling.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

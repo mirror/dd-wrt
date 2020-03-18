@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Configuring Asterisk Calendaring</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Calendaring_5243066.html">Asterisk Calendaring</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Configuring Asterisk Calendaring
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Rusty Newton</span> on Nov 25, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="ConfiguringAsteriskCalendaring-Thecalendar.conffile">The calendar.conf file</h1><p>All asterisk calendaring modules are configured through calendar.conf. Each calendar module can define its own set of required parameters in addition to the parameters available to all calendar types. An effort has been made to keep all options the same in all calendaring modules, but some options will diverge over time as features are added to each module.</p><p>An example calendar.conf might look like:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[calendar_joe]
+type = ical 
+url = https://example.com/home/jdoe/Calendar 
+user = jdoe 
+secret = mysecret 
+refresh = 15 
+timeframe = 600 
+autoreminder = 10 
+channel = SIP/joe 
+context = calendar_event_notify 
+extension = s 
+waittime = 30
+</pre>
+</div></div></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303045181 {padding: 0px;}
+div.rbtoc1582303045181 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303045181 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303045181'>
+<ul class='toc-indentation'>
+<li><a href='#ConfiguringAsteriskCalendaring-Thecalendar.conffile'>The calendar.conf file</a>
+<ul class='toc-indentation'>
+<li><a href='#ConfiguringAsteriskCalendaring-Module-independentsettings'>Module-independent settings</a></li>
+<li><a href='#ConfiguringAsteriskCalendaring-Module-dependentsettings'>Module-dependent settings</a></li>
+</ul>
+</li>
+<li><a href='#ConfiguringAsteriskCalendaring-SpecificExamples'>Specific Examples</a>
+<ul class='toc-indentation'>
+<li><a href='#ConfiguringAsteriskCalendaring-GoogleCalendar'>Google Calendar</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><h2 id="ConfiguringAsteriskCalendaring-Module-independentsettings"><span style="color: rgb(133,120,102);">Module-independent settings</span></h2><p>The settings related to calendar event notification are handled by the core calendaring API. These settings are:</p><ul><li>autoreminder - This allows the overriding of any alarms that may or may not be set for a calendar event. It is specified in minutes.</li></ul><ul><li>refresh - How often to refresh the calendar data; specified in minutes.</li></ul><ul><li>timeframe - How far into the future each calendar refresh should look. This is the amount of data that will be visible to queries from the dialplan. This setting should always be greater than or equal to the refresh setting or events may be missed. It is specified in minutes.</li></ul><ul><li>channel - The channel that should be used for making the notification attempt.</li></ul><ul><li>waittime - How long to wait, in seconds, for the channel to answer a notification attempt. There are two ways to specify how to handle a notification. One option is providing a context and extension, while the other is providing an application and the arguments to that application. One (and only one) of these options should be provided.</li></ul><ul><li>context - The context of the extension to connect to the notification channel</li></ul><ul><li>extension - The extension to connect to the notification. Note that the priority will always be 1.</li></ul><ul><li>app - The dialplan application to execute upon the answer of a notification</li></ul><ul><li>appdata - The data to pass to the notification dialplan application</li></ul><h2 id="ConfiguringAsteriskCalendaring-Module-dependentsettings">Module-dependent settings</h2><p>Connection-related options are specific to each module. Currently, all modules take a url, user, and secret for configuration and no other module-specific settings have been implemented. At this time, no support for HTTP redirects has been implemented, so it is important to specify the correct URL-paying attention to any trailing slashes that may be necessary.</p><h1 id="ConfiguringAsteriskCalendaring-SpecificExamples">Specific Examples</h1><h2 id="ConfiguringAsteriskCalendaring-GoogleCalendar">Google Calendar</h2><p>Requirements:</p><ul><li>The res_calendar_icalendar.so module must be loaded and running.</li><li>You must have a Google calendar!</li><li>Google requires that you share the calendar publicly. However you can choose to only share busy/free information to limit exposure to details.</li><li>Configure Asterisk to connect to the specific public calendar.</li></ul><p>In this example we'll configure Asterisk to connect to your Google Calendar via the ical type calendar.</p><h3 id="ConfiguringAsteriskCalendaring-SharingyourGooglecalendar">Sharing your Google calendar</h3><p>For detailed instructions <a href="https://support.google.com/calendar/answer/37083" class="external-link" rel="nofollow">see Google's answer page</a>.</p><p>We'll assume you are familiar with Google's interface and provide some brief instructions here.</p><p>Go to your Google calendar settings, navigate to a specific calendar and open the <strong>Share this Calendar</strong> tab.</p><p><img class="confluence-embedded-image confluence-content-image-border" height="154" width="431" src="attachments/5243068/33423363.png" data-image-src="attachments/5243068/33423363.png"></p><p>Make the calendar public and choose save.</p><h3 id="ConfiguringAsteriskCalendaring-GettheGooglecalendaraddress">Get the Google calendar address</h3><p>Go to the <strong>Calendar Details</strong> tab and find the button for getting the public <strong>ical</strong> address.</p><p><img class="confluence-embedded-image confluence-content-image-border" height="47" width="500" src="attachments/5243068/33423364.png" data-image-src="attachments/5243068/33423364.png"></p><h3 id="ConfiguringAsteriskCalendaring-ConfigureAsteriskwithGoogleCalendardetails">Configure Asterisk with Google Calendar details</h3><p>This specific configuration isn't too different than the generic example. Your calendar address goes in the <strong>url</strong> field.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[gcal1]
+type = ical
+url = https://calendar.google.com/calendar/ical/example%40gmail.com/public/basic.ics
+user = example@gmail.com
+secret = a_very_secure_password
+refresh = 15
+timeframe = 60</pre>
+</div></div><p>Once you have a configuration you can startup Asterisk or else reload the modules. After this you can check to see if the calendar is being read. Use the commands <strong>&quot;calendar show calendars&quot;</strong> and <strong>&quot;calendar show calendar &lt;calendar name&gt;&quot;</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>CentOSLab*CLI&gt; calendar show calendars
+Calendar             Type       Status
+--------             ----       ------
+gcal1                ical       busy</pre>
+</div></div><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>CentOSLab*CLI&gt; calendar show calendar gcal1
+Name              : gcal1
+Notify channel    :
+Notify context    :
+Notify extension  :
+Notify applicatio :
+Notify appdata    :
+Refresh time      : 15
+Timeframe         : 60
+Autoreminder      : 0
+Events
+------
+Summary     : Busy
+Description :
+Organizer   :
+Location    :
+Categories  :
+Priority    : 0
+UID         : 6b6ikcvq165i470lq5sdm7r1v4@google.com
+Start       : 2015-11-25 05:40:00 PM -0600
+End         : 2015-11-25 06:10:00 PM -0600
+Alarm       :</pre>
+</div></div><p>The output should reflect your calendar settings and if it is reading from the calendar server you should see events that are present (on your calendar) within the configured Timeframe. If you don't see any events then go to your Google calendar and create an event within the timeframe. Save that event, then wait at least the Refresh time before checking the commands again to see if the event shows up.</p>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/5243068/33423363.png">calendaring_make_public.PNG</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/5243068/33423365.png">calendaring_get_address.PNG</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/5243068/33423364.png">calendaring_get_address.PNG</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

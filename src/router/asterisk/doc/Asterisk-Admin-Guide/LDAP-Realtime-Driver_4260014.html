@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : LDAP Realtime Driver</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Back-end-Database-and-Realtime-Connectivity_28314861.html">Back-end Database and Realtime Connectivity</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : LDAP Realtime Driver
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Joshua C. Colp</span> on Oct 11, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="LDAPRealtimeDriver-AsteriskRealtimeLightweightDirectoryAccessProtocol(LDAP)Driver">Asterisk Realtime Lightweight Directory Access Protocol (LDAP) Driver</h1><p>With this driver Asterisk, using the <a href="Realtime-Database-Configuration_4620317.html">Realtime Database Configuration</a>, can access and update information in an LDAP directory. Asterisk can configure SIP/IAX2 users, extensions, queues, queue members, and entire configuration files. This guide assumes you have a working knowledge of LDAP and have an LDAP server with authentication already setup. Asterisk requires read and write permissions to update the directory.</p><p>See <a href="https://raw.githubusercontent.com/asterisk/asterisk/master/configs/samples/res_ldap.conf.sample" class="external-link" rel="nofollow">configs/res_ldap.conf.sample</a> for a configuration file sample.<br /> See contrib/scripts for the LDAP <a href="https://raw.githubusercontent.com/asterisk/asterisk/master/contrib/scripts/asterisk.ldap-schema" class="external-link" rel="nofollow">schema</a> and <a href="https://raw.githubusercontent.com/asterisk/asterisk/master/contrib/scripts/asterisk.ldif" class="external-link" rel="nofollow">ldif</a> files needed for the LDAP server.</p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>To use static realtime with certain core configuration files the realtime backend you wish to use must be preloaded in <code>modules.conf</code>.</p>
+                    </div>
+    </div>
+<p>From within your Asterisk source directory:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">cd contrib/scripts
+sudo cp asterisk.ldap-schema /etc/ldap/schema/
+sudo service slapd restart
+sudo ldapadd -Y EXTERNAL -H ldapi:/// -f ./asterisk.ldif
+</pre>
+</div></div><p>Let's edit the extconfig.conf file to specify LDAP as our realtime storage engine and where Asterisk will look for data.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">sippeers = ldap,&quot;ou=sip,dc=example,dc=domain&quot;,sip
+sipusers = ldap,&quot;ou=sip,dc=example,dc=domain&quot;,sip
+extensions = ldap,&quot;ou=extensions,dc=example,dc=domain&quot;,extensions
+</pre>
+</div></div>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>You'll want to reference the Asterisk res_ldap.conf file which holds the LDAP mapping configuration when building your own record schema.</p>
+                    </div>
+    </div>
+<p><strong>Basic</strong> sip users record layout which will need to be saved to a file (we'll use 'createduser.ldif' here as an example). This example record is for sip user '1000'. This example record is for sip user '1000'.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">dn: cn=1000,ou=sip,dc=digium,dc=internal
+objectClass: AsteriskAccount
+objectClass: AsteriskExtension
+objectClass: AsteriskSIPUser
+objectClass: top
+AstAccountName: sip user
+cn: 1000
+AstAccountDefaultUser: 0
+AstAccountExpirationTimestamp: 0
+AstAccountFullContact: 0
+AstAccountHost: dynamic
+AstAccountIPAddress: 0
+AstAccountLastQualifyMilliseconds: 0
+AstAccountPort: 0
+AstAccountRegistrationServer: 0
+AstAccountType: 0
+AstAccountUserAgent: 0
+AstExtension: 1000
+</pre>
+</div></div><p>Let's add the record to the LDAP server:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">sudo ldapadd -D &quot;cn=admin,dc=example,dc=domain&quot; -x -W -f createduser.ldif
+</pre>
+</div></div><p>When creating your own record schema, you'll obviously want to incorporate authentication. Asterisk + LDAP requires that the user secrets be stored as an MD5 hash. MD5 hashes can be created using 'md5sum'.</p><p>For AstAccountRealmedPassword authentication use this.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">printf &quot;&lt;secret composed of username, realm, and password goes here&gt;&quot; | md5sum
+</pre>
+</div></div><p>For AstMD5secret authentication use this.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">printf &quot;password&quot; | md5sum
+</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -27,7 +27,7 @@
 
   Using this functionality is quite simple. An example structure
   with three fields is defined like this:
-  
+
   \code
   struct sample_fields {
 	  int x1;
@@ -39,14 +39,14 @@
 	  long x2;
   };
   \endcode
-  
+
   When an instance of this structure is allocated (either statically or
   dynamically), the fields and the pool of storage for them must be
   initialized:
-  
+
   \code
   struct sample_fields *x;
-  
+
   x = ast_calloc(1, sizeof(*x));
   if (x == NULL || ast_string_field_init(x, 252)) {
 	if (x)
@@ -62,7 +62,7 @@
 
   ast_string_field_init(x, 0) will reset fields to the
   initial value while keeping the pool allocated.
-  
+
   Reading the fields is much like using 'const char * const' fields in the
   structure: you cannot write to the field or to the memory it points to.
 
@@ -88,7 +88,7 @@
 
   When the structure instance is no longer needed, the fields
   and their storage pool must be freed:
-  
+
   \code
   ast_string_field_free_memory(x);
   ast_free(x);
@@ -222,26 +222,12 @@ AST_VECTOR(ast_string_field_vector, const char **);
 
 /*!
   \internal
-  \brief Structure used to hold a pointer to the embedded pool and the field vector
-  \since 13.9.0
-*/
-struct ast_string_field_header {
-	struct ast_string_field_pool *embedded_pool;	/*!< pointer to the embedded pool, if any */
-	struct ast_string_field_vector string_fields;	/*!< field vector for compare and copy */
-};
-
-/*!
-  \internal
   \brief Structure used to manage the storage for a set of string fields.
 */
 struct ast_string_field_mgr {
 	ast_string_field last_alloc;			/*!< the last field allocated */
-	struct ast_string_field_header *header;	/*!< pointer to the header */
-#if defined(__AST_DEBUG_MALLOC)
-	const char *owner_file;				/*!< filename of owner */
-	const char *owner_func;				/*!< function name of owner */
-	int owner_line;					/*!< line number of owner */
-#endif
+	struct ast_string_field_pool *embedded_pool;	/*!< pointer to the embedded pool, if any */
+	struct ast_string_field_vector string_fields;	/*!< field vector for compare and copy */
 };
 
 /*!
@@ -275,7 +261,8 @@ int __ast_string_field_ptr_grow(struct ast_string_field_mgr *mgr,
   an additional pool will be allocated.
 */
 ast_string_field __ast_string_field_alloc_space(struct ast_string_field_mgr *mgr,
-						struct ast_string_field_pool **pool_head, size_t needed);
+	struct ast_string_field_pool **pool_head, size_t needed,
+	const char *file, int lineno, const char *func);
 
 /*!
   \internal
@@ -286,9 +273,9 @@ ast_string_field __ast_string_field_alloc_space(struct ast_string_field_mgr *mgr
   \param format printf-style format string
   \return nothing
 */
-void __ast_string_field_ptr_build(struct ast_string_field_mgr *mgr,
-				  struct ast_string_field_pool **pool_head,
-				  ast_string_field *ptr, const char *format, ...) __attribute__((format(printf, 4, 5)));
+void __ast_string_field_ptr_build(const char *file, int lineno, const char *func,
+	struct ast_string_field_mgr *mgr, struct ast_string_field_pool **pool_head,
+	ast_string_field *ptr, const char *format, ...) __attribute__((format(printf, 7, 8)));
 
 /*!
   \internal
@@ -301,8 +288,9 @@ void __ast_string_field_ptr_build(struct ast_string_field_mgr *mgr,
   \return nothing
 */
 void __ast_string_field_ptr_build_va(struct ast_string_field_mgr *mgr,
-				     struct ast_string_field_pool **pool_head,
-				     ast_string_field *ptr, const char *format, va_list ap) __attribute__((format(printf, 4, 0)));
+	struct ast_string_field_pool **pool_head,
+	ast_string_field *ptr, const char *format, va_list ap,
+	const char *file, int lineno, const char *func) __attribute__((format(printf, 4, 0)));
 
 /*!
   \brief Declare a string field
@@ -407,10 +395,10 @@ int __ast_string_field_free_memory(struct ast_string_field_mgr *mgr,
 #define ast_string_field_init_extended(x, field) \
 ({ \
 	int __res__ = -1; \
-	if (((void *)(x)) != NULL && (x)->__field_mgr.header != NULL) { \
+	if (((void *)(x)) != NULL) { \
 		ast_string_field *non_const = (ast_string_field *)&(x)->field; \
 		*non_const = __ast_string_field_empty; \
-		__res__ = AST_VECTOR_APPEND(&(x)->__field_mgr.header->string_fields, non_const); \
+		__res__ = AST_VECTOR_APPEND(&(x)->__field_mgr.string_fields, non_const); \
 	} \
 	__res__; \
 })
@@ -443,7 +431,7 @@ int __ast_string_field_init(struct ast_string_field_mgr *mgr, struct ast_string_
  * \internal
  * \brief internal version of ast_calloc_with_stringfields
  */
-void * attribute_malloc __ast_calloc_with_stringfields(unsigned int num_structs,
+void *__ast_calloc_with_stringfields(unsigned int num_structs,
 	size_t struct_size, size_t field_mgr_offset, size_t field_mgr_pool_offset, size_t pool_size,
 	const char *file, int lineno, const char *func);
 
@@ -488,7 +476,7 @@ void __ast_string_field_release_active(struct ast_string_field_pool *pool_head,
 	__res__; \
 })
 
-#define ast_string_field_ptr_set_by_fields(field_mgr_pool, field_mgr, ptr, data)               \
+#define __ast_string_field_ptr_set_by_fields(field_mgr_pool, field_mgr, ptr, data, file, lineno, func) \
 ({                                                                                             \
     int __res__ = 0;                                                                           \
     const char *__d__ = (data);                                                                \
@@ -500,7 +488,7 @@ void __ast_string_field_release_active(struct ast_string_field_pool *pool_head,
         *__p__ = __ast_string_field_empty;                                                     \
     } else if ((__dlen__ <= AST_STRING_FIELD_ALLOCATION(*__p__)) ||                            \
            (!__ast_string_field_ptr_grow(&field_mgr, &field_mgr_pool, __dlen__, __p__)) ||     \
-           (target = __ast_string_field_alloc_space(&field_mgr, &field_mgr_pool, __dlen__))) { \
+           (target = __ast_string_field_alloc_space(&field_mgr, &field_mgr_pool, __dlen__, file, lineno, func))) { \
         if (target != *__p__) {                                                                \
             __ast_string_field_release_active(field_mgr_pool, *__p__);                         \
             *__p__ = target;                                                                   \
@@ -511,6 +499,9 @@ void __ast_string_field_release_active(struct ast_string_field_pool *pool_head,
     }                                                                                          \
     __res__;                                                                                   \
 })
+
+#define ast_string_field_ptr_set_by_fields(field_mgr_pool, field_mgr, ptr, data) \
+	__ast_string_field_ptr_set_by_fields(field_mgr_pool, field_mgr, ptr, data, __FILE__, __LINE__, __PRETTY_FUNCTION__)
 
 /*!
   \brief Set a field to a simple string value
@@ -541,7 +532,8 @@ void __ast_string_field_release_active(struct ast_string_field_pool *pool_head,
 ({ \
 	int __res__ = -1; \
 	if (((void *)(x)) != NULL) { \
-		__ast_string_field_ptr_build(&(x)->__field_mgr, &(x)->__field_mgr_pool, (ast_string_field *) ptr, fmt, args); \
+		__ast_string_field_ptr_build(__FILE__, __LINE__, __PRETTY_FUNCTION__, \
+			&(x)->__field_mgr, &(x)->__field_mgr_pool, (ast_string_field *) ptr, fmt, args); \
 		__res__ = 0; \
 	} \
 	__res__; \
@@ -559,7 +551,8 @@ void __ast_string_field_release_active(struct ast_string_field_pool *pool_head,
 ({ \
 	int __res__ = -1; \
 	if (((void *)(x)) != NULL) { \
-		__ast_string_field_ptr_build(&(x)->__field_mgr, &(x)->__field_mgr_pool, (ast_string_field *) &(x)->field, fmt, args); \
+		__ast_string_field_ptr_build(__FILE__, __LINE__, __PRETTY_FUNCTION__, \
+			&(x)->__field_mgr, &(x)->__field_mgr_pool, (ast_string_field *) &(x)->field, fmt, args); \
 		__res__ = 0; \
 	} \
 	__res__; \
@@ -577,7 +570,8 @@ void __ast_string_field_release_active(struct ast_string_field_pool *pool_head,
 ({ \
 	int __res__ = -1; \
 	if (((void *)(x)) != NULL) { \
-		__ast_string_field_ptr_build_va(&(x)->__field_mgr, &(x)->__field_mgr_pool, (ast_string_field *) ptr, fmt, args); \
+		__ast_string_field_ptr_build_va(&(x)->__field_mgr, &(x)->__field_mgr_pool, (ast_string_field *) ptr, fmt, args, \
+			__FILE__, __LINE__, __PRETTY_FUNCTION__); \
 		__res__ = 0; \
 	} \
 	__res__; \
@@ -595,7 +589,8 @@ void __ast_string_field_release_active(struct ast_string_field_pool *pool_head,
 ({ \
 	int __res__ = -1; \
 	if (((void *)(x)) != NULL) { \
-		__ast_string_field_ptr_build_va(&(x)->__field_mgr, &(x)->__field_mgr_pool, (ast_string_field *) &(x)->field, fmt, args); \
+		__ast_string_field_ptr_build_va(&(x)->__field_mgr, &(x)->__field_mgr_pool, (ast_string_field *) &(x)->field, fmt, args, \
+			__FILE__, __LINE__, __PRETTY_FUNCTION__); \
 		__res__ = 0; \
 	} \
 	__res__; \
@@ -613,8 +608,8 @@ void __ast_string_field_release_active(struct ast_string_field_pool *pool_head,
 ({ \
 	int __res__ = -1; \
 	if (((void *)(instance1)) != NULL && ((void *)(instance2)) != NULL) { \
-		__res__ = __ast_string_fields_cmp(&(instance1)->__field_mgr.header->string_fields, \
-			&(instance2)->__field_mgr.header->string_fields); \
+		__res__ = __ast_string_fields_cmp(&(instance1)->__field_mgr.string_fields, \
+			&(instance2)->__field_mgr.string_fields); \
 	} \
 	__res__; \
 })
@@ -635,12 +630,14 @@ int __ast_string_fields_cmp(struct ast_string_field_vector *left, struct ast_str
 	if (((void *)(copy)) != NULL && ((void *)(orig)) != NULL) { \
 		__res__ = __ast_string_fields_copy(((copy)->__field_mgr_pool), \
 			(struct ast_string_field_mgr *)&((copy)->__field_mgr), \
-			(struct ast_string_field_mgr *)&((orig)->__field_mgr)); \
+			(struct ast_string_field_mgr *)&((orig)->__field_mgr), \
+			__FILE__, __LINE__, __PRETTY_FUNCTION__); \
 	} \
 	__res__; \
 })
 
 int __ast_string_fields_copy(struct ast_string_field_pool *copy_pool,
-	struct ast_string_field_mgr *copy_mgr, struct ast_string_field_mgr *orig_mgr);
+	struct ast_string_field_mgr *copy_mgr, struct ast_string_field_mgr *orig_mgr,
+	const char *file, int lineno, const char *func);
 
 #endif /* _ASTERISK_STRINGFIELDS_H */

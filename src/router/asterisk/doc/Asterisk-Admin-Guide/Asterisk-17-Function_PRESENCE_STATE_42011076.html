@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Function_PRESENCE_STATE</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Functions_42010713.html">Asterisk 17 Dialplan Functions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Function_PRESENCE_STATE
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Function_PRESENCE_STATE-PRESENCE_STATE()">PRESENCE_STATE()</h1>
+
+<h3 id="Asterisk17Function_PRESENCE_STATE-Synopsis">Synopsis</h3>
+
+<p>Get or Set a presence state.</p>
+
+<h3 id="Asterisk17Function_PRESENCE_STATE-Description">Description</h3>
+
+<p>The PRESENCE_STATE function can be used to retrieve the presence from any presence provider. For example:</p>
+
+<p>NoOp(SIP/mypeer has presence ${PRESENCE_STATE(SIP/mypeer,value)})</p>
+
+<p>NoOp(Conference number 1234 has presence message ${PRESENCE_STATE(MeetMe:1234,message)})</p>
+
+<p>The PRESENCE_STATE function can also be used to set custom presence state from the dialplan. The <code>CustomPresence:</code> prefix must be used. For example:</p>
+
+<p>Set(PRESENCE_STATE(CustomPresence:lamp1)=away,temporary,Out to lunch)</p>
+
+<p>Set(PRESENCE_STATE(CustomPresence:lamp2)=dnd,,Trying to get work done)</p>
+
+<p>Set(PRESENCE_STATE(CustomPresence:lamp3)=xa,T24gdmFjYXRpb24=,,e)</p>
+
+<p>Set(BASE64_LAMP3_PRESENCE=${PRESENCE_STATE(CustomPresence:lamp3,subtype,e)})</p>
+
+<p>You can subscribe to the status of a custom presence state using a hint in the dialplan:</p>
+
+<p>exten =&gt; 1234,hint,,CustomPresence:lamp1</p>
+
+<p>The possible values for both uses of this function are:</p>
+
+<p>not_set | unavailable | available | away | xa | chat | dnd</p>
+
+
+<h3 id="Asterisk17Function_PRESENCE_STATE-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>PRESENCE_STATE(provider,field[,options])</pre>
+</div></div>
+
+<h5 id="Asterisk17Function_PRESENCE_STATE-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>provider</code> - The provider of the presence, such as <code>CustomPresence</code></li>
+	<li><code>field</code> - Which field of the presence state information is wanted.
+	<ul>
+		<li><code>value</code> - The current presence, such as <code>away</code></li>
+		<li><code>subtype</code> - Further information about the current presence</li>
+		<li><code>message</code> - A custom message that may indicate further details about the presence</li>
+	</ul>
+	</li>
+	<li><code>options</code>
+	<ul>
+		<li><code>e</code> - On Write - Use this option when the subtype and message provided are Base64 encoded. The values will be stored encoded within Asterisk, but all consumers of the presence state (e.g. the SIP presence event package) will receive decoded values.<br />
+On Read - Retrieves unencoded message/subtype in Base64 encoded form.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Function_PRESENCE_STATE-SeeAlso">See Also</h3>
+
+
+<h3 id="Asterisk17Function_PRESENCE_STATE-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

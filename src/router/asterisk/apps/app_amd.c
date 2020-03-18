@@ -32,7 +32,7 @@
  * \addtogroup configuration_file Configuration Files
  */
 
-/*! 
+/*!
  * \page amd.conf amd.conf
  * \verbinclude amd.conf.sample
  */
@@ -42,8 +42,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/module.h"
 #include "asterisk/lock.h"
@@ -85,7 +83,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			</parameter>
 			<parameter name="maximumNumberOfWords" required="false">
 				<para>Is the maximum number of words in a greeting</para>
-				<para>If this is REACHED, then the result is detection as a MACHINE</para>
+				<para>If this is exceeded, then the result is detection as a MACHINE</para>
 			</parameter>
 			<parameter name="silenceThreshold" required="false">
 				<para>What is the average level of noise from 0 to 32767 which if not exceeded, should be considered silence?</para>
@@ -154,7 +152,7 @@ static int dfltAfterGreetingSilence = 800;
 static int dfltTotalAnalysisTime    = 5000;
 static int dfltMinimumWordLength    = 100;
 static int dfltBetweenWordsSilence  = 50;
-static int dfltMaximumNumberOfWords = 3;
+static int dfltMaximumNumberOfWords = 2;
 static int dfltSilenceThreshold     = 256;
 static int dfltMaximumWordLength    = 5000; /* Setting this to a large default so it is not used unless specify it in the configs or command line */
 
@@ -164,8 +162,10 @@ static int dfltMaxWaitTimeForFrame  = 50;
 static void isAnsweringMachine(struct ast_channel *chan, const char *data)
 {
 	int res = 0;
+	int audioFrameCount = 0;
 	struct ast_frame *f = NULL;
 	struct ast_dsp *silenceDetector = NULL;
+	struct timeval amd_tvstart;
 	int dspsilence = 0, framelength = 0;
 	RAII_VAR(struct ast_format *, readFormat, NULL, ao2_cleanup);
 	int inInitialSilence = 1;
@@ -277,8 +277,17 @@ static void isAnsweringMachine(struct ast_channel *chan, const char *data)
 	/* Set silence threshold to specified value */
 	ast_dsp_set_threshold(silenceDetector, silenceThreshold);
 
+	/* Set our start time so we can tie the loop to real world time and not RTP updates */
+	amd_tvstart = ast_tvnow();
+
 	/* Now we go into a loop waiting for frames from the channel */
 	while ((res = ast_waitfor(chan, 2 * maxWaitTimeForFrame)) > -1) {
+		int ms = 0;
+
+		/* Figure out how long we waited */
+		if (res >= 0) {
+			ms = 2 * maxWaitTimeForFrame - res;
+		}
 
 		/* If we fail to read in a frame, that means they hung up */
 		if (!(f = ast_read(chan))) {
@@ -289,15 +298,39 @@ static void isAnsweringMachine(struct ast_channel *chan, const char *data)
 			break;
 		}
 
-		if (f->frametype == AST_FRAME_VOICE || f->frametype == AST_FRAME_NULL || f->frametype == AST_FRAME_CNG) {
-			/* If the total time exceeds the analysis time then give up as we are not too sure */
+		/* Check to make sure we haven't gone over our real-world timeout in case frames get stalled for whatever reason */
+		if ( (ast_tvdiff_ms(ast_tvnow(), amd_tvstart)) > totalAnalysisTime ) {
+			ast_frfree(f);
+			strcpy(amdStatus , "NOTSURE");
+			if ( audioFrameCount == 0 ) {
+				ast_verb(3, "AMD: Channel [%s]. No audio data received in [%d] seconds.\n", ast_channel_name(chan), totalAnalysisTime);
+				sprintf(amdCause , "NOAUDIODATA-%d", iTotalTime);
+				break;
+			}
+			ast_verb(3, "AMD: Channel [%s]. Timeout...\n", ast_channel_name(chan));
+			sprintf(amdCause , "TOOLONG-%d", iTotalTime);
+			break;
+		}
+
+		if (f->frametype == AST_FRAME_VOICE || f->frametype == AST_FRAME_CNG) {
+			/* keep track of the number of audio frames we get */
+			audioFrameCount++;
+
+			/* Figure out how long the frame is in milliseconds */
 			if (f->frametype == AST_FRAME_VOICE) {
 				framelength = (ast_codec_samples_count(f) / DEFAULT_SAMPLES_PER_MS);
 			} else {
-				framelength = 2 * maxWaitTimeForFrame;
+				framelength = ms;
 			}
 
 			iTotalTime += framelength;
+
+			ast_debug(1, "AMD: Channel [%s] frametype [%s] iTotalTime [%d] framelength [%d] totalAnalysisTime [%d]\n",
+					  ast_channel_name(chan),
+					  f->frametype == AST_FRAME_VOICE ? "AST_FRAME_VOICE" : "AST_FRAME_CNG",
+					  iTotalTime, framelength, totalAnalysisTime);
+
+			/* If the total time exceeds the analysis time then give up as we are not too sure */
 			if (iTotalTime >= totalAnalysisTime) {
 				ast_verb(3, "AMD: Channel [%s]. Too long...\n", ast_channel_name(chan));
 				ast_frfree(f);
@@ -308,7 +341,7 @@ static void isAnsweringMachine(struct ast_channel *chan, const char *data)
 
 			/* Feed the frame of audio into the silence detector and see if we get a result */
 			if (f->frametype != AST_FRAME_VOICE)
-				dspsilence += 2 * maxWaitTimeForFrame;
+				dspsilence += framelength;
 			else {
 				dspsilence = 0;
 				ast_dsp_silence(silenceDetector, f, &dspsilence);
@@ -316,7 +349,7 @@ static void isAnsweringMachine(struct ast_channel *chan, const char *data)
 
 			if (dspsilence > 0) {
 				silenceDuration = dspsilence;
-				
+
 				if (silenceDuration >= betweenWordsSilence) {
 					if (currentState != STATE_IN_SILENCE ) {
 						ast_verb(3, "AMD: Channel [%s]. Changed state to STATE_IN_SILENCE\n", ast_channel_name(chan));
@@ -338,7 +371,7 @@ static void isAnsweringMachine(struct ast_channel *chan, const char *data)
 					res = 1;
 					break;
 				}
-				
+
 				if (silenceDuration >= afterGreetingSilence  &&  inGreeting == 1) {
 					ast_verb(3, "AMD: Channel [%s]. HUMAN: silenceDuration:%d afterGreetingSilence:%d\n",
 						ast_channel_name(chan), silenceDuration, afterGreetingSilence);
@@ -348,7 +381,7 @@ static void isAnsweringMachine(struct ast_channel *chan, const char *data)
 					res = 1;
 					break;
 				}
-				
+
 			} else {
 				consecutiveVoiceDuration += framelength;
 				voiceDuration += framelength;
@@ -367,7 +400,7 @@ static void isAnsweringMachine(struct ast_channel *chan, const char *data)
 					sprintf(amdCause , "MAXWORDLENGTH-%d", consecutiveVoiceDuration);
 					break;
 				}
-				if (iWordsCount >= maximumNumberOfWords) {
+				if (iWordsCount > maximumNumberOfWords) {
 					ast_verb(3, "AMD: Channel [%s]. ANSWERING MACHINE: iWordsCount:%d\n", ast_channel_name(chan), iWordsCount);
 					ast_frfree(f);
 					strcpy(amdStatus , "MACHINE");
@@ -397,12 +430,20 @@ static void isAnsweringMachine(struct ast_channel *chan, const char *data)
 					inInitialSilence = 0;
 					inGreeting = 1;
 				}
-				
+
+			}
+		} else {
+			iTotalTime += ms;
+			if (iTotalTime >= totalAnalysisTime) {
+				ast_frfree(f);
+				strcpy(amdStatus , "NOTSURE");
+				sprintf(amdCause , "TOOLONG-%d", iTotalTime);
+				break;
 			}
 		}
 		ast_frfree(f);
 	}
-	
+
 	if (!res) {
 		/* It took too long to get a frame back. Giving up. */
 		ast_verb(3, "AMD: Channel [%s]. Too long...\n", ast_channel_name(chan));
@@ -507,8 +548,8 @@ static int unload_module(void)
  * Module loading including tests for configuration or dependencies.
  * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
  * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
- * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
- * configuration file or other non-critical problem return 
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the
+ * configuration file or other non-critical problem return
  * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
  */
 static int load_module(void)
@@ -528,8 +569,8 @@ static int reload(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Answering Machine Detection Application",
-		.support_level = AST_MODULE_SUPPORT_EXTENDED,
-		.load = load_module,
-		.unload = unload_module,
-		.reload = reload,
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
+	.load = load_module,
+	.unload = unload_module,
+	.reload = reload,
 );

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Device State</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Key-Concepts_27200276.html">Key Concepts</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="States-and-Presence_28315969.html">States and Presence</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Device State
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified by <span class='editor'> Mark Michelson</span> on Oct 22, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="DeviceState-Devices">Devices</h1><p>Devices are discrete components of functionality within Asterisk that serve a particular task. A device may be a channel technology resource, such as SIP/&lt;name&gt; in the case of chan_sip.so or a feature resource of another module such as app_confbridge.so which provides devices like confbridge:&lt;name&gt;.</p><h2 id="DeviceState-Stateinformation">State information</h2><p>Asterisk devices make state information available to the Asterisk user, such that a user might make use of the information to affect call flow or behavior of the Asterisk system. The device state identifier for a particular device is typically very similar to the device name. For example the device state identifier for SIP/6001 would be SIP/6001, for confbridge 7777 it would be confbridge:7777. Device states have a one-to-one mapping to the device they represent. That is opposed to other state providers in Asterisk which may have one-to-many relationships, such as Extension State.</p><p>The <a href="Querying-and-Manipulating-State_28934227.html">Querying and Manipulating State</a> section covers how to access or manipulate device state as well as other states.</p><h1 id="DeviceState-CommonDeviceStateProviders">Common Device State Providers</h1><p><em>Device state providers</em> are the components of Asterisk that provide some state information for their resources. The device state providers available in Asterisk will depend on the version of Asterisk you are using, what modules you have installed and how those modules are configured. Here is a list of the common <em>device state identifiers</em> you will see and what Asterisk component provides the resources and state.</p></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302946305 {padding: 0px;}
+div.rbtoc1582302946305 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302946305 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302946305'>
+<ul class='toc-indentation'>
+<li><a href='#DeviceState-Devices'>Devices</a>
+<ul class='toc-indentation'>
+<li><a href='#DeviceState-Stateinformation'>State information</a></li>
+</ul>
+</li>
+<li><a href='#DeviceState-CommonDeviceStateProviders'>Common Device State Providers</a>
+<ul class='toc-indentation'>
+<li><a href='#DeviceState-CustomDeviceStates'>Custom Device States</a></li>
+</ul>
+</li>
+<li><a href='#DeviceState-PossibleDeviceStates'>Possible Device States</a></li>
+<li><a href='#DeviceState-ModuleSpecificDeviceState'>Module Specific Device State</a></li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Device State Identifier</th><th class="confluenceTh">Device State Provider</th></tr><tr><td class="confluenceTd">PJSIP/&lt;resource&gt;</td><td class="confluenceTd">PJSIP SIP stack, res_pjsip.so, chan_pjsip.so.</td></tr><tr><td colspan="1" class="confluenceTd">SIP/&lt;resource&gt;</td><td colspan="1" class="confluenceTd">The older SIP channel driver, chan_sip.so.</td></tr><tr><td colspan="1" class="confluenceTd">DAHDI/&lt;resource&gt;</td><td colspan="1" class="confluenceTd">The popular telephony hardware interface driver, chan_dahdi.so.</td></tr><tr><td colspan="1" class="confluenceTd">IAX2/&lt;resource&gt;</td><td colspan="1" class="confluenceTd">Inter-Asterisk Exchange protocol! chan_iax2.so.</td></tr><tr><td colspan="1" class="confluenceTd">ConfBridge:&lt;resource&gt;</td><td colspan="1" class="confluenceTd">The conference bridge application, app_confbridge.so.</td></tr><tr><td colspan="1" class="confluenceTd">MeetMe:&lt;resource&gt;</td><td colspan="1" class="confluenceTd">The older conference bridging app, app_meetme.so.</td></tr><tr><td colspan="1" class="confluenceTd">Park:&lt;resource&gt;</td><td colspan="1" class="confluenceTd">The Asterisk core in versions up to 11.<br />res_parking.so in versions 12 or greater.</td></tr><tr><td colspan="1" class="confluenceTd">Calendar:&lt;resource&gt;</td><td colspan="1" class="confluenceTd">res_calendar.so and related calendaring modules.</td></tr><tr><td colspan="1" class="confluenceTd">Custom:&lt;resource&gt;</td><td colspan="1" class="confluenceTd">Custom device state provided by the asterisk core.</td></tr></tbody></table></div><p>Note that we are not differentiating any device state providers based on what is on the far end. Depending on device state provider, the far end of signaling for state could be a physical device, or just a discrete feature resource inside of Asterisk.  In terms of understanding device state for use in Asterisk, it doesn't really matter. The device state represents the state of the Asterisk device as long as it is able to provide it regardless of what is on the far end of the communication path.</p><h2 id="DeviceState-CustomDeviceStates">Custom Device States</h2><p>The Asterisk core provides a <em>Custom</em> device state provider (custom:&lt;resource&gt;) that allows you to define arbitrary device state resources. See the <a href="Querying-and-Manipulating-State_28934227.html">Querying and Manipulating State</a> section for more on using custom device state.</p><h1 id="DeviceState-PossibleDeviceStates">Possible Device States</h1><p>Here are the possible states that a device state may have.</p><ul><li>UNKNOWN</li><li>NOT_INUSE</li><li>INUSE</li><li>BUSY</li><li>INVALID</li><li>UNAVAILABLE</li><li>RINGING</li><li>RINGINUSE</li><li>ONHOLD</li></ul><p>Though the label for each state carries a certain connotation, the actual meaning of each state is really up to the device state provider. That is, any particular state may mean something different across device state providers.</p><h1 id="DeviceState-ModuleSpecificDeviceState">Module Specific Device State</h1><p>There is module specific configuration that you must be aware of to get optimal behavior with certain state providers.</p><p>For <strong>chan_sip</strong> see the <a href="chan_sip-State-and-Presence-Options_28934285.html">chan_sip State and Presence Options</a> section.</p><p>For <strong>res_pjsip</strong> see the <a href="Configuring-res_pjsip-for-Presence-Subscriptions_29392974.html">Configuring res_pjsip for Presence Subscriptions</a> section.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

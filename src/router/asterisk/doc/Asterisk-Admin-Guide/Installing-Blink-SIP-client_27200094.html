@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Installing Blink SIP client</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Secure-Calling_11338110.html">Secure Calling</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Secure-Calling-Tutorial_8127019.html">Secure Calling Tutorial</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Installing Blink SIP client
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on Jan 30, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="InstallingBlinkSIPclient-Overview">Overview</h1><p>I wanted to provide some brief instructions on installing the Blink SIP client on Linux since it is useful for running the <a href="Secure-Calling-Tutorial_8127019.html">Secure Calling Tutorial</a>.</p><h1 id="InstallingBlinkSIPclient-HowtoinstallBlinkonUbuntu12.04PrecisePangolin">How to install Blink on Ubuntu 12.04 Precise Pangolin</h1><h2 id="InstallingBlinkSIPclient-Installsomedependencies">Install some dependencies</h2><ol><li>*Get latest Python 2.X</li><li><p>Setup repo from here: <a href="http://projects.ag-projects.com/projects/documentation/wiki/Repositories" class="external-link" rel="nofollow">http://projects.ag-projects.com/projects/documentation/wiki/Repositories</a></p></li><li><p>In your terminal, run the following commands</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>sudo apt-get update
+sudo apt-get install python-sipsimple python-gnutls python-eventlib python-application python-cjson python-eventlet python-qt4 python-twisted-core python-zope.interface</pre>
+</div></div></li></ol><p>If you have issues see: <a href="http://sipsimpleclient.org/projects/sipsimpleclient/wiki/SipInstallation" class="external-link" rel="nofollow">http://sipsimpleclient.org/projects/sipsimpleclient/wiki/SipInstallation</a></p><h2 id="InstallingBlinkSIPclient-DownloadandinstallBlink">Download and install Blink</h2><ol><li>Download Blink source code from <a href="http://download.ag-projects.com/BlinkQt" class="external-link" rel="nofollow">http://download.ag-projects.com/BlinkQt</a></li><li>In your terminal, extract the tar.gz file contents to a folder and then <strong>cd</strong> to that folder in the terminal</li><li><p>Change directory into the Blink folder and run <strong>sudo python setup.py install</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>root@newtonr-laptop:/usr/src/blink-0.6.0# sudo python setup.py install
+running install
+running build
+running build_py
+running build_scripts
+running install_lib
+running install_scripts
+changing mode of /usr/local/bin/blink to 755
+running install_data
+running install_egg_info
+Removing /usr/local/lib/python2.7/dist-packages/blink-0.6.0.egg-info
+Writing /usr/local/lib/python2.7/dist-packages/blink-0.6.0.egg-info
+
+</pre>
+</div></div></li></ol><h2 id="InstallingBlinkSIPclient-RunBlink!">Run Blink!</h2><ol><li><p>From the command line, run Blink by executing blink.<br /><br /></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>root@newtonr-laptop:/usr/src/blink-0.6.0# blink
+using set_wakeup_fd
+&quot;sni-qt/6493&quot; WARN  08:11:15.444 void StatusNotifierItemFactory::connectToSnw() Invalid interface to SNW_SERVICE </pre>
+</div></div></li><li>Blink should launch and show up within your graphical desktop.</li></ol><p> </p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>Blink doesn't appear to support call forwarding or call transfers, so don't expect to do anything too fancy!</p>
+                    </div>
+    </div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

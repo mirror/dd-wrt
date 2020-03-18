@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk Dialplan Function Examples</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Functions_27200281.html">Functions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk Dialplan Function Examples
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on Oct 14, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>UNDER CONSTRUCTION</p>
+                    </div>
+    </div>
+<p> </p><h1 id="AsteriskDialplanFunctionExamples-FunctionExamples">Function Examples</h1><p>Asterisk includes a wide variety of functions. Here we'll show you a few commonly used functions and a selection of others to give you an idea of what you can do.</p></div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303037015 {padding: 0px;}
+div.rbtoc1582303037015 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303037015 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303037015'>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskDialplanFunctionExamples-FunctionExamples'>Function Examples</a>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskDialplanFunctionExamples-CHANNELandCHANNELS'>CHANNEL and CHANNELS</a></li>
+<li><a href='#AsteriskDialplanFunctionExamples-DBandotherDBfunctions'>DB and other DB functions</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h2 id="AsteriskDialplanFunctionExamples-CHANNELandCHANNELS">CHANNEL and CHANNELS</h2><p>CHANNEL Gets or sets various pieces of information about the channel. Additional arguments may be available from the channel driver; see its documentation for details. Any item requested that is not available on the current channel will return an empty string. CHANNELS on the other hand, gets the list of channels while optionally filtering by a regular expression (provided via argument). If no argument is provided, all known channels are returned. The regular_expression must correspond to the POSIX.2 specification, as shown in regex(7). The list returned will be space-delimited.</p><p>See the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+14+Function_CHANNEL">CHANNEL function</a> reference documentation for an extensive list of arguments.</p><p><strong>Examples:</strong></p><p>Push a <a href="Hangup-Handlers_20189328.html">hangup handler</a> subroutine onto the channel. The hangup handler must exist at the location specified (default,s,1).</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">same = n,Set(CHANNEL(hangup_handler_push)=default,s,1)</pre>
+</div></div><p>Using the CHANNEL function along with the Log application, we can log the current state of the channel.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">same = n,Log(NOTICE, This channel is: ${CHANNEL(state)})</pre>
+</div></div><p>Set the channel variable myvar to a space-delimited list of all channels.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">same = n,Set(myvar=${CHANNELS})</pre>
+</div></div><p> </p><h2 id="AsteriskDialplanFunctionExamples-DBandotherDBfunctions">DB and other DB functions</h2><p>The DB function will read from or write a value to the <a href="Asterisk-Internal-Database_27200271.html">Asterisk Internal Database</a>. On a read, this function returns the corresponding value from the database, or blank if it does not exist. Reading a database value will also set the variable DB_RESULT. There are a few related functions. DB_EXISTS, DB_DELETE and DB_KEYS.</p><p>If you wish to find out if an entry exists, use the DB_EXISTS function. The DB_DELETE function will retrieve a value from the Asterisk database and then remove that key from the database. DB_RESULT will be set to the key's value if it exists. Finally, the DB_KEYS will return a comma-separated list of keys existing at the prefix specified within the Asterisk database. If no argument is provided, then a list of key families will be returned.</p><p><strong>Examples:</strong></p><p>Set the key &quot;testkey&quot; in family &quot;testfamily&quot; to the value &quot;Alice&quot;.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">same = n,Set(DB(testfamily/testkey)=Alice)</pre>
+</div></div><p>Dialing a PJSIP endpoint using the value of the previously set key as the endpoint name.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">same = n,Dial(PJSIP/${DB(testfamily/testkey)})</pre>
+</div></div><p>Go to a specific dialplan location (via <a href="4817410.html">label</a>) depending on if the key exists or does not.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">same = n,Gotoif($[${DB_EXISTS(testfamily/testkey)}]?keyexists:keydoesnotexist)</pre>
+</div></div><p>Delete the entry while logging the value of the key!</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">same = n,Log(NOTICE, Deleting the key testfamily/testkey which had the value: ${DB_DELETE(testfamily/testkey)})</pre>
+</div></div></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

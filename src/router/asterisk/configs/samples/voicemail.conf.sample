@@ -73,6 +73,10 @@ maxlogins=3
 ;
 ;userscontext=default
 ;
+; Aliases allow a mailbox to be referenced by an alias.  The aliases are
+; specified in the special context named here.  There is no default.
+;aliasescontext=myaliases
+;
 ; If you need to have an external program, i.e. /usr/bin/myapp
 ; called when a voicemail is left, delivered, or your voicemailbox
 ; is checked, uncomment this.
@@ -145,8 +149,9 @@ maxlogins=3
 ; You can select between two variables by using dialplan functions, e.g.
 ;     ${IF(${ISNULL(${ORIG_VM_DATE})}?${VM_DATE}:${ORIG_VM_DATE})}
 ;
-; Note: The emailbody config row can only be up to 512 characters due to a
-;       limitation in the Asterisk configuration subsystem.
+; Note: The emailbody config row can only be up to 8190 characters due to a
+;       limitation in the Asterisk configuration subsystem.  If compiled with
+;       LOW_MEMORY the limit is 510 characters.
 ;emailsubject=[PBX]: New message ${VM_MSGNUM} in mailbox ${VM_MAILBOX}
 ; The following definition is very close to the default, but the default shows
 ; just the CIDNAME, if it is not null, otherwise just the CIDNUM, or "an unknown
@@ -232,7 +237,6 @@ pagerdateformat=%A, %B %d, %Y at %r
                          ; Default: no
 
 ; -----------------------------------------------------------------------------
-;
 
 ; Each mailbox is listed in the form <mailbox>=<password>,<name>,<email>,<pager_email>,<options>
 ; If email is specified, a message will be sent when a voicemail is received, to
@@ -245,7 +249,7 @@ pagerdateformat=%A, %B %d, %Y at %r
 ; overridden in the per-mailbox settings, unless listed otherwise.
 ;
 ; tz=central 		; Timezone from zonemessages below. Irrelevant if envelope=no.
-; locale=de_DE.UTF-8	; set the locale for generation of the date/time strings (make 
+; locale=de_DE.UTF-8	; set the locale for generation of the date/time strings (make
 			; sure the locales are installed in your operating system; e.g
 			; on Debian Linux you can use "dpkg-reconfigure locales").
 			; If you use UTF-8 locales, make sure to set the "charset" option
@@ -259,8 +263,8 @@ pagerdateformat=%A, %B %d, %Y at %r
 			; Useful if Windows users want wav49, but Linux users want gsm.
 			; [per-mailbox only]
 ; saycid=yes 		; Say the caller id information before the message. If not described,
-			;     or set to no, it will be in the envelope. When enabled, if a recorded file 
-			;     with the same name as the caller id exists in 
+			;     or set to no, it will be in the envelope. When enabled, if a recorded file
+			;     with the same name as the caller id exists in
 			;     <astspooldir>/recordings/callerids, then that file will be played as a name
 			;     rather than saying each digit as a phone number.
 ; cidinternalcontexts=intern	; Internal Context for Name Playback instead of
@@ -450,6 +454,13 @@ european=Europe/Copenhagen|'vm-received' a d b 'digits/at' HM
 ;4110 => 3443,Rob Flynn,rflynn@blueridge.net
 ;4235 => 1234,Jim Holmes,jim@astricon.ips,,Tz=european
 
+;
+; Aliases allow alternate references to mailboxes.  See the "aliasescontext"
+; parameter in the "general" section.
+;
+[myaliases]
+1234@devices => 1234@default
+;6200@devices => 4200@default
 
 ;
 ; Mailboxes may be organized into multiple contexts for

@@ -23,8 +23,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/_private.h"
 #include "asterisk/astobj2.h"
 #include "astobj2_private.h"
@@ -104,47 +102,27 @@ struct hash_traversal_state_check {
 /*!
  * \internal
  * \brief Create an empty copy of this container.
- * \since 12.0.0
- *
- * \param self Container to operate upon.
- *
- * \retval empty-clone-container on success.
- * \retval NULL on error.
- */
-static struct ao2_container *hash_ao2_alloc_empty_clone(struct ao2_container_hash *self)
-{
-	if (!is_ao2_object(self)) {
-		return NULL;
-	}
-
-	return ao2_t_container_alloc_hash(ao2_options_get(self), self->common.options, self->n_buckets,
-		self->hash_fn, self->common.sort_fn, self->common.cmp_fn, "Clone hash container");
-}
-
-/*!
- * \internal
- * \brief Create an empty copy of this container. (Debug version)
- * \since 12.0.0
+ * \since 14.0.0
  *
  * \param self Container to operate upon.
  * \param tag used for debugging.
  * \param file Debug file name invoked from
  * \param line Debug line invoked from
  * \param func Debug function name invoked from
- * \param ref_debug TRUE if to output a debug reference message.
  *
  * \retval empty-clone-container on success.
  * \retval NULL on error.
  */
-static struct ao2_container *hash_ao2_alloc_empty_clone_debug(struct ao2_container_hash *self, const char *tag, const char *file, int line, const char *func, int ref_debug)
+static struct ao2_container *hash_ao2_alloc_empty_clone(struct ao2_container_hash *self,
+	const char *tag, const char *file, int line, const char *func)
 {
-	if (!is_ao2_object(self)) {
+	if (!__is_ao2_object(self, file, line, func)) {
 		return NULL;
 	}
 
-	return __ao2_container_alloc_hash_debug(ao2_options_get(self), self->common.options,
+	return __ao2_container_alloc_hash(ao2_options_get(self), self->common.options,
 		self->n_buckets, self->hash_fn, self->common.sort_fn, self->common.cmp_fn,
-		tag, file, line, func, ref_debug);
+		tag, file, line, func);
 }
 
 /*!
@@ -186,7 +164,7 @@ static void hash_ao2_node_destructor(void *v_doomed)
 		 * same node.
 		 */
 		my_container = (struct ao2_container_hash *) doomed->common.my_container;
-#if defined(AST_DEVMODE)
+#ifdef AST_DEVMODE
 		is_ao2_object(my_container);
 #endif
 
@@ -232,18 +210,15 @@ static struct hash_bucket_node *hash_ao2_new_node(struct ao2_container_hash *sel
 	struct hash_bucket_node *node;
 	int i;
 
-	node = __ao2_alloc(sizeof(*node), hash_ao2_node_destructor, AO2_ALLOC_OPT_LOCK_NOLOCK);
+	node = ao2_alloc_options(sizeof(*node), hash_ao2_node_destructor,
+		AO2_ALLOC_OPT_LOCK_NOLOCK | AO2_ALLOC_OPT_NO_REF_DEBUG);
 	if (!node) {
 		return NULL;
 	}
 
 	i = abs(self->hash_fn(obj_new, OBJ_SEARCH_OBJECT) % self->n_buckets);
 
-	if (tag) {
-		__ao2_ref_debug(obj_new, +1, tag, file, line, func);
-	} else {
-		ao2_t_ref(obj_new, +1, "Container node creation");
-	}
+	__ao2_ref(obj_new, +1, tag ?: "Container node creation", file, line, func);
 	node->common.obj = obj_new;
 	node->common.my_container = (struct ao2_container *) self;
 	node->my_bucket = i;
@@ -300,7 +275,7 @@ static enum ao2_container_insert hash_ao2_insert_node(struct ao2_container_hash 
 					break;
 				case AO2_CONTAINER_ALLOC_OPT_DUPS_REPLACE:
 					SWAP(cur->common.obj, node->common.obj);
-					__ao2_ref(node, -1);
+					ao2_ref(node, -1);
 					return AO2_CONTAINER_INSERT_NODE_OBJ_REPLACED;
 				}
 			}
@@ -333,7 +308,7 @@ static enum ao2_container_insert hash_ao2_insert_node(struct ao2_container_hash 
 					break;
 				case AO2_CONTAINER_ALLOC_OPT_DUPS_REPLACE:
 					SWAP(cur->common.obj, node->common.obj);
-					__ao2_ref(node, -1);
+					ao2_ref(node, -1);
 					return AO2_CONTAINER_INSERT_NODE_OBJ_REPLACED;
 				}
 			}
@@ -441,7 +416,7 @@ static struct hash_bucket_node *hash_ao2_find_first(struct ao2_container_hash *s
 				}
 
 				/* We have the first traversal node */
-				__ao2_ref(node, +1);
+				ao2_ref(node, +1);
 				return node;
 			}
 		}
@@ -483,7 +458,7 @@ static struct hash_bucket_node *hash_ao2_find_first(struct ao2_container_hash *s
 				}
 
 				/* We have the first traversal node */
-				__ao2_ref(node, +1);
+				ao2_ref(node, +1);
 				return node;
 			}
 		}
@@ -552,7 +527,7 @@ static struct hash_bucket_node *hash_ao2_find_next(struct ao2_container_hash *se
 				}
 
 				/* We have the next traversal node */
-				__ao2_ref(node, +1);
+				ao2_ref(node, +1);
 
 				/*
 				 * Dereferencing the prev node may result in our next node
@@ -560,7 +535,7 @@ static struct hash_bucket_node *hash_ao2_find_next(struct ao2_container_hash *se
 				 * the container uses RW locks and the container was read
 				 * locked.
 				 */
-				__ao2_ref(prev, -1);
+				ao2_ref(prev, -1);
 				if (node->common.obj) {
 					return node;
 				}
@@ -596,7 +571,7 @@ hash_descending_resume:;
 				}
 
 				/* We have the next traversal node */
-				__ao2_ref(node, +1);
+				ao2_ref(node, +1);
 
 				/*
 				 * Dereferencing the prev node may result in our next node
@@ -604,7 +579,7 @@ hash_descending_resume:;
 				 * the container uses RW locks and the container was read
 				 * locked.
 				 */
-				__ao2_ref(prev, -1);
+				ao2_ref(prev, -1);
 				if (node->common.obj) {
 					return node;
 				}
@@ -616,7 +591,7 @@ hash_ascending_resume:;
 	}
 
 	/* No more nodes in the container left to traverse. */
-	__ao2_ref(prev, -1);
+	ao2_ref(prev, -1);
 	return NULL;
 }
 
@@ -1038,8 +1013,6 @@ static int hash_ao2_integrity(struct ao2_container_hash *self)
 /*! Hash container virtual method table. */
 static const struct ao2_container_methods v_table_hash = {
 	.alloc_empty_clone = (ao2_container_alloc_empty_clone_fn) hash_ao2_alloc_empty_clone,
-	.alloc_empty_clone_debug =
-		(ao2_container_alloc_empty_clone_debug_fn) hash_ao2_alloc_empty_clone_debug,
 	.new_node = (ao2_container_new_node_fn) hash_ao2_new_node,
 	.insert = (ao2_container_insert_fn) hash_ao2_insert_node,
 	.traverse_first = (ao2_container_find_first_fn) hash_ao2_find_first,
@@ -1105,25 +1078,8 @@ static struct ao2_container *hash_ao2_container_init(
 
 struct ao2_container *__ao2_container_alloc_hash(unsigned int ao2_options,
 	unsigned int container_options, unsigned int n_buckets, ao2_hash_fn *hash_fn,
-	ao2_sort_fn *sort_fn, ao2_callback_fn *cmp_fn)
-{
-	unsigned int num_buckets;
-	size_t container_size;
-	struct ao2_container_hash *self;
-
-	num_buckets = hash_fn ? n_buckets : 1;
-	container_size = sizeof(struct ao2_container_hash) + num_buckets * sizeof(struct hash_bucket);
-
-	self = ao2_t_alloc_options(container_size, container_destruct, ao2_options,
-		"New hash container");
-	return hash_ao2_container_init(self, container_options, num_buckets,
-		hash_fn, sort_fn, cmp_fn);
-}
-
-struct ao2_container *__ao2_container_alloc_hash_debug(unsigned int ao2_options,
-	unsigned int container_options, unsigned int n_buckets, ao2_hash_fn *hash_fn,
 	ao2_sort_fn *sort_fn, ao2_callback_fn *cmp_fn,
-	const char *tag, const char *file, int line, const char *func, int ref_debug)
+	const char *tag, const char *file, int line, const char *func)
 {
 	unsigned int num_buckets;
 	size_t container_size;
@@ -1132,25 +1088,16 @@ struct ao2_container *__ao2_container_alloc_hash_debug(unsigned int ao2_options,
 	num_buckets = hash_fn ? n_buckets : 1;
 	container_size = sizeof(struct ao2_container_hash) + num_buckets * sizeof(struct hash_bucket);
 
-	self = __ao2_alloc_debug(container_size,
-		ref_debug ? container_destruct_debug : container_destruct, ao2_options,
-		tag, file, line, func, ref_debug);
+	self = __ao2_alloc(container_size, container_destruct, ao2_options,
+		tag ?: __PRETTY_FUNCTION__, file, line, func);
 	return hash_ao2_container_init(self, container_options, num_buckets, hash_fn,
 		sort_fn, cmp_fn);
 }
 
 struct ao2_container *__ao2_container_alloc_list(unsigned int ao2_options,
-	unsigned int container_options, ao2_sort_fn *sort_fn, ao2_callback_fn *cmp_fn)
-{
-	return __ao2_container_alloc_hash(ao2_options, container_options, 1, NULL, sort_fn,
-		cmp_fn);
-}
-
-struct ao2_container *__ao2_container_alloc_list_debug(unsigned int ao2_options,
 	unsigned int container_options, ao2_sort_fn *sort_fn, ao2_callback_fn *cmp_fn,
-	const char *tag, const char *file, int line, const char *func, int ref_debug)
+	const char *tag, const char *file, int line, const char *func)
 {
-	return __ao2_container_alloc_hash_debug(ao2_options, container_options, 1, NULL,
-		sort_fn, cmp_fn, tag, file, line, func, ref_debug);
+	return __ao2_container_alloc_hash(ao2_options, container_options, 1, NULL,
+		sort_fn, cmp_fn, tag, file, line, func);
 }
-

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Pattern Matching</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Pattern Matching
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Alexander Gonchiy</span> on Oct 29, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><p>The next concept we'll cover is called <em>pattern matching</em>. Pattern matching allows us to create extension patterns in our dialplan that match more than one possible dialed number. Pattern matching saves us from having to create an extension in the dialplan for every possible number that might be dialed.</p><p>When Alice dials a number on her phone, Asterisk first looks for an extension (in the context specified by the channel driver configuration) that matches exactly what Alice dialed. If there's no exact match, Asterisk then looks for a pattern that matches. After we show the syntax and some basic examples of pattern matching, we'll explain how Asterisk finds the best match if there are two or more patterns which match the dialed number.</p><h1 id="PatternMatching-SpecialCharactersUsedinPatternMatching">Special Characters Used in Pattern Matching</h1><p>Pattern matches always begin with an underscore. This is how Asterisk recognizes that the extension is a pattern and not just an extension with a funny name. Within the pattern, we use various letters and characters to represent sets or ranges of numbers. Here are the most common letters:</p><h2 id="PatternMatching-X">X</h2><p>The letter <strong>X</strong> or <strong>x</strong> represents a single digit from 0 to 9.</p><h2 id="PatternMatching-Z">Z</h2><p>The letter <strong>Z</strong> or <strong>z</strong> represents any digit from 1 to 9.</p></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303022921 {padding: 0px;}
+div.rbtoc1582303022921 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303022921 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303022921'>
+<ul class='toc-indentation'>
+<li><a href='#PatternMatching-SpecialCharactersUsedinPatternMatching'>Special Characters Used in Pattern Matching</a>
+<ul class='toc-indentation'>
+<li><a href='#PatternMatching-X'>X</a></li>
+<li><a href='#PatternMatching-Z'>Z</a></li>
+<li><a href='#PatternMatching-N'>N</a></li>
+</ul>
+</li>
+<li><a href='#PatternMatching-CharacterSets'>Character Sets</a></li>
+<li><a href='#PatternMatching-OtherSpecialCharacters'>Other Special Characters</a></li>
+<li><a href='#PatternMatching-OrderofPatternMatching'>Order of Pattern Matching</a></li>
+<li><a href='#PatternMatching-MatchingonCallerID'>Matching on Caller ID</a></li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><h2 id="PatternMatching-N">N</h2><p>The letter <strong>N</strong> or <strong>n</strong> represents a single digit from 2 to 9.</p><p>Now let's look at a sample pattern. If you wanted to match all four-digit numbers that had the first two digits as six and four, you would create an extension that looks like:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; _64XX,1,SayDigits(${EXTEN})
+</pre>
+</div></div><p>In this example, each <strong>X</strong> represents a single digit, with any value from zero to nine. We're essentially saying &quot;The first digit must be a six, the second digit must be a four, the third digit can be anything from zero to nine, and the fourth digit can be anything from zero to nine&quot;.</p><h1 id="PatternMatching-CharacterSets">Character Sets</h1><p>If we want to be more specific about a range of numbers, we can put those numbers or number ranges in square brackets to define a character set. For example, what if we wanted the second digit to be either a three or a four? One way would be to create two patterns (<strong>_64XX</strong> and <strong>_63XX</strong>), but a more compact method would be to do <strong>_6[34]XX</strong>. This specifies that the first digit must be a six, the second digit can be either a three or a four, and that the last two digits can be anything from zero to nine.</p><p>You can also use ranges within square brackets. For example, <strong>[1-468]</strong> would match a single digit from one through four or six or eight. It does not match any number from one to four hundred sixty-eight!</p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>The X, N, and Z convenience notations mentioned earlier have no special meaning within a set.</p><p>The only characters with special meaning within a set are the '-' character, to define a range between two characters, the  '\' character to escape a special character available within a set, and<br /> the ']' character which closes the set. The treatment of the '\' character in pattern matching is somewhat haphazard and may not escape any special character meaning correctly.<span class="HOEnZb"> </span></p>
+                    </div>
+    </div>
+<h1 id="PatternMatching-OtherSpecialCharacters">Other Special Characters</h1><p>Within Asterisk patterns, we can also use a couple of other characters to represent ranges of numbers. The period character (<strong>.</strong>) at the end of a pattern matches one or more remaining <strong>characters</strong>. You put it at the end of a pattern when you want to match extensions of an indeterminate length. As an example, the pattern <strong>_9876.</strong> would match any number that began with <strong>9876</strong> and had at least one more character or digit.</p><p>The exclamation mark (<strong>!</strong>) character is similar to the period and matches zero or more remaining characters. It is used in overlap dialing to dial through Asterisk. For example, <strong>_9876!</strong> would match any number that began with <strong>9876</strong> including <strong>9876</strong>, and would respond that the number was complete as soon as there was an unambiguous match.</p>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>Asterisk treats a period or exclamation mark as the end of a pattern. If you want a period or exclamation mark in your pattern as a plain character you should put it into a character set: <strong>[.]</strong> or <strong>[!]</strong>.</p>
+                    </div>
+    </div>
+    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">Be Careful With Wildcards in Pattern Matches</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>Please be extremely cautious when using the period and exclamation mark characters in your pattern matches. They match more than just digits. They match on characters. If you're not careful to filter the input from your callers, a malicious caller might try to use these wildcards to bypass security boundaries on your system.</p><p>For a more complete explanation of this topic and how you can protect yourself, please refer to the <strong>README-SERIOUSLY.bestpractices.txt</strong> file in the Asterisk source code.</p>
+                    </div>
+    </div>
+<h1 id="PatternMatching-OrderofPatternMatching">Order of Pattern Matching</h1><p>Now let's show what happens when there is more than one pattern that matches the dialed number. How does Asterisk know which pattern to choose as the best match?</p><p>Asterisk uses a simple set of rules to sort the extensions and patterns so that the best match is found first. The best match is simply the most specific pattern. The sorting rules are:</p><ol><li>The dash (<strong>-</strong>) character is ignored in extensions and patterns except when it is used in a pattern to specify a range in a character set. It has no effect in matching or sorting extensions.</li><li>Non-pattern extensions are sorted in ASCII sort order before patterns.</li><li>Patterns are sorted by the most constrained character set per digit first. By most constrained, we mean the pattern that has the fewest possible matches for a digit. As an example, the <strong>N</strong> character has eight possible matches (two through nine), while <strong>X</strong> has ten possible matches (zero through nine) so <strong>N</strong> sorts first.</li><li>Character sets that have the same number of characters are sorted in ASCII sort order as if the sets were strings of the set characters. As an example, <strong>X</strong> is <strong>0123456789</strong> and <strong>[a-j]</strong> is <strong>abcdefghij</strong> so <strong>X</strong> sorts first. This sort ordering is important if the character sets overlap as with <strong>[0-4]</strong> and <strong>[4-8]</strong>.</li><li>The period (<strong>.</strong>) wildcard sorts after character sets.</li><li>The exclamation mark (<strong>!</strong>) wildcard sorts after the period wildcard.</li></ol><p>Let's look at an example to better understand how this works. Let's assume Alice dials extension <strong>6421</strong>, and she has the following patterns in her dialplan:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; _6XX1,1,SayAlpha(A)
+exten =&gt; _64XX,1,SayAlpha(B)
+exten =&gt; _640X,1,SayAlpha(C)
+exten =&gt; _6.,1,SayAlpha(D)
+exten =&gt; _64NX,1,SayAlpha(E)
+exten =&gt; _6[45]NX,1,SayAlpha(F)
+exten =&gt; _6[34]NX,1,SayAlpha(G)
+</pre>
+</div></div><p>Can you tell (without reading ahead) which one would match?</p><p>Using the sorting rules explained above, the extensions sort as follows:<br /> <strong>_640X</strong> sorts before <strong>_64NX</strong> because of rule 3 at position 4. (0 before N)<br /> <strong>_64NX</strong> sorts before <strong>_64XX</strong> because of rule 3 at position 4. (N before X)<br /> <strong>_64XX</strong> sorts before <strong>_6[34]NX</strong> because of rule 3 at position 3. (4 before [34])<br /> <strong>_6[34]NX</strong> sorts before <strong>_6[45]NX</strong> because of rule 4 at position 3. ([34] before [45])<br /> <strong>_6[45]NX</strong> sorts before <strong>_6XX1</strong> because of rule 3 at position 3. ([45] before X)<br /> <strong>_6XX1</strong> sorts before <strong>_6.</strong> because of rule 5 at position 3. (X before .)</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedHeader panelHeader" style="border-bottom-width: 1px;"><b>Sorted extensions</b></div><div class="preformattedContent panelContent">
+<pre>exten =&gt; _640X,1,SayAlpha(C)
+exten =&gt; _64NX,1,SayAlpha(E)
+exten =&gt; _64XX,1,SayAlpha(B)
+exten =&gt; _6[34]NX,1,SayAlpha(G)
+exten =&gt; _6[45]NX,1,SayAlpha(F)
+exten =&gt; _6XX1,1,SayAlpha(A)
+exten =&gt; _6.,1,SayAlpha(D)
+</pre>
+</div></div><p>When Alice dials <strong>6421</strong>, Asterisk searches through its list of sorted extensions and uses the first matching extension. In this case <strong>_64NX</strong> is found.</p><p>To verify that Asterisk actually does sort the extensions in the manner that we've shown, add the following extensions to the <strong>[users]</strong> context of your own dialplan.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; _6XX1,1,SayAlpha(A)
+exten =&gt; _64XX,1,SayAlpha(B)
+exten =&gt; _640X,1,SayAlpha(C)
+exten =&gt; _6.,1,SayAlpha(D)
+exten =&gt; _64NX,1,SayAlpha(E)
+exten =&gt; _6[45]NX,1,SayAlpha(F)
+exten =&gt; _6[34]NX,1,SayAlpha(G)
+</pre>
+</div></div><p>Reload the dialplan, and then type <strong>dialplan show 6421@users</strong> at the Asterisk CLI. Asterisk will show you all extensions that match in the <strong>[users]</strong> context. If you were to dial extension <strong>6421</strong> in the <strong>[users]</strong> context the first found extension will execute.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>server*CLI&gt; dialplan show 6421@users
+[ Context &#39;users&#39; created by &#39;pbx_config&#39; ]
+  &#39;_64NX&#39; =&gt;        1. SayAlpha(E)                                [pbx_config]
+  &#39;_64XX&#39; =&gt;        1. SayAlpha(B)                                [pbx_config]
+  &#39;_6[34]NX&#39; =&gt;     1. SayAlpha(G)                                [pbx_config]
+  &#39;_6[45]NX&#39; =&gt;     1. SayAlpha(F)                                [pbx_config]
+  &#39;_6XX1&#39; =&gt;        1. SayAlpha(A)                                [pbx_config]
+  &#39;_6.&#39; =&gt;          1. SayAlpha(D)                                [pbx_config]
+
+-= 6 extensions (6 priorities) in 1 context. =-
+</pre>
+</div></div><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>server*CLI&gt; dialplan show users
+[ Context &#39;users&#39; created by &#39;pbx_config&#39; ]
+  &#39;_640X&#39; =&gt;        1. SayAlpha(C)                                [pbx_config]
+  &#39;_64NX&#39; =&gt;        1. SayAlpha(E)                                [pbx_config]
+  &#39;_64XX&#39; =&gt;        1. SayAlpha(B)                                [pbx_config]
+  &#39;_6[34]NX&#39; =&gt;     1. SayAlpha(G)                                [pbx_config]
+  &#39;_6[45]NX&#39; =&gt;     1. SayAlpha(F)                                [pbx_config]
+  &#39;_6XX1&#39; =&gt;        1. SayAlpha(A)                                [pbx_config]
+  &#39;_6.&#39; =&gt;          1. SayAlpha(D)                                [pbx_config]
+
+-= 7 extensions (7 priorities) in 1 context. =-
+</pre>
+</div></div><p>You can dial extension <strong>6421</strong> to try it out on your own.</p>    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">Be Careful with Pattern Matching</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>Please be aware that because of the way auto-fallthrough works, if Asterisk can't find the next priority number for the current extension or pattern match, it will also look for that same priority in a less specific pattern match. Consider the following example:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; 6410,1,SayDigits(987)
+exten =&gt; _641X,1,SayDigits(12345)
+exten =&gt; _641X,n,SayDigits(54321)
+</pre>
+</div></div><p>If you were to dial extension <strong>6410</strong>, you'd hear &quot;nine eight seven five four three two one&quot;.</p><p>We strongly recommend you make the <strong>Hangup()</strong> application be the last priority of any extension to avoid this behaviour, unless you purposely want to fall through to a less specific match.</p>
+                    </div>
+    </div>
+<h1 id="PatternMatching-MatchingonCallerID">Matching on Caller ID</h1><p>Within an extension handler, it is also possible to match based upon the Caller ID of the incoming channel by appending a forward slash to the dialed extension or pattern, followed by a Caller ID pattern to be matched. Consider the following example, featuring phones with Caller IDs of 101, 102 and 103.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; 306,1,NoOp()
+same =&gt; n,Background(goodbye)
+same =&gt; n,Hangup()
+ 
+exten =&gt; 306/_101,1,NoOp()
+same =&gt; n,Background(year)
+same =&gt; n,Hangup()
+ 
+exten =&gt; 306/_102,1,NoOp()
+same =&gt; n,Background(beep)
+same =&gt; n,Hangup()</pre>
+</div></div><p>The phone with Caller ID 101, when dialing 306, will hear the prompt &quot;year&quot; and will be hung up.  The phone with Caller ID 102, when dialing 306, will hear the &quot;beep&quot; sound and will be hung up.  The phone with Caller ID 103, or any other caller, when dialing 306, will hear the &quot;goodbye&quot; prompt and will be hung up.</p>    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">Rewriting Caller ID</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>Changing the value of <strong>CALLERID(num)</strong> variable inside of extension handler matched by Caller ID can immediately <strong>throw the call to another handler</strong>. Consider the following example:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[unexpected-jump-test]
+
+exten =&gt; s/_1XX,1,Set(CALLERID(num)=200) ; &lt;- Example call starts here
+same  =&gt;        2,Hangup()               ; &lt;- This line is NEVER reached normally because of the assignment above
+
+exten =&gt; s/_2XX,1,SayDigits(1)
+same  =&gt;        2,SayDigits(2)           ; &lt;- This is where the dialplan proceeds instead
+same  =&gt;        3,SayDigits(3)
+same  =&gt;        4,SayDigits(4)</pre>
+</div></div><p>You'd expect the call with Caller ID 100 to hang up, but instead you'd hear Asterisk saying &quot;two, three, four&quot;.<br />As soon as the Caller ID changes, the next priority Asterisk goes to will be inside extension handler that matches the <strong>new</strong> Caller ID.</p>
+                    </div>
+    </div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/astobj2.h"
 #include "asterisk/stasis_message_router.h"
 #include "asterisk/vector.h"
@@ -207,10 +205,11 @@ static void router_dispatch(void *data,
 }
 
 static struct stasis_message_router *stasis_message_router_create_internal(
-	struct stasis_topic *topic, int use_thread_pool)
+	struct stasis_topic *topic, int use_thread_pool, const char *file, int lineno,
+	const char *func)
 {
 	int res;
-	RAII_VAR(struct stasis_message_router *, router, NULL, ao2_cleanup);
+	struct stasis_message_router *router;
 
 	router = ao2_t_alloc(sizeof(*router), router_dtor, stasis_topic_name(topic));
 	if (!router) {
@@ -221,32 +220,39 @@ static struct stasis_message_router *stasis_message_router_create_internal(
 	res |= AST_VECTOR_INIT(&router->routes, 0);
 	res |= AST_VECTOR_INIT(&router->cache_routes, 0);
 	if (res) {
+		ao2_ref(router, -1);
+
 		return NULL;
 	}
 
 	if (use_thread_pool) {
-		router->subscription = stasis_subscribe_pool(topic, router_dispatch, router);
+		router->subscription = __stasis_subscribe_pool(topic, router_dispatch, router, file, lineno, func);
 	} else {
-		router->subscription = stasis_subscribe(topic, router_dispatch, router);
+		router->subscription = __stasis_subscribe(topic, router_dispatch, router, file, lineno, func);
 	}
+
 	if (!router->subscription) {
+		ao2_ref(router, -1);
+
 		return NULL;
 	}
 
-	ao2_ref(router, +1);
+	/* We need to receive subscription change messages so we know when our subscription goes away */
+	stasis_subscription_accept_message_type(router->subscription, stasis_subscription_change_type());
+
 	return router;
 }
 
-struct stasis_message_router *stasis_message_router_create(
-	struct stasis_topic *topic)
+struct stasis_message_router *__stasis_message_router_create(
+	struct stasis_topic *topic, const char *file, int lineno, const char *func)
 {
-	return stasis_message_router_create_internal(topic, 0);
+	return stasis_message_router_create_internal(topic, 0, file, lineno, func);
 }
 
-struct stasis_message_router *stasis_message_router_create_pool(
-	struct stasis_topic *topic)
+struct stasis_message_router *__stasis_message_router_create_pool(
+	struct stasis_topic *topic, const char *file, int lineno, const char *func)
 {
-	return stasis_message_router_create_internal(topic, 1);
+	return stasis_message_router_create_internal(topic, 1, file, lineno, func);
 }
 
 void stasis_message_router_unsubscribe(struct stasis_message_router *router)
@@ -315,6 +321,14 @@ int stasis_message_router_add(struct stasis_message_router *router,
 	}
 	ao2_lock(router);
 	res = route_table_add(&router->routes, message_type, callback, data);
+	if (!res) {
+		stasis_subscription_accept_message_type(router->subscription, message_type);
+		/* Until a specific message type was added we would already drop the message, so being
+		 * selective now doesn't harm us. If we have a default route then we are already forced
+		 * to filter nothing and messages will come in regardless.
+		 */
+		stasis_subscription_set_filter(router->subscription, STASIS_SUBSCRIPTION_FILTER_SELECTIVE);
+	}
 	ao2_unlock(router);
 	return res;
 }
@@ -333,6 +347,10 @@ int stasis_message_router_add_cache_update(struct stasis_message_router *router,
 	}
 	ao2_lock(router);
 	res = route_table_add(&router->cache_routes, message_type, callback, data);
+	if (!res) {
+		stasis_subscription_accept_message_type(router->subscription, stasis_cache_update_type());
+		stasis_subscription_set_filter(router->subscription, STASIS_SUBSCRIPTION_FILTER_SELECTIVE);
+	}
 	ao2_unlock(router);
 	return res;
 }
@@ -370,13 +388,41 @@ int stasis_message_router_set_default(struct stasis_message_router *router,
 	stasis_subscription_cb callback,
 	void *data)
 {
+	stasis_message_router_set_formatters_default(router, callback, data, STASIS_SUBSCRIPTION_FORMATTER_NONE);
+
+	/* While this implementation can never fail, it used to be able to */
+	return 0;
+}
+
+void stasis_message_router_set_formatters_default(struct stasis_message_router *router,
+	stasis_subscription_cb callback,
+	void *data,
+	enum stasis_subscription_message_formatters formatters)
+{
 	ast_assert(router != NULL);
 	ast_assert(callback != NULL);
+
+	stasis_subscription_accept_formatters(router->subscription, formatters);
 
 	ao2_lock(router);
 	router->default_route.callback = callback;
 	router->default_route.data = data;
 	ao2_unlock(router);
-	/* While this implementation can never fail, it used to be able to */
-	return 0;
+
+	if (formatters == STASIS_SUBSCRIPTION_FORMATTER_NONE) {
+		/* Formatters govern what messages the default callback get, so it is only if none is
+		 * specified that we accept all messages regardless.
+		 */
+		stasis_subscription_set_filter(router->subscription, STASIS_SUBSCRIPTION_FILTER_FORCED_NONE);
+	}
+}
+
+void stasis_message_router_accept_formatters(struct stasis_message_router *router,
+	enum stasis_subscription_message_formatters formatters)
+{
+	ast_assert(router != NULL);
+
+	stasis_subscription_accept_formatters(router->subscription, formatters);
+
+	return;
 }

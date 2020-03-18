@@ -83,6 +83,9 @@ static int set_outbound_authentication_credentials(pjsip_auth_clt_sess *auth_ses
 			pj_cstr(&auth_creds[i].data, auths[i]->md5_creds);
 			auth_creds[i].data_type = PJSIP_CRED_DATA_DIGEST;
 			break;
+		case AST_SIP_AUTH_TYPE_GOOGLE_OAUTH:
+			/* nothing to do. handled seperately in res_pjsip_outbound_registration */
+			break;
 		case AST_SIP_AUTH_TYPE_ARTIFICIAL:
 			ast_log(LOG_ERROR, "Trying to set artificial outbound auth credentials shouldn't happen.\n");
 			break;
@@ -96,7 +99,7 @@ cleanup:
 	return res;
 }
 
-static int digest_create_request_with_auth_from_old(const struct ast_sip_auth_vector *auths,
+static int digest_create_request_with_auth(const struct ast_sip_auth_vector *auths,
 	pjsip_rx_data *challenge, pjsip_tx_data *old_request, pjsip_tx_data **new_request)
 {
 	pjsip_auth_clt_sess auth_sess;
@@ -118,8 +121,8 @@ static int digest_create_request_with_auth_from_old(const struct ast_sip_auth_ve
 	}
 	/* If there was no dialog, then this is probably a REGISTER so no endpoint */
 	if (!id) {
-		id = ast_alloca(strlen(challenge->pkt_info.src_name) + 7 /* ':' + port + NULL */);
-		sprintf(id, "%s:%d", challenge->pkt_info.src_name, challenge->pkt_info.src_port);
+		id = ast_alloca(AST_SOCKADDR_BUFLEN);
+		pj_sockaddr_print(&challenge->pkt_info.src_addr, id, AST_SOCKADDR_BUFLEN, 3);
 		id_type = "Host";
 	}
 
@@ -199,21 +202,12 @@ static int digest_create_request_with_auth_from_old(const struct ast_sip_auth_ve
 	return -1;
 }
 
-static int digest_create_request_with_auth(const struct ast_sip_auth_vector *auths, pjsip_rx_data *challenge,
-		pjsip_transaction *tsx, pjsip_tx_data **new_request)
-{
-	return digest_create_request_with_auth_from_old(auths, challenge, tsx->last_tx, new_request);
-}
-
 static struct ast_sip_outbound_authenticator digest_authenticator = {
 	.create_request_with_auth = digest_create_request_with_auth,
-	.create_request_with_auth_from_old = digest_create_request_with_auth_from_old,
 };
 
 static int load_module(void)
 {
-	CHECK_PJSIP_MODULE_LOADED();
-
 	if (ast_sip_register_outbound_authenticator(&digest_authenticator)) {
 		return AST_MODULE_LOAD_DECLINE;
 	}
@@ -227,8 +221,9 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PJSIP authentication resource",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.load_pri = AST_MODPRI_CHANNEL_DEPEND,
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.load_pri = AST_MODPRI_CHANNEL_DEPEND,
+	.requires = "res_pjsip",
 );

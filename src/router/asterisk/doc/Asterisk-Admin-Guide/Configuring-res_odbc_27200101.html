@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Configuring res_odbc</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Back-end-Database-and-Realtime-Connectivity_28314861.html">Back-end Database and Realtime Connectivity</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="ODBC_28314864.html">ODBC</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Configuring res_odbc
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on May 12, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Configuringres_odbc-Overview">Overview</h1><p>The <strong>res_odbc</strong> module for Asterisk can provide Asterisk with connectivity to various database backends through ODBC (a database abstraction layer). Asterisk features such as<a href="Realtime-Database-Configuration_4620317.html"> Asterisk Realtime Architecture</a>, <a href="5242894.html">Call Detail Records</a>, <a href="5242932.html">Channel Event Logging</a>, can connect to a database through res_odbc.</p><p>More details on specific options within configuration are provided in the <a href="http://svnview.digium.com/svn/asterisk/branches/11/configs/res_odbc.conf.sample?view=markup" class="external-link" rel="nofollow">sample configuration file</a> included with Asterisk source.</p><p>We'll provide a brief guide here on how to get the res_odbc.so module configured to connect to an existing ODBC installation.</p><p><span style="color: rgb(0,0,0);font-family: MuseoSans700 , sans-serif;font-size: 24.0px;line-height: 1.25;">Recompile Asterisk to build required modules</span></p><p>You'll need to rebuild Asterisk with the needed modules.</p><p>Other pages on the wiki describe that process:</p><p><a href="Building-and-Installing-Asterisk_4817525.html">Building and Installing Asterisk</a></p><p><a href="Using-Menuselect-to-Select-Asterisk-Options_4817523.html">Using Menuselect to Select Asterisk Options</a></p><p>When using menuselect, verify that the <strong>func_odbc</strong> (you'll probably be using that one) and <strong>res_odbc</strong> (required) modules will be built. Then, build Asterisk and make sure those modules were built and exist in <strong>/usr/lib/asterisk/modules</strong> (or whatever directory you use).</p><h1 id="Configuringres_odbc-Configureres_odbc.conftoconnecttoyourODBCinstallation">Configure res_odbc.conf to connect to your ODBC installation</h1><p>Find the configuration file, which should typically be located at /etc/asterisk/res_odbc.conf and p<span style="background-color: transparent;line-height: 1.4285715;">rovide a basic configuration such as:</span></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[asterisk]
+enabled =&gt; yes
+dsn =&gt; your-configured-dsn-name
+username =&gt; your-database-username
+password =&gt; insecurepassword
+pre-connect =&gt; yes</pre>
+</div></div><p>Then start up Asterisk and assuming res_odbc loads properly on the CLI you can use odbc show to verify a DSN is configured and shows up:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>rnewton-office-lab*CLI&gt; odbc show
+ODBC DSN Settings
+-----------------
+  Name:   asterisk
+  DSN:    your-configured-dsn-name
+    Last connection attempt: 1969-12-31 18:00:00</pre>
+</div></div><p>To verify the connection works you should use func_odbc or something similar to query the data source from Asterisk.</p><h1 id="Configuringres_odbc-Troubleshooting">Troubleshooting</h1><p>If you don't have the <strong>odbc</strong> command at the CLI, check that</p><ul><li>The res_odbc.so module exists and has proper permissions in /usr/lib/asterisk/modules/</li><li>Your modules.conf to make sure the module isn't noloaded or being prevented from loading somehow</li><li>Debug during Asterisk startup to look for messages regarding res_odbc.conf (see logger.conf to get things setup)</li></ul><p>If you the <strong>odbc show</strong> output shows &quot;Connected: No&quot; then you'll want to try connecting to your ODBC installation from other methods to verify it is working. The Linux tool <strong>isql</strong> is good for that.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

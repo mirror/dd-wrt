@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/autochan.h"
 #include "asterisk/utils.h"
 #include "asterisk/linkedlists.h"

@@ -25,10 +25,9 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/manager.h"
 #include "asterisk/app.h"
+#include "asterisk/mwi.h"
 #include "asterisk/channel.h"
 #include "asterisk/stasis_message_router.h"
 #include "asterisk/stasis.h"

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 ManagerEvent_LocalBridge</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-AMI-Events_42010707.html">Asterisk 17 AMI Events</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 ManagerEvent_LocalBridge
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17ManagerEvent_LocalBridge-LocalBridge">LocalBridge</h1>
+
+<h3 id="Asterisk17ManagerEvent_LocalBridge-Synopsis">Synopsis</h3>
+
+<p>Raised when two halves of a Local Channel form a bridge.</p>
+
+<h3 id="Asterisk17ManagerEvent_LocalBridge-Description">Description</h3>
+
+<h3 id="Asterisk17ManagerEvent_LocalBridge-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Event: LocalBridge
+LocalOneChannel: &lt;value&gt;
+LocalOneChannelState: &lt;value&gt;
+LocalOneChannelStateDesc: &lt;value&gt;
+LocalOneCallerIDNum: &lt;value&gt;
+LocalOneCallerIDName: &lt;value&gt;
+LocalOneConnectedLineNum: &lt;value&gt;
+LocalOneConnectedLineName: &lt;value&gt;
+LocalOneLanguage: &lt;value&gt;
+LocalOneAccountCode: &lt;value&gt;
+LocalOneContext: &lt;value&gt;
+LocalOneExten: &lt;value&gt;
+LocalOnePriority: &lt;value&gt;
+LocalOneUniqueid: &lt;value&gt;
+LocalOneLinkedid: &lt;value&gt;
+LocalTwoChannel: &lt;value&gt;
+LocalTwoChannelState: &lt;value&gt;
+LocalTwoChannelStateDesc: &lt;value&gt;
+LocalTwoCallerIDNum: &lt;value&gt;
+LocalTwoCallerIDName: &lt;value&gt;
+LocalTwoConnectedLineNum: &lt;value&gt;
+LocalTwoConnectedLineName: &lt;value&gt;
+LocalTwoLanguage: &lt;value&gt;
+LocalTwoAccountCode: &lt;value&gt;
+LocalTwoContext: &lt;value&gt;
+LocalTwoExten: &lt;value&gt;
+LocalTwoPriority: &lt;value&gt;
+LocalTwoUniqueid: &lt;value&gt;
+LocalTwoLinkedid: &lt;value&gt;
+Context: &lt;value&gt;
+Exten: &lt;value&gt;
+LocalOptimization: &lt;value&gt;
+</pre>
+</div></div>
+
+<h5 id="Asterisk17ManagerEvent_LocalBridge-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>LocalOneChannel</code></li>
+	<li><code>LocalOneChannelState</code> - A numeric code for the channel's current state, related to LocalOneChannelStateDesc</li>
+	<li><code>LocalOneChannelStateDesc</code>
+	<ul>
+		<li><code>Down</code></li>
+		<li><code>Rsrvd</code></li>
+		<li><code>OffHook</code></li>
+		<li><code>Dialing</code></li>
+		<li><code>Ring</code></li>
+		<li><code>Ringing</code></li>
+		<li><code>Up</code></li>
+		<li><code>Busy</code></li>
+		<li><code>Dialing Offhook</code></li>
+		<li><code>Pre-ring</code></li>
+		<li><code>Unknown</code></li>
+	</ul>
+	</li>
+	<li><code>LocalOneCallerIDNum</code></li>
+	<li><code>LocalOneCallerIDName</code></li>
+	<li><code>LocalOneConnectedLineNum</code></li>
+	<li><code>LocalOneConnectedLineName</code></li>
+	<li><code>LocalOneLanguage</code></li>
+	<li><code>LocalOneAccountCode</code></li>
+	<li><code>LocalOneContext</code></li>
+	<li><code>LocalOneExten</code></li>
+	<li><code>LocalOnePriority</code></li>
+	<li><code>LocalOneUniqueid</code></li>
+	<li><code>LocalOneLinkedid</code> - Uniqueid of the oldest channel associated with this channel.</li>
+	<li><code>LocalTwoChannel</code></li>
+	<li><code>LocalTwoChannelState</code> - A numeric code for the channel's current state, related to LocalTwoChannelStateDesc</li>
+	<li><code>LocalTwoChannelStateDesc</code>
+	<ul>
+		<li><code>Down</code></li>
+		<li><code>Rsrvd</code></li>
+		<li><code>OffHook</code></li>
+		<li><code>Dialing</code></li>
+		<li><code>Ring</code></li>
+		<li><code>Ringing</code></li>
+		<li><code>Up</code></li>
+		<li><code>Busy</code></li>
+		<li><code>Dialing Offhook</code></li>
+		<li><code>Pre-ring</code></li>
+		<li><code>Unknown</code></li>
+	</ul>
+	</li>
+	<li><code>LocalTwoCallerIDNum</code></li>
+	<li><code>LocalTwoCallerIDName</code></li>
+	<li><code>LocalTwoConnectedLineNum</code></li>
+	<li><code>LocalTwoConnectedLineName</code></li>
+	<li><code>LocalTwoLanguage</code></li>
+	<li><code>LocalTwoAccountCode</code></li>
+	<li><code>LocalTwoContext</code></li>
+	<li><code>LocalTwoExten</code></li>
+	<li><code>LocalTwoPriority</code></li>
+	<li><code>LocalTwoUniqueid</code></li>
+	<li><code>LocalTwoLinkedid</code> - Uniqueid of the oldest channel associated with this channel.</li>
+	<li><code>Context</code> - The context in the dialplan that Channel2 starts in.</li>
+	<li><code>Exten</code> - The extension in the dialplan that Channel2 starts in.</li>
+	<li><code>LocalOptimization</code>
+	<ul>
+		<li><code>Yes</code></li>
+		<li><code>No</code></li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17ManagerEvent_LocalBridge-Class">Class</h3>
+
+<p>CALL</p>
+<h3 id="Asterisk17ManagerEvent_LocalBridge-SeeAlso">See Also</h3>
+
+<h3 id="Asterisk17ManagerEvent_LocalBridge-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

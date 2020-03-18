@@ -63,12 +63,11 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <sys/time.h>
 #include <signal.h>
 #include <fcntl.h>
 
+#include "asterisk/module.h"
 #include "asterisk/udptl.h"
 #include "asterisk/frame.h"
 #include "asterisk/channel.h"
@@ -239,9 +238,9 @@ static int udptl_pre_apply_config(void);
 static struct aco_type general_option = {
 	.type = ACO_GLOBAL,
 	.name = "global",
-	.category_match = ACO_WHITELIST,
+	.category_match = ACO_WHITELIST_EXACT,
 	.item_offset = offsetof(struct udptl_config, general),
-	.category = "^general$",
+	.category = "general",
 };
 
 static struct aco_type *general_options[] = ACO_TYPES(&general_option);
@@ -405,6 +404,24 @@ static int udptl_rx_packet(struct ast_udptl *s, uint8_t *buf, unsigned int len)
 		return -1;
 	seq_no = (buf[0] << 8) | buf[1];
 	ptr += 2;
+
+	/* UDPTL sequence numbers are 16 bit so after 0xFFFF comes
+	   0 which breaks all packet recovery logic.  To fix this
+	   if we see that next expected packet (rx_seq_no) is close
+	   to or beyond the wrap around limit & the received packet
+	   is still near zero, then we 'unwrap' the received seqno
+	   so it has the value it would have had.  After a 16
+	   packet grace period (there shouldn't be  more than
+	   that many recovery packets) we wrap the expected
+	   sequence number around and things can return back
+	   to normal */
+	if (seq_no < 0x000F && s->rx_seq_no > 0xFFF0) {
+		/* received seq_no has wrapped adjust it */
+		seq_no += 0x10000;
+	} else {
+		/* otherwise make sure expected rx_seq_no is properly wrapped */
+		s->rx_seq_no &= 0xFFFF;
+	}
 
 	/* Break out the primary packet */
 	if ((stat1 = decode_open_type(buf, len, &ptr, &ifp, &ifp_len)) != 0)
@@ -1014,7 +1031,6 @@ struct ast_udptl *ast_udptl_new_with_bindaddr(struct ast_sched_context *sched, s
 	int x;
 	int startplace;
 	int i;
-	long int flags;
 	RAII_VAR(struct udptl_config *, cfg, ao2_global_obj_ref(globals), ao2_cleanup);
 
 	if (!cfg || !cfg->general) {
@@ -1039,14 +1055,12 @@ struct ast_udptl *ast_udptl_new_with_bindaddr(struct ast_sched_context *sched, s
 		udptl->tx[i].buf_len = -1;
 	}
 
-	if ((udptl->fd = socket(ast_sockaddr_is_ipv6(addr) ?
+	if ((udptl->fd = ast_socket_nonblock(ast_sockaddr_is_ipv6(addr) ?
 					AF_INET6 : AF_INET, SOCK_DGRAM, 0)) < 0) {
 		ast_free(udptl);
 		ast_log(LOG_WARNING, "Unable to allocate socket: %s\n", strerror(errno));
 		return NULL;
 	}
-	flags = fcntl(udptl->fd, F_GETFL);
-	fcntl(udptl->fd, F_SETFL, flags | O_NONBLOCK);
 
 #ifdef SO_NO_CHECK
 	if (cfg->general->nochecksums)
@@ -1359,9 +1373,10 @@ static int udptl_pre_apply_config(void) {
 	return 0;
 }
 
-int ast_udptl_reload(void)
+static int reload_module(void)
 {
 	__ast_udptl_reload(1);
+
 	return 0;
 }
 
@@ -1369,17 +1384,19 @@ int ast_udptl_reload(void)
  * \internal
  * \brief Clean up resources on Asterisk shutdown
  */
-static void udptl_shutdown(void)
+static int unload_module(void)
 {
 	ast_cli_unregister_multiple(cli_udptl, ARRAY_LEN(cli_udptl));
 	ao2_t_global_obj_release(globals, "Unref udptl global container in shutdown");
 	aco_info_destroy(&cfg_info);
+
+	return 0;
 }
 
-void ast_udptl_init(void)
+static int load_module(void)
 {
 	if (aco_info_init(&cfg_info)) {
-		return;
+		return AST_MODULE_LOAD_FAILURE;
 	}
 
 	aco_option_register(&cfg_info, "udptlstart", ACO_EXACT, general_options, __stringify(DEFAULT_UDPTLSTART),
@@ -1411,5 +1428,14 @@ void ast_udptl_init(void)
 
 	ast_cli_register_multiple(cli_udptl, ARRAY_LEN(cli_udptl));
 
-	ast_register_cleanup(udptl_shutdown);
+	return AST_MODULE_LOAD_SUCCESS;
 }
+
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "UDPTL",
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.reload = reload_module,
+	.load_pri = AST_MODPRI_CORE,
+	.requires = "extconfig",
+);

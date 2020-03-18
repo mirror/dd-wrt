@@ -17,11 +17,11 @@
  * at the top of the source tree.
  */
 
-/*! 
+/*!
  * \file
  *
  * \brief Resample slinear audio
- * 
+ *
  * \ingroup codecs
  */
 
@@ -31,8 +31,6 @@
 
 #include "asterisk.h"
 #include "speex/speex_resampler.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/module.h"
 #include "asterisk/translate.h"

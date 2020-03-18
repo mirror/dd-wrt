@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Real-time Text (T.140)</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SIP_28314848.html">SIP</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Real-time Text (T.140)
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Terry Wilson</span> on Aug 05, 2011
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Real-timeText(T.140)-Real-timetextinAsterisk">Real-time text in Asterisk </h1>
+
+<p>The SIP channel has support for real-time text conversation calls in Asterisk (T.140).  This is a way to perform text based conversations in combination with other media, most often video. The text is sent character by character as a media stream.</p>
+
+<p>During a call sometimes there are losses of T.140 packets and a solution to that is to use redundancy in the media stream (RTP).  See  &quot;http://en.wikipedia.org/wiki/Text_over_IP&quot;http://en.wikipedia.org/wiki/Text_over_IP and RFC 5194 for more information.</p>
+
+<p>The supported real-time text codec is t.140.</p>
+
+<p>Real-time text redundancy support is now available in Asterisk.</p>
+
+<h5 id="Real-timeText(T.140)-ITU-TT.140">ITU-T T.140 </h5>
+
+<p>You can find more information about T.140 at www.itu.int. RTP is used for the transport T.140, as specified in RFC 4103.</p>
+
+<h5 id="Real-timeText(T.140)-HowtoenableT.140">How to enable T.140</h5>
+
+<p>In order to enable real-time text with redundancy in Asterisk, modify sip.conf to add: </p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+[general]
+disallow=all
+allow=ulaw
+allow = alaw
+allow=t140
+allow=t140red
+textsupport=yes
+</pre>
+</div></div>
+
+<p>The codec settings may change, depending on your phones. The important settings here are to allow t140 and 140red and enable text support.</p>
+
+<h5 id="Real-timeText(T.140)-Generalinformationaboutreal-timetextsupportinAsterisk">General information about real-time text support in Asterisk </h5>
+
+<p>With the configuration above, calls will be supported with any combination of real-time text,  audio and video. </p>
+
+<p>Text for both t140 and t140red is handled on channel and application level in Asterisk conveyed in Text frames, with the subtype &quot;t140&quot;. Text is conveyed in such frames usually only containing one or a few characters from the real-time text flow. The packetization interval is 300 ms, handled on lower RTP level, and transmission redundancy level is 2, causing one original and two redundant transmissions of all text so that it is reliable even in high packet loss situations. Transmitting applications do not need to bother about the transmission interval. The t140red support handles any buffering needed during the packetization intervals.</p>
+
+<h5 id="Real-timeText(T.140)-Clientsknowntosupporttext,audio/textoraudio/video/textcallswithAsterisk:">Clients known to support text, audio/text or audio/video/text calls with Asterisk: </h5>
+
+<ul>
+	<li>Omnitor Allan eC - SIP audio/video/text softphone</li>
+	<li>AuPix APS-50 - audio/video/text softphone.</li>
+	<li>France Telecom eConf â€“audio/video/text softphone.</li>
+	<li>SIPcon1 - open source SIP audio/text softphone available in Sourceforge.</li>
+</ul>
+
+
+<h5 id="Real-timeText(T.140)-Credits">Credits</h5>
+
+<ul>
+	<li>Asterisk real-time text support is developed by AuPix</li>
+	<li>Asterisk real-time text redundancy support is developed by Omnitor</li>
+</ul>
+
+
+
+<p>The work with Asterisk real-time text redundancy was supported with funding from the National Institute on Disability and Rehabilitation Research (NIDRR), U.S. Department of Education, under grant number H133E040013 as part of a co-operation between the Telecommunication Access Rehabilitation Engineering Research Center of the University of Wisconsin â€“ Trace Center joint with Gallaudet University, and Omnitor. </p>
+
+<p>Olle E. Johansson, Edvina AB, has been a liason between the Asterisk project and this project.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

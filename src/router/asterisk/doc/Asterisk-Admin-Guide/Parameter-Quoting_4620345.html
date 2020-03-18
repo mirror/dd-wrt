@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Parameter Quoting</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Variables_4817407.html">Variables</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Variables_4620340.html">Channel Variables</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Parameter Quoting
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Alexander Gonchiy</span> on Oct 30, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; s,5,BackGround,my-custom-sound
+</pre>
+</div></div><p>The parameter (blabla) can be quoted with double quotes (<strong>&quot;</strong>blabla<strong>&quot;</strong>). In this case, a comma does not terminate the field. However, the double quotes will be <strong>passed down</strong> to the Background command, in this example.</p><p>Special characters that must be escaped to be used literally, are &quot;<strong>[</strong>&quot;, &quot;<strong>]</strong>&quot;, &quot;<strong>\</strong>&quot; (backslash) and <strong>&quot;</strong> (double quote).<br />Dollar sign &quot;<strong>$</strong>&quot; does not require escaping, as long as it doesn't trigger variable expansion or expression evaluation (i.e. &quot;<strong>$[</strong>&quot; or &quot;<strong>${</strong>&quot;), - in that case you'd have to either surround it with double quotes or escape the next character with a backslash (See example code below).</p><p>Double quotes and escapes are evaluated at the level of the asterisk config file parser.</p><p>Double quotes can also be used inside expressions, as discussed later.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Useful Examples</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">; Comma truncation
+exten =&gt; s,1,Verbose(Hi, James!)   ; &lt;- , James!
+exten =&gt; s,2,Verbose(&quot;Hi, James!&quot;) ; &lt;- &quot;Hi, James!&quot;
+
+; Variable expansion
+exten =&gt; s,1,Verbose(${EXTEN} is a standard variable)   ; &lt;- s is a standard variable
+exten =&gt; s,2,Verbose($\{EXTEN} is a standard variable)  ; &lt;- ${EXTEN} is a standard variable
+exten =&gt; s,3,Verbose(&quot;$&quot;{EXTEN} is a standard variable) ; &lt;- ${EXTEN} is a standard variable
+
+; Expression expansion
+exten =&gt; s,1,Verbose(:-] smile!)  ; &lt;- (Syntax error)
+exten =&gt; s,2,Verbose(:-\] smile!) ; &lt;- :-] smile!
+
+; Quote stripping
+exten =&gt; s,1,Verbose(&quot;haxxor1337&quot; is calling)   ; &lt;- haxxor1337 is calling
+exten =&gt; s,2,Verbose(\&quot;haxxor1337\&quot; is calling) ; &lt;- &quot;haxxor1337&quot; is calling</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

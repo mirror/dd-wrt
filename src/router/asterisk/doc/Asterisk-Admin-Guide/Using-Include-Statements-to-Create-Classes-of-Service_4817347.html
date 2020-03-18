@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Using Include Statements to Create Classes of Service</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Include-Statements_4817359.html">Include Statements</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Using Include Statements to Create Classes of Service
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Rusty Newton</span> on Jan 13, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Now that we've shown the basic syntax of include statements, let's put some include statements to good use. Include statements are often used to build chains of functionality or classes of service. In this example, we're going to build several different contexts, each with its own type of outbound calling. We'll then use include statements to chain these contexts together.</p>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Numbering Plans</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>The examples in this section use patterns designed for the North American Number Plan, and may not fit your individual circumstances. Feel free to use this example as a guide as you build your own dialplan.</p><p>In these examples, we're going to assuming that a seven-digit number that does not begin with a zero or a one is a local (non-toll) call. Ten-digit numbers (where neither the first or fourth digits begin with zero or one) are also treated as local calls. A one, followed by ten digits (where neither the first or fourth digits begin with zero or one) is considered a long-distance (toll) call. Again, feel free to modify these examples to fit your own particular circumstances.</p>
+                    </div>
+    </div>
+    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">Outbound dialing</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>These examples assume that you have a SIP provider named provider configured in <strong>sip.conf</strong>. The examples dial out through this SIP provider using the <strong>SIP/provider/number</strong> syntax.<br /> Obviously, these examples won't work unless you setup a SIP provider for outbound calls, or replace this syntax with some other type of outbound connection.</p>
+                    </div>
+    </div>
+<p>First, let's create a new context for local calls.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[local]
+; seven-digit local numbers
+exten =&gt; _NXXXXXX,1,Dial(SIP/provider/${EXTEN})
+
+; ten-digit local numbers
+exten =&gt; _NXXNXXXXXX,1,Dial(SIP/provider/${EXTEN})
+
+; emergency services (911), and other three-digit services
+exten =&gt; NXX,1,Dial(SIP/provider/${EXTEN})
+
+; if you don&#39;t find a match in this context, look in [users]
+include =&gt; users
+</pre>
+</div></div><p>Remember that the variable <strong>${EXTEN}</strong> will get replaced with the dialed extension. For example, if Bob dials <strong>5551212</strong> in the <strong>local</strong> context, Asterisk will execute the Dial application with <strong>SIP/provider/5551212</strong> as the first parameter. (This syntax means &quot;Dial out to the account named provider using the SIP channel driver, and dial the number <strong>5551212</strong>.)</p><p>Next, we'll build a long-distance context, and link it back to the <strong>local</strong> context with an include statement. This way, if you dial a local number and your phone's channel driver sends the call to the <strong>longdistance</strong> context, Asterisk will search the <strong>local</strong> context if it doesn't find a matching pattern in the <strong>longdistance</strong> context.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">[longdistance]
+; 1+ ten digit long-distance numbers
+exten =&gt; _1NXXNXXXXXX,1,Dial(SIP/provider/${EXTEN})
+
+; if you don&#39;t find a match in this context, look in [local]
+include =&gt; local</pre>
+</div></div><p>Last but not least, let's add an <strong>international</strong> context. In North America, you dial 011 to signify that you're going to dial an international number.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">[international]
+; 1+ ten digit long-distance numbers
+exten =&gt; _011.,1,Dial(SIP/provider/${EXTEN})
+
+; if you don&#39;t find a match in this context, look in [longdistance]
+include =&gt; longdistance</pre>
+</div></div><p>And there we have it -- a simple chain of contexts going from most privileged (international calls) down to lease privileged (local calling).</p><p>At this point, you may be asking yourself, &quot;What's the big deal? Why did we need to break them up into contexts, if they're all going out the same outbound connection?&quot; That's a great question! The primary reason for breaking the different classes of calls into separate contexts is so that we can enforce some security boundaries.</p><p>Do you remember what we said earlier, that the channel drivers point inbound calls at a particular context? In this case, if we point a phone at the <strong>local</strong> context, it could only make local and internal calls. On the other hand, if we were to point it at the <strong>international</strong> context, it could make international and long-distance and local and internal calls. Essentially, we've created different classes of service by chaining contexts together with include statements, and using the channel driver configuration files to point different phones at different contexts along the chain.</p><p>Please take the next few minutes and implement a series of chained contexts into your own dialplan, similar to what we've explained above. You can then change the configuration for Alice and Bob (in <strong>sip.conf</strong>, since they're SIP phones) to point to different contexts, and see what happens when you attempt to make various types of calls from each phone.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

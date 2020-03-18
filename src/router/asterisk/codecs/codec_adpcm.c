@@ -23,7 +23,7 @@
 /*! \file
  *
  * \brief codec_adpcm.c - translate between signed linear and Dialogic ADPCM
- * 
+ *
  * \ingroup codecs
  */
 
@@ -32,8 +32,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/lock.h"
 #include "asterisk/linkedlists.h"
@@ -52,7 +50,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "ex_adpcm.h"
 
 /*
- * Step size index shift table 
+ * Step size index shift table
  */
 
 static int indsft[8] = { -1, -1, -1, -1, 2, 4, 6, 8 };
@@ -169,7 +167,7 @@ static inline int adpcm(short csig, struct adpcm_state *state)
 	int step;
 	int encoded;
 
-	/* 
+	/*
 	 * Clip csig if too large or too small
 	 */
 	csig >>= 4;
@@ -210,7 +208,7 @@ static inline int adpcm(short csig, struct adpcm_state *state)
 
 	/* feedback to state */
 	decode(encoded, state);
-	
+
 	return encoded;
 }
 
@@ -261,7 +259,7 @@ static struct ast_frame *lintoadpcm_frameout(struct ast_trans_pvt *pvt)
 	struct ast_frame *f;
 	int i;
 	int samples = pvt->samples;	/* save original number */
-  
+
 	if (samples < 2)
 		return NULL;
 
@@ -355,7 +353,7 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Adaptive Differential PCM Coder/Decoder",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-	       );
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+);

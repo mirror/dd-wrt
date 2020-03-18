@@ -1,7 +1,5 @@
 ; MINI-VOICEMAIL dialplan example
 ; ---------------------------------------------------------------------------------------
-; ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-;
 ;
 ; This is an example on how to use the Mini-Voicemail system to build
 ; voicemail systems.
@@ -156,4 +154,3 @@ exten => sendvmcleanup,n(done),wait(0.5)
 exten => sendvmcleanup,n,hangup
 
 exten => h,1,gotoif($[${MINIVM_RECORD_STATUS} = SUCCESS]?sendvmcleanup,1))
-

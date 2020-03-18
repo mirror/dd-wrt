@@ -105,7 +105,7 @@ void ast_cli(int fd, const char *fmt, ...)
 	char *new_setdebug(const struct ast_cli_entry *e, int cmd, struct ast_cli_args *a);
 
 	...
-	// this is how we create the entry to register 
+	// this is how we create the entry to register
 	AST_CLI_DEFINE(new_setdebug, "short description")
 	...
 
@@ -132,7 +132,7 @@ static char *test_new_cli(struct ast_cli_entry *e, int cmd, struct ast_cli_args 
                         return NULL;
         	return ast_cli_complete(a->word, choices, a->n);
 
-        default:        
+        default:
                 // we are guaranteed to be called with argc >= e->args;
                 if (a->argc > e->args + 1) // we accept one extra argument
                         return CLI_SHOWUSAGE;
@@ -142,10 +142,10 @@ static char *test_new_cli(struct ast_cli_entry *e, int cmd, struct ast_cli_args 
 }
 
 \endcode
- 
+
  */
 
-/*! \brief calling arguments for new-style handlers. 
+/*! \brief calling arguments for new-style handlers.
 * \arg \ref CLI_command_API
 */
 enum ast_cli_command {
@@ -165,7 +165,7 @@ struct ast_cli_args {
 	const int n;		/* the iteration count (n-th entry we generate) */
 };
 
-/*! \brief descriptor for a cli entry. 
+/*! \brief descriptor for a cli entry.
  * \arg \ref CLI_command_API
  */
 struct ast_cli_entry {
@@ -177,7 +177,7 @@ struct ast_cli_entry {
 	const char * usage; 				/*!< Detailed usage information */
 
 	int inuse; 				/*!< For keeping track of usage */
-	struct module *module;			/*!< module this belongs to */
+	struct ast_module *module;			/*!< module this belongs to */
 	char *_full_cmd;			/*!< built at load time from cmda[] */
 	int cmdlen;				/*!< len up to the first invalid char [<{% */
 	/*! \brief This gets set in ast_cli_register()
@@ -215,7 +215,7 @@ struct ast_cli_entry {
  */
 char *ast_cli_complete(const char *word, const char * const choices[], int pos);
 
-/*! 
+/*!
  * \brief Interprets a command
  * Interpret a command s, sending output to fd if uid:gid has permissions
  * to run this command. uid = CLI_NO_PERMS to avoid checking user permissions
@@ -229,9 +229,9 @@ char *ast_cli_complete(const char *word, const char * const choices[], int pos);
  */
 int ast_cli_command_full(int uid, int gid, int fd, const char *s);
 
-#define ast_cli_command(fd,s) ast_cli_command_full(CLI_NO_PERMS, CLI_NO_PERMS, fd, s) 
+#define ast_cli_command(fd,s) ast_cli_command_full(CLI_NO_PERMS, CLI_NO_PERMS, fd, s)
 
-/*! 
+/*!
  * \brief Executes multiple CLI commands
  * Interpret strings separated by NULL and execute each one, sending output to fd
  * if uid has permissions, uid = CLI_NO_PERMS to avoid checking users permissions.
@@ -253,16 +253,21 @@ int ast_cli_command_multiple_full(int uid, int gid, int fd, size_t size, const c
  * \retval 0 on success
  * \retval -1 on failure
  */
-int ast_cli_register(struct ast_cli_entry *e);
+#define ast_cli_register(e) __ast_cli_register(e, AST_MODULE_SELF)
+
+int __ast_cli_register(struct ast_cli_entry *e, struct ast_module *mod);
 
 /*!
  * \brief Register multiple commands
  * \param e pointer to first cli entry to register
  * \param len number of entries to register
  */
-int ast_cli_register_multiple(struct ast_cli_entry *e, int len);
+#define ast_cli_register_multiple(e, len) \
+	__ast_cli_register_multiple(e, len, AST_MODULE_SELF)
 
-/*! 
+int __ast_cli_register_multiple(struct ast_cli_entry *e, int len, struct ast_module *mod);
+
+/*!
  * \brief Unregisters a command or an array of commands
  * \param e which cli entry to unregister
  * Unregister your own command.  You must pass a completed ast_cli_entry structure
@@ -277,15 +282,16 @@ int ast_cli_unregister(struct ast_cli_entry *e);
  */
 int ast_cli_unregister_multiple(struct ast_cli_entry *e, int len);
 
-/*! 
+/*!
  * \brief Readline madness
  * Useful for readline, that's about it
  * \retval 0 on success
  * \retval -1 on failure
+ *
+ * Only call this function to proxy the CLI generator to
+ * another.
  */
 char *ast_cli_generator(const char *, const char *, int);
-
-int ast_cli_generatornummatches(const char *, const char *);
 
 /*!
  * \brief Generates a NULL-terminated array of strings that
@@ -297,8 +303,52 @@ int ast_cli_generatornummatches(const char *, const char *);
  * Subsequent entries are all possible values, followed by a NULL.
  * All strings and the array itself are malloc'ed and must be freed
  * by the caller.
+ *
+ * \warning This function cannot be called recursively so it will always
+ *          fail if called from a CLI_GENERATE callback.
  */
 char **ast_cli_completion_matches(const char *, const char *);
+
+/*!
+ * \brief Generates a vector of strings for CLI completion.
+ *
+ * \param text Complete input being matched.
+ * \param word Current word being matched
+ *
+ * The results contain strings that both:
+ * 1) Begin with the string in \a word.
+ * 2) Are valid in a command after the string in \a text.
+ *
+ * The first entry (offset 0) of the result is the longest common substring
+ * in the results, useful to extend the string that has been completed.
+ * Subsequent entries are all possible values.
+ *
+ * \note All strings and the vector itself are malloc'ed and must be freed
+ *       by the caller.
+ *
+ * \note The vector is sorted and does not contain any duplicates.
+ *
+ * \warning This function cannot be called recursively so it will always
+ *          fail if called from a CLI_GENERATE callback.
+ */
+struct ast_vector_string *ast_cli_completion_vector(const char *text, const char *word);
+
+/*!
+ * \brief Add a result to a request for completion options.
+ *
+ * \param value A completion option text.
+ *
+ * \retval 0 Success
+ * \retval -1 Failure
+ *
+ * This is an alternative to returning individual values from CLI_GENERATE.  Instead
+ * of repeatedly being asked for the next match and having to start over, you can
+ * call this function repeatedly from your own stateful loop.  When all matches have
+ * been added you can return NULL from the CLI_GENERATE function.
+ *
+ * \note This function always eventually results in calling ast_free on \a value.
+ */
+int ast_cli_completion_add(char *value);
 
 /*!
  * \brief Command completion for the list of active channels.
@@ -311,6 +361,17 @@ char **ast_cli_completion_matches(const char *, const char *);
 char *ast_complete_channels(const char *line, const char *word, int pos, int state, int rpos);
 
 /*!
+ * \since 13.8
+ * \brief Print on cli a duration in seconds in format
+ * %s year(s), %s week(s), %s day(s), %s hour(s), %s second(s)
+ *
+ * \param ast_cli_args fd to print by ast_cli
+ * \param duration The time (in seconds) to print
+ * \param prefix A Prefix string to add before of duration formatted
+ */
+void ast_cli_print_timestr_fromseconds(int fd, int seconds, const char *prefix);
+
+/*
  * \brief Allow a CLI command to be executed while Asterisk is shutting down.
  *
  * CLI commands by defeault are disabled when Asterisk is shutting down. This is

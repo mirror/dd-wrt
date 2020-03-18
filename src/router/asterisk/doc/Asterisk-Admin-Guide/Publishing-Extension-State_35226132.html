@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Publishing Extension State</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SIP_28314848.html">SIP</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-res_pjsip_25919621.html">Configuring res_pjsip</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Publishing Extension State
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Joshua C. Colp</span>, last modified by <span class='editor'> Richard Mudgett</span> on Sep 16, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h2 id="PublishingExtensionState-Background">Background</h2><p>Functionality exists within PJSIP, as of Asterisk 14, that allows extension state to be published to another entity, commonly referred to as an event state compositor. Instead of each device subscribing to Asterisk and receiving a NOTIFY as extension state changes, PJSIP can be configured to send a single PUBLISH request for each extension state change to the other entity. These PUBLISH requests are triggered based on extension state changes made to hints in the dialplan.</p><p>
+
+<map id="gliffy-map-35454978-8747" name="gliffy-map-35454978-8747"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 578px;" usemap="#gliffy-map-35454978-8747" src="attachments/35226132/35454979.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p><h2 id="PublishingExtensionState-WhyDoIt">Why Do It</h2><p>Publishing extension state allows the SUBSCRIBE and NOTIFY functionality to be handled by the other entity. Each device subscribes to the event state compositor and receives NOTIFY messages from it instead. This can scale further as less state is present in Asterisk, and also allows multiple Asterisk instances to be used while still making extension state available to everyone from the central event state compositor.</p><p>
+
+<map id="gliffy-map-35454984-7347" name="gliffy-map-35454984-7347"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 802px;" usemap="#gliffy-map-35454984-7347" src="attachments/35226132/35454985.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p><h2 id="PublishingExtensionState-WhatCanBePublished?">What Can Be Published?</h2><p>PJSIP has a pluggable body type system.  Any type that can be subscribed to for extension state can be published. As of this writing the available body types are:</p><ul><li>application/dialog-info+xml</li><li>application/pidf+xml</li><li>application/xpidf+xml</li><li>application/cpim-pidf+xml</li></ul><p>The PUBLISH request will contain the same body that a NOTIFY request would.</p><h2 id="PublishingExtensionState-Configuration">Configuration</h2><p>The publishing of extension state is configured by specifying an <strong>outbound publish</strong> in the pjsip.conf configuration file. This tells PJSIP how to publish to another entity and gives it information about what to publish. The outbound publishing of extension state has some additional arguments, though, which allow more control.</p><p> </p><p>The <strong>@body</strong> option specifies what body type to publish. This is a required option.</p><p>The <strong>@context</strong> option specifies a filter for context. This is a regular expression and is optional.</p><p>The <strong>@exten</strong> option specifies a filter for extensions. This is a regular expression and is optional.</p><p>An additional option which is required on the outbound publish is the <strong>multi_user </strong>option. This enables support in the outbound publish module for publishing to different users. This is needed for extension state publishing so the specific extension can be published to. Without this option enabled all PUBLISH requests would go to the same user.</p><h2 id="PublishingExtensionState-ExampleConfiguration">Example Configuration</h2><h4 id="PublishingExtensionState-Thisconfigurationwouldlimitoutboundpublishtoonlyextensionstatechangesasaresultofahintnamed&quot;1000&quot;inthecontext&quot;users&quot;.">This configuration would limit outbound publish to only extension state changes as a result of a hint named &quot;1000&quot; in the context &quot;users&quot;.</h4><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[test-esc]
+type=outbound-publish
+server_uri=sip:172.16.0.100
+from_uri=sip:172.16.0.100
+event=dialog
+multi_user=yes
+@body=application/dialog-info+xml
+@context=^users
+@exten=^1000</pre>
+</div></div><h4 id="PublishingExtensionState-Thisconfigurationwouldlimitoutboundpublishtoallextensionstatechangesaresultofhintsinthecontext&quot;users&quot;.">This configuration would limit outbound publish to all extension state changes a result of hints in the context &quot;users&quot;.</h4><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[test-esc]
+type=outbound-publish
+server_uri=sip:172.16.0.100
+from_uri=sip:172.16.0.100
+event=dialog
+multi_user=yes
+@body=application/dialog-info+xml
+@context=^users</pre>
+</div></div><p>You are also not limited to a single configured outbound publish. You can have as many as you want, provided they have different names. Each one can go to the same server with a different body type, or to different servers.</p><h2 id="PublishingExtensionState-WhatAboutMakingItMoreDynamic?">What About Making It More Dynamic?</h2><p>As part of the work to implement the publishing of extension state, the concept of <strong>autohints</strong> were also created. Autohints are created automatically as a result of a device state change. The extension name used is the name of the device, without the technology. They can be enabled by setting &quot;autohints=yes&quot; in a context in extensions.conf like so:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[users]
+autohints=yes
+</pre>
+</div></div><p>For example, once enabled, if a device state change occurs for &quot;PJSIP/alice&quot; and no hint named &quot;alice&quot; exists, then one will be automatically created in lieu of explicit definition of the following:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; alice,hint,PJSIP/alice</pre>
+</div></div><p>Despite being added after startup, this hint will still be given to the extension state publishing for publishing.</p><h2 id="PublishingExtensionState-TheOtherEntity">The Other Entity</h2><p>Throughout this page, I've mentioned another entity; but what can you use? Kamailio! Kamailio has event state compositor support available using the <a href="http://kamailio.org/docs/modules/4.4.x/modules/presence.html" class="external-link" rel="nofollow">presence module</a>. It can be configured to accept SUBSCRIBE and PUBLISH requests, persist information in a database, and to then send NOTIFY messages to each subscribed device. The module exports the handle_publish and handle_subscribe functions for handling each.<br /><br />This module works perfectly with the PJSIP extension state publishing support. The Asterisk configuration needs to use a URI to the Kamailio server and the Kamailio server has to explicitly trust traffic from the Asterisk instance, or authentication needs to be configured.</p>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/35226132/35454980">Publishing</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/35226132/35454981.png">Publishing.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/35226132/35454982">Publishing</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/35226132/35454983.png">Publishing.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/35226132/35454988">Publishing</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/35226132/35454989.png">Publishing.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/35226132/35454986">Publishing Full</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/35226132/35454987.png">Publishing Full.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/35226132/35454984">Publishing Full</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/35226132/35454985.png">Publishing Full.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/35226132/35454978">Publishing</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/35226132/35454979.png">Publishing.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

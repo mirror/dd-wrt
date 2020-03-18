@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : SLA and Voicemail Example</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="4816923.html">Shared Line Appearances (SLA)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SLA-Configuration-Examples_4816940.html">SLA Configuration Examples</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : SLA and Voicemail Example
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>This is an example of how you could set up a single voicemail box for the phone system. The voicemail box number used in this example is 1234, which would be configured in voicemail.conf.</p>
+
+<p>For this example, assume that there are 2 trunks and 3 stations. The trunks are DAHDI/1 and DAHDI/2. The stations are SIP/station1, SIP/station2, and SIP/station3. </p>
+
+<p>In dahdi.conf, channel 1 has context=line1 and channel 2 has context=line2. </p>
+
+<p>In sip.conf, all three stations are configured with context=sla_stations. </p>
+
+<p>When the stations pick up their phones to dial, they are allowed to dial NANP numbers for outbound calls, or 8500 for checking voicemail. </p>
+
+<p>sla.conf:</p>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+[line1] 
+type=trunk 
+device=Local/disa@line1_outbound 
+
+[line2] 
+type=trunk 
+device=Local/disa@line2_outbound 
+
+[station] 
+type=station 
+trunk=line1 
+trunk=line2 
+
+[station1](station) 
+device=SIP/station1 
+
+[station2](station) 
+device=SIP/station2 
+
+[station3](station) 
+device=SIP/station3
+</pre>
+</div></div>
+
+<p>extensions.conf:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+[macro-slaline] 
+exten =&gt; s,1,SLATrunk(${ARG1}) 
+exten =&gt; s,n,Goto(s-${SLATRUNK_STATUS},1) 
+exten =&gt; s-FAILURE,1,Voicemail(1234,u) 
+exten =&gt; s-UNANSWERED,1,Voicemail(1234,u) 
+
+[line1] 
+exten =&gt; s,1,Macro(slaline,line1) 
+
+[line2] 
+exten =&gt; s,2,Macro(slaline,line2) 
+
+[line1_outbound] 
+exten =&gt; disa,1,Disa(no-password,line1_outbound) 
+exten =&gt; _1NXXNXXXXXX,1,Dial(DAHDI/1/${EXTEN}) 
+exten =&gt; 8500,1,VoicemailMain(1234) 
+
+[line2_outbound] 
+exten =&gt; disa,1,Disa(no-password|line2_outbound) 
+exten =&gt; _1NXXNXXXXXX,1,Dial(DAHDI/2/${EXTEN}) 
+exten =&gt; 8500,1,VoicemailMain(1234) 
+
+[sla_stations] 
+exten =&gt; station1,1,SLAStation(station1) 
+exten =&gt; station1_line1,hint,SLA:station1_line1 
+exten =&gt; station1_line1,1,SLAStation(station1_line1) 
+exten =&gt; station1_line2,hint,SLA:station1_line2 
+exten =&gt; station1_line2,1,SLAStation(station1_line2) 
+exten =&gt; station2,1,SLAStation(station2) 
+exten =&gt; station2_line1,hint,SLA:station2_line1 
+exten =&gt; station2_line1,1,SLAStation(station2_line1) 
+exten =&gt; station2_line2,hint,SLA:station2_line2 
+exten =&gt; station2_line2,1,SLAStation(station2_line2) 
+exten =&gt; station3,1,SLAStation(station3) 
+exten =&gt; station3_line1,hint,SLA:station3_line1 
+exten =&gt; station3_line1,1,SLAStation(station3_line1) 
+exten =&gt; station3_line2,hint,SLA:station3_line2 
+exten =&gt; station3_line2,1,SLAStation(station3_line2)
+</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

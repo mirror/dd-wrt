@@ -13,6 +13,7 @@ down_revision = '136885b81223'
 from alembic import op
 import sqlalchemy as sa
 
+
 def upgrade():
     op.alter_column('ps_aors', 'qualify_timeout', type_=sa.Float)
     op.alter_column('ps_contacts', 'qualify_timeout', type_=sa.Float)

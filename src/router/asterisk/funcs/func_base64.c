@@ -18,7 +18,7 @@
 /*! \file
  *
  * \brief Use the base64 as functions
- * 
+ *
  * \ingroup functions
  */
 
@@ -27,8 +27,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/module.h"
 #include "asterisk/pbx.h"	/* function register/unregister */

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Unable to connect to remote Asterisk</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Troubleshooting_4817477.html">Troubleshooting</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Unable to connect to remote Asterisk
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span> on Jan 12, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="UnabletoconnecttoremoteAsterisk-Overview">Overview</h1><p>When first learning Asterisk some users will find they are unable to connect to the Asterisk service.</p><p>You may see the below message after running some variation of <code>asterisk -r</code></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Unable to connect to remote asterisk (does /var/run/asterisk/asterisk.ctl exist?)</pre>
+</div></div><p>First, let's break down the message.</p><ul><li>&quot;Unable to connect to remote asterisk&quot;</li></ul><p>This means you are attempting to connect to Asterisk with a <a href="Verbosity-in-Core-and-Remote-Consoles_28315852.html">remote console</a>. That is, you are using &quot;asterisk -r&quot; as opposed to &quot;asterisk -c&quot;.</p><ul><li>&quot;does /var/run/asterisk/asterisk.ctl exist?&quot;</li></ul><p>This is letting you know specifically what file is potentially missing or unable to be accessed.</p><p>Now let's find out what asterisk.ctl is and investigate potential causes of this error.</p><h1 id="UnabletoconnecttoremoteAsterisk-Theasterisk.ctlfile">The asterisk.ctl file</h1><p>asterisk.ctl is a UNIX Domain Socket file. It is used to pass commands to an Asterisk process and it is how the Asterisk console (&quot;asterisk r&quot; or any variation) communicates with the back-end Asterisk process.</p><h1 id="UnabletoconnecttoremoteAsterisk-The/var/run/asterisk/directory">The /var/run/asterisk/ directory</h1><p>This directory is the default Asterisk run directory. Asterisk will create it the first time it is run. This location is defined in the <a href="Asterisk-Main-Configuration-File_4620296.html">Asterisk Main Configuration File</a>. As is explained in the <a href="Directory-and-File-Structure_27200268.html">Directory and File Structure</a> section; when Asterisk is <a href="Running-Asterisk_27200195.html">running</a>, you'll see two files here, <strong>asterisk.ctl</strong> and <strong>asterisk.pid</strong>. These are the control socket and the PID(Process ID) files for Asterisk.</p><h1 id="UnabletoconnecttoremoteAsterisk-PotentialCausesandSolutions">Potential Causes and Solutions</h1><h3 id="UnabletoconnecttoremoteAsterisk-Cause1:asterisk.ctldoesexist.Youruserdoesnothavewritepermissionforthisfile.">Cause 1: asterisk.ctl does exist. Your user does not have write permission for this file.</h3><p>Solution: </p><ol><li>To verify, check the permissions of the asterisk.ctl file and also check what user you are currently running as.</li><li>Switch to the correct user that has access to the /var/run/asterisk/ directory and asterisk.ctl file, or provide your current user with the correct permissions.</li></ol><h3 id="UnabletoconnecttoremoteAsterisk-Cause2:Permissionsissue.Asteriskdoesnothavewriteaccessto/var/run/asteriskoryouruserdoesn&#39;thavewriteaccesstoasterisk.ctl."><span style="color: rgb(133,120,102);">Cause 2: Permissions issue. Asterisk does not have write access to /var/run/asterisk or your user doesn't have write access to asterisk.ctl.</span></h3><p>Solution:</p><ol><li>If /var/run/asterisk does not exist then create it and assign permission to it such that the user that runs Asterisk will have write and read access.</li><li>If it already exists, simply verify and assign the correct permissions to the directory. You probably want to double-check what user runs Asterisk.</li></ol><h3 id="UnabletoconnecttoremoteAsterisk-Cause3:asterisk.ctldoesnotexistbecauseAsteriskisn&#39;trunning.WhenAsteriskisstarteditmayrunbrieflyandthenquicklyhaltduetoanerror."><span style="color: rgb(133,120,102);">Cause 3: asterisk.ctl does not exist because Asterisk isn't running. When Asterisk is started it may run briefly and then quickly halt due to an error.</span></h3><p>Solution:</p><p>You need to find out what error is causing Asterisk to halt and resolve it.</p><ul><li>The quick way is to run Asterisk in root/core console mode and watch for the last messages Asterisk prints out before halting.<ul><li><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>asterisk -cvvvvv</pre>
+</div></div><p>This will start Asterisk in console mode with level 5 verbosity. That should give you plenty to look at.</p></li></ul></li><li>Another way is to setup Asterisk <a href="Logging_27200200.html">Logging</a> to log what you want to see to a file. You'll need to read up on Asterisk's <a href="Logging-Configuration_28315599.html">Logging Configuration</a></li><li>Asterisk could halt for a variety of reasons. The last messages you see before Asterisk halts will give you a clue. Then you can Google from there or ask the user community.</li></ul><h3 id="UnabletoconnecttoremoteAsterisk-Cause4:SELinuxenabledandnotproperlyconfiguredforAsterisk.SELinuxnotallowingasterisk.ctltobecreated."><span style="color: rgb(133,120,102);">Cause 4: SELinux enabled and not properly configured for Asterisk. SELinux not allowing asterisk.ctl to be created.</span></h3><p>Solution:</p><p>Configuring SELinux is outside the scope of this article.</p><ul><li>Consult an experienced SELinux user or SELinux documentation on how to configure it properly.</li><li>Disable SELinux if you don't require it (Not recommended)</li></ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

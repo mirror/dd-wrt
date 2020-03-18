@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : AEL Semantic Checks</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="4620445.html">Asterisk Extension Language (AEL)</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : AEL Semantic Checks
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>AEL, after parsing, but before compiling, traverses the dialplan tree, and makes several checks:</p>
+
+<ul>
+	<li>Macro calls to non-existent macros.</li>
+	<li>Macro calls to contexts.</li>
+	<li>Macro calls with argument count not matching the definition.</li>
+	<li>application call to macro. (missing the '&amp;')</li>
+	<li>application calls to &quot;GotoIf&quot;, &quot;GotoIfTime&quot;, &quot;while&quot;, &quot;endwhile&quot;, &quot;Random&quot;, and &quot;execIf&quot;, will generate a message to consider converting the call to AEL goto, while, etc. constructs.</li>
+	<li>goto a label in an empty extension.</li>
+	<li>goto a non-existent label, either a within-extension, within-context, or in a different context, or in any included contexts. Will even check &quot;sister&quot; context references.</li>
+	<li>All the checks done on the time values in the dial plan, are done on the time values in the ifTime() and includes times: o the time range has to have two times separated by a dash; o the times have to be in range of 0 to 24 hours. o The weekdays have to match the internal list, if they are provided; o the day of the month, if provided, must be in range of 1 to 31; o the month name or names have to match those in the internal list.</li>
+	<li>(0.5) If an expression is wrapped in $[ ... ], and the compiler will wrap it again, a warning is issued.</li>
+	<li>(0.5) If an expression had operators (you know, +,-,,/,issued. Maybe someone forgot to wrap a variable name?*</li>
+	<li>(0.12) check for duplicate context names.</li>
+	<li>(0.12) check for abstract contexts that are not included by any context.</li>
+	<li>(0.13) Issue a warning if a label is a numeric value.</li>
+</ul>
+
+
+<p>There are a subset of checks that have been removed until the proposed AAL (Asterisk Argument Language) is developed and incorporated into Asterisk. These checks will be:</p>
+
+<ul>
+	<li>(if the application argument analyzer is working: the presence of the 'j' option is reported as error.</li>
+	<li>if options are specified, that are not available in an application.</li>
+	<li>if you specify too many arguments to an application.</li>
+	<li>a required argument is not present in an application call.</li>
+	<li>Switch-case using &quot;known&quot; variables that applications set, that does not cover all the possible values. (a &quot;default&quot; case will solve this problem. Each &quot;unhandled&quot; value is listed.</li>
+	<li>a Switch construct is used, which is uses a known variable, and the application that would set that variable is not called in the same extension. This is a warning only...</li>
+	<li>Calls to applications not in the &quot;applist&quot; database (installed in /var/lib/asterisk/applist&quot; on most systems).</li>
+	<li>In an assignment statement, if the assignment is to a function, the function name used is checked to see if it one of the currently known functions. A warning is issued if it is not.</li>
+</ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

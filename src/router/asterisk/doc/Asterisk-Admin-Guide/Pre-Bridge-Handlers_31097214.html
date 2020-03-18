@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Pre-Bridge Handlers</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Subroutines_28314892.html">Subroutines</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Pre-Bridge Handlers
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on Jan 15, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="Pre-BridgeHandlers-Overview">Overview</h1><p>Pre-bridge handlers allow you to execute dialplan subroutines on a channel after the call has been initiated and the channels have been created, but before connecting the caller to the callee. Handlers for the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_Dial">Dial</a> and <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_Queue">queue</a> applications allow both the older <a href="Macros_31097216.html"><strong>macro</strong></a> and the newer <a href="Gosub_31097218.html"><strong>gosub</strong></a> routines to be executed. These handlers are executed on the <strong>called party</strong> channel, after it is <strong>answered</strong>, but <strong>pre-bridge</strong> before the calling and called party are connected.</p><p>If you want to execute routines<strong> </strong>earlier in the call lifetime then check out the <a href="Pre-Dial-Handlers_20189344.html">Pre-Dial Handlers</a> section.</p><p>Pre-bridge handlers are invoked using flags or arguments for a particular dialplan application. The dialplan application help documentation within Asterisk goes into detail on the various arguments, options and flags, however we will provide some examples below. You should always check the CLI or wiki application docs for any updates.</p><h2 id="Pre-BridgeHandlers-Dialapplication">Dial application</h2><p>There are two flags for the Dial application, <strong>M</strong> and <strong>U</strong>.</p><h3 id="Pre-BridgeHandlers-Mflag">M flag</h3><p>The M flag allows a <a href="Macros_31097216.html"><span class="confluence-link">macro</span></a> and arguments to be specified. You must specify the macro name, leaving off the 'macro-' prefix.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">M(macro[^arg[^...]])</pre>
+</div></div><p>The variable MACRO_RESULT can be set with certain options inside the specified macro to determine behavior when the macro finishes. The options are documented in the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_Dial">Dial application documentation</a>.</p></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303023469 {padding: 0px;}
+div.rbtoc1582303023469 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303023469 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303023469'>
+<ul class='toc-indentation'>
+<li><a href='#Pre-BridgeHandlers-Overview'>Overview</a>
+<ul class='toc-indentation'>
+<li><a href='#Pre-BridgeHandlers-Dialapplication'>Dial application</a></li>
+<li><a href='#Pre-BridgeHandlers-Queueapplication'>Queue application</a></li>
+<li><a href='#Pre-BridgeHandlers-Examples'>Examples</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><h3 id="Pre-BridgeHandlers-Uflag">U flag</h3><p>The U flag allows a <a href="Gosub_31097218.html">gosub</a> and arguments to be specified. You must remember to call Return inside the gosub.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">U(x[^arg[^...]])</pre>
+</div></div><p>The variable GOSUB_RESULT can be set within certain options inside the specified gosub to determine behavior when the gosub returns. The options are documented in the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_Dial">Dial application documentation</a>.</p><h2 id="Pre-BridgeHandlers-Queueapplication">Queue application</h2><p>The Queue application, similar to Dial, has two options for handling pre-bridge subroutines. For Queue, both arguments have the same syntax.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">Queue(queuename[,options[,URL[,announceoverride[,timeout[,AGI[,macro[,gosub[,rule[,position]]]]]]]]])</pre>
+</div></div><p><strong>macro</strong> and <strong>gosub</strong> can both be populated with the name of a macro or gosub routine to execute on the called party channel as described in the overview.</p><h2 id="Pre-BridgeHandlers-Examples">Examples</h2><h3 id="Pre-BridgeHandlers-Example1-Executingapre-bridgemacrohandlerfromDial">Example 1 - Executing a pre-bridge macro handler from Dial</h3><p>BOB(6002) dials ALICE(6001) and Playback is executed from within the subroutine on the called party's channel after they answer.</p><p>Dialplan</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[from-internal]
+exten = 6001,1,Dial(PJSIP/ALICE,30,M(announcement))
+
+[macro-announcement]
+exten = s,1,NoOp()
+ same = n,Playback(tt-weasels)
+ same = n,Hangup()</pre>
+</div></div><p>CLI output</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>    -- Executing [6001@from-internal:1] Dial(&quot;PJSIP/BOB-00000014&quot;, &quot;PJSIP/ALICE,30,M(announcement)&quot;) in new stack
+    -- Called PJSIP/ALICE
+    -- PJSIP/ALICE-00000015 is ringing
+    -- PJSIP/ALICE-00000015 answered PJSIP/BOB-00000014
+    -- Executing [s@macro-announcement:1] NoOp(&quot;PJSIP/ALICE-00000015&quot;, &quot;&quot;) in new stack
+    -- Executing [s@macro-announcement:2] Playback(&quot;PJSIP/ALICE-00000015&quot;, &quot;tt-weasels&quot;) in new stack
+    -- &lt;PJSIP/ALICE-00000015&gt; Playing &#39;tt-weasels.gsm&#39; (language &#39;en&#39;)
+    -- Channel PJSIP/BOB-00000014 joined &#39;simple_bridge&#39; basic-bridge &lt;612c2313-98bf-48ce-89b1-d530b06e44d7&gt;
+    -- Channel PJSIP/ALICE-00000015 joined &#39;simple_bridge&#39; basic-bridge &lt;612c2313-98bf-48ce-89b1-d530b06e44d7&gt;
+    -- Channel PJSIP/BOB-00000014 left &#39;native_rtp&#39; basic-bridge &lt;612c2313-98bf-48ce-89b1-d530b06e44d7&gt;
+    -- Channel PJSIP/ALICE-00000015 left &#39;native_rtp&#39; basic-bridge &lt;612c2313-98bf-48ce-89b1-d530b06e44d7&gt;
+  == Spawn extension (from-internal, 6001, 1) exited non-zero on &#39;PJSIP/BOB-00000014&#39;</pre>
+</div></div><p> </p><h3 id="Pre-BridgeHandlers-Example2-Executingapre-bridgegosubhandlerfromDial">Example 2 - Executing a pre-bridge gosub handler from Dial</h3><p>ALICE(6001) dials BOB(6002) and Playback is executed from within the subroutine on the called party's channel after they answer. Notice that since this subroutine is a gosub, we need to call Return.</p><p>Dialplan</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[from-internal]
+exten = 6002,1,Dial(PJSIP/BOB,30,U(sub-announcement))
+
+[sub-announcement]
+exten = s,1,NoOp()
+ same = n,Playback(tt-weasels)
+ same = n,Return()</pre>
+</div></div><p>CLI output</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>    -- Executing [6002@from-internal:1] Dial(&quot;PJSIP/ALICE-00000016&quot;, &quot;PJSIP/BOB,30,U(sub-announcement)&quot;) in new stack
+    -- Called PJSIP/BOB
+    -- PJSIP/BOB-00000017 is ringing
+    -- PJSIP/BOB-00000017 answered PJSIP/ALICE-00000016
+    -- PJSIP/BOB-00000017 Internal Gosub(sub-announcement,s,1) start
+    -- Executing [s@sub-announcement:1] NoOp(&quot;PJSIP/BOB-00000017&quot;, &quot;&quot;) in new stack
+    -- Executing [s@sub-announcement:2] Playback(&quot;PJSIP/BOB-00000017&quot;, &quot;tt-weasels&quot;) in new stack
+    -- &lt;PJSIP/BOB-00000017&gt; Playing &#39;tt-weasels.gsm&#39; (language &#39;en&#39;)
+    -- Executing [s@sub-announcement:3] Return(&quot;PJSIP/BOB-00000017&quot;, &quot;&quot;) in new stack
+  == Spawn extension (from-internal, , 1) exited non-zero on &#39;PJSIP/BOB-00000017&#39;
+    -- PJSIP/BOB-00000017 Internal Gosub(sub-announcement,s,1) complete GOSUB_RETVAL=
+    -- Channel PJSIP/ALICE-00000016 joined &#39;simple_bridge&#39; basic-bridge &lt;16e76a40-4a24-441d-a2b2-5c9ddfb21d7a&gt;
+    -- Channel PJSIP/BOB-00000017 joined &#39;simple_bridge&#39; basic-bridge &lt;16e76a40-4a24-441d-a2b2-5c9ddfb21d7a&gt;
+    -- Channel PJSIP/BOB-00000017 left &#39;native_rtp&#39; basic-bridge &lt;16e76a40-4a24-441d-a2b2-5c9ddfb21d7a&gt;
+    -- Channel PJSIP/ALICE-00000016 left &#39;native_rtp&#39; basic-bridge &lt;16e76a40-4a24-441d-a2b2-5c9ddfb21d7a&gt;
+  == Spawn extension (from-internal, 6002, 1) exited non-zero on &#39;PJSIP/ALICE-00000016&#39;</pre>
+</div></div><h3 id="Pre-BridgeHandlers-Example3-Executingapre-bridgegosubhandlerfromQueue">Example 3 - Executing a pre-bridge gosub handler from Queue</h3><p>ALICE(6001) dials Queue 'sales' where BOB(6002) is a member. Once BOB answers the queue call, the Playback is executed from within the gosub.</p><p>Dialplan</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[sub-announcement]
+exten = s,1,NoOp()
+ same = n,Playback(tt-weasels)
+ same = n,Return()
+
+[queues]
+exten =&gt; 7002,1,Verbose(2,${CALLERID(all)} entering the sales queue)
+same =&gt; n,Queue(sales,,,,,,,sub-announcement)
+same =&gt; n,Hangup()</pre>
+</div></div><p>CLI output</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>    -- Executing [7002@from-internal:1] Verbose(&quot;PJSIP/ALICE-00000009&quot;, &quot;2,&quot;Alice&quot; &lt;ALICE&gt; entering the sales queue&quot;) in new stack
+  == &quot;Alice&quot; &lt;ALICE&gt; entering the sales queue
+    -- Executing [7002@from-internal:2] Queue(&quot;PJSIP/ALICE-00000009&quot;, &quot;sales,,,,,,,sub-announcement&quot;) in new stack
+    -- Started music on hold, class &#39;default&#39;, on channel &#39;PJSIP/ALICE-00000009&#39;
+    -- Called PJSIP/BOB
+    -- PJSIP/BOB-0000000a is ringing
+       &gt; 0x7f74d4039840 -- Probation passed - setting RTP source address to 10.24.18.138:4042
+    -- PJSIP/BOB-0000000a answered PJSIP/ALICE-00000009
+    -- Stopped music on hold on PJSIP/ALICE-00000009
+    -- PJSIP/BOB-0000000a Internal Gosub(sub-announcement,s,1) start
+    -- Executing [s@sub-announcement:1] NoOp(&quot;PJSIP/BOB-0000000a&quot;, &quot;&quot;) in new stack
+    -- Executing [s@sub-announcement:2] Playback(&quot;PJSIP/BOB-0000000a&quot;, &quot;tt-weasels&quot;) in new stack
+    -- &lt;PJSIP/BOB-0000000a&gt; Playing &#39;tt-weasels.gsm&#39; (language &#39;en&#39;)
+    -- Executing [s@sub-announcement:3] Return(&quot;PJSIP/BOB-0000000a&quot;, &quot;&quot;) in new stack
+  == Spawn extension (from-internal, 7002, 1) exited non-zero on &#39;PJSIP/BOB-0000000a&#39;
+    -- PJSIP/BOB-0000000a Internal Gosub(sub-announcement,s,1) complete GOSUB_RETVAL=
+    -- Channel PJSIP/ALICE-00000009 joined &#39;simple_bridge&#39; basic-bridge &lt;cbc54ed6-1f51-4b10-be99-4994f52d851f&gt;
+    -- Channel PJSIP/BOB-0000000a joined &#39;simple_bridge&#39; basic-bridge &lt;cbc54ed6-1f51-4b10-be99-4994f52d851f&gt;
+       &gt; Bridge cbc54ed6-1f51-4b10-be99-4994f52d851f: switching from simple_bridge technology to native_rtp
+       &gt; Remotely bridged &#39;PJSIP/BOB-0000000a&#39; and &#39;PJSIP/ALICE-00000009&#39; - media will flow directly between them
+       &gt; Remotely bridged &#39;PJSIP/BOB-0000000a&#39; and &#39;PJSIP/ALICE-00000009&#39; - media will flow directly between them
+       &gt; 0x7f74d400c620 -- Probation passed - setting RTP source address to 10.24.18.16:4040
+    -- Channel PJSIP/BOB-0000000a left &#39;native_rtp&#39; basic-bridge &lt;cbc54ed6-1f51-4b10-be99-4994f52d851f&gt;
+    -- Channel PJSIP/ALICE-00000009 left &#39;native_rtp&#39; basic-bridge &lt;cbc54ed6-1f51-4b10-be99-4994f52d851f&gt;
+  == Spawn extension (from-internal, 7002, 2) exited non-zero on &#39;PJSIP/ALICE-00000009&#39;</pre>
+</div></div><h3 id="Pre-BridgeHandlers-Example4-Executingapre-bridgemacrohandlerfromQueue">Example 4 - Executing a pre-bridge macro handler from Queue</h3><p>BOB(6002) calls the queue 'support' where ALICE(6001) is a member. Once ALICE answers the queue call, the Playback is executed from within the macro.</p><p>Dialplan</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[macro-announcement]
+exten = s,1,NoOp()
+ same = n,Playback(tt-weasels)
+
+[queues]
+exten =&gt; 7001,1,Verbose(2,${CALLERID(all)} entering the support queue)
+same =&gt; n,Queue(support,,,,,,announcement)
+same =&gt; n,Hangup()</pre>
+</div></div><p>CLI output</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>    -- Executing [7001@from-internal:1] Verbose(&quot;PJSIP/BOB-00000004&quot;, &quot;2,&quot;Bob&quot; &lt;BOB&gt; entering the support queue&quot;) in new stack
+  == &quot;Bob&quot; &lt;BOB&gt; entering the support queue
+    -- Executing [7001@from-internal:2] Queue(&quot;PJSIP/BOB-00000004&quot;, &quot;support,,,,,,announcement&quot;) in new stack
+    -- Started music on hold, class &#39;default&#39;, on channel &#39;PJSIP/BOB-00000004&#39;
+    -- Called PJSIP/ALICE
+    -- PJSIP/ALICE-00000005 is ringing
+       &gt; 0x7f8450039d40 -- Probation passed - setting RTP source address to 10.24.18.16:4048
+    -- PJSIP/ALICE-00000005 answered PJSIP/BOB-00000004
+    -- Stopped music on hold on PJSIP/BOB-00000004
+    -- Executing [s@macro-announcement:1] NoOp(&quot;PJSIP/ALICE-00000005&quot;, &quot;&quot;) in new stack
+    -- Executing [s@macro-announcement:2] Playback(&quot;PJSIP/ALICE-00000005&quot;, &quot;tt-weasels&quot;) in new stack
+    -- &lt;PJSIP/ALICE-00000005&gt; Playing &#39;tt-weasels.gsm&#39; (language &#39;en&#39;)
+    -- Channel PJSIP/BOB-00000004 joined &#39;simple_bridge&#39; basic-bridge &lt;8283212f-b12d-4571-9653-0c8484e88980&gt;
+    -- Channel PJSIP/ALICE-00000005 joined &#39;simple_bridge&#39; basic-bridge &lt;8283212f-b12d-4571-9653-0c8484e88980&gt;
+       &gt; Bridge 8283212f-b12d-4571-9653-0c8484e88980: switching from simple_bridge technology to native_rtp
+       &gt; Remotely bridged &#39;PJSIP/ALICE-00000005&#39; and &#39;PJSIP/BOB-00000004&#39; - media will flow directly between them
+       &gt; Remotely bridged &#39;PJSIP/ALICE-00000005&#39; and &#39;PJSIP/BOB-00000004&#39; - media will flow directly between them
+       &gt; 0x7f84500145d0 -- Probation passed - setting RTP source address to 10.24.18.138:4050
+    -- Channel PJSIP/ALICE-00000005 left &#39;native_rtp&#39; basic-bridge &lt;8283212f-b12d-4571-9653-0c8484e88980&gt;
+    -- Channel PJSIP/BOB-00000004 left &#39;native_rtp&#39; basic-bridge &lt;8283212f-b12d-4571-9653-0c8484e88980&gt;
+  == Spawn extension (from-internal, 7001, 2) exited non-zero on &#39;PJSIP/BOB-00000004&#39;</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

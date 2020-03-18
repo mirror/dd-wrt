@@ -51,6 +51,39 @@
 /*! \brief Integer vector definition */
 AST_VECTOR(ast_vector_int, int);
 
+/*! \brief String vector definitions */
+AST_VECTOR(ast_vector_string, char *);
+AST_VECTOR(ast_vector_const_string, const char *);
+
+/*! Options to override default processing of ast_vector_string_split. */
+enum ast_vector_string_split_flags {
+	/*! Do not trim whitespace from values. */
+	AST_VECTOR_STRING_SPLIT_NO_TRIM = 0x01,
+	/*! Append empty strings to the vector. */
+	AST_VECTOR_STRING_SPLIT_ALLOW_EMPTY = 0x02,
+};
+
+/*!
+ * \brief Append a string vector by splitting a string.
+ *
+ * \param dest Pointer to an initialized vector.
+ * \param input String buffer to split.
+ * \param delim String delimeter passed to strsep.
+ * \param flags Processing options defined by \ref enum ast_vector_string_split_flags.
+ * \param excludes_cmp NULL or a function like strcmp to exclude duplicate strings.
+ *
+ * \retval 0 Success
+ * \retval -1 Failure
+ *
+ * \note All elements added to the vector are allocated.  The caller is always
+ *       responsible for calling ast_free on each element in the vector even
+ *       after failure.  It's possible for this function to successfully add
+ *       some elements before failing.
+ */
+int ast_vector_string_split(struct ast_vector_string *dest,
+	const char *input, const char *delim, int flags,
+	int (*excludes_cmp)(const char *s1, const char *s2));
+
 /*!
  * \brief Define a vector structure with a read/write lock
  *
@@ -91,6 +124,26 @@ AST_VECTOR(ast_vector_int, int);
 })
 
 /*!
+ * \brief Steal the elements from a vector and reinitialize.
+ *
+ * \param vec Vector to operate on.
+ *
+ * This allows you to use vector.h to construct a list and use the
+ * data as a bare array.
+ *
+ * \note The stolen array must eventually be released using ast_free.
+ *
+ * \warning AST_VECTOR_SIZE and AST_VECTOR_MAX_SIZE are both reset
+ *          to 0.  If either are needed they must be saved to a local
+ *          variable before stealing the elements.
+ */
+#define AST_VECTOR_STEAL_ELEMENTS(vec) ({ \
+	typeof((vec)->elems) __elems = (vec)->elems; \
+	AST_VECTOR_INIT((vec), 0); \
+	(__elems); \
+})
+
+/*!
  * \brief Initialize a vector with a read/write lock
  *
  * If \a size is 0, then no space will be allocated until the vector is
@@ -113,7 +166,7 @@ AST_VECTOR(ast_vector_int, int);
 /*!
  * \brief Deallocates this vector.
  *
- * If any code to free the elements of this vector need to be run, that should
+ * If any code to free the elements of this vector needs to be run, that should
  * be done prior to this call.
  *
  * \param vec Vector to deallocate.
@@ -304,27 +357,31 @@ AST_VECTOR(ast_vector_int, int);
  * \brief Add an element into a sorted vector
  *
  * \param vec Sorted vector to add to.
- * \param elem Element to insert.
+ * \param elem Element to insert. Must not be an array type.
  * \param cmp A strcmp compatible compare function.
  *
  * \return 0 on success.
  * \return Non-zero on failure.
  *
  * \warning Use of this macro on an unsorted vector will produce unpredictable results
+ * \warning 'elem' must not be an array type so passing 'x' where 'x' is defined as
+ *          'char x[4]' will fail to compile. However casting 'x' as 'char *' does
+ *          result in a value that CAN be used.
  */
 #define AST_VECTOR_ADD_SORTED(vec, elem, cmp) ({ \
 	int res = 0; \
 	size_t __idx = (vec)->current; \
+	typeof(elem) __elem = (elem); \
 	do { \
 		if (__make_room((vec)->current, vec) != 0) { \
 			res = -1; \
 			break; \
 		} \
-		while (__idx > 0 && (cmp((vec)->elems[__idx - 1], elem) > 0)) { \
+		while (__idx > 0 && (cmp((vec)->elems[__idx - 1], __elem) > 0)) { \
 			(vec)->elems[__idx] = (vec)->elems[__idx - 1]; \
 			__idx--; \
 		} \
-		(vec)->elems[__idx] = elem; \
+		(vec)->elems[__idx] = __elem; \
 		(vec)->current++; \
 	} while (0); \
 	res; \
@@ -544,6 +601,14 @@ AST_VECTOR(ast_vector_int, int);
 #define AST_VECTOR_SIZE(vec) (vec)->current
 
 /*!
+ * \brief Get the maximum number of elements the vector can currently hold.
+ *
+ * \param vec Vector to query.
+ * \return Maximum number of elements the vector can currently hold.
+ */
+#define AST_VECTOR_MAX_SIZE(vec) (vec)->max
+
+/*!
  * \brief Reset vector.
  *
  * \param vec Vector to reset.
@@ -552,6 +617,34 @@ AST_VECTOR(ast_vector_int, int);
 #define AST_VECTOR_RESET(vec, cleanup) ({ \
 	AST_VECTOR_CALLBACK_VOID(vec, cleanup); \
 	(vec)->current = 0; \
+})
+
+/*!
+ * \brief Resize a vector so that its capacity is the same as its size.
+ *
+ * \param vec Vector to compact.
+ *
+ * \return 0 on success.
+ * \return Non-zero on failure.
+ */
+#define AST_VECTOR_COMPACT(vec) ({ \
+	int res = 0;								\
+	do {														\
+		if ((vec)->max > (vec)->current) {						\
+			size_t new_max = (vec)->current;				\
+			typeof((vec)->elems) new_elems = ast_realloc(		\
+				(vec)->elems,									\
+				new_max * sizeof(*new_elems));					\
+			if (new_elems || (vec)->current == 0) {				\
+				(vec)->elems = new_elems;						\
+				(vec)->max = new_max;							\
+			} else {											\
+				res = -1;										\
+				break;											\
+			}													\
+		}														\
+	} while(0);													\
+	res;														\
 })
 
 /*!

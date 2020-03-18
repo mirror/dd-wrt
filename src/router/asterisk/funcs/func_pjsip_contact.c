@@ -34,8 +34,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <pjsip.h>
 #include <pjlib.h>
 
@@ -62,6 +60,12 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 					<configOptionToEnum>
 						<xi:include xpointer="xpointer(/docs/configInfo[@name='res_pjsip']/configFile[@name='pjsip.conf']/configObject[@name='contact']/configOption)"/>
 					</configOptionToEnum>
+					<enum name="rtt">
+						<para>The RTT of the last qualify</para>
+					</enum>
+					<enum name="status">
+						<para>Status of the contact</para>
+					</enum>
 				</enumlist>
 			</parameter>
 		</syntax>
@@ -144,12 +148,12 @@ static int pjsip_contact_function_read(struct ast_channel *chan,
 		return -1;
 	}
 
-	contact_status = ast_sorcery_retrieve_by_id(pjsip_sorcery, CONTACT_STATUS, ast_sorcery_object_get_id(contact_obj));
+	contact_status = ast_sip_get_contact_status(contact_obj);
 
 	if (!strcmp(args.field_name, "status")) {
-		ast_str_set(buf, len, "%s", ast_sip_get_contact_status_label(contact_status->status));
+		ast_str_set(buf, len, "%s", ast_sip_get_contact_status_label(contact_status ? contact_status->status : UNKNOWN));
 	} else if (!strcmp(args.field_name, "rtt")) {
-		if (contact_status->status == UNKNOWN) {
+		if (!contact_status || contact_status->status != AVAILABLE) {
 			ast_str_set(buf, len, "%s", "N/A");
 		} else {
 			ast_str_set(buf, len, "%" PRId64, contact_status->rtt);
@@ -200,4 +204,9 @@ static int load_module(void)
 	return ast_custom_function_register(&pjsip_contact_function);
 }
 
-AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "Get information about a PJSIP contact");
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Get information about a PJSIP contact",
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.requires = "res_pjsip",
+);

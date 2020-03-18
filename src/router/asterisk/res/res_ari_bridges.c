@@ -35,12 +35,12 @@
 	<depend type="module">res_ari</depend>
 	<depend type="module">res_ari_model</depend>
 	<depend type="module">res_stasis</depend>
+	<depend type="module">res_stasis_recording</depend>
+	<depend type="module">res_stasis_playback</depend>
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/app.h"
 #include "asterisk/module.h"
@@ -432,6 +432,14 @@ int ast_ari_bridges_add_channel_parse_body(
 	if (field) {
 		args->role = ast_json_string_get(field);
 	}
+	field = ast_json_object_get(body, "absorbDTMF");
+	if (field) {
+		args->absorb_dtmf = ast_json_is_true(field);
+	}
+	field = ast_json_object_get(body, "mute");
+	if (field) {
+		args->mute = ast_json_is_true(field);
+	}
 	return 0;
 }
 
@@ -500,6 +508,12 @@ static void ast_ari_bridges_add_channel_cb(
 		} else
 		if (strcmp(i->name, "role") == 0) {
 			args.role = (i->value);
+		} else
+		if (strcmp(i->name, "absorbDTMF") == 0) {
+			args.absorb_dtmf = ast_true(i->value);
+		} else
+		if (strcmp(i->name, "mute") == 0) {
+			args.mute = ast_true(i->value);
 		} else
 		{}
 	}
@@ -972,7 +986,32 @@ int ast_ari_bridges_play_parse_body(
 	/* Parse query parameters out of it */
 	field = ast_json_object_get(body, "media");
 	if (field) {
-		args->media = ast_json_string_get(field);
+		/* If they were silly enough to both pass in a query param and a
+		 * JSON body, free up the query value.
+		 */
+		ast_free(args->media);
+		if (ast_json_typeof(field) == AST_JSON_ARRAY) {
+			/* Multiple param passed as array */
+			size_t i;
+			args->media_count = ast_json_array_size(field);
+			args->media = ast_malloc(sizeof(*args->media) * args->media_count);
+
+			if (!args->media) {
+				return -1;
+			}
+
+			for (i = 0; i < args->media_count; ++i) {
+				args->media[i] = ast_json_string_get(ast_json_array_get(field, i));
+			}
+		} else {
+			/* Multiple param passed as single value */
+			args->media_count = 1;
+			args->media = ast_malloc(sizeof(*args->media) * args->media_count);
+			if (!args->media) {
+				return -1;
+			}
+			args->media[0] = ast_json_string_get(field);
+		}
 	}
 	field = ast_json_object_get(body, "lang");
 	if (field) {
@@ -1014,7 +1053,47 @@ static void ast_ari_bridges_play_cb(
 
 	for (i = get_params; i; i = i->next) {
 		if (strcmp(i->name, "media") == 0) {
-			args.media = (i->value);
+			/* Parse comma separated list */
+			char *vals[MAX_VALS];
+			size_t j;
+
+			args.media_parse = ast_strdup(i->value);
+			if (!args.media_parse) {
+				ast_ari_response_alloc_failed(response);
+				goto fin;
+			}
+
+			if (strlen(args.media_parse) == 0) {
+				/* ast_app_separate_args can't handle "" */
+				args.media_count = 1;
+				vals[0] = args.media_parse;
+			} else {
+				args.media_count = ast_app_separate_args(
+					args.media_parse, ',', vals,
+					ARRAY_LEN(vals));
+			}
+
+			if (args.media_count == 0) {
+				ast_ari_response_alloc_failed(response);
+				goto fin;
+			}
+
+			if (args.media_count >= MAX_VALS) {
+				ast_ari_response_error(response, 400,
+					"Bad Request",
+					"Too many values for media");
+				goto fin;
+			}
+
+			args.media = ast_malloc(sizeof(*args.media) * args.media_count);
+			if (!args.media) {
+				ast_ari_response_alloc_failed(response);
+				goto fin;
+			}
+
+			for (j = 0; j < args.media_count; ++j) {
+				args.media[j] = (vals[j]);
+			}
 		} else
 		if (strcmp(i->name, "lang") == 0) {
 			args.lang = (i->value);
@@ -1072,6 +1151,8 @@ static void ast_ari_bridges_play_cb(
 #endif /* AST_DEVMODE */
 
 fin: __attribute__((unused))
+	ast_free(args.media_parse);
+	ast_free(args.media);
 	return;
 }
 int ast_ari_bridges_play_with_id_parse_body(
@@ -1082,7 +1163,32 @@ int ast_ari_bridges_play_with_id_parse_body(
 	/* Parse query parameters out of it */
 	field = ast_json_object_get(body, "media");
 	if (field) {
-		args->media = ast_json_string_get(field);
+		/* If they were silly enough to both pass in a query param and a
+		 * JSON body, free up the query value.
+		 */
+		ast_free(args->media);
+		if (ast_json_typeof(field) == AST_JSON_ARRAY) {
+			/* Multiple param passed as array */
+			size_t i;
+			args->media_count = ast_json_array_size(field);
+			args->media = ast_malloc(sizeof(*args->media) * args->media_count);
+
+			if (!args->media) {
+				return -1;
+			}
+
+			for (i = 0; i < args->media_count; ++i) {
+				args->media[i] = ast_json_string_get(ast_json_array_get(field, i));
+			}
+		} else {
+			/* Multiple param passed as single value */
+			args->media_count = 1;
+			args->media = ast_malloc(sizeof(*args->media) * args->media_count);
+			if (!args->media) {
+				return -1;
+			}
+			args->media[0] = ast_json_string_get(field);
+		}
 	}
 	field = ast_json_object_get(body, "lang");
 	if (field) {
@@ -1120,7 +1226,47 @@ static void ast_ari_bridges_play_with_id_cb(
 
 	for (i = get_params; i; i = i->next) {
 		if (strcmp(i->name, "media") == 0) {
-			args.media = (i->value);
+			/* Parse comma separated list */
+			char *vals[MAX_VALS];
+			size_t j;
+
+			args.media_parse = ast_strdup(i->value);
+			if (!args.media_parse) {
+				ast_ari_response_alloc_failed(response);
+				goto fin;
+			}
+
+			if (strlen(args.media_parse) == 0) {
+				/* ast_app_separate_args can't handle "" */
+				args.media_count = 1;
+				vals[0] = args.media_parse;
+			} else {
+				args.media_count = ast_app_separate_args(
+					args.media_parse, ',', vals,
+					ARRAY_LEN(vals));
+			}
+
+			if (args.media_count == 0) {
+				ast_ari_response_alloc_failed(response);
+				goto fin;
+			}
+
+			if (args.media_count >= MAX_VALS) {
+				ast_ari_response_error(response, 400,
+					"Bad Request",
+					"Too many values for media");
+				goto fin;
+			}
+
+			args.media = ast_malloc(sizeof(*args.media) * args.media_count);
+			if (!args.media) {
+				ast_ari_response_alloc_failed(response);
+				goto fin;
+			}
+
+			for (j = 0; j < args.media_count; ++j) {
+				args.media[j] = (vals[j]);
+			}
 		} else
 		if (strcmp(i->name, "lang") == 0) {
 			args.lang = (i->value);
@@ -1178,6 +1324,8 @@ static void ast_ari_bridges_play_with_id_cb(
 #endif /* AST_DEVMODE */
 
 fin: __attribute__((unused))
+	ast_free(args.media_parse);
+	ast_free(args.media);
 	return;
 }
 int ast_ari_bridges_record_parse_body(
@@ -1408,7 +1556,6 @@ static struct stasis_rest_handlers bridges = {
 static int unload_module(void)
 {
 	ast_ari_remove_handler(&bridges);
-	stasis_app_unref();
 	return 0;
 }
 
@@ -1416,10 +1563,7 @@ static int load_module(void)
 {
 	int res = 0;
 
-	CHECK_ARI_MODULE_LOADED();
 
-
-	stasis_app_ref();
 	res |= ast_ari_add_handler(&bridges);
 	if (res) {
 		unload_module();
@@ -1433,5 +1577,5 @@ AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "RESTful API module - Bri
 	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
-	.nonoptreq = "res_ari,res_stasis",
-	);
+	.requires = "res_ari,res_ari_model,res_stasis,res_stasis_recording,res_stasis_playback",
+);

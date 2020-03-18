@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : SMS</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : SMS
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Rusty Newton</span> on Apr 09, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="SMS-TheSMSapplication">The SMS application</h1><p>SMS() is an application to handles calls to/from text message capable phones and message centres using ETSI ES 201 912 protocol 1 FSK messaging over analog calls.</p><p>Basically it allows sending and receiving of text messages over the PSTN. It is compatible with BT Text service in the UK and works on ISDN and PSTN lines. It is designed to connect to an ISDN or DAHDI interface directly and uses FSK so would <br /> probably not work over any sort of compressed link (like a VoIP call using GSM codec).</p><p>Typical applications include:-</p><ol><li>Connection to a message centre to send text messages - probably initiated via the manager interface or &quot;outgoing&quot; directory</li><li>Connection to an POTS line with an SMS capable phone to send messages - probably initiated via the manager interface or &quot;outgoing&quot; directory</li><li>Acceptance of calls from the message centre (based on CLI) and storage of received messages</li><li>Acceptance of calls from a POTS line with an SMS capable phone and storage of received messages</li></ol><h5 id="SMS-Argumentstosms():">Arguments to sms():</h5><ul><li>First argument is queue name</li><li>Second is options:<ul><li>a: SMS() is to act as the answering side, and so send the initial FSK frame</li><li>s: SMS() is to act as a service centre side rather than as terminal equipment</li></ul></li></ul><ul><li>If a third argument is specified, then SMS does not handle the call at all, but takes the third argument as a destination number to send an SMS to</li></ul><ul><li>The forth argument onward is a message to be queued to the number in the third argument. All this does is create the file in the me-sc directory.</li></ul><ul><li>If 's' is set then the number is the source address and the message placed in the sc-me directory.</li></ul><p>All text messages are stored in /var/spool/asterisk/sms</p><p>A log is recorded in /var/log/asterisk/sms</p><p>There are two subdirectories called sc-me.&lt;queuename&gt; holding all messages from service centre to phone, and me-sc.&lt;queuename&gt; holding all messages from phone to service centre.</p><p>In each directory are messages in files, one per file, using any filename not starting with a dot.</p><p>When connected as a service centre, SMS(s) will send all messages waiting in the sc-me-&lt;queuename&gt; directory, deleting the files as it goes. Any received in this mode are placed in the me-sc-&lt;queuename&gt; directory.</p><p>When connected as a client, SMS() will send all messages waiting in the me-sc-&lt;queuename&gt; directory, deleting the files as it goes. Any received in this mode are placed in the sc-me-&lt;queuename&gt; directory.</p><p>Message files created by SMS() use a time stamp/reference based filename.</p><p>The format of the sms file is lines that have the form of key=value</p><p>Keys are :</p><ul><li>oa - Originating Address. Telephone number, national number if just digits. Telephone number starting with + then digits for international. Ignored on sending messages to service centre (CLI used)</li><li>da - Destination Address. Telephone number, national number if just digits. Telephone number starting with + then digits for international.</li><li>scts - Service Centre Time Stamp in the format YYYY-MM-DD HH:MM:SS</li><li>pid - Protocol Identifier (decimal octet value)</li><li>dcs - Data coding scheme (decimal octet value)</li><li>mr - Message reference (decimal octet value)</li><li>ud - The message (see escaping below)</li><li>srr - 0/1 Status Report Request</li><li>rp - 0/1 Return Path</li><li>vp - mins validity period</li></ul><p>Omitted fields have default values.</p><p>Note that there is special format for ud, ud# instead of ud= which is followed by raw hex (2 characters per octet). This is used in output where characters other than 10,13,32-126,128-255 are included in the data. In this case a comment (line starting ;) is added showing the printable characters</p><p>When generating files to send to a service centre, only da and ud need be specified. oa is ignored.</p><p>When generating files to send to a phone, only oa and ud need be specified. da is ignored.</p><p>When receiving a message as a service centre, only the destination address is sent, so the originating address is set to the callerid.</p><h5 id="SMS-EXAMPLES">EXAMPLES</h5><p>The following are examples of use within the UK using BT Text SMS/landline service.</p><p>This is a context to use with a manager script.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[smsdial]
+; create and send a text message, expects number+message and
+; connect to 17094009
+exten =&gt; _X.,1,SMS(${CALLERIDNUM},,${EXTEN},${CALLERIDNAME})
+exten =&gt; _X.,n,SMS(${CALLERIDNUM})
+exten =&gt; _X.,n,Hangup
+</pre>
+</div></div><p>The script sends</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>	action: originate
+	callerid: message &lt;from&gt;
+	exten: to
+	channel: Local/17094009
+	context: smsdial
+	priority: 1
+</pre>
+</div></div><p>You put the message as the name of the caller ID (messy, I know), the originating number and hence queue name as the number of the caller ID and the exten as the number to which the sms is to be sent. The context uses SMS to create the message in the queue and then SMS to communicate with 17094009 to actually send the message.</p><p>Note that the 9 on the end of 17094009 is the sub address 9 meaning no sub address (BT specific). If a different digit is used then that is the sub address for the sending message source address (appended to the outgoing CLI by BT).</p><p>For incoming calls you can use a context like this :-</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[incoming]
+exten =&gt; _XXXXXX/_8005875290,1,SMS(${EXTEN:3},a)
+exten =&gt; _XXXXXX/_8005875290,n,System(/usr/lib/asterisk/smsin ${EXTEN:3})
+exten =&gt; _XXXXXX/_80058752[0-8]0,1,SMS(${EXTEN:3}${CALLERIDNUM:8:1},a)
+exten =&gt; _XXXXXX/_80058752[0-8]0,n,System(/usr/lib/asterisk/smsin ${EXTEN&gt;:3}${CALLERIDNUM:8:1})
+exten =&gt; _XXXXXX/_80058752[0-8]0,n,Hangup
+</pre>
+</div></div><p>In this case the called number we get from BT is 6 digits (XXXXXX) and we are using the last 3 digits as the queue name.</p><p>Priority 1 causes the SMS to be received and processed for the incoming call. It is from 080058752X0. The two versions handle the queue name as 3 digits (no sub address) or 4 digits (with sub address). In both cases, after the call a script (smsin) is run - this is optional, but is useful to actually processed the received queued SMS. In our case we email them based on the target number. Priority 3 hangs up.</p><p>If using the CAPI drivers they send the right CLI and so the _800... would be _0800...</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

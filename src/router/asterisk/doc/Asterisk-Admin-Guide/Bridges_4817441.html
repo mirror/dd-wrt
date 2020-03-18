@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Bridges</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Key-Concepts_27200276.html">Key Concepts</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Bridges
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Kinsey Moore</span> on Sep 18, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="Bridges-Overview">Overview</h1><p>In Asterisk, a bridge is the construct that shares media among <a href="Channels_28314836.html">Channels</a>. While a channel represents the path of communication between Asterisk and some device, a bridge is how that path of communication is shared. While channels are in a bridge, their media is exchanged in a manner dictated by the bridge's type. While we generally think of media being directed among channels, media can also be directed from Asterisk to the channels in a bridge. This can be the case in some conferences, where Music on Hold (MoH) or announcements are played for waiting channels.</p></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302900436 {padding: 0px;}
+div.rbtoc1582302900436 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302900436 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302900436'>
+<ul class='toc-indentation'>
+<li><a href='#Bridges-Overview'>Overview</a>
+<ul class='toc-indentation'>
+<li><a href='#Bridges-Creation'>Creation</a></li>
+<li><a href='#Bridges-Destruction'>Destruction</a></li>
+</ul>
+</li>
+<li><a href='#Bridges-Types'>Types</a>
+<ul class='toc-indentation'>
+<li><a href='#Bridges-Two-Party'>Two-Party</a>
+<ul class='toc-indentation'>
+<li><a href='#Bridges-Core'>Core</a></li>
+<li><a href='#Bridges-Native'>Native</a></li>
+</ul>
+</li>
+<li><a href='#Bridges-Multiparty'>Multiparty</a>
+<ul class='toc-indentation'>
+<li><a href='#Bridges-Mixing'>Mixing</a></li>
+<li><a href='#Bridges-Holding'>Holding</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><h2 id="Bridges-Creation">Creation</h2><p>Generally, a bridge is created when Asterisk knows that two or more channels want to communicate. A variety of applications and API calls can cause a bridge to be created. Some of these include:</p><ul><li><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Application_Dial">Dial</a> - a bridge is created for the two channels when the outbound channel answers. Both the inbound channel and the outbound channel are placed into the bridge.<ul><li class="confluence-link">DTMF feature invocations available from Dial() can create, modify, or destroy bridges.</li></ul></li><li><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Application_Bridge">Bridge</a> - this directly creates a new bridge and places two channels into the bridge. Unlike Dial, both channels have to already exist.</li><li><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_BridgeWait">BridgeWait</a> (Asterisk 12+) - creates a special holding bridge and places a channel into it. Any number of channels may join the holding bridge, which can entertain them in a variety of ways.</li><li><a href="https://wiki.asterisk.org/wiki/display/AST/Application_MeetMe">MeetMe</a>/<a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Application_ConfBridge">ConfBridge</a> - both of these applications are used for conferencing, and can support multiple channels together in the same bridge.</li><li><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Application_Page">Page</a> - a conferencing bridge (similar to MeetMe/ConfBridge) is used to direct the audio from the announcer to the many dialed channels.</li><li><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_Park">Parking</a> (Asterisk 12+) - a special holding bridge is used for Parking, which entertains the waiting channel with hold music.<span class="confluence-link"> </span><br /><br /></li></ul><p> </p>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Asterisk 12+: Bridging Changed</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>In Asterisk 12, the bridging framework that <a href="ConfBridge_13076234.html">ConfBridge</a> was built on top of was extended to all bridges that Asterisk creates (with the exception of MeetMe). There are some new capabilities that this afforded Asterisk users; where applicable, this page will call out features that only apply to Asterisk 12 and later versions.</p>
+                    </div>
+    </div>
+<h2 id="Bridges-Destruction">Destruction</h2><p>Channels typically leave a bridge when the application that created the bridge is terminated (such as a conference leader ending a ConfBridge conference) or when the other side hangs up (such as in a two-party bridge created by Dial). When channels leave a bridge they can continue doing what they were doing prior to entering the bridge, continue executing dialplan, or be hung up.</p><h1 id="Bridges-Types">Types</h1><p>There are many types of bridges in Asterisk, each of which determine how the media is mixed between the participants of the bridge. In general, there are two categories of bridge types within Asterisk: two party and multiparty. Two party bridge variants include core bridges, local native bridges, and remote native bridges. Multiparty bridge variants include mixing and holding.</p><p> </p>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Asterisk 12+: Bridges are Smart</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p> In Asterisk 12, the bridging framework is smart! It will automatically choose the best mixing technology available based on the channels in the bridge and - if needed - it will dynamically change the mixing type of the bridge based on conditions that occur. For example, a two-party core bridge may turn into a multiparty bridge if an attended transfer converges into a three-way bridge via the <code>atxferthreeway</code> DTMF option.</p>
+                    </div>
+    </div>
+<h2 id="Bridges-Two-Party">Two-Party</h2><p>A two-party bridge shares media between two channels. Because there are only two participants in the bridge, certain optimizations can take place, depending on the type of channels in the bridge. As such, there are &quot;sub-types&quot; of two-party bridges that Asterisk can attempt to use to improve performance.</p><div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h3 id="Bridges-Core">Core</h3><p>A core bridge is the basic two-party bridge in Asterisk. Any channel of any type can communicate with any channel of any other type. A core bridge can perform media transcoding, media manipulation, call recording, DTMF feature execution, talk detection, and additional functionality because Asterisk has direct access to the media flowing between channels. Core bridges are the fallback when other types of bridging are not possible due to limiting network factors, configuration, or functionality requirements.</p></div><div class="columnMacro"><p>
+
+<map id="gliffy-map-29687963-6112" name="gliffy-map-29687963-6112"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 300px;" usemap="#gliffy-map-29687963-6112" src="attachments/4817441/29687964.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p></div></div></div></div><h3 id="Bridges-Native">Native</h3><p>A native bridge occurs when both participants in a two-party bridge have similar channel technologies. When this occurs, Asterisk defers the transfer of media to the channel drivers/protocol stacks themselves, and simply monitors for the channels leaving the bridge (either due to hangup, time-out, or some other condition). Since media is handled in the channel drivers/protocol stacks, no transcoding, media manipulation, recording, DTMF, or other features depending on media interpretation can be done by Asterisk. The primary advantage to native bridging is higher performance.</p><p>The following channel technologies support native bridging:</p><ul><li><a href="SIP_28314848.html">RTP capable channel drivers</a> (such as SIP channels)</li><li><a href="DAHDI_28314858.html">DAHDI channels</a></li><li><p><a href="4817132.html">IAX2 channels</a> (Asterisk 11-)</p>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Asterisk 12+ IAX2 Native Bridging is Gone</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>As it turned out, IAX2 native bridging was not much more efficient than a standard core bridge. In an IAX2 native bridge, the media must still be handled a good bit, i.e., placed into internal Asterisk frames. As such, when the bridging in Asterisk was converted to the new smart bridging framework, the IAX2 native bridge did not survive the transition.</p>
+                    </div>
+    </div>
+</li></ul><div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h4 id="Bridges-Local">Local</h4><p>A local native bridge occurs when the media between two channels is handled by the channel drivers/protocol stacks themselves, but the media is still sent from each device to Asterisk. In this case, Asterisk is merely proxying the media back and forth between the two devices. Most types of native bridging in Asterisk are local.</p></div><div class="columnMacro"><p>
+
+<map id="gliffy-map-29687971-6792" name="gliffy-map-29687971-6792"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 300px;" usemap="#gliffy-map-29687971-6792" src="attachments/4817441/29687972.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p></div></div></div></div><div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h4 id="Bridges-Remote">Remote</h4><p>A remote native bridge occurs when the media between two channels is redirected by Asterisk to flow directly between the two devices the channels talk to. When this occurs, the media is completely outside of Asterisk. With <a href="SIP_28314848.html">SIP</a> channels, this is often called &quot;direct media&quot;. Not surprisingly, since the media is flowing outside of Asterisk, this bridge has the best performance in Asterisk. However, it can only be used in certain circumstances:</p><ul><li>Both channels in the native bridge must support direct media.</li><li>The devices communicating with Asterisk cannot be behind a NAT (or otherwise obscured with a private IP address that the other device cannot resolve).</li></ul><p>Only <a href="SIP_28314848.html">SIP</a> channels support this type of native bridge.</p></div><div class="columnMacro"><p>
+
+<map id="gliffy-map-29687975-2062" name="gliffy-map-29687975-2062"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 300px;" usemap="#gliffy-map-29687975-2062" src="attachments/4817441/29687976.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p></div></div></div></div><div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h2 id="Bridges-Multiparty">Multiparty</h2><p>Multiparty bridges interact with one or more channels and may route media among them. This can be thought of as an extension to two-party core bridging where media from multiple channels is merged or selected to be forwarded to the channels participating in the bridge. These bridges can have some, all, or none of the extended features of two-party core bridges depending on their intended use.</p><h3 id="Bridges-Mixing">Mixing</h3><p>There are several ways to access mixing multiparty bridges:</p><ul><li><a href="https://wiki.asterisk.org/wiki/display/AST/Application_MeetMe">MeetMe</a> - This is a legacy conference bridge application and relies on DAHDI. This type of conference is limited to narrow band audio.</li><li><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Application_ConfBridge">ConfBridge</a> (Asterisk 11+) - This is a conference bridge application based that supports wide band mixing.</li><li><span class="confluence-link"><span class="confluence-link">Ad-hoc Multiparty Bridges</span></span> (Asterisk 12+) - Some DTMF features like 3-way attended transfers can create multiparty bridges as necessary.</li></ul><h3 id="Bridges-Holding">Holding</h3><p>Holding bridges are only available in Asterisk 12+ and provide a waiting area for channels which you may not yet be prepared to process or connect to other channels. This type of bridge prevents participants from exchanging media, can provide entertainment for all participants, and provides the ability for an announcer to interrupt entertainment with special messages as necessary. Entertainment for waiting channels can be MoH, silence, ringing, hold, etc.. Holding bridges can be accessed via <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_BridgeWait">BridgeWait</a> or <a href="attachments/29395597/29687934">ARI</a>.</p></div><div class="columnMacro"><p>
+
+<map id="gliffy-map-29687977-9995" name="gliffy-map-29687977-9995"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 300px;" usemap="#gliffy-map-29687977-9995" src="attachments/4817441/29687978.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p></div></div></div></div>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817441/29687965">two-party</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817441/29687966.png">two-party.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817441/29687967">two-party</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817441/29687968.png">two-party.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817441/29687969">two-party</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817441/29687970.png">two-party.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817441/29687963">two-party</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817441/29687964.png">two-party.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817441/29687973">two-party native local</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817441/29687974.png">two-party native local.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817441/29687971">two-party native local</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817441/29687972.png">two-party native local.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817441/29687975">two-party remote native</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817441/29687976.png">two-party remote native.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817441/29687977">multi-party</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817441/29687978.png">multi-party.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

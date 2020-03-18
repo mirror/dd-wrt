@@ -60,8 +60,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #ifdef HAVE_URIPARSER
 #include <uriparser/Uri.h>
 #endif
@@ -163,12 +161,25 @@ static int bucket_wizard_delete(const struct ast_sorcery *sorcery, void *data, v
 	return bucket->scheme_impl->bucket->delete(sorcery, data, object);
 }
 
+/*! \brief Callback function for determining if a bucket is stale */
+static int bucket_wizard_is_stale(const struct ast_sorcery *sorcery, void *data, void *object)
+{
+	struct ast_bucket *bucket = object;
+
+	if (!bucket->scheme_impl->bucket->is_stale) {
+		return 0;
+	}
+
+	return bucket->scheme_impl->bucket->is_stale(sorcery, data, object);
+}
+
 /*! \brief Intermediary bucket wizard */
 static struct ast_sorcery_wizard bucket_wizard = {
 	.name = "bucket",
 	.create = bucket_wizard_create,
 	.retrieve_id = bucket_wizard_retrieve,
 	.delete = bucket_wizard_delete,
+	.is_stale = bucket_wizard_is_stale,
 };
 
 /*! \brief Callback function for creating a bucket file */
@@ -240,6 +251,18 @@ static int bucket_file_wizard_delete(const struct ast_sorcery *sorcery, void *da
 	return file->scheme_impl->file->delete(sorcery, data, object);
 }
 
+/*! \brief Callback function for determining if a bucket is stale */
+static int bucket_file_wizard_is_stale(const struct ast_sorcery *sorcery, void *data, void *object)
+{
+	struct ast_bucket_file *file = object;
+
+	if (!file->scheme_impl->file->is_stale) {
+		return 0;
+	}
+
+	return file->scheme_impl->file->is_stale(sorcery, data, object);
+}
+
 /*! \brief Intermediary file wizard */
 static struct ast_sorcery_wizard bucket_file_wizard = {
 	.name = "bucket_file",
@@ -247,6 +270,7 @@ static struct ast_sorcery_wizard bucket_file_wizard = {
 	.retrieve_id = bucket_file_wizard_retrieve,
 	.update = bucket_file_wizard_update,
 	.delete = bucket_file_wizard_delete,
+	.is_stale = bucket_file_wizard_is_stale,
 };
 
 int __ast_bucket_scheme_register(const char *name, struct ast_sorcery_wizard *bucket,
@@ -258,7 +282,7 @@ int __ast_bucket_scheme_register(const char *name, struct ast_sorcery_wizard *bu
 
 	if (ast_strlen_zero(name) || !bucket || !file ||
 	    !bucket->create || !bucket->delete || !bucket->retrieve_id ||
-	    !create_cb) {
+	    (!bucket->create && !create_cb)) {
 		return -1;
 	}
 
@@ -335,6 +359,12 @@ struct ast_bucket_metadata *ast_bucket_file_metadata_get(struct ast_bucket_file 
 {
 	return ao2_find(file->metadata, name, OBJ_KEY);
 }
+
+void ast_bucket_file_metadata_callback(struct ast_bucket_file *file, ao2_callback_fn cb, void *arg)
+{
+	ao2_callback(file->metadata, 0, cb, arg);
+}
+
 
 /*! \brief Destructor for buckets */
 static void bucket_destroy(void *obj)
@@ -459,6 +489,28 @@ int ast_bucket_create(struct ast_bucket *bucket)
 	return ast_sorcery_create(bucket_sorcery, bucket);
 }
 
+/*!
+ * \internal
+ * \brief Sorcery object type copy handler for \c ast_bucket
+ */
+static int bucket_copy_handler(const void *src, void *dst)
+{
+	const struct ast_bucket *src_bucket = src;
+	struct ast_bucket *dst_bucket = dst;
+
+	dst_bucket->scheme_impl = ao2_bump(src_bucket->scheme_impl);
+	ast_string_field_set(dst_bucket, scheme, src_bucket->scheme);
+	dst_bucket->created = src_bucket->created;
+	dst_bucket->modified = src_bucket->modified;
+
+	return 0;
+}
+
+struct ast_bucket *ast_bucket_clone(struct ast_bucket *bucket)
+{
+	return ast_sorcery_copy(bucket_sorcery, bucket);
+}
+
 struct ast_bucket *ast_bucket_retrieve(const char *uri)
 {
 	if (ast_strlen_zero(uri)) {
@@ -466,6 +518,11 @@ struct ast_bucket *ast_bucket_retrieve(const char *uri)
 	}
 
 	return ast_sorcery_retrieve_by_id(bucket_sorcery, "bucket", uri);
+}
+
+int ast_bucket_is_stale(struct ast_bucket *bucket)
+{
+	return ast_sorcery_is_stale(bucket_sorcery, bucket);
 }
 
 int ast_bucket_observer_add(const struct ast_sorcery_observer *callbacks)
@@ -560,33 +617,10 @@ struct ast_json *ast_bucket_json(const struct ast_bucket *bucket)
 }
 
 /*! \brief Hashing function for file metadata */
-static int bucket_file_metadata_hash(const void *obj, const int flags)
-{
-	const struct ast_bucket_metadata *object;
-	const char *key;
-
-	switch (flags & (OBJ_POINTER | OBJ_KEY | OBJ_PARTIAL_KEY)) {
-	case OBJ_KEY:
-		key = obj;
-		return ast_str_hash(key);
-	case OBJ_POINTER:
-		object = obj;
-		return ast_str_hash(object->name);
-	default:
-		/* Hash can only work on something with a full key */
-		ast_assert(0);
-		return 0;
-	}
-}
+AO2_STRING_FIELD_HASH_FN(ast_bucket_metadata, name)
 
 /*! \brief Comparison function for file metadata */
-static int bucket_file_metadata_cmp(void *obj, void *arg, int flags)
-{
-	struct ast_bucket_metadata *metadata1 = obj, *metadata2 = arg;
-	const char *name = arg;
-
-	return !strcmp(metadata1->name, flags & OBJ_KEY ? name : metadata2->name) ? CMP_MATCH | CMP_STOP : 0;
-}
+AO2_STRING_FIELD_CMP_FN(ast_bucket_metadata, name)
 
 /*! \brief Destructor for bucket files */
 static void bucket_file_destroy(void *obj)
@@ -615,8 +649,8 @@ static void *bucket_file_alloc(const char *name)
 		return NULL;
 	}
 
-	file->metadata = ao2_container_alloc_options(AO2_ALLOC_OPT_LOCK_NOLOCK, METADATA_BUCKETS,
-		bucket_file_metadata_hash, bucket_file_metadata_cmp);
+	file->metadata = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_NOLOCK, 0, METADATA_BUCKETS,
+		ast_bucket_metadata_hash_fn, NULL, ast_bucket_metadata_cmp_fn);
 	if (!file->metadata) {
 		return NULL;
 	}
@@ -679,7 +713,7 @@ struct ast_bucket_file *ast_bucket_file_alloc(const char *uri)
 
 	ast_string_field_set(file, scheme, uri_scheme);
 
-	if (scheme->create(file)) {
+	if (scheme->create && scheme->create(file)) {
 		ao2_ref(file, -1);
 		return NULL;
 	}
@@ -730,6 +764,29 @@ static int bucket_copy(const char *infile, const char *outfile)
 	return 0;	/* success */
 }
 
+/*!
+ * \internal
+ * \brief Sorcery object type copy handler for \c ast_bucket_file
+ */
+static int bucket_file_copy_handler(const void *src, void *dst)
+{
+	const struct ast_bucket_file *src_file = src;
+	struct ast_bucket_file *dst_file = dst;
+
+	dst_file->scheme_impl = ao2_bump(src_file->scheme_impl);
+	ast_string_field_set(dst_file, scheme, src_file->scheme);
+	dst_file->created = src_file->created;
+	dst_file->modified = src_file->modified;
+	strcpy(dst_file->path, src_file->path); /* safe */
+
+	dst_file->metadata = ao2_container_clone(src_file->metadata, 0);
+	if (!dst_file->metadata) {
+		return -1;
+	}
+
+	return 0;
+}
+
 struct ast_bucket_file *ast_bucket_file_copy(struct ast_bucket_file *file, const char *uri)
 {
 	RAII_VAR(struct ast_bucket_file *, copy, ast_bucket_file_alloc(uri), ao2_cleanup);
@@ -749,6 +806,11 @@ struct ast_bucket_file *ast_bucket_file_copy(struct ast_bucket_file *file, const
 	return copy;
 }
 
+struct ast_bucket_file *ast_bucket_file_clone(struct ast_bucket_file *file)
+{
+	return ast_sorcery_copy(bucket_sorcery, file);
+}
+
 struct ast_bucket_file *ast_bucket_file_retrieve(const char *uri)
 {
 	if (ast_strlen_zero(uri)) {
@@ -756,6 +818,11 @@ struct ast_bucket_file *ast_bucket_file_retrieve(const char *uri)
 	}
 
 	return ast_sorcery_retrieve_by_id(bucket_sorcery, "file", uri);
+}
+
+int ast_bucket_file_is_stale(struct ast_bucket_file *file)
+{
+	return ast_sorcery_is_stale(bucket_sorcery, file);
 }
 
 int ast_bucket_file_observer_add(const struct ast_sorcery_observer *callbacks)
@@ -851,33 +918,10 @@ void ast_bucket_file_temporary_destroy(struct ast_bucket_file *file)
 }
 
 /*! \brief Hashing function for scheme container */
-static int bucket_scheme_hash(const void *obj, const int flags)
-{
-	const struct ast_bucket_scheme *object;
-	const char *key;
-
-	switch (flags & (OBJ_POINTER | OBJ_KEY | OBJ_PARTIAL_KEY)) {
-	case OBJ_KEY:
-		key = obj;
-		return ast_str_hash(key);
-	case OBJ_POINTER:
-		object = obj;
-		return ast_str_hash(object->name);
-	default:
-		/* Hash can only work on something with a full key */
-		ast_assert(0);
-		return 0;
-	}
-}
+AO2_STRING_FIELD_HASH_FN(ast_bucket_scheme, name)
 
 /*! \brief Comparison function for scheme container */
-static int bucket_scheme_cmp(void *obj, void *arg, int flags)
-{
-	struct ast_bucket_scheme *scheme1 = obj, *scheme2 = arg;
-	const char *name = arg;
-
-	return !strcmp(scheme1->name, flags & OBJ_KEY ? name : scheme2->name) ? CMP_MATCH | CMP_STOP : 0;
-}
+AO2_STRING_FIELD_CMP_FN(ast_bucket_scheme, name)
 
 /*! \brief Cleanup function for graceful shutdowns */
 static void bucket_cleanup(void)
@@ -910,8 +954,8 @@ int ast_bucket_init(void)
 {
 	ast_register_cleanup(&bucket_cleanup);
 
-	schemes = ao2_container_alloc_options(AO2_ALLOC_OPT_LOCK_RWLOCK, SCHEME_BUCKETS, bucket_scheme_hash,
-		bucket_scheme_cmp);
+	schemes = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_RWLOCK, 0, SCHEME_BUCKETS,
+		ast_bucket_scheme_hash_fn, NULL, ast_bucket_scheme_cmp_fn);
 	if (!schemes) {
 		ast_log(LOG_ERROR, "Failed to create container for Bucket schemes\n");
 		return -1;
@@ -945,6 +989,7 @@ int ast_bucket_init(void)
 	ast_sorcery_object_field_register(bucket_sorcery, "bucket", "scheme", "", OPT_STRINGFIELD_T, 0, STRFLDSET(struct ast_bucket, scheme));
 	ast_sorcery_object_field_register_custom(bucket_sorcery, "bucket", "created", "", timeval_str2struct, timeval_struct2str, NULL, 0, FLDSET(struct ast_bucket, created));
 	ast_sorcery_object_field_register_custom(bucket_sorcery, "bucket", "modified", "", timeval_str2struct, timeval_struct2str, NULL, 0, FLDSET(struct ast_bucket, modified));
+	ast_sorcery_object_set_copy_handler(bucket_sorcery, "bucket", bucket_copy_handler);
 
 	if (ast_sorcery_apply_default(bucket_sorcery, "file", "bucket_file", NULL) == AST_SORCERY_APPLY_FAIL) {
 		ast_log(LOG_ERROR, "Failed to apply intermediary for 'file' object type in Bucket sorcery\n");
@@ -959,6 +1004,7 @@ int ast_bucket_init(void)
 	ast_sorcery_object_field_register(bucket_sorcery, "file", "scheme", "", OPT_STRINGFIELD_T, 0, STRFLDSET(struct ast_bucket_file, scheme));
 	ast_sorcery_object_field_register_custom(bucket_sorcery, "file", "created", "", timeval_str2struct, timeval_struct2str, NULL, 0, FLDSET(struct ast_bucket_file, created));
 	ast_sorcery_object_field_register_custom(bucket_sorcery, "file", "modified", "", timeval_str2struct, timeval_struct2str, NULL, 0, FLDSET(struct ast_bucket_file, modified));
+	ast_sorcery_object_set_copy_handler(bucket_sorcery, "file", bucket_file_copy_handler);
 
 	return 0;
 }

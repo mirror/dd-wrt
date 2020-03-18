@@ -27,7 +27,7 @@
  * \since 12.0.0
  *
  * This is a very thin wrapper around the Jansson API. For more details on it,
- * see its docs at http://www.digip.org/jansson/doc/2.4/apiref.html.
+ * see its docs at http://www.digip.org/jansson/doc/2.11/apiref.html.
  *
  * Rather than provide the multiple ways of doing things that the Jansson API
  * does, the Asterisk wrapper is always reference-stealing, and always NULL
@@ -42,35 +42,6 @@
  * In the cases where you have a need to introduce intermediate objects, just
  * wrap them with json_ref() when passing them to other \c ast_json_*()
  * functions.
- *
- * \par Thread Safety
- *
- * Jansson (as of 2.4) provides fairly weak thread safety guarantees. The
- * Asterisk wrapper improves upon that slightly. The remaining refcounting
- * problems are issues when slicing/sharing/mixing instances between JSON
- * objects and arrays, which we avoid.
- *
- * The \c ast_json_dump_* functions are thread safe for multiple concurrent
- * dumps of the same object, so long as the concurrent dumps start from the same
- * \c root object. But if an object is shared by other JSON objects/arrays, then
- * concurrent dumps of the outer objects/arrays are not thread safe. This can be
- * avoided by using ast_json_deep_copy() when sharing JSON instances between
- * objects.
- *
- * The ast_json_ref() and ast_json_unref() functions are thread safe. Since the
- * Asterisk wrapper exclusively uses the reference stealing API, Jansson won't
- * be performing many refcount modifications behind our backs. There are a few
- * exceptions.
- *
- * The first is the transitive json_decref() that occurs when \ref
- * AST_JSON_OBJECT and \ref AST_JSON_ARRAY instances are deleted. This can be
- * avoided by using ast_json_deep_copy() when sharing JSON instances between
- * objects.
- *
- * The second is when using the reference borrowing specifier in
- * ast_json_pack() (capital \c O). This can be avoided by using the reference
- * stealing specifier (lowercase \c o) and wrapping the JSON object parameter
- * with ast_json_ref() for an explicit ref-bump.
  *
  * \par Example code
  *
@@ -111,9 +82,14 @@
 /*!@{*/
 
 /*!
+ * \brief Primarily used to cast when packing to an "I" type.
+ */
+typedef AST_JSON_INT_T ast_json_int_t;
+
+/*!
  * \brief Initialize the JSON library.
  */
-void ast_json_init(void);
+int ast_json_init(void);
 
 /*!
  * \brief Set custom allocators instead of the standard ast_malloc() and ast_free().
@@ -586,6 +562,17 @@ size_t ast_json_object_size(struct ast_json *object);
 struct ast_json *ast_json_object_get(struct ast_json *object, const char *key);
 
 /*!
+ * \brief Get a string field from a JSON object.
+ * \since 16.3.0
+ *
+ * \param object JSON object.
+ * \param key Key of string field to look up.
+ * \return String value of given \a key.
+ * \return \c NULL on error, or key value is not a string.
+ */
+#define ast_json_object_string_get(object, key) ast_json_string_get(ast_json_object_get(object, key))
+
+/*!
  * \brief Set a field in a JSON object.
  * \since 12.0.0
  *
@@ -907,7 +894,7 @@ struct ast_json *ast_json_load_new_file(const char *path, struct ast_json_error 
  * \brief Helper for creating complex JSON values.
  * \since 12.0.0
  *
- * See original Jansson docs at http://www.digip.org/jansson/doc/2.4/apiref.html#apiref-pack
+ * See original Jansson docs at http://www.digip.org/jansson/doc/2.11/apiref.html#apiref-pack
  * for more details.
  */
 struct ast_json *ast_json_pack(char const *format, ...);
@@ -916,7 +903,7 @@ struct ast_json *ast_json_pack(char const *format, ...);
  * \brief Helper for creating complex JSON values simply.
  * \since 12.0.0
  *
- * See original Jansson docs at http://www.digip.org/jansson/doc/2.4/apiref.html#apiref-pack
+ * See original Jansson docs at http://www.digip.org/jansson/doc/2.11/apiref.html#apiref-pack
  * for more details.
  */
 struct ast_json *ast_json_vpack(char const *format, va_list ap);
@@ -1006,6 +993,22 @@ struct ast_json *ast_json_timeval(const struct timeval tv, const char *zone);
 struct ast_json *ast_json_ipaddr(const struct ast_sockaddr *addr, enum ast_transport transport_type);
 
 /*!
+ * \brief Construct a context/exten/priority/application/application_data as JSON.
+ *
+ * If a \c NULL is passed for \c context or \c exten or \c app_name or \c app_data,
+ * or -1 for \c priority, the fields is set to ast_json_null().
+ *
+ * \param context Context name.
+ * \param exten Extension.
+ * \param priority Dialplan priority.
+ * \param app_name Application name.
+ * \param app_data Application argument.
+ * \return JSON object with \c context, \c exten and \c priority \c app_name \c app_data fields
+ */
+struct ast_json *ast_json_dialplan_cep_app(
+		const char *context, const char *exten, int priority, const char *app_name, const char *app_data);
+
+/*!
  * \brief Construct a context/exten/priority as JSON.
  *
  * If a \c NULL is passed for \c context or \c exten, or -1 for \c priority,
@@ -1075,6 +1078,18 @@ enum ast_json_to_ast_vars_code {
  * \return Conversion enum ast_json_to_ast_vars_code status
  */
 enum ast_json_to_ast_vars_code ast_json_to_ast_variables(struct ast_json *json_variables, struct ast_variable **variables);
+
+struct varshead;
+
+/*!
+ * \brief Construct a JSON object from a \c ast_var_t list
+ * \since 14.2.0
+ *
+ * \param channelvars The list of \c ast_var_t to represent as JSON
+ *
+ * \return JSON object with variable names as keys and variable values as values
+ */
+struct ast_json *ast_json_channel_vars(struct varshead *channelvars);
 
 /*!@}*/
 

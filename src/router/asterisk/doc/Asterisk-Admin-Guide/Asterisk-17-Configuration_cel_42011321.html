@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Configuration_cel</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Module-Configuration_42010715.html">Asterisk 17 Module Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Configuration_cel
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    
+
+<p>This configuration documentation is for functionality provided by <code>cel</code>.</p>
+
+<h2 id="Asterisk17Configuration_cel-cel.conf">cel.conf</h2>
+
+<h3 id="Asterisk17Configuration_cel-general">general</h3>
+
+<p>Options that apply globally to Channel Event Logging (CEL)</p>
+
+<h4 id="Asterisk17Configuration_cel-ConfigurationOptionReference">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>enable</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Determines whether CEL is enabled </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>dateformat</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The format to be used for dates when logging </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_cel-general_apps"><code>apps</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> List of apps for CEL to track </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_cel-general_events"><code>events</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> List of events for CEL to track </p></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="Asterisk17Configuration_cel-ConfigurationOptionDescriptions">Configuration Option Descriptions</h4>
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_cel-general_apps"></span></p>
+<h5 id="Asterisk17Configuration_cel-apps">apps</h5>
+
+<p>A case-insensitive, comma-separated list of applications to track when one or both of APP_START and APP_END events are flagged for tracking</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_cel-general_events"></span></p>
+<h5 id="Asterisk17Configuration_cel-events">events</h5>
+
+<p>A case-sensitive, comma-separated list of event names to track. These event names do not include the leading <code>AST_CEL</code>.</p>
+
+<ul>
+	<li><code>ALL</code> - Special value which tracks all events.</li>
+	<li><code>CHAN_START</code></li>
+	<li><code>CHAN_END</code></li>
+	<li><code>ANSWER</code></li>
+	<li><code>HANGUP</code></li>
+	<li><code>APP_START</code></li>
+	<li><code>APP_END</code></li>
+	<li><code>PARK_START</code></li>
+	<li><code>PARK_END</code></li>
+	<li><code>USER_DEFINED</code></li>
+	<li><code>BRIDGE_ENTER</code></li>
+	<li><code>BRIDGE_EXIT</code></li>
+	<li><code>BLINDTRANSFER</code></li>
+	<li><code>ATTENDEDTRANSFER</code></li>
+	<li><code>PICKUP</code></li>
+	<li><code>FORWARD</code></li>
+	<li><code>LINKEDID_END</code></li>
+	<li><code>LOCAL_OPTIMIZE</code></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Configuration_cel-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

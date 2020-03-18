@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Simple Message Desk Interface (SMDI) Integration</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Functions_27200281.html">Functions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Simple Message Desk Interface (SMDI) Integration
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 27, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="SimpleMessageDeskInterface(SMDI)Integration-AccessingSMDIinformationinthedialplan.">Accessing SMDI information in the dialplan.</h1>
+
+<p>There are two dialplan functions that can be used to access the details of<br />
+incoming SMDI messages.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+*CLI&gt; core show function SMDI_MSG_RETRIEVE
+
+  -= Info about function &#39;SMDI_MSG_RETRIEVE&#39; =- 
+</pre>
+</div></div>
+
+<h5 id="SimpleMessageDeskInterface(SMDI)Integration-Syntax">Syntax</h5>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+SMDI_MSG_RETRIEVE(&lt;smdi port&gt;,&lt;search key&gt;[,timeout[,options]])
+</pre>
+</div></div>
+
+<h5 id="SimpleMessageDeskInterface(SMDI)Integration-Synopsis">Synopsis</h5>
+
+<p>Retrieve an SMDI message.</p>
+
+<h5 id="SimpleMessageDeskInterface(SMDI)Integration-Description">Description</h5>
+
+<p>This function is used to retrieve an incoming SMDI message.  It returns an ID which can be used with the SMDI_MSG() function to access details of the message.  Note that this is a destructive function in the sense that once an SMDI message is retrieved using this function, it is no longer in the global SMDI message queue, and can not be accessed by any other Asterisk channels.  The timeout for this function is optional, and the default is 3 seconds.  When providing a timeout, it should be in milliseconds. The default search is done on the forwarding station ID.  However, if you set one of the search key options in the options field, you can change this behavior.</p>
+
+<h5 id="SimpleMessageDeskInterface(SMDI)Integration-Options">Options</h5>
+
+<ul>
+	<li>t - Instead of searching on the forwarding station, search on the message desk terminal.</li>
+	<li>n - Instead of searching on the forwarding station, search on the message desk number.</li>
+</ul>
+
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+*CLI&gt; core show function SMDI_MSG
+
+  -= Info about function &#39;SMDI_MSG&#39; =-
+</pre>
+</div></div>
+
+<h5 id="SimpleMessageDeskInterface(SMDI)Integration-Syntax.1">Syntax</h5>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+SMDI_MSG(&lt;message_id&gt;,&lt;component&gt;)
+</pre>
+</div></div>
+
+<h5 id="SimpleMessageDeskInterface(SMDI)Integration-Synopsis.1">Synopsis</h5>
+
+<p>Retrieve details about an SMDI message.</p>
+
+<h5 id="SimpleMessageDeskInterface(SMDI)Integration-Description.1">Description</h5>
+
+<p>This function is used to access details of an SMDI message that was pulled from the incoming SMDI message queue using the SMDI_MSG_RETRIEVE() function. Valid message components are:</p>
+
+<ul>
+	<li>station  - The forwarding station</li>
+	<li>callerid - The callerID of the calling party that was forwarded</li>
+	<li>type     - The call type.  The value here is the exact character that came in on the SMDI link.  Typically, example values are: D - Direct Calls, A - Forward All Calls, B - Forward Busy Calls, N - Forward No Answer Calls</li>
+</ul>
+
+
+<p>Here is an example of how to use these functions:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+; Retrieve the SMDI message that is associated with the number that
+; was called in Asterisk.
+exten =&gt; _0XXX,1,Set(SMDI_MSG_ID=${SMDI_MSG_RETRIEVE(/dev/tty0,${EXTEN})})
+
+; Ensure that the message was retrieved.
+exten =&gt; _0XXX,n,GotoIf($[&quot;x${SMDI_MSG_ID}&quot; != &quot;x&quot;]?processcall:hangup)
+exten =&gt; _0XXX,n(hangup),NoOp(No SMDI message retrieved for ${EXTEN})
+
+; Grab the details out of the SMDI message.
+exten =&gt; _0XXX,n(processcall),NoOp(Message found for ${EXTEN})
+exten =&gt; _0XXX,n,Set(SMDI_EXTEN=${SMDI_MSG(${SMDI_MSG_ID},station)})
+exten =&gt; _0XXX,n,Set(SMDI_CID=${SMDI_MSG(${SMDI_MSG_ID},callerid)})
+
+; Map SMDI message types to the right voicemail option.  If it is &quot;B&quot;, use the
+; busy option.  Otherwise, use the unavailable option.
+exten =&gt; _0XXX,n,GotoIf($[&quot;${SMDI_MSG(${SMDI_MSG_ID},type)}&quot; == &quot;B&quot;]?usebusy:useunavail)
+
+exten =&gt; _0XXX,n(usebusy),Set(SMDI_VM_TYPE=b)
+exten =&gt; _0XXX,n,Goto(continue)
+
+exten =&gt; _0XXX,n,(useunavil),Set(SMDI_VM_TYPE=u)
+
+exten =&gt; _0XXX,n(continue),NoOp( Process the rest of the call ... )
+</pre>
+</div></div>
+
+
+<h1 id="SimpleMessageDeskInterface(SMDI)Integration-EnsuringcompleteMWIinformationoverSMDI">Ensuring complete MWI information over SMDI</h1>
+
+<p>Another change has been made to ensure that MWI state is properly propagated over the SMDI link.  This replaces the use of externnotify=smdi for voicemail.conf.  The issue is that we have to poll mailboxes occasionally for changes that were made using an IMAP client.  So, this ability was added to res_smdi.  To configure this, there is a new section in smdi.conf.  It looks like this:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+[mailboxes]
+; This section configures parameters related to MWI handling for the SMDI link.
+ ;
+; This option configures the polling interval used to check to see if the
+; mailboxes have any new messages.  This option is specified in seconds.
+; The default value is 10 seconds.
+;
+;pollinginterval=10
+;
+; Before specifying mailboxes, you must specify an SMDI interface.  All mailbox
+; definitions that follow will correspond to that SMDI interface.  If you
+; specify another interface, then all definitions following that will correspond
+; to the new interface.
+;
+; Every other entry in this section of the configuration file is interpreted as
+; a mapping between the mailbox ID on the SMDI link, and the local Asterisk
+; mailbox name.  In many cases, they are the same thing, but they still must be
+; listed here so that this module knows which mailboxes it needs to pay
+; attention to.
+;
+; Syntax:
+;   &lt;SMDI mailbox ID&gt;=&lt;Asterisk Mailbox Name&gt;[@Asterisk Voicemail Context]
+;
+; If no Asterisk voicemail context is specified, &quot;default&quot; will be assumed.
+;
+;
+;smdiport=/dev/ttyS0
+;2565551234=1234@vmcontext1
+;2565555678=5678@vmcontext2
+;smdiport=/dev/ttyS1
+;2565559999=9999
+</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

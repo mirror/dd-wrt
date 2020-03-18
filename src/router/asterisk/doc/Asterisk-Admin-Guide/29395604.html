@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : ARI and Channels: Manipulating Channel State</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="29395573.html">Asterisk REST Interface (ARI)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Introduction-to-ARI-and-Channels_29395597.html">Introduction to ARI and Channels</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : ARI and Channels: Manipulating Channel State
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified on Aug 21, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="ARIandChannels:ManipulatingChannelState-ChannelState">Channel State</h1><p>A channel's state reflects the current state of the path of communication between Asterisk and a device. What state a channel is in also affects what operations are allowed on it and/or how certain operations will affect a device.</p><p>While there are many states a channel can be in, the following are the most common:</p><ul><li><strong>Down</strong> - a path of communication exists or used to exist between Asterisk and the device, but no media can flow between the two.</li><li><strong>Ringing</strong> - the device is ringing. Media may or may not be able to flow from Asterisk to the device.</li><li><strong>Up</strong> - the device has been answered. When in the up state, media can flow bidirectionally between Asterisk and the device.</li></ul>    <div class="aui-message warning shadowed information-macro">
+                    <p class="title">More Channel States</p>
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>Certain channel technologies, such as DAHDI analog channels, may have additional channel states (such as &quot;Pre-ring&quot; or &quot;Dialing Offhook&quot;). When handling channel state, consult the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+REST+Data+Models#Asterisk12RESTDataModels-Channel" rel="nofollow">Channel data model</a> for all possible values.</p>
+                    </div>
+    </div>
+</div><div class="columnMacro" style="width:40%;min-width:40%;max-width:40%;"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303059617 {padding: 0px;}
+div.rbtoc1582303059617 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303059617 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303059617'>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:ManipulatingChannelState-ChannelState'>Channel State</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:ManipulatingChannelState-IndicatingRinging'>Indicating Ringing</a></li>
+<li><a href='#ARIandChannels:ManipulatingChannelState-AnsweringaChannel'>Answering a Channel</a></li>
+<li><a href='#ARIandChannels:ManipulatingChannelState-Hangingupachannel'>Hanging up a channel</a></li>
+</ul>
+</li>
+<li><a href='#ARIandChannels:ManipulatingChannelState-Example:ManipulatingChannelState'>Example: Manipulating Channel State</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:ManipulatingChannelState-Dialplan'>Dialplan</a></li>
+<li><a href='#ARIandChannels:ManipulatingChannelState-Python'>Python</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:ManipulatingChannelState-channel-state.py'>channel-state.py</a></li>
+<li><a href='#ARIandChannels:ManipulatingChannelState-channel-state.pyinaction'>channel-state.py in action</a></li>
+</ul>
+</li>
+<li><a href='#ARIandChannels:ManipulatingChannelState-JavaScript(Node.js)'>JavaScript (Node.js)</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:ManipulatingChannelState-channel-state.js'>channel-state.js</a></li>
+<li><a href='#ARIandChannels:ManipulatingChannelState-channel-state.jsinaction'>channel-state.js in action</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div> </p>
+</div></div></div></div></div></div><h2 id="ARIandChannels:ManipulatingChannelState-IndicatingRinging">Indicating Ringing</h2><p>Asterisk can inform a device that it should start playing a ringing tone back to the caller using the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Channels+REST+API#Asterisk12ChannelsRESTAPI-ring" rel="nofollow"><code>POST /channels/{channel_id}/ring</code></a> operation. Likewise, ringing can be stopped using the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Channels+REST+API#Asterisk12ChannelsRESTAPI-ringStop" rel="nofollow"><code>DELETE /channels/{channel_id}/ring</code></a> operation. Note that indicating ringing typically does not actually transmit media from Asterisk to the device in question - Asterisk merely signals the device to ring. It is up to the device itself to actually play something back for the user.</p><h2 id="ARIandChannels:ManipulatingChannelState-AnsweringaChannel">Answering a Channel</h2><p>When a channel isn't answered, Asterisk has typically not yet informed the device how it will communicate with it. Answering a channel will cause Asterisk to complete the path of communication, such that media flows bi-directionally between the device and Asterisk.</p><p>You can answer a channel using the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Channels+REST+API#Asterisk12ChannelsRESTAPI-answer" rel="nofollow"><code>POST /channels/{channel_id}/answer</code></a> operation.</p><h2 id="ARIandChannels:ManipulatingChannelState-Hangingupachannel">Hanging up a channel</h2><p>You can hang up a channel using the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Channels+REST+API#Asterisk12ChannelsRESTAPI-hangup" rel="nofollow"><code>DELETE /channels/{channel_id}</code></a> operation. When this occurs, the path of communication between Asterisk and the device is terminated, and the channel will leave the Stasis application. Your application will be notified of this via a <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+REST+Data+Models#Asterisk12RESTDataModels-StasisEnd" rel="nofollow">StasisEnd</a> event.</p><p>The same is true if the device initiates the hang up. In the same fashion, the path of communication between Asterisk and the device is terminated, the channel is hung up, and your application is informed that the channel is leaving your application via a <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+REST+Data+Models#Asterisk12RESTDataModels-StasisEnd" rel="nofollow">StasisEnd</a> event.</p><p>Generally, once a channel leaves your application, you won't receive any more events about the channel. There are times, however, when you may be subscribed to all events coming from a channel - regardless if that channel is in your application or not. In that case, a <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+REST+Data+Models#Asterisk12RESTDataModels-ChannelDestroyed" rel="nofollow">ChannelDestroyed</a> event will inform you when the channel is well and truly dead.</p><h1 id="ARIandChannels:ManipulatingChannelState-Example:ManipulatingChannelState">Example: Manipulating Channel State</h1><p>For this example, we're going to write an ARI application that will do the following:</p><ol><li>Wait for a channel to enter its Stasis application.</li><li>When a channel enters its Stasis application, it will indicate ringing to the channel. If the channel wasn't already ringing, it will now!</li><li>After a few seconds, it will answer the channel.</li><li>Once the channel is answered, we'll start silence on the channel so that the user feels a comfortable whishing noise. Then, after a few more seconds, we'll hangup the channel.</li><li>If at any point in time the phone hangs up first, we'll gracefully handle that.</li></ol><h2 id="ARIandChannels:ManipulatingChannelState-Dialplan">Dialplan</h2><p>For this example, we need to just drop the channel into Stasis, specifying our application:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">exten =&gt; 1000,1,NoOp()
+ same =&gt;      n,Stasis(channel-state)
+ same =&gt;      n,Hangup() </pre>
+</div></div><h2 id="ARIandChannels:ManipulatingChannelState-Python">Python</h2><p>This example will use the <a class="external-link" href="https://github.com/asterisk/ari-py" rel="nofollow">ari-py</a> library. The basic structure is very similar to the <a href="Introduction-to-ARI-and-Channels_29395597.html">channel-dump Python example</a> - see that example for more information on the basics of setting up an ARI connection using this library.</p><p>To start, once our ARI client has been set up, we will want to register handlers for three different events - <code>StasisStart</code>, <code>ChannelStateChange</code>, and <code>StasisEnd</code>.</p><ol><li>The bulk of the work will be done in <code>StasisStart</code>, which is called when the channel enters our application. For the most part, this will involve setting up Python timers to initiate actions on the channel.</li><li>The <code>ChannelStateChange</code> handler will merely print out the channel state changes for us, which is informative as it will tell us when the channel is answered.</li><li>Finally, the <code>StasisEnd</code> event will clean up for us by cancelling any pending timers that we initiated. This will get called when the channel leaves our application - which will happen when the user hangs up the channel, or when we hang up the channel.</li></ol><p>We can store the timers that we've set up for a channel using a dictionary of channel IDs to timer instances:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 11; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">channel_timers = {}</pre>
+</div></div><p>And we can register for our three events:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 58; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">client.on_channel_event(&#39;StasisStart&#39;, stasis_start_cb)
+client.on_channel_event(&#39;ChannelStateChange&#39;, channel_state_change_cb)
+client.on_channel_event(&#39;StasisEnd&#39;, stasis_end_cb)</pre>
+</div></div><p> </p><p>The <code>StasisStart</code> event is the most interesting part.</p><ol><li><p>First, we tell the channel to ring, and after two seconds, to answer the channel:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 47; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">    channel.ring()
+    # Answer the channel after 2 seconds
+    timer = threading.Timer(2, answer_channel, [channel])
+    channel_timers[channel.id] = timer
+    timer.start()</pre>
+</div></div><p>If we didn't have that there, then the caller would probably just have dead space to listen to! Not very enjoyable. We store the timer in the <code>channel_timers</code> dictionary so that our <code>StasisEnd</code> event can cancel it for us if the user hangs up the phone.</p></li><li><p>Once we're in the <code>answer_channel</code> handler, we answer the channel and start silence on the channel. That (hopefully) gives them a slightly more ambient silence noise. Note that we'll go ahead and declare <code>answer_channel</code> as a nested function inside our <code>StasisStart</code> handler, <code>stasis_start_cb</code>:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 24; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">def stasis_start_cb(channel_obj, ev):
+    &quot;&quot;&quot;Handler for StasisStart event&quot;&quot;&quot;
+
+    def answer_channel(channel):
+        &quot;&quot;&quot;Callback that will actually answer the channel&quot;&quot;&quot;
+        print &quot;Answering channel %s&quot; % channel.json.get(&#39;name&#39;)
+        channel.answer()
+        channel.startSilence()</pre>
+</div></div></li><li><p>After we've answered the channel, we kick off another Python timer to hang up the channel in 4 seconds. When that timer fires, it will call <code>hangup_channel</code>. This does the final action on the channel by hanging it up. Again, we'll declare <code>hangup_channel</code> as a nested function inside our <code>StasisStart</code> handler:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 38; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">     def hangup_channel(channel):
+        &quot;&quot;&quot;Callback that will actually hangup the channel&quot;&quot;&quot;
+
+        print &quot;Hanging up channel %s&quot; % channel.json.get(&#39;name&#39;)
+        channel.hangup()</pre>
+</div></div></li></ol><p>When we create a timer - such as when we started ringing on the channel - we stored it in our <code>channel_timers</code> dictionary. In our <code>StasisEnd</code> event handler, we'll want to cancel any pending timers. Otherwise, our timers may fire and try to perform an action on channel that has already left our Stasis application, which is a good way to get an HTTP error response code.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 13; theme: Confluence; brush: py; gutter: true" style="font-size:12px;"> def stasis_end_cb(channel, ev):
+    &quot;&quot;&quot;Handler for StasisEnd event&quot;&quot;&quot;
+
+    print &quot;Channel %s just left our application&quot; % channel.json.get(&#39;name&#39;)
+
+    # Cancel any pending timers
+    timer = channel_timers.get(channel.id)
+    if timer:
+        timer.cancel()
+        del channel_timers[channel.id]</pre>
+</div></div><p> </p><p>Finally, we want to print out the state of the channel in the <code>ChannelStateChanged</code> handler. This will tell us exactly when our channel has been answered:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 53; theme: Confluence; brush: py; gutter: true" style="font-size:12px;"> def channel_state_change_cb(channel, ev):
+    &quot;&quot;&quot;Handler for changes in a channel&#39;s state&quot;&quot;&quot;
+    print &quot;Channel %s is now: %s&quot; % (channel.json.get(&#39;name&#39;),
+                                     channel.json.get(&#39;state&#39;))</pre>
+</div></div><h3 id="ARIandChannels:ManipulatingChannelState-channel-state.py">channel-state.py</h3><p>The full source code for <code>channel-state.py</code> is shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>channel-state.py</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: py; gutter: true" style="font-size:12px;">#!/usr/bin/env python
+
+import ari
+import logging
+import threading
+
+logging.basicConfig(level=logging.ERROR)
+
+client = ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;)
+
+channel_timers = {}
+
+def stasis_end_cb(channel, ev):
+    &quot;&quot;&quot;Handler for StasisEnd event&quot;&quot;&quot;
+
+    print &quot;Channel %s just left our application&quot; % channel.json.get(&#39;name&#39;)
+
+    # Cancel any pending timers
+    timer = channel_timers.get(channel.id)
+    if timer:
+        timer.cancel()
+        del channel_timers[channel.id]
+
+def stasis_start_cb(channel_obj, ev):
+    &quot;&quot;&quot;Handler for StasisStart event&quot;&quot;&quot;
+
+    def answer_channel(channel):
+        &quot;&quot;&quot;Callback that will actually answer the channel&quot;&quot;&quot;
+        print &quot;Answering channel %s&quot; % channel.json.get(&#39;name&#39;)
+        channel.answer()
+        channel.startSilence()
+
+        # Hang up the channel in 4 seconds
+        timer = threading.Timer(4, hangup_channel, [channel])
+        channel_timers[channel.id] = timer
+        timer.start()
+
+     def hangup_channel(channel):
+        &quot;&quot;&quot;Callback that will actually hangup the channel&quot;&quot;&quot;
+
+        print &quot;Hanging up channel %s&quot; % channel.json.get(&#39;name&#39;)
+        channel.hangup()
+
+    channel = channel_obj.get(&#39;channel&#39;)
+    print &quot;Channel %s has entered the application&quot; % channel.json.get(&#39;name&#39;)
+
+    channel.ring()
+    # Answer the channel after 2 seconds
+    timer = threading.Timer(2, answer_channel, [channel])
+    channel_timers[channel.id] = timer
+    timer.start()
+
+def channel_state_change_cb(channel, ev):
+    &quot;&quot;&quot;Handler for changes in a channel&#39;s state&quot;&quot;&quot;
+    print &quot;Channel %s is now: %s&quot; % (channel.json.get(&#39;name&#39;),
+                                     channel.json.get(&#39;state&#39;))
+
+client.on_channel_event(&#39;StasisStart&#39;, stasis_start_cb)
+client.on_channel_event(&#39;ChannelStateChange&#39;, channel_state_change_cb)
+client.on_channel_event(&#39;StasisEnd&#39;, stasis_end_cb)
+
+client.run(apps=&#39;channel-state&#39;)</pre>
+</div></div><h3 id="ARIandChannels:ManipulatingChannelState-channel-state.pyinaction">channel-state.py in action</h3><p>Here, we see the output from the <code>channel-state.py</code> script when a PJSIP channel for endpoint 'alice' enters into the application:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">Channel PJSIP/alice-00000001 has entered the application
+Answering channel PJSIP/alice-00000001
+Channel PJSIP/alice-00000001 is now: Up
+Hanging up channel PJSIP/alice-00000001
+Channel PJSIP/alice-00000001 just left our application</pre>
+</div></div><h2 id="ARIandChannels:ManipulatingChannelState-JavaScript(Node.js)">JavaScript (Node.js)</h2><p>This example will use the <a href="https://github.com/asterisk/node-ari-client" class="external-link" rel="nofollow">ari-client</a> library. The basic structure is very similar to the <a href="https://wiki.asterisk.org/wiki/display/%7Emjordan/Draft%3A+ARI+Channels+Introduction#Draft:ARIChannelsIntroduction-JavaScript%28Node.js%29" rel="nofollow">channel-dump JavaScript example</a> - see that example for more information on the basics of setting up an ARI connection using this library.</p><p>To start, once our ARI client has been set up, we will want to register callbakcs for three different events - <code>StasisStart</code>, <code>ChannelStateChange</code>, and <code>StasisEnd</code>.</p><ol><li>The bulk of the work will be done in <code>StasisStart</code>, which is called when the channel enters our application. For the most part, this will involve setting up JavaScript timeouts to initiate actions on the channel.</li><li>The <code>ChannelStateChange</code> handler will merely print out the channel state changes for us, which is informative as it will tell us when the channel is answered.</li><li>Finally, the <code>StasisEnd</code> event will clean up for us by cancelling any pending timeouts that we initiated. This will get called when the channel leaves our application - which will happen when the user hangs up the channel, or when we hang up the channel.</li></ol><p>We can store the timeouts that we've set up for a channel using an object of channel IDs to timer instances:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 7; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">timers = {}</pre>
+</div></div><p>And we can register for our three events:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 76; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">client.on_channel_event(&#39;StasisStart&#39;, stasis_start_cb)
+client.on_channel_event(&#39;ChannelStateChange&#39;, channel_state_change_cb)
+client.on_channel_event(&#39;StasisEnd&#39;, stasis_end_cb)</pre>
+</div></div><p> </p><p>The <code>StasisStart</code> event is the most interesting part.</p><ol><li><p>First, we tell the channel to ring, and after two seconds, to answer the channel:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 21; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">channel.ring(function(err) {
+  if (err) {
+    throw err;
+  }
+});
+// answer the channel after 2 seconds
+var timer = setTimeout(answer, 2000);
+timers[channel.id] = timer;</pre>
+</div></div><p>If we didn't have that there, then the caller would probably just have dead space to listen to! Not very enjoyable. We store the timer in the <code>timers</code> object so that our <code>StasisEnd</code> event can cancel it for us if the user hangs up the phone.</p></li><li><p>Once we're in the <code>answer</code> callback, we answer the channel and start silence on the channel. That (hopefully) gives them a slightly more ambient silence noise:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 30; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">// callback that will answer the channel
+function answer() {
+  console.log(util.format(&#39;Answering channel %s&#39;, channel.name));
+  channel.answer(function(err) {
+    if (err) {
+      throw err;
+    }
+  });
+  channel.startSilence(function(err) {
+    if (err) {
+      throw err;
+    }
+  });
+  // hang up the channel in 4 seconds
+  var timer = setTimeout(hangup, 4000);
+  timers[channel.id] = timer;
+}</pre>
+</div></div></li><li><p>After we've answered the channel, we kick off another timer to hang up the channel in 4 seconds. When that timer fires, it will call <code>the hangup callback</code>. This does the final action on the channel by hanging it up:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 48; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">// callback that will hangup the channel
+function hangup() {
+  console.log(util.format(&#39;Hanging up channel %s&#39;, channel.name));
+  channel.hangup(function(err) {
+    if (err) {
+      throw err;
+    }
+  });
+}</pre>
+</div></div></li></ol><p>When we create a timer - such as when we started ringing on the channel - we stored it in our <code>timers</code> object. In our <code>StasisEnd</code> event handler, we'll want to cancel any pending timers. Otherwise, our timers may fire and try to perform an action on channel that has already left our Stasis application, which is a good way to get an HTTP error response code.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 59; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">// handler for StasisEnd event
+function stasisEnd(event, channel) {
+  console.log(util.format(
+        &#39;Channel %s just left our application&#39;, channel.name));
+  var timer = timers[channel.id];
+  if (timer) {
+    clearTimeout(timer);
+    delete timers[channel.id];
+  }
+} </pre>
+</div></div><p> </p><p>Finally, we want to print out the state of the channel in the <code>ChannelStateChanged</code> callback. This will tell us exactly when our channel has been answered:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 70; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">// handler for ChannelStateChange event
+function channelStateChange(event, channel) {
+  console.log(util.format(
+        &#39;Channel %s is now: %s&#39;, channel.name, channel.state));
+}</pre>
+</div></div><h3 id="ARIandChannels:ManipulatingChannelState-channel-state.js">channel-state.js</h3><p><span class="confluence-anchor-link" id="ARIandChannels:ManipulatingChannelState-channel-state.js"></span></p><p>The full source code for <code>channel-state.js</code> is shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>channel-state.js</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: js; gutter: true" style="font-size:12px;">/*jshint node: true*/
+&#39;use strict&#39;;
+
+var ari = require(&#39;ari-client&#39;);
+var util = require(&#39;util&#39;);
+
+var timers = {};
+ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;, clientLoaded);
+
+// handler for client being loaded
+function clientLoaded (err, client) {
+  if (err) {
+    throw err;
+  }
+
+  // handler for StasisStart event
+  function stasisStart(event, channel) {
+    console.log(util.format(
+          &#39;Channel %s has entered the application&#39;, channel.name));
+
+    channel.ring(function(err) {
+      if (err) {
+        throw err;
+      }
+    });
+    // answer the channel after 2 seconds
+    var timer = setTimeout(answer, 2000);
+    timers[channel.id] = timer;
+
+    // callback that will answer the channel
+    function answer() {
+      console.log(util.format(&#39;Answering channel %s&#39;, channel.name));
+      channel.answer(function(err) {
+        if (err) {
+          throw err;
+        }
+      });
+      channel.startSilence(function(err) {
+        if (err) {
+          throw err;
+        }
+      });
+      // hang up the channel in 4 seconds
+      var timer = setTimeout(hangup, 4000);
+      timers[channel.id] = timer;
+    }
+
+    // callback that will hangup the channel
+    function hangup() {
+      console.log(util.format(&#39;Hanging up channel %s&#39;, channel.name));
+      channel.hangup(function(err) {
+        if (err) {
+          throw err;
+        }
+      });
+    }
+  }
+
+  // handler for StasisEnd event
+  function stasisEnd(event, channel) {
+    console.log(util.format(
+          &#39;Channel %s just left our application&#39;, channel.name));
+    var timer = timers[channel.id];
+    if (timer) {
+      clearTimeout(timer);
+      delete timers[channel.id];
+    }
+  }
+
+  // handler for ChannelStateChange event
+  function channelStateChange(event, channel) {
+    console.log(util.format(
+          &#39;Channel %s is now: %s&#39;, channel.name, channel.state));
+  }
+
+  client.on(&#39;StasisStart&#39;, stasisStart);
+  client.on(&#39;StasisEnd&#39;, stasisEnd);
+  client.on(&#39;ChannelStateChange&#39;, channelStateChange);
+
+  client.start(&#39;channel-state&#39;);
+}</pre>
+</div></div><h3 id="ARIandChannels:ManipulatingChannelState-channel-state.jsinaction">channel-state.js in action</h3><p>Here, we see the output from the <code>channel-state.js</code> script when a PJSIP channel for endpoint 'alice' enters into the application:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">Channel PJSIP/alice-00000001 has entered the application
+Answering channel PJSIP/alice-00000001
+Channel PJSIP/alice-00000001 is now: Up
+Hanging up channel PJSIP/alice-00000001
+Channel PJSIP/alice-00000001 just left our application</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

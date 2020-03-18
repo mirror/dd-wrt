@@ -19,13 +19,10 @@
 /*** MODULEINFO
 	<depend>pjproject</depend>
 	<depend>res_pjsip</depend>
-	<depend>res_pjsip_session</depend>
 	<support_level>core</support_level>
 ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <pjsip.h>
 #include <pjsip_ua.h>
@@ -86,11 +83,8 @@ static struct ast_sip_session_supplement  dlg_options_supplement = {
 
 static int load_module(void)
 {
-	CHECK_PJSIP_MODULE_LOADED();
+	ast_sip_session_register_supplement(&dlg_options_supplement);
 
-	if (ast_sip_session_register_supplement(&dlg_options_supplement)) {
-		return AST_MODULE_LOAD_DECLINE;
-	}
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
@@ -101,7 +95,9 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "SIP OPTIONS in dialog handler",
+	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
 	.load_pri = AST_MODPRI_APP_DEPEND,
+	.requires = "res_pjsip",
 );

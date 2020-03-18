@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : ConfBridge Functions</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Conferencing-Applications_32375228.html">Conferencing Applications</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="ConfBridge_13076234.html">ConfBridge</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : ConfBridge Functions
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span> on Mar 30, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="ConfBridgeFunctions-FunctionCONFBRIDGE">Function CONFBRIDGE</h1><p>The CONFBRIDGE dialplan function is used to set customized Bridge and/or User Profiles on a channel for the ConfBridge application. It uses the same options defined in confbridge.conf and allows the creation of dynamic, dialplan-driven conferences.</p><p> </p></div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303032032 {padding: 0px;}
+div.rbtoc1582303032032 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303032032 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303032032'>
+<ul class='toc-indentation'>
+<li><a href='#ConfBridgeFunctions-FunctionCONFBRIDGE'>Function CONFBRIDGE</a>
+<ul class='toc-indentation'>
+<li><a href='#ConfBridgeFunctions-Syntax'>Syntax</a></li>
+<li><a href='#ConfBridgeFunctions-Examples'>Examples</a></li>
+</ul>
+</li>
+<li><a href='#ConfBridgeFunctions-FunctionCONFBRIDGE_INFO'>Function CONFBRIDGE_INFO</a>
+<ul class='toc-indentation'>
+<li><a href='#ConfBridgeFunctions-Syntax.1'>Syntax</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h2 id="ConfBridgeFunctions-Syntax">Syntax</h2><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>CONFBRIDGE(type,option)
+</pre>
+</div></div><ul><li>type - Refers to which type of profile the option belongs to. Type can be either &quot;bridge&quot; or &quot;user.&quot;</li><li>option - Refers to the confbridge.conf option that is to be set dynamically on the channel. This can also refer to an existing Bridge or User Profile by using the keyword &quot;template.&quot; In this case, an existing Bridge or User Profile can be appended or modified on-the-fly.</li></ul><h2 id="ConfBridgeFunctions-Examples">Examples</h2><p><strong>Example 1</strong><br /> In this example, the custom set User Profile on this channel enables announce_join_leave (so users will be announced as they come and go), sets users to join muted (so that they're not able to speak), and pushes them into bridge &quot;1.&quot;</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; 1,1,Answer()
+exten =&gt; 1,n,Set(CONFBRIDGE(user,announce_join_leave)=yes)
+exten =&gt; 1,n,Set(CONFBRIDGE(user,startmuted)=yes)
+exten =&gt; 1,n,ConfBridge(1)
+</pre>
+</div></div><p><strong>Example 2</strong><br /> In this example, we will include an existing User Profile, the default_user User Profile as defined in confbridge.comf, and we will set additional parameters (admin and marked) that aren't already defined in the default_user User Profile.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; 1,1,Answer()
+exten =&gt; 1,n,Set(CONFBRIDGE(user,template)=default_user)
+exten =&gt; 1,n,Set(CONFBRIDGE(user,admin)=yes)
+exten =&gt; 1,n,Set(CONFBRIDGE(user,marked)=yes)
+exten =&gt; 1,n,ConfBridge(1)
+</pre>
+</div></div><h1 id="ConfBridgeFunctions-FunctionCONFBRIDGE_INFO">Function CONFBRIDGE_INFO</h1><p>The CONFBRIDGE_INFO dialplan function is used to retrieve information about a conference, such as locked/unlocked status and the number of parties including admins and marked users.</p><h3 id="ConfBridgeFunctions-Syntax.1">Syntax</h3><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>CONFBRIDGE_INFO(type,conf)
+</pre>
+</div></div><ul><li>type - Refers to which information type to be retrieved. Type can be either &quot;parties,&quot; &quot;admins,&quot; &quot;marked,&quot; or &quot;locked.&quot;</li><li>conf - Refers to the name of the conference being referenced.</li></ul><p>The CONFBRIDGE_INFO function returns a non-negative integer for valid conference identifiers, 0 or 1 for locked, and &quot;&quot; for invalid conference identifiers.</p></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

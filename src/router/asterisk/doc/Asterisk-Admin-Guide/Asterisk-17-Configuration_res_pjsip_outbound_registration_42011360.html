@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Configuration_res_pjsip_outbound_registration</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Module-Configuration_42010715.html">Asterisk 17 Module Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Configuration_res_pjsip_outbound_registration
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span>, last modified on Nov 02, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Configuration_res_pjsip_outbound_registration-SIPresourceforoutboundregistrations">SIP resource for outbound registrations</h1>
+
+<p>This configuration documentation is for functionality provided by <code>res_pjsip_outbound_registration</code>.</p>
+
+<h2 id="Asterisk17Configuration_res_pjsip_outbound_registration-Overview">Overview</h2>
+
+<p><strong>Outbound Registration</strong></p>
+
+<p>This module allows <code>res_pjsip</code> to register to other SIP servers.</p>
+
+
+<h2 id="Asterisk17Configuration_res_pjsip_outbound_registration-pjsip.conf">pjsip.conf</h2>
+
+<h3 id="Asterisk17Configuration_res_pjsip_outbound_registration-registration">registration</h3>
+
+<p>The configuration for outbound registration</p>
+
+<h4 id="Asterisk17Configuration_res_pjsip_outbound_registration-ConfigurationOptionReference">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_outbound_registration-registration_auth_rejection_permanent"><code>auth_rejection_permanent</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>yes</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Determines whether failed authentication challenges are treated as permanent failures. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_outbound_registration-registration_client_uri"><code>client_uri</code></a> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Client SIP URI used when attemping outbound registration </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>contact_user</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Contact User to use in request </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>contact_header_params</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Header parameters to place in the Contact header </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>expiration</code> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>3600</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Expiration time for registrations in seconds </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_outbound_registration-registration_max_retries"><code>max_retries</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>10</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Maximum number of registration attempts. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_outbound_registration-registration_outbound_auth"><code>outbound_auth</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Authentication object(s) to be used for outbound registrations. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>outbound_proxy</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Full SIP URI of the outbound proxy used to send registrations </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>retry_interval</code> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>60</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Interval in seconds between retries if outbound registration is unsuccessful </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_outbound_registration-registration_forbidden_retry_interval"><code>forbidden_retry_interval</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Interval used when receiving a 403 Forbidden response. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_outbound_registration-registration_fatal_retry_interval"><code>fatal_retry_interval</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Interval used when receiving a Fatal response. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_outbound_registration-registration_server_uri"><code>server_uri</code></a> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> SIP URI of the server to register against </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_outbound_registration-registration_transport"><code>transport</code></a> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Transport used for outbound authentication </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_outbound_registration-registration_line"><code>line</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Whether to add a 'line' parameter to the Contact for inbound call matching </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_outbound_registration-registration_endpoint"><code>endpoint</code></a> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Endpoint to use for incoming related calls </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>type</code> </p></td>
+<td class="confluenceTd"><p> <code>None</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Must be of type 'registration'. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_outbound_registration-registration_support_path"><code>support_path</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Enables advertising SIP Path support for outbound REGISTER requests. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>support_outbound</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Enables advertising SIP Outbound support (RFC5626) for outbound REGISTER requests. </p></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="Asterisk17Configuration_res_pjsip_outbound_registration-ConfigurationOptionDescriptions">Configuration Option Descriptions</h4>
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_outbound_registration-registration_auth_rejection_permanent"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_outbound_registration-auth_rejection_permanent">auth_rejection_permanent</h5>
+
+<p>If this option is enabled and an authentication challenge fails, registration will not be attempted again until the configuration is reloaded.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_outbound_registration-registration_client_uri"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_outbound_registration-client_uri">client_uri</h5>
+
+<p>This is the address-of-record for the outbound registration (i.e. the URI in the To header of the REGISTER).</p>
+
+<p>For registration with an ITSP, the client SIP URI may need to consist of an account name or number and the provider's hostname for their registrar, e.g. client_uri=1234567890@example.com. This may differ between providers.</p>
+
+<p>For registration to generic registrars, the client SIP URI will depend on networking specifics and configuration of the registrar.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_outbound_registration-registration_max_retries"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_outbound_registration-max_retries">max_retries</h5>
+
+<p>This sets the maximum number of registration attempts that are made before stopping any further attempts. If set to 0 then upon failure no further attempts are made.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_outbound_registration-registration_outbound_auth"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_outbound_registration-outbound_auth">outbound_auth</h5>
+
+<p>This is a comma-delimited list of <em>auth</em> sections defined in <code>pjsip.conf</code> used to respond to outbound authentication challenges.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>Using the same auth section for inbound and outbound authentication is not recommended. There is a difference in meaning for an empty realm setting between inbound and outbound authentication uses. See the auth realm description for details.</p>
+
+                    </div>
+    </div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_outbound_registration-registration_forbidden_retry_interval"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_outbound_registration-forbidden_retry_interval">forbidden_retry_interval</h5>
+
+<p>If a 403 Forbidden is received, chan_pjsip will wait <em>forbidden_retry_interval</em> seconds before attempting registration again. If 0 is specified, chan_pjsip will not retry after receiving a 403 Forbidden response. Setting this to a non-zero value goes against a &quot;SHOULD NOT&quot; in RFC3261, but can be used to work around buggy registrars.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_outbound_registration-registration_fatal_retry_interval"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_outbound_registration-fatal_retry_interval">fatal_retry_interval</h5>
+
+<p>If a fatal response is received, chan_pjsip will wait <em>fatal_retry_interval</em> seconds before attempting registration again. If 0 is specified, chan_pjsip will not retry after receiving a fatal (non-temporary 4xx, 5xx, 6xx) response. Setting this to a non-zero value may go against a &quot;SHOULD NOT&quot; in RFC3261, but can be used to work around buggy registrars.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>if also set the <em>forbidden_retry_interval</em> takes precedence over this one when a 403 is received. Also, if <em>auth_rejection_permanent</em> equals 'yes' then a 401 and 407 become subject to this retry interval.</p>
+
+                    </div>
+    </div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_outbound_registration-registration_server_uri"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_outbound_registration-server_uri">server_uri</h5>
+
+<p>This is the URI at which to find the registrar to send the outbound REGISTER. This URI is used as the request URI of the outbound REGISTER request from Asterisk.</p>
+
+<p>For registration with an ITSP, the setting may often be just the domain of the registrar, e.g. sip:sip.example.com.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_outbound_registration-registration_transport"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_outbound_registration-transport">transport</h5>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>A <em>transport</em> configured in <code>pjsip.conf</code>. As with other <code>res_pjsip</code> modules, this will use the first available transport of the appropriate type if unconfigured.</p>
+
+                    </div>
+    </div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_outbound_registration-registration_line"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_outbound_registration-line">line</h5>
+
+<p>When enabled this option will cause a 'line' parameter to be added to the Contact header placed into the outgoing registration request. If the remote server sends a call this line parameter will be used to establish a relationship to the outbound registration, ultimately causing the configured endpoint to be used.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_outbound_registration-registration_endpoint"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_outbound_registration-endpoint">endpoint</h5>
+
+<p>When line support is enabled this configured endpoint name is used for incoming calls that are related to the outbound registration.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_outbound_registration-registration_support_path"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_outbound_registration-support_path">support_path</h5>
+
+<p>When this option is enabled, outbound REGISTER requests will advertise support for Path headers so that intervening proxies can add to the Path header as necessary.</p>
+
+
+
+<h3 id="Asterisk17Configuration_res_pjsip_outbound_registration-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-eea2d499f</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

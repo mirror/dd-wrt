@@ -98,8 +98,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_REGISTER_FILE()
-
 #include <stdarg.h>
 #include <pjlib.h>
 #include <pjsip.h>
@@ -112,6 +110,8 @@ ASTERISK_REGISTER_FILE()
 #include "asterisk/res_pjproject.h"
 #include "asterisk/vector.h"
 #include "asterisk/sorcery.h"
+#include "asterisk/test.h"
+#include "asterisk/netsock2.h"
 
 static struct ast_sorcery *pjproject_sorcery;
 static pj_log_func *log_cb_orig;
@@ -229,11 +229,16 @@ static void log_forwarder(int level, const char *data, int len)
 
 static void capture_buildopts_cb(int level, const char *data, int len)
 {
+	char *dup;
+
 	if (strstr(data, "Teluu") || strstr(data, "Dumping")) {
 		return;
 	}
 
-	AST_VECTOR_ADD_SORTED(&buildopts, ast_strdup(ast_skip_blanks(data)), strcmp);
+	dup = ast_strdup(ast_skip_blanks(data));
+	if (dup && AST_VECTOR_ADD_SORTED(&buildopts, dup, strcmp)) {
+		ast_free(dup);
+	}
 }
 
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
@@ -275,16 +280,6 @@ void ast_pjproject_log_intercept_end(void)
 	pjproject_log_intercept.thread = AST_PTHREADT_NULL;
 
 	ast_mutex_unlock(&pjproject_log_intercept_lock);
-}
-
-void ast_pjproject_ref(void)
-{
-	ast_module_ref(ast_module_info->self);
-}
-
-void ast_pjproject_unref(void)
-{
-	ast_module_unref(ast_module_info->self);
 }
 
 static char *handle_pjproject_show_buildopts(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
@@ -466,6 +461,196 @@ static struct ast_cli_entry pjproject_cli[] = {
 	AST_CLI_DEFINE(handle_pjproject_show_log_level, "Show the maximum active pjproject logging level"),
 };
 
+void ast_pjproject_caching_pool_init(pj_caching_pool *cp,
+	const pj_pool_factory_policy *policy, pj_size_t max_capacity)
+{
+	/* Passing a max_capacity of zero disables caching pools */
+	pj_caching_pool_init(cp, policy, ast_option_pjproject_cache_pools ? max_capacity : 0);
+}
+
+void ast_pjproject_caching_pool_destroy(pj_caching_pool *cp)
+{
+	pj_caching_pool_destroy(cp);
+}
+
+int ast_sockaddr_to_pj_sockaddr(const struct ast_sockaddr *addr, pj_sockaddr *pjaddr)
+{
+	if (addr->ss.ss_family == AF_INET) {
+		struct sockaddr_in *sin = (struct sockaddr_in *) &addr->ss;
+		pjaddr->ipv4.sin_family = pj_AF_INET();
+#ifdef HAVE_PJPROJECT_BUNDLED
+		pjaddr->ipv4.sin_addr = sin->sin_addr;
+#else
+		pjaddr->ipv4.sin_addr.s_addr = sin->sin_addr.s_addr;
+#endif
+		pjaddr->ipv4.sin_port   = sin->sin_port;
+	} else if (addr->ss.ss_family == AF_INET6) {
+		struct sockaddr_in6 *sin = (struct sockaddr_in6 *) &addr->ss;
+		pjaddr->ipv6.sin6_family   = pj_AF_INET6();
+		pjaddr->ipv6.sin6_port     = sin->sin6_port;
+		pjaddr->ipv6.sin6_flowinfo = sin->sin6_flowinfo;
+		pjaddr->ipv6.sin6_scope_id = sin->sin6_scope_id;
+		memcpy(&pjaddr->ipv6.sin6_addr, &sin->sin6_addr, sizeof(pjaddr->ipv6.sin6_addr));
+	} else {
+		memset(pjaddr, 0, sizeof(*pjaddr));
+		return -1;
+	}
+	return 0;
+}
+
+int ast_sockaddr_from_pj_sockaddr(struct ast_sockaddr *addr, const pj_sockaddr *pjaddr)
+{
+	if (pjaddr->addr.sa_family == pj_AF_INET()) {
+		struct sockaddr_in *sin = (struct sockaddr_in *) &addr->ss;
+		sin->sin_family = AF_INET;
+#ifdef HAVE_PJPROJECT_BUNDLED
+		sin->sin_addr = pjaddr->ipv4.sin_addr;
+#else
+		sin->sin_addr.s_addr = pjaddr->ipv4.sin_addr.s_addr;
+#endif
+		sin->sin_port   = pjaddr->ipv4.sin_port;
+		addr->len = sizeof(struct sockaddr_in);
+	} else if (pjaddr->addr.sa_family == pj_AF_INET6()) {
+		struct sockaddr_in6 *sin = (struct sockaddr_in6 *) &addr->ss;
+		sin->sin6_family   = AF_INET6;
+		sin->sin6_port     = pjaddr->ipv6.sin6_port;
+		sin->sin6_flowinfo = pjaddr->ipv6.sin6_flowinfo;
+		sin->sin6_scope_id = pjaddr->ipv6.sin6_scope_id;
+		memcpy(&sin->sin6_addr, &pjaddr->ipv6.sin6_addr, sizeof(sin->sin6_addr));
+		addr->len = sizeof(struct sockaddr_in6);
+	} else {
+		memset(addr, 0, sizeof(*addr));
+		return -1;
+	}
+	return 0;
+}
+
+#ifdef TEST_FRAMEWORK
+static void fill_with_garbage(void *x, ssize_t len)
+{
+	unsigned char *w = x;
+	while (len > 0) {
+		int r = ast_random();
+		memcpy(w, &r, len > sizeof(r) ? sizeof(r) : len);
+		w += sizeof(r);
+		len -= sizeof(r);
+	}
+}
+
+AST_TEST_DEFINE(ast_sockaddr_to_pj_sockaddr_test)
+{
+	char *candidates[] = {
+		"127.0.0.1:5555",
+		"[::]:4444",
+		"192.168.0.100:0",
+		"[fec0::1:80]:0",
+		"[fec0::1]:80",
+		NULL,
+	}, **candidate = candidates;
+
+	switch (cmd) {
+	case TEST_INIT:
+		info->name = "ast_sockaddr_to_pj_sockaddr_test";
+		info->category = "/res/res_pjproject/";
+		info->summary = "Validate conversions from an ast_sockaddr to a pj_sockaddr";
+		info->description = "This test converts an ast_sockaddr to a pj_sockaddr and validates\n"
+			"that the two evaluate to the same string when formatted.";
+		return AST_TEST_NOT_RUN;
+	case TEST_EXECUTE:
+		break;
+	}
+
+	while (*candidate) {
+		struct ast_sockaddr addr = {{0,}};
+		pj_sockaddr pjaddr;
+		char buffer[512];
+
+		fill_with_garbage(&pjaddr, sizeof(pj_sockaddr));
+
+		if (!ast_sockaddr_parse(&addr, *candidate, 0)) {
+			ast_test_status_update(test, "Failed to parse candidate IP: %s\n", *candidate);
+			return AST_TEST_FAIL;
+		}
+
+		if (ast_sockaddr_to_pj_sockaddr(&addr, &pjaddr)) {
+			ast_test_status_update(test, "Failed to convert ast_sockaddr to pj_sockaddr: %s\n", *candidate);
+			return AST_TEST_FAIL;
+		}
+
+		pj_sockaddr_print(&pjaddr, buffer, sizeof(buffer), 1 | 2);
+
+		if (strcmp(*candidate, buffer)) {
+			ast_test_status_update(test, "Converted sockaddrs do not match: \"%s\" and \"%s\"\n",
+				*candidate,
+				buffer);
+			return AST_TEST_FAIL;
+		}
+
+		candidate++;
+	}
+
+	return AST_TEST_PASS;
+}
+
+AST_TEST_DEFINE(ast_sockaddr_from_pj_sockaddr_test)
+{
+	char *candidates[] = {
+		"127.0.0.1:5555",
+		"[::]:4444",
+		"192.168.0.100:0",
+		"[fec0::1:80]:0",
+		"[fec0::1]:80",
+		NULL,
+	}, **candidate = candidates;
+
+	switch (cmd) {
+	case TEST_INIT:
+		info->name = "ast_sockaddr_from_pj_sockaddr_test";
+		info->category = "/res/res_pjproject/";
+		info->summary = "Validate conversions from a pj_sockaddr to an ast_sockaddr";
+		info->description = "This test converts a pj_sockaddr to an ast_sockaddr and validates\n"
+			"that the two evaluate to the same string when formatted.";
+		return AST_TEST_NOT_RUN;
+	case TEST_EXECUTE:
+		break;
+	}
+
+	while (*candidate) {
+		struct ast_sockaddr addr = {{0,}};
+		pj_sockaddr pjaddr;
+		pj_str_t t;
+		char buffer[512];
+
+		fill_with_garbage(&addr, sizeof(addr));
+
+		pj_strset(&t, *candidate, strlen(*candidate));
+
+		if (pj_sockaddr_parse(pj_AF_UNSPEC(), 0, &t, &pjaddr) != PJ_SUCCESS) {
+			ast_test_status_update(test, "Failed to parse candidate IP: %s\n", *candidate);
+			return AST_TEST_FAIL;
+		}
+
+		if (ast_sockaddr_from_pj_sockaddr(&addr, &pjaddr)) {
+			ast_test_status_update(test, "Failed to convert pj_sockaddr to ast_sockaddr: %s\n", *candidate);
+			return AST_TEST_FAIL;
+		}
+
+		snprintf(buffer, sizeof(buffer), "%s", ast_sockaddr_stringify(&addr));
+
+		if (strcmp(*candidate, buffer)) {
+			ast_test_status_update(test, "Converted sockaddrs do not match: \"%s\" and \"%s\"\n",
+				*candidate,
+				buffer);
+			return AST_TEST_FAIL;
+		}
+
+		candidate++;
+	}
+
+	return AST_TEST_PASS;
+}
+#endif
+
 static int load_module(void)
 {
 	ast_debug(3, "Starting PJPROJECT logging to Asterisk logger\n");
@@ -535,6 +720,9 @@ static int load_module(void)
 
 	ast_cli_register_multiple(pjproject_cli, ARRAY_LEN(pjproject_cli));
 
+	AST_TEST_REGISTER(ast_sockaddr_to_pj_sockaddr_test);
+	AST_TEST_REGISTER(ast_sockaddr_from_pj_sockaddr_test);
+
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
@@ -546,7 +734,7 @@ static int unload_module(void)
 	pj_log_set_log_func(log_cb_orig);
 	pj_log_set_decor(decor_orig);
 
-	AST_VECTOR_REMOVE_CMP_UNORDERED(&buildopts, NULL, NOT_EQUALS, ast_free);
+	AST_VECTOR_CALLBACK_VOID(&buildopts, ast_free);
 	AST_VECTOR_FREE(&buildopts);
 
 	ast_debug(3, "Stopped PJPROJECT logging to Asterisk logger\n");
@@ -557,6 +745,9 @@ static int unload_module(void)
 	default_log_mappings = NULL;
 
 	ast_sorcery_unref(pjproject_sorcery);
+
+	AST_TEST_UNREGISTER(ast_sockaddr_to_pj_sockaddr_test);
+	AST_TEST_UNREGISTER(ast_sockaddr_from_pj_sockaddr_test);
 
 	return 0;
 }
@@ -576,4 +767,4 @@ AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_
 	.unload = unload_module,
 	.reload = reload_module,
 	.load_pri = AST_MODPRI_CHANNEL_DEPEND - 6,
-	);
+);

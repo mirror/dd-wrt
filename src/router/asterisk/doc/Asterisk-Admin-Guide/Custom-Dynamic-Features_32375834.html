@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Custom Dynamic Features</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Features_4260053.html">Features</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Custom Dynamic Features
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified by <span class='editor'> Richard Mudgett</span> on Nov 23, 2017
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="CustomDynamicFeatures-Overview">Overview</h1><p>Asterisk allows you to define custom features mapped to Asterisk applications. You can then enable these features dynamically, on a per-channel basis by using a channel variable.</p><h1 id="CustomDynamicFeatures-DefiningtheFeatures">Defining the Features</h1><p>Custom features are defined in the <strong>applicationmap</strong> section of the features.conf file.</p><p>Syntax:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[applicationmap]
+&lt;FeatureName&gt; = &lt;DTMF_sequence&gt;,&lt;ActivateOn&gt;[/&lt;ActivatedBy&gt;],&lt;Application&gt;[,&lt;AppArguments&gt;[,MOH_Class]]
+&lt;FeatureName&gt; = &lt;DTMF_sequence&gt;,&lt;ActivateOn&gt;[/&lt;ActivatedBy&gt;],&lt;Application&gt;[,&quot;&lt;AppArguments&gt;&quot;[,MOH_Class]]
+&lt;FeatureName&gt; = &lt;DTMF_sequence&gt;,&lt;ActivateOn&gt;[/&lt;ActivatedBy&gt;],&lt;Application&gt;([&lt;AppArguments&gt;])[,MOH_Class]</pre>
+</div></div><p>Syntax Fields:</p><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Field Name</th><th class="confluenceTh">Description</th></tr><tr><td class="confluenceTd">FeatureName</td><td class="confluenceTd">This is the name of the feature used when setting the DYNAMIC_FEATURES variable to enable usage of this feature.</td></tr><tr><td class="confluenceTd">DTMF_sequence</td><td class="confluenceTd">This is the key sequence used to activate this feature.</td></tr><tr><td class="confluenceTd">ActivateOn</td><td class="confluenceTd">This is the channel of the call that the application will be executed on. Valid values are &quot;self&quot; and &quot;peer&quot;. &quot;self&quot; means run the application on the same channel that activated the feature. &quot;peer&quot; means run the application on the opposite channel from the one that has activated the feature.</td></tr><tr><td colspan="1" class="confluenceTd">ActivatedBy</td><td colspan="1" class="confluenceTd">ActivatedBy is no longer honored. The feature is activated by which channel DYNAMIC_FEATURES includes the feature is on. Use a pre-dial handler to set different values for DYNAMIC_FEATURES on the channels. Historic values are: &quot;caller&quot;, &quot;callee&quot;, and &quot;both&quot;.</td></tr><tr><td colspan="1" class="confluenceTd">Application</td><td colspan="1" class="confluenceTd">This is the application to execute.</td></tr><tr><td colspan="1" class="confluenceTd">AppArguments</td><td colspan="1" class="confluenceTd">These are the arguments to be passed into the application. If you need commas in your arguments, you should use either the second or third syntax, above.</td></tr><tr><td colspan="1" class="confluenceTd">MOH_Class</td><td colspan="1" class="confluenceTd">This is the music on hold class to play while the idle channel waits for the feature to complete. If left blank, no music will be played.</td></tr></tbody></table></div><h2 id="CustomDynamicFeatures-ApplicationMapping">Application Mapping</h2><p>The applicationmap is not intended to be used for all Asterisk applications. When applications are used in extensions.conf, they are executed by the PBX core. In this case, these applications are executed outside of the PBX core, so it does *not* make sense to use any application which has any concept of dialplan flow. Examples of this would be things like Goto, Background, WaitExten, and many more.  The exceptions to this are Gosub and Macro routines which must complete for the call to continue.</p><p>Enabling these features means that the PBX needs to stay in the media flow and media will not be re-directed if DTMF is sent in the media stream.</p><h2 id="CustomDynamicFeatures-ExampleFeatureDefinitions:">Example Feature Definitions:</h2><p>Here we have defined a few custom features to give you an idea of how the configuration looks.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>features.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;"> [applicationmap]
+playmonkeys =&gt; #9,peer,Playback,tt-monkeys
+retrieveinfo =&gt; #8,peer,Set(ARRAY(CDR(mark),CDR(name))=${ODBC_FOO(${CALLERID(num)})})
+pauseMonitor   =&gt; #1,self/callee,Pausemonitor
+unpauseMonitor =&gt; #3,self/callee,UnPauseMonitor</pre>
+</div></div><p>Example feature descriptions:</p><ul><li>playmonkeys - Allow both the caller and callee to play tt-monkeys to the bridged channel.</li><li>retrieveinfo - Set arbitrary channel variables, based upon CALLERID number (Note that the application argument contains commas)</li><li>pauseMonitor - Allow the callee to pause monitoring on their channel.</li><li>unpauseMonitor - Allow the callee to unpause monitoring on their channel.</li></ul><h1 id="CustomDynamicFeatures-EnablingFeatures">Enabling Features</h1><p>After you define a custom feature in features.conf you must enable it on a channel by setting the DYNAMIC_FEATURES channel variable.</p><p>DYNAMIC_FEATURES accepts as an argument a list of hash-sign delimited feature names.</p><p>Example Usage:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;"> Set(__DYNAMIC_FEATURES=playmonkeys#pauseMonitor#unpauseMonitor)</pre>
+</div></div>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Tip: Variable Inheritance</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>The <a href="Variable-Inheritance_4620353.html">two leading underscores</a> allow these feature settings to be set on the outbound channels, as well.  Otherwise, only the original channel will have access to these features.</p>
+                    </div>
+    </div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

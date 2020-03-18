@@ -39,8 +39,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <sqlite3.h>
 
 #include "asterisk/paths.h"	/* use ast_config_AST_LOG_DIR */
@@ -63,6 +61,7 @@ static sqlite3 *db = NULL;
 
 static char table[80];
 static char *columns;
+static int busy_timeout;
 
 struct values {
 	AST_LIST_ENTRY(values) list;
@@ -181,6 +180,15 @@ static int load_config(int reload)
 	} else {
 		ast_log(LOG_WARNING, "Table name not specified.  Assuming cdr.\n");
 		strcpy(table, "cdr");
+	}
+
+	/* sqlite3_busy_timeout in miliseconds */
+	if ((tmp = ast_variable_retrieve(cfg, "master", "busy_timeout")) != NULL) {
+		if (ast_parse_arg(tmp, PARSE_INT32|PARSE_DEFAULT, &busy_timeout, 1000) != 0) {
+			ast_log(LOG_WARNING, "Invalid busy_timeout value '%s' specified. Using 1000 instead.\n", tmp);
+		}
+	} else {
+		busy_timeout = 1000;
 	}
 
 	/* Columns */
@@ -307,7 +315,7 @@ static int load_module(void)
 		free_config(0);
 		return AST_MODULE_LOAD_DECLINE;
 	}
-	sqlite3_busy_timeout(db, 1000);
+	sqlite3_busy_timeout(db, busy_timeout);
 	/* is the table there? */
 	sql = sqlite3_mprintf("SELECT COUNT(AcctId) FROM %q;", table);
 	res = sqlite3_exec(db, sql, NULL, NULL, NULL);
@@ -352,4 +360,5 @@ AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "SQLite3 Custom CDR Mo
 	.unload = unload_module,
 	.reload = reload,
 	.load_pri = AST_MODPRI_CDR_DRIVER,
+	.requires = "cdr",
 );

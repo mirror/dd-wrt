@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : ARI and Bridges: Holding Bridges</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="29395573.html">Asterisk REST Interface (ARI)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Introduction-to-ARI-and-Bridges_29396210.html">Introduction to ARI and Bridges</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : ARI and Bridges: Holding Bridges
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified on Oct 19, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-right-sidebar" data-layout="two-right-sidebar">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="ARIandBridges:HoldingBridges-HoldingBridges">Holding Bridges</h1><p>Holding bridges are a special type of bridge in Asterisk. The purpose of a holding bridge is to provide a consistent way to place channels when you want the person on the other end of the channel to wait. Asterisk will mix the media to the channel depending on the type of <strong>role</strong> the channel has within the bridge. Two types of roles are supported:</p><ul><li><code>participant</code> - the default role for channels in a holding bridge. Media from the bridge is played directly to the channels; however, media from the channels is not played to any other participant.</li><li><code>announcer</code> - if a channel joins a holding bridge as an announcer, the bridge will not play media to the channel. However, all media from the channel will be played to all <code>participant</code> channels in the bridge simultaneously.</li></ul><h2 id="ARIandBridges:HoldingBridges-Addingachannelasaparticipant">Adding a channel as a participant</h2><p>To add a channel as a participant to a holding bridge, you can either not specify a <code>role</code> (as the <code>participant</code> role is the default role for holding bridges), or you can specify the <code>participant</code> role directly:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">POST /bridges/{bridge_id}/addChannel?channel=12345
+POST /bridges/{bridge_id}/addChannel?channel=12345&amp;role=participant</pre>
+</div></div></div>
+</div>
+<div class="cell aside" data-type="aside">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303060252 {padding: 0px;}
+div.rbtoc1582303060252 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303060252 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303060252'>
+<ul class='toc-indentation'>
+<li><a href='#ARIandBridges:HoldingBridges-HoldingBridges'>Holding Bridges</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandBridges:HoldingBridges-Addingachannelasaparticipant'>Adding a channel as a participant</a></li>
+<li><a href='#ARIandBridges:HoldingBridges-Addingachannelasanannouncer'>Adding a channel as an announcer</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandBridges:HoldingBridges-Musiconhold,mediaplayback,recording,andothersuchthings'>Music on hold, media playback, recording, and other such things</a></li>
+<li><a href='#ARIandBridges:HoldingBridges-Therecanbeonlyone!'>There can be only one!</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href='#ARIandBridges:HoldingBridges-Example:Infinitewaitarea'>Example: Infinite wait area</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandBridges:HoldingBridges-Dialplan'>Dialplan</a></li>
+<li><a href='#ARIandBridges:HoldingBridges-Python'>Python</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandBridges:HoldingBridges-bridge-infinite-wait.py'>bridge-infinite-wait.py</a></li>
+<li><a href='#ARIandBridges:HoldingBridges-bridge-infinite-wait.pyinaction'>bridge-infinite-wait.py in action</a></li>
+</ul>
+</li>
+<li><a href='#ARIandBridges:HoldingBridges-JavaScript(Node.js)'>JavaScript (Node.js)</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandBridges:HoldingBridges-bridge-infinite-wait.js'>bridge-infinite-wait.js</a></li>
+<li><a href='#ARIandBridges:HoldingBridges-bridge-infinite-wait.jsinaction'>bridge-infinite-wait.js in action</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h2 id="ARIandBridges:HoldingBridges-Addingachannelasanannouncer">Adding a channel as an announcer</h2><p>To add a channel as an announcer to a holding bridge, you must specify a role of <code>announcer</code>:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">POST /bridges/{bridge_id}/addChannel?channel=56789&amp;role=announcer</pre>
+</div></div>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">When is an Announcer channel useful?</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>If you want to simply play back a media file to all participants in a holding bridge, e.g., &quot;your call is important to us, please keep waiting&quot;, you can simply initiate a <code>/play</code> operation on the holding bridge itself. That will perform a playback to all participants in the same fashion as an announcer channel.</p><p>An announcer channel is particularly useful when there is someone actually on the other end of the channel, as opposed to a pre-recorded message. For example, you may have a call queue supervisor who wants to let everyone who is waiting for an agent that response times are especially long, but to hold on for a bit longer. Jumping into the holding bridge as an announcer adds a small bit of humanity to the dreaded call queue experience!</p>
+                    </div>
+    </div>
+<h3 id="ARIandBridges:HoldingBridges-Musiconhold,mediaplayback,recording,andothersuchthings">Music on hold, media playback, recording, and other such things</h3><p>When dealing with holding bridges, given the particular media rules and channel roles involves, there are some additional catches that you have to be aware when manipulating the bridge:</p><ol><li>Playing music on hold to the bridge will play it for all participants, as well playing media to the bridge. However, you can only do <strong>one</strong> of those operations - you cannot play media to a holding bridge while you are simultaneously playing music on hold to the bridge. Initiating a <code>/play</code> operation on a holding bridge should only be done after stopping the music on hold; likewise, starting music on hold on a bridge with a <code>/play</code> operation currently in progress will fail.</li><li>Recording a holding bridge - while possible - is not terribly interesting. Participant media is dropped - so at best, you'll only record the entertainment that was played to the participants.</li></ol><h3 id="ARIandBridges:HoldingBridges-Therecanbeonlyone!">There can be only one!</h3><p>You cannot have an announcer channel in a holding bridge at the same time that you perform a <code>play</code> operation or have music on hold playing to the bridge. Holding bridges do <strong>not</strong> mix the media between announcers. Since media from the <code>play</code> operation has to go to all participants, as does your announcer channel's media, the holding bridge will become quite confused about your application's intent.</p><h1 id="ARIandBridges:HoldingBridges-Example:Infinitewaitarea">Example: Infinite wait area</h1><p>Now that we all know that holding bridges are perfect for building what many callers fear - the dreaded waiting area of doom - let's make one! This example ARI application will do the following:</p><ol><li>When a channel enters into the Stasis application, it will be put into a existing holding bridge or a newly created one if none exist.</li><li>Music on hold will be played on the bridge.</li><li>Periodically, the <code>thnk-u-for-patience</code> sound will be played to the bridge thanking the users for their patience, which they will need since this holding bridge will never progress beyond this point!</li><li>When a channel leaves a holding bridge, if no other channels remain, the bridge will be destroyed.</li></ol><p>This example will use a similar structure to the bridge-hold python example. Unlike that example, however, it will use some form of a timer to perform our periodic announcement to the holding bridge, and when all the channels have left the infinite wait area, we'll destroy the holding bridge (cleaning up resources is always good!)</p><h2 id="ARIandBridges:HoldingBridges-Dialplan">Dialplan</h2><p>For this example, we need to just drop the channel into Stasis, specifying our application:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; 1000,1,NoOp()
+ same =&gt;      n,Stasis(bridge-infinite-wait)
+ same =&gt;      n,Hangup()</pre>
+</div></div><h2 id="ARIandBridges:HoldingBridges-Python">Python</h2><p>When a channel enters our Stasis application, we first look for an existing holding bridge or create one if none is found. When we create a new bridge, we start music on hold in the bridge and create a timer that will call a callback after 30 seconds. That callback temporarily stops the music on hold, and starts a play operation on the bridge that thanks everyone for their patience. When the play operation finishes, it resumes music on hold.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 11; theme: Confluence; brush: py; gutter: true" style="font-size:12px;"># find or create a holding bridge
+holding_bridge = None
+
+# Announcer timer
+announcer_timer = None
+
+def find_or_create_bridge():
+    &quot;&quot;&quot;Find our infinite wait bridge, or create a new one
+
+    Returns:
+    The one and only holding bridge
+    &quot;&quot;&quot;
+
+    global holding_bridge
+    global announcer_timer
+
+    if holding_bridge:
+        return holding_bridge
+
+    bridges = [candidate for candidate in client.bridges.list() if
+               candidate.json[&#39;bridge_type&#39;] == &#39;holding&#39;]
+    if bridges:
+        bridge = bridges[0]
+        print &quot;Using bridge %s&quot; % bridge.id
+    else:
+        bridge = client.bridges.create(type=&#39;holding&#39;)
+        bridge.startMoh()
+        print &quot;Created bridge %s&quot; % bridge.id
+
+    def play_announcement(bridge):
+        &quot;&quot;&quot;Play an announcement to the bridge&quot;&quot;&quot;
+
+        def on_playback_finished(playback, ev):
+            &quot;&quot;&quot;Handler for the announcement&#39;s PlaybackFinished event&quot;&quot;&quot;
+            global announcer_timer
+            global holding_bridge
+
+            holding_bridge.startMoh()
+
+            announcer_timer = threading.Timer(30, play_announcement,
+                                              [holding_bridge])
+            announcer_timer.start()
+
+        bridge.stopMoh()
+        print &quot;Letting the everyone know we care...&quot;
+        thanks_playback = bridge.play(media=&#39;sound:thnk-u-for-patience&#39;)
+        thanks_playback.on_event(&#39;PlaybackFinished&#39;, on_playback_finished)
+
+    holding_bridge = bridge
+    holding_bridge.on_event(&#39;ChannelLeftBridge&#39;, on_channel_left_bridge)
+    # After 30 seconds, let everyone in the bridge know that we care
+    announcer_timer = threading.Timer(30, play_announcement, [holding_bridge])
+    announcer_timer.start()
+    return bridge</pre>
+</div></div><p>The function that does this work, <code>find_or_create_bridge</code>, is called from our <code>StasisStart</code> event handler. The bridge that it returns will have the new channel added to it.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 87; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">def stasis_start_cb(channel_obj, ev):
+    &quot;&quot;&quot;Handler for StasisStart event&quot;&quot;&quot;
+ 
+    bridge = find_or_create_bridge()
+
+    channel = channel_obj.get(&#39;channel&#39;)
+    print &quot;Channel %s just entered our application, adding it to bridge %s&quot; % (
+        channel.json.get(&#39;name&#39;), holding_bridge.id)
+ 
+    channel.answer()
+    bridge.addChannel(channel=channel.id)
+ </pre>
+</div></div><p>In the <code>find_or_create_bridge</code> function, we also subscribed for the <code>ChannelLeftBridge</code> event. We'll add a callback handler for this in that function as well. When the channel leaves the bridge, we'll check to see if there are no more channels in the bridge and - if so - destroy the bridge.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 59; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">    def on_channel_left_bridge(bridge, ev):
+        &quot;&quot;&quot;Handler for ChannelLeftBridge event&quot;&quot;&quot;
+        global holding_bridge
+        global announcer_timer
+
+        channel = ev.get(&#39;channel&#39;)
+        channel_count = len(bridge.json.get(&#39;channels&#39;))
+
+        print &quot;Channel %s left bridge %s&quot; % (channel.get(&#39;name&#39;), bridge.id)
+        if holding_bridge.id == bridge.id and channel_count == 0:
+            if announcer_timer:
+                announcer_timer.cancel()
+                announcer_timer = None
+                
+            print &quot;Destroying bridge %s&quot; % bridge.id
+            holding_bridge.destroy()
+            holding_bridge = None
+
+</pre>
+</div></div><h3 id="ARIandBridges:HoldingBridges-bridge-infinite-wait.py">bridge-infinite-wait.py</h3><p>The full source code for <code>bridge-infinite-wait.py</code> is shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>bridge-infinite-wait.py</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: py; gutter: true" style="font-size:12px;">#!/usr/bin/env python
+
+import ari
+import logging
+import threading
+ 
+logging.basicConfig(level=logging.ERROR)
+ 
+client = ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;)
+ 
+# find or create a holding bridge
+holding_bridge = None
+
+# Announcer timer
+announcer_timer = None
+
+def find_or_create_bridge():
+    &quot;&quot;&quot;Find our infinite wait bridge, or create a new one
+
+    Returns:
+    The one and only holding bridge
+    &quot;&quot;&quot;
+
+    global holding_bridge
+    global announcer_timer
+
+    if holding_bridge:
+        return holding_bridge
+
+    bridges = [candidate for candidate in client.bridges.list() if
+               candidate.json[&#39;bridge_type&#39;] == &#39;holding&#39;]
+    if bridges:
+        bridge = bridges[0]
+        print &quot;Using bridge %s&quot; % bridge.id
+    else:
+        bridge = client.bridges.create(type=&#39;holding&#39;)
+        bridge.startMoh()
+        print &quot;Created bridge %s&quot; % bridge.id
+
+    def play_announcement(bridge):
+        &quot;&quot;&quot;Play an announcement to the bridge&quot;&quot;&quot;
+
+        def on_playback_finished(playback, ev):
+            &quot;&quot;&quot;Handler for the announcement&#39;s PlaybackFinished event&quot;&quot;&quot;
+            global announcer_timer
+            global holding_bridge
+
+            holding_bridge.startMoh()
+
+            announcer_timer = threading.Timer(30, play_announcement,
+                                              [holding_bridge])
+            announcer_timer.start()
+
+        bridge.stopMoh()
+        print &quot;Letting the everyone know we care...&quot;
+        thanks_playback = bridge.play(media=&#39;sound:thnk-u-for-patience&#39;)
+        thanks_playback.on_event(&#39;PlaybackFinished&#39;, on_playback_finished)
+
+    def on_channel_left_bridge(bridge, ev):
+        &quot;&quot;&quot;Handler for ChannelLeftBridge event&quot;&quot;&quot;
+        global holding_bridge
+        global announcer_timer
+
+        channel = ev.get(&#39;channel&#39;)
+        channel_count = len(bridge.json.get(&#39;channels&#39;))
+
+        print &quot;Channel %s left bridge %s&quot; % (channel.get(&#39;name&#39;), bridge.id)
+        if holding_bridge.id == bridge.id and channel_count == 0:
+            if announcer_timer:
+                announcer_timer.cancel()
+                announcer_timer = None
+                
+            print &quot;Destroying bridge %s&quot; % bridge.id
+            holding_bridge.destroy()
+            holding_bridge = None
+
+    holding_bridge = bridge
+    holding_bridge.on_event(&#39;ChannelLeftBridge&#39;, on_channel_left_bridge)
+
+    # After 30 seconds, let everyone in the bridge know that we care
+    announcer_timer = threading.Timer(30, play_announcement, [holding_bridge])
+    announcer_timer.start()
+
+    return bridge
+
+
+def stasis_start_cb(channel_obj, ev):
+    &quot;&quot;&quot;Handler for StasisStart event&quot;&quot;&quot;
+ 
+    bridge = find_or_create_bridge()
+
+    channel = channel_obj.get(&#39;channel&#39;)
+    print &quot;Channel %s just entered our application, adding it to bridge %s&quot; % (
+        channel.json.get(&#39;name&#39;), holding_bridge.id)
+ 
+    channel.answer()
+    bridge.addChannel(channel=channel.id)
+ 
+def stasis_end_cb(channel, ev):
+    &quot;&quot;&quot;Handler for StasisEnd event&quot;&quot;&quot;
+ 
+    print &quot;Channel %s just left our application&quot; % channel.json.get(&#39;name&#39;)
+ 
+client.on_channel_event(&#39;StasisStart&#39;, stasis_start_cb)
+client.on_channel_event(&#39;StasisEnd&#39;, stasis_end_cb)
+ 
+client.run(apps=&#39;bridge-infinite-wait&#39;)
+</pre>
+</div></div><p> </p><h3 id="ARIandBridges:HoldingBridges-bridge-infinite-wait.pyinaction">bridge-infinite-wait.py in action</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">Created bridge 950c4805-c33c-4895-ad9a-2798055e4939
+Channel PJSIP/alice-00000000 just entered our application, adding it to bridge 950c4805-c33c-4895-ad9a-2798055e4939
+Letting the everyone know we care...
+Channel PJSIP/alice-00000000 left bridge 950c4805-c33c-4895-ad9a-2798055e4939
+Destroying bridge 950c4805-c33c-4895-ad9a-2798055e4939
+Channel PJSIP/alice-00000000 just left our application</pre>
+</div></div><h2 id="ARIandBridges:HoldingBridges-JavaScript(Node.js)">JavaScript (Node.js)</h2><p>When a channel enters our Stasis application, we first look for an existing holding bridge or create one if none is found. When we create a new bridge, we start music on hold in the bridge and create a timer that will call a callback after 30 seconds. That callback temporarily stops the music on hold, and starts a play operation on the bridge that thanks everyone for their patience. When the play operation finishes, it resumes music on hold.</p><p>In all cases, we add the channel to the bridge via the <code>joinBridge</code> function.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 18; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">    console.log(&#39;Channel %s just entered our application&#39;, channel.name);
+
+    // find or create a holding bridge
+    client.bridges.list(function(err, bridges) {
+      if (err) {
+        throw err;
+      }
+
+      var bridge = bridges.filter(function(candidate) {
+        return candidate.bridge_type === &#39;holding&#39;;
+      })[0];
+
+      if (bridge) {
+        console.log(&#39;Using bridge %s&#39;, bridge.id);
+        joinBridge(bridge);
+      } else {
+        client.bridges.create({type: &#39;holding&#39;}, function(err, newBridge) {
+          if (err) {
+            throw err;
+          }    
+          console.log(&#39;Created bridge %s&#39;, newBridge.id);
+          newBridge.startMoh(function(err) {
+            if (err) {
+              throw err;
+            }
+          });
+          joinBridge(newBridge);
+
+          timer = setTimeout(play_announcement, 30000);
+
+          // callback that will let our users know how much we care
+          function play_announcement() {
+            console.log(&#39;Letting everyone know we care...&#39;);
+            newBridge.stopMoh(function(err) {
+              if (err) {
+                throw err;
+              }
+
+              var playback = client.Playback();
+              newBridge.play({media: &#39;sound:thnk-u-for-patience&#39;},
+                             playback, function(err, playback) {
+                if (err) {
+                  throw err;
+                }
+              });
+              playback.once(&#39;PlaybackFinished&#39;, function(event, playback) {
+                newBridge.startMoh(function(err) {
+                  if (err) {
+                    throw err;
+                  }
+                });
+                timer = setTimeout(play_announcement, 30000);
+              });
+            });
+          }
+        });
+      }</pre>
+</div></div><p>The joinBridge function involves registered a callback for the ChannelLeftBridge event and adds the channel to the bridge.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 77; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">    function joinBridge(bridge) {
+      channel.once(&#39;ChannelLeftBridge&#39;, function(event, instances) {
+        channelLeftBridge(event, instances, bridge);
+      });
+
+      bridge.addChannel({channel: channel.id}, function(err) {
+        if (err) {
+          throw err;
+        }
+      });
+      channel.answer(function(err) {
+        if (err) {
+          throw err;
+        }
+      });
+    } </pre>
+</div></div><p>Notice that we use an anonymous function to pass the bridge as an extra parameter to the ChannelLeftBridge callback so we can keep the handler at the same level as joinBridge and avoid another indentation level of callbacks. Finally, we can handle destroying the bridge when the last channel contained in it has left:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 95; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">    // Handler for ChannelLeftBridge event
+    function channelLeftBridge(event, instances, bridge) {
+      var holdingBridge = instances.bridge;
+      var channel = instances.channel;
+
+      console.log(&#39;Channel %s left bridge %s&#39;, channel.name, bridge.id);
+
+      if (holdingBridge.id === bridge.id &amp;&amp;
+          holdingBridge.channels.length === 0) {
+
+        if (timer) {
+          clearTimeout(timer);
+        }
+
+        bridge.destroy(function(err) {
+          if (err) {
+            throw err;
+          }
+        });
+      }
+    }</pre>
+</div></div><h3 id="ARIandBridges:HoldingBridges-bridge-infinite-wait.js">bridge-infinite-wait.js</h3><p>The full source code for <code>bridge-infinite-wait.js</code> is shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>bridge-infinite-wait.js</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: js; gutter: true" style="font-size:12px;">/*jshint node:true*/
+&#39;use strict&#39;;
+
+var ari = require(&#39;ari-client&#39;);
+var util = require(&#39;util&#39;);
+
+var timer = null;
+ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;, clientLoaded);
+
+// handler for client being loaded
+function clientLoaded (err, client) {
+  if (err) {
+    throw err;
+  }
+
+  // handler for StasisStart event
+  function stasisStart(event, channel) {
+    console.log(&#39;Channel %s just entered our application&#39;, channel.name);
+
+    // find or create a holding bridge
+    client.bridges.list(function(err, bridges) {
+      if (err) {
+        throw err;
+      }
+
+      var bridge = bridges.filter(function(candidate) {
+        return candidate.bridge_type === &#39;holding&#39;;
+      })[0];
+
+      if (bridge) {
+        console.log(&#39;Using bridge %s&#39;, bridge.id);
+        joinBridge(bridge);
+      } else {
+        client.bridges.create({type: &#39;holding&#39;}, function(err, newBridge) {
+          if (err) {
+            throw err;
+          }    
+          console.log(&#39;Created bridge %s&#39;, newBridge.id);
+          newBridge.startMoh(function(err) {
+            if (err) {
+              throw err;
+            }
+          });
+          joinBridge(newBridge);
+
+          timer = setTimeout(play_announcement, 30000);
+
+          // callback that will let our users know how much we care
+          function play_announcement() {
+            console.log(&#39;Letting everyone know we care...&#39;);
+            newBridge.stopMoh(function(err) {
+              if (err) {
+                throw err;
+              }
+
+              var playback = client.Playback();
+              newBridge.play({media: &#39;sound:thnk-u-for-patience&#39;},
+                             playback, function(err, playback) {
+                if (err) {
+                  throw err;
+                }
+              });
+              playback.once(&#39;PlaybackFinished&#39;, function(event, playback) {
+                newBridge.startMoh(function(err) {
+                  if (err) {
+                    throw err;
+                  }
+                });
+                timer = setTimeout(play_announcement, 30000);
+              });
+            });
+          }
+        });
+      }
+    });
+
+    function joinBridge(bridge) {
+      channel.once(&#39;ChannelLeftBridge&#39;, function(event, instances) {
+        channelLeftBridge(event, instances, bridge);
+      });
+
+      bridge.addChannel({channel: channel.id}, function(err) {
+        if (err) {
+          throw err;
+        }
+      });
+      channel.answer(function(err) {
+        if (err) {
+          throw err;
+        }
+      });
+    }
+
+    // Handler for ChannelLeftBridge event
+    function channelLeftBridge(event, instances, bridge) {
+      var holdingBridge = instances.bridge;
+      var channel = instances.channel;
+
+      console.log(&#39;Channel %s left bridge %s&#39;, channel.name, bridge.id);
+
+      if (holdingBridge.id === bridge.id &amp;&amp;
+          holdingBridge.channels.length === 0) {
+
+        if (timer) {
+          clearTimeout(timer);
+        }
+
+        bridge.destroy(function(err) {
+          if (err) {
+            throw err;
+          }
+        });
+      }
+    }
+  }
+
+  // handler for StasisEnd event
+  function stasisEnd(event, channel) {
+    console.log(&#39;Channel %s just left our application&#39;, channel.name);
+  }
+
+  client.on(&#39;StasisStart&#39;, stasisStart);
+  client.on(&#39;StasisEnd&#39;, stasisEnd);
+
+  console.log(&#39;starting&#39;);
+  client.start(&#39;bridge-infinite-wait&#39;);
+}</pre>
+</div></div><h3 id="ARIandBridges:HoldingBridges-bridge-infinite-wait.jsinaction">bridge-infinite-wait.js in action</h3><p>The following shows the output of the <code>bridge-infinite-wait.js</code> script when a <code>PJSIP</code> channel for <code>alice</code> enters the application:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">Channel PJSIP/alice-00000001 just entered our application
+Created bridge 31a4a193-36a7-412b-854b-cf2cf5f90bbd
+Letting everyone know we care...
+Channel PJSIP/alice-00000001 left bridge 31a4a193-36a7-412b-854b-cf2cf5f90bbd
+Channel PJSIP/alice-00000001 just left our application</pre>
+</div></div></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : SQLite Tables</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Back-end-Database-and-Realtime-Connectivity_28314861.html">Back-end Database and Realtime Connectivity</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : SQLite Tables
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 27, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>/*
+ * res_config_sqlite - SQLite 2 support for Asterisk
+ *
+ * This module can be used as a static/RealTime configuration module, and a CDR
+ * handler.  See the Doxygen documentation for a detailed description of the
+ * module, and the configs/ directory for the sample configuration file.
+ */
+
+/*
+ * Tables for res_config_sqlite.so.
+ */
+
+/*
+ * RealTime static table.
+ */
+CREATE TABLE ast_config (
+	id		INTEGER,
+	cat_metric	INT(11)		NOT NULL	DEFAULT 0,
+	var_metric	INT(11)		NOT NULL	DEFAULT 0,
+	commented	TINYINT(1)	NOT NULL	DEFAULT 0,
+	filename	VARCHAR(128)	NOT NULL	DEFAULT &#39;&#39;,
+	category	VARCHAR(128)	NOT NULL	DEFAULT &#39;default&#39;,
+	var_name	VARCHAR(128)	NOT NULL	DEFAULT &#39;&#39;,
+	var_val		TEXT		NOT NULL	DEFAULT &#39;&#39;,
+	PRIMARY KEY	(id)
+);
+
+CREATE INDEX ast_config__idx__cat_metric		ON ast_config(cat_metric);
+CREATE INDEX ast_config__idx__var_metric		ON ast_config(var_metric);
+CREATE INDEX ast_config__idx__filename_commented	ON ast_config(filename, commented);
+
+/*
+ * CDR table (this table is automatically created if non existent).
+ */
+CREATE TABLE ast_cdr (
+	id		INTEGER,
+	clid		VARCHAR(80)	NOT NULL	DEFAULT &#39;&#39;,
+	src		VARCHAR(80)	NOT NULL	DEFAULT &#39;&#39;,
+	dst		VARCHAR(80)	NOT NULL	DEFAULT &#39;&#39;,
+	dcontext	VARCHAR(80)	NOT NULL	DEFAULT &#39;&#39;,
+	channel		VARCHAR(80)	NOT NULL	DEFAULT &#39;&#39;,
+	dstchannel	VARCHAR(80)	NOT NULL	DEFAULT &#39;&#39;,
+	lastapp		VARCHAR(80)	NOT NULL	DEFAULT &#39;&#39;,
+	lastdata	VARCHAR(80)	NOT NULL	DEFAULT &#39;&#39;,
+	start		DATETIME	NOT NULL	DEFAULT &#39;0000-00-00 00:00:00&#39;,
+	answer		DATETIME	NOT NULL	DEFAULT &#39;0000-00-00 00:00:00&#39;,
+	end		DATETIME	NOT NULL	DEFAULT &#39;0000-00-00 00:00:00&#39;,
+	duration	INT(11)		NOT NULL	DEFAULT 0,
+	billsec		INT(11)		NOT NULL	DEFAULT 0,
+	disposition	VARCHAR(45)	NOT NULL	DEFAULT &#39;&#39;,
+	amaflags	INT(11)		NOT NULL	DEFAULT 0,
+	accountcode	VARCHAR(20)	NOT NULL	DEFAULT &#39;&#39;,
+	uniqueid	VARCHAR(32)	NOT NULL	DEFAULT &#39;&#39;,
+	userfield	VARCHAR(255)	NOT NULL	DEFAULT &#39;&#39;,
+	PRIMARY KEY	(id)
+);
+
+/*
+ * SIP RealTime table.
+ */
+CREATE TABLE ast_sip (
+	id		INTEGER,
+	commented	TINYINT(1)	NOT NULL	DEFAULT 0,
+	name		VARCHAR(80)	NOT NULL	DEFAULT &#39;&#39;,
+	host		VARCHAR(31)	NOT NULL	DEFAULT &#39;&#39;,
+	nat		VARCHAR(5)	NOT NULL	DEFAULT &#39;no&#39;,
+	type		VARCHAR(6)	NOT NULL	DEFAULT &#39;friend&#39;,
+	accountcode	VARCHAR(20)			DEFAULT NULL,
+	amaflags	VARCHAR(13)			DEFAULT NULL,
+	callgroup	VARCHAR(10)			DEFAULT NULL,
+	callerid	VARCHAR(80)			DEFAULT NULL,
+	cancallforward	CHAR(3)				DEFAULT &#39;yes&#39;,
+	directmedia	CHAR(3)				DEFAULT &#39;yes&#39;,
+	context		VARCHAR(80)			DEFAULT NULL,
+	defaultip	VARCHAR(15)			DEFAULT NULL,
+	dtmfmode	VARCHAR(7)			DEFAULT NULL,
+	fromuser	VARCHAR(80)			DEFAULT NULL,
+	fromdomain	VARCHAR(80)			DEFAULT NULL,
+	insecure	VARCHAR(4)			DEFAULT NULL,
+	language	CHAR(2)				DEFAULT NULL,
+	mailbox		VARCHAR(50)			DEFAULT NULL,
+	md5secret	VARCHAR(80)			DEFAULT NULL,
+	deny		VARCHAR(95)			DEFAULT NULL,
+	permit		VARCHAR(95)			DEFAULT NULL,
+	mask		VARCHAR(95)			DEFAULT NULL,
+	musiconhold	VARCHAR(100)			DEFAULT NULL,
+	pickupgroup	VARCHAR(10)			DEFAULT NULL,
+	qualify		CHAR(3)				DEFAULT NULL,
+	regexten	VARCHAR(80)			DEFAULT NULL,
+	restrictcid	CHAR(3)				DEFAULT NULL,
+	rtptimeout	CHAR(3)				DEFAULT NULL,
+	rtpholdtimeout	CHAR(3)				DEFAULT NULL,
+	secret		VARCHAR(80)			DEFAULT NULL,
+	setvar		VARCHAR(100)			DEFAULT NULL,
+	disallow	VARCHAR(100)			DEFAULT &#39;all&#39;,
+	allow		VARCHAR(100)			DEFAULT &#39;g729,ilbc,gsm,ulaw,alaw&#39;,
+	fullcontact	VARCHAR(80)	NOT NULL	DEFAULT &#39;&#39;,
+	ipaddr		VARCHAR(15)	NOT NULL	DEFAULT &#39;&#39;,
+	port		INT(11)		NOT NULL	DEFAULT 0,
+	regserver	VARCHAR(100)			DEFAULT NULL,
+	regseconds	INT(11)		NOT NULL	DEFAULT 0,
+	username	VARCHAR(80)	NOT NULL	DEFAULT &#39;&#39;,
+	PRIMARY KEY	(id)
+	UNIQUE		(name)
+);
+
+CREATE INDEX ast_sip__idx__commented ON ast_sip(commented);
+
+/*
+ * Dialplan RealTime table.
+ */
+CREATE TABLE ast_exten (
+	id		INTEGER,
+	commented	TINYINT(1)	NOT NULL	DEFAULT 0,
+	context		VARCHAR(80)	NOT NULL	DEFAULT &#39;&#39;,
+	exten		VARCHAR(40)	NOT NULL	DEFAULT &#39;&#39;,
+	priority	INT(11)		NOT NULL	DEFAULT 0,
+	app		VARCHAR(128)	NOT NULL	DEFAULT &#39;&#39;,
+	appdata		VARCHAR(128)	NOT NULL	DEFAULT &#39;&#39;,
+	PRIMARY KEY	(id)
+);
+
+CREATE INDEX ast_exten__idx__commented			ON ast_exten(commented);
+CREATE INDEX ast_exten__idx__context_exten_priority	ON ast_exten(context, exten, priority);
+</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

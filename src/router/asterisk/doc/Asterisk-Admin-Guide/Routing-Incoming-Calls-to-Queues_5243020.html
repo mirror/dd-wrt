@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Routing Incoming Calls to Queues</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Queues_5243008.html">Asterisk Queues</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-Call-Queues-with-AEL_5243010.html">Configuring Call Queues with AEL</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Routing Incoming Calls to Queues
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Alexander Gonchiy</span> on Nov 09, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Then in extensions.ael, you can do these things:</p><p>The Main Menu<br /> At Digium, incoming callers are sent to the &quot;mainmenu&quot; context, where they are greeted, and directed to the numbers they choose...</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">context mainmenu {
+    includes {
+        digium;
+        queues-loginout;
+    }
+    0 =&gt; goto dispatch,s,1; 
+    2 =&gt; goto sales,s,1;
+    3 =&gt; goto customerservice,s,1;
+    4 =&gt; goto dispatch,s,1;
+    s =&gt; {
+        Ringing();
+        Wait(1);
+        Set(attempts=0); 
+        Answer(); 
+        Wait(1); 
+        Background(digium/ThankYouForCallingDigium);
+        Background(digium/YourOpenSourceTelecommunicationsSupplier); 
+        WaitExten(0.3);
+    repeat: 
+        Set(attempts=$[${attempts} + 1]); 
+        Background(digium/IfYouKnowYourPartysExtensionYouMayDialItAtAnyTime); 
+        WaitExten(0.1);
+        Background(digium/Otherwise); 
+        WaitExten(0.1); 
+        Background(digium/ForSalesPleasePress2); 
+        WaitExten(0.2);
+        Background(digium/ForCustomerServicePleasePress3); 
+        WaitExten(0.2);
+        Background(digium/ForAllOtherDepartmentsPleasePress4); 
+        WaitExten(0.2); 
+        Background(digium/ToSpeakWithAnOperatorPleasePress0AtAnyTime); 
+        if( ${attempts} &lt; 2 ) { 
+            WaitExten(0.3); 
+            Background(digium/ToHearTheseOptionsRepeatedPleaseHold);
+        }
+        WaitExten(5);
+        if( ${attempts} &lt; 2 ) goto repeat; 
+        Background(digium/YouHaveMadeNoSelection); 
+        Background(digium/ThisCallWillBeEnded); 
+        Background(goodbye); 
+        Hangup(); 
+    } 
+}
+</pre>
+</div></div><p>The Contexts referenced from the queues.conf file</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">context sales {
+    0 =&gt; goto dispatch,s,1;
+    8 =&gt; Voicemail(${SALESVM});
+    s =&gt; {
+        Ringing();
+        Wait(2); 
+        Background(digium/ThankYouForContactingTheDigiumSalesDepartment); 
+        WaitExten(0.3); 
+        Background(digium/PleaseHoldAndYourCallWillBeAnsweredByOurNextAvailableSalesRepresentative); 
+        WaitExten(0.3); 
+        Background(digium/AtAnyTimeYouMayPress0ToSpeakWithAnOperatorOr8ToLeaveAMessage); 
+        Set(CALLERID(name)=Sales); 
+        Queue(sales-general,t); 
+        Set(CALLERID(name)=EmptySalQ); 
+        goto dispatch,s,1; 
+        Playback(goodbye); 
+        Hangup(); 
+    } 
+}
+</pre>
+</div></div><p>Please note that there is only one attempt to queue a call in the sales queue. All sales agents that are logged in will be rung.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">context customerservice { 
+    0 =&gt; {
+        Set(CALLERID(name)=CSVTrans); 
+        goto dispatch,s,1; 
+    } 
+    8 =&gt; Voicemail(${CUSTSERVVM}); 
+    s =&gt; {
+        Ringing(); 
+        Wait(2); 
+        Background(digium/ThankYouForCallingDigiumCustomerService); 
+        WaitExten(0.3); 
+        notracking: Background(digium/PleaseWaitForTheNextAvailableCustomerServiceRepresentative); 
+        WaitExten(0.3); 
+        Background(digium/AtAnyTimeYouMayPress0ToSpeakWithAnOperatorOr8ToLeaveAMessage); 
+        Set(CALLERID(name)=Cust Svc); 
+        Set(QUEUE_MAX_PENALTY=10); 
+        Queue(customerservice,t);
+        Set(QUEUE_MAX_PENALTY=0); 
+        Queue(customerservice,t); 
+        Set(CALLERID(name)=EmptyCSVQ); 
+        goto dispatch,s,1; 
+        Background(digium/NoCustomerServiceRepresentativesAreAvailableAtThisTime);  
+        Background(digium/PleaseLeaveAMessageInTheCustomerServiceVoiceMailBox); 
+        Voicemail(${CUSTSERVVM}); 
+        Playback(goodbye); 
+        Hangup(); 
+    } 
+}
+</pre>
+</div></div><p>Note that calls coming into customerservice will first be try to queue calls to those agents with a QUEUE_MAX_PENALTY of 10, and if none are available, then all agents are rung.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">context dispatch {
+    s =&gt; {
+        Ringing();
+        Wait(2); 
+        Background(digium/ThankYouForCallingDigium); 
+        WaitExten(0.3);
+        Background(digium/YourCallWillBeAnsweredByOurNextAvailableOperator); 
+        Background(digium/PleaseHold); 
+        Set(QUEUE_MAX_PENALTY=10);
+        Queue(dispatch,t); 
+        Set(QUEUE_MAX_PENALTY=20); 
+        Queue(dispatch,t); 
+        Set(QUEUE_MAX_PENALTY=0);
+        Queue(dispatch,t);
+        Background(digium/NoOneIsAvailableToTakeYourCall); 
+        Background(digium/PleaseLeaveAMessageInOurGeneralVoiceMailBox);
+        Voicemail(${DISPATCHVM}); 
+        Playback(goodbye); 
+        Hangup(); 
+    }
+}
+</pre>
+</div></div><p>And in the dispatch context, first agents of priority 10 are tried, then 20, and if none are available, all agents are tried.</p><p>Notice that a common pattern is followed in each of the three queue contexts:</p><p>First, you set QUEUE_MAX_PENALTY to a value, then you call Queue(queue-name,option,...) (see the Queue application documetation for details)</p><p>In the above, note that the &quot;t&quot; option is specified, and this allows the agent picking up the incoming call the luxury of transferring the call to other parties.</p><p>The purpose of specifying the QUEUE_MAX_PENALTY is to develop a set of priorities amongst agents. By the above usage, agents with lower number priorities will be given the calls first, and then, if no-one picks up the call, the QUEUE_MAX_PENALTY will be incremented, and the queue tried <br /> again. Hopefully, along the line, someone will pick up the call, and the Queue application will end with a hangup.</p><p>The final attempt to queue in most of our examples sets the QUEUE_MAX_PENALTY to zero, which means to try all available agents.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

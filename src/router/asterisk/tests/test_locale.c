@@ -21,7 +21,7 @@
  * \brief Locale Test
  *
  * \author\verbatim Tilghman Lesher <tlesher AT digium DOT com> \endverbatim
- * 
+ *
  * \ingroup tests
  */
 
@@ -31,8 +31,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <sys/types.h>
 #include <dirent.h>

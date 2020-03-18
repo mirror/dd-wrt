@@ -36,10 +36,10 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <math.h>
 
+#include "asterisk/config.h"
+#include "asterisk/module.h"
 #include "asterisk/plc.h"
 
 #if !defined(FALSE)
@@ -98,7 +98,7 @@ static void normalise_history(plc_state_t *s)
 	if (s->buf_ptr == 0)
 		return;
 	memcpy(tmp, s->history, sizeof(int16_t)*s->buf_ptr);
-	memcpy(s->history, s->history + s->buf_ptr, sizeof(int16_t) * (PLC_HISTORY_LEN - s->buf_ptr));
+	memmove(s->history, s->history + s->buf_ptr, sizeof(int16_t) * (PLC_HISTORY_LEN - s->buf_ptr));
 	memcpy(s->history + PLC_HISTORY_LEN - s->buf_ptr, tmp, sizeof(int16_t) * s->buf_ptr);
 	s->buf_ptr = 0;
 }
@@ -138,7 +138,7 @@ int plc_rx(plc_state_t *s, int16_t amp[], int len)
 	float old_weight;
 	float new_weight;
 	float gain;
-	
+
 	if (s->missing_samples) {
 		/* Although we have a real signal, we need to smooth it to fit well
 		with the synthetic signal we used for the previous block */
@@ -248,3 +248,53 @@ plc_state_t *plc_init(plc_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/
+
+static int reload_module(void)
+{
+	struct ast_variable *var;
+	struct ast_flags config_flags = { 0 };
+	struct ast_config *cfg = ast_config_load("codecs.conf", config_flags);
+
+	if (cfg == CONFIG_STATUS_FILEMISSING || cfg == CONFIG_STATUS_FILEUNCHANGED || cfg == CONFIG_STATUS_FILEINVALID) {
+		return 0;
+	}
+
+	for (var = ast_variable_browse(cfg, "plc"); var; var = var->next) {
+		if (!strcasecmp(var->name, "genericplc")) {
+			ast_set2_flag(&ast_options, ast_true(var->value), AST_OPT_FLAG_GENERIC_PLC);
+		} else if (!strcasecmp(var->name, "genericplc_on_equal_codecs")) {
+			ast_set2_flag(&ast_options, ast_true(var->value), AST_OPT_FLAG_GENERIC_PLC_ON_EQUAL_CODECS);
+		}
+	}
+	ast_config_destroy(cfg);
+
+	/*
+	 * Force on_equal_codecs to false if generic_plc is false.
+	 */
+	if (!ast_opt_generic_plc) {
+		ast_set2_flag(&ast_options, 0, AST_OPT_FLAG_GENERIC_PLC_ON_EQUAL_CODECS);
+	}
+
+	return 0;
+}
+
+static int load_module(void)
+{
+	reload_module();
+
+	return AST_MODULE_LOAD_SUCCESS;
+}
+
+static int unload_module(void)
+{
+	return 0;
+}
+
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "PLC",
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.reload = reload_module,
+	.load_pri = AST_MODPRI_CORE,
+	.requires = "extconfig",
+);

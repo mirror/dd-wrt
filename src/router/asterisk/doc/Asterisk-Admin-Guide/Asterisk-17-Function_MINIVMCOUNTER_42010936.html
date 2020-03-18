@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Function_MINIVMCOUNTER</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Functions_42010713.html">Asterisk 17 Dialplan Functions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Function_MINIVMCOUNTER
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Function_MINIVMCOUNTER-MINIVMCOUNTER()">MINIVMCOUNTER()</h1>
+
+<h3 id="Asterisk17Function_MINIVMCOUNTER-Synopsis">Synopsis</h3>
+
+<p>Reads or sets counters for MiniVoicemail message.</p>
+
+<h3 id="Asterisk17Function_MINIVMCOUNTER-Description">Description</h3>
+
+<p>The operation is atomic and the counter is locked while changing the value. The counters are stored as text files in the minivm account directories. It might be better to use realtime functions if you are using a database to operate your Asterisk.</p>
+
+
+<h3 id="Asterisk17Function_MINIVMCOUNTER-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>MINIVMCOUNTER(account:name:operand)</pre>
+</div></div>
+
+<h5 id="Asterisk17Function_MINIVMCOUNTER-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>account</code> - If account is given and it exists, the counter is specific for the account.<br />
+If account is a domain and the domain directory exists, counters are specific for a domain.</li>
+	<li><code>name</code> - The name of the counter is a string, up to 10 characters.</li>
+	<li><code>operand</code> - The counters never goes below zero. Valid operands for changing the value of a counter when assigning a value are:
+	<ul>
+		<li><code>i</code> - Increment by value.</li>
+		<li><code>d</code> - Decrement by value.</li>
+		<li><code>s</code> - Set to value.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Function_MINIVMCOUNTER-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Application_MinivmRecord_42010930.html">Asterisk 17 Application_MinivmRecord</a></li>
+	<li><a href="Asterisk-17-Application_MinivmGreet_42010931.html">Asterisk 17 Application_MinivmGreet</a></li>
+	<li><a href="Asterisk-17-Application_MinivmNotify_42010932.html">Asterisk 17 Application_MinivmNotify</a></li>
+	<li><a href="Asterisk-17-Application_MinivmDelete_42010933.html">Asterisk 17 Application_MinivmDelete</a></li>
+	<li><a href="Asterisk-17-Application_MinivmAccMess_42010934.html">Asterisk 17 Application_MinivmAccMess</a></li>
+	<li><a href="Asterisk-17-Application_MinivmMWI_42010935.html">Asterisk 17 Application_MinivmMWI</a></li>
+	<li><a href="Asterisk-17-Function_MINIVMACCOUNT_42010937.html">Asterisk 17 Function_MINIVMACCOUNT</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Function_MINIVMCOUNTER-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

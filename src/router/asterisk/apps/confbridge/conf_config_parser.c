@@ -29,7 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/logger.h"
 #include "asterisk/config.h"
 #include "asterisk/config_options.h"
@@ -68,6 +67,23 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 				</configOption>
 				<configOption name="admin">
 					<synopsis>Sets if the user is an admin or not</synopsis>
+				</configOption>
+				<configOption name="send_events" default="no">
+					<synopsis>Sets if events are send to the user</synopsis>
+					<description><para>If events are enabled for this bridge and this option is
+					set, users will receive events like join, leave, talking, etc. via text
+					messages.  For users accessing the bridge via chan_pjsip, this means
+					in-dialog MESSAGE messages.  This is most useful for WebRTC participants
+					where the browser application can use the messages to alter the user
+					interface.</para></description>
+				</configOption>
+				<configOption name="echo_events" default="yes">
+					<synopsis>Sets if events are echoed back to the user that
+					triggered them</synopsis>
+					<description><para>If events are enabled for this user and this option
+					is set, the user will receive events they trigger, talking, mute, etc.
+					If not set, they will not receive their own events.
+					</para></description>
 				</configOption>
 				<configOption name="marked">
 					<synopsis>Sets if this is a marked user or not</synopsis>
@@ -145,72 +161,66 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 					</para></description>
 				</configOption>
 				<configOption name="dsp_silence_threshold">
-					<synopsis>The number of milliseconds of detected silence necessary to trigger silence detection</synopsis>
-					<description><para>
-					The time in milliseconds of sound falling within the what
-					the dsp has established as baseline silence before a user
-					is considered be silent.  This value affects several
-					operations and should not be changed unless the impact
-					on call quality is fully understood.</para>
-					<para>What this value affects internally:</para>
-					<para>
-						1. When talk detection AMI events are enabled, this value
+					<synopsis>The number of milliseconds of silence necessary to declare talking stopped.</synopsis>
+					<description>
+						<para>The time in milliseconds of sound falling below the
+						<replaceable>dsp_talking_threshold</replaceable> option when
+						a user is considered to stop talking.  This value affects several
+						operations and should not be changed unless the impact on call
+						quality is fully understood.
+						</para>
+						<para>What this value affects internally:
+						</para>
+						<para>1. When talk detection AMI events are enabled, this value
 						determines when the user has stopped talking after a
 						period of talking.  If this value is set too low
 						AMI events indicating the user has stopped talking
 						may get falsely sent out when the user briefly pauses
 						during mid sentence.
-					</para>
-					<para>
-						2. The <replaceable>drop_silence</replaceable> option depends on this value to
-						determine when the user's audio should begin to be
-						dropped from the conference bridge after the user
+						</para>
+						<para>2. The <replaceable>drop_silence</replaceable> option
+						depends on this value to determine when the user's audio should
+						begin to be dropped from the conference bridge after the user
 						stops talking.  If this value is set too low the user's
-						audio stream may sound choppy to the other participants.
-						This is caused by the user transitioning constantly from
-						silence to talking during mid sentence.
-					</para>
-					<para>
-						The best way to approach this option is to set it slightly above
-						the maximum amount of ms of silence a user may generate during
-						natural speech.
-					</para>
-					<para>By default this value is 2500ms. Valid values are 1 through 2^31.</para>
+						audio stream may sound choppy to the other participants.  This
+						is caused by the user transitioning constantly from silence to
+						talking during mid sentence.
+						</para>
+						<para>The best way to approach this option is to set it slightly
+						above the maximum amount of milliseconds of silence a user may
+						generate during natural speech.
+						</para>
+						<para>Valid values are 1 through 2^31.</para>
 					</description>
 				</configOption>
 				<configOption name="dsp_talking_threshold">
-					<synopsis>The number of milliseconds of detected non-silence necessary to triger talk detection</synopsis>
-					<description><para>
-						The time in milliseconds of sound above what the dsp has
-						established as base line silence for a user before a user
-						is considered to be talking.  This value affects several
-						operations and should not be changed unless the impact on
-						call quality is fully understood.</para>
-						<para>
-						What this value affects internally:
+					<synopsis>Average magnitude threshold to determine talking.</synopsis>
+					<description>
+						<para>The minimum average magnitude per sample in a frame
+						for the DSP to consider talking/noise present.  A value below
+						this level is considered silence.  This value affects several
+						operations and should not be changed unless the impact on call
+						quality is fully understood.
 						</para>
-						<para>
-						1. Audio is only mixed out of a user's incoming audio stream
-						if talking is detected.  If this value is set too
-						loose the user will hear themselves briefly each
-						time they begin talking until the dsp has time to
-						establish that they are in fact talking.
+						<para>What this value affects internally:
 						</para>
-						<para>
-						2. When talk detection AMI events are enabled, this value
+						<para>1. Audio is only mixed out of a user's incoming audio
+						stream if talking is detected.  If this value is set too
+						high the user will hear himself talking.
+						</para>
+						<para>2. When talk detection AMI events are enabled, this value
 						determines when talking has begun which results in
-						an AMI event to fire.  If this value is set too tight
+						an AMI event to fire.  If this value is set too low
 						AMI events may be falsely triggered by variants in
 						room noise.
 						</para>
-						<para>
-						3. The <replaceable>drop_silence</replaceable> option depends on this value to determine
-						when the user's audio should be mixed into the bridge
-						after periods of silence.  If this value is too loose
-						the beginning of a user's speech will get cut off as they
-						transition from silence to talking.
+						<para>3. The <replaceable>drop_silence</replaceable> option
+						depends on this value to determine when the user's audio should
+						be mixed into the bridge after periods of silence.  If this value
+						is too high the user's speech will get discarded as they will
+						be considered silent.
 						</para>
-						<para>By default this value is 160 ms. Valid values are 1 through 2^31</para>
+						<para>Valid values are 1 through 2^15.</para>
 					</description>
 				</configOption>
 				<configOption name="jitterbuffer">
@@ -264,6 +274,15 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 						will be used.
 					</para></description>
 				</configOption>
+				<configOption name="maximum_sample_rate">
+					<synopsis>Set the maximum native sample rate for mixing the conference</synopsis>
+					<description><para>
+						Sets the maximum native sample rate the
+						conference is mixed at. This is set to not have a
+						maximum by default. If a sample rate is specified,
+						though, the native sample rate will never exceed it.
+					</para></description>
+				</configOption>
 				<configOption name="language" default="en">
 					<synopsis>The language used for announcements to the conference.</synopsis>
 					<description><para>
@@ -282,6 +301,13 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 						be chosen.  Using a larger mixing interval comes at the cost of introducing
 						larger amounts of delay into the bridge.  Valid values here are 10, 20, 40,
 						or 80.
+					</para></description>
+				</configOption>
+				<configOption name="binaural_active">
+					<synopsis>If true binaural conferencing with stereo audio is active</synopsis>
+					<description><para>
+						Activates binaural mixing for a conference bridge.
+						Binaural features are disabled by default.
 					</para></description>
 				</configOption>
 				<configOption name="record_conference">
@@ -309,12 +335,34 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 					</para></description>
 				</configOption>
 				<configOption name="record_file_append" default="yes">
-					<synopsis>Append record file when starting/stopping on same conference recording</synopsis>
+					<synopsis>Append to record file when starting/stopping on same conference recording</synopsis>
 					<description><para>
 						When <replaceable>record_file_append</replaceable> is set to yes, stopping and starting recording on a
 						conference adds the new portion to end of current record_file. When this is
 						set to no, a new <replaceable>record_file</replaceable> is generated every time you start then stop recording
 						on a conference.
+					</para></description>
+				</configOption>
+				<configOption name="record_file_timestamp" default="yes">
+					<synopsis>Append the start time to the record_file name so that it is unique.</synopsis>
+					<description><para>
+						When <replaceable>record_file_timestamp</replaceable> is set to yes, the start time is appended to
+						<replaceable>record_file</replaceable> so that the filename is unique. This allows you to specify
+						a <replaceable>record_file</replaceable> but not overwrite existing recordings.
+					</para></description>
+				</configOption>
+				<configOption name="record_options" default="">
+					<synopsis>Pass additional options to MixMonitor when recording</synopsis>
+					<description><para>
+						Pass additional options to MixMonitor when <replaceable>record_conference</replaceable> is set to yes.
+						See <literal>MixMonitor</literal> for available options.
+					</para></description>
+				</configOption>
+				<configOption name="record_command" default="">
+					<synopsis>Execute a command after recording ends</synopsis>
+					<description><para>
+						Executes the specified command when recording ends. Any strings matching <literal>^{X}</literal> will be
+						unescaped to <variable>X</variable>. All variables will be evaluated at the time ConfBridge is called.
 					</para></description>
 				</configOption>
 				<configOption name="regcontext">
@@ -363,6 +411,10 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 								is the single source of video distribution among all participants. If
 								that user leaves, the marked user to join after them becomes the source.</para>
 							</enum>
+							<enum name="sfu">
+								<para>Selective Forwarding Unit - Sets multi-stream
+								operation for a multi-party video conference.</para>
+							</enum>
 						</enumlist>
 					</description>
 				</configOption>
@@ -377,7 +429,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 						regardless if this limit is reached or not.
 					</para></description>
 				</configOption>
-				<configOption name="^sound_">
+				<configOption name="sound_">
 					<synopsis>Override the various conference bridge sound files</synopsis>
 					<description><para>
 						All sounds in the conference are customizable using the bridge profile options below.
@@ -397,6 +449,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 							<enum name="sound_kicked"><para>The sound played to a user who has been kicked from the conference.</para></enum>
 							<enum name="sound_muted"><para>The sound played when the mute option it toggled on.</para></enum>
 							<enum name="sound_unmuted"><para>The sound played when the mute option it toggled off.</para></enum>
+							<enum name="sound_binaural_on"><para>The sound played when binaural auudio is turned on.</para></enum>
+							<enum name="sound_binaural_off"><para>The sound played when the binaural audio is turned off.</para></enum>
 							<enum name="sound_only_person"><para>The sound played when the user is the only person in the conference.</para></enum>
 							<enum name="sound_only_one"><para>The sound played to a user when there is only one other
 										person is in the conference.</para></enum>
@@ -418,6 +472,72 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 							<enum name="sound_unlocked_now"><para>The sound played to an admin after toggling the conference to unlocked mode.</para></enum>
 							<enum name="sound_error_menu"><para>The sound played when an invalid menu option is entered.</para></enum>
 						</enumlist>
+					</description>
+				</configOption>
+				<configOption name="video_update_discard" default="2000">
+					<synopsis>Sets the amount of time in milliseconds after sending a video update to discard subsequent video updates</synopsis>
+					<description><para>
+						Sets the amount of time in milliseconds after sending a video update request
+						that subsequent video updates should be discarded. This means that if we
+						send a video update we will discard any other video update requests until
+						after the configured amount of time has elapsed. This prevents flooding of
+						video update requests from clients.
+					</para></description>
+				</configOption>
+				<configOption name="remb_send_interval" default="0">
+					<synopsis>Sets the interval in milliseconds that a combined REMB frame will be sent to video sources</synopsis>
+					<description><para>
+						Sets the interval in milliseconds that a combined REMB frame will be sent
+						to video sources. This is done by taking all REMB frames that have been
+						received since the last REMB frame was sent, making a combined value,
+						and sending it to the source. A REMB frame contains receiver estimated
+						maximum bitrate information. By creating a combined REMB frame the
+						sender of video can be influenced on the bitrate they choose, allowing
+						better quality for all receivers.
+					</para></description>
+				</configOption>
+				<configOption name="remb_behavior" default="average">
+					<synopsis>Sets how REMB reports are generated from multiple sources</synopsis>
+					<description><para>
+						Sets how REMB reports are combined from multiple sources to form one. A REMB report
+						consists of information about the receiver estimated maximum bitrate. As a source
+						stream may be forwarded to multiple receivers the reports must be combined into
+						a single one which is sent to the sender.</para>
+						<enumlist>
+							<enum name="average">
+								<para>The average of all estimated maximum bitrates is taken and sent
+								to the sender.</para>
+							</enum>
+							<enum name="lowest">
+								<para>The lowest estimated maximum bitrate is forwarded to the sender.</para>
+							</enum>
+							<enum name="highest">
+								<para>The highest estimated maximum bitrate is forwarded to the sender.</para>
+							</enum>
+							<enum name="average_all">
+								<para>The average of all estimated maximum bitrates is taken from all
+								receivers in the bridge and a single value is sent to each sender.</para>
+							</enum>
+							<enum name="lowest_all">
+								<para>The lowest estimated maximum bitrate of all receivers in the bridge
+								is taken and sent to each sender.</para>
+							</enum>
+							<enum name="highest_all">
+								<para>The highest estimated maximum bitrate of all receivers in the bridge
+								is taken and sent to each sender.</para>
+							</enum>
+						</enumlist>
+					</description>
+				</configOption>
+				<configOption name="enable_events" default="no">
+					<synopsis>Enables events for this bridge</synopsis>
+					<description><para>
+						If enabled, recipients who joined the bridge via a channel driver
+						that supports Enhanced Messaging (currently only chan_pjsip) will
+						receive in-dialog messages containing a JSON body describing the
+						event.  The Content-Type header will be
+						<literal>text/x-ast-confbridge-event</literal>.
+						This feature must also be enabled in user profiles.</para>
 					</description>
 				</configOption>
 				<configOption name="template">
@@ -483,6 +603,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 						<enum name="toggle_mute"><para>
 							Toggle turning on and off mute.  Mute will make the user silent
 							to everyone else, but the user will still be able to listen in.
+							</para></enum>
+						<enum name="toggle_binaural"><para>
+							Toggle turning on and off binaural audio processing.
 							</para></enum>
 						<enum name="no_op"><para>
 							This action does nothing (No Operation). Its only real purpose exists for
@@ -592,8 +715,8 @@ static void *bridge_profile_find(struct ao2_container *container, const char *ca
 static struct aco_type bridge_type = {
 	.type = ACO_ITEM,
 	.name = "bridge_profile",
-	.category_match = ACO_BLACKLIST,
-	.category = "^general$",
+	.category_match = ACO_BLACKLIST_EXACT,
+	.category = "general",
 	.matchfield = "type",
 	.matchvalue = "bridge",
 	.item_alloc = bridge_profile_alloc,
@@ -629,8 +752,8 @@ static void *user_profile_find(struct ao2_container *container, const char *cate
 static struct aco_type user_type = {
 	.type = ACO_ITEM,
 	.name  = "user_profile",
-	.category_match = ACO_BLACKLIST,
-	.category = "^general$",
+	.category_match = ACO_BLACKLIST_EXACT,
+	.category = "general",
 	.matchfield = "type",
 	.matchvalue = "user",
 	.item_alloc = user_profile_alloc,
@@ -660,8 +783,8 @@ static void *menu_find(struct ao2_container *container, const char *category)
 static struct aco_type menu_type = {
 	.type = ACO_ITEM,
 	.name = "menu",
-	.category_match = ACO_BLACKLIST,
-	.category = "^general$",
+	.category_match = ACO_BLACKLIST_EXACT,
+	.category = "general",
 	.matchfield = "type",
 	.matchvalue = "menu",
 	.item_alloc = menu_alloc,
@@ -678,8 +801,8 @@ static struct aco_type *user_types[] = ACO_TYPES(&user_type);
 static struct aco_type general_type = {
 	.type = ACO_GLOBAL,
 	.name = "global",
-	.category_match = ACO_WHITELIST,
-	.category = "^general$",
+	.category_match = ACO_WHITELIST_EXACT,
+	.category = "general",
 };
 
 static struct aco_file confbridge_conf = {
@@ -888,6 +1011,10 @@ static int set_sound(const char *sound_name, const char *sound_file, struct brid
 		ast_string_field_set(sounds, muted, sound_file);
 	} else if (!strcasecmp(sound_name, "sound_unmuted")) {
 		ast_string_field_set(sounds, unmuted, sound_file);
+	} else if (!strcasecmp(sound_name, "sound_binaural_on")) {
+		ast_string_field_set(sounds, binauralon, sound_file);
+	} else if (!strcasecmp(sound_name, "sound_binaural_off")) {
+		ast_string_field_set(sounds, binauraloff, sound_file);
 	} else if (!strcasecmp(sound_name, "sound_there_are")) {
 		ast_string_field_set(sounds, thereare, sound_file);
 	} else if (!strcasecmp(sound_name, "sound_other_in_party")) {
@@ -1113,6 +1240,7 @@ static int add_action_to_menu_entry(struct conf_menu_entry *menu_entry, enum con
 	switch (id) {
 	case MENU_ACTION_NOOP:
 	case MENU_ACTION_TOGGLE_MUTE:
+	case MENU_ACTION_TOGGLE_BINAURAL:
 	case MENU_ACTION_INCREASE_LISTENING:
 	case MENU_ACTION_DECREASE_LISTENING:
 	case MENU_ACTION_INCREASE_TALKING:
@@ -1221,6 +1349,8 @@ static int add_menu_entry(struct conf_menu *menu, const char *dtmf, const char *
 		ast_copy_string(menu_entry->dtmf, dtmf, sizeof(menu_entry->dtmf));
 		if (!strcasecmp(action, "toggle_mute")) {
 			res |= add_action_to_menu_entry(menu_entry, MENU_ACTION_TOGGLE_MUTE, NULL);
+		} else if (!strcasecmp(action, "toggle_binaural")) {
+			res |= add_action_to_menu_entry(menu_entry, MENU_ACTION_TOGGLE_BINAURAL, NULL);
 		} else if (!strcasecmp(action, "no_op")) {
 			res |= add_action_to_menu_entry(menu_entry, MENU_ACTION_NOOP, NULL);
 		} else if (!strcasecmp(action, "increase_listening_volume")) {
@@ -1397,6 +1527,12 @@ static char *handle_cli_confbridge_show_user_profile(struct ast_cli_entry *e, in
 	ast_cli(a->fd,"Admin:                   %s\n",
 		u_profile.flags & USER_OPT_ADMIN ?
 		"true" : "false");
+	ast_cli(a->fd,"Send Events:             %s\n",
+		u_profile.flags & USER_OPT_SEND_EVENTS ?
+		"true" : "false");
+	ast_cli(a->fd,"Echo Events:             %s\n",
+		u_profile.flags & USER_OPT_ECHO_EVENTS ?
+		"true" : "false");
 	ast_cli(a->fd,"Marked User:             %s\n",
 		u_profile.flags & USER_OPT_MARKEDUSER ?
 		"true" : "false");
@@ -1425,7 +1561,7 @@ static char *handle_cli_confbridge_show_user_profile(struct ast_cli_entry *e, in
 		"enabled" : "disabled");
 	ast_cli(a->fd,"Silence Threshold:       %ums\n",
 		u_profile.silence_threshold);
-	ast_cli(a->fd,"Talking Threshold:       %ums\n",
+	ast_cli(a->fd,"Talking Threshold:       %u\n",
 		u_profile.talking_threshold);
 	ast_cli(a->fd,"Denoise:                 %s\n",
 		u_profile.flags & USER_OPT_DENOISE ?
@@ -1555,6 +1691,13 @@ static char *handle_cli_confbridge_show_bridge_profile(struct ast_cli_entry *e, 
 	}
 	ast_cli(a->fd,"Internal Sample Rate: %s\n", tmp);
 
+	if (b_profile.maximum_sample_rate) {
+		snprintf(tmp, sizeof(tmp), "%u", b_profile.maximum_sample_rate);
+	} else {
+		ast_copy_string(tmp, "none", sizeof(tmp));
+	}
+	ast_cli(a->fd,"Maximum Sample Rate: %s\n", tmp);
+
 	if (b_profile.mix_interval) {
 		ast_cli(a->fd,"Mixing Interval:      %u\n", b_profile.mix_interval);
 	} else {
@@ -1569,9 +1712,19 @@ static char *handle_cli_confbridge_show_bridge_profile(struct ast_cli_entry *e, 
 		b_profile.flags & BRIDGE_OPT_RECORD_FILE_APPEND ?
 		"yes" : "no");
 
+	ast_cli(a->fd,"Record File Timestamp: %s\n",
+		b_profile.flags & BRIDGE_OPT_RECORD_FILE_TIMESTAMP ?
+		"yes" : "no");
+
 	ast_cli(a->fd,"Record File:          %s\n",
 		ast_strlen_zero(b_profile.rec_file) ? "Auto Generated" :
 		b_profile.rec_file);
+
+	ast_cli(a->fd,"Record Options:       %s\n",
+		b_profile.rec_options);
+
+	ast_cli(a->fd,"Record Command:       %s\n",
+		b_profile.rec_command);
 
 	if (b_profile.max_members) {
 		ast_cli(a->fd,"Max Members:          %u\n", b_profile.max_members);
@@ -1582,8 +1735,10 @@ static char *handle_cli_confbridge_show_bridge_profile(struct ast_cli_entry *e, 
 	ast_cli(a->fd,"Registration context: %s\n", b_profile.regcontext);
 
 	switch (b_profile.flags
-		& (BRIDGE_OPT_VIDEO_SRC_LAST_MARKED | BRIDGE_OPT_VIDEO_SRC_FIRST_MARKED
-			| BRIDGE_OPT_VIDEO_SRC_FOLLOW_TALKER)) {
+		& (BRIDGE_OPT_VIDEO_SRC_LAST_MARKED |
+			BRIDGE_OPT_VIDEO_SRC_FIRST_MARKED |
+			BRIDGE_OPT_VIDEO_SRC_FOLLOW_TALKER |
+			BRIDGE_OPT_VIDEO_SRC_SFU)) {
 	case BRIDGE_OPT_VIDEO_SRC_LAST_MARKED:
 		ast_cli(a->fd, "Video Mode:           last_marked\n");
 		break;
@@ -1592,6 +1747,9 @@ static char *handle_cli_confbridge_show_bridge_profile(struct ast_cli_entry *e, 
 		break;
 	case BRIDGE_OPT_VIDEO_SRC_FOLLOW_TALKER:
 		ast_cli(a->fd, "Video Mode:           follow_talker\n");
+		break;
+	case BRIDGE_OPT_VIDEO_SRC_SFU:
+		ast_cli(a->fd, "Video Mode:           sfu\n");
 		break;
 	case 0:
 		ast_cli(a->fd, "Video Mode:           no video\n");
@@ -1602,6 +1760,40 @@ static char *handle_cli_confbridge_show_bridge_profile(struct ast_cli_entry *e, 
 		break;
 	}
 
+	ast_cli(a->fd,"Video Update Discard: %u\n", b_profile.video_update_discard);
+	ast_cli(a->fd,"REMB Send Interval: %u\n", b_profile.remb_send_interval);
+
+	switch (b_profile.flags
+		& (BRIDGE_OPT_REMB_BEHAVIOR_AVERAGE | BRIDGE_OPT_REMB_BEHAVIOR_LOWEST
+			| BRIDGE_OPT_REMB_BEHAVIOR_HIGHEST | BRIDGE_OPT_REMB_BEHAVIOR_AVERAGE_ALL
+			| BRIDGE_OPT_REMB_BEHAVIOR_LOWEST_ALL | BRIDGE_OPT_REMB_BEHAVIOR_LOWEST_ALL)) {
+	case BRIDGE_OPT_REMB_BEHAVIOR_AVERAGE:
+		ast_cli(a->fd, "REMB Behavior:           average\n");
+		break;
+	case BRIDGE_OPT_REMB_BEHAVIOR_LOWEST:
+		ast_cli(a->fd, "REMB Behavior:           lowest\n");
+		break;
+	case BRIDGE_OPT_REMB_BEHAVIOR_HIGHEST:
+		ast_cli(a->fd, "REMB Behavior:           highest\n");
+		break;
+	case BRIDGE_OPT_REMB_BEHAVIOR_AVERAGE_ALL:
+		ast_cli(a->fd, "REMB Behavior:           average_all\n");
+		break;
+	case BRIDGE_OPT_REMB_BEHAVIOR_LOWEST_ALL:
+		ast_cli(a->fd, "REMB Behavior:           lowest_all\n");
+		break;
+	case BRIDGE_OPT_REMB_BEHAVIOR_HIGHEST_ALL:
+		ast_cli(a->fd, "REMB Behavior:           highest_all\n");
+		break;
+	default:
+		ast_assert(0);
+		break;
+	}
+
+	ast_cli(a->fd,"Enable Events:             %s\n",
+		b_profile.flags & BRIDGE_OPT_ENABLE_EVENTS ?
+		"yes" : "no");
+
 	ast_cli(a->fd,"sound_only_person:    %s\n", conf_get_sound(CONF_SOUND_ONLY_PERSON, b_profile.sounds));
 	ast_cli(a->fd,"sound_only_one:       %s\n", conf_get_sound(CONF_SOUND_ONLY_ONE, b_profile.sounds));
 	ast_cli(a->fd,"sound_has_joined:     %s\n", conf_get_sound(CONF_SOUND_HAS_JOINED, b_profile.sounds));
@@ -1609,6 +1801,8 @@ static char *handle_cli_confbridge_show_bridge_profile(struct ast_cli_entry *e, 
 	ast_cli(a->fd,"sound_kicked:         %s\n", conf_get_sound(CONF_SOUND_KICKED, b_profile.sounds));
 	ast_cli(a->fd,"sound_muted:          %s\n", conf_get_sound(CONF_SOUND_MUTED, b_profile.sounds));
 	ast_cli(a->fd,"sound_unmuted:        %s\n", conf_get_sound(CONF_SOUND_UNMUTED, b_profile.sounds));
+	ast_cli(a->fd,"sound_binaural_on:    %s\n", conf_get_sound(CONF_SOUND_BINAURAL_ON, b_profile.sounds));
+	ast_cli(a->fd,"sound_binaural_off:   %s\n", conf_get_sound(CONF_SOUND_BINAURAL_OFF, b_profile.sounds));
 	ast_cli(a->fd,"sound_there_are:      %s\n", conf_get_sound(CONF_SOUND_THERE_ARE, b_profile.sounds));
 	ast_cli(a->fd,"sound_other_in_party: %s\n", conf_get_sound(CONF_SOUND_OTHER_IN_PARTY, b_profile.sounds));
 	ast_cli(a->fd,"sound_place_into_conference: %s\n", conf_get_sound(CONF_SOUND_PLACE_IN_CONF, b_profile.sounds));
@@ -1737,6 +1931,9 @@ static char *handle_cli_confbridge_show_menu(struct ast_cli_entry *e, int cmd, s
 			case MENU_ACTION_TOGGLE_MUTE:
 				ast_cli(a->fd, "toggle_mute");
 				break;
+			case MENU_ACTION_TOGGLE_BINAURAL:
+				ast_cli(a->fd, "toggle_binaural");
+				break;
 			case MENU_ACTION_NOOP:
 				ast_cli(a->fd, "no_op");
 				break;
@@ -1828,15 +2025,21 @@ void *confbridge_cfg_alloc(void)
 		return NULL;
 	}
 
-	if (!(cfg->user_profiles = ao2_container_alloc(283, user_hash_cb, user_cmp_cb))) {
+	cfg->user_profiles = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0, 283,
+		user_hash_cb, NULL, user_cmp_cb);
+	if (!cfg->user_profiles) {
 		goto error;
 	}
 
-	if (!(cfg->bridge_profiles = ao2_container_alloc(283, bridge_hash_cb, bridge_cmp_cb))) {
+	cfg->bridge_profiles = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0, 283,
+		bridge_hash_cb, NULL, bridge_cmp_cb);
+	if (!cfg->bridge_profiles) {
 		goto error;
 	}
 
-	if (!(cfg->menus = ao2_container_alloc(283, menu_hash_cb, menu_cmp_cb))) {
+	cfg->menus = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0, 283,
+		menu_hash_cb, NULL, menu_cmp_cb);
+	if (!cfg->menus) {
 		goto error;
 	}
 
@@ -1897,25 +2100,69 @@ static int video_mode_handler(const struct aco_option *opt, struct ast_variable 
 		ast_set_flags_to(b_profile,
 			BRIDGE_OPT_VIDEO_SRC_FIRST_MARKED
 				| BRIDGE_OPT_VIDEO_SRC_LAST_MARKED
-				| BRIDGE_OPT_VIDEO_SRC_FOLLOW_TALKER,
+				| BRIDGE_OPT_VIDEO_SRC_FOLLOW_TALKER
+				| BRIDGE_OPT_VIDEO_SRC_SFU,
 			BRIDGE_OPT_VIDEO_SRC_FIRST_MARKED);
 	} else if (!strcasecmp(var->value, "last_marked")) {
 		ast_set_flags_to(b_profile,
 			BRIDGE_OPT_VIDEO_SRC_FIRST_MARKED
 				| BRIDGE_OPT_VIDEO_SRC_LAST_MARKED
-				| BRIDGE_OPT_VIDEO_SRC_FOLLOW_TALKER,
+				| BRIDGE_OPT_VIDEO_SRC_FOLLOW_TALKER
+				| BRIDGE_OPT_VIDEO_SRC_SFU,
 			BRIDGE_OPT_VIDEO_SRC_LAST_MARKED);
 	} else if (!strcasecmp(var->value, "follow_talker")) {
 		ast_set_flags_to(b_profile,
 			BRIDGE_OPT_VIDEO_SRC_FIRST_MARKED
 				| BRIDGE_OPT_VIDEO_SRC_LAST_MARKED
-				| BRIDGE_OPT_VIDEO_SRC_FOLLOW_TALKER,
+				| BRIDGE_OPT_VIDEO_SRC_FOLLOW_TALKER
+				| BRIDGE_OPT_VIDEO_SRC_SFU,
 			BRIDGE_OPT_VIDEO_SRC_FOLLOW_TALKER);
+	} else if (!strcasecmp(var->value, "sfu")) {
+		ast_set_flags_to(b_profile,
+			BRIDGE_OPT_VIDEO_SRC_FIRST_MARKED
+				| BRIDGE_OPT_VIDEO_SRC_LAST_MARKED
+				| BRIDGE_OPT_VIDEO_SRC_FOLLOW_TALKER
+				| BRIDGE_OPT_VIDEO_SRC_SFU,
+			BRIDGE_OPT_VIDEO_SRC_SFU);
 	} else if (!strcasecmp(var->value, "none")) {
 		ast_clear_flag(b_profile,
 			BRIDGE_OPT_VIDEO_SRC_FIRST_MARKED
 				| BRIDGE_OPT_VIDEO_SRC_LAST_MARKED
-				| BRIDGE_OPT_VIDEO_SRC_FOLLOW_TALKER);
+				| BRIDGE_OPT_VIDEO_SRC_FOLLOW_TALKER
+				| BRIDGE_OPT_VIDEO_SRC_SFU);
+	} else {
+		return -1;
+	}
+	return 0;
+}
+
+static int remb_behavior_handler(const struct aco_option *opt, struct ast_variable *var, void *obj)
+{
+	struct bridge_profile *b_profile = obj;
+
+	if (strcasecmp(var->name, "remb_behavior")) {
+		return -1;
+	}
+
+	ast_clear_flag(b_profile, BRIDGE_OPT_REMB_BEHAVIOR_AVERAGE |
+		BRIDGE_OPT_REMB_BEHAVIOR_LOWEST |
+		BRIDGE_OPT_REMB_BEHAVIOR_HIGHEST |
+		BRIDGE_OPT_REMB_BEHAVIOR_AVERAGE_ALL |
+		BRIDGE_OPT_REMB_BEHAVIOR_LOWEST_ALL |
+		BRIDGE_OPT_REMB_BEHAVIOR_HIGHEST_ALL);
+
+	if (!strcasecmp(var->value, "average")) {
+		ast_set_flag(b_profile, BRIDGE_OPT_REMB_BEHAVIOR_AVERAGE);
+	} else if (!strcasecmp(var->value, "lowest")) {
+		ast_set_flag(b_profile, BRIDGE_OPT_REMB_BEHAVIOR_LOWEST);
+	} else if (!strcasecmp(var->value, "highest")) {
+		ast_set_flag(b_profile, BRIDGE_OPT_REMB_BEHAVIOR_HIGHEST);
+	} else if (!strcasecmp(var->value, "average_all")) {
+		ast_set_flag(b_profile, BRIDGE_OPT_REMB_BEHAVIOR_AVERAGE_ALL);
+	} else if (!strcasecmp(var->value, "lowest_all")) {
+		ast_set_flag(b_profile, BRIDGE_OPT_REMB_BEHAVIOR_LOWEST_ALL);
+	} else if (!strcasecmp(var->value, "highest_all")) {
+		ast_set_flag(b_profile, BRIDGE_OPT_REMB_BEHAVIOR_HIGHEST_ALL);
 	} else {
 		return -1;
 	}
@@ -2109,6 +2356,8 @@ int conf_load_config(void)
 	/* User options */
 	aco_option_register(&cfg_info, "type", ACO_EXACT, user_types, NULL, OPT_NOOP_T, 0, 0);
 	aco_option_register(&cfg_info, "admin", ACO_EXACT, user_types, "no", OPT_BOOLFLAG_T, 1, FLDSET(struct user_profile, flags), USER_OPT_ADMIN);
+	aco_option_register(&cfg_info, "send_events", ACO_EXACT, user_types, "no", OPT_BOOLFLAG_T, 1, FLDSET(struct user_profile, flags), USER_OPT_SEND_EVENTS);
+	aco_option_register(&cfg_info, "echo_events", ACO_EXACT, user_types, "no", OPT_BOOLFLAG_T, 1, FLDSET(struct user_profile, flags), USER_OPT_ECHO_EVENTS);
 	aco_option_register(&cfg_info, "marked", ACO_EXACT, user_types, "no", OPT_BOOLFLAG_T, 1, FLDSET(struct user_profile, flags), USER_OPT_MARKEDUSER);
 	aco_option_register(&cfg_info, "startmuted", ACO_EXACT, user_types, "no", OPT_BOOLFLAG_T, 1, FLDSET(struct user_profile, flags), USER_OPT_STARTMUTED);
 	aco_option_register(&cfg_info, "music_on_hold_when_empty", ACO_EXACT, user_types, "no", OPT_BOOLFLAG_T, 1, FLDSET(struct user_profile, flags), USER_OPT_MUSICONHOLD);
@@ -2132,6 +2381,7 @@ int conf_load_config(void)
 	aco_option_register(&cfg_info, "dsp_talking_threshold", ACO_EXACT, user_types, __stringify(DEFAULT_TALKING_THRESHOLD), OPT_UINT_T, 0, FLDSET(struct user_profile, talking_threshold));
 	aco_option_register(&cfg_info, "jitterbuffer", ACO_EXACT, user_types, "no", OPT_BOOLFLAG_T, 1, FLDSET(struct user_profile, flags), USER_OPT_JITTERBUFFER);
 	aco_option_register(&cfg_info, "timeout", ACO_EXACT, user_types, "0", OPT_UINT_T, 0, FLDSET(struct user_profile, timeout));
+
 	/* This option should only be used with the CONFBRIDGE dialplan function */
 	aco_option_register_custom(&cfg_info, "template", ACO_EXACT, user_types, NULL, user_template_handler, 0);
 
@@ -2141,15 +2391,24 @@ int conf_load_config(void)
 	aco_option_register(&cfg_info, "jitterbuffer", ACO_EXACT, bridge_types, "no", OPT_BOOLFLAG_T, 1, FLDSET(struct bridge_profile, flags), USER_OPT_JITTERBUFFER);
 	/* "auto" will fail to parse as a uint, but we use PARSE_DEFAULT to set the value to 0 in that case, which is the value that auto resolves to */
 	aco_option_register(&cfg_info, "internal_sample_rate", ACO_EXACT, bridge_types, "0", OPT_UINT_T, PARSE_DEFAULT, FLDSET(struct bridge_profile, internal_sample_rate), 0);
+	aco_option_register(&cfg_info, "binaural_active", ACO_EXACT, bridge_types, "no", OPT_BOOLFLAG_T, 1, FLDSET(struct bridge_profile, flags), BRIDGE_OPT_BINAURAL_ACTIVE);
+	aco_option_register(&cfg_info, "maximum_sample_rate", ACO_EXACT, bridge_types, "0", OPT_UINT_T, PARSE_DEFAULT, FLDSET(struct bridge_profile, maximum_sample_rate), 0);
 	aco_option_register_custom(&cfg_info, "mixing_interval", ACO_EXACT, bridge_types, "20", mix_interval_handler, 0);
 	aco_option_register(&cfg_info, "record_conference", ACO_EXACT, bridge_types, "no", OPT_BOOLFLAG_T, 1, FLDSET(struct bridge_profile, flags), BRIDGE_OPT_RECORD_CONFERENCE);
 	aco_option_register_custom(&cfg_info, "video_mode", ACO_EXACT, bridge_types, NULL, video_mode_handler, 0);
 	aco_option_register(&cfg_info, "record_file_append", ACO_EXACT, bridge_types, "yes", OPT_BOOLFLAG_T, 1, FLDSET(struct bridge_profile, flags), BRIDGE_OPT_RECORD_FILE_APPEND);
+	aco_option_register(&cfg_info, "record_file_timestamp", ACO_EXACT, bridge_types, "yes", OPT_BOOLFLAG_T, 1, FLDSET(struct bridge_profile, flags), BRIDGE_OPT_RECORD_FILE_TIMESTAMP);
 	aco_option_register(&cfg_info, "max_members", ACO_EXACT, bridge_types, "0", OPT_UINT_T, 0, FLDSET(struct bridge_profile, max_members));
 	aco_option_register(&cfg_info, "record_file", ACO_EXACT, bridge_types, NULL, OPT_CHAR_ARRAY_T, 0, CHARFLDSET(struct bridge_profile, rec_file));
+	aco_option_register(&cfg_info, "record_options", ACO_EXACT, bridge_types, NULL, OPT_CHAR_ARRAY_T, 0, CHARFLDSET(struct bridge_profile, rec_options));
+	aco_option_register(&cfg_info, "record_command", ACO_EXACT, bridge_types, NULL, OPT_CHAR_ARRAY_T, 0, CHARFLDSET(struct bridge_profile, rec_command));
 	aco_option_register(&cfg_info, "regcontext", ACO_EXACT, bridge_types, NULL, OPT_CHAR_ARRAY_T, 0, CHARFLDSET(struct bridge_profile, regcontext));
 	aco_option_register(&cfg_info, "language", ACO_EXACT, bridge_types, "en", OPT_CHAR_ARRAY_T, 0, CHARFLDSET(struct bridge_profile, language));
-	aco_option_register_custom(&cfg_info, "^sound_", ACO_REGEX, bridge_types, NULL, sound_option_handler, 0);
+	aco_option_register_custom(&cfg_info, "sound_", ACO_PREFIX, bridge_types, NULL, sound_option_handler, 0);
+	aco_option_register(&cfg_info, "video_update_discard", ACO_EXACT, bridge_types, "2000", OPT_UINT_T, 0, FLDSET(struct bridge_profile, video_update_discard));
+	aco_option_register(&cfg_info, "remb_send_interval", ACO_EXACT, bridge_types, "0", OPT_UINT_T, 0, FLDSET(struct bridge_profile, remb_send_interval));
+	aco_option_register_custom(&cfg_info, "remb_behavior", ACO_EXACT, bridge_types, "average", remb_behavior_handler, 0);
+	aco_option_register(&cfg_info, "enable_events", ACO_EXACT, bridge_types, "no", OPT_BOOLFLAG_T, 1, FLDSET(struct bridge_profile, flags), BRIDGE_OPT_ENABLE_EVENTS);
 	/* This option should only be used with the CONFBRIDGE dialplan function */
 	aco_option_register_custom(&cfg_info, "template", ACO_EXACT, bridge_types, NULL, bridge_template_handler, 0);
 

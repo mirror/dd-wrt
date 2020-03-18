@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Configuring chan_sip for Presence Subscriptions</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SIP_28314848.html">SIP</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-chan_sip_28934283.html">Configuring chan_sip</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Configuring chan_sip for Presence Subscriptions
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on Jun 05, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Configuringchan_sipforPresenceSubscriptions-Overview">Overview</h1><p>This page is a rough guide to get you configuring chan_sip and Asterisk to accept subscriptions for presence (in this case, <a href="Extension-State-and-Hints_28934189.html">Extension State</a>) and notify the subscribers of state changes.</p><h1 id="Configuringchan_sipforPresenceSubscriptions-Requirements">Requirements</h1><p>You should understand the basics of</p><ul><li> <a href="Device-State_28934187.html">Device State</a> and <a href="Extension-State-and-Hints_28934189.html">Extension State and Hints</a></li><li> Configuring SIP peers in sip.conf</li></ul><h1 id="Configuringchan_sipforPresenceSubscriptions-GeneralProcess">General Process</h1><h2 id="Configuringchan_sipforPresenceSubscriptions-Overview.1">Overview</h2><div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><p>It is best to consider this configuration in the context of a very simplified use case. It should illustrate the overall concept, as well as the ability for Extension State to aggregate Device States.</p><p>The case is that our administrator wants the user device of SIP/Alice to display the presence of Bob. Bob has two devices, SIP/Bob-mobile and SIP/Bob-desk. He could be on either device at any one time, so we want to map them both to the same Hint. That way, when Alice subscribes to the Hint, she'll get the aggregated Extension State of Bob's devices. That means if either of Bobs phones are busy, then the extension state will be busy. Then Alice knows that Bob is busy without having to have a separate light for each of Bob's phones.</p><p>Figure 1 should illustrate the overall relationships of the different elements involved.</p><p>Then following down the page you can find detail on configuring the three major elements, SIP configuration options, hints in dialplan, and configuring a phone to subscribe.</p><h2 id="Configuringchan_sipforPresenceSubscriptions-ConfigureSIPoptions">Configure SIP options</h2><p>Since this is not a guide on configuring SIP peers, we'll show a very simple <strong>sip.conf</strong>  with only enough configuration to point out where you might set specific <a href="chan_sip-State-and-Presence-Options_28934285.html">chan_sip State and Presence Options</a> .</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[general]
+callcounter=yes
+
+[Alice]
+type=friend
+subscribecontext=default
+allowsubscribe=yes
+
+[Bob-mobile]
+type=friend
+busylevel=1
+
+[Bob-desk]
+type=friend
+busylevel=1</pre>
+</div></div><p>We are setting one option in the general section, and then a few options across the three SIP peers involved.</p><p><strong>callcounter</strong> and <strong>busylevel</strong> are the most essential options. <strong>callcounter</strong> needs to be enabled for chan_sip to provide accurate device. <strong>busylevel</strong>=1 says we want the device states of those peers to show busy if they have at least one call in progress. The <strong>subscribecontext</strong> option tells Asterisk which dialplan context to look for the hint. <strong>allowsubscribe</strong> says that we will allow subscriptions for that peer. It is really set to yes by default, but we are defining it here to demonstrate that you could allow and disallow subscriptions on a per-peer basis if you wanted.</p></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>Figure 1</b></div><div class="panelContent">
+<p>
+
+<map id="gliffy-map-29687809-1395" name="gliffy-map-29687809-1395"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 531px;" usemap="#gliffy-map-29687809-1395" src="attachments/29392926/29687810.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+ </p><p>This diagram is purposefully simplified to only show the relationships between the<br />elements involved in this configuration.</p>
+</div></div></div></div></div></div><h2 id="Configuringchan_sipforPresenceSubscriptions-ConfigureHints">Configure Hints</h2><p>Hints are configured in Asterisk <a href="Dialplan_4817412.html">dialplan</a> (extensions.conf). This is where you map <a href="Device-State_28934187.html">Device State</a> identifiers or <a href="Presence-State_21463121.html">Presence State</a> identifiers to a hint, which will then be subscribed to by one or more SIP User Agents.</p><p>For our example we need to define a hint mapping 6001 to Bob's two devices.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[default]
+exten = 6001,hint,SIP/Bob-mobile&amp;SIP/Bob-desk</pre>
+</div></div><p>Defining the hint is pretty straightforward and follows the syntax discussed in the <a href="Extension-State-and-Hints_28934189.html">Extension State and Hints</a> section.</p><p>Notice that we put it in the context we set in <strong>subscribecontext</strong> in sip.conf earlier. Otherwise we would need to make sure it is in the same context that the SIP peer uses (defined with &quot;context&quot;).</p><p>If you have restarted Asterisk to load the hints, then you can check to make sure they are configured with &quot;core show hints&quot;</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; core show hints
+    -= Registered Asterisk Dial Plan Hints =-
+                   6001@default             : SIP/Bob-mobile&amp;SIP/B  State:Unavailable     Watchers  0</pre>
+</div></div><p>You'll see the state changes to Idle or something else if you have your sip.conf configured properly and the two SIP devices are at least available.</p><h2 id="Configuringchan_sipforPresenceSubscriptions-ConfigureSubscriber">Configure Subscriber</h2><p>You should configure your SIP User Agent (soft-phone, hard-phone, another phone application like Asterisk) to subscribe to the hint. In this case that is SIP/Alice and we want her phone to subscribe to 6001.</p><p>The process will be different for every phone, and keep in mind that some phones may not support Asterisk's state notification. With most phones it'll be a matter of adding a &quot;contact&quot; to a contact list, buddy list, or address book and then making sure that SIP presence is enabled in the options.</p><p>If you want to submit a guide for a specific phone, feel free to comment on this page or submit it to the <a href="Asterisk-Issue-Guidelines_19726406.html">Asterisk issue tracker</a>.</p><h2 id="Configuringchan_sipforPresenceSubscriptions-Operation">Operation</h2><p>Typically as soon as you add the contact or subscription on the phone then it will attempt to SUBSCRIBE to Asterisk.</p><p>If you haven't done so, restart Asterisk and then restart the SIP User Agent client doing the subscribing.</p><p>The flow of SIP messaging can differ based on configuration, but typically looks like this for a peer that requires authentication:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>SIP/Alice                    Asterisk
+----------------------------------------
+SUBSCRIBE          ---&gt;
+                   &lt;---      401 Unauthorized
+SUBSCRIBE(w/ Auth) ---&gt;
+                   &lt;---      200 OK
+                   &lt;---      NOTIFY
+200 OK             ---&gt;</pre>
+</div></div><p>In the expanding frame below is a SIP trace of a successful subscription for reference. You could see this on your own system by running &quot;sip set debug on&quot; and then watching for the subscription. You might have to restart your phone again or re-add a contact to see it.</p>
+<div id="expander-627859201" class="expand-container">
+<div id="expander-control-627859201" class="expand-control">
+    <span class="expand-control-icon"><img style="vertical-align:middle;" class="expand-control-image" src="images/icons/grey_arrow_down.png"></span><span class="expand-control-text">Click to see the subscription trace...</span>
+</div>
+<div id="expander-content-627859201" class="expand-content"><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&lt;--- SIP read from UDP:10.24.17.254:37509 ---&gt;
+SUBSCRIBE sip:6001@10.24.18.124;transport=UDP SIP/2.0
+Via: SIP/2.0/UDP 10.24.17.254:37509;branch=z9hG4bK-d8754z-e5ecfde1f337b690-1---d8754z-
+Max-Forwards: 70
+Contact: &lt;sip:Alice@10.24.17.254:37509;transport=UDP&gt;
+To: &lt;sip:6001@10.24.18.124;transport=UDP&gt;
+From: &lt;sip:Alice@10.24.18.124;transport=UDP&gt;;tag=f51e9632
+Call-ID: ZjE2ZDAwYThiOTA2MzYxOWEwNTEwMjc1ZGIxNTk3NDU.
+CSeq: 1 SUBSCRIBE
+Expires: 1800
+Accept: application/pidf+xml
+Allow: INVITE, ACK, CANCEL, BYE, NOTIFY, REFER, MESSAGE, OPTIONS, INFO, SUBSCRIBE
+Supported: replaces, norefersub, extended-refer, timer, X-cisco-serviceuri
+User-Agent: Z 3.2.21357 r21103
+Event: presence
+Allow-Events: presence, kpml
+Content-Length: 0
+
+&lt;-------------&gt;
+--- (16 headers 0 lines) ---
+Sending to 10.24.17.254:37509 (no NAT)
+Creating new subscription
+Sending to 10.24.17.254:37509 (no NAT)
+list_route: route/path hop: &lt;sip:Alice@10.24.17.254:37509;transport=UDP&gt;
+Found peer &#39;Alice&#39; for &#39;Alice&#39; from 10.24.17.254:37509
+
+&lt;--- Transmitting (no NAT) to 10.24.17.254:37509 ---&gt;
+SIP/2.0 401 Unauthorized
+Via: SIP/2.0/UDP 10.24.17.254:37509;branch=z9hG4bK-d8754z-e5ecfde1f337b690-1---d8754z-;received=10.24.17.254
+From: &lt;sip:Alice@10.24.18.124;transport=UDP&gt;;tag=f51e9632
+To: &lt;sip:6001@10.24.18.124;transport=UDP&gt;;tag=as46a6e039
+Call-ID: ZjE2ZDAwYThiOTA2MzYxOWEwNTEwMjc1ZGIxNTk3NDU.
+CSeq: 1 SUBSCRIBE
+Server: Asterisk PBX SVN-branch-12-r413487
+Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO, PUBLISH, MESSAGE
+Supported: replaces, timer
+WWW-Authenticate: Digest algorithm=MD5, realm=&quot;asterisk&quot;, nonce=&quot;522456f4&quot;
+Content-Length: 0
+
+
+&lt;------------&gt;
+Scheduling destruction of SIP dialog &#39;ZjE2ZDAwYThiOTA2MzYxOWEwNTEwMjc1ZGIxNTk3NDU.&#39; in 32000 ms (Method: SUBSCRIBE)
+
+&lt;--- SIP read from UDP:10.24.17.254:37509 ---&gt;
+SUBSCRIBE sip:6001@10.24.18.124;transport=UDP SIP/2.0
+Via: SIP/2.0/UDP 10.24.17.254:37509;branch=z9hG4bK-d8754z-c6908de6f0126edf-1---d8754z-
+Max-Forwards: 70
+Contact: &lt;sip:Alice@10.24.17.254:37509;transport=UDP&gt;
+To: &lt;sip:6001@10.24.18.124;transport=UDP&gt;
+From: &lt;sip:Alice@10.24.18.124;transport=UDP&gt;;tag=f51e9632
+Call-ID: ZjE2ZDAwYThiOTA2MzYxOWEwNTEwMjc1ZGIxNTk3NDU.
+CSeq: 2 SUBSCRIBE
+Expires: 1800
+Accept: application/pidf+xml
+Allow: INVITE, ACK, CANCEL, BYE, NOTIFY, REFER, MESSAGE, OPTIONS, INFO, SUBSCRIBE
+Supported: replaces, norefersub, extended-refer, timer, X-cisco-serviceuri
+User-Agent: Z 3.2.21357 r21103
+Authorization: Digest username=&quot;Alice&quot;,realm=&quot;asterisk&quot;,nonce=&quot;522456f4&quot;,uri=&quot;sip:6001@10.24.18.124;transport=UDP&quot;,response=&quot;6d66dcad8c176aa3ef7baec7680d2445&quot;,algorithm=MD5
+Event: presence
+Allow-Events: presence, kpml
+Content-Length: 0
+
+&lt;-------------&gt;
+--- (17 headers 0 lines) ---
+Creating new subscription
+Sending to 10.24.17.254:37509 (no NAT)
+Found peer &#39;Alice&#39; for &#39;Alice&#39; from 10.24.17.254:37509
+Looking for 6001 in default (domain 10.24.18.124)
+Scheduling destruction of SIP dialog &#39;ZjE2ZDAwYThiOTA2MzYxOWEwNTEwMjc1ZGIxNTk3NDU.&#39; in 1810000 ms (Method: SUBSCRIBE)
+
+&lt;--- Transmitting (no NAT) to 10.24.17.254:37509 ---&gt;
+SIP/2.0 200 OK
+Via: SIP/2.0/UDP 10.24.17.254:37509;branch=z9hG4bK-d8754z-c6908de6f0126edf-1---d8754z-;received=10.24.17.254
+From: &lt;sip:Alice@10.24.18.124;transport=UDP&gt;;tag=f51e9632
+To: &lt;sip:6001@10.24.18.124;transport=UDP&gt;;tag=as46a6e039
+Call-ID: ZjE2ZDAwYThiOTA2MzYxOWEwNTEwMjc1ZGIxNTk3NDU.
+CSeq: 2 SUBSCRIBE
+Server: Asterisk PBX SVN-branch-12-r413487
+Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO, PUBLISH, MESSAGE
+Supported: replaces, timer
+Expires: 1800
+Contact: &lt;sip:6001@10.24.18.124:5060&gt;;expires=1800
+Content-Length: 0
+
+
+&lt;------------&gt;
+set_destination: Parsing &lt;sip:Alice@10.24.17.254:37509;transport=UDP&gt; for address/port to send to
+set_destination: set destination to 10.24.17.254:37509
+Reliably Transmitting (no NAT) to 10.24.17.254:37509:
+NOTIFY sip:Alice@10.24.17.254:37509;transport=UDP SIP/2.0
+Via: SIP/2.0/UDP 10.24.18.124:5060;branch=z9hG4bK14aacddc
+Max-Forwards: 70
+From: &lt;sip:6001@10.24.18.124;transport=UDP&gt;;tag=as46a6e039
+To: &lt;sip:Alice@10.24.18.124;transport=UDP&gt;;tag=f51e9632
+Contact: &lt;sip:6001@10.24.18.124:5060&gt;
+Call-ID: ZjE2ZDAwYThiOTA2MzYxOWEwNTEwMjc1ZGIxNTk3NDU.
+CSeq: 102 NOTIFY
+User-Agent: Asterisk PBX SVN-branch-12-r413487
+Subscription-State: active
+Event: presence
+Content-Type: application/pidf+xml
+Content-Length: 530
+
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;ISO-8859-1&quot;?&gt;
+&lt;presence xmlns=&quot;urn:ietf:params:xml:ns:pidf&quot; 
+xmlns:pp=&quot;urn:ietf:params:xml:ns:pidf:person&quot;
+xmlns:es=&quot;urn:ietf:params:xml:ns:pidf:rpid:status:rpid-status&quot;
+xmlns:ep=&quot;urn:ietf:params:xml:ns:pidf:rpid:rpid-person&quot;
+entity=&quot;sip:Alice@10.24.18.124&quot;&gt;
+&lt;pp:person&gt;&lt;status&gt;
+&lt;ep:activities&gt;&lt;ep:away/&gt;&lt;/ep:activities&gt;
+&lt;/status&gt;&lt;/pp:person&gt;
+&lt;note&gt;Unavailable&lt;/note&gt;
+&lt;tuple id=&quot;6001&quot;&gt;
+&lt;contact priority=&quot;1&quot;&gt;sip:6001@10.24.18.124&lt;/contact&gt;
+&lt;status&gt;&lt;basic&gt;closed&lt;/basic&gt;&lt;/status&gt;
+&lt;/tuple&gt;
+&lt;/presence&gt;
+
+---
+
+&lt;--- SIP read from UDP:10.24.17.254:37509 ---&gt;
+SIP/2.0 200 OK
+Via: SIP/2.0/UDP 10.24.18.124:5060;branch=z9hG4bK14aacddc
+Contact: &lt;sip:Alice@10.24.17.254:37509;transport=UDP&gt;
+To: &lt;sip:Alice@10.24.18.124;transport=UDP&gt;;tag=f51e9632
+From: &lt;sip:6001@10.24.18.124;transport=UDP&gt;;tag=as46a6e039
+Call-ID: ZjE2ZDAwYThiOTA2MzYxOWEwNTEwMjc1ZGIxNTk3NDU.
+CSeq: 102 NOTIFY
+User-Agent: Z 3.2.21357 r21103
+Content-Length: 0
+
+&lt;-------------&gt;
+--- (9 headers 0 lines) ---
+
+
+
+</pre>
+</div></div></div>
+</div>
+<p>Once the subscription has taken place, there is a command to list them. &quot;sip show subscriptions&quot;</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; sip show subscriptions
+Peer             User             Call ID          Extension        Last state     Type            Mailbox    Expiry
+10.24.17.254     Alice            ZjE2ZDAwYThiOTA  6001@default     Unavailable    pidf+xml        &lt;none&gt;     001800
+1 active SIP subscription</pre>
+</div></div><p>From this point onward, Asterisk should send out a SIP NOTIFY to the Alice peer whenever state changes for any of the devices mapped to the hint 6001. Alice's phone should then reflect that state on its display.</p><p> </p>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29392926/29687811">ExtensionAndDeviceState</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29392926/29687812.png">ExtensionAndDeviceState.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29392926/29687813">ExtensionAndDeviceState</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29392926/29687814.png">ExtensionAndDeviceState.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29392926/29687809">ExtensionAndDeviceState</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29392926/29687810.png">ExtensionAndDeviceState.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : AEL Conditionals</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="4620445.html">Asterisk Extension Language (AEL)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="AEL-Example-Usages_4620476.html">AEL Example Usages</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : AEL Conditionals
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Alexander Gonchiy</span> on Apr 22, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>AEL supports if and switch statements, like AEL, but adds ifTime, and random. Unlike the original AEL, though, you do NOT need to put curly braces around a single statement in the &quot;true&quot; branch of an if(), the random(), or an ifTime() statement. The if(), ifTime(), and random() statements allow optional else clause.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">context conditional {
+    _8XXX =&gt; {
+        Dial(SIP/${EXTEN});
+        if (&quot;${DIALSTATUS}&quot; = &quot;BUSY&quot;) 
+        {
+            NoOp(yessir);
+            Voicemail(${EXTEN},b); 
+        }
+        else 
+            Voicemail(${EXTEN},u);
+        ifTime (14:00-23:59|sat-sun|*|*) 
+            Voicemail(${EXTEN},b); 
+        else 
+        { 
+            Voicemail(${EXTEN},u); 
+            NoOp(hi, there!); 
+        } 
+        random(51) NoOp(This should appear 51% of the time); 
+        random( 60 ) 
+        { 
+                NoOp( This should appear 60% of the time ); 
+        }
+        else
+        { 
+                random(75) 
+                { 
+                    NoOp( This should appear 30% of the time! );
+                }
+                else 
+                {
+                    NoOp( This should appear 10% of the time! ); 
+                }
+        }
+    } 
+    _777X =&gt; {
+        switch (${EXTEN}) {
+            case 7771:
+                NoOp(You called 7771!); 
+                break; 
+            case 7772: 
+                NoOp(You called 7772!); 
+                break; 
+            case 7773: 
+                NoOp(You called 7773!); 
+                // fall thru-
+            pattern 777[4-9]:
+                NoOp(You called 777 something!); 
+            default: NoOp(In the default clause!);
+        } 
+    }
+}
+</pre>
+</div></div>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>The conditional expression in if() statements (the &quot;${DIALSTATUS}&quot; = &quot;BUSY&quot; above) is wrapped by the compiler in $[] for evaluation.</p>
+                    </div>
+    </div>
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>Neither the switch nor case values are wrapped in $[ ]; they can be constants, or ${var} type references only.</p>
+                    </div>
+    </div>
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>AEL generates each case as a separate extension. case clauses with no terminating 'break', or 'goto', have a goto inserted, to the next clause, which creates a 'fall thru' effect.</p>
+                    </div>
+    </div>
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>AEL introduces the ifTime keyword/statement, which works just like the if() statement, but the expression is a time value, exactly like that used by the application GotoIfTime(). See Asterisk cmd GotoIfTime</p>
+                    </div>
+    </div>
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>The pattern statement makes sure the new extension that is created has an '_' preceding it to make sure asterisk recognizes the extension name as a pattern.</p>
+                    </div>
+    </div>
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>Every character enclosed by the switch expression's parenthesis are included verbatim in the labels generated. So watch out for spaces!</p>
+                    </div>
+    </div>
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>NEW: Previous to version 0.13, the random statement used the &quot;Random()&quot; application, which has been deprecated. It now uses the RAND() function instead, in the GotoIf application.</p>
+                    </div>
+    </div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

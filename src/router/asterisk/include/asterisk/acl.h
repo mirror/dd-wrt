@@ -135,6 +135,29 @@ void ast_copy_ha(const struct ast_ha *from, struct ast_ha *to);
 struct ast_ha *ast_append_ha(const char *sense, const char *stuff, struct ast_ha *path, int *error);
 
 /*!
+ * \brief Add a new rule with optional port to a list of HAs
+ * \since 13.31.0, 16.8.0, 17.2.0
+ *
+ * \details
+ * This adds the new host access rule to the end of the list
+ * whose head is specified by the path parameter. Rules are
+ * evaluated in a way such that if multiple rules apply to
+ * a single IP address/subnet mask, then the rule latest
+ * in the list will be used.
+ *
+ * \param sense Either "permit" or "deny" (Actually any 'p' word will result
+ * in permission, and any other word will result in denial)
+ * \param stuff The IP address and subnet mask, separated with a '/'. The subnet
+ * mask can either be in dotted-decimal format or in CIDR notation (i.e. 0-32). A
+ * port can be provided by placing it after the IP address, separated with a ':'.
+ * \param path The head of the HA list to which we wish to append our new rule. If
+ * NULL is passed, then the new rule will become the head of the list
+ * \param[out] error The integer error points to will be set non-zero if an error occurs
+ * \return The head of the HA list
+ */
+struct ast_ha *ast_append_ha_with_port(const char *sense, const char *stuff, struct ast_ha *path, int *error);
+
+/*!
  * \brief Convert HAs to a comma separated string value
  * \param ha the starting ha head
  * \param buf string buffer to convert data to
@@ -211,6 +234,20 @@ enum ast_acl_sense ast_apply_ha(const struct ast_ha *ha, const struct ast_sockad
  * \retval AST_SENSE_DENY The IP address fails our ACLs
  */
 enum ast_acl_sense ast_apply_acl(struct ast_acl_list *acl_list, const struct ast_sockaddr *addr, const char *purpose);
+
+/*!
+ * \brief Apply a set of rules to a given IP address, don't log failure.
+ *
+ * \details
+ * Exactly like ast_apply_acl, except that it will never log anything.
+ *
+ * \param acl_list The head of the list of ACLs to evaluate
+ * \param addr An ast_sockaddr whose address is considered when matching rules
+ *
+ * \retval AST_SENSE_ALLOW The IP address passes our ACLs
+ * \retval AST_SENSE_DENY The IP address fails our ACLs
+ */
+enum ast_acl_sense ast_apply_acl_nolog(struct ast_acl_list *acl_list, const struct ast_sockaddr *addr);
 
 /*!
  * \brief Get the IP address given a hostname
@@ -380,24 +417,6 @@ const char *ast_tos2str(unsigned int tos);
  * \retval NULL if no ACL could be found.
  */
 struct ast_ha *ast_named_acl_find(const char *name, int *is_realtime, int *is_undefined);
-
-/*!
- * \brief Initialize and configure the named ACL system.
- *
- * \details
- * This function will prepare the named ACL system for use.
- * For this reason, it needs to be called before other things that use ACLs are initialized.
- */
-int ast_named_acl_init(void);
-
-/*!
- * \brief reload/reconfigure the named ACL system.
- *
- * \details
- * This function is designed to trigger an event upon a successful reload that may update
- * ACL consumers.
- */
-int ast_named_acl_reload(void);
 
 /*!
  * \brief a \ref stasis_message_type for changes against a named ACL or the set of all named ACLs

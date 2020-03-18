@@ -208,7 +208,7 @@ context=public
 ; response to call collisions (glare) and buggy peers.  However, there
 ; are telco switches out there that ignore the RESTART and continue to
 ; send calls to the channel in the restarting state.
-; Default yes in current release branches for backward compatibility.
+; Default no.
 ;
 ;force_restart_unavailable_chans=yes
 ;
@@ -1137,6 +1137,21 @@ pickupgroup=1
 ;
 ;faxbuffers=>6,full
 ;
+; When FXO signalling (FXS device, e.g. analog phone) is used, overlap dialing
+; is typically used. Asterisk has several configurable (per-channel) timeouts
+; to know how long to wait for the next digit. All the values are in
+; milliseconds.
+; * firstdigit_timeout: a longer timeout before any digit is dialed.
+;   By default: 16 seconds.
+; * interdigit_timeout: timeout for next digits, if the current number dialed
+;   does not match a number in the current context. Default: 8 seconds.
+; * matchdigit_timeout: timeout for next digits, if the current number dialed
+;   matches a number in the current context. Default: 3 seconds.
+;
+;firstdigit_timeout=16000
+;interdigit_timeout=8000
+;matchdigit_timeout=3000
+;
 ; Configure the default number of DAHDI buffers and the transmit policy to use.
 ; This can be used to eliminate data drops when scheduling jitter prevents
 ; Asterisk from writing to a DAHDI channel regularly. Most users will probably
@@ -1330,24 +1345,6 @@ pickupgroup=1
 ; signalling = pri_cpe
 ; group = 2
 ; channel => 1-23
-;
-; Alternatively, the number of the channel may be replaced with a relative
-; path to a device file under /dev/dahdi . The final element of that file
-; must be a number, though. The directory separator is '!', as we can't
-; use '/' in a dial string. So if we have
-;
-;   /dev/dahdi/span-name/pstn/00/1
-;   /dev/dahdi/span-name/pstn/00/2
-;   /dev/dahdi/span-name/pstn/00/3
-;   /dev/dahdi/span-name/pstn/00/4
-;
-; we could use:
-;channel => span-name!pstn!00!1-4
-;
-; or:
-;channel => span-name!pstn!00!1,2,3,4
-;
-; See also ignore_failed_channels above.
 
 ;  Used for distinctive ring support for x100p.
 ;  You can see the dringX patterns is to set any one of the dringXcontext fields
@@ -1508,12 +1505,12 @@ pickupgroup=1
 ; MFC-R2 signaling has lots of variants from country to country and even sometimes
 ; minor variants inside the same country. The only mandatory parameters here are:
 ; mfcr2_variant, mfcr2_max_ani and mfcr2_max_dnis.
-; IT IS RECOMMENDED that you leave the default values (leaving it commented) for the 
-; other parameters unless you have problems or you have been instructed to change some 
-; parameter. OpenR2 library uses the mfcr2_variant parameter to try to determine the 
-; best defaults for your country, also refer to the OpenR2 package directory 
-; doc/asterisk/ where you can find sample configurations for some countries. If you 
-; want to contribute your configs for a particular country send them to the e-mail 
+; IT IS RECOMMENDED that you leave the default values (leaving it commented) for the
+; other parameters unless you have problems or you have been instructed to change some
+; parameter. OpenR2 library uses the mfcr2_variant parameter to try to determine the
+; best defaults for your country, also refer to the OpenR2 package directory
+; doc/asterisk/ where you can find sample configurations for some countries. If you
+; want to contribute your configs for a particular country send them to the e-mail
 ; of the primary OpenR2 developer that you can find in the AUTHORS file of the OpenR2 package
 
 ; MFC/R2 variant. This depends on the OpenR2 supported variants

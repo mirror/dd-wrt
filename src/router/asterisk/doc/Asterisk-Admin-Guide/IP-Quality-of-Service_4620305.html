@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : IP Quality of Service</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : IP Quality of Service
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Jul 08, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h2 id="IPQualityofService-Introduction">Introduction</h2><p>Asterisk supports different QoS settings at the application level for various protocols on both signaling and media. The Type of Service (TOS) byte can be set on outgoing IP packets for various protocols. The TOS byte is used by the network to provide some level of Quality of Service (QoS) even if the network is congested with other traffic.</p><p>Asterisk running on Linux can also set 802.1p CoS marks in VLAN packets for the VoIP protocols it uses. This is useful when working in a switched environment. In fact Asterisk only set priority for Linux socket. For mapping this priority and VLAN CoS mark you need to use this command:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">vconfig set_egress_map [vlan-device] [skb-priority] [vlan-qos] 
+</pre>
+</div></div><p>The table below shows all VoIP channel drivers and other Asterisk modules that support QoS settings for network traffic. It also shows the type(s) of traffic for which each module can support setting QoS settings:</p><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh"><p> </p></th><th class="confluenceTh"><p>Signaling</p></th><th class="confluenceTh"><p>Audio</p></th><th class="confluenceTh"><p>Video</p></th><th class="confluenceTh"><p>Text</p></th></tr><tr><td class="confluenceTd"><p>chan_sip</p></td><td class="confluenceTd"><p>+</p></td><td class="confluenceTd"><p>+</p></td><td class="confluenceTd"><p>+</p></td><td class="confluenceTd"><p>+</p></td></tr><tr><td class="confluenceTd"><p>chan_skinny</p></td><td class="confluenceTd"><p>+</p></td><td class="confluenceTd"><p>+</p></td><td class="confluenceTd"><p>+</p></td><td class="confluenceTd"><p> </p></td></tr><tr><td class="confluenceTd"><p>chan_mgcp</p></td><td class="confluenceTd"><p>+</p></td><td class="confluenceTd"><p>+</p></td><td class="confluenceTd"><p> </p></td><td class="confluenceTd"><p> </p></td></tr><tr><td class="confluenceTd"><p>chan_unistm</p></td><td class="confluenceTd"><p>+</p></td><td class="confluenceTd"><p>+</p></td><td class="confluenceTd"><p> </p></td><td class="confluenceTd"><p> </p></td></tr><tr><td class="confluenceTd"><p>chan_h323</p></td><td class="confluenceTd"><p> </p></td><td class="confluenceTd"><p>+</p></td><td class="confluenceTd"><p> </p></td><td class="confluenceTd"><p> </p></td></tr><tr><td class="confluenceTd"><p>chan_iax2</p></td><td class="confluenceTd"><p>+</p></td><td class="confluenceTd"><p> </p></td><td class="confluenceTd"><p> </p></td><td class="confluenceTd"><p> </p></td></tr><tr><td colspan="1" class="confluenceTd">chan_pjsip</td><td colspan="1" class="confluenceTd">+</td><td colspan="1" class="confluenceTd">+</td><td colspan="1" class="confluenceTd">+</td><td colspan="1" class="confluenceTd"> </td></tr><tr><td colspan="1" class="confluenceTd">DUNDI</td><td colspan="1" class="confluenceTd">+ (tos setting)</td><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"> </td></tr><tr><td colspan="1" class="confluenceTd">IAXProv</td><td colspan="1" class="confluenceTd">+ (tos setting)</td><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"> </td></tr></tbody></table></div><h3 id="IPQualityofService-IPTOSvalues">IP TOS values</h3><p>The allowable values for any of the tos parameters are: CS0, CS1, CS2, CS3, CS4, CS5, CS6, CS7, AF11, AF12, AF13, AF21, AF22, AF23, AF31, AF32, AF33, AF41, AF42, AF43 and ef (expedited forwarding),*</p><p>The tos parameters also take numeric values.*</p><p>Note that on a Linux system, Asterisk must be compiled with libcap in order to use the ef tos setting if Asterisk is not run as root.</p><p>The lowdelay, throughput, reliability, mincost, and none values have been removed in current releases.</p><p>ToS decimal equivalence table:</p><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh"><p>na<span>me</span></p></th><th class="confluenceTh">decimal value</th></tr><tr><td colspan="1" class="confluenceTd">cs0</td><td colspan="1" class="confluenceTd">0</td></tr><tr><td class="confluenceTd">cs1</td><td class="confluenceTd">32</td></tr><tr><td class="confluenceTd">af11</td><td class="confluenceTd">40</td></tr><tr><td class="confluenceTd">af12</td><td class="confluenceTd">48</td></tr><tr><td class="confluenceTd">af13</td><td class="confluenceTd">56</td></tr><tr><td class="confluenceTd">cs2</td><td class="confluenceTd">64</td></tr><tr><td class="confluenceTd">af21</td><td class="confluenceTd">72</td></tr><tr><td class="confluenceTd">af22</td><td class="confluenceTd">80</td></tr><tr><td class="confluenceTd">af23</td><td class="confluenceTd">88</td></tr><tr><td class="confluenceTd">cs3</td><td class="confluenceTd">96</td></tr><tr><td class="confluenceTd">af31</td><td class="confluenceTd">104</td></tr><tr><td class="confluenceTd">af32</td><td class="confluenceTd">112</td></tr><tr><td class="confluenceTd">af33</td><td class="confluenceTd">120</td></tr><tr><td class="confluenceTd">cs4</td><td class="confluenceTd">128</td></tr><tr><td class="confluenceTd">af41</td><td class="confluenceTd">136</td></tr><tr><td class="confluenceTd">af42</td><td class="confluenceTd">144</td></tr><tr><td class="confluenceTd">af43</td><td class="confluenceTd">152</td></tr><tr><td class="confluenceTd">cs5</td><td class="confluenceTd">160</td></tr><tr><td class="confluenceTd">ef</td><td class="confluenceTd">184</td></tr><tr><td class="confluenceTd">cs6</td><td class="confluenceTd"><p>192</p></td></tr><tr><td colspan="1" class="confluenceTd">cs7</td><td colspan="1" class="confluenceTd">224</td></tr></tbody></table></div><h3 id="IPQualityofService-802.1pCoSvalues">802.1p CoS values</h3><p>Because 802.1p uses 3 bits of the VLAN header, this parameter can take integer values from 0 to 7.</p><h3 id="IPQualityofService-Recommendedvalues">Recommended values</h3><p>The recommended values shown below are also included in sample configuration files:</p><div class="table-wrap"><table style="line-height: 1.4285715;" class="confluenceTable"><tbody><tr><th class="confluenceTh"><p> </p></th><th class="confluenceTh"><p>tos</p></th><th class="confluenceTh"><p>cos</p></th></tr><tr><td class="confluenceTd"><p>Signaling</p></td><td class="confluenceTd"><p>cs3</p></td><td class="confluenceTd"><p>3</p></td></tr><tr><td class="confluenceTd"><p>Audio</p></td><td class="confluenceTd"><p>ef</p></td><td class="confluenceTd"><p>5</p></td></tr><tr><td class="confluenceTd"><p>Video</p></td><td class="confluenceTd"><p>af41</p></td><td class="confluenceTd"><p>4</p></td></tr><tr><td class="confluenceTd"><p>Text</p></td><td class="confluenceTd"><p>af41</p></td><td class="confluenceTd"><p>3</p></td></tr><tr><td class="confluenceTd"><p>Other</p></td><td class="confluenceTd"><p>ef</p></td><td class="confluenceTd"><p> </p></td></tr></tbody></table></div><h3 id="IPQualityofService-IAX2">IAX2</h3><p>In iax.conf, there is a &quot;tos&quot; parameter that sets the global default TOS for IAX packets generated by chan_iax2. Since IAX connections combine signalling, audio, and video into one UDP stream, it is not possible to set the TOS separately for the different types of traffic.</p><p>In iaxprov.conf, there is a &quot;tos&quot; parameter that tells the IAXy what TOS to set on packets it generates. As with the parameter in iax.conf, IAX packets generated by an IAXy cannot have different TOS settings based upon the type of packet. However different IAXy devices can have different TOS settings.</p><h3 id="IPQualityofService-CHAN_SIP">CHAN_SIP</h3><p>In chan_sip, there are four parameters that control the TOS settings: &quot;tos_sip&quot;, &quot;tos_audio&quot;, &quot;tos_video&quot; and &quot;tos_text&quot;. tos_sip controls what TOS SIP call signaling packets are set to. tos_audio, tos_video and tos_text control what TOS values are used for RTP audio, video, and text packets, respectively. <br /> There are four parameters to control 802.1p CoS: &quot;cos_sip&quot;, &quot;cos_audio&quot;, &quot;cos_video&quot; and &quot;cos_text&quot;. The behavior of these parameters is the same as for the SIP TOS settings described above.</p><h3 id="IPQualityofService-CHAN_PJSIP">CHAN_PJSIP</h3><p>In chan_pjsip, there are three parameters that control the TOS settings: a <strong>tos</strong> option for a <strong>type=transport </strong>that controls the TOS of SIP signaling packets, a <strong>tos_audio</strong> option for a <strong>type=endpoint</strong> that controls the TOS of RTP audio packets, and a <strong>tos_video</strong> option for a <strong>type=endpoint</strong> that controls the TOS of video packets.</p><p>Similarly, there are there parameters that control the 802.1p CoS settings: a <strong>cos</strong> option for a <strong>type=transport</strong> that controls the 802.1p value for SIP signaling packets, a<strong> cos_audio</strong> option for a <strong>type=endpoint</strong> that controls the 802.1p value of RTP audio packets, and a <strong>cos_video</strong> option for a <strong>type=endpoint</strong> that controls the 802.1p value for video packets.</p>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>Changes to a chan_pjsip <strong>type=transport</strong> require an Asterisk restart to be affected. They are not affected by simply reloading Asterisk.</p>
+                    </div>
+    </div>
+<p> </p><h3 id="IPQualityofService-OtherRTPchannels">Other RTP channels</h3><p>chan_mgcp, chan_h323, chan_skinny and chan_unistim also support TOS and CoS via setting tos and cos parameters in their corresponding configuration files. Naming style and behavior are the same as for chan_sip.</p><h3 id="IPQualityofService-Reference">Reference</h3><p>IEEE 802.1Q Standard: <a class="external-link" href="http://standards.ieee.org/getieee802/download/802.1Q-1998.pdfRelated" rel="nofollow">http://standards.ieee.org/getieee802/download/802.1Q-1998.pdfRelated</a> protocols: IEEE 802.3, 802.2, 802.1D, 802.1Q</p><p>RFC 2474 - &quot;Definition of the Differentiated Services Field (DS field) in the IPv4 and IPv6 Headers&quot;, Nichols, K., et al, December 1998.</p><p>IANA Assignments, DSCP registry Differentiated Services Field Codepoints <a class="external-link" href="http://www.iana.org/assignments/dscp-registry" rel="nofollow">http://www.iana.org/assignments/dscp-registry</a> <br /> To get the most out of setting the TOS on packets generated by Asterisk, you will need to ensure that your network handles packets with a TOS properly. For Cisco devices, see the previously mentioned &quot;Enterprise QoS Solution Reference Network Design Guide&quot;. For Linux systems see the &quot;Linux Advanced Routing &amp; Traffic Control HOWTO&quot; at <a class="external-link" href="http://www.lartc.org/" rel="nofollow">http://www.lartc.org/</a>. <br /> For more information on Quality of Service for VoIP networks see the &quot;Enterprise QoS Solution Reference Network Design Guide&quot; version 3.3 from Cisco at: <a class="external-link" href="http://www.cisco.com/application/pdf/en/us/guest/netsol/ns432/c649/ccmigration_09186a008049b062.pdf" rel="nofollow">http://www.cisco.com/application/pdf/en/us/guest/netsol/ns432/c649/ccmigration_09186a008049b062.pdf</a></p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

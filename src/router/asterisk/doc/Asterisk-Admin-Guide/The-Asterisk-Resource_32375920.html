@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : The Asterisk Resource</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="29395573.html">Asterisk REST Interface (ARI)</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : The Asterisk Resource
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span> on Jul 16, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-right-sidebar" data-layout="two-right-sidebar">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="TheAsteriskResource-TheAsteriskResource">The Asterisk Resource</h1><p>While the <a href="https://wiki.asterisk.org/wiki/pages/viewpage.action?pageId=29395573#AsteriskRESTInterface%28ARI%29-ARI:AnInterfaceforCommunicationsApplications" rel="nofollow">primary purpose of ARI</a> is to allow developers to build their own communications applications using Asterisk as a media engine, there are other resources in the API that are useful outside of this use case. One of these is the <code>asterisk</code> resource. This resource not only provides information about the running Asterisk instance, but also exposes resources and operations that allow an external system to manipulate the overall Asterisk system.</p></div>
+</div>
+<div class="cell aside" data-type="aside">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303093361 {padding: 0px;}
+div.rbtoc1582303093361 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303093361 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303093361'>
+<ul class='toc-indentation'>
+<li><a href='#TheAsteriskResource-TheAsteriskResource'>The Asterisk Resource</a></li>
+<li><a href='#TheAsteriskResource-RetrievingSystemInformation'>Retrieving System Information</a></li>
+</ul>
+</div></p>
+</div></div><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>More Detail</b></div><div class="panelContent">
+<p><ul class='childpages-macro'><li><a href="ARI-Push-Configuration_32375922.html">ARI Push Configuration</a></li></ul></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="TheAsteriskResource-RetrievingSystemInformation">Retrieving System Information</h1><p>The <code>asterisk</code> resource provides the ability to retrieve basic information about the running Asterisk process. This includes:</p><ul><li>Information about how Asterisk was compiled</li><li>Information about Asterisk's configuration</li><li>Current status of the Asterisk process</li><li>Information about the system the Asterisk process is running on</li></ul><p>An example of this is shown below:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>$ curl -X GET -u asterisk:SECRET https://localhost:8088/ari/asterisk/info
+
+{
+  &quot;status&quot;:
+  {
+    &quot;startup_time&quot;: &quot;2015-07-16T21:01:37.273-0500&quot;,
+    &quot;last_reload_time&quot;: &quot;2015-07-16T21:01:37.273-0500&quot;
+  },
+  &quot;build&quot;:
+  {
+    &quot;user&quot;: &quot;mjordan&quot;,
+    &quot;options&quot;: &quot;AST_DEVMODE, LOADABLE_MODULES, OPTIONAL_API, TEST_FRAMEWORK&quot;,
+    &quot;machine&quot;: &quot;x86_64&quot;,
+    &quot;os&quot;: &quot;Linux&quot;,
+    &quot;kernel&quot;: &quot;3.13.0-24-generic&quot;,
+    &quot;date&quot;: &quot;2015-07-11 15:51:57 UTC&quot;
+  },
+  &quot;system&quot;:
+  {
+    &quot;version&quot;: &quot;GIT-master-0b2cbeaM&quot;,
+    &quot;entity_id&quot;: &quot;ec:f4:bb:67:a6:d0&quot;
+  },
+  &quot;config&quot;:
+  {
+    &quot;default_language&quot;: &quot;en&quot;,
+    &quot;name&quot;:&quot;mjordan-laptop&quot;,
+    &quot;setid&quot;:
+    {
+      &quot;user&quot;: &quot;asterisk&quot;,
+      &quot;group&quot;: &quot;asterisk&quot;
+    }
+  }
+}</pre>
+</div></div></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

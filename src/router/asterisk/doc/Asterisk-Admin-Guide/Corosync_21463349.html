@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Corosync</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Distributed-Device-State_19009167.html">Distributed Device State</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Corosync
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Darren Sessions</span>, last modified by <span class='editor'> Russell Bryant</span> on Sep 18, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h5 id="Corosync-Corosync">Corosync</h5>
+<p><a href="http://www.corosync.org" class="external-link" rel="nofollow">Corosync</a> is an open source group messaging system typically used in clusters, cloud computing, and other high availability environments.</p>
+
+<p>The project, at it's core, provides four C api features:</p>
+<ul>
+	<li>A closed process group communication model with virtual synchrony guarantees for creating replicated state machines.</li>
+	<li>A simple availability manager that restarts the application process when it has failed.</li>
+	<li>A configuration and statistics in-memory database that provide the ability to set, retrieve, and receive change notifications of information.</li>
+	<li>A quorum system that notifies applications when quorum is achieved or lost.</li>
+</ul>
+
+
+<h5 id="Corosync-CorosyncandAsterisk">Corosync and Asterisk</h5>
+<p>Using Corosync together with res_corosync allows events to be shared amongst a local cluster of Asterisk servers. Specifically, the types of events that may be shared include:</p>
+<ul>
+	<li>Device state</li>
+	<li>Message Waiting Indication, or MWI (to allow voicemail to live on a server that is different from where the phones are registered)</li>
+</ul>
+
+
+<h5 id="Corosync-SetupandConfiguration">Setup and Configuration</h5>
+
+<h6 id="Corosync-Corosync.1">Corosync</h6>
+<ul>
+	<li><h6 id="Corosync-Installation">Installation</h6>
+Debian / Ubuntu
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>apt-get install corosync corosync-dev
+</pre>
+</div></div>
+Red Hat / Fedora
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>yum install corosync corosynclib corosynclib-devel
+</pre>
+</div></div></li>
+</ul>
+
+
+<ul>
+	<li><h6 id="Corosync-Authkey">Authkey</h6>
+To create an authentication key for secure communications between your nodes you need to do this on, what will be, the active node.
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>corosync-keygen
+</pre>
+</div></div>
+This creates a key in /etc/corosync/authkey.
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>asterisk_active:~# scp /etc/corosync/authkey asterisk_standby:
+</pre>
+</div></div>
+Now, on the standby node, you'll need to stick the authkey in it's new home and fix it's permissions / ownership.
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>asterisk_standby:~# mv ~/authkey /etc/corosync/authkey
+asterisk_standby:~# chown root:root /etc/corosync/authkey
+asterisk_standby:~# chmod 400 /etc/corosync/authkey
+</pre>
+</div></div></li>
+	<li><h6 id="Corosync-/etc/corosync/corosync.conf">/etc/corosync/corosync.conf</h6>
+The interface section under the totem block defines the communication path(s) to the other Corosync processes running on nodes within the cluster. These can be either IPv4 or IPv6 ip addresses but can not be mixed and matched within an interface. Adjustments can be made to the cluster settings based on your needs and installation environment.
+	<ul>
+		<li><h6 id="Corosync-IPv4">IPv4</h6>
+<h6 id="Corosync-ActiveNodeExample">Active Node Example</h6>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>totem {
+        version: 2
+        token: 160
+        token_retransmits_before_loss_const: 3
+        join: 30
+        consensus: 300
+        vsftype: none
+        max_messages: 20
+        threads: 0
+        nodeid: 1
+        rrp_mode: none
+        interface {
+                ringnumber: 0
+                bindnetaddr: 192.168.1.0
+                mcastaddr: 226.94.1.1
+                mcastport: 5405
+        }
+}
+</pre>
+</div></div>
+<h6 id="Corosync-StandbyNodeExample">Standby Node Example</h6>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>totem {
+        version: 2
+        token: 160
+        token_retransmits_before_loss_const: 3
+        join: 30
+        consensus: 300
+        vsftype: none
+        max_messages: 20
+        threads: 0
+        nodeid: 2
+        rrp_mode: none
+        interface {
+                ringnumber: 0
+                bindnetaddr: 192.168.1.0
+                mcastaddr: 226.94.1.1
+                mcastport: 5405
+        }
+}
+</pre>
+</div></div></li>
+	</ul>
+	</li>
+</ul>
+
+
+<ul>
+	<li><h6 id="Corosync-StartCorosync">Start Corosync</h6>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>service corosync start
+</pre>
+</div></div></li>
+</ul>
+
+
+<h6 id="Corosync-Asterisk">Asterisk</h6>
+<ul>
+	<li><h6 id="Corosync-Installation.1">Installation</h6>
+In your Asterisk source directory:
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>./configure
+make
+make install
+</pre>
+</div></div></li>
+</ul>
+
+
+<ul>
+	<li><h6 id="Corosync-/etc/asterisk/res_corosync.conf">/etc/asterisk/res_corosync.conf</h6>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>;
+; Sample configuration file for res_corosync.
+;
+; This module allows events to be shared amongst a local cluster of
+; Asterisk servers.  Specifically, the types of events that may be
+; shared include:
+;
+;   - Device State (for shared presence information)
+;
+;   - Message Waiting Indication, or MWI (to allow Voicemail to live on
+;     a server that is different from where the phones are registered)
+;
+; For more information about Corosync, see: http://www.corosync.org/
+;
+
+[general]
+
+;
+;  Publish Message Waiting Indication (MWI) events from this server to the
+;  cluster.
+publish_event = mwi
+;
+;  Subscribe to MWI events from the cluster.
+subscribe_event = mwi
+;
+;  Publish Device State (presence) events from this server to the cluster.
+publish_event = device_state
+;
+;  Subscribe to Device State (presence) events from the cluster.
+subscribe_event = device_state
+;
+</pre>
+</div></div>
+In the general section of the res_corosync.conf file we are specifying which events we'd like to publish and subscribe to (at the moment this is either device_state or mwi).</li>
+</ul>
+
+
+<ul>
+	<li><h6 id="Corosync-VerifyingInstallation">Verifying Installation</h6>
+If everything is setup correctly, you should see this output after executing a 'corosync show members' on the Asterisk CLI.
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; corosync show members
+
+=============================================================
+=== Cluster members =========================================
+=============================================================
+===
+=== Node 1
+=== --&gt; Group: asterisk
+=== --&gt; Address 1: &lt;host #1 ip goes here&gt;
+===
+=============================================================
+</pre>
+</div></div></li>
+</ul>
+
+
+<p>After starting Corosync and Asterisk on your second node, the 'corosync show members' output should look something like this:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; corosync show members 
+
+=============================================================
+=== Cluster members =========================================
+=============================================================
+===
+=== Node 1
+=== --&gt; Group: asterisk
+=== --&gt; Address 1: &lt;host #1 ip goes here&gt;
+=== Node 2
+=== --&gt; Group: asterisk
+=== --&gt; Address 1: &lt;host #2 ip goes here&gt;
+===
+=============================================================
+</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

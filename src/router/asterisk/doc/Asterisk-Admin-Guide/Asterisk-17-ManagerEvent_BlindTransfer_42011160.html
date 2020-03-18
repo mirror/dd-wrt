@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 ManagerEvent_BlindTransfer</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-AMI-Events_42010707.html">Asterisk 17 AMI Events</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 ManagerEvent_BlindTransfer
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17ManagerEvent_BlindTransfer-BlindTransfer">BlindTransfer</h1>
+
+<h3 id="Asterisk17ManagerEvent_BlindTransfer-Synopsis">Synopsis</h3>
+
+<p>Raised when a blind transfer is complete.</p>
+
+<h3 id="Asterisk17ManagerEvent_BlindTransfer-Description">Description</h3>
+
+<h3 id="Asterisk17ManagerEvent_BlindTransfer-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Event: BlindTransfer
+Result: &lt;value&gt;
+TransfererChannel: &lt;value&gt;
+TransfererChannelState: &lt;value&gt;
+TransfererChannelStateDesc: &lt;value&gt;
+TransfererCallerIDNum: &lt;value&gt;
+TransfererCallerIDName: &lt;value&gt;
+TransfererConnectedLineNum: &lt;value&gt;
+TransfererConnectedLineName: &lt;value&gt;
+TransfererLanguage: &lt;value&gt;
+TransfererAccountCode: &lt;value&gt;
+TransfererContext: &lt;value&gt;
+TransfererExten: &lt;value&gt;
+TransfererPriority: &lt;value&gt;
+TransfererUniqueid: &lt;value&gt;
+TransfererLinkedid: &lt;value&gt;
+TransfereeChannel: &lt;value&gt;
+TransfereeChannelState: &lt;value&gt;
+TransfereeChannelStateDesc: &lt;value&gt;
+TransfereeCallerIDNum: &lt;value&gt;
+TransfereeCallerIDName: &lt;value&gt;
+TransfereeConnectedLineNum: &lt;value&gt;
+TransfereeConnectedLineName: &lt;value&gt;
+TransfereeLanguage: &lt;value&gt;
+TransfereeAccountCode: &lt;value&gt;
+TransfereeContext: &lt;value&gt;
+TransfereeExten: &lt;value&gt;
+TransfereePriority: &lt;value&gt;
+TransfereeUniqueid: &lt;value&gt;
+TransfereeLinkedid: &lt;value&gt;
+BridgeUniqueid: &lt;value&gt;
+BridgeType: &lt;value&gt;
+BridgeTechnology: &lt;value&gt;
+BridgeCreator: &lt;value&gt;
+BridgeName: &lt;value&gt;
+BridgeNumChannels: &lt;value&gt;
+BridgeVideoSourceMode: &lt;value&gt;
+BridgeVideoSource: &lt;value&gt;
+IsExternal: &lt;value&gt;
+Context: &lt;value&gt;
+Extension: &lt;value&gt;
+</pre>
+</div></div>
+
+<h5 id="Asterisk17ManagerEvent_BlindTransfer-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>Result</code> - Indicates if the transfer was successful or if it failed.
+	<ul>
+		<li><code>Fail</code> - An internal error occurred.</li>
+		<li><code>Invalid</code> - Invalid configuration for transfer (e.g. Not bridged)</li>
+		<li><code>Not Permitted</code> - Bridge does not permit transfers</li>
+		<li><code>Success</code> - Transfer completed successfully
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>A result of <code>Success</code> does not necessarily mean that a target was succesfully contacted. It means that a party was succesfully placed into the dialplan at the expected location.</p>
+                    </div>
+    </div>
+</li>
+	</ul>
+	</li>
+	<li><code>TransfererChannel</code></li>
+	<li><code>TransfererChannelState</code> - A numeric code for the channel's current state, related to TransfererChannelStateDesc</li>
+	<li><code>TransfererChannelStateDesc</code>
+	<ul>
+		<li><code>Down</code></li>
+		<li><code>Rsrvd</code></li>
+		<li><code>OffHook</code></li>
+		<li><code>Dialing</code></li>
+		<li><code>Ring</code></li>
+		<li><code>Ringing</code></li>
+		<li><code>Up</code></li>
+		<li><code>Busy</code></li>
+		<li><code>Dialing Offhook</code></li>
+		<li><code>Pre-ring</code></li>
+		<li><code>Unknown</code></li>
+	</ul>
+	</li>
+	<li><code>TransfererCallerIDNum</code></li>
+	<li><code>TransfererCallerIDName</code></li>
+	<li><code>TransfererConnectedLineNum</code></li>
+	<li><code>TransfererConnectedLineName</code></li>
+	<li><code>TransfererLanguage</code></li>
+	<li><code>TransfererAccountCode</code></li>
+	<li><code>TransfererContext</code></li>
+	<li><code>TransfererExten</code></li>
+	<li><code>TransfererPriority</code></li>
+	<li><code>TransfererUniqueid</code></li>
+	<li><code>TransfererLinkedid</code> - Uniqueid of the oldest channel associated with this channel.</li>
+	<li><code>TransfereeChannel</code></li>
+	<li><code>TransfereeChannelState</code> - A numeric code for the channel's current state, related to TransfereeChannelStateDesc</li>
+	<li><code>TransfereeChannelStateDesc</code>
+	<ul>
+		<li><code>Down</code></li>
+		<li><code>Rsrvd</code></li>
+		<li><code>OffHook</code></li>
+		<li><code>Dialing</code></li>
+		<li><code>Ring</code></li>
+		<li><code>Ringing</code></li>
+		<li><code>Up</code></li>
+		<li><code>Busy</code></li>
+		<li><code>Dialing Offhook</code></li>
+		<li><code>Pre-ring</code></li>
+		<li><code>Unknown</code></li>
+	</ul>
+	</li>
+	<li><code>TransfereeCallerIDNum</code></li>
+	<li><code>TransfereeCallerIDName</code></li>
+	<li><code>TransfereeConnectedLineNum</code></li>
+	<li><code>TransfereeConnectedLineName</code></li>
+	<li><code>TransfereeLanguage</code></li>
+	<li><code>TransfereeAccountCode</code></li>
+	<li><code>TransfereeContext</code></li>
+	<li><code>TransfereeExten</code></li>
+	<li><code>TransfereePriority</code></li>
+	<li><code>TransfereeUniqueid</code></li>
+	<li><code>TransfereeLinkedid</code> - Uniqueid of the oldest channel associated with this channel.</li>
+	<li><code>BridgeUniqueid</code></li>
+	<li><code>BridgeType</code> - The type of bridge</li>
+	<li><code>BridgeTechnology</code> - Technology in use by the bridge</li>
+	<li><code>BridgeCreator</code> - Entity that created the bridge if applicable</li>
+	<li><code>BridgeName</code> - Name used to refer to the bridge by its BridgeCreator if applicable</li>
+	<li><code>BridgeNumChannels</code> - Number of channels in the bridge</li>
+	<li><code>BridgeVideoSourceMode</code> - ** <code>none</code>
+	<ul>
+		<li><code>talker</code></li>
+		<li><code>single</code><br />
+The video source mode for the bridge.</li>
+	</ul>
+	</li>
+	<li><code>BridgeVideoSource</code> - If there is a video source for the bridge, the unique ID of the channel that is the video source.</li>
+	<li><code>IsExternal</code> - Indicates if the transfer was performed outside of Asterisk. For instance, a channel protocol native transfer is external. A DTMF transfer is internal.
+	<ul>
+		<li><code>Yes</code></li>
+		<li><code>No</code></li>
+	</ul>
+	</li>
+	<li><code>Context</code> - Destination context for the blind transfer.</li>
+	<li><code>Extension</code> - Destination extension for the blind transfer.</li>
+</ul>
+
+
+<h3 id="Asterisk17ManagerEvent_BlindTransfer-Class">Class</h3>
+
+<p>CALL</p>
+<h3 id="Asterisk17ManagerEvent_BlindTransfer-SeeAlso">See Also</h3>
+<ul>
+	<li><a href="Asterisk-17-ManagerAction_BlindTransfer_42011302.html">Asterisk 17 ManagerAction_BlindTransfer</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17ManagerEvent_BlindTransfer-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

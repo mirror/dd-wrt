@@ -30,8 +30,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/app.h"
 #include "asterisk/module.h"
 #include "asterisk/pbx.h"
@@ -127,24 +125,17 @@ static int app_exec(struct ast_channel *chan, const char *data)
 
 static int load_module(void)
 {
-	int r = 0;
-
-	stasis_app_ref();
-	r |= ast_register_application_xml(stasis, app_exec);
-	return r;
+	return ast_register_application_xml(stasis, app_exec);
 }
 
 static int unload_module(void)
 {
-	int r = 0;
-	r |= ast_unregister_application(stasis);
-	stasis_app_unref();
-	return r;
+	return ast_unregister_application(stasis);
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Stasis dialplan application",
 	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
-	.nonoptreq = "res_stasis",
-	);
+	.requires = "res_stasis",
+);

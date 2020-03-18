@@ -20,17 +20,15 @@
  *
  * \brief Flat, binary, ADPCM vox file format.
  * \arg File name extensions: vox
- * 
+ *
  * \ingroup formats
  */
 
 /*** MODULEINFO
 	<support_level>extended</support_level>
  ***/
- 
-#include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
+#include "asterisk.h"
 
 #include "asterisk/mod_format.h"
 #include "asterisk/module.h"
@@ -42,20 +40,15 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 static struct ast_frame *vox_read(struct ast_filestream *s, int *whennext)
 {
-	int res;
+	size_t res;
 
 	/* Send a frame from the file to the appropriate channel */
 	AST_FRAME_SET_BUFFER(&s->fr, s->buf, AST_FRIENDLY_OFFSET, BUF_SIZE);
-	if ((res = fread(s->fr.data.ptr, 1, s->fr.datalen, s->f)) != s->fr.datalen) {
-		if (feof(s->f)) {
-			if (res) {
-				ast_debug(3, "Incomplete frame data at end of %s file "
-						  "(expected %d bytes, read %d)\n",
-						  ast_format_get_name(s->fr.subclass.format), s->fr.datalen, res);
-			}
-		} else {
-			ast_log(LOG_ERROR, "Error while reading %s file: %s\n",
-					ast_format_get_name(s->fr.subclass.format), strerror(errno));
+	if ((res = fread(s->fr.data.ptr, 1, s->fr.datalen, s->f)) < 1) {
+		if (res) {
+			ast_log(LOG_WARNING, "Short read of %s data (expected %d bytes, read %zu): %s\n",
+					ast_format_get_name(s->fr.subclass.format), s->fr.datalen, res,
+					strerror(errno));
 		}
 		return NULL;
 	}
@@ -129,12 +122,13 @@ static off_t vox_tell(struct ast_filestream *fs)
 {
      off_t offset;
      offset = ftello(fs->f) << 1;
-     return offset; 
+     return offset;
 }
 
 static struct ast_format_def vox_f = {
 	.name = "vox",
 	.exts = "vox",
+	.mime_types = "audio/x-vox",
 	.write = vox_write,
 	.seek = vox_seek,
 	.trunc = vox_trunc,

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : PJSIP with Proxies</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SIP_28314848.html">SIP</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-res_pjsip_25919621.html">Configuring res_pjsip</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : PJSIP with Proxies
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> George Joseph</span>, last modified on Mar 30, 2017
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>There are many different proxy scenarios Asterisk can be involved in.  Not all can be explained here but a few examples can help you adapt to your specific situation.  The first, and simplest, scenario is where Asterisk is functioning as a PBX on the same private network that the phones are on but needs connectivity to an Internet telephony Service Provider (ITSP).</p><h1 id="PJSIPwithProxies-OutboundProxy">Outbound Proxy</h1><p>We'll assume that the ITSP requires Asterisk to register in order to receive calls.   Of course, even with Asterisk behind a NAT firewall or router, a proxy isn't really necessary but the configuration is a good one to start with.  While configuration of a proxy such as Kamailio is beyond the scope of this document, this scenario requires only the simplest of proxy configurations and would probably work with the samples provides by Kamailio.   We'll assume that the proxy is dual homed with one interface on the private network and one interface on the public network.  We'll also assume that the proxy is relaying media as well as signalling.  We'll use <code>192.168.0.1</code> as the proxy's private address and <code>192.168.0.2</code> as Asterisk's address.</p><h2 id="PJSIPwithProxies-AsteriskConfiguration"><span style="color: rgb(133,120,102);">Asterisk Configuration</span></h2><p>There are several pjsip objects that need to be configured for this situation.</p><ul><li><code>transport</code>: Actually, this is an un-configure action. <img class="emoticon emoticon-smile" src="images/icons/emoticons/smile.png" data-emoticon-name="smile" alt="(smile)"/>  If Asterisk were not using a proxy you might have parameters in the transport like <code>external_signalling_address</code>, <code>external_media_address</code>, <code>local_net</code>, etc.  These must NOT be set when Asterisk and the proxy are on the same network.  Asterisk shouldn't know anything about what's on the other side of the proxy since the proxy's job is to make that invisible.<br />Example:<br /><code>[ipv4-udp]</code><br /><code>type = transport</code><br /><code>protocol = udp</code><br /><code>bind = 0.0.0.0:5060</code><br /><code><br /></code></li><li><code>endpoint</code>:  Configure the ITSP's endpoint as you normally would but add an <code>outbound_proxy</code> parameter with a URI that points to the proxy's internal address.  This will direct (almost) all outbound requests for this endpoint to the proxy.  You should also not enable any NAT related parameters like <code>force_rport</code>, <code>ice_support</code>, etc.<br />Example:<br /><code>[myitsp]</code><br /><code>type = endpoint</code><br /><code>; other stuff</code><br /><code>outbound_proxy = sip:192.168.0.1\;lr</code><br /> </li><li><code>aor</code>:  In order for Asterisk to send <code>OPTIONS</code> requests to the ITSP via the proxy, the <code>outbound_proxy</code> parameter needs to be added here as well.  All other aor parameters, including <code>contact</code> should be left just as though there were no proxy.<br />Example:<br /><code>[myitsp]</code><br /><code>type = aor</code><br /><code>contact = sip:my.itsp.com:5060<br /></code><code><code>outbound_proxy = sip:192.168.0.1\;lr</code><br />qualify_frequency = 60</code><br /> </li><li><code>registration</code>:  Same as aor.  The client and server URIs should remain as they were for the non-proxy situation and the <code>outbound_proxy</code> parameter should be added.<br />Example:<br /><code>[myitsp]</code><br /><code>type = registration</code><br /><code>client_uri = sip:my_account@my.itsp.com</code><br /><code>server_uri = sip:my.itsp.com</code><br /><code>outbound_proxy = sip:192.168.0.1\;lr</code><br /><br /></li><li><code>identify</code>:  Now things get just a little complicated.  Most ITSPs don't authenticate back to their clients when sending them calls and they may be sending the caller's CallerID as the From header's user so the (almost) only way to identify calls from the ITSP is by IP address.   If there were no proxy in the picture, you'd probably set up an <code>identify</code> object with a <code>match = my.itsp.com</code> parameter.  In the proxy case though, the match needs to be against the proxy's private address since that's the ip address where the packets will come from.<br />Example:<br /><code>[myitsp]</code><br /><code>type = identify</code> <br /><code>match = 192.168.0.1</code><br /><code>endpoint = myitsp</code><br /> </li></ul><p>You'll have noticed that the proxy URIs have the &quot;lr&quot; parameter added.  This is because most proxies these days follow RFC 3261 and are therefore &quot;loose-routing&quot;.  If you don't have it set, you'll probably get a 404 response from the proxy.  The <code>&quot;\&quot;</code> before the semicolon is important to keep the semicolon from being treated as a comment start character in the config file.</p><p>At this point you should have a working ITSP trunk for both inbound and outbound calls.</p><h2 id="PJSIPwithProxies-DirectMedia"><span style="color: rgb(133,120,102);">Direct Media</span></h2><p>If your proxy supports it, you can enable direct media between the phones and the proxy by setting d<code>irect_media = yes</code> on the phone and ITSP endpoints.  The proxy should take care of the rest.  Attempting to do direct media directly between the phones and the ITSP is unlikely to work at all.</p><h2 id="PJSIPwithProxies-MultipleITSPs"><span style="color: rgb(133,120,102);">Multiple ITSPs</span></h2><p>There's a slight issue with the above configuration if you have more than 1 ITSP trunk through the proxy.  In the configuration above, the <code>identify</code> object is used to direct incoming requests from the proxy to a single endpoint and you can't direct the same ip address to multiple endpoints for obvious reasons.  You could define 1 <code>endpoint</code> and 1 <code>identify</code> for the proxy to act as the receiver of calls from all service providers but that's not always convenient or possible with some front end GUIs.  In this case, and if your ITSP supports it, you can use the <code>line</code> parameter of the <code>registration</code> object as the mechanism to match incoming requests to an endpoint and eliminate the use of <code>identify</code> altogether.  Here's how it works:  When you specify <code>line = true</code> and <code>endpoint = &lt;endpoint&gt;</code> on a registration, Asterisk appends a &quot;line&quot; parameter to the outgoing REGISTER's Contact URI that contains a unique string.  It'll look like this: &quot;<code>Contact: &lt;sip:s@192.168.0.2.245:5060;line=eylpkkv&gt;&quot;</code>.  If the ITSP supports it, when it sends an <code>INVITE</code> request to Asterisk, it will include that &quot;line&quot; parameter in either the Request URI or the To header like so: &quot;<code>INVITE sip:8005551212@192.168.0.2:5060;line=eylpkkv SIP/2.0</code>&quot; .  Asterisk will then use that unique string to match the request to the endpoint specified in the registration.</p><p>Example:<br /><code>[myitsp]</code><br /><code>type = registration</code><br /><code>client_uri = sip:my_account@<a href="http://my.itsp.com" class="external-link" rel="nofollow">my.itsp.com</a></code><br /><code>server_uri = sip:<a href="http://my.itsp.com" class="external-link" rel="nofollow">my.itsp.com</a></code><br /><code>outbound_proxy = sip:192.168.0.1<br /><code>line = yes</code><br /><code>endpoint = myitsp</code> </code></p><h3 id="PJSIPwithProxies-HeaderMatching">Header Matching</h3><p>Some ITSPs include &quot;X-&quot; headers in their requests that contain account numbers or other identifying information.  Asterisk 13.15 and 14.5 have a new <code>identify</code> feature which enables matching incoming requests to endpoints via those headers.</p><p>Example: <br /><code>[myitsp]</code><br /><code>type = identify</code><br /><code>match_header = X-My-Account-Number: 12345678</code><br /><code>endpoint = myitsp</code> </p><h1 id="PJSIPwithProxies-InboundProxy"><span style="color: rgb(133,120,102);">Inbound Proxy</span></h1><p>In a service provider scenario, Asterisk will most likely be behind a proxy separated from the public internet and the clients, be they phones or PBXes or whatever.  In this case, the configuration burden shifts from Asterisk to the proxy.   You'll probably want to set the proxy up to handle authentication, qualification, direction of media to media gateways, voicemail servers, etc, and that's all well beyond the scope of this document.   Contributions that contain instructions for popular proxies would be most welcomed.</p><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

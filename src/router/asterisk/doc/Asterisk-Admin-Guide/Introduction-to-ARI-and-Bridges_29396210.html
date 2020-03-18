@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Introduction to ARI and Bridges</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="29395573.html">Asterisk REST Interface (ARI)</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Introduction to ARI and Bridges
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified on Sep 12, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-right-sidebar" data-layout="two-right-sidebar">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="IntroductiontoARIandBridges-AsteriskBridges">Asterisk Bridges</h1><p>In Asterisk, bridges can be thought of as a container for channels that form paths of communication between the channels contained within them. They can be used to pass media back and forth between the channels, as well as to play media to the various channels in a variety of ways.</p>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">More Information</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>For more information on bridges in Asterisk, see <a href="Bridges_4817441.html">Bridges</a>.</p>
+                    </div>
+    </div>
+<h1 id="IntroductiontoARIandBridges-BridgesinaStasisApplication">Bridges in a Stasis Application</h1><h2 id="IntroductiontoARIandBridges-BridgeTypes">Bridge Types</h2><p>When a bridge is created through ARI, there are a number of attributes that can be specified that determine how the bridge mixes media between its participants. These include:</p><ul><li><p><code>mixing</code> - specify that media should be passed between all channels in the bridge. This attribute cannot be used with <code>holding</code>.</p></li><li><p><code>dtmf_events</code> - specify that media should be decoded within Asterisk so that DTMF can be recognized. If this is not specified, then DTMF events may not be raised due to the media being passed directly between the channels in the bridge. This attribute only impacts how media is mixed when the <code>mixing</code> attribute is used.</p></li><li><p><code>proxy_media</code> - specify that media should always go through Asterisk, even if it could be redirected between clients. This attribute only impacts how media is mixed when the <code>mixing</code> attribute is used.</p></li></ul></div>
+</div>
+<div class="cell aside" data-type="aside">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303060086 {padding: 0px;}
+div.rbtoc1582303060086 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303060086 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303060086'>
+<ul class='toc-indentation'>
+<li><a href='#IntroductiontoARIandBridges-AsteriskBridges'>Asterisk Bridges</a></li>
+<li><a href='#IntroductiontoARIandBridges-BridgesinaStasisApplication'>Bridges in a Stasis Application</a>
+<ul class='toc-indentation'>
+<li><a href='#IntroductiontoARIandBridges-BridgeTypes'>Bridge Types</a></li>
+<li><a href='#IntroductiontoARIandBridges-SubscriptionModel'>Subscription Model</a></li>
+</ul>
+</li>
+<li><a href='#IntroductiontoARIandBridges-Example:InteractingwithBridges'>Example: Interacting with Bridges</a>
+<ul class='toc-indentation'>
+<li><a href='#IntroductiontoARIandBridges-Dialplan'>Dialplan</a></li>
+<li><a href='#IntroductiontoARIandBridges-Python'>Python</a>
+<ul class='toc-indentation'>
+<li><a href='#IntroductiontoARIandBridges-bridge-hold.py'>bridge-hold.py</a></li>
+<li><a href='#IntroductiontoARIandBridges-bridge-hold.pyinaction'>bridge-hold.py in action</a></li>
+</ul>
+</li>
+<li><a href='#IntroductiontoARIandBridges-JavaScript(Node.js)'>JavaScript (Node.js)</a>
+<ul class='toc-indentation'>
+<li><a href='#IntroductiontoARIandBridges-bridge-hold.js'>bridge-hold.js</a></li>
+<li><a href='#IntroductiontoARIandBridges-bridge-hold.jsinaction'>bridge-hold.js in action</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>Bridges in Depth</b></div><div class="panelContent">
+<p><ul class='childpages-macro'><li><a href="29396218.html">ARI and Bridges: Holding Bridges</a></li><li><a href="29396220.html">ARI and Bridges: Basic Mixing Bridges</a></li><li><a href="29396222.html">ARI and Bridges: Bridge Operations</a></li></ul></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<ul><li><code>holding</code> - specify that the channels in the bridge should be entertained with some media. Channels in the bridge have two possible roles: a participant or an announcer. Media between participant channels is not shared; media from an announcer channel is played to all participant channels.</li></ul><p>Depending on the combination of attributes selected when a bridge is created, different mixing technologies may be used for the participants in the bridge. Asterisk will attempt to use the most performant mixing technology that it can based on the channel types in the bridge, subject to the attributes specified when the bridge was created.</p><h2 id="IntroductiontoARIandBridges-SubscriptionModel">Subscription Model</h2><p>Unlike channels, bridges in a Stasis application are not automatically subscribed to for events. In order to receive events concerning events for a given bridge, the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Applications+REST+API" rel="nofollow">applications</a> resource must be used to subscribe to the bridge via the <code>POST - /applications/{app_name}/subscription</code> operation. Events related to channels entering and leaving bridges will be sent without the need to subscribe to them since they are related to a channel in a Stasis application.</p><h1 id="IntroductiontoARIandBridges-Example:InteractingwithBridges">Example: Interacting with Bridges</h1><p>For this example, we're going to write an ARI application that will do the following:</p><ol><li>When it connects, it will print out the names of all existing holding bridges. If there are no existing holding bridges, it will create one.</li><li>When a channel enters into its Stasis application, it will be added to the holding bridge and music on hold will be started on the bridge.</li></ol><h2 id="IntroductiontoARIandBridges-Dialplan">Dialplan</h2><p>The dialplan for this will be very straight forward: a simple extension that drops a channel into Stasis.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[default]
+
+exten =&gt; 1000,1,NoOp()
+ same =&gt;      n,Answer()
+ same =&gt;      n,Stasis(bridge-hold)
+ same =&gt;      n,Hangup()</pre>
+</div></div><h2 id="IntroductiontoARIandBridges-Python">Python</h2><p>For our Python examples, we will rely primarily on the <a href="https://github.com/asterisk/ari-py" class="external-link" rel="nofollow">ari-py</a> library. Because the <code>ari</code> library will emit useful information using Python logging, we should go ahead and set that up as well - for now, a <code>basicConfig</code> with <code>ERROR</code> messages displayed should be sufficient. Finally, we'll need to get a client made by initiating a connection to Asterisk. This occurs using the <code>ari.connect</code> method, where we have to specify three things:</p><ol><li>The HTTP base URI of the Asterisk server to connect to. Here, we assume that this is running on the same machine as the script, and that we're using the default port for Asterisk's HTTP server - <code>8088</code>.</li><li>The username of the ARI user account to connect as. In this case, we're specifying it as <code>asterisk</code>.</li><li>The password for the ARI user account. In this case, that's asterisk.</li></ol>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>Modify the connection credentials as appropriate for your server, although many examples will use these credentials.</p><p><strong>Please don't use these credentials in production systems!</strong></p>
+                    </div>
+    </div>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: py; gutter: true" style="font-size:12px;">#!/usr/bin/env python
+
+import ari
+import logging
+ 
+logging.basicConfig(level=logging.ERROR)
+ 
+client = ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;)</pre>
+</div></div><p>Once we've made our connection, our first task is to look for an existing holding bridge - if there is no existing holding bridge - we need to create it. The bridges resource has an operation for listing existing bridges - <code>GET /bridges</code>. Using ari-py we need to use the operation nickname - <code>list</code>. We can then use another bridges resource operation to create a holding bridge if none was found - <code>POST /bridges</code>. Using ari-py, we need to use the operation nickname - <code>create</code>.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 10; theme: Confluence; brush: py; gutter: true" style="font-size:12px;"># find or create a holding bridge
+bridges = [candidate for candidate in client.bridges.list() if
+           candidate.json[&#39;bridge_type&#39;] == &#39;holding&#39;]
+if bridges:
+    bridge = bridges[0]
+    print &quot;Using bridge %s&quot; % bridge.id
+else:
+    bridge = client.bridges.create(type=&#39;holding&#39;)
+    print &quot;Created bridge %s&quot; % bridge.id</pre>
+</div></div><p>The <code>GET /channels</code> operation returns back a list of <code>Bridge</code> resources. Those resources, however, are returned as JSON from the operation, and while the <code>ari-py</code> library converts the <code>uniqueid</code> of those into an attribute on the object, it leaves the rest of them in the JSON dictionary.</p><p>Our next step involves adding channels that enter our Stasis application to the bridge we either found or created and signaling when a channel leaves our Stasis application. To do that, we need to subscribe for the <code>StasisStart</code> and <code>StasisEnd</code> events:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 36; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">client.on_channel_event(&#39;StasisStart&#39;, stasis_start_cb)
+client.on_channel_event(&#39;StasisEnd&#39;, stasis_end_cb)</pre>
+</div></div><p>We need two handler functions - <code>stasis_start_cb</code> for the <code>StasisStart</code> event and <code>stasis_end_cb</code> for the <code>StasisEnd</code> event:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 20; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">def stasis_start_cb(channel_obj, ev):
+    &quot;&quot;&quot;Handler for StasisStart event&quot;&quot;&quot;
+
+    channel = channel_obj.get(&#39;channel&#39;)
+    print &quot;Channel %s just entered our application, adding it to bridge %s&quot; % (
+        channel.json.get(&#39;name&#39;), bridge.id)
+    channel.answer()
+    bridge.addChannel(channel=channel.id)
+    bridge.startMoh()
+
+def stasis_end_cb(channel, ev):
+    &quot;&quot;&quot;Handler for StasisEnd event&quot;&quot;&quot;
+
+    print &quot;Channel %s just left our application&quot; % channel.json.get(&#39;name&#39;)</pre>
+</div></div><p>Finally, we need to tell the <code>client</code> to run our application. Once we call <code>client.run</code>, the websocket connection will be made and our application will wait on events infinitely. We can use <code>Ctrl+C</code> to kill it and break the connection.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 39; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">client.run(apps=&#39;bridge-hold&#39;)</pre>
+</div></div><h3 id="IntroductiontoARIandBridges-bridge-hold.py">bridge-hold.py</h3><p>The full source code for <code>bridge-hold.py</code> is shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: py; gutter: true" style="font-size:12px;">#!/usr/bin/env python
+
+import ari
+import logging
+
+logging.basicConfig(level=logging.ERROR)
+
+client = ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;)
+
+# find or create a holding bridge
+bridges = [candidate for candidate in client.bridges.list() if
+           candidate.json[&#39;bridge_type&#39;] == &#39;holding&#39;]
+if bridges:
+    bridge = bridges[0]
+    print &quot;Using bridge %s&quot; % bridge.id
+else:
+    bridge = client.bridges.create(type=&#39;holding&#39;)
+    print &quot;Created bridge %s&quot; % bridge.id
+
+def stasis_start_cb(channel_obj, ev):
+    &quot;&quot;&quot;Handler for StasisStart event&quot;&quot;&quot;
+
+    channel = channel_obj.get(&#39;channel&#39;)
+    print &quot;Channel %s just entered our application, adding it to bridge %s&quot; % (
+        channel.json.get(&#39;name&#39;), bridge.id)
+
+    channel.answer()
+    bridge.addChannel(channel=channel.id)
+    bridge.startMoh()
+
+def stasis_end_cb(channel, ev):
+    &quot;&quot;&quot;Handler for StasisEnd event&quot;&quot;&quot;
+
+    print &quot;Channel %s just left our application&quot; % channel.json.get(&#39;name&#39;)
+
+client.on_channel_event(&#39;StasisStart&#39;, stasis_start_cb)
+client.on_channel_event(&#39;StasisEnd&#39;, stasis_end_cb)
+
+client.run(apps=&#39;bridge-hold&#39;)</pre>
+</div></div><p> </p><h3 id="IntroductiontoARIandBridges-bridge-hold.pyinaction">bridge-hold.py in action</h3><p>Here, we see the output from the <code>bridge-hold.py</code> script when a PJSIP channel for endpoint 'alice' enters into the application:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: true" style="font-size:12px;">asterisk:~$ python bridge-hold.py
+Created bridge 79f3ad78-b124-4d7b-a629-a53b7e7f50cd
+Channel PJSIP/alice-00000001 just entered our application, adding it to bridge 79f3ad78-b124-4d7b-a629-a53b7e7f50cd
+Channel PJSIP/alice-00000001 just left our application</pre>
+</div></div><p> </p><h2 id="IntroductiontoARIandBridges-JavaScript(Node.js)">JavaScript (Node.js)</h2><p>For our JavaScript examples, we will rely primarily on the Node.js <a href="https://github.com/asterisk/node-ari-client" class="external-link" rel="nofollow">ari-client</a> library. We'll need to get a client made by initiating a connection to Asterisk. This occurs using the <code>ari.connect</code> method, where we have to specify four things:</p><ol><li>The HTTP base URI of the Asterisk server to connect to. Here, we assume that this is running on the same machine as the script, and that we're using the default port for Asterisk's HTTP server - <code>8088</code>.</li><li>The username of the ARI user account to connect as. In this case, we're specifying it as <code>asterisk</code>.</li><li>The password for the ARI user account. In this case, that's asterisk.</li><li>A callback that will be called with an error if one occurred, followed by an instance of an ARI client.</li></ol>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>Modify the connection credentials as appropriate for your server, although many examples will use these credentials.</p><p><strong>Please don't use these credentials in production systems!</strong></p>
+                    </div>
+    </div>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: js; gutter: true" style="font-size:12px;">/*jshint node:true*/
+&#39;use strict&#39;;
+
+var ari = require(&#39;ari-client&#39;);
+var util = require(&#39;util&#39;);
+
+ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;, clientLoaded);
+
+// handler for client being loaded
+function clientLoaded (err, client) {
+  if (err) {
+    throw err;
+  }
+}</pre>
+</div></div><p>Once we've made our connection, our first task is to look for an existing holding bridge - if there is no existing holding bridge - we need to create it. The bridges resource has an operation for listing existing bridges - <code>GET /bridges</code>. Using ari-client we need to use the operation nickname - <code>list</code>. We can then use another bridges resource operation to create a holding bridge if none was found - <code>POST /bridges</code>. Using ari-client, we need to use the operation nickname - <code>create</code>.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 15; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">// find or create a holding bridge
+var bridge = null;
+client.bridges.list(function(err, bridges) {
+  if (err) {
+    throw err;
+  }
+  bridge = bridges.filter(function(candidate) {
+    return candidate.bridge_type === &#39;holding&#39;;
+  })[0];
+  if (bridge) {
+    console.log(util.format(&#39;Using bridge %s&#39;, bridge.id));
+  } else {
+    client.bridges.create({type: &#39;holding&#39;}, function(err, newBridge) {
+      if (err) {
+        throw err;
+      }
+      bridge = newBridge;
+      console.log(util.format(&#39;Created bridge %s&#39;, bridge.id));
+    });
+  }
+});</pre>
+</div></div><p>The <code>GET /channels</code> operation returns back a an error if it occurred and a list of <code>Bridge</code> resources. <code>ari-client</code> will return a JavaScript object for each <code>Bridge</code> resource. Properties such as <code>bridge_type</code> can be accessed on the object directly.</p><p>Our next step involves adding channels that enter our Stasis application to the bridge we either found or created and signaling when a channel leaves our Stasis application. To do that, we need to subscribe for the <code>StasisStart</code> and <code>StasisEnd</code> events:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 72; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">client.on(&#39;StasisStart&#39;, stasisStart);
+client.on(&#39;StasisEnd&#39;, stasisEnd);</pre>
+</div></div><p>We need two callback functions - <code>stasisStart</code> for the <code>StasisStart</code> event and <code>stasisEnd</code> for the <code>StasisEnd</code> event:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 40; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">// handler for StasisStart event
+function stasisStart(event, channel) {
+  console.log(util.format(
+      &#39;Channel %s just entered our application, adding it to bridge %s&#39;,
+      channel.name,
+      bridge.id));
+
+  channel.answer(function(err) {
+    if (err) {
+      throw err;
+    }
+
+    bridge.addChannel({channel: channel.id}, function(err) {
+      if (err) {
+        throw err;
+      }
+
+      bridge.startMoh(function(err) {
+        if (err) {
+          throw err;
+        }
+      });
+    });
+  });
+}
+
+// handler for StasisEnd event
+function stasisEnd(event, channel) {
+  console.log(util.format(
+      &#39;Channel %s just left our application&#39;, channel.name));
+} </pre>
+</div></div><p>Finally, we need to tell the <code>client</code> to start our application. Once we call <code>client.start</code>, a websocket connection will be established and the client will emit Node.js events as events come in through the websocket. We can use <code>Ctrl+C</code> to kill it and break the connection.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 75; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">client.start(&#39;bridge-hold&#39;);</pre>
+</div></div><h3 id="IntroductiontoARIandBridges-bridge-hold.js">bridge-hold.js</h3><p>The full source code for<code> bridge-hold.js</code> is shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: js; gutter: true" style="font-size:12px;">/*jshint node:true*/
+&#39;use strict&#39;;
+
+var ari = require(&#39;ari-client&#39;);
+var util = require(&#39;util&#39;);
+
+ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;, clientLoaded);
+
+// handler for client being loaded
+function clientLoaded (err, client) {
+  if (err) {
+    throw err;
+  }
+
+  // find or create a holding bridge
+  var bridge = null;
+  client.bridges.list(function(err, bridges) {
+    if (err) {
+      throw err;
+    }
+
+    bridge = bridges.filter(function(candidate) {
+      return candidate.bridge_type === &#39;holding&#39;;
+    })[0];
+
+    if (bridge) {
+      console.log(util.format(&#39;Using bridge %s&#39;, bridge.id));
+    } else {
+      client.bridges.create({type: &#39;holding&#39;}, function(err, newBridge) {
+        if (err) {
+          throw err;
+        }
+
+        bridge = newBridge;
+        console.log(util.format(&#39;Created bridge %s&#39;, bridge.id));
+      });
+    }
+  });
+
+  // handler for StasisStart event
+  function stasisStart(event, channel) {
+    console.log(util.format(
+        &#39;Channel %s just entered our application, adding it to bridge %s&#39;,
+        channel.name,
+        bridge.id));
+
+    channel.answer(function(err) {
+      if (err) {
+        throw err;
+      }
+
+      bridge.addChannel({channel: channel.id}, function(err) {
+        if (err) {
+          throw err;
+        }
+
+        bridge.startMoh(function(err) {
+          if (err) {
+            throw err;
+          }
+        });
+      });
+    });
+  }
+
+  // handler for StasisEnd event
+  function stasisEnd(event, channel) {
+    console.log(util.format(
+        &#39;Channel %s just left our application&#39;, channel.name));
+  }
+
+  client.on(&#39;StasisStart&#39;, stasisStart);
+  client.on(&#39;StasisEnd&#39;, stasisEnd);
+
+  client.start(&#39;bridge-hold&#39;);
+}</pre>
+</div></div><h3 id="IntroductiontoARIandBridges-bridge-hold.jsinaction">bridge-hold.js in action</h3><p>Here, we see the output from the <code>bridge-hold.js</code> script when a PJSIP channel for endpoint 'alice' enters into the application:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: true" style="font-size:12px;">asterisk:~$ node bridge-hold.js
+Created bridge 41208316-174c-4e40-90bb-c45cca6579d4
+Channel PJSIP/alice-00000001 just entered our application, adding it to bridge 41208316-174c-4e40-90bb-c45cca6579d4
+Channel PJSIP/alice-00000001 just left our application</pre>
+</div></div></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

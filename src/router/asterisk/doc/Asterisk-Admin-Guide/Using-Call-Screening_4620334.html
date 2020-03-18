@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Using Call Screening</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Privacy-Configuration_4620321.html">Privacy Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Using Call Screening
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Another option is to use call screening in the Dial command. It has two main privacy modes, one that remembers the CID of the caller, and how the callee wants the call handled, and the other, which does not have a &quot;memory&quot;. <br />
+Turning on these modes in the dial command results in this sequence of events, when someone calls you at an extension:</p>
+
+<p>The caller calls the Asterisk system, and at some point, selects an option or enters an extension number that would dial your extension.</p>
+
+<p>Before ringing your extension, the caller is asked to supply an introduction. The application asks them: &quot;After the tone, say your name&quot;. They are allowed 4 seconds of introduction.</p>
+
+<p>After that, they are told &quot;Hang on, we will attempt to connect you to your party. Depending on your dial options, they will hear ringing indications, or get music on hold. I suggest music on hold.</p>
+
+<p>Your extension is then dialed. When (and if) you pick up, you are told that a caller presenting themselves as their recorded intro is played is calling, and you have options, like being connected, sending them to voicemail, torture, etc.<br />
+You make your selection, and the call is handled as you chose.</p>
+
+<p>There are some variations, and these will be explained in due course. </p>
+
+<p>To use these options, set your Dial to something like:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+exten =&gt; 3,3,Dial(DAHDI/5r3&amp;DAHDI/6r3,35,tmPA(beep))
+</pre>
+</div></div>
+
+<p>or:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+exten =&gt; 3,3,Dial(DAHDI/5r3&amp;DAHDI/6r3,35,tmP(something)A(beep))
+</pre>
+</div></div>
+
+<p>or: </p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+exten =&gt; 3,3,Dial(DAHDI/5r3&amp;DAHDI/6r3,35,tmpA(beep))
+</pre>
+</div></div>
+
+<p>The '<strong>t</strong>' allows the dialed party to transfer the call using '#'. It's optional. </p>
+
+<p>The '<strong>m</strong>' is for music on hold. I suggest it. Otherwise, the calling party gets to hear all the ringing, and lack thereof. It is generally better to use Music On Hold. Lots of folks hang up after the 3rd or 4th ring, and you might lose the call before you can enter an option! </p>
+
+<p>The '<strong>P</strong>' option alone will database everything using the extension as a default 'tree'. To get multiple extensions sharing the same database, use P(some-shared-key). Also, if the same person has multiple extensions, use P(unique-id) on all their dial commands. </p>
+
+<p>Use little '<strong>p</strong>' for screening. Every incoming call will include a prompt for the callee's choice. </p>
+
+<p>The <strong>A(beep)</strong>, will generate a 'beep' that the callee will hear if they choose to talk to the caller. It's kind of a prompt to let the callee know that he has to say 'hi'. It's not required, but I find it helpful.</p>
+
+<p>When there is no CallerID, <strong>P</strong> and <strong>p</strong> options will always record an intro for the incoming caller. This intro will be stored temporarily in the <strong>/var/lib/asterisk/sounds/priv-callerintros</strong> dir, under the name <strong>NOCALLERID_extension</strong> channelname and will be erased after the callee decides what to do with the call. </p>
+
+<p>Of course, NOCALLERID is not stored in the database. All those with no CALLERID will be considered &quot;Unknown&quot;.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

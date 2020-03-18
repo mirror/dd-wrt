@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Introduction to ARI and Media Manipulation</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="29395573.html">Asterisk REST Interface (ARI)</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Introduction to ARI and Media Manipulation
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Mark Michelson</span>, last modified by <span class='editor'> Matt Jordan</span> on Oct 16, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="IntroductiontoARIandMediaManipulation-MediaControl">Media Control</h1><p>ARI contains tools for manipulating media, such as playing sound files, playing tones, playing numbers and digits, recording media, deleting stored recordings, manipulating playbacks (e.g. rewind and fast-forward), and intercepting DTMF tones. Some channel-specific information and examples for <a href="29395606.html">playing media</a> and <a href="29395612.html">intercepting DTMF</a> have been covered on previous pages. While some information will be repeated here, the intention of this section is to delve deeper into media manipulation.</p><p>To frame the discussion, we will be creating a set of applications that mimic a minimal voice mail system.</p><h1 id="IntroductiontoARIandMediaManipulation-AbouttheCodeSamples">About the Code Samples</h1><p>The following ARI client libraries are used in the code samples on these pages</p><ul><li>Python code samples use <a href="https://github.com/asterisk/ari-py" class="external-link" rel="nofollow">ari-py</a></li><li>Node.js samples use <a href="https://github.com/asterisk/node-ari-client" class="external-link" rel="nofollow">node-ari-client</a></li></ul></div><div class="columnMacro" style="width:40%;min-width:40%;max-width:40%;"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303060488 {padding: 0px;}
+div.rbtoc1582303060488 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303060488 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303060488'>
+<ul class='toc-indentation'>
+<li><a href='#IntroductiontoARIandMediaManipulation-MediaControl'>Media Control</a></li>
+<li><a href='#IntroductiontoARIandMediaManipulation-AbouttheCodeSamples'>About the Code Samples</a></li>
+<li><a href='#IntroductiontoARIandMediaManipulation-StateMachine'>State Machine</a></li>
+</ul>
+</div></p>
+</div></div><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>Media In Depth</b></div><div class="panelContent">
+<ul class='childpages-macro'><li><a href="30277826.html">ARI and Media: Part 1 - Recording</a></li><li><a href="30277828.html">ARI and Media: Part 2 - Playbacks</a></li></ul>
+</div></div></div></div></div></div><p>All of the code presented here has been tested with Asterisk 13 and works as intended. That being said, the code samples given are intended more to demonstrate the capabilities of ARI than to be a best practices guide for writing an application or to illustrate watertight code. Error-handling is virtually non-existent in the code samples. For a real application, Python calls to ARI should likely be in <code>try-catch</code> blocks in case there is an error, and Node.js calls to ARI should provide callbacks that detect if there was an error.</p><p>The asynchronous nature of Node.js and the node-ari-client library is not always used in the safest ways in the code samples provided. For instance, there are code samples where DTMF presses cause media operations to take place, and the code does not await confirmation that the media operation has actually completed before accepting more DTMF presses. This could potentially result in the desired media operations happening out of order if many DTMF presses occur in rapid succession.</p><h1 id="IntroductiontoARIandMediaManipulation-StateMachine">State Machine</h1><p>Voice mail, at its heart, is an IVR. IVRs are most easily represented using a finite state machine. The way a state machine works is that a program switches between pre-defined states based on events that occur. Certain events will cause program code within the state to take certain actions, and other events will result in a change to a different program state. Each state can almost be seen as a self-contained program.</p><p>To start our state machine, we will define what events might cause state transitions. If you think about a typical IVR, the events that can occur are DTMF key presses, and changes in the state of a call, such as hanging up. As such, we'll define a base set of events.</p><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">event.py</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: py; collapse: true; gutter: false" style="font-size:12px;">class Event(object):
+    # DTMF digits
+    DTMF_1 = &quot;1&quot;
+    DTMF_2 = &quot;2&quot;
+    DTMF_3 = &quot;3&quot;
+    DTMF_4 = &quot;4&quot;
+    DTMF_5 = &quot;5&quot;
+    DTMF_6 = &quot;6&quot;
+    DTMF_7 = &quot;7&quot;
+    DTMF_8 = &quot;8&quot;
+    DTMF_9 = &quot;9&quot;
+    DTMF_0 = &quot;0&quot;
+    # Use &quot;octothorpe&quot; so there is no confusion about &quot;pound&quot; or &quot;hash&quot;
+    # terminology.
+    DTMF_OCTOTHORPE = &quot;#&quot;
+    DTMF_STAR = &quot;*&quot;
+    # Call has hung up
+    HANGUP = &quot;hangup&quot;
+    # Playback of a file has completed
+    PLAYBACK_COMPLETE = &quot;playback_complete&quot;
+    # Mailbox has been emptied
+    MAILBOX_EMPTY = &quot;empty&quot;</pre> 
+ </div>
+</div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">event.js</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: js; collapse: true; gutter: false" style="font-size:12px;">var Event = {
+    // DTMF digits
+    DTMF_1: &quot;1&quot;,
+    DTMF_2: &quot;2&quot;,
+    DTMF_3: &quot;3&quot;,
+    DTMF_4: &quot;4&quot;,
+    DTMF_5: &quot;5&quot;,
+    DTMF_6: &quot;6&quot;,
+    DTMF_7: &quot;7&quot;,
+    DTMF_8: &quot;8&quot;,
+    DTMF_9: &quot;9&quot;,
+    DTMF_0: &quot;0&quot;,
+    // Use &quot;octothorpe&quot; so there is no confusion about &quot;pound&quot; or &quot;hash&quot;
+    // terminology.
+    DTMF_OCTOTHORPE: &quot;#&quot;,
+    DTMF_STAR: &quot;*&quot;,
+    // Call has hung up
+    HANGUP: &quot;hangup&quot;,
+    // Playback of a file has completed
+    PLAYBACK_COMPLETE: &quot;playback_complete&quot;,
+    // Mailbox has been emptied
+    MAILBOX_EMPTY: &quot;empty&quot;
+}
+module.exports = Event;</pre> 
+ </div>
+</div><p>There is no hard requirement for our application that we define events as named constants, but doing so makes it easier for tools like pylint and jslint to find potential mistakes.</p><p>After we have defined our events, we need to create a state machine itself. The state machine keeps track of what the current state is, and which events cause state changes. Here is a simple implementation of a state machine</p><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">state_machine.py</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: py; collapse: true; gutter: false" style="font-size:12px;">class StateMachine(object):
+    def __init__(self):
+        self.transitions = {}
+        self.current_state = None
+
+    def add_transition(self, src_state, event, dst_state):
+        if not self.transitions.get(src_state.state_name):
+            self.transitions[src_state.state_name] = {}
+
+        self.transitions[src_state.state_name][event] = dst_state
+
+    def change_state(self, event):
+        self.current_state = self.transitions[self.current_state.state_name][event]
+        self.current_state.enter()
+
+    def start(self, initial_state):
+        self.current_state = initial_state
+        self.current_state.enter()</pre> 
+ </div>
+</div><div class="code panel pdl" style="border-width: 1px;">
+ <div class="codeHeader panelHeader pdl hide-border-bottom" style="border-bottom-width: 1px;">
+  <b class=" code-title">state_machine.js</b>
+  <span class="collapse-source expand-control"><span class="expand-control-icon icon">&nbsp;</span><span class="expand-control-text">Expand source</span></span>
+ </div>
+ <div class="codeContent panelContent pdl hide-toolbar"> 
+  <pre class="theme: Confluence; brush: js; collapse: true; gutter: false" style="font-size:12px;">function StateMachine() {
+    var transitions = {};
+    var current_state = null;
+
+    this.add_transition = function(src_state, event, dst_state) {
+        if (!transitions.hasOwnProperty(src_state.state_name)) {
+            transitions[src_state.state_name] = {};
+        }
+        transitions[src_state.state_name][event] = dst_state;
+    }
+
+    this.change_state = function(event) {
+        current_state = transitions[current_state.state_name][event];
+        current_state.enter();
+    }
+
+    this.start = function(initial_state) {
+        current_state = initial_state;
+        current_state.enter();
+    }
+}
+
+module.exports = StateMachine;</pre> 
+ </div>
+</div><p>The state machine code is pretty straightforward. The state machine has transitions added to it with the <code>add_transition()</code> method and can be started with the <code>start()</code> method. Our use of the state machine will always be to define all transitions, and then to start the state machine.</p><p>States within a state machine have certain duties that they must fulfill if they want to work well in the state machine we have devised</p><ul><li>A state must know what events should cause it to change states, though it does not need to know what state it will be transitioning to.</li><li>A state must set up ARI event listeners each time the state is entered, and it must remove these before changing states.</li><li>The state must define the following attributes:<ul><li><code>state_name</code>, a string that represents the name of the state.</li><li><code>enter()</code>, a method that is called whenever the state is entered.</li></ul></li></ul><p>It should be noted that this state machine implementation is not necessarily ideal, since it requires the states to know what events cause it to change states. However, it will become clear later that for a simple voice mail system, this is not that big a deal. To see how we use this state machine, continue on to the sub-pages.</p>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474247">basic_record</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474248.png">basic_record.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474255">basic_record</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474256.png">basic_record.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474257">record-with-retry</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474258.png">record-with-retry.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474259">record-with-review</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474260.png">record-with-review.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474261">vm-full</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474262.png">vm-full.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474263">basic_record</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474264.png">basic_record.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474265">record-with-retry</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474266.png">record-with-retry.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474267">record-with-review</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474268.png">record-with-review.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474275">vm-full</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474276.png">vm-full.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474269">basic_record</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474270.png">basic_record.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474271">record-with-retry</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474272.png">record-with-retry.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474273">record-with-review</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474274.png">record-with-review.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474245">basic_record</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474246.png">basic_record.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474279">record-with-retry</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474280.png">record-with-retry.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474277">record-with-review</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474278.png">record-with-review.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474283">vm-full</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474284.png">vm-full.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474281">record-with-review</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474282.png">record-with-review.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474249">record-with-retry</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474250.png">record-with-retry.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474251">record-with-review</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474252.png">record-with-review.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474253">vm-full</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474254.png">vm-full.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474290">vm-listen</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474291.png">vm-listen.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474292">vm-listen</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474293.png">vm-listen.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474294">vm-listen</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474295.png">vm-listen.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474288">vm-listen</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29396202/30474289.png">vm-listen.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

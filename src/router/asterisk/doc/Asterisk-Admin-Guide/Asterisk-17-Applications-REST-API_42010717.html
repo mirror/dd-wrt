@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Applications REST API</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-ARI_42010709.html">Asterisk 17 ARI</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Applications REST API
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17ApplicationsRESTAPI-Applications">Applications</h1>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Method </p></th>
+<th class="confluenceTh"><p> Path&lt;br&gt;h5. Parameters are case-sensitive </p></th>
+<th class="confluenceTh"><p> Return Model </p></th>
+<th class="confluenceTh"><p> Summary </p></th>
+</tr>
+</tbody></table></div>
+
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ApplicationsRESTAPI-list">/applications</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Application">List[Application]</a> </p></td>
+<td class="confluenceTd"><p> List all applications. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ApplicationsRESTAPI-get">/applications/{applicationName}</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Application">Application</a> </p></td>
+<td class="confluenceTd"><p> Get details of an application. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ApplicationsRESTAPI-subscribe">/applications/{applicationName}/subscription</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Application">Application</a> </p></td>
+<td class="confluenceTd"><p> Subscribe an application to a event source. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> DELETE </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ApplicationsRESTAPI-unsubscribe">/applications/{applicationName}/subscription</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Application">Application</a> </p></td>
+<td class="confluenceTd"><p> Unsubscribe an application from an event source. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> PUT </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ApplicationsRESTAPI-filter">/applications/{applicationName}/eventFilter</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Application">Application</a> </p></td>
+<td class="confluenceTd"><p> Filter application events types. </p></td>
+</tr>
+</tbody></table></div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ApplicationsRESTAPI-list"></span></p>
+<h2 id="Asterisk17ApplicationsRESTAPI-list:GET/applications">list: GET /applications</h2>
+
+<p>List all applications.</p>
+
+<p><span class="confluence-anchor-link" id="Asterisk17ApplicationsRESTAPI-get"></span></p>
+<h2 id="Asterisk17ApplicationsRESTAPI-get:GET/applications/{applicationName}">get: GET /applications/{applicationName}</h2>
+
+<p>Get details of an application.</p>
+
+<h3 id="Asterisk17ApplicationsRESTAPI-Pathparameters">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>applicationName: <em>string</em> - Application's name</li>
+</ul>
+
+
+<h3 id="Asterisk17ApplicationsRESTAPI-ErrorResponses">Error Responses</h3>
+<ul>
+	<li>404 - Application does not exist.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ApplicationsRESTAPI-subscribe"></span></p>
+<h2 id="Asterisk17ApplicationsRESTAPI-subscribe:POST/applications/{applicationName}/subscription">subscribe: POST /applications/{applicationName}/subscription</h2>
+
+<p>Subscribe an application to a event source. Returns the state of the application after the subscriptions have changed</p>
+
+<h3 id="Asterisk17ApplicationsRESTAPI-Pathparameters.1">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>applicationName: <em>string</em> - Application's name</li>
+</ul>
+
+
+<h3 id="Asterisk17ApplicationsRESTAPI-Queryparameters">Query parameters</h3>
+<ul>
+	<li>eventSource: <em>string</em> - <strong>(required)</strong> URI for event source (channel:{channelId}, bridge:{bridgeId}, endpoint:{tech}[/{resource}], deviceState:{deviceName}
+	<ul>
+		<li>Allows comma separated values.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17ApplicationsRESTAPI-ErrorResponses.1">Error Responses</h3>
+<ul>
+	<li>400 - Missing parameter.</li>
+	<li>404 - Application does not exist.</li>
+	<li>422 - Event source does not exist.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ApplicationsRESTAPI-unsubscribe"></span></p>
+<h2 id="Asterisk17ApplicationsRESTAPI-unsubscribe:DELETE/applications/{applicationName}/subscription">unsubscribe: DELETE /applications/{applicationName}/subscription</h2>
+
+<p>Unsubscribe an application from an event source. Returns the state of the application after the subscriptions have changed</p>
+
+<h3 id="Asterisk17ApplicationsRESTAPI-Pathparameters.2">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>applicationName: <em>string</em> - Application's name</li>
+</ul>
+
+
+<h3 id="Asterisk17ApplicationsRESTAPI-Queryparameters.1">Query parameters</h3>
+<ul>
+	<li>eventSource: <em>string</em> - <strong>(required)</strong> URI for event source (channel:{channelId}, bridge:{bridgeId}, endpoint:{tech}[/{resource}], deviceState:{deviceName}
+	<ul>
+		<li>Allows comma separated values.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17ApplicationsRESTAPI-ErrorResponses.2">Error Responses</h3>
+<ul>
+	<li>400 - Missing parameter; event source scheme not recognized.</li>
+	<li>404 - Application does not exist.</li>
+	<li>409 - Application not subscribed to event source.</li>
+	<li>422 - Event source does not exist.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ApplicationsRESTAPI-filter"></span></p>
+<h2 id="Asterisk17ApplicationsRESTAPI-filter:PUT/applications/{applicationName}/eventFilter">filter: PUT /applications/{applicationName}/eventFilter</h2>
+
+<p>Filter application events types. Allowed and/or disallowed event type filtering can be done. The body (parameter) should specify a JSON key/value object that describes the type of event filtering needed. One, or both of the following keys can be designated:</p>
+
+<p>&quot;allowed&quot; - Specifies an allowed list of event types<br />
+&quot;disallowed&quot; - Specifies a disallowed list of event types</p>
+
+<p>Further, each of those key's value should be a JSON array that holds zero, or more JSON key/value objects. Each of these objects must contain the following key with an associated value:</p>
+
+<p>&quot;type&quot; - The type name of the event to filter</p>
+
+<p>The value must be the string name (case sensitive) of the event type that needs filtering. For example:</p>
+
+<p>{ &quot;allowed&quot;: [ { &quot;type&quot;: &quot;StasisStart&quot; }, { &quot;type&quot;: &quot;StasisEnd&quot; } ] }</p>
+
+<p>As this specifies only an allowed list, then only those two event type messages are sent to the application. No other event messages are sent.</p>
+
+<p>The following rules apply:</p>
+
+<ul>
+	<li>If the body is empty, both the allowed and disallowed filters are set empty.</li>
+	<li>If both list types are given then both are set to their respective values (note, specifying an empty array for a given type sets that type to empty).</li>
+	<li>If only one list type is given then only that type is set. The other type is not updated.</li>
+	<li>An empty &quot;allowed&quot; list means all events are allowed.</li>
+	<li>An empty &quot;disallowed&quot; list means no events are disallowed.</li>
+	<li>Disallowed events take precedence over allowed events if the event type is specified in both lists.</li>
+</ul>
+
+
+<h3 id="Asterisk17ApplicationsRESTAPI-Pathparameters.3">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>applicationName: <em>string</em> - Application's name</li>
+</ul>
+
+
+<h3 id="Asterisk17ApplicationsRESTAPI-Bodyparameter">Body parameter</h3>
+<ul>
+	<li>filter: object - Specify which event types to allow/disallow</li>
+</ul>
+
+
+<h3 id="Asterisk17ApplicationsRESTAPI-ErrorResponses.3">Error Responses</h3>
+<ul>
+	<li>400 - Bad request.</li>
+	<li>404 - Application does not exist.</li>
+</ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -19,7 +19,6 @@
 /*** MODULEINFO
 	<depend>pjproject</depend>
 	<depend>res_pjsip</depend>
-	<depend>res_pjsip_session</depend>
 	<support_level>core</support_level>
  ***/
 
@@ -69,11 +68,43 @@ static enum pjsip_status_code check_content_type(const pjsip_rx_data *rdata)
 			&rdata->msg_info.msg->body->content_type, "text", "plain");
 	} else {
 		res = rdata->msg_info.ctype &&
-			!pj_strcmp2(&rdata->msg_info.ctype->media.type, "text") &&
-			!pj_strcmp2(&rdata->msg_info.ctype->media.subtype, "plain");
+			ast_sip_is_content_type(
+				&rdata->msg_info.ctype->media, "text", "plain");
 	}
 
 	return res ? PJSIP_SC_OK : PJSIP_SC_UNSUPPORTED_MEDIA_TYPE;
+}
+
+/*!
+ * \internal
+ * \brief Checks to make sure the request has the correct content type.
+ *
+ * \details This module supports the following media types: "text/\*", "application/\*".
+ * Return unsupported otherwise.
+ *
+ * \param rdata The SIP request
+ */
+static enum pjsip_status_code check_content_type_in_dialog(const pjsip_rx_data *rdata)
+{
+	int res = PJSIP_SC_UNSUPPORTED_MEDIA_TYPE;
+	static const pj_str_t text = { "text", 4};
+	static const pj_str_t application = { "application", 11};
+
+	if (!(rdata->msg_info.msg->body && rdata->msg_info.msg->body->len > 0)) {
+		return res;
+	}
+
+	/* We'll accept any text/ or application/ content type */
+	if (pj_stricmp(&rdata->msg_info.msg->body->content_type.type, &text) == 0
+			|| pj_stricmp(&rdata->msg_info.msg->body->content_type.type, &application) == 0) {
+		res = PJSIP_SC_OK;
+	} else if (rdata->msg_info.ctype
+		&& (pj_stricmp(&rdata->msg_info.ctype->media.type, &text) == 0
+		|| pj_stricmp(&rdata->msg_info.ctype->media.type, &application) == 0)) {
+		res = PJSIP_SC_OK;
+	}
+
+	return res;
 }
 
 /*!
@@ -285,10 +316,7 @@ static int is_msg_var_blocked(const char *name)
 {
 	int i;
 
-	/*
-	 * Don't block Content-Type or Max-Forwards headers because the
-	 * user can override them.
-	 */
+	/* Don't block the Max-Forwards header because the user can override it */
 	static const char *hdr[] = {
 		"To",
 		"From",
@@ -299,6 +327,7 @@ static int is_msg_var_blocked(const char *name)
 		"CSeq",
 		"Allow",
 		"Content-Length",
+		"Content-Type",
 		"Request-URI",
 	};
 
@@ -512,7 +541,7 @@ static enum pjsip_status_code rx_data_to_ast_msg(pjsip_rx_data *rdata, struct as
 	buf[size] = '\0';
 	res |= ast_msg_set_from(msg, "%s", buf);
 
-	field = pj_sockaddr_print(&rdata->pkt_info.src_addr, buf, sizeof(buf) - 1, 1);
+	field = pj_sockaddr_print(&rdata->pkt_info.src_addr, buf, sizeof(buf) - 1, 3);
 	res |= ast_msg_set_var(msg, "PJSIP_RECVADDR", field);
 
 	switch (rdata->tp_info.transport->key.type) {
@@ -604,11 +633,40 @@ static struct msg_data *msg_data_create(const struct ast_msg *msg, const char *t
 	return mdata;
 }
 
+static void update_content_type(pjsip_tx_data *tdata, struct ast_msg *msg, struct ast_sip_body *body)
+{
+	static const pj_str_t CONTENT_TYPE = { "Content-Type", sizeof("Content-Type") - 1 };
+
+	const char *content_type = ast_msg_get_var(msg, pj_strbuf(&CONTENT_TYPE));
+	if (content_type) {
+		pj_str_t type, subtype;
+		pjsip_ctype_hdr *parsed;
+
+		/* Let pjsip do the parsing for us */
+		parsed = pjsip_parse_hdr(tdata->pool, &CONTENT_TYPE,
+			ast_strdupa(content_type), strlen(content_type),
+			NULL);
+
+		if (!parsed) {
+			ast_log(LOG_WARNING, "Failed to parse '%s' as a content type. Using text/plain\n",
+				content_type);
+			return;
+		}
+
+		/* We need to turn type and subtype into zero-terminated strings */
+		pj_strdup_with_null(tdata->pool, &type, &parsed->media.type);
+		pj_strdup_with_null(tdata->pool, &subtype, &parsed->media.subtype);
+
+		body->type = pj_strbuf(&type);
+		body->subtype = pj_strbuf(&subtype);
+	}
+}
+
 static int msg_send(void *data)
 {
-	RAII_VAR(struct msg_data *, mdata, data, ao2_cleanup);
+	struct msg_data *mdata = data; /* The caller holds a reference */
 
-	const struct ast_sip_body body = {
+	struct ast_sip_body body = {
 		.type = "text",
 		.subtype = "plain",
 		.body_text = ast_msg_get_body(mdata->msg)
@@ -627,12 +685,13 @@ static int msg_send(void *data)
 	}
 
 	if (ast_sip_create_request("MESSAGE", NULL, endpoint, uri, NULL, &tdata)) {
-		ast_log(LOG_ERROR, "PJSIP MESSAGE - Could not create request\n");
+		ast_log(LOG_WARNING, "PJSIP MESSAGE - Could not create request\n");
 		return -1;
 	}
 
 	update_to(tdata, mdata->to);
 	update_from(tdata, mdata->from);
+	update_content_type(tdata, mdata->msg, &body);
 
 	if (ast_sip_add_body(tdata, &body)) {
 		pjsip_tx_data_dec_ref(tdata);
@@ -650,24 +709,28 @@ static int msg_send(void *data)
 		return -1;
 	}
 
-	return PJ_SUCCESS;
+	return 0;
 }
 
 static int sip_msg_send(const struct ast_msg *msg, const char *to, const char *from)
 {
 	struct msg_data *mdata;
+	int res;
 
 	if (ast_strlen_zero(to)) {
 		ast_log(LOG_ERROR, "SIP MESSAGE - a 'To' URI  must be specified\n");
 		return -1;
 	}
 
-	if (!(mdata = msg_data_create(msg, to, from)) ||
-	    ast_sip_push_task(message_serializer, msg_send, mdata)) {
-		ao2_cleanup(mdata);
+	mdata = msg_data_create(msg, to, from);
+	if (!mdata) {
 		return -1;
 	}
-	return 0;
+
+	res = ast_sip_push_task_wait_serializer(message_serializer, msg_send, mdata);
+	ao2_ref(mdata, -1);
+
+	return res;
 }
 
 static const struct ast_msg_tech msg_tech = {
@@ -756,39 +819,98 @@ static pj_bool_t module_on_rx_request(pjsip_rx_data *rdata)
 
 static int incoming_in_dialog_request(struct ast_sip_session *session, struct pjsip_rx_data *rdata)
 {
-	char buf[MAX_BODY_SIZE];
 	enum pjsip_status_code code;
-	struct ast_frame f;
+	int rc;
 	pjsip_dialog *dlg = session->inv_session->dlg;
 	pjsip_transaction *tsx = pjsip_rdata_get_tsx(rdata);
+	struct ast_msg_data *msg;
+	struct ast_party_caller *caller;
+	pjsip_name_addr *name_addr;
+	size_t from_len;
+	size_t to_len;
+	struct ast_msg_data_attribute attrs[4];
+	int pos = 0;
+	int body_pos;
 
 	if (!session->channel) {
 		send_response(rdata, PJSIP_SC_NOT_FOUND, dlg, tsx);
 		return 0;
 	}
 
-	if ((code = check_content_type(rdata)) != PJSIP_SC_OK) {
+	code = check_content_type_in_dialog(rdata);
+	if (code != PJSIP_SC_OK) {
 		send_response(rdata, code, dlg, tsx);
 		return 0;
 	}
 
-	if (print_body(rdata, buf, sizeof(buf)-1) < 1) {
-		/* invalid body size */
-		send_response(rdata, PJSIP_SC_REQUEST_ENTITY_TOO_LARGE, dlg, tsx);
+	caller = ast_channel_caller(session->channel);
+
+	name_addr = (pjsip_name_addr *) rdata->msg_info.from->uri;
+	from_len = pj_strlen(&name_addr->display);
+	if (from_len) {
+		attrs[pos].type = AST_MSG_DATA_ATTR_FROM;
+		from_len++;
+		attrs[pos].value = ast_alloca(from_len);
+		ast_copy_pj_str(attrs[pos].value, &name_addr->display, from_len);
+		pos++;
+	} else if (caller->id.name.valid && !ast_strlen_zero(caller->id.name.str)) {
+		attrs[pos].type = AST_MSG_DATA_ATTR_FROM;
+		attrs[pos].value = caller->id.name.str;
+		pos++;
+	}
+
+	name_addr = (pjsip_name_addr *) rdata->msg_info.to->uri;
+	to_len = pj_strlen(&name_addr->display);
+	if (to_len) {
+		attrs[pos].type = AST_MSG_DATA_ATTR_TO;
+		to_len++;
+		attrs[pos].value = ast_alloca(to_len);
+		ast_copy_pj_str(attrs[pos].value, &name_addr->display, to_len);
+		pos++;
+	}
+
+	attrs[pos].type = AST_MSG_DATA_ATTR_CONTENT_TYPE;
+	attrs[pos].value = ast_alloca(rdata->msg_info.msg->body->content_type.type.slen
+		+ rdata->msg_info.msg->body->content_type.subtype.slen + 2);
+	sprintf(attrs[pos].value, "%.*s/%.*s",
+		(int)rdata->msg_info.msg->body->content_type.type.slen,
+		rdata->msg_info.msg->body->content_type.type.ptr,
+		(int)rdata->msg_info.msg->body->content_type.subtype.slen,
+		rdata->msg_info.msg->body->content_type.subtype.ptr);
+	pos++;
+
+	body_pos = pos;
+	attrs[pos].type = AST_MSG_DATA_ATTR_BODY;
+	attrs[pos].value = ast_malloc(rdata->msg_info.msg->body->len + 1);
+	if (!attrs[pos].value) {
+		send_response(rdata, PJSIP_SC_INTERNAL_SERVER_ERROR, dlg, tsx);
+		return 0;
+	}
+	ast_copy_string(attrs[pos].value, rdata->msg_info.msg->body->data, rdata->msg_info.msg->body->len + 1);
+	pos++;
+
+	msg = ast_msg_data_alloc(AST_MSG_DATA_SOURCE_TYPE_IN_DIALOG, attrs, pos);
+	if (!msg) {
+		ast_free(attrs[body_pos].value);
+		send_response(rdata, PJSIP_SC_INTERNAL_SERVER_ERROR, dlg, tsx);
 		return 0;
 	}
 
-	ast_debug(3, "Received in dialog SIP message\n");
+	ast_debug(1, "Received in-dialog MESSAGE from '%s:%s': %s %s\n",
+		ast_msg_data_get_attribute(msg, AST_MSG_DATA_ATTR_FROM),
+		ast_channel_name(session->channel),
+		ast_msg_data_get_attribute(msg, AST_MSG_DATA_ATTR_TO),
+		ast_msg_data_get_attribute(msg, AST_MSG_DATA_ATTR_BODY));
 
-	memset(&f, 0, sizeof(f));
-	f.frametype = AST_FRAME_TEXT;
-	f.subclass.integer = 0;
-	f.offset = 0;
-	f.data.ptr = buf;
-	f.datalen = strlen(buf) + 1;
-	ast_queue_frame(session->channel, &f);
+	rc = ast_msg_data_queue_frame(session->channel, msg);
+	ast_free(attrs[body_pos].value);
+	ast_free(msg);
+	if (rc != 0) {
+		send_response(rdata, PJSIP_SC_INTERNAL_SERVER_ERROR, dlg, tsx);
+	} else {
+		send_response(rdata, PJSIP_SC_ACCEPTED, dlg, tsx);
+	}
 
-	send_response(rdata, PJSIP_SC_ACCEPTED, dlg, tsx);
 	return 0;
 }
 
@@ -806,8 +928,6 @@ static pjsip_module messaging_module = {
 
 static int load_module(void)
 {
-	CHECK_PJSIP_SESSION_MODULE_LOADED();
-
 	if (ast_sip_register_service(&messaging_module) != PJ_SUCCESS) {
 		return AST_MODULE_LOAD_DECLINE;
 	}
@@ -825,7 +945,7 @@ static int load_module(void)
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
-	message_serializer = ast_sip_create_serializer_named("pjsip/messaging");
+	message_serializer = ast_sip_create_serializer("pjsip/messaging");
 	if (!message_serializer) {
 		ast_sip_unregister_service(&messaging_module);
 		ast_msg_tech_unregister(&msg_tech);
@@ -846,8 +966,9 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PJSIP Messaging Support",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.load_pri = AST_MODPRI_APP_DEPEND,
-	       );
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.load_pri = AST_MODPRI_APP_DEPEND,
+	.requires = "res_pjsip,res_pjsip_session",
+);

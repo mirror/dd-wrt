@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 ManagerEvent_ExtensionStatus</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-AMI-Events_42010707.html">Asterisk 17 AMI Events</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 ManagerEvent_ExtensionStatus
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17ManagerEvent_ExtensionStatus-ExtensionStatus">ExtensionStatus</h1>
+
+<h3 id="Asterisk17ManagerEvent_ExtensionStatus-Synopsis">Synopsis</h3>
+
+<p>Raised when a hint changes due to a device state change.</p>
+
+<h3 id="Asterisk17ManagerEvent_ExtensionStatus-Description">Description</h3>
+
+<h3 id="Asterisk17ManagerEvent_ExtensionStatus-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Event: ExtensionStatus
+Exten: &lt;value&gt;
+Context: &lt;value&gt;
+Hint: &lt;value&gt;
+Status: &lt;value&gt;
+StatusText: &lt;value&gt;
+</pre>
+</div></div>
+
+<h5 id="Asterisk17ManagerEvent_ExtensionStatus-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>Exten</code> - Name of the extension.</li>
+	<li><code>Context</code> - Context that owns the extension.</li>
+	<li><code>Hint</code> - Hint set for the extension</li>
+	<li><code>Status</code> - Numerical value of the extension status. Extension status is determined by the combined device state of all items contained in the hint.
+	<ul>
+		<li><code>-2</code> - The extension was removed from the dialplan.</li>
+		<li><code>-1</code> - The extension's hint was removed from the dialplan.</li>
+		<li><code>0</code> - Idle - Related device(s) are in an idle state.</li>
+		<li><code>1</code> - InUse - Related device(s) are in active calls but may take more calls.</li>
+		<li><code>2</code> - Busy - Related device(s) are in active calls and may not take any more calls.</li>
+		<li><code>4</code> - Unavailable - Related device(s) are not reachable.</li>
+		<li><code>8</code> - Ringing - Related device(s) are currently ringing.</li>
+		<li><code>9</code> - InUse&amp;Ringing - Related device(s) are currently ringing and in active calls.</li>
+		<li><code>16</code> - Hold - Related device(s) are currently on hold.</li>
+		<li><code>17</code> - InUse&amp;Hold - Related device(s) are currently on hold and in active calls.</li>
+	</ul>
+	</li>
+	<li><code>StatusText</code> - Text representation of <code>Status</code>.
+	<ul>
+		<li><code>Idle</code></li>
+		<li><code>InUse</code></li>
+		<li><code>Busy</code></li>
+		<li><code>Unavailable</code></li>
+		<li><code>Ringing</code></li>
+		<li><code>InUse&amp;Ringing</code></li>
+		<li><code>Hold</code></li>
+		<li><code>InUse&amp;Hold</code></li>
+		<li><code>Unknown</code> - Status does not match any of the above values.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17ManagerEvent_ExtensionStatus-Class">Class</h3>
+
+<p>CALL</p>
+<h3 id="Asterisk17ManagerEvent_ExtensionStatus-SeeAlso">See Also</h3>
+<ul>
+	<li><a href="Asterisk-17-ManagerAction_ExtensionState_42011280.html">Asterisk 17 ManagerAction_ExtensionState</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17ManagerEvent_ExtensionStatus-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

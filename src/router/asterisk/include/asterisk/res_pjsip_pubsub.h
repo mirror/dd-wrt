@@ -166,6 +166,20 @@ struct ast_datastore *ast_sip_publication_get_datastore(struct ast_sip_publicati
 void ast_sip_publication_remove_datastore(struct ast_sip_publication *publication, const char *name);
 
 /*!
+ * \brief Get the datastores container for a publication
+ *
+ * \param publication The publication to get the datastores container from
+ *
+ * \retval NULL datastores container not present
+ * \retval non-NULL datastores container
+ *
+ * \note The container is NOT returned with reference count bumped
+ *
+ * \since 14.0.0
+ */
+struct ao2_container *ast_sip_publication_get_datastores(const struct ast_sip_publication *publication);
+
+/*!
  * \brief Opaque structure representing an RFC 3265 SIP subscription
  */
 struct ast_sip_subscription;
@@ -518,6 +532,43 @@ struct ast_datastore *ast_sip_subscription_get_datastore(struct ast_sip_subscrip
 void ast_sip_subscription_remove_datastore(struct ast_sip_subscription *subscription, const char *name);
 
 /*!
+ * \brief Get the datastores container for a subscription
+ *
+ * \param subscription The subscription to get the datastores container from
+ *
+ * \retval NULL datastores container not present
+ * \retval non-NULL datastores container
+ *
+ * \note The container is NOT returned with reference count bumped
+ *
+ * \since 14.0.0
+ */
+struct ao2_container *ast_sip_subscription_get_datastores(const struct ast_sip_subscription *subscription);
+
+/*!
+ * \since 13.31.0
+ * \since 16.8.0
+ * \since 17.2.0
+ * \brief Set persistence data for a subscription
+ *
+ * \param subscription The subscription to set persistence data on
+ * \param persistence_data The persistence data to set
+ *
+ * \note This steals the reference to persistence_data
+ */
+void ast_sip_subscription_set_persistence_data(struct ast_sip_subscription *subscription, struct ast_json *persistence_data);
+
+/*!
+ * \since 13.31.0
+ * \since 16.8.0
+ * \since 17.2.0
+ * \brief Retrieve persistence data for a subscription
+ *
+ * \param subscription The subscription to retrieve persistence data from
+ */
+const struct ast_json *ast_sip_subscription_get_persistence_data(const struct ast_sip_subscription *subscription);
+
+/*!
  * \brief Register a subscription handler
  *
  * \retval 0 Handler was registered successfully
@@ -649,6 +700,19 @@ int ast_sip_pubsub_generate_body_content(const char *content_type,
 		const char *content_subtype, struct ast_sip_body_data *data, struct ast_str **str);
 
 /*!
+ * \brief Is a body generator registered for the given type/subtype.
+ * \since 14.0.0
+ *
+ * \param type The content type of the body
+ * \param subtype The content subtype of the body
+ *
+ * \note In "plain/text", "plain" is the type and "text" is the subtype.
+ *
+ * \retval non-zero if a generator is registered.
+ */
+int ast_sip_pubsub_is_body_generator_registered(const char *type, const char *subtype);
+
+/*!
  * \since 13.0.0
  * \brief Register a body generator with the pubsub core.
  *
@@ -712,14 +776,5 @@ const char *ast_sip_subscription_get_body_subtype(struct ast_sip_subscription *s
  * \return Nothing
  */
 void ast_sip_subscription_destroy(struct ast_sip_subscription *sub);
-
-/*! \brief Determines whether the res_pjsip_pubsub module is loaded */
-#define CHECK_PJSIP_PUBSUB_MODULE_LOADED()			\
-	do {							\
-		CHECK_PJSIP_MODULE_LOADED();			\
-		if (!ast_module_check("res_pjsip_pubsub.so")) {	\
-			return AST_MODULE_LOAD_DECLINE;		\
-		}						\
-	} while(0)
 
 #endif /* RES_PJSIP_PUBSUB_H */

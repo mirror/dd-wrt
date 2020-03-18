@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Connecting to the Asterisk CLI</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Operation_27200183.html">Operation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Command-Line-Interface_4259982.html">Asterisk Command Line Interface</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Connecting to the Asterisk CLI
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Rusty Newton</span> on May 01, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>There are two ways to connect to an Asterisk console, either a <strong>foreground console</strong> when starting the Asterisk process or by connecting to a <strong>remote console</strong> after Asterisk is <a href="Running-Asterisk_27200195.html">already running</a>.</p><h2 id="ConnectingtotheAsteriskCLI-Connectingtoaforegroundconsole">Connecting to a foreground console</h2><p>This is as simple as passing the <strong> <code>-c</code> </strong> flag when starting Asterisk.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>       -c     Provide  a control console on the calling terminal. The console is similar to the remote console provided
+              by -r. Specifying this option implies -f and will cause asterisk to no longer fork  or  detach  from  the
+              controlling terminal. Equivalent to console = yes in asterisk.conf.</pre>
+</div></div><p>When working on a foreground console, you won't be able to <code>exit</code>, instead you'll have to stop Asterisk to return to the Linux shell. Most people will use a remote console when performing administration tasks.</p><p>After Asterisk has finished loading, you'll see the default CLI prompt. The text &quot;server&quot; will be replaced with your system's hostname.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>server*CLI&gt;</pre>
+</div></div><h2 id="ConnectingtotheAsteriskCLI-Connectingtoaremoteconsole">Connecting to a remote console</h2><p>Connecting to a remote console using the <strong> <code>-r</code> </strong> or<strong> <code>-R</code> </strong> flags. </p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>       -r     Instead of running a new Asterisk process, attempt to connect to a running Asterisk process and provide a
+              console interface for controlling it.
+       -R     Much like -r. Instead of running a new Asterisk process, attempt to connect to a running Asterisk process
+              and provide a console interface for controlling it. Additionally, if connection to the  Asterisk  process
+              is lost, attempt to reconnect for as long as 30 seconds.</pre>
+</div></div><p>To <strong>exit a remote console</strong>, simply type 'quit' or 'exit'. Please note that you can differentiate between a remote console and a foreground Asterisk console, as 'quit' or 'exit' will not function on the main console, which prevents an accidental shutdown of the daemon. If you would like to shutdown the Asterisk daemon from a remote console, there are <a href="Running-Asterisk_27200195.html">various commands available</a>.</p><pre> </pre>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Executing Command Outside Of CLI</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>You can execute an Asterisk command from outside the CLI:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ asterisk -rx &quot;core reload&quot;
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ asterisk -rx &quot;core show help&quot; | grep -i &quot;sip&quot;
+</pre>
+</div></div>
+                    </div>
+    </div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

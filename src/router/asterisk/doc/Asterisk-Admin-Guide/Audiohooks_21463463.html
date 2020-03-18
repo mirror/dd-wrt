@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Audiohooks</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Key-Concepts_27200276.html">Key Concepts</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Frames_28314840.html">Frames</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Audiohooks
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Jonathan Rose</span>, last modified on Sep 24, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Audiohooks-Overview">Overview</h1>
+
+<p>Certain applications and functions are capable of attaching what is known as an audiohook to a channel. In order to understand what this means and how to handle these applications and functions, it is useful to understand a little of the architecture involved with attaching them.</p>
+
+<h1 id="Audiohooks-Introduction-ASimpleAudiohook">Introduction - A Simple Audiohook</h1>
+
+
+<map id="gliffy-map-21758046-110" name="gliffy-map-21758046-110"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 683px;" usemap="#gliffy-map-21758046-110" src="attachments/21463463/21758045.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+
+
+<p>In this simple example, a SIP phone has dialed into Asterisk and its channel has invoked a function (pitch_shift) which has been set to cause all audio sent and received to have its pitch shifted higher (i.e. if the audio is voice, the voices will sound squeaky sort of like obnoxious cartoon chipmunks). The following dialplan provides a more concrete usage:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: plain; gutter: false" style="font-size:12px;">exten =&gt; 1,1,Answer()
+exten =&gt; 1,n,Set(PITCH_SHIFT(both)=higher)
+exten =&gt; 1,n,Voicemail(501)</pre>
+</div></div>
+
+<p>When a phone calls this extension, it will be greeted by a higher pitched version of the voicemail prompt and then the speaker will leave a message for 501. The sound going from the phone to voicemail will also be higher pitched than what was actually said by the person who left the message.</p>
+
+<p>Right now a serious minded Asterisk user reading this example might think something along the lines of 'So what, I don't have any use for making people using my phone system sound like squirrels.&quot; However, audiohooks provide a great deal of the functionality for other applications within Asterisk including some features that are very business minded (listening in on channels, recording phone calls, and even less spy-guy type things like adjusting volume on the fly)</p>
+
+<p>It's important to note that audiohooks are bound to the channel that they were invoked on. They don't apply to a call (a call is actually a somewhat nebulous concept in general anyway) and so one shouldn't expect audiohooks to follow other channels around just because audio that those channels are involved with touches the hook. If the channel that created the audiohook ceases to be involved with an audio stream, the audiohook will also no longer be involved with that audio stream.</p>
+
+<h1 id="Audiohooks-AttendedTransfersandAUDIOHOOK_INHERIT">Attended Transfers and AUDIOHOOK_INHERIT</h1>
+
+
+
+<map id="gliffy-map-21758044-2574" name="gliffy-map-21758044-2574"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 927px;" usemap="#gliffy-map-21758044-2574" src="attachments/21463463/21758043.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: plain; gutter: false" style="font-size:12px;">exten =&gt; 1,1,Answer()
+exten =&gt; 1,n,MixMonitor(training_recording.wav)
+exten =&gt; 1,n,Queue(techsupport)</pre>
+</div></div>
+
+<p>Imagine the following scenario. An outside line calls into an Asterisk system to enter a tech support queue. When the call starts this user hears something along the lines of &quot;Thank you for calling, all calls will be recorded for training purposes&quot;, so naturally MixMonitor will be used to record the call. The first available agent answers the call and can't quite seem to provide a working solution to the customer's problem, so he attempts to perform an attended transfer to someone with more expertise on the issue. The user gets transfered, and the rest of the call goes smoothly, but... ah nuts. The recording stopped for some reason when the agent transferred the customer to the other user. And why didn't this happen when he blind transferred a customer the other day?</p>
+
+<p>The reason MixMonitor stopped is because the channel that owned it died. An Asterisk admin might think something like &quot;That's not true, the mixmonitor was put on the customer channel and its still there, I can still see it's name is the same and everything.&quot; and it's true that it seems that way, but attended transfers in particular cause what's known as a channel masquerade. Yes, its name and everything else about it seems like the same channel, but in reality the customer's channel has been swapped for the agent's channel and died since the agent hung up. The audiohook went with it. Under normal circumstances, administrators don't need to think about masquerades at all, but this is one of the rare instances where it gets in the way of desired behavior. This doesn't affect blind transfers because they don't start the new dialog by having the person who initiated the transfer bridging to the end recipient.</p>
+
+<p>Working around this problem is pretty easy though. Audiohooks are not swapped by default when a masquerade occurs, unlike most of the relevant data on the channel. This can be changed on a case by case basis though with the AUDIOHOOK_INHERIT dialplan function.</p>
+
+<p>Using AUDIOHOOK_INHERT only requires that AUDIOHOOK_INHERIT(source)=yes is set where source is the name given for the source of the audiohook. For more information on the sources available, see the description of the source argument in the documentation for AUDIOHOOK_INHERIT.</p>
+
+<p>So to fix the above example so that mixmonitor continues to record after the attended transfer, only one extra line is needed.</p>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: plain; gutter: false" style="font-size:12px;">exten =&gt; 1,1,Answer()
+exten =&gt; 1,n,MixMonitor(training_recording.wav)
+exten =&gt; 1,n,Set(AUDIOHOOK_INHERIT(MixMonitor)=yes)
+exten =&gt; 1,n,Queue(techsupport)</pre>
+</div></div>
+
+<p>Below is an illustrated example of how the masquerade process impacts an audiohook (in the case of the example, PITCH_SHIFT)</p>
+
+
+
+<map id="gliffy-map-21758042-4382" name="gliffy-map-21758042-4382"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 615px;" usemap="#gliffy-map-21758042-4382" src="attachments/21463463/21758041.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+
+
+<p>Inheritance of audiohooks can be turned off in the same way by setting AUDIOHOOK_INHERIT(source)=no.</p>
+
+<h1 id="Audiohooks-AudiohookSources">Audiohook Sources</h1>
+
+<p>Audiohooks have a source name and can come from a number of sources. An up to date list of possible sources should always be available from the documentation for AUDIOHOOK_INHERIT.</p>
+
+<img class="wysiwyg-unknown-macro" src="plugins/servlet/confluence/placeholder/unknown-macro"/>
+
+<h1 id="Audiohooks-LimitationsfortransferringAudiohooks">Limitations for transferring Audiohooks</h1>
+
+<p>Even with audiohook inheritance set, the MixMonitor is still bound to the channel that invoked it. The only difference in this case is that with this option set, the audiohook won't be left on the discarded channel through the masquerade. This option doesn't enable a channel running mixmonitor to transfer the MixMonitor to another channel or anything like that. The dialog below illustrates why.</p>
+
+
+<map id="gliffy-map-21758040-7267" name="gliffy-map-21758040-7267"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 622px;" usemap="#gliffy-map-21758040-7267" src="attachments/21463463/21758039.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/21463463/21758039.png">audiohook_masquerade_transfer_initiated_by_owner.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/21463463/21758040">audiohook_masquerade_transfer_initiated_by_owner</a> (application/gliffy+xml)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/21463463/21758041.png">Attended Transfer.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/21463463/21758042">Attended Transfer</a> (application/gliffy+xml)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/21463463/21758043.png">Audio Hook with two endpoints.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/21463463/21758044">Audio Hook with two endpoints</a> (application/gliffy+xml)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/21463463/21758045.png">Simple Audio Hook Example.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/21463463/21758046">Simple Audio Hook Example</a> (application/gliffy+xml)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

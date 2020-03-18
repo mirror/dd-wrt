@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Configuring Localized Tone Indications</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Core-Configuration_27820183.html">Core Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Configuring Localized Tone Indications
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on Oct 17, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="ConfiguringLocalizedToneIndications-Overview">Overview</h1><p>In certain cases Asterisk will generate tones to be used in call signaling. It may be during the use of a specific application, or with certain channel drivers. The tones used are configurable and may be defined by location.</p><p>Note that the tones configured here are only used when Asterisk is directly generating the tones.</p><h1 id="ConfiguringLocalizedToneIndications-Configuration">Configuration</h1><p>The configuration file for location specific tone indications is <strong>indications.conf</strong>. It is read from the typical <a href="https://wiki.asterisk.org/wiki/display/AST/Directory+and+File+Structure" rel="nofollow">Asterisk configuration directory</a>. You can also view the sample of indications.conf file in your source directory at configs/modules.conf.sample or on <a href="http://svnview.digium.com/svn/asterisk/trunk/configs/samples/indications.conf.sample?view=markup" class="external-link" rel="nofollow">SVN at this link</a>.</p><p>The configuration itself consists of a 'general' section and then one or more country specific sections. (e.g. '[au]' for Australia)</p><p>Within the general section, only the <strong>country</strong> option can be set. This option sets the default location tone set to be used.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[general]
+country=us</pre>
+</div></div><p>As an example, the above set the default country to the tone set for the USA.</p><p>Within any location specific configuration, several tone types may be configured.</p><ul><li><p>description = string ;      The full name of your country, in English.</p></li><li><p>ringcadence = num[,num]*  ;      List of durations the physical bell rings.</p></li><li><p>dial = tonelist   ;      Set of tones to be played when one picks up the hook.</p></li><li><p>busy = tonelist  ;      Set of tones played when the receiving end is busy.</p></li><li><p>congestion = tonelist   ;      Set of tones played when there is some congestion (on the network?)</p></li><li><p>callwaiting = tonelist    ;      Set of tones played when there is a call waiting in the background.</p></li><li><p>dialrecall = tonelist     ;      Not well defined; many phone systems play a recall dial tone after hook flash</p></li><li><p>record = tonelist  ;      Set of tones played when call recording is in progress.</p></li><li><p>info = tonelist  ;      Set of tones played with special information messages (e.g., &quot;number is out of service&quot;)</p></li><li><p>'name' = tonelist  ;      Every other variable will be available as a shortcut for the &quot;PlayList&quot; command but will not be used automatically by Asterisk.</p></li></ul><h2 id="ConfiguringLocalizedToneIndications-Explanationofthe&#39;tonelist&#39;usage:">Explanation of the 'tonelist' usage:</h2><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>; The tonelist itself is defined by a comma-separated sequence of elements.
+; Each element consist of a frequency (f) with an optional duration (in ms)
+; attached to it (f/duration). The frequency component may be a mixture of two
+; frequencies (f1+f2) or a frequency modulated by another frequency (f1*f2).
+; The implicit modulation depth is fixed at 90%, though.
+; If the list element starts with a !, that element is NOT repeated,
+; therefore, only if all elements start with !, the tonelist is time-limited,
+; all others will repeat indefinitely.
+;
+; concisely:
+;   element = [!]freq[+|*freq2][/duration]
+;   tonelist = element[,element]*</pre>
+</div></div><p> </p><h2 id="ConfiguringLocalizedToneIndications-Exampleofalocationspecifictoneconfiguration:">Example of a location specific tone configuration:</h2><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[br]
+description = Brazil
+ringcadence = 1000,4000
+dial = 425
+busy = 425/250,0/250
+ring = 425/1000,0/4000
+congestion = 425/250,0/250,425/750,0/250
+callwaiting = 425/50,0/1000
+; Dialrecall not used in Brazil standard (using UK standard)
+dialrecall = 350+440
+; Record tone is not used in Brazil, use busy tone
+record = 425/250,0/250
+; Info not used in Brazil standard (using UK standard)
+info = 950/330,1400/330,1800/330
+stutter = 350+440</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

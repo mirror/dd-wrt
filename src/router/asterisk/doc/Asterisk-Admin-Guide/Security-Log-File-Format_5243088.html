@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Security Log File Format</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Security-Framework_5243074.html">Asterisk Security Framework</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Security Log File Format
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Mar 10, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>The beginning of each line in the log file is the same as it is for other logger levels within Asterisk.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[Feb 11 07:57:03] SECURITY[23736] res_security_log.c: &lt;...&gt; 
+</pre>
+</div></div><p>The part of the log entry identified by \&lt;...\&gt; is where the security event content resides. The security event content is a comma separated list of key value pairs. The key is the information element type, and the value is a quoted string that contains the associated meta data for that information element. Any embedded quotes within the content are escaped with a backslash.</p><p>INFORMATION_ELEMENT_1=&quot;IE1 content&quot;,INFORMATION_ELEMENT_2=&quot;IE2 content&quot;</p><p>The following table includes potential information elements and what the associated content looks like:</p><ul><li>IE: SecurityEvent<br /> Content: This is the security event sub-type.<br /> Values: FailedACL, InvalidAccountID, SessionLimit, MemoryLimit, LoadAverageLimit, RequestNotSupported, RequestNotAllowed, AuthMethodNotAllowed, ReqBadFormat, UnexpectedAddress, ChallengeSent, ChallengeResponseFailed, InvalidPassword</li></ul><ul><li>IE: Severity<br /> Content: This is the relatively severity of the security event. <br /> Values: Informational, Error</li></ul><ul><li>IE: EventVersion<br /> Content: This is a numeric value that indicates when updates are made to the content of the event. <br /> Values: Monotonically increasing integer, starting at 1</li></ul><ul><li>IE: Service<br /> Content: This is the Asterisk service that generated the event. <br /> Values: TEST, SIP, PJSIP, AMI</li></ul><ul><li>IE: Module<br /> Content: This is the Asterisk module that generated the event. <br /> Values: chan_sip</li></ul><ul><li>IE: AccountID<br /> Content: This is a string used to identify the account associated with the event. In most cases, this would be a username.</li></ul><ul><li>IE: SessionID<br /> Content: This is a string used to identify the session associated with the event. The format of the session identifier is specific to the service. In the case of SIP, this would be the Call-ID.</li></ul><ul><li>IE: SessionTV<br /> Content: The time that the session associated with the SessionID started. <br /> Values: &lt;seconds&gt;&lt;microseconds&gt; since epoch</li></ul><ul><li>IE: ACLName<br /> Content: This is a string that identifies which named ACL is associated with this event.</li></ul><ul><li>IE: LocalAddress<br /> Content: This is the local address that was contacted for the related event. <br /> Values: &lt;Address Family&gt;/&lt;Transport&gt;/&lt;Address&gt;/&lt;Port&gt; <br /> Examples: -&gt; IPV4/UDP/192.168.1.1/5060 -&gt; IPV4/TCP/192.168.1.1/5038</li></ul><ul><li>IE: RemoteAddress<br /> Content: This is the remote address associated with the event. <br /> Examples: -&gt; IPV4/UDP/192.168.1.2/5060 -&gt; IPV4/TCP/192.168.1.2/5038</li></ul><ul><li>IE: ExpectedAddress<br /> Content: This is the address that was expected to be the remote address. <br /> Examples: -&gt; IPV4/UDP/192.168.1.2/5060 -&gt; IPV4/TCP/192.168.1.2/5038</li></ul><ul><li>IE: EventTV<br /> Content: This is the timestamp of when the event occurred. <br /> Values: &lt;seconds&gt;&lt;microseconds&gt; since epoch</li></ul><ul><li>IE: RequestType<br /> Content: This is a service specific string that represents the invalid request</li></ul><ul><li>IE: RequestParams<br /> Content: This is a service specific string that represents relevant parameters given with a request that was considered invalid.</li></ul><ul><li>IE: AuthMethod<br /> Content: This is a service specific string that represents an authentication method that was used or requested.</li></ul><ul><li>IE: Challenge<br /> Content: This is a service specific string that represents the challenge provided to a user attempting challenge/response authentication.</li></ul><ul><li>IE: Response<br /> Content: This is a service specific string that represents the response received from a user attempting challenge/response authentication.</li></ul><ul><li>IE: ExpectedResponse<br /> Content: This is a service specific string that represents the response that was expected to be received from a user attempting challenge/response authentication.</li></ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

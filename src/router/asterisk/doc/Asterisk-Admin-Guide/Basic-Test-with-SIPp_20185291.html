@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Basic Test with SIPp</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Test-Suite-Documentation_17793142.html">Asterisk Test Suite Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Test-Development_20185285.html">Test Development</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Tests-with-SIPp_20185287.html">Tests with SIPp</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Basic Test with SIPp
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified on Jun 12, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h2 id="BasicTestwithSIPp-Introduction">Introduction</h2>
+
+<p>When are you writing a &quot;Basic&quot; test with SIPp?</p>
+<ul>
+	<li>When you only want to execute a SIPp scenario, and do not need any information from Asterisk itself to determine the pass/fail status of the test.</li>
+	<li>When you have large numbers of related SIPp scenarios that do not need information from Asterisk.</li>
+</ul>
+
+
+<p>Lets assume we would like to test a nominal SIP REGISTER request.  A very simple SIPp scenario can be used for this purpose.  Note that this only tests that Asterisk can receive a REGISTER request and reply back with a &quot;200 OK&quot; response, not whether or not Asterisk has created a SIP peer internally or performed any decisions based on the receiving of the REGISTER request.</p>
+
+<h2 id="BasicTestwithSIPp-SIPpScenario">SIPp Scenario</h2>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;ISO-8859-1&quot; ?&gt;
+&lt;scenario name=&quot;UAC Register&quot;&gt;
+
+    &lt;send retrans=&quot;500&quot;&gt;
+        &lt;![CDATA[
+
+        REGISTER sip:v4-in@[remote_ip]:[remote_port] SIP/2.0
+        Via: SIP/2.0/[transport] [local_ip]:[local_port];branch=[branch]
+        From: v4-in &lt;sip:v4-in@[local_ip]:[local_port]&gt;;tag=[pid]SIPpTag00[call_number]
+        To: &lt;sip:v4-in@[remote_ip]:[remote_port]&gt;
+        Call-ID: [call_id]
+        CSeq: 1 REGISTER
+        Contact: sip:v4-in@[local_ip]:[local_port]
+        Max-Forwards: 70
+        Subject: REGISTER Test
+        Expires: 3600
+        Content-Length: 0
+
+        ]]&gt;
+    &lt;/send&gt;
+
+    &lt;recv response=&quot;200&quot; rtd=&quot;true&quot; /&gt;
+&lt;/scenario&gt;
+</pre>
+</div></div>
+
+<h2 id="BasicTestwithSIPp-AsteriskConfiguration">Asterisk Configuration</h2>
+
+<p>Since the SIPp scenario is attempting a REGISTER request for v4-in, we must have a corresponding sip.conf configuration file defining the peer.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+[general]
+bindaddr=[::]:5060
+
+[v4-in]
+type=friend
+host=dynamic
+</pre>
+</div></div>
+
+<h2 id="BasicTestwithSIPp-AsteriskTestSuiterun-test">Asterisk Test Suite run-test</h2>
+
+<p>The Asterisk Test Suite provides a class, SIPpTest, that inherits from TestCase and will automatically run a set of SIPp scenarios.  The class looks for the scenarios in the 'sipp' folder and will execute the scenarios in parallel on a single instance of Asterisk. The results of the test are directly related to the success/failure of the SIPp scenario - if all scenarios pass, the test passes; if any scenario fails, the test fails. Creating a <em>run-test</em> script that executes a SIPp scenario is thus exceedingly simple.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+#!/usr/bin/env python
+
+import sys
+import os
+
+sys.path.append(&quot;lib/python&quot;)
+
+from twisted.internet import reactor
+from asterisk.sipp import SIPpTest
+
+WORKING_DIR = &quot;channels/SIP/sip_register&quot;
+TEST_DIR = os.path.dirname(os.path.realpath(__file__))
+
+SIPP_SCENARIOS = [
+    {
+        &#39;scenario&#39; : &#39;registerv4.xml&#39;
+    },
+]
+
+
+def main():
+    test = SIPpTest(WORKING_DIR, TEST_DIR, SIPP_SCENARIOS)
+    reactor.run()
+    if not test.passed:
+        return 1
+
+    return 0
+
+
+if __name__ == &quot;__main__&quot;:
+    sys.exit(main())
+</pre>
+</div></div>
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            
+<p>Any number of scenarios can be passed to the SIPpTest.  The class takes in as its third parameter a list of dictionaries, where each dictionary specifies a scenario to execute.</p>
+                    </div>
+    </div>
+
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

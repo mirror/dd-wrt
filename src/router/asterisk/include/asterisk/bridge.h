@@ -75,6 +75,7 @@ extern "C" {
 #include "asterisk/dsp.h"
 #include "asterisk/uuid.h"
 
+struct a02_container;
 struct ast_bridge_technology;
 struct ast_bridge;
 struct ast_bridge_tech_optimizations;
@@ -102,6 +103,10 @@ enum ast_bridge_video_mode_type {
 	/*! A single user's video feed is distributed to all bridge channels, but
 	 *  that feed is automatically picked based on who is talking the most. */
 	AST_BRIDGE_VIDEO_MODE_TALKER_SRC,
+	/*! Operate as a selective forwarding unit. Video from each participant is
+	 * cloned to a dedicated stream on a subset of the remaining participants.
+	 */
+	AST_BRIDGE_VIDEO_MODE_SFU,
 };
 
 /*! \brief This is used for both SINGLE_SRC mode to set what channel
@@ -122,6 +127,30 @@ struct ast_bridge_video_talker_src_data {
 	struct ast_channel *chan_old_vsrc;
 };
 
+/*! \brief REMB report behaviors */
+enum ast_bridge_video_sfu_remb_behavior {
+	/*! The average of all reports is sent to the sender */
+	AST_BRIDGE_VIDEO_SFU_REMB_AVERAGE = 0,
+	/*! The lowest reported bitrate is forwarded to the sender */
+	AST_BRIDGE_VIDEO_SFU_REMB_LOWEST,
+	/*! The highest reported bitrate is forwarded to the sender */
+	AST_BRIDGE_VIDEO_SFU_REMB_HIGHEST,
+	/*! The average of all reports WITHIN the bridge is sent to each sender */
+	AST_BRIDGE_VIDEO_SFU_REMB_AVERAGE_ALL,
+	/*! The lowest reported bitrate from all channels in the bridge is forwarded to each sender */
+	AST_BRIDGE_VIDEO_SFU_REMB_LOWEST_ALL,
+	/*! The highest reported bitrate from all channels in the bridge is forwarded to each sender */
+	AST_BRIDGE_VIDEO_SFU_REMB_HIGHEST_ALL,
+};
+
+/*! \brief This is used for selective forwarding unit configuration */
+struct ast_bridge_video_sfu_data {
+	/*! The interval at which a REMB report is generated and sent */
+	unsigned int remb_send_interval;
+	/*! How the combined REMB report is generated */
+	enum ast_bridge_video_sfu_remb_behavior remb_behavior;
+};
+
 /*! \brief Data structure that defines a video source mode */
 struct ast_bridge_video_mode {
 	enum ast_bridge_video_mode_type mode;
@@ -129,7 +158,10 @@ struct ast_bridge_video_mode {
 	union {
 		struct ast_bridge_video_single_src_data single_src_data;
 		struct ast_bridge_video_talker_src_data talker_src_data;
+		struct ast_bridge_video_sfu_data sfu_data;
 	} mode_data;
+	/*! The minimum interval between video updates */
+	unsigned int video_update_discard;
 };
 
 /*!
@@ -263,6 +295,56 @@ struct ast_bridge_softmix {
 	 * for itself.
 	 */
 	unsigned int internal_mixing_interval;
+	/*! TRUE if binaural convolve is activated in configuration. */
+	unsigned int binaural_active;
+	/*!
+	 * Add a "label" attribute to each stream in the SDP containing
+	 * the channel uniqueid.  Used for participant info correlation.
+	 */
+	unsigned int send_sdp_label;
+	/*!
+	 * \brief The maximum sample rate softmix uses to mix channels.
+	 *
+	 * \note If this value is 0, there is no maximum sample rate.
+	 */
+	unsigned int maximum_sample_rate;
+};
+
+AST_LIST_HEAD_NOLOCK(ast_bridge_channels_list, ast_bridge_channel);
+
+/*!
+ * \brief Structure that contains a snapshot of information about a bridge
+ */
+struct ast_bridge_snapshot {
+	AST_DECLARE_STRING_FIELDS(
+		/*! Immutable bridge UUID. */
+		AST_STRING_FIELD(uniqueid);
+		/*! Bridge technology that is handling the bridge */
+		AST_STRING_FIELD(technology);
+		/*! Bridge subclass that is handling the bridge */
+		AST_STRING_FIELD(subclass);
+		/*! Creator of the bridge */
+		AST_STRING_FIELD(creator);
+		/*! Name given to the bridge by its creator */
+		AST_STRING_FIELD(name);
+		/*! Unique ID of the channel providing video, if one exists */
+		AST_STRING_FIELD(video_source_id);
+	);
+	/*! AO2 container of bare channel uniqueid strings participating in the bridge.
+	 * Allocated from ast_str_container_alloc() */
+	struct ao2_container *channels;
+	/*! Bridge flags to tweak behavior */
+	struct ast_flags feature_flags;
+	/*! Bridge capabilities */
+	uint32_t capabilities;
+	/*! Number of channels participating in the bridge */
+	unsigned int num_channels;
+	/*! Number of active channels in the bridge. */
+	unsigned int num_active;
+	/*! The video mode of the bridge */
+	enum ast_bridge_video_mode_type video_mode;
+	/*! The time of bridge creation */
+	struct timeval creationtime;
 };
 
 /*!
@@ -278,11 +360,11 @@ struct ast_bridge {
 	/*! Private information unique to the bridge technology */
 	void *tech_pvt;
 	/*! Per-bridge topics */
-	struct stasis_cp_single *topics;
+	struct stasis_topic *topic;
 	/*! Call ID associated with the bridge */
-	struct ast_callid *callid;
+	ast_callid callid;
 	/*! Linked list of channels participating in the bridge */
-	AST_LIST_HEAD_NOLOCK(, ast_bridge_channel) channels;
+	struct ast_bridge_channels_list channels;
 	/*! Queue of actions to perform on the bridge. */
 	AST_LIST_HEAD_NOLOCK(, ast_frame) action_queue;
 	/*! Softmix technology parameters. */
@@ -321,10 +403,30 @@ struct ast_bridge {
 		/*! Immutable bridge UUID. */
 		AST_STRING_FIELD(uniqueid);
 	);
+
+	/*! Type mapping used for media routing */
+	struct ast_vector_int media_types;
+	/*! Current bridge snapshot */
+	struct ast_bridge_snapshot *current_snapshot;
+	/*! The time of bridge creation */
+	struct timeval creationtime;
 };
 
 /*! \brief Bridge base class virtual method table. */
 extern struct ast_bridge_methods ast_bridge_base_v_table;
+
+/*!
+ * \brief Returns the global bridges container
+ * \since 17.0
+ *
+ * \retval a pointer to the bridges container success
+ * \retval NULL on failure
+ *
+ * \note You must use ao2_ref(<container>, -1) when done with it
+ *
+ * \warning You must not attempt to modify the container returned.
+ */
+struct ao2_container *ast_bridges(void);
 
 /*!
  * \brief Create a new base class bridge
@@ -555,6 +657,9 @@ enum ast_bridge_impart_flags {
  * it were placed into the bridge by ast_bridge_join().
  * Channels placed into a bridge by ast_bridge_join() are
  * removed by a third party using ast_bridge_remove().
+ *
+ * \note Any callbacks on the channel will be invoked on failure
+ * with the reason as AST_BRIDGE_AFTER_CB_REASON_IMPART_FAILED.
  */
 int ast_bridge_impart(struct ast_bridge *bridge,
 	struct ast_channel *chan,
@@ -858,6 +963,21 @@ int ast_bridge_queue_everyone_else(struct ast_bridge *bridge, struct ast_bridge_
 void ast_bridge_set_internal_sample_rate(struct ast_bridge *bridge, unsigned int sample_rate);
 
 /*!
+ * \brief Adjust the maximum mixing sample rate of a bridge
+ * used during multimix mode.
+ * \since 13.31.0
+ * \since 16.8.0
+ * \since 17.2.0
+ *
+ * \param bridge Channel to change the sample rate on.
+ * \param sample_rate the maximum sample rate to use. If a
+ *        value of 0 is passed here, the bridge will be free to pick
+ *        what ever sample rate it chooses.
+ *
+ */
+void ast_bridge_set_maximum_sample_rate(struct ast_bridge *bridge, unsigned int sample_rate);
+
+/*!
  * \brief Adjust the internal mixing interval of a bridge used
  * during multimix mode.
  *
@@ -866,6 +986,14 @@ void ast_bridge_set_internal_sample_rate(struct ast_bridge *bridge, unsigned int
  * the bridge tech is free to choose any mixing interval it uses by default.
  */
 void ast_bridge_set_mixing_interval(struct ast_bridge *bridge, unsigned int mixing_interval);
+
+/*!
+ * \brief Activates the use of binaural signals in a conference bridge.
+ *
+ *  \param bridge Channel to activate the binaural signals.
+ *  \param binaural_active If true binaural signal processing will be active for the bridge.
+ */
+void ast_bridge_set_binaural_active(struct ast_bridge *bridge, unsigned int binaural_active);
 
 /*!
  * \brief Set a bridge to feed a single video source to all participants.
@@ -877,6 +1005,39 @@ void ast_bridge_set_single_src_video_mode(struct ast_bridge *bridge, struct ast_
  * video as the single source video feed
  */
 void ast_bridge_set_talker_src_video_mode(struct ast_bridge *bridge);
+
+/*!
+ * \brief Set the bridge to be a selective forwarding unit
+ */
+void ast_bridge_set_sfu_video_mode(struct ast_bridge *bridge);
+
+/*!
+ * \brief Set the amount of time to discard subsequent video updates after a video update has been sent
+ *
+ * \param bridge Bridge to set the minimum video update wait time on
+ * \param video_update_discard Amount of time after sending a video update that others should be discarded
+ */
+void ast_bridge_set_video_update_discard(struct ast_bridge *bridge, unsigned int video_update_discard);
+
+/*!
+ * \brief Set the interval at which a combined REMB frame will be sent to video sources
+ *
+ * \param bridge Bridge to set the REMB send interval on
+ * \param remb_send_interval The REMB send interval
+ *
+ * \note This can only be called when the bridge has been set to the SFU video mode.
+ */
+void ast_bridge_set_remb_send_interval(struct ast_bridge *bridge, unsigned int remb_send_interval);
+
+/*!
+ * \brief Set the REMB report generation behavior on a bridge
+ *
+ * \param bridge Bridge to set the REMB behavior on
+ * \param behavior How REMB reports are generated
+ *
+ * \note This can only be called when the bridge has been set to the SFU video mode.
+ */
+void ast_brige_set_remb_behavior(struct ast_bridge *bridge, enum ast_bridge_video_sfu_remb_behavior behavior);
 
 /*!
  * \brief Update information about talker energy for talker src video mode.
@@ -911,6 +1072,31 @@ void ast_bridge_remove_video_src(struct ast_bridge *bridge, struct ast_channel *
  * \retval A string representation of \c video_mode
  */
 const char *ast_bridge_video_mode_to_string(enum ast_bridge_video_mode_type video_mode);
+
+/*!
+ * \brief Controls whether to send a "label" attribute in each stream in an SDP
+ * \since 16.1.0
+ *
+ * \param bridge The bridge
+ * \param send_sdp_label Whether to send the labels or not
+ *
+ * \note The label will contain the uniqueid of the channel related to the stream.
+ * This is used to allow the recipient to correlate the stream to the participant
+ * information events sent by app_confbridge.
+ * The bridge will be locked in this function.
+ */
+void ast_bridge_set_send_sdp_label(struct ast_bridge *bridge, unsigned int send_sdp_label);
+
+/*!
+ * \brief Acquire the channel's bridge for transfer purposes.
+ * \since 13.21.0
+ *
+ * \param chan Channel involved in a transfer.
+ *
+ * \return The bridge the channel is in or NULL if it either isn't
+ * in a bridge or should not be considered to be in a bridge.
+ */
+struct ast_bridge *ast_bridge_transfer_acquire_bridge(struct ast_channel *chan);
 
 enum ast_transfer_result {
 	/*! The transfer completed successfully */

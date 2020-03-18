@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Setting and Substituting Channel Variables</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Variables_4817407.html">Variables</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Variables_4620340.html">Channel Variables</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Setting and Substituting Channel Variables
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Rusty Newton</span> on Aug 05, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Parameter strings can include variables. Variable names are arbitrary strings. They are stored in the respective channel structure.</p><p>To <strong>set</strong> a variable to a particular value, do:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; 1,2,Set(varname=value)
+</pre>
+</div></div><p>You can <strong>substitute</strong> the value of a variable everywhere using ${variablename}.</p><p>Here is a simple example.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; 1,1,Set(COUNT=3)
+exten =&gt; 1,n,SayNumber(${COUNT})</pre>
+</div></div><p>In the second line of this example, Asterisk replaces the ${COUNT} text with the value of the COUNT variable, so that it ends up calling SayNumber(3).</p><p>For another example, to stringwise append $varname2 to $varname3 and store result in $varname1, do:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; 1,2,Set(varname1=${varname2}${varname3})
+</pre>
+</div></div><p>There are two reference modes - reference by value and reference by name. To refer to a variable with its name (as an argument to a function that requires a variable), just write the name. To refer to the variable's value, enclose it inside ${}. For example, Set takes as the first argument (before the =) a variable name, so:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; 1,2,Set(varname1=varname2)
+exten =&gt; 1,3,Set(${varname1}=value)
+</pre>
+</div></div><p>The above dialplan stores to the variable &quot;varname1&quot; the value &quot;varname2&quot; and to variable &quot;varname2&quot; the value &quot;value&quot;.</p><p>In fact, everything contained ${here} is just replaced with the value of the variable &quot;here&quot;.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : MSSQL CDR Backend</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Reporting_27200283.html">Reporting</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="5242894.html">Call Detail Records (CDR)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="CDR-Storage-Backends_5242913.html">CDR Storage Backends</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : MSSQL CDR Backend
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Sean Bright</span> on May 04, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Asterisk can currently store CDRs into a Microsoft SQL Server database in two different ways: cdr_odbc or cdr_tds </p>
+
+<p>Call Data Records can be stored using unixODBC (which requires the FreeTDS package) <a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=cdr_odbc&amp;linkCreation=true&amp;fromPageId=5242916">cdr_odbc</a> or directly by using just the FreeTDS package <a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=cdr_tds&amp;linkCreation=true&amp;fromPageId=5242916">cdr_tds</a>.  The following provide some examples known to get asterisk working with mssql. </p>
+
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            
+<p>Only choose one db connector.</p>
+                    </div>
+    </div>
+
+
+<h3 id="MSSQLCDRBackend-ODBCusingcdr_odbc">ODBC using cdr_odbc</h3>
+
+<h5 id="MSSQLCDRBackend-Compile,configure,andinstallthelatestunixODBCpackage:">Compile, configure, and install the latest unixODBC package:</h5>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>tar -zxvf unixODBC-2.2.9.tar.gz &amp;&amp; cd unixODBC-2.2.9 &amp;&amp; ./configure --sysconfdir=/etc --prefix=/usr --disable-gui &amp;&amp; make &amp;&amp; make install
+</pre>
+</div></div>
+
+<h5 id="MSSQLCDRBackend-Compile,configure,andinstallthelatestFreeTDSpackage:">Compile, configure, and install the latest FreeTDS package:</h5>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>tar -zxvf freetds-0.62.4.tar.gz &amp;&amp; cd freetds-0.62.4 &amp;&amp; ./configure --prefix=/usr --with-tdsver=7.0 \ --with-unixodbc=/usr/lib &amp;&amp; make &amp;&amp; make install
+</pre>
+</div></div>
+
+<h5 id="MSSQLCDRBackend-Compile,orrecompile,asterisksothatitwillnowaddsupportforcdr_odbc.">Compile, or recompile, asterisk so that it will now add support for cdr_odbc.</h5>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>make clean &amp;&amp; ./configure --with-odbc &amp;&amp; make update &amp;&amp; make &amp;&amp; make install
+</pre>
+</div></div>
+
+<h5 id="MSSQLCDRBackend-Setupodbcconfigurationfiles.">Setup odbc configuration files.</h5>
+<p>These are working examples from my system. You will need to modify for your setup. You are not required to store usernames or passwords here.</p>
+
+<p>/etc/odbcinst.ini</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[FreeTDS]
+Description = FreeTDS ODBC driver for MSSQL 
+Driver = /usr/lib/libtdsodbc.so 
+Setup = /usr/lib/libtdsS.so 
+FileUsage = 1 
+</pre>
+</div></div>
+
+<p>/etc/odbc.ini</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[MSSQL-asterisk]
+description = Asterisk ODBC for MSSQL 
+driver = FreeTDS 
+server = 192.168.1.25 
+port = 1433 
+database = voipdb 
+tds_version = 7.0 
+language = us_english
+</pre>
+</div></div>
+
+    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            
+<p>Only install one database connector. Do not confuse asterisk by using both ODBC (cdr_odbc) and FreeTDS (cdr_tds). This command will erase the contents of cdr_tds.conf</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[ -f /etc/asterisk/cdr_tds.conf ] &gt; /etc/asterisk/cdr_tds.conf
+</pre>
+</div></div>
+                    </div>
+    </div>
+
+
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            
+<p>unixODBC requires the freeTDS package, but asterisk does not call freeTDS directly. </p>
+                    </div>
+    </div>
+
+
+<h5 id="MSSQLCDRBackend-Nowsetupcdr_odbcconfigurationfiles.">Now set up cdr_odbc configuration files. </h5>
+
+<p>These are working samples from my system. You will need to modify for your setup. Define your usernames and passwords here, secure file as well.</p>
+
+<p>/etc/asterisk/cdr_odbc.conf</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[global]
+dsn=MSSQL-asterisk
+username=voipdbuser 
+password=voipdbpass 
+loguniqueid=yes
+</pre>
+</div></div>
+
+<h5 id="MSSQLCDRBackend-Andfinally,createthe&#39;cdr&#39;tableinyourmssqldatabase.">And finally, create the 'cdr' table in your mssql database.</h5>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>CREATE TABLE cdr (
+        [calldate] [datetime] NOT NULL ,
+        [clid] [varchar] (80) NOT NULL , 
+        [src] [varchar] (80) NOT NULL , 
+        [dst] [varchar] (80) NOT NULL , 
+        [dcontext] [varchar] (80) NOT NULL , 
+        [channel] [varchar] (80) NOT NULL , 
+        [dstchannel] [varchar] (80) NOT NULL , 
+        [lastapp] [varchar] (80) NOT NULL , 
+        [lastdata] [varchar] (80) NOT NULL , 
+        [duration] [int] NOT NULL , 
+        [billsec] [int] NOT NULL , 
+        [disposition] [varchar] (45) NOT NULL , 
+        [amaflags] [int] NOT NULL , 
+        [accountcode] [varchar] (20) NOT NULL , 
+        [uniqueid] [varchar] (150) NOT NULL , 
+        [userfield] [varchar] (255) NOT NULL 
+)
+</pre>
+</div></div>
+
+<h5 id="MSSQLCDRBackend-Startasteriskinverbosemode.">Start asterisk in verbose mode.</h5>
+
+<p>You should see that asterisk logs a connection to the database and will now record every call to the database when it's complete.</p>
+
+
+<h3 id="MSSQLCDRBackend-TDS,usingcdr_tds">TDS, using cdr_tds</h3>
+
+<h5 id="MSSQLCDRBackend-Compile,configure,andinstallthelatestFreeTDSpackage:.1">Compile, configure, and install the latest FreeTDS package:</h5>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>tar -zxvf freetds-0.62.4.tar.gz &amp;&amp; cd freetds-0.62.4 &amp;&amp; ./configure --prefix=/usr --with-tdsver=7.0 make &amp;&amp; make install
+</pre>
+</div></div>
+
+<h5 id="MSSQLCDRBackend-Compile,orrecompile,asterisksothatitwillnowaddsupportforcdr_tds.">Compile, or recompile, asterisk so that it will now add support for cdr_tds.</h5>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>make clean &amp;&amp; ./configure --with-tds &amp;&amp; make update &amp;&amp; make &amp;&amp; make install
+</pre>
+</div></div>
+
+    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            
+<p>Only install one database connector. Do not confuse asterisk by using both ODBC (cdr_odbc) and FreeTDS (cdr_tds). This command will erase the contents of cdr_odbc.conf</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[ -f /etc/asterisk/cdr_odbc.conf ] &gt; /etc/asterisk/cdr_odbc.conf
+</pre>
+</div></div>
+                    </div>
+    </div>
+
+
+<h5 id="MSSQLCDRBackend-Setupcdr_tdsconfigurationfiles.">Setup cdr_tds configuration files.</h5>
+
+<p>These are working samples from my system. You will need to modify for your setup. Define your usernames and passwords here, secure file as well.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>/etc/asterisk/cdr_tds.conf [global] hostname=192.168.1.25 port=1433 dbname=voipdb user=voipdbuser password=voipdpass charset=BIG5
+</pre>
+</div></div>
+
+<h5 id="MSSQLCDRBackend-Andfinally,createthe&#39;cdr&#39;tableinyourmssqldatabase..1">And finally, create the 'cdr' table in your mssql database.</h5>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>CREATE TABLE cdr (
+        [accountcode] [varchar] (20) NULL , 
+        [src] [varchar] (80) NULL , 
+        [dst] [varchar] (80) NULL , 
+        [dcontext] [varchar] (80) NULL , 
+        [clid] [varchar] (80) NULL , 
+        [channel] [varchar] (80) NULL , 
+        [dstchannel] [varchar] (80) NULL , 
+        [lastapp] [varchar] (80) NULL , 
+        [lastdata] [varchar] (80) NULL , 
+        [start] [datetime] NULL , 
+        [answer] [datetime] NULL , 
+        [end] [datetime] NULL , 
+        [duration] [int] NULL , 
+        [billsec] [int] NULL , 
+        [disposition] [varchar] (20) NULL , 
+        [amaflags] [varchar] (16) NULL , 
+        [uniqueid] [varchar] (150) NULL , 
+        [userfield] [varchar] (256) NULL
+)
+</pre>
+</div></div>
+
+<h5 id="MSSQLCDRBackend-Startasteriskinverbosemode..1">Start asterisk in verbose mode.</h5>
+
+<p>You should see that asterisk logs a connection to the database and will now record every call to the database when it's complete.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

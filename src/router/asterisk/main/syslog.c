@@ -30,8 +30,6 @@
 #include "asterisk/utils.h"
 #include "asterisk/syslog.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <syslog.h>
 
 static const struct {

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Function_TALK_DETECT</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Functions_42010713.html">Asterisk 17 Dialplan Functions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Function_TALK_DETECT
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Function_TALK_DETECT-TALK_DETECT()">TALK_DETECT()</h1>
+
+<h3 id="Asterisk17Function_TALK_DETECT-Synopsis">Synopsis</h3>
+
+<p>Raises notifications when Asterisk detects silence or talking on a channel.</p>
+
+<h3 id="Asterisk17Function_TALK_DETECT-Description">Description</h3>
+
+<p>The TALK_DETECT function enables events on the channel it is applied to. These events can be emited over AMI, ARI, and potentially other Asterisk modules that listen for the internal notification.</p>
+
+<p>The function has two parameters that can optionally be passed when <code>set</code> on a channel: <em>dsp_talking_threshold</em> and <em>dsp_silence_threshold</em>.</p>
+
+<p>dsp_talking_threshold is the time in milliseconds of sound above what the dsp has established as base line silence for a user before a user is considered to be talking. By default, the value of silencethreshold from dsp.conf is used. If this value is set too tight events may be falsely triggered by variants in room noise.</p>
+
+<p>Valid values are 1 through 2^31.</p>
+
+<p>dsp_silence_threshold is the time in milliseconds of sound falling within what the dsp has established as baseline silence before a user is considered be silent. If this value is set too low events indicating the user has stopped talking may get falsely sent out when the user briefly pauses during mid sentence.</p>
+
+<p>The best way to approach this option is to set it slightly above the maximum amount of ms of silence a user may generate during natural speech.</p>
+
+<p>By default this value is 2500ms. Valid values are 1 through 2^31.</p>
+
+<p>Example:</p>
+
+<p>same =&gt; n,Set(TALK_DETECT(set)=) ; Enable talk detection</p>
+
+<p>same =&gt; n,Set(TALK_DETECT(set)=1200) ; Update existing talk detection's silence threshold to 1200 ms</p>
+
+<p>same =&gt; n,Set(TALK_DETECT(remove)=) ; Remove talk detection</p>
+
+<p>same =&gt; n,Set(TALK_DETECT(set)=,128) ; Enable and set talk threshold to 128</p>
+
+<p>This function will set the following variables:</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>The TALK_DETECT function uses an audiohook to inspect the voice media frames on a channel. Other functions, such as JITTERBUFFER, DENOISE, and AGC use a similar mechanism. Audiohooks are processed in the order in which they are placed on the channel. As such, it typically makes sense to place functions that modify the voice media data prior to placing the TALK_DETECT function, as this will yield better results.</p>
+
+<p>Example:</p>
+
+<p>same =&gt; n,Set(DENOISE(rx)=on) ; Denoise received audio</p>
+
+<p>same =&gt; n,Set(TALK_DETECT(set)=) ; Perform talk detection on the denoised received audio</p>
+
+                    </div>
+    </div>
+
+
+<h3 id="Asterisk17Function_TALK_DETECT-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>TALK_DETECT(action)</pre>
+</div></div>
+
+<h5 id="Asterisk17Function_TALK_DETECT-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>action</code>
+	<ul>
+		<li><code>remove</code> - W/O. Remove talk detection from the channel.</li>
+		<li><code>set</code><code>( dsp_silence_threshold,dsp_talking_threshold )</code> - W/O. Enable TALK_DETECT and/or configure talk detection parameters. Can be called multiple times to change parameters on a channel with talk detection already enabled.
+		<ul>
+			<li><code>dsp_silence_threshold</code> - The time in milliseconds before which a user is considered silent.</li>
+			<li><code>dsp_talking_threshold</code> - The time in milliseconds after which a user is considered talking.</li>
+		</ul>
+		</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Function_TALK_DETECT-SeeAlso">See Also</h3>
+
+
+<h3 id="Asterisk17Function_TALK_DETECT-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

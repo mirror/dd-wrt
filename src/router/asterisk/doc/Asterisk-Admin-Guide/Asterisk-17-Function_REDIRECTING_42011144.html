@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Function_REDIRECTING</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Functions_42010713.html">Asterisk 17 Dialplan Functions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Function_REDIRECTING
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Function_REDIRECTING-REDIRECTING()">REDIRECTING()</h1>
+
+<h3 id="Asterisk17Function_REDIRECTING-Synopsis">Synopsis</h3>
+
+<p>Gets or sets Redirecting data on the channel.</p>
+
+<h3 id="Asterisk17Function_REDIRECTING-Description">Description</h3>
+
+<p>Gets or sets Redirecting data on the channel.</p>
+
+<p>The <em>orig-pres</em>, <em>from-pres</em> and <em>to-pres</em> fields get/set a combined value for the corresponding <em>...-name-pres</em> and <em>...-num-pres</em> fields.</p>
+
+<p>The recognized values for the <em>reason</em> and <em>orig-reason</em> fields are the following:</p>
+
+<ul>
+	<li><code>away</code> - Callee is Away</li>
+	<li><code>cf_dte</code> - Call Forwarding By The Called DTE</li>
+	<li><code>cfb</code> - Call Forwarding Busy</li>
+	<li><code>cfnr</code> - Call Forwarding No Reply</li>
+	<li><code>cfu</code> - Call Forwarding Unconditional</li>
+	<li><code>deflection</code> - Call Deflection</li>
+	<li><code>dnd</code> - Do Not Disturb</li>
+	<li><code>follow_me</code> - Follow Me</li>
+	<li><code>out_of_order</code> - Called DTE Out-Of-Order</li>
+	<li><code>send_to_vm</code> - Send the call to voicemail</li>
+	<li><code>time_of_day</code> - Time of Day</li>
+	<li><code>unavailable</code> - Callee is Unavailable</li>
+	<li><code>unknown</code> - Unknown
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>You can set a user defined reason string that SIP can send/receive instead. The user defined reason string my need to be quoted depending upon SIP or the peer's requirements. These strings are treated as unknown by the non-SIP channel drivers.</p>
+
+                    </div>
+    </div>
+
+The allowable values for the <em>xxx-name-charset</em> field are the following:</li>
+</ul>
+
+
+<ul>
+	<li><code>unknown</code> - Unknown</li>
+	<li><code>iso8859-1</code> - ISO8859-1</li>
+	<li><code>withdrawn</code> - Withdrawn</li>
+	<li><code>iso8859-2</code> - ISO8859-2</li>
+	<li><code>iso8859-3</code> - ISO8859-3</li>
+	<li><code>iso8859-4</code> - ISO8859-4</li>
+	<li><code>iso8859-5</code> - ISO8859-5</li>
+	<li><code>iso8859-7</code> - ISO8859-7</li>
+	<li><code>bmp</code> - ISO10646 Bmp String</li>
+	<li><code>utf8</code> - ISO10646 UTF-8 String</li>
+</ul>
+
+
+<h3 id="Asterisk17Function_REDIRECTING-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>REDIRECTING(datatype,i)</pre>
+</div></div>
+
+<h5 id="Asterisk17Function_REDIRECTING-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>datatype</code> - The allowable datatypes are:
+	<ul>
+		<li><code>orig-all</code></li>
+		<li><code>orig-name</code></li>
+		<li><code>orig-name-valid</code></li>
+		<li><code>orig-name-charset</code></li>
+		<li><code>orig-name-pres</code></li>
+		<li><code>orig-num</code></li>
+		<li><code>orig-num-valid</code></li>
+		<li><code>orig-num-plan</code></li>
+		<li><code>orig-num-pres</code></li>
+		<li><code>orig-pres</code></li>
+		<li><code>orig-subaddr</code></li>
+		<li><code>orig-subaddr-valid</code></li>
+		<li><code>orig-subaddr-type</code></li>
+		<li><code>orig-subaddr-odd</code></li>
+		<li><code>orig-tag</code></li>
+		<li><code>orig-reason</code></li>
+		<li><code>from-all</code></li>
+		<li><code>from-name</code></li>
+		<li><code>from-name-valid</code></li>
+		<li><code>from-name-charset</code></li>
+		<li><code>from-name-pres</code></li>
+		<li><code>from-num</code></li>
+		<li><code>from-num-valid</code></li>
+		<li><code>from-num-plan</code></li>
+		<li><code>from-num-pres</code></li>
+		<li><code>from-pres</code></li>
+		<li><code>from-subaddr</code></li>
+		<li><code>from-subaddr-valid</code></li>
+		<li><code>from-subaddr-type</code></li>
+		<li><code>from-subaddr-odd</code></li>
+		<li><code>from-tag</code></li>
+		<li><code>to-all</code></li>
+		<li><code>to-name</code></li>
+		<li><code>to-name-valid</code></li>
+		<li><code>to-name-charset</code></li>
+		<li><code>to-name-pres</code></li>
+		<li><code>to-num</code></li>
+		<li><code>to-num-valid</code></li>
+		<li><code>to-num-plan</code></li>
+		<li><code>to-num-pres</code></li>
+		<li><code>to-pres</code></li>
+		<li><code>to-subaddr</code></li>
+		<li><code>to-subaddr-valid</code></li>
+		<li><code>to-subaddr-type</code></li>
+		<li><code>to-subaddr-odd</code></li>
+		<li><code>to-tag</code></li>
+		<li><code>priv-orig-all</code></li>
+		<li><code>priv-orig-name</code></li>
+		<li><code>priv-orig-name-valid</code></li>
+		<li><code>priv-orig-name-charset</code></li>
+		<li><code>priv-orig-name-pres</code></li>
+		<li><code>priv-orig-num</code></li>
+		<li><code>priv-orig-num-valid</code></li>
+		<li><code>priv-orig-num-plan</code></li>
+		<li><code>priv-orig-num-pres</code></li>
+		<li><code>priv-orig-subaddr</code></li>
+		<li><code>priv-orig-subaddr-valid</code></li>
+		<li><code>priv-orig-subaddr-type</code></li>
+		<li><code>priv-orig-subaddr-odd</code></li>
+		<li><code>priv-orig-tag</code></li>
+		<li><code>priv-from-all</code></li>
+		<li><code>priv-from-name</code></li>
+		<li><code>priv-from-name-valid</code></li>
+		<li><code>priv-from-name-charset</code></li>
+		<li><code>priv-from-name-pres</code></li>
+		<li><code>priv-from-num</code></li>
+		<li><code>priv-from-num-valid</code></li>
+		<li><code>priv-from-num-plan</code></li>
+		<li><code>priv-from-num-pres</code></li>
+		<li><code>priv-from-subaddr</code></li>
+		<li><code>priv-from-subaddr-valid</code></li>
+		<li><code>priv-from-subaddr-type</code></li>
+		<li><code>priv-from-subaddr-odd</code></li>
+		<li><code>priv-from-tag</code></li>
+		<li><code>priv-to-all</code></li>
+		<li><code>priv-to-name</code></li>
+		<li><code>priv-to-name-valid</code></li>
+		<li><code>priv-to-name-charset</code></li>
+		<li><code>priv-to-name-pres</code></li>
+		<li><code>priv-to-num</code></li>
+		<li><code>priv-to-num-valid</code></li>
+		<li><code>priv-to-num-plan</code></li>
+		<li><code>priv-to-num-pres</code></li>
+		<li><code>priv-to-subaddr</code></li>
+		<li><code>priv-to-subaddr-valid</code></li>
+		<li><code>priv-to-subaddr-type</code></li>
+		<li><code>priv-to-subaddr-odd</code></li>
+		<li><code>priv-to-tag</code></li>
+		<li><code>reason</code></li>
+		<li><code>count</code></li>
+	</ul>
+	</li>
+	<li><code>i</code> - If set, this will prevent the channel from sending out protocol messages because of the value being set</li>
+</ul>
+
+
+<h3 id="Asterisk17Function_REDIRECTING-SeeAlso">See Also</h3>
+
+
+<h3 id="Asterisk17Function_REDIRECTING-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

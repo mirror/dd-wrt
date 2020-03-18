@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Running the Asterisk Test Suite</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Test-Suite-Documentation_17793142.html">Asterisk Test Suite Documentation</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Running the Asterisk Test Suite
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified on Jun 24, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>The Asterisk Test Suite uses a python script, <em><strong>runtests.py</strong></em>, to execute the tests within the suite.  The <em>runtests.py</em> script is responsible for determining what tests exist in the Test Suite and managing their execution.  </p>
+
+<p>There are a number of ways the Asterisk Test Suite can be executed:</p>
+<ul>
+	<li>Execute all tests</li>
+	<li>Execute a single test</li>
+	<li>Execute a set of tests that share common tags</li>
+	<li>Execute a pre-defined set of tests</li>
+</ul>
+
+
+
+<h2 id="RunningtheAsteriskTestSuite-Executingalltests">Executing all tests</h2>
+
+<p>The simplest way of executing tests, all tests in the Test Suite can be run by simply calling the <em>runtests.py</em> script with no arguments.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+# ./runtests.py
+
+Running tests for Asterisk SVN-trunk-r366462M
+ ...
+
+--&gt; Running test &#39;tests/example&#39; ...
+
+Making sure Asterisk isn&#39;t running ...
+Running [&#39;tests/example/run-test&#39;] ...
+</pre>
+</div></div>
+
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            
+<p>Depending on permissions and the modules installed, you may need to run the runtests.py script with elevated permissions.</p>
+                    </div>
+    </div>
+
+
+<p>Since this can take a long time to execute to completion - and may cover functionality you do not want to test - there are a variety of other ways to run tests as well.</p>
+
+<h2 id="RunningtheAsteriskTestSuite-Executingasingletest">Executing a single test</h2>
+
+<p>A single test can be executed using the <em>-t</em> command line option.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+# ./runtests.py -t tests/dialplan
+</pre>
+</div></div>
+
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            
+<p>You can determine what tests are available for execution by using the <em>-l</em> command line option.</p>
+                    </div>
+    </div>
+
+
+<h2 id="RunningtheAsteriskTestSuite-Executingasetoftestsbytag">Executing a set of tests by tag</h2>
+
+<p>Many tests in the Asterisk Test Suite have tags that group them according to functionality that they test. The tags currently in use by all executable tests in the Test Suite can be determined using the <em>-L</em> command line option:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+# ./runtests.py -L
+Available test tags:
+	AGI                 AMI                 apps           
+	bridge              ccss                CDR            
+	chan_local          chanspy             confbridge     
+	connected_line      dial                dialplan       
+	dialplan_lua        directory           DTMF           
+	fax                 fax_gateway         fax_passthrough
+	features            gosub               GoSub          
+	IAX                 incomplete          macro          
+	mixmonitor          page                parking        
+	pickup              queues              redirecting    
+	SIP                 subroutine          transfer
+        voicemail                        
+</pre>
+</div></div>
+
+<p>All tests that have a tag can be executed using the <em>-g</em> command line option:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+# ./runtests.py -g SIP
+</pre>
+</div></div>
+
+<p>Multiple tags can be specified as well, using multiple invocations of the <em>-g</em> command line option.  A test must satisfy each tag specified in order to be executed.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+# ./runtests.py -g SIP -g CDR
+</pre>
+</div></div>
+
+<h2 id="RunningtheAsteriskTestSuite-Executingpre-definedsetsoftests">Executing pre-defined sets of tests</h2>
+
+<p>Pre-defined sets of tests can be set up in the top level <em>test-config.yaml</em> configuration file.  When the <em>runtests.py</em> script starts, it looks for the key in <em>global-settings/test-configuration</em>.  The value specified for that key is used to look up test run specific settings.  An example is shown below, where the <em>test-configuration</em> is set to <em>config-quick</em>.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+
+# Global settings
+global-settings:
+    # The active test configuration.  The value must match a subsequent key
+    # in this file, which defines the global settings to apply to the test execution
+    # run.
+    test-configuration: config-quick
+
+config-quick:
+
+</pre>
+</div></div>
+
+<p>A test configuration can exclude tests from a run by using the <em>exclude-tests</em> key.  Each value under that key is a test that will <strong>not</strong> be run when the <em>runtests.py</em> script executes.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+
+# Exclude some long-running tests
+config-quick:
+    exclude-tests:
+        - &#39;authenticate_invalid_password&#39;
+        - &#39;check_voicemail_callback&#39;
+        - &#39;check_voicemail_delete&#39;
+        - &#39;check_voicemail_dialout&#39;
+        - &#39;check_voicemail_envelope&#39;
+        - &#39;check_voicemail_new_user&#39;
+        - &#39;check_voicemail_nominal&#39;
+        - &#39;check_voicemail_reply&#39;
+        - &#39;leave_voicemail_external_notification&#39;
+        - &#39;leave_voicemail_nominal&#39;
+        - &#39;gateway_g711_t38&#39;
+        - &#39;gateway_mix1&#39;
+        - &#39;gateway_mix2&#39;
+        - &#39;gateway_mix3&#39;
+        - &#39;gateway_mix4&#39;
+        - &#39;gateway_native_t38&#39;
+        - &#39;gateway_native_t38_ced&#39;
+        - &#39;gateway_no_t38&#39;
+        - &#39;gateway_t38_g711&#39;
+        - &#39;gateway_timeout1&#39;
+        - &#39;gateway_timeout2&#39;
+        - &#39;gateway_timeout3&#39;
+        - &#39;gateway_timeout4&#39;
+        - &#39;gateway_timeout5&#39;
+
+</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

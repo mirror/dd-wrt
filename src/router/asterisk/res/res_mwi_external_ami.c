@@ -127,8 +127,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/module.h"
 #include "asterisk/res_mwi_external.h"
 #include "asterisk/manager.h"
@@ -344,17 +342,12 @@ static int unload_module(void)
 	ast_manager_unregister("MWIDelete");
 	ast_manager_unregister("MWIUpdate");
 
-	/* Must be done last */
-	ast_mwi_external_unref();
 	return 0;
 }
 
 static int load_module(void)
 {
 	int res;
-
-	/* Must be done first */
-	ast_mwi_external_ref();
 
 	res = 0;
 	res |= ast_manager_register_xml("MWIGet", EVENT_FLAG_CALL | EVENT_FLAG_REPORTING, mwi_mailbox_get);
@@ -368,9 +361,10 @@ static int load_module(void)
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
-AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "AMI support for external MWI",
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "AMI support for external MWI",
 	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
+	.load_pri = AST_MODPRI_CHANNEL_DEPEND - 5,
+	.requires = "res_mwi_external",
 );
-

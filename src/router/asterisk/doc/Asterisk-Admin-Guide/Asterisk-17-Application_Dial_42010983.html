@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_Dial</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_Dial
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span>, last modified on Jan 10, 2020
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_Dial-Dial()">Dial()</h1>
+
+<h3 id="Asterisk17Application_Dial-Synopsis">Synopsis</h3>
+
+<p>Attempt to connect to another device or endpoint and bridge the call.</p>
+
+<h3 id="Asterisk17Application_Dial-Description">Description</h3>
+
+<p>This application will place calls to one or more specified channels. As soon as one of the requested channels answers, the originating channel will be answered, if it has not already been answered. These two channels will then be active in a bridged call. All other channels that were requested will then be hung up.</p>
+
+<p>Unless there is a timeout specified, the Dial application will wait indefinitely until one of the called channels answers, the user hangs up, or if all of the called channels are busy or unavailable. Dialplan execution will continue if no requested channels can be called, or if the timeout expires. This application will report normal termination if the originating channel hangs up, or if the call is bridged and either of the parties in the bridge ends the call.</p>
+
+<p>If the <code>OUTBOUND_GROUP</code> variable is set, all peer channels created by this application will be put into that group (as in <code>Set(GROUP()=...</code>). If the <code>OUTBOUND_GROUP_ONCE</code> variable is set, all peer channels created by this application will be put into that group (as in <code>Set(GROUP()=...</code>). Unlike <code>OUTBOUND_GROUP</code>, however, the variable will be unset after use.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Example: Dial with 30 second timeout</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">
+
+same =&gt; n,Dial(PJSIP/alice,30)
+
+</pre>
+</div></div>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Example: Parallel dial with 45 second timeout</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">
+
+same =&gt; n,Dial(PJSIP/alice&amp;PJIP/bob,45)
+
+</pre>
+</div></div>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Example: Dial with 'g' continuation option</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">
+
+same =&gt; n,Dial(PJSIP/alice,,g)
+same =&gt; n,Log(NOTICE, Alice call result: ${DIALSTATUS})
+
+</pre>
+</div></div>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Example: Dial with transfer/recording features for calling party</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">
+
+same =&gt; n,Dial(PJSIP/alice,,TX)
+
+</pre>
+</div></div>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Example: Dial with call length limit</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">
+
+same =&gt; n,Dial(PJSIP/alice,,L(60000:30000:10000))
+
+</pre>
+</div></div>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Example: Dial alice and bob and send NO_ANSWER to bob instead of ANSWERED_ELSEWHERE when alice answers</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">
+
+same =&gt; n,Dial(PJSIP/alice&amp;PJSIP/bob,,Q(NO_ANSWER))
+
+</pre>
+</div></div>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Example: Dial with pre-dial subroutines</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">
+
+[default]
+
+exten =&gt; callee_channel,1,NoOp(ARG1=${ARG1} ARG2=${ARG2})
+same =&gt; n,Log(NOTICE, I&#39;m called on channel ${CHANNEL} prior to it starting the dial attempt)
+same =&gt; n,Return()
+
+exten =&gt; called_channel,1,NoOp(ARG1=${ARG1} ARG2=${ARG2})
+same =&gt; n,Log(NOTICE, I&#39;m called on outbound channel ${CHANNEL} prior to it being used to dial someone)
+same =&gt; n,Return()
+
+exten =&gt; _X.,1,NoOp()
+same =&gt; n,Dial(PJSIP/alice,,b(default^called_channel^1(my_gosub_arg1^my_gosub_arg2))B(default^callee_channel^1(my_gosub_arg1^my_gosub_arg2)))
+same =&gt; n,Hangup()
+
+</pre>
+</div></div>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Example: Dial with post-answer subroutine executed on outbound channel</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">
+
+[my_gosub_routine]
+
+exten =&gt; s,1,NoOp(ARG1=${ARG1} ARG2=${ARG2})
+same =&gt; n,Playback(hello)
+same =&gt; n,Return()
+
+[default]
+
+exten =&gt; _X.,1,NoOp()
+same =&gt; n,Dial(PJSIP/alice,,U(my_gosub_routine^my_gosub_arg1^my_gosub_arg2))
+same =&gt; n,Hangup()
+
+</pre>
+</div></div>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Example: Dial into ConfBridge using 'G' option</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">
+
+same =&gt; n,Dial(PJSIP/alice,,G(jump_to_here))
+same =&gt; n(jump_to_here),Goto(confbridge)
+same =&gt; n,Goto(confbridge)
+same =&gt; n(confbridge),ConfBridge(${EXTEN})
+
+</pre>
+</div></div>
+<p>This application sets the following channel variables:</p>
+
+<ul>
+	<li><code>DIALEDTIME</code> - This is the time from dialing a channel until when it is disconnected.</li>
+	<li><code>DIALEDTIME_MS</code> - This is the milliseconds version of the DIALEDTIME variable.</li>
+	<li><code>ANSWEREDTIME</code> - This is the amount of time for actual call.</li>
+	<li><code>ANSWEREDTIME_MS</code> - This is the milliseconds version of the ANSWEREDTIME variable.</li>
+	<li><code>RINGTIME</code> - This is the time from creating the channel to the first RINGING event received. Empty if there was no ring.</li>
+	<li><code>RINGTIME_MS</code> - This is the milliseconds version of the RINGTIME variable.</li>
+	<li><code>PROGRESSTIME</code> - This is the time from creating the channel to the first PROGRESS event received. Empty if there was no such event.</li>
+	<li><code>PROGRESSTIME_MS</code> - This is the milliseconds version of the PROGRESSTIME variable.</li>
+	<li><code>DIALEDPEERNAME</code> - The name of the outbound channel that answered the call.</li>
+	<li><code>DIALEDPEERNUMBER</code> - The number that was dialed for the answered outbound channel.</li>
+	<li><code>FORWARDERNAME</code> - If a call forward occurred, the name of the forwarded channel.</li>
+	<li><code>DIALSTATUS</code> - This is the status of the call
+	<ul>
+		<li>CHANUNAVAIL</li>
+		<li>CONGESTION</li>
+		<li>NOANSWER</li>
+		<li>BUSY</li>
+		<li>ANSWER</li>
+		<li>CANCEL</li>
+		<li>DONTCALL - For the Privacy and Screening Modes. Will be set if the called party chooses to send the calling party to the 'Go Away' script.</li>
+		<li>TORTURE - For the Privacy and Screening Modes. Will be set if the called party chooses to send the calling party to the 'torture' script.</li>
+		<li>INVALIDARGS</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_Dial-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Dial(Technology/Resource&amp;[Technology2/Resource2[&amp;...]],[timeout,[options,[URL]]]])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_Dial-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>Technology/Resource</code>
+	<ul>
+		<li><code><strong>Technology/Resource</strong></code> - Specification of the device(s) to dial. These must be in the format of <code>Technology/Resource</code>, where <em>Technology</em> represents a particular channel driver, and <em>Resource</em> represents a resource available to that particular channel driver.</li>
+		<li><code>Technology2/Resource2</code>[,<code>Technology2/Resource2</code>...] - Optional extra devices to dial in parallel<br />
+If you need more than one enter them as Technology2/Resource2&amp;Technology3/Resource3&amp;.....</li>
+	</ul>
+	</li>
+	<li><code>timeout</code> - Specifies the number of seconds we attempt to dial the specified devices.<br />
+If not specified, this defaults to 136 years.</li>
+	<li><code>options</code>
+	<ul>
+		<li><code>A</code><code>( <strong>x</strong> )</code> - Play an announcement to the called party, where <em>x</em> is the prompt to be played
+		<ul>
+			<li><code><strong>x</strong></code> - The file to play to the called party</li>
+		</ul>
+		</li>
+		<li><code>a</code> - Immediately answer the calling channel when the called channel answers in all cases. Normally, the calling channel is answered when the called channel answers, but when options such as <code>A()</code> and <code>M()</code> are used, the calling channel is not answered until all actions on the called channel (such as playing an announcement) are completed. This option can be used to answer the calling channel before doing anything on the called channel. You will rarely need to use this option, the default behavior is adequate in most cases.</li>
+		<li><code>b</code><code>( context^exten^<strong>priority</strong> )</code> - Before initiating an outgoing call, <code>Gosub</code> to the specified location using the newly created channel. The <code>Gosub</code> will be executed for each destination channel.
+		<ul>
+			<li><code>context</code></li>
+			<li><code>exten</code></li>
+			<li><code><strong>priority</strong></code><code>( params )</code>
+			<ul>
+				<li><code><strong>arg1</strong></code>[^<code>arg1</code>...]</li>
+				<li><code>argN</code></li>
+			</ul>
+			</li>
+		</ul>
+		</li>
+		<li><code>B</code><code>( context^exten^<strong>priority</strong> )</code> - Before initiating the outgoing call(s), <code>Gosub</code> to the specified location using the current channel.
+		<ul>
+			<li><code>context</code></li>
+			<li><code>exten</code></li>
+			<li><code><strong>priority</strong></code><code>( params )</code>
+			<ul>
+				<li><code><strong>arg1</strong></code>[^<code>arg1</code>...]</li>
+				<li><code>argN</code></li>
+			</ul>
+			</li>
+		</ul>
+		</li>
+		<li><code>C</code> - Reset the call detail record (CDR) for this call.</li>
+		<li><code>c</code> - If the Dial() application cancels this call, always set <code>HANGUPCAUSE</code> to 'answered elsewhere'</li>
+		<li><code>d</code> - Allow the calling user to dial a 1 digit extension while waiting for a call to be answered. Exit to that extension if it exists in the current context, or the context defined in the <code>EXITCONTEXT</code> variable, if it exists.<br />
+NOTE: Many SIP and ISDN phones cannot send DTMF digits until the call is connected. If you wish to use this option with these phones, you can use the <code>Answer</code> application before dialing.</li>
+		<li><code>D</code><code>( called:calling:progress )</code> - Send the specified DTMF strings <strong>after</strong> the called party has answered, but before the call gets bridged. The <em>called</em> DTMF string is sent to the called party, and the <em>calling</em> DTMF string is sent to the calling party. Both arguments can be used alone. If <em>progress</em> is specified, its DTMF is sent to the called party immediately after receiving a <code>PROGRESS</code> message.<br />
+See <code>SendDTMF</code> for valid digits.
+		<ul>
+			<li><code>called</code></li>
+			<li><code>calling</code></li>
+			<li><code>progress</code></li>
+		</ul>
+		</li>
+		<li><code>e</code> - Execute the <code>h</code> extension for peer after the call ends</li>
+		<li><code>f</code><code>( x )</code> - If <em>x</em> is not provided, force the CallerID sent on a call-forward or deflection to the dialplan extension of this <code>Dial()</code> using a dialplan <code>hint</code>. For example, some PSTNs do not allow CallerID to be set to anything other than the numbers assigned to you. If <em>x</em> is provided, force the CallerID sent to <em>x</em>.
+		<ul>
+			<li><code>x</code></li>
+		</ul>
+		</li>
+		<li><code>F</code><code>( context^exten^<strong>priority</strong> )</code> - When the caller hangs up, transfer the <strong>called</strong> party to the specified destination and <strong>start</strong> execution at that location.<br />
+NOTE: Any channel variables you want the called channel to inherit from the caller channel must be prefixed with one or two underbars ('_').
+		<ul>
+			<li><code>context</code></li>
+			<li><code>exten</code></li>
+			<li><code><strong>priority</strong></code></li>
+		</ul>
+		</li>
+		<li><code>F</code> - When the caller hangs up, transfer the <strong>called</strong> party to the next priority of the current extension and <strong>start</strong> execution at that location.<br />
+NOTE: Any channel variables you want the called channel to inherit from the caller channel must be prefixed with one or two underbars ('_').<br />
+NOTE: Using this option from a Macro() or GoSub() might not make sense as there would be no return points.</li>
+		<li><code>g</code> - Proceed with dialplan execution at the next priority in the current extension if the destination channel hangs up.</li>
+		<li><code>G</code><code>( context^exten^<strong>priority</strong> )</code> - If the call is answered, transfer the calling party to the specified <em>priority</em> and the called party to the specified <em>priority</em> plus one.<br />
+NOTE: You cannot use any additional action post answer options in conjunction with this option.
+		<ul>
+			<li><code>context</code></li>
+			<li><code>exten</code></li>
+			<li><code><strong>priority</strong></code></li>
+		</ul>
+		</li>
+		<li><code>h</code> - Allow the called party to hang up by sending the DTMF sequence defined for disconnect in <code>features.conf</code>.</li>
+		<li><code>H</code> - Allow the calling party to hang up by sending the DTMF sequence defined for disconnect in <code>features.conf</code>.<br />
+NOTE: Many SIP and ISDN phones cannot send DTMF digits until the call is connected. If you wish to allow DTMF disconnect before the dialed party answers with these phones, you can use the <code>Answer</code> application before dialing.</li>
+		<li><code>i</code> - Asterisk will ignore any forwarding requests it may receive on this dial attempt.</li>
+		<li><code>I</code> - Asterisk will ignore any connected line update requests or any redirecting party update requests it may receive on this dial attempt.</li>
+		<li><code>k</code> - Allow the called party to enable parking of the call by sending the DTMF sequence defined for call parking in <code>features.conf</code>.</li>
+		<li><code>K</code> - Allow the calling party to enable parking of the call by sending the DTMF sequence defined for call parking in <code>features.conf</code>.</li>
+		<li><code>L</code><code>( <strong>x</strong>:y:z )</code> - Limit the call to <em>x</em> milliseconds. Play a warning when <em>y</em> milliseconds are left. Repeat the warning every <em>z</em> milliseconds until time expires.<br />
+This option is affected by the following variables:
+		<ul>
+			<li><code>LIMIT_PLAYAUDIO_CALLER</code> - If set, this variable causes Asterisk to play the prompts to the caller.
+			<ul>
+				<li>YES default: (true)</li>
+				<li>NO</li>
+			</ul>
+			</li>
+			<li><code>LIMIT_PLAYAUDIO_CALLEE</code> - If set, this variable causes Asterisk to play the prompts to the callee.
+			<ul>
+				<li>YES</li>
+				<li>NO default: (true)</li>
+			</ul>
+			</li>
+			<li><code>LIMIT_TIMEOUT_FILE</code> - If specified, <em>filename</em> specifies the sound prompt to play when the timeout is reached. If not set, the time remaining will be announced.
+			<ul>
+				<li>FILENAME</li>
+			</ul>
+			</li>
+			<li><code>LIMIT_CONNECT_FILE</code> - If specified, <em>filename</em> specifies the sound prompt to play when the call begins. If not set, the time remaining will be announced.
+			<ul>
+				<li>FILENAME</li>
+			</ul>
+			</li>
+			<li><code>LIMIT_WARNING_FILE</code> - If specified, <em>filename</em> specifies the sound prompt to play as a warning when time <em>x</em> is reached. If not set, the time remaining will be announced.
+			<ul>
+				<li>FILENAME</li>
+			</ul>
+			</li>
+			<li><code><strong>x</strong></code> - Maximum call time, in milliseconds</li>
+			<li><code>y</code> - Warning time, in milliseconds</li>
+			<li><code>z</code> - Repeat time, in milliseconds</li>
+		</ul>
+		</li>
+		<li><code>m</code><code>( class )</code> - Provide hold music to the calling party until a requested channel answers. A specific music on hold <em>class</em> (as defined in <code>musiconhold.conf</code>) can be specified.
+		<ul>
+			<li><code>class</code></li>
+		</ul>
+		</li>
+		<li><code>M</code><code>( <strong>macro</strong>^arg )</code> - Execute the specified <em>macro</em> for the <strong>called</strong> channel before connecting to the calling channel. Arguments can be specified to the Macro using <code>^</code> as a delimiter. The macro can set the variable <code>MACRO_RESULT</code> to specify the following actions after the macro is finished executing:<br />
+NOTE: You cannot use any additional action post answer options in conjunction with this option. Also, pbx services are run on the peer (called) channel, so you will not be able to set timeouts via the <code>TIMEOUT()</code> function in this macro.<br />
+WARNING: Be aware of the limitations that macros have, specifically with regards to use of the <code>WaitExten</code> application. For more information, see the documentation for <code>Macro()</code>.<br />
+NOTE: Macros are deprecated, GoSub should be used instead, see the <code>U</code> option.
+		<ul>
+			<li><code>MACRO_RESULT</code> - If set, this action will be taken after the macro finished executing.
+			<ul>
+				<li>ABORT - Hangup both legs of the call</li>
+				<li>CONGESTION - Behave as if line congestion was encountered</li>
+				<li>BUSY - Behave as if a busy signal was encountered</li>
+				<li>CONTINUE - Hangup the called party and allow the calling party to continue dialplan execution at the next priority</li>
+				<li>GOTO:[[&lt;CONTEXT&gt;^]&lt;EXTEN&gt;^]&lt;PRIORITY&gt; - Transfer the call to the specified destination.</li>
+			</ul>
+			</li>
+			<li><code><strong>macro</strong></code> - Name of the macro that should be executed.</li>
+			<li><code>arg</code>[^<code>arg</code>...] - Macro arguments</li>
+		</ul>
+		</li>
+		<li><code>n</code><code>( delete )</code> - This option is a modifier for the call screening/privacy mode. (See the <code>p</code> and <code>P</code> options.) It specifies that no introductions are to be saved in the <code>priv-callerintros</code> directory.
+		<ul>
+			<li><code>delete</code> - With <em>delete</em> either not specified or set to <code>0</code>, the recorded introduction will not be deleted if the caller hangs up while the remote party has not yet answered.<br />
+With <em>delete</em> set to <code>1</code>, the introduction will always be deleted.</li>
+		</ul>
+		</li>
+		<li><code>N</code> - This option is a modifier for the call screening/privacy mode. It specifies that if CallerID is present, do not screen the call.</li>
+		<li><code>o</code><code>( x )</code> - If <em>x</em> is not provided, specify that the CallerID that was present on the <strong>calling</strong> channel be stored as the CallerID on the <strong>called</strong> channel. This was the behavior of Asterisk 1.0 and earlier. If <em>x</em> is provided, specify the CallerID stored on the <strong>called</strong> channel. Note that <code>o(${CALLERID(all)})</code> is similar to option <code>o</code> without the parameter.
+		<ul>
+			<li><code>x</code></li>
+		</ul>
+		</li>
+		<li><code>O</code><code>( mode )</code> - Enables <strong>operator services</strong> mode. This option only works when bridging a DAHDI channel to another DAHDI channel only. if specified on non-DAHDI interfaces, it will be ignored. When the destination answers (presumably an operator services station), the originator no longer has control of their line. They may hang up, but the switch will not release their line until the destination party (the operator) hangs up.
+		<ul>
+			<li><code>mode</code> - With <em>mode</em> either not specified or set to <code>1</code>, the originator hanging up will cause the phone to ring back immediately.<br />
+With <em>mode</em> set to <code>2</code>, when the operator flashes the trunk, it will ring their phone back.</li>
+		</ul>
+		</li>
+		<li><code>p</code> - This option enables screening mode. This is basically Privacy mode without memory.</li>
+		<li><code>P</code><code>( x )</code> - Enable privacy mode. Use <em>x</em> as the family/key in the AstDB database if it is provided. The current extension is used if a database family/key is not specified.
+		<ul>
+			<li><code>x</code></li>
+		</ul>
+		</li>
+		<li><code>Q</code><code>( <strong>cause</strong> )</code> - Specify the Q.850/Q.931 <em>cause</em> to send on unanswered channels when another channel answers the call. As with <code>Hangup()</code>, <em>cause</em> can be a numeric cause code or a name such as <code>NO_ANSWER</code>, <code>USER_BUSY</code>, <code>CALL_REJECTED</code> or <code>ANSWERED_ELSEWHERE</code> (the default if Q isn't specified). You can also specify <code>0</code> or <code>NONE</code> to send no cause. See the <code>causes.h</code> file for the full list of valid causes and names.<br />
+NOTE: chan_sip does not support setting the cause on a CANCEL to anything other than ANSWERED_ELSEWHERE.
+		<ul>
+			<li><code><strong>cause</strong></code></li>
+		</ul>
+		</li>
+		<li><code>r</code><code>( tone )</code> - Default: Indicate ringing to the calling party, even if the called party isn't actually ringing. Pass no audio to the calling party until the called channel has answered.
+		<ul>
+			<li><code>tone</code> - Indicate progress to calling party. Send audio 'tone' from the <code>indications.conf</code> tonezone currently in use.</li>
+		</ul>
+		</li>
+		<li><code>R</code> - Default: Indicate ringing to the calling party, even if the called party isn't actually ringing. Allow interruption of the ringback if early media is received on the channel.</li>
+		<li><code>S</code><code>( <strong>x</strong> )</code> - Hang up the call <em>x</em> seconds <strong>after</strong> the called party has answered the call.
+		<ul>
+			<li><code><strong>x</strong></code></li>
+		</ul>
+		</li>
+		<li><code>s</code><code>( <strong>x</strong> )</code> - Force the outgoing CallerID tag parameter to be set to the string <em>x</em>.<br />
+Works with the <code>f</code> option.
+		<ul>
+			<li><code><strong>x</strong></code></li>
+		</ul>
+		</li>
+		<li><code>t</code> - Allow the called party to transfer the calling party by sending the DTMF sequence defined in <code>features.conf</code>. This setting does not perform policy enforcement on transfers initiated by other methods.</li>
+		<li><code>T</code> - Allow the calling party to transfer the called party by sending the DTMF sequence defined in <code>features.conf</code>. This setting does not perform policy enforcement on transfers initiated by other methods.</li>
+		<li><code>U</code><code>( <strong>x</strong>^arg )</code> - Execute via <code>Gosub</code> the routine <em>x</em> for the <strong>called</strong> channel before connecting to the calling channel. Arguments can be specified to the <code>Gosub</code> using <code>^</code> as a delimiter. The <code>Gosub</code> routine can set the variable <code>GOSUB_RESULT</code> to specify the following actions after the <code>Gosub</code> returns.<br />
+NOTE: You cannot use any additional action post answer options in conjunction with this option. Also, pbx services are run on the <strong>called</strong> channel, so you will not be able to set timeouts via the <code>TIMEOUT()</code> function in this routine.
+		<ul>
+			<li><code>GOSUB_RESULT</code>
+			<ul>
+				<li>ABORT - Hangup both legs of the call.</li>
+				<li>CONGESTION - Behave as if line congestion was encountered.</li>
+				<li>BUSY - Behave as if a busy signal was encountered.</li>
+				<li>CONTINUE - Hangup the called party and allow the calling party to continue dialplan execution at the next priority.</li>
+				<li>GOTO:[[&lt;CONTEXT&gt;^]&lt;EXTEN&gt;^]&lt;PRIORITY&gt; - Transfer the call to the specified destination.</li>
+			</ul>
+			</li>
+			<li><code><strong>x</strong></code> - Name of the subroutine context to execute via <code>Gosub</code>. The subroutine execution starts in the named context at the s exten and priority 1.</li>
+			<li><code>arg</code>[^<code>arg</code>...] - Arguments for the <code>Gosub</code> routine</li>
+		</ul>
+		</li>
+		<li><code>u</code><code>( <strong>x</strong> )</code> - Works with the <code>f</code> option.
+		<ul>
+			<li><code><strong>x</strong></code> - Force the outgoing callerid presentation indicator parameter to be set to one of the values passed in <em>x</em>: <code>allowed_not_screened</code> <code>allowed_passed_screen</code> <code>allowed_failed_screen</code> <code>allowed</code> <code>prohib_not_screened</code> <code>prohib_passed_screen</code> <code>prohib_failed_screen</code> <code>prohib</code> <code>unavailable</code></li>
+		</ul>
+		</li>
+		<li><code>w</code> - Allow the called party to enable recording of the call by sending the DTMF sequence defined for one-touch recording in <code>features.conf</code>.</li>
+		<li><code>W</code> - Allow the calling party to enable recording of the call by sending the DTMF sequence defined for one-touch recording in <code>features.conf</code>.</li>
+		<li><code>x</code> - Allow the called party to enable recording of the call by sending the DTMF sequence defined for one-touch automixmonitor in <code>features.conf</code>.</li>
+		<li><code>X</code> - Allow the calling party to enable recording of the call by sending the DTMF sequence defined for one-touch automixmonitor in <code>features.conf</code>.</li>
+		<li><code>z</code> - On a call forward, cancel any dial timeout which has been set for this call.</li>
+	</ul>
+	</li>
+	<li><code>URL</code> - The optional URL will be sent to the called party if the channel driver supports it.</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_Dial-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Application_RetryDial_42010984.html">Asterisk 17 Application_RetryDial</a></li>
+	<li><a href="Asterisk-17-Application_SendDTMF_42010861.html">Asterisk 17 Application_SendDTMF</a></li>
+	<li><a href="Asterisk-17-Application_Gosub_42010832.html">Asterisk 17 Application_Gosub</a></li>
+	<li><a href="Asterisk-17-Application_Macro_42010957.html">Asterisk 17 Application_Macro</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Application_Dial-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-5dda6d4</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

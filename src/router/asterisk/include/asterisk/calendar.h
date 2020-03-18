@@ -129,11 +129,12 @@ struct ast_calendar {
 	int autoreminder;    /*!< If set, override any calendar_tech specific notification times and use this time (in mins) */
 	int notify_waittime; /*!< Maxiumum time to allow for a notification attempt */
 	int refresh;         /*!< When to refresh the calendar events */
+	int fetch_again_at_reload; /*!< To reload the calendar content when the module is reloaded */
 	int timeframe;       /*!< Span (in mins) of calendar data to pull with each request */
 	pthread_t thread;    /*!< The thread that the calendar is loaded/updated in */
 	ast_cond_t unload;
-	int unloading:1;
-	int pending_deletion:1;
+	unsigned int unloading:1;
+	unsigned int pending_deletion:1;
 	struct ao2_container *events;  /*!< The events that are known at this time */
 };
 
@@ -176,7 +177,7 @@ struct ao2_container *ast_calendar_event_container_alloc(void);
  */
 void ast_calendar_merge_events(struct ast_calendar *cal, struct ao2_container *new_events);
 
-/*! \brief Unreference an ast_calendar_event 
+/*! \brief Unreference an ast_calendar_event
  *
  * \param event event to unref
  *
@@ -184,7 +185,7 @@ void ast_calendar_merge_events(struct ast_calendar *cal, struct ao2_container *n
  */
 struct ast_calendar_event *ast_calendar_unref_event(struct ast_calendar_event *event);
 
-/*! \brief Remove all events from calendar 
+/*! \brief Remove all events from calendar
  *
  * \param cal calendar whose events need to be cleared
  */

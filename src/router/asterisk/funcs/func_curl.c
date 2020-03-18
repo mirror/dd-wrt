@@ -18,26 +18,24 @@
  */
 
 /*! \file
- * 
+ *
  * \brief Curl - Load a URL
  *
  * \author Tilghman Lesher <curl-20050919@the-tilghman.com>
  *
- * \note Brian Wilkins <bwilkins@cfl.rr.com> (Added POST option) 
+ * \note Brian Wilkins <bwilkins@cfl.rr.com> (Added POST option)
  *
  * \extref Depends on the CURL library  - http://curl.haxx.se/
- * 
+ *
  * \ingroup functions
  */
- 
+
 /*** MODULEINFO
 	<depend>curl</depend>
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <curl/curl.h>
 
@@ -58,15 +56,39 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			Retrieve content from a remote web or ftp server
 		</synopsis>
 		<syntax>
-			<parameter name="url" required="true" />
+			<parameter name="url" required="true">
+				<para>The full URL for the resource to retrieve.</para>
+			</parameter>
 			<parameter name="post-data">
+				<para><emphasis>Read Only</emphasis></para>
 				<para>If specified, an <literal>HTTP POST</literal> will be
 				performed with the content of
 				<replaceable>post-data</replaceable>, instead of an
 				<literal>HTTP GET</literal> (default).</para>
 			</parameter>
 		</syntax>
-		<description />
+		<description>
+			<para>When this function is read, a <literal>HTTP GET</literal>
+			(by default) will be used to retrieve the contents of the provided
+			<replaceable>url</replaceable>. The contents are returned as the
+			result of the function.</para>
+			<example title="Displaying contents of a page" language="text">
+			exten => s,1,Verbose(0, ${CURL(http://localhost:8088/static/astman.css)})
+			</example>
+			<para>When this function is written to, a <literal>HTTP GET</literal>
+			will be used to retrieve the contents of the provided
+			<replaceable>url</replaceable>. The value written to the function
+			specifies the destination file of the cURL'd resource.</para>
+			<example title="Retrieving a file" language="text">
+			exten => s,1,Set(CURL(http://localhost:8088/static/astman.css)=/var/spool/asterisk/tmp/astman.css))
+			</example>
+			<note>
+				<para>If <literal>live_dangerously</literal> in <literal>asterisk.conf</literal>
+				is set to <literal>no</literal>, this function can only be written to from the
+				dialplan, and not directly from external protocols. Read operations are
+				unaffected.</para>
+			</note>
+		</description>
 		<see-also>
 			<ref type="function">CURLOPT</ref>
 		</see-also>
@@ -88,6 +110,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 					<enum name="dnstimeout">
 						<para>Number of seconds to wait for DNS to be resolved</para>
 					</enum>
+					<enum name="followlocation">
+						<para>Whether or not to follow HTTP 3xx redirects (boolean)</para>
+					</enum>
 					<enum name="ftptext">
 						<para>For FTP URIs, force a text transfer (boolean)</para>
 					</enum>
@@ -99,12 +124,19 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 						<para>Include header information in the result
 						(boolean)</para>
 					</enum>
+					<enum name="httpheader">
+						<para>Add HTTP header. Multiple calls add multiple headers.
+						Setting of any header will remove the default
+						"Content-Type application/x-www-form-urlencoded"</para>
+					</enum>
 					<enum name="httptimeout">
 						<para>For HTTP(S) URIs, number of seconds to wait for a
 						server response</para>
 					</enum>
 					<enum name="maxredirs">
-						<para>Maximum number of redirects to follow</para>
+						<para>Maximum number of redirects to follow. The default is -1,
+						which allows for unlimited redirects. This only makes sense when
+						followlocation is also set.</para>
 					</enum>
 					<enum name="proxy">
 						<para>Hostname or IP address to use as a proxy server</para>
@@ -159,7 +191,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		</syntax>
 		<description>
 			<para>Options may be set globally or per channel.  Per-channel
-			settings will override global settings.</para>
+			settings will override global settings. Only HTTP headers are added instead of overriding</para>
 		</description>
 		<see-also>
 			<ref type="function">CURL</ref>
@@ -196,7 +228,7 @@ static void curlds_free(void *data)
 		return;
 	}
 	while ((setting = AST_LIST_REMOVE_HEAD(list, list))) {
-		free(setting);
+		ast_free(setting);
 	}
 	AST_LIST_HEAD_DESTROY(list);
 	ast_free(list);
@@ -221,6 +253,9 @@ static int parse_curlopt_key(const char *name, CURLoption *key, enum optiontype 
 	if (!strcasecmp(name, "header")) {
 		*key = CURLOPT_HEADER;
 		*ot = OT_BOOLEAN;
+	} else if (!strcasecmp(name, "httpheader")) {
+		*key = CURLOPT_HTTPHEADER;
+		*ot = OT_STRING;
 	} else if (!strcasecmp(name, "proxy")) {
 		*key = CURLOPT_PROXY;
 		*ot = OT_STRING;
@@ -239,6 +274,9 @@ static int parse_curlopt_key(const char *name, CURLoption *key, enum optiontype 
 	} else if (!strcasecmp(name, "proxyuserpwd")) {
 		*key = CURLOPT_PROXYUSERPWD;
 		*ot = OT_STRING;
+	} else if (!strcasecmp(name, "followlocation")) {
+		*key = CURLOPT_FOLLOWLOCATION;
+		*ot = OT_BOOLEAN;
 	} else if (!strcasecmp(name, "maxredirs")) {
 		*key = CURLOPT_MAXREDIRS;
 		*ot = OT_INTEGER;
@@ -390,16 +428,18 @@ yuck:
 		return -1;
 	}
 
-	/* Remove any existing entry */
+	/* Remove any existing entry, only http headers are left */
 	AST_LIST_LOCK(list);
-	AST_LIST_TRAVERSE_SAFE_BEGIN(list, cur, list) {
-		if (cur->key == new->key) {
-			AST_LIST_REMOVE_CURRENT(list);
-			free(cur);
-			break;
+	if (new->key != CURLOPT_HTTPHEADER) {
+		AST_LIST_TRAVERSE_SAFE_BEGIN(list, cur, list) {
+			if (cur->key == new->key) {
+				AST_LIST_REMOVE_CURRENT(list);
+				ast_free(cur);
+				break;
+			}
 		}
+		AST_LIST_TRAVERSE_SAFE_END
 	}
-	AST_LIST_TRAVERSE_SAFE_END
 
 	/* Insert new entry */
 	ast_debug(1, "Inserting entry %p with key %d and value %p\n", new, new->key, new->value);
@@ -526,16 +566,27 @@ static int acf_curlopt_read2(struct ast_channel *chan, const char *cmd, char *da
 	return acf_curlopt_helper(chan, cmd, data, NULL, buf, len);
 }
 
+/*! \brief Callback data passed to \ref WriteMemoryCallback */
+struct curl_write_callback_data {
+	/*! \brief If a string is being built, the string buffer */
+	struct ast_str *str;
+	/*! \brief The max size of \ref str */
+	ssize_t len;
+	/*! \brief If a file is being retrieved, the file to write to */
+	FILE *out_file;
+};
+
 static size_t WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *data)
 {
-	register int realsize = size * nmemb;
-	struct ast_str **pstr = (struct ast_str **)data;
+	register int realsize = 0;
+	struct curl_write_callback_data *cb_data = data;
 
-	ast_debug(3, "Called with data=%p, str=%p, realsize=%d, len=%zu, used=%zu\n", data, *pstr, realsize, ast_str_size(*pstr), ast_str_strlen(*pstr));
-
-	ast_str_append_substr(pstr, 0, ptr, realsize);
-
-	ast_debug(3, "Now, len=%zu, used=%zu\n", ast_str_size(*pstr), ast_str_strlen(*pstr));
+	if (cb_data->str) {
+		realsize = size * nmemb;
+		ast_str_append_substr(&cb_data->str, 0, ptr, realsize);
+	} else if (cb_data->out_file) {
+		realsize = fwrite(ptr, size, nmemb, cb_data->out_file);
+	}
 
 	return realsize;
 }
@@ -594,45 +645,35 @@ static int url_is_vulnerable(const char *url)
 	return 0;
 }
 
-static int acf_curl_helper(struct ast_channel *chan, const char *cmd, char *info, char *buf, struct ast_str **input_str, ssize_t len)
+struct curl_args {
+	const char *url;
+	const char *postdata;
+	struct curl_write_callback_data cb_data;
+};
+
+static int acf_curl_helper(struct ast_channel *chan, struct curl_args *args)
 {
 	struct ast_str *escapebuf = ast_str_thread_get(&thread_escapebuf, 16);
-	struct ast_str *str = ast_str_create(16);
 	int ret = -1;
-	AST_DECLARE_APP_ARGS(args,
-		AST_APP_ARG(url);
-		AST_APP_ARG(postdata);
-	);
 	CURL **curl;
 	struct curl_settings *cur;
+	struct curl_slist *headers = NULL;
 	struct ast_datastore *store = NULL;
 	int hashcompat = 0;
 	AST_LIST_HEAD(global_curl_info, curl_settings) *list = NULL;
 	char curl_errbuf[CURL_ERROR_SIZE + 1]; /* add one to be safe */
 
-	if (buf) {
-		*buf = '\0';
-	}
-
-	if (!str) {
-		return -1;
-	}
-
 	if (!escapebuf) {
-		ast_free(str);
 		return -1;
 	}
 
-	if (ast_strlen_zero(info)) {
-		ast_log(LOG_WARNING, "CURL requires an argument (URL)\n");
-		ast_free(str);
+	if (!(curl = ast_threadstorage_get(&curl_instance, sizeof(*curl)))) {
+		ast_log(LOG_ERROR, "Cannot allocate curl structure\n");
 		return -1;
 	}
 
-	AST_STANDARD_APP_ARGS(args, info);
-
-	if (url_is_vulnerable(args.url)) {
-		ast_log(LOG_ERROR, "URL '%s' is vulnerable to HTTP injection attacks. Aborting CURL() call.\n", args.url);
+	if (url_is_vulnerable(args->url)) {
+		ast_log(LOG_ERROR, "URL '%s' is vulnerable to HTTP injection attacks. Aborting CURL() call.\n", args->url);
 		return -1;
 	}
 
@@ -640,40 +681,47 @@ static int acf_curl_helper(struct ast_channel *chan, const char *cmd, char *info
 		ast_autoservice_start(chan);
 	}
 
-	if (!(curl = ast_threadstorage_get(&curl_instance, sizeof(*curl)))) {
-		ast_log(LOG_ERROR, "Cannot allocate curl structure\n");
-		ast_free(str);
-		return -1;
-	}
-
 	AST_LIST_LOCK(&global_curl_info);
 	AST_LIST_TRAVERSE(&global_curl_info, cur, list) {
 		if (cur->key == CURLOPT_SPECIAL_HASHCOMPAT) {
 			hashcompat = (long) cur->value;
+		} else if (cur->key == CURLOPT_HTTPHEADER) {
+			headers = curl_slist_append(headers, (char*) cur->value);
 		} else {
 			curl_easy_setopt(*curl, cur->key, cur->value);
 		}
 	}
 	AST_LIST_UNLOCK(&global_curl_info);
 
-	if (chan && (store = ast_channel_datastore_find(chan, &curl_info, NULL))) {
-		list = store->data;
-		AST_LIST_LOCK(list);
-		AST_LIST_TRAVERSE(list, cur, list) {
-			if (cur->key == CURLOPT_SPECIAL_HASHCOMPAT) {
-				hashcompat = (long) cur->value;
-			} else {
-				curl_easy_setopt(*curl, cur->key, cur->value);
+	if (chan) {
+		ast_channel_lock(chan);
+		store = ast_channel_datastore_find(chan, &curl_info, NULL);
+		ast_channel_unlock(chan);
+		if (store) {
+			list = store->data;
+			AST_LIST_LOCK(list);
+			AST_LIST_TRAVERSE(list, cur, list) {
+				if (cur->key == CURLOPT_SPECIAL_HASHCOMPAT) {
+					hashcompat = (long) cur->value;
+				} else if (cur->key == CURLOPT_HTTPHEADER) {
+					headers = curl_slist_append(headers, (char*) cur->value);
+				} else {
+					curl_easy_setopt(*curl, cur->key, cur->value);
+				}
 			}
 		}
 	}
 
-	curl_easy_setopt(*curl, CURLOPT_URL, args.url);
-	curl_easy_setopt(*curl, CURLOPT_FILE, (void *) &str);
+	curl_easy_setopt(*curl, CURLOPT_URL, args->url);
+	curl_easy_setopt(*curl, CURLOPT_FILE, (void *) &args->cb_data);
 
-	if (args.postdata) {
+	if (args->postdata) {
 		curl_easy_setopt(*curl, CURLOPT_POST, 1);
-		curl_easy_setopt(*curl, CURLOPT_POSTFIELDS, args.postdata);
+		curl_easy_setopt(*curl, CURLOPT_POSTFIELDS, args->postdata);
+	}
+
+	if (headers) {
+		curl_easy_setopt(*curl, CURLOPT_HTTPHEADER, headers);
 	}
 
 	/* Temporarily assign a buffer for curl to write errors to. */
@@ -681,7 +729,7 @@ static int acf_curl_helper(struct ast_channel *chan, const char *cmd, char *info
 	curl_easy_setopt(*curl, CURLOPT_ERRORBUFFER, curl_errbuf);
 
 	if (curl_easy_perform(*curl) != 0) {
-		ast_log(LOG_WARNING, "%s ('%s')\n", curl_errbuf, args.url);
+		ast_log(LOG_WARNING, "%s ('%s')\n", curl_errbuf, args->url);
 	}
 
 	/* Reset buffer to NULL so curl doesn't try to write to it when the
@@ -693,20 +741,21 @@ static int acf_curl_helper(struct ast_channel *chan, const char *cmd, char *info
 	if (store) {
 		AST_LIST_UNLOCK(list);
 	}
+	curl_slist_free_all(headers);
 
-	if (args.postdata) {
+	if (args->postdata) {
 		curl_easy_setopt(*curl, CURLOPT_POST, 0);
 	}
 
-	if (ast_str_strlen(str)) {
-		ast_str_trim_blanks(str);
+	if (args->cb_data.str && ast_str_strlen(args->cb_data.str)) {
+		ast_str_trim_blanks(args->cb_data.str);
 
-		ast_debug(3, "str='%s'\n", ast_str_buffer(str));
+		ast_debug(3, "CURL returned str='%s'\n", ast_str_buffer(args->cb_data.str));
 		if (hashcompat) {
-			char *remainder = ast_str_buffer(str);
+			char *remainder = ast_str_buffer(args->cb_data.str);
 			char *piece;
-			struct ast_str *fields = ast_str_create(ast_str_strlen(str) / 2);
-			struct ast_str *values = ast_str_create(ast_str_strlen(str) / 2);
+			struct ast_str *fields = ast_str_create(ast_str_strlen(args->cb_data.str) / 2);
+			struct ast_str *values = ast_str_create(ast_str_strlen(args->cb_data.str) / 2);
 			int rowcount = 0;
 			while (fields && values && (piece = strsep(&remainder, "&"))) {
 				char *name = strsep(&piece, "=");
@@ -720,49 +769,93 @@ static int acf_curl_helper(struct ast_channel *chan, const char *cmd, char *info
 				rowcount++;
 			}
 			pbx_builtin_setvar_helper(chan, "~ODBCFIELDS~", ast_str_buffer(fields));
-			if (buf) {
-				ast_copy_string(buf, ast_str_buffer(values), len);
-			} else {
-				ast_str_set(input_str, len, "%s", ast_str_buffer(values));
-			}
+			ast_str_set(&args->cb_data.str, 0, "%s", ast_str_buffer(values));
 			ast_free(fields);
 			ast_free(values);
-		} else {
-			if (buf) {
-				ast_copy_string(buf, ast_str_buffer(str), len);
-			} else {
-				ast_str_set(input_str, len, "%s", ast_str_buffer(str));
-			}
 		}
 		ret = 0;
 	}
-	ast_free(str);
 
-	if (chan)
+	if (chan) {
 		ast_autoservice_stop(chan);
+	}
 
 	return ret;
 }
 
-static int acf_curl_exec(struct ast_channel *chan, const char *cmd, char *info, char *buf, size_t len)
+static int acf_curl_exec(struct ast_channel *chan, const char *cmd, char *info, struct ast_str **buf, ssize_t len)
 {
-	return acf_curl_helper(chan, cmd, info, buf, NULL, len);
+	struct curl_args curl_params = { 0, };
+	int res;
+
+	AST_DECLARE_APP_ARGS(args,
+		AST_APP_ARG(url);
+		AST_APP_ARG(postdata);
+	);
+
+	AST_STANDARD_APP_ARGS(args, info);
+
+	if (ast_strlen_zero(info)) {
+		ast_log(LOG_WARNING, "CURL requires an argument (URL)\n");
+		return -1;
+	}
+
+	curl_params.url = args.url;
+	curl_params.postdata = args.postdata;
+	curl_params.cb_data.str = ast_str_create(16);
+	if (!curl_params.cb_data.str) {
+		return -1;
+	}
+
+	res = acf_curl_helper(chan, &curl_params);
+	ast_str_set(buf, len, "%s", ast_str_buffer(curl_params.cb_data.str));
+	ast_free(curl_params.cb_data.str);
+
+	return res;
 }
 
-static int acf_curl2_exec(struct ast_channel *chan, const char *cmd, char *info, struct ast_str **buf, ssize_t len)
+static int acf_curl_write(struct ast_channel *chan, const char *cmd, char *name, const char *value)
 {
-	return acf_curl_helper(chan, cmd, info, NULL, buf, len);
+	struct curl_args curl_params = { 0, };
+	int res;
+	char *args_value = ast_strdupa(value);
+	AST_DECLARE_APP_ARGS(args,
+		AST_APP_ARG(file_path);
+	);
+
+	AST_STANDARD_APP_ARGS(args, args_value);
+
+	if (ast_strlen_zero(name)) {
+		ast_log(LOG_WARNING, "CURL requires an argument (URL)\n");
+		return -1;
+	}
+
+	if (ast_strlen_zero(args.file_path)) {
+		ast_log(LOG_WARNING, "CURL requires a file to write\n");
+		return -1;
+	}
+
+	curl_params.url = name;
+	curl_params.cb_data.out_file = fopen(args.file_path, "w");
+	if (!curl_params.cb_data.out_file) {
+		ast_log(LOG_WARNING, "Failed to open file %s: %s (%d)\n",
+			args.file_path,
+			strerror(errno),
+			errno);
+		return -1;
+	}
+
+	res = acf_curl_helper(chan, &curl_params);
+
+	fclose(curl_params.cb_data.out_file);
+
+	return res;
 }
 
 static struct ast_custom_function acf_curl = {
 	.name = "CURL",
-	.synopsis = "Retrieves the contents of a URL",
-	.syntax = "CURL(url[,post-data])",
-	.desc =
-	"  url       - URL to retrieve\n"
-	"  post-data - Optional data to send as a POST (GET is default action)\n",
-	.read = acf_curl_exec,
-	.read2 = acf_curl2_exec,
+	.read2 = acf_curl_exec,
+	.write = acf_curl_write,
 };
 
 static struct ast_custom_function acf_curlopt = {
@@ -773,9 +866,11 @@ static struct ast_custom_function acf_curlopt = {
 "  cookie         - Send cookie with request [none]\n"
 "  conntimeout    - Number of seconds to wait for connection\n"
 "  dnstimeout     - Number of seconds to wait for DNS response\n"
+"  followlocation - Follow HTTP 3xx redirects (boolean)\n"
 "  ftptext        - For FTP, force a text transfer (boolean)\n"
 "  ftptimeout     - For FTP, the server response timeout\n"
 "  header         - Retrieve header information (boolean)\n"
+"  httpheader     - Add new custom http header (string)\n"
 "  httptimeout    - Number of seconds to wait for HTTP response\n"
 "  maxredirs      - Maximum number of redirects to follow\n"
 "  proxy          - Hostname or IP to use as a proxy\n"
@@ -860,14 +955,7 @@ static int load_module(void)
 {
 	int res;
 
-	if (!ast_module_check("res_curl.so")) {
-		if (ast_load_resource("res_curl.so") != AST_MODULE_LOAD_SUCCESS) {
-			ast_log(LOG_ERROR, "Cannot load res_curl, so func_curl cannot be loaded\n");
-			return AST_MODULE_LOAD_DECLINE;
-		}
-	}
-
-	res = ast_custom_function_register(&acf_curl);
+	res = ast_custom_function_register_escalating(&acf_curl, AST_CFE_WRITE);
 	res |= ast_custom_function_register(&acf_curlopt);
 
 	AST_TEST_REGISTER(vulnerable_url);
@@ -876,9 +964,9 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Load external URL",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.load_pri = AST_MODPRI_REALTIME_DEPEND2,
-	);
-
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.load_pri = AST_MODPRI_REALTIME_DEPEND2,
+	.requires = "res_curl",
+);

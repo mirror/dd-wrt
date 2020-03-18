@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : External IVR Interface</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : External IVR Interface
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Sean Bright</span> on May 08, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="ExternalIVRInterface-AsteriskExternalIVRInterface">Asterisk External IVR Interface</h1>
+
+<p>If you load <code>app_externalivr.so</code> in your Asterisk instance, you will have an <code>ExternalIVR</code> application available in your dialplan.  This application implements a simple protocol for bidirectional communication with an external process, while simultaneously playing audio files to the connected channel (without interruption or blocking).</p>
+
+<p>There are two ways to use <code>ExternalIVR</code>; you can execute an application on the local system or you can establish a socket connection to a TCP/IP socket server.</p>
+
+<p>To execute a local application use the form:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+ExternalIVR(/full/path/to/applcation[(arguments)],options)
+</pre>
+</div></div>
+
+<p>The arguments are optional, however if they exist they must be enclosed in parentheses. The external application will be executed in a child process, with its standard file handles connected to the Asterisk process as follows:</p>
+
+<ul>
+	<li><code>stdin</code> (0)  - Events will be received on this handle</li>
+	<li><code>stdout</code> (1) - Commands can be sent on this handle</li>
+	<li><code>stderr</code> (2) - Messages can be sent on this handle</li>
+</ul>
+
+
+    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>Use of <code>stderr</code> for message communication is discouraged because it is not supported by a socket connection.</p>
+                    </div>
+    </div>
+
+
+<p>To create a socket connection use the form:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+ExternalIVR(ivr://host[:port][(arguments)],options)
+</pre>
+</div></div>
+
+<p>The host can be a fully qualified domain name or an IP address (both IPv4 and IPv6 are supported).  The port is optional and, if not specified, is <code>2949</code> by default.  The <code>ExternalIVR</code> application will connect to the specified socket server and establish a bidirectional socket connection, where events will be sent to the TCP/IP server and commands received from it.</p>
+
+<p>The specific <code>ExternalIVR</code> options, <a href="#ExternalIVRInterface-events">#events</a> and <a href="#ExternalIVRInterface-commands">#commands</a> are detailed below.</p>
+
+<p>Upon execution, if not specifically prevented by an option, the <code>ExternalIVR</code> application will answer the channel (if it's not already answered), create an audio generator, and start playing silence. When your application wants to send audio to the channel, it can send a <a href="#ExternalIVRInterface-commands">command</a> to add a file to the generator's playlist. The generator will then work its way through the list, playing each file in turn until it either runs out of files to play, the channel is hung up, or a command is received to clear the list and start with a new file.  At any time, more files can be added to the list and the generator will play them in sequence.</p>
+
+<p>While the generator is playing audio (or silence), any DTMF <a href="#ExternalIVRInterface-events">#events</a> received on the channel will be sent to the child process. Note that this can happen at any time, since the generator, the child process and the channel thread are all executing independently. It is very important that your external application be ready to receive events from Asterisk at all times (without blocking), or you could cause the channel to become non-responsive.</p>
+
+<p>If the child process dies, or the remote server disconnects, <code>ExternalIVR</code> will notice this and hang up the channel immediately (and also send a message to the log). </p>
+
+<h5 id="ExternalIVRInterface-ExternalIVROptions"><code>ExternalIVR</code> Options</h5>
+
+<ul>
+	<li><code>n</code> - 'n'oanswer, don't answer an otherwise unanswered channel.</li>
+	<li><code>i</code> - 'i'gnore_hangup, instead of sending an <code>H</code> event and exiting <code>ExternalIVR</code> upon channel hangup, it instead sends an <code>I</code> event and expects the external application to exit the process.</li>
+	<li><code>d</code> - 'd'ead, allows the operation of <code>ExternalIVR</code> on channels that have already been hung up.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="ExternalIVRInterface-events"></span></p>
+<h5 id="ExternalIVRInterface-Events">Events</h5>
+
+<p>All events are be newline-terminated strings and are sent in the following format:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+tag,timestamp[,data]
+</pre>
+</div></div>
+
+<p>The tag can be one of the following characters:</p>
+
+<ul>
+	<li><code>0-9</code> - DTMF event for keys 0 through 9</li>
+	<li><code>A-D</code> - DTMF event for keys A through D</li>
+	<li><code>*</code> - DTMF event for key *</li>
+	<li><code>#</code> - DTMF event for key #</li>
+	<li><code>H</code> - The channel was hung up by the connected party</li>
+	<li><code>E</code> - The script requested an exit</li>
+	<li><code>Z</code> - The previous command was unable to be executed. There may be a data element if appropriate, see specific commands below for details</li>
+	<li><code>T</code> - The play list was interrupted (see <a href="#ExternalIVRInterface-S-command"><code>S</code> command</a>)</li>
+	<li><code>D</code> - A file was dropped from the play list due to interruption (the data element will be the dropped file name) NOTE: this tag conflicts with the <code>D</code> DTMF event tag. The existence of the data element is used to differentiate between the two cases</li>
+	<li><code>F</code> - A file has finished playing (the data element will be the file name)</li>
+	<li><code>P</code> - A response to the <a href="#ExternalIVRInterface-P-command"><code>P</code> command</a></li>
+	<li><code>G</code> - A response to the <a href="#ExternalIVRInterface-G-command"><code>G</code> command</a></li>
+	<li><code>I</code> - A Inform message, meant to &quot;inform&quot; the client that something has occurred.  (see Inform Messages below)</li>
+</ul>
+
+
+<p>The timestamp will be a decimal representation of the standard Unix epoch-based timestamp, e.g., <code>284654100</code>.</p>
+
+<p><span class="confluence-anchor-link" id="ExternalIVRInterface-commands"></span></p>
+<h5 id="ExternalIVRInterface-Commands">Commands</h5>
+
+<p>All commands are newline-terminated (<code>\n</code>) strings.</p>
+
+<p>The child process can send one of the following commands:</p>
+
+<ul>
+	<li><code>S,filename</code></li>
+	<li><code>A,filename</code></li>
+	<li><code>I,TIMESTAMP</code></li>
+	<li><code>H,message</code></li>
+	<li><code>E,message</code></li>
+	<li><code>O,option</code></li>
+	<li><code>V,name=value[,name=value[,name=value]]</code></li>
+	<li><code>G,name[,name[,name]]</code></li>
+	<li><code>L,log_message</code></li>
+	<li><code>P,TIMESTAMP</code></li>
+	<li><code>T,TIMESTAMP</code></li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="ExternalIVRInterface-S-command"></span>The <code>S</code> command checks to see if there is a playable audio file with the specified name, and if so, clears the generator's playlist and places the file onto the list. Note that the playability check does not take into account transcoding requirements, so it is possible for the file to not be played even though it was found. If the file does not exist it sends a <code>Z</code> response with the data element set to the file requested. If the generator is not currently playing silence, then <code>T</code> and <code>D</code> events will be sent to signal the playlist interruption and notify it of the files that will not be played.</p>
+
+<p><span class="confluence-anchor-link" id="ExternalIVRInterface-A-command"></span>The <code>A</code> command checks to see if there is a playable audio file with the specified name, and if so, appends it to the generator's playlist. The same playability and exception rules apply as for the <code>S</code> command.</p>
+
+<p><span class="confluence-anchor-link" id="ExternalIVRInterface-I-command"></span>The <code>I</code> command stops any audio currently playing and clears the generator's playlist.  The <code>I</code> command was added in Asterisk 11.</p>
+
+<p><span class="confluence-anchor-link" id="ExternalIVRInterface-E-command"></span>The <code>E</code> command logs the supplied message to the Asterisk log, stops the generator and terminates the <code>ExternalIVR</code> application, but continues execution in the dialplan.</p>
+
+<p><span class="confluence-anchor-link" id="ExternalIVRInterface-H-command"></span>The <code>H</code> command logs the supplied message to the Asterisk log, stops the generator, hangs up the channel and terminates the ExternalIVR application.</p>
+
+<p><span class="confluence-anchor-link" id="ExternalIVRInterface-O-command"></span>The <code>O</code> command allows the child to set/clear options in the ExternalIVR() application.  The supported options are:</p>
+<ul>
+	<li><code>(no)autoclear</code> - Automatically interrupt and clear the playlist upon reception of DTMF input.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="ExternalIVRInterface-T-command"></span>The <code>T</code> command will answer an unanswered channel. If it fails either answering the channel or starting the generator it sends a <code>Z</code> response of <code>Z,TIMESTAMP,ANSWER_FAILED</code> or <code>Z,TIMESTAMP,GENERATOR_FAILED</code> respectively.</p>
+
+<p><span class="confluence-anchor-link" id="ExternalIVRInterface-V-command"></span>The <code>V</code> command sets the specified channel variable(s) to the specified value(s).</p>
+
+<p><span class="confluence-anchor-link" id="ExternalIVRInterface-G-command"></span>The <code>G</code> command gets the specified channel variable(s).  Multiple variables are separated by commas.  Response is in <code>name=value</code> format.</p>
+
+<p><span class="confluence-anchor-link" id="ExternalIVRInterface-P-command"></span>The <code>P</code> command gets the parameters passed into <code>ExternalIVR</code> minus the options to <code>ExternalIVR</code> itself:</p>
+
+<p>If <code>ExternalIVR</code> is executed as:</p>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+ExternalIVR(/usr/bin/foo(arg1,arg2),n)
+</pre>
+</div></div>
+<p>The response to the <code>P</code> command would be:</p>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+P,TIMESTAMP,/usr/bin/foo,arg1,arg2
+</pre>
+</div></div>
+
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>This is the only way for a TCP/IP server to be able to get retrieve the arguments.</p>
+                    </div>
+    </div>
+
+
+<p><span class="confluence-anchor-link" id="ExternalIVRInterface-L-command"></span>The <code>L</code> command puts a message into the Asterisk log.</p>
+
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>This is preferred to using <code>stderr</code> and is the only way for a TCP/IP server to log a message.</p>
+                    </div>
+    </div>
+
+
+<h5 id="ExternalIVRInterface-InformMessages">Inform Messages</h5>
+
+<p>The only inform message that currently exists is a <code>HANGUP</code> message, in the form <code>I,TIMESTAMP,HANGUP</code> and is used to inform of a hangup when the <code>i</code> option is specified.</p>
+
+<h5 id="ExternalIVRInterface-Errors">Errors</h5>
+
+<p>Any newline-terminated (<code>\n</code>) output generated by the child process on its <code>stderr</code> handle will be copied into the Asterisk log.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

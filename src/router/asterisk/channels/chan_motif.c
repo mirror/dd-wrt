@@ -44,14 +44,12 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include <iksemel.h>
 #include <pthread.h>
 
@@ -317,7 +315,7 @@ struct jingle_session {
 	struct ast_format_cap *peercap;       /*!< Peer codec capabilities */
 	unsigned int outgoing:1;              /*!< Whether this is an outgoing leg or not */
 	unsigned int gone:1;                  /*!< In the eyes of Jingle this session is already gone */
-	struct ast_callid *callid;            /*!< Bound session call-id */
+	ast_callid callid;                    /*!< Bound session call-id */
 };
 
 static const char channel_type[] = "Motif";
@@ -473,7 +471,9 @@ static struct jingle_endpoint_state *jingle_endpoint_state_create(void)
 		return NULL;
 	}
 
-	if (!(state->sessions = ao2_container_alloc(SESSION_BUCKETS, jingle_session_hash, jingle_session_cmp))) {
+	state->sessions = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0,
+		SESSION_BUCKETS, jingle_session_hash, NULL, jingle_session_cmp);
+	if (!state->sessions) {
 		ao2_ref(state, -1);
 		return NULL;
 	}
@@ -543,8 +543,8 @@ static int jingle_endpoint_cmp(void *obj, void *arg, int flags)
 static struct aco_type endpoint_option = {
 	.type = ACO_ITEM,
 	.name = "endpoint",
-	.category_match = ACO_BLACKLIST,
-	.category = "^general$",
+	.category_match = ACO_BLACKLIST_EXACT,
+	.category = "general",
 	.item_alloc = jingle_endpoint_alloc,
 	.item_find = jingle_endpoint_find,
 	.item_offset = offsetof(struct jingle_config, endpoints),
@@ -584,10 +584,6 @@ static void jingle_session_destructor(void *obj)
 	ao2_cleanup(session->jointcap);
 	ao2_cleanup(session->peercap);
 
-	if (session->callid) {
-		ast_callid_unref(session->callid);
-	}
-
 	ast_string_field_free_memory(session);
 }
 
@@ -607,7 +603,9 @@ static void *jingle_config_alloc(void)
 		return NULL;
 	}
 
-	if (!(cfg->endpoints = ao2_container_alloc(ENDPOINT_BUCKETS, jingle_endpoint_hash, jingle_endpoint_cmp))) {
+	cfg->endpoints = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0,
+		ENDPOINT_BUCKETS, jingle_endpoint_hash, NULL, jingle_endpoint_cmp);
+	if (!cfg->endpoints) {
 		ao2_ref(cfg, -1);
 		return NULL;
 	}
@@ -703,7 +701,7 @@ static void jingle_enable_video(struct jingle_session *session)
 static struct jingle_session *jingle_alloc(struct jingle_endpoint *endpoint, const char *from, const char *sid)
 {
 	struct jingle_session *session;
-	struct ast_callid *callid;
+	ast_callid callid;
 	struct ast_sockaddr tmp;
 
 	if (!(session = ao2_alloc(sizeof(*session), jingle_session_destructor))) {
@@ -1907,7 +1905,7 @@ static struct ast_channel *jingle_request(const char *type, struct ast_format_ca
 {
 	RAII_VAR(struct jingle_config *, cfg, ao2_global_obj_ref(globals), ao2_cleanup);
 	RAII_VAR(struct jingle_endpoint *, endpoint, NULL, ao2_cleanup);
-	char *dialed, target[200] = "";
+	char *dialed, target[1024] = "";
 	struct ast_xmpp_buddy *buddy;
 	struct jingle_session *session;
 	struct ast_channel *chan;
@@ -2088,15 +2086,16 @@ static int jingle_interpret_description(struct jingle_session *session, iks *des
 
 	/* Iterate the codecs updating the relevant RTP instance as we go */
 	for (codec = iks_child(description); codec; codec = iks_next(codec)) {
-		char *id = iks_find_attrib(codec, "id"), *name = iks_find_attrib(codec, "name");
+		char *id = iks_find_attrib(codec, "id");
+		char *attr_name = iks_find_attrib(codec, "name");
 		char *clockrate = iks_find_attrib(codec, "clockrate");
 		int rtp_id, rtp_clockrate;
 
-		if (!ast_strlen_zero(id) && !ast_strlen_zero(name) && (sscanf(id, "%30d", &rtp_id) == 1)) {
+		if (!ast_strlen_zero(id) && !ast_strlen_zero(attr_name) && (sscanf(id, "%30d", &rtp_id) == 1)) {
 			if (!ast_strlen_zero(clockrate) && (sscanf(clockrate, "%30d", &rtp_clockrate) == 1)) {
-				ast_rtp_codecs_payloads_set_rtpmap_type_rate(&codecs, NULL, rtp_id, media, name, 0, rtp_clockrate);
+				ast_rtp_codecs_payloads_set_rtpmap_type_rate(&codecs, NULL, rtp_id, media, attr_name, 0, rtp_clockrate);
 			} else {
-				ast_rtp_codecs_payloads_set_rtpmap_type(&codecs, NULL, rtp_id, media, name, 0);
+				ast_rtp_codecs_payloads_set_rtpmap_type(&codecs, NULL, rtp_id, media, attr_name, 0);
 			}
 		}
 	}
@@ -2721,8 +2720,8 @@ static int custom_transport_handler(const struct aco_option *opt, struct ast_var
  * Module loading including tests for configuration or dependencies.
  * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
  * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
- * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
- * configuration file or other non-critical problem return 
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the
+ * configuration file or other non-critical problem return
  * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
  */
 static int load_module(void)
@@ -2822,9 +2821,10 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Motif Jingle Channel Driver",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.reload = reload,
-		.load_pri = AST_MODPRI_CHANNEL_DRIVER,
-	       );
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.reload = reload,
+	.load_pri = AST_MODPRI_CHANNEL_DRIVER,
+	.requires = "res_xmpp",
+);

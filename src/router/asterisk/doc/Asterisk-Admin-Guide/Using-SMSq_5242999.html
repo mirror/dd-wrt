@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Using SMSq</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="5242984.html">Short Message Service (SMS)</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Using SMSq
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>smsq is a simple helper application designed to make it easy to send messages from a command line. it is intended to run on the Asterisk box and have direct access to the queue directories for SMS and for Asterisk. </p>
+
+<p>In its simplest form you can send an SMS by a command such as smsq 0123456789 This is a test to 0123456789 This would create a queue file for a mobile originated TX message in queue 0 to send the text &quot;This is a test to 0123456789&quot; to 0123456789. It would then place a file in the /var/spool/asterisk/outgoing directory to initiate a call to 17094009 (the default message centre in smsq) attached to application SMS with argument of the queue name (0). </p>
+
+<p>Normally smsq will queue a message ready to send, and will then create a file in the Asterisk outgoing directory causing Asterisk to actually connect to the message centre or device and actually send the pending message(s). </p>
+
+<p>Using --process, smsq can however be used on received queues to run a command for each file (matching the queue if specified) with various environment variables set based on the message (see below); smsq options: </p>
+
+<ul>
+	<li>--help Show help text</li>
+	<li>--usage Show usage</li>
+	<li>--queue -q Specify a specific queue In no specified, messages are queued under queue &quot;0&quot;</li>
+	<li>--da -d Specify destination address</li>
+	<li>--oa -o Specify originating address This also implies that we are generating a mobile terminated message</li>
+	<li>--ud -m Specify the actual message</li>
+	<li>--ud-file -f Specify a file to be read for the context of the message A blank filename (e.g. --ud-file= on its own) means read stdin. Very useful when using via ssh where command line parsing could mess up the message.</li>
+	<li>--mt -t Mobile terminated message to be generated</li>
+	<li>--mo Mobile originated message to be generated Default</li>
+	<li>--tx Transmit message Default</li>
+	<li>--rx -r Generate a message in the receive queue</li>
+	<li>--UTF-8 Treat the file as UTF-8 encoded (default)</li>
+	<li>--UCS-1 Treat the file as raw 8 bit UCS-1 data, not UTF-8 encoded</li>
+	<li>--UCS-2 Treat the file as raw 16 bit bigendian USC-2 data</li>
+	<li>--process Specific a command to process for each file in the queue Implies --rx and --mt if not otherwise specified. Sets environment variables for every possible variable, and also ud, ud8 (USC-1 hex), and ud16 (USC-2 hex) for each call. Removes files.</li>
+	<li>--motx-channel Specify the channel for motx calls May contain X to use sub address based on queue name or may be full number Default is Local/1709400X</li>
+	<li>--motx-callerid Specify the caller ID for motx calls The default is the queue name without -X suffix</li>
+	<li>--motx-wait Wait time for motx call Default 10</li>
+	<li>--motx-delay Retry time for motx call Default 1</li>
+	<li>--motx-retries Retries for motx call Default 10</li>
+	<li>--mttx-channel Specify the channel for mttx calls Default is Local/ and the queue name without -X suffix</li>
+	<li>--mtttx-callerid Specify the callerid for mttx calls May include X to use sub address based on queue name or may be full number Default is 080058752X0</li>
+	<li>--mttx-wait Wait time for mttx call Default 10</li>
+	<li>--mttx-delay Retry time for mttx call Default 30</li>
+	<li>--mttx-retries Retries for mttx call Default 100</li>
+	<li>--default-sub-address The default sub address assumed (e.g. for X in CLI and dialled numbers as above) when none added (-X) to queue Default 9</li>
+	<li>--no-dial -x Create queue, but do not dial to send message</li>
+	<li>--no-wait Do not wait if a call appears to be in progress This could have a small window where a message is queued but not sent, so regular calls to smsq should be done to pick up any missed messages</li>
+	<li>--concurrent How many concurrent calls to allow (per queue), default 1</li>
+	<li>--mr -n Message reference</li>
+	<li>--pid -p Protocol ID</li>
+	<li>--dcs Data coding scheme</li>
+	<li>--udh Specific hex string of user data header specified (not including the initial length byte) May be a blank string to indicate header is included in the user data already but user data header indication to be set.</li>
+	<li>--srr Status report requested</li>
+	<li>--rp Return path requested</li>
+	<li>--vp Specify validity period (seconds)</li>
+	<li>--scts Specify timestamp (YYYY-MM-DDTHH:MM:SS)</li>
+	<li>--spool-dir Spool dir (in which sms and outgoing are found) Default /var/spool/asterisk</li>
+</ul>
+
+
+<p>Other arguments starting '' or '' are invalid and will cause an error. Any trailing arguments are processed as follows:</p>
+
+<ul>
+	<li>If the message is mobile originating and no destination address has been specified, then the first argument is assumed to be a destination address</li>
+	<li>If the message is mobile terminating and no destination address has been specified, then the first argument is assumed to be the queue name</li>
+	<li>If there is no user data, or user data file specified, then any following arguments are assumed to be the message, which are concatenated.</li>
+	<li>If no user data is specified, then no message is sent. However, unless --no-dial is specified, smsq checks for pending messages and generates an outgoing anyway</li>
+</ul>
+
+
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>When smsq attempts to make a file in /var/spool/asterisk/outgoing, it checks if there is already a call queued for that queue. It will try several filenames, up to the --concurrent setting. If these files exist, then this means Asterisk is already queued to send all messages for that queue, and so Asterisk should pick up the message just queued. However, this alone could create a race condition, so if the files exist then smsq will wait up to 3 seconds to confirm it still exists or if the queued messages have been sent already. The --no-wait turns off this behaviour. Basically, this means that if you have a lot of messages to send all at once, Asterisk will not make unlimited concurrent calls to the same message centre or device for the same queue. This is because it is generally more efficient to make one call and send all of the messages one after the other. </p>
+                    </div>
+    </div>
+
+
+<p>smsq can be used with no arguments, or with a queue name only, and it will check for any pending messages and cause an outgoing if there are any. It only sets up one outgoing call at a time based on the first queued message it finds. A outgoing call will normally send all queued messages for that queue. One way to use smsq would be to run with no queue name (so any queue) every minute or every few seconds to send pending message. This is not normally necessary unless --no-dial is selected. Note that smsq does only check motx or mttx depending on the options selected, so it would need to be called twice as a general check. </p>
+
+<p>UTF-8 is used to parse command line arguments for user data, and is the default when reading a file. If an invalid UTF-8 sequence is found, it is treated as UCS-1 data (i.e, as is). The --process option causes smsq to scan the specified queue (default is mtrx) for messages (matching the queue specified, or any if queue not specified) and run a command and delete the file. The command is run with a number of environment variables set as follows. Note that these are unset if not needed and not just taken from the calling environment. This allows simple processing of incoming messages </p>
+
+<ul>
+	<li>- $queue Set if a queue specified $?srr srr is set (to blank) if srr defined and has value 1. $?rp rp is set (to blank) if rp defined and has value 1. $ud User data, UTF-8 encoding, including any control characters, but with nulls stripped out Useful for the content of emails, for example, as it includes any newlines, etc. $ude User data, escaped UTF-8, including all characters, but control characters \n, \r, \t, \f, \xxx and \ is escaped as</li>
+</ul>
+
+
+<p>Useful guaranteed one line printable text, so useful in Subject lines of emails, etc $ud8 Hex UCS-1 coding of user data (2 hex digits per character) Present only if all user data is in range U+0000 to U+00FF $ud16 Hex UCS-2 coding of user data (4 hex digits per character) other Other fields set using their field name, e.g. mr, pid, dcs, etc. udh is a hex byte string</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

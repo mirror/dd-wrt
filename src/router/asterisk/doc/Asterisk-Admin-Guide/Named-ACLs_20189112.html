@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Named ACLs</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Core-Configuration_27820183.html">Core Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Named ACLs
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Jonathan Rose</span>, last modified by <span class='editor'> Rusty Newton</span> on Feb 26, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="NamedACLs-Overview">Overview</h1><p>Named ACLs introduce a new way to define Access Control Lists (ACLs) in Asterisk. Unlike traditional ACLs defined in specific module configuration files, Named ACLs can be shared across multiple modules. Named ACLs can also be accessed via the Asterisk Realtime Architecture (ARA), allowing for run-time updates of ACL information that can be retrieved by multiple consumers of ACL information.</p><h2 id="NamedACLs-Configuration">Configuration</h2><h3 id="NamedACLs-StaticConfiguration">Static Configuration</h3><p>Named ACLs can be defined statically in <em>acl.conf</em>. Each context in <em>acl.conf</em> defines a specific Named ACL, where the name of the context is the name of the ACL. The syntax for each context follows the permit/deny nomenclature used in traditional ACLs defined in a consumer module's configuration file.</p><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh"><p>Option</p></th><th class="confluenceTh"><p>Value</p></th><th class="confluenceTh"><p>Description</p></th></tr><tr><td class="confluenceTd"><p>deny</p></td><td class="confluenceTd"><p>IP address [/Mask]</p></td><td class="confluenceTd"><p>An IP address to deny, with an optional subnet mask to apply</p></td></tr><tr><td class="confluenceTd"><p>permit</p></td><td class="confluenceTd"><p>IP address [/Mask]</p></td><td class="confluenceTd"><p>An IP address to allow, with an optional subnet mask to apply</p></td></tr></tbody></table></div></div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302953093 {padding: 0px;}
+div.rbtoc1582302953093 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302953093 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302953093'>
+<ul class='toc-indentation'>
+<li><a href='#NamedACLs-Overview'>Overview</a>
+<ul class='toc-indentation'>
+<li><a href='#NamedACLs-Configuration'>Configuration</a>
+<ul class='toc-indentation'>
+<li><a href='#NamedACLs-StaticConfiguration'>Static Configuration</a></li>
+<li><a href='#NamedACLs-ConfiguringforIPv6'>Configuring for IPv6</a></li>
+<li><a href='#NamedACLs-ARAConfiguration'>ARA Configuration</a></li>
+</ul>
+</li>
+<li><a href='#NamedACLs-NamedACLConsumers'>Named ACL Consumers</a>
+<ul class='toc-indentation'>
+<li><a href='#NamedACLs-Configuration.1'>Configuration</a></li>
+<li><a href='#NamedACLs-ACLRuleApplication'>ACL Rule Application</a></li>
+</ul>
+</li>
+<li><a href='#NamedACLs-ModuleReloads'>Module Reloads</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h4 id="NamedACLs-Examples">Examples</h4><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>; within acl.conf
+
+[name_of_acl1]
+deny=0.0.0.0/0.0.0.0
+permit=127.0.0.1
+</pre>
+</div></div><p>Multiple rules can be specified in an ACL as well by chaining deny/permit specifiers.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[name_of_acl2]
+deny=10.24.0.0/255.255.0.0
+deny=10.25.0.0/255.255.0.0
+permit=10.24.11.0/255.255.255.0
+permit=10.24.12.0/255.255.255.0
+</pre>
+</div></div><p>Named ACLs support common modifiers like templates and additions within configuration as well.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[template_deny_all](!)
+deny=0.0.0.0/0.0.0.0
+
+[deny_all_whitelist_these](template_deny_all)
+permit=10.24.20.1
+permit=10.24.20.2
+permit=10.24.20.3
+</pre>
+</div></div><h3 id="NamedACLs-ConfiguringforIPv6">Configuring for IPv6</h3><pre>Named ACLs can use ipv6 addresses just like normal ACLs.</pre><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[ipv6_example_1]
+deny = ::
+permit = ::1/128
+
+[ipv6_example_2]
+permit = fe80::21d:bad:fad:2323</pre>
+</div></div><h3 id="NamedACLs-ARAConfiguration">ARA Configuration</h3><p>The ARA supports Named ACLs using the '<strong>acls</strong>' keyword in <em>extconfig.conf</em>.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedHeader panelHeader" style="border-bottom-width: 1px;"><b>Example Configuration</b></div><div class="preformattedContent panelContent">
+<pre>;in extconfig.conf
+acls =&gt; odbc,asterisk,acltable
+</pre>
+</div></div><h4 id="NamedACLs-Schema">Schema</h4><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh"><p>Column Name</p></th><th class="confluenceTh"><p>Type</p></th><th class="confluenceTh"><p>Description</p></th></tr><tr><td class="confluenceTd"><p>name</p></td><td class="confluenceTd"><p>varchar(80)</p></td><td class="confluenceTd"><p>Name of the ACL</p></td></tr><tr><td class="confluenceTd"><p>rule_order</p></td><td class="confluenceTd"><p>integer</p></td><td class="confluenceTd"><p>Order to apply the ACL rule. Rules are applied in ascending order. Rule numbers do not have to be sequential</p></td></tr><tr><td class="confluenceTd"><p>sense</p></td><td class="confluenceTd"><p>varchar(6)</p></td><td class="confluenceTd"><p>Either 'permit' or 'deny'</p></td></tr><tr><td class="confluenceTd"><p>rule</p></td><td class="confluenceTd"><p>varchar(95)</p></td><td class="confluenceTd"><p>The IP address/Mask pair to apply</p></td></tr></tbody></table></div><h4 id="NamedACLs-Examples.1">Examples</h4><h5 id="NamedACLs-TableCreationScript(PostgreSQL)">Table Creation Script (PostgreSQL)</h5><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>CREATE TABLE acltable
+(
+   &quot;name&quot; character varying(80) NOT NULL,
+   rule_order integer NOT NULL,
+   sense character varying(6) NOT NULL,
+   &quot;rule&quot; character varying(95) NOT NULL,
+   CONSTRAINT aclrulekey PRIMARY KEY (name, rule_order, rule, sense)
+)
+WITH (
+   OIDS=FALSE
+);
+ALTER TABLE acltable OWNER TO asterisk;
+GRANT ALL ON TABLE acltable TO asterisk;
+)
+</pre>
+</div></div><h5 id="NamedACLs-TableCreationScript(SQLite3)">Table Creation Script (SQLite3)</h5><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>BEGIN TRANSACTION;
+CREATE TABLE acltable (rule TEXT, sense TEXT, rule_order NUMERIC, name TEXT);
+COMMIT;
+</pre>
+</div></div>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>These scripts were generated by pgadmin III and SQLite Database Browser. They might not necessarily apply for your own setup.</p>
+                    </div>
+    </div>
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>Since ACLs are obtained by consumer modules when they are loaded, an ACL updated in an ARA backend will not be propagated automatically to consumers using static configuration. Consumer modules also using ARA for their configuration (such as SIP/IAX2 peers) will similarly be up to date if and only if they have built the peer in question since the changes to the realtime ACL have taken place.</p>
+                    </div>
+    </div>
+<h2 id="NamedACLs-NamedACLConsumers">Named ACL Consumers</h2><p>Named ACLs are supported by the following Asterisk components:</p><ul><li>Manager (IPv4 and IPv6)</li><li>chan_sip (IPv4 and IPv6)</li><li>chan_pjsip (IPv4 and IPv6)</li><li>chan_iax2 (IPv4 and IPv6)</li></ul><h3 id="NamedACLs-Configuration.1">Configuration</h3><p>A consumer of Named ACLs can be configured to use a named ACL using the <em>acl</em> option in their ACL access rules. This can be in addition to the ACL rules traditionally defined in those configuration files.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedHeader panelHeader" style="border-bottom-width: 1px;"><b>Example 1: referencing a Named ACL</b></div><div class="preformattedContent panelContent">
+<pre>; within sip.conf
+
+[peer1]
+;stuff
+;deny=0.0.0.0/0.0.0.0
+;permit=127.0.0.1
+acl=name_of_acl_1 ; an ACL included from acl.conf that matches peer1&#39;s commented out permits/denies
+</pre>
+</div></div><p>Multiple named ACLs can be referenced as well by specifying a comma delineated list of Named ACLs to apply.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedHeader panelHeader" style="border-bottom-width: 1px;"><b>Example 2: multiple Named ACL references</b></div><div class="preformattedContent panelContent">
+<pre>; within sip.conf
+
+[peer1]
+;stuff
+acl=named_acl_1,named_acl_2
+</pre>
+</div></div><p>Similarly, a SIP or IAX2 peer defined in ARA can include an '<em>acl</em>' column and list the Named ACLs to apply in that column.</p>    <div class="aui-message warning shadowed information-macro">
+                    <p class="title">NOTE</p>
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>Named ACLs can also be defined using multiple instances of the <em>acl</em> keyword. This is discouraged, however, as the order in which ACLs are applied can be less obvious then the comma delineated list format.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>acl=named_acl_1
+acl=named_acl_2
+</pre>
+</div></div>
+                    </div>
+    </div>
+<p> </p><h3 id="NamedACLs-ACLRuleApplication">ACL Rule Application</h3><p>Each module consumer of ACL information maintains, for each object that uses the information, a list of the defined ACL rule sets that apply to that object. When an address is evaluated for the particular object, the address is evaluated against each rule. For an address to pass the ACL rules, it must pass each ACL rule set that was defined for that object. Failure of any ACL rule set will result in a rejection of the address.</p><h2 id="NamedACLs-ModuleReloads">Module Reloads</h2><p>ACL information is static once a consumer module references that information. Hence, changes in ACL information in an ARA backend will not automatically update consumers of that information. In order for consumers to receive updated ACL information, the Named ACL component must be reloaded.</p><p>The Named ACL component supports module reloads, in the same way as other Asterisk components. When the Named ACL component is reloaded, it will issue a request to all consumers of Named ACLs. Those consumer modules will also be automatically reloaded.</p>    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">WARNING</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>This implies that reloading the Named ACL component will force a reload of manager, chan_sip, etc. Only reload the Named ACL component if you want all consumers of that information to be reloaded as well.</p>
+                    </div>
+    </div>
+</div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

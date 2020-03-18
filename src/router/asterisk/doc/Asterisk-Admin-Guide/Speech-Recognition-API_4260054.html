@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Speech Recognition API</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Speech Recognition API
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Sean Bright</span> on May 10, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="SpeechRecognitionAPI-TheAsteriskSpeechRecognitionAPI">The Asterisk Speech Recognition API</h1>
+
+<p>The generic speech recognition engine is implemented in the res_speech.so module.  This module connects through the API to speech recognition software, that is not included in the module.</p>
+
+<p>To use the API, you must load the res_speech.so module before any connectors.  For your convenience, there is a preload line commented out in the modules.conf sample file.</p>
+
+
+<h5 id="SpeechRecognitionAPI-DialplanApplications:">Dialplan Applications:</h5>
+
+<p>The dialplan API is based around a single speech utilities application file, which exports many applications to be used for speech recognition. These include an application to prepare for speech recognition, activate a grammar, and play back a sound file while waiting for the person to speak. Using a combination of these applications you can easily make a dialplan use speech recognition without worrying about what speech recognition engine is being used.</p>
+
+<p><strong>SpeechCreate(Engine Name)</strong></p>
+
+<p>This application creates information to be used by all the other applications.  It must be called before doing any speech recognition activities such as activating a grammar. It takes the engine name to use as the argument, if not specified the default engine will be used.</p>
+
+<p>If an error occurs are you are not able to create an object, the variable ERROR will be set to 1. You can then exit your speech recognition specific context and play back an error message, or resort to a DTMF based IVR.</p>
+
+<p><strong>SpeechLoadGrammar(Grammar Name|Path)</strong></p>
+
+<p>Loads grammar locally on a channel. Note that the grammar is only available as long as the channel exists, and you must call SpeechUnloadGrammar before all is done or you may cause a memory leak. First argument is the grammar name that it will be loaded as and second argument is the path to the grammar.</p>
+
+<p><strong>SpeechUnloadGrammar(Grammar Name)</strong></p>
+
+<p>Unloads a locally loaded grammar and frees any memory used by it. The only argument is the name of the grammar to unload.</p>
+
+<p><strong>SpeechActivateGrammar(Grammar Name)</strong></p>
+
+<p>This activates the specified grammar to be recognized by the engine. A grammar tells the speech recognition engine what to recognize, and how to portray it back to you in the dialplan. The grammar name is the only argument to this application.</p>
+
+<p><strong>SpeechStart()</strong></p>
+
+<p>Tell the speech recognition engine that it should start trying to get results from audio being fed to it. This has no arguments.</p>
+
+<p><strong>SpeechBackground(Sound File|Timeout)</strong></p>
+
+<p>This application plays a sound file and waits for the person to speak. Once they start  speaking playback of the file stops, and silence is heard. Once they stop talking the processing sound is played to indicate the speech recognition engine is working. Note it is possible to have more then one result. The first argument is the sound file and the second is the timeout. Note the timeout will only start once the sound file has stopped playing.</p>
+
+<p><strong>SpeechDeactivateGrammar(Grammar Name)</strong></p>
+
+<p>This deactivates the specified grammar so that it is no longer recognized. The only argument is the grammar name to deactivate.</p>
+
+<p><strong>SpeechProcessingSound(Sound File)</strong></p>
+
+<p>This changes the processing sound that SpeechBackground plays back when the speech recognition engine is processing and working to get results. It takes the sound file as the only argument.</p>
+
+<p><strong>SpeechDestroy()</strong></p>
+
+<p>This destroys the information used by all the other speech recognition applications.  If you call this application but end up wanting to recognize more speech, you must call SpeechCreate again before calling any other application. It takes no arguments.</p>
+
+<h5 id="SpeechRecognitionAPI-GettingResultInformation:">Getting Result Information:</h5>
+
+<p>The speech recognition utilities module exports several dialplan functions that you can use to  examine results.</p>
+
+<ul>
+	<li><code>${SPEECH(status)</code>} - Returns <code>1</code> if <code>SpeechCreate</code> has been called. This uses the same check that applications do to see if a speech object is setup. If it returns <code>0</code> then you know you can not use other speech applications.</li>
+	<li><code>${SPEECH(spoke)</code>} - Returns <code>1</code> if the speaker spoke something, or <code>0</code> if they were silent.</li>
+	<li><code>${SPEECH(results)</code>} - Returns the number of results that are available.</li>
+	<li><code>${SPEECH_SCORE(result number)</code>} - Returns the score of a result.</li>
+	<li><code>${SPEECH_TEXT(result number)</code>} - Returns the recognized text of a result.</li>
+	<li><code>${SPEECH_GRAMMAR(result number)</code>} - Returns the matched grammar of the result.</li>
+	<li><code>SPEECH_ENGINE(name)=value</code> - Sets a speech engine specific attribute.</li>
+</ul>
+
+
+<h5 id="SpeechRecognitionAPI-DialplanFlow:">Dialplan Flow:</h5>
+
+<ol>
+	<li>Create a speech recognition object using <code>SpeechCreate()</code></li>
+	<li>Activate your grammars using <code>SpeechActivateGrammar(Grammar Name)</code></li>
+	<li>Call <code>SpeechStart()</code> to indicate you are going to do speech recognition immediately</li>
+	<li>Play back your audio and wait for recognition using <code>SpeechBackground(Sound File|Timeout)</code></li>
+	<li>Check the results and do things based on them</li>
+	<li>Deactivate your grammars using <code>SpeechDeactivateGrammar(Grammar Name)</code></li>
+	<li>Destroy your speech recognition object using <code>SpeechDestroy()</code></li>
+</ol>
+
+
+<h5 id="SpeechRecognitionAPI-DialplanExamples:">Dialplan Examples:</h5>
+
+<p>This is pretty cheeky in that it does not confirmation of results. As well the way the grammar is written it returns the person's extension instead of their name so we can just do a Goto based on the result text.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Grammar: company-directory.gram</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: plain; gutter: false" style="font-size:12px;">
+#ABNF 1.0;
+language en-US;
+mode voice;
+tag-format &lt;lumenvox/1.0&gt;;
+root $company_directory;
+
+$josh = ((Joshua | Josh) [Colp]):&quot;6066&quot;;
+$mark = (Mark [Spencer] | Markster):&quot;4569&quot;;
+$kevin = (Kevin [Fleming]):&quot;2567&quot;;
+
+$company_directory = ($josh | $mark | $kevin) { $ = $$ };
+</pre>
+</div></div>
+
+<p><strong>Dialplan logic</strong></p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: plain; gutter: false" style="font-size:12px;">
+[dial-by-name]
+exten =&gt; s,1,SpeechCreate()
+exten =&gt; s,2,SpeechActivateGrammar(company-directory)
+exten =&gt; s,3,SpeechStart()
+exten =&gt; s,4,SpeechBackground(who-would-you-like-to-dial)
+exten =&gt; s,5,SpeechDeactivateGrammar(company-directory)
+exten =&gt; s,6,Goto(internal-extensions-${SPEECH_TEXT(0)})
+</pre>
+</div></div>
+
+<h5 id="SpeechRecognitionAPI-UsefulDialplanTidbits">Useful Dialplan Tidbits</h5>
+
+<p>A simple macro that can be used for confirm of a result. Requires some sound files.  ARG1 is equal to the file to play back after &quot;I heard...&quot; is played.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: plain; gutter: false" style="font-size:12px;">
+[macro-speech-confirm]
+exten =&gt; s,1,SpeechActivateGrammar(yes_no)
+exten =&gt; s,2,Set(OLDTEXT0=${SPEECH_TEXT(0)})
+exten =&gt; s,3,Playback(heard)
+exten =&gt; s,4,Playback(${ARG1})
+exten =&gt; s,5,SpeechStart()
+exten =&gt; s,6,SpeechBackground(correct)
+exten =&gt; s,7,Set(CONFIRM=${SPEECH_TEXT(0)})
+exten =&gt; s,8,GotoIf($[&quot;${SPEECH_TEXT(0)}&quot; = &quot;1&quot;]?9:10)
+exten =&gt; s,9,Set(CONFIRM=yes)
+exten =&gt; s,10,Set(CONFIRMED=${OLDTEXT0})
+exten =&gt; s,11,SpeechDeactivateGrammar(yes_no)
+</pre>
+</div></div>
+
+<h3 id="SpeechRecognitionAPI-TheAsteriskSpeechRecognitionCAPI">The Asterisk Speech Recognition C API</h3>
+
+<p>The module <code>res_speech.so</code> exports a C based API that any developer can use to speech recognize enable their application. The API gives greater control, but requires the developer to do more on their end in comparison to the dialplan speech utilities.</p>
+
+<p>For all API calls that return an integer value, a non-zero value indicates an error has occurred.</p>
+
+<p><strong>Creating a speech structure</strong></p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: c; gutter: false" style="font-size:12px;">
+struct ast_speech *ast_speech_new(char *engine_name, int format)
+
+struct ast_speech *speech = ast_speech_new(NULL, AST_FORMAT_SLINEAR);
+</pre>
+</div></div>
+
+<p>This will create a new speech structure that will be returned to you. The speech recognition  engine name is optional and if NULL the default one will be used. As well for now format should always be AST_FORMAT_SLINEAR.</p>
+
+<p><strong>Activating a grammar</strong></p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: c; gutter: false" style="font-size:12px;">
+int ast_speech_grammar_activate(struct ast_speech *speech, char *grammar_name)
+
+res = ast_speech_grammar_activate(speech, &quot;yes_no&quot;);
+</pre>
+</div></div>
+
+<p>This activates the specified grammar on the speech structure passed to it.</p>
+
+<p><strong>Start recognizing audio</strong></p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: c; gutter: false" style="font-size:12px;">
+void ast_speech_start(struct ast_speech *speech)
+
+ast_speech_start(speech);
+</pre>
+</div></div>
+
+<p>This essentially tells the speech recognition engine that you will be feeding audio to it from  then on. It MUST be called every time before you start feeding audio to the speech structure.</p>
+
+<p><strong>Send audio to be recognized</strong></p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: c; gutter: false" style="font-size:12px;">
+int ast_speech_write(struct ast_speech *speech, void *data, int len)
+
+res = ast_speech_write(speech, fr-&gt;data, fr-&gt;datalen);
+</pre>
+</div></div>
+
+<p>This writes audio to the speech structure that will then be recognized. It must be written  signed linear only at this time. In the future other formats may be supported.</p>
+
+<p><strong>Checking for results</strong></p>
+
+<p>The way the generic speech recognition API is written is that the speech structure will undergo state changes to indicate progress of recognition. The states are outlined below:</p>
+
+<ul>
+	<li><code>AST_SPEECH_STATE_NOT_READY</code> - The speech structure is not ready to accept audio</li>
+	<li><code>AST_SPEECH_STATE_READY</code> - You may write audio to the speech structure</li>
+	<li><code>AST_SPEECH_STATE_WAIT</code> - No more audio should be written, and results will be available soon.</li>
+	<li><code>AST_SPEECH_STATE_DONE</code> - Results are available and the speech structure can only be used again by calling <code>ast_speech_start</code></li>
+</ul>
+
+
+<p>It is up to you to monitor these states. Current state is available via a variable on the speech structure. (<code>state</code>)</p>
+
+<p><strong>Knowing when to stop playback</strong></p>
+
+<p>If you are playing back a sound file to the user and you want to know when to stop play back because the individual started talking use the following.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: c; gutter: false" style="font-size:12px;">
+ast_test_flag(speech, AST_SPEECH_QUIET) /* This will return a positive value when the person has started talking. */
+</pre>
+</div></div>
+
+<p><strong>Getting results</strong></p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: c; gutter: false" style="font-size:12px;">
+struct ast_speech_result *ast_speech_results_get(struct ast_speech *speech)
+
+struct ast_speech_result *results = ast_speech_results_get(speech);
+</pre>
+</div></div>
+
+<p>This will return a linked list of result structures. A result structure looks like the following:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: c; gutter: false" style="font-size:12px;">
+struct ast_speech_result {
+    char *text;                     /*!&lt; Recognized text */
+    int score;                      /*!&lt; Result score */
+    char *grammar;                  /*!&lt; Matched grammar */
+    struct ast_speech_result *next; /*!&lt; List information */
+};
+</pre>
+</div></div>
+
+<p><strong>Freeing a set of results</strong></p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: c; gutter: false" style="font-size:12px;">
+int ast_speech_results_free(struct ast_speech_result *result)
+
+res = ast_speech_results_free(results);
+</pre>
+</div></div>
+
+<p>This will free all results on a linked list. Results MAY NOT be used as the memory will have been freed.</p>
+
+<p><strong>Deactivating a grammar</strong></p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: c; gutter: false" style="font-size:12px;">
+int ast_speech_grammar_deactivate(struct ast_speech *speech, char *grammar_name)
+
+res = ast_speech_grammar_deactivate(speech, &quot;yes_no&quot;);
+</pre>
+</div></div>
+
+<p>This deactivates the specified grammar on the speech structure.</p>
+
+<p><strong>Destroying a speech structure</strong></p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: c; gutter: false" style="font-size:12px;">
+int ast_speech_destroy(struct ast_speech *speech)
+
+res = ast_speech_destroy(speech);
+</pre>
+</div></div>
+
+<p>This will free all associated memory with the speech structure and destroy it with the speech recognition engine.</p>
+
+<p><strong>Loading a grammar on a speech structure</strong></p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: c; gutter: false" style="font-size:12px;">
+int ast_speech_grammar_load(struct ast_speech *speech, char *grammar_name, char *grammar)
+
+res = ast_speech_grammar_load(speech, &quot;builtin:yes_no&quot;, &quot;yes_no&quot;);
+</pre>
+</div></div>
+
+<p><strong>Unloading a grammar on a speech structure</strong></p>
+
+<p>If you load a grammar on a speech structure it is preferred that you unload it as well, or you may cause a memory leak. Don't say I didn't warn you.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: c; gutter: false" style="font-size:12px;">
+int ast_speech_grammar_unload(struct ast_speech *speech, char *grammar_name)
+
+res = ast_speech_grammar_unload(speech, &quot;yes_no&quot;);
+</pre>
+</div></div>
+
+<p>This unloads the specified grammar from the speech structure.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

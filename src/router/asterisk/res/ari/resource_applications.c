@@ -26,8 +26,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/stasis_app.h"
 #include "resource_applications.h"
 
@@ -60,7 +58,7 @@ void ast_ari_applications_list(struct ast_variable *headers,
 	ao2_lock(apps);
 	count = ao2_container_count(apps);
 	ao2_callback(apps, OBJ_NOLOCK | OBJ_NODATA, append_json, json);
-	ao2_lock(apps);
+	ao2_unlock(apps);
 
 	if (count != ast_json_array_size(json)) {
 		ast_ari_response_error(response, 500, "Internal Server Error",
@@ -169,4 +167,24 @@ void ast_ari_applications_unsubscribe(struct ast_variable *headers,
 		ast_ari_response_error(response, 500, "Internal Server Error",
 			"Error processing request");
 	}
+}
+
+void ast_ari_applications_filter(struct ast_variable *headers,
+	struct ast_ari_applications_filter_args *args,
+	struct ast_ari_response *response)
+{
+	struct stasis_app *app = stasis_app_get_by_name(args->application_name);
+
+	if (!app) {
+		ast_ari_response_error(response, 404, "Not Found", "Application not found");
+		return;
+	}
+
+	if (stasis_app_event_filter_set(app, args->filter)) {
+		ast_ari_response_error(response, 400, "Bad Request", "Invalid format definition");
+	} else {
+		ast_ari_response_ok(response, stasis_app_object_to_json(app));
+	}
+
+	ao2_ref(app, -1);
 }

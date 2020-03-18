@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Include Statements Basics</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Include-Statements_4817359.html">Include Statements</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Include Statements Basics
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Alexander Gonchiy</span> on Nov 30, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p> </p><p>To set the stage for our explanation of include statements, let's say that we want to organize our dialplan and create a new context called <strong>features</strong>. We'll leave our extensions <strong>6001</strong> and <strong>6002</strong> for Alice and Bob in the <strong>users</strong> context, and place extensions such as <strong>6500</strong> in the new <strong>features</strong> context. When calls come into the users context and doesn't find a matching extension, the include statement tells Asterisk to also look in the new <strong>features</strong> context.</p><p>The syntax for an include statement is very simple. You simply write <strong>include =&gt;</strong> and then the name of the context you'd like to include from the existing context. If we reorganize our dialplan to add a <strong>features</strong> context, it might look something like this:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[users]
+include =&gt; features
+
+exten =&gt; 6001,1,Dial(SIP/demo-alice,20)
+   same =&gt; n,VoiceMail(6001@vm-demo,u)
+
+exten =&gt; 6002,1,Dial(SIP/demo-bob,20)
+   same =&gt; n,VoiceMail(6002@vm-demo,u)
+
+[features]
+exten =&gt; 6000,1,Answer(500)
+   same =&gt; n,Playback(hello-world)
+   same =&gt; n,Hangup()
+
+exten =&gt; 6500,1,Answer(500)
+   same =&gt; n,VoiceMailMain(@vm-demo)</pre>
+</div></div>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Location of Include Statements</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>Please note that in the example above, we placed the include statement before extensions <strong>6001</strong> and <strong>6002</strong>. It could have just as well come after.<br />The order in which Asterisk tries to find a matching extension is always current context first, then all the include statements.</p>
+                    </div>
+    </div>
+    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">Be careful with overlapping patterns/extensions</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>Because Asterisk doesn't stop processing the dialplan after the first matching extension is found, always ensure that you don't have overlapping patterns or duplicate extensions among included contexts, or else you'll get an unexpected behavior.<br />To prevent convoluted bugs it's recommended to end each extension with a Hangup call to explicitly exit the dialplan.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>How calling 6001 may go wrong</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[users]
+include =&gt; features
+include =&gt; catchall
+
+exten =&gt; 6001,1,Dial(SIP/demo-alice,20) ; &lt;- Priority 1
+   same =&gt; n,VoiceMail(6001@vm-demo,u)  ; &lt;- Priority 2
+
+exten =&gt; 6002,1,Dial(SIP/demo-bob,20)
+   same =&gt; n,VoiceMail(6002@vm-demo,u)
+
+[features]
+exten =&gt; 6000,1,Answer(500)
+   same =&gt; n,Playback(hello-world)
+   same =&gt; n,Hangup()
+exten =&gt; 6500,1,Answer(500)
+   same =&gt; n,VoiceMailMain(@vm-demo)
+   
+[catchall]
+exten =&gt; _.,1,NoOp();
+exten =&gt; _.,2,NoOp();
+exten =&gt; _.,3,NoOp();  ; &lt;- Priority 3 ends up being here, which is NOT what you want</pre>
+</div></div>
+                    </div>
+    </div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

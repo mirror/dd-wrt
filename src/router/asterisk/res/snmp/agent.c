@@ -18,9 +18,9 @@
 	<support_level>extended</support_level>
  ***/
 
+/* Needed for net-snmp headers */
+#define ASTMM_LIBC ASTMM_IGNORE
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 /*
  * There is some collision collision between netsmp and asterisk names,
@@ -62,6 +62,10 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
+
+#if !defined(RONLY) && defined(NETSNMP_OLDAPI_RONLY)
+#define RONLY NETSNMP_OLDAPI_RONLY
+#endif
 
 #include "asterisk/paths.h"	/* need ast_config_AST_SOCKET */
 #include "asterisk/channel.h"
@@ -551,7 +555,7 @@ static u_char *ast_var_channel_types_table(struct variable *vp, oid *name, size_
 	ast_variables_destroy(channel_types);
 	if (next == NULL || tech == NULL)
 		return NULL;
-	
+
 	switch (vp->magic) {
 	case ASTCHANTYPEINDEX:
 		long_ret = name[*length - 1];

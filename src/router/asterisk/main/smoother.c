@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/_private.h"
 #include "asterisk/frame.h"
 #include "asterisk/astobj2.h"
@@ -224,4 +222,3 @@ void ast_smoother_free(struct ast_smoother *s)
 	ao2_cleanup(s->format);
 	ast_free(s);
 }
-

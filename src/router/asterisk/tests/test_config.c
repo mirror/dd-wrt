@@ -31,8 +31,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$");
-
 #include <math.h> /* HUGE_VAL */
 #include <sys/stat.h>
 
@@ -43,6 +41,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$");
 #include "asterisk/config_options.h"
 #include "asterisk/netsock2.h"
 #include "asterisk/acl.h"
+#include "asterisk/app.h"
 #include "asterisk/pbx.h"
 #include "asterisk/frame.h"
 #include "asterisk/utils.h"
@@ -958,7 +957,8 @@ AST_TEST_DEFINE(config_hook)
 {
 	enum ast_test_result_state res = AST_TEST_FAIL;
 	enum config_hook_flags hook_flags = { 0, };
-	struct ast_flags config_flags = { CONFIG_FLAG_FILEUNCHANGED };
+	struct ast_flags config_flags = { 0 };
+	struct ast_flags reload_flags = { CONFIG_FLAG_FILEUNCHANGED };
 	struct ast_config *cfg;
 
 	switch (cmd) {
@@ -1026,7 +1026,7 @@ AST_TEST_DEFINE(config_hook)
 	 * Hook should not run
 	 */
 	hook_run = 0;
-	cfg = ast_config_load(CONFIG_FILE, config_flags);
+	cfg = ast_config_load(CONFIG_FILE, reload_flags);
 	/* Only destroy this cfg conditionally. Otherwise a crash happens. */
 	if (cfg != CONFIG_STATUS_FILEUNCHANGED) {
 		ast_config_destroy(cfg);
@@ -1039,6 +1039,7 @@ AST_TEST_DEFINE(config_hook)
 	res = AST_TEST_PASS;
 
 out:
+	ast_config_hook_unregister("test_hook");
 	delete_config_file();
 	return res;
 }
@@ -1082,6 +1083,13 @@ enum {
 				ast_test_status_update(test, "ast_parse_arg double failed with %f != %f\n", *r, e); \
 				ret = AST_TEST_FAIL; \
 			} \
+		} else if (((flags) & PARSE_TYPE) == PARSE_TIMELEN) { \
+			int *r = (int *) (void *) result; \
+			int e = (int) expected_result; \
+			if (*r != e) { \
+				ast_test_status_update(test, "ast_parse_arg timelen failed with %d != %d\n", *r, e); \
+				ret = AST_TEST_FAIL; \
+			} \
 		} \
 	} \
 	*(result) = DEFAULTVAL; \
@@ -1092,6 +1100,7 @@ AST_TEST_DEFINE(ast_parse_arg_test)
 	int ret = AST_TEST_PASS;
 	int32_t int32_t_val = DEFAULTVAL;
 	uint32_t uint32_t_val = DEFAULTVAL;
+	int timelen_val = DEFAULTVAL;
 	double double_val = DEFAULTVAL;
 
 	switch (cmd) {
@@ -1224,6 +1233,60 @@ AST_TEST_DEFINE(ast_parse_arg_test)
 
 	TEST_PARSE("   -123", EXPECT_FAIL, DEFAULTVAL, PARSE_UINT32, &uint32_t_val);
 
+	/* timelen testing */
+	TEST_PARSE("123", EXPECT_SUCCEED, 123, PARSE_TIMELEN, &timelen_val, TIMELEN_MILLISECONDS);
+	TEST_PARSE("-123", EXPECT_SUCCEED, -123, PARSE_TIMELEN, &timelen_val, TIMELEN_MILLISECONDS);
+	TEST_PARSE("0", EXPECT_SUCCEED, 0, PARSE_TIMELEN, &timelen_val, TIMELEN_MILLISECONDS);
+	TEST_PARSE("not a number", EXPECT_FAIL, DEFAULTVAL, PARSE_TIMELEN, &timelen_val, TIMELEN_MILLISECONDS);
+	TEST_PARSE("7not a number", EXPECT_FAIL, DEFAULTVAL, PARSE_TIMELEN, &timelen_val, TIMELEN_MILLISECONDS);
+
+	TEST_PARSE("123s", EXPECT_SUCCEED, 123000, PARSE_TIMELEN, &timelen_val, TIMELEN_MILLISECONDS);
+	TEST_PARSE("-123s", EXPECT_SUCCEED, -123000, PARSE_TIMELEN, &timelen_val, TIMELEN_MILLISECONDS);
+	TEST_PARSE("1m", EXPECT_SUCCEED, 60000, PARSE_TIMELEN, &timelen_val, TIMELEN_MILLISECONDS);
+	TEST_PARSE("1", EXPECT_SUCCEED, 60000, PARSE_TIMELEN, &timelen_val, TIMELEN_MINUTES);
+	TEST_PARSE("1h", EXPECT_SUCCEED, 3600000, PARSE_TIMELEN, &timelen_val, TIMELEN_MILLISECONDS);
+	TEST_PARSE("1", EXPECT_SUCCEED, 3600000, PARSE_TIMELEN, &timelen_val, TIMELEN_HOURS);
+
+	TEST_PARSE("123", EXPECT_SUCCEED, 123, PARSE_TIMELEN | PARSE_DEFAULT, &timelen_val, TIMELEN_MILLISECONDS, 7);
+	TEST_PARSE("-123", EXPECT_SUCCEED, -123, PARSE_TIMELEN | PARSE_DEFAULT, &timelen_val, TIMELEN_MILLISECONDS, 7);
+	TEST_PARSE("0", EXPECT_SUCCEED, 0, PARSE_TIMELEN | PARSE_DEFAULT, &timelen_val, TIMELEN_MILLISECONDS, 7);
+	TEST_PARSE("not a number", EXPECT_FAIL, 7, PARSE_TIMELEN | PARSE_DEFAULT, &timelen_val, TIMELEN_MILLISECONDS, 7);
+	TEST_PARSE("7not a number", EXPECT_FAIL, 7, PARSE_TIMELEN | PARSE_DEFAULT, &timelen_val, TIMELEN_MILLISECONDS, 7);
+
+	TEST_PARSE("123", EXPECT_SUCCEED, 123, PARSE_TIMELEN | PARSE_IN_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 0, 200);
+	TEST_PARSE("-123", EXPECT_SUCCEED, -123, PARSE_TIMELEN | PARSE_IN_RANGE, &timelen_val, TIMELEN_MILLISECONDS, -200, 100);
+	TEST_PARSE("0", EXPECT_SUCCEED, 0, PARSE_TIMELEN | PARSE_IN_RANGE, &timelen_val, TIMELEN_MILLISECONDS, -1, 0);
+	TEST_PARSE("123", EXPECT_FAIL, DEFAULTVAL, PARSE_TIMELEN | PARSE_IN_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 0, 122);
+	TEST_PARSE("-123", EXPECT_FAIL, DEFAULTVAL, PARSE_TIMELEN | PARSE_IN_RANGE, &timelen_val, TIMELEN_MILLISECONDS, -122, 100);
+	TEST_PARSE("0", EXPECT_FAIL, DEFAULTVAL, PARSE_TIMELEN | PARSE_IN_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 1, 100);
+	TEST_PARSE("not a number", EXPECT_FAIL, DEFAULTVAL, PARSE_TIMELEN | PARSE_IN_RANGE, &timelen_val, TIMELEN_MILLISECONDS, INT_MIN, INT_MAX);
+	TEST_PARSE("7not a number", EXPECT_FAIL, DEFAULTVAL, PARSE_TIMELEN | PARSE_IN_RANGE, &timelen_val, TIMELEN_MILLISECONDS, INT_MIN, INT_MAX);
+	TEST_PARSE("123", EXPECT_FAIL, DEFAULTVAL, PARSE_TIMELEN | PARSE_OUT_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 0, 200);
+	TEST_PARSE("-123", EXPECT_FAIL, DEFAULTVAL, PARSE_TIMELEN | PARSE_OUT_RANGE, &timelen_val, TIMELEN_MILLISECONDS, -200, 100);
+	TEST_PARSE("0", EXPECT_FAIL, DEFAULTVAL, PARSE_TIMELEN | PARSE_OUT_RANGE, &timelen_val, TIMELEN_MILLISECONDS, -1, 0);
+	TEST_PARSE("123", EXPECT_SUCCEED, 123, PARSE_TIMELEN | PARSE_OUT_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 0, 122);
+	TEST_PARSE("-123", EXPECT_SUCCEED, -123, PARSE_TIMELEN | PARSE_OUT_RANGE, &timelen_val, TIMELEN_MILLISECONDS, -122, 100);
+	TEST_PARSE("0", EXPECT_SUCCEED, 0, PARSE_TIMELEN | PARSE_OUT_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 1, 100);
+	TEST_PARSE("not a number", EXPECT_FAIL, DEFAULTVAL, PARSE_TIMELEN | PARSE_OUT_RANGE, &timelen_val, TIMELEN_MILLISECONDS, INT_MIN, INT_MAX);
+	TEST_PARSE("7not a number", EXPECT_FAIL, DEFAULTVAL, PARSE_TIMELEN | PARSE_OUT_RANGE, &timelen_val, TIMELEN_MILLISECONDS, INT_MIN, INT_MAX);
+
+	TEST_PARSE("123", EXPECT_SUCCEED, 123, PARSE_TIMELEN | PARSE_DEFAULT | PARSE_IN_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 7, 0, 200);
+	TEST_PARSE("-123", EXPECT_SUCCEED, -123, PARSE_TIMELEN | PARSE_DEFAULT | PARSE_IN_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 7, -200, 100);
+	TEST_PARSE("0", EXPECT_SUCCEED, 0, PARSE_TIMELEN | PARSE_DEFAULT | PARSE_IN_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 7, -1, 0);
+	TEST_PARSE("123", EXPECT_FAIL, 7, PARSE_TIMELEN | PARSE_DEFAULT | PARSE_IN_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 7, 0, 122);
+	TEST_PARSE("-123", EXPECT_FAIL, 7, PARSE_TIMELEN | PARSE_DEFAULT | PARSE_IN_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 7, -122, 100);
+	TEST_PARSE("0", EXPECT_FAIL, 7, PARSE_TIMELEN | PARSE_DEFAULT | PARSE_IN_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 7, 1, 100);
+	TEST_PARSE("not a number", EXPECT_FAIL, 7, PARSE_TIMELEN | PARSE_DEFAULT | PARSE_IN_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 7, INT_MIN, INT_MAX);
+	TEST_PARSE("7not a number", EXPECT_FAIL, 7, PARSE_TIMELEN | PARSE_DEFAULT | PARSE_IN_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 7, INT_MIN, INT_MAX);
+	TEST_PARSE("123", EXPECT_FAIL, 7, PARSE_TIMELEN | PARSE_DEFAULT | PARSE_OUT_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 7, 0, 200);
+	TEST_PARSE("-123", EXPECT_FAIL, 7, PARSE_TIMELEN | PARSE_DEFAULT | PARSE_OUT_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 7, -200, 100);
+	TEST_PARSE("0", EXPECT_FAIL, 7, PARSE_TIMELEN | PARSE_DEFAULT | PARSE_OUT_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 7, -1, 0);
+	TEST_PARSE("123", EXPECT_SUCCEED, 123, PARSE_TIMELEN | PARSE_DEFAULT | PARSE_OUT_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 7, 0, 122);
+	TEST_PARSE("-123", EXPECT_SUCCEED, -123, PARSE_TIMELEN | PARSE_DEFAULT | PARSE_OUT_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 7, -122, 100);
+	TEST_PARSE("0", EXPECT_SUCCEED, 0, PARSE_TIMELEN | PARSE_DEFAULT | PARSE_OUT_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 7, 1, 100);
+	TEST_PARSE("not a number", EXPECT_FAIL, 7, PARSE_TIMELEN | PARSE_DEFAULT | PARSE_OUT_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 7, INT_MIN, INT_MAX);
+	TEST_PARSE("7not a number", EXPECT_FAIL, 7, PARSE_TIMELEN | PARSE_DEFAULT | PARSE_OUT_RANGE, &timelen_val, TIMELEN_MILLISECONDS, 7, INT_MIN, INT_MAX);
+
 	/* double testing */
 	TEST_PARSE("123", EXPECT_SUCCEED, 123, PARSE_DOUBLE, &double_val);
 	TEST_PARSE("123.123", EXPECT_SUCCEED, 123.123, PARSE_DOUBLE, &double_val);
@@ -1283,6 +1346,10 @@ struct test_item {
 	);
 	int32_t intopt;
 	uint32_t uintopt;
+	int timelenopt1;
+	int timelenopt2;
+	int timelenopt3;
+	int timelenopt4;
 	unsigned int flags;
 	double doubleopt;
 	struct ast_sockaddr sockaddropt;
@@ -1297,12 +1364,6 @@ struct test_config {
 	struct ao2_container *items;
 };
 
-static int test_item_hash(const void *obj, const int flags)
-{
-	const struct test_item *item = obj;
-	const char *name = (flags & OBJ_KEY) ? obj : item->name;
-	return ast_str_case_hash(name);
-}
 static int test_item_cmp(void *obj, void *arg, int flags)
 {
 	struct test_item *one = obj, *two = arg;
@@ -1355,7 +1416,8 @@ static void *test_config_alloc(void)
 	if (!(cfg->global_defaults = test_item_alloc("global_defaults"))) {
 		goto error;
 	}
-	if (!(cfg->items = ao2_container_alloc(1, test_item_hash, test_item_cmp))) {
+	cfg->items = ao2_container_alloc_list(AO2_ALLOC_OPT_LOCK_MUTEX, 0, NULL, test_item_cmp);
+	if (!cfg->items) {
 		goto error;
 	}
 	return cfg;
@@ -1389,13 +1451,19 @@ static struct aco_type global = {
 static struct aco_type global_defaults = {
 	.type = ACO_GLOBAL,
 	.item_offset = offsetof(struct test_config, global_defaults),
-	.category_match = ACO_WHITELIST,
-	.category = "^global_defaults$",
+	.category_match = ACO_WHITELIST_EXACT,
+	.category = "global_defaults",
 };
+static const char *item_blacklist[] = {
+	"global",
+	"global_defaults",
+	NULL,
+};
+
 static struct aco_type item = {
 	.type = ACO_ITEM,
-	.category_match = ACO_BLACKLIST,
-	.category = "^(global|global_defaults)$",
+	.category_match = ACO_BLACKLIST_ARRAY,
+	.category = (const char *)item_blacklist,
 	.item_alloc = test_item_alloc,
 	.item_find = test_item_find,
 	.item_offset = offsetof(struct test_config, items),
@@ -1437,6 +1505,8 @@ AST_TEST_DEFINE(config_options_test)
 #define INT_CONFIG "-1"
 #define UINT_DEFAULT "2"
 #define UINT_CONFIG "1"
+#define TIMELEN_DEFAULT "2"
+#define TIMELEN_CONFIG "1"
 #define DOUBLE_DEFAULT "1.1"
 #define DOUBLE_CONFIG "0.1"
 #define SOCKADDR_DEFAULT "4.3.2.1:4321"
@@ -1471,6 +1541,10 @@ AST_TEST_DEFINE(config_options_test)
 	/* Register all options */
 	aco_option_register(&cfg_info, "intopt", ACO_EXACT, config_test_conf.types, INT_DEFAULT, OPT_INT_T, 0, FLDSET(struct test_item, intopt));
 	aco_option_register(&cfg_info, "uintopt", ACO_EXACT, config_test_conf.types, UINT_DEFAULT, OPT_UINT_T, 0, FLDSET(struct test_item, uintopt));
+	aco_option_register(&cfg_info, "timelenopt1", ACO_EXACT, config_test_conf.types, TIMELEN_DEFAULT, OPT_TIMELEN_T, 0, FLDSET(struct test_item, timelenopt1), TIMELEN_MILLISECONDS);
+	aco_option_register(&cfg_info, "timelenopt2", ACO_EXACT, config_test_conf.types, TIMELEN_DEFAULT, OPT_TIMELEN_T, 0, FLDSET(struct test_item, timelenopt2), TIMELEN_SECONDS);
+	aco_option_register(&cfg_info, "timelenopt3", ACO_EXACT, config_test_conf.types, TIMELEN_DEFAULT, OPT_TIMELEN_T, 0, FLDSET(struct test_item, timelenopt3), TIMELEN_MINUTES);
+	aco_option_register(&cfg_info, "timelenopt4", ACO_EXACT, config_test_conf.types, TIMELEN_DEFAULT, OPT_TIMELEN_T, 0, FLDSET(struct test_item, timelenopt4), TIMELEN_HOURS);
 	aco_option_register(&cfg_info, "doubleopt", ACO_EXACT, config_test_conf.types, DOUBLE_DEFAULT, OPT_DOUBLE_T, 0, FLDSET(struct test_item, doubleopt));
 	aco_option_register(&cfg_info, "sockaddropt", ACO_EXACT, config_test_conf.types, SOCKADDR_DEFAULT, OPT_SOCKADDR_T, 0, FLDSET(struct test_item, sockaddropt));
 	aco_option_register(&cfg_info, "boolopt", ACO_EXACT, config_test_conf.types, BOOL_DEFAULT, OPT_BOOL_T, 1, FLDSET(struct test_item, boolopt));
@@ -1492,6 +1566,14 @@ AST_TEST_DEFINE(config_options_test)
 
 	ast_parse_arg(INT_DEFAULT, PARSE_INT32, &defaults.intopt);
 	ast_parse_arg(INT_CONFIG, PARSE_INT32, &configs.intopt);
+	ast_parse_arg(TIMELEN_DEFAULT, PARSE_TIMELEN, &defaults.timelenopt1, TIMELEN_MILLISECONDS);
+	ast_parse_arg(TIMELEN_CONFIG, PARSE_TIMELEN, &configs.timelenopt1, TIMELEN_MILLISECONDS);
+	ast_parse_arg(TIMELEN_DEFAULT, PARSE_TIMELEN, &defaults.timelenopt2, TIMELEN_SECONDS);
+	ast_parse_arg(TIMELEN_CONFIG, PARSE_TIMELEN, &configs.timelenopt2, TIMELEN_SECONDS);
+	ast_parse_arg(TIMELEN_DEFAULT, PARSE_TIMELEN, &defaults.timelenopt3, TIMELEN_MINUTES);
+	ast_parse_arg(TIMELEN_CONFIG, PARSE_TIMELEN, &configs.timelenopt3, TIMELEN_MINUTES);
+	ast_parse_arg(TIMELEN_DEFAULT, PARSE_TIMELEN, &defaults.timelenopt4, TIMELEN_HOURS);
+	ast_parse_arg(TIMELEN_CONFIG, PARSE_TIMELEN, &configs.timelenopt4, TIMELEN_HOURS);
 	ast_parse_arg(UINT_DEFAULT, PARSE_UINT32, &defaults.uintopt);
 	ast_parse_arg(UINT_CONFIG, PARSE_UINT32, &configs.uintopt);
 	ast_parse_arg(DOUBLE_DEFAULT, PARSE_DOUBLE, &defaults.doubleopt);
@@ -1553,6 +1635,10 @@ AST_TEST_DEFINE(config_options_test)
 
 		NOT_EQUAL_FAIL(intopt, "%d");
 		NOT_EQUAL_FAIL(uintopt, "%u");
+		NOT_EQUAL_FAIL(timelenopt1, "%d");
+		NOT_EQUAL_FAIL(timelenopt2, "%d");
+		NOT_EQUAL_FAIL(timelenopt3, "%d");
+		NOT_EQUAL_FAIL(timelenopt4, "%d");
 		NOT_EQUAL_FAIL(boolopt, "%d");
 		NOT_EQUAL_FAIL(flags, "%u");
 		NOT_EQUAL_FAIL(customopt, "%d");
@@ -1592,6 +1678,8 @@ AST_TEST_DEFINE(config_options_test)
 	configs.codeccapopt = NULL;
 	ast_string_field_free_memory(&defaults);
 	ast_string_field_free_memory(&configs);
+	aco_info_destroy(&cfg_info);
+	ao2_global_obj_release(global_obj);
 	return res;
 }
 
@@ -1836,4 +1924,3 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "Config test module");
-

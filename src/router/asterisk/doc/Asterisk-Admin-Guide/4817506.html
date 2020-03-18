@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : What to Download?</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Getting-Started_5243710.html">Getting Started</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Installing-Asterisk_4817553.html">Installing Asterisk</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Installing-Asterisk-From-Source_4817561.html">Installing Asterisk From Source</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : What to Download?
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Malcolm Davenport</span> on Apr 28, 2017
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="WhattoDownload?-Asterisk">Asterisk</h1><p>Downloads of Asterisk are available at <a href="https://downloads.asterisk.org/pub/telephony/asterisk/" class="external-link" rel="nofollow">https://downloads.asterisk.org/pub/telephony/asterisk/</a>. The currently supported versions of Asterisk will each have a symbolic link to their related release on this server, named <strong>asterisk-{version}-current</strong><strong>.tar.gz</strong>. All releases ever made for the Asterisk project are available at <a href="https://downloads.asterisk.org/pub/telephony/asterisk/releases/" class="external-link" rel="nofollow">https://downloads.asterisk.org/pub/telephony/asterisk/releases/</a>.</p><p>The currently supported versions of Asterisk are documented on the <a href="Asterisk-Versions_7667733.html">Asterisk Versions</a> page. It is highly recommended that you install one of the currently supported versions, as these versions continue to receive bug and security fixes.</p>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Which version should I install?</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <ul><li>If you want a rock solid communications framework, choose the latest <strong>Long Term Support (LTS)</strong> release.</li><li>If you want the latest cool features and capabilities, choose the latest release of Asterisk. If that is a <strong>Standard</strong> release, note that these releases may have larger changes made in them than LTS releases.</li></ul><p>Unless otherwise noted, for the purposes of this section we will assume that Asterisk 14 is being installed.</p>
+                    </div>
+    </div>
+<p>Review Asterisk's<a href="System-Requirements_4817508.html"> System Requirements</a> in order to determine what needs to be installed for the version of Asterisk you are installing. While Asterisk will look for any missing system requirements during compilation, it's often best to install these prior to configuring and compiling Asterisk.</p><p>Asterisk does come with a script, <strong>install_prereq</strong>, to aid in this process. If you'd like to use this script, download Asterisk first, then see <a href="Checking-Asterisk-Requirements_4817512.html">Checking Asterisk Requirements</a> for instructions on using this script to install prerequisites for your version of Asterisk.</p></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302867158 {padding: 0px;}
+div.rbtoc1582302867158 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302867158 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302867158'>
+<ul class='toc-indentation'>
+<li><a href='#WhattoDownload?-Asterisk'>Asterisk</a>
+<ul class='toc-indentation'>
+<li><a href='#WhattoDownload?-DownloadingAsterisk'>Downloading Asterisk</a></li>
+</ul>
+</li>
+<li><a href='#WhattoDownload?-OtherProjects'>Other Projects</a>
+<ul class='toc-indentation'>
+<li><a href='#WhattoDownload?-libpri'>libpri</a></li>
+<li><a href='#WhattoDownload?-DAHDI'>DAHDI</a></li>
+</ul>
+</li>
+<li><a href='#WhattoDownload?-DownloadLocations'>Download Locations</a></li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><h2 id="WhattoDownload?-DownloadingAsterisk">Downloading Asterisk</h2><p>Browse to <a href="https://downloads.asterisk.org/pub/telephony/asterisk" class="external-link" rel="nofollow">https://downloads.asterisk.org/pub/telephony/asterisk</a>, select <a href="https://downloads.asterisk.org/pub/telephony/asterisk/asterisk-14-current.tar.gz" class="external-link" rel="nofollow">asterisk-14-current.tar.gz</a>, and save the file on your file system.</p><p>You can also get the latest releases from the downloads page on <a href="http://asterisk.org/downloads" class="external-link" rel="nofollow">asterisk.org</a>.</p><p>Alternatively, you can us<code>e <a href="https://www.gnu.org/software/wget/" class="external-link" rel="nofollow">wget</a></code> to retrieve the latest release:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server:/usr/local/src]# wget https://downloads.asterisk.org/pub/telephony/asterisk/asterisk-14-current.tar.gz
+--2017-04-28 15:45:36--  https://downloads.asterisk.org/pub/telephony/asterisk/asterisk-14-current.tar.gz
+Resolving downloads.asterisk.org (downloads.asterisk.org)... 76.164.171.238
+Connecting to downloads.asterisk.org (downloads.asterisk.org)|76.164.171.238|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 40692588 (39M) [application/x-gzip]
+Saving to: ‘asterisk-14-current.tar.gz’
+
+asterisk-14-current.tar.gz            100%[======================================================================&gt;]  38.81M  3.32MB/s    in 12s     
+
+2017-04-28 15:45:47 (3.37 MB/s) - ‘asterisk-14-current.tar.gz’ saved [40692588/40692588]</pre>
+</div></div><h1 id="WhattoDownload?-OtherProjects">Other Projects</h1><h2 id="WhattoDownload?-libpri">libpri</h2><p>The <strong>libpri</strong> library allows Asterisk to communicate with ISDN connections.You'll only need this if you are going to use DAHDI with ISDN interface hardware (such as T1/E1/J1/BRI cards).</p><h2 id="WhattoDownload?-DAHDI">DAHDI</h2><p>The <strong>DAHDI</strong> library allows Asterisk to communicate with analog and digital telephones and telephone lines, including connections to the Public Switched Telephone Network, or PSTN.</p><p>DAHDI stands for Digium Asterisk Hardware Device Interface, and is a set of drivers and utilities for a number of analog and digital telephony cards, such as those manufactured by Digium. The DAHDI drivers are independent of Asterisk, and can be used by other applications. DAHDI was previously called Zaptel, as it evolved from the Zapata Telephony Project.</p><p>The DAHDI code can be downloaded as individual pieces (<strong>dahdi-linux</strong> for the DAHDI drivers, and <strong>dahdi-tools</strong> for the DAHDI utilities. They can also be downloaded as a complete package called <strong>dahdi-linux-complete</strong>, which contains both the Linux drivers and the utilities.</p><p>You will only need to install DAHDI if you are going to utilize DAHDI compatible analog or digital telephony interface boards.</p>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Why is DAHDI split into different pieces?</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>DAHDI has been split into two pieces (the Linux drivers and the tools) as third parties have begun porting the DAHDI drivers to other operating systems, such as FreeBSD. Eventually, we may have dahdi-linux, dahdi-freebsd, and so on.</p>
+                    </div>
+    </div>
+<h1 id="WhattoDownload?-DownloadLocations">Download Locations</h1><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Project</th><th class="confluenceTh">Location</th></tr><tr><td class="confluenceTd">Asterisk</td><td class="confluenceTd"><a href="https://downloads.asterisk.org/pub/telephony/asterisk/asterisk-14-current.tar.gz" class="external-link" rel="nofollow">https://downloads.asterisk.org/pub/telephony/asterisk/asterisk-14-current.tar.gz</a></td></tr><tr><td colspan="1" class="confluenceTd">libpri</td><td colspan="1" class="confluenceTd"><a href="https://downloads.asterisk.org/pub/telephony/libpri/libpri-current.tar.gz" class="external-link" rel="nofollow">https://downloads.asterisk.org/pub/telephony/libpri/libpri-current.tar.gz</a></td></tr><tr><td colspan="1" class="confluenceTd">dahdi-linux</td><td colspan="1" class="confluenceTd"><a href="https://downloads.asterisk.org/pub/telephony/dahdi-linux/dahdi-linux-current.tar.gz" class="external-link" rel="nofollow">https://downloads.asterisk.org/pub/telephony/dahdi-linux/dahdi-linux-current.tar.gz</a></td></tr><tr><td colspan="1" class="confluenceTd">dahdi-tools</td><td colspan="1" class="confluenceTd"><a href="https://downloads.asterisk.org/pub/telephony/dahdi-tools/dahdi-tools-current.tar.gz" class="external-link" rel="nofollow">https://downloads.asterisk.org/pub/telephony/dahdi-tools/dahdi-tools-current.tar.gz</a></td></tr><tr><td colspan="1" class="confluenceTd">dahdi-complete</td><td colspan="1" class="confluenceTd"><a href="https://downloads.asterisk.org/pub/telephony/dahdi-linux-complete/dahdi-linux-complete-current.tar.gz" class="external-link" rel="nofollow">https://downloads.asterisk.org/pub/telephony/dahdi-linux-complete/dahdi-linux-complete-current.tar.gz</a></td></tr></tbody></table></div><p> </p><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

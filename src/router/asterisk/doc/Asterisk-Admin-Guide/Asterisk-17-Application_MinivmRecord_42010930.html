@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_MinivmRecord</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_MinivmRecord
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_MinivmRecord-MinivmRecord()">MinivmRecord()</h1>
+
+<h3 id="Asterisk17Application_MinivmRecord-Synopsis">Synopsis</h3>
+
+<p>Receive Mini-Voicemail and forward via e-mail.</p>
+
+<h3 id="Asterisk17Application_MinivmRecord-Description">Description</h3>
+
+<p>This application is part of the Mini-Voicemail system, configured in <code>minivm.conf</code></p>
+
+<p>MiniVM records audio file in configured format and forwards message to e-mail and pager.</p>
+
+<p>If there's no user account for that address, a temporary account will be used with default options.</p>
+
+<p>The recorded file name and path will be stored in <code>MVM_FILENAME</code> and the duration of the message will be stored in <code>MVM_DURATION</code></p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>If the caller hangs up after the recording, the only way to send the message and clean up is to execute in the <code>h</code> extension. The application will exit if any of the following DTMF digits are received and the requested extension exist in the current context.</p>
+
+                    </div>
+    </div>
+
+<ul>
+	<li><code>MVM_RECORD_STATUS</code> - This is the status of the record operation
+	<ul>
+		<li>SUCCESS</li>
+		<li>USEREXIT</li>
+		<li>FAILED</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_MinivmRecord-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>MinivmRecord(username@domain,[options])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_MinivmRecord-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>mailbox</code>
+	<ul>
+		<li><code><strong>username</strong></code> - Voicemail username</li>
+		<li><code><strong>domain</strong></code> - Voicemail domain</li>
+	</ul>
+	</li>
+	<li><code>options</code>
+	<ul>
+		<li><code>0</code> - Jump to the <code>o</code> extension in the current dialplan context.</li>
+		<li><code>*</code> - Jump to the <code>a</code> extension in the current dialplan context.</li>
+		<li><code>g</code><code>( gain )</code> - Use the specified amount of gain when recording the voicemail message. The units are whole-number decibels (dB).
+		<ul>
+			<li><code>gain</code> - Amount of gain to use</li>
+		</ul>
+		</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_MinivmRecord-SeeAlso">See Also</h3>
+
+
+<h3 id="Asterisk17Application_MinivmRecord-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

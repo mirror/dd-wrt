@@ -23,9 +23,5 @@ maximum_word_length = 5000  	; Maximum duration of a single Voice utterance allo
 between_words_silence = 50	; Minimum duration of silence after a word to consider
 				; the audio what follows as a new word
 
-maximum_number_of_words = 3	; Maximum number of words in the greeting
-				; If REACHED, then the result is detection as a MACHINE
-				; WARNING: Releases prior to January 1 2016 documented
-				; maximum_number_of_words as 'if exceeded, then MACHINE',
-				; which did not reflect the true functionality.  In Asterisk 14,
-				; this functionality will change to reflect the variables' name.
+maximum_number_of_words = 2	; Maximum number of words in the greeting
+				; If exceeded, then the result is detection as a MACHINE

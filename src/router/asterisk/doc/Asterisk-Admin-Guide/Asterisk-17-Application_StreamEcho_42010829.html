@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_StreamEcho</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_StreamEcho
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_StreamEcho-StreamEcho()">StreamEcho()</h1>
+
+<h3 id="Asterisk17Application_StreamEcho-Synopsis">Synopsis</h3>
+
+<p>Echo media, up to 'N' streams of a type, and DTMF back to the calling party</p>
+
+<h3 id="Asterisk17Application_StreamEcho-Description">Description</h3>
+
+<p>If a &quot;num&quot; (the number of streams) is not given then this simply echos back any media or DTMF frames (note, however if '#' is detected then the application exits) read from the calling channel back to itself. This means for any relevant frame read from a particular stream it is written back out to the associated write stream in a one to one fashion.</p>
+
+<p>However if a &quot;num&quot; is specified, and if the calling channel allows it (a new offer is made requesting the allowance of additional streams) then any any media received, like before, is echoed back onto each stream. However, in this case a relevant frame received on a stream of the given &quot;type&quot; is also echoed back out to the other streams of that same type. It should be noted that when operating in this mode only the first stream found of the given &quot;type&quot; is allowed from the original offer. And this first stream found is also the only stream of that &quot;type&quot; granted read (send/receive) capabilities in the new offer whereas the additional ones are set to receive only.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>This does not echo CONTROL, MODEM, or NULL frames.</p>
+
+                    </div>
+    </div>
+
+
+<h3 id="Asterisk17Application_StreamEcho-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>StreamEcho([num,[type]])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_StreamEcho-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>num</code> - The number of streams of a type to echo back. If '0' is specified then all streams of a type are removed.</li>
+	<li><code>type</code> - The media type of the stream(s) to add or remove (in the case of &quot;num&quot; being '0'). This can be set to either &quot;audio&quot; or &quot;video&quot; (default). If &quot;num&quot; is empty (i.e. not specified) then this parameter is ignored.</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_StreamEcho-SeeAlso">See Also</h3>
+
+
+<h3 id="Asterisk17Application_StreamEcho-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

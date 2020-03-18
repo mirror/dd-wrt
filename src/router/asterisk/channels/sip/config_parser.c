@@ -20,12 +20,10 @@
  */
 
 /*** MODULEINFO
-	<support_level>extended</support_level>
+	<support_level>deprecated</support_level>
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "include/sip.h"
 #include "include/config_parser.h"
@@ -926,4 +924,3 @@ void sip_config_parser_unregister_tests(void)
 	AST_TEST_UNREGISTER(sip_parse_host_line_test);
 	AST_TEST_UNREGISTER(sip_parse_nat_test);
 }
-

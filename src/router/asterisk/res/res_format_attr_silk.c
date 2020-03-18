@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/module.h"
 #include "asterisk/format.h"
 
@@ -111,7 +109,7 @@ static void silk_generate_sdp_fmtp(const struct ast_format *format, unsigned int
 		return;
 	}
 
-	if ((attr->maxbitrate > 5000) && (attr->maxbitrate < 40000)) { 
+	if ((attr->maxbitrate > 5000) && (attr->maxbitrate < 40000)) {
 		ast_str_append(str, 0, "a=fmtp:%u maxaveragebitrate=%u\r\n", payload, attr->maxbitrate);
 	}
 

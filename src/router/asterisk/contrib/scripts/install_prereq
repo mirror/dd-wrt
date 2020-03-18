@@ -19,29 +19,150 @@ usage() {
 }
 
 # Basic build system:
-PACKAGES_DEBIAN="build-essential"
+PACKAGES_DEBIAN="build-essential pkg-config"
 # Asterisk: basic requirements:
-PACKAGES_DEBIAN="$PACKAGES_DEBIAN libncurses-dev libz-dev libssl-dev libxml2-dev libsqlite3-dev uuid-dev uuid"
+PACKAGES_DEBIAN="$PACKAGES_DEBIAN libedit-dev libjansson-dev libsqlite3-dev uuid-dev libxml2-dev"
 # Asterisk: for addons:
-PACKAGES_DEBIAN="$PACKAGES_DEBIAN libcurl-dev libspeex-dev libspeexdsp-dev libogg-dev libvorbis-dev libasound2-dev portaudio19-dev libcurl4-openssl-dev"
-PACKAGES_DEBIAN="$PACKAGES_DEBIAN libpq-dev unixodbc-dev libsqlite0-dev libmysqlclient15-dev libneon27-dev libgmime-dev libusb-dev liblua5.1-0-dev lua5.1"
-PACKAGES_DEBIAN="$PACKAGES_DEBIAN libopenh323-dev libvpb-dev libgtk2.0-dev libmysqlclient-dev libbluetooth-dev libradiusclient-ng-dev freetds-dev"
-PACKAGES_DEBIAN="$PACKAGES_DEBIAN libsnmp-dev libiksemel-dev libcorosync-dev libnewt-dev libpopt-dev libical-dev libspandsp-dev libjack-dev"
-PACKAGES_DEBIAN="$PACKAGES_DEBIAN libresample-dev libc-client-dev binutils-dev libsrtp-dev libgsm1-dev libedit-dev doxygen libjansson-dev libldap-dev"
-PACKAGES_DEBIAN="$PACKAGES_DEBIAN subversion git libxslt1-dev automake libsrtp-dev libncurses5-dev python-dev"
-PACKAGES_RH="automake bzip2 gcc gcc-c++ patch ncurses-devel openssl-devel libxml2-devel unixODBC-devel libcurl-devel libogg-devel libvorbis-devel speex-devel"
-PACKAGES_RH="$PACKAGES_RH spandsp-devel freetds-devel net-snmp-devel iksemel-devel corosynclib-devel newt-devel popt-devel libtool-ltdl-devel lua-devel"
-PACKAGES_RH="$PACKAGES_RH sqlite-devel libsqlite3x-devel radiusclient-ng-devel portaudio-devel postgresql-devel libresample-devel neon-devel libical-devel"
-PACKAGES_RH="$PACKAGES_RH openldap-devel gmime22-devel sqlite2-devel mysql-devel bluez-libs-devel jack-audio-connection-kit-devel gsm-devel libedit-devel libuuid-devel"
-PACKAGES_RH="$PACKAGES_RH jansson-devel libsrtp-devel pjproject-devel subversion git libxslt-devel python-devel"
+PACKAGES_DEBIAN="$PACKAGES_DEBIAN libspeex-dev libspeexdsp-dev libogg-dev libvorbis-dev libasound2-dev portaudio19-dev libcurl4-openssl-dev xmlstarlet bison flex"
+PACKAGES_DEBIAN="$PACKAGES_DEBIAN libpq-dev unixodbc-dev libneon27-dev libgmime-2.6-dev liblua5.2-dev liburiparser-dev libxslt1-dev libssl-dev"
+PACKAGES_DEBIAN="$PACKAGES_DEBIAN libvpb-dev libmysqlclient-dev libbluetooth-dev libradcli-dev freetds-dev libosptk-dev libjack-jackd2-dev bash"
+PACKAGES_DEBIAN="$PACKAGES_DEBIAN libsnmp-dev libiksemel-dev libcorosync-common-dev libcpg-dev libcfg-dev libnewt-dev libpopt-dev libical-dev libspandsp-dev"
+PACKAGES_DEBIAN="$PACKAGES_DEBIAN libresample1-dev libc-client2007e-dev binutils-dev libsrtp0-dev libsrtp2-dev libgsm1-dev doxygen graphviz zlib1g-dev libldap2-dev"
+PACKAGES_DEBIAN="$PACKAGES_DEBIAN libcodec2-dev libfftw3-dev libsndfile1-dev libunbound-dev"
+# Asterisk: for the unpackaged below:
+PACKAGES_DEBIAN="$PACKAGES_DEBIAN wget subversion"
+# Asterisk: for ./configure --with-pjproject-bundled:
+PACKAGES_DEBIAN="$PACKAGES_DEBIAN bzip2 patch python-dev"
 
-PACKAGES_OBSD="popt gmake wget libxml libogg libvorbis curl iksemel spandsp speex iodbc freetds-0.63p1-msdblib mysql-client gmime sqlite sqlite3 jack libxslt"
-PACKAGES_FBSD="autoconf gcc binutils popt gmake wget libxml2 libogg libvorbis curl iksemel spandsp speex unixODBC freetds-devel mysql55-client gmime2 sqlite"
-PACKAGES_FBSD="$PACKAGES_FBSD sqlite3 libxslt jansson e2fsprogs-libuuid gsm libsrtp libsamplerate"
+# Basic build system:
+PACKAGES_RH="make gcc gcc-c++ pkgconfig"
+# Asterisk: basic requirements:
+PACKAGES_RH="$PACKAGES_RH libedit-devel jansson-devel libuuid-devel sqlite-devel libxml2-devel"
+# Asterisk: for addons:
+PACKAGES_RH="$PACKAGES_RH speex-devel speexdsp-devel libogg-devel libvorbis-devel alsa-lib-devel portaudio-devel libcurl-devel xmlstarlet bison flex"
+PACKAGES_RH="$PACKAGES_RH postgresql-devel unixODBC-devel neon-devel gmime-devel lua-devel uriparser-devel libxslt-devel openssl-devel"
+PACKAGES_RH="$PACKAGES_RH mysql-devel bluez-libs-devel radcli-devel freetds-devel jack-audio-connection-kit-devel bash"
+PACKAGES_RH="$PACKAGES_RH net-snmp-devel iksemel-devel corosynclib-devel newt-devel popt-devel libical-devel spandsp-devel"
+PACKAGES_RH="$PACKAGES_RH libresample-devel uw-imap-devel binutils-devel libsrtp-devel gsm-devel doxygen graphviz zlib-devel openldap-devel hoard"
+PACKAGES_RH="$PACKAGES_RH codec2-devel fftw-devel libsndfile-devel unbound-devel"
+# Asterisk: for the unpackaged below:
+PACKAGES_RH="$PACKAGES_RH wget subversion"
+# Asterisk: for ./configure --with-pjproject-bundled:
+PACKAGES_RH="$PACKAGES_RH bzip2 patch python-devel"
+
+# Basic build system:
+PACKAGES_SUSE="make gcc gcc-c++ pkg-config"
+# Asterisk: basic requirements:
+PACKAGES_SUSE="$PACKAGES_SUSE libedit-devel libjansson-devel libuuid-devel sqlite3-devel libxml2-devel"
+# Asterisk: for addons:
+PACKAGES_SUSE="$PACKAGES_SUSE speex-devel speexdsp-devel libogg-devel libvorbis-devel alsa-devel portaudio-devel libcurl-devel xmlstarlet bison flex"
+PACKAGES_SUSE="$PACKAGES_SUSE postgresql-devel unixODBC-devel libneon-devel gmime-devel lua-devel liburiparser-devel libxslt-devel libopenssl-devel"
+PACKAGES_SUSE="$PACKAGES_SUSE libmysqlclient-devel bluez-devel freeradius-client-devel freetds-devel bash"
+PACKAGES_SUSE="$PACKAGES_SUSE net-snmp-devel iksemel-devel libcorosync-devel newt-devel popt-devel libical-devel spandsp-devel"
+PACKAGES_SUSE="$PACKAGES_SUSE imap-devel libsrtp2-devel libgsm-devel doxygen graphviz zlib-devel openldap2-devel"
+PACKAGES_SUSE="$PACKAGES_SUSE codec2-devel fftw3-devel libsndfile-devel unbound-devel"
+# Asterisk: for the unpackaged below:
+PACKAGES_SUSE="$PACKAGES_SUSE wget subversion"
+# Asterisk: for ./configure --with-pjproject-bundled:
+PACKAGES_SUSE="$PACKAGES_SUSE bzip2 patch python-devel"
+
+# Basic build system:
+PACKAGES_ARCH="make gcc pkg-config"
+# Asterisk: basic requirements:
+PACKAGES_ARCH="$PACKAGES_ARCH libedit jansson libutil-linux libxml2 sqlite"
+# Asterisk: for addons:
+PACKAGES_ARCH="$PACKAGES_ARCH speex speexdsp libogg libvorbis alsa-lib portaudio curl xmlstarlet bison flex"
+PACKAGES_ARCH="$PACKAGES_ARCH postgresql-libs unixodbc neon gmime lua uriparser libxslt openssl"
+PACKAGES_ARCH="$PACKAGES_ARCH libmariadbclient bluez-libs radcli freetds bash"
+PACKAGES_ARCH="$PACKAGES_ARCH net-snmp libnewt popt libical spandsp"
+PACKAGES_ARCH="$PACKAGES_ARCH c-client binutils libsrtp gsm doxygen graphviz zlib libldap"
+PACKAGES_ARCH="$PACKAGES_ARCH fftw libsndfile unbound"
+# Asterisk: for the unpackaged below:
+PACKAGES_ARCH="$PACKAGES_ARCH wget subversion"
+# Asterisk: for ./configure --with-pjproject-bundled:
+PACKAGES_ARCH="$PACKAGES_ARCH bzip2 patch python2"
+
+# Basic build system:
+PACKAGES_GENTOO="sys-devel/make sys-devel/gcc dev-util/pkgconfig"
+# Asterisk: basic requirements:
+PACKAGES_GENTOO="$PACKAGES_GENTOO dev-libs/libedit dev-libs/jansson sys-libs/e2fsprogs-libs dev-libs/libxml2 dev-db/sqlite"
+# Asterisk: for addons:
+PACKAGES_GENTOO="$PACKAGES_GENTOO media-libs/speex media-libs/speexdsp media-libs/libogg media-libs/libvorbis media-libs/alsa-lib media-libs/portaudio net-misc/curl app-text/xmlstarlet sys-devel/bison sys-devel/flex"
+PACKAGES_GENTOO="$PACKAGES_GENTOO dev-db/postgresql dev-db/unixODBC net-libs/neon dev-libs/gmime dev-lang/lua dev-libs/uriparser dev-libs/libxslt dev-libs/openssl"
+PACKAGES_GENTOO="$PACKAGES_GENTOO virtual/libmysqlclient net-wireless/bluez net-dialup/radiusclient-ng dev-db/freetds app-shells/bash"
+PACKAGES_GENTOO="$PACKAGES_GENTOO net-analyzer/net-snmp dev-libs/iksemel sys-cluster/corosync dev-libs/newt dev-libs/popt dev-libs/libical media-libs/spandsp"
+PACKAGES_GENTOO="$PACKAGES_GENTOO net-libs/c-client sys-devel/binutils net-libs/libsrtp media-sound/gsm media-libs/libilbc app-doc/doxygen sys-libs/zlib net-nds/openldap"
+PACKAGES_GENTOO="$PACKAGES_GENTOO sci-libs/fftw media-libs/libsndfile net-dns/unbound"
+# Asterisk: for the unpackaged below:
+PACKAGES_GENTOO="$PACKAGES_GENTOO net-misc/wget dev-vcs/subversion"
+# Asterisk: for ./configure --with-pjproject-bundled:
+PACKAGES_GENTOO="$PACKAGES_GENTOO app-arch/bzip2 sys-devel/patch dev-lang/python:2.7"
+
+# Basic build system:
+PACKAGES_NBSD="gmake pkg-config"
+# Asterisk: basic requirements:
+PACKAGES_NBSD="$PACKAGES_NBSD editline jansson sqlite3 libuuid libxml2"
+# Asterisk: for addons:
+PACKAGES_NBSD="$PACKAGES_NBSD speex speexdsp libogg libvorbis alsa-lib portaudio-devel curl bison flex"
+PACKAGES_NBSD="$PACKAGES_NBSD postgresql10-client unixodbc neon gmime lua52 uriparser libxslt openssl"
+PACKAGES_NBSD="$PACKAGES_NBSD mysql-client radiusclient-ng freetds bash"
+PACKAGES_NBSD="$PACKAGES_NBSD net-snmp iksemel popt libical spandsp"
+PACKAGES_NBSD="$PACKAGES_NBSD imap-uw srtp gsm doxygen graphviz libzip openldap-client"
+PACKAGES_NBSD="$PACKAGES_NBSD codec2 fftw libsndfile unbound"
+# Asterisk: for the unpackaged below:
+PACKAGES_NBSD="$PACKAGES_NBSD wget subversion-base"
+# Asterisk: for ./configure --with-pjproject-bundled:
+PACKAGES_NBSD="$PACKAGES_NBSD bzip2 patch python27"
+
+# Basic build system:
+PACKAGES_OBSD="gmake"
+# Asterisk: basic requirements:
+PACKAGES_OBSD="$PACKAGES_OBSD libxml sqlite3 e2fsprogs jansson"
+# Asterisk: for addons:
+PACKAGES_OBSD="$PACKAGES_OBSD speex speexdsp libogg libvorbis portaudio-svn curl xmlstarlet bison"
+PACKAGES_OBSD="$PACKAGES_OBSD postgresql-client iodbc neon gmime lua%5.2 uriparser libxslt"
+PACKAGES_OBSD="$PACKAGES_OBSD mariadb-client radcli freetds"
+PACKAGES_OBSD="$PACKAGES_OBSD net-snmp iksemel popt libical spandsp"
+PACKAGES_OBSD="$PACKAGES_OBSD c-client libsrtp gsm doxygen graphviz"
+PACKAGES_OBSD="$PACKAGES_OBSD fftw3 libsndfile"
+# Asterisk: for the unpackaged below:
+PACKAGES_OBSD="$PACKAGES_OBSD wget subversion"
+# Asterisk: for ./configure --with-pjproject-bundled:
+PACKAGES_OBSD="$PACKAGES_OBSD bzip2 python%2"
+
+# Basic build system:
+PACKAGES_FBSD="gmake pkgconf"
+# Asterisk: basic requirements:
+PACKAGES_FBSD="$PACKAGES_FBSD libedit jansson e2fsprogs-libuuid sqlite3 libxml2"
+# Asterisk: for addons:
+PACKAGES_FBSD="$PACKAGES_FBSD speex speexdsp libogg libvorbis alsa-lib portaudio curl xmlstarlet bison flex"
+PACKAGES_FBSD="$PACKAGES_FBSD postgresql10-client unixODBC neon gmime26 lua52 uriparser libxslt openssl"
+PACKAGES_FBSD="$PACKAGES_FBSD mysql57-client radcli freetds"
+PACKAGES_FBSD="$PACKAGES_FBSD net-snmp iksemel corosync newt popt libical spandsp"
+PACKAGES_FBSD="$PACKAGES_FBSD cclient libbfd libsrtp gsm libilbc doxygen graphviz libzip openldap-client libhoard"
+PACKAGES_FBSD="$PACKAGES_FBSD codec2 fftw3 libsndfile unbound"
+# Asterisk: for the unpackaged below:
+PACKAGES_FBSD="$PACKAGES_FBSD wget subversion"
+# Asterisk: for ./configure --with-pjproject-bundled:
+PACKAGES_FBSD="$PACKAGES_FBSD bzip2 patch python"
+
+# Basic build system:
+PACKAGES_DBSD="gmake pkgconf"
+# Asterisk: basic requirements:
+PACKAGES_DBSD="$PACKAGES_DBSD libedit jansson e2fsprogs-libuuid sqlite3 libxml2"
+# Asterisk: for addons:
+PACKAGES_DBSD="$PACKAGES_DBSD speex speexdsp libogg libvorbis alsa-lib portaudio curl xmlstarlet bison flex"
+PACKAGES_DBSD="$PACKAGES_DBSD postgresql10-client unixODBC neon gmime26 lua52 uriparser libxslt libressl"
+PACKAGES_DBSD="$PACKAGES_DBSD mariadb101-client radcli freetds"
+PACKAGES_DBSD="$PACKAGES_DBSD net-snmp iksemel corosync newt popt libical spandsp"
+PACKAGES_DBSD="$PACKAGES_DBSD cclient binutils libsrtp gsm libilbc doxygen graphviz libzip openldap-client libhoard"
+PACKAGES_DBSD="$PACKAGES_DBSD codec2 fftw3 libsndfile unbound"
+# Asterisk: for the unpackaged below:
+PACKAGES_DBSD="$PACKAGES_DBSD wget subversion"
+# Asterisk: for ./configure --with-pjproject-bundled:
+PACKAGES_DBSD="$PACKAGES_DBSD bzip2 patch python"
 
 KVERS=`uname -r`
-
-JANSSON_VER=2.4
 
 case "$1" in
 test)
@@ -88,6 +209,29 @@ check_installed_rpms() {
 	done
 }
 
+check_installed_equery() {
+	for pack in "$@"
+	do
+		# equery --quiet list $pack
+		# is slower and
+		# would require the optional app-portage/gentoolkit
+		# /var/lib/portage/world would be the non-dep list
+		pack_with_version=${pack/:/-} # replace a possible version with '-'
+		if ! ls -d /var/db/pkg/${pack_with_version}* >/dev/null 2>/dev/null
+		then echo $pack
+		fi
+	done
+}
+
+check_installed_pacman() {
+	for pack in "$@"
+	do
+		if ! pacman -Q --explicit $pack >/dev/null 2>/dev/null
+		then echo $pack
+		fi
+	done
+}
+
 check_installed_pkgs() {
 	for pack in "$@"
 	do
@@ -106,9 +250,18 @@ check_installed_fpkgs() {
 	done
 }
 
+check_installed_zypper() {
+	for pack in "$@"
+	do
+		if ! zypper se -ixnC $pack >/dev/null 2>/dev/null
+		then echo $pack
+		fi
+	done
+}
+
 handle_debian() {
 	if ! [ -x "$(command -v aptitude)" ]; then
-		apt-get install aptitude
+		apt-get install -y aptitude
 	fi
 	extra_packs=`check_installed_debs $PACKAGES_DEBIAN`
 	$testcmd aptitude update
@@ -120,7 +273,32 @@ handle_debian() {
 handle_rh() {
 	extra_packs=`check_installed_rpms $PACKAGES_RH`
 	if [ x"$extra_packs" != "x" ] ; then
-		$testcmd yum install -y $extra_packs
+		$testcmd yum install --skip-broken --assumeyes $extra_packs
+	fi
+}
+
+handle_gentoo() {
+	extra_packs=`check_installed_equery $PACKAGES_GENTOO`
+	if [ x"$extra_packs" != "x" ] ; then
+		$testcmd emerge $extra_packs
+	fi
+}
+
+handle_arch() {
+	extra_packs=`check_installed_pacman $PACKAGES_ARCH`
+	if [ x"$extra_packs" != "x" ] ; then
+		$testcmd pacman -S --asexplicit --noconfirm $extra_packs
+	fi
+}
+
+handle_nbsd() {
+	extra_packs=`check_installed_pkgs $PACKAGES_NBSD`
+	if [ x"$extra_packs" != "x" ] ; then
+		if [ -z "$PKG_PATH" ] ; then
+			# see NetBSD Problem Report #48177
+			export PKG_PATH="http://cdn.NetBSD.org/pub/pkgsrc/packages/$(uname -s)/$(uname -p)/$(uname -r)/All"
+		fi
+		$testcmd pkg_add $extra_packs
 	fi
 }
 
@@ -138,11 +316,25 @@ handle_fbsd() {
 	fi
 }
 
+handle_dbsd() {
+	extra_packs=`check_installed_fpkgs $PACKAGES_DBSD`
+	if [ x"$extra_packs" != "x" ] ; then
+		$testcmd pkg install -y $extra_packs
+	fi
+}
+
+handle_SUSE() {
+	extra_packs=`check_installed_zypper $PACKAGES_SUSE`
+	if [ x"$extra_packs" != "x" ] ; then
+		$testcmd zypper install --no-confirm $extra_packs
+	fi
+}
+
 install_unpackaged() {
 	echo "*** Installing NBS (Network Broadcast Sound) ***"
 	svn co http://svn.digium.com/svn/nbs/trunk nbs-trunk
 	cd nbs-trunk
-	make && make install
+	make all install
 	cd ..
 
 	# Only install libresample if it wasn't installed via package
@@ -150,53 +342,32 @@ install_unpackaged() {
 		echo "*** Installing libresample ***"
 		svn co http://svn.digium.com/svn/thirdparty/libresample/trunk libresample-trunk
 		cd libresample-trunk
-		./configure && make && make install
+		./configure
+		make all install
 		cd ..
 	fi
 
-	# Only install Jansson if it wasn't installed via package
-	if ! test -f /usr/include/jansson.h; then
-		echo "*** Installing jansson ***"
-		wget -O - http://www.digip.org/jansson/releases/jansson-${JANSSON_VER}.tar.gz | zcat | tar -xf -
-		cd jansson-${JANSSON_VER}
-		./configure && make all && make install
-		cd ..
-		echo "/usr/local/lib" > /etc/ld.so.conf.d/usr_local.conf
-		/sbin/ldconfig
-	fi
-
-	# Only install libsrtp if it wasn't installed via package
+	# Only install libsrtp2 if it wasn't installed via package
 	if ! test -f /usr/include/srtp/srtp.h; then
-		echo "*** Installing libsrtp ***"
-		if [ ! -d libsrtp ]; then
-			git clone https://github.com/cisco/libsrtp.git
-			cd libsrtp
-		else
-			cd libsrtp
-			git pull
+		if ! test -f /usr/include/srtp2/srtp.h; then
+			echo "*** Installing libsrtp2 ***"
+			wget -O - http://github.com/cisco/libsrtp/archive/v2.tar.gz | zcat | tar -xf -
+			cd libsrtp-2
+			./configure --enable-openssl
+			make shared_library install
+			cd ..
+			if test -d /etc/ld.so.conf.d; then
+				echo "/usr/local/lib" > /etc/ld.so.conf.d/usr_local.conf
+			else # for example: Slackware 14.2
+				echo "/usr/local/lib" > /etc/ld.so.conf
+			fi
+			/sbin/ldconfig
 		fi
-		git checkout "1_5_x_throttle"
-		./configure --disable-debug --disable-stdout --enable-openssl
-		make shared_library uninstall install
-		cd ..
-		echo "/usr/local/lib" > /etc/ld.so.conf.d/usr_local.conf
-		/sbin/ldconfig
 	fi
 
-	# Only install pjproject if it wasn't installed via package
 	if ! test -f /usr/include/pjlib.h; then
-		echo "*** Installing pjproject ***"
-		if [ ! -d pjproject ]; then
-			git clone https://github.com/asterisk/pjproject.git
-			cd pjproject
-		else
-			cd pjproject
-			git pull
-		fi
-		./configure CFLAGS="-DNDEBUG -DPJ_HAS_IPV6=1" --enable-shared --with-external-speex --with-external-gsm --with-external-srtp --disable-sound --disable-resample && make && make install
-		cd ..
-		echo "/usr/local/lib" > /etc/ld.so.conf.d/usr_local.conf
-		/sbin/ldconfig
+		echo "PJProject not installed, yet. Therefore, please, run"
+		echo "./configure --with-pjproject-bundled"
 	fi
 }
 
@@ -214,25 +385,23 @@ OS=`uname -s`
 unsupported_distro=''
 
 # A number of distributions we don't (yet?) support.
-if [ "$OS" != 'Linux' -a "$OS" != 'OpenBSD' -a "$OS" != 'FreeBSD' ]; then
+if [ "$OS" != 'Linux' -a "$OS" != 'NetBSD' -a "$OS" != 'OpenBSD' -a "$OS" != 'FreeBSD' -a "$OS" != 'DragonFly' ]; then
 	echo >&2 "$0: Your OS ($OS) is currently not supported. Aborting."
 	exit 1
-fi
-
-if [ -f /etc/gentoo-release ]; then
-	unsupported_distro='Gentoo'
 fi
 
 if [ -f /etc/mandrake-release ]; then
 	unsupported_distro='Mandriva'
 fi
 
-if [ -f /etc/SuSE-release ]; then
-	unsupported_distro='SUSE'
-fi
-
-if [ -f /etc/slackware-version ]; then
-	unsupported_distro='Slackware'
+if [ -f /etc/slackware-version ] || ([ -f /etc/os-release ] && . /etc/os-release && [ "$ID" = "slackware" ]); then
+	echo >&2 "$0: Your distribution (Slackware) is currently not supported. Aborting. Try manually:"
+	# libedit requires a newer version than Slackware 14.2, for example Slackware-current
+	# or you build it manually: <http://thrysoee.dk/editline/>
+	echo >&2 "$0: # slackpkg install make gcc pkg-config libedit util-linux sqlite libxml2 patch wget"
+	# required for libjansson
+	echo >&2 "$0: # ./contrib/scripts/install_prereq install-unpackaged"
+	exit 1
 fi
 
 if [ "$unsupported_distro" != '' ]; then
@@ -245,10 +414,26 @@ if [ -r /etc/debian_version ]; then
 	handle_debian
 elif [ -r /etc/redhat-release ]; then
 	handle_rh
+elif [ -f /etc/SuSE-release -o -f /etc/novell-release ]; then
+	handle_SUSE
+elif [ -f /etc/os-release ] && . /etc/os-release && [ "$ID" = "opensuse" ]; then
+	handle_SUSE
+elif [ -r /etc/arch-release ]; then
+	handle_arch
+elif [ -f /etc/os-release ] && . /etc/os-release && [ "$ID_LIKE" = "archlinux" ]; then
+	handle_arch # $ID=arch
+elif [ -f /etc/gentoo-release ]; then
+	handle_gentoo
+elif [ -f /etc/os-release ] && . /etc/os-release && [ "$ID" = "gentoo" ]; then
+	handle_gentoo
+elif [ "$OS" = 'NetBSD' ]; then
+	handle_nbsd
 elif [ "$OS" = 'OpenBSD' ]; then
 	handle_obsd
 elif [ "$OS" = 'FreeBSD' ]; then
 	handle_fbsd
+elif [ "$OS" = 'DragonFly' ]; then
+	handle_dbsd
 fi
 
 if ! in_test_mode; then

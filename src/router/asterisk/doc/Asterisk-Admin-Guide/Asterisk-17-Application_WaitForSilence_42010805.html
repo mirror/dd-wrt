@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_WaitForSilence</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_WaitForSilence
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_WaitForSilence-WaitForSilence()">WaitForSilence()</h1>
+
+<h3 id="Asterisk17Application_WaitForSilence-Synopsis">Synopsis</h3>
+
+<p>Waits for a specified amount of silence.</p>
+
+<h3 id="Asterisk17Application_WaitForSilence-Description">Description</h3>
+
+<p>Waits for up to <em>silencerequired</em> milliseconds of silence, <em>iterations</em> times. An optional <em>timeout</em> specified the number of seconds to return after, even if we do not receive the specified amount of silence. Use <em>timeout</em> with caution, as it may defeat the purpose of this application, which is to wait indefinitely until silence is detected on the line. This is particularly useful for reverse-911-type call broadcast applications where you need to wait for an answering machine to complete its spiel before playing a message.</p>
+
+<p>Typically you will want to include two or more calls to WaitForSilence when dealing with an answering machine; first waiting for the spiel to finish, then waiting for the beep, etc.</p>
+
+<p>Examples:</p>
+
+<p>WaitForSilence(500,2) will wait for 1/2 second of silence, twice</p>
+
+<p>WaitForSilence(1000) will wait for 1 second of silence, once</p>
+
+<p>WaitForSilence(300,3,10) will wait for 300ms silence, 3 times, and returns after 10 sec, even if silence is not detected</p>
+
+<p>Sets the channel variable <code>WAITSTATUS</code> to one of these values:</p>
+
+<ul>
+	<li><code>WAITSTATUS</code>
+	<ul>
+		<li>SILENCE - if exited with silence detected.</li>
+		<li>TIMEOUT - if exited without silence detected after timeout.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_WaitForSilence-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>WaitForSilence([silencerequired,[iterations,[timeout]]])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_WaitForSilence-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>silencerequired</code> - If not specified, defaults to <code>1000</code> milliseconds.</li>
+	<li><code>iterations</code> - If not specified, defaults to <code>1</code>.</li>
+	<li><code>timeout</code> - Is specified only to avoid an infinite loop in cases where silence is never achieved.</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_WaitForSilence-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Application_WaitForNoise_42010806.html">Asterisk 17 Application_WaitForNoise</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Application_WaitForSilence-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

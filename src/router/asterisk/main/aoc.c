@@ -28,7 +28,6 @@
  ***/
 
 #include "asterisk.h"
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$");
 
 #include "asterisk/aoc.h"
 #include "asterisk/utils.h"
@@ -1664,7 +1663,7 @@ static struct ast_json *currency_to_json(const char *name, int cost,
 
 static struct ast_json *charge_to_json(const struct ast_aoc_decoded *decoded)
 {
-	RAII_VAR(struct ast_json *, obj, NULL, ast_json_unref);
+	struct ast_json *obj;
 	const char *obj_type;
 
 	if (decoded->charge_type != AST_AOC_CHARGE_CURRENCY &&
@@ -1686,7 +1685,7 @@ static struct ast_json *charge_to_json(const struct ast_aoc_decoded *decoded)
 		"Type", aoc_charge_type_str(decoded->charge_type),
 		"BillingID", aoc_billingid_str(decoded->billing_id),
 		"TotalType", aoc_type_of_totaling_str(decoded->total_type),
-		obj_type, ast_json_ref(obj));
+		obj_type, obj);
 }
 
 static struct ast_json *association_to_json(const struct ast_aoc_decoded *decoded)
@@ -1714,9 +1713,9 @@ static struct ast_json *s_to_json(const struct ast_aoc_decoded *decoded)
 	}
 
 	for (i = 0; i < decoded->aoc_s_count; ++i) {
-		struct ast_json *rate = ast_json_object_create();
-		RAII_VAR(struct ast_json *, type, NULL, ast_json_unref);
-		RAII_VAR(struct ast_json *, currency, NULL, ast_json_unref);
+		struct ast_json *rate;
+		struct ast_json *type = NULL;
+		struct ast_json *currency;
 		const char *charge_item = aoc_charged_item_str(
 			decoded->aoc_s_entries[i].charged_item);
 
@@ -1731,30 +1730,30 @@ static struct ast_json *s_to_json(const struct ast_aoc_decoded *decoded)
 		switch (decoded->aoc_s_entries[i].rate_type) {
 		case AST_AOC_RATE_TYPE_DURATION:
 		{
-			RAII_VAR(struct ast_json *, time, NULL, ast_json_unref);
-			RAII_VAR(struct ast_json *, granularity, NULL, ast_json_unref);
+			struct ast_json *time;
+			struct ast_json *granularity = NULL;
 
 			currency = currency_to_json(
 				decoded->aoc_s_entries[i].rate.duration.currency_name,
 				decoded->aoc_s_entries[i].rate.duration.amount,
 				decoded->aoc_s_entries[i].rate.duration.multiplier);
 
-			time = ast_json_pack("{s:i, s:i}",
-				"Length", decoded->aoc_s_entries[i].rate.duration.time,
+			time = ast_json_pack("{s:I, s:i}",
+				"Length", (ast_json_int_t)decoded->aoc_s_entries[i].rate.duration.time,
 				"Scale", decoded->aoc_s_entries[i].rate.duration.time_scale);
 
 			if (decoded->aoc_s_entries[i].rate.duration.granularity_time) {
-				granularity = ast_json_pack("{s:i, s:i}",
-					"Length", decoded->aoc_s_entries[i].rate.duration.granularity_time,
+				granularity = ast_json_pack("{s:I, s:i}",
+					"Length", (ast_json_int_t)decoded->aoc_s_entries[i].rate.duration.granularity_time,
 					"Scale", decoded->aoc_s_entries[i].rate.duration.granularity_time_scale);
 			}
 
 			type = ast_json_pack("{s:o, s:s, s:o, s:o}",
-				"Currency", ast_json_ref(currency),
+				"Currency", currency,
 				"ChargingType", decoded->aoc_s_entries[i].rate.duration.charging_type
 					? "StepFunction" : "ContinuousCharging",
-				"Time", ast_json_ref(time),
-				"Granularity", granularity ? ast_json_ref(granularity) : ast_json_null());
+				"Time", time,
+				"Granularity", granularity ?: ast_json_null());
 
 			break;
 		}
@@ -1764,7 +1763,7 @@ static struct ast_json *s_to_json(const struct ast_aoc_decoded *decoded)
 				decoded->aoc_s_entries[i].rate.flat.amount,
 				decoded->aoc_s_entries[i].rate.flat.multiplier);
 
-			type = ast_json_pack("{s:o}", "Currency", ast_json_ref(currency));
+			type = ast_json_pack("{s:o}", "Currency", currency);
 			break;
 		case AST_AOC_RATE_TYPE_VOLUME:
 			currency = currency_to_json(
@@ -1775,7 +1774,7 @@ static struct ast_json *s_to_json(const struct ast_aoc_decoded *decoded)
 			type = ast_json_pack("{s:s, s:o}",
 				"Unit", aoc_volume_unit_str(
 					decoded->aoc_s_entries[i].rate.volume.volume_unit),
-				"Currency", ast_json_ref(currency));
+				"Currency", currency);
 			break;
 		case AST_AOC_RATE_TYPE_SPECIAL_CODE:
 			type = ast_json_pack("{s:i}",
@@ -1787,7 +1786,7 @@ static struct ast_json *s_to_json(const struct ast_aoc_decoded *decoded)
 
 		rate = ast_json_pack("{s:s, s:o}",
 			"Chargeable", charge_item,
-			aoc_rate_type_str(decoded->aoc_s_entries[i].rate_type), ast_json_ref(type));
+			aoc_rate_type_str(decoded->aoc_s_entries[i].rate_type), type);
 		if (ast_json_array_append(rates, rate)) {
 			break;
 		}
@@ -1850,7 +1849,9 @@ static void aoc_publish_blob(struct ast_channel *chan, struct stasis_message_typ
 	}
 
 	if (chan) {
-		aoc_event->snapshot = ast_channel_snapshot_get_latest(ast_channel_uniqueid(chan));
+		ast_channel_lock(chan);
+		aoc_event->snapshot = ao2_bump(ast_channel_snapshot(chan));
+		ast_channel_unlock(chan);
 		if (!aoc_event->snapshot) {
 			ao2_ref(aoc_event, -1);
 			return;
@@ -1861,7 +1862,10 @@ static void aoc_publish_blob(struct ast_channel *chan, struct stasis_message_typ
 	msg = stasis_message_create(msg_type, aoc_event);
 	ao2_ref(aoc_event, -1);
 
-	stasis_publish(ast_manager_get_topic(), msg);
+	if (msg) {
+		stasis_publish(ast_manager_get_topic(), msg);
+		ao2_ref(msg, -1);
+	}
 }
 
 static struct ast_manager_event_blob *aoc_to_ami(struct stasis_message *message,

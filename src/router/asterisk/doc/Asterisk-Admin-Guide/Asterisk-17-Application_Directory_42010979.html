@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_Directory</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_Directory
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_Directory-Directory()">Directory()</h1>
+
+<h3 id="Asterisk17Application_Directory-Synopsis">Synopsis</h3>
+
+<p>Provide directory of voicemail extensions.</p>
+
+<h3 id="Asterisk17Application_Directory-Description">Description</h3>
+
+<p>This application will present the calling channel with a directory of extensions from which they can search by name. The list of names and corresponding extensions is retrieved from the voicemail configuration file, <code>voicemail.conf</code>.</p>
+
+<p>This application will immediately exit if one of the following DTMF digits are received and the extension to jump to exists:</p>
+
+<p>0 - Jump to the 'o' extension, if it exists.</p>
+
+<ul>
+	<li>- Jump to the 'a' extension, if it exists.</li>
+</ul>
+
+
+<p>This application will set the following channel variable before completion:</p>
+
+<ul>
+	<li><code>DIRECTORY_RESULT</code> - Reason Directory application exited.
+	<ul>
+		<li>OPERATOR - User requested operator</li>
+		<li>ASSISTANT - User requested assistant</li>
+		<li>TIMEOUT - User allowed DTMF wait duration to pass without sending DTMF</li>
+		<li>HANGUP - The channel hung up before the application finished</li>
+		<li>SELECTED - User selected a user to call from the directory</li>
+		<li>USEREXIT - User exited with '#' during selection</li>
+		<li>FAILED - The application failed</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_Directory-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Directory([vm-context,[dial-context,[options]]])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_Directory-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>vm-context</code> - This is the context within voicemail.conf to use for the Directory. If not specified and <code>searchcontexts=no</code> in <code>voicemail.conf</code>, then <code>default</code> will be assumed.</li>
+	<li><code>dial-context</code> - This is the dialplan context to use when looking for an extension that the user has selected, or when jumping to the <code>o</code> or <code>a</code> extension. If not specified, the current context will be used.</li>
+	<li><code>options</code>
+	<ul>
+		<li><code>e</code> - In addition to the name, also read the extension number to the caller before presenting dialing options.</li>
+		<li><code>f</code><code>( <strong>n</strong> )</code> - Allow the caller to enter the first name of a user in the directory instead of using the last name. If specified, the optional number argument will be used for the number of characters the user should enter.
+		<ul>
+			<li><code><strong>n</strong></code></li>
+		</ul>
+		</li>
+		<li><code>l</code><code>( <strong>n</strong> )</code> - Allow the caller to enter the last name of a user in the directory. This is the default. If specified, the optional number argument will be used for the number of characters the user should enter.
+		<ul>
+			<li><code><strong>n</strong></code></li>
+		</ul>
+		</li>
+		<li><code>b</code><code>( <strong>n</strong> )</code> - Allow the caller to enter either the first or the last name of a user in the directory. If specified, the optional number argument will be used for the number of characters the user should enter.
+		<ul>
+			<li><code><strong>n</strong></code></li>
+		</ul>
+		</li>
+		<li><code>a</code> - Allow the caller to additionally enter an alias for a user in the directory. This option must be specified in addition to the <code>f</code>, <code>l</code>, or <code>b</code> option.</li>
+		<li><code>m</code> - Instead of reading each name sequentially and asking for confirmation, create a menu of up to 8 names.</li>
+		<li><code>n</code> - Read digits even if the channel is not answered.</li>
+		<li><code>p</code><code>( <strong>n</strong> )</code> - Pause for n milliseconds after the digits are typed. This is helpful for people with cellphones, who are not holding the receiver to their ear while entering DTMF.
+		<ul>
+			<li><code><strong>n</strong></code>
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>Only one of the <em>f</em>, <em>l</em>, or <em>b</em> options may be specified. <strong>If more than one is specified</strong>, then Directory will act as if <em>b</em> was specified. The number of characters for the user to type defaults to <code>3</code>.</p>
+                    </div>
+    </div>
+</li>
+		</ul>
+		</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_Directory-SeeAlso">See Also</h3>
+
+
+<h3 id="Asterisk17Application_Directory-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

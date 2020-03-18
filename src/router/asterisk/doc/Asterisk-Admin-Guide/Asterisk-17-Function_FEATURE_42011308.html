@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Function_FEATURE</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Functions_42010713.html">Asterisk 17 Dialplan Functions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Function_FEATURE
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Function_FEATURE-FEATURE()">FEATURE()</h1>
+
+<h3 id="Asterisk17Function_FEATURE-Synopsis">Synopsis</h3>
+
+<p>Get or set a feature option on a channel.</p>
+
+<h3 id="Asterisk17Function_FEATURE-Description">Description</h3>
+
+<p>When this function is used as a read, it will get the current value of the specified feature option for this channel. It will be the value of this option configured in features.conf if a channel specific value has not been set. This function can also be used to set a channel specific value for the supported feature options.</p>
+
+
+<h3 id="Asterisk17Function_FEATURE-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>FEATURE(option_name)</pre>
+</div></div>
+
+<h5 id="Asterisk17Function_FEATURE-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>option_name</code> - The allowed values are:
+	<ul>
+		<li><code>inherit</code> - Inherit feature settings made in FEATURE or FEATUREMAP to child channels.</li>
+		<li><code>featuredigittimeout</code> - Milliseconds allowed between digit presses when entering a feature code.</li>
+		<li><code>transferdigittimeout</code> - Seconds allowed between digit presses when dialing a transfer destination</li>
+		<li><code>atxfernoanswertimeout</code> - Seconds to wait for attended transfer destination to answer</li>
+		<li><code>atxferdropcall</code> - Hang up the call entirely if the attended transfer fails</li>
+		<li><code>atxferloopdelay</code> - Seconds to wait between attempts to re-dial transfer destination</li>
+		<li><code>atxfercallbackretries</code> - Number of times to re-attempt dialing a transfer destination</li>
+		<li><code>xfersound</code> - Sound to play to during transfer and transfer-like operations.</li>
+		<li><code>xferfailsound</code> - Sound to play to a transferee when a transfer fails</li>
+		<li><code>atxferabort</code> - Digits to dial to abort an attended transfer attempt</li>
+		<li><code>atxfercomplete</code> - Digits to dial to complete an attended transfer</li>
+		<li><code>atxferthreeway</code> - Digits to dial to change an attended transfer into a three-way call</li>
+		<li><code>pickupexten</code> - Digits used for picking up ringing calls</li>
+		<li><code>pickupsound</code> - Sound to play to picker when a call is picked up</li>
+		<li><code>pickupfailsound</code> - Sound to play to picker when a call cannot be picked up</li>
+		<li><code>courtesytone</code> - Sound to play when automon or automixmon is activated</li>
+		<li><code>recordingfailsound</code> - Sound to play when automon or automixmon is attempted but fails to start</li>
+		<li><code>transferdialattempts</code> - Number of dial attempts allowed when attempting a transfer</li>
+		<li><code>transferretrysound</code> - Sound that is played when an incorrect extension is dialed and the transferer should try again.</li>
+		<li><code>transferinvalidsound</code> - Sound that is played when an incorrect extension is dialed and the transferer has no attempts remaining.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Function_FEATURE-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Function_FEATUREMAP_42011309.html">Asterisk 17 Function_FEATUREMAP</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Function_FEATURE-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

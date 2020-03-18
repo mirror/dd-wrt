@@ -17,7 +17,7 @@
 /*! \file
  *
  * \brief Return the current Version strings
- * 
+ *
  * \author Steve Murphy (murf@digium.com)
  * \ingroup functions
  */
@@ -27,8 +27,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/module.h"
 #include "asterisk/channel.h"

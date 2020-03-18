@@ -1,6 +1,6 @@
 #
 # Asterisk -- An open source telephony toolkit.
-# 
+#
 # Makefile rules
 #
 # Copyright (C) 2006-2010, Digium, Inc.
@@ -20,6 +20,9 @@
 # Helpful functions
 # call with $(call function,...)
 tolower = $(shell echo $(1) | tr '[:upper:]' '[:lower:]')
+# Takes a list of MENUSELECT_CFLAG Id and returns CFLAGS to declare
+# the ones which are enabled.
+get_menuselect_cflags=$(patsubst %,-D%,$(filter $1,$(MENUSELECT_CFLAGS)))
 
 .PHONY: dist-clean
 
@@ -55,7 +58,7 @@ ifeq ($(NOISY_BUILD),)
     ECHO_PREFIX=@
     CMD_PREFIX=@
 else
-    ECHO_PREFIX=@\# 
+    ECHO_PREFIX=@\#
     CMD_PREFIX=
 endif
 
@@ -65,6 +68,17 @@ ifneq ($(findstring darwin,$(OSARCH)),)
     # Snow Leopard/Lion has an issue with this optimization flag on large files (like chan_sip)
     OPTIMIZE+=-fno-inline-functions
   endif
+endif
+
+# gcc version 8.2.1 and above must have partial-inlining disabled to avoid documented bug.
+# We must handle cross-compiling and clang so make sure the compiler version string has "gcc"
+# somewhere in it before testing the version.
+CC_VERS_STRING=$(shell $(CC) --version | grep -i gcc)
+ifneq ($(CC_VERS_STRING),)
+GCC_VER_GTE821:=$(shell expr `echo '$(CC_VERS_STRING)' | cut -d ' ' -f 3 | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 80201)
+ifeq ($(GCC_VER_GTE821),1)
+    OPTIMIZE+=-fno-partial-inlining
+endif
 endif
 
 ifeq ($(findstring DONT_OPTIMIZE,$(MENUSELECT_CFLAGS))$(AST_CODE_COVERAGE),no)
@@ -176,17 +190,17 @@ ifeq ($(GNU_LD),1)
 	$(CMD_PREFIX) $(ASTTOPDIR)/build_tools/make_linker_version_script $* "$(LINKER_SYMBOL_PREFIX)" "$(ASTTOPDIR)"
 endif
 	$(ECHO_PREFIX) echo "   [LD] $^ -> $@"
-	$(CMD_PREFIX) $(CC) $(STATIC_BUILD) -o $@ $(CC_LDFLAGS_SO) $^ $(CC_LIBS)
+	$(CMD_PREFIX) $(CC) -o $@ $(CC_LDFLAGS_SO) $^ $(CC_LIBS)
 
 %.so: %.oo
 ifeq ($(GNU_LD),1)
 	$(CMD_PREFIX) $(ASTTOPDIR)/build_tools/make_linker_version_script $* "$(LINKER_SYMBOL_PREFIX)" "$(ASTTOPDIR)"
 endif
 	$(ECHO_PREFIX) echo "   [LDXX] $^ -> $@"
-	$(CMD_PREFIX) $(CXX) $(STATIC_BUILD) -o $@ $(CXX_LDFLAGS_SO) $^ $(CXX_LIBS)
+	$(CMD_PREFIX) $(CXX) -o $@ $(CXX_LDFLAGS_SO) $^ $(CXX_LIBS)
 
 %: %.o
 	$(ECHO_PREFIX) echo "   [LD] $^ -> $@"
-	$(CMD_PREFIX) $(CXX) $(STATIC_BUILD) -o $@ $(PTHREAD_CFLAGS) $(_ASTLDFLAGS) $^ $(CXX_LIBS) $(ASTLDFLAGS)
+	$(CMD_PREFIX) $(CXX) -o $@ $(PTHREAD_CFLAGS) $(_ASTLDFLAGS) $^ $(CXX_LIBS) $(ASTLDFLAGS)
 
 dist-clean:: clean

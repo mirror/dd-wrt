@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Hello World</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Getting-Started_5243710.html">Getting Started</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Hello World
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on Apr 21, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302880452 {padding: 0px;}
+div.rbtoc1582302880452 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302880452 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302880452'>
+<ul class='toc-indentation'>
+<li><a href='#HelloWorld-HelloWorldwithAsteriskandSIP'>Hello World with Asterisk and SIP</a>
+<ul class='toc-indentation'>
+<li><a href='#HelloWorld-Requirements'>Requirements</a></li>
+<li><a href='#HelloWorld-Configurationfilesneeded'>Configuration files needed</a></li>
+<li><a href='#HelloWorld-Configureextensions.conf'>Configure extensions.conf</a></li>
+<li><a href='#HelloWorld-ConfigureaSIPchanneldriver'>Configure a SIP channel driver</a>
+<ul class='toc-indentation'>
+<li><a href='#HelloWorld-Configurechan_sip'>Configure chan_sip</a></li>
+<li><a href='#HelloWorld-Configurechan_pjsip'>Configure chan_pjsip</a></li>
+</ul>
+</li>
+<li><a href='#HelloWorld-ConfigureyourSIPphone'>Configure your SIP phone</a></li>
+<li><a href='#HelloWorld-StartAsterisk'>Start Asterisk</a></li>
+<li><a href='#HelloWorld-Makethecall'>Make the call</a></li>
+</ul>
+</li>
+</ul>
+</div></p><p>You've just installed Asterisk and you have read about basic configuration. Now let's quickly get a phone call working so you can get a taste for a simple phone call to Asterisk.</p><h1 id="HelloWorld-HelloWorldwithAsteriskandSIP">Hello World with Asterisk and SIP</h1><h2 id="HelloWorld-Requirements">Requirements</h2><p>This tutorial assumes the following:</p><ul><li>You have a SIP phone plugged into the same LAN where the Asterisk server is plugged in, or can install the Zoiper softphone used in the example</li><li>If you use your own hardware phone, we assume both the phone and Asterisk can reach each other and are on the same subnet.</li><li>When you built Asterisk, you should have made sure to build the SIP channel driver you wanted to use, which may imply other requirements. For example if you want to use chan_pjsip, then make sure you followed the <a href="PJSIP-pjproject_25919783.html">Installing pjproject</a> guide.</li></ul><h2 id="HelloWorld-Configurationfilesneeded">Configuration files needed</h2><p>You should have already run &quot;make samples&quot; if you installed from source, otherwise you may have the sample config files if you installed from packages.</p><p>If you have no configuration files in <strong>/etc/asterisk/</strong> then grab the sample config files from the <a href="Untarring-the-Source_4817514.html">source directory</a> by navigating to it and running &quot;make samples&quot;.</p><p>Files needed for this example:</p><ul><li>asterisk.conf</li><li>modules.conf</li><li>extensions.conf</li><li>sip.conf or pjsip.conf</li></ul><p>You can use the defaults for asterisk.conf and modules.conf, we'll only need to modify extensions.conf and sip.conf or pjsip.conf.</p><p>To get started, go ahead and move to the /etc/asterisk/ directory where the files are located.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>cd /etc/asterisk</pre>
+</div></div><h2 id="HelloWorld-Configureextensions.conf">Configure extensions.conf</h2><p>Backup the sample extensions.conf and create a new one</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>mv extensions.conf extensions.sample
+vim extensions.conf</pre>
+</div></div><p>I'm assuming you use the VI/VIM editor here, after all, it is the best.</p><p>We are going to use a very simple dialplan. A dialplan is simply instructions telling Asterisk what to do with a call.</p><p>Edit your blank extensions.conf to reflect the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[from-internal]
+exten = 100,1,Answer()
+same = n,Wait(1)
+same = n,Playback(hello-world)
+same = n,Hangup()</pre>
+</div></div><p>When a phone dials extension 100, we are telling Asterisk to <strong>Answer</strong> the call, <strong>Wait</strong> one second, then Play (<strong>Playback</strong>) a sound file (hello-world) to the channel and <strong>Hangup</strong>.</p><h2 id="HelloWorld-ConfigureaSIPchanneldriver">Configure a SIP channel driver</h2><p>Depending on the version of Asterisk in use, you may have the option of more than one SIP channel driver. You'll have to pick one to use for the example.</p>    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <ul><li>Asterisk 11 and previous: chan_sip is the primary option.</li><li>Asterisk 12 and beyond: You'll probably want to use chan_pjsip (the newest driver), but you still have the option of using chan_sip as well</li></ul>
+                    </div>
+    </div>
+<p>Follow the instructions below for the channel driver you chose.</p><h3 id="HelloWorld-Configurechan_sip">Configure chan_sip</h3><p>Backup and edit a new blank <strong>sip.conf</strong>, just like you did with extensions.conf.</p><p>Then add the following to your sip.conf file:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[general]
+context=default
+
+[6001]
+type=friend
+context=from-internal
+host=dynamic
+secret=unsecurepassword
+disallow=all
+allow=ulaw</pre>
+</div></div><p>Basic configuration will be explained in more detail in other sections of the wiki. For this example to work, just make sure you have everything exactly as written above. For the sake of terminology, it is useful to note that though we have this SIP configuration configured with &quot;type=friend&quot;, most people refer to this as configuring a SIP peer.</p><h3 id="HelloWorld-Configurechan_pjsip">Configure chan_pjsip</h3><p>Backup and edit a new blank <strong>pjsip.conf</strong>, just like you did with extensions.conf.</p><p>Then add the following to your pjsip.conf file:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[transport-udp]
+type=transport
+protocol=udp
+bind=0.0.0.0
+
+[6001]
+type=endpoint
+context=from-internal
+disallow=all
+allow=ulaw
+auth=6001
+aors=6001
+
+[6001]
+type=auth
+auth_type=userpass
+password=unsecurepassword
+username=6001
+
+[6001]
+type=aor
+max_contacts=1</pre>
+</div></div><h2 id="HelloWorld-ConfigureyourSIPphone">Configure your SIP phone</h2><p>You can use any SIP phone you want of course, but for this demonstration we'll use Zoiper, a Softphone which just happens to be easily demonstrable.</p><p>You can find the latest version of Zoiper for your platform <a href="http://www.zoiper.com/en/voip-softphone/download/zoiper3" class="external-link" rel="nofollow">at their website</a>. You can install it on the same system you are running Asterisk on, or it may make more sense to you if you install on another system on the same LAN (though you might find complication with software firewalls in that case).</p><p>Once you have Zoiper installed. Configure a new SIP account in Zoiper.</p><ol><li>Once Zoiper is opened, click the wrench icon to get to settings.</li><li>Click &quot;Add new SIP account&quot;</li><li>Enter 6001 for the account name, click OK</li><li>Enter the IP address of your Asterisk system in the <strong>Domain</strong> field</li><li>Enter 6001 in the <strong>Username</strong> field</li><li>Enter your SIP peer's password in the <strong>Password</strong> field</li><li>Enter whatever you like in <strong>Caller ID Name</strong> or leave it blank</li><li>Click OK</li></ol><p><img class="confluence-embedded-image" src="attachments/27200389/27328533.png" data-image-src="attachments/27200389/27328533.png"></p><p>Your results should look like the above screen shot.</p><h2 id="HelloWorld-StartAsterisk">Start Asterisk</h2><p>Back at the Linux shell go ahead and start Asterisk. We'll start Asterisk with a control console (-c) and level 5 verbosity (vvvvv).</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>asterisk -cvvvvv</pre>
+</div></div><p>Or if Asterisk is already running, restart Asterisk from the shell and connect to it.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>asterisk -rx &quot;core restart now&quot;
+asterisk -rvvvvv</pre>
+</div></div><h2 id="HelloWorld-Makethecall">Make the call</h2><p>Go back to the main Zoiper interface, and make sure the account is registered. Select the account from the drop down list and click the <strong>Register</strong> button next to it. If it says registered, you are good to go. If it doesn't register, then double check your configuration.</p><p>Once registered, enter extension 100 and click the Dial button. The call should be made and you should hear the sound file hello-world!</p><p>On the Asterisk CLI, you should see something like:</p><p><img class="confluence-embedded-image" src="attachments/27200389/27328534.png" data-image-src="attachments/27200389/27328534.png"></p><p>Now that you have made a very simple call, you may want to start reading through the other sections on the wiki to learn more about <a href="Operation_27200183.html">Operation</a>, <a href="Fundamentals_27200185.html">Fundamentals</a> and <a href="Configuration_4260139.html">Configuration</a>.</p><p> </p><p> </p>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/27200389/27328533.png">Selection_011.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/27200389/27328534.png">Selection_012.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

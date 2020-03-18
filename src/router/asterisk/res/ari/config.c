@@ -24,10 +24,10 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/config_options.h"
 #include "asterisk/http_websocket.h"
+#include "asterisk/app.h"
+#include "asterisk/channel.h"
 #include "internal.h"
 
 /*! \brief Locking container for safe configuration access. */
@@ -39,8 +39,8 @@ static struct aco_type general_option = {
 	.type = ACO_GLOBAL,
 	.name = "general",
 	.item_offset = offsetof(struct ast_ari_conf, general),
-	.category = "^general$",
-	.category_match = ACO_WHITELIST,
+	.category = "general",
+	.category_match = ACO_WHITELIST_EXACT,
 };
 
 static struct aco_type *general_options[] = ACO_TYPES(&general_option);
@@ -156,8 +156,8 @@ static void *user_find(struct ao2_container *tmp_container, const char *cat)
 static struct aco_type user_option = {
 	.type = ACO_ITEM,
 	.name = "user",
-	.category_match = ACO_BLACKLIST,
-	.category = "^general$",
+	.category_match = ACO_BLACKLIST_EXACT,
+	.category = "general",
 	.matchfield = "type",
 	.matchvalue = "user",
 	.item_alloc = user_alloc,
@@ -165,7 +165,7 @@ static struct aco_type user_option = {
 	.item_offset = offsetof(struct ast_ari_conf, users),
 };
 
-static struct aco_type *user[] = ACO_TYPES(&user_option);
+static struct aco_type *global_user[] = ACO_TYPES(&user_option);
 
 static void conf_general_dtor(void *obj)
 {
@@ -318,6 +318,22 @@ static int process_config(int reload)
 	return 0;
 }
 
+#define MAX_VARS 128
+
+static int channelvars_handler(const struct aco_option *opt, struct ast_variable *var, void *obj)
+{
+	char *parse = NULL;
+	AST_DECLARE_APP_ARGS(args,
+		AST_APP_ARG(vars)[MAX_VARS];
+	);
+
+	parse = ast_strdupa(var->value);
+	AST_STANDARD_APP_ARGS(args, parse);
+
+	ast_channel_set_ari_vars(args.argc, args.vars);
+	return 0;
+}
+
 int ast_ari_config_init(void)
 {
 	if (aco_info_init(&cfg_info)) {
@@ -341,18 +357,20 @@ int ast_ari_config_init(void)
 	aco_option_register(&cfg_info, "websocket_write_timeout", ACO_EXACT, general_options,
 		AST_DEFAULT_WEBSOCKET_WRITE_TIMEOUT_STR, OPT_INT_T, PARSE_IN_RANGE,
 		FLDSET(struct ast_ari_conf_general, write_timeout), 1, INT_MAX);
+	aco_option_register_custom(&cfg_info, "channelvars", ACO_EXACT, general_options,
+		"", channelvars_handler, 0);
 
 	/* ARI type=user category options */
-	aco_option_register(&cfg_info, "type", ACO_EXACT, user, NULL,
+	aco_option_register(&cfg_info, "type", ACO_EXACT, global_user, NULL,
 		OPT_NOOP_T, 0, 0);
-	aco_option_register(&cfg_info, "read_only", ACO_EXACT, user,
+	aco_option_register(&cfg_info, "read_only", ACO_EXACT, global_user,
 		"no", OPT_BOOL_T, 1,
 		FLDSET(struct ast_ari_conf_user, read_only));
-	aco_option_register(&cfg_info, "password", ACO_EXACT, user,
+	aco_option_register(&cfg_info, "password", ACO_EXACT, global_user,
 		"", OPT_CHAR_ARRAY_T, 0,
 		FLDSET(struct ast_ari_conf_user, password), ARI_PASSWORD_LEN);
 	aco_option_register_custom(&cfg_info, "password_format", ACO_EXACT,
-		user, "plain",  password_format_handler, 0);
+		global_user, "plain",  password_format_handler, 0);
 
 	return process_config(0);
 }

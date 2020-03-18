@@ -21,7 +21,7 @@
  * \brief String manipulation dialplan functions
  *
  * \author Tilghman Lesher
- * \author Anothony Minessale II 
+ * \author Anothony Minessale II
  * \ingroup functions
  */
 
@@ -30,8 +30,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <regex.h>
 #include <ctype.h>
@@ -108,13 +106,13 @@ AST_THREADSTORAGE(tmp_buf);
 			<parameter name="string" required="true" />
 		</syntax>
 		<description>
-			<para>Permits all characters listed in <replaceable>allowed-chars</replaceable>, 
-			filtering all others outs. In addition to literally listing the characters, 
+			<para>Permits all characters listed in <replaceable>allowed-chars</replaceable>,
+			filtering all others outs. In addition to literally listing the characters,
 			you may also use ranges of characters (delimited by a <literal>-</literal></para>
 			<para>Hexadecimal characters started with a <literal>\x</literal>(i.e. \x20)</para>
 			<para>Octal characters started with a <literal>\0</literal> (i.e. \040)</para>
-			<para>Also <literal>\t</literal>,<literal>\n</literal> and <literal>\r</literal> are recognized.</para> 
-			<note><para>If you want the <literal>-</literal> character it needs to be prefixed with a 
+			<para>Also <literal>\t</literal>,<literal>\n</literal> and <literal>\r</literal> are recognized.</para>
+			<note><para>If you want the <literal>-</literal> character it needs to be prefixed with a
 			<literal>\</literal></para></note>
 		</description>
 	</function>
@@ -181,9 +179,9 @@ AST_THREADSTORAGE(tmp_buf);
 		</syntax>
 		<description>
 			<para>Return <literal>1</literal> on regular expression match or <literal>0</literal> otherwise</para>
-			<para>Please note that the space following the double quotes separating the 
-			regex from the data is optional and if present, is skipped. If a space is 
-			desired at the beginning of the data, then put two spaces there; the second 
+			<para>Please note that the space following the double quotes separating the
+			regex from the data is optional and if present, is skipped. If a space is
+			desired at the beginning of the data, then put two spaces there; the second
 			will not be skipped.</para>
 		</description>
 	</function>
@@ -220,8 +218,8 @@ AST_THREADSTORAGE(tmp_buf);
 			<parameter name="hashname" required="true" />
 		</syntax>
 		<description>
-			<para>Returns a comma-delimited list of the current keys of the associative array 
-			defined by the HASH() function. Note that if you iterate over the keys of 
+			<para>Returns a comma-delimited list of the current keys of the associative array
+			defined by the HASH() function. Note that if you iterate over the keys of
 			the result, adding keys during iteration will cause the result of the HASHKEYS()
 			function to change.</para>
 		</description>
@@ -247,8 +245,8 @@ AST_THREADSTORAGE(tmp_buf);
 			<parameter name="varN" required="false" />
 		</syntax>
 		<description>
-			<para>The comma-delimited list passed as a value to which the function is set will 
-			be interpreted as a set of values to which the comma-delimited list of 
+			<para>The comma-delimited list passed as a value to which the function is set will
+			be interpreted as a set of values to which the comma-delimited list of
 			variable names in the argument should be set.</para>
 			<para>Example: Set(ARRAY(var1,var2)=1,2) will set var1 to 1 and var2 to 2</para>
 		</description>
@@ -263,7 +261,7 @@ AST_THREADSTORAGE(tmp_buf);
 			<parameter name="format" required="true" />
 		</syntax>
 		<description>
-			<para>This is useful for converting a date into <literal>EPOCH</literal> time, 
+			<para>This is useful for converting a date into <literal>EPOCH</literal> time,
 			possibly to pass to an application like SayUnixTime or to calculate the difference
 			between the two date strings</para>
 			<para>Example: ${STRPTIME(2006-03-01 07:30:35,America/Chicago,%Y-%m-%d %H:%M:%S)} returns 1141219835</para>
@@ -386,7 +384,7 @@ AST_THREADSTORAGE(tmp_buf);
 				NoOp(var is three) being executed.
 			</para>
 		</description>
-	</function>	
+	</function>
 	<function name="POP" language="en_US">
 		<synopsis>
 			Removes and returns the last item off of a variable containing delimited text
@@ -406,7 +404,7 @@ AST_THREADSTORAGE(tmp_buf);
 				NoOp(var is one) being executed.
 			</para>
 		</description>
-	</function>	
+	</function>
 	<function name="PUSH" language="en_US">
 		<synopsis>
 			Appends one or more values to the end of a variable containing delimited text
@@ -976,7 +974,7 @@ static int regex(struct ast_channel *chan, const char *cmd, char *parse, char *b
 		ast_log(LOG_WARNING, "Malformed input %s(%s): %s\n", cmd, parse, buf);
 		return -1;
 	}
-	
+
 	strcpy(buf, regexec(&regexbuf, args.str, 0, NULL, 0) ? "0" : "1");
 
 	regfree(&regexbuf);
@@ -1091,10 +1089,33 @@ static int array(struct ast_channel *chan, const char *cmd, char *var,
 	return 0;
 }
 
+static const char *get_key(const struct ast_str *prefix, const struct ast_var_t *var)
+{
+	const char *prefix_name = ast_str_buffer(prefix);
+	const char *var_name = ast_var_name(var);
+	int prefix_len;
+	int var_len;
+
+	if (ast_strlen_zero(var_name)) {
+		return NULL;
+	}
+
+	prefix_len = ast_str_strlen(prefix);
+	var_len = strlen(var_name);
+
+	/*
+	 * Make sure we only match on non-empty, hash function created keys. If valid
+	 * then return a pointer to the variable that's just after the prefix.
+	 */
+	return var_len > (prefix_len + 1) && var_name[var_len - 1] == '~' &&
+		strncmp(prefix_name, var_name, prefix_len) == 0 ? var_name + prefix_len : NULL;
+}
+
 static int hashkeys_read(struct ast_channel *chan, const char *cmd, char *data, char *buf, size_t len)
 {
 	struct ast_var_t *newvar;
 	struct ast_str *prefix = ast_str_alloca(80);
+	size_t buf_len;
 
 	if (!chan) {
 		ast_log(LOG_WARNING, "No channel was provided to %s function.\n", cmd);
@@ -1105,15 +1126,19 @@ static int hashkeys_read(struct ast_channel *chan, const char *cmd, char *data, 
 	memset(buf, 0, len);
 
 	AST_LIST_TRAVERSE(ast_channel_varshead(chan), newvar, entries) {
-		if (strncmp(ast_str_buffer(prefix), ast_var_name(newvar), ast_str_strlen(prefix)) == 0) {
-			/* Copy everything after the prefix */
-			strncat(buf, ast_var_name(newvar) + ast_str_strlen(prefix), len - strlen(buf) - 1);
-			/* Trim the trailing ~ */
+		const char *key = get_key(prefix, newvar);
+
+		if (key) {
+			strncat(buf, key, len - strlen(buf) - 1);
+			/* Replace the trailing ~ */
 			buf[strlen(buf) - 1] = ',';
 		}
 	}
 	/* Trim the trailing comma */
-	buf[strlen(buf) - 1] = '\0';
+	buf_len = strlen(buf);
+	if (buf_len) {
+		buf[buf_len - 1] = '\0';
+	}
 	return 0;
 }
 
@@ -1121,7 +1146,6 @@ static int hashkeys_read2(struct ast_channel *chan, const char *cmd, char *data,
 {
 	struct ast_var_t *newvar;
 	struct ast_str *prefix = ast_str_alloca(80);
-	char *tmp;
 
 	if (!chan) {
 		ast_log(LOG_WARNING, "No channel was provided to %s function.\n", cmd);
@@ -1131,17 +1155,19 @@ static int hashkeys_read2(struct ast_channel *chan, const char *cmd, char *data,
 	ast_str_set(&prefix, -1, HASH_PREFIX, data);
 
 	AST_LIST_TRAVERSE(ast_channel_varshead(chan), newvar, entries) {
-		if (strncmp(ast_str_buffer(prefix), ast_var_name(newvar), ast_str_strlen(prefix)) == 0) {
-			/* Copy everything after the prefix */
-			ast_str_append(buf, len, "%s", ast_var_name(newvar) + ast_str_strlen(prefix));
-			/* Trim the trailing ~ */
+		const char *key = get_key(prefix, newvar);
+
+		if (key) {
+			char *tmp;
+
+			ast_str_append(buf, len, "%s", key);
+			/* Replace the trailing ~ */
 			tmp = ast_str_buffer(*buf);
 			tmp[ast_str_strlen(*buf) - 1] = ',';
 		}
 	}
-	/* Trim the trailing comma */
-	tmp = ast_str_buffer(*buf);
-	tmp[ast_str_strlen(*buf) - 1] = '\0';
+
+	ast_str_truncate(*buf, -1);
 	return 0;
 }
 
@@ -1903,7 +1929,7 @@ AST_TEST_DEFINE(test_STRREPLACE)
 			ast_channel_release(chan);
 			return AST_TEST_FAIL;
 		}
-			
+
 		AST_LIST_INSERT_HEAD(ast_channel_varshead(chan), var, entries);
 
 		if (test_strings[i][3]) {

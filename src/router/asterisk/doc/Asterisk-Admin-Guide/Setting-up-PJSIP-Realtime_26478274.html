@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Setting up PJSIP Realtime</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SIP_28314848.html">SIP</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-res_pjsip_25919621.html">Configuring res_pjsip</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Setting up PJSIP Realtime
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Jonathan Rose</span>, last modified by <span class='editor'> Joshua C. Colp</span> on Aug 07, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="SettingupPJSIPRealtime-/*&lt;![CDATA[*/div.rbtoc1582302968083{padding:0px;}div.rbtoc1582302968083ul{list-style:disc;margin-left:0px;}div.rbtoc1582302968083li{margin-left:0px;padding-left:0px;}/*]]&gt;*/Overview#SettingupPJSIPRealtime-OverviewInstallingDependenc"><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302968083 {padding: 0px;}
+div.rbtoc1582302968083 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302968083 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302968083'>
+<ul class='toc-indentation'>
+<li><a href='#SettingupPJSIPRealtime-Overview'>Overview</a>
+<ul class='toc-indentation'>
+<li><a href='#SettingupPJSIPRealtime-InstallingDependencies'>Installing Dependencies</a></li>
+<li><a href='#SettingupPJSIPRealtime-CreatingtheMySQLDatabase'>Creating the MySQL Database</a></li>
+<li><a href='#SettingupPJSIPRealtime-InstallingandUsingAlembic'>Installing and Using Alembic</a></li>
+<li><a href='#SettingupPJSIPRealtime-ConfiguringODBC'>Configuring ODBC</a></li>
+<li><a href='#SettingupPJSIPRealtime-ConnectingPJSIPSorcerytotheRealtimeDatabase'>Connecting PJSIP Sorcery to the Realtime Database</a></li>
+<li><a href='#SettingupPJSIPRealtime-Optionallyconfiguringsorceryforrealtimeandnon-realtimedatasources'>Optionally configuring sorcery for realtime and non-realtime data sources</a></li>
+<li><a href='#SettingupPJSIPRealtime-RealtimeConfiguration'>Realtime Configuration</a></li>
+<li><a href='#SettingupPJSIPRealtime-AsteriskStartupConfiguration'>Asterisk Startup Configuration</a></li>
+<li><a href='#SettingupPJSIPRealtime-AsteriskPJSIPconfiguration'>Asterisk PJSIP configuration</a></li>
+<li><a href='#SettingupPJSIPRealtime-EndpointPopulation'>Endpoint Population</a></li>
+<li><a href='#SettingupPJSIPRealtime-ALittleDialplan'>A Little Dialplan</a></li>
+<li><a href='#SettingupPJSIPRealtime-ReservedCharacters'>Reserved Characters</a></li>
+<li><a href='#SettingupPJSIPRealtime-Conclusion'>Conclusion</a></li>
+</ul>
+</li>
+</ul>
+</div></h1><h1 id="SettingupPJSIPRealtime-Overview">Overview</h1><p>This tutorial describes the configuration of Asterisk's PJSIP channel driver with the &quot;realtime&quot; database storage backend.  The realtime interface allows storing much of the configuration of PJSIP, such as endpoints, auths, aors and more, in a database, as opposed to the normal flat-file storage of pjsip.conf.</p><h2 id="SettingupPJSIPRealtime-InstallingDependencies">Installing Dependencies</h2><p>For the purposes of this tutorial, we will assume a base Ubuntu 12.0.4.3 x86_64 server installation, with the OpenSSH server and LAMP server options, and that Asterisk will use its <a href="http://www.unixodbc.org/" class="external-link" rel="nofollow">ODBC</a> connector to reach a back-end <a href="http://www.mysql.com/" class="external-link" rel="nofollow">MySQL</a> database.</p><p>Beyond the normal packages needed to install Asterisk 12 on such a server (build-essential, libncurses5-dev, uuid-dev, libjansson-dev, libxml2-dev, libsqlite3-dev) as well as the <a href="PJSIP-pjproject_25919783.html">Installation of pjproject</a>, you will need to install the following packages:</p><ul><li>unixodbc and unixodbc-dev<ul><li>ODBC and the development packages for building against ODBC</li></ul></li><li>libmyodbc<ul><li>The ODBC to MySQL interface package</li></ul></li><li>python-dev and python-pip<ul><li>The Python development package and the pip package to allow installation of Alembic</li></ul></li><li>python-mysqldb<ul><li>The Python interface to MySQL, which will be used by Alembic to generate the database tables</li></ul></li></ul><p>So, from the CLI, perform:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># apt-get install unixodbc unixodbc-dev libmyodbc python-dev python-pip python-mysqldb</pre>
+</div></div><p>Once these packages are installed, check your Asterisk installation's <strong>make menuconfig</strong> tool to make sure that the <strong>res_config_odbc</strong> and <strong>res_odbc</strong> resource modules, as well as the <strong>res_pjsip_xxx</strong> modules are selected for installation.  If they are, then go through the normal Asterisk installation process: <strong>./configure; make; make install</strong></p><p>And, if this is your first installation of Asterisk, be sure to install the sample files: <strong>make samples</strong></p><h2 id="SettingupPJSIPRealtime-CreatingtheMySQLDatabase">Creating the MySQL Database</h2><p>Use the <strong>mysqladmin</strong> tool to create the database that we'll use to store the configuration.  From the Linux CLI, perform:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># mysqladmin -u root -p create asterisk</pre>
+</div></div><p>This will prompt you for your MySQL database password and then create a database named <strong>asterisk</strong> that we'll use to store our PJSIP configuration.</p><h2 id="SettingupPJSIPRealtime-InstallingandUsingAlembic">Installing and Using Alembic</h2><p><span>Alembic is a full database migration tool, with support for upgrading the schemas of existing databases, versioning of schemas, creation of new tables and databases, and a whole lot more.  A good guide on using Alembic with Asterisk can be found on the <a href="https://wiki.asterisk.org/wiki/display/AST/Managing+Realtime+Databases+with+Alembic">Managing Realtime Databases with Alembic</a> wiki page.  A shorter discussion of the steps necessary to prep your database will follow.</span></p><p>First, install Alembic:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># pip install alembic</pre>
+</div></div><p><span style="background-color: transparent;line-height: 1.4285715;">Then, move to the Asterisk source directory containing the Alembic scripts:</span></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># cd contrib/ast-db-manage/</pre>
+</div></div><p><span>Next, edit the <strong>config.ini.sample</strong> file and change the <strong>sqlalchemy.url</strong> option, e.g.</span></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>sqlalchemy.url = mysql://root:password@localhost/asterisk</pre>
+</div></div><p><span>such that the URL matches the username and password required to access your database.</span></p><p><span>Then rename the config.ini.sample file to config.ini</span></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># cp config.ini.sample config.ini</pre>
+</div></div><p>Finally, use Alembic to setup the database tables:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># alembic -c config.ini upgrade head</pre>
+</div></div><p>You'll see something similar to:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># alembic -c config.ini upgrade head
+INFO  [alembic.migration] Context impl MySQLImpl.
+INFO  [alembic.migration] Will assume non-transactional DDL.
+INFO  [alembic.migration] Running upgrade None -&gt; 4da0c5f79a9c, Create tables
+INFO  [alembic.migration] Running upgrade 4da0c5f79a9c -&gt; 43956d550a44, Add tables for pjsip
+#</pre>
+</div></div><p>You can then connect to MySQL to see that the tables were created:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># mysql -u root -p -D asterisk
+
+mysql&gt; show tables;
++--------------------+
+| Tables_in_asterisk |
++--------------------+
+| alembic_version    |
+| iaxfriends         |
+| meetme             |
+| musiconhold        |
+| ps_aors            |
+| ps_auths           |
+| ps_contacts        |
+| ps_domain_aliases  |
+| ps_endpoint_id_ips |
+| ps_endpoints       |
+| sippeers           |
+| voicemail          |
++--------------------+
+12 rows in set (0.00 sec)
+mysql&gt; quit</pre>
+</div></div><h2 id="SettingupPJSIPRealtime-ConfiguringODBC">Configuring ODBC</h2><p>Now that we have our MySQL database created and populated, we'll need to setup ODBC and Asterisk's ODBC resource to access the database.  First, we'll tell ODBC how to connect to MySQL.  To do this, we'll edit the <strong>/etc/odbcinst.ini</strong> configuration file.  Your file should look something like:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>/etc/odbcinst.ini</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[MySQL]
+Description = ODBC for MySQL
+Driver = /usr/lib/x86_64-linux-gnu/odbc/libmyodbc.so
+Setup = /usr/lib/x86_64-linux-gnu/odbc/libodbcmyS.so
+UsageCount = 2</pre>
+</div></div><p>Next, we'll tell ODBC <strong>which</strong> MySQL database to use.  To do this, we'll edit the <strong>/etc/odbc.ini</strong> configuration file and create a database handle called <strong>asterisk</strong>.  Your file should look something like:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>/etc/odbc.ini</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[asterisk]
+Driver = MySQL
+Description = MySQL connection to ‘asterisk’ database
+Server = localhost
+Port = 3306
+Database = asterisk
+UserName = root
+Password = password
+Socket = /var/run/mysqld/mysqld.sock</pre>
+</div></div><p>Take care to use your database access UserName and Password, and not necessarily what's defined in this example.</p><p>Now, we need to configure Asterisk's ODBC resource, res_odbc, to connect to the ODBC <strong>asterisk</strong> database handle that we just created.  res_odbc is configured using the <strong>/etc/asterisk/res_odbc.conf</strong> configuration file.  There, you'll want:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>/etc/asterisk/res_odbc.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[asterisk]
+enabled =&gt; yes
+dsn =&gt; asterisk
+username =&gt; root
+password =&gt; password
+pre-connect =&gt; yes</pre>
+</div></div><p>Again, take care to use the proper username and password.</p><p>Now, you can start Asterisk and you can check its connection to your &quot;asterisk&quot; MySQL database using the &quot;asterisk&quot; res_odbc connector to ODBC.  You can do this by executing &quot;odbc show&quot; from the Asterisk CLI.  If everything went well, you'll see:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># asterisk -vvvvc
+*CLI&gt; odbc show
+ 
+ODBC DSN Settings
+-----------------
+ Name: asterisk
+ DSN:    asterisk
+ Last connection attempt: 1969-12-31 18:00:00
+ Pooled: No
+ Connected: Yes
+*CLI&gt; </pre>
+</div></div><h2 id="SettingupPJSIPRealtime-ConnectingPJSIPSorcerytotheRealtimeDatabase"><span style="background-color: transparent;color: rgb(133,120,102);font-family: MuseoSans500 , sans-serif;font-size: 20.0px;line-height: 1.5;">Connecting PJSIP Sorcery to the Realtime Database</span></h2><p>The PJSIP stack uses a new data abstraction layer in Asterisk called <strong>sorcery</strong>. Sorcery lets a user build a hierarchical layer of data sources for Asterisk to use when it retrieves, updates, creates, or destroys data that it interacts with. This tutorial focuses on getting PJSIP's configuration stored in a realtime back-end; the rest of the details of sorcery are beyond the scope of this page.</p><p>PJSIP bases its configuration on types of objects.  For more information about these types of objects, please refer to the <a href="Configuring-res_pjsip_25919621.html">Configuring res_pjsip</a> wiki page.  In this case, we have a total of five objects we need to configure in Sorcery:</p><ul><li>endpoint</li><li>auth</li><li>aor</li><li>domain</li><li>identify</li></ul><p>We'll also configure the contact object, though we don't need it for this example.</p><p>Sorcery is configured using the <strong>/etc/asterisk/sorcery.conf</strong> configuration file.  So, we need to add the following lines to the file:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>/etc/asterisk/sorcery.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: false" style="font-size:12px;">[res_pjsip] ; Realtime PJSIP configuration wizard
+endpoint=realtime,ps_endpoints
+auth=realtime,ps_auths
+aor=realtime,ps_aors
+domain_alias=realtime,ps_domain_aliases
+contact=realtime,ps_contacts
+ 
+[res_pjsip_endpoint_identifier_ip]
+identify=realtime,ps_endpoint_id_ips</pre>
+</div></div><p>The items use the following nomenclature:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>{object_type} = {sorcery_wizard_name},{wizard_arguments}</pre>
+</div></div><p>In our case, the <code>sorcery_wizard_name</code> is <strong>realtime</strong>, and the <strong>wizard_arguments</strong> are the name of the database connector (&quot;asterisk&quot;) to associate with our object types. Note that the &quot;identify&quot; object is separated from the rest of the configuration objects. This is because this object type is provided by an optional module (res_pjsip_endpoint_idenfifier_ip.so) and not the main PJSIP module (res_pjsip.so). </p><h2 id="SettingupPJSIPRealtime-Optionallyconfiguringsorceryforrealtimeandnon-realtimedatasources">Optionally configuring sorcery for realtime and non-realtime data sources</h2><p>If you want to configure<strong> both realtime and static configuration</strong> file lookups for PJSIP then you need to add additional lines to the sorcery config.</p><p>For example if you want to read <strong>endpoints</strong> from both realtime and static configuration:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>endpoint=realtime,ps_endpoints
+endpoint=config,pjsip.conf,criteria=type=endpoint</pre>
+</div></div><p>You can swap the order to control which data source is read first.</p><h2 id="SettingupPJSIPRealtime-RealtimeConfiguration">Realtime Configuration</h2><p>Since we've associated the PJSIP objects with database connector types, we now need to tell Asterisk to use a database backend with the object types, and not just the flat pjsip.conf file.  To do this, we modify the <strong>/etc/asterisk/extconfig.conf</strong> configuration file to provide these connections.</p><p>Open extconfig.conf (/etc/asterisk/extconfig.conf) and add the following lines to the 'settings' configuration section</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>/etc/asterisk/extconfig.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: false" style="font-size:12px;">[settings]
+ps_endpoints =&gt; odbc,asterisk
+ps_auths =&gt; odbc,asterisk
+ps_aors =&gt; odbc,asterisk
+ps_domain_aliases =&gt; odbc,asterisk
+ps_endpoint_id_ips =&gt; odbc,asterisk
+ps_contacts =&gt; odbc,asterisk
+ </pre>
+</div></div>    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <p>Other tables allowed but not demonstrated in this tutorial: <span>ps_systems, ps_globals, ps_transports, and ps_registrations.</span></p>
+                    </div>
+    </div>
+<p> </p><p>At this point, Asterisk is nearly ready to use the tables created by alembic with PJSIP to configure endpoints, authorization, AORs, domain aliases, and endpoint identifiers.</p>    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">A warning for adventurous types:</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>Sorcery.conf allows you to try to configure other PJSIP objects such as transport using realtime and it currently won't stop you from doing so. However, some of these object types should not be used with realtime and this can lead to errant behavior.</p>
+                    </div>
+    </div>
+<h2 id="SettingupPJSIPRealtime-AsteriskStartupConfiguration">Asterisk Startup Configuration</h2><p>Now, we need to configure Asterisk to load its ODBC driver at an early stage of startup, so that it's available when any other modules might need to take advantage of it.  Also, we're going to prevent the old chan_sip channel driver from loading, since we're only worried about PJSIP.</p><p>To do this, edit the <strong>/etc/asterisk/modules.conf</strong> configuration file.  In the <strong>[modules]</strong> section, add the following lines:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>/etc/asterisk/modules.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">preload =&gt; res_odbc.so
+preload =&gt; res_config_odbc.so
+noload =&gt; chan_sip.so </pre>
+</div></div><h2 id="SettingupPJSIPRealtime-AsteriskPJSIPconfiguration">Asterisk PJSIP configuration</h2><p>Next, we need to configure a transport in <strong>/etc/asterisk/pjsip.conf</strong>.  PJSIP transport object types are not stored in realtime as unexpected results can occur.  So, edit it and add the following lines:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>/etc/asterisk/pjsip.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[transport-udp]
+type=transport
+protocol=udp
+bind=0.0.0.0</pre>
+</div></div><p>Here, we created a transport called <strong>transport-udp</strong> that we'll reference in the next section.</p><h2 id="SettingupPJSIPRealtime-EndpointPopulation">Endpoint Population</h2><p>Now, we need to create our endpoints inside of the database.  For this example, we'll create two peers, 101 and 102, that register using the totally insecure passwords &quot;101&quot; and &quot;102&quot; respectively.  Here, we'll be populating data directly into the database using the MySQL interactive tool.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># mysql -u root -p -D asterisk;
+mysql&gt; insert into ps_aors (id, max_contacts) values (101, 1);
+mysql&gt; insert into ps_aors (id, max_contacts) values (102, 1);
+mysql&gt; insert into ps_auths (id, auth_type, password, username) values (101, &#39;userpass&#39;, 101, 101);
+mysql&gt; insert into ps_auths (id, auth_type, password, username) values (102, &#39;userpass&#39;, 102, 102);
+mysql&gt; insert into ps_endpoints (id, transport, aors, auth, context, disallow, allow, direct_media) values (101, &#39;transport-udp&#39;, &#39;101&#39;, &#39;101&#39;, &#39;testing&#39;, &#39;all&#39;, &#39;g722&#39;, &#39;no&#39;);
+mysql&gt; insert into ps_endpoints (id, transport, aors, auth, context, disallow, allow, direct_media) values (102, &#39;transport-udp&#39;, &#39;102&#39;, &#39;102&#39;, &#39;testing&#39;, &#39;all&#39;, &#39;g722&#39;, &#39;no&#39;);
+mysql&gt; quit;</pre>
+</div></div><p>In this example, we first created an <strong>aor</strong> for each peer, one called <strong>101</strong> and the other <strong>102</strong>.</p><p>Next, we created an <strong>auth</strong> for each peer with a userpass of <strong>101</strong> and <strong>102</strong>, respectively.</p><p>Then, we created two endpoints, <strong>101</strong> and <strong>102</strong>, each referencing the appropriate <strong>auth</strong> and <strong>aor</strong>, we selected the G.722 codec and we forced media to route inside of Asterisk (not the default behavior of Asterisk).</p><p>Now, you can start Asterisk and you can check to see if it's finding your PJSIP endpoints in the database.  You can do this by executing &quot;pjsip show endpoints&quot; from the Asterisk CLI.  If everything went well, you'll see:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># asterisk -vvvvc
+*CLI&gt; pjsip show endpoints
+Endpoints:
+101
+102
+*CLI&gt; </pre>
+</div></div><h2 id="SettingupPJSIPRealtime-ALittleDialplan">A Little Dialplan</h2><p>Now that we have our PJSIP endpoints stored in our MySQL database, let's add a little dialplan so that they can call each other.  To do this, edit Asterisk's <strong>/etc/asterisk/extensions.conf</strong> file and add the following lines to the end:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>/etc/asterisk/extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[testing]
+exten =&gt; _1XX,1,NoOp()
+same =&gt; n,Dial(PJSIP/${EXTEN})</pre>
+</div></div><p>Or to dial multiple AOR contacts at the same time, use the PJSIP_DIAL_CONTACTS function:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>/etc/asterisk/extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[testing]
+exten =&gt; _1XX,1,NoOp()
+same =&gt; n,Dial(${PJSIP_DIAL_CONTACTS(${EXTEN})})</pre>
+</div></div><h2 id="SettingupPJSIPRealtime-ReservedCharacters">Reserved Characters</h2><p>Realtime uses the semicolon ( ; ) as a delimiter for multiple entries.  It must be replaced with &quot;^3B&quot; to prevent the data from being interpreted as multiple entries.</p>    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            &quot;^3B&quot; is the corresponding byte value of the semicolon character in ASCII, represented as a pair of hexadecimal digits, preceded by a caret ( ^ ) acting as the escape character.
+                    </div>
+    </div>
+<p> </p><p>For example, this outbound_proxy parameter</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">sip:10.30.100.28:5060;lr</pre>
+</div></div><p>should be stored in the database as</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">sip:10.30.100.28:5060^3Blr</pre>
+</div></div><h2 id="SettingupPJSIPRealtime-Conclusion">Conclusion</h2><p>Now, start Asterisk back up, or reload it using <strong>core reload</strong> from the Asterisk CLI, register your two SIP phones using the 101/101 and 102/102 credentials, and make a call.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

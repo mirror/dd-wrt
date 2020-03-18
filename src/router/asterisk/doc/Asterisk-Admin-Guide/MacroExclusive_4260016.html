@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : MacroExclusive</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : MacroExclusive
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Rusty Newton</span> on Apr 09, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="MacroExclusive-AbouttheMacroExclusiveapplication">About the MacroExclusive application</h1><p>By: Steve Davies &lt;steve@connection-telecom.com</p><p>The MacroExclusive application was added to solve the problem of synchronization between calls running at the same time.</p><p>This is usually an issue when you have calls manipulating global variables or the Asterisk database, but may be useful elsewhere.</p><p>Consider this example macro, intended to return a &quot;next&quot; number - each caller is intended to get a different number:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[macro-next]
+exten =&gt; s,1,Set(RESULT=${COUNT})
+exten =&gt; s,n,SetGlobalVar(COUNT=$[${COUNT} + 1])
+</pre>
+</div></div><p>The problem is that in a box with high activity, you can be sure that two calls will come along together - both will get the same &quot;RESULT&quot;, or the &quot;COUNT&quot; value will get mangled.</p><p>Calling this Macro via MacroExclusive will use a mutex to make sure that only one call executes in the Macro at a time. This ensures that the two lines execute as a unit.</p><p>Note that even the s,2 line above has its own race problem. Two calls running that line at once will step on each other and the count will end up as +1 rather than +2.</p><p>I've also been able to use MacroExclusive where I have two Macros that need to be mutually exclusive.</p><p>Here's the example:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[macro-push]
+; push value ${ARG2} onto stack ${ARG1}
+exten =&gt; s,1,Set(DB(STACK/${ARG1})=${ARG2}^${DB(STACK/${ARG1})})
+
+[macro-pop]
+; pop top value from stack ${ARG1}
+exten =&gt; s,1,Set(RESULT=${DB(STACK/${ARG1})})
+exten =&gt; s,n,Set(DB(STACK/${ARG1})=${CUT(RESULT,^,2)})
+exten =&gt; s,n,Set(RESULT=${CUT(RESULT,^,1)})
+</pre>
+</div></div><p>All that futzing with the STACK/${ARG1} in the astdb needs protecting if this is to work. But neither push nor pop can run together.</p><p>So add this &quot;pattern&quot;:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[macro-stack]
+exten =&gt; Macro(${ARG1},${ARG2},${ARG3})
+</pre>
+</div></div><p>... and use it like so:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; s,1,MacroExclusive(stack,push,MYSTACK,bananas)
+exten =&gt; s,n,MacroExclusive(stack,push,MYSTACK,apples)
+exten =&gt; s,n,MacroExclusive(stack,push,MYSTACK,guavas)
+exten =&gt; s,n,MacroExclusive(stack,push,MYSTACK,pawpaws)
+exten =&gt; s,n,MacroExclusive(stack,pop,MYSTACK) ; RESULT gets pawpaws (yum)
+exten =&gt; s,n,MacroExclusive(stack,pop,MYSTACK) ; RESULT gets guavas
+exten =&gt; s,n,MacroExclusive(stack,pop,MYSTACK) ; RESULT gets apples
+exten =&gt; s,n,MacroExclusive(stack,pop,MYSTACK) ; RESULT gets bananas
+</pre>
+</div></div><p>We get to the push and pop macros &quot;via&quot; the stack macro. But only one call can execute the stack macro at a time; ergo, only one of push OR pop can run at a time.</p><p>Hope people find this useful.</p><p>Lastly, its worth pointing out that only Macros that access shared data will require this MacroExclusive protection. And Macro's that you call with macroExclusive should run quickly or you will clog up your Asterisk system.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

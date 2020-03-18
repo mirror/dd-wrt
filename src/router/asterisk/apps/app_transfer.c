@@ -21,7 +21,7 @@
  * \brief Transfer a caller
  *
  * \author Mark Spencer <markster@digium.com>
- * 
+ *
  * Requires transfer support from channel driver
  *
  * \ingroup applications
@@ -32,8 +32,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/pbx.h"
 #include "asterisk/module.h"
@@ -53,7 +51,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		</syntax>
 		<description>
 			<para>Requests the remote caller be transferred
-			to a given destination. If TECH (SIP, IAX2, LOCAL etc) is used, only
+			to a given destination. If TECH (SIP, IAX2, etc) is used, only
 			an incoming call with the same channel technology will be transferred.
 			Note that for SIP, if you transfer before call is setup, a 302 redirect
 			SIP message will be returned to the caller.</para>

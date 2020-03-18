@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 ManagerEvent_CEL</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-AMI-Events_42010707.html">Asterisk 17 AMI Events</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 ManagerEvent_CEL
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17ManagerEvent_CEL-CEL">CEL</h1>
+
+<h3 id="Asterisk17ManagerEvent_CEL-Synopsis">Synopsis</h3>
+
+<p>Raised when a Channel Event Log is generated for a channel.</p>
+
+<h3 id="Asterisk17ManagerEvent_CEL-Description">Description</h3>
+
+<h3 id="Asterisk17ManagerEvent_CEL-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Event: CEL
+EventName: &lt;value&gt;
+AccountCode: &lt;value&gt;
+CallerIDnum: &lt;value&gt;
+CallerIDname: &lt;value&gt;
+CallerIDani: &lt;value&gt;
+CallerIDrdnis: &lt;value&gt;
+CallerIDdnid: &lt;value&gt;
+Exten: &lt;value&gt;
+Context: &lt;value&gt;
+Application: &lt;value&gt;
+AppData: &lt;value&gt;
+EventTime: &lt;value&gt;
+AMAFlags: &lt;value&gt;
+UniqueID: &lt;value&gt;
+LinkedID: &lt;value&gt;
+UserField: &lt;value&gt;
+Peer: &lt;value&gt;
+PeerAccount: &lt;value&gt;
+Extra: &lt;value&gt;
+</pre>
+</div></div>
+
+<h5 id="Asterisk17ManagerEvent_CEL-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>EventName</code> - The name of the CEL event being raised. This can include both the system defined CEL events, as well as user defined events.
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>All events listed here may not be raised, depending on the configuration in <code>cel.conf</code>.</p>
+                    </div>
+    </div>
+
+	<ul>
+		<li><code>CHAN_START</code> - A channel was created.</li>
+		<li><code>CHAN_END</code> - A channel was terminated.</li>
+		<li><code>ANSWER</code> - A channel answered.</li>
+		<li><code>HANGUP</code> - A channel was hung up.</li>
+		<li><code>BRIDGE_ENTER</code> - A channel entered a bridge.</li>
+		<li><code>BRIDGE_EXIT</code> - A channel left a bridge.</li>
+		<li><code>APP_START</code> - A channel entered into a tracked application.</li>
+		<li><code>APP_END</code> - A channel left a tracked application.</li>
+		<li><code>PARK_START</code> - A channel was parked.</li>
+		<li><code>PARK_END</code> - A channel was unparked.</li>
+		<li><code>BLINDTRANSFER</code> - A channel initiated a blind transfer.</li>
+		<li><code>ATTENDEDTRANSFER</code> - A channel initiated an attended transfer.</li>
+		<li><code>PICKUP</code> - A channel initated a call pickup.</li>
+		<li><code>FORWARD</code> - A channel is being forwarded to another destination.</li>
+		<li><code>LINKEDID_END</code> - The linked ID associated with this channel is being retired.</li>
+		<li><code>LOCAL_OPTIMIZE</code> - A Local channel optimization has occurred.</li>
+		<li><code>USER_DEFINED</code> - A user defined type.
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>This event is only present if <code>show_user_defined</code> in <code>cel.conf</code> is <code>True</code>. Otherwise, the user defined event will be placed directly in the <em>EventName</em> field.</p>
+                    </div>
+    </div>
+</li>
+	</ul>
+	</li>
+	<li><code>AccountCode</code> - The channel's account code.</li>
+	<li><code>CallerIDnum</code> - The Caller ID number.</li>
+	<li><code>CallerIDname</code> - The Caller ID name.</li>
+	<li><code>CallerIDani</code> - The Caller ID Automatic Number Identification.</li>
+	<li><code>CallerIDrdnis</code> - The Caller ID Redirected Dialed Number Identification Service.</li>
+	<li><code>CallerIDdnid</code> - The Caller ID Dialed Number Identifier.</li>
+	<li><code>Exten</code> - The dialplan extension the channel is currently executing in.</li>
+	<li><code>Context</code> - The dialplan context the channel is currently executing in.</li>
+	<li><code>Application</code> - The dialplan application the channel is currently executing.</li>
+	<li><code>AppData</code> - The arguments passed to the dialplan <em>Application</em>.</li>
+	<li><code>EventTime</code> - The time the CEL event occurred.</li>
+	<li><code>AMAFlags</code> - A flag that informs a billing system how to treat the CEL.
+	<ul>
+		<li><code>OMIT</code> - This event should be ignored.</li>
+		<li><code>BILLING</code> - This event contains valid billing data.</li>
+		<li><code>DOCUMENTATION</code> - This event is for documentation purposes.</li>
+	</ul>
+	</li>
+	<li><code>UniqueID</code> - The unique ID of the channel.</li>
+	<li><code>LinkedID</code> - The linked ID of the channel, which ties this event to other related channel's events.</li>
+	<li><code>UserField</code> - A user defined field set on a channel, containing arbitrary application specific data.</li>
+	<li><code>Peer</code> - If this channel is in a bridge, the channel that it is in a bridge with.</li>
+	<li><code>PeerAccount</code> - If this channel is in a bridge, the accountcode of the channel it is in a bridge with.</li>
+	<li><code>Extra</code> - Some events will have event specific data that accompanies the CEL record. This extra data is JSON encoded, and is dependent on the event in question.</li>
+</ul>
+
+
+<h3 id="Asterisk17ManagerEvent_CEL-Class">Class</h3>
+
+<p>CEL</p>
+<h3 id="Asterisk17ManagerEvent_CEL-SeeAlso">See Also</h3>
+
+<h3 id="Asterisk17ManagerEvent_CEL-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

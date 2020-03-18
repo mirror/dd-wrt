@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_Originate</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_Originate
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_Originate-Originate()">Originate()</h1>
+
+<h3 id="Asterisk17Application_Originate-Synopsis">Synopsis</h3>
+
+<p>Originate a call.</p>
+
+<h3 id="Asterisk17Application_Originate-Description">Description</h3>
+
+<p>This application originates an outbound call and connects it to a specified extension or application. This application will block until the outgoing call fails or gets answered. At that point, this application will exit with the status variable set and dialplan processing will continue.</p>
+
+<p>This application sets the following channel variable before exiting:</p>
+
+<ul>
+	<li><code>ORIGINATE_STATUS</code> - This indicates the result of the call origination.
+	<ul>
+		<li>FAILED</li>
+		<li>SUCCESS</li>
+		<li>BUSY</li>
+		<li>CONGESTION</li>
+		<li>HANGUP</li>
+		<li>RINGING</li>
+		<li>UNKNOWN - In practice, you should never see this value. Please report it to the issue tracker if you ever see it.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_Originate-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Originate(tech_data,type,arg1,[arg2,[arg3,[timeout,[options]]]])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_Originate-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>tech_data</code> - Channel technology and data for creating the outbound channel. For example, SIP/1234.</li>
+	<li><code>type</code> - This should be <code>app</code> or <code>exten</code>, depending on whether the outbound channel should be connected to an application or extension.</li>
+	<li><code>arg1</code> - If the type is <code>app</code>, then this is the application name. If the type is <code>exten</code>, then this is the context that the channel will be sent to.</li>
+	<li><code>arg2</code> - If the type is <code>app</code>, then this is the data passed as arguments to the application. If the type is <code>exten</code>, then this is the extension that the channel will be sent to.</li>
+	<li><code>arg3</code> - If the type is <code>exten</code>, then this is the priority that the channel is sent to. If the type is <code>app</code>, then this parameter is ignored.</li>
+	<li><code>timeout</code> - Timeout in seconds. Default is 30 seconds.</li>
+	<li><code>options</code>
+	<ul>
+		<li><code>a</code> - Originate asynchronously. In other words, continue in the dialplan without waiting for the originated channel to answer.</li>
+		<li><code>b</code><code>( context^exten^<strong>priority</strong> )</code> - Before originating the outgoing call, Gosub to the specified location using the newly created channel.
+		<ul>
+			<li><code>context</code></li>
+			<li><code>exten</code></li>
+			<li><code><strong>priority</strong></code><code>( params )</code>
+			<ul>
+				<li><code><strong>arg1</strong></code>[^<code>arg1</code>...]</li>
+				<li><code>argN</code></li>
+			</ul>
+			</li>
+		</ul>
+		</li>
+		<li><code>B</code><code>( context^exten^<strong>priority</strong> )</code> - Before originating the outgoing call, Gosub to the specified location using the current channel.
+		<ul>
+			<li><code>context</code></li>
+			<li><code>exten</code></li>
+			<li><code><strong>priority</strong></code><code>( params )</code>
+			<ul>
+				<li><code><strong>arg1</strong></code>[^<code>arg1</code>...]</li>
+				<li><code>argN</code></li>
+			</ul>
+			</li>
+		</ul>
+		</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_Originate-SeeAlso">See Also</h3>
+
+
+<h3 id="Asterisk17Application_Originate-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Getting Asterisk Connected to MySQL via ODBC</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Back-end-Database-and-Realtime-Connectivity_28314861.html">Back-end Database and Realtime Connectivity</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="ODBC_28314864.html">ODBC</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Getting Asterisk Connected to MySQL via ODBC
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on May 12, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="GettingAsteriskConnectedtoMySQLviaODBC-ConnectAsterisktoaMySQLback-endthroughODBC">Connect Asterisk to a MySQL back-end through ODBC</h1><p>This is a short tutorial on how to quickly setup Asterisk to use MySQL, the ODBC MySQL connector and ODBC. We'll use CentOS 6 as the OS in this tutorial. However, the same essential steps apply for any popular Linux distro.</p><h2 id="GettingAsteriskConnectedtoMySQLviaODBC-InstallingandConfiguringMySQL">Installing and Configuring MySQL</h2><div><div>There are three basic steps to install and configure MySQL for Asterisk.</div><div><ul><li>Install MySQL server package and start the DB service.</li><li>Secure the installation if appropriate.</li><li>Configure a user and database for Asterisk in MySQL</li></ul></div></div></div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303097646 {padding: 0px;}
+div.rbtoc1582303097646 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303097646 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303097646'>
+<ul class='toc-indentation'>
+<li><a href='#GettingAsteriskConnectedtoMySQLviaODBC-ConnectAsterisktoaMySQLback-endthroughODBC'>Connect Asterisk to a MySQL back-end through ODBC</a>
+<ul class='toc-indentation'>
+<li><a href='#GettingAsteriskConnectedtoMySQLviaODBC-InstallingandConfiguringMySQL'>Installing and Configuring MySQL</a>
+<ul class='toc-indentation'>
+<li><a href='#GettingAsteriskConnectedtoMySQLviaODBC-InstallMySQLserverpackageandstarttheDBservice'>Install MySQL server package and start the DB service</a></li>
+<li><a href='#GettingAsteriskConnectedtoMySQLviaODBC-Securetheinstallationifappropriate'>Secure the installation if appropriate</a></li>
+<li><a href='#GettingAsteriskConnectedtoMySQLviaODBC-ConfigureauseranddatabaseforAsteriskinMySQL'>Configure a user and database for Asterisk in MySQL</a></li>
+</ul>
+</li>
+<li><a href='#GettingAsteriskConnectedtoMySQLviaODBC-InstallODBCandtheMySQLODBCconnector'>Install ODBC and the MySQL ODBC connector</a>
+<ul class='toc-indentation'>
+<li><a href='#GettingAsteriskConnectedtoMySQLviaODBC-InstallthelatestunixODBCandGNULibtoolDynamicModuleLoaderpackages'>Install the latest unixODBC and GNU Libtool Dynamic Module Loader packages</a></li>
+<li><a href='#GettingAsteriskConnectedtoMySQLviaODBC-InstallthelatestMySQLODBCconnector'>Install the latest MySQL ODBC connector</a></li>
+</ul>
+</li>
+<li><a href='#GettingAsteriskConnectedtoMySQLviaODBC-ConfigureODBCandtheMySQLODBCconnector'>Configure ODBC and the MySQL ODBC connector</a>
+<ul class='toc-indentation'>
+<li><a href='#GettingAsteriskConnectedtoMySQLviaODBC-Configureodbcinst.iniforODBC'>Configure odbcinst.ini for ODBC</a></li>
+<li><a href='#GettingAsteriskConnectedtoMySQLviaODBC-ConfiguretheMySQLODBCconnector'>Configure the MySQL ODBC connector</a></li>
+</ul>
+</li>
+<li><a href='#GettingAsteriskConnectedtoMySQLviaODBC-TesttheODBCDataSourceNameconnection'>Test the ODBC Data Source Name connection</a></li>
+<li><a href='#GettingAsteriskConnectedtoMySQLviaODBC-ConfiguringAsterisktoUsetheNewODBCandMySQLInstall'>Configuring Asterisk to Use the New ODBC and MySQL Install</a>
+<ul class='toc-indentation'>
+<li><a href='#GettingAsteriskConnectedtoMySQLviaODBC-GettingtherightAsteriskmodules'>Getting the right Asterisk modules</a></li>
+<li><a href='#GettingAsteriskConnectedtoMySQLviaODBC-ConfiguringAsterisk&#39;sODBCconnection'>Configuring Asterisk&#39;s ODBC connection</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h3 id="GettingAsteriskConnectedtoMySQLviaODBC-InstallMySQLserverpackageandstarttheDBservice">Install MySQL server package and start the DB service</h3><div><p> </p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># sudo yum install mysql-server
+# sudo service mysqld start</pre>
+</div></div><h3 id="GettingAsteriskConnectedtoMySQLviaODBC-Securetheinstallationifappropriate">Secure the installation if appropriate</h3></div><div>If you intend to push this install into production or practice as if you were then you will want to use the mysql_secure_installation script to apply some basic security.</div><div><p> </p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># sudo /usr/bin/mysql_secure_installation</pre>
+</div></div><h3 id="GettingAsteriskConnectedtoMySQLviaODBC-ConfigureauseranddatabaseforAsteriskinMySQL">Configure a user and database for Asterisk in MySQL</h3><p>If you want to use a GUI to manage your database then now is the time to set that GUI up and use it to create your asterisk user. Otherwise we will provide basic instructions for user setup below.</p><div>We'll have you login into the mysql command console, create a user, create a database and then assign appropriate permissions for the asterisk user.</div><div><p>First, login using the root password you set earlier.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># mysql -u root -p</pre>
+</div></div><p>Now verify you are at the MySQL command prompt. It should look like &quot;mysql&gt;&quot;. Then enter the following commands:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># CREATE USER &#39;asterisk&#39;@&#39;%&#39; IDENTIFIED BY &#39;replace_with_strong_password&#39;;
+# CREATE DATABASE asterisk;
+# GRANT ALL PRIVILEGES ON asterisk.* TO &#39;asterisk&#39;@&#39;%&#39;;
+# exit</pre>
+</div></div><div>After each of the CREATE and GRANT commands you should see output indicating that the Query was OK including many rows were affected.</div><div>If you want, you can test out the new permissions by logging in as your user to the asterisk database and then logout again.</div><div><p> </p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># mysql -u asterisk -p asterisk
+# exit</pre>
+</div></div><p> </p></div><h2 id="GettingAsteriskConnectedtoMySQLviaODBC-InstallODBCandtheMySQLODBCconnector">Install ODBC and the MySQL ODBC connector</h2><p>Be sure you have followed the previous sections as we presume you already have MySQL installed on your CentOS server along with a database and user for Asterisk configured. The database name should be 'asterisk' and the username should be 'asterisk'.</p><h3 id="GettingAsteriskConnectedtoMySQLviaODBC-InstallthelatestunixODBCandGNULibtoolDynamicModuleLoaderpackages">Install the latest unixODBC and GNU Libtool Dynamic Module Loader packages</h3><p>The development packages are necessary as well, since later Asterisk will need to use them when building ODBC related modules.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># sudo yum install unixODBC unixODBC-devel libtool-ltdl libtool-ltdl-devel</pre>
+</div></div><h3 id="GettingAsteriskConnectedtoMySQLviaODBC-InstallthelatestMySQLODBCconnector">Install the latest MySQL ODBC connector</h3><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># sudo yum install mysql-connector-odbc</pre>
+</div></div><p> </p><h2 id="GettingAsteriskConnectedtoMySQLviaODBC-ConfigureODBCandtheMySQLODBCconnector">Configure ODBC and the MySQL ODBC connector</h2><h3 id="GettingAsteriskConnectedtoMySQLviaODBC-Configureodbcinst.iniforODBC">Configure odbcinst.ini for ODBC</h3><p>With recent UnixODBC versions the configuration should already be done for you in the /etc/odbcinst.ini file.</p><p>Verify that you have the following configuration:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># Driver from the mysql-connector-odbc package
+# Setup from the unixODBC package
+[MySQL]
+Description     = ODBC for MySQL
+Driver          = /usr/lib/libmyodbc5.so
+Setup           = /usr/lib/libodbcmyS.so
+Driver64        = /usr/lib64/libmyodbc5.so
+Setup64         = /usr/lib64/libodbcmyS.so
+FileUsage       = 1
+Pooling         = Yes
+CPTimeout       = 120</pre>
+</div></div>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>We configure pooling for the connection as that is probably desired by most users. Consult the <a href="http://www.unixodbc.org/doc/conn_pool.html" class="external-link" rel="nofollow">unixODBC documentation</a> to learn more about the function of ODBC connection pooling.</p>
+                    </div>
+    </div>
+<p> </p><p>There may also be configuration for PostgreSQL which you can comment out if you are not planning to setup PostgreSQL as well. Comments begin the line with a hash (#) symbol.</p><p>You can also call <strong><code>odbcinst</code></strong> to query the driver, verifying that the configuration is found.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># odbcinst -q -d</pre>
+</div></div><p>The output should read simply &quot;[MySQL]&quot;</p><h3 id="GettingAsteriskConnectedtoMySQLviaODBC-ConfiguretheMySQLODBCconnector">Configure the MySQL ODBC connector</h3><p>Now we'll configure the /etc/odbc.ini file to create a DSN (Data Source Name) for Asterisk. The file may be empty, so you'll have to copy-paste from this example or write this from scratch.</p><p>Add the following to /etc/odbc.ini</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[asterisk-connector]
+Description = MySQL connection to &#39;asterisk&#39; database
+Driver = MySQL
+Database = asterisk
+Server = localhost
+Port = 3306
+Socket = /var/lib/mysql/mysql.sock</pre>
+</div></div>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>You may want to verify that mysql.sock is actually in the location specific here. It will differ on some systems depending on your configuration.</p>
+                    </div>
+    </div>
+<p> </p><h2 id="GettingAsteriskConnectedtoMySQLviaODBC-TesttheODBCDataSourceNameconnection">Test the ODBC Data Source Name connection</h2><p>Now is a good time to test your database by connecting to it and performing a query. The unixODBC package provides <strong><code>isql</code></strong>; a command line utility that allows you to connect to the Data Source, send SQL commands to it and receive results back. The syntax used is:</p><p>isql -v <em>dsn_name</em> <em>db_username</em> <em>db_password</em></p><p>So, for our purposes you would enter:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># isql -v asterisk-connector asterisk replace_with_strong_password</pre>
+</div></div>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>It is important to use the -v flag so that if isql runs into a problem you will be alerted of any diagnostics or errors available.</p>
+                    </div>
+    </div>
+<p> </p><p>At this point you should get an SQL prompt. Run the following command:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>SQL&gt; select 1</pre>
+</div></div><p>You should see some simple results if the query is successful. Then you can exit.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>SQL&gt; select 1
++---------------------+
+| 1                   |
++---------------------+
+| 1                   |
++---------------------+
+SQLRowCount returns 1
+1 rows fetched
+ 
+SQL&gt; quit</pre>
+</div></div><p> </p><h2 id="GettingAsteriskConnectedtoMySQLviaODBC-ConfiguringAsterisktoUsetheNewODBCandMySQLInstall">Configuring Asterisk to Use the New ODBC and MySQL Install</h2><p>Now you have a MySQL database, ODBC and an ODBC MySQL connector installed and basically configured. The next step is to recompile Asterisk so that the ODBC modules which required the previously mentioned items can now be built. Once those modules exist, then you can configure the proper configuration files in Asterisk depending on what information you want to write to or read from MySQL.</p><h3 id="GettingAsteriskConnectedtoMySQLviaODBC-GettingtherightAsteriskmodules">Getting the right Asterisk modules</h3><p>If you already had Asterisk installed from source and the modules you need are already selected by default in menuselect - then the recompilation process could be as simple as navigating to the Asterisk source and running a few commands.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># cd ~/asterisk-source/
+# ./configure
+# make &amp;&amp; make install</pre>
+</div></div><p>Otherwise you should follow the typical Asterisk installation process to make sure modules such as res_odbc, res_config_odbc, cdr_odbc, cdr_adaptive_odbc and func_odbc have their dependencies fulfilled and that they will be built.</p><p>See <a href="Building-and-Installing-Asterisk_4817525.html">Building and Installing Asterisk</a> and <a href="Using-Menuselect-to-Select-Asterisk-Options_4817523.html">Using Menuselect to Select Asterisk Options</a>.</p><h3 id="GettingAsteriskConnectedtoMySQLviaODBC-ConfiguringAsterisk&#39;sODBCconnection">Configuring Asterisk's ODBC connection</h3><p>The basic configuration for an Asterisk ODBC connection is handled in res_odbc.conf. You should check out the <a href="Configuring-res_odbc_27200101.html">Configuring res_odbc</a> page and follow it using the DSN and database username and password you setup earlier.</p><p>After you have the connection set up in Asterisk you are ready to then configure your database tables with the proper schema depending on what exactly you want to do with them. Asterisk comes with some helpful tools to do this, such as Alembic. See the <a href="https://wiki.asterisk.org/wiki/display/AST/Managing+Realtime+Databases+with+Alembic">Managing Realtime Databases with Alembic</a> section to get started with Alembic if you are working towards an Asterisk Realtime setup.</p><p> </p><p> </p></div></div></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

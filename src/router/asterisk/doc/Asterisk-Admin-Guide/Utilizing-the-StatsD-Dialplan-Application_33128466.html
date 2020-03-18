@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Utilizing the StatsD Dialplan Application</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Utilizing the StatsD Dialplan Application
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Tyler Cambron</span>, last modified on Dec 04, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="UtilizingtheStatsDDialplanApplication-UtilizingtheStatsDDialplanApplication">Utilizing the StatsD Dialplan Application</h1><p>This page will document how to use the StatsD dialplan application. Statistics will be logged anytime that a call is made to an extension, within the dialplan, that uses the StatsD application.</p><h2 id="UtilizingtheStatsDDialplanApplication-Overview">Overview</h2><p>StatsD is a daemon used to aggregate statistics by using different metrics and then summarizing these statistics in a way that can be useful to the users. One of StatsD's most useful capabilities is its ability to use a graphing back-end to display the statistics graphically. StatsD makes this very simple by accepting statistics through a short, one-line command and then grouping and arranging the statistics for you.</p><p>This StatsD application is a dialplan application that is used to send statistics automatically whenever a call is made to an extension that employs the application. The user must provide the arguments to the application in the dialplan, but after that, the application will send statistics to StatsD without requiring the user to perform anymore actions whenever a call comes through that extension.</p><h2 id="UtilizingtheStatsDDialplanApplication-Setup">Setup</h2><p>To send statistics to a StatsD server, you first need to have a StatsD server able to accept the metrics you are sending. This does not have to be the same machine that contains your asterisk instance.</p><p>Installing StatsD on a machine will make the machine a StatsD server. A backend can then be installed on the same machine as a way of viewing the statistics that StatsD receives. StatsD already has the capability built in to support a backend. Most backends are graphs that you can view through a browser and allow you to track statistics that you have sent in real time.</p><p>After a StatsD server has been set up, all that is needed is to provide the IP address of the server and the port to <em>statsd.conf</em>. You will now have a StatsD server that can accept statistics and your dialplan application will send statistics directly to this server. If a backend is configured on the StatsD server, then the backend will automatically interact with StatsD when statistics are sent to the server.</p><p>If you wish to set up your own StatsD server, then you can download StatsD from here: <a href="https://github.com/etsy/statsd" class="external-link" rel="nofollow">https://github.com/etsy/statsd</a>.</p><p>A list of available backends to be used is available here: <a href="https://github.com/etsy/statsd/wiki/Backends" class="external-link" rel="nofollow">https://github.com/etsy/statsd/wiki/Backends</a>.</p><h2 id="UtilizingtheStatsDDialplanApplication-Requirements">Requirements</h2><p>Only a few requirements are needed for working with the StatsD application.</p><ul><li>You need a statsd capable backend to receive statistics.</li><li>Build Asterisk with the res_statsd module. This provides the StatsD dialplan application.</li><li>Configure and enable StatsD support in Asterisk's statsd.conf</li></ul><h2 id="UtilizingtheStatsDDialplanApplication-Configuration">Configuration</h2><p>To send statistics from the dialplan application to a StatsD server, the only options that you need from <em>statsd.conf</em> are <em>enabled</em> and <em>server</em>.</p><ul><li><em>enabled</em>- whether or not StatsD support is enabled in Asterisk. To use StatsD, this must be set to yes.</li><li><em>server-</em> the address of the StatsD server. A port is not required, and if one is not provided, will be used 8125 as the default port.</li></ul><h4 id="UtilizingtheStatsDDialplanApplication-statsd.conf">statsd.conf</h4><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[general]
+enabled = yes			; When set to yes, statsd support is enabled
+server = 127.0.0.1		; server[:port] of statsd server to use.
+						; If not specified, the port is 8125
+;prefix =				; Prefix to prepend to all metrics
+;add_newline = no		; Append a newline to every event. This is
+						; useful if you want to run a fake statsd
+						; server using netcat (nc -lu 8125)</pre>
+</div></div><p>If you wish to add a port, such as 8126, to the server address, then you would add it at the end of the address with a colon, like so: <em>127.0.0.1:8126</em>.</p><h4 id="UtilizingtheStatsDDialplanApplication-extension.conf">extension.conf</h4><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[default]
+
+exten =&gt; 100,1,NoOp()
+	same =&gt; n,StatsD(g,confBridgeUsers,+1,1)
+	same =&gt; n,Set(CHANNEL(hangup_handler_push)=default,200,1);
+	same =&gt; n,ConfBridge(1000)
+	same =&gt; n,StatsD(g,confBridgeUsers,-1,1)
+	same =&gt; n,Hangup()
+
+ 
+exten =&gt; 200,1,NoOp()
+	same =&gt; n,StatsD(g,confBridgeUsers,-1,1)
+	same =&gt; n,Hangup()</pre>
+</div></div><p> </p><h2 id="UtilizingtheStatsDDialplanApplication-Example">Example</h2><p>The image below is an example of how calling into the dialplan provided above would send statistics to a StatsD server.</p><ul><li>The number of members in the conference initially is at 0. When someone calls into the conference, the gauge <em>confBridgeUsers</em> is incremented by 1, and the graph below shows the count of <em>confBridgeUsers</em> to be 1.</li><li>When another person calls in and joins the conference, the count is incremented to 2, and the graph displays that two people are in the conference.</li><li>When one person hangs up or is kicked from the conference, the count will decrement, showing that only one person remains in the conference.</li><li>When the final person hangs up, the count of <em>confBridgeUsers</em> is decremented again, and the value of <em>confBridgeUsers</em> is again 0.</li></ul><p><img class="confluence-embedded-image" width="900" src="attachments/33128466/33423362.png" data-image-src="attachments/33128466/33423362.png"></p><p>Note: this graph is not a part of StatsD, but is rather a backend that StatsD can be configured to use. This configuration would occur on the StatsD server.</p>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/33128466/33423361.png">confBridgeUsersOverview.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/33128466/33423362.png">image2015-11-24 13:57:15.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

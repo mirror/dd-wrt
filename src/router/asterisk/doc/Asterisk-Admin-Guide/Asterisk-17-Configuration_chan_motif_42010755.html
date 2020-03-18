@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Configuration_chan_motif</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Module-Configuration_42010715.html">Asterisk 17 Module Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Configuration_chan_motif
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Configuration_chan_motif-JingleChannelDriver">Jingle Channel Driver</h1>
+
+<p>This configuration documentation is for functionality provided by <code>chan_motif</code>.</p>
+
+<h2 id="Asterisk17Configuration_chan_motif-Overview">Overview</h2>
+
+<p>Transports</p>
+
+<p>There are three different transports and protocol derivatives supported by <code>chan_motif</code>. They are in order of preference: Jingle using ICE-UDP, Google Jingle, and Google-V1.</p>
+
+<p>Jingle as defined in XEP-0166 supports the widest range of features. It is referred to as <code>ice-udp</code>. This is the specification that Jingle clients implement.</p>
+
+<p>Google Jingle follows the Jingle specification for signaling but uses a custom transport for media. It is supported by the Google Talk Plug-in in Gmail and by some other Jingle clients. It is referred to as <code>google</code> in this file.</p>
+
+<p>Google-V1 is the original Google Talk signaling protocol which uses an initial preliminary version of Jingle. It also uses the same custom transport as Google Jingle for media. It is supported by Google Voice, some other Jingle clients, and the Windows Google Talk client. It is referred to as <code>google-v1</code> in this file.</p>
+
+<p>Incoming sessions will automatically switch to the correct transport once it has been determined.</p>
+
+<p>Outgoing sessions are capable of determining if the target is capable of Jingle or a Google transport if the target is in the roster. Unfortunately it is not possible to differentiate between a Google Jingle or Google-V1 capable resource until a session initiate attempt occurs. If a resource is determined to use a Google transport it will initially use Google Jingle but will fall back to Google-V1 if required.</p>
+
+<p>If an outgoing session attempt fails due to failure to support the given transport <code>chan_motif</code> will fall back in preference order listed previously until all transports have been exhausted.</p>
+
+<p>Dialing and Resource Selection Strategy</p>
+
+<p>Placing a call through an endpoint can be accomplished using the following dial string:</p>
+
+<p>Motif/<a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=endpoint+name&amp;linkCreation=true&amp;fromPageId=42010755">endpoint name</a>/<a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=target&amp;linkCreation=true&amp;fromPageId=42010755">target</a></p>
+
+<p>When placing an outgoing call through an endpoint the requested target is searched for in the roster list. If present the first Jingle or Google Jingle capable resource is specifically targeted. Since the capabilities of the resource are known the outgoing session initiation will disregard the configured transport and use the determined one.</p>
+
+<p>If the target is not found in the roster the target will be used as-is and a session will be initiated using the transport specified in this configuration file. If no transport has been specified the endpoint defaults to <code>ice-udp</code>.</p>
+
+<p>Video Support</p>
+
+<p>Support for video does not need to be explicitly enabled. Configuring any video codec on your endpoint will automatically enable it.</p>
+
+<p>DTMF</p>
+
+<p>The only supported method for DTMF is RFC2833. This is always enabled on audio streams and negotiated if possible.</p>
+
+<p>Incoming Calls</p>
+
+<p>Incoming calls will first look for the extension matching the name of the endpoint in the configured context. If no such extension exists the call will automatically fall back to the <code>s</code> extension.</p>
+
+<p>CallerID</p>
+
+<p>The incoming caller id number is populated with the username of the caller and the name is populated with the full identity of the caller. If you would like to perform authentication or filtering of incoming calls it is recommended that you use these fields to do so.</p>
+
+<p>Outgoing caller id can <strong>not</strong> be set.</p>
+
+    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">Warning</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            
+<p>Multiple endpoints using the same connection is <strong>NOT</strong> supported. Doing so may result in broken calls.</p>
+
+                    </div>
+    </div>
+
+
+<h2 id="Asterisk17Configuration_chan_motif-motif.conf">motif.conf</h2>
+
+<h3 id="Asterisk17Configuration_chan_motif-endpoint">endpoint</h3>
+
+<p>The configuration for an endpoint.</p>
+
+<h4 id="Asterisk17Configuration_chan_motif-ConfigurationOptionReference">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>context</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> <code>default</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Default dialplan context that incoming sessions will be routed to </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>callgroup</code> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> A callgroup to assign to this endpoint. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>pickupgroup</code> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> A pickup group to assign to this endpoint. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>language</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The default language for this endpoint. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>musicclass</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Default music on hold class for this endpoint. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>parkinglot</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Default parking lot for this endpoint. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>accountcode</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Accout code for CDR purposes </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>allow</code> </p></td>
+<td class="confluenceTd"><p> <code>Codec</code> </p></td>
+<td class="confluenceTd"><p> <code>ulaw,alaw</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Codecs to allow </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>disallow</code> </p></td>
+<td class="confluenceTd"><p> <code>Codec</code> </p></td>
+<td class="confluenceTd"><p> <code>all</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Codecs to disallow </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>connection</code> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Connection to accept traffic on and on which to send traffic out </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_chan_motif-endpoint_transport"><code>transport</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The transport to use for the endpoint. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>maxicecandidates</code> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>10</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Maximum number of ICE candidates to offer </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>maxpayloads</code> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>30</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Maximum number of pyaloads to offer </p></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="Asterisk17Configuration_chan_motif-ConfigurationOptionDescriptions">Configuration Option Descriptions</h4>
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_chan_motif-endpoint_transport"></span></p>
+<h5 id="Asterisk17Configuration_chan_motif-transport">transport</h5>
+
+<p>The default outbound transport for this endpoint. Inbound messages are inferred. Allowed transports are <code>ice-udp</code>, <code>google</code>, or <code>google-v1</code>. Note that <code>chan_motif</code> will fall back to transport preference order if the transport value chosen here fails.</p>
+
+<ul>
+	<li><code>ice-udp</code> - The Jingle protocol, as defined in XEP 0166.</li>
+	<li><code>google</code> - The Google Jingle protocol, which follows the Jingle specification for signaling but uses a custom transport for media.</li>
+	<li><code>google-v1</code> - Google-V1 is the original Google Talk signaling protocol which uses an initial preliminary version of Jingle. It also uses the same custom transport as <code>google</code> for media.</li>
+</ul>
+
+
+
+<h3 id="Asterisk17Configuration_chan_motif-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

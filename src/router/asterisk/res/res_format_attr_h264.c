@@ -33,8 +33,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/module.h"
 #include "asterisk/format.h"
 
@@ -284,7 +282,7 @@ static void h264_generate_sdp_fmtp(const struct ast_format *format, unsigned int
 	APPEND_IF_NOT_H264_UNSET(attr->PACKETIZATION_MODE, str, "packetization-mode");
 	APPEND_IF_NOT_H264_UNSET(attr->LEVEL_ASYMMETRY_ALLOWED, str, "level-asymmetry-allowed");
 
-	if (attr->PROFILE_IDC && attr->PROFILE_IOP && attr->LEVEL) {
+	if (attr->PROFILE_IDC && attr->LEVEL) {
 		if (added) {
 			ast_str_append(str, 0, ";");
 		} else if (0 < ast_str_append(str, 0, "a=fmtp:%u ", payload)) {
@@ -332,9 +330,8 @@ static int load_module(void)
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
-AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "H.264 Format Attribute Module",
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "H.264 Format Attribute Module",
 	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
-	.load_pri = AST_MODPRI_DEFAULT,
 );

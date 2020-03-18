@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 ManagerEvent_Cdr</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-AMI-Events_42010707.html">Asterisk 17 AMI Events</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 ManagerEvent_Cdr
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17ManagerEvent_Cdr-Cdr">Cdr</h1>
+
+<h3 id="Asterisk17ManagerEvent_Cdr-Synopsis">Synopsis</h3>
+
+<p>Raised when a CDR is generated.</p>
+
+<h3 id="Asterisk17ManagerEvent_Cdr-Description">Description</h3>
+
+<p>The <em>Cdr</em> event is only raised when the <code>cdr_manager</code> backend is loaded and registered with the CDR engine.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>This event can contain additional fields depending on the configuration provided by <code>cdr_manager.conf</code>.</p>
+
+                    </div>
+    </div>
+
+
+<h3 id="Asterisk17ManagerEvent_Cdr-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Event: Cdr
+AccountCode: &lt;value&gt;
+Source: &lt;value&gt;
+Destination: &lt;value&gt;
+DestinationContext: &lt;value&gt;
+CallerID: &lt;value&gt;
+Channel: &lt;value&gt;
+DestinationChannel: &lt;value&gt;
+LastApplication: &lt;value&gt;
+LastData: &lt;value&gt;
+StartTime: &lt;value&gt;
+AnswerTime: &lt;value&gt;
+EndTime: &lt;value&gt;
+Duration: &lt;value&gt;
+BillableSeconds: &lt;value&gt;
+Disposition: &lt;value&gt;
+AMAFlags: &lt;value&gt;
+UniqueID: &lt;value&gt;
+UserField: &lt;value&gt;
+</pre>
+</div></div>
+
+<h5 id="Asterisk17ManagerEvent_Cdr-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>AccountCode</code> - The account code of the Party A channel.</li>
+	<li><code>Source</code> - The Caller ID number associated with the Party A in the CDR.</li>
+	<li><code>Destination</code> - The dialplan extension the Party A was executing.</li>
+	<li><code>DestinationContext</code> - The dialplan context the Party A was executing.</li>
+	<li><code>CallerID</code> - The Caller ID name associated with the Party A in the CDR.</li>
+	<li><code>Channel</code> - The channel name of the Party A.</li>
+	<li><code>DestinationChannel</code> - The channel name of the Party B.</li>
+	<li><code>LastApplication</code> - The last dialplan application the Party A executed.</li>
+	<li><code>LastData</code> - The parameters passed to the last dialplan application the Party A executed.</li>
+	<li><code>StartTime</code> - The time the CDR was created.</li>
+	<li><code>AnswerTime</code> - The earliest of either the time when Party A answered, or the start time of this CDR.</li>
+	<li><code>EndTime</code> - The time when the CDR was finished. This occurs when the Party A hangs up or when the bridge between Party A and Party B is broken.</li>
+	<li><code>Duration</code> - The time, in seconds, of <em>EndTime</em> - <em>StartTime</em>.</li>
+	<li><code>BillableSeconds</code> - The time, in seconds, of <em>AnswerTime</em> - <em>StartTime</em>.</li>
+	<li><code>Disposition</code> - The final known disposition of the CDR.
+	<ul>
+		<li><code>NO ANSWER</code> - The channel was not answered. This is the default disposition.</li>
+		<li><code>FAILED</code> - The channel attempted to dial but the call failed.
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>The congestion setting in <code>cdr.conf</code> can result in the <code>AST_CAUSE_CONGESTION</code> hang up cause or the <code>CONGESTION</code> dial status to map to this disposition.</p>
+                    </div>
+    </div>
+</li>
+		<li><code>BUSY</code> - The channel attempted to dial but the remote party was busy.</li>
+		<li><code>ANSWERED</code> - The channel was answered. The hang up cause will no longer impact the disposition of the CDR.</li>
+		<li><code>CONGESTION</code> - The channel attempted to dial but the remote party was congested.</li>
+	</ul>
+	</li>
+	<li><code>AMAFlags</code> - A flag that informs a billing system how to treat the CDR.
+	<ul>
+		<li><code>OMIT</code> - This CDR should be ignored.</li>
+		<li><code>BILLING</code> - This CDR contains valid billing data.</li>
+		<li><code>DOCUMENTATION</code> - This CDR is for documentation purposes.</li>
+	</ul>
+	</li>
+	<li><code>UniqueID</code> - A unique identifier for the Party A channel.</li>
+	<li><code>UserField</code> - A user defined field set on the channels. If set on both the Party A and Party B channel, the userfields of both are concatenated and separated by a <code>;</code>.</li>
+</ul>
+
+
+<h3 id="Asterisk17ManagerEvent_Cdr-Class">Class</h3>
+
+<p>CDR</p>
+<h3 id="Asterisk17ManagerEvent_Cdr-SeeAlso">See Also</h3>
+
+<h3 id="Asterisk17ManagerEvent_Cdr-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

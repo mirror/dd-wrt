@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Lua Dialplan Examples</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Lua-Dialplan-Configuration_16548006.html">Lua Dialplan Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Lua Dialplan Examples
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matthew Nicholson</span>, last modified on Jul 21, 2011
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Some example <code>extensions.lua</code> files can be found below. They demonstrate various ways to organize extensions.</p>
+
+<h2 id="LuaDialplanExamples-LessClutter">Less Clutter</h2>
+
+<p>Instead of defining every extension inline, you can use this method to create a neater <code>extensions.lua</code> file. Since the extensions table and each context are both normal lua tables, you can treat them as such and build them piece by piece.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.lua</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+-- this function serves as an extension function directly
+function call_user(c, user)
+   app.dial(&quot;SIP/&quot; .. user, 60)
+end
+
+-- this function returns an extension function
+function call_sales_queue(queue)
+  return function(c, e)
+      app.queue(queue)
+   end
+end
+
+e = {}
+
+e.default = {}
+e.default.include = {&quot;users&quot;, &quot;sales&quot;}
+
+e.users = {}
+e.users[&quot;100&quot;] = call_user
+e.users[&quot;101&quot;] = call_user
+
+e.sales = {}
+e.sales[&quot;5000&quot;] = call_sales_queue(&quot;sales1&quot;)
+e.sales[&quot;6000&quot;] = call_sales_queue(&quot;sales2&quot;)
+
+extensions = e
+</pre>
+</div></div>
+
+<h2 id="LuaDialplanExamples-LessClutterv2">Less Clutter v2</h2>
+
+<p>In this example, we use a fancy function to register extensions.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.lua</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+function register(context, extension, func)
+   if not extensions then
+      extensions = {}
+   end
+
+   if not extensions[context] then
+      extensions[context] = {}
+   end
+
+   extensions[context][extension] = func
+end
+
+function include(context, included_context)
+   if not extensions then
+      extensions = {}
+   end
+
+   if not extensions[context] then
+      extensions[context] = {}
+   end
+
+   if not extensions[context].include then
+      extensions[context].include = {}
+   end
+
+   table.insert(extensions[context].include, included_context)
+end
+
+-- this function serves as an extension function directly
+function call_user(c, user)
+   app.dial(&quot;SIP/&quot; .. user, 60)
+end
+
+-- this function returns an extension function
+function call_sales_queue(queue)
+  return function(c, e)
+      app.queue(queue)
+   end
+end
+
+include(&quot;default&quot;, &quot;users&quot;)
+include(&quot;default&quot;, &quot;sales&quot;)
+
+register(&quot;users&quot;, &quot;100&quot;, call_user)
+register(&quot;users&quot;, &quot;101&quot;, call_user)
+
+register(&quot;sales&quot;, &quot;5000&quot;, call_sales_queue(&quot;sales1&quot;))
+register(&quot;sales&quot;, &quot;6000&quot;, call_sales_queue(&quot;sales2&quot;))
+register(&quot;sales&quot;, &quot;7000&quot;, function()
+   app.queue(&quot;sales3&quot;)
+end)
+
+</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

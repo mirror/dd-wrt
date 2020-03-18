@@ -42,8 +42,9 @@ extern "C" {
  */
 struct ast_format_def {
 	char name[80];		/*!< Name of format */
-	char exts[80];		/*!< Extensions (separated by | if more than one) 
+	char exts[80];		/*!< Extensions (separated by | if more than one)
 						 * this format can read.  First is assumed for writing (e.g. .mp3) */
+	char mime_types[80]; /*!< MIME Types related to the format (separated by | if more than one)*/
 	struct ast_format *format;	/*!< Format of frames it uses/provides (one only) */
 	/*!
 	 * \brief Prepare an input stream for playback.
@@ -53,11 +54,11 @@ struct ast_format_def {
 	 * function can be omitted.
 	 */
 	int (*open)(struct ast_filestream *s);
-	/*! 
+	/*!
 	 * \brief Prepare a stream for output, and comment it appropriately if applicable.
-	 * \return 0 on success, -1 on error. 
-	 * Same as the open, the FILE is already open so the function just needs to 
-	 * prepare any header and other fields, if any. 
+	 * \return 0 on success, -1 on error.
+	 * Same as the open, the FILE is already open so the function just needs to
+	 * prepare any header and other fields, if any.
 	 * The function can be omitted if nothing is needed.
 	 */
 	int (*rewrite)(struct ast_filestream *s, const char *comment);
@@ -125,17 +126,17 @@ struct ast_filestream {
 	char *write_buffer;
 };
 
-/*! 
+/*!
  * \brief Register a new file format capability.
  * Adds a format to Asterisk's format abilities.
  * \retval 0 on success
  * \retval -1 on failure
  */
 int __ast_format_def_register(const struct ast_format_def *f, struct ast_module *mod);
-#define ast_format_def_register(f) __ast_format_def_register(f, ast_module_info->self)
+#define ast_format_def_register(f) __ast_format_def_register(f, AST_MODULE_SELF)
 
-/*! 
- * \brief Unregisters a file format 
+/*!
+ * \brief Unregisters a file format
  * \param name the name of the format you wish to unregister
  * Unregisters a format based on the name of the format.
  * \retval 0 on success

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Gosub</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Subroutines_28314892.html">Subroutines</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Gosub
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified by <span class='editor'> Sean Bright</span> on Mar 07, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Gosub-Overview">Overview</h1><p><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_Gosub"><code>Gosub</code> is a dialplan application</a>. It replaces (is recommended in place of, and deprecates) the <code>Macro</code> application.</p><p><code>Gosub</code> allows you to execute a specific block (context or section) of dialplan as well as pass and return information via arguments to/from the scope of the block. Whereas <code>Macro</code> has issues with nesting, <code>Gosub</code> does not and <code>Gosub</code> should be used wherever you would have used a <code>Macro</code>.</p><p>Other dialplan applications, such as <code>Dial</code> and <code>Queue</code> make use of <code>Gosub</code> functionality from within their applications. That means they allow you to perform actions like calling <code>Gosub</code> on the called party's channel from a <code>Dial</code>, or on a <code>Queue</code> member's channel after they answer. See the <a href="Pre-Dial-Handlers_20189344.html">Pre-Dial Handlers</a> and <a href="Pre-Bridge-Handlers_31097214.html">Pre-Bridge Handlers</a> sections for more information.</p><h1 id="Gosub-DefiningadialplancontextforusewithGosub">Defining a dialplan context for use with Gosub</h1><p>No special syntax is needed when defining the dialplan code that you want to call with <code>Gosub</code>, <em>unless</em> you want to return back to where you called <code>Gosub</code> from. In the case of wanting to return, then you should call the <code><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_Return">Return</a></code> application.</p><p>Here is an example of dialplan we could call with <code>Gosub</code> when we don't wish to return.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[my-gosub]
+exten =&gt; s,1,Verbose(&quot;Here we are in a subroutine! Let&#39;s listen to some weasels&quot;)
+ same =&gt; n,Playback(tt-weasels)</pre>
+</div></div><p>Here is an example where we do wish to return.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[my-gosub]
+exten =&gt; s,1,Verbose(&quot;Here we are in a subroutine! Let&#39;s listen to some weasels&quot;)
+ same =&gt; n,Playback(tt-weasels)
+ same =&gt; n,Return()</pre>
+</div></div><h1 id="Gosub-CallingGosub">Calling Gosub</h1><p><code>Gosub</code> syntax is simple, you only need to specify the priority, and then optionally the context and extension plus any arguments you wish to use.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">Gosub([[context,]exten,]priority[(arg1[,...][,argN])])</pre>
+</div></div><p>Here is an example within Asterisk dialplan.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[somecontext]
+exten =&gt; 7000,1,Verbose(&quot;We are going to run a Gosub before Dialing!&quot;)
+ same =&gt; n,Gosub(my-gosub,s,1)
+ same =&gt; n,Dial(PJSIP/ALICE)</pre>
+</div></div><p>Here we are calling the <code>my-gosub</code> context at extension <code>s</code> , priority <code>1</code>.</p><h1 id="Gosub-CallingGosubwitharguments">Calling Gosub with arguments</h1><p>If you want to pass information into your <code>Gosub</code> routine then you need to use arguments.</p><p>Here is how we call <code>Gosub</code> with an argument. We are substituting the <code>EXTEN</code> channel variable for the first argument field (<code>ARG1</code>).</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[somecontext]
+exten =&gt; 7000,1,Verbose(&quot;We are going to run a Gosub before Dialing!&quot;)
+ same =&gt; n,Gosub(my-gosub,s,1(${EXTEN}))
+ same =&gt; n,Dial(PJSIP/ALICE)</pre>
+</div></div><p>Below we make use of <code>ARG1</code> in the <code>Verbose</code> message we print during the subroutine execution.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[my-gosub]
+exten =&gt; s,1,Verbose(&quot;Here we are in a subroutine! This subroutine was called from extension ${ARG1}&quot;)
+ same =&gt; n,Playback(tt-weasels)
+ same =&gt; n,Return()</pre>
+</div></div><p>To use multiple arguments, simply separate them via commas when defining them in the <code>Gosub</code> call. Then within the <code>Gosub</code> reference them as <code>ARG1</code>, <code>ARG2</code>, <code>ARG3</code>, etc.</p><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

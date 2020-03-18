@@ -24,16 +24,10 @@
  */
 
 /*** MODULEINFO
-	<depend type="module">res_stasis_answer</depend>
-	<depend type="module">res_stasis_playback</depend>
-	<depend type="module">res_stasis_recording</depend>
-	<depend type="module">res_stasis_snoop</depend>
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/file.h"
 #include "asterisk/pbx.h"
@@ -48,9 +42,104 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/format_cache.h"
 #include "asterisk/core_local.h"
 #include "asterisk/dial.h"
+#include "asterisk/max_forwards.h"
+#include "asterisk/rtp_engine.h"
 #include "resource_channels.h"
 
 #include <limits.h>
+
+
+/*! \brief Return the corresponded hangup code of the given reason */
+static int convert_reason_to_hangup_code(const char* reason)
+{
+	if (!strcmp(reason, "normal")) {
+		return AST_CAUSE_NORMAL;
+	} else if (!strcmp(reason, "busy")) {
+		return AST_CAUSE_BUSY;
+	} else if (!strcmp(reason, "congestion")) {
+		return AST_CAUSE_CONGESTION;
+	} else if (!strcmp(reason, "no_answer")) {
+		return AST_CAUSE_NOANSWER;
+	} else if (!strcmp(reason, "timeout")) {
+		return AST_CAUSE_NO_USER_RESPONSE;
+	} else if (!strcmp(reason, "rejected")) {
+		return AST_CAUSE_CALL_REJECTED;
+	} else if (!strcmp(reason, "unallocated")) {
+		return AST_CAUSE_UNALLOCATED;
+	} else if (!strcmp(reason, "normal_unspecified")) {
+		return AST_CAUSE_NORMAL_UNSPECIFIED;
+	} else if (!strcmp(reason, "number_incomplete")) {
+		return AST_CAUSE_INVALID_NUMBER_FORMAT;
+	} else if (!strcmp(reason, "codec_mismatch")) {
+		return AST_CAUSE_BEARERCAPABILITY_NOTAVAIL;
+	} else if (!strcmp(reason, "interworking")) {
+		return AST_CAUSE_INTERWORKING;
+	} else if (!strcmp(reason, "failure")) {
+		return AST_CAUSE_FAILURE;
+	} else if(!strcmp(reason, "answered_elsewhere")) {
+		return AST_CAUSE_ANSWERED_ELSEWHERE;
+	}
+
+	return -1;
+}
+
+/*!
+ * \brief Ensure channel is in a state that allows operation to be performed.
+ *
+ * Since Asterisk 14, it has been possible for down channels, as well as unanswered
+ * outbound channels to enter Stasis. While some operations are fine to perform on
+ * such channels, operations that
+ *
+ * - Attempt to manipulate channel state
+ * - Attempt to play media
+ * - Attempt to control the channel's location in the dialplan
+ *
+ * are invalid. This function can be used to determine if the channel is in an
+ * appropriate state.
+ *
+ * \note When this function returns an error, the HTTP response is taken care of.
+ *
+ * \param control The app control
+ * \param response Response to fill in if there is an error
+ *
+ * \retval 0 Channel is in a valid state. Continue on!
+ * \retval non-zero Channel is in an invalid state. Bail!
+ */
+static int channel_state_invalid(struct stasis_app_control *control,
+	struct ast_ari_response *response)
+{
+	struct ast_channel_snapshot *snapshot;
+
+	snapshot = stasis_app_control_get_snapshot(control);
+	if (!snapshot) {
+		ast_ari_response_error(response, 404, "Not Found", "Channel not found");
+		return -1;
+	}
+
+	/* These channel states apply only to outbound channels:
+	 * - Down: Channel has been created, and nothing else has been done
+	 * - Reserved: For a PRI, an underlying B-channel is reserved,
+	 *   but the channel is not yet dialed
+	 * - Ringing: The channel has been dialed.
+	 *
+	 * This does not affect inbound channels. Inbound channels, when they
+	 * enter the dialplan, are in the "Ring" state. If they have already
+	 * been answered, then they are in the "Up" state.
+	 */
+	if (snapshot->state == AST_STATE_DOWN
+		|| snapshot->state == AST_STATE_RESERVED
+		|| snapshot->state == AST_STATE_RINGING) {
+		ast_ari_response_error(response, 412, "Precondition Failed",
+			"Channel in invalid state");
+		ao2_ref(snapshot, -1);
+
+		return -1;
+	}
+
+	ao2_ref(snapshot, -1);
+
+	return 0;
+}
 
 /*!
  * \brief Finds the control object for a channel, filling the response with an
@@ -106,14 +195,19 @@ void ast_ari_channels_continue_in_dialplan(
 		return;
 	}
 
+	if (channel_state_invalid(control, response)) {
+		return;
+	}
+
 	snapshot = stasis_app_control_get_snapshot(control);
 	if (!snapshot) {
+		ast_ari_response_error(response, 404, "Not Found", "Channel not found");
 		return;
 	}
 
 	if (ast_strlen_zero(args->context)) {
-		context = snapshot->context;
-		exten = S_OR(args->extension, snapshot->exten);
+		context = snapshot->dialplan->context;
+		exten = S_OR(args->extension, snapshot->dialplan->exten);
 	} else {
 		context = args->context;
 		exten = S_OR(args->extension, "s");
@@ -145,7 +239,7 @@ void ast_ari_channels_continue_in_dialplan(
 		ipri = args->priority;
 	} else if (ast_strlen_zero(args->context) && ast_strlen_zero(args->extension)) {
 		/* Special case. No exten, context, or priority provided, then move on to the next priority */
-		ipri = snapshot->priority + 1;
+		ipri = snapshot->dialplan->priority + 1;
 	} else {
 		ipri = 1;
 	}
@@ -153,6 +247,26 @@ void ast_ari_channels_continue_in_dialplan(
 
 	if (stasis_app_control_continue(control, context, exten, ipri)) {
 		ast_ari_response_alloc_failed(response);
+		return;
+	}
+
+	ast_ari_response_no_content(response);
+}
+
+void ast_ari_channels_move(struct ast_variable *headers,
+	struct ast_ari_channels_move_args *args,
+	struct ast_ari_response *response)
+{
+	RAII_VAR(struct stasis_app_control *, control, NULL, ao2_cleanup);
+
+	control = find_control(response, args->channel_id);
+	if (!control) {
+		return;
+	}
+
+	if (stasis_app_control_move(control, args->app, args->app_args)) {
+		ast_ari_response_error(response, 500, "Internal Server Error",
+			"Failed to switch Stasis applications");
 		return;
 	}
 
@@ -171,6 +285,10 @@ void ast_ari_channels_redirect(struct ast_variable *headers,
 
 	control = find_control(response, args->channel_id);
 	if (!control) {
+		return;
+	}
+
+	if (channel_state_invalid(control, response)) {
 		return;
 	}
 
@@ -201,10 +319,10 @@ void ast_ari_channels_redirect(struct ast_variable *headers,
 		return;
 	}
 
-	if (strncasecmp(chan_snapshot->type, tech, tech_len)) {
+	if (strncasecmp(chan_snapshot->base->type, tech, tech_len)) {
 		ast_ari_response_error(response, 422, "Unprocessable Entity",
 			"Endpoint technology '%s' does not match channel technology '%s'",
-			tech, chan_snapshot->type);
+			tech, chan_snapshot->base->type);
 		return;
 	}
 
@@ -225,6 +343,10 @@ void ast_ari_channels_answer(struct ast_variable *headers,
 
 	control = find_control(response, args->channel_id);
 	if (control == NULL) {
+		return;
+	}
+
+	if (channel_state_invalid(control, response)) {
 		return;
 	}
 
@@ -249,6 +371,10 @@ void ast_ari_channels_ring(struct ast_variable *headers,
 		return;
 	}
 
+	if (channel_state_invalid(control, response)) {
+		return;
+	}
+
 	stasis_app_control_ring(control);
 
 	ast_ari_response_no_content(response);
@@ -262,6 +388,10 @@ void ast_ari_channels_ring_stop(struct ast_variable *headers,
 
 	control = find_control(response, args->channel_id);
 	if (control == NULL) {
+		return;
+	}
+
+	if (channel_state_invalid(control, response)) {
 		return;
 	}
 
@@ -280,6 +410,10 @@ void ast_ari_channels_mute(struct ast_variable *headers,
 
 	control = find_control(response, args->channel_id);
 	if (control == NULL) {
+		return;
+	}
+
+	if (channel_state_invalid(control, response)) {
 		return;
 	}
 
@@ -321,6 +455,10 @@ void ast_ari_channels_unmute(struct ast_variable *headers,
 		return;
 	}
 
+	if (channel_state_invalid(control, response)) {
+		return;
+	}
+
 	if (ast_strlen_zero(args->direction)) {
 		ast_ari_response_error(
 			response, 400, "Bad Request",
@@ -357,6 +495,10 @@ void ast_ari_channels_send_dtmf(struct ast_variable *headers,
 		return;
 	}
 
+	if (channel_state_invalid(control, response)) {
+		return;
+	}
+
 	if (ast_strlen_zero(args->dtmf)) {
 		ast_ari_response_error(
 			response, 400, "Bad Request",
@@ -381,6 +523,10 @@ void ast_ari_channels_hold(struct ast_variable *headers,
 		return;
 	}
 
+	if (channel_state_invalid(control, response)) {
+		return;
+	}
+
 	stasis_app_control_hold(control);
 
 	ast_ari_response_no_content(response);
@@ -395,6 +541,10 @@ void ast_ari_channels_unhold(struct ast_variable *headers,
 	control = find_control(response, args->channel_id);
 	if (control == NULL) {
 		/* Response filled in by find_control */
+		return;
+	}
+
+	if (channel_state_invalid(control, response)) {
 		return;
 	}
 
@@ -415,6 +565,10 @@ void ast_ari_channels_start_moh(struct ast_variable *headers,
 		return;
 	}
 
+	if (channel_state_invalid(control, response)) {
+		return;
+	}
+
 	stasis_app_control_moh_start(control, args->moh_class);
 	ast_ari_response_no_content(response);
 }
@@ -428,6 +582,10 @@ void ast_ari_channels_stop_moh(struct ast_variable *headers,
 	control = find_control(response, args->channel_id);
 	if (control == NULL) {
 		/* Response filled in by find_control */
+		return;
+	}
+
+	if (channel_state_invalid(control, response)) {
 		return;
 	}
 
@@ -447,6 +605,10 @@ void ast_ari_channels_start_silence(struct ast_variable *headers,
 		return;
 	}
 
+	if (channel_state_invalid(control, response)) {
+		return;
+	}
+
 	stasis_app_control_silence_start(control);
 	ast_ari_response_no_content(response);
 }
@@ -463,13 +625,18 @@ void ast_ari_channels_stop_silence(struct ast_variable *headers,
 		return;
 	}
 
+	if (channel_state_invalid(control, response)) {
+		return;
+	}
+
 	stasis_app_control_silence_stop(control);
 	ast_ari_response_no_content(response);
 }
 
 static void ari_channels_handle_play(
 	const char *args_channel_id,
-	const char *args_media,
+	const char **args_media,
+	size_t args_media_count,
 	const char *args_lang,
 	int args_offsetms,
 	int args_skipms,
@@ -488,6 +655,10 @@ static void ari_channels_handle_play(
 	control = find_control(response, args_channel_id);
 	if (control == NULL) {
 		/* Response filled in by find_control */
+		return;
+	}
+
+	if (channel_state_invalid(control, response)) {
 		return;
 	}
 
@@ -513,9 +684,9 @@ static void ari_channels_handle_play(
 		return;
 	}
 
-	language = S_OR(args_lang, snapshot->language);
+	language = S_OR(args_lang, snapshot->base->language);
 
-	playback = stasis_app_control_play_uri(control, args_media, language,
+	playback = stasis_app_control_play_uri(control, args_media, args_media_count, language,
 		args_channel_id, STASIS_PLAYBACK_TARGET_CHANNEL, args_skipms, args_offsetms, args_playback_id);
 	if (!playback) {
 		ast_ari_response_error(
@@ -551,6 +722,7 @@ void ast_ari_channels_play(struct ast_variable *headers,
 	ari_channels_handle_play(
 		args->channel_id,
 		args->media,
+		args->media_count,
 		args->lang,
 		args->offsetms,
 		args->skipms,
@@ -565,6 +737,7 @@ void ast_ari_channels_play_with_id(struct ast_variable *headers,
 	ari_channels_handle_play(
 		args->channel_id,
 		args->media,
+		args->media_count,
 		args->lang,
 		args->offsetms,
 		args->skipms,
@@ -716,32 +889,19 @@ void ast_ari_channels_get(struct ast_variable *headers,
 	struct ast_ari_channels_get_args *args,
 	struct ast_ari_response *response)
 {
-	RAII_VAR(struct stasis_message *, msg, NULL, ao2_cleanup);
-	struct stasis_cache *cache;
 	struct ast_channel_snapshot *snapshot;
 
-	cache = ast_channel_cache();
-	if (!cache) {
-		ast_ari_response_error(
-			response, 500, "Internal Server Error",
-			"Message bus not initialized");
-		return;
-	}
-
-	msg = stasis_cache_get(cache, ast_channel_snapshot_type(),
-				   args->channel_id);
-	if (!msg) {
+	snapshot = ast_channel_snapshot_get_latest(args->channel_id);
+	if (!snapshot) {
 		ast_ari_response_error(
 			response, 404, "Not Found",
 			"Channel not found");
 		return;
 	}
 
-	snapshot = stasis_message_data(msg);
-	ast_assert(snapshot != NULL);
-
 	ast_ari_response_ok(response,
 				ast_channel_snapshot_to_json(snapshot, NULL));
+	ao2_ref(snapshot, -1);
 }
 
 void ast_ari_channels_hangup(struct ast_variable *headers,
@@ -759,19 +919,32 @@ void ast_ari_channels_hangup(struct ast_variable *headers,
 		return;
 	}
 
-	if (ast_strlen_zero(args->reason) || !strcmp(args->reason, "normal")) {
-		cause = AST_CAUSE_NORMAL;
-	} else if (!strcmp(args->reason, "busy")) {
-		cause = AST_CAUSE_BUSY;
-	} else if (!strcmp(args->reason, "congestion")) {
-		cause = AST_CAUSE_CONGESTION;
-	} else if (!strcmp(args->reason, "no_answer")) {
-		cause = AST_CAUSE_NOANSWER;
-	} else {
-		ast_ari_response_error(
-			response, 400, "Invalid Reason",
-			"Invalid reason for hangup provided");
+	if (!ast_strlen_zero(args->reason) && !ast_strlen_zero(args->reason_code)) {
+		ast_ari_response_error(response, 400, "Bad Request",
+			"The reason and reason_code can't both be specified");
 		return;
+	}
+
+	if (!ast_strlen_zero(args->reason_code)) {
+		/* reason_code allows any hangup code */
+		if (sscanf(args->reason_code, "%30d", &cause) != 1) {
+			ast_ari_response_error(
+				response, 400, "Invalid Reason Code",
+				"Invalid reason for hangup reason code provided");
+			return;
+		}
+	} else if (!ast_strlen_zero(args->reason)) {
+		/* reason allows only listed hangup reason */
+		cause = convert_reason_to_hangup_code(args->reason);
+		if (cause == -1) {
+			ast_ari_response_error(
+				response, 400, "Invalid Reason",
+				"Invalid reason for hangup reason provided");
+			return;
+		}
+	} else {
+		/* not specified. set default hangup */
+		cause = AST_CAUSE_NORMAL;
 	}
 
 	ast_channel_hangupcause_set(chan, cause);
@@ -784,27 +957,13 @@ void ast_ari_channels_list(struct ast_variable *headers,
 	struct ast_ari_channels_list_args *args,
 	struct ast_ari_response *response)
 {
-	RAII_VAR(struct stasis_cache *, cache, NULL, ao2_cleanup);
 	RAII_VAR(struct ao2_container *, snapshots, NULL, ao2_cleanup);
 	RAII_VAR(struct ast_json *, json, NULL, ast_json_unref);
 	struct ao2_iterator i;
 	void *obj;
 	struct stasis_message_sanitizer *sanitize = stasis_app_get_sanitizer();
 
-	cache = ast_channel_cache();
-	if (!cache) {
-		ast_ari_response_error(
-			response, 500, "Internal Server Error",
-			"Message bus not initialized");
-		return;
-	}
-	ao2_ref(cache, +1);
-
-	snapshots = stasis_cache_dump(cache, ast_channel_snapshot_type());
-	if (!snapshots) {
-		ast_ari_response_alloc_failed(response);
-		return;
-	}
+	snapshots = ast_channel_cache_all();
 
 	json = ast_json_array_create();
 	if (!json) {
@@ -814,12 +973,12 @@ void ast_ari_channels_list(struct ast_variable *headers,
 
 	i = ao2_iterator_init(snapshots, 0);
 	while ((obj = ao2_iterator_next(&i))) {
-		RAII_VAR(struct stasis_message *, msg, obj, ao2_cleanup);
-		struct ast_channel_snapshot *snapshot = stasis_message_data(msg);
+		struct ast_channel_snapshot *snapshot = obj;
 		int r;
 
 		if (sanitize && sanitize->channel_snapshot
 			&& sanitize->channel_snapshot(snapshot)) {
+			ao2_ref(snapshot, -1);
 			continue;
 		}
 
@@ -828,8 +987,10 @@ void ast_ari_channels_list(struct ast_variable *headers,
 		if (r != 0) {
 			ast_ari_response_alloc_failed(response);
 			ao2_iterator_destroy(&i);
+			ao2_ref(snapshot, -1);
 			return;
 		}
+		ao2_ref(snapshot, -1);
 	}
 	ao2_iterator_destroy(&i);
 
@@ -899,7 +1060,7 @@ end:
 	return NULL;
 }
 
-static void ari_channels_handle_originate_with_id(const char *args_endpoint,
+static struct ast_channel *ari_channels_handle_originate_with_id(const char *args_endpoint,
 	const char *args_extension,
 	const char *args_context,
 	long args_priority,
@@ -937,19 +1098,19 @@ static void ari_channels_handle_originate_with_id(const char *args_endpoint,
 		|| (assignedids.uniqueid2 && AST_MAX_PUBLIC_UNIQUEID < strlen(assignedids.uniqueid2))) {
 		ast_ari_response_error(response, 400, "Bad Request",
 			"Uniqueid length exceeds maximum of %d", AST_MAX_PUBLIC_UNIQUEID);
-		return;
+		return NULL;
 	}
 
 	if (ast_strlen_zero(args_endpoint)) {
 		ast_ari_response_error(response, 400, "Bad Request",
 			"Endpoint must be specified");
-		return;
+		return NULL;
 	}
 
 	if (!ast_strlen_zero(args_originator) && !ast_strlen_zero(args_formats)) {
 		ast_ari_response_error(response, 400, "Bad Request",
 			"Originator and formats can't both be specified");
-		return;
+		return NULL;
 	}
 
 	dialtech = ast_strdupa(args_endpoint);
@@ -961,7 +1122,7 @@ static void ari_channels_handle_originate_with_id(const char *args_endpoint,
 	if (ast_strlen_zero(dialtech) || ast_strlen_zero(dialdevice)) {
 		ast_ari_response_error(response, 400, "Bad Request",
 			"Invalid endpoint specified");
-		return;
+		return NULL;
 	}
 
 	if (!ast_strlen_zero(args_app)) {
@@ -969,7 +1130,7 @@ static void ari_channels_handle_originate_with_id(const char *args_endpoint,
 
 		if (!appdata) {
 			ast_ari_response_alloc_failed(response);
-			return;
+			return NULL;
 		}
 
 		ast_str_set(&appdata, 0, "%s", args_app);
@@ -980,7 +1141,7 @@ static void ari_channels_handle_originate_with_id(const char *args_endpoint,
 		origination = ast_calloc(1, sizeof(*origination) + ast_str_size(appdata) + 1);
 		if (!origination) {
 			ast_ari_response_alloc_failed(response);
-			return;
+			return NULL;
 		}
 
 		strcpy(origination->appdata, ast_str_buffer(appdata));
@@ -988,7 +1149,7 @@ static void ari_channels_handle_originate_with_id(const char *args_endpoint,
 		origination = ast_calloc(1, sizeof(*origination) + 1);
 		if (!origination) {
 			ast_ari_response_alloc_failed(response);
-			return;
+			return NULL;
 		}
 
 		ast_copy_string(origination->context, S_OR(args_context, "default"), sizeof(origination->context));
@@ -1003,7 +1164,7 @@ static void ari_channels_handle_originate_with_id(const char *args_endpoint,
 				if (ipri == -1) {
 					ast_log(AST_LOG_ERROR, "Requested label: %s can not be found in context: %s\n", args_label, args_context);
 					ast_ari_response_error(response, 404, "Not Found", "Requested label can not be found");
-					return;
+					return NULL;
 				}
 			} else {
 				ast_debug(3, "Numeric value provided for label, jumping to that priority\n");
@@ -1013,7 +1174,7 @@ static void ari_channels_handle_originate_with_id(const char *args_endpoint,
 				ast_log(AST_LOG_ERROR, "Invalid priority label '%s' specified for extension %s in context: %s\n",
 						args_label, args_extension, args_context);
 				ast_ari_response_error(response, 400, "Bad Request", "Requested priority is illegal");
-				return;
+				return NULL;
 			}
 
 			/* Our priority was provided by a label */
@@ -1027,14 +1188,14 @@ static void ari_channels_handle_originate_with_id(const char *args_endpoint,
 	} else {
 		ast_ari_response_error(response, 400, "Bad Request",
 			"Application or extension must be specified");
-		return;
+		return NULL;
 	}
 
 	dial = ast_dial_create();
 	if (!dial) {
 		ast_ari_response_alloc_failed(response);
 		ast_free(origination);
-		return;
+		return NULL;
 	}
 	ast_dial_set_user_data(dial, origination);
 
@@ -1042,7 +1203,7 @@ static void ari_channels_handle_originate_with_id(const char *args_endpoint,
 		ast_ari_response_alloc_failed(response);
 		ast_dial_destroy(dial);
 		ast_free(origination);
-		return;
+		return NULL;
 	}
 
 	if (args_timeout > 0) {
@@ -1070,7 +1231,7 @@ static void ari_channels_handle_originate_with_id(const char *args_endpoint,
 				"Provided originator channel was not found");
 			ast_dial_destroy(dial);
 			ast_free(origination);
-			return;
+			return NULL;
 		}
 	}
 
@@ -1083,7 +1244,7 @@ static void ari_channels_handle_originate_with_id(const char *args_endpoint,
 			ast_dial_destroy(dial);
 			ast_free(origination);
 			ast_channel_cleanup(other);
-			return;
+			return NULL;
 		}
 
 		while ((format_name = ast_strip(strsep(&formats_copy, ",")))) {
@@ -1102,7 +1263,7 @@ static void ari_channels_handle_originate_with_id(const char *args_endpoint,
 				ast_channel_cleanup(other);
 				ao2_ref(format_cap, -1);
 				ao2_cleanup(fmt);
-				return;
+				return NULL;
 			}
 			ao2_ref(fmt, -1);
 		}
@@ -1118,7 +1279,7 @@ static void ari_channels_handle_originate_with_id(const char *args_endpoint,
 		ast_dial_destroy(dial);
 		ast_free(origination);
 		ast_channel_cleanup(other);
-		return;
+		return NULL;
 	}
 
 	ast_channel_cleanup(other);
@@ -1129,7 +1290,7 @@ static void ari_channels_handle_originate_with_id(const char *args_endpoint,
 		ast_ari_response_alloc_failed(response);
 		ast_dial_destroy(dial);
 		ast_free(origination);
-		return;
+		return NULL;
 	}
 
 	if (!ast_strlen_zero(cid_num) || !ast_strlen_zero(cid_name)) {
@@ -1194,8 +1355,7 @@ static void ari_channels_handle_originate_with_id(const char *args_endpoint,
 		ast_ari_response_ok(response, ast_channel_snapshot_to_json(snapshot, NULL));
 	}
 
-	ast_channel_unref(chan);
-	return;
+	return chan;
 }
 
 /*!
@@ -1236,6 +1396,7 @@ void ast_ari_channels_originate_with_id(struct ast_variable *headers,
 	struct ast_ari_response *response)
 {
 	struct ast_variable *variables = NULL;
+	struct ast_channel *chan;
 
 	/* Parse any query parameters out of the body parameter */
 	if (args->variables) {
@@ -1249,7 +1410,7 @@ void ast_ari_channels_originate_with_id(struct ast_variable *headers,
 		}
 	}
 
-	ari_channels_handle_originate_with_id(
+	chan = ari_channels_handle_originate_with_id(
 		args->endpoint,
 		args->extension,
 		args->context,
@@ -1265,6 +1426,7 @@ void ast_ari_channels_originate_with_id(struct ast_variable *headers,
 		args->originator,
 		args->formats,
 		response);
+	ast_channel_cleanup(chan);
 	ast_variables_destroy(variables);
 }
 
@@ -1273,6 +1435,7 @@ void ast_ari_channels_originate(struct ast_variable *headers,
 	struct ast_ari_response *response)
 {
 	struct ast_variable *variables = NULL;
+	struct ast_channel *chan;
 
 	/* Parse any query parameters out of the body parameter */
 	if (args->variables) {
@@ -1286,7 +1449,7 @@ void ast_ari_channels_originate(struct ast_variable *headers,
 		}
 	}
 
-	ari_channels_handle_originate_with_id(
+	chan = ari_channels_handle_originate_with_id(
 		args->endpoint,
 		args->extension,
 		args->context,
@@ -1302,6 +1465,7 @@ void ast_ari_channels_originate(struct ast_variable *headers,
 		args->originator,
 		args->formats,
 		response);
+	ast_channel_cleanup(chan);
 	ast_variables_destroy(variables);
 }
 
@@ -1510,4 +1674,496 @@ void ast_ari_channels_snoop_channel_with_id(struct ast_variable *headers,
 		args->app_args,
 		args->snoop_id,
 		response);
+}
+
+struct ari_channel_thread_data {
+	struct ast_channel *chan;
+	struct ast_str *stasis_stuff;
+};
+
+static void chan_data_destroy(struct ari_channel_thread_data *chan_data)
+{
+	ast_free(chan_data->stasis_stuff);
+	ast_hangup(chan_data->chan);
+	ast_free(chan_data);
+}
+
+/*!
+ * \brief Thread that owns stasis-created channel.
+ *
+ * The channel enters into a Stasis application immediately upon creation. In this
+ * way, the channel can be manipulated by the Stasis application. Once the channel
+ * exits the Stasis application, it is hung up.
+ */
+static void *ari_channel_thread(void *data)
+{
+	struct ari_channel_thread_data *chan_data = data;
+	struct ast_app *stasis_app;
+
+	stasis_app = pbx_findapp("Stasis");
+	if (!stasis_app) {
+		ast_log(LOG_ERROR, "Stasis dialplan application is not registered");
+		chan_data_destroy(chan_data);
+		return NULL;
+	}
+
+	pbx_exec(chan_data->chan, stasis_app, ast_str_buffer(chan_data->stasis_stuff));
+
+	chan_data_destroy(chan_data);
+
+	return NULL;
+}
+
+struct ast_datastore_info dialstring_info = {
+	.type = "ARI Dialstring",
+	.destroy = ast_free_ptr,
+};
+
+/*!
+ * \brief Save dialstring onto a channel datastore
+ *
+ * This will later be retrieved when it comes time to actually dial the channel
+ *
+ * \param chan The channel on which to save the dialstring
+ * \param dialstring The dialstring to save
+ * \retval 0 SUCCESS!
+ * \reval -1 Failure :(
+ */
+static int save_dialstring(struct ast_channel *chan, const char *dialstring)
+{
+	struct ast_datastore *datastore;
+
+	datastore = ast_datastore_alloc(&dialstring_info, NULL);
+	if (!datastore) {
+		return -1;
+	}
+
+	datastore->data = ast_strdup(dialstring);
+	if (!datastore->data) {
+		ast_datastore_free(datastore);
+		return -1;
+	}
+
+	ast_channel_lock(chan);
+	if (ast_channel_datastore_add(chan, datastore)) {
+		ast_channel_unlock(chan);
+		ast_datastore_free(datastore);
+		return -1;
+	}
+	ast_channel_unlock(chan);
+
+	return 0;
+}
+
+/*!
+ * \brief Retrieve the dialstring from the channel datastore
+ *
+ * \pre chan is locked
+ * \param chan Channel that was previously created in ARI
+ * \retval NULL Failed to find datastore
+ * \retval non-NULL The dialstring
+ */
+static char *restore_dialstring(struct ast_channel *chan)
+{
+	struct ast_datastore *datastore;
+
+	datastore = ast_channel_datastore_find(chan, &dialstring_info, NULL);
+	if (!datastore) {
+		return NULL;
+	}
+
+	return datastore->data;
+}
+
+void ast_ari_channels_create(struct ast_variable *headers,
+	struct ast_ari_channels_create_args *args,
+	struct ast_ari_response *response)
+{
+	struct ast_assigned_ids assignedids = {
+		.uniqueid = args->channel_id,
+		.uniqueid2 = args->other_channel_id,
+	};
+	struct ari_channel_thread_data *chan_data;
+	struct ast_channel_snapshot *snapshot;
+	pthread_t thread;
+	char *dialtech;
+	char dialdevice[AST_CHANNEL_NAME];
+	char *stuff;
+	int cause;
+	struct ast_format_cap *request_cap;
+	struct ast_channel *originator;
+
+	if (!ast_strlen_zero(args->originator) && !ast_strlen_zero(args->formats)) {
+		ast_ari_response_error(response, 400, "Bad Request",
+			"Originator and formats can't both be specified");
+		return;
+	}
+
+	if (ast_strlen_zero(args->endpoint)) {
+		ast_ari_response_error(response, 400, "Bad Request",
+			"Endpoint must be specified");
+		return;
+	}
+
+	chan_data = ast_calloc(1, sizeof(*chan_data));
+	if (!chan_data) {
+		ast_ari_response_alloc_failed(response);
+		return;
+	}
+
+	chan_data->stasis_stuff = ast_str_create(32);
+	if (!chan_data->stasis_stuff) {
+		ast_ari_response_alloc_failed(response);
+		chan_data_destroy(chan_data);
+		return;
+	}
+
+	ast_str_append(&chan_data->stasis_stuff, 0, "%s", args->app);
+	if (!ast_strlen_zero(args->app_args)) {
+		ast_str_append(&chan_data->stasis_stuff, 0, ",%s", args->app_args);
+	}
+
+	dialtech = ast_strdupa(args->endpoint);
+	if ((stuff = strchr(dialtech, '/'))) {
+		*stuff++ = '\0';
+		ast_copy_string(dialdevice, stuff, sizeof(dialdevice));
+	}
+
+	originator = ast_channel_get_by_name(args->originator);
+	if (originator) {
+		request_cap = ao2_bump(ast_channel_nativeformats(originator));
+		if (!ast_strlen_zero(args->app)) {
+			stasis_app_subscribe_channel(args->app, originator);
+		}
+	} else if (!ast_strlen_zero(args->formats)) {
+		char *format_name;
+		char *formats_copy = ast_strdupa(args->formats);
+
+		if (!(request_cap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
+			ast_ari_response_alloc_failed(response);
+			chan_data_destroy(chan_data);
+			return;
+		}
+
+		while ((format_name = ast_strip(strsep(&formats_copy, ",")))) {
+			struct ast_format *fmt = ast_format_cache_get(format_name);
+
+			if (!fmt || ast_format_cap_append(request_cap, fmt, 0)) {
+				if (!fmt) {
+					ast_ari_response_error(
+						response, 400, "Bad Request",
+						"Provided format (%s) was not found", format_name);
+				} else {
+					ast_ari_response_alloc_failed(response);
+				}
+				ao2_ref(request_cap, -1);
+				ao2_cleanup(fmt);
+				chan_data_destroy(chan_data);
+				return;
+			}
+			ao2_ref(fmt, -1);
+		}
+	} else {
+		if (!(request_cap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
+			ast_ari_response_alloc_failed(response);
+			chan_data_destroy(chan_data);
+			return;
+		}
+
+		ast_format_cap_append_by_type(request_cap, AST_MEDIA_TYPE_AUDIO);
+	}
+
+	chan_data->chan = ast_request(dialtech, request_cap, &assignedids, originator, dialdevice, &cause);
+	ao2_cleanup(request_cap);
+
+	if (!chan_data->chan) {
+		if (ast_channel_errno() == AST_CHANNEL_ERROR_ID_EXISTS) {
+			ast_ari_response_error(response, 409, "Conflict",
+				"Channel with given unique ID already exists");
+		} else {
+			ast_ari_response_alloc_failed(response);
+		}
+		ast_channel_cleanup(originator);
+		chan_data_destroy(chan_data);
+		return;
+	}
+
+	if (!ast_strlen_zero(args->app)) {
+		stasis_app_subscribe_channel(args->app, chan_data->chan);
+	}
+
+	ast_channel_cleanup(originator);
+
+	if (save_dialstring(chan_data->chan, stuff)) {
+		ast_ari_response_alloc_failed(response);
+		chan_data_destroy(chan_data);
+		return;
+	}
+
+	snapshot = ast_channel_snapshot_get_latest(ast_channel_uniqueid(chan_data->chan));
+
+	if (ast_pthread_create_detached(&thread, NULL, ari_channel_thread, chan_data)) {
+		ast_ari_response_alloc_failed(response);
+		chan_data_destroy(chan_data);
+	} else {
+		ast_ari_response_ok(response, ast_channel_snapshot_to_json(snapshot, NULL));
+	}
+
+	ao2_ref(snapshot, -1);
+}
+
+void ast_ari_channels_dial(struct ast_variable *headers,
+	struct ast_ari_channels_dial_args *args,
+	struct ast_ari_response *response)
+{
+	RAII_VAR(struct stasis_app_control *, control, NULL, ao2_cleanup);
+	RAII_VAR(struct ast_channel *, caller, NULL, ast_channel_cleanup);
+	RAII_VAR(struct ast_channel *, callee, NULL, ast_channel_cleanup);
+	char *dialstring;
+
+	control = find_control(response, args->channel_id);
+	if (control == NULL) {
+		/* Response filled in by find_control */
+		return;
+	}
+
+	caller = ast_channel_get_by_name(args->caller);
+
+	callee = ast_channel_get_by_name(args->channel_id);
+	if (!callee) {
+		ast_ari_response_error(response, 404, "Not Found",
+			"Callee not found");
+		return;
+	}
+
+	if (ast_channel_state(callee) != AST_STATE_DOWN
+		&& ast_channel_state(callee) != AST_STATE_RESERVED) {
+		ast_ari_response_error(response, 409, "Conflict",
+			"Channel is not in the 'Down' state");
+		return;
+	}
+
+	/* XXX This is straight up copied from main/dial.c. It's probably good
+	 * to separate this to some common method.
+	 */
+	if (caller) {
+		ast_channel_lock_both(caller, callee);
+	} else {
+		ast_channel_lock(callee);
+	}
+
+	dialstring = restore_dialstring(callee);
+	if (!dialstring) {
+		ast_channel_unlock(callee);
+		if (caller) {
+			ast_channel_unlock(caller);
+		}
+		ast_ari_response_error(response, 409, "Conflict",
+			"Dialing a channel not created by ARI");
+		return;
+	}
+	/* Make a copy of the dialstring just in case some jerk tries to hang up the
+	 * channel before we can actually dial
+	 */
+	dialstring = ast_strdupa(dialstring);
+
+	ast_channel_stage_snapshot(callee);
+	if (caller) {
+		ast_channel_inherit_variables(caller, callee);
+		ast_channel_datastore_inherit(caller, callee);
+		ast_max_forwards_decrement(callee);
+
+		/* Copy over callerid information */
+		ast_party_redirecting_copy(ast_channel_redirecting(callee), ast_channel_redirecting(caller));
+
+		ast_channel_dialed(callee)->transit_network_select = ast_channel_dialed(caller)->transit_network_select;
+
+		ast_connected_line_copy_from_caller(ast_channel_connected(callee), ast_channel_caller(caller));
+
+		ast_channel_language_set(callee, ast_channel_language(caller));
+		ast_channel_req_accountcodes(callee, caller, AST_CHANNEL_REQUESTOR_BRIDGE_PEER);
+		if (ast_strlen_zero(ast_channel_musicclass(callee)))
+			ast_channel_musicclass_set(callee, ast_channel_musicclass(caller));
+
+		ast_channel_adsicpe_set(callee, ast_channel_adsicpe(caller));
+		ast_channel_transfercapability_set(callee, ast_channel_transfercapability(caller));
+		ast_channel_unlock(caller);
+	}
+
+	ast_channel_stage_snapshot_done(callee);
+	ast_channel_unlock(callee);
+
+	if (stasis_app_control_dial(control, dialstring, args->timeout)) {
+		ast_ari_response_alloc_failed(response);
+		return;
+	}
+
+	ast_ari_response_no_content(response);
+}
+
+void ast_ari_channels_rtpstatistics(struct ast_variable *headers,
+		struct ast_ari_channels_rtpstatistics_args *args,
+		struct ast_ari_response *response)
+{
+	RAII_VAR(struct ast_channel *, chan, NULL, ast_channel_cleanup);
+	RAII_VAR(struct ast_rtp_instance *, rtp, NULL, ao2_cleanup);
+	struct ast_json *j_res;
+	const struct ast_channel_tech *tech;
+	struct ast_rtp_glue *glue;
+
+	chan = ast_channel_get_by_name(args->channel_id);
+	if (!chan) {
+		ast_ari_response_error(response, 404, "Not Found",
+			"Channel not found");
+		return;
+	}
+
+	ast_channel_lock(chan);
+	tech = ast_channel_tech(chan);
+	if (!tech) {
+		ast_channel_unlock(chan);
+		ast_ari_response_error(response, 404, "Not Found",
+			"Channel's tech not found");
+		return;
+	}
+
+	glue = ast_rtp_instance_get_glue(tech->type);
+	if (!glue) {
+		ast_channel_unlock(chan);
+		ast_ari_response_error(response, 403, "Forbidden",
+			"Unsupported channel type");
+		return;
+	}
+
+	glue->get_rtp_info(chan, &rtp);
+	if (!rtp) {
+		ast_channel_unlock(chan);
+		ast_ari_response_error(response, 404, "Not Found",
+			"RTP info not found");
+		return;
+	}
+
+	j_res = ast_rtp_instance_get_stats_all_json(rtp);
+	if (!j_res) {
+		ast_channel_unlock(chan);
+		ast_ari_response_error(response, 404, "Not Found",
+			"Statistics not found");
+		return;
+	}
+
+	ast_channel_unlock(chan);
+	ast_ari_response_ok(response, j_res);
+
+	return;
+}
+
+static void external_media_rtp_udp(struct ast_ari_channels_external_media_args *args,
+	struct ast_variable *variables,
+	struct ast_ari_response *response)
+{
+	size_t endpoint_len;
+	char *endpoint;
+	struct ast_channel *chan;
+	struct varshead *vars;
+
+	endpoint_len = strlen("UnicastRTP/") + strlen(args->external_host) + 1;
+	endpoint = ast_alloca(endpoint_len);
+	snprintf(endpoint, endpoint_len, "UnicastRTP/%s", args->external_host);
+
+	chan = ari_channels_handle_originate_with_id(
+		endpoint,
+		NULL,
+		NULL,
+		0,
+		NULL,
+		args->app,
+		NULL,
+		NULL,
+		0,
+		variables,
+		args->channel_id,
+		NULL,
+		NULL,
+		args->format,
+		response);
+	ast_variables_destroy(variables);
+
+	if (!chan) {
+		return;
+	}
+
+	ast_channel_lock(chan);
+	vars = ast_channel_varshead(chan);
+	if (vars && !AST_LIST_EMPTY(vars)) {
+		ast_json_object_set(response->message, "channelvars", ast_json_channel_vars(vars));
+	}
+	ast_channel_unlock(chan);
+	ast_channel_unref(chan);
+}
+
+#include "asterisk/config.h"
+#include "asterisk/netsock2.h"
+
+void ast_ari_channels_external_media(struct ast_variable *headers,
+	struct ast_ari_channels_external_media_args *args, struct ast_ari_response *response)
+{
+	struct ast_variable *variables = NULL;
+	char *external_host;
+	char *host = NULL;
+	char *port = NULL;
+
+	ast_assert(response != NULL);
+
+	if (ast_strlen_zero(args->app)) {
+		ast_ari_response_error(response, 400, "Bad Request", "app cannot be empty");
+		return;
+	}
+
+	if (ast_strlen_zero(args->external_host)) {
+		ast_ari_response_error(response, 400, "Bad Request", "external_host cannot be empty");
+		return;
+	}
+
+	external_host = ast_strdupa(args->external_host);
+	if (!ast_sockaddr_split_hostport(external_host, &host, &port, PARSE_PORT_REQUIRE)) {
+		ast_ari_response_error(response, 400, "Bad Request", "external_host must be <host>:<port>");
+		return;
+	}
+
+	if (ast_strlen_zero(args->format)) {
+		ast_ari_response_error(response, 400, "Bad Request", "format cannot be empty");
+		return;
+	}
+
+	if (ast_strlen_zero(args->encapsulation)) {
+		args->encapsulation = "rtp";
+	}
+	if (ast_strlen_zero(args->transport)) {
+		args->transport = "udp";
+	}
+	if (ast_strlen_zero(args->connection_type)) {
+		args->connection_type = "client";
+	}
+	if (ast_strlen_zero(args->direction)) {
+		args->direction = "both";
+	}
+
+	if (args->variables) {
+		struct ast_json *json_variables;
+
+		ast_ari_channels_external_media_parse_body(args->variables, args);
+		json_variables = ast_json_object_get(args->variables, "variables");
+		if (json_variables
+			&& json_to_ast_variables(response, json_variables, &variables)) {
+			return;
+		}
+	}
+
+	if (strcasecmp(args->encapsulation, "rtp") == 0 && strcasecmp(args->transport, "udp") == 0) {
+		external_media_rtp_udp(args, variables, response);
+	} else {
+		ast_ari_response_error(
+			response, 501, "Not Implemented",
+			"The encapsulation and/or transport is not supported");
+	}
 }

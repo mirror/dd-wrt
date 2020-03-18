@@ -2,7 +2,7 @@
  * Asterisk -- An open source telephony toolkit.
  *
  * Simple fax applications
- * 
+ *
  * 2007-2008, Dmitry Andrianov <asterisk@dima.spb.ru>
  *
  * Code based on original implementation by Steve Underwood <steveu@coppice.org>
@@ -16,12 +16,11 @@
 	<defaultenabled>no</defaultenabled>
 	<depend>spandsp</depend>
 	<conflict>res_fax</conflict>
-	<support_level>extended</support_level>
+	<support_level>deprecated</support_level>
+	<replacement>res_fax</replacement>
 ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <string.h>
 #include <stdlib.h>
@@ -102,12 +101,12 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 				<para>Filename of TIFF file save incoming fax</para>
 			</parameter>
 			<parameter name="c" required="false">
-				<para>Makes the application behave as the calling machine</para> 
+				<para>Makes the application behave as the calling machine</para>
 				<para>(Default behavior is as answering machine)</para>
 			</parameter>
 		</syntax>
 		<description>
-			<para>Receives a FAX from the channel into the given filename 
+			<para>Receives a FAX from the channel into the given filename
 			overwriting the file if it already exists.</para>
 			<para>File created will be in TIFF format.</para>
 
@@ -284,7 +283,7 @@ static int set_logging(logging_state_t *state)
 	int level = SPAN_LOG_WARNING + option_debug;
 
 	span_log_set_message_handler(state, span_message);
-	span_log_set_level(state, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | level); 
+	span_log_set_level(state, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | level);
 
 	return 0;
 }
@@ -330,7 +329,7 @@ static int fax_generator_generate(struct ast_channel *chan, void *data, int len,
 	fax_state_t *fax = (fax_state_t*) data;
 	uint8_t buffer[AST_FRIENDLY_OFFSET + MAX_SAMPLES * sizeof(uint16_t)];
 	int16_t *buf = (int16_t *) (buffer + AST_FRIENDLY_OFFSET);
-    
+
 	struct ast_frame outf = {
 		.frametype = AST_FRAME_VOICE,
 		.subclass.format = ast_format_slin,
@@ -341,7 +340,7 @@ static int fax_generator_generate(struct ast_channel *chan, void *data, int len,
 		ast_log(LOG_WARNING, "Only generating %d samples, where %d requested\n", MAX_SAMPLES, samples);
 		samples = MAX_SAMPLES;
 	}
-	
+
 	if ((len = fax_tx(fax, buf, samples)) > 0) {
 		outf.samples = len;
 		AST_FRAME_SET_BUFFER(&outf, buffer, AST_FRIENDLY_OFFSET, len * sizeof(int16_t));
@@ -781,14 +780,14 @@ static int transmit(fax_session *s)
 
 	/* Clear all channel variables which to be set by the application.
 	   Pre-set status to error so in case of any problems we can just leave */
-	pbx_builtin_setvar_helper(s->chan, "FAXSTATUS", "FAILED"); 
-	pbx_builtin_setvar_helper(s->chan, "FAXERROR", "Channel problems"); 
+	pbx_builtin_setvar_helper(s->chan, "FAXSTATUS", "FAILED");
+	pbx_builtin_setvar_helper(s->chan, "FAXERROR", "Channel problems");
 
 	pbx_builtin_setvar_helper(s->chan, "FAXMODE", NULL);
 	pbx_builtin_setvar_helper(s->chan, "REMOTESTATIONID", NULL);
 	pbx_builtin_setvar_helper(s->chan, "FAXPAGES", "0");
 	pbx_builtin_setvar_helper(s->chan, "FAXRESOLUTION", NULL);
-	pbx_builtin_setvar_helper(s->chan, "FAXBITRATE", NULL); 
+	pbx_builtin_setvar_helper(s->chan, "FAXBITRATE", NULL);
 
 	if (ast_channel_state(s->chan) != AST_STATE_UP) {
 		/* Shouldn't need this, but checking to see if channel is already answered
@@ -802,8 +801,8 @@ static int transmit(fax_session *s)
 
 	s->t38state = ast_channel_get_t38_state(s->chan);
 	if (s->t38state != T38_STATE_NEGOTIATED) {
-		/* T38 is not negotiated on the channel yet. First start regular transmission. If it switches to T38, follow */	
-		pbx_builtin_setvar_helper(s->chan, "FAXMODE", "audio"); 
+		/* T38 is not negotiated on the channel yet. First start regular transmission. If it switches to T38, follow */
+		pbx_builtin_setvar_helper(s->chan, "FAXMODE", "audio");
 		res = transmit_audio(s);
 		if (res > 0) {
 			/* transmit_audio reports switchover to T38. Update t38state */
@@ -815,7 +814,7 @@ static int transmit(fax_session *s)
 	}
 
 	if (s->t38state == T38_STATE_NEGOTIATED) {
-		pbx_builtin_setvar_helper(s->chan, "FAXMODE", "T38"); 
+		pbx_builtin_setvar_helper(s->chan, "FAXMODE", "T38");
 		res = transmit_t38(s);
 	}
 
@@ -859,7 +858,7 @@ static int sndfax_exec(struct ast_channel *chan, const char *data)
 
 	parse = ast_strdupa(data);
 	AST_STANDARD_APP_ARGS(args, parse);
-	
+
 	session.caller_mode = TRUE;
 
 	if (args.options) {
@@ -928,7 +927,7 @@ static int rcvfax_exec(struct ast_channel *chan, const char *data)
 
 	parse = ast_strdupa(data);
 	AST_STANDARD_APP_ARGS(args, parse);
-	
+
 	session.caller_mode = FALSE;
 
 	if (args.options) {
@@ -975,8 +974,8 @@ static int unload_module(void)
 {
 	int res;
 
-	res = ast_unregister_application(app_sndfax_name);	
-	res |= ast_unregister_application(app_rcvfax_name);	
+	res = ast_unregister_application(app_sndfax_name);
+	res |= ast_unregister_application(app_rcvfax_name);
 
 	return res;
 }
@@ -996,9 +995,7 @@ static int load_module(void)
 
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Simple FAX Application",
-		.support_level = AST_MODULE_SUPPORT_EXTENDED,
-		.load = load_module,
-		.unload = unload_module,
-		);
-
-
+	.support_level = AST_MODULE_SUPPORT_DEPRECATED,
+	.load = load_module,
+	.unload = unload_module,
+);

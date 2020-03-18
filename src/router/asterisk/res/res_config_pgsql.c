@@ -1,7 +1,7 @@
 /*
  * Asterisk -- An open source telephony toolkit.
  *
- * Copyright (C) 1999-2010, Digium, Inc.
+ * Copyright (C) 1999 - 2017, Digium, Inc.
  *
  * Manuel Guesdon <mguesdon@oxymium.net> - PostgreSQL RealTime Driver Author/Adaptor
  * Mark Spencer <markster@digium.com>  - Asterisk Author
@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <libpq-fe.h>			/* PostgreSQL */
 
 #include "asterisk/file.h"
@@ -54,6 +52,7 @@ AST_THREADSTORAGE(semibuf_buf);
 static PGconn *pgsqlConn = NULL;
 static int version;
 #define has_schema_support	(version > 70300 ? 1 : 0)
+#define USE_BACKSLASH_AS_STRING	(version >= 90100 ? 1 : 0)
 
 #define MAX_DB_OPTION_SIZE 64
 
@@ -278,63 +277,30 @@ static struct tables *find_table(const char *database, const char *orig_tablenam
 
 	/* Not found, scan the table */
 	if (has_schema_support) {
-		char *schemaname, *tablename;
+		char *schemaname, *tablename, *tmp_schemaname, *tmp_tablename;
 		if (strchr(orig_tablename, '.')) {
-			schemaname = ast_strdupa(orig_tablename);
-			tablename = strchr(schemaname, '.');
-			*tablename++ = '\0';
+			tmp_schemaname = ast_strdupa(orig_tablename);
+			tmp_tablename = strchr(tmp_schemaname, '.');
+			*tmp_tablename++ = '\0';
 		} else {
-			schemaname = "";
-			tablename = ast_strdupa(orig_tablename);
+			tmp_schemaname = "";
+			tmp_tablename = ast_strdupa(orig_tablename);
 		}
 
-		/* Escape special characters in schemaname */
-		if (strchr(schemaname, '\\') || strchr(schemaname, '\'')) {
-			char *tmp = schemaname, *ptr;
+		tablename = ast_alloca(strlen(tmp_tablename) * 2 + 1);
+		PQescapeStringConn(pgsqlConn, tablename, tmp_tablename, strlen(tmp_tablename), NULL);
+		schemaname = ast_alloca(strlen(tmp_schemaname) * 2 + 1);
+		PQescapeStringConn(pgsqlConn, schemaname, tmp_schemaname, strlen(tmp_schemaname), NULL);
 
-			ptr = schemaname = ast_alloca(strlen(tmp) * 2 + 1);
-			for (; *tmp; tmp++) {
-				if (strchr("\\'", *tmp)) {
-					*ptr++ = *tmp;
-				}
-				*ptr++ = *tmp;
-			}
-			*ptr = '\0';
-		}
-		/* Escape special characters in tablename */
-		if (strchr(tablename, '\\') || strchr(tablename, '\'')) {
-			char *tmp = tablename, *ptr;
-
-			ptr = tablename = ast_alloca(strlen(tmp) * 2 + 1);
-			for (; *tmp; tmp++) {
-				if (strchr("\\'", *tmp)) {
-					*ptr++ = *tmp;
-				}
-				*ptr++ = *tmp;
-			}
-			*ptr = '\0';
-		}
-
-		ast_str_set(&sql, 0, "SELECT a.attname, t.typname, a.attlen, a.attnotnull, d.adsrc, a.atttypmod FROM (((pg_catalog.pg_class c INNER JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace AND c.relname = '%s' AND n.nspname = %s%s%s) INNER JOIN pg_catalog.pg_attribute a ON (NOT a.attisdropped) AND a.attnum > 0 AND a.attrelid = c.oid) INNER JOIN pg_catalog.pg_type t ON t.oid = a.atttypid) LEFT OUTER JOIN pg_attrdef d ON a.atthasdef AND d.adrelid = a.attrelid AND d.adnum = a.attnum ORDER BY n.nspname, c.relname, attnum",
+		ast_str_set(&sql, 0, "SELECT a.attname, t.typname, a.attlen, a.attnotnull, pg_catalog.pg_get_expr(d.adbin, d.adrelid) adsrc, a.atttypmod FROM (((pg_catalog.pg_class c INNER JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace AND c.relname = '%s' AND n.nspname = %s%s%s) INNER JOIN pg_catalog.pg_attribute a ON (NOT a.attisdropped) AND a.attnum > 0 AND a.attrelid = c.oid) INNER JOIN pg_catalog.pg_type t ON t.oid = a.atttypid) LEFT OUTER JOIN pg_attrdef d ON a.atthasdef AND d.adrelid = a.attrelid AND d.adnum = a.attnum ORDER BY n.nspname, c.relname, attnum",
 			tablename,
 			ast_strlen_zero(schemaname) ? "" : "'", ast_strlen_zero(schemaname) ? "current_schema()" : schemaname, ast_strlen_zero(schemaname) ? "" : "'");
 	} else {
-		/* Escape special characters in tablename */
-		if (strchr(orig_tablename, '\\') || strchr(orig_tablename, '\'')) {
-			const char *tmp = orig_tablename;
-			char *ptr;
+		char *tablename;
+		tablename = ast_alloca(strlen(orig_tablename) * 2 + 1);
+		PQescapeStringConn(pgsqlConn, tablename, orig_tablename, strlen(orig_tablename), NULL);
 
-			orig_tablename = ptr = ast_alloca(strlen(tmp) * 2 + 1);
-			for (; *tmp; tmp++) {
-				if (strchr("\\'", *tmp)) {
-					*ptr++ = *tmp;
-				}
-				*ptr++ = *tmp;
-			}
-			*ptr = '\0';
-		}
-
-		ast_str_set(&sql, 0, "SELECT a.attname, t.typname, a.attlen, a.attnotnull, d.adsrc, a.atttypmod FROM pg_class c, pg_type t, pg_attribute a LEFT OUTER JOIN pg_attrdef d ON a.atthasdef AND d.adrelid = a.attrelid AND d.adnum = a.attnum WHERE c.oid = a.attrelid AND a.atttypid = t.oid AND (a.attnum > 0) AND c.relname = '%s' ORDER BY c.relname, attnum", orig_tablename);
+		ast_str_set(&sql, 0, "SELECT a.attname, t.typname, a.attlen, a.attnotnull, d.adsrc, a.atttypmod FROM pg_class c, pg_type t, pg_attribute a LEFT OUTER JOIN pg_attrdef d ON a.atthasdef AND d.adrelid = a.attrelid AND d.adnum = a.attnum WHERE c.oid = a.attrelid AND a.atttypid = t.oid AND (a.attnum > 0) AND c.relname = '%s' ORDER BY c.relname, attnum", tablename);
 	}
 
 	ast_mutex_lock(&pgsql_lock);
@@ -419,7 +385,7 @@ static struct columns *find_column(struct tables *t, const char *colname)
 }
 
 #define IS_SQL_LIKE_CLAUSE(x) ((x) && ast_ends_with(x, " LIKE"))
-static char *ESCAPE_CLAUSE = " ESCAPE '\\'";
+#define ESCAPE_CLAUSE (USE_BACKSLASH_AS_STRING ? " ESCAPE '\\'" : " ESCAPE '\\\\'")
 
 static struct ast_variable *realtime_pgsql(const char *database, const char *tablename, const struct ast_variable *fields)
 {
@@ -1070,7 +1036,7 @@ static int store_pgsql(const char *database, const char *table, const struct ast
 	numrows = atoi(PQcmdTuples(result));
 	ast_mutex_unlock(&pgsql_lock);
 
-	ast_debug(1, "PostgreSQL RealTime: row inserted on table: %s.", table);
+	ast_debug(1, "PostgreSQL RealTime: row inserted on table: %s.\n", table);
 
 	/* From http://dev.pgsql.com/doc/pgsql/en/pgsql-affected-rows.html
 	 * An integer greater than zero indicates the number of rows affected
@@ -1249,7 +1215,8 @@ static int require_pgsql(const char *database, const char *tablename, va_list ap
 	struct columns *column;
 	struct tables *table;
 	char *elm;
-	int type, size, res = 0;
+	int type, res = 0;
+	unsigned int size;
 
 	/*
 	 * Ignore database from the extconfig.conf since it was
@@ -1265,7 +1232,7 @@ static int require_pgsql(const char *database, const char *tablename, va_list ap
 
 	while ((elm = va_arg(ap, char *))) {
 		type = va_arg(ap, require_type);
-		size = va_arg(ap, int);
+		size = va_arg(ap, unsigned int);
 		AST_LIST_TRAVERSE(&table->columns, column, list) {
 			if (strcmp(column->name, elm) == 0) {
 				/* Char can hold anything, as long as it is large enough */
@@ -1322,14 +1289,14 @@ static int require_pgsql(const char *database, const char *tablename, va_list ap
 				res = -1;
 			} else {
 				struct ast_str *sql = ast_str_create(100);
-				char fieldtype[15];
+				char fieldtype[10];
 				PGresult *result;
 
 				if (requirements == RQ_CREATECHAR || type == RQ_CHAR) {
 					/* Size is minimum length; make it at least 50% greater,
 					 * just to be sure, because PostgreSQL doesn't support
 					 * resizing columns. */
-					snprintf(fieldtype, sizeof(fieldtype), "CHAR(%d)",
+					snprintf(fieldtype, sizeof(fieldtype), "CHAR(%u)",
 						size < 15 ? size * 2 :
 						(size * 3 / 2 > 255) ? 255 : size * 3 / 2);
 				} else if (type == RQ_INTEGER1 || type == RQ_UINTEGER1 || type == RQ_INTEGER2) {
@@ -1474,6 +1441,9 @@ static int parse_config(int is_reload)
 
 	config = ast_config_load(RES_CONFIG_PGSQL_CONF, config_flags);
 	if (config == CONFIG_STATUS_FILEUNCHANGED) {
+		if (is_reload && pgsqlConn && PQstatus(pgsqlConn) != CONNECTION_OK) {
+			ast_log(LOG_WARNING,  "PostgreSQL RealTime: Not connected\n");
+		}
 		return 0;
 	}
 
@@ -1558,16 +1528,16 @@ static int parse_config(int is_reload)
 
 	ast_config_destroy(config);
 
-	if (option_debug) {
+	if (DEBUG_ATLEAST(1)) {
 		if (!ast_strlen_zero(dbhost)) {
-			ast_debug(1, "PostgreSQL RealTime Host: %s\n", dbhost);
-			ast_debug(1, "PostgreSQL RealTime Port: %i\n", dbport);
+			ast_log(LOG_DEBUG, "PostgreSQL RealTime Host: %s\n", dbhost);
+			ast_log(LOG_DEBUG, "PostgreSQL RealTime Port: %i\n", dbport);
 		} else {
-			ast_debug(1, "PostgreSQL RealTime Socket: %s\n", dbsock);
+			ast_log(LOG_DEBUG, "PostgreSQL RealTime Socket: %s\n", dbsock);
 		}
-		ast_debug(1, "PostgreSQL RealTime User: %s\n", dbuser);
-		ast_debug(1, "PostgreSQL RealTime Password: %s\n", dbpass);
-		ast_debug(1, "PostgreSQL RealTime DBName: %s\n", dbname);
+		ast_log(LOG_DEBUG, "PostgreSQL RealTime User: %s\n", dbuser);
+		ast_log(LOG_DEBUG, "PostgreSQL RealTime Password: %s\n", dbpass);
+		ast_log(LOG_DEBUG, "PostgreSQL RealTime DBName: %s\n", dbname);
 	}
 
 	if (!pgsql_reconnect(NULL)) {
@@ -1700,7 +1670,9 @@ static char *handle_cli_realtime_pgsql_cache(struct ast_cli_entry *e, int cmd, s
 
 static char *handle_cli_realtime_pgsql_status(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
-	char status[256], credentials[100] = "";
+	char connection_info[256];
+	char credentials[100] = "";
+	char buf[376]; /* 256+100+"Connected to "+" for "+NULL */
 	int is_connected = 0, ctimesec = time(NULL) - connect_time;
 
 	switch (cmd) {
@@ -1717,49 +1689,36 @@ static char *handle_cli_realtime_pgsql_status(struct ast_cli_entry *e, int cmd, 
 	if (a->argc != 4)
 		return CLI_SHOWUSAGE;
 
+	if (!ast_strlen_zero(dbhost))
+		snprintf(connection_info, sizeof(connection_info), "%s@%s, port %d", dbname, dbhost, dbport);
+	else if (!ast_strlen_zero(dbsock))
+		snprintf(connection_info, sizeof(connection_info), "%s on socket file %s", dbname, dbsock);
+	else
+		snprintf(connection_info, sizeof(connection_info), "%s@%s", dbname, dbhost);
+
+	if (!ast_strlen_zero(dbuser))
+		snprintf(credentials, sizeof(credentials), " with username %s", dbuser);
+
 	ast_mutex_lock(&pgsql_lock);
 	is_connected = (pgsqlConn && PQstatus(pgsqlConn) == CONNECTION_OK);
 	ast_mutex_unlock(&pgsql_lock);
 
 	if (is_connected) {
-		if (!ast_strlen_zero(dbhost))
-			snprintf(status, sizeof(status), "Connected to %s@%s, port %d", dbname, dbhost, dbport);
-		else if (!ast_strlen_zero(dbsock))
-			snprintf(status, sizeof(status), "Connected to %s on socket file %s", dbname, dbsock);
-		else
-			snprintf(status, sizeof(status), "Connected to %s@%s", dbname, dbhost);
-
-		if (!ast_strlen_zero(dbuser))
-			snprintf(credentials, sizeof(credentials), " with username %s", dbuser);
-
-		if (ctimesec > 31536000)
-			ast_cli(a->fd, "%s%s for %d years, %d days, %d hours, %d minutes, %d seconds.\n",
-					status, credentials, ctimesec / 31536000, (ctimesec % 31536000) / 86400,
-					(ctimesec % 86400) / 3600, (ctimesec % 3600) / 60, ctimesec % 60);
-		else if (ctimesec > 86400)
-			ast_cli(a->fd, "%s%s for %d days, %d hours, %d minutes, %d seconds.\n", status,
-					credentials, ctimesec / 86400, (ctimesec % 86400) / 3600, (ctimesec % 3600) / 60,
-					ctimesec % 60);
-		else if (ctimesec > 3600)
-			ast_cli(a->fd, "%s%s for %d hours, %d minutes, %d seconds.\n", status, credentials,
-					ctimesec / 3600, (ctimesec % 3600) / 60, ctimesec % 60);
-		else if (ctimesec > 60)
-			ast_cli(a->fd, "%s%s for %d minutes, %d seconds.\n", status, credentials, ctimesec / 60,
-					ctimesec % 60);
-		else
-			ast_cli(a->fd, "%s%s for %d seconds.\n", status, credentials, ctimesec);
-
+		snprintf(buf, sizeof(buf), "Connected to %s%s for ", connection_info, credentials);
+		ast_cli_print_timestr_fromseconds(a->fd, ctimesec, buf);
 		return CLI_SUCCESS;
 	} else {
+		ast_cli(a->fd, "Unable to connect %s%s\n", connection_info, credentials);
 		return CLI_FAILURE;
 	}
 }
 
 /* needs usecount semantics defined */
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PostgreSQL RealTime Configuration Driver",
-		.support_level = AST_MODULE_SUPPORT_EXTENDED,
-		.load = load_module,
-		.unload = unload_module,
-		.reload = reload,
-		.load_pri = AST_MODPRI_REALTIME_DRIVER,
-	       );
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
+	.load = load_module,
+	.unload = unload_module,
+	.reload = reload,
+	.load_pri = AST_MODPRI_REALTIME_DRIVER,
+	.requires = "extconfig",
+);
