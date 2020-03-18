@@ -17,7 +17,8 @@
  */
 
 /*!
- * \file \brief Test optional API.
+ * \file
+ * \brief Test optional API.
  *
  * This tests exercise the underlying implementation functions. Acutal usage
  * won't look anything like this; it would use the wrapper macros.
@@ -34,8 +35,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/module.h"
 #include "asterisk/optional_api.h"
@@ -182,6 +181,7 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "ARI testing",
+	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
-	);
+);

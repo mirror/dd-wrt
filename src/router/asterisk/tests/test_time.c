@@ -32,8 +32,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/utils.h"
 #include "asterisk/app.h"
 #include "asterisk/module.h"

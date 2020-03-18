@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Interfaces</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Interfaces
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified by <span class='editor'> Kevin Harwell</span> on Mar 12, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="Interfaces-Overview">Overview</h1><p>There are many ways to interface Asterisk with scripts, other applications or storage systems. From the very trivial, such as using Asterisk Call Files, to sophisticated APIs such as the Asterisk Rest Interface. The pages in this section cover many of Asterisk's built-in interfaces, all of which provide some aspect of control, monitoring or storage.</p></div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>In this Section</b></div><div class="panelContent">
+<p><ul class='childpages-macro'><li><a href="Asterisk-Calendaring_5243066.html">Asterisk Calendaring</a></li><li><a href="Asterisk-Call-Files_4259976.html">Asterisk Call Files</a></li><li><a href="32375589.html">Asterisk Gateway Interface (AGI)</a></li><li><a href="4817239.html">Asterisk Manager Interface (AMI)</a></li><li><a href="29395573.html">Asterisk REST Interface (ARI)</a></li><li><a href="Back-end-Database-and-Realtime-Connectivity_28314861.html">Back-end Database and Realtime Connectivity</a></li><li><a href="Distributed-Device-State_19009167.html">Distributed Device State</a></li><li><a href="4260049.html">Simple Network Management Protocol (SNMP) Support</a></li><li><a href="Speech-Recognition-API_4260054.html">Speech Recognition API</a></li><li><a href="Utilizing-the-StatsD-Dialplan-Application_33128466.html">Utilizing the StatsD Dialplan Application</a></li></ul></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<div class="table-wrap"><table class="confluenceTable"><tbody><tr><th colspan="1" class="confluenceTh">Interface</th><th colspan="1" class="confluenceTh">Description</th></tr><tr><td colspan="1" class="confluenceTd">Asterisk Call Files</td><td colspan="1" class="confluenceTd"><p>Asterisk can initiate calls based on information provided via flat text files in a spool directory. Asterisk can operate on these as soon as the file is inside the directory, or in the future depending on the timestamp of the file.</p></td></tr><tr><td colspan="1" class="confluenceTd">Asterisk Gateway Interface</td><td colspan="1" class="confluenceTd"><p>AGI provides an interface between the Asterisk dialplan and an external program (via pipes, stdin and stdout) that wants to manipulate a channel in the dialplan.</p></td></tr><tr><td colspan="1" class="confluenceTd">Asterisk Management Interface<strong>*</strong></td><td colspan="1" class="confluenceTd"><p>AMI is intended for management type functions. The manager is a client/server model over TCP. With the <span style="line-height: 1.42857;">AMI </span>you'll be able to control the PBX, originate calls, check mailbox status, monitor channels and queues as well as execute Asterisk commands.</p></td></tr><tr><td colspan="1" class="confluenceTd">Asterisk REST Interface<strong>*</strong></td><td colspan="1" class="confluenceTd"><p>ARI is an asynchronous API that allows developers to build communications applications by exposing the raw primitive objects in Asterisk - channels, bridges, endpoints, media, etc. - through an intuitive REST interface. The state of the objects being controlled by the user are conveyed via JSON events over a WebSocket.</p></td></tr><tr><td colspan="1" class="confluenceTd">Calendaring</td><td colspan="1" class="confluenceTd"><p>Asterisk's calendaring module allows read and write communication with various standardized calendar technologies. Asterisk dialplan can make use of calendar event information.</p></td></tr><tr><td colspan="1" class="confluenceTd">Database Connectivity</td><td colspan="1" class="confluenceTd"><p>Asterisk has core support for ODBC connectivity, and many Asterisk modules provide support for a variety of back-end database connectivity, such as for MySQL or PostgreSQL.</p></td></tr><tr><td colspan="1" class="confluenceTd">Distributed Device State</td><td colspan="1" class="confluenceTd"><p>Asterisk provides a few ways of distributing the state of devices between multiple Asterisk instances, whether on the same system or multiple systems.</p></td></tr><tr><td colspan="1" class="confluenceTd">SNMP</td><td colspan="1" class="confluenceTd"><p>Basic SNMP support is included with Asterisk. This allows monitoring of a variety of Asterisk activity.</p></td></tr><tr><td colspan="1" class="confluenceTd">Speech Recognition API</td><td colspan="1" class="confluenceTd"><p>The dialplan speech recognition API is based around a single speech utilities application file, which exports many applications to be used for speech recognition. These include an application to prepare for speech recognition, activate a grammar, and play back a sound file while waiting for the person to speak. Using a combination of these applications you can easily make a dialplan use speech recognition without worrying about what speech recognition engine is being used.</p></td></tr><tr><td colspan="1" class="confluenceTd">StatsD</td><td colspan="1" class="confluenceTd"><p>This StatsD application is a dialplan application that is used to send statistics automatically whenever a call is made to an extension that employs the application. The user must provide the arguments to the application in the dialplan, but after that, the application will send statistics to StatsD without requiring the user to perform anymore actions whenever a call comes through that extension.</p></td></tr></tbody></table></div><p><strong>*</strong> Event ordering is not guaranteed. Applications monitoring events from these interfaces should be aware that the order between received events is not assured unless otherwise, and elsewhere specified. For example, an event monitoring application may receive the following events: A-&gt;B-&gt;C. However, later it might receive those same events, but in a different order: B-&gt;A-&gt;C</p><p> </p></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

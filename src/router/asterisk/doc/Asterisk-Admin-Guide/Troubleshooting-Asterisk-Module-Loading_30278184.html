@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Troubleshooting Asterisk Module Loading</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Troubleshooting_4817477.html">Troubleshooting</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Troubleshooting Asterisk Module Loading
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on Oct 09, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="TroubleshootingAsteriskModuleLoading-Symptoms">Symptoms</h1><ul><li>Specific Asterisk functionality is no longer available or completely non-functioning, but other Asterisk features and modules continue to function.</li><li>Specific Asterisk CLI commands are no longer available.</li></ul><p>Example<code>:</code></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>No such command &#39;sip show peers&#39;</pre>
+</div></div><p>We can presume that something is wrong with <strong>chan_sip</strong> module since we know it provides the 'sip' commands and sub-commands.</p><h1 id="TroubleshootingAsteriskModuleLoading-Problem">Problem</h1><p>Asterisk has started successfully and the module providing the missing functionality either didn't load at all, or it loaded but isn't running.</p><p>The reason for the failure to load or run is typically invalid configuration or a failure to parse the configuration for the module.</p></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303111967 {padding: 0px;}
+div.rbtoc1582303111967 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303111967 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303111967'>
+<ul class='toc-indentation'>
+<li><a href='#TroubleshootingAsteriskModuleLoading-Symptoms'>Symptoms</a></li>
+<li><a href='#TroubleshootingAsteriskModuleLoading-Problem'>Problem</a></li>
+<li><a href='#TroubleshootingAsteriskModuleLoading-Solution'>Solution</a></li>
+<li><a href='#TroubleshootingAsteriskModuleLoading-Troubleshooting'>Troubleshooting</a>
+<ul class='toc-indentation'>
+<li><a href='#TroubleshootingAsteriskModuleLoading-CheckModuleLoadedandRunningStates'>Check Module Loaded and Running States</a></li>
+<li><a href='#TroubleshootingAsteriskModuleLoading-MakesureAsteriskisconfiguredtoloadthemodule'>Make sure Asterisk is configured to load the module</a></li>
+<li><a href='#TroubleshootingAsteriskModuleLoading-CheckForModuleLoadingIssuesonAsteriskStartup'>Check For Module Loading Issues on Asterisk Startup</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><h1 id="TroubleshootingAsteriskModuleLoading-Solution">Solution</h1><p>Identify the state of the module. If the module is loaded but not running, or not loaded at all, then resolve file format, configuration syntax issues or unwanted modules.conf configuration  for the specific module. Restart Asterisk.</p><h1 id="TroubleshootingAsteriskModuleLoading-Troubleshooting">Troubleshooting</h1><h2 id="TroubleshootingAsteriskModuleLoading-CheckModuleLoadedandRunningStates">Check Module Loaded and Running States</h2><p>From the <a href="Asterisk-Command-Line-Interface_4259982.html">Asterisk CLI</a> you can use the 'module show' commands to identify the state of a module.</p><p>Previous to Asterisk 12, you could only see if the module is loaded. However it may not actually be running (usable).</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; module show like chan_sip.so 
+Module                         Description                              Use Count 
+chan_sip.so                    Session Initiation Protocol (SIP)        0         
+1 modules loaded</pre>
+</div></div><p>In Asterisk 12 and beyond you can quickly see if a module is loaded and whether it is running or not.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; module show like chan_sip.so 
+Module                         Description                              Use Count  Status
+chan_sip.so                    Session Initiation Protocol (SIP)        0          Not Running
+1 modules loaded</pre>
+</div></div><h2 id="TroubleshootingAsteriskModuleLoading-MakesureAsteriskisconfiguredtoloadthemodule">Make sure Asterisk is configured to load the module</h2><p>Modules.conf is a <a href="Core-Configuration_27820183.html">core configuration</a> file that includes parameters affecting module loading and loading order. There are a few items to check.</p><p>Verify that <strong>autoload=yes</strong> is enabled if you are intending to load modules from the Asterisk modules directory automatically.</p><p>Verify that there is <strong>not</strong> a '<strong>noload'</strong> line for the module that is failing to load. That is, if we had a line as follows:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>noload =&gt; chan_sip.so</pre>
+</div></div><p>That would tell Asterisk to not load chan_sip.so.</p><p>If you are not using <strong>autoload</strong>, then be sure you have a <strong>load</strong> line for the module you desire to load.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>load =&gt; chan_sip.so</pre>
+</div></div><h2 id="TroubleshootingAsteriskModuleLoading-CheckForModuleLoadingIssuesonAsteriskStartup">Check For Module Loading Issues on Asterisk Startup</h2><p>Now that we know the suspect module should be loading, we can look at some logs that may tell us what is happening.</p><h3 id="TroubleshootingAsteriskModuleLoading-StopAsterisk">Stop Asterisk</h3><p>Be sure Asterisk is stopped to avoid issues with making the logs confusing.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>asterisk -rx &quot;core stop now&quot;</pre>
+</div></div><p>or</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>service asterisk stop</pre>
+</div></div><h3 id="TroubleshootingAsteriskModuleLoading-Enableloggingchannels">Enable logging channels</h3><p>You can read in detail about <a href="Logging_27200200.html">Logging facilities</a> on the wiki. In short, for this example, make sure you have the following lines uncommented in your <a href="Logging-Configuration_28315599.html">logger.conf</a> file.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[logfiles]
+full =&gt; notice,warning,error,debug,verbose</pre>
+</div></div><h3 id="TroubleshootingAsteriskModuleLoading-Clearoutoldlogs">Clear out old logs</h3><p>You don't want to mistakenly look at an older log where Asterisk was loading appropriately.</p><p>Remove the most recent log file, or else move it somewhere you want to keep it.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># rm /var/log/asterisk/full</pre>
+</div></div><h3 id="TroubleshootingAsteriskModuleLoading-StartAsteriskwithappropriateloglevels">Start Asterisk with appropriate log levels</h3><p>It is important to start Asterisk with <a href="Basic-Logging-Commands_28315847.html">log levels</a> that will provide us enough information.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># asterisk -cvvvvvddd</pre>
+</div></div><p>You'll see a lot of information output in the terminal as Asterisk loads.</p><h3 id="TroubleshootingAsteriskModuleLoading-StopAsteriskafterithasfinishedloading">Stop Asterisk after it has finished loading</h3><p>After the output calms down and Asterisk has finished loading, go ahead and stop Asterisk. The logs should have already been recorded.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; core stop now</pre>
+</div></div><h3 id="TroubleshootingAsteriskModuleLoading-Searchlogsforlinesrelatedtosuspectmodule">Search logs for lines related to suspect module</h3><p>Search the <a href="Directory-and-File-Structure_27200268.html">log file</a> using keywords based on the specific module that appeared to be failing to load or run.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>/var/log/asterisk# grep -i chan_sip full
+[Oct  9 14:54:43] VERBOSE[21809] chan_sip.c: SIP channel loading...
+[Oct  9 14:54:43] ERROR[21809] chan_sip.c: Contents of sip.conf are invalid and cannot be parsed
+
+/var/log/asterisk# grep -i sip.conf full
+[Oct  9 14:54:43] DEBUG[21809] config.c: Parsing /etc/asterisk/sip.conf
+[Oct  9 14:54:43] VERBOSE[21809] config.c:   == Parsing &#39;/etc/asterisk/sip.conf&#39;: Found
+[Oct  9 14:54:43] WARNING[21809] config.c: parse error: No category context for line 1 of /etc/asterisk/sip.conf
+[Oct  9 14:54:43] ERROR[21809] chan_sip.c: Contents of sip.conf are invalid and cannot be parsed
+[Oct  9 14:54:55] DEBUG[21809] config.c: Parsing /etc/asterisk/sip.conf
+[Oct  9 14:54:55] VERBOSE[21809] config.c:   == Parsing &#39;/etc/asterisk/sip.conf&#39;: Found
+[Oct  9 14:54:55] WARNING[21809] config.c: parse error: No category context for line 1 of /etc/asterisk/sip.conf</pre>
+</div></div><p>Based on the lines found, you can then use an editor like VIM to view the full log and jump to where the relevant messages are.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[Oct  9 14:54:43] VERBOSE[21809] chan_sip.c: SIP channel loading...
+[Oct  9 14:54:43] DEBUG[21809] config.c: Parsing /etc/asterisk/sip.conf
+[Oct  9 14:54:43] VERBOSE[21809] config.c:   == Parsing &#39;/etc/asterisk/sip.conf&#39;: Found
+[Oct  9 14:54:43] WARNING[21809] config.c: parse error: No category context for line 1 of /etc/asterisk/sip.conf
+[Oct  9 14:54:43] ERROR[21809] chan_sip.c: Contents of sip.conf are invalid and cannot be parsed</pre>
+</div></div><p>In this case, not much more is revealed past what we saw with grep. You can see that Asterisk tries to load and run chan_sip, it fails because the contents of sip.conf are invalid and cannot be parsed. The most specific clue is the WARNING:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>WARNING[21809] config.c: parse error: No category context for line 1 of /etc/asterisk/sip.conf</pre>
+</div></div><h3 id="TroubleshootingAsteriskModuleLoading-Edittherelatedconfigfiletoresolvetheissue">Edit the related config file to resolve the issue</h3><p>If we look at line 1 of sip.conf we'll spot the root problem.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>general]
+context=public
+allowoverlap=no</pre>
+</div></div><p>For our example, a square bracket is missing from the context definition! Fix this issue, restart Asterisk and things should work assuming I don't have any other syntax errors.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

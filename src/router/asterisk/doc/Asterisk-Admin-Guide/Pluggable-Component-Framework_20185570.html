@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Pluggable Component Framework</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Test-Suite-Documentation_17793142.html">Asterisk Test Suite Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Test-Development_20185285.html">Test Development</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Pluggable Component Framework
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified on Dec 23, 2013
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="PluggableComponentFramework-Motivation">Motivation</h1><p>At its heart, the Asterisk Test Suite is a way of executing programs that test functionality in Asterisk. Historically, the Test Suite has implemented these tests in a variety of languages - Lua, bash, Python - but there is no hard rule that limits what is supported. If your implementation supports having an executable file named <em>run-test</em>, then it is acceptable by the Test Suite.</p><p>There are some problems that arise with this level of flexibility. Tests often have to do many of the same tasks: start and stop Asterisk, connect over AMI and originate calls, run AGI scripts, gather and report results, etc. For each language chosen, sets of libraries have grown to support these common activities. This has resulted in duplication of functionality between libraries written in different languages. Over time, some libraries have also received more attention than others as well, resulting in functionality that is only available in a particular language.</p><p>In the current state of the Asterisk Test Suite, we've focused our efforts on writing our tests in Python. There is no strict enforcement of this, but since we have developed a number of libraries to support test execution - and continue to expand and enhance those libraries - you may get more &quot;bang for your buck&quot; by writing tests in Python as well.</p><p>All of that said, even when a single implementation language is chosen, there is still a fair amount of repeated code throughout the Test Suite. Because tests support their own execution, they often have to implement similar mechanisms. Each test must have its own execution entry point, instantiate its own objects, do the minimum amount needed to get Asterisk running, etc. Between tests that cover similar functionality, there is even more repeated code. Moving shared code into libraries helps alleviate that to some extent, but even then some amount of duplication occurs.</p>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>For a list of all pluggable test objects and modules in the Test Suite, see the sample YAML files:</p><p><a href="http://svn.asterisk.org/svn/testsuite/asterisk/trunk/sample-yaml/" class="external-link" rel="nofollow">http://svn.asterisk.org/svn/testsuite/asterisk/trunk/sample-yaml/</a></p>
+                    </div>
+    </div>
+<p> </p><h1 id="PluggableComponentFramework-AnExample-TwoTraditionalTestsUsingSIPp">An Example - Two Traditional Tests Using SIPp</h1><p>As an example, consider two tests written in Python that run SIPp scenarios - <strong>message_auth</strong> and <strong>message_disabled</strong>.</p><h5 id="PluggableComponentFramework-message_auth">message_auth</h5><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">#!/usr/bin/env python
+&#39;&#39;&#39;
+Copyright (C) 2010, Digium, Inc.
+Russell Bryant &lt;russell@digium.com&gt;
+
+This program is free software, distributed under the terms of
+the GNU General Public License Version 2.
+&#39;&#39;&#39;
+
+import sys
+import os
+
+sys.path.append(&quot;lib/python&quot;)
+
+from twisted.internet import reactor
+from asterisk.sipp import SIPpTest
+
+
+WORKING_DIR = &quot;sip/message_auth&quot;
+TEST_DIR = os.path.dirname(os.path.realpath(__file__))
+
+SIPP_SCENARIOS = [
+    {
+        &#39;scenario&#39; : &#39;message_recv.xml&#39;,
+        &#39;-p&#39; : &#39;5062&#39;
+    },
+    {
+        &#39;scenario&#39; : &#39;message.xml&#39;,
+        &#39;-p&#39; : &#39;5061&#39;
+    }
+]
+
+
+def main():
+    test = SIPpTest(WORKING_DIR, TEST_DIR, SIPP_SCENARIOS)
+    reactor.run()
+    if not test.passed:
+        return 1
+
+    return 0
+
+if __name__ == &quot;__main__&quot;:
+    sys.exit(main())
+
+</pre>
+</div></div><h5 id="PluggableComponentFramework-message_disabled">message_disabled</h5><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">#!/usr/bin/env python
+&#39;&#39;&#39;
+Copyright (C) 2010, Digium, Inc.
+Russell Bryant &lt;russell@digium.com&gt;
+
+This program is free software, distributed under the terms of
+the GNU General Public License Version 2.
+&#39;&#39;&#39;
+
+import sys
+import os
+
+sys.path.append(&quot;lib/python&quot;)
+
+from twisted.internet import reactor
+from asterisk.sipp import SIPpTest
+
+
+WORKING_DIR = &quot;sip/message_disabled&quot;
+TEST_DIR = os.path.dirname(os.path.realpath(__file__))
+
+SIPP_SCENARIOS = [
+    {
+        &#39;scenario&#39; : &#39;message.xml&#39;,
+    }
+]
+
+
+def main():
+    test = SIPpTest(WORKING_DIR, TEST_DIR, SIPP_SCENARIOS)
+    reactor.run()
+    if not test.passed:
+        return 1
+
+    return 0
+
+
+if __name__ == &quot;__main__&quot;:
+    sys.exit(main())
+</pre>
+</div></div><p>Both of these are very straight-forward tests that simply execute their SIPp scenarios and base their pass/fail status on the result of those scenarios. Even still, there is repeated code:</p><ul><li>Duplicate entry points for execution</li><li>Manipulation of the <a href="http://twistedmatrix.com/trac/" class="external-link" rel="nofollow">twisted</a> reactor</li><li>Instantiation of the test object, and reading of its result</li></ul><p>In fact, if we look at what is unique, it consists only of the SIPp scenarios to run and the parameters passed to SIPp. Even the working and test directories can be inferred by higher level entities, or specified via configuration. If the only differences between tests can be expressed by configuration, why not do that?</p><h1 id="PluggableComponentFramework-APluggableFrameworkImplementation">A Pluggable Framework Implementation</h1><p>These observations led to the development of a pluggable component framework for the Asterisk Test Suite. Tests that support this framework specify what components they need and their configuration in their <em>test-config.yaml</em> configuration files. A Python module, <em>test_runner.py</em>, is responsible for starting execution, instantiating the components and injecting their dependencies, starting the test, and reporting results. The actual &quot;business logic&quot; of the test itself is deferred to the components specified in the test configuration.</p><p>Components in the test configuration fall into two categories:</p><ol><li><em>test_object</em>: This is typically an object derived from the <em>test_case.TestCase</em> class and is responsible for managing Asterisk, its interfaces (AMI/FastAgi/ARI), holding the pass/fail status of the test, and generally orchestrating the entire test process. It is the central point that other pluggable modules typically attach to. A test may only have <strong>on</strong><strong>e</strong> test object.</li><li><em>pluggable_module</em>: A piece of functionality that attaches to a <em>test_object</em> and provides some test functionality. This could be verifying that an AMI event is received, executing some callback when an AMI event is received, validating CDRs, or any test specific piece of code. A test may have any number of pluggable modules.</li></ol><p>See the <a href="http://svn.asterisk.org/svn/testsuite/asterisk/trunk/sample-yaml/test-config.yaml.sample" class="external-link" rel="nofollow">test-config.yaml.sample</a> file for an example of specifying a <em>test_object</em> and its pluggable modules.</p><h1 id="PluggableComponentFramework-Example-TwoPluggableModuleTestsUsingSIPp">Example - Two Pluggable Module Tests Using SIPp</h1><p>Looking again at the two tests using SIPp, we could discard both of their <em>run-test</em> script files, and instead express all of their intent simply in their <em>test-config.yaml</em> configuration files. Assuming the SIPpTest class was modified slightly to be able to parse the scenario information from the YAML file, one particular implementation of this could express those tests in the following manner:</p><h5 id="PluggableComponentFramework-message_auth.1">message_auth</h5><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">testinfo:
+    summary: &#39;Test response to MESSAGE when out-of-call MESSAGE is disabled (or not supported)&#39;
+    description: |
+        &#39;Send Asterisk a MESSAGE and expect that it gets denied&#39;
+
+test-modules:
+    test-object:
+        config-section: test-object-config
+        typename: &#39;sipp.SIPpTest&#39;
+
+test-object-config:
+    pass-on-sipp-scenario: True
+    scenarios:
+        -
+            scenario: &#39;message_recv.xml&#39;
+            -p: &#39;5062&#39;
+        -
+            scenario: &#39;message.xml&#39;
+            -p: &#39;5061&#39;
+</pre>
+</div></div><h5 id="PluggableComponentFramework-message_disabled.1">message_disabled</h5><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">testinfo:
+    summary: &#39;Test response to MESSAGE when out-of-call MESSAGE is disabled (or not supported)&#39;
+    description: |
+        &#39;Send Asterisk a MESSAGE and expect that it gets denied&#39;
+
+test-modules:
+    test-object:
+        config-section: test-object-config
+        typename: &#39;sipp.SIPpTest&#39;
+
+test-object-config:
+    pass-on-sipp-scenario: True
+    scenarios:
+        -
+            scenario: &#39;message.xml&#39;
+
+properties:
+    minversion: &#39;1.8.0.0&#39;
+    dependencies:
+        - app : &#39;sipp&#39;
+    tags:
+        - SIP
+</pre>
+</div></div><p>All of this, hopefully, gives the following benefits:</p><ul><li>Less time to write a test, particularly if you have a large number of tests that cover related functionality, or your tests can leverage existing Python libraries</li><li>Some more difficult concepts - such as asynchronous event programming using twisted - may be deferred to lower level libraries (bad pun)</li><li>Quicker execution time, by taking advantage of byte code files compiled by the Python interpreter</li><li>Shared functionality across tests</li><li>Common implementation of similar functionality across tests, easing test maintenance</li></ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Installing and Configuring CyberMegaPhone</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="WebRTC_40818093.html">WebRTC</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Installing and Configuring CyberMegaPhone
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> George Joseph</span>, last modified by <span class='editor'> Benjamin Keith Ford</span> on May 02, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-right-sidebar" data-layout="two-right-sidebar">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="InstallingandConfiguringCyberMegaPhone-Introduction">Introduction</h1><p>At <a href="https://wiki.asterisk.org/wiki/display/AST/AstriDevCon+2017">AstriDevCon 2017</a>, Digium introduced a sample WebRTC Video Conference Web Application called CyberMegaPhone (CMP2K).  This document will walk you through installing the application and configuring it and Asterisk as a simple video conference server.</p><p> </p><p> </p><p> </p></div>
+</div>
+<div class="cell aside" data-type="aside">
+<div class="innerCell">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303108189 {padding: 0px;}
+div.rbtoc1582303108189 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303108189 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303108189'>
+<ul class='toc-indentation'>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Installing+and+Configuring+CyberMegaPhone#InstallingandConfiguringCyberMegaPhone-Introduction'>Introduction</a></li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Installing+and+Configuring+CyberMegaPhone#InstallingandConfiguringCyberMegaPhone-Prerequisites'>Prerequisites</a></li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Installing+and+Configuring+CyberMegaPhone#InstallingandConfiguringCyberMegaPhone-GetTheCode'>Get The Code</a></li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Installing+and+Configuring+CyberMegaPhone#InstallingandConfiguringCyberMegaPhone-ConfigureAsterisk'>Configure Asterisk</a>
+<ul class='toc-indentation'>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Installing+and+Configuring+CyberMegaPhone#InstallingandConfiguringCyberMegaPhone-(Re)ConfiguretheAsteriskHTTPServer'>(Re)Configure the Asterisk HTTP Server</a></li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Installing+and+Configuring+CyberMegaPhone#InstallingandConfiguringCyberMegaPhone-(Re)ConfigurePJSIP'>(Re)Configure PJSIP</a></li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Installing+and+Configuring+CyberMegaPhone#InstallingandConfiguringCyberMegaPhone-Configureapp_confbridge'>Configure app_confbridge</a></li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Installing+and+Configuring+CyberMegaPhone#InstallingandConfiguringCyberMegaPhone-Configureextensions.conf'>Configure extensions.conf</a></li>
+</ul>
+</li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Installing+and+Configuring+CyberMegaPhone#InstallingandConfiguringCyberMegaPhone-JointheConferenceBridge!'>Join the Conference Bridge!</a></li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Installing+and+Configuring+CyberMegaPhone#InstallingandConfiguringCyberMegaPhone-BonusPoints'>Bonus Points</a></li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Installing+and+Configuring+CyberMegaPhone#InstallingandConfiguringCyberMegaPhone-Recommendations'>Recommendations</a></li>
+</ul>
+</div></p></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="InstallingandConfiguringCyberMegaPhone-Prerequisites">Prerequisites</h1><p>Before proceeding, follow the instructions for <a href="Configuring-Asterisk-for-WebRTC-Clients_40818051.html">Configuring Asterisk for WebRTC Clients</a> and then use SIPML5 to test your connectivity by following the instructions at <a href="WebRTC-tutorial-using-SIPML5_27200129.html">WebRTC tutorial using SIPML5</a>.  The instructions below assume you've completed those steps.  Don't forget, Asterisk 15.5 or better is required.</p><p>You'll also need a working webcam and microphone on your client computer.  CMP2K will not connect unless both are available.</p></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="InstallingandConfiguringCyberMegaPhone-GetTheCode">Get The Code</h1><p>The CyberMegaPhone (CMP2K) code is located in Asterisk's public Github repository at <a href="https://github.com/asterisk/cyber_mega_phone_2k.git" class="external-link" rel="nofollow">https://github.com/asterisk/cyber_mega_phone_2k</a>.  You can either download the code as a zip file or clone the repository using git.  Which ever way you choose, download it now to the directory of your choice.  We'll use <code>/usr/src/asterisk/cyber_mega_phone_2k</code> in the instructions below.</p><p>From an installation perspective, that's all there is to it.  It's just configuration from now on.</p><p>As a reminder, we'll be using <code>pbx.example.com</code> as our hostname so substitute it with your own hostname or ip address.</p><h1 id="InstallingandConfiguringCyberMegaPhone-ConfigureAsterisk">Configure Asterisk</h1><h2 id="InstallingandConfiguringCyberMegaPhone-(Re)ConfiguretheAsteriskHTTPServer">(Re)Configure the Asterisk HTTP Server</h2><p>The CMP2K software needs to be served by a TLS capable web server.  The easiest way to do this by far is to simply use Asterisk's built-in HTTP server.  Here's what we need to add...</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>/etc/asterisk/http.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">; Existing definition
+[general]
+enabled=yes
+bindaddr=0.0.0.0
+bindport=8088
+tlsenable=yes
+tlsbindaddr=0.0.0.0:8089
+tlscertfile=&lt;your_cert_file&gt;
+tlsprivatekey=&lt;your_key_file&gt;
+tlscafile=&lt;your_ca_cert_file&gt;
+ 
+; Add the following if not already present
+; Allow the HTTP server to serve static content from /var/lib/asterisk/static-http
+enablestatic = yes
+; Create an alias that will allow us to easily load the client in a web browser.
+redirect = /cmp2k /static/cyber_mega_phone_2k/index.html
+ </pre>
+</div></div><p>Restart Asterisk or issue the CLI command &quot;<code>config reload /etc/asterisk/http.conf</code>&quot;</p><p>Now check that the configuration was applied.  From the Asterisk CLI...</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Asterisk CLI</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;"> 
+*CLI&gt; http show status
+HTTP Server Status:
+Prefix: 
+Server: Asterisk/GIT-16-a84c257cd6
+Server Enabled and Bound to [::]:8088
+
+
+HTTPS Server Enabled and Bound to [::]:8089
+
+Enabled URI&#39;s:
+/test_media_cache/... =&gt; HTTP Media Cache Test URI
+/guimohdir_rh =&gt; HTTP POST mapping
+/httpstatus =&gt; Asterisk HTTP General Status
+/phoneprov/... =&gt; Asterisk HTTP Phone Provisioning Tool
+/amanager =&gt; HTML Manager Event Interface w/Digest authentication
+/backups =&gt; HTTP POST mapping
+/arawman =&gt; Raw HTTP Manager Event Interface w/Digest authentication
+/manager =&gt; HTML Manager Event Interface
+/rawman =&gt; Raw HTTP Manager Event Interface
+/static/... =&gt; Asterisk HTTP Static Delivery
+/amxml =&gt; XML Manager Event Interface w/Digest authentication
+/mxml =&gt; XML Manager Event Interface
+/moh =&gt; HTTP POST mapping
+/ari/... =&gt; Asterisk RESTful API
+/ws =&gt; Asterisk HTTP WebSocket
+
+Enabled Redirects:
+  /cmp2k =&gt; /static/cyber_mega_phone_2k/index.html
+
+</pre>
+</div></div><p> </p><p>Notice that there's a new Redirect entry.  </p><p>For security reasons, the HTTP server will not serve arbitrary paths so the  <code>/static/cyber_mega_phone_2k/index.html</code> path will actually resolve to is <code>/var/lib/asterisk/static-http/cyber_mega_phone_2k/index.html</code>.  You can either move the CMP2K directory that you downloaded to <code>/var/lib/asterisk/static-http</code> or you can simply create a symlink to it as follows:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Shell Prompt</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;"># cd /var/lib/asterisk/static-http
+# ln -s /usr/src/asterisk/cyber_mega_phone_2k</pre>
+</div></div><p>OK, let's test.  From your web browser, visit <code>https://pbx.example.com:8089/cmp2k</code> remembering to substitute your hostname or ip address as appropriate.</p><p>Did you get?...</p><p><img class="confluence-embedded-image" width="500" src="attachments/40818102/41156635.png" data-image-src="attachments/40818102/41156635.png"></p><p>Great.  </p><h2 id="InstallingandConfiguringCyberMegaPhone-(Re)ConfigurePJSIP">(Re)Configure PJSIP</h2><p>In the <a href="Configuring-Asterisk-for-WebRTC-Clients_40818051.html">Configuring Asterisk for WebRTC Clients</a> tutorial, you created a PJSIP Endpoint named &quot;webrtc_client&quot;.  We need to modify that definition for our purposes.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>/etc/asterisk/pjsip.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[webrtc_client]
+type=endpoint
+aors=webrtc_client
+auth=webrtc_client
+dtls_auto_generate_cert=yes
+webrtc=yes
+context=default
+disallow=all
+; We need to allow more codecs.
+; vp8, vp9 and h264 are video pass-through codecs.
+; No special Asterisk modules are required to support them.
+allow=opus,g722,ulaw,vp9,vp8,h264
+; Since video conferencing makes use of the Streams functionality added in Asterisk 15
+; we need to indicate the maximum number of streams allowed for audio and video.
+max_audio_streams = 1
+max_video_streams = 15
+ </pre>
+</div></div><p>You may already have some of the config from previous webrtc endpoints for certificates, keys, encryption, ice support etc and think you don't need to add the magical <code>webrtc=yes</code> but you do! The <code>webrtc=yes</code> flag does more than just shortcut already existing flags which are needed for proper SFU support.</p><p>There are two more Asterisk changes we need to make so no need to restart Asterisk just yet.</p><h2 id="InstallingandConfiguringCyberMegaPhone-Configureapp_confbridge">Configure app_confbridge</h2><p>The sample <code>confbridge.conf</code> file is enough to get you going with one exception.  In the <code>default_bridge</code> section, we need to set <code>video_mode=sfu</code>.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>/etc/asterisk/confbridge.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[default_bridge]
+type=bridge
+; other stuff
+; SFU is Selective Forwarding Mode
+; Basically all participant&#39;s video streams are relayed to all other participants.
+video_mode = sfu
+ </pre>
+</div></div><p>One more change...</p><h2 id="InstallingandConfiguringCyberMegaPhone-Configureextensions.conf">Configure extensions.conf</h2><p>Now we need to configure an extension that, when dialed, will put us into the video conference bridge, so add the following to extensions.conf</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>/etc/asterisk/extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[default]
+exten = my_video_conference,1,Confbridge(MYCONF,default_bridge,default_user,sample_user_menu)
+</pre>
+</div></div><p>NOW, restart Asterisk!</p><h1 id="InstallingandConfiguringCyberMegaPhone-JointheConferenceBridge!">Join the Conference Bridge!</h1><p>Open a browser window and visit <code>
+          <a href="https://pbx.example.com:8089/cmp2k" class="external-link" rel="nofollow">https://pbx.example.com:8089/cmp2k</a>
+        </code> remembering to substitute your hostname or ip address as appropriate.</p><p>You should be back at the page you  got when you tested earlier...</p><p><img class="confluence-embedded-image" width="500" src="attachments/40818102/41156635.png" data-image-src="attachments/40818102/41156635.png"></p><p>Click the <code>Account</code> button and fill in the details as follows...</p><p><img class="confluence-embedded-image" src="attachments/40818102/41156636.png" data-image-src="attachments/40818102/41156636.png"></p><p>Now click anywhere outside the edit box or click the <span style="font-family: monospace;">X</span> in the upper right corner to save the information and you'll be be back to the previous page.</p><p>Now click <code>Connect</code> and you should see the button change to <code>Disconnect</code></p><p><img class="confluence-embedded-image" width="500" src="attachments/40818102/41156637.png" data-image-src="attachments/40818102/41156637.png"></p><p>You should have also seen an <code>== Endpoint webrtc_client is now Reachable</code> message on the Asterisk console (if you were looking).</p><p>Finally, click <code>Call</code>...</p><p>You may be prompted to allow access to your microphone and camera.  If so, allow them both.</p><p>Now, did you hear the <code>You are the only person in this conference</code> prompt?  Do you see yourself in the video preview window?</p><p><img class="confluence-embedded-image" width="500" src="attachments/40818102/41156638.png" data-image-src="attachments/40818102/41156638.png"></p><p>That's it!</p><h1 id="InstallingandConfiguringCyberMegaPhone-BonusPoints">Bonus Points</h1><p>Have a friend or co-worker join the bridge.  They can use the same <code>webrtc_client</code> credentials.</p><h1 id="InstallingandConfiguringCyberMegaPhone-Recommendations">Recommendations</h1><p>If you experience audio issues, it may be a good idea to turn on the jitterbuffer. This can cause the audio to be slightly delayed, but will also eliminate problems such as bursty audio packets causing disruptions. You can enable this option in confbridge.conf for a user, or you can do it through the dialplan before placing the user in the conference by using the JITTERBUFFER dialplan function for a more fine tuned experience.</p><p> </p></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/40818102/41156635.png">Screenshot_2018-09-07_12-03-18.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/40818102/41156636.png">Screenshot_2018-09-07_12-30-43.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/40818102/41156637.png">Screenshot_2018-09-07_12-34-07.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/40818102/41156638.png">Screenshot_2018-09-07_12-40-16.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Using Swagger to Drive ARI</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="29395573.html">Asterisk REST Interface (ARI)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Getting-Started-with-ARI_26478450.html">Getting Started with ARI</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Using Swagger to Drive ARI
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified by <span class='editor'> Rusty Newton</span> on Apr 22, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="UsingSwaggertoDriveARI-UsingSwagger-UI">Using Swagger-UI</h1><p>The REST API that makes up ARI is documented using <a class="external-link" href="https://developers.helloreverb.com/swagger/" rel="nofollow">Swagger</a>, a lightweight specification for documenting RESTful API's. The Swagger API docs are used to generate validations and boilerplate in Asterisk itself, along with <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+ARI" rel="nofollow">static wiki documentation</a>, and interactive documentation using <a class="external-link" href="https://github.com/wordnik/swagger-ui" rel="nofollow">Swagger-UI</a>.</p><p><a href="https://github.com/wordnik/swagger-ui" class="external-link" rel="nofollow">Swagger-UI</a> is a pure HTML+JavaScript application which can download Swagger api-docs, and generate an interactive web page which allows you to view resources, their operations, and submit API requests directly from the documentation. A fork of Swagger-UI is hosted on <a href="http://ari.asterisk.org" class="external-link" rel="nofollow">ari.asterisk.org</a>, which enables DELETE operations (which are disabled by default in Swagger-UI), and sets the default URL to what it would be running Asterisk on your local system.</p><p>In order to access ARI, you have to populate the <code>api_key</code> field with a <code><a href="http://usernamepassword" class="external-link" rel="nofollow">username:password</a></code> configured in <code>ari.conf</code>. You should also set <code>allowed_origins</code> in <code>ari.conf</code> to allow the site hosting Swagger-UI to access ARI.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>ari.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[general]
+enabled=yes
+;pretty=yes     ; we don&#39;t need pretty-printing of the JSON responses in this
+                ; example, but you might if you use curl a lot.
+;
+; In this example, we are going to use the version of Swagger-UI that is hosted
+; at ari.asterisk.org. In order to get past CORS restrictions in the browser,
+; That origin needs to be added to the allowed_origins list.
+;
+allowed_origins=http://ari.asterisk.org
+ 
+[hey]
+type=user
+password=peekaboo
+;read_only=no   ; Set to yes for read-only applications </pre>
+</div></div><p> </p><p><img class="confluence-embedded-image" alt="Swagger-UI Screenshot" width="300" src="attachments/26478450/26902563.png" data-image-src="attachments/26478450/26902563.png" title="Screenshot"></p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

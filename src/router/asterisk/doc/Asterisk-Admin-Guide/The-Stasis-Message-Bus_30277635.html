@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : The Stasis Message Bus</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Key-Concepts_27200276.html">Key Concepts</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : The Stasis Message Bus
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified by <span class='editor'> Joshua C. Colp</span> on Jan 22, 2018
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p> </p><p> </p><div class="contentLayout2">
+<div class="columnLayout two-right-sidebar" data-layout="two-right-sidebar">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="TheStasisMessageBus-Overview">Overview</h1>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Asterisk 12 and Later</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>This content only applies to Asterisk 12 and later.</p>
+                    </div>
+    </div>
+<p>In Asterisk 12, a new core component was added to Asterisk: the Stasis Message Bus. As the name suggests, Stasis is an internal publish/subscribe message bus that lets the real-time core of Asterisk inform other modules or components – who subscribe for specific information topic – about events that occurred that they were interested in.</p><p>While the Stasis Message Bus is mostly of interest to those developing Asterisk, its existence is a useful piece of information in understanding how the Asterisk architecture works.</p></div>
+</div>
+<div class="cell aside" data-type="aside">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302947094 {padding: 0px;}
+div.rbtoc1582302947094 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302947094 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302947094'>
+<ul class='toc-indentation'>
+<li><a href='#TheStasisMessageBus-Overview'>Overview</a></li>
+<li><a href='#TheStasisMessageBus-KeyConcepts'>Key Concepts</a>
+<ul class='toc-indentation'>
+<li><a href='#TheStasisMessageBus-Publisher'>Publisher</a></li>
+<li><a href='#TheStasisMessageBus-Topic'>Topic</a></li>
+<li><a href='#TheStasisMessageBus-Message'>Message</a></li>
+<li><a href='#TheStasisMessageBus-Subscriber'>Subscriber</a></li>
+<li><a href='#TheStasisMessageBus-Cache'>Cache</a></li>
+</ul>
+</li>
+<li><a href='#TheStasisMessageBus-Benefits'>Benefits</a></li>
+</ul>
+</div></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="TheStasisMessageBus-KeyConcepts">Key Concepts</h1><p>The Stasis Message Bus has many concepts that work in concert together. Some of the most important are:</p><h2 id="TheStasisMessageBus-Publisher">Publisher</h2><p>A Publisher is some core component that wants to inform other components in Asterisk about some event that took place. More rarely, this can be a dynamically loadable module; most publishers however are real-time components in the Asterisk core (such as the Channel Core or the Bridging Framework).</p><h2 id="TheStasisMessageBus-Topic">Topic</h2><p>A Topic is a high level, abstract concept that provides a way to group events together. For example, a topic may be all changes to a single channel, or all changes to all bridges in Asterisk.</p><h2 id="TheStasisMessageBus-Message">Message</h2><p>A Message contains the information about the event that just occurred. A Publisher publishes a Message under a specific Topic to the Stasis Message Bus.</p><h2 id="TheStasisMessageBus-Subscriber">Subscriber</h2><p>A Subscriber subscribes to a particular topic, and chooses which messages it is interested in. When the Stasis Message Bus receives a Message from a Publisher, it delivers the Message to each subscribed Subscriber.</p><h2 id="TheStasisMessageBus-Cache">Cache</h2><p>Some Messages - particularly those that affect core communications primitives in Asterisk (such as channels or bridges) are stored in a special cache in Stasis. Subscribers have the option to query the cache for the last known state of those primitives.</p><p> </p><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>Example: Channel Hangup</b></div><div class="panelContent">
+<p>
+
+<map id="gliffy-map-40534026-8416" name="gliffy-map-40534026-8416"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 768px;" usemap="#gliffy-map-40534026-8416" src="attachments/30277635/40534027.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p>
+</div></div><h1 id="TheStasisMessageBus-Benefits">Benefits</h1><p><span style="color: rgb(0,0,0);text-decoration: none;">Prior to Asterisk 12, various parts of the real-time core of Asterisk itself would have been responsible for updating AMI, the CDR Engine, and other modules/components during key operations. By decoupling the consumers of state (such as AMI or the CDR Engine) from the producer (such as the Channel Core), we have the following benefits:</span></p><ul><li style="text-decoration: none;"><p><span style="color: rgb(0,0,0);text-decoration: none;">Improved Modularity: the logic for AMI, CDRs, and other consumers of state is no longer tightly coupled with the real-time components. This simplifies both the producers and the consumers.</span></p></li><li style="text-decoration: none;"><p><span style="color: rgb(0,0,0);text-decoration: none;">Insulation: because the APIs are now based on the Stasis Message Bus, changes to other parts of the Asterisk core do not immediately affect the APIs. The APIs have the ability to transform, buffer, or even discard messages from the message bus, and can choose how to represent Asterisk to their consumers. This provides increased stability for Asterisk users.</span></p></li><li style="text-decoration: none;"><p><span style="color: rgb(0,0,0);text-decoration: none;">Extensibility: because real-time state is now readily available over the message bus, adding additional consumers of state becomes much easier. New interfaces and APIs can be added to Asterisk without modifying the Asterisk core.</span></p></li></ul></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/30277635/40534021.png">Stasis Bus.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/30277635/40534020">Stasis Bus</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/30277635/40534026">Stasis Bus Copy</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/30277635/40534027.png">Stasis Bus Copy.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

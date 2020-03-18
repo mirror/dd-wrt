@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : CLI Syntax and Help Commands</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Operation_27200183.html">Operation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Command-Line-Interface_4259982.html">Asterisk Command Line Interface</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : CLI Syntax and Help Commands
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on May 28, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="CLISyntaxandHelpCommands-CommandSyntaxandAvailability">Command Syntax and Availability</h1><p>Commands follow a general syntax of <strong>&lt;module name&gt; &lt;action type&gt; &lt;parameters&gt;</strong>.</p><p>For example:</p><ul><li><strong>sip show peers</strong> - returns a list of chan_sip loaded peers</li><li><strong>voicemail show users</strong> - returns a list of app_voicemail loaded users</li><li><strong>core set debug 5</strong> - sets the core debug to level 5 verbosity.</li></ul>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>Commands are provided by the core, or by Asterisk modules. If the component that provides the commands is not loaded, then the commands it provides won't be available.</p>
+                    </div>
+    </div>
+<p>Asterisk does support command aliases. You can find information in the <a href="Asterisk-CLI-Configuration_28315613.html">Asterisk CLI Configuration</a> section.</p><h1 id="CLISyntaxandHelpCommands-FindingHelpattheCLI">Finding Help at the CLI</h1><h2 id="CLISyntaxandHelpCommands-Command-lineCompletion">Command-line Completion</h2><p>The Asterisk CLI supports command-line completion on all commands, including many arguments. To use it, simply press the <strong>&lt;Tab&gt;</strong> key at any time while entering the beginning of any command. If the command can be completed unambiguously, it will do so, otherwise it will complete as much of the command as possible. Additionally, Asterisk will print a list of all possible matches, if possible.</p></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303120319 {padding: 0px;}
+div.rbtoc1582303120319 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303120319 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303120319'>
+<ul class='toc-indentation'>
+<li><a href='#CLISyntaxandHelpCommands-CommandSyntaxandAvailability'>Command Syntax and Availability</a></li>
+<li><a href='#CLISyntaxandHelpCommands-FindingHelpattheCLI'>Finding Help at the CLI</a>
+<ul class='toc-indentation'>
+<li><a href='#CLISyntaxandHelpCommands-Command-lineCompletion'>Command-line Completion</a></li>
+<li><a href='#CLISyntaxandHelpCommands-Listingcommandsandshowingusage'>Listing commands and showing usage</a></li>
+<li><a href='#CLISyntaxandHelpCommands-Helpforfunctions,applicationsandmore'>Help for functions, applications and more</a></li>
+<li><a href='#CLISyntaxandHelpCommands-ModuleConfigurationHelp'>Module Configuration Help</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><h2 id="CLISyntaxandHelpCommands-Listingcommandsandshowingusage">Listing commands and showing usage</h2><p>Once on the console, the 'help' alias (for 'core show help') may be used to see a large list of commands available for use.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; help
+!                              -- Execute a shell command
+acl show                       -- Show a named ACL or list all named ACLs
+ael reload                     -- Reload AEL configuration
+...</pre>
+</div></div><p>The 'help' alias may also be used to obtain more detailed information on how to use a particular command and listing sub-commands. For example, if you type 'help core show', Asterisk will respond with a list of all commands that start with that string. If you type 'help core show version', specifying a complete command, Asterisk will respond with a usage message which describes how to use that command. As with other commands on the Asterisk console, the help command also responds to tab command line completion.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; help core show
+core show applications [like|describing] -- Shows registered dialplan applications
+core show application          -- Describe a specific dialplan application
+...</pre>
+</div></div><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; help core show version
+Usage: core show version
+       Shows Asterisk version information.</pre>
+</div></div><h2 id="CLISyntaxandHelpCommands-Helpforfunctions,applicationsandmore">Help for functions, applications and more</h2><p>A big part of working with Asterisk involves making use of Asterisk applications and functions. Often you'll want to know usage details for these, including their overall behavior or allowed arguments and parameters.</p><p>The command <strong> <code>core show application &lt;application name&gt;</code> </strong> or similarly <strong> <code>core show function &lt;function name&gt;</code> </strong>will show you the usage and arguments.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; core show application Wait
+  -= Info about application &#39;Wait&#39; =- 
+[Synopsis]
+Waits for some time.
+
+[Description]
+This application waits for a specified number of &lt;seconds&gt;.
+
+[Syntax]
+Wait(seconds)
+
+[Arguments]
+seconds
+    Can be passed with fractions of a second. For example, &#39;1.5&#39; will
+    ask the application to wait for 1.5 seconds.</pre>
+</div></div><h2 id="CLISyntaxandHelpCommands-ModuleConfigurationHelp">Module Configuration Help</h2><p>A very useful addition to Asterisk's help and documentation features is the command <strong><code>config show help</code></strong>. This command provides detailed information about configuration files, option sections in those files, and options within the sections.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; help config show help
+Usage: config show help [&lt;module&gt; [&lt;type&gt; [&lt;option&gt;]]]
+   Display detailed information about module configuration.
+     * If nothing is specified, the modules that have
+       configuration information are listed.
+     * If &lt;module&gt; is specified, the configuration types
+       for that module will be listed, along with brief
+       information about that type.
+     * If &lt;module&gt; and &lt;type&gt; are specified, detailed
+       information about the type is displayed, as well
+       as the available options.
+     * If &lt;module&gt;, &lt;type&gt;, and &lt;option&gt; are specified,
+       detailed information will be displayed about that
+       option.
+   NOTE: the help documentation is partially generated at run
+     time when a module is loaded. If a module is not loaded,
+     configuration help for that module may be incomplete.</pre>
+</div></div><p>For example maybe we see the 'callerid' option in a pjsip.conf file sent to us from a friend. We want to know what that option configures. If we know that pjsip.conf is provided by the res_pjsip module then we can find help on that configuration option.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; config show help res_pjsip endpoint callerid
+[endpoint]
+callerid = [(null)] (Default: n/a) (Regex: False)
+
+CallerID information for the endpoint
+
+ Must be in the format &#39;Name &lt;Number&gt;&#39;, or only &#39;&lt;Number&gt;&#39;. </pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

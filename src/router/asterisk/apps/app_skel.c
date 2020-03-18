@@ -33,7 +33,7 @@
  * \addtogroup configuration_file Configuration Files
  */
 
-/*! 
+/*!
  * \page app_skel.conf app_skel.conf
  * \verbinclude app_skel.conf.sample
  */
@@ -44,8 +44,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <math.h> /* log10 */
 #include "asterisk/file.h"
@@ -173,7 +171,7 @@ struct skel_level_state {
 };
 
 /*! \brief Object to hold level config information.
- * \note This object should hold a reference to an an object that holds state across reloads.
+ * \note This object should hold a reference to an object that holds state across reloads.
  * The other fields are just examples of the kind of data that might be stored in an level.
  */
 struct skel_level {
@@ -193,7 +191,7 @@ struct skel_level {
  * the running game.
  */
 struct skel_current_game {
-	uint32_t total_games;          /*! The total number of games for this call to to the app */
+	uint32_t total_games;          /*! The total number of games for this call to the app */
 	uint32_t games_left;           /*! How many games are left to play in this set */
 	uint32_t cheat;                /*! Whether or not cheating was enabled for the game */
 	struct skel_level *level_info; /*! The level information for the running game */
@@ -244,8 +242,8 @@ static struct aco_type global_option = {
 	.type = ACO_GLOBAL,
 	.name = "globals",
 	.item_offset = offsetof(struct skel_config, global),
-	.category_match = ACO_WHITELIST,
-	.category = "^general$",
+	.category_match = ACO_WHITELIST_EXACT,
+	.category = "general",
 };
 
 struct aco_type *global_options[] = ACO_TYPES(&global_option);
@@ -255,18 +253,24 @@ static struct aco_type sound_option = {
 	.type = ACO_GLOBAL,
 	.name = "sounds",
 	.item_offset = offsetof(struct skel_config, global),
-	.category_match = ACO_WHITELIST,
-	.category = "^sounds$",
+	.category_match = ACO_WHITELIST_EXACT,
+	.category = "sounds",
 };
 
 struct aco_type *sound_options[] = ACO_TYPES(&sound_option);
+
+static const char *level_categories[] = {
+	"general",
+	"sounds",
+	NULL,
+};
 
 /*! \brief An aco_type structure to link the everything but the "general" and "sounds" categories to the skel_level type */
 static struct aco_type level_option = {
 	.type = ACO_ITEM,
 	.name = "level",
-	.category_match = ACO_BLACKLIST,
-	.category = "^(general|sounds)$",
+	.category_match = ACO_BLACKLIST_ARRAY,
+	.category = (const char *)level_categories,
 	.item_alloc = skel_level_alloc,
 	.item_find = skel_level_find,
 	.item_offset = offsetof(struct skel_config, levels),
@@ -576,7 +580,9 @@ static void *skel_config_alloc(void)
 		goto error;
 	}
 
-	if (!(cfg->levels = ao2_container_alloc(LEVEL_BUCKETS, skel_level_hash, skel_level_cmp))) {
+	cfg->levels = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0, LEVEL_BUCKETS,
+		skel_level_hash, NULL, skel_level_cmp);
+	if (!cfg->levels) {
 		goto error;
 	}
 
@@ -712,8 +718,8 @@ static int unload_module(void)
  * Module loading including tests for configuration or dependencies.
  * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
  * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
- * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
- * configuration file or other non-critical problem return 
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the
+ * configuration file or other non-critical problem return
  * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
  */
 static int load_module(void)
@@ -721,7 +727,9 @@ static int load_module(void)
 	if (aco_info_init(&cfg_info)) {
 		goto error;
 	}
-	if (!(games = ao2_container_alloc(1, NULL, NULL))) {
+
+	games = ao2_container_alloc_list(AO2_ALLOC_OPT_LOCK_MUTEX, 0, NULL, NULL);
+	if (!games) {
 		goto error;
 	}
 
@@ -757,10 +765,9 @@ error:
 	return AST_MODULE_LOAD_DECLINE;
 }
 
-AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Skeleton (sample) Application",
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Skeleton (sample) Application",
 	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
 	.reload = reload_module,
-	.load_pri = AST_MODPRI_DEFAULT,
 );

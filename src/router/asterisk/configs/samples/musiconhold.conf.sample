@@ -2,14 +2,18 @@
 ; Music on Hold -- Sample Configuration
 ;
 [general]
-;cachertclasses=yes ; use 1 instance of moh class for all users who are using it,
-                    ; decrease consumable cpu cycles and memory
-                    ; disabled by default
+;cachertclasses=yes     ; use 1 instance of moh class for all users who are using it,
+                        ; decrease consumable cpu cycles and memory
+                        ; disabled by default
 
+;preferchannelclass=yes ; Prefer the musicclass as defined by CHANNEL(musicclass),
+                        ; over a class set by an application (e.g. a musicclass set on a queue).
+                        ; Defaults to yes.
 
 ; valid mode options:
 ; files		-- read files from a directory in any Asterisk supported
 ;		   media format
+; playlist	-- provide a fixed list of filenames or URLs to play
 ; quietmp3 	-- default
 ; mp3 		-- loud
 ; mp3nb		-- unbuffered
@@ -41,6 +45,22 @@
 ; this, res_musiconhold will skip the files it is not able to
 ; understand when it loads.
 ;
+; =========
+; Playlist (native) music on hold
+; =========
+;
+; This mode is similar to 'files' mode in that it plays through a list
+; of files, but instead of scanning a directory the files are
+; explicitly configured using one or more 'entry' options.
+;
+; Each entry must be one of:
+;
+;   * An absolute path to the file to be played, without an extension.
+;   * A URL
+;
+; The entries are played in the order in which they appear in the
+; configuration. The 'sort' option is not used for this mode.
+;
 
 [default]
 mode=files
@@ -57,13 +77,22 @@ directory=moh
 ;               ; be played to them. Also, if using modes that Asterisk
 ;               ; controls the playlist for (files, mp3, etc), the same
 ;               ; sound will also be played between MOH songs.
-;sort=random    ; Sort the files in random order
+;sort=random    ; Sort the files in random order. Other sort options are:
+;               ; 'alpha' and 'randstart'. If 'alpha', the files are sorted
+;               ; in alphabetical order. If 'randstart', the files are sorted
+;               ; in alphabetical order as well, but the first file is chosen
+;               ; at random. If unspecified, the sort order is undefined.
 
 ;[native-alphabetical]
 ;mode=files
 ;directory=moh
-;sort=alpha     ; Sort the files in alphabetical order.  If this option is
-;               ; not specified, the sort order is undefined.
+;sort=alpha     ; Sort the files in alphabetical order.
+
+;[sales-queue-hold]
+;mode=playlist
+;entry=/var/lib/asterisk/sounds/en/yourcallisimportant
+;entry=http://example.local/sales-queue-hold-music.ulaw
+;entry=/var/lib/asterisk/moh/macroform-robot_dity
 
 ; =========
 ; Other (non-native) playback methods
@@ -91,3 +120,26 @@ directory=moh
 ;mode=custom
 ;directory=/var/lib/asterisk/mohmp3
 ;application=/site/sw/bin/madplay -Q -o raw:- --mono -R 8000 -a -12
+
+; By default, when res_musiconhold reloads or unloads, it sends a HUP signal
+; to custom applications (and all descendants), waits 100ms, then sends a
+; TERM signal, waits 100ms, then finally sends a KILL signal.  An application
+; which is interacting with an external device and/or spawns children of its
+; own may not be able to exit cleanly in the default times, expecially if sent
+; a KILL signal, or if it's children are getting signals directly from
+; res_musiconhoild.  To allow extra time, the 'kill_escalation_delay'
+; class option can be used to set the number of milliseconds res_musiconhold
+; waits before escalating kill signals, with the default being the current
+; 100ms.  To control to whom the signals are sent, the "kill_method"
+; class option can be set to "process_group" (the default, existing behavior),
+; which sends signals to the application and its descendants directly, or
+; "process" which sends signals only to the application itself.
+
+;[sox_from_device]
+;mode=custom
+;directory=/var/lib/asterisk/mohmp3
+;application=/usr/bin/sox -q -t alsa -c 2 -r 48000 hw:1 -c 1 -r 8000 -t raw -s -
+; Wait 500ms before escalating kill signals
+;kill_escalation_delay=500
+; Send signals to just the child process instead of all descendants
+;kill_method=process

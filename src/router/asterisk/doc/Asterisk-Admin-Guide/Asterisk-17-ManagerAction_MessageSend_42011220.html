@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 ManagerAction_MessageSend</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-AMI-Actions_42010705.html">Asterisk 17 AMI Actions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 ManagerAction_MessageSend
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17ManagerAction_MessageSend-MessageSend">MessageSend</h1>
+
+<h3 id="Asterisk17ManagerAction_MessageSend-Synopsis">Synopsis</h3>
+
+<p>Send an out of call message to an endpoint.</p>
+
+<h3 id="Asterisk17ManagerAction_MessageSend-Description">Description</h3>
+
+<h3 id="Asterisk17ManagerAction_MessageSend-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: MessageSend
+ActionID: &lt;value&gt;
+To: &lt;value&gt;
+From: &lt;value&gt;
+Body: &lt;value&gt;
+Base64Body: &lt;value&gt;
+Variable: &lt;value&gt;
+</pre>
+</div></div>
+
+<h5 id="Asterisk17ManagerAction_MessageSend-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>ActionID</code> - ActionID for this transaction. Will be returned.</li>
+	<li><code>To</code> - The URI the message is to be sent to.</li>
+</ul>
+
+
+<ul>
+	<li><strong>Technology: PJSIP</strong><br />
+Specifying a prefix of <code>pjsip:</code> will send the message as a SIP MESSAGE request.</li>
+</ul>
+
+
+<ul>
+	<li><strong>Technology: SIP</strong><br />
+Specifying a prefix of <code>sip:</code> will send the message as a SIP MESSAGE request.</li>
+</ul>
+
+
+<ul>
+	<li><strong>Technology: XMPP</strong><br />
+Specifying a prefix of <code>xmpp:</code> will send the message as an XMPP chat message.</li>
+	<li><code>From</code> - A From URI for the message if needed for the message technology being used to send this message.</li>
+</ul>
+
+
+<ul>
+	<li><strong>Technology: PJSIP</strong><br />
+The <code>from</code> parameter can be a configured endpoint or in the form of &quot;display-name&quot; &lt;URI&gt;.</li>
+</ul>
+
+
+<ul>
+	<li><strong>Technology: SIP</strong><br />
+The <code>from</code> parameter can be a configured peer name or in the form of &quot;display-name&quot; &lt;URI&gt;.</li>
+</ul>
+
+
+<ul>
+	<li><strong>Technology: XMPP</strong><br />
+Specifying a prefix of <code>xmpp:</code> will specify the account defined in <code>xmpp.conf</code> to send the message from. Note that this field is required for XMPP messages.</li>
+	<li><code>Body</code> - The message body text. This must not contain any newlines as that conflicts with the AMI protocol.</li>
+	<li><code>Base64Body</code> - Text bodies requiring the use of newlines have to be base64 encoded in this field. Base64Body will be decoded before being sent out. Base64Body takes precedence over Body.</li>
+	<li><code>Variable</code> - Message variable to set, multiple Variable: headers are allowed. The header value is a comma separated list of name=value pairs.</li>
+</ul>
+
+
+<h3 id="Asterisk17ManagerAction_MessageSend-SeeAlso">See Also</h3>
+
+<h3 id="Asterisk17ManagerAction_MessageSend-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_MessageSend</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_MessageSend
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_MessageSend-MessageSend()">MessageSend()</h1>
+
+<h3 id="Asterisk17Application_MessageSend-Synopsis">Synopsis</h3>
+
+<p>Send a text message.</p>
+
+<h3 id="Asterisk17Application_MessageSend-Description">Description</h3>
+
+<p>Send a text message. The body of the message that will be sent is what is currently set to <code>MESSAGE(body)</code>. The technology chosen for sending the message is determined based on a prefix to the <code>to</code> parameter.</p>
+
+<p>This application sets the following channel variables:</p>
+
+<ul>
+	<li><code>MESSAGE_SEND_STATUS</code> - This is the message delivery status returned by this application.
+	<ul>
+		<li>INVALID_PROTOCOL - No handler for the technology part of the URI was found.</li>
+		<li>INVALID_URI - The protocol handler reported that the URI was not valid.</li>
+		<li>SUCCESS - Successfully passed on to the protocol handler, but delivery has not necessarily been guaranteed.</li>
+		<li>FAILURE - The protocol handler reported that it was unabled to deliver the message for some reason.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_MessageSend-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>MessageSend(to,[from])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_MessageSend-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>to</code> - A To URI for the message.</li>
+</ul>
+
+
+<ul>
+	<li><strong>Technology: PJSIP</strong><br />
+Specifying a prefix of <code>pjsip:</code> will send the message as a SIP MESSAGE request.</li>
+</ul>
+
+
+<ul>
+	<li><strong>Technology: SIP</strong><br />
+Specifying a prefix of <code>sip:</code> will send the message as a SIP MESSAGE request.</li>
+</ul>
+
+
+<ul>
+	<li><strong>Technology: XMPP</strong><br />
+Specifying a prefix of <code>xmpp:</code> will send the message as an XMPP chat message.</li>
+	<li><code>from</code> - A From URI for the message if needed for the message technology being used to send this message. This can be a SIP(S) URI, such as <code>Alice &lt;sip:alice@atlanta.com&gt;</code>, a string in the format <code>alice@atlanta.com</code>, or simply a username such as <code>alice</code>.</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_MessageSend-SeeAlso">See Also</h3>
+
+
+<h3 id="Asterisk17Application_MessageSend-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

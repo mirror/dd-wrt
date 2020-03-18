@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_DISA</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_DISA
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_DISA-DISA()">DISA()</h1>
+
+<h3 id="Asterisk17Application_DISA-Synopsis">Synopsis</h3>
+
+<p>Direct Inward System Access.</p>
+
+<h3 id="Asterisk17Application_DISA-Description">Description</h3>
+
+<p>The DISA, Direct Inward System Access, application allows someone from outside the telephone switch (PBX) to obtain an <strong>internal</strong> system dialtone and to place calls from it as if they were placing a call from within the switch. DISA plays a dialtone. The user enters their numeric passcode, followed by the pound sign <code>#</code>. If the passcode is correct, the user is then given system dialtone within <em>context</em> on which a call may be placed. If the user enters an invalid extension and extension <code>i</code> exists in the specified <em>context</em>, it will be used.</p>
+
+<p>Be aware that using this may compromise the security of your PBX.</p>
+
+<p>The arguments to this application (in <code>extensions.conf</code>) allow either specification of a single global <em>passcode</em> (that everyone uses), or individual passcodes contained in a file (<em>filename</em>).</p>
+
+<p>The file that contains the passcodes (if used) allows a complete specification of all of the same arguments available on the command line, with the sole exception of the options. The file may contain blank lines, or comments starting with <code>#</code> or <code>;</code>.</p>
+
+
+<h3 id="Asterisk17Application_DISA-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>DISA(passcode|filename,[context,[cid,mailbox@[context],[options]]]])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_DISA-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>passcode|filename</code> - If you need to present a DISA dialtone without entering a password, simply set <em>passcode</em> to <code>no-password</code><br />
+You may specified a <em>filename</em> instead of a <em>passcode</em>, this filename must contain individual passcodes</li>
+	<li><code>context</code> - Specifies the dialplan context in which the user-entered extension will be matched. If no context is specified, the DISA application defaults to the <code>disa</code> context. Presumably a normal system will have a special context set up for DISA use with some or a lot of restrictions.</li>
+	<li><code>cid</code> - Specifies a new (different) callerid to be used for this call.</li>
+	<li><code>mailbox</code> - Will cause a stutter-dialtone (indication <strong>dialrecall</strong>) to be used, if the specified mailbox contains any new messages.
+	<ul>
+		<li><code><strong>mailbox</strong></code></li>
+		<li><code>context</code></li>
+	</ul>
+	</li>
+	<li><code>options</code>
+	<ul>
+		<li><code>n</code> - The DISA application will not answer initially.</li>
+		<li><code>p</code> - The extension entered will be considered complete when a <code>#</code> is entered.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_DISA-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Application_Authenticate_42011014.html">Asterisk 17 Application_Authenticate</a></li>
+	<li><a href="Asterisk-17-Application_VMAuthenticate_42010811.html">Asterisk 17 Application_VMAuthenticate</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Application_DISA-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

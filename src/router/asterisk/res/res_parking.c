@@ -149,9 +149,6 @@
 							<variable name="PARKING_SPACE">
 								<para>extension that the call was parked in prior to timing out.</para>
 							</variable>
-							<variable name="PARKINGSLOT">
-								<para>Deprecated.  Use <variable>PARKING_SPACE</variable> instead.</para>
-							</variable>
 							<variable name="PARKEDLOT">
 								<para>name of the lot that the call was parked in prior to timing out.</para>
 							</variable>
@@ -233,8 +230,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "parking/res_parking.h"
 #include "asterisk/config.h"
 #include "asterisk/config_options.h"
@@ -291,8 +286,8 @@ static struct aco_type global_option = {
 	.type = ACO_GLOBAL,
 	.name = "globals",
 	.item_offset = offsetof(struct parking_config, global),
-	.category_match = ACO_WHITELIST,
-	.category = "^general$",
+	.category_match = ACO_WHITELIST_EXACT,
+	.category = "general",
 };
 
 struct aco_type *global_options[] = ACO_TYPES(&global_option);
@@ -300,8 +295,8 @@ struct aco_type *global_options[] = ACO_TYPES(&global_option);
 static struct aco_type parking_lot_type = {
 	.type = ACO_ITEM,
 	.name = "parking_lot",
-	.category_match = ACO_BLACKLIST,
-	.category = "^(general)$",
+	.category_match = ACO_BLACKLIST_EXACT,
+	.category = "general",
 	.item_alloc = parking_lot_cfg_alloc,
 	.item_find = named_item_find,
 	.item_offset = offsetof(struct parking_config, parking_lots),
@@ -387,7 +382,9 @@ static void *parking_config_alloc(void)
 		return NULL;
 	}
 
-	if (!(cfg->parking_lots = ao2_container_alloc(37, parking_lot_cfg_hash_fn, parking_lot_cfg_cmp_fn))) {
+	cfg->parking_lots = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0, 37,
+		parking_lot_cfg_hash_fn, NULL, parking_lot_cfg_cmp_fn);
+	if (!cfg->parking_lots) {
 		return NULL;
 	}
 
@@ -723,7 +720,7 @@ static int parking_add_extension(struct ast_context *context, int replace, const
 	}
 
 	if (ast_add_extension2_nolock(context, replace, extension, priority, NULL, NULL,
-			application, data_duplicate, ast_free_ptr, registrar)) {
+			application, data_duplicate, ast_free_ptr, registrar, NULL, 0)) {
 		ast_free(data_duplicate);
 		return -1;
 	}
@@ -1191,11 +1188,6 @@ static void link_configured_disable_marked_lots(void)
 	disable_marked_lots();
 }
 
-const struct ast_module_info *parking_get_module_info(void)
-{
-	return ast_module_info;
-}
-
 static int unload_module(void)
 {
 	unload_parking_bridge_features();
@@ -1300,4 +1292,5 @@ AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Call Parking Resource
 	.load = load_module,
 	.unload = unload_module,
 	.reload = reload_module,
+	.load_pri = AST_MODPRI_DEVSTATE_PROVIDER,
 );

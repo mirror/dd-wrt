@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : RTP Packetization</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : RTP Packetization
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Matt Jordan</span> on Aug 08, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="RTPPacketization-Overview">Overview</h1>
+
+<p>Asterisk currently supports configurable RTP packetization per codec for select RTP-based channels.</p>
+
+<h5 id="RTPPacketization-Channels">Channels</h5>
+<p>These channel drivers allow RTP packetization on a user/peer/friend or global level:</p>
+<ul>
+	<li>chan_sip</li>
+	<li>chan_skinny</li>
+	<li>chan_h323</li>
+	<li>chan_ooh323 (Asterisk-Addons)</li>
+	<li>chan_gtalk</li>
+	<li>chan_jingle</li>
+	<li>chan_motif (Asterisk 11+)</li>
+</ul>
+
+
+<h5 id="RTPPacketization-Configuration">Configuration</h5>
+<p>To set a desired packetization interval on a specific codec, append that inteval to the allow= statement.</p>
+
+<p>Example:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>allow=ulaw:30,alaw,g729:60
+</pre>
+</div></div>
+
+<p>No packetization is specified in the case of alaw in this example, so the default of 20ms is used.</p>
+
+<h5 id="RTPPacketization-Autoframing">Autoframing</h5>
+
+<p>In addition, chan_sip has the ability to negotiate the desired framing at call establishment.</p>
+
+<p>In <code>sip.conf</code> if <code>autoframing=yes</code> is set in the global section, then all calls will try to set the packetization based on the remote endpoint's preferences.  This behaviour depends on the endpoints ability to present the desired packetization (<code>ptime\:</code>) in the SDP.  If the endpoint does not include a ptime attribute, the call will be established with 20ms packetization.</p>
+
+<p>Autoframing can be set at the global level or on a user/peer/friend basis.  If it is enabled at the global level, it applies to all users/peers/friends regardless of their prefered codec packetization.</p>
+
+<h5 id="RTPPacketization-Codecframingoptions">Codec framing options</h5>
+
+<p>The following table lists the minimum and maximum values that are valid per codec, as well as the increment value used for each.  Please note that the maximum values here are only recommended maximums, and should not exceed the RTP MTU.</p>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p>Name</p></th>
+<th class="confluenceTh"><p>Minimum (ms)</p></th>
+<th class="confluenceTh"><p>Maximum (ms)</p></th>
+<th class="confluenceTh"><p>Default (ms)</p></th>
+<th class="confluenceTh"><p>Increment (ms)</p></th>
+</tr>
+<tr>
+<th class="confluenceTh"><p>g723</p></th>
+<td class="confluenceTd"><p>30</p></td>
+<td class="confluenceTd"><p>300</p></td>
+<td class="confluenceTd"><p>30</p></td>
+<td class="confluenceTd"><p>30</p></td>
+</tr>
+<tr>
+<th class="confluenceTh"><p>gsm</p></th>
+<td class="confluenceTd"><p>20</p></td>
+<td class="confluenceTd"><p>300</p></td>
+<td class="confluenceTd"><p>20</p></td>
+<td class="confluenceTd"><p>20</p></td>
+</tr>
+<tr>
+<th class="confluenceTh"><p>ulaw</p></th>
+<td class="confluenceTd"><p>10</p></td>
+<td class="confluenceTd"><p>150</p></td>
+<td class="confluenceTd"><p>20</p></td>
+<td class="confluenceTd"><p>10</p></td>
+</tr>
+<tr>
+<th class="confluenceTh"><p>alaw</p></th>
+<td class="confluenceTd"><p>10</p></td>
+<td class="confluenceTd"><p>150</p></td>
+<td class="confluenceTd"><p>20</p></td>
+<td class="confluenceTd"><p>10</p></td>
+</tr>
+<tr>
+<th class="confluenceTh"><p>g726</p></th>
+<td class="confluenceTd"><p>10</p></td>
+<td class="confluenceTd"><p>300</p></td>
+<td class="confluenceTd"><p>20</p></td>
+<td class="confluenceTd"><p>10</p></td>
+</tr>
+<tr>
+<th class="confluenceTh"><p>ADPCM</p></th>
+<td class="confluenceTd"><p>10</p></td>
+<td class="confluenceTd"><p>300</p></td>
+<td class="confluenceTd"><p>20</p></td>
+<td class="confluenceTd"><p>10</p></td>
+</tr>
+<tr>
+<th class="confluenceTh"><p>SLIN</p></th>
+<td class="confluenceTd"><p>10</p></td>
+<td class="confluenceTd"><p>70</p></td>
+<td class="confluenceTd"><p>20</p></td>
+<td class="confluenceTd"><p>10</p></td>
+</tr>
+<tr>
+<th class="confluenceTh"><p>lpc10</p></th>
+<td class="confluenceTd"><p>20</p></td>
+<td class="confluenceTd"><p>20</p></td>
+<td class="confluenceTd"><p>20</p></td>
+<td class="confluenceTd"><p>20</p></td>
+</tr>
+<tr>
+<th class="confluenceTh"><p>g729</p></th>
+<td class="confluenceTd"><p>10</p></td>
+<td class="confluenceTd"><p>230</p></td>
+<td class="confluenceTd"><p>20</p></td>
+<td class="confluenceTd"><p>10</p></td>
+</tr>
+<tr>
+<th class="confluenceTh"><p>speex</p></th>
+<td class="confluenceTd"><p>10</p></td>
+<td class="confluenceTd"><p>60</p></td>
+<td class="confluenceTd"><p>20</p></td>
+<td class="confluenceTd"><p>10</p></td>
+</tr>
+<tr>
+<th class="confluenceTh"><p>ilbc</p></th>
+<td class="confluenceTd"><p>30</p></td>
+<td class="confluenceTd"><p>30</p></td>
+<td class="confluenceTd"><p>30</p></td>
+<td class="confluenceTd"><p>30</p></td>
+</tr>
+<tr>
+<th class="confluenceTh"><p>g726_aal2</p></th>
+<td class="confluenceTd"><p>10</p></td>
+<td class="confluenceTd"><p>300</p></td>
+<td class="confluenceTd"><p>20</p></td>
+<td class="confluenceTd"><p>10</p></td>
+</tr>
+</tbody></table></div>
+
+
+<p>Invalid framing options are handled based on the following rules:</p>
+
+<ol>
+	<li>If the specified framing is less than the codec's minimum, then the minimum value is used.</li>
+	<li>If the specific framing is greater than the codec's maximum, then the maximum value is used</li>
+	<li>If the specificed framing does not meet the increment requirement, the specified framing is rounded down to the closest valid framing options.</li>
+</ol>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

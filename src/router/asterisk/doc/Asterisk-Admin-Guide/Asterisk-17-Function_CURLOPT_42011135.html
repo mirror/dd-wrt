@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Function_CURLOPT</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Functions_42010713.html">Asterisk 17 Dialplan Functions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Function_CURLOPT
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span>, last modified on Jan 15, 2020
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Function_CURLOPT-CURLOPT()">CURLOPT()</h1>
+
+<h3 id="Asterisk17Function_CURLOPT-Synopsis">Synopsis</h3>
+
+<p>Sets various options for future invocations of CURL.</p>
+
+<h3 id="Asterisk17Function_CURLOPT-Description">Description</h3>
+
+<p>Options may be set globally or per channel. Per-channel settings will override global settings. Only HTTP headers are added instead of overriding</p>
+
+
+<h3 id="Asterisk17Function_CURLOPT-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>CURLOPT(key)</pre>
+</div></div>
+
+<h5 id="Asterisk17Function_CURLOPT-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>key</code>
+	<ul>
+		<li><code>cookie</code> - A cookie to send with the request. Multiple cookies are supported.</li>
+		<li><code>conntimeout</code> - Number of seconds to wait for a connection to succeed</li>
+		<li><code>dnstimeout</code> - Number of seconds to wait for DNS to be resolved</li>
+		<li><code>followlocation</code> - Whether or not to follow HTTP 3xx redirects (boolean)</li>
+		<li><code>ftptext</code> - For FTP URIs, force a text transfer (boolean)</li>
+		<li><code>ftptimeout</code> - For FTP URIs, number of seconds to wait for a server response</li>
+		<li><code>header</code> - Include header information in the result (boolean)</li>
+		<li><code>httpheader</code> - Add HTTP header. Multiple calls add multiple headers. Setting of any header will remove the default &quot;Content-Type application/x-www-form-urlencoded&quot;</li>
+		<li><code>httptimeout</code> - For HTTP(S) URIs, number of seconds to wait for a server response</li>
+		<li><code>maxredirs</code> - Maximum number of redirects to follow. The default is -1, which allows for unlimited redirects. This only makes sense when followlocation is also set.</li>
+		<li><code>proxy</code> - Hostname or IP address to use as a proxy server</li>
+		<li><code>proxytype</code> - Type of <code>proxy</code>
+		<ul>
+			<li><code>http</code></li>
+			<li><code>socks4</code></li>
+			<li><code>socks5</code></li>
+		</ul>
+		</li>
+		<li><code>proxyport</code> - Port number of the <code>proxy</code></li>
+		<li><code>proxyuserpwd</code> - A <em>username</em><code>:</code><em>password</em> combination to use for authenticating requests through a <code>proxy</code></li>
+		<li><code>referer</code> - Referer URL to use for the request</li>
+		<li><code>useragent</code> - UserAgent string to use for the request</li>
+		<li><code>userpwd</code> - A <em>username</em><code>:</code><em>password</em> to use for authentication when the server response to an initial request indicates a 401 status code.</li>
+		<li><code>ssl_verifypeer</code> - Whether to verify the server certificate against a list of known root certificate authorities (boolean).</li>
+		<li><code>hashcompat</code> - Assuming the responses will be in <code>key1=value1&amp;key2=value2</code> format, reformat the response such that it can be used by the <code>HASH</code> function.
+		<ul>
+			<li><code>yes</code></li>
+			<li><code>no</code></li>
+			<li><code>legacy</code> - Also translate <code>+</code> to the space character, in violation of current RFC standards.</li>
+		</ul>
+		</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Function_CURLOPT-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Function_CURL_42011134.html">Asterisk 17 Function_CURL</a></li>
+	<li><a href="Asterisk-17-Function_HASH_42011046.html">Asterisk 17 Function_HASH</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Function_CURLOPT-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-0bd7cd5</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

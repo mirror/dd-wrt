@@ -3,10 +3,6 @@
 #ifndef MENUSELECT_AUTOCONFIG_H
 #define MENUSELECT_AUTOCONFIG_H
 
-#ifndef _REENTRANT
-#define _REENTRANT
-#endif
-
 
 /* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
    systems. This function is required for `alloca.c' support on those systems.
@@ -25,15 +21,6 @@
 
 /* Define to 1 if you have the `asprintf' function. */
 #undef HAVE_ASPRINTF
-
-/* Define to 1 if your GCC C compiler supports the 'weak' attribute. */
-#undef HAVE_ATTRIBUTE_weak
-
-/* Define to 1 if your GCC C compiler supports the 'weak_import' attribute. */
-#undef HAVE_ATTRIBUTE_weak_import
-
-/* Define to 1 if your GCC C compiler supports the 'weakref' attribute. */
-#undef HAVE_ATTRIBUTE_weakref
 
 /* Define to 1 if you have the curses library. */
 #undef HAVE_CURSES
@@ -92,6 +79,9 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
+/* Define to 1 if you have the terminfo library. */
+#undef HAVE_TINFO
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
@@ -134,4 +124,3 @@
 #undef size_t
 
 #endif
-

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Configuration_res_statsd</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Module-Configuration_42010715.html">Asterisk 17 Module Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Configuration_res_statsd
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span>, last modified on Jan 23, 2020
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Configuration_res_statsd-StatsDclient">StatsD client</h1>
+
+<p>This configuration documentation is for functionality provided by <code>res_statsd</code>.</p>
+
+<h2 id="Asterisk17Configuration_res_statsd-Overview">Overview</h2>
+
+<p>The <code>res_statsd</code> module provides an API that allows Asterisk and its modules to send statistics to a StatsD server. It only provides a means to communicate with a StatsD server and does not send any metrics of its own.</p>
+
+<p>An example module, <code>res_chan_stats</code>, is provided which uses the API exposed by this module to send channel statistics to the configured StatsD server.</p>
+
+<p>More information about StatsD can be found at <a class="external-link" href="https://github.com/statsd/statsd" rel="nofollow">https://github.com/statsd/statsd</a></p>
+
+
+<h2 id="Asterisk17Configuration_res_statsd-statsd.conf">statsd.conf</h2>
+
+<h3 id="Asterisk17Configuration_res_statsd-global">global</h3>
+
+<p>Global configuration settings</p>
+
+<h4 id="Asterisk17Configuration_res_statsd-ConfigurationOptionReference">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>enabled</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Enable/disable the StatsD module </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>server</code> </p></td>
+<td class="confluenceTd"><p> <code>IP Address</code> </p></td>
+<td class="confluenceTd"><p> <code>127.0.0.1</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Address of the StatsD server </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>prefix</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Prefix to prepend to every metric </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>add_newline</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Append a newline to every event. This is useful if you want to fake out a server using netcat (nc -lu 8125) </p></td>
+</tr>
+</tbody></table></div>
+
+
+<h3 id="Asterisk17Configuration_res_statsd-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-f7e0b6b</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -31,8 +31,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/utils.h"
 #include "asterisk/module.h"
 #include "asterisk/test.h"
@@ -42,8 +40,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 /*!
  * Wrapper of ast_test_validate_int() so an external function pointer is not used.
  *
- * \note Must do this because using an external function pointer
- * does not play nicely when loading with RTLD_LAZY.
+ * \note We do this because using an external function pointer
+ * did not play nicely when we loaded with RTLD_LAZY.
  */
 static int wrap_ast_ari_validate_int(struct ast_json *json)
 {
@@ -55,8 +53,8 @@ static int wrap_ast_ari_validate_int(struct ast_json *json)
 /*!
  * Wrapper of ast_ari_validate_string() so an external function pointer is not used.
  *
- * \note Must do this because using an external function pointer
- * does not play nicely when loading with RTLD_LAZY.
+ * \note We do this because using an external function pointer
+ * did not play nicely when we loaded with RTLD_LAZY.
  */
 static int wrap_ast_ari_validate_string(struct ast_json *json)
 {
@@ -454,4 +452,9 @@ static int load_module(void)
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
-AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "Skeleton (sample) Test");
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Skeleton (sample) Test",
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.requires = "res_ari_model",
+);

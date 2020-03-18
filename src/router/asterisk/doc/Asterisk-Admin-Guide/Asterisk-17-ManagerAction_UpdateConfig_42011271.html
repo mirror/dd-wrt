@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 ManagerAction_UpdateConfig</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-AMI-Actions_42010705.html">Asterisk 17 AMI Actions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 ManagerAction_UpdateConfig
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17ManagerAction_UpdateConfig-UpdateConfig">UpdateConfig</h1>
+
+<h3 id="Asterisk17ManagerAction_UpdateConfig-Synopsis">Synopsis</h3>
+
+<p>Update basic configuration.</p>
+
+<h3 id="Asterisk17ManagerAction_UpdateConfig-Description">Description</h3>
+
+<p>This action will modify, create, or delete configuration elements in Asterisk configuration files.</p>
+
+
+<h3 id="Asterisk17ManagerAction_UpdateConfig-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: UpdateConfig
+ActionID: &lt;value&gt;
+SrcFilename: &lt;value&gt;
+DstFilename: &lt;value&gt;
+Reload: &lt;value&gt;
+PreserveEffectiveContext: &lt;value&gt;
+Action-000000: &lt;value&gt;
+Cat-000000: &lt;value&gt;
+Var-000000: &lt;value&gt;
+Value-000000: &lt;value&gt;
+Match-000000: &lt;value&gt;
+Line-000000: &lt;value&gt;
+Options-000000: &lt;value&gt;
+</pre>
+</div></div>
+
+<h5 id="Asterisk17ManagerAction_UpdateConfig-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>ActionID</code> - ActionID for this transaction. Will be returned.</li>
+	<li><code>SrcFilename</code> - Configuration filename to read (e.g. <code>foo.conf</code>).</li>
+	<li><code>DstFilename</code> - Configuration filename to write (e.g. <code>foo.conf</code>)</li>
+	<li><code>Reload</code> - Whether or not a reload should take place (or name of specific module).</li>
+	<li><code>PreserveEffectiveContext</code> - Whether the effective category contents should be preserved on template change. Default is true (pre 13.2 behavior).</li>
+	<li><code>Action-000000</code> - Action to take.<br />
+0's represent 6 digit number beginning with 000000.
+	<ul>
+		<li><code>NewCat</code></li>
+		<li><code>RenameCat</code></li>
+		<li><code>DelCat</code></li>
+		<li><code>EmptyCat</code></li>
+		<li><code>Update</code></li>
+		<li><code>Delete</code></li>
+		<li><code>Append</code></li>
+		<li><code>Insert</code></li>
+	</ul>
+	</li>
+	<li><code>Cat-000000</code> - Category to operate on.<br />
+0's represent 6 digit number beginning with 000000.</li>
+	<li><code>Var-000000</code> - Variable to work on.<br />
+0's represent 6 digit number beginning with 000000.</li>
+	<li><code>Value-000000</code> - Value to work on.<br />
+0's represent 6 digit number beginning with 000000.</li>
+	<li><code>Match-000000</code> - Extra match required to match line.<br />
+0's represent 6 digit number beginning with 000000.</li>
+	<li><code>Line-000000</code> - Line in category to operate on (used with delete and insert actions).<br />
+0's represent 6 digit number beginning with 000000.</li>
+	<li><code>Options-000000</code> - A comma separated list of action-specific options.
+	<ul>
+		<li><code>NewCat</code> - One or more of the following...
+		<ul>
+			<li><code>allowdups</code> - Allow duplicate category names.</li>
+			<li><code>template</code> - This category is a template.</li>
+			<li><code>inherit=&quot;template<a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=%2C...&amp;linkCreation=true&amp;fromPageId=42011271">,...</a>&quot;</code> - Templates from which to inherit.</li>
+		</ul>
+		</li>
+	</ul>
+	</li>
+</ul>
+
+
+<p>The following actions share the same options...</p>
+<ul>
+	<li>
+	<ul>
+		<li><code>RenameCat</code></li>
+		<li><code>DelCat</code></li>
+		<li><code>EmptyCat</code></li>
+		<li><code>Update</code></li>
+		<li><code>Delete</code></li>
+		<li><code>Append</code></li>
+		<li><code>Insert</code> -
+		<ul>
+			<li><code>catfilter=&quot;&lt;expression&gt;<a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=%2C...&amp;linkCreation=true&amp;fromPageId=42011271">,...</a>&quot;</code> -<br />
+A comma separated list of <em>name_regex</em>=<em>value_regex</em> expressions which will cause only categories whose variables match all expressions to be considered. The special variable name <code>TEMPLATES</code> can be used to control whether templates are included. Passing <code>include</code> as the value will include templates along with normal categories. Passing <code>restrict</code> as the value will restrict the operation to ONLY templates. Not specifying a <code>TEMPLATES</code> expression results in the default behavior which is to not include templates.<br />
+catfilter is most useful when a file contains multiple categories with the same name and you wish to operate on specific ones instead of all of them.<br />
+0's represent 6 digit number beginning with 000000.</li>
+		</ul>
+		</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17ManagerAction_UpdateConfig-SeeAlso">See Also</h3>
+<ul>
+	<li><a href="Asterisk-17-ManagerAction_GetConfig_42011269.html">Asterisk 17 ManagerAction_GetConfig</a></li>
+	<li><a href="Asterisk-17-ManagerAction_GetConfigJSON_42011270.html">Asterisk 17 ManagerAction_GetConfigJSON</a></li>
+	<li><a href="Asterisk-17-ManagerAction_CreateConfig_42011272.html">Asterisk 17 ManagerAction_CreateConfig</a></li>
+	<li><a href="Asterisk-17-ManagerAction_ListCategories_42011273.html">Asterisk 17 ManagerAction_ListCategories</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17ManagerAction_UpdateConfig-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Configuration_res_hep</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Module-Configuration_42010715.html">Asterisk 17 Module Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Configuration_res_hep
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Configuration_res_hep-ResourceforintegrationwithHomerusingHEPv3">Resource for integration with Homer using HEPv3</h1>
+
+<p>This configuration documentation is for functionality provided by <code>res_hep</code>.</p>
+
+<h2 id="Asterisk17Configuration_res_hep-hep.conf">hep.conf</h2>
+
+<h3 id="Asterisk17Configuration_res_hep-general">general</h3>
+
+<p>General settings.</p>
+
+<h4 id="Asterisk17Configuration_res_hep-ConfigurationOptionReference">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_hep-general_enabled"><code>enabled</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>yes</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Enable or disable packet capturing. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_hep-general_uuid_type"><code>uuid_type</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>call-id</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> The preferred type of UUID to pass to Homer. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>capture_address</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> The address and port of the Homer server to send packets to. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>capture_password</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> If set, the authentication password to send to Homer. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>capture_id</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> The ID for this capture agent. </p></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="Asterisk17Configuration_res_hep-ConfigurationOptionDescriptions">Configuration Option Descriptions</h4>
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_hep-general_enabled"></span></p>
+<h5 id="Asterisk17Configuration_res_hep-enabled">enabled</h5>
+
+<ul>
+	<li><code>no</code></li>
+	<li><code>yes</code></li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_hep-general_uuid_type"></span></p>
+<h5 id="Asterisk17Configuration_res_hep-uuid_type">uuid_type</h5>
+
+<ul>
+	<li><code>call-id</code> - Use the PJSIP Call-Id</li>
+	<li><code>channel</code> - Use the Asterisk channel name</li>
+</ul>
+
+
+
+<h3 id="Asterisk17Configuration_res_hep-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

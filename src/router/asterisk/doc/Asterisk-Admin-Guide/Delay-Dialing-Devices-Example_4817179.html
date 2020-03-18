@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Delay Dialing Devices Example</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Local-Channel_4817170.html">Local Channel</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Local-Channel-Examples_4817175.html">Local Channel Examples</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Delay Dialing Devices Example
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Lets say when someone calls extension 201, we want to ring both the desk phone and their cellphone at the same time, but we want to wait about 6 seconds to start dialing the cellphone. This is useful in a situation when someone might be sitting at their desk, but don't want both devices ringing at the same time, but also doesn't want to wait for the full ring cycle to execute on their desk phone before rolling over to their cellphone. </p>
+
+<p>The dialplan for this would look something like the following:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+[devices]
+exten =&gt; 201,1,Verbose(2,Call desk phone and cellphone but with delay) 
+exten =&gt; 201,n,Dial(Local/deskphone-201@extensions&amp;Local/cellphone-201@extensions,30) 
+exten =&gt; 201,n,Voicemail(201@default,${IF($[${DIALSTATUS} = BUSY]?b:u)}) 
+exten =&gt; 201,n,Hangup() 
+
+[extensions]
+; Dial the desk phone 
+exten =&gt; deskphone-201,1,Verbose(2,Dialing desk phone of extension 201) 
+exten =&gt; deskphone-201,n,Dial(SIP/0004f2040001) ; SIP device with MAC address 
+                                                ; of 0004f2040001 
+; Dial the cellphone 
+exten =&gt; cellphone-201,1,Verbose(2,Dialing cellphone of extension 201) 
+exten =&gt; cellphone-201,n,Verbose(2,-- Waiting 6 seconds before dialing) 
+exten =&gt; cellphone-201,n,Wait(6) 
+exten =&gt; cellphone-201,n,Dial(DAHDI/g0/14165551212)
+</pre>
+</div></div>
+
+<p>When someone dials extension 201 in the [devices] context, it will execute the Dial() application, and call two Local channels at the same time:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Local/deskphone-201@extensions
+Local/cellphone-201@extensions
+</pre>
+</div></div>
+
+<p>It will then ring both of those extensions for 30 seconds before rolling over to the Voicemail() application and playing the appropriate voicemail recording depending on whether the ${DIALSTATUS} variable returned BUSY or not. </p>
+
+<p>When reaching the deskphone-201 extension, we execute the Dial() application which calls the SIP device configured as '0004f204001' (the MAC address of the device). When reaching the cellphone-201 extension, we dial the cellphone via the DAHDI channel using group zero (g0) and dialing phone number 1-416-555-1212.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

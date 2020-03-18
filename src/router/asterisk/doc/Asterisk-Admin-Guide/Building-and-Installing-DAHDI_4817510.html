@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Building and Installing DAHDI</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Getting-Started_5243710.html">Getting Started</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Installing-Asterisk_4817553.html">Installing Asterisk</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Installing-Asterisk-From-Source_4817561.html">Installing Asterisk From Source</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Building and Installing DAHDI
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Shaun Ruffell</span> on Apr 30, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="BuildingandInstallingDAHDI-Overview">Overview</h1><p>Let's install DAHDI!</p><p>On Linux, we will use the <strong>DAHDI-linux-complete</strong> tarball, which contains the DAHDI Linux drivers, DAHDI tools, and board firmware files. Again, we're assuming that you've untarred the tarball in the <code>/usr/local/src</code> directory, and that you'll replace X and Y with the appropriate version numbers.</p><p>See <a href="4817506.html">What to Download?</a> for more information on downloading the DAHDI tarballs.</p>    <div class="aui-message warning shadowed information-macro">
+                    <p class="title">Install DAHDI before libpri</p>
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>libpri 1.4.13 and later source code depends on DAHDI include files. So, one must install DAHDI before installing libpri.</p>
+                    </div>
+    </div>
+    <div class="aui-message warning shadowed information-macro">
+                    <p class="title">Don&#39;t need DAHDI?</p>
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p> If you are not integrating with any traditional telephony equipment and you are not planning on using the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Application_MeetMe">MeetMe</a> dialplan application, then you do not have to install DAHDI or libpri in order to use Asterisk.</p>
+                    </div>
+    </div>
+</div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302868175 {padding: 0px;}
+div.rbtoc1582302868175 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302868175 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302868175'>
+<ul class='toc-indentation'>
+<li><a href='#BuildingandInstallingDAHDI-Overview'>Overview</a></li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><p> </p><p>Starting with DAHDI-Linux-complete version 2.8.0+2.8.0, all files necessary to install DAHDI are available in the complete tarball. Therefore, all you need to do to install DAHDI is:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server src]# cd dahdi-linux-complete-2.X.Y+2.X.Y
+
+[root@server dahdi-linux-complete-2.X.Y+2.X.Y]# make
+
+[root@server dahdi-linux-complete-2.X.Y+2.X.Y]# make install
+
+[root@server dahdi-linux-complete-2.X.Y+2.X.Y]# make config </pre>
+</div></div><p> </p><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

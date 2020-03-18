@@ -39,14 +39,13 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/_private.h"
+#include "features_config.h"
 
 #include <pthread.h>
 #include <signal.h>
 #include <sys/time.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include <netinet/in.h>
 
 #include "asterisk/lock.h"
@@ -85,7 +84,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		</synopsis>
 		<syntax>
 			<parameter name="channel" required="true">
-				<para>The current channel is bridged to the specified <replaceable>channel</replaceable>.</para>
+				<para>The current channel is bridged to the channel
+				identified by the channel name, channel name prefix, or channel
+				uniqueid.</para>
 			</parameter>
 			<parameter name="options">
 				<optionlist>
@@ -198,7 +199,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 					<value name="FAILURE" />
 					<value name="LOOP" />
 					<value name="NONEXISTENT" />
-					<value name="INCOMPATIBLE" />
 				</variable>
 			</variablelist>
 		</description>
@@ -327,7 +327,6 @@ struct ast_bridge_thread_obj
 	struct ast_bridge_config bconfig;
 	struct ast_channel *chan;
 	struct ast_channel *peer;
-	struct ast_callid *callid;                             /*<! callid pointer (Only used to bind thread) */
 	unsigned int return_to_pbx:1;
 };
 
@@ -896,7 +895,7 @@ int ast_bridge_timelimit(struct ast_channel *chan, struct ast_bridge_config *con
 		config->warning_freq = atol(warnfreq_str);
 
 	if (!config->timelimit) {
-		ast_log(LOG_WARNING, "Bridge does not accept L(%s), hanging up.\n", limit_str);
+		ast_log(LOG_WARNING, "Bridge does not accept L(%s)\n", limit_str);
 		config->timelimit = config->play_warning = config->warning_freq = 0;
 		config->warning_sound = NULL;
 		return -1; /* error */
@@ -999,7 +998,7 @@ int ast_bridge_timelimit(struct ast_channel *chan, struct ast_bridge_config *con
  */
 static int bridge_exec(struct ast_channel *chan, const char *data)
 {
-	struct ast_channel *current_dest_chan;
+	struct ast_channel *current_dest_chan = NULL;
 	char *tmp_data  = NULL;
 	struct ast_flags opts = { 0, };
 	struct ast_bridge_config bconfig = { { 0, }, };
@@ -1009,6 +1008,7 @@ static int bridge_exec(struct ast_channel *chan, const char *data)
 	const char *extension;
 	int priority;
 	int bridge_add_failed;
+	int res = -1;
 	struct ast_bridge_features chan_features;
 	struct ast_bridge_features *peer_features;
 	struct ast_bridge *bridge;
@@ -1019,22 +1019,21 @@ static int bridge_exec(struct ast_channel *chan, const char *data)
 		AST_APP_ARG(options);
 	);
 
-	if (ast_strlen_zero(data)) {
-		ast_log(LOG_WARNING, "Bridge require at least 1 argument specifying the other end of the bridge\n");
-		return -1;
+	tmp_data = ast_strdupa(data ?: "");
+	AST_STANDARD_APP_ARGS(args, tmp_data);
+	if (!ast_strlen_zero(args.options)) {
+		ast_app_parse_options(bridge_exec_options, &opts, opt_args, args.options);
 	}
 
-	tmp_data = ast_strdupa(data);
-	AST_STANDARD_APP_ARGS(args, tmp_data);
-	if (!ast_strlen_zero(args.options))
-		ast_app_parse_options(bridge_exec_options, &opts, opt_args, args.options);
-
 	/* make sure we have a valid end point */
-	current_dest_chan = ast_channel_get_by_name_prefix(args.dest_chan,
-		strlen(args.dest_chan));
+	if (!ast_strlen_zero(args.dest_chan)) {
+		current_dest_chan = ast_channel_get_by_name_prefix(args.dest_chan,
+			strlen(args.dest_chan));
+	}
 	if (!current_dest_chan) {
-		ast_log(LOG_WARNING, "Bridge failed because channel %s does not exist\n",
-			args.dest_chan);
+		ast_verb(4, "Bridge failed because channel '%s' does not exist\n",
+			args.dest_chan ?: "");
+		pbx_builtin_setvar_helper(chan, "BRIDGERESULT", "NONEXISTENT");
 		return 0;
 	}
 
@@ -1042,13 +1041,13 @@ static int bridge_exec(struct ast_channel *chan, const char *data)
 	if (chan == current_dest_chan) {
 		ast_channel_unref(current_dest_chan);
 		ast_log(LOG_WARNING, "Unable to bridge channel %s with itself\n", ast_channel_name(chan));
+		pbx_builtin_setvar_helper(chan, "BRIDGERESULT", "LOOP");
 		return 0;
 	}
 
 	if (ast_test_flag(&opts, OPT_DURATION_LIMIT)
 		&& !ast_strlen_zero(opt_args[OPT_ARG_DURATION_LIMIT])
 		&& ast_bridge_timelimit(chan, &bconfig, opt_args[OPT_ARG_DURATION_LIMIT], &calldurationlimit)) {
-		pbx_builtin_setvar_helper(chan, "BRIDGERESULT", "FAILURE");
 		goto done;
 	}
 
@@ -1127,14 +1126,18 @@ static int bridge_exec(struct ast_channel *chan, const char *data)
 	/* Don't keep the channel ref in case it was not already in a bridge. */
 	current_dest_chan = ast_channel_unref(current_dest_chan);
 
-	ast_bridge_join(bridge, chan, NULL, &chan_features, NULL,
+	res = ast_bridge_join(bridge, chan, NULL, &chan_features, NULL,
 		AST_BRIDGE_JOIN_PASS_REFERENCE);
 
 	ast_bridge_features_cleanup(&chan_features);
 
-	/* The bridge has ended, set BRIDGERESULT to SUCCESS. */
-	pbx_builtin_setvar_helper(chan, "BRIDGERESULT", "SUCCESS");
 done:
+	if (res == -1) {
+		pbx_builtin_setvar_helper(chan, "BRIDGERESULT", "FAILURE");
+	} else {
+		pbx_builtin_setvar_helper(chan, "BRIDGERESULT", "SUCCESS");
+	}
+
 	ast_free((char *) bconfig.warning_sound);
 	ast_free((char *) bconfig.end_sound);
 	ast_free((char *) bconfig.start_sound);
@@ -1143,36 +1146,33 @@ done:
 	return 0;
 }
 
-/*!
- * \internal
- * \brief Clean up resources on Asterisk shutdown
- */
-static void features_shutdown(void)
+static int unload_module(void)
 {
-	ast_features_config_shutdown();
+	unload_features_config();
 
 	ast_manager_unregister("Bridge");
 
 	ast_unregister_application(app_bridge);
 
+	return 0;
 }
 
-int ast_features_init(void)
+static int load_module(void)
 {
 	int res;
 
-	res = ast_features_config_init();
-	if (res) {
-		return res;
-	}
+	res = load_features_config();
 	res |= ast_register_application2(app_bridge, bridge_exec, NULL, NULL, NULL);
 	res |= ast_manager_register_xml_core("Bridge", EVENT_FLAG_CALL, action_bridge);
 
-	if (res) {
-		features_shutdown();
-	} else {
-		ast_register_cleanup(features_shutdown);
-	}
-
-	return res;
+	return res ? AST_MODULE_LOAD_FAILURE : AST_MODULE_LOAD_SUCCESS;
 }
+
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "Call Features",
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.reload = reload_features_config,
+	.load_pri = AST_MODPRI_CORE,
+	.requires = "extconfig",
+);

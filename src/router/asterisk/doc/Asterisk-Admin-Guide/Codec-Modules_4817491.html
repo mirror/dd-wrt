@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Codec Modules</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Architecture_4817475.html">Asterisk Architecture</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Types-of-Asterisk-Modules_4817485.html">Types of Asterisk Modules</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Codec Modules
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Malcolm Davenport</span> on Jul 10, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>CODEC modules have file names that look like <strong>codec_xxxxx.so</strong>, such as <strong>codec_alaw.so</strong> and <strong>codec_ulaw.so</strong>.</p><p>CODECs represent mathematical algorithms for encoding (compressing) and decoding (decompression) media streams. Asterisk uses CODEC modules to both send and recieve media (audio and video). Asterisk also uses CODEC modules to convert (or transcode) media streams between different formats.</p><h1 id="CodecModules-ModulesProvidedbyDefault">Modules Provided by Default</h1><p>Asterisk is provided with CODEC modules for the following media types:</p><ul><li>ADPCM, 32kbit/s</li><li>G.711 A-law, 64kbit/s</li><li>G.711 µ-law, 64kbit/s</li><li>G.722, 64kbit/s</li><li>G.726, 32kbit/s</li><li>GSM, 13kbit/s</li><li>LPC-10, 2.4kbit/s</li></ul><h1 id="CodecModules-OtherFormatsandModules">Other Formats and Modules</h1><p>The Asterisk core provides capability for 16 bit Signed Linear PCM, which is what all of the CODECs are encoding from or decoding to. There is another CODEC module, <strong>codec_resample</strong> which allows re-sampling of Signed Linear into different sampling rates 12,16,24,32,44,48,96 or 192 kHz to aid translation.</p><p>Various other CODEC modules will be built and installed if their dependencies are detected during Asterisk compilation.</p><ul><li>If the <a href="Building-and-Installing-DAHDI_4817510.html">DAHDI</a> drivers are detected then <strong>codec_dahdi</strong> will installed.</li><li>If the Speex (<a href="http://www.speex.org" class="external-link" rel="nofollow">www.speex.org</a>) development libraries are detected, <strong>codec_speex</strong> will also be installed.</li><li>If the iLBC (<a href="http://www.ilbcfreeware.org/" class="external-link" rel="nofollow">www.ilbcfreeware.org</a>) development libraries are detected, <strong>codec_ilbc</strong> will also be installed.</li></ul><p>Support for the patent-encumbered G.729A or G.723.1 CODECs is provided by Digium on a commercial basis through software (G.729A) or hardware (G.729A and G.723.1) products. For more information about purchasing licenses or hardware to use the G.729A or G.723.1 CODECs with Asterisk, please see Digium's website.</p><p>Support for Polycom's patent-encumbered but free G.722.1 Siren7 and G.722.1C Siren14 CODECs, or for Skype's SILK CODEC, can be enabled in Asterisk by <a href="http://downloads.digium.com/pub/telephony/" class="external-link" rel="nofollow">downloading the binary CODEC modules</a> from Digium's website.</p>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>On the Asterisk Command Line Interface, use the command &quot;core show translation&quot; to show the translation times between all registered audio formats.</p>
+                    </div>
+    </div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

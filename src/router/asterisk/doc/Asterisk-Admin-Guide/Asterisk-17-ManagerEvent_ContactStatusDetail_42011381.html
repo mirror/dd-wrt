@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 ManagerEvent_ContactStatusDetail</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-AMI-Events_42010707.html">Asterisk 17 AMI Events</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 ManagerEvent_ContactStatusDetail
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17ManagerEvent_ContactStatusDetail-ContactStatusDetail">ContactStatusDetail</h1>
+
+<h3 id="Asterisk17ManagerEvent_ContactStatusDetail-Synopsis">Synopsis</h3>
+
+<p>Provide details about a contact's status.</p>
+
+<h3 id="Asterisk17ManagerEvent_ContactStatusDetail-Description">Description</h3>
+
+<h3 id="Asterisk17ManagerEvent_ContactStatusDetail-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Event: ContactStatusDetail
+AOR: &lt;value&gt;
+URI: &lt;value&gt;
+Status: &lt;value&gt;
+RoundtripUsec: &lt;value&gt;
+EndpointName: &lt;value&gt;
+UserAgent: &lt;value&gt;
+RegExpire: &lt;value&gt;
+ViaAddress: &lt;value&gt;
+CallID: &lt;value&gt;
+ID: &lt;value&gt;
+AuthenticateQualify: &lt;value&gt;
+OutboundProxy: &lt;value&gt;
+Path: &lt;value&gt;
+QualifyFrequency: &lt;value&gt;
+QualifyTimeout: &lt;value&gt;
+</pre>
+</div></div>
+
+<h5 id="Asterisk17ManagerEvent_ContactStatusDetail-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>AOR</code> - The AoR that owns this contact.</li>
+	<li><code>URI</code> - This contact's URI.</li>
+	<li><code>Status</code> - This contact's status.
+	<ul>
+		<li><code>Reachable</code></li>
+		<li><code>Unreachable</code></li>
+		<li><code>NonQualified</code></li>
+		<li><code>Unknown</code></li>
+	</ul>
+	</li>
+	<li><code>RoundtripUsec</code> - The round trip time in microseconds.</li>
+	<li><code>EndpointName</code> - The name of the endpoint associated with this information.</li>
+	<li><code>UserAgent</code> - Content of the User-Agent header in REGISTER request</li>
+	<li><code>RegExpire</code> - Absolute time that this contact is no longer valid after</li>
+	<li><code>ViaAddress</code> - IP address:port of the last Via header in REGISTER request. Will only appear in the event if available.</li>
+	<li><code>CallID</code> - Content of the Call-ID header in REGISTER request. Will only appear in the event if available.</li>
+	<li><code>ID</code> - The sorcery ID of the contact.</li>
+	<li><code>AuthenticateQualify</code> - A boolean indicating whether a qualify should be authenticated.</li>
+	<li><code>OutboundProxy</code> - The contact's outbound proxy.</li>
+	<li><code>Path</code> - The Path header received on the REGISTER.</li>
+	<li><code>QualifyFrequency</code> - The interval in seconds at which the contact will be qualified.</li>
+	<li><code>QualifyTimeout</code> - The elapsed time in decimal seconds after which an OPTIONS message is sent before the contact is considered unavailable.</li>
+</ul>
+
+
+<h3 id="Asterisk17ManagerEvent_ContactStatusDetail-Class">Class</h3>
+
+<p>COMMAND</p>
+<h3 id="Asterisk17ManagerEvent_ContactStatusDetail-SeeAlso">See Also</h3>
+
+<h3 id="Asterisk17ManagerEvent_ContactStatusDetail-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

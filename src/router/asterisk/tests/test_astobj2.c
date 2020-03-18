@@ -30,8 +30,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/utils.h"
 #include "asterisk/module.h"
 #include "asterisk/test.h"
@@ -458,7 +456,7 @@ static int astobj2_test_1_helper(int tst_num, enum test_container_type type, int
 			test_sort_cb, test_cmp_cb, "test");
 		break;
 	}
-	c2 = ao2_t_container_alloc(1, NULL, NULL, "test");
+	c2 = ao2_t_container_alloc_list(AO2_ALLOC_OPT_LOCK_MUTEX, 0, NULL, NULL, "test");
 
 	if (!c1 || !c2) {
 		ast_test_status_update(test, "ao2_container_alloc failed.\n");
@@ -714,9 +712,9 @@ AST_TEST_DEFINE(astobj2_test_2)
 		break;
 	}
 
-	c = ao2_container_alloc(1, NULL, test_cmp_cb);
+	c = ao2_container_alloc_list(AO2_ALLOC_OPT_LOCK_MUTEX, 0, NULL, test_cmp_cb);
 	if (!c) {
-		ast_test_status_update(test, "ao2_container_alloc failed.\n");
+		ast_test_status_update(test, "ao2_container_alloc_list failed.\n");
 		res = AST_TEST_FAIL;
 		goto cleanup;
 	}
@@ -1996,10 +1994,15 @@ static enum ast_test_result_state testloop(struct ast_test *test,
 {
 	int res = AST_TEST_PASS;
 	int i;
+	int reportcount = iterations / 5;
 	struct timeval start;
 
 	start = ast_tvnow();
 	for (i = 1 ; i <= iterations && res == AST_TEST_PASS ; i++) {
+		if (i % reportcount == 0 && i != iterations) {
+			ast_test_status_update(test, "%5.2fK traversals, %9s\n",
+				i / 1000.0, test_container2str(type));
+		}
 		res = test_performance(test, type, copt);
 	}
 	ast_test_status_update(test, "%5.2fK traversals, %9s : %5lu ms\n",

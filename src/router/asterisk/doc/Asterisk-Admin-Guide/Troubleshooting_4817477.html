@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Troubleshooting</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Troubleshooting
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Rusty Newton</span> on Mar 05, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                        <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>Under Construction</p>
+                    </div>
+    </div>
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>This page will be reworked to become a top level page for troubleshooting articles, including a page for overall troubleshooting approach and specific sub-pages on troubleshooting certain sub-systems.</p>
+                    </div>
+    </div>
+<p> </p><p> </p><p>If you're able to get the command-line examples above working, feel free to skip this section. Otherwise, let's look at troubleshooting connections to the Asterisk CLI.</p><p>The most common problem that people encounter when learning the Asterisk command-line interface is that sometimes they're not able to connect to the Asterisk service running in the background. For example, let's say that Fred starts the Asterisk service, but then isn't able to connect to it with the CLI:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server ~]# service asterisk start
+Starting asterisk:                                         [  OK  ]
+[root@server ~]# asterisk -r
+Asterisk version, Copyright (C) 1999 - 2010 Digium, Inc. and others.
+Created by Mark Spencer &lt;markster@digium.com&gt;
+=========================================================================
+Unable to connect to remote asterisk (does /var/run/asterisk/asterisk.ctl exist?)
+</pre>
+</div></div><p>What does this mean? It most likely means that Asterisk did not remain running between the time that the service was started and the time Fred tried to connect to the CLI (even if it was only a matter of a few seconds.) This could be caused by a variety of things, but the most common is a broken configuration file.</p><p>To diagnose Asterisk start-up problems, we'll start Asterisk in a special mode, known as <strong>console</strong> mode. In this mode, Asterisk does not run as a background service or daemon, but instead runs directly in the console. To start Asterisk in console mode, pass the <strong>-c</strong> parameter to the <strong>asterisk</strong> application. In this case, we also want to turn up the verbosity, so we can see any error messages that might indicate why Asterisk is unable to start.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server ~]# asterisk -vvvc
+Asterisk version, Copyright (C) 1999 - 2010 Digium, Inc. and others.
+Created by Mark Spencer &lt;markster@digium.com&gt;
+Asterisk comes with ABSOLUTELY NO WARRANTY; type &#39;core show warranty&#39; for details.
+This is free software, with components licensed under the GNU General Public
+License version 2 and other licenses; you are welcome to redistribute it under
+certain conditions. Type &#39;core show license&#39; for details.
+=========================================================================
+  == Parsing &#39;/etc/asterisk/asterisk.conf&#39;:   == Found
+  == Parsing &#39;/etc/asterisk/extconfig.conf&#39;:   == Found
+  == Parsing &#39;/etc/asterisk/logger.conf&#39;:   == Found
+  == Parsing &#39;/etc/asterisk/asterisk.conf&#39;:   == Found
+  Asterisk Dynamic Loader Starting:
+  == Parsing &#39;/etc/asterisk/modules.conf&#39;:   == Found
+...
+</pre>
+</div></div><p>Carefully look for any errors or warnings that are printed to the CLI, and you should have enough information to solve whatever problem is keeping Asterisk from starting up.</p>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Running Asterisk in Console Mode</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>We don't recommend you use Asterisk in console mode on a production system, but simply use it for debugging, especially when debugging start-up problems. On production systems, run Asterisk as a background service.</p>
+                    </div>
+    </div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

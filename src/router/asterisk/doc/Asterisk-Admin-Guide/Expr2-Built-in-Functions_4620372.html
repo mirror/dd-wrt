@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Expr2 Built-in Functions</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Expressions_4620364.html">Expressions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Expr2 Built-in Functions
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Rusty Newton</span> on Feb 12, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>In 1.6 and above, we upgraded the $[] expressions to handle floating point numbers. Because of this, folks counting on integer behavior would be disrupted. To make the same results possible, some rounding and integer truncation functions have been added to the core of the Expr2 parser. Indeed, dialplan functions can be called from $[..] expressions without the ${...} operators. The only trouble might be in the fact that the arguments to these functions must be specified with a comma. If you try to call the MATH function, for example, and try to say 3 + MATH(7*8), the expression parser will evaluate 7*8 for you into 56, and the MATH function will most likely complain that its input doesn't make any sense.</p><p>We also provide access to most of the floating point functions in the C library. (but not all of them).</p><p>While we don't expect someone to want to do Fourier analysis in the dialplan, we don't want to preclude it, either.</p><p>Here is a list of the 'builtin' functions in Expr2. All other dialplan functions are available by simply calling them (read-only). In other words, you don't need to surround function calls in $[...] expressions with ${...}. Don't jump to conclusions, though! - you still need to wrap variable names in curly braces!</p><ul><li>COS(x) x is in radians. Results vary from -1 to 1.</li><li>SIN(x) x is in radians. Results vary from -1 to 1.</li><li>TAN(x) x is in radians.</li><li>ACOS(x) x should be a value between -1 and 1.</li><li>ASIN(x) x should be a value between -1 and 1.</li><li>ATAN(x) returns the arc tangent in radians; between -PI/2 and PI/2.</li><li>ATAN2(x,y) returns a result resembling y/x, except that the signs of both args are used to determine the quadrant of the result. Its result is in radians, between -PI and PI.</li><li>POW(x,y) returns the value of x raised to the power of y.</li><li>SQRT(x) returns the square root of x.</li><li>FLOOR(x) rounds x down to the nearest integer.</li><li>CEIL(x) rounds x up to the nearest integer.</li><li>ROUND(x) rounds x to the nearest integer, but round halfway cases away from zero.</li><li>RINT(x) rounds x to the nearest integer, rounding halfway cases to the nearest even integer.</li><li>TRUNC(x) rounds x to the nearest integer not larger in absolute value.</li><li>REMAINDER(x,y) computes the remainder of dividing x by y. The return value is x - n*y, where n is the value x/y, rounded to the nearest integer. If this quotient is 1/2, it is rounded to the nearest even number.</li><li>EXP(x) returns e to the x power.</li><li>EXP2(x) returns 2 to the x power.</li><li>LOG(x) returns the natural logarithm of x.</li><li>LOG2(x) returns the base 2 log of x.</li><li>LOG10(x) returns the base 10 log of x.</li></ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

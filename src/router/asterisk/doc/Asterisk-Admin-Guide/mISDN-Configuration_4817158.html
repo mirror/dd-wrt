@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : mISDN Configuration</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="mISDN_4817147.html">mISDN</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : mISDN Configuration
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>First of all you must configure the mISDN drivers, please follow the instructions in the mISDN package to do that, the main config file and config script is:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>/etc/init.d/misdn-init and /etc/misdn-init.conf
+</pre>
+</div></div>
+
+<p>Now you will want to configure the misdn.conf file which resides in the Asterisk config directory (normally /etc/asterisk).</p>
+
+<h5 id="mISDNConfiguration-misdn.conf:[general]subsection">misdn.conf: [general] subsection</h5>
+<p>The misdn.conf file contains a &quot;general&quot; subsection, and user subsections which contain misdn port settings and different Asterisk contexts. <br />
+In the general subsection you can set options that are not directly port related. There is for example the very important debug variable which you can set from the Asterisk cli (command line interface) or in this configuration file, bigger numbers will lead to more debug output. There's also a trace file option, which takes a path+filename where debug output is written to.</p>
+
+<h5 id="mISDNConfiguration-misdn.conf:[default]subsection">misdn.conf: [default] subsection</h5>
+<p>The default subsection is another special subsection which can contain all the options available in the user/port subsections. The user/port subsections inherit their parameters from the default subsection.</p>
+
+<h5 id="mISDNConfiguration-misdn.conf:user/portsubsections">misdn.conf: user/port subsections</h5>
+<p>The user subsections have names which are unequal to &quot;general&quot;. Those subsections contain the ports variable which mean the mISDN Ports. Here you can add multiple ports, comma separated. </p>
+
+<p>Especially for TE-Mode Ports there is a msns option. This option tells the chan_misdn driver to listen for incoming calls with the given msns, you can insert a '' as single msn, which leads to getting every incoming call. If you want to share on PMP TE S0 with Asterisk and a phone or ISDN card you should insert here the msns which you assign to Asterisk. Finally a context variable resides in the user subsections, which tells chan_misdn where to send incoming calls to in the Asterisk dial plan (extension.conf).*</p>
+
+<h5 id="mISDNConfiguration-DialandOptionsString">Dial and Options String</h5>
+<p>The dial string of chan_misdn got more complex, because we added more features, so the generic dial string looks like:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+mISDN/&lt;port&gt;[:bchannel]|g:&lt;group&gt;/&lt;extension&gt;[/&lt;OPTIONSSTRING&gt;]
+</pre>
+</div></div>
+
+<p>The Optionsstring looks Like:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+ :&lt;optchar&gt;&lt;optarg&gt;:&lt;optchar&gt;&lt;optarg&gt;...
+</pre>
+</div></div>
+
+<p>The &quot;:&quot; character is the delimiter. The available options are: </p>
+
+<ul>
+	<li>a - Have Asterisk detect DTMF tones on called channel</li>
+	<li>c - Make crypted outgoing call, optarg is keyindex</li>
+	<li>d - Send display text to called phone, text is the optarg</li>
+	<li>e - Perform echo cancelation on this channel, takes taps as optarg (32,64,128,256)</li>
+	<li>e! - Disable echo cancelation on this channel</li>
+	<li>f - Enable fax detection</li>
+	<li>h - Make digital outgoing call</li>
+	<li>h1 - Make HDLC mode digital outgoing call</li>
+	<li>i - Ignore detected DTMF tones, don't signal them to Asterisk, they will be transported inband.</li>
+	<li>jb - Set jitter buffer length, optarg is length</li>
+	<li>jt - Set jitter buffer upper threshold, optarg is threshold</li>
+	<li>jn - Disable jitter buffer</li>
+	<li>n - Disable mISDN DSP on channel. Disables: echo cancel, DTMF detection, and volume control.</li>
+	<li>p - Caller ID presentation, optarg is either 'allowed' or 'restricted'</li>
+	<li>s - Send Non-inband DTMF as inband</li>
+	<li>vr - Rx gain control, optarg is gain</li>
+	<li>vt - Tx gain control, optarg is gain</li>
+</ul>
+
+
+<p>chan_misdn registers a new dial plan application &quot;misdn_set_opt&quot; when loaded. This application takes the Optionsstring as argument. The Syntax is: </p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+misdn_set_opt(&lt;OPTIONSSTRING&gt;) 
+</pre>
+</div></div>
+
+<p>When you set options in the dialstring, the options are set in the external channel. When you set options with misdn_set_opt, they are set in the current incoming channel. So if you like to use static encryption, the scenario looks as follows: </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Phone1 --&gt; * Box 1 --&gt; PSTN_TE PSTN_TE --&gt; * Box 2 --&gt; Phone2 
+</pre>
+</div></div>
+
+<p>The encryption must be done on the PSTN sides, so the dialplan on the boxes are:</p>
+
+<ul>
+	<li>Box 1:</li>
+</ul>
+
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+exten =&gt; _${CRYPT_PREFIX}X.,1,Dial(mISDN/g:outbound/:c1)
+</pre>
+</div></div>
+
+<ul>
+	<li>Box 2:</li>
+</ul>
+
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+exten =&gt; ${CRYPT_MSN},1,misdn_set_opt(:c1)
+exten =&gt; ${CRYPT_MSN},2,dial(${PHONE2})
+</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

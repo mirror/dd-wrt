@@ -21,7 +21,7 @@
  * \brief JSON abstraction layer.
  *
  * This is a very thin wrapper around the Jansson API. For more details on it,
- * see its docs at http://www.digip.org/jansson/doc/2.4/apiref.html.
+ * see its docs at http://www.digip.org/jansson/doc/2.11/apiref.html.
  *
  * \author David M. Lee, II <dlee@digium.com>
  */
@@ -32,8 +32,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/json.h"
 #include "asterisk/localtime.h"
@@ -46,148 +44,14 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include <jansson.h>
 #include <time.h>
 
-/*! \brief Magic number, for safety checks. */
-#define JSON_MAGIC 0x1541992
-
-/*! \brief Internal structure for allocated memory blocks */
-struct json_mem {
-	/*! Magic number, for safety checks */
-	uint32_t magic;
-	/*! Mutext for locking this memory block */
-	ast_mutex_t mutex;
-	/*! Linked list pointer for the free list */
-	AST_LIST_ENTRY(json_mem) list;
-	/*! Data section of the allocation; void pointer for proper alignment */
-	void *data[];
-};
-
-/*! \brief Free a \ref json_mem block. */
-static void json_mem_free(struct json_mem *mem)
-{
-	mem->magic = 0;
-	ast_mutex_destroy(&mem->mutex);
-	ast_free(mem);
-}
-
-/*!
- * \brief Get the \ref json_mem block for a pointer allocated via
- * ast_json_malloc().
- *
- * This function properly handles Jansson singletons (null, true, false), and
- * \c NULL.
- *
- * \param p Pointer, usually to a \c json_t or \ref ast_json.
- * \return \ref json_mem object with extra allocation info.
- */
-static inline struct json_mem *to_json_mem(void *p)
-{
-	struct json_mem *mem;
-	/* Avoid ref'ing the singleton values */
-	if (p == NULL || p == json_null() || p == json_true() ||
-		p == json_false()) {
-		return NULL;
-	}
-	mem = (struct json_mem *)((char *) (p) - sizeof(*mem));
-	ast_assert(mem->magic == JSON_MAGIC);
-	return mem;
-}
-
-/*!
- * \brief Lock an \ref ast_json instance.
- *
- * If \a json is an immutable singleton (null, true, false), this function
- * safely ignores it and returns \c NULL. Otherwise, \a json must have been
- * allocates using ast_json_malloc().
- *
- * \param json JSON instance to lock.
- * \return \ref Corresponding \ref json_mem block.
- * \return \c NULL if \a json was not allocated.
- */
-static struct json_mem *json_mem_lock(struct ast_json *json)
-{
-	struct json_mem *mem = to_json_mem(json);
-	if (!mem) {
-		return NULL;
-	}
-	ast_mutex_lock(&mem->mutex);
-	return mem;
-}
-
-/*!
- * \brief Unlock a \ref json_mem instance.
- *
- * \param mem \ref json_mem, usually returned from json_mem_lock().
- */
-static void json_mem_unlock(struct json_mem *mem)
-{
-	if (!mem) {
-		return;
-	}
-	ast_mutex_unlock(&mem->mutex);
-}
-
-/*!
- * \brief Scoped lock for a \ref ast_json instance.
- *
- * \param json JSON instance to lock.
- */
-#define SCOPED_JSON_LOCK(json)				\
-	RAII_VAR(struct json_mem *, __mem_ ## __LINE__, \
-		json_mem_lock(json), json_mem_unlock)
-
 void *ast_json_malloc(size_t size)
 {
-	struct json_mem *mem = ast_malloc(size + sizeof(*mem));
-	if (!mem) {
-		return NULL;
-	}
-	mem->magic = JSON_MAGIC;
-	ast_mutex_init(&mem->mutex);
-	return mem->data;
-}
-
-AST_THREADSTORAGE(json_free_list_ts);
-
-/*!
- * \brief Struct for a linked list of \ref json_mem.
- */
-AST_LIST_HEAD_NOLOCK(json_mem_list, json_mem);
-
-/*!
- * \brief Thread local list of \ref json_mem blocks to free at the end of an
- * unref.
- */
-static struct json_mem_list *json_free_list(void)
-{
-	return ast_threadstorage_get(&json_free_list_ts,
-		sizeof(struct json_mem_list));
+	return ast_malloc(size);
 }
 
 void ast_json_free(void *p)
 {
-	struct json_mem *mem;
-	struct json_mem_list *free_list;
-	mem = to_json_mem(p);
-
-	if (!mem) {
-		return;
-	}
-
-	/* Since the unref is holding a lock in mem, we can't free it
-	 * immediately. Store it off on a thread local list to be freed by
-	 * ast_json_unref().
-	 */
-	free_list = json_free_list();
-	if (!free_list) {
-		ast_log(LOG_ERROR, "Error allocating free list\n");
-		ast_assert(0);
-		/* It's not ideal to free the memory immediately, but that's the
-		 * best we can do if the threadlocal allocation fails */
-		json_mem_free(mem);
-		return;
-	}
-
-	AST_LIST_INSERT_HEAD(free_list, mem, list);
+	ast_free(p);
 }
 
 void ast_json_set_alloc_funcs(void *(*malloc_fn)(size_t), void (*free_fn)(void*))
@@ -202,38 +66,13 @@ void ast_json_reset_alloc_funcs(void)
 
 struct ast_json *ast_json_ref(struct ast_json *json)
 {
-	/* Jansson refcounting is non-atomic; lock it. */
-	SCOPED_JSON_LOCK(json);
 	json_incref((json_t *)json);
 	return json;
 }
 
 void ast_json_unref(struct ast_json *json)
 {
-	struct json_mem_list *free_list;
-	struct json_mem *mem;
-
-	if (!json) {
-		return;
-	}
-
-	/* Jansson refcounting is non-atomic; lock it. */
-	{
-		SCOPED_JSON_LOCK(json);
-
-		json_decref((json_t *) json);
-	}
-
-	/* Now free any objects that were ast_json_free()'s while the lock was
-	 * held */
-	free_list = json_free_list();
-	if (!free_list) {
-		return;
-	}
-
-	while ((mem = AST_LIST_REMOVE_HEAD(free_list, list))) {
-		json_mem_free(mem);
-	}
+	json_decref((json_t *) json);
 }
 
 enum ast_json_type ast_json_typeof(const struct ast_json *json)
@@ -403,11 +242,7 @@ struct ast_json *ast_json_false(void)
 
 struct ast_json *ast_json_boolean(int value)
 {
-#if JANSSON_VERSION_HEX >= 0x020400
 	return (struct ast_json *)json_boolean(value);
-#else
-	return value ? ast_json_true() : ast_json_false();
-#endif
 }
 
 struct ast_json *ast_json_null(void)
@@ -457,16 +292,25 @@ struct ast_json *ast_json_stringf(const char *format, ...)
 
 struct ast_json *ast_json_vstringf(const char *format, va_list args)
 {
-	char *str = NULL;
 	json_t *ret = NULL;
 
 	if (format) {
+		/* json_pack was not introduced until jansson-2.0 so Asterisk could never
+		 * be compiled against older versions.  The version check can never match
+		 * anything older than 2.12. */
+#if defined(HAVE_JANSSON_BUNDLED) || JANSSON_MAJOR_VERSION > 2 || JANSSON_MINOR_VERSION > 11
+		ret = json_vsprintf(format, args);
+#else
+		char *str = NULL;
 		int err = ast_vasprintf(&str, format, args);
-		if (err > 0) {
+
+		if (err >= 0) {
 			ret = json_string(str);
 			ast_free(str);
 		}
+#endif
 	}
+
 	return (struct ast_json *)ret;
 }
 
@@ -575,57 +419,11 @@ int ast_json_object_update(struct ast_json *object, struct ast_json *other)
 }
 int ast_json_object_update_existing(struct ast_json *object, struct ast_json *other)
 {
-#if JANSSON_VERSION_HEX >= 0x020300
 	return json_object_update_existing((json_t *)object, (json_t *)other);
-#else
-	struct ast_json_iter *iter = ast_json_object_iter(other);
-	int ret = 0;
-
-	if (object == NULL || other == NULL) {
-		return -1;
-	}
-
-	while (iter != NULL && ret == 0) {
-		const char *key = ast_json_object_iter_key(iter);
-
-		if (ast_json_object_get(object, key) != NULL) {
-			struct ast_json *value = ast_json_object_iter_value(iter);
-
-			if (!value || ast_json_object_set(object, key, ast_json_ref(value))) {
-				ret = -1;
-			}
-		}
-		iter = ast_json_object_iter_next(other, iter);
-	}
-	return ret;
-#endif
 }
 int ast_json_object_update_missing(struct ast_json *object, struct ast_json *other)
 {
-#if JANSSON_VERSION_HEX >= 0x020300
 	return json_object_update_missing((json_t *)object, (json_t *)other);
-#else
-	struct ast_json_iter *iter = ast_json_object_iter(other);
-	int ret = 0;
-
-	if (object == NULL || other == NULL) {
-		return -1;
-	}
-
-	while (iter != NULL && ret == 0) {
-		const char *key = ast_json_object_iter_key(iter);
-
-		if (ast_json_object_get(object, key) == NULL) {
-			struct ast_json *value = ast_json_object_iter_value(iter);
-
-			if (!value || ast_json_object_set(object, key, ast_json_ref(value))) {
-				ret = -1;
-			}
-		}
-		iter = ast_json_object_iter_next(other, iter);
-	}
-	return ret;
-#endif
 }
 
 struct ast_json_iter *ast_json_object_iter(struct ast_json *object)
@@ -664,10 +462,6 @@ static size_t dump_flags(enum ast_json_encoding_format format)
 
 char *ast_json_dump_string_format(struct ast_json *root, enum ast_json_encoding_format format)
 {
-	/* Jansson's json_dump*, even though it's a read operation, isn't
-	 * thread safe for concurrent reads. Locking is necessary.
-	 * See http://www.digip.org/jansson/doc/2.4/portability.html#thread-safety. */
-	SCOPED_JSON_LOCK(root);
 	return json_dumps((json_t *)root, dump_flags(format));
 }
 
@@ -704,20 +498,12 @@ static int write_to_ast_str(const char *buffer, size_t size, void *data)
 
 int ast_json_dump_str_format(struct ast_json *root, struct ast_str **dst, enum ast_json_encoding_format format)
 {
-	/* Jansson's json_dump*, even though it's a read operation, isn't
-	 * thread safe for concurrent reads. Locking is necessary.
-	 * See http://www.digip.org/jansson/doc/2.4/portability.html#thread-safety. */
-	SCOPED_JSON_LOCK(root);
 	return json_dump_callback((json_t *)root, write_to_ast_str, dst, dump_flags(format));
 }
 
 
 int ast_json_dump_file_format(struct ast_json *root, FILE *output, enum ast_json_encoding_format format)
 {
-	/* Jansson's json_dump*, even though it's a read operation, isn't
-	 * thread safe for concurrent reads. Locking is necessary.
-	 * See http://www.digip.org/jansson/doc/2.4/portability.html#thread-safety. */
-	SCOPED_JSON_LOCK(root);
 	if (!root || !output) {
 		return -1;
 	}
@@ -725,10 +511,6 @@ int ast_json_dump_file_format(struct ast_json *root, FILE *output, enum ast_json
 }
 int ast_json_dump_new_file_format(struct ast_json *root, const char *path, enum ast_json_encoding_format format)
 {
-	/* Jansson's json_dump*, even though it's a read operation, isn't
-	 * thread safe for concurrent reads. Locking is necessary.
-	 * See http://www.digip.org/jansson/doc/2.4/portability.html#thread-safety. */
-	SCOPED_JSON_LOCK(root);
 	if (!root || !path) {
 		return -1;
 	}
@@ -825,6 +607,7 @@ struct ast_json *ast_json_vpack(char const *format, va_list ap)
 			ast_log(LOG_ERROR,
 				"Error building JSON from '%s': %s.\n",
 				format, error.text);
+			ast_log_backtrace();
 		}
 	}
 	return r;
@@ -846,12 +629,21 @@ struct ast_json *ast_json_name_number(const char *name, const char *number)
 		"number", AST_JSON_UTF8_VALIDATE(number));
 }
 
+struct ast_json *ast_json_dialplan_cep_app(
+		const char *context, const char *exten, int priority, const char *app_name, const char *app_data)
+{
+	return ast_json_pack("{s: s?, s: s?, s: o, s: s?, s: s?}",
+		"context", context,
+		"exten", exten,
+		"priority", priority != -1 ? ast_json_integer_create(priority) : ast_json_null(),
+		"app_name", app_name,
+		"app_data", app_data
+		);
+}
+
 struct ast_json *ast_json_dialplan_cep(const char *context, const char *exten, int priority)
 {
-	return ast_json_pack("{s: o, s: o, s: o}",
-		"context", context ? ast_json_string_create(context) : ast_json_null(),
-		"exten", exten ? ast_json_string_create(exten) : ast_json_null(),
-		"priority", priority != -1 ? ast_json_integer_create(priority) : ast_json_null());
+	return ast_json_dialplan_cep_app(context, exten, priority, "", "");
 }
 
 struct ast_json *ast_json_timeval(const struct timeval tv, const char *zone)
@@ -910,10 +702,28 @@ struct ast_json *ast_json_ipaddr(const struct ast_sockaddr *addr, enum ast_trans
 	return ast_json_string_create(ast_str_buffer(string));
 }
 
-void ast_json_init(void)
+int ast_json_init(void)
 {
+	json_t *version_check;
+
 	/* Setup to use Asterisk custom allocators */
 	ast_json_reset_alloc_funcs();
+
+	/* We depend on functionality of jansson-2.11 but don't actually use
+	 * any symbols.  If we link at runtime to less than 2.11 this json_pack
+	 * will return NULL. */
+	version_check = json_pack("{s: o?, s: o*}",
+		"JSON", NULL,
+		"Bourne", NULL);
+	if (!version_check) {
+		ast_log(LOG_ERROR, "There was a problem finding jansson 2.11 runtime libraries.\n"
+			"Please rebuild Asterisk using ./configure --with-jansson-bundled.\n");
+		return -1;
+	}
+
+	json_decref(version_check);
+
+	return 0;
 }
 
 static void json_payload_destructor(void *obj)
@@ -973,42 +783,21 @@ static struct ast_json *json_party_subaddress(struct ast_party_subaddress *subad
 
 struct ast_json *ast_json_party_id(struct ast_party_id *party)
 {
-	RAII_VAR(struct ast_json *, json_party_id, NULL, ast_json_unref);
-	int pres;
+	int pres = ast_party_id_presentation(party);
 
 	/* Combined party presentation */
-	pres = ast_party_id_presentation(party);
-	json_party_id = ast_json_pack("{s: i, s: s}",
+	return ast_json_pack("{s: i, s: s, s: o*, s: o*, s: o*}",
 		"presentation", pres,
-		"presentation_txt", ast_describe_caller_presentation(pres));
-	if (!json_party_id) {
-		return NULL;
-	}
-
-	/* Party number */
-	if (party->number.valid
-		&& ast_json_object_set(json_party_id, "number", json_party_number(&party->number))) {
-		return NULL;
-	}
-
-	/* Party name */
-	if (party->name.valid
-		&& ast_json_object_set(json_party_id, "name", json_party_name(&party->name))) {
-		return NULL;
-	}
-
-	/* Party subaddress */
-	if (party->subaddress.valid
-		&& ast_json_object_set(json_party_id, "subaddress", json_party_subaddress(&party->subaddress))) {
-		return NULL;
-	}
-
-	return ast_json_ref(json_party_id);
+		"presentation_txt", ast_describe_caller_presentation(pres),
+		"number", json_party_number(&party->number),
+		"name", json_party_name(&party->name),
+		"subaddress", json_party_subaddress(&party->subaddress));
 }
 
 enum ast_json_to_ast_vars_code ast_json_to_ast_variables(struct ast_json *json_variables, struct ast_variable **variables)
 {
 	struct ast_json_iter *it_json_var;
+	struct ast_variable *tail = NULL;
 
 	*variables = NULL;
 
@@ -1045,8 +834,21 @@ enum ast_json_to_ast_vars_code ast_json_to_ast_variables(struct ast_json *json_v
 			return AST_JSON_TO_AST_VARS_CODE_OOM;
 		}
 
-		ast_variable_list_append(variables, new_var);
+		tail = ast_variable_list_append_hint(variables, tail, new_var);
 	}
 
 	return AST_JSON_TO_AST_VARS_CODE_SUCCESS;
+}
+
+struct ast_json *ast_json_channel_vars(struct varshead *channelvars)
+{
+	struct ast_json *ret;
+	struct ast_var_t *var;
+
+	ret = ast_json_object_create();
+	AST_LIST_TRAVERSE(channelvars, var, entries) {
+		ast_json_object_set(ret, var->name, ast_json_string_create(var->value));
+	}
+
+	return ret;
 }

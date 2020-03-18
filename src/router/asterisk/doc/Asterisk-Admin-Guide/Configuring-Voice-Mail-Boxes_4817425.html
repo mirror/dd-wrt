@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Configuring Voice Mail Boxes</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Basic-PBX-Functionality_4817469.html">Basic PBX Functionality</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Adding-Voice-Mail-to-Dialplan-Extensions_4817431.html">Adding Voice Mail to Dialplan Extensions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Configuring Voice Mail Boxes
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Rod Montgomery</span> on May 05, 2011
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Now that we've covered the two main voice mail applications, let's look at the voicemail configuration. Voice mail options and mailboxes are configured in the <strong>voicemail.conf</strong> configuration file. This file has three major sections:</p>
+
+<h4 id="ConfiguringVoiceMailBoxes-The[general]section">The [general] section</h4>
+
+<p>Near the top of <strong>voicemail.conf</strong>, you'll find the <strong>[general]</strong> section. This section of the configuration file controls the general aspects of the voicemail system, such as the maximum number of messages per mailbox, the maximum length of a voicemail message, and so forth. Feel free to look at the sample <strong>voicemail.conf</strong> file for more details about the various settings.</p>
+
+<h4 id="ConfiguringVoiceMailBoxes-The[zonemessages]section">The [zonemessages] section</h4>
+
+<p>The <strong>[zonemessages]</strong> section is used to define various timezones around the world. Each mailbox can be assigned to a particular time zone, so that times and dates are announced relative to their local time. The time zones specified in this section also control the way in which times and dates are announced, such as reading the time of day in 24-hour format.</p>
+
+<h4 id="ConfiguringVoiceMailBoxes-VoiceMailContexts">Voice Mail Contexts</h4>
+
+<p>After the <strong>[general]</strong> and <strong>[zonemessages]</strong> sections, any other bracketed section is a voice mail context. Within each context, you can define one or more mailbox. To define a mailbox, we set a mailbox number, a PIN, the mailbox owner's name, the primary email address, a secondary email address, and a list of mailbox options (separated by the pipe character), as shown below:</p>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">mailbox=&gt;pin,full name,email address,short email address,mailbox options
+</pre>
+</div></div>
+<p>By way of explanation, the short email address is an email address that will receive shorter email notifications suitable for mobile devices such as cell phones and pagers. It will never receive attachments.</p>
+
+<p>To add voice mail capabilities to extensions <strong>6001</strong> and <strong>6002</strong>, add these three lines to the bottom of <strong>voicemail.conf</strong>.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">[vm-demo]
+6001 =&gt; 8762,Alice Jones,alice@example.com,alice2@example.com,attach=no|tz=central|maxmsg=10
+6002 =&gt; 9271,Bob Smith,bob@example.com,bob2@example.com,attach=yes|tz=eastern</pre>
+</div></div>
+<p>Now that we've defined the mailboxes, we can go into the Asterisk CLI and type <strong>voicemail reload</strong> to get Asterisk to reload the <strong>voicemail.conf</strong> file. We can also verify that the new mailboxes have been created by typing <strong>voicemail show users</strong>.</p>
+
+<p>﻿</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>server*CLI&gt; voicemail reload
+Reloading voicemail configuration...
+server*CLI&gt; voicemail show users
+Context    Mbox  User                      Zone       NewMsg
+default    general New User                                0
+default    1234  Example Mailbox                           0
+other      1234  Company2 User                             0
+vm-demo    6001  Alice Jones               central         0
+vm-demo    6002  Bob Smith                 eastern         0
+5 voicemail users configured.</pre>
+</div></div>
+<p>Now that we have mailboxes defined, let's add a priority to extensions <strong>6001</strong> and <strong>6002</strong> which will allow callers to leave voice mail in their respective mailboxes. We'll also add an extension <strong>6500</strong> to allow Alice and Bob to check their voicemail messages. Please modify your <strong>[users]</strong> context in <strong>extensions.conf</strong> to look like the following:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">[users]
+exten =&gt; 6000,1,Answer(500)
+exten =&gt; 6000,n,Playback(hello-world)
+exten =&gt; 6000,n,Hangup()
+
+exten =&gt; 6001,1,Dial(SIP/demo-alice,20)
+exten =&gt; 6001,n,VoiceMail(6001@vm-demo,u)
+
+exten =&gt; 6002,1,Dial(SIP/demo-bob,20)
+exten =&gt; 6002,n,VoiceMail(6002@vm-demo,u)
+
+exten =&gt; 6500,1,Answer(500)
+exten =&gt; 6500,n,VoiceMailMain(@vm-demo)</pre>
+</div></div>
+<p>Reload the dialplan by typing <strong>dialplan reload</strong> at the Asterisk CLI. You can then test the voice mail system by dialing from one phone to the other and waiting twenty seconds. You should then be connected to the voicemail system, where you can leave a message. You should also be able to dial extension <strong>6500</strong> to retrieve the voicemail message. When prompted, enter the mailbox number and PIN number of the mailbox.</p>
+
+<p>While in the <strong>VoiceMainMain()</strong> application, you can also record the mailbox owner's name, unavailable greeting, and busy greeting by pressing 0 at the voicemail menu. Please record at least the name greeting for both Alice and Bob before continuing on to the next section.</p>
+
+<p>Go into lots of detail about the voicemail interface? How to move between messages, move between folders, forward messages, etc?</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -21,9 +21,21 @@ rtpend=20000
 ; rtcpinterval = 5000 	; Milliseconds between rtcp reports
 			;(min 500, max 60000, default 5000)
 ;
-; Enable strict RTP protection. This will drop RTP packets that
-; do not come from the source of the RTP stream. This option is
-; enabled by default.
+; Enable strict RTP protection.  This will drop RTP packets that do not come
+; from the recoginized source of the RTP stream.  Strict RTP qualifies RTP
+; packet stream sources before accepting them upon initial connection and
+; when the connection is renegotiated (e.g., transfers and direct media).
+; Initial connection and renegotiation starts a learning mode to qualify
+; stream source addresses.  Once Asterisk has recognized a stream it will
+; allow other streams to qualify and replace the current stream for 5
+; seconds after starting learning mode.  Once learning mode completes the
+; current stream is locked in and cannot change until the next
+; renegotiation.
+; Valid options are "no" to disable strictrtp, "yes" to enable strictrtp,
+; and "seqno", which does the same thing as strictrtp=yes, but only checks
+; to make sure the sequence number is correct rather than checking the time
+; interval as well.
+; This option is enabled by default.
 ; strictrtp=yes
 ;
 ; Number of packets containing consecutive sequence values needed
@@ -33,8 +45,8 @@ rtpend=20000
 ; connected. This option is set to 4 by default.
 ; probation=8
 ;
-; Whether to enable or disable ICE support. This option is disabled by default.
-; icesupport=true
+; Whether to enable or disable ICE support. This option is enabled by default.
+; icesupport=false
 ;
 ; Hostname or address for the STUN server used when determining the external
 ; IP address and port an RTP session can be reached at. The port number is
@@ -90,6 +102,10 @@ rtpend=20000
 ;
 ; ice_blacklist =
 ;
+; The MTU to use for DTLS packet fragmentation. This option is set to 1200
+; by default. The minimum MTU is 256.
+; dtls_mtu = 1200
+;
 [ice_host_candidates]
 ;
 ; When Asterisk is behind a static one-to-one NAT and ICE is in use, ICE will
@@ -106,12 +122,18 @@ rtpend=20000
 ;
 ; The format for these overrides is:
 ;
-;    <local address> => <advertised address>
+;    <local address> => <advertised address>,[include_local_address]
 ;
 ; The following will replace 192.168.1.10 with 1.2.3.4 during ICE
 ; negotiation:
 ;
 ;192.168.1.10 => 1.2.3.4
+;
+; The following will include BOTH 192.168.1.10 and 1.2.3.4 during ICE
+; negotiation instead of replacing 192.168.1.10.  This can make it easier
+; to serve both local and remote clients.
+;
+;192.168.1.10 => 1.2.3.4,include_local_address
 ;
 ; You can define an override for more than 1 interface if you have a multihomed
 ; server. Any local interface that is not matched will be passed through

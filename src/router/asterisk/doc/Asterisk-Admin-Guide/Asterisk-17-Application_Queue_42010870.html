@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_Queue</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_Queue
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_Queue-Queue()">Queue()</h1>
+
+<h3 id="Asterisk17Application_Queue-Synopsis">Synopsis</h3>
+
+<p>Queue a call for a call queue.</p>
+
+<h3 id="Asterisk17Application_Queue-Description">Description</h3>
+
+<p>In addition to transferring the call, a call may be parked and then picked up by another user.</p>
+
+<p>This application will return to the dialplan if the queue does not exist, or any of the join options cause the caller to not enter the queue.</p>
+
+<p>This application does not automatically answer and should be preceeded by an application such as Answer(), Progress(), or Ringing().</p>
+
+<p>This application sets the following channel variables upon completion:</p>
+
+<ul>
+	<li><code>QUEUESTATUS</code> - The status of the call as a text string.
+	<ul>
+		<li>TIMEOUT</li>
+		<li>FULL</li>
+		<li>JOINEMPTY</li>
+		<li>LEAVEEMPTY</li>
+		<li>JOINUNAVAIL</li>
+		<li>LEAVEUNAVAIL</li>
+		<li>CONTINUE</li>
+	</ul>
+	</li>
+	<li><code>ABANDONED</code> - If the call was not answered by an agent this variable will be TRUE.
+	<ul>
+		<li>TRUE</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_Queue-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Queue(queuename,[options,[URL,[announceoverride,[timeout,[AGI,[macro,[gosub,[rule,[position]]]]]]]]])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_Queue-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>queuename</code></li>
+	<li><code>options</code>
+	<ul>
+		<li><code>b</code><code>( context^exten^<strong>priority</strong> )</code> - Before initiating an outgoing call, <code>Gosub</code> to the specified location using the newly created channel. The <code>Gosub</code> will be executed for each destination channel.
+		<ul>
+			<li><code>context</code></li>
+			<li><code>exten</code></li>
+			<li><code><strong>priority</strong></code><code>( params )</code>
+			<ul>
+				<li><code><strong>arg1</strong></code>[^<code>arg1</code>...]</li>
+				<li><code>argN</code></li>
+			</ul>
+			</li>
+		</ul>
+		</li>
+		<li><code>B</code><code>( context^exten^<strong>priority</strong> )</code> - Before initiating the outgoing call(s), <code>Gosub</code> to the specified location using the current channel.
+		<ul>
+			<li><code>context</code></li>
+			<li><code>exten</code></li>
+			<li><code><strong>priority</strong></code><code>( params )</code>
+			<ul>
+				<li><code><strong>arg1</strong></code>[^<code>arg1</code>...]</li>
+				<li><code>argN</code></li>
+			</ul>
+			</li>
+		</ul>
+		</li>
+		<li><code>C</code> - Mark all calls as &quot;answered elsewhere&quot; when cancelled.</li>
+		<li><code>c</code> - Continue in the dialplan if the callee hangs up.</li>
+		<li><code>d</code> - data-quality (modem) call (minimum delay).</li>
+		<li><code>F</code><code>( context^exten^<strong>priority</strong> )</code> - When the caller hangs up, transfer the <strong>called member</strong> to the specified destination and <strong>start</strong> execution at that location.<br />
+NOTE: Any channel variables you want the called channel to inherit from the caller channel must be prefixed with one or two underbars ('_').
+		<ul>
+			<li><code>context</code></li>
+			<li><code>exten</code></li>
+			<li><code><strong>priority</strong></code></li>
+		</ul>
+		</li>
+		<li><code>F</code> - When the caller hangs up, transfer the <strong>called member</strong> to the next priority of the current extension and <strong>start</strong> execution at that location.<br />
+NOTE: Any channel variables you want the called channel to inherit from the caller channel must be prefixed with one or two underbars ('_').<br />
+NOTE: Using this option from a Macro() or GoSub() might not make sense as there would be no return points.</li>
+		<li><code>h</code> - Allow <strong>callee</strong> to hang up by pressing <code>*</code>.</li>
+		<li><code>H</code> - Allow <strong>caller</strong> to hang up by pressing <code>*</code>.</li>
+		<li><code>n</code> - No retries on the timeout; will exit this application and go to the next step.</li>
+		<li><code>i</code> - Ignore call forward requests from queue members and do nothing when they are requested.</li>
+		<li><code>I</code> - Asterisk will ignore any connected line update requests or any redirecting party update requests it may receive on this dial attempt.</li>
+		<li><code>r</code> - Ring instead of playing MOH. Periodic Announcements are still made, if applicable.</li>
+		<li><code>R</code> - Ring instead of playing MOH when a member channel is actually ringing.</li>
+		<li><code>t</code> - Allow the <strong>called</strong> user to transfer the calling user.</li>
+		<li><code>T</code> - Allow the <strong>calling</strong> user to transfer the call.</li>
+		<li><code>w</code> - Allow the <strong>called</strong> user to write the conversation to disk via Monitor.</li>
+		<li><code>W</code> - Allow the <strong>calling</strong> user to write the conversation to disk via Monitor.</li>
+		<li><code>k</code> - Allow the <strong>called</strong> party to enable parking of the call by sending the DTMF sequence defined for call parking in <code>features.conf</code>.</li>
+		<li><code>K</code> - Allow the <strong>calling</strong> party to enable parking of the call by sending the DTMF sequence defined for call parking in <code>features.conf</code>.</li>
+		<li><code>x</code> - Allow the <strong>called</strong> user to write the conversation to disk via MixMonitor.</li>
+		<li><code>X</code> - Allow the <strong>calling</strong> user to write the conversation to disk via MixMonitor.</li>
+	</ul>
+	</li>
+	<li><code>URL</code> - URL will be sent to the called party if the channel supports it.</li>
+	<li><code>announceoverride</code></li>
+	<li><code>timeout</code> - Will cause the queue to fail out after a specified number of seconds, checked between each <code>queues.conf</code> <em>timeout</em> and <em>retry</em> cycle.</li>
+	<li><code>AGI</code> - Will setup an AGI script to be executed on the calling party's channel once they are connected to a queue member.</li>
+	<li><code>macro</code> - Will run a macro on the called party's channel (the queue member) once the parties are connected.<br />
+NOTE: Macros are deprecated, GoSub should be used instead.</li>
+	<li><code>gosub</code> - Will run a gosub on the called party's channel (the queue member) once the parties are connected. The subroutine execution starts in the named context at the s exten and priority 1.</li>
+	<li><code>rule</code> - Will cause the queue's defaultrule to be overridden by the rule specified.</li>
+	<li><code>position</code> - Attempt to enter the caller into the queue at the numerical position specified. <code>1</code> would attempt to enter the caller at the head of the queue, and <code>3</code> would attempt to place the caller third in the queue.</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_Queue-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Application_Queue_42010870.html">Asterisk 17 Application_Queue</a></li>
+	<li><a href="Asterisk-17-Application_QueueLog_42010875.html">Asterisk 17 Application_QueueLog</a></li>
+	<li><a href="Asterisk-17-Application_AddQueueMember_42010871.html">Asterisk 17 Application_AddQueueMember</a></li>
+	<li><a href="Asterisk-17-Application_RemoveQueueMember_42010872.html">Asterisk 17 Application_RemoveQueueMember</a></li>
+	<li><a href="Asterisk-17-Application_PauseQueueMember_42010873.html">Asterisk 17 Application_PauseQueueMember</a></li>
+	<li><a href="Asterisk-17-Application_UnpauseQueueMember_42010874.html">Asterisk 17 Application_UnpauseQueueMember</a></li>
+	<li><a href="Asterisk-17-Function_QUEUE_VARIABLES_42010877.html">Asterisk 17 Function_QUEUE_VARIABLES</a></li>
+	<li><a href="Asterisk-17-Function_QUEUE_MEMBER_42010878.html">Asterisk 17 Function_QUEUE_MEMBER</a></li>
+	<li><a href="Asterisk-17-Function_QUEUE_MEMBER_COUNT_42010879.html">Asterisk 17 Function_QUEUE_MEMBER_COUNT</a></li>
+	<li><a href="Asterisk-17-Function_QUEUE_EXISTS_42010880.html">Asterisk 17 Function_QUEUE_EXISTS</a></li>
+	<li><a href="Asterisk-17-Function_QUEUE_GET_CHANNEL_42010881.html">Asterisk 17 Function_QUEUE_GET_CHANNEL</a></li>
+	<li><a href="Asterisk-17-Function_QUEUE_WAITING_COUNT_42010882.html">Asterisk 17 Function_QUEUE_WAITING_COUNT</a></li>
+	<li><a href="Asterisk-17-Function_QUEUE_MEMBER_LIST_42010883.html">Asterisk 17 Function_QUEUE_MEMBER_LIST</a></li>
+	<li><a href="Asterisk-17-Function_QUEUE_MEMBER_PENALTY_42010884.html">Asterisk 17 Function_QUEUE_MEMBER_PENALTY</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Application_Queue-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

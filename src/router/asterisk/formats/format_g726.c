@@ -19,7 +19,7 @@
 /*!\file
  *
  * \brief Headerless G.726 (16/24/32/40kbps) data format for Asterisk.
- * 
+ *
  * File name extensions:
  * \arg 40 kbps: g726-40
  * \arg 32 kbps: g726-32
@@ -31,10 +31,8 @@
 /*** MODULEINFO
 	<support_level>core</support_level>
  ***/
- 
-#include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
+#include "asterisk.h"
 
 #include "asterisk/mod_format.h"
 #include "asterisk/module.h"
@@ -51,7 +49,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #define	BUF_SIZE	(5*FRAME_TIME)	/* max frame size in bytes ? */
 /* Frame sizes in bytes */
-static int frame_size[4] = { 
+static int frame_size[4] = {
 		FRAME_TIME * 5,
 		FRAME_TIME * 4,
 		FRAME_TIME * 3,
@@ -119,22 +117,17 @@ static int g726_16_rewrite(struct ast_filestream *s, const char *comment)
 
 static struct ast_frame *g726_read(struct ast_filestream *s, int *whennext)
 {
-	int res;
+	size_t res;
 	struct g726_desc *fs = (struct g726_desc *)s->_private;
 
 	/* Send a frame from the file to the appropriate channel */
 	AST_FRAME_SET_BUFFER(&s->fr, s->buf, AST_FRIENDLY_OFFSET, frame_size[fs->rate]);
 	s->fr.samples = 8 * FRAME_TIME;
 	if ((res = fread(s->fr.data.ptr, 1, s->fr.datalen, s->f)) != s->fr.datalen) {
-		if (feof(s->f)) {
-			if (res) {
-				ast_debug(3, "Incomplete frame data at end of %s file "
-						  "(expected %d bytes, read %d)\n",
-						  ast_format_get_name(s->fr.subclass.format), s->fr.datalen, res);
-			}
-		} else {
-			ast_log(LOG_ERROR, "Error while reading %s file: %s\n",
-					ast_format_get_name(s->fr.subclass.format), strerror(errno));
+		if (res) {
+			ast_log(LOG_WARNING, "Short read of %s data (expected %d bytes, read %zu): %s\n",
+					ast_format_get_name(s->fr.subclass.format), s->fr.datalen, res,
+					strerror(errno));
 		}
 		return NULL;
 	}
@@ -148,12 +141,12 @@ static int g726_write(struct ast_filestream *s, struct ast_frame *f)
 	struct g726_desc *fs = (struct g726_desc *)s->_private;
 
 	if (f->datalen % frame_size[fs->rate]) {
-		ast_log(LOG_WARNING, "Invalid data length %d, should be multiple of %d\n", 
+		ast_log(LOG_WARNING, "Invalid data length %d, should be multiple of %d\n",
 						f->datalen, frame_size[fs->rate]);
 		return -1;
 	}
 	if ((res = fwrite(f->data.ptr, 1, f->datalen, s->f)) != f->datalen) {
-		ast_log(LOG_WARNING, "Bad write (%d/%d): %s\n", 
+		ast_log(LOG_WARNING, "Bad write (%d/%d): %s\n",
 				res, frame_size[fs->rate], strerror(errno));
 			return -1;
 	}
@@ -162,7 +155,38 @@ static int g726_write(struct ast_filestream *s, struct ast_frame *f)
 
 static int g726_seek(struct ast_filestream *fs, off_t sample_offset, int whence)
 {
-	return -1;
+	off_t offset = 0, min = 0, cur, max, distance;
+
+	if ((cur = ftello(fs->f)) < 0) {
+		ast_log(AST_LOG_WARNING, "Unable to determine current position in g726 filestream %p: %s\n", fs, strerror(errno));
+		return -1;
+	}
+
+	if (fseeko(fs->f, 0, SEEK_END) < 0) {
+		ast_log(AST_LOG_WARNING, "Unable to seek to end of g726 filestream %p: %s\n", fs, strerror(errno));
+		return -1;
+	}
+
+	if ((max = ftello(fs->f)) < 0) {
+		ast_log(AST_LOG_WARNING, "Unable to determine max position in g726 filestream %p: %s\n", fs, strerror(errno));
+		return -1;
+	}
+
+	/* have to fudge to frame here, so not fully to sample */
+	distance = sample_offset / 2;
+	if (whence == SEEK_SET) {
+		offset = distance;
+	} else if (whence == SEEK_CUR || whence == SEEK_FORCECUR) {
+		offset = distance + cur;
+	} else if (whence == SEEK_END) {
+		offset = max - distance;
+	}
+
+	if (whence != SEEK_FORCECUR) {
+		offset = offset > max ? max : offset;
+		offset = offset < min ? min : offset;
+	}
+	return fseeko(fs->f, offset, SEEK_SET);
 }
 
 static int g726_trunc(struct ast_filestream *fs)
@@ -172,10 +196,10 @@ static int g726_trunc(struct ast_filestream *fs)
 
 static off_t g726_tell(struct ast_filestream *fs)
 {
-	return -1;
+	return ftello(fs->f) << 1;
 }
 
-static struct ast_format_def f[] = {
+static struct ast_format_def f_def[] = {
 	{
 		.name = "g726-40",
 		.exts = "g726-40",
@@ -235,9 +259,9 @@ static int unload_module(void)
 {
 	int i;
 
-	for (i = 0; f[i].desc_size ; i++) {
-		if (ast_format_def_unregister(f[i].name))
-			ast_log(LOG_WARNING, "Failed to unregister format %s.\n", f[i].name);
+	for (i = 0; f_def[i].desc_size ; i++) {
+		if (ast_format_def_unregister(f_def[i].name))
+			ast_log(LOG_WARNING, "Failed to unregister format %s.\n", f_def[i].name);
 	}
 	return(0);
 }
@@ -246,10 +270,10 @@ static int load_module(void)
 {
 	int i;
 
-	for (i = 0; f[i].desc_size ; i++) {
-		f[i].format = ast_format_g726;
-		if (ast_format_def_register(&f[i])) {	/* errors are fatal */
-			ast_log(LOG_WARNING, "Failed to register format %s.\n", f[i].name);
+	for (i = 0; f_def[i].desc_size ; i++) {
+		f_def[i].format = ast_format_g726;
+		if (ast_format_def_register(&f_def[i])) {	/* errors are fatal */
+			ast_log(LOG_WARNING, "Failed to register format %s.\n", f_def[i].name);
 			unload_module();
 			return AST_MODULE_LOAD_DECLINE;
 		}

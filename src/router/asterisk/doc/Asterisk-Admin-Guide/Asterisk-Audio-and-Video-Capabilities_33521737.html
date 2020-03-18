@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk Audio and Video Capabilities</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Operation_27200183.html">Operation</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk Audio and Video Capabilities
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified by <span class='editor'> Malcolm Davenport</span> on Apr 27, 2018
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="AsteriskAudioandVideoCapabilities-OverviewofMediaSupport">Overview of Media Support</h1><p>Asterisk supports a variety of audio and video media. Asterisk provides CODEC modules to facilitate encoding and decoding of audio streams. Additionally file format modules are provided to handle writing to and reading from the file-system.</p><p>The tables on this page describe what capabilities Asterisk supports and specific details for each format.</p></div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303120638 {padding: 0px;}
+div.rbtoc1582303120638 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303120638 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303120638'>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskAudioandVideoCapabilities-OverviewofMediaSupport'>Overview of Media Support</a></li>
+<li><a href='#AsteriskAudioandVideoCapabilities-Enablingspecificmediasupport'>Enabling specific media support</a>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskAudioandVideoCapabilities-Modulecompilationandloading'>Module compilation and loading</a></li>
+<li><a href='#AsteriskAudioandVideoCapabilities-Channeldriverconfiguration'>Channel driver configuration</a>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskAudioandVideoCapabilities-ConfiguringallowedmediaforaPJSIPendpoint'>Configuring allowed media for a PJSIP endpoint</a></li>
+<li><a href='#AsteriskAudioandVideoCapabilities-Configuringapp_voicemailfileformatsforrecordings'>Configuring app_voicemail file formats for recordings</a></li>
+</ul>
+</li>
+<li><a href='#AsteriskAudioandVideoCapabilities-Endpointdeviceconfiguration'>Endpoint device configuration</a></li>
+</ul>
+</li>
+<li><a href='#AsteriskAudioandVideoCapabilities-AudioSupport'>Audio Support</a>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskAudioandVideoCapabilities-SpeexSupport'>Speex Support</a></li>
+<li><a href='#AsteriskAudioandVideoCapabilities-SignedLinearPCM'>Signed Linear PCM</a></li>
+</ul>
+</li>
+<li><a href='#AsteriskAudioandVideoCapabilities-VideoandImageSupport'>Video and Image Support</a></li>
+</ul>
+</div></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="AsteriskAudioandVideoCapabilities-Enablingspecificmediasupport">Enabling specific media support</h1><p>There are three basic requirements for making use of specific audio or video media with Asterisk.</p><ol><li>The Asterisk core must support the format or a module may be required to add the support.</li><li>Asterisk configuration must be modified appropriately.</li><li>The devices interfacing with Asterisk must support the format and be configured to use it.</li></ol><h2 id="AsteriskAudioandVideoCapabilities-Modulecompilationandloading">Module compilation and loading</h2><p>For audio or video capabilities that require a module - you should make sure that the module is built and installed on the system.</p><p>See the section on <a href="Using-Menuselect-to-Select-Asterisk-Options_4817523.html">Using Menuselect to Select Asterisk Options</a> if you need help figuring out how to get a module built and then section on <a href="Configuring-the-Asterisk-Module-Loader_30278449.html">Configuring the Asterisk Module Loader</a> to verify that a module gets loaded when Asterisk starts up.</p><h2 id="AsteriskAudioandVideoCapabilities-Channeldriverconfiguration">Channel driver configuration</h2><p>Audio or video capabilities for Asterisk are used on a per channel or per feature basis. To tell Asterisk what CODECs or formats to use in a particular scenario you may need to configure your channel driver, or modify configuration for the feature itself.</p><p>We'll provide two examples, but you should look at the documentation for the channel driver or feature to better understand how to configure media in that context.</p><h3 id="AsteriskAudioandVideoCapabilities-ConfiguringallowedmediaforaPJSIPendpoint"><span>Configuring allowed media for a PJSIP endpoint</span></h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>pjsip.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[CATHY]
+type=endpoint
+context=from-internal
+allow=!all,ulaw
+auth=CATHY
+aors=CATHY</pre>
+</div></div><p>We set the option &quot;allow&quot; to a string of values &quot;!all,ulaw&quot;.</p><ul><li>The value &quot;<strong>!all</strong>&quot; means &quot;Disallow all&quot; and is identical to &quot;disallow=all&quot;. This tells Asterisk to disallow all codecs except what we further define in the allow option.</li><li>The value &quot;<strong>ulaw</strong>&quot; instructs Asterisk to allow ulaw audio during media negotiation for this endpoint.</li></ul><p>See the section <a href="Configuring-res_pjsip_25919621.html">Configuring res_pjsip</a> for more information on the PJSIP channel driver.</p><h3 id="AsteriskAudioandVideoCapabilities-Configuringapp_voicemailfileformatsforrecordings">Configuring app_voicemail file formats for recordings</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>voicemail.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;"> [general]
+format=wav49,wav,gsm</pre>
+</div></div><p>In the general section of voicemail.conf you can set the formats used when writing <a href="Voicemail_5242963.html">voicemail&nbsp;</a>to the file-system. We set the option &quot;format&quot; to a string of file format names.</p><ul><li>The value &quot;wav49&quot; represents GSM in a WAV|wav49 container.</li><li>The value &quot;wav&quot; represents SLIN in a wav container.</li><li>The value &quot;gsm&quot; represents GSM in straight gsm format.</li></ul><h2 id="AsteriskAudioandVideoCapabilities-Endpointdeviceconfiguration">Endpoint device configuration</h2><p>Configuring your particular device is outside the scope of the Asterisk documentation.</p><p>Consult your devices user/admin manual to find out where you define codecs or media to be used.</p><p>For VoIP desk phones there are typically two places to look for media configuration.</p><ol><li>The web GUI for the phone.</li><li>The provisioning files that are pulled down by the phones on your network.</li></ol><h1 id="AsteriskAudioandVideoCapabilities-AudioSupport">Audio Support</h1><p>A variety of audio capabilities are supported by Asterisk.</p><p> </p><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Name</th><th colspan="1" class="confluenceTh">Config Value</th><th class="confluenceTh"><p>Capability:<br />(T)ranscoding</p><p>(P)assthrough</p></th><th class="confluenceTh">CODEC Module</th><th colspan="1" class="confluenceTh">Format Module</th><th colspan="1" class="confluenceTh">Distributed w/ Asterisk?</th><th colspan="1" class="confluenceTh">Commercial License<br /> Required?</th></tr><tr><td class="confluenceTd">ADPCM</td><td colspan="1" class="confluenceTd">adpcm</td><td class="confluenceTd">T</td><td class="confluenceTd">codec_adpcm</td><td colspan="1" class="confluenceTd">format_vox</td><td colspan="1" class="confluenceTd">YES</td><td colspan="1" class="confluenceTd">NO</td></tr><tr><td colspan="1" class="confluenceTd">G.711 A-law</td><td colspan="1" class="confluenceTd">alaw</td><td colspan="1" class="confluenceTd">T</td><td colspan="1" class="confluenceTd">codec_alaw</td><td colspan="1" class="confluenceTd">format_pcm</td><td colspan="1" class="confluenceTd">YES</td><td colspan="1" class="confluenceTd">NO</td></tr><tr><td colspan="1" class="confluenceTd">G.711 µ-law</td><td colspan="1" class="confluenceTd">ulaw</td><td colspan="1" class="confluenceTd">T</td><td colspan="1" class="confluenceTd">codec_ulaw</td><td colspan="1" class="confluenceTd">format_pcm</td><td colspan="1" class="confluenceTd">YES</td><td colspan="1" class="confluenceTd">NO</td></tr><tr><td colspan="1" class="confluenceTd">G.719</td><td colspan="1" class="confluenceTd">g719</td><td colspan="1" class="confluenceTd">P</td><td colspan="1" class="confluenceTd">n/a</td><td colspan="1" class="confluenceTd">format_g719</td><td colspan="1" class="confluenceTd">YES</td><td colspan="1" class="confluenceTd">NO</td></tr><tr><td colspan="1" class="confluenceTd">G.722</td><td colspan="1" class="confluenceTd">g722</td><td colspan="1" class="confluenceTd">T</td><td colspan="1" class="confluenceTd">codec_g722</td><td colspan="1" class="confluenceTd">format_pcm</td><td colspan="1" class="confluenceTd">YES</td><td colspan="1" class="confluenceTd">NO</td></tr><tr><td colspan="1" class="confluenceTd">G.722.1 Siren7</td><td colspan="1" class="confluenceTd">siren7</td><td colspan="1" class="confluenceTd">T</td><td colspan="1" class="confluenceTd">codec_siren7</td><td colspan="1" class="confluenceTd">format_siren7</td><td colspan="1" class="confluenceTd">Codec(NO) Format(YES)</td><td colspan="1" class="confluenceTd">NO</td></tr><tr><td colspan="1" class="confluenceTd">G.722.1C Siren14</td><td colspan="1" class="confluenceTd">siren14</td><td colspan="1" class="confluenceTd">T</td><td colspan="1" class="confluenceTd">codec_siren14</td><td colspan="1" class="confluenceTd">format_siren14</td><td colspan="1" class="confluenceTd">Codec(NO) Format(YES)</td><td colspan="1" class="confluenceTd">NO</td></tr><tr><td colspan="1" class="confluenceTd">G.723.1</td><td colspan="1" class="confluenceTd">g723</td><td colspan="1" class="confluenceTd">T</td><td colspan="1" class="confluenceTd">codec_g723</td><td colspan="1" class="confluenceTd">format_g723</td><td colspan="1" class="confluenceTd">Codec(NO) Format(YES)</td><td colspan="1" class="confluenceTd">YES(hardware required)</td></tr><tr><td colspan="1" class="confluenceTd">G.726</td><td colspan="1" class="confluenceTd">g726</td><td colspan="1" class="confluenceTd">T</td><td colspan="1" class="confluenceTd">codec_g726</td><td colspan="1" class="confluenceTd">format_g726</td><td colspan="1" class="confluenceTd">YES</td><td colspan="1" class="confluenceTd">NO</td></tr><tr><td colspan="1" class="confluenceTd">G.726 AAL2</td><td colspan="1" class="confluenceTd">g726aal2</td><td colspan="1" class="confluenceTd">T</td><td colspan="1" class="confluenceTd">codec_g726</td><td colspan="1" class="confluenceTd">format_g726</td><td colspan="1" class="confluenceTd">YES</td><td colspan="1" class="confluenceTd">NO</td></tr><tr><td colspan="1" class="confluenceTd">G.729A</td><td colspan="1" class="confluenceTd">g729</td><td colspan="1" class="confluenceTd">T</td><td colspan="1" class="confluenceTd">codec_g729a</td><td colspan="1" class="confluenceTd">format_g729</td><td colspan="1" class="confluenceTd">Codec(NO) Format(YES)</td><td colspan="1" class="confluenceTd">YES</td></tr><tr><td colspan="1" class="confluenceTd">GSM</td><td colspan="1" class="confluenceTd">gsm</td><td colspan="1" class="confluenceTd">T</td><td colspan="1" class="confluenceTd">codec_gsm</td><td colspan="1" class="confluenceTd">format_gsm</td><td colspan="1" class="confluenceTd">YES</td><td colspan="1" class="confluenceTd">NO</td></tr><tr><td colspan="1" class="confluenceTd">ILBC</td><td colspan="1" class="confluenceTd">ilbc</td><td colspan="1" class="confluenceTd">T</td><td colspan="1" class="confluenceTd">codec_ilbc</td><td colspan="1" class="confluenceTd">format_ilbc</td><td colspan="1" class="confluenceTd">YES</td><td colspan="1" class="confluenceTd">NO</td></tr><tr><td colspan="1" class="confluenceTd">LPC-10</td><td colspan="1" class="confluenceTd">lpc10</td><td colspan="1" class="confluenceTd">T</td><td colspan="1" class="confluenceTd">codec_lpc10</td><td colspan="1" class="confluenceTd">n/a</td><td colspan="1" class="confluenceTd">YES</td><td colspan="1" class="confluenceTd">NO</td></tr><tr><td colspan="1" class="confluenceTd">SILK</td><td colspan="1" class="confluenceTd">silk</td><td colspan="1" class="confluenceTd">T</td><td colspan="1" class="confluenceTd">codec_silk</td><td colspan="1" class="confluenceTd">n/a</td><td colspan="1" class="confluenceTd">Codec(NO) Format(YES)</td><td colspan="1" class="confluenceTd">NO</td></tr><tr><td colspan="1" class="confluenceTd">Speex</td><td colspan="1" class="confluenceTd">speex</td><td colspan="1" class="confluenceTd">T</td><td colspan="1" class="confluenceTd">codec_speex</td><td colspan="1" class="confluenceTd">n/a</td><td colspan="1" class="confluenceTd">YES</td><td colspan="1" class="confluenceTd">NO</td></tr><tr><td colspan="1" class="confluenceTd">Signed Linear PCM</td><td colspan="1" class="confluenceTd">slin</td><td colspan="1" class="confluenceTd">T</td><td colspan="1" class="confluenceTd">codec_resample</td><td colspan="1" class="confluenceTd">format_sln</td><td colspan="1" class="confluenceTd">YES</td><td colspan="1" class="confluenceTd">NO</td></tr><tr><td colspan="1" class="confluenceTd">Ogg Vorbis</td><td colspan="1" class="confluenceTd">n/a</td><td colspan="1" class="confluenceTd">n/a</td><td colspan="1" class="confluenceTd">n/a</td><td colspan="1" class="confluenceTd">format_ogg_vorbis</td><td colspan="1" class="confluenceTd">Codec(NO) Format(YES)</td><td colspan="1" class="confluenceTd">NO</td></tr><tr><td class="confluenceTd">Opus</td><td colspan="1" class="confluenceTd">opus</td><td class="confluenceTd">T</td><td class="confluenceTd">codec_opus</td><td colspan="1" class="confluenceTd">n/a</td><td colspan="1" class="confluenceTd">Codec(NO) Format(YES)</td><td colspan="1" class="confluenceTd">NO</td></tr><tr><td colspan="1" class="confluenceTd">wav (SLIN)</td><td colspan="1" class="confluenceTd">wav</td><td colspan="1" class="confluenceTd">T</td><td colspan="1" class="confluenceTd">n/a</td><td colspan="1" class="confluenceTd">format_wav</td><td colspan="1" class="confluenceTd">YES</td><td colspan="1" class="confluenceTd">NO</td></tr><tr><td colspan="1" class="confluenceTd">WAV (GSM)</td><td colspan="1" class="confluenceTd">wav49</td><td colspan="1" class="confluenceTd">T</td><td colspan="1" class="confluenceTd">n/a</td><td colspan="1" class="confluenceTd">format_wav_gsm</td><td colspan="1" class="confluenceTd">YES</td><td colspan="1" class="confluenceTd">NO</td></tr></tbody></table></div><h2 id="AsteriskAudioandVideoCapabilities-SpeexSupport">Speex Support</h2><p>Asterisk supports 8, 16, and 32kHz Speex. Use of the 32kHz Speex mode is, like the other modes, controlled in the respective channel driver's configuration file, e.g. chan_sip's sip.conf or PJSIP's pjsip.conf.</p><h2 id="AsteriskAudioandVideoCapabilities-SignedLinearPCM">Signed Linear PCM</h2><p>Asterisk can resample between several different sampling rates and can read/write raw 16-bit signed linear audio files from/to disk. The complete list of supported sampling rates and file format is found in the expansion link below:</p>
+<div id="expander-1232207802" class="expand-container">
+<div id="expander-control-1232207802" class="expand-control">
+    <span class="expand-control-icon"><img style="vertical-align:middle;" class="expand-control-image" src="images/icons/grey_arrow_down.png"></span><span class="expand-control-text">Click here to expand...</span>
+</div>
+<div id="expander-content-1232207802" class="expand-content"><div class="table-wrap"><table class="confluenceTable"><thead><tr><th class="confluenceTh"><div class="tablesorter-header-inner"><p>Sampling Rate</p></div></th><th class="confluenceTh"><div class="tablesorter-header-inner"><p>Asterisk File format</p></div></th></tr></thead><tbody><tr><td class="confluenceTd"><p>8kHz</p></td><td class="confluenceTd"><p>.sln</p></td></tr><tr><td class="confluenceTd"><p>12kHz</p></td><td class="confluenceTd"><p>.sln12</p></td></tr><tr><td class="confluenceTd"><p>16kHz</p></td><td class="confluenceTd"><p>.sln16</p></td></tr><tr><td class="confluenceTd"><p>24kHz</p></td><td class="confluenceTd"><p>.sln24</p></td></tr><tr><td class="confluenceTd"><p>32kHz</p></td><td class="confluenceTd"><p>.sln32</p></td></tr><tr><td class="confluenceTd"><p>44.1kHz</p></td><td class="confluenceTd"><p>.sln44</p></td></tr><tr><td class="confluenceTd"><p>48kHz</p></td><td class="confluenceTd"><p>.sln48</p></td></tr><tr><td class="confluenceTd"><p>96kHz</p></td><td class="confluenceTd"><p>.sln96</p></td></tr><tr><td class="confluenceTd"><p>192kHz</p></td><td class="confluenceTd"><p>.sln192</p></td></tr></tbody></table></div></div>
+</div>
+    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>Users can create 16-bit Signed Linear files of varying sampling rates from WAV files using the sox command-line audio utility.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">sox input.wav -t raw -b 16 -r 32000 output.sln
+mv output.sln output.sln32</pre>
+</div></div><p>In this example, an input WAV file has been converted to Signed Linear at a depth of 16-bits and at a rate of 32kHz. The resulting output.sln file is then renamed output.sln32 so that it can be processed correctly by Asterisk.</p>
+                    </div>
+    </div>
+<p> </p><h1 id="AsteriskAudioandVideoCapabilities-VideoandImageSupport">Video and Image Support</h1><p>You'll notice the CODEC module column is missing. Video transcoding or image transcoding is not currently supported.</p><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Name</th><th colspan="1" class="confluenceTh">Config Value</th><th colspan="1" class="confluenceTh"><p>Capability:<br />(T)ranscoding</p><p>(P)assthrough</p></th><th colspan="1" class="confluenceTh">Format Module</th><th colspan="1" class="confluenceTh">Distributed w/ Asterisk</th></tr><tr><td class="confluenceTd">JPEG</td><td colspan="1" class="confluenceTd">jpeg</td><td colspan="1" class="confluenceTd">P</td><td colspan="1" class="confluenceTd">format_jpeg</td><td colspan="1" class="confluenceTd">YES</td></tr><tr><td colspan="1" class="confluenceTd">H.261</td><td colspan="1" class="confluenceTd">h261</td><td colspan="1" class="confluenceTd">P</td><td colspan="1" class="confluenceTd">n/a</td><td colspan="1" class="confluenceTd">YES</td></tr><tr><td colspan="1" class="confluenceTd">H.263</td><td colspan="1" class="confluenceTd">h263</td><td colspan="1" class="confluenceTd">P</td><td colspan="1" class="confluenceTd">format_h263</td><td colspan="1" class="confluenceTd">YES</td></tr><tr><td colspan="1" class="confluenceTd">H.263+</td><td colspan="1" class="confluenceTd">h263p</td><td colspan="1" class="confluenceTd">P</td><td colspan="1" class="confluenceTd">format_h263</td><td colspan="1" class="confluenceTd">YES</td></tr><tr><td colspan="1" class="confluenceTd">H.264</td><td colspan="1" class="confluenceTd">h264</td><td colspan="1" class="confluenceTd">P</td><td colspan="1" class="confluenceTd">format_h264</td><td colspan="1" class="confluenceTd">YES</td></tr><tr><td colspan="1" class="confluenceTd">VP8</td><td colspan="1" class="confluenceTd">vp8</td><td colspan="1" class="confluenceTd">P</td><td colspan="1" class="confluenceTd">n/a</td><td colspan="1" class="confluenceTd">YES</td></tr><tr><td colspan="1" class="confluenceTd">VP9</td><td colspan="1" class="confluenceTd">vp9</td><td colspan="1" class="confluenceTd">P</td><td colspan="1" class="confluenceTd">n/a</td><td colspan="1" class="confluenceTd">YES</td></tr></tbody></table></div><p> </p><p> </p></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

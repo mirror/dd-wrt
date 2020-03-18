@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : MSSQL CEL Backend</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Reporting_27200283.html">Reporting</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="5242932.html">Channel Event Logging (CEL)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="CEL-Configuration-Examples_5242950.html">CEL Configuration Examples</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : MSSQL CEL Backend
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Asterisk can currently store Channel Events into an MSSQL database in two different ways: cel_odbc or cel_tds </p>
+
+<p>Channel Event Records can be stored using unixODBC (which requires the FreeTDS package) <a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=cel_odbc&amp;linkCreation=true&amp;fromPageId=5242952">cel_odbc</a> or directly by using just the FreeTDS package <a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=cel_tds&amp;linkCreation=true&amp;fromPageId=5242952">cel_tds</a> </p>
+
+<p>The following provide some examples known to get asterisk working with mssql. </p>
+
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            
+<p>Only choose one db connector.</p>
+                    </div>
+    </div>
+
+
+<h3 id="MSSQLCELBackend-ODBCusingcel_odbc">ODBC using cel_odbc</h3>
+
+<h5 id="MSSQLCELBackend-Compile,configure,andinstallthelatestunixODBCpackage:">Compile, configure, and install the latest unixODBC package: </h5>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>tar -zxvf unixODBC-2.2.9.tar.gz &amp;&amp; cd unixODBC-2.2.9 &amp;&amp; ./configure --sysconfdir=/etc --prefix=/usr --disable-gui &amp;&amp; make &amp;&amp; make install 
+</pre>
+</div></div>
+
+<h5 id="MSSQLCELBackend-Compile,configure,andinstallthelatestFreeTDSpackage:">Compile, configure, and install the latest FreeTDS package: </h5>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>tar -zxvf freetds-0.62.4.tar.gz &amp;&amp; cd freetds-0.62.4 &amp;&amp; ./configure --prefix=/usr --with-tdsver=7.0 \ --with-unixodbc=/usr/lib &amp;&amp; make &amp;&amp; make install 
+</pre>
+</div></div>
+
+<h5 id="MSSQLCELBackend-Compile,orrecompile,asterisksothatitwillnowaddsupportforcel_odbc.">Compile, or recompile, asterisk so that it will now add support for cel_odbc. </h5>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>make clean &amp;&amp; ./configure --with-odbc &amp;&amp; make update &amp;&amp; make &amp;&amp; make install 
+</pre>
+</div></div>
+
+<h5 id="MSSQLCELBackend-Setupodbcconfigurationfiles.">Setup odbc configuration files.</h5>
+<p>These are working examples from my system. You will need to modify for your setup. You are not required to store usernames or passwords here. </p>
+
+<p>/etc/odbcinst.ini</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[FreeTDS]
+Description = FreeTDS ODBC driver for MSSQL
+Driver = /usr/lib/libtdsodbc.so
+Setup = /usr/lib/libtdsS.so
+FileUsage = 1
+</pre>
+</div></div>
+
+<p>/etc/odbc.ini</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[MSSQL-asterisk]
+description = Asterisk ODBC for MSSQL
+driver = FreeTDS
+server = 192.168.1.25
+port = 1433
+database = voipdb
+tds_version = 7.0
+language = us_english 
+</pre>
+</div></div>
+
+    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            
+<p>Only install one database connector. Do not confuse asterisk by using both ODBC (cel_odbc) and FreeTDS (cel_tds). This command will erase the contents of cel_tds.conf </p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[ -f /etc/asterisk/cel_tds.conf ] &gt; /etc/asterisk/cel_tds.conf 
+</pre>
+</div></div>
+                    </div>
+    </div>
+
+
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            
+<p>unixODBC requires the freeTDS package, but asterisk does not call freeTDS directly. </p>
+                    </div>
+    </div>
+
+
+<h5 id="MSSQLCELBackend-Nowsetupcel_odbcconfigurationfiles.">Now set up cel_odbc configuration files.</h5>
+
+<p>These are working samples from my system. You will need to modify for your setup. Define your usernames and passwords here, secure file as well. </p>
+
+<p>/etc/asterisk/cel_odbc.conf</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[global]
+dsn=MSSQL-asterisk
+username=voipdbuser
+password=voipdbpass
+loguniqueid=yes 
+</pre>
+</div></div>
+
+<h5 id="MSSQLCELBackend-Andfinally,createthe&#39;cel&#39;tableinyourmssqldatabase.">And finally, create the 'cel' table in your mssql database. </h5>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>CREATE TABLE cel (
+        [eventtype] [varchar] (30) NOT NULL , 
+        [eventtime] [datetime] NOT NULL , 
+        [cidname] [varchar] (80) NOT NULL , 
+        [cidnum] [varchar] (80) NOT NULL , 
+        [cidani] [varchar] (80) NOT NULL , 
+        [cidrdnis] [varchar] (80) NOT NULL , 
+        [ciddnid] [varchar] (80) NOT NULL , 
+        [exten] [varchar] (80) NOT NULL ,
+        [context] [varchar] (80) NOT NULL , 
+        [channame] [varchar] (80) NOT NULL ,
+        [appname] [varchar] (80) NOT NULL ,
+        [appdata] [varchar] (80) NOT NULL ,
+        [amaflags] [int] NOT NULL , 
+        [accountcode] [varchar] (20) NOT NULL , 
+        [uniqueid] [varchar] (32) NOT NULL , 
+        [peer] [varchar] (80) NOT NULL ,
+        [userfield] [varchar] (255) NOT NULL 
+) ;
+</pre>
+</div></div>
+
+<p>Start asterisk in verbose mode, you should see that asterisk logs a connection to the database and will now record every desired channel event at the moment it occurs.</p>
+
+<h3 id="MSSQLCELBackend-FreeTDS,usingcel_tds">FreeTDS, using cel_tds</h3>
+
+<h5 id="MSSQLCELBackend-Compile,configure,andinstallthelatestFreeTDSpackage:.1">Compile, configure, and install the latest FreeTDS package: </h5>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>tar -zxvf freetds-0.62.4.tar.gz &amp;&amp; cd freetds-0.62.4 &amp;&amp; ./configure --prefix=/usr --with-tdsver=7.0 make &amp;&amp; make install 
+</pre>
+</div></div>
+
+<h5 id="MSSQLCELBackend-Compile,orrecompile,asterisksothatitwillnowaddsupportforcel_tds.">Compile, or recompile, asterisk so that it will now add support for cel_tds. </h5>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>make clean &amp;&amp; ./configure --with-tds &amp;&amp; make update &amp;&amp; make &amp;&amp; make install 
+</pre>
+</div></div>
+
+    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            
+<p>Only install one database connector. Do not confuse asterisk by using both ODBC (cel_odbc) and FreeTDS (cel_tds). This command will erase the contents of cel_odbc.conf </p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[ -f /etc/asterisk/cel_odbc.conf ] &gt; /etc/asterisk/cel_odbc.conf 
+</pre>
+</div></div>
+                    </div>
+    </div>
+
+
+<h5 id="MSSQLCELBackend-Setupcel_tdsconfigurationfiles.">Setup cel_tds configuration files.</h5>
+
+<p>These are working samples from my system. You will need to modify for your setup. Define your usernames and passwords here, secure file as well. </p>
+
+<p>/etc/asterisk/cel_tds.conf</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[global]
+hostname=192.168.1.25
+port=1433 
+dbname=voipdb 
+user=voipdbuser 
+password=voipdpass 
+charset=BIG5
+</pre>
+</div></div>
+
+<h5 id="MSSQLCELBackend-Andfinally,createthe&#39;cel&#39;tableinyourmssqldatabase..1">And finally, create the 'cel' table in your mssql database. </h5>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>CREATE TABLE cel ( 
+        [eventtype] [varchar] (30) NULL ,
+        [eventtime] [datetime] NULL , 
+        [cidname] [varchar] (80) NULL , 
+        [cidnum] [varchar] (80) NULL , 
+        [cidani] [varchar] (80) NULL ,
+        [cidrdnis] [varchar] (80) NULL , 
+        [ciddnid] [varchar] (80) NULL ,
+        [exten] [varchar] (80) NULL , 
+        [context] [varchar] (80) NULL , 
+        [channame] [varchar] (80) NULL ,
+        [appname] [varchar] (80) NULL ,
+        [appdata] [varchar] (80) NULL , 
+        [amaflags] [varchar] (16) NULL , 
+        [accountcode] [varchar] (20) NULL ,
+        [uniqueid] [varchar] (32) NULL , 
+        [userfield] [varchar] (255) NULL , 
+        [peer] [varchar] (80) NULL 
+) ;
+</pre>
+</div></div>
+<p>Start asterisk in verbose mode, you should see that asterisk logs a connection to the database and will now record every call to the database when it's complete.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

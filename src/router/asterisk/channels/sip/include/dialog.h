@@ -33,7 +33,7 @@
 #define dialog_unref(dialog, tag) ({ ao2_t_cleanup(dialog, tag); (NULL); })
 
 struct sip_pvt *__sip_alloc(ast_string_field callid, struct ast_sockaddr *sin,
-				 int useglobal_nat, const int intended_method, struct sip_request *req, struct ast_callid *logger_callid,
+				 int useglobal_nat, const int intended_method, struct sip_request *req, ast_callid logger_callid,
 				 const char *file, int line, const char *func);
 
 #define sip_alloc(callid, addr, useglobal_nat, intended_method, req, logger_callid) \

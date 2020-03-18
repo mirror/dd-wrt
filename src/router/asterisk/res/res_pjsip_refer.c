@@ -179,7 +179,7 @@ static void refer_progress_bridge(void *data, struct stasis_subscription *sub,
 	}
 
 	enter_blob = stasis_message_data(message);
-	if (strcmp(enter_blob->channel->uniqueid, progress->transferee)) {
+	if (strcmp(enter_blob->channel->base->uniqueid, progress->transferee)) {
 		/* Don't care */
 		return;
 	}
@@ -233,11 +233,12 @@ static struct ast_frame *refer_progress_framehook(struct ast_channel *chan, stru
 	/* Determine the state of the REFER based on the control frames (or voice frames) passing */
 	if (f->frametype == AST_FRAME_VOICE && !progress->subclass) {
 		/* Media is passing without progress, this means the call has been answered */
+		progress->subclass = AST_CONTROL_ANSWER;
 		notification = refer_progress_notification_alloc(progress, 200, PJSIP_EVSUB_STATE_TERMINATED);
 	} else if (f->frametype == AST_FRAME_CONTROL) {
 		/* Based on the control frame being written we can send a NOTIFY advising of the progress */
 		if ((f->subclass.integer == AST_CONTROL_RING) || (f->subclass.integer == AST_CONTROL_RINGING)) {
-			progress->subclass = f->subclass.integer;
+			/* Don't set progress->subclass; an ANSWER can still follow */
 			notification = refer_progress_notification_alloc(progress, 180, PJSIP_EVSUB_STATE_ACTIVE);
 		} else if (f->subclass.integer == AST_CONTROL_BUSY) {
 			progress->subclass = f->subclass.integer;
@@ -246,10 +247,10 @@ static struct ast_frame *refer_progress_framehook(struct ast_channel *chan, stru
 			progress->subclass = f->subclass.integer;
 			notification = refer_progress_notification_alloc(progress, 503, PJSIP_EVSUB_STATE_TERMINATED);
 		} else if (f->subclass.integer == AST_CONTROL_PROGRESS) {
-			progress->subclass = f->subclass.integer;
+			/* Don't set progress->subclass; an ANSWER can still follow */
 			notification = refer_progress_notification_alloc(progress, 183, PJSIP_EVSUB_STATE_ACTIVE);
 		} else if (f->subclass.integer == AST_CONTROL_PROCEEDING) {
-			progress->subclass = f->subclass.integer;
+			/* Don't set progress->subclass; an ANSWER can still follow */
 			notification = refer_progress_notification_alloc(progress, 100, PJSIP_EVSUB_STATE_ACTIVE);
 		} else if (f->subclass.integer == AST_CONTROL_ANSWER) {
 			progress->subclass = f->subclass.integer;
@@ -316,7 +317,15 @@ static void refer_progress_on_evsub_state(pjsip_evsub *sub, pjsip_event *event)
 		/* It's possible that a task is waiting to remove us already, so bump the refcount of progress so it doesn't get destroyed */
 		ao2_ref(progress, +1);
 		pjsip_dlg_dec_lock(progress->dlg);
-		ast_sip_push_task_synchronous(progress->serializer, refer_progress_terminate, progress);
+		/*
+		 * XXX We are always going to execute this inline rather than
+		 * in the serializer because this function is a PJPROJECT
+		 * callback and thus has to be a SIP servant thread.
+		 *
+		 * The likely remedy is to push most of this function into
+		 * refer_progress_terminate() with ast_sip_push_task().
+		 */
+		ast_sip_push_task_wait_servant(progress->serializer, refer_progress_terminate, progress);
 		pjsip_dlg_inc_lock(progress->dlg);
 		ao2_ref(progress, -1);
 
@@ -385,7 +394,7 @@ static int refer_progress_alloc(struct ast_sip_session *session, pjsip_rx_data *
 	ast_taskprocessor_build_name(tps_name, sizeof(tps_name), "pjsip/refer/%s",
 		ast_sorcery_object_get_id(session->endpoint));
 
-	if (!((*progress)->serializer = ast_sip_create_serializer_named(tps_name))) {
+	if (!((*progress)->serializer = ast_sip_create_serializer(tps_name))) {
 		goto error;
 	}
 
@@ -468,10 +477,20 @@ static struct refer_attended *refer_attended_alloc(struct ast_sip_session *trans
 	return attended;
 }
 
-static int defer_termination_cancel(void *data)
+static int session_end_if_deferred_task(void *data)
 {
 	struct ast_sip_session *session = data;
 
+	ast_sip_session_end_if_deferred(session);
+	ao2_ref(session, -1);
+	return 0;
+}
+
+static int defer_termination_cancel_task(void *data)
+{
+	struct ast_sip_session *session = data;
+
+	ast_sip_session_end_if_deferred(session);
 	ast_sip_session_defer_termination_cancel(session);
 	ao2_ref(session, -1);
 	return 0;
@@ -513,6 +532,7 @@ static int refer_attended_task(void *data)
 {
 	struct refer_attended *attended = data;
 	int response;
+	int (*task_cb)(void *data);
 
 	if (attended->transferer_second->channel) {
 		ast_debug(3, "Performing a REFER attended transfer - Transferer #1: %s Transferer #2: %s\n",
@@ -543,13 +563,18 @@ static int refer_attended_task(void *data)
 		}
 	}
 
-	ast_sip_session_end_if_deferred(attended->transferer);
-	if (response != 200) {
-		if (!ast_sip_push_task(attended->transferer->serializer,
-			defer_termination_cancel, attended->transferer)) {
-			/* Gave the ref to the pushed task. */
-			attended->transferer = NULL;
-		}
+	if (response == 200) {
+		task_cb = session_end_if_deferred_task;
+	} else {
+		task_cb = defer_termination_cancel_task;
+	}
+	if (!ast_sip_push_task(attended->transferer->serializer,
+		task_cb, attended->transferer)) {
+		/* Gave the ref to the pushed task. */
+		attended->transferer = NULL;
+	} else {
+		/* Do this anyway even though it is the wrong serializer. */
+		ast_sip_session_end_if_deferred(attended->transferer);
 	}
 
 	ao2_ref(attended, -1);
@@ -662,6 +687,10 @@ static void refer_blind_callback(struct ast_channel *chan, struct transfer_chann
 			ast_channel_unlock(chan);
 
 			ao2_cleanup(refer->progress);
+		} else {
+			stasis_subscription_accept_message_type(refer->progress->bridge_sub, ast_channel_entered_bridge_type());
+			stasis_subscription_accept_message_type(refer->progress->bridge_sub, stasis_subscription_change_type());
+			stasis_subscription_set_filter(refer->progress->bridge_sub, STASIS_SUBSCRIPTION_FILTER_SELECTIVE);
 		}
 	}
 
@@ -901,10 +930,7 @@ static int invite_replaces(void *data)
 	ast_channel_ref(invite->session->channel);
 	invite->channel = invite->session->channel;
 
-	ast_channel_lock(invite->channel);
-	invite->bridge = ast_channel_get_bridge(invite->channel);
-	ast_channel_unlock(invite->channel);
-
+	invite->bridge = ast_bridge_transfer_acquire_bridge(invite->channel);
 	return 0;
 }
 
@@ -947,7 +973,8 @@ static int refer_incoming_invite_request(struct ast_sip_session *session, struct
 
 	invite.session = other_session;
 
-	if (ast_sip_push_task_synchronous(other_session->serializer, invite_replaces, &invite)) {
+	if (ast_sip_push_task_wait_serializer(other_session->serializer, invite_replaces,
+		&invite)) {
 		response = 481;
 		goto inv_replace_failed;
 	}
@@ -1202,14 +1229,17 @@ static int load_module(void)
 {
 	const pj_str_t str_norefersub = { "norefersub", 10 };
 
-	CHECK_PJSIP_SESSION_MODULE_LOADED();
-
 	pjsip_replaces_init_module(ast_sip_get_pjsip_endpoint());
 	pjsip_xfer_init_module(ast_sip_get_pjsip_endpoint());
-	pjsip_endpt_add_capability(ast_sip_get_pjsip_endpoint(), NULL, PJSIP_H_SUPPORTED, NULL, 1, &str_norefersub);
+
+	if (ast_sip_get_norefersub()) {
+		pjsip_endpt_add_capability(ast_sip_get_pjsip_endpoint(), NULL, PJSIP_H_SUPPORTED, NULL, 1, &str_norefersub);
+	}
 
 	ast_sip_register_service(&refer_progress_module);
 	ast_sip_session_register_supplement(&refer_supplement);
+
+	ast_module_shutdown_ref(ast_module_info->self);
 
 	return AST_MODULE_LOAD_SUCCESS;
 }
@@ -1223,8 +1253,9 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PJSIP Blind and Attended Transfer Support",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.load_pri = AST_MODPRI_APP_DEPEND,
-		   );
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.load_pri = AST_MODPRI_APP_DEPEND,
+	.requires = "res_pjsip,res_pjsip_session,res_pjsip_pubsub",
+);

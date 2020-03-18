@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_Pickup</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_Pickup
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_Pickup-Pickup()">Pickup()</h1>
+
+<h3 id="Asterisk17Application_Pickup-Synopsis">Synopsis</h3>
+
+<p>Directed extension call pickup.</p>
+
+<h3 id="Asterisk17Application_Pickup-Description">Description</h3>
+
+<p>This application can pickup a specified ringing channel. The channel to pickup can be specified in the following ways.</p>
+
+<p>1) If no <em>extension</em> targets are specified, the application will pickup a channel matching the pickup group of the requesting channel.</p>
+
+<p>2) If the <em>extension</em> is specified with a <em>context</em> of the special string <code>PICKUPMARK</code> (for example 10@PICKUPMARK), the application will pickup a channel which has defined the channel variable <code>PICKUPMARK</code> with the same value as <em>extension</em> (in this example, <code>10</code>).</p>
+
+<p>3) If the <em>extension</em> is specified with or without a <em>context</em>, the channel with a matching <em>extension</em> and <em>context</em> will be picked up. If no <em>context</em> is specified, the current context will be used.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>The <em>extension</em> is typically set on matching channels by the dial application that created the channel. The <em>context</em> is set on matching channels by the channel driver for the device.</p>
+
+                    </div>
+    </div>
+
+
+<h3 id="Asterisk17Application_Pickup-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Pickup(extension&amp;[extension2[&amp;...]])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_Pickup-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>targets</code>
+	<ul>
+		<li><code><strong>extension</strong></code> - Specification of the pickup target.
+		<ul>
+			<li><code><strong>extension</strong></code></li>
+			<li><code>context</code></li>
+		</ul>
+		</li>
+		<li><code>extension2</code>[,<code>extension2</code>...] - Additional specifications of pickup targets.
+		<ul>
+			<li><code><strong>extension2</strong></code></li>
+			<li><code>context2</code></li>
+		</ul>
+		</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_Pickup-SeeAlso">See Also</h3>
+
+
+<h3 id="Asterisk17Application_Pickup-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

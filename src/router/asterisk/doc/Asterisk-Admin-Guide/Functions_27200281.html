@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Functions</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Functions
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on Sep 02, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>Under Construction</p>
+                    </div>
+    </div>
+<h1 id="Functions-AsteriskDialplanFunctions">Asterisk Dialplan Functions</h1><p>Asterisk functions are very similar to functions in many programming languages.</p><p>Functions are:</p><ul><li>Sophisticated subroutines that help you manipulate data in a variety of ways.</li><li>Callable from within dialplan and Asterisk's various interfaces.</li></ul><p>Compared to Dialplan Applications:</p><ul><li>Dialplan Functions tend to be geared towards manipulating channel data and attributes as well as providing general tools for manipulating data in variables and expressions, whether they are channel related or not.</li><li><a href="Applications_4817408.html">Dialplan Applications</a> tend to take over the channel and provide more complex features to the channel.</li></ul><p>Both will be typically be used with a channel but in different ways. For example you may send a channel to an application such as Playback and then let it fly, but with functions you might use one or many functions in a single expression to manipulate or move around data related to the channels operation.</p><p>Applications and functions are regularly used together and as you use them you'll see that the distinction between applications and the more powerful functions can sometimes be murky.</p></div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>In This Section</b></div><div class="panelContent">
+<p> <ul class='childpages-macro'><li><a href="Asterisk-Dialplan-Function-Examples_36215464.html">Asterisk Dialplan Function Examples</a></li><li><a href="Database-Transactions_4259986.html">Database Transactions</a></li><li><a href="Manipulating-Party-ID-Information_5243183.html">Manipulating Party ID Information</a></li><li><a href="4260044.html">Simple Message Desk Interface (SMDI) Integration</a></li></ul></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h2 id="Functions-Availablefunctions">Available functions</h2><p>Many functions come with Asterisk by default. For a complete list of the dialplan functions available to your installation of Asterisk, type <strong>core show functions</strong> at the Asterisk CLI. Not all functions are compiled with Asterisk by default, so if you have the source available then you may want to browse the functions listed in <a href="Using-Menuselect-to-Select-Asterisk-Options_4817523.html">menuselect</a> under &quot;Dialplan Functions&quot;. Dedicated function modules start with &quot;func_&quot;, but the core or other large modules may provide functions as well.</p><p>Since anyone can write an Asterisk module they can also be obtained from sources outside the Asterisk distribution. Pre-packaged community or commercial Asterisk distributions that have a special purpose may include a custom function or two.</p><h2 id="Functions-Generalfunctionsyntax">General function syntax</h2><p>The general syntax for calling a function follows:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">FUNCTION(argument1,argument2, ...)</pre>
+</div></div><p>A function's value can be set using the Set application. The example below will show how to set the CHANNEL function argument &quot;tonezone&quot; to the value &quot;de&quot; (for Germany).</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">same =&gt; n,Set(CHANNEL(tonezone)=de)</pre>
+</div></div><p>A function's value can be referenced almost anywhere in dialplan where you can use an expression or reference a variable. The value can be referenced by encapsulating the call with curly braces and a leading dollar sign.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">${FUNCTION(argument)}</pre>
+</div></div><p>For example, if we wanted to log the destination address for the audio stream of the channel:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">same =&gt; n,Log(NOTICE, The destination for the audio stream is: ${CHANNEL(rtp,dest)})</pre>
+</div></div><h2 id="Functions-Helpforspecificfunctions"><span style="color: rgb(133,120,102);">Help for specific functions</span></h2><p>The wiki section CLI Syntax and Help Commands details how to use the CLI-accessible documentation. This will allow you to access the syntax and usage info for each function including detail on all the arguments for each function.</p><p>Wikibot also publishes the same documentation on the wiki. You can find function docs in the version specific top level sections; such as Asterisk 13 Dialplan Functions.</p></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

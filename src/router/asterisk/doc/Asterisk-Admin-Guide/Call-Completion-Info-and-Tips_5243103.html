@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Call Completion Info and Tips</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="PSTN-Connectivity_4260105.html">PSTN Connectivity</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="5243096.html">Call Completion Supplementary Services (CCSS)</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Call Completion Info and Tips
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Mark Michelson</span> on Jan 27, 2011
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <ul>
+	<li>Be aware when using a generic agent that the max_cc_agents configuration parameter is ignored. The main driving reason for this is that the mechanism for cancelling CC when using a generic agent would become much more potentially confusing to execute. By limiting a calling party to having a single request, there is only ever a single request to be cancelled, making the process simple.</li>
+</ul>
+
+
+<ul>
+	<li>Keep in mind that no matter what CC agent type is being used, a CC request can only be made for the latest call issued.</li>
+</ul>
+
+
+<ul>
+	<li>If available timers are running on multiple called parties, it is possible that one of the timers may expire before the others do. If such a situation occurs, then the interface on which the timer expired will cease to be monitored. If, though, one of the other called parties becomes available before his available timer expires, the called party whose available timer had previously expired will still be included in the CC_INTERFACES channel variable on the recall.</li>
+	<li>It is strongly recommended that lots of thought is placed into the settings of the CC timers. Our general recommendation is that timers for phones should be set shorter than those for trunks. The reason for this is that it makes it less likely for a link in the middle of a network to cause CC to fail.</li>
+</ul>
+
+
+<ul>
+	<li>CC can potentially be a memory hog if used irresponsibly. The following are recommendations to help curb the amount of resources required by the CC engine. First, limit the maximum number of CC requests in the system using the cc_max_requests option in ccss.conf. Second, set the cc_offer_timer low for your callers. Since it is likely that most calls will not result in a CC request, it is a good idea to set this value to something low so that information for calls does not stick around in memory for long. The final thing that can be done is to conditionally set the cc_agent_policy to &quot;never&quot; using the CALLCOMPLETION dialplan function. By doing this, no CC information will be kept around after the call completes.</li>
+</ul>
+
+
+<ul>
+	<li>It is possible to request CCNR on answered calls. The reason for this is that it is impossible to know whether a call that is answered has actually been answered by a person or by something such as voicemail or some other IVR.</li>
+</ul>
+
+
+<ul>
+	<li>Not all channel drivers have had the ability to set CC config parameters in their configuration files added yet. At the time of this writing (2009 Oct), only chan_sip has had this ability added, with short-term plans to add this to chan_dahdi as well. It is possible to set CC configuration parameters for other channel types, though. For these channel types, the setting of the parameters can only be accomplished using the CALLCOMPLETION dialplan function.</li>
+</ul>
+
+
+<ul>
+	<li>It is documented in many places that generic agents and monitors can only be used for phones. In most cases, however, Asterisk has no way of distinguishing between a phone and a trunk itself. The result is that Asterisk will happily let you violate the advice given and allow you to set up a trunk with a generic monitor or agent. While this will not cause anything catastrophic to occur, the behavior will most definitely not be what you want.</li>
+</ul>
+
+
+<ul>
+	<li>At the time of this writing (2009 Oct), Asterisk is the only known SIP stack to write an implementation of draft-ietf-bliss-call-completion-04. As a result, it is recommended that for your SIP phones, use a generic agent and monitor. For SIP trunks, you will only be able to use CC if the other end is terminated by another Asterisk server running version 1.8 or later.</li>
+</ul>
+
+
+<ul>
+	<li>Native SIP CC will only work if the xml2 development library is installed. This is because we use libxml2 in order to parse PIDF bodies of PUBLISH messages received. If, at configure time, Asterisk cannot detect that the necessary library is installed, then native CC in SIP will be disabled. Attempts to set a channel or SIP peer to use native CC will be changed to having CC being disabled instead.</li>
+</ul>
+
+
+<ul>
+	<li>If the Dial application is called multiple times by a single extension, CC will only be offered to the caller for the parties called by the first instantiation of Dial.</li>
+</ul>
+
+
+<ul>
+	<li>If a phone forwards a call, then CC may only be requested for the phone that executed the call forward. CC may not be requested for the phone to which the call was forwarded.</li>
+	<li>CC is currently only supported by the Dial application. Queue, Followme, and Page do not support CC because it is not particularly useful for those applications.</li>
+</ul>
+
+
+    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <ul>
+	<li>Generic CC relies heavily on accurate device state reporting. In particular, when using SIP phones it is vital to be sure that device state is updated properly when using them. In order to facilitate proper device state handling, be sure to set callcounter=yes for all peers and to set limitonpeers=yes in the general section of sip.conf</li>
+</ul>
+
+                    </div>
+    </div>
+
+
+<ul>
+	<li>When using SIP CC (i.e. native CC over SIP), it is important that your minexpiry and maxexpiry values allow for available timers to run as little or as long as they are configured. When an Asterisk server requests call completion over SIP, it sends a SUBSCRIBE message with an Expires header set to the number of seconds that the available timer should run. If the Asterisk server that receives this SUBSCRIBE has a maxexpiry set lower than what is in the received Expires header, then the available timer will only run for maxexpiry seconds.</li>
+</ul>
+
+
+<ul>
+	<li>CC support for ETSI PTP and Q.SIG requires CallerID information to match CC requests with CC offers.  For Q.SIG, depending upon the options negotiated when CC is requested, the CallerID information needs to be callable as well.</li>
+</ul>
+
+
+<ul>
+	<li>As with all Asterisk components, CC is not perfect. If you should find a bug or wish to enhance the feature, please open an issue on <a class="external-link" href="https://issues.asterisk.org" rel="nofollow">https://issues.asterisk.org</a>. If writing an enhancement, please be sure to include a patch for the enhancement, or else the issue will be closed.</li>
+</ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

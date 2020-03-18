@@ -2,10 +2,14 @@
 	"_copyright": "Copyright (C) 2012 - 2013, Digium, Inc.",
 	"_author": "David M. Lee, II <dlee@digium.com>",
 	"_svn_revision": "$Revision$",
-	"apiVersion": "1.10.0",
+	"apiVersion": "2.0.0",
 	"swaggerVersion": "1.1",
 	"basePath": "http://localhost:8088/ari",
 	"resourcePath": "/api-docs/bridges.{format}",
+	"requiresModules": [
+		"res_stasis_recording",
+		"res_stasis_playback"
+	],
 	"apis": [
 		{
 			"path": "/bridges",
@@ -26,7 +30,7 @@
 					"parameters": [
 						{
 							"name": "type",
-							"description": "Comma separated list of bridge type attributes (mixing, holding, dtmf_events, proxy_media).",
+							"description": "Comma separated list of bridge type attributes (mixing, holding, dtmf_events, proxy_media, video_sfu).",
 							"paramType": "query",
 							"required": false,
 							"allowMultiple": false,
@@ -65,7 +69,7 @@
 					"parameters": [
 						{
 							"name": "type",
-							"description": "Comma separated list of bridge type attributes (mixing, holding, dtmf_events, proxy_media) to set.",
+							"description": "Comma separated list of bridge type attributes (mixing, holding, dtmf_events, proxy_media, video_sfu) to set.",
 							"paramType": "query",
 							"required": false,
 							"allowMultiple": false,
@@ -169,6 +173,24 @@
 							"required": false,
 							"allowMultiple": false,
 							"dataType": "string"
+						},
+						{
+							"name": "absorbDTMF",
+							"description": "Absorb DTMF coming from this channel, preventing it to pass through to the bridge",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "boolean",
+							"defaultValue": false
+						},
+						{
+							"name": "mute",
+							"description": "Mute audio from this channel, preventing it to pass through to the bridge",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "boolean",
+							"defaultValue": false
 						}
 					],
 					"errorResponses": [
@@ -400,10 +422,10 @@
 						},
 						{
 							"name": "media",
-							"description": "Media's URI to play.",
+							"description": "Media URIs to play.",
 							"paramType": "query",
 							"required": true,
-							"allowMultiple": false,
+							"allowMultiple": true,
 							"dataType": "string"
 						},
 						{
@@ -416,7 +438,7 @@
 						},
 						{
 							"name": "offsetms",
-							"description": "Number of media to skip before playing.",
+							"description": "Number of milliseconds to skip before playing. Only applies to the first URI if multiple media URIs are specified.",
 							"paramType": "query",
 							"required": false,
 							"allowMultiple": false,
@@ -492,10 +514,10 @@
 						},
 						{
 							"name": "media",
-							"description": "Media's URI to play.",
+							"description": "Media URIs to play.",
 							"paramType": "query",
 							"required": true,
-							"allowMultiple": false,
+							"allowMultiple": true,
 							"dataType": "string"
 						},
 						{
@@ -508,7 +530,7 @@
 						},
 						{
 							"name": "offsetms",
-							"description": "Number of media to skip before playing.",
+							"description": "Number of milliseconds to skip before playing. Only applies to the first URI if multiple media URIs are specified.",
 							"paramType": "query",
 							"required": false,
 							"allowMultiple": false,
@@ -731,6 +753,11 @@
 					"type": "string",
 					"description": "The ID of the channel that is the source of video in this bridge, if one exists.",
 					"required": false
+				},
+				"creationtime": {
+					"required": true,
+					"type": "Date",
+					"description": "Timestamp when bridge was created"
 				}
 			}
 		}

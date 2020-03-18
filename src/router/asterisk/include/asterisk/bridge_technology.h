@@ -46,11 +46,9 @@ enum ast_bridge_preference {
  * performing talking optimizations.
  */
 struct ast_bridge_tech_optimizations {
-	/*! The amount of time in ms that talking must be detected before
-	 *  the dsp determines that talking has occurred */
+	/*! Minimum average magnitude threshold to determine talking by the DSP. */
 	unsigned int talking_threshold;
-	/*! The amount of time in ms that silence must be detected before
-	 *  the dsp determines that talking has stopped */
+	/*! Time in ms of silence necessary to declare talking stopped by the bridge. */
 	unsigned int silence_threshold;
 	/*! Whether or not the bridging technology should drop audio
 	 *  detected as silence from the mix. */
@@ -108,11 +106,13 @@ struct ast_bridge_technology {
 	 *
 	 * \note On entry, bridge is already locked.
 	 *
-	 * \note The bridge technology must tollerate a failed to join channel
+	 * \note The bridge technology must tolerate a failed to join channel
 	 * until it can be kicked from the bridge.
 	 *
 	 * \note A channel may be in a suspended state already when joining a bridge
 	 * technology. The technology must handle this case.
+	 *
+	 * \note A channel may not be answered when joining a bridge technology.
 	 */
 	int (*join)(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel);
 	/*!
@@ -162,10 +162,34 @@ struct ast_bridge_technology {
 	 */
 	int (*write)(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel, struct ast_frame *frame);
 	/*!
-	 * \brief Formats that the bridge technology supports
-	 * \note This is no longer used.  It remains for ABI compatibility.
+	 * \brief Callback for when a request has been made to change a stream topology on a channel
+	 *
+	 * \details
+	 * This is called when a bridge receives a request to change the
+	 * topology on the channel.  A bridge technology should define a
+	 * handler for this callback if it needs to update internals or
+	 * intercept the request and not pass it on to other channels.
+	 * This can be done by returning a nonzero value.
+	 *
+	 * \retval 0 Frame can pass to the bridge technology.
+	 * \retval non-zero Frame intercepted by the bridge technology.
+	 *
+	 * \note On entry, bridge is already locked.
 	 */
-	struct ast_format_cap *format_capabilities;
+	int (*stream_topology_request_change)(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel);
+	/*!
+	 * \brief Callback for when a stream topology changes on the channel
+	 *
+	 * \details
+	 * This is called when a bridge receives an indication that a
+	 * topology has been changed on a channel and the new topology has
+	 * been mapped to the bridge.  A bridge technology should define a
+	 * handler for this callback if it needs to update internals due
+	 * to a channel's topology changing.
+	 *
+	 * \note On entry, bridge is already locked.
+	 */
+	void (*stream_topology_changed)(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel);
 	/*! TRUE if the bridge technology is currently suspended. */
 	unsigned int suspended:1;
 	/*! Module this bridge technology belongs to. It is used for reference counting bridges using the technology. */
@@ -196,7 +220,7 @@ struct ast_bridge_technology {
 int __ast_bridge_technology_register(struct ast_bridge_technology *technology, struct ast_module *mod);
 
 /*! \brief See \ref __ast_bridge_technology_register() */
-#define ast_bridge_technology_register(technology) __ast_bridge_technology_register(technology, ast_module_info->self)
+#define ast_bridge_technology_register(technology) __ast_bridge_technology_register(technology, AST_MODULE_SELF)
 
 /*!
  * \brief Unregister a bridge technology from use

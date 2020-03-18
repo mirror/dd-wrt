@@ -16,7 +16,7 @@
  */
 
 /*! \file
- * 
+ *
  * \brief CUT function
  *
  * \author Tilghman Lesher <app_cut__v003@the-tilghman.com>
@@ -30,8 +30,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/file.h"
 #include "asterisk/channel.h"
 #include "asterisk/pbx.h"
@@ -41,7 +39,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 /*** DOCUMENTATION
 	<function name="SORT" language="en_US">
 		<synopsis>
-			Sorts a list of key/vals into a list of keys, based upon the vals.	
+			Sorts a list of key/vals into a list of keys, based upon the vals.
 		</synopsis>
 		<syntax>
 			<parameter name="keyval" required="true" argsep=":">
@@ -61,7 +59,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 	</function>
 	<function name="CUT" language="en_US">
 		<synopsis>
-			Slices and dices strings, based upon a named delimiter.		
+			Slices and dices strings, based upon a named delimiter.
 		</synopsis>
 		<syntax>
 			<parameter name="varname" required="true">
@@ -77,7 +75,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		</syntax>
 		<description>
 			<para>Cut out information from a string (<replaceable>varname</replaceable>), based upon a named delimiter.</para>
-		</description>	
+		</description>
 	</function>
  ***/
 

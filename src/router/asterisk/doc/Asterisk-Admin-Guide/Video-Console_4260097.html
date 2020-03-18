@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Video Console</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Core-Configuration_27820183.html">Core Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Video Console
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 27, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="VideoConsole-VideoConsoleSupportinAsterisk">Video Console Support in Asterisk</h1>
+
+<p>Some console drivers (at the moment chan_oss.so) can be built with support for sending and receiving video.  In order to have this working you need to perform the following steps:</p>
+
+<h5 id="VideoConsole-Enablebuildingthevideo_consolesupport">Enable building the video_console support</h5>
+
+<p>The simplest way to do it is add this one line to channels/Makefile:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+chan_oss.so: _ASTCFLAGS+=-DHAVE_VIDEO_CONSOLE
+</pre>
+</div></div>
+
+<h5 id="VideoConsole-Installprerequisitepackages">Install prerequisite packages</h5>
+
+<p>The video_console support relies on the presence of SDL, SDL_image and ffmpeg libraries, and of course on the availability of X11</p>
+
+<p>On Linux, these are supplied by</p>
+
+<ul>
+	<li>libncurses-dev</li>
+	<li>libsdl1.2-dev</li>
+	<li>libsdl-image1.2-dev</li>
+	<li>libavcodec-dev</li>
+	<li>libswcale-dev</li>
+</ul>
+
+
+<p>On FreeBSD, you need the following ports:</p>
+
+<ul>
+	<li>multimedia/ffmpeg (2007.10.04)</li>
+	<li>devel/sdl12  graphics/sdl_image</li>
+</ul>
+
+
+<h5 id="VideoConsole-Buildandinstallasteriskwithalltheabove">Build and install asterisk with all the above</h5>
+
+<p>Make sure you do a 'make clean' and run configure again after you have installed the required packages, to make sure that the required pieces are found.</p>
+
+<p>Check that chan_oss.so is generated and correctly installed.</p>
+
+<h5 id="VideoConsole-Updateconfigurationfiles">Update configuration files</h5>
+
+<p>Video support requires explicit configuration as described below:</p>
+
+<p><strong>oss.conf</strong><br />
+You need to set various parameters for video console, the easiest way is to uncomment the following line in oss.conf by removing the leading ';'</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+;[general](+,my_video,skin2)
+</pre>
+</div></div>
+
+<p>You also need to manually copy the two files</p>
+
+<ul>
+	<li>images/kpad2.jpg</li>
+	<li>images/font.png</li>
+</ul>
+
+
+<p>into the places specified in oss.conf, which in the sample are set to</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+keypad = /tmp/kpad2.jpg
+keypad_font = /tmp/font.png
+</pre>
+</div></div>
+
+<p>other configuration parameters are described in oss.conf.sample</p>
+
+<p><strong>sip.conf</strong></p>
+
+<p>To actually run a call using SIP (the same probably applies to iax.conf) you need to enable video support as following</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+[general](+)
+videosupport=yes
+allow=h263      ; this or other video formats   
+allow=h263p     ; this or other video formats
+</pre>
+</div></div>
+
+<p>You can add other video formats e.g. h261, h264, mpeg if they are supported by your version of libavcodec.</p>
+
+<h5 id="VideoConsole-RuntheProgram">Run the Program</h5>
+
+<p>Run asterisk in console mode e.g. asterisk -vdc</p>
+
+<p>If video console support has been successfully compiled in, then you will see the &quot;console startgui&quot; command available on the CLI interface. Run the command, and you should see a window like this <a class="external-link" href="http://info.iet.unipi.it/~luigi/asterisk_video_console.jpg" rel="nofollow">http://info.iet.unipi.it/~luigi/asterisk_video_console.jpg</a></p>
+
+<p>To exit from this window, in the console run &quot;console stopgui&quot;.</p>
+
+<p>If you want to start a video call, you need to configure your dialplan so that you can reach (or be reachable) by a peer who can support video.  Once done, a video call is the same as an ordinary call:</p>
+
+<p>&quot;console dial ...&quot;, &quot;console answer&quot;, &quot;console hangup&quot; all work the same.</p>
+
+<p>To use the GUI, and also configure video sources, see the next section.</p>
+
+<h5 id="VideoConsole-VideoSources">Video Sources</h5>
+
+<p>Video sources are declared with the &quot;videodevice=...&quot; lines in oss.conf where the ... is the name of a device (e.g. /dev/video0 ...) or a string starting with X11 which identifies one instance of an X11 grabber.</p>
+
+<p>You can have up to 9 sources, displayed in thumbnails in the gui, and select which one to transmit, possibly using Picture-in-Picture.</p>
+
+<p>For webcams, the only control you have is the image size and frame rate (which at the moment is the same for all video sources).  X11 grabbers capture a region of the X11 screen (it can contain anything, even a live video) and use it as the source.  The position of the grab region can be configured using the GUI below independently for each video source.</p>
+
+<p>The actual video sent to the remote side is the device selected as &quot;primary&quot; (with the mouse, see below), possibly with a small 'Picture-in-Picture' of the &quot;secondary&quot; device (all selectable with the mouse).</p>
+
+<h5 id="VideoConsole-GUICommandsandVideoSources">GUI Commands and Video Sources</h5>
+
+<p>(most of the text below is taken from channels/console_gui.c)</p>
+
+<p>The GUI is made of 4 areas: remote video on the left, local video on the right, keypad with all controls and text windows in the center, and source device thumbnails on the top.  The top row is not displayed if no devices are specified in the config file.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>     ________________________________________________________________
+    |  ______   ______   ______   ______   ______   ______   ______  |
+    | | tn.1 | | tn.2 | | tn.3 | | tn.4 | | tn.5 | | tn.6 | | tn.7 | |
+    | |______| |______| |______| |______| |______| |______| |______| |
+    |  ______   ______   ______   ______   ______   ______   ______  |
+    | |______| |______| |______| |______| |______| |______| |______| |
+    |  _________________    __________________    _________________  |
+    | |                 |  |                  |  |                 | |
+    | |                 |  |                  |  |                 | |
+    | |                 |  |                  |  |                 | |
+    | |   remote video  |  |                  |  |   local video   | |
+    | |                 |  |                  |  |          ______ | |
+    | |                 |  |      keypad      |  |         |  PIP || |
+    | |                 |  |                  |  |         |______|| |
+    | |_________________|  |                  |  |_________________| |
+    |                      |                  |                      |
+    |                      |                  |                      |
+    |                      |__________________|                      |
+    |________________________________________________________________|
+</pre>
+</div></div>
+
+<p>The central section is built using an image (jpg, png, maybe gif too) for the skin and other GUI elements.  Comments embedded in the image indicate to what function each area is mapped to.</p>
+
+<p>Another image (png with transparency) is used for the font.</p>
+
+<p>Mouse and keyboard events are detected on the whole surface, and handled differently according to their location:</p>
+
+<ul>
+	<li>Center/right click on the local/remote window are used to resize the corresponding window</li>
+	<li>Clicks on the thumbnail start/stop sources and select them as primary or secondary video sources</li>
+	<li>Drag on the local video window are used to move the captured area (in the case of X11 grabber) or the picture-in-picture position</li>
+	<li>Keystrokes on the keypad are mapped to the corresponding key; keystrokes are used as keypad functions, or as text input<br />
+  if we are in text-input mode.</li>
+	<li>Drag on some keypad areas (sliders etc.) are mapped to the corresponding functions (mute/unmute audio and video,<br />
+  enable/disable Picture-in-Picture, freeze the incoming video, dial numbers, pick up or hang up a call, ...)</li>
+</ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

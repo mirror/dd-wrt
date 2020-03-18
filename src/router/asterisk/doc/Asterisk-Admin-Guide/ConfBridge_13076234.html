@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : ConfBridge</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Conferencing-Applications_32375228.html">Conferencing Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : ConfBridge
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Rusty Newton</span> on Mar 30, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="ConfBridge-Overview">Overview</h1><p>Asterisk, since its early days, has offered a conferencing application called MeetMe (<a href="http://app_meetme.so" class="external-link" rel="nofollow">app_meetme.so</a>). MeetMe provides DAHDI-mixed software-based bridges for multi-party audio conferencing. MeetMe is used by nearly all Asterisk implementations - small office, call center, large office, feature-server, third-party application, etc. It has been extremely successful as an audio bridge.</p><p>Over time, several significant limitations of MeetMe have been encountered by its users. Among these are two of distinction: MeetMe requires DAHDI for mixing, and is thus limited to 8kHz (PSTN) audio sampling rates; and MeetMe is delivered in a fairly static form, it does not provide extensive configuration options.</p><p>To address these limitations, a new conferencing application, based upon the ConfBridge application introduced in Asterisk 1.6.0, is now available with Asterisk 10. This new ConfBridge application replaces the older ConfBridge application. It is not intended to be a direct replacement for MeetMe, it will not provide feature parity with the MeetMe application. Instead, the new ConfBridge application delivers a completely redesigned set of functionality that most users will find more than sufficient, and in many ways better, for their conferencing needs.</p></div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303031444 {padding: 0px;}
+div.rbtoc1582303031444 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303031444 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303031444'>
+<ul class='toc-indentation'>
+<li><a href='#ConfBridge-Overview'>Overview</a></li>
+<li><a href='#ConfBridge-ConfBridgeConcepts'>ConfBridge Concepts</a></li>
+<li><a href='#ConfBridge-ConfBridgeApplicationSyntax'>ConfBridge Application Syntax</a></li>
+<li><a href='#ConfBridge-ConfBridgeApplicationExamples'>ConfBridge Application Examples</a></li>
+<li><a href='#ConfBridge-UsageNotes,FAQandOther'>Usage Notes, FAQ and Other</a></li>
+</ul>
+</div></p>
+</div></div><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>In This Section</b></div><div class="panelContent">
+<p><ul class='childpages-macro'><li><a href="ConfBridge-AMI-Actions_34014261.html">ConfBridge AMI Actions</a></li><li><a href="ConfBridge-AMI-Events_34014263.html">ConfBridge AMI Events</a></li><li><a href="ConfBridge-CLI-Commands_34014257.html">ConfBridge CLI Commands</a></li><li><a href="ConfBridge-Configuration_34014252.html">ConfBridge Configuration</a></li><li><a href="ConfBridge-Functions_34014255.html">ConfBridge Functions</a></li><li><a href="ConfBridge-Sound-Prompts_34014265.html">ConfBridge Sound Prompts</a></li></ul></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="ConfBridge-ConfBridgeConcepts">ConfBridge Concepts</h1><p>ConfBridge provides four internal concepts:</p><ol><li>Conference Number</li><li>Bridge Profile</li><li>User Profile</li><li>Conference Menu</li></ol><p>A <strong>Conference Number</strong> is a numerical representation for an instance of the bridge. Callers joined to the same conference number will be in the same conference bridge; they're connected. Callers joined to different conference numbers are not in the same conference bridge; they're separated. Conference Numbers are assigned in the dialplan. Unlike MeetMe, they're not pre-reserved.</p><p>A <strong>Bridge Profile</strong> is a named set of options that control the behavior of a particular conference bridge. Each bridge must have its own profile. A single bridge cannot have more than one Bridge Profile.</p><p>A <strong>User Profile</strong> is a named set of options that control the user's experience as a member of a particular bridge. Each user participating in a bridge can have their own individual User Profile.</p><p>A <strong>Conference Menu</strong> is a named set of options that are provided to a user when they present DTMF keys while connected to the bridge. Each user participating in a bridge can have their own individual Conference Menu.</p><h1 id="ConfBridge-ConfBridgeApplicationSyntax">ConfBridge Application Syntax</h1><p>The ConfBridge application syntax and usage can be found at <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_ConfBridge">Asterisk 13 Application_ConfBridge</a></p><h1 id="ConfBridge-ConfBridgeApplicationExamples">ConfBridge Application Examples</h1><p><strong>Example 1</strong><br /> In this example, callers will be joined to conference number 1234, using the default Bridge Profile, the default User Profile, and no Conference Menu.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; 1,1,Answer()
+exten =&gt; 1,n,ConfBridge(1234)
+</pre>
+</div></div><p><strong>Example 2</strong><br /> In this example, callers will be joined to conference number 1234, with the default Bridge Profile, a User Profile called &quot;1234_participants&quot; and a Conference Menu called &quot;1234_menu.&quot;</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; 1,1,Answer()
+exten =&gt; 1,n,ConfBridge(1234,,1234_participants,1234_menu)
+</pre>
+</div></div><h1 id="ConfBridge-UsageNotes,FAQandOther">Usage Notes, FAQ and Other</h1><p>There are many points to consider when using the new ConfBridge appliation. Some will be examined here.</p><h4 id="ConfBridge-VideoConferencing">Video Conferencing</h4><p>It is imperative that a video conference not have participants using disparate video codecs or encoding profiles. Everyone <strong>must</strong> use the same codec and profile. Otherwise, the video sessions won't work - you'll likely experience frozen video as the conference switches from one video stream using a codec your client has negotiated, to a video stream using a codec your client hasn't negotiated or doesn't support.</p><h5 id="ConfBridge-VideoEndpoints">Video Endpoints</h5><p>ConfBridge has been tested against a number of video-capable SIP endpoints. Success, and your mileage will vary.</p><p>Endpoints that work:</p><ul><li>Jitsi - Jitsi works well for both H.264 and H.263+1998 video calling on Mac, Linux and Windows machines. Currently, Jitsi seems to be the best-working, free, H.264-capable SIP video client.</li><li>Linphone - Linphone works well for H.263+1998 and H.263 video calling on Linux - the Mac port and mobile ports do not support video. Currently, Linphone seems to be the best-working, free, H.263-capable SIP video client, when Jitsi or H.263+1998 aren't an option.</li><li>Empathy - Empathy works for H.264 calling, but is amazingly difficult to configure (why one has to make two SIP accounts just to make a SIP call is a mystery).</li><li>Lifesize - The Lifesize client supports H.264 and runs on Windows only. It works very well, but it isn't free.</li><li>Polycom VVX 1500 - The Polycom VVX 1500 works well for H.264 calling. If you're connecting it to Jitsi, you may have to configure Jitsi to use the Baseline H.264 profile instead of the Main profile.</li></ul><p>Endpoints that don't or weren't tested:</p><ul><li>Xlite - Xlite works in some cases, but also seems to crash, regardless of operating system, at odd times. In other cases, Xlite isn't able to decode video from clients.</li><li>Ekiga - Ekiga wasn't tested, because our test camera wasn't supported by the client. The same camera was supported by other soft clients.</li><li>SIPDroid - SIPDroid doesn't seem to work.</li><li>OfficeSIP Messenger - OfficeSIP Messenger didn't seem capable of performing a SIP registration. On this basis alone, no one should recommend its use.</li></ul><h4 id="ConfBridge-MixingInterval">Mixing Interval</h4><p>The mixing interval for a conference is defined in its Bridge Profile. The allowable options are 10, 20, 40, and 80, all in milliseconds. Usage of 80ms mixing intervals is only supported for conferences that are sampled at 8, 12, 16, 24, 32, and 48kHz. Usage of 40ms intervals includes all of the aforementioned sampling rates as well as 96kHz. 192kHz sampled conferences are only supported at 10 and 20ms mixing intervals. These limitations are imposed because higher mixing intervals at the higher sampling rates causes large increases in memory consumption. Adventurous users may, through changing of the MAX_DATALEN define in bridge_softmix.c allow 96kHz and 192kHz sampled conferences to operate at longer intervals - set to 16192 for 96kHz at 80ms or 32384 for 192kHz at 80ms, recompile, and restart.</p><h4 id="ConfBridge-MaximizingPerformance">Maximizing Performance</h4><p>In order to maximize the performance of a given machine for ConfBridge purposes, there are several steps one should take.</p><ul><li>Enable dsp_drop_silence is enabled in the User Profile.<ul><li>This is the <strong>single most</strong> important step one can take when trying to increase the number of bridge participants that a single machine can handle. Enabling this means that the audio of users that aren't speaking isn't mixed in with the bridge.</li></ul></li><li>Lengthen mixing_interval in the Bridge Profile.<ul><li>The default interval is 20ms. Other options are 10, 40, and 80ms. Lower values provide a &quot;tighter&quot; sound, but require substantially more CPU. Higher values provider a &quot;looser&quot; sound, and consume substantially less CPU. Setting the value to 80 provides the highest number of possible participants.</li></ul></li><li>Connect clients at the same sampling rate.<ul><li>Requiring the bridge to resample between clients that use codecs with different sampling rates is an expensive operation. If all clients are dialed in to the bridge at the same sampling rate, and the bridge operates at that same rate, e.g. 16kHz, then the number of possible clients will be maximized.</li></ul></li><li>Run Asterisk with a higher priority.<ul><li>By default, Asterisk operates at a relatively normal priority, as compared to other processes on the system. To maximize the number of possible clients, Asterisk should be started using the <strong>-p</strong> (realtime) flag. If the load becomes too large, this can negatively impact the performance of other processes, including the console itself - making it difficult to remotely administer a fully loaded system.</li></ul></li></ul><p>As the number of clients approaches the maximum possible on the given machine, given its processing capabilities, audio quality will suffer. Following the above guidelines will increase the number of connected clients before audio quality suffers.</p></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

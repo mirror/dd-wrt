@@ -35,12 +35,11 @@
 
 /*** MODULEINFO
 	<depend>res_odbc</depend>
+	<depend>generic_odbc</depend>
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <sys/types.h>
 #include <time.h>
@@ -82,6 +81,7 @@ struct tables {
 	char *connection;
 	char *table;
 	char *schema;
+	char quoted_identifiers;
 	unsigned int usegmtime:1;
 	AST_LIST_HEAD_NOLOCK(odbc_columns, columns) columns;
 	AST_RWLIST_ENTRY(tables) list;
@@ -101,6 +101,7 @@ static int load_config(void)
 	char connection[40];
 	char table[40];
 	char schema[40];
+	char quoted_identifiers;
 	int lenconnection, lentable, lenschema, usegmtime = 0;
 	SQLLEN sqlptr;
 	int res = 0;
@@ -149,6 +150,16 @@ static int load_config(void)
 		ast_copy_string(schema, tmp, sizeof(schema));
 		lenschema = strlen(schema);
 
+		if (ast_strlen_zero(tmp = ast_variable_retrieve(cfg, catg, "quoted_identifiers"))) {
+			tmp = "";
+		}
+		quoted_identifiers = tmp[0];
+		if (strlen(tmp) > 1) {
+			ast_log(LOG_ERROR, "The quoted_identifiers setting only accepts a single character,"
+				" while a value of '%s' was provided. This option has been disabled as a result.\n", tmp);
+			quoted_identifiers = '\0';
+		}
+
 		res = SQLAllocHandle(SQL_HANDLE_STMT, obj->con, &stmt);
 		if ((res != SQL_SUCCESS) && (res != SQL_SUCCESS_WITH_INFO)) {
 			ast_log(LOG_WARNING, "SQL Alloc Handle failed on connection '%s'!\n", connection);
@@ -164,7 +175,7 @@ static int load_config(void)
 			continue;
 		}
 
-		tableptr = ast_calloc(sizeof(char), sizeof(*tableptr) + lenconnection + 1 + lentable + 1 + lenschema + 1);
+		tableptr = ast_calloc(sizeof(char), sizeof(*tableptr) + lenconnection + 1 + lentable + 1 + lenschema + 1 + 1);
 		if (!tableptr) {
 			ast_log(LOG_ERROR, "Out of memory creating entry for table '%s' on connection '%s'%s%s%s\n", table, connection,
 				lenschema ? " (schema '" : "", lenschema ? schema : "", lenschema ? "')" : "");
@@ -181,6 +192,7 @@ static int load_config(void)
 		ast_copy_string(tableptr->connection, connection, lenconnection + 1);
 		ast_copy_string(tableptr->table, table, lentable + 1);
 		ast_copy_string(tableptr->schema, schema, lenschema + 1);
+		tableptr->quoted_identifiers = quoted_identifiers;
 
 		ast_verb(3, "Found adaptive CDR table %s@%s.\n", tableptr->table, tableptr->connection);
 
@@ -326,7 +338,7 @@ static SQLHSTMT generic_prepare(struct odbc_obj *obj, void *data)
 		return NULL;
 	}
 
-	res = SQLPrepare(stmt, (unsigned char *) data, SQL_NTS);
+	res = ast_odbc_prepare(obj, stmt, data);
 	if ((res != SQL_SUCCESS) && (res != SQL_SUCCESS_WITH_INFO)) {
 		ast_log(LOG_WARNING, "SQL Prepare failed![%s]\n", (char *) data);
 		SQLGetDiagField(SQL_HANDLE_STMT, stmt, 1, SQL_DIAG_NUMBER, &numfields, SQL_IS_INTEGER, &diagbytes);
@@ -345,11 +357,11 @@ static SQLHSTMT generic_prepare(struct odbc_obj *obj, void *data)
 	return stmt;
 }
 
-#define LENGTHEN_BUF1(size)														\
+#define LENGTHEN_BUF(size, var_sql)														\
 			do {																\
 				/* Lengthen buffer, if necessary */								\
-				if (ast_str_strlen(sql) + size + 1 > ast_str_size(sql)) {		\
-					if (ast_str_make_space(&sql, ((ast_str_size(sql) + size + 1) / 512 + 1) * 512) != 0) { \
+				if (ast_str_strlen(var_sql) + size + 1 > ast_str_size(var_sql)) {		\
+					if (ast_str_make_space(&var_sql, ((ast_str_size(var_sql) + size + 1) / 512 + 1) * 512) != 0) { \
 						ast_log(LOG_ERROR, "Unable to allocate sufficient memory.  Insert CDR '%s:%s' failed.\n", tableptr->connection, tableptr->table); \
 						ast_free(sql);											\
 						ast_free(sql2);											\
@@ -359,18 +371,10 @@ static SQLHSTMT generic_prepare(struct odbc_obj *obj, void *data)
 				}																\
 			} while (0)
 
-#define LENGTHEN_BUF2(size)														\
-			do {																\
-				if (ast_str_strlen(sql2) + size + 1 > ast_str_size(sql2)) {		\
-					if (ast_str_make_space(&sql2, ((ast_str_size(sql2) + size + 3) / 512 + 1) * 512) != 0) { \
-						ast_log(LOG_ERROR, "Unable to allocate sufficient memory.  Insert CDR '%s:%s' failed.\n", tableptr->connection, tableptr->table); \
-						ast_free(sql);											\
-						ast_free(sql2);											\
-						AST_RWLIST_UNLOCK(&odbc_tables);						\
-						return -1;												\
-					}															\
-				}																\
-			} while (0)
+#define LENGTHEN_BUF1(size)	\
+	LENGTHEN_BUF(size, sql);
+#define LENGTHEN_BUF2(size)	\
+	LENGTHEN_BUF(size, sql2);
 
 static int odbc_log(struct ast_cdr *cdr)
 {
@@ -382,6 +386,8 @@ static int odbc_log(struct ast_cdr *cdr)
 	char colbuf[1024], *colptr;
 	SQLHSTMT stmt = NULL;
 	SQLLEN rows = 0;
+	char *separator;
+	int quoted = 0;
 
 	if (!sql || !sql2) {
 		if (sql)
@@ -399,11 +405,28 @@ static int odbc_log(struct ast_cdr *cdr)
 	}
 
 	AST_LIST_TRAVERSE(&odbc_tables, tableptr, list) {
-		int first = 1;
+		separator = "";
+
+		quoted = 0;
+		if (tableptr->quoted_identifiers != '\0'){
+			quoted = 1;
+		}
+
 		if (ast_strlen_zero(tableptr->schema)) {
-			ast_str_set(&sql, 0, "INSERT INTO %s (", tableptr->table);
+			if (quoted) {
+				ast_str_set(&sql, 0, "INSERT INTO %c%s%c (",
+					tableptr->quoted_identifiers, tableptr->table, tableptr->quoted_identifiers );
+			}else{
+				ast_str_set(&sql, 0, "INSERT INTO %s (", tableptr->table);
+			}
 		} else {
-			ast_str_set(&sql, 0, "INSERT INTO %s.%s (", tableptr->schema, tableptr->table);
+			if (quoted) {
+				ast_str_set(&sql, 0, "INSERT INTO %c%s%c.%c%s%c (",
+						tableptr->quoted_identifiers, tableptr->schema, tableptr->quoted_identifiers,
+						tableptr->quoted_identifiers, tableptr->table,  tableptr->quoted_identifiers);
+			}else{
+				ast_str_set(&sql, 0, "INSERT INTO %s.%s (", tableptr->schema, tableptr->table);
+			}
 		}
 		ast_str_set(&sql2, 0, " VALUES (");
 
@@ -484,11 +507,10 @@ static int odbc_log(struct ast_cdr *cdr)
 						}
 					}
 
-					ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
 					LENGTHEN_BUF2(strlen(colptr));
 
 					/* Encode value, with escaping */
-					ast_str_append(&sql2, 0, "%s'", first ? "" : ",");
+					ast_str_append(&sql2, 0, "%s'", separator);
 					for (tmp = colptr; *tmp; tmp++) {
 						if (*tmp == '\'') {
 							ast_str_append(&sql2, 0, "''");
@@ -520,9 +542,8 @@ static int odbc_log(struct ast_cdr *cdr)
 							year += 2000;
 						}
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
 						LENGTHEN_BUF2(17);
-						ast_str_append(&sql2, 0, "%s{ d '%04d-%02d-%02d' }", first ? "" : ",", year, month, day);
+						ast_str_append(&sql2, 0, "%s{ d '%04d-%02d-%02d' }", separator, year, month, day);
 					}
 					break;
 				case SQL_TYPE_TIME:
@@ -537,9 +558,8 @@ static int odbc_log(struct ast_cdr *cdr)
 							continue;
 						}
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
 						LENGTHEN_BUF2(15);
-						ast_str_append(&sql2, 0, "%s{ t '%02d:%02d:%02d' }", first ? "" : ",", hour, minute, second);
+						ast_str_append(&sql2, 0, "%s{ t '%02d:%02d:%02d' }", separator, hour, minute, second);
 					}
 					break;
 				case SQL_TYPE_TIMESTAMP:
@@ -566,9 +586,8 @@ static int odbc_log(struct ast_cdr *cdr)
 							year += 2000;
 						}
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
 						LENGTHEN_BUF2(26);
-						ast_str_append(&sql2, 0, "%s{ ts '%04d-%02d-%02d %02d:%02d:%02d' }", first ? "" : ",", year, month, day, hour, minute, second);
+						ast_str_append(&sql2, 0, "%s{ ts '%04d-%02d-%02d %02d:%02d:%02d' }", separator, year, month, day, hour, minute, second);
 					}
 					break;
 				case SQL_INTEGER:
@@ -581,9 +600,8 @@ static int odbc_log(struct ast_cdr *cdr)
 							continue;
 						}
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
 						LENGTHEN_BUF2(12);
-						ast_str_append(&sql2, 0, "%s%d", first ? "" : ",", integer);
+						ast_str_append(&sql2, 0, "%s%d", separator, integer);
 					}
 					break;
 				case SQL_BIGINT:
@@ -596,9 +614,8 @@ static int odbc_log(struct ast_cdr *cdr)
 							continue;
 						}
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
 						LENGTHEN_BUF2(24);
-						ast_str_append(&sql2, 0, "%s%lld", first ? "" : ",", integer);
+						ast_str_append(&sql2, 0, "%s%lld", separator, integer);
 					}
 					break;
 				case SQL_SMALLINT:
@@ -611,9 +628,8 @@ static int odbc_log(struct ast_cdr *cdr)
 							continue;
 						}
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
 						LENGTHEN_BUF2(6);
-						ast_str_append(&sql2, 0, "%s%d", first ? "" : ",", integer);
+						ast_str_append(&sql2, 0, "%s%d", separator, integer);
 					}
 					break;
 				case SQL_TINYINT:
@@ -626,9 +642,8 @@ static int odbc_log(struct ast_cdr *cdr)
 							continue;
 						}
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
 						LENGTHEN_BUF2(4);
-						ast_str_append(&sql2, 0, "%s%d", first ? "" : ",", integer);
+						ast_str_append(&sql2, 0, "%s%d", separator, integer);
 					}
 					break;
 				case SQL_BIT:
@@ -643,9 +658,8 @@ static int odbc_log(struct ast_cdr *cdr)
 						if (integer != 0)
 							integer = 1;
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
 						LENGTHEN_BUF2(2);
-						ast_str_append(&sql2, 0, "%s%d", first ? "" : ",", integer);
+						ast_str_append(&sql2, 0, "%s%d", separator, integer);
 					}
 					break;
 				case SQL_NUMERIC:
@@ -676,9 +690,8 @@ static int odbc_log(struct ast_cdr *cdr)
 							continue;
 						}
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
 						LENGTHEN_BUF2(entry->decimals);
-						ast_str_append(&sql2, 0, "%s%*.*lf", first ? "" : ",", entry->decimals, entry->radix, number);
+						ast_str_append(&sql2, 0, "%s%*.*lf", separator, entry->decimals, entry->radix, number);
 					}
 					break;
 				case SQL_FLOAT:
@@ -710,16 +723,20 @@ static int odbc_log(struct ast_cdr *cdr)
 							continue;
 						}
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
 						LENGTHEN_BUF2(entry->decimals);
-						ast_str_append(&sql2, 0, "%s%lf", first ? "" : ",", number);
+						ast_str_append(&sql2, 0, "%s%lf", separator, number);
 					}
 					break;
 				default:
 					ast_log(LOG_WARNING, "Column type %d (field '%s:%s:%s') is unsupported at this time.\n", entry->type, tableptr->connection, tableptr->table, entry->name);
 					continue;
 				}
-				first = 0;
+				if (quoted) {
+					ast_str_append(&sql, 0, "%s%c%s%c", separator, tableptr->quoted_identifiers, entry->name, tableptr->quoted_identifiers);
+				} else {
+					ast_str_append(&sql, 0, "%s%s", separator, entry->name);
+				}
+				separator = ", ";
 			} else if (entry->filtervalue
 				&& ((!entry->negatefiltervalue && entry->filtervalue[0] != '\0')
 					|| (entry->negatefiltervalue && entry->filtervalue[0] == '\0'))) {
@@ -814,5 +831,5 @@ AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Adaptive ODBC CDR bac
 	.unload = unload_module,
 	.reload = reload,
 	.load_pri = AST_MODPRI_CDR_DRIVER,
+	.requires = "cdr,res_odbc",
 );
-

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 ManagerAction_GetConfigJSON</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-AMI-Actions_42010705.html">Asterisk 17 AMI Actions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 ManagerAction_GetConfigJSON
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17ManagerAction_GetConfigJSON-GetConfigJSON">GetConfigJSON</h1>
+
+<h3 id="Asterisk17ManagerAction_GetConfigJSON-Synopsis">Synopsis</h3>
+
+<p>Retrieve configuration (JSON format).</p>
+
+<h3 id="Asterisk17ManagerAction_GetConfigJSON-Description">Description</h3>
+
+<p>This action will dump the contents of a configuration file by category and contents in JSON format or optionally by specified category only. This only makes sense to be used using rawman over the HTTP interface. In the case where a category name is non-unique, a filter may be specified to match only categories with matching variable values.</p>
+
+
+<h3 id="Asterisk17ManagerAction_GetConfigJSON-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: GetConfigJSON
+ActionID: &lt;value&gt;
+Filename: &lt;value&gt;
+Category: &lt;value&gt;
+Filter: &lt;value&gt;
+</pre>
+</div></div>
+
+<h5 id="Asterisk17ManagerAction_GetConfigJSON-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>ActionID</code> - ActionID for this transaction. Will be returned.</li>
+	<li><code>Filename</code> - Configuration filename (e.g. <code>foo.conf</code>).</li>
+	<li><code>Category</code> - Category in configuration file.</li>
+	<li><code>Filter</code> - A comma separated list of <em>name_regex</em>=<em>value_regex</em> expressions which will cause only categories whose variables match all expressions to be considered. The special variable name <code>TEMPLATES</code> can be used to control whether templates are included. Passing <code>include</code> as the value will include templates along with normal categories. Passing <code>restrict</code> as the value will restrict the operation to ONLY templates. Not specifying a <code>TEMPLATES</code> expression results in the default behavior which is to not include templates.</li>
+</ul>
+
+
+<h3 id="Asterisk17ManagerAction_GetConfigJSON-SeeAlso">See Also</h3>
+<ul>
+	<li><a href="Asterisk-17-ManagerAction_GetConfig_42011269.html">Asterisk 17 ManagerAction_GetConfig</a></li>
+	<li><a href="Asterisk-17-ManagerAction_UpdateConfig_42011271.html">Asterisk 17 ManagerAction_UpdateConfig</a></li>
+	<li><a href="Asterisk-17-ManagerAction_CreateConfig_42011272.html">Asterisk 17 ManagerAction_CreateConfig</a></li>
+	<li><a href="Asterisk-17-ManagerAction_ListCategories_42011273.html">Asterisk 17 ManagerAction_ListCategories</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17ManagerAction_GetConfigJSON-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -20,7 +20,7 @@
 #define _RES_PJSIP_SESSION_H
 
 /* Needed for pj_timer_entry definition */
-#include "pjlib.h"
+#include <pjlib.h>
 #include "asterisk/linkedlists.h"
 /* Needed for AST_MAX_EXTENSION constant */
 #include "asterisk/channel.h"
@@ -28,6 +28,8 @@
 #include "asterisk/netsock2.h"
 /* Needed for ast_sdp_srtp struct */
 #include "asterisk/sdp_srtp.h"
+/* Needed for ast_media_type */
+#include "asterisk/codec.h"
 
 /* Forward declarations */
 struct ast_sip_endpoint;
@@ -56,17 +58,21 @@ enum ast_sip_session_t38state {
 };
 
 struct ast_sip_session_sdp_handler;
+struct ast_sip_session;
+struct ast_sip_session_media;
+
+typedef struct ast_frame *(*ast_sip_session_media_read_cb)(struct ast_sip_session *session, struct ast_sip_session_media *session_media);
+typedef int (*ast_sip_session_media_write_cb)(struct ast_sip_session *session, struct ast_sip_session_media *session_media,
+	struct ast_frame *frame);
 
 /*!
  * \brief A structure containing SIP session media information
  */
 struct ast_sip_session_media {
-	union {
-		/*! \brief RTP instance itself */
-		struct ast_rtp_instance *rtp;
-		/*! \brief UDPTL instance itself */
-		struct ast_udptl *udptl;
-	};
+	/*! \brief RTP instance itself */
+	struct ast_rtp_instance *rtp;
+	/*! \brief UDPTL instance itself */
+	struct ast_udptl *udptl;
 	/*! \brief Direct media address */
 	struct ast_sockaddr direct_media_addr;
 	/*! \brief SDP handler that setup the RTP */
@@ -81,12 +87,62 @@ struct ast_sip_session_media {
 	int keepalive_sched_id;
 	/*! \brief Scheduler ID for RTP timeout */
 	int timeout_sched_id;
-	/*! \brief Stream is on hold */
-	unsigned int held:1;
+	/*! \brief Stream is on hold by remote side */
+	unsigned int remotely_held:1;
+	/*! \brief Stream is on hold by local side */
+	unsigned int locally_held:1;
 	/*! \brief Does remote support rtcp_mux */
 	unsigned int remote_rtcp_mux:1;
-	/*! \brief Stream type this session media handles */
-	char stream_type[1];
+	/*! \brief Does remote support ice */
+	unsigned int remote_ice:1;
+	/*! \brief Stream is held by remote side changed during this negotiation*/
+	unsigned int remotely_held_changed:1;
+	/*! \brief Media type of this session media */
+	enum ast_media_type type;
+	/*! \brief The write callback when writing frames */
+	ast_sip_session_media_write_cb write_callback;
+	/*! \brief The stream number to place into any resulting frames */
+	int stream_num;
+	/*! \brief Media identifier for this stream (may be shared across multiple streams) */
+	char *mid;
+	/*! \brief The bundle group the stream belongs to */
+	int bundle_group;
+	/*! \brief Whether this stream is currently bundled or not */
+	unsigned int bundled;
+	/*! \brief Media stream label */
+	char mslabel[AST_UUID_STR_LEN];
+	/*! \brief Track label */
+	char label[AST_UUID_STR_LEN];
+	/*! \brief The underlying session has been changed in some fashion */
+	unsigned int changed;
+	/*! \brief Remote media stream label */
+	char *remote_mslabel;
+};
+
+/*!
+ * \brief Structure which contains read callback information
+ */
+struct ast_sip_session_media_read_callback_state {
+	/*! \brief The file descriptor itself */
+	int fd;
+	/*! \brief The callback to invoke */
+	ast_sip_session_media_read_cb read_callback;
+	/*! \brief The media session */
+	struct ast_sip_session_media *session;
+};
+
+/*!
+ * \brief Structure which contains media state information (streams, sessions)
+ */
+struct ast_sip_session_media_state {
+	/*! \brief Mapping of stream to media sessions */
+	AST_VECTOR(, struct ast_sip_session_media *) sessions;
+	/*! \brief Added read callbacks - these are whole structs and not pointers */
+	AST_VECTOR(, struct ast_sip_session_media_read_callback_state) read_callbacks;
+	/*! \brief Default media sessions for each type */
+	struct ast_sip_session_media *default_session[AST_MEDIA_TYPE_END];
+	/*! \brief The media stream topology */
+	struct ast_stream_topology *topology;
 };
 
 /*!
@@ -121,8 +177,6 @@ struct ast_sip_session {
 	AST_LIST_HEAD(, ast_sip_session_supplement) supplements;
 	/*! Datastores added to the session by supplements to the session */
 	struct ao2_container *datastores;
-	/*! Media streams */
-	struct ao2_container *media;
 	/*! Serializer for tasks relating to this SIP session */
 	struct ast_taskprocessor *serializer;
 	/*! Non-null if the session serializer is suspended or being suspended. */
@@ -137,8 +191,10 @@ struct ast_sip_session {
 	pj_timer_entry scheduled_termination;
 	/*! Identity of endpoint this session deals with */
 	struct ast_party_id id;
-	/*! Requested capabilities */
-	struct ast_format_cap *req_caps;
+	/*! Active media state (sessions + streams) - contents are guaranteed not to change */
+	struct ast_sip_session_media_state *active_media_state;
+	/*! Pending media state (sessions + streams) */
+	struct ast_sip_session_media_state *pending_media_state;
 	/*! Optional DSP, used only for inband DTMF/Fax-CNG detection if configured */
 	struct ast_dsp *dsp;
 	/*! Whether the termination of the session should be deferred */
@@ -157,6 +213,14 @@ struct ast_sip_session {
 	unsigned int defer_end:1;
 	/*! Session end (remote hangup) requested while termination deferred */
 	unsigned int ended_while_deferred:1;
+	/*! Whether to pass through hold and unhold using re-invites with recvonly and sendrecv */
+	unsigned int moh_passthrough:1;
+	/*! DTMF mode to use with this session, from endpoint but can change */
+	enum ast_sip_dtmf_mode dtmf;
+	/*! Initial incoming INVITE Request-URI.  NULL otherwise. */
+	pjsip_uri *request_uri;
+	/* Media statistics for negotiated RTP streams */
+	AST_VECTOR(, struct ast_rtp_instance_stats *) media_stats;
 };
 
 typedef int (*ast_sip_session_request_creation_cb)(struct ast_sip_session *session, pjsip_tx_data *tdata);
@@ -200,6 +264,8 @@ enum ast_sip_session_response_priority {
  * processing to incoming and outgoing SIP requests and responses
  */
 struct ast_sip_session_supplement {
+	/*! Reference module info */
+	struct ast_module *module;
 	/*! Method on which to call the callbacks. If NULL, call on all methods */
 	const char *method;
 	/*! Priority for this supplement. Lower numbers are visited before higher numbers */
@@ -209,7 +275,7 @@ struct ast_sip_session_supplement {
 	 * This method will always be called from a SIP servant thread.
 	 */
 	void (*session_begin)(struct ast_sip_session *session);
-	/*! 
+	/*!
 	 * \brief Notification that the session has ended
 	 *
 	 * This method may or may not be called from a SIP servant thread. Do
@@ -239,7 +305,7 @@ struct ast_sip_session_supplement {
 	 * There is no guarantee that a channel will be present on the session when this is called.
 	 */
 	int (*incoming_request)(struct ast_sip_session *session, struct pjsip_rx_data *rdata);
-	/*! 
+	/*!
 	 * \brief Called on an incoming SIP response
 	 * This method is always called from a SIP servant thread.
 	 *
@@ -260,7 +326,7 @@ struct ast_sip_session_supplement {
 	 * This method is always called from a SIP servant thread.
 	 */
 	void (*outgoing_request)(struct ast_sip_session *session, struct pjsip_tx_data *tdata);
-	/*! 
+	/*!
 	 * \brief Called on an outgoing SIP response
 	 * This method is always called from a SIP servant thread.
 	 */
@@ -313,34 +379,29 @@ struct ast_sip_session_sdp_handler {
 	/*!
 	 * \brief Set session details based on a stream in an incoming SDP offer or answer
 	 * \param session The session for which the media is being negotiated
-	 * \param session_media The media to be setup for this session
+	 * \param session_media The media session
 	 * \param sdp The entire SDP. Useful for getting "global" information, such as connections or attributes
-	 * \param stream The stream on which to operate
+	 * \param index The index for the session media, Asterisk stream, and PJMEDIA stream being negotiated
+	 * \param asterisk_stream The Asterisk stream representation
 	 * \retval 0 The stream was not handled by this handler. If there are other registered handlers for this stream type, they will be called.
 	 * \retval <0 There was an error encountered. No further operation will take place and the current negotiation will be abandoned.
 	 * \retval >0 The stream was handled by this handler. No further handler of this stream type will be called.
 	 */
-	int (*negotiate_incoming_sdp_stream)(struct ast_sip_session *session, struct ast_sip_session_media *session_media, const struct pjmedia_sdp_session *sdp, const struct pjmedia_sdp_media *stream);
-	/*!
-	 * \brief Create an SDP media stream and add it to the outgoing SDP offer or answer
-	 * \param session The session for which media is being added
-	 * \param session_media The media to be setup for this session
-	 * \param stream The stream on which to operate
-	 * \retval 0 The stream was not handled by this handler. If there are other registered handlers for this stream type, they will be called.
-	 * \retval <0 There was an error encountered. No further operation will take place and the current negotiation will be abandoned.
-	 * \retval >0 The stream was handled by this handler. No further handler of this stream type will be called.
-	 */
-	int (*handle_incoming_sdp_stream)(struct ast_sip_session *session, struct ast_sip_session_media *session_media, const struct pjmedia_sdp_session *sdp, struct pjmedia_sdp_media *stream);
+	int (*negotiate_incoming_sdp_stream)(struct ast_sip_session *session, struct ast_sip_session_media *session_media,
+		const struct pjmedia_sdp_session *sdp, int index, struct ast_stream *asterisk_stream);
 	/*!
 	 * \brief Create an SDP media stream and add it to the outgoing SDP offer or answer
 	 * \param session The session for which media is being added
 	 * \param session_media The media to be setup for this session
 	 * \param sdp The entire SDP as currently built
+	 * \param remote Optional remote SDP if this is an answer
+	 * \param stream The stream that is to be added to the outgoing SDP
 	 * \retval 0 This handler has no stream to add. If there are other registered handlers for this stream type, they will be called.
 	 * \retval <0 There was an error encountered. No further operation will take place and the current SDP negotiation will be abandoned.
 	 * \retval >0 The handler has a stream to be added to the SDP. No further handler of this stream type will be called.
 	 */
-	int (*create_outgoing_sdp_stream)(struct ast_sip_session *session, struct ast_sip_session_media *session_media, struct pjmedia_sdp_session *sdp);
+	int (*create_outgoing_sdp_stream)(struct ast_sip_session *session, struct ast_sip_session_media *session_media, struct pjmedia_sdp_session *sdp,
+		const struct pjmedia_sdp_session *remote, struct ast_stream *stream);
 	/*!
 	 * \brief Update media stream with external address if applicable
 	 * \param tdata The outgoing message itself
@@ -351,17 +412,18 @@ struct ast_sip_session_sdp_handler {
 	/*!
 	 * \brief Apply a negotiated SDP media stream
 	 * \param session The session for which media is being applied
-	 * \param session_media The media to be setup for this session
+	 * \param session_media The media session
 	 * \param local The entire local negotiated SDP
-	 * \param local_stream The local stream which to apply
 	 * \param remote The entire remote negotiated SDP
-	 * \param remote_stream The remote stream which to apply
+	 * \param index The index of the session media, SDP streams, and Asterisk streams
+	 * \param asterisk_stream The Asterisk stream representation
 	 * \retval 0 The stream was not applied by this handler. If there are other registered handlers for this stream type, they will be called.
 	 * \retval <0 There was an error encountered. No further operation will take place and the current application will be abandoned.
 	 * \retval >0 The stream was handled by this handler. No further handler of this stream type will be called.
 	 */
-	int (*apply_negotiated_sdp_stream)(struct ast_sip_session *session, struct ast_sip_session_media *session_media, const struct pjmedia_sdp_session *local, const struct pjmedia_sdp_media *local_stream,
-		const struct pjmedia_sdp_session *remote, const struct pjmedia_sdp_media *remote_stream);
+	int (*apply_negotiated_sdp_stream)(struct ast_sip_session *session, struct ast_sip_session_media *session_media,
+		const struct pjmedia_sdp_session *local, const struct pjmedia_sdp_session *remote, int index,
+		struct ast_stream *asterisk_stream);
 	/*!
 	 * \brief Stop a session_media created by this handler but do not destroy resources
 	 * \param session The session for which media is being stopped
@@ -391,7 +453,7 @@ struct ast_sip_channel_pvt {
 /*!
  * \brief Allocate a new SIP channel pvt structure
  *
- * \param pvt Pointer to channel specific implementation
+ * \param pvt Pointer to channel specific information
  * \param session Pointer to SIP session
  *
  * \retval non-NULL success
@@ -450,11 +512,11 @@ void ast_sip_session_unsuspend(struct ast_sip_session *session);
  * \param contact The contact that this session will communicate with
  * \param location Name of the location to call, be it named location or explicit URI. Overrides contact if present.
  * \param request_user Optional request user to place in the request URI if permitted
- * \param req_caps The requested capabilities
+ * \param req_topology The requested capabilities
  */
 struct ast_sip_session *ast_sip_session_create_outgoing(struct ast_sip_endpoint *endpoint,
 	struct ast_sip_contact *contact, const char *location, const char *request_user,
-	struct ast_format_cap *req_caps);
+	struct ast_stream_topology *req_topology);
 
 /*!
  * \brief Terminate a session and, if possible, send the provided response code
@@ -526,11 +588,13 @@ void ast_sip_session_unregister_sdp_handler(struct ast_sip_session_sdp_handler *
  * set channel data based on headers in an incoming message. Similarly,
  * a module could reject an incoming request if desired.
  *
+ * \param module Referenced module(NULL safe)
  * \param supplement The supplement to register
- * \retval 0 Success
- * \retval -1 Failure
  */
-int ast_sip_session_register_supplement(struct ast_sip_session_supplement *supplement);
+void ast_sip_session_register_supplement_with_module(struct ast_module *module, struct ast_sip_session_supplement *supplement);
+
+#define ast_sip_session_register_supplement(supplement) \
+		ast_sip_session_register_supplement_with_module(AST_MODULE_SELF, supplement)
 
 /*!
  * \brief Unregister a an supplement to SIP session processing
@@ -538,6 +602,20 @@ int ast_sip_session_register_supplement(struct ast_sip_session_supplement *suppl
  * \param supplement The supplement to unregister
  */
 void ast_sip_session_unregister_supplement(struct ast_sip_session_supplement *supplement);
+
+/*!
+ * \brief Add supplements to a SIP session
+ *
+ * \param session The session to initialize
+ */
+int ast_sip_session_add_supplements(struct ast_sip_session *session);
+
+/*!
+ * \brief Remove supplements from a SIP session
+ *
+ * \param session The session to remove
+ */
+void ast_sip_session_remove_supplements(struct ast_sip_session *session);
 
 /*!
  * \brief Alternative for ast_datastore_alloc()
@@ -604,22 +682,44 @@ void ast_sip_session_remove_datastore(struct ast_sip_session *session, const cha
  * Note: The on_request_creation callback may or may not be called in the same
  * thread where this function is called. Request creation may need to be delayed
  * due to the current INVITE transaction state.
- * 
+ *
  * \param session The session on which the reinvite will be sent
  * \param on_request_creation Callback called when request is created
  * \param on_sdp_creation Callback called when SDP is created
  * \param on_response Callback called when response for request is received
  * \param method The method that should be used when constructing the session refresh
  * \param generate_new_sdp Boolean to indicate if a new SDP should be created
+ * \param media_state Optional requested media state for the SDP
+ *
  * \retval 0 Successfully sent refresh
  * \retval -1 Failure to send refresh
+ *
+ * \note If a media_state is passed in ownership will be taken in all cases
  */
 int ast_sip_session_refresh(struct ast_sip_session *session,
 		ast_sip_session_request_creation_cb on_request_creation,
 		ast_sip_session_sdp_creation_cb on_sdp_creation,
 		ast_sip_session_response_cb on_response,
 		enum ast_sip_session_refresh_method method,
-		int generate_new_sdp);
+		int generate_new_sdp,
+		struct ast_sip_session_media_state *media_state);
+
+/*!
+ * \brief Regenerate SDP Answer
+ *
+ * This method is used when an SDP offer has been received but an SDP answer
+ * has not been sent yet. It requests that a new local SDP be created and
+ * set as the SDP answer. As with any outgoing request in res_pjsip_session,
+ * this will call into registered supplements in case they wish to add anything.
+ *
+ * \param session The session on which the answer will be updated
+ * \param on_sdp_creation Callback called when SDP is created
+ * \param generate_new_sdp Boolean to indicate if a new SDP should be created
+ * \retval 0 Successfully updated the SDP answer
+ * \retval -1 Failure to updated the SDP answer
+ */
+int ast_sip_session_regenerate_answer(struct ast_sip_session *session,
+		ast_sip_session_sdp_creation_cb on_sdp_creation);
 
 /*!
  * \brief Send a SIP response
@@ -690,13 +790,128 @@ struct ast_sip_session *ast_sip_dialog_get_session(pjsip_dialog *dlg);
  */
 void ast_sip_session_resume_reinvite(struct ast_sip_session *session);
 
-/*! \brief Determines whether the res_pjsip_session module is loaded */
-#define CHECK_PJSIP_SESSION_MODULE_LOADED()				\
-	do {								\
-		CHECK_PJSIP_MODULE_LOADED();				\
-		if (!ast_module_check("res_pjsip_session.so")) {	\
-			return AST_MODULE_LOAD_DECLINE;			\
-		}							\
-	} while(0)
+/*!
+ * \brief Determines if a provided pending stream will be the default stream or not
+ * \since 15.0.0
+ *
+ * \param session The session to check against
+ * \param stream The pending stream
+ *
+ * \retval 1 if stream will be default
+ * \retval 0 if stream will NOT be the default
+ */
+int ast_sip_session_is_pending_stream_default(const struct ast_sip_session *session, const struct ast_stream *stream);
+
+/*!
+ * \brief Allocate a session media state structure
+ * \since 15.0.0
+ *
+ * \retval non-NULL success
+ * \retval NULL failure
+ */
+struct ast_sip_session_media_state *ast_sip_session_media_state_alloc(void);
+
+/*!
+ * \brief Allocate an ast_session_media and add it to the media state's vector.
+ * \since 15.0.0
+ *
+ * This allocates a session media of the specified type. The position argument
+ * determines where in the vector that the new session media will be inserted.
+ *
+ * \note The returned ast_session_media is the reference held by the vector. Callers
+ * of this function must NOT decrement the refcount of the session media.
+ *
+ * \param session Session on which to query active media state for
+ * \param media_state Media state to place the session media into
+ * \param type The type of the session media
+ * \param position Position at which to insert the new session media.
+ *
+ * \note The active media state will be queried and if a media session already
+ * exists at the given position for the same type it will be reused instead of
+ * allocating a new one.
+ *
+ * \retval non-NULL success
+ * \retval NULL failure
+ */
+struct ast_sip_session_media *ast_sip_session_media_state_add(struct ast_sip_session *session,
+	struct ast_sip_session_media_state *media_state, enum ast_media_type type, int position);
+
+/*!
+ * \brief Save a media stats.
+ *
+ * \param media_state The media state to save
+ */
+void ast_sip_session_media_stats_save(struct ast_sip_session *sip_session, struct ast_sip_session_media_state *media_state);
+
+/*!
+ * \brief Reset a media state to a clean state
+ * \since 15.0.0
+ *
+ * \param media_state The media state to reset
+ */
+void ast_sip_session_media_state_reset(struct ast_sip_session_media_state *media_state);
+
+/*!
+ * \brief Clone a media state
+ * \since 15.0.0
+ *
+ * \param media_state The media state to clone
+ *
+ * \retval non-NULL success
+ * \retval NULL failure
+ */
+struct ast_sip_session_media_state *ast_sip_session_media_state_clone(const struct ast_sip_session_media_state *media_state);
+
+/*!
+ * \brief Free a session media state structure
+ * \since 15.0.0
+ */
+void ast_sip_session_media_state_free(struct ast_sip_session_media_state *media_state);
+
+/*!
+ * \brief Set a read callback for a media session with a specific file descriptor
+ * \since 15.0.0
+ *
+ * \param session The session
+ * \param session_media The media session
+ * \param fd The file descriptor
+ * \param callback The read callback
+ *
+ * \retval 0 the read callback was successfully added
+ * \retval -1 the read callback could not be added
+ *
+ * \note This operations on the pending media state
+ */
+int ast_sip_session_media_add_read_callback(struct ast_sip_session *session, struct ast_sip_session_media *session_media,
+	int fd, ast_sip_session_media_read_cb callback);
+
+/*!
+ * \brief Set a write callback for a media session
+ * \since 15.0.0
+ *
+ * \param session The session
+ * \param session_media The media session
+ * \param callback The write callback
+ *
+ * \retval 0 the write callback was successfully add
+ * \retval -1 the write callback is already set to something different
+ *
+ * \note This operates on the pending media state
+ */
+int ast_sip_session_media_set_write_callback(struct ast_sip_session *session, struct ast_sip_session_media *session_media,
+	ast_sip_session_media_write_cb callback);
+
+/*!
+ * \brief Retrieve the underlying media session that is acting as transport for a media session
+ * \since 15.0.0
+ *
+ * \param session The session
+ * \param session_media The media session to retrieve the transport for
+ *
+ * \note This operates on the pending media state
+ *
+ * \note This function is guaranteed to return non-NULL
+ */
+struct ast_sip_session_media *ast_sip_session_media_get_transport(struct ast_sip_session *session, struct ast_sip_session_media *session_media);
 
 #endif /* _RES_PJSIP_SESSION_H */

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk PJSIP Troubleshooting Guide</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SIP_28314848.html">SIP</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-res_pjsip_25919621.html">Configuring res_pjsip</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk PJSIP Troubleshooting Guide
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Mark Michelson</span>, last modified by <span class='editor'> Rusty Newton</span> on Dec 19, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro">    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>This page is currently under construction. Please refrain from commenting until this warning is removed.</p>
+                    </div>
+    </div>
+<h1 id="AsteriskPJSIPTroubleshootingGuide-Overview"><span style="color: rgb(133,120,102);">Overview</span></h1><p>Are you having problems getting your PJSIP setup working properly? If you are encountering a common problem then hopefully your answer can be found on this page.</p><p>Before looking any further here, you should make sure that you have gathered enough information from Asterisk to know what your issue is. It is suggested that you perform the following actions at the Asterisk CLI:</p><ul><li><code>core set verbose 4</code></li><li><code>core set debug 4</code></li><li><code>pjsip set logger on</code></li></ul><p>With these options enabled, this will allow you to more easily see what is going on behind the scenes in your failing scenario. It also can help you to cross-reference entries on this page since several debug, warning, and error messages will be quoted here.</p><h1 id="AsteriskPJSIPTroubleshootingGuide-InboundCalls">Inbound Calls</h1><h2 id="AsteriskPJSIPTroubleshootingGuide-UnrecognizedEndpoint">Unrecognized Endpoint</h2><p>All inbound SIP traffic to Asterisk must be matched to a configured endpoint. If Asterisk is unable to determine which endpoint the SIP request is coming from, then the incoming request will be rejected. If you are seeing messages like:</p></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302968809 {padding: 0px;}
+div.rbtoc1582302968809 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302968809 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302968809'>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-Overview'>Overview</a></li>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-InboundCalls'>Inbound Calls</a>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-UnrecognizedEndpoint'>Unrecognized Endpoint</a></li>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-Authenticationisfailing'>Authentication is failing</a></li>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-AuthenticationNotAttempted'>Authentication Not Attempted</a></li>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-Asteriskcannotfindthespecifiedextension'>Asterisk cannot find the specified extension</a></li>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-ARGH!NAT!'>ARGH! NAT!</a></li>
+</ul>
+</li>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-OutboundCalls'>Outbound Calls</a>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-Asterisksaysmyendpointdoesnotexist'>Asterisk says my endpoint does not exist</a></li>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-Asteriskcannotroutemycall'>Asterisk cannot route my call</a></li>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-ARGH!NAT!(Part2)'>ARGH! NAT! (Part 2)</a></li>
+</ul>
+</li>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-BridgedCalls'>Bridged Calls</a>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-Directmediaisnotbeingused'>Direct media is not being used</a></li>
+</ul>
+</li>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-InboundRegistrations'>Inbound Registrations</a></li>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-OutboundRegistrations'>Outbound Registrations</a></li>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-InboundSubscriptions'>Inbound Subscriptions</a>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-Presence/DialogInfo'>Presence/Dialog Info</a></li>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-MWI'>MWI</a></li>
+</ul>
+</li>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-ConfigurationIssues'>Configuration Issues</a>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskPJSIPTroubleshootingGuide-Can&#39;tcreateanIPv6transport'>Can&#39;t create an IPv6 transport</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[2014-10-13 16:12:17.349] DEBUG[27284]: res_pjsip_endpoint_identifier_user.c:106 username_identify: Could not identify endpoint by username &#39;eggowaffles&#39;</pre>
+</div></div><p>or</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[2014-10-13 16:13:07.201] DEBUG[27507]: res_pjsip_endpoint_identifier_ip.c:113 ip_identify_match_check: Source address 127.0.0.1:5061 does not match identify &#39;david-ident&#39;</pre>
+</div></div><p>then this is a good indication that the request is being rejected because Asterisk cannot determine which endpoint the incoming request is coming from.</p><p>How does Asterisk determine which endpoint a request is coming from? Asterisk uses something called &quot;endpoint identifiers&quot; to determine this. There are three endpoint identifiers bundled with Asterisk: user, ip, and anonymous.</p><h3 id="AsteriskPJSIPTroubleshootingGuide-IdentifybyUser">Identify by User</h3><p>The user endpoint identifier is provided by the <code>res_pjsip_endpoint_identifier_user.so</code> module. If nothing has been explicitly configured with regards to endpoint identification, this endpoint identifier is the one being used. The way it works is to use the user portion of the From header from the incoming SIP request to determine which endpoint the request comes from. Here is an example INVITE:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&lt;--- Received SIP request (541 bytes) from UDP:127.0.0.1:5061 ---&gt;
+INVITE sip:service@127.0.0.1:5060 SIP/2.0
+Via: SIP/2.0/UDP 127.0.0.1:5061;branch=z9hG4bK-27600-1-0
+From: breakfast &lt;sip:eggowaffles@127.0.0.1:5061&gt;;tag=27600SIPpTag001
+To: sut &lt;sip:service@127.0.0.1&gt;
+Call-ID: 1-27600@127.0.0.1
+CSeq: 1 INVITE
+Contact: sip:eggowaffles@127.0.0.1:5061
+Max-Forwards: 70
+Content-Type: application/sdp
+Content-Length:   163
+
+v=0
+o=user1 53655765 2353687637 IN IP4 127.0.0.1
+s=-
+c=IN IP4 127.0.0.1
+t=0 0
+m=audio 6000 RTP/AVP 0
+a=rtpmap:8 PCMA/8000
+a=rtpmap:0 PCMU/8000
+a=ptime:20</pre>
+</div></div><p>In this example, the URI in the From header is &quot;sip:eggowaffles@127.0.0.1:5061&quot;. The user portion is &quot;eggowaffles&quot;, so Asterisk attempts to look up an endpoint called &quot;eggowaffles&quot; in its configuration. If such an endpoint is not configured, then the INVITE is rejected by Asterisk. The most common cause of the problem is that the user name referenced in the From header is not the name of a configured endpoint in Asterisk.</p><p>But what if you have configured an endpoint called &quot;eggowaffles&quot;? It is possible that there was an error in your configuration, such as an option name that Asterisk does not recognize. If this is the case, then the endpoint may not have been loaded at all. Here are some troubleshooting steps to see if this might be the case:</p><ul><li>From the CLI, issue the &quot;pjsip show endpoints&quot; command. If the endpoint in question does not show up, then there likely was a problem attempting to load the endpoint on startup.</li><li><p>Go through the logs from Asterisk startup. You may find that there was an error reported that got lost in the rest of the startup messages. For instance, be on the lookout for messages like:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[2014-10-13 16:25:01.674] ERROR[27771]: config_options.c:710 aco_process_var: Could not find option suitable for category &#39;eggowaffles&#39; named &#39;setvar&#39; at line 390 of 
+[2014-10-13 16:25:01.674] ERROR[27771]: res_sorcery_config.c:275 sorcery_config_internal_load: Could not create an object of type &#39;endpoint&#39; with id &#39;eggowaffles&#39; from configuration file &#39;pjsip.conf&#39;</pre>
+</div></div><p>In this case, I set an endpoint option called &quot;setvar&quot; instead of the appropriate &quot;set_var&quot;. The result was that the endpoint was not loaded.</p></li><li>If you do not see such error messages in the logs, but you do not see the endpoint listed in &quot;pjsip show endpoints&quot;, it may be that you forgot to put <code>type = endpoint</code> in your endpoint section. In this case, the entire section would be ignored since Asterisk did not know that this was an endpoint section.</li></ul><h3 id="AsteriskPJSIPTroubleshootingGuide-IdentifybyIPaddress">Identify by IP address</h3><p>Asterisk can also recognize endpoints based on the source IP address of the SIP request. This requires setting up a <code>type = identify</code> section in your configuration to match IP addresses or networks to a specific endpoint. Here are some troubleshooting steps:</p><ul><li><p>Ensure that <code>res_pjsip_endpoint_identifier_ip.so</code> is loaded and running. From the CLI, run <code>module show like res_pjsip_endpoint_identifier_ip.so</code>. The output should look like the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Module                         Description                              Use Count  Status      Support Level
+res_pjsip_endpoint_identifier_ip.so PJSIP IP endpoint identifier             0          Running              core</pre>
+</div></div></li><li>Run the troubleshooting steps from the Identify by User section to ensure that the endpoint you have configured has actually been properly loaded.</li><li><p>From the Asterisk CLI, run the command <code>pjsip show endpoint &lt;endpoint name&gt;</code>. Below the headers at the top of the output, you should see something like the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre> Endpoint:  david/6001                                           Unavailable   0 of inf
+     InAuth:  david-auth/david
+        Aor:  david                                             10
+  Transport:  main-transport            udp      0      0  0.0.0.0:5060
+   Identify:  10.24.16.36/32</pre>
+</div></div><p>Notice the bottom line. This states that the endpoint is matched based on the IP address 10.24.16.36. If you do not see such a line for the endpoint that you expect to be matched, then there is likely a configuration error. If the line does appear, then ensure that the IP address listed matches what you expect for the endpoint.</p></li><li><p>If you are noticing that Asterisk is matching the incorrect endpoint by IP address, ensure that there are no conflicts in your configuration. Run the <code>pjsip show endpoints</code> command and look for issues such as the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre> Endpoint:  carol/6000                                           Unavailable   0 of inf
+     InAuth:  carol-auth/carol
+        Aor:  carol                                             10
+  Transport:  main-transport            udp      0      0  0.0.0.0:5060
+   Identify:  10.0.0.0/8
+
+ Endpoint:  david/6001                                           Unavailable   0 of inf
+     InAuth:  david-auth/david
+        Aor:  david                                             10
+  Transport:  main-transport            udp      0      0  0.0.0.0:5060
+   Identify:  10.24.16.36/32</pre>
+</div></div><p>Notice that if a SIP request arrives from 10.24.16.36, it is ambiguous if the request should be matched to carol or david.</p></li></ul><p>If you run <code>pjsip show endpoint &lt;endpoint name&gt;</code> and do not see an &quot;Identify&quot; line listed, then there is likely a configuration issue somewhere. Here are some common pitfalls</p><ul><li>Ensure that your identify section has <code>type = identify</code> in it. Without this, Asterisk will completely ignore the configuration section.</li><li>Ensure that your identify section has an <code>endpoint </code>option set in it and that the endpoint is spelled correctly.</li><li>Double-check your <code>match</code> lines for common errors:<ul><li>You cannot use FQDNs or hostnames. You must use IP addresses.</li><li>Ensure that you do not have an invalid netmask (e.g. 10.9.3.4/255.255.255.300, 127.0.0.1/33).</li><li>Ensure that you have not mixed up /0 and /32 when using CIDR notation.</li></ul></li><li><p>If you are using a configuration method other than a config file, ensure that <code>sorcery.conf</code> is configured correctly. Since identify sections are not provided by the base <code>res_pjsip.so</code> module, you must ensure that the configuration resides in the <code>res_pjsip_endpoint_identifier_ip</code> section of <code>sorcery.conf</code>. For example, if you are using dynamic realtime, you might have the following configuration:</p><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>sorcery.conf</b></div><div class="panelContent">
+<pre>[res_pjsip_endpoint_identifier_ip]
+identify = realtime,ps_endpoint_id_ips</pre>
+</div></div><p>And then you would need the corresponding config in <code>extconfig.conf</code>:</p><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>extconfig.conf</b></div><div class="panelContent">
+<pre>[settings]
+ps_endpoint_id_ips =&gt; odbc </pre>
+</div></div></li></ul><h3 id="AsteriskPJSIPTroubleshootingGuide-AnonymousIdentification">Anonymous Identification</h3><p>Anonymous endpoint identification allows for a specially-named endpoint called &quot;anonymous&quot; to be matched if other endpoint identifiers are not able to determine which endpoint a request originates from. The <code>res_pjsip_endpoint_identifier_anonymous.so</code> module is responsible for matching the incoming request to the anonymous endpoint. If SIP traffic that you expect to be matched to the anonymous endpoint is being rejected, try the following troubleshooting steps:</p><ul><li><p>Ensure that <code>res_pjsip_endpoint_identifier_anonymous.so</code> is loaded and running. From the Asterisk CLI, run <code>module show like res_pjsip_endpoint_identifier_anonymous.so</code>. The output should look like the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Module                         Description                              Use Count  Status      Support Level
+res_pjsip_endpoint_identifier_anonymous.so PJSIP Anonymous endpoint identifier      0          Running              core</pre>
+</div></div></li><li>Ensure that the &quot;anonymous&quot; endpoint has been properly loaded. See the troubleshooting steps in the Identify by User section for more details about how to determine if an endpoint has been loaded.</li></ul><h2 id="AsteriskPJSIPTroubleshootingGuide-Authenticationisfailing">Authentication is failing</h2><p>The first thing you should check if you believe that authentication is failing is to ensure that this is the actual problem. Consider the following SIP call from endpoint 200 to Asterisk:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&lt;--- Received SIP request (1053 bytes) from UDP:10.24.16.37:5060 ---&gt;
+INVITE sip:201@10.24.20.249 SIP/2.0
+Via: SIP/2.0/UDP 10.24.16.37:5060;rport;branch=z9hG4bKPjQevrxvXqk9Lk5xSW.pzQQb8SAWnJ5Lll
+Max-Forwards: 70
+From: &quot;200&quot; &lt;sip:200@10.24.20.249&gt;;tag=DTD-tYEwFMmbPyu0YWalLQdbEUGSLGN5
+To: &lt;sip:201@10.24.20.249&gt;
+Contact: &quot;200&quot; &lt;sip:200@10.24.16.37:5060;ob&gt;
+Call-ID: q.TF2SAaX3jn8dtaLTOCuIO8FRyDCsSR
+CSeq: 9775 INVITE
+Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS
+Supported: replaces, 100rel, timer, norefersub
+Session-Expires: 1800
+Min-SE: 90
+User-Agent: Digium D40 1_4_0_0_57389
+Content-Type: application/sdp
+Content-Length:   430
+
+v=0
+o=- 108683760 108683760 IN IP4 10.24.16.37
+s=digphn
+c=IN IP4 10.24.16.37
+t=0 0
+a=X-nat:0
+m=audio 4046 RTP/AVP 0 8 9 111 18 58 118 58 96
+a=rtcp:4047 IN IP4 10.24.16.37
+a=rtpmap:0 PCMU/8000
+a=rtpmap:8 PCMA/8000
+a=rtpmap:9 G722/8000
+a=rtpmap:111 G726-32/8000
+a=rtpmap:18 G729/8000
+a=rtpmap:58 L16/16000
+a=rtpmap:118 L16/8000
+a=rtpmap:58 L16-256/16000
+a=sendrecv
+a=rtpmap:96 telephone-event/8000
+a=fmtp:96 0-15
+
+
+&lt;--- Transmitting SIP response (543 bytes) to UDP:10.24.16.37:5060 ---&gt;
+SIP/2.0 401 Unauthorized
+Via: SIP/2.0/UDP 10.24.16.37:5060;rport;received=10.24.16.37;branch=z9hG4bKPjQevrxvXqk9Lk5xSW.pzQQb8SAWnJ5Lll
+Call-ID: q.TF2SAaX3jn8dtaLTOCuIO8FRyDCsSR
+From: &quot;200&quot; &lt;sip:200@10.24.20.249&gt;;tag=DTD-tYEwFMmbPyu0YWalLQdbEUGSLGN5
+To: &lt;sip:201@10.24.20.249&gt;;tag=z9hG4bKPjQevrxvXqk9Lk5xSW.pzQQb8SAWnJ5Lll
+CSeq: 9775 INVITE
+WWW-Authenticate: Digest  realm=&quot;asterisk&quot;,nonce=&quot;1413305427/8dd1b7f56aba97da45754f7052d8a688&quot;,opaque=&quot;3b9c806b61adf911&quot;,algorithm=md5,qop=&quot;auth&quot;
+Content-Length:  0
+
+
+&lt;--- Received SIP request (370 bytes) from UDP:10.24.16.37:5060 ---&gt;
+ACK sip:201@10.24.20.249 SIP/2.0
+Via: SIP/2.0/UDP 10.24.16.37:5060;rport;branch=z9hG4bKPjQevrxvXqk9Lk5xSW.pzQQb8SAWnJ5Lll
+Max-Forwards: 70
+From: &quot;200&quot; &lt;sip:200@10.24.20.249&gt;;tag=DTD-tYEwFMmbPyu0YWalLQdbEUGSLGN5
+To: &lt;sip:201@10.24.20.249&gt;;tag=z9hG4bKPjQevrxvXqk9Lk5xSW.pzQQb8SAWnJ5Lll
+Call-ID: q.TF2SAaX3jn8dtaLTOCuIO8FRyDCsSR
+CSeq: 9775 ACK
+Content-Length:  0
+
+
+&lt;--- Received SIP request (1343 bytes) from UDP:10.24.16.37:5060 ---&gt;
+INVITE sip:201@10.24.20.249 SIP/2.0
+Via: SIP/2.0/UDP 10.24.16.37:5060;rport;branch=z9hG4bKPjCrZnx79augJPtGcTbYlXEs2slZNtwYeC
+Max-Forwards: 70
+From: &quot;200&quot; &lt;sip:200@10.24.20.249&gt;;tag=DTD-tYEwFMmbPyu0YWalLQdbEUGSLGN5
+To: &lt;sip:201@10.24.20.249&gt;
+Contact: &quot;200&quot; &lt;sip:200@10.24.16.37:5060;ob&gt;
+Call-ID: q.TF2SAaX3jn8dtaLTOCuIO8FRyDCsSR
+CSeq: 9776 INVITE
+Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS
+Supported: replaces, 100rel, timer, norefersub
+Session-Expires: 1800
+Min-SE: 90
+User-Agent: Digium D40 1_4_0_0_57389
+Authorization: Digest username=&quot;200&quot;, realm=&quot;asterisk&quot;, nonce=&quot;1413305427/8dd1b7f56aba97da45754f7052d8a688&quot;, uri=&quot;sip:201@10.24.20.249&quot;, response=&quot;2da759314909af8507a59cd1b6bc0baa&quot;, algorithm=md5, cnonce=&quot;-me-qsYc.rGU-I5A6n-Dy8IhCBg9wKe8&quot;, opaque=&quot;3b9c806b61adf911&quot;, qop=auth, nc=00000001
+Content-Type: application/sdp
+Content-Length:   430
+
+v=0
+o=- 108683760 108683760 IN IP4 10.24.16.37
+s=digphn
+c=IN IP4 10.24.16.37
+t=0 0
+a=X-nat:0
+m=audio 4046 RTP/AVP 0 8 9 111 18 58 118 58 96
+a=rtcp:4047 IN IP4 10.24.16.37
+a=rtpmap:0 PCMU/8000
+a=rtpmap:8 PCMA/8000
+a=rtpmap:9 G722/8000
+a=rtpmap:111 G726-32/8000
+a=rtpmap:18 G729/8000
+a=rtpmap:58 L16/16000
+a=rtpmap:118 L16/8000
+a=rtpmap:58 L16-256/16000
+a=sendrecv
+a=rtpmap:96 telephone-event/8000
+a=fmtp:96 0-15
+
+
+&lt;--- Transmitting SIP response (543 bytes) to UDP:10.24.16.37:5060 ---&gt;
+SIP/2.0 401 Unauthorized
+Via: SIP/2.0/UDP 10.24.16.37:5060;rport;received=10.24.16.37;branch=z9hG4bKPjCrZnx79augJPtGcTbYlXEs2slZNtwYeC
+Call-ID: q.TF2SAaX3jn8dtaLTOCuIO8FRyDCsSR
+From: &quot;200&quot; &lt;sip:200@10.24.20.249&gt;;tag=DTD-tYEwFMmbPyu0YWalLQdbEUGSLGN5
+To: &lt;sip:201@10.24.20.249&gt;;tag=z9hG4bKPjCrZnx79augJPtGcTbYlXEs2slZNtwYeC
+CSeq: 9776 INVITE
+WWW-Authenticate: Digest  realm=&quot;asterisk&quot;,nonce=&quot;1413305427/8dd1b7f56aba97da45754f7052d8a688&quot;,opaque=&quot;0b5a53ab6484480a&quot;,algorithm=md5,qop=&quot;auth&quot;
+Content-Length:  0
+
+
+&lt;--- Received SIP request (370 bytes) from UDP:10.24.16.37:5060 ---&gt;
+ACK sip:201@10.24.20.249 SIP/2.0
+Via: SIP/2.0/UDP 10.24.16.37:5060;rport;branch=z9hG4bKPjCrZnx79augJPtGcTbYlXEs2slZNtwYeC
+Max-Forwards: 70
+From: &quot;200&quot; &lt;sip:200@10.24.20.249&gt;;tag=DTD-tYEwFMmbPyu0YWalLQdbEUGSLGN5
+To: &lt;sip:201@10.24.20.249&gt;;tag=z9hG4bKPjCrZnx79augJPtGcTbYlXEs2slZNtwYeC
+Call-ID: q.TF2SAaX3jn8dtaLTOCuIO8FRyDCsSR
+CSeq: 9776 ACK
+Content-Length:  0</pre>
+</div></div><p>At first glance, it would appear that the incoming call was challenged for authentication, and that 200 then failed to authenticate on the second INVITE sent. The actual problem here is that the endpoint 200 does not exist within Asterisk. Whenever a SIP request arrives and Asterisk cannot match the request to a configured endpoint, Asterisk will respond to the request with a 401 Unauthorized response. The response will contain a WWW-Authenticate header to make it look as though Asterisk is requesting authentication. Since no endpoint was actually matched, the authentication challenge created by Asterisk is just dummy information and is actually impossible to authenticate against.</p><p>The reason this is done is to prevent an information leak. Consider an attacker that sends SIP INVITEs to an Asterisk box, each from a different user. If the attacker happens to send a SIP INVITE from a user name that matches an actual endpoint on the system, then Asterisk will respond to that INVITE with an authentication challenge using that endpoint's authentication credentials. But what happens if the attacker sends a SIP INVITE from a user name that does not match an endpoint on the system? If Asterisk responds differently, then Asterisk has leaked information by responding differently. If Asterisk sends a response that looks the same, though, then the attacker is unable to easily determine what user names are valid for the Asterisk system.</p><p>So if you are seeing what appears to be authentication problems, the first thing you should do is to read the Unrecognized Endpoint section above and ensure that the endpoint you think the SIP request is coming from is actually configured properly. If it turns out that the endpoint is configured properly, here are some trouble-shooting steps to ensure that authentication is working as intended:</p><ul><li>Ensure that username and password in the <code>type = auth</code> section are spelled correctly and that they are <strong>using the correct case</strong>. If you have &quot;Alice&quot; as the username on your phone and &quot;alice&quot; as the username in Asterisk, things will go poorly.</li><li>If you are using the <code>md5_cred</code> option in an auth section, ensure the following:<ul><li>Ensure that you have set <code>auth_type = md5</code>.</li><li>Ensure that the calculated MD5 sum is composed of <em>username:realm:password</em></li><li>Ensure that the calculated MD5 sum did not contain any extraneous whitespace, such as a newline character at the end.</li><li>Ensure there were no copy-paste errors. An MD5 sum is exactly 32 hexadecimal characters. If the option in your config file contains fewer or greater than 32 characters, or if any of the characters are not hexadecimal characters, then the MD5 sum is invalid.</li></ul></li><li>Ensure that you have specified a <code>username</code>. Asterisk does not imply a username based on the name of the auth section.</li><li>Ensure that the configured <code>realm</code> is acceptable. In most cases, simple SIP devices like phones will authenticate to whatever realm is presented to them, so you do not need to configure one explicitly. However, if a specific realm is required, be sure it is configured. Be sure that if you are using the <code>md5_cred</code> option that this realm name is used in the calculation of the MD5 sum.</li><li>Ensure that the endpoint that is communicating with Asterisk uses the &quot;Digest&quot; method of authentication and the &quot;md5&quot; algorithm. If they use something else, then Asterisk will not understand and reject the authentication attempt.</li></ul><h2 id="AsteriskPJSIPTroubleshootingGuide-AuthenticationNotAttempted">Authentication Not Attempted</h2><p>The opposite problem of authentication failures is that incoming calls are not being challenged for authentication where it would be expected. Asterisk chooses to challenge for authentication if the endpoint from which the request arrives has a configured <code>auth</code> option on it. From the CLI, run the <code>pjsip show endpoint &lt;endpoint name&gt;</code> command. Below the initial headers should be something like the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre> Endpoint:  david/6001                                           Unavailable   0 of inf
+     InAuth:  david-auth/david
+        Aor:  david                                             10
+  Transport:  main-transport            udp      0      0  0.0.0.0:5060
+   Identify:  10.24.16.36/32</pre>
+</div></div><p>Notice the &quot;InAuth&quot; on the second line of output. This shows that the endpoint's auth is pointing to a configuration section called &quot;david-auth&quot; and that the auth section has a username of &quot;david&quot;. If you do not see an &quot;InAuth&quot; specified for the endpoint, then this means that Asterisk does not see that the endpoint is configured for authentication. Check the following:</p><ul><li>Ensure that there is an <code>auth </code>line in your endpoint's configuration.</li><li>Ensure that the auth that your endpoint is pointing to actually exists. Spelling is important.</li><li>Ensure that the auth that your endpoint is pointing to has <code>type = auth</code> specified in it.</li></ul><h2 id="AsteriskPJSIPTroubleshootingGuide-Asteriskcannotfindthespecifiedextension">Asterisk cannot find the specified extension</h2><p>If you are seeing a message like the following on your CLI when you place an incoming call:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[2014-10-14 13:22:45.886] NOTICE[1583]: res_pjsip_session.c:1538 new_invite: Call from &#39;201&#39; (UDP:10.24.18.87:5060) to extension &#39;456789&#39; rejected because extension not found in context &#39;default&#39;.</pre>
+</div></div><p>then it means that Asterisk was not able to direct the incoming call to an appropriate extension in the dialplan. In the case above, I dialled &quot;456789&quot; on the phone that corresponds with endpoint 201. Endpoint 201 is configured with <code>context = default</code> and the &quot;default&quot; context in my dialplan does not have an extension &quot;456789&quot;.</p><p>The NOTICE message can be helpful in this case, since it tells what endpoint the call is from, what extension it is looking for, and in what context it is searching. Here are some helpful tips to be sure that calls are being directed where you expect:</p><ul><li>Be sure that the endpoint has the expected context configured. Be sure to check spelling.</li><li>Be sure that the extension being dialled exists in the dialplan. From the Asterisk CLI, run <code>dialplan show &lt;context name&gt;</code> to see the extensions for a particular context. If the extension you are dialing is not listed, then Asterisk does not know about the extension.<br /><ul><li>Ensure that if you have modified <code>extensions.conf</code> recently that you have saved your changes and issued a <code>dialplan reload</code> from the Asterisk CLI.</li><li>Ensure that the extension being dialled has a 1 priority.</li><li>Ensure the the extension being dialled is in the expected dialplan context.</li></ul></li></ul><h2 id="AsteriskPJSIPTroubleshootingGuide-ARGH!NAT!">ARGH! NAT!</h2><p>NAT is objectively terrible. Before having a look at this section, have a look at <a href="Configuring-res_pjsip-to-work-through-NAT_27198672.html">this page</a> to be sure that you understand the options available to help combat the problems NAT can cause.</p><p>NAT can adversely affect all areas of SIP calls, but we'll focus for now on how they can negatively affect the ability to allow for incoming calls to be set up. The most common issues are the following:</p><ul><li>Asterisk routes responses to incoming SIP requests to the wrong location.</li><li>Asterisk gives the far end an unroutable private address to send SIP traffic to during the call.</li></ul><h3 id="AsteriskPJSIPTroubleshootingGuide-Asterisksendstraffictounroutableaddress">Asterisk sends traffic to unroutable address</h3><p>The endpoint option that controls how Asterisk routes responses is <code>force_rport</code>. By default, this option is enabled and causes Asterisk to send responses to the address and port from which the request was received. This default behavior works well when Asterisk is on a different side of a NAT from the device that is calling in. Since Asterisk presumably cannot route responses to the device itself, Asterisk instead routes the response back to where it received the request from.</p><h3 id="AsteriskPJSIPTroubleshootingGuide-Asteriskgivesunroutableaddresstodevice">Asterisk gives unroutable address to device</h3><p>By default, Asterisk will place its own IP address into Contact headers when responding to SIP requests. This can be a problem if the Asterisk server is not routable from the remote device. The <code>local_net</code>, <code>external_signaling_address</code>, and <code>external_signaling_port</code> transport options can assist in preventing this. By setting these options, Asterisk can detect an address as being a &quot;local&quot; address and replace them with &quot;external&quot; addresses instead.</p><h1 id="AsteriskPJSIPTroubleshootingGuide-OutboundCalls">Outbound Calls</h1><h2 id="AsteriskPJSIPTroubleshootingGuide-Asterisksaysmyendpointdoesnotexist">Asterisk says my endpoint does not exist</h2><p>If you see a message like the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[2014-10-14 15:50:50.407] ERROR[2004]: chan_pjsip.c:1767 request: Unable to create PJSIP channel - endpoint &#39;hammerhead&#39; was not found</pre>
+</div></div><p>then this means that Asterisk thinks the endpoint you are trying to dial does not exist. For troubleshooting tips about how to ensure that endpoints are loaded as expected, check the Identify by User subsection in the Incoming Calls section.</p><p>Alternatively, if you see a message like the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[2014-10-14 15:55:06.292] ERROR[2578][C-00000000]: netsock2.c:303 ast_sockaddr_resolve: getaddrinfo(&quot;hammerhead&quot;, &quot;(null)&quot;, ...): Name or service not known
+[2014-10-14 15:55:06.292] WARNING[2578][C-00000000]: chan_sip.c:6116 create_addr: No such host: hammerhead
+[2014-10-14 15:55:06.292] DEBUG[2578][C-00000000]: chan_sip.c:29587 sip_request_call: Cant create SIP call - target device not registered</pre>
+</div></div><p>or</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[2014-10-14 15:55:58.440] WARNING[2700][C-00000000]: channel.c:5946 ast_request: No channel type registered for &#39;SIP&#39;
+[2014-10-14 15:55:58.440] WARNING[2700][C-00000000]: app_dial.c:2431 dial_exec_full: Unable to create channel of type &#39;SIP&#39; (cause 66 - Channel not implemented)</pre>
+</div></div><p>then it means that your dialplan is referencing &quot;SIP/hammerhead&quot; instead of &quot;PJSIP/hammerhead&quot;. Change your dialplan to refer to the correct channel driver, and don't forget to <code>dialplan reload</code> when you are finished.</p><h2 id="AsteriskPJSIPTroubleshootingGuide-Asteriskcannotroutemycall">Asterisk cannot route my call</h2><p>If Asterisk is finding your endpoint successfully, it may be that Asterisk has no address information when trying to dial the endpoint. You may see a message like the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[2014-10-14 15:58:06.690] WARNING[2743]: res_pjsip/location.c:155 ast_sip_location_retrieve_contact_from_aor_list: Unable to determine contacts from empty aor list
+[2014-10-14 15:58:06.690] WARNING[2834][C-00000000]: app_dial.c:2431 dial_exec_full: Unable to create channel of type &#39;PJSIP&#39; (cause 3 - No route to destination)</pre>
+</div></div><p>If you see this, then the endpoint you are dialling either has no associated address of record (AoR) or the associated AoR does not have any contact URIs bound to it. AoRs are necessary in order to determine the appropriate destination of the call. To see if your endpoint has an associated AoR, run <code>pjsip show endpoint &lt;endpoint name&gt;</code> from the Asterisk CLI. The following is sample output of an endpoint that <strong>does</strong> have an AoR configured on it:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre> Endpoint:  david/6001                                           Unavailable   0 of inf
+     InAuth:  david-auth/david
+        Aor:  david                                             10
+  Transport:  main-transport            udp      0      0  0.0.0.0:5060
+   Identify:  10.24.16.36/32</pre>
+</div></div><p>Notice the third line. The endpoint points to the AoR section called &quot;david&quot;. If your endpoint does not have an AoR associated with it, this third line will be absent.</p><p>If you think you have associated your endpoint with an AoR, but one does not appear in the CLI, then here are some troubleshooting steps:</p><ul><li>Ensure that you have set the <code>aors</code> option on the endpoint. Notice that the option is not <code>aor</code> (there is an 's' at the end).</li><li>Ensure that the AoR pointed to by the <code>aors</code> option exists. Check your spelling!</li></ul><p>If those appear to be okay, it may be that there was an error when attempting to load the AoR from configuration. From the Asterisk CLI, run the command <code>pjsip show aor &lt;aor name&gt;</code>. If you see a message like</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Unable to find object heman.</pre>
+</div></div><p>Then it means the AoR did not get loaded properly. Here are some troubleshooting steps to ensure your AoR is configured correctly:</p><ul><li>Ensure that your AoR has <code>type = aor</code> set on it.</li><li><p>Ensure that there were no nonexistent configuration options set. You can check the logs at Asterisk startup to see if there were any options Asterisk did not understand. For instance, you may see something like:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[2014-10-14 16:16:20.658] ERROR[2939]: config_options.c:710 aco_process_var: Could not find option suitable for category &#39;1000&#39; named &#39;awesomeness&#39; at line 219 of 
+[2014-10-14 16:16:20.659] ERROR[2939]: res_sorcery_config.c:275 sorcery_config_internal_load: Could not create an object of type &#39;aor&#39; with id &#39;1000&#39; from configuration file &#39;pjsip.conf&#39;</pre>
+</div></div><p>In this case, I tried to set an option called &quot;awesomeness&quot; on the AoR 1000. Since Asterisk did not recognize this option, AoR 1000 was unable to be loaded.</p></li><li>The <code>contact</code> option can be a pitfall. There is an object type called &quot;contact&quot; that is documented on the wiki, which may make you think that the AoR option should point to the name of a contact object that you have configured. On the contrary, the <code>contact</code> option for an AoR is meant to be a SIP URI. The resulting contact object will be created by Asterisk based on the provided URI. Make sure when setting the <code>contact</code> that you use a full SIP URI and not just an IP address.</li></ul><p>Another issue you may encounter is that you have properly configured an AoR on the endpoint but that this particular AoR has no contact URIs bound to it. From the CLI, run the <code>pjsip show aor &lt;aor name&gt;</code> command to see details about the AoR. Here is an example of an AoR that has a contact URI bound to it.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>      Aor:  201                                                  1
+    Contact:  201/sip:201@10.24.18.87:5060;ob                    Unknown               nan</pre>
+</div></div><p>The &quot;Contact:&quot; line shows the URI &quot;sip:201@10.24.18.87:5060;ob&quot; is bound to the AoR 201. If the AoR does not have any contacts bound to it, then no Contact lines would appear. The absence of Contact lines can be explained by any of the following:</p><ul><li>If the device is expected to register, then it may be that the device is either not properly configured or that there was a registration failure. See the Inbound Registrations section for details on how to resolve that problem.</li><li>If the device is not intended to register, then the AoR needs to have a <code>contact</code> option set on it. See the previous bulleted list for possible <code>contact</code>-related pitfalls.</li></ul><h2 id="AsteriskPJSIPTroubleshootingGuide-ARGH!NAT!(Part2)">ARGH! NAT! (Part 2)</h2><p>NAT makes babies cry.</p><p>For outbound calls, the main NAT issue you are likely to come across is Asterisk publishing an unroutable private address in its Contact header. If this is an issue you are facing, this can be corrected by setting the <code>local_net</code>, <code>external_signaling_address</code>, and <code>external_signaling_port</code> options for the transport you are using when communicating with the endpoint. For more information on how this can be set up, please see <a href="Configuring-res_pjsip-to-work-through-NAT_27198672.html">this page</a>.</p><h1 id="AsteriskPJSIPTroubleshootingGuide-BridgedCalls">Bridged Calls</h1><h2 id="AsteriskPJSIPTroubleshootingGuide-Directmediaisnotbeingused">Direct media is not being used</h2><p>Direct media is a feature that allows for media to bypass Asterisk and flow directly between two endpoints. This can save resources on the Asterisk system and allow for more simultaneous calls. The following conditions are required for direct media. If any are not met, then direct media is not possible:</p><ul><li>There must only be two endpoints involved in the call.</li><li>Both endpoints involved in the call must have the <code>direct_media</code> option enabled.</li><li>The call must be a regular person-to-person call. Calls through ConfBridge() and Meetme() cannot use direct media.</li><li>The sets of codecs in use by each endpoint during the call must have a non-empty intersection. In other words, each endpoint must be using at least one codec that the other endpoint is using.</li><li>Any features in Asterisk that manipulate, record, or inject media may not be used. This includes:<ul><li>The Monitor() and Mixmonitor() applications</li><li>The Chanspy() application</li><li>The JACK() application</li><li>The VOLUME() function</li><li>The TALK_DETECT() function</li><li>The SPEEX() function</li><li>The PERIODIC_HOOK() function</li><li>The 'L' option to the Dial() application</li><li>An ARI snoop</li><li>A jitter buffer</li><li>A FAX gateway</li></ul></li><li>No features that require that Asterisk intercept DTMF may be used. This includes the T, t, K, k, W, w, X, and x options to the Dial() application.</li><li>If either endpoint has the <code>disable_direct_media_on_nat</code> option set, and a possible media NAT is detected, then direct media will not be used. This option is disabled by default, so you would have to explicitly set this option for this to be a problem.</li><li>The two endpoints must be in the same bridge with each other. If the two endpoints are in separate bridges, and those two bridges are connected with one or more local channels, then direct media is not possible.</li></ul><p>Double-check that all requirements are met. Unfortunately, Asterisk does not provide much in the way of debug for determining why it has chosen <strong>not</strong> to use direct media.</p><h1 id="AsteriskPJSIPTroubleshootingGuide-InboundRegistrations">Inbound Registrations</h1><p>For inbound registrations, a lot of the same problems that can happen on inbound calls may occur. Asterisk goes through the same endpoint identification and authentication process as for incoming calls, so if your registrations are failing for those reasons, consult the troubleshooting guide for incoming calls to determine what the problem may be.</p><p>If your problem is not solved by looking in those sections, then you may have a problem that relates directly to the act of registering. Before continuing, here is a sample REGISTER request sent to an Asterisk server:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>REGISTER sip:10.24.20.249:5060 SIP/2.0
+Via: SIP/2.0/UDP 10.24.16.37:5060;rport;branch=z9hG4bKPj.rPtUH-P33vMFd68cLZjQj0QQxdu6mNx
+Max-Forwards: 70
+From: &quot;200&quot; &lt;sip:200@10.24.20.249&gt;;tag=BXs-nct8-XOe7Q7tspK3Vl3iqUa0cmzc
+To: &quot;200&quot; &lt;sip:200@10.24.20.249&gt;
+Call-ID: C0yYQJ8h776wbheBiUEqCin.ZhcBB.tZ
+CSeq: 5200 REGISTER
+User-Agent: Digium D40 1_4_0_0_57389
+Contact: &quot;200&quot; &lt;sip:200@10.24.16.37:5060;ob&gt;
+Expires: 300
+Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS
+Content-Length:  0</pre>
+</div></div><p>This REGISTER was sent by the endpoint 200. The URI in the To header is &quot;sip:200@10.24.20.249&quot;. Asterisk extracts the username portion of this URI to determine the address of record (AoR) that the REGISTER pertains to. In this case, the AoR has the same name as the endpoint, 200. The URI in the Contact header is &quot;sip:200@10.24.16.37:5060;ob&quot;. The REGISTER request is attempting to bind this contact URI to the AoR. Ultimately, what this means is that when someone requests to reach endpoint 200, Asterisk will check the AoRs associated with the endpoint, and send requests to all contact URIs that have been bound to the AoR. In other words, the REGISTER gives Asterisk the means to locate the endpoint.</p><p>You can ensure that your configuration is sane by running the the <code>pjsip show endpoint &lt;endpoint name&gt;</code> CLI command. Part of the output is to show all AoRs associated with a particular endpoint, as well as contact URIs that have been bound to those AoRs. Here is sample output from running <code>pjsip show endpoint 200</code> on a system where registration has succeeded:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre> Endpoint:  200/200                                              Not in use    0 of inf
+        Aor:  200                                                1
+      Contact:  200/sip:200@10.24.16.37:5060;ob                  Unknown               nan
+  Transport:  main-transport            udp      0      0  0.0.0.0:5060</pre>
+</div></div><p>This shows that endpoint 200 has AoR 200 associated with it. And you can also see that the contact &quot;sip:200@10.24.16.37:5060;ob&quot; has been bound to the AoR.</p><p>If running this command shows no AoR, then ensure that the endpoint has the <code>aors</code> option set. Note that the name is <code>aors</code>, not <code>aor</code>.</p><p>More likely, the issue will be that an AoR will be listed, but there will be no associated contact. If this is the case, here are some possible troubleshooting steps:</p><ul><li>Ensure that the AoR has actually been loaded. Run the CLI command <code>pjsip show aor &lt;aor name&gt;</code>. If no AoR is displayed, then that means the AoR was not loaded.<ul><li>Ensure that the configuration section has <code>type = aor</code> specified.</li><li>Ensure that all configuration options specified on the AoR are options that Asterisk recognizes.</li></ul></li><li><p>Ensure that the <code>res_pjsip_registrar.so</code> module is loaded and running. Running <code>module show like res_pjsip_registrar.so</code> should show the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Module                         Description                              Use Count  Status      Support Level
+res_pjsip_registrar.so         PJSIP Registrar Support                  0          Running              core</pre>
+</div></div></li><li><p>Ensure that the AoR has a <code>max_contacts</code> value configured on it. If this option is not set, then registration cannot succeed. You will see this message on the CLI:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[2014-10-16 11:34:07.887] WARNING[2940]: res_pjsip_registrar.c:685 registrar_on_rx_request: AOR &#39;200&#39; has no configured max_contacts. Endpoint &#39;200&#39; unable to register</pre>
+</div></div><p>Asterisk will transmit a 403 Forbidden in response to the registration attempt.</p></li></ul><p>If you initially have successful registrations but they later start failing, then here are some further troubleshooting steps for you to try:</p><ul><li>If you intend for new registrations to replace old ones, then enable the <code>remove_existing</code> option for the AoR.</li><li><p>Ensure that if you are attempting to bind multiple contacts to an AoR that the <code>max_contacts</code> for the AoR is large enough. If the <code>max_contacts</code> value is not high enough, you will see the following CLI message:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[2014-10-16 11:34:07.887] WARNING[2940]: res_pjsip_registrar.c:411 rx_task: Registration attempt from endpoint &#39;200&#39; to AOR &#39;200&#39; will exceed max contacts of 1</pre>
+</div></div><p>Asterisk will respond to the registration attempt with a 403 Forbidden.</p></li></ul><h1 id="AsteriskPJSIPTroubleshootingGuide-OutboundRegistrations">Outbound Registrations</h1><p>If you are having troubles with outbound registrations and unfamiliar with the mechanics involved, please see <a href="Configuring-Outbound-Registrations_30278351.html">this page</a>. It will explain quite a few of the concepts that Asterisk uses and may give you some clues for solving your issue.</p><p>If you are still having trouble, here are some troubleshooting steps:</p><ul><li>If Asterisk is not sending an outbound REGISTER at all, then it is likely that there was an error when trying to load the outbound registration.<ul><li>Ensure that the outbound registration has <code>type = registration</code> in it.</li><li>Ensure that there are no configuration options that Asterisk does not recognize.</li></ul></li><li><p>Another reason Asterisk may not be sending an outbound REGISTER is that you do not have a valid SIP URI for your <code>server_uri</code> or <code>client_uri</code>. You may see a message like this on the CLI if this is the case:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[2014-10-16 12:05:16.064] ERROR[3187]: res_pjsip_outbound_registration.c:724 sip_outbound_registration_regc_alloc: Invalid server URI &#39;registrar@example.com&#39; specified on outbound registration &#39;outreg&#39;</pre>
+</div></div><p>In this case, I left off the initial &quot;sip:&quot; from the URI.</p></li><li>If your outbound REGISTER receives no response, then you may have misconfigured the <code>server_uri</code> to point somewhere the REGISTER is not meant to be sent.</li><li>If Asterisk has stopped sending REGISTER requests, then either the maximum number of retries has been attempted or the response that Asterisk received from the registrar was considered to be a permanent failure. If you want to get Asterisk to start sending REGISTER requests again after making configuration adjustments, you can do so by running the <code>module reload res_pjsip_registrar.so</code> CLI command.</li></ul><h1 id="AsteriskPJSIPTroubleshootingGuide-InboundSubscriptions">Inbound Subscriptions</h1><p>The first thing to acknowledge with inbound subscriptions is that the handling of the inbound SUBSCRIBE messages starts the same as for inbound calls. This means that if you are having troubles where Asterisk does not recognize the endpoint sending the SUBSCRIBE or if authentication is failing, you should check the troubleshooting guide for incoming calls for details on how to solve these issues.</p><p>It is also important to ensure that <code>res_pjsip_pubsub.so</code> is loaded and running. This module is the core of all of Asterisk's handling of subscriptions, and if it is not loaded, then Asterisk will not be able to set up subscriptions properly.</p><h2 id="AsteriskPJSIPTroubleshootingGuide-Presence/DialogInfo">Presence/Dialog Info</h2><p>A tutorial about subscribing to presence and dialog-info can be found on <a href="Configuring-res_pjsip-for-Presence-Subscriptions_29392974.html">this page</a>. Reading that page may point you towards how to resolve the issue you are facing.</p><p>If you are attempting to subscribe to the presence or dialog event packages, then here are some troubleshooting steps for determining what is going wrong.</p><ul><li>Ensure that the <code>res_pjsip_exten_state.so</code> module is loaded.</li><li>Ensure that the Event header in inbound subscribe messages are one of &quot;presence&quot; or &quot;dialog&quot;.</li><li>Ensure all necessary modules are loaded, depending on what values are in the Accept header of inbound SUBSCRIBE requests.<br /><ul><li>Subscriptions that use Accept: application/pidf+xml will need to have <code>res_pjsip_pidf_body_generator.so</code> loaded.</li><li>Subscriptions that use Accept: application/xpidf+xml will need to have <code>res_pjsip_xpidf_body_generator.so</code> loaded.</li><li>Subscriptions that use Accept: application/dialog-info+xml will need to have <code>res_pjsip_dialog_info_body_generator.so</code> loaded.</li></ul></li><li><p>When subscribing, you may see a message like the following on the CLI:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[2014-10-16 12:56:58.605] WARNING[3780]: res_pjsip_exten_state.c:337 new_subscribe: Extension blah does not exist or has no associated hint</pre>
+</div></div><p>The warning message is self-explanatory. If you think you have placed extension &quot;blah&quot; in your <code>extensions.conf</code> file and it contains a hint, then be sure that it exists in the same context as the <code>context</code> option on the endpoint that is attempting to subscribe. Also be sure that if you have recently changed your <code>extensions.conf</code> file that you have saved the changes and run the <code>dialplan reload</code> CLI command.</p></li></ul><h2 id="AsteriskPJSIPTroubleshootingGuide-MWI">MWI</h2><p>If you are attempting to subscribe to the message-summary package, then here are some troubleshooting steps for determining what is going wrong.</p><ul><li>Ensure that the <code>res_pjsip_mwi.so</code> and the <code>res_pjsip_mwi_body_generator.so</code> modules are loaded.</li><li>Ensure that the AoR that the MWI SUBSCRIBE is being sent to has <code>mailboxes</code> configured on it. Note that the option name is <code>mailboxes</code> and not <code>mailbox</code>.</li><li><p>When subscribing to MWI, you may see a message like the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[2014-10-16 13:06:51.323] NOTICE[3963]: res_pjsip_mwi.c:566 mwi_validate_for_aor: Endpoint &#39;200&#39; already configured for unsolicited MWI for mailbox &#39;200&#39;. Denying MWI subscription to 200</pre>
+</div></div><p>The most likely cause of something like this is that you have an endpoint and an AoR that both have <code>mailboxes = 200</code> in your configuration. The endpoint with <code>mailboxes = 200</code> attempts to subscribe to the AoR that has <code>mailboxes = 200</code>. In this case, since Asterisk is already sending MWI notifications about mailbox 200 to the endpoint, the subscription to the AoR is denied. To fix this, remove the <code>mailboxes</code> option from your endpoint, or configure your device not to attempt to subscribe to MWI.</p></li><li>Asterisk has multiple ways of having MWI state set, but the most common way is to use <code>app_voicemail</code> that comes with Asterisk. <code>app_voicemail</code> has a requirement that mailbox names must follow the format &quot;mailbox@context&quot;. If you are using <code>app_voicemail</code> and you configure MWI in <code>pjsip.conf</code> and only provide the mailbox name without a context, then you will not receive MWI updates when the state of the mailbox changes.</li></ul><h1 id="AsteriskPJSIPTroubleshootingGuide-ConfigurationIssues">Configuration Issues</h1><h2 id="AsteriskPJSIPTroubleshootingGuide-Can&#39;tcreateanIPv6transport">Can't create an IPv6 transport</h2><p>You've configured a transport in pjsip.conf to bind to an IPv6 address or block. However, Asterisk fails to create the transport when loading!</p><p>If you look into your logs you might messages similar to the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[Dec 12 00:58:31] ERROR[10157] config_options.c: Error parsing bind=:: at line 8 of 
+[Dec 12 00:58:31] ERROR[10157] res_sorcery_config.c: Could not create an object of type &#39;transport&#39; with id &#39;my-ipv6-transport&#39; from configuration file &#39;pjsip.conf&#39;</pre>
+</div></div><p>The most likely issue is that you have not compiled <strong>pjproject</strong> with support for IPv6. You can find instructions at <a href="PJSIP-pjproject_25919783.html">PJSIP-pjproject</a>.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

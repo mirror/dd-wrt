@@ -11,14 +11,13 @@
 	<support_level>extended</support_level>
  ***/
 
+#define ASTMM_LIBC ASTMM_IGNORE
 #include "asterisk.h"
 
 #include <locale.h>
 #include <ctype.h>
 #include <regex.h>
 #include <limits.h>
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/backtrace.h"
 #include "asterisk/channel.h"
@@ -32,10 +31,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 int option_debug = 0;
 int option_verbose = 0;
-#if !defined(LOW_MEMORY)
-void ast_register_file_version(const char *file, const char *version) { }
-void ast_unregister_file_version(const char *file) { }
-#endif
 
 /*** MODULEINFO
   	<depend>res_ael_share</depend>
@@ -48,7 +43,7 @@ struct namelist
 	struct namelist *next;
 };
 
-struct ast_context 
+struct ast_context
 {
 	int extension_count;
 	char name[100];
@@ -103,7 +98,7 @@ static char var_dir[PATH_MAX];
 const char *ast_config_AST_CONFIG_DIR = config_dir;
 const char *ast_config_AST_VAR_DIR = var_dir;
 
-void ast_cli_register_multiple(void);
+void __ast_cli_register_multiple(void);
 int ast_add_extension2(struct ast_context *con,
 					   int replace, const char *extension, int priority, const char *label, const char *callerid,
 						const char *application, void *data, void (*datad)(void *),
@@ -136,7 +131,7 @@ void ast_log(int level, const char *file, int line, const char *function, const 
 {
 	        va_list vars;
 		        va_start(vars,fmt);
-			
+
 			        printf("LOG: lev:%d file:%s  line:%d func: %s  ",
 						                   level, file, line, function);
 				        vprintf(fmt, vars);
@@ -147,21 +142,21 @@ void ast_log(int level, const char *file, int line, const char *function, const 
 struct ast_exten *pbx_find_extension(struct ast_channel *chan,
 									 struct ast_context *bypass,
 									 struct pbx_find_info *q,
-									 const char *context, 
-									 const char *exten, 
+									 const char *context,
+									 const char *exten,
 									 int priority,
-									 const char *label, 
-									 const char *callerid, 
+									 const char *label,
+									 const char *callerid,
 									 enum ext_match_t action);
 
 struct ast_exten *pbx_find_extension(struct ast_channel *chan,
 									 struct ast_context *bypass,
 									 struct pbx_find_info *q,
-									 const char *context, 
-									 const char *exten, 
+									 const char *context,
+									 const char *exten,
 									 int priority,
-									 const char *label, 
-									 const char *callerid, 
+									 const char *label,
+									 const char *callerid,
 									 enum ext_match_t action)
 {
 	return localized_find_extension(bypass, q, context, exten, priority, label, callerid, action);
@@ -180,7 +175,6 @@ struct ast_custom_function *ast_custom_function_find(const char *name)
 	return 0; /* in "standalone" mode, functions are just not avail */
 }
 
-#if !defined(LOW_MEMORY)
 int ast_add_profile(const char *x, uint64_t scale)
 {
 	if (!no_comp)
@@ -188,7 +182,6 @@ int ast_add_profile(const char *x, uint64_t scale)
 
 	return 0;
 }
-#endif
 
 int ast_loader_register(int (*updater)(void))
 {
@@ -208,7 +201,7 @@ void ast_module_unregister(const struct ast_module_info *x)
 }
 
 
-void ast_cli_register_multiple(void)
+void __ast_cli_register_multiple(void)
 {
 	if(!no_comp)
         	printf("Executed ast_cli_register_multiple();\n");
@@ -218,7 +211,7 @@ void pbx_substitute_variables_helper(struct ast_channel *c,const char *cp1,char 
 void pbx_substitute_variables_helper(struct ast_channel *c,const char *cp1,char *cp2,int count)
 {
 	if (cp1 && *cp1)
-		strncpy(cp2,cp1,AST_MAX_EXTENSION); /* Right now, this routine is ONLY being called for 
+		strncpy(cp2,cp1,AST_MAX_EXTENSION); /* Right now, this routine is ONLY being called for
 											   a possible var substitution on extension names,
 											   so....! */
 	else
@@ -255,15 +248,15 @@ int ast_add_extension2(struct ast_context *con,
 
 		if( FIRST_TIME ) {
 			FIRST_TIME = 0;
-			
+
 			if( globalvars )
 				fprintf(dumpfile,"[globals]\n");
-			
+
 			for(n=globalvars;n;n=n->next) {
 				fprintf(dumpfile, "%s\n", n->name);
 			}
 		}
-		
+
 		/* print out each extension , possibly the context header also */
 		if( con != last_context ) {
 			fprintf(dumpfile,"\n\n[%s]\n", con->name);
@@ -280,7 +273,7 @@ int ast_add_extension2(struct ast_context *con,
 			for(n=con->eswitches;n;n=n->next) {
 				fprintf(dumpfile, "eswitch => %s/%s\n", n->name, n->name2);
 			}
-			
+
 		}
 		if( data ) {
 			filter_newlines((char*)data);
@@ -303,7 +296,7 @@ int ast_add_extension2(struct ast_context *con,
 				fprintf(dumpfile,"exten => %s,%d,%s\n", extension, priority, application);
 		}
 	}
-	
+
 	/* since add_extension2 is responsible for the malloc'd data stuff */
 	free(data);
 	return 0;
@@ -320,7 +313,7 @@ void pbx_builtin_setvar(void *chan, void *data)
 		ADD_LAST(globalvars,x);
 	}
 }
-	
+
 
 struct ast_context * ast_context_create(void **extcontexts, const char *name, const char *registrar)
 {
@@ -381,7 +374,7 @@ void ast_context_add_switch2(struct ast_context *con, const char *value, const c
 	if( dump_extensions ) {
 		struct namelist *x;
 		x = create_name((char*)value);
-		strncpy(x->name2,data,100);
+		strncpy(x->name2, data, 99);
 		if( eval ) {
 
 			ADD_LAST(con->switches,x);
@@ -458,7 +451,7 @@ void filter_leading_space_from_exprs(char *str)
 {
 	/*  Mainly for aesthetics */
 	char *t, *v, *u = str;
-	
+
 	while ( u && *u ) {
 
 		if( *u == '$' && *(u+1) == '[' ) {
@@ -471,7 +464,7 @@ void filter_leading_space_from_exprs(char *str)
 				}
 			}
 		}
-		
+
 		u++;
 	}
 }
@@ -500,7 +493,7 @@ int main(int argc, char **argv)
 	int i;
 	struct namelist *n;
 	struct ast_context *lp,*lp2;
-	
+
 	for(i=1;i<argc;i++) {
 		if( argv[i][0] == '-' && argv[i][1] == 'n' )
 			no_comp =1;
@@ -513,7 +506,7 @@ int main(int argc, char **argv)
 		if( argv[i][0] == '-' && argv[i][1] == 'w' )
 			dump_extensions =1;
 	}
-	
+
 	if( !quiet ) {
 		printf("\n(If you find progress and other non-error messages irritating, you can use -q to suppress them)\n");
 		if( !no_comp )
@@ -533,30 +526,30 @@ int main(int argc, char **argv)
 		localized_use_conf_dir();
 	}
 	strcpy(var_dir, "/var/lib/asterisk");
-	
+
 	if( dump_extensions ) {
 		dumpfile = fopen("extensions.conf.aeldump","w");
 		if( !dumpfile ) {
 			printf("\n\nSorry, cannot open extensions.conf.aeldump for writing! Correct the situation and try again!\n\n");
 			exit(10);
 		}
-		
+
 	}
 
 	FIRST_TIME = 1;
-	
+
 	ael_external_load_module();
-	
+
 	ast_log(4, "ael2_parse", __LINE__, "main", "%d contexts, %d extensions, %d priorities\n", conts, extens, priors);
 
 	if( dump_extensions && dumpfile ) {
-	
+
 		for( lp = context_list; lp; lp = lp->next ) { /* print out any contexts that didn't have any
 														 extensions in them */
 			if( lp->extension_count == 0 ) {
-				
+
 				fprintf(dumpfile,"\n\n[%s]\n", lp->name);
-				
+
 				for(n=lp->ignorepats;n;n=n->next) {
 					fprintf(dumpfile, "ignorepat => %s\n", n->name);
 				}
@@ -572,10 +565,10 @@ int main(int argc, char **argv)
 			}
 		}
 	}
-	
+
 	if( dump_extensions && dumpfile )
 		fclose(dumpfile);
-	
+
 	for( lp = context_list; lp; lp = lp2 ) { /* free the ast_context structs */
 		lp2 = lp->next;
 		lp->next = 0;
@@ -587,7 +580,7 @@ int main(int argc, char **argv)
 
 		free(lp);
 	}
-	
+
     return 0;
 }
 
@@ -606,11 +599,9 @@ unsigned int ast_hashtab_hash_contexts(const void *obj)
 }
 
 #ifdef DEBUG_THREADS
-#if !defined(LOW_MEMORY)
 void ast_mark_lock_acquired(void *lock_addr)
 {
 }
-#ifdef HAVE_BKTR
 void ast_remove_lock_info(void *lock_addr, struct ast_bt *bt)
 {
 }
@@ -620,30 +611,15 @@ void ast_store_lock_info(enum ast_lock_type type, const char *filename,
 {
 }
 
+#ifdef HAVE_BKTR
 int __ast_bt_get_addresses(struct ast_bt *bt)
 {
 	return 0;
 }
 
-char **__ast_bt_get_symbols(void **addresses, size_t num_frames)
+struct ast_vector_string *__ast_bt_get_symbols(void **addresses, size_t num_frames)
 {
-	char **foo = calloc(num_frames, sizeof(char *) + 1);
-	if (foo) {
-		int i;
-		for (i = 0; i < num_frames; i++) {
-			foo[i] = (char *) foo + sizeof(char *) * num_frames;
-		}
-	}
-	return foo;
-}
-#else
-void ast_remove_lock_info(void *lock_addr)
-{
-}
-
-void ast_store_lock_info(enum ast_lock_type type, const char *filename,
-	int line_num, const char *func, const char *lock_name, void *lock_addr)
-{
+	return NULL;
 }
 #endif /* HAVE_BKTR */
 void ast_suspend_lock_info(void *lock_addr)
@@ -652,5 +628,4 @@ void ast_suspend_lock_info(void *lock_addr)
 void ast_restore_lock_info(void *lock_addr)
 {
 }
-#endif /* !defined(LOW_MEMORY) */
 #endif /* DEBUG_THREADS */

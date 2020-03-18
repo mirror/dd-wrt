@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : ARI and Channels: Simple Media Manipulation</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="29395573.html">Asterisk REST Interface (ARI)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Introduction-to-ARI-and-Channels_29395597.html">Introduction to ARI and Channels</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : ARI and Channels: Simple Media Manipulation
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified by <span class='editor'> Dan Jenkins</span> on Feb 07, 2017
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro" style="width:60%;min-width:60%;max-width:60%;"><h1 id="ARIandChannels:SimpleMediaManipulation-Simplemediaplayback">Simple media playback</h1><p>Almost all media is played to a channel using the <code>POST /channels/{channel_id}/play</code> operation. This will do the following:</p><ol><li>Create a new <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+REST+Data+Models#Asterisk12RESTDataModels-Playback" rel="nofollow"><code>Playback</code></a> object for the channel. If a media operation is currently in progress on the channel, the new <code>Playback</code> object will be queued up for the channel.</li><li><p>The <code>media</code> URI passed to the <code>play</code> operation will be inspected, and Asterisk will attempt to find the media requested. Currently, the following media schemes are supported:</p><div class="table-wrap"><table class="confluenceTable"><tbody><tr style="margin-left: 60.0px;"><th class="confluenceTh">URI Scheme</th><th class="confluenceTh">Description</th></tr><tr style="margin-left: 60.0px;"><td class="confluenceTd"><code>sound</code></td><td class="confluenceTd">A sound file located on the Asterisk system. You can use the <code><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Sounds+REST+API" rel="nofollow">/sounds</a></code> resource to query for available sounds on the system. You can also use specify a media file which is consumed via HTTP (e.g sound:http://foo.com/sound.wav)</td></tr><tr style="margin-left: 60.0px;"><td colspan="1" class="confluenceTd"><code>recording</code></td><td colspan="1" class="confluenceTd">A <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+REST+Data+Models#Asterisk12RESTDataModels-StoredRecording" rel="nofollow"><code>StoredRecording</code></a> stored on the Asterisk system. You can use the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Recordings+REST+API" rel="nofollow"><code>/recordings/stored</code></a> resource to query for available <code>StoredRecording</code>s on the system.</td></tr><tr style="margin-left: 60.0px;"><td colspan="1" class="confluenceTd"><code>number</code></td><td colspan="1" class="confluenceTd">Play back the specified number. This uses the same mechanism as Asterisk's <code><a href="https://wiki.asterisk.org/wiki/display/AST/SayDigits,+SayNumber,+SayAlpha,+and+SayPhonetic+Applications?src=search" rel="nofollow">Say</a></code> family of applications.</td></tr><tr style="margin-left: 60.0px;"><td colspan="1" class="confluenceTd"><code>digits</code></td><td colspan="1" class="confluenceTd">Play back the specified digits. This uses the same mechanism as Asterisk's <code><a href="https://wiki.asterisk.org/wiki/display/AST/SayDigits,+SayNumber,+SayAlpha,+and+SayPhonetic+Applications?src=search" rel="nofollow">Say</a></code> family of applications.</td></tr><tr style="margin-left: 60.0px;"><td colspan="1" class="confluenceTd"><code>characters</code></td><td colspan="1" class="confluenceTd">Play back the specified characters. This uses the same mechanism as Asterisk's <code><a href="https://wiki.asterisk.org/wiki/display/AST/SayDigits,+SayNumber,+SayAlpha,+and+SayPhonetic+Applications?src=search" rel="nofollow">Say</a></code> family of applications.</td></tr><tr style="margin-left: 60.0px;"><td colspan="1" class="confluenceTd"><code>tone</code></td><td colspan="1" class="confluenceTd">Play a particular tone sequence until stopped. This can be used to play locale specific ringing, stutter, busy, congestion, or other tones to a device.</td></tr></tbody></table></div></li><li>Once the media operation is started or enqueued, the <code>Playback</code> object will be returned to the caller in the <code>HTTP</code> response to the request. The caller can use that playback object to manipulate the media operation.</li></ol><p> </p></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303059780 {padding: 0px;}
+div.rbtoc1582303059780 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303059780 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303059780'>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:SimpleMediaManipulation-Simplemediaplayback'>Simple media playback</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:SimpleMediaManipulation-EarlyMedia'>Early Media</a></li>
+</ul>
+</li>
+<li><a href='#ARIandChannels:SimpleMediaManipulation-Example:Playingbacktones'>Example: Playing back tones</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:SimpleMediaManipulation-Dialplan'>Dialplan</a></li>
+<li><a href='#ARIandChannels:SimpleMediaManipulation-Python'>Python</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:SimpleMediaManipulation-channel-tones.py'>channel-tones.py</a></li>
+<li><a href='#ARIandChannels:SimpleMediaManipulation-channel-tones.pyinaction'>channel-tones.py in action</a></li>
+</ul>
+</li>
+<li><a href='#ARIandChannels:SimpleMediaManipulation-JavaScript(Node.js)'>JavaScript (Node.js)</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:SimpleMediaManipulation-channel-tones.js'>channel-tones.js</a></li>
+<li><a href='#ARIandChannels:SimpleMediaManipulation-channel-tones.jsinaction'>channel-tones.js in action</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href='#ARIandChannels:SimpleMediaManipulation-Example:Playingbackasoundfile'>Example: Playing back a sound file</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:SimpleMediaManipulation-Dialplan.1'>Dialplan</a></li>
+<li><a href='#ARIandChannels:SimpleMediaManipulation-Python.1'>Python</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:SimpleMediaManipulation-channel-playback-monkeys.py'>channel-playback-monkeys.py</a></li>
+<li><a href='#ARIandChannels:SimpleMediaManipulation-channel-playback-monkeys.pyinaction'>channel-playback-monkeys.py in action</a></li>
+</ul>
+</li>
+<li><a href='#ARIandChannels:SimpleMediaManipulation-JavaScript(Node.js).1'>JavaScript (Node.js)</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:SimpleMediaManipulation-channel-playback-monkeys.js'>channel-playback-monkeys.js</a></li>
+<li><a href='#ARIandChannels:SimpleMediaManipulation-channel-playback-monkeys.jsinaction'>channel-playback-monkeys.js in action</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div> </p>
+</div></div></div></div></div></div>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Specify your own ID!</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>It is <strong>highly</strong> recommended that the <code>POST /channels/{channel_id}/play/{playback_id}</code> operation be used instead of the <code>POST /channels/{channel_id}/play</code> variant. Asterisk lives in an asynchronous world - which is the same world you and I live in. Sometimes, if things happen <em>very</em> quickly, you may get notifications over the WebSocket about things you have started before the HTTP response completes!</p><p>When you specify your own ID, you have the ability to tie information coming from events back to whatever operation you initiated - if you so choose to. If you use the non-ID providing variant, Asterisk will happily generate a UUID for your <code>Playback</code> object - but then it is up to you to deal with whatever information comes back from the WebSocket.</p>
+                    </div>
+    </div>
+<h2 id="ARIandChannels:SimpleMediaManipulation-EarlyMedia">Early Media</h2><p>Generally, before a channel has been answered and transitioned to the Up state, media cannot pass between Asterisk and a device. For example, if Asterisk is placing an outbound call to a device, the device may be ringing but no one has picked up a handset yet! In such circumstances, media cannot be successfully played to the ringing device - after all, who could listen to it?</p><p>However, with inbound calls, Asterisk is the entity that decides when the path of communication between itself and the device is answered - not the user on the other end. This can be useful when answering the channel may trigger billing times or other mechanisms that we don't want to fire yet. This is called &quot;early media&quot;. For the channel technologies that support this, ARI and Asterisk will automatically handle sending the correct indications to the ringing phone before sending it media. The same <code>play</code> operation can be used both for &quot;regular&quot; playback of media, as well as for &quot;early media&quot; scenarios.</p><h1 id="ARIandChannels:SimpleMediaManipulation-Example:Playingbacktones">Example: Playing back tones</h1><p>This example ARI application will do the following:</p><ol><li>When a channel enters into the Stasis application, it will start a playback of a French ringing tone.</li><li>After 8 seconds, the channel will be answered.</li><li>After 1 second, the channel will be rudely hung up on - we didn't want to talk to them anyway!</li></ol><h2 id="ARIandChannels:SimpleMediaManipulation-Dialplan">Dialplan</h2><p>For this example, we need to just drop the channel into Stasis, specifying our application:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: true" style="font-size:12px;">exten =&gt; 1000,1,NoOp()
+ same =&gt;      n,Stasis(channel-tones)
+ same =&gt;      n,Hangup() </pre>
+</div></div><h2 id="ARIandChannels:SimpleMediaManipulation-Python">Python</h2><p>This example will use a very similar structure as the <a href="https://wiki.asterisk.org/wiki/display/%7Emjordan/Draft%3A+ARI+Channels%3A+Channel+State#Draft:ARIChannels:ChannelState-channel-state.py" rel="nofollow"><code>channel-state.py</code></a> example. Instead of performing a <code>ring</code> operation in our <code>StasisStart</code> handler, we'll instead initiate a playback using the <code>playWithId</code> operation on the channel. Note that our URI uses the <code>tone</code> scheme, which supports an optional <code>tonezone</code> parameter. We specify our <code>tonezone</code> as <code>fr</code>, so that we get an elegant French ringing tone. Much like the <code>channel-state.py</code> example, we then use a Python timer to schedule a callback that will answer the channel. Since we care about both the <code>channel</code> and the <code>playback</code> initiated on it, we pass both parameters as <code>*args</code> parameters to the callback function.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 46; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">    playback_id = str(uuid.uuid4())
+    playback = channel.playWithId(playbackId=playback_id,
+                                  media=&#39;tone:ring;tonezone=fr&#39;)
+    timer = threading.Timer(8, answer_channel, [channel, playback])
+</pre>
+</div></div><p>Since this is a media operation and not <em>technically</em> a ringing indication, when we <code>answer</code> the channel, the tone playback will not stop! To stop playing back our French ringing tone, we issue a <code>stop</code> operation on the <code>playback</code> object. This actually maps to a <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Playbacks+REST+API#Asterisk12PlaybacksRESTAPI-stop" rel="nofollow"><code>DELETE /playbacks/{playback_id}</code></a> operation.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 26; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">    def answer_channel(channel, playback):
+        &quot;&quot;&quot;Callback that will actually answer the channel&quot;&quot;&quot;
+
+        print &quot;Answering channel %s&quot; % channel.json.get(&#39;name&#39;)
+        playback.stop()
+        channel.answer()</pre>
+</div></div><p>Once answered, we'll schedule another Python timer that will do the actual hanging up of the channel.</p><h3 id="ARIandChannels:SimpleMediaManipulation-channel-tones.py">channel-tones.py</h3><p>The full source code for <code>channel-tones.py</code> is shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>channel-tones.py</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: py; gutter: true" style="font-size:12px;">#!/usr/bin/env python
+
+import ari
+import logging
+import threading
+import uuid
+
+logging.basicConfig(level=logging.ERROR)
+
+client = ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;)
+
+channel_timers = {}
+
+def stasis_end_cb(channel, ev):
+    &quot;&quot;&quot;Handler for StasisEnd event&quot;&quot;&quot;
+
+    print &quot;Channel %s just left our application&quot; % channel.json.get(&#39;name&#39;)
+    timer = channel_timers.get(channel.id)
+    if timer:
+        timer.cancel()
+        del channel_timers[channel.id]
+
+def stasis_start_cb(channel_obj, ev):
+    &quot;&quot;&quot;Handler for StasisStart event&quot;&quot;&quot;
+
+    def answer_channel(channel, playback):
+        &quot;&quot;&quot;Callback that will actually answer the channel&quot;&quot;&quot;
+
+        print &quot;Answering channel %s&quot; % channel.json.get(&#39;name&#39;)
+        playback.stop()
+        channel.answer()
+
+        timer = threading.Timer(1, hangup_channel, [channel])
+        channel_timers[channel.id] = timer
+        timer.start()
+
+    def hangup_channel(channel):
+        &quot;&quot;&quot;Callback that will actually hangup the channel&quot;&quot;&quot;
+
+        print &quot;Hanging up channel %s&quot; % channel.json.get(&#39;name&#39;)
+        channel.hangup()
+
+    channel = channel_obj.get(&#39;channel&#39;)
+    print &quot;Channel %s has entered the application&quot; % channel.json.get(&#39;name&#39;)
+
+    playback_id = str(uuid.uuid4())
+    playback = channel.playWithId(playbackId=playback_id,
+                                  media=&#39;tone:ring;tonezone=fr&#39;)
+    timer = threading.Timer(8, answer_channel, [channel, playback])
+    channel_timers[channel.id] = timer
+    timer.start()
+
+
+client.on_channel_event(&#39;StasisStart&#39;, stasis_start_cb)
+client.on_channel_event(&#39;StasisEnd&#39;, stasis_end_cb)
+
+
+client.run(apps=&#39;channel-tones&#39;)
+
+</pre>
+</div></div><h3 id="ARIandChannels:SimpleMediaManipulation-channel-tones.pyinaction">channel-tones.py in action</h3><p>The following shows the output of the <code>channel-tones.js</code> script when a <code>PJSIP</code> channel for <code>alice</code> enters the application:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">Channel PJSIP/alice-00000000 has entered the application
+Answering channel PJSIP/alice-00000000
+Hanging up channel PJSIP/alice-00000000
+Channel PJSIP/alice-00000000 just left our application</pre>
+</div></div><h2 id="ARIandChannels:SimpleMediaManipulation-JavaScript(Node.js)">JavaScript (Node.js)</h2><p>This example will use a very similar structure as the <span class="confluence-link"><code><span class="confluence-link"><span class="confluence-link"><a href="https://wiki.asterisk.org/wiki/display/%7Emjordan/Draft%3A+ARI+Channels%3A+Channel+State#Draft:ARIChannels:ChannelState-channel-state.js" rel="nofollow">channel-state.js</a></span></span></code></span> example. Instead of performing a <code>ring</code> operation in our <code>StasisStart</code> handler, we'll instead initiate a playback using the <code>play</code> operation on the channel. Note that our URI uses the <code>tone</code> scheme, which supports an optional <code>tonezone</code> parameter. We specify our <code>tonezone</code> as <code>fr</code>, so that we get an elegant French ringing tone. Much like the <code>channel-state.js</code> example, we then use a JavaScript timeout to schedule a callback that will answer the channel.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 21; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">var playback = client.Playback();
+channel.play({media: &#39;tone:ring;tonezone=fr&#39;},
+             playback, function(err, newPlayback) {
+  if (err) {
+    throw err;
+  }
+});
+// answer the channel after 8 seconds
+var timer = setTimeout(answer, 8000);
+timers[channel.id] = timer;
+</pre>
+</div></div><p>Since this is a media operation and not <em>technically</em> a ringing indication, when we <code>answer</code> the channel, the tone playback will not stop! To stop playing back our French ringing tone, we issue a <code>stop</code> operation on the <code>playback</code> object. This actually maps to a <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Playbacks+REST+API#Asterisk12PlaybacksRESTAPI-stop" rel="nofollow"><code>DELETE /playbacks/{playback_id}</code></a> operation. Notice that we use the fact that the answer callback closes on the original channel and playback variables to access them from the callback.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 33; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">function answer() {
+  console.log(util.format(&#39;Answering channel %s&#39;, channel.name));
+  playback.stop(function(err) {
+    if (err) {
+      throw err;
+    }
+  });
+  channel.answer(function(err) {
+    if (err) {
+      throw err;
+    }
+  });
+  // hang up the channel in 1 seconds
+  var timer = setTimeout(hangup, 1000);
+  timers[channel.id] = timer;
+}</pre>
+</div></div><p>Once answered, we'll schedule another timeout that will do the actual hanging up of the channel.</p><h3 id="ARIandChannels:SimpleMediaManipulation-channel-tones.js">channel-tones.js</h3><p><span class="confluence-anchor-link" id="ARIandChannels:SimpleMediaManipulation-channel-tones.js"></span></p><p>The full source code for <code>channel-tones.js</code> is shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>channel-tones.js</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: js; gutter: true" style="font-size:12px;">/*jshint node: true*/
+&#39;use strict&#39;;
+
+var ari = require(&#39;ari-client&#39;);
+var util = require(&#39;util&#39;);
+
+var timers = {};
+ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;, clientLoaded);
+
+// handler for client being loaded
+function clientLoaded (err, client) {
+  if (err) {
+    throw err;
+  }
+
+  // handler for StasisStart event
+  function stasisStart(event, channel) {
+    console.log(util.format(
+          &#39;Channel %s has entered the application&#39;, channel.name));
+
+    var playback = client.Playback();
+    channel.play({media: &#39;tone:ring;tonezone=fr&#39;},
+                 playback, function(err, newPlayback) {
+      if (err) {
+        throw err;
+      }
+    });
+    // answer the channel after 8 seconds
+    var timer = setTimeout(answer, 8000);
+    timers[channel.id] = timer;
+
+    // callback that will answer the channel
+    function answer() {
+      console.log(util.format(&#39;Answering channel %s&#39;, channel.name));
+      playback.stop(function(err) {
+        if (err) {
+          throw err;
+        }
+      });
+      channel.answer(function(err) {
+        if (err) {
+          throw err;
+        }
+      });
+      // hang up the channel in 1 seconds
+      var timer = setTimeout(hangup, 1000);
+      timers[channel.id] = timer;
+    }
+
+    // callback that will hangup the channel
+    function hangup() {
+      console.log(util.format(&#39;Hanging up channel %s&#39;, channel.name));
+      channel.hangup(function(err) {
+        if (err) {
+          throw err;
+        }
+      });
+    }
+  }
+
+  // handler for StasisEnd event
+  function stasisEnd(event, channel) {
+    console.log(util.format(
+          &#39;Channel %s just left our application&#39;, channel.name));
+    var timer = timers[channel.id];
+    if (timer) {
+      clearTimeout(timer);
+      delete timers[channel.id];
+    }
+  }
+
+  client.on(&#39;StasisStart&#39;, stasisStart);
+  client.on(&#39;StasisEnd&#39;, stasisEnd);
+
+  client.start(&#39;channel-tones&#39;);
+} </pre>
+</div></div><h3 id="ARIandChannels:SimpleMediaManipulation-channel-tones.jsinaction">channel-tones.js in action</h3><p>The following shows the output of the <code>channel-tones.js</code> script when a <code>PJSIP</code> channel for <code>alice</code> enters the application:</p><pre>Channel PJSIP/alice-00000000 has entered the application
+Answering channel PJSIP/alice-00000000
+Hanging up channel PJSIP/alice-00000000
+Channel PJSIP/alice-00000000 just left our application</pre><h1 id="ARIandChannels:SimpleMediaManipulation-Example:Playingbackasoundfile">Example: Playing back a sound file</h1><p>This example ARI application will do the following:</p><ol><li>When a channel enters the Stasis application, initiate a playback of howler monkeys on the channel. Fly my pretties, FLY!</li><li>If the user has not hung up their phone in panic, it will hang up the channel when the howler monkeys return victorious - or rather, when ARI notifies the application that the playback has finished via the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+REST+Data+Models#Asterisk12RESTDataModels-PlaybackFinished" rel="nofollow"><code>PlaybackFinished</code></a> event.</li></ol><h2 id="ARIandChannels:SimpleMediaManipulation-Dialplan.1">Dialplan</h2><p>For this example, we need to just drop the channel into Stasis, specifying our application:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: true" style="font-size:12px;">exten =&gt; 1000,1,NoOp()
+ same =&gt;      n,Stasis(channel-playback-monkeys)
+ same =&gt;      n,Hangup() </pre>
+</div></div><h2 id="ARIandChannels:SimpleMediaManipulation-Python.1">Python</h2><p>Much like the <code><a href="https://wiki.asterisk.org/wiki/display/%7Emjordan/Draft%3A+ARI+Channels%3A+Performing+a+simple+playback+of+media#Draft:ARIChannels:Performingasimpleplaybackofmedia-channel-tones.py" rel="nofollow">channel-tones.py</a></code> example, we'll start off by initiating a playback on the channel. Instead of specifying a <code>tone</code> scheme, however, we'll specify a scheme of <code>sound</code> with a resource of <code>tt-monkeys</code>. Unlike the tones, this media <em>does</em> have a well defined ending - the end of the sound file! So we'll subscribe for the <code>PlaybackFinished</code> event and tell <code>ari-py</code> to call <code>playback_finished</code> when our monkeys are done attacking.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 32; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">    playback_id = str(uuid.uuid4())
+    playback = channel.playWithId(playbackId=playback_id,
+                                  media=&#39;sound:tt-monkeys&#39;)
+    playback.on_event(&#39;PlaybackFinished&#39;, playback_finished)</pre>
+</div></div><p>Unfortunately, <code>ari-py</code> doesn't let us pass arbitrary data to a callback function in the same fashion as a Python timer. Nuts. Luckily, the <code>Playback</code> object has a property, <code>target_uri</code>, that tells us which object it just finished playing to. Using that, we can get the <code>channel</code> object back from Asterisk so we can hang it up.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 19; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">    def playback_finished(playback, ev):
+        &quot;&quot;&quot;Callback when the monkeys have finished howling&quot;&quot;&quot;
+
+        target_uri = playback.json.get(&#39;target_uri&#39;)
+        channel_id = target_uri.replace(&#39;channel:&#39;, &#39;&#39;)
+        channel = client.channels.get(channelId=channel_id)
+
+        print &quot;Monkeys successfully vanquished %s; hanging them up&quot; % channel.json.get(&#39;name&#39;)
+        channel.hangup() </pre>
+</div></div><p>Note that unlike the <code>channel-tones.py</code> example, this application eschews the use of Python timers and simply responds to ARI events as they happen. This means we don't have to do much in our <code>StasisEnd</code> event, and we have to track less state.</p><h3 id="ARIandChannels:SimpleMediaManipulation-channel-playback-monkeys.py">channel-playback-monkeys.py</h3><p>The full source code for <code>channel-playback-monkeys.py</code> is shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: py; gutter: true" style="font-size:12px;"> #!/usr/bin/env python
+
+import ari
+import logging
+import uuid
+
+logging.basicConfig(level=logging.ERROR)
+
+client = ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;)
+
+def stasis_end_cb(channel, ev):
+    &quot;&quot;&quot;Handler for StasisEnd event&quot;&quot;&quot;
+
+    print &quot;Channel %s just left our application&quot; % channel.json.get(&#39;name&#39;)
+
+def stasis_start_cb(channel_obj, ev):
+    &quot;&quot;&quot;Handler for StasisStart event&quot;&quot;&quot;
+
+    def playback_finished(playback, ev):
+        &quot;&quot;&quot;Callback when the monkeys have finished howling&quot;&quot;&quot;
+
+        target_uri = playback.json.get(&#39;target_uri&#39;)
+        channel_id = target_uri.replace(&#39;channel:&#39;, &#39;&#39;)
+        channel = client.channels.get(channelId=channel_id)
+
+        print &quot;Monkeys successfully vanquished %s; hanging them up&quot; % channel.json.get(&#39;name&#39;)
+        channel.hangup()
+
+    channel = channel_obj.get(&#39;channel&#39;)
+    print &quot;Monkeys! Attack %s!&quot; % channel.json.get(&#39;name&#39;)
+
+    playback_id = str(uuid.uuid4())
+    playback = channel.playWithId(playbackId=playback_id,
+                                  media=&#39;sound:tt-monkeys&#39;)
+    playback.on_event(&#39;PlaybackFinished&#39;, playback_finished)
+
+
+client.on_channel_event(&#39;StasisStart&#39;, stasis_start_cb)
+client.on_channel_event(&#39;StasisEnd&#39;, stasis_end_cb)
+
+
+client.run(apps=&#39;channel-playback-monkeys&#39;)
+
+</pre>
+</div></div><h3 id="ARIandChannels:SimpleMediaManipulation-channel-playback-monkeys.pyinaction">channel-playback-monkeys.py in action</h3><p>The following shows the output of the <code>channel-playback-monkeys</code>.py script when a <code>PJSIP</code> channel for <code>alice</code> enters the application:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">Monkeys! Attack PJSIP/alice-00000000!
+Monkeys successfully vanquished PJSIP/alice-00000000; hanging them up
+Channel PJSIP/alice-00000000 just left our application</pre>
+</div></div><h2 id="ARIandChannels:SimpleMediaManipulation-JavaScript(Node.js).1">JavaScript (Node.js)</h2><p>Much like the <code><span class="confluence-link"><a href="#ARIandChannels:SimpleMediaManipulation-channel-tones.js">channel-tones.js</a></span></code> example, we'll start off by initiating a playback on the channel. Instead of specifying a <code>tone</code> scheme, however, we'll specify a scheme of <code>sound</code> with a resource of <code>tt-monkeys</code>. Unlike the tones, this media <em>does</em> have a well defined ending - the end of the sound file! So we'll subscribe for the <code>PlaybackFinished</code> event and tell <code>ari-client</code> to call <code>playbackFinished</code> when our monkeys are done attacking. Notice that we use <code>client.Playback()</code> to generate a playback object with a pre-existing Id so we can scope the PlaybackFinished event to the playback we just created.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 20; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">var playback = client.Playback();
+channel.play({media: &#39;sound:tt-monkeys&#39;},
+              playback, function(err, newPlayback) {
+  if (err) {
+    throw err;
+  }
+});
+playback.on(&#39;PlaybackFinished&#39;, playbackFinished);</pre>
+</div></div><p>Notice that we use the fact that the playbackFinished callback closes over the original channel variable to perform a hangup operation using that object directly.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 29; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">function playbackFinished(event, completedPlayback) {
+  console.log(util.format(
+      &#39;Monkeys successfully vanquished %s; hanging them up&#39;,
+      channel.name));
+  channel.hangup(function(err) {
+    if (err) {
+      throw err;
+    }
+  });
+}</pre>
+</div></div><p>Note that unlike the <code>channel-tones.js</code> example, this application eschews the use of JavaScript timeouts and simply responds to ARI events as they happen. This means we don't have to do much in our <code>StasisEnd</code> event, and we have to track less state.</p><h3 id="ARIandChannels:SimpleMediaManipulation-channel-playback-monkeys.js">channel-playback-monkeys.js</h3><p>The full source code for <code>channel-playback-monkeys.js</code> is shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: js; gutter: true" style="font-size:12px;">/*jshint node: true*/
+&#39;use strict&#39;;
+
+var ari = require(&#39;ari-client&#39;);
+var util = require(&#39;util&#39;);
+
+ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;, clientLoaded);
+
+// handler for client being loaded
+function clientLoaded (err, client) {
+  if (err) {
+    throw err;
+  }
+
+  // handler for StasisStart event
+  function stasisStart(event, channel) {
+    console.log(util.format(
+          &#39;Monkeys! Attack %s!&#39;, channel.name));
+
+    var playback = client.Playback();
+    channel.play({media: &#39;sound:tt-monkeys&#39;},
+                  playback, function(err, newPlayback) {
+      if (err) {
+        throw err;
+      }
+    });
+    playback.on(&#39;PlaybackFinished&#39;, playbackFinished);
+
+    function playbackFinished(event, completedPlayback) {
+      console.log(util.format(
+          &#39;Monkeys successfully vanquished %s; hanging them up&#39;,
+          channel.name));
+      channel.hangup(function(err) {
+        if (err) {
+          throw err;
+        }
+      });
+    }
+  }
+
+  // handler for StasisEnd event
+  function stasisEnd(event, channel) {
+    console.log(util.format(
+          &#39;Channel %s just left our application&#39;, channel.name));
+  }
+
+  client.on(&#39;StasisStart&#39;, stasisStart);
+  client.on(&#39;StasisEnd&#39;, stasisEnd);
+
+  client.start(&#39;channel-playback-monkeys&#39;);
+}
+</pre>
+</div></div><h3 id="ARIandChannels:SimpleMediaManipulation-channel-playback-monkeys.jsinaction">channel-playback-monkeys.js in action</h3><p>The following shows the output of the <code>channel-playback-monkeys</code>.js script when a <code>PJSIP</code> channel for <code>alice</code> enters the application:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">Monkeys! Attack PJSIP/alice-00000000!
+Monkeys successfully vanquished PJSIP/alice-00000000; hanging them up
+Channel PJSIP/alice-00000000 just left our application</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

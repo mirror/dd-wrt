@@ -1,13 +1,13 @@
 """Add PJSIP Endpoint IP Access Control options
 
-Revision ID: bca7113d796f
+Revision ID: d7e3c73eb2bf
 Revises: 6be31516058d
-Create Date: 2016-05-13 12:37:03.786359
+Create Date: 2016-05-13 12:45:45.071871
 
 """
 
 # revision identifiers, used by Alembic.
-revision = 'bca7113d796f'
+revision = 'd7e3c73eb2bf'
 down_revision = '6be31516058d'
 
 from alembic import op

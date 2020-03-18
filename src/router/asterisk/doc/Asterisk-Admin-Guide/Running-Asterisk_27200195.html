@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Running Asterisk</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Operation_27200183.html">Operation</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Running Asterisk
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified by <span class='editor'> Matt Jordan</span> on May 19, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="RunningAsterisk-RunningAsteriskfromtheCommandLine">Running Asterisk from the Command Line</h1><ul><li><p>By default, starting Asterisk will run it in the background:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># asterisk
+
+# ps aux | grep asterisk
+my_user     26246  2.0  4.1 2011992 165520 ?      Ssl  16:35   0:16 asterisk</pre>
+</div></div></li><li><p>In order to connect to a running Asterisk process, you can attach a <strong>remote console</strong> using the <code>-r</code> option:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># asterisk -r
+
+Asterisk 11.9.0, Copyright (C) 1999 - 2014 Digium, Inc. and others.
+Created by Mark Spencer &lt;markster@digium.com&gt;
+Asterisk comes with ABSOLUTELY NO WARRANTY; type &#39;core show warranty&#39; for details.
+This is free software, with components licensed under the GNU General Public
+License version 2 and other licenses; you are welcome to redistribute it under
+certain conditions. Type &#39;core show license&#39; for details.
+=========================================================================
+Connected to Asterisk 11.9.0 currently running on asterisk-server (pid = 26246)
+asterisk-server*CLI&gt; </pre>
+</div></div>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>The <code>-R</code> option will also attach a remote console - however, it will attempt to automatically reconnect to Asterisk if for some reason the connection is broken. This is particularly useful if your remote console restarts Asterisk.</p>
+                    </div>
+    </div>
+</li></ul></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303119518 {padding: 0px;}
+div.rbtoc1582303119518 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303119518 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303119518'>
+<ul class='toc-indentation'>
+<li><a href='#RunningAsterisk-RunningAsteriskfromtheCommandLine'>Running Asterisk from the Command Line</a>
+<ul class='toc-indentation'>
+<li><a href='#RunningAsterisk-AddingVerbosity'>Adding Verbosity</a>
+<ul class='toc-indentation'>
+<li><a href='#RunningAsterisk-RemoteConsoleVerbosity'>Remote Console Verbosity</a></li>
+</ul>
+</li>
+<li><a href='#RunningAsterisk-ExecutingasanotherUser'>Executing as another User</a></li>
+<li><a href='#RunningAsterisk-MoreOptions'>More Options</a></li>
+</ul>
+</li>
+<li><a href='#RunningAsterisk-RunningAsteriskasaService'>Running Asterisk as a Service</a>
+<ul class='toc-indentation'>
+<li><a href='#RunningAsterisk-SupportedDistributions'>Supported Distributions</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><ul><li><p>To disconnect from a connected remote console, simply hit <strong>Ctrl+C</strong>:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>asterisk-server*CLI&gt; 
+Disconnected from Asterisk server
+Asterisk cleanly ending (0).
+Executing last minute cleanups</pre>
+</div></div></li></ul><ul><li><p>To shut down Asterisk, issue <code>core stop gracefully</code>:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>asterisk-server*CLI&gt; core stop gracefully
+Disconnected from Asterisk server
+Asterisk cleanly ending (0).
+Executing last minute cleanups</pre>
+</div></div>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>You can stop/restart Asterisk in many ways. See <a href="Stopping-and-Restarting-Asterisk-From-The-CLI_4817529.html">Stopping and Restarting Asterisk From The CLI</a> for more information.</p>
+                    </div>
+    </div>
+</li><li><p>You can start Asterisk in the foreground, with an attached <strong>root console</strong>, using the <code>-c</code> option:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># asterisk -c
+
+Asterisk 11.9.0, Copyright (C) 1999 - 2014 Digium, Inc. and others.
+Created by Mark Spencer &lt;markster@digium.com&gt;
+Asterisk comes with ABSOLUTELY NO WARRANTY; type &#39;core show warranty&#39; for details.
+This is free software, with components licensed under the GNU General Public
+License version 2 and other licenses; you are welcome to redistribute it under
+certain conditions. Type &#39;core show license&#39; for details.
+=========================================================================
+Connected to Asterisk 11.9.0 currently running on asterisk-server (pid = 26246)
+[May 16 17:02:50] NOTICE[27035]: loader.c:1323 load_modules: 287 modules will be loaded.
+Asterisk Ready.
+*CLI&gt; </pre>
+</div></div></li></ul><h2 id="RunningAsterisk-AddingVerbosity">Adding Verbosity</h2><p>Asterisk provides a number of mechanisms to control the verbosity of its logging. One way in which this can be controlled is through the command line parameter <code>-v</code>. For each <code>-v</code> specified, Asterisk will increase the level of <code>VERBOSE</code> messages by 1. The following will create a console and set the <code>VERBOSE</code> message level to 2:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># asterisk -c -v -v</pre>
+</div></div><p>Command line parameters can be combined. The previous command can also be invoked in the following way:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># asterisk -cvv</pre>
+</div></div>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>The <code>VERBOSE</code> message level set via the command line is only applicable if the <code>asterisk.conf</code> <code>verbose</code> setting is not set.</p>
+                    </div>
+    </div>
+<h3 id="RunningAsterisk-RemoteConsoleVerbosity">Remote Console Verbosity</h3>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p><strong>This feature is only available in Asterisk 11 and later versions.</strong></p>
+                    </div>
+    </div>
+<p>The verboseness of a remote console is set independently of the verboseness of other consoles and the core. A root console can be created with no verboseness:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># asterisk -c</pre>
+</div></div><p>While a remote console can be attached to that Asterisk process with a different verbosity:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># asterisk -rvvv</pre>
+</div></div><p>Multiple remote consoles can be attached, each with their own verbosity:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># asterisk -rv</pre>
+</div></div><h2 id="RunningAsterisk-ExecutingasanotherUser">Executing as another User</h2>    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">Do not run as root</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>Running Asterisk as <code>root</code> or as a user with super user permissions is dangerous and not recommended. There are many ways Asterisk can affect the system on which it operates, and running as <code>root</code> can increase the cost of small configuration mistakes.</p><p>For more information, see the <a href="http://svn.asterisk.org/svn/asterisk/trunk/README-SERIOUSLY.bestpractices.txt" class="external-link" rel="nofollow">README-SERIOUSLY.bestpractices.txt</a> file delivered with Asterisk.</p>
+                    </div>
+    </div>
+<p>Asterisk can be run as another user using the <code>-U</code> option:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># asterisk -U asteriskuser</pre>
+</div></div><p>Often, this option is specified in conjunction with the <code>-G</code> option, which specifies the group to run under:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># asterisk -U asteriskuser -G asteriskuser</pre>
+</div></div><p>When running Asterisk as another user, make sure that user owns the various directories that Asterisk will access:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># sudo chown -R asteriskuser:asteriskuser /usr/lib/asterisk
+# sudo chown -R asteriskuser:asteriskuser /var/lib/asterisk
+# sudo chown -R asteriskuser:asteriskuser /var/spool/asterisk
+# sudo chown -R asteriskuser:asteriskuser /var/log/asterisk
+# sudo chown -R asteriskuser:asteriskuser /var/run/asterisk
+# sudo chown asteriskuser:asteriskuser /usr/sbin/asterisk</pre>
+</div></div><h2 id="RunningAsterisk-MoreOptions">More Options</h2><p>There are many more command line options available. For more information, use the <code>-h</code> option:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># asterisk -h
+Asterisk 11.9.0, Copyright (C) 1999 - 2014, Digium, Inc. and others.
+Usage: asterisk [OPTIONS]
+...</pre>
+</div></div><h1 id="RunningAsterisk-RunningAsteriskasaService">Running Asterisk as a Service</h1><p>The most common way to run Asterisk in a production environment is as a service. Asterisk includes both a <code>make</code> target for installing Asterisk as a service, as well as a script - <code>live_asterisk</code> - that will manage the service and automatically restart Asterisk in case of errors.</p><ul><li><p>Asterisk can be installed as a service using the <code>make config</code> target:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># make config
+   /etc/rc0.d/K91asterisk -&gt; ../init.d/asterisk
+   /etc/rc1.d/K91asterisk -&gt; ../init.d/asterisk
+   /etc/rc6.d/K91asterisk -&gt; ../init.d/asterisk
+   /etc/rc2.d/S50asterisk -&gt; ../init.d/asterisk
+   /etc/rc3.d/S50asterisk -&gt; ../init.d/asterisk
+   /etc/rc4.d/S50asterisk -&gt; ../init.d/asterisk
+   /etc/rc5.d/S50asterisk -&gt; ../init.d/asterisk</pre>
+</div></div></li><li><p>Asterisk can now be started as a service:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># service asterisk start
+ * Starting Asterisk PBX: asterisk                                                                               [ OK ] </pre>
+</div></div></li><li><p>And stopped:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># service asterisk stop
+ * Stopping Asterisk PBX: asterisk                                                                               [ OK ] </pre>
+</div></div></li><li><p>And restarted:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># service asterisk restart
+ * Stopping Asterisk PBX: asterisk                                                                               [ OK ] 
+ * Starting Asterisk PBX: asterisk                                                                               [ OK ]</pre>
+</div></div></li></ul><h2 id="RunningAsterisk-SupportedDistributions">Supported Distributions</h2><p>Not all distributions of Linux/Unix are supported by the <code>make config</code> target. The following distributions are supported - if not using one of these distributions, the <code>make config</code> target may or may not work for you.</p><ul><li>RedHat/CentOS</li><li>Debian/Ubuntu</li><li>Gentoo</li><li>Mandrake/Mandriva</li><li>SuSE/Novell</li></ul><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

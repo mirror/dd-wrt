@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Expressions Examples</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Expressions_4620364.html">Expressions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Expressions Examples
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Scott Pabin</span> on Jul 11, 2018
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Expression</th><th class="confluenceTh">Result</th><th class="confluenceTh">Note</th></tr><tr><td class="confluenceTd">&quot;One Thousand Five Hundred&quot; =~ &quot;(T[Expressions Examples^ ])&quot;</td><td style="text-align: center;" class="confluenceTd">Thousand</td><td class="confluenceTd"> </td></tr><tr><td class="confluenceTd">&quot;One Thousand Five Hundred&quot; =~ &quot;T[Expressions Examples^ ]&quot;</td><td style="text-align: center;" class="confluenceTd">8</td><td class="confluenceTd"> </td></tr><tr><td class="confluenceTd">&quot;One Thousand Five Hundred&quot; : &quot;T[Expressions Examples^ ]&quot;</td><td style="text-align: center;" class="confluenceTd">0</td><td class="confluenceTd"> </td></tr><tr><td class="confluenceTd">&quot;8015551212&quot; : &quot;(...)&quot;</td><td style="text-align: center;" class="confluenceTd">801</td><td class="confluenceTd"> </td></tr><tr><td class="confluenceTd">&quot;3075551212&quot;:&quot;...(...)&quot;</td><td style="text-align: center;" class="confluenceTd">555</td><td class="confluenceTd"> </td></tr><tr><td class="confluenceTd">! &quot;One Thousand Five Hundred&quot; =~ &quot;T[Expressions Examples^ ]&quot;</td><td style="text-align: center;" class="confluenceTd">0</td><td class="confluenceTd">Because it applies to the string, which is non-null, which it turns to &quot;0&quot;, and then looks for the pattern in the &quot;0&quot;, and doesn't find it</td></tr><tr><td class="confluenceTd">!( &quot;One Thousand Five Hundred&quot; : &quot;T[Expressions Examples^ ]+&quot; )</td><td style="text-align: center;" class="confluenceTd">1</td><td class="confluenceTd">Because the string doesn't start with a word starting with T, so the match evals to 0, and the ! operator inverts it to 1</td></tr><tr><td class="confluenceTd">2 + 8 / 2</td><td style="text-align: center;" class="confluenceTd">6</td><td class="confluenceTd">Because of operator precedence; the division is done first, then the addition</td></tr><tr><td class="confluenceTd">2+8/2</td><td style="text-align: center;" class="confluenceTd">6</td><td class="confluenceTd">Spaces aren't necessary</td></tr><tr><td class="confluenceTd">(2+8)/2</td><td style="text-align: center;" class="confluenceTd">5</td><td class="confluenceTd"> </td></tr><tr><td class="confluenceTd">(3+8)/2</td><td style="text-align: center;" class="confluenceTd">5.5</td><td class="confluenceTd"> </td></tr><tr><td class="confluenceTd">TRUNC((3+8)/2)</td><td style="text-align: center;" class="confluenceTd">5</td><td class="confluenceTd"> </td></tr><tr><td class="confluenceTd">FLOOR(2.5)</td><td style="text-align: center;" class="confluenceTd">2</td><td class="confluenceTd"> </td></tr><tr><td class="confluenceTd">FLOOR(-2.5)</td><td style="text-align: center;" class="confluenceTd">-3</td><td class="confluenceTd"> </td></tr><tr><td class="confluenceTd">CEIL(2.5)</td><td style="text-align: center;" class="confluenceTd">3</td><td class="confluenceTd"> </td></tr><tr><td class="confluenceTd">CEIL(-2.5)</td><td style="text-align: center;" class="confluenceTd">-2</td><td class="confluenceTd"> </td></tr><tr><td class="confluenceTd">ROUND(2.5)</td><td style="text-align: center;" class="confluenceTd">3</td><td class="confluenceTd"> </td></tr><tr><td class="confluenceTd">ROUND(3.5)</td><td style="text-align: center;" class="confluenceTd">4</td><td class="confluenceTd"> </td></tr><tr><td class="confluenceTd">ROUND(-2.5)</td><td style="text-align: center;" class="confluenceTd">-3</td><td class="confluenceTd"> </td></tr><tr><td colspan="1" class="confluenceTd">RINT(2.5)</td><td colspan="1" style="text-align: center;" class="confluenceTd">2</td><td colspan="1" class="confluenceTd"> </td></tr><tr><td colspan="1" class="confluenceTd">RINT(3.5)</td><td colspan="1" style="text-align: center;" class="confluenceTd">4</td><td colspan="1" class="confluenceTd"> </td></tr><tr><td colspan="1" class="confluenceTd">RINT(-2.5)</td><td colspan="1" style="text-align: center;" class="confluenceTd">-2</td><td colspan="1" class="confluenceTd"> </td></tr><tr><td colspan="1" class="confluenceTd">RINT(-3.5)</td><td colspan="1" style="text-align: center;" class="confluenceTd">-4</td><td colspan="1" class="confluenceTd"> </td></tr><tr><td colspan="1" class="confluenceTd">TRUNC(2.5)</td><td colspan="1" style="text-align: center;" class="confluenceTd">2</td><td colspan="1" class="confluenceTd"> </td></tr><tr><td colspan="1" class="confluenceTd">TRUNC(3.5)</td><td colspan="1" style="text-align: center;" class="confluenceTd">3</td><td colspan="1" class="confluenceTd"> </td></tr><tr><td colspan="1" class="confluenceTd">TRUNC(-3.5)</td><td colspan="1" style="text-align: center;" class="confluenceTd">-3</td><td colspan="1" class="confluenceTd"> </td></tr></tbody></table></div><p>Of course, all of the above examples use constants, but would work the same if any of the numeric or string constants were replaced with a variable reference ${CALLERID(num)}, for instance.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

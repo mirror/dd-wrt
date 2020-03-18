@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Using Callfiles and Local Channels</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Local-Channel_4817170.html">Local Channel</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Local-Channel-Examples_4817175.html">Local Channel Examples</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Using Callfiles and Local Channels
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Richard Mudgett</span> on Jan 09, 2018
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Another example is to use callfiles and Local channels so that you can execute some dialplan prior to performing a Dial(). We'll construct a callfile which will then utilize a Local channel to lookup a bit of information in the AstDB and then place a call via the channel configured in the AstDB.</p><p>First, lets construct our callfile that will use the Local channel to do some lookups prior to placing our call. More information on constructing callfiles is located in the doc/callfiles.txt file of your Asterisk source.</p><p>Our callfile will simply look like the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Channel: Local/201@devices
+Application: Playback
+Data: silence/1&amp;tt-weasels 
+</pre>
+</div></div><p>Add the callfile information to a file such as 'callfile.new' or some other appropriately named file.</p><p>Our dialplan will perform a lookup in the AstDB to determine which device to call, and will then call the device, and upon answer, Playback() the silence/1 (1 second of silence) and the tt-weasels sound files.</p><p>Before looking at our dialplan, lets put some data into AstDB that we can then lookup from the dialplan. From the Asterisk CLI, run the following command:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; database put phones 201/device SIP/0004f2040001 
+</pre>
+</div></div><p>We've now put the device destination (SIP/0004f2040001) into the 201/device key within the phones family. This will allow us to lookup the device location for extension 201 from the database.</p><p>We can then verify our entry in the database using the 'database show' CLI command:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; database show /phones/201/device : SIP/0004f2040001 
+</pre>
+</div></div><p>Now lets create the dialplan that will allow us to call SIP/0004f2040001 when we request extension 201 from the <a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=extensions&amp;linkCreation=true&amp;fromPageId=4817183">extensions</a> context via our Local channel.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[devices]
+exten =&gt; 201,1,NoOp() 
+exten =&gt; 201,n,Set(DEVICE=${DB(phones/${EXTEN}/device)}) 
+exten =&gt; 201,n,GotoIf($[${ISNULL(${DEVICE})}]?hangup) ; if nothing returned, 
+                                                      ; then hangup
+exten =&gt; 201,n,Dial(${DEVICE},30) 
+exten =&gt; 201,n(hangup),Hangup()
+</pre>
+</div></div><p>Then, we can perform a call to our device using the callfile by moving it into the /var/spool/asterisk/outgoing/ directory.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>mv callfile.new /var/spool/asterisks/outgoing*
+</pre>
+</div></div><p>Then after a moment, you should see output on your console similar to the following, and your device ringing. Information about what is going on during the output has also been added throughout.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>– Attempting call on Local/201@devices for application Playback(silence/1&amp;tt-weasels) (Retry 1)
+</pre>
+</div></div><p>You'll see the line above as soon as Asterisk gets the request from the callfile.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>– Executing [201@devices:1] NoOp(&quot;Local/201@devices-ecf0;2&quot;, &quot;&quot;) in new stack
+– Executing [201@devices:2] Set(&quot;Local/201@devices-ecf0;2&quot;, &quot;DEVICE=SIP/0004f2040001&quot;) in new stack
+</pre>
+</div></div><p>This is where we performed our lookup in the AstDB. The value of SIP/0004f2040001 was then returned and saved to the DEVICE channel variable.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>– Executing [201@devices:3] GotoIf(&quot;Local/201@devices-ecf0;2&quot;, &quot;0?hangup&quot;) in new stack
+</pre>
+</div></div><p>We perform a check to make sure ${DEVICE} isn't NULL. If it is, we'll just hangup here.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>– Executing [201@devices:4] Dial(&quot;Local/201@devices-ecf0;2&quot;, &quot;SIP/0004f2040001,30&quot;) in new stack
+– Called 000f2040001
+– SIP/0004f2040001-00000022 is ringing
+</pre>
+</div></div><p>Now we call our device SIP/0004f2040001 from the Local channel.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>SIP/0004f2040001-00000022 answered Local/201@devices-ecf0;2*
+</pre>
+</div></div><p>We answer the call.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&gt; Channel Local/201@devices-ecf0;1 was answered.
+&gt; Launching Playback(silence/1&amp;tt-weasels) on Local/201@devices-ecf0;1
+</pre>
+</div></div><p>We then start playing back the files.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>– &lt;Local/201@devices-ecf0;1&gt; Playing &#39;silence/1.slin&#39; (language &#39;en&#39;)
+== Spawn extension (devices, 201, 4) exited non-zero on &#39;Local/201@devices-ecf0;2&#39;
+</pre>
+</div></div><p>At this point we now see the Local channel has been optimized out of the call path. This is important as we'll see in examples later. By default, the Local channel will try to optimize itself out of the call path as soon as it can. Now that the call has been established and audio is flowing, it gets out of the way.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>– &lt;SIP/0004f2040001-00000022&gt; Playing &#39;tt-weasels.ulaw&#39; (language &#39;en&#39;)
+[Mar 1 13:35:23] NOTICE[16814]: pbx_spool.c:349 attempt_thread: Call completed to Local/201@devices
+</pre>
+</div></div><p>We can now see the tt-weasels file is played directly to the destination (instead of through the Local channel which was optimized out of the call path) and then a NOTICE stating the call was completed.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Creating SIP Accounts</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Basic-PBX-Functionality_4817469.html">Basic PBX Functionality</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Creating SIP Accounts
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Rusty Newton</span> on Apr 23, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><p>In order for our phones to communicate with each other, we need to configure an account for each phone in the channel driver which corresponds to the protocol they'll be using. Since the phones are using the SIP protocol, we actually have two options for a SIP channel driver, the configuration file would be <strong>sip.conf</strong> for chan_sip, or <strong>pjsip.conf</strong> for chan_pjsip/res_pjsip (res_pjsip actually provides the configuration). You may already know that chan_pjsip is only available in Asterisk 12 or later. These files reside in the Asterisk configuration directory, which is typically <strong>/etc/asterisk</strong>. We'll include separate instructions for each channel driver below, so you have the option of using either.</p>    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>For the sake of the examples in this section, you should only configure and use one SIP channel driver at a time. Advanced configuration is needed to use two different SIP channel drivers simultaneously.</p>
+                    </div>
+    </div>
+<h2 id="CreatingSIPAccounts-Useoftemplates">Use of templates</h2><p>In the below examples of channel driver configuration we will use templates. Using templates can make the configuration seem a bit more confusing at first, but in the long run it will simplify managing larger groups of extensions. Templates are used to define sections of options or settings that can then be inherited by a child section. <a href="Templates_4817463.html">Read about templates here</a>. The short story is that parents are defined with a bang in parentheses after their section name, and children specify a parent in the parentheses after their section name.</p></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this page</b></div><div class="panelContent">
+<p> <style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303110278 {padding: 0px;}
+div.rbtoc1582303110278 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303110278 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303110278'>
+<ul class='toc-indentation'>
+<li><a href='#CreatingSIPAccounts-Useoftemplates'>Use of templates</a></li>
+<li><a href='#CreatingSIPAccounts-Configuringchan_sip'>Configuring chan_sip</a></li>
+<li><a href='#CreatingSIPAccounts-Configuringchan_pjsip'>Configuring chan_pjsip</a></li>
+<li><a href='#CreatingSIPAccounts-Loadingtheconfiguration'>Loading the configuration</a></li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><h2 id="CreatingSIPAccounts-Configuringchan_sip">Configuring chan_sip</h2><p>Open <strong>sip.conf</strong> with your favorite text editor, and spend a minute or two looking at the sample file. (Don't let it overwhelm you — the sample <strong>sip.conf</strong> has a <strong>lot</strong> of data in it, and can be overwhelming at first glance.) Notice that there are a couple of sections at the top of the configuration, such as [general] and [authentication], which control the overall functionality of the channel driver. Below those sections, there are sections which correspond to SIP accounts on the system.</p><p>Now copy the sample sip.conf to something like sip.conf.sample and create a new blank sip.conf to work with.</p><p>Create the following sections of configuration in the sip.conf file. Let's name your phones <strong>Alice</strong> and <strong>Bob</strong>, so that we can easily differentiate between them.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[general]
+transport=udp
+
+[friends_internal](!)
+type=friend
+host=dynamic
+context=from-internal
+disallow=all
+allow=ulaw
+
+[demo-alice](friends_internal)
+secret=verysecretpassword ; put a strong, unique password here instead
+
+[demo-bob](friends_internal)
+secret=othersecretpassword ; put a strong, unique password here instead
+</pre>
+</div></div><p>You can read what each of the options do in the sip.conf sample file. However, let's take a look at why we are using each option here.</p><p>In the general section:</p><ul><li>transport=udp: sets the general transport used by all chan_sip accounts defined in configuration if they don't have their own transport defined. We want to use UDP</li></ul><p>In the template for friends_internal:</p><ul><li>type=friend: we are using the friend type to make things easy. See the sip.conf.sample for more explanation on the section types available in sip.conf</li><li>host=dynamic: our phones will register to Asterisk. Otherwise we would define the IP address of the phone here.</li><li>context=from-internal: When Asterisk receives a call from this phone, it'll look for the dialed extension number inside this context within dialplan (/etc/asterisk/extensions.conf typically)</li><li><p>disallow=all; Don't allow any codecs to be used except what is set in 'allow'</p></li><li>allow=ulaw; Only allow the ulaw codec to be used.</li></ul><p>In the sections for demo-alice and demo-bob:</p><ul><li>secret=verysecretpassword: This is the authentication password the phone needs to use when authenticating against Asterisk.</li></ul><p>Note that in chan_sip configuration, the authentication username for each SIP account is the section name itself. That is &quot;demo-alice&quot; is the name you'll have your phone authenticate against when registering. This will be covered more in the next wiki section on registering phones to Asterisk.</p><h2 id="CreatingSIPAccounts-Configuringchan_pjsip">Configuring chan_pjsip</h2><p>Take a minute to look over the pjsip.conf sample file if you haven't already. Then backup your pjsip.conf file and create a new blank one.</p><p>Add the following configuration:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[transport-udp]
+type=transport
+protocol=udp
+bind=0.0.0.0
+
+;Templates for the necessary config sections
+
+[endpoint_internal](!)
+type=endpoint
+context=from-internal
+disallow=all
+allow=ulaw
+
+[auth_userpass](!)
+type=auth
+auth_type=userpass
+
+[aor_dynamic](!)
+type=aor
+max_contacts=1
+
+;Definitions for our phones, using the templates above
+
+[demo-alice](endpoint_internal)
+auth=demo-alice
+aors=demo-alice
+[demo-alice](auth_userpass)
+password=unsecurepassword ; put a strong, unique password here instead
+username=demo-alice
+[demo-alice](aor_dynamic) 
+
+[demo-bob](endpoint_internal)
+auth=demo-bob
+aors=demo-bob
+[demo-bob](auth_userpass)
+password=unsecurepassword ; put a strong, unique password here instead
+username=demo-bob
+[demo-bob](aor_dynamic) </pre>
+</div></div><p>This configuration is roughly comparable to the chan_sip configuration in its end result. The pjsip configuration is a little more complex as the channel driver's architecture allows for more flexibility in configuration, so things tend be more modular and broken out.</p><p>Each configuration section has a type.</p><p>In the <strong>transport</strong> type section we configure the following:</p><ul><li><p>type=transport; This defines a transport that can be used by other configuration objects/sections, such as endpoints</p></li><li><p>protocol=udp; We want to use the UDP protocol</p></li><li><p>bind=0.0.0.0; We want to communicate over the most appropriate available interfaces.</p></li></ul><p>In the <strong>endpoint</strong> template, endpoint_internal:</p><ul><li><p>type=endpoint; This defines an endpoint; a primary configuration section that you could think of as a profile of settings for a SIP connection</p></li><li><p>context=from-internal; When Asterisk receives a call from this phone, it'll look for the dialed extension number inside this context within dialplan (/etc/asterisk/extensions.conf typically)</p></li><li><p>disallow=all; Don't allow any codecs to be used except what is set in 'allow'</p></li><li>allow=ulaw; Only allow the ulaw codec to be used.</li></ul><p>In theauth template, auth_userpass:</p><ul><li>type=auth; This defines an auth section which describes credentials used for authentication. Any particular endpoint or registration will typically reference an auth section by name.</li><li>auth_type=userpass; This tells Asterisk to use the 'username' and 'password' options set in this auth.  In this case we'll be setting those in the children auths that inherit this template.</li></ul><p>In the <strong>aor</strong> template, aor_dynamic:</p><ul><li>type=aor; This defines an aor section which describe location information making up an Address of Record. Endpoints make use of an AOR so that Asterisk knows where to send calls to the endpoint.</li><li>max_contacts=1; We want to allow up to a maximum of one registration to this AOR. That is, we are only going to have one phone registering for each AOR.</li></ul><p>In the AOR type configuration section (see type=aor) we purposefully don't define any contacts, and instead we set &quot;max_contacts=1&quot;, this allows us to register phones to the AORs configured for each endpoint. This accomplishes similar behavior to &quot;host=dynamic&quot; for account entries in the older chan_sip driver.</p><p>After the templates, you'll see the definitions of the <strong>demo-alice</strong> and <strong>demo-bob</strong> endpoints. In those, all we do is tie them to their own auth and aor sections. In their <strong>auth</strong> sections we set their unique usernames and passwords. In their aor sections we don't set anything, because the necessary settings were already set in the template.</p><p>If you want to explore pjsip configuration more deeply after you finish this PBX tutorial, check out the <a href="Configuring-res_pjsip_25919621.html">Configuring res_pjsip</a> wiki section.</p><h2 id="CreatingSIPAccounts-Loadingtheconfiguration">Loading the configuration</h2><p>We have more configuration to do in the next section, so there is no need to load configuration yet. However if you do want to go ahead and load the configuration; note that for some channel drivers, like chan_pjsip, certain configuration sections (transport, system) can't be reloaded at runtime. Therefore it is easiest to restart Asterisk completely here since we have made set transport settings.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>#service asterisk restart
+or
+#asterisk -rx &quot;core restart now&quot;</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

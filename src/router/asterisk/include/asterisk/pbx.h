@@ -85,7 +85,7 @@ struct ast_exten;
 struct ast_include;
 struct ast_ignorepat;
 struct ast_sw;
- 
+
 enum ast_state_cb_update_reason {
 	/*! The extension state update is a result of a device state changing on the extension. */
 	AST_HINT_UPDATE_DEVICE = 1,
@@ -109,7 +109,7 @@ struct ast_state_cb_info {
 };
 
 /*! \brief Typedef for devicestate and hint callbacks */
-typedef int (*ast_state_cb_type)(char *context, char *id, struct ast_state_cb_info *info, void *data);
+typedef int (*ast_state_cb_type)(const char *context, const char *exten, struct ast_state_cb_info *info, void *data);
 
 /*! \brief Typedef for devicestate and hint callback removal indication callback */
 typedef void (*ast_state_cb_destroy_type)(int id, void *data);
@@ -286,6 +286,15 @@ int pbx_exec(struct ast_channel *c, struct ast_app *app, const char *data);
  * \return NULL on failure, and an ast_context structure on success
  */
 struct ast_context *ast_context_find_or_create(struct ast_context **extcontexts, struct ast_hashtab *exttable, const char *name, const char *registrar);
+
+/*!
+ * \brief Enable or disable autohints support on a context
+ *
+ * \param con pointer to the context
+ * \param enabled whether autohints are enabled
+ *
+ */
+void ast_context_set_autohints(struct ast_context *con, int enabled);
 
 /*!
  * \brief Merge the temporary contexts into a global contexts list and delete from the
@@ -496,11 +505,15 @@ int ast_add_extension(const char *context, int replace, const char *extension,
 /*!
  * \brief Add an extension to an extension context, this time with an ast_context *.
  *
- * \note For details about the arguments, check ast_add_extension()
+ * \param registrar_file optional configuration file that defines this extension
+ * \param registrar_line optional line number of configuration file that defines extension
+ *
+ * \note For details about the other arguments, check ast_add_extension()
  */
 int ast_add_extension2(struct ast_context *con, int replace, const char *extension,
 	int priority, const char *label, const char *callerid,
-	const char *application, void *data, void (*datad)(void *), const char *registrar);
+	const char *application, void *data, void (*datad)(void *), const char *registrar,
+	const char *registrar_file, int registrar_line);
 
 /*!
  * \brief Same as ast_add_extension2, but assumes you have already locked context
@@ -511,7 +524,8 @@ int ast_add_extension2(struct ast_context *con, int replace, const char *extensi
  */
 int ast_add_extension2_nolock(struct ast_context *con, int replace, const char *extension,
 	int priority, const char *label, const char *callerid,
-	const char *application, void *data, void (*datad)(void *), const char *registrar);
+	const char *application, void *data, void (*datad)(void *), const char *registrar,
+	const char *registrar_file, int registrar_line);
 
 /*!
  * \brief Map devstate to an extension state.
@@ -1094,7 +1108,7 @@ int ast_rdlock_context(struct ast_context *con);
 int ast_unlock_context(struct ast_context *con);
 
 /*!
- * \brief locks the macrolock in the given given context
+ * \brief locks the macrolock in the given context
  *
  * \param macrocontext name of the macro-context to lock
  *
@@ -1177,6 +1191,12 @@ int ast_pbx_outgoing_exten(const char *type, struct ast_format_cap *cap, const c
 	const char *account, struct ast_channel **locked_channel, int early_media,
 	const struct ast_assigned_ids *assignedids);
 
+int ast_pbx_outgoing_exten_predial(const char *type, struct ast_format_cap *cap, const char *addr,
+	int timeout, const char *context, const char *exten, int priority, int *reason,
+	int synchronous, const char *cid_num, const char *cid_name, struct ast_variable *vars,
+	const char *account, struct ast_channel **locked_channel, int early_media,
+	const struct ast_assigned_ids *assignedids, const char *predial_callee);
+
 /*!
  * \brief Synchronously or asynchronously make an outbound call and execute an
  *  application on the channel.
@@ -1215,6 +1235,12 @@ int ast_pbx_outgoing_app(const char *type, struct ast_format_cap *cap, const cha
 	const char *account, struct ast_channel **locked_channel,
 	const struct ast_assigned_ids *assignedids);
 
+int ast_pbx_outgoing_app_predial(const char *type, struct ast_format_cap *cap, const char *addr,
+	int timeout, const char *app, const char *appdata, int *reason, int synchronous,
+	const char *cid_num, const char *cid_name, struct ast_variable *vars,
+	const char *account, struct ast_channel **locked_channel,
+	const struct ast_assigned_ids *assignedids, const char *predial_callee);
+
 /*!
  * \brief Evaluate a condition
  *
@@ -1231,11 +1257,11 @@ int pbx_checkcondition(const char *condition);
 const char *ast_get_context_name(struct ast_context *con);
 const char *ast_get_extension_name(struct ast_exten *exten);
 struct ast_context *ast_get_extension_context(struct ast_exten *exten);
-const char *ast_get_include_name(struct ast_include *include);
-const char *ast_get_ignorepat_name(struct ast_ignorepat *ip);
-const char *ast_get_switch_name(struct ast_sw *sw);
-const char *ast_get_switch_data(struct ast_sw *sw);
-int ast_get_switch_eval(struct ast_sw *sw);
+const char *ast_get_include_name(const struct ast_include *include);
+const char *ast_get_ignorepat_name(const struct ast_ignorepat *ip);
+const char *ast_get_switch_name(const struct ast_sw *sw);
+const char *ast_get_switch_data(const struct ast_sw *sw);
+int ast_get_switch_eval(const struct ast_sw *sw);
 
 /*! @} */
 
@@ -1253,10 +1279,27 @@ void *ast_get_extension_app_data(struct ast_exten *e);
 /*! @{ */
 const char *ast_get_context_registrar(struct ast_context *c);
 const char *ast_get_extension_registrar(struct ast_exten *e);
-const char *ast_get_include_registrar(struct ast_include *i);
-const char *ast_get_ignorepat_registrar(struct ast_ignorepat *ip);
-const char *ast_get_switch_registrar(struct ast_sw *sw);
+const char *ast_get_include_registrar(const struct ast_include *i);
+const char *ast_get_ignorepat_registrar(const struct ast_ignorepat *ip);
+const char *ast_get_switch_registrar(const struct ast_sw *sw);
 /*! @} */
+
+/*!
+ * \brief Get name of configuration file used by registrar to register this extension
+ *
+ * \retval NULL if registrar did not indicate config file when registering the extension
+ * \retval name of the file used to register the extension
+ */
+const char *ast_get_extension_registrar_file(struct ast_exten *e);
+
+/*!
+ * \brief Get line number of configuration file used by registrar to register this extension
+ *
+ * \retval 0 if the line wasn't indicated when the extension was registered
+ * \retval positive integer indicating what line in the config file was responsible for
+ *         registering the extension.
+ */
+int ast_get_extension_registrar_line(struct ast_exten *e);
 
 /*! @name Walking functions ... */
 /*! @{ */
@@ -1265,11 +1308,22 @@ struct ast_exten *ast_walk_context_extensions(struct ast_context *con,
 	struct ast_exten *priority);
 struct ast_exten *ast_walk_extension_priorities(struct ast_exten *exten,
 	struct ast_exten *priority);
-struct ast_include *ast_walk_context_includes(struct ast_context *con,
-	struct ast_include *inc);
-struct ast_ignorepat *ast_walk_context_ignorepats(struct ast_context *con,
-	struct ast_ignorepat *ip);
-struct ast_sw *ast_walk_context_switches(struct ast_context *con, struct ast_sw *sw);
+const struct ast_include *ast_walk_context_includes(const struct ast_context *con,
+	const struct ast_include *inc);
+const struct ast_ignorepat *ast_walk_context_ignorepats(const struct ast_context *con,
+	const struct ast_ignorepat *ip);
+const struct ast_sw *ast_walk_context_switches(const struct ast_context *con,
+	const struct ast_sw *sw);
+/*! @} */
+
+/*! @name Iterator functions ... */
+/*! @{ */
+int ast_context_includes_count(const struct ast_context *con);
+const struct ast_include *ast_context_includes_get(const struct ast_context *con, int idx);
+int ast_context_ignorepats_count(const struct ast_context *con);
+const struct ast_ignorepat *ast_context_ignorepats_get(const struct ast_context *con, int idx);
+int ast_context_switches_count(const struct ast_context *con);
+const struct ast_sw *ast_context_switches_get(const struct ast_context *con, int idx);
 /*! @} */
 
 /*!
@@ -1378,7 +1432,7 @@ void ast_str_substitute_variables_varshead(struct ast_str **buf, ssize_t maxlen,
  * \param c Channel variables from which to extract values, and channel to pass to any dialplan functions.
  * \param headp If no channel is specified, a channel list from which to extract variable values
  * \param templ Variable template to expand.
- * \param used Number of bytes read from the template.
+ * \param used Number of bytes read from the template.  (May be NULL)
  */
 void ast_str_substitute_variables_full(struct ast_str **buf, ssize_t maxlen, struct ast_channel *c, struct varshead *headp, const char *templ, size_t *used);
 /*! @} */
@@ -1447,7 +1501,7 @@ enum ast_custom_function_escalation {
 /*!
  * \brief Register a custom function
  */
-#define ast_custom_function_register(acf) __ast_custom_function_register(acf, ast_module_info->self)
+#define ast_custom_function_register(acf) __ast_custom_function_register(acf, AST_MODULE_SELF)
 
 /*!
  * \brief Register a custom function which requires escalated privileges.
@@ -1456,7 +1510,7 @@ enum ast_custom_function_escalation {
  * arbitrary code) or FILE() (for which write needs permission to change files
  * on the filesystem).
  */
-#define ast_custom_function_register_escalating(acf, escalation) __ast_custom_function_register_escalating(acf, escalation, ast_module_info->self)
+#define ast_custom_function_register_escalating(acf, escalation) __ast_custom_function_register_escalating(acf, escalation, AST_MODULE_SELF)
 
 /*!
  * \brief Register a custom function
@@ -1548,7 +1602,12 @@ enum ext_match_t {
 #define STATUS_NO_PRIORITY	3
 #define STATUS_NO_LABEL		4
 #define STATUS_SUCCESS		5
+
+#ifdef LOW_MEMORY
 #define AST_PBX_MAX_STACK  128
+#else
+#define AST_PBX_MAX_STACK  512
+#endif
 
 /* request and result for pbx_find_extension */
 struct pbx_find_info {

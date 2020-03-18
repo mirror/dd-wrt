@@ -30,8 +30,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <regex.h>
 
 #include "asterisk/module.h"
@@ -59,6 +57,8 @@ static void *sorcery_realtime_retrieve_fields(const struct ast_sorcery *sorcery,
 static void sorcery_realtime_retrieve_multiple(const struct ast_sorcery *sorcery, void *data, const char *type, struct ao2_container *objects,
 					     const struct ast_variable *fields);
 static void sorcery_realtime_retrieve_regex(const struct ast_sorcery *sorcery, void *data, const char *type, struct ao2_container *objects, const char *regex);
+static void sorcery_realtime_retrieve_prefix(const struct ast_sorcery *sorcery, void *data, const char *type,
+					     struct ao2_container *objects, const char *prefix, const size_t prefix_len);
 static int sorcery_realtime_update(const struct ast_sorcery *sorcery, void *data, void *object);
 static int sorcery_realtime_delete(const struct ast_sorcery *sorcery, void *data, void *object);
 static void sorcery_realtime_close(void *data);
@@ -71,6 +71,7 @@ static struct ast_sorcery_wizard realtime_object_wizard = {
 	.retrieve_fields = sorcery_realtime_retrieve_fields,
 	.retrieve_multiple = sorcery_realtime_retrieve_multiple,
 	.retrieve_regex = sorcery_realtime_retrieve_regex,
+	.retrieve_prefix = sorcery_realtime_retrieve_prefix,
 	.update = sorcery_realtime_update,
 	.delete = sorcery_realtime_delete,
 	.close = sorcery_realtime_close,
@@ -94,7 +95,7 @@ static int sorcery_realtime_create(const struct ast_sorcery *sorcery, void *data
 	return (ast_store_realtime_fields(config->family, fields) <= 0) ? -1 : 0;
 }
 
-/*! \brief Internal helper function which returns a filtered objectset. 
+/*! \brief Internal helper function which returns a filtered objectset.
  *
  * The following are filtered out of the objectset:
  * \li The id field. This is returned to the caller in an out parameter.
@@ -175,6 +176,7 @@ static void *sorcery_realtime_retrieve_fields(const struct ast_sorcery *sorcery,
 	if (!id
 		|| !(object = ast_sorcery_alloc(sorcery, type, id->value))
 		|| ast_sorcery_objectset_apply(sorcery, object, objectset)) {
+		ao2_cleanup(object);
 		return NULL;
 	}
 
@@ -206,8 +208,7 @@ static void sorcery_realtime_retrieve_multiple(const struct ast_sorcery *sorcery
 			return;
 		}
 		if (config->fetch == UNQUALIFIED_FETCH_WARN) {
-			ast_log(LOG_WARNING, "Unqualified fetch attempted on %s\n", config->family);
-			return;
+			ast_log(LOG_WARNING, "Unqualified fetch requested on %s\n", config->family);
 		}
 
 		/* If no fields have been specified we want all rows, so trick realtime into doing it */
@@ -232,7 +233,9 @@ static void sorcery_realtime_retrieve_multiple(const struct ast_sorcery *sorcery
 
 		objectset = sorcery_realtime_filter_objectset(objectset, &id, sorcery, type);
 
-		if (id && (object = ast_sorcery_alloc(sorcery, type, id->value)) && !ast_sorcery_objectset_apply(sorcery, object, objectset)) {
+		if (id
+			&& (object = ast_sorcery_alloc(sorcery, type, id->value))
+			&& !ast_sorcery_objectset_apply(sorcery, object, objectset)) {
 			ao2_link(objects, object);
 		}
 
@@ -254,6 +257,23 @@ static void sorcery_realtime_retrieve_regex(const struct ast_sorcery *sorcery, v
 			snprintf(value, sizeof(value), "%%%s%%", regex);
 		}
 
+		if (!(fields = ast_variable_new(field, value, ""))) {
+			return;
+		}
+	}
+
+	sorcery_realtime_retrieve_multiple(sorcery, data, type, objects, fields);
+}
+
+static void sorcery_realtime_retrieve_prefix(const struct ast_sorcery *sorcery, void *data, const char *type,
+					     struct ao2_container *objects, const char *prefix, const size_t prefix_len)
+{
+	char field[strlen(UUID_FIELD) + 6], value[prefix_len + 2];
+	RAII_VAR(struct ast_variable *, fields, NULL, ast_variables_destroy);
+
+	if (prefix_len) {
+		snprintf(field, sizeof(field), "%s LIKE", UUID_FIELD);
+		snprintf(value, sizeof(value), "%.*s%%", (int) prefix_len, prefix);
 		if (!(fields = ast_variable_new(field, value, ""))) {
 			return;
 		}

@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/_private.h"
 #include <sys/time.h>
 #include <signal.h>
@@ -44,7 +42,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 static int vt100compat;
 
-static char prepdata[80] = "";
 static char enddata[80] = "";
 static char quitdata[80] = "";
 
@@ -173,13 +170,10 @@ end:
 	if (vt100compat) {
 		/* Make commands show up in nice colors */
 		if (ast_opt_light_background) {
-			snprintf(prepdata, sizeof(prepdata), "%c[%dm", ESC, COLOR_BROWN);
 			snprintf(enddata, sizeof(enddata), "%c[%dm", ESC, COLOR_BLACK);
 		} else if (ast_opt_force_black_background) {
-			snprintf(prepdata, sizeof(prepdata), "%c[%d;%d;%dm", ESC, ATTR_BRIGHT, COLOR_BROWN, COLOR_BLACK + 10);
 			snprintf(enddata, sizeof(enddata), "%c[%d;%d;%dm", ESC, ATTR_RESET, COLOR_WHITE, COLOR_BLACK + 10);
 		} else {
-			snprintf(prepdata, sizeof(prepdata), "%c[%d;%dm", ESC, ATTR_BRIGHT, COLOR_BROWN);
 			snprintf(enddata, sizeof(enddata), "%c[%dm", ESC, ATTR_RESET);
 		}
 		snprintf(quitdata, sizeof(quitdata), "%c[%dm", ESC, ATTR_RESET);
@@ -336,34 +330,6 @@ char *term_strip(char *outbuf, const char *inbuf, int maxout)
 	return outbuf;
 }
 
-char *term_prompt(char *outbuf, const char *inbuf, int maxout)
-{
-	if (!vt100compat) {
-		ast_copy_string(outbuf, inbuf, maxout);
-		return outbuf;
-	}
-	if (ast_opt_force_black_background) {
-		snprintf(outbuf, maxout, "%c[%d;%d;%dm%c%c[%d;%dm%s",
-			ESC, ATTR_BRIGHT, COLOR_BLUE, COLOR_BLACK + 10,
-			inbuf[0],
-			ESC, COLOR_WHITE, COLOR_BLACK + 10,
-			inbuf + 1);
-	} else if (ast_opt_light_background) {
-		snprintf(outbuf, maxout, "%c[%d;0m%c%c[0m%s",
-			ESC, COLOR_BLUE,
-			inbuf[0],
-			ESC,
-			inbuf + 1);
-	} else {
-		snprintf(outbuf, maxout, "%c[%d;%d;0m%c%c[0m%s",
-			ESC, ATTR_BRIGHT, COLOR_BLUE,
-			inbuf[0],
-			ESC,
-			inbuf + 1);
-	}
-	return outbuf;
-}
-
 /* filter escape sequences */
 void term_filter_escapes(char *line)
 {
@@ -385,11 +351,6 @@ void term_filter_escapes(char *line)
 		/* replace ESC with a space */
 		line[i] = ' ';
 	}
-}
-
-const char *term_prep(void)
-{
-	return prepdata;
 }
 
 const char *term_end(void)

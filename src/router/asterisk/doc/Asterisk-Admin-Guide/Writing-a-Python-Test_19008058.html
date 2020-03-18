@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Writing a Python Test</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Test-Suite-Documentation_17793142.html">Asterisk Test Suite Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Test-Development_20185285.html">Test Development</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Writing a Python Test
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified on Jan 23, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="WritingaPythonTest-Overview">Overview</h1><p>While the Asterisk Test Suite can execute a test written in any scripting language, <a href="http://www.python.org" class="external-link" rel="nofollow">Python</a> has become the de facto language of choice. The Asterisk Test Suite contains a number of modules written in Python to help with writing tests; as such, we strongly encourage people to make use of the existing infrastructure - and, of course - add to it as necessary!</p><p>The following walkthrough produces a test similar to the <em>tests/skeleton_test</em>, which is included in the Asterisk Test Suite and provides a template for a Python test. You can use that test as a starting point for tests that you write.</p><p>Developing a test can be broken down into the following steps:</p><ol><li>Define the <a href="#WritingaPythonTest-TestLayoutandAsteriskConfiguration">#Test Layout and Asterisk Configuration</a></li><li>Describe the test in <a href="#WritingaPythonTest-DescribingthetestinTest-Config.yaml">Test-Config.yaml</a></li><li>Write the <a href="#WritingaPythonTest-Writingrun-test">run-test</a> script</li><li><a href="#WritingaPythonTest-Runningthetest">Execute</a> the test</li></ol><p>This walkthrough will create a test (<em>sample</em>) that makes Asterisk playback tt-monkeys.</p><h1 id="WritingaPythonTest-TestLayoutandAsteriskConfiguration">Test Layout and Asterisk Configuration</h1><ol><li>Create a new folder for the test in the appropriate location. In general, this will be a folder in the <em>/tests</em> directory. You may want to provide a similar structure to Asterisk by grouping related tests together, e.g., application tests should have folder(s) under the <em>/tests/apps</em> directory. For now, we'll assume that we're creating a test called <em>sample</em>, located in <em>tests/sample</em>.</li><li>In the <em>sample</em> folder, create the following:<ul><li>A <em>run-test</em> file, which will contain the python script to execute. The file should have execute permissions, and should not have the &quot;.py&quot; extension. The Test Suite looks for files named run-test and executes them; the fact that we are choosing Python as our language is an implementation decision that the Test Suite does not care about.</li><li><em>test-config.yaml</em>, which will contain the test information and its dependency properties</li><li>A <em>configs</em> directory. The <em>configs</em> directory should contain subfolder(s) for each instance of Asterisk that will be instantiated by the test, named <em>ast#</em>, where # is the 1-based index of the Asterisk instance. For now, create a single folder named <em>ast1</em>.</li><li><p>In each <em>ast#</em> subfolder, the Asterisk config files needed for the test. At a minimum, this will be <em>extensions.conf</em>.</p>    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <p>The asterisk class automatically creates an <em>asterisk.conf</em> file, and installs it along with other basic Asterisk configuration files (see the <em>configs</em> directory). You can override their behavior by providing your own <em>.conf.inc</em> files. Any configuration files not provided in the <em>configs</em> directory are installed from the subfolders for each test.</p>
+                    </div>
+    </div>
+</li></ul></li><li><p>Edit your <em>extensions.conf</em> to perform some test in Asterisk. For our test, we'll simply check that we can dial into Asterisk and play back a sound file.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">[default]
+exten =&gt; s,1,NoOp()
+same =&gt; n,Playback(tt-monkeys)
+same =&gt; n,UserEvent(TestResult,result:pass)
+</pre>
+</div></div></li></ol><p>At the end of this, you should have:</p><ul><li>A folder in <em>tests</em> named <em>sample</em></li><li>An empty file in <em>tests/sample</em> named <em>run-test</em></li><li>An empty file in <em>tests/sample</em> named <em>test-config.yaml</em></li><li>A subfolder in <em>sample</em> named <em>configs</em></li><li>A subfolder in <em>sample/configs</em> named <em>ast1</em></li><li>A populated <em>extensions.conf</em> in <em>sample/configs/ast1</em></li></ul><h1 id="WritingaPythonTest-DescribingthetestinTest-Config.yaml">Describing the test in Test-Config.yaml</h1><p>Each test has a corresponding <a href="http://yaml.org/" class="external-link" rel="nofollow">yaml</a> file that defines information about the test, the dependencies the test has, and other optional configuration information. The fields that should be filled out, at a minimum, are:</p><ul><li>testinfo:<ul><li>summary: A summary of the test</li><li>description: A verbose description of exactly what piece and functionality of Asterisk is under test.</li></ul></li><li>properties:<ul><li>minversion: The minimum version of Asterisk that this test applies to</li><li>dependencies:<ul><li>python: Any python based dependencies. Often, this will be noted twice, once for 'twisted' and once for 'starpy'</li><li>custom: Custom dependencies, e.g., 'soundcard', 'fax', etc.</li><li>app: External applications that are needed, i.e., 'pjsua'</li></ul></li></ul></li></ul>    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <p>See the Test Suite's README.txt for all of the possible fields in a test configuration file</p>
+                    </div>
+    </div>
+<p>The <em>test-config.yaml</em> file for our <em>sample</em> test is below.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">testinfo:
+    summary: &#39;A sample test&#39;
+    description: |
+        This test verifies that monkeys have taken over the phone system.
+
+properties:
+    minversion: &#39;1.8&#39;
+    dependencies:
+        - python : &#39;twisted&#39;
+        - python : &#39;starpy&#39;
+</pre>
+</div></div><p>While we've created our test description, we haven't yet told the Test Suite of its existence. Upon startup, <em>runtests.py</em> checks <em>tests/tests.yaml</em> for the tests that exist. That file defines the folders that contain tests, where each folder contains another <em>tests.yaml</em> file that further defines tests and folders. In order for the Test Suite to find our sample test, open the <em>tests/tests.yaml</em> file and insert our test:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">tests:
+    - test: &#39;example&#39;
+# We&#39;re inserting our sample test here:
+    - test: &#39;sample&#39;
+    - test: &#39;dynamic-modules&#39;
+    - dir: &#39;manager&#39;
+# And so on...
+</pre>
+</div></div><h1 id="WritingaPythonTest-Writingrun-test">Writing run-test</h1><p>Now we start to actually write the meat of our test. Each test in the Test Suite is spawned as a separate process, and so each test needs an entry point. First, lets import a few libraries and write our main.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: python; gutter: true" style="font-size:12px;">#!/usr/bin/env python
+# vim: sw=3 et:
+import sys
+import os
+import logging
+
+from twisted.internet import reactor
+
+sys.path.append(&quot;lib/python&quot;)
+from asterisk.test_case import TestCase
+
+LOGGER = logging.getLogger(__name__)
+
+def main():
+    &quot;&quot;&quot;
+    Main entry point for the test.  This will do the following:
+    1. Instantiate the test object
+    2. Tell the test object to start the Asterisk instances
+    3. Run the twisted reactor.  This will automatically call the test&#39;s run method when twisted is up and start the instances of Asterisk, and block until the twisted reactor exits.
+    4. Check results.  If the test passed, return 0; otherwise, return any other value (usually 1).  The top level script checks the return code from the process it spawned to determine whether or not the test passed or failed.
+    &quot;&quot;&quot;
+
+    test = SampleTest()
+    reactor.run()
+
+    if not test.passed:
+        return 1
+
+    return 0
+
+if __name__ == &quot;__main__&quot;:
+   sys.exit(main() or 0)
+</pre>
+</div></div><p>There are a few things to note from this:</p><ul><li>We're going to use the twisted reactor for our test. This is usually useful as we typically will use asynchronous AMI events to drive the tests.</li><li>We've told the python path where the Test Suite libraries are, and imported the TestCase class. Our test case class, SampleTest, will end up deriving from it.</li><li>We have a logging object we can use to send statements to the Test Suite log file</li></ul><p>Moving on!</p><h2 id="WritingaPythonTest-DefiningtheTestClass">Defining the Test Class</h2><p>We'll need a test the inherits from TestCase. For now, we'll assume that the basic class provides our start_asterisk and stop_asterisk methods and that we don't need to override them (which is a safe assumption in most cases). We'll fill in some of these methods a bit more later.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: python; gutter: true" style="font-size:12px;">class SampleTest(TestCase):
+    &quot;&quot;&quot;
+    A class that executes a very simple test, using TestCase to do most of the
+    heavy lifting.
+    &quot;&quot;&quot;
+
+    def __init__(self):
+        super(SampleTest, self).__init__()
+        &quot;&quot;&quot; You should always call the base class implementation of __init__ prior
+        to initializing your test conditions here.  Some useful variables the TestCase
+        class provides:
+         - passed - set to False initially.  Set to True if your test passes.
+         - ast - a list of Asterisk instance
+         - ami - a list of StarPY manager (AMI) instances, corresponding to each Asterisk instance
+         - reactor_timeout - maximum time a test can execute before it is considered to fail.  This
+             prevents tests from hanging and never finishing.  You can reset this timer using a call
+             to TestCase.reset_timeout
+
+        In your initialization, you should usually set the reactor_timeout if it should
+        be something other than 30 (the default).  You should also call create_asterisk, which
+        will create and initialize the Asterisk instances.  You can specify as a parameter the number
+        of Asterisk instances to create.
+        &quot;&quot;&quot;
+        self.create_asterisk()
+
+    def run(self):
+        &quot;&quot;&quot;
+        Run is called by the reactor when the test starts.  It is the entry point for test execution,
+        and will occur after Asterisk is started (so long as the instructions in this example are followed).
+        Typically, after calling the base class implementation, connections over AMI are created.  You
+        can also interact with the started Asterisk instances here by referencing the ast list.
+        &quot;&quot;&quot;
+        super(SampleTest, self).run()
+
+
+        # Create a connection over AMI to the created Asterisk instance.  If you need to communicate with
+        # all of the instances of Asterisk that were created, specify the number of AMI connections to make.
+        # When the AMI connection succeeds, ami_connect will be called.
+        self.create_ami_factory()
+
+    def ami_connect(self, ami):
+        &quot;&quot;&quot;
+        This method is called by the StarPY manager class when AMI connects to Asterisk.
+
+        Keyword Arguments:
+        ami    -    The StarPY manager object that connected
+        &quot;&quot;&quot;
+</pre>
+</div></div><p>At the end of this, we have the following:</p><ul><li>A class that inherits from <em>TestCase</em>. In its constructor, it calls the base class constructor and creates an instance of Asterisk by calling the <em>TestCase.create_asterisk()</em> method. The base class provides us a few attributes that are of particular use:<ul><li><em>passed</em> - a boolean variable that we can set to True or False</li><li><em>ast</em> - a list of asterisk instances, that provide access to a running Asterisk application</li><li><em>ami</em> - a list of AMI connections corresponding to each asterisk instance</li><li><em>reactor_timeout</em> - the amount of time (in seconds) that the twisted reactor will wait before it stops itself. This is used to prevent tests from hanging.</li><li><em>TestCase</em> has a method we can call called <em>create_asterisk()</em>, that, well, creates instances of Asterisk. Yay!</li><li><em>TestCase</em> has another method we can call called <em>create_ami_factory()</em> that creates AMI connections to our previously created instances of Asterisk. We do this after the twisted reactor has started, so that Asterisk has a chance to start up.</li></ul></li><li>An entry point for the twisted reactor called <em>run()</em>. This calls the base class's implementation of the method, then spawns an AMI connection. Note that in our <em>main</em> method, we start up the created Asterisk instances prior to starting the twisted reactor - so when <em>run()</em> is called by twisted, Asterisk should already be started and ready for an AMI connection.</li><li>A method, <em>ami_connect</em>, that is called when an AMI connection succeeds. This same method is used for all AMI connections - so to tell which AMI connection you are receiving, we can check the <em>ami.id</em> property. Each AMI connection corresponds exactly to the instance of Asterisk in the <em>ast</em> list - so <em>ast[ami.id]</em> will reference the Asterisk instance associated with the <em>ami</em> object.</li></ul><h2 id="WritingaPythonTest-MakingtheTestdosomething">Making the Test do something</h2><p>So, we have a test that will start up, spawn an instance of Asterisk, and connect to it over AMI. That's interesting, but doesn't really test anything. Based on our <em>extensions.conf</em>, we want to call the <em>s</em> extension in <em>default</em>, hopefully have monkeys possess our channel, and then check that the <em>UserEvent</em> fired off to determine if we passed. If we don't see the UserEvent, we should eventually fail. Lets start off by adding some code to <em>ami_connect</em>.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: python; gutter: true" style="font-size:12px;">def ami_connect(self, ami):
+        &quot;&quot;&quot;
+        This method is called by the StarPY manager class when AMI connects to Asterisk.
+
+        Keyword Arguments:
+        ami    -    The StarPY manager object that connected
+        &quot;&quot;&quot;
+        LOGGER.info(&quot;Instructing monkeys to rise up and overthrow their masters&quot;)
+        deferred = ami.originate(channel=&quot;Local/s@default&quot;,
+                                 application=&quot;Echo&quot;)
+        deferred.addErrback(self.handle_originate_failure)
+</pre>
+</div></div><p>What we've now instructed the test to do is, upon an AMI connection, originate a call to the <em>s</em> extension in context <em>default</em>, using a Local channel. starpy's <em>originate</em> method returns a deferred object, which lets us assign a callback handler in case of an error. We've used the TestCase class's <em>handleOriginateFailure</em> method for this, which will automagically fail our test for us if the originate fails.</p><p>Now we need something to handle the UserEvent when monkeys inevitably enslave our phone system. Let's add that to our <em>ami_connect</em> method as well.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: python; gutter: true" style="font-size:12px;">def ami_connect(self, ami):
+        &quot;&quot;&quot;
+        This method is called by the StarPY manager class when AMI connects to Asterisk.
+
+        Keyword Arguments:
+        ami    -    The StarPY manager object that connected
+        &quot;&quot;&quot;
+
+        ami.registerEvent(&#39;UserEvent&#39;, self.user_event)
+
+        LOGGER.info(&quot;Instructing monkeys to rise up and overthrow their masters&quot;)
+        deferred = ami.originate(channel=&quot;Local/s@default&quot;,
+                                 application=&quot;Echo&quot;)
+        deferred.addErrback(self.handle_originate_failure)
+
+    def user_event(self, ami, event):
+      &quot;&quot;&quot;
+      Handler for the AMI UserEvent
+      Keyword Arguements:
+      ami     -     The StarPY AMI object corresponding to the received UserEvent
+      event   -     The AMI event
+      &quot;&quot;&quot;
+      if event[&#39;userevent&#39;] != &#39;TestResult&#39;:
+         return
+
+      if event[&#39;result&#39;] == &quot;pass&quot;:
+         self.passed = True
+         LOGGER.info(&quot;Monkeys detected; test passes!&quot;)
+      else:
+         LOGGER.error(&quot;No monkeys found :-(&quot;)
+      self.stop_reactor()
+</pre>
+</div></div><p>Now we've registered for the UserEvent that should be raised from the dialplan after monkeys are played back. We make the assumption in the handler that we could have other UserEvents that return failure results - in our case, we don't have failure scenarios, but many tests do. Regardless, once we receive a user event we stop the twisted reactor, which will cause our test to be stopped and the results evaluated.</p><p>We should now be ready to run our test.</p><h1 id="WritingaPythonTest-Runningthetest">Running the test</h1><p>From a console window, browse to the base directory of the Test Suite and type the following:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">./runtests.py --test=tests/sample/
+</pre>
+</div></div><p>You should see something similar to the following:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">Making sure Asterisk isn&#39;t running ...
+Running [&#39;tests/sample/run-test&#39;] ...
+Resetting translation matrix
+Parsing /tmp/asterisk-testsuite/sample/ast1/etc/asterisk/logger.conf
+Parsing /tmp/asterisk-testsuite/sample/ast1/etc/asterisk/logger.general.conf.inc
+Parsing /tmp/asterisk-testsuite/sample/ast1/etc/asterisk/logger.logfiles.conf.inc
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;testsuite errors=&quot;0&quot; failures=&quot;0&quot; name=&quot;AsteriskTestSuite&quot; tests=&quot;1&quot; time=&quot;18.83&quot;&gt;
+  &lt;testcase name=&quot;tests/sample&quot; time=&quot;18.83&quot;/&gt;
+&lt;/testsuite&gt;
+</pre>
+</div></div><p>We can inspect the log files created by the Test Suite for more information. The Test Suite makes two log files - full.txt and messages.txt - by default, DEBUG and higher are sent to full.txt, while INFO and higher are sent to mssages.txt. The following is a snippet from messages.txt - yours should look similar.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[Feb 07 17:04:51] INFO[6991]: asterisk.TestCase:86 __init__: Executing tests/sample
+[Feb 07 17:04:51] INFO[6991]: asterisk.TestCase:135 create_asterisk: Creating Asterisk instance 1
+[Feb 07 17:04:52] INFO[6991]: asterisk.TestCase:208 start_asterisk: Starting Asterisk instance 1
+[Feb 07 17:04:52] INFO[6991]: asterisk.TestCase:159 create_ami_factory: Creating AMIFactory 1
+[Feb 07 17:04:52] INFO[6991]: AMI:158 connectionMade: Connection Made
+[Feb 07 17:04:52] INFO[6991]: AMI:172 onComplete: Login Complete: {&#39;message&#39;: &#39;Authentication accepted&#39;, &#39;response&#39;: &#39;Success&#39;, &#39;actionid&#39;: &#39;mjordan-laptop-22006600-1&#39;}
+[Feb 07 17:04:52] INFO[6991]: asterisk.TestCase:297 __ami_connect: AMI Connect instance 1
+[Feb 07 17:04:52] INFO[6991]: __main__:67 ami_connect: Instructing monkeys to rise up and overthrow their masters
+[Feb 07 17:05:09] INFO[6991]: __main__:85 user_event: Monkeys detected; test passes!
+[Feb 07 17:05:09] INFO[6991]: asterisk.TestCase:256 stop_reactor: Stopping Reactor
+[Feb 07 17:05:09] INFO[6991]: asterisk.TestCase:223 stop_asterisk: Stopping Asterisk instance 1
+</pre>
+</div></div><h1 id="WritingaPythonTest-SampleTest">Sample Test</h1><h2 id="WritingaPythonTest-extensions.conf">extensions.conf</h2><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">[default]
+exten =&gt; s,1,NoOp()
+same =&gt; n,Playback(tt-monkeys)
+same =&gt; n,UserEvent(TestResult,result:pass)
+</pre>
+</div></div><h2 id="WritingaPythonTest-test-config.yaml">test-config.yaml</h2><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">testinfo:
+    summary: &#39;A sample test&#39;
+    description: |
+        This test verifies that monkeys have taken over the phone system.
+
+properties:
+    minversion: &#39;1.8&#39;
+    dependencies:
+        - python : &#39;twisted&#39;
+        - python : &#39;starpy&#39;
+</pre>
+</div></div><h2 id="WritingaPythonTest-run-test">run-test</h2><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: python; gutter: true" style="font-size:12px;">#!/usr/bin/env python
+# vim: sw=3 et:
+&#39;&#39;&#39;Asterisk Test Suite Sample Test
+
+Copyright (C) 2012, Digium, Inc.
+Matt Jordan &lt;mjordan@digium.com&gt;
+
+This program is free software, distributed under the terms of
+the GNU General Public License Version 2.
+&#39;&#39;&#39;
+
+import sys
+import os
+import logging
+
+from twisted.internet import reactor
+
+sys.path.append(&quot;lib/python&quot;)
+from asterisk.test_case import TestCase
+
+LOGGER = logging.getLogger(__name__)
+
+class SampleTest(TestCase):
+    &quot;&quot;&quot;
+    A class that executes a very simple test, using TestCase to do most of the
+    heavy lifting.
+    &quot;&quot;&quot;
+
+    def __init__(self):
+        super(SampleTest, self).__init__()
+        &quot;&quot;&quot; You should always call the base class implementation of __init__ prior
+        to initializing your test conditions here.  Some useful variables the TestCase
+        class provides:
+         - passed - set to False initially.  Set to True if your test passes.
+         - ast - a list of Asterisk instance
+         - ami - a list of StarPY manager (AMI) instances, corresponding to each Asterisk instance
+         - reactor_timeout - maximum time a test can execute before it is considered to fail.  This
+             prevents tests from hanging and never finishing.  You can reset this timer using a call
+             to TestCase.reset_timeout
+
+        In your initialization, you should usually set the reactor_timeout if it should
+        be something other than 30 (the default).  You should also call create_asterisk, which
+        will create and initialize the Asterisk instances.  You can specify as a parameter the number
+        of Asterisk instances to create.
+        &quot;&quot;&quot;
+        self.create_asterisk()
+
+    def run(self):
+        &quot;&quot;&quot;
+        Run is called by the reactor when the test starts.  It is the entry point for test execution,
+        and will occur after Asterisk is started (so long as the instructions in this example are followed).
+        Typically, after calling the base class implementation, connections over AMI are created.  You
+        can also interact with the started Asterisk instances here by referencing the ast list.
+        &quot;&quot;&quot;
+        super(SampleTest, self).run()
+
+        # Create a connection over AMI to the created Asterisk instance.  If you need to communicate with
+        # all of the instances of Asterisk that were created, specify the number of AMI connections to make.
+        # When the AMI connection succeeds, ami_connect will be called.
+        self.create_ami_factory()
+
+    def ami_connect(self, ami):
+        &quot;&quot;&quot;
+        This method is called by the StarPY manager class when AMI connects to Asterisk.
+
+        Keyword Arguments:
+        ami    -    The StarPY manager object that connected
+        &quot;&quot;&quot;
+
+        ami.registerEvent(&#39;UserEvent&#39;, self.user_event)
+
+        LOGGER.info(&quot;Instructing monkeys to rise up and overthrow their masters&quot;)
+        deferred = ami.originate(channel=&quot;Local/s@default&quot;,
+                                 application=&quot;Echo&quot;)
+        deferred.addErrback(self.handle_originate_failure)
+
+    def user_event(self, ami, event):
+      &quot;&quot;&quot;
+      Handler for the AMI UserEvent
+      Keyword Arguements:
+      ami     -     The StarPY AMI object corresponding to the received UserEvent
+      event   -     The AMI event
+      &quot;&quot;&quot;
+      if event[&#39;userevent&#39;] != &#39;TestResult&#39;:
+         return
+
+      if event[&#39;result&#39;] == &quot;pass&quot;:
+         self.passed = True
+         LOGGER.info(&quot;Monkeys detected; test passes!&quot;)
+      else:
+         LOGGER.error(&quot;No monkeys found :-(&quot;)
+      self.stop_reactor()
+
+
+def main():
+    &quot;&quot;&quot;
+    Main entry point for the test.  This will do the following:
+    1. Instantiate the test object
+    2. Tell the test object to start the Asterisk instances
+    3. Run the twisted reactor.  This will automatically call the test&#39;s run method when twisted is up and start the instances of Asterisk, and block until the twisted reactor exits.
+    4. Check results.  If the test passed, return 0; otherwise, return any other value (usually 1).  The top level script checks the return code from the process it spawned to determine whether or not the test passed or failed.
+    &quot;&quot;&quot;
+
+    test = SampleTest()
+    reactor.run()
+
+    if not test.passed:
+        return 1
+
+    return 0
+
+if __name__ == &quot;__main__&quot;:
+   sys.exit(main() or 0)
+</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

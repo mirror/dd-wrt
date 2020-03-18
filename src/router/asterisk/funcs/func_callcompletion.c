@@ -27,8 +27,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/module.h"
 #include "asterisk/channel.h"
 #include "asterisk/ccss.h"
@@ -128,4 +126,9 @@ static int load_module(void)
 	return ast_custom_function_register(&cc_function) == 0 ? AST_MODULE_LOAD_SUCCESS : AST_MODULE_LOAD_DECLINE;
 }
 
-AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "Call Control Configuration Function");
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Call Control Configuration Function",
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.requires = "ccss",
+);

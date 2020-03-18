@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Controlling the way Queues Call Agents</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Queues_5243008.html">Asterisk Queues</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-Call-Queues-with-AEL_5243010.html">Configuring Call Queues with AEL</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Controlling the way Queues Call Agents
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Jan 05, 2011
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Notice in the above, that the commands to manipulate agents in queues have &quot;@agents&quot; in their arguments. This is a reference to the agents context:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+context agents { 
+    // General sales queue 
+    8010 =&gt; {
+        Set(QUEUE_MAX_PENALTY=10); 
+        Queue(sales-general,t); 
+        Set(QUEUE_MAX_PENALTY=0); 
+        Queue(sales-general,t); 
+        Set(CALLERID(name)=EmptySalQ); 
+       goto dispatch,s,1;
+    } 
+    // Customer Service queue 
+    8011 =&gt; { 
+        Set(QUEUE_MAX_PENALTY=10);
+        Queue(customerservice,t); 
+        Set(QUEUE_MAX_PENALTY=0);
+        Queue(customerservice,t); 
+        Set(CALLERID(name)=EMptyCSVQ);
+        goto dispatch,s,1; 
+    } 
+    8013 =&gt; {
+        Dial(iax2/sweatshop/9456@from-ecstacy);
+        Set(CALLERID(name)=EmptySupQ); 
+        Set(QUEUE_MAX_PENALTY=10); 
+        Queue(support-dispatch,t); 
+        Set(QUEUE_MAX_PENALTY=20); 
+        Queue(support-dispatch,t);
+        Set(QUEUE_MAX_PENALTY=0); // means no max 
+        Queue(support-dispatch,t); 
+        goto dispatch,s,1; 
+    } 
+    6121 =&gt; &amp;callagent(${RAQUEL},${EXTEN}); 
+    6165 =&gt; &amp;callagent(${SPEARS},${EXTEN});
+    6170 =&gt; &amp;callagent(${ROCK},${EXTEN}); 
+    6070 =&gt; &amp;callagent(${SALINE},${EXTEN}); 
+}
+</pre>
+</div></div>
+
+<p>In the above, the variables ${RAQUEL}, etc stand for actual devices to ring that person's phone (like DAHDI/37). </p>
+
+<p>The 8010, 8011, and 8013 extensions are purely for transferring incoming callers to queues. For instance, a customer service agent might want to transfer the caller to talk to sales. The agent only has to transfer to extension 8010, in this case. </p>
+
+<p>Here is the callagent macro, note that if a person in the queue is called, but does not answer, then they are automatically removed from the queue.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+macro callagent(device,exten) {
+    if( ${GROUP_COUNT(${exten}@agents)}=0 ) { 
+        Set(OUTBOUND_GROUP_ONCE=${exten}@agents);
+        Dial(${device},300,t);
+        switch(${DIALSTATUS}) {
+            case BUSY: 
+                Busy(); 
+                break;
+            case NOANSWER:
+                Set(queue-announce-success=0);
+                goto queues-manip,O${exten},1; 
+            default: 
+                Hangup(); 
+                break; 
+        } 
+    }
+    else { 
+        Busy(); 
+    } 
+}
+</pre>
+</div></div>
+
+<p>In the callagent macro above, the ${exten} will be 6121, or 6165, etc, which is the extension of the agent. </p>
+
+<p>The use of the GROUP_COUNT, and OUTBOUND_GROUP follow this line of thinking. Incoming calls can be queued to ring all agents in the current priority. If some of those agents are already talking, they would get bothersome call-waiting tones. To avoid this inconvenience, when an agent gets a call, the OUTBOUND_GROUP assigns that conversation to the group specified, for instance 6171@agents. The ${GROUP_COUNT()} variable on a subsequent call should return &quot;1&quot; for that group. If GROUP_COUNT returns 1, then the busy() is returned without actually trying to dial the agent.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -19,7 +19,7 @@
 /*! \file
  *
  * \brief codec_alaw.c - translate between signed linear and alaw
- * 
+ *
  * \ingroup codecs
  */
 
@@ -28,8 +28,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/module.h"
 #include "asterisk/config.h"
@@ -52,7 +50,7 @@ static int alawtolin_framein(struct ast_trans_pvt *pvt, struct ast_frame *f)
 
 	pvt->samples += i;
 	pvt->datalen += i * 2;	/* 2 bytes/sample */
-	
+
 	while (i--)
 		*dst++ = AST_ALAW(*src++);
 
@@ -69,7 +67,7 @@ static int lintoalaw_framein(struct ast_trans_pvt *pvt, struct ast_frame *f)
 	pvt->samples += i;
 	pvt->datalen += i;	/* 1 byte/sample */
 
-	while (i--) 
+	while (i--)
 		*dst++ = AST_LIN2A(*src++);
 
 	return 0;
@@ -139,7 +137,7 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "A-law Coder/Decoder",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-	       );
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+);

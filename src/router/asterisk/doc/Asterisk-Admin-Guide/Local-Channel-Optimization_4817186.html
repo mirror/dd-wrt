@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Local Channel Optimization</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Local-Channel_4817170.html">Local Channel</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Local Channel Optimization
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Rusty Newton</span> on Nov 25, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="LocalChannelOptimization-DefaultChannelOptimization">Default Channel Optimization</h1><p>By default, the <a href="Local-Channel_4817170.html">Local channel</a> will try to optimize itself out of the call path. This means that once the Local channel has established the call between the destination and Asterisk, the Local channel will get out of the way and let Asterisk and the end point talk directly, instead of flowing through the Local channel.</p><p>This can have some adverse effects when you're expecting information to be available during the call that gets associated with the Local channel. When the Local channel is optimized out of the call path, any Dial() flags, or channel variables associated with the Local channel are also destroyed and are no longer available to Asterisk.</p><p>Diagrams really help to show what is going on:</p><h3 id="LocalChannelOptimization-Figure1">Figure 1</h3><p>This is a call in an unanswered (ringing) state - from SIP to SIP using Local Channels in between.</p><h3 id="LocalChannelOptimization-Figure2">Figure 2</h3><p>By default, after the callee answers this is what the call would look like with the Local Channels optimizing out.</p><h3 id="LocalChannelOptimization-Figure3">Figure 3</h3><p>This is what the call would look like when established if you called the Local Channel with &quot;/n&quot;. You can see the Local Channels get pushed into bridges with channels they were connected with through app_dial previously.</p><p>
+
+<map id="gliffy-map-30474343-9495" name="gliffy-map-30474343-9495"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 650px;" usemap="#gliffy-map-30474343-9495" src="attachments/4817186/30474344.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p><h1 id="LocalChannelOptimization-DisablingLocalChannelOptimization">Disabling Local Channel Optimization</h1><p>You may have read about the /n modifier in <a href="Local-Channel-Modifiers_4817188.html">Local Channel Modifiers</a>. We can force the Local channel to remain in the call path by utilizing the /n directive. By adding /n to the end of the channel dial-string, we can keep the Local channel in the call path, along with any channel variables, or other channel specific information.</p><h2 id="LocalChannelOptimization-Whentodisableoptimization">When to disable optimization</h2><p>Lets take a look at an example that demonstrates when the use of the /n directive is necessary. If we spawn a Local channel which does a Dial() to a SIP channel, but we use the L() option (which is used to limit the amount of time a call can be active, along with warning tones when the time is nearly up), it will be associated with the Local channel, which is then optimized out of the call path, and thus won't perform as expected.</p><p>This following dialplan will not perform as expected.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[services]
+exten =&gt; 2,1,Dial(SIP/PHONE_B,,L(60000:45000:15000))
+
+[internal]
+exten =&gt; 4,1,Dial(Local/2@services) 
+</pre>
+</div></div><p>In order to make this behave as we expect (limiting the call), we would change:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[internal]
+exten =&gt; 4,1,Dial(Local/2@services) 
+</pre>
+</div></div><p>...into the following:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[internal]
+exten =&gt; 4,1,Dial(Local/2@services/n) 
+</pre>
+</div></div><p>By adding <strong>/n</strong> to the end of the dial-string, our Local channel will now stay in the call path and not go away.</p><h3 id="LocalChannelOptimization-Detailedwalk-throughofexamplecall-flow">Detailed walk-through of example call-flow</h3><p>Why does adding the <strong>/n</strong> option all of a sudden make the 'L' option work? First we need to show an overview of the call flow that doesn't work properly, and discuss the information associated with the channels:</p><ol><li>SIP device PHONE_A calls Asterisk via a SIP INVITE.</li><li>Asterisk accepts the INVITE and then starts processing dialplan logic in the [internal] context.</li><li>Our dialplan calls Dial(Local/2@services) - notice the lack of the &quot;/n&quot;.</li><li>The Local channel then executes dialplan at extension 2 within the [services] context.</li><li>Extension 2 within [services] then performs Dial() to PHONE_B with the line: Dial(SIP/PHONE_B,,L(60000:45000:15000))</li><li>SIP/PHONE_B then answers the call.</li><li>Even though the L option was given when dialing the SIP device, the L information is stored in the channel that is doing the Dial() which is the Local channel, and not the endpoint SIP channel.</li><li>The Local channel in the middle, containing the information for tracking the time allowance of the call, is then optimized out of the call path, losing all information about when to terminate the call.</li><li>SIP/PHONE_A and SIP/PHONE_B then continue talking indefinitely.</li></ol><p>Now, if we were to add /n to our dialplan at step three (3) then we would force the Local channel to stay in the call path, and the L() option associated with the Dial() from the Local channel would remain, and our warning sounds and timing would work as expected. <br /> There are two workarounds for the above described scenario:</p><ol><li>Use what we just described, Dial(Local/2@services/n) to cause the Local channel to remain in the call path so that the L() option used inside the Local channel is not discarded when optimization is performed.</li><li>Place the L() option at the outermost part of the path so that when the middle is optimized out of the call path, the information required to make L() work is associated with the outside channel. The L information will then be stored on the calling channel, which is PHONE_A. For example:</li></ol><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[services]
+exten =&gt; 2,1,Dial(SIP/PHONE_B)
+
+[internal]
+exten =&gt; 4,1,Dial(Local/2@services,,L(60000:45000:15000));
+</pre>
+</div></div>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817186/30474345">LocalChannels_Optimization</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817186/30474346.png">LocalChannels_Optimization.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817186/30474347">LocalChannels_Optimization</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817186/30474348.png">LocalChannels_Optimization.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817186/30474349">LocalChannels_Optimization</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817186/30474350.png">LocalChannels_Optimization.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817186/30474343">LocalChannels_Optimization</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817186/30474344.png">LocalChannels_Optimization.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

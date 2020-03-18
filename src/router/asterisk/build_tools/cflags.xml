@@ -10,13 +10,10 @@
 		<member name="DEBUG_THREADS" displayname="Enable Thread Debugging">
 			<support_level>core</support_level>
 		</member>
-		<member name="REF_DEBUG" displayname="Enable reference count debugging">
+		<member name="REF_DEBUG" displayname="Enable reference count debugging by default">
 			<support_level>extended</support_level>
 		</member>
 		<member name="AO2_DEBUG" displayname="Enable internal Astobj2 debugging">
-			<support_level>extended</support_level>
-		</member>
-		<member name="STATIC_BUILD" displayname="Build static binaries">
 			<support_level>extended</support_level>
 		</member>
 		<member name="DEBUG_FD_LEAKS" displayname="Enable File Descriptor Leak Detection">
@@ -78,11 +75,9 @@
 			<support_level>extended</support_level>
 		</member>
 		<member name="MALLOC_DEBUG" displayname="Keep Track of Memory Allocations">
-			<conflict>DEBUG_CHAOS</conflict>
 			<support_level>core</support_level>
 		</member>
 		<member name="DEBUG_CHAOS" displayname="Randomly FAIL memory allocations or other operations">
-			<conflict>MALLOC_DEBUG</conflict>
 			<support_level>core</support_level>
 		</member>
 		<member name="ADDRESS_SANITIZER" displayname="Address Sanitizer">

@@ -28,12 +28,11 @@
 
 /*** MODULEINFO
 	<depend>res_odbc</depend>
+	<depend>generic_odbc</depend>
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <sys/types.h>
 #include <time.h>
@@ -324,7 +323,7 @@ static SQLHSTMT generic_prepare(struct odbc_obj *obj, void *data)
 		return NULL;
 	}
 
-	res = SQLPrepare(stmt, (unsigned char *)sql, SQL_NTS);
+	res = ast_odbc_prepare(obj, stmt, sql);
 	if ((res != SQL_SUCCESS) && (res != SQL_SUCCESS_WITH_INFO)) {
 		ast_log(LOG_WARNING, "SQL Prepare failed![%s]\n", sql);
 		SQLGetDiagField(SQL_HANDLE_STMT, stmt, 1, SQL_DIAG_NUMBER, &numfields, SQL_IS_INTEGER, &diagbytes);
@@ -343,11 +342,11 @@ static SQLHSTMT generic_prepare(struct odbc_obj *obj, void *data)
 	return stmt;
 }
 
-#define LENGTHEN_BUF1(size)														\
+#define LENGTHEN_BUF(size, var_sql)														\
 			do {																\
 				/* Lengthen buffer, if necessary */								\
-				if (ast_str_strlen(sql) + size + 1 > ast_str_size(sql)) {		\
-					if (ast_str_make_space(&sql, ((ast_str_size(sql) + size + 1) / 512 + 1) * 512) != 0) { \
+				if (ast_str_strlen(var_sql) + size + 1 > ast_str_size(var_sql)) {		\
+					if (ast_str_make_space(&var_sql, ((ast_str_size(var_sql) + size + 1) / 512 + 1) * 512) != 0) { \
 						ast_log(LOG_ERROR, "Unable to allocate sufficient memory.  Insert CEL '%s:%s' failed.\n", tableptr->connection, tableptr->table); \
 						ast_free(sql);											\
 						ast_free(sql2);											\
@@ -357,18 +356,11 @@ static SQLHSTMT generic_prepare(struct odbc_obj *obj, void *data)
 				}																\
 			} while (0)
 
-#define LENGTHEN_BUF2(size)														\
-			do {																\
-				if (ast_str_strlen(sql2) + size + 1 > ast_str_size(sql2)) {		\
-					if (ast_str_make_space(&sql2, ((ast_str_size(sql2) + size + 3) / 512 + 1) * 512) != 0) { \
-						ast_log(LOG_ERROR, "Unable to allocate sufficient memory.  Insert CEL '%s:%s' failed.\n", tableptr->connection, tableptr->table); \
-						ast_free(sql);											\
-						ast_free(sql2);											\
-						AST_RWLIST_UNLOCK(&odbc_tables);						\
-						return;													\
-					}															\
-				}																\
-			} while (0)
+#define LENGTHEN_BUF1(size) \
+	LENGTHEN_BUF(size, sql);
+
+#define LENGTHEN_BUF2(size) \
+	LENGTHEN_BUF(size, sql2);
 
 static void odbc_log(struct ast_event *event)
 {
@@ -404,7 +396,7 @@ static void odbc_log(struct ast_event *event)
 	}
 
 	AST_LIST_TRAVERSE(&odbc_tables, tableptr, list) {
-		int first = 1;
+		char *separator = "";
 		ast_str_set(&sql, 0, "INSERT INTO %s (", tableptr->table);
 		ast_str_set(&sql2, 0, " VALUES (");
 
@@ -538,11 +530,11 @@ static void odbc_log(struct ast_event *event)
 						}
 					}
 
-					ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
+					ast_str_append(&sql, 0, "%s%s", separator, entry->name);
 					LENGTHEN_BUF2(strlen(colptr));
 
 					/* Encode value, with escaping */
-					ast_str_append(&sql2, 0, "%s'", first ? "" : ",");
+					ast_str_append(&sql2, 0, "%s'", separator);
 					for (tmp = colptr; *tmp; tmp++) {
 						if (*tmp == '\'') {
 							ast_str_append(&sql2, 0, "''");
@@ -582,9 +574,9 @@ static void odbc_log(struct ast_event *event)
 							}
 						}
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
+						ast_str_append(&sql, 0, "%s%s", separator, entry->name);
 						LENGTHEN_BUF2(17);
-						ast_str_append(&sql2, 0, "%s{d '%04d-%02d-%02d'}", first ? "" : ",", year, month, day);
+						ast_str_append(&sql2, 0, "%s{d '%04d-%02d-%02d'}", separator, year, month, day);
 					}
 					break;
 				case SQL_TYPE_TIME:
@@ -607,9 +599,9 @@ static void odbc_log(struct ast_event *event)
 							}
 						}
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
+						ast_str_append(&sql, 0, "%s%s", separator, entry->name);
 						LENGTHEN_BUF2(15);
-						ast_str_append(&sql2, 0, "%s{t '%02d:%02d:%02d'}", first ? "" : ",", hour, minute, second);
+						ast_str_append(&sql2, 0, "%s{t '%02d:%02d:%02d'}", separator, hour, minute, second);
 					}
 					break;
 				case SQL_TYPE_TIMESTAMP:
@@ -622,9 +614,9 @@ static void odbc_log(struct ast_event *event)
 							 * We've already properly formatted the timestamp so there's no need
 							 * to parse it and re-format it.
 							 */
-							ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
+							ast_str_append(&sql, 0, "%s%s", separator, entry->name);
 							LENGTHEN_BUF2(27);
-							ast_str_append(&sql2, 0, "%s{ts '%s'}", first ? "" : ",", colptr);
+							ast_str_append(&sql2, 0, "%s{ts '%s'}", separator, colptr);
 						} else {
 							int year = 0, month = 0, day = 0, hour = 0, minute = 0;
 							/* MUST use double for microsecond precision */
@@ -669,9 +661,9 @@ static void odbc_log(struct ast_event *event)
 								}
 							}
 
-							ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
+							ast_str_append(&sql, 0, "%s%s", separator, entry->name);
 							LENGTHEN_BUF2(27);
-							ast_str_append(&sql2, 0, "%s{ts '%04d-%02d-%02d %02d:%02d:%09.6lf'}", first ? "" : ",", year, month, day, hour, minute, second);
+							ast_str_append(&sql2, 0, "%s{ts '%04d-%02d-%02d %02d:%02d:%09.6lf'}", separator, year, month, day, hour, minute, second);
 						}
 					}
 					break;
@@ -683,9 +675,9 @@ static void odbc_log(struct ast_event *event)
 							continue;
 						}
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
+						ast_str_append(&sql, 0, "%s%s", separator, entry->name);
 						LENGTHEN_BUF2(12);
-						ast_str_append(&sql2, 0, "%s%d", first ? "" : ",", integer);
+						ast_str_append(&sql2, 0, "%s%d", separator, integer);
 					}
 					break;
 				case SQL_BIGINT:
@@ -697,9 +689,9 @@ static void odbc_log(struct ast_event *event)
 							continue;
 						}
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
+						ast_str_append(&sql, 0, "%s%s", separator, entry->name);
 						LENGTHEN_BUF2(24);
-						ast_str_append(&sql2, 0, "%s%lld", first ? "" : ",", integer);
+						ast_str_append(&sql2, 0, "%s%lld", separator, integer);
 					}
 					break;
 				case SQL_SMALLINT:
@@ -710,9 +702,9 @@ static void odbc_log(struct ast_event *event)
 							continue;
 						}
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
+						ast_str_append(&sql, 0, "%s%s", separator, entry->name);
 						LENGTHEN_BUF2(7);
-						ast_str_append(&sql2, 0, "%s%d", first ? "" : ",", integer);
+						ast_str_append(&sql2, 0, "%s%d", separator, integer);
 					}
 					break;
 				case SQL_TINYINT:
@@ -723,9 +715,9 @@ static void odbc_log(struct ast_event *event)
 							continue;
 						}
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
+						ast_str_append(&sql, 0, "%s%s", separator, entry->name);
 						LENGTHEN_BUF2(4);
-						ast_str_append(&sql2, 0, "%s%d", first ? "" : ",", integer);
+						ast_str_append(&sql2, 0, "%s%d", separator, integer);
 					}
 					break;
 				case SQL_BIT:
@@ -738,9 +730,9 @@ static void odbc_log(struct ast_event *event)
 						if (integer != 0)
 							integer = 1;
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
+						ast_str_append(&sql, 0, "%s%s", separator, entry->name);
 						LENGTHEN_BUF2(2);
-						ast_str_append(&sql2, 0, "%s%d", first ? "" : ",", integer);
+						ast_str_append(&sql2, 0, "%s%d", separator, integer);
 					}
 					break;
 				case SQL_NUMERIC:
@@ -752,9 +744,9 @@ static void odbc_log(struct ast_event *event)
 							continue;
 						}
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
+						ast_str_append(&sql, 0, "%s%s", separator, entry->name);
 						LENGTHEN_BUF2(entry->decimals + 2);
-						ast_str_append(&sql2, 0, "%s%*.*lf", first ? "" : ",", entry->decimals, entry->radix, number);
+						ast_str_append(&sql2, 0, "%s%*.*lf", separator, entry->decimals, entry->radix, number);
 					}
 					break;
 				case SQL_FLOAT:
@@ -767,16 +759,16 @@ static void odbc_log(struct ast_event *event)
 							continue;
 						}
 
-						ast_str_append(&sql, 0, "%s%s", first ? "" : ",", entry->name);
+						ast_str_append(&sql, 0, "%s%s", separator, entry->name);
 						LENGTHEN_BUF2(entry->decimals);
-						ast_str_append(&sql2, 0, "%s%lf", first ? "" : ",", number);
+						ast_str_append(&sql2, 0, "%s%lf", separator, number);
 					}
 					break;
 				default:
 					ast_log(LOG_WARNING, "Column type %d (field '%s:%s:%s') is unsupported at this time.\n", entry->type, tableptr->connection, tableptr->table, entry->name);
 					continue;
 				}
-				first = 0;
+				separator = ", ";
 			}
 		}
 
@@ -823,7 +815,7 @@ static int unload_module(void)
 	free_config();
 	AST_RWLIST_UNLOCK(&odbc_tables);
 	AST_RWLIST_HEAD_DESTROY(&odbc_tables);
-        
+
 	return 0;
 }
 
@@ -858,11 +850,11 @@ static int reload(void)
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
-AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, ODBC_BACKEND_NAME,
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "ODBC CEL backend",
 	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
 	.reload = reload,
 	.load_pri = AST_MODPRI_CDR_DRIVER,
+	.requires = "cel,res_odbc",
 );
-

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Presence State</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Key-Concepts_27200276.html">Key Concepts</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="States-and-Presence_28315969.html">States and Presence</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Presence State
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Mark Michelson</span>, last modified by <span class='editor'> Rusty Newton</span> on May 21, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="PresenceState-Overview">Overview</h1><p>Asterisk 11 has been outfitted with support for presence states. An easy way to understand this is to compare presence state support to the device state support Asterisk has always had. Like with device state support, Asterisk has a core API so that modules can register themselves as presence state providers, alert others to changes in presence state, and query the presence state of others. The difference between the device and presence state concepts is made clear by understanding the subject of state for each concept.</p><ul><li>Device state reflects the current <strong>state of a physical device</strong> connected to Asterisk</li><li>Presence state reflects the current <strong>state of the user</strong> of the device</li></ul><p>For example, a <strong>device</strong> may currently be <code>not in use</code> but the <strong>person</strong> is <code>away</code>. This can be a critical detail when determining the availability of the <strong>person</strong>.</p><p>While the architectures of presence state and device state support in Asterisk are similar, there are some key differences between the two.</p><ul><li>Asterisk cannot infer presence state changes the same way it can device state changes. For instance, when a SIP endpoint is on a call, Asterisk can infer that the device is being used and report the device state as <code>in use</code>. Asterisk cannot infer whether a user of such a device does not wish to be disturbed or would rather chat, though. Thus, all presence state changes have to be manually enacted.</li><li>Asterisk does not take presence into consideration when determining availability of a device. For instance, members of a queue whose device state is <code>busy</code> will not be called; however, if that member's device is <code>not in use</code> but his presence is <code>away</code> then Asterisk will still attempt to call the queue member.</li><li>Asterisk cannot aggregate multiple presence states into a single combined state. Multiple device states can be listed in an extension's hint priority to have a combined state reported. Presence state support in Asterisk lacks this concept.</li></ul></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302946667 {padding: 0px;}
+div.rbtoc1582302946667 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302946667 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302946667'>
+<ul class='toc-indentation'>
+<li><a href='#PresenceState-Overview'>Overview</a></li>
+<li><a href='#PresenceState-PresenceStates'>Presence States</a></li>
+<li><a href='#PresenceState-SubtypeandMessage'>Subtype and Message</a></li>
+<li><a href='#PresenceState-func_presencestateAndTheCustomPresenceProvider'>func_presencestate And The CustomPresence Provider</a></li>
+<li><a href='#PresenceState-ConfiguringPresenceSubscriptionwithHints'>Configuring Presence Subscription with Hints</a>
+<ul class='toc-indentation'>
+<li><a href='#PresenceState-ExamplePresenceNotification'>Example Presence Notification</a></li>
+</ul>
+</li>
+<li><a href='#PresenceState-PhoneSupportforPresenceStateviaSIPpresencenotifications'>Phone Support for Presence State via SIP presence notifications</a>
+<ul class='toc-indentation'>
+<li><a href='#PresenceState-DigiumPhones'>Digium Phones</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><h1 id="PresenceState-PresenceStates">Presence States</h1><ul><li><code>not_set</code>: No presence state has been set for this entity.</li><li><code>unavailable</code>: This entity is present but currently not available for communications.</li><li><code>available</code>: This entity is available for communication.</li><li><code>away</code>: This entity is not present and is unable to communicate.</li><li><code>xa</code>: This entity is not present and is not expected to return for a while.</li><li><code>chat</code>: This entity is available to communicate but would rather use instant messaging than speak.</li><li><code>dnd</code>: This entity does not wish to be disturbed.</li></ul><h1 id="PresenceState-SubtypeandMessage">Subtype and Message</h1><p>In addition to the basic presence states provided, presence also has the concept of a <strong>subtype</strong> and a <strong>message</strong>.</p><p>The subtype is a brief method of describing the nature of the state. For instance, a subtype for the <code>away</code> status might be &quot;at home&quot;.</p><p>The message is a longer explanation of the current presence state. Using the same <code>away</code> example from before, the message may be &quot;Sick with the flu. Out until the 18th&quot;.</p><h1 id="PresenceState-func_presencestateAndTheCustomPresenceProvider"><code>func_presencestate</code> And The <code>CustomPresence</code> Provider</h1><p>The only provider of presence state in Asterisk 11 is the <code>CustomPresence</code> provider. This provider is supplied by the <code>func_presencestate.so</code> module, which grants access to the <code>PRESENCE_STATE</code> dialplan function. The documentation for <code>PRESENCE_STATE</code> can be found <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Function_PRESENCE_STATE">here</a>.<code> CustomPresence</code> is device-agnostic within the core and can be a handy way to set and query presence from <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Function_PRESENCE_STATE">dialplan</a>, or APIs such as the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+ManagerAction_PresenceState">AMI</a>.</p><p>A simple use case for <code>CustomPresence</code> in dialplan is demonstrated below.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[default]
+exten =&gt; 2000,1,Answer()
+same =&gt; n,Set(CURRENT_PRESENCE=${PRESENCE_STATE(CustomPresence:Bob,value)})
+same =&gt; n,GotoIf($[${CURRENT_PRESENCE}=available]?set_unavailable:set_available)
+same =&gt; n(set_available),Set(PRESENCE_STATE(CustomPresence:Bob)=available,,)
+same =&gt; n,Goto(finished)
+same =&gt; n(set_unavailable),Set(PRESENCE_STATE(CustomPresence:Bob)=unavailable,,)
+same =&gt; n(finished),Playback(queue-thankyou)
+same =&gt; n,Hangup
+
+exten =&gt; 2001,1,GotoIf($[${PRESENCE_STATE(CustomPresence:Bob,value)}!=available]?voicemail)
+same =&gt; n,Dial(SIP/Bob)
+same =&gt; n(voicemail)VoiceMail(Bob@default)
+</pre>
+</div></div><p>With this dialplan, a user can dial <code>2000@default</code> to toggle Bob's presence between <code>available</code> and <code>unavailable</code>. When a user attempts to call Bob using <code>2001@default</code>, if Bob's presence is currently not <code>available</code> then the call will go directly to voicemail.</p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>One thing to keep in mind with the <code>PRESENCE_STATE</code> dialplan function is that, like with <code>DEVICE_STATE</code>, state may be queried from any presence provider, but <code>PRESENCE_STATE</code> is only capable of setting presence state for the <code>CustomPresence</code> presence state provider.</p>
+                    </div>
+    </div>
+<h1 id="PresenceState-ConfiguringPresenceSubscriptionwithHints">Configuring Presence Subscription with Hints</h1><p>As is mentioned in the phone support section, at the time of writing this will only work with a Digium phone.</p><p>Like with device state, presence state is associated to a dialplan extension with a hint. Presence state hints come after device state in the hint extension and are separated by a comma (<code>,</code>). As an example:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[default]
+exten =&gt; 2000,hint,SIP/2000,CustomPresence:2000
+exten =&gt; 2000,1,Dial(SIP/2000)
+same =&gt; n,Hangup()
+</pre>
+</div></div><p>Or alternatively, you could define the presence state provider without a device.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; 2000,hint,,CustomPresence:2000
+</pre>
+</div></div><p>The <strong>first</strong> example would allow for someone subscribing to the extension state of <code>2000@default</code> to be notified of device state changes for device <code>SIP/2000</code> as well as presence state changes for the presence provider <code>CustomPresence:2000</code>.</p><p>The <strong>second</strong> example would allow for the subscriber to receive notification of state changes for only the presence provider CustomPresence:2000.</p><p>The <code>CustomPresence</code> presence state provider will be discussed further on this page.</p><p>Also like with device state, there is an <a href="4817239.html">Asterisk Manager Interface</a> command for querying presence state. Documentation for the AMI <code>PresenceState</code> command can be found <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+ManagerAction_PresenceState">here</a>.</p><h3 id="PresenceState-ExamplePresenceNotification">Example Presence Notification</h3><p>When a SIP device is subscribed to a hint you have configured in Asterisk and that hint references a presence state provider, then upon change of that state Asterisk will generate a notification. That notification will take the form of a SIP NOTIFY including XML content. In the expanding panel below I've included an example of a presence notification sent to a Digium phone. This particular presence notification happened when we changed presence state for CustomPresence:6002 via the CLI command 'presencestate change'.</p>
+<div id="expander-912002246" class="expand-container">
+<div id="expander-control-912002246" class="expand-control">
+    <span class="expand-control-icon"><img style="vertical-align:middle;" class="expand-control-image" src="images/icons/grey_arrow_down.png"></span><span class="expand-control-text">Click here to see the NOTIFY example</span>
+</div>
+<div id="expander-content-912002246" class="expand-content"><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>myserver*CLI&gt; presencestate change CustomPresence:6002 UNAVAILABLE
+Changing 6002 to UNAVAILABLE
+set_destination: Parsing &lt;sip:6002@10.24.18.138:5060;ob&gt; for address/port to send to
+set_destination: set destination to 10.24.18.138:5060
+Reliably Transmitting (no NAT) to 10.24.18.138:5060:
+NOTIFY sip:6002@10.24.18.138:5060;ob SIP/2.0
+Via: SIP/2.0/UDP 10.24.18.124:5060;branch=z9hG4bK68008251;rport
+Max-Forwards: 70
+From: sip:6002@10.24.18.124;tag=as722c69ec
+To: &quot;Bob&quot; &lt;sip:6002@10.24.18.124&gt;;tag=4DpRZfRIlaKU9iQcaME2APx85TgFOEN7
+Contact: &lt;sip:6002@10.24.18.124:5060&gt;
+Call-ID: JVoQfeZe1cWTdPI5aTWkRpdqkjs8zmME
+CSeq: 104 NOTIFY
+User-Agent: Asterisk PBX SVN-branch-12-r413487
+Subscription-State: active
+Event: presence
+Content-Type: application/pidf+xml
+Content-Length: 602
+
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;ISO-8859-1&quot;?&gt;
+&lt;presence xmlns=&quot;urn:ietf:params:xml:ns:pidf&quot; 
+xmlns:pp=&quot;urn:ietf:params:xml:ns:pidf:person&quot;
+xmlns:es=&quot;urn:ietf:params:xml:ns:pidf:rpid:status:rpid-status&quot;
+xmlns:ep=&quot;urn:ietf:params:xml:ns:pidf:rpid:rpid-person&quot;
+entity=&quot;sip:6002@10.24.18.124&quot;&gt;
+&lt;pp:person&gt;&lt;status&gt;
+&lt;/status&gt;&lt;/pp:person&gt;
+&lt;note&gt;Ready&lt;/note&gt;
+&lt;tuple id=&quot;6002&quot;&gt;
+&lt;contact priority=&quot;1&quot;&gt;sip:6002@10.24.18.124&lt;/contact&gt;
+&lt;status&gt;&lt;basic&gt;open&lt;/basic&gt;&lt;/status&gt;
+&lt;/tuple&gt;
+&lt;tuple id=&quot;digium-presence&quot;&gt;
+&lt;status&gt;
+&lt;digium_presence type=&quot;unavailable&quot; subtype=&quot;&quot;&gt;&lt;/digium_presence&gt;
+&lt;/status&gt;
+&lt;/tuple&gt;
+&lt;/presence&gt;
+
+---
+  == Extension Changed 6002[from-internal] new state Idle for Notify User 6002 
+
+&lt;--- SIP read from UDP:10.24.18.138:5060 ---&gt;
+SIP/2.0 200 OK
+Via: SIP/2.0/UDP 10.24.18.124:5060;rport=5060;received=10.24.18.124;branch=z9hG4bK68008251
+Call-ID: JVoQfeZe1cWTdPI5aTWkRpdqkjs8zmME
+From: &lt;sip:6002@10.24.18.124&gt;;tag=as722c69ec
+To: &quot;Bob&quot; &lt;sip:6002@10.24.18.124&gt;;tag=4DpRZfRIlaKU9iQcaME2APx85TgFOEN7
+CSeq: 104 NOTIFY
+Contact: &quot;Bob&quot; &lt;sip:6002@10.24.18.138:5060;ob&gt;
+Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS
+Supported: replaces, 100rel, timer, norefersub
+Content-Length: 0
+
+&lt;-------------&gt;
+
+</pre>
+</div></div></div>
+</div>
+<h1 id="PresenceState-PhoneSupportforPresenceStateviaSIPpresencenotifications">Phone Support for Presence State via SIP presence notifications</h1><p>At the time of writing, only Digium phones have built-in support for interpreting Asterisk's Presence State notifications (as opposed to SIP presence notifications for extension/device state). The CustomPresence provider itself is device-agnostic and support for other devices could be added in. Or devices themselves (soft-phone or hardphone) could be modified to interpret the XML send out in the Presence State notification.</p><h2 id="PresenceState-DigiumPhones">Digium Phones</h2><p><a href="http://www.youtube.com/watch?v=yMuGMGl4Ww0" class="external-link" rel="nofollow">This Video</a> provides more insight on how presence can be set and viewed on Digium phones.</p><p>When using Digium phones with the <a href="http://downloads.digium.com/pub/telephony/res_digium_phone/" class="external-link" rel="nofollow">Digium Phone Module for Asterisk</a>, you can set hints in Asterisk so that when one Digium phone's presence is updated, other Digium phones can be notified of the presence change. The DPMA automatically creates provisions such that when a Digium Phone updates its presence, <code>CustomPresence:&lt;line name&gt;</code> is updated, where <code>&lt;line name&gt;</code> is the value set for the <code>line=</code> option in a <code>type=phone</code> category. Using the example dialplan from the Overview section, Digium phones that are subscribed to <code>2000@default</code> will automatically be updated about line 2000's presence whenever line 2000's presence changes.</p>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>Digium phones support only the available, away, dnd, xa, and chat states. The unavailable and not_set states are not supported.</p>
+                    </div>
+    </div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Directory and File Structure</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Directory and File Structure
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on May 02, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><p>The top level directories used by Asterisk can be configured in the <a href="Asterisk-Main-Configuration-File_4620296.html">asterisk.conf</a> configuration file.</p><p>Here we'll describe what each directory is used for, and what sub-directories Asterisk will place in each by default. Below each heading you can also see the correlating configuration line in <a href="Asterisk-Main-Configuration-File_4620296.html">asterisk.conf</a>.</p><h2 id="DirectoryandFileStructure-AsteriskConfigurationFiles">Asterisk Configuration Files</h2><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>astetcdir =&gt; /etc/asterisk</pre>
+</div></div><p>This location is used to store and read Asterisk <a href="Asterisk-Configuration-Files_4817443.html">configuration files</a>. That is generally files with a .conf extension, but other configuration types as well, for example <a href="Lua-Dialplan-Configuration_16548006.html">.lua</a> and <a href="4620445.html">.ael</a>.</p><h2 id="DirectoryandFileStructure-AsteriskModules">Asterisk Modules</h2><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>astmoddir =&gt; /usr/lib/asterisk/modules</pre>
+</div></div><p><a href="Types-of-Asterisk-Modules_4817485.html">Loadable modules</a> in Shared Object format (.so) installed by Asterisk or the user should go here.</p><h2 id="DirectoryandFileStructure-VariousLibraries">Various Libraries</h2><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>astvarlibdir =&gt; /var/lib/asterisk</pre>
+</div></div><p>Additional library elements and files containing data used in runtime are put here.</p></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302899286 {padding: 0px;}
+div.rbtoc1582302899286 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302899286 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302899286'>
+<ul class='toc-indentation'>
+<li><a href='#DirectoryandFileStructure-AsteriskConfigurationFiles'>Asterisk Configuration Files</a></li>
+<li><a href='#DirectoryandFileStructure-AsteriskModules'>Asterisk Modules</a></li>
+<li><a href='#DirectoryandFileStructure-VariousLibraries'>Various Libraries</a></li>
+<li><a href='#DirectoryandFileStructure-DatabaseDirectory'>Database Directory</a></li>
+<li><a href='#DirectoryandFileStructure-EncryptionKeys'>Encryption Keys</a></li>
+<li><a href='#DirectoryandFileStructure-SystemDataDirectory'>System Data Directory</a></li>
+<li><a href='#DirectoryandFileStructure-AGI(AsteriskGatewayInterface)Directory'>AGI(Asterisk Gateway Interface) Directory</a></li>
+<li><a href='#DirectoryandFileStructure-SpoolDirectories'>Spool Directories</a></li>
+<li><a href='#DirectoryandFileStructure-RunningProcessDirectory'>Running Process Directory</a></li>
+<li><a href='#DirectoryandFileStructure-LoggingOutput'>Logging Output</a></li>
+<li><a href='#DirectoryandFileStructure-SystemBinaryDirectory'>System Binary Directory</a></li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><p> </p><h2 id="DirectoryandFileStructure-DatabaseDirectory">Database Directory</h2><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>astdbdir =&gt; /var/lib/asterisk</pre>
+</div></div><p>This location is used to store the data file for <a href="Asterisk-Internal-Database_27200271.html">Asterisk's internal database</a>. In Asterisk versions using the SQLite3 database, the file will be named astdb.sqlite3.</p><h2 id="DirectoryandFileStructure-EncryptionKeys">Encryption Keys</h2><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>astkeydir =&gt; /var/lib/asterisk</pre>
+</div></div><p>When configuring key-based encryption, Asterisk will look in the <strong>keys</strong> subdirectory of this location for the necessary keys.</p><h2 id="DirectoryandFileStructure-SystemDataDirectory">System Data Directory</h2><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>astdatadir =&gt; /var/lib/asterisk</pre>
+</div></div><p>By default, Asterisk sounds are stored and read from the <strong>sounds</strong> subdirectory at this location.</p><h2 id="DirectoryandFileStructure-AGI(AsteriskGatewayInterface)Directory">AGI(Asterisk Gateway Interface) Directory</h2><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>astagidir =&gt; /var/lib/asterisk/agi-bin</pre>
+</div></div><p>When using various AGI <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Application_AGI">applications</a>, Asterisk looks here for the AGI scripts by default.</p><h2 id="DirectoryandFileStructure-SpoolDirectories">Spool Directories</h2><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>astspooldir =&gt; /var/spool/asterisk</pre>
+</div></div><p>This directory is used for storing spool files from various core and module-provided components of Asterisk.</p><p>Most of them use their own subdirectories, such as the following:</p><ul><li>dictate</li><li>meetme</li><li>monitor</li><li>outgoing</li><li>recording</li><li>system</li><li>tmp</li><li>voicemail</li></ul><h2 id="DirectoryandFileStructure-RunningProcessDirectory">Running Process Directory</h2><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>astrundir =&gt; /var/run/asterisk</pre>
+</div></div><p>When Asterisk is <a href="Running-Asterisk_27200195.html">running</a>, you'll see two files here, <strong>asterisk.ctl</strong> and <strong>asterisk.pid</strong>. That is the control socket and the PID(Process ID) files for Asterisk.</p><h2 id="DirectoryandFileStructure-LoggingOutput">Logging Output</h2><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>astlogdir =&gt; /var/log/asterisk</pre>
+</div></div><p>When Asterisk is configured to <a href="Logging_27200200.html">provide log file</a> output, it will be stored in this directory.</p><h2 id="DirectoryandFileStructure-SystemBinaryDirectory">System Binary Directory</h2><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>astsbindir =&gt; /usr/sbin</pre>
+</div></div><p>By default, Asterisk looks in this directory for any system binaries that it uses, if you move the Asterisk binary itself or any others that it uses, you'll need to change this location.<br /><br /></p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

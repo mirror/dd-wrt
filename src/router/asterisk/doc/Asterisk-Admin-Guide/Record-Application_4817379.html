@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Record Application</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Basic-PBX-Functionality_4817469.html">Basic PBX Functionality</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Auto-attendant-and-IVR-Menus_4817391.html">Auto-attendant and IVR Menus</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Record Application
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Malcolm Davenport</span> on May 10, 2011
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>For creating your own auto-attendant or IVR menus, you're probably going to want to record your own custom prompts. An easy way to do this is with the <strong>Record()</strong> application. The <strong>Record()</strong> application plays a beep, and then begins recording audio until you press the hash key (<strong>#</strong>) on your keypad. It then saves the audio to the filename specified as the first parameter to the application and continues on to the next priority in the extension. If you hang up the call before pressing the hash key, the audio will not be recorded. For example, the following extension records a sound prompt called <strong>custom-menu</strong> in the <strong>gsm</strong> format in the <strong>en/</strong> sub-directory, and then plays it back to you.</p>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">exten =&gt; 6597,1,Answer(500)
+   same =&gt; n,Record(en/custom-menu.gsm)
+   same =&gt; n,Wait(1)
+   same =&gt; n,Playback(custom-menu)
+   same =&gt; n,Hangup()</pre>
+</div></div>
+    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Recording Formats</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>When specifiying a file extension when using the <strong>Record()</strong> application, you must choose a file extension which represents one of the supported file formats in Asterisk. For the complete list of file formats supported in your Asterisk installation, type <strong>core show file formats</strong> at the Asterisk command-line interface.</p>
+                    </div>
+    </div>
+
+<p>You've now learned the basics of how to create a simple auto-attendant menu. Now let's build a more practical menu for callers to be able to reach Alice or Bob or the dial-by-name directory.</p>
+
+<h4 id="RecordApplication-Procedure216.1.BuildingaPracticalAuto-AttendantMenu"> Procedure 216.1. Building a Practical Auto-Attendant Menu</h4>
+
+<ol>
+	<li>Add an extension 6599 to the [docs:users] context which sends the calls to a new context we'll build called [docs:day-menu]. Your extension should look something like:
+	<ul>
+		<li><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">exten=&gt;6599,1,Goto(day-menu,s,1)</pre>
+</div></div></li>
+	</ul>
+	</li>
+	<li>Add a new context called <strong>[docs:day-menu]</strong>, with the following contents:
+	<ul>
+		<li><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">[day-menu]
+exten =&gt; s,1,Answer(500)
+same =&gt; n(loop),Background(custom-menu)
+same =&gt; n,WaitExten()
+
+exten =&gt; 1,1,Goto(users,6001,1)
+
+exten =&gt; 2,1,Goto(users,6002,1)
+
+exten =&gt; 9,1,Directory(vm-demo,users,fe)
+exten =&gt; *,1,VoiceMailMain(@vm-demo)
+
+exten =&gt; i,1,Playback(option-is-invalid) 
+same =&gt; n,Goto(s,loop)
+
+exten =&gt; t,1,Playback(are-you-still-there)
+same =&gt; n,Goto(s,loop)
+</pre>
+</div></div></li>
+	</ul>
+	</li>
+</ol>
+
+
+<ol>
+	<li>Dial extension <strong>6597</strong> to record your auto-attendant sound prompt. Your sound prompt should say something like &quot;Thank you for calling! Press one for Alice, press two for Bob, or press 9 for a company directory&quot;. Press the hash key (<strong>#</strong>) on your keypad when you're finished recording, and Asterisk will play it back to you. If you don't like it, simply dial extension <strong>6597</strong> again to re-record it.</li>
+	<li>Dial extension <strong>6599</strong> to test your auto-attendant menu.</li>
+</ol>
+
+
+<p>In just a few lines of code, you've created your own auto-attendant menu.  Feel free to experiment with your auto-attendant menu before moving on to the next section.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Configuration_stasis</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Module-Configuration_42010715.html">Asterisk 17 Module Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Configuration_stasis
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    
+
+<p>This configuration documentation is for functionality provided by <code>stasis</code>.</p>
+
+<h2 id="Asterisk17Configuration_stasis-stasis.conf">stasis.conf</h2>
+
+<h3 id="Asterisk17Configuration_stasis-threadpool">threadpool</h3>
+
+<p>Settings that configure the threadpool Stasis uses to deliver some messages.</p>
+
+<h4 id="Asterisk17Configuration_stasis-ConfigurationOptionReference">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>initial_size</code> </p></td>
+<td class="confluenceTd"><p> <code>Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>5</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Initial number of threads in the message bus threadpool. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>idle_timeout_sec</code> </p></td>
+<td class="confluenceTd"><p> <code>Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>20</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Number of seconds before an idle thread is disposed of. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>max_size</code> </p></td>
+<td class="confluenceTd"><p> <code>Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>50</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Maximum number of threads in the threadpool. </p></td>
+</tr>
+</tbody></table></div>
+
+<h3 id="Asterisk17Configuration_stasis-declined_message_types">declined_message_types</h3>
+
+<p>Stasis message types for which to decline creation.</p>
+
+<h4 id="Asterisk17Configuration_stasis-ConfigurationOptionReference.1">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_stasis-declined_message_types_decline"><code>decline</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The message type to decline. </p></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="Asterisk17Configuration_stasis-ConfigurationOptionDescriptions">Configuration Option Descriptions</h4>
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_stasis-declined_message_types_decline"></span></p>
+<h5 id="Asterisk17Configuration_stasis-decline">decline</h5>
+
+<p>This configuration option defines the name of the Stasis message type that Asterisk is forbidden from creating and can be specified as many times as necessary to achieve the desired result.</p>
+
+<ul>
+	<li><code>stasis_app_recording_snapshot_type</code></li>
+	<li><code>stasis_app_playback_snapshot_type</code></li>
+	<li><code>stasis_test_message_type</code></li>
+	<li><code>confbridge_start_type</code></li>
+	<li><code>confbridge_end_type</code></li>
+	<li><code>confbridge_join_type</code></li>
+	<li><code>confbridge_leave_type</code></li>
+	<li><code>confbridge_start_record_type</code></li>
+	<li><code>confbridge_stop_record_type</code></li>
+	<li><code>confbridge_mute_type</code></li>
+	<li><code>confbridge_unmute_type</code></li>
+	<li><code>confbridge_talking_type</code></li>
+	<li><code>cel_generic_type</code></li>
+	<li><code>ast_bridge_snapshot_type</code></li>
+	<li><code>ast_bridge_merge_message_type</code></li>
+	<li><code>ast_channel_entered_bridge_type</code></li>
+	<li><code>ast_channel_left_bridge_type</code></li>
+	<li><code>ast_blind_transfer_type</code></li>
+	<li><code>ast_attended_transfer_type</code></li>
+	<li><code>ast_endpoint_snapshot_type</code></li>
+	<li><code>ast_endpoint_state_type</code></li>
+	<li><code>ast_device_state_message_type</code></li>
+	<li><code>ast_test_suite_message_type</code></li>
+	<li><code>ast_mwi_state_type</code></li>
+	<li><code>ast_mwi_vm_app_type</code></li>
+	<li><code>ast_format_register_type</code></li>
+	<li><code>ast_format_unregister_type</code></li>
+	<li><code>ast_manager_get_generic_type</code></li>
+	<li><code>ast_parked_call_type</code></li>
+	<li><code>ast_channel_snapshot_type</code></li>
+	<li><code>ast_channel_dial_type</code></li>
+	<li><code>ast_channel_varset_type</code></li>
+	<li><code>ast_channel_hangup_request_type</code></li>
+	<li><code>ast_channel_dtmf_begin_type</code></li>
+	<li><code>ast_channel_dtmf_end_type</code></li>
+	<li><code>ast_channel_hold_type</code></li>
+	<li><code>ast_channel_unhold_type</code></li>
+	<li><code>ast_channel_chanspy_start_type</code></li>
+	<li><code>ast_channel_chanspy_stop_type</code></li>
+	<li><code>ast_channel_fax_type</code></li>
+	<li><code>ast_channel_hangup_handler_type</code></li>
+	<li><code>ast_channel_moh_start_type</code></li>
+	<li><code>ast_channel_moh_stop_type</code></li>
+	<li><code>ast_channel_monitor_start_type</code></li>
+	<li><code>ast_channel_monitor_stop_type</code></li>
+	<li><code>ast_channel_agent_login_type</code></li>
+	<li><code>ast_channel_agent_logoff_type</code></li>
+	<li><code>ast_channel_talking_start</code></li>
+	<li><code>ast_channel_talking_stop</code></li>
+	<li><code>ast_security_event_type</code></li>
+	<li><code>ast_named_acl_change_type</code></li>
+	<li><code>ast_local_bridge_type</code></li>
+	<li><code>ast_local_optimization_begin_type</code></li>
+	<li><code>ast_local_optimization_end_type</code></li>
+	<li><code>stasis_subscription_change_type</code></li>
+	<li><code>ast_multi_user_event_type</code></li>
+	<li><code>stasis_cache_clear_type</code></li>
+	<li><code>stasis_cache_update_type</code></li>
+	<li><code>ast_network_change_type</code></li>
+	<li><code>ast_system_registry_type</code></li>
+	<li><code>ast_cc_available_type</code></li>
+	<li><code>ast_cc_offertimerstart_type</code></li>
+	<li><code>ast_cc_requested_type</code></li>
+	<li><code>ast_cc_requestacknowledged_type</code></li>
+	<li><code>ast_cc_callerstopmonitoring_type</code></li>
+	<li><code>ast_cc_callerstartmonitoring_type</code></li>
+	<li><code>ast_cc_callerrecalling_type</code></li>
+	<li><code>ast_cc_recallcomplete_type</code></li>
+	<li><code>ast_cc_failure_type</code></li>
+	<li><code>ast_cc_monitorfailed_type</code></li>
+	<li><code>ast_presence_state_message_type</code></li>
+	<li><code>ast_rtp_rtcp_sent_type</code></li>
+	<li><code>ast_rtp_rtcp_received_type</code></li>
+	<li><code>ast_call_pickup_type</code></li>
+	<li><code>aoc_s_type</code></li>
+	<li><code>aoc_d_type</code></li>
+	<li><code>aoc_e_type</code></li>
+	<li><code>dahdichannel_type</code></li>
+	<li><code>mcid_type</code></li>
+	<li><code>session_timeout_type</code></li>
+	<li><code>cdr_read_message_type</code></li>
+	<li><code>cdr_write_message_type</code></li>
+	<li><code>cdr_prop_write_message_type</code></li>
+	<li><code>corosync_ping_message_type</code></li>
+	<li><code>agi_exec_start_type</code></li>
+	<li><code>agi_exec_end_type</code></li>
+	<li><code>agi_async_start_type</code></li>
+	<li><code>agi_async_exec_type</code></li>
+	<li><code>agi_async_end_type</code></li>
+	<li><code>queue_caller_join_type</code></li>
+	<li><code>queue_caller_leave_type</code></li>
+	<li><code>queue_caller_abandon_type</code></li>
+	<li><code>queue_member_status_type</code></li>
+	<li><code>queue_member_added_type</code></li>
+	<li><code>queue_member_removed_type</code></li>
+	<li><code>queue_member_pause_type</code></li>
+	<li><code>queue_member_penalty_type</code></li>
+	<li><code>queue_member_ringinuse_type</code></li>
+	<li><code>queue_agent_called_type</code></li>
+	<li><code>queue_agent_connect_type</code></li>
+	<li><code>queue_agent_complete_type</code></li>
+	<li><code>queue_agent_dump_type</code></li>
+	<li><code>queue_agent_ringnoanswer_type</code></li>
+	<li><code>meetme_join_type</code></li>
+	<li><code>meetme_leave_type</code></li>
+	<li><code>meetme_end_type</code></li>
+	<li><code>meetme_mute_type</code></li>
+	<li><code>meetme_talking_type</code></li>
+	<li><code>meetme_talk_request_type</code></li>
+	<li><code>appcdr_message_type</code></li>
+	<li><code>forkcdr_message_type</code></li>
+	<li><code>cdr_sync_message_type</code></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Configuration_stasis-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

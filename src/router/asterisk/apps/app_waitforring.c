@@ -21,7 +21,7 @@
  * \brief Wait for Ring Application
  *
  * \author Mark Spencer <markster@digium.com>
- * 
+ *
  * \ingroup applications
  */
 
@@ -30,8 +30,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/file.h"
 #include "asterisk/channel.h"
@@ -141,4 +139,3 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO_STANDARD_EXTENDED(ASTERISK_GPL_KEY, "Waits until first ring after time");
-

@@ -173,8 +173,6 @@
 #include "asterisk/utils.h"
 #include "asterisk/event.h"
 
-/*! @{ */
-
 /*!
  * \brief Metadata about a \ref stasis_message.
  * \since 12
@@ -294,6 +292,30 @@ enum stasis_message_type_result {
 };
 
 /*!
+ * \brief Stasis subscription message filters
+ */
+enum stasis_subscription_message_filter {
+	STASIS_SUBSCRIPTION_FILTER_NONE = 0,    /*!< No filter is in place, all messages are raised */
+	STASIS_SUBSCRIPTION_FILTER_FORCED_NONE, /*!< No filter is in place or can be set, all messages are raised */
+	STASIS_SUBSCRIPTION_FILTER_SELECTIVE,   /*!< Only messages of allowed message types are raised */
+};
+
+/*!
+ * \brief Stasis subscription formatter filters
+ *
+ * There should be an entry here for each member of \ref stasis_message_vtable
+ *
+ * \since 13.25.0
+ * \since 16.2.0
+ */
+enum stasis_subscription_message_formatters {
+	STASIS_SUBSCRIPTION_FORMATTER_NONE =  0,
+	STASIS_SUBSCRIPTION_FORMATTER_JSON =  1 << 0,  /*!< Allow messages with a to_json formatter */
+	STASIS_SUBSCRIPTION_FORMATTER_AMI =   1 << 1,  /*!< Allow messages with a to_ami formatter */
+	STASIS_SUBSCRIPTION_FORMATTER_EVENT = 1 << 2,  /*!< Allow messages with a to_event formatter */
+};
+
+/*!
  * \brief Create a new message type.
  *
  * \ref stasis_message_type is an AO2 object, so ao2_cleanup() when you're done
@@ -319,6 +341,22 @@ enum stasis_message_type_result stasis_message_type_create(const char *name,
  * \since 12
  */
 const char *stasis_message_type_name(const struct stasis_message_type *type);
+
+/*!
+ * \brief Gets the hash of a given message type
+ * \param type The type to get the hash of.
+ * \return The hash
+ * \since 13.24.0
+ */
+unsigned int stasis_message_type_hash(const struct stasis_message_type *type);
+
+/*!
+ * \brief Gets the id of a given message type
+ * \param type The type to get the id of.
+ * \return The id
+ * \since 17.0.0
+ */
+int stasis_message_type_id(const struct stasis_message_type *type);
 
 /*!
  * \brief Check whether a message type is declined
@@ -459,10 +497,6 @@ int stasis_message_can_be_ami(struct stasis_message *msg);
  */
 struct ast_event *stasis_message_to_event(struct stasis_message *msg);
 
-/*! @} */
-
-/*! @{ */
-
 /*!
  * \brief A topic to which messages may be posted, and subscribers, well, subscribe
  * \since 12
@@ -475,17 +509,73 @@ struct stasis_topic;
  * \return New topic instance.
  * \return \c NULL on error.
  * \since 12
+ *
+ * \note There is no explicit ability to unsubscribe all subscribers
+ * from a topic and destroy it. As a result the topic can persist until
+ * the last subscriber unsubscribes itself even if there is no
+ * publisher.
+ *
+ * \note Topic names should be in the form of <subsystem>:<functionality>[/<object>]
  */
 struct stasis_topic *stasis_topic_create(const char *name);
+
+/*!
+ * \brief Create a new topic with given detail.
+ * \param name Name of the new topic.
+ * \param detail Detail description of the new topic. i.e. "Queue main topic for subscribing every queue event"
+ * \return New topic instance.
+ * \return \c NULL on error.
+ *
+ * \note There is no explicit ability to unsubscribe all subscribers
+ * from a topic and destroy it. As a result the topic can persist until
+ * the last subscriber unsubscribes itself even if there is no
+ * publisher.
+ */
+struct stasis_topic *stasis_topic_create_with_detail(
+		const char *name, const char *detail);
+
+/*!
+ * \brief Get a topic of the given name.
+ * \param name Topic's name.
+ * \return Name of the topic.
+ * \return \c NULL on error or not exist.
+ *
+ * \note This SHOULD NOT be used in normal operation for publishing messages.
+ */
+struct stasis_topic *stasis_topic_get(const char *name);
+
+/*!
+ * \brief Return the uniqueid of a topic.
+ * \param topic Topic.
+ * \return Uniqueid of the topic.
+ * \return \c NULL if topic is \c NULL.
+ */
+const char *stasis_topic_uniqueid(const struct stasis_topic *topic);
 
 /*!
  * \brief Return the name of a topic.
  * \param topic Topic.
  * \return Name of the topic.
  * \return \c NULL if topic is \c NULL.
- * \since 12
  */
 const char *stasis_topic_name(const struct stasis_topic *topic);
+
+/*!
+ * \brief Return the detail of a topic.
+ * \param topic Topic.
+ * \return Detail of the topic.
+ * \return \c NULL if topic is \c NULL.
+ * \since 12
+ */
+const char *stasis_topic_detail(const struct stasis_topic *topic);
+
+/*!
+ * \brief Return the number of subscribers of a topic.
+ * \param topic Topic.
+ * \return Number of subscribers of the topic.
+ * \since 17.0.0
+ */
+size_t stasis_topic_subscribers(const struct stasis_topic *topic);
 
 /*!
  * \brief Publish a message to a topic's subscribers.
@@ -515,10 +605,6 @@ void stasis_publish(struct stasis_topic *topic, struct stasis_message *message);
  * \since 12.1.0
  */
 void stasis_publish_sync(struct stasis_subscription *sub, struct stasis_message *message);
-
-/*! @} */
-
-/*! @{ */
 
 /*!
  * \brief Callback function type for Stasis subscriptions.
@@ -556,9 +642,14 @@ void stasis_subscription_cb_noop(void *data, struct stasis_subscription *sub, st
  * \return New \ref stasis_subscription object.
  * \return \c NULL on error.
  * \since 12
+ *
+ * \note This callback will receive a callback with a message indicating it
+ * has been subscribed. This occurs immediately before accepted message
+ * types can be set and the callback must expect to receive it.
  */
-struct stasis_subscription *stasis_subscribe(struct stasis_topic *topic,
-	stasis_subscription_cb callback, void *data);
+struct stasis_subscription *__stasis_subscribe(struct stasis_topic *topic,
+	stasis_subscription_cb callback, void *data, const char *file, int lineno, const char *func);
+#define stasis_subscribe(topic, callback, data) __stasis_subscribe(topic, callback, data, __FILE__, __LINE__, __PRETTY_FUNCTION__)
 
 /*!
  * \brief Create a subscription whose callbacks occur on a thread pool
@@ -581,9 +672,92 @@ struct stasis_subscription *stasis_subscribe(struct stasis_topic *topic,
  * \return New \ref stasis_subscription object.
  * \return \c NULL on error.
  * \since 12.8.0
+ *
+ * \note This callback will receive a callback with a message indicating it
+ * has been subscribed. This occurs immediately before accepted message
+ * types can be set and the callback must expect to receive it.
  */
-struct stasis_subscription *stasis_subscribe_pool(struct stasis_topic *topic,
-	stasis_subscription_cb callback, void *data);
+struct stasis_subscription *__stasis_subscribe_pool(struct stasis_topic *topic,
+	stasis_subscription_cb callback, void *data, const char *file, int lineno, const char *func);
+#define stasis_subscribe_pool(topic, callback, data) __stasis_subscribe_pool(topic, callback, data, __FILE__, __LINE__, __PRETTY_FUNCTION__)
+
+/*!
+ * \brief Indicate to a subscription that we are interested in a message type.
+ *
+ * This will cause the subscription to allow the given message type to be
+ * raised to our subscription callback. This enables internal filtering in
+ * the stasis message bus to reduce messages.
+ *
+ * \param subscription Subscription to add message type to.
+ * \param type The message type we wish to receive.
+ * \retval 0 on success
+ * \retval -1 failure
+ *
+ * \since 17.0.0
+ *
+ * \note If you are wanting to use stasis_final_message you will need to accept
+ * \ref stasis_subscription_change_type as a message type.
+ *
+ * \note Until the subscription is set to selective filtering it is possible for it
+ * to receive messages of message types that would not normally be accepted.
+ */
+int stasis_subscription_accept_message_type(struct stasis_subscription *subscription,
+	const struct stasis_message_type *type);
+
+/*!
+ * \brief Indicate to a subscription that we are not interested in a message type.
+ *
+ * \param subscription Subscription to remove message type from.
+ * \param type The message type we don't wish to receive.
+ * \retval 0 on success
+ * \retval -1 failure
+ *
+ * \since 17.0.0
+ */
+int stasis_subscription_decline_message_type(struct stasis_subscription *subscription,
+	const struct stasis_message_type *type);
+
+/*!
+ * \brief Set the message type filtering level on a subscription
+ *
+ * This will cause the subscription to filter messages according to the
+ * provided filter level. For example if selective is used then only
+ * messages matching those provided to \ref stasis_subscription_accept_message_type
+ * will be raised to the subscription callback.
+ *
+ * \param subscription Subscription that should receive all messages.
+ * \param filter What filter to use
+ * \retval 0 on success
+ * \retval -1 failure
+ *
+ * \since 17.0.0
+ */
+int stasis_subscription_set_filter(struct stasis_subscription *subscription,
+	enum stasis_subscription_message_filter filter);
+
+/*!
+ * \brief Indicate to a subscription that we are interested in messages with one or more formatters.
+ *
+ * \param subscription Subscription to alter.
+ * \param formatters A bitmap of \ref stasis_subscription_message_formatters we wish to receive.
+ *
+ * \since 13.25.0
+ * \since 16.2.0
+ */
+void stasis_subscription_accept_formatters(struct stasis_subscription *subscription,
+	enum stasis_subscription_message_formatters formatters);
+
+/*!
+ * \brief Get a bitmap of available formatters for a message type
+ *
+ * \param message_type Message type
+ * \return A bitmap of \ref stasis_subscription_message_formatters
+ *
+ * \since 13.25.0
+ * \since 16.2.0
+ */
+enum stasis_subscription_message_formatters stasis_message_type_available_formatters(
+	const struct stasis_message_type *message_type);
 
 /*!
  * \brief Cancel a subscription.
@@ -716,11 +890,9 @@ int stasis_subscription_final_message(struct stasis_subscription *sub, struct st
  * \since 12
  */
 struct stasis_subscription_change {
-	AST_DECLARE_STRING_FIELDS(
-		AST_STRING_FIELD(uniqueid);	/*!< The unique ID associated with this subscription */
-		AST_STRING_FIELD(description);	/*!< The description of the change to the subscription associated with the uniqueid */
-	);
-	struct stasis_topic *topic;		/*!< The topic the subscription is/was subscribing to */
+	struct stasis_topic *topic; /*!< The topic the subscription is/was subscribing to */
+	char *uniqueid;             /*!< The unique ID associated with this subscription */
+	char description[0];        /*!< The description of the change to the subscription associated with the uniqueid */
 };
 
 /*!
@@ -731,8 +903,6 @@ struct stasis_subscription_change {
 struct stasis_message_type *stasis_subscription_change_type(void);
 
 /*! @} */
-
-/*! @{ */
 
 /*!
  * \brief Pool for topic aggregation
@@ -756,7 +926,28 @@ struct stasis_topic_pool *stasis_topic_pool_create(struct stasis_topic *pooled_t
  */
 struct stasis_topic *stasis_topic_pool_get_topic(struct stasis_topic_pool *pool, const char *topic_name);
 
-/*! @} */
+/*!
+ * \brief Delete a topic from the topic pool
+ *
+ * \param pool Pool from which to delete the topic
+ * \param topic_name Name of the topic to delete in the form of
+ *                   <pool_topic_name>/<topic_name> or just <topic_name>
+ *
+ * \since 13.24
+ * \since 15.6
+ * \since 16.1
+ */
+void stasis_topic_pool_delete_topic(struct stasis_topic_pool *pool, const char *topic_name);
+
+/*!
+ * \brief Check if a topic exists in a pool
+ * \param pool Pool to check
+ * \param topic_name Name of the topic to check
+ * \retval 1 exists
+ * \retval 0 does not exist
+ * \since 13.23.0
+ */
+int stasis_topic_pool_topic_exists(const struct stasis_topic_pool *pool, const char *topic_name);
 
 /*! \addtogroup StasisTopicsAndMessages
  * @{
@@ -789,8 +980,6 @@ struct stasis_cache_update {
 struct stasis_message_type *stasis_cache_clear_type(void);
 
 /*! @} */
-
-/*! @{ */
 
 /*!
  * \brief A message cache, for use with \ref stasis_caching_topic.
@@ -1018,6 +1207,41 @@ struct stasis_topic *stasis_caching_get_topic(
 	struct stasis_caching_topic *caching_topic);
 
 /*!
+ * \brief Indicate to a caching topic that we are interested in a message type.
+ *
+ * This will cause the caching topic to receive messages of the given message
+ * type. This enables internal filtering in the stasis message bus to reduce
+ * messages.
+ *
+ * \param caching_topic The caching topic.
+ * \param type The message type we wish to receive.
+ * \retval 0 on success
+ * \retval -1 failure
+ *
+ * \since 17.0.0
+ */
+int stasis_caching_accept_message_type(struct stasis_caching_topic *caching_topic,
+	struct stasis_message_type *type);
+
+/*!
+ * \brief Set the message type filtering level on a cache
+ *
+ * This will cause the underlying subscription to filter messages according to the
+ * provided filter level. For example if selective is used then only
+ * messages matching those provided to \ref stasis_subscription_accept_message_type
+ * will be raised to the subscription callback.
+ *
+ * \param caching_topic The caching topic.
+ * \param filter What filter to use
+ * \retval 0 on success
+ * \retval -1 failure
+ *
+ * \since 17.0.0
+ */
+int stasis_caching_set_filter(struct stasis_caching_topic *caching_topic,
+	enum stasis_subscription_message_filter filter);
+
+/*!
  * \brief A message which instructs the caching topic to remove an entry from
  * its cache.
  *
@@ -1123,6 +1347,10 @@ struct ao2_container *stasis_cache_dump_by_eid(struct stasis_cache *cache, struc
  */
 struct ao2_container *stasis_cache_dump_all(struct stasis_cache *cache, struct stasis_message_type *type);
 
+/*! \addtogroup StasisTopicsAndMessages
+ * @{
+ */
+
 /*!
  * \brief Object type code for multi user object snapshots
  */
@@ -1195,8 +1423,6 @@ void ast_multi_object_blob_single_channel_publish(struct ast_channel *chan, stru
 
 
 /*! @} */
-
-/*! @{ */
 
 /*!
  * \internal
@@ -1300,10 +1526,6 @@ void stasis_log_bad_type_access(const char *name);
 		_priv_ ## name = NULL;		\
 	})
 
-/*! @} */
-
-/*! @{ */
-
 /*!
  * \brief Initialize the Stasis subsystem.
  * \return 0 on success.
@@ -1311,10 +1533,6 @@ void stasis_log_bad_type_access(const char *name);
  * \since 12
  */
 int stasis_init(void);
-
-/*! @} */
-
-/*! @{ */
 
 /*!
  * \internal
@@ -1334,12 +1552,10 @@ int stasis_cache_init(void);
  */
 int stasis_config_init(void);
 
-/*! @} */
-
 /*!
  * \defgroup StasisTopicsAndMessages Stasis topics, and their messages.
  *
- * This group contains the topics, messages and corresponding message types
+ * \brief This group contains the topics, messages and corresponding message types
  * found within Asterisk.
  */
 

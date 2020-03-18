@@ -1,3 +1,29 @@
+/*
+ * Asterisk -- An open source telephony toolkit.
+ *
+ * Copyright (C) 2007, Russell Bryant
+ *
+ * Russell Bryant <russell@digium.com>
+ *
+ * See http://www.asterisk.org for more information about
+ * the Asterisk project. Please do not directly contact
+ * any of the maintainers of this project for assistance;
+ * the project provides a web site, mailing lists and IRC
+ * channels for your use.
+ *
+ * This program is free software, distributed under the terms of
+ * the GNU General Public License Version 2. See the LICENSE file
+ * at the top of the source tree.
+ */
+
+/*
+ * \file
+ *
+ * \author Russell Bryant <russell@digium.com>
+ *
+ * \brief GTK 2.x frontend for selection maintenance
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -208,7 +234,7 @@ static GtkWidget *get_menubar_menu(GtkWidget *window)
 
 	/* This function generates the menu items. Pass the item factory,
 	   the number of items in the array, the array itself, and any
-	   callback data for the the menu items. */
+	   callback data for the menu items. */
 	gtk_item_factory_create_items(item_factory, nmenu_items, menu_items, NULL);
 
 	/* Attach the new accelerator group to the window. */
@@ -232,13 +258,13 @@ int run_menu(void)
 	GtkWidget *menubar;
 
 	gtk_init(&argc, &argv);
-   
+
    	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_widget_set_size_request(window, 640, 480);
 	gtk_window_set_title(GTK_WINDOW(window), "GMenuselect");
 
 	main_vbox = gtk_vbox_new(FALSE, 1);
-	gtk_container_set_border_width(GTK_CONTAINER(main_vbox), 1); 
+	gtk_container_set_border_width(GTK_CONTAINER(main_vbox), 1);
 	gtk_container_add(GTK_CONTAINER(window), main_vbox);
 
 	menubar = get_menubar_menu(window);
@@ -347,7 +373,7 @@ int run_menu(void)
 	column = gtk_tree_view_column_new_with_attributes("Conflicts With",
 				renderer, "text", COLUMN_CNFS, NULL);
 	gtk_tree_view_append_column(GTK_TREE_VIEW(tree), column);
-	
+
 	renderer = gtk_cell_renderer_text_new();
 	column = gtk_tree_view_column_new_with_attributes("Description",
 				renderer, "text", COLUMN_DESC, NULL);
@@ -360,7 +386,7 @@ int run_menu(void)
 	gtk_box_pack_end(GTK_BOX(main_vbox), s_window, TRUE, TRUE, 0);
 
 	gtk_widget_show_all(window);
-   
+
 	gtk_main();
 
 	return main_res;

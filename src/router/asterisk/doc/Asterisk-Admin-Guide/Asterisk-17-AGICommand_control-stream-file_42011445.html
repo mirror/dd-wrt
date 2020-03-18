@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 AGICommand_control stream file</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-AGI-Commands_42010703.html">Asterisk 17 AGI Commands</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 AGICommand_control stream file
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17AGICommand_controlstreamfile-CONTROLSTREAMFILE">CONTROL STREAM FILE</h1>
+
+<h3 id="Asterisk17AGICommand_controlstreamfile-Synopsis">Synopsis</h3>
+
+<p>Sends audio file on channel and allows the listener to control the stream.</p>
+
+<h3 id="Asterisk17AGICommand_controlstreamfile-Description">Description</h3>
+
+<p>Send the given file, allowing playback to be controlled by the given digits, if any. Use double quotes for the digits if you wish none to be permitted. If offsetms is provided then the audio will seek to offsetms before play starts. Returns <code>0</code> if playback completes without a digit being pressed, or the ASCII numerical value of the digit if one was pressed, or <code>-1</code> on error or if the channel was disconnected. Returns the position where playback was terminated as endpos.</p>
+
+<p>It sets the following channel variables upon completion:</p>
+
+<ul>
+	<li><code>CPLAYBACKSTATUS</code> - Contains the status of the attempt as a text string
+	<ul>
+		<li>SUCCESS</li>
+		<li>USERSTOPPED</li>
+		<li>REMOTESTOPPED</li>
+		<li>ERROR</li>
+	</ul>
+	</li>
+	<li><code>CPLAYBACKOFFSET</code> - Contains the offset in ms into the file where playback was at when it stopped. <code>-1</code> is end of file.</li>
+	<li><code>CPLAYBACKSTOPKEY</code> - If the playback is stopped by the user this variable contains the key that was pressed.</li>
+</ul>
+
+
+<h3 id="Asterisk17AGICommand_controlstreamfile-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>CONTROL STREAM FILE FILENAME ESCAPE_DIGITS SKIPMS FFCHAR REWCHR PAUSECHR OFFSETMS </pre>
+</div></div>
+
+<h5 id="Asterisk17AGICommand_controlstreamfile-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>filename</code> - The file extension must not be included in the filename.</li>
+	<li><code>escape_digits</code></li>
+	<li><code>skipms</code></li>
+	<li><code>ffchar</code> - Defaults to <code>#</code></li>
+	<li><code>rewchr</code> - Defaults to <code>*</code></li>
+	<li><code>pausechr</code></li>
+	<li><code>offsetms</code> - Offset, in milliseconds, to start the audio playback</li>
+</ul>
+
+
+<h3 id="Asterisk17AGICommand_controlstreamfile-SeeAlso">See Also</h3>
+<ul>
+	<li><a href="Asterisk-17-AGICommand_get-option_42011453.html">Asterisk 17 AGICommand_get option</a></li>
+	<li><a href="Asterisk-17-AGICommand_control-stream-file_42011445.html">Asterisk 17 AGICommand_control stream file</a></li>
+	<li><a href="Asterisk-17-Application_AGI_42011488.html">Asterisk 17 Application_AGI</a></li>
+</ul>
+
+
+
+
+<h3 id="Asterisk17AGICommand_controlstreamfile-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

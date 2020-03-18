@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Configuring res_pjsip for Presence Subscriptions</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SIP_28314848.html">SIP</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-res_pjsip_25919621.html">Configuring res_pjsip</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Configuring res_pjsip for Presence Subscriptions
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified by <span class='editor'> Mark Michelson</span> on Oct 31, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro">    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>Under Construction - This page is a stub!</p>
+                    </div>
+    </div>
+<h1 id="Configuringres_pjsipforPresenceSubscriptions-Capabilities">Capabilities</h1>Asterisk's PJSIP channel driver provides the same presence subscription capabilities as <code>chan_sip</code> does. This means that <a href="http://tools.ietf.org/html/rfc3856" class="external-link" rel="nofollow">RFC 3856</a> presence and <a href="http://www.rfc-editor.org/rfc/rfc4235.txt" class="external-link" rel="nofollow">RFC 4235</a> dialog info are supported. Presence subscriptions support <a href="http://tools.ietf.org/html/rfc3863" class="external-link" rel="nofollow">RFC 3863</a> PIDF+XML bodies as well as <a href="http://tools.ietf.org/html/draft-rosenberg-impp-pidf-00" class="external-link" rel="nofollow">XPIDF+XML</a>. Beyond that, Asterisk also supports subscribing to <a href="http://tools.ietf.org/html/rfc4662" class="external-link" rel="nofollow">RFC 4662</a> lists of presence resources.<br /><h1 id="Configuringres_pjsipforPresenceSubscriptions-Configuration">Configuration</h1>If you are familiar with configuring subscriptions in <code>chan_sip</code> then this should be familiar to you. Configuration of presence is performed using the &quot;hint&quot; priority for an extension in <code>extensions.conf</code>.</div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302968178 {padding: 0px;}
+div.rbtoc1582302968178 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302968178 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302968178'>
+<ul class='toc-indentation'>
+<li><a href='#Configuringres_pjsipforPresenceSubscriptions-Capabilities'>Capabilities</a></li>
+<li><a href='#Configuringres_pjsipforPresenceSubscriptions-Configuration'>Configuration</a></li>
+<li><a href='#Configuringres_pjsipforPresenceSubscriptions-PresenceCustomisations'>Presence Customisations</a>
+<ul class='toc-indentation'>
+<li><a href='#Configuringres_pjsipforPresenceSubscriptions-DigiumPresence'>Digium Presence</a></li>
+<li><a href='#Configuringres_pjsipforPresenceSubscriptions-RichPresence(limited)'>Rich Presence (limited)</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="panelContent">
+<pre>[default]
+exten =&gt; 1000,hint,PJSIP/alice</pre>
+</div></div><p>The line shown here is similar to any normal line in a dialplan, except that instead of a priority number or label, the word &quot;hint&quot; is specified. The hint is used to associate the state of individual devices with the state of a dialplan extension. An English translation of the dialplan line would be &quot;Use the state of device PJSIP/alice as the basis for the state of extension 1000&quot;. When PJSIP endpoints subscribe to presence, they are subscribing to the state of an extension in the dialplan. By providing the dialplan hint, you are creating the necessary association in order to know which device (or devices) are relevant. For the example given above, this means that if someone subscribes to the state of extension 1000, then they will be told the state of PJSIP/alice. For more information about device state, see <a href="Device-State_28934187.html">this page</a>.</p><p>There are two endpoint options that affect presence subscriptions in <code>pjsip.conf</code>. The <code>allow_subscribe</code> option determines whether SUBSCRIBE requests from the endpoint are permitted to be received by Asterisk. By default, <code>allow_subscribe</code> is enabled. The other setting that affects presence subscriptions is the <code>context</code> option. This is used to determine the dialplan context in which the extension being subscribed to should be searched for. Given the dialplan snippet above, if the intent of an endpoint that subscribes to extension 1000 is to subscribe to the hint at 1000@default, then the context of the subscribing endpoint would need to be set to &quot;default&quot;. Note that if the <code>context</code> option is set to something other than &quot;default&quot;, then Asterisk will search that context for the hint instead.</p><p>In order for presence subscriptions to work properly, some modules need to be loaded. Here is a list of the required modules:</p><ul><li><code>res_pjsip.so</code>: Core of PJSIP code in Asterisk.</li><li><code>res_pjsip_pubsub.so</code>: The code that implements SUBSCRIBE/NOTIFY logic, on which individual event handlers are built.</li><li><code>res_pjsip_exten_state.so</code>: Handles the &quot;presence&quot; and &quot;dialog&quot; events.</li><li><code>res_pjsip_pidf_body_generator.so</code>: This module generates application/pidf+xml message bodies. Required for most subscriptions to the &quot;presence&quot; event.</li><li><code>res_pjsip_xpidf_body_generator.so</code>: This module generates application/xpidf+xml message bodies. Required for some subscriptions to the &quot;presence&quot; event.</li><li><code>res_pjsip_dialog_info_body_generator.so</code>: Required for subscriptions to the &quot;dialog&quot; event. This module generates application/dialog-info message bodies.</li></ul><p>If you are unsure of what event or what body type your device uses for presence subscriptions, consult the device manufacturer's manual for more information.</p><h1 id="Configuringres_pjsipforPresenceSubscriptions-PresenceCustomisations">Presence Customisations</h1><h2 id="Configuringres_pjsipforPresenceSubscriptions-DigiumPresence">Digium Presence</h2><p>Digium phones are outfitted with a custom supplement to the base PIDF+XML presence format that allows for XMPP-like presence to be understood. To add this, the hint can be modified to include an additional presence state, like so:</p><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="panelContent">
+<pre>[default]
+exten =&gt; 1000,hint,PJSIP/alice,CustomPresence:alice</pre>
+</div></div><p>This means that updates to the presence state of CustomPresence:alice will also be conveyed to subscribers to extension 1000. For more information on presence state in Asterisk, see <a href="Presence-State_21463121.html">this page</a>.</p><p>The <code>res_pjsip_pidf_digium_body_supplement.so</code> module must be loaded in order for additional presence details to be reported.</p><h2 id="Configuringres_pjsipforPresenceSubscriptions-RichPresence(limited)">Rich Presence (limited)</h2><p>Some rich presence supplements that were in <code>chan_sip</code> have been migrated to the PJSIP channel driver as well. This is an extremely limited implementation of the &quot;activities&quot; element of a person. The <code>res_pjsip_pidf_eyebeam_body_supplement.so</code> module is required to add this functionality.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

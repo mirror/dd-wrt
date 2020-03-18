@@ -1,6 +1,6 @@
 #
 # Asterisk -- An open source telephony toolkit.
-# 
+#
 # Makefile for PBX modules
 #
 # Copyright (C) 1999-2006, Digium, Inc.
@@ -23,13 +23,4 @@ ifneq ($(findstring $(OSARCH), mingw32 cygwin ),)
   LIBS+= -lres_ael_share.so -lres_monitor.so
 endif
 
-clean::
-	rm -f ael/*.o ael/*.i ael/*.gcda ael/*.gcno
-
-dundi-parser.o: dundi-parser.h
-dundi-parser.o: _ASTCFLAGS+=-I.
-
-pbx_gtkconsole.o: _ASTCFLAGS+=-Wno-strict-prototypes
-
-pbx_dundi.so: dundi-parser.o
-dundi-parser.o: _ASTCFLAGS+=$(call MOD_ASTCFLAGS,pbx_dundi)
+$(call MOD_ADD_C,pbx_dundi,dundi-parser.c)

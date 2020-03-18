@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk Architecture, The Big Picture</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Architecture_4817475.html">Asterisk Architecture</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk Architecture, The Big Picture
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Rusty Newton</span> on Aug 06, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><p>Before we dive too far into the various types of modules, let's first take a step back and look at the overall architecture of Asterisk.</p><p>Asterisk a big program with many components, with complex relationships. To be able to use it, you don't have to know how everything relates in extreme detail. Below is a simplified diagram intended to illustrate the relationships of some major components to each other and to entities outside Asterisk. It is useful to understand how a component may relate to things outside Asterisk as Asterisk is not typically operating without some connectivity or interaction with other network devices or files on the local system.</p><h1 id="AsteriskArchitecture,TheBigPicture-AnAsteriskSystem">An Asterisk System</h1><p>
+
+<map id="gliffy-map-29687850-7775" name="gliffy-map-29687850-7775"><area coords="391,73,422,85" href="../../x/ZoJJ" shape="rect" title="../../x/ZoJJ"/><area coords="424,73,445,85" href="../../x/bYJJ" shape="rect" title="../../x/bYJJ"/><area coords="584,244,645,255" href="../../x/7QywAQ" shape="rect" title="../../x/7QywAQ"/><area coords="551,312,592,322" href="../../x/GwufAQ" shape="rect" title="../../x/GwufAQ"/><area coords="615,312,649,322" href="../../x/yAqfAQ" shape="rect" title="../../x/yAqfAQ"/><area coords="576,210,634,222" href="../../x/KwFB" shape="rect" title="../../x/KwFB"/><area coords="568,122,617,132" href="../../x/HwufAQ" shape="rect" title="../../x/HwufAQ"/><area coords="551,133,635,144" href="../../x/HwufAQ" shape="rect" title="../../x/HwufAQ"/><area coords="557,55,628,66" href="../../x/6oBJ" shape="rect" title="../../x/6oBJ"/><area coords="547,385,656,397" href="../../x/jgBB" shape="rect" title="../../x/jgBB"/></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 800px;" usemap="#gliffy-map-29687850-7775" src="attachments/4817479/29687851.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p><p>Remember this is not an exhaustive diagram. It covers only a few of the common relationships between certain components.</p></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p> <style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302881632 {padding: 0px;}
+div.rbtoc1582302881632 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302881632 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302881632'>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskArchitecture,TheBigPicture-AnAsteriskSystem'>An Asterisk System</a></li>
+<li><a href='#AsteriskArchitecture,TheBigPicture-AsteriskArchitecture'>Asterisk Architecture</a>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskArchitecture,TheBigPicture-TheCore'>The Core</a></li>
+<li><a href='#AsteriskArchitecture,TheBigPicture-Modules'>Modules</a></li>
+<li><a href='#AsteriskArchitecture,TheBigPicture-CallsandChannels'>Calls and Channels</a></li>
+<li><a href='#AsteriskArchitecture,TheBigPicture-Dialplan'>Dialplan</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><h1 id="AsteriskArchitecture,TheBigPicture-AsteriskArchitecture">Asterisk Architecture</h1><p>Asterisk has a <strong>core</strong> that can interact with many <strong>modules</strong>. Modules called channel drivers provide <strong>channels</strong> that follow Asterisk <strong>dialplan</strong> to execute programmed behavior and facilitate communication between devices or programs outside Asterisk. Channels often use <strong>bridging</strong> infrastructure to interact with other channels. We'll describe some of these concepts in brief below.</p><h2 id="AsteriskArchitecture,TheBigPicture-TheCore">The Core</h2><p>The heart of any Asterisk system is the <strong>core</strong>. The PBX core is the essential component that provides a lot of infrastructure. Among many functions it reads the configuration files, including dialplan and loads all the other <strong>modules</strong>, distinct components that provide more functionality.</p><p>The core loads and builds the dialplan, which is the logic of any Asterisk system. The <a href="Dialplan_4817412.html">dialplan</a> contains a list of instructions that Asterisk should follow to know how to handle incoming and outgoing <strong>calls</strong> on the system.</p><h2 id="AsteriskArchitecture,TheBigPicture-Modules">Modules</h2><p>Other than functionality provided by the core of Asterisk, modules provide all other functionality. The source for many modules is distributed with Asterisk, though other modules may be available from community members or even businesses that make commercial modules. The modules distributed with Asterisk can be o<a href="Using-Menuselect-to-Select-Asterisk-Options_4817523.html">ptionally be built</a> when Asterisk is built.</p><p>Modules are not only optionally built, but you can affect at load-time whether they will be loaded at all, the loading order or even unload/load them during run-time. Most modules are independently configurable and have their own <a href="Configuration_4260139.html">configuration</a> files. Some modules have support for configuration to be read statically or dynamically(realtime) from database backends.</p><p>From a logistical standpoint, these modules are typically files with a <strong>.so</strong> file extension, which live in the Asterisk <a href="Directory-and-File-Structure_27200268.html">modules directory</a> (which is typically <strong>/usr/lib/asterisk/modules</strong>). When <a href="Running-Asterisk_27200195.html">Asterisk starts up</a>, it loads these files and adds their functionality to the system.</p><p>Asterisk modules which are part of the core have a file name that look like <strong>pbx_xxxxx.so</strong>. All of the modules types are discussed in the section <a href="Types-of-Asterisk-Modules_4817485.html">Types of Asterisk Modules</a>.</p>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">A Plethora of Modules</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            Take just a minute and go look at the Asterisk modules directory on your system. You should find a wide variety of modules. A default installation of Asterisk has over one hundred fifty different modules!
+                    </div>
+    </div>
+<h3 id="AsteriskArchitecture,TheBigPicture-AFewModuleExamples">A Few Module Examples</h3><ul><li><strong>chan_pjsip</strong> uses <strong>res_pjsip</strong> and many other res_pjsip modules to provide a SIP stack for SIP devices to interact with Asterisk and with each other through Asterisk.</li><li><strong>app_voicemail</strong> provides traditional PBX-type voicemail features.</li><li><strong>app_confbridge</strong> provides conference bridges with many optional features.</li><li><strong>res_agi</strong> provides the Asterisk Gateway Interface, an API that allows call control from external scripts and programs.</li></ul><h2 id="AsteriskArchitecture,TheBigPicture-CallsandChannels">Calls and Channels</h2><p>As was mentioned in the <a href="Asterisk-as-a-Swiss-Army-Knife-of-Telephony_5243716.html">Asterisk as a Swiss Army Knife of Telephony</a> section, the primary purpose of Asterisk is being an engine for building Real Time Communication systems and applications.</p><p>In most but not all cases this means you'll deal with the concept of &quot;calls&quot;. Calls in telephony terminology typically refer to one phone communicating with (calling) another phone over a medium, such as a <a href="http://en.wikipedia.org/wiki/Public_switched_telephone_network" class="external-link" rel="nofollow">PSTN</a> line. However in the case of Asterisk a call typically references one or more <a href="Channels_28314836.html"><strong>channels</strong></a> existing in Asterisk.</p><p>Here are some example &quot;calls&quot;.</p><ul><li>A phone calling another phone through Asterisk.</li><li>A phone calling many phones at once (for example, paging) through Asterisk.</li><li>A phone calls an application or the reverse happens. e.g., app_voicemail or app_queue</li><li>A local channel is created and interacts with an application or another channel.</li></ul><p>Note that I primarily use phones as an example, however you could refer to any channel or group of channels as a call. It doesn't matter if the devices are phones or something else, like an alarm system sensor or garage door opener.</p><h3 id="AsteriskArchitecture,TheBigPicture-Channels">Channels</h3><p><a href="Channels_28314836.html">Channels</a> are created by Asterisk using <a href="Channel-Drivers_4817130.html">Channel Drivers</a>. They can utilize other resources in the Asterisk system to facilitate various types of communication between one or more devices. Channels can be <strong>bridged</strong> to other channels and be affected by <a href="Applications_4817408.html"><strong>applications</strong></a> and <a href="Functions_27200281.html"><strong>functions</strong></a>. Channels can make use of many other resources provided by other modules or external libraries. For example SIP channels when passing audio will make use of the <strong>codec</strong> and <strong>format</strong> modules. Channels may interact with many different modules at once.</p><h2 id="AsteriskArchitecture,TheBigPicture-Dialplan">Dialplan</h2><p>Dialplan is the one main method of directing Asterisk behavior. Dialplan exists as text files (for example extensions.conf) either in the built-in dialplan scripting language, AEL or LUA formats. Alternatively dialplan could be read from a <a href="Database-Support-Configuration_4620315.html">database</a>, along with other module configuration. When writing dialplan, you will make heavy use of <strong>applications</strong> and <strong>functions </strong>to affect channels, configuration and features.</p><p>Dialplan can also call out through other interfaces such as <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Application_AGI">AGI</a> to receive call control instruction from external scripts and programs. The <a href="Dialplan_4817412.html">Dialplan</a> section of the wiki goes into detail on the usage of dialplan.<br /><br /></p><p> </p>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/4980749.png">bigpicture.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687852">AsteriskArchitecture</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687853.png">AsteriskArchitecture.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687854">AsteriskArchitecture</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687855.png">AsteriskArchitecture.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687856">AsteriskArchitecture</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687857.png">AsteriskArchitecture.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687858">AsteriskArchitecture</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687859.png">AsteriskArchitecture.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687860">AsteriskArchitecture</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687861.png">AsteriskArchitecture.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687862">AsteriskArchitecture</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687863.png">AsteriskArchitecture.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687864">AsteriskArchitecture</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687865.png">AsteriskArchitecture.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687866">AsteriskArchitecture</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687867.png">AsteriskArchitecture.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687868">AsteriskArchitecture</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687869.png">AsteriskArchitecture.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687870">AsteriskArchitecture</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687871.png">AsteriskArchitecture.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687850">AsteriskArchitecture</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817479/29687851.png">AsteriskArchitecture.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

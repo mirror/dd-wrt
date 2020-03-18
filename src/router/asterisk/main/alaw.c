@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/alaw.h"
 #include "asterisk/logger.h"
 
@@ -214,4 +212,3 @@ void ast_alaw_init(void)
 #endif /* TEST_TANDEM_TRANSCODING */
 
 }
-

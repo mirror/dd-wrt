@@ -20,8 +20,8 @@
 	<support_level>extended</support_level>
  ***/
 
+#define ASTMM_LIBC ASTMM_IGNORE
 #include "asterisk.h"
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/ast_expr.h"
 
@@ -42,9 +42,9 @@ enum ast_lock_type {
 #define MALLOC_FAILURE_MSG \
 	ast_log(LOG_ERROR, "Memory Allocation Failure in function %s at line %d of %s\n", func, lineno, file);
 
-void * attribute_malloc _ast_calloc(size_t num, size_t len, const char *file, int lineno, const char *func);
+void * attribute_malloc __ast_calloc(size_t num, size_t len, const char *file, int lineno, const char *func);
 
-void * attribute_malloc _ast_calloc(size_t num, size_t len, const char *file, int lineno, const char *func)
+void * attribute_malloc __ast_calloc(size_t num, size_t len, const char *file, int lineno, const char *func)
 {
 	void *p;
 
@@ -56,8 +56,6 @@ void * attribute_malloc _ast_calloc(size_t num, size_t len, const char *file, in
 #endif
 
 #ifdef DEBUG_THREADS
-#if !defined(LOW_MEMORY)
-#ifdef HAVE_BKTR
 void ast_store_lock_info(enum ast_lock_type type, const char *filename,
 		        int line_num, const char *func, const char *lock_name, void *lock_addr, struct ast_bt *bt);
 void ast_store_lock_info(enum ast_lock_type type, const char *filename,
@@ -72,37 +70,17 @@ void ast_remove_lock_info(void *lock_addr, struct ast_bt *bt)
     /* not a lot to do in a standalone w/o threading! */
 }
 
+#ifdef HAVE_BKTR
 int __ast_bt_get_addresses(struct ast_bt *bt);
 int __ast_bt_get_addresses(struct ast_bt *bt)
 {
 	/* Suck it, you stupid utils directory! */
 	return 0;
 }
-char **__ast_bt_get_symbols(void **addresses, size_t num_frames);
-char **__ast_bt_get_symbols(void **addresses, size_t num_frames)
+struct ast_vector_string *__ast_bt_get_symbols(void **addresses, size_t num_frames);
+struct ast_vector_string *__ast_bt_get_symbols(void **addresses, size_t num_frames)
 {
-	char **foo = calloc(num_frames, sizeof(char *) + 1);
-	if (foo) {
-		int i;
-		for (i = 0; i < num_frames; i++) {
-			foo[i] = (char *) foo + sizeof(char *) * num_frames;
-		}
-	}
-	return foo;
-}
-#else
-void ast_store_lock_info(enum ast_lock_type type, const char *filename,
-		        int line_num, const char *func, const char *lock_name, void *lock_addr);
-void ast_store_lock_info(enum ast_lock_type type, const char *filename,
-		        int line_num, const char *func, const char *lock_name, void *lock_addr)
-{
-    /* not a lot to do in a standalone w/o threading! */
-}
-
-void ast_remove_lock_info(void *lock_addr);
-void ast_remove_lock_info(void *lock_addr)
-{
-    /* not a lot to do in a standalone w/o threading! */
+	return NULL;
 }
 #endif /* HAVE_BKTR */
 
@@ -117,7 +95,6 @@ void ast_mark_lock_acquired(void *foo)
 {
     /* not a lot to do in a standalone w/o threading! */
 }
-#endif
 #endif /* DEBUG_THREADS */
 
 
@@ -145,15 +122,13 @@ void ast_log(int level, const char *file, int line, const char *function, const 
 {
 	va_list vars;
 	va_start(vars,fmt);
-	
+
 	printf("LOG: lev:%d file:%s  line:%d func: %s  ",
 		   level, file, line, function);
 	vprintf(fmt, vars);
 	fflush(stdout);
 	va_end(vars);
 }
-//void ast_register_file_version(const char *file, const char *version);
-//void ast_unregister_file_version(const char *file);
 
 char *find_var(const char *varname);
 void set_var(const char *varname, const char *varval);
@@ -161,23 +136,7 @@ unsigned int check_expr(char* buffer, char* error_report);
 int check_eval(char *buffer, char *error_report);
 void parse_file(const char *fname);
 
-void ast_register_file_version(const char *file, const char *version);  
-void ast_register_file_version(const char *file, const char *version) { }
-#if !defined(LOW_MEMORY)
-int ast_add_profile(const char *x, uint64_t scale) { return 0;} 
-#endif
-int ast_atomic_fetchadd_int_slow(volatile int *p, int v)
-{
-        int ret;
-        ret = *p;
-        *p += v;
-        return ret;
-}
-
-void ast_unregister_file_version(const char *file);
-void ast_unregister_file_version(const char *file)
-{
-}
+int ast_add_profile(const char *x, uint64_t scale) { return 0;}
 
 char *find_var(const char *varname) /* the list should be pretty short, if there's any list at all */
 {
@@ -209,7 +168,7 @@ unsigned int check_expr(char* buffer, char* error_report)
 	unsigned int warn_found = 0;
 
 	error_report[0] = 0;
-	
+
 	for (cp = buffer; *cp; ++cp)
 	{
 		switch (*cp)
@@ -225,7 +184,7 @@ unsigned int check_expr(char* buffer, char* error_report)
 						global_lineno);
 				}
 				break;
-				
+
 			case '>':
 			case '<':
 			case '!':
@@ -242,7 +201,7 @@ unsigned int check_expr(char* buffer, char* error_report)
 					++warn_found;
 				}
 				break;
-				
+
 			case '|':
 			case '&':
 			case '=':
@@ -294,13 +253,13 @@ int check_eval(char *buffer, char *error_report)
 		if (*cp == '$' && *(cp+1) == '{') {
 			int brack_lev = 1;
 			char *xp= cp+2;
-			
+
 			while (*xp) {
 				if (*xp == '{')
 					brack_lev++;
 				else if (*xp == '}')
 					brack_lev--;
-				
+
 				if (brack_lev == 0)
 					break;
 				xp++;
@@ -308,7 +267,7 @@ int check_eval(char *buffer, char *error_report)
 			if (*xp == '}') {
 				char varname[200];
 				char *val;
-				
+
 				strncpy(varname,cp+2, xp-cp-2);
 				varname[xp-cp-2] = 0;
 				cp = xp;
@@ -360,7 +319,7 @@ void parse_file(const char *fname)
 	int c1;
 	char last_char= 0;
 	char buffer[30000]; /* I sure hope no expr gets this big! */
-	
+
 	if (!f) {
 		fprintf(stderr,"Couldn't open %s for reading... need an extensions.conf file to parse!\n",fname);
 		exit(20);
@@ -369,9 +328,9 @@ void parse_file(const char *fname)
 		fprintf(stderr,"Couldn't open 'expr2_log' file for writing... please fix and re-run!\n");
 		exit(21);
 	}
-	
+
 	global_lineno = 1;
-	
+
 	while ((c1 = fgetc(f)) != EOF) {
 		if (c1 == '\n')
 			global_lineno++;
@@ -382,7 +341,7 @@ void parse_file(const char *fname)
 				int bufcount = 0;
 				int retval;
 				char error_report[30000];
-				
+
 				while ((c1 = fgetc(f)) != EOF) {
 					if (c1 == '[')
 						bracklev++;
@@ -394,7 +353,7 @@ void parse_file(const char *fname)
 						fclose(l);
 						printf("--- ERROR --- A newline in the middle of an expression at line %d!\n", global_lineno);
 					}
-					
+
 					if (bracklev == 0)
 						break;
 					buffer[bufcount++] = c1;
@@ -406,18 +365,18 @@ void parse_file(const char *fname)
 					printf("--- ERROR --- EOF reached in middle of an expression at line %d!\n", global_lineno);
 					exit(22);
 				}
-				
+
 				buffer[bufcount] = 0;
 				/* update stats */
 				global_expr_tot_size += bufcount;
 				global_expr_count++;
 				if (bufcount > global_expr_max_size)
 					global_expr_max_size = bufcount;
-				
+
 				retval = check_expr(buffer, error_report); /* check_expr should bump the warning counter */
 				if (retval != 0) {
 					/* print error report */
-					printf("Warning(s) at line %d, expression: $[%s]; see expr2_log file for details\n", 
+					printf("Warning(s) at line %d, expression: $[%s]; see expr2_log file for details\n",
 						   global_lineno, buffer);
 					fprintf(l, "%s", error_report);
 				}
@@ -438,7 +397,7 @@ void parse_file(const char *fname)
 		   global_warn_count,
 		   global_expr_max_size,
 		   (global_expr_count) ? global_expr_tot_size/global_expr_count : 0);
-	
+
 	fclose(f);
 	fclose(l);
 }
@@ -448,7 +407,7 @@ int main(int argc,char **argv)
 {
 	int argc1;
 	char *eq;
-	
+
 	if (argc < 2) {
 		printf("check_expr -- a program to look thru extensions.conf files for $[...] expressions,\n");
 		printf("              and run them thru the parser, looking for problems\n");
@@ -460,7 +419,7 @@ int main(int argc,char **argv)
 		printf(" Note that messages about operators not being surrounded by spaces is merely to alert\n");
 		printf("  you to possible problems where you might be expecting those operators as part of a string.\n");
         printf("  (to include operators in a string, wrap with double quotes!)\n");
-		
+
 		exit(19);
 	}
 	global_varlist = 0;
@@ -472,7 +431,7 @@ int main(int argc,char **argv)
 	}
 
 	/* parse command args for x=y and set varz */
-	
+
 	parse_file(argv[1]);
 	return 0;
 }

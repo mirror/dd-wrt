@@ -18,6 +18,18 @@
 [default_user]
 type=user
 ;admin=yes     ; Sets if the user is an admin or not. Off by default.
+
+;send_events=no  ; If events are enabled for this bridge and this option is
+                 ; set, users will receive events like join, leave, talking,
+                 ; etc. via text messages.  For users accessing the bridge
+                 ; via chan_pjsip, this means in-dialog MESSAGE messages.
+                 ; This is most useful for WebRTC participants where the
+                 ; browser application can use the messages to alter the user
+                 ; interface.
+;echo_events=yes ; If events are enabled for this user and this option is set,
+                 ; the user will receive events they trigger, talking, mute, etc.
+                 ; If not set, they will not receive their own events.
+
 ;marked=yes    ; Sets if this is a marked user or not. Off by default.
 ;startmuted=yes; Sets if all users should start out muted. Off by default
 ;music_on_hold_when_empty=yes  ; Sets whether MOH should be played when only
@@ -49,59 +61,67 @@ type=user
                        ; noise from the conference. Highly recommended for large conferences
                        ; due to its performance enhancements.
 
-;dsp_talking_threshold=128  ; The time in milliseconds of sound above what the dsp has
-                            ; established as base line silence for a user before a user
-                            ; is considered to be talking.  This value affects several
+;dsp_talking_threshold=128  ; Average magnitude threshold to determine talking.
+                            ;
+                            ; The minimum average magnitude per sample in a frame for the
+                            ; DSP to consider talking/noise present.  A value below this
+                            ; level is considered silence.  This value affects several
                             ; operations and should not be changed unless the impact on
                             ; call quality is fully understood.
                             ;
                             ; What this value affects internally:
                             ;
-                            ; 1. Audio is only mixed out of a user's incoming audio stream
-                            ;    if talking is detected.  If this value is set too
-                            ;    loose the user will hear themselves briefly each
-                            ;    time they begin talking until the dsp has time to
-                            ;    establish that they are in fact talking.
-                            ; 2. When talk detection AMI events are enabled, this value
-                            ;    determines when talking has begun which results in
-                            ;    an AMI event to fire.  If this value is set too tight
-                            ;    AMI events may be falsely triggered by variants in
-                            ;    room noise.
-                            ; 3. The drop_silence option depends on this value to determine
-                            ;    when the user's audio should be mixed into the bridge
-                            ;    after periods of silence.  If this value is too loose
-                            ;    the beginning of a user's speech will get cut off as they
-                            ;    transition from silence to talking.
+                            ; 1. Audio is only mixed out of a user's incoming audio
+                            ;    stream if talking is detected.  If this value is set too
+                            ;    high the user will hear himself talking.
                             ;
-                            ; By default this value is 160 ms. Valid values are 1 through 2^31
+                            ; 2. When talk detection AMI events are enabled, this value
+                            ;    determines when talking has begun which results in an
+                            ;    AMI event to fire.  If this value is set too low AMI
+                            ;    events may be falsely triggered by variants in room
+                            ;    noise.
+                            ;
+                            ; 3. The 'drop_silence' option depends on this value to
+                            ;    determine when the user's audio should be mixed into the
+                            ;    bridge after periods of silence.  If this value is too
+                            ;    high the user's speech will get discarded as they will
+                            ;    be considered silent.
+                            ;
+                            ; Valid values are 1 through 2^15.
+                            ; By default this value is 160.
 
-;dsp_silence_threshold=2000 ; The time in milliseconds of sound falling within the what
-                            ; the dsp has established as baseline silence before a user
-                            ; is considered be silent.  This value affects several
-                            ; operations and should not be changed unless the impact
-                            ; on call quality is fully understood.
+;dsp_silence_threshold=2000 ; The number of milliseconds of silence necessary to declare
+                            ; talking stopped.
+                            ;
+                            ; The time in milliseconds of sound falling below the
+                            ; 'dsp_talking_threshold' option when a user is considered to
+                            ; stop talking.  This value affects several operations and
+                            ; should not be changed unless the impact on call quality is
+                            ; fully understood.
                             ;
                             ; What this value affects internally:
                             ;
                             ; 1. When talk detection AMI events are enabled, this value
                             ;    determines when the user has stopped talking after a
-                            ;    period of talking.  If this value is set too low
-                            ;    AMI events indicating the user has stopped talking
-                            ;    may get falsely sent out when the user briefly pauses
-                            ;    during mid sentence.
-                            ; 2. The drop_silence option depends on this value to
+                            ;    period of talking.  If this value is set too low AMI
+                            ;    events indicating the user has stopped talking may get
+                            ;    falsely sent out when the user briefly pauses during mid
+                            ;    sentence.
+                            ;
+                            ; 2. The 'drop_silence' option depends on this value to
                             ;    determine when the user's audio should begin to be
-                            ;    dropped from the conference bridge after the user
-                            ;    stops talking.  If this value is set too low the user's
-                            ;    audio stream may sound choppy to the other participants.
-                            ;    This is caused by the user transitioning constantly from
+                            ;    dropped from the conference bridge after the user stops
+                            ;    talking.  If this value is set too low the user's audio
+                            ;    stream may sound choppy to the other participants.  This
+                            ;    is caused by the user transitioning constantly from
                             ;    silence to talking during mid sentence.
                             ;
-                            ; The best way to approach this option is to set it slightly above
-                            ; the maximum amount of ms of silence a user may generate during
-                            ; natural speech.
+                            ; The best way to approach this option is to set it slightly
+                            ; above the maximum amount of milliseconds of silence a user
+                            ; may generate during natural speech.
                             ;
-                            ; By default this value is 2500ms. Valid values are 1 through 2^31
+                            ; Valid values are 1 through 2^31.
+                            ; By default this value is 2500ms.
 
 ;talk_detection_events=yes ; This option sets whether or not notifications of when a user
                            ; begins and ends talking should be sent out as events over AMI.
@@ -169,6 +189,12 @@ type=bridge
                                ; By default, the record_file is stored in Asterisk's spool/monitor directory
                                ; with a unique filename starting with the 'confbridge' prefix.
 
+;record_file_append=yes        ; Append record file when starting/stopping on same conference recording.
+;record_file_timestamp=yes     ; Append the start time to the record file name.
+
+;record_options=               ; Pass additional options to MixMonitor.
+;record_command=</path/to/command> ; Command to execute when recording finishes.
+
 ;internal_sample_rate=auto     ; Sets the internal native sample rate the
                                ; conference is mixed at.  This is set to automatically
                                ; adjust the sample rate to the best quality by default.
@@ -176,6 +202,10 @@ type=bridge
                                ; sample rate is set that Asterisk does not support, the
                                ; closest sample rate Asterisk does support to the one requested
                                ; will be used.
+
+;maximum_sample_rate=none      ; Sets the maximum sample rate the conference
+                               ; is mixed at. This is set to no maximum by default.
+                               ; Values can be anything from 8000-192000.
 
 ;mixing_interval=40     ; Sets the internal mixing interval in milliseconds for the bridge.  This
                         ; number reflects how tight or loose the mixing will be for the conference.
@@ -207,11 +237,39 @@ type=bridge
                            ; first_marked: The first marked user to join the conference with video capabilities
                            ;               is the single source of video distribution among all participants. If
                            ;               that user leaves, the marked user to join after them becomes the source.
+                           ;
+                           ; sfu: Selective Forwarding Unit - Sets multi-stream operation
+                           ;      for a multi-party video conference.
 
 ;language=en               ; Set the language used for announcements to the conference.
                            ; Default is en (English).
 
 ;regcontext=conferences    ; The name of the context into which to register conference names as extensions.
+;video_update_discard=2000 ; Amount of time (in milliseconds) to discard video update requests after sending a video
+                           ; update request. Default is 2000. A video update request is a request for a full video
+                           ; intra-frame. Clients can request this if they require a full frame in order to decode
+                           ; the video stream. Since a full frame can be large limiting how often they occur can
+                           ; reduce bandwidth usage at the cost of increasing how long it may take a newly joined
+                           ; channel to receive the video stream.
+;remb_send_interval=1000   ; Interval (in milliseconds) at which a combined REMB frame will be sent to sources of video.
+                           ; A REMB frame contains receiver estimated maximum bitrate information. By creating a combined
+                           ; frame and sending it to the sources of video the sender can be influenced on what bitrate
+                           ; they choose allowing a better experience for the receivers. This defaults to 0, or disabled.
+;remb_behavior=average     ; How the combined REMB report for an SFU video bridge is constructed. If set to "average" then
+                           ; the estimated maximum bitrate of each receiver is used to construct an average bitrate. If
+                           ; set to "lowest" the lowest maximum bitrate is forwarded to the sender. If set to "highest"
+                           ; the highest maximum bitrate is forwarded to the sender. If set to "average_all" a single average
+                           ; is generated from every receiver and the same value is sent to every sender. If set to
+                           ; "lowest_all" the lowest maximum bitrate of all receivers is sent to every sender. If set to
+                           ; "highest_all" the highest maximum bitrate of all receivers is sent to every sender. This
+                           ; defaults to "average".
+
+;enable_events=no          ; If enabled, recipients who joined the bridge via a channel driver
+                           ; that supports Enhanced Messaging (currently only chan_pjsip) will
+                           ; receive in-dialog messages containing a JSON body describing the
+                           ; event.  The Content-Type header will be
+                           ; "text/x-ast-confbridge-event".
+                           ; This feature must also be enabled in user profiles.
 
 ; All sounds in the conference are customizable using the bridge profile options below.
 ; Simply state the option followed by the filename or full path of the filename after
@@ -228,8 +286,8 @@ type=bridge
                 ; left the conference. This is used for user intros.
                 ; Example "_____ has left the conference"
 ;sound_kicked ; The sound played to a user who has been kicked from the conference.
-;sound_muted  ; The sound played when the mute option it toggled on.
-;sound_unmuted  ; The sound played when the mute option it toggled off.
+;sound_muted  ; The sound played when the mute option is toggled on using DTMF menu.
+;sound_unmuted  ; The sound played when the mute option is toggled off using DTMF menu.
 ;sound_only_person ; The sound played when the user is the only person in the conference.
 ;sound_only_one ; The sound played to a user when there is only one other
                 ; person is in the conference.
@@ -253,6 +311,8 @@ type=bridge
 ;sound_unlocked_now; The sound played to an admin after toggling the conference to unlocked mode.
 ;sound_error_menu ; The sound played when an invalid menu option is entered.
 ;sound_begin ; The sound played to the conference when the first marked user enters the conference.
+;sound_binaural_on ; The sound played when binaural audio is turned on
+;sound_binaural_off ; The sound played when binaural audio is turned off
 
 ; --- ConfBridge Menu Options ---
 ; The ConfBridge application also has the ability to
@@ -291,6 +351,7 @@ type=bridge
                                        ; using the '&' character as a delimiter.
 ; toggle_mute      ; Toggle turning on and off mute.  Mute will make the user silent
                    ; to everyone else, but the user will still be able to listen in.
+; toggle_binaural  ; Toggle on or off binaural audio processing.
 
 ; no_op ; This action does nothing (No Operation). Its only real purpose exists for
         ; being able to reserve a sequence in the config as a menu exit sequence.

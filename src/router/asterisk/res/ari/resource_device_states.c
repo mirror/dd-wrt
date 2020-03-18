@@ -24,13 +24,10 @@
  */
 
 /*** MODULEINFO
-	<depend type="module">res_stasis_device_state</depend>
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "resource_device_states.h"
 #include "asterisk/stasis_app_device_state.h"

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Using The include, tryinclude and exec Constructs</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Configuration_4620290.html">Asterisk Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Configuration-Files_4817443.html">Asterisk Configuration Files</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Using The include, tryinclude and exec Constructs
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Richard Mudgett</span> on Apr 14, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="UsingTheinclude,tryincludeandexecConstructs-include,tryincludeandexec">include, tryinclude and exec</h1>    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <p>You might have arrived here looking for <a href="Include-Statements_4817359.html">Include Statements</a> specific to Asterisk dialplan.</p>
+                    </div>
+    </div>
+<p>There are two other constructs we can use within all of our configuration files. They are <strong>#include</strong> and <strong>#exec</strong>.</p><p>The <strong>#include</strong> construct tells Asterisk to read in the contents of another configuration file, and act as though the contents were at this location in this configuration file. The syntax is <strong>#include filename</strong>, where <strong>filename</strong> is the name of the file you'd like to include. This construct is most often used to break a large configuration file into smaller pieces, so that it's more manageable. The asterisk/star character will be parsed in the path, allowing for the inclusion of an entire directory of files. If the target file specified does not exist, then Asterisk will not load the module that contains configuration with the #include directive.</p><p>The <strong>#tryinclude</strong> construct is the same as #include except it won't stop Asterisk from loading the module when the target file does not exist.</p><p>The <strong>#exec</strong> takes this one step further. It allows you to execute an external program, and place the output of that program into the current configuration file. The syntax is <strong>#exec program</strong>, where <strong>program</strong> is the name of the program you'd like to execute.</p><p>The<strong> #exec</strong>, <strong>#include</strong>, and #<strong>tryinclude</strong> constructs do not work in the following configuration files:</p><div class="comment-content wiki-content"><ul><li>asterisk.conf</li><li>modules.conf</li></ul><p> </p></div>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <h4 id="UsingTheinclude,tryincludeandexecConstructs-Enabling#execFunctionality">Enabling #exec Functionality</h4><p>The #exec construct is not enabled by default, as it has some risks both in terms of performance and security. To enable this functionality, go to the <strong>asterisk.conf</strong> configuration file (by default located in <em>/etc/asterisk</em>) and set <strong>execincludes=yes</strong> in the <strong>[options]</strong> section. By default both the <strong>[options]</strong> section heading and the <strong>execincludes=yes</strong> option have been commented out, you you'll need to remove the semicolon from the beginning of both lines.</p>
+                    </div>
+    </div>
+<h2 id="UsingTheinclude,tryincludeandexecConstructs-Examples">Examples</h2><p>Let's look at example of both constructs in action. This is a generic example meant to illustrate the syntax usage inside a configuration file.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">[section-name]
+setting=true
+#include otherconfig.conf      ; include another configuration file
+#include my_other_files/*.conf ; include all .conf files in the subdirectory my_other_files
+#exec otherprogram             ; include output of otherprogram</pre>
+</div></div><p>You can use #tryinclude if there is any chance the target file may not exist and you still want Asterisk to load the configuration for the module.</p><p>Here is a more realistic example of how #exec might be used with real-world commands.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">#exec /usr/bin/curl -s http://example.com/mystuff &gt; /etc/asterisk/mystuff
+#include mystuff</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

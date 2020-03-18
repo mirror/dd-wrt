@@ -34,6 +34,13 @@
 #define READ_SIZE 160
 #define RING_PATTERNS 3
 
+/*! \brief Default time (ms) to detect first digit */
+#define ANALOG_FIRST_DIGIT_TIMEOUT	16000
+/*! \brief Default time (ms) to detect following digits */
+#define ANALOG_INTER_DIGIT_TIMEOUT	8000
+/*! \brief Default time (ms) to wait, in case of ambiguous match */
+#define ANALOG_MATCH_DIGIT_TIMEOUT	3000
+
 /* Signalling types supported */
 enum analog_sigtype {
 	ANALOG_SIG_NONE = -1,
@@ -93,7 +100,7 @@ enum analog_event {
 	ANALOG_EVENT_EC_NLP_ENABLED,
 	ANALOG_EVENT_ERROR, /* not a DAHDI event */
 	ANALOG_EVENT_DTMFCID, /* not a DAHDI event */
-	ANALOG_EVENT_PULSEDIGIT = (1 << 16), 
+	ANALOG_EVENT_PULSEDIGIT = (1 << 16),
 	ANALOG_EVENT_DTMFDOWN = (1 << 17),
 	ANALOG_EVENT_DTMFUP = (1 << 18),
 };
@@ -231,12 +238,15 @@ struct analog_callback {
 	int (* const check_confirmanswer)(void *pvt);
 	void (* const set_callwaiting)(void *pvt, int callwaiting_enable);
 	void (* const cancel_cidspill)(void *pvt);
-	int (* const confmute)(void *pvt, int mute);	
+	int (* const confmute)(void *pvt, int mute);
 	void (* const set_pulsedial)(void *pvt, int flag);
 	void (* const set_new_owner)(void *pvt, struct ast_channel *new_owner);
 
 	const char *(* const get_orig_dialstring)(void *pvt);
 	int (* const have_progressdetect)(void *pvt);
+	int (* const get_firstdigit_timeout)(void *pvt);
+	int (* const get_interdigit_timeout)(void *pvt);
+	int (* const get_matchdigit_timeout)(void *pvt);
 };
 
 /*! Global analog callbacks to the upper layer. */

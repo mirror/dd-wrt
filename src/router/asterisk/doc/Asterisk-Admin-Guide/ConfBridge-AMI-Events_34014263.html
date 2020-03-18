@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : ConfBridge AMI Events</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Conferencing-Applications_32375228.html">Conferencing Applications</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="ConfBridge_13076234.html">ConfBridge</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : ConfBridge AMI Events
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span> on Mar 30, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h2 id="ConfBridgeAMIEvents-ConfbridgeStart">ConfbridgeStart</h2><p>This event is sent when the first user requests a conference and it is instantiated</p><p><strong>Example</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Event: ConfbridgeStart
+Privilege: call,all
+Conference: 1111
+</pre>
+</div></div></div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303031651 {padding: 0px;}
+div.rbtoc1582303031651 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303031651 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303031651'>
+<ul class='toc-indentation'>
+<li><a href='#ConfBridgeAMIEvents-ConfbridgeStart'>ConfbridgeStart</a></li>
+<li><a href='#ConfBridgeAMIEvents-ConfbridgeJoin'>ConfbridgeJoin</a></li>
+<li><a href='#ConfBridgeAMIEvents-ConfbridgeLeave'>ConfbridgeLeave</a></li>
+<li><a href='#ConfBridgeAMIEvents-ConfbridgeEnd'>ConfbridgeEnd</a></li>
+<li><a href='#ConfBridgeAMIEvents-ConfbridgeTalking'>ConfbridgeTalking</a></li>
+</ul>
+</div></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h2 id="ConfBridgeAMIEvents-ConfbridgeJoin">ConfbridgeJoin</h2><p>This event is sent when a user joins a conference - either one already in progress or as the first user to join a newly instantiated bridge.</p><p><strong>Example</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Event: ConfbridgeJoin
+Privilege: call,all
+Channel: SIP/mypeer-00000001
+Uniqueid: 1303309562.3
+Conference: 1111
+CallerIDnum: 1234
+CallerIDname: mypeer
+</pre>
+</div></div><h2 id="ConfBridgeAMIEvents-ConfbridgeLeave">ConfbridgeLeave</h2><p>This event is sent when a user leaves a conference.</p><p><strong>Example</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Event: ConfbridgeLeave
+Privilege: call,all
+Channel: SIP/mypeer-00000001
+Uniqueid: 1303308745.0
+Conference: 1111
+CallerIDnum: 1234
+CallerIDname: mypeer
+</pre>
+</div></div><h2 id="ConfBridgeAMIEvents-ConfbridgeEnd">ConfbridgeEnd</h2><p>This event is sent when the last user leaves a conference and it is torn down.</p><p><strong>Example</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Event: ConfbridgeEnd
+Privilege: call,all
+Conference: 1111
+</pre>
+</div></div><h2 id="ConfBridgeAMIEvents-ConfbridgeTalking">ConfbridgeTalking</h2><p>This event is sent when the conference detects that a user has either begin or stopped talking.</p><p><strong>Start talking Example</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Event: ConfbridgeTalking
+Privilege: call, all
+Channel: SIP/mypeer-00000001
+Uniqueid: 1303308745.0
+Conference: 1111
+TalkingStatus: on
+</pre>
+</div></div><p><strong>Stop talking Example</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Event: ConfbridgeTalking
+Privilege: call, all
+Channel: SIP/mypeer-00000001
+Uniqueid: 1303308745.0
+Conference: 1111
+TalkingStatus: off
+</pre>
+</div></div></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

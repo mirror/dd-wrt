@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Dialing PJSIP Channels</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SIP_28314848.html">SIP</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-res_pjsip_25919621.html">Configuring res_pjsip</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Dialing PJSIP Channels
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified by <span class='editor'> Scott Griepentrog</span> on Oct 31, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="DialingPJSIPChannels-Dialingfromdialplan">Dialing from dialplan</h1><p>We are assuming you already know a little bit about the Dial application here. To see the full help for it, see &quot;core show help application dial&quot; on the Asterisk CLI, or see <a href="https://wiki.asterisk.org/wiki/display/AST/Application_Dial">Application_Dial</a></p><p>Below we'll simply dial an endpoint using the chan_pjsip channel driver. This is really going to look at the AOR of the same name as the endpoint and start dialing the first contact associated.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; _6XXX,1,Dial(PJSIP/${EXTEN})</pre>
+</div></div><p>To dial all the contacts associated with the endpoint, use the PJSIP_DIAL_CONTACTS function. It evaluates to a list of contacts separated by &amp;, which causes the Dial application to call them simultaneously.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; _6XXX,1,Dial(${PJSIP_DIAL_CONTACTS(${EXTEN})})</pre>
+</div></div><p>Heres how you would dial with an explicit SIP URI, user and domain, via an endpoint (in this case dialing out a trunk), but not using its associated AOR/contact objects.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; _9NXXNXXXXXX,1,Dial(PJSIP/mytrunk/sip:${EXTEN:1}@203.0.113.1:5060)</pre>
+</div></div><p>This uses a contact(and its domain) set in the AOR associated with the <strong>mytrunk</strong> endpoint, but still explicitly sets the user portion of the URI in the dial string. For the AOR's contact, you would define it in the AOR config without the user name.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; _9NXXNXXXXXX,1,Dial(PJSIP/${EXTEN:1}@mytrunk)</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -8,7 +8,11 @@
 		</member>
 		<member name="app_amd" displayname="Answering Machine Detection Application" remove_on_change="apps/app_amd.o apps/app_amd.so">
 		</member>
+		<member name="app_attended_transfer" displayname="Attended transfer to the given extension" remove_on_change="apps/app_attended_transfer.o apps/app_attended_transfer.so">
+		</member>
 		<member name="app_authenticate" displayname="Authentication Application" remove_on_change="apps/app_authenticate.o apps/app_authenticate.so">
+		</member>
+		<member name="app_blind_transfer" displayname="Blind transfer by caller channel" remove_on_change="apps/app_blind_transfer.o apps/app_blind_transfer.so">
 		</member>
 		<member name="app_cdr" displayname="Tell Asterisk to not maintain a CDR for the current call" remove_on_change="apps/app_cdr.o apps/app_cdr.so">
 		</member>
@@ -425,8 +429,6 @@
 		<member name="MTX_PROFILE" displayname="Enable Code Profiling Using TSC Counters">
 		</member>
 		<member name="RADIO_RELAX" displayname="Relax DTMF for Radio Applications">
-		</member>
-		<member name="TRACE_FRAMES" displayname="Trace Frame Allocations">
 		</member>
 	</category>
 	<category name="MENUSELECT_CORE_SOUNDS" displayname="Core Sound Packages" positive_output="yes">

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Signaling System Number 7</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="PSTN-Connectivity_4260105.html">PSTN Connectivity</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Signaling System Number 7
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Joshua C. Colp</span> on Jan 09, 2020
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="comment-content wiki-content">    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>The LibSS7 project is not actively developed or maintained.</p>
+                    </div>
+    </div>
+<h3 id="SignalingSystemNumber7-WheretogetLibSS7?">Where to get LibSS7?</h3><p>Currently, all released branches of Asterisk including trunk use the released versions of libss7.</p><p>The latest compatible libss7 code can be obtained from the <a href="http://svn.asterisk.org/svn/libss7/branches/1.0" class="external-link" rel="nofollow">1.0 SVN branch</a></p><p>As of 7/2013, the libss7 trunk (<a class="external-link" href="http://svn.asterisk.org/svn/libss7/branches/1.0" rel="nofollow">http://svn.asterisk.org/svn/libss7/trunk</a>) is currently only usable with this Asterisk branch (<a class="external-link" href="http://svn.asterisk.org/svn/libss7/branches/1.0" rel="nofollow">http://svn.asterisk.org/svn/asterisk/team/rmudgett/ss7_27_knk</a>) based off of Asterisk trunk.</p></div><h5 id="SignalingSystemNumber7-TestedSwitches:">Tested Switches:</h5><ul><li>Siemens EWSD - (ITU style) MTP2 and MTP3 comes up, ISUP inbound and outbound calls work as well.</li><li>DTI DXC 4K - (ANSI style) 56kbps link, MTP2 and MTP3 come up, ISUP inbound and outbound calls work as well.</li><li>Huawei M800 - (ITU style) MTP2 and MTP3 comes up, ISUP National, International inbound and outbound calls work as well, CallerID presentation&amp;screening work.</li></ul><p>and MORE~!</p><h5 id="SignalingSystemNumber7-Thanks:">Thanks:</h5><p>Mark Spencer, for writing Asterisk and libpri and being such a great friend and boss.</p><p>Luciano Ramos, for donating a link in getting the first &quot;real&quot; ITU switch working.</p><p>Collin Rose and John Lodden, John for introducing me to Collin, and Collin for the first &quot;real&quot; ANSI link and for holding my hand through the remaining changes that had to be done for ANSI switches.</p><h5 id="SignalingSystemNumber7-ToUse:">To Use:</h5><p>In order to use libss7, you must get at least the following versions of DAHDI and Asterisk:<br /> DAHDI: 2.0.x<br /> libss7: trunk (currently, there <strong>only</strong> is a trunk release).<br /> Asterisk: 1.6.x</p><p>You must then do a `make; make install` in each of the directories that you installed in the given order (DAHDI first, libss7 second, and Asterisk last).</p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>In order to check out the code, you must have the subversion client installed. This is how to check them out from the public subversion server.</p><p>These are the commands you would type to install them:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">`svn co http://svn.digium.com/svn/dahdi/linux/trunk dahdi-trunk`
+`cd dahdi-trunk`
+`make; make install`
+
+`svn co http://svn.digium.com/svn/dahdi/tools/trunk dahdi-tools`
+`cd dahdi-tools`
+`./configure; make; make install`
+
+`svn co http://svn.digium.com/svn/libss7/trunk libss7-trunk`
+`cd libss7-trunk`
+`make; make install`
+
+`svn co http://svn.digium.com/svn/asterisk/trunk asterisk-trunk`
+`cd asterisk-trunk`
+`./configure; make; make install;`
+</pre>
+</div></div><p>This should build DAHDI, libss7, and Asterisk with SS7 support.</p>
+                    </div>
+    </div>
+<p>In the past, there was a special asterisk-ss7 branch to use which contained the SS7 code. That code has been merged back into the trunk version of Asterisk, and the old asterisk-ss7 branch has been deprecated and removed. If you are still using the asterisk-ss7 branch, it will not work against the current version of libss7, and you should switch to asterisk-trunk instead.</p><h5 id="SignalingSystemNumber7-Configuration:">Configuration:</h5><p>In /etc/dahdi/system.conf, your signalling channel(s) should be a &quot;dchan&quot; and your bearers should be set as &quot;bchan&quot;.</p><p>The sample chan_dahdi.conf contains sample configuration for setting up an E1 link.</p><p>In brief, here is a simple ss7 linkset setup:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">signalling = ss7
+ss7type = itu 		; or ansi if you are using an ANSI link
+
+linkset = 1		; Pick a number for your linkset identifier in chan_dahdi.conf
+
+pointcode = 28		; The decimal form of your point code.  If you are using an
+			; ANSI linkset, you can use the xxx-xxx-xxx notation for
+			; specifying your link
+adjpointcode = 2	; The point code of the switch adjacent to your linkset
+
+defaultdpc = 3		; The point code of the switch you want to send your ISUP
+			; traffic to.  A lot of the time, this is the same as your
+			; adjpointcode.
+
+; Now we configure our Bearer channels (CICs)
+
+cicbeginswith = 1	; Number to start counting the CICs from.  So if DAHDI/1 to
+			; DAHDI/15 are CICs 1-15, you would set this to 1 before you
+			; declare channel=1-15
+
+channel=1-15		; Use DAHDI/1-15 and assign them to CICs 1-15
+
+cicbeginswith = 17	; Now for DAHDI/17 to DAHDI/31, they are CICs 17-31 so we initialize
+			; cicbeginswith to 17 before we declare those channels
+
+channel = 17-31		; This assigns CICs 17-31 to channels 17-31
+
+sigchan = 16		; This is where you declare which DAHDI channel is your signalling
+			; channel.  In our case it is DAHDI/16.  You can add redundant
+			; signalling channels by adding additional sigchan= lines.
+			
+; If we want an alternate redundant signalling channel add this
+
+sigchan = 48		; This would put two signalling channels in our linkset, one at
+			; DAHDI/16 and one at DAHDI/48 which both would be used to send/receive
+			; ISUP traffic.
+
+; End of chan_dahdi.conf
+</pre>
+</div></div><p>This is how a basic linkset is setup. For more detailed chan_dahdi.conf SS7 config information as well as other options available for that file, see the default chan_dahdi.conf that comes with the samples in asterisk. If you would like, you can do a `make samples` in your asterisk-trunk directory and it will install a sample chan_dahdi.conf for you that contains<br /> more information about SS7 setup.</p><p>For more information, you can ask questions of the community on the asterisk-ss7 or asterisk-dev mailing lists.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

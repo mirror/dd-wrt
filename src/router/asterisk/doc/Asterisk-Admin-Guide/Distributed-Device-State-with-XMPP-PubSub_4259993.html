@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Distributed Device State with XMPP PubSub</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Distributed-Device-State_19009167.html">Distributed Device State</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Distributed Device State with XMPP PubSub
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Russell Bryant</span> on Nov 16, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    
+
+<style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303098134 {padding: 0px;}
+div.rbtoc1582303098134 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303098134 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303098134'>
+<ul class='toc-indentation'>
+<li><a href='#DistributedDeviceStatewithXMPPPubSub-Introduction'>1. Introduction</a></li>
+<li><a href='#DistributedDeviceStatewithXMPPPubSub-TigaseInstallation'>2. Tigase Installation</a>
+<ul class='toc-indentation'>
+
+<ul class='toc-indentation'>
+<li><a href='#DistributedDeviceStatewithXMPPPubSub-Description'>Description</a></li>
+<li><a href='#DistributedDeviceStatewithXMPPPubSub-Download'>Download</a></li>
+<li><a href='#DistributedDeviceStatewithXMPPPubSub-Install'>Install</a></li>
+</ul>
+<li><a href='#DistributedDeviceStatewithXMPPPubSub-TigaseConfiguration'>2.1. Tigase Configuration</a>
+<ul class='toc-indentation'>
+<li><a href='#DistributedDeviceStatewithXMPPPubSub-Generatingthekeystorefile'>Generating the keystore file</a></li>
+<li><a href='#DistributedDeviceStatewithXMPPPubSub-Configuringinit.properties'>Configuring init.properties</a></li>
+</ul>
+</li>
+<li><a href='#DistributedDeviceStatewithXMPPPubSub-RunningTigase'>2.2. Running Tigase</a></li>
+<li><a href='#DistributedDeviceStatewithXMPPPubSub-AddingBuddiestoTigase'>2.3. Adding Buddies to Tigase</a></li>
+</ul>
+</li>
+<li><a href='#DistributedDeviceStatewithXMPPPubSub-InstallingAsterisk'>3. Installing Asterisk</a>
+<ul class='toc-indentation'>
+<li><a href='#DistributedDeviceStatewithXMPPPubSub-ConfiguringAsterisk'>3.1. Configuring Asterisk</a></li>
+</ul>
+</li>
+<li><a href='#DistributedDeviceStatewithXMPPPubSub-BasicTestingofAsteriskwithXMPPPubSub'>4. Basic Testing of Asterisk with XMPP PubSub</a></li>
+<li><a href='#DistributedDeviceStatewithXMPPPubSub-TestingDistributedDeviceState'>5. Testing Distributed Device State</a></li>
+<li><a href='#DistributedDeviceStatewithXMPPPubSub-NotesOnLargeInstallations'>6. Notes On Large Installations</a></li>
+</ul>
+</div>
+
+<h1><a name="DistributedDeviceStatewithXMPPPubSub-Introduction"></a>1. Introduction</h1>
+
+<p>This document describes installing and utilizing XMPP PubSub events to distribute device state and message waiting indication (MWI) events between servers. The difference between this method and OpenAIS (see <a href="/wiki/display/AST/Distributed+Device+State+with+AIS" title="Distributed Device State with AIS">Distributed Device State with AIS</a>) is that OpenAIS can only be used in low latency networks; meaning only on the LAN, and not across the internet.</p>
+
+<p>If you plan on distributing device state or MWI across the internet, then you will require the use of XMPP PubSub events.</p>
+
+<h1><a name="DistributedDeviceStatewithXMPPPubSub-TigaseInstallation"></a>2. Tigase Installation</h1>
+
+<h5><a name="DistributedDeviceStatewithXMPPPubSub-Description"></a>Description</h5>
+
+<p>Currently the only server supported for XMPP PubSub events is the Tigase open source XMPP/Jabber environment. This is the server that the various Asterisk servers will connect to in order to distribute the events. The Tigase server can even be clustered in order to provide high availability for your device state; however, that is beyond the scope of this document.</p>
+
+<p>For more information about Tigase, visit their web site <a href="http://www.tigase.org/" class="external-link" rel="nofollow">http://www.tigase.org/</a>.</p>
+
+<h5><a name="DistributedDeviceStatewithXMPPPubSub-Download"></a>Download</h5>
+
+<p>To download the Tigase environment, get the latest version at <a href="http://www.tigase.org/content/tigase-downloads" class="external-link" rel="nofollow">http://www.tigase.org/content/tigase-downloads</a>.  Some distributions have Tigase packaged, as well.</p>
+
+<h5><a name="DistributedDeviceStatewithXMPPPubSub-Install"></a>Install</h5>
+
+<p>The Tigase server requires a working Java environment, including both a JRE (Java Runtime Environment) and a JDK (Java Development Kit), currently at least version 1.6.</p>
+
+<p>For more information about how to install Tigase, see the web site <a href="http://www.tigase.org/content/quick-start" class="external-link" rel="nofollow">http://www.tigase.org/content/quick-start</a>.</p>
+
+<h2><a name="DistributedDeviceStatewithXMPPPubSub-TigaseConfiguration"></a>2.1. Tigase Configuration</h2>
+
+<p>While installing Tigase, be sure you enable the PubSub module. Without it, the PubSub events won't be accepted by the server, and your device state will not be distributed.</p>
+
+<p>There are a couple of things you need to configure in Tigase before you start it in order for Asterisk to connect. The first thing we need to do is generate the self-signed certificate. To do this we use the keytool application. More<br/>
+information can be found here <a href="http://www.tigase.org/content/server-certificate" class="external-link" rel="nofollow">http://www.tigase.org/content/server-certificate</a>.</p>
+
+<h5><a name="DistributedDeviceStatewithXMPPPubSub-Generatingthekeystorefile"></a>Generating the keystore file</h5>
+
+<p>Generally, we need to run the following commands to generate a new keystore file.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># cd /opt/Tigase-4.3.1-b1858/certs
+</pre>
+</div></div>
+
+<p>Be sure to change the 'yourdomain' to your domain.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># keytool -genkey -alias yourdomain -keystore rsa-keystore -keyalg RSA -sigalg MD5withRSA
+</pre>
+</div></div>
+
+<p>The keytool application will then ask you for a password. Use the password 'keystore' as this is the default password that Tigase will use to load the keystore file.</p>
+
+<p>You then need to specify your domain as the first value to be entered in the security certificate.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>What is your first and last name?
+  [Unknown]: asterisk.mydomain.tld
+What is the name of your organizational unit?
+  [Unknown]:
+What is the name of your organization?
+  [Unknown]:
+What is the name of your City or Locality?
+  [Unknown]:
+What is the name of your State or Province?
+  [Unknown]:
+What is the two-letter country code for this unit?
+  [Unknown]:
+Is CN=asterisk.mydomain.tld, OU=Unknown, O=Unknown, L=Unknown, ST=Unknown, C=Unknown correct?
+  [no]: yes
+</pre>
+</div></div>
+
+<p>You will then be asked for another password, in which case you must just press enter for the same password as Tigase will not work without them being the same.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Enter key password for &lt;mykey&gt;
+             (RETURN if same as keystore password):
+</pre>
+</div></div>
+
+<h5><a name="DistributedDeviceStatewithXMPPPubSub-Configuringinit.properties"></a>Configuring init.properties</h5>
+
+<p>The next step is to configure the init.properties file which is used by Tigase to generate the tigase.xml file. Whenever you change the init.properties file because sure to remove the current tigase.xml file so that it will be regenerated at start up.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># cd /opt/Tigase-4.3.1-b1858/etc
+</pre>
+</div></div>
+
+<p>Then edit the init.properties file and add the following:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>config-type=--gen-config-def
+--admins=admin@asterisk.mydomain.tld
+--virt-hosts=asterisk.mydomain.tld
+--debug=server
+--user-db=derby
+--user-db-uri=jdbc:derby:/opt/Tigase-4.3.1-b1858
+--comp-name-1=pubsub
+--comp-class-1=tigase.pubsub.PubSubComponent
+</pre>
+</div></div>
+
+<p>Be sure to change the domain in the --admin and --virt-hosts options. The most important lines are --comp-name-1 and --comp-class-1 which tell Tigase to load the PubSub module.</p>
+
+<h2><a name="DistributedDeviceStatewithXMPPPubSub-RunningTigase"></a>2.2. Running Tigase</h2>
+
+<p>You can then start the Tigase server with the tigase.sh script.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># cd /opt/Tigase-4.3.1-b1858
+# ./scripts/tigase.sh start etc/tigase.conf
+</pre>
+</div></div>
+
+<h2><a name="DistributedDeviceStatewithXMPPPubSub-AddingBuddiestoTigase"></a>2.3. Adding Buddies to Tigase</h2>
+
+<p>At this time, Asterisk is not able to automatically register your peers for you, so you'll need to use an external application to do the initial registration.</p>
+
+<p>Pidgin is an excellent multi-protocol instant messenger application which supports XMPP. It runs on Linux, Windows, and OSX, and is open source. You can get Pidgin from <a href="http://www.pidgin.im" class="external-link" rel="nofollow">http://www.pidgin.im</a></p>
+
+<p>Then add the two buddies we'll use in Asterisk with Pidgin by connecting to the Tigase server. For more information about how to register new buddies, see the Pidgin documentation.</p>
+
+<p>Once the initial registration is done and loaded into Tigase, you no longer need to worry about using Pidgin. Asterisk will then be able to load the peers into memory at start up.</p>
+
+<p>The example peers we've used in the following documentation for our two nodes are:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>server1@asterisk.mydomain.tld/astvoip1
+server2@asterisk.mydomain.tld/astvoip2
+</pre>
+</div></div>
+
+<h1><a name="DistributedDeviceStatewithXMPPPubSub-InstallingAsterisk"></a>3. Installing Asterisk</h1>
+
+<p>Install Asterisk as usual. However, you'll need to make sure you have the res_jabber module compiled, which requires the iksemel development library. Additionally, be sure you have the OpenSSL development library installed so you can connect securly to the Tigase server.</p>
+
+<p>Make sure you check menuselect that res_jabber is selected so that it will compile.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># cd asterisk-source
+# ./configure
+
+# make menuselect
+  ---&gt; Resource Modules
+</pre>
+</div></div>
+
+<p>If you don't have jabber.conf in your existing configuration, because sure to copy the sample configuration file there.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># cd configs
+# cp jabber.conf.sample /etc/asterisk/jabber.conf
+</pre>
+</div></div>
+
+<h2><a name="DistributedDeviceStatewithXMPPPubSub-ConfiguringAsterisk"></a>3.1. Configuring Asterisk</h2>
+
+<p>We then need to configure our servers to communicate with the Tigase server. We need to modify the jabber.conf file on the servers. The configurations below are for a 2 server setup, but could be expanded for additional servers easily.</p>
+
+<p>The key note here is to note that the pubsub_node option needs to start with pubsub, so for example, pubsub.asterisk.mydomain.tld. Without the 'pubsub' your Asterisk system will not be able to distribute events.</p>
+
+<p>Additionally, you will need to specify each of the servers you need to connec to using the 'buddy' option.</p>
+
+
+<p>*Asterisk Server 1</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>jabber.conf on server1</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+[general]
+debug=no                                ;;Turn on debugging by default.
+;autoprune=yes                          ;;Auto remove users from buddy list. Depending on your
+                                        ;;setup (ie, using your personal Gtalk account for a test)
+                                        ;;you might lose your contacts list. Default is &#39;no&#39;.
+autoregister=yes                        ;;Auto register users from buddy list.
+;collection_nodes=yes                   ;;Enable support for XEP-0248 for use with
+                                        ;;distributed device state.  Default is &#39;no&#39;.
+;pubsub_autocreate=yes                  ;;Whether or not the PubSub server supports/is using
+                                        ;;auto-create for nodes.  If it is, we have to
+                                        ;;explicitly pre-create nodes before publishing them.
+                                        ;;Default is &#39;no&#39;.
+
+[asterisk]
+type=client
+serverhost=asterisk.mydomain.tld
+pubsub_node=pubsub.asterisk.mydomain.tld
+username=server1@asterisk.mydomain.tld/astvoip1
+secret=welcome
+distribute_events=yes
+status=available
+usetls=no
+usesasl=yes
+buddy=server2@asterisk.mydomain.tld/astvoip2
+</pre>
+</div></div>
+
+<p><strong>Asterisk Server 2</strong></p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>jabber.conf on server2</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+[general]
+debug=yes				;;Turn on debugging by default.
+;autoprune=yes				;;Auto remove users from buddy list. Depending on your
+					;;setup (ie, using your personal Gtalk account for a test)
+					;;you might lose your contacts list. Default is &#39;no&#39;.
+autoregister=yes			;;Auto register users from buddy list.
+;collection_nodes=yes			;;Enable support for XEP-0248 for use with
+					;;distributed device state.  Default is &#39;no&#39;.
+;pubsub_autocreate=yes			;;Whether or not the PubSub server supports/is using
+					;;auto-create for nodes.  If it is, we have to
+					;;explicitly pre-create nodes before publishing them.
+					;;Default is &#39;no&#39;.
+
+[asterisk]
+type=client
+serverhost=asterisk.mydomain.tld
+pubsub_node=pubsub.asterisk.mydomain.tld
+username=server2@asterisk.mydomain.tld/astvoip2
+secret=welcome
+distribute_events=yes
+status=available
+usetls=no
+usesasl=yes
+buddy=server1@asterisk.mydomain.tld/astvoip1
+</pre>
+</div></div>
+
+<h1><a name="DistributedDeviceStatewithXMPPPubSub-BasicTestingofAsteriskwithXMPPPubSub"></a>4. Basic Testing of Asterisk with XMPP PubSub</h1>
+
+<p>Once you have Asterisk installed with XMPP PubSub, it is time to test it out.</p>
+
+<p>We need to start up our first server and make sure we get connected to the XMPP server. We can verify this with an Asterisk console command to determine if we're connected.</p>
+
+<p>On Asterisk 1 we can run 'jabber show connected' to verify we're connected to the XMPP server.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; jabber show connected 
+Jabber Users and their status:
+       User: server1@asterisk.mydomain.tld/astvoip1     - Connected
+----
+   Number of users: 1
+</pre>
+</div></div>
+
+<p>The command above has given us output which verifies we've connected our first server.</p>
+
+<p>We can then check the state of our buddies with the 'jabber show buddies' CLI command.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; jabber show buddies
+Jabber buddy lists
+Client: server1@asterisk.mydomain.tld/astvoip1
+	Buddy:	server2@asterisk.mydomain.tld
+		Resource: None
+	Buddy:	server2@asterisk.mydomain.tld/astvoip2
+		Resource: None
+</pre>
+</div></div>
+
+<p>The output above tells us we're not connected to any buddies, and thus we're not distributing state to anyone (or getting it from anyone). That makes sense since we haven't yet started our other server.</p>
+
+<p>Now, let's start the other server and verify the servers are able to establish a connection between each other.</p>
+
+<p>On Asterisk 2, again we run the 'jabber show connected' command to make sure we've connected successfully to the XMPP server.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; jabber show connected 
+Jabber Users and their status:
+       User: server2@asterisk.mydomain.tld/astvoip2     - Connected
+----
+   Number of users: 1
+</pre>
+</div></div>
+
+<p>And now we can check the status of our buddies.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; jabber show buddies
+Jabber buddy lists
+Client: server2@scooter/astvoip2
+	Buddy:	server1@asterisk.mydomain.tld
+		Resource: astvoip1
+			node: http://www.asterisk.org/xmpp/client/caps
+			version: asterisk-xmpp
+			Jingle capable: yes
+		Status: 1
+		Priority: 0
+	Buddy:	server1@asterisk.mydomain.tld/astvoip1
+		Resource: None
+</pre>
+</div></div>
+
+<p>Excellent! So we're connected to the buddy on Asterisk 1, and we could run the same command on Asterisk 1 to verify the buddy on Asterisk 2 is seen.</p>
+
+<h1><a name="DistributedDeviceStatewithXMPPPubSub-TestingDistributedDeviceState"></a>5. Testing Distributed Device State</h1>
+
+<p>The easiest way to test distributed device state is to use the DEVICE_STATE() diaplan function.  For example, you could have the following piece of dialplan on every server:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[devstate_test]
+
+exten =&gt; 1234,hint,Custom:mystate
+
+exten =&gt; set_inuse,1,Set(DEVICE_STATE(Custom:mystate)=INUSE)
+exten =&gt; set_not_inuse,1,Set(DEVICE_STATE(Custom:mystate)=NOT_INUSE)
+
+exten =&gt; check,1,NoOp(Custom:mystate is ${DEVICE_STATE(Custom:mystate)})
+</pre>
+</div></div>
+
+<p>Now, you can test that the cluster-wide state of "Custom:mystate" is what you would expect after going to the CLI of each server and adjusting the state.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>server1*CLI&gt; console dial set_inuse@devstate_test
+   ...
+
+server2*CLI&gt; console dial check@devstate_test
+    -- Executing [check@devstate_test:1] NoOp("OSS/dsp", "Custom:mystate is INUSE") in new stack
+</pre>
+</div></div>
+
+<p>Various combinations of setting and checking the state on different servers can be used to verify that it works as expected.  Also, you can see the status of the hint on each server, as well, to see how extension state would reflect the<br/>
+state change with distributed device state: </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>server2*CLI&gt; core show hints
+    -= Registered Asterisk Dial Plan Hints =-
+                   1234@devstate_test       : Custom:mystate        State:InUse           Watchers  0
+</pre>
+</div></div>
+
+<p>One other helpful thing here during testing and debugging is to enable debug logging.  To do so, enable debug on the console in /etc/asterisk/logger.conf. Also, enable debug at the Asterisk CLI.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; core set debug 1
+</pre>
+</div></div>
+
+<p>When you have this debug enabled, you will see output during the processing of every device state change.  The important thing to look for is where the known state of the device for each server is added together to determine the overall<br/>
+state.</p>
+
+<h1><a name="DistributedDeviceStatewithXMPPPubSub-NotesOnLargeInstallations"></a>6. Notes On Large Installations</h1>
+
+<p>On larger installations where you want a fully meshed network of buddies (i.e. all servers have all the buddies of the remote servers), you may want some method of distributing those buddies automatically so you don't need to modify<br/>
+all servers (N+1) every time you add a new server to the cluster.</p>
+
+<p>The problem there is that you're confined by what's allowed in XEP-0060, and unfortunately that means modifying affiliations by individual JID (as opposed to the various subscription access models, which are more flexible).</p>
+
+<p>See here for details <a href="http://xmpp.org/extensions/xep-0060.html#owner-affiliations" class="external-link" rel="nofollow">http://xmpp.org/extensions/xep-0060.html#owner-affiliations</a></p>
+
+<p>One method for making this slightly easier is to utilize the #exec functionality in configuration files, and dynamically generate the buddies via script that pulls the information from a database, or to #include a file which is automatically generated on all the servers when you add a new node to the cluster.</p>
+
+<p>Unfortunately this still requires a reload of res_jabber.so on all the servers, but this could also be solved through the use of the Asterisk Manager Interface (AMI).</p>
+
+<p>So while this is not the ideal situation, it is programmatically solvable with existing technologies and features found in Asterisk today.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

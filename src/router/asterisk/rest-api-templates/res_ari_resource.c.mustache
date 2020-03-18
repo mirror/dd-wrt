@@ -40,12 +40,13 @@
 	<depend type="module">res_ari</depend>
 	<depend type="module">res_ari_model</depend>
 	<depend type="module">res_stasis</depend>
+{{#requires_modules}}
+	<depend type="module">{{.}}</depend>
+{{/requires_modules}}
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/app.h"
 #include "asterisk/module.h"
@@ -54,7 +55,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #if defined(AST_DEVMODE)
 #include "ari/ari_model_validators.h"
 #endif
-{{^has_websocket}}
+{{#has_websocket}}
 {{! Only include http_websocket if necessary. Otherwise we'll do a lot of
  *  unnecessary optional_api intialization, which makes optional_api harder
  *  to debug
@@ -90,7 +91,12 @@ static void ast_ari_{{c_name}}_{{c_nickname}}_cb(
 #endif /* AST_DEVMODE */
 
 {{> param_parsing}}
+{{^is_binary_response}}
 	ast_ari_{{c_name}}_{{c_nickname}}(headers, &args, response);
+{{/is_binary_response}}
+{{#is_binary_response}}
+	ast_ari_{{c_name}}_{{c_nickname}}(ser, headers, &args, response);
+{{/is_binary_response}}
 #if defined(AST_DEVMODE)
 	code = response->response_code;
 
@@ -113,8 +119,14 @@ static void ast_ari_{{c_name}}_{{c_nickname}}_cb(
 				ast_ari_validate_{{c_singular_name}}_fn());
 {{/is_list}}
 {{^is_list}}
+{{^is_binary_response}}
 			is_valid = ast_ari_validate_{{c_name}}(
 				response->message);
+{{/is_binary_response}}
+{{#is_binary_response}}
+			/* No validation on a raw binary response */
+			is_valid = 1;
+{{/is_binary_response}}
 {{/is_list}}
 {{/response_class}}
 		} else {
@@ -136,7 +148,8 @@ fin: __attribute__((unused))
 }
 {{/is_req}}
 {{#is_websocket}}
-static int ast_ari_{{c_name}}_{{c_nickname}}_ws_attempted_cb(struct ast_tcptls_session_instance *ser, struct ast_variable *get_params, struct ast_variable *headers)
+static int ast_ari_{{c_name}}_{{c_nickname}}_ws_attempted_cb(struct ast_tcptls_session_instance *ser,
+	struct ast_variable *get_params, struct ast_variable *headers, const char *session_id)
 {
 	struct ast_ari_{{c_name}}_{{c_nickname}}_args args = {};
 {{#has_parameters}}
@@ -155,7 +168,7 @@ static int ast_ari_{{c_name}}_{{c_nickname}}_ws_attempted_cb(struct ast_tcptls_s
 
 {{> param_parsing}}
 
-	res = ast_ari_websocket_{{c_name}}_{{c_nickname}}_attempted(ser, headers, &args);
+	res = ast_ari_websocket_{{c_name}}_{{c_nickname}}_attempted(ser, headers, &args, session_id);
 
 fin: __attribute__((unused))
 	if (!response) {
@@ -197,6 +210,8 @@ static void ast_ari_{{c_name}}_{{c_nickname}}_ws_established_cb(struct ast_webso
 	 * just punt. */
 	struct ast_variable *path_vars = NULL;
 {{/has_path_parameters}}
+
+	SCOPED_MODULE_USE(ast_module_info->self);
 
 {{#has_parameters}}
 	response = ast_calloc(1, sizeof(*response));
@@ -253,9 +268,9 @@ static int unload_module(void)
 {{#has_websocket}}
 	ao2_cleanup({{full_name}}.ws_server);
 	{{full_name}}.ws_server = NULL;
+	ast_ari_websocket_events_event_websocket_dtor();
 {{/has_websocket}}
 {{/apis}}
-	stasis_app_unref();
 	return 0;
 }
 
@@ -263,37 +278,35 @@ static int load_module(void)
 {
 	int res = 0;
 
-	CHECK_ARI_MODULE_LOADED();
-
 {{#apis}}
 {{#operations}}
-{{#has_websocket}}
-	/* This is scoped to not conflict with CHECK_ARI_MODULE_LOADED */
-	{
-		struct ast_websocket_protocol *protocol;
-
-		{{full_name}}.ws_server = ast_websocket_server_create();
-		if (!{{full_name}}.ws_server) {
-			return AST_MODULE_LOAD_DECLINE;
-		}
-
-		protocol = ast_websocket_sub_protocol_alloc("{{websocket_protocol}}");
-		if (!protocol) {
-			ao2_ref({{full_name}}.ws_server, -1);
-			{{full_name}}.ws_server = NULL;
-			return AST_MODULE_LOAD_DECLINE;
-		}
-		protocol->session_attempted = ast_ari_{{c_name}}_{{c_nickname}}_ws_attempted_cb;
-		protocol->session_established = ast_ari_{{c_name}}_{{c_nickname}}_ws_established_cb;
-{{/has_websocket}}
 {{#is_websocket}}
-		res |= ast_websocket_server_add_protocol2({{full_name}}.ws_server, protocol);
+	struct ast_websocket_protocol *protocol;
+
+	if (ast_ari_websocket_{{c_name}}_{{c_nickname}}_init() == -1) {
+		return AST_MODULE_LOAD_DECLINE;
 	}
+
+	{{full_name}}.ws_server = ast_websocket_server_create();
+	if (!{{full_name}}.ws_server) {
+		ast_ari_websocket_events_event_websocket_dtor();
+		return AST_MODULE_LOAD_DECLINE;
+	}
+
+	protocol = ast_websocket_sub_protocol_alloc("{{websocket_protocol}}");
+	if (!protocol) {
+		ao2_ref({{full_name}}.ws_server, -1);
+		{{full_name}}.ws_server = NULL;
+		ast_ari_websocket_events_event_websocket_dtor();
+		return AST_MODULE_LOAD_DECLINE;
+	}
+	protocol->session_attempted = ast_ari_{{c_name}}_{{c_nickname}}_ws_attempted_cb;
+	protocol->session_established = ast_ari_{{c_name}}_{{c_nickname}}_ws_established_cb;
+	res |= ast_websocket_server_add_protocol2({{full_name}}.ws_server, protocol);
 {{/is_websocket}}
 {{/operations}}
 {{/apis}}
 
-	stasis_app_ref();
 	res |= ast_ari_add_handler(&{{root_full_name}});
 	if (res) {
 		unload_module();
@@ -307,6 +320,6 @@ AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "RESTful API module - {{{
 	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
-	.nonoptreq = "res_ari,res_stasis",
-	);
+	.requires = "res_ari,res_ari_model,res_stasis{{#requires_modules}},{{.}}{{/requires_modules}}",
+);
 {{/api_declaration}}

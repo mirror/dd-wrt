@@ -1,12 +1,4 @@
-# Process this file with autoconf to produce a configure script.
-#
-# Make sure we use autoconf 2.60 to generate the "configure" script,
-# in case we want to commit it. Other than that, version 2.59 is
-# perfectly fine for our purposes, so people who want to modify
-# this file just have to remember to set the AC_PREREQ argument
-# to something that suits their needs.
-
-AC_PREREQ(2.60)
+AC_PREREQ(2.60a)
 
 AC_INIT([asterisk], [trunk], [https://issues.asterisk.org])
 
@@ -17,10 +9,7 @@ AC_CANONICAL_HOST
 # check existence of the package
 AC_CONFIG_SRCDIR([main/asterisk.c])
 
-AC_CONFIG_AUX_DIR(`pwd`)
-
 AC_COPYRIGHT("Asterisk")
-AC_REVISION($Revision$)
 
 # preserve any CFLAGS or LDFLAGS that may be set
 # NOTE: This must be done before calling any macros that end up
@@ -60,7 +49,7 @@ AC_SUBST([astvarrundir],      ['${localstatedir}/run/asterisk'])dnl
 
 case "${host_os}" in
      *bsd*)
-     if test ${prefix} = 'NONE'; then
+     if test ${prefix} != 'NONE'; then
         astvarlibdir='${prefix}/share/asterisk'
         astdbdir='${localstatedir}/db/asterisk'
      fi
@@ -73,7 +62,12 @@ case "${host_os}" in
 esac
 
 case "${host_os}" in
-     freebsd*)
+     netbsd*)
+     ac_default_prefix=/usr/pkg
+     CPPFLAGS=-I/usr/pkg/include
+     LDFLAGS=-L/usr/pkg/lib
+     ;;
+     dragonfly*|freebsd*)
      ac_default_prefix=/usr/local
      CPPFLAGS=-I/usr/local/include
      LDFLAGS=-L/usr/local/lib
@@ -158,7 +152,7 @@ AC_SUBST(HOST_OS)
 PBX_WINARCH=0
 
 case "${host_os}" in
-     freebsd*)
+     dragonfly*|freebsd*)
      OSARCH=FreeBSD
      ;;
      netbsd*)
@@ -180,6 +174,9 @@ case "${host_os}" in
      ;;
      linux-gnu*)
      OSARCH=linux-gnu
+     ;;
+     linux-musl*)
+     OSARCH=linux-musl
      ;;
      kfreebsd*-gnu)
      OSARCH=kfreebsd-gnu
@@ -218,17 +215,13 @@ if test ! x"${UNAME}" = xNo; then
 fi
 AC_SUBST(PBX_OSREV)
 
-AH_TOP(
-#ifndef ASTERISK_AUTOCONFIG_H
+AH_TOP([#ifndef ASTERISK_AUTOCONFIG_H
 #define ASTERISK_AUTOCONFIG_H
+/* IWYU pragma: private, include "asterisk.h" */
 
-#include "asterisk/buildopts.h"
+#include "asterisk/buildopts.h" /* IWYU pragma: export */])
 
-)
-
-AH_BOTTOM(
-#endif
-)
+AH_BOTTOM([#endif	/* ASTERISK_AUTOCONFIG_H */])
 
 # cross-compile checks
 if test "${cross_compiling}" = "yes";
@@ -237,6 +230,8 @@ then
    AC_CHECK_TOOL(CXX, g++, :)
    AC_CHECK_TOOL(LD, ld, :)
    AC_CHECK_TOOL(RANLIB, ranlib, :)
+   CROSS_COMPILING=1
+   AC_SUBST(CROSS_COMPILING)
 fi
 
 # Checks for programs.
@@ -265,6 +260,7 @@ AC_SUBST(GNU_LD)
 AC_PATH_PROG([BISON], [bison], :)
 AC_PATH_PROG([CMP], [cmp], :)
 AC_PATH_PROG([CAT], [cat], :)
+AC_PATH_PROG([CUT], [cut], :)
 AC_PATH_PROG([FLEX], [flex], :)
 AC_PATH_PROG([GREP], [grep], :)
 AC_PATH_PROG([PYTHON], [python], :)
@@ -282,7 +278,7 @@ AC_PATH_PROG([RUBBER], [rubber], :)
 AC_PATH_PROG([CATDVI], [catdvi], :)
 AC_PATH_PROG([KPATHSEA], [kpsewhich], :)
 AC_PATH_PROG([XMLLINT], [xmllint], :)
-AC_PATH_PROG([XMLSTARLET], [xmlstarlet], :)
+AC_PATH_PROGS([XMLSTARLET], [xmlstarlet xml], :)
 AC_PATH_PROG([BASH], [bash], :)
 AC_PATH_PROG([GIT], [git], :)
 AC_PATH_PROG([ALEMBIC], [alembic], :)
@@ -292,22 +288,25 @@ AC_PATH_PROG([PATCH], [patch], :)
 AC_PATH_PROG([SED], [sed], :)
 AC_PATH_PROG([NM], [nm], :)
 
+DOWNLOAD=":"
+DOWNLOAD_TO_STDOUT=
+DOWNLOAD_TIMEOUT=
 if test "${WGET}" != ":" ; then
   DOWNLOAD=${WGET}
   DOWNLOAD_TO_STDOUT="${WGET} -q -O-"
   DOWNLOAD_TIMEOUT='--timeout=$1'
-else if test "${CURL}" != ":" ; then
+elif test "${CURL}" != ":" ; then
   DOWNLOAD="${CURL} -O --progress-bar -w \"%{url_effective}\n\""
   DOWNLOAD_TO_STDOUT="${CURL} -Ls"
   DOWNLOAD_TIMEOUT='--max-time $(or $2,$1)'
 else
-  AC_PATH_PROG([FETCH], [fetch], [:])
-  DOWNLOAD=${FETCH}
-  DOWNLOAD_TO_STDOUT="${FETCH} -o-"
-  DOWNLOAD_TIMEOUT='--timeout=$(or $2,$1)'
+  AC_PATH_PROG([FETCH], [fetch], :)
+  if test "${FETCH}" != ":" ; then
+    DOWNLOAD=${FETCH}
+    DOWNLOAD_TO_STDOUT="${FETCH} -o-"
+    DOWNLOAD_TIMEOUT='--timeout=$(or $2,$1)'
+  fi
 fi
-fi
-
 AC_SUBST(DOWNLOAD)
 AC_SUBST(DOWNLOAD_TO_STDOUT)
 AC_SUBST(DOWNLOAD_TIMEOUT)
@@ -388,6 +387,17 @@ AX_PTHREAD
 
 AC_LANG(C)
 
+PBX_NO_BINARY_MODULES=0
+AC_ARG_ENABLE([binary-modules],
+	[AS_HELP_STRING([--disable-binary-modules],
+		[Block installation of binary modules.])],
+	[case "${enableval}" in
+	      y|ye|yes) PBX_NO_BINARY_MODULES=0 ;;
+	      n|no)  PBX_NO_BINARY_MODULES=1 ;;
+	      *) AC_MSG_ERROR(bad value ${enableval} for --disable-binary-modules)  ;;
+	esac])
+AC_SUBST(PBX_NO_BINARY_MODULES)
+
 AC_ARG_ENABLE([dev-mode],
 	[AS_HELP_STRING([--enable-dev-mode],
 		[Turn on developer mode])],
@@ -408,6 +418,7 @@ AC_SUBST(NOISY_BUILD)
 AC_SUBST(AST_DEVMODE)
 AC_SUBST(AST_DEVMODE_STRICT)
 
+AST_OPTION_ONLY([download-cache], [AST_DOWNLOAD_CACHE], [cached sound AND external module tarfiles], [])
 AST_OPTION_ONLY([sounds-cache], [SOUNDS_CACHE_DIR], [cached sound tarfiles], [])
 AST_OPTION_ONLY([externals-cache], [EXTERNALS_CACHE_DIR], [cached external module tarfiles], [])
 
@@ -425,12 +436,21 @@ AC_SUBST(AST_CODE_COVERAGE)
 AST_CHECK_RAII()
 AST_CHECK_STRSEP_ARRAY_BOUNDS()
 
-PJPROJECT_BUNDLED=no
+JANSSON_BUNDLED=no
+AC_ARG_WITH([jansson-bundled],
+	[AS_HELP_STRING([--with-jansson-bundled],
+		[Use bundled jansson library])],
+	[case "${withval}" in
+		y|yes) JANSSON_BUNDLED=yes ;;
+		*) JANSSON_BUNDLED=no ;;
+	esac])
+
+PJPROJECT_BUNDLED=yes
 AH_TEMPLATE(m4_bpatsubst([[HAVE_PJPROJECT_BUNDLED]], [(.*)]), [Define to 1 when using the bundled pjproject.])
 
 AC_ARG_WITH([pjproject-bundled],
 	[AS_HELP_STRING([--with-pjproject-bundled],
-		[Use bundled pjproject libraries])],
+		[Use bundled pjproject libraries (default)])],
 	[case "${withval}" in
 	      n|no) PJPROJECT_BUNDLED=no ;;
 	      *) PJPROJECT_BUNDLED=yes ;;
@@ -456,20 +476,19 @@ AST_EXT_LIB_SETUP([BFD], [Debug symbol decoding], [bfd])
 AST_EXT_LIB_SETUP([BKTR], [Stack Backtrace], [execinfo])
 AST_EXT_LIB_SETUP([BLUETOOTH], [Bluetooth], [bluetooth])
 AST_EXT_LIB_SETUP([CAP], [POSIX 1.e capabilities], [cap])
+AST_EXT_LIB_SETUP([CODEC2], [Codec 2 Audio Decoder/Encoder], [codec2])
 AST_EXT_LIB_SETUP([COROSYNC], [Corosync], [cpg])
 AST_EXT_LIB_SETUP_OPTIONAL([COROSYNC_CFG_STATE_TRACK], [A callback only in corosync 1.x], [COROSYNC], [cfg])
-AST_EXT_LIB_SETUP([CURSES], [curses], [curses])
 AST_EXT_LIB_SETUP([CRYPT], [password and data encryption], [crypt])
 AST_EXT_LIB_SETUP([CRYPTO], [OpenSSL Cryptography], [crypto])
 AST_EXT_LIB_SETUP_OPTIONAL([OPENSSL_SRTP], [OpenSSL SRTP Extension Support], [CRYPTO], [crypto])
-AST_EXT_LIB_SETUP_OPTIONAL([OPENSSL_EC], [OpenSSL Elliptic Curve Support], [CRYPTO], [crypto])
+AST_EXT_LIB_SETUP_OPTIONAL([OPENSSL_BIO_METHOD], [OpenSSL BIO Method Support], [CRYPTO], [crypto])
 AST_EXT_LIB_SETUP([DAHDI], [DAHDI], [dahdi])
 AST_EXT_LIB_SETUP([FFMPEG], [Ffmpeg and avcodec], [avcodec])
 AST_EXT_LIB_SETUP([GSM], [External GSM], [gsm], [, use 'internal' GSM otherwise])
 AST_EXT_LIB_SETUP([ILBC], [System iLBC], [ilbc], [, use 'internal' iLBC otherwise])
 AST_EXT_LIB_SETUP([GTK2], [gtk2], [gtk2])
 AST_EXT_LIB_SETUP([GMIME], [GMime], [gmime])
-AST_EXT_LIB_SETUP([OPENH323], [OpenH323], [h323])
 AST_EXT_LIB_SETUP([HOARD], [Hoard Memory Allocator], [hoard])
 AST_EXT_LIB_SETUP([ICAL], [iCal], [ical])
 AST_EXT_LIB_SETUP([ICONV], [Iconv], [iconv])
@@ -484,17 +503,15 @@ AST_EXT_LIB_SETUP([URIPARSER], [uriparser library], [uriparser])
 AST_EXT_LIB_SETUP([KQUEUE], [kqueue support], [kqueue])
 AST_EXT_LIB_SETUP([LDAP], [OpenLDAP], [ldap])
 AST_LIBCURL_CHECK_CONFIG([], [7.10.1])
-AST_EXT_LIB_SETUP([LIBEDIT], [NetBSD Editline library], [libedit], [, use 'internal' Editline otherwise])
+AST_EXT_LIB_SETUP([LIBEDIT], [NetBSD Editline library], [libedit])
 AST_EXT_LIB_SETUP_OPTIONAL([LIBEDIT_IS_UNICODE], [Libedit compiled for unicode], [LIBEDIT], [libedit])
 AST_EXT_LIB_SETUP([LIBXML2], [LibXML2], [libxml2])
 AST_EXT_LIB_SETUP([LIBXSLT], [LibXSLT], [libxslt])
 AST_EXT_LIB_SETUP_OPTIONAL([LIBXSLT_CLEANUP], [LibXSLT Library Cleanup Function], [LIBXSLT], [libxslt])
-AST_EXT_LIB_SETUP([LTDL], [libtool], [ltdl])
 AST_EXT_LIB_SETUP([LUA], [Lua], [lua])
 AST_EXT_LIB_SETUP([MISDN], [mISDN user], [misdn])
 AST_EXT_LIB_SETUP([MYSQLCLIENT], [MySQL client], [mysqlclient])
 AST_EXT_LIB_SETUP([NBS], [Network Broadcast Sound], [nbs])
-AST_EXT_LIB_SETUP([NCURSES], [ncurses], [ncurses])
 AST_EXT_LIB_SETUP([NEON], [neon], [neon])
 AST_EXT_LIB_SETUP([NEON29], [neon29], [neon29])
 AST_EXT_LIB_SETUP([NETSNMP], [Net-SNMP], [netsnmp])
@@ -502,9 +519,11 @@ AST_EXT_LIB_SETUP([NEWT], [newt], [newt])
 AST_EXT_LIB_SETUP([OGG], [OGG], [ogg])
 AST_EXT_LIB_SETUP([OPENR2], [MFR2], [openr2])
 AST_EXT_LIB_SETUP([OPUS], [Opus], [opus])
+AST_EXT_LIB_SETUP([OPUSFILE], [Opusfile], [opusfile])
 AST_EXT_LIB_SETUP([OSPTK], [OSP Toolkit], [osptk])
 AST_EXT_LIB_SETUP([OSS], [Open Sound System], [oss])
 AST_EXT_LIB_SETUP([PGSQL], [PostgreSQL], [postgres])
+AST_EXT_LIB_SETUP([BEANSTALK], [Beanstalk Job Queue], [beanstalk])
 
 if test "x${PBX_PJPROJECT}" != "x1" ; then
 AST_EXT_LIB_SETUP([PJPROJECT], [PJPROJECT], [pjproject])
@@ -518,8 +537,11 @@ AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_TLS_TRANSPORT_PROTO], [PJSIP TLS Transport pro
 AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_EVSUB_GRP_LOCK], [PJSIP EVSUB Group Lock support], [PJPROJECT], [pjsip])
 AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_INV_SESSION_REF], [PJSIP INVITE Session Reference Count support], [PJPROJECT], [pjsip])
 AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_AUTH_CLT_DEINIT], [pjsip_auth_clt_deinit support], [PJPROJECT], [pjsip])
-AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_EVSUB_SET_UAS_TIMEOUT], [PJSIP EVSUB Set UAS Timeout support], [PJPROJECT], [pjsip])
 AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_TSX_LAYER_FIND_TSX2], [pjsip_tsx_layer_find_tsx2 support], [PJPROJECT], [pjsip])
+AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_INV_ACCEPT_MULTIPLE_SDP_ANSWERS], [PJSIP INVITE Accept Multiple SDP Answers], [PJPROJECT], [pjsip])
+AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_ENDPOINT_COMPACT_FORM], [PJSIP Compact Form Support on Endpoint], [PJPROJECT], [pjsip])
+AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_TRANSPORT_DISABLE_CONNECTION_REUSE], [PJSIP Transport Connection Reuse Disabling], [PJPROJECT], [pjsip])
+AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_OAUTH_AUTHENTICATION], [PJSIP OAuth Authentication Support], [PJPROJECT], [pjsip])
 fi
 
 AST_EXT_LIB_SETUP([POPT], [popt], [popt])
@@ -549,9 +571,10 @@ AST_EXT_LIB_SETUP_OPTIONAL([PRI_PROG_W_CAUSE], [ISDN progress with cause], [PRI]
 AST_EXT_LIB_SETUP_OPTIONAL([PRI_SERVICE_MESSAGES], [ISDN service messages], [PRI], [pri])
 AST_EXT_LIB_SETUP_OPTIONAL([PRI_REVERSE_CHARGE], [ISDN reverse charge], [PRI], [pri])
 # ------------------------------------^
-AST_EXT_LIB_SETUP([PWLIB], [PWlib], [pwlib])
 AST_EXT_LIB_SETUP([RADIUS], [Radius Client], [radius])
+AST_EXT_LIB_SETUP([FFTW3], [LIBFFTW3], [fftw3])
 AST_EXT_LIB_SETUP([RESAMPLE], [LIBRESAMPLE], [resample])
+AST_EXT_LIB_SETUP([SNDFILE], [libsndfile], [sndfile])
 AST_EXT_LIB_SETUP([SDL], [Sdl], [sdl])
 AST_EXT_LIB_SETUP([SDL_IMAGE], [Sdl Image], [SDL_image])
 AST_EXT_LIB_SETUP([SPANDSP], [SPANDSP], [spandsp])
@@ -563,15 +586,18 @@ AST_EXT_LIB_SETUP_DEPENDENT([SPEEX_PREPROCESS], [speex_preprocess_ctl], [], [spe
 AST_EXT_LIB_SETUP([SQLITE], [SQLite], [sqlite])
 AST_EXT_LIB_SETUP([SQLITE3], [SQLite], [sqlite3])
 AST_EXT_LIB_SETUP([SRTP], [Secure RTP], [srtp])
+AST_EXT_LIB_SETUP_OPTIONAL([SRTP_256], [SRTP Library AES-256 (ICM)], [SRTP], [srtp])
+AST_EXT_LIB_SETUP_OPTIONAL([SRTP_192], [SRTP Library AES-192 (ICM)], [SRTP], [srtp])
+AST_EXT_LIB_SETUP_OPTIONAL([SRTP_GCM], [SRTP Library AES-128 (GCM) and AES-256 (GCM)], [SRTP], [srtp])
 AST_EXT_LIB_SETUP_OPTIONAL([SRTP_SHUTDOWN], [SRTP Library Shutdown Function], [SRTP], [srtp])
+AST_EXT_LIB_SETUP_OPTIONAL([SRTP_GET_VERSION], [SRTP Library Version Function], [SRTP], [srtp])
 AST_EXT_LIB_SETUP([OPENSSL], [OpenSSL Secure Sockets Layer], [ssl])
 AST_EXT_LIB_SETUP_OPTIONAL([RT], [Realtime functions], [rt])
 AST_EXT_LIB_SETUP([SUPPSERV], [mISDN Supplemental Services], [suppserv])
 AST_EXT_LIB_SETUP([FREETDS], [FreeTDS], [tds])
-AST_EXT_LIB_SETUP([TERMCAP], [Termcap], [termcap])
 AST_EXT_LIB_SETUP([TIMERFD], [timerfd], [timerfd])
-AST_EXT_LIB_SETUP([TINFO], [Term Info], [tinfo])
 AST_EXT_LIB_SETUP([TONEZONE], [tonezone], [tonezone])
+AST_EXT_LIB_SETUP([UNBOUND], [unbound], [unbound])
 AST_EXT_LIB_SETUP([UNIXODBC], [unixODBC], [unixodbc])
 AST_EXT_LIB_SETUP([VORBIS], [Vorbis], [vorbis])
 AST_EXT_LIB_SETUP([VPB], [Voicetronix API], [vpb])
@@ -583,75 +609,109 @@ AST_EXT_LIB_SETUP([ZLIB], [zlib compression], [z])
 
 AC_FUNC_ALLOCA
 AC_HEADER_DIRENT
-AC_HEADER_STDC
-AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h inttypes.h libintl.h limits.h locale.h malloc.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h strings.h sys/event.h sys/file.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h syslog.h termios.h unistd.h utime.h arpa/nameser.h sys/io.h])
-
-# Any one of these packages support a mandatory requirement, so we want to check on them as early as possible.
-AST_EXT_LIB_CHECK([TERMCAP], [termcap], [tgetent], [])
-AST_EXT_LIB_CHECK([TINFO], [tinfo], [tgetent], [])
-AST_EXT_LIB_CHECK([CURSES], [curses], [initscr], [curses.h])
-AST_EXT_LIB_CHECK([NCURSES], [ncurses], [initscr], [curses.h])
-
-EDITLINE_LIB=""
-if test "x$TERMCAP_LIB" != "x" ; then
-  EDITLINE_LIB="$TERMCAP_LIB"
-elif test "x$TINFO_LIB" != "x" ; then
-  EDITLINE_LIB="$TINFO_LIB"
-elif test "x$CURSES_LIB" != "x" ; then
-  EDITLINE_LIB="$CURSES_LIB"
-elif test "x$NCURSES_LIB" != "x" ; then
-  EDITLINE_LIB="$NCURSES_LIB"
-else
-  AC_MSG_ERROR([*** termcap support not found (on modern systems, this typically means the ncurses development package is missing)])
+if test -z $ac_header_dirent -o "$ac_header_dirent" = "no"; then
+  AC_MSG_ERROR([*** Could not find dirent header that defines 'DIR'.])
 fi
-AC_SUBST(EDITLINE_LIB)
+
+AC_HEADER_STDC
+if test "$ac_cv_header_stdc" != "yes"; then
+  AC_MSG_ERROR([*** ANSI C header files not found.])
+fi
+
+AC_HEADER_SYS_WAIT
+if test "$ac_cv_header_sys_wait_h" != "yes"; then
+  AC_MSG_ERROR([*** POSIX.1 compatible sys/wait.h is required.])
+fi
+
+AC_HEADER_RESOLV
+if test "$ac_cv_header_resolv_h" != "yes"; then
+  AC_MSG_ERROR([*** resolv.h is required.])
+fi
+
+# Check for headers that are unconditionally required on all platforms.  Do not use
+# this to check for headers that are only needed by modules.
+AC_CHECK_HEADERS([ \
+  arpa/nameser.h assert.h ctype.h dlfcn.h errno.h fcntl.h float.h grp.h \
+  inttypes.h limits.h locale.h math.h pwd.h netinet/in.h regex.h \
+  sched.h stdarg.h stdint.h stdio.h stdlib.h string.h syslog.h \
+  sys/file.h sys/ioctl.h sys/param.h sys/resource.h sys/socket.h sys/stat.h \
+  sys/time.h sys/types.h sys/un.h \
+  termios.h time.h unistd.h \
+], [], [
+  AC_MSG_ERROR([*** A required header was not found.])
+])
+
+AC_CHECK_HEADERS([arpa/inet.h libintl.h malloc.h netdb.h stddef.h strings.h sys/event.h utime.h])
+
+PKG_PROG_PKG_CONFIG()
+
+# Find required NetBSD Editline library (libedit).
+AST_PKG_CONFIG_CHECK(LIBEDIT, libedit)
+# some platforms do not list libedit via pkg-config, for example OpenBSD 6.2
+AST_EXT_LIB_CHECK([LIBEDIT], [edit], [history_init], [histedit.h], [-ltermcap])
+if test "${PBX_LIBEDIT}" != 1; then
+	AC_MSG_ERROR(*** Please install the 'libedit' development package.)
+	exit 1
+fi
+AST_C_COMPILE_CHECK([LIBEDIT_IS_UNICODE], [el_rfunc_t *callback;], [histedit.h], [], [Testing for libedit unicode support])
 
 # Find required UUID support.
 #  * -luuid on Linux
 #  * -le2fs-uuid on OpenBSD
 #  * in libsystem on OS X
-AST_EXT_LIB_CHECK([LIBUUID], [uuid], [uuid_generate_random], [uuid/uuid.h], [])
-AST_EXT_LIB_CHECK([E2FSUUID], [e2fs-uuid], [uuid_generate_random], [uuid/uuid.h], [])
-AC_CHECK_FUNCS([uuid_generate_random], [SYSUUID=true], [SYSUUID=""])
-
+AST_EXT_LIB_CHECK([LIBUUID], [uuid], [uuid_generate_random], [uuid/uuid.h])
 if test "x$LIBUUID_LIB" != "x" ; then
   UUID_INCLUDE="$LIBUUID_INCLUDE"
   UUID_LIB="$LIBUUID_LIB"
-elif test "x$E2FSUUID_LIB" != "x" ; then
-  UUID_INCLUDE="$E2FSUUID_INCLUDE"
-  UUID_LIB="$E2FSUUID_LIB"
-elif test "x$SYSUUID" != "x" ; then
-  UUID_INCLUDE=""
-  UUID_LIB=""
 else
-  AC_MSG_ERROR([*** uuid support not found (this typically means the uuid development package is missing)])
+  AST_EXT_LIB_CHECK([E2FSUUID], [e2fs-uuid], [uuid_generate_random], [uuid/uuid.h])
+  if test "x$E2FSUUID_LIB" != "x" ; then
+    UUID_INCLUDE="$E2FSUUID_INCLUDE"
+    UUID_LIB="$E2FSUUID_LIB"
+  else
+    AC_CHECK_FUNCS([uuid_generate_random], [SYSUUID=true], [SYSUUID=""])
+    if test "x$SYSUUID" != "x" ; then
+      UUID_INCLUDE=""
+      UUID_LIB=""
+    else
+      AC_MSG_ERROR([*** uuid support not found (this typically means the uuid development package is missing)])
+    fi
+  fi
 fi
 AC_SUBST(UUID_INCLUDE)
 AC_SUBST(UUID_LIB)
 
-# Find required JSON support.
-AST_EXT_LIB_CHECK([JANSSON], [jansson], [json_dumps], [jansson.h])
+# Find required JSON support if bundled is not enabled.
+if test "$JANSSON_BUNDLED" = "no" ; then
+	AST_PKG_CONFIG_CHECK([JANSSON], [jansson >= 2.11])
+	# json_sprintf is available in 2.11+
+	AST_EXT_LIB_CHECK([JANSSON], [jansson], [json_sprintf], [jansson.h])
 
-if test "x$JANSSON_LIB" == "x"; then
-  AC_MSG_ERROR([*** JSON support not found (this typically means the libjansson development package is missing)])
+	if test "${PBX_JANSSON}" != 1; then
+		AC_MSG_NOTICE(*** Asterisk requires libjansson >= 2.11 and no system copy was found.)
+		AC_MSG_NOTICE(*** Please install the 'libjansson' development package or)
+		AC_MSG_NOTICE(*** use './configure --with-jansson-bundled')
+		exit 1
+	fi
+	JANSSON_DEFINE_JSON_INT()
+else
+	PBX_JANSSON=1
 fi
 
 # See if clock_gettime is in librt
-AST_EXT_LIB_CHECK([RT], [rt], [clock_gettime])
+AST_EXT_LIB_CHECK([RT], [rt], [clock_gettime], [])
 
+AST_EXT_TOOL_CHECK([LIBXML2], [xml2-config], , ,
+        [#include <libxml/tree.h>
+        #include <libxml/parser.h>],
+        [LIBXML_TEST_VERSION])
 
-#AST_EXT_TOOL_CHECK([LIBXML2], [xml2-config], , ,
-#        [#include <libxml/tree.h>
-#        #include <libxml/parser.h>],
-#        [LIBXML_TEST_VERSION])
-#
-#if test "${PBX_LIBXML2}" != 1; then
-#	AC_MSG_NOTICE(*** The Asterisk menuselect tool requires the 'libxml2' development package.)
-#	AC_MSG_NOTICE(*** Please install the 'libxml2' development package.)
-#	exit 1
-#fi
-#
+if test "${PBX_LIBXML2}" != 1; then
+	AC_MSG_NOTICE(*** The Asterisk menuselect tool requires the 'libxml2' development package.)
+	AC_MSG_NOTICE(*** Please install the 'libxml2' development package.)
+	exit 1
+fi
+
 AST_EXT_LIB_CHECK([URIPARSER], [uriparser], [uriParseUriA], [uriparser/Uri.h])
 
 # Another mandatory item (unless it's explicitly disabled)
@@ -659,15 +719,31 @@ AC_ARG_ENABLE([xmldoc],
 	[AS_HELP_STRING([--disable-xmldoc],
 		[Explicitly disable XML documentation])],
 	[case "${enableval}" in
-		y|ye|yes) disable_xmldoc=no ;;
-		n|no)  disable_xmldoc=yes ;;
+		y|ye|yes) DISABLE_XMLDOC=no ;;
+		n|no)  DISABLE_XMLDOC=yes ;;
 		*) AC_MSG_ERROR(bad value ${enableval} for --disable-xmldoc)  ;;
-	esac], [disable_xmldoc=no])
+	esac], [DISABLE_XMLDOC=no])
 
-if test "${disable_xmldoc}" != "yes"; then
+AC_SUBST([DISABLE_XMLDOC])
+if test "${DISABLE_XMLDOC}" != "yes"; then
+        AC_DEFINE([AST_XML_DOCS], 1, [Define to enable XML documentation.])
         AST_EXT_LIB_CHECK([LIBXSLT], [xslt], [xsltLoadStylesheetPI], [libxslt/xsltInternals.h], [${LIBXML2_LIB}], [${LIBXML2_INCLUDE}])
         AST_EXT_LIB_CHECK([LIBXSLT_CLEANUP], [xslt], [xsltCleanupGlobals], [libxslt/xsltInternals.h], [${LIBXML2_LIB}], [${LIBXML2_INCLUDE}])
 
+fi
+
+AC_ARG_ENABLE([permanent-dlopen],
+	[AS_HELP_STRING([--enable-permanent-dlopen],
+		[Enable when your libc has a permanent dlopen like musl])],
+	[case "${enableval}" in
+		y|ye|yes) PERMANENT_DLOPEN=yes ;;
+		n|no)  PERMANENT_DLOPEN=no ;;
+		*) AC_MSG_ERROR(bad value ${enableval} for --enable-permanent-dlopen)  ;;
+	esac], [PERMANENT_DLOPEN=no])
+
+AC_SUBST([PERMANENT_DLOPEN])
+if test "${PERMANENT_DLOPEN}" == "yes"; then
+	AC_DEFINE([HAVE_PERMANENT_DLOPEN], 1, [Define to support libc with permanent dlopen.])
 fi
 
 # some embedded systems omit internationalization (locale) support
@@ -727,7 +803,7 @@ AC_FUNC_STRNLEN
 AC_FUNC_STRTOD
 AC_FUNC_UTIME_NULL
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([asprintf atexit closefrom dup2 eaccess endpwent euidaccess ffsll ftruncate getcwd gethostbyname gethostname getloadavg gettimeofday glob ioperm inet_ntoa isascii memchr memmove memset mkdir mkdtemp munmap newlocale ppoll putenv re_comp regcomp select setenv socket strcasecmp strcasestr strchr strcspn strdup strerror strlcat strlcpy strncasecmp strndup strnlen strrchr strsep strspn strstr strtod strtol strtold strtoq unsetenv utime vasprintf getpeereid sysctl swapctl])
+AC_CHECK_FUNCS([asprintf atexit closefrom dup2 eaccess endpwent euidaccess ffsll ftruncate getcwd gethostbyname gethostname getloadavg gettimeofday glob ioperm inet_ntoa isascii memchr memmove memset mkdir mkdtemp munmap newlocale pipe2 ppoll putenv re_comp regcomp select setenv socket strcasecmp strcasestr strchr strcspn strdup strerror strlcat strlcpy strncasecmp strndup strnlen strrchr strsep strspn strstr strtod strtol strtold strtoq unsetenv uselocale utime vasprintf getpeereid sysctl swapctl malloc_trim])
 
 AC_MSG_CHECKING(for htonll)
 AC_LINK_IFELSE(
@@ -820,10 +896,6 @@ AC_ARG_ENABLE([asteriskssl],
 		*) AC_MSG_ERROR(bad value ${enableval} for --disable-asteriskssl)  ;;
 	esac], [AST_ASTERISKSSL=yes])
 AC_SUBST(AST_ASTERISKSSL)
-
-# https support (in main/http.c) uses funopen on BSD systems,
-# fopencookie on linux
-AC_CHECK_FUNCS([funopen fopencookie])
 
 AC_CHECK_FUNCS([inet_aton])
 
@@ -963,6 +1035,22 @@ AC_LINK_IFELSE(
   ]
 )
 
+# Some platforms define sem_init(), but only support sem_open(). joyous.
+AC_MSG_CHECKING(for working unnamed semaphores)
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM(
+	  [#include <semaphore.h>],
+	  [#if defined(__UCLIBC__)
+	   i_dont_exist sem;
+	   #else
+	   sem_t sem;
+	   #endif
+	   return sem_init(&sem, 0, 0);])],
+	AC_MSG_RESULT(yes)
+	AC_DEFINE([HAS_WORKING_SEMAPHORE], 1, [Define to 1 if anonymous semaphores work.]),
+	AC_MSG_RESULT(no)
+)
+
 LIBS="$save_LIBS"
 CFLAGS="$save_CFLAGS"
 if test "${ac_cv_pthread_rwlock_timedwrlock}" = "yes"; then
@@ -1024,13 +1112,27 @@ AC_LINK_IFELSE(
 # for FreeBSD thr_self
 AC_CHECK_HEADERS([sys/thr.h])
 
-AC_MSG_CHECKING(for compiler atomic operations)
+AC_MSG_CHECKING(for compiler sync operations)
 AC_LINK_IFELSE(
 [AC_LANG_PROGRAM([], [int foo1; int foo2 = __sync_fetch_and_add(&foo1, 1);])],
 AC_MSG_RESULT(yes)
-AC_DEFINE([HAVE_GCC_ATOMICS], 1, [Define to 1 if your GCC C compiler provides atomic operations.]),
+ax_cv_have_gcc_atomics=1
+AC_DEFINE([HAVE_GCC_ATOMICS], 1, [Define to 1 if your GCC C compiler provides __sync atomic operations.]),
 AC_MSG_RESULT(no)
 )
+
+AC_MSG_CHECKING(for compiler atomic operations)
+AC_LINK_IFELSE(
+[AC_LANG_PROGRAM([], [int foo1; int foo2 = __atomic_fetch_add(&foo1, 1, __ATOMIC_RELAXED);])],
+AC_MSG_RESULT(yes)
+ax_cv_have_c_atomics=1
+AC_DEFINE([HAVE_C_ATOMICS], 1, [Define to 1 if your C compiler provides __atomic operations.]),
+AC_MSG_RESULT(no)
+)
+
+if test -z $ax_cv_have_c_atomics$ax_cv_have_gcc_atomics; then
+	AC_MSG_ERROR([*** Atomic operations are not supported by your compiler.])
+fi
 
 # glibc, AFAIK, is the only C library that makes printing a NULL to a string safe.
 AC_MSG_CHECKING([if your system printf is NULL-safe.])
@@ -1042,6 +1144,27 @@ AC_RUN_IFELSE(
 	AC_MSG_RESULT(no),
 	# It's unlikely an embedded system will have this.
 	AC_MSG_RESULT(unknown)
+)
+
+AC_MSG_CHECKING([if socket() accepts SOCK_NONBLOCK])
+AC_RUN_IFELSE(
+[AC_LANG_PROGRAM([
+	#ifdef HAVE_SYS_TYPES_H
+	# include <sys/types.h>
+	#endif
+	#ifdef HAVE_SYS_SOCKET_H
+	# include <sys/socket.h>
+	#endif
+	], [
+	   if (socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0) < 0) {
+	      return 1;
+	   }
+	   return 0;
+	])],
+	AC_MSG_RESULT(yes)
+	AC_DEFINE([HAVE_SOCK_NONBLOCK], 1, [Define to 1 if your socket() implementation can accept SOCK_NONBLOCK.]),
+	AC_MSG_RESULT(no),
+	AC_MSG_RESULT(cross-compile)
 )
 
 AC_MSG_CHECKING(if we can increase the maximum select-able file descriptor)
@@ -1087,7 +1210,7 @@ if test "${ac_cv_have_variable_fdset}x" = "0x"; then
 fi
 
 AC_MSG_CHECKING([if we have usable eventfd support])
-AC_RUN_IFELSE(
+AC_LINK_IFELSE(
   [AC_LANG_PROGRAM([#include <sys/eventfd.h>],
       [return eventfd(0, EFD_NONBLOCK | EFD_SEMAPHORE) == -1;])],
   AC_MSG_RESULT(yes)
@@ -1106,7 +1229,14 @@ AST_GCC_ATTRIBUTE(sentinel)
 AST_GCC_ATTRIBUTE(warn_unused_result)
 AST_GCC_ATTRIBUTE(may_alias)
 AST_GCC_ATTRIBUTE(constructor)
+if test "$ax_cv_have_func_attribute_constructor" != "1"; then
+	AC_MSG_ERROR([*** Function constructor attribute is not supported by your compiler.])
+fi
+
 AST_GCC_ATTRIBUTE(destructor)
+if test "$ax_cv_have_func_attribute_destructor" != "1"; then
+	AC_MSG_ERROR([*** Function destructor attribute is not supported by your compiler.])
+fi
 AST_GCC_ATTRIBUTE(noreturn,noreturn)
 
 AC_MSG_CHECKING(for -fsanitize=address support)
@@ -1174,7 +1304,7 @@ LDFLAGS="${saved_sanitize_LDFLAGS}"
 AC_SUBST(AST_UNDEFINED_SANITIZER)
 
 AC_MSG_CHECKING(for -Wdeclaration-after-statement support)
-if $(${CC} -Wdeclaration-after-statement -S -o /dev/null -xc /dev/null > /dev/null 2>&1); then
+if $(${CC} -Wdeclaration-after-statement -Werror -S -o /dev/null -xc /dev/null > /dev/null 2>&1); then
 	AC_MSG_RESULT(yes)
 	AST_DECLARATION_AFTER_STATEMENT=-Wdeclaration-after-statement
 else
@@ -1213,8 +1343,28 @@ else
 fi
 AC_SUBST(AST_NO_STRICT_OVERFLOW)
 
+AC_MSG_CHECKING(for -Wno-format-truncation)
+if $(${CC} -Wno-format-truncation -Werror -S -o /dev/null -xc /dev/null > /dev/null 2>&1); then
+	AC_MSG_RESULT(yes)
+	AST_NO_FORMAT_TRUNCATION=-Wno-format-truncation
+else
+	AC_MSG_RESULT(no)
+	AST_NO_FORMAT_TRUNCATION=
+fi
+AC_SUBST(AST_NO_FORMAT_TRUNCATION)
+
+AC_MSG_CHECKING(for -Wno-stringop-truncation)
+if $(${CC} -Wno-stringop-truncation -Werror -S -o /dev/null -xc /dev/null > /dev/null 2>&1); then
+	AC_MSG_RESULT(yes)
+	AST_NO_STRINGOP_TRUNCATION=-Wno-stringop-truncation
+else
+	AC_MSG_RESULT(no)
+	AST_NO_STRINGOP_TRUNCATION=
+fi
+AC_SUBST(AST_NO_STRINGOP_TRUNCATION)
+
 AC_MSG_CHECKING(for -Wshadow)
-if $(${CC} -Wshadow -S -o /dev/null -xc /dev/null > /dev/null 2>&1); then
+if $(${CC} -Wshadow -Werror -S -o /dev/null -xc /dev/null > /dev/null 2>&1); then
 	AC_MSG_RESULT(yes)
 	AST_SHADOW_WARNINGS=-Wshadow
 else
@@ -1246,6 +1396,9 @@ AC_ARG_ENABLE(rpath,
 
 AC_MSG_CHECKING(whether to use rpath)
 AST_RPATH=
+if test "${OSARCH}" = "NetBSD"; then
+	AST_RPATH="-Wl,-rpath,/usr/pkg/lib"
+fi
 if test "${check_rpath}" != yes; then
 	AC_MSG_RESULT(skipped)
 elif test "${prefix}" = /usr || test "${prefix}" = NONE; then
@@ -1278,8 +1431,13 @@ AC_LINK_IFELSE(
 			#include <arpa/nameser.h>
 			#endif
 			#include <resolv.h>],
-			[int foo = res_ninit(NULL);])],
+			[
+				int foo;
+				foo = res_ninit(NULL);
+				foo = res_nsearch(NULL, NULL, 0, 0, NULL, 0);
+			])],
 	AC_MSG_RESULT(yes)
+	AC_DEFINE([HAVE_RES_NINIT], 1, [Define to 1 if your system has the re-entrant resolver functions.])
 	AC_SEARCH_LIBS(res_9_ndestroy, resolv)
 	AC_MSG_CHECKING(for res_ndestroy)
 	AC_LINK_IFELSE(
@@ -1341,9 +1499,6 @@ AST_C_DEFINE_CHECK([RTLD_NOLOAD], [RTLD_NOLOAD], [dlfcn.h])
 
 AST_C_DEFINE_CHECK([IP_MTU_DISCOVER], [IP_MTU_DISCOVER], [netinet/in.h])
 
-AC_CHECK_HEADER([libkern/OSAtomic.h],
-                [AC_DEFINE_UNQUOTED([HAVE_OSX_ATOMICS], 1, [Define to 1 if OSX atomic operations are supported.])])
-
 AC_CHECK_SIZEOF([int])
 AC_CHECK_SIZEOF([long])
 AC_CHECK_SIZEOF([long long])
@@ -1361,11 +1516,11 @@ AC_CHECK_SIZEOF(fd_set.fds_bits)
 # correctly if the size is wrong.
 if test $ac_cv_sizeof_int = $ac_cv_sizeof_fd_set_fds_bits; then
   AC_DEFINE([TYPEOF_FD_SET_FDS_BITS], [int], [Define to a type of the same size as fd_set.fds_bits[[0]]])
-else if test $ac_cv_sizeof_long = $ac_cv_sizeof_fd_set_fds_bits; then
+elif test $ac_cv_sizeof_long = $ac_cv_sizeof_fd_set_fds_bits; then
   AC_DEFINE([TYPEOF_FD_SET_FDS_BITS], [long], [Define to a type of the same size as fd_set.fds_bits[[0]]])
-else if test $ac_cv_sizeof_long_long = $ac_cv_sizeof_fd_set_fds_bits; then
+elif test $ac_cv_sizeof_long_long = $ac_cv_sizeof_fd_set_fds_bits; then
   AC_DEFINE([TYPEOF_FD_SET_FDS_BITS], [long long], [Define to a type of the same size as fd_set.fds_bits[[0]]])
-fi ; fi ; fi
+fi
 
 AC_MSG_CHECKING(for dladdr in dlfcn.h)
 PBX_DLADDR=0
@@ -1384,29 +1539,39 @@ AC_LINK_IFELSE(
 )
 LIBS=${old_LIBS}
 
-# PKGCONFIG is used in later tests
-PKG_PROG_PKG_CONFIG()
+# re-check without -ldl
+# Non-Linux platforms like FreeBSD and NetBSD do not need a library libdl.so.
+if test "${PBX_DLADDR}" = "0"; then
+	AC_MSG_CHECKING(for dladdr in dlfcn.h without -ldl)
+	AC_LINK_IFELSE(
+		[AC_LANG_PROGRAM([#define _GNU_SOURCE 1
+#include <dlfcn.h>],
+			[dladdr((void *)0, (void *)0)]
+		)],
+		AC_MSG_RESULT(yes)
+		PBX_DLADDR=1
+		AC_SUBST([PBX_DLADDR])
+		AC_DEFINE([HAVE_DLADDR], 1, [Define to 1 if your system has the dladdr() GNU extension]),
+		AC_MSG_RESULT(no)
+	)
+fi
 
 
 # do the package library checks now
 
-AST_EXT_LIB_CHECK([ALSA], [asound], [snd_spcm_init], [alsa/asoundlib.h], [-lm -ldl])
+AST_EXT_LIB_CHECK([ALSA], [asound], [snd_pcm_open], [alsa/asoundlib.h])
 
 AST_EXT_LIB_CHECK([BFD], [bfd], [bfd_openr], [bfd.h])
+# Fedora/RedHat/CentOS require extra libraries
+AST_EXT_LIB_CHECK([BFD], [bfd], [bfd_openr], [bfd.h], [-ldl -liberty])
+# openSUSE requires -lz
+AST_EXT_LIB_CHECK([BFD], [bfd], [bfd_openr], [bfd.h], [-ldl -liberty -lz])
 
-if test "${PBX_BFD}" = "0"; then
-  # Fedora/RedHat/CentOS require extra libraries
-  AST_EXT_LIB_CHECK([BFD], [bfd], [bfd_check_format], [bfd.h], [-ldl -liberty])
-fi
-
-if test "${PBX_BFD}" = "0"; then
-  # openSUSE requires -lz
-  AST_EXT_LIB_CHECK([BFD], [bfd], [bfd_check_format], [bfd.h], [-ldl -liberty -lz])
-fi
-
-if test "x${OSARCH}" = "xlinux-gnu" ; then
+case "${OSARCH}" in
+linux*)
   AST_EXT_LIB_CHECK([CAP], [cap], [cap_from_text], [sys/capability.h])
-fi
+  ;;
+esac
 
 AST_C_DEFINE_CHECK([DAHDI], [DAHDI_RESET_COUNTERS], [dahdi/user.h], [230])
 AST_C_DEFINE_CHECK([DAHDI], [DAHDI_DEFAULT_MTU_MRU], [dahdi/user.h], [220])
@@ -1464,11 +1629,9 @@ if test "${USE_GSM}" != "no"; then
          if test "${GSM_HEADER_FOUND}" = "1" ; then
             AC_DEFINE_UNQUOTED([HAVE_GSM_HEADER], 1, [Define to indicate that gsm.h has no prefix for its location])
             GSM_OK=1
-         else
-            if test "${GSM_GSM_HEADER_FOUND}" = "1" ; then
-               AC_DEFINE_UNQUOTED([HAVE_GSM_GSM_HEADER], 1, [Define to indicate that gsm.h is in gsm/gsm.h])
-               GSM_OK=1
-            fi
+         elif test "${GSM_GSM_HEADER_FOUND}" = "1" ; then
+            AC_DEFINE_UNQUOTED([HAVE_GSM_GSM_HEADER], 1, [Define to indicate that gsm.h is in gsm/gsm.h])
+            GSM_OK=1
          fi
          if test "${GSM_OK}" = "1" ; then
             GSM_LIB="-lgsm"
@@ -1504,29 +1667,6 @@ if test "${USE_ILBC}" != "no"; then
    fi
    if test "${ILBC_INTERNAL}" = "yes"; then
       PBX_ILBC=1
-   fi
-fi
-
-LIBEDIT_INTERNAL="yes"
-AC_SUBST(LIBEDIT_INTERNAL)
-LIBEDIT_SYSTEM="yes"
-if test "${USE_LIBEDIT}" != "no"; then
-   if test "${LIBEDIT_DIR}" = "internal"; then
-      LIBEDIT_SYSTEM="no"
-   elif test "${LIBEDIT_DIR}" != ""; then
-      LIBEDIT_INTERNAL="no"
-   fi
-   if test "${LIBEDIT_SYSTEM}" = "yes"; then
-      AST_PKG_CONFIG_CHECK(LIBEDIT, libedit)
-      if test "$PBX_LIBEDIT" = "1"; then
-      LIBEDIT_INTERNAL="no"
-      fi
-   fi
-   if test "${LIBEDIT_INTERNAL}" = "yes"; then
-      PBX_LIBEDIT=1
-      LIBEDIT_IS_UNICODE=no
-   else
-      AST_C_COMPILE_CHECK([LIBEDIT_IS_UNICODE], [el_rfunc_t *callback;], [histedit.h], [], [Testing for libedit unicode support])
    fi
 fi
 
@@ -1806,7 +1946,7 @@ if test "${USE_IMAP_TK}" != "no"; then
 		CPPFLAGS="${saved_cppflags}"
 		LIBS="${saved_libs}"
 		imap_ldflags=""
-		imap_libs="-lc-client"
+		imap_libs="-lcrypto -lssl -lc-client"
 		imap_include="-DUSE_SYSTEM_IMAP" #Try the imap directory first
 		CPPFLAGS="${CPPFLAGS} ${imap_include}"
 		LIBS="${LIBS} ${imap_libs} "`echo ${imap_ldflags}`
@@ -1925,7 +2065,7 @@ if test "${USE_IMAP_TK}" != "no"; then
 			)
 		else #looking in imap directory didn't work, try c-client
 			imap_ldflags=""
-			imap_libs="-lc-client"
+			imap_libs="-lcrypto -lssl -lc-client"
 			imap_include="-DUSE_SYSTEM_CCLIENT"
 			CPPFLAGS="${saved_cppflags}"
 			LIBS="${saved_libs}"
@@ -1987,6 +2127,66 @@ if test "${USE_IMAP_TK}" != "no"; then
 				[ac_cv_imap_tk="yes"],
 				[ac_cv_imap_tk="no"]
 	   		)
+			if test "${ac_cv_imap_tk}" = "no"; then
+				imap_libs="-lcrypto -lssl -lc-client4"
+				LIBS="${saved_libs} ${imap_libs} "`echo ${imap_ldflags}`
+				AC_LINK_IFELSE(
+					[AC_LANG_PROGRAM(
+						[#include <stdio.h>
+						#include <c-client/c-client.h>
+						void mm_searched (MAILSTREAM *stream,unsigned long number)
+						{
+						}
+						void mm_exists (MAILSTREAM *stream,unsigned long number)
+						{
+						}
+						void mm_expunged (MAILSTREAM *stream,unsigned long number)
+						{
+						}
+						void mm_flags (MAILSTREAM *stream,unsigned long number)
+						{
+						}
+						void mm_notify (MAILSTREAM *stream,char *string,long errflg)
+						{
+						}
+						void mm_list (MAILSTREAM *stream,int delimiter,char *mailbox,long attributes)
+						{
+						}
+						void mm_lsub (MAILSTREAM *stream,int delimiter,char *mailbox,long attributes)
+						{
+						}
+						void mm_status (MAILSTREAM *stream,char *mailbox,MAILSTATUS *status)
+						{
+						}
+						void mm_log (char *string,long errflg)
+						{
+						}
+						void mm_dlog (char *string)
+						{
+						}
+						void mm_login (NETMBX *mb,char *user,char *pwd,long trial)
+						{
+						}
+						void mm_critical (MAILSTREAM *stream)
+						{
+						}
+						void mm_nocritical (MAILSTREAM *stream)
+						{
+						}
+						long mm_diskerror (MAILSTREAM *stream,long errcode,long serious)
+						{
+						}
+						void mm_fatal (char *string)
+						{
+						}],
+						[
+						MAILSTREAM *foo = mail_open(NULL, "", 0);
+						]
+					)],
+					[ac_cv_imap_tk="yes"],
+					[ac_cv_imap_tk="no"]
+				)
+			fi
 			if test "${ac_cv_imap_tk}" = "yes"; then
 				AC_LINK_IFELSE(
 					[AC_LANG_PROGRAM(
@@ -2075,9 +2275,6 @@ AST_EXT_LIB_CHECK([KQUEUE], [c], [kqueue], [sys/event.h])
 # 64-bit version of kevent (from kqueue) on OS X
 AC_CHECK_FUNCS([kevent64])
 
-# Needed by unixodbc
-AST_EXT_LIB_CHECK([LTDL], [ltdl], [lt_dlinit], [ltdl.h], [])
-
 AST_EXT_LIB_CHECK([LDAP], [ldap], [ldap_initialize], [ldap.h])
 
 AST_EXT_LIB_CHECK([MISDN], [mISDN], [mISDN_open], [mISDNuser/mISDNlib.h])
@@ -2091,7 +2288,27 @@ if test "${PBX_MISDN}" = 1; then
    AC_CHECK_MEMBER([Q931_info_t.redirect_dn], [], [PBX_MISDN=0], [#include <mISDNuser/mISDNlib.h>])
 fi
 
+
 AST_EXT_TOOL_CHECK([MYSQLCLIENT], [mysql_config])
+
+if test "${PBX_MYSQLCLIENT}" = 1; then
+   AC_MSG_CHECKING(for MySQL client bool support)
+   AC_LINK_IFELSE(
+           [AC_LANG_PROGRAM([#include <mysql/mysql.h>],
+                   [bool test = 1;])],
+           AC_MSG_RESULT(yes)
+           AC_DEFINE(HAVE_MYSQLCLIENT_BOOL, 1, [Define to 1 if mysql/mysql.h has bool defined.]),
+           AC_MSG_RESULT(no)
+   )
+   AC_MSG_CHECKING(for MySQL client my_bool support)
+   AC_LINK_IFELSE(
+           [AC_LANG_PROGRAM([#include <mysql/mysql.h>],
+                   [my_bool test = 1;])],
+           AC_MSG_RESULT(yes)
+           AC_DEFINE(HAVE_MYSQLCLIENT_MY_BOOL, 1, [Define to 1 if mysql/mysql.h has my_bool defined.]),
+           AC_MSG_RESULT(no)
+   )
+fi
 
 AST_EXT_LIB_CHECK([NBS], [nbs], [nbs_connect], [nbs.h])
 
@@ -2111,9 +2328,21 @@ AST_EXT_TOOL_CHECK([NETSNMP], [net-snmp-config], , [--agent-libs],
 
 AST_EXT_LIB_CHECK([NEWT], [newt], [newtBell], [newt.h])
 
-AST_EXT_LIB_CHECK([UNIXODBC], [odbc], [SQLConnect], [sql.h], [])
+# Check that unbound is installed and the version code fragment compiles
+AST_EXT_LIB_EXTRA_CHECK([UNBOUND], [unbound], [ub_ctx_delete], [unbound.h],
+   [], [], [
+      AC_LANG_PROGRAM( [#include <unbound.h>],
+         [
+            #if (UNBOUND_VERSION_MAJOR < 1 || (UNBOUND_VERSION_MAJOR == 1 && UNBOUND_VERSION_MINOR < 5 ))
+            #error "Unbound version must be >= 1.5"
+            #endif
+         ]
+      )
+   ], [unbound version >= 1.5])
 
-AST_EXT_LIB_CHECK([OGG], [ogg], [ogg_sync_init], [])
+AST_EXT_LIB_CHECK([UNIXODBC], [odbc], [SQLConnect], [sql.h])
+
+AST_EXT_LIB_CHECK([OGG], [ogg], [ogg_stream_init], [ogg/ogg.h])
 
 # Non-glibc platforms require libexecinfo for backtrace support
 AST_EXT_LIB_CHECK([BKTR], [execinfo], [backtrace], [execinfo.h])
@@ -2121,6 +2350,8 @@ AST_EXT_LIB_CHECK([BKTR], [execinfo], [backtrace], [execinfo.h])
 AST_EXT_LIB_CHECK([BKTR], [c], [backtrace], [execinfo.h])
 
 AST_EXT_LIB_CHECK([BLUETOOTH], [bluetooth], [ba2str], [bluetooth/bluetooth.h])
+
+AST_EXT_LIB_CHECK([BEANSTALK], [beanstalk], [bs_version], [beanstalk.h])
 
 # possible places for oss definitions
 AST_EXT_LIB_CHECK([OSS], [ossaudio], [], [linux/soundcard.h])
@@ -2190,7 +2421,7 @@ if test "$USE_PJPROJECT" != "no" ; then
    if test "$PJPROJECT_BUNDLED" = "no" ; then
       AST_PKG_CONFIG_CHECK([PJPROJECT], [libpjproject])
 
-      AST_EXT_LIB_CHECK([PJSIP_DLG_CREATE_UAS_AND_INC_LOCK], [pjsip], [pjsip_dlg_create_uas_and_inc_lock], [pjsip.h], [$PJPROJECT_LIBS], [$PJPROJECT_CFLAGS])
+      AST_EXT_LIB_CHECK([PJSIP_DLG_CREATE_UAS_AND_INC_LOCK], [pjsip], [pjsip_dlg_create_uas_and_inc_lock], [pjsip.h], [$PJPROJECT_LIB], [$PJPROJECT_CFLAGS])
       AST_EXT_LIB_CHECK([PJ_TRANSACTION_GRP_LOCK], [pjsip], [pjsip_tsx_create_uac2], [pjsip.h], [$PJPROJECT_LIB], [$PJPROJECT_CFLAGS])
 
       saved_cppflags="${CPPFLAGS}"
@@ -2203,20 +2434,43 @@ if test "$USE_PJPROJECT" != "no" ; then
 
       AST_EXT_LIB_CHECK([PJSIP_GET_DEST_INFO], [pjsip], [pjsip_get_dest_info], [pjsip.h], [$PJPROJECT_LIB], [$PJPROJECT_CFLAGS])
       AST_EXT_LIB_CHECK([PJ_SSL_CERT_LOAD_FROM_FILES2], [pj], [pj_ssl_cert_load_from_files2], [pjlib.h], [$PJPROJECT_LIB], [$PJPROJECT_CFLAGS])
-      AST_EXT_LIB_CHECK([PJSIP_EXTERNAL_RESOLVER], [pjsip], [pjsip_endpt_set_ext_resolver], [pjsip.h], [$PJPROJECT_LIBS], [$PJPROJECT_CFLAGS])
+      AST_EXT_LIB_CHECK([PJSIP_EXTERNAL_RESOLVER], [pjsip], [pjsip_endpt_set_ext_resolver], [pjsip.h], [$PJPROJECT_LIB], [$PJPROJECT_CFLAGS])
 
       saved_cppflags="${CPPFLAGS}"
       saved_libs="${LIBS}"
       CPPFLAGS="${CPPFLAGS} ${PJPROJECT_CFLAGS}"
       LIBS="${LIBS} ${PJPROJECT_LIB}"
       AST_C_COMPILE_CHECK([PJSIP_TLS_TRANSPORT_PROTO], [struct pjsip_tls_setting setting; int proto; proto = setting.proto;], [pjsip.h])
+      AST_C_COMPILE_CHECK([PJSIP_INV_ACCEPT_MULTIPLE_SDP_ANSWERS], [pjsip_cfg()->endpt.accept_multiple_sdp_answers = 0;], [pjsip.h])
+      AST_C_COMPILE_CHECK([PJSIP_ENDPOINT_COMPACT_FORM], [pjsip_cfg()->endpt.use_compact_form = PJ_TRUE;], [pjsip.h])
+      AST_C_COMPILE_CHECK([PJSIP_TRANSPORT_DISABLE_CONNECTION_REUSE], [struct pjsip_tpselector sel; sel.disable_connection_reuse = PJ_TRUE;], [pjsip.h])
+      AST_C_COMPILE_CHECK([PJSIP_OAUTH_AUTHENTICATION], [struct pjsip_oauth_credential credential;], [pjsip.h])
+      AC_MSG_CHECKING(for pjproject on_valid_pair callback)
+      AC_LINK_IFELSE(
+         [AC_LANG_PROGRAM(
+            [#include <pjsip.h>
+            #include <pjsip_ua.h>
+            #include <pjnath.h>
+            void on_valid_pair(pj_ice_sess *ice) {}
+            void on_ice_complete(pj_ice_sess *ice, pj_status_t status) {}
+            void on_rx_data(pj_ice_sess *ice, unsigned comp_id, unsigned transport_id, void *pkt, pj_size_t size, const pj_sockaddr_t *src_addr, unsigned src_addr_len) {}
+            pj_status_t on_tx_pkt(pj_ice_sess *ice, unsigned comp_id, unsigned transport_id, const void *pkt, pj_size_t size, const pj_sockaddr_t *dst_addr, unsigned dst_addr_len) {}],
+            [pj_ice_sess_cb ice_sess_cb = {
+               .on_valid_pair = on_valid_pair,
+               .on_ice_complete = on_ice_complete,
+               .on_rx_data = on_rx_data,
+               .on_tx_pkt = on_tx_pkt,
+            };])],
+         AC_MSG_RESULT(yes)
+         AC_DEFINE(HAVE_PJPROJECT_ON_VALID_ICE_PAIR_CALLBACK, 1, [Define to 1 if on_valid_pair callback is present.]),
+         AC_MSG_RESULT(no)
+      )
       LIBS="${saved_libs}"
       CPPFLAGS="${saved_cppflags}"
 
       AST_EXT_LIB_CHECK([PJSIP_EVSUB_GRP_LOCK], [pjsip], [pjsip_evsub_add_ref], [pjsip.h], [$PJPROJECT_LIB], [$PJPROJECT_CFLAGS])
       AST_EXT_LIB_CHECK([PJSIP_INV_SESSION_REF], [pjsip], [pjsip_inv_add_ref], [pjsip.h], [$PJPROJECT_LIB], [$PJPROJECT_CFLAGS])
       AST_EXT_LIB_CHECK([PJSIP_AUTH_CLT_DEINIT], [pjsip], [pjsip_auth_clt_deinit], [pjsip.h], [$PJPROJECT_LIB], [$PJPROJECT_CFLAGS])
-      AST_EXT_LIB_CHECK([PJSIP_EVSUB_SET_UAS_TIMEOUT], [pjsip], [pjsip_evsub_set_uas_timeout], [pjsip.h], [$PJPROJECT_LIB], [$PJPROJECT_CFLAGS])
       AST_EXT_LIB_CHECK([PJSIP_TSX_LAYER_FIND_TSX2], [pjsip], [pjsip_tsx_layer_find_tsx2], [pjsip.h], [$PJPROJECT_LIB], [$PJPROJECT_CFLAGS])
    fi
 fi
@@ -2227,6 +2481,7 @@ AST_PKG_CONFIG_CHECK([PYTHONDEV], [python])
 
 AST_EXT_LIB_CHECK([POPT], [popt], [poptStrerror], [popt.h])
 
+AST_PKG_CONFIG_CHECK([PORTAUDIO], [portaudio-2.0])
 AST_EXT_LIB_CHECK([PORTAUDIO], [portaudio], [Pa_GetDeviceCount], [portaudio.h])
 
 AST_EXT_LIB_CHECK([PRI], [pri], [pri_connected_line_update], [libpri.h])
@@ -2257,6 +2512,8 @@ AST_EXT_LIB_CHECK([PRI_REVERSE_CHARGE], [pri], [pri_sr_set_reversecharge], [libp
 # ------------------------------------^
 
 AST_EXT_LIB_CHECK([RESAMPLE], [resample], [resample_open], [libresample.h], [-lm])
+AST_EXT_LIB_CHECK([FFTW3], [fftw3], [fftw_malloc], [fftw3.h])
+AST_EXT_LIB_CHECK([SNDFILE], [sndfile], [sf_open], [sndfile.h])
 
 AST_C_COMPILE_CHECK([SPANDSP], [
 		#if SPANDSP_RELEASE_DATE < 20080516
@@ -2283,74 +2540,49 @@ AST_EXT_LIB_CHECK([SS7], [ss7], [ss7_set_isup_timer], [libss7.h])
 AST_EXT_LIB_CHECK([OPENR2], [openr2], [openr2_chan_new], [openr2.h])
 
 AST_EXT_LIB_CHECK([OPUS], [opus], [opus_encoder_create], [opus/opus.h])
-
-if test "${USE_PWLIB}" != "no"; then
-	if test -n "${PWLIB_DIR}"; then
-		PWLIBDIR="${PWLIB_DIR}"
-	fi
-	AST_CHECK_PWLIB()
-	AST_CHECK_PWLIB_VERSION([PWLib], [PWLIB], [ptbuildopts.h], [1], [9], [2], [P[[WT]]LIB_VERSION])
-
-	if test "${HAS_PWLIB:-unset}" != "unset"; then
-		AST_CHECK_PWLIB_PLATFORM()
-
-		PLATFORM_PWLIB="pt_${PWLIB_PLATFORM}_r"
-
-		AST_CHECK_PWLIB_BUILD([PWLib], [PWLIB],
-			[Define if your system has the PWLib libraries.],
-			[#include "ptlib.h"],
-			[int q = (int) PTime::IsDaylightSavings();])
-	fi
+# opusfile.h includes <opus_multistream.h> so we need to make sure that
+# either $OPUS_INCLUDE or /usr/include/opus is added to the search path.
+__opus_include=${OPUS_INCLUDE}
+if test -z "$__opus_include" -o x"$__opus_include" = x" " ; then
+	__opus_include=-I/usr/include/opus
 fi
+AST_EXT_LIB_CHECK([OPUSFILE], [opusfile], [op_open_callbacks], [opus/opusfile.h], [], [$__opus_include])
 
-if test "${PBX_PWLIB}" = "1" -a "${USE_OPENH323}" != "no" ; then
-	if test -n "${OPENH323_DIR}"; then
-		OPENH323DIR="${OPENH323_DIR}"
+for ver in 5.3 5.2 5.1; do
+	AST_EXT_LIB_CHECK([LUA], lua${ver}, [luaL_newstate], lua${ver}/lua.h, [-lm])
+	if test "x${PBX_LUA}" = "x1" ; then
+		if test x"${LUA_DIR}" = x; then
+			LUA_INCLUDE="${LUA_INCLUDE} -I/usr/include/lua${ver}"
+		else
+			LUA_INCLUDE="${LUA_INCLUDE} -I${LUA_DIR}/lua${ver}"
+		fi
+		break;
 	fi
-	AST_CHECK_OPENH323()
-	AST_CHECK_PWLIB_VERSION([OpenH323], [OPENH323], [openh323buildopts.h], [1], [17], [3], [], [1], [19], [0])
-	AST_CHECK_OPENH323_BUILD()
-	PLATFORM_OPENH323="h323_${PWLIB_PLATFORM}_${OPENH323_SUFFIX}"
-	AST_CHECK_PWLIB_BUILD([OpenH323], [OPENH323],
-		[Define if your system has the OpenH323 libraries.],
-		[#include "ptlib.h"
-		#include "h323.h"
-		#include "h323ep.h"],
-		[H323EndPoint ep = H323EndPoint();],
-		[${PWLIB_INCLUDE}], [${PWLIB_LIB}])
-fi
+done
 
-AST_EXT_LIB_CHECK([LUA], [lua5.2], [luaL_newstate], [lua5.2/lua.h], [-lm])
-if test "x${PBX_LUA}" = "x1" ; then
-	if test x"${LUA_DIR}" = x; then
-		LUA_INCLUDE="${LUA_INCLUDE} -I/usr/include/lua5.2"
-	else
-		LUA_INCLUDE="${LUA_INCLUDE} -I${LUA_DIR}/lua5.2"
-	fi
-fi
-
-AST_EXT_LIB_CHECK([LUA], [lua5.1], [luaL_newstate], [lua5.1/lua.h], [-lm])
-if test "x${PBX_LUA}" = "x1" ; then
-	if test x"${LUA_DIR}" = x; then
-		LUA_INCLUDE="${LUA_INCLUDE} -I/usr/include/lua5.1"
-	else
-		LUA_INCLUDE="${LUA_INCLUDE} -I${LUA_DIR}/lua5.1"
-	fi
-fi
-
-# Some distributions (like SuSE) remove the 5.1 suffix.
-AST_EXT_LIB_CHECK([LUA], [lua], [luaL_openlib], [lua.h], [-lm])
+# Some distributions (like openSUSE and NetBSD) remove the 5.x suffix.
+AST_EXT_LIB_CHECK([LUA], [lua], [luaL_newstate], [lua.h], [-lm])
 
 # Accept either RADIUS client library, their APIs are fully compatible,
 # just different header filenames and different SONAMEs
 AST_EXT_LIB_CHECK([RADIUS], [freeradius-client], [rc_read_config], [freeradius-client.h])
 if test "x${PBX_RADIUS}" = "x1"; then
-	AC_DEFINE(FREERADIUS_CLIENT, [], [Use the FreeRADIUS-client library])
+	AC_DEFINE(RADIUS_HEADER_STR, [<freeradius-client.h>], [Name of RADIUS library include header])
 else
 	AST_EXT_LIB_CHECK([RADIUS], [radiusclient-ng], [rc_read_config], [radiusclient-ng.h])
+	if test "x${PBX_RADIUS}" = "x1"; then
+		AC_DEFINE(RADIUS_HEADER_STR, [<radiusclient-ng.h>], [Name of RADIUS library include header])
+	else
+		AST_EXT_LIB_CHECK([RADIUS], [radcli], [rc_read_config], [radcli/radcli.h])
+		if test "x${PBX_RADIUS}" = "x1"; then
+			AC_DEFINE(RADIUS_HEADER_STR, [<radcli/radcli.h>], [Name of RADIUS library include header])
+		fi
+	fi
 fi
 
-AST_EXT_LIB_CHECK([COROSYNC], [cpg], [cpg_join], [corosync/cpg.h], [-lcfg])
+AST_EXT_LIB_CHECK([CODEC2], [codec2], [codec2_create], [codec2/codec2.h])
+
+AST_EXT_LIB_CHECK([COROSYNC], [cpg], [cpg_join], [corosync/cpg.h], [-lcpg -lcfg])
 AST_EXT_LIB_CHECK([COROSYNC_CFG_STATE_TRACK], [cfg], [corosync_cfg_state_track], [corosync/cfg.h], [-lcfg])
 
 AST_EXT_LIB_CHECK([SPEEX], [speex], [speex_encode], [speex/speex.h], [-lm])
@@ -2406,23 +2638,12 @@ AST_EXT_LIB_CHECK([CRYPTO], [crypto], [AES_encrypt], [openssl/aes.h])
 if test "$PBX_CRYPTO" = "1";
 then
 	AST_EXT_LIB_CHECK([OPENSSL], [ssl], [SSL_connect], [openssl/ssl.h], [-lcrypto])
+	AST_EXT_LIB_CHECK([OPENSSL_BIO_METHOD], [ssl], [BIO_meth_new], [openssl/ssl.h], [-lcrypto])
 fi
 
 if test "$PBX_OPENSSL" = "1";
 then
         AST_CHECK_OSPTK([4], [0], [0])
-        AST_EXT_LIB_CHECK([OPENSSL_SRTP], [ssl], [SSL_CTX_set_tlsext_use_srtp], [openssl/ssl.h], [-lcrypto])
-fi
-
-if test "$PBX_OPENSSL" = "1";
-then
-	AST_EXT_LIB_CHECK([OPENSSL_EC], [ssl], [EC_KEY_new_by_curve_name], [openssl/ec.h], [-lcrypto])
-fi
-
-if test "$PBX_OPENSSL" = "1";
-then
-        AST_C_DEFINE_CHECK([SSL_OP_NO_TLSV1_1], [SSL_OP_NO_TLSv1_1], [openssl/ssl.h])
-        AST_C_DEFINE_CHECK([SSL_OP_NO_TLSV1_2], [SSL_OP_NO_TLSv1_2], [openssl/ssl.h])
 fi
 
 AST_EXT_LIB_CHECK([SRTP], [srtp2], [srtp_init], [srtp2/srtp.h], [], [], [2])
@@ -2444,7 +2665,11 @@ AST_EXT_LIB_CHECK_SHARED([SRTP], [srtp2], [srtp_init], [srtp2/srtp.h], [], [], [
 
 if test "x$PBX_SRTP" = x1;
 then
+    AST_EXT_LIB_CHECK([SRTP_256], [srtp2], [srtp_crypto_policy_set_aes_cm_256_hmac_sha1_80])
+    AST_EXT_LIB_CHECK([SRTP_192], [srtp2], [srtp_crypto_policy_set_aes_cm_192_hmac_sha1_80])
+    AST_EXT_LIB_CHECK([SRTP_GCM], [srtp2], [srtp_crypto_policy_set_aes_gcm_128_8_auth])
     AST_EXT_LIB_CHECK([SRTP_SHUTDOWN], [srtp2], [srtp_shutdown], [srtp2/srtp.h])
+    AST_EXT_LIB_CHECK([SRTP_GET_VERSION], [srtp2], [srtp_get_version_string], [srtp2/srtp.h])
 
     # libsrtp2 removed support for PRNG, so we require OpenSSL
     if test "x$PBX_OPENSSL" != x1;
@@ -2452,7 +2677,7 @@ then
         AC_MSG_WARN([***])
         AC_MSG_WARN([*** OpenSSL required when using libsrtp2, checking for libsrtp instead.])
         AC_MSG_WARN([***])
-        PBX_SRTP=0
+	PBX_SRTP=0
     fi
 fi
 
@@ -2475,11 +2700,15 @@ then
 
     if test "x$PBX_SRTP" = x1;
     then
+        AST_EXT_LIB_CHECK([SRTP_256], [srtp], [crypto_policy_set_aes_cm_256_hmac_sha1_80])
+        AST_EXT_LIB_CHECK([SRTP_192], [srtp], [crypto_policy_set_aes_cm_192_hmac_sha1_80])
+        AST_EXT_LIB_CHECK([SRTP_GCM], [srtp], [crypto_policy_set_aes_gcm_128_8_auth])
         AST_EXT_LIB_CHECK([SRTP_SHUTDOWN], [srtp], [srtp_shutdown], [srtp/srtp.h])
+        AST_EXT_LIB_CHECK([SRTP_GET_VERSION], [srtp], [srtp_get_version_string], [srtp/srtp.h])
     fi
 fi
 
-for ver in 2.0 2.2 2.4 2.6; do
+for ver in 2.0 2.2 2.4 2.6 3.0; do
 	AST_PKG_CONFIG_CHECK([GMIME], gmime-$ver)
 	if test "$PBX_GMIME" = 1; then
 		break;
@@ -2498,12 +2727,7 @@ fi
 
 AST_EXT_LIB_CHECK([TONEZONE], [tonezone], [tone_zone_find], [dahdi/tonezone.h], [${tonezone_extra} ${DAHDI_INCLUDE}])
 
-if test "${OSARCH}" = "OpenBSD";
-then
-	AST_EXT_LIB_CHECK([VORBIS], [vorbis], [vorbis_info_init], [vorbis/codec.h], [-lm -lvorbisenc -lvorbisfile -logg])
-else
-	AST_EXT_LIB_CHECK([VORBIS], [vorbis], [vorbis_info_init], [vorbis/codec.h], [-lm -lvorbisenc -lvorbisfile])
-fi
+AST_EXT_LIB_CHECK([VORBIS], [vorbis], [vorbis_info_init], [vorbis/codec.h], [-lm -lvorbisenc -lvorbisfile])
 AST_C_DECLARE_CHECK([VORBIS_OPEN_CALLBACKS], [OV_CALLBACKS_NOCLOSE], [vorbis/vorbisfile.h])
 
 AC_LANG_PUSH(C++)
@@ -2655,6 +2879,12 @@ else
 	touch makeopts.acbak
 fi
 
+# conf_bridge (binaural rendering): check if HRIRs are available
+# this check does not work when cross-compiling
+if test "${cross_compiling}" = "no"; then
+    AC_CHECK_FILES([bridges/bridge_softmix/include/hrirs.h])
+fi
+
 AC_CONFIG_FILES([build_tools/menuselect-deps makeopts])
 AST_CHECK_MANDATORY
 
@@ -2673,9 +2903,9 @@ AC_OUTPUT
 ${ac_cv_path_EGREP} 'CURSES|GTK2|OSARCH|NEWT' makeopts > makeopts.acbak2
 if test "x${ac_cv_path_CMP}" = "x:"; then
 	( cd `pwd`/menuselect && ./configure )
-else if ${ac_cv_path_CMP} -s makeopts.acbak makeopts.acbak2; then : ; else
+elif ${ac_cv_path_CMP} -s makeopts.acbak makeopts.acbak2; then : ; else
 	( cd `pwd`/menuselect && ./configure )
-fi ; fi
+fi
 
 rm makeopts.acbak makeopts.acbak2
 

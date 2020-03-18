@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_GotoIf</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_GotoIf
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_GotoIf-GotoIf()">GotoIf()</h1>
+
+<h3 id="Asterisk17Application_GotoIf-Synopsis">Synopsis</h3>
+
+<p>Conditional goto.</p>
+
+<h3 id="Asterisk17Application_GotoIf-Description">Description</h3>
+
+<p>This application will set the current context, extension, and priority in the channel structure based on the evaluation of the given condition. After this application completes, the pbx engine will continue dialplan execution at the specified location in the dialplan. The labels are specified with the same syntax as used within the Goto application. If the label chosen by the condition is omitted, no jump is performed, and the execution passes to the next instruction. If the target location is bogus, and does not exist, the execution engine will try to find and execute the code in the <code>i</code> (invalid) extension in the current context. If that does not exist, it will try to execute the <code>h</code> extension. If neither the <code>h</code> nor <code>i</code> extensions have been defined, the channel is hung up, and the execution of instructions on the channel is terminated. Remember that this command can set the current context, and if the context specified does not exist, then it will not be able to find any 'h' or 'i' extensions there, and the channel and call will both be terminated!.</p>
+
+
+<h3 id="Asterisk17Application_GotoIf-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>GotoIf(condition?[labeliftrue:[labeliffalse]])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_GotoIf-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>condition</code></li>
+	<li><code>destination</code>
+	<ul>
+		<li><code>labeliftrue</code> - Continue at <em>labeliftrue</em> if the condition is true. Takes the form similar to Goto() of [[context,]extension,]priority.</li>
+		<li><code>labeliffalse</code> - Continue at <em>labeliffalse</em> if the condition is false. Takes the form similar to Goto() of [[context,]extension,]priority.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_GotoIf-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Application_Goto_42011190.html">Asterisk 17 Application_Goto</a></li>
+	<li><a href="Asterisk-17-Application_GotoIfTime_42011192.html">Asterisk 17 Application_GotoIfTime</a></li>
+	<li><a href="Asterisk-17-Application_GosubIf_42010833.html">Asterisk 17 Application_GosubIf</a></li>
+	<li><a href="Asterisk-17-Application_MacroIf_42010958.html">Asterisk 17 Application_MacroIf</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Application_GotoIf-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

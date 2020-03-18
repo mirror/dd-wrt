@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Collecting Debug Information</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Operation_27200183.html">Operation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Logging_27200200.html">Logging</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Collecting Debug Information
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> George Joseph</span> on Jun 16, 2017
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="CollectingDebugInformation-CollectingDebugInformationfortheAsteriskIssueTracker">Collecting Debug Information for the Asterisk Issue Tracker</h1><p>This document will provide instructions on how to collect debugging logs from an Asterisk machine, for the purpose of helping bug marshals troubleshoot an issue on <a href="https://issues.asterisk.org" class="external-link" rel="nofollow">https://issues.asterisk.org</a></p><p>If Asterisk has crashed or deadlocked, see <a href="https://wiki.asterisk.org/wiki/display/AST/Getting+A+Backtrace" rel="nofollow">Getting a Backtrace</a>.</p><h1 id="CollectingDebugInformation-STEPS">STEPS</h1></div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303120016 {padding: 0px;}
+div.rbtoc1582303120016 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303120016 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303120016'>
+<ul class='toc-indentation'>
+<li><a href='#CollectingDebugInformation-CollectingDebugInformationfortheAsteriskIssueTracker'>Collecting Debug Information for the Asterisk Issue Tracker</a></li>
+<li><a href='#CollectingDebugInformation-STEPS'>STEPS</a>
+<ul class='toc-indentation'>
+<li><a href='#CollectingDebugInformation-ConfigureAsterisklogging'>Configure Asterisk logging</a></li>
+<li><a href='#CollectingDebugInformation-Configureverbositylevelsandrotatelogs'>Configure verbosity levels and rotate logs</a></li>
+<li><a href='#CollectingDebugInformation-Enablechanneltechorfeaturespecificdebug'>Enable channel tech or feature specific debug</a></li>
+<li><a href='#CollectingDebugInformation-Issuereproductionandcleanup'>Issue reproduction and clean up</a></li>
+<li><a href='#CollectingDebugInformation-Providedebugtothedevelopers'>Provide debug to the developers</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h2 id="CollectingDebugInformation-ConfigureAsterisklogging">Configure Asterisk logging</h2><p><strong>1.</strong> Edit the logger.conf file to enable specific logger channels to output to your filesystem. The word &quot;debug_log_123456&quot; can be changed to anything you want, as that is the filename the logging will be written to.</p><p>Modify the file name &quot;debug_log_123456&quot; to reflect your <a href="http://issues.asterisk.org" class="external-link" rel="nofollow">issues.asterisk.org</a> issue number.</p><div class="code panel pdl" style="border-style: solid;border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;border-bottom-style: solid;"><b>logger.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[logfiles]
+debug_log_123456 =&gt; notice,warning,error,debug,verbose,dtmf
+</pre>
+</div></div>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Asterisk 13+</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p> In Asterisk 13 and later, you can dynamically create log channels from the CLI using the <code>logger add channel</code> command. For example, to create the log file above, you would enter:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>logger add channel debug_log_123456 notice,warning,error,debug,verbose,dtmf</pre>
+</div></div><p>The new log channel persists until Asterisk is restarted, the logger module is reloaded, or the log files are rotated. If using this CLI command, do <strong>not</strong> reload/restart/rotate the log files in Step 2.</p>
+                    </div>
+    </div>
+<h2 id="CollectingDebugInformation-Configureverbositylevelsandrotatelogs">Configure verbosity levels and rotate logs</h2><p><strong>2.</strong> From the Asterisk CLI, set the verbose and debug levels for logging (this affects CLI and log output) and then restart the logger module:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">*CLI&gt; core set verbose 5
+*CLI&gt; core set debug 5
+*CLI&gt; module reload logger
+</pre>
+</div></div><p>Optionally, if you've used this file to record data previously, then rotate the logs:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">*CLI&gt; logger rotate
+</pre>
+</div></div><h2 id="CollectingDebugInformation-Enablechanneltechorfeaturespecificdebug">Enable channel tech or feature specific debug</h2><p><strong>2.1.</strong> Depending on your issue and if a protocol level trace is requested, be sure to enable logging for the channel driver or other module.</p><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Module (version)</th><th class="confluenceTh">CLI Command</th></tr><tr><td class="confluenceTd">New PJSIP driver (12 or higher)</td><td class="confluenceTd"><pre>pjsip set logger on</pre></td></tr><tr><td class="confluenceTd">SIP (1.6.0 or higher)</td><td class="confluenceTd"><pre>sip set debug on</pre></td></tr><tr><td class="confluenceTd">SIP (1.4)</td><td class="confluenceTd"><pre>sip set debug</pre></td></tr><tr><td class="confluenceTd">IAX2 (1.6.0 or higher)</td><td class="confluenceTd"><pre>iax2 set debug on</pre></td></tr><tr><td colspan="1" class="confluenceTd">IAX2 (1.4)</td><td colspan="1" class="confluenceTd"><pre>iax2 set debug</pre></td></tr><tr><td colspan="1" class="confluenceTd">CDR engine</td><td colspan="1" class="confluenceTd"><code>cdr set debug on</code></td></tr></tbody></table></div><h2 id="CollectingDebugInformation-Issuereproductionandcleanup">Issue reproduction and clean up</h2><p><strong>3.</strong> Now that logging is configured, enabled and verbosity is turned up you should reproduce your issue.</p><p><strong>4.</strong> Once finished, be sure to disable the extra debugging:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">*CLI&gt; core set verbose 0
+*CLI&gt; core set debug 0
+</pre>
+</div></div><p><strong>4.1.</strong> Again, remember to disable any extra logging for channel drivers or features.</p><p>SIP (1.4 or higher)</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">*CLI&gt; sip set debug off
+</pre>
+</div></div><p>IAX2 (1.4 or higher)</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">*CLI&gt; iax2 set debug off
+</pre>
+</div></div><p><strong>5.</strong> Disable logging to the filesystem. Edit the logger.conf file and comment out or delete the line you added in step 1. Using a semi-colon as the first character on the line will comment out the line.</p><div class="code panel pdl" style="border-style: solid;border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;border-bottom-style: solid;"><b>logger.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[logfiles]
+;debug_log_123456 =&gt; notice,warning,error,debug,verbose,dtmf
+</pre>
+</div></div><p>Then reload the logger module (or restart Asterisk) as you did in step 2:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">*CLI&gt; module reload logger
+</pre>
+</div></div><h2 id="CollectingDebugInformation-Providedebugtothedevelopers">Provide debug to the developers<strong><br /></strong></h2><p><strong>6.</strong> Upload the file located in /var/log/asterisk/debug_log_123456 to the issue tracker.</p>    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <ol><li>Do <strong>NOT</strong> post the output of your file as a comment. This clutters the issue and will only result in your comment being deleted.</li><li>Attach the file with a .txt extension to make it easy for the developers to quickly open the file without downloading.<br />Files are attached on the issue page with following menu items: ( More &gt; Attach files )</li></ol>
+                    </div>
+    </div>
+</div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

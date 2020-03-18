@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Configuring res_pjsip for IPv6</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SIP_28314848.html">SIP</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-res_pjsip_25919621.html">Configuring res_pjsip</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Configuring res_pjsip for IPv6
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified by <span class='editor'> Joshua C. Colp</span> on Oct 04, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Configuringres_pjsipforIPv6-TellAsteriskandPJSIPtoSpeakIPv6">Tell Asterisk and PJSIP to Speak IPv6</h1><p>The configuration described here happens in the pjsip.conf file within transport and endpoint sections. For more information about the transport side of things see <a href="PJSIP-Transport-Selection_31097159.html">PJSIP Transport Selection</a></p><h2 id="Configuringres_pjsipforIPv6-BindPJSIPtoaspecificinterface">Bind PJSIP to a specific interface</h2><p>To configure res_pjsip for communication over an IPv6 interface you must modify the bind address for your transports in pjsip.conf.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[transport-udp6]
+type=transport
+protocol=udp
+bind=[fe80::5e26:aff:fe4b:4399]
+ 
+[transport-tcp6]
+type=transport
+protocol=tcp
+bind=[fe80::5e26:aff:fe4b:4399]</pre>
+</div></div><h2 id="Configuringres_pjsipforIPv6-BindPJSIPtothefirstavailableIPv6interface">Bind PJSIP to the first available IPv6 interface</h2><p>A transport can be configured to automatically bind to the first available IPv6 interface. You use &quot;::&quot; as the bind address.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[transport-auto-ipv6]
+type=transport
+protocol=udp
+bind=::</pre>
+</div></div><h2 id="Configuringres_pjsipforIPv6-ConfigureaPJSIPendpointtouseRTPoverIPv6">Configure a PJSIP endpoint to use RTP over IPv6</h2><p>There is no additional configuration required to have an endpoint use RTP over IPv6. IPv4 or IPv6 will be automatically chosen based on the address family of the address for signaling. That is: If an endpoint is using IPv4 it will be IPv4, if it is using IPv6 it will be IPv6.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[mytrunk]
+type=endpoint
+transport=transport-udp6
+context=from-external
+disallow=all
+allow=ulaw</pre>
+</div></div><p> </p><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

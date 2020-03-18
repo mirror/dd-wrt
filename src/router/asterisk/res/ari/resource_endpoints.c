@@ -25,8 +25,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "resource_endpoints.h"
 
 #include "asterisk/astobj2.h"

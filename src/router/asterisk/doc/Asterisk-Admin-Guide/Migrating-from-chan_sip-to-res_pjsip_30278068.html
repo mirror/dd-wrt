@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Migrating from chan_sip to res_pjsip</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SIP_28314848.html">SIP</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-res_pjsip_25919621.html">Configuring res_pjsip</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Migrating from chan_sip to res_pjsip
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified by <span class='editor'> Malcolm Davenport</span> on Jul 24, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="Migratingfromchan_siptores_pjsip-Overview">Overview</h1><p>This page documents any useful tools, tips or examples on moving from the old chan_sip channel driver to the new chan_pjsip/res_pjsip added in Asterisk 12.</p><h2 id="Migratingfromchan_siptores_pjsip-ConfigurationConversionScript">Configuration Conversion Script</h2><p>Contained within a download of Asterisk, there is a Python script, sip_to_pjsip.py, found within the contrib/scripts/sip_to_pjsip subdirectory, that provides a basic conversion of a sip.conf config to a pjsip.conf config. It is not intended to work for every scenario or configuration; for basic configurations it should provide a good example of how to convert it over to pjsip.conf style config.</p><p>To insure that the script can read any <a href="4817459.html">#include'd</a> files, run it from the /etc/asterisk directory or in another location with a copy of the sip.conf and any included files. The default input file is sip.conf, and the default output file is pjsip.conf. Any included files will also be converted, and written out with a pjsip_ prefix, unless changed with the --prefix=<em>xxx</em> option.</p><h3 id="Migratingfromchan_siptores_pjsip-Commandlineusage">Command line usage</h3><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># /path/to/asterisk/source/contrib/scripts/sip_to_pjsip/sip_to_pjsip.py --help
+Usage: sip_to_pjsip.py [options] [input-file [output-file]]
+input-file defaults to &#39;sip.conf&#39;
+output-file defaults to &#39;pjsip.conf&#39;
+Options:
+  -h, --help            show this help message and exit
+  -p PREFIX, --prefix=PREFIX
+                        output prefix for include files
+ </pre>
+</div></div><h3 id="Migratingfromchan_siptores_pjsip-ExampleofUse">Example of Use</h3><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># cd /etc/asterisk
+# /path/to/asterisk/source/contrib/scripts/sip_to_pjsip/sip_to_pjsip.py
+Reading sip.conf
+Converting to PJSIP...
+Writing pjsip.conf</pre>
+</div></div></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302967947 {padding: 0px;}
+div.rbtoc1582302967947 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302967947 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302967947'>
+<ul class='toc-indentation'>
+<li><a href='#Migratingfromchan_siptores_pjsip-Overview'>Overview</a>
+<ul class='toc-indentation'>
+<li><a href='#Migratingfromchan_siptores_pjsip-ConfigurationConversionScript'>Configuration Conversion Script</a></li>
+</ul>
+</li>
+<li><a href='#Migratingfromchan_siptores_pjsip-SidebySideExamplesofsip.confandpjsip.confConfiguration'>Side by Side Examples of sip.conf and pjsip.conf Configuration</a>
+<ul class='toc-indentation'>
+<li><a href='#Migratingfromchan_siptores_pjsip-ExampleEndpointConfiguration'>Example Endpoint Configuration</a></li>
+<li><a href='#Migratingfromchan_siptores_pjsip-ExampleSIPTrunkConfiguration'>Example SIP Trunk Configuration</a></li>
+</ul>
+</li>
+<li><a href='#Migratingfromchan_siptores_pjsip-Disablingres_pjsipandchan_pjsip'>Disabling res_pjsip and chan_pjsip</a></li>
+<li><a href='#Migratingfromchan_siptores_pjsip-NetworkAddressTranslation(NAT)'>Network Address Translation (NAT)</a></li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><h1 id="Migratingfromchan_siptores_pjsip-SidebySideExamplesofsip.confandpjsip.confConfiguration">Side by Side Examples of sip.conf and pjsip.conf Configuration</h1><p>These examples contain only the configuration required for sip.conf/pjsip.conf as the configuration for other files should be the same, excepting the Dial statements in your extensions.conf. Dialing with PJSIP is discussed in <a href="Dialing-PJSIP-Channels_30278070.html">Dialing PJSIP Channels</a>.</p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>It is important to know that PJSIP syntax and configuration format is stricter than the older chan_sip driver. When in doubt, try to follow the documentation exactly, avoid extra spaces or strange capitalization. Always check your logs for warnings or errors if you suspect something is wrong.</p>
+                    </div>
+    </div>
+<h2 id="Migratingfromchan_siptores_pjsip-ExampleEndpointConfiguration">Example Endpoint Configuration</h2><p>This examples shows the configuration required for:</p><ul><li>two SIP phones need to make calls to or through Asterisk, we also want to be able to call them from Asterisk</li><li>for them to be identified as users (in the old chan_sip) or endpoints (in the new res_sip/chan_pjsip)</li><li>both devices need to use username and password authentication</li><li>6001 is setup to allow registration to Asterisk, and 6002 is setup with a static host/contact</li></ul><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">sip.conf</th><th class="confluenceTh">pjsip.conf</th></tr><tr><td class="confluenceTd"><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[general]
+udpbindaddr=0.0.0.0
+
+[6001]
+type=friend
+host=dynamic
+disallow=all
+allow=ulaw
+context=internal
+secret=1234
+
+[6002]
+type=friend
+host=192.0.2.1
+disallow=all
+allow=ulaw
+context=internal
+secret=1234</pre>
+</div></div><p> </p><p> </p></td><td class="confluenceTd"><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[simpletrans]
+type=transport
+protocol=udp
+bind=0.0.0.0
+
+[6001]
+type = endpoint
+context = internal
+disallow = all
+allow = ulaw
+aors = 6001
+auth = auth6001
+
+[6001]
+type = aor
+max_contacts = 1
+
+[auth6001]
+type=auth
+auth_type=userpass
+password=1234
+username=6001
+
+[6002]
+type = endpoint
+context = internal
+disallow = all
+allow = ulaw
+aors = 6002
+auth = auth6002
+
+[6002]
+type = aor
+contact = sip:6002@192.0.2.1:5060
+
+[auth6002]
+type=auth
+auth_type=userpass
+password=1234
+username=6001</pre>
+</div></div></td></tr></tbody></table></div><h2 id="Migratingfromchan_siptores_pjsip-ExampleSIPTrunkConfiguration">Example SIP Trunk Configuration</h2><p>This shows configuration for a SIP trunk as would typically be provided by an ITSP. That is registration to a remote server, authentication to it and a peer/endpoint setup to allow inbound calls from the provider.</p><ul><li>SIP provider requires registration to their server with a username of &quot;myaccountname&quot; and a password of &quot;1234567890&quot;</li><li>SIP provider requires registration to their server at the address of 203.0.113.1:5060</li><li>SIP provider requires outbound calls to their server at the same address of registration, plus using same authentication details.</li><li>SIP provider will call your server with a user name of &quot;mytrunk&quot;. Their traffic will only be coming from 203.0.113.1</li></ul><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">sip.conf</th><th class="confluenceTh">pjsip.conf</th></tr><tr><td class="confluenceTd"><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[general]
+udpbindaddr=0.0.0.0
+
+register =&gt; myaccountname:1234567890@203.0.113.1:5060
+
+[mytrunk]
+type=friend
+secret=1234567890
+username=myaccountname
+host=203.0.113.1
+disallow=all
+allow=ulaw
+context=from-external</pre>
+</div></div></td><td class="confluenceTd"><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[simpletrans]
+type=transport
+protocol=udp
+bind=0.0.0.0
+
+[mytrunk]
+type=registration
+outbound_auth=mytrunk
+server_uri=sip:myaccountname@203.0.113.1:5060
+client_uri=sip:myaccountname@203.0.133.1:5060
+
+[mytrunk]
+type=auth
+auth_type=userpass
+password=1234567890
+username=myaccountname
+
+[mytrunk]
+type=aor
+contact=sip:203.0.113.1:5060
+
+[mytrunk]
+type=endpoint
+context=from-external
+disallow=all
+allow=ulaw
+outbound_auth=mytrunk
+aors=mytrunk
+
+[mytrunk]
+type=identify
+endpoint=mytrunk
+match=203.0.113.1</pre>
+</div></div></td></tr></tbody></table></div><p> </p><h1 id="Migratingfromchan_siptores_pjsip-Disablingres_pjsipandchan_pjsip">Disabling res_pjsip and chan_pjsip</h1><p>You may want to keep using chan_sip for a short time in Asterisk 12+ while you migrate to res_pjsip. In that case, it is best to disable res_pjsip unless you understand how to configure them both together.</p><p>There are several methods to disable or remove modules in Asterisk. Which method is best depends on your intent.</p><p>If you have built Asterisk with the PJSIP modules, but don't intend to use them at this moment, you might consider the following:</p><ol><li><p>Edit the file <strong>modules.conf</strong> in your Asterisk configuration directory. (typically /etc/asterisk/)</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">noload =&gt; res_pjsip.so
+noload =&gt; res_pjsip_pubsub.so
+noload =&gt; res_pjsip_session.so
+noload =&gt; chan_pjsip.so
+noload =&gt; res_pjsip_exten_state.so
+noload =&gt; res_pjsip_log_forwarder.so</pre>
+</div></div><p>Having a noload for the above modules should (at the moment of writing this) prevent any PJSIP related modules from loading.</p></li><li>Restart Asterisk!</li></ol><p>Other possibilities would be:</p><ul><li>Remove all PJSIP modules from the modules directory (often, /usr/lib/asterisk/modules)</li><li>Remove the configuration file (pjsip.conf)</li><li>Un-install and re-install Asterisk with no PJSIP related modules.</li><li>If you are wanting to use chan_pjsip alongside chan_sip, you could change the port or bind interface of your chan_pjsip transport in pjsip.conf</li></ul><h1 id="Migratingfromchan_siptores_pjsip-NetworkAddressTranslation(NAT)">Network Address Translation (NAT)</h1><p>When configured with <strong>chan_sip</strong>, peers that are, relative to Asterisk, located behind a NAT are configured using the <strong>nat</strong> parameter.  In versions 1.8 and greater of Asterisk, the following nat parameter options are available:</p><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Value</th><th class="confluenceTh">Description</th></tr><tr><td class="confluenceTd">no</td><td class="confluenceTd">Do not perform NAT handling other than <a href="http://www.ietf.org/rfc/rfc3581.txt" class="external-link" rel="nofollow">RFC 3581</a>.</td></tr><tr><td colspan="1" class="confluenceTd">force_rport</td><td colspan="1" class="confluenceTd">When the rport parameter is not present, send responses to the source IP address and port anyway, as though the rport parameter was present</td></tr><tr><td colspan="1" class="confluenceTd">comedia</td><td colspan="1" class="confluenceTd">Send media to the address and port from which Asterisk received it, regardless of where SDP indicates that it should be sent</td></tr><tr><td colspan="1" class="confluenceTd">auto_force_rport</td><td colspan="1" class="confluenceTd">Automatically enable the sending of responses to the source IP address and port, as though rport were present, if Asterisk detects NAT. Default.</td></tr><tr><td colspan="1" class="confluenceTd">auto_comedia</td><td colspan="1" class="confluenceTd">Automatically send media to the port from which Asterisk received it, regardless of where SDP indicates that it should be sent, if Asterisk detects NAT.</td></tr></tbody></table></div><p>Versions of Asterisk prior to 1.8 had less granularity for the nat parameter:</p><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Value</th><th class="confluenceTh">Description</th></tr><tr><td class="confluenceTd">no</td><td class="confluenceTd">Do not perform NAT handling other than RFC 3581</td></tr><tr><td class="confluenceTd">yes</td><td class="confluenceTd">Send media to the port from which Asterisk received it, regardless of where SDP indicates that it should be sent; send responses to the source IP address and port as though rport were present; and rewrite the SIP Contact to the source address and port of the request so that subsequent requests go to that address and port.</td></tr><tr><td class="confluenceTd">never</td><td class="confluenceTd">Do not perform any NAT handling</td></tr><tr><td colspan="1" class="confluenceTd">route</td><td colspan="1" class="confluenceTd"><span>Send media to the port from which Asterisk received it, regardless of where SDP indicates that it should be sent and rewrite the SIP Contact to the source address and port of the request so that subsequent requests go to that address and port.</span></td></tr></tbody></table></div><p>In <strong>chan_pjsip</strong>, the <strong>endpoint</strong> options that control NAT behavior are:</p><ul><li>rtp_symmetric - Send media to the address and port from which Asterisk receives it, regardless of where SDP indicates that it should be sent</li><li>force_rport - Send responses to the source IP address and port as though port were present, even if it's not</li><li>rewrite_contact - Rewrite SIP Contact to the source address and port of the request so that subsequent requests go to that address and port.</li></ul><p>Thus, the following are equivalent:</p><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">chan_sip (sip.conf)</th><th class="confluenceTh">chan_pjsip (pjsip.conf)</th></tr><tr><td class="confluenceTd"><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[mypeer1]
+type=peer
+nat=yes
+;...
+ 
+ 
+ 
+[mypeer2]
+type=peer
+nat=no
+;...
+ 
+ 
+ 
+[mypeer3]
+type=peer
+nat=never
+;...
+ 
+ 
+ 
+[mypeer4]
+type=peer
+nat=route
+;...
+ 
+ 
+ </pre>
+</div></div></td><td class="confluenceTd"><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[mypeer1]
+type=endpoint
+rtp_symmetric=yes
+force_rport=yes
+rewrite_contact=yes
+;...
+ 
+[mypeer2]
+type=endpoint
+rtp_symmetric=no
+force_rport=no
+rewrite_contact=no
+;...
+ 
+[mypeer3]
+type=endpoint
+rtp_symmetric=no
+force_rport=no
+rewrite_contact=no
+;...
+ 
+[mypeer4]
+type=endpoint
+rtp_symmetric=no
+force_rport=yes
+rewrite_contact=yes
+;...
+ </pre>
+</div></div></td></tr></tbody></table></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

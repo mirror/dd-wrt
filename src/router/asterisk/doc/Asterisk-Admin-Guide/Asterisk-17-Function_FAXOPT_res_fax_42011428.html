@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Function_FAXOPT_res_fax</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Functions_42010713.html">Asterisk 17 Dialplan Functions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Function_FAXOPT_res_fax
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span>, last modified on Jan 03, 2020
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Function_FAXOPT_res_fax-FAXOPT()-[res_fax]">FAXOPT() - [res_fax]</h1>
+
+<h3 id="Asterisk17Function_FAXOPT_res_fax-Synopsis">Synopsis</h3>
+
+<p>Gets/sets various pieces of information about a fax session.</p>
+
+<h3 id="Asterisk17Function_FAXOPT_res_fax-Description">Description</h3>
+
+<p>FAXOPT can be used to override the settings for a FAX session listed in <code>res_fax.conf</code>, it can also be used to retrieve information about a FAX session that has finished eg. pages/status.</p>
+
+
+<h3 id="Asterisk17Function_FAXOPT_res_fax-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>FAXOPT(item)</pre>
+</div></div>
+
+<h5 id="Asterisk17Function_FAXOPT_res_fax-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>item</code>
+	<ul>
+		<li><code>ecm</code> - R/W Error Correction Mode (ECM) enable with 'yes', disable with 'no'.</li>
+		<li><code>error</code> - R/O FAX transmission error code upon failure.</li>
+		<li><code>filename</code> - R/O Filename of the first file of the FAX transmission.</li>
+		<li><code>filenames</code> - R/O Filenames of all of the files in the FAX transmission (comma separated).</li>
+		<li><code>headerinfo</code> - R/W FAX header information.</li>
+		<li><code>localstationid</code> - R/W Local Station Identification.</li>
+		<li><code>minrate</code> - R/W Minimum transfer rate set before transmission.</li>
+		<li><code>maxrate</code> - R/W Maximum transfer rate set before transmission.</li>
+		<li><code>modem</code> - R/W Modem type (v17/v27/v29).</li>
+		<li><code>gateway</code> - R/W T38 fax gateway, with optional fax activity timeout in seconds (yes[,timeout]/no)</li>
+		<li><code>faxdetect</code> - R/W Enable FAX detect with optional timeout in seconds (yes,t38,cng[,timeout]/no)</li>
+		<li><code>pages</code> - R/O Number of pages transferred.</li>
+		<li><code>rate</code> - R/O Negotiated transmission rate.</li>
+		<li><code>remotestationid</code> - R/O Remote Station Identification after transmission.</li>
+		<li><code>resolution</code> - R/O Negotiated image resolution after transmission.</li>
+		<li><code>sessionid</code> - R/O Session ID of the FAX transmission.</li>
+		<li><code>status</code> - R/O Result Status of the FAX transmission.</li>
+		<li><code>statusstr</code> - R/O Verbose Result Status of the FAX transmission.</li>
+		<li><code>t38timeout</code> - R/W The timeout used for T.38 negotiation.</li>
+		<li><code>negotiate_both</code> - R/W Upon v21 detection allow gateway to send negotiation requests to both T.38 endpoints, and do not wait on the &quot;other&quot; side to initiate (yes|no)</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Function_FAXOPT_res_fax-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=Asterisk+17+Application_ReceiveFax&amp;linkCreation=true&amp;fromPageId=42011428">Asterisk 17 Application_ReceiveFax</a></li>
+	<li><a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=Asterisk+17+Application_SendFax&amp;linkCreation=true&amp;fromPageId=42011428">Asterisk 17 Application_SendFax</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Function_FAXOPT_res_fax-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-e5446d7</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

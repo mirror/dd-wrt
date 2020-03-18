@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Special Dialplan Extensions</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Special Dialplan Extensions
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on Feb 04, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="SpecialDialplanExtensions-SpecialAsteriskDialplanExtensions">Special Asterisk Dialplan Extensions</h1><p>Here we'll list all of the special built-in dialplan extensions and their usage.</p>    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <p>Other than special extensions, there is a special context &quot;default&quot; that is used when either a) an extension context is deleted while an extension is in use, or b) a specific starting extension handler has not been defined (unless overridden by the low level channel interface).</p>
+                    </div>
+    </div>
+<h2 id="SpecialDialplanExtensions-a:Assistantextension">a: Assistant extension</h2><p>This extension is similar to the <strong>o</strong> extension, only it gets triggered when the caller presses the asterisk (*) key while recording a voice mail message. This is typically used to reach an assistant.</p><h2 id="SpecialDialplanExtensions-e:ExceptionCatchallextension">e: Exception Catchall extension</h2><p>This extension will substitute as a catchall for any of the 'i', 't', or 'T' extensions, if any of them do not exist and catching the error in a single routine is desired. The function <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Function_EXCEPTION">EXCEPTION</a> may be used to query the type of exception or the location where it occurred.</p><h2 id="SpecialDialplanExtensions-h:Hangupextension">h: Hangup extension</h2><p>When a call is hung up, Asterisk executes the <strong>h</strong> extension in the current context. This is typically used for some sort of clean-up after a call has been completed.</p><h2 id="SpecialDialplanExtensions-i:Invalidentryextension">i: Invalid entry extension</h2><p>If Asterisk can't find an extension in the current context that matches the digits dialed during the <strong>Background()</strong> or <strong>WaitExten()</strong> applications, it will send the call to the <strong>i</strong> extension. You can then handle the call however you see fit.</p><h2 id="SpecialDialplanExtensions-o:Operatorextension">o: Operator extension</h2><p>If a caller presses the zero key on their phone keypad while recording a voice mail message, and the <strong>o</strong> extension exists, the caller will be redirected to the o extension. This is typically used so that the caller can press zero to reach an operator.</p><h2 id="SpecialDialplanExtensions-s:Startextension">s: Start extension</h2><p>When an analog call comes into Asterisk, the call is sent to the <strong>s</strong> extension. The s extension is also used in macros.</p><p>Please note that the <strong>s</strong> extension is <strong>not</strong> a catch-all extension. It's simply the location that analog calls and macros begin. In our example above, it simply makes a convenient extension to use that can't be easily dialed from the <strong>Background()</strong> and <strong>WaitExten()</strong> applications.</p><h2 id="SpecialDialplanExtensions-t:Responsetimeoutextension">t: Response timeout extension</h2><p>When the caller waits too long before entering a response to the <strong>Background()</strong> or <strong>WaitExten()</strong> applications, and there are no more priorities in the current extension, the call is sent to the t extension.</p><h2 id="SpecialDialplanExtensions-T:Absolutetimeoutextension">T: Absolute timeout extension</h2><p>This is the extension that is executed when the 'absolute' timeout is reached. See &quot;core show function TIMEOUT&quot; for more information on setting timeouts.</p><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

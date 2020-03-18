@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : PJSIP Configuration Wizard</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SIP_28314848.html">SIP</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-res_pjsip_25919621.html">Configuring res_pjsip</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : PJSIP Configuration Wizard
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> George Joseph</span>, last modified on Apr 25, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<p>The PJSIP Configuration Wizard (module <code>res_pjsip_config_wizard</code>) is a new feature in Asterisk 13.2.0.  While the basic <code>chan_pjsip</code> configuration objects (endpoint, aor, etc.) allow a great deal of flexibility and control they can also make configuring standard scenarios like <code>trunk</code> and <code>user</code> more complicated than similar scenarios in <code>sip.conf</code> and <code>users.conf</code>.  The PJSIP Configuration Wizard aims to ease that burden by providing a single object called 'wizard' that be used to configure most common <code>chan_pjsip</code> scenarios.</p><p>The following configurations demonstrate a simple ITSP scenario.</p><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh"><p><code>pjsip_wizard.conf</code></p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[my-itsp]
+type = wizard
+sends_auth = yes
+sends_registrations = yes
+remote_hosts = sip.my-itsp.net
+outbound_auth/username = my_username
+outbound_auth/password = my_password
+endpoint/context = default
+aor/qualify_frequency = 15
+
+
+</pre>
+</div></div><p> </p><p> </p><pre> </pre></th><th class="confluenceTh"><p><code>pjsip.conf</code></p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[my-itsp]
+type = endpoint
+aors = my-itsp
+outbound_auth = my-itsp-auth
+context = default
+ 
+[my-itsp]
+type = aor
+contact = sip:sip.my-itsp.net
+qualify_frequency = 15
+
+[my-itsp-auth]
+type = auth
+auth_type = userpass
+username = my_username
+password = my_password
+
+[my-itsp-reg]
+type = registration
+outbound_auth = my-itsp-auth
+server_uri = sip:sip.my-itsp.net
+client_uri = sip:my_username@sip.my-itsp.net
+
+[my-itsp-identify]
+type = identify
+endpoint = my-itsp
+match = sip.my-itsp.net
+
+</pre>
+</div></div><p> </p></th></tr></tbody></table></div><p> </p><p>Both produce the same result.  In fact, the wizard creates standard <code>chan_pjsip</code> objects behind the scenes.  In the above example...</p><ul><li>An endpoint and aor are created with the same name as the wizard.</li><li>The <code>endpoint/context</code> and <code>aor/qualify_fequency</code> parameters are added to them.</li><li><code>remote_hosts</code> captures the remote host for all objects.</li><li>A contact for the aor is created for each remote host.</li><li><code>sends_auth=yes</code> causes an auth object to be created.</li><li><span style="line-height: 1.4285715;"><code>outbound_auth/username</code> and <code>outbound_auth/password</code> are added to it.</span></li><li>An <code>outbound_auth</code> line is added to the endpoint.</li><li><code>sends_registrations=yes</code> causes a registration object to be created.</li><li>An <code>outbound_auth</code> line is added to the registration.</li><li>The <code>server_uri</code> and <code>client_uri</code> are constructed using the remote host and username.</li><li>An identify object is created and a match is added for each remote host.</li></ul><p> </p></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h2 id="PJSIPConfigurationWizard-ConfigurationReference:">Configuration Reference:</h2><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Parameter</th><th class="confluenceTh">Description</th></tr><tr><td colspan="1" class="confluenceTd">type</td><td colspan="1" class="confluenceTd">Must be <code>wizard</code></td></tr><tr><td class="confluenceTd">sends_auth</td><td class="confluenceTd"><p>Will create an outbound auth object for the endpoint and<br />registration. At least <code>outbound/username</code> must be specified.</p><p>default = <code>no</code><span> </span></p></td></tr><tr><td class="confluenceTd">accepts_auth</td><td class="confluenceTd"><p>Will create an inbound auth object for the endpoint.<br />At least 'inbound/username' must be specified.</p><p>default = <code>no</code><span> </span></p></td></tr><tr><td class="confluenceTd">sends_registrations</td><td class="confluenceTd"><p>Will create an outbound registration object for each<br />host in remote_hosts.</p><p>default = <code>no</code></p></td></tr><tr><td colspan="1" class="confluenceTd">remote_hosts</td><td colspan="1" class="confluenceTd"><p>A comma separated list of remote hosts in the form of<br /><code>&lt;ipaddress | hostname&gt;[:port][, ... ]</code><br />If specified, a static contact for each host will be created<br />in the aor. If <code>accepts_registrations</code> is no, an identify<br />object is also created with a match line for each remote host.<br />Hostnames must resolve to A, AAAA or CNAME records.<br />SRV records are not currently supported.</p><p>default = <code>&quot;&quot;</code></p></td></tr><tr><td colspan="1" class="confluenceTd">transport</td><td colspan="1" class="confluenceTd"><p>The transport to use for the endpoint and registrations</p><p>default = the pjsip default</p></td></tr><tr><td colspan="1" class="confluenceTd">server_uri_pattern</td><td colspan="1" class="confluenceTd"><p>The pattern used to construct the registration <code>server_uri</code>.<br />The replaceable parameter <code>${REMOTE_HOST</code>} is available for use.</p><p>default = <code>sip:${REMOTE_HOST</code>}</p></td></tr><tr><td colspan="1" class="confluenceTd">client_uri_pattern</td><td colspan="1" class="confluenceTd"><p>The pattern used to construct the registration <code>client_uri</code>.<br />The replaceable parameters ${REMOTE_HOST} and<br />${USERNAME} are available for use.</p><p>default = {{sip:${USERNAME}@${REMOTE_HOST}}}</p></td></tr><tr><td colspan="1" class="confluenceTd">contact_pattern</td><td colspan="1" class="confluenceTd"><p>The pattern used to construct the aor contact.<br />The replaceable parameter ${REMOTE_HOST} is available for use.</p><p>default = <code>sip:${REMOTE_HOST</code>}</p></td></tr><tr><td colspan="1" class="confluenceTd">has_phoneprov</td><td colspan="1" class="confluenceTd"><p>Will create a phoneprov object. If yes, both <code>phoneprov/MAC</code> and <code>phoneprov/PROFILE</code><br />must be specified.</p><p>default = <code>no</code><span> </span></p></td></tr><tr><td colspan="1" class="confluenceTd">has_hint</td><td colspan="1" class="confluenceTd"><p>Enables the automatic creation of dialplan hints.</p><p>Two entries will be created.  One hint for 'hint_exten' and one application to execute <br />when 'hint_exten' is dialed.</p></td></tr><tr><td colspan="1" class="confluenceTd">hint_context</td><td colspan="1" class="confluenceTd">The context into which hints are placed.</td></tr><tr><td colspan="1" class="confluenceTd">hint_exten</td><td colspan="1" class="confluenceTd">The extension this hint will be registered with.</td></tr><tr><td colspan="1" class="confluenceTd">hint_application</td><td colspan="1" class="confluenceTd"><p>An application with parameters to execute when 'hint_exten' is dialed.</p><pre>Example: Gosub(stdexten,${EXTEN},1(${HINT}))</pre></td></tr><tr><td colspan="1" class="confluenceTd">&lt;object&gt;/&lt;parameter&gt;</td><td colspan="1" class="confluenceTd"><p>These parameters are passed unmodified to the native object.</p></td></tr></tbody></table></div><p> </p><p> </p></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h2 id="PJSIPConfigurationWizard-ConfigurationNotes:"><span>Configuration Notes:</span></h2><ul><li>Wizards must be defined in <code>pjsip_wizard.conf</code>.</li><li>Using pjsip_wizard.conf doesn't remove the need for pjsip.conf or any other config file.</li><li>Transport, system and global sections still need to be defined in pjsip.conf.</li><li>You can continue to create discrete endpoint, aor, etc. objects in pjsip.conf but there can be no name collisions between wizard created objects and discretely created objects.</li><li>An endpoint and aor are created for each wizard.<ul><li>The endpoint and aor are named the same as the wizard.</li><li>Parameters are passed to them using the <code>endpoint/</code> and <code>aor/</code> prefixes.</li><li>A contact is added to the aor for each remote host using the <code>contact_pattern</code> and <code>${REMOTE_HOST</code>}.</li></ul></li><li><code>sends_auth</code> causes an auth object to be created.<ul><li>The name will be <code>&lt;wizard_name&gt;-oauth</code>.</li><li>Parameters are passed to it using the <code>outbound_auth/</code> prefix.</li><li>The endpoint automatically has an <code>outbound_auth</code> parameter added to it.</li><li>Registrations automatically have an <code>outbound_auth</code> parameter added to them (if registrations are created, see below). </li></ul></li><li><code>accepts_auth</code> causes an auth object to be created.<ul><li>The name will be <code>&lt;wizard_name&gt;-iauth</code>.</li><li>Parameters are passed to it using the <code>inbound_auth/</code> prefix.</li><li>The endpoint automatically has an <code>auth</code> parameter added to it.</li></ul></li><li><code>sends_registrations</code> causes an outbound registration object to be created for each remote host.<ul><li>The name will be <code>&lt;wizard_name&gt;-reg-&lt;n&gt;</code> where n starts at 0 and increments by 1 for each remote host.</li><li>Parameters are passed to them using the <code>registration/</code> prefix.</li><li>You should not use a wizard in situations whereyou need to pass different parameters to each registration.</li><li><code>server_uri</code> and <code>client_uri</code> are constructed using their respective patterns using <code>${REMOTE_HOST</code>} and <code>${USERNAME</code>}.</li></ul></li><li>If <code>accepts_registrations</code> is specified, <code>remote_hosts</code> must NOT be specified and no contacts are added to the aor.  This causes registrations to be accepted.</li><li>If <code>accepts_registrations</code> is NOT specified or set to <code>no</code>, then an identify object is created to match incoming requests to the endpoint.<br /><ul><li>The name will be <code>&lt;wizard_name&gt;-identify</code>.</li><li>Parameters are passed to it using the <code>identify/</code> prefix although there really aren't any to pass.</li></ul></li><li>If <code>has_phoneprov</code> is specified, a phoneprov object object is created.<ul><li>The name will be <code>&lt;wizard_name&gt;-phoneprov</code>.</li><li>Both <code>phoneprov/MAC</code> and <code>phoneprov/PROFILE</code> must be specified.</li></ul></li><li><code>has_hint</code> causes hints to be automatically created.<br /><ul><li><code>hint_exten</code> must be specified.</li></ul></li><li>All created objects must pass the same edit criteria they would have to pass if they were specified discretely.</li><li>All created objects will have a <code>@pjsip_wizard=&lt;wizard_name&gt;</code> parameter added to them otherwise they are indistinguishable from discretely created ones.</li><li>All created object are visible via the CLI and AMI as though they were created discretely.<br /><br /></li></ul></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h2 id="PJSIPConfigurationWizard-FullExamples:"><span>Full Examples:</span></h2><h3 id="PJSIPConfigurationWizard-Phones:"><span> </span>Phones:</h3><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Configuration</th><th class="confluenceTh">Notes</th></tr><tr><td colspan="1" class="confluenceTd"><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[user_defaults](!)
+type = wizard
+transport = ipv4
+accepts_registrations = yes
+sends_registrations = no
+accepts_auth = yes
+sends_auth = no
+has_hint = yes
+hint_context = DLPN_DialPlan1
+hint_application = Gosub(stdexten,${EXTEN},1(${HINT}))
+endpoint/context = DLPN_DialPlan1
+endpoint/allow_subscribe = yes
+endpoint/allow = !all,ulaw,gsm,g722
+endpoint/direct_media = yes
+endpoint/force_rport = yes
+endpoint/disable_direct_media_on_nat = yes
+endpoint/direct_media_method = invite
+endpoint/ice_support = yes
+endpoint/moh_suggest = default
+endpoint/send_rpid = yes
+endpoint/rewrite_contact = yes
+endpoint/send_pai = yes
+endpoint/allow_transfer = yes
+endpoint/trust_id_inbound = yes
+endpoint/device_state_busy_at = 1
+endpoint/trust_id_outbound = yes
+endpoint/send_diversion = yes
+aor/qualify_frequency = 30
+aor/authenticate_qualify = no
+aor/max_contacts = 1
+aor/remove_existing = yes
+aor/minimum_expiration = 30
+aor/support_path = yes
+phoneprov/PROFILE = profile1
+
+[bob](user_defaults)
+hint_exten = 1000
+inbound_auth/username = bob
+inbound_auth/password = bobspassword
+
+[alice](user_defaults)
+hint_exten = 1001
+endpoint/callerid = Alice &lt;1001&gt;
+endpoint/allow = !all,ulaw
+inbound_auth/username = alice
+inbound_auth/password = alicespassword
+has_phoneprov = yes
+phoneprov/MAC = deadbeef4dad
+
+ </pre>
+</div></div></td><td colspan="1" class="confluenceTd"><p>This example demonstrates the power of both wizards and templates.</p><p>Once the template is created, adding a new phone could be as simple as creating a wizard object<br />with nothing more than a username and password.  You don't even have to specify 'type' because it's<br />inherited from the template.</p><p>Of course, you can override ANYTHING in the wizard object or specify everything and not use templates at all.</p></td></tr></tbody></table></div><h3 id="PJSIPConfigurationWizard-TrunktoanITSPrequiringregistration:"><span style="color: rgb(133,120,102);">Trunk to an ITSP requiring registration:</span></h3><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Configuration</th><th class="confluenceTh">Notes</th></tr><tr><td class="confluenceTd"><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[trunk_defaults](!)
+type = wizard
+transport = ipv4
+endpoint/allow_subscribe = no
+endpoint/allow = !all,ulaw
+aor/qualify_frequency = 30
+registration/expiration = 1800
+ 
+[myitsp](trunk_defaults)
+sends_auth = yes
+sends_registrations = yes
+endpoint/context = DID_myitsp
+remote_hosts = sip1.myitsp.net,sip2.myitsp.net
+accepts_registrations = no
+endpoint/send_rpid = yes
+endpoint/send_pai = yes
+outbound_auth/username = my_username
+outbound_auth/password = my_password
+ 
+[my_other_itsp](trunk_defaults)
+sends_auth = yes
+sends_registrations = yes
+endpoint/context = DID_myitsp
+remote_hosts = sip1.my-other-itsp.net,sip2.my-other-itsp.net
+accepts_registrations = no
+endpoint/send_rpid = yes
+endpoint/send_pai = yes
+outbound_auth/username = my_username
+outbound_auth/password = my_password
+registration/expiration = 900
+registration/support_path = no</pre>
+</div></div></td><td class="confluenceTd"><p>This is an example of trunks to 2 different ITSPs each of which has a primary and<br />backup server.</p><p>It also shows most of the endpoint and aor parameters being left at their defaults.</p><p>In this scenario, each wizard object takes the place of an endpoint, aor, auth,<br />identify and 2 registrations.</p></td></tr></tbody></table></div><h3 id="PJSIPConfigurationWizard-Trunkbetweentrustedpeers:">Trunk between trusted peers:</h3><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Configuration</th><th class="confluenceTh">Notes</th></tr><tr><td class="confluenceTd"><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[trusted-peer](trunk_defaults)
+endpoint/context = peer_context
+remote_hosts = sip1.peer.com:45060
+sends_registrations = no
+accepts_registrations = no
+sends_auth = no
+accepts_auth = no</pre>
+</div></div></td><td class="confluenceTd"><p>This one's even simpler. The <code>sends_</code> and <code>accepts_</code> parameters all default to <code>no</code> so you don't really<br />even have to specify them unless your template has them set to <code>yes</code>.</p></td></tr></tbody></table></div></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

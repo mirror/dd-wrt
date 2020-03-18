@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk REST Interface (ARI)</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk REST Interface (ARI)
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified by <span class='editor'> Rusty Newton</span> on Aug 29, 2017
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="AsteriskRESTInterface(ARI)-TheEvolutionofAsteriskAPIs">The Evolution of Asterisk APIs</h1><p>When Asterisk was first created back in 1999, its design was focussed on being a stand-alone Private Branch eXchange (PBX) that you could configure via static <code>.conf</code> files. Control of the calls that passed through it was done through a special <code>.conf</code> file, <code>extensions.conf</code>, known as the &quot;dialplan&quot;. The dialplan script told Asterisk which applications to execute on the call, and made logical decisions based on what the users did through their phones. This model worked well for a long time - it was certainly more flexible than what existed at the time, and the plethora of dialplan applications provided a large suite of functionality.</p><p>These dialplan applications, however, were - and still are - written in C. Because the applications act directly on the raw primitives in Asterisk, they are incredibly powerful. They have access to the channels, media, bridges, endpoints, and all other objects that Asterisk uses to make phones communicate. However, while powerful, there are times when a business use case is not met by the existing suite of applications. In the past, if the functionality you needed wasn't met by the dialplan application, you really only had one solution: write a patch in C - possibly adding a parameter to the application to tweak the behaviour - and submit it to the project. If you could not write the feature in C, you were, unfortunately, stuck.</p><h2 id="AsteriskRESTInterface(ARI)-EnterAMIandAGI">Enter AMI and AGI</h2><p>Not long into the project, two application programming interfaces (APIs) were added to Asterisk: the Asterisk Gateway Interface (AGI) and the Asterisk Manager Interface (AMI). These interfaces have distinct purposes:</p><ol><li>AGI is analogous to CGI in Apache. AGI provides an interface between the Asterisk dialplan and an external program that wants to manipulate a channel in the dialplan. In general, the interface is synchronous - actions taken on a channel from an AGI block and do not return until the action is completed.</li><li>AMI provides a mechanism to control where channels execute in the dialplan. Unlike AGI, AMI is an asynchronous, event driven interface. For the most part, AMI does not provide mechanisms to control channel execution - rather, it provides information about the state of the channels and controls about where the channels are executing.</li></ol><p>Both of these interfaces are powerful and opened up a wide range of integration possibilities. Using AGI, remote dialplan execution could be enabled, which allowed developers to integrate Asterisk with PHP, Python, Java, and other applications. Using AMI, the state of Asterisk could be displayed, calls initiated, and the location of channels controlled. Using both APIs together, complex applications using Asterisk as the engine <em>could</em> be developed.</p></div><div class="columnMacro" style="width:40%;min-width:40%;max-width:40%;"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303047427 {padding: 0px;}
+div.rbtoc1582303047427 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303047427 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303047427'>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskRESTInterface(ARI)-TheEvolutionofAsteriskAPIs'>The Evolution of Asterisk APIs</a>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskRESTInterface(ARI)-EnterAMIandAGI'>Enter AMI and AGI</a></li>
+<li><a href='#AsteriskRESTInterface(ARI)-ARI:AnInterfaceforCommunicationsApplications'>ARI: An Interface for Communications Applications</a></li>
+</ul>
+</li>
+<li><a href='#AsteriskRESTInterface(ARI)-ARIFundamentals'>ARI Fundamentals</a>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskRESTInterface(ARI)-WhatisREST?'>What is REST?</a></li>
+<li><a href='#AsteriskRESTInterface(ARI)-WhatisaWebSocket?'>What is a WebSocket?</a></li>
+<li><a href='#AsteriskRESTInterface(ARI)-WhatisStasis?'>What is Stasis?</a></li>
+</ul>
+</li>
+<li><a href='#AsteriskRESTInterface(ARI)-DivingDeeper'>Diving Deeper</a>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskRESTInterface(ARI)-Wheretogettheexamples'>Where to get the examples</a></li>
+<li><a href='#AsteriskRESTInterface(ARI)-ARILibraries'>ARI Libraries</a></li>
+</ul>
+</li>
+<li><a href='#AsteriskRESTInterface(ARI)-RecommendedPractices'>Recommended Practices</a>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskRESTInterface(ARI)-Don&#39;taccessARIdirectlyfromawebpage'>Don&#39;t access ARI directly from a web page</a></li>
+<li><a href='#AsteriskRESTInterface(ARI)-Useanabstractionlayer'>Use an abstraction layer</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>ARI In More Detail</b></div><div class="panelContent">
+<p><ul class='childpages-macro'><li><a href="Getting-Started-with-ARI_26478450.html">Getting Started with ARI</a></li><li><a href="Asterisk-Configuration-for-ARI_29395596.html">Asterisk Configuration for ARI</a></li><li><a href="Introduction-to-ARI-and-Channels_29395597.html">Introduction to ARI and Channels</a></li><li><a href="Introduction-to-ARI-and-Bridges_29396210.html">Introduction to ARI and Bridges</a></li><li><a href="Introduction-to-ARI-and-Media-Manipulation_29396202.html">Introduction to ARI and Media Manipulation</a></li><li><a href="The-Asterisk-Resource_32375920.html">The Asterisk Resource</a></li><li><a href="ARI-Versioning_36802335.html">ARI Versioning</a></li><li><a href="ARI-Libraries_38273061.html">ARI Libraries</a></li></ul></p>
+</div></div></div></div></div></div><p>However, there are some drawbacks to using AMI and AGI to create custom communication applications:</p><ol><li>AGI is synchronous and blocks the thread servicing the AGI when an Asterisk action is taken on the channel. When creating a communications application, you will often want to respond to changes in the channel (DTMF, channel state, etc.); this is difficult to do with AGI by itself. Coordinating with AMI events can be challenging.</li><li>The dialplan can be limiting. Even with AMI and AGI, your fundamental operations are limited to what can be executed on a channel. While powerful, there are other primitives in Asterisk that are not available through those APIs: bridges, endpoints, device state, message waiting indications, and the actual media on the channels themselves. Controlling those through AMI and AGI can be difficult, and can often involve complex dialplan manipulation to achieve.</li><li>Finally, both AMI and AGI were created early in the Asterisk project, and are products of their time. While both are powerful interfaces, technologies that are used today were not in heavy use at the time. Concepts such as SOAP, XML/JSON-RPC, and REST were not in heavy use. As such, newer APIs can be more intuitive and easier to adopt, leading to faster development for users of Asterisk.</li></ol><p>And so, before Asterisk 12, if you wanted your own custom communication application, you could:</p><ul><li>Write an Asterisk module in C, <strong>or</strong></li><li>Write a custom application using both AGI and AMI, performing some herculean effort to marry the two APIs together (as well as some dialplan trickery)</li></ul><p> </p><div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h2 id="AsteriskRESTInterface(ARI)-ARI:AnInterfaceforCommunicationsApplications">ARI: An Interface for Communications Applications</h2><p>The Asterisk RESTful Interface (ARI) was created to address these concerns. While AMI is good at call control and AGI is good at allowing a remote process to execute dialplan applications, neither of these APIs was designed to let a developer build their own custom communications application. ARI is an asynchronous API that allows developers to build communications applications by exposing the raw primitive objects in Asterisk - channels, bridges, endpoints, media, etc. - through an intuitive REST interface. The state of the objects being controlled by the user are conveyed via JSON events over a WebSocket.</p><p>These resources were traditionally the purview of Asterisk's C modules. By handing control of these resources over to all developers - regardless of their language choice - Asterisk becomes an engine of communication, with the business logic of how things should communicate deferred to the application using Asterisk.</p><p style="text-align: center;"><strong><em>ARI is not about telling a channel to execute the VoiceMail dialplan application or redirecting a channel in the dialplan to VoiceMail.</em></strong></p><p style="text-align: center;"><strong><em>It is about letting you build your own VoiceMail application.</em></strong></p></div><div class="columnMacro"> 
+
+<map id="gliffy-map-29687931-111" name="gliffy-map-29687931-111"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 516px;" usemap="#gliffy-map-29687931-111" src="attachments/29395573/29687932.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</div></div></div></div><h1 id="AsteriskRESTInterface(ARI)-ARIFundamentals">ARI Fundamentals</h1><p>ARI consists of three different pieces that are - for all intents and purposes - interrelated and used together. They are:</p><ol><li>A <a href="http://en.wikipedia.org/wiki/Representational_state_transfer" class="external-link" rel="nofollow">RESTful</a> interface that a client uses to control resources in Asterisk.</li><li>A WebSocket that conveys events in <a href="http://www.json.org/" class="external-link" rel="nofollow">JSON</a> about the resources in Asterisk to the client.</li><li>The <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Application_Stasis">Stasis</a> dialplan application that hands over control of a channel from Asterisk to the client.</li></ol><p>All three pieces work together, allowing a developer to manipulate and control the fundamental resources in Asterisk and build their own communications application.</p>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Developer Documentation</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>You can find some historical documents <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+API+Improvements">on the wiki</a> about the development and architecture of ARI.</p>
+                    </div>
+    </div>
+<h2 id="AsteriskRESTInterface(ARI)-WhatisREST?">What is REST?</h2><p><a href="https://wiki.asterisk.org/wiki/en.wikipedia.org/wiki/Representational_state_transfer" rel="nofollow">Representational State Transfer (REST)</a> is a software architectural style. It has several characteristics:</p><ul><li>Communication is performed using a client-server model.</li><li>The communication is stateless. Servers do not store client state between requests.</li><li>Connections are layered, allowing for intermediaries to assist in routing and load balancing.</li><li>A uniform interface. Resources are identified in the requests, messages are self-descriptive, etc.</li></ul><p>ARI <em>does not</em> strictly conform to a REST API. Asterisk, as a stand-alone application, has state that may change outside of a client request through ARI. For example, a SIP phone may be hung up, and Asterisk will hang up the channel - even though a client through ARI did not tell Asterisk to hang up the SIP phone. Asterisk lives in an asynchronous, state-ful world: hence, ARI is <em>RESTful</em>. It attempts to follow the tenants of REST as best as it can, without getting bogged down in philosophical constraints.</p><h2 id="AsteriskRESTInterface(ARI)-WhatisaWebSocket?">What is a WebSocket?</h2><p><a href="http://en.wikipedia.org/wiki/WebSocket" class="external-link" rel="nofollow">WebSockets</a> are a relatively new protocol standard (<a href="http://tools.ietf.org/html/rfc6455" class="external-link" rel="nofollow">RFC 6455</a>) that enable two-way communication between a client and server. The protocol's primary purpose is to provide a mechanism for browser-based applications that need two-way communication with servers, without relying on HTTP long polling or other, non-standard, mechanisms.</p><p>In the case of ARI, a WebSocket connection is used to pass asynchronous events from Asterisk to the client. These events are related to the RESTful interface, but are technically independent of it. They allow Asterisk to inform the client of changes in resource state that may occur because of and in conjunction with the changes made by the client through ARI.</p><h2 id="AsteriskRESTInterface(ARI)-WhatisStasis?">What is Stasis?</h2><p><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Application_Stasis">Stasis</a> is a dialplan application in Asterisk. It is the mechanism that Asterisk uses to hand control of a channel over from the dialplan - which is the traditional way in which channels are controlled - to ARI and the client. Generally, ARI applications manipulate channels in the Stasis dialplan application, as well as other resources in Asterisk. Channels not in a Stasis dialplan application generally cannot be manipulated by ARI - the purpose of ARI, after all, is to build your own dialplan application, not manipulate an existing one.</p><h1 id="AsteriskRESTInterface(ARI)-DivingDeeper">Diving Deeper</h1><p>This space has a number of pages that explore different resources available to you in ARI and examples of what you can build with them. Generally, the examples assume the following:</p><ul><li>That you have some phone registered to Asterisk, typically using <code>chan_pjsip</code> or <code>chan_sip</code></li><li>That you have some basic knowledge of configuring Asterisk</li><li>A basic knowledge of Python, JavaScript, or some other higher level programming language (or a willingness to learn!)</li></ul><p>Most of the examples will not directly construct the HTTP REST calls, as a number of very useful libraries have been written to encapsulate those mechanics. These libraries are listed below.</p><h2 id="AsteriskRESTInterface(ARI)-Wheretogettheexamples">Where to get the examples</h2><p>All of the examples on the pages below this one are available on <a href="https://github.com/asterisk/ari-examples" class="external-link" rel="nofollow">github</a>. Check them out!</p><h2 id="AsteriskRESTInterface(ARI)-ARILibraries">ARI Libraries</h2><p>See the <a href="ARI-Libraries_38273061.html">ARI Libraries</a> page for a list of Asterisk Rest Interface libraries and frameworks.</p><h1 id="AsteriskRESTInterface(ARI)-RecommendedPractices">Recommended Practices</h1><h2 id="AsteriskRESTInterface(ARI)-Don&#39;taccessARIdirectlyfromawebpage">Don't access ARI directly from a web page</h2><p>It's very convenient to use ARI directly from a web page for development, such as using Swagger-UI, or even abusing the <a href="http://www.websocket.org/echo.html" class="external-link" rel="nofollow">WebSocket echo demo</a> to get at the ARI WebSocket.</p><p>But, <em>please</em>, do not do this in your production applications. This would be akin to accessing your database directly from a web page. You need to hide Asterisk behind your own application server, where you can handle security, logging, multi-tenancy and other concerns that really don't belong in a communications engine.</p><h2 id="AsteriskRESTInterface(ARI)-Useanabstractionlayer">Use an abstraction layer</h2><p>One of the beautiful things about ARI is that it's so easy to just bang out a request. But what's good for development isn't necessarily what's good for production.</p><p>Please don't spread lots of direct HTTP calls throughout your application. There are cross-cutting concerns with accessing the API that you'll want to deal with in a central location. Today, the only concern is authentication. But as the API evolves, other concerns (such as versioning) will also be important.</p><p>Note that the abstraction layer doesn't (and shouldn't) be complicated. Your client side API can even be something as simple wrapper around GET, POST and DELETE that addresses the cross-cutting concerns. The Asterisk TestSuite has a very simple abstraction library that can be used like this:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: py; gutter: false" style="font-size:12px;">ari = ARI(&#39;localhost&#39;, (&#39;username&#39;, &#39;password&#39;))
+ 
+# Hang up all channels
+channels = ari.get(&#39;channels&#39;)
+for channel in channels:
+    ari.delete(&#39;channels&#39;, channel[&#39;id&#39;])</pre>
+</div></div><p>In other words: <strong>use one of the aforementioned libraries or write your own!</strong></p><p> </p>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29395573/29687930.gliffy">AMI-AGI-ARI.gliffy</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29395573/30474241">AMI-ARI-AGI</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29395573/30474242.png">AMI-ARI-AGI.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29395573/30474243">AMI-ARI-AGI</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29395573/30474244.png">AMI-ARI-AGI.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29395573/29687931">AMI-ARI-AGI</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29395573/29687932.png">AMI-ARI-AGI.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

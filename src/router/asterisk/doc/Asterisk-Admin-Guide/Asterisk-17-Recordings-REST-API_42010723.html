@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Recordings REST API</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-ARI_42010709.html">Asterisk 17 ARI</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Recordings REST API
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17RecordingsRESTAPI-Recordings">Recordings</h1>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Method </p></th>
+<th class="confluenceTh"><p> Path&lt;br&gt;h5. Parameters are case-sensitive </p></th>
+<th class="confluenceTh"><p> Return Model </p></th>
+<th class="confluenceTh"><p> Summary </p></th>
+</tr>
+</tbody></table></div>
+
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17RecordingsRESTAPI-listStored">/recordings/stored</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-StoredRecording">List[StoredRecording]</a> </p></td>
+<td class="confluenceTd"><p> List recordings that are complete. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17RecordingsRESTAPI-getStored">/recordings/stored/{recordingName}</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-StoredRecording">StoredRecording</a> </p></td>
+<td class="confluenceTd"><p> Get a stored recording's details. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> DELETE </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17RecordingsRESTAPI-deleteStored">/recordings/stored/{recordingName}</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Delete a stored recording. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17RecordingsRESTAPI-getStoredFile">/recordings/stored/{recordingName}/file</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-binary">binary</a> </p></td>
+<td class="confluenceTd"><p> Get the file associated with the stored recording. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17RecordingsRESTAPI-copyStored">/recordings/stored/{recordingName}/copy</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-StoredRecording">StoredRecording</a> </p></td>
+<td class="confluenceTd"><p> Copy a stored recording. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17RecordingsRESTAPI-getLive">/recordings/live/{recordingName}</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-LiveRecording">LiveRecording</a> </p></td>
+<td class="confluenceTd"><p> List live recordings. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> DELETE </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17RecordingsRESTAPI-cancel">/recordings/live/{recordingName}</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Stop a live recording and discard it. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17RecordingsRESTAPI-stop">/recordings/live/{recordingName}/stop</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Stop a live recording and store it. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17RecordingsRESTAPI-pause">/recordings/live/{recordingName}/pause</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Pause a live recording. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> DELETE </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17RecordingsRESTAPI-unpause">/recordings/live/{recordingName}/pause</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Unpause a live recording. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17RecordingsRESTAPI-mute">/recordings/live/{recordingName}/mute</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Mute a live recording. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> DELETE </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17RecordingsRESTAPI-unmute">/recordings/live/{recordingName}/mute</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Unmute a live recording. </p></td>
+</tr>
+</tbody></table></div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17RecordingsRESTAPI-listStored"></span></p>
+<h2 id="Asterisk17RecordingsRESTAPI-listStored:GET/recordings/stored">listStored: GET /recordings/stored</h2>
+
+<p>List recordings that are complete.</p>
+
+<p><span class="confluence-anchor-link" id="Asterisk17RecordingsRESTAPI-getStored"></span></p>
+<h2 id="Asterisk17RecordingsRESTAPI-getStored:GET/recordings/stored/{recordingName}">getStored: GET /recordings/stored/{recordingName}</h2>
+
+<p>Get a stored recording's details.</p>
+
+<h3 id="Asterisk17RecordingsRESTAPI-Pathparameters">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>recordingName: <em>string</em> - The name of the recording</li>
+</ul>
+
+
+<h3 id="Asterisk17RecordingsRESTAPI-ErrorResponses">Error Responses</h3>
+<ul>
+	<li>404 - Recording not found</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17RecordingsRESTAPI-deleteStored"></span></p>
+<h2 id="Asterisk17RecordingsRESTAPI-deleteStored:DELETE/recordings/stored/{recordingName}">deleteStored: DELETE /recordings/stored/{recordingName}</h2>
+
+<p>Delete a stored recording.</p>
+
+<h3 id="Asterisk17RecordingsRESTAPI-Pathparameters.1">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>recordingName: <em>string</em> - The name of the recording</li>
+</ul>
+
+
+<h3 id="Asterisk17RecordingsRESTAPI-ErrorResponses.1">Error Responses</h3>
+<ul>
+	<li>404 - Recording not found</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17RecordingsRESTAPI-getStoredFile"></span></p>
+<h2 id="Asterisk17RecordingsRESTAPI-getStoredFile:GET/recordings/stored/{recordingName}/file">getStoredFile: GET /recordings/stored/{recordingName}/file</h2>
+
+<p>Get the file associated with the stored recording.</p>
+
+<h3 id="Asterisk17RecordingsRESTAPI-Pathparameters.2">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>recordingName: <em>string</em> - The name of the recording</li>
+</ul>
+
+
+<h3 id="Asterisk17RecordingsRESTAPI-ErrorResponses.2">Error Responses</h3>
+<ul>
+	<li>403 - The recording file could not be opened</li>
+	<li>404 - Recording not found</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17RecordingsRESTAPI-copyStored"></span></p>
+<h2 id="Asterisk17RecordingsRESTAPI-copyStored:POST/recordings/stored/{recordingName}/copy">copyStored: POST /recordings/stored/{recordingName}/copy</h2>
+
+<p>Copy a stored recording.</p>
+
+<h3 id="Asterisk17RecordingsRESTAPI-Pathparameters.3">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>recordingName: <em>string</em> - The name of the recording to copy</li>
+</ul>
+
+
+<h3 id="Asterisk17RecordingsRESTAPI-Queryparameters">Query parameters</h3>
+<ul>
+	<li>destinationRecordingName: <em>string</em> - <strong>(required)</strong> The destination name of the recording</li>
+</ul>
+
+
+<h3 id="Asterisk17RecordingsRESTAPI-ErrorResponses.3">Error Responses</h3>
+<ul>
+	<li>404 - Recording not found</li>
+	<li>409 - A recording with the same name already exists on the system</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17RecordingsRESTAPI-getLive"></span></p>
+<h2 id="Asterisk17RecordingsRESTAPI-getLive:GET/recordings/live/{recordingName}">getLive: GET /recordings/live/{recordingName}</h2>
+
+<p>List live recordings.</p>
+
+<h3 id="Asterisk17RecordingsRESTAPI-Pathparameters.4">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>recordingName: <em>string</em> - The name of the recording</li>
+</ul>
+
+
+<h3 id="Asterisk17RecordingsRESTAPI-ErrorResponses.4">Error Responses</h3>
+<ul>
+	<li>404 - Recording not found</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17RecordingsRESTAPI-cancel"></span></p>
+<h2 id="Asterisk17RecordingsRESTAPI-cancel:DELETE/recordings/live/{recordingName}">cancel: DELETE /recordings/live/{recordingName}</h2>
+
+<p>Stop a live recording and discard it.</p>
+
+<h3 id="Asterisk17RecordingsRESTAPI-Pathparameters.5">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>recordingName: <em>string</em> - The name of the recording</li>
+</ul>
+
+
+<h3 id="Asterisk17RecordingsRESTAPI-ErrorResponses.5">Error Responses</h3>
+<ul>
+	<li>404 - Recording not found</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17RecordingsRESTAPI-stop"></span></p>
+<h2 id="Asterisk17RecordingsRESTAPI-stop:POST/recordings/live/{recordingName}/stop">stop: POST /recordings/live/{recordingName}/stop</h2>
+
+<p>Stop a live recording and store it.</p>
+
+<h3 id="Asterisk17RecordingsRESTAPI-Pathparameters.6">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>recordingName: <em>string</em> - The name of the recording</li>
+</ul>
+
+
+<h3 id="Asterisk17RecordingsRESTAPI-ErrorResponses.6">Error Responses</h3>
+<ul>
+	<li>404 - Recording not found</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17RecordingsRESTAPI-pause"></span></p>
+<h2 id="Asterisk17RecordingsRESTAPI-pause:POST/recordings/live/{recordingName}/pause">pause: POST /recordings/live/{recordingName}/pause</h2>
+
+<p>Pause a live recording. Pausing a recording suspends silence detection, which will be restarted when the recording is unpaused. Paused time is not included in the accounting for maxDurationSeconds.</p>
+
+<h3 id="Asterisk17RecordingsRESTAPI-Pathparameters.7">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>recordingName: <em>string</em> - The name of the recording</li>
+</ul>
+
+
+<h3 id="Asterisk17RecordingsRESTAPI-ErrorResponses.7">Error Responses</h3>
+<ul>
+	<li>404 - Recording not found</li>
+	<li>409 - Recording not in session</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17RecordingsRESTAPI-unpause"></span></p>
+<h2 id="Asterisk17RecordingsRESTAPI-unpause:DELETE/recordings/live/{recordingName}/pause">unpause: DELETE /recordings/live/{recordingName}/pause</h2>
+
+<p>Unpause a live recording.</p>
+
+<h3 id="Asterisk17RecordingsRESTAPI-Pathparameters.8">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>recordingName: <em>string</em> - The name of the recording</li>
+</ul>
+
+
+<h3 id="Asterisk17RecordingsRESTAPI-ErrorResponses.8">Error Responses</h3>
+<ul>
+	<li>404 - Recording not found</li>
+	<li>409 - Recording not in session</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17RecordingsRESTAPI-mute"></span></p>
+<h2 id="Asterisk17RecordingsRESTAPI-mute:POST/recordings/live/{recordingName}/mute">mute: POST /recordings/live/{recordingName}/mute</h2>
+
+<p>Mute a live recording. Muting a recording suspends silence detection, which will be restarted when the recording is unmuted.</p>
+
+<h3 id="Asterisk17RecordingsRESTAPI-Pathparameters.9">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>recordingName: <em>string</em> - The name of the recording</li>
+</ul>
+
+
+<h3 id="Asterisk17RecordingsRESTAPI-ErrorResponses.9">Error Responses</h3>
+<ul>
+	<li>404 - Recording not found</li>
+	<li>409 - Recording not in session</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17RecordingsRESTAPI-unmute"></span></p>
+<h2 id="Asterisk17RecordingsRESTAPI-unmute:DELETE/recordings/live/{recordingName}/mute">unmute: DELETE /recordings/live/{recordingName}/mute</h2>
+
+<p>Unmute a live recording.</p>
+
+<h3 id="Asterisk17RecordingsRESTAPI-Pathparameters.10">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>recordingName: <em>string</em> - The name of the recording</li>
+</ul>
+
+
+<h3 id="Asterisk17RecordingsRESTAPI-ErrorResponses.10">Error Responses</h3>
+<ul>
+	<li>404 - Recording not found</li>
+	<li>409 - Recording not in session</li>
+</ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

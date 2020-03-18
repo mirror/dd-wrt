@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Introduction to the Unistim channel</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Unistim_19008142.html">Unistim</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Introduction to the Unistim channel
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Igor Goncharovsky</span> on Oct 07, 2017
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="IntroductiontotheUnistimchannel-UnifiedNetworksIPStimulus(UNIStim)ChannelDriverforAsterisk">Unified Networks IP Stimulus (UNIStim) Channel Driver for Asterisk</h1><p>This is a channel driver for Unistim protocol. You can use a least a Nortel i2002, i2004 and i2050.</p><p>Following features are supported :</p><ul><li>Send/Receive CallerID</li><li>Redial</li><li>SoftKeys</li><li>SendText()</li><li>Music On Hold</li><li>Message Waiting Indication (MWI)</li><li>Distinctive ring</li><li>Transfer</li><li>History</li><li>Forward</li><li>Dynamic SoftKeys.</li></ul><h3 id="IntroductiontotheUnistimchannel-Howtoconfigurethei2004">How to configure the i2004</h3><ol><li>Power on the phone</li><li>Wait for message &quot;Nortel Networks&quot;</li><li>Press quickly the four buttons just below the LCD screen, in sequence from left to right</li><li>If you see &quot;Locating server&quot;, power off or reboot the phone and try again</li><li>DHCP : 0</li><li>SET IP : a free ip of your network</li><li>NETMSK / DEF GW : netmask and default gateway</li><li>S1 IP : ip of the asterisk server</li><li>S1 PORT : 5000</li><li>S1 ACTION : 1</li><li>S1 RETRY COUNT : 10</li><li>S2 : same as S1</li></ol><h3 id="IntroductiontotheUnistimchannel-Howtoplaceacall">How to place a call</h3><p>The line=&gt; entry in unistim.conf does not add an extension in asterisk by default. If you want to do that, add extension=line in your phone context.</p><p>If you have this entry on unistim.conf :</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;"> 
+[violet]
+device=006038abcdef
+line =&gt; 102
+</pre>
+</div></div><p>then use:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; 2100,1,Dial(USTM/102@violet)
+</pre>
+</div></div><p>You can display a text with :</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; 555,1,SendText(Sends text to client. Greetings) 
+</pre>
+</div></div><h5 id="IntroductiontotheUnistimchannel-RebootingaNortelphone">Rebooting a Nortel phone</h5><ul><li>Press mute,up,down,up,down,up,mute,9,release(red button)</li></ul><h5 id="IntroductiontotheUnistimchannel-Distinctivering">Distinctive ring</h5><ol><li>You need to append /r to the dial string.</li><li>The first digit must be from 0 to 7 (inclusive). It's the 'melody' selection.</li><li>The second digit (optional) must be from 0 to 3 (inclusive). It's the ring volume. 0 still produce a sound.</li></ol><p>Select the ring style #1 and the default volume :</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; 2100,1,Dial(USTM/102@violet/r1)
+</pre>
+</div></div><p>Select the ring style #4 with a very loud volume :</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; 2100,1,Dial(USTM/102@violet/r43)
+</pre>
+</div></div><h5 id="IntroductiontotheUnistimchannel-Countrycode">Country code</h5><ul><li>You can use the following codes for country= (used for dial tone) - us fr au nl uk fi es jp no at nz tw cl se be sg il br hu lt pl za pt ee mx in de ch dk cn</li></ul><ul><li>If you want a correct ring, busy and congestion tone, you also need a valid entry in indications.conf and check if res_indications.so is loaded.</li></ul><ul><li>language= is also supported but it's only used by Asterisk (for more information see <a class="external-link" href="http://www.voip-info.org/wiki/view/Asterisk+multi-language" rel="nofollow">http://www.voip-info.org/wiki/view/Asterisk+multi-language</a> ). The end user interface of the phone will stay in english.</li></ul><h5 id="IntroductiontotheUnistimchannel-Bookmarks,Softkeys">Bookmarks, Softkeys</h5><p><strong>Layout</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre> |--------------------|
+ |  5            2    |
+ |  4            1    |
+ |  3            0    |
+</pre>
+</div></div><ul><li>When the second letter of bookmark= is @, then the first character is used for positioning this entry</li><li>If this option is omitted, the bookmark will be added to the next available sofkey</li><li>Also work for linelabel (example : linelabel=&quot;5@Line 123&quot;)</li><li>You can change a softkey programmatically with SendText(@position@icon@label@extension) ex: SendText(@1@55@Stop Forwd@908)</li></ul><h5 id="IntroductiontotheUnistimchannel-Autoprovisioning">Autoprovisioning</h5><ul><li>This feature must only be used on a trusted network. It's very insecure : all unistim phones will be able to use your asterisk pbx.</li><li>You must add an entry called <a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=template&amp;linkCreation=true&amp;fromPageId=4260080">template</a>. Each new phones will be based on this profile.</li><li>You must set a least line=&gt;. This value will be incremented when a new phone is registered. device= must not be specified. By default, the phone will asks for a number. It will be added into the dialplan. Add extension=line for using the generated line number instead.</li></ul><p>Example :</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[general]
+port=5000
+autoprovisioning=yes
+
+[template]
+line =&gt; 100
+bookmark=Support@123  ; Every phone will have a softkey Support
+</pre>
+</div></div><ul><li>If a first phone have a mac = 006038abcdef, a new device named USTM/100@006038abcdef will be created.</li><li>If a second phone have a mac = 006038000000, it will be named USTM/101@006038000000 and so on.</li></ul><ul><li>When autoprovisioning=tn, new phones will ask for a tn, if this number match a tn= entry in a device, this phone will be mapped into.</li></ul><p>Example:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[black]
+tn=1234
+line =&gt; 100
+</pre>
+</div></div><ul><li>If a user enter TN 1234, the phone will be known as USTM/100@black.</li></ul><h5 id="IntroductiontotheUnistimchannel-History">History</h5><ul><li>Use the two keys located in the middle of the Fixed feature keys row (on the bottom of the phone) to enter call history.</li></ul><ul><li>By default, chan_unistim add any incoming and outgoing calls in files (/var/log/asterisk/unistimHistory). It can be a privacy issue, you can disable this feature by adding callhistory=0. If history files were created, you also need to delete them. callhistory=0 will NOT disable normal asterisk CDR logs.</li></ul><h5 id="IntroductiontotheUnistimchannel-Forward">Forward</h5><ul><li>This feature requires chan_local (loaded by default)</li></ul><h5 id="IntroductiontotheUnistimchannel-Genericasteriskfeatures">Generic asterisk features</h5><p>You can use the following entries in unistim.conf</p><ul><li>Billing - accountcode amaflags</li><li>Call Group - callgroup pickupgroup (untested)</li><li>Music On Hold - musiconhold</li><li>Language - language (see section Coutry Code)</li><li>RTP NAT - nat (control ast_rtp_setnat, default = 0. Obscure behaviour)</li></ul><h5 id="IntroductiontotheUnistimchannel-Trunking">Trunking</h5><ul><li>It's not possible to connect a Nortel Succession/Meridian/BCM to Asterisk via chan_unistim. Use either E1/T1 trunks, or buy UTPS (UNISTIM Terminal Proxy Server) from Nortel.</li></ul><h5 id="IntroductiontotheUnistimchannel-Wiki,Additionalinfos,Comments:">Wiki, Additional infos, Comments :</h5><ul><li><a class="external-link" href="http://www.voip-info.org/wiki-Asterisk+UNISTIM+channels" rel="nofollow">http://www.voip-info.org/wiki-Asterisk+UNISTIM+channels</a></li></ul><h5 id="IntroductiontotheUnistimchannel-*BSD:">*BSD :</h5><ul><li>Comment #define HAVE_IP_PKTINFO in chan_unistim.c</li><li>Set public_ip with an IP of your computer</li><li>Check if unistim.conf is in the correct directory</li></ul><h5 id="IntroductiontotheUnistimchannel-Issues">Issues</h5><ul><li>As always, NAT can be tricky. If a phone is behind a NAT, you should port forward UDP 5000 (or change <a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=general&amp;linkCreation=true&amp;fromPageId=4260080">general</a> port= in unistim.conf) and UDP 10000 (or change <a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=yourphone&amp;linkCreation=true&amp;fromPageId=4260080">yourphone</a> rtp_port=)</li></ul><ul><li>Only one phone per public IP (multiple phones behind the same NAT don't work). You can either :<ul><li>Setup a VPN</li><li>Install asterisk inside your NAT. You can use IAX2 trunking if you're master asterisk is outside.</li><li>If asterisk is behind a NAT, you must set <a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=general&amp;linkCreation=true&amp;fromPageId=4260080">general</a> public_ip= with your public IP. If you don't do that or the bindaddr is invalid (or no longer valid, eg dynamic IP), phones should be able to display messages but will be unable to send/receive RTP packets (no sound)</li></ul></li><li>Don't forget : this work is based entirely on a reverse engineering, so you may encounter compatibility issues. At this time, I know three ways to establish a RTP session. You can modify <a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=yourphone&amp;linkCreation=true&amp;fromPageId=4260080">yourphone</a> rtp_method= with 0, 1, 2 or 3. 0 is the default method, should work. 1 can be used on new firmware (black i2004) and 2 on old violet i2004. 3 can be used on black i2004 with chrome.</li><li>If you have difficulties, try unistim debug and set verbose 3 on the asterisk CLI. For extra debug, uncomment #define DUMP_PACKET 1 and recompile chan_unistim.</li></ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

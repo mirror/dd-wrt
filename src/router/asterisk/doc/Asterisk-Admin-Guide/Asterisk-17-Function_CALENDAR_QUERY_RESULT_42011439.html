@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Function_CALENDAR_QUERY_RESULT</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Functions_42010713.html">Asterisk 17 Dialplan Functions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Function_CALENDAR_QUERY_RESULT
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Function_CALENDAR_QUERY_RESULT-CALENDAR_QUERY_RESULT()">CALENDAR_QUERY_RESULT()</h1>
+
+<h3 id="Asterisk17Function_CALENDAR_QUERY_RESULT-Synopsis">Synopsis</h3>
+
+<p>Retrieve data from a previously run CALENDAR_QUERY() call</p>
+
+<h3 id="Asterisk17Function_CALENDAR_QUERY_RESULT-Description">Description</h3>
+
+<p>After running CALENDAR_QUERY and getting a result <em>id</em>, calling <code>CALENDAR_QUERY</code> with that <em>id</em> and a <em>field</em> will return the data for that field. If multiple events matched the query, and <em>entry</em> is provided, information from that event will be returned.</p>
+
+
+<h3 id="Asterisk17Function_CALENDAR_QUERY_RESULT-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>CALENDAR_QUERY_RESULT(id,field[,entry])</pre>
+</div></div>
+
+<h5 id="Asterisk17Function_CALENDAR_QUERY_RESULT-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>id</code> - The query ID returned by <code>CALENDAR_QUERY</code></li>
+	<li><code>field</code>
+	<ul>
+		<li><code>getnum</code> - number of events occurring during time range</li>
+		<li><code>summary</code> - A summary of the event</li>
+		<li><code>description</code> - The full event description</li>
+		<li><code>organizer</code> - The event organizer</li>
+		<li><code>location</code> - The event location</li>
+		<li><code>categories</code> - The categories of the event</li>
+		<li><code>priority</code> - The priority of the event</li>
+		<li><code>calendar</code> - The name of the calendar associted with the event</li>
+		<li><code>uid</code> - The unique identifier for the event</li>
+		<li><code>start</code> - The start time of the event (in seconds since epoch)</li>
+		<li><code>end</code> - The end time of the event (in seconds since epoch)</li>
+		<li><code>busystate</code> - The busy status of the event 0=FREE, 1=TENTATIVE, 2=BUSY</li>
+	</ul>
+	</li>
+	<li><code>entry</code> - Return data from a specific event returned by the query</li>
+</ul>
+
+
+<h3 id="Asterisk17Function_CALENDAR_QUERY_RESULT-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Function_CALENDAR_BUSY_42011436.html">Asterisk 17 Function_CALENDAR_BUSY</a></li>
+	<li><a href="Asterisk-17-Function_CALENDAR_EVENT_42011437.html">Asterisk 17 Function_CALENDAR_EVENT</a></li>
+	<li><a href="Asterisk-17-Function_CALENDAR_QUERY_42011438.html">Asterisk 17 Function_CALENDAR_QUERY</a></li>
+	<li><a href="Asterisk-17-Function_CALENDAR_WRITE_42011440.html">Asterisk 17 Function_CALENDAR_WRITE</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Function_CALENDAR_QUERY_RESULT-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

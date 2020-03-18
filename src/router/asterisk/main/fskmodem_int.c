@@ -34,8 +34,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/fskmodem.h"
 
 #define NBW	2

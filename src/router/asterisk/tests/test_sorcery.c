@@ -32,8 +32,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "")
-
 #include "asterisk/test.h"
 #include "asterisk/module.h"
 #include "asterisk/astobj2.h"
@@ -138,6 +136,9 @@ struct sorcery_test_caching {
 	/*! \brief Whether the object has been deleted from the cache or not */
 	unsigned int deleted:1;
 
+	/*! \brief Whether the object is stale or not */
+	unsigned int is_stale:1;
+
 	/*! \brief Object to return when asked */
 	struct test_sorcery_object object;
 };
@@ -217,6 +218,12 @@ static int sorcery_test_delete(const struct ast_sorcery *sorcery, void *data, vo
 	return 0;
 }
 
+static int sorcery_test_is_stale(const struct ast_sorcery *sorcery, void *data, void *object)
+{
+	cache.is_stale = 1;
+	return 1;
+}
+
 /*! \brief Dummy sorcery wizards, not actually used so we only populate the name and nothing else */
 static struct ast_sorcery_wizard test_wizard = {
 	.name = "test",
@@ -234,6 +241,7 @@ static struct ast_sorcery_wizard test_wizard2 = {
 	.retrieve_id = sorcery_test_retrieve_id,
 	.update = sorcery_test_update,
 	.delete = sorcery_test_delete,
+	.is_stale = sorcery_test_is_stale,
 };
 
 static void sorcery_observer_created(const void *object)
@@ -2223,6 +2231,84 @@ AST_TEST_DEFINE(object_delete_uncreated)
 	return AST_TEST_PASS;
 }
 
+AST_TEST_DEFINE(object_is_stale)
+{
+	RAII_VAR(struct ast_sorcery *, sorcery, NULL, ast_sorcery_unref);
+	RAII_VAR(struct ast_sorcery_wizard *, wizard1, &test_wizard, ast_sorcery_wizard_unregister);
+	RAII_VAR(struct ast_sorcery_wizard *, wizard2, &test_wizard2, ast_sorcery_wizard_unregister);
+	RAII_VAR(struct test_sorcery_object *, obj1, NULL, ao2_cleanup);
+	RAII_VAR(struct test_sorcery_object *, obj2, NULL, ao2_cleanup);
+
+	switch (cmd) {
+	case TEST_INIT:
+		info->name = "object_is_stale";
+		info->category = "/main/sorcery/";
+		info->summary = "sorcery object staleness unit test";
+		info->description =
+			"Test whether sorcery will query a wizard correctly if asked\n"
+			"if an object is stale.";
+		return AST_TEST_NOT_RUN;
+	case TEST_EXECUTE:
+		break;
+	}
+
+	if (ast_sorcery_wizard_register(&test_wizard)) {
+		ast_test_status_update(test, "Failed to register a perfectly valid sorcery wizard\n");
+		return AST_TEST_FAIL;
+	}
+
+	if (ast_sorcery_wizard_register(&test_wizard2)) {
+		ast_test_status_update(test, "Failed to register a perfectly valid sorcery wizard\n");
+		return AST_TEST_FAIL;
+	}
+
+	if (!(sorcery = ast_sorcery_open())) {
+		ast_test_status_update(test, "Failed to open sorcery structure\n");
+		return AST_TEST_FAIL;
+	}
+
+	if ((ast_sorcery_apply_default(sorcery, "test", "test", NULL) != AST_SORCERY_APPLY_SUCCESS) ||
+		ast_sorcery_internal_object_register(sorcery, "test", test_sorcery_object_alloc, NULL, NULL)) {
+		return AST_TEST_FAIL;
+	}
+
+	ast_sorcery_object_field_register_nodoc(sorcery, "test", "bob", "5", OPT_UINT_T, 0, FLDSET(struct test_sorcery_object, bob));
+	ast_sorcery_object_field_register_nodoc(sorcery, "test", "joe", "10", OPT_UINT_T, 0, FLDSET(struct test_sorcery_object, joe));
+	ast_sorcery_object_field_register_custom_nodoc(sorcery, "test", "jim", "444", jim_handler, NULL, jim_vl, 0, 0);
+	ast_sorcery_object_field_register_custom_nodoc(sorcery, "test", "jack", "888,999", jack_handler, jack_str, NULL, 0, 0);
+
+
+	if ((ast_sorcery_apply_default(sorcery, "test2", "test2", "test2data") != AST_SORCERY_APPLY_SUCCESS) ||
+		ast_sorcery_internal_object_register(sorcery, "test2", test_sorcery_object_alloc, NULL, NULL)) {
+		return AST_TEST_FAIL;
+	}
+
+	ast_sorcery_object_field_register_nodoc(sorcery, "test2", "bob", "5", OPT_UINT_T, 0, FLDSET(struct test_sorcery_object, bob));
+	ast_sorcery_object_field_register_nodoc(sorcery, "test2", "joe", "10", OPT_UINT_T, 0, FLDSET(struct test_sorcery_object, joe));
+	ast_sorcery_object_field_register_custom_nodoc(sorcery, "test2", "jim", "444", jim_handler, NULL, jim_vl, 0, 0);
+	ast_sorcery_object_field_register_custom_nodoc(sorcery, "test2", "jack", "888,999", jack_handler, jack_str, NULL, 0, 0);
+
+
+	if (!(obj1 = ast_sorcery_alloc(sorcery, "test", "blah"))) {
+		ast_test_status_update(test, "Failed to allocate a known object type\n");
+		return AST_TEST_FAIL;
+	}
+
+	if (!(obj2 = ast_sorcery_alloc(sorcery, "test2", "blah"))) {
+		ast_test_status_update(test, "Failed to allocate a known object type\n");
+		return AST_TEST_FAIL;
+	}
+
+	/* The 'test' wizard has no is_stale callback */
+	ast_test_validate(test, ast_sorcery_is_stale(sorcery, obj1) == 0);
+
+	/* The 'test2' wizard should return stale */
+	ast_test_validate(test, ast_sorcery_is_stale(sorcery, obj2) == 1);
+	ast_test_validate(test, cache.is_stale == 1);
+
+	return AST_TEST_PASS;
+}
+
 AST_TEST_DEFINE(caching_wizard_behavior)
 {
 	struct ast_flags flags = { CONFIG_FLAG_NOCACHE };
@@ -3419,6 +3505,13 @@ AST_TEST_DEFINE(wizard_apply_and_insert)
 		ast_sorcery_insert_wizard_mapping(sorcery, "test_object_type", "test2", "test2data", 0, 0) != 0);
 
 	ast_test_validate(test,
+		ast_sorcery_object_type_insert_wizard(sorcery, "test_object_type", "test2", "test2data2",
+			AST_SORCERY_WIZARD_APPLY_ALLOW_DUPLICATE, 0, NULL, NULL) == 0);
+
+	ast_test_validate(test,
+		ast_sorcery_object_type_remove_wizard(sorcery, "test_object_type", "test2", "test2data2") == 0);
+
+	ast_test_validate(test,
 		ast_sorcery_get_wizard_mapping(sorcery, "test_object_type", 0, &wizard, &data) == 0);
 	ast_test_validate(test, strcmp("test2", wizard->name) == 0);
 	ast_test_validate(test, strcmp("test2data", data) == 0);
@@ -3468,6 +3561,73 @@ AST_TEST_DEFINE(wizard_apply_and_insert)
 	return AST_TEST_PASS;
 }
 
+static struct ast_sorcery_wizard test_read_only_wizard = {
+	.name = "test-read-only",
+	.retrieve_id = sorcery_test_retrieve_id,
+};
+
+AST_TEST_DEFINE(wizard_read_only)
+{
+	RAII_VAR(struct ast_sorcery *, sorcery, NULL, ast_sorcery_unref);
+	RAII_VAR(struct ast_sorcery_wizard *, wizard_read_only, &test_read_only_wizard, ast_sorcery_wizard_unregister);
+	RAII_VAR(struct ast_sorcery_wizard *, wizard1, &test_wizard, ast_sorcery_wizard_unregister);
+	RAII_VAR(struct test_sorcery_object *, obj, NULL, ao2_cleanup);
+	struct ast_sorcery_wizard *wizard;
+
+	switch (cmd) {
+	case TEST_INIT:
+		info->name = "wizard_read_only";
+		info->category = "/main/sorcery/";
+		info->summary = "sorcery wizard read-only test";
+		info->description =
+			"sorcery wizard read-only test";
+		return AST_TEST_NOT_RUN;
+	case TEST_EXECUTE:
+		break;
+	}
+
+	wizard1->load = sorcery_test_load;
+	wizard1->reload = sorcery_test_load;
+
+	if (!(sorcery = ast_sorcery_open())) {
+		ast_test_status_update(test, "Failed to open a sorcery instance\n");
+		return AST_TEST_FAIL;
+	}
+
+	ast_sorcery_wizard_register(wizard_read_only);
+	ast_sorcery_wizard_register(wizard1);
+
+	if ((ast_sorcery_apply_default(sorcery, "test_object_type", "test-read-only", NULL) != AST_SORCERY_APPLY_SUCCESS) ||
+		ast_sorcery_internal_object_register(sorcery, "test_object_type", test_sorcery_object_alloc, NULL, NULL)) {
+		ast_test_status_update(test, "Failed to apply object defaults\n");
+		return AST_TEST_FAIL;
+	}
+
+	ast_test_validate(test,
+		ast_sorcery_get_wizard_mapping_count(sorcery, "test_object_type") == 1);
+
+	ast_test_validate(test,
+		ast_sorcery_object_type_apply_wizard(sorcery, "test_object_type",
+			"test", "test2data", AST_SORCERY_WIZARD_APPLY_READONLY, &wizard, NULL) == 0);
+
+	ast_test_validate(test, strcmp(wizard->name, wizard1->name) == 0);
+
+	ast_test_validate(test,
+		ast_sorcery_get_wizard_mapping_count(sorcery, "test_object_type") == 2);
+
+	if (!(obj = ast_sorcery_alloc(sorcery, "test_object_type", "blah"))) {
+		ast_test_status_update(test, "Failed to allocate a known object type\n");
+		return AST_TEST_FAIL;
+	}
+
+	if (ast_sorcery_create(sorcery, obj) == 0) {
+		ast_test_status_update(test, "Should not have created object using read-only wizard\n");
+		return AST_TEST_FAIL;
+	}
+
+	return AST_TEST_PASS;
+}
+
 static int unload_module(void)
 {
 	AST_TEST_UNREGISTER(wizard_registration);
@@ -3505,6 +3665,7 @@ static int unload_module(void)
 	AST_TEST_UNREGISTER(object_update_uncreated);
 	AST_TEST_UNREGISTER(object_delete);
 	AST_TEST_UNREGISTER(object_delete_uncreated);
+	AST_TEST_UNREGISTER(object_is_stale);
 	AST_TEST_UNREGISTER(caching_wizard_behavior);
 	AST_TEST_UNREGISTER(object_type_observer);
 	AST_TEST_UNREGISTER(configuration_file_wizard);
@@ -3519,6 +3680,7 @@ static int unload_module(void)
 	AST_TEST_UNREGISTER(instance_observation);
 	AST_TEST_UNREGISTER(wizard_observation);
 	AST_TEST_UNREGISTER(wizard_apply_and_insert);
+	AST_TEST_UNREGISTER(wizard_read_only);
 
 	return 0;
 }
@@ -3561,6 +3723,7 @@ static int load_module(void)
 	AST_TEST_REGISTER(object_update_uncreated);
 	AST_TEST_REGISTER(object_delete);
 	AST_TEST_REGISTER(object_delete_uncreated);
+	AST_TEST_REGISTER(object_is_stale);
 	AST_TEST_REGISTER(caching_wizard_behavior);
 	AST_TEST_REGISTER(object_type_observer);
 	AST_TEST_REGISTER(configuration_file_wizard);
@@ -3574,6 +3737,7 @@ static int load_module(void)
 	AST_TEST_REGISTER(global_observation);
 	AST_TEST_REGISTER(instance_observation);
 	AST_TEST_REGISTER(wizard_observation);
+	AST_TEST_REGISTER(wizard_read_only);
 
 	return AST_MODULE_LOAD_SUCCESS;
 }

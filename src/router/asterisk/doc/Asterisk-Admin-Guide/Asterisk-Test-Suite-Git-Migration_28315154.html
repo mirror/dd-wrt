@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk Test Suite Git Migration</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Test-Suite-Documentation_17793142.html">Asterisk Test Suite Documentation</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk Test Suite Git Migration
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Kevin Harwell</span>, last modified on Apr 01, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>This page contains (and will contain) information pertaining to the migration of the Asterisk test suite from subversion to git.</p><h4 id="AsteriskTestSuiteGitMigration-Movingthetestsuitetogit:">Moving the test suite to git:</h4><p>There are several things that need to be considered before making the move. First, how should the project be structured? A few possible options:</p><ol><li><p><em>Keep the current</em> – Use the structure that is already in place with everything under one repository. Everyone is use to it (there is something to be said for that) and knows how it works.</p></li><li><p><em>Framework + tests</em> - One repository for the Framework and “n” repositories for the tests. This separates the shared/generic code from the more specific individual tests. Also, tests could be grouped by repository. A minor benefit to doing it this way is it would be possible to only checkout a desired set of tests without having to download the entire test suite.</p></li><li><p><em> <span>Branch all the things</span> </em> <strong> <span> –</span> </strong> One repository with a master branch that contains just the framework code and then 'n' branches for various tests. One drawback here is running the test suite against multiple tests could be problematic or overly complicated.</p></li></ol><p>As mentioned, having one repository with the tests residing in various branches would make it a bit more difficult when wanting to run multiple tests. For instance, when a test is run the branch that the test resides in would need to be checked out. This would have to occur for each test.</p><p>Having the tests reside in separate repositories is also not without complications. For instance, how would the repositories interact with each other (histories, logs, other dependencies)? Git has some mechanisms that attempt to alleviate the issue such as submodule and subtree(s), but each of those add another layer of complexity and their own problems.</p><p>Maintaining the current structure certainly keeps things simple. Nothing would really have to change as far developer work flow and how tests are run. It would also ensure that histories/logs would be maintained with the move (not even sure if it would be possible under the other options). Also, if for some reason a subversion mirror needed to be maintained keeping the current structure might be the only option.</p><h4 id="AsteriskTestSuiteGitMigration-Apathforward:">A path forward:</h4><p>Moving to git and learning a new source control system is a task in and of itself for new git users. With this, and the aforementioned things, in mind for now the migration of the test suite from subversion to git will consist of <em>keeping the current structure in place</em>. The test suite structure will stay the same and the framework and tests will be maintained in one repository to be hosted on git.asterisk.org.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -21,27 +21,20 @@
  * \brief Execute an ISDN RAS
  *
  * \author Mark Spencer <markster@digium.com>
- * 
+ *
  * \ingroup applications
  */
 
 /*** MODULEINFO
 	<depend>dahdi</depend>
-	<support_level>extended</support_level>
+	<support_level>deprecated</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <sys/ioctl.h>
 #include <sys/wait.h>
-#ifdef __linux__
-#include <sys/signal.h>
-#else
 #include <signal.h>
-#endif /* __linux__ */
-
 #include <fcntl.h>
 
 #include <dahdi/user.h>
@@ -138,7 +131,7 @@ static void run_ras(struct ast_channel *chan, char *args)
 	int signalled = 0;
 	struct dahdi_bufferinfo savebi;
 	int x;
-	
+
 	res = ioctl(ast_channel_fd(chan, 0), DAHDI_GET_BUFINFO, &savebi);
 	if(res) {
 		ast_log(LOG_WARNING, "Unable to check buffer policy on channel %s\n", ast_channel_name(chan));
@@ -168,7 +161,7 @@ static void run_ras(struct ast_channel *chan, char *args)
 			if (WIFEXITED(status)) {
 				ast_verb(3, "RAS on %s terminated with status %d\n", ast_channel_name(chan), WEXITSTATUS(status));
 			} else if (WIFSIGNALED(status)) {
-				ast_verb(3, "RAS on %s terminated with signal %d\n", 
+				ast_verb(3, "RAS on %s terminated with signal %d\n",
 					 ast_channel_name(chan), WTERMSIG(status));
 			} else {
 				ast_verb(3, "RAS on %s terminated weirdly.\n", ast_channel_name(chan));
@@ -194,11 +187,11 @@ static int dahdiras_exec(struct ast_channel *chan, const char *data)
 	char *args;
 	struct dahdi_params dahdip;
 
-	if (!data) 
+	if (!data)
 		data = "";
 
 	args = ast_strdupa(data);
-	
+
 	/* Answer the channel if it's not up */
 	if (ast_channel_state(chan) != AST_STATE_UP)
 		ast_answer(chan);
@@ -223,7 +216,7 @@ static int dahdiras_exec(struct ast_channel *chan, const char *data)
 	return res;
 }
 
-static int unload_module(void) 
+static int unload_module(void)
 {
 	return ast_unregister_application(app);
 }
@@ -233,6 +226,4 @@ static int load_module(void)
 	return ((ast_register_application_xml(app, dahdiras_exec)) ? AST_MODULE_LOAD_DECLINE : AST_MODULE_LOAD_SUCCESS);
 }
 
-AST_MODULE_INFO_STANDARD_EXTENDED(ASTERISK_GPL_KEY, "DAHDI ISDN Remote Access Server");
-
-
+AST_MODULE_INFO_STANDARD_DEPRECATED(ASTERISK_GPL_KEY, "DAHDI ISDN Remote Access Server");

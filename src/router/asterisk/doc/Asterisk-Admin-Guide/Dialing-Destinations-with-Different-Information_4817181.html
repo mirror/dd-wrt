@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Dialing Destinations with Different Information</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Local-Channel_4817170.html">Local Channel</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Local-Channel-Examples_4817175.html">Local Channel Examples</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Dialing Destinations with Different Information
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>With Asterisk, we can place a call to multiple destinations by separating the technology/destination pair with an ampersand (&amp;). For example, the following Dial() line would ring two separate destinations for 30 seconds:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+exten =&gt; 201,1,Dial(SIP/0004f2040001&amp;DAHDI/g0/14165551212,30)
+</pre>
+</div></div>
+
+<p>That line would dial both the SIP/0004f2040001 device (likely a SIP device on the network) and dial the phone number 1-416-555-1212 via a DAHDI interface. In our example though, we would be sending the same callerID information to both end points, but perhaps we want to send a different callerID to one of the destinations? </p>
+
+<p>We can send different callerIDs to each of the destinations if we want by using the Local channel. The following example shows how this is possible because we would Dial() two different Local channels from our top level Dial(), and that would then execute some dialplan before sending the call off to the final destinations.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+[devices]
+exten =&gt; 201,1,NoOp() 
+exten =&gt; 201,n,Dial(Local/201@internal&amp;Local/201@external,30) 
+exten =&gt; 201,n,Voicemail(201@default,${IF($[${DIALSTATUS} = BUSY]?b:u)}) 
+exten =&gt; 201,n,Hangup() 
+
+[internal] 
+exten =&gt; 201,1,Verbose(2,Placing internal call for extension 201) 
+exten =&gt; 201,n,Set(CALLERID(name)=From Sales) 
+exten =&gt; 201,n,Dial(SIP/0004f2040001,30) 
+
+[external] 
+exten =&gt; 201,1,Verbose(2,Placing external call for extension 201) 
+exten =&gt; 201,n,Set(CALLERID(name)=Acme Cleaning) 
+exten =&gt; 201,n,Dial(DAHDI/g0/14165551212)
+</pre>
+</div></div>
+
+<p>With the dialplan above, we've sent two different callerIDs to the destinations:</p>
+
+<ul>
+	<li>&quot;From Sales&quot; was sent to the local device SIP/0004f2040001</li>
+	<li>&quot;Acme Cleaning&quot; was sent to the remote number 1-416-555-1212 via DAHDI</li>
+</ul>
+
+
+<p>Because each of the channels is independent from the other, you could perform any other call manipulation you need. Perhaps the 1-416-555-1212 number is a cell phone and you know you can only ring that device for 18 seconds before the voicemail would pick up. You could then limit the length of time the external number is dialed, but still allow the internal device to be dialed for a longer period of time.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

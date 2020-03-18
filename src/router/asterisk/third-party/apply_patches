@@ -1,0 +1,33 @@
+#!/bin/sh
+
+if [ "$1" = "-q" ] ; then
+	quiet=1
+	shift
+fi
+
+PATCH=${PATCH:-patch}
+
+patchdir=${1:?You must supply a patches directory}
+sourcedir=${2?:You must supply a source directory}
+
+if [ ! -d "$patchdir" ] ; then
+	echo "$patchdir is not a directory" >&2
+	exit 1
+fi
+
+if [ ! -d "$sourcedir" ] ; then
+	echo "$sourcedir is not a directory"  >&2
+	exit 1
+fi
+
+if [ ! "$(ls -A $patchdir/*.patch 2>/dev/null)" ] ; then
+	echo "No patches in $patchdir"  >&2
+	exit 0
+fi
+
+for patchfile in "$patchdir"/*.patch ; do
+	[ -z $quiet ] && echo "Applying patch $(basename $patchfile)"
+	${PATCH} -d "$sourcedir" -p1 -s -i "$patchfile" || exit 1
+done
+
+exit 0

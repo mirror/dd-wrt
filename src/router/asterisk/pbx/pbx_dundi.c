@@ -32,18 +32,17 @@
 
 /*** MODULEINFO
 	<depend>zlib</depend>
+	<use type="module">res_crypto</use>
 	<use type="external">crypto</use>
 	<support_level>extended</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/network.h"
 #include <sys/ioctl.h>
 #include <zlib.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include <pthread.h>
 #include <net/if.h>
 
@@ -99,8 +98,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			in the DUNDi lookup. If no results were found, the result will be blank.</para>
 		</description>
 	</function>
-			
-		
+
+
 	<function name="DUNDIQUERY" language="en_US">
 		<synopsis>
 			Initiate a DUNDi query.
@@ -184,7 +183,8 @@ enum {
 
 static struct io_context *io;
 static struct ast_sched_context *sched;
-static int netsocket = -1;
+static int netsocket = -1; /* Socket for bindaddr if only one bindaddr. Otherwise the IPv4 socket when bindaddr2 given. */
+static int netsocket2 = -1; /* IPv6 socket when bindaddr2 given. */
 static pthread_t netthreadid = AST_PTHREADT_NULL;
 static pthread_t precachethreadid = AST_PTHREADT_NULL;
 static pthread_t clearcachethreadid = AST_PTHREADT_NULL;
@@ -243,7 +243,7 @@ struct dundi_precache_queue {
 struct dundi_request;
 
 struct dundi_transaction {
-	struct sockaddr_in addr;                       /*!< Other end of transaction */
+	struct ast_sockaddr addr;                      /*!< Other end of transaction */
 	struct timeval start;                          /*!< When this transaction was created */
 	dundi_eid eids[DUNDI_MAX_STACK + 1];
 	int eidcount;                                  /*!< Number of eids in eids */
@@ -302,7 +302,7 @@ struct dundi_mapping {
 
 struct dundi_peer {
 	dundi_eid eid;
-	struct sockaddr_in addr;               /*!< Address of DUNDi peer */
+	struct ast_sockaddr addr;              /*!< Address of DUNDi peer */
 	AST_LIST_HEAD_NOLOCK(permissionlist, permission) permit;
 	struct permissionlist include;
 	dundi_eid us_eid;
@@ -408,18 +408,20 @@ static int str2tech(char *str)
 static int dundi_lookup_internal(struct dundi_result *result, int maxret, struct ast_channel *chan, const char *dcontext, const char *number, int ttl, int blockempty, struct dundi_hint_metadata *md, int *expiration, int cybpass, int modeselect, dundi_eid *skip, dundi_eid *avoid[], int direct[]);
 static int dundi_precache_internal(const char *context, const char *number, int ttl, dundi_eid *avoids[]);
 static struct dundi_transaction *create_transaction(struct dundi_peer *p);
-static struct dundi_transaction *find_transaction(struct dundi_hdr *hdr, struct sockaddr_in *sin)
+
+static struct dundi_transaction *find_transaction(struct dundi_hdr *hdr, struct ast_sockaddr *sin)
 {
 	struct dundi_transaction *trans;
 
 	/* Look for an exact match first */
 	AST_LIST_TRAVERSE(&alltrans, trans, all) {
-		if (!inaddrcmp(&trans->addr, sin) &&
-		     ((trans->strans == (ntohs(hdr->dtrans) & 32767)) /* Matches our destination */ ||
-			  ((trans->dtrans == (ntohs(hdr->strans) & 32767)) && (!hdr->dtrans))) /* We match their destination */) {
-			  if (hdr->strans)
-				  trans->dtrans = ntohs(hdr->strans) & 32767;
-			  return trans;
+		if (!ast_sockaddr_cmp(&trans->addr, sin) &&
+			((trans->strans == (ntohs(hdr->dtrans) & 32767)) /* Matches our destination */ ||
+				((trans->dtrans == (ntohs(hdr->strans) & 32767)) && (!hdr->dtrans))) /* We match their destination */) {
+			if (hdr->strans) {
+				trans->dtrans = ntohs(hdr->strans) & 32767;
+			}
+			return trans;
 		}
 	}
 
@@ -435,7 +437,7 @@ static struct dundi_transaction *find_transaction(struct dundi_hdr *hdr, struct 
 		/* Create new transaction */
 		if (!(trans = create_transaction(NULL)))
 			break;
-		memcpy(&trans->addr, sin, sizeof(trans->addr));
+		ast_sockaddr_copy(&trans->addr, sin);
 		trans->dtrans = ntohs(hdr->strans) & 32767;
 	default:
 		break;
@@ -450,7 +452,7 @@ static int dundi_ack(struct dundi_transaction *trans, int final)
 {
 	return dundi_send(trans, DUNDI_COMMAND_ACK, 0, final, NULL);
 }
-static void dundi_reject(struct dundi_hdr *h, struct sockaddr_in *sin)
+static void dundi_reject(struct dundi_hdr *h, struct ast_sockaddr *sin)
 {
 	struct {
 		struct dundi_packet pack;
@@ -462,7 +464,7 @@ static void dundi_reject(struct dundi_hdr *h, struct sockaddr_in *sin)
 		return;
 	memset(&tmp, 0, sizeof(tmp));
 	memset(&trans, 0, sizeof(trans));
-	memcpy(&trans.addr, sin, sizeof(trans.addr));
+	ast_sockaddr_copy(&trans.addr, sin);
 	tmp.hdr.strans = h->dtrans;
 	tmp.hdr.dtrans = h->strans;
 	tmp.hdr.iseqno = h->oseqno;
@@ -562,7 +564,7 @@ static int get_mapping_weight(struct dundi_mapping *map, struct varshead *headp)
 	if (map->weightstr) {
 		if (headp) {
 			pbx_substitute_variables_varshead(headp, map->weightstr, buf, sizeof(buf) - 1);
-		} else {                
+		} else {
 			pbx_substitute_variables_helper(NULL, map->weightstr, buf, sizeof(buf) - 1);
 		}
 
@@ -1239,7 +1241,6 @@ static int cache_lookup_internal(time_t now, struct dundi_request *req, char *ke
 
 static int cache_lookup(struct dundi_request *req, dundi_eid *peer_eid, uint32_t crc, int *lowexpiration)
 {
-	char key[256];
 	char eid_str[20];
 	char eidroot_str[20];
 	time_t now;
@@ -1247,6 +1248,8 @@ static int cache_lookup(struct dundi_request *req, dundi_eid *peer_eid, uint32_t
 	int res2=0;
 	char eid_str_full[20];
 	char tmp[256]="";
+	/* Enough space for largest value that can be stored in key. */
+	char key[sizeof(eid_str) + sizeof(tmp) + sizeof(req->dcontext) + sizeof(eidroot_str) + sizeof("hint////r")];
 	int x;
 
 	time(&now);
@@ -1291,8 +1294,9 @@ static void qualify_peer(struct dundi_peer *peer, int schedonly);
 
 static void apply_peer(struct dundi_transaction *trans, struct dundi_peer *p)
 {
-	if (!trans->addr.sin_addr.s_addr)
-		memcpy(&trans->addr, &p->addr, sizeof(trans->addr));
+	if (ast_sockaddr_isnull(&trans->addr)) {
+		ast_sockaddr_copy(&trans->addr, &p->addr);
+	}
 	trans->us_eid = p->us_eid;
 	trans->them_eid = p->eid;
 	/* Enable encryption if appropriate */
@@ -1318,10 +1322,12 @@ static int do_register_expire(const void *data)
 {
 	struct dundi_peer *peer = (struct dundi_peer *)data;
 	char eid_str[20];
+
 	ast_debug(1, "Register expired for '%s'\n", ast_eid_to_str(eid_str, sizeof(eid_str), &peer->eid));
+	ast_db_del("dundi/dpeers", dundi_eid_to_str_short(eid_str, sizeof(eid_str), &peer->eid));
 	peer->registerexpire = -1;
 	peer->lastms = 0;
-	memset(&peer->addr, 0, sizeof(peer->addr));
+	ast_sockaddr_setnull(&peer->addr);
 	return 0;
 }
 
@@ -1540,7 +1546,18 @@ static void deep_copy_peer(struct dundi_peer *peer_dst, const struct dundi_peer 
 {
 	struct permission *cur, *perm;
 
-	memcpy(peer_dst, peer_src, sizeof(*peer_dst));
+	*peer_dst = *peer_src;
+	AST_LIST_NEXT(peer_dst, list) = NULL;
+
+	/* Scheduled items cannot go with the copy */
+	peer_dst->registerid = -1;
+	peer_dst->qualifyid = -1;
+	peer_dst->registerexpire = -1;
+
+	/* Transactions and lookup history cannot go with the copy either */
+	peer_dst->regtrans = NULL;
+	peer_dst->qualtrans = NULL;
+	memset(&peer_dst->lookups, 0, sizeof(peer_dst->lookups));
 
 	memset(&peer_dst->permit, 0, sizeof(peer_dst->permit));
 	memset(&peer_dst->include, 0, sizeof(peer_dst->permit));
@@ -1706,17 +1723,16 @@ static int handle_command_response(struct dundi_transaction *trans, struct dundi
 				int needqual = 0;
 				AST_SCHED_DEL(sched, peer->registerexpire);
 				peer->registerexpire = ast_sched_add(sched, (expire + 10) * 1000, do_register_expire, peer);
-				snprintf(data, sizeof(data), "%s:%d:%d", ast_inet_ntoa(trans->addr.sin_addr),
-					ntohs(trans->addr.sin_port), expire);
+				snprintf(data, sizeof(data), "%s:%d", ast_sockaddr_stringify(&trans->addr), expire);
 				ast_db_put("dundi/dpeers", dundi_eid_to_str_short(eid_str, sizeof(eid_str), &peer->eid), data);
-				if (inaddrcmp(&peer->addr, &trans->addr)) {
-					ast_verb(3, "Registered DUNDi peer '%s' at '%s:%d'\n",
-							ast_eid_to_str(eid_str, sizeof(eid_str), &peer->eid),
-							ast_inet_ntoa(trans->addr.sin_addr), ntohs(trans->addr.sin_port));
+				if (ast_sockaddr_cmp(&peer->addr, &trans->addr)) {
+					ast_verb(3, "Registered DUNDi peer '%s' at '%s'\n",
+						ast_eid_to_str(eid_str, sizeof(eid_str), &peer->eid),
+						ast_sockaddr_stringify(&trans->addr));
 					needqual = 1;
 				}
 
-				memcpy(&peer->addr, &trans->addr, sizeof(peer->addr));
+				ast_sockaddr_copy(&peer->addr, &trans->addr);
 				dundi_ie_append_short(ied, DUNDI_IE_EXPIRATION, default_expiration);
 				dundi_send(trans, DUNDI_COMMAND_REGRESPONSE, 0, 1, ied);
 				if (needqual)
@@ -1840,7 +1856,7 @@ static int handle_command_response(struct dundi_transaction *trans, struct dundi
 							ast_copy_string(trans->parent->dei->ipaddr, ies.q_ipaddr, sizeof(trans->parent->dei->ipaddr));
 						if (!ast_eid_cmp(&trans->them_eid, &trans->parent->query_eid)) {
 							/* If it's them, update our address */
-							ast_copy_string(trans->parent->dei->ipaddr, ast_inet_ntoa(trans->addr.sin_addr), sizeof(trans->parent->dei->ipaddr));
+							ast_copy_string(trans->parent->dei->ipaddr, ast_sockaddr_stringify_addr(&trans->addr), sizeof(trans->parent->dei->ipaddr));
 						}
 					}
 					if (ies.hint) {
@@ -2023,7 +2039,7 @@ static int ack_trans(struct dundi_transaction *trans, int iseqno)
 	return 0;
 }
 
-static int handle_frame(struct dundi_hdr *h, struct sockaddr_in *sin, int datalen)
+static int handle_frame(struct dundi_hdr *h, struct ast_sockaddr *sin, int datalen)
 {
 	struct dundi_transaction *trans;
 	trans = find_transaction(h, sin);
@@ -2064,15 +2080,14 @@ static int handle_frame(struct dundi_hdr *h, struct sockaddr_in *sin, int datale
 	return 0;
 }
 
-static int socket_read(int *id, int fd, short events, void *cbdata)
+static int socket_read(int *id, int fd, short events, void *sock)
 {
-	struct sockaddr_in sin;
+	struct ast_sockaddr sin;
 	int res;
 	struct dundi_hdr *h;
 	char buf[MAX_PACKET_SIZE];
-	socklen_t len = sizeof(sin);
 
-	res = recvfrom(netsocket, buf, sizeof(buf) - 1, 0,(struct sockaddr *) &sin, &len);
+	res = ast_recvfrom(*((int *)sock), buf, sizeof(buf), 0, &sin);
 	if (res < 0) {
 		if (errno != ECONNREFUSED)
 			ast_log(LOG_WARNING, "Error: %s\n", strerror(errno));
@@ -2109,7 +2124,7 @@ static void build_secret(char *secret, int seclen)
 
 static void save_secret(const char *newkey, const char *oldkey)
 {
-	char tmp[256];
+	char tmp[350];
 	if (oldkey)
 		snprintf(tmp, sizeof(tmp), "%s;%s", oldkey, newkey);
 	else
@@ -2182,7 +2197,11 @@ static void *network_thread(void *ignore)
 	   from the network, and queue them for delivery to the channels */
 	int res;
 	/* Establish I/O callback for socket read */
-	int *socket_read_id = ast_io_add(io, netsocket, socket_read, AST_IO_IN, NULL);
+	int *socket_read_id = ast_io_add(io, netsocket, socket_read, AST_IO_IN, &netsocket);
+	int *socket_read_id2 = NULL;
+	if (netsocket2 >= 0) {
+		socket_read_id2 = ast_io_add(io, netsocket2, socket_read, AST_IO_IN, &netsocket2);
+	}
 
 	while (!dundi_shutdown) {
 		res = ast_sched_wait(sched);
@@ -2198,7 +2217,10 @@ static void *network_thread(void *ignore)
 	}
 
 	ast_io_remove(io, socket_read_id);
-	netthreadid = AST_PTHREADT_NULL;
+
+	if (socket_read_id2) {
+		ast_io_remove(io, socket_read_id2);
+	}
 
 	return NULL;
 }
@@ -2233,7 +2255,6 @@ static void *process_clearcache(void *ignore)
 		pthread_testcancel();
 	}
 
-	clearcachethreadid = AST_PTHREADT_NULL;
 	return NULL;
 }
 
@@ -2268,8 +2289,6 @@ static void *process_precache(void *ign)
 		} else
 			sleep(1);
 	}
-
-	precachethreadid = AST_PTHREADT_NULL;
 
 	return NULL;
 }
@@ -2367,8 +2386,7 @@ static char *dundi_flush(struct ast_cli_entry *e, int cmd, struct ast_cli_args *
 		AST_LIST_LOCK(&peers);
 		AST_LIST_TRAVERSE(&peers, p, list) {
 			for (x = 0;x < DUNDI_TIMING_HISTORY; x++) {
-				if (p->lookups[x])
-					ast_free(p->lookups[x]);
+				ast_free(p->lookups[x]);
 				p->lookups[x] = NULL;
 				p->lookuptimes[x] = 0;
 			}
@@ -2580,6 +2598,26 @@ static char *dundi_do_query(struct ast_cli_entry *e, int cmd, struct ast_cli_arg
 	return CLI_SUCCESS;
 }
 
+static char *dundi_sockaddr_stringify_host(const struct ast_sockaddr *addr)
+{
+	if (ast_sockaddr_isnull(addr)) {
+		return "(Unspecified)";
+	}
+	return ast_sockaddr_stringify_host(addr);
+}
+
+static uint16_t dundi_sockaddr_port(const struct ast_sockaddr *addr)
+{
+	/*
+	 * Test to avoid a debug message complaining about addr
+	 * not being an IPv4 or IPv6 address.
+	 */
+	if (ast_sockaddr_isnull(addr)) {
+		return 0;
+	}
+	return ast_sockaddr_port(addr);
+}
+
 static char *dundi_show_peer(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
 	struct dundi_peer *peer;
@@ -2625,8 +2663,8 @@ static char *dundi_show_peer(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 		ast_cli(a->fd, "Peer:    %s\n", ast_eid_to_str(eid_str, sizeof(eid_str), &peer->eid));
 		ast_cli(a->fd, "Model:   %s\n", model2str(peer->model));
 		ast_cli(a->fd, "Order:   %s\n", order);
-		ast_cli(a->fd, "Host:    %s\n", peer->addr.sin_addr.s_addr ? ast_inet_ntoa(peer->addr.sin_addr) : "<Unspecified>");
-		ast_cli(a->fd, "Port:    %d\n", ntohs(peer->addr.sin_port));
+		ast_cli(a->fd, "Host:    %s\n", ast_sockaddr_isnull(&peer->addr) ? "<Unspecified>" : ast_sockaddr_stringify_host(&peer->addr));
+		ast_cli(a->fd, "Port:    %d\n", dundi_sockaddr_port(&peer->addr));
 		ast_cli(a->fd, "Dynamic: %s\n", peer->dynamic ? "yes" : "no");
 		ast_cli(a->fd, "Reg:     %s\n", peer->registerid < 0 ? "No" : "Yes");
 		ast_cli(a->fd, "In Key:  %s\n", ast_strlen_zero(peer->inkey) ? "<None>" : peer->inkey);
@@ -2658,8 +2696,8 @@ static char *dundi_show_peer(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 
 static char *dundi_show_peers(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
-#define FORMAT2 "%-20.20s %-15.15s     %-6.6s %-10.10s %-8.8s %-15.15s\n"
-#define FORMAT "%-20.20s %-15.15s %s %-6d %-10.10s %-8.8s %-15.15s\n"
+#define FORMAT2 "%-20.20s %-41s     %-6.6s %-10.10s %-8.8s %-15.15s\n"
+#define FORMAT "%-20.20s %-41s %s %-6d %-10.10s %-8.8s %-15.15s\n"
 	struct dundi_peer *peer;
 	int registeredonly=0;
 	char avgms[20];
@@ -2693,12 +2731,14 @@ static char *dundi_show_peers(struct ast_cli_entry *e, int cmd, struct ast_cli_a
 	AST_LIST_LOCK(&peers);
 	ast_cli(a->fd, FORMAT2, "EID", "Host", "Port", "Model", "AvgTime", "Status");
 	AST_LIST_TRAVERSE(&peers, peer, list) {
-		char status[20];
+		char status[64];
 		int print_line = -1;
 		char srch[2000];
+
 		total_peers++;
-		if (registeredonly && !peer->addr.sin_addr.s_addr)
+		if (registeredonly && ast_sockaddr_isnull(&peer->addr)) {
 			continue;
+		}
 		if (peer->maxms) {
 			if (peer->lastms < 0) {
 				strcpy(status, "UNREACHABLE");
@@ -2724,9 +2764,9 @@ static char *dundi_show_peers(struct ast_cli_entry *e, int cmd, struct ast_cli_a
 			snprintf(avgms, sizeof(avgms), "%d ms", peer->avgms);
 		else
 			strcpy(avgms, "Unavail");
-		snprintf(srch, sizeof(srch), FORMAT, ast_eid_to_str(eid_str, sizeof(eid_str), &peer->eid),
-					peer->addr.sin_addr.s_addr ? ast_inet_ntoa(peer->addr.sin_addr) : "(Unspecified)",
-					peer->dynamic ? "(D)" : "(S)", ntohs(peer->addr.sin_port), model2str(peer->model), avgms, status);
+		snprintf(srch, sizeof(srch), FORMAT, ast_eid_to_str(eid_str, sizeof(eid_str),
+			&peer->eid), dundi_sockaddr_stringify_host(&peer->addr),
+			peer->dynamic ? "(D)" : "(S)", dundi_sockaddr_port(&peer->addr), model2str(peer->model), avgms, status);
 
                 if (a->argc == 5) {
                   if (!strcasecmp(a->argv[3],"include") && strstr(srch,a->argv[4])) {
@@ -2742,8 +2782,8 @@ static char *dundi_show_peers(struct ast_cli_entry *e, int cmd, struct ast_cli_a
 
         if (print_line) {
 			ast_cli(a->fd, FORMAT, ast_eid_to_str(eid_str, sizeof(eid_str), &peer->eid),
-					peer->addr.sin_addr.s_addr ? ast_inet_ntoa(peer->addr.sin_addr) : "(Unspecified)",
-					peer->dynamic ? "(D)" : "(S)", ntohs(peer->addr.sin_port), model2str(peer->model), avgms, status);
+				dundi_sockaddr_stringify_host(&peer->addr),
+				peer->dynamic ? "(D)" : "(S)", dundi_sockaddr_port(&peer->addr), model2str(peer->model), avgms, status);
 		}
 	}
 	ast_cli(a->fd, "%d dundi peers [%d online, %d offline, %d unmonitored]\n", total_peers, online_peers, offline_peers, unmonitored_peers);
@@ -2755,8 +2795,8 @@ static char *dundi_show_peers(struct ast_cli_entry *e, int cmd, struct ast_cli_a
 
 static char *dundi_show_trans(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
-#define FORMAT2 "%-22.22s %-5.5s %-5.5s %-3.3s %-3.3s %-3.3s\n"
-#define FORMAT "%-16.16s:%5d %-5.5d %-5.5d %-3.3d %-3.3d %-3.3d\n"
+#define FORMAT2 "%-47s %-5.5s %-5.5s %-3.3s %-3.3s %-3.3s\n"
+#define FORMAT "%-41s:%5d %-5.5d %-5.5d %-3.3d %-3.3d %-3.3d\n"
 	struct dundi_transaction *trans;
 	switch (cmd) {
 	case CLI_INIT:
@@ -2774,8 +2814,9 @@ static char *dundi_show_trans(struct ast_cli_entry *e, int cmd, struct ast_cli_a
 	AST_LIST_LOCK(&peers);
 	ast_cli(a->fd, FORMAT2, "Remote", "Src", "Dst", "Tx", "Rx", "Ack");
 	AST_LIST_TRAVERSE(&alltrans, trans, all) {
-		ast_cli(a->fd, FORMAT, ast_inet_ntoa(trans->addr.sin_addr),
-			ntohs(trans->addr.sin_port), trans->strans, trans->dtrans, trans->oseqno, trans->iseqno, trans->aseqno);
+		ast_cli(a->fd, FORMAT, ast_sockaddr_stringify_host(&trans->addr),
+			ast_sockaddr_port(&trans->addr), trans->strans, trans->dtrans,
+			trans->oseqno, trans->iseqno, trans->aseqno);
 	}
 	AST_LIST_UNLOCK(&peers);
 	return CLI_SUCCESS;
@@ -2945,6 +2986,8 @@ static char *dundi_show_cache(struct ast_cli_entry *e, int cmd, struct ast_cli_a
 	db_tree = ast_db_gettree("dundi/cache", NULL);
 	ast_cli(a->fd, FORMAT2, "Number", "Context", "Expiration", "From", "Weight", "Destination (Flags)");
 	for (db_entry = db_tree; db_entry; db_entry = db_entry->next) {
+		char *rest;
+
 		if ((strncmp(db_entry->key, "/dundi/cache/hint/", 18) == 0) || ast_get_time_t(db_entry->data, &ts, 0, &length)) {
 			continue;
 		}
@@ -2956,10 +2999,10 @@ static char *dundi_show_cache(struct ast_cli_entry *e, int cmd, struct ast_cli_a
 		}
 
 		ptr = db_entry->key + sizeof("/dundi/cache");
-		strtok(ptr, "/");
-		number = strtok(NULL, "/");
-		context = strtok(NULL, "/");
-		ptr = strtok(NULL, "/");
+		strtok_r(ptr, "/", &rest);
+		number = strtok_r(NULL, "/", &rest);
+		context = strtok_r(NULL, "/", &rest);
+		ptr = strtok_r(NULL, "/", &rest);
 
 		if (*ptr != 'e') {
 			continue;
@@ -3037,6 +3080,8 @@ static char *dundi_show_hints(struct ast_cli_entry *e, int cmd, struct ast_cli_a
 	ast_cli(a->fd, FORMAT2, "Prefix", "Context", "Expiration", "From");
 
 	for (db_entry = db_tree; db_entry; db_entry = db_entry->next) {
+		char *rest = NULL;
+
 		if (ast_get_time_t(db_entry->data, &ts, 0, &length)) {
 			continue;
 		}
@@ -3048,10 +3093,10 @@ static char *dundi_show_hints(struct ast_cli_entry *e, int cmd, struct ast_cli_a
 		}
 
 		ptr = db_entry->key + sizeof("/dundi/cache/hint");
-		src = strtok(ptr, "/");
-		number = strtok(NULL, "/");
-		context = strtok(NULL, "/");
-		ptr = strtok(NULL, "/");
+		src = strtok_r(ptr, "/", &rest);
+		number = strtok_r(NULL, "/", &rest);
+		context = strtok_r(NULL, "/", &rest);
+		ptr = strtok_r(NULL, "/", &rest);
 
 		if (*ptr != 'e') {
 			continue;
@@ -3095,8 +3140,9 @@ static struct dundi_transaction *create_transaction(struct dundi_peer *p)
 	int tid;
 
 	/* Don't allow creation of transactions to non-registered peers */
-	if (p && !p->addr.sin_addr.s_addr)
+	if (p && ast_sockaddr_isnull(&p->addr)) {
 		return NULL;
+	}
 	tid = get_trans_id();
 	if (tid < 1)
 		return NULL;
@@ -3125,11 +3171,20 @@ static int dundi_xmit(struct dundi_packet *pack)
 	int res;
 	if (dundidebug)
 		dundi_showframe(pack->h, 0, &pack->parent->addr, pack->datalen - sizeof(struct dundi_hdr));
-	res = sendto(netsocket, pack->data, pack->datalen, 0, (struct sockaddr *)&pack->parent->addr, sizeof(pack->parent->addr));
+
+	if (netsocket2 < 0) {
+		res = ast_sendto(netsocket, pack->data, pack->datalen, 0, &pack->parent->addr);
+	} else {
+		if (ast_sockaddr_is_ipv4(&pack->parent->addr)) {
+			res = ast_sendto(netsocket, pack->data, pack->datalen, 0, &pack->parent->addr);
+		} else {
+			res = ast_sendto(netsocket2, pack->data, pack->datalen, 0, &pack->parent->addr);
+		}
+	}
+
 	if (res < 0) {
-		ast_log(LOG_WARNING, "Failed to transmit to '%s:%d': %s\n",
-			ast_inet_ntoa(pack->parent->addr.sin_addr),
-			ntohs(pack->parent->addr.sin_port), strerror(errno));
+		ast_log(LOG_WARNING, "Failed to transmit to '%s': %s\n",
+			ast_sockaddr_stringify(&pack->parent->addr), strerror(errno));
 	}
 	if (res > 0)
 		res = 0;
@@ -3180,8 +3235,7 @@ static void destroy_trans(struct dundi_transaction *trans, int fromtimeout)
 					if (!ast_eid_cmp(&trans->them_eid, &peer->eid)) {
 						peer->avgms = 0;
 						cnt = 0;
-						if (peer->lookups[DUNDI_TIMING_HISTORY-1])
-							ast_free(peer->lookups[DUNDI_TIMING_HISTORY-1]);
+						ast_free(peer->lookups[DUNDI_TIMING_HISTORY - 1]);
 						for (x=DUNDI_TIMING_HISTORY-1;x>0;x--) {
 							peer->lookuptimes[x] = peer->lookuptimes[x-1];
 							peer->lookups[x] = peer->lookups[x-1];
@@ -3235,10 +3289,10 @@ static int dundi_rexmit(const void *data)
 	AST_LIST_LOCK(&peers);
 	if (pack->retrans < 1) {
 		pack->retransid = -1;
-		if (!ast_test_flag(pack->parent, FLAG_ISQUAL))
-			ast_log(LOG_NOTICE, "Max retries exceeded to host '%s:%d' msg %d on call %d\n",
-				ast_inet_ntoa(pack->parent->addr.sin_addr),
-				ntohs(pack->parent->addr.sin_port), pack->h->oseqno, ntohs(pack->h->strans));
+		if (!ast_test_flag(pack->parent, FLAG_ISQUAL)) {
+			ast_log(LOG_NOTICE, "Max retries exceeded to host '%s' msg %d on call %d\n",
+				ast_sockaddr_stringify(&pack->parent->addr), pack->h->oseqno, ntohs(pack->h->strans));
+		}
 		destroy_trans(pack->parent, 1);
 		res = 0;
 	} else {
@@ -3593,8 +3647,9 @@ static int append_transaction(struct dundi_request *dr, struct dundi_peer *p, in
 	char eid_str2[20];
 
 	/* Ignore if not registered */
-	if (!p->addr.sin_addr.s_addr)
+	if (ast_sockaddr_isnull(&p->addr)) {
 		return 0;
+	}
 	if (p->maxms && ((p->lastms < 0) || (p->lastms >= p->maxms)))
 		return 0;
 
@@ -4327,19 +4382,31 @@ static void destroy_permissions(struct permissionlist *permlist)
 
 static void destroy_peer(struct dundi_peer *peer)
 {
+	int idx;
+
+	AST_SCHED_DEL(sched, peer->registerexpire);
 	AST_SCHED_DEL(sched, peer->registerid);
-	if (peer->regtrans)
+	if (peer->regtrans) {
 		destroy_trans(peer->regtrans, 0);
+	}
 	AST_SCHED_DEL(sched, peer->qualifyid);
+	if (peer->qualtrans) {
+		destroy_trans(peer->qualtrans, 0);
+	}
 	destroy_permissions(&peer->permit);
 	destroy_permissions(&peer->include);
+
+	/* Release lookup history */
+	for (idx = 0; idx < ARRAY_LEN(peer->lookups); ++idx) {
+		ast_free(peer->lookups[idx]);
+	}
+
 	ast_free(peer);
 }
 
 static void destroy_map(struct dundi_mapping *map)
 {
-	if (map->weightstr)
-		ast_free(map->weightstr);
+	ast_free(map->weightstr);
 	ast_free(map);
 }
 
@@ -4527,15 +4594,31 @@ static void populate_addr(struct dundi_peer *peer, dundi_eid *eid)
 	char eid_str[20];
 	ast_eid_to_str(eid_str, sizeof(eid_str), eid);
 	if (!ast_db_get("dundi/dpeers", eid_str, data, sizeof(data))) {
-		c = strchr(data, ':');
+		/*
+		 * data is in the form:
+		 * IPv6 address: [ffff:ffff::ffff:ffff]:port:expire
+		 * IPv4 address: a.b.c.d:port:expire
+		 */
+		c = data;
+		if (*c == '[') {
+			/* Need to skip over the IPv6 address. */
+			c = strchr(c, ']');
+		}
+		if (c) {
+			c = strchr(c, ':');
+		}
 		if (c) {
 			*c = '\0';
 			c++;
 			if (sscanf(c, "%5d:%30d", &port, &expire) == 2) {
 				/* Got it! */
-				inet_aton(data, &peer->addr.sin_addr);
-				peer->addr.sin_family = AF_INET;
-				peer->addr.sin_port = htons(port);
+				struct ast_sockaddr *addrs;
+
+				if (ast_sockaddr_resolve(&addrs, data, PARSE_PORT_FORBID, AF_UNSPEC) > 0){
+					ast_sockaddr_copy(&peer->addr, &addrs[0]);
+					ast_free(addrs);
+				}
+				ast_sockaddr_set_port(&peer->addr, port);
 				peer->registerexpire = ast_sched_add(sched, (expire + 10) * 1000, do_register_expire, peer);
 			}
 		}
@@ -4546,11 +4629,10 @@ static void populate_addr(struct dundi_peer *peer, dundi_eid *eid)
 static void build_peer(dundi_eid *eid, struct ast_variable *v, int *globalpcmode)
 {
 	struct dundi_peer *peer;
-	struct ast_hostent he;
-	struct hostent *hp;
 	dundi_eid testeid;
 	int needregister=0;
 	char eid_str[20];
+	int port = 0;
 
 	AST_LIST_LOCK(&peers);
 	AST_LIST_TRAVERSE(&peers, peer, list) {
@@ -4567,8 +4649,6 @@ static void build_peer(dundi_eid *eid, struct ast_variable *v, int *globalpcmode
 		peer->registerid = -1;
 		peer->registerexpire = -1;
 		peer->qualifyid = -1;
-		peer->addr.sin_family = AF_INET;
-		peer->addr.sin_port = htons(DUNDI_PORT);
 		populate_addr(peer, eid);
 		AST_LIST_INSERT_HEAD(&peers, peer, list);
 	}
@@ -4584,15 +4664,17 @@ static void build_peer(dundi_eid *eid, struct ast_variable *v, int *globalpcmode
 		} else if (!strcasecmp(v->name, "outkey")) {
 			ast_copy_string(peer->outkey, v->value, sizeof(peer->outkey));
 		} else if (!strcasecmp(v->name, "port")) {
-			peer->addr.sin_port = htons(atoi(v->value));
+			port = atoi(v->value);
 		} else if (!strcasecmp(v->name, "host")) {
 			if (!strcasecmp(v->value, "dynamic")) {
 				peer->dynamic = 1;
 			} else {
-				hp = ast_gethostbyname(v->value, &he);
-				if (hp) {
-					memcpy(&peer->addr.sin_addr, hp->h_addr, sizeof(peer->addr.sin_addr));
+				struct ast_sockaddr *addrs;
+
+				if (ast_sockaddr_resolve(&addrs, v->value, PARSE_PORT_FORBID, AF_UNSPEC) > 0) {
+					ast_sockaddr_copy(&peer->addr, &addrs[0]);
 					peer->dynamic = 0;
+					ast_free(addrs);
 				} else {
 					ast_log(LOG_WARNING, "Unable to find host '%s' at line %d\n", v->value, v->lineno);
 					peer->dead = 1;
@@ -4663,6 +4745,11 @@ static void build_peer(dundi_eid *eid, struct ast_variable *v, int *globalpcmode
 			}
 		}
 	}
+
+	if (!ast_sockaddr_isnull(&peer->addr)) {
+		ast_sockaddr_set_port(&peer->addr, (0 < port) ? port : DUNDI_PORT);
+	}
+
 	(*globalpcmode) |= peer->pcmodel;
 	if (!peer->model && !peer->pcmodel) {
 		ast_log(LOG_WARNING, "Peer '%s' lacks a model or pcmodel, discarding!\n",
@@ -4683,10 +4770,11 @@ static void build_peer(dundi_eid *eid, struct ast_variable *v, int *globalpcmode
 		ast_log(LOG_WARNING, "Peer '%s' is supposed to have permission for some inbound searches but isn't an inbound peer or outbound precache!\n",
 			ast_eid_to_str(eid_str, sizeof(eid_str), &peer->eid));
 	} else {
-		if (needregister) {
-			peer->registerid = ast_sched_add(sched, 2000, do_register, peer);
-		}
 		if (ast_eid_cmp(&peer->eid, &empty_eid)) {
+			/* Schedule any items for explicitly configured peers. */
+			if (needregister) {
+				peer->registerid = ast_sched_add(sched, 2000, do_register, peer);
+			}
 			qualify_peer(peer, 1);
 		}
 	}
@@ -4811,20 +4899,55 @@ static struct ast_switch dundi_switch = {
 	.matchmore   = dundi_matchmore,
 };
 
-static int set_config(char *config_file, struct sockaddr_in* sin, int reload)
+static int get_ipaddress(char *ip, size_t size, const char *str, int family)
+{
+	struct ast_sockaddr *addrs;
+
+	if (!ast_sockaddr_resolve(&addrs, str, 0, family)) {
+		return -1;
+	}
+
+	ast_copy_string(ip, ast_sockaddr_stringify_host(&addrs[0]), size);
+	ast_free(addrs);
+
+	return 0;
+}
+
+static void set_host_ipaddr(struct ast_sockaddr *sin)
+{
+	char hn[MAXHOSTNAMELEN];
+	struct addrinfo hints;
+	int family;
+
+	memset(&hints, 0, sizeof(hints));
+
+	if (ast_sockaddr_is_ipv6(sin)) {
+		family = AF_INET6;
+	} else {
+		family = AF_INET;
+	}
+
+	if (gethostname(hn, sizeof(hn) - 1) < 0) {
+		ast_log(LOG_WARNING, "Unable to get host name!\n");
+		return;
+	}
+
+	get_ipaddress(ipaddr, sizeof(ipaddr), hn, family);
+}
+
+static int set_config(char *config_file, struct ast_sockaddr *sin, int reload, struct ast_sockaddr *sin2)
 {
 	struct ast_config *cfg;
 	struct ast_variable *v;
 	char *cat;
 	int x;
 	struct ast_flags config_flags = { 0 };
-	char hn[MAXHOSTNAMELEN] = "";
-	struct ast_hostent he;
-	struct hostent *hp;
-	struct sockaddr_in sin2;
 	static int last_port = 0;
+	int port = 0;
 	int globalpcmodel = 0;
 	dundi_eid testeid;
+	char bind_addr[80]={0,};
+	char bind_addr2[80]={0,};
 
 	if (!(cfg = ast_config_load(config_file, config_flags)) || cfg == CONFIG_STATUS_FILEINVALID) {
 		ast_log(LOG_ERROR, "Unable to load config %s\n", config_file);
@@ -4835,16 +4958,6 @@ static int set_config(char *config_file, struct sockaddr_in* sin, int reload)
 	dundi_cache_time = DUNDI_DEFAULT_CACHE_TIME;
 	any_peer = NULL;
 
-	ipaddr[0] = '\0';
-	if (!gethostname(hn, sizeof(hn)-1)) {
-		hp = ast_gethostbyname(hn, &he);
-		if (hp) {
-			memcpy(&sin2.sin_addr, hp->h_addr, sizeof(sin2.sin_addr));
-			ast_copy_string(ipaddr, ast_inet_ntoa(sin2.sin_addr), sizeof(ipaddr));
-		} else
-			ast_log(LOG_WARNING, "Unable to look up host '%s'\n", hn);
-	} else
-		ast_log(LOG_WARNING, "Unable to get host name!\n");
 	AST_LIST_LOCK(&peers);
 
 	if (ast_eid_is_empty(&ast_eid_default)) {
@@ -4857,19 +4970,19 @@ static int set_config(char *config_file, struct sockaddr_in* sin, int reload)
 	v = ast_variable_browse(cfg, "general");
 	while(v) {
 		if (!strcasecmp(v->name, "port")){
-			sin->sin_port = htons(atoi(v->value));
-			if(last_port==0){
-				last_port=sin->sin_port;
-			} else if(sin->sin_port != last_port)
-				ast_log(LOG_WARNING, "change to port ignored until next asterisk re-start\n");
+			port = atoi(v->value);
 		} else if (!strcasecmp(v->name, "bindaddr")) {
-			struct hostent *hep;
-			struct ast_hostent hent;
-			hep = ast_gethostbyname(v->value, &hent);
-			if (hep) {
-				memcpy(&sin->sin_addr, hep->h_addr, sizeof(sin->sin_addr));
-			} else
-				ast_log(LOG_WARNING, "Invalid host/IP '%s'\n", v->value);
+			if (get_ipaddress(bind_addr, sizeof(bind_addr), v->value, AF_UNSPEC) == 0) {
+				if (!ast_sockaddr_parse(sin, bind_addr, 0)) {
+					ast_log(LOG_WARNING, "Invalid host/IP '%s'\n", v->value);
+				}
+			}
+		} else if (!strcasecmp(v->name, "bindaddr2")) {
+			if (get_ipaddress(bind_addr2, sizeof(bind_addr2), v->value, AF_UNSPEC) == 0) {
+				if (!ast_sockaddr_parse(sin2, bind_addr2, 0)) {
+					ast_log(LOG_WARNING, "Invalid host/IP '%s'\n", v->value);
+				}
+			}
 		} else if (!strcasecmp(v->name, "authdebug")) {
 			authdebug = ast_true(v->value);
 		} else if (!strcasecmp(v->name, "ttl")) {
@@ -4924,14 +5037,42 @@ static int set_config(char *config_file, struct sockaddr_in* sin, int reload)
 		}
 		v = v->next;
 	}
+
+	if (port == 0) {
+		port = DUNDI_PORT;
+	}
+
+	if (ast_sockaddr_isnull(sin)) {
+		sprintf(bind_addr, "0.0.0.0:%d", port);
+		ast_sockaddr_parse(sin, bind_addr, 0);
+	} else {
+		ast_sockaddr_set_port(sin, port);
+	}
+
+	if (last_port == 0) {
+		last_port = port;
+	} else if (last_port != port) {
+		ast_log(LOG_WARNING, "change to port ignored until next asterisk re-start\n");
+	}
+
+	set_host_ipaddr(sin);
+
+	if (!ast_sockaddr_isnull(sin2)) {
+		ast_sockaddr_set_port(sin2, port);
+	}
+
 	AST_LIST_UNLOCK(&peers);
+
 	mark_mappings();
 	v = ast_variable_browse(cfg, "mappings");
-	while(v) {
+	while (v) {
+		AST_LIST_LOCK(&peers);
 		build_mapping(v->name, v->value);
+		AST_LIST_UNLOCK(&peers);
 		v = v->next;
 	}
 	prune_mappings();
+
 	mark_peers();
 	cat = ast_category_browse(cfg, NULL);
 	while(cat) {
@@ -4948,6 +5089,7 @@ static int set_config(char *config_file, struct sockaddr_in* sin, int reload)
 		cat = ast_category_browse(cfg, cat);
 	}
 	prune_peers();
+
 	ast_config_destroy(cfg);
 	load_password();
 	if (globalpcmodel & DUNDI_MODEL_OUTBOUND)
@@ -4957,8 +5099,6 @@ static int set_config(char *config_file, struct sockaddr_in* sin, int reload)
 
 static int unload_module(void)
 {
-	pthread_t previous_netthreadid = netthreadid, previous_precachethreadid = precachethreadid, previous_clearcachethreadid = clearcachethreadid;
-
 	ast_cli_unregister_multiple(cli_dundi, ARRAY_LEN(cli_dundi));
 	ast_unregister_switch(&dundi_switch);
 	ast_custom_function_unregister(&dundi_function);
@@ -4967,36 +5107,61 @@ static int unload_module(void)
 
 	/* Stop all currently running threads */
 	dundi_shutdown = 1;
-	if (previous_netthreadid != AST_PTHREADT_NULL) {
-		pthread_kill(previous_netthreadid, SIGURG);
-		pthread_join(previous_netthreadid, NULL);
+	if (netthreadid != AST_PTHREADT_NULL) {
+		pthread_kill(netthreadid, SIGURG);
+		pthread_join(netthreadid, NULL);
+		netthreadid = AST_PTHREADT_NULL;
 	}
-	if (previous_precachethreadid != AST_PTHREADT_NULL) {
-		pthread_kill(previous_precachethreadid, SIGURG);
-		pthread_join(previous_precachethreadid, NULL);
+	if (precachethreadid != AST_PTHREADT_NULL) {
+		pthread_kill(precachethreadid, SIGURG);
+		pthread_join(precachethreadid, NULL);
+		precachethreadid = AST_PTHREADT_NULL;
 	}
- 	if (previous_clearcachethreadid != AST_PTHREADT_NULL) {
- 		pthread_cancel(previous_clearcachethreadid);
- 		pthread_join(previous_clearcachethreadid, NULL);
+ 	if (clearcachethreadid != AST_PTHREADT_NULL) {
+ 		pthread_cancel(clearcachethreadid);
+ 		pthread_join(clearcachethreadid, NULL);
+		clearcachethreadid = AST_PTHREADT_NULL;
  	}
 
-	close(netsocket);
-	io_context_destroy(io);
-	ast_sched_context_destroy(sched);
+	if (netsocket >= 0) {
+		close(netsocket);
+	}
+
+	if (netsocket2 >= 0) {
+		close(netsocket2);
+	}
 
 	mark_mappings();
 	prune_mappings();
 	mark_peers();
 	prune_peers();
 
+	if (-1 < netsocket) {
+		close(netsocket);
+		netsocket = -1;
+	}
+	if (io) {
+		io_context_destroy(io);
+		io = NULL;
+	}
+
+	if (sched) {
+		ast_sched_context_destroy(sched);
+		sched = NULL;
+	}
+
 	return 0;
 }
 
 static int reload(void)
 {
-	struct sockaddr_in sin;
+	struct ast_sockaddr sin;
+	struct ast_sockaddr sin2;
 
-	if (set_config("dundi.conf", &sin, 1))
+	ast_sockaddr_setnull(&sin);
+	ast_sockaddr_setnull(&sin2);
+
+	if (set_config("dundi.conf", &sin, 1, &sin2))
 		return AST_MODULE_LOAD_FAILURE;
 
 	return AST_MODULE_LOAD_SUCCESS;
@@ -5004,14 +5169,11 @@ static int reload(void)
 
 static int load_module(void)
 {
-	struct sockaddr_in sin;
+	struct ast_sockaddr sin;
+	struct ast_sockaddr sin2;
 
 	dundi_set_output(dundi_debug_output);
 	dundi_set_error(dundi_error_output);
-
-	sin.sin_family = AF_INET;
-	sin.sin_port = htons(DUNDI_PORT);
-	sin.sin_addr.s_addr = INADDR_ANY;
 
 	/* Make a UDP socket */
 	io = io_context_create();
@@ -5021,23 +5183,69 @@ static int load_module(void)
 		goto declined;
 	}
 
-	if (set_config("dundi.conf", &sin, 0)) {
+	ast_sockaddr_setnull(&sin);
+	ast_sockaddr_setnull(&sin2);
+
+	if (set_config("dundi.conf", &sin, 0, &sin2)) {
 		goto declined;
 	}
 
-	netsocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+	if (!ast_sockaddr_isnull(&sin2)) {
+		if ((ast_sockaddr_is_ipv4(&sin) == ast_sockaddr_is_ipv4(&sin2)) || (ast_sockaddr_is_ipv6(&sin) == ast_sockaddr_is_ipv6(&sin2))) {
+			ast_log(LOG_ERROR, "bindaddr & bindaddr2 should be different IP protocols.\n");
+			goto declined;
+		}
 
-	if (netsocket < 0) {
-		ast_log(LOG_ERROR, "Unable to create network socket: %s\n", strerror(errno));
-		goto declined;
-	}
-	if (bind(netsocket, (struct sockaddr *) &sin, sizeof(sin))) {
-		ast_log(LOG_ERROR, "Unable to bind to %s port %d: %s\n",
-			ast_inet_ntoa(sin.sin_addr), ntohs(sin.sin_port), strerror(errno));
-		goto declined;
-	}
+		/*bind netsocket to ipv4, netsocket2 to ipv6 */
 
-	ast_set_qos(netsocket, tos, 0, "DUNDi");
+		netsocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+		netsocket2 = socket(AF_INET6, SOCK_DGRAM, IPPROTO_IP);
+		if (netsocket < 0 || netsocket2 < 0) {
+			ast_log(LOG_ERROR, "Unable to create network socket: %s\n", strerror(errno));
+			goto declined;
+		}
+		if (ast_sockaddr_is_ipv4(&sin)) {
+			if (ast_bind(netsocket, &sin)) {
+				ast_log(LOG_ERROR, "Unable to bind to %s : %s\n",
+				ast_sockaddr_stringify(&sin), strerror(errno));
+				goto declined;
+			}
+			if (ast_bind(netsocket2, &sin2)) {
+				ast_log(LOG_ERROR, "Unable to bind to %s : %s\n",
+				ast_sockaddr_stringify(&sin2), strerror(errno));
+				goto declined;
+			}
+		} else {
+			if (ast_bind(netsocket, &sin2)) {
+				ast_log(LOG_ERROR, "Unable to bind to %s : %s\n",
+				ast_sockaddr_stringify(&sin2), strerror(errno));
+				goto declined;
+			}
+			if (ast_bind(netsocket2, &sin)) {
+				ast_log(LOG_ERROR, "Unable to bind to %s : %s\n",
+					ast_sockaddr_stringify(&sin), strerror(errno));
+				goto declined;
+			}
+		}
+		ast_set_qos(netsocket, tos, 0, "DUNDi");
+		ast_set_qos(netsocket2, tos, 0, "DUNDi");
+	} else {
+		if (ast_sockaddr_is_ipv6(&sin)) {
+			netsocket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_IP);
+		} else {
+			netsocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+		}
+		if (netsocket < 0) {
+			ast_log(LOG_ERROR, "Unable to create network socket: %s\n", strerror(errno));
+			goto declined;
+		}
+		if (ast_bind(netsocket, &sin))  {
+			ast_log(LOG_ERROR, "Unable to bind to %s : %s\n",
+				ast_sockaddr_stringify(&sin), strerror(errno));
+			goto declined;
+		}
+		ast_set_qos(netsocket, tos, 0, "DUNDi");
+	}
 
 	if (start_network_thread()) {
 		ast_log(LOG_ERROR, "Unable to start network thread\n");
@@ -5051,7 +5259,9 @@ static int load_module(void)
 	ast_custom_function_register(&dundi_query_function);
 	ast_custom_function_register(&dundi_result_function);
 
-	ast_verb(2, "DUNDi Ready and Listening on %s port %d\n", ast_inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
+	ast_verb(2, "DUNDi Ready and Listening on %s\n", ast_sockaddr_stringify(&sin));
+	if (!ast_sockaddr_isnull(&sin2))
+		ast_verb(2, "DUNDi Ready and Listening on %s\n", ast_sockaddr_stringify(&sin2));
 
 	return AST_MODULE_LOAD_SUCCESS;
 
@@ -5061,10 +5271,9 @@ declined:
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Distributed Universal Number Discovery (DUNDi)",
-		.support_level = AST_MODULE_SUPPORT_EXTENDED,
-		.load = load_module,
-		.unload = unload_module,
-		.reload = reload,
-		.nonoptreq = "res_crypto",
-	       );
-
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
+	.load = load_module,
+	.unload = unload_module,
+	.reload = reload,
+	.optional_modules = "res_crypto",
+);

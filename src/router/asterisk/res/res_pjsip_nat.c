@@ -32,9 +32,45 @@
 #include "asterisk/module.h"
 #include "asterisk/acl.h"
 
+/*! URI parameter for original host/port */
+#define AST_SIP_X_AST_ORIG_HOST "x-ast-orig-host"
+#define AST_SIP_X_AST_ORIG_HOST_LEN 15
+
+static void save_orig_contact_host(pjsip_rx_data *rdata, pjsip_sip_uri *uri)
+{
+	pjsip_param *x_orig_host;
+	pj_str_t p_value;
+#define COLON_LEN 1
+#define MAX_PORT_LEN 5
+
+	if (rdata->msg_info.msg->type != PJSIP_REQUEST_MSG ||
+		rdata->msg_info.msg->line.req.method.id != PJSIP_REGISTER_METHOD) {
+		return;
+	}
+
+	ast_debug(1, "Saving contact '%.*s:%d'\n",
+		(int)uri->host.slen, uri->host.ptr, uri->port);
+
+	x_orig_host = PJ_POOL_ALLOC_T(rdata->tp_info.pool, pjsip_param);
+	x_orig_host->name = pj_strdup3(rdata->tp_info.pool, AST_SIP_X_AST_ORIG_HOST);
+	p_value.slen = pj_strlen(&uri->host) + COLON_LEN + MAX_PORT_LEN;
+	p_value.ptr = (char*)pj_pool_alloc(rdata->tp_info.pool, p_value.slen + 1);
+	p_value.slen = snprintf(p_value.ptr, p_value.slen + 1, "%.*s:%d", (int)uri->host.slen, uri->host.ptr, uri->port);
+	pj_strassign(&x_orig_host->value, &p_value);
+	pj_list_insert_before(&uri->other_param, x_orig_host);
+
+	return;
+}
+
 static void rewrite_uri(pjsip_rx_data *rdata, pjsip_sip_uri *uri)
 {
+
+	if (pj_strcmp2(&uri->host, rdata->pkt_info.src_name) != 0) {
+		save_orig_contact_host(rdata, uri);
+	}
+
 	pj_cstr(&uri->host, rdata->pkt_info.src_name);
+	uri->port = rdata->pkt_info.src_port;
 	if (!strcasecmp("WSS", rdata->tp_info.transport->type_name)) {
 		/* WSS is special, we don't want to overwrite the URI at all as it needs to be ws */
 	} else if (strcasecmp("udp", rdata->tp_info.transport->type_name)) {
@@ -42,13 +78,44 @@ static void rewrite_uri(pjsip_rx_data *rdata, pjsip_sip_uri *uri)
 	} else {
 		uri->transport_param.slen = 0;
 	}
-	uri->port = rdata->pkt_info.src_port;
 }
+
+/*
+ * Update the Record-Route headers in the request or response and in the dialog
+ * object if exists.
+ *
+ * When NAT is in use, the address of the next hop in the SIP may be incorrect.
+ * To address this  asterisk uses two strategies in parallel:
+ *  1. intercept the messages at the transaction level and rewrite the
+ *     messages before arriving at the dialog layer
+ *  2. after the application processing, update the dialog object with the
+ *     correct information
+ *
+ * The first strategy has a limitation that the SIP message may not have all
+ * the information required to determine if the next hop is in the route set
+ * or in the contact. Causing risk that asterisk will update the Contact on
+ * receipt of an in-dialog message despite there being a route set saved in
+ * the dialog.
+ *
+ * The second strategy has a limitation that not all UAC layers have interfaces
+ * available to invoke this module after dialog creation.  (pjsip_sesion does
+ * but pjsip_pubsub does not), thus this strategy can't update the dialog in
+ * all cases needed.
+ *
+ * The ideal solution would be to implement an "incomming_request" event
+ * in pubsub module that can then pass the dialog object to this module
+ * on SUBSCRIBE, this module then should add itself as a listener to the dialog
+ * for the subsequent requests and responses & then be able to properly update
+ * the dialog object for all required events.
+ */
 
 static int rewrite_route_set(pjsip_rx_data *rdata, pjsip_dialog *dlg)
 {
 	pjsip_rr_hdr *rr = NULL;
 	pjsip_sip_uri *uri;
+	int res = -1;
+	int ignore_rr = 0;
+	int pubsub = 0;
 
 	if (rdata->msg_info.msg->type == PJSIP_RESPONSE_MSG) {
 		pjsip_hdr *iter;
@@ -60,21 +127,49 @@ static int rewrite_route_set(pjsip_rx_data *rdata, pjsip_dialog *dlg)
 		}
 	} else if (pjsip_method_cmp(&rdata->msg_info.msg->line.req.method, &pjsip_register_method)) {
 		rr = pjsip_msg_find_hdr(rdata->msg_info.msg, PJSIP_H_RECORD_ROUTE, NULL);
+	} else {
+		/**
+		 * Record-Route header has no meaning in REGISTER requests
+		 * and should be ignored
+		 */
+		ignore_rr = 1;
+	}
+
+	if (!pjsip_method_cmp(&rdata->msg_info.cseq->method, &pjsip_subscribe_method) ||
+		!pjsip_method_cmp(&rdata->msg_info.cseq->method, &pjsip_notify_method)) {
+		/**
+		 * There is currently no good way to get the dlg object for a pubsub dialog
+		 * so we will just look at the rr & contact of the current message and
+		 * hope for the best
+		 */
+		pubsub = 1;
 	}
 
 	if (rr) {
 		uri = pjsip_uri_get_uri(&rr->name_addr);
 		rewrite_uri(rdata, uri);
-		if (dlg && !pj_list_empty(&dlg->route_set) && !dlg->route_set_frozen) {
-			pjsip_routing_hdr *route = dlg->route_set.next;
-			uri = pjsip_uri_get_uri(&route->name_addr);
-			rewrite_uri(rdata, uri);
-		}
-
-		return 0;
+		res = 0;
 	}
 
-	return -1;
+	if (dlg && !pj_list_empty(&dlg->route_set) && !dlg->route_set_frozen) {
+		pjsip_routing_hdr *route = dlg->route_set.next;
+		uri = pjsip_uri_get_uri(&route->name_addr);
+		rewrite_uri(rdata, uri);
+		res = 0;
+	}
+
+	if (!dlg && !rr && !ignore_rr  && !pubsub && rdata->msg_info.to->tag.slen){
+		/**
+		 * Even if this message doesn't have any route headers
+		 * the dialog may, so wait until a later invocation that
+		 * has a dialog reference to make sure there isn't a
+		 * previously saved routset in the dialog before deciding
+		 * the contact needs to be modified
+		 */
+		res = 0;
+	}
+
+	return res;
 }
 
 static int rewrite_contact(pjsip_rx_data *rdata, pjsip_dialog *dlg)
@@ -165,7 +260,7 @@ static int find_transport_state_in_use(void *obj, void *arg, int flags)
 		((details->type == transport_state->type) && (transport_state->factory) &&
 			!pj_strcmp(&transport_state->factory->addr_name.host, &details->local_address) &&
 			transport_state->factory->addr_name.port == details->local_port))) {
-		return CMP_MATCH | CMP_STOP;
+		return CMP_MATCH;
 	}
 
 	return 0;
@@ -204,7 +299,44 @@ static int nat_invoke_hook(void *obj, void *arg, int flags)
 	return 0;
 }
 
-static pj_status_t nat_on_tx_message(pjsip_tx_data *tdata)
+static void restore_orig_contact_host(pjsip_tx_data *tdata)
+{
+	pjsip_contact_hdr *contact;
+
+	if (tdata->msg->type != PJSIP_RESPONSE_MSG) {
+		return;
+	}
+
+	contact = pjsip_msg_find_hdr(tdata->msg, PJSIP_H_CONTACT, NULL);
+	while (contact) {
+		pjsip_sip_uri *contact_uri = pjsip_uri_get_uri(contact->uri);
+		pj_str_t x_name = { AST_SIP_X_AST_ORIG_HOST, AST_SIP_X_AST_ORIG_HOST_LEN };
+		pjsip_param *x_orig_host = pjsip_param_find(&contact_uri->other_param, &x_name);
+
+		if (x_orig_host) {
+			char host_port[x_orig_host->value.slen + 1];
+			char *sep;
+
+			ast_debug(1, "Restoring contact %.*s:%d  to %.*s\n", (int)contact_uri->host.slen,
+				contact_uri->host.ptr, contact_uri->port,
+				(int)x_orig_host->value.slen, x_orig_host->value.ptr);
+
+			strncpy(host_port, x_orig_host->value.ptr, x_orig_host->value.slen);
+			host_port[x_orig_host->value.slen] = '\0';
+			sep = strchr(host_port, ':');
+			if (sep) {
+				*sep = '\0';
+				sep++;
+				pj_strdup2(tdata->pool, &contact_uri->host, host_port);
+				contact_uri->port = strtol(sep, NULL, 10);
+			}
+			pj_list_erase(x_orig_host);
+		}
+		contact = pjsip_msg_find_hdr(tdata->msg, PJSIP_H_CONTACT, contact->next);
+	}
+}
+
+static pj_status_t process_nat(pjsip_tx_data *tdata)
 {
 	RAII_VAR(struct ao2_container *, transport_states, NULL, ao2_cleanup);
 	RAII_VAR(struct ast_sip_transport *, transport, NULL, ao2_cleanup);
@@ -267,16 +399,16 @@ static pj_status_t nat_on_tx_message(pjsip_tx_data *tdata)
 		ast_sockaddr_set_port(&addr, tdata->tp_info.dst_port);
 
 		/* See if where we are sending this request is local or not, and if not that we can get a Contact URI to modify */
-		if (ast_apply_ha(transport_state->localnet, &addr) != AST_SENSE_ALLOW) {
+		if (ast_sip_transport_is_local(transport_state, &addr)) {
 			ast_debug(5, "Request is being sent to local address, skipping NAT manipulation\n");
 			return PJ_SUCCESS;
 		}
 	}
 
-	if (!ast_sockaddr_isnull(&transport_state->external_address)) {
+	if (!ast_sockaddr_isnull(&transport_state->external_signaling_address)) {
 		/* Update the contact header with the external address */
 		if (uri || (uri = nat_get_contact_sip_uri(tdata))) {
-			pj_strdup2(tdata->pool, &uri->host, ast_sockaddr_stringify_host(&transport_state->external_address));
+			pj_strdup2(tdata->pool, &uri->host, ast_sockaddr_stringify_host(&transport_state->external_signaling_address));
 			if (transport->external_signaling_port) {
 				uri->port = transport->external_signaling_port;
 				ast_debug(4, "Re-wrote Contact URI port to %d\n", uri->port);
@@ -285,7 +417,7 @@ static pj_status_t nat_on_tx_message(pjsip_tx_data *tdata)
 
 		/* Update the via header if relevant */
 		if ((tdata->msg->type == PJSIP_REQUEST_MSG) && (via || (via = pjsip_msg_find_hdr(tdata->msg, PJSIP_H_VIA, NULL)))) {
-			pj_strdup2(tdata->pool, &via->sent_by.host, ast_sockaddr_stringify_host(&transport_state->external_address));
+			pj_strdup2(tdata->pool, &via->sent_by.host, ast_sockaddr_stringify_host(&transport_state->external_signaling_address));
 			if (transport->external_signaling_port) {
 				via->sent_by.port = transport->external_signaling_port;
 			}
@@ -303,6 +435,16 @@ static pj_status_t nat_on_tx_message(pjsip_tx_data *tdata)
 
 	return PJ_SUCCESS;
 }
+
+static pj_status_t nat_on_tx_message(pjsip_tx_data *tdata) {
+	pj_status_t rc;
+
+	rc = process_nat(tdata);
+	restore_orig_contact_host(tdata);
+
+	return rc;
+}
+
 
 static pjsip_module nat_module = {
 	.name = { "NAT", 3 },
@@ -357,25 +499,20 @@ static int unload_module(void)
 
 static int load_module(void)
 {
-	CHECK_PJSIP_SESSION_MODULE_LOADED();
-
 	if (ast_sip_register_service(&nat_module)) {
 		ast_log(LOG_ERROR, "Could not register NAT module for incoming and outgoing requests\n");
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
-	if (ast_sip_session_register_supplement(&nat_supplement)) {
-		ast_log(LOG_ERROR, "Could not register NAT session supplement for incoming and outgoing INVITE requests\n");
-		unload_module();
-		return AST_MODULE_LOAD_DECLINE;
-	}
+	ast_sip_session_register_supplement(&nat_supplement);
 
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PJSIP NAT Support",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.load_pri = AST_MODPRI_APP_DEPEND,
-	       );
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.load_pri = AST_MODPRI_APP_DEPEND,
+	.requires = "res_pjsip,res_pjsip_session",
+);

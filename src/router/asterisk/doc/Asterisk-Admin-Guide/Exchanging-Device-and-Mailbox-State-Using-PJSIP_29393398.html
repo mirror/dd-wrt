@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Exchanging Device and Mailbox State Using PJSIP</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SIP_28314848.html">SIP</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-res_pjsip_25919621.html">Configuring res_pjsip</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Exchanging Device and Mailbox State Using PJSIP
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Joshua C. Colp</span>, last modified by <span class='editor'> Rusty Newton</span> on Aug 21, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h2 id="ExchangingDeviceandMailboxStateUsingPJSIP-Background">Background</h2><p>Asterisk has permitted the exchange of device and mailbox state for many versions. This has normally been accomplished using the res_xmpp module for instances across networks or using res_corosync for instances on the same network. This has required, in some cases, an extreme amount of work to setup. In the case of res_xmpp this also adds another point of failure for the exchange in the form of the XMPP server itself. The res_pjsip_publish_asterisk module on the other hand does not suffer from this.</p><h2 id="ExchangingDeviceandMailboxStateUsingPJSIP-Operation">Operation</h2><p>The res_pjsip_publish_asterisk module establishes an optionally bidirectional or unidirectional relationship between Asterisk instances. When the device or mailbox state on one Asterisk changes it is sent to the other Asterisk instance using a PUBLISH message containing an Asterisk specific body. This body is comprised of JSON and contains the information required to reflect the remote state change. For situations where you may not want to expose all states or you may not want to allow all states to be received you can optionally filter using a regular expression. This limits the scope of traffic.</p><h2 id="ExchangingDeviceandMailboxStateUsingPJSIP-Configuration">Configuration</h2><p>Configuring things to exchange state requires a few different objects: endpoint, publish, asterisk-publication, and optionally auth. These all configure a specific part in the exchange. An endpoint must be configured as a fundamental part of PJSIP is that <strong>all</strong> incoming requests are associated with an endpoint. A publish object tells the res_pjsip_outbound_publish where to send the PUBLISH and what type of PUBLISH message to send. An asterisk-publication object configures handling of PUBLISH messages, including whether they are permitted and from whom. Last you can optionally use authentication so that PUBLISH messages are challenged for credentials.</p><h2 id="ExchangingDeviceandMailboxStateUsingPJSIP-ExampleConfiguration">Example Configuration</h2><p>The below configuration is for two Asterisk instances sharing all device and mailbox state between them.</p><h4 id="ExchangingDeviceandMailboxStateUsingPJSIP-Instance#1(IPAddress:172.16.10.1):">Instance #1 (IP Address: 172.16.10.1):</h4><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[instance2]
+type=endpoint
+
+[instance2-devicestate]
+type=outbound-publish
+server_uri=sip:instance1@172.16.10.2
+event=asterisk-devicestate
+
+[instance2-mwi]
+type=outbound-publish
+server_uri=sip:instance1@172.16.10.2
+event=asterisk-mwi
+ 
+[instance2]
+type=inbound-publication
+event_asterisk-devicestate=instance2
+event_asterisk-mwi=instance2
+
+[instance2]
+type=asterisk-publication
+devicestate_publish=instance2-devicestate
+mailboxstate_publish=instance2-mwi
+device_state=yes
+mailbox_state=yes</pre>
+</div></div><p>This configures the first instance to publish device and mailbox state to 'instance 2' located at 172.16.10.2 using a resource name of 'instance1' without authentication. As no filters exist all state will be published. It also configures the first instance to accept all device and mailbox state messages published to a resource named 'instance2' from 'instance2'.</p><h4 id="ExchangingDeviceandMailboxStateUsingPJSIP-Instance#2(IPAddress:172.16.10.2):">Instance #2 (IP Address: 172.16.10.2):</h4><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[instance1]
+type=endpoint
+
+[instance1-devicestate]
+type=outbound-publish
+server_uri=sip:instance2@172.16.10.1
+event=asterisk-devicestate
+ 
+[instance1-mwi]
+type=outbound-publish
+server_uri=sip:instance2@172.16.10.1
+event=asterisk-mwi
+ 
+[instance1]
+type=inbound-publication
+event_asterisk-devicestate=instance1
+event_asterisk-mwi=instance1
+
+[instance1]
+type=asterisk-publication
+devicestate_publish=instance1-devicestate
+mailboxstate_publish=instance1-mwi
+device_state=yes
+mailbox_state=yes</pre>
+</div></div><p>This configures the second instance to publish device and mailbox state to 'instance 1' located at 172.16.10.1 using a resource name of 'instance2' without authentication. As no filters exist all state will be published. It also configures the second instance to accept all device and mailbox state messages published to a resource named 'instance1' from 'instance1'.</p><h2 id="ExchangingDeviceandMailboxStateUsingPJSIP-Filtering">Filtering</h2><p>As previously mentioned state events can be filtered by the device or mailbox they relate to using a regular expression. This is configured on 'publish' types using '@device_state_filter' and '@mailbox_state_filter' and on 'asterisk-publication' types using 'device_state_filter' and 'mailbox_state_filter'. As each event is sent or received the device or mailbox is given to the regular expression and if it does not match the event is stopped.</p><h4 id="ExchangingDeviceandMailboxStateUsingPJSIP-Example">Example</h4><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[instance1]
+type=endpoint
+
+[instance1-devicestate]
+type=outbound-publish
+server_uri=sip:instance2@172.16.10.1
+event=asterisk-devicestate
+
+[instance1-mwi]
+type=outbound-publish
+server_uri=sip:instance2@172.16.10.1
+event=asterisk-mwi
+ 
+[instance1]
+type=inbound-publication
+event_asterisk-devicestate=instance1
+event_asterisk-mwi=instance1
+
+[instance1]
+type=asterisk-publication
+devicestate_publish=instance1-devicestate
+mailboxstate_publish=instance1-mwi
+device_state=yes
+device_state_filter=^PJSIP/
+mailbox_state=yes
+mailbox_state_filter=^1000
+ </pre>
+</div></div><p>This builds upon the initial configuration for instance #2 but adds filtering of received events. Only device state events relating to PJSIP endpoints will be accepted. As well only mailbox state events for mailboxes starting with 1000 will be accepted.</p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>This configuration is not ideal as the publishing instance (instance #1) will still send state changes for devices and mailboxes that instance #2 does not care about, thus wasting bandwidth.</p>
+                    </div>
+    </div>
+<h2 id="ExchangingDeviceandMailboxStateUsingPJSIP-FreshStartup">Fresh Startup</h2><p>When the res_pjsip_publish_asterisk module is loaded it will send its own current states for all applicable devices and mailboxes to all configured 'publish' types. Instances may optionally be configured to send a refresh request to 'publish' types as well by setting the 'devicestate_publish' and/or 'mailboxstate_publish' option in the 'asterisk-publication' type. This refresh request causes the remote instances to send current states for all applicable devices and mailboxes back, bringing the potentially newly started Asterisk up to date with its peers.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : About the Sounds Tools</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Internationalization-and-Localization_27200307.html">Internationalization and Localization</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Sounds-Packages_5243120.html">Asterisk Sounds Packages</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : About the Sounds Tools
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>The following sections will describe the sound tools in more detail and explain what they are used for in the sounds package creation process.</p>
+
+<h3 id="AbouttheSoundsTools-audiofilter">audiofilter</h3>
+
+<p>The audiofilter application is used to &quot;tune&quot; the sound files in such a way that they sound good when being used while in a compressed format. The values in the scripts for creating the sound files supplied in repotools is essentially a high-pass filter that drops out audio below 100Hz (or so). </p>
+
+<p>(There is an ITU specification that states for 8KHz audio that is being compressed frequencies below a certain threshold should be removed because they make the resulting compressed audio sound worse than it should.) </p>
+
+<p>The audiofilter application is used by the 'converter' script located in the scripts subdirectory of repotools/sound_tools. The values being passed to the audiofilter application is as follows:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>audiofilter -n 0.86916 -1.73829 0.86916 -d 1.00000 -1.74152 0.77536
+</pre>
+</div></div>
+
+<p>The two options -n and -d are 'numerator' and 'denominator'. Per the author, Jean-Marc Valin, &quot;These values are filter coefficients (-n means numerator, -d is denominator) expressed in the z-transform domain. There represent an elliptic filter that I designed with Octave such that 'the result sounds good'.&quot;</p>
+
+<h3 id="AbouttheSoundsTools-makeg722">makeg722</h3>
+
+<p>The makeg722 application is used by the 'converters' script to generate the G.722 sound files that are shipped with Asterisk. It starts with the RAW sound files and then converts them to G.722.</p>
+
+<h3 id="AbouttheSoundsTools-scripts">scripts</h3>
+
+<p>The scripts folder is where all the magic happens. These are the scripts that the Asterisk open source team use to build the packaged audio files for the various formats that are distributed with Asterisk.</p>
+
+<ul>
+	<li>chkcore - used to check that the contents of core-sounds-lang.txt are in sync</li>
+	<li>chkextra - same as above, but checks the extra sound files</li>
+	<li>mkcore - script used to generate the core sounds packages</li>
+	<li>mkextra - script used to generate the extra sounds packages</li>
+	<li>mkmoh - script used to generate the music on hold packages</li>
+	<li>converters - script used to convert the master files to various formats</li>
+</ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

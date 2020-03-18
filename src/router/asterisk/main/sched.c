@@ -30,13 +30,8 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #ifdef DEBUG_SCHEDULER
-#define DEBUG(a) do { \
-	if (option_debug) \
-		DEBUG_M(a) \
-	} while (0)
+#define DEBUG(a) a
 #else
 #define DEBUG(a)
 #endif
@@ -121,6 +116,8 @@ struct ast_sched_context {
 	struct sched_thread *sched_thread;
 	/*! The scheduled task that is currently executing */
 	struct sched *currently_executing;
+	/*! Valid while currently_executing is not NULL */
+	pthread_t executing_thread_id;
 
 #ifdef SCHED_MAX_CACHE
 	AST_LIST_HEAD_NOLOCK(, sched) schedc;   /*!< Cache of unused schedule structures and how many */
@@ -488,7 +485,7 @@ static void schedule(struct ast_sched_context *con, struct sched *s)
  * given the last event *tv and the offset in milliseconds 'when',
  * computes the next value,
  */
-static int sched_settime(struct timeval *t, int when)
+static void sched_settime(struct timeval *t, int when)
 {
 	struct timeval now = ast_tvnow();
 
@@ -510,7 +507,6 @@ static int sched_settime(struct timeval *t, int when)
 	if (ast_tvcmp(*t, now) < 0) {
 		*t = now;
 	}
-	return 0;
 }
 
 int ast_sched_replace_variable(int old_id, struct ast_sched_context *con, int when, ast_sched_cb callback, const void *data, int variable)
@@ -541,17 +537,14 @@ int ast_sched_add_variable(struct ast_sched_context *con, int when, ast_sched_cb
 		tmp->variable = variable;
 		tmp->when = ast_tv(0, 0);
 		tmp->deleted = 0;
-		if (sched_settime(&tmp->when, when)) {
-			sched_release(con, tmp);
-		} else {
-			schedule(con, tmp);
-			res = tmp->sched_id->id;
-		}
+
+		sched_settime(&tmp->when, when);
+		schedule(con, tmp);
+		res = tmp->sched_id->id;
 	}
 #ifdef DUMP_SCHEDULER
 	/* Dump contents of the context while we have the lock so nothing gets screwed up by accident. */
-	if (option_debug)
-		ast_sched_dump(con);
+	ast_sched_dump(con);
 #endif
 	if (con->sched_thread) {
 		ast_cond_signal(&con->sched_thread->cond);
@@ -614,11 +607,7 @@ const void *ast_sched_find_data(struct ast_sched_context *con, int id)
  * would be two or more in the list with that
  * id.
  */
-#ifndef AST_DEVMODE
 int ast_sched_del(struct ast_sched_context *con, int id)
-#else
-int _ast_sched_del(struct ast_sched_context *con, int id, const char *file, int line, const char *function)
-#endif
 {
 	struct sched *s = NULL;
 	int *last_id = ast_threadstorage_get(&last_del_id, sizeof(int));
@@ -638,21 +627,31 @@ int _ast_sched_del(struct ast_sched_context *con, int id, const char *file, int 
 		}
 		sched_release(con, s);
 	} else if (con->currently_executing && (id == con->currently_executing->sched_id->id)) {
-		s = con->currently_executing;
-		s->deleted = 1;
-		/* Wait for executing task to complete so that caller of ast_sched_del() does not
-		 * free memory out from under the task.
-		 */
-		while (con->currently_executing && (id == con->currently_executing->sched_id->id)) {
-			ast_cond_wait(&s->cond, &con->lock);
+		if (con->executing_thread_id == pthread_self()) {
+			/* The scheduled callback is trying to delete itself.
+			 * Not good as that is a deadlock. */
+			ast_log(LOG_ERROR,
+				"BUG! Trying to delete sched %d from within the callback %p.  "
+				"Ignoring so we don't deadlock\n",
+				id, con->currently_executing->callback);
+			ast_log_backtrace();
+			/* We'll return -1 below because s is NULL.
+			 * The caller will rightly assume that the unscheduling failed. */
+		} else {
+			s = con->currently_executing;
+			s->deleted = 1;
+			/* Wait for executing task to complete so that the caller of
+			 * ast_sched_del() does not free memory out from under the task. */
+			while (con->currently_executing && (id == con->currently_executing->sched_id->id)) {
+				ast_cond_wait(&s->cond, &con->lock);
+			}
+			/* Do not sched_release() here because ast_sched_runq() will do it */
 		}
-		/* Do not sched_release() here because ast_sched_runq() will do it */
 	}
 
 #ifdef DUMP_SCHEDULER
 	/* Dump contents of the context while we have the lock so nothing gets screwed up by accident. */
-	if (option_debug)
-		ast_sched_dump(con);
+	ast_sched_dump(con);
 #endif
 	if (con->sched_thread) {
 		ast_cond_signal(&con->sched_thread->cond);
@@ -713,25 +712,33 @@ void ast_sched_report(struct ast_sched_context *con, struct ast_str **buf, struc
 void ast_sched_dump(struct ast_sched_context *con)
 {
 	struct sched *q;
-	struct timeval when = ast_tvnow();
+	struct timeval when;
 	int x;
 	size_t heap_size;
+
+	if (!DEBUG_ATLEAST(1)) {
+		return;
+	}
+
+	when = ast_tvnow();
 #ifdef SCHED_MAX_CACHE
-	ast_debug(1, "Asterisk Schedule Dump (%zu in Q, %u Total, %u Cache, %u high-water)\n", ast_heap_size(con->sched_heap), con->eventcnt - 1, con->schedccnt, con->highwater);
+	ast_log(LOG_DEBUG, "Asterisk Schedule Dump (%zu in Q, %u Total, %u Cache, %u high-water)\n",
+		ast_heap_size(con->sched_heap), con->eventcnt - 1, con->schedccnt, con->highwater);
 #else
-	ast_debug(1, "Asterisk Schedule Dump (%zu in Q, %u Total, %u high-water)\n", ast_heap_size(con->sched_heap), con->eventcnt - 1, con->highwater);
+	ast_log(LOG_DEBUG, "Asterisk Schedule Dump (%zu in Q, %u Total, %u high-water)\n",
+		ast_heap_size(con->sched_heap), con->eventcnt - 1, con->highwater);
 #endif
 
-	ast_debug(1, "=============================================================\n");
-	ast_debug(1, "|ID    Callback          Data              Time  (sec:ms)   |\n");
-	ast_debug(1, "+-----+-----------------+-----------------+-----------------+\n");
+	ast_log(LOG_DEBUG, "=============================================================\n");
+	ast_log(LOG_DEBUG, "|ID    Callback          Data              Time  (sec:ms)   |\n");
+	ast_log(LOG_DEBUG, "+-----+-----------------+-----------------+-----------------+\n");
 	ast_mutex_lock(&con->lock);
 	heap_size = ast_heap_size(con->sched_heap);
 	for (x = 1; x <= heap_size; x++) {
 		struct timeval delta;
 		q = ast_heap_peek(con->sched_heap, x);
 		delta = ast_tvsub(q->when, when);
-		ast_debug(1, "|%.4d | %-15p | %-15p | %.6ld : %.6ld |\n",
+		ast_log(LOG_DEBUG, "|%.4d | %-15p | %-15p | %.6ld : %.6ld |\n",
 			q->sched_id->id,
 			q->callback,
 			q->data,
@@ -739,7 +746,7 @@ void ast_sched_dump(struct ast_sched_context *con)
 			(long int)delta.tv_usec);
 	}
 	ast_mutex_unlock(&con->lock);
-	ast_debug(1, "=============================================================\n");
+	ast_log(LOG_DEBUG, "=============================================================\n");
 }
 
 /*! \brief
@@ -779,6 +786,7 @@ int ast_sched_runq(struct ast_sched_context *con)
 		 */
 
 		con->currently_executing = current;
+		con->executing_thread_id = pthread_self();
 		ast_mutex_unlock(&con->lock);
 		res = current->callback(current->data);
 		ast_mutex_lock(&con->lock);
@@ -790,11 +798,8 @@ int ast_sched_runq(struct ast_sched_context *con)
 			 * If they return non-zero, we should schedule them to be
 			 * run again.
 			 */
-			if (sched_settime(&current->when, current->variable? res : current->resched)) {
-				sched_release(con, current);
-			} else {
-				schedule(con, current);
-			}
+			sched_settime(&current->when, current->variable ? res : current->resched);
+			schedule(con, current);
 		} else {
 			/* No longer needed, so release it */
 			sched_release(con, current);

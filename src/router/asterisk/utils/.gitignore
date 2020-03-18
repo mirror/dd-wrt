@@ -3,6 +3,7 @@ aelparse
 aelparse.c
 ast_expr2.c
 ast_expr2f.c
+astmm.c
 astman
 astcanary
 astdb2bdb
@@ -23,3 +24,4 @@ stereorize
 strcompat.c
 streamplayer
 threadstorage.c
+conf_bridge_binaural_hrir_importer

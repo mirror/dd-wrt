@@ -8,7 +8,7 @@ Create Date: 2014-10-13 13:46:24.474675
 
 # revision identifiers, used by Alembic.
 revision = '371a3bf4143e'
-down_revision = 'eb88a14f2a'
+down_revision = '10aedae86a32'
 
 from alembic import op
 import sqlalchemy as sa
@@ -27,4 +27,6 @@ def upgrade():
     op.add_column('ps_endpoints', sa.Column('user_eq_phone', yesno_values))
 
 def downgrade():
+    if op.get_context().bind.dialect.name == 'mssql':
+        op.drop_constraint('ck_ps_endpoints_user_eq_phone_yesno_values','ps_endpoints')
     op.drop_column('ps_endpoints', 'user_eq_phone')

@@ -20,17 +20,15 @@
  * \brief Trivial application to read an extension into a variable
  *
  * \author David Chappell <David.Chappell@trincoll.edu>
- * 
+ *
  * \ingroup applications
  */
 
 /*** MODULEINFO
 	<support_level>core</support_level>
  ***/
- 
-#include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
+#include "asterisk.h"
 
 #include "asterisk/file.h"
 #include "asterisk/pbx.h"
@@ -64,6 +62,10 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 					</option>
 					<option name="n">
 						<para>Read digits even if the channel is not answered.</para>
+					</option>
+					<option name="p">
+						<para>The extension entered will be considered complete when a <literal>#</literal>
+						is entered.</para>
 					</option>
 				</optionlist>
 			</parameter>
@@ -102,12 +104,14 @@ enum readexten_option_flags {
 	OPT_SKIP = (1 << 0),
 	OPT_INDICATION = (1 << 1),
 	OPT_NOANSWER = (1 << 2),
+	OPT_POUND_TO_END = (1 << 3),
 };
 
 AST_APP_OPTIONS(readexten_app_options, {
 	AST_APP_OPTION('s', OPT_SKIP),
 	AST_APP_OPTION('i', OPT_INDICATION),
 	AST_APP_OPTION('n', OPT_NOANSWER),
+	AST_APP_OPTION('p', OPT_POUND_TO_END),
 });
 
 static char *app = "ReadExten";
@@ -166,8 +170,7 @@ static int readexten_exec(struct ast_channel *chan, const char *data)
 	if (timeout <= 0)
 		timeout = ast_channel_pbx(chan) ? ast_channel_pbx(chan)->rtimeoutms : 10000;
 
-	if (digit_timeout <= 0)
-		digit_timeout = ast_channel_pbx(chan) ? ast_channel_pbx(chan)->dtimeoutms : 5000;
+	digit_timeout = ast_channel_pbx(chan) ? ast_channel_pbx(chan)->dtimeoutms : 5000;
 
 	if (ast_test_flag(&flags, OPT_INDICATION) && !ast_strlen_zero(arglist.filename)) {
 		ts = ast_get_indication_tone(ast_channel_zone(chan), arglist.filename);
@@ -225,6 +228,11 @@ static int readexten_exec(struct ast_channel *chan, const char *data)
 					pbx_builtin_setvar_helper(chan, arglist.variable, "t");
 					status = "TIMEOUT";
 				}
+				break;
+			}
+
+			if (ast_test_flag(&flags, OPT_POUND_TO_END) && res == '#') {
+				exten[x] = 0;
 				break;
 			}
 

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Function_CONFBRIDGE</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Functions_42010713.html">Asterisk 17 Dialplan Functions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Function_CONFBRIDGE
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Function_CONFBRIDGE-CONFBRIDGE()">CONFBRIDGE()</h1>
+
+<h3 id="Asterisk17Function_CONFBRIDGE-Synopsis">Synopsis</h3>
+
+<p>Set a custom dynamic bridge, user, or menu profile on a channel for the ConfBridge application using the same options available in confbridge.conf.</p>
+
+<h3 id="Asterisk17Function_CONFBRIDGE-Description">Description</h3>
+
+<p>A custom profile uses the default profile type settings defined in <code>confbridge.conf</code> as defaults if the profile template is not explicitly specified first.</p>
+
+<p>For <code>bridge</code> profiles the default template is <code>default_bridge</code>.</p>
+
+<p>For <code>menu</code> profiles the default template is <code>default_menu</code>.</p>
+
+<p>For <code>user</code> profiles the default template is <code>default_user</code>.</p>
+
+<p>---- Example 1 ----</p>
+
+<p>In this example the custom user profile set on the channel will automatically be used by the ConfBridge application.</p>
+
+<p>exten =&gt; 1,1,Answer()</p>
+
+<p>; In this example the effect of the following line is</p>
+
+<p>; implied:</p>
+
+<p>; same =&gt; n,Set(CONFBRIDGE(user,template)=default_user)</p>
+
+<p>same =&gt; n,Set(CONFBRIDGE(user,announce_join_leave)=yes)</p>
+
+<p>same =&gt; n,Set(CONFBRIDGE(user,startmuted)=yes)</p>
+
+<p>same =&gt; n,ConfBridge(1)</p>
+
+<p>---- Example 2 ----</p>
+
+<p>This example shows how to use a predefined user profile in <code>confbridge.conf</code> as a template for a dynamic profile. Here we make an admin/marked user out of the <code>my_user</code> profile that you define in <code>confbridge.conf</code>.</p>
+
+<p>exten =&gt; 1,1,Answer()</p>
+
+<p>same =&gt; n,Set(CONFBRIDGE(user,template)=my_user)</p>
+
+<p>same =&gt; n,Set(CONFBRIDGE(user,admin)=yes)</p>
+
+<p>same =&gt; n,Set(CONFBRIDGE(user,marked)=yes)</p>
+
+<p>same =&gt; n,ConfBridge(1)</p>
+
+
+<h3 id="Asterisk17Function_CONFBRIDGE-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>CONFBRIDGE(type,option)</pre>
+</div></div>
+
+<h5 id="Asterisk17Function_CONFBRIDGE-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>type</code> - To what type of conference profile the option applies.
+	<ul>
+		<li><code>bridge</code></li>
+		<li><code>menu</code></li>
+		<li><code>user</code></li>
+	</ul>
+	</li>
+	<li><code>option</code> - Option refers to a <code>confbridge.conf</code> option that is being set dynamically on this channel, or <code>clear</code> to remove already applied profile options from the channel.</li>
+</ul>
+
+
+<h3 id="Asterisk17Function_CONFBRIDGE-SeeAlso">See Also</h3>
+
+
+<h3 id="Asterisk17Function_CONFBRIDGE-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

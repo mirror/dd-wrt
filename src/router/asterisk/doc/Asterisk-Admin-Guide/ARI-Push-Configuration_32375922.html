@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : ARI Push Configuration</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="29395573.html">Asterisk REST Interface (ARI)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="The-Asterisk-Resource_32375920.html">The Asterisk Resource</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : ARI Push Configuration
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified on Jul 17, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-right-sidebar" data-layout="two-right-sidebar">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="ARIPushConfiguration-Overview">Overview</h1><p>Asterisk typically retrieves its configuration information by <em>pulling</em> it from some configuration source - whether that be a static configuration file or a relational database. This page describes an alternative way to provide configuration information to Asterisk using a <em>push</em> model through ARI. Note that only modules whose configuration is managed by the <a href="Sorcery_27200342.html">Sorcery</a> data abstraction framework in Asterisk can make use of this mechanism. Predominately, this implies configuration of the <a href="Configuring-res_pjsip_25919621.html">PJSIP</a> stack.</p><p> </p></div>
+</div>
+<div class="cell aside" data-type="aside">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303093577 {padding: 0px;}
+div.rbtoc1582303093577 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303093577 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303093577'>
+<ul class='toc-indentation'>
+<li><a href='#ARIPushConfiguration-Overview'>Overview</a></li>
+<li><a href='#ARIPushConfiguration-PushConfigurationWorkflow'>Push Configuration Workflow</a></li>
+<li><a href='#ARIPushConfiguration-AsteriskConfiguration'>Asterisk Configuration                        </a></li>
+<li><a href='#ARIPushConfiguration-PushingPJSIPConfiguration'>Pushing PJSIP Configuration</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIPushConfiguration-OriginalPJSIPConfiguration'>Original PJSIP Configuration</a></li>
+<li><a href='#ARIPushConfiguration-NewConfiguration'>New Configuration</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIPushConfiguration-PJSIP'>PJSIP</a></li>
+<li><a href='#ARIPushConfiguration-Sorcery'>Sorcery</a></li>
+<li><a href='#ARIPushConfiguration-AsteriskCLI'>Asterisk CLI</a></li>
+</ul>
+</li>
+<li><a href='#ARIPushConfiguration-PushingConfiguration'>Pushing Configuration</a></li>
+<li><a href='#ARIPushConfiguration-DeletingConfiguration'>Deleting Configuration</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>Version Information</b></div><div class="panelContent">
+<div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>This feature was introduced in ARI version 1.8.0, or Asterisk 13.5.0 or later.</p>
+                    </div>
+    </div>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="ARIPushConfiguration-PushConfigurationWorkflow">Push Configuration Workflow</h1><p>
+
+<map id="gliffy-map-32735300-1666" name="gliffy-map-32735300-1666"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 350px;" usemap="#gliffy-map-32735300-1666" src="attachments/32375922/32735301.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p></div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<p>With push configuration, an external process uses ARI to perform a configuration operation. The configuration operation could be any one of the four classic operations for persistent storage - <a href="https://en.wikipedia.org/wiki/Create,_read,_update_and_delete" class="external-link" rel="nofollow">Create, Retrieve, Update, or Delete</a>. For the purposes of this workflow, we'll assume that the operation is to create a configuration change in Asterisk.</p><p>The ARI client makes a <code>PUT</code> request, where the body contains the configuration object to create, encoded in JSON. This is first handled by ARI, which performs basic validation on the inbound request and its contents. Once the request is validated, ARI asks the Sorcery framework to create the actual object.</p><p>Sorcery requires three pieces of information, at a minimum, to create an object:</p><ul><li>The overall class of configuration types. This is usually a module or namespace that provides multiple types of objects to be created, e.g., 'res_pjsip'.</li><li>The type of configuration object to create, e.g., 'endpoint'.</li><li>A unique identifier (amongst objects of the same type) for the object, e.g., 'alice'.</li></ul><p>Once Sorcery has determined that it knows how to create the type of object, it creates it using the provided data in the JSON body. If some piece of data in the body can't be converted to an attribute on the object, the inbound request is rejected.</p><p>If the object is created successfully, Sorcery then has to determine what to do with it. While we've just had a piece of configuration pushed to Asterisk, Sorcery is responsible for storing it in some permanent - or semi-permanent - storage. For this, it looks to its configuration in <code>sorcery.conf</code>. We'll assume that our object should be created in the AstDB, a SQLite database. In that case, Asterisk pushes the newly created object to <code>res_sorcery_astdb</code>, which is the Sorcery driver for the AstDB. This module then writes the information to the SQLite database.</p><p>When the PJSIP stack next needs the object - such as when an <code>INVITE</code> request is received that maps to Alice's endpoint - it queries Sorcery for the object. At this point, from Sorcery's perspective, the retrieval of the configuration information is exactly the same as if a static configuration file or a relational database was providing the information, and it returns the pushed configuration information.</p></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="ARIPushConfiguration-AsteriskConfiguration">Asterisk Configuration                        </h1><p>To make use of push configuration, you <strong>must</strong> configure Sorcery to persist the pushed configuration somewhere. If you don't want the information to persist beyond reloads, you can use the in-memory Sorcery driver, <code>res_sorcery_memory</code>. The example below assumes that we will push configuration to the PJSIP stack, and that we want information to persist even if Asterisk is restarted. For that reason, we'll use the AstDB.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>sorcery.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[res_pjsip]                                                                                                                                                         
+endpoint=astdb,ps_endpoints
+auth=astdb,ps_auths
+aor=astdb,ps_aors
+domain_alias=astdb,ps_domain_aliases
+contact=astdb,ps_contacts
+system=astdb,ps_systems
+
+[res_pjsip_endpoint_identifier_ip]
+identify=astdb,ps_endpoint_id_ips
+
+[res_pjsip_outbound_registration]
+registration=astdb,ps_registrations                                           </pre>
+</div></div>    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>You <strong>must</strong> configure <code>sorcery.conf</code> for this feature to work. The standard data provider Sorcery uses for PJSIP objects is the static configuration file driver. This driver does not support creation, updating, or deletion of objects - which means only the <code>GET</code> request will succeed. Any of the following drivers will work to support push configuration:</p><ul><li><code>res_sorcery_memory</code></li><li><code>res_sorcery_astdb</code></li><li><code>res_sorcery_realtime</code></li></ul>
+                    </div>
+    </div>
+</div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="ARIPushConfiguration-PushingPJSIPConfiguration">Pushing PJSIP Configuration</h1><p>This walk-through will show how we can use the <code>asterisk</code> resource in ARI to push a PJSIP endpoint into the AstDB, and then later remove the endpoint.</p><h2 id="ARIPushConfiguration-OriginalPJSIPConfiguration">Original PJSIP Configuration</h2><p>Assume we have the following static PJSIP configuration file that defines an endpoint for Alice:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>pjsip.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[transport-udp]
+type=transport
+protocol=udp
+bind=0.0.0.0:5060
+
+[transport-tcp]
+type=transport
+protocol=tcp
+bind=0.0.0.0:5060
+
+[alice]
+type=aor
+support_path=yes
+remove_existing=yes
+max_contacts=1
+
+[alice]
+type=auth
+auth_type=userpass
+username=alice
+password=secret
+
+[alice]
+type=endpoint
+from_user=alice
+allow=!all,g722,ulaw,alaw
+ice_support=yes
+force_rport=yes
+rewrite_contact=yes
+rtp_symmetric=yes
+context=default
+auth=alice
+aors=alice</pre>
+</div></div><p>If we then ask Asterisk what endpoints we have, it will show us something like the following:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Asterisk CLI</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">*CLI&gt; pjsip show endpoints
+ Endpoint:  &lt;Endpoint/CID.....................................&gt;  &lt;State.....&gt;  &lt;Channels.&gt;
+    I/OAuth:  &lt;AuthId/UserName...........................................................&gt;
+        Aor:  &lt;Aor............................................&gt;  &lt;MaxContact&gt;
+      Contact:  &lt;Aor/ContactUri...............................&gt;  &lt;Status....&gt;  &lt;RTT(ms)..&gt;
+  Transport:  &lt;TransportId........&gt;  &lt;Type&gt;  &lt;cos&gt;  &lt;tos&gt;  &lt;BindAddress..................&gt;
+   Identify:  &lt;Identify/Endpoint.........................................................&gt;
+        Match:  &lt;ip/cidr.........................&gt;
+    Channel:  &lt;ChannelId......................................&gt;  &lt;State.....&gt;  &lt;Time(sec)&gt;
+        Exten: &lt;DialedExten...........&gt;  CLCID: &lt;ConnectedLineCID.......&gt;
+ =========================================================================================
+ Endpoint:  alice                                                Unavailable   0 of inf
+     InAuth:  alice/alice
+        Aor:  alice                                              1
+*CLI&gt; </pre>
+</div></div><p><strong>Our goal is to recreate alice, using ARI.</strong></p><h2 id="ARIPushConfiguration-NewConfiguration">New Configuration</h2><h3 id="ARIPushConfiguration-PJSIP">PJSIP</h3><p>Remove Alice from <code>pjsip.conf</code>:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>pjsip.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[transport-udp]
+type=transport
+protocol=udp
+bind=0.0.0.0:5060
+
+[transport-tcp]
+type=transport
+protocol=tcp
+bind=0.0.0.0:5060
+</pre>
+</div></div><h3 id="ARIPushConfiguration-Sorcery">Sorcery</h3><p>Tell the Sorcery data abstraction framework to pull <em>endpoint</em>, <em>aor</em>, and <em>auth</em> objects from the Asterisk Database:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>sorcery.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[res_pjsip]
+endpoint=astdb,ps_endpoints
+auth=astdb,ps_auths
+aor=astdb,ps_aors</pre>
+</div></div><h3 id="ARIPushConfiguration-AsteriskCLI">Asterisk CLI</h3><p>Now, if we ask Asterisk for the PJSIP endpoints, it will tell us none are defined:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Asterisk CLI</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: false" style="font-size:12px;">*CLI&gt; pjsip show endpoints
+No objects found.</pre>
+</div></div><h2 id="ARIPushConfiguration-PushingConfiguration">Pushing Configuration</h2><p>First, let's push in Alice's authentication:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ curl -X PUT -H &quot;Content-Type: application/json&quot; -u asterisk:secret -d &#39;{&quot;fields&quot;: [ { &quot;attribute&quot;: &quot;auth_type&quot;, &quot;value&quot;: &quot;userpass&quot;}, {&quot;attribute&quot;: &quot;username&quot;, &quot;value&quot;: &quot;alice&quot;}, {&quot;attribute&quot;: &quot;password&quot;, &quot;value&quot;: &quot;secret&quot; } ] }&#39; https://localhost:8088/ari/asterisk/config/dynamic/res_pjsip/auth/alice
+
+[{&quot;attribute&quot;:&quot;md5_cred&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;realm&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;auth_type&quot;,&quot;value&quot;:&quot;userpass&quot;},{&quot;attribute&quot;:&quot;password&quot;,&quot;value&quot;:&quot;secret&quot;},{&quot;attribute&quot;:&quot;nonce_lifetime&quot;,&quot;value&quot;:&quot;32&quot;},{&quot;attribute&quot;:&quot;username&quot;,&quot;value&quot;:&quot;alice&quot;}]</pre>
+</div></div><p>We can note a few things from this:</p><ol><li>We supply the non-default values that make up Alice's authentication in the JSON body of the request. The body specifies the &quot;fields&quot; to update, which is a list of attributes to modify on the object we're creating.</li><li>We don't have to provide default values for the object. This includes the &quot;type&quot; attribute - ARI is smart enough to figure out what that is from the request URI, where we specify that we are creating an &quot;auth&quot; object.</li><li>When we've created the object successfully, ARI returns back all the attributes that make up that object as a list of attribute/value pairs - even the attributes we didn't specify.</li></ol><p>Next, we can push in Alice's AoRs:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ curl -X PUT -H &quot;Content-Type: application/json&quot; -u asterisk:secret -d &#39;{&quot;fields&quot;: [ { &quot;attribute&quot;: &quot;support_path&quot;, &quot;value&quot;: &quot;yes&quot;}, {&quot;attribute&quot;: &quot;remove_existing&quot;, &quot;value&quot;: &quot;yes&quot;}, {&quot;attribute&quot;: &quot;max_contacts&quot;, &quot;value&quot;: &quot;1&quot;} ] }&#39; https://localhost:8088/ari/asterisk/config/dynamic/res_pjsip/aor/alice
+
+[{&quot;attribute&quot;:&quot;support_path&quot;,&quot;value&quot;:&quot;true&quot;},{&quot;attribute&quot;:&quot;default_expiration&quot;,&quot;value&quot;:&quot;3600&quot;},{&quot;attribute&quot;:&quot;qualify_timeout&quot;,&quot;value&quot;:&quot;3.000000&quot;},{&quot;attribute&quot;:&quot;mailboxes&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;minimum_expiration&quot;,&quot;value&quot;:&quot;60&quot;},{&quot;attribute&quot;:&quot;outbound_proxy&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;maximum_expiration&quot;,&quot;value&quot;:&quot;7200&quot;},{&quot;attribute&quot;:&quot;qualify_frequency&quot;,&quot;value&quot;:&quot;0&quot;},{&quot;attribute&quot;:&quot;authenticate_qualify&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;contact&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;max_contacts&quot;,&quot;value&quot;:&quot;1&quot;},{&quot;attribute&quot;:&quot;remove_existing&quot;,&quot;value&quot;:&quot;true&quot;}]</pre>
+</div></div><p>Finally, we can push in Alice's endpoint:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ curl -X PUT -H &quot;Content-Type: application/json&quot; -u asterisk:secret -d &#39;{&quot;fields&quot;: [ { &quot;attribute&quot;: &quot;from_user&quot;, &quot;value&quot;: &quot;alice&quot; }, { &quot;attribute&quot;: &quot;allow&quot;, &quot;value&quot;: &quot;!all,g722,ulaw,alaw&quot;}, {&quot;attribute&quot;: &quot;ice_support&quot;, &quot;value&quot;: &quot;yes&quot;}, {&quot;attribute&quot;: &quot;force_rport&quot;, &quot;value&quot;: &quot;yes&quot;}, {&quot;attribute&quot;: &quot;rewrite_contact&quot;, &quot;value&quot;: &quot;yes&quot;}, {&quot;attribute&quot;: &quot;rtp_symmetric&quot;, &quot;value&quot;: &quot;yes&quot;}, {&quot;attribute&quot;: &quot;context&quot;, &quot;value&quot;: &quot;default&quot; }, {&quot;attribute&quot;: &quot;auth&quot;, &quot;value&quot;: &quot;alice&quot; }, {&quot;attribute&quot;: &quot;aors&quot;, &quot;value&quot;: &quot;alice&quot;} ] }&#39; https://localhost:8088/ari/asterisk/config/dynamic/res_pjsip/endpoint/alice
+
+[{&quot;attribute&quot;:&quot;timers_sess_expires&quot;,&quot;value&quot;:&quot;1800&quot;},{&quot;attribute&quot;:&quot;device_state_busy_at&quot;,&quot;value&quot;:&quot;0&quot;},{&quot;attribute&quot;:&quot;dtls_cipher&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;from_domain&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;dtls_rekey&quot;,&quot;value&quot;:&quot;0&quot;},{&quot;attribute&quot;:&quot;dtls_fingerprint&quot;,&quot;value&quot;:&quot;SHA-256&quot;},{&quot;attribute&quot;:&quot;direct_media_method&quot;,&quot;value&quot;:&quot;invite&quot;},{&quot;attribute&quot;:&quot;send_rpid&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;pickup_group&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;sdp_session&quot;,&quot;value&quot;:&quot;Asterisk&quot;},{&quot;attribute&quot;:&quot;dtls_verify&quot;,&quot;value&quot;:&quot;No&quot;},{&quot;attribute&quot;:&quot;message_context&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;mailboxes&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;named_pickup_group&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;record_on_feature&quot;,&quot;value&quot;:&quot;automixmon&quot;},{&quot;attribute&quot;:&quot;dtls_private_key&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;named_call_group&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;t38_udptl_maxdatagram&quot;,&quot;value&quot;:&quot;0&quot;},{&quot;attribute&quot;:&quot;media_encryption_optimistic&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;aors&quot;,&quot;value&quot;:&quot;alice&quot;},{&quot;attribute&quot;:&quot;rpid_immediate&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;outbound_proxy&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;identify_by&quot;,&quot;value&quot;:&quot;username&quot;},{&quot;attribute&quot;:&quot;inband_progress&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;rtp_symmetric&quot;,&quot;value&quot;:&quot;true&quot;},{&quot;attribute&quot;:&quot;transport&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;t38_udptl_ec&quot;,&quot;value&quot;:&quot;none&quot;},{&quot;attribute&quot;:&quot;fax_detect&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;t38_udptl_nat&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;allow_transfer&quot;,&quot;value&quot;:&quot;true&quot;},{&quot;attribute&quot;:&quot;tos_video&quot;,&quot;value&quot;:&quot;0&quot;},{&quot;attribute&quot;:&quot;srtp_tag_32&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;timers_min_se&quot;,&quot;value&quot;:&quot;90&quot;},{&quot;attribute&quot;:&quot;call_group&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;sub_min_expiry&quot;,&quot;value&quot;:&quot;0&quot;},{&quot;attribute&quot;:&quot;100rel&quot;,&quot;value&quot;:&quot;yes&quot;},{&quot;attribute&quot;:&quot;direct_media&quot;,&quot;value&quot;:&quot;true&quot;},{&quot;attribute&quot;:&quot;g726_non_standard&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;dtmf_mode&quot;,&quot;value&quot;:&quot;rfc4733&quot;},{&quot;attribute&quot;:&quot;dtls_cert_file&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;media_encryption&quot;,&quot;value&quot;:&quot;no&quot;},{&quot;attribute&quot;:&quot;media_use_received_transport&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;direct_media_glare_mitigation&quot;,&quot;value&quot;:&quot;none&quot;},{&quot;attribute&quot;:&quot;trust_id_inbound&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;force_avp&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;record_off_feature&quot;,&quot;value&quot;:&quot;automixmon&quot;},{&quot;attribute&quot;:&quot;send_diversion&quot;,&quot;value&quot;:&quot;true&quot;},{&quot;attribute&quot;:&quot;language&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;mwi_from_user&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;rtp_ipv6&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;ice_support&quot;,&quot;value&quot;:&quot;true&quot;},{&quot;attribute&quot;:&quot;callerid&quot;,&quot;value&quot;:&quot;&lt;unknown&gt;&quot;},{&quot;attribute&quot;:&quot;aggregate_mwi&quot;,&quot;value&quot;:&quot;true&quot;},{&quot;attribute&quot;:&quot;one_touch_recording&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;moh_passthrough&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;cos_video&quot;,&quot;value&quot;:&quot;0&quot;},{&quot;attribute&quot;:&quot;accountcode&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;allow&quot;,&quot;value&quot;:&quot;(g722|ulaw|alaw)&quot;},{&quot;attribute&quot;:&quot;rewrite_contact&quot;,&quot;value&quot;:&quot;true&quot;},{&quot;attribute&quot;:&quot;t38_udptl_ipv6&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;tone_zone&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;user_eq_phone&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;allow_subscribe&quot;,&quot;value&quot;:&quot;true&quot;},{&quot;attribute&quot;:&quot;rtp_engine&quot;,&quot;value&quot;:&quot;asterisk&quot;},{&quot;attribute&quot;:&quot;auth&quot;,&quot;value&quot;:&quot;alice&quot;},{&quot;attribute&quot;:&quot;from_user&quot;,&quot;value&quot;:&quot;alice&quot;},{&quot;attribute&quot;:&quot;disable_direct_media_on_nat&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;set_var&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;use_ptime&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;outbound_auth&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;media_address&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;tos_audio&quot;,&quot;value&quot;:&quot;0&quot;},{&quot;attribute&quot;:&quot;dtls_ca_path&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;dtls_setup&quot;,&quot;value&quot;:&quot;active&quot;},{&quot;attribute&quot;:&quot;force_rport&quot;,&quot;value&quot;:&quot;true&quot;},{&quot;attribute&quot;:&quot;connected_line_method&quot;,&quot;value&quot;:&quot;invite&quot;},{&quot;attribute&quot;:&quot;callerid_tag&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;timers&quot;,&quot;value&quot;:&quot;yes&quot;},{&quot;attribute&quot;:&quot;sdp_owner&quot;,&quot;value&quot;:&quot;-&quot;},{&quot;attribute&quot;:&quot;trust_id_outbound&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;use_avpf&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;context&quot;,&quot;value&quot;:&quot;default&quot;},{&quot;attribute&quot;:&quot;moh_suggest&quot;,&quot;value&quot;:&quot;default&quot;},{&quot;attribute&quot;:&quot;send_pai&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;t38_udptl&quot;,&quot;value&quot;:&quot;false&quot;},{&quot;attribute&quot;:&quot;dtls_ca_file&quot;,&quot;value&quot;:&quot;&quot;},{&quot;attribute&quot;:&quot;callerid_privacy&quot;,&quot;value&quot;:&quot;allowed_not_screened&quot;},{&quot;attribute&quot;:&quot;cos_audio&quot;,&quot;value&quot;:&quot;0&quot;}]</pre>
+</div></div><p>We can now verify that Alice's endpoint exists:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Asterisk CLI</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: false" style="font-size:12px;">*CLI&gt; pjsip show endpoints
+ Endpoint:  &lt;Endpoint/CID.....................................&gt;  &lt;State.....&gt;  &lt;Channels.&gt;
+    I/OAuth:  &lt;AuthId/UserName...........................................................&gt;
+        Aor:  &lt;Aor............................................&gt;  &lt;MaxContact&gt;
+      Contact:  &lt;Aor/ContactUri...............................&gt;  &lt;Status....&gt;  &lt;RTT(ms)..&gt;
+  Transport:  &lt;TransportId........&gt;  &lt;Type&gt;  &lt;cos&gt;  &lt;tos&gt;  &lt;BindAddress..................&gt;
+   Identify:  &lt;Identify/Endpoint.........................................................&gt;
+        Match:  &lt;ip/cidr.........................&gt;
+    Channel:  &lt;ChannelId......................................&gt;  &lt;State.....&gt;  &lt;Time(sec)&gt;
+        Exten: &lt;DialedExten...........&gt;  CLCID: &lt;ConnectedLineCID.......&gt;
+ =========================================================================================
+ Endpoint:  alice/unknown                                        Invalid       0 of inf
+     InAuth:  alice/alice
+        Aor:  alice                                              1</pre>
+</div></div>    <div class="aui-message warning shadowed information-macro">
+                    <p class="title">Order Matters!</p>
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p> While ARI itself won't care about the order you create objects in, PJSIP will. A PJSIP endpoint is used to look-up the endpoint's authentication and AoRs. Asterisk and ARI will let you create the endpoint first, referencing an authentication and AoR object that don't yet exist. If an inbound request arrives for that endpoint, the request will be rejected because the endpoint won't be able to find the authentication or store the Contact on a REGISTER request! By creating things in the order that we did, we can guarantee that everything will be in place when the endpoint is instantiated.</p>
+                    </div>
+    </div>
+<p>We can also verify that Alice exists in the AstDB:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Asterisk CLI</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: false" style="font-size:12px;">*CLI&gt; database show
+/ps_aors/aor/alice                                : {&quot;qualify_frequency&quot;:&quot;0&quot;,&quot;maximum_expiration&quot;:&quot;7200&quot;,&quot;minimum_expiration&quot;:&quot;60&quot;,&quot;qualify_timeout&quot;:&quot;3.000000&quot;,&quot;support_path&quot;:&quot;true&quot;,&quot;default_expiration&quot;:&quot;3600&quot;,&quot;mailboxes&quot;:&quot;&quot;,&quot;authenticate_qualify&quot;:&quot;false&quot;,&quot;outbound_proxy&quot;:&quot;&quot;,&quot;max_contacts&quot;:&quot;1&quot;,&quot;remove_existing&quot;:&quot;true&quot;}
+/ps_auths/auth/alice                              : {&quot;realm&quot;:&quot;&quot;,&quot;md5_cred&quot;:&quot;&quot;,&quot;nonce_lifetime&quot;:&quot;32&quot;,&quot;auth_type&quot;:&quot;userpass&quot;,&quot;password&quot;:&quot;secret&quot;,&quot;username&quot;:&quot;alice&quot;}
+/ps_endpoints/endpoint/alice                      : {&quot;send_diversion&quot;:&quot;true&quot;,&quot;device_state_busy_at&quot;:&quot;0&quot;,&quot;direct_media_method&quot;:&quot;invite&quot;,&quot;sdp_owner&quot;:&quot;-&quot;,&quot;pickup_group&quot;:&quot;&quot;,&quot;timers_sess_expires&quot;:&quot;1800&quot;,&quot;message_context&quot;:&quot;&quot;,&quot;accountcode&quot;:&quot;&quot;,&quot;dtls_fingerprint&quot;:&quot;SHA-256&quot;,&quot;rpid_immediate&quot;:&quot;false&quot;,&quot;force_avp&quot;:&quot;false&quot;,&quot;aors&quot;:&quot;alice&quot;,&quot;trust_id_inbound&quot;:&quot;false&quot;,&quot;ice_support&quot;:&quot;true&quot;,&quot;fax_detect&quot;:&quot;false&quot;,&quot;outbound_proxy&quot;:&quot;&quot;,&quot;t38_udptl_maxdatagram&quot;:&quot;0&quot;,&quot;direct_media_glare_mitigation&quot;:&quot;none&quot;,&quot;dtls_rekey&quot;:&quot;0&quot;,&quot;context&quot;:&quot;default&quot;,&quot;media_encryption_optimistic&quot;:&quot;false&quot;,&quot;named_pickup_group&quot;:&quot;&quot;,&quot;from_domain&quot;:&quot;&quot;,&quot;mailboxes&quot;:&quot;&quot;,&quot;sdp_session&quot;:&quot;Asterisk&quot;,&quot;cos_video&quot;:&quot;0&quot;,&quot;identify_by&quot;:&quot;username&quot;,&quot;t38_udptl&quot;:&quot;false&quot;,&quot;send_rpid&quot;:&quot;false&quot;,&quot;rtp_engine&quot;:&quot;asterisk&quot;,&quot;t38_udptl_ec&quot;:&quot;none&quot;,&quot;dtls_verify&quot;:&quot;No&quot;,&quot;aggregate_mwi&quot;:&quot;true&quot;,&quot;moh_suggest&quot;:&quot;default&quot;,&quot;media_encryption&quot;:&quot;no&quot;,&quot;callerid&quot;:&quot;&lt;unknown&gt;&quot;,&quot;named_call_group&quot;:&quot;&quot;,&quot;record_on_feature&quot;:&quot;automixmon&quot;,&quot;dtls_setup&quot;:&quot;active&quot;,&quot;inband_progress&quot;:&quot;false&quot;,&quot;timers_min_se&quot;:&quot;90&quot;,&quot;tos_video&quot;:&quot;0&quot;,&quot;rtp_symmetric&quot;:&quot;true&quot;,&quot;rtp_ipv6&quot;:&quot;false&quot;,&quot;transport&quot;:&quot;&quot;,&quot;t38_udptl_nat&quot;:&quot;false&quot;,&quot;connected_line_method&quot;:&quot;invite&quot;,&quot;allow_transfer&quot;:&quot;true&quot;,&quot;allow_subscribe&quot;:&quot;true&quot;,&quot;srtp_tag_32&quot;:&quot;false&quot;,&quot;g726_non_standard&quot;:&quot;false&quot;,&quot;100rel&quot;:&quot;yes&quot;,&quot;use_avpf&quot;:&quot;false&quot;,&quot;call_group&quot;:&quot;&quot;,&quot;moh_passthrough&quot;:&quot;false&quot;,&quot;user_eq_phone&quot;:&quot;false&quot;,&quot;allow&quot;:&quot;(g722|ulaw|alaw)&quot;,&quot;sub_min_expiry&quot;:&quot;0&quot;,&quot;force_rport&quot;:&quot;true&quot;,&quot;direct_media&quot;:&quot;true&quot;,&quot;dtmf_mode&quot;:&quot;rfc4733&quot;,&quot;media_use_received_transport&quot;:&quot;false&quot;,&quot;record_off_feature&quot;:&quot;automixmon&quot;,&quot;language&quot;:&quot;&quot;,&quot;mwi_from_user&quot;:&quot;&quot;,&quot;one_touch_recording&quot;:&quot;false&quot;,&quot;rewrite_contact&quot;:&quot;true&quot;,&quot;cos_audio&quot;:&quot;0&quot;,&quot;t38_udptl_ipv6&quot;:&quot;false&quot;,&quot;trust_id_outbound&quot;:&quot;false&quot;,&quot;tone_zone&quot;:&quot;&quot;,&quot;auth&quot;:&quot;alice&quot;,&quot;from_user&quot;:&quot;alice&quot;,&quot;disable_direct_media_on_nat&quot;:&quot;false&quot;,&quot;tos_audio&quot;:&quot;0&quot;,&quot;use_ptime&quot;:&quot;false&quot;,&quot;media_address&quot;:&quot;&quot;,&quot;timers&quot;:&quot;yes&quot;,&quot;send_pai&quot;:&quot;false&quot;,&quot;callerid_privacy&quot;:&quot;allowed_not_screened&quot;}
+3 results found.
+*CLI&gt; </pre>
+</div></div><h2 id="ARIPushConfiguration-DeletingConfiguration">Deleting Configuration</h2><p>If we no longer want Alice to have an endpoint, we can remove it and its related objects using the <code>DELETE</code> operation:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ curl -X DELETE -u asterisk:secret https://localhost:8088/ari/asterisk/config/dynamic/res_pjsip/endpoint/alice
+$ curl -X DELETE -u asterisk:secret https://localhost:8088/ari/asterisk/config/dynamic/res_pjsip/aor/alice
+$ curl -X DELETE -u asterisk:secret https://localhost:8088/ari/asterisk/config/dynamic/res_pjsip/auth/alice</pre>
+</div></div><p>And we can confirm that Alice no longer exists:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Asterisk CLI</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: false" style="font-size:12px;">*CLI&gt; pjsip show endpoints
+No objects found.
+*CLI&gt; database show
+0 results found.
+*CLI&gt;  </pre>
+</div></div>    <div class="aui-message warning shadowed information-macro">
+                    <p class="title">Order Matters!</p>
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p> Note that we remove Alice in reverse order of how her endpoint was created - we first remove the endpoint, then its related objects. Once the endpoint is removed, further requests will no longer be serviced, which allows us to safely remove the auth and aor objects.</p>
+                    </div>
+    </div>
+<p> </p><p> </p></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/32375922/32735300">ARI Push Configuration</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/32375922/32735301.png">ARI Push Configuration.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : res_pjsip Configuration Examples</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SIP_28314848.html">SIP</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-res_pjsip_25919621.html">Configuring res_pjsip</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : res_pjsip Configuration Examples
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified by <span class='editor'> Malcolm Davenport</span> on Apr 27, 2018
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><p>Below are some sample configurations to demonstrate various scenarios with complete pjsip.conf files. To see examples side by side with old chan_sip config head to <a href="Migrating-from-chan_sip-to-res_pjsip_30278068.html">Migrating from chan_sip to res_pjsip</a>. Explanations of the config sections found in each example can be found in <a href="PJSIP-Configuration-Sections-and-Relationships_30278064.html">PJSIP Configuration Sections and Relationships</a>.</p><p>A tutorial on secure and encrypted calling is located in the <a href="Secure-Calling_11338110.html">Secure Calling</a> section of the wiki.</p><h2 id="res_pjsipConfigurationExamples-AnendpointwithasingleSIPphonewithinboundregistrationtoAsterisk">An endpoint with a single SIP phone with inbound registration to Asterisk</h2>
+<div id="expander-1875075326" class="expand-container">
+<div id="expander-control-1875075326" class="expand-control">
+    <span class="expand-control-icon"><img style="vertical-align:middle;" class="expand-control-image" src="images/icons/grey_arrow_down.png"></span><span class="expand-control-text">EXAMPLE CONFIGURATION</span>
+</div>
+<div id="expander-content-1875075326" class="expand-content"><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">;===============TRANSPORT
+
+[simpletrans]
+type=transport
+protocol=udp
+bind=0.0.0.0
+
+;===============EXTENSION 6001
+
+[6001]
+type=endpoint
+context=internal
+disallow=all
+allow=ulaw
+auth=auth6001
+aors=6001
+
+[auth6001]
+type=auth
+auth_type=userpass
+password=6001
+username=6001
+
+[6001]
+type=aor
+max_contacts=1</pre>
+</div></div><ul><li>auth= is used for the endpoint as opposed to outbound_auth= since we want to allow inbound registration for this endpoint</li><li>max_contacts= is set to something non-zero as we want to allow contacts to be created through registration</li></ul><p> </p></div>
+</div>
+</div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302967880 {padding: 0px;}
+div.rbtoc1582302967880 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302967880 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302967880'>
+<ul class='toc-indentation'>
+<li><a href='#res_pjsipConfigurationExamples-AnendpointwithasingleSIPphonewithinboundregistrationtoAsterisk'>An endpoint with a single SIP phone with inbound registration to Asterisk</a></li>
+<li><a href='#res_pjsipConfigurationExamples-ASIPtrunktoyourserviceprovider,includingoutboundregistration'>A SIP trunk to your service provider, including outbound registration</a></li>
+<li><a href='#res_pjsipConfigurationExamples-MultipleendpointswithphonesregisteringtoAsterisk,usingtemplates'>Multiple endpoints with phones registering to Asterisk, using templates</a></li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><p> </p><h2 id="res_pjsipConfigurationExamples-ASIPtrunktoyourserviceprovider,includingoutboundregistration"><span style="line-height: 1.5;">A SIP trunk to your service provider, including outbound registration</span></h2>
+<div id="expander-449327169" class="expand-container">
+<div id="expander-control-449327169" class="expand-control">
+    <span class="expand-control-icon"><img style="vertical-align:middle;" class="expand-control-image" src="images/icons/grey_arrow_down.png"></span><span class="expand-control-text">EXAMPLE CONFIGURATION</span>
+</div>
+<div id="expander-content-449327169" class="expand-content"><p>Trunks are a little tricky since many providers have unique requirements. Your final configuration may differ from what you see here.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">;==============TRANSPORTS
+
+[simpletrans]
+type=transport
+protocol=udp
+bind=0.0.0.0
+
+;===============TRUNK
+
+[mytrunk]
+type=registration
+outbound_auth=mytrunk
+server_uri=sip:sip.example.com
+client_uri=sip:1234567890@sip.example.com
+retry_interval=60
+
+[mytrunk]
+type=auth
+auth_type=userpass
+password=1234567890
+username=1234567890
+
+[mytrunk]
+type=aor
+contact=sip:sip.example.com:5060
+
+[mytrunk]
+type=endpoint
+context=from-external
+disallow=all
+allow=ulaw
+outbound_auth=mytrunk
+aors=mytrunk
+
+[mytrunk]
+type=identify
+endpoint=mytrunk
+match=sip.example.com
+</pre>
+</div></div><ul><li><p>&quot;contact=sip:203.0.113.1:5060&quot;, we don't define the user portion statically since we'll set that dynamically in dialplan when we call the Dial application.<br />See the dialing examples in the section &quot;Dialing using chan_pjsip&quot; for more.</p></li><li><p>&quot;outbound_auth=mytrunk&quot;, we use &quot;outbound_auth&quot; instead of &quot;auth&quot; since the provider isn't typically going to authenticate with us when calling, but we will probably<br />have to authenticate when calling through them.</p></li><li>We use an identify object to map all traffic from the provider's IP as traffic to that endpoint since the user portion of their From: header may vary with each call.</li><li>This example assumes that <a href="http://sip.example.com" class="external-link" rel="nofollow">sip.example.com</a> resolves to 203.0.113.1</li></ul>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>You can specify the transport type by appending it to the server_uri and client_uri parameters. e.g.:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[mytrunk]
+type=registration
+outbound_auth=mytrunk
+server_uri=sip:sip.example.com\;transport=tcp
+client_uri=sip:1234567890@sip.example.com\;transport=tcp
+retry_interval=60</pre>
+</div></div>
+                    </div>
+    </div>
+</div>
+</div>
+<h2 id="res_pjsipConfigurationExamples-MultipleendpointswithphonesregisteringtoAsterisk,usingtemplates">Multiple endpoints with phones registering to Asterisk, using templates</h2>
+<div id="expander-1171313528" class="expand-container">
+<div id="expander-control-1171313528" class="expand-control">
+    <span class="expand-control-icon"><img style="vertical-align:middle;" class="expand-control-image" src="images/icons/grey_arrow_down.png"></span><span class="expand-control-text">EXAMPLE CONFIGURATION</span>
+</div>
+<div id="expander-content-1171313528" class="expand-content"><p>We want to show here that generally, with a large configuration you'll end up using templates to make configuration easier to handle when scaling. This avoids having redundant code in every similar section that you create.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;"> ;===============TRANSPORT
+
+[simpletrans]
+type=transport
+protocol=udp
+bind=0.0.0.0
+
+;===============ENDPOINT TEMPLATES
+
+[endpoint-basic](!)
+type=endpoint
+context=internal
+disallow=all
+allow=ulaw
+
+[auth-userpass](!)
+type=auth
+auth_type=userpass
+
+[aor-single-reg](!)
+type=aor
+max_contacts=1
+
+;===============EXTENSION 6001
+
+[6001](endpoint-basic)
+auth=auth6001
+aors=6001
+
+[auth6001](auth-userpass)
+password=6001
+username=6001
+
+[6001](aor-single-reg)
+
+;===============EXTENSION 6002
+
+[6002](endpoint-basic)
+auth=auth6002
+aors=6002
+
+[auth6002](auth-userpass)
+password=6002
+username=6002
+
+[6002](aor-single-reg)
+
+;===============EXTENSION 6003
+
+[6003](endpoint-basic)
+auth=auth6003
+aors=6003
+
+[auth6003](auth-userpass)
+password=6003
+username=6003
+
+[6003](aor-single-reg) </pre>
+</div></div><p>Obviously the larger your configuration is, the more templates will benefit you. Here we just break apart the endpoints with templates, but you could do that with any config section that needs instances with variation, but where each may share common settings with their peers.</p></div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

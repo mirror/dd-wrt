@@ -38,8 +38,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/file.h"
 #include "asterisk/channel.h"
 #include "asterisk/pbx.h"
@@ -74,6 +72,34 @@ static const char app_originate[] = "Originate";
 			<parameter name="timeout" required="false">
 				<para>Timeout in seconds. Default is 30 seconds.</para>
 			</parameter>
+			<parameter name="options" required="false">
+				<optionlist>
+				<option name="a">
+					<para>Originate asynchronously.  In other words, continue in the dialplan
+					without waiting for the originated channel to answer.</para>
+				</option>
+				<option name="b" argsep="^">
+					<para>Before originating the outgoing call, Gosub to the specified
+					location using the newly created channel.</para>
+					<argument name="context" required="false" />
+					<argument name="exten" required="false" />
+					<argument name="priority" required="true" hasparams="optional" argsep="^">
+						<argument name="arg1" multiple="true" required="true" />
+						<argument name="argN" />
+					</argument>
+				</option>
+				<option name="B" argsep="^">
+					<para>Before originating the outgoing call, Gosub to the specified
+					location using the current channel.</para>
+					<argument name="context" required="false" />
+					<argument name="exten" required="false" />
+					<argument name="priority" required="true" hasparams="optional" argsep="^">
+						<argument name="arg1" multiple="true" required="true" />
+						<argument name="argN" />
+					</argument>
+				</option>
+				</optionlist>
+			</parameter>
 		</syntax>
 		<description>
 		<para>This application originates an outbound call and connects it to a specified extension or application.  This application will block until the outgoing call fails or gets answered.  At that point, this application will exit with the status variable set and dialplan processing will continue.</para>
@@ -97,6 +123,27 @@ static const char app_originate[] = "Originate";
 	</application>
  ***/
 
+
+enum {
+	OPT_PREDIAL_CALLEE =    (1 << 0),
+	OPT_PREDIAL_CALLER =    (1 << 1),
+	OPT_ASYNC =             (1 << 2),
+};
+
+enum {
+	OPT_ARG_PREDIAL_CALLEE,
+	OPT_ARG_PREDIAL_CALLER,
+	/* note: this entry _MUST_ be the last one in the enum */
+	OPT_ARG_ARRAY_SIZE,
+};
+
+AST_APP_OPTIONS(originate_exec_options, BEGIN_OPTIONS
+	AST_APP_OPTION('a', OPT_ASYNC),
+	AST_APP_OPTION_ARG('b', OPT_PREDIAL_CALLEE, OPT_ARG_PREDIAL_CALLEE),
+	AST_APP_OPTION_ARG('B', OPT_PREDIAL_CALLER, OPT_ARG_PREDIAL_CALLER),
+END_OPTIONS );
+
+
 static int originate_exec(struct ast_channel *chan, const char *data)
 {
 	AST_DECLARE_APP_ARGS(args,
@@ -106,10 +153,15 @@ static int originate_exec(struct ast_channel *chan, const char *data)
 		AST_APP_ARG(arg2);
 		AST_APP_ARG(arg3);
 		AST_APP_ARG(timeout);
+		AST_APP_ARG(options);
 	);
+	struct ast_flags64 opts = { 0, };
+	char *opt_args[OPT_ARG_ARRAY_SIZE];
+	char *predial_callee = NULL;
 	char *parse;
 	char *chantech, *chandata;
 	int res = -1;
+	int continue_in_dialplan = 0;
 	int outgoing_status = 0;
 	unsigned int timeout = 30;
 	static const char default_exten[] = "s";
@@ -159,6 +211,31 @@ static int originate_exec(struct ast_channel *chan, const char *data)
 		goto return_cleanup;
 	}
 
+	if (!ast_strlen_zero(args.options) &&
+		ast_app_parse_options64(originate_exec_options, &opts, opt_args, args.options)) {
+		ast_log(LOG_ERROR, "Invalid options: '%s'\n", args.options);
+		goto return_cleanup;
+	}
+
+	/* PREDIAL: Run gosub on the caller's channel */
+	if (ast_test_flag64(&opts, OPT_PREDIAL_CALLER)
+		&& !ast_strlen_zero(opt_args[OPT_ARG_PREDIAL_CALLER])) {
+		ast_replace_subargument_delimiter(opt_args[OPT_ARG_PREDIAL_CALLER]);
+		ast_app_exec_sub(NULL, chan, opt_args[OPT_ARG_PREDIAL_CALLER], 0);
+	}
+
+	if (ast_test_flag64(&opts, OPT_PREDIAL_CALLEE)
+		&& !ast_strlen_zero(opt_args[OPT_ARG_PREDIAL_CALLEE])) {
+		ast_replace_subargument_delimiter(opt_args[OPT_ARG_PREDIAL_CALLEE]);
+		predial_callee = opt_args[OPT_ARG_PREDIAL_CALLEE];
+	}
+
+	if (strcasecmp(args.type, "exten") && strcasecmp(args.type, "app")) {
+		ast_log(LOG_ERROR, "Incorrect type, it should be 'exten' or 'app': %s\n",
+				args.type);
+		goto return_cleanup;
+	}
+
 	if (!strcasecmp(args.type, "exten")) {
 		int priority = 1; /* Initialized in case priority not specified */
 		const char *exten = args.arg2;
@@ -177,23 +254,34 @@ static int originate_exec(struct ast_channel *chan, const char *data)
 		ast_debug(1, "Originating call to '%s/%s' and connecting them to extension %s,%s,%d\n",
 				chantech, chandata, args.arg1, exten, priority);
 
-		ast_pbx_outgoing_exten(chantech, cap_slin, chandata,
+		res = ast_pbx_outgoing_exten_predial(chantech, cap_slin, chandata,
 				timeout * 1000, args.arg1, exten, priority, &outgoing_status,
-				AST_OUTGOING_WAIT, NULL, NULL, NULL, NULL, NULL, 0, NULL);
-	} else if (!strcasecmp(args.type, "app")) {
+				ast_test_flag64(&opts, OPT_ASYNC) ? AST_OUTGOING_NO_WAIT : AST_OUTGOING_WAIT,
+				NULL, NULL, NULL, NULL, NULL, 0, NULL,
+				predial_callee);
+	} else {
 		ast_debug(1, "Originating call to '%s/%s' and connecting them to %s(%s)\n",
 				chantech, chandata, args.arg1, S_OR(args.arg2, ""));
 
-		ast_pbx_outgoing_app(chantech, cap_slin, chandata,
+		res = ast_pbx_outgoing_app_predial(chantech, cap_slin, chandata,
 				timeout * 1000, args.arg1, args.arg2, &outgoing_status,
-				AST_OUTGOING_WAIT, NULL, NULL, NULL, NULL, NULL, NULL);
-	} else {
-		ast_log(LOG_ERROR, "Incorrect type, it should be 'exten' or 'app': %s\n",
-				args.type);
-		goto return_cleanup;
+				ast_test_flag64(&opts, OPT_ASYNC) ? AST_OUTGOING_NO_WAIT : AST_OUTGOING_WAIT,
+				NULL, NULL, NULL, NULL, NULL, NULL,
+				predial_callee);
 	}
 
-	res = 0;
+	/*
+	 * Getting here means that we have passed the various validation checks and
+	 * have at least attempted the dial. If we have a reason (outgoing_status),
+	 * we clear our error indicator so that we ultimately report the right thing
+	 * to the caller.
+	 */
+	if (res && outgoing_status) {
+		res = 0;
+	}
+
+	/* We need to exit cleanly if we've gotten this far */
+	continue_in_dialplan = 1;
 
 return_cleanup:
 	if (res) {
@@ -226,7 +314,7 @@ return_cleanup:
 	ao2_cleanup(cap_slin);
 	ast_autoservice_stop(chan);
 
-	return res;
+	return continue_in_dialplan ? 0 : -1;
 }
 
 static int unload_module(void)

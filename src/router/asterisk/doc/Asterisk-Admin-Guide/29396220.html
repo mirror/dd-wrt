@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : ARI and Bridges: Basic Mixing Bridges</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="29395573.html">Asterisk REST Interface (ARI)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Introduction-to-ARI-and-Bridges_29396210.html">Introduction to ARI and Bridges</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : ARI and Bridges: Basic Mixing Bridges
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified on Nov 16, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-right-sidebar" data-layout="two-right-sidebar">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="ARIandBridges:BasicMixingBridges-MixingBridges">Mixing Bridges</h1><p>In a mixing bridge, Asterisk shares media between all the channels in the bridge. Depending on the attributes the bridge was created with and the types of channels in the bridge, a mixing bridge may attempt to share the media in a variety of ways. They are, in order of best performance to lowest performance:</p><ul><li>Direct packet sharing between devices - when there are two channels in a mixing bridge of similar types, it may be possible to have the media bypass Asterisk completely. In this type of bridge, the channels will pass media directly between each other, and Asterisk will simply monitor the state of the channels. However, because the media is not going through Asterisk, most features - such as recording, speech detection, DTMF, etc. - are not available. The <code>proxy_media</code> attribute or the <code>dtmf_events</code> attribute will prevent this mixing type from being used.</li><li>Native packet sharing through Asterisk - when there are two channels in a mixing bridge of similar types, but the media cannot flow directly between the devices, Asterisk will attempt to mix the media between the channels by directly passing media from one channel to the other, and vice versa. The media itself is not decoded, and so - much like when the media is directly shared between the devices - Asterisk cannot use many features. The <code>proxy_media</code> attribute or the <code>dtmf_events</code> attribute will prevent this mixing type from being used.</li></ul></div>
+</div>
+<div class="cell aside" data-type="aside">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303060355 {padding: 0px;}
+div.rbtoc1582303060355 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303060355 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303060355'>
+<ul class='toc-indentation'>
+<li><a href='#ARIandBridges:BasicMixingBridges-MixingBridges'>Mixing Bridges</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandBridges:BasicMixingBridges-WhatCanHappeninaMixingBridge'>What Can Happen in a Mixing Bridge</a></li>
+</ul>
+</li>
+<li><a href='#ARIandBridges:BasicMixingBridges-Example:Implementingabasicdial'>Example: Implementing a basic dial</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandBridges:BasicMixingBridges-Dialplan'>Dialplan</a></li>
+<li><a href='#ARIandBridges:BasicMixingBridges-Python'>Python</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandBridges:BasicMixingBridges-bridge-dial.py'>bridge-dial.py</a></li>
+<li><a href='#ARIandBridges:BasicMixingBridges-bridge-dial.pyinaction'>bridge-dial.py in action</a></li>
+</ul>
+</li>
+<li><a href='#ARIandBridges:BasicMixingBridges-JavaScript(Node.js)'>JavaScript (Node.js)</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandBridges:BasicMixingBridges-bridge-dial.js'>bridge-dial.js</a></li>
+<li><a href='#ARIandBridges:BasicMixingBridges-bridge-dial.jsinaction'>bridge-dial.js in action</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<ul><li>Two party mixing - when there are two channels in a mixing bridge, regardless of the channel type, Asterisk will decode the media from each channel and pass it to the other participant. This mixing technology allows for all the various features of Asterisk to be used on the channels while they are in the bridge, but does not necessarily incur any penalties from transcoding.</li><li>Multi-party mixing - when there are more than two channels in a mixing bridge, Asterisk will transcode the media from each participant into signed linear, mix the media from all participants together into a new media frame, then write the media back out to all participants.</li></ul><p>At all times, the bridge will attempt to mix the media in the most performant manner possible. As the situation in the bridge changes, Asterisk will switch the mixing technology to the best mixing technology available.</p><h2 id="ARIandBridges:BasicMixingBridges-WhatCanHappeninaMixingBridge">What Can Happen in a Mixing Bridge</h2><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Action</th><th class="confluenceTh">Bridge Response</th></tr><tr><td class="confluenceTd">A bridge is created using <code>POST /bridges</code>, and Alice's channel - which supports having media be directly sent to another device - is added to the bridge using <code>POST /bridges/{bridge_id}/addChannel</code>.</td><td class="confluenceTd">Asterisk picks the basic two-party mixing technology. We don't know yet what other channel is going to join the bridge - it could be anything! - and so Asterisk picks the best one based on the information it currently has.</td></tr><tr><td colspan="1" class="confluenceTd">Bob's channel - which also supports having media be directly sent to another device - also joins the bridge via <code>POST /bridges/{bridge_id}/addChannel</code>.</td><td colspan="1" class="confluenceTd"><p>We have two channels in the bridge now, so Asterisk re-evaluates how the media is mixed. Since both channels support having their media be sent directly to each other, and mixing media that way is more performant than the current mixing technology, Asterisk picks the direct media mixing technology and instructs the channels to tell their devices to send the media to each other.</p></td></tr><tr><td colspan="1" class="confluenceTd">Carol's channel - which is a DAHDI channel (poor Carol, calling from the PSTN) - is also added to the bridge via <code>POST /bridges/{bridge_id}/addChannel</code>.</td><td colspan="1" class="confluenceTd">Since we now have three channels in the bridge, Asterisk switches the mixing technology to multi-mix. Alice and Bob's media is sent back to Asterisk, and Asterisk mixes the media from Alice, Bob, and Carol together and then sends the new media to each channel.</td></tr><tr><td colspan="1" class="confluenceTd">Eventually, Alice hangs up, leaving only Bob and Carol in the bridge.</td><td colspan="1" class="confluenceTd">Since Alice left, Asterisk switches back to the basic two-party mixing technology. We can't use a native mixing technology, as Bob and Carol's channels are incompatible, but we can use a mixing technology that is less expensive than the multi-mix technology.</td></tr></tbody></table></div><h1 id="ARIandBridges:BasicMixingBridges-Example:Implementingabasicdial">Example: Implementing a basic dial</h1><p>Dialing can be implemented by using the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Channels+REST+API#Asterisk12ChannelsRESTAPI-originate" rel="nofollow"><code>POST - /channels</code></a> operation and putting both the resulting channel and the original Stasis channel in a mixing bridge to allow media to flow between them. An endpoint should be specified along with the originate operation as well as a Stasis application name. This will cause the dialed channel to enter Stasis, where it can be added to a mixing bridge. It's also a good idea to use Stasis application arguments to flag that the dialed channel was dialed using originate in order to handle it differently from the original channel once it enters into the Stasis application.</p><p>This example ARI application will do the following:</p><ol><li>When a channel enters into the Stasis application, a call will be originated to the endpoint specified by the first command line argument to the script.</li><li>When that channel enters into the Stasis application, a mixing bridge will be created and the two channels will be put in it so that media can flow between them.</li><li>If either channel hangs up, the other channel will also be hung up.</li><li>Once the dialed channel exists the Stasis application, the mixing bridge will be destroyed.</li></ol><h2 id="ARIandBridges:BasicMixingBridges-Dialplan">Dialplan</h2><p>For this example, we'll use a Stasis application that species not only the application - <code>bridge-dial</code> - but also:</p><ul><li>Whether or not the channel is <code>inbound</code> or a <code>dialed</code> channel.</li><li>If the channel is <code>inbound</code>, the endpoint to dial.</li></ul><p>As an example, here is a dialplan that dials the <code>PJSIP/bob</code> endpoint:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; 1000,1,NoOp()
+ same =&gt;      n,Stasis(bridge-dial,inbound,PJSIP/bob)
+ same =&gt;      n,Hangup()</pre>
+</div></div><h2 id="ARIandBridges:BasicMixingBridges-Python">Python</h2><p>As is typical for an ARI application, we'll start off by implementing a callback handler for the <code>StasisStart</code> event. In this particular case, our callback handler will be called in two conditions:</p><ol><li>When an inbound channel enters into the <code>Stasis</code> dialplan application. In that case, we'll want to initiate the outbound dial.</li><li>When an outbound channel answers. In that case, we'll want to defer processing to a different callback handler and - in that handler - initiate the bridging of the two channels.</li></ol><p>In our <code>StasisStart</code> callback handler, we can expect to have two pieces of information passed to the application:</p><ol><li>The &quot;type&quot; of channel entering the callback handler. In this case, we expect the type to be either <code>inbound</code> or <code>dialed</code>.</li><li>If the &quot;type&quot; of channel is <code>inbound</code>, we expect the second argument to be the endpoint to dial.</li></ol><p>The following code shows the <code>StasisStart</code> callback handler for the <code>inbound</code> channel. Note that if the &quot;type&quot; is not <code>inbound</code>, we defer processing to another callback handler. We also tell the inbound channel to start ringing via the <code>ring</code> operation, and initiate an outbound dial by creating a new channel to the endpoint specified. Finally, we subscribe to the <code>StasisEnd</code> event for both channels, and instruct them to call a <code>safe_hangup</code> function on the opposing channel. This ensures that if either party hangs up, we hang up the person they were talking to. We'll show the implementation of that function shortly.</p>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Be careful of errors!</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>Note that we wrap the origination with a <code>try / except</code> block, in case the endpoint provided by the dialplan doesn't exist. When taking in input from a user or from the Asterisk dialplan, it is always good to be mindful of possible errors.</p>
+                    </div>
+    </div>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 31; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">def stasis_start_cb(channel_obj, ev):
+    &quot;&quot;&quot;Handler for StasisStart&quot;&quot;&quot;
+
+    channel = channel_obj.get(&#39;channel&#39;)
+    channel_name = channel.json.get(&#39;name&#39;)
+    args = ev.get(&#39;args&#39;)
+
+    if not args:
+        print &quot;Error: {} didn&#39;t provide any arguments!&quot;.format(channel_name)
+        return
+
+    if args and args[0] != &#39;inbound&#39;:
+        # Only handle inbound channels here
+        return
+
+    if len(args) != 2:
+        print &quot;Error: {} didn&#39;t tell us who to dial&quot;.format(channel_name)
+        channel.hangup()
+        return
+
+    print &quot;{} entered our application&quot;.format(channel_name)
+    channel.ring()
+
+    try:
+        print &quot;Dialing {}&quot;.format(args[1])
+        outgoing = client.channels.originate(endpoint=args[1],
+                                             app=&#39;bridge-dial&#39;,
+                                             appArgs=&#39;dialed&#39;)
+    except requests.HTTPError:
+        print &quot;Whoops, pretty sure %s wasn&#39;t valid&quot; % args[1]
+        channel.hangup()
+        return
+
+    channel.on_event(&#39;StasisEnd&#39;, lambda *args: safe_hangup(outgoing))
+    outgoing.on_event(&#39;StasisEnd&#39;, lambda *args: safe_hangup(channel))</pre>
+</div></div><p>The <code>safe_hangup</code> function referenced above simply does a &quot;safe&quot; hangup on the channel provided. This is because it is entirely possible for both parties to hang up nearly simultaneously. Since our Python code is running in a separate process from Asterisk, we may be processing the hang up of the first party and instruct Asterisk to hang up the second party when they are already technically hung up! Again, it is always a good idea to view the processing of a communications application in an asynchronous fashion: we live in an asynchronous world, and a user can take an action at any moment in time.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 12; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">def safe_hangup(channel):
+    &quot;&quot;&quot;Safely hang up the specified channel&quot;&quot;&quot;
+    try:
+        channel.hangup()
+        print &quot;Hung up {}&quot;.format(channel.json.get(&#39;name&#39;))
+    except requests.HTTPError as e:
+        if e.response.status_code != requests.codes.not_found:
+            raise e</pre>
+</div></div><p>We now have to handle the outbound channel when it answers. Currently, when it answers it will be immediately placed in our Stasis application, which will call the <code>stasis_start_cb</code> we previously defined. While we could have some additional <code>if / else</code> blocks in that handler, we can also just apply a <code>StasisStart</code> callback to the outbound channel after we create it, and handle its entrance separately.</p><p>When the outbound channel is answered, we need to do the following:</p><ol><li>Answer the inbound channel.</li><li>Create a new mixing bridge.</li><li>Put both channels into the mixing bridge.</li><li>Ensure we destroy the mixing bridge when either channel leaves our application.</li></ol><p>This is shown in the following code:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 67; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">    def outgoing_start_cb(channel_obj, ev):
+        &quot;&quot;&quot;StasisStart handler for our dialed channel&quot;&quot;&quot;
+
+        print &quot;{} answered; bridging with {}&quot;.format(outgoing.json.get(&#39;name&#39;),
+                                                     channel.json.get(&#39;name&#39;))
+        channel.answer()
+
+        bridge = client.bridges.create(type=&#39;mixing&#39;)
+        bridge.addChannel(channel=[channel.id, outgoing.id])
+
+        # Clean up the bridge when done
+        channel.on_event(&#39;StasisEnd&#39;, lambda *args:
+                         safe_bridge_destroy(bridge))
+        outgoing.on_event(&#39;StasisEnd&#39;, lambda *args:
+                          safe_bridge_destroy(bridge))
+
+    outgoing.on_event(&#39;StasisStart&#39;, outgoing_start_cb)</pre>
+</div></div><p>Note that the <code>safe_bridge_destroy</code> function is similar to the <code>safe_hangup</code> function, except that it attempts to safely destroy the mixing bridge, as opposed to hanging up the other party.</p><p><span class="confluence-anchor-link" id="ARIandBridges:BasicMixingBridges-bridge-dial-python"></span></p><h3 id="ARIandBridges:BasicMixingBridges-bridge-dial.py">bridge-dial.py</h3><p>The full source code for <code>bridge-dial.py</code> is shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>basic-dial.py</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: py; gutter: true" style="font-size:12px;">#!/usr/bin/env python
+
+import logging
+import requests
+import ari
+
+logging.basicConfig(level=logging.ERROR)
+
+client = ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;)
+
+
+def safe_hangup(channel):
+    &quot;&quot;&quot;Safely hang up the specified channel&quot;&quot;&quot;
+    try:
+        channel.hangup()
+        print &quot;Hung up {}&quot;.format(channel.json.get(&#39;name&#39;))
+    except requests.HTTPError as e:
+        if e.response.status_code != requests.codes.not_found:
+            raise e
+
+
+def safe_bridge_destroy(bridge):
+    &quot;&quot;&quot;Safely destroy the specified bridge&quot;&quot;&quot;
+    try:
+        bridge.destroy()
+    except requests.HTTPError as e:
+        if e.response.status_code != requests.codes.not_found:
+            raise e
+
+
+def stasis_start_cb(channel_obj, ev):
+    &quot;&quot;&quot;Handler for StasisStart&quot;&quot;&quot;
+
+    channel = channel_obj.get(&#39;channel&#39;)
+    channel_name = channel.json.get(&#39;name&#39;)
+    args = ev.get(&#39;args&#39;)
+
+    if not args:
+        print &quot;Error: {} didn&#39;t provide any arguments!&quot;.format(channel_name)
+        return
+
+    if args and args[0] != &#39;inbound&#39;:
+        # Only handle inbound channels here
+        return
+
+    if len(args) != 2:
+        print &quot;Error: {} didn&#39;t tell us who to dial&quot;.format(channel_name)
+        channel.hangup()
+        return
+
+    print &quot;{} entered our application&quot;.format(channel_name)
+    channel.ring()
+
+    try:
+        print &quot;Dialing {}&quot;.format(args[1])
+        outgoing = client.channels.originate(endpoint=args[1],
+                                             app=&#39;bridge-dial&#39;,
+                                             appArgs=&#39;dialed&#39;)
+    except requests.HTTPError:
+        print &quot;Whoops, pretty sure %s wasn&#39;t valid&quot; % args[1]
+        channel.hangup()
+        return
+
+    channel.on_event(&#39;StasisEnd&#39;, lambda *args: safe_hangup(outgoing))
+    outgoing.on_event(&#39;StasisEnd&#39;, lambda *args: safe_hangup(channel))
+
+    def outgoing_start_cb(channel_obj, ev):
+        &quot;&quot;&quot;StasisStart handler for our dialed channel&quot;&quot;&quot;
+
+        print &quot;{} answered; bridging with {}&quot;.format(outgoing.json.get(&#39;name&#39;),
+                                                     channel.json.get(&#39;name&#39;))
+        channel.answer()
+
+        bridge = client.bridges.create(type=&#39;mixing&#39;)
+        bridge.addChannel(channel=[channel.id, outgoing.id])
+
+        # Clean up the bridge when done
+        channel.on_event(&#39;StasisEnd&#39;, lambda *args:
+                         safe_bridge_destroy(bridge))
+        outgoing.on_event(&#39;StasisEnd&#39;, lambda *args:
+                          safe_bridge_destroy(bridge))
+
+    outgoing.on_event(&#39;StasisStart&#39;, outgoing_start_cb)
+
+
+client.on_channel_event(&#39;StasisStart&#39;, stasis_start_cb)
+
+client.run(apps=&#39;bridge-dial&#39;)
+
+</pre>
+</div></div><h3 id="ARIandBridges:BasicMixingBridges-bridge-dial.pyinaction">bridge-dial.py in action</h3><p>The following shows the output of the <code>bridge-dial.py</code> script when a <code>PJSIP</code> channel for <code>alice</code> enters the application and dials a <code>PJSIP</code> channel for <code>bob</code>:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>PJSIP/Alice-00000001 entered our application
+Dialing PJSIP/Bob
+PJSIP/Bob-00000002 answered; bridging with PJSIP/Alice-00000001
+Hung up PJSIP/Bob-00000002</pre>
+</div></div><p> </p><h2 id="ARIandBridges:BasicMixingBridges-JavaScript(Node.js)">JavaScript (Node.js)</h2><p>This example shows how to use anonymous functions to call functions with extra parameters that would otherwise require a closer. This can be done to reduce the number of nested callbacks required to implement the flow of an application. First, we look for an application argument in our <code>StasisStart</code> event callback to ensure that we will only originate a call if the channel entering Stasis is a channel that dialed our application extension we defined in the extensions.conf file above. We then play a sound on the channel asking the caller to wait while they are being connected and call the originate() function to process down the application flow:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 22; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">function stasisStart(event, channel) {
+  // ensure the channel is not a dialed channel
+  var dialed = event.args[0] === &#39;dialed&#39;;
+
+  if (!dialed) {
+    channel.answer(function(err) {
+      if (err) {
+        throw err;
+      }
+
+      console.log(&#39;Channel %s has entered our application&#39;, channel.name);
+
+      var playback = client.Playback();
+      channel.play({media: &#39;sound:pls-wait-connect-call&#39;},
+        playback, function(err, playback) {
+          if (err) {
+            throw err;
+          }
+      });
+
+      originate(channel);
+    });
+  }
+}</pre>
+</div></div><p>We then prepare an object with a locally generate Id for the dialed channel and register event callbacks either channels hanging up and the dialed channel entering into the Stasis application. We then originate a call to the endpoint specified by the first command line argument to the script passing in a Stasis application argument of dialed so we can skip the dialed channel when the original StasisStart event callback fires for it:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 47; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">function originate(channel) {
+  var dialed = client.Channel();
+
+  channel.on(&#39;StasisEnd&#39;, function(event, channel) {
+    hangupDialed(channel, dialed);
+  });
+
+  dialed.on(&#39;ChannelDestroyed&#39;, function(event, dialed) {
+    hangupOriginal(channel, dialed);
+  });
+
+  dialed.on(&#39;StasisStart&#39;, function(event, dialed) {
+    joinMixingBridge(channel, dialed);
+  });
+
+  dialed.originate(
+    {endpoint: process.argv[2], app: &#39;bridge-dial&#39;, appArgs: &#39;dialed&#39;},
+    function(err, dialed) {
+      if (err) {
+        throw err;
+      }
+  });
+}</pre>
+</div></div><p>We then handle either channel hanging up by hanging up the other channel. Note that we skip any errors that occur on hangup since it is possible that the channel we are attempting to hang up is the one that has already left and would result in an HTTP error as it is no longer a Statis channel:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 73; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">function hangupDialed(channel, dialed) {
+  console.log(
+    &#39;Channel %s left our application, hanging up dialed channel %s&#39;,
+    channel.name, dialed.name);
+
+  // hangup the other end
+  dialed.hangup(function(err) {
+    // ignore error since dialed channel could have hung up, causing the
+    // original channel to exit Stasis
+  });
+}
+
+// handler for the dialed channel hanging up so we can gracefully hangup the
+// other end
+function hangupOriginal(channel, dialed) {
+  console.log(&#39;Dialed channel %s has been hung up, hanging up channel %s&#39;,
+    dialed.name, channel.name);
+
+  // hangup the other end
+  channel.hangup(function(err) {
+    // ignore error since original channel could have hung up, causing the
+    // dialed channel to exit Stasis
+  });
+}</pre>
+</div></div><p>We then handle the StasisStart event for the dialed channel by registered an event callback for the StasisEnd event on the dialed channel, answer that answer, creating a new mixing bridge, and finally calling a function to add the two channels to the new bridge:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 99; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">function joinMixingBridge(channel, dialed) {
+  var bridge = client.Bridge();
+
+  dialed.on(&#39;StasisEnd&#39;, function(event, dialed) {
+    dialedExit(dialed, bridge);
+  });
+
+  dialed.answer(function(err) {
+    if (err) {
+      throw err;
+    }
+  });
+
+  bridge.create({type: &#39;mixing&#39;}, function(err, bridge) {
+    if (err) {
+      throw err;
+    }
+
+    console.log(&#39;Created bridge %s&#39;, bridge.id);
+
+    addChannelsToBridge(channel, dialed, bridge);
+  });
+}</pre>
+</div></div><p>We then handle the dialed channel exiting the Stasis application by destroying the mixing bridge:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 124; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">function dialedExit(dialed, bridge) {
+  console.log(
+      &#39;Dialed channel %s has left our application, destroying bridge %s&#39;,
+      dialed.name, bridge.id);
+
+  bridge.destroy(function(err) {
+    if (err) {
+      throw err;
+    }
+  });
+}</pre>
+</div></div><p>Finally, the function that was called earlier by the callback handling the StasisStart event for the dialed channel adds the two channels to the mixing bridge which allows media to flow between the two channels:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 137; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">function addChannelsToBridge(channel, dialed, bridge) {
+  console.log(&#39;Adding channel %s and dialed channel %s to bridge %s&#39;,
+      channel.name, dialed.name, bridge.id);
+
+  bridge.addChannel({channel: [channel.id, dialed.id]}, function(err) {
+    if (err) {
+      throw err;
+    }
+  });
+}</pre>
+</div></div><h3 id="ARIandBridges:BasicMixingBridges-bridge-dial.js">bridge-dial.js</h3><p>The full source code for <code>bridge-dial.js</code> is shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>bridge-dial.js</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: js; gutter: true" style="font-size:12px;">/*jshint node:true*/
+&#39;use strict&#39;;
+
+var ari = require(&#39;ari-client&#39;);
+var util = require(&#39;util&#39;);
+
+// ensure endpoint was passed in to script
+if (!process.argv[2]) {
+  console.error(&#39;usage: node bridge-dial.js endpoint&#39;);
+  process.exit(1);
+}
+
+ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;, clientLoaded);
+
+// handler for client being loaded
+function clientLoaded (err, client) {
+  if (err) {
+    throw err;
+  }
+
+  // handler for StasisStart event
+  function stasisStart(event, channel) {
+    // ensure the channel is not a dialed channel
+    var dialed = event.args[0] === &#39;dialed&#39;;
+
+    if (!dialed) {
+      channel.answer(function(err) {
+        if (err) {
+          throw err;
+        }
+
+        console.log(&#39;Channel %s has entered our application&#39;, channel.name);
+
+        var playback = client.Playback();
+        channel.play({media: &#39;sound:pls-wait-connect-call&#39;},
+          playback, function(err, playback) {
+            if (err) {
+              throw err;
+            }
+        });
+
+        originate(channel);
+      });
+    }
+  }
+
+  function originate(channel) {
+    var dialed = client.Channel();
+
+    channel.on(&#39;StasisEnd&#39;, function(event, channel) {
+      hangupDialed(channel, dialed);
+    });
+
+    dialed.on(&#39;ChannelDestroyed&#39;, function(event, dialed) {
+      hangupOriginal(channel, dialed);
+    });
+
+    dialed.on(&#39;StasisStart&#39;, function(event, dialed) {
+      joinMixingBridge(channel, dialed);
+    });
+
+    dialed.originate(
+      {endpoint: process.argv[2], app: &#39;bridge-dial&#39;, appArgs: &#39;dialed&#39;},
+      function(err, dialed) {
+        if (err) {
+          throw err;
+        }
+    });
+  }
+
+  // handler for original channel hanging up so we can gracefully hangup the
+  // other end
+  function hangupDialed(channel, dialed) {
+    console.log(
+      &#39;Channel %s left our application, hanging up dialed channel %s&#39;,
+      channel.name, dialed.name);
+
+    // hangup the other end
+    dialed.hangup(function(err) {
+      // ignore error since dialed channel could have hung up, causing the
+      // original channel to exit Stasis
+    });
+  }
+
+  // handler for the dialed channel hanging up so we can gracefully hangup the
+  // other end
+  function hangupOriginal(channel, dialed) {
+    console.log(&#39;Dialed channel %s has been hung up, hanging up channel %s&#39;,
+      dialed.name, channel.name);
+
+    // hangup the other end
+    channel.hangup(function(err) {
+      // ignore error since original channel could have hung up, causing the
+      // dialed channel to exit Stasis
+    });
+  }
+
+  // handler for dialed channel entering Stasis
+  function joinMixingBridge(channel, dialed) {
+    var bridge = client.Bridge();
+
+    dialed.on(&#39;StasisEnd&#39;, function(event, dialed) {
+      dialedExit(dialed, bridge);
+    });
+
+    dialed.answer(function(err) {
+      if (err) {
+        throw err;
+      }
+    });
+
+    bridge.create({type: &#39;mixing&#39;}, function(err, bridge) {
+      if (err) {
+        throw err;
+      }
+
+      console.log(&#39;Created bridge %s&#39;, bridge.id);
+
+      addChannelsToBridge(channel, dialed, bridge);
+    });
+  }
+
+  // handler for the dialed channel leaving Stasis
+  function dialedExit(dialed, bridge) {
+    console.log(
+        &#39;Dialed channel %s has left our application, destroying bridge %s&#39;,
+        dialed.name, bridge.id);
+
+    bridge.destroy(function(err) {
+      if (err) {
+        throw err;
+      }
+    });
+  }
+
+  // handler for new mixing bridge ready for channels to be added to it
+  function addChannelsToBridge(channel, dialed, bridge) {
+    console.log(&#39;Adding channel %s and dialed channel %s to bridge %s&#39;,
+        channel.name, dialed.name, bridge.id);
+
+    bridge.addChannel({channel: [channel.id, dialed.id]}, function(err) {
+      if (err) {
+        throw err;
+      }
+    });
+  }
+
+  client.on(&#39;StasisStart&#39;, stasisStart);
+
+  client.start(&#39;bridge-dial&#39;);
+}</pre>
+</div></div><h3 id="ARIandBridges:BasicMixingBridges-bridge-dial.jsinaction">bridge-dial.js in action</h3><p>The following shows the output of the <code>bridge-dial.js</code> script when a <code>PJSIP</code> channel for <code>alice</code> enters the application and dials a PJSIP channel for bob:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">Channel PJSIP/alice-00000001 has entered our application
+Created bridge 30430e82-83ed-4242-9f37-1bc040f70724
+Adding channel PJSIP/alice-00000001 and dialed channel PJSIP/bob-00000002 to bridge 30430e82-83ed-4242-9f37-1bc040f70724
+Dialed channel PJSIP/bob-00000002 has left our application, destroying bridge 30430e82-83ed-4242-9f37-1bc040f70724
+Dialed channel PJSIP/bob-00000002 has been hung up, hanging up channel PJSIP/alice-00000001
+Channel PJSIP/alice-00000001 left our application, hanging up dialed channel undefined</pre>
+</div></div></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

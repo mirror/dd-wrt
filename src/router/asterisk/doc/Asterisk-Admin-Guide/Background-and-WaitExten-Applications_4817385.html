@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Background and WaitExten Applications</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Basic-PBX-Functionality_4817469.html">Basic PBX Functionality</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Auto-attendant-and-IVR-Menus_4817391.html">Auto-attendant and IVR Menus</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Background and WaitExten Applications
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Leif Madsen</span> on Feb 24, 2011
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>The <strong>Background()</strong> application plays a sound prompt, but listens for DTMF input. Asterisk then tries to find an extension in the current dialplan context that matches the DTMF input. If it finds a matching extension, Asterisk will send the call to that extension.</p>
+
+<p>The Background() application takes the name of the sound prompt as the first parameter just like the Playback() application, so remember not to include the file extension.</p>
+
+    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Multiple Prompts</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>If you have multiple prompts you'd like to play during the Background() application, simply concatenate them together with the ampersand (&amp;) character, like this:</p>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">exten =&gt; 6123,1,Background(prompt1&amp;prompt2&amp;prompt3)
+</pre>
+</div></div>
+                    </div>
+    </div>
+
+<p>One problems you may encounter with the <strong>Background()</strong> application is that you may want Asterisk to wait a few more seconds after playing the sound prompt. In order to do this, you can call the <strong>WaitExten()</strong> application. You'll usually see the <strong>WaitExten()</strong> application called immediately after the <strong>Background()</strong> application. The first parameter to the <strong>WaitExten()</strong> application is the number of seconds to wait for the caller to enter an extension. If you don't supply the first parameter, Asterisk will use the built-in response timeout (which can be modified with the <strong>TIMEOUT()</strong> dialplan function).</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">[auto_attendant]
+exten =&gt; start,1,Verbose(2,Incoming call from ${CALLERID(all)})
+   same =&gt; n,Playback(silence/1)
+   same =&gt; n,Background(prompt1&amp;prompt2&amp;prompt3)
+   same =&gt; n,WaitExten(10)
+   same =&gt; n,Goto(timeout-handler,1)
+
+exten =&gt; timeout-handler,1)
+   same =&gt; n,Dial(${GLOBAL(OPERATOR)},30)
+   same =&gt; n,Voicemail(operator@default,${IF($[${DIALSTATUS} = BUSY]?b:u)})
+   same =&gt; n,Hangup()</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

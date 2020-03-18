@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : ODBC Voicemail Storage</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Voicemail_5242963.html">Voicemail</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : ODBC Voicemail Storage
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Matt Jordan</span> on Aug 06, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>ODBC Storage allows you to store voicemail messages within a database instead of using a file. This is not a full realtime engine and only supports ODBC. The table description for the voicemessages table is as follows: </p>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p>Field</p></th>
+<th class="confluenceTh"><p>Type</p></th>
+<th class="confluenceTh"><p>Null</p></th>
+<th class="confluenceTh"><p>Key</p></th>
+<th class="confluenceTh"><p>Default</p></th>
+<th class="confluenceTh"><p>Extra</p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p>msgnum</p></td>
+<td class="confluenceTd"><p>int(11)</p></td>
+<td class="confluenceTd"><p>Yes</p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p>NULL</p></td>
+<td class="confluenceTd"><p> </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>dir</p></td>
+<td class="confluenceTd"><p>varchar(80)</p></td>
+<td class="confluenceTd"><p>Yes</p></td>
+<td class="confluenceTd"><p>MUL</p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p>NULL</p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>context</p></td>
+<td class="confluenceTd"><p>varchar(80)</p></td>
+<td class="confluenceTd"><p>Yes</p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p>NULL</p></td>
+<td class="confluenceTd"><p> </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>macrocontext</p></td>
+<td class="confluenceTd"><p>varchar(80)</p></td>
+<td class="confluenceTd"><p>Yes</p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p>NULL</p></td>
+<td class="confluenceTd"><p> </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>callerid</p></td>
+<td class="confluenceTd"><p>varchar(40)</p></td>
+<td class="confluenceTd"><p>Yes</p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p>NULL</p></td>
+<td class="confluenceTd"><p> </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>origtime</p></td>
+<td class="confluenceTd"><p>varchar(40)</p></td>
+<td class="confluenceTd"><p>Yes</p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p>NULL</p></td>
+<td class="confluenceTd"><p> </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>duration</p></td>
+<td class="confluenceTd"><p>varchar(20)</p></td>
+<td class="confluenceTd"><p>Yes</p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p>NULL</p></td>
+<td class="confluenceTd"><p> </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>flag</p></td>
+<td class="confluenceTd"><p>varchar(8)</p></td>
+<td class="confluenceTd"><p>Yes</p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p>NULL</p></td>
+<td class="confluenceTd"><p> </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>mailboxuser</p></td>
+<td class="confluenceTd"><p>varchar(80)</p></td>
+<td class="confluenceTd"><p>Yes</p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p>NULL</p></td>
+<td class="confluenceTd"><p> </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>mailboxcontext</p></td>
+<td class="confluenceTd"><p>varchar(80)</p></td>
+<td class="confluenceTd"><p>Yes</p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p>NULL</p></td>
+<td class="confluenceTd"><p> </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>recording</p></td>
+<td class="confluenceTd"><p>longblob</p></td>
+<td class="confluenceTd"><p>Yes</p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p>NULL</p></td>
+<td class="confluenceTd"><p> </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>msg_id</p></td>
+<td class="confluenceTd"><p>varchar(40)</p></td>
+<td class="confluenceTd"><p>Yes</p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> NULL</p></td>
+<td class="confluenceTd"><p> (See Note) </p></td>
+</tr>
+</tbody></table></div>
+
+
+    <div class="aui-message warning shadowed information-macro">
+                    <p class="title">Upgrade Notice</p>
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            
+
+<p>The msg_id column is new in Asterisk 11.  Existing installations should add this column to their schema when upgrading to Asterisk 11.  Existing voicemail messages will have this value populated when the messages are initially manipulated by app_voicemail in Asterisk 11.</p>
+
+                    </div>
+    </div>
+
+
+<p>The database name (from /etc/asterisk/res_odbc.conf) is in the odbcstorage variable in the general section of voicemail.conf.</p>
+
+<p>You may modify the voicemessages table name by using odbctable=table_name in voicemail.conf.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

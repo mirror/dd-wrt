@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Sorcery Caching</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Configuration_4620290.html">Asterisk Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Sorcery_27200342.html">Sorcery</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Sorcery Caching
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Mark Michelson</span>, last modified on Sep 23, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><p>Since Asterisk 12, Asterisk has had a generic data access/storage layer called &quot;sorcery&quot;, with pluggable &quot;wizards&quot; that each create, retrieve, update, and delete data from various backends. For instance, there is a sorcery wizard that reads configuration data from .conf files. There is a sorcery wizard that uses the Asterisk Realtime Architecture to interface with databases and other alternative backends. There are also sorcery wizards that use the AstDB and a simple in-memory container.</p><p>Starting in Asterisk 13.5.0, a new &quot;memory_cache&quot; wizard has been created. This allows for a cached copy of an object to be stored locally in cases where retrieval from a remote backend (such as a relational database) might be expensive. Memory caching is a flexible way to provide per object type caching, meaning that you are not forced into an all-or-nothing situation if you decide to cache. Caching also provides configuration options to allow for cached entries to automatically be updated or expired.</p><h1 id="SorceryCaching-CachableObjects">Cachable Objects</h1><p>Not all configurable objects are managed by sorcery. The following is a list of objects that are managed by the sorcery subsystem in Asterisk.</p><ul><li>PJSIP endpoint</li><li>PJSIP AOR</li><li>PJSIP contact</li><li>PJSIP identify</li><li>PJSIP ACL</li><li>PJSIP resource_list</li><li>PJSIP phoneprov</li><li>PJSIP registration</li><li>PJSIP subscription_persistence</li><li>PJSIP inbound-publication</li><li>PJSIP asterisk-publication</li><li>PJSIP system</li><li>PJSIP global</li><li>PJSIP auth</li><li>PJSIP outbound-publish</li><li>PJSIP transport</li><li>External MWI mailboxes</li></ul></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302900119 {padding: 0px;}
+div.rbtoc1582302900119 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302900119 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302900119'>
+<ul class='toc-indentation'>
+<li><a href='#SorceryCaching-CachableObjects'>Cachable Objects</a></li>
+<li><a href='#SorceryCaching-WhenShouldIUseCaching?'>When Should I Use Caching?</a></li>
+<li><a href='#SorceryCaching-HowdoIenableCaching?'>How do I enable Caching?</a></li>
+<li><a href='#SorceryCaching-Howdoesthecachebehave?'>How does the cache behave?</a>
+<ul class='toc-indentation'>
+<li><a href='#SorceryCaching-name'>name</a></li>
+<li><a href='#SorceryCaching-maximum_objects'>maximum_objects</a></li>
+<li><a href='#SorceryCaching-object_lifetime_maximum'>object_lifetime_maximum</a></li>
+<li><a href='#SorceryCaching-staleobject_lifetime_stale'>object_lifetime_stale</a></li>
+<li><a href='#SorceryCaching-expire_on_reload'>expire_on_reload</a></li>
+</ul>
+</li>
+<li><a href='#SorceryCaching-WhatAMIandCLIcommandsdoesthecacheprovide?'>What AMI and CLI commands does the cache provide?</a>
+<ul class='toc-indentation'>
+<li><a href='#SorceryCaching-CLI'>CLI</a></li>
+<li><a href='#SorceryCaching-AMI'>AMI</a></li>
+</ul>
+</li>
+<li><a href='#SorceryCaching-Whataresomecachingstrategies?'>What are some caching strategies?</a>
+<ul class='toc-indentation'>
+<li><a href='#SorceryCaching-Hands-onorhands-off?'>Hands-on or hands-off?</a></li>
+<li><a href='#SorceryCaching-ExpireorStale?'>Expire or Stale?</a></li>
+</ul>
+</li>
+<li><a href='#SorceryCaching-Anexampleconfiguration'>An example configuration</a></li>
+<li><a href='#SorceryCaching-Pre-cachingallobjects'>Pre-caching all objects</a>
+<ul class='toc-indentation'>
+<li><a href='#SorceryCaching-CLI.1'>CLI</a></li>
+<li><a href='#SorceryCaching-AMI.1'>AMI</a></li>
+<li><a href='#SorceryCaching-WhentousethisCachingmethod'>When to use this Caching method</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><h1 id="SorceryCaching-WhenShouldIUseCaching?">When Should I Use Caching?</h1><p>First, if you are using default sorcery backends for objects (i.e. you have not altered <code>sorcery.conf</code> at all), then caching will likely not have any positive effect on your configuration. However, if you are using the &quot;realtime&quot; sorcery wizard or any other that retrieves data from outside the Asterisk process, then caching could be a good fit for certain object types.</p><p>There are two overall flavors of caching. The first type is a method that caches individually retrieved objects. In other words, when an object is retrieved from the backend, that object is also placed in the cache. That object can then be retrieved individually from the cache the next time it is needed. This type of caching works well for values that are</p><ul><li>Read more often than they are written</li><li>Retrieved one-at-a-time.</li></ul><p>For the first point, you will be able to know this better than anyone else. For instance, if you tend to configure PJSIP authentication very infrequently, but there are many calls, subscriptions, and qualifies that require authentication, then caching PJSIP auths is probably a good idea. If you are constantly tweaking PJSIP endpoint configuration for some reason, then you might find that caching isn't necessarily as good a fit for PJSIP endpoints.</p><p>For the second point, it may not always be obvious which types of objects are typically looked up one-at-a-time and which ones are typically looked up in multiples. The following object types are likely a bad fit for caching since they tend to be looked up in multiples:</p><ul><li>PJSIP contact</li><li>PJSIP identify</li><li>PJSIP global</li><li>PJSIP system</li><li>PJSIP registrations</li><li>PJSIP ACLs</li><li>PJSIP outbound-publishes</li><li>PJSIP subscription_persistence</li></ul><p>The rest of the objects listed are most typically retrieved one-at-a-time and would be good for caching in this manner.</p><p>The second type of caching instead pulls all objects from the database up front. These objects are all stored in memory, and since it is known that the cache has all objects, multiple objects can be retrieved from the cache at once. This means that <strong>any</strong> object type is a good fit for this type of caching.</p><h1 id="SorceryCaching-HowdoIenableCaching?">How do I enable Caching?</h1><p>If you are familiar with enabling realtime for a sorcery object, then enabling caching should not seem difficult. Here is an example of what it might look like if you have configured PJSIP endpoints to use a cache:</p><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>sorcery.conf</b></div><div class="panelContent">
+<pre>[res_pjsip]
+endpoint/cache=memory_cache
+endpoint=realtime,ps_endpoints</pre>
+</div></div><p>Let's break this down line-by-line. The first line starts with &quot;endpoint/cache&quot;. &quot;endpoint&quot; is the name of the object type. &quot;/cache&quot; is a cue to sorcery that the wizard being specified on this line is a cache. And &quot;memory_cache&quot; is the name of the caching wizard that has been added in Asterisk 14.0.0. The second line is the familiar line that specifies that endpoints can be retrieved from realtime by following the &quot;ps_endpoints&quot; configuration line in <code>extconfig.conf</code>.</p><p>The order of the lines is important. You will want to specify the memory_cache wizard before the realtime wizard so that the memory_cache is looked in before realtime when retrieving an item.</p><h1 id="SorceryCaching-Howdoesthecachebehave?">How does the cache behave?</h1><p>By default, the cache will simply store objects in memory. There will be no limits to the number of objects stored in the cache, and the items in the cache will never be updated or expire, no matter whether the backend has been updated to have new configuration values. The cache entry in <code>sorcery.conf</code> is configurable, though, so you can modify the behavior to suit your setup. Options for the memory cache are comma-separated on the line in <code>sorcery.conf</code> that defines the cache. For instance, you might have something like the following:</p><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>sorcery.conf</b></div><div class="panelContent">
+<pre>[res_pjsip]
+endpoint/cache = memory_cache,maximum_objects=150,expire_on_reload=yes,object_lifetime_maximum=3600
+endpoint = realtime,ps_endpoints</pre>
+</div></div><p>The following configuration options are recognized by the memory cache:</p><h2 id="SorceryCaching-name">name</h2><p>The name of a cache is used when referring to a specific cache when running an AMI or CLI command. If no name is provided for a cache, then the default is &lt;configuration section&gt;/&lt;object type&gt;. PJSIP endpoints, for instance, have a default cache name of &quot;res_pjsip/endpoint&quot;.</p><h2 id="SorceryCaching-maximum_objects">maximum_objects</h2><p>This option specifies the maximum number of objects that can be in the cache at a given time. If the cache is full and a new item is to be added, then the oldest item in the cache is removed to make room for the new item. If this option is not set or if its value is set to 0, then there is no limit on the number of objects in the cache.</p><h2 id="SorceryCaching-object_lifetime_maximum">object_lifetime_maximum</h2><p>This option specifies the number of seconds an object may occupy the cache before it is automatically removed. This time is measured from when the object is initially added to the cache, not the time when the object was last accessed. If this option is not set or if its value is set to 0, then objects will stay in the cache forever.</p><h2 id="SorceryCaching-staleobject_lifetime_stale"><span class="confluence-anchor-link" id="SorceryCaching-stale"></span>object_lifetime_stale</h2><p>This option specifies the number of seconds an object may occupy the cache until it is considered stale. When a stale object is retrieved from the cache, the stale object is given to the requestor, and a background task is initiated to update the object in the cache by querying whatever backend stores are configured. If a new object is retrieved from the backend, then the stale cached object is replaced with the new object. If the backend no longer has an object with the same ID as the one that has become stale, then the stale object is removed from the cache. If this option is not set or if its value is 0, then objects in the cache will never be marked stale.</p><h2 id="SorceryCaching-expire_on_reload">expire_on_reload</h2><p>This option specifies whether a reload of a module should automatically remove all of its objects from the cache. For instance, if this option is enabled, and you are caching PJSIP endpoints, then a module reload of <code>res_pjsip.so</code> would clear all PJSIP endpoints from the cache. By default this option is not enabled.</p><h1 id="SorceryCaching-WhatAMIandCLIcommandsdoesthecacheprovide?">What AMI and CLI commands does the cache provide?</h1><h2 id="SorceryCaching-CLI">CLI</h2><h3 id="SorceryCaching-sorcerymemorycacheshow&lt;cachename&gt;">sorcery memory cache show &lt;cache name&gt;</h3><p>This CLI command displays the configuration for the given cache and tells the number of items currently in the cache.</p><h3 id="SorceryCaching-sorcerymemorycachedump&lt;cachename&gt;">sorcery memory cache dump &lt;cache name&gt;</h3><p>This CLI command displays all objects in the given cache. In addition to the name of the object, the command also displays the number of seconds until the object becomes stale and the number of seconds until the object will be removed from the cache. </p><h3 id="SorceryCaching-sorcerymemorycacheexpire&lt;cachename&gt;[objectname]">sorcery memory cache expire &lt;cache name&gt; [object name]</h3><p>This CLI command is used to remove objects from a given cache. If no object name is specified, then all objects in the cache are removed. If an object name is specified, then only the specified object is removed.</p><h3 id="SorceryCaching-sorcerymemorycachestale&lt;cachename&gt;[object_name]">sorcery memory cache stale &lt;cache name&gt; [object_name]</h3><p>This CLI command is used to mark an item in the cache as stale. If no object name is specified, then all objects in the cache are marked stale. If an object name is specified, then only the specified object is marked stale. For information on what it means for an object to be stale, see <a href="#SorceryCaching-stale">here</a></p><h2 id="SorceryCaching-AMI">AMI</h2>    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <p>Since AMI commands are XML-documented in the source, there should be a dedicated wiki page with this information.</p>
+                    </div>
+    </div>
+<h3 id="SorceryCaching-SorceryMemoryCacheExpireObject"><span style="color: rgb(133,120,102);">SorceryMemoryCacheExpireObject</span></h3><p>This command has the following syntax:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: SorceryMemoryCacheExpireObject
+Cache: &lt;cache name&gt;
+Object: &lt;object name&gt;</pre>
+</div></div><p>Issuing this command will cause the specified object in the specified cache to be removed. Like all AMI commands, an optional ActionID may be specified.</p><h3 id="SorceryCaching-SorceryMemoryCacheExpire">SorceryMemoryCacheExpire</h3><p>This command has the following syntax:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: SorceryMemoryCacheExpire
+Cache: &lt;cache name&gt;</pre>
+</div></div><p>Issuing this command will cause all objects in the specified cache to be removed. Like all AMI commands, an optional ActionID may be specified.</p><h3 id="SorceryCaching-SorceryMemoryCacheStaleObject">SorceryMemoryCacheStaleObject</h3><p>This command has the following syntax:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: SorceryMemoryCacheStaleObject
+Cache: &lt;cache name&gt;
+Object: &lt;object name&gt;</pre>
+</div></div><p>Issuing this command will cause the specified object in the specified cache to be marked as stale. For more information on what it means for an object to be stale, see <a href="#SorceryCaching-stale">here</a>.  Like all AMI commands, an optional ActionID may be specified.</p><h3 id="SorceryCaching-SorceryMemoryCacheStale">SorceryMemoryCacheStale</h3><p>This command has the following syntax:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: SorceryMemoryCacheStale
+Cache: &lt;cache name&gt;</pre>
+</div></div><p>Issuing this command will cause all objects in the specified cache to be marked as stale. For more information on what it means for an object to be stale, see <a href="#SorceryCaching-stale">here</a>.  Like all AMI commands, an optional ActionID may be specified.</p><h1 id="SorceryCaching-Whataresomecachingstrategies?">What are some caching strategies?</h1><h2 id="SorceryCaching-Hands-onorhands-off?">Hands-on or hands-off?</h2><p>The hands-on approach to caching is that you set your cache to have no maximum number of objects, and objects never expire or become stale on their own. Instead, whenever you make changes to the backend store, you issue an AMI or CLI command to remove objects or mark them stale. The hands-off approach to caching is to fine-tune the maximum number of objects, stale timeout, and expire timeout such that you never have to think about the cache again after you set it up the first time.</p><p>The hands-on approach is a good fit either for installations where configuration rarely changes, or where there is some automation involved when configuration changes are made. For instance, if you are setting up a PBX for a small office where you are likely to make configuration changes a few times a year, then the hands-on approach may be a good fit. If your configuration is managed through a GUI that fires off a script when the &quot;submit&quot; button is pressed, then the hands-on approach may be a good fit since your scripts can be modified to manually expire objects or mark them stale. The main disadvantage to the hands-on approach is that if you forget to manually expire a cached object or if you make a mistake in your tooling, you're likely to have some big problems since configuration changes will seemingly not have any effect.</p><p>The hands-off approach is a good fit for configurations that change frequently or for deployments with inconsistent usage among users. If configuration is changing frequently, then it makes sense for objects in the cache to become stale and automatically get refreshed. If you have some users on the system that maybe use the system once a week, it makes sense for them to get removed from the cache as more frequent users occupy it. The biggest disadvantage to the hands-off approach is the potential for churn if your settings are overzealous. For instance, if you allow a maximum of 15 objects in a cache but it's common for 20 to be used, then the cache may constantly be shuffling which objects are stored in it. Similarly, if you set a stale object timeout low, then it is possible that objects in the cache will frequently be replacing themselves with identical copies.</p><p>There is also a hybrid approach. In the hybrid approach, you're mostly hands-off, but you can be hands-on for &quot;emergency&quot; changes. For instance, if there is a misconfiguration that is resulting in calls not being able to be sent to a user, then you may want to get that configuration updated and immediately remove the cached object so that the new configuration can be added to the cache instead.</p><h2 id="SorceryCaching-ExpireorStale?">Expire or Stale?</h2><p>One question that may enter your mind is whether to have objects expire or whether they should become stale.</p><p>Letting objects expire has the advantage that they no longer are occupying cache space. For objects that are infrequently accessed, this can be a good thing since they otherwise will be taking up space and being useless. For objects that are accessed frequency, expiration is likely a bad choice. This is because if the object has been removed from the cache, then attempting to retrieve the object will require a cache miss, followed by a backend hit to retrieve the object. If the object configuration has not been altered, then this equates to a waste of cycles.</p><p>Letting objects become stale has the advantage that retrievals will always be quick. This is because even if the object is stale, the stale cached object is returned. It's left up to a background task to update the cached object with new data from the backend. The main disadvantage to objects being stale is that infrequently accessed objects will remain in the cache long after their useful lifetime.</p><p>One approach to take is a hybrid approach. You can set objects to become stale after an amount of time, and then later, the object will become expired. This way, objects that are retrieved frequently will stay up to date as they become stale, and objects that are rarely accessed will expire after a while.</p><h1 id="SorceryCaching-Anexampleconfiguration">An example configuration</h1><p>Below is a sample sorcery.conf file that uses realtime as the backend store for some PJSIP objects.</p><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>sorcery.conf</b></div><div class="panelContent">
+<pre> [res_pjsip]
+endpoint/cache = memory_cache,object_lifetime_stale=600,object_lifetime_maximum=1800,expire_on_reload=yes
+endpoint = realtime,ps_endpoints
+auth/cache=memory_cache,expire_on_reload=yes
+auth = realtime,ps_auths
+aor/cache = memory_cache,object_lifetime_stale=1500,object_lifetime_maximum=1800,expire_on_reload=yes
+aor = realtime,ps_aors</pre>
+</div></div><p>In this particular setup, the administrator has set different options for different object caches.</p><ul><li>For endpoints, the administrator decided that cached endpoint configuration may occasionally need updating. Endpoints therefore will be marked stale after 10 minutes. If an endpoint happens to make it 30 minutes without being retrieved, then the endpoint will be ejected from the cache entirely.</li><li>For auths, the administrator realized that auth so rarely changes that there is no reason to set any sort of extra parameters. On those odd occasions where auth is updated, the admin will just manually expire the old auth.</li><li>AORs, like endpoints, may require refreshing after a while, but because the AOR configurations are changed much more infrequently, it takes 25 minutes for the object to become stale.</li><li>All objects expire on a reload since a reload likely means that there was some large-scale change and everything should start from scratch.</li></ul><p>This is just an example. It is not necessarily going to be a good fit for everyone's needs.</p><h1 id="SorceryCaching-Pre-cachingallobjects">Pre-caching all objects</h1><p>When introducing caching, we discussed a second form of caching, where all objects are pre-loaded from the realtime backend and placed in the cache. Why would this be necessary?</p><p>Consider if you have configured AORs to be cached. At some point, Asterisk tried to retrieve AOR &quot;alice&quot;. This AOR was found in a database, and it was added to the cache. Now, Asterisk gets told to retrieve all AORs. If Asterisk just looks in the cache, all it will get is &quot;alice&quot;. The cache has no way of knowing whether it has all values cached or not. Thus, rather than even asking the cache, Asterisk skips straight to going to the database directly. The cache did not serve us much good there.</p><p>However, Asterisk can be told to pre-load all objects of a certain type and cache those. This way, the cache knows that it has all objects of a certain type. Therefore, if multiple objects need to be retrieved, Asterisk can ask the cache for those items and not have to hit the realtime backend at all. Here's an example configuration:</p><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>sorcery.conf</b></div><div class="panelContent">
+<pre>[res_pjsip]
+identify/cache = memory_cache,object_lifetime_stale=600,object_lifetime_maximum=1800,expire_on_reload=yes,full_backend_cache=yes
+identify = realtime,ps_endpoint_id_ips</pre>
+</div></div><p>Just like with the previous section's configuration, we have configured an object to be retrieved from realtime and cached in memory. Notice, though, that we have added <code>full_backend_cache=yes</code> to the end of the line. This is what causes Asterisk to pre-cache the objects. Normally, PJSIP &quot;identify&quot; objects would be a bad fit for caching since we tend to retrieve them all at once rather than one-at-a-time. By pre-caching all objects though, Asterisk can now retrieve all of them directly from the cache. Also notice that the other caching options are still relevant here. Rather than having the options apply to individual objects, they now apply to all of the retrieved objects. So if Asterisk retrieved 10 identifys during pre-cache, when the stale lifetime rolls around, all 10 will be marked stale and Asterisk will once again retrieve all of the objects from the backend.</p><h2 id="SorceryCaching-CLI.1">CLI</h2><h3 id="SorceryCaching-sorcerymemorycachepopulate&lt;cachename&gt;">sorcery memory cache populate &lt;cache name&gt;</h3><p>This CLI command is used to manually tell Asterisk to remove all objects from the cache and repopulate that cache with all objects from the backend.</p><h2 id="SorceryCaching-AMI.1">AMI</h2><h3 id="SorceryCaching-SorceryMemoryCachePopulate">SorceryMemoryCachePopulate</h3><p>This command has the following syntax:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: SorceryMemoryCachePopulate
+Cache: &lt;cache name&gt;</pre>
+</div></div><p>Issuing this command has the same effect as the CLI &quot;sorcery memory cache populate&quot; command. It will invalidate all cached entries from the particular cache and then repopulate it with all objects from the backend.</p><h2 id="SorceryCaching-WhentousethisCachingmethod">When to use this Caching method</h2><p>Pre-caching the entire backend is a good idea if you find that caching individual objects is not working for you. The tradeoff is that you will use more memory this way since all objects are retrieved from the cache at once.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

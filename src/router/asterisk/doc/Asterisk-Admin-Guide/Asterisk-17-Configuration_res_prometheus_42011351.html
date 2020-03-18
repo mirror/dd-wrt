@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Configuration_res_prometheus</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Module-Configuration_42010715.html">Asterisk 17 Module Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Configuration_res_prometheus
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Configuration_res_prometheus-ResourceforintegrationwithPrometheus">Resource for integration with Prometheus</h1>
+
+<p>This configuration documentation is for functionality provided by <code>res_prometheus</code>.</p>
+
+<h2 id="Asterisk17Configuration_res_prometheus-prometheus.conf">prometheus.conf</h2>
+
+<h3 id="Asterisk17Configuration_res_prometheus-general">general</h3>
+
+<p>General settings.</p>
+
+<h4 id="Asterisk17Configuration_res_prometheus-ConfigurationOptionReference">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_prometheus-general_enabled"><code>enabled</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Enable or disable Prometheus statistics. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_prometheus-general_core_metrics_enabled"><code>core_metrics_enabled</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>yes</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Enable or disable core metrics. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>uri</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The HTTP URI to serve metrics up on. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_prometheus-general_auth_username"><code>auth_username</code></a> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Username to use for Basic Auth. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_prometheus-general_auth_password"><code>auth_password</code></a> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Password to use for Basic Auth. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>auth_realm</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> <code>Asterisk Prometheus Metrics</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Auth realm used in challenge responses </p></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="Asterisk17Configuration_res_prometheus-ConfigurationOptionDescriptions">Configuration Option Descriptions</h4>
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_prometheus-general_enabled"></span></p>
+<h5 id="Asterisk17Configuration_res_prometheus-enabled">enabled</h5>
+
+<ul>
+	<li><code>no</code></li>
+	<li><code>yes</code></li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_prometheus-general_core_metrics_enabled"></span></p>
+<h5 id="Asterisk17Configuration_res_prometheus-core_metrics_enabled">core_metrics_enabled</h5>
+
+<p>Core metrics show various properties of the Asterisk system, including how the binary was built, the version, uptime, last reload time, etc. Generally, these options are harmless and should always be enabled. This option mostly exists to disable output of all options for testing purposes, as well as for those foolish souls who really don't care what version of Asterisk they're running.</p>
+
+<ul>
+	<li><code>no</code></li>
+	<li><code>yes</code></li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_prometheus-general_auth_username"></span></p>
+<h5 id="Asterisk17Configuration_res_prometheus-auth_username">auth_username</h5>
+
+<p>If set, use Basic Auth to authenticate requests to the route specified by <em>uri</em>. Note that you will need to configure your Prometheus server with the appropriate auth credentials.</p>
+
+<p>If set, <em>auth_password</em> must also be set appropriately.</p>
+
+    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">Warning</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            
+<p>It is highly recommended to set up Basic Auth. Failure to do so may result in useful information about your Asterisk system being made easily scrapable by the wide world. Consider yourself duly warned.</p>
+
+                    </div>
+    </div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_prometheus-general_auth_password"></span></p>
+<h5 id="Asterisk17Configuration_res_prometheus-auth_password">auth_password</h5>
+
+<p>If set, this is used in conjunction with <em>auth_username</em> to require Basic Auth for all requests to the Prometheus metrics. Note that setting this without <em>auth_username</em> will not do anything.</p>
+
+
+
+<h3 id="Asterisk17Configuration_res_prometheus-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

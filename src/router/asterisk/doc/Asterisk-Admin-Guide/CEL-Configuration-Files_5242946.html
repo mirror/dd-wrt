@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : CEL Configuration Files</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Reporting_27200283.html">Reporting</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="5242932.html">Channel Event Logging (CEL)</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : CEL Configuration Files
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Rusty Newton</span> on Mar 24, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="CELConfigurationFiles-CELGeneralConfiguration">CEL General Configuration</h1><p>Primary CEL configuration settings are located in <code>cel.conf</code>. Note that CEL only publishes record types to back-ends that are enabled in the general CEL configuration. </p><h1 id="CELConfigurationFiles-Back-endConfiguration">Back-end Configuration</h1><p>Configuration for specific logging or storage back-ends is located in separate configuration files. The exception is the AMI and RADIUS back-ends. Sample configurations are provided with the Asterisk 12 source for all of these back-ends.</p><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Name</th><th class="confluenceTh">Config File</th><th class="confluenceTh">Description</th></tr><tr><td colspan="1" class="confluenceTd">Manager (AMI)</td><td colspan="1" class="confluenceTd">cel.conf</td><td colspan="1" class="confluenceTd">The manager CEL output module publishes records over AMI as CEL events with the record type published under the &quot;EventName&quot; key. This module is configured in cel.conf in the [manager] section.</td></tr><tr><td colspan="1" class="confluenceTd">RADIUS</td><td colspan="1" class="confluenceTd">cel.conf</td><td colspan="1" class="confluenceTd">The RADIUS CEL output module allows the CEL engine to publish records to a RADIUS server. This module is configured in cel.conf in the [radius] section.</td></tr><tr><td class="confluenceTd">CEL Custom</td><td class="confluenceTd">cel_custom.conf</td><td class="confluenceTd">The Custom CEL output module provides logging capability to a CSV file in a format described in the configuration file.</td></tr><tr><td colspan="1" class="confluenceTd">ODBC</td><td colspan="1" class="confluenceTd">cel_odbc.conf</td><td colspan="1" class="confluenceTd">The ODBC CEL output module provides logging capability to any ODBC-compatible database.</td></tr><tr><td colspan="1" class="confluenceTd"><span>PGSQL</span></td><td colspan="1" class="confluenceTd"><span>cel_pgsql.conf</span></td><td colspan="1" class="confluenceTd">The PGSQL CEL output module provides logging capability to PostgreSQL databases when it is desirable to avoid the ODBC abstraction layer. </td></tr><tr><td colspan="1" class="confluenceTd"><span>SQLite</span></td><td colspan="1" class="confluenceTd"><span>cel_sqlite3_custom.conf</span></td><td colspan="1" class="confluenceTd">The SQLite CEL output module provides logging capability to a SQLite3 database in a format described in its configuration file.</td></tr><tr><td colspan="1" class="confluenceTd"><span>TDS</span></td><td colspan="1" class="confluenceTd"><span>cel_tds.conf</span></td><td colspan="1" class="confluenceTd">The TDS CEL output module provides logging capability to Sybase or Microsoft SQL Server databases when it is desirable to avoid the ODBC abstraction layer.</td></tr></tbody></table></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

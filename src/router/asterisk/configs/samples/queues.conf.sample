@@ -59,7 +59,7 @@ monitor-type = MixMonitor
 ; respect the wrapuptime of another queue for a shared member.
 ; The default value is no.
 ;
-;shared_lastcall=no
+;shared_lastcall=yes
 ;
 ; Negative_penalty_invalid will treat members with a negative penalty as logged off
 ;
@@ -97,7 +97,7 @@ monitor-type = MixMonitor
 ; fewestcalls - ring the one with fewest completed calls from this queue
 ; random - ring random interface
 ; rrmemory - round robin with memory, remember where we left off last ring pass
-; rrordered - same as rrmemory, except the queue member order from config file 
+; rrordered - same as rrmemory, except the queue member order from config file
 ;             is preserved
 ; linear - rings interfaces in the order specified in this configuration file.
 ;          If you use dynamic members, the members will be rung in the order in
@@ -113,8 +113,10 @@ monitor-type = MixMonitor
 ;strategy = ringall
 ;
 ; Second settings for service level (default 0)
-; Used for service level statistics (calls answered within service level time
-; frame)
+; Used for service level statistics (calls answered within service level time frame)
+; There are 2 Service Level Performance Calculations SL and SL2
+; SL = (total calls answered within threshold / total calls answered) * 100
+; SL2 = ((calls answered within threshold + calls abandoned within threshold) / (answered calls + abandoned calls)) * 100
 ;servicelevel = 60
 ;
 ; A context may be specified, in which if the user types a SINGLE
@@ -343,6 +345,11 @@ monitor-type = MixMonitor
 ;
 ; announce-round-seconds = 10
 ;
+; Only announce the caller's position if it has improved since the last announcement.
+; The default value is no.
+;
+; announce-position-only-up = yes
+;
 ; Use these sound files in making position/holdtime announcements.  The
 ; defaults are as listed below -- change only if you need to.
 ;
@@ -544,7 +551,7 @@ monitor-type = MixMonitor
 ; must also preload pbx_config.so and chan_local.so (or pbx_ael.so, pbx_lua.so,
 ; or pbx_realtime.so, depending on how your dialplan is configured).
 ;
-; syntax: member => interface,[,penalty][,membername][,state_interface][,ringinuse]
+; syntax: member => interface,[,penalty][,membername][,state_interface][,ringinuse][,wrapuptime]
 ;
 ;member => DAHDI/1
 ;member => DAHDI/2,10

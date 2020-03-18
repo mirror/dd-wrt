@@ -26,9 +26,6 @@
 #ifndef _AST_CODEC_H_
 #define _AST_CODEC_H_
 
-#define AST_SMOOTHER_FLAGS_PACK(x)   ((x) << 1)
-#define AST_SMOOTHER_FLAGS_UNPACK(x) ((x) >> 1)
-
 /*! \brief Types of media */
 enum ast_media_type {
 	AST_MEDIA_TYPE_UNKNOWN = 0,
@@ -36,6 +33,7 @@ enum ast_media_type {
 	AST_MEDIA_TYPE_VIDEO,
 	AST_MEDIA_TYPE_IMAGE,
 	AST_MEDIA_TYPE_TEXT,
+	AST_MEDIA_TYPE_END,
 };
 
 struct ast_module;
@@ -78,6 +76,8 @@ struct ast_codec {
 	int (*get_length)(unsigned int samples);
 	/*! \brief Whether the media can be smoothed or not */
 	unsigned int smooth;
+	/*! \brief Flags to be passed to the smoother */
+	unsigned int smoother_flags;
 	/*! \brief The module that registered this codec */
 	struct ast_module *mod;
 };
@@ -119,7 +119,7 @@ int __ast_codec_register(struct ast_codec *codec, struct ast_module *mod);
  * \retval 0 success
  * \retval -1 failure
  */
-#define ast_codec_register(codec) __ast_codec_register(codec, ast_module_info->self)
+#define ast_codec_register(codec) __ast_codec_register(codec, AST_MODULE_SELF)
 
 /*!
  * \brief Retrieve a codec given a name, type, and sample rate
@@ -166,6 +166,17 @@ int ast_codec_get_max(void);
  * \retval string representation of the media type
  */
 const char *ast_codec_media_type2str(enum ast_media_type type);
+
+/*!
+ * \brief Conversion function to take a media string and convert it to a media type
+ *
+ * \param media_type_str The media type string
+ *
+ * \retval The ast_media_type that corresponds to the string
+ *
+ * \since 15.0.0
+ */
+enum ast_media_type ast_media_type_from_str(const char *media_type_str);
 
 /*!
  * \brief Get the number of samples contained within a frame

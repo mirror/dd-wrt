@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_Bridge</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_Bridge
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span>, last modified on Jan 08, 2020
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_Bridge-Bridge()">Bridge()</h1>
+
+<h3 id="Asterisk17Application_Bridge-Synopsis">Synopsis</h3>
+
+<p>Bridge two channels.</p>
+
+<h3 id="Asterisk17Application_Bridge-Description">Description</h3>
+
+<p>Allows the ability to bridge two channels via the dialplan.</p>
+
+<p>This application sets the following channel variable upon completion:</p>
+
+<ul>
+	<li><code>BRIDGERESULT</code> - The result of the bridge attempt as a text string.
+	<ul>
+		<li>SUCCESS</li>
+		<li>FAILURE</li>
+		<li>LOOP</li>
+		<li>NONEXISTENT</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_Bridge-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Bridge(channel,[options])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_Bridge-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>channel</code> - The current channel is bridged to the channel identified by the channel name, channel name prefix, or channel uniqueid.</li>
+	<li><code>options</code>
+	<ul>
+		<li><code>p</code> - Play a courtesy tone to <em>channel</em>.</li>
+		<li><code>F</code><code>( context^exten^<strong>priority</strong> )</code> - When the bridger hangs up, transfer the <strong>bridged</strong> party to the specified destination and <strong>start</strong> execution at that location.
+		<ul>
+			<li><code>context</code></li>
+			<li><code>exten</code></li>
+			<li><code><strong>priority</strong></code></li>
+		</ul>
+		</li>
+		<li><code>F</code> - When the bridger hangs up, transfer the <strong>bridged</strong> party to the next priority ofthe current extension and <strong>start</strong> execution at that location.</li>
+		<li><code>h</code> - Allow the called party to hang up by sending the <em>*</em> DTMF digit.</li>
+		<li><code>H</code> - Allow the calling party to hang up by pressing the <em>*</em> DTMF digit.</li>
+		<li><code>k</code> - Allow the called party to enable parking of the call by sending the DTMF sequence defined for call parking in <code>features.conf</code>.</li>
+		<li><code>K</code> - Allow the calling party to enable parking of the call by sending the DTMF sequence defined for call parking in <code>features.conf</code>.</li>
+		<li><code>L(x<a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=y&amp;linkCreation=true&amp;fromPageId=42011310">y</a><a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=z&amp;linkCreation=true&amp;fromPageId=42011310">z</a>)</code> - Limit the call to <em>x</em> ms. Play a warning when <em>y</em> ms are left. Repeat the warning every <em>z</em> ms. The following special variables can be used with this option:
+		<ul>
+			<li><code>LIMIT_PLAYAUDIO_CALLER</code> - Play sounds to the caller. yes|no (default yes)</li>
+			<li><code>LIMIT_PLAYAUDIO_CALLEE</code> - Play sounds to the callee. yes|no</li>
+			<li><code>LIMIT_TIMEOUT_FILE</code> - File to play when time is up.</li>
+			<li><code>LIMIT_CONNECT_FILE</code> - File to play when call begins.</li>
+			<li><code>LIMIT_WARNING_FILE</code> - File to play as warning if <em>y</em> is defined. The default is to say the time remaining.</li>
+		</ul>
+		</li>
+		<li><code>S<img class="emoticon emoticon-cross" src="images/icons/emoticons/error.png" data-emoticon-name="cross" alt="(error)"/></code> - Hang up the call after <em>x</em> seconds <strong>after</strong> the called party has answered the call.</li>
+		<li><code>t</code> - Allow the called party to transfer the calling party by sending the DTMF sequence defined in <code>features.conf</code>.</li>
+		<li><code>T</code> - Allow the calling party to transfer the called party by sending the DTMF sequence defined in <code>features.conf</code>.</li>
+		<li><code>w</code> - Allow the called party to enable recording of the call by sending the DTMF sequence defined for one-touch recording in <code>features.conf</code>.</li>
+		<li><code>W</code> - Allow the calling party to enable recording of the call by sending the DTMF sequence defined for one-touch recording in <code>features.conf</code>.</li>
+		<li><code>x</code> - Cause the called party to be hung up after the bridge, instead of being restarted in the dialplan.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_Bridge-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-ManagerAction_Bridge_42011311.html">Asterisk 17 ManagerAction_Bridge</a></li>
+	<li><a href="Asterisk-17-ManagerEvent_BridgeCreate_42011247.html">Asterisk 17 ManagerEvent_BridgeCreate</a></li>
+	<li><a href="Asterisk-17-ManagerEvent_BridgeEnter_42011249.html">Asterisk 17 ManagerEvent_BridgeEnter</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Application_Bridge-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-0b09aa0</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

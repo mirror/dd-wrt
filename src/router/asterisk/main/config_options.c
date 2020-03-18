@@ -27,8 +27,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <regex.h>
 
 #include "asterisk/_private.h"
@@ -36,6 +34,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/config_options.h"
 #include "asterisk/stringfields.h"
 #include "asterisk/acl.h"
+#include "asterisk/app.h"
 #include "asterisk/frame.h"
 #include "asterisk/xmldoc.h"
 #include "asterisk/cli.h"
@@ -81,7 +80,6 @@ struct aco_option {
 
 #ifdef AST_XML_DOCS
 static struct ao2_container *xmldocs;
-#endif /* AST_XML_DOCS */
 
 /*! \brief Value of the aco_option_type enum as strings */
 static char *aco_option_type_string[] = {
@@ -98,7 +96,9 @@ static char *aco_option_type_string[] = {
 	"String",			/* OPT_STRINGFIELD_T, */
 	"Unsigned Integer",	/* OPT_UINT_T, */
 	"Boolean",			/* OPT_YESNO_T, */
+	"Time Length",		/* OPT_TIMELEN_T, */
 };
+#endif /* AST_XML_DOCS */
 
 void *aco_pending_config(struct aco_info *info)
 {
@@ -120,6 +120,7 @@ static void config_option_destroy(void *obj)
 
 static int int_handler_fn(const struct aco_option *opt, struct ast_variable *var, void *obj);
 static int uint_handler_fn(const struct aco_option *opt, struct ast_variable *var, void *obj);
+static int timelen_handler_fn(const struct aco_option *opt, struct ast_variable *var, void *obj);
 static int double_handler_fn(const struct aco_option *opt, struct ast_variable *var, void *obj);
 static int sockaddr_handler_fn(const struct aco_option *opt, struct ast_variable *var, void *obj);
 static int stringfield_handler_fn(const struct aco_option *opt, struct ast_variable *var, void *obj);
@@ -131,7 +132,7 @@ static int noop_handler_fn(const struct aco_option *opt, struct ast_variable *va
 static int chararray_handler_fn(const struct aco_option *opt, struct ast_variable *var, void *obj);
 
 #ifdef AST_XML_DOCS
-static int xmldoc_update_config_type(const char *module, const char *name, const char *category, const char *matchfield, const char *matchvalue, unsigned int matches);
+static int xmldoc_update_config_type(const char *module, const char *name, const char *category, const char *matchfield, const char *matchvalue, enum aco_category_op category_match);
 static int xmldoc_update_config_option(struct aco_type **types, const char *module, const char *name, const char *object_name, const char *default_value, unsigned int regex, enum aco_option_type type);
 #endif
 
@@ -153,6 +154,7 @@ static aco_option_handler ast_config_option_default_handler(enum aco_option_type
 	case OPT_SOCKADDR_T: return sockaddr_handler_fn;
 	case OPT_STRINGFIELD_T: return stringfield_handler_fn;
 	case OPT_UINT_T: return uint_handler_fn;
+	case OPT_TIMELEN_T: return timelen_handler_fn;
 
 	case OPT_CUSTOM_T: return NULL;
 	}
@@ -198,7 +200,8 @@ static int link_option_to_types(struct aco_info *info, struct aco_type **types, 
 			return -1;
 		}
 #ifdef AST_XML_DOCS
-		if (!info->hidden && !opt->no_doc && xmldoc_update_config_option(types, info->module, opt->name, type->name, opt->default_val, opt->match_type == ACO_REGEX, opt->type)) {
+		if (!info->hidden && !opt->no_doc &&
+			xmldoc_update_config_option(types, info->module, opt->name, type->name, opt->default_val, opt->match_type == ACO_REGEX, opt->type)) {
 #ifdef AST_DEVMODE
 			opt->doc_unavailable = 1;
 #endif
@@ -219,7 +222,8 @@ int aco_option_register_deprecated(struct aco_info *info, const char *name, stru
 		return -1;
 	}
 
-	if (!(opt = ao2_alloc(sizeof(*opt), config_option_destroy))) {
+	opt = ao2_alloc_options(sizeof(*opt), config_option_destroy, AO2_ALLOC_OPT_LOCK_NOLOCK);
+	if (!opt) {
 		return -1;
 	}
 
@@ -310,7 +314,9 @@ int __aco_option_register(struct aco_info *info, const char *name, enum aco_matc
 		return -1;
 	}
 
-	if (!(opt = ao2_alloc(sizeof(*opt) + argc * sizeof(opt->args[0]), config_option_destroy))) {
+	opt = ao2_alloc_options(sizeof(*opt) + argc * sizeof(opt->args[0]),
+		config_option_destroy, AO2_ALLOC_OPT_LOCK_NOLOCK);
+	if (!opt) {
 		return -1;
 	}
 
@@ -371,6 +377,8 @@ static int find_option_cb(void *obj, void *arg, int flags)
 	switch (match->match_type) {
 	case ACO_EXACT:
 		return strcasecmp(name, match->name) ? 0 : CMP_MATCH | CMP_STOP;
+	case ACO_PREFIX:
+		return strncasecmp(name, match->name, strlen(match->name)) ? 0 : CMP_MATCH | CMP_STOP;
 	case ACO_REGEX:
 		return regexec(match->name_regex, name, 0, NULL, 0) ? 0 : CMP_MATCH | CMP_STOP;
 	}
@@ -397,7 +405,47 @@ static struct aco_option *aco_option_find(struct aco_type *type, const char *nam
 
 struct ao2_container *aco_option_container_alloc(void)
 {
-	return ao2_container_alloc(CONFIG_OPT_BUCKETS, config_opt_hash, config_opt_cmp);
+	return ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0, CONFIG_OPT_BUCKETS,
+		config_opt_hash, NULL, config_opt_cmp);
+}
+
+static int internal_aco_type_category_check(struct aco_type *match, const char *category)
+{
+	const char **categories = (const char **)match->category;
+
+	switch (match->category_match) {
+	case ACO_WHITELIST:
+		return regexec(match->internal->regex, category, 0, NULL, 0);
+
+	case ACO_BLACKLIST:
+		return !regexec(match->internal->regex, category, 0, NULL, 0);
+
+	case ACO_WHITELIST_EXACT:
+		return strcasecmp(match->category, category);
+
+	case ACO_BLACKLIST_EXACT:
+		return !strcasecmp(match->category, category);
+
+	case ACO_WHITELIST_ARRAY:
+		while (*categories) {
+			if (!strcasecmp(*categories, category)) {
+				return 0;
+			}
+			categories++;
+		}
+		return -1;
+
+	case ACO_BLACKLIST_ARRAY:
+		while (*categories) {
+			if (!strcasecmp(*categories, category)) {
+				return -1;
+			}
+			categories++;
+		}
+		return 0;
+	}
+
+	return -1;
 }
 
 static struct aco_type *internal_aco_type_find(struct aco_file *file, struct ast_config *cfg, const char *category)
@@ -408,7 +456,7 @@ static struct aco_type *internal_aco_type_find(struct aco_file *file, struct ast
 
 	for (x = 0, match = file->types[x]; match; match = file->types[++x]) {
 		/* First make sure we are an object that can service this category */
-		if (!regexec(match->internal->regex, category, 0, NULL, 0) == !match->category_match) {
+		if (internal_aco_type_category_check(match, category)) {
 			continue;
 		}
 
@@ -479,6 +527,10 @@ static int process_category(struct ast_config *cfg, struct aco_info *info, struc
 	if (!(type = internal_aco_type_find(file, cfg, cat))) {
 		ast_log(LOG_ERROR, "Could not find config type for category '%s' in '%s'\n", cat, file->filename);
 		return -1;
+	}
+
+	if (type->type == ACO_IGNORE) {
+		return 0;
 	}
 
 	field = info->internal->pending + type->item_offset;
@@ -566,7 +618,7 @@ enum aco_process_status aco_process_ast_config(struct aco_info *info, struct aco
 {
 	if (!info->internal) {
 		ast_log(LOG_ERROR, "Attempt to process %s with uninitialized aco_info\n", file->filename);
-		goto error;
+		return ACO_PROCESS_ERROR;
 	}
 
 	if (!(info->internal->pending = info->snapshot_alloc())) {
@@ -628,6 +680,10 @@ enum aco_process_status aco_process_config(struct aco_info *info, int reload)
 		/* set defaults for global objects */
 		for (i = 0, match = file->types[i]; match; match = file->types[++i]) {
 			void **field = info->internal->pending + match->item_offset;
+
+			if (match->type == ACO_IGNORE) {
+				continue;
+			}
 
 			if (match->type != ACO_GLOBAL || !*field) {
 				continue;
@@ -795,9 +851,19 @@ static int internal_type_init(struct aco_type *type)
 		return -1;
 	}
 
-	if (!(type->internal->regex = build_regex(type->category))) {
-		internal_type_destroy(type);
-		return -1;
+	switch (type->category_match) {
+	case ACO_BLACKLIST:
+	case ACO_WHITELIST:
+		if (!(type->internal->regex = build_regex(type->category))) {
+			internal_type_destroy(type);
+			return -1;
+		}
+		break;
+	case ACO_BLACKLIST_EXACT:
+	case ACO_WHITELIST_EXACT:
+	case ACO_BLACKLIST_ARRAY:
+	case ACO_WHITELIST_ARRAY:
+		break;
 	}
 
 	if (!(type->internal->opts = aco_option_container_alloc())) {
@@ -826,7 +892,8 @@ int aco_info_init(struct aco_info *info)
 #ifdef AST_XML_DOCS
 			if (!info->hidden &&
 				!type->hidden &&
-				xmldoc_update_config_type(info->module, type->name, type->category, type->matchfield, type->matchvalue, type->category_match == ACO_WHITELIST)) {
+				type->type != ACO_IGNORE &&
+				xmldoc_update_config_type(info->module, type->name, type->category, type->matchfield, type->matchvalue, type->category_match)) {
 				goto error;
 			}
 #endif /* AST_XML_DOCS */
@@ -895,88 +962,79 @@ int aco_set_defaults(struct aco_type *type, const char *category, void *obj)
 /*! \internal
  * \brief Complete the name of the module the user is looking for
  */
-static char *complete_config_module(const char *word, int pos, int state)
+static char *complete_config_module(const char *word)
 {
-	char *c = NULL;
 	size_t wordlen = strlen(word);
-	int which = 0;
 	struct ao2_iterator i;
 	struct ast_xml_doc_item *cur;
 
-	if (pos != 3) {
-		return NULL;
-	}
-
 	i = ao2_iterator_init(xmldocs, 0);
 	while ((cur = ao2_iterator_next(&i))) {
-		if (!strncasecmp(word, cur->name, wordlen) && ++which > state) {
-			c = ast_strdup(cur->name);
-			ao2_ref(cur, -1);
-			break;
+		if (!strncasecmp(word, cur->name, wordlen)) {
+			if (ast_cli_completion_add(ast_strdup(cur->name))) {
+				ao2_ref(cur, -1);
+				break;
+			}
 		}
 		ao2_ref(cur, -1);
 	}
 	ao2_iterator_destroy(&i);
 
-	return c;
+	return NULL;
 }
 
 /*! \internal
  * \brief Complete the name of the configuration type the user is looking for
  */
-static char *complete_config_type(const char *module, const char *word, int pos, int state)
+static char *complete_config_type(const char *module, const char *word)
 {
-	char *c = NULL;
 	size_t wordlen = strlen(word);
-	int which = 0;
-	RAII_VAR(struct ast_xml_doc_item *, info, NULL, ao2_cleanup);
+	struct ast_xml_doc_item *info;
 	struct ast_xml_doc_item *cur;
 
-	if (pos != 4) {
-		return NULL;
-	}
-
-	if (!(info = ao2_find(xmldocs, module, OBJ_KEY))) {
+	info = ao2_find(xmldocs, module, OBJ_KEY);
+	if (!info) {
 		return NULL;
 	}
 
 	cur = info;
 	while ((cur = AST_LIST_NEXT(cur, next))) {
-		if (!strcasecmp(cur->type, "configObject") && !strncasecmp(word, cur->name, wordlen) && ++which > state) {
-			c = ast_strdup(cur->name);
-			break;
+		if (!strcasecmp(cur->type, "configObject") && !strncasecmp(word, cur->name, wordlen)) {
+			if (ast_cli_completion_add(ast_strdup(cur->name))) {
+				break;
+			}
 		}
 	}
-	return c;
+	ao2_ref(info, -1);
+
+	return NULL;
 }
 
 /*! \internal
  * \brief Complete the name of the configuration option the user is looking for
  */
-static char *complete_config_option(const char *module, const char *option, const char *word, int pos, int state)
+static char *complete_config_option(const char *module, const char *option, const char *word)
 {
-	char *c = NULL;
 	size_t wordlen = strlen(word);
-	int which = 0;
-	RAII_VAR(struct ast_xml_doc_item *, info, NULL, ao2_cleanup);
+	struct ast_xml_doc_item *info;
 	struct ast_xml_doc_item *cur;
 
-	if (pos != 5) {
-		return NULL;
-	}
-
-	if (!(info = ao2_find(xmldocs, module, OBJ_KEY))) {
+	info = ao2_find(xmldocs, module, OBJ_KEY);
+	if (!info) {
 		return NULL;
 	}
 
 	cur = info;
 	while ((cur = AST_LIST_NEXT(cur, next))) {
-		if (!strcasecmp(cur->type, "configOption") && !strcasecmp(cur->ref, option) && !strncasecmp(word, cur->name, wordlen) && ++which > state) {
-			c = ast_strdup(cur->name);
-			break;
+		if (!strcasecmp(cur->type, "configOption") && !strcasecmp(cur->ref, option) && !strncasecmp(word, cur->name, wordlen)) {
+			if (ast_cli_completion_add(ast_strdup(cur->name))) {
+				break;
+			}
 		}
 	}
-	return c;
+	ao2_ref(info, -1);
+
+	return NULL;
 }
 
 /* Define as 0 if we want to allow configurations to be registered without
@@ -987,7 +1045,7 @@ static char *complete_config_option(const char *module, const char *option, cons
 /*! \internal
  * \brief Update the XML documentation for a config type based on its registration
  */
-static int xmldoc_update_config_type(const char *module, const char *name, const char *category, const char *matchfield, const char *matchvalue, unsigned int matches)
+static int xmldoc_update_config_type(const char *module, const char *name, const char *category, const char *matchfield, const char *matchvalue, enum aco_category_op category_match)
 {
 	RAII_VAR(struct ast_xml_xpath_results *, results, NULL, ast_xml_xpath_results_free);
 	RAII_VAR(struct ast_xml_doc_item *, config_info, ao2_find(xmldocs, module, OBJ_KEY), ao2_cleanup);
@@ -996,11 +1054,11 @@ static int xmldoc_update_config_type(const char *module, const char *name, const
 
 	/* If we already have a syntax element, bail. This isn't an error, since we may unload a module which
 	 * has updated the docs and then load it again. */
-	if ((results = ast_xmldoc_query("//configInfo[@name='%s']/*/configObject[@name='%s']/syntax", module, name))) {
+	if ((results = ast_xmldoc_query("/docs/configInfo[@name='%s']/configFile/configObject[@name='%s']/syntax", module, name))) {
 		return 0;
 	}
 
-	if (!(results = ast_xmldoc_query("//configInfo[@name='%s']/*/configObject[@name='%s']", module, name))) {
+	if (!(results = ast_xmldoc_query("/docs/configInfo[@name='%s']/configFile/configObject[@name='%s']", module, name))) {
 		ast_log(LOG_WARNING, "Cannot update type '%s' in module '%s' because it has no existing documentation!\n", name, module);
 		return XMLDOC_STRICT ? -1 : 0;
 	}
@@ -1026,7 +1084,18 @@ static int xmldoc_update_config_type(const char *module, const char *name, const
 	}
 
 	ast_xml_set_text(tmp, category);
-	ast_xml_set_attribute(tmp, "match", matches ? "true" : "false");
+	switch (category_match) {
+	case ACO_WHITELIST:
+	case ACO_WHITELIST_EXACT:
+	case ACO_WHITELIST_ARRAY:
+		ast_xml_set_attribute(tmp, "match", "true");
+		break;
+	case ACO_BLACKLIST:
+	case ACO_BLACKLIST_EXACT:
+	case ACO_BLACKLIST_ARRAY:
+		ast_xml_set_attribute(tmp, "match", "false");
+		break;
+	}
 
 	if (!ast_strlen_zero(matchfield) && !(tmp = ast_xml_new_child(matchinfo, "field"))) {
 		ast_log(LOG_WARNING, "Could not add %s attribute for type '%s' in module '%s'\n", matchfield, name, module);
@@ -1066,7 +1135,7 @@ static int xmldoc_update_config_option(struct aco_type **types, const char *modu
 		return XMLDOC_STRICT ? -1 : 0;
 	}
 
-	if (!(results = ast_xmldoc_query("//configInfo[@name='%s']/*/configObject[@name='%s']/configOption[@name='%s']", module, object_name, name))) {
+	if (!(results = ast_xmldoc_query("/docs/configInfo[@name='%s']/configFile/configObject[@name='%s']/configOption[@name='%s']", module, object_name, name))) {
 		ast_log(LOG_WARNING, "Could not find option '%s' with type '%s' in module '%s'\n", name, object_name, module);
 		return XMLDOC_STRICT ? -1 : 0;
 	}
@@ -1266,10 +1335,14 @@ static char *cli_show_help(struct ast_cli_entry *e, int cmd, struct ast_cli_args
 		return NULL;
 	case CLI_GENERATE:
 		switch(a->pos) {
-		case 3: return complete_config_module(a->word, a->pos, a->n);
-		case 4: return complete_config_type(a->argv[3], a->word, a->pos, a->n);
-		case 5: return complete_config_option(a->argv[3], a->argv[4], a->word, a->pos, a->n);
-		default: return NULL;
+		case 3:
+			return complete_config_module(a->word);
+		case 4:
+			return complete_config_type(a->argv[3], a->word);
+		case 5:
+			return complete_config_option(a->argv[3], a->argv[4], a->word);
+		default:
+			return NULL;
 		}
 	}
 
@@ -1374,6 +1447,39 @@ static int uint_handler_fn(const struct aco_option *opt, struct ast_variable *va
 		ast_log(LOG_WARNING, "Attempted to set %s=%s, but set it to %u instead due to default)\n", var->name, var->value, *field);
 	} else {
 		res = ast_parse_arg(var->value, flags, field);
+	}
+
+	return res;
+}
+
+/*! \brief Default option handler for timelen signed integers
+ * \note For a description of the opt->flags and opt->args values, see the documentation for
+ * enum aco_option_type in config_options.h
+ */
+static int timelen_handler_fn(const struct aco_option *opt, struct ast_variable *var, void *obj)
+{
+	int *field = (int *)(obj + opt->args[0]);
+	unsigned int flags = PARSE_TIMELEN | opt->flags;
+	int res = 0;
+	if (opt->flags & PARSE_IN_RANGE) {
+		if (opt->flags & PARSE_DEFAULT) {
+			res = ast_parse_arg(var->value, flags, field, (enum ast_timelen) opt->args[1], (int) opt->args[2], (int) opt->args[3], opt->args[4]);
+		} else {
+			res = ast_parse_arg(var->value, flags, field, (enum ast_timelen) opt->args[1], (int) opt->args[2], (int) opt->args[3]);
+		}
+		if (res) {
+			if (opt->flags & PARSE_RANGE_DEFAULTS) {
+				ast_log(LOG_WARNING, "Failed to set %s=%s. Set to %d instead due to range limit (%d, %d)\n", var->name, var->value, *field, (int) opt->args[2], (int) opt->args[3]);
+				res = 0;
+			} else if (opt->flags & PARSE_DEFAULT) {
+				ast_log(LOG_WARNING, "Failed to set %s=%s, Set to default value %d instead.\n", var->name, var->value, *field);
+				res = 0;
+			}
+		}
+	} else if ((opt->flags & PARSE_DEFAULT) && ast_parse_arg(var->value, flags, field, (enum ast_timelen) opt->args[1], (int) opt->args[2])) {
+		ast_log(LOG_WARNING, "Attempted to set %s=%s, but set it to %d instead due to default)\n", var->name, var->value, *field);
+	} else {
+		res = ast_parse_arg(var->value, flags, field, (enum ast_timelen) opt->args[1]);
 	}
 
 	return res;

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Screening Calls with Recorded Introductions</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Privacy-Configuration_4620321.html">Privacy Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Screening Calls with Recorded Introductions
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h3 id="ScreeningCallswithRecordedIntroductions-PhilosophicalSideNote">Philosophical Side Note</h3>
+<p>The 'P' option stores the CALLERID in the database, along with the callee's choice of actions, as a convenience to the CALLEE, whereas introductions are stored and re-used for the convenience of the CALLER.</p>
+
+<h3 id="ScreeningCallswithRecordedIntroductions-Introductions">Introductions</h3>
+<p>Unless instructed to not save introductions (see the 'n' option above), the screening modes will save the recordings of the caller's names in the directory /var/lib/asterisk/sounds/priv-callerintros, if they have a CallerID. Just the 10-digit callerid numbers are used as filenames, with a &quot;.gsm&quot; at the end. </p>
+
+<p>Having these recordings around can be very useful, however... </p>
+
+<p>First of all, if a callerid is supplied, and a recorded intro for that number is already present, the caller is spared the inconvenience of having to supply their name, which shortens their call a bit. </p>
+
+<p>Next of all, these intros can be used in voicemail, played over loudspeakers, and perhaps other nifty things. For instance:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+exten =&gt; s,6,Set(PATH=/var/lib/asterisk/sounds/priv-callerintros)
+exten =&gt; s,7,System(/usr/bin/play ${PATH}/${CALLERID(num)}.gsm&amp;,0)
+</pre>
+</div></div>
+
+<p>When a call comes in at the house, the above priority gets executed, and the callers intro is played over the phone systems speakers. This gives us a hint who is calling. </p>
+
+<p>(Note: the ,0 option at the end of the System command above, is a local mod I made to the System command. It forces a 0 result code to be returned, whether the play command successfully completed or not. Therefore, I don't have to ensure that the file exists or not. While I've turned this mod into the developers, it hasn't been incorporated yet. You might want to write an AGI or shell script to handle it a little more intelligently) </p>
+
+<p>And one other thing. You can easily supply your callers with an option to listen to, and re-record their introductions. Here's what I did in the home system's extensions.conf. (assume that a Goto(home-introduction,s,1) exists somewhere in your main menu as an option):</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+[home-introduction]
+exten =&gt; s,1,Background(intro-options) ;; Script:
+;; To hear your Introduction, dial 1.
+;; to record a new introduction, dial 2. 
+;; to return to the main menu, dial 3. 
+;; to hear what this is all about, dial 4. 
+exten =&gt; 1,1,Playback,priv-callerintros/${CALLERID(num)}
+exten =&gt; 1,2,Goto(s,1)
+exten =&gt; 2,1,Goto(home-introduction-record,s,1)
+exten =&gt; 3,1,Goto(homeline,s,7)
+exten =&gt; 4,1,Playback(intro-intro) ;; Script:
+;; This may seem a little strange, but it really is a neat
+;; thing, both for you and for us. I&#39;ve taped a short introduction
+;; for many of the folks who normally call us. Using the Caller ID
+;; from each incoming call, the system plays the introduction
+;; for that phone number over a speaker, just as the call comes in.
+;; This helps the folks
+;; here in the house more quickly determine who is calling.
+;; and gets the right ones to gravitate to the phone.
+;; You can listen to, and record a new intro for your phone number
+;; using this menu.
+exten =&gt; 4,2,Goto(s,1)
+exten =&gt; t,1,Goto(s,1)
+exten =&gt; i,1,Background(invalid)
+exten =&gt; i,2,Goto(s,1)
+exten =&gt; o,1,Goto(s,1)
+
+[home-introduction-record]
+exten =&gt; s,1,Background(intro-record-choices) ;; Script:
+;; If you want some advice about recording your
+;; introduction, dial 1.
+;; otherwise, dial 2, and introduce yourself after
+;; the beep.
+exten =&gt; 1,1,Playback(intro-record)
+;; Your introduction should be short and sweet and crisp.
+;; Your introduction will be limited to 4 seconds.
+;; This is NOT meant to be a voice mail message, so
+;; please, don&#39;t say anything about why you are calling. 
+;; After we are done making the recording, your introduction 
+;; will be saved for playback. 
+;; If you are the only person that would call from this number, 
+;; please state your name. Otherwise, state your business 
+;; or residence name instead. For instance, if you are 
+;; friend of the family, say, Olie McPherson, and both 
+;; you and your kids might call here a lot, you might 
+;; say: &quot;This is the distinguished Olie McPherson Residence!&quot; 
+;; If you are the only person calling, you might say this: 
+;; &quot;This is the illustrious Kermit McFrog! Pick up the Phone, someone!!
+;; If you are calling from a business, you might pronounce a more sedate introduction, like,
+;; &quot;Fritz from McDonalds calling.&quot;, or perhaps the more original introduction: 
+;; &quot;John, from the Park County Morgue. You stab &#39;em, we slab &#39;em!&quot;.
+;; Just one caution: the kids will hear what you record every time 
+;; you call. So watch your language! 
+;; I will begin recording after the tone. 
+;; When you are done, hit the # key. Gather your thoughts and get 
+;; ready. Remember, the # key will end the recording, and play back 
+;; your intro. Good Luck, and Thank you!&quot;
+exten =&gt; 1,2,Goto(2,1)
+exten =&gt; 2,1,Background(intro-start)
+;; OK, here we go! After the beep, please give your introduction.
+exten =&gt; 2,2,Background(beep) 
+exten =&gt; 2,3,Record(priv-callerintros/${CALLERID(num)}:gsm,4)
+exten =&gt; 2,4,Background(priv-callerintros/${CALLERID(num)})
+exten =&gt; 2,5,Goto(home-introduction,s,1) 
+exten =&gt; t,1,Goto(s,1)
+exten =&gt; i,1,Background(invalid)
+exten =&gt; i,2,Goto(s,1)
+exten =&gt; o,1,Goto(s,1)
+</pre>
+</div></div>
+
+<p>In the above, you'd most likely reword the messages to your liking, and maybe do more advanced things with the 'error' conditions (i,o,t priorities), but I hope it conveys the idea.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

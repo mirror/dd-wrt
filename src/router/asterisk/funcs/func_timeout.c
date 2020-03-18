@@ -20,7 +20,7 @@
  *
  * \brief Channel timeout related dialplan functions
  *
- * \author Mark Spencer <markster@digium.com> 
+ * \author Mark Spencer <markster@digium.com>
  * \ingroup functions
  */
 
@@ -29,8 +29,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/module.h"
 #include "asterisk/channel.h"
@@ -46,7 +44,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		<syntax>
 			<parameter name="timeouttype" required="true">
 				<para>The timeout that will be manipulated. The possible timeout types
-				are: <literal>absolute</literal>, <literal>digit</literal> or 
+				are: <literal>absolute</literal>, <literal>digit</literal> or
 				<literal>response</literal></para>
 			</parameter>
 		</syntax>

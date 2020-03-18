@@ -33,8 +33,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/_private.h"
 #include "asterisk/paths.h"	/* use ast_config_AST_DB */
 #include <sys/time.h>
@@ -129,6 +127,20 @@ DEFINE_SQL_STATEMENT(gettree_all_stmt, "SELECT key, value FROM astdb ORDER BY ke
 DEFINE_SQL_STATEMENT(showkey_stmt, "SELECT key, value FROM astdb WHERE key LIKE '%' || '/' || ? ORDER BY key")
 DEFINE_SQL_STATEMENT(create_astdb_stmt, "CREATE TABLE IF NOT EXISTS astdb(key VARCHAR(256), value VARCHAR(256), PRIMARY KEY(key))")
 
+/* This query begs an explanation:
+ *
+ * First, the parameter binding syntax used here is slightly different than the other
+ * queries in that we use a numbered parameter so that we can bind once and get the same
+ * value substituted multiple times within the executed query.
+ *
+ * Second, the key comparison is being used to find all keys that are lexicographically
+ * greater than the provided key, but less than the provided key with a high (but
+ * invalid) Unicode codepoint appended to it. This will give us all keys in the database
+ * that have 'key' as a prefix and performs much better than the equivalent "LIKE key ||
+ * '%'" operation.
+ */
+DEFINE_SQL_STATEMENT(gettree_prefix_stmt, "SELECT key, value FROM astdb WHERE key > ?1 AND key <= ?1 || X'ffff'")
+
 static int init_stmt(sqlite3_stmt **stmt, const char *sql, size_t len)
 {
 	ast_mutex_lock(&dblock);
@@ -169,6 +181,7 @@ static void clean_statements(void)
 	clean_stmt(&deltree_all_stmt, deltree_all_stmt_sql);
 	clean_stmt(&gettree_stmt, gettree_stmt_sql);
 	clean_stmt(&gettree_all_stmt, gettree_all_stmt_sql);
+	clean_stmt(&gettree_prefix_stmt, gettree_prefix_stmt_sql);
 	clean_stmt(&showkey_stmt, showkey_stmt_sql);
 	clean_stmt(&put_stmt, put_stmt_sql);
 	clean_stmt(&create_astdb_stmt, create_astdb_stmt_sql);
@@ -176,14 +189,15 @@ static void clean_statements(void)
 
 static int init_statements(void)
 {
-	/* Don't initialize create_astdb_statment here as the astdb table needs to exist
-	 * brefore these statments can be initialized */
+	/* Don't initialize create_astdb_statement here as the astdb table needs to exist
+	 * brefore these statements can be initialized */
 	return init_stmt(&get_stmt, get_stmt_sql, sizeof(get_stmt_sql))
 	|| init_stmt(&del_stmt, del_stmt_sql, sizeof(del_stmt_sql))
 	|| init_stmt(&deltree_stmt, deltree_stmt_sql, sizeof(deltree_stmt_sql))
 	|| init_stmt(&deltree_all_stmt, deltree_all_stmt_sql, sizeof(deltree_all_stmt_sql))
 	|| init_stmt(&gettree_stmt, gettree_stmt_sql, sizeof(gettree_stmt_sql))
 	|| init_stmt(&gettree_all_stmt, gettree_all_stmt_sql, sizeof(gettree_all_stmt_sql))
+	|| init_stmt(&gettree_prefix_stmt, gettree_prefix_stmt_sql, sizeof(gettree_prefix_stmt_sql))
 	|| init_stmt(&showkey_stmt, showkey_stmt_sql, sizeof(showkey_stmt_sql))
 	|| init_stmt(&put_stmt, put_stmt_sql, sizeof(put_stmt_sql));
 }
@@ -193,9 +207,11 @@ static int convert_bdb_to_sqlite3(void)
 	char *cmd;
 	int res;
 
-	ast_asprintf(&cmd, "%s/astdb2sqlite3 '%s'\n", ast_config_AST_SBIN_DIR, ast_config_AST_DB);
-	res = ast_safe_system(cmd);
-	ast_free(cmd);
+	res = ast_asprintf(&cmd, "%s/astdb2sqlite3 '%s'\n", ast_config_AST_SBIN_DIR, ast_config_AST_DB);
+	if (0 <= res) {
+		res = ast_safe_system(cmd);
+		ast_free(cmd);
+	}
 
 	return res;
 }
@@ -329,7 +345,7 @@ int ast_db_put(const char *family, const char *key, const char *value)
 		ast_log(LOG_WARNING, "Couldn't bind value to stmt: %s\n", sqlite3_errmsg(astdb));
 		res = -1;
 	} else if (sqlite3_step(put_stmt) != SQLITE_DONE) {
-		ast_log(LOG_WARNING, "Couldn't execute statment: %s\n", sqlite3_errmsg(astdb));
+		ast_log(LOG_WARNING, "Couldn't execute statement: %s\n", sqlite3_errmsg(astdb));
 		res = -1;
 	}
 
@@ -473,19 +489,64 @@ int ast_db_deltree(const char *family, const char *keytree)
 	return res;
 }
 
+static struct ast_db_entry *db_gettree_common(sqlite3_stmt *stmt)
+{
+	struct ast_db_entry *head = NULL, *prev = NULL, *cur;
+
+	while (sqlite3_step(stmt) == SQLITE_ROW) {
+		const char *key, *value;
+		size_t key_len, value_len;
+
+		key   = (const char *) sqlite3_column_text(stmt, 0);
+		value = (const char *) sqlite3_column_text(stmt, 1);
+
+		if (!key || !value) {
+			break;
+		}
+
+		key_len = strlen(key);
+		value_len = strlen(value);
+
+		cur = ast_malloc(sizeof(*cur) + key_len + value_len + 2);
+		if (!cur) {
+			break;
+		}
+
+		cur->next = NULL;
+		cur->key = cur->data + value_len + 1;
+		memcpy(cur->data, value, value_len + 1);
+		memcpy(cur->key, key, key_len + 1);
+
+		if (prev) {
+			prev->next = cur;
+		} else {
+			head = cur;
+		}
+		prev = cur;
+	}
+
+	return head;
+}
+
 struct ast_db_entry *ast_db_gettree(const char *family, const char *keytree)
 {
 	char prefix[MAX_DB_FIELD];
 	sqlite3_stmt *stmt = gettree_stmt;
-	struct ast_db_entry *cur, *last = NULL, *ret = NULL;
+	size_t res = 0;
+	struct ast_db_entry *ret;
 
 	if (!ast_strlen_zero(family)) {
 		if (!ast_strlen_zero(keytree)) {
 			/* Family and key tree */
-			snprintf(prefix, sizeof(prefix), "/%s/%s", family, keytree);
+			res = snprintf(prefix, sizeof(prefix), "/%s/%s", family, keytree);
 		} else {
 			/* Family only */
-			snprintf(prefix, sizeof(prefix), "/%s", family);
+			res = snprintf(prefix, sizeof(prefix), "/%s", family);
+		}
+
+		if (res >= sizeof(prefix)) {
+			ast_log(LOG_WARNING, "Requested prefix is too long: %s\n", keytree);
+			return NULL;
 		}
 	} else {
 		prefix[0] = '\0';
@@ -493,36 +554,42 @@ struct ast_db_entry *ast_db_gettree(const char *family, const char *keytree)
 	}
 
 	ast_mutex_lock(&dblock);
-	if (!ast_strlen_zero(prefix) && (sqlite3_bind_text(stmt, 1, prefix, -1, SQLITE_STATIC) != SQLITE_OK)) {
-		ast_log(LOG_WARNING, "Could bind %s to stmt: %s\n", prefix, sqlite3_errmsg(astdb));
+	if (res && (sqlite3_bind_text(stmt, 1, prefix, res, SQLITE_STATIC) != SQLITE_OK)) {
+		ast_log(LOG_WARNING, "Could not bind %s to stmt: %s\n", prefix, sqlite3_errmsg(astdb));
 		sqlite3_reset(stmt);
 		ast_mutex_unlock(&dblock);
 		return NULL;
 	}
 
-	while (sqlite3_step(stmt) == SQLITE_ROW) {
-		const char *key_s, *value_s;
-		if (!(key_s = (const char *) sqlite3_column_text(stmt, 0))) {
-			break;
-		}
-		if (!(value_s = (const char *) sqlite3_column_text(stmt, 1))) {
-			break;
-		}
-		if (!(cur = ast_malloc(sizeof(*cur) + strlen(key_s) + strlen(value_s) + 2))) {
-			break;
-		}
-		cur->next = NULL;
-		cur->key = cur->data + strlen(value_s) + 1;
-		strcpy(cur->data, value_s);
-		strcpy(cur->key, key_s);
-		if (last) {
-			last->next = cur;
-		} else {
-			ret = cur;
-		}
-		last = cur;
-	}
+	ret = db_gettree_common(stmt);
 	sqlite3_reset(stmt);
+	ast_mutex_unlock(&dblock);
+
+	return ret;
+}
+
+struct ast_db_entry *ast_db_gettree_by_prefix(const char *family, const char *key_prefix)
+{
+	char prefix[MAX_DB_FIELD];
+	size_t res;
+	struct ast_db_entry *ret;
+
+	res = snprintf(prefix, sizeof(prefix), "/%s/%s", family, key_prefix);
+	if (res >= sizeof(prefix)) {
+		ast_log(LOG_WARNING, "Requested key prefix is too long: %s\n", key_prefix);
+		return NULL;
+	}
+
+	ast_mutex_lock(&dblock);
+	if (sqlite3_bind_text(gettree_prefix_stmt, 1, prefix, res, SQLITE_STATIC) != SQLITE_OK) {
+		ast_log(LOG_WARNING, "Could not bind %s to stmt: %s\n", prefix, sqlite3_errmsg(astdb));
+		sqlite3_reset(gettree_prefix_stmt);
+		ast_mutex_unlock(&dblock);
+		return NULL;
+	}
+
+	ret = db_gettree_common(gettree_prefix_stmt);
+	sqlite3_reset(gettree_prefix_stmt);
 	ast_mutex_unlock(&dblock);
 
 	return ret;
@@ -960,8 +1027,8 @@ static void *db_sync_thread(void *data)
 	ast_mutex_lock(&dblock);
 	ast_db_begin_transaction();
 	for (;;) {
-		/* If dosync is set, db_sync() was called during sleep(1), 
-		 * and the pending transaction should be committed. 
+		/* If dosync is set, db_sync() was called during sleep(1),
+		 * and the pending transaction should be committed.
 		 * Otherwise, block until db_sync() is called.
 		 */
 		while (!dosync) {
@@ -1014,11 +1081,12 @@ static void astdb_atexit(void)
 
 int astdb_init(void)
 {
+	ast_cond_init(&dbcond, NULL);
+
 	if (db_init()) {
 		return -1;
 	}
 
-	ast_cond_init(&dbcond, NULL);
 	if (ast_pthread_create_background(&syncthread, NULL, db_sync_thread, NULL)) {
 		return -1;
 	}

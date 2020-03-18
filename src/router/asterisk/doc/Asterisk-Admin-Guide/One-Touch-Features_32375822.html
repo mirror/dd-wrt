@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : One-Touch Features</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Features_4260053.html">Features</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : One-Touch Features
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on Jul 06, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="One-TouchFeatures-Overview"><span style="color: rgb(133,120,102);">Overview</span></h1><p>Once configured these features can be activated with only a few or even one keypress on a user's phone. They are often called &quot;one-touch&quot; or &quot;one-step&quot; features.</p><p>All of the features are configured via options in the featuremap section of features.conf and require arguments to be passed to the applications invoking the target channel.</p><h1 id="One-TouchFeatures-AvailableFeatures">Available Features</h1><ul><li><strong>automon</strong> - (One-touch Recording) Asterisk will invoke Monitor on the current channel.</li><li><strong>automixmon</strong> - (One-touch Recording) Has the same behavior as automon, but uses MixMonitor instead of Monitor.</li><li><strong>disconnect</strong> - (One-touch Disconnect) When this code is detected on a channel that channel will be immediately hung up.</li><li><strong>parkcall</strong> - (One-touch Parking) Sets a feature code for quickly parking a call.<ul><li>Most parking options and behavior are configured in res_parking.conf in Asterisk 12 and newer.</li></ul></li></ul><h1 id="One-TouchFeatures-EnablingtheFeatures">Enabling the Features</h1><h2 id="One-TouchFeatures-Configurationoffeatures.conf">Configuration of features.conf</h2><p>The options are configured in features.conf in the featuremap section. They use typical Asterisk <a href="Config-File-Format_4817447.html">configuration file syntax</a>.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>features.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;"> [featuremap]
+automon = *1
+automixmon = *3
+disconnect = *0
+parkcall = #72</pre>
+</div></div><p>Assign each option the DTMF character string that you want users to enter for invoking the feature.</p><h2 id="One-TouchFeatures-Dialplanapplicationoptions">Dialplan application options</h2><p>For each feature there are a pair of options that can be set in the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_Dial">Dial</a> or <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_Queue">Queue</a> applications. The two options enable the feature on either the calling party channel or the called party channel.</p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>If neither option of a pair are set then you will not be able to use the related feature on the channel.</p>
+                    </div>
+    </div>
+<p><strong>automon</strong></p><ul><li>W - Allow the calling party to enable recording of the call.</li><li>w - Allow the called party to enable recording of the call.</li></ul><p><strong>automixmon</strong></p><ul><li>X - Allow the calling party to enable recording of the call.</li><li>x - Allow the called party to enable recording of the call.</li></ul><p><strong>disconnect</strong></p><ul><li>H - Allow the calling party to hang up the channel.</li><li><code>h</code> - Allow the called party to hang up the channel.</li></ul><p><strong>parkcall</strong></p><ul><li><code>K</code> - Allow the calling party to enable parking of the call.</li><li><code>k</code> - Allow the called party to enable parking of the call.</li></ul><h3 id="One-TouchFeatures-Exampleusage">Example usage</h3><p>Set the option as you would any <a href="Applications_4817408.html">application</a> option.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten = 101,1,Dial(PJSIP/ALICE,30,X)</pre>
+</div></div><p>This would allow the calling party, the party dialing PJSIP/ALICE, to invoke recording on the channel.</p><h1 id="One-TouchFeatures-UsingtheFeature">Using the Feature</h1><p>One you have configured features.conf and the options in the application then you only have to enter the feature code on your phone's keypad during a call!</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

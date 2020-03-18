@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Conference Participant Messaging</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Enhanced-Messaging_40818220.html">Enhanced Messaging</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Conference Participant Messaging
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Richard Mudgett</span>, last modified by <span class='editor'> George Joseph</span> on Sep 12, 2018
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-right-sidebar" data-layout="two-right-sidebar">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="ConferenceParticipantMessaging-Overview">Overview</h1><p>Since Asterisk 13.22.0 and 15.5.0, in-dialog SIP MESSAGE support in the chan_pjsip channel driver is enhanced and conference bridges added support for relaying messages.  The chan_pjsip channel driver now allows exchanging enhanced messages with Asterisk's core that have additional metadata indicating the sender and the mime-type of the message contents.  The conference bridges now allow relaying text and enhanced messages from one participant to all other participants.</p><h1 id="ConferenceParticipantMessaging-Howitworks">How it works</h1><p>It sounds simple enough but this required some restructuring of the bridging core to preserve the original sender's information and add support for text content types other than text/plain.</p><ul><li><p>The participant creates a SIP MESSAGE request with a specific content type, message body, and optionally a &quot;From&quot; display name.</p></li><li><p>The participant then sends that message in-dialog to the conference bridge.</p></li><li><p>Normally when a channel driver receives a text message, it passes only the text body to the bridging core, but this causes the sender and content type to be lost.  Now, when the chan_pjsip res_pjsip_messaging module receives an in-dialog SIP MESSAGE, it captures the From header's display name, the content type, and the body to pass on to the bridging core.  Other than the From display name, no other sender information is exposed.</p></li><li><p>When bridge_softmix (the bridging module used by ConfBridge) sees the message, it relays it to all other bridge participants.</p></li><li><p>Any other participants connected via chan_pjsip will get the From display name, content-type, and body.  Those not connected via chan_pjsip will get whatever the channel driver supports.</p></li></ul></div>
+</div>
+<div class="cell aside" data-type="aside">
+<div class="innerCell">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303118958 {padding: 0px;}
+div.rbtoc1582303118958 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303118958 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303118958'>
+<ul class='toc-indentation'>
+<li><a href='#ConferenceParticipantMessaging-Overview'>Overview</a></li>
+<li><a href='#ConferenceParticipantMessaging-Howitworks'>How it works</a></li>
+<li><a href='#ConferenceParticipantMessaging-UsingEnhancedMessaging'>Using Enhanced Messaging</a>
+<ul class='toc-indentation'>
+<li><a href='#ConferenceParticipantMessaging-ConfiguringAsterisk'>Configuring Asterisk</a></li>
+<li><a href='#ConferenceParticipantMessaging-Inthebrowser...'>In the browser...</a></li>
+</ul>
+</li>
+</ul>
+</div></p></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="ConferenceParticipantMessaging-UsingEnhancedMessaging">Using Enhanced Messaging</h1><p>While Enhanced Messaging is interesting for Asterisk 13, it is very interesting for Asterisk 15 and later.  Imagine a video conference using Asterisk 15's Selective Forwarding Unit (SFU) capability in ConfBridge.  Enhanced Messaging allows the conference participants to chat while participating in the conference.  <a href="Installing-and-Configuring-CyberMegaPhone_40818102.html">CyberMegaPhone</a> is an example for such a video conference application.</p><h2 id="ConferenceParticipantMessaging-ConfiguringAsterisk">Configuring Asterisk</h2><p>There is no additional configuration needed.  Enhanced Messaging is built-in and always available.</p><h2 id="ConferenceParticipantMessaging-Inthebrowser...">In the browser...</h2><p>How you design the user interface portion is totally up to you but here is a sample of how <a href="Installing-and-Configuring-CyberMegaPhone_40818102.html">CyberMegaPhone</a> could be extended to send a message using <a href="http://jssip.net" class="external-link" rel="nofollow">JsSIP</a>.  In this example, this._ua is a JsSIP.UA instance and this.rtc is a JsSIP.RTCSession instance.  Refer to the <a href="Installing-and-Configuring-CyberMegaPhone_40818102.html">CyberMegaPhone</a> code to see where this might fit.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">CyberMegaPhone.prototype.sendMessage = function (string_msg, options = {} ) {
+    /*
+     * You could allow the user to set a nickname
+     * for themselves which JsSIP can send as the
+     * display name in the SIP From header.  In the code
+     * that receives the message, you can then grab the
+     * display name from the packet.
+     */
+    if (options.from) {
+        from = options.from;
+        this._ua.set(&quot;display_name&quot;, from);
+    }
+    /*
+     * The message payload can be any UTF-8 string but you are not
+     * limited to plain text.  The Content-Type must be set to one
+     * of the text/ or application/ types but as long as the sender
+     * and receiver agree on the payload format, it can contain
+     * whatever you want. In this example, we are going to send
+     * a JSON blob.
+     *
+     * If you do not want to alter the display name on the actual
+     * SIP MESSAGE From header, you could include the user&#39;s
+     * nickname in the payload.
+     */
+    let msg = {
+        &#39;From&#39;: from,
+        &#39;Body&#39;: string_msg
+    };
+    let body = JSON.stringify(msg);
+    let extraHeaders = [ &#39;Content-Type: application/x-myphone-confbridge-chat+json&#39; ];
+    this.rtc.sendRequest(JsSIP.C.MESSAGE, {
+        extraHeaders,
+        body: body,
+        eventHandlers: options.handlers
+    });
+};
+/*
+ * Now here is how you would call sendMessage
+ */
+    phone.sendMessage(&quot;Hello!&quot;, {from: &quot;My Name&quot;, handlers: {
+        onSuccessResponse(response) {
+            // You may want to show an indicator that the message was sent successfully.
+            console.log(&quot;Message Sent: &quot; + response);
+        },
+        onErrorResponse(response) {
+            console.log(&quot;Message ERROR: &quot; + response);
+        },
+        onTransportError() {
+            console.log(&quot;Could not send message&quot;);
+        },
+        onRequestTimeout() {
+            console.log(&quot;Timeout sending message&quot;);
+        },
+        onDialogError() {
+            console.log(&quot;Dialog Error sending message&quot;);
+        },
+    }});</pre>
+</div></div><p>Congratulations, you have just sent a text message!  Assuming the user called a conference bridge in the first place, all the other participants should receive it.  The code to retrieve the message is even simpler than the code to send it.  Once again, in this CyberMegaPhone example, this._ua is the JsSIP.UA instance.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">    this._ua.on(&#39;newMessage&#39;, function (data) {
+        /* We do not care about messages we send. */
+        if (data.originator === &#39;local&#39;) {
+            return;
+        }
+        /* Grab the Content-Type header from the packet */
+        let ct = data.request.headers[&#39;Content-Type&#39;][0].raw;
+        /* Make sure the message is one we care about */
+        if (ct === &#39;application/x-myphone-confbridge-chat+json&#39;) {
+            /* Parse the body back into an object */
+            let msg = JSON.parse(data.request.body);
+            /* Tell the UI that we got a chat message */
+            that.raise(&#39;messageReceived&#39;, msg);
+        }
+    });</pre>
+</div></div></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

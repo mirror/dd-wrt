@@ -26,8 +26,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/message.h"
 #include "asterisk/endpoints.h"
 #include "asterisk/astobj2.h"
@@ -264,21 +262,20 @@ static struct ast_json *msg_to_json(struct ast_msg *msg)
 		return NULL;
 	}
 
-	json_vars = ast_json_array_create();
+	json_vars = ast_json_object_create();
 	if (!json_vars) {
+		ast_msg_var_iterator_destroy(it_vars);
 		return NULL;
 	}
 
-	while (ast_msg_var_iterator_next(msg, it_vars, &name, &value)) {
-		struct ast_json *json_tuple;
-
-		json_tuple = ast_json_pack("{s: s}", name, value);
-		if (!json_tuple) {
-			ast_json_free(json_vars);
+	while (ast_msg_var_iterator_next_received(msg, it_vars, &name, &value)) {
+		struct ast_json *json_val = ast_json_string_create(value);
+		if (!json_val || ast_json_object_set(json_vars, name, json_val)) {
+			ast_json_unref(json_vars);
+			ast_msg_var_iterator_destroy(it_vars);
 			return NULL;
 		}
 
-		ast_json_array_append(json_vars, json_tuple);
 		ast_msg_var_unref_current(it_vars);
 	}
 	ast_msg_var_iterator_destroy(it_vars);
@@ -457,7 +454,12 @@ static struct message_subscription *get_or_create_subscription(struct ast_endpoi
 		ao2_link(endpoint_subscriptions, sub);
 	} else {
 		ast_rwlock_wrlock(&tech_subscriptions_lock);
-		AST_VECTOR_APPEND(&tech_subscriptions, ao2_bump(sub));
+		ao2_ref(sub, +1);
+		if (AST_VECTOR_APPEND(&tech_subscriptions, sub)) {
+			/* Release the refs that were for the vector and the allocation. */
+			ao2_ref(sub, -2);
+			sub = NULL;
+		}
 		ast_rwlock_unlock(&tech_subscriptions_lock);
 	}
 
@@ -485,7 +487,11 @@ int messaging_app_subscribe_endpoint(const char *app_name, struct ast_endpoint *
 		ao2_unlock(sub);
 		return -1;
 	}
-	AST_VECTOR_APPEND(&sub->applications, tuple);
+	if (AST_VECTOR_APPEND(&sub->applications, tuple)) {
+		ao2_ref(tuple, -1);
+		ao2_unlock(sub);
+		return -1;
+	}
 	ao2_unlock(sub);
 
 	ast_debug(3, "App '%s' subscribed to messages from endpoint '%s'\n", app_name, endpoint ? ast_endpoint_get_id(endpoint) : "-- ALL --");

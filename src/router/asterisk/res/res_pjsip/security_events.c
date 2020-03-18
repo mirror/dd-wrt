@@ -26,8 +26,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <pjsip.h>
 
 #include "asterisk/res_pjsip.h"
@@ -188,7 +186,7 @@ void ast_sip_report_auth_success(struct ast_sip_endpoint *endpoint, pjsip_rx_dat
 					.transport  = transport,
 			},
 			.common.session_id  = call_id,
-			.using_password     = auth ? (uint32_t *)1 : (uint32_t *)0,
+			.using_password     = auth ? 1 : 0,
 	};
 
 	security_event_populate(rdata, call_id, sizeof(call_id), &local, &remote);

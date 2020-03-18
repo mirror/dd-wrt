@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : IAX2 Security</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="4817132.html">Inter-Asterisk eXchange protocol, version 2 (IAX2)</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : IAX2 Security
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Sean Bright</span> on May 09, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="IAX2Security-IAX2Security">IAX2 Security</h1>
+
+<p>Copyright (c) 2009 - Digium, Inc.<br />
+All Rights Reserved.<br />
+Document Version 1.0<br />
+09/03/09<br />
+Asterisk Development Team &lt;asteriskteam@digium.com&gt;</p>
+
+<style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302993054 {padding: 0px;}
+div.rbtoc1582302993054 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302993054 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302993054'>
+<ul class='toc-indentation'>
+<li><span class='TOCOutline'>1</span> <a href='#IAX2Security-Introduction'>Introduction</a>
+<ul class='toc-indentation'>
+<li><span class='TOCOutline'>1.1</span> <a href='#IAX2Security-Overview'>Overview</a></li>
+</ul>
+</li>
+<li><span class='TOCOutline'>2</span> <a href='#IAX2Security-UserGuide'>User Guide</a>
+<ul class='toc-indentation'>
+<li><span class='TOCOutline'>2.1</span> <a href='#IAX2Security-Configuration'>Configuration</a>
+<ul class='toc-indentation'>
+<li><span class='TOCOutline'>2.1.1</span> <a href='#IAX2Security-QuickStart'>Quick Start</a></li>
+<li><span class='TOCOutline'>2.1.2</span> <a href='#IAX2Security-ControlledNetworks'>Controlled Networks</a>
+<ul class='toc-indentation'>
+<li><span class='TOCOutline'>2.1.2.1</span> <a href='#IAX2Security-FullUpgrade'>Full Upgrade</a></li>
+<li><span class='TOCOutline'>2.1.2.2</span> <a href='#IAX2Security-PartialUpgrade'>Partial Upgrade</a></li>
+</ul>
+</li>
+<li><span class='TOCOutline'>2.1.3</span> <a href='#IAX2Security-PublicNetworks'>Public Networks</a>
+<ul class='toc-indentation'>
+<li><span class='TOCOutline'>2.1.3.1</span> <a href='#IAX2Security-FullUpgrade.1'>Full Upgrade</a></li>
+<li><span class='TOCOutline'>2.1.3.2</span> <a href='#IAX2Security-PartialUpgrade.1'>Partial Upgrade</a></li>
+<li><span class='TOCOutline'>2.1.3.3</span> <a href='#IAX2Security-GuestAccess'>Guest Access</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><span class='TOCOutline'>2.2</span> <a href='#IAX2Security-CLICommands'>CLI Commands</a>
+<ul class='toc-indentation'>
+<li><span class='TOCOutline'>2.2.1</span> <a href='#IAX2Security-iax2showcallnumberusage'>iax2 show callnumber usage</a></li>
+<li><span class='TOCOutline'>2.2.2</span> <a href='#IAX2Security-iax2showpeer'>iax2 show peer</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><span class='TOCOutline'>3</span> <a href='#IAX2Security-ProtocolModification'>Protocol Modification</a>
+<ul class='toc-indentation'>
+<li><span class='TOCOutline'>3.1</span> <a href='#IAX2Security-Overview.1'>Overview</a></li>
+<li><span class='TOCOutline'>3.2</span> <a href='#IAX2Security-CallTokenValidation'>Call Token Validation</a></li>
+<li><span class='TOCOutline'>3.3</span> <a href='#IAX2Security-ExampleMessageExchanges'>Example Message Exchanges</a>
+<ul class='toc-indentation'>
+<li><span class='TOCOutline'>3.3.1</span> <a href='#IAX2Security-CallSetup'>Call Setup</a></li>
+<li><span class='TOCOutline'>3.3.2</span> <a href='#IAX2Security-CallSetup,clientdoesnotsupportCALLTOKEN'>Call Setup, client does not support CALLTOKEN</a></li>
+<li><span class='TOCOutline'>3.3.3</span> <a href='#IAX2Security-CallSetup,clientsupportsCALLTOKEN,serverdoesnot'>Call Setup, client supports CALLTOKEN, server does not</a></li>
+<li><span class='TOCOutline'>3.3.4</span> <a href='#IAX2Security-CallSetupfromclientthatsendsinvalidtoken'>Call Setup from client that sends invalid token</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><span class='TOCOutline'>4</span> <a href='#IAX2Security-AsteriskImplementation'>Asterisk Implementation</a>
+<ul class='toc-indentation'>
+<li><span class='TOCOutline'>4.1</span> <a href='#IAX2Security-CALLTOKENIEPayload'>CALLTOKEN IE Payload</a></li>
+</ul>
+</li>
+</ul>
+</div>
+
+<h2 id="IAX2Security-Introduction">Introduction</h2>
+<h3 id="IAX2Security-Overview">Overview</h3>
+
+<p>A change has been made to the IAX2 protocol to help mitigate denial of service attacks. This change is referred to as call token validation. This change affects how messages are exchanged and is not backwards compatible for an older client connecting to an updated server, so a number of options have been provided to disable call token validation as needed for compatibility purposes.</p>
+
+<p>In addition to call token validation, Asterisk can now also limit the number of connections allowed per IP address to disallow one host from preventing other hosts from making successful connections. These options are referred to as call number limits.</p>
+
+<p>For additional details about the configuration options referenced in this document, see the sample configuration file, <code>iax.conf.sample</code>. For information regarding the details of the call token validation protocol modification, see <a href="#IAX2Security-ProtocolModification">#Protocol Modification</a>.</p>
+
+<h2 id="IAX2Security-UserGuide">User Guide</h2>
+<h3 id="IAX2Security-Configuration">Configuration</h3>
+<h4 id="IAX2Security-QuickStart">Quick Start</h4>
+
+<p>We strongly recommend that administrators leave the IAX2 security enhancements in place where possible. However, to bypass the security enhancements completely and have Asterisk work exactly as it did before, the following options can be specified in the <code>[general]</code> section of <code>iax.conf</code>:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>iax.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: plain; gutter: false" style="font-size:12px;">
+[general]
+...
+calltokenoptional = 0.0.0.0/0.0.0.0
+maxcallnumbers = 16382
+...
+</pre>
+</div></div>
+
+<h4 id="IAX2Security-ControlledNetworks">Controlled Networks</h4>
+
+<p>This section discusses what needs to be done for an Asterisk server on a network where no unsolicited traffic will reach the IAX2 service.</p>
+
+<h5 id="IAX2Security-FullUpgrade">Full Upgrade</h5>
+
+<p>If all IAX2 endpoints have been upgraded, then no changes to configuration need to be made.</p>
+
+<h5 id="IAX2Security-PartialUpgrade">Partial Upgrade</h5>
+
+<p>If only some of the IAX2 endpoints have been upgraded, then some configuration changes will need to be made for interoperability. Since this is for a controlled network, the easiest thing to do is to disable call token validation completely, as described under <a href="#IAX2Security-QuickStart">#Quick Start</a>.</p>
+
+<h4 id="IAX2Security-PublicNetworks">Public Networks</h4>
+
+<p>This section discusses the use of the IAX2 security functionality on public networks where it is possible to receive unsolicited IAX2 traffic.</p>
+
+<h5 id="IAX2Security-FullUpgrade.1">Full Upgrade</h5>
+
+<p>If all IAX2 endpoints have been upgraded to support call token validation, then no changes need to be made. However, for enhanced security, the administrator may adjust call number limits to further reduce the potential impact of malicious call number consumption. The following configuration will allow known peers to consume more call numbers than unknown source IP addresses:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>iax.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: plain; gutter: false" style="font-size:12px;">
+[general]
+; By default, restrict call number usage to a low number.
+maxcallnumbers = 16
+...
+
+[callnumberlimits]
+; For peers with known IP addresses, call number limits can
+; be set in this section. This limit is per IP address for
+; addresses that fall in the specified range.
+; &lt;IP&gt;/&lt;mask&gt; = &lt;limit&gt;
+192.168.1.0/255.255.255.0 = 1024
+...
+
+[peerA]
+; Since we won&#39;t know the IP address of a dynamic peer until
+; they register, a max call number limit can be set in a
+; dynamic peer configuration section.
+type = peer
+host = dynamic
+maxcallnumbers = 1024
+...
+</pre>
+</div></div>
+
+<h5 id="IAX2Security-PartialUpgrade.1">Partial Upgrade</h5>
+
+<p>If only some IAX2 endpoints have been upgraded, or the status of an IAX2 endpoint is unknown, then call token validation must be disabled to ensure interoperability. To reduce the potential impact of disabling call token validation, it should only be disabled for a specific peer or user as needed. By using the auto option, call token validation will be changed to<br />
+required as soon as we determine that the peer supports it.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>iax.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: plain; gutter: false" style="font-size:12px;">
+[friendA]
+requirecalltoken = auto
+...
+</pre>
+</div></div>
+
+<p>Note that there are some cases where auto should not be used. For example, if multiple peers use the same authentication details, and they have not all upgraded to support call token validation, then the ones that do not support it will get locked out. Once an upgraded client successfully completes an authenticated call setup using call token validation,<br />
+Asterisk will require it from then on. In that case, it would be better to set the requirecalltoken option to no.</p>
+
+<h5 id="IAX2Security-GuestAccess">Guest Access</h5>
+
+<p>Guest access via IAX2 requires special attention. Given the number of existing IAX2 endpoints that do not support call token validation, most systems that allow guest access should do so without requiring call token validation.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>iax.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: plain; gutter: false" style="font-size:12px;">
+[guest]
+; Note that the name &quot;guest&quot; is special here. When the code
+; tries to determine if call token validation is required, it
+; will look for a user by the username specified in the
+; request. Guest calls can be sent without a username. In
+; that case, we will look for a defined user called &quot;guest&quot; to
+; determine if call token validation is required or not.
+type = user
+requirecalltoken = no
+...
+</pre>
+</div></div>
+
+<p>Since disabling call token validation for the guest account allows a huge hole for malicious call number consumption, an option has been provided to segregate the call numbers consumed by connections not using call token validation from those that do. That way, there are resources dedicated to the more secure connections to ensure that service is not interrupted for them.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>iax.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: plain; gutter: false" style="font-size:12px;">
+[general]
+maxcallnumbers_nonvalidated = 2048
+...
+</pre>
+</div></div>
+
+<h3 id="IAX2Security-CLICommands">CLI Commands</h3>
+<h4 id="IAX2Security-iax2showcallnumberusage"><code>iax2 show callnumber usage</code></h4>
+
+<p>Usage: <code>iax2 show callnumber usage [IP address]</code></p>
+
+<p>Show current IP addresses which are consuming IAX2 call numbers.</p>
+
+<h4 id="IAX2Security-iax2showpeer"><code>iax2 show peer</code></h4>
+
+<p>This command will now also show the configured call number limit and whether or not call token validation is required for this peer.</p>
+
+<h2 id="IAX2Security-ProtocolModification">Protocol Modification</h2>
+
+<p>This section discusses the modification that has been made to the IAX2 protocol. This information would be most useful to implementors of IAX2.</p>
+
+<h3 id="IAX2Security-Overview.1">Overview</h3>
+
+<p>The IAX2 protocol uses a call number to associate messages with which call they belong to. The available amount of call numbers is finite as defined by the protocol. Because of this, it is important to prevent attackers from maliciously consuming call numbers. To achieve this, an enhancement to the IAX2 protocol has been made which is referred to as call token validation.</p>
+
+<p>Call token validation ensures that an IAX2 connection is not coming from a spoofed IP address. In addition to using call token validation, Asterisk will also limit how many call numbers may be consumed by a given remote IP address. These limits have defaults that will usually not need to be changed, but can be modified for a specific need.</p>
+
+<p>The combination of call token validation and call number limits is used to mitigate a denial of service attack to consume all available IAX2 call numbers. An alternative approach to securing IAX2 would be to use a security layer on top of IAX2, such as DTLS <a href="http://www.ietf.org/rfc/rfc4347" class="external-link" rel="nofollow">RFC 4347</a> or IPsec <a href="http://www.ietf.org/rfc/rfc4301" class="external-link" rel="nofollow">RFC 4301</a>.</p>
+
+<h3 id="IAX2Security-CallTokenValidation">Call Token Validation</h3>
+
+<p>The key words &quot;MUST&quot;, &quot;MUST NOT&quot;, &quot;REQUIRED&quot;, &quot;SHALL&quot;, &quot;SHALL NOT&quot;, &quot;SHOULD&quot;, &quot;SHOULD NOT&quot;, &quot;RECOMMENDED&quot;, &quot;MAY&quot;, and &quot;OPTIONAL&quot; in this document are to be interpreted as described in RFC 2119.</p>
+
+<p>For this section, when the word &quot;request&quot; is used, it is referring to the command that starts an IAX2 dialog.</p>
+
+<p>This modification adds a new IAX2 frame type, and a new information element be defined.</p>
+
+<p>Frame Type: CALLTOKEN — 0x28 (40)</p>
+
+<p>IE: CALLTOKEN — 0x36 (54)</p>
+
+<p>When a request is initially sent, it SHOULD include the CALLTOKEN IE with a zero-length payload to indicate that this client supports the CALLTOKEN exchange. When a server receives this request, it MUST respond with the IAX2 message CALLTOKEN. The CALLTOKEN message MUST be sent with a source call number of 0, as a call number will not yet be allocated for this call.</p>
+
+<p>For the sake of backwards compatibility with clients that do not support token validation, server implementations MAY process requests that do not indicate CALLTOKEN support in their initial request. However, this SHOULD NOT be the default behavior, as it gives up the security benefits gained by CALLTOKEN validation.</p>
+
+<p>After a client sends a request with an empty CALLTOKEN IE, it MUST be prepared to receive a CALLTOKEN response, or to receive a response that would be given in the case of a valid CALLTOKEN. This is how a client must behave to inter operate with IAX2 server implementations that do not yet support CALLTOKEN validation.</p>
+
+<p>When an IAX2 client receives a CALLTOKEN response, it MUST send its initial request again. This request MUST include the CALLTOKEN IE with a copy of the value of the CALLTOKEN IE received in the CALLTOKEN response. The IE value is an opaque value. Clients MUST be able to accept a CALLTOKEN payload of any length, up to the maximum length allowed in an IAX2 IE.</p>
+
+<p>The value of the payload in the CALLTOKEN IE is an implementation detail.  It is left to the implementor to decide how sophisticated it should be.  However, it MUST be enough such that when the CALLTOKEN IE is sent back, it can be used to verify that the source IP address and port number has not been spoofed.</p>
+
+<p>If a server receives a request with an invalid CALLTOKEN IE value, then it MUST drop it and not respond.</p>
+
+<h3 id="IAX2Security-ExampleMessageExchanges">Example Message Exchanges</h3>
+<h4 id="IAX2Security-CallSetup">Call Setup</h4>
+
+
+
+<map id="gliffy-map-19398860-8317" name="gliffy-map-19398860-8317"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 420px;" usemap="#gliffy-map-19398860-8317" src="attachments/4259943/19398868.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+
+
+<h4 id="IAX2Security-CallSetup,clientdoesnotsupportCALLTOKEN">Call Setup, client does not support CALLTOKEN</h4>
+
+
+
+<map id="gliffy-map-19398856-4425" name="gliffy-map-19398856-4425"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 420px;" usemap="#gliffy-map-19398856-4425" src="attachments/4259943/19398869.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+
+
+<h4 id="IAX2Security-CallSetup,clientsupportsCALLTOKEN,serverdoesnot">Call Setup, client supports CALLTOKEN, server does not</h4>
+
+
+
+<map id="gliffy-map-19398854-6600" name="gliffy-map-19398854-6600"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 420px;" usemap="#gliffy-map-19398854-6600" src="attachments/4259943/19398870.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+
+
+<h4 id="IAX2Security-CallSetupfromclientthatsendsinvalidtoken">Call Setup from client that sends invalid token</h4>
+
+
+
+<map id="gliffy-map-19398850-9241" name="gliffy-map-19398850-9241"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 420px;" usemap="#gliffy-map-19398850-9241" src="attachments/4259943/19398871.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+
+
+<h2 id="IAX2Security-AsteriskImplementation">Asterisk Implementation</h2>
+
+<p>This section includes some additional details on the implementation of these changes in Asterisk.</p>
+
+<h3 id="IAX2Security-CALLTOKENIEPayload">CALLTOKEN IE Payload</h3>
+
+<p>For Asterisk, we will encode the payload of the CALLTOKEN IE such that the server is able to validate a received token without having to store any information after transmitting the CALLTOKEN response. The CALLTOKEN IE payload will contain:</p>
+
+<ul>
+	<li>A timestamp (epoch based)</li>
+</ul>
+
+
+<ul>
+	<li>SHA1 hash of the remote IP address and port, the timestamp, as well some random data generated when Asterisk starts.</li>
+</ul>
+
+
+<p>When a CALLTOKEN IE is received, its validity will be determined by recalculating the SHA1 hash. If it is a valid token, the timestamp is checked to determine if the token is expired. The token timeout will be hard coded at 10 seconds for now. However, it may be made configurable at some point if it seems to be a useful addition. If the server determines that a received token is expired, it will treat it as an invalid token and not respond to the request.</p>
+
+<p>By using this method, we require no additional memory to be allocated for a dialog, other than what is on the stack for processing the initial request, until token validation is complete.</p>
+
+<p>However, one thing to note with this CALLTOKEN IE encoding is that a token would be considered valid by Asterisk every time a client sent it until we considered it an expired token. However, with use of the &quot;maxcallnumbers&quot; option, this is not actually a problem. It just means that an attacker could hit their call number limit a bit quicker since they would only have to acquire a single token per timeout period, instead of a token per request.</p>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4259943/19398852">IAX2 Call Setup - Invalid Token</a> (text/xml)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4259943/19398850">IAX2 Call Setup - Invalid Token</a> (application/gliffy+xml)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4259943/19398866">IAX2 Call Setup - No Server Support</a> (text/xml)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4259943/19398858">IAX2 Call Setup - No Client Support</a> (text/xml)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4259943/19398864">IAX2 Call Setup - No Client Support</a> (text/xml)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4259943/19398862">IAX2 Call Setup - Call Token Support</a> (text/xml)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4259943/19398860">IAX2 Call Setup - Call Token Support</a> (application/gliffy+xml)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4259943/19398872">IAX2 Call Setup - No Client Support</a> (text/xml)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4259943/19398874">IAX2 Call Setup - No Server Support</a> (text/xml)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4259943/19398868.png">IAX2 Call Setup - Call Token Support.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4259943/19398873.png">IAX2 Call Setup - No Client Support.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4259943/19398875.png">IAX2 Call Setup - No Server Support.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4259943/19398871.png">IAX2 Call Setup - Invalid Token.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4259943/19398856">IAX2 Call Setup - No Client Support</a> (application/gliffy+xml)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4259943/19398869.png">IAX2 Call Setup - No Client Support.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4259943/19398854">IAX2 Call Setup - No Server Support</a> (application/gliffy+xml)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4259943/19398870.png">IAX2 Call Setup - No Server Support.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

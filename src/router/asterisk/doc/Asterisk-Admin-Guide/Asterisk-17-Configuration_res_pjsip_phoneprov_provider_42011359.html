@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Configuration_res_pjsip_phoneprov_provider</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Module-Configuration_42010715.html">Asterisk 17 Module Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Configuration_res_pjsip_phoneprov_provider
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Configuration_res_pjsip_phoneprov_provider-Modulethatintegratesres_pjsipwithres_phoneprov.">Module that integrates res_pjsip with res_phoneprov.</h1>
+
+<p>This configuration documentation is for functionality provided by <code>res_pjsip_phoneprov_provider</code>.</p>
+
+<h2 id="Asterisk17Configuration_res_pjsip_phoneprov_provider-Overview">Overview</h2>
+
+<p><strong>PJSIP Phoneprov Provider</strong></p>
+
+<p>This module creates the integration between <code>res_pjsip</code> and <code>res_phoneprov</code>.</p>
+
+<p>Each user to be integrated requires a <code>phoneprov</code> section defined in <code>pjsip.conf</code>. Each section identifies the endpoint associated with the user and any other name/value pairs to be passed on to res_phoneprov's template substitution. Only <code>MAC</code> and <code>PROFILE</code> variables are required. Any other variables supplied will be passed through.</p>
+
+
+
+<p>Example:</p>
+
+<p>[1000]</p>
+
+<p>type = phoneprovr</p>
+
+<p>endpoint = ep1000</p>
+
+<p>MAC = deadbeef4dad</p>
+
+<p>PROFILE = grandstream2</p>
+
+<p>LINEKEYS = 2</p>
+
+<p>LINE = 1</p>
+
+<p>OTHERVAR = othervalue</p>
+
+
+
+<p>The following variables are automatically defined if an endpoint is defined for the user:</p>
+
+<ul>
+	<li><code>USERNAME</code> - Source: The user_name defined in the first auth reference in the endpoint.</li>
+	<li><code>SECRET</code> - Source: The user_pass defined in the first auth reference in the endpoint.</li>
+	<li><code>CALLERID</code> - Source: The number part of the callerid defined in the endpoint.</li>
+	<li><code>DISPLAY_NAME</code> - Source: The name part of the callerid defined in the endpoint.</li>
+	<li><code>LABEL</code> - Source: The id of the phoneprov section.</li>
+</ul>
+
+
+
+<p>In addition to the standard variables, the following are also automatically defined:</p>
+
+<ul>
+	<li><code>ENDPOINT_ID</code> - Source: The id of the endpoint.</li>
+	<li><code>TRANSPORT_ID</code> - Source: The id of the transport used by the endpoint.</li>
+	<li><code>AUTH_ID</code> - Source: The id of the auth used by the endpoint.</li>
+</ul>
+
+
+
+<p>All other template substitution variables must be explicitly defined in the phoneprov_default or phoneprov sections.</p>
+
+
+<h2 id="Asterisk17Configuration_res_pjsip_phoneprov_provider-pjsip.conf">pjsip.conf</h2>
+
+<h3 id="Asterisk17Configuration_res_pjsip_phoneprov_provider-phoneprov">phoneprov</h3>
+
+<p>Provides variables for each user.</p>
+
+<h4 id="Asterisk17Configuration_res_pjsip_phoneprov_provider-ConfigurationOptionReference">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>type</code> </p></td>
+<td class="confluenceTd"><p> <code>None</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Must be of type 'phoneprov'. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>endpoint</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> The endpoint from which variables will be retrieved. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>MAC</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> The mac address for this user. (required) </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>PROFILE</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> The phoneprov profile to use for this user. (required) </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>*</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Other name/value pairs to be passed through for use in templates. </p></td>
+</tr>
+</tbody></table></div>
+
+
+<h3 id="Asterisk17Configuration_res_pjsip_phoneprov_provider-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

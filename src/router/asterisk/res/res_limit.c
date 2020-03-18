@@ -2,7 +2,7 @@
  * Asterisk -- An open source telephony toolkit.
  *
  * Resource limits
- * 
+ *
  * Copyright (c) 2006 Tilghman Lesher.  All rights reserved.
  *
  * Tilghman Lesher <res_limit_200607@the-tilghman.com>
@@ -23,8 +23,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <ctype.h>
 #include <sys/time.h>
@@ -215,4 +213,3 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "Resource limits");
-

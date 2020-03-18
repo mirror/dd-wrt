@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 ManagerEvent_QueueMemberRemoved</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-AMI-Events_42010707.html">Asterisk 17 AMI Events</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 ManagerEvent_QueueMemberRemoved
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17ManagerEvent_QueueMemberRemoved-QueueMemberRemoved">QueueMemberRemoved</h1>
+
+<h3 id="Asterisk17ManagerEvent_QueueMemberRemoved-Synopsis">Synopsis</h3>
+
+<p>Raised when a member is removed from the queue.</p>
+
+<h3 id="Asterisk17ManagerEvent_QueueMemberRemoved-Description">Description</h3>
+
+<h3 id="Asterisk17ManagerEvent_QueueMemberRemoved-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Event: QueueMemberRemoved
+Queue: &lt;value&gt;
+MemberName: &lt;value&gt;
+Interface: &lt;value&gt;
+StateInterface: &lt;value&gt;
+Membership: &lt;value&gt;
+Penalty: &lt;value&gt;
+CallsTaken: &lt;value&gt;
+LastCall: &lt;value&gt;
+LastPause: &lt;value&gt;
+InCall: &lt;value&gt;
+Status: &lt;value&gt;
+Paused: &lt;value&gt;
+PausedReason: &lt;value&gt;
+Ringinuse: &lt;value&gt;
+Wrapuptime: &lt;value&gt;
+</pre>
+</div></div>
+
+<h5 id="Asterisk17ManagerEvent_QueueMemberRemoved-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>Queue</code> - The name of the queue.</li>
+	<li><code>MemberName</code> - The name of the queue member.</li>
+	<li><code>Interface</code> - The queue member's channel technology or location.</li>
+	<li><code>StateInterface</code> - Channel technology or location from which to read device state changes.</li>
+	<li><code>Membership</code>
+	<ul>
+		<li><code>dynamic</code></li>
+		<li><code>realtime</code></li>
+		<li><code>static</code></li>
+	</ul>
+	</li>
+	<li><code>Penalty</code> - The penalty associated with the queue member.</li>
+	<li><code>CallsTaken</code> - The number of calls this queue member has serviced.</li>
+	<li><code>LastCall</code> - The time this member last took a call, expressed in seconds since 00:00, Jan 1, 1970 UTC.</li>
+	<li><code>LastPause</code> - The time when started last paused the queue member.</li>
+	<li><code>InCall</code> - Set to 1 if member is in call. Set to 0 after LastCall time is updated.
+	<ul>
+		<li><code>0</code></li>
+		<li><code>1</code></li>
+	</ul>
+	</li>
+	<li><code>Status</code> - The numeric device state status of the queue member.
+	<ul>
+		<li><code>0</code> - AST_DEVICE_UNKNOWN</li>
+		<li><code>1</code> - AST_DEVICE_NOT_INUSE</li>
+		<li><code>2</code> - AST_DEVICE_INUSE</li>
+		<li><code>3</code> - AST_DEVICE_BUSY</li>
+		<li><code>4</code> - AST_DEVICE_INVALID</li>
+		<li><code>5</code> - AST_DEVICE_UNAVAILABLE</li>
+		<li><code>6</code> - AST_DEVICE_RINGING</li>
+		<li><code>7</code> - AST_DEVICE_RINGINUSE</li>
+		<li><code>8</code> - AST_DEVICE_ONHOLD</li>
+	</ul>
+	</li>
+	<li><code>Paused</code>
+	<ul>
+		<li><code>0</code></li>
+		<li><code>1</code></li>
+	</ul>
+	</li>
+	<li><code>PausedReason</code> - If set when paused, the reason the queue member was paused.</li>
+	<li><code>Ringinuse</code>
+	<ul>
+		<li><code>0</code></li>
+		<li><code>1</code></li>
+	</ul>
+	</li>
+	<li><code>Wrapuptime</code> - The Wrapup Time of the queue member. If this value is set will override the wrapup time of queue.</li>
+</ul>
+
+
+<h3 id="Asterisk17ManagerEvent_QueueMemberRemoved-Class">Class</h3>
+
+<p>AGENT</p>
+<h3 id="Asterisk17ManagerEvent_QueueMemberRemoved-SeeAlso">See Also</h3>
+<ul>
+	<li><a href="Asterisk-17-ManagerEvent_QueueMemberAdded_42010898.html">Asterisk 17 ManagerEvent_QueueMemberAdded</a></li>
+	<li><a href="Asterisk-17-Application_RemoveQueueMember_42010872.html">Asterisk 17 Application_RemoveQueueMember</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17ManagerEvent_QueueMemberRemoved-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

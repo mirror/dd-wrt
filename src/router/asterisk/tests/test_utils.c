@@ -27,12 +27,13 @@
 
 /*** MODULEINFO
 	<depend>TEST_FRAMEWORK</depend>
+	<use type="module">res_agi</use>
+	<use type="module">res_crypto</use>
+	<use type="external">crypto</use>
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$");
 
 #include "asterisk/utils.h"
 #include "asterisk/test.h"
@@ -324,20 +325,6 @@ AST_TEST_DEFINE(crypto_loaded_test)
 		break;
 	}
 
-#if 0 /* Not defined on Solaris */
-	ast_test_status_update(test,
-			       "address of __stub__ast_crypto_loaded is %p\n",
-			       __stub__ast_crypto_loaded);
-#ifndef HAVE_ATTRIBUTE_weak_import
-	ast_test_status_update(test,
-			       "address of __ref__ast_crypto_loaded is %p\n",
-			       __ref__ast_crypto_loaded);
-#endif
-	ast_test_status_update(test,
-			       "pointer to ast_crypto_loaded is %p\n",
-			       ast_crypto_loaded);
-#endif
-
 	return ast_crypto_loaded() ? AST_TEST_PASS : AST_TEST_FAIL;
 }
 
@@ -354,6 +341,11 @@ AST_TEST_DEFINE(adsi_loaded_test)
 		return AST_TEST_NOT_RUN;
 	case TEST_EXECUTE:
 		break;
+	}
+
+	if (!ast_module_check("res_adsi.so")) {
+		ast_test_status_update(test, "This test skipped because deprecated module res_adsi.so is not built by default.\n");
+		return AST_TEST_PASS;
 	}
 
 	if (!(c = ast_dummy_channel_alloc())) {
@@ -388,20 +380,6 @@ AST_TEST_DEFINE(agi_loaded_test)
 		break;
 	}
 
-#if 0
-	ast_test_status_update(test,
-			       "address of __stub__ast_agi_register is %p\n",
-			       __stub__ast_agi_register);
-#ifndef HAVE_ATTRIBUTE_weak_import
-	ast_test_status_update(test,
-			       "address of __ref__ast_agi_register is %p\n",
-			       __ref__ast_agi_register);
-#endif
-	ast_test_status_update(test,
-			       "pointer to ast_agi_register is %p\n",
-			       ast_agi_register);
-#endif
-
 	if (ast_agi_register(ast_module_info->self, &noop_command) == AST_OPTIONAL_API_UNAVAILABLE) {
 		ast_test_status_update(test, "Unable to register testnoop command, because res_agi is not loaded.\n");
 		return AST_TEST_FAIL;
@@ -419,7 +397,7 @@ AST_TEST_DEFINE(agi_loaded_test)
 	}
 #endif
 
-	ast_agi_unregister(ast_module_info->self, &noop_command);
+	ast_agi_unregister(&noop_command);
 	return res;
 }
 
@@ -674,4 +652,9 @@ static int load_module(void)
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
-AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "Utils test module");
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Utils test module",
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.requires = "res_agi,res_crypto",
+);

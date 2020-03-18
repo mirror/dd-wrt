@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Creating and Manipulating Channels from the CLI</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Operation_27200183.html">Operation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Command-Line-Interface_4259982.html">Asterisk Command Line Interface</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Creating and Manipulating Channels from the CLI
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span> on May 02, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Here we'll mention a few commands that allow you to create or manipulate channels at the CLI during runtime.</p><h2 id="CreatingandManipulatingChannelsfromtheCLI-channelrequesthangup">channel request hangup</h2><p>Provided by the core, this command simply allows you to request that a specified channel or all channels be hungup.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Usage: channel request hangup &lt;channel&gt;|&lt;all&gt;
+       Request that a channel be hung up. The hangup takes effect
+       the next time the driver reads or writes from the channel.
+       If &#39;all&#39; is specified instead of a channel name, all channels
+       will see the hangup request.</pre>
+</div></div><p>An example:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>newtonr-laptop*CLI&gt; core show channels
+Channel              Location             State   Application(Data)             
+SIP/6001-00000001    (None)               Up      Playback(demo-congrats)       
+1 active channel
+
+newtonr-laptop*CLI&gt; channel request hangup SIP/6001-00000001 
+Requested Hangup on channel &#39;SIP/6001-00000001&#39;
+[May  2 09:51:19] WARNING[7045][C-00000001]: app_playback.c:493 playback_exec: Playback failed on SIP/6001-00000001 for demo-congrats</pre>
+</div></div><p>Here I made a call to an extension calling Playback, then from the CLI I requested that the established channel be hung up. You can see that it hung up in the middle of playing a sound file, so that sound file fails to continue playing.</p><h2 id="CreatingandManipulatingChannelsfromtheCLI-channeloriginate">channel originate</h2><p>Provided by res_clioriginate.so, this command allows you to create a new channel and have it connect to either a dialplan extension or a specific application.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>  There are two ways to use this command. A call can be originated between a
+channel and a specific application, or between a channel and an extension in
+the dialplan. This is similar to call files or the manager originate action.
+Calls originated with this command are given a timeout of 30 seconds.
+Usage1: channel originate &lt;tech/data&gt; application &lt;appname&gt; [appdata]
+  This will originate a call between the specified channel tech/data and the
+given application. Arguments to the application are optional. If the given
+arguments to the application include spaces, all of the arguments to the
+application need to be placed in quotation marks.
+Usage2: channel originate &lt;tech/data&gt; extension [exten@][context]
+  This will originate a call between the specified channel tech/data and the
+given extension. If no context is specified, the &#39;default&#39; context will be
+used. If no extension is given, the &#39;s&#39; extension will be used.</pre>
+</div></div><p>An example:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>newtonr-laptop*CLI&gt; channel originate SIP/6001 extension 9999@somecontext
+  == Using SIP RTP CoS mark 5
+    -- Called 6001
+    -- SIP/6001-00000004 is ringing
+       &gt; 0x7f0828067710 -- Probation passed - setting RTP source address to 10.24.18.16:4046
+    -- SIP/6001-00000004 answered
+    -- Executing [9999@somecontext:1] VoiceMailMain(&quot;SIP/6001-00000004&quot;, &quot;&quot;) in new stack
+    -- &lt;SIP/6001-00000004&gt; Playing &#39;vm-login.gsm&#39; (language &#39;en&#39;)
+       &gt; 0x7f0828067710 -- Probation passed - setting RTP source address to 10.24.18.16:4046</pre>
+</div></div><p>We originated a call to the chan_sip peer 6001 in this case. The extension parameter tells it what extension to connect that channel to once the channel answers. In this case we connect it to an extension calling VoiceMailMain.</p><h2 id="CreatingandManipulatingChannelsfromtheCLI-channelredirect">channel redirect</h2><p>Provided by res_clioriginate.so, this command allows you to redirect an existing channel to a dialplan extension.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Usage: channel redirect &lt;channel&gt; &lt;[[context,]exten,]priority&gt;
+    Redirect an active channel to a specified extension.</pre>
+</div></div><p>An example:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>    -- Executing [100@from-internal:1] Playback(&quot;SIP/6001-00000005&quot;, &quot;demo-congrats&quot;) in new stack
+       &gt; 0x7f07ec03e560 -- Probation passed - setting RTP source address to 10.24.18.16:4048
+    -- &lt;SIP/6001-00000005&gt; Playing &#39;demo-congrats.gsm&#39; (language &#39;en&#39;)
+newtonr-laptop*CLI&gt; channel redirect SIP/6001-00000005 somecontext,9999,1
+Channel &#39;SIP/6001-00000005&#39; successfully redirected to somecontext,9999,1
+[May  2 09:56:28] WARNING[7056][C-00000005]: app_playback.c:493 playback_exec: Playback failed on SIP/6001-00000005 for demo-congrats
+    -- Executing [9999@somecontext:1] VoiceMailMain(&quot;SIP/6001-00000005&quot;, &quot;&quot;) in new stack
+    -- &lt;SIP/6001-00000005&gt; Playing &#39;vm-login.gsm&#39; (language &#39;en&#39;)</pre>
+</div></div><p>Here we make a call from SIP/6001 to a 100@from-internal, which results in a call to Playback. After the call is established, we issue a 'channel redirect' to redirect that channel to the extension 9999 in the context 'somecontext'. It is immediately placed into that extension and we hear the VoicemailMain prompt.</p><p> </p><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

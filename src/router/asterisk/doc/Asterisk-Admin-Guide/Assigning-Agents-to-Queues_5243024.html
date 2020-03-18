@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Assigning Agents to Queues</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Queues_5243008.html">Asterisk Queues</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-Call-Queues-with-AEL_5243010.html">Configuring Call Queues with AEL</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Assigning Agents to Queues
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>In this example dialplan, we want to be able to add and remove agents to handle incoming calls, as they feel they are available. As they log in, they are added to the queue's agent list, and as they log out, they are removed. If no agents are available, the queue command will terminate, and it is the duty of the dialplan to do something appropriate, be it sending the incoming caller to voicemail, or trying the queue again with a higher QUEUE_MAX_PENALTY.</p>
+
+<p>Because a single agent can make themselves available to more than one queue, the process of joining multiple queues can be handled automatically by the dialplan.</p>
+
+<h5 id="AssigningAgentstoQueues-AgentsLogInandOut">Agents Log In and Out</h5>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+context queues-loginout {
+    6092 =&gt; {
+        Answer(); 
+        Read(AGENT_NUMBER,agent-enternum); 
+        VMAuthenticate(${AGENT_NUMBER}@default,s); 
+        Set(queue-announce-success=1); 
+        goto queues-manip,I${AGENT_NUMBER},1; 
+    } 
+    6093 =&gt; { 
+        Answer(); 
+        Read(AGENT_NUMBER,agent-enternum); 
+        Set(queue-announce-success=1); 
+        goto queues-manip,O${AGENT_NUMBER},1;
+    }
+}
+</pre>
+</div></div>
+
+<p>In the above contexts, the agents dial 6092 to log into their queues, and they dial 6093 to log out of their queues. The agent is prompted for their agent number, and if they are logging in, their passcode, and then they are transferred to the proper extension in the queues-manip context. The queues-manip context does all the actual work:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+context queues-manip {
+    // Raquel Squelch 
+    _[IO]6121 =&gt; {
+        &amp;queue-addremove(dispatch,10,${EXTEN}); 
+        &amp;queue-success(${EXTEN}); 
+    }
+    // Brittanica Spears
+    _[IO]6165 =&gt; {
+        &amp;queue-addremove(dispatch,20,${EXTEN}); 
+        &amp;queue-success(${EXTEN}); 
+    }
+    // Rock Hudson
+    _[IO]6170 =&gt; {
+        &amp;queue-addremove(sales-general,10,${EXTEN}); 
+        &amp;queue-addremove(customerservice,20,${EXTEN});
+        &amp;queue-addremove(dispatch,30,${EXTEN});
+        &amp;queue-success(${EXTEN}); 
+    }
+    // Saline Dye-on 
+    _[IO]6070 =&gt; {
+        &amp;queue-addremove(sales-general,20,${EXTEN});
+        &amp;queue-addremove(customerservice,30,${EXTEN});
+        &amp;queue-addremove(dispatch,30,${EXTEN});
+        &amp;queue-success(${EXTEN}); 
+    }
+}
+</pre>
+</div></div>
+
+<p>In the above extensions, note that the queue-addremove macro is used to actually add or remove the agent from the applicable queue, with the applicable priority level. Note that agents with a priority level of 10 will be called before agents with levels of 20 or 30. </p>
+
+<p>In the above example, Raquel will be dialed first in the dispatch queue, if she has logged in. If she is not, then the second call of Queue() with priority of 20 will dial Brittanica if she is present, otherwise the third call of Queue() with MAX_PENALTY of 0 will dial Rock and Saline simultaneously. </p>
+
+<p>Also note that Rock will be among the first to be called in the sales-general queue, and among the last in the dispatch queue. As you can see in main menu, the callerID is set in the main menu so they can tell which queue incoming calls are coming from. </p>
+
+<p>The call to queue-success() gives some feedback to the agent as they log in and out, that the process has completed.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+macro queue-success(exten) {
+    if( ${queue-announce-success} &gt; 0 ) {
+        switch(${exten:0:1}) {
+            case I:
+                Playback(agent-loginok);
+                Hangup();
+                break;
+            case O:
+                Playback(agent-loggedoff);
+                Hangup();
+                break;
+        }
+    }
+}
+</pre>
+</div></div>
+
+<p>The queue-addremove macro is defined in this manner:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+macro queue-addremove(queuename,penalty,exten) {
+    switch(${exten:0:1}) {
+        case I: // Login 
+            AddQueueMember(${queuename},Local/${exten:1}@agents,${penalty});
+            break; 
+        case O: // Logout
+            RemoveQueueMember(${queuename},Local/${exten:1}@agents); 
+            break;
+        case P: // Pause
+            PauseQueueMember(${queuename},Local/${exten:1}@agents); 
+            break;
+        case U: // Unpause
+            UnpauseQueueMember(${queuename},Local/${exten:1}@agents); 
+            break;
+        default: // Invalid
+            Playback(invalid); 
+            break;
+    }
+}
+</pre>
+</div></div>
+
+<p>Basically, it uses the first character of the exten variable, to determine the proper actions to take. In the above dial plan code, only the cases I or O are used, which correspond to the Login and Logout actions.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

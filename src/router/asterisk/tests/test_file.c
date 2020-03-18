@@ -26,8 +26,6 @@
 #include <sys/stat.h>
 #include <stdio.h>
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/file.h"
 #include "asterisk/paths.h"
 #include "asterisk/test.h"

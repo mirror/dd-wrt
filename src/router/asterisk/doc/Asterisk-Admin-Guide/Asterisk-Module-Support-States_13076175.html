@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk Module Support States</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Community_22088300.html">Asterisk Community</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk Module Support States
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Leif Madsen</span>, last modified by <span class='editor'> Matt Jordan</span> on Aug 07, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="AsteriskModuleSupportStates-Introduction">Introduction</h1><p>In Asterisk, modules can take one of three supported states. These states include:</p><ul><li>Core</li><li>Extended</li><li>Deprecated</li></ul><p>The definition of the various states is described in the following sections.</p><h2 id="AsteriskModuleSupportStates-Core">Core</h2><p>Most modules in Asterisk are in the Core state, which means issues found with these modules can freely be reported to the Asterisk issue tracker, where the issue will be triaged and placed into a queue for resolution.</p><h2 id="AsteriskModuleSupportStates-Extended">Extended</h2><p>This module is supported by the Asterisk community, and may or may not have an active developer. Some extended modules have active community developers; others do not. Issues reported against these modules may have a low level of support. For more information about which extended support modules have an active developer supporting them, see <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+Open+Source+Maintainers">Asterisk Open Source Maintainers.</a></p><h2 id="AsteriskModuleSupportStates-Deprecated">Deprecated</h2><p>The module will remain in the tree, but there is a better way to do it. After two release cycles issues that have been deprecated for some time will be listed in an email to the Asterisk-Dev list where the community will have an opportunity to comment on whether a deprecated module: still compiles, works sufficiently well, and is still being utilized in a system where there is a justification for not using the preferred module.</p><h1 id="AsteriskModuleSupportStates-MODULEINFOConfigurations">MODULEINFO Configurations</h1><p>At the top of modules there is the ability to set meta information about that module. Currently we have the following tags:</p><ul><li><strong>&lt;defaultenabled&gt;</strong></li><li><strong>&lt;use&gt;</strong></li><li><strong>&lt;depend&gt;</strong></li></ul><p>The meta data added to <strong>MODULEINFO</strong> in the module causes data to be generated in <em>menuselect</em>. For example, when you use <strong>&lt;defaultenabled&gt;no&lt;/defaultenabled&gt;</strong> the module will not be selected by default. We would use the <strong>&lt;defaultenabled&gt;</strong> tag for <em>deprecated</em> modules so that they are not built unless explicitly selected by an Asterisk administrator.</p><h2 id="AsteriskModuleSupportStates-AddingNewMetadata">Adding New Metadata</h2><p>On top of the existing tags, we would add two additional tags to communicate via menuselect that a module was extended or deprecated (and what module supersedes the deprecated module). These tags include:</p><ul><li><strong>&lt;support_level&gt;</strong><ul><li><em>Example: &lt;support_level&gt;deprecated&lt;/support_level&gt;</em>  --  This module would be deprecated. Maintenance of this module may not exist. It is possible this module could eventually be tagged as deprecated, or removed from the tree entirely. </li></ul></li><li><strong>&lt;replacement&gt;</strong><ul><li><em>Example: &lt;replacement&gt;func_odbc&lt;/replacement&gt;</em>  --  The replacement for this module is the func_odbc module. This is used when the <em>&lt;support_level&gt;</em> is set to <strong>deprecated</strong>.</li></ul></li></ul><h3 id="AsteriskModuleSupportStates-MenuselectDisplay">Menuselect Display</h3><p>The following two images show the suggested menuselect output based on the addition of the <em>&lt;support_level&gt;</em> and <em>&lt;replacement&gt;</em> tags. This would be a new line that has not been used before, and therefore would be added to menuselect as that new line.</p><p>If the <strong>deprecated</strong> value is used, then the value between the <strong>&lt;replacement&gt;</strong> tags will replace the value of <em>app_superQ</em> as shown in the image below. The text surrounding <em>app_superQ</em> would be static (same for all modules that used <strong>deprecated</strong>).</p><p><img class="confluence-embedded-image" src="attachments/13076175/13008898.png" data-image-src="attachments/13076175/13008898.png"></p><p>If the <strong>&lt;support_level&gt;</strong> tag is used, then the value of <em>extended</em> would cause the additional text of <strong>*</strong>* EXTENDED *<strong>*</strong> to be displayed.</p><p><img class="confluence-embedded-image" src="attachments/13076175/13008899.png" data-image-src="attachments/13076175/13008899.png"></p><p>Display in menuselect-newt for supported modules. If no &lt;support_level&gt; is specified, then it is assumed the module is supported:</p><p><img class="confluence-embedded-image" src="attachments/13076175/13008901.png" data-image-src="attachments/13076175/13008901.png"></p><p>Display in menuselect-newt for extended modules:</p><p><img class="confluence-embedded-image" src="attachments/13076175/13008902.png" data-image-src="attachments/13076175/13008902.png"></p><p>Display in menuselect-newt for deprecated modules:</p><p><img class="confluence-embedded-image" src="attachments/13076175/13008900.png" data-image-src="attachments/13076175/13008900.png"></p>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/13076175/13008898.png">menuselect-deprecated.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/13076175/13008899.png">menuselect-unmaintained.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/13076175/13008900.png">menuselect-newt-deprecated.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/13076175/13008901.png">menuselect-newt-supported.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/13076175/13008902.png">menuselect-newt-unmaintained.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

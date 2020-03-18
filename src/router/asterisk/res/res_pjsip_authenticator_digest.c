@@ -524,8 +524,6 @@ static int reload_module(void)
 
 static int load_module(void)
 {
-	CHECK_PJSIP_MODULE_LOADED();
-
 	if (build_entity_id()) {
 		return AST_MODULE_LOAD_DECLINE;
 	}
@@ -549,9 +547,10 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PJSIP authentication resource",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.reload = reload_module,
-		.load_pri = AST_MODPRI_CHANNEL_DEPEND - 5,
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.reload = reload_module,
+	.load_pri = AST_MODPRI_CHANNEL_DEPEND - 5,
+	.requires = "res_pjsip",
 );

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : ConfBridge CLI Commands</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Conferencing-Applications_32375228.html">Conferencing Applications</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="ConfBridge_13076234.html">ConfBridge</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : ConfBridge CLI Commands
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span> on Mar 30, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="ConfBridgeCLICommands-ConfBridgeCLICommands">ConfBridge CLI Commands</h1><p>ConfBridge offers several commands that may be invoked from the Asterisk CLI.</p><h2 id="ConfBridgeCLICommands-confbridgekick&lt;conference&gt;&lt;channel&gt;">confbridge kick &lt;conference&gt; &lt;channel&gt;</h2><p>Removes the specified channel from the conference, e.g.:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; confbridge kick 1111 SIP/mypeer-00000000
+Kicking SIP/mypeer-00000000 from confbridge 1111
+</pre>
+</div></div></div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303031739 {padding: 0px;}
+div.rbtoc1582303031739 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303031739 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303031739'>
+<ul class='toc-indentation'>
+<li><a href='#ConfBridgeCLICommands-ConfBridgeCLICommands'>ConfBridge CLI Commands</a>
+<ul class='toc-indentation'>
+<li><a href='#ConfBridgeCLICommands-confbridgekick&lt;conference&gt;&lt;channel&gt;'>confbridge kick &lt;conference&gt; &lt;channel&gt;</a></li>
+<li><a href='#ConfBridgeCLICommands-confbridgelist'>confbridge list</a></li>
+<li><a href='#ConfBridgeCLICommands-confbridgelist&lt;conference&gt;'>confbridge list &lt;conference&gt;</a></li>
+<li><a href='#ConfBridgeCLICommands-confbridgelock&lt;conference&gt;'>confbridge lock &lt;conference&gt;</a></li>
+<li><a href='#ConfBridgeCLICommands-confbridgeunlock&lt;conference&gt;'>confbridge unlock &lt;conference&gt;</a></li>
+<li><a href='#ConfBridgeCLICommands-confbridgemute&lt;conference&gt;&lt;channel&gt;'>confbridge mute &lt;conference&gt; &lt;channel&gt;</a></li>
+<li><a href='#ConfBridgeCLICommands-confbridgeunmute&lt;conference&gt;&lt;channel&gt;'>confbridge unmute &lt;conference&gt; &lt;channel&gt;</a></li>
+<li><a href='#ConfBridgeCLICommands-confbridgerecordstart&lt;conference&gt;&lt;file&gt;'>confbridge record start &lt;conference&gt; &lt;file&gt;</a></li>
+<li><a href='#ConfBridgeCLICommands-confbridgerecordstop&lt;confererence&gt;'>confbridge record stop &lt;confererence&gt;</a></li>
+<li><a href='#ConfBridgeCLICommands-confbridgeshowmenus'>confbridge show menus</a></li>
+<li><a href='#ConfBridgeCLICommands-confbridgeshowmenu&lt;menuname&gt;'>confbridge show menu &lt;menu name&gt;</a></li>
+<li><a href='#ConfBridgeCLICommands-confbridgeshowprofilebridges'>confbridge show profile bridges</a></li>
+<li><a href='#ConfBridgeCLICommands-confbridgeshowprofilebridge&lt;bridge&gt;'>confbridge show profile bridge &lt;bridge&gt;</a></li>
+<li><a href='#ConfBridgeCLICommands-confbridgeshowprofileusers'>confbridge show profile users</a></li>
+<li><a href='#ConfBridgeCLICommands-confbirdgeshowprofileuser&lt;user&gt;'>confbirdge show profile user &lt;user&gt;</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h2 id="ConfBridgeCLICommands-confbridgelist">confbridge list</h2><p>Shows a summary listing of all bridges, e.g.:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; confbridge list
+Conference Bridge Name           Users  Marked Locked?
+================================ ====== ====== ========
+1111                                  1      0 unlocked
+</pre>
+</div></div><h2 id="ConfBridgeCLICommands-confbridgelist&lt;conference&gt;">confbridge list &lt;conference&gt;</h2><p>Shows a detailed listing of participants in a specified conference, e.g.:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; confbridge list 1111
+Channel                       User Profile     Bridge Profile   Menu
+============================= ================ ================ ================
+SIP/mypeer-00000001          default_user     1111             sample_user_menu 
+</pre>
+</div></div><h2 id="ConfBridgeCLICommands-confbridgelock&lt;conference&gt;">confbridge lock &lt;conference&gt;</h2><p>Locks a specified conference so that only Admin users can join, e.g.:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; confbridge lock 1111
+Conference 1111 is locked.
+</pre>
+</div></div><h2 id="ConfBridgeCLICommands-confbridgeunlock&lt;conference&gt;">confbridge unlock &lt;conference&gt;</h2><p>Unlocks a specified conference so that only Admin users can join, e.g.:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; confbridge unlock 1111
+Conference 1111 is unlocked.
+</pre>
+</div></div><h2 id="ConfBridgeCLICommands-confbridgemute&lt;conference&gt;&lt;channel&gt;">confbridge mute &lt;conference&gt; &lt;channel&gt;</h2><p>Mutes a specified user in a specified conference, e.g.:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; confbridge mute 1111 SIP/mypeer-00000001
+Muting SIP/mypeer-00000001 from confbridge 1111
+</pre>
+</div></div><h2 id="ConfBridgeCLICommands-confbridgeunmute&lt;conference&gt;&lt;channel&gt;">confbridge unmute &lt;conference&gt; &lt;channel&gt;</h2><p>Unmutes a specified user in a specified conference, e.g.:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; confbridge unmute 1111 SIP/mypeer-00000001
+Unmuting SIP/mypeer-00000001 from confbridge 1111
+</pre>
+</div></div><h2 id="ConfBridgeCLICommands-confbridgerecordstart&lt;conference&gt;&lt;file&gt;">confbridge record start &lt;conference&gt; &lt;file&gt;</h2><p>Begins recording a conference. If &quot;file&quot; is specified, it will be used, otherwise, the Bridge Profile record_file will be used. If the Bridge Profile does not specify a record_file, one will be automatically generated in Asterisk's monitor directory. Usage:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; confbridge record start 1111
+Recording started
+*CLI&gt;   == Begin MixMonitor Recording ConfBridgeRecorder/conf-1111-uid-618880445
+</pre>
+</div></div><h2 id="ConfBridgeCLICommands-confbridgerecordstop&lt;confererence&gt;">confbridge record stop &lt;confererence&gt;</h2><p>Stops recording the specified conference, e.g.:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; confbridge record stop 1111
+Recording stopped.
+*CLI&gt;   == MixMonitor close filestream (mixed)
+  == End MixMonitor Recording ConfBridgeRecorder/conf-1111-uid-618880445
+</pre>
+</div></div><h2 id="ConfBridgeCLICommands-confbridgeshowmenus">confbridge show menus</h2><p>Shows a listing of Conference Menus as defined in confbridge.conf, e.g.:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; confbridge show menus
+--------- Menus -----------
+sample_admin_menu
+sample_user_menu
+</pre>
+</div></div><h2 id="ConfBridgeCLICommands-confbridgeshowmenu&lt;menuname&gt;">confbridge show menu &lt;menu name&gt;</h2><p>Shows a detailed listing of a named Conference Menu, e.g.:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; confbridge show menu sample_admin_menu
+Name: sample_admin_menu
+*9=increase_talking_volume
+*8=no_op
+*7=decrease_talking_volume
+*6=increase_listening_volume
+*4=decrease_listening_volume
+*3=admin_kick_last
+*2=admin_toggle_conference_lock
+*1=toggle_mute
+*=playback_and_continue(conf-adminmenu)
+</pre>
+</div></div><h2 id="ConfBridgeCLICommands-confbridgeshowprofilebridges">confbridge show profile bridges</h2><p>Shows a listing of Bridge Profiles as defined in confbridge.conf, e.g.:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; confbridge show profile bridges
+--------- Bridge Profiles -----------
+1111
+default_bridge
+</pre>
+</div></div><h2 id="ConfBridgeCLICommands-confbridgeshowprofilebridge&lt;bridge&gt;">confbridge show profile bridge &lt;bridge&gt;</h2><p>Shows a detailed listing of a named Bridge Profile, e.g.:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; confbridge show profile bridge 1111 
+--------------------------------------------
+Name:                 1111
+Internal Sample Rate: 16000
+Mixing Interval:      10
+Record Conference:    no
+Record File:          Auto Generated
+Max Members:          No Limit
+sound_only_person:    conf-onlyperson
+sound_has_joined:     conf-hasjoin
+sound_has_left:       conf-hasleft
+sound_kicked:         conf-kicked
+sound_muted:          conf-muted
+sound_unmuted:        conf-unmuted
+sound_there_are:      conf-thereare
+sound_other_in_party: conf-otherinparty
+sound_place_into_conference: conf-placeintoconf
+sound_wait_for_leader:       conf-waitforleader
+sound_get_pin:        conf-getpin
+sound_invalid_pin:    conf-invalidpin
+sound_locked:         conf-locked
+sound_unlocked_now:   conf-unlockednow
+sound_lockednow:      conf-lockednow
+sound_error_menu:     conf-errormenu
+</pre>
+</div></div><h2 id="ConfBridgeCLICommands-confbridgeshowprofileusers">confbridge show profile users</h2><p>Shows a listing of User Profiles as defined in confbridge.conf, e.g.:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; confbridge show profile users
+--------- User Profiles -----------
+awesomeusers
+default_user
+</pre>
+</div></div><h2 id="ConfBridgeCLICommands-confbirdgeshowprofileuser&lt;user&gt;">confbirdge show profile user &lt;user&gt;</h2><p>Shows a detailed listing of a named Bridge Profile, e.g.:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; confbridge show profile user default_user 
+--------------------------------------------
+Name:                    default_user
+Admin:                   false
+Marked User:             false
+Start Muted:             false
+MOH When Empty:          enabled
+MOH Class:               default
+Quiet:                   disabled
+Wait Marked:             disabled
+END Marked:              disabled
+Drop_silence:            enabled
+Silence Threshold:       2500ms
+Talking Threshold:       160ms
+Denoise:                 disabled
+Talk Detect Events:      disabled
+DTMF Pass Through:       disabled
+PIN:                     None
+Announce User Count:     enabled
+Announce join/leave:     enabled
+Announce User Count all: enabled
+</pre>
+</div></div></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

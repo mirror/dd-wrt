@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/ulaw.h"
 #include "asterisk/logger.h"
 
@@ -248,4 +246,3 @@ void ast_ulaw_init(void)
 	ast_log(LOG_NOTICE, "u-Law tandem transcoding test complete.\n");
 #endif /* TEST_TANDEM_TRANSCODING */
 }
-

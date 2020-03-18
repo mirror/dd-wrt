@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_MixMonitor</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_MixMonitor
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span>, last modified on Feb 21, 2020
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_MixMonitor-MixMonitor()">MixMonitor()</h1>
+
+<h3 id="Asterisk17Application_MixMonitor-Synopsis">Synopsis</h3>
+
+<p>Record a call and mix the audio during the recording. Use of StopMixMonitor is required to guarantee the audio file is available for processing during dialplan execution.</p>
+
+<h3 id="Asterisk17Application_MixMonitor-Description">Description</h3>
+
+<p>Records the audio on the current channel to the specified file.</p>
+
+<p>This application does not automatically answer and should be preceeded by an application such as Answer or Progress().</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>MixMonitor runs as an audiohook.</p>
+
+                    </div>
+    </div>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>If a filename passed to MixMonitor ends with <code>.wav49</code>, Asterisk will silently convert the extension to <code>.WAV</code> for legacy reasons. <code>MIXMONITOR_FILENAME</code> will contain the actual filename that Asterisk is writing to, not necessarily the value that was passed in.</p>
+
+                    </div>
+    </div>
+
+<ul>
+	<li><code>MIXMONITOR_FILENAME</code> - Will contain the filename used to record.
+    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">Warning</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            
+<p>Do not use untrusted strings such as <code>CALLERID(num)</code> or <code>CALLERID(name)</code> as part of ANY of the application's parameters. You risk a command injection attack executing arbitrary commands if the untrusted strings aren't filtered to remove dangerous characters. See function <code>FILTER()</code>.</p>
+
+                    </div>
+    </div>
+</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_MixMonitor-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>MixMonitor(filename.extension,[options,[command]])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_MixMonitor-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>file</code>
+	<ul>
+		<li><code><strong>filename</strong></code> - If <em>filename</em> is an absolute path, uses that path, otherwise creates the file in the configured monitoring directory from <code>asterisk.conf.</code></li>
+		<li><code><strong>extension</strong></code></li>
+	</ul>
+	</li>
+	<li><code>options</code>
+	<ul>
+		<li><code>a</code> - Append to the file instead of overwriting it.</li>
+		<li><code>b</code> - Only save audio to the file while the channel is bridged.</li>
+		<li><code>B</code><code>( interval )</code> - Play a periodic beep while this call is being recorded.
+		<ul>
+			<li><code>interval</code> - Interval, in seconds. Default is 15.</li>
+		</ul>
+		</li>
+		<li><code>v</code><code>( <strong>x</strong> )</code> - Adjust the <strong>heard</strong> volume by a factor of <em>x</em> (range <code>-4</code> to <code>4</code>)
+		<ul>
+			<li><code><strong>x</strong></code></li>
+		</ul>
+		</li>
+		<li><code>V</code><code>( <strong>x</strong> )</code> - Adjust the <strong>spoken</strong> volume by a factor of <em>x</em> (range <code>-4</code> to <code>4</code>)
+		<ul>
+			<li><code><strong>x</strong></code></li>
+		</ul>
+		</li>
+		<li><code>W</code><code>( <strong>x</strong> )</code> - Adjust both, <strong>heard and spoken</strong> volumes by a factor of <em>x</em> (range <code>-4</code> to <code>4</code>)
+		<ul>
+			<li><code><strong>x</strong></code></li>
+		</ul>
+		</li>
+		<li><code>r</code><code>( <strong>file</strong> )</code> - Use the specified file to record the <strong>receive</strong> audio feed. Like with the basic filename argument, if an absolute path isn't given, it will create the file in the configured monitoring directory.
+		<ul>
+			<li><code><strong>file</strong></code></li>
+		</ul>
+		</li>
+		<li><code>t</code><code>( <strong>file</strong> )</code> - Use the specified file to record the <strong>transmit</strong> audio feed. Like with the basic filename argument, if an absolute path isn't given, it will create the file in the configured monitoring directory.
+		<ul>
+			<li><code><strong>file</strong></code></li>
+		</ul>
+		</li>
+		<li><code>S</code> - When combined with the <em>r</em> or <em>t</em> option, inserts silence when necessary to maintain synchronization between the receive and transmit audio streams.</li>
+		<li><code>i</code><code>( <strong>chanvar</strong> )</code> - Stores the MixMonitor's ID on this channel variable.
+		<ul>
+			<li><code><strong>chanvar</strong></code></li>
+		</ul>
+		</li>
+		<li><code>p</code> - Play a beep on the channel that starts the recording.</li>
+		<li><code>P</code> - Play a beep on the channel that stops the recording.</li>
+		<li><at:declarations><at:string at:name="default,2222" /></at:declarations><code>m</code><code>( <strong>mailbox</strong> )</code> - Create a copy of the recording as a voicemail in the indicated <strong>mailbox</strong>(es) separated by commas eg. m(1111<at:var at:name="default,2222" />default,...). Folders can be optionally specified using the syntax: mailbox@context/folder
+		<ul>
+			<li><code><strong>mailbox</strong></code></li>
+		</ul>
+		</li>
+	</ul>
+	</li>
+	<li><code>command</code> - Will be executed when the recording is over.<br />
+Any strings matching <code>^{X</code>} will be unescaped to <code>X</code>.<br />
+All variables will be evaluated at the time MixMonitor is called.
+    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">Warning</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            
+<p>Do not use untrusted strings such as <code>CALLERID(num)</code> or <code>CALLERID(name)</code> as part of the command parameters. You risk a command injection attack executing arbitrary commands if the untrusted strings aren't filtered to remove dangerous characters. See function <code>FILTER()</code>.</p>
+                    </div>
+    </div>
+</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_MixMonitor-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Application_Monitor_42011411.html">Asterisk 17 Application_Monitor</a></li>
+	<li><a href="Asterisk-17-Application_StopMixMonitor_42010925.html">Asterisk 17 Application_StopMixMonitor</a></li>
+	<li><a href="Asterisk-17-Application_PauseMonitor_42011414.html">Asterisk 17 Application_PauseMonitor</a></li>
+	<li><a href="Asterisk-17-Application_UnpauseMonitor_42011415.html">Asterisk 17 Application_UnpauseMonitor</a></li>
+	<li><a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=Asterisk+17+Function_AUDIOHOOK_INHERIT&amp;linkCreation=true&amp;fromPageId=42010924">Asterisk 17 Function_AUDIOHOOK_INHERIT</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Application_MixMonitor-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-e4f5142</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

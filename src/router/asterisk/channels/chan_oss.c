@@ -40,20 +40,18 @@
 
 /*** MODULEINFO
 	<depend>oss</depend>
-	<support_level>extended</support_level>
+	<support_level>deprecated</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <ctype.h>		/* isalnum() used here */
 #include <math.h>
-#include <sys/ioctl.h>		
+#include <sys/ioctl.h>
 
 #ifdef __linux
 #include <linux/soundcard.h>
-#elif defined(__FreeBSD__) || defined(__CYGWIN__) || defined(__GLIBC__) || defined(__sun)
+#elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__CYGWIN__) || defined(__GLIBC__) || defined(__sun)
 #include <sys/soundcard.h>
 #else
 #include <soundcard.h>
@@ -257,7 +255,12 @@ struct chan_oss_pvt {
 	char *name;
 	int total_blocks;			/*!< total blocks in the output device */
 	int sounddev;
-	enum { M_UNSET, M_FULL, M_READ, M_WRITE } duplex;
+	enum {
+		CHAN_OSS_DUPLEX_UNSET,
+		CHAN_OSS_DUPLEX_FULL,
+		CHAN_OSS_DUPLEX_READ,
+		CHAN_OSS_DUPLEX_WRITE
+	} duplex;
 	int autoanswer;             /*!< Boolean: whether to answer the immediately upon calling */
 	int autohangup;             /*!< Boolean: whether to hangup the call when the remote end hangs up */
 	int hookstate;              /*!< Boolean: 1 if offhook; 0 if onhook */
@@ -320,7 +323,7 @@ struct video_desc *get_video_desc(struct ast_channel *c)
 }
 static struct chan_oss_pvt oss_default = {
 	.sounddev = -1,
-	.duplex = M_UNSET,			/* XXX check this */
+	.duplex = CHAN_OSS_DUPLEX_UNSET, /* XXX check this */
 	.autoanswer = 1,
 	.autohangup = 1,
 	.queuesize = QUEUE_SIZE,
@@ -482,7 +485,7 @@ static int setformat(struct chan_oss_pvt *o, int mode)
 	if (o->sounddev >= 0) {
 		ioctl(o->sounddev, SNDCTL_DSP_RESET, 0);
 		close(o->sounddev);
-		o->duplex = M_UNSET;
+		o->duplex = CHAN_OSS_DUPLEX_UNSET;
 		o->sounddev = -1;
 	}
 	if (mode == O_CLOSE)		/* we are done */
@@ -515,16 +518,16 @@ static int setformat(struct chan_oss_pvt *o, int mode)
 		res = ioctl(fd, SNDCTL_DSP_GETCAPS, &fmt);
 		if (res == 0 && (fmt & DSP_CAP_DUPLEX)) {
 			ast_verb(2, "Console is full duplex\n");
-			o->duplex = M_FULL;
+			o->duplex = CHAN_OSS_DUPLEX_FULL;
 		};
 		break;
 
 	case O_WRONLY:
-		o->duplex = M_WRITE;
+		o->duplex = CHAN_OSS_DUPLEX_WRITE;
 		break;
 
 	case O_RDONLY:
-		o->duplex = M_READ;
+		o->duplex = CHAN_OSS_DUPLEX_READ;
 		break;
 	}
 
@@ -582,7 +585,7 @@ static int oss_digit_begin(struct ast_channel *c, char digit)
 static int oss_digit_end(struct ast_channel *c, char digit, unsigned int duration)
 {
 	/* no better use for received digits than print them */
-	ast_verbose(" << Console Received digit %c of duration %u ms >> \n", 
+	ast_verbose(" << Console Received digit %c of duration %u ms >> \n",
 		digit, duration);
 	return 0;
 }
@@ -892,7 +895,7 @@ static char *console_cmd(struct ast_cli_entry *e, int cmd, struct ast_cli_args *
 	switch (cmd) {
 	case CLI_INIT:
 		e->command = CONSOLE_VIDEO_CMDS;
-		e->usage = 
+		e->usage =
 			"Usage: " CONSOLE_VIDEO_CMDS "...\n"
 			"       Generic handler for console commands.\n";
 		return NULL;
@@ -1144,7 +1147,7 @@ static char *console_mute(struct ast_cli_entry *e, int cmd, struct ast_cli_args 
 	struct chan_oss_pvt *o = find_desc(oss_active);
 	const char *s;
 	int toggle = 0;
-	
+
 	if (cmd == CLI_INIT) {
 		e->command = "console {mute|unmute} [toggle]";
 		e->usage =
@@ -1294,7 +1297,7 @@ static struct ast_cli_entry cli_oss[] = {
 	AST_CLI_DEFINE(console_flash, "Flash a call on the console"),
 	AST_CLI_DEFINE(console_dial, "Dial an extension on the console"),
 	AST_CLI_DEFINE(console_mute, "Disable/Enable mic input"),
-	AST_CLI_DEFINE(console_transfer, "Transfer a call to a different extension"),	
+	AST_CLI_DEFINE(console_transfer, "Transfer a call to a different extension"),
 	AST_CLI_DEFINE(console_cmd, "Generic console command"),
 	AST_CLI_DEFINE(console_sendtext, "Send text to the remote device"),
 	AST_CLI_DEFINE(console_autoanswer, "Sets/displays autoanswer"),
@@ -1418,7 +1421,7 @@ openit:
 		ast_verb(1, "Turn off OSS support by adding " "'noload=chan_oss.so' in /etc/asterisk/modules.conf\n");
 		goto error;
 	}
-	if (o->duplex != M_FULL)
+	if (o->duplex != CHAN_OSS_DUPLEX_FULL)
 		ast_log(LOG_WARNING, "XXX I don't work right with non " "full-duplex sound cards XXX\n");
 #endif /* TRYOPEN */
 
@@ -1468,8 +1471,8 @@ static int unload_module(void)
  * Module loading including tests for configuration or dependencies.
  * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
  * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
- * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
- * configuration file or other non-critical problem return 
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the
+ * configuration file or other non-critical problem return
  * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
  */
 static int load_module(void)
@@ -1521,5 +1524,4 @@ static int load_module(void)
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
-AST_MODULE_INFO_STANDARD_EXTENDED(ASTERISK_GPL_KEY, "OSS Console Channel Driver");
-
+AST_MODULE_INFO_STANDARD_DEPRECATED(ASTERISK_GPL_KEY, "OSS Console Channel Driver");

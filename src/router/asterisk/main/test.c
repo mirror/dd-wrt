@@ -31,8 +31,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$");
-
 #include "asterisk/_private.h"
 
 #ifdef TEST_FRAMEWORK
@@ -269,21 +267,80 @@ void ast_test_set_result(struct ast_test *test, enum ast_test_result_state state
 	test->state = state;
 }
 
+/*
+ * These are the Java reserved words we need to munge so Jenkins
+ * doesn't barf on them.
+ */
+static char *reserved_words[] = {
+	"abstract", "arguments", "as", "assert", "await",
+	"boolean", "break", "byte", "case", "catch", "char", "class",
+	"const", "continue", "debugger", "def", "default", "delete", "do",
+	"double", "else", "enum", "eval", "export", "extends", "false",
+	"final", "finally", "float", "for", "function", "goto", "if",
+	"implements", "import", "in", "instanceof", "int", "interface",
+	"let", "long", "native", "new", "null", "package", "private",
+	"protected", "public", "return", "short", "static", "strictfp",
+	"string", "super", "switch", "synchronized", "this", "throw", "throws",
+	"trait", "transient", "true", "try", "typeof", "var", "void",
+	"volatile", "while", "with", "yield" };
+
+static int is_reserved_word(const char *word)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_LEN(reserved_words); i++) {
+		if (strcmp(word, reserved_words[i]) == 0) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 static void test_xml_entry(struct ast_test *test, FILE *f)
 {
-	if (!f || !test || test->state == AST_TEST_NOT_RUN) {
+	/* We need a copy of the category skipping past the initial '/' */
+	char *test_cat = ast_strdupa(test->info.category + 1);
+	char *next_cat;
+	char *test_name = (char *)test->info.name;
+	struct ast_str *category = ast_str_create(strlen(test->info.category) + 32);
+
+	if (!category || test->state == AST_TEST_NOT_RUN) {
+		ast_free(category);
+
 		return;
 	}
 
-	fprintf(f, "\t<testcase time=\"%u.%u\" name=\"%s%s\"%s>\n",
+	while ((next_cat = ast_strsep(&test_cat, '/', AST_STRSEP_TRIM))) {
+		char *prefix = "";
+
+		if (is_reserved_word(next_cat)) {
+			prefix = "_";
+		}
+		ast_str_append(&category, 0, ".%s%s", prefix, next_cat);
+	}
+	test_cat = ast_str_buffer(category);
+	/* Skip past the initial '.' */
+	test_cat++;
+
+	if (is_reserved_word(test->info.name)) {
+		size_t name_length = strlen(test->info.name) + 2;
+
+		test_name = ast_alloca(name_length);
+		snprintf(test_name, name_length, "_%s", test->info.name);
+	}
+
+	fprintf(f, "\t\t<testcase time=\"%u.%u\" classname=\"%s\" name=\"%s\"%s>\n",
 			test->time / 1000, test->time % 1000,
-			test->info.category, test->info.name,
+			test_cat, test_name,
 			test->state == AST_TEST_PASS ? "/" : "");
 
+	ast_free(category);
+
 	if (test->state == AST_TEST_FAIL) {
-		fprintf(f, "\t\t<failure><![CDATA[\n%s\n\t\t]]></failure>\n",
+		fprintf(f, "\t\t\t<failure><![CDATA[\n%s\n\t\t]]></failure>\n",
 				S_OR(ast_str_buffer(test->status_str), "NA"));
-		fprintf(f, "\t</testcase>\n");
+		fprintf(f, "\t\t</testcase>\n");
 	}
 
 }
@@ -475,13 +532,14 @@ static int test_generate_results(const char *name, const char *category, const c
 		 * http://confluence.atlassian.com/display/BAMBOO/JUnit+parsing+in+Bamboo
 		 */
 		fprintf(f_xml, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-		fprintf(f_xml, "<testsuite errors=\"0\" time=\"%u.%u\" tests=\"%u\" "
+		fprintf(f_xml, "<testsuites>\n");
+		fprintf(f_xml, "\t<testsuite errors=\"0\" time=\"%u.%u\" tests=\"%u\" "
 				"name=\"AsteriskUnitTests\">\n",
 				last_results.total_time / 1000, last_results.total_time % 1000,
 				last_results.total_tests);
-		fprintf(f_xml, "\t<properties>\n");
-		fprintf(f_xml, "\t\t<property name=\"version\" value=\"%s\"/>\n", ast_get_version());
-		fprintf(f_xml, "\t</properties>\n");
+		fprintf(f_xml, "\t\t<properties>\n");
+		fprintf(f_xml, "\t\t\t<property name=\"version\" value=\"%s\"/>\n", ast_get_version());
+		fprintf(f_xml, "\t\t</properties>\n");
 	}
 
 	/* txt header information */
@@ -519,7 +577,8 @@ static int test_generate_results(const char *name, const char *category, const c
 
 done:
 	if (f_xml) {
-		fprintf(f_xml, "</testsuite>\n");
+		fprintf(f_xml, "\t</testsuite>\n");
+		fprintf(f_xml, "</testsuites>\n");
 		fclose(f_xml);
 	}
 	if (f_txt) {
@@ -693,40 +752,40 @@ static struct ast_test *test_alloc(ast_test_cb_t *cb)
 	return test;
 }
 
-static char *complete_test_category(const char *line, const char *word, int pos, int state)
+static char *complete_test_category(const char *word)
 {
-	int which = 0;
 	int wordlen = strlen(word);
-	char *ret = NULL;
 	struct ast_test *test;
 
 	AST_LIST_LOCK(&tests);
 	AST_LIST_TRAVERSE(&tests, test, entry) {
-		if (!strncasecmp(word, test->info.category, wordlen) && ++which > state) {
-			ret = ast_strdup(test->info.category);
-			break;
+		if (!strncasecmp(word, test->info.category, wordlen)) {
+			if (ast_cli_completion_add(ast_strdup(test->info.category))) {
+				break;
+			}
 		}
 	}
 	AST_LIST_UNLOCK(&tests);
-	return ret;
+
+	return NULL;
 }
 
-static char *complete_test_name(const char *line, const char *word, int pos, int state, const char *category)
+static char *complete_test_name(const char *word, const char *category)
 {
-	int which = 0;
 	int wordlen = strlen(word);
-	char *ret = NULL;
 	struct ast_test *test;
 
 	AST_LIST_LOCK(&tests);
 	AST_LIST_TRAVERSE(&tests, test, entry) {
-		if (!test_cat_cmp(test->info.category, category) && (!strncasecmp(word, test->info.name, wordlen) && ++which > state)) {
-			ret = ast_strdup(test->info.name);
-			break;
+		if (!test_cat_cmp(test->info.category, category) && !strncasecmp(word, test->info.name, wordlen)) {
+			if (ast_cli_completion_add(ast_strdup(test->info.name))) {
+				break;
+			}
 		}
 	}
 	AST_LIST_UNLOCK(&tests);
-	return ret;
+
+	return NULL;
 }
 
 /* CLI commands */
@@ -751,22 +810,22 @@ static char *test_cli_show_registered(struct ast_cli_entry *e, int cmd, struct a
 		return NULL;
 	case CLI_GENERATE:
 		if (a->pos == 3) {
-			return ast_cli_complete(a->word, option1, a->n);
+			return ast_cli_complete(a->word, option1, -1);
 		}
-		if (a->pos == 4) {
-			return complete_test_category(a->line, a->word, a->pos, a->n);
+		if (a->pos == 4 && !strcasecmp(a->argv[3], "category")) {
+			return complete_test_category(a->word);
 		}
 		if (a->pos == 5) {
-			return ast_cli_complete(a->word, option2, a->n);
+			return ast_cli_complete(a->word, option2, -1);
 		}
 		if (a->pos == 6) {
-			return complete_test_name(a->line, a->word, a->pos, a->n, a->argv[3]);
+			return complete_test_name(a->word, a->argv[4]);
 		}
 		return NULL;
 	case CLI_HANDLER:
 		if ((a->argc < 4) || (a->argc == 6) || (a->argc > 7) ||
-			((a->argc == 4) && strcmp(a->argv[3], "all")) ||
-			((a->argc == 7) && strcmp(a->argv[5], "name"))) {
+			((a->argc == 4) && strcasecmp(a->argv[3], "all")) ||
+			((a->argc == 7) && strcasecmp(a->argv[5], "name"))) {
 			return CLI_SHOWUSAGE;
 		}
 		ast_cli(a->fd, FORMAT, "Category", "Name", "Summary", "Test Result");
@@ -810,16 +869,16 @@ static char *test_cli_execute_registered(struct ast_cli_entry *e, int cmd, struc
 		return NULL;
 	case CLI_GENERATE:
 		if (a->pos == 2) {
-			return ast_cli_complete(a->word, option1, a->n);
+			return ast_cli_complete(a->word, option1, -1);
 		}
-		if (a->pos == 3) {
-			return complete_test_category(a->line, a->word, a->pos, a->n);
+		if (a->pos == 3 && !strcasecmp(a->argv[2], "category")) {
+			return complete_test_category(a->word);
 		}
 		if (a->pos == 4) {
-			return ast_cli_complete(a->word, option2, a->n);
+			return ast_cli_complete(a->word, option2, -1);
 		}
 		if (a->pos == 5) {
-			return complete_test_name(a->line, a->word, a->pos, a->n, a->argv[3]);
+			return complete_test_name(a->word, a->argv[3]);
 		}
 		return NULL;
 	case CLI_HANDLER:
@@ -828,7 +887,7 @@ static char *test_cli_execute_registered(struct ast_cli_entry *e, int cmd, struc
 			return CLI_SHOWUSAGE;
 		}
 
-		if ((a->argc == 3) && !strcmp(a->argv[2], "all")) { /* run all registered tests */
+		if ((a->argc == 3) && !strcasecmp(a->argv[2], "all")) { /* run all registered tests */
 			ast_cli(a->fd, "Running all available tests...\n\n");
 			test_execute_multiple(NULL, NULL, a);
 		} else if (a->argc == 4) { /* run only tests within a category */
@@ -879,7 +938,7 @@ static char *test_cli_show_results(struct ast_cli_entry *e, int cmd, struct ast_
 		return NULL;
 	case CLI_GENERATE:
 		if (a->pos == 3) {
-			return ast_cli_complete(a->word, option1, a->n);
+			return ast_cli_complete(a->word, option1, -1);
 		}
 		return NULL;
 	case CLI_HANDLER:
@@ -887,11 +946,11 @@ static char *test_cli_show_results(struct ast_cli_entry *e, int cmd, struct ast_
 		/* verify input */
 		if (a->argc != 4) {
 			return CLI_SHOWUSAGE;
-		} else if (!strcmp(a->argv[3], "passed")) {
+		} else if (!strcasecmp(a->argv[3], "passed")) {
 			mode = 2;
-		} else if (!strcmp(a->argv[3], "failed")) {
+		} else if (!strcasecmp(a->argv[3], "failed")) {
 			mode = 1;
-		} else if (!strcmp(a->argv[3], "all")) {
+		} else if (!strcasecmp(a->argv[3], "all")) {
 			mode = 0;
 		} else {
 			return CLI_SHOWUSAGE;
@@ -952,7 +1011,7 @@ static char *test_cli_generate_results(struct ast_cli_entry *e, int cmd, struct 
 		return NULL;
 	case CLI_GENERATE:
 		if (a->pos == 3) {
-			return ast_cli_complete(a->word, option, a->n);
+			return ast_cli_complete(a->word, option, -1);
 		}
 		return NULL;
 	case CLI_HANDLER:
@@ -960,10 +1019,10 @@ static char *test_cli_generate_results(struct ast_cli_entry *e, int cmd, struct 
 		/* verify input */
 		if (a->argc < 4 || a->argc > 5) {
 			return CLI_SHOWUSAGE;
-		} else if (!strcmp(a->argv[3], "xml")) {
+		} else if (!strcasecmp(a->argv[3], "xml")) {
 			type = "xml";
 			isxml = 1;
-		} else if (!strcmp(a->argv[3], "txt")) {
+		} else if (!strcasecmp(a->argv[3], "txt")) {
 			type = "txt";
 		} else {
 			return CLI_SHOWUSAGE;
@@ -1165,7 +1224,7 @@ int ast_test_init(void)
 	ast_register_cleanup(test_cleanup);
 
 	/* Create stasis topic */
-	test_suite_topic = stasis_topic_create("test_suite_topic");
+	test_suite_topic = stasis_topic_create("testsuite:all");
 	if (!test_suite_topic) {
 		return -1;
 	}

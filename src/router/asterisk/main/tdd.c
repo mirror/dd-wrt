@@ -33,8 +33,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <time.h>
 #include <math.h>
 #include <ctype.h>
@@ -43,6 +41,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/ulaw.h"
 #include "asterisk/tdd.h"
 #include "asterisk/fskmodem.h"
+#include "asterisk/utils.h"
 #include "ecdisa.h"
 
 struct tdd_state {
@@ -104,7 +103,7 @@ void tdd_init(void)
 struct tdd_state *tdd_new(void)
 {
 	struct tdd_state *tdd;
-	tdd = calloc(1, sizeof(*tdd));
+	tdd = ast_calloc(1, sizeof(*tdd));
 	if (tdd) {
 #ifdef INTEGER_CALLERID
 		tdd->fskd.ispb = 176;        /* 45.5 baud */
@@ -166,7 +165,7 @@ int tdd_feed(struct tdd_state *tdd, unsigned char *ubuf, int len)
 	int b = 'X';
 	int res;
 	int c,x;
-	short *buf = calloc(1, 2 * len + tdd->oldlen);
+	short *buf = ast_calloc(1, 2 * len + tdd->oldlen);
 	short *obuf = buf;
 	if (!buf) {
 		ast_log(LOG_WARNING, "Out of memory\n");
@@ -182,13 +181,13 @@ int tdd_feed(struct tdd_state *tdd, unsigned char *ubuf, int len)
 		res = fsk_serial(&tdd->fskd, buf, &mylen, &b);
 		if (mylen < 0) {
 			ast_log(LOG_ERROR, "fsk_serial made mylen < 0 (%d) (olen was %d)\n", mylen, olen);
-			free(obuf);
+			ast_free(obuf);
 			return -1;
 		}
 		buf += (olen - mylen);
 		if (res < 0) {
 			ast_log(LOG_NOTICE, "fsk_serial failed\n");
-			free(obuf);
+			ast_free(obuf);
 			return -1;
 		}
 		if (res == 1) {
@@ -206,7 +205,7 @@ int tdd_feed(struct tdd_state *tdd, unsigned char *ubuf, int len)
 		tdd->oldlen = mylen * 2;
 	} else
 		tdd->oldlen = 0;
-	free(obuf);
+	ast_free(obuf);
 	if (res) {
 		tdd->mode = 2;
 /* put it in mode where it
@@ -218,7 +217,7 @@ int tdd_feed(struct tdd_state *tdd, unsigned char *ubuf, int len)
 
 void tdd_free(struct tdd_state *tdd)
 {
-	free(tdd);
+	ast_free(tdd);
 }
 
 static inline float tdd_getcarrier(float *cr, float *ci, int bit)
@@ -362,4 +361,3 @@ int tdd_generate(struct tdd_state *tdd, unsigned char *buf, const char *str)
 	}
 	return bytes;
 }
-

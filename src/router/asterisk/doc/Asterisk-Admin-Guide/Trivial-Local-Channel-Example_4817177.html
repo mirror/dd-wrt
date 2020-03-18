@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Trivial Local Channel Example</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Local-Channel_4817170.html">Local Channel</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Local-Channel-Examples_4817175.html">Local Channel Examples</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Trivial Local Channel Example
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>In our dialplan (extensions.conf), we can Dial() another part of the dialplan through the use Local channels. To do this, we can use the following dialplan:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+[devices] 
+exten =&gt; 201,1,Verbose(2,Dial another part of the dialplan via the Local chan) 
+exten =&gt; 201,n,Verbose(2,Outside channel: ${CHANNEL}) 
+exten =&gt; 201,n,Dial(Local/201@extensions) 
+exten =&gt; 201,n,Hangup() 
+
+[extensions] 
+exten =&gt; 201,1,Verbose(2,Made it to the Local channel) 
+exten =&gt; 201,n,Verbose(2,Inside channel: ${CHANNEL}) 
+exten =&gt; 201,n,Dial(SIP/some-named-extension,30) 
+exten =&gt; 201,n,Hangup()
+</pre>
+</div></div>
+
+<p>The output of the dialplan would look something like the following. The output has been broken up with some commentary to explain what we're looking at.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>– Executing [201@devices:1] Verbose(&quot;SIP/my_desk_phone-00000014&quot;, &quot;2,Dial another part of the dialplan via the
+            Local chan&quot;) in new stack
+== Dial another part of the dialplan via the Local chan
+</pre>
+</div></div>
+
+<p>We dial extension 201 from SIP/my_desk_phone which has entered the [devices] context. The first line simply outputs some information via the Verbose() application.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>– Executing [201@devices:2] Verbose(&quot;SIP/my_desk_phone-00000014&quot;,
+                 &quot;2,Outside channel: SIP/my_desk_phone-00000014&quot;) in new stack
+== Outside channel: SIP/my_desk_phone-00000014
+</pre>
+</div></div>
+
+<p>The next line is another Verbose() application statement that tells us our current channel name. We can see that the channel executing the current dialplan is a desk phone (aptly named 'my_desk_phone').</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>– Executing [201@devices:3] Dial(&quot;SIP/my_desk_phone-00000014&quot;, &quot;Local/201@extensions&quot;) in new stack
+– Called 201@extensions
+</pre>
+</div></div>
+
+<p>Now the third step in our dialplan executes the Dial() application which calls extension 201 in the [extensions] context of our dialplan. There is no requirement that we use the same extension number - we could have just as easily used a named extension, or some other number. Remember that we're dialing another channel, but instead of dialing a device, we're &quot;dialing&quot; another part of the dialplan.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>– Executing [201@extensions:1] Verbose(&quot;Local/201@extensions-7cf4;2&quot;, &quot;2,Made it to the Local
+             channel&quot;) in new stack == Made it to the Local channel
+</pre>
+</div></div>
+
+<p>Now we've verified we've dialed another part of the dialplan. We can see the channel executing the dialplan has changed to Local/201@extensions-7cf4;2. The part '-7cf4;2' is just the unique identifier, and will be different for you.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>– Executing [201@extensions:2] Verbose(&quot;Local/201@extensions-7cf4;2&quot;, &quot;2,Inside channel:
+             Local/201@extensions-7cf4;2&quot;) in new stack
+== Inside channel: Local/201@extensions-7cf4;2
+</pre>
+</div></div>
+
+<p>Here we use the Verbose() application to see what our current channel name is. As you can see the current channel is a Local channel which we created from our SIP channel.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>– Executing [201@extensions:3] Dial(&quot;Local/201@extensions-7cf4;2&quot;, &quot;SIP/some-named-extension,30&quot;) in new stack
+</pre>
+</div></div>
+
+<p>And from here, we're using another Dial() application to call a SIP device configured in sip.conf as [some-named-extension].</p>
+
+<p>Now that we understand a simple example of calling the Local channel, let's expand upon this example by using Local channels to call two devices at the same time, but delay calling one of the devices.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

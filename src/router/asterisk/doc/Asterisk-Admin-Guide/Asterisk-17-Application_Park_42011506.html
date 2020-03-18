@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_Park</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_Park
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_Park-Park()">Park()</h1>
+
+<h3 id="Asterisk17Application_Park-Synopsis">Synopsis</h3>
+
+<p>Park yourself.</p>
+
+<h3 id="Asterisk17Application_Park-Description">Description</h3>
+
+<p>Used to park yourself (typically in combination with an attended transfer to know the parking space).</p>
+
+<p>If you set the <code>PARKINGEXTEN</code> variable to a parking space extension in the parking lot, Park() will attempt to park the call on that extension. If the extension is already in use then execution will continue at the next priority.</p>
+
+<p>If the <code>parkeddynamic</code> option is enabled in <code>res_parking.conf</code> the following variables can be used to dynamically create new parking lots. When using dynamic parking lots, be aware of the conditions as explained in the notes section below.</p>
+
+<p>The <code>PARKINGDYNAMIC</code> variable specifies the parking lot to use as a template to create a dynamic parking lot. It is an error to specify a non-existent parking lot for the template. If not set then the default parking lot is used as the template.</p>
+
+<p>The <code>PARKINGDYNCONTEXT</code> variable specifies the dialplan context to use for the newly created dynamic parking lot. If not set then the context from the parking lot template is used. The context is created if it does not already exist and the new parking lot needs to create extensions.</p>
+
+<p>The <code>PARKINGDYNEXTEN</code> variable specifies the <code>parkext</code> to use for the newly created dynamic parking lot. If not set then the <code>parkext</code> is used from the parking lot template. If the template does not specify a <code>parkext</code> then no extensions are created for the newly created parking lot. The dynamic parking lot cannot be created if it needs to create extensions that overlap existing parking lot extensions. The only exception to this is for the <code>parkext</code> extension and only if neither of the overlaping parking lot's <code>parkext</code> is exclusive.</p>
+
+<p>The <code>PARKINGDYNPOS</code> variable specifies the parking positions to use for the newly created dynamic parking lot. If not set then the <code>parkpos</code> from the parking lot template is used.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>This application must be used as the first extension priority to be recognized as a parking access extension for blind transfers. Blind transfers and the DTMF one-touch parking feature need this distinction to operate properly. The parking access extension in this case is treated like a dialplan hint.</p>
+
+                    </div>
+    </div>
+
+
+<h3 id="Asterisk17Application_Park-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Park([parking_lot_name,[options]])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_Park-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>parking_lot_name</code> - Specify in which parking lot to park a call.<br />
+The parking lot used is selected in the following order:<br />
+1) parking_lot_name option to this application<br />
+2) <code>PARKINGLOT</code> variable<br />
+3) <code>CHANNEL(parkinglot)</code> function (Possibly preset by the channel driver.)<br />
+4) Default parking lot.</li>
+	<li><code>options</code> - A list of options for this parked call.
+	<ul>
+		<li><code>r</code> - Send ringing instead of MOH to the parked call.</li>
+		<li><code>R</code> - Randomize the selection of a parking space.</li>
+		<li><code>s</code> - Silence announcement of the parking space number.</li>
+		<li><code>c</code><code>( context,extension,<strong>priority</strong> )</code> - If the parking times out, go to this place in the dialplan instead of where the parking lot defines the call should go.
+		<ul>
+			<li><code>context</code></li>
+			<li><code>extension</code></li>
+			<li><code><strong>priority</strong></code></li>
+		</ul>
+		</li>
+		<li><code>t</code><code>( <strong>duration</strong> )</code> - Use a timeout of <code>duration</code> seconds instead of the timeout specified by the parking lot.
+		<ul>
+			<li><code><strong>duration</strong></code></li>
+		</ul>
+		</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_Park-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Application_ParkedCall_42011507.html">Asterisk 17 Application_ParkedCall</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Application_Park-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

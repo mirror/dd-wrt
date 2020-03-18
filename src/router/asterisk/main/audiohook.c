@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <signal.h>
 
 #include "asterisk/channel.h"
@@ -45,6 +43,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #define AST_AUDIOHOOK_SYNC_TOLERANCE 100 /*!< Tolerance in milliseconds for audiohooks synchronization */
 #define AST_AUDIOHOOK_SMALL_QUEUE_TOLERANCE 100 /*!< When small queue is enabled, this is the maximum amount of audio that can remain queued at a time. */
+#define AST_AUDIOHOOK_LONG_QUEUE_TOLERANCE 500 /*!< Otheriwise we still don't want the queue to grow indefinitely */
 
 #define DEFAULT_INTERNAL_SAMPLE_RATE 8000
 
@@ -196,6 +195,10 @@ int ast_audiohook_write_frame(struct ast_audiohook *audiohook, enum ast_audiohoo
 		ast_debug(1, "Audiohook %p has stale audio in its factories. Flushing them both\n", audiohook);
 		ast_slinfactory_flush(factory);
 		ast_slinfactory_flush(other_factory);
+	} else if ((our_factory_ms > AST_AUDIOHOOK_LONG_QUEUE_TOLERANCE) || (other_factory_ms > AST_AUDIOHOOK_LONG_QUEUE_TOLERANCE)) {
+		ast_debug(1, "Audiohook %p has stale audio in its factories. Flushing them both\n", audiohook);
+		ast_slinfactory_flush(factory);
+		ast_slinfactory_flush(other_factory);
 	}
 
 	/* Write frame out to respective factory */
@@ -334,6 +337,17 @@ static struct ast_frame *audiohook_read_frame_both(struct ast_audiohook *audioho
 	}
 
 	frame.subclass.format = ast_format_cache_get_slin_by_rate(audiohook->hook_internal_samp_rate);
+
+	/* Should we substitute silence if one side lacks audio? */
+	if ((ast_test_flag(audiohook, AST_AUDIOHOOK_SUBSTITUTE_SILENCE))) {
+		if (read_reference && !read_buf && write_buf) {
+			read_buf = buf1;
+			memset(buf1, 0, sizeof(buf1));
+		} else if (write_reference && read_buf && !write_buf) {
+			write_buf = buf2;
+			memset(buf2, 0, sizeof(buf2));
+		}
+	}
 
 	/* Basically we figure out which buffer to use... and if mixing can be done here */
 	if (read_buf && read_reference) {
@@ -947,7 +961,9 @@ static struct ast_frame *audio_audiohook_write_list(struct ast_channel *chan, st
 	 * rely on actual media being present to do things.
 	 */
 	if (!middle_frame->data.ptr) {
-		ast_frfree(middle_frame);
+		if (middle_frame != start_frame) {
+			ast_frfree(middle_frame);
+		}
 		return start_frame;
 	}
 

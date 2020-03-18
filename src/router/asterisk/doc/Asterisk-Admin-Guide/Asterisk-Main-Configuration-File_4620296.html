@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk Main Configuration File</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Core-Configuration_27820183.html">Core Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk Main Configuration File
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Rusty Newton</span> on May 05, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="AsteriskMainConfigurationFile-Theasterisk.conffile">The asterisk.conf file</h1><p>asterisk.conf is used to configure the locations of directories and files used by Asterisk, as well as options relevant to the core of Asterisk.</p><p><a href="http://svnview.digium.com/svn/asterisk/trunk/configs/asterisk.conf.sample?view=markup" class="external-link" rel="nofollow">Link to the asterisk.conf.sample</a> file in the Asterisk trunk subversion repo. The information below could become out of date, so always check the relevant sample file in our version control system.</p><p>asterisk.conf has two primary contexts, shown below with some descriptions about their content.</p><h2 id="AsteriskMainConfigurationFile-ANoteonIncludes">A Note on Includes</h2><p><a href="4817459.html">Includes</a> in this file will only work with absolute paths, as the configuration in this file is setting the relative paths that would be used in includes set in other files.</p><h2 id="AsteriskMainConfigurationFile-DirectoriesContext">Directories Context</h2><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[directories](!)
+astetcdir =&gt; /etc/asterisk
+astmoddir =&gt; /usr/lib/asterisk/modules
+astvarlibdir =&gt; /var/lib/asterisk
+astdbdir =&gt; /var/lib/asterisk
+astkeydir =&gt; /var/lib/asterisk
+astdatadir =&gt; /var/lib/asterisk
+astagidir =&gt; /var/lib/asterisk/agi-bin
+astspooldir =&gt; /var/spool/asterisk
+astrundir =&gt; /var/run/asterisk
+astlogdir =&gt; /var/log/asterisk
+astsbindir =&gt; /usr/sbin
+</pre>
+</div></div><p>The directories listed above are explained in detail in the <a href="Directory-and-File-Structure_27200268.html">Directory and File Structure</a> page.</p><h2 id="AsteriskMainConfigurationFile-OptionsContext">Options Context</h2><p>Some additional annotation for each configuration option is included inline.</p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>TODO: Match this up with what is current in the sample, and update both.</p>
+                    </div>
+    </div>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre> [options] 
+;Under &quot;options&quot; you can enter configuration options 
+;that you also can set with command line options 
+; Verbosity level for logging (-v) verbose = 0 
+; Debug: &quot;No&quot; or value (1-4) 
+debug = 3 
+
+; Background execution disabled (-f) 
+nofork=yes | no 
+
+; Always background, even with -v or -d (-F) 
+alwaysfork=yes | no 
+
+; Console mode (-c) 
+console= yes | no 
+
+; Execute with high priority (-p) 
+highpriority = yes | no 
+
+; Initialize crypto at startup (-i) 
+initcrypto = yes | no 
+
+; Disable ANSI colors (-n) 
+nocolor = yes | no 
+
+; Dump core on failure (-g) 
+dumpcore = yes | no 
+
+; Run quietly (-q) 
+quiet = yes | no 
+
+; Force timestamping in CLI verbose output (-T) 
+timestamp = yes | no 
+
+; User to run asterisk as (-U) NOTE: will require changes to 
+; directory and device permissions 
+runuser = asterisk 
+
+; Group to run asterisk as (-G) 
+rungroup = asterisk 
+
+; Enable internal timing support (-I) 
+internal_timing = yes | no 
+
+; Language Options 
+documentation_language = en | es | ru 
+
+; These options have no command line equivalent 
+
+; Cache record() files in another directory until completion 
+cache_record_files = yes | no 
+record_cache_dir = &lt;dir&gt; 
+
+; Build transcode paths via SLINEAR 
+transcode_via_sln = yes | no 
+
+; send SLINEAR silence while channel is being recorded 
+transmit_silence_during_record = yes | no 
+
+; The maximum load average we accept calls for 
+maxload = 1.0 
+
+; The maximum number of concurrent calls you want to allow 
+maxcalls = 255 
+
+; Stop accepting calls when free memory falls below this amount specified in MB 
+minmemfree = 256 
+
+; Allow #exec entries in configuration files 
+execincludes = yes | no 
+
+; Don&#39;t over-inform the Asterisk sysadm, he&#39;s a guru 
+dontwarn = yes | no 
+
+; System name. Used to prefix CDR uniqueid and to fill \${SYSTEMNAME} 
+systemname = &lt;a_string&gt; 
+
+; Should language code be last component of sound file name or first? 
+; when off, sound files are searched as &lt;path&gt;/&lt;lang&gt;/&lt;file&gt; 
+; when on, sound files are search as &lt;lang&gt;/&lt;path&gt;/&lt;file&gt; 
+; (only affects relative paths for sound files) 
+languageprefix = yes | no 
+
+; Locking mode for voicemail 
+; - lockfile: default, for normal use 
+; - flock: for where the lockfile locking method doesn&#39;t work 
+; eh. on SMB/CIFS mounts 
+lockmode = lockfile | flock 
+
+; Entity ID. This is in the form of a MAC address. It should be universally 
+; unique. It must be unique between servers communicating with a protocol 
+; that uses this value. The only thing that uses this currently is DUNDi, 
+; but other things will use it in the future. 
+; entityid=00:11:22:33:44:55 
+
+[files]
+; Changing the following lines may compromise your security 
+; Asterisk.ctl is the pipe that is used to connect the remote CLI
+; (asterisk -r) to Asterisk. Changing these settings change the 
+; permissions and ownership of this file. 
+; The file is created when Asterisk starts, in the &quot;astrundir&quot; above. 
+;astctlpermissions = 0660 
+;astctlowner = root 
+;astctlgroup = asterisk 
+;astctl = asterisk.ctl</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

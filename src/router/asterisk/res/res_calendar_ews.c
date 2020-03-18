@@ -21,13 +21,12 @@
  */
 
 /*** MODULEINFO
+	<depend>res_calendar</depend>
 	<depend>neon29</depend>
-	<support_level>core</support_level>
+	<support_level>extended</support_level>
 ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <ne_request.h>
 #include <ne_session.h>
@@ -119,6 +118,7 @@ static void ewscal_destructor(void *obj)
 	if (pvt->session) {
 		ne_session_destroy(pvt->session);
 	}
+	ne_uri_free(&pvt->uri);
 	ast_string_field_free_memory(pvt);
 
 	ao2_callback(pvt->events, OBJ_UNLINK | OBJ_NODATA | OBJ_MULTIPLE, NULL, NULL);
@@ -938,8 +938,9 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Asterisk MS Exchange Web Service Calendar Integration",
-	.support_level = AST_MODULE_SUPPORT_CORE,
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
 	.load = load_module,
 	.unload = unload_module,
 	.load_pri = AST_MODPRI_DEVSTATE_PLUGIN,
+	.requires = "res_calendar",
 );

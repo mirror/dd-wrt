@@ -20,7 +20,7 @@
  * \file
  *
  * \author Russell Bryant <russell@digium.com>
- * 
+ *
  * \brief curses frontend for selection maintenance
  */
 
@@ -31,7 +31,15 @@
 #include <string.h>
 #include <signal.h>
 #include <time.h>
+#ifdef HAVE_NCURSES
+#ifdef HAVE_NCURSES_SUBDIR
+#include <ncurses/ncurses.h>
+#else
+#include <ncurses.h>
+#endif
+#else
 #include <curses.h>
+#endif
 
 #include "menuselect.h"
 
@@ -227,7 +235,7 @@ static void display_mem_info(WINDOW *menu, struct member *mem, int start_y, int 
 				buf[0] = '\0';
 				new_line = 1;
 			}
-			sprintf(buf, "%s%*.*s%s", buf, new_line ? 0 : 1, new_line ? 0 : 1, " ", word);
+			sprintf(buf + strlen(buf), "%*.*s%s", new_line ? 0 : 1, new_line ? 0 : 1, " ", word);
 			new_line = 0;
 		}
 		if (strlen(buf)) {
@@ -291,7 +299,7 @@ static void draw_category_menu(WINDOW *menu, struct category *cat, int start, in
 	char buf[64];
 
 	if (!changed) {
-		/* If all we have to do is move the cursor, 
+		/* If all we have to do is move the cursor,
 		 * then don't clear the screen and start over */
 		AST_LIST_TRAVERSE(&cat->members, mem, list) {
 			i++;
@@ -327,7 +335,7 @@ static void draw_category_menu(WINDOW *menu, struct category *cat, int start, in
 			snprintf(buf, sizeof(buf), "[%s] %s", mem->enabled ? "*" : " ", mem->name);
 		}
 		waddstr(menu, buf);
-		
+
 		if (curopt + 1 == i)
 			display_mem_info(menu, mem, start, end);
 
@@ -467,7 +475,7 @@ static int run_category_menu(WINDOW *menu, int cat_num)
 			set_all(cat, 1);
 			changed = 1;
 		default:
-			break;	
+			break;
 		}
 		if (c == 'x' || c == 'X' || c == 'Q' || c == 'q')
 			break;
@@ -533,13 +541,13 @@ int run_menu(void)
 	refresh();
 
 	maxopt = count_categories() - 1;
-	
+
 	/* We have two windows - the title window at the top, and the menu window gets the rest */
 	title = newwin(TITLE_HEIGHT, max_x, 0, 0);
 	menu = newwin(max_y - TITLE_HEIGHT, max_x, TITLE_HEIGHT, 0);
-	draw_title_window(title);	
+	draw_title_window(title);
 	draw_main_menu(menu, curopt);
-	
+
 	while ((c = getch())) {
 		switch (c) {
 		case KEY_UP:
@@ -571,7 +579,7 @@ int run_menu(void)
 			play_space();
 			draw_title_window(title);
 		default:
-			break;	
+			break;
 		}
 		if (c == 'q' || c == 'Q' || c == 27 || c == 3) {
 			if (changes_made) {
@@ -586,7 +594,7 @@ int run_menu(void)
 			}
 		}
 		if (c == 'x' || c == 'X' || c == 's' || c == 'S')
-			break;	
+			break;
 		draw_main_menu(menu, curopt);
 	}
 
@@ -729,7 +737,7 @@ static int repaint_screen(void)
 			wmove(stdscr, cur->oy, cur->ox);
 			waddch(stdscr, ' ');
 			wmove(stdscr, cur->y, cur->x);
-			waddch(stdscr, type2chtype(cur->type));	
+			waddch(stdscr, type2chtype(cur->type));
 			cur->ox = cur->x;
 			cur->oy = cur->y;
 		}
@@ -746,7 +754,7 @@ static int tank_move_left(void)
 {
 	if (tank->x > 0)
 		tank->x--;
-	
+
 	return 0;
 }
 

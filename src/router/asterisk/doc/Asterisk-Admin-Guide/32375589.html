@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk Gateway Interface (AGI)</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk Gateway Interface (AGI)
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified by <span class='editor'> Joshua C. Colp</span> on Oct 19, 2018
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>This page is under construction!</p>
+                    </div>
+    </div>
+<h1 id="AsteriskGatewayInterface(AGI)-Overview"><span style="color: rgb(133,120,102);">Overview</span></h1><p><span style="color: rgb(133,120,102);"> </span><span style="color: rgb(51,51,51);font-family: &quot;Helvetica Neue&quot; , Helvetica , Arial , sans-serif;font-size: 14.0px;line-height: 1.4285715;">AGI is analogous to CGI in Apache. AGI provides an interface between the Asterisk dialplan and an external program that wants to manipulate a channel in the dialplan. In general, the interface is synchronous - actions taken on a channel from an AGI block and do not return until the action is completed.</span></p></div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303046609 {padding: 0px;}
+div.rbtoc1582303046609 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303046609 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303046609'>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskGatewayInterface(AGI)-Overview'>Overview</a></li>
+<li><a href='#AsteriskGatewayInterface(AGI)-AGILibrariesandFrameworks'>AGI Libraries and Frameworks</a></li>
+</ul>
+</div></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="AsteriskGatewayInterface(AGI)-AGILibrariesandFrameworks"><span style="color: rgb(133,120,102);">AGI Libraries and Frameworks</span></h1><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Name</th><th class="confluenceTh">Language</th><th class="confluenceTh">Website</th><th colspan="1" class="confluenceTh">Protocols</th></tr><tr><td class="confluenceTd">Adhearsion</td><td class="confluenceTd">Ruby</td><td class="confluenceTd"><a href="http://www.adhearsion.com/" class="external-link" rel="nofollow">http://www.adhearsion.com/</a></td><td colspan="1" class="confluenceTd">AMI/FastAGI</td></tr><tr><td class="confluenceTd">Asterisk-Java</td><td class="confluenceTd">Java</td><td class="confluenceTd"><a href="https://asterisk-java.org/" class="external-link" rel="nofollow">https://asterisk-java.org/</a></td><td colspan="1" class="confluenceTd">AMI/FastAGI</td></tr><tr><td class="confluenceTd">PAGI</td><td class="confluenceTd">PHP</td><td class="confluenceTd"><a href="https://github.com/marcelog/PAGI" class="external-link" rel="nofollow">https://github.com/marcelog/PAGI</a></td><td colspan="1" class="confluenceTd">AGI</td></tr><tr><td colspan="1" class="confluenceTd">PHPAGI</td><td colspan="1" class="confluenceTd">PHP</td><td colspan="1" class="confluenceTd"><a href="http://phpagi.sourceforge.net/" class="external-link" rel="nofollow">http://phpagi.sourceforge.net/</a></td><td colspan="1" class="confluenceTd">AGI</td></tr><tr><td class="confluenceTd">Panoramisk</td><td class="confluenceTd">Python+AsyncIO</td><td class="confluenceTd"><a href="https://github.com/gawel/panoramisk" class="external-link" rel="nofollow">https://github.com/gawel/panoramisk</a></td><td colspan="1" class="confluenceTd">AMI/FastAGI</td></tr><tr><td class="confluenceTd">Pyst2</td><td class="confluenceTd">Python</td><td class="confluenceTd"><a href="https://github.com/rdegges/pyst2" class="external-link" rel="nofollow">https://github.com/rdegges/pyst2</a></td><td colspan="1" class="confluenceTd">AMI/AGI</td></tr><tr><td class="confluenceTd">StarPy</td><td class="confluenceTd">Python+Twisted</td><td class="confluenceTd"><a href="https://github.com/asterisk/starpy" class="external-link" rel="nofollow">https://github.com/asterisk/starpy</a></td><td colspan="1" class="confluenceTd">AMI/FastAGI</td></tr><tr><td colspan="1" class="confluenceTd">Nanoagi</td><td colspan="1" class="confluenceTd">C++</td><td colspan="1" class="confluenceTd"><a href="http://sourceforge.net/projects/nanoagi/" class="external-link" rel="nofollow">http://sourceforge.net/projects/nanoagi/</a></td><td colspan="1" class="confluenceTd">AGI</td></tr><tr><td colspan="1" class="confluenceTd">AsterNET</td><td colspan="1" class="confluenceTd">.NET (C#/VB.net)</td><td colspan="1" class="confluenceTd"><a href="https://github.com/skrusty/AsterNET" class="external-link" rel="nofollow">https://github.com/skrusty/AsterNET</a></td><td colspan="1" class="confluenceTd">AMI/FastAGI</td></tr><tr><td colspan="1" class="confluenceTd">Ding-dong</td><td colspan="1" class="confluenceTd">node.js</td><td colspan="1" class="confluenceTd"><a href="https://www.npmjs.com/package/ding-dong" class="external-link" rel="nofollow">https://www.npmjs.com/package/ding-dong</a></td><td colspan="1" class="confluenceTd">AGI</td></tr></tbody></table></div><p><span style="color: rgb(133,120,102);"><br /></span></p></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

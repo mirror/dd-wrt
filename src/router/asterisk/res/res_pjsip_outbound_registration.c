@@ -19,6 +19,7 @@
 /*** MODULEINFO
 	<depend>pjproject</depend>
 	<depend>res_pjsip</depend>
+	<use type="module">res_statsd</use>
 	<support_level>core</support_level>
  ***/
 
@@ -37,6 +38,8 @@
 #include "asterisk/threadpool.h"
 #include "asterisk/statsd.h"
 #include "res_pjsip/include/res_pjsip_private.h"
+#include "asterisk/vector.h"
+#include "asterisk/pbx.h"
 
 /*** DOCUMENTATION
 	<configInfo name="res_pjsip_outbound_registration" language="en_US">
@@ -75,11 +78,19 @@
 				<configOption name="contact_user">
 					<synopsis>Contact User to use in request</synopsis>
 				</configOption>
+				<configOption name="contact_header_params">
+					<synopsis>Header parameters to place in the Contact header</synopsis>
+				</configOption>
 				<configOption name="expiration" default="3600">
 					<synopsis>Expiration time for registrations in seconds</synopsis>
 				</configOption>
 				<configOption name="max_retries" default="10">
 					<synopsis>Maximum number of registration attempts.</synopsis>
+					<description><para>
+						This sets the maximum number of registration attempts that are made before
+						stopping any further attempts. If set to 0 then upon failure no further attempts
+						are made.
+					</para></description>
 				</configOption>
 				<configOption name="outbound_auth" default="">
 					<synopsis>Authentication object(s) to be used for outbound registrations.</synopsis>
@@ -163,12 +174,15 @@
 					<synopsis>Must be of type 'registration'.</synopsis>
 				</configOption>
 				<configOption name="support_path">
-					<synopsis>Enables Path support for outbound REGISTER requests.</synopsis>
+					<synopsis>Enables advertising SIP Path support for outbound REGISTER requests.</synopsis>
 					<description><para>
 						When this option is enabled, outbound REGISTER requests will advertise
 						support for Path headers so that intervening proxies can add to the Path
 						header as necessary.
 					</para></description>
+				</configOption>
+				<configOption name="support_outbound">
+					<synopsis>Enables advertising SIP Outbound support (RFC5626) for outbound REGISTER requests.</synopsis>
 				</configOption>
 			</configObject>
 		</configFile>
@@ -222,6 +236,10 @@
 		</description>
 	</manager>
  ***/
+
+/* forward declarations */
+static int set_outbound_initial_authentication_credentials(pjsip_regc *regc,
+		const struct ast_sip_auth_vector *auth_vector);
 
 /*! \brief Some thread local storage used to determine if the running thread invoked the callback */
 AST_THREADSTORAGE(register_callback_invoked);
@@ -290,6 +308,8 @@ struct sip_outbound_registration {
 		AST_STRING_FIELD(client_uri);
 		/*! \brief Optional user for contact header */
 		AST_STRING_FIELD(contact_user);
+		/*! \bried Optional header parameters for contact */
+		AST_STRING_FIELD(contact_header_params);
 		/*! \brief Explicit transport to use for registration */
 		AST_STRING_FIELD(transport);
 		/*! \brief Outbound proxy to use */
@@ -315,6 +335,8 @@ struct sip_outbound_registration {
 	struct ast_sip_auth_vector outbound_auths;
 	/*! \brief Whether Path support is enabled */
 	unsigned int support_path;
+	/*! \brief Whether Outbound support is enabled */
+	unsigned int support_outbound;
 };
 
 /*! \brief Outbound registration client state information (persists for lifetime of regc) */
@@ -328,6 +350,14 @@ struct sip_outbound_registration_client_state {
 	 * module unload.
 	 */
 	pjsip_regc *client;
+	/*!
+	 * \brief Last tdata sent
+	 * We need the original tdata to resend a request on auth failure
+	 * or timeout.  On an auth failure, we use the original tdata
+	 * to initialize the new tdata for the authorized response.  On a timeout
+	 * we need it to skip failed SRV entries if any.
+	 */
+	pjsip_tx_data *last_tdata;
 	/*! \brief Timer entry for retrying on temporal responses */
 	pj_timer_entry timer;
 	/*! \brief Optional line parameter placed into Contact */
@@ -346,6 +376,8 @@ struct sip_outbound_registration_client_state {
 	unsigned int auth_rejection_permanent;
 	/*! \brief Determines whether SIP Path support should be advertised */
 	unsigned int support_path;
+	/*! \brief Determines whether SIP Outbound support should be advertised */
+	unsigned int support_outbound;
 	/*! CSeq number of last sent auth request. */
 	unsigned int auth_cseq;
 	/*! \brief Serializer for stuff and things */
@@ -358,6 +390,8 @@ struct sip_outbound_registration_client_state {
 	unsigned int auth_attempted:1;
 	/*! \brief The name of the transport to be used for the registration */
 	char *transport_name;
+	/*! \brief The name of the registration sorcery object */
+	char *registration_name;
 };
 
 /*! \brief Outbound registration state information (persists for lifetime that registration should exist) */
@@ -459,7 +493,7 @@ static int line_identify_relationship(void *obj, void *arg, int flags)
 	struct sip_outbound_registration_state *state = obj;
 	pjsip_param *line = arg;
 
-	return !pj_strcmp2(&line->value, state->client_state->line) ? CMP_MATCH | CMP_STOP : 0;
+	return !pj_strcmp2(&line->value, state->client_state->line) ? CMP_MATCH : 0;
 }
 
 static struct pjsip_param *get_uri_option_line(const void *uri)
@@ -509,13 +543,15 @@ static struct ast_sip_endpoint_identifier line_identifier = {
 /*! \brief Helper function which cancels the timer on a client */
 static void cancel_registration(struct sip_outbound_registration_client_state *client_state)
 {
-	if (pj_timer_heap_cancel(pjsip_endpt_get_timer_heap(ast_sip_get_pjsip_endpoint()), &client_state->timer)) {
+	if (pj_timer_heap_cancel_if_active(pjsip_endpt_get_timer_heap(ast_sip_get_pjsip_endpoint()),
+		&client_state->timer, client_state->timer.id)) {
 		/* The timer was successfully cancelled, drop the refcount of client_state */
 		ao2_ref(client_state, -1);
 	}
 }
 
 static pj_str_t PATH_NAME = { "path", 4 };
+static pj_str_t OUTBOUND_NAME = { "outbound", 8 };
 
 /*! \brief Helper function which sends a message and cleans up, if needed, on failure */
 static pj_status_t registration_client_send(struct sip_outbound_registration_client_state *client_state,
@@ -535,23 +571,85 @@ static pj_status_t registration_client_send(struct sip_outbound_registration_cli
 	/* Due to the message going out the callback may now be invoked, so bump the count */
 	ao2_ref(client_state, +1);
 	/*
+	 * We also bump tdata in expectation of saving it to client_state->last_tdata.
+	 * We have to do it BEFORE pjsip_regc_send because if it succeeds, it decrements
+	 * the ref count on its own.
+	 */
+	pjsip_tx_data_add_ref(tdata);
+
+	/*
 	 * Set the transport in case transports were reloaded.
 	 * When pjproject removes the extraneous error messages produced,
 	 * we can check status and only set the transport and resend if there was an error
 	 */
 	ast_sip_set_tpselector_from_transport_name(client_state->transport_name, &selector);
 	pjsip_regc_set_transport(client_state->client, &selector);
-	ast_sip_record_request_serializer(tdata);
+	ast_sip_tpselector_unref(&selector);
+
 	status = pjsip_regc_send(client_state->client, tdata);
 
-	/* If the attempt to send the message failed and the callback was not invoked we need to
-	 * drop the reference we just added
+	/*
+	 * If the attempt to send the message failed and the callback was not invoked we need to
+	 * drop the references we just added
 	 */
 	if ((status != PJ_SUCCESS) && !(*callback_invoked)) {
+		pjsip_tx_data_dec_ref(tdata);
 		ao2_ref(client_state, -1);
+		return status;
 	}
 
+	/*
+	 * Decref the old last_data before replacing it.
+	 * BTW, it's quite possible that last_data == tdata
+	 * if we're trying successive servers in an SRV set.
+	 */
+	if (client_state->last_tdata) {
+		pjsip_tx_data_dec_ref(client_state->last_tdata);
+	}
+	client_state->last_tdata = tdata;
+
 	return status;
+}
+
+/*! \brief Helper function to add string to Supported header */
+static int add_to_supported_header(pjsip_tx_data *tdata, pj_str_t *name)
+{
+	pjsip_supported_hdr *hdr;
+
+	hdr = pjsip_msg_find_hdr(tdata->msg, PJSIP_H_SUPPORTED, NULL);
+	if (!hdr) {
+		/* insert a new Supported header */
+		hdr = pjsip_supported_hdr_create(tdata->pool);
+		if (!hdr) {
+			pjsip_tx_data_dec_ref(tdata);
+			return 0;
+		}
+
+		pjsip_msg_add_hdr(tdata->msg, (pjsip_hdr *)hdr);
+	}
+
+	/* add on to the existing Supported header */
+	pj_strassign(&hdr->values[hdr->count++], name);
+
+	return 1;
+}
+
+/*! \brief Helper function to add configured supported headers */
+static int add_configured_supported_headers(struct sip_outbound_registration_client_state *client_state, pjsip_tx_data *tdata)
+{
+	if (client_state->support_path) {
+		if (!add_to_supported_header(tdata, &PATH_NAME)) {
+			return 0;
+		}
+	}
+
+	if (client_state->support_outbound) {
+		if (!add_to_supported_header(tdata, &OUTBOUND_NAME)) {
+			return 0;
+		}
+	}
+
+	return 1;
 }
 
 /*! \brief Callback function for registering */
@@ -559,38 +657,30 @@ static int handle_client_registration(void *data)
 {
 	RAII_VAR(struct sip_outbound_registration_client_state *, client_state, data, ao2_cleanup);
 	pjsip_tx_data *tdata;
-	pjsip_regc_info info;
-	char server_uri[PJSIP_MAX_URL_SIZE];
-	char client_uri[PJSIP_MAX_URL_SIZE];
+
+	if (set_outbound_initial_authentication_credentials(client_state->client, &client_state->outbound_auths)) {
+		ast_log(LOG_WARNING, "Failed to set initial authentication credentials\n");
+		return -1;
+	}
 
 	if (client_state->status == SIP_REGISTRATION_STOPPED
 		|| pjsip_regc_register(client_state->client, PJ_FALSE, &tdata) != PJ_SUCCESS) {
 		return 0;
 	}
 
-	pjsip_regc_get_info(client_state->client, &info);
-	ast_copy_pj_str(server_uri, &info.server_uri, sizeof(server_uri));
-	ast_copy_pj_str(client_uri, &info.client_uri, sizeof(client_uri));
-	ast_debug(1, "Outbound REGISTER attempt %u to '%s' with client '%s'\n",
-		client_state->retries + 1, server_uri, client_uri);
+	if (DEBUG_ATLEAST(1)) {
+		pjsip_regc_info info;
 
-	if (client_state->support_path) {
-		pjsip_supported_hdr *hdr;
+		pjsip_regc_get_info(client_state->client, &info);
+		ast_log(LOG_DEBUG, "Outbound REGISTER attempt %u to '%.*s' with client '%.*s'\n",
+			client_state->retries + 1,
+			(int) info.server_uri.slen, info.server_uri.ptr,
+			(int) info.client_uri.slen, info.client_uri.ptr);
+	}
 
-		hdr = pjsip_msg_find_hdr(tdata->msg, PJSIP_H_SUPPORTED, NULL);
-		if (!hdr) {
-			/* insert a new Supported header */
-			hdr = pjsip_supported_hdr_create(tdata->pool);
-			if (!hdr) {
-				pjsip_tx_data_dec_ref(tdata);
-				return -1;
-			}
-
-			pjsip_msg_add_hdr(tdata->msg, (pjsip_hdr *)hdr);
-		}
-
-		/* add on to the existing Supported header */
-		pj_strassign(&hdr->values[hdr->count++], &PATH_NAME);
+	if (!add_configured_supported_headers(client_state, tdata)) {
+		ast_log(LOG_WARNING, "Failed to set supported headers\n");
+		return -1;
 	}
 
 	registration_client_send(client_state, tdata);
@@ -703,6 +793,7 @@ static int handle_client_state_destruction(void *data)
 			update_client_state_status(client_state, SIP_REGISTRATION_STOPPING);
 			client_state->destroy = 1;
 			if (pjsip_regc_unregister(client_state->client, &tdata) == PJ_SUCCESS
+				&& add_configured_supported_headers(client_state, tdata)
 				&& registration_client_send(client_state, tdata) == PJ_SUCCESS) {
 				ao2_ref(client_state, -1);
 				return 0;
@@ -795,6 +886,161 @@ static void schedule_retry(struct registration_response *response, unsigned int 
 	}
 }
 
+static int reregister_immediately_cb(void *obj)
+{
+	struct sip_outbound_registration_state *state = obj;
+
+	if (state->client_state->status != SIP_REGISTRATION_REGISTERED) {
+		ao2_ref(state, -1);
+		return 0;
+	}
+
+	if (DEBUG_ATLEAST(1)) {
+		pjsip_regc_info info;
+
+		pjsip_regc_get_info(state->client_state->client, &info);
+		ast_log(LOG_DEBUG,
+			"Outbound registration transport to server '%.*s' from client '%.*s' shutdown\n",
+			(int) info.server_uri.slen, info.server_uri.ptr,
+			(int) info.client_uri.slen, info.client_uri.ptr);
+	}
+
+	cancel_registration(state->client_state);
+
+	ao2_ref(state->client_state, +1);
+	handle_client_registration(state->client_state);
+
+	ao2_ref(state, -1);
+	return 0;
+}
+
+/*!
+ * \internal
+ * \brief The reliable transport we registered using has shutdown.
+ * \since 13.18.0
+ *
+ * \param obj What is needed to initiate a reregister attempt.
+ *
+ * \note Normally executed by the pjsip monitor thread.
+ *
+ * \return Nothing
+ */
+static void registration_transport_shutdown_cb(void *obj)
+{
+	const char *registration_name = obj;
+	struct sip_outbound_registration_state *state;
+
+	state = get_state(registration_name);
+	if (!state) {
+		/* Registration no longer exists or shutting down. */
+		return;
+	}
+	if (ast_sip_push_task(state->client_state->serializer, reregister_immediately_cb, state)) {
+		ao2_ref(state, -1);
+	}
+}
+
+static int monitor_matcher(void *a, void *b)
+{
+	char *ma = a;
+	char *mb = b;
+
+	return strcmp(ma, mb) == 0;
+}
+
+static void registration_transport_monitor_setup(pjsip_transport *transport, const char *registration_name)
+{
+	char *monitor;
+
+	if (!PJSIP_TRANSPORT_IS_RELIABLE(transport)) {
+		return;
+	}
+	monitor = ao2_alloc_options(strlen(registration_name) + 1, NULL,
+		AO2_ALLOC_OPT_LOCK_NOLOCK);
+	if (!monitor) {
+		return;
+	}
+	strcpy(monitor, registration_name);/* Safe */
+
+	/*
+	 * We'll ignore if the transport has already been shutdown before we
+	 * register the monitor.  We might get into a message spamming infinite
+	 * loop of registration, shutdown, reregistration...
+	 */
+	ast_sip_transport_monitor_register(transport, registration_transport_shutdown_cb,
+		monitor);
+	ao2_ref(monitor, -1);
+}
+
+static void save_response_fields_to_transport(struct registration_response *response)
+{
+	static const pj_str_t associated_uri_str = { "P-Associated-URI", 16 };
+	static const pj_str_t service_route_str = { "Service-Route", 13 };
+	pjsip_hdr *header = NULL;
+	pjsip_msg *msg = response->rdata->msg_info.msg;
+	struct ast_sip_service_route_vector *service_routes = NULL;
+
+	/* If no transport is specified then we can't update any */
+	if (ast_strlen_zero(response->client_state->transport_name)) {
+		return;
+	}
+
+	ast_sip_transport_state_set_transport(response->client_state->transport_name, response->rdata->tp_info.transport);
+
+	while ((header = pjsip_msg_find_hdr_by_name(msg, &service_route_str, header ? header->next : NULL))) {
+		char *service_route;
+		size_t size;
+
+		/* The below code takes the approach that if we can't store all service routes then we
+		 * store none at all. This gives a predictable failure condition instead of storing a
+		 * partial list and having partial route headers.
+		 */
+		size = pj_strlen(&((pjsip_generic_string_hdr*)header)->hvalue) + 1;
+		service_route = ast_malloc(size);
+		if (!service_route) {
+			if (service_routes) {
+				ast_sip_service_route_vector_destroy(service_routes);
+				service_routes = NULL;
+			}
+			break;
+		}
+
+		ast_copy_pj_str(service_route, &((pjsip_generic_string_hdr*)header)->hvalue, size);
+
+		if (!service_routes) {
+			service_routes = ast_sip_service_route_vector_alloc();
+			if (!service_routes) {
+				ast_free(service_route);
+				break;
+			}
+		}
+
+		if (AST_VECTOR_APPEND(service_routes, service_route)) {
+			ast_free(service_route);
+			ast_sip_service_route_vector_destroy(service_routes);
+			service_routes = NULL;
+			break;
+		}
+	}
+
+	/* If any service routes were handled then store them on the transport */
+	if (service_routes) {
+		ast_sip_transport_state_set_service_routes(response->client_state->transport_name, service_routes);
+	}
+
+	/* If an associated URI is present in the response we need to use it on any outgoing
+	 * traffic on the transport.
+	 */
+	header = pjsip_msg_find_hdr_by_name(msg, &associated_uri_str, NULL);
+	if (header) {
+		char value[pj_strlen(&((pjsip_generic_string_hdr*)header)->hvalue) + 1];
+
+		ast_copy_pj_str(value, &((pjsip_generic_string_hdr*)header)->hvalue, sizeof(value));
+		ast_sip_transport_state_set_preferred_identity(response->client_state->transport_name, value);
+	}
+}
+
+
 /*! \brief Callback function for handling a response to a registration attempt */
 static int handle_registration_response(void *data)
 {
@@ -815,14 +1061,24 @@ static int handle_registration_response(void *data)
 	ast_debug(1, "Processing REGISTER response %d from server '%s' for client '%s'\n",
 			response->code, server_uri, client_uri);
 
-	if ((response->code == 401 || response->code == 407)
+	if (response->code == 408 || response->code == 503) {
+		if ((ast_sip_failover_request(response->old_request))) {
+			int res = registration_client_send(response->client_state, response->old_request);
+			/* The tdata ref was stolen */
+			response->old_request = NULL;
+			if (res == PJ_SUCCESS) {
+				ao2_ref(response, -1);
+				return 0;
+			}
+		}
+	} else if ((response->code == 401 || response->code == 407)
 		&& (!response->client_state->auth_attempted
 			|| response->rdata->msg_info.cseq->cseq != response->client_state->auth_cseq)) {
 		int res;
 		pjsip_cseq_hdr *cseq_hdr;
 		pjsip_tx_data *tdata;
 
-		if (!ast_sip_create_request_with_auth_from_old(&response->client_state->outbound_auths,
+		if (!ast_sip_create_request_with_auth(&response->client_state->outbound_auths,
 				response->rdata, response->old_request, &tdata)) {
 			response->client_state->auth_attempted = 1;
 			ast_debug(1, "Sending authenticated REGISTER to server '%s' from client '%s'\n",
@@ -863,10 +1119,19 @@ static int handle_registration_response(void *data)
 				next_registration_round = 0;
 			}
 			schedule_registration(response->client_state, next_registration_round);
+
+			/* See if we should monitor for transport shutdown */
+			registration_transport_monitor_setup(response->rdata->tp_info.transport,
+				response->client_state->registration_name);
 		} else {
 			ast_debug(1, "Outbound unregistration to '%s' with client '%s' successful\n", server_uri, client_uri);
 			update_client_state_status(response->client_state, SIP_REGISTRATION_UNREGISTERED);
+			ast_sip_transport_monitor_unregister(response->rdata->tp_info.transport,
+				registration_transport_shutdown_cb, response->client_state->registration_name,
+				monitor_matcher);
 		}
+
+		save_response_fields_to_transport(response);
 	} else if (response->client_state->destroy) {
 		/* We need to deal with the pending destruction instead. */
 	} else if (response->retry_after) {
@@ -965,11 +1230,25 @@ static void sip_outbound_registration_response_cb(struct pjsip_regc_cbparam *par
 		retry_after = pjsip_msg_find_hdr(param->rdata->msg_info.msg, PJSIP_H_RETRY_AFTER,
 			NULL);
 		response->retry_after = retry_after ? retry_after->ivalue : 0;
+
+		/*
+		 * If we got a response from the server, we have to use the tdata
+		 * from the transaction, not the tdata saved when we sent the
+		 * request.  If we use the saved tdata, we won't process responses
+		 * like 423 Interval Too Brief correctly and we'll wind up sending
+		 * the bad Expires value again.
+		 */
+		pjsip_tx_data_dec_ref(client_state->last_tdata);
+
 		tsx = pjsip_rdata_get_tsx(param->rdata);
 		response->old_request = tsx->last_tx;
 		pjsip_tx_data_add_ref(response->old_request);
 		pjsip_rx_data_clone(param->rdata, 0, &response->rdata);
+	} else {
+		/* old_request steals the reference */
+		response->old_request = client_state->last_tdata;
 	}
+	client_state->last_tdata = NULL;
 
 	/*
 	 * Transfer response reference to serializer task so the
@@ -988,7 +1267,8 @@ static void sip_outbound_registration_state_destroy(void *obj)
 	struct sip_outbound_registration_state *state = obj;
 
 	ast_debug(3, "Destroying registration state for registration to server '%s' from client '%s'\n",
-			state->registration->server_uri, state->registration->client_uri);
+		state->registration ? state->registration->server_uri : "",
+		state->registration ? state->registration->client_uri : "");
 	ao2_cleanup(state->registration);
 
 	if (!state->client_state) {
@@ -1007,12 +1287,16 @@ static void sip_outbound_registration_client_state_destroy(void *obj)
 {
 	struct sip_outbound_registration_client_state *client_state = obj;
 
-	ast_free(client_state->transport_name);
 	ast_statsd_log_string("PJSIP.registrations.count", AST_STATSD_GAUGE, "-1", 1.0);
 	ast_statsd_log_string_va("PJSIP.registrations.state.%s", AST_STATSD_GAUGE, "-1", 1.0,
 		sip_outbound_registration_status_str(client_state->status));
 
 	ast_taskprocessor_unreference(client_state->serializer);
+	ast_free(client_state->transport_name);
+	ast_free(client_state->registration_name);
+	if (client_state->last_tdata) {
+		pjsip_tx_data_dec_ref(client_state->last_tdata);
+	}
 }
 
 /*! \brief Allocator function for registration state */
@@ -1032,24 +1316,33 @@ static struct sip_outbound_registration_state *sip_outbound_registration_state_a
 		return NULL;
 	}
 
+	state->client_state->status = SIP_REGISTRATION_UNREGISTERED;
+	pj_timer_entry_init(&state->client_state->timer, 0, state->client_state,
+		sip_outbound_registration_timer_cb);
+	state->client_state->transport_name = ast_strdup(registration->transport);
+	state->client_state->registration_name =
+		ast_strdup(ast_sorcery_object_get_id(registration));
+
+	ast_statsd_log_string("PJSIP.registrations.count", AST_STATSD_GAUGE, "+1", 1.0);
+	ast_statsd_log_string_va("PJSIP.registrations.state.%s", AST_STATSD_GAUGE, "+1", 1.0,
+		sip_outbound_registration_status_str(state->client_state->status));
+
+	if (!state->client_state->transport_name
+		|| !state->client_state->registration_name) {
+		ao2_cleanup(state);
+		return NULL;
+	}
+
 	/* Create name with seq number appended. */
 	ast_taskprocessor_build_name(tps_name, sizeof(tps_name), "pjsip/outreg/%s",
 		ast_sorcery_object_get_id(registration));
 
-	state->client_state->serializer = ast_sip_create_serializer_group_named(tps_name,
+	state->client_state->serializer = ast_sip_create_serializer_group(tps_name,
 		shutdown_group);
 	if (!state->client_state->serializer) {
 		ao2_cleanup(state);
 		return NULL;
 	}
-	state->client_state->status = SIP_REGISTRATION_UNREGISTERED;
-	state->client_state->timer.user_data = state->client_state;
-	state->client_state->timer.cb = sip_outbound_registration_timer_cb;
-	state->client_state->transport_name = ast_strdup(registration->transport);
-
-	ast_statsd_log_string("PJSIP.registrations.count", AST_STATSD_GAUGE, "+1", 1.0);
-	ast_statsd_log_string_va("PJSIP.registrations.state.%s", AST_STATSD_GAUGE, "+1", 1.0,
-		sip_outbound_registration_status_str(state->client_state->status));
 
 	state->registration = ao2_bump(registration);
 	return state;
@@ -1082,7 +1375,7 @@ static void *sip_outbound_registration_alloc(const char *name)
 
 /*! \brief Helper function which populates a pj_str_t with a contact header */
 static int sip_dialog_create_contact(pj_pool_t *pool, pj_str_t *contact, const char *user,
-	const pj_str_t *target, pjsip_tpselector *selector, const char *line)
+	const pj_str_t *target, pjsip_tpselector *selector, const char *line, const char *header_params)
 {
 	pj_str_t tmp, local_addr;
 	pjsip_uri *uri;
@@ -1126,7 +1419,7 @@ static int sip_dialog_create_contact(pj_pool_t *pool, pj_str_t *contact, const c
 
 	contact->ptr = pj_pool_alloc(pool, PJSIP_MAX_URL_SIZE);
 	contact->slen = pj_ansi_snprintf(contact->ptr, PJSIP_MAX_URL_SIZE,
-		"<%s:%s@%s%.*s%s:%d%s%s%s%s>",
+		"<%s:%s@%s%.*s%s:%d%s%s%s%s>%s%s",
 		((pjsip_transport_get_flag_from_type(type) & PJSIP_TRANSPORT_SECURE) && PJSIP_URI_SCHEME_IS_SIPS(uri)) ? "sips" : "sip",
 		user,
 		(type & PJSIP_TRANSPORT_IPV6) ? "[" : "",
@@ -1137,7 +1430,9 @@ static int sip_dialog_create_contact(pj_pool_t *pool, pj_str_t *contact, const c
 		(type != PJSIP_TRANSPORT_UDP && type != PJSIP_TRANSPORT_UDP6) ? ";transport=" : "",
 		(type != PJSIP_TRANSPORT_UDP && type != PJSIP_TRANSPORT_UDP6) ? pjsip_transport_get_type_name(type) : "",
 		!ast_strlen_zero(line) ? ";line=" : "",
-		S_OR(line, ""));
+		S_OR(line, ""),
+		!ast_strlen_zero(header_params) ? ";" : "",
+		S_OR(header_params, ""));
 
 	return 0;
 }
@@ -1173,6 +1468,124 @@ static int can_reuse_registration(struct sip_outbound_registration *existing,
 	ast_variables_destroy(vc);
 
 	return rc;
+}
+
+/* \brief Get google oauth2 access token using refresh token */
+static const char *fetch_google_access_token(const struct ast_sip_auth *auth)
+{
+	char *cmd = NULL;
+	const char *token;
+	const char *url = "https://www.googleapis.com/oauth2/v3/token";
+	char buf[4096];
+	int res;
+	struct ast_json_error error;
+	struct ast_json *json;
+
+	/* set timeout to be shorter than default 180s (also checks func_curl is available) */
+	if (ast_func_write(NULL, "CURLOPT(conntimeout)", "10")) {
+		ast_log(LOG_ERROR, "CURL is unavailable. This is required for Google OAuth 2.0 authentication. Please ensure it is loaded.\n");
+		return NULL;
+	}
+
+	res = ast_asprintf(&cmd,
+		"CURL(%s,client_id=%s&client_secret=%s&refresh_token=%s&grant_type=refresh_token)",
+		url, auth->oauth_clientid, auth->oauth_secret, auth->refresh_token);
+	if (res < 0) {
+		return NULL;
+	}
+
+	ast_debug(2, "Performing Google OAuth 2.0 authentication using command: %s\n", cmd);
+
+	buf[0] = '\0';
+	res = ast_func_read(NULL, cmd, buf, sizeof(buf));
+	ast_free(cmd);
+	if (res) {
+		ast_log(LOG_ERROR, "Could not retrieve Google OAuth 2.0 authentication\n");
+		return NULL;
+	}
+
+	ast_debug(2, "Google OAuth 2.0 authentication returned: %s\n", buf);
+
+	json = ast_json_load_string(buf, &error);
+	if (!json) {
+		ast_log(LOG_ERROR, "Could not parse Google OAuth 2.0 authentication: %d(%d) %s: '%s'\n",
+			error.line, error.column, error.text, buf);
+		return NULL;
+	}
+
+	token = ast_json_string_get(ast_json_object_get(json, "access_token"));
+	if (!token) {
+		ast_log(LOG_ERROR, "Could not find Google OAuth 2.0 access_token in: '%s'\n",
+			buf);
+	}
+	token = ast_strdup(token);
+	ast_json_unref(json);
+	return token;
+}
+
+/*!
+ * \internal
+ * \brief Set pjsip registration context with any authentication credentials that need to be
+ * sent in the initial registration request
+ *
+ * \param regc The pjsip registration context
+ * \param auth_vector The vector of configured authentication credentials
+ */
+static int set_outbound_initial_authentication_credentials(pjsip_regc *regc,
+		const struct ast_sip_auth_vector *auth_vector)
+{
+	size_t auth_size = AST_VECTOR_SIZE(auth_vector);
+	struct ast_sip_auth *auths[auth_size];
+	const char *access_token;
+	pjsip_cred_info auth_creds[1];
+	pjsip_auth_clt_pref prefs;
+	int res = 0;
+	int idx;
+
+	memset(auths, 0, sizeof(auths));
+	if (ast_sip_retrieve_auths(auth_vector, auths)) {
+		res = -1;
+		goto cleanup;
+	}
+
+	for (idx = 0; idx < auth_size; ++idx) {
+		switch (auths[idx]->type) {
+		case AST_SIP_AUTH_TYPE_GOOGLE_OAUTH:
+			pj_cstr(&auth_creds[0].username, auths[idx]->auth_user);
+			pj_cstr(&auth_creds[0].scheme, "Bearer");
+			pj_cstr(&auth_creds[0].realm, auths[idx]->realm);
+			ast_debug(2, "Obtaining Google OAuth access token\n");
+			access_token = fetch_google_access_token(auths[idx]);
+			if (!access_token) {
+				ast_log(LOG_WARNING, "Obtaining Google OAuth access token failed\n");
+				access_token = auths[idx]->auth_pass;
+				res = -1;
+			}
+			ast_debug(2, "Setting data to '%s'\n", access_token);
+
+			pj_cstr(&auth_creds[0].data, access_token);
+			auth_creds[0].data_type = PJSIP_CRED_DATA_PLAIN_PASSWD;
+
+			pjsip_regc_set_credentials(regc, 1, auth_creds);
+
+			/* for oauth, send auth without waiting for unauthorized response */
+			prefs.initial_auth = PJ_TRUE;
+			pj_cstr(&prefs.algorithm, "oauth");
+			pjsip_regc_set_prefs(regc, &prefs);
+
+			if (access_token != auths[idx]->auth_pass) {
+				ast_free((char *) access_token);
+			}
+			break;
+		default:
+			/* other cases handled after receiving auth rejection */
+			break;
+		}
+	}
+
+cleanup:
+	ast_sip_cleanup_auths(auths, auth_size);
+	return res;
 }
 
 /*! \brief Helper function that allocates a pjsip registration client and configures it */
@@ -1248,6 +1661,7 @@ static int sip_outbound_registration_regc_alloc(void *data)
 		route = pjsip_parse_hdr(pjsip_regc_get_pool(state->client_state->client),
 			&ROUTE_HNAME, tmp.ptr, tmp.slen, NULL);
 		if (!route) {
+			ast_sip_tpselector_unref(&selector);
 			return -1;
 		}
 		pj_list_insert_nodes_before(&route_set, route);
@@ -1261,12 +1675,14 @@ static int sip_outbound_registration_regc_alloc(void *data)
 
 	pj_cstr(&server_uri, registration->server_uri);
 
-
 	if (sip_dialog_create_contact(pjsip_regc_get_pool(state->client_state->client),
 		&contact_uri, S_OR(registration->contact_user, "s"), &server_uri, &selector,
-		state->client_state->line)) {
+		state->client_state->line, registration->contact_header_params)) {
+		ast_sip_tpselector_unref(&selector);
 		return -1;
 	}
+
+	ast_sip_tpselector_unref(&selector);
 
 	pj_cstr(&client_uri, registration->client_uri);
 	if (pjsip_regc_init(state->client_state->client, &server_uri, &client_uri,
@@ -1289,10 +1705,10 @@ static int sip_outbound_registration_perform(void *data)
 
 	AST_VECTOR_INIT(&state->client_state->outbound_auths, AST_VECTOR_SIZE(&registration->outbound_auths));
 	for (i = 0; i < AST_VECTOR_SIZE(&registration->outbound_auths); ++i) {
-		const char *name = ast_strdup(AST_VECTOR_GET(&registration->outbound_auths, i));
+		char *name = ast_strdup(AST_VECTOR_GET(&registration->outbound_auths, i));
 
-		if (name) {
-			AST_VECTOR_APPEND(&state->client_state->outbound_auths, name);
+		if (name && AST_VECTOR_APPEND(&state->client_state->outbound_auths, name)) {
+			ast_free(name);
 		}
 	}
 	state->client_state->retry_interval = registration->retry_interval;
@@ -1301,6 +1717,7 @@ static int sip_outbound_registration_perform(void *data)
 	state->client_state->max_retries = registration->max_retries;
 	state->client_state->retries = 0;
 	state->client_state->support_path = registration->support_path;
+	state->client_state->support_outbound = registration->support_outbound;
 	state->client_state->auth_rejection_permanent = registration->auth_rejection_permanent;
 
 	pjsip_regc_update_expires(state->client_state->client, registration->expiration);
@@ -1333,7 +1750,7 @@ static int sip_outbound_registration_apply(const struct ast_sorcery *sorcery, vo
 			ast_sorcery_object_get_id(applied));
 		return -1;
 	} else if (ast_sip_validate_uri_length(applied->server_uri)) {
-			ast_log(LOG_ERROR, "Server URI or hostname length exceeds pjpropject limit '%s'\n",
+			ast_log(LOG_ERROR, "Server URI or hostname length exceeds pjproject limit or is not a sip(s) uri: '%s'\n",
 				ast_sorcery_object_get_id(applied));
 			return -1;
 	} else if (ast_strlen_zero(applied->client_uri)) {
@@ -1341,7 +1758,7 @@ static int sip_outbound_registration_apply(const struct ast_sorcery *sorcery, vo
 			ast_sorcery_object_get_id(applied));
 		return -1;
 	} else if (ast_sip_validate_uri_length(applied->client_uri)) {
-			ast_log(LOG_ERROR, "Client URI or hostname length exceeds pjpropject limit '%s'\n",
+			ast_log(LOG_ERROR, "Client URI or hostname length exceeds pjproject limit or is not a sip(s) uri: '%s'\n",
 				ast_sorcery_object_get_id(applied));
 			return -1;
 	} else if (applied->line && ast_strlen_zero(applied->endpoint)) {
@@ -1374,7 +1791,7 @@ static int sip_outbound_registration_apply(const struct ast_sorcery *sorcery, vo
 		return -1;
 	}
 
-	if (ast_sip_push_task_synchronous(new_state->client_state->serializer,
+	if (ast_sip_push_task_wait_serializer(new_state->client_state->serializer,
 		sip_outbound_registration_regc_alloc, new_state)) {
 		return -1;
 	}
@@ -1442,7 +1859,8 @@ static int unregister_task(void *obj)
 
 	cancel_registration(state->client_state);
 
-	if (pjsip_regc_unregister(client, &tdata) == PJ_SUCCESS) {
+	if (pjsip_regc_unregister(client, &tdata) == PJ_SUCCESS
+		&& add_configured_supported_headers(state->client_state, tdata)) {
 		registration_client_send(state->client_state, tdata);
 	}
 
@@ -1744,8 +2162,7 @@ static int ami_outbound_registration_detail(void *obj, void *arg, int flags)
 	struct sip_ami_outbound *ami = arg;
 
 	ami->registration = obj;
-	return ast_sip_push_task_synchronous(
-		NULL, ami_outbound_registration_task, ami);
+	return ast_sip_push_task_wait_servant(NULL, ami_outbound_registration_task, ami);
 }
 
 static int ami_show_outbound_registrations(struct mansession *s,
@@ -2053,6 +2470,8 @@ static int unload_module(void)
 
 	ao2_global_obj_release(current_states);
 
+	ast_sip_transport_monitor_unregister_all(registration_transport_shutdown_cb, NULL, NULL);
+
 	/* Wait for registration serializers to get destroyed. */
 	ast_debug(2, "Waiting for registration transactions to complete for unload.\n");
 	remaining = ast_serializer_shutdown_group_join(shutdown_group, MAX_UNLOAD_TIMEOUT_TIME);
@@ -2079,16 +2498,14 @@ static int load_module(void)
 {
 	struct ao2_container *new_states;
 
-	CHECK_PJSIP_MODULE_LOADED();
-
 	shutdown_group = ast_serializer_shutdown_group_alloc();
 	if (!shutdown_group) {
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	/* Create outbound registration states container. */
-	new_states = ao2_container_alloc(DEFAULT_STATE_BUCKETS,
-		registration_state_hash, registration_state_cmp);
+	new_states = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0,
+		DEFAULT_STATE_BUCKETS, registration_state_hash, NULL, registration_state_cmp);
 	if (!new_states) {
 		ast_log(LOG_ERROR, "Unable to allocate registration states container\n");
 		unload_module();
@@ -2112,6 +2529,7 @@ static int load_module(void)
 	ast_sorcery_object_field_register(ast_sip_get_sorcery(), "registration", "server_uri", "", OPT_STRINGFIELD_T, 0, STRFLDSET(struct sip_outbound_registration, server_uri));
 	ast_sorcery_object_field_register(ast_sip_get_sorcery(), "registration", "client_uri", "", OPT_STRINGFIELD_T, 0, STRFLDSET(struct sip_outbound_registration, client_uri));
 	ast_sorcery_object_field_register(ast_sip_get_sorcery(), "registration", "contact_user", "", OPT_STRINGFIELD_T, 0, STRFLDSET(struct sip_outbound_registration, contact_user));
+	ast_sorcery_object_field_register(ast_sip_get_sorcery(), "registration", "contact_header_params", "", OPT_STRINGFIELD_T, 0, STRFLDSET(struct sip_outbound_registration, contact_header_params));
 	ast_sorcery_object_field_register(ast_sip_get_sorcery(), "registration", "transport", "", OPT_STRINGFIELD_T, 0, STRFLDSET(struct sip_outbound_registration, transport));
 	ast_sorcery_object_field_register(ast_sip_get_sorcery(), "registration", "outbound_proxy", "", OPT_STRINGFIELD_T, 0, STRFLDSET(struct sip_outbound_registration, outbound_proxy));
 	ast_sorcery_object_field_register(ast_sip_get_sorcery(), "registration", "expiration", "3600", OPT_UINT_T, 0, FLDSET(struct sip_outbound_registration, expiration));
@@ -2122,6 +2540,7 @@ static int load_module(void)
 	ast_sorcery_object_field_register(ast_sip_get_sorcery(), "registration", "auth_rejection_permanent", "yes", OPT_BOOL_T, 1, FLDSET(struct sip_outbound_registration, auth_rejection_permanent));
 	ast_sorcery_object_field_register_custom(ast_sip_get_sorcery(), "registration", "outbound_auth", "", outbound_auth_handler, outbound_auths_to_str, outbound_auths_to_var_list, 0, 0);
 	ast_sorcery_object_field_register(ast_sip_get_sorcery(), "registration", "support_path", "no", OPT_BOOL_T, 1, FLDSET(struct sip_outbound_registration, support_path));
+	ast_sorcery_object_field_register(ast_sip_get_sorcery(), "registration", "support_outbound", "no", OPT_YESNO_T, 1, FLDSET(struct sip_outbound_registration, support_outbound));
 	ast_sorcery_object_field_register(ast_sip_get_sorcery(), "registration", "line", "no", OPT_BOOL_T, 1, FLDSET(struct sip_outbound_registration, line));
 	ast_sorcery_object_field_register(ast_sip_get_sorcery(), "registration", "endpoint", "", OPT_STRINGFIELD_T, 0, STRFLDSET(struct sip_outbound_registration, endpoint));
 
@@ -2175,6 +2594,8 @@ static int load_module(void)
 
 	network_change_sub = stasis_subscribe(ast_system_topic(),
 		network_change_stasis_cb, NULL);
+	stasis_subscription_accept_message_type(network_change_sub, ast_network_change_type());
+	stasis_subscription_set_filter(network_change_sub, STASIS_SUBSCRIPTION_FILTER_SELECTIVE);
 
 	return AST_MODULE_LOAD_SUCCESS;
 }
@@ -2186,9 +2607,11 @@ static int reload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PJSIP Outbound Registration Support",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.reload = reload_module,
-		.unload = unload_module,
-		.load_pri = AST_MODPRI_APP_DEPEND,
-	       );
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.reload = reload_module,
+	.unload = unload_module,
+	.load_pri = AST_MODPRI_APP_DEPEND,
+	.requires = "res_pjsip",
+	.optional_modules = "res_statsd",
+);

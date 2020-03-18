@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : New in 17</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : New in 17
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> George Joseph</span>, last modified by <span class='editor'> Joshua C. Colp</span> on Aug 22, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                        <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>This is a curated list of new functionality in Asterisk 17 and features which have been developed for Asterisk 17 but were also backported and made available in earlier versions. For a complete list of changes you can consult the <a href="https://raw.githubusercontent.com/asterisk/asterisk/17/CHANGES" class="external-link" rel="nofollow">CHANGES file</a> in Asterisk 17.</p>
+                    </div>
+    </div>
+<h1 id="Newin17-ARI">ARI</h1><p>Application event filtering is now supported. An application can now specify an &quot;allowed&quot; and/or &quot;disallowed&quot; list(s) of event types. Only those types indicated in the &quot;allowed&quot; list are sent to the application. Conversely, any types defined in the &quot;disallowed&quot; list are not sent to the application. Note that if a type is specified in both lists &quot;disallowed&quot; takes precedence.</p><p>A new REST API call has been added: 'move'. It follows the format 'channels/{channelId}/move' and can be used to move channels from one application to another without needing to exit back into the dialplan. An application must be specified, but the passing a list of arguments to the new application is optional. An example call would look like this:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">client.channels.move(channelId=chan.id, app=&#39;ari-example&#39;, appArgs=&#39;a,b,c&#39;)</pre>
+</div></div><p>If the channel was inside of a bridge when switching applications, it will remain there. If the application specified cannot be moved to, then the channel will remain in the current application and an event will be triggered named &quot;ApplicationMoveFailed&quot;, which will provide the destination application's name and the channel information.</p><p>Whenever an ARI application is started, a context will be created for it automatically as long as one does not already exist, following the format 'stasis-&lt;app_name&gt;'. Two extensions are also added to this context: a match-all extension, and the 'h' extension. Any phone that registers under this context will place all calls to the corresponding Stasis application.</p><h1 id="Newin17-AttendedTransfer">AttendedTransfer</h1><p>A new application, this will queue up attended transfer to the given extension.</p><h1 id="Newin17-BlindTransfer">BlindTransfer</h1><p>A new application, this will redirect all channels currently bridged to the caller channel to the specified destination.</p><h1 id="Newin17-ConfBridge">ConfBridge</h1><p>Add &quot;average_all&quot;, &quot;highest_all&quot;, and &quot;lowest_all&quot; values for the remb_behavior option. These values operate on a bridge level instead of a per-source level. This means that a single REMB value is calculated and sent to every sender, instead of a REMB value that is unique for the specific sender.</p><h1 id="Newin17-Dial">Dial</h1><p>Add RINGTIME and RINGTIME_MS variables containing respectively seconds and milliseconds between creation of the dialing channel and receiving the first RINGING signal</p><p>Add PROGRESSTIME and PROGRESSTIME_MS variables analogous to the above with respect to the PROGRESS signal. Shorter of these two times should be equivalent to the PDD (Post Dial Delay) value</p><p>Add DIALEDTIME_MS and ANSWEREDTIME_MS variables to get millisecond resolution versions of DIALEDTIME and ANSWEREDTIME</p><h1 id="Newin17-RTP/ICE">RTP/ICE</h1><p>You can now indicate that you'd like an ice_host_candidate's local address to be published as well as the mapped address.  See the sample rtp.conf for more information.</p><p>DTLS packets will now be fragmented according to the MTU as set in rtp.conf. This allows larger certificates to be used for the DTLS negotiation. By default this value is 1200.</p><h1 id="Newin17-ReadExten">ReadExten</h1><p>Add 'p' option to stop reading extension if user presses '#' key.</p><h1 id="Newin17-DUNDi">DUNDi</h1><p>The DUNDi PBX module now supports IPv4/IPv6 dual binding.</p><h1 id="Newin17-MWI">MWI</h1><p>A new module &quot;res_mwi_devstate&quot; has been added that allows subscriptions to voicemail boxes using &quot;presence&quot; events.  This allows common BLF keys to act as voicemail waiting indicators.</p><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

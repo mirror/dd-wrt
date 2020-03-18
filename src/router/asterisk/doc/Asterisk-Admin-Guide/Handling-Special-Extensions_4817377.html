@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Handling Special Extensions</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Basic-PBX-Functionality_4817469.html">Basic PBX Functionality</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Auto-attendant-and-IVR-Menus_4817391.html">Auto-attendant and IVR Menus</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Handling Special Extensions
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Rusty Newton</span> on Mar 14, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>We have the basics of an auto-attendant created, but now let's make it a bit more robust. We need to be able to handle special situations, such as when the caller enters an invalid extension, or doesn't enter an extension at all. Asterisk has a set of special extensions for dealing with situations like there. They all are named with a single letter, so we recommend you don't create any other extensions named with a single letter. You can read about all the <a href="Special-Dialplan-Extensions_28314883.html">Special Dialplan Extensions on the wiki</a>.</p><p> </p><hr /><p>Let's add a few more lines to our <strong>[docs:demo-menu]</strong> context, to handle invalid entries and timeouts. Modify your <strong>[docs:demo-menu]</strong> context so that it matches the one below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">[demo-menu]
+exten =&gt; s,1,Answer(500)
+   same =&gt; n(loop),Background(press-1&amp;or&amp;press-2)
+   same =&gt; n,WaitExten()
+
+exten =&gt; 1,1,Playback(you-entered)
+   same =&gt; n,SayNumber(1)
+   same =&gt; n,Goto(s,loop)
+
+exten =&gt; 2,1,Playback(you-entered)
+   same =&gt; n,SayNumber(2)
+   same =&gt; n,Goto(s,loop)
+
+exten =&gt; i,1,Playback(option-is-invalid)
+   same =&gt; n,Goto(s,loop)
+
+exten =&gt; t,1,Playback(are-you-still-there)
+   same =&gt; n,Goto(s,loop)</pre>
+</div></div><p>Now dial your auto-attendant menu again (by dialing extension <strong>6598</strong>), and try entering an invalid option (such as <strong>3</strong>) at the auto-attendant menu. If you watch the Asterisk command-line interface while you dial and your verbosity level is three or higher, you should see something similar to the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>-- Executing [6598@users:1] Goto(&quot;SIP/demo-alice-00000008&quot;, &quot;demo-menu,s,1&quot;) in new stack
+-- Goto (demo-menu,s,1)
+-- Executing [s@demo-menu:1] Answer(&quot;SIP/demo-alice-00000008&quot;, &quot;500&quot;) in new stack
+-- Executing [s@demo-menu:2] BackGround(&quot;SIP/demo-alice-00000008&quot;, &quot;press-1&amp;or&amp;press-2&quot;) in new stack
+-- &lt;SIP/demo-alice-00000008&gt; Playing &#39;press-1.gsm&#39; (language &#39;en&#39;)
+-- &lt;SIP/demo-alice-00000008&gt; Playing &#39;or.gsm&#39; (language &#39;en&#39;)
+-- &lt;SIP/demo-alice-00000008&gt; Playing &#39;press-2.gsm&#39; (language &#39;en&#39;)
+-- Invalid extension &#39;3&#39; in context &#39;demo-menu&#39; on SIP/demo-alice-00000008
+-- Executing [i@demo-menu:1] Playback(&quot;SIP/demo-alice-00000008&quot;, &quot;option-is-invalid&quot;) in new stack
+-- &lt;SIP/demo-alice-00000008&gt; Playing &#39;option-is-invalid.gsm&#39; (language &#39;en&#39;)
+-- Executing [i@demo-menu:2] Goto(&quot;SIP/demo-alice-00000008&quot;, &quot;s,loop&quot;) in new stack
+-- Goto (demo-menu,s,2)
+-- Executing [s@demo-menu:2] BackGround(&quot;SIP/demo-alice-00000008&quot;, &quot;press-1&amp;or&amp;press-2&quot;) in new stack
+-- &lt;SIP/demo-alice-00000008&gt; Playing &#39;press-1.gsm&#39; (language &#39;en&#39;)
+-- &lt;SIP/demo-alice-00000008&gt; Playing &#39;or.gsm&#39; (language &#39;en&#39;)
+-- &lt;SIP/demo-alice-00000008&gt; Playing &#39;press-2.gsm&#39; (language &#39;en&#39;)</pre>
+</div></div><p>If you don't enter anything at the auto-attendant menu and instead wait approximately ten seconds, you should hear (and see) Asterisk go to the <strong>t</strong> extension as well.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

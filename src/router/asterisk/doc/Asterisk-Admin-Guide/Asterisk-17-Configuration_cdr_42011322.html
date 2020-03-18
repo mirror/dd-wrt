@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Configuration_cdr</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Module-Configuration_42010715.html">Asterisk 17 Module Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Configuration_cdr
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Configuration_cdr-CallDetailRecordconfiguration">Call Detail Record configuration</h1>
+
+<p>This configuration documentation is for functionality provided by <code>cdr</code>.</p>
+
+<h2 id="Asterisk17Configuration_cdr-Overview">Overview</h2>
+
+<p>CDR is Call Detail Record, which provides logging services via a variety of pluggable backend modules. Detailed call information can be recorded to databases, files, etc. Useful for billing, fraud prevention, compliance with Sarbanes-Oxley aka The Enron Act, QOS evaluations, and more.</p>
+
+
+<h2 id="Asterisk17Configuration_cdr-cdr.conf">cdr.conf</h2>
+
+<h3 id="Asterisk17Configuration_cdr-general">general</h3>
+
+<p>Global settings applied to the CDR engine.</p>
+
+<h4 id="Asterisk17Configuration_cdr-ConfigurationOptionReference">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_cdr-general_debug"><code>debug</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Enable/disable verbose CDR debugging. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_cdr-general_enable"><code>enable</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>1</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Enable/disable CDR logging. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_cdr-general_unanswered"><code>unanswered</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Log calls that are never answered and don't set an outgoing party. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_cdr-general_congestion"><code>congestion</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Log congested calls. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_cdr-general_endbeforehexten"><code>endbeforehexten</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>1</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Don't produce CDRs while executing hangup logic </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_cdr-general_initiatedseconds"><code>initiatedseconds</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Count microseconds for billsec purposes </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_cdr-general_batch"><code>batch</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Submit CDRs to the backends for processing in batches </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_cdr-general_size"><code>size</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>100</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The maximum number of CDRs to accumulate before triggering a batch </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_cdr-general_time"><code>time</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>300</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The maximum time to accumulate CDRs before triggering a batch </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_cdr-general_scheduleronly"><code>scheduleronly</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Post batched CDRs on their own thread instead of the scheduler </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_cdr-general_safeshutdown"><code>safeshutdown</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>1</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Block shutdown of Asterisk until CDRs are submitted </p></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="Asterisk17Configuration_cdr-ConfigurationOptionDescriptions">Configuration Option Descriptions</h4>
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_cdr-general_debug"></span></p>
+<h5 id="Asterisk17Configuration_cdr-debug">debug</h5>
+
+<p>When set to <code>True</code>, verbose updates of changes in CDR information will be logged. Note that this is only of use when debugging CDR behavior.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_cdr-general_enable"></span></p>
+<h5 id="Asterisk17Configuration_cdr-enable">enable</h5>
+
+<p>Define whether or not to use CDR logging. Setting this to &quot;no&quot; will override any loading of backend CDR modules. Default is &quot;yes&quot;.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_cdr-general_unanswered"></span></p>
+<h5 id="Asterisk17Configuration_cdr-unanswered">unanswered</h5>
+
+<p>Define whether or not to log unanswered calls that don't involve an outgoing party. Setting this to &quot;yes&quot; will make calls to extensions that don't answer and don't set a side B channel (such as by using the Dial application) receive CDR log entries. If this option is set to &quot;no&quot;, then those log entries will not be created. Unanswered calls which get offered to an outgoing line will always receive log entries regardless of this option, and that is the intended behavior.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_cdr-general_congestion"></span></p>
+<h5 id="Asterisk17Configuration_cdr-congestion">congestion</h5>
+
+<p>Define whether or not to log congested calls. Setting this to &quot;yes&quot; will report each call that fails to complete due to congestion conditions.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_cdr-general_endbeforehexten"></span></p>
+<h5 id="Asterisk17Configuration_cdr-endbeforehexten">endbeforehexten</h5>
+
+<p>As each CDR for a channel is finished, its end time is updated and the CDR is finalized. When a channel is hung up and hangup logic is present (in the form of a hangup handler or the <code>h</code> extension), a new CDR is generated for the channel. Any statistics are gathered from this new CDR. By enabling this option, no new CDR is created for the dialplan logic that is executed in <code>h</code> extensions or attached hangup handler subroutines. The default value is <code>yes</code>, indicating that a CDR will be generated during hangup logic.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_cdr-general_initiatedseconds"></span></p>
+<h5 id="Asterisk17Configuration_cdr-initiatedseconds">initiatedseconds</h5>
+
+<p>Normally, the <code>billsec</code> field logged to the CDR backends is simply the end time (hangup time) minus the answer time in seconds. Internally, asterisk stores the time in terms of microseconds and seconds. By setting initiatedseconds to <code>yes</code>, you can force asterisk to report any seconds that were initiated (a sort of round up method). Technically, this is when the microsecond part of the end time is greater than the microsecond part of the answer time, then the billsec time is incremented one second.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_cdr-general_batch"></span></p>
+<h5 id="Asterisk17Configuration_cdr-batch">batch</h5>
+
+<p>Define the CDR batch mode, where instead of posting the CDR at the end of every call, the data will be stored in a buffer to help alleviate load on the asterisk server.</p>
+
+    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">Warning</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            
+<p>Use of batch mode may result in data loss after unsafe asterisk termination, i.e., software crash, power failure, kill -9, etc.</p>
+
+                    </div>
+    </div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_cdr-general_size"></span></p>
+<h5 id="Asterisk17Configuration_cdr-size">size</h5>
+
+<p>Define the maximum number of CDRs to accumulate in the buffer before posting them to the backend engines. batch must be set to <code>yes</code>.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_cdr-general_time"></span></p>
+<h5 id="Asterisk17Configuration_cdr-time">time</h5>
+
+<p>Define the maximum time to accumulate CDRs before posting them in a batch to the backend engines. If this time limit is reached, then it will post the records, regardless of the value defined for size. batch must be set to <code>yes</code>.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>Time is expressed in seconds.</p>
+
+                    </div>
+    </div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_cdr-general_scheduleronly"></span></p>
+<h5 id="Asterisk17Configuration_cdr-scheduleronly">scheduleronly</h5>
+
+<p>The CDR engine uses the internal asterisk scheduler to determine when to post records. Posting can either occur inside the scheduler thread, or a new thread can be spawned for the submission of every batch. For small batches, it might be acceptable to just use the scheduler thread, so set this to <code>yes</code>. For large batches, say anything over size=10, a new thread is recommended, so set this to <code>no</code>.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_cdr-general_safeshutdown"></span></p>
+<h5 id="Asterisk17Configuration_cdr-safeshutdown">safeshutdown</h5>
+
+<p>When shutting down asterisk, you can block until the CDRs are submitted. If you don't, then data will likely be lost. You can always check the size of the CDR batch buffer with the CLI <code>cdr status</code> command. To enable blocking on submission of CDR data during asterisk shutdown, set this to <code>yes</code>.</p>
+
+
+
+<h3 id="Asterisk17Configuration_cdr-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

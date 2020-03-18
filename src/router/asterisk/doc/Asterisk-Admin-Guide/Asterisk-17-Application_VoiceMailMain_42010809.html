@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_VoiceMailMain</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_VoiceMailMain
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_VoiceMailMain-VoiceMailMain()">VoiceMailMain()</h1>
+
+<h3 id="Asterisk17Application_VoiceMailMain-Synopsis">Synopsis</h3>
+
+<p>Check Voicemail messages.</p>
+
+<h3 id="Asterisk17Application_VoiceMailMain-Description">Description</h3>
+
+<p>This application allows the calling party to check voicemail messages. A specific <em>mailbox</em>, and optional corresponding <em>context</em>, may be specified. If a <em>mailbox</em> is not provided, the calling party will be prompted to enter one. If a <em>context</em> is not specified, the <code>default</code> context will be used.</p>
+
+<p>The VoiceMailMain application will exit if the following DTMF digit is entered as Mailbox or Password, and the extension exists:</p>
+
+<ul>
+	<li><code>*</code> - Jump to the <code>a</code> extension in the current dialplan context.</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_VoiceMailMain-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>VoiceMailMain([mailbox@[context]],[options])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_VoiceMailMain-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>mailbox</code>
+	<ul>
+		<li><code>mailbox</code></li>
+		<li><code>context</code></li>
+	</ul>
+	</li>
+	<li><code>options</code>
+	<ul>
+		<li><code>p</code> - Consider the <em>mailbox</em> parameter as a prefix to the mailbox that is entered by the caller.</li>
+		<li><code>g</code><code>( <strong>#</strong> )</code> - Use the specified amount of gain when recording a voicemail message. The units are whole-number decibels (dB).
+		<ul>
+			<li><code><strong>#</strong></code></li>
+		</ul>
+		</li>
+		<li><code>s</code> - Skip checking the passcode for the mailbox.</li>
+		<li><code>a</code><code>( <strong>folder</strong> )</code> - Skip folder prompt and go directly to <em>folder</em> specified. Defaults to <code>INBOX</code> (or <code>0</code>).
+		<ul>
+			<li><code><strong>folder</strong></code></li>
+			<li><code>0</code> - INBOX</li>
+			<li><code>1</code> - Old</li>
+			<li><code>2</code> - Work</li>
+			<li><code>3</code> - Family</li>
+			<li><code>4</code> - Friends</li>
+			<li><code>5</code> - Cust1</li>
+			<li><code>6</code> - Cust2</li>
+			<li><code>7</code> - Cust3</li>
+			<li><code>8</code> - Cust4</li>
+			<li><code>9</code> - Cust5</li>
+		</ul>
+		</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_VoiceMailMain-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Application_VoiceMail_42010808.html">Asterisk 17 Application_VoiceMail</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Application_VoiceMailMain-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

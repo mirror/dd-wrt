@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_SendText</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_SendText
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span>, last modified on Jan 10, 2020
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_SendText-SendText()">SendText()</h1>
+
+<h3 id="Asterisk17Application_SendText-Synopsis">Synopsis</h3>
+
+<p>Send a Text Message on a channel.</p>
+
+<h3 id="Asterisk17Application_SendText-Description">Description</h3>
+
+<p>Sends <em>text</em> to the current channel.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>current channel could be the caller or callee depending on the context in which this application is called.</p>
+
+                    </div>
+    </div>
+
+
+
+<p>The following variables can be set:</p>
+
+<ul>
+	<li><code>SENDTEXT_FROM_DISPLAYNAME</code> - If set and this channel supports enhanced messaging, this value will be used as the <code>From</code> display name.</li>
+	<li><code>SENDTEXT_TO_DISPLAYNAME</code> - If set and this channel supports enhanced messaging, this value will be used as the <code>To</code> display name.</li>
+	<li><code>SENDTEXT_CONTENT_TYPE</code> - If set and this channel supports enhanced messaging, this value will be used as the message <code>Content-Type</code>. If not specified, the default of <code>text/plain</code> will be used.<br />
+Warning: Messages of types other than text/* cannot be sent via channel drivers that do not support Enhanced Messaging. An attempt to do so will be ignored and will result in the SENDTEXTSTATUS variable being set to UNSUPPORTED.</li>
+	<li><code>SENDTEXT_BODY</code> - If set this value will be used as the message body and any text supplied as a function parameter will be ignored.</li>
+</ul>
+
+
+
+<p>Result of transmission will be stored in the following variables:</p>
+
+<ul>
+	<li><code>SENDTEXTTYPE</code>
+	<ul>
+		<li>NONE - No message sent.</li>
+		<li>BASIC - Message body sent without attributes because the channel driver doesn't support enhanced messaging.</li>
+		<li>ENHANCED - The message was sent using enhanced messaging.</li>
+	</ul>
+	</li>
+	<li><code>SENDTEXTSTATUS</code>
+	<ul>
+		<li>SUCCESS - Transmission succeeded.</li>
+		<li>FAILURE - Transmission failed.</li>
+		<li>UNSUPPORTED - Text transmission not supported by channel.</li>
+	</ul>
+	</li>
+</ul>
+
+
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>The text encoding and transmission method is completely at the discretion of the channel driver. chan_pjsip will use in-dialog SIP MESSAGE messages always. chan_sip will use T.140 via RTP if a text media type was negotiated and in-dialog SIP MESSAGE messages otherwise.</p>
+
+                    </div>
+    </div>
+
+
+
+<p>Examples:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Example: Send a simple message</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">
+
+same =&gt; n,SendText(Your Text Here)
+
+</pre>
+</div></div>
+<p>If the channel driver supports enhanced messaging (currently only chan_pjsip), you can set additional variables:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Example: Alter the From display name</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">
+
+same =&gt; n,Set(SENDTEXT_FROM_DISPLAYNAME=Really From Bob)
+same =&gt; n,SendText(Your Text Here)
+
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Example: Send a JSON String</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">
+
+same =&gt; n,Set(SENDTEXT_CONTENT_TYPE=text/json)
+same =&gt; n,SendText({&quot;foo&quot;:a, &quot;bar&quot;:23})
+
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Example: Send a JSON String (alternate)</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">
+
+same =&gt; n,Set(SENDTEXT_CONTENT_TYPE=text/json)
+same =&gt; n,Set(SENDTEXT_BODY={&quot;foo&quot;:a, &quot;bar&quot;:23})
+same =&gt; n,SendText()
+
+</pre>
+</div></div>
+<h3 id="Asterisk17Application_SendText-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>SendText([text])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_SendText-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>text</code></li>
+</ul>
+
+
+<h3 id="Asterisk17Application_SendText-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Application_SendImage_42010963.html">Asterisk 17 Application_SendImage</a></li>
+	<li><a href="Asterisk-17-Application_SendURL_42010822.html">Asterisk 17 Application_SendURL</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Application_SendText-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-5dda6d4</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

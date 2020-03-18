@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <time.h>
 #include <math.h>
 #include <ctype.h>
@@ -503,7 +501,7 @@ int callerid_feed_jp(struct callerid_state *cid, unsigned char *ubuf, int len, s
 						case 0x06: /* short dial number */
 						case 0x07: /* reserved */
 						default:   /* reserved */
-							if (option_debug > 1)
+							if (DEBUG_ATLEAST(2))
 								ast_log(LOG_NOTICE, "did info:#1=%X\n", (unsigned)cid->rawdata[x]);
 							break ;
 						}

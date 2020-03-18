@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Operators</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Expressions_4620364.html">Expressions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Operators
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Alexander Gonchiy</span> on Oct 29, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Operators are listed below in order of increasing precedence. Operators with equal precedence are grouped within { } symbols.</p><ul><li>expr1 | expr2<br /> Return the evaluation of expr1 if it is neither an empty string nor zero; otherwise, returns the evaluation of expr2.</li></ul><ul><li>expr1 &amp; expr2<br /> Return the evaluation of expr1 if neither expression evaluates to an empty string or zero; otherwise, returns zero.</li></ul><ul><li>expr1 {=, &gt;, &gt;=, &lt;, &lt;=, !=} expr2<br /> Return the results of floating point comparison if both arguments are numbers; otherwise, returns the results of string comparison using the locale-specific collation sequence. The result of each comparison is 1 if the specified relation is true, or 0 if the relation is false.</li></ul><ul><li>expr1 {+, -} expr2<br /> Return the results of addition or subtraction of floating point-valued arguments.</li></ul><ul><li>expr1 {*, /, %} expr2<br /> Return the results of multiplication, floating point division, or remainder of arguments.</li></ul><ul><li>- expr1<br /> Return the result of subtracting expr1 from 0. This, the unary minus operator, is right associative, and has the same precedence as the ! operator.</li></ul><ul><li>! expr1<br /> Return the result of a logical complement of expr1. In other words, if expr1 is null, 0, an empty string, or the string &quot;0&quot;, return a 1. Otherwise, return a 0. It has the same precedence as the unary minus operator, and is also right associative.</li></ul><ul><li>expr1 : expr2<br /> The `:' operator matches expr1 against expr2, which must be a regular expression. The regular expression is anchored to the beginning of the string with an implicit `'.</li></ul><p>If the match succeeds and the pattern contains at least one regular expression subexpression `', the string corresponing to `\1' is returned; otherwise the matching operator returns the number of characters matched. If the match fails and the pattern contains a regular expression subexpression the null string is returned; otherwise 0.</p><p>Normally, the double quotes wrapping a string are left as part of the string. This is disastrous to the : operator. Therefore, before the regex match is made, beginning and ending double quote characters are stripped from both the pattern and the string.</p><ul><li>expr1 =~ expr2<br /> Exactly the same as the ':' operator, except that the match is not anchored to the beginning of the string. Pardon any similarity to seemingly similar operators in other programming languages! The &quot;:&quot; and &quot;=~&quot; operators share the same precedence.</li></ul><ul><li>expr1 ? expr2 :: expr3<br /> Traditional Conditional operator. If expr1 is a number that evaluates to 0 (false), expr3 is result of the this expression evaluation. Otherwise, expr2 is the result. If expr1 is a string, and evaluates to an empty string, or the two characters (&quot;&quot;), then expr3 is the result. Otherwise, expr2 is the result. In Asterisk, all 3 exprs will be &quot;evaluated&quot;; if expr1 is &quot;true&quot;, expr2 will be the result of the &quot;evaluation&quot; of this expression. expr3 will be the result otherwise. This operator has the lowest precedence.</li></ul><ul><li>expr1 ~~ expr2<br /> Concatenation operator. The two exprs are evaluated and turned into strings, stripped of surrounding double quotes, and are turned into a single string with no invtervening spaces. This operator is new to trunk after 1.6.0; it is not needed in existing extensions.conf code. Because of the way asterisk evaluates [ ] constructs (recursively, bottom- up), no is ever present when the contents of a [] is evaluated. Thus, tokens are usually already merged at evaluation time. But, in AEL, various exprs are evaluated raw, and [] are gathered and treated as tokens. And in AEL, no two tokens can sit side by side without an intervening operator. So, in AEL, concatenation must be explicitly specified in expressions. This new operator will play well into future plans, where expressions ( constructs) are merged into a single grammar.</li></ul><p>Parentheses are used for grouping in the usual manner.</p><p>Operator precedence is applied as one would expect in any of the C or C derived languages.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

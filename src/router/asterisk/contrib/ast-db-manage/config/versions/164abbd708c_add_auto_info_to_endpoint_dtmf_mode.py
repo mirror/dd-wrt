@@ -1,14 +1,14 @@
 """Add auto_info to endpoint dtmf_mode
 
 Revision ID: 164abbd708c
-Revises: 86bb1efa278d
+Revises: 39959b9c2566
 Create Date: 2017-06-19 13:55:15.354706
 
 """
 
 # revision identifiers, used by Alembic.
 revision = '164abbd708c'
-down_revision = 'd7983954dd96'
+down_revision = '39959b9c2566'
 
 from alembic import op
 import sqlalchemy as sa
@@ -52,7 +52,7 @@ def downgrade():
         enum.create(op.get_bind(), checkfirst=False)
 
         op.execute('ALTER TABLE ps_endpoints ALTER COLUMN dtmf_mode TYPE'
-                   ' pjsip_dtmf_mode_values USING'
+                   ' pjsip_dtmf_mode_values_v2 USING'
                    ' dtmf_mode::text::pjsip_dtmf_mode_values_v2')
 
         ENUM(name="pjsip_dtmf_mode_values_v3").drop(op.get_bind(), checkfirst=False)

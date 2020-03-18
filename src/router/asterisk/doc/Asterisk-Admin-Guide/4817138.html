@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Why IAX2?</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="4817132.html">Inter-Asterisk eXchange protocol, version 2 (IAX2)</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Why IAX2?
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Sean Bright</span> on May 08, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>The first question most people are thinking at this point is &quot;Why do you need another VoIP protocol?  Why didn't you just use SIP or H.323?&quot;</p>
+
+<p>Well, the answer is a fairly complicated one, but in a nutshell it's like this... Asterisk is intended as a very flexible and powerful communications tool. As such, the primary feature we need from a VoIP protocol is the ability to meet our own goals with Asterisk, and one with enough flexibility that we could use it as a kind of laboratory for inventing and implementing new concepts in the field. Neither H.323 or SIP fit the roles we needed, so we developed our own protocol, which, while not standards based, provides a number of advantages over both SIP and H.323, some of which are:</p>
+
+<ul>
+	<li><strong>Interoperability with NAT/PAT/Masquerade firewalls</strong> - IAX2 seamlessly interoperates through all sorts of NAT and PAT and other firewalls, including the ability to place and receive calls, and transfer calls to other stations.</li>
+	<li><strong>High performance, low overhead protocol</strong> – When running on low-bandwidth connections, or when running large numbers of calls, optimized bandwidth utilization is imperative. IAX2 uses only 4 bytes of overhead.</li>
+	<li><strong>Internationalization support</strong> – IAX2 transmits language information, so that remote PBX content can be delivered in the native language of the calling party.</li>
+	<li><strong>Remote dialplan polling</strong> – IAX2 allows a PBX or IP phone to poll the availability of a number from a remote server. This allows PBX dialplans to be centralized.</li>
+	<li><strong>Flexible authentication</strong> – IAX2 supports cleartext, MD5, and RSA authentication, providing flexible security models for outgoing calls and registration services.</li>
+	<li><strong>Multimedia protocol</strong> – IAX2 supports the transmission of voice, video, images, text, HTML, DTMF, and URL's. Voice menus can be presented in both audibly and visually.</li>
+	<li><strong>Call statistic gathering</strong> – IAX2 gathers statistics about network performance (including latency and jitter), as well as providing end-to-end latency measurement.</li>
+	<li><strong>Call parameter communication</strong> – Caller*ID, requested extension, requested context, etc. are all communicated through the call.</li>
+	<li><strong>Single socket design</strong> – IAX2's single socket design allows up to 32768 calls to be multiplexed.</li>
+</ul>
+
+
+<p>While we value the importance of standards based (i.e. SIP) call handling, hopefully this will provide a reasonable explanation of why we developed IAX2 rather than starting with SIP.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -48,6 +48,7 @@ extern "C" {
  * \arg \b DTMF:   A DTMF digit, subclass is the digit
  * \arg \b IMAGE:  Image transport, mostly used in IAX
  * \arg \b TEXT:   Text messages and character by character (real time text)
+ * \arg \b TEXT_DATA:   Text messages in an ast_msg_data structure
  * \arg \b HTML:   URL's and web pages
  * \arg \b MODEM:  Modulated data encodings, such as T.38 and V.150
  * \arg \b IAX:    Private frame type for the IAX protocol
@@ -127,6 +128,10 @@ enum ast_frame_type {
 	 * directly into bridges.
 	 */
 	AST_FRAME_BRIDGE_ACTION_SYNC,
+	/*! RTCP feedback (the subclass will contain the payload type) */
+	AST_FRAME_RTCP,
+	/*! Text message in an ast_msg_data structure */
+	AST_FRAME_TEXT_DATA,
 };
 #define AST_FRAME_DTMF AST_FRAME_DTMF_END
 
@@ -135,6 +140,8 @@ enum {
 	AST_FRFLAG_HAS_TIMING_INFO = (1 << 0),
 	/*! This frame has been requeued */
 	AST_FRFLAG_REQUEUED = (1 << 1),
+	/*! This frame contains a valid sequence number */
+	AST_FRFLAG_HAS_SEQUENCE_NUMBER = (1 << 2),
 };
 
 struct ast_frame_subclass {
@@ -179,6 +186,8 @@ struct ast_frame {
 	long len;
 	/*! Sequence number */
 	int seqno;
+	/*! Stream number the frame originated from */
+	int stream_num;
 };
 
 /*!
@@ -293,6 +302,9 @@ enum ast_control_frame_type {
 	AST_CONTROL_UPDATE_RTP_PEER = 32, /*!< Interrupt the bridge and have it update the peer */
 	AST_CONTROL_PVT_CAUSE_CODE = 33, /*!< Contains an update to the protocol-specific cause-code stored for branching dials */
 	AST_CONTROL_MASQUERADE_NOTIFY = 34,	/*!< A masquerade is about to begin/end. (Never sent as a frame but directly with ast_indicate_data().) */
+	AST_CONTROL_STREAM_TOPOLOGY_REQUEST_CHANGE = 35,    /*!< Channel indication that a stream topology change has been requested */
+	AST_CONTROL_STREAM_TOPOLOGY_CHANGED = 36,           /*!< Channel indication that a stream topology change has occurred */
+	AST_CONTROL_STREAM_TOPOLOGY_SOURCE_CHANGED = 37,    /*!< Channel indication that one of the source streams has changed its source */
 
 	/*
 	 * WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
@@ -325,6 +337,7 @@ enum ast_control_frame_type {
 
 enum ast_frame_read_action {
 	AST_FRAME_READ_ACTION_CONNECTED_LINE_MACRO,
+	AST_FRAME_READ_ACTION_SEND_TEXT,
 };
 
 struct ast_control_read_action_payload {

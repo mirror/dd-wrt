@@ -2,7 +2,7 @@
  * Asterisk -- An open source telephony toolkit.
  *
  * Paths to configurable Asterisk directories
- * 
+ *
  * Copyright (C) 1999-2006, Digium, Inc.
  *
  * Mark Spencer <markster@digium.com>
@@ -37,5 +37,9 @@ extern const char *ast_config_AST_RUN_GROUP;
 extern const char *ast_config_AST_RUN_USER;
 extern const char *ast_config_AST_SYSTEM_NAME;
 extern const char *ast_config_AST_SBIN_DIR;
+extern const char *ast_config_AST_CTL_PERMISSIONS;
+extern const char *ast_config_AST_CTL_OWNER;
+extern const char *ast_config_AST_CTL_GROUP;
+extern const char *ast_config_AST_CTL;
 
 #endif /* _ASTERISK_PATHS_H */

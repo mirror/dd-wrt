@@ -38,12 +38,10 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <sys/stat.h>
 #include <signal.h>
 
-#if defined(__CYGWIN__)
+#if defined(__CYGWIN__) || defined(__NetBSD__)
 /*
  * cygwin headers are partly inconsistent. struct iovec is defined in sys/uio.h
  * which is not included by default by sys/socket.h - in_pktinfo is defined in
@@ -55,7 +53,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #ifdef HAVE_PKTINFO
 #undef HAVE_PKTINFO
 #endif
-#endif /* __CYGWIN__ */
+#endif /* __CYGWIN__ || __NetBSD__ */
 
 #include "asterisk/paths.h"	/* ast_config_AST_LOG_DIR used in (too ?) many places */
 #include "asterisk/network.h"
@@ -64,11 +62,13 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/module.h"
 #include "asterisk/pbx.h"
 #include "asterisk/rtp_engine.h"
+#include "asterisk/unaligned.h"
 #include "asterisk/netsock2.h"
 #include "asterisk/acl.h"
 #include "asterisk/callerid.h"
 #include "asterisk/cli.h"
 #include "asterisk/app.h"
+#include "asterisk/mwi.h"
 #include "asterisk/musiconhold.h"
 #include "asterisk/causes.h"
 #include "asterisk/indications.h"
@@ -116,7 +116,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #define SUB_REAL		0
 #define SUB_RING                1
 #define SUB_THREEWAY            2
-#define SUB_ONHOLD              3
 
 struct ast_format_cap *global_cap;
 
@@ -353,13 +352,14 @@ struct wsabuf {
 
 struct unistim_subchannel {
 	ast_mutex_t lock;
-	unsigned int subtype;		/*! SUB_REAL, SUB_RING, SUB_THREEWAY or SUB_ONHOLD */
+	unsigned int subtype;		/*! SUB_REAL, SUB_RING or SUB_THREEWAY */
 	struct ast_channel *owner;	/*! Asterisk channel used by the subchannel */
 	struct unistim_line *parent;	/*! Unistim line */
 	struct ast_rtp_instance *rtp;	/*! RTP handle */
 	int softkey;			/*! Softkey assigned */
 	pthread_t ss_thread;		/*! unistim_ss thread handle */
 	int alreadygone;
+	int holding;			/*! this subchannel holds someone */
 	signed char ringvolume;
 	signed char ringstyle;
 	int moh;					/*!< Music on hold in progress */
@@ -372,7 +372,7 @@ struct unistim_subchannel {
 struct unistim_line {
 	ast_mutex_t lock;
 	char name[80]; /*! Like 200 */
-	char fullname[80]; /*! Like USTM/200\@black */
+	char fullname[101]; /*! Like USTM/200\@black */
 	char exten[AST_MAX_EXTENSION]; /*! Extension where to start */
 	char cid_num[AST_MAX_EXTENSION]; /*! CallerID Number */
 	char mailbox[AST_MAX_EXTENSION]; /*! Mailbox for MWI */
@@ -576,7 +576,7 @@ static const unsigned char packet_send_stream_based_tone_on[] =
 	{ 0x16, 0x06, 0x1b, 0x00, 0x00, 0x05 };
 static const unsigned char packet_send_stream_based_tone_single_freq[] =
 	{ 0x16, 0x06, 0x1d, 0x00, 0x01, 0xb8 };
-static const unsigned char packet_send_stream_based_tone_dial_freq[] =
+static const unsigned char packet_send_stream_based_tone_dual_freq[] =
 	{ 0x16, 0x08, 0x1d, 0x00, 0x01, 0xb8, 0x01, 0x5e };
 static const unsigned char packet_send_select_output[] =
 	{ 0x16, 0x06, 0x32, 0xc0, 0x01, 0x00 };
@@ -815,7 +815,9 @@ static const char *ustmtext(const char *str, struct unistimsession *pte)
 		char tmp[1024], *p, *p_orig = NULL, *p_trans = NULL;
 		FILE *f;
 
-		if (!(lang->trans = ao2_container_alloc(8, lang_hash_fn, lang_cmp_fn))) {
+		lang->trans = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0, 8,
+			lang_hash_fn, NULL, lang_cmp_fn);
+		if (!lang->trans) {
 			ast_log(LOG_ERROR, "Unable to allocate container for translation!\n");
 			return str;
 		}
@@ -1001,33 +1003,43 @@ static int get_to_address(int fd, struct sockaddr_in *toAddr)
 {
 #ifdef HAVE_PKTINFO
 	int err;
-	struct msghdr msg;
-	struct {
-		struct cmsghdr cm;
-		int len;
-		struct in_addr address;
-	} ip_msg;
-
-	/* Zero out the structures before we use them */
-	/* This sets several key values to NULL */
-	memset(&msg, 0, sizeof(msg));
-	memset(&ip_msg, 0, sizeof(ip_msg));
-
-	/* Initialize the message structure */
-	msg.msg_control = &ip_msg;
-	msg.msg_controllen = sizeof(ip_msg);
+	char cmbuf[0x100];
+	struct cmsghdr *cmsg;
+	struct sockaddr_in peeraddr;
+	struct in_addr addr;
+	struct msghdr mh = {
+		.msg_name = &peeraddr,
+		.msg_namelen = sizeof(peeraddr),
+		.msg_control = cmbuf,
+		.msg_controllen = sizeof(cmbuf),
+	};
+	memset(&addr, 0, sizeof(addr));
 	/* Get info about the incoming packet */
-	err = recvmsg(fd, &msg, MSG_PEEK);
+	err = recvmsg(fd, &mh, MSG_PEEK);
 	if (err == -1) {
 		ast_log(LOG_WARNING, "recvmsg returned an error: %s\n", strerror(errno));
+		return err;
 	}
-	memcpy(&toAddr->sin_addr, &ip_msg.address, sizeof(struct in_addr));
+	for(cmsg = CMSG_FIRSTHDR(&mh);
+		cmsg != NULL;
+		cmsg = CMSG_NXTHDR(&mh, cmsg))
+	{
+		 if (cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_PKTINFO) {
+			struct in_pktinfo *pkt = (struct in_pktinfo*)CMSG_DATA(cmsg);
+			addr = pkt->ipi_addr;
+			if (unistimdebug) {
+				ast_verb(0, "message received on address %s\n", ast_inet_ntoa(addr));
+			}
+		}
+	}
+	memcpy(&toAddr->sin_addr, &addr, sizeof(struct in_addr));
 	return err;
 #else
 	memcpy(toAddr, &public_ip, sizeof(*toAddr));
 	return 0;
 #endif
 }
+
 
 /* Allocate memory & initialize structures for a new phone */
 /* addr_from : ip address of the phone */
@@ -1040,7 +1052,10 @@ static struct unistimsession *create_client(const struct sockaddr_in *addr_from)
 		return NULL;
 
 	memcpy(&s->sin, addr_from, sizeof(struct sockaddr_in));
-	get_to_address(unistimsock, &s->sout);
+	if (get_to_address(unistimsock, &s->sout) < 0) {
+		ast_free(s);
+		return NULL;
+	}
 	s->sout.sin_family = AF_INET;
 	if (unistimdebug) {
 		ast_verb(0, "Creating a new entry for the phone from %s received via server ip %s\n",
@@ -1207,19 +1222,16 @@ static void send_tone(struct unistimsession *pte, uint16_t tone1, uint16_t tone2
 	if (!tone2) {
 		memcpy(buffsend + SIZE_HEADER, packet_send_stream_based_tone_single_freq,
 			   sizeof(packet_send_stream_based_tone_single_freq));
-		buffsend[10] = (tone1 & 0xff00) >> 8;
-		buffsend[11] = (tone1 & 0x00ff);
+		put_unaligned_uint16(&buffsend[10], htons(tone1));
 		send_client(SIZE_HEADER + sizeof(packet_send_stream_based_tone_single_freq), buffsend,
 				   pte);
 	} else {
 		tone2 *= 8;
-		memcpy(buffsend + SIZE_HEADER, packet_send_stream_based_tone_dial_freq,
-			   sizeof(packet_send_stream_based_tone_dial_freq));
-		buffsend[10] = (tone1 & 0xff00) >> 8;
-		buffsend[11] = (tone1 & 0x00ff);
-		buffsend[12] = (tone2 & 0xff00) >> 8;
-		buffsend[13] = (tone2 & 0x00ff);
-		send_client(SIZE_HEADER + sizeof(packet_send_stream_based_tone_dial_freq), buffsend,
+		memcpy(buffsend + SIZE_HEADER, packet_send_stream_based_tone_dual_freq,
+			   sizeof(packet_send_stream_based_tone_dual_freq));
+		put_unaligned_uint16(&buffsend[10], htons(tone1));
+		put_unaligned_uint16(&buffsend[12], htons(tone2));
+		send_client(SIZE_HEADER + sizeof(packet_send_stream_based_tone_dual_freq), buffsend,
 				   pte);
 	}
 
@@ -2017,8 +2029,6 @@ static const char *subtype_tostr(const int type)
 	switch (type) {
 	case SUB_REAL:
 		return "REAL";
-	case SUB_ONHOLD:
-		return "ONHOLD";
 	case SUB_RING:
 		return "RINGING";
 	case SUB_THREEWAY:
@@ -2498,6 +2508,24 @@ static struct unistim_subchannel* get_sub(struct unistim_device *device, int typ
 	return sub;
 }
 
+static struct unistim_subchannel* get_sub_holding(struct unistim_device *device, int type, int holding)
+{
+	struct unistim_subchannel *sub = NULL;
+
+	AST_LIST_LOCK(&device->subs);
+	AST_LIST_TRAVERSE(&device->subs, sub, list) {
+		if (!sub) {
+			continue;
+		}
+		if (sub->subtype == type && sub->holding == holding) {
+			break;
+		}
+	}
+	AST_LIST_UNLOCK(&device->subs);
+
+	return sub;
+}
+
 static void sub_start_silence(struct unistimsession *pte, struct unistim_subchannel *sub)
 {
 	/* Silence our channel */
@@ -2535,13 +2563,12 @@ static void sub_hold(struct unistimsession *pte, struct unistim_subchannel *sub)
 		return;
 	}
 	sub->moh = 1;
-	sub->subtype = SUB_ONHOLD;
+	sub->holding = 1;
 	send_favorite_short(sub->softkey, FAV_ICON_ONHOLD_BLACK + FAV_BLINK_SLOW, pte);
 	send_select_output(pte, pte->device->output, pte->device->volume, MUTE_ON);
 	send_stop_timer(pte);
 	if (sub->owner) {
 		ast_queue_hold(sub->owner, NULL);
-		send_end_call(pte);
 	}
 	return;
 }
@@ -2556,7 +2583,7 @@ static void sub_unhold(struct unistimsession *pte, struct unistim_subchannel *su
 	}
 
 	sub->moh = 0;
-	sub->subtype = SUB_REAL;
+	sub->holding = 0;
 	send_favorite_short(sub->softkey, FAV_ICON_OFFHOOK_BLACK, pte);
 	send_select_output(pte, pte->device->output, pte->device->volume, MUTE_OFF);
 	send_start_timer(pte);
@@ -2712,7 +2739,8 @@ static void send_start_rtp(struct unistim_subchannel *sub)
 	}
 
 	pte = sub->parent->parent->session;
-	codec = ast_rtp_codecs_payload_code(ast_rtp_instance_get_codecs(sub->rtp), 1, ast_channel_readformat(sub->owner), 0);
+	codec = ast_rtp_codecs_payload_code_tx(ast_rtp_instance_get_codecs(sub->rtp),
+		1, ast_channel_readformat(sub->owner), 0);
 	if ((ast_format_cmp(ast_channel_readformat(sub->owner), ast_format_ulaw) == AST_FORMAT_CMP_EQUAL) ||
 		(ast_format_cmp(ast_channel_readformat(sub->owner), ast_format_alaw) == AST_FORMAT_CMP_EQUAL)) {
 		if (unistimdebug) {
@@ -2730,7 +2758,7 @@ static void send_start_rtp(struct unistim_subchannel *sub)
 		   sizeof(packet_send_jitter_buffer_conf));
 	send_client(SIZE_HEADER + sizeof(packet_send_jitter_buffer_conf), buffsend, pte);
 	if (pte->device->rtp_method != 0) {
-		uint16_t rtcpsin_port = htons(us.sin_port) + 1; /* RTCP port is RTP + 1 */
+		uint16_t rtcpsin_port = ntohs(us.sin_port) + 1; /* RTCP port is RTP + 1 */
 
 		if (unistimdebug) {
 			ast_verb(0, "Sending OpenAudioStreamTX using method #%d\n", pte->device->rtp_method);
@@ -2744,20 +2772,14 @@ static void send_start_rtp(struct unistim_subchannel *sub)
 		}
 		if (pte->device->rtp_method != 2) {
 			memcpy(buffsend + 28, &public.sin_addr, sizeof(public.sin_addr));
-			buffsend[20] = (htons(sin.sin_port) & 0xff00) >> 8;
-			buffsend[21] = (htons(sin.sin_port) & 0x00ff);
-			buffsend[23] = (rtcpsin_port & 0x00ff);
-			buffsend[22] = (rtcpsin_port & 0xff00) >> 8;
-			buffsend[25] = (us.sin_port & 0xff00) >> 8;
-			buffsend[24] = (us.sin_port & 0x00ff);
-			buffsend[27] = (rtcpsin_port & 0x00ff);
-			buffsend[26] = (rtcpsin_port & 0xff00) >> 8;
+			put_unaligned_uint16(&buffsend[20], sin.sin_port);
+			put_unaligned_uint16(&buffsend[22], htons(rtcpsin_port));
+			put_unaligned_uint16(&buffsend[24], us.sin_port);
+			put_unaligned_uint16(&buffsend[26], htons(rtcpsin_port));
 		} else {
 			memcpy(buffsend + 23, &public.sin_addr, sizeof(public.sin_addr));
-			buffsend[15] = (htons(sin.sin_port) & 0xff00) >> 8;
-			buffsend[16] = (htons(sin.sin_port) & 0x00ff);
-			buffsend[20] = (us.sin_port & 0xff00) >> 8;
-			buffsend[19] = (us.sin_port & 0x00ff);
+			put_unaligned_uint16(&buffsend[15], sin.sin_port);
+			put_unaligned_uint16(&buffsend[19], us.sin_port);
 		}
 		buffsend[11] = codec; /* rx */
 		buffsend[12] = codec; /* tx */
@@ -2775,20 +2797,14 @@ static void send_start_rtp(struct unistim_subchannel *sub)
 		}
 		if (pte->device->rtp_method != 2) {
 			memcpy(buffsend + 28, &public.sin_addr, sizeof(public.sin_addr));
-			buffsend[20] = (htons(sin.sin_port) & 0xff00) >> 8;
-			buffsend[21] = (htons(sin.sin_port) & 0x00ff);
-			buffsend[23] = (rtcpsin_port & 0x00ff);
-			buffsend[22] = (rtcpsin_port & 0xff00) >> 8;
-			buffsend[25] = (us.sin_port & 0xff00) >> 8;
-			buffsend[24] = (us.sin_port & 0x00ff);
-			buffsend[27] = (rtcpsin_port & 0x00ff);
-			buffsend[26] = (rtcpsin_port & 0xff00) >> 8;
+			put_unaligned_uint16(&buffsend[20], sin.sin_port);
+			put_unaligned_uint16(&buffsend[22], htons(rtcpsin_port));
+			put_unaligned_uint16(&buffsend[24], us.sin_port);
+			put_unaligned_uint16(&buffsend[26], htons(rtcpsin_port));
 		} else {
 			memcpy(buffsend + 23, &public.sin_addr, sizeof(public.sin_addr));
-			buffsend[15] = (htons(sin.sin_port) & 0xff00) >> 8;
-			buffsend[16] = (htons(sin.sin_port) & 0x00ff);
-			buffsend[20] = (us.sin_port & 0xff00) >> 8;
-			buffsend[19] = (us.sin_port & 0x00ff);
+			put_unaligned_uint16(&buffsend[15], sin.sin_port);
+			put_unaligned_uint16(&buffsend[19], us.sin_port);
 		}
 		buffsend[11] = codec; /* rx */
 		buffsend[12] = codec; /* tx */
@@ -2803,11 +2819,9 @@ static void send_start_rtp(struct unistim_subchannel *sub)
 		memcpy(buffsend + SIZE_HEADER, packet_send_call, sizeof(packet_send_call));
 		memcpy(buffsend + 53, &public.sin_addr, sizeof(public.sin_addr));
 		/* Destination port when sending RTP */
-		buffsend[49] = (us.sin_port & 0x00ff);
-		buffsend[50] = (us.sin_port & 0xff00) >> 8;
+		put_unaligned_uint16(&buffsend[49], us.sin_port);
 		/* Destination port when sending RTCP */
-		buffsend[52] = (rtcpsin_port & 0x00ff);
-		buffsend[51] = (rtcpsin_port & 0xff00) >> 8;
+		put_unaligned_uint16(&buffsend[51], htons(rtcpsin_port));
 		/* Codec */
 		buffsend[40] = codec;
 		buffsend[41] = codec;
@@ -2824,10 +2838,8 @@ static void send_start_rtp(struct unistim_subchannel *sub)
 				ast_format_get_name(ast_channel_readformat(sub->owner)));
 		}
 		/* Source port for transmit RTP and Destination port for receiving RTP */
-		buffsend[45] = (htons(sin.sin_port) & 0xff00) >> 8;
-		buffsend[46] = (htons(sin.sin_port) & 0x00ff);
-		buffsend[47] = (rtcpsin_port & 0xff00) >> 8;
-		buffsend[48] = (rtcpsin_port & 0x00ff);
+		put_unaligned_uint16(&buffsend[45], sin.sin_port);
+		put_unaligned_uint16(&buffsend[47], htons(rtcpsin_port));
 		send_client(SIZE_HEADER + sizeof(packet_send_call), buffsend, pte);
 	}
 }
@@ -3314,22 +3326,12 @@ static void handle_call_incoming(struct unistimsession *s)
 	return;
 }
 
-static int unistim_do_senddigit(struct unistimsession *pte, char digit)
+static int send_dtmf_tone(struct unistimsession *pte, char digit)
 {
-	struct ast_frame f = { .frametype = AST_FRAME_DTMF, .subclass.integer = digit, .src = "unistim" };
-	struct unistim_subchannel *sub;
-        int row, col;
+	int row, col;
 
-	sub = get_sub(pte->device, SUB_REAL);
-	if (!sub || !sub->owner || sub->alreadygone) {
-		ast_log(LOG_WARNING, "Unable to find subchannel in dtmf senddigit\n");
-		return -1;
-	}
-
-	/* Send DTMF indication _before_ playing sounds */
-	ast_queue_frame(sub->owner, &f);
 	if (unistimdebug) {
-		ast_verb(0, "Send Digit %c (%i ms)\n", digit, pte->device->dtmfduration);
+		ast_verb(0, "Phone Play Digit %c\n", digit);
 	}
 	if (pte->device->dtmfduration > 0) {
 		row = (digit - '1') % 3;
@@ -3347,6 +3349,28 @@ static int unistim_do_senddigit(struct unistimsession *pte, char digit)
 		} else {
 			send_tone(pte, 500, 2000);
 		}
+	}
+	return 0;
+}
+
+static int unistim_do_senddigit(struct unistimsession *pte, char digit)
+{
+	struct ast_frame f = { .frametype = AST_FRAME_DTMF, .subclass.integer = digit, .src = "unistim" };
+	struct unistim_subchannel *sub;
+
+	sub = get_sub(pte->device, SUB_REAL);
+	if (!sub || !sub->owner || sub->alreadygone) {
+		ast_log(LOG_WARNING, "Unable to find subchannel in dtmf senddigit\n");
+		return -1;
+	}
+
+	/* Send DTMF indication _before_ playing sounds */
+	ast_queue_frame(sub->owner, &f);
+	if (pte->device->dtmfduration > 0) {
+		if (unistimdebug) {
+			ast_verb(0, "Send Digit %c (%i ms)\n", digit, pte->device->dtmfduration);
+		}
+		send_dtmf_tone(pte, digit);
 		usleep(pte->device->dtmfduration * 1000);	 /* XXX Less than perfect, blocking an important thread is not a good idea */
 		send_tone(pte, 0, 0);
 	}
@@ -3356,12 +3380,12 @@ static int unistim_do_senddigit(struct unistimsession *pte, char digit)
 static void handle_key_fav(struct unistimsession *pte, char keycode)
 {
 	int keynum = keycode - KEY_FAV0;
-	struct unistim_subchannel *sub;
-
-	sub = get_sub(pte->device, SUB_REAL);
+	struct unistim_subchannel *sub, *sub_key = NULL;
+	sub = get_sub_holding(pte->device, SUB_REAL, 0);
 
 	/* Make an action on selected favorite key */
 	if (!pte->device->ssub[keynum]) { /* Key have no assigned call */
+		sub = get_sub_holding(pte->device, SUB_REAL, 0);
 		send_favorite_selected(FAV_LINE_ICON, pte);
 		if (is_key_line(pte->device, keynum)) {
 			if (unistimdebug) {
@@ -3386,21 +3410,24 @@ static void handle_key_fav(struct unistimsession *pte, char keycode)
 			key_favorite(pte, keycode);
 		}
 	} else {
-		sub = pte->device->ssub[keynum];
+		sub_key = pte->device->ssub[keynum];
 		/* Favicon have assigned sub, activate it and put current on hold */
-		if (sub->subtype == SUB_REAL) {
-			sub_hold(pte, sub);
+		if (sub_key->subtype == SUB_REAL && !sub_key->holding) {
+			sub_hold(pte, sub_key);
 			show_main_page(pte);
-		} else if (sub->subtype == SUB_RING) {
-			sub->softkey = keynum;
-			handle_call_incoming(pte);
-		} else if (sub->subtype == SUB_ONHOLD) {
+		} else if (sub_key->subtype == SUB_REAL && sub_key->holding) {
+			/* We are going to unhold line (we should put active line on hold, of any) */
 			if (pte->state == STATE_DIALPAGE){
 				send_tone(pte, 0, 0);
 			}
-			send_callerid_screen(pte, sub);
-			sub_unhold(pte, sub);
+			sub_hold(pte, sub);
+			send_callerid_screen(pte, sub_key);
+			sub_unhold(pte, sub_key);
 			pte->state = STATE_CALL;
+		} else if (sub_key->subtype == SUB_RING) {
+			sub_hold(pte, sub);
+			sub_key->softkey = keynum;
+			handle_call_incoming(pte);
 		}
 	}
 }
@@ -3470,8 +3497,13 @@ static void key_call(struct unistimsession *pte, char keycode)
 	case KEY_ONHOLD:
 		if (!sub) {
 			if(pte->device->ssub[pte->device->selected]) {
-				sub_hold(pte, pte->device->ssub[pte->device->selected]);
+				sub = pte->device->ssub[pte->device->selected];
+			} else {
+				break;
 			}
+		}
+		if (sub->holding) {
+			sub_unhold(pte, sub);
 		} else {
 			sub_hold(pte, sub);
 		}
@@ -3699,7 +3731,7 @@ static void key_select_option(struct unistimsession *pte, char keycode)
 #define SELECTCODEC_MSG "Codec number : .."
 static void handle_select_codec(struct unistimsession *pte)
 {
-	char buf[30], buf2[5];
+	char buf[30], buf2[6];
 
 	pte->state = STATE_SELECTCODEC;
 	ast_copy_string(buf, ustmtext("Using codec", pte), sizeof(buf));
@@ -4485,7 +4517,7 @@ static void process_request(int size, unsigned char *buf, struct unistimsession 
 	}
 	if (!memcmp(buf + SIZE_HEADER, packet_recv_expansion_pressed_key, sizeof(packet_recv_expansion_pressed_key))) {
 		char keycode = buf[13];
-		
+
 		if (unistimdebug) {
 			ast_verb(0, "Expansion key pressed: keycode = 0x%02hhx - current state: %s\n", (unsigned char)keycode,
 						ptestate_tostr(pte->state));
@@ -4965,7 +4997,7 @@ static int unistim_hangup(struct ast_channel *ast)
 				continue;
 			}
 			if (d->ssub[i] != sub) {
-				if (d->ssub[i] != NULL) { /* Found other subchannel active other then hangup'ed one */
+				if (d->ssub[i] != NULL) { /* Found other subchannel active other than hangup'ed one */
 					end_call = 0;
 				}
 				continue;
@@ -5429,7 +5461,8 @@ static struct unistim_subchannel *find_subchannel_by_name(const char *dest)
 					}
 					if (sub->owner) {
 						/* Allocate additional channel if asterisk channel already here */
-						sub = unistim_alloc_sub(d, SUB_ONHOLD);
+						sub = unistim_alloc_sub(d, SUB_REAL);
+						sub->holding = 1;
 					}
 					sub->ringvolume = -1;
 					sub->ringstyle = -1;
@@ -5480,34 +5513,21 @@ static int unistim_senddigit_begin(struct ast_channel *ast, char digit)
 	if (!pte) {
 		return -1;
 	}
-	return unistim_do_senddigit(pte, digit);
+	return send_dtmf_tone(pte, digit);
 }
 
 static int unistim_senddigit_end(struct ast_channel *ast, char digit, unsigned int duration)
 {
 	struct unistimsession *pte = channel_to_session(ast);
-	struct ast_frame f = { 0, };
-	struct unistim_subchannel *sub;
 
-	sub = get_sub(pte->device, SUB_REAL);
-
-	if (!sub || !sub->owner || sub->alreadygone) {
-		ast_log(LOG_WARNING, "Unable to find subchannel in dtmf senddigit_end\n");
+	if (!pte) {
 		return -1;
 	}
 
 	if (unistimdebug) {
-		ast_verb(0, "Send Digit off %c\n", digit);
-	}
-	if (!pte) {
-		return -1;
+		ast_verb(0, "Send Digit off %c (duration %d)\n", digit, duration);
 	}
 	send_tone(pte, 0, 0);
-	f.frametype = AST_FRAME_DTMF;
-	f.subclass.integer = digit;
-	f.src = "unistim";
-	ast_queue_frame(sub->owner, &f);
-
 	return 0;
 }
 
@@ -6399,6 +6419,85 @@ static struct unistim_line *find_line_by_number(struct unistim_device *d, const 
 	return ret;
 }
 
+static void delete_device(struct unistim_device *d)
+{
+	struct unistim_line *l;
+	struct unistim_subchannel *sub;
+	struct unistimsession *s;
+
+	if (unistimdebug) {
+		ast_verb(0, "Removing device '%s'\n", d->name);
+	}
+	AST_LIST_LOCK(&d->subs);
+	AST_LIST_TRAVERSE_SAFE_BEGIN(&d->subs, sub, list){
+		if (sub->subtype == SUB_REAL) {
+			if (sub->owner) {
+				ast_log(LOG_WARNING,
+						"Device '%s' was not deleted : a call is in progress. Try again later.\n",
+						d->name);
+				AST_LIST_UNLOCK(&d->subs);
+				return;
+			}
+		}
+		if (sub->subtype == SUB_THREEWAY) {
+			ast_log(LOG_WARNING,
+					"Device '%s' with threeway call subchannels allocated, aborting.\n",
+					d->name);
+			AST_LIST_UNLOCK(&d->subs);
+			return;
+		}
+		AST_LIST_REMOVE_CURRENT(list);
+		ast_mutex_destroy(&sub->lock);
+		ast_free(sub);
+	}
+	AST_LIST_TRAVERSE_SAFE_END
+	AST_LIST_UNLOCK(&d->subs);
+
+
+	AST_LIST_LOCK(&d->lines);
+	AST_LIST_TRAVERSE_SAFE_BEGIN(&d->lines, l, list){
+		AST_LIST_REMOVE_CURRENT(list);
+		ast_mutex_destroy(&l->lock);
+		unistim_line_destroy(l);
+	}
+	AST_LIST_TRAVERSE_SAFE_END
+	AST_LIST_UNLOCK(&d->lines);
+
+	if (d->session) {
+		if (sessions == d->session) {
+			sessions = d->session->next;
+		} else {
+			s = sessions;
+			while (s) {
+				if (s->next == d->session) {
+					s->next = d->session->next;
+					break;
+				}
+				s = s->next;
+			}
+		}
+		ast_mutex_destroy(&d->session->lock);
+		ast_free(d->session);
+	}
+	if (devices == d) {
+		devices = d->next;
+	} else {
+		struct unistim_device *d2 = devices;
+		while (d2) {
+			if (d2->next == d) {
+				d2->next = d->next;
+				break;
+			}
+			d2 = d2->next;
+		}
+	}
+	if (d->tz) {
+		d->tz = ast_tone_zone_unref(d->tz);
+	}
+	ast_mutex_destroy(&d->lock);
+	ast_free(d);
+}
+
 static struct unistim_device *build_device(const char *cat, const struct ast_variable *v)
 {
 	struct unistim_device *d;
@@ -6437,7 +6536,7 @@ static struct unistim_device *build_device(const char *cat, const struct ast_var
 		}
 		ast_mutex_init(&d->lock);
 		ast_copy_string(d->name, cat, sizeof(d->name));
-		
+
 		ast_copy_string(d->context, DEFAULTCONTEXT, sizeof(d->context));
 		d->contrast = -1;
 		d->output = OUTPUT_HANDSET;
@@ -6490,7 +6589,14 @@ static struct unistim_device *build_device(const char *cat, const struct ast_var
 		} else if (!strcasecmp(v->name, "tn")) {
 			ast_copy_string(d->extension_number, v->value, sizeof(d->extension_number));
 		} else if (!strcasecmp(v->name, "permit") || !strcasecmp(v->name, "deny")) {
-			d->ha = ast_append_ha(v->name, v->value, d->ha, NULL);
+			int acl_error = 0;
+			d->ha = ast_append_ha(v->name, v->value, d->ha, &acl_error);
+			if (acl_error) {
+				ast_log(LOG_ERROR, "Invalid ACL '%s' specified for device '%s' on line %d. Deleting device\n",
+						v->value, cat, v->lineno);
+				delete_device(d);
+				return NULL;
+			}
 		} else if (!strcasecmp(v->name, "context")) {
 			ast_copy_string(d->context, v->value, sizeof(d->context));
 		} else if (!strcasecmp(v->name, "maintext0")) {
@@ -6857,85 +6963,7 @@ static int reload_config(void)
 	d = devices;
 	while (d) {
 		if (d->to_delete) {
-			struct unistim_line *l;
-			struct unistim_subchannel *sub;
-
-			if (unistimdebug) {
-				ast_verb(0, "Removing device '%s'\n", d->name);
-			}
-			AST_LIST_LOCK(&d->subs);
-			AST_LIST_TRAVERSE_SAFE_BEGIN(&d->subs, sub, list){
-				if (sub->subtype == SUB_REAL) {
-					if (!sub) {
-						ast_log(LOG_ERROR, "Device '%s' without a subchannel !, aborting\n",
-								d->name);
-						ast_config_destroy(cfg);
-						return 0;
-					}
-					if (sub->owner) {
-						ast_log(LOG_WARNING,
-								"Device '%s' was not deleted : a call is in progress. Try again later.\n",
-								d->name);
-						d = d->next;
-						continue;
-					}
-				}
-				if (sub->subtype == SUB_THREEWAY) {
-					ast_log(LOG_WARNING,
-							"Device '%s' with threeway call subchannels allocated, aborting.\n",
-							d->name);
-					break;
-				}
-				AST_LIST_REMOVE_CURRENT(list);
-				ast_mutex_destroy(&sub->lock);
-				ast_free(sub);
-			}
-			AST_LIST_TRAVERSE_SAFE_END
-			AST_LIST_UNLOCK(&d->subs);
-
-
-			AST_LIST_LOCK(&d->lines);
-			AST_LIST_TRAVERSE_SAFE_BEGIN(&d->lines, l, list){
-				AST_LIST_REMOVE_CURRENT(list);
-				ast_mutex_destroy(&l->lock);
-				unistim_line_destroy(l);
-			}
-			AST_LIST_TRAVERSE_SAFE_END
-			AST_LIST_UNLOCK(&d->lines);
-
-			if (d->session) {
-				if (sessions == d->session) {
-					sessions = d->session->next;
-				} else {
-					s = sessions;
-					while (s) {
-						if (s->next == d->session) {
-							s->next = d->session->next;
-							break;
-						}
-						s = s->next;
-					}
-				}
-				ast_mutex_destroy(&d->session->lock);
-				ast_free(d->session);
-			}
-			if (devices == d) {
-				devices = d->next;
-			} else {
-				struct unistim_device *d2 = devices;
-				while (d2) {
-					if (d2->next == d) {
-						d2->next = d->next;
-						break;
-					}
-					d2 = d2->next;
-				}
-			}
-			if (d->tz) {
-				d->tz = ast_tone_zone_unref(d->tz);
-			}
-			ast_mutex_destroy(&d->lock);
-			ast_free(d);
+			delete_device(d);
 			d = devices;
 			continue;
 		}
@@ -7025,7 +7053,7 @@ static int unistim_set_rtp_peer(struct ast_channel *chan, struct ast_rtp_instanc
 	if (!rtp) {
 		return 0;
 	}
-	
+
 	sub = (struct unistim_subchannel *) ast_channel_tech_pvt(chan);
 	if (!sub) {
 		ast_log(LOG_ERROR, "No Private Structure, this is bad\n");
@@ -7038,9 +7066,9 @@ static int unistim_set_rtp_peer(struct ast_channel *chan, struct ast_rtp_instanc
 		ast_rtp_instance_get_local_address(rtp, &tmp);
 		ast_sockaddr_to_sin(&tmp, &us);
 	}
-	
+
 	/* TODO: Set rtp on phone in case of direct rtp (not implemented) */
-	
+
 	return 0;
 }
 
@@ -7174,7 +7202,7 @@ int reload(void)
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "UNISTIM Protocol (USTM)",
 	.support_level = AST_MODULE_SUPPORT_EXTENDED,
-    .load = load_module,
-    .unload = unload_module,
-    .reload = reload,
+	.load = load_module,
+	.unload = unload_module,
+	.reload = reload,
 );

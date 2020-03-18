@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Using Menuselect to Select Asterisk Options</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Getting-Started_5243710.html">Getting Started</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Installing-Asterisk_4817553.html">Installing Asterisk</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Installing-Asterisk-From-Source_4817561.html">Installing Asterisk From Source</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Using Menuselect to Select Asterisk Options
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Kevin Harwell</span> on Jan 19, 2017
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="UsingMenuselecttoSelectAsteriskOptions-UsingMenuselect">Using Menuselect</h1><p>The next step in the build process is to tell Asterisk which <a href="Types-of-Asterisk-Modules_4817485.html">modules</a> to compile and install, as well as set various compiler options. These settings are all controlled via a menu-driven system called <strong>Menuselect</strong>. To access the Menuselect system, type:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# make menuselect
+</pre>
+</div></div>    <div class="aui-message warning shadowed information-macro">
+                    <p class="title">Terminal Window</p>
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>Your terminal window size must be at least eighty characters wide and twenty-seven lines high, or Menuselect will not work. Instead, you'll get an error message stating</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Terminal must be at least 80 x 27.</pre>
+</div></div>
+                    </div>
+    </div>
+<p>The <strong>Menuselect</strong> menu should look like the screen-shot below. On the left-hand side, you have a list of categories, such as <strong>Applications</strong>, <strong>Channel</strong> <strong>Drivers</strong>, and <strong>PBX</strong> <strong>Modules</strong>. On the right-hand side, you'll see a list of modules that correspond with the select category. At the bottom of the screen you'll see two buttons. You can use the <strong>Tab</strong> key to cycle between the various sections, and press the <strong>Enter</strong> key to select or unselect a particular module. If you see <strong>[*]</strong> next to a module name, it signifies that the module has been selected. If you see<strong> *XXX</strong> next to a module name, it signifies that the select module cannot be built, as one of its dependencies is missing. In that case, you can look at the bottom of the screen for the line labeled <strong>Depends</strong> <strong>upon</strong>: for a description of the missing dependency.</p></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302876359 {padding: 0px;}
+div.rbtoc1582302876359 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302876359 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302876359'>
+<ul class='toc-indentation'>
+<li><a href='#UsingMenuselecttoSelectAsteriskOptions-UsingMenuselect'>Using Menuselect</a>
+<ul class='toc-indentation'>
+<li><a href='#UsingMenuselecttoSelectAsteriskOptions-ModuleSupportLevels'>Module Support Levels</a></li>
+</ul>
+</li>
+<li><a href='#UsingMenuselecttoSelectAsteriskOptions-MenuselectCategories'>Menuselect Categories</a></li>
+<li><a href='#UsingMenuselecttoSelectAsteriskOptions-ControllingMenuselect'>Controlling Menuselect</a>
+<ul class='toc-indentation'>
+<li><a href='#UsingMenuselecttoSelectAsteriskOptions-ListingOptions'>Listing Options</a></li>
+<li><a href='#UsingMenuselecttoSelectAsteriskOptions-EnablinganOption'>Enabling an Option</a></li>
+<li><a href='#UsingMenuselecttoSelectAsteriskOptions-DisablinganOption'>Disabling an Option</a></li>
+<li><a href='#UsingMenuselecttoSelectAsteriskOptions-EnablingaCategory'>Enabling a Category</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><p><img class="confluence-embedded-image" src="attachments/4817523/4980750.png" data-image-src="attachments/4817523/4980750.png"></p><p>When you're first learning your way around Asterisk on a test system, you'll probably want to stick with the default settings in <strong>Menuselect</strong>. If you're building a production system, however, you may not wish to build all of the various modules, and instead only build the modules that your system is using.</p><p> </p><p>When you are finished selecting the modules and options you'd like in <strong>Menuselect</strong>, press <strong>F12</strong> to save and exit, or highlight the <strong>Save</strong> <strong>and</strong> <strong>Exit</strong> button and press enter.</p><h2 id="UsingMenuselecttoSelectAsteriskOptions-ModuleSupportLevels">Module Support Levels</h2><p><strong>Menuselect</strong> will also show the support level for a selected module or build option. The support level will always be one of <code>core</code>, <code>extended</code>, or <code>deprecated</code>. For more information on these support levels, see <a href="Asterisk-Module-Support-States_13076175.html">Asterisk Module Support States</a>.</p><h1 id="UsingMenuselecttoSelectAsteriskOptions-MenuselectCategories">Menuselect Categories</h1><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Category</th><th class="confluenceTh">Description</th></tr><tr><td class="confluenceTd"><strong>Add-ons</strong></td><td class="confluenceTd">Modules that link with libraries that have licensing restrictions beyond what is allowed via the GPLv2 and Asterisk's dual licensing model. See <a href="http://svn.asterisk.org/svn/asterisk/trunk/README-addons.txt" class="external-link" rel="nofollow">README-addons.txt</a>, delivered with Asterisk, for more information.</td></tr><tr><td colspan="1" class="confluenceTd"><strong>Applications</strong></td><td colspan="1" class="confluenceTd"><p>Modules that provide call functionality to the system. An application might answer a call, play a sound prompt, hang up a call, and so forth.</p></td></tr><tr><td colspan="1" class="confluenceTd"><strong>Bridging Modules</strong></td><td colspan="1" class="confluenceTd"><p>Modules that provide various bridge mixing technologies and other bridge related functionality.</p></td></tr><tr><td colspan="1" class="confluenceTd"><strong>Call Detail Recording</strong></td><td colspan="1" class="confluenceTd"><p>Modules that provide Call Detail Record (CDR) drivers for various permanent storage backends.</p></td></tr><tr><td colspan="1" class="confluenceTd"><strong>Channel Event Logging</strong></td><td colspan="1" class="confluenceTd">Modules that provide Channel Event Logging (CEL) drivers for various permanent storage backends.</td></tr><tr><td colspan="1" class="confluenceTd"><strong>Channel Drivers</strong></td><td colspan="1" class="confluenceTd"><p>Modules that provide communications with devices outside of Asterisk, and translate that particular signalling or protocol to the core.</p></td></tr><tr><td colspan="1" class="confluenceTd"><strong>Codec</strong> <strong>Translators</strong></td><td colspan="1" class="confluenceTd"><p>Modules that provide encoding/decoding for audio or video. Typically codecs are used to encode media so that it takes less bandwidth.</p></td></tr><tr><td colspan="1" class="confluenceTd"><strong>Format Interpreters</strong></td><td colspan="1" class="confluenceTd"><p>Modules used to save media to disk in a particular file format, and to convert those files back to media streams on the network.</p></td></tr><tr><td colspan="1" class="confluenceTd"><strong>Dialplan Functions</strong></td><td colspan="1" class="confluenceTd"><p>Modules that are used to retrieve or set various settings on a call. A function might be used to set the Caller ID on an outbound call, for example.</p></td></tr><tr><td colspan="1" class="confluenceTd"><strong>PBX Modules</strong></td><td colspan="1" class="confluenceTd">Modules that implement dialplan functionality or enhancements.</td></tr><tr><td colspan="1" class="confluenceTd"><strong>Resource Modules</strong></td><td colspan="1" class="confluenceTd"><p>Modules that provide additional resources to Asterisk. This can includes music on hold, calendar integration, database integration, various protocol stacks, etc.</p></td></tr><tr><td colspan="1" class="confluenceTd"><strong>Test Modules</strong></td><td colspan="1" class="confluenceTd">Unit test modules. These are typically only available when Asterisk has:<ul><li>Been configured with the <code>--enable-dev-mode</code> setting</li><li>The <code>TEST_FRAMEWORK</code> compilation option has been selected in <strong>Compiler Flags - Development</strong></li></ul></td></tr><tr><td colspan="1" class="confluenceTd"><strong>Compiler Flags - Development</strong></td><td colspan="1" class="confluenceTd"><p>Various compilation flags that alter Asterisk's behaviour. These flags are often useful in debugging Asterisk, or obtaining information for Asterisk developers.</p>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Easier Debugging of Asterisk Crashes</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>As much as we may hate to admit it, Asterisk <em>may</em> sometimes have problems.</p><p>If you're finding that Asterisk is crashing on you, there's are settings under <strong>Compiler Flags - Development</strong> that are critical for developers attempting to assist you. For detailed instructions on enabling these settings, see <a href="https://wiki.asterisk.org/wiki/pages/viewpage.action?pageId=5243139">Getting a Backtrace (Asterisk versions &lt; 13.14.0 and 14.3.0)</a>.</p>
+                    </div>
+    </div>
+</td></tr><tr><td colspan="1" class="confluenceTd"><strong>Voicemail Build Options</strong></td><td colspan="1" class="confluenceTd">Compilation flags that enable different Voicemail (via <code>app_voicemail</code>) storage backends.</td></tr><tr><td colspan="1" class="confluenceTd"><strong>Utilities</strong></td><td colspan="1" class="confluenceTd">Various utilities for Asterisk. These include Asterisk Database upgrade utilities, Asterisk monitoring utilities, and other potentially useful tools.</td></tr><tr><td colspan="1" class="confluenceTd"><strong>AGI Samples</strong></td><td colspan="1" class="confluenceTd">Sample AGI applications.</td></tr><tr><td colspan="1" class="confluenceTd"><strong>Module</strong> <strong>Embedding</strong></td><td colspan="1" class="confluenceTd">Compilation flags to enable embedding of Asterisk dynamic modules into the Asterisk binary.</td></tr><tr><td colspan="1" class="confluenceTd"><strong>Core Sound Packages</strong></td><td colspan="1" class="confluenceTd">Core sounds used by Asterisk. Different sound formats can be selected in this menu; when Asterisk is installed, these sounds will be downloaded and installed.</td></tr><tr><td colspan="1" class="confluenceTd"><strong>Music On Hold File Packages</strong></td><td colspan="1" class="confluenceTd">Sample Music on Hold media used by Asterisk. Different formats can be selected in this menu; when Asterisk is installed, the various media samples will be downloaded and installed.</td></tr><tr><td colspan="1" class="confluenceTd"><strong>Extras Sound Packages</strong></td><td colspan="1" class="confluenceTd">Extra sounds that can be used by Asterisk integrators. Different sound formats can be selected in this menu; when Asterisk is installed, these sounds will be downloaded and installed.</td></tr></tbody></table></div><h1 id="UsingMenuselecttoSelectAsteriskOptions-ControllingMenuselect">Controlling Menuselect</h1><p>Options in <strong> Menuselect </strong>can be controlled from the command line. <strong>Menuselect</strong> can be built without invoking the user interface via the <code>menuselect.makeopts</code> target:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# make menuselect.makeopts</pre>
+</div></div><p>Available options can be viewed using the <code>--help</code> command line parameter:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# menuselect/menuselect --help
+
+</pre>
+</div></div><p>Some of the more common options are shown below.</p>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Menuselect Output</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p> Asterisk expects all <strong>Menuselect</strong> options to be written to the <strong>menuselect.makeopts</strong> file. When enabling/disabling <strong>Menuselect</strong> options via the command line, your output should typically be to that file.</p>
+                    </div>
+    </div>
+<h2 id="UsingMenuselecttoSelectAsteriskOptions-ListingOptions">Listing Options</h2><p>To list all options in <strong>Menuselect</strong>, use the <code>--list-options</code> command line parameter:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# menuselect/menuselect --list-options</pre>
+</div></div><p> </p><p>To list only the categories, use the <code>--category-list</code> command line parameter:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# menuselect/menuselect --category-list
+MENUSELECT_ADDONS
+MENUSELECT_APPS
+MENUSELECT_BRIDGES
+MENUSELECT_CDR
+MENUSELECT_CEL
+MENUSELECT_CHANNELS
+MENUSELECT_CODECS
+MENUSELECT_FORMATS
+MENUSELECT_FUNCS
+MENUSELECT_PBX
+MENUSELECT_RES
+MENUSELECT_TESTS
+MENUSELECT_CFLAGS
+MENUSELECT_OPTS_app_voicemail
+MENUSELECT_UTILS
+MENUSELECT_AGIS
+MENUSELECT_EMBED
+MENUSELECT_CORE_SOUNDS
+MENUSELECT_MOH
+MENUSELECT_EXTRA_SOUNDS</pre>
+</div></div><p> </p><p>To list the options in a category, use the <code>--list-category</code> command line parameter:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# menuselect/menuselect --list-category MENUSELECT_OPTS_app_voicemail
++ FILE_STORAGE
+- ODBC_STORAGE
+- IMAP_STORAGE</pre>
+</div></div><h2 id="UsingMenuselecttoSelectAsteriskOptions-EnablinganOption">Enabling an Option</h2><p>To enable an option in Menuselect, use the <code>--enable</code> command line parameter:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# menuselect/menuselect --enable IMAP_STORAGE menuselect.makeopts</pre>
+</div></div>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Chaining Options</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p> Multiple options can be chained together:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# menuselect/menuselect --enable app_voicemail --enable IMAP_STORAGE menuselect.makeopts</pre>
+</div></div>
+                    </div>
+    </div>
+<h2 id="UsingMenuselecttoSelectAsteriskOptions-DisablinganOption">Disabling an Option</h2><p>To disable an option in <strong>Menuselect</strong>, use the <code>--disable</code> command line parameter:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# menuselect/menuselect --disable app_voicemail menuselect.makeopts</pre>
+</div></div><h2 id="UsingMenuselecttoSelectAsteriskOptions-EnablingaCategory">Enabling a Category</h2><p>An entire category can be enabled in <strong>Menuselect</strong> using the <code>--enable-category</code> command line parameter:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# menuselect/menuselect --enable-category MENUSELECT_ADDONS menuselect.makeopts</pre>
+</div></div>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/4817523/4980750.png">menuselect.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

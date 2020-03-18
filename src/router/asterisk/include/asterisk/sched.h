@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-/*! 
+/*!
  * \brief Remove a scheduler entry
  *
  * This is a loop construct to ensure that
@@ -39,8 +39,8 @@ extern "C" {
  *
  * Since macro expansion essentially works like pass-by-name
  * parameter passing, this macro will still work correctly even
- * if the id of the task to delete changes. This holds as long as 
- * the name of the id which could change is passed to the macro 
+ * if the id of the task to delete changes. This holds as long as
+ * the name of the id which could change is passed to the macro
  * and not a copy of the value of the id.
  */
 #define AST_SCHED_DEL(sched, id) \
@@ -71,20 +71,24 @@ extern "C" {
 
 /*!
  * \brief schedule task to get deleted and call unref function
+ *
+ * Only calls unref function if the delete succeeded.
+ *
  * \sa AST_SCHED_DEL
  * \since 1.6.1
  */
 #define AST_SCHED_DEL_UNREF(sched, id, refcall)			\
 	do { \
-		int _count = 0; \
-		while (id > -1 && ast_sched_del(sched, id) && ++_count < 10) { \
+		int _count = 0, _id; \
+		while ((_id = id) > -1 && ast_sched_del(sched, _id) && ++_count < 10) { \
 			usleep(1); \
 		} \
-		if (_count == 10) \
-			ast_log(LOG_WARNING, "Unable to cancel schedule ID %d.  This is probably a bug (%s: %s, line %d).\n", id, __FILE__, __PRETTY_FUNCTION__, __LINE__); \
-		if (id > -1) \
+		if (_count == 10) { \
+			ast_log(LOG_WARNING, "Unable to cancel schedule ID %d.  This is probably a bug (%s: %s, line %d).\n", _id, __FILE__, __PRETTY_FUNCTION__, __LINE__); \
+		} else if (_id > -1) { \
 			refcall; \
-		id = -1; \
+			id = -1; \
+		} \
 	} while (0);
 
 /*!
@@ -260,8 +264,8 @@ int ast_sched_add_variable(struct ast_sched_context *con, int when, ast_sched_cb
  */
 int ast_sched_replace_variable(int old_id, struct ast_sched_context *con, int when, ast_sched_cb callback, const void *data, int variable) attribute_warn_unused_result;
 
-/*! 
- * \brief Find a sched structure and return the data field associated with it. 
+/*!
+ * \brief Find a sched structure and return the data field associated with it.
  *
  * \param con scheduling context in which to search fro the matching id
  * \param id ID of the scheduled item to find
@@ -284,12 +288,7 @@ const void *ast_sched_find_data(struct ast_sched_context *con, int id);
  *
  * \return Returns 0 on success, -1 on failure
  */
-#ifndef AST_DEVMODE
 int ast_sched_del(struct ast_sched_context *con, int id) attribute_warn_unused_result;
-#else
-int _ast_sched_del(struct ast_sched_context *con, int id, const char *file, int line, const char *function) attribute_warn_unused_result;
-#define	ast_sched_del(a, b)	_ast_sched_del(a, b, __FILE__, __LINE__, __PRETTY_FUNCTION__)
-#endif
 
 /*!
  * \brief Determines number of seconds until the next outstanding event to take place

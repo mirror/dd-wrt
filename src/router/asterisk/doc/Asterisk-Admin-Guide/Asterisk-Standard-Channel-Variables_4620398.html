@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk Standard Channel Variables</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Variables_4817407.html">Variables</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Variables_4620340.html">Channel Variables</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk Standard Channel Variables
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Igor Goncharovsky</span> on Oct 20, 2018
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>There are a number of variables that are defined or read by Asterisk. Here is a listing of them. More information is available in each application's help text. All these variables are in UPPER CASE only.</p><p>Variables marked with a * are builtin functions and can't be set, only read in the dialplan. Writes to such variables are silently ignored.</p><h3 id="AsteriskStandardChannelVariables-VariablespresentinAsterisk1.8andforward:">Variables present in Asterisk 1.8 and forward:</h3><ul><li>${CDR(accountcode)} * - Account code (if specified)</li><li>${BLINDTRANSFER} - The name of the channel on the other side of a blind transfer</li><li>${BRIDGEPEER} - Bridged peer</li><li>${BRIDGEPVTCALLID} - Bridged peer PVT call ID (SIP Call ID if a SIP call)</li><li>${CALLERID(ani)} * - Caller ANI (PRI channels)</li><li>${CALLERID(ani2)} * - ANI2 (Info digits) also called Originating line information or OLI</li><li>${CALLERID(all)} - Caller ID</li><li>${CALLERID(dnid)} * - Dialed Number Identifier</li><li>${CALLERID(name)} - Caller ID Name only</li><li>${CALLERID(num)} - Caller ID Number only</li><li>${CALLERID(rdnis)} * - Redirected Dial Number ID Service</li><li>${CALLINGANI2} * - Caller ANI2 (PRI channels)</li><li>${CALLINGPRES} * - Caller ID presentation for incoming calls (PRI channels)</li><li>${CALLINGTNS} * - Transit Network Selector (PRI channels)</li><li>${CALLINGTON} * - Caller Type of Number (PRI channels)</li><li>${CHANNEL} * - Current channel name</li><li>${CONTEXT} * - Current context</li><li>${DATETIME} * - Current date time in the format: DDMMYYYY-HH:MM:SS (Deprecated; use ${STRFTIME(${EPOCH},,%d%m%Y-%H:%M:%S)})</li><li>${DB_RESULT} - Result value of DB_EXISTS() dial plan function</li><li>${EPOCH} * - Current unix style epoch</li><li>${EXTEN} * - Current extension</li><li>${ENV(VAR)} - Environmental variable VAR</li><li>${GOTO_ON_BLINDXFR} - Transfer to the specified context/extension/priority after a blind transfer (use ^ characters in place of | to separate context/extension/priority when setting this variable from the dialplan)</li><li>${HANGUPCAUSE} * - Asterisk cause of hangup (inbound/outbound)</li><li>${HINT} * - Channel hints for this extension</li><li>${HINTNAME} * - Suggested Caller*ID name for this extension</li><li>${INVALID_EXTEN} - The invalid called extension (used in the &quot;i&quot; extension)</li><li>${LANGUAGE} * - Current language (Deprecated; use ${CHANNEL(language)})</li><li>${LEN(VAR)} - String length of VAR (integer)</li><li>${PRIORITY} * - Current priority in the dialplan</li><li>${PRIREDIRECTREASON} - Reason for redirect on PRI, if a call was directed</li><li>${TIMESTAMP} * - Current date time in the format: YYYYMMDD-HHMMSS (Deprecated; use ${STRFTIME(${EPOCH},,%Y%m%d-%H%M%S)})</li><li>${TRANSFER_CONTEXT} - Context for transferred calls</li><li>${FORWARD_CONTEXT} - Context for forwarded calls</li><li>${DYNAMIC_PEERNAME} - The name of the channel on the other side when a dynamic feature is used (removed)</li><li>${DYNAMIC_FEATURENAME} - The name of the last triggered dynamic feature</li><li>${DYNAMIC_WHO_ACTIVATED} - Gives the channel name that activated the dynamic feature</li><li>${UNIQUEID} * - Current call unique identifier</li><li>${SYSTEMNAME} * - value of the systemname option of asterisk.conf</li><li>${ENTITYID} * - Global Entity ID set automatically, or from asterisk.conf</li></ul><h3 id="AsteriskStandardChannelVariables-VariablespresentinAsterisk11andforward:">Variables present in Asterisk 11 and forward:</h3><ul><li>${AGIEXITONHANGUP} - set to <code>1</code> to force the behavior of a call to AGI to behave as it did in 1.4, where the AGI script would exit immediately on detecting a channel hangup</li><li>${CALENDAR_SUCCESS} * - Status of the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Function_CALENDAR_WRITE">CALENDAR_WRITE</a> function. Set to <code>1</code> if the function completed successfully; <code>0</code> otherwise.</li><li>${SIP_RECVADDR} * - the address a SIP MESSAGE request was received from</li><li>${VOICEMAIL_PLAYBACKSTATUS} * - Status of the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Application_VoiceMailPlayMsg">VoiceMailPlayMsg</a> application. <code>SUCCESS</code> if the voicemail was played back successfully, {{FAILED} otherwise</li></ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

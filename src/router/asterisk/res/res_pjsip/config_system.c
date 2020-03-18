@@ -52,6 +52,13 @@ struct system_config {
 	} threadpool;
 	/*! Nonzero to disable switching from UDP to TCP transport */
 	unsigned int disable_tcp_switch;
+	/*!
+	 * Although early media is enabled in pjproject by default, it's only
+	 * enabled when the To tags are different. These options allow turning
+	 * on or off the feature for different tags and same tags.
+	 */
+	unsigned int follow_early_media_fork;
+	unsigned int accept_multiple_sdp_answers;
 };
 
 static struct ast_threadpool_options sip_threadpool_options = {
@@ -76,7 +83,7 @@ static void *system_alloc(const char *name)
 	return system;
 }
 
-static int system_apply(const struct ast_sorcery *system_sorcery, void *obj)
+static int system_apply(const struct ast_sorcery *sorcery, void *obj)
 {
 	struct system_config *system = obj;
 	int min_timerb;
@@ -96,10 +103,24 @@ static int system_apply(const struct ast_sorcery *system_sorcery, void *obj)
 	pjsip_cfg()->tsx.t1 = system->timert1;
 	pjsip_cfg()->tsx.td = system->timerb;
 
+	pjsip_cfg()->endpt.follow_early_media_fork = system->follow_early_media_fork;
+#ifdef HAVE_PJSIP_INV_ACCEPT_MULTIPLE_SDP_ANSWERS
+	pjsip_cfg()->endpt.accept_multiple_sdp_answers = system->accept_multiple_sdp_answers;
+#else
+	if (system->accept_multiple_sdp_answers) {
+		ast_log(LOG_WARNING,
+			"The accept_multiple_sdp_answers flag is not supported in this version of pjproject. Ignoring\n");
+	}
+#endif
+
 	if (system->compactheaders) {
+#ifdef HAVE_PJSIP_ENDPOINT_COMPACT_FORM
+		pjsip_cfg()->endpt.use_compact_form = PJ_TRUE;
+#else
 		extern pj_bool_t pjsip_use_compact_form;
 
 		pjsip_use_compact_form = PJ_TRUE;
+#endif
 	}
 
 	sip_threadpool_options.initial_size = system->threadpool.initial_size;
@@ -158,7 +179,7 @@ int ast_sip_initialize_system(void)
 		return -1;
 	}
 
-	ast_sorcery_apply_default(system_sorcery, "system", "config", "pjsip.conf,criteria=type=system");
+	ast_sorcery_apply_default(system_sorcery, "system", "config", "pjsip.conf,criteria=type=system,single_object=yes,explicit_name=system");
 
 	if (ast_sorcery_object_register_no_reload(system_sorcery, "system", system_alloc, NULL, system_apply)) {
 		ast_log(LOG_ERROR, "Failed to register with sorcery (is res_sorcery_config loaded?)\n");
@@ -184,6 +205,10 @@ int ast_sip_initialize_system(void)
 			OPT_UINT_T, 0, FLDSET(struct system_config, threadpool.max_size));
 	ast_sorcery_object_field_register(system_sorcery, "system", "disable_tcp_switch", "yes",
 			OPT_BOOL_T, 1, FLDSET(struct system_config, disable_tcp_switch));
+	ast_sorcery_object_field_register(system_sorcery, "system", "follow_early_media_fork", "yes",
+			OPT_BOOL_T, 1, FLDSET(struct system_config, follow_early_media_fork));
+	ast_sorcery_object_field_register(system_sorcery, "system", "accept_multiple_sdp_answers", "no",
+			OPT_BOOL_T, 1, FLDSET(struct system_config, accept_multiple_sdp_answers));
 
 	ast_sorcery_load(system_sorcery);
 
@@ -282,5 +307,5 @@ static int system_create_resolver_and_set_nameservers(void *data)
 
 void ast_sip_initialize_dns(void)
 {
-	ast_sip_push_task_synchronous(NULL, system_create_resolver_and_set_nameservers, NULL);
+	ast_sip_push_task_wait_servant(NULL, system_create_resolver_and_set_nameservers, NULL);
 }

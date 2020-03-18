@@ -20,17 +20,15 @@
  *
  * \brief Flat, binary, ulaw PCM file format.
  * \arg File name extension: alaw, al, alw, pcm, ulaw, ul, mu, ulw, g722, au
- * 
+ *
  * \ingroup formats
  */
 
 /*** MODULEINFO
 	<support_level>core</support_level>
  ***/
- 
-#include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
+#include "asterisk.h"
 
 #include "asterisk/mod_format.h"
 #include "asterisk/module.h"
@@ -80,29 +78,20 @@ static int pcma_rewrite(struct ast_filestream *s, const char *comment)
 
 static struct ast_frame *pcm_read(struct ast_filestream *s, int *whennext)
 {
-	int res;
-	
-	/* Send a frame from the file to the appropriate channel */
+	size_t res;
 
+	/* Send a frame from the file to the appropriate channel */
 	AST_FRAME_SET_BUFFER(&s->fr, s->buf, AST_FRIENDLY_OFFSET, BUF_SIZE);
-	if ((res = fread(s->fr.data.ptr, 1, s->fr.datalen, s->f)) != s->fr.datalen) {
-		if (feof(s->f)) {
-			if (res) {
-				ast_debug(3, "Incomplete frame data at end of %s file "
-						  "(expected %d bytes, read %d)\n",
-						  ast_format_get_name(s->fr.subclass.format), s->fr.datalen, res);
-			}
-		} else {
-			ast_log(LOG_ERROR, "Error while reading %s file: %s\n",
-					ast_format_get_name(s->fr.subclass.format), strerror(errno));
+	if ((res = fread(s->fr.data.ptr, 1, s->fr.datalen, s->f)) < 1) {
+		if (res) {
+			ast_log(LOG_WARNING, "Short read of %s data (expected %d bytes, read %zu): %s\n",
+					ast_format_get_name(s->fr.subclass.format), s->fr.datalen, res,
+					strerror(errno));
 		}
 		return NULL;
 	}
 	s->fr.datalen = res;
-	if (ast_format_cmp(s->fmt->format, ast_format_g722) == AST_FORMAT_CMP_EQUAL)
-		*whennext = s->fr.samples = res * 2;
-	else
-		*whennext = s->fr.samples = res;
+	*whennext = s->fr.samples = res;
 	return &s->fr;
 }
 
@@ -201,7 +190,7 @@ static int pcm_write(struct ast_filestream *fs, struct ast_frame *f)
 		/* Check if we have written to this position yet. If we have, then increment pos by one frame
 		*  for some degree of protection against receiving packets in the same clock tick.
 		*/
-		
+
 		fstat(fileno(fs->f), &stat_buf );
 		if (stat_buf.st_size > fpos )
 			fpos += f->datalen;	/* Incrementing with the size of this current frame */
@@ -235,7 +224,7 @@ static int pcm_write(struct ast_filestream *fs, struct ast_frame *f)
 		}
 	}
 #endif	/* REALTIME_WRITE */
-	
+
 	if ((res = fwrite(f->data.ptr, 1, f->datalen, fs->f)) != f->datalen) {
 		ast_log(LOG_WARNING, "Bad write (%d/%d): %s\n", res, f->datalen, strerror(errno));
 		return -1;
@@ -418,15 +407,10 @@ static int au_rewrite(struct ast_filestream *s, const char *comment)
 static int au_seek(struct ast_filestream *fs, off_t sample_offset, int whence)
 {
 	off_t min, max, cur;
-	long offset = 0, bytes;
+	long offset = 0;
 	struct au_desc *desc = fs->_private;
 
 	min = desc->hdr_size;
-
-	if (ast_format_cmp(fs->fmt->format, ast_format_g722) == AST_FORMAT_CMP_EQUAL)
-		bytes = sample_offset / 2;
-	else
-		bytes = sample_offset;
 
 	if ((cur = ftello(fs->f)) < 0) {
 		ast_log(AST_LOG_WARNING, "Unable to determine current position in au filestream %p: %s\n", fs, strerror(errno));
@@ -444,11 +428,11 @@ static int au_seek(struct ast_filestream *fs, off_t sample_offset, int whence)
 	}
 
 	if (whence == SEEK_SET)
-		offset = bytes + min;
+		offset = sample_offset + min;
 	else if (whence == SEEK_CUR || whence == SEEK_FORCECUR)
-		offset = bytes + cur;
+		offset = sample_offset + cur;
 	else if (whence == SEEK_END)
-		offset = max - bytes;
+		offset = max - sample_offset;
 
 	if (whence != SEEK_FORCECUR) {
 		offset = (offset > max) ? max : offset;
@@ -487,6 +471,23 @@ static off_t au_tell(struct ast_filestream *fs)
 	return offset - desc->hdr_size;
 }
 
+static struct ast_frame *g722_read(struct ast_filestream *s, int *whennext)
+{
+	struct ast_frame *f = pcm_read(s, whennext);
+	*whennext = s->fr.samples = (*whennext * 2);
+	return f;
+}
+
+static int g722_seek(struct ast_filestream *fs, off_t sample_offset, int whence)
+{
+	return pcm_seek(fs, sample_offset / 2, whence);
+}
+
+static off_t g722_tell(struct ast_filestream *fs)
+{
+	return pcm_tell(fs) * 2;
+}
+
 static struct ast_format_def alaw_f = {
 	.name = "alaw",
 	.exts = "alaw|al|alw",
@@ -506,6 +507,7 @@ static struct ast_format_def alaw_f = {
 static struct ast_format_def pcm_f = {
 	.name = "pcm",
 	.exts = "pcm|ulaw|ul|mu|ulw",
+	.mime_types = "audio/basic",
 	.write = pcm_write,
 	.seek = pcm_seek,
 	.trunc = pcm_trunc,
@@ -518,10 +520,10 @@ static struct ast_format_def g722_f = {
 	.name = "g722",
 	.exts = "g722",
 	.write = pcm_write,
-	.seek = pcm_seek,
+	.seek = g722_seek,
 	.trunc = pcm_trunc,
-	.tell = pcm_tell,
-	.read = pcm_read,
+	.tell = g722_tell,
+	.read = g722_read,
 	.buf_size = (BUF_SIZE * 2) + AST_FRIENDLY_OFFSET,
 };
 

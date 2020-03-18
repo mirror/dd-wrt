@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Bridges REST API</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-ARI_42010709.html">Asterisk 17 ARI</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Bridges REST API
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17BridgesRESTAPI-Bridges">Bridges</h1>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Method </p></th>
+<th class="confluenceTh"><p> Path&lt;br&gt;h5. Parameters are case-sensitive </p></th>
+<th class="confluenceTh"><p> Return Model </p></th>
+<th class="confluenceTh"><p> Summary </p></th>
+</tr>
+</tbody></table></div>
+
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17BridgesRESTAPI-list">/bridges</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Bridge">List[Bridge]</a> </p></td>
+<td class="confluenceTd"><p> List all active bridges in Asterisk. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17BridgesRESTAPI-create">/bridges</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Bridge">Bridge</a> </p></td>
+<td class="confluenceTd"><p> Create a new bridge. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17BridgesRESTAPI-createWithId">/bridges/{bridgeId}</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Bridge">Bridge</a> </p></td>
+<td class="confluenceTd"><p> Create a new bridge or updates an existing one. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17BridgesRESTAPI-get">/bridges/{bridgeId}</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Bridge">Bridge</a> </p></td>
+<td class="confluenceTd"><p> Get bridge details. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> DELETE </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17BridgesRESTAPI-destroy">/bridges/{bridgeId}</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Shut down a bridge. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17BridgesRESTAPI-addChannel">/bridges/{bridgeId}/addChannel</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Add a channel to a bridge. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17BridgesRESTAPI-removeChannel">/bridges/{bridgeId}/removeChannel</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Remove a channel from a bridge. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17BridgesRESTAPI-setVideoSource">/bridges/{bridgeId}/videoSource/{channelId}</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Set a channel as the video source in a multi-party mixing bridge. This operation has no effect on bridges with two or fewer participants. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> DELETE </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17BridgesRESTAPI-clearVideoSource">/bridges/{bridgeId}/videoSource</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Removes any explicit video source in a multi-party mixing bridge. This operation has no effect on bridges with two or fewer participants. When no explicit video source is set, talk detection will be used to determine the active video stream. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17BridgesRESTAPI-startMoh">/bridges/{bridgeId}/moh</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Play music on hold to a bridge or change the MOH class that is playing. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> DELETE </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17BridgesRESTAPI-stopMoh">/bridges/{bridgeId}/moh</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Stop playing music on hold to a bridge. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17BridgesRESTAPI-play">/bridges/{bridgeId}/play</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Playback">Playback</a> </p></td>
+<td class="confluenceTd"><p> Start playback of media on a bridge. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17BridgesRESTAPI-playWithId">/bridges/{bridgeId}/play/{playbackId}</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Playback">Playback</a> </p></td>
+<td class="confluenceTd"><p> Start playback of media on a bridge. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17BridgesRESTAPI-record">/bridges/{bridgeId}/record</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-LiveRecording">LiveRecording</a> </p></td>
+<td class="confluenceTd"><p> Start a recording. </p></td>
+</tr>
+</tbody></table></div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17BridgesRESTAPI-list"></span></p>
+<h2 id="Asterisk17BridgesRESTAPI-list:GET/bridges">list: GET /bridges</h2>
+
+<p>List all active bridges in Asterisk.</p>
+
+<p><span class="confluence-anchor-link" id="Asterisk17BridgesRESTAPI-create"></span></p>
+<h2 id="Asterisk17BridgesRESTAPI-create:POST/bridges">create: POST /bridges</h2>
+
+<p>Create a new bridge. This bridge persists until it has been shut down, or Asterisk has been shut down.</p>
+
+<h3 id="Asterisk17BridgesRESTAPI-Queryparameters">Query parameters</h3>
+<ul>
+	<li>type: <em>string</em> - Comma separated list of bridge type attributes (mixing, holding, dtmf_events, proxy_media, video_sfu).</li>
+	<li>bridgeId: <em>string</em> - Unique ID to give to the bridge being created.</li>
+	<li>name: <em>string</em> - Name to give to the bridge being created.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17BridgesRESTAPI-createWithId"></span></p>
+<h2 id="Asterisk17BridgesRESTAPI-createWithId:POST/bridges/{bridgeId}">createWithId: POST /bridges/{bridgeId}</h2>
+
+<p>Create a new bridge or updates an existing one. This bridge persists until it has been shut down, or Asterisk has been shut down.</p>
+
+<h3 id="Asterisk17BridgesRESTAPI-Pathparameters">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>bridgeId: <em>string</em> - Unique ID to give to the bridge being created.</li>
+</ul>
+
+
+<h3 id="Asterisk17BridgesRESTAPI-Queryparameters.1">Query parameters</h3>
+<ul>
+	<li>type: <em>string</em> - Comma separated list of bridge type attributes (mixing, holding, dtmf_events, proxy_media, video_sfu) to set.</li>
+	<li>name: <em>string</em> - Set the name of the bridge.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17BridgesRESTAPI-get"></span></p>
+<h2 id="Asterisk17BridgesRESTAPI-get:GET/bridges/{bridgeId}">get: GET /bridges/{bridgeId}</h2>
+
+<p>Get bridge details.</p>
+
+<h3 id="Asterisk17BridgesRESTAPI-Pathparameters.1">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>bridgeId: <em>string</em> - Bridge's id</li>
+</ul>
+
+
+<h3 id="Asterisk17BridgesRESTAPI-ErrorResponses">Error Responses</h3>
+<ul>
+	<li>404 - Bridge not found</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17BridgesRESTAPI-destroy"></span></p>
+<h2 id="Asterisk17BridgesRESTAPI-destroy:DELETE/bridges/{bridgeId}">destroy: DELETE /bridges/{bridgeId}</h2>
+
+<p>Shut down a bridge. If any channels are in this bridge, they will be removed and resume whatever they were doing beforehand.</p>
+
+<h3 id="Asterisk17BridgesRESTAPI-Pathparameters.2">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>bridgeId: <em>string</em> - Bridge's id</li>
+</ul>
+
+
+<h3 id="Asterisk17BridgesRESTAPI-ErrorResponses.1">Error Responses</h3>
+<ul>
+	<li>404 - Bridge not found</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17BridgesRESTAPI-addChannel"></span></p>
+<h2 id="Asterisk17BridgesRESTAPI-addChannel:POST/bridges/{bridgeId}/addChannel">addChannel: POST /bridges/{bridgeId}/addChannel</h2>
+
+<p>Add a channel to a bridge.</p>
+
+<h3 id="Asterisk17BridgesRESTAPI-Pathparameters.3">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>bridgeId: <em>string</em> - Bridge's id</li>
+</ul>
+
+
+<h3 id="Asterisk17BridgesRESTAPI-Queryparameters.2">Query parameters</h3>
+<ul>
+	<li>channel: <em>string</em> - <strong>(required)</strong> Ids of channels to add to bridge
+	<ul>
+		<li>Allows comma separated values.</li>
+	</ul>
+	</li>
+	<li>role: <em>string</em> - Channel's role in the bridge</li>
+	<li>absorbDTMF: <em>boolean</em> - Absorb DTMF coming from this channel, preventing it to pass through to the bridge</li>
+	<li>mute: <em>boolean</em> - Mute audio from this channel, preventing it to pass through to the bridge</li>
+</ul>
+
+
+<h3 id="Asterisk17BridgesRESTAPI-ErrorResponses.2">Error Responses</h3>
+<ul>
+	<li>400 - Channel not found</li>
+	<li>404 - Bridge not found</li>
+	<li>409 - Bridge not in Stasis application; Channel currently recording</li>
+	<li>422 - Channel not in Stasis application</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17BridgesRESTAPI-removeChannel"></span></p>
+<h2 id="Asterisk17BridgesRESTAPI-removeChannel:POST/bridges/{bridgeId}/removeChannel">removeChannel: POST /bridges/{bridgeId}/removeChannel</h2>
+
+<p>Remove a channel from a bridge.</p>
+
+<h3 id="Asterisk17BridgesRESTAPI-Pathparameters.4">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>bridgeId: <em>string</em> - Bridge's id</li>
+</ul>
+
+
+<h3 id="Asterisk17BridgesRESTAPI-Queryparameters.3">Query parameters</h3>
+<ul>
+	<li>channel: <em>string</em> - <strong>(required)</strong> Ids of channels to remove from bridge
+	<ul>
+		<li>Allows comma separated values.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17BridgesRESTAPI-ErrorResponses.3">Error Responses</h3>
+<ul>
+	<li>400 - Channel not found</li>
+	<li>404 - Bridge not found</li>
+	<li>409 - Bridge not in Stasis application</li>
+	<li>422 - Channel not in this bridge</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17BridgesRESTAPI-setVideoSource"></span></p>
+<h2 id="Asterisk17BridgesRESTAPI-setVideoSource:POST/bridges/{bridgeId}/videoSource/{channelId}">setVideoSource: POST /bridges/{bridgeId}/videoSource/{channelId}</h2>
+
+<p>Set a channel as the video source in a multi-party mixing bridge. This operation has no effect on bridges with two or fewer participants.</p>
+
+<h3 id="Asterisk17BridgesRESTAPI-Pathparameters.5">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>bridgeId: <em>string</em> - Bridge's id</li>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17BridgesRESTAPI-ErrorResponses.4">Error Responses</h3>
+<ul>
+	<li>404 - Bridge or Channel not found</li>
+	<li>409 - Channel not in Stasis application</li>
+	<li>422 - Channel not in this Bridge</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17BridgesRESTAPI-clearVideoSource"></span></p>
+<h2 id="Asterisk17BridgesRESTAPI-clearVideoSource:DELETE/bridges/{bridgeId}/videoSource">clearVideoSource: DELETE /bridges/{bridgeId}/videoSource</h2>
+
+<p>Removes any explicit video source in a multi-party mixing bridge. This operation has no effect on bridges with two or fewer participants. When no explicit video source is set, talk detection will be used to determine the active video stream.</p>
+
+<h3 id="Asterisk17BridgesRESTAPI-Pathparameters.6">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>bridgeId: <em>string</em> - Bridge's id</li>
+</ul>
+
+
+<h3 id="Asterisk17BridgesRESTAPI-ErrorResponses.5">Error Responses</h3>
+<ul>
+	<li>404 - Bridge not found</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17BridgesRESTAPI-startMoh"></span></p>
+<h2 id="Asterisk17BridgesRESTAPI-startMoh:POST/bridges/{bridgeId}/moh">startMoh: POST /bridges/{bridgeId}/moh</h2>
+
+<p>Play music on hold to a bridge or change the MOH class that is playing.</p>
+
+<h3 id="Asterisk17BridgesRESTAPI-Pathparameters.7">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>bridgeId: <em>string</em> - Bridge's id</li>
+</ul>
+
+
+<h3 id="Asterisk17BridgesRESTAPI-Queryparameters.4">Query parameters</h3>
+<ul>
+	<li>mohClass: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17BridgesRESTAPI-ErrorResponses.6">Error Responses</h3>
+<ul>
+	<li>404 - Bridge not found</li>
+	<li>409 - Bridge not in Stasis application</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17BridgesRESTAPI-stopMoh"></span></p>
+<h2 id="Asterisk17BridgesRESTAPI-stopMoh:DELETE/bridges/{bridgeId}/moh">stopMoh: DELETE /bridges/{bridgeId}/moh</h2>
+
+<p>Stop playing music on hold to a bridge. This will only stop music on hold being played via POST bridges/{bridgeId}/moh.</p>
+
+<h3 id="Asterisk17BridgesRESTAPI-Pathparameters.8">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>bridgeId: <em>string</em> - Bridge's id</li>
+</ul>
+
+
+<h3 id="Asterisk17BridgesRESTAPI-ErrorResponses.7">Error Responses</h3>
+<ul>
+	<li>404 - Bridge not found</li>
+	<li>409 - Bridge not in Stasis application</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17BridgesRESTAPI-play"></span></p>
+<h2 id="Asterisk17BridgesRESTAPI-play:POST/bridges/{bridgeId}/play">play: POST /bridges/{bridgeId}/play</h2>
+
+<p>Start playback of media on a bridge. The media URI may be any of a number of URI's. Currently sound:, recording:, number:, digits:, characters:, and tone: URI's are supported. This operation creates a playback resource that can be used to control the playback of media (pause, rewind, fast forward, etc.)</p>
+
+<h3 id="Asterisk17BridgesRESTAPI-Pathparameters.9">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>bridgeId: <em>string</em> - Bridge's id</li>
+</ul>
+
+
+<h3 id="Asterisk17BridgesRESTAPI-Queryparameters.5">Query parameters</h3>
+<ul>
+	<li>media: <em>string</em> - <strong>(required)</strong> Media URIs to play.
+	<ul>
+		<li>Allows comma separated values.</li>
+	</ul>
+	</li>
+	<li>lang: <em>string</em> - For sounds, selects language for sound.</li>
+	<li>offsetms: <em>int</em> - Number of milliseconds to skip before playing. Only applies to the first URI if multiple media URIs are specified.
+	<ul>
+		<li>Allowed range: Min: 0; Max: None</li>
+	</ul>
+	</li>
+	<li>skipms: <em>int</em> - Number of milliseconds to skip for forward/reverse operations.
+	<ul>
+		<li>Default: 3000</li>
+		<li>Allowed range: Min: 0; Max: None</li>
+	</ul>
+	</li>
+	<li>playbackId: <em>string</em> - Playback Id.</li>
+</ul>
+
+
+<h3 id="Asterisk17BridgesRESTAPI-ErrorResponses.8">Error Responses</h3>
+<ul>
+	<li>404 - Bridge not found</li>
+	<li>409 - Bridge not in a Stasis application</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17BridgesRESTAPI-playWithId"></span></p>
+<h2 id="Asterisk17BridgesRESTAPI-playWithId:POST/bridges/{bridgeId}/play/{playbackId}">playWithId: POST /bridges/{bridgeId}/play/{playbackId}</h2>
+
+<p>Start playback of media on a bridge. The media URI may be any of a number of URI's. Currently sound:, recording:, number:, digits:, characters:, and tone: URI's are supported. This operation creates a playback resource that can be used to control the playback of media (pause, rewind, fast forward, etc.)</p>
+
+<h3 id="Asterisk17BridgesRESTAPI-Pathparameters.10">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>bridgeId: <em>string</em> - Bridge's id</li>
+	<li>playbackId: <em>string</em> - Playback ID.</li>
+</ul>
+
+
+<h3 id="Asterisk17BridgesRESTAPI-Queryparameters.6">Query parameters</h3>
+<ul>
+	<li>media: <em>string</em> - <strong>(required)</strong> Media URIs to play.
+	<ul>
+		<li>Allows comma separated values.</li>
+	</ul>
+	</li>
+	<li>lang: <em>string</em> - For sounds, selects language for sound.</li>
+	<li>offsetms: <em>int</em> - Number of milliseconds to skip before playing. Only applies to the first URI if multiple media URIs are specified.
+	<ul>
+		<li>Allowed range: Min: 0; Max: None</li>
+	</ul>
+	</li>
+	<li>skipms: <em>int</em> - Number of milliseconds to skip for forward/reverse operations.
+	<ul>
+		<li>Default: 3000</li>
+		<li>Allowed range: Min: 0; Max: None</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17BridgesRESTAPI-ErrorResponses.9">Error Responses</h3>
+<ul>
+	<li>404 - Bridge not found</li>
+	<li>409 - Bridge not in a Stasis application</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17BridgesRESTAPI-record"></span></p>
+<h2 id="Asterisk17BridgesRESTAPI-record:POST/bridges/{bridgeId}/record">record: POST /bridges/{bridgeId}/record</h2>
+
+<p>Start a recording. This records the mixed audio from all channels participating in this bridge.</p>
+
+<h3 id="Asterisk17BridgesRESTAPI-Pathparameters.11">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>bridgeId: <em>string</em> - Bridge's id</li>
+</ul>
+
+
+<h3 id="Asterisk17BridgesRESTAPI-Queryparameters.7">Query parameters</h3>
+<ul>
+	<li>name: <em>string</em> - <strong>(required)</strong> Recording's filename</li>
+	<li>format: <em>string</em> - <strong>(required)</strong> Format to encode audio in</li>
+	<li>maxDurationSeconds: <em>int</em> - Maximum duration of the recording, in seconds. 0 for no limit.
+	<ul>
+		<li>Allowed range: Min: 0; Max: None</li>
+	</ul>
+	</li>
+	<li>maxSilenceSeconds: <em>int</em> - Maximum duration of silence, in seconds. 0 for no limit.
+	<ul>
+		<li>Allowed range: Min: 0; Max: None</li>
+	</ul>
+	</li>
+	<li>ifExists: <em>string</em> - Action to take if a recording with the same name already exists.
+	<ul>
+		<li>Default: fail</li>
+		<li>Allowed values: fail, overwrite, append</li>
+	</ul>
+	</li>
+	<li>beep: <em>boolean</em> - Play beep when recording begins</li>
+	<li>terminateOn: <em>string</em> - DTMF input to terminate recording.
+	<ul>
+		<li>Default: none</li>
+		<li>Allowed values: none, any, *, #</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17BridgesRESTAPI-ErrorResponses.10">Error Responses</h3>
+<ul>
+	<li>400 - Invalid parameters</li>
+	<li>404 - Bridge not found</li>
+	<li>409 - Bridge is not in a Stasis application; A recording with the same name already exists on the system and can not be overwritten because it is in progress or ifExists=fail</li>
+	<li>422 - The format specified is unknown on this system</li>
+</ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

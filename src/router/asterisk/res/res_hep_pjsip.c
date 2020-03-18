@@ -34,8 +34,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <pjsip.h>
 #include <pjsip_ua.h>
 #include <pjlib.h>
@@ -91,35 +89,44 @@ static pj_status_t logging_on_tx_msg(pjsip_tx_data *tdata)
 	pjsip_cid_hdr *cid_hdr;
 	pjsip_from_hdr *from_hdr;
 	pjsip_to_hdr *to_hdr;
-	pjsip_tpmgr_fla2_param prm;
 
 	capture_info = hepv3_create_capture_info(tdata->buf.start, (size_t)(tdata->buf.cur - tdata->buf.start));
 	if (!capture_info) {
 		return PJ_SUCCESS;
 	}
 
-	/* Attempt to determine what IP address will we send this packet out of */
-	pjsip_tpmgr_fla2_param_default(&prm);
-	prm.tp_type = tdata->tp_info.transport->key.type;
-	pj_strset2(&prm.dst_host, tdata->tp_info.dst_name);
-	prm.local_if = PJ_TRUE;
+	if (!(tdata->tp_info.transport->flag & PJSIP_TRANSPORT_RELIABLE)) {
+		pjsip_tpmgr_fla2_param prm;
 
-	/* If we can't get the local address use what we have already */
-	if (pjsip_tpmgr_find_local_addr2(pjsip_endpt_get_tpmgr(ast_sip_get_pjsip_endpoint()), tdata->pool, &prm) != PJ_SUCCESS) {
-		pj_sockaddr_print(&tdata->tp_info.transport->local_addr, local_buf, sizeof(local_buf), 3);
-	} else {
-		if (prm.tp_type & PJSIP_TRANSPORT_IPV6) {
-			snprintf(local_buf, sizeof(local_buf), "[%.*s]:%hu",
-				(int)pj_strlen(&prm.ret_addr),
-				pj_strbuf(&prm.ret_addr),
-				prm.ret_port);
+		/* Attempt to determine what IP address will we send this packet out of */
+		pjsip_tpmgr_fla2_param_default(&prm);
+		prm.tp_type = tdata->tp_info.transport->key.type;
+		pj_strset2(&prm.dst_host, tdata->tp_info.dst_name);
+		prm.local_if = PJ_TRUE;
+
+		/* If we can't get the local address use what we have already */
+		if (pjsip_tpmgr_find_local_addr2(pjsip_endpt_get_tpmgr(ast_sip_get_pjsip_endpoint()), tdata->pool, &prm) != PJ_SUCCESS) {
+			pj_sockaddr_print(&tdata->tp_info.transport->local_addr, local_buf, sizeof(local_buf), 3);
 		} else {
-			snprintf(local_buf, sizeof(local_buf), "%.*s:%hu",
-				(int)pj_strlen(&prm.ret_addr),
-				pj_strbuf(&prm.ret_addr),
-				prm.ret_port);
+			if (prm.tp_type & PJSIP_TRANSPORT_IPV6) {
+				snprintf(local_buf, sizeof(local_buf), "[%.*s]:%hu",
+					(int)pj_strlen(&prm.ret_addr),
+					pj_strbuf(&prm.ret_addr),
+					prm.ret_port);
+			} else {
+				snprintf(local_buf, sizeof(local_buf), "%.*s:%hu",
+					(int)pj_strlen(&prm.ret_addr),
+					pj_strbuf(&prm.ret_addr),
+					prm.ret_port);
+			}
 		}
+	} else {
+		/* For reliable transports they can only ever come from the transport
+		 * local address.
+		 */
+		pj_sockaddr_print(&tdata->tp_info.transport->local_addr, local_buf, sizeof(local_buf), 3);
 	}
+
 	pj_sockaddr_print(&tdata->tp_info.dst_addr, remote_buf, sizeof(remote_buf), 3);
 
 	cid_hdr = PJSIP_MSG_CID_HDR(tdata->msg);
@@ -152,7 +159,6 @@ static pj_bool_t logging_on_rx_msg(pjsip_rx_data *rdata)
 	char remote_buf[256];
 	char *uuid;
 	struct hepv3_capture_info *capture_info;
-	pjsip_tpmgr_fla2_param prm;
 
 	capture_info = hepv3_create_capture_info(&rdata->pkt_info.packet, rdata->pkt_info.len);
 	if (!capture_info) {
@@ -164,27 +170,33 @@ static pj_bool_t logging_on_rx_msg(pjsip_rx_data *rdata)
 	}
 	pj_sockaddr_print(&rdata->pkt_info.src_addr, remote_buf, sizeof(remote_buf), 3);
 
-	/* Attempt to determine what IP address we probably received this packet on */
-	pjsip_tpmgr_fla2_param_default(&prm);
-	prm.tp_type = rdata->tp_info.transport->key.type;
-	pj_strset2(&prm.dst_host, rdata->pkt_info.src_name);
-	prm.local_if = PJ_TRUE;
+	if (!(rdata->tp_info.transport->flag & PJSIP_TRANSPORT_RELIABLE)) {
+		pjsip_tpmgr_fla2_param prm;
 
-	/* If we can't get the local address use what we have already */
-	if (pjsip_tpmgr_find_local_addr2(pjsip_endpt_get_tpmgr(ast_sip_get_pjsip_endpoint()), rdata->tp_info.pool, &prm) != PJ_SUCCESS) {
-		pj_sockaddr_print(&rdata->tp_info.transport->local_addr, local_buf, sizeof(local_buf), 3);
-	} else {
-		if (prm.tp_type & PJSIP_TRANSPORT_IPV6) {
-			snprintf(local_buf, sizeof(local_buf), "[%.*s]:%hu",
-				(int)pj_strlen(&prm.ret_addr),
-				pj_strbuf(&prm.ret_addr),
-				prm.ret_port);
+		/* Attempt to determine what IP address we probably received this packet on */
+		pjsip_tpmgr_fla2_param_default(&prm);
+		prm.tp_type = rdata->tp_info.transport->key.type;
+		pj_strset2(&prm.dst_host, rdata->pkt_info.src_name);
+		prm.local_if = PJ_TRUE;
+
+		/* If we can't get the local address use what we have already */
+		if (pjsip_tpmgr_find_local_addr2(pjsip_endpt_get_tpmgr(ast_sip_get_pjsip_endpoint()), rdata->tp_info.pool, &prm) != PJ_SUCCESS) {
+			pj_sockaddr_print(&rdata->tp_info.transport->local_addr, local_buf, sizeof(local_buf), 3);
 		} else {
-			snprintf(local_buf, sizeof(local_buf), "%.*s:%hu",
-				(int)pj_strlen(&prm.ret_addr),
-				pj_strbuf(&prm.ret_addr),
-				prm.ret_port);
+			if (prm.tp_type & PJSIP_TRANSPORT_IPV6) {
+				snprintf(local_buf, sizeof(local_buf), "[%.*s]:%hu",
+					(int)pj_strlen(&prm.ret_addr),
+					pj_strbuf(&prm.ret_addr),
+					prm.ret_port);
+			} else {
+				snprintf(local_buf, sizeof(local_buf), "%.*s:%hu",
+					(int)pj_strlen(&prm.ret_addr),
+					pj_strbuf(&prm.ret_addr),
+					prm.ret_port);
+			}
 		}
+	} else {
+		pj_sockaddr_print(&rdata->tp_info.transport->local_addr, local_buf, sizeof(local_buf), 3);
 	}
 
 	uuid = assign_uuid(&rdata->msg_info.cid->id, &rdata->msg_info.to->tag, &rdata->msg_info.from->tag);
@@ -220,10 +232,8 @@ static pjsip_module logging_module = {
 
 static int load_module(void)
 {
-	CHECK_PJSIP_MODULE_LOADED();
-
-	if (!ast_module_check("res_hep.so") || !hepv3_is_loaded()) {
-		ast_log(AST_LOG_WARNING, "res_hep is not loaded or running; declining module load\n");
+	if (!hepv3_is_loaded()) {
+		ast_log(AST_LOG_WARNING, "res_hep is disabled; declining module load\n");
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
@@ -237,9 +247,9 @@ static int unload_module(void)
 	return 0;
 }
 
-AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PJSIP HEPv3 Logger",
-		.support_level = AST_MODULE_SUPPORT_EXTENDED,
-		.load = load_module,
-		.unload = unload_module,
-		.load_pri = AST_MODPRI_DEFAULT,
-	       );
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "PJSIP HEPv3 Logger",
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
+	.load = load_module,
+	.unload = unload_module,
+	.requires = "res_hep,res_pjsip",
+);

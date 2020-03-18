@@ -40,18 +40,30 @@ struct aco_type_internal;
 enum aco_type_t {
 	ACO_GLOBAL,
 	ACO_ITEM,
+	ACO_IGNORE,
 };
 
-/*! \brief Whether a category regex is a blackist or a whitelist */
+/*! Type of category matching to perform */
 enum aco_category_op {
+	/*! Regex based blacklist. */
 	ACO_BLACKLIST = 0,
+	/*! Regex based whitelist. */
 	ACO_WHITELIST,
+	/*! Blacklist with a single string matched with strcasecmp. */
+	ACO_BLACKLIST_EXACT,
+	/*! Whitelist with a single string matched with strcasecmp. */
+	ACO_WHITELIST_EXACT,
+	/*! Blacklist with a NULL terminated array of strings matched with strcasecmp. */
+	ACO_BLACKLIST_ARRAY,
+	/*! Whitelist with a NULL terminated array of strings matched with strcasecmp. */
+	ACO_WHITELIST_ARRAY,
 };
 
 /*! \brief What kind of matching should be done on an option name */
 enum aco_matchtype {
 	ACO_EXACT = 1,
 	ACO_REGEX,
+	ACO_PREFIX,
 };
 
 /*! Callback functions for option parsing via aco_process_config() */
@@ -156,7 +168,7 @@ struct aco_file {
 
 struct aco_info {
 	const char *module; /*!< The name of the module whose config is being processed */
-	int hidden:1;                /*!< If enabled, this config item is hidden from users */
+	unsigned int hidden:1;                /*!< If enabled, this config item is hidden from users */
 	aco_pre_apply_config pre_apply_config; /*!< A callback called after processing, but before changes are applied */
 	aco_post_apply_config post_apply_config;/*!< A callback called after changes are applied */
 	aco_snapshot_alloc snapshot_alloc;     /*!< Allocate an object to hold all global configs and item containers */
@@ -467,6 +479,31 @@ enum aco_option_type {
 	 * {endcode}
 	 */
 	OPT_YESNO_T,
+
+	/*! \brief Type for default option handler for time length signed integers
+	 *
+	 * \note aco_option_register flags:
+	 *   See flags available for use with the PARSE_TIMELEN type for the ast_parse_arg function
+	 * aco_option_register varargs:
+	 *   FLDSET macro with the field of type int
+	 *   The remaining varargs for should be arguments compatible with the varargs for the
+	 *   ast_parse_arg function with the PARSE_TIMELEN type and the flags passed in the
+	 *   aco_option_register flags parameter.
+	 *
+	 * \note In most situations, it is preferable to not pass the PARSE_DEFAULT flag. If a config
+	 * contains an invalid value, it is better to let the config loading fail with warnings so that
+	 * the problem is fixed by the administrator.
+	 *
+	 * Example:
+	 * struct test_item {
+	 *     int timelen;
+	 * };
+	 * {code}
+	 * aco_option_register(&cfg_info, "timelen", ACO_EXACT, my_types, "3", OPT_TIMELEN_T, PARSE_IN_RANGE, FLDSET(struct test_item, intopt), TIMELEN_MILLISECONDS, -10, 10);
+	 * {endcode}
+	 */
+	OPT_TIMELEN_T,
+
 };
 
 /*! \brief A callback function for handling a particular option
@@ -747,11 +784,11 @@ intptr_t aco_option_get_argument(const struct aco_option *option, unsigned int p
  * VA_NARGS(one, two, three) ->                    v
  * VA_NARGS1(one, two, three,  8,  7,  6,  5,  4,  3,  2,  1,  0) ->
  * VA_NARGS1( _1,  _2,    _3, _4, _5, _6, _7, _8,  N, ...       ) N -> 3
- * 
+ *
  * Note that VA_NARGS *does not* work when there are no arguments passed. Pasting an empty
  * __VA_ARGS__ with a comma like ", ##__VA_ARGS__" will delete the leading comma, but it
  * does not work when __VA_ARGS__ is the first argument. Instead, 1 is returned instead of 0:
- * 
+ *
  * VA_NARGS() ->                              v
  * VA_NARGS1(  ,  8,  7,  6,  5,  4,  3,  2,  1,  0) ->
  * VA_NARGS1(_1, _2, _3, _4, _5, _6, _7, _8,  N) -> 1

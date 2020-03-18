@@ -96,10 +96,12 @@ struct ast_ari_response {
 	/*! HTTP response code.
 	 * See http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html */
 	int response_code;
+	/*! File descriptor for whatever file we want to respond with */
+	int fd;
 	/*! Corresponding text for the response code */
 	const char *response_text; /* Shouldn't http.c handle this? */
 	/*! Flag to indicate that no further response is needed */
-	int no_response:1;
+	unsigned int no_response:1;
 };
 
 /*!
@@ -265,15 +267,5 @@ void ast_ari_response_created(struct ast_ari_response *response,
  * \param response Response to fill in.
  */
 void ast_ari_response_alloc_failed(struct ast_ari_response *response);
-
-/*! \brief Determines whether the res_ari module is loaded */
-#define CHECK_ARI_MODULE_LOADED()				\
-	do {							\
-		if (!ast_module_check("res_ari.so")		\
-			|| !ast_ari_oom_json()) {	\
-			return AST_MODULE_LOAD_DECLINE;		\
-		}						\
-	} while(0)
-
 
 #endif /* _ASTERISK_ARI_H */

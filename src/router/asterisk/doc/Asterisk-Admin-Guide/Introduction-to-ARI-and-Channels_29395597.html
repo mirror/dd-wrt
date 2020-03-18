@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Introduction to ARI and Channels</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="29395573.html">Asterisk REST Interface (ARI)</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Introduction to ARI and Channels
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified on Aug 21, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="IntroductiontoARIandChannels-Channels:AnOverview">Channels: An Overview</h1><p>In Asterisk, a channel is a patch of communication between some endpoint and Asterisk itself. The path of communication encompasses all information passed to and from the endpoint. That includes both the signalling (such as &quot;change the state of the device to ringing&quot; or &quot;hangup this call&quot;) as well as media (the actual audio or video being sent/received to/from the endpoint).</p><p>When a channel is created in Asterisk to represent this path of communication, Asterisk assigns it both a <strong>UniqueID</strong> - which acts as a handle to the channel for its entire lifetime - as well as a unique <strong>Name</strong>. The UniqueID can be any globally unique identifier provided by the ARI client. If the ARI client does not provide a UniqueID to the channel, then Asterisk will assign one to the channel itself. By default, it uses an epoch timestamp with a monotonically increasing integer, optionally along with the Asterisk system name.</p><h2 id="IntroductiontoARIandChannels-ChannelstoEndpoints">Channels to Endpoints</h2><p>The channel name consists of two parts: the type of channel being created, along with a descriptive identifier determined by the channel type. What channel types are available depends on how the Asterisk system is configured; for the purposes of most examples, we will use &quot;PJSIP&quot; channels to communicate with SIP devices.</p><p>
+
+<map id="gliffy-map-29687934-9908" name="gliffy-map-29687934-9908"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 493px;" usemap="#gliffy-map-29687934-9908" src="attachments/29395597/29687935.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p><p>In the above diagram, Alice's SIP device has called into Asterisk, and Asterisk has assigned the resulting channel a UniqueID of <strong>Asterisk01-123456789.1</strong>, while the PJSIP channel driver has assigned a name of <strong>PJSIP/Alice-00000001</strong>. In order to manipulate this channel, ARI operations would use the UniqueID Asterisk01-123456789.1 as the handle to the channel.</p></div><div class="columnMacro" style="width:40%;min-width:40%;max-width:40%;"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303052464 {padding: 0px;}
+div.rbtoc1582303052464 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303052464 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303052464'>
+<ul class='toc-indentation'>
+<li><a href='#IntroductiontoARIandChannels-Channels:AnOverview'>Channels: An Overview</a>
+<ul class='toc-indentation'>
+<li><a href='#IntroductiontoARIandChannels-ChannelstoEndpoints'>Channels to Endpoints</a></li>
+<li><a href='#IntroductiontoARIandChannels-InternalChannels-LocalChannels'>Internal Channels - Local Channels</a></li>
+</ul>
+</li>
+<li><a href='#IntroductiontoARIandChannels-ChannelsinaStasisApplication'>Channels in a Stasis Application</a></li>
+<li><a href='#IntroductiontoARIandChannels-Example:InteractingwithChannels'>Example: Interacting with Channels</a>
+<ul class='toc-indentation'>
+<li><a href='#IntroductiontoARIandChannels-Dialplan'>Dialplan</a></li>
+<li><a href='#IntroductiontoARIandChannels-Python'>Python</a>
+<ul class='toc-indentation'>
+<li><a href='#IntroductiontoARIandChannels-channel-dump.py'>channel-dump.py</a></li>
+<li><a href='#IntroductiontoARIandChannels-channel-dump.pyinaction'>channel-dump.py in action</a></li>
+</ul>
+</li>
+<li><a href='#IntroductiontoARIandChannels-JavaScript(Node.js)'>JavaScript (Node.js)</a>
+<ul class='toc-indentation'>
+<li><a href='#IntroductiontoARIandChannels-channel-dump.js'>channel-dump.js</a></li>
+<li><a href='#IntroductiontoARIandChannels-channel-dump.jsinaction'>channel-dump.js in action</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>Channels In Depth</b></div><div class="panelContent">
+<p><ul class='childpages-macro'><li><a href="29395604.html">ARI and Channels: Manipulating Channel State</a></li><li><a href="29395606.html">ARI and Channels: Simple Media Manipulation</a></li><li><a href="29395612.html">ARI and Channels: Handling DTMF</a></li></ul></p>
+</div></div></div></div></div></div><h2 id="IntroductiontoARIandChannels-InternalChannels-LocalChannels">Internal Channels - Local Channels</h2><p>While most channels are between some external endpoint and Asterisk, Asterisk can also create channels that are completely internal within itself. These channels - called <strong>Local</strong> channels - help to move media between various resources within Asterisk.</p><p>Local channel are special in that Local channels always come in pairs of channels. Creating a single Local &quot;channel&quot; will <em>always</em> result in two channels being created in Asterisk. Sitting between the Local channel pairs is a special virtual endpoint that forwards media back and forth between the two Local channel pairs. One end of each Local channel is permanently tied to this virtual endpoint and cannot be moved about - however, the other end of each Local channel can be manipulated in any fashion. All media that enters into one of the Local channel halves is passed out through the other Local channel half, and vice versa.</p><p>
+
+<map id="gliffy-map-29687937-7501" name="gliffy-map-29687937-7501"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 602px;" usemap="#gliffy-map-29687937-7501" src="attachments/29395597/29687938.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p><p>In the above diagram, ARI has created a Local channel, <code>Local/myapp@default</code>. As a result, Asterisk has created a pair of Local channels with the UniqueIDs of <strong>Asterisk01-123456790.1</strong> and <strong>Asterisk01-123456790.2</strong>. The names of the Local channel halves are <strong>Local/myapp@default-00000000;1</strong> and <strong>Local/myapp@default-00000000;2</strong> - where the ;1 and ;2 denote the two halves of the Local channel.</p><h1 id="IntroductiontoARIandChannels-ChannelsinaStasisApplication">Channels in a Stasis Application</h1><p>When a channel is created in Asterisk, it begins to execute dialplan. All channels enter into the dialplan at some location defined by a <strong>context/extension/priority</strong> tuple. Each tuple location in the dialplan defines some Asterisk application that the channel should go execute. When the application completes, the priority in the tuple is increased by one, and the next location in the dialplan is executed. This continues until the dialplan runs out of things to execute, the dialplan application tells the channel to hangup, or until the device itself hangs up.</p><p>Channels are handed over to ARI through the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Application_Stasis">Stasis</a> dialplan application. This special application takes control of the channel from the dialplan, and indicates to an ARI client with a connected websocket that a channel is now ready to be controlled. When this occurs, a <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+REST+Data+Models#Asterisk12RESTDataModels-StasisStart" rel="nofollow">StasisStart</a> event is emitted; when the channel leaves the Stasis dialplan application - either because it was told to leave or because the device hung up - a <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+REST+Data+Models#Asterisk12RESTDataModels-StasisEnd" rel="nofollow">StasisEnd</a> event is emitted. When the StasisEnd event is emitted, ARI no longer controls the channel and the channel is handed back over to the dialplan.</p><p>Resources in Asterisk do not, by default, send events about themselves to a connected ARI application. In order to get events about resources, one of three things must occur:</p><ol><li>The resource must be a channel that entered into a Stasis dialplan application. A subscription is implicitly created in this case. The subscription is implicitly destroyed when the channel leaves the Stasis dialplan application.</li><li>While a channel is in a Stasis dialplan application, the channel may interact with other resources - such as a <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+REST+Data+Models#Asterisk12RESTDataModels-Bridge" rel="nofollow">bridge</a>. While channels interact with the resource, a subscription is made to that resource. When no more channels in a Stasis dialplan application are interacting with the resource, the implicit subscription is destroyed.</li><li>At any time, an ARI application may make a subscription to a resource in Asterisk through <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Applications+REST+API">application</a> operations. While that resource exists, the ARI application owns the subscription.</li></ol><h1 id="IntroductiontoARIandChannels-Example:InteractingwithChannels">Example: Interacting with Channels</h1><p>For this example, we're going to write an ARI application that will do the following:</p><ol><li>When it connects, it will print out the names of all existing channels. If there are no existing channels, it will tell us that as well.</li><li>When a channel enters into its Stasis application, it will print out all of the specific information about that channel.</li><li>When a channel leaves its Stasis application, it will print out that the channel has left.</li></ol><h2 id="IntroductiontoARIandChannels-Dialplan">Dialplan</h2><p>The dialplan for this will be very straight forward: a simple extension that drops a channel into Stasis.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[default]
+
+exten =&gt; 1000,1,NoOp()
+ same =&gt;      n,Answer()
+ same =&gt;      n,Stasis(channel-dump)
+ same =&gt;      n,Hangup()</pre>
+</div></div><h2 id="IntroductiontoARIandChannels-Python">Python</h2><p><span class="confluence-anchor-link" id="IntroductiontoARIandChannels-channel-dump-python"></span></p><p>For our Python examples, we will rely primarily on the <a href="https://github.com/asterisk/ari-py" class="external-link" rel="nofollow">ari-py</a> library. Because the <code>ari</code> library will emit useful information using Python logging, we should go ahead and set that up as well - for now, a <code>basicConfig</code> with <code>ERROR</code> messages displayed should be sufficient. Finally, we'll need to get a client made by initiating a connection to Asterisk. This occurs using the <code>ari.connect</code> method, where we have to specify three things:</p><ol><li>The HTTP base URI of the Asterisk server to connect to. Here, we assume that this is running on the same machine as the script, and that we're using the default port for Asterisk's HTTP server - <code>8088</code>.</li><li>The username of the ARI user account to connect as. In this case, we're specifying it as <code>asterisk</code>.</li><li>The password for the ARI user account. In this case, that's asterisk.</li></ol>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>Modify the connection credentials as appropriate for your server, although many examples will use these credentials.</p><p><strong>Please don't use these credentials in production systems!</strong></p>
+                    </div>
+    </div>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: py; gutter: true" style="font-size:12px;"> #!/usr/bin/env python
+
+import ari
+import logging
+
+logging.basicConfig(level=logging.ERROR)
+
+client = ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;)</pre>
+</div></div><p>Once we've made our connection, our first task is to print out all existing channels or - if there are no channels - print out that there are no channels. The <code>channels</code> resource has an operation for this - <code>GET /channels</code>. Since the <code>ari-py</code> library will dynamically construct operations on objects that map to resource calls using the nickname of an operation, we can use the <code>list</code> method on the <code>channels</code> resource to get all current channels in Asterisk:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 10; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">current_channels = client.channels.list()
+if (len(current_channels) == 0):
+    print &quot;No channels currently :-(&quot;
+else:
+    print &quot;Current channels:&quot;
+    for channel in current_channels:
+        print channel.json.get(&#39;name&#39;) </pre>
+</div></div><p>The <code>GET /channels</code> operation returns back a list of <code>Channel</code> resources. Those resources, however, are returned as JSON from the operation, and while the <code>ari-py</code> library converts the <code>uniqueid</code> of those into an attribute on the object, it leaves the rest of them in the JSON dictionary. Since what we want is the name, we can just extract it ourselves out of the JSON and print it out.</p><p>Our next step involves a bit more - we want to print out all the information about a channel when it enters into our Stasis dialplan application &quot;channel-dump&quot; and print the channel name when it leaves. To do that, we need to subscribe for the <code>StasisStart</code> and <code>StasisEnd</code> events:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 32; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">client.on_channel_event(&#39;StasisStart&#39;, stasis_start_cb)
+client.on_channel_event(&#39;StasisEnd&#39;, stasis_end_cb) </pre>
+</div></div><p>We need two handler functions - <code>stasis_start_cb</code> for the <code>StasisStart</code> event and <code>stasis_end_cb</code> for the <code>StasisEnd</code> event:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 18; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">def stasis_start_cb(channel_obj, ev):
+    &quot;&quot;&quot;Handler for StasisStart event&quot;&quot;&quot;
+
+    channel = channel_obj.get(&#39;channel&#39;)
+    print &quot;Channel %s has entered the application&quot; % channel.json.get(&#39;name&#39;)
+
+    for key, value in channel.json.items():
+        print &quot;%s: %s&quot; % (key, value)
+
+def stasis_end_cb(channel, ev):
+    &quot;&quot;&quot;Handler for StasisEnd event&quot;&quot;&quot;
+
+    print &quot;%s has left the application&quot; % channel.json.get(&#39;name&#39;)</pre>
+</div></div><p>Finally, we need to tell the <code>client</code> to run our application. Once we call <code>client.run</code>, the websocket connection will be made and our application will wait on events infinitely. We can use <code>Ctrl+C</code> to kill it and break the connection.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 35; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">client.run(apps=&#39;channel-dump&#39;) </pre>
+</div></div><h3 id="IntroductiontoARIandChannels-channel-dump.py">channel-dump.py</h3><p>The full source code for <code>channel-dump.py</code> is shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>channel-dump.py</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: py; gutter: true" style="font-size:12px;">#!/usr/bin/env python
+
+import ari
+import logging
+
+logging.basicConfig(level=logging.ERROR)
+
+client = ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;)
+
+current_channels = client.channels.list()
+if (len(current_channels) == 0):
+    print &quot;No channels currently :-(&quot;
+else:
+    print &quot;Current channels:&quot;
+    for channel in current_channels:
+        print channel.json.get(&#39;name&#39;)
+
+def stasis_start_cb(channel_obj, ev):
+    &quot;&quot;&quot;Handler for StasisStart event&quot;&quot;&quot;
+
+    channel = channel_obj.get(&#39;channel&#39;)
+    print &quot;Channel %s has entered the application&quot; % channel.json.get(&#39;name&#39;)
+
+    for key, value in channel.json.items():
+        print &quot;%s: %s&quot; % (key, value)
+
+def stasis_end_cb(channel, ev):
+    &quot;&quot;&quot;Handler for StasisEnd event&quot;&quot;&quot;
+
+    print &quot;%s has left the application&quot; % channel.json.get(&#39;name&#39;)
+
+client.on_channel_event(&#39;StasisStart&#39;, stasis_start_cb)
+client.on_channel_event(&#39;StasisEnd&#39;, stasis_end_cb)
+
+client.run(apps=&#39;channel-dump&#39;)
+
+</pre>
+</div></div><h3 id="IntroductiontoARIandChannels-channel-dump.pyinaction">channel-dump.py in action</h3><p>Here's sample output from <code>channel-dump.py</code>. When it first connects there are no channels in Asterisk - <img class="emoticon emoticon-sad" src="images/icons/emoticons/sad.png" data-emoticon-name="sad" alt="(sad)"/> - but afterwards a PJSIP channel from Alice enters into extension 1000. This prints out all the information about her channels. After hearing silence for awhile, she hangs up - and our script notifies us that her channel has left the application.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">asterisk:~$ python channel-dump.py
+No channels currently :-(
+Channel PJSIP/alice-00000001 has entered the application
+accountcode: 
+name: PJSIP/alice-00000001
+caller: {u&#39;Alice&#39;: u&#39;&#39;, u&#39;6575309&#39;: u&#39;&#39;}
+creationtime: 2014-06-09T17:36:31.698-0500
+state: Up
+connected: {u&#39;name&#39;: u&#39;&#39;, u&#39;number&#39;: u&#39;&#39;}
+dialplan: {u&#39;priority&#39;: 3, u&#39;exten&#39;: u&#39;1000&#39;, u&#39;context&#39;: u&#39;default&#39;}
+id: asterisk-01-1402353503.1
+PJSIP/alice-00000001 has left the application</pre>
+</div></div><h2 id="IntroductiontoARIandChannels-JavaScript(Node.js)">JavaScript (Node.js)</h2><p>For our JavaScript examples, we will rely primarily on the Node.js <a class="external-link" href="https://github.com/asterisk/node-ari-client" rel="nofollow">ari-client</a> library. We'll need to get a client made by initiating a connection to Asterisk. This occurs using the <code>ari.connect</code> method, where we have to specify four things:</p><ol><li>The HTTP base URI of the Asterisk server to connect to. Here, we assume that this is running on the same machine as the script, and that we're using the default port for Asterisk's HTTP server - <code>8088</code>.</li><li>The username of the ARI user account to connect as. In this case, we're specifying it as <code>asterisk</code>.</li><li>The password for the ARI user account. In this case, that's asterisk.</li><li>A callback that will be called with an error if one occurred, followed by an instance of an ARI client.</li></ol>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <div class="message-content"><p>Modify the connection credentials as appropriate for your server, although many examples will use these credentials.</p><p><strong>Please don't use these credentials in production systems!</strong></p></div>
+                    </div>
+    </div>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: js; gutter: true" style="font-size:12px;">/*jshint node:true*/
+&#39;use strict&#39;;
+
+var ari = require(&#39;ari-client&#39;);
+var util = require(&#39;util&#39;);
+
+ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;, clientLoaded);
+
+// handler for client being loaded
+function clientLoaded (err, client) {
+  if (err) {
+    throw err;
+  }
+}</pre>
+</div></div><p>Once we've made our connection, our first task is to print out all existing channels or - if there are no channels - print out that there are no channels. The <code>channels</code> resource has an operation for this - <code>GET /channels</code>. Since the <code>ari-client</code> library will dynamically construct a client with operations on objects that map to resource calls using the nickname of an operation, we can use the <code>list</code> method on the <code>channels</code> resource to get all current channels in Asterisk:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 15; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">client.channels.list(function(err, channels) {
+  if (!channels.length) {
+    console.log(&#39;No channels currently :-(&#39;);
+  } else {
+    console.log(&#39;Current channels:&#39;);
+    channels.forEach(function(channel) {
+      console.log(channel.name);
+    });
+  }
+});</pre>
+</div></div><p>The <code>GET /channels</code> operation expects a callback that will be called with an error if one occurred and a list of <code>Channel</code> resources. <code>ari-client</code> will return a JavaScript object for each <code>Channel</code> resource. Properties such as <code>name</code> can be accessed on the object directly.</p><p>Our next step involves a bit more - we want to print out all the information about a channel when it enters into our Stasis dialplan application &quot;channel-dump&quot; and print the channel name when it leaves. To do that, we need to subscribe for the <code>StasisStart</code> and <code>StasisEnd</code> events:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 43; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">client.on(&#39;StasisStart&#39;, stasisStart);
+client.on(&#39;StasisEnd&#39;, stasisEnd);</pre>
+</div></div><p>We need two callback functions - <code>stasisStart</code> for the <code>StasisStart</code> event and <code>stasisEnd</code> for the <code>StasisEnd</code> event:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 26; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">// handler for StasisStart event
+function stasisStart(event, channel) {
+  console.log(util.format(
+      &#39;Channel %s has entered the application&#39;, channel.name));
+  // use keys on event since channel will also contain channel operations
+  Object.keys(event.channel).forEach(function(key) {
+    console.log(util.format(&#39;%s: %s&#39;, key, JSON.stringify(channel[key])));
+  });
+}
+// handler for StasisEnd event
+function stasisEnd(event, channel) {
+  console.log(util.format(
+      &#39;Channel %s has left the application&#39;, channel.name));
+}</pre>
+</div></div><p>Finally, we need to tell the <code>client</code> to start our application. Once we call <code>client.start</code>, a websocket connection will be established and the client will emit Node.js events as events come in through the websocket. We can use <code>Ctrl+C</code> to kill it and break the connection.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 46; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">client.start(&#39;channel-dump&#39;);</pre>
+</div></div><h3 id="IntroductiontoARIandChannels-channel-dump.js">channel-dump.js</h3><p>The full source code for <code>channel-dump.js</code> is shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: js; gutter: true" style="font-size:12px;">/*jshint node:true*/
+&#39;use strict&#39;;
+
+var ari = require(&#39;ari-client&#39;);
+var util = require(&#39;util&#39;);
+
+ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;, clientLoaded);
+
+// handler for client being loaded
+function clientLoaded (err, client) {
+  if (err) {
+    throw err;
+  }
+
+  client.channels.list(function(err, channels) {
+    if (!channels.length) {
+      console.log(&#39;No channels currently :-(&#39;);
+    } else {
+      console.log(&#39;Current channels:&#39;);
+      channels.forEach(function(channel) {
+        console.log(channel.name);
+      });
+    }
+  });
+
+  // handler for StasisStart event
+  function stasisStart(event, channel) {
+    console.log(util.format(
+        &#39;Channel %s has entered the application&#39;, channel.name));
+
+    // use keys on event since channel will also contain channel operations
+    Object.keys(event.channel).forEach(function(key) {
+      console.log(util.format(&#39;%s: %s&#39;, key, JSON.stringify(channel[key])));
+    });
+  }
+
+  // handler for StasisEnd event
+  function stasisEnd(event, channel) {
+    console.log(util.format(
+        &#39;Channel %s has left the application&#39;, channel.name));
+  }
+
+  client.on(&#39;StasisStart&#39;, stasisStart);
+  client.on(&#39;StasisEnd&#39;, stasisEnd);
+
+  client.start(&#39;channel-dump&#39;);
+}</pre>
+</div></div><h3 id="IntroductiontoARIandChannels-channel-dump.jsinaction">channel-dump.js in action</h3><p>Here's sample output from <code>channel-dump.js</code>. When it first connects there are no channels in Asterisk - <img class="emoticon emoticon-sad" src="images/icons/emoticons/sad.png" data-emoticon-name="sad" alt="(sad)"/> - but afterwards a PJSIP channel from Alice enters into extension 1000. This prints out all the information about her channels. After hearing silence for a while, she hangs up - and our script notifies us that her channel has left the application.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: true" style="font-size:12px;">asterisk:~$ node channel-dump.js
+No channels currently :-(
+Channel PJSIP/alice-00000001 has entered the application
+accountcode: 
+name: PJSIP/alice-00000001
+caller: {u&#39;Alice&#39;: u&#39;&#39;, u&#39;6575309&#39;: u&#39;&#39;}
+creationtime: 2014-06-09T17:36:31.698-0500
+state: Up
+connected: {u&#39;name&#39;: u&#39;&#39;, u&#39;number&#39;: u&#39;&#39;}
+dialplan: {u&#39;priority&#39;: 3, u&#39;exten&#39;: u&#39;1000&#39;, u&#39;context&#39;: u&#39;default&#39;}
+id: asterisk-01-1402353503.1
+PJSIP/alice-00000001 has left the application</pre>
+</div></div>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29395597/29687933.gliffy">ARI - Asterisk Channel to Endpoint.gliffy</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29395597/29687934">ARI - Asterisk channel to endpoint</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29395597/29687935.png">ARI - Asterisk channel to endpoint.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29395597/29687936.gliffy">ARI - Asterisk Local Channels.gliffy</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29395597/29687937">ARI - Asterisk Local Channels</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/29395597/29687938.png">ARI - Asterisk Local Channels.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

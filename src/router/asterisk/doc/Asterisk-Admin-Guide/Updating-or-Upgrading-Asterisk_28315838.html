@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Updating or Upgrading Asterisk</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Operation_27200183.html">Operation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Maintenance-and-Upgrades_27200197.html">Maintenance and Upgrades</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Updating or Upgrading Asterisk
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on May 16, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div><h1 id="UpdatingorUpgradingAsterisk-KeepingtheSystemUp-to-date">Keeping the System Up-to-date</h1><h2 id="UpdatingorUpgradingAsterisk-DefinitionofUpdatesandUpgrades">Definition of Updates and Upgrades</h2><p><strong>Updates</strong> involve installing a new minor version. That is, moving from 11.X.X to 11.X.X vs moving from 11 to 12. New minor versions include bug fixes, some of which may be security related. Typically, there should not be features or new functionality included in a minor version except when the fixing of a bug requires it.</p><p><strong>Upgrades</strong> involve installing a new major version. For example, moving from 11 to 12. New major versions can include bug fixes, new features and functionality, changes to old features or functionality, deprecation of functionality or change in support status.</p><p><strong>Updates and upgrades should only be performed when necessary</strong></p></div><div><ul><li>Reason to Update<br /><ul><li>Your install is affected by a bug or <a href="Asterisk-Security-Vulnerabilities_27199866.html">security vulnerability</a> and you believe the new minor version will fix your issue.</li></ul></li><li>Reason to Upgrade<br /><ul><li>You require new features or enhancements only available in a new major version and are ready for the work involved in upgrading.</li></ul></li></ul><p>When considering an update or upgrade you should be familiar with the <a href="Asterisk-Versions_7667733.html">Asterisk support life-cycle</a>. It is useful to know the support status of the version you may be moving to.</p><h2 id="UpdatingorUpgradingAsterisk-ResearchingaNewAsteriskVersion">Researching a New Asterisk Version</h2></div><p>Included with Asterisk releases are a few files that are useful for researching the version you are considering for update or upgrade. These can be found in the root of the Asterisk source directory.</p><ol><li>UPGRADE.txt - Documents any changes that you need to know about when moving between major versions. Especially changes that break backwards compatibility.</li><li>CHANGES - Documents new or enhanced functionality between versions listed in the file.</li><li>ChangeLog - A log showing all changes (bug fixes, new features, security fixes,etc) between released versions. It can be useful if you are searching for a specific fix or change, but this could be overly verbose for looking at changes between two major versions.</li></ol><h2 id="UpdatingorUpgradingAsterisk-PerformingUpdates">Performing Updates</h2><div>Process</div><div><ol><li>Research the new minor version you intend to update to.</li><li>Be sure you <a href="Asterisk-Backups_28315834.html">have a backup</a> of any essential data on the system.</li><li>If you determine one of those changes will be beneficial for you, only then proceed with an update.</li><li>Download the new version and <a href="Installing-Asterisk_4817553.html">install Asterisk</a>.</li></ol></div><h2 id="UpdatingorUpgradingAsterisk-PerformingUpgrades">Performing Upgrades</h2><div>Process</div><div><ol><li>Research the new major version you are considering for an upgrade.</li><li>Be sure you <a href="Asterisk-Backups_28315834.html">have a backup</a> of any essential data on the system.</li><li>If you determine the new functionality or changes will be beneficial then proceed with the upgrade.</li><li>On a test system, a non-production system, download and <a href="Installing-Asterisk_4817553.html">install the new version</a>.</li><li>Migrate backups of configuration, databases and other data to the new Asterisk install.</li><li>Test this new system, or simulate your production environment before moving this new system into production.<ol><li>Especially test any areas of Asterisk where behavior changes have been noted in the UPGRADE.txt or CHANGES files. APIs, like AGI, AMI or ARI connecting to custom applications or scripts should be thoroughly tested. You should always try to extensively test your dialplan.</li></ol></li></ol><h2 id="UpdatingorUpgradingAsterisk-ThirdPartyModules">Third Party Modules</h2><p>When updating or upgrading Asterisk you should also check for updates to any third party modules you use. That is, modules that are not distributed with Asterisk. Those third party modules may require updates to work with your new version of Asterisk.</p><h2 id="UpdatingorUpgradingAsterisk-UpdateandUpgradeTips">Update and Upgrade Tips</h2></div><div><p> </p>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>Updates and upgrades could include changes to configuration samples.  Sample files will not be updated unless you run &quot;make samples&quot; again or copy the new sample files from the source directory. Be careful not to overwrite your current configuration.</p>
+                    </div>
+    </div>
+    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>Keep old menuselect.makeopts files (see Asterisk source directory) and use them when building a new version to avoid customizing menuselect again when building a new version. This may only work for updates and not upgrades.</p>
+                    </div>
+    </div>
+    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>If you forget to re-build all Asterisk modules currently installed on the system then you may be prompted after compilation with a warning about those modules. That can be resolved by simply re-building those modules or re-installing them if you obtain them in binary form from a third party.</p>
+                    </div>
+    </div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

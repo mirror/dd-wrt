@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Logging</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Operation_27200183.html">Operation</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Logging
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on May 15, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Logging in Asterisk is a powerful mechanism that can be utilized to extract vital information from a running system. Asterisk currently has the capability to log messages to a variety of places that include files, consoles, and the syslog facility. Logging in Asterisk is configured in the logger.conf file. See <a href="Logging-Configuration_28315599.html">Logging Configuration</a> page for more information.</p><p>Along with the options defined in the logger configuration file, <a href="Basic-Logging-Commands_28315847.html">commands are available at runtime</a> that allow a user to manipulate and even override certain settings via the CLI. Additionally <a href="Basic-Logging-Start-up-Options_28315850.html">flags are available</a> with the Asterisk binary that allow similar configuration.</p><p>Most of the configuration for logging is concerning the activation or direction of various logging channels and their verbosity. It is important to note that the verbosity of logging messages is independent between root (or foreground) consoles and remote consoles. An example is provided in the <a href="Verbosity-in-Core-and-Remote-Consoles_28315852.html">Verbosity in Core and Remote consoles sub-section</a>.</p><h2 id="Logging-DialplanLoggingApplications"><strong>Dialplan Logging Applications<br /></strong></h2><p>Logging can also be done in the dialplan utilizing the following applications:</p><h5 id="Logging-Log(&lt;level&gt;,&lt;message&gt;)">Log(&lt;level&gt;, &lt;message&gt;)</h5><p>Send arbitrary text to a selected log level, which must be one of the following: ERROR, WARNING, NOTICE, DEBUG, or VERBOSE.</p><h5 id="Logging-Verbose([&lt;level&gt;,]&lt;message&gt;)">Verbose([&lt;level&gt;,] &lt;message&gt;)</h5><p>Send arbitrary text to verbose output.  &quot;Level&quot; here is an optional integer value (defaults to 0) specifying the verbosity level at which to output the message. </p><h2 id="Logging-OtherLoggingResources"><strong>Other Logging Resources<br /></strong></h2><p>For information about extensive and detailed tracing of queued calls see the <a href="Queue-Logs_5243044.html">queue logs</a> page.  For instructions on how to help administrators and support givers to more quickly understand problems that occur during the course of calls see <a href="Call-Identifier-Logging_21463903.html">call identifier logging</a> page.  Also, if a problem is suspected see <a href="Collecting-Debug-Information_4259941.html">collecting debug information</a> for help on how to collect debugging logs from an Asterisk machine (this can greatly help support and bug marshals).  For details about logging security specific events see the <a href="Asterisk-Security-Event-Logger_5243080.html">asterisk security event logger</a> page.  Lastly, for advice on logging event data that can be grouped together to form a billing record see the<a href="5242932.html"> channel event logging (CEL)</a> page.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

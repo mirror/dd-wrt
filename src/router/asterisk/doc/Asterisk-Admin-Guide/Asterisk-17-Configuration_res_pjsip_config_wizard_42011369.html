@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Configuration_res_pjsip_config_wizard</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Module-Configuration_42010715.html">Asterisk 17 Module Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Configuration_res_pjsip_config_wizard
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Configuration_res_pjsip_config_wizard-Modulethatprividessimpleconfigurationwizardcapabilities.">Module that privides simple configuration wizard capabilities.</h1>
+
+<p>This configuration documentation is for functionality provided by <code>res_pjsip_config_wizard</code>.</p>
+
+<h2 id="Asterisk17Configuration_res_pjsip_config_wizard-Overview">Overview</h2>
+
+<p><strong>PJSIP Configuration Wizard</strong></p>
+
+<p>This module allows creation of common PJSIP configuration scenarios without having to specify individual endpoint, aor, auth, identify and registration objects.</p>
+
+
+
+<p>For example, the following configuration snippet would create the endpoint, aor, contact, auth and phoneprov objects necessary for a phone to get phone provisioning information, register, and make and receive calls. A hint is also created in the default context for extension 1000.</p>
+
+
+
+<p>[myphone]</p>
+
+<p>type = wizard</p>
+
+<p>sends_auth = no</p>
+
+<p>accepts_auth = yes</p>
+
+<p>sends_registrations = no</p>
+
+<p>accepts_registrations = yes</p>
+
+<p>has_phoneprov = yes</p>
+
+<p>transport = ipv4</p>
+
+<p>has_hint = yes</p>
+
+<p>hint_exten = 1000</p>
+
+<p>inbound_auth/username = testname</p>
+
+<p>inbound_auth/password = test password</p>
+
+<p>endpoint/allow = ulaw</p>
+
+<p>endpoint/context = default</p>
+
+<p>phoneprov/MAC = 001122aa4455</p>
+
+<p>phoneprov/PROFILE = profile1</p>
+
+
+
+<p>The first 8 items are specific to the wizard. The rest of the items are passed verbatim to the underlying objects.</p>
+
+
+
+<p>The following configuration snippet would create the endpoint, aor, contact, auth, identify and registration objects necessary for a trunk to another pbx or ITSP that requires registration.</p>
+
+
+
+<p>[mytrunk]</p>
+
+<p>type = wizard</p>
+
+<p>sends_auth = yes</p>
+
+<p>accepts_auth = no</p>
+
+<p>sends_registrations = yes</p>
+
+<p>accepts_registrations = no</p>
+
+<p>transport = ipv4</p>
+
+<p>remote_hosts = sip1.myitsp.com:5060,sip2.myitsp.com:5060</p>
+
+<p>outbound_auth/username = testname</p>
+
+<p>outbound_auth/password = test password</p>
+
+<p>endpoint/allow = ulaw</p>
+
+<p>endpoint/context = default</p>
+
+
+
+<p>Of course, any of the items in either example could be placed into templates and shared among wizard objects.</p>
+
+
+
+<p>For more information, visit:</p>
+
+<p><a class="external-link" href="https://wiki.asterisk.org/wiki/display/AST/PJSIP+Configuration+Wizard" rel="nofollow">https://wiki.asterisk.org/wiki/display/AST/PJSIP+Configuration+Wizard</a></p>
+
+
+<h2 id="Asterisk17Configuration_res_pjsip_config_wizard-pjsip_wizard.conf">pjsip_wizard.conf</h2>
+
+<h3 id="Asterisk17Configuration_res_pjsip_config_wizard-wizard">wizard</h3>
+
+<p>Provides config wizard.</p>
+
+<h4 id="Asterisk17Configuration_res_pjsip_config_wizard-ConfigurationOptionReference">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>type</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Must be 'wizard'. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_transport"><code>transport</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> The name of a transport to use for this object. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_remote_hosts"><code>remote_hosts</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> List of remote hosts. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_outbound_proxy"><code>outbound_proxy</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Shortcut for specifying proxy on individual objects. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_sends_auth"><code>sends_auth</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Send outbound authentication to remote hosts. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_accepts_auth"><code>accepts_auth</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Accept incoming authentication from remote hosts. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_sends_registrations"><code>sends_registrations</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Send outbound registrations to remote hosts. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_sends_line_with_registrations"><code>sends_line_with_registrations</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Sets &quot;line&quot; and &quot;endpoint parameters on registrations. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_accepts_registrations"><code>accepts_registrations</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Accept inbound registration from remote hosts. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_has_phoneprov"><code>has_phoneprov</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Create a phoneprov object for this endpoint. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_server_uri_pattern"><code>server_uri_pattern</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>sip:REMOTE_HOST</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> A pattern to use for constructing outbound registration server_uris. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_client_uri_pattern"><code>client_uri_pattern</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>sip:USERNAMEREMOTE_HOST</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> A pattern to use for constructing outbound registration client_uris. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_contact_pattern"><code>contact_pattern</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>sip:REMOTE_HOST</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> A pattern to use for constructing outbound contact uris. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_has_hint"><code>has_hint</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Create hint and optionally a default application. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_hint_context"><code>hint_context</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>endpoint/context or 'default'</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> The context in which to place hints. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_hint_exten"><code>hint_exten</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Extension to map a PJSIP hint to. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_hint_application"><code>hint_application</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Application to call when 'hint_exten' is dialed. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>endpoint/*</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Variables to be passed directly to the endpoint. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_aor/*"><code>aor/*</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Variables to be passed directly to the aor. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>inbound_auth/*</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Variables to be passed directly to the inbound auth. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>outbound_auth/*</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Variables to be passed directly to the outbound auth. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_identify/*"><code>identify/*</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Variables to be passed directly to the identify. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>registration/*</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Variables to be passed directly to the outbound registrations. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_config_wizard-wizard_phoneprov/*"><code>phoneprov/*</code></a> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> Variables to be passed directly to the phoneprov object. </p></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="Asterisk17Configuration_res_pjsip_config_wizard-ConfigurationOptionDescriptions">Configuration Option Descriptions</h4>
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_transport"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-transport">transport</h5>
+
+<p>If not specified, the default will be used.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_remote_hosts"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-remote_hosts">remote_hosts</h5>
+
+<p>A comma-separated list of remote hosts in the form of <em>host</em>[:<em>port</em>]. If set, an aor static contact and an identify match will be created for each entry in the list. If send_registrations is also set, a registration will also be created for each.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_outbound_proxy"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-outbound_proxy">outbound_proxy</h5>
+
+<p>Shortcut for specifying endpoint/outbound_proxy, aor/outbound_proxy, and registration/outbound_proxy individually.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_sends_auth"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-sends_auth">sends_auth</h5>
+
+<p>At least outbound_auth/username is required.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_accepts_auth"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-accepts_auth">accepts_auth</h5>
+
+<p>At least inbound_auth/username is required.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_sends_registrations"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-sends_registrations">sends_registrations</h5>
+
+<p>remote_hosts is required and a registration object will be created for each host in the remote _hosts string. If authentication is required, sends_auth and an outbound_auth/username must also be supplied.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_sends_line_with_registrations"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-sends_line_with_registrations">sends_line_with_registrations</h5>
+
+<p>Setting this to true will cause the wizard to skip the creation of an identify object to match incoming requests to the endpoint and instead add the line and endpoint parameters to the outbound registration object.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_accepts_registrations"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-accepts_registrations">accepts_registrations</h5>
+
+<p>An AOR with dynamic contacts will be created. If the number of contacts nneds to be limited, set aor/max_contacts.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_has_phoneprov"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-has_phoneprov">has_phoneprov</h5>
+
+<p>A phoneprov object will be created. phoneprov/MAC must be specified.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_server_uri_pattern"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-server_uri_pattern">server_uri_pattern</h5>
+
+<p>The literal <code>${REMOTE_HOST</code>} will be substituted with the appropriate remote_host for each registration.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_client_uri_pattern"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-client_uri_pattern">client_uri_pattern</h5>
+
+<p>The literals <code>${REMOTE_HOST</code>} and <code>${USERNAME</code>} will be substituted with the appropriate remote_host and outbound_auth/username.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_contact_pattern"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-contact_pattern">contact_pattern</h5>
+
+<p>The literal <code>${REMOTE_HOST</code>} will be substituted with the appropriate remote_host for each contact.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_has_hint"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-has_hint">has_hint</h5>
+
+<p>Create hint and optionally a default application.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_hint_context"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-hint_context">hint_context</h5>
+
+<p>Ignored if <code>hint_exten</code> is not specified otherwise specifies the context into which the dialplan hints will be placed. If not specified, defaults to the endpoint's context or <code>default</code> if that isn't found.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_hint_exten"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-hint_exten">hint_exten</h5>
+
+<p>Will create the following entry in <code>hint_context</code>:</p>
+
+<p><code>exten =&gt; &lt;hint_exten&gt;,hint,PJSIP/&lt;wizard_id&gt;</code></p>
+
+
+
+<p>Normal dialplan precedence rules apply so if there's already a hint for this extension in <code>hint_context</code>, this one will be ignored. For more information, visit:</p>
+
+<p><a class="external-link" href="https://wiki.asterisk.org/wiki/display/AST/PJSIP+Configuration+Wizard" rel="nofollow">https://wiki.asterisk.org/wiki/display/AST/PJSIP+Configuration+Wizard</a></p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_hint_application"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-hint_application">hint_application</h5>
+
+<p>Ignored if <code>hint_exten</code> isn't specified otherwise will create the following priority 1 extension in <code>hint_context</code>:</p>
+
+<p><code>exten =&gt; &lt;hint_exten&gt;,1,&lt;hint_application&gt;</code></p>
+
+
+
+<p>You can specify any valid extensions.conf application expression.</p>
+
+<p>Examples:</p>
+
+<p><code>Dial(${HINT})</code></p>
+
+<p><code>Gosub(stdexten,${EXTEN},1(${HINT}))</code></p>
+
+
+
+<p>Any extensions.conf style variables specified are passed directly to the dialplan.</p>
+
+
+
+<p>Normal dialplan precedence rules apply so if there's already a priority 1 application for this specific extension in <code>hint_context</code>, this one will be ignored. For more information, visit:</p>
+
+<p><a class="external-link" href="https://wiki.asterisk.org/wiki/display/AST/PJSIP+Configuration+Wizard" rel="nofollow">https://wiki.asterisk.org/wiki/display/AST/PJSIP+Configuration+Wizard</a></p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_aor/*"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-aor/*">aor/*</h5>
+
+<p>If an aor/contact is explicitly defined then remote_hosts will not be used to create contacts automatically.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_identify/*"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-identify/*">identify/*</h5>
+
+<p>If an identify/match is explicitly defined then remote_hosts will not be used to create matches automatically.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_config_wizard-wizard_phoneprov/*"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_config_wizard-phoneprov/*">phoneprov/*</h5>
+
+<p>To activate phoneprov, at least phoneprov/MAC must be set.</p>
+
+
+
+<h3 id="Asterisk17Configuration_res_pjsip_config_wizard-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

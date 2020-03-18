@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Keepalives</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Skinny_22088152.html">Skinny</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Skinny-Dev-Notes_22773813.html">Skinny Dev Notes</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Keepalives
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Damien Wedhorn</span>, last modified on Jul 16, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Been doing some mucking around with cisco phones. Things found out about keepalives documented here.</p>
+
+<p>It appears the minimum keepalive is 10. Any setting below this reverts to the the device setting 10 seconds.</p>
+
+<p>Keepalive timings seem to vary by device type (and probably firmware).</p>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Device </p></th>
+<th class="confluenceTh"><p> F/Ware </p></th>
+<th class="confluenceTh"><p> Proto </p></th>
+<th class="confluenceTh"><p> 1st KA </p></th>
+<th class="confluenceTh"><p> Behavior w/ no response </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> 7960 </p></td>
+<td class="confluenceTd"><p> 7.2(3.0)  </p></td>
+<td class="confluenceTd"><p> 6  </p></td>
+<td class="confluenceTd"><p> 15 Sec </p></td>
+<td class="confluenceTd"><p> KA, KA, KA, UNREG </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> 7961 </p></td>
+<td class="confluenceTd"><p> 8.5.4(1.6 </p></td>
+<td class="confluenceTd"><p> 17 </p></td>
+<td class="confluenceTd"><p> As set </p></td>
+<td class="confluenceTd"><p> KA, KA*2, KA*2, UNREG </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> 7920 </p></td>
+<td class="confluenceTd"><p> 4.0-3-2   </p></td>
+<td class="confluenceTd"><p> 5  </p></td>
+<td class="confluenceTd"><p> As set </p></td>
+<td class="confluenceTd"><p> KA, KA, KA, KA+Reset Conn </p></td>
+</tr>
+</tbody></table></div>
+
+
+
+<p>For example, with keepalive set to 20:</p>
+<ul class="alternate">
+	<li>the 7960 will UNREG in 75 sec (ka@15, ka@35, ka@55, unreg@75) (straight after registration); or</li>
+	<li>the 7960 will UNREG in 80 sec (ka@20, ka@40, ka@60, unreg@80) (after 1 keepalive ack sent);</li>
+	<li>the 7961 will UNREG in 120 sec (ka@20, ka@60, ka@100, unreg@120).</li>
+</ul>
+
+
+<p>Other info:</p>
+<ul class="alternate">
+	<li>Devices appear to consider themselves still registered (with no indication provided to user) until the unregister/reset conn occurs.</li>
+	<li>Devices generally do not respond to keepalives or reset their own timings (see below for exception)</li>
+	<li>After unregister (but no reset obviously) keepalives are still sent, further, the device now responds to keepalives with a keepalive_ack, but this doesn't affect the timing of their own keepalives.</li>
+</ul>
+
+
+<p>chan_skinny impact:</p>
+<ul class="alternate">
+	<li>need to revise keepalive timing with is currently set to unregister at 1.1 * keepalive time</li>
+</ul>
+
+
+<p>Testing wifi (7920 with keepalive set to 20), immediately after a keepalive:</p>
+<ul class="alternate">
+	<li>removed from range for 55 secs - at 58 secs 3 keepalives received, connection remains.</li>
+	<li>removed from range for 65 secs - at about 80 secs, connection reset and device reloads.</li>
+	<li>server set to ignore 2 keepalives - 3rd keepalive at just under 60secs, connection remains.</li>
+	<li>server set to ignore 3 keepalives - 4th keepalive at just under 80secs, connection reset by device anyway.</li>
+	<li>looks like timing should be about 3*keepalive (ie 60secs), maybe 5*keepalive for 7961 (v17?)</li>
+</ul>
+
+
+<p>More on ignoring keepalives at the server (with the 7920) (table below)</p>
+<ul class="alternate">
+	<li>if keepalive is odd, the time used is rounded up to the next even number (ie 15 will result in 16 secs)</li>
+	<li>the first keepalive is delayed by 1 sec if keepalive is less than 30, 15 secs if less than 120, else 105 secs</li>
+	<li>these two lead to some funny numbers</li>
+	<li>if set to 119, the first will be at 135 secs (119 rounded up + 15), and subsequent each 120 secs</li>
+	<li>if set to 120, the first will be at 225 secs (120 not rounded + 105), and subsequent each 120 secs</li>
+	<li>similarly if set to 29, the first will be 31 then 30, where if set to 30 the first will be 45 then 30</li>
+	<li>only tested out to 600 secs (where the first is still delayed by 105 secs)</li>
+	<li>device resets the connection 20 secs after the 3rd unreplied keepalive</li>
+	<li>keepalives below 20 seem unreliable in that they do not reset the connection</li>
+	<li>above 20secs and after the first keepalive, the device will reset at (TRUNC((KA+1)/2)*2)*3+20</li>
+	<li>before the first keepalive, add 1 if KA&lt;30, add 15 if KA&lt;120, else add 105</li>
+	<li>actually, about a second earlier. After the first missed KA, the next will be about a second early</li>
+	<li>not valid for other devices</li>
+</ul>
+
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p>Set	</p></th>
+<th class="confluenceTh"><p>First (s)	</p></th>
+<th class="confluenceTh"><p>Then (s)	</p></th>
+<th class="confluenceTh"><p>Packets (#)	</p></th>
+<th class="confluenceTh"><p>Reset (s) </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p>20	</p></td>
+<td class="confluenceTd"><p>21	</p></td>
+<td class="confluenceTd"><p>20	</p></td>
+<td class="confluenceTd"><p>3	</p></td>
+<td class="confluenceTd"><p>20 </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>25	</p></td>
+<td class="confluenceTd"><p>27	</p></td>
+<td class="confluenceTd"><p>26	</p></td>
+<td class="confluenceTd"><p>3	</p></td>
+<td class="confluenceTd"><p>20 </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>26	</p></td>
+<td class="confluenceTd"><p>27	</p></td>
+<td class="confluenceTd"><p>26	</p></td>
+<td class="confluenceTd"><p>3	</p></td>
+<td class="confluenceTd"><p>20 </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>29	</p></td>
+<td class="confluenceTd"><p>31	</p></td>
+<td class="confluenceTd"><p>30	</p></td>
+<td class="confluenceTd"><p>3	</p></td>
+<td class="confluenceTd"><p>20 </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>30	</p></td>
+<td class="confluenceTd"><p>45	</p></td>
+<td class="confluenceTd"><p>30	</p></td>
+<td class="confluenceTd"><p>3	</p></td>
+<td class="confluenceTd"><p>20 </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>60	</p></td>
+<td class="confluenceTd"><p>75	</p></td>
+<td class="confluenceTd"><p>60	</p></td>
+<td class="confluenceTd"><p>3	</p></td>
+<td class="confluenceTd"><p>20 </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>90	</p></td>
+<td class="confluenceTd"><p>105	</p></td>
+<td class="confluenceTd"><p>90	</p></td>
+<td class="confluenceTd"><p>3	</p></td>
+<td class="confluenceTd"><p>20 </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>119	</p></td>
+<td class="confluenceTd"><p>135	</p></td>
+<td class="confluenceTd"><p>120	</p></td>
+<td class="confluenceTd"><p>3	</p></td>
+<td class="confluenceTd"><p>20 </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>120	</p></td>
+<td class="confluenceTd"><p>225	</p></td>
+<td class="confluenceTd"><p>120	</p></td>
+<td class="confluenceTd"><p>3	</p></td>
+<td class="confluenceTd"><p>20 </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>600	</p></td>
+<td class="confluenceTd"><p>705	</p></td>
+<td class="confluenceTd"><p>600	</p></td>
+<td class="confluenceTd"><p>3	</p></td>
+<td class="confluenceTd"><p>20 </p></td>
+</tr>
+</tbody></table></div>
+
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

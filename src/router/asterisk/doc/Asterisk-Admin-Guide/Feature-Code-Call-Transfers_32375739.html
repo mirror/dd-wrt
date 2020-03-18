@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Feature Code Call Transfers</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Features_4260053.html">Features</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Feature Code Call Transfers
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on Jun 29, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="FeatureCodeCallTransfers-OverviewofFeatureCodeCallTransfers">Overview of Feature Code Call Transfers</h1><p>A call transfer is when one party of a call directs Asterisk to connect the other party to a new location on the system.</p><p>Transfer types supported by the Asterisk core:</p><ul><li>Blind transfer</li><li>Attended transfer<ul><li>Variations on attended transfer behavior</li></ul></li></ul><p>Transfer features provided by the Asterisk core are configured in features.conf and accessed with feature codes.</p><p>Channel driver technologies such as chan_sip and chan_pjsip have native capability for various transfer types. That native transfer functionality is independent of this core transfer functionality. The core feature code transfer functionality is channel agnostic.</p></div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303030501 {padding: 0px;}
+div.rbtoc1582303030501 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303030501 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303030501'>
+<ul class='toc-indentation'>
+<li><a href='#FeatureCodeCallTransfers-OverviewofFeatureCodeCallTransfers'>Overview of Feature Code Call Transfers</a>
+<ul class='toc-indentation'>
+<li><a href='#FeatureCodeCallTransfers-Blindtransfer'>Blind transfer</a></li>
+<li><a href='#FeatureCodeCallTransfers-Attendedtransfer'>Attended transfer</a></li>
+</ul>
+</li>
+<li><a href='#FeatureCodeCallTransfers-ConfiguringTransferFeatures'>Configuring Transfer Features</a>
+<ul class='toc-indentation'>
+<li><a href='#FeatureCodeCallTransfers-Enablingblindorattendedtransfers'>Enabling blind or attended transfers</a></li>
+<li><a href='#FeatureCodeCallTransfers-Featurecodesforattendedtransfercontrol'>Feature codes for attended transfer control</a></li>
+<li><a href='#FeatureCodeCallTransfers-Configuringattendedtransfercallbacks'>Configuring attended transfer callbacks</a></li>
+</ul>
+</li>
+<li><a href='#FeatureCodeCallTransfers-BehaviorOptions'>Behavior Options</a></li>
+<li><a href='#FeatureCodeCallTransfers-BasicTransferExamples'>Basic Transfer Examples</a>
+<ul class='toc-indentation'>
+<li><a href='#FeatureCodeCallTransfers-Makingablindtransfer'>Making a blind transfer</a></li>
+<li><a href='#FeatureCodeCallTransfers-Makinganattendedtransfer'>Making an attended transfer</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h2 id="FeatureCodeCallTransfers-Blindtransfer">Blind transfer</h2><p>A blind or unsupervised transfer is where the initiating party is blind to what is happening after initiating the transfer. They are removed from the process as soon as they initiate the transfer. It is a sort of &quot;fire and forget&quot; transfer.</p><h2 id="FeatureCodeCallTransfers-Attendedtransfer">Attended transfer</h2><p>An attended or supervised transfer happens when one party transfers another party to a new location by first dialing the transfer destination and only completing the transfer when ready. The initiating party is attending or supervising the transfer process by contacting the destination before completing the transfer. This is helpful if the transfer initiator wants to make sure someone answers or is ready at the destination.</p><h1 id="FeatureCodeCallTransfers-ConfiguringTransferFeatures">Configuring Transfer Features</h1><p>There are three primary requirements for the use of core transfer functionality.</p><ul><li>The transfer type must be enabled and assigned a DTMF digit string in features.conf or per channel - see (((Dynamic DTMF Features)))</li><li>The channel must allow the type of transfer attempted. This can be configured via the Application invoking the channel such as Dial or Queue.</li><li>The channels involved must be answered and bridged.</li></ul><h2 id="FeatureCodeCallTransfers-Enablingblindorattendedtransfers">Enabling blind or attended transfers</h2><p>In features.conf you must configure the blindxfer or atxfer options in the featuremap section. The options are configured with the DTMF character string you want to use for accessing the feature.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[featuremap]
+blindxfer = #1
+atxfer = *2</pre>
+</div></div><p>Now that you have the feature enabled you need to configure the dialplan such that a particular channel will be allowed to use the feature.</p><p>As an example if you want to allow transfers via the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_Dial">Dial</a> application you can use two options, &quot;t&quot; or &quot;T&quot;.</p><ul><li>t - Allow the called party to transfer the calling party by sending the DTMF sequence defined in features.conf. This setting does not perform policy enforcement on transfers initiated by other methods</li><li>T - Allow the calling party to transfer the called party by sending the DTMF sequence defined in features.conf. This setting does not perform policy enforcement on transfers initiated by other methods.</li></ul><p>Setting these options for Dial in extensions.conf would look similar to the following:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten = 102,1,Dial(PJSIP/BOB,30,T)</pre>
+</div></div><p>Asterisk should be restarted or relevant modules should be reloaded for changes to take effect.</p>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>The same arguments (&quot;t&quot; and &quot;T&quot;) work for the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_Queue">Queue</a> and <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Application_Dial">Dial</a> applications!</p>
+                    </div>
+    </div>
+<h2 id="FeatureCodeCallTransfers-Featurecodesforattendedtransfercontrol">Feature codes for attended transfer control</h2><p>There are a few additional feature codes related to attended transfers. These features allow you to vary the behavior of an attended transfer on command. They are all configured in the 'general' section of features.conf</p><h3 id="FeatureCodeCallTransfers-Abortinganattendedtransfer">Aborting an attended transfer</h3><p>Dialing the <strong>atxferabort</strong> code aborts an attended transfer. Otherwise there is no way to abort an attended transfer.</p><h3 id="FeatureCodeCallTransfers-Completinganattendedtransfer">Completing an attended transfer</h3><p>Dialing the <strong>atxfercomplete</strong> code completes an attended transfer and drops out of the call without having to hang up.</p><h3 id="FeatureCodeCallTransfers-Completinganattendedtransferasathree-waybridge">Completing an attended transfer as a three-way bridge</h3><p>Dialing the <strong>atxferthreeway</strong> code completes an attended transfer and enters a bridge with both of the other parties.</p><h3 id="FeatureCodeCallTransfers-Swappingbetweenthetransfereeanddestination">Swapping between the transferee and destination</h3><p>Dialing the <strong>atxferswap</strong> code swaps you between bridges with either party before the transfer is complete. This allows you to talk to either party one at a time before finalizing the attended transfer.</p><h3 id="FeatureCodeCallTransfers-Exampleconfiguration">Example configuration</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[general]
+atxferabort = *3
+atxfercomplete = *4
+atxferthreeway = *5
+atxferswap = *6</pre>
+</div></div><h2 id="FeatureCodeCallTransfers-Configuringattendedtransfercallbacks">Configuring attended transfer callbacks</h2><p>By default Asterisk will call back the initiator of the transfer if they hang up before the target answers and the answer timeout is reached. There are a few options for configuring this behavior.</p><h3 id="FeatureCodeCallTransfers-Noanswertimeout">No answer timeout</h3><p><strong>atxfernoanswertimeout</strong> allows you to define the timeout for attended transfers. This is the amount of time (in seconds) Asterisk will attempt to ring the target before giving up.</p><h3 id="FeatureCodeCallTransfers-Droppedcallbehavior">Dropped call behavior</h3><p><strong>atxferdropcall</strong> allows you to change the default callback behavior. The default is 'no' which results in Asterisk calling back the initiator of a transfer when they hang up early and the attended transfer times out. If set to 'yes' then the transfer target channel will be immediately transferred to the channel being transferred as soon as the initiator hangs up.</p><h3 id="FeatureCodeCallTransfers-Loopdelaytiming">Loop delay timing</h3><p><strong>atxferloopdelay</strong> sets the number of seconds to wait between callback retries. This option is only relevant when atxferdropcall=no (or is undefined).</p><h3 id="FeatureCodeCallTransfers-Numberofretriesforcallbacks">Number of retries for callbacks</h3><p><strong>atxfercallbackretries</strong> sets the number of times Asterisk will try to send a failed attended transfer back to the initiator. The default is 2.</p><h3 id="FeatureCodeCallTransfers-ExampleConfiguration">Example Configuration</h3><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[general]
+atxfernoanswertimeout = 15 
+atxferdropcall = no 
+atxferloopdelay = 10 
+atxfercallbackretries = 2</pre>
+</div></div><h1 id="FeatureCodeCallTransfers-BehaviorOptions">Behavior Options</h1><p>These options are configured in the &quot;[general]&quot; section of features.conf</p><h3 id="FeatureCodeCallTransfers-Generaltransferoptions">General transfer options</h3><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>;transferdigittimeout = 3 ; Number of seconds to wait between digits when transferring a call
+; (default is 3 seconds)</pre>
+</div></div><h3 id="FeatureCodeCallTransfers-Attendedtransferoptions">Attended transfer options</h3><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>;xfersound = beep ; to indicate an attended transfer is complete
+;xferfailsound = beeperr ; to indicate a failed transfer
+;transferdialattempts = 3 ; Number of times that a transferer may attempt to dial an extension before
+; being kicked back to the original call.
+;transferretrysound = &quot;beep&quot; ; Sound to play when a transferer fails to dial a valid extension.
+;transferinvalidsound = &quot;beeperr&quot; ; Sound to play when a transferer fails to dial a valid extension and is out of retries.
+</pre>
+</div></div><h1 id="FeatureCodeCallTransfers-BasicTransferExamples">Basic Transfer Examples</h1><p>In the previous section we configured #1 and *2 as our features codes. We also passed the &quot;T&quot; argument in the Dial application at 102 to allow transfers by the calling party.</p><p>Our hypothetical example includes a few devices:</p><ul><li>PJSIP/ALICE at extension 101</li><li>PJSIP/BOB at extension 102</li><li>PJSIP/CATHY at extension 103</li></ul><h2 id="FeatureCodeCallTransfers-Makingablindtransfer">Making a blind transfer</h2><p>For blind transfers we configured the #1 feature code.</p><p>An example call flow:</p><ul><li>ALICE dials extension 102 to call BOB</li><li>ALICE decides to transfer BOB to extension 103, so she dials #1. Asterisk will play the audio prompt &quot;transfer&quot;.</li><li>ALICE enters the digits 103 for the destination extension.</li><li>Asterisk immediately hangs up the channel between ALICE and BOB. Asterisk creates a new channel for BOB that is dialing extension 103.</li></ul><h2 id="FeatureCodeCallTransfers-Makinganattendedtransfer">Making an attended transfer</h2><p>For attended transfers we configured *2 as our feature code.</p><p>An example call flow:</p><ul><li>ALICE dials extension 102 to call BOB and BOB answers.</li><li>ALICE decides to transfer BOB to extension 103, so she dials *2. Asterisk plays the audio prompt &quot;transfer&quot;.</li><li>ALICE enters the digits 103 for the destination extension. Asterisk places BOB on hold and creates a channel for ALICE to dial CATHY.</li><li>CATHY answers - ALICE and CATHY talk. ALICE decides to complete the transfer and hangs up the phone.</li><li>Asterisk immediately hangs up the channel between ALICE and BOB. Asterisk plays a short beep tone to CATHY and then bridges the channels for BOB and CATHY.</li></ul><br /><p> </p></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

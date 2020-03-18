@@ -25,8 +25,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/astobj2.h"
 #include "asterisk/paths.h"
 #include "asterisk/stasis_app_recording.h"
@@ -59,6 +57,24 @@ const char *stasis_app_stored_recording_get_file(
 		return NULL;
 	}
 	return recording->file;
+}
+
+const char *stasis_app_stored_recording_get_filename(
+	struct stasis_app_stored_recording *recording)
+{
+	if (!recording) {
+		return NULL;
+	}
+	return recording->file_with_ext;
+}
+
+const char *stasis_app_stored_recording_get_extension(
+	struct stasis_app_stored_recording *recording)
+{
+	if (!recording) {
+		return NULL;
+	}
+	return recording->format;
 }
 
 /*!
@@ -107,18 +123,9 @@ static int split_path(const char *path, char **dir, char **file)
 		return -1;
 	}
 
-#if defined(__AST_DEBUG_MALLOC)
 	*dir = ast_strdup(real_dir); /* Dupe so we can ast_free() */
-#else
-	/*
-	 * ast_std_free() and ast_free() are the same thing at this time
-	 * so we don't need to dupe.
-	 */
-	*dir = real_dir;
-	real_dir = NULL;
-#endif	/* defined(__AST_DEBUG_MALLOC) */
 	*file = ast_strdup(file_portion);
-	return 0;
+	return (*dir && *file) ? 0 : -1;
 }
 
 struct match_recording_data {
@@ -314,6 +321,7 @@ struct stasis_app_stored_recording *stasis_app_stored_recording_find_by_name(
 	RAII_VAR(char *, file_with_ext, NULL, ast_free);
 	int res;
 	struct stat file_stat;
+	int prefix_len = strlen(ast_config_AST_RECORDING_DIR);
 
 	errno = 0;
 
@@ -334,18 +342,28 @@ struct stasis_app_stored_recording *stasis_app_stored_recording_find_by_name(
 	ast_string_field_build(recording, file, "%s/%s", dir, file);
 
 	if (!ast_begins_with(dir, ast_config_AST_RECORDING_DIR)) {
-		/* Attempt to escape the recording directory */
-		ast_log(LOG_WARNING, "Attempt to access invalid recording %s\n",
-			name);
-		errno = EACCES;
-		return NULL;
+		/* It's possible that one or more component of the recording path is
+		 * a symbolic link, this would prevent dir from ever matching. */
+		char *real_basedir = realpath(ast_config_AST_RECORDING_DIR, NULL);
+
+		if (!real_basedir || !ast_begins_with(dir, real_basedir)) {
+			/* Attempt to escape the recording directory */
+			ast_log(LOG_WARNING, "Attempt to access invalid recording directory %s\n",
+				dir);
+			ast_std_free(real_basedir);
+			errno = EACCES;
+
+			return NULL;
+		}
+
+		prefix_len = strlen(real_basedir);
+		ast_std_free(real_basedir);
 	}
 
 	/* The actual name of the recording is file with the config dir
 	 * prefix removed.
 	 */
-	ast_string_field_set(recording, name,
-		recording->file + strlen(ast_config_AST_RECORDING_DIR) + 1);
+	ast_string_field_set(recording, name, recording->file + prefix_len + 1);
 
 	file_with_ext = find_recording(dir, file);
 	if (!file_with_ext) {
