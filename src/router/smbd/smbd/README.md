@@ -113,7 +113,7 @@ build your kernel
 9. HMAC-SHA256 Signing
 10. Secure negotiate
 11. Signing Update
-12. Preautentication integrity(SMB 3.1.1)
+12. Pre-authentication integrity(SMB 3.1.1)
 13. SMB3 encryption(CCM, GCM)
 14. SMB direct(RDMA)
 
