@@ -35,7 +35,6 @@
 typedef struct {
     json_t json;
     hashtable_t hashtable;
-    int visited;
 } json_object_t;
 
 typedef struct {
@@ -43,7 +42,6 @@ typedef struct {
     size_t size;
     size_t entries;
     json_t **table;
-    int visited;
 } json_array_t;
 
 typedef struct {
@@ -75,20 +73,22 @@ json_t *jsonp_stringn_nocheck_own(const char *value, size_t len);
 void jsonp_error_init(json_error_t *error, const char *source);
 void jsonp_error_set_source(json_error_t *error, const char *source);
 void jsonp_error_set(json_error_t *error, int line, int column,
-                     size_t position, const char *msg, ...);
+                     size_t position, enum json_error_code code,
+                     const char *msg, ...);
 void jsonp_error_vset(json_error_t *error, int line, int column,
-                      size_t position, const char *msg, va_list ap);
+                      size_t position, enum json_error_code code,
+                      const char *msg, va_list ap);
 
 /* Locale independent string<->double conversions */
 int jsonp_strtod(strbuffer_t *strbuffer, double *out);
 int jsonp_dtostr(char *buffer, size_t size, double value, int prec);
 
 /* Wrappers for custom memory functions */
-void* jsonp_malloc(size_t size);
+void* jsonp_malloc(size_t size) JANSSON_ATTRS(warn_unused_result);
 void jsonp_free(void *ptr);
-char *jsonp_strndup(const char *str, size_t length);
-char *jsonp_strdup(const char *str);
-char *jsonp_strndup(const char *str, size_t len);
+char *jsonp_strndup(const char *str, size_t length) JANSSON_ATTRS(warn_unused_result);
+char *jsonp_strdup(const char *str) JANSSON_ATTRS(warn_unused_result);
+char *jsonp_strndup(const char *str, size_t len) JANSSON_ATTRS(warn_unused_result);
 
 
 /* Windows compatibility */

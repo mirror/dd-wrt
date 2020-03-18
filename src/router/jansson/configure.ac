@@ -1,5 +1,5 @@
 AC_PREREQ([2.60])
-AC_INIT([jansson], [2.10], [petri@digip.org])
+AC_INIT([jansson], [2.12], [petri@digip.org])
 
 AC_CONFIG_AUX_DIR([.])
 AM_INIT_AUTOMAKE([1.10 foreign])
@@ -38,25 +38,33 @@ AC_CHECK_FUNCS([close getpid gettimeofday localeconv open read sched_yield strto
 AC_MSG_CHECKING([for gcc __sync builtins])
 have_sync_builtins=no
 AC_TRY_LINK(
-  [], [unsigned long val; __sync_bool_compare_and_swap(&val, 0, 1);],
+  [], [unsigned long val; __sync_bool_compare_and_swap(&val, 0, 1); __sync_add_and_fetch(&val, 1); __sync_sub_and_fetch(&val, 1);],
   [have_sync_builtins=yes],
 )
 if test "x$have_sync_builtins" = "xyes"; then
   AC_DEFINE([HAVE_SYNC_BUILTINS], [1],
     [Define to 1 if gcc's __sync builtins are available])
+  json_have_sync_builtins=1
+else
+  json_have_sync_builtins=0
 fi
+AC_SUBST([json_have_sync_builtins])
 AC_MSG_RESULT([$have_sync_builtins])
 
 AC_MSG_CHECKING([for gcc __atomic builtins])
 have_atomic_builtins=no
 AC_TRY_LINK(
-  [], [char l; unsigned long v; __atomic_test_and_set(&l, __ATOMIC_RELAXED); __atomic_store_n(&v, 1, __ATOMIC_RELEASE); __atomic_load_n(&v, __ATOMIC_ACQUIRE);],
+  [], [char l; unsigned long v; __atomic_test_and_set(&l, __ATOMIC_RELAXED); __atomic_store_n(&v, 1, __ATOMIC_RELEASE); __atomic_load_n(&v, __ATOMIC_ACQUIRE); __atomic_add_fetch(&v, 1, __ATOMIC_ACQUIRE); __atomic_sub_fetch(&v, 1, __ATOMIC_RELEASE);],
   [have_atomic_builtins=yes],
 )
 if test "x$have_atomic_builtins" = "xyes"; then
   AC_DEFINE([HAVE_ATOMIC_BUILTINS], [1],
     [Define to 1 if gcc's __atomic builtins are available])
+  json_have_atomic_builtins=1
+else
+  json_have_atomic_builtins=0
 fi
+AC_SUBST([json_have_atomic_builtins])
 AC_MSG_RESULT([$have_atomic_builtins])
 
 case "$ac_cv_type_long_long_int$ac_cv_func_strtoll" in
@@ -99,8 +107,44 @@ AC_ARG_ENABLE([initial-hashtable-order],
 AC_DEFINE_UNQUOTED([INITIAL_HASHTABLE_ORDER], [$initial_hashtable_order],
   [Number of buckets new object hashtables contain is 2 raised to this power. E.g. 3 -> 2^3 = 8.])
 
+AC_ARG_ENABLE([Bsymbolic],
+  [AS_HELP_STRING([--disable-Bsymbolic],
+    [Avoid linking with -Bsymbolic-function])],
+  [], [with_Bsymbolic=check])
+
+if test "x$with_Bsymbolic" != "xno" ; then
+    AC_MSG_CHECKING([for -Bsymbolic-functions linker flag])
+    saved_LDFLAGS="${LDFLAGS}"
+    LDFLAGS=-Wl,-Bsymbolic-functions
+    AC_TRY_LINK(
+      [], [int main (void) { return 0; }],
+      [AC_MSG_RESULT([yes])
+       have_Bsymbolic=yes],
+      [AC_MSG_RESULT([no])
+       have_Bsymbolic=no]
+    )
+    LDFLAGS="${saved_LDFLAGS}"
+
+    if test "x$with_Bsymbolic" = "xcheck" ; then
+        with_Bsymbolic=$have_Bsymbolic;
+    fi
+    if test "x$with_Bsymbolic:x$have_Bsymbolic" = "xyes:xno" ; then
+        AC_MSG_ERROR([linker support is required for -Bsymbolic])
+    fi
+fi
+
+AS_IF([test "x$with_Bsymbolic" = "xyes"], [JSON_BSYMBOLIC_LDFLAGS=-Wl[,]-Bsymbolic-functions])
+AC_SUBST(JSON_BSYMBOLIC_LDFLAGS)
+
 if test x$GCC = xyes; then
-    AM_CFLAGS="-Wall -Wextra -Wdeclaration-after-statement"
+    AC_MSG_CHECKING(for -Wno-format-truncation)
+    wnoformat_truncation="-Wno-format-truncation"
+    AS_IF([${CC} -Wno-format-truncation -Werror -S -o /dev/null -xc /dev/null > /dev/null 2>&1],
+      [AC_MSG_RESULT(yes)],
+      [AC_MSG_RESULT(no)
+      wnoformat_truncation=""])
+
+    AM_CFLAGS="-Wall -Wextra -Wdeclaration-after-statement -Wshadow ${wnoformat_truncation}"
 fi
 AC_SUBST([AM_CFLAGS])
 
