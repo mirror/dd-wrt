@@ -1,4 +1,23 @@
-asterisk-configure: util-linux-configure util-linux-install jansson
+editline-configure:
+	cd editline && ./configure --host=$(ARCH)-linux-uclibc --prefix=/usr \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -I$(TOP)/ncurses/include" \
+	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -I$(TOP)/ncurses/include" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -I$(TOP)/ncurses/include" \
+	LDFLAGS="-L$(TOP)/ncurses/lib"
+
+editline:
+	make -C editline
+
+editline-install:
+	make -C editline install DESTDIR=$(INSTALLDIR)/editline
+	rm -rf $(INSTALLDIR)/editline/usr/share
+	rm -rf $(INSTALLDIR)/editline/usr/include
+	rm -rf $(INSTALLDIR)/editline/usr/lib/pkgconfig
+	rm -f $(INSTALLDIR)/editline/usr/lib/*.a
+	rm -f $(INSTALLDIR)/editline/usr/lib/*.la
+
+
+asterisk-configure: util-linux-configure util-linux-install jansson editline
 	rm -f asterisk/menuselect.makeopts && \
 	cd asterisk && ./configure --host=$(ARCH)-linux-uclibc \
 	--libdir=/usr/lib \
@@ -53,8 +72,10 @@ asterisk-configure: util-linux-configure util-linux-install jansson
 	LIBUUID_INCLUDE="-I $(INSTALLDIR)/util-linux/usr/include" \
 	NCURSES_CFLAGS="-I$(TOP)/ncurses/include" \
 	NCURSES_LIB="-L$(TOP)/ncurses/lib -lncurses" \
-	JANSSON_INCLUDE="-I$(TOP)/jansson/src" \
-	JANSSON_LIB="-L$(TOP)/jansson/src/.libs -ljansson"
+	JANSSON_CFLAGS="-I$(TOP)/jansson/src" \
+	JANSSON_LIBS="-L$(TOP)/jansson/src/.libs -ljansson -L$(TOP)/minidlna/lib -lsqlite3 -L$(TOP)/openssl" \
+	LIBEDIT_CFLAGS="-I$(TOP)/editline/src" \
+	LIBEDIT_LIBS="-L$(TOP)/editline/src/.libs -ledit -L$(TOP)/ncurses/lib -lncurses"
 	-cd chan_dongle && aclocal && autoconf && automake -a && cd ..
 	cd chan_dongle && ./configure  ac_cv_header_locale_h=yes --host=$(ARCH)-linux-uclibc --libdir=/usr/lib --with-asterisk=$(TOP)/asterisk/include DESTDIR=$(INSTALLDIR)/asterisk/usr/lib/asterisk/modules CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/glib20/libiconv/include -DASTERISK_VERSION_NUM=13000 -DLOW_MEMORY -D_XOPEN_SOURCE=600"
 
