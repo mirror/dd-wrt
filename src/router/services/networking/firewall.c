@@ -1968,6 +1968,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	/*
 	 * lonewolf mods for multiple VLANs / interfaces 
 	 */
+/* moved to openvpn.c route-up	 
 #ifdef HAVE_OPENVPN
 	//check if ovpn server is running
 	if (nvram_matchi("openvpn_enable", 1)) {
@@ -1981,6 +1982,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 		}
 	}
 #endif
+*/
 	if (wanactive(wanaddr)) {
 		if (nvram_invmatchi("dr_wan_rx", 0))
 			save2file_A_input("-p udp -i %s --dport %d -j %s", wanface, RIP_PORT, log_accept);
